@@ -1,0 +1,136 @@
+import uuid
+
+from app.db.neo4j_driver import get_driver
+
+PERSON_FIELDS = ["name", "personType", "description", "notes", "sichtbarkeit"]
+ORT_FIELDS = ["name", "description", "notes", "sichtbarkeit"]
+EVENT_FIELDS = ["title", "timestamp", "description", "notes", "sichtbarkeit"]
+
+
+def _return_clause(alias: str, fields: list[str]) -> str:
+    return ", ".join(f"{alias}.{f} AS {f}" for f in ["id", *fields])
+
+
+async def create_node(label: str, fields: list[str], campaign_id: str, data: dict) -> dict:
+    driver = get_driver()
+    node_id = str(uuid.uuid4())
+    props = ", ".join(f"{f}: ${f}" for f in fields)
+    query = f"""
+        MATCH (c:Campaign {{id: $campaign_id}})
+        CREATE (n:{label} {{id: $node_id, campaignId: $campaign_id, {props}}})
+        CREATE (c)-[:HAT_ENTITAET]->(n)
+        RETURN {_return_clause('n', fields)}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **data)
+        record = await result.single()
+        return dict(record)
+
+
+async def list_nodes(label: str, fields: list[str], campaign_id: str, order_field: str = "name") -> list[dict]:
+    driver = get_driver()
+    query = f"MATCH (n:{label} {{campaignId: $campaign_id}}) RETURN {_return_clause('n', fields)} ORDER BY n.{order_field}"
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(record) async for record in result]
+
+
+async def get_node(label: str, fields: list[str], campaign_id: str, node_id: str) -> dict | None:
+    driver = get_driver()
+    query = f"MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}}) RETURN {_return_clause('n', fields)}"
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def update_node(label: str, fields: list[str], campaign_id: str, node_id: str, data: dict) -> dict | None:
+    changed = {k: v for k, v in data.items() if v is not None}
+    if not changed:
+        return await get_node(label, fields, campaign_id, node_id)
+
+    driver = get_driver()
+    set_clause = ", ".join(f"n.{f} = ${f}" for f in changed)
+    query = f"""
+        MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}})
+        SET {set_clause}
+        RETURN {_return_clause('n', fields)}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **changed)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
+    driver = get_driver()
+    query = f"MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}}) DETACH DELETE n RETURN count(n) AS deleted"
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
+        record = await result.single()
+        return dict(record)["deleted"] > 0
+
+
+async def create_verbindung(campaign_id: str, data: dict) -> dict:
+    driver = get_driver()
+    edge_id = str(uuid.uuid4())
+    von_kind = data["vonKind"]
+    zu_kind = data["zuKind"]
+    query = f"""
+        MATCH (a:{von_kind} {{id: $von_id, campaignId: $campaign_id}})
+        MATCH (b:{zu_kind} {{id: $zu_id, campaignId: $campaign_id}})
+        CREATE (a)-[r:VERBINDUNG {{
+            id: $edge_id, typ: $typ, beschreibung: $beschreibung,
+            seit: $seit, bis: $bis, sichtbarkeit: $sichtbarkeit
+        }}]->(b)
+        RETURN r.id AS id, r.typ AS typ, r.beschreibung AS beschreibung,
+               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            von_id=data["vonId"],
+            zu_id=data["zuId"],
+            edge_id=edge_id,
+            typ=data["typ"],
+            beschreibung=data["beschreibung"],
+            seit=data["seit"],
+            bis=data["bis"],
+            sichtbarkeit=data["sichtbarkeit"],
+        )
+        record = await result.single()
+        if record is None:
+            return None
+        response = dict(record)
+        response.update(vonKind=von_kind, vonId=data["vonId"], zuKind=zu_kind, zuId=data["zuId"])
+        return response
+
+
+async def list_verbindungen(campaign_id: str) -> list[dict]:
+    driver = get_driver()
+    query = """
+        MATCH (a)-[r:VERBINDUNG]->(b)
+        WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+        RETURN r.id AS id, labels(a)[0] AS vonKind, a.id AS vonId,
+               labels(b)[0] AS zuKind, b.id AS zuId,
+               r.typ AS typ, r.beschreibung AS beschreibung,
+               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(record) async for record in result]
+
+
+async def delete_verbindung(campaign_id: str, edge_id: str) -> bool:
+    driver = get_driver()
+    query = """
+        MATCH (a)-[r:VERBINDUNG {id: $edge_id}]->(b)
+        WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+        DELETE r
+        RETURN count(r) AS deleted
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, edge_id=edge_id)
+        record = await result.single()
+        return dict(record)["deleted"] > 0
