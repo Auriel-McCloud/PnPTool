@@ -146,6 +146,9 @@ Ausgangspunkt: Mark wollte (a) Gegenstände 1:N an Personen hängen können, aut
 - UI: Checkbox "Einzigartig" + (nur wenn nicht einzigartig) ein Mengen-Zahlenfeld, Zusammenfassungszeile zeigt `×{menge}` wenn nicht einzigartig.
 - **Für später (wenn der Shop drankommt)**: eine echte Vorlage/Instanz-Trennung (`GegenstandVorlage` campaign-weit + `Gegenstand`-Instanzen die darauf referenzieren) wäre der nächste Schritt, sobald mehrere Spieler denselben Gegenstand kaufen/haben sollen UND der SL die Vorlage zentral pflegen will (z.B. Preis einmal ändern statt bei jeder Instanz einzeln). Jetzige Lösung (unabhängige Menge pro Person) ist bewusst der einfachere Zwischenschritt.
 
+**Nachgezogen (28.08.2026, Runde 5 — Gegenstands-Meta hinter Optionen-Schalter):**
+- "Im Beziehungsgraph anzeigen" (MacGuffin), "Einzigartig" und "Menge" sind jetzt hinter demselben `showOptions`-Schalter versteckt, der schon die Trait-`+max`/`−max`-Buttons steuert (ein Schalter oben im `CharacterSheetPanel`, nicht mehr pro Gegenstand). `GegenstandRow` bekommt `showOptions` jetzt als Prop von `CharacterSheetPanel` durchgereicht. Rein clientseitiges Ausblenden — sobald es echte Spieler-Routen gibt (Phase 4), muss diese Trennung serverseitig in `visibility.py` nachgezogen werden, das reine Verstecken im UI ist kein Sicherheitsmechanismus.
+
 **Nicht gemacht / bewusst zurückgestellt (Rest von Phase 3):**
 - Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.
 - Kein Cyber/Bio-Ware, keine Rüstung/Waffen-Slots (nur generische Gegenstände ohne Schadenswerte etc.)

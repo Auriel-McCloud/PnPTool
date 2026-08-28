@@ -111,6 +111,7 @@ function GegenstandRow({
   personId,
   item,
   pcOptions,
+  showOptions,
   onChanged,
   onRemoved,
 }: {
@@ -118,6 +119,7 @@ function GegenstandRow({
   personId: string;
   item: Gegenstand;
   pcOptions: PersonOption[];
+  showOptions: boolean;
   onChanged: () => void;
   onRemoved: () => void;
 }) {
@@ -253,29 +255,33 @@ function GegenstandRow({
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <label style={{ fontSize: "0.9em" }}>
-              <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} /> Einzigartig
-              (genau ein Exemplar in der Welt)
-            </label>
-            {!einzigartig && (
-              <label style={{ fontSize: "0.85em", color: "#555" }}>
-                Menge{" "}
-                <input
-                  type="number"
-                  min={0}
-                  value={menge}
-                  onChange={(e) => setMenge(Number(e.target.value))}
-                  style={{ width: 70 }}
-                />
-              </label>
-            )}
-          </div>
-          {!einzigartig && (
-            <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
-              Nicht-einzigartige Gegenstände (z.B. Munition) haben bei jeder besitzenden Person ihre eigene Menge — kein
-              geteilter Vorrat.
-            </p>
+          {showOptions && (
+            <>
+              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                <label style={{ fontSize: "0.9em" }}>
+                  <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
+                  Einzigartig (genau ein Exemplar in der Welt)
+                </label>
+                {!einzigartig && (
+                  <label style={{ fontSize: "0.85em", color: "#555" }}>
+                    Menge{" "}
+                    <input
+                      type="number"
+                      min={0}
+                      value={menge}
+                      onChange={(e) => setMenge(Number(e.target.value))}
+                      style={{ width: 70 }}
+                    />
+                  </label>
+                )}
+              </div>
+              {!einzigartig && (
+                <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
+                  Nicht-einzigartige Gegenstände (z.B. Munition) haben bei jeder besitzenden Person ihre eigene Menge —
+                  kein geteilter Vorrat.
+                </p>
+              )}
+            </>
           )}
 
           <div>
@@ -303,10 +309,12 @@ function GegenstandRow({
 
           <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
 
-          <label style={{ fontSize: "0.9em" }}>
-            <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} /> Im
-            Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
-          </label>
+          {showOptions && (
+            <label style={{ fontSize: "0.9em" }}>
+              <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} /> Im
+              Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
+            </label>
+          )}
 
           <VisibilitySelector
             label="Sichtbarkeit"
@@ -446,6 +454,7 @@ export function CharacterSheetPanel({
             personId={person.id}
             item={item}
             pcOptions={pcOptions}
+            showOptions={showOptions}
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
           />
