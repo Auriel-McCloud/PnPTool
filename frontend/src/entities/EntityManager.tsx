@@ -2,9 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type Event, type Ort, type Person, type SichtbarkeitModus, type Verbindung } from "./api";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
+import { SichtbarkeitBadge } from "./SichtbarkeitBadge";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { RichTextView } from "../richtext/RichTextView";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
+import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
 const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid #ddd" };
@@ -21,39 +23,6 @@ const formStyle: React.CSSProperties = {
 };
 const fieldRowStyle: React.CSSProperties = { display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" };
 const textInputStyle: React.CSSProperties = { fontSize: "1rem", padding: "8px 10px", minWidth: 260 };
-
-function SichtbarkeitBadge({
-  modus,
-  sichtbarFuer,
-  personenById,
-  label,
-}: {
-  modus: SichtbarkeitModus;
-  sichtbarFuer: string[];
-  personenById: Map<string, string>;
-  label: string;
-}) {
-  const text =
-    modus === "GM"
-      ? `${label}: SL-geheim`
-      : modus === "ALLE"
-        ? `${label}: alle Spieler`
-        : `${label}: ${sichtbarFuer.map((id) => personenById.get(id) ?? "?").join(", ") || "niemand ausgewählt"}`;
-  return (
-    <span
-      style={{
-        marginRight: 8,
-        fontSize: "0.75em",
-        padding: "2px 8px",
-        borderRadius: 4,
-        background: modus === "GM" ? "#333" : modus === "ALLE" ? "#2a6" : "#a67c00",
-        color: "white",
-      }}
-    >
-      {text}
-    </span>
-  );
-}
 
 // Gebündelter State für die Felder, die Personen/Orte/Events gemeinsam haben:
 // Rich-Text-Beschreibung + Notizen, je mit eigener Sichtbarkeit.
@@ -174,6 +143,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
   const [personName, setPersonName] = useState("");
   const [personType, setPersonType] = useState<"PC" | "NPC">("NPC");
   const personContent = useContentAndVisibility();
+  const [openSheetFor, setOpenSheetFor] = useState<string | null>(null);
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
     await entitiesApi.createPerson(campaignId, { name: personName, personType, ...personContent.payload() });
@@ -267,6 +237,12 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
                 label="Notizen"
               />
             )}
+            <div style={{ marginTop: 6 }}>
+              <button type="button" onClick={() => setOpenSheetFor(openSheetFor === p.id ? null : p.id)}>
+                {openSheetFor === p.id ? "Charakterblatt schließen" : "Charakterblatt öffnen"}
+              </button>
+            </div>
+            {openSheetFor === p.id && <CharacterSheetPanel campaignId={campaignId} person={p} />}
           </div>
         ))}
         <form onSubmit={submitPerson} style={formStyle}>

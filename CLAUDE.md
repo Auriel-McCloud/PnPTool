@@ -84,7 +84,7 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **Phase 2a** — Backend-CRUD (Personen/Orte/Events/generische `VERBINDUNG`-Relationships) + Frontend-Listen/Formulare
 - ✅ **Phase 2b** — Cytoscape-Graph-Ansicht: `GET /api/campaigns/{cid}/graph?focus=&depth=` liefert Cytoscape-JSON (voller Graph oder BFS-begrenzte Nachbarschaft), Frontend zeigt Personen/Orte/Events als farbige Knoten, Klick fokussiert auf Nachbarschaft. Cytoscape-Canvas-Offset-Bug (Stolperstein #8) gefunden, gefixt und vom Nutzer live am Handy bestätigt — Phase 2 damit komplett.
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
-- ⬜ **Phase 3** — Spieler-Charakterbogen CRUD (Dot-Pools, Box-Tracks, Würfeln)
+- 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
 - ⬜ **Phase 4** — Zugangscode/Link-Beitritt für Spieler, Charakter beanspruchen. **Wichtig:** die Sichtbarkeits-Filterung (`entities/visibility.py`) ist bereits fertig und getestet, aber in KEINE Route eingebaut — es gibt noch keine Spieler-Route, die `viewer_role="PLAYER"` überhaupt übergibt. Das ist der erste Schritt in Phase 4: eine Spieler-Version der `entities`-Routen (oder ein Query-Param/Claim am bestehenden Endpoint), die `filter_entities_for_viewer`/`filter_verbindungen_for_viewer` tatsächlich aufruft.
 - ⬜ **Phase 5** — Live-WebSocket-Pop-ups vom SL an Spieler
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
@@ -106,6 +106,26 @@ Ausgangspunkt: Mark wollte (a) Sichtbarkeit nicht nur GM/Alle sondern auch "nur 
 - Multi-Ruleset ist nur die Weiche (ein String-Feld), kein echtes pluggable System — Würfelmechanik/Regelwerk-Engine ist ein Splittermond/D&D-Projekt für später.
 - Die Redaktions-Logik ist fertig, aber **ungenutzt** bis Phase 4 eine Spieler-Route hat (siehe oben).
 - Cytoscape-Graph-Ansicht zeigt weiterhin nur zweistufig GM(rot)/nicht-GM(grau) als Kantenfarbe — SPEZIFISCH sieht optisch wie ALLE aus. Kann man später verfeinern, war kein Teil dieses Durchgangs.
+
+## Phase 3 (teilweise, 28.08.2026) — Charakterblatt-Grundlage + Gegenstände
+
+Ausgangspunkt: Mark wollte (a) Gegenstände 1:N an Personen hängen können, automatisch sichtbar für den Besitzer, (b) ein generalisierbares "Charakterblatt" (nicht nur PCs, auch NPCs/Fahrzeuge) mit Punkte-Werten wie im Excel — meist 0-5/0-6, aber einzelne mächtige Sachen sollen auch 0-15 oder 0-20 gehen können, ohne dass das System das global deckelt.
+
+**Umgesetzt:**
+- `TraitDef`-Katalog (`app/traits/`): 52 Werte aus `Neotopia.xlsx` geseedet (9 Attribute max 6, 30 Fertigkeiten, 4 NeuroWeaving, 9 Sphären je max 5), ruleset-gescoped (`neotopia`), deterministische IDs (`ruleset:category:name`) + `MERGE` → Seeding läuft bei jedem Backend-Start erneut, idempotent, überschreibt nie individuelle Charakter-Werte. Seed-Liste in `app/traits/seed.py`, bei Bedarf dort erweitern.
+- `HAS_TRAIT`-Relationship (`Person`/später `Companion` → `TraitDef`) trägt `rating` UND optional `maxOverride` — **das Maximum ist pro Charakter überschreibbar**, nicht nur pro Fähigkeit global. So kann eine einzelne Elder-NPC bei Schusswaffen auf 8/10 stehen, während normale Charaktere bei 5 gedeckelt bleiben. Effektives Maximum = `maxOverride ?? TraitDef.defaultMax`.
+- `GET /api/campaigns/{cid}/personen/{id}/werte` liefert nur explizit gesetzte Werte — das Frontend merged das clientseitig mit dem vollen Katalog (`CharacterSheetPanel.tsx`, `mergeCatalogWithRatings`), damit ein frischer Charakter alle 52 Werte auf 0 zeigt statt einer leeren Liste.
+- `DotPool`-Komponente (`frontend/src/traits/DotPool.tsx`): generische Punkte-Anzeige, rendert exakt `max` Kreise, funktioniert unverändert für 5, 15 oder 20. Klick-UX wie klassischer WoD-Bogen (Klick auf obersten gefüllten Punkt reduziert um 1, sonst direkt setzen).
+- `Gegenstand`-Knoten (`app/items/`), verbunden über `Person -[:BESITZT]-> Gegenstand` (1:N). Sichtbarkeit wird beim Anlegen **automatisch** vorbelegt (PC-Besitzer → `SPEZIFISCH` nur für diesen einen Spieler, NPC-Besitzer → `GM`), aber der SL kann das beim Erstellen explizit übersteuern (`sichtbarkeit`/`sichtbarFuer` im Request setzen). `visibility.py` hat dafür `filter_gegenstand_for_viewer`/`filter_gegenstaende_for_viewer` (gleiches Muster wie bei Entities, ungenutzt bis Phase 4).
+- Nebenbei gefixt: `delete_node` (Personen/Orte/Events löschen) hat vorher Gegenstände verwaister Personen im Graph zurückgelassen (`DETACH DELETE n` löscht nur den Knoten selbst, nicht was er besaß) — räumt jetzt via `OPTIONAL MATCH (n)-[:BESITZT]->(owned)` mit auf.
+- UI: "Charakterblatt öffnen"-Button pro Person in `EntityManager.tsx`, klappt `CharacterSheetPanel` auf (Werte nach Kategorie gruppiert + Gegenstände-Liste mit Anlegen/Entfernen).
+
+**Nicht gemacht / bewusst zurückgestellt (Rest von Phase 3):**
+- Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.
+- Kein Cyber/Bio-Ware, keine Rüstung/Waffen-Slots (nur generische Gegenstände ohne Schadenswerte etc.)
+- Kein Companion/Drohne-Sheet, obwohl `HAS_TRAIT` dafür schon generisch genug wäre (funktioniert für jeden Knotentyp, nicht nur Person) — nur noch nicht an eine Companion-Route angebunden.
+- Kein Würfeln.
+- `sortOrder`-Nummerierung im Seed ist grob (Reihenfolge aus dem Excel übernommen), nicht weiter kuratiert.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 

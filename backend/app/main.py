@@ -8,6 +8,9 @@ from app.campaigns.routes import router as campaigns_router
 from app.config import settings
 from app.entities.routes import router as entities_router
 from app.graph.routes import router as graph_router
+from app.items.routes import router as items_router
+from app.traits.routes import router as traits_router
+from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
 from app.db.neo4j_driver import close_driver
 
@@ -15,6 +18,7 @@ from app.db.neo4j_driver import close_driver
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await apply_migrations()
+    await seed_traits()
     yield
     await close_driver()
 
@@ -33,6 +37,8 @@ app.include_router(auth_router)
 app.include_router(campaigns_router)
 app.include_router(entities_router)
 app.include_router(graph_router)
+app.include_router(items_router)
+app.include_router(traits_router)
 
 
 @app.get("/api/health")

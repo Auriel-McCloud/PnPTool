@@ -43,3 +43,14 @@ async def campaign_owned_by(campaign_id: str, gm_id: str) -> bool:
             campaign_id=campaign_id,
         )
         return await result.single() is not None
+
+
+async def get_campaign(campaign_id: str) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (c:Campaign {id: $campaign_id}) RETURN c.id AS id, c.name AS name, coalesce(c.ruleset, 'neotopia') AS ruleset",
+            campaign_id=campaign_id,
+        )
+        record = await result.single()
+        return dict(record) if record else None

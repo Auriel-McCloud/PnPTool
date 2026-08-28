@@ -84,3 +84,16 @@ def filter_verbindung_for_viewer(edge: dict, viewer_role: str, viewer_person_id:
 def filter_verbindungen_for_viewer(edges: list[dict], viewer_role: str, viewer_person_id: str | None) -> list[dict]:
     filtered = (filter_verbindung_for_viewer(e, viewer_role, viewer_person_id) for e in edges)
     return [e for e in filtered if e is not None]
+
+
+def filter_gegenstand_for_viewer(item: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
+    if not is_visible_to(item["sichtbarkeit"], item.get("sichtbarFuer", []), viewer_role, viewer_person_id):
+        return None
+    result = dict(item)
+    result["description"] = redact_rich_text(result.get("description", ""), viewer_role)
+    return result
+
+
+def filter_gegenstaende_for_viewer(items: list[dict], viewer_role: str, viewer_person_id: str | None) -> list[dict]:
+    filtered = (filter_gegenstand_for_viewer(i, viewer_role, viewer_person_id) for i in items)
+    return [i for i in filtered if i is not None]

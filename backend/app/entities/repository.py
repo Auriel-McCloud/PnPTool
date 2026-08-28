@@ -66,7 +66,15 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
 
 async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
     driver = get_driver()
-    query = f"MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}}) DETACH DELETE n RETURN count(n) AS deleted"
+    # OPTIONAL MATCH auf BESITZT ist ein No-op für Ort/Event (haben nie ausgehende
+    # BESITZT-Kanten), räumt aber bei Person auch die Gegenstände mit weg statt
+    # sie als verwaiste Knoten zurückzulassen.
+    query = f"""
+        MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (n)-[:BESITZT]->(owned)
+        DETACH DELETE n, owned
+        RETURN count(n) AS deleted
+    """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
         record = await result.single()
