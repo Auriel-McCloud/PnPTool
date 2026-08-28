@@ -106,7 +106,7 @@ function EigenschaftenEditor({ pairs, onChange }: { pairs: Eigenschaft[]; onChan
   );
 }
 
-function GegenstandRow({
+export function GegenstandRow({
   campaignId,
   personId,
   item,

@@ -11,6 +11,7 @@ from app.config import settings
 from app.entities.routes import router as entities_router
 from app.graph.routes import router as graph_router
 from app.items.routes import router as items_router
+from app.items.routes import campaign_router as items_campaign_router
 from app.traits.routes import router as traits_router
 from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
@@ -40,6 +41,7 @@ app.include_router(campaigns_router)
 app.include_router(entities_router)
 app.include_router(graph_router)
 app.include_router(items_router)
+app.include_router(items_campaign_router)
 app.include_router(traits_router)
 
 Path("uploads").mkdir(exist_ok=True)

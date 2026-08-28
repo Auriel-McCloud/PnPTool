@@ -21,8 +21,18 @@ export interface Gegenstand {
   sichtbarFuer: string[];
 }
 
+export interface GegenstandMitBesitzer extends Gegenstand {
+  ownerId: string;
+  ownerName: string;
+  ownerPersonType: "PC" | "NPC";
+}
+
 function base(campaignId: string, personId: string) {
   return `/api/campaigns/${campaignId}/personen/${personId}/gegenstaende`;
+}
+
+function campaignBase(campaignId: string) {
+  return `/api/campaigns/${campaignId}/gegenstaende`;
 }
 
 export interface GegenstandUpdate {
@@ -46,6 +56,7 @@ export interface GegenstandUpdate {
 
 export const itemsApi = {
   list: (cid: string, personId: string) => api.get<Gegenstand[]>(base(cid, personId)),
+  listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
   create: (
     cid: string,
     personId: string,

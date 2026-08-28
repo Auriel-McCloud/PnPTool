@@ -4,6 +4,7 @@ import { GmLoginPage } from "./auth/GmLoginPage";
 import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
+import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
 
 function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
   const [name, setName] = useState("");
@@ -24,7 +25,7 @@ function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<
 function Dashboard() {
   const { me, logout } = useAuth();
   const { campaigns, loading, createCampaign } = useCampaign();
-  const [tab, setTab] = useState<"liste" | "graph">("liste");
+  const [tab, setTab] = useState<"liste" | "graph" | "gegenstaende">("liste");
 
   return (
     <div style={{ maxWidth: 960, margin: "2rem auto", fontFamily: "sans-serif" }}>
@@ -53,11 +54,24 @@ function Dashboard() {
             >
               Liste
             </button>
-            <button type="button" onClick={() => setTab("graph")} style={{ fontWeight: tab === "graph" ? "bold" : "normal" }}>
+            <button
+              type="button"
+              onClick={() => setTab("graph")}
+              style={{ fontWeight: tab === "graph" ? "bold" : "normal", marginRight: 8 }}
+            >
               Beziehungsgraph
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("gegenstaende")}
+              style={{ fontWeight: tab === "gegenstaende" ? "bold" : "normal" }}
+            >
+              Gegenstände
+            </button>
           </div>
-          {tab === "liste" ? <EntityManager campaignId={campaigns[0].id} /> : <CampaignGraphView campaignId={campaigns[0].id} />}
+          {tab === "liste" && <EntityManager campaignId={campaigns[0].id} />}
+          {tab === "graph" && <CampaignGraphView campaignId={campaigns[0].id} />}
+          {tab === "gegenstaende" && <GegenstaendeUebersicht campaignId={campaigns[0].id} />}
         </>
       )}
     </div>

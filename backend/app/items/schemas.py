@@ -84,3 +84,9 @@ class GegenstandResponse(BaseModel):
     bildUrl: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
+
+
+class GegenstandMitBesitzer(GegenstandResponse):
+    ownerId: str
+    ownerName: str
+    ownerPersonType: str

@@ -47,7 +47,8 @@ C:\DEV\PnPTool\
         ├── campaigns/useCampaign.ts
         ├── entities/             (api.ts, EntityManager.tsx — Listen+Formulare für Personen/Orte/Events/Verbindungen)
         ├── graph/                (api.ts, CampaignGraphView.tsx — Cytoscape-Graph-Ansicht)
-        └── App.tsx               (Tab-Umschalter Liste/Beziehungsgraph)
+        ├── items/                (api.ts, GegenstaendeUebersicht.tsx — kampagnenweite Gegenstände-Übersicht über alle Personen hinweg)
+        └── App.tsx               (Tab-Umschalter Liste/Beziehungsgraph/Gegenstände)
 ```
 
 **Kein git-Repo bisher.** Für paralleles Arbeiten von mehreren Geräten wäre ein Git-Remote (GitHub o.ä.) sinnvoll — noch nicht eingerichtet, auf Wunsch nachholen.
@@ -159,6 +160,13 @@ Ausgangspunkt: Mark wollte (a) Gegenstände 1:N an Personen hängen können, aut
 - Frontend: `alleOptionen` (ungefilterte Personen-Liste, Label mit `(PC)`/`(NPC)`-Kennzeichnung) neu von `EntityManager.tsx` durch `CharacterSheetPanel.tsx` bis zu `GegenstandRow` durchgereicht — nötig weil die Zuweisen-Zielauswahl auch NPCs anbieten soll, während `pcOptions` (nur PCs) weiterhin exklusiv für den `VisibilitySelector` reserviert bleibt.
 - Komplett end-to-end getestet: Vorlage mit `hatMenge=true, menge=20` angelegt, an einen echten PC UND einen NPC zugewiesen, beide Kopien korrekt mit übernommener Menge und frisch berechneter Sichtbarkeit — sowie die 400-Ablehnung für Nicht-Vorlagen. Alles über den Vite-Proxy-Pfad.
 - **Größere Vision, bewusst nur dokumentiert, nicht gebaut** (siehe Plandatei `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` für Details): komplett neue Menüführung (eigene Bereiche für PCs/NPCs/Gegenstände/Orte/Regeln/Graph, Gegenstände als fokussiertes Popup statt Inline-Akkordeon), Shop = Ort mit Angebot + Live-WebSocket-Popup (minimierbar, zuweisbar/entziehbar, Teil von Phase 5), Popup-Animation (klappt von der Klick-Stelle bzw. einem Benachrichtigungs-Symbol oben rechts auf), Munition als Waffen-Untereigenschaft statt eigener Gegenstand.
+
+**Nachgezogen (28.08.2026, Runde 7 — kampagnenweite Gegenstände-Übersicht):**
+- Auslöser: Gegenstände existierten nur verschachtelt im Charakterblatt einer einzelnen Person (Kira Voss) — dadurch kaum testbar, ohne extra für jeden Test ein Charakterblatt aufzuklappen. Statt des großen Menüführungs-Umbaus (weiterhin nur dokumentierte Vision, s.o.) jetzt bewusst die leichtgewichtige Zwischenlösung: eine dritte, kampagnenweite Ansicht.
+- Backend: neuer `campaign_router` in `backend/app/items/routes.py` (Prefix `/api/campaigns/{campaign_id}/gegenstaende`, ohne `{person_id}` — daher eigener Router statt einer weiteren Route auf dem bestehenden personen-gescopten Router) mit `GET ""`. Neue Repository-Funktion `list_alle_gegenstaende()` matched `Person -[:BESITZT]-> Gegenstand` ohne Personen-Filter, liefert zusätzlich `ownerId`/`ownerName`/`ownerPersonType` pro Gegenstand. Neues Response-Schema `GegenstandMitBesitzer(GegenstandResponse)` mit denselben drei Zusatzfeldern. In `main.py` als zweiter Items-Router eingehängt.
+- Frontend: `GegenstandRow` in `CharacterSheetPanel.tsx` ist jetzt `export`iert und wird unverändert wiederverwendet (kein Duplikat-Code für Bearbeiten/Löschen/Zuweisen/Bild-Upload). Neue Komponente `frontend/src/items/GegenstaendeUebersicht.tsx`: lädt `entitiesApi.listPersonen` (für `pcOptions`/`alleOptionen`, gleiches Muster wie `EntityManager.tsx`) + `itemsApi.listAlle`, gruppiert die Items clientseitig nach `ownerId` und rendert pro Besitzer eine Überschrift + die zugehörigen `GegenstandRow`s. Dritter Tab "Gegenstände" in `App.tsx`s `Dashboard()` neben Liste/Beziehungsgraph.
+- End-to-end über den Vite-Proxy-Pfad getestet (GM-Login `sl`/`test-passwort-123`, dann `GET /api/campaigns/{cid}/gegenstaende`): alle 7 Bestands-Gegenstände korrekt nach Besitzer gruppiert zurückgegeben (Kira Voss NPC: 6 Items inkl. einer Vorlage + ihrer eigenen Kopie, Mr. Chrome NPC: 1 zugewiesene Kopie). `npm run build` sauber, Vite-Dev-Server nach dem etablierten Muster (exakte PID killen, `node_modules/.vite` löschen, neu starten) neu gestartet, neue Module (`GegenstaendeUebersicht.tsx`, `App.tsx`) liefern beim direkten Abruf über den Dev-Server-Transform-Endpoint 200 ohne Fehler.
+- Bewusst nicht Teil dieser Runde: kein eigenes "Gegenstand neu anlegen"-Formular in der Übersicht (Neuanlage bleibt vorerst am Charakterblatt einer Person hängen, da jeder Gegenstand einen Besitzer braucht) — reine Lese-/Bearbeiten-/Zuweisen-Übersicht.
 
 **Nicht gemacht / bewusst zurückgestellt (Rest von Phase 3):**
 - Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.

@@ -96,6 +96,18 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
         return [_decode(dict(record)) async for record in result]
 
 
+async def list_alle_gegenstaende(campaign_id: str) -> list[dict]:
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        RETURN {RETURN_FIELDS}, p.id AS ownerId, p.name AS ownerName, p.personType AS ownerPersonType
+        ORDER BY p.name, g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [_decode(dict(record)) async for record in result]
+
+
 async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict | None:
     changed = {k: v for k, v in data.items() if v is not None}
     if "eigenschaften" in changed:

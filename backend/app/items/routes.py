@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from app.auth.dependencies import require_campaign_gm
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.items import repository
-from app.items.schemas import GegenstandCreate, GegenstandResponse, GegenstandUpdate, ZuweisenRequest
+from app.items.schemas import GegenstandCreate, GegenstandMitBesitzer, GegenstandResponse, GegenstandUpdate, ZuweisenRequest
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -15,9 +15,22 @@ router = APIRouter(
     dependencies=[Depends(require_campaign_gm)],
 )
 
+# Kampagnenweite Übersicht (alle Gegenstände aller Personen) — eigener Router,
+# weil der Pfad kein {person_id} enthält und daher nicht in obiges Prefix passt.
+campaign_router = APIRouter(
+    prefix="/api/campaigns/{campaign_id}/gegenstaende",
+    tags=["items"],
+    dependencies=[Depends(require_campaign_gm)],
+)
+
 UPLOAD_DIR = Path("uploads")
 ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+
+
+@campaign_router.get("", response_model=list[GegenstandMitBesitzer])
+async def list_all_items(campaign_id: str):
+    return await repository.list_alle_gegenstaende(campaign_id)
 
 
 def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[str]]:
