@@ -128,6 +128,8 @@ function GegenstandRow({
   const [kraft, setKraft] = useState(item.kraft);
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
   const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
+  const [einzigartig, setEinzigartig] = useState(item.einzigartig);
+  const [menge, setMenge] = useState(item.menge);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
@@ -141,6 +143,8 @@ function GegenstandRow({
     setKraft(item.kraft);
     setEigenschaften(recordToPairs(item.eigenschaften));
     setZeigeInGraph(item.zeigeInGraph);
+    setEinzigartig(item.einzigartig);
+    setMenge(item.menge);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -156,6 +160,8 @@ function GegenstandRow({
       kraft,
       eigenschaften: pairsToRecord(eigenschaften),
       zeigeInGraph,
+      einzigartig,
+      menge: einzigartig ? 1 : menge,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -190,6 +196,7 @@ function GegenstandRow({
             <img src={item.bildUrl} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
           )}
           {item.name}
+          {!item.einzigartig && <strong>×{item.menge}</strong>}
           <span style={{ fontSize: "0.75em", color: "#888" }}>
             [{item.typ}
             {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
@@ -244,6 +251,31 @@ function GegenstandRow({
                 <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
               </div>
             </div>
+          )}
+
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <label style={{ fontSize: "0.9em" }}>
+              <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} /> Einzigartig
+              (genau ein Exemplar in der Welt)
+            </label>
+            {!einzigartig && (
+              <label style={{ fontSize: "0.85em", color: "#555" }}>
+                Menge{" "}
+                <input
+                  type="number"
+                  min={0}
+                  value={menge}
+                  onChange={(e) => setMenge(Number(e.target.value))}
+                  style={{ width: 70 }}
+                />
+              </label>
+            )}
+          </div>
+          {!einzigartig && (
+            <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
+              Nicht-einzigartige Gegenstände (z.B. Munition) haben bei jeder besitzenden Person ihre eigene Menge — kein
+              geteilter Vorrat.
+            </p>
           )}
 
           <div>

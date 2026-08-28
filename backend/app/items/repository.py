@@ -7,14 +7,23 @@ RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
     g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
+    g.einzigartig AS einzigartig, g.menge AS menge,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
 """
+
+
+def _or_default(value, default):
+    """Wie `value or default`, aber ohne die Falsy-Falle bei 0/False als gültigem Wert."""
+    return value if value is not None else default
 
 
 def _decode(record: dict) -> dict:
     # Bei jeder neuen Property IMMER hier einen Fallback ergänzen — ein
     # fehlender Fallback für ein Pflichtfeld in GegenstandResponse lässt sonst
     # die komplette Liste mit 500 abstürzen, siehe Stolperstein #9 in CLAUDE.md.
+    # Für Felder, bei denen 0/False ein gültiger (nicht der Default-)Wert sein
+    # kann — einzigartig, menge — MUSS `_or_default` (is-not-None-Check) statt
+    # `or` verwendet werden, sonst wird z.B. menge=0 fälschlich zu 1.
     record = dict(record)
     try:
         record["eigenschaften"] = json.loads(record["eigenschaften"]) if record["eigenschaften"] else {}
@@ -25,6 +34,8 @@ def _decode(record: dict) -> dict:
     record["typ"] = record.get("typ") or "Sonstiges"
     record["preis"] = record.get("preis") or 0
     record["kraft"] = record.get("kraft") or 0
+    record["einzigartig"] = _or_default(record.get("einzigartig"), True)
+    record["menge"] = _or_default(record.get("menge"), 1)
     return record
 
 
@@ -36,7 +47,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
         CREATE (g:Gegenstand {{
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
-            zeigeInGraph: $zeigeInGraph, bildUrl: '',
+            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, menge: $menge, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }})
         CREATE (p)-[:BESITZT]->(g)
@@ -56,6 +67,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             kraft=data["kraft"],
             eigenschaften=json.dumps(data["eigenschaften"]),
             zeigeInGraph=data["zeigeInGraph"],
+            einzigartig=data["einzigartig"],
+            menge=data["menge"],
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
         )

@@ -11,6 +11,8 @@ export interface Gegenstand {
   kraft: number;
   eigenschaften: Record<string, string>;
   zeigeInGraph: boolean;
+  einzigartig: boolean;
+  menge: number;
   bildUrl: string;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
@@ -29,6 +31,8 @@ export interface GegenstandUpdate {
   kraft?: number;
   eigenschaften?: Record<string, string>;
   zeigeInGraph?: boolean;
+  einzigartig?: boolean;
+  menge?: number;
   bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];

@@ -18,6 +18,13 @@ class GegenstandCreate(BaseModel):
     # MacGuffins/plot-relevante Gegenstände können als eigener Knoten im
     # Beziehungsgraph erscheinen (normale Gegenstände wie ein Hemdknopf nicht).
     zeigeInGraph: bool = False
+    # Einzigartig = genau ein Exemplar in der Welt (z.B. "Das Amulett von
+    # Neotopia"). Nicht-einzigartig = Verbrauchs-/Stapel-Gegenstand, bei dem
+    # jede besitzende Person ihre eigene Menge führt (z.B. Munition, eine Dose
+    # Cola) — bewusst noch keine geteilte Vorlage über Personen hinweg, das
+    # wäre erst für einen echten Shop-Katalog nötig.
+    einzigartig: bool = True
+    menge: int = 1
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -33,6 +40,8 @@ class GegenstandUpdate(BaseModel):
     kraft: int | None = None
     eigenschaften: dict[str, str] | None = None
     zeigeInGraph: bool | None = None
+    einzigartig: bool | None = None
+    menge: int | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -48,6 +57,8 @@ class GegenstandResponse(BaseModel):
     kraft: int
     eigenschaften: dict[str, str]
     zeigeInGraph: bool
+    einzigartig: bool
+    menge: int
     bildUrl: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
