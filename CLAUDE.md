@@ -12,6 +12,8 @@ Zwei Nutzerrollen:
 
 Der volle Plan (Architektur-Entscheidungen, Datenmodell, Phasen-Roadmap) liegt hier: `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` — bei Bedarf dort nachlesen, diese Datei hier ist die kompaktere Zusammenfassung + laufender Status.
 
+**Das UI-Konzept ("Commlink") steht in `docs/ui-konzept.md`** — Leitbild, Aufbau, Bereichsschnitt, Kampfmodus, Tooltip-System. Vor UI-Arbeit dort nachlesen, das ist die Quelle der Wahrheit fürs Aussehen.
+
 ## Tech-Stack (entschieden, nicht neu diskutieren)
 
 - **Backend**: FastAPI (async), `neo4j` async driver, JWT in httpOnly-Cookie, `bcrypt` direkt (NICHT passlib — siehe "Bekannte Stolpersteine" unten)
