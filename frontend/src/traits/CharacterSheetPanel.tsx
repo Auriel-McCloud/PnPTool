@@ -270,6 +270,11 @@ export function GegenstandRow({
             maxWidth: "100%",
           }}
         >
+          {item.istVorlage && (
+            <p style={{ fontSize: "0.85em", color: "#888", fontStyle: "italic", margin: 0 }}>
+              📋 Vorlage — hat keinen Besitzer
+            </p>
+          )}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
             <select value={typ} onChange={(e) => setTyp(e.target.value)}>
@@ -358,8 +363,7 @@ export function GegenstandRow({
                 <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                   <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
                     <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
-                    verfolgen (z.B. Munition — unabhängig von "Einzigartig": ein Seil ist z.B. nicht einzigartig, aber
-                    trotzdem zählt niemand die Stückzahl)
+                    verfolgen
                   </label>
                   {hatMenge && (
                     <input
@@ -371,11 +375,6 @@ export function GegenstandRow({
                     />
                   )}
                 </div>
-                {hatMenge && (
-                  <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
-                    Jede besitzende Person führt ihre eigene Menge — kein geteilter Vorrat über mehrere Personen hinweg.
-                  </p>
-                )}
                 <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                   <input
                     type="checkbox"
