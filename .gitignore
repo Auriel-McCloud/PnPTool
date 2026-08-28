@@ -3,5 +3,6 @@ backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.egg-info/
+backend/uploads/
 frontend/node_modules/
 frontend/dist/

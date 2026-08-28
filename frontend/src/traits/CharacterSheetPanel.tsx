@@ -56,6 +56,50 @@ function visibilityLabel(item: Gegenstand): string {
   return "nur bestimmte Spieler";
 }
 
+const TYP_VORSCHLAEGE = ["Allgemein", "Waffe", "Rüstung", "Droge", "Werkzeug", "MacGuffin"];
+
+type Eigenschaft = { key: string; value: string };
+
+function recordToPairs(r: Record<string, string>): Eigenschaft[] {
+  return Object.entries(r).map(([key, value]) => ({ key, value }));
+}
+
+function pairsToRecord(pairs: Eigenschaft[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const p of pairs) {
+    if (p.key.trim()) out[p.key.trim()] = p.value;
+  }
+  return out;
+}
+
+function EigenschaftenEditor({ pairs, onChange }: { pairs: Eigenschaft[]; onChange: (pairs: Eigenschaft[]) => void }) {
+  function update(i: number, patch: Partial<Eigenschaft>) {
+    onChange(pairs.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
+  }
+  function remove(i: number) {
+    onChange(pairs.filter((_, idx) => idx !== i));
+  }
+  return (
+    <div>
+      <label style={{ fontSize: "0.85em", color: "#555" }}>
+        Zusatzeigenschaften (z.B. Munition, Schaden, Preis, Level — frei benennbar)
+      </label>
+      {pairs.map((p, i) => (
+        <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+          <input placeholder="Eigenschaft" value={p.key} onChange={(e) => update(i, { key: e.target.value })} style={{ flex: 1 }} />
+          <input placeholder="Wert" value={p.value} onChange={(e) => update(i, { value: e.target.value })} style={{ flex: 1 }} />
+          <button type="button" onClick={() => remove(i)}>
+            ×
+          </button>
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange([...pairs, { key: "", value: "" }])} style={{ marginTop: 4, fontSize: "0.85em" }}>
+        + Eigenschaft
+      </button>
+    </div>
+  );
+}
+
 function GegenstandRow({
   campaignId,
   personId,
@@ -73,13 +117,20 @@ function GegenstandRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState(item.name);
+  const [typ, setTyp] = useState(item.typ);
+  const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
+  const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
   const [sichtbarFuer, setSichtbarFuer] = useState(item.sichtbarFuer);
+  const [uploading, setUploading] = useState(false);
 
   function openEdit() {
     setName(item.name);
+    setTyp(item.typ);
+    setEigenschaften(recordToPairs(item.eigenschaften));
+    setZeigeInGraph(item.zeigeInGraph);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -90,6 +141,9 @@ function GegenstandRow({
   async function save() {
     await itemsApi.update(campaignId, personId, item.id, {
       name,
+      typ,
+      eigenschaften: pairsToRecord(eigenschaften),
+      zeigeInGraph,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -99,12 +153,29 @@ function GegenstandRow({
     onChanged();
   }
 
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await itemsApi.uploadBild(campaignId, personId, item.id, file);
+      onChanged();
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div style={{ borderBottom: "1px solid #eee", padding: "6px 0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {item.bildUrl && (
+            <img src={item.bildUrl} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
+          )}
           {item.name}
-          <span style={{ marginLeft: 8, fontSize: "0.75em", color: "#888" }}>({visibilityLabel(item)})</span>
+          <span style={{ fontSize: "0.75em", color: "#888" }}>
+            [{item.typ}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
+          </span>
         </span>
         <span style={{ display: "flex", gap: 6 }}>
           <button type="button" onClick={expanded ? () => setExpanded(false) : openEdit}>
@@ -126,7 +197,25 @@ function GegenstandRow({
             gap: 10,
           }}
         >
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+            <input value={typ} onChange={(e) => setTyp(e.target.value)} placeholder="Typ" list="typ-vorschlaege" style={{ width: 140 }} />
+          </div>
+          <datalist id="typ-vorschlaege">
+            {TYP_VORSCHLAEGE.map((t) => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+
+          <div>
+            <label style={{ fontSize: "0.85em", color: "#555" }}>Bild</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
+              <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
+              {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
+            </div>
+          </div>
+
           <div>
             <label style={{ fontSize: "0.85em", color: "#555" }}>Beschreibung</label>
             <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
@@ -135,6 +224,14 @@ function GegenstandRow({
             <label style={{ fontSize: "0.85em", color: "#555" }}>Notizen</label>
             <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
           </div>
+
+          <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
+
+          <label style={{ fontSize: "0.9em" }}>
+            <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} /> Im
+            Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
+          </label>
+
           <VisibilitySelector
             label="Sichtbarkeit"
             modus={sichtbarkeit}

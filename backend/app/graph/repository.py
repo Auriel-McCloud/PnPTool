@@ -4,7 +4,9 @@ from app.db.neo4j_driver import get_driver
 async def get_all_nodes(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = """
-        MATCH (n:Person|Ort|Event {campaignId: $campaign_id})
+        MATCH (n)
+        WHERE n.campaignId = $campaign_id
+          AND (n:Person OR n:Ort OR n:Event OR (n:Gegenstand AND n.zeigeInGraph = true))
         RETURN n.id AS id, labels(n)[0] AS kind,
                coalesce(n.name, n.title) AS label,
                n.sichtbarkeit AS sichtbarkeit

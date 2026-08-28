@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.auth.routes import router as auth_router
 from app.campaigns.routes import router as campaigns_router
@@ -39,6 +41,9 @@ app.include_router(entities_router)
 app.include_router(graph_router)
 app.include_router(items_router)
 app.include_router(traits_router)
+
+Path("uploads").mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/api/health")

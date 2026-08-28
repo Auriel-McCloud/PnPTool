@@ -6,12 +6,14 @@ const KIND_SHAPE: Record<string, string> = {
   Person: "ellipse",
   Ort: "round-rectangle",
   Event: "diamond",
+  Gegenstand: "star",
 };
 
 const KIND_COLOR: Record<string, string> = {
   Person: "#3f6fb4",
   Ort: "#2a8f5a",
   Event: "#b4703f",
+  Gegenstand: "#8a4fb0",
 };
 
 const stylesheet = [

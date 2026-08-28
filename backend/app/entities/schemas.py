@@ -113,7 +113,7 @@ class EventResponse(BaseModel):
     notizenSichtbarFuer: list[str]
 
 
-EntityKind = Literal["Person", "Ort", "Event"]
+EntityKind = Literal["Person", "Ort", "Event", "Gegenstand"]
 
 
 class VerbindungCreate(BaseModel):

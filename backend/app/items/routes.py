@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import mimetypes
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.auth.dependencies import require_campaign_gm
 from app.entities.repository import PERSON_FIELDS, get_node
@@ -10,6 +14,10 @@ router = APIRouter(
     tags=["items"],
     dependencies=[Depends(require_campaign_gm)],
 )
+
+UPLOAD_DIR = Path("uploads")
+ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
 @router.post("", response_model=GegenstandResponse)
@@ -36,6 +44,9 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
             "name": body.name,
             "description": body.description,
             "notes": body.notes,
+            "typ": body.typ,
+            "eigenschaften": body.eigenschaften,
+            "zeigeInGraph": body.zeigeInGraph,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer or [],
         },
@@ -53,6 +64,27 @@ async def list_items(campaign_id: str, person_id: str):
 @router.patch("/{item_id}", response_model=GegenstandResponse)
 async def update_item(campaign_id: str, person_id: str, item_id: str, body: GegenstandUpdate):
     item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
+
+
+@router.post("/{item_id}/bild", response_model=GegenstandResponse)
+async def upload_bild(campaign_id: str, person_id: str, item_id: str, file: UploadFile = File(...)):
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+
+    campaign_dir = UPLOAD_DIR / campaign_id
+    campaign_dir.mkdir(parents=True, exist_ok=True)
+    ext = mimetypes.guess_extension(file.content_type) or ""
+    filename = f"{uuid.uuid4()}{ext}"
+    (campaign_dir / filename).write_bytes(contents)
+
+    item = await repository.set_bild_url(campaign_id, item_id, f"/uploads/{campaign_id}/{filename}")
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item

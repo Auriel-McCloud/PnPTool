@@ -7,6 +7,7 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { RichTextView } from "../richtext/RichTextView";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
+import { getGraph } from "../graph/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
 const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid #ddd" };
@@ -118,18 +119,26 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
+  const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
 
   async function refreshAll() {
-    const [p, o, e, v] = await Promise.all([
+    const [p, o, e, v, graph] = await Promise.all([
       entitiesApi.listPersonen(campaignId),
       entitiesApi.listOrte(campaignId),
       entitiesApi.listEvents(campaignId),
       entitiesApi.listVerbindungen(campaignId),
+      getGraph(campaignId),
     ]);
     setPersonen(p);
     setOrte(o);
     setEvents(e);
     setVerbindungen(v);
+    // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
+    // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
+    // bewusst nicht auf, um die Verbindungen-Auswahl nicht zu überladen.
+    setGraphGegenstaende(
+      graph.nodes.filter((n) => n.data.kind === "Gegenstand").map((n) => ({ id: n.data.id, label: n.data.label }))
+    );
   }
 
   useEffect(() => {
@@ -189,6 +198,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
     ...personen.map((p) => ({ id: p.id, kind: "Person" as const, label: `Person: ${p.name}` })),
     ...orte.map((o) => ({ id: o.id, kind: "Ort" as const, label: `Ort: ${o.name}` })),
     ...events.map((ev) => ({ id: ev.id, kind: "Event" as const, label: `Event: ${ev.title}` })),
+    ...graphGegenstaende.map((g) => ({ id: g.id, kind: "Gegenstand" as const, label: `Gegenstand: ${g.label}` })),
   ];
   function kindOf(id: string) {
     return alleEntitaeten.find((e) => e.id === id)?.kind;

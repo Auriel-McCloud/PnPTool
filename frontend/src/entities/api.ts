@@ -1,7 +1,7 @@
 import { api } from "../api/client";
 
 export type SichtbarkeitModus = "GM" | "ALLE" | "SPEZIFISCH";
-export type EntityKind = "Person" | "Ort" | "Event";
+export type EntityKind = "Person" | "Ort" | "Event" | "Gegenstand";
 
 export interface VisibilityFields {
   sichtbarkeit: SichtbarkeitModus;

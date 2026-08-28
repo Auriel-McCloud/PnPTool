@@ -13,6 +13,12 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
       },
+      // hochgeladene Gegenstands-Bilder werden vom Backend statisch ausgeliefert,
+      // müssen aus demselben Grund wie /api mitgeproxyt werden
+      "/uploads": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
     },
   },
 })
