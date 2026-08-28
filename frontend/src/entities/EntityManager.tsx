@@ -147,6 +147,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
 
   const personenById = new Map(personen.map((p) => [p.id, p.name]));
   const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
+  const alleOptionen: PersonOption[] = personen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
@@ -252,7 +253,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
                 {openSheetFor === p.id ? "Charakterblatt schließen" : "Charakterblatt öffnen"}
               </button>
             </div>
-            {openSheetFor === p.id && <CharacterSheetPanel campaignId={campaignId} person={p} pcOptions={pcOptions} />}
+            {openSheetFor === p.id && (
+              <CharacterSheetPanel campaignId={campaignId} person={p} pcOptions={pcOptions} alleOptionen={alleOptionen} />
+            )}
           </div>
         ))}
         <form onSubmit={submitPerson} style={formStyle}>

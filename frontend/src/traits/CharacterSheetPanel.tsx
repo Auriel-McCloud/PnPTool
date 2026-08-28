@@ -111,6 +111,7 @@ function GegenstandRow({
   personId,
   item,
   pcOptions,
+  alleOptionen,
   onChanged,
   onRemoved,
 }: {
@@ -118,6 +119,7 @@ function GegenstandRow({
   personId: string;
   item: Gegenstand;
   pcOptions: PersonOption[];
+  alleOptionen: PersonOption[];
   onChanged: () => void;
   onRemoved: () => void;
 }) {
@@ -127,27 +129,33 @@ function GegenstandRow({
   const [typ, setTyp] = useState(item.typ);
   const [preis, setPreis] = useState(item.preis);
   const [kraft, setKraft] = useState(item.kraft);
+  const [seltenheit, setSeltenheit] = useState(item.seltenheit);
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
   const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
   const [einzigartig, setEinzigartig] = useState(item.einzigartig);
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
+  const [istVorlage, setIstVorlage] = useState(item.istVorlage);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
   const [sichtbarFuer, setSichtbarFuer] = useState(item.sichtbarFuer);
   const [uploading, setUploading] = useState(false);
+  const [zuweisenZiel, setZuweisenZiel] = useState("");
+  const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
 
   function openEdit() {
     setName(item.name);
     setTyp(item.typ);
     setPreis(item.preis);
     setKraft(item.kraft);
+    setSeltenheit(item.seltenheit);
     setEigenschaften(recordToPairs(item.eigenschaften));
     setZeigeInGraph(item.zeigeInGraph);
     setEinzigartig(item.einzigartig);
     setHatMenge(item.hatMenge);
     setMenge(item.menge);
+    setIstVorlage(item.istVorlage);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -161,11 +169,13 @@ function GegenstandRow({
       typ,
       preis,
       kraft,
+      seltenheit,
       eigenschaften: pairsToRecord(eigenschaften),
       zeigeInGraph,
       einzigartig,
       hatMenge,
       menge: hatMenge ? menge : 1,
+      istVorlage,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -173,6 +183,18 @@ function GegenstandRow({
     });
     setExpanded(false);
     onChanged();
+  }
+
+  async function zuweisen() {
+    if (!zuweisenZiel) return;
+    setZuweisenLaeuft(true);
+    try {
+      await itemsApi.assign(campaignId, personId, item.id, zuweisenZiel);
+      setZuweisenZiel("");
+      onChanged();
+    } finally {
+      setZuweisenLaeuft(false);
+    }
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -204,6 +226,7 @@ function GegenstandRow({
           <span style={{ fontSize: "0.75em", color: "#888" }}>
             [{item.typ}
             {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
+            {item.istVorlage && " · Vorlage"}
           </span>
         </span>
         <span style={{ display: "flex", gap: 6 }}>
@@ -245,6 +268,10 @@ function GegenstandRow({
                 onChange={(e) => setPreis(Number(e.target.value))}
                 style={{ width: 90 }}
               />
+            </label>
+            <label style={{ fontSize: "0.85em", color: "#555", display: "flex", alignItems: "center", gap: 6 }}>
+              Seltenheit
+              <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
             </label>
           </div>
 
@@ -328,9 +355,33 @@ function GegenstandRow({
                     Jede besitzende Person führt ihre eigene Menge — kein geteilter Vorrat über mehrere Personen hinweg.
                   </p>
                 )}
+                <label style={{ fontSize: "0.9em" }}>
+                  <input type="checkbox" checked={istVorlage} onChange={(e) => setIstVorlage(e.target.checked)} /> Ist
+                  eine Vorlage für einen einzigartigen Gegenstand (kann beliebig oft an Personen zugewiesen werden,
+                  jede Zuweisung erzeugt eine unabhängige, individualisierbare Kopie)
+                </label>
               </div>
             )}
           </div>
+
+          {item.istVorlage && (
+            <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+              <label style={{ fontSize: "0.85em", color: "#555" }}>Diesem Gegenstand zuweisen (erstellt eine Kopie)</label>
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <select value={zuweisenZiel} onChange={(e) => setZuweisenZiel(e.target.value)}>
+                  <option value="">Person wählen...</option>
+                  {alleOptionen.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                  {zuweisenLaeuft ? "..." : "Kopie erstellen"}
+                </button>
+              </div>
+            </div>
+          )}
 
           <button type="button" onClick={save} style={{ alignSelf: "flex-start" }}>
             Speichern
@@ -345,10 +396,12 @@ export function CharacterSheetPanel({
   campaignId,
   person,
   pcOptions,
+  alleOptionen,
 }: {
   campaignId: string;
   person: Person;
   pcOptions: PersonOption[];
+  alleOptionen: PersonOption[];
 }) {
   const [katalog, setKatalog] = useState<TraitDef[]>([]);
   const [werte, setWerte] = useState<TraitRating[]>([]);
@@ -461,6 +514,7 @@ export function CharacterSheetPanel({
             personId={person.id}
             item={item}
             pcOptions={pcOptions}
+            alleOptionen={alleOptionen}
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
           />

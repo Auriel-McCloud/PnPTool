@@ -8,6 +8,7 @@ RETURN_FIELDS = """
     g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
+    g.istVorlage AS istVorlage, g.seltenheit AS seltenheit,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
 """
 
@@ -37,6 +38,8 @@ def _decode(record: dict) -> dict:
     record["einzigartig"] = _or_default(record.get("einzigartig"), True)
     record["hatMenge"] = _or_default(record.get("hatMenge"), False)
     record["menge"] = _or_default(record.get("menge"), 1)
+    record["istVorlage"] = _or_default(record.get("istVorlage"), False)
+    record["seltenheit"] = _or_default(record.get("seltenheit"), 1)
     return record
 
 
@@ -48,7 +51,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
         CREATE (g:Gegenstand {{
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
-            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge, bildUrl: '',
+            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
+            istVorlage: $istVorlage, seltenheit: $seltenheit, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }})
         CREATE (p)-[:BESITZT]->(g)
@@ -71,6 +75,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             einzigartig=data["einzigartig"],
             hatMenge=data["hatMenge"],
             menge=data["menge"],
+            istVorlage=data["istVorlage"],
+            seltenheit=data["seltenheit"],
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
         )
@@ -113,6 +119,51 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id, **changed)
         record = await result.single()
         return _decode(dict(record)) if record else None
+
+
+async def get_gegenstand(campaign_id: str, item_id: str) -> dict | None:
+    driver = get_driver()
+    query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) RETURN {RETURN_FIELDS}"
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def assign_copy(
+    campaign_id: str, source: dict, ziel_person_id: str, sichtbarkeit: str, sichtbar_fuer: list[str]
+) -> dict | None:
+    """Erzeugt eine unabhängige Kopie einer Vorlage für eine Zielperson.
+
+    einzigartig wird immer auf True gesetzt (die Kopie ist ab jetzt ein
+    individualisierbares Einzelstück), istVorlage immer auf False (eine
+    zugewiesene Kopie ist selbst keine Vorlage mehr). hatMenge/menge werden
+    dagegen unverändert von der Vorlage übernommen, nicht zurückgesetzt.
+    """
+    copy = await create_gegenstand(
+        campaign_id,
+        ziel_person_id,
+        {
+            "name": source["name"],
+            "description": source["description"],
+            "notes": source["notes"],
+            "typ": source["typ"],
+            "preis": source["preis"],
+            "kraft": source["kraft"],
+            "seltenheit": source["seltenheit"],
+            "eigenschaften": source["eigenschaften"],
+            "zeigeInGraph": source["zeigeInGraph"],
+            "einzigartig": True,
+            "hatMenge": source["hatMenge"],
+            "menge": source["menge"],
+            "istVorlage": False,
+            "sichtbarkeit": sichtbarkeit,
+            "sichtbarFuer": sichtbar_fuer,
+        },
+    )
+    if copy is None or not source["bildUrl"]:
+        return copy
+    return await set_bild_url(campaign_id, copy["id"], source["bildUrl"])
 
 
 async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | None:

@@ -14,6 +14,8 @@ export interface Gegenstand {
   einzigartig: boolean;
   hatMenge: boolean;
   menge: number;
+  istVorlage: boolean;
+  seltenheit: number;
   bildUrl: string;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
@@ -35,6 +37,8 @@ export interface GegenstandUpdate {
   einzigartig?: boolean;
   hatMenge?: boolean;
   menge?: number;
+  istVorlage?: boolean;
+  seltenheit?: number;
   bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];
@@ -50,6 +54,8 @@ export const itemsApi = {
   update: (cid: string, personId: string, itemId: string, body: GegenstandUpdate) =>
     api.patch<Gegenstand>(`${base(cid, personId)}/${itemId}`, body),
   remove: (cid: string, personId: string, itemId: string) => api.delete<void>(`${base(cid, personId)}/${itemId}`),
+  assign: (cid: string, personId: string, itemId: string, zielPersonId: string) =>
+    api.post<Gegenstand>(`${base(cid, personId)}/${itemId}/zuweisen`, { zielPersonId }),
   uploadBild: async (cid: string, personId: string, itemId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);

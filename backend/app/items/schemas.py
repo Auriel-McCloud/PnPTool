@@ -29,6 +29,14 @@ class GegenstandCreate(BaseModel):
     einzigartig: bool = True
     hatMenge: bool = False
     menge: int = 1
+    # Markiert diesen Gegenstand als Vorlage: kann per "Zuweisen" beliebig oft
+    # als unabhängige, individualisierbare Kopie an eine Person vergeben werden
+    # (z.B. ein Pistolenmodell, das zwei Spieler kaufen und dann unterschiedlich
+    # aufrüsten). Die Vorlage selbst bleibt dabei unverändert bestehen.
+    istVorlage: bool = False
+    # Seltenheit 1 (überall verfügbar) bis 5 (nur Speziallabor/Schwarzmarkt).
+    # Wird später für automatische Shop-Bestückung genutzt (noch nicht gebaut).
+    seltenheit: int = 1
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -47,9 +55,15 @@ class GegenstandUpdate(BaseModel):
     einzigartig: bool | None = None
     hatMenge: bool | None = None
     menge: int | None = None
+    istVorlage: bool | None = None
+    seltenheit: int | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
+
+
+class ZuweisenRequest(BaseModel):
+    zielPersonId: str
 
 
 class GegenstandResponse(BaseModel):
@@ -65,6 +79,8 @@ class GegenstandResponse(BaseModel):
     einzigartig: bool
     hatMenge: bool
     menge: int
+    istVorlage: bool
+    seltenheit: int
     bildUrl: str
     sichtbarkeit: str
     sichtbarFuer: list[str]

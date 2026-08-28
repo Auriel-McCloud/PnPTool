@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from app.auth.dependencies import require_campaign_gm
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.items import repository
-from app.items.schemas import GegenstandCreate, GegenstandResponse, GegenstandUpdate
+from app.items.schemas import GegenstandCreate, GegenstandResponse, GegenstandUpdate, ZuweisenRequest
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -20,6 +20,15 @@ ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
+def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[str]]:
+    # Standard: Gegenstände von Spielercharakteren sind automatisch nur für
+    # diesen Spieler sichtbar, bei NPCs bleiben sie SL-geheim. Der SL kann das
+    # beim Anlegen/Zuweisen jederzeit explizit übersteuern.
+    if person_type == "PC":
+        return "SPEZIFISCH", [person_id]
+    return "GM", []
+
+
 @router.post("", response_model=GegenstandResponse)
 async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     owner = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
@@ -29,13 +38,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     sichtbarkeit = body.sichtbarkeit
     sichtbar_fuer = body.sichtbarFuer
     if sichtbarkeit is None:
-        # Standard: Gegenstände von Spielercharakteren sind automatisch nur für
-        # diesen Spieler sichtbar, bei NPCs bleiben sie SL-geheim. Der SL kann
-        # das beim Anlegen jederzeit explizit übersteuern.
-        if owner["personType"] == "PC":
-            sichtbarkeit, sichtbar_fuer = "SPEZIFISCH", [person_id]
-        else:
-            sichtbarkeit, sichtbar_fuer = "GM", []
+        sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(owner["personType"], person_id)
 
     item = await repository.create_gegenstand(
         campaign_id,
@@ -52,6 +55,8 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
             "einzigartig": body.einzigartig,
             "hatMenge": body.hatMenge,
             "menge": body.menge,
+            "istVorlage": body.istVorlage,
+            "seltenheit": body.seltenheit,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer or [],
         },
@@ -93,6 +98,25 @@ async def upload_bild(campaign_id: str, person_id: str, item_id: str, file: Uplo
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item
+
+
+@router.post("/{item_id}/zuweisen", response_model=GegenstandResponse)
+async def zuweisen(campaign_id: str, person_id: str, item_id: str, body: ZuweisenRequest):
+    source = await repository.get_gegenstand(campaign_id, item_id)
+    if source is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if not source["istVorlage"]:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Vorlagen können zugewiesen werden")
+
+    ziel = await get_node("Person", PERSON_FIELDS, campaign_id, body.zielPersonId)
+    if ziel is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zielperson nicht gefunden")
+
+    sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
+    copy = await repository.assign_copy(campaign_id, source, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
+    if copy is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zuweisen fehlgeschlagen")
+    return copy
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
