@@ -1,35 +1,43 @@
 import { api } from "../api/client";
 
-export type Sichtbarkeit = "GM" | "SPIELER";
+export type SichtbarkeitModus = "GM" | "ALLE" | "SPEZIFISCH";
 export type EntityKind = "Person" | "Ort" | "Event";
 
-export interface Person {
+export interface VisibilityFields {
+  sichtbarkeit: SichtbarkeitModus;
+  sichtbarFuer: string[];
+}
+
+export interface Person extends VisibilityFields {
   id: string;
   name: string;
   personType: "PC" | "NPC";
   description: string;
   notes: string;
-  sichtbarkeit: Sichtbarkeit;
+  notizenSichtbarkeit: SichtbarkeitModus;
+  notizenSichtbarFuer: string[];
 }
 
-export interface Ort {
+export interface Ort extends VisibilityFields {
   id: string;
   name: string;
   description: string;
   notes: string;
-  sichtbarkeit: Sichtbarkeit;
+  notizenSichtbarkeit: SichtbarkeitModus;
+  notizenSichtbarFuer: string[];
 }
 
-export interface Event {
+export interface Event extends VisibilityFields {
   id: string;
   title: string;
   timestamp: string;
   description: string;
   notes: string;
-  sichtbarkeit: Sichtbarkeit;
+  notizenSichtbarkeit: SichtbarkeitModus;
+  notizenSichtbarFuer: string[];
 }
 
-export interface Verbindung {
+export interface Verbindung extends VisibilityFields {
   id: string;
   vonKind: EntityKind;
   vonId: string;
@@ -39,7 +47,6 @@ export interface Verbindung {
   beschreibung: string;
   seit: string;
   bis: string;
-  sichtbarkeit: Sichtbarkeit;
 }
 
 function base(campaignId: string) {

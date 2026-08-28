@@ -81,17 +81,31 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 ## Stand der Umsetzung
 
 - ✅ **Phase 1** — Grundgerüst: Docker-Compose, Neo4j-Constraints, FastAPI-Skeleton, GM-Login (JWT-Cookie), React-Grundgerüst
-- ✅ **Phase 2a** — Backend-CRUD (Personen/Orte/Events/generische `VERBINDUNG`-Relationships) + Frontend-Listen/Formulare. Sichtbarkeit aktuell nur binär `GM`/`SPIELER` pro Entität (siehe Design-Schuld unten)
+- ✅ **Phase 2a** — Backend-CRUD (Personen/Orte/Events/generische `VERBINDUNG`-Relationships) + Frontend-Listen/Formulare
 - ✅ **Phase 2b** — Cytoscape-Graph-Ansicht: `GET /api/campaigns/{cid}/graph?focus=&depth=` liefert Cytoscape-JSON (voller Graph oder BFS-begrenzte Nachbarschaft), Frontend zeigt Personen/Orte/Events als farbige Knoten, Klick fokussiert auf Nachbarschaft. Cytoscape-Canvas-Offset-Bug (Stolperstein #8) gefunden, gefixt und vom Nutzer live am Handy bestätigt — Phase 2 damit komplett.
+- ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - ⬜ **Phase 3** — Spieler-Charakterbogen CRUD (Dot-Pools, Box-Tracks, Würfeln)
-- ⬜ **Phase 4** — Zugangscode/Link-Beitritt für Spieler, Charakter beanspruchen
+- ⬜ **Phase 4** — Zugangscode/Link-Beitritt für Spieler, Charakter beanspruchen. **Wichtig:** die Sichtbarkeits-Filterung (`entities/visibility.py`) ist bereits fertig und getestet, aber in KEINE Route eingebaut — es gibt noch keine Spieler-Route, die `viewer_role="PLAYER"` überhaupt übergibt. Das ist der erste Schritt in Phase 4: eine Spieler-Version der `entities`-Routen (oder ein Query-Param/Claim am bestehenden Endpoint), die `filter_entities_for_viewer`/`filter_verbindungen_for_viewer` tatsächlich aufruft.
 - ⬜ **Phase 5** — Live-WebSocket-Pop-ups vom SL an Spieler
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
 
-## Bekannte Design-Schuld (bewusst zurückgestellt)
+## UI-Polish-Durchgang (28.08.2026) — Sichtbarkeit v2 + Rich-Text
 
-- UI ist funktionaler Erstwurf: Formularfelder klein/knapp, Notizen-Feld fehlt in Formularen (nur Backend)
-- Sichtbarkeit ist nur binär (GM-geheim / für alle Spieler sichtbar) und nur pro Entität/Verbindung, nicht pro Feld. Gewünscht: pro-Feld-Sichtbarkeit + dritte Stufe "nur bestimmte einzelne Spieler". Ändert das `sichtbarkeit`-Datenmodell — spätestens vor Phase 4 klären.
+Ausgangspunkt: Mark wollte (a) Sichtbarkeit nicht nur GM/Alle sondern auch "nur bestimmte Spieler", (b) Text-Abschnitte *innerhalb* eines Feldes vor Spielern verstecken können (nicht nur ganze Felder), ohne dass ein Spieler-Edit den GM-Text kaputt macht, (c) Tabellen für den künftigen Regel-Bereich, (d) eine kleine Weiche für später weitere Regelsysteme (Splittermond, D&D) neben dem aktuellen Neotopia-Homebrew.
+
+**Umgesetzt:**
+- `Campaign.ruleset` (String, Default `"neotopia"`) — noch keine Logik verzweigt darauf, ist nur die Vorbereitung. Fähigkeits-Kataloge (`TraitDef`, kommt in Phase 3) sollten pro Ruleset gescoped werden, nicht global.
+- Sichtbarkeits-Datenmodell v2: statt einem binären `sichtbarkeit: GM|SPIELER` jetzt `sichtbarkeit: GM|ALLE|SPEZIFISCH` + `sichtbarFuer: string[]` (Person-IDs, nur bei SPEZIFISCH). Getrennt für Haupt-Inhalt (`sichtbarkeit`/`sichtbarFuer`) und Notizen (`notizenSichtbarkeit`/`notizenSichtbarFuer`) — auf Person, Ort, Event UND Verbindung (Verbindung hat nur eine Sichtbarkeits-Ebene, keine separaten Notizen).
+- `backend/app/entities/visibility.py`: `filter_entity_for_viewer`/`filter_verbindungen_for_viewer` — server-seitige Durchsetzung, inkl. **inline-Redaktion**: `redact_rich_text()` parst das TipTap-JSON-Dokument und entfernt Text-Knoten mit dem `gmSecret`-Mark, bevor es an einen Nicht-GM-Viewer geht. GM bekommt immer die rohe, unredigierte Version. Per Unit-Test + curl-Roundtrip verifiziert (siehe Stolperstein-Abschnitt falls es nochmal kaputtgeht).
+- Frontend: `description`/`notes` sind jetzt Rich-Text (TipTap, gespeichert als JSON-String in denselben String-Feldern wie vorher — Backend-Schema dafür unverändert, nur die Konvention des Inhalts). Editor unter `frontend/src/richtext/` (`RichTextEditor.tsx` fürs Bearbeiten, `RichTextView.tsx` fürs Anzeigen, `GmSecretMark.ts` = die "🔒 SL-geheim"-Markierung wie Fett/Kursiv, `content.ts` = Parsing mit Rückwärtskompatibilität für alte Klartext-Strings). Tabellen-Extension ist mit drin (Toolbar-Button "▦ Tabelle").
+- `frontend/src/entities/VisibilitySelector.tsx`: wiederverwendbare 3-stufige Sichtbarkeits-Auswahl, bei SPEZIFISCH Mehrfachauswahl aus den PC-Personen der Kampagne.
+- `EntityManager.tsx` komplett überarbeitet: größere Formulare, Notizen-Feld ergänzt (fehlte vorher komplett in der UI), jede Entität hat jetzt zwei Sichtbarkeits-Einstellungen (Beschreibung + Notizen) sichtbar als Badges in der Liste.
+- Bestandsdaten in der Testkampagne wurden per Einmal-Migration (Cypher, nicht als Code hinterlegt — siehe Git-Historie falls nötig) von altem `GM`/`SPIELER` auf `GM`/`ALLE` + neue Felder mit Defaults migriert.
+
+**Nicht gemacht / bewusst zurückgestellt:**
+- Multi-Ruleset ist nur die Weiche (ein String-Feld), kein echtes pluggable System — Würfelmechanik/Regelwerk-Engine ist ein Splittermond/D&D-Projekt für später.
+- Die Redaktions-Logik ist fertig, aber **ungenutzt** bis Phase 4 eine Spieler-Route hat (siehe oben).
+- Cytoscape-Graph-Ansicht zeigt weiterhin nur zweistufig GM(rot)/nicht-GM(grau) als Kantenfarbe — SPEZIFISCH sieht optisch wie ALLE aus. Kann man später verfeinern, war kein Teil dieses Durchgangs.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
@@ -106,11 +120,11 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 
 ## Nächste Schritte
 
-1. **UI-Polish-Durchgang** (größere Formularfelder, fehlende Notizen-Felder ergänzen) — nächster Punkt, macht der Nutzer am PC weiter (28.08.2026 von unterwegs/Handy aus zurückgestellt)
-2. Granulare Sichtbarkeit (pro Feld, pro Spieler) designen — vor Phase 4 nötig
-3. Danach: Phase 3 (Spieler-Charakterbogen)
+1. Nutzer bestätigt den UI-Polish-Durchgang im Browser (Rich-Text-Editor, SL-geheim-Markierung, Sichtbarkeits-Auswahl, Tabellen) — noch nicht visuell bestätigt, nur backend-seitig und per Build durchgetestet
+2. Danach: Phase 3 (Spieler-Charakterbogen) — dabei `TraitDef`-Katalog gleich pro `ruleset` scopen, nicht global
+3. Vor Phase 4: die Sichtbarkeits-Filterung tatsächlich in eine Spieler-Route einbauen (Funktionen sind fertig, siehe oben)
 
-**Hinweis zum Server-Status:** Backend/Frontend-Dev-Server laufen aktuell NICHT (liefen zuletzt lokal im Hintergrund einer Claude-Code-Session, wurden aber durch Container-Neustart beendet). Vor dem Weitermachen erst neu starten, siehe "Wie man lokal startet" oben — Backend braucht keinen `--host`-Flag mehr (läuft bewusst nur auf `127.0.0.1`, siehe LAN-Abschnitt unten), Frontend mit `npm run dev -- --host` falls wieder vom Handy getestet werden soll, sonst reicht `npm run dev`.
+**Server-Status:** Backend läuft auf `0.0.0.0:8000` (ohne `--reload`, siehe Stolperstein #2), Frontend mit `npm run dev` (hat `host:true` fest in `vite.config.ts`, kein `--host`-Flag mehr nötig) auf Port 5173. Neo4j läuft durchgehend in Docker. Falls nach einem Reboot/Neustart nichts erreichbar ist: siehe "Wie man lokal startet" oben.
 
 ## Zugriff vom Handy / LAN (eingerichtet, für Tests unterwegs)
 

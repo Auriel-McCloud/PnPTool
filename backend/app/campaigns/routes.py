@@ -9,16 +9,18 @@ router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 
 class CampaignCreateRequest(BaseModel):
     name: str
+    ruleset: str = "neotopia"
 
 
 class CampaignResponse(BaseModel):
     id: str
     name: str
+    ruleset: str
 
 
 @router.post("", response_model=CampaignResponse)
 async def create(body: CampaignCreateRequest, claims: dict = Depends(require_gm)):
-    return await create_campaign(body.name, claims["sub"])
+    return await create_campaign(body.name, body.ruleset, claims["sub"])
 
 
 @router.get("", response_model=list[CampaignResponse])

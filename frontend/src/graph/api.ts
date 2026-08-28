@@ -1,12 +1,12 @@
 import { api } from "../api/client";
-import type { EntityKind, Sichtbarkeit } from "../entities/api";
+import type { EntityKind, SichtbarkeitModus } from "../entities/api";
 
 export interface GraphNode {
   data: {
     id: string;
     kind: EntityKind;
     label: string;
-    sichtbarkeit: Sichtbarkeit;
+    sichtbarkeit: SichtbarkeitModus;
   };
 }
 
@@ -16,7 +16,7 @@ export interface GraphEdge {
     source: string;
     target: string;
     typ: string;
-    sichtbarkeit: Sichtbarkeit;
+    sichtbarkeit: SichtbarkeitModus;
   };
 }
 

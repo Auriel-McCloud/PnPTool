@@ -2,7 +2,16 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-Sichtbarkeit = Literal["GM", "SPIELER"]
+SichtbarkeitModus = Literal["GM", "ALLE", "SPEZIFISCH"]
+
+
+class SichtbarkeitInput(BaseModel):
+    modus: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+
+
+VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "notizenSichtbarFuer"]
+VERBINDUNG_VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer"]
 
 
 class PersonCreate(BaseModel):
@@ -10,7 +19,10 @@ class PersonCreate(BaseModel):
     personType: Literal["PC", "NPC"] = "NPC"
     description: str = ""
     notes: str = ""
-    sichtbarkeit: Sichtbarkeit = "GM"
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+    notizenSichtbarkeit: SichtbarkeitModus = "GM"
+    notizenSichtbarFuer: list[str] = []
 
 
 class PersonUpdate(BaseModel):
@@ -18,7 +30,10 @@ class PersonUpdate(BaseModel):
     personType: Literal["PC", "NPC"] | None = None
     description: str | None = None
     notes: str | None = None
-    sichtbarkeit: Sichtbarkeit | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+    notizenSichtbarkeit: SichtbarkeitModus | None = None
+    notizenSichtbarFuer: list[str] | None = None
 
 
 class PersonResponse(BaseModel):
@@ -28,20 +43,29 @@ class PersonResponse(BaseModel):
     description: str
     notes: str
     sichtbarkeit: str
+    sichtbarFuer: list[str]
+    notizenSichtbarkeit: str
+    notizenSichtbarFuer: list[str]
 
 
 class OrtCreate(BaseModel):
     name: str
     description: str = ""
     notes: str = ""
-    sichtbarkeit: Sichtbarkeit = "GM"
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+    notizenSichtbarkeit: SichtbarkeitModus = "GM"
+    notizenSichtbarFuer: list[str] = []
 
 
 class OrtUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     notes: str | None = None
-    sichtbarkeit: Sichtbarkeit | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+    notizenSichtbarkeit: SichtbarkeitModus | None = None
+    notizenSichtbarFuer: list[str] | None = None
 
 
 class OrtResponse(BaseModel):
@@ -50,6 +74,9 @@ class OrtResponse(BaseModel):
     description: str
     notes: str
     sichtbarkeit: str
+    sichtbarFuer: list[str]
+    notizenSichtbarkeit: str
+    notizenSichtbarFuer: list[str]
 
 
 class EventCreate(BaseModel):
@@ -57,7 +84,10 @@ class EventCreate(BaseModel):
     timestamp: str = ""
     description: str = ""
     notes: str = ""
-    sichtbarkeit: Sichtbarkeit = "GM"
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+    notizenSichtbarkeit: SichtbarkeitModus = "GM"
+    notizenSichtbarFuer: list[str] = []
 
 
 class EventUpdate(BaseModel):
@@ -65,7 +95,10 @@ class EventUpdate(BaseModel):
     timestamp: str | None = None
     description: str | None = None
     notes: str | None = None
-    sichtbarkeit: Sichtbarkeit | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+    notizenSichtbarkeit: SichtbarkeitModus | None = None
+    notizenSichtbarFuer: list[str] | None = None
 
 
 class EventResponse(BaseModel):
@@ -75,6 +108,9 @@ class EventResponse(BaseModel):
     description: str
     notes: str
     sichtbarkeit: str
+    sichtbarFuer: list[str]
+    notizenSichtbarkeit: str
+    notizenSichtbarFuer: list[str]
 
 
 EntityKind = Literal["Person", "Ort", "Event"]
@@ -89,7 +125,8 @@ class VerbindungCreate(BaseModel):
     beschreibung: str = ""
     seit: str = ""
     bis: str = ""
-    sichtbarkeit: Sichtbarkeit = "GM"
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
 
 
 class VerbindungResponse(BaseModel):
@@ -103,3 +140,4 @@ class VerbindungResponse(BaseModel):
     seit: str
     bis: str
     sichtbarkeit: str
+    sichtbarFuer: list[str]

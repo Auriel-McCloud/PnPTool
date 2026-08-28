@@ -1,24 +1,146 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { entitiesApi, type Event, type Ort, type Person, type Sichtbarkeit, type Verbindung } from "./api";
+import type { JSONContent } from "@tiptap/react";
+import { entitiesApi, type Event, type Ort, type Person, type SichtbarkeitModus, type Verbindung } from "./api";
+import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
+import { RichTextEditor } from "../richtext/RichTextEditor";
+import { RichTextView } from "../richtext/RichTextView";
+import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 
-const sectionStyle: React.CSSProperties = { marginBottom: "2rem" };
-const listItemStyle: React.CSSProperties = { padding: "0.4rem 0", borderBottom: "1px solid #ddd" };
-const formRowStyle: React.CSSProperties = { display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" };
+const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
+const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid #ddd" };
+const formStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  marginTop: 12,
+  padding: 16,
+  background: "#fafafa",
+  border: "1px solid #eee",
+  borderRadius: 8,
+  maxWidth: 640,
+};
+const fieldRowStyle: React.CSSProperties = { display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" };
+const textInputStyle: React.CSSProperties = { fontSize: "1rem", padding: "8px 10px", minWidth: 260 };
 
-function SichtbarkeitBadge({ value }: { value: Sichtbarkeit }) {
+function SichtbarkeitBadge({
+  modus,
+  sichtbarFuer,
+  personenById,
+  label,
+}: {
+  modus: SichtbarkeitModus;
+  sichtbarFuer: string[];
+  personenById: Map<string, string>;
+  label: string;
+}) {
+  const text =
+    modus === "GM"
+      ? `${label}: SL-geheim`
+      : modus === "ALLE"
+        ? `${label}: alle Spieler`
+        : `${label}: ${sichtbarFuer.map((id) => personenById.get(id) ?? "?").join(", ") || "niemand ausgewählt"}`;
   return (
     <span
       style={{
-        marginLeft: 8,
+        marginRight: 8,
         fontSize: "0.75em",
-        padding: "1px 6px",
+        padding: "2px 8px",
         borderRadius: 4,
-        background: value === "GM" ? "#333" : "#2a6",
+        background: modus === "GM" ? "#333" : modus === "ALLE" ? "#2a6" : "#a67c00",
         color: "white",
       }}
     >
-      {value === "GM" ? "SL-geheim" : "Spieler sichtbar"}
+      {text}
     </span>
+  );
+}
+
+// Gebündelter State für die Felder, die Personen/Orte/Events gemeinsam haben:
+// Rich-Text-Beschreibung + Notizen, je mit eigener Sichtbarkeit.
+function useContentAndVisibility() {
+  const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
+  const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
+  const [sichtbarkeit, setSichtbarkeit] = useState<SichtbarkeitModus>("GM");
+  const [sichtbarFuer, setSichtbarFuer] = useState<string[]>([]);
+  const [notizenSichtbarkeit, setNotizenSichtbarkeit] = useState<SichtbarkeitModus>("GM");
+  const [notizenSichtbarFuer, setNotizenSichtbarFuer] = useState<string[]>([]);
+
+  function reset() {
+    setDescriptionDoc(EMPTY_DOC);
+    setNotesDoc(EMPTY_DOC);
+    setSichtbarkeit("GM");
+    setSichtbarFuer([]);
+    setNotizenSichtbarkeit("GM");
+    setNotizenSichtbarFuer([]);
+  }
+
+  function payload() {
+    return {
+      description: serializeRichText(descriptionDoc),
+      notes: serializeRichText(notesDoc),
+      sichtbarkeit,
+      sichtbarFuer,
+      notizenSichtbarkeit,
+      notizenSichtbarFuer,
+    };
+  }
+
+  return {
+    descriptionDoc,
+    setDescriptionDoc,
+    notesDoc,
+    setNotesDoc,
+    sichtbarkeit,
+    setSichtbarkeit,
+    sichtbarFuer,
+    setSichtbarFuer,
+    notizenSichtbarkeit,
+    setNotizenSichtbarkeit,
+    notizenSichtbarFuer,
+    setNotizenSichtbarFuer,
+    reset,
+    payload,
+  };
+}
+
+function RichContentFields({
+  state,
+  pcOptions,
+}: {
+  state: ReturnType<typeof useContentAndVisibility>;
+  pcOptions: PersonOption[];
+}) {
+  return (
+    <>
+      <div>
+        <label style={{ fontSize: "0.85em", color: "#555" }}>Beschreibung</label>
+        <RichTextEditor content={state.descriptionDoc} onChange={state.setDescriptionDoc} />
+      </div>
+      <VisibilitySelector
+        label="Sichtbarkeit der Beschreibung"
+        modus={state.sichtbarkeit}
+        sichtbarFuer={state.sichtbarFuer}
+        onChange={(m, f) => {
+          state.setSichtbarkeit(m);
+          state.setSichtbarFuer(f);
+        }}
+        pcOptions={pcOptions}
+      />
+      <div>
+        <label style={{ fontSize: "0.85em", color: "#555" }}>Notizen</label>
+        <RichTextEditor content={state.notesDoc} onChange={state.setNotesDoc} minHeight={70} />
+      </div>
+      <VisibilitySelector
+        label="Sichtbarkeit der Notizen"
+        modus={state.notizenSichtbarkeit}
+        sichtbarFuer={state.notizenSichtbarFuer}
+        onChange={(m, f) => {
+          state.setNotizenSichtbarkeit(m);
+          state.setNotizenSichtbarFuer(f);
+        }}
+        pcOptions={pcOptions}
+      />
+    </>
   );
 }
 
@@ -45,35 +167,53 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
     refreshAll();
   }, [campaignId]);
 
-  const [personForm, setPersonForm] = useState({ name: "", personType: "NPC" as "PC" | "NPC", description: "", sichtbarkeit: "GM" as Sichtbarkeit });
+  const personenById = new Map(personen.map((p) => [p.id, p.name]));
+  const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
+
+  // --- Person ---
+  const [personName, setPersonName] = useState("");
+  const [personType, setPersonType] = useState<"PC" | "NPC">("NPC");
+  const personContent = useContentAndVisibility();
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
-    await entitiesApi.createPerson(campaignId, { ...personForm, notes: "" });
-    setPersonForm({ name: "", personType: "NPC", description: "", sichtbarkeit: "GM" });
+    await entitiesApi.createPerson(campaignId, { name: personName, personType, ...personContent.payload() });
+    setPersonName("");
+    setPersonType("NPC");
+    personContent.reset();
     await refreshAll();
   }
 
-  const [ortForm, setOrtForm] = useState({ name: "", description: "", sichtbarkeit: "GM" as Sichtbarkeit });
+  // --- Ort ---
+  const [ortName, setOrtName] = useState("");
+  const ortContent = useContentAndVisibility();
   async function submitOrt(e: FormEvent) {
     e.preventDefault();
-    await entitiesApi.createOrt(campaignId, { ...ortForm, notes: "" });
-    setOrtForm({ name: "", description: "", sichtbarkeit: "GM" });
+    await entitiesApi.createOrt(campaignId, { name: ortName, ...ortContent.payload() });
+    setOrtName("");
+    ortContent.reset();
     await refreshAll();
   }
 
-  const [eventForm, setEventForm] = useState({ title: "", timestamp: "", description: "", sichtbarkeit: "GM" as Sichtbarkeit });
+  // --- Event ---
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventTimestamp, setEventTimestamp] = useState("");
+  const eventContent = useContentAndVisibility();
   async function submitEvent(e: FormEvent) {
     e.preventDefault();
-    await entitiesApi.createEvent(campaignId, { ...eventForm, notes: "" });
-    setEventForm({ title: "", timestamp: "", description: "", sichtbarkeit: "GM" });
+    await entitiesApi.createEvent(campaignId, { title: eventTitle, timestamp: eventTimestamp, ...eventContent.payload() });
+    setEventTitle("");
+    setEventTimestamp("");
+    eventContent.reset();
     await refreshAll();
   }
 
+  // --- Verbindung ---
   const [verbindungForm, setVerbindungForm] = useState({
     vonId: "",
     zuId: "",
     typ: "",
-    sichtbarkeit: "GM" as Sichtbarkeit,
+    sichtbarkeit: "GM" as SichtbarkeitModus,
+    sichtbarFuer: [] as string[],
   });
   const alleEntitaeten = [
     ...personen.map((p) => ({ id: p.id, kind: "Person" as const, label: `Person: ${p.name}` })),
@@ -98,8 +238,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
       seit: "",
       bis: "",
       sichtbarkeit: verbindungForm.sichtbarkeit,
+      sichtbarFuer: verbindungForm.sichtbarFuer,
     });
-    setVerbindungForm({ vonId: "", zuId: "", typ: "", sichtbarkeit: "GM" });
+    setVerbindungForm({ vonId: "", zuId: "", typ: "", sichtbarkeit: "GM", sichtbarFuer: [] });
     await refreshAll();
   }
 
@@ -113,21 +254,30 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         <h2>Personen</h2>
         {personen.map((p) => (
           <div key={p.id} style={listItemStyle}>
-            <strong>{p.name}</strong> ({p.personType}) — {p.description}
-            <SichtbarkeitBadge value={p.sichtbarkeit} />
+            <strong>{p.name}</strong> <span style={{ color: "#888" }}>({p.personType})</span>
+            <div style={{ margin: "4px 0" }}>
+              <RichTextView content={parseRichText(p.description)} />
+            </div>
+            <SichtbarkeitBadge modus={p.sichtbarkeit} sichtbarFuer={p.sichtbarFuer} personenById={personenById} label="Beschreibung" />
+            {p.notes && (
+              <SichtbarkeitBadge
+                modus={p.notizenSichtbarkeit}
+                sichtbarFuer={p.notizenSichtbarFuer}
+                personenById={personenById}
+                label="Notizen"
+              />
+            )}
           </div>
         ))}
-        <form onSubmit={submitPerson} style={formRowStyle}>
-          <input placeholder="Name" value={personForm.name} onChange={(e) => setPersonForm({ ...personForm, name: e.target.value })} required />
-          <select value={personForm.personType} onChange={(e) => setPersonForm({ ...personForm, personType: e.target.value as "PC" | "NPC" })}>
-            <option value="NPC">NPC</option>
-            <option value="PC">PC</option>
-          </select>
-          <input placeholder="Beschreibung" value={personForm.description} onChange={(e) => setPersonForm({ ...personForm, description: e.target.value })} />
-          <select value={personForm.sichtbarkeit} onChange={(e) => setPersonForm({ ...personForm, sichtbarkeit: e.target.value as Sichtbarkeit })}>
-            <option value="GM">SL-geheim</option>
-            <option value="SPIELER">Spieler sichtbar</option>
-          </select>
+        <form onSubmit={submitPerson} style={formStyle}>
+          <div style={fieldRowStyle}>
+            <input style={textInputStyle} placeholder="Name" value={personName} onChange={(e) => setPersonName(e.target.value)} required />
+            <select value={personType} onChange={(e) => setPersonType(e.target.value as "PC" | "NPC")}>
+              <option value="NPC">NPC</option>
+              <option value="PC">PC</option>
+            </select>
+          </div>
+          <RichContentFields state={personContent} pcOptions={pcOptions} />
           <button type="submit">Person anlegen</button>
         </form>
       </section>
@@ -136,17 +286,24 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         <h2>Orte</h2>
         {orte.map((o) => (
           <div key={o.id} style={listItemStyle}>
-            <strong>{o.name}</strong> — {o.description}
-            <SichtbarkeitBadge value={o.sichtbarkeit} />
+            <strong>{o.name}</strong>
+            <div style={{ margin: "4px 0" }}>
+              <RichTextView content={parseRichText(o.description)} />
+            </div>
+            <SichtbarkeitBadge modus={o.sichtbarkeit} sichtbarFuer={o.sichtbarFuer} personenById={personenById} label="Beschreibung" />
+            {o.notes && (
+              <SichtbarkeitBadge
+                modus={o.notizenSichtbarkeit}
+                sichtbarFuer={o.notizenSichtbarFuer}
+                personenById={personenById}
+                label="Notizen"
+              />
+            )}
           </div>
         ))}
-        <form onSubmit={submitOrt} style={formRowStyle}>
-          <input placeholder="Name" value={ortForm.name} onChange={(e) => setOrtForm({ ...ortForm, name: e.target.value })} required />
-          <input placeholder="Beschreibung" value={ortForm.description} onChange={(e) => setOrtForm({ ...ortForm, description: e.target.value })} />
-          <select value={ortForm.sichtbarkeit} onChange={(e) => setOrtForm({ ...ortForm, sichtbarkeit: e.target.value as Sichtbarkeit })}>
-            <option value="GM">SL-geheim</option>
-            <option value="SPIELER">Spieler sichtbar</option>
-          </select>
+        <form onSubmit={submitOrt} style={formStyle}>
+          <input style={textInputStyle} placeholder="Name" value={ortName} onChange={(e) => setOrtName(e.target.value)} required />
+          <RichContentFields state={ortContent} pcOptions={pcOptions} />
           <button type="submit">Ort anlegen</button>
         </form>
       </section>
@@ -155,18 +312,32 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         <h2>Events</h2>
         {events.map((ev) => (
           <div key={ev.id} style={listItemStyle}>
-            <strong>{ev.title}</strong> {ev.timestamp && `(${ev.timestamp})`} — {ev.description}
-            <SichtbarkeitBadge value={ev.sichtbarkeit} />
+            <strong>{ev.title}</strong> {ev.timestamp && <span style={{ color: "#888" }}>({ev.timestamp})</span>}
+            <div style={{ margin: "4px 0" }}>
+              <RichTextView content={parseRichText(ev.description)} />
+            </div>
+            <SichtbarkeitBadge modus={ev.sichtbarkeit} sichtbarFuer={ev.sichtbarFuer} personenById={personenById} label="Beschreibung" />
+            {ev.notes && (
+              <SichtbarkeitBadge
+                modus={ev.notizenSichtbarkeit}
+                sichtbarFuer={ev.notizenSichtbarFuer}
+                personenById={personenById}
+                label="Notizen"
+              />
+            )}
           </div>
         ))}
-        <form onSubmit={submitEvent} style={formRowStyle}>
-          <input placeholder="Titel" value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} required />
-          <input placeholder="Zeitpunkt (z.B. Session 3)" value={eventForm.timestamp} onChange={(e) => setEventForm({ ...eventForm, timestamp: e.target.value })} />
-          <input placeholder="Beschreibung" value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} />
-          <select value={eventForm.sichtbarkeit} onChange={(e) => setEventForm({ ...eventForm, sichtbarkeit: e.target.value as Sichtbarkeit })}>
-            <option value="GM">SL-geheim</option>
-            <option value="SPIELER">Spieler sichtbar</option>
-          </select>
+        <form onSubmit={submitEvent} style={formStyle}>
+          <div style={fieldRowStyle}>
+            <input style={textInputStyle} placeholder="Titel" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
+            <input
+              style={textInputStyle}
+              placeholder="Zeitpunkt (z.B. Session 3)"
+              value={eventTimestamp}
+              onChange={(e) => setEventTimestamp(e.target.value)}
+            />
+          </div>
+          <RichContentFields state={eventContent} pcOptions={pcOptions} />
           <button type="submit">Event anlegen</button>
         </form>
       </section>
@@ -176,31 +347,44 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         {verbindungen.map((v) => (
           <div key={v.id} style={listItemStyle}>
             {labelFor(v.vonKind, v.vonId)} <strong>— {v.typ} →</strong> {labelFor(v.zuKind, v.zuId)}
-            <SichtbarkeitBadge value={v.sichtbarkeit} />
+            <div>
+              <SichtbarkeitBadge modus={v.sichtbarkeit} sichtbarFuer={v.sichtbarFuer} personenById={personenById} label="Sichtbarkeit" />
+            </div>
           </div>
         ))}
-        <form onSubmit={submitVerbindung} style={formRowStyle}>
-          <select value={verbindungForm.vonId} onChange={(e) => setVerbindungForm({ ...verbindungForm, vonId: e.target.value })} required>
-            <option value="">Von...</option>
-            {alleEntitaeten.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.label}
-              </option>
-            ))}
-          </select>
-          <input placeholder="Beziehungstyp (z.B. kennt)" value={verbindungForm.typ} onChange={(e) => setVerbindungForm({ ...verbindungForm, typ: e.target.value })} required />
-          <select value={verbindungForm.zuId} onChange={(e) => setVerbindungForm({ ...verbindungForm, zuId: e.target.value })} required>
-            <option value="">Zu...</option>
-            {alleEntitaeten.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.label}
-              </option>
-            ))}
-          </select>
-          <select value={verbindungForm.sichtbarkeit} onChange={(e) => setVerbindungForm({ ...verbindungForm, sichtbarkeit: e.target.value as Sichtbarkeit })}>
-            <option value="GM">SL-geheim</option>
-            <option value="SPIELER">Spieler sichtbar</option>
-          </select>
+        <form onSubmit={submitVerbindung} style={formStyle}>
+          <div style={fieldRowStyle}>
+            <select value={verbindungForm.vonId} onChange={(e) => setVerbindungForm({ ...verbindungForm, vonId: e.target.value })} required>
+              <option value="">Von...</option>
+              {alleEntitaeten.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+            <input
+              style={textInputStyle}
+              placeholder="Beziehungstyp (z.B. kennt)"
+              value={verbindungForm.typ}
+              onChange={(e) => setVerbindungForm({ ...verbindungForm, typ: e.target.value })}
+              required
+            />
+            <select value={verbindungForm.zuId} onChange={(e) => setVerbindungForm({ ...verbindungForm, zuId: e.target.value })} required>
+              <option value="">Zu...</option>
+              {alleEntitaeten.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <VisibilitySelector
+            label="Sichtbarkeit der Verbindung"
+            modus={verbindungForm.sichtbarkeit}
+            sichtbarFuer={verbindungForm.sichtbarFuer}
+            onChange={(m, f) => setVerbindungForm({ ...verbindungForm, sichtbarkeit: m, sichtbarFuer: f })}
+            pcOptions={pcOptions}
+          />
           <button type="submit">Verbindung anlegen</button>
         </form>
       </section>

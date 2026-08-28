@@ -2,9 +2,11 @@ import uuid
 
 from app.db.neo4j_driver import get_driver
 
-PERSON_FIELDS = ["name", "personType", "description", "notes", "sichtbarkeit"]
-ORT_FIELDS = ["name", "description", "notes", "sichtbarkeit"]
-EVENT_FIELDS = ["title", "timestamp", "description", "notes", "sichtbarkeit"]
+_VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "notizenSichtbarFuer"]
+
+PERSON_FIELDS = ["name", "personType", "description", "notes", *_VISIBILITY_FIELDS]
+ORT_FIELDS = ["name", "description", "notes", *_VISIBILITY_FIELDS]
+EVENT_FIELDS = ["title", "timestamp", "description", "notes", *_VISIBILITY_FIELDS]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
@@ -81,10 +83,10 @@ async def create_verbindung(campaign_id: str, data: dict) -> dict:
         MATCH (b:{zu_kind} {{id: $zu_id, campaignId: $campaign_id}})
         CREATE (a)-[r:VERBINDUNG {{
             id: $edge_id, typ: $typ, beschreibung: $beschreibung,
-            seit: $seit, bis: $bis, sichtbarkeit: $sichtbarkeit
+            seit: $seit, bis: $bis, sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }}]->(b)
         RETURN r.id AS id, r.typ AS typ, r.beschreibung AS beschreibung,
-               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit
+               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer
     """
     async with driver.session() as session:
         result = await session.run(
@@ -98,6 +100,7 @@ async def create_verbindung(campaign_id: str, data: dict) -> dict:
             seit=data["seit"],
             bis=data["bis"],
             sichtbarkeit=data["sichtbarkeit"],
+            sichtbarFuer=data["sichtbarFuer"],
         )
         record = await result.single()
         if record is None:
@@ -115,7 +118,7 @@ async def list_verbindungen(campaign_id: str) -> list[dict]:
         RETURN r.id AS id, labels(a)[0] AS vonKind, a.id AS vonId,
                labels(b)[0] AS zuKind, b.id AS zuId,
                r.typ AS typ, r.beschreibung AS beschreibung,
-               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit
+               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)

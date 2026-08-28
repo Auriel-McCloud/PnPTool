@@ -1,0 +1,32 @@
+.gm-secret {
+  background-color: #fde2e2;
+  border-bottom: 2px dashed #a11;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  vertical-align: top;
+}
+
+.ProseMirror table th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+.ProseMirror p {
+  margin: 0 0 8px;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
