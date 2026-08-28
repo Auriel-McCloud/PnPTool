@@ -349,7 +349,8 @@ export function CharacterSheetPanel({
   const [items, setItems] = useState<Gegenstand[]>([]);
   const [loading, setLoading] = useState(true);
   const [itemName, setItemName] = useState("");
-  const [showOptions, setShowOptions] = useState(false);
+  const [showTraitOptions, setShowTraitOptions] = useState(false);
+  const [showItemOptions, setShowItemOptions] = useState(false);
 
   async function refresh() {
     const [k, w, i] = await Promise.all([
@@ -402,9 +403,10 @@ export function CharacterSheetPanel({
 
   return (
     <div style={{ padding: 16, background: "#fff", border: "1px solid #ddd", borderRadius: 8, marginTop: 8 }}>
-      <div style={{ marginBottom: 12, textAlign: "right" }}>
-        <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
-          ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <h3 style={{ margin: 0, fontSize: "1em", color: "#333" }}>Werte</h3>
+        <button type="button" onClick={() => setShowTraitOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+          ⚙ {showTraitOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
         </button>
       </div>
 
@@ -419,7 +421,7 @@ export function CharacterSheetPanel({
               <span style={{ minWidth: 160 }}>{t.name}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <DotPool value={t.rating} max={t.max} onChange={(v) => setRating(t, v)} />
-                {showOptions && (
+                {showTraitOptions && (
                   <span style={{ display: "flex", gap: 2 }}>
                     <button
                       type="button"
@@ -446,7 +448,12 @@ export function CharacterSheetPanel({
       ))}
 
       <div>
-        <h4 style={{ margin: "0 0 8px", color: "#555" }}>Gegenstände</h4>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h4 style={{ margin: 0, color: "#555" }}>Gegenstände</h4>
+          <button type="button" onClick={() => setShowItemOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+            ⚙ {showItemOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+          </button>
+        </div>
         {items.map((item) => (
           <GegenstandRow
             key={item.id}
@@ -454,7 +461,7 @@ export function CharacterSheetPanel({
             personId={person.id}
             item={item}
             pcOptions={pcOptions}
-            showOptions={showOptions}
+            showOptions={showItemOptions}
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
           />
