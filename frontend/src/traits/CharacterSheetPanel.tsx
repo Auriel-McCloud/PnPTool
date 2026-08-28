@@ -1,5 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
+import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
+import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
+import { RichTextEditor } from "../richtext/RichTextEditor";
+import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
@@ -46,12 +50,125 @@ function groupByCategory(traits: MergedTrait[]): [string, MergedTrait[]][] {
   return Array.from(groups.entries());
 }
 
-export function CharacterSheetPanel({ campaignId, person }: { campaignId: string; person: Person }) {
+function visibilityLabel(item: Gegenstand): string {
+  if (item.sichtbarkeit === "GM") return "SL-geheim";
+  if (item.sichtbarkeit === "ALLE") return "für alle sichtbar";
+  return "nur bestimmte Spieler";
+}
+
+function GegenstandRow({
+  campaignId,
+  personId,
+  item,
+  pcOptions,
+  onChanged,
+  onRemoved,
+}: {
+  campaignId: string;
+  personId: string;
+  item: Gegenstand;
+  pcOptions: PersonOption[];
+  onChanged: () => void;
+  onRemoved: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
+  const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
+  const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
+  const [sichtbarFuer, setSichtbarFuer] = useState(item.sichtbarFuer);
+
+  function openEdit() {
+    setName(item.name);
+    setDescriptionDoc(parseRichText(item.description));
+    setNotesDoc(parseRichText(item.notes));
+    setSichtbarkeit(item.sichtbarkeit);
+    setSichtbarFuer(item.sichtbarFuer);
+    setExpanded(true);
+  }
+
+  async function save() {
+    await itemsApi.update(campaignId, personId, item.id, {
+      name,
+      description: serializeRichText(descriptionDoc),
+      notes: serializeRichText(notesDoc),
+      sichtbarkeit,
+      sichtbarFuer,
+    });
+    setExpanded(false);
+    onChanged();
+  }
+
+  return (
+    <div style={{ borderBottom: "1px solid #eee", padding: "6px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>
+          {item.name}
+          <span style={{ marginLeft: 8, fontSize: "0.75em", color: "#888" }}>({visibilityLabel(item)})</span>
+        </span>
+        <span style={{ display: "flex", gap: 6 }}>
+          <button type="button" onClick={expanded ? () => setExpanded(false) : openEdit}>
+            {expanded ? "Schließen" : "Bearbeiten"}
+          </button>
+          <button type="button" onClick={onRemoved}>
+            Entfernen
+          </button>
+        </span>
+      </div>
+      {expanded && (
+        <div
+          style={{
+            marginTop: 8,
+            paddingLeft: 10,
+            borderLeft: "2px solid #eee",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+          <div>
+            <label style={{ fontSize: "0.85em", color: "#555" }}>Beschreibung</label>
+            <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
+          </div>
+          <div>
+            <label style={{ fontSize: "0.85em", color: "#555" }}>Notizen</label>
+            <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
+          </div>
+          <VisibilitySelector
+            label="Sichtbarkeit"
+            modus={sichtbarkeit}
+            sichtbarFuer={sichtbarFuer}
+            onChange={(m, f) => {
+              setSichtbarkeit(m);
+              setSichtbarFuer(f);
+            }}
+            pcOptions={pcOptions}
+          />
+          <button type="button" onClick={save} style={{ alignSelf: "flex-start" }}>
+            Speichern
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CharacterSheetPanel({
+  campaignId,
+  person,
+  pcOptions,
+}: {
+  campaignId: string;
+  person: Person;
+  pcOptions: PersonOption[];
+}) {
   const [katalog, setKatalog] = useState<TraitDef[]>([]);
   const [werte, setWerte] = useState<TraitRating[]>([]);
   const [items, setItems] = useState<Gegenstand[]>([]);
   const [loading, setLoading] = useState(true);
   const [itemName, setItemName] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
 
   async function refresh() {
     const [k, w, i] = await Promise.all([
@@ -104,6 +221,12 @@ export function CharacterSheetPanel({ campaignId, person }: { campaignId: string
 
   return (
     <div style={{ padding: 16, background: "#fff", border: "1px solid #ddd", borderRadius: 8, marginTop: 8 }}>
+      <div style={{ marginBottom: 12, textAlign: "right" }}>
+        <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+          ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+        </button>
+      </div>
+
       {grouped.map(([category, traits]) => (
         <div key={category} style={{ marginBottom: 16 }}>
           <h4 style={{ margin: "0 0 8px", color: "#555" }}>{CATEGORY_LABELS[category] ?? category}</h4>
@@ -115,24 +238,26 @@ export function CharacterSheetPanel({ campaignId, person }: { campaignId: string
               <span style={{ minWidth: 160 }}>{t.name}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <DotPool value={t.rating} max={t.max} onChange={(v) => setRating(t, v)} />
-                <span style={{ display: "flex", gap: 2 }}>
-                  <button
-                    type="button"
-                    title="Maximum für diesen Wert bei dieser Person verringern"
-                    onClick={() => adjustMax(t, -1)}
-                    style={{ padding: "0 6px", fontSize: "0.8em" }}
-                  >
-                    −max
-                  </button>
-                  <button
-                    type="button"
-                    title="Maximum für diesen Wert bei dieser Person erhöhen (z.B. für besonders mächtige Charaktere)"
-                    onClick={() => adjustMax(t, 1)}
-                    style={{ padding: "0 6px", fontSize: "0.8em" }}
-                  >
-                    +max
-                  </button>
-                </span>
+                {showOptions && (
+                  <span style={{ display: "flex", gap: 2 }}>
+                    <button
+                      type="button"
+                      title="Maximum für diesen Wert bei dieser Person verringern"
+                      onClick={() => adjustMax(t, -1)}
+                      style={{ padding: "0 6px", fontSize: "0.8em" }}
+                    >
+                      −max
+                    </button>
+                    <button
+                      type="button"
+                      title="Maximum für diesen Wert bei dieser Person erhöhen (z.B. für besonders mächtige Charaktere)"
+                      onClick={() => adjustMax(t, 1)}
+                      style={{ padding: "0 6px", fontSize: "0.8em" }}
+                    >
+                      +max
+                    </button>
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -142,23 +267,15 @@ export function CharacterSheetPanel({ campaignId, person }: { campaignId: string
       <div>
         <h4 style={{ margin: "0 0 8px", color: "#555" }}>Gegenstände</h4>
         {items.map((item) => (
-          <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
-            <span>
-              {item.name}
-              <span style={{ marginLeft: 8, fontSize: "0.75em", color: "#888" }}>
-                (
-                {item.sichtbarkeit === "GM"
-                  ? "SL-geheim"
-                  : item.sichtbarkeit === "ALLE"
-                    ? "für alle sichtbar"
-                    : "nur Besitzer sichtbar"}
-                )
-              </span>
-            </span>
-            <button type="button" onClick={() => removeItem(item.id)}>
-              Entfernen
-            </button>
-          </div>
+          <GegenstandRow
+            key={item.id}
+            campaignId={campaignId}
+            personId={person.id}
+            item={item}
+            pcOptions={pcOptions}
+            onChanged={refresh}
+            onRemoved={() => removeItem(item.id)}
+          />
         ))}
         <form onSubmit={addItem} style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <input placeholder="Neuer Gegenstand" value={itemName} onChange={(e) => setItemName(e.target.value)} />

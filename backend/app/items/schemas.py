@@ -12,6 +12,14 @@ class GegenstandCreate(BaseModel):
     sichtbarFuer: list[str] | None = None
 
 
+class GegenstandUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    notes: str | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+
+
 class GegenstandResponse(BaseModel):
     id: str
     name: str

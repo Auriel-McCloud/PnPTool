@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import require_campaign_gm
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.items import repository
-from app.items.schemas import GegenstandCreate, GegenstandResponse
+from app.items.schemas import GegenstandCreate, GegenstandResponse, GegenstandUpdate
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -48,6 +48,14 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
 @router.get("", response_model=list[GegenstandResponse])
 async def list_items(campaign_id: str, person_id: str):
     return await repository.list_gegenstaende(campaign_id, person_id)
+
+
+@router.patch("/{item_id}", response_model=GegenstandResponse)
+async def update_item(campaign_id: str, person_id: str, item_id: str, body: GegenstandUpdate):
+    item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

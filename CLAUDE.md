@@ -120,12 +120,19 @@ Ausgangspunkt: Mark wollte (a) Gegenstände 1:N an Personen hängen können, aut
 - Nebenbei gefixt: `delete_node` (Personen/Orte/Events löschen) hat vorher Gegenstände verwaister Personen im Graph zurückgelassen (`DETACH DELETE n` löscht nur den Knoten selbst, nicht was er besaß) — räumt jetzt via `OPTIONAL MATCH (n)-[:BESITZT]->(owned)` mit auf.
 - UI: "Charakterblatt öffnen"-Button pro Person in `EntityManager.tsx`, klappt `CharacterSheetPanel` auf (Werte nach Kategorie gruppiert + Gegenstände-Liste mit Anlegen/Entfernen).
 
+**Nachgezogen (28.08.2026, nach Feedback "Gegenstand ist nicht bearbeitbar"):**
+- `PATCH /api/campaigns/{cid}/personen/{personId}/gegenstaende/{itemId}` — Gegenstände waren vorher nur anlegbar (nur Name) und löschbar, nicht bearbeitbar. Jetzt volles Update für Name/Beschreibung(Rich-Text)/Notizen(Rich-Text)/Sichtbarkeit.
+- `frontend/src/traits/CharacterSheetPanel.tsx` → `GegenstandRow`: jeder Gegenstand ist über "Bearbeiten" aufklappbar, editiert Name + Rich-Text-Beschreibung/Notizen + `VisibilitySelector` (Sichtbarkeit nachträglich änderbar, z.B. wenn ein Spieler seinen eigenen Gegenstand doch entdecken soll).
+- Die `+max`/`−max`-Knöpfe sind jetzt hinter einem "⚙ Optionen anzeigen"-Schalter versteckt (waren vorher immer sichtbar, wirkte unübersichtlich/würde Spieler verwirren).
+
 **Nicht gemacht / bewusst zurückgestellt (Rest von Phase 3):**
 - Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.
 - Kein Cyber/Bio-Ware, keine Rüstung/Waffen-Slots (nur generische Gegenstände ohne Schadenswerte etc.)
 - Kein Companion/Drohne-Sheet, obwohl `HAS_TRAIT` dafür schon generisch genug wäre (funktioniert für jeden Knotentyp, nicht nur Person) — nur noch nicht an eine Companion-Route angebunden.
 - Kein Würfeln.
 - `sortOrder`-Nummerierung im Seed ist grob (Reihenfolge aus dem Excel übernommen), nicht weiter kuratiert.
+- Optisches Layout ist weiterhin "unübersichtlich, nicht schön" (O-Ton Mark) — funktional korrekt, aber noch kein eigener Design-Durchgang für den Charakterbogen.
+- **Neue Idee von Mark (28.08.2026, noch nicht designed):** drei eigene Ansichten/Modi für den Charakterbogen — "Charaktererstellung" (Startpunkte-Regeln, Rassen-Boni etc. aus dem Regeln-Sheet), "Spiel" (Standard-Ansicht, das was jetzt existiert), "Level Up" (EP ausgeben). Dazu ein Erfahrungspunkte-Zähler pro Charakter + eine Möglichkeit für den SL, EP an alle oder einzelne Spieler zu vergeben (soll sich automatisch im Charakterbogen niederschlagen). Braucht eigene Logik/Design-Runde, bewusst noch nicht begonnen.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 

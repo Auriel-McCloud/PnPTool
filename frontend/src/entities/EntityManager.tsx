@@ -242,7 +242,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
                 {openSheetFor === p.id ? "Charakterblatt schließen" : "Charakterblatt öffnen"}
               </button>
             </div>
-            {openSheetFor === p.id && <CharacterSheetPanel campaignId={campaignId} person={p} />}
+            {openSheetFor === p.id && <CharacterSheetPanel campaignId={campaignId} person={p} pcOptions={pcOptions} />}
           </div>
         ))}
         <form onSubmit={submitPerson} style={formStyle}>

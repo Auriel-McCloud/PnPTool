@@ -45,6 +45,34 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
         return [dict(record) async for record in result]
 
 
+async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict | None:
+    changed = {k: v for k, v in data.items() if v is not None}
+    if not changed:
+        driver = get_driver()
+        query = """
+            MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+            RETURN g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
+                   g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
+        """
+        async with driver.session() as session:
+            result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+            record = await result.single()
+            return dict(record) if record else None
+
+    driver = get_driver()
+    set_clause = ", ".join(f"g.{k} = ${k}" for k in changed)
+    query = f"""
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        SET {set_clause}
+        RETURN g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
+               g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, **changed)
+        record = await result.single()
+        return dict(record) if record else None
+
+
 async def delete_gegenstand(campaign_id: str, item_id: str) -> bool:
     driver = get_driver()
     query = """
