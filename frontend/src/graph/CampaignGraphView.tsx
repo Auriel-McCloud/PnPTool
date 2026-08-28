@@ -179,7 +179,9 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
         style={{
           width: "100%",
           height: 520,
-          border: "1px solid var(--linie)",
+          // Neonröhre als Begrenzung, siehe .cl-roehre in shell/commlink.css
+          border: "1px solid var(--neon)",
+          boxShadow: "0 0 10px -4px var(--neon), inset 0 0 20px -12px var(--neon)",
           borderRadius: 6,
           display: isEmpty ? "none" : "block",
           position: "relative",

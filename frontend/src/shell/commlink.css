@@ -9,40 +9,178 @@
   min-height: 100svh;
 }
 
+/* ===================================================================
+   Neonröhre: leuchtende Begrenzung für Felder und Karten.
+
+   Bewusst CSS statt animierter Bilddateien — passt sich jeder Feldgröße
+   an, ist umfärbbar (Magenta trägt die Bedeutung "SL-geheim") und bleibt
+   auf hochauflösenden Displays scharf.
+
+   Aufbau wie eine echte Röhre: harter Kern (border), enger heller Schein
+   nach aussen, weicher Abglanz nach innen.
+   =================================================================== */
+
+.cl-roehre {
+  position: relative;
+  border: 1px solid var(--roehre-farbe, var(--neon));
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 8px -2px var(--roehre-farbe, var(--neon)),
+    inset 0 0 14px -8px var(--roehre-farbe, var(--neon));
+  /* Röhren zünden nicht sofort sauber durch */
+  animation: cl-zuenden 0.5s ease-out;
+}
+
+.cl-roehre[data-ton="signal"] {
+  --roehre-farbe: var(--signal);
+}
+
+.cl-roehre[data-ton="warn"] {
+  --roehre-farbe: var(--warn);
+}
+
+.cl-roehre[data-ton="ruhig"] {
+  --roehre-farbe: var(--linie-hell);
+  box-shadow: none;
+}
+
+@keyframes cl-zuenden {
+  0% {
+    opacity: 0.5;
+    box-shadow: none;
+  }
+  35% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0.72;
+  }
+  55% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* --- Bereichsmenü ---------------------------------------------------- */
 
+/* --- Bereichsmenü -----------------------------------------------------
+   Ab Tablet-Breite eine schmale Symbolspalte, die dauerhaft stehen bleibt
+   und beim Antippen nach rechts ausfährt. Sie überlagert dabei den Inhalt,
+   statt ihn zu verschieben — sonst würde bei jedem Ausfahren die ganze
+   Seite umbrechen.
+   `.cl-menue` hält nur den Platz im Layout, `.cl-menue-tafel` ist das
+   sichtbare, ausfahrende Menü.                                          */
+
 .cl-menue {
-  width: var(--menue-breite);
+  width: var(--rail-breite);
   flex-shrink: 0;
+}
+
+.cl-menue-tafel {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  width: var(--rail-breite);
+  height: 100svh;
   display: flex;
   flex-direction: column;
   background: var(--flaeche);
   border-right: 1px solid var(--linie);
-  position: sticky;
-  top: 0;
-  height: 100svh;
+  overflow-x: hidden;
   overflow-y: auto;
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.cl-menue[data-ausgefahren="true"] .cl-menue-tafel {
+  width: var(--menue-breite);
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.55);
+  border-right-color: var(--linie-hell);
+}
+
+/* Beschriftungen sind in der Rail ausgeblendet und erscheinen beim
+   Ausfahren. `white-space: nowrap` verhindert, dass sie beim Zusammen-
+   fahren umbrechen und die Zeilen aufreissen. */
+.cl-bereich-name,
+.cl-marke-zeile,
+.cl-menue-fuss,
+.cl-gruppe {
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.16s;
+}
+
+.cl-menue[data-ausgefahren="true"] .cl-bereich-name,
+.cl-menue[data-ausgefahren="true"] .cl-marke-zeile,
+.cl-menue[data-ausgefahren="true"] .cl-menue-fuss,
+.cl-menue[data-ausgefahren="true"] .cl-gruppe {
+  opacity: 1;
+  transition-delay: 0.08s;
+}
+
+/* Der Markenkopf ist zugleich der Schalter, der die Rail ausfährt. */
 .cl-marke {
-  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 18px;
+  background: none;
+  border: none;
   border-bottom: 1px solid var(--linie);
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cl-marke:hover {
+  background: var(--flaeche-aktiv);
+  color: inherit;
+  border-color: var(--linie);
+}
+
+.cl-marke-zeichen {
+  font-size: 18px;
+  color: var(--neon);
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  text-shadow: 0 0 12px var(--neon-schwach);
 }
 
 .cl-marke-name {
+  display: block;
   font-family: var(--mono);
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--neon);
   text-shadow: 0 0 14px var(--neon-schwach);
+  white-space: nowrap;
+  /* In der Rail ausgeblendet, erscheint mit dem Ausfahren */
+  opacity: 0;
+  transition: opacity 0.16s;
+}
+
+.cl-menue[data-ausgefahren="true"] .cl-marke-name {
+  opacity: 1;
+  transition-delay: 0.08s;
 }
 
 .cl-marke-zeile {
+  display: block;
   font-size: 11px;
   color: var(--text-aus);
   font-family: var(--mono);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .cl-bereiche {
@@ -61,10 +199,11 @@
 .cl-bereich {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
   min-height: var(--tipp);
-  padding: 10px 18px;
+  /* 19px + halbe Symbolbreite = Mitte der 60px-Rail */
+  padding: 10px 19px;
   background: none;
   border: none;
   border-left: 2px solid transparent;
@@ -93,9 +232,9 @@
 }
 
 .cl-bereich-symbol {
-  width: 20px;
+  width: 22px;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
@@ -198,28 +337,39 @@
   display: none;
 }
 
-/* --- Schmale Geräte ---------------------------------------------------
-   Unter 900px wird aus dem Menü eine überlagernde Schublade. Der Wert
-   liegt bewusst so hoch, dass auch Tablets im Hochformat davon
-   profitieren — dort ist Inhaltsbreite kostbarer als Dauersichtbarkeit. */
+/* --- Handy ------------------------------------------------------------
+   Nur unter 600px verschwindet das Menü ganz und wird zur Schublade
+   hinter dem Schalter. Tablets behalten die Symbolspalte — dort ist ein
+   verstecktes Menü unangenehm, weil ständig zwischen Bereichen
+   gewechselt wird.                                                       */
 
-@media (max-width: 900px) {
+@media (max-width: 599px) {
   .cl-menue-schalter {
     display: inline-flex;
   }
 
+  /* Kein Platzhalter mehr im Layout: der Inhalt bekommt die volle Breite */
   .cl-menue {
-    position: fixed;
-    z-index: 40;
-    left: 0;
-    top: 0;
+    width: 0;
+  }
+
+  .cl-menue-tafel {
+    width: var(--menue-breite);
     transform: translateX(-100%);
     transition: transform 0.22s ease;
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
   }
 
-  .cl-menue[data-offen="true"] {
+  .cl-menue[data-offen="true"] .cl-menue-tafel {
     transform: translateX(0);
+  }
+
+  /* In der Schublade sind Beschriftungen immer sichtbar */
+  .cl-menue .cl-bereich-name,
+  .cl-menue .cl-marke-zeile,
+  .cl-menue .cl-menue-fuss,
+  .cl-menue .cl-gruppe {
+    opacity: 1;
   }
 
   .cl-abdunkelung[data-offen="true"] {
@@ -237,21 +387,87 @@
 }
 
 /* --- Wechsel zwischen Bereichen ---------------------------------------
-   Kein Seitenwechsel-Gefühl, sondern ein kurzes Aufblenden wie bei einem
-   Gerät, das die Anzeige neu aufbaut.                                    */
+   Kein Seitenwechsel, sondern ein Gerät, das die Anzeige neu aufbaut:
+   der angetippte Name löst sich aus dem Menü, fliegt nach oben und wird
+   zur Überschrift, während ein Balken herabfährt und darunter die neue
+   Seite freilegt.
+   Ablauf und Zeiten sind mit CommlinkShell.tsx abgestimmt.              */
 
 .cl-ansicht {
-  animation: cl-ansicht-an 0.2s ease;
+  animation: cl-ansicht-an 0.28s ease-out;
 }
 
 @keyframes cl-ansicht-an {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Der fliegende Name: ein Klon, der von der Menüzeile zur Überschrift
+   wandert. Startkoordinaten setzt das Skript per Inline-Style. */
+.cl-flug {
+  position: fixed;
+  z-index: 60;
+  margin: 0;
+  pointer-events: none;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon);
+  text-shadow: 0 0 16px var(--neon);
+  transition:
+    left 0.42s cubic-bezier(0.5, 0, 0.2, 1),
+    top 0.42s cubic-bezier(0.5, 0, 0.2, 1),
+    opacity 0.42s ease-in;
+}
+
+/* Der Balken: fährt einmal von oben nach unten durch die Inhaltsfläche.
+   Heller Kern mit Schweif, wie ein Bildaufbau auf einer Röhre. */
+.cl-balken {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cl-balken::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--neon-schwach) 55%,
+    rgba(0, 229, 255, 0.5) 88%,
+    var(--neon) 96%,
+    rgba(0, 229, 255, 0.9) 100%
+  );
+  /* forwards: ohne Endzustand springt der Balken nach dem Durchlauf an
+     seine Ausgangsposition zurück und bleibt quer über dem Inhalt liegen.
+     Entfernt wird er zusätzlich vom Skript, das ist hier die Absicherung
+     für die Zeit dazwischen. */
+  animation: cl-balken-lauf 0.5s cubic-bezier(0.4, 0, 0.5, 1) forwards;
+}
+
+@keyframes cl-balken-lauf {
+  from {
+    top: -42%;
+    opacity: 1;
+  }
+  to {
+    top: 102%;
+    opacity: 0;
   }
 }
 

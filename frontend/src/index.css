@@ -45,6 +45,7 @@
   /* --- Maße ---------------------------------------------------------- */
   --radius: 4px;
   --menue-breite: 232px;
+  --rail-breite: 60px; /* schmale Symbolspalte, ab Tablet dauerhaft sichtbar */
   --leiste-hoehe: 52px;
   /* Touch-Mindestgröße: das Tablet ist Zielgerät, nicht die Maus. */
   --tipp: 44px;

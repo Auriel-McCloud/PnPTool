@@ -14,6 +14,18 @@ Die Oberfläche soll sich anfühlen wie ein **Commlink** — ein Zukunfts-Handy 
 - **Oben: Werkzeugleiste.** Symbole für SL-Popups, den Tooltip-Schalter (siehe unten) und weitere Funktionen, die noch zu definieren sind.
 - **Fenster** statt Inline-Akkordeons: ein Gegenstand öffnet sich als eigenes, fokussiertes Fenster. Auf allen Geräten echte Fenster; am Handy bildschirmfüllend mit Griff oben mittig. **Position wechselt bewusst** — mal weiter oben, unten, rechts oder links statt immer starr zentriert.
 - **Störeffekte**: gelegentliches Flackern wie bei einer Neonröhre oder einem gestörten Fernseher, etwa alle 5 bis zufällig 10 Minuten. Bewusst selten, als Würze.
+- **Neonröhren als Feldbegrenzung**: leuchtende Ränder um Eingabeflächen. Bewusst in CSS statt als animierte Bilddateien — passt sich jeder Feldgröße an, bleibt auf hochauflösenden Displays scharf und ist umfärbbar (Magenta trägt die Bedeutung "SL-geheim"). Nur auf aktiven Flächen, nicht auf jedem Listeneintrag, sonst flimmert die Seite.
+
+## Leitprinzip: kein Scrollen
+
+Marks Vorgabe: *"der Plan ist, dass man niemals scrollen muss, maximal in Pop-ups, aber die Übersichtsseiten sollten immer statisch sein."*
+
+Das ist die weitreichendste Entscheidung des ganzen Konzepts und erklärt auch das Urteil "zu viel Listen-Charakter": Eine scrollende Liste ist das Gegenteil eines Geräte-Displays. Konsequenzen, die daran hängen:
+
+- Übersichten brauchen eine **feste Höhe** und müssen sich einteilen — Raster mit fester Kachelzahl, Blättern statt Scrollen, oder Suche/Filter als primärer Zugang statt einer langen Liste.
+- Bei den derzeitigen Testdaten (2 Personen, 7 Gegenstände) passt alles auf einen Bildschirm; das täuscht. Bei 40 NPCs oder 60 Gegenständen trägt das nicht mehr.
+- **Mark hat die Schwachstelle selbst benannt**: *"höchstens bei den Gegenständen müssen wir uns was überlegen."* Genau dort ist zuerst zu entscheiden — vermutlich in Verbindung mit der schon notierten Vision zu Suche und Kategorisierung (siehe CLAUDE.md, Abschnitt "Vision — Party/Gruppen, Suche & Kategorisierung").
+- Scrollen bleibt erlaubt in Popups/Fenstern. Das macht das Fenstersystem umso wichtiger: lange Inhalte gehören dorthin, nicht auf die Übersichtsseite.
 
 ## Zwei Rollen, eine Hülle
 
@@ -45,8 +57,15 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 **Gebaut (28.08.2026) — Schritt 1: die Hülle.**
 - `frontend/src/index.css` ist jetzt das Commlink-Fundament: dunkle Flächen, CSS-Variablen für Farben/Maße, dunkle Formularelemente, Touch-Mindestgröße 44px. Ersetzt das Vite-Startertheme.
 - `frontend/src/shell/CommlinkShell.tsx` + `commlink.css`: Bereichsmenü links, Werkzeugleiste oben, Aufblenden beim Bereichswechsel, Neonflackern. Bewusst **inhaltsfrei** — sie weiß nichts über Kampagnen oder Personen und kann deshalb später unverändert die Spieler-Ansicht tragen.
-- Unter 900px Breite wird das Menü zu einer überlagernden Schublade (Schalter oben links). Der Schwellwert liegt bewusst hoch, damit auch Tablets im Hochformat davon profitieren.
 - Die bestehenden Ansichten wurden auf die Variablen umgestellt; hartkodierte Hellwerte sind raus.
+
+**Navigation (nach Marks Rückmeldung überarbeitet).** Erst lag die Schwelle bei 900px, wodurch das Tablet im Hochformat dieselbe Burger-Schublade bekam wie das Handy — für ein Gerät, an dem man ständig zwischen Bereichen wechselt, falsch. Jetzt:
+- **Ab 600px** eine schmale Symbolspalte (60px), die dauerhaft stehen bleibt. Antippen des Markenkopfs fährt sie auf 232px aus und blendet die Namen ein. Sie überlagert dabei den Inhalt, statt ihn zu verschieben — sonst bräche bei jedem Ausfahren die ganze Seite um.
+- **Unter 600px** (Handy) bleibt es bei der Schublade hinter dem ☰; dort war es laut Mark passend.
+
+**Der Bereichswechsel ist inszeniert**, wie von Mark beschrieben: der angetippte Name löst sich aus dem Menü, fliegt nach oben und wird zur Überschrift, während ein Leuchtbalken herabfährt, die alte Seite auslöscht und die neue freilegt. Umgesetzt als fliegender Klon (Start- und Zielkoordinaten werden vor dem Umschalten gemessen) plus Balken-Animation; der Inhalt wechselt auf halbem Weg, verdeckt vom Balken. Zeiten stehen als Konstanten in `CommlinkShell.tsx` und müssen zu denen in `commlink.css` passen.
+
+*Fallstrick dabei, bereits behoben:* eine CSS-Animation ohne `animation-fill-mode: forwards` springt am Ende in den Ausgangszustand zurück — der Balken blieb dadurch quer über dem Inhalt liegen. Jetzt zusätzlich per Zeitgeber aus dem Baum entfernt.
 
 **Farbwelt: Neon auf Schwarz.** Grund `#08080d`, Cyan `#00e5ff` als Aktiv-/Fokusfarbe, Magenta `#ff2d95` als Signal. Bewusste Regel: **die Neonfarben tragen Bedeutung statt Dekoration** — Magenta heißt durchgehend "SL-geheim", Cyan "aktiv/Fokus". Flächiges Neon ermüdet bei langen Sitzungen am Tablet, deshalb sind die Flächen selbst gedeckt und nur Ränder, Text und Zustände leuchten.
 

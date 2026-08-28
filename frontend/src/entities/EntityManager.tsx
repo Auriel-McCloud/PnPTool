@@ -18,7 +18,12 @@ const formStyle: React.CSSProperties = {
   marginTop: 12,
   padding: 16,
   background: "var(--flaeche)",
-  border: "1px solid var(--linie)",
+  // Neonröhre als Begrenzung (vgl. .cl-roehre in shell/commlink.css):
+  // harter Kern, enger Schein nach aussen, weicher Abglanz nach innen.
+  // Bewusst nur auf Eingabeflächen — läge der Schein auch auf jedem
+  // Listeneintrag, flimmerte die ganze Seite.
+  border: "1px solid var(--neon)",
+  boxShadow: "0 0 8px -3px var(--neon), inset 0 0 16px -10px var(--neon)",
   borderRadius: 8,
   maxWidth: 640,
 };
