@@ -2,26 +2,39 @@ import { useEffect, useState, type FormEvent } from "react";
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
-import { itemsApi, type GegenstandMitBesitzer } from "./api";
+import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer } from "./api";
+
+const VORLAGEN_GRUPPE = "__vorlagen__";
 
 interface OwnerGroup {
-  ownerId: string;
+  ownerId: string | null;
   ownerName: string;
-  ownerPersonType: string;
+  ownerPersonType: string | null;
   items: GegenstandMitBesitzer[];
 }
 
 function groupByOwner(items: GegenstandMitBesitzer[]): OwnerGroup[] {
   const groups = new Map<string, OwnerGroup>();
   for (const item of items) {
-    let group = groups.get(item.ownerId);
+    const key = item.ownerId ?? VORLAGEN_GRUPPE;
+    let group = groups.get(key);
     if (!group) {
-      group = { ownerId: item.ownerId, ownerName: item.ownerName, ownerPersonType: item.ownerPersonType, items: [] };
-      groups.set(item.ownerId, group);
+      group = {
+        ownerId: item.ownerId,
+        ownerName: item.ownerName ?? "Vorlagen (kein Besitzer)",
+        ownerPersonType: item.ownerPersonType,
+        items: [],
+      };
+      groups.set(key, group);
     }
     group.items.push(item);
   }
-  return Array.from(groups.values());
+  // Vorlagen-Gruppe zuerst anzeigen (Katalog-Charakter), danach nach Personen.
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.ownerId === null) return -1;
+    if (b.ownerId === null) return 1;
+    return a.ownerName.localeCompare(b.ownerName);
+  });
 }
 
 export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
@@ -48,15 +61,19 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const alleOptionen: PersonOption[] = personen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
   const groups = groupByOwner(items);
 
-  async function removeItem(ownerId: string, itemId: string) {
-    await itemsApi.remove(campaignId, ownerId, itemId);
+  async function removeItem(itemId: string) {
+    await itemsApi.remove(campaignId, itemId);
     await refresh();
   }
 
   async function addItem(e: FormEvent) {
     e.preventDefault();
     if (!neuName.trim() || !neuBesitzer) return;
-    await itemsApi.create(campaignId, neuBesitzer, { name: neuName });
+    if (neuBesitzer === VORLAGE_SENTINEL) {
+      await itemsApi.createVorlage(campaignId, { name: neuName });
+    } else {
+      await itemsApi.create(campaignId, neuBesitzer, { name: neuName });
+    }
     setNeuName("");
     await refresh();
   }
@@ -67,6 +84,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       <form onSubmit={addItem} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "1.5rem" }}>
         <select value={neuBesitzer} onChange={(e) => setNeuBesitzer(e.target.value)} required>
           <option value="">Besitzer wählen...</option>
+          <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
           {alleOptionen.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -78,20 +96,21 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       </form>
       {groups.length === 0 && <p style={{ color: "#888" }}>Noch keine Gegenstände in dieser Kampagne.</p>}
       {groups.map((group) => (
-        <section key={group.ownerId} style={{ marginBottom: "2rem" }}>
+        <section key={group.ownerId ?? VORLAGEN_GRUPPE} style={{ marginBottom: "2rem" }}>
           <h3 style={{ margin: "0 0 8px", color: "#333" }}>
-            {group.ownerName} <span style={{ color: "#888", fontWeight: "normal" }}>({group.ownerPersonType})</span>
+            {group.ownerName}
+            {group.ownerPersonType && <span style={{ color: "#888", fontWeight: "normal" }}> ({group.ownerPersonType})</span>}
           </h3>
           {group.items.map((item) => (
             <GegenstandRow
               key={item.id}
               campaignId={campaignId}
-              personId={group.ownerId}
+              personId={group.ownerId ?? undefined}
               item={item}
               pcOptions={pcOptions}
               alleOptionen={alleOptionen}
               onChanged={refresh}
-              onRemoved={() => removeItem(group.ownerId, item.id)}
+              onRemoved={() => removeItem(item.id)}
             />
           ))}
         </section>

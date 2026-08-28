@@ -33,6 +33,9 @@ class GegenstandCreate(BaseModel):
     # als unabhängige, individualisierbare Kopie an eine Person vergeben werden
     # (z.B. ein Pistolenmodell, das zwei Spieler kaufen und dann unterschiedlich
     # aufrüsten). Die Vorlage selbst bleibt dabei unverändert bestehen.
+    # Invariante: istVorlage <=> kein Besitzer. Wird beim Anlegen serverseitig
+    # anhand dessen erzwungen, ob ein owner_person_id übergeben wurde — dieser
+    # Wert hier wird für die person-gescopte Route ignoriert.
     istVorlage: bool = False
     # Seltenheit 1 (überall verfügbar) bis 5 (nur Speziallabor/Schwarzmarkt).
     # Wird später für automatische Shop-Bestückung genutzt (noch nicht gebaut).
@@ -60,7 +63,10 @@ class GegenstandUpdate(BaseModel):
     einzigartig: bool | None = None
     hatMenge: bool | None = None
     menge: int | None = None
-    istVorlage: bool | None = None
+    # istVorlage bewusst NICHT hier: ob ein Gegenstand eine Vorlage ist, ergibt
+    # sich ausschließlich daraus, ob er einen Besitzer hat (siehe Besitzer
+    # wechseln/Vorlage machen/Zuweisen-Endpoints) — kein direktes Umschalten
+    # per PATCH, sonst könnten owned+istVorlage-Widersprüche entstehen.
     seltenheit: int | None = None
     automatischImShop: bool | None = None
     bildUrl: str | None = None
@@ -94,6 +100,8 @@ class GegenstandResponse(BaseModel):
 
 
 class GegenstandMitBesitzer(GegenstandResponse):
-    ownerId: str
-    ownerName: str
-    ownerPersonType: str
+    # Vorlagen haben keinen Besitzer (siehe istVorlage-Kommentar in
+    # GegenstandUpdate) — daher optional statt Pflichtfeld.
+    ownerId: str | None = None
+    ownerName: str | None = None
+    ownerPersonType: str | None = None

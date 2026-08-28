@@ -44,21 +44,31 @@ def _decode(record: dict) -> dict:
     return record
 
 
-async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) -> dict | None:
+async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data: dict) -> dict | None:
+    """owner_person_id=None erzeugt einen besitzerlosen Gegenstand (= Vorlage,
+    siehe Invariante in schemas.py). Ist eine ID gegeben, muss die Person
+    existieren, sonst liefert die Query keine Zeile (item wird None)."""
     driver = get_driver()
     item_id = str(uuid.uuid4())
-    query = f"""
-        MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})
-        CREATE (g:Gegenstand {{
+    create_clause = """
+        CREATE (g:Gegenstand {
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
-        }})
-        CREATE (p)-[:BESITZT]->(g)
-        RETURN {RETURN_FIELDS}
+        })
     """
+    if owner_person_id:
+        query = f"""
+            MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})
+            {create_clause}
+            CREATE (p)-[:BESITZT]->(g)
+            RETURN {RETURN_FIELDS}
+        """
+    else:
+        query = f"{create_clause}\n        RETURN {RETURN_FIELDS}"
+
     async with driver.session() as session:
         result = await session.run(
             query,
@@ -101,7 +111,8 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
 async def list_alle_gegenstaende(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
-        MATCH (p:Person {{campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        MATCH (g:Gegenstand {{campaignId: $campaign_id}})
+        OPTIONAL MATCH (p:Person)-[:BESITZT]->(g)
         RETURN {RETURN_FIELDS}, p.id AS ownerId, p.name AS ownerName, p.personType AS ownerPersonType
         ORDER BY p.name, g.name
     """
@@ -206,6 +217,23 @@ async def transfer_owner(campaign_id: str, item_id: str, ziel_person_id: str) ->
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id, ziel_person_id=ziel_person_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def remove_owner(campaign_id: str, item_id: str) -> dict | None:
+    """Entfernt die Besitzer-Zuordnung und macht den Gegenstand zu einer
+    besitzerlosen Vorlage. Liefert None, wenn der Gegenstand aktuell gar
+    keinen Besitzer hat (schon eine Vorlage ist)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person)-[r:BESITZT]->(g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        DELETE r
+        SET g.istVorlage = true
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
         record = await result.single()
         return _decode(dict(record)) if record else None
 

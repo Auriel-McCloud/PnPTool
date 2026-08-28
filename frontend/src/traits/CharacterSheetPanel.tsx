@@ -4,7 +4,7 @@ import type { Person } from "../entities/api";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
-import { itemsApi, type Gegenstand } from "../items/api";
+import { itemsApi, VORLAGE_SENTINEL, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
 
@@ -116,7 +116,8 @@ export function GegenstandRow({
   onRemoved,
 }: {
   campaignId: string;
-  personId: string;
+  // Fehlt bei Vorlagen (die haben per Invariante keinen Besitzer).
+  personId?: string;
   item: Gegenstand;
   pcOptions: PersonOption[];
   alleOptionen: PersonOption[];
@@ -135,7 +136,6 @@ export function GegenstandRow({
   const [einzigartig, setEinzigartig] = useState(item.einzigartig);
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
-  const [istVorlage, setIstVorlage] = useState(item.istVorlage);
   const [automatischImShop, setAutomatischImShop] = useState(item.automatischImShop);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -158,7 +158,6 @@ export function GegenstandRow({
     setEinzigartig(item.einzigartig);
     setHatMenge(item.hatMenge);
     setMenge(item.menge);
-    setIstVorlage(item.istVorlage);
     setAutomatischImShop(item.automatischImShop);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
@@ -168,7 +167,7 @@ export function GegenstandRow({
   }
 
   async function save() {
-    await itemsApi.update(campaignId, personId, item.id, {
+    await itemsApi.update(campaignId, item.id, {
       name,
       typ,
       preis,
@@ -179,7 +178,6 @@ export function GegenstandRow({
       einzigartig,
       hatMenge,
       menge: hatMenge ? menge : 1,
-      istVorlage,
       automatischImShop,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
@@ -194,7 +192,7 @@ export function GegenstandRow({
     if (!zuweisenZiel) return;
     setZuweisenLaeuft(true);
     try {
-      await itemsApi.assign(campaignId, personId, item.id, zuweisenZiel);
+      await itemsApi.assign(campaignId, item.id, zuweisenZiel);
       setZuweisenZiel("");
       onChanged();
     } finally {
@@ -206,7 +204,11 @@ export function GegenstandRow({
     if (!besitzerZiel) return;
     setBesitzerLaeuft(true);
     try {
-      await itemsApi.changeOwner(campaignId, personId, item.id, besitzerZiel);
+      if (besitzerZiel === VORLAGE_SENTINEL) {
+        await itemsApi.removeOwner(campaignId, item.id);
+      } else {
+        await itemsApi.changeOwner(campaignId, item.id, besitzerZiel);
+      }
       setBesitzerZiel("");
       onChanged();
     } finally {
@@ -219,7 +221,7 @@ export function GegenstandRow({
     if (!file) return;
     setUploading(true);
     try {
-      await itemsApi.uploadBild(campaignId, personId, item.id, file);
+      await itemsApi.uploadBild(campaignId, item.id, file);
       onChanged();
     } finally {
       setUploading(false);
@@ -227,7 +229,7 @@ export function GegenstandRow({
   }
 
   async function removeBild() {
-    await itemsApi.update(campaignId, personId, item.id, { bildUrl: "" });
+    await itemsApi.update(campaignId, item.id, { bildUrl: "" });
     onChanged();
   }
 
@@ -375,11 +377,6 @@ export function GegenstandRow({
                   </p>
                 )}
                 <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input type="checkbox" checked={istVorlage} onChange={(e) => setIstVorlage(e.target.checked)} /> Ist
-                  eine Vorlage für einen einzigartigen Gegenstand (kann beliebig oft an Personen zugewiesen werden,
-                  jede Zuweisung erzeugt eine unabhängige, individualisierbare Kopie)
-                </label>
-                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                   <input
                     type="checkbox"
                     checked={automatischImShop}
@@ -404,6 +401,7 @@ export function GegenstandRow({
                   style={{ minWidth: 0, maxWidth: "100%" }}
                 >
                   <option value="">Person wählen...</option>
+                  <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
                   {alleOptionen
                     .filter((p) => p.id !== personId)
                     .map((p) => (
@@ -505,7 +503,7 @@ export function CharacterSheetPanel({
   }
 
   async function removeItem(itemId: string) {
-    await itemsApi.remove(campaignId, person.id, itemId);
+    await itemsApi.remove(campaignId, itemId);
     await refresh();
   }
 

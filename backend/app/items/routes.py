@@ -42,6 +42,27 @@ def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[s
     return "GM", []
 
 
+def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, sichtbar_fuer: list[str]) -> dict:
+    return {
+        "name": body.name,
+        "description": body.description,
+        "notes": body.notes,
+        "typ": body.typ,
+        "preis": body.preis,
+        "kraft": body.kraft,
+        "eigenschaften": body.eigenschaften,
+        "zeigeInGraph": body.zeigeInGraph,
+        "einzigartig": body.einzigartig,
+        "hatMenge": body.hatMenge,
+        "menge": body.menge,
+        "istVorlage": ist_vorlage,
+        "seltenheit": body.seltenheit,
+        "automatischImShop": body.automatischImShop,
+        "sichtbarkeit": sichtbarkeit,
+        "sichtbarFuer": sichtbar_fuer,
+    }
+
+
 @router.post("", response_model=GegenstandResponse)
 async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     owner = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
@@ -53,27 +74,11 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     if sichtbarkeit is None:
         sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(owner["personType"], person_id)
 
+    # istVorlage wird hier immer False erzwungen (nicht body.istVorlage) — ein
+    # Gegenstand mit Besitzer ist per Invariante nie eine Vorlage, siehe
+    # schemas.py. Vorlagen entstehen ausschließlich über create_vorlage unten.
     item = await repository.create_gegenstand(
-        campaign_id,
-        person_id,
-        {
-            "name": body.name,
-            "description": body.description,
-            "notes": body.notes,
-            "typ": body.typ,
-            "preis": body.preis,
-            "kraft": body.kraft,
-            "eigenschaften": body.eigenschaften,
-            "zeigeInGraph": body.zeigeInGraph,
-            "einzigartig": body.einzigartig,
-            "hatMenge": body.hatMenge,
-            "menge": body.menge,
-            "istVorlage": body.istVorlage,
-            "seltenheit": body.seltenheit,
-            "automatischImShop": body.automatischImShop,
-            "sichtbarkeit": sichtbarkeit,
-            "sichtbarFuer": sichtbar_fuer or [],
-        },
+        campaign_id, person_id, _create_data(body, False, sichtbarkeit, sichtbar_fuer or [])
     )
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
@@ -85,16 +90,28 @@ async def list_items(campaign_id: str, person_id: str):
     return await repository.list_gegenstaende(campaign_id, person_id)
 
 
-@router.patch("/{item_id}", response_model=GegenstandResponse)
-async def update_item(campaign_id: str, person_id: str, item_id: str, body: GegenstandUpdate):
+@campaign_router.post("", response_model=GegenstandResponse)
+async def create_vorlage(campaign_id: str, body: GegenstandCreate):
+    """Legt einen besitzerlosen Gegenstand an — per Invariante immer eine
+    Vorlage (siehe schemas.py). Für Gegenstände mit Besitzer siehe create_item."""
+    sichtbarkeit = body.sichtbarkeit or "GM"
+    sichtbar_fuer = body.sichtbarFuer or []
+    item = await repository.create_gegenstand(campaign_id, None, _create_data(body, True, sichtbarkeit, sichtbar_fuer))
+    if item is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Anlegen fehlgeschlagen")
+    return item
+
+
+@campaign_router.patch("/{item_id}", response_model=GegenstandResponse)
+async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item
 
 
-@router.post("/{item_id}/bild", response_model=GegenstandResponse)
-async def upload_bild(campaign_id: str, person_id: str, item_id: str, file: UploadFile = File(...)):
+@campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse)
+async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(...)):
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
 
@@ -114,8 +131,8 @@ async def upload_bild(campaign_id: str, person_id: str, item_id: str, file: Uplo
     return item
 
 
-@router.post("/{item_id}/zuweisen", response_model=GegenstandResponse)
-async def zuweisen(campaign_id: str, person_id: str, item_id: str, body: ZuweisenRequest):
+@campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse)
+async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     source = await repository.get_gegenstand(campaign_id, item_id)
     if source is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
@@ -133,8 +150,8 @@ async def zuweisen(campaign_id: str, person_id: str, item_id: str, body: Zuweise
     return copy
 
 
-@router.post("/{item_id}/besitzer", response_model=GegenstandResponse)
-async def besitzer_wechseln(campaign_id: str, person_id: str, item_id: str, body: ZuweisenRequest):
+@campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse)
+async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenRequest):
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
@@ -160,7 +177,17 @@ async def besitzer_wechseln(campaign_id: str, person_id: str, item_id: str, body
     return moved
 
 
-@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(campaign_id: str, person_id: str, item_id: str):
+@campaign_router.post("/{item_id}/vorlage", response_model=GegenstandResponse)
+async def vorlage_machen(campaign_id: str, item_id: str):
+    """Entfernt den Besitzer eines Gegenstands — er wird zur besitzerlosen
+    Vorlage (Gegenstück zu Besitzer wechseln, siehe schemas.py-Invariante)."""
+    moved = await repository.remove_owner(campaign_id, item_id)
+    if moved is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden oder hat schon keinen Besitzer")
+    return moved
+
+
+@campaign_router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_item(campaign_id: str, item_id: str):
     if not await repository.delete_gegenstand(campaign_id, item_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")

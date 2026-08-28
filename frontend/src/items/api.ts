@@ -23,10 +23,15 @@ export interface Gegenstand {
 }
 
 export interface GegenstandMitBesitzer extends Gegenstand {
-  ownerId: string;
-  ownerName: string;
-  ownerPersonType: "PC" | "NPC";
+  // Vorlagen haben keinen Besitzer (siehe VORLAGE_SENTINEL) — daher nullable.
+  ownerId: string | null;
+  ownerName: string | null;
+  ownerPersonType: "PC" | "NPC" | null;
 }
+
+// Pseudo-Wert für Besitzer-Dropdowns: "kein Besitzer, dieser Gegenstand ist
+// eine Vorlage" statt einer echten Person-ID.
+export const VORLAGE_SENTINEL = "__VORLAGE__";
 
 function base(campaignId: string, personId: string) {
   return `/api/campaigns/${campaignId}/personen/${personId}/gegenstaende`;
@@ -34,6 +39,10 @@ function base(campaignId: string, personId: string) {
 
 function campaignBase(campaignId: string) {
   return `/api/campaigns/${campaignId}/gegenstaende`;
+}
+
+function itemBase(campaignId: string, itemId: string) {
+  return `${campaignBase(campaignId)}/${itemId}`;
 }
 
 export interface GegenstandUpdate {
@@ -48,7 +57,9 @@ export interface GegenstandUpdate {
   einzigartig?: boolean;
   hatMenge?: boolean;
   menge?: number;
-  istVorlage?: boolean;
+  // istVorlage bewusst nicht editierbar (siehe Backend-Kommentar in
+  // schemas.py) — ergibt sich ausschließlich aus Besitzer wechseln/Vorlage
+  // machen/Zuweisen.
   seltenheit?: number;
   automatischImShop?: boolean;
   bildUrl?: string;
@@ -56,25 +67,36 @@ export interface GegenstandUpdate {
   sichtbarFuer?: string[];
 }
 
+type NeuerGegenstand = {
+  name: string;
+  description?: string;
+  notes?: string;
+  typ?: string;
+  eigenschaften?: Record<string, string>;
+  zeigeInGraph?: boolean;
+};
+
 export const itemsApi = {
+  // Person-gescopt: nur für Gegenstände MIT Besitzer (Anlegen/Auflisten im
+  // Kontext einer Person). Alle anderen Operationen sind campaign-gescopt,
+  // da Vorlagen keinen Besitzer haben.
   list: (cid: string, personId: string) => api.get<Gegenstand[]>(base(cid, personId)),
+  create: (cid: string, personId: string, body: NeuerGegenstand) => api.post<Gegenstand>(base(cid, personId), body),
+
   listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
-  create: (
-    cid: string,
-    personId: string,
-    body: { name: string; description?: string; notes?: string; typ?: string; eigenschaften?: Record<string, string>; zeigeInGraph?: boolean }
-  ) => api.post<Gegenstand>(base(cid, personId), body),
-  update: (cid: string, personId: string, itemId: string, body: GegenstandUpdate) =>
-    api.patch<Gegenstand>(`${base(cid, personId)}/${itemId}`, body),
-  remove: (cid: string, personId: string, itemId: string) => api.delete<void>(`${base(cid, personId)}/${itemId}`),
-  assign: (cid: string, personId: string, itemId: string, zielPersonId: string) =>
-    api.post<Gegenstand>(`${base(cid, personId)}/${itemId}/zuweisen`, { zielPersonId }),
-  changeOwner: (cid: string, personId: string, itemId: string, zielPersonId: string) =>
-    api.post<Gegenstand>(`${base(cid, personId)}/${itemId}/besitzer`, { zielPersonId }),
-  uploadBild: async (cid: string, personId: string, itemId: string, file: File) => {
+  createVorlage: (cid: string, body: NeuerGegenstand) => api.post<Gegenstand>(campaignBase(cid), body),
+  update: (cid: string, itemId: string, body: GegenstandUpdate) =>
+    api.patch<Gegenstand>(itemBase(cid, itemId), body),
+  remove: (cid: string, itemId: string) => api.delete<void>(itemBase(cid, itemId)),
+  assign: (cid: string, itemId: string, zielPersonId: string) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId }),
+  changeOwner: (cid: string, itemId: string, zielPersonId: string) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/besitzer`, { zielPersonId }),
+  removeOwner: (cid: string, itemId: string) => api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlage`, {}),
+  uploadBild: async (cid: string, itemId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch(`${base(cid, personId)}/${itemId}/bild`, {
+    const response = await fetch(`${itemBase(cid, itemId)}/bild`, {
       method: "POST",
       credentials: "include",
       body: formData,
