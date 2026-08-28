@@ -16,6 +16,7 @@ export interface Gegenstand {
   menge: number;
   istVorlage: boolean;
   seltenheit: number;
+  automatischImShop: boolean;
   bildUrl: string;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
@@ -49,6 +50,7 @@ export interface GegenstandUpdate {
   menge?: number;
   istVorlage?: boolean;
   seltenheit?: number;
+  automatischImShop?: boolean;
   bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];

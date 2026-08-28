@@ -8,7 +8,7 @@ RETURN_FIELDS = """
     g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
-    g.istVorlage AS istVorlage, g.seltenheit AS seltenheit,
+    g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
 """
 
@@ -40,6 +40,7 @@ def _decode(record: dict) -> dict:
     record["menge"] = _or_default(record.get("menge"), 1)
     record["istVorlage"] = _or_default(record.get("istVorlage"), False)
     record["seltenheit"] = _or_default(record.get("seltenheit"), 1)
+    record["automatischImShop"] = _or_default(record.get("automatischImShop"), False)
     return record
 
 
@@ -52,7 +53,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
-            istVorlage: $istVorlage, seltenheit: $seltenheit, bildUrl: '',
+            istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }})
         CREATE (p)-[:BESITZT]->(g)
@@ -77,6 +78,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             menge=data["menge"],
             istVorlage=data["istVorlage"],
             seltenheit=data["seltenheit"],
+            automatischImShop=data["automatischImShop"],
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
         )
@@ -169,6 +171,7 @@ async def assign_copy(
             "hatMenge": source["hatMenge"],
             "menge": source["menge"],
             "istVorlage": False,
+            "automatischImShop": False,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer,
         },

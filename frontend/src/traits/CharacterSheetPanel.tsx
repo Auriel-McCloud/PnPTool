@@ -136,6 +136,7 @@ export function GegenstandRow({
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
   const [istVorlage, setIstVorlage] = useState(item.istVorlage);
+  const [automatischImShop, setAutomatischImShop] = useState(item.automatischImShop);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
@@ -158,6 +159,7 @@ export function GegenstandRow({
     setHatMenge(item.hatMenge);
     setMenge(item.menge);
     setIstVorlage(item.istVorlage);
+    setAutomatischImShop(item.automatischImShop);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -178,6 +180,7 @@ export function GegenstandRow({
       hatMenge,
       menge: hatMenge ? menge : 1,
       istVorlage,
+      automatischImShop,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -376,34 +379,45 @@ export function GegenstandRow({
                   eine Vorlage für einen einzigartigen Gegenstand (kann beliebig oft an Personen zugewiesen werden,
                   jede Zuweisung erzeugt eine unabhängige, individualisierbare Kopie)
                 </label>
+                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                  <input
+                    type="checkbox"
+                    checked={automatischImShop}
+                    onChange={(e) => setAutomatischImShop(e.target.checked)}
+                  />{" "}
+                  Automatisch in Shops gleicher Seltenheitsstufe verfügbar (wirkt sich erst aus, sobald es Shops
+                  gibt — noch nicht gebaut)
+                </label>
               </div>
             )}
           </div>
 
-          <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
-            <label style={{ fontSize: "0.85em", color: "#555" }}>
-              Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
-            </label>
-            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-              <select
-                value={besitzerZiel}
-                onChange={(e) => setBesitzerZiel(e.target.value)}
-                style={{ minWidth: 0, maxWidth: "100%" }}
-              >
-                <option value="">Person wählen...</option>
-                {alleOptionen
-                  .filter((p) => p.id !== personId)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
-              <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
-                {besitzerLaeuft ? "..." : "Übertragen"}
-              </button>
+          {!item.istVorlage && (
+            <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+              <label style={{ fontSize: "0.85em", color: "#555" }}>
+                Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
+              </label>
+              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                <select
+                  value={besitzerZiel}
+                  onChange={(e) => setBesitzerZiel(e.target.value)}
+                  style={{ minWidth: 0, maxWidth: "100%" }}
+                >
+                  <option value="">Person wählen...</option>
+                  {alleOptionen
+                    .filter((p) => p.id !== personId)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+                <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
+                  {besitzerLaeuft ? "..." : "Übertragen"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {item.istVorlage && (
             <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>

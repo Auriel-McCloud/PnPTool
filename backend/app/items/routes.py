@@ -70,6 +70,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
             "menge": body.menge,
             "istVorlage": body.istVorlage,
             "seltenheit": body.seltenheit,
+            "automatischImShop": body.automatischImShop,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer or [],
         },

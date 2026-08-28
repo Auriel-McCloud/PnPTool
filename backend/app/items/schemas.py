@@ -37,6 +37,11 @@ class GegenstandCreate(BaseModel):
     # Seltenheit 1 (überall verfügbar) bis 5 (nur Speziallabor/Schwarzmarkt).
     # Wird später für automatische Shop-Bestückung genutzt (noch nicht gebaut).
     seltenheit: int = 1
+    # Soll dieser Gegenstand automatisch im Angebot von Shops (Orten mit
+    # passender Seltenheitsstufe) auftauchen, sobald es Shops gibt? Reines
+    # Datenfeld ohne Logik — die automatische Shop-Bestückung selbst ist noch
+    # nicht gebaut (Phase 5), siehe CLAUDE.md.
+    automatischImShop: bool = False
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -57,6 +62,7 @@ class GegenstandUpdate(BaseModel):
     menge: int | None = None
     istVorlage: bool | None = None
     seltenheit: int | None = None
+    automatischImShop: bool | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -81,6 +87,7 @@ class GegenstandResponse(BaseModel):
     menge: int
     istVorlage: bool
     seltenheit: int
+    automatischImShop: bool
     bildUrl: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
