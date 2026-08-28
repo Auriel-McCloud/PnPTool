@@ -47,9 +47,9 @@ export function ViewAsSwitcher({
         gap: 8,
         marginBottom: 16,
         padding: "8px 12px",
-        borderRadius: 6,
-        border: `1px solid ${aktiv ? "#c48a00" : "var(--border, #ddd)"}`,
-        background: aktiv ? "rgba(255, 196, 0, 0.12)" : "transparent",
+        borderRadius: "var(--radius)",
+        border: `1px solid ${aktiv ? "var(--warn)" : "var(--linie)"}`,
+        background: aktiv ? "rgba(255, 182, 72, 0.1)" : "var(--flaeche)",
       }}
     >
       <label style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
@@ -66,7 +66,7 @@ export function ViewAsSwitcher({
 
       {aktiv && (
         <>
-          <strong style={{ color: "#8a6000" }}>
+          <strong style={{ color: "var(--warn)" }}>
             👁 Vorschau: du siehst nur, was {gewaehlt?.name ?? "dieser Charakter"} sehen darf
           </strong>
           <button type="button" onClick={() => handleChange("")}>

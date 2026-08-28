@@ -9,12 +9,20 @@ const KIND_SHAPE: Record<string, string> = {
   Gegenstand: "star",
 };
 
+// Cytoscape zeichnet auf Canvas und kennt keine CSS-Variablen — diese Werte
+// müssen die Entsprechungen aus index.css (--kind-*) von Hand spiegeln.
+// Beim Ändern dort also auch hier nachziehen.
 const KIND_COLOR: Record<string, string> = {
-  Person: "#3f6fb4",
-  Ort: "#2a8f5a",
-  Event: "#b4703f",
-  Gegenstand: "#8a4fb0",
+  Person: "#4d8bd8",
+  Ort: "#2fa96a",
+  Event: "#d4894b",
+  Gegenstand: "#a865d8",
 };
+
+const FARBE_GEHEIM = "#ff2d95"; // --signal
+const FARBE_LINIE = "#3a3a52"; // --linie-hell, gedämpft für Kanten
+const FARBE_NEON = "#00e5ff"; // --neon, Auswahl
+const FARBE_TEXT_LEISE = "#9a9ab2"; // --text-leise, Kantenbeschriftung
 
 const stylesheet = [
   {
@@ -32,24 +40,27 @@ const stylesheet = [
       width: 56,
       height: 56,
       "border-width": 3,
-      "border-color": (ele: cytoscape.NodeSingular) => (ele.data("sichtbarkeit") === "GM" ? "#a11" : "#ccc"),
+      "border-color": (ele: cytoscape.NodeSingular) =>
+        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
     } as cytoscape.Css.Node,
   },
   {
     selector: "node:selected",
-    style: { "border-width": 5, "border-color": "#ffd23f" } as cytoscape.Css.Node,
+    style: { "border-width": 5, "border-color": FARBE_NEON } as cytoscape.Css.Node,
   },
   {
     selector: "edge",
     style: {
       width: 2,
-      "line-color": (ele: cytoscape.EdgeSingular) => (ele.data("sichtbarkeit") === "GM" ? "#a11" : "#999"),
-      "target-arrow-color": (ele: cytoscape.EdgeSingular) => (ele.data("sichtbarkeit") === "GM" ? "#a11" : "#999"),
+      "line-color": (ele: cytoscape.EdgeSingular) =>
+        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
+      "target-arrow-color": (ele: cytoscape.EdgeSingular) =>
+        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
       "target-arrow-shape": "triangle",
       "curve-style": "bezier",
       label: "data(typ)",
       "font-size": 10,
-      color: "#555",
+      color: FARBE_TEXT_LEISE,
       "text-rotation": "autorotate",
     } as cytoscape.Css.Edge,
   },
@@ -158,7 +169,7 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
       </div>
 
       {error && (
-        <p style={{ color: "crimson", border: "1px solid crimson", padding: 8, borderRadius: 4 }}>
+        <p style={{ color: "var(--signal)", border: "1px solid var(--signal)", padding: 8, borderRadius: 4 }}>
           Fehler beim Laden des Graphen: {error}
         </p>
       )}
@@ -168,16 +179,17 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
         style={{
           width: "100%",
           height: 520,
-          border: "1px solid #ddd",
+          border: "1px solid var(--linie)",
           borderRadius: 6,
           display: isEmpty ? "none" : "block",
           position: "relative",
           overflow: "hidden",
-          // #root hat global text-align:center. Cytoscapes Canvas-Layer sind
-          // position:absolute mit left/right:auto, wodurch der Browser ihre
-          // "static position" wie ein zentriertes Inline-Element berechnet und sie
-          // nach rechts verschiebt (sichtbarer Bug: linke Hälfte leer, Klicks versetzt).
-          // Lokal überschreiben behebt das, ohne die globale Zentrierung zu ändern.
+          // Absicherung, siehe Stolperstein 8 in CLAUDE.md: Cytoscapes
+          // Canvas-Layer sind position:absolute mit left/right:auto und erben
+          // damit text-align — bei "center" rutscht die gesamte Zeichenfläche
+          // zur Seite (linke Hälfte leer, Klicks versetzt). Die Ursache von
+          // damals (#root { text-align: center }) ist mit dem Commlink-Theme
+          // entfallen, das hier bleibt als Schutz falls es wiederkehrt.
           textAlign: "left",
         }}
       />

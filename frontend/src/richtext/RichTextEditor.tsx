@@ -35,11 +35,14 @@ function ToolbarButton({
       onClick={onClick}
       style={{
         fontWeight: active ? "bold" : "normal",
-        background: active ? "#333" : "#f0f0f0",
-        color: active ? "#fff" : "#000",
-        border: "1px solid #ccc",
+        background: active ? "var(--neon-schwach)" : "var(--flaeche)",
+        color: active ? "var(--neon)" : "var(--text-leise)",
+        border: `1px solid ${active ? "var(--neon)" : "var(--linie)"}`,
         borderRadius: 4,
         padding: "4px 8px",
+        // Werkzeugleiste des Editors: viele Knöpfe nebeneinander, hier ist die
+        // globale Touch-Mindesthöhe zu wuchtig.
+        minHeight: 0,
         cursor: "pointer",
       }}
     >
@@ -66,8 +69,8 @@ export function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div style={{ border: "1px solid #ccc", borderRadius: 6 }}>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: 6, borderBottom: "1px solid #eee" }}>
+    <div style={{ border: "1px solid var(--linie)", borderRadius: 6 }}>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: 6, borderBottom: "1px solid var(--linie)" }}>
         <ToolbarButton title="Fett" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
           B
         </ToolbarButton>
@@ -91,7 +94,7 @@ export function RichTextEditor({
         >
           ▦ Tabelle
         </ToolbarButton>
-        <span style={{ borderLeft: "1px solid #ddd", margin: "0 4px" }} />
+        <span style={{ borderLeft: "1px solid var(--linie)", margin: "0 4px" }} />
         <ToolbarButton
           title="Markierten Text vor Spielern verstecken (nur du siehst die Markierung)"
           active={editor.isActive("gmSecret")}

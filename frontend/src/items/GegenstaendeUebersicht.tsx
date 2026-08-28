@@ -94,12 +94,12 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         <input placeholder="Neuer Gegenstand" value={neuName} onChange={(e) => setNeuName(e.target.value)} />
         <button type="submit">Hinzufügen</button>
       </form>
-      {groups.length === 0 && <p style={{ color: "#888" }}>Noch keine Gegenstände in dieser Kampagne.</p>}
+      {groups.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Gegenstände in dieser Kampagne.</p>}
       {groups.map((group) => (
         <section key={group.ownerId ?? VORLAGEN_GRUPPE} style={{ marginBottom: "2rem" }}>
-          <h3 style={{ margin: "0 0 8px", color: "#333" }}>
+          <h3 style={{ margin: "0 0 8px", color: "var(--text)" }}>
             {group.ownerName}
-            {group.ownerPersonType && <span style={{ color: "#888", fontWeight: "normal" }}> ({group.ownerPersonType})</span>}
+            {group.ownerPersonType && <span style={{ color: "var(--text-leise)", fontWeight: "normal" }}> ({group.ownerPersonType})</span>}
           </h3>
           {group.items.map((item) => (
             <GegenstandRow

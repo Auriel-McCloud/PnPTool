@@ -20,7 +20,7 @@ export function VisibilitySelector({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <label style={{ fontSize: "0.85em", color: "#555" }}>{label}</label>
+      <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{label}</label>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <select value={modus} onChange={(e) => onChange(e.target.value as SichtbarkeitModus, sichtbarFuer)}>
           <option value="GM">SL-geheim</option>

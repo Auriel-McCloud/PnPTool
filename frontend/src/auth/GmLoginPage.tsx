@@ -47,7 +47,7 @@ export function GmLoginPage() {
             />
           </label>
         </div>
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
+        {error && <p style={{ color: "var(--signal)" }}>{error}</p>}
         <button type="submit" disabled={submitting}>
           {submitting ? "..." : "Anmelden"}
         </button>

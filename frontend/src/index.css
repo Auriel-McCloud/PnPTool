@@ -1,3 +1,11 @@
+/* ===================================================================
+   Commlink — Cyberpunk-Grundlage
+   Konzept: docs/ui-konzept.md
+   Neon auf Schwarz, Akzente aber bewusst sparsam: grelles Magenta/Cyan
+   flächig ermüdet bei langen Sitzungen am Tablet. Die Neonfarben tragen
+   deshalb Bedeutung (aktiv, geheim, Gefahr) statt Dekoration zu sein.
+   =================================================================== */
+
 *,
 *::before,
 *::after {
@@ -5,113 +13,240 @@
 }
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* --- Flächen, von tief nach hoch ---------------------------------- */
+  --grund: #08080d; /* Seitenhintergrund, fast schwarz */
+  --flaeche: #101018; /* Karten, Panels */
+  --flaeche-hoch: #171722; /* Fenster, hervorgehobene Karten */
+  --flaeche-aktiv: #1e1e2c; /* Hover, ausgewählt */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* --- Linien -------------------------------------------------------- */
+  --linie: #26263a; /* normale Trennlinie/Rahmen */
+  --linie-hell: #363650; /* betonter Rahmen */
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
+  /* --- Text ---------------------------------------------------------- */
+  --text: #e8e8f0;
+  --text-leise: #8a8aa0; /* Beschriftungen, Nebeninfo */
+  --text-aus: #5a5a70; /* deaktiviert */
+
+  /* --- Neon: sparsam einsetzen --------------------------------------- */
+  --neon: #00e5ff; /* Cyan — aktiv, Fokus, Primäraktion */
+  --neon-schwach: rgba(0, 229, 255, 0.14);
+  --signal: #ff2d95; /* Magenta — SL-geheim, Warnung, Löschen */
+  --signal-schwach: rgba(255, 45, 149, 0.14);
+  --gut: #3ddc84; /* Bestätigung */
+  --warn: #ffb648; /* Achtung, Vorschau-Modus */
+
+  /* --- Entitätsfarben (Graph + Badges halten sich daran) ------------- */
+  --kind-person: #4d8bd8;
+  --kind-ort: #2fa96a;
+  --kind-event: #d4894b;
+  --kind-gegenstand: #a865d8;
+
+  /* --- Maße ---------------------------------------------------------- */
+  --radius: 4px;
+  --menue-breite: 232px;
+  --leiste-hoehe: 52px;
+  /* Touch-Mindestgröße: das Tablet ist Zielgerät, nicht die Maus. */
+  --tipp: 44px;
+
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  font: 16px/1.5 var(--sans);
   color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  background: var(--grund);
+  color-scheme: dark;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  /* Verhindert, dass iOS/Android beim Antippen grau aufblitzen */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
+  min-height: 100svh;
+  background: var(--grund);
+  /* Sehr dezenter Schimmer, damit Schwarz nicht tot wirkt */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0, 229, 255, 0.05), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255, 45, 149, 0.04), transparent);
+  background-attachment: fixed;
 }
 
+/* #root war im Vite-Starter zentriert und breitenbegrenzt. Das ist für ein
+   App-Layout falsch — und war überdies die Ursache des Cytoscape-Versatzes
+   (Stolperstein 8 in CLAUDE.md): absolut positionierte Canvas-Layer erben
+   text-align und rutschen dadurch zur Seite. */
+#root {
+  min-height: 100svh;
+}
+
+/* --- Typografie ------------------------------------------------------ */
+
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  margin: 0 0 12px;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
 }
+
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+  font-size: 17px;
 }
+
+h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-leise);
+}
+
 p {
-  margin: 0;
+  margin: 0 0 8px;
+}
+
+a {
+  color: var(--neon);
 }
 
 code,
-.counter {
+.mono {
   font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  font-size: 0.92em;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* --- Formularelemente ------------------------------------------------
+   Zentral gesetzt, damit die bestehenden Ansichten ohne Einzelumbau
+   mitziehen. Touch-Größe eingerechnet.                                  */
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  min-height: var(--tipp);
+  max-width: 100%;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 12px var(--neon-schwach);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-aus);
+}
+
+button {
+  cursor: pointer;
+  background: var(--flaeche-hoch);
+  border-color: var(--linie-hell);
+  letter-spacing: 0.04em;
+  /* Buttons stehen oft dicht an dicht; etwas Luft ohne Layout-Umbau */
+  padding-inline: 14px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--flaeche-aktiv);
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  color: var(--text-aus);
+  cursor: not-allowed;
+}
+
+/* Checkbox/Radio behalten Systemgröße, sonst werden Labels unlesbar */
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  accent-color: var(--neon);
+  vertical-align: middle;
+}
+
+label {
+  color: var(--text-leise);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--linie);
+  margin: 16px 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid var(--linie);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+/* --- Bildlaufleisten -------------------------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--linie-hell) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--linie-hell);
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--neon);
+}
+
+/* --- Bewegung ---------------------------------------------------------
+   Alle Effekte respektieren die Systemeinstellung. Das gilt besonders für
+   das Neonflackern: für lichtempfindliche Menschen ist Geflacker nicht
+   Atmosphäre, sondern ein Problem.                                       */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -87,7 +87,7 @@ function EigenschaftenEditor({ pairs, onChange }: { pairs: Eigenschaft[]; onChan
   }
   return (
     <div>
-      <label style={{ fontSize: "0.85em", color: "#555" }}>
+      <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
         Zusatzeigenschaften (z.B. Munition, Schaden, Preis, Level — frei benennbar)
       </label>
       {pairs.map((p, i) => (
@@ -234,7 +234,7 @@ export function GegenstandRow({
   }
 
   return (
-    <div style={{ borderBottom: "1px solid #eee", padding: "6px 0" }}>
+    <div style={{ borderBottom: "1px solid var(--linie)", padding: "6px 0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {item.bildUrl && (
@@ -242,7 +242,7 @@ export function GegenstandRow({
           )}
           {item.name}
           {item.hatMenge && <strong>×{item.menge}</strong>}
-          <span style={{ fontSize: "0.75em", color: "#888" }}>
+          <span style={{ fontSize: "0.75em", color: "var(--text-leise)" }}>
             [{item.typ}
             {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
             {item.istVorlage && " · Vorlage"}
@@ -262,7 +262,7 @@ export function GegenstandRow({
           style={{
             marginTop: 8,
             paddingLeft: 10,
-            borderLeft: "2px solid #eee",
+            borderLeft: "2px solid var(--linie)",
             display: "flex",
             flexDirection: "column",
             gap: 10,
@@ -271,7 +271,7 @@ export function GegenstandRow({
           }}
         >
           {item.istVorlage && (
-            <p style={{ fontSize: "0.85em", color: "#888", fontStyle: "italic", margin: 0 }}>
+            <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: 0 }}>
               📋 Vorlage — hat keinen Besitzer
             </p>
           )}
@@ -285,7 +285,7 @@ export function GegenstandRow({
                 </option>
               ))}
             </select>
-            <label style={{ fontSize: "0.85em", color: "#555" }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
               Preis (¥){" "}
               <input
                 type="number"
@@ -295,7 +295,7 @@ export function GegenstandRow({
                 style={{ width: 90 }}
               />
             </label>
-            <label style={{ fontSize: "0.85em", color: "#555", display: "flex", alignItems: "center", gap: 6 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 6 }}>
               Seltenheit
               <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
             </label>
@@ -303,7 +303,7 @@ export function GegenstandRow({
 
           {KRAFT_TYPEN.has(typ) && (
             <div>
-              <label style={{ fontSize: "0.85em", color: "#555" }}>{kraftLabel(typ)}</label>
+              <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
               <div>
                 <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
               </div>
@@ -311,7 +311,7 @@ export function GegenstandRow({
           )}
 
           <div>
-            <label style={{ fontSize: "0.85em", color: "#555" }}>Bild</label>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Bild</label>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
               <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
@@ -325,11 +325,11 @@ export function GegenstandRow({
           </div>
 
           <div>
-            <label style={{ fontSize: "0.85em", color: "#555" }}>Beschreibung</label>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
             <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
           </div>
           <div>
-            <label style={{ fontSize: "0.85em", color: "#555" }}>Notizen</label>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
             <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
           </div>
 
@@ -346,7 +346,7 @@ export function GegenstandRow({
             pcOptions={pcOptions}
           />
 
-          <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
             <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
               ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
             </button>
@@ -389,8 +389,8 @@ export function GegenstandRow({
           </div>
 
           {!item.istVorlage && (
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
-              <label style={{ fontSize: "0.85em", color: "#555" }}>
+            <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+              <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
                 Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
               </label>
               <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
@@ -426,8 +426,8 @@ export function GegenstandRow({
               // die Zuweisen-Aktion wirkt ja auf den gespeicherten Gegenstand.
               const keineKopie = item.einzigartig || item.zeigeInGraph;
               return (
-                <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
-                  <label style={{ fontSize: "0.85em", color: "#555" }}>
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
                     {keineKopie
                       ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst — einzigartig/MacGuffin, keine Kopie möglich)"
                       : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
@@ -530,9 +530,9 @@ export function CharacterSheetPanel({
   const grouped = groupByCategory(merged);
 
   return (
-    <div style={{ padding: 16, background: "#fff", border: "1px solid #ddd", borderRadius: 8, marginTop: 8 }}>
+    <div style={{ padding: 16, background: "var(--flaeche-hoch)", border: "1px solid var(--linie)", borderRadius: 8, marginTop: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <h3 style={{ margin: 0, fontSize: "1em", color: "#333" }}>Werte</h3>
+        <h3 style={{ margin: 0, fontSize: "1em", color: "var(--text)" }}>Werte</h3>
         <button type="button" onClick={() => setShowTraitOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
           ⚙ {showTraitOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
         </button>
@@ -540,7 +540,7 @@ export function CharacterSheetPanel({
 
       {grouped.map(([category, traits]) => (
         <div key={category} style={{ marginBottom: 16 }}>
-          <h4 style={{ margin: "0 0 8px", color: "#555" }}>{CATEGORY_LABELS[category] ?? category}</h4>
+          <h4 style={{ margin: "0 0 8px", color: "var(--text-leise)" }}>{CATEGORY_LABELS[category] ?? category}</h4>
           {traits.map((t) => (
             <div
               key={t.traitDefId}
@@ -583,7 +583,7 @@ export function CharacterSheetPanel({
       ))}
 
       <div>
-        <h4 style={{ margin: "0 0 8px", color: "#555" }}>Gegenstände</h4>
+        <h4 style={{ margin: "0 0 8px", color: "var(--text-leise)" }}>Gegenstände</h4>
         {items.map((item) => (
           <GegenstandRow
             key={item.id}

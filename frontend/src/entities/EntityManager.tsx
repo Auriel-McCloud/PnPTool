@@ -10,15 +10,15 @@ import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
 import { getGraph } from "../graph/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
-const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid #ddd" };
+const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid var(--linie)" };
 const formStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 12,
   marginTop: 12,
   padding: 16,
-  background: "#fafafa",
-  border: "1px solid #eee",
+  background: "var(--flaeche)",
+  border: "1px solid var(--linie)",
   borderRadius: 8,
   maxWidth: 640,
 };
@@ -83,7 +83,7 @@ function RichContentFields({
   return (
     <>
       <div>
-        <label style={{ fontSize: "0.85em", color: "#555" }}>Beschreibung</label>
+        <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
         <RichTextEditor content={state.descriptionDoc} onChange={state.setDescriptionDoc} />
       </div>
       <VisibilitySelector
@@ -97,7 +97,7 @@ function RichContentFields({
         pcOptions={pcOptions}
       />
       <div>
-        <label style={{ fontSize: "0.85em", color: "#555" }}>Notizen</label>
+        <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
         <RichTextEditor content={state.notesDoc} onChange={state.setNotesDoc} minHeight={70} />
       </div>
       <VisibilitySelector
@@ -235,7 +235,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         <h2>Personen</h2>
         {personen.map((p) => (
           <div key={p.id} style={listItemStyle}>
-            <strong>{p.name}</strong> <span style={{ color: "#888" }}>({p.personType})</span>
+            <strong>{p.name}</strong> <span style={{ color: "var(--text-leise)" }}>({p.personType})</span>
             <div style={{ margin: "4px 0" }}>
               <RichTextView content={parseRichText(p.description)} />
             </div>
@@ -301,7 +301,7 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         <h2>Events</h2>
         {events.map((ev) => (
           <div key={ev.id} style={listItemStyle}>
-            <strong>{ev.title}</strong> {ev.timestamp && <span style={{ color: "#888" }}>({ev.timestamp})</span>}
+            <strong>{ev.title}</strong> {ev.timestamp && <span style={{ color: "var(--text-leise)" }}>({ev.timestamp})</span>}
             <div style={{ margin: "4px 0" }}>
               <RichTextView content={parseRichText(ev.description)} />
             </div>

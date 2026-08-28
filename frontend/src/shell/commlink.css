@@ -1,0 +1,302 @@
+/* ===================================================================
+   Commlink-Hülle: Bereichsmenü links, Werkzeugleiste oben.
+   Konzept: docs/ui-konzept.md
+   Tablet ist Zielgerät — Touch-Größen und Wischgesten vor Mausdetails.
+   =================================================================== */
+
+.cl-shell {
+  display: flex;
+  min-height: 100svh;
+}
+
+/* --- Bereichsmenü ---------------------------------------------------- */
+
+.cl-menue {
+  width: var(--menue-breite);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--flaeche);
+  border-right: 1px solid var(--linie);
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow-y: auto;
+}
+
+.cl-marke {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.cl-marke-name {
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon);
+  text-shadow: 0 0 14px var(--neon-schwach);
+}
+
+.cl-marke-zeile {
+  font-size: 11px;
+  color: var(--text-aus);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.cl-bereiche {
+  padding: 10px 0;
+  flex: 1;
+}
+
+.cl-gruppe {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  padding: 14px 18px 6px;
+}
+
+.cl-bereich {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--tipp);
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-leise);
+  text-align: left;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.cl-bereich:hover:not(:disabled) {
+  background: var(--flaeche-aktiv);
+  color: var(--text);
+  border-left-color: var(--linie-hell);
+}
+
+.cl-bereich[aria-current="page"] {
+  color: var(--neon);
+  background: var(--neon-schwach);
+  border-left-color: var(--neon);
+}
+
+.cl-bereich:disabled {
+  color: var(--text-aus);
+  cursor: default;
+}
+
+.cl-bereich-symbol {
+  width: 20px;
+  text-align: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.cl-bereich-bald {
+  margin-left: auto;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+
+.cl-menue-fuss {
+  padding: 12px 18px;
+  border-top: 1px solid var(--linie);
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+/* --- Hauptspalte ------------------------------------------------------ */
+
+.cl-haupt {
+  flex: 1;
+  min-width: 0; /* sonst sprengt breiter Inhalt das Flex-Layout */
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-leiste {
+  min-height: var(--leiste-hoehe);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(16, 16, 24, 0.86);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--linie);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.cl-leiste-titel {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cl-leiste-werkzeuge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Werkzeugsymbole oben rechts: SL-Popups, Tooltip-Schalter, ... */
+.cl-werkzeug {
+  min-height: var(--tipp);
+  min-width: var(--tipp);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-inline: 10px;
+  font-size: 15px;
+}
+
+.cl-werkzeug[aria-pressed="true"] {
+  color: var(--neon);
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+.cl-inhalt {
+  flex: 1;
+  padding: 20px 16px 64px;
+  min-width: 0;
+}
+
+/* --- Menüschalter (nur schmal sichtbar) ------------------------------- */
+
+.cl-menue-schalter {
+  display: none;
+  min-height: var(--tipp);
+  min-width: var(--tipp);
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.cl-abdunkelung {
+  display: none;
+}
+
+/* --- Schmale Geräte ---------------------------------------------------
+   Unter 900px wird aus dem Menü eine überlagernde Schublade. Der Wert
+   liegt bewusst so hoch, dass auch Tablets im Hochformat davon
+   profitieren — dort ist Inhaltsbreite kostbarer als Dauersichtbarkeit. */
+
+@media (max-width: 900px) {
+  .cl-menue-schalter {
+    display: inline-flex;
+  }
+
+  .cl-menue {
+    position: fixed;
+    z-index: 40;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .cl-menue[data-offen="true"] {
+    transform: translateX(0);
+  }
+
+  .cl-abdunkelung[data-offen="true"] {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+  }
+
+  .cl-inhalt {
+    padding: 16px 12px 64px;
+  }
+}
+
+/* --- Wechsel zwischen Bereichen ---------------------------------------
+   Kein Seitenwechsel-Gefühl, sondern ein kurzes Aufblenden wie bei einem
+   Gerät, das die Anzeige neu aufbaut.                                    */
+
+.cl-ansicht {
+  animation: cl-ansicht-an 0.2s ease;
+}
+
+@keyframes cl-ansicht-an {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Neonflackern -----------------------------------------------------
+   Liegt als nicht klickbare Schicht über allem und blitzt selten kurz auf
+   (Steuerung in CommlinkShell.tsx). Kein Dauereffekt: Atmosphäre lebt
+   davon, dass sie überrascht.                                            */
+
+.cl-stoerung {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.cl-stoerung[data-aktiv="true"] {
+  animation: cl-flackern 0.45s steps(2, end);
+}
+
+@keyframes cl-flackern {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+    background: rgba(0, 229, 255, 0.05);
+    box-shadow: inset 0 0 120px rgba(0, 229, 255, 0.18);
+  }
+  22% {
+    opacity: 0;
+  }
+  34% {
+    opacity: 0.42;
+    background: rgba(255, 45, 149, 0.05);
+    box-shadow: inset 0 0 90px rgba(255, 45, 149, 0.16);
+  }
+  48% {
+    opacity: 0.06;
+  }
+  62% {
+    opacity: 0.34;
+    background: rgba(232, 232, 240, 0.045);
+  }
+  100% {
+    opacity: 0;
+  }
+}
