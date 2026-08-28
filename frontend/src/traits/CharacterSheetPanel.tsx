@@ -247,6 +247,8 @@ export function GegenstandRow({
             display: "flex",
             flexDirection: "column",
             gap: 10,
+            minWidth: 0,
+            maxWidth: "100%",
           }}
         >
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
@@ -326,16 +328,16 @@ export function GegenstandRow({
             </button>
             {showOptions && (
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-                <label style={{ fontSize: "0.9em" }}>
+                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                   <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
                   Im Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
                 </label>
-                <label style={{ fontSize: "0.9em" }}>
+                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                   <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
                   Einzigartig (genau ein Exemplar in der Welt, z.B. das Amulett)
                 </label>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <label style={{ fontSize: "0.9em" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
                     <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
                     verfolgen (z.B. Munition — unabhängig von "Einzigartig": ein Seil ist z.B. nicht einzigartig, aber
                     trotzdem zählt niemand die Stückzahl)
@@ -346,7 +348,7 @@ export function GegenstandRow({
                       min={0}
                       value={menge}
                       onChange={(e) => setMenge(Number(e.target.value))}
-                      style={{ width: 70 }}
+                      style={{ width: 70, flex: "0 0 auto" }}
                     />
                   )}
                 </div>
@@ -355,7 +357,7 @@ export function GegenstandRow({
                     Jede besitzende Person führt ihre eigene Menge — kein geteilter Vorrat über mehrere Personen hinweg.
                   </p>
                 )}
-                <label style={{ fontSize: "0.9em" }}>
+                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                   <input type="checkbox" checked={istVorlage} onChange={(e) => setIstVorlage(e.target.checked)} /> Ist
                   eine Vorlage für einen einzigartigen Gegenstand (kann beliebig oft an Personen zugewiesen werden,
                   jede Zuweisung erzeugt eine unabhängige, individualisierbare Kopie)
@@ -367,8 +369,8 @@ export function GegenstandRow({
           {item.istVorlage && (
             <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
               <label style={{ fontSize: "0.85em", color: "#555" }}>Diesem Gegenstand zuweisen (erstellt eine Kopie)</label>
-              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <select value={zuweisenZiel} onChange={(e) => setZuweisenZiel(e.target.value)}>
+              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                <select value={zuweisenZiel} onChange={(e) => setZuweisenZiel(e.target.value)} style={{ minWidth: 0, maxWidth: "100%" }}>
                   <option value="">Person wählen...</option>
                   {alleOptionen.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -474,10 +476,17 @@ export function CharacterSheetPanel({
           {traits.map((t) => (
             <div
               key={t.traitDefId}
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "4px 0",
+                flexWrap: "wrap",
+                gap: 4,
+              }}
             >
               <span style={{ minWidth: 160 }}>{t.name}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
                 <DotPool value={t.rating} max={t.max} onChange={(v) => setRating(t, v)} />
                 {showTraitOptions && (
                   <span style={{ display: "flex", gap: 2 }}>
