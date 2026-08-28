@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:8000";
+// Relative URL: läuft über den Vite-Dev-Proxy (siehe vite.config.ts), damit Backend-Traffic
+// über denselben Port wie das Frontend läuft (wichtig für LAN-Zugriff, z.B. vom Handy,
+// wo Port 8000 durch die Windows-Firewall blockiert ist, Port 5173 aber nicht).
+const API_BASE = "";
 
 export class ApiError extends Error {
   status: number;

@@ -84,7 +84,21 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
 
     cyRef.current = cy;
 
+    // Falls der Container beim cytoscape()-Aufruf noch nicht final gelayoutet ist
+    // (z.B. direkt nach Tab-Wechsel oder auf schmalen/mobilen Viewports), kann die
+    // interne Erstmessung zu klein/falsch ausfallen und bleibt es auch (Canvas nur
+    // "halb" befüllt, Klick-Koordinaten verschoben). Doppeltes rAF erzwingt eine
+    // Nachmessung, nachdem der Browser das Layout tatsächlich committed hat.
+    const forceResize = () => {
+      cy.resize();
+      cy.fit(undefined, 30);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(forceResize));
+
+    window.addEventListener("resize", forceResize);
+
     return () => {
+      window.removeEventListener("resize", forceResize);
       cy.destroy();
       cyRef.current = null;
     };
@@ -155,6 +169,14 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
           border: "1px solid #ddd",
           borderRadius: 6,
           display: isEmpty ? "none" : "block",
+          position: "relative",
+          overflow: "hidden",
+          // #root hat global text-align:center. Cytoscapes Canvas-Layer sind
+          // position:absolute mit left/right:auto, wodurch der Browser ihre
+          // "static position" wie ein zentriertes Inline-Element berechnet und sie
+          // nach rechts verschiebt (sichtbarer Bug: linke Hälfte leer, Klicks versetzt).
+          // Lokal überschreiben behebt das, ohne die globale Zentrierung zu ändern.
+          textAlign: "left",
         }}
       />
     </div>
