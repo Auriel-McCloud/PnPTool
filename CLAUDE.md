@@ -51,7 +51,7 @@ C:\DEV\PnPTool\
         └── App.tsx               (Tab-Umschalter Liste/Beziehungsgraph/Gegenstände)
 ```
 
-**Kein git-Repo bisher.** Für paralleles Arbeiten von mehreren Geräten wäre ein Git-Remote (GitHub o.ä.) sinnvoll — noch nicht eingerichtet, auf Wunsch nachholen.
+**Git ist eingerichtet.** Remote `origin` = `https://github.com/Auriel-McCloud/PnPTool.git`, Arbeitsbranch `main` (es wird direkt auf `main` committet, keine Feature-Branches). Commit-Messages auf Deutsch, eine Zeile, beschreiben das fachliche Ergebnis statt der Dateien (z.B. "Vorlagen sind jetzt besitzerlos statt einer Person zugeordnet"). Ignoriert sind `.env`, `backend/.venv/`, `backend/uploads/`, `frontend/node_modules/`, `frontend/dist/` und `__pycache__`. Da Mark abwechselnd vom PC und vom Handy aus arbeitet: zu Session-Beginn `git log --oneline -5` + `git status` prüfen, am Ende committen und pushen, damit das jeweils andere Gerät den Stand hat.
 
 ## Wie man lokal startet
 
@@ -239,11 +239,14 @@ Mark hat beim Testen der Übersicht mehrere zusammenhängende Bedürfnisse skizz
 
 ## Nächste Schritte
 
-1. Nutzer bestätigt den UI-Polish-Durchgang im Browser (Rich-Text-Editor, SL-geheim-Markierung, Sichtbarkeits-Auswahl, Tabellen) — noch nicht visuell bestätigt, nur backend-seitig und per Build durchgetestet
-2. Danach: Phase 3 (Spieler-Charakterbogen) — dabei `TraitDef`-Katalog gleich pro `ruleset` scopen, nicht global
-3. Vor Phase 4: die Sichtbarkeits-Filterung tatsächlich in eine Spieler-Route einbauen (Funktionen sind fertig, siehe oben)
+*(Stand 28.08.2026, nach Runde 10 — der UI-Polish-Durchgang und die Gegenstands-Runden sind durch, Mark hat sie im Browser benutzt und laufend Feedback gegeben.)*
 
-**Server-Status:** Backend läuft auf `0.0.0.0:8000` (ohne `--reload`, siehe Stolperstein #2), Frontend mit `npm run dev` (hat `host:true` fest in `vite.config.ts`, kein `--host`-Flag mehr nötig) auf Port 5173. Neo4j läuft durchgehend in Docker. Falls nach einem Reboot/Neustart nichts erreichbar ist: siehe "Wie man lokal startet" oben.
+1. **Spieler-Sicht scharf schalten** — die Filterfunktionen in `entities/visibility.py` (inkl. `redact_rich_text`) und ihre Gegenstücke in `items/` sind fertig geschrieben und unit-getestet, werden aber von **keiner** Route aufgerufen: es gibt bislang nur GM-Routen, niemand übergibt je `viewer_role="PLAYER"`. Das ist damit ungenutzter, im Echtbetrieb unerprobter Code und gleichzeitig der Blocker für Phase 4. Backend-lastig, gut per curl testbar (auch vom Handy aus machbar).
+2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete), Cyber-/Bio-Ware-Slots, Waffen-/Rüstungswerte am Charakter (statt nur generischer Gegenstände), Companion-/Drohnen-Bögen (`HAS_TRAIT` ist dafür schon generisch genug), Würfeln.
+3. **Offene Design-Runden** (jeweils eigener Durchgang, Datenmodell noch komplett offen — Details in den Abschnitten oben): Party/Gruppen-Konzept + Suche/Filter für die Gegenstände-Übersicht · EP-System + die drei Charakterbogen-Modi (Erstellung/Spiel/Level-Up) · typspezifische Gegenstandsfelder (Cyberware→WVerlust, Drogen→Wirkung/Dauer) + Upgrade-/Verbesserungs-System · die große Menüführungs-Vision mit Gegenstands-Popups.
+4. **Kleinere bekannte Schulden** — verwaiste Bilddateien nach "Bild entfernen" (nur die `bildUrl` wird gelöscht, die Datei bleibt liegen) · der Breite-Bug im Optionen-Block (bewusst vertagt bis zum Popup-Umbau, siehe oben) · der Graph zeigt `SPEZIFISCH` optisch wie `ALLE`.
+
+**Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8000` (bewusst nur localhost, siehe LAN-Abschnitt unten; ohne `--reload`, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, lauscht dank `host:true` in `vite.config.ts` auf allen Interfaces (kein `--host`-Flag mehr nötig). Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
 
 ## Zugriff vom Handy / LAN (eingerichtet, für Tests unterwegs)
 
