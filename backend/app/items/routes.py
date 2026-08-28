@@ -144,10 +144,16 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zielperson nicht gefunden")
 
     sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
-    copy = await repository.assign_copy(campaign_id, source, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
-    if copy is None:
+
+    if source["einzigartig"] or source["zeigeInGraph"]:
+        # Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt werden —
+        # hier wird der Gegenstand selbst übergeben (verschoben), keine Kopie.
+        result = await repository.assign_owner(campaign_id, item_id, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
+    else:
+        result = await repository.assign_copy(campaign_id, source, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
+    if result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zuweisen fehlgeschlagen")
-    return copy
+    return result
 
 
 @campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse)

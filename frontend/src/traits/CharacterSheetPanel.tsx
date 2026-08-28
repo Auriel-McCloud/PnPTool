@@ -416,24 +416,42 @@ export function GegenstandRow({
             </div>
           )}
 
-          {item.istVorlage && (
-            <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
-              <label style={{ fontSize: "0.85em", color: "#555" }}>Diesem Gegenstand zuweisen (erstellt eine Kopie)</label>
-              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                <select value={zuweisenZiel} onChange={(e) => setZuweisenZiel(e.target.value)} style={{ minWidth: 0, maxWidth: "100%" }}>
-                  <option value="">Person wählen...</option>
-                  {alleOptionen.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
-                  {zuweisenLaeuft ? "..." : "Kopie erstellen"}
-                </button>
-              </div>
-            </div>
-          )}
+          {item.istVorlage &&
+            (() => {
+              // Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt
+              // werden — Zuweisen übergibt dann den Gegenstand selbst
+              // (verschiebt ihn, wie Besitzer wechseln), statt eine Kopie zu
+              // erzeugen. Das Backend entscheidet dasselbe anhand des
+              // GESPEICHERTEN Stands (item.*, nicht den lokalen Edit-State) —
+              // die Zuweisen-Aktion wirkt ja auf den gespeicherten Gegenstand.
+              const keineKopie = item.einzigartig || item.zeigeInGraph;
+              return (
+                <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "#555" }}>
+                    {keineKopie
+                      ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst — einzigartig/MacGuffin, keine Kopie möglich)"
+                      : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
+                  </label>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                    <select
+                      value={zuweisenZiel}
+                      onChange={(e) => setZuweisenZiel(e.target.value)}
+                      style={{ minWidth: 0, maxWidth: "100%" }}
+                    >
+                      <option value="">Person wählen...</option>
+                      {alleOptionen.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                      {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
           <button type="button" onClick={save} style={{ alignSelf: "flex-start" }}>
             Speichern

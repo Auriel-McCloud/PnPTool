@@ -192,6 +192,38 @@ async def assign_copy(
     return await set_bild_url(campaign_id, copy["id"], source["bildUrl"])
 
 
+async def assign_owner(
+    campaign_id: str, item_id: str, ziel_person_id: str, sichtbarkeit: str, sichtbar_fuer: list[str]
+) -> dict | None:
+    """Gibt einer besitzerlosen Vorlage eine Besitzer:in, OHNE zu kopieren —
+    für einzigartige/MacGuffin-Vorlagen, die nicht vervielfältigt werden
+    dürfen (siehe routes.py::zuweisen, Gegenstück zu assign_copy). Setzt
+    istVorlage=false (Invariante). Kein Effekt, wenn schon ein Besitzer
+    existiert (dafür ist transfer_owner da)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (alt:Person)-[:BESITZT]->(g)
+        WITH g, alt
+        WHERE alt IS NULL
+        MATCH (neu:Person {{id: $ziel_person_id, campaignId: $campaign_id}})
+        SET g.istVorlage = false, g.sichtbarkeit = $sichtbarkeit, g.sichtbarFuer = $sichtbar_fuer
+        CREATE (neu)-[:BESITZT]->(g)
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            item_id=item_id,
+            ziel_person_id=ziel_person_id,
+            sichtbarkeit=sichtbarkeit,
+            sichtbar_fuer=sichtbar_fuer,
+        )
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
 async def get_owner_id(campaign_id: str, item_id: str) -> str | None:
     driver = get_driver()
     query = """
