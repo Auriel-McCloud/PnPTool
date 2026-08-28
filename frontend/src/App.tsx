@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { GmLoginPage } from "./auth/GmLoginPage";
+import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
 import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
@@ -26,6 +27,11 @@ function Dashboard() {
   const { me, logout } = useAuth();
   const { campaigns, loading, createCampaign } = useCampaign();
   const [tab, setTab] = useState<"liste" | "graph" | "gegenstaende">("liste");
+  // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als
+  // React-key der Ansichten: bei einem Wechsel werden sie neu aufgebaut und
+  // laden ihre Daten frisch gefiltert, statt in jeder Komponente einzeln eine
+  // Abhängigkeit nachziehen zu müssen.
+  const [viewAs, setViewAs] = useState<string | null>(null);
 
   return (
     <div style={{ maxWidth: 960, margin: "2rem auto", fontFamily: "sans-serif" }}>
@@ -69,9 +75,13 @@ function Dashboard() {
               Gegenstände
             </button>
           </div>
-          {tab === "liste" && <EntityManager campaignId={campaigns[0].id} />}
-          {tab === "graph" && <CampaignGraphView campaignId={campaigns[0].id} />}
-          {tab === "gegenstaende" && <GegenstaendeUebersicht campaignId={campaigns[0].id} />}
+          <ViewAsSwitcher campaignId={campaigns[0].id} value={viewAs} onChange={setViewAs} />
+
+          {tab === "liste" && <EntityManager key={viewAs ?? "gm"} campaignId={campaigns[0].id} />}
+          {tab === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={campaigns[0].id} />}
+          {tab === "gegenstaende" && (
+            <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={campaigns[0].id} />
+          )}
         </>
       )}
     </div>

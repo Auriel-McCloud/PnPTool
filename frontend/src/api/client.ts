@@ -12,6 +12,27 @@ export class ApiError extends Error {
   }
 }
 
+// SL-Vorschau ("Sehen wie Spieler X"): ist hier eine Person-ID gesetzt, hängt
+// jeder GET automatisch ?alsSpieler= an und bekommt die gefilterte Antwort.
+// Bewusst Modul-Zustand statt Prop-Drilling durch jede Komponente: der Wert
+// wird im Event-Handler synchron gesetzt, also lange bevor ein davon
+// abhängiger Effect feuert — kein Wettlauf mit dem React-Render.
+// Schreibzugriffe bleiben unberührt, die Vorschau ändert nie etwas.
+let viewAsPersonId: string | null = null;
+
+export function setViewAs(personId: string | null) {
+  viewAsPersonId = personId;
+}
+
+export function getViewAs(): string | null {
+  return viewAsPersonId;
+}
+
+function withViewAs(path: string): string {
+  if (!viewAsPersonId) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}alsSpieler=${encodeURIComponent(viewAsPersonId)}`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -35,7 +56,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
+  get: <T>(path: string) => request<T>(withViewAs(path)),
+  // Umgeht die Vorschau bewusst. Nötig für die Charakter-Auswahl des
+  // Umschalters selbst: würde die Personenliste mitgefiltert, verschwände
+  // womöglich genau der Charakter, den man gerade betrachtet, aus dem
+  // Dropdown — und man käme nicht mehr zurück zur SL-Sicht.
+  getAsGm: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
   put: <T>(path: string, body?: unknown) =>

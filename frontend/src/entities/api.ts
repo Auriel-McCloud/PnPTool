@@ -55,6 +55,8 @@ function base(campaignId: string) {
 
 export const entitiesApi = {
   listPersonen: (cid: string) => api.get<Person[]>(`${base(cid)}/personen`),
+  // Ungefiltert, für die Charakter-Auswahl der SL-Vorschau — siehe api.getAsGm.
+  listPersonenAlsGm: (cid: string) => api.getAsGm<Person[]>(`${base(cid)}/personen`),
   createPerson: (cid: string, body: Omit<Person, "id">) => api.post<Person>(`${base(cid)}/personen`, body),
 
   listOrte: (cid: string) => api.get<Ort[]>(`${base(cid)}/orte`),
