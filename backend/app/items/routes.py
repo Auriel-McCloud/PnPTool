@@ -132,6 +132,33 @@ async def zuweisen(campaign_id: str, person_id: str, item_id: str, body: Zuweise
     return copy
 
 
+@router.post("/{item_id}/besitzer", response_model=GegenstandResponse)
+async def besitzer_wechseln(campaign_id: str, person_id: str, item_id: str, body: ZuweisenRequest):
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    ziel = await get_node("Person", PERSON_FIELDS, campaign_id, body.zielPersonId)
+    if ziel is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zielperson nicht gefunden")
+
+    alter_besitzer = await repository.get_owner_id(campaign_id, item_id)
+    updates: dict = {}
+    if item["sichtbarkeit"] == "SPEZIFISCH" and item["sichtbarFuer"] == [alter_besitzer]:
+        # Sichtbarkeit war exklusiv auf den alten Besitzer zugeschnitten (Standardfall
+        # beim Anlegen) — für den neuen Besitzer frisch berechnen. War die Sichtbarkeit
+        # bewusst breiter gewählt (ALLE, GM oder mehrere Spieler), bleibt sie unangetastet.
+        sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
+        updates = {"sichtbarkeit": sichtbarkeit, "sichtbarFuer": sichtbar_fuer}
+
+    moved = await repository.transfer_owner(campaign_id, item_id, body.zielPersonId)
+    if moved is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Übertragung fehlgeschlagen")
+    if updates:
+        moved = await repository.update_gegenstand(campaign_id, item_id, updates)
+    return moved
+
+
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(campaign_id: str, person_id: str, item_id: str):
     if not await repository.delete_gegenstand(campaign_id, item_id):

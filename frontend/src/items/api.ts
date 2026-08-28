@@ -67,6 +67,8 @@ export const itemsApi = {
   remove: (cid: string, personId: string, itemId: string) => api.delete<void>(`${base(cid, personId)}/${itemId}`),
   assign: (cid: string, personId: string, itemId: string, zielPersonId: string) =>
     api.post<Gegenstand>(`${base(cid, personId)}/${itemId}/zuweisen`, { zielPersonId }),
+  changeOwner: (cid: string, personId: string, itemId: string, zielPersonId: string) =>
+    api.post<Gegenstand>(`${base(cid, personId)}/${itemId}/besitzer`, { zielPersonId }),
   uploadBild: async (cid: string, personId: string, itemId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);

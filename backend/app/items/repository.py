@@ -178,6 +178,35 @@ async def assign_copy(
     return await set_bild_url(campaign_id, copy["id"], source["bildUrl"])
 
 
+async def get_owner_id(campaign_id: str, item_id: str) -> str | None:
+    driver = get_driver()
+    query = """
+        MATCH (p:Person)-[:BESITZT]->(g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+        RETURN p.id AS ownerId
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+        record = await result.single()
+        return record["ownerId"] if record else None
+
+
+async def transfer_owner(campaign_id: str, item_id: str, ziel_person_id: str) -> dict | None:
+    """Verschiebt einen bestehenden Gegenstand zu einer anderen Person (kein Kopieren — für
+    Vorlagen-Kopien siehe assign_copy)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (alt:Person)-[r:BESITZT]->(g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        MATCH (neu:Person {{id: $ziel_person_id, campaignId: $campaign_id}})
+        DELETE r
+        CREATE (neu)-[:BESITZT]->(g)
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, ziel_person_id=ziel_person_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
 async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | None:
     driver = get_driver()
     query = f"""

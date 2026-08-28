@@ -143,6 +143,8 @@ export function GegenstandRow({
   const [uploading, setUploading] = useState(false);
   const [zuweisenZiel, setZuweisenZiel] = useState("");
   const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
+  const [besitzerZiel, setBesitzerZiel] = useState("");
+  const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
 
   function openEdit() {
     setName(item.name);
@@ -194,6 +196,18 @@ export function GegenstandRow({
       onChanged();
     } finally {
       setZuweisenLaeuft(false);
+    }
+  }
+
+  async function besitzerWechseln() {
+    if (!besitzerZiel) return;
+    setBesitzerLaeuft(true);
+    try {
+      await itemsApi.changeOwner(campaignId, personId, item.id, besitzerZiel);
+      setBesitzerZiel("");
+      onChanged();
+    } finally {
+      setBesitzerLaeuft(false);
     }
   }
 
@@ -364,6 +378,31 @@ export function GegenstandRow({
                 </label>
               </div>
             )}
+          </div>
+
+          <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "#555" }}>
+              Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
+            </label>
+            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+              <select
+                value={besitzerZiel}
+                onChange={(e) => setBesitzerZiel(e.target.value)}
+                style={{ minWidth: 0, maxWidth: "100%" }}
+              >
+                <option value="">Person wählen...</option>
+                {alleOptionen
+                  .filter((p) => p.id !== personId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
+              <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
+                {besitzerLaeuft ? "..." : "Übertragen"}
+              </button>
+            </div>
           </div>
 
           {item.istVorlage && (

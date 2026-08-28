@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
@@ -28,6 +28,8 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [items, setItems] = useState<GegenstandMitBesitzer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [neuName, setNeuName] = useState("");
+  const [neuBesitzer, setNeuBesitzer] = useState("");
 
   async function refresh() {
     const [p, i] = await Promise.all([entitiesApi.listPersonen(campaignId), itemsApi.listAlle(campaignId)]);
@@ -51,9 +53,29 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     await refresh();
   }
 
+  async function addItem(e: FormEvent) {
+    e.preventDefault();
+    if (!neuName.trim() || !neuBesitzer) return;
+    await itemsApi.create(campaignId, neuBesitzer, { name: neuName });
+    setNeuName("");
+    await refresh();
+  }
+
   return (
     <div>
       <h2>Gegenstände</h2>
+      <form onSubmit={addItem} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "1.5rem" }}>
+        <select value={neuBesitzer} onChange={(e) => setNeuBesitzer(e.target.value)} required>
+          <option value="">Besitzer wählen...</option>
+          {alleOptionen.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <input placeholder="Neuer Gegenstand" value={neuName} onChange={(e) => setNeuName(e.target.value)} />
+        <button type="submit">Hinzufügen</button>
+      </form>
       {groups.length === 0 && <p style={{ color: "#888" }}>Noch keine Gegenstände in dieser Kampagne.</p>}
       {groups.map((group) => (
         <section key={group.ownerId} style={{ marginBottom: "2rem" }}>
