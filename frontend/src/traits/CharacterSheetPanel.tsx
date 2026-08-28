@@ -56,7 +56,13 @@ function visibilityLabel(item: Gegenstand): string {
   return "nur bestimmte Spieler";
 }
 
-const TYP_VORSCHLAEGE = ["Allgemein", "Waffe", "Rüstung", "Droge", "Werkzeug", "MacGuffin"];
+const TYP_OPTIONEN = ["Waffe", "Rüstung", "Cyberware", "Droge", "Verbrauchsgegenstand", "Werkzeug", "Sonstiges"];
+const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
+const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
+
+function kraftLabel(typ: string): string {
+  return typ === "Rüstung" ? "Rüstungsbonus" : "Schadensbonus";
+}
 
 type Eigenschaft = { key: string; value: string };
 
@@ -118,6 +124,8 @@ function GegenstandRow({
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
+  const [preis, setPreis] = useState(item.preis);
+  const [kraft, setKraft] = useState(item.kraft);
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
   const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -129,6 +137,8 @@ function GegenstandRow({
   function openEdit() {
     setName(item.name);
     setTyp(item.typ);
+    setPreis(item.preis);
+    setKraft(item.kraft);
     setEigenschaften(recordToPairs(item.eigenschaften));
     setZeigeInGraph(item.zeigeInGraph);
     setDescriptionDoc(parseRichText(item.description));
@@ -142,6 +152,8 @@ function GegenstandRow({
     await itemsApi.update(campaignId, personId, item.id, {
       name,
       typ,
+      preis,
+      kraft,
       eigenschaften: pairsToRecord(eigenschaften),
       zeigeInGraph,
       description: serializeRichText(descriptionDoc),
@@ -165,6 +177,11 @@ function GegenstandRow({
     }
   }
 
+  async function removeBild() {
+    await itemsApi.update(campaignId, personId, item.id, { bildUrl: "" });
+    onChanged();
+  }
+
   return (
     <div style={{ borderBottom: "1px solid #eee", padding: "6px 0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -174,7 +191,8 @@ function GegenstandRow({
           )}
           {item.name}
           <span style={{ fontSize: "0.75em", color: "#888" }}>
-            [{item.typ}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
+            [{item.typ}
+            {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
           </span>
         </span>
         <span style={{ display: "flex", gap: 6 }}>
@@ -197,15 +215,36 @@ function GegenstandRow({
             gap: 10,
           }}
         >
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-            <input value={typ} onChange={(e) => setTyp(e.target.value)} placeholder="Typ" list="typ-vorschlaege" style={{ width: 140 }} />
+            <select value={typ} onChange={(e) => setTyp(e.target.value)}>
+              {!TYP_OPTIONEN.includes(typ) && <option value={typ}>{typ} (alt)</option>}
+              {TYP_OPTIONEN.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <label style={{ fontSize: "0.85em", color: "#555" }}>
+              Preis (¥){" "}
+              <input
+                type="number"
+                min={0}
+                value={preis}
+                onChange={(e) => setPreis(Number(e.target.value))}
+                style={{ width: 90 }}
+              />
+            </label>
           </div>
-          <datalist id="typ-vorschlaege">
-            {TYP_VORSCHLAEGE.map((t) => (
-              <option key={t} value={t} />
-            ))}
-          </datalist>
+
+          {KRAFT_TYPEN.has(typ) && (
+            <div>
+              <label style={{ fontSize: "0.85em", color: "#555" }}>{kraftLabel(typ)}</label>
+              <div>
+                <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
+              </div>
+            </div>
+          )}
 
           <div>
             <label style={{ fontSize: "0.85em", color: "#555" }}>Bild</label>
@@ -213,6 +252,11 @@ function GegenstandRow({
               {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
               <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
               {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
+              {item.bildUrl && (
+                <button type="button" onClick={removeBild}>
+                  Bild entfernen
+                </button>
+              )}
             </div>
           </div>
 

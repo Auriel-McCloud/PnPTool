@@ -5,12 +5,16 @@ from app.db.neo4j_driver import get_driver
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
-    g.typ AS typ, g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
+    g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
+    g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
 """
 
 
 def _decode(record: dict) -> dict:
+    # Bei jeder neuen Property IMMER hier einen Fallback ergänzen — ein
+    # fehlender Fallback für ein Pflichtfeld in GegenstandResponse lässt sonst
+    # die komplette Liste mit 500 abstürzen, siehe Stolperstein #9 in CLAUDE.md.
     record = dict(record)
     try:
         record["eigenschaften"] = json.loads(record["eigenschaften"]) if record["eigenschaften"] else {}
@@ -18,7 +22,9 @@ def _decode(record: dict) -> dict:
         record["eigenschaften"] = {}
     record["zeigeInGraph"] = bool(record.get("zeigeInGraph"))
     record["bildUrl"] = record.get("bildUrl") or ""
-    record["typ"] = record.get("typ") or "Allgemein"
+    record["typ"] = record.get("typ") or "Sonstiges"
+    record["preis"] = record.get("preis") or 0
+    record["kraft"] = record.get("kraft") or 0
     return record
 
 
@@ -29,7 +35,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
         MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})
         CREATE (g:Gegenstand {{
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
-            typ: $typ, eigenschaften: $eigenschaften, zeigeInGraph: $zeigeInGraph, bildUrl: '',
+            typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
+            zeigeInGraph: $zeigeInGraph, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }})
         CREATE (p)-[:BESITZT]->(g)
@@ -45,6 +52,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             description=data["description"],
             notes=data["notes"],
             typ=data["typ"],
+            preis=data["preis"],
+            kraft=data["kraft"],
             eigenschaften=json.dumps(data["eigenschaften"]),
             zeigeInGraph=data["zeigeInGraph"],
             sichtbarkeit=data["sichtbarkeit"],

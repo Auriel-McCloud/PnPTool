@@ -7,6 +7,8 @@ export interface Gegenstand {
   description: string;
   notes: string;
   typ: string;
+  preis: number;
+  kraft: number;
   eigenschaften: Record<string, string>;
   zeigeInGraph: boolean;
   bildUrl: string;
@@ -23,8 +25,11 @@ export interface GegenstandUpdate {
   description?: string;
   notes?: string;
   typ?: string;
+  preis?: number;
+  kraft?: number;
   eigenschaften?: Record<string, string>;
   zeigeInGraph?: boolean;
+  bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];
 }
