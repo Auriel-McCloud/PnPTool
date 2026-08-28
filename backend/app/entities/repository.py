@@ -126,7 +126,14 @@ async def list_verbindungen(campaign_id: str) -> list[dict]:
         RETURN r.id AS id, labels(a)[0] AS vonKind, a.id AS vonId,
                labels(b)[0] AS zuKind, b.id AS zuId,
                r.typ AS typ, r.beschreibung AS beschreibung,
-               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer
+               r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer,
+               // Sichtbarkeit der beiden Endpunkte: eine für sich sichtbare
+               // Verbindung darf trotzdem nicht ausgeliefert werden, wenn sie
+               // an einer verborgenen Entität hängt — sonst verrät sie deren
+               // Existenz. Wird in visibility.py ausgewertet und ist in
+               // VerbindungResponse nicht enthalten, geht also nicht raus.
+               a.sichtbarkeit AS vonSichtbarkeit, a.sichtbarFuer AS vonSichtbarFuer,
+               b.sichtbarkeit AS zuSichtbarkeit, b.sichtbarFuer AS zuSichtbarFuer
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)

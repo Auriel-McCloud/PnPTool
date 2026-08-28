@@ -9,7 +9,7 @@ async def get_all_nodes(campaign_id: str) -> list[dict]:
           AND (n:Person OR n:Ort OR n:Event OR (n:Gegenstand AND n.zeigeInGraph = true))
         RETURN n.id AS id, labels(n)[0] AS kind,
                coalesce(n.name, n.title) AS label,
-               n.sichtbarkeit AS sichtbarkeit
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
@@ -22,7 +22,7 @@ async def get_all_edges(campaign_id: str) -> list[dict]:
         MATCH (a)-[r:VERBINDUNG]->(b)
         WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
         RETURN r.id AS id, a.id AS source, b.id AS target,
-               r.typ AS typ, r.sichtbarkeit AS sichtbarkeit
+               r.typ AS typ, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)

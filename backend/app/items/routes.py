@@ -4,8 +4,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from app.auth.dependencies import require_campaign_gm
+from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm
 from app.entities.repository import PERSON_FIELDS, get_node
+from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import repository
 from app.items.schemas import GegenstandCreate, GegenstandMitBesitzer, GegenstandResponse, GegenstandUpdate, ZuweisenRequest
 
@@ -29,8 +30,9 @@ MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
 @campaign_router.get("", response_model=list[GegenstandMitBesitzer])
-async def list_all_items(campaign_id: str):
-    return await repository.list_alle_gegenstaende(campaign_id)
+async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    items = await repository.list_alle_gegenstaende(campaign_id)
+    return filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
 
 
 def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[str]]:
@@ -86,8 +88,9 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
 
 
 @router.get("", response_model=list[GegenstandResponse])
-async def list_items(campaign_id: str, person_id: str):
-    return await repository.list_gegenstaende(campaign_id, person_id)
+async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
+    items = await repository.list_gegenstaende(campaign_id, person_id)
+    return filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
 
 
 @campaign_router.post("", response_model=GegenstandResponse)

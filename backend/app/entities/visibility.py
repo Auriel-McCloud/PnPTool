@@ -1,10 +1,17 @@
 """Server-side visibility filtering for the GM/ALLE/SPEZIFISCH visibility model.
 
-Not yet wired into any route — there is no player-facing route until Phase 4
-(player access). This module exists now so the GM-side UI can already set
-per-entity and per-notes visibility, and so the actual enforcement logic is
-written and testable ahead of time. Filtering must always happen here
-(server-side) and never rely on the client hiding data it already received.
+Wired into the read routes via the `Viewer` dependency (app/auth/dependencies.py).
+Today the only way to get a non-GM viewer is the GM's own "Sehen wie Spieler X"
+preview (`?alsSpieler=<personId>`); the real player login follows in Phase 4 and
+only needs to supply a different `Viewer`, not a different filter path.
+
+Filtering must always happen here (server-side) and never rely on the client
+hiding data it already received.
+
+Defaults are deliberately restrictive: a missing visibility field is treated as
+"GM" (hidden) rather than "ALLE". Legacy nodes predating the visibility model
+therefore stay invisible to players instead of leaking, and a typo in a field
+name fails closed.
 """
 
 import json
@@ -54,7 +61,9 @@ def is_visible_to(modus: str, sichtbar_fuer: list[str], viewer_role: str, viewer
 
 
 def filter_entity_for_viewer(entity: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
-    if not is_visible_to(entity["sichtbarkeit"], entity.get("sichtbarFuer", []), viewer_role, viewer_person_id):
+    if not is_visible_to(
+        entity.get("sichtbarkeit") or "GM", entity.get("sichtbarFuer") or [], viewer_role, viewer_person_id
+    ):
         return None
 
     result = dict(entity)
@@ -62,7 +71,10 @@ def filter_entity_for_viewer(entity: dict, viewer_role: str, viewer_person_id: s
         result["description"] = redact_rich_text(result["description"], viewer_role)
 
     if is_visible_to(
-        entity["notizenSichtbarkeit"], entity.get("notizenSichtbarFuer", []), viewer_role, viewer_person_id
+        entity.get("notizenSichtbarkeit") or "GM",
+        entity.get("notizenSichtbarFuer") or [],
+        viewer_role,
+        viewer_person_id,
     ):
         result["notes"] = redact_rich_text(result.get("notes", ""), viewer_role)
     else:
@@ -75,22 +87,86 @@ def filter_entities_for_viewer(entities: list[dict], viewer_role: str, viewer_pe
     return [e for e in filtered if e is not None]
 
 
+def _is_element_visible(element: dict, viewer_role: str, viewer_person_id: str | None) -> bool:
+    return is_visible_to(
+        element.get("sichtbarkeit") or "GM",
+        element.get("sichtbarFuer") or [],
+        viewer_role,
+        viewer_person_id,
+    )
+
+
 def filter_verbindung_for_viewer(edge: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
-    if not is_visible_to(edge["sichtbarkeit"], edge.get("sichtbarFuer", []), viewer_role, viewer_person_id):
-        return None
-    return edge
+    return edge if _is_element_visible(edge, viewer_role, viewer_person_id) else None
+
+
+def _endpoint_visible(edge: dict, prefix: str, viewer_role: str, viewer_person_id: str | None) -> bool:
+    return is_visible_to(
+        edge.get(f"{prefix}Sichtbarkeit") or "GM",
+        edge.get(f"{prefix}SichtbarFuer") or [],
+        viewer_role,
+        viewer_person_id,
+    )
 
 
 def filter_verbindungen_for_viewer(edges: list[dict], viewer_role: str, viewer_person_id: str | None) -> list[dict]:
-    filtered = (filter_verbindung_for_viewer(e, viewer_role, viewer_person_id) for e in edges)
-    return [e for e in filtered if e is not None]
+    """Filters connections by their own visibility *and* both endpoints'.
+
+    Expects each edge to carry von/zu endpoint visibility (see
+    repository.list_verbindungen). A connection that is itself public but ends
+    at a GM-only NPC still has to go, or it announces that NPC's existence.
+
+    Graph edges do not carry those keys — the graph route filters its edges
+    against its already-filtered node set instead (drop_edges_with_hidden_endpoints).
+    """
+    return [
+        e
+        for e in edges
+        if _is_element_visible(e, viewer_role, viewer_person_id)
+        and _endpoint_visible(e, "von", viewer_role, viewer_person_id)
+        and _endpoint_visible(e, "zu", viewer_role, viewer_person_id)
+    ]
+
+
+def filter_graph_edges_for_viewer(
+    edges: list[dict], visible_node_ids: set[str], viewer_role: str, viewer_person_id: str | None
+) -> list[dict]:
+    """Graph-shaped counterpart: own visibility plus both endpoints surviving.
+
+    `visible_node_ids` must come from an already-filtered node set, so the
+    endpoint check needs no per-edge endpoint metadata here.
+    """
+    return [
+        e
+        for e in edges
+        if _is_element_visible(e, viewer_role, viewer_person_id)
+        and e["source"] in visible_node_ids
+        and e["target"] in visible_node_ids
+    ]
+
+
+def filter_graph_nodes_for_viewer(nodes: list[dict], viewer_role: str, viewer_person_id: str | None) -> list[dict]:
+    """Graph nodes only carry id/kind/label/visibility — no rich text to redact.
+
+    Callers must additionally drop edges whose endpoints disappeared here,
+    otherwise a hidden node's existence still leaks through its edges.
+    """
+    return [n for n in nodes if _is_element_visible(n, viewer_role, viewer_person_id)]
 
 
 def filter_gegenstand_for_viewer(item: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
-    if not is_visible_to(item["sichtbarkeit"], item.get("sichtbarFuer", []), viewer_role, viewer_person_id):
+    if not _is_element_visible(item, viewer_role, viewer_person_id):
         return None
     result = dict(item)
     result["description"] = redact_rich_text(result.get("description", ""), viewer_role)
+    # Unlike Person/Ort/Event, a Gegenstand has no separate notizenSichtbarkeit:
+    # its notes are purely GM notes and there is no way to release them to a
+    # player. So they are withheld wholesale rather than redacted — redacting
+    # would still hand over every unmarked sentence. If player-visible item
+    # notes are ever wanted, add a notizenSichtbarkeit field like the entities
+    # have instead of loosening this.
+    if viewer_role != "GM":
+        result["notes"] = ""
     return result
 
 
