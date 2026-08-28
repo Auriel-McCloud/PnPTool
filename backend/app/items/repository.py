@@ -7,7 +7,7 @@ RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
     g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
-    g.einzigartig AS einzigartig, g.menge AS menge,
+    g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
 """
 
@@ -35,6 +35,7 @@ def _decode(record: dict) -> dict:
     record["preis"] = record.get("preis") or 0
     record["kraft"] = record.get("kraft") or 0
     record["einzigartig"] = _or_default(record.get("einzigartig"), True)
+    record["hatMenge"] = _or_default(record.get("hatMenge"), False)
     record["menge"] = _or_default(record.get("menge"), 1)
     return record
 
@@ -47,7 +48,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
         CREATE (g:Gegenstand {{
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
-            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, menge: $menge, bildUrl: '',
+            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         }})
         CREATE (p)-[:BESITZT]->(g)
@@ -68,6 +69,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str, data: dict) 
             eigenschaften=json.dumps(data["eigenschaften"]),
             zeigeInGraph=data["zeigeInGraph"],
             einzigartig=data["einzigartig"],
+            hatMenge=data["hatMenge"],
             menge=data["menge"],
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],

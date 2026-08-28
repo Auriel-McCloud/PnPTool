@@ -111,7 +111,6 @@ function GegenstandRow({
   personId,
   item,
   pcOptions,
-  showOptions,
   onChanged,
   onRemoved,
 }: {
@@ -119,11 +118,11 @@ function GegenstandRow({
   personId: string;
   item: Gegenstand;
   pcOptions: PersonOption[];
-  showOptions: boolean;
   onChanged: () => void;
   onRemoved: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
   const [preis, setPreis] = useState(item.preis);
@@ -131,6 +130,7 @@ function GegenstandRow({
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
   const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
   const [einzigartig, setEinzigartig] = useState(item.einzigartig);
+  const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -146,6 +146,7 @@ function GegenstandRow({
     setEigenschaften(recordToPairs(item.eigenschaften));
     setZeigeInGraph(item.zeigeInGraph);
     setEinzigartig(item.einzigartig);
+    setHatMenge(item.hatMenge);
     setMenge(item.menge);
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
@@ -163,7 +164,8 @@ function GegenstandRow({
       eigenschaften: pairsToRecord(eigenschaften),
       zeigeInGraph,
       einzigartig,
-      menge: einzigartig ? 1 : menge,
+      hatMenge,
+      menge: hatMenge ? menge : 1,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -198,7 +200,7 @@ function GegenstandRow({
             <img src={item.bildUrl} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
           )}
           {item.name}
-          {!item.einzigartig && <strong>×{item.menge}</strong>}
+          {item.hatMenge && <strong>×{item.menge}</strong>}
           <span style={{ fontSize: "0.75em", color: "#888" }}>
             [{item.typ}
             {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
@@ -255,35 +257,6 @@ function GegenstandRow({
             </div>
           )}
 
-          {showOptions && (
-            <>
-              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                <label style={{ fontSize: "0.9em" }}>
-                  <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
-                  Einzigartig (genau ein Exemplar in der Welt)
-                </label>
-                {!einzigartig && (
-                  <label style={{ fontSize: "0.85em", color: "#555" }}>
-                    Menge{" "}
-                    <input
-                      type="number"
-                      min={0}
-                      value={menge}
-                      onChange={(e) => setMenge(Number(e.target.value))}
-                      style={{ width: 70 }}
-                    />
-                  </label>
-                )}
-              </div>
-              {!einzigartig && (
-                <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
-                  Nicht-einzigartige Gegenstände (z.B. Munition) haben bei jeder besitzenden Person ihre eigene Menge —
-                  kein geteilter Vorrat.
-                </p>
-              )}
-            </>
-          )}
-
           <div>
             <label style={{ fontSize: "0.85em", color: "#555" }}>Bild</label>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -309,13 +282,6 @@ function GegenstandRow({
 
           <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
 
-          {showOptions && (
-            <label style={{ fontSize: "0.9em" }}>
-              <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} /> Im
-              Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
-            </label>
-          )}
-
           <VisibilitySelector
             label="Sichtbarkeit"
             modus={sichtbarkeit}
@@ -326,6 +292,46 @@ function GegenstandRow({
             }}
             pcOptions={pcOptions}
           />
+
+          <div style={{ borderTop: "1px solid #eee", paddingTop: 8 }}>
+            <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+              ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+            </button>
+            {showOptions && (
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: "0.9em" }}>
+                  <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
+                  Im Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
+                </label>
+                <label style={{ fontSize: "0.9em" }}>
+                  <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
+                  Einzigartig (genau ein Exemplar in der Welt, z.B. das Amulett)
+                </label>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <label style={{ fontSize: "0.9em" }}>
+                    <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
+                    verfolgen (z.B. Munition — unabhängig von "Einzigartig": ein Seil ist z.B. nicht einzigartig, aber
+                    trotzdem zählt niemand die Stückzahl)
+                  </label>
+                  {hatMenge && (
+                    <input
+                      type="number"
+                      min={0}
+                      value={menge}
+                      onChange={(e) => setMenge(Number(e.target.value))}
+                      style={{ width: 70 }}
+                    />
+                  )}
+                </div>
+                {hatMenge && (
+                  <p style={{ fontSize: "0.8em", color: "#888", margin: 0 }}>
+                    Jede besitzende Person führt ihre eigene Menge — kein geteilter Vorrat über mehrere Personen hinweg.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <button type="button" onClick={save} style={{ alignSelf: "flex-start" }}>
             Speichern
           </button>
@@ -350,7 +356,6 @@ export function CharacterSheetPanel({
   const [loading, setLoading] = useState(true);
   const [itemName, setItemName] = useState("");
   const [showTraitOptions, setShowTraitOptions] = useState(false);
-  const [showItemOptions, setShowItemOptions] = useState(false);
 
   async function refresh() {
     const [k, w, i] = await Promise.all([
@@ -448,12 +453,7 @@ export function CharacterSheetPanel({
       ))}
 
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h4 style={{ margin: 0, color: "#555" }}>Gegenstände</h4>
-          <button type="button" onClick={() => setShowItemOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
-            ⚙ {showItemOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
-          </button>
-        </div>
+        <h4 style={{ margin: "0 0 8px", color: "#555" }}>Gegenstände</h4>
         {items.map((item) => (
           <GegenstandRow
             key={item.id}
@@ -461,7 +461,6 @@ export function CharacterSheetPanel({
             personId={person.id}
             item={item}
             pcOptions={pcOptions}
-            showOptions={showItemOptions}
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
           />

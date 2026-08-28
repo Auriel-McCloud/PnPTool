@@ -12,6 +12,7 @@ export interface Gegenstand {
   eigenschaften: Record<string, string>;
   zeigeInGraph: boolean;
   einzigartig: boolean;
+  hatMenge: boolean;
   menge: number;
   bildUrl: string;
   sichtbarkeit: SichtbarkeitModus;
@@ -32,6 +33,7 @@ export interface GegenstandUpdate {
   eigenschaften?: Record<string, string>;
   zeigeInGraph?: boolean;
   einzigartig?: boolean;
+  hatMenge?: boolean;
   menge?: number;
   bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;

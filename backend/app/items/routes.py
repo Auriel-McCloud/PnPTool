@@ -50,6 +50,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
             "eigenschaften": body.eigenschaften,
             "zeigeInGraph": body.zeigeInGraph,
             "einzigartig": body.einzigartig,
+            "hatMenge": body.hatMenge,
             "menge": body.menge,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer or [],
