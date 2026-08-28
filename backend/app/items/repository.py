@@ -18,6 +18,7 @@ def _decode(record: dict) -> dict:
         record["eigenschaften"] = {}
     record["zeigeInGraph"] = bool(record.get("zeigeInGraph"))
     record["bildUrl"] = record.get("bildUrl") or ""
+    record["typ"] = record.get("typ") or "Allgemein"
     return record
 
 
