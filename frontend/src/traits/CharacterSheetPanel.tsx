@@ -69,6 +69,8 @@ const TYP_OPTIONEN = [
   "Fahrzeug",
   "Behälter",
   "Commlink",
+  "Cyberdeck",
+  "Riggerkonsole",
   "Sonstiges",
 ];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);

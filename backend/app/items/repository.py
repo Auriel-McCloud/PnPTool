@@ -25,6 +25,24 @@ LIEGT_IN = "OPTIONAL MATCH (g)-[:LIEGT_IN]->(ziel)"
 # alles andere weg.
 LIEGT_IN_NACH_CREATE = "WITH g " + LIEGT_IN
 
+# Felder, die eine Kopie nicht von ihrer Vorlage erbt: Identität, Herkunft
+# und alles, was der Aufrufer selbst bestimmt.
+_NICHT_KOPIEREN = {
+    "id",
+    "istVorlage",
+    "sichtbarkeit",
+    "sichtbarFuer",
+    "automatischImShop",
+    "bildUrl",
+    # Kommen aus der Abfrage, sind aber keine eigenen Eigenschaften
+    "ablageZielId",
+    "ablageZielName",
+    "ablageZielKind",
+    "ownerId",
+    "ownerName",
+    "ownerPersonType",
+}
+
 
 def _or_default(value, default):
     """Wie `value or default`, aber ohne die Falsy-Falle bei 0/False als gültigem Wert."""
@@ -197,28 +215,24 @@ async def assign_copy(
     zugewiesene Kopie ist selbst keine Vorlage mehr). hatMenge/menge werden
     dagegen unverändert von der Vorlage übernommen, nicht zurückgesetzt.
     """
-    copy = await create_gegenstand(
-        campaign_id,
-        ziel_person_id,
+    # Alles übernehmen und nur gezielt überschreiben, statt die Felder
+    # einzeln aufzuzählen: eine Positivliste muss bei jeder neuen Eigenschaft
+    # mitgepflegt werden, was hier schon zweimal vergessen wurde (Gewicht und
+    # Kapazität beim Traglast-Feature, Cyberwall bei den Commlinks) — die
+    # Werte fielen dann bei jeder Zuweisung still auf ihren Standard zurück.
+    daten = {k: v for k, v in source.items() if k not in _NICHT_KOPIEREN}
+    daten.update(
         {
-            "name": source["name"],
-            "description": source["description"],
-            "notes": source["notes"],
-            "typ": source["typ"],
-            "preis": source["preis"],
-            "kraft": source["kraft"],
-            "seltenheit": source["seltenheit"],
-            "eigenschaften": source["eigenschaften"],
-            "zeigeInGraph": source["zeigeInGraph"],
-            "einzigartig": True,
-            "hatMenge": source["hatMenge"],
-            "menge": source["menge"],
+            # Die Kopie ist ein Einzelstück, keine Vorlage mehr.
             "istVorlage": False,
+            "einzigartig": True,
+            # Ein zugewiesenes Stück ist kein Shop-Muster mehr.
             "automatischImShop": False,
             "sichtbarkeit": sichtbarkeit,
             "sichtbarFuer": sichtbar_fuer,
-        },
+        }
     )
+    copy = await create_gegenstand(campaign_id, ziel_person_id, daten)
     if copy is None or not source["bildUrl"]:
         return copy
     return await set_bild_url(campaign_id, copy["id"], source["bildUrl"])
@@ -460,23 +474,37 @@ async def traglast_uebersicht(campaign_id: str, attribut: str, pro_punkt: float)
 
 
 async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
-    """Cyberwall-Wert des Commlinks, das diese Person bei sich hat.
+    """Cyberwall dieser Person aus ihren mitgeführten Geräten.
 
-    Zählt nur, was am Körper ist (ausgerüstet oder mitgeführt) — ein Commlink
-    im Versteck schützt niemanden. Bei mehreren gilt der beste Wert, nicht die
-    Summe: man ist über ein Gerät online, nicht über alle gleichzeitig.
-    Ergibt 0, wenn keines da ist; dann ist die Person offline.
+    **Commlink:** bestimmt den Grundwert. Bei mehreren gilt der beste, nicht
+    die Summe — man ist über *ein* Gerät online, nicht über alle zugleich.
+    Die Liste im Regelwerk reicht von Meta Link (1) bis Transs Avalon (6);
+    das Feld ist aber nicht begrenzt.
+
+    **Cyberdeck:** addiert seinen Bonus obendrauf (im Regelwerk als "Cywall+1"
+    bis "Cywall+4" notiert). Mehrere Decks werden summiert — anders als bei
+    Commlinks, weil es Zusatzausrüstung ist und kein Zugangsgerät.
+
+    Zählt nur, was am Körper ist: ein Gerät im Versteck schützt niemanden.
+    Ergibt 0, wenn nichts da ist — dann ist die Person offline.
     """
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
             MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-            WHERE g.typ = 'Commlink' AND g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
-            RETURN max(coalesce(g.cyberwall, 0)) AS wert
+            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
+            RETURN
+              max(CASE WHEN g.typ = 'Commlink' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS grund,
+              sum(CASE WHEN g.typ = 'Cyberdeck' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS bonus
             """,
             campaign_id=campaign_id,
             person_id=person_id,
         )
         record = await result.single()
-        return int(record["wert"] or 0) if record else 0
+        if record is None:
+            return 0
+        grund = int(record["grund"] or 0)
+        # Ohne Commlink kein Zugang — ein Deck allein bringt nichts, es
+        # verstärkt nur eine vorhandene Verbindung.
+        return grund + int(record["bonus"] or 0) if grund > 0 else 0

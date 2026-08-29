@@ -57,7 +57,20 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 
 **Wer kein Technomancer ist, bezieht den Wert vom Commlink.** Ohne Commlink ist er 0 — dann ist man aber auch **offline und schlicht nicht angreifbar**. Der Unterschied zwischen „ungeschützt" und „nicht erreichbar" liegt also nicht im Wert, sondern darin, ob überhaupt ein Gerät dabei ist. Ein Commlink im Versteck schützt niemanden; es zählt nur, was ausgerüstet oder mitgeführt wird. Bei mehreren Geräten gilt der beste Wert, nicht die Summe.
 
+**Cyberdecks addieren ihren Bonus obendrauf** (im Regelwerk als „Cywall+1" bis „Cywall+4" notiert). Mehrere Decks werden summiert — anders als Commlinks, weil es Zusatzausrüstung ist und kein Zugangsgerät. **Ein Deck allein nützt nichts:** ohne Commlink besteht keine Verbindung, die es verstärken könnte.
+
 Commlink-Preis: 200 ¥ je Cyberwall-Punkt bis 5, darüber 500 ¥ je Punkt.
+
+| Commlink | I.C.E. | Preis | | Cyberdeck | B/S/D/K | Bonus |
+|---|---|---|---|---|---|---|
+| Meta Link | 1 | 100 ¥ | | Aztechnology Tlaloc | 4/4/3/5 | +1 |
+| Sony Emperer | 2 | 700 ¥ | | Tachikoma Prime | 5/3/4/4 | +2 |
+| Renraku Sensei | 3 | 1.000 ¥ | | Hosaka Ghost | 4/5/4/5 | +3 |
+| Erika Elite | 4 | 2.500 ¥ | | Ono-Sendai Cyberspace VII | 5/5/5/5 | +4 |
+| Hermes Ikon | 5 | 5.000 ¥ | | | | |
+| Transs Avalon | 6 | 8.000 ¥ | | | | |
+
+Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 
 **Technomancer: Fassung + Geistesschärfe.** Er trägt seine Abwehr in sich und braucht kein Gerät, ist also nie offline.
 
