@@ -106,7 +106,19 @@ async def charakter_beanspruchen(body: CharakterWahlRequest, sitzung: dict = Dep
 
 
 @spieler_router.post("/abmelden")
-async def spieler_abmelden(response: Response):
+async def spieler_abmelden(response: Response, claims: dict = Depends(get_current_claims)):
+    """Meldet ab und **beendet die Sitzung**.
+
+    Das Cookie allein zu löschen genügte nicht: die Sitzung blieb bestehen
+    und hielt den Charakter weiter fest, während der Spieler ohne Cookie
+    nicht mehr an sie herankam. Der Charakter war damit dauerhaft blockiert,
+    bis die Spielleitung die Sitzung von Hand entfernte.
+
+    Wer nur das Gerät zuklappt, verliert nichts — das Cookie hält 30 Tage.
+    Beendet wird ausschliesslich beim ausdrücklichen Abmelden.
+    """
+    if claims.get("role") == "PLAYER":
+        await repository.delete_session_by_id(claims["sub"])
     response.delete_cookie(SESSION_COOKIE)
     return {"ok": True}
 

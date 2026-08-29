@@ -154,7 +154,13 @@ function Shell() {
 
   if (me?.role === "PLAYER") {
     if (hatCharakter === null) return null;
-    if (!hatCharakter) return <CharakterWahl onGewaehlt={() => setHatCharakter(true)} />;
+    if (!hatCharakter)
+      return (
+        <CharakterWahl
+          onGewaehlt={() => setHatCharakter(true)}
+          onAbmelden={() => playersApi.abmelden().then(() => window.location.reload())}
+        />
+      );
     return <SpielerAnsicht onAbgemeldet={() => window.location.reload()} />;
   }
 

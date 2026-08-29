@@ -65,8 +65,14 @@ export function BeitrittPage({ onBeigetreten, onZurueck }: { onBeigetreten: () =
   );
 }
 
-/** Auswahl des eigenen Charakters, direkt nach dem Beitritt. */
-export function CharakterWahl({ onGewaehlt }: { onGewaehlt: () => void }) {
+/**
+ * Auswahl des eigenen Charakters, direkt nach dem Beitritt.
+ *
+ * Braucht zwingend einen Ausweg: ist gerade kein Charakter frei — etwa weil
+ * eine ältere Sitzung von einem anderen Gerät ihn noch hält — säße man hier
+ * sonst fest, ohne Abmelden und ohne Navigation.
+ */
+export function CharakterWahl({ onGewaehlt, onAbmelden }: { onGewaehlt: () => void; onAbmelden: () => void }) {
   const [charaktere, setCharaktere] = useState<{ id: string; name: string }[] | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -98,7 +104,9 @@ export function CharakterWahl({ onGewaehlt }: { onGewaehlt: () => void }) {
       <h1>Wer bist du?</h1>
       {charaktere.length === 0 ? (
         <p style={{ color: "var(--text-leise)" }}>
-          Zurzeit ist kein Charakter frei. Deine Spielleitung muss dir einen anlegen — danach hier neu laden.
+          Zurzeit ist kein Charakter frei. Entweder deine Spielleitung muss dir einen anlegen — oder du bist
+          bereits auf einem anderen Gerät angemeldet und hältst ihn dort noch. In dem Fall dort abmelden oder
+          die Spielleitung bitten, die alte Sitzung zu beenden.
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
@@ -110,6 +118,19 @@ export function CharakterWahl({ onGewaehlt }: { onGewaehlt: () => void }) {
         </div>
       )}
       {fehler && <p style={{ color: "var(--signal)", marginTop: 12 }}>{fehler}</p>}
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+        <button type="button" onClick={() => window.location.reload()}>
+          Neu laden
+        </button>
+        <button
+          type="button"
+          onClick={onAbmelden}
+          style={{ background: "none", border: "none", color: "var(--text-leise)" }}
+        >
+          Abmelden
+        </button>
+      </div>
     </div>
   );
 }

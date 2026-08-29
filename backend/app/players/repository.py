@@ -177,3 +177,16 @@ async def delete_session(campaign_id: str, session_id: str) -> bool:
         )
         record = await result.single()
         return bool(record and record["geloescht"])
+
+
+async def delete_session_by_id(session_id: str) -> bool:
+    """Beendet eine Sitzung ohne Kampagnenbezug — für das Abmelden durch den
+    Spieler selbst, der seine Kampagne nicht mitschicken muss."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (s:PlayerSession {id: $session_id}) DETACH DELETE s RETURN count(s) AS weg",
+            session_id=session_id,
+        )
+        record = await result.single()
+        return bool(record and record["weg"])

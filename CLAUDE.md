@@ -335,7 +335,9 @@ Im Regelwerk gibt es ab Zeile 172 bereits eine Drogentabelle mit Name, Wirkung, 
 Was das verlangt — deutlich mehr als ein Zahlenfeld:
 
 - **Effekte dürfen das Maximum überschreiten.** Geschicklichkeit 6 + 2 ergibt 8, obwohl 6 die Obergrenze ist. Die Anzeige muss den Grundwert und den Aufschlag unterscheidbar zeigen, sonst hält man 8 für den echten Wert.
-- **Effekte haben eine Dauer** (Runden, Minuten) und oft eine **Nachwirkung**, die erst danach greift. Es braucht also einen Zustand „aktiv seit" und eine Vorstellung von Zeit im Spiel.
+- **Dauer wird über Szenen gezählt, nicht über die Uhr.** Mark (29.08.2026): In der World of Darkness gilt üblicherweise alles *bis zum Ende der Szene* — eine Droge wirkt also die laufende Szene, ihre **Nachwirkung greift in der nächsten**. Den Szenenwechsel bestimmt die Spielleitung von Hand.
+- **Daraus folgt eine Anzeige für den Spielleiter:** er muss sehen, dass gerade Verstärkungen oder Schwächungen aktiv sind, damit er den Wechsel überhaupt bewusst auslöst. Ohne diese Sichtbarkeit wird der Szenenwechsel vergessen und die Werte bleiben stehen.
+- Ein Szenenzähler wäre damit ein eigenes, kampagnenweites Konzept — vermutlich verwandt mit den Spieleinstellungen.
 - **Effekte wirken auf Verschiedenes**: einzelne Attribute, abgeleitete Werte (Initiative), oder pauschal auf alle Würfe.
 - Marks weitere Idee: eine Droge, die das I.C.E. eines Technomancers anhebt — trifft also auch berechnete Werte.
 
