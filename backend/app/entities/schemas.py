@@ -19,6 +19,28 @@ class PersonCreate(BaseModel):
     personType: Literal["PC", "NPC"] = "NPC"
     description: str = ""
     notes: str = ""
+    # --- Charakterbogen ---------------------------------------------------
+    # Der eingeschlagene Weg entscheidet, was auf dem Blatt überhaupt
+    # erscheint: Sphären und Arete nur für Magier, NeuroWeaving nur für
+    # Technomancer. Auf dem Blatt steht ausdrücklich "Arete != NeuroWeaving",
+    # beides zugleich geht also nicht. Ein eigenes Feld statt aus Arete > 0
+    # abzuleiten — sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
+    weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] = "KEINER"
+    # Bestimmt Startwerte und Maxima bei der Erstellung (Mensch, Ork, Elf,
+    # Zwerg, Troll). Frei als Text, weil Rassen dazukommen können.
+    rasse: str = ""
+    # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
+    # (Gesundheit = 5 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
+    # + Fassung) und wird berechnet, nicht gespeichert.
+    gesundheitSchaden: int = 0
+    willenskraftVerbraucht: int = 0
+    iceSchaden: int = 0
+    # I.C.E. kommt vom Commlink und ist deshalb nicht ableitbar.
+    iceMax: int = 0
+    # Erfahrung: gesamt vergeben und davon ausgegeben.
+    erfahrung: int = 0
+    erfahrungAusgegeben: int = 0
+
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -27,6 +49,14 @@ class PersonCreate(BaseModel):
 
 class PersonUpdate(BaseModel):
     name: str | None = None
+    weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] | None = None
+    rasse: str | None = None
+    gesundheitSchaden: int | None = None
+    willenskraftVerbraucht: int | None = None
+    iceSchaden: int | None = None
+    iceMax: int | None = None
+    erfahrung: int | None = None
+    erfahrungAusgegeben: int | None = None
     personType: Literal["PC", "NPC"] | None = None
     description: str | None = None
     notes: str | None = None
@@ -42,6 +72,16 @@ class PersonResponse(BaseModel):
     personType: str
     description: str
     notes: str
+    # Charakterbogen — Ausgangswerte greifen für Bestandsdaten, die diese
+    # Felder noch nicht haben (Ersatz kommt aus dem Repository).
+    weg: str = "KEINER"
+    rasse: str = ""
+    gesundheitSchaden: int = 0
+    willenskraftVerbraucht: int = 0
+    iceSchaden: int = 0
+    iceMax: int = 0
+    erfahrung: int = 0
+    erfahrungAusgegeben: int = 0
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

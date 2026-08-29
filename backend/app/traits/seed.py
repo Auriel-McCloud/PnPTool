@@ -68,6 +68,11 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Ursprung", "Sphäre", 5, 7),
     ("Geister", "Sphäre", 5, 8),
     ("Zeit", "Sphäre", 5, 9),
+    # Arete ist der Magiewert selbst (nicht zu verwechseln mit den Sphären,
+    # die nur beschreiben was möglich ist). Auf dem Blatt eine Reihe von zehn
+    # Kästchen, daher Maximum 10 statt 5 wie bei Fähigkeiten. Kostet in der
+    # Erstellung 5 Freebees wie ein Attribut.
+    ("Arete", "Arete", 10, 1),
 ]
 
 

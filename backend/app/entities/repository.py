@@ -4,13 +4,41 @@ from app.db.neo4j_driver import get_driver
 
 _VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "notizenSichtbarFuer"]
 
-PERSON_FIELDS = ["name", "personType", "description", "notes", *_VISIBILITY_FIELDS]
+# Felder des Charakterbogens. "weg" und "rasse" sind leer, solange niemand
+# einen Charakter angelegt hat — NPCs brauchen sie meist gar nicht.
+_BOGEN_FELDER = ["weg", "rasse", "gesundheitSchaden", "willenskraftVerbraucht", "iceSchaden", "iceMax", "erfahrung", "erfahrungAusgegeben"]
+
+PERSON_FIELDS = ["name", "personType", "description", "notes", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 ORT_FIELDS = ["name", "description", "notes", *_VISIBILITY_FIELDS]
 EVENT_FIELDS = ["title", "timestamp", "description", "notes", *_VISIBILITY_FIELDS]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
     return ", ".join(f"{alias}.{f} AS {f}" for f in ["id", *fields])
+
+
+# Ausgangswerte für die Bogenfelder. Bestandsdaten kennen sie nicht und
+# liefern None — ohne Ersatz scheitert die Pydantic-Prüfung und reisst die
+# komplette Liste mit 500 herunter (siehe Stolperstein 9 in CLAUDE.md).
+_BOGEN_DEFAULTS: dict = {
+    "weg": "KEINER",
+    "rasse": "",
+    "gesundheitSchaden": 0,
+    "willenskraftVerbraucht": 0,
+    "iceSchaden": 0,
+    "iceMax": 0,
+    "erfahrung": 0,
+    "erfahrungAusgegeben": 0,
+}
+
+
+def _mit_defaults(record: dict) -> dict:
+    """Ergänzt fehlende Bogenfelder. Nur Personen haben sie überhaupt."""
+    daten = dict(record)
+    for feld, ersatz in _BOGEN_DEFAULTS.items():
+        if feld in daten and daten[feld] is None:
+            daten[feld] = ersatz
+    return daten
 
 
 async def create_node(label: str, fields: list[str], campaign_id: str, data: dict) -> dict:
@@ -26,7 +54,7 @@ async def create_node(label: str, fields: list[str], campaign_id: str, data: dic
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **data)
         record = await result.single()
-        return dict(record)
+        return _mit_defaults(record)
 
 
 async def list_nodes(label: str, fields: list[str], campaign_id: str, order_field: str = "name") -> list[dict]:
@@ -34,7 +62,7 @@ async def list_nodes(label: str, fields: list[str], campaign_id: str, order_fiel
     query = f"MATCH (n:{label} {{campaignId: $campaign_id}}) RETURN {_return_clause('n', fields)} ORDER BY n.{order_field}"
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
-        return [dict(record) async for record in result]
+        return [_mit_defaults(record) async for record in result]
 
 
 async def get_node(label: str, fields: list[str], campaign_id: str, node_id: str) -> dict | None:
@@ -43,7 +71,7 @@ async def get_node(label: str, fields: list[str], campaign_id: str, node_id: str
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
         record = await result.single()
-        return dict(record) if record else None
+        return _mit_defaults(record) if record else None
 
 
 async def update_node(label: str, fields: list[str], campaign_id: str, node_id: str, data: dict) -> dict | None:
@@ -61,7 +89,7 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **changed)
         record = await result.single()
-        return dict(record) if record else None
+        return _mit_defaults(record) if record else None
 
 
 async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
