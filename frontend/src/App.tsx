@@ -94,6 +94,9 @@ function Dashboard() {
       titel={kampagne ? `${kampagne.name} — ${TITEL[bereich] ?? ""}` : "Keine Kampagne"}
       werkzeuge={werkzeuge}
       fuss={fuss}
+      /* Bisher nur die Gegenstände-Übersicht teilt sich selbst ein und kommt
+         ohne Scrollen aus; die übrigen Bereiche folgen noch. */
+      statisch={bereich === "gegenstaende"}
     >
       {loading && <p style={{ color: "var(--text-leise)" }}>Lade Kampagnen…</p>}
       {!loading && campaigns && campaigns.length === 0 && <CreateCampaignForm onCreate={createCampaign} />}

@@ -38,6 +38,7 @@ export function CommlinkShell({
   titel,
   werkzeuge,
   fuss,
+  statisch = false,
   children,
 }: {
   bereiche: Bereich[];
@@ -46,6 +47,12 @@ export function CommlinkShell({
   titel: string;
   werkzeuge?: ReactNode;
   fuss?: ReactNode;
+  /**
+   * Bereich füllt die Fläche und scrollt nicht (Leitprinzip "nie scrollen").
+   * Nur für Ansichten setzen, die sich selbst einteilen — sonst wird Inhalt
+   * unerreichbar abgeschnitten.
+   */
+  statisch?: boolean;
   children: ReactNode;
 }) {
   // Kennung des einen Eintrags, der aus der Symbolspalte herausgefahren ist
@@ -194,7 +201,7 @@ export function CommlinkShell({
           {werkzeuge && <div className="cl-leiste-werkzeuge">{werkzeuge}</div>}
         </header>
 
-        <main className="cl-inhalt" style={{ position: "relative" }}>
+        <main className="cl-inhalt" data-statisch={statisch ? "true" : undefined} style={{ position: "relative" }}>
           {/* key: baut die Ansicht bei jedem Bereichswechsel neu auf */}
           <div className="cl-ansicht" key={aktiv}>
             {children}

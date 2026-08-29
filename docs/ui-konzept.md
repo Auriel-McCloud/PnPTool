@@ -90,6 +90,24 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 - Ob die Störeffekte abschaltbar sein sollen (Empfehlung: ja, mindestens für längere Sitzungen).
 - Der **Regeln-Bereich** ist weiterhin ein komplett neuer Inhaltstyp (siehe Plandatei): vermutlich eine Rich-Text-Seite pro Kampagne, campaign-weit statt an eine Entität gebunden.
 
+## Fenstersystem und "nie scrollen" (gebaut 29.08.2026)
+
+**Fenster** (`frontend/src/shell/Fenster.tsx` + `fenster.css`): eigenständig und inhaltsfrei, damit später auch SL-Popups und der Shop darauf aufsetzen können.
+- **Lage aus der Kennung abgeleitet** (kleine Streufunktion über die Item-ID): dasselbe Fenster geht immer an derselben Stelle auf, verschiedene Fenster an verschiedenen — Marks Wunsch "nicht zwingend immer in der Mitte", ohne dass etwas bei jedem Öffnen umherspringt. Bereich 36–64 %, also deutlich aus der Mitte, aber nie am Rand klebend.
+- Am Handy bildschirmfüllend von unten, mit Griff oben mittig; darüber ein freistehendes Fenster mit Neonrahmen im Ton des Bereichs.
+- Schließt per ✕, Escape und Klick auf den Hintergrund. Der Hintergrund wird währenddessen am Scrollen gehindert.
+- **Der Detailbereich eines Gegenstands liegt jetzt hier** statt inline aufzuklappen. Damit erledigt sich auch der alte, bewusst vertagte Breite-Bug: das Akkordeon riss die Karte bei langen Inhalten auf, ein Fenster hat feste Maße.
+- `GegenstandRow` hat dafür zwei Darstellungen (`kachel`) bei **einem** gemeinsamen Fenster — im Charakterblatt bleibt die kompakte Zeile, in der Übersicht die Kachel.
+
+**"Nie scrollen" ist jetzt echt umgesetzt** — aber bewusst **bereichsweise**:
+- `.cl-shell` hat feste Höhe (`100svh`) statt `min-height`; nur so hat ein Bereich eine ausmessbare Fläche.
+- Die Hülle nimmt ein `statisch`-Flag. Gesetzte Bereiche bekommen `overflow: hidden` und teilen sich selbst ein, alle anderen scrollen weiter wie bisher. **Nur für Ansichten setzen, die dafür gebaut sind** — sonst wird Inhalt unerreichbar abgeschnitten. Derzeit einzig die Gegenstände-Übersicht.
+- Die Gegenstände-Übersicht **misst ihre Fläche aus** (`useProSeite` mit `ResizeObserver`) und rechnet daraus, wie viele Kacheln hineinpassen; der Rest wird geblättert. Passt sich damit Hoch- und Querformat am Tablet gleichermaßen an, statt auf eine geratene Kachelzahl zu setzen.
+- Dazu Suche (Name, Typ **und Besitzer** — "alle Waffen von Kira" ist die häufigere Frage als der exakte Name) und ein Besitzerfilter. Das Anlegen-Formular ist hinter "+ Neu" eingeklappt, damit es keine feste Höhe kostet.
+- Verifiziert auf Tablet (768×1024) und Handy (412×915): `document.body.scrollHeight` entspricht exakt der Bildschirmhöhe, der Inhaltsbereich hat keinen Überlauf.
+
+**Noch offen:** die Bereiche "Welt" und "Beziehungen" scrollen weiterhin — sie müssen sich erst selbst einteilen, bevor sie `statisch` bekommen können. Für "Welt" heißt das dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Der Graph hat eine feste Höhe von 520px und sollte stattdessen die Fläche füllen.
+
 ## Verhältnis zum früheren Vorbehalt
 
 Die Plandatei `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` hatte den Umbau verschoben, weil *"der Funktionsumfang pro Entität noch spürbar wächst"*. Bewusste Differenzierung dazu:

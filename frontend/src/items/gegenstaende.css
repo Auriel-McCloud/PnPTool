@@ -1,0 +1,167 @@
+/* ===================================================================
+   Gegenstaende-Uebersicht als Kachelraster.
+   Leitprinzip "nie scrollen" (docs/ui-konzept.md): die Seite bekommt eine
+   feste Hoehe, es passt genau so viel hinein wie Platz ist, der Rest wird
+   geblaettert. Gescrollt wird nur im Fenster.
+   =================================================================== */
+
+.gg-seite {
+  display: flex;
+  flex-direction: column;
+  /* fuellt den Inhaltsbereich, ohne ihn zu sprengen */
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.gg-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.gg-suche {
+  flex: 1;
+  min-width: 180px;
+}
+
+.gg-anzahl {
+  font-size: 12px;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+/* Das Raster darf nie ueberlaufen — was nicht passt, kommt auf die
+   naechste Seite (Anzahl wird in der Komponente ausgemessen). */
+.gg-raster {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--gg-kachel-breite), 1fr));
+  grid-auto-rows: var(--gg-kachel-hoehe);
+  gap: var(--gg-abstand);
+  align-content: start;
+}
+
+.gg-kachel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px;
+  min-height: 0;
+  text-align: left;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.gg-kachel:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  background: var(--flaeche-hoch);
+  color: inherit;
+  box-shadow: 0 0 12px -4px var(--bereich-farbe, var(--neon));
+}
+
+.gg-kachel-bild {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grund);
+  border-radius: 2px;
+  font-size: 26px;
+  color: var(--linie-hell);
+  overflow: hidden;
+}
+
+.gg-kachel-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gg-kachel-menge {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: rgba(8, 8, 13, 0.86);
+  color: var(--text);
+}
+
+.gg-kachel-name {
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--text);
+  /* zwei Zeilen, danach abgeschnitten — Kacheln muessen gleich hoch bleiben */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gg-kachel-zeile {
+  font-size: 11px;
+  color: var(--text-leise);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gg-kachel-marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 0;
+}
+
+.gg-marke {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 4px;
+  border-radius: 2px;
+  border: 1px solid var(--linie-hell);
+  color: var(--text-leise);
+}
+
+.gg-marke[data-ton="signal"] {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.gg-marke[data-ton="neon"] {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+/* --- Blaettern --------------------------------------------------------- */
+
+.gg-blaettern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.gg-leer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-leise);
+}

@@ -4,6 +4,7 @@ import type { Person } from "../entities/api";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
+import { Fenster } from "../shell/Fenster";
 import { itemsApi, VORLAGE_SENTINEL, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
@@ -114,6 +115,7 @@ export function GegenstandRow({
   alleOptionen,
   onChanged,
   onRemoved,
+  kachel = false,
 }: {
   campaignId: string;
   // Fehlt bei Vorlagen (die haben per Invariante keinen Besitzer).
@@ -123,6 +125,12 @@ export function GegenstandRow({
   alleOptionen: PersonOption[];
   onChanged: () => void;
   onRemoved: () => void;
+  /**
+   * Kachel statt Listenzeile. Die kampagnenweite Übersicht stellt Gegenstände
+   * als Raster dar, damit sie ohne Scrollen auf eine Seite passen; im
+   * Charakterblatt bleibt die kompakte Zeile.
+   */
+  kachel?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -233,6 +241,249 @@ export function GegenstandRow({
     onChanged();
   }
 
+  // Das Detail öffnet als eigenes Fenster statt inline aufzuklappen: hält die
+  // Übersicht statisch (Leitprinzip "nie scrollen") und gibt dem Ding eine
+  // feste Größe — das alte Akkordeon riss die Karte bei langen Inhalten in
+  // die Breite. Kachel wie Zeile öffnen dasselbe Fenster.
+  const fenster = (
+    <Fenster
+      offen={expanded}
+      onSchliessen={() => setExpanded(false)}
+      kennung={item.id}
+      titel={item.name}
+      unterzeile={
+        <>
+          {item.typ}
+          {item.preis > 0 && ` · ${item.preis}¥`} · {visibilityLabel(item)}
+          {item.istVorlage && " · Vorlage"}
+        </>
+      }
+    >
+        {item.istVorlage && (
+          <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: 0 }}>
+            📋 Vorlage — hat keinen Besitzer
+          </p>
+        )}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+          <select value={typ} onChange={(e) => setTyp(e.target.value)}>
+            {!TYP_OPTIONEN.includes(typ) && <option value={typ}>{typ} (alt)</option>}
+            {TYP_OPTIONEN.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+            Preis (¥){" "}
+            <input
+              type="number"
+              min={0}
+              value={preis}
+              onChange={(e) => setPreis(Number(e.target.value))}
+              style={{ width: 90 }}
+            />
+          </label>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 6 }}>
+            Seltenheit
+            <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
+          </label>
+        </div>
+
+        {KRAFT_TYPEN.has(typ) && (
+          <div>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
+            <div>
+              <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Bild</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
+            <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
+            {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
+            {item.bildUrl && (
+              <button type="button" onClick={removeBild}>
+                Bild entfernen
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
+          <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
+        </div>
+        <div>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
+          <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
+        </div>
+
+        <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
+
+        <VisibilitySelector
+          label="Sichtbarkeit"
+          modus={sichtbarkeit}
+          sichtbarFuer={sichtbarFuer}
+          onChange={(m, f) => {
+            setSichtbarkeit(m);
+            setSichtbarFuer(f);
+          }}
+          pcOptions={pcOptions}
+        />
+
+        <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+          <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+            ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+          </button>
+          {showOptions && (
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
+                Im Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
+              </label>
+              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
+                Einzigartig (genau ein Exemplar in der Welt, z.B. das Amulett)
+              </label>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
+                  <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
+                  verfolgen
+                </label>
+                {hatMenge && (
+                  <input
+                    type="number"
+                    min={0}
+                    value={menge}
+                    onChange={(e) => setMenge(Number(e.target.value))}
+                    style={{ width: 70, flex: "0 0 auto" }}
+                  />
+                )}
+              </div>
+              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                <input
+                  type="checkbox"
+                  checked={automatischImShop}
+                  onChange={(e) => setAutomatischImShop(e.target.checked)}
+                />{" "}
+                Automatisch in Shops gleicher Seltenheitsstufe verfügbar (wirkt sich erst aus, sobald es Shops
+                gibt — noch nicht gebaut)
+              </label>
+            </div>
+          )}
+        </div>
+
+        {!item.istVorlage && (
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+              Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
+            </label>
+            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+              <select
+                value={besitzerZiel}
+                onChange={(e) => setBesitzerZiel(e.target.value)}
+                style={{ minWidth: 0, maxWidth: "100%" }}
+              >
+                <option value="">Person wählen...</option>
+                <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
+                {alleOptionen
+                  .filter((p) => p.id !== personId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
+              <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
+                {besitzerLaeuft ? "..." : "Übertragen"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {item.istVorlage &&
+          (() => {
+            // Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt
+            // werden — Zuweisen übergibt dann den Gegenstand selbst
+            // (verschiebt ihn, wie Besitzer wechseln), statt eine Kopie zu
+            // erzeugen. Das Backend entscheidet dasselbe anhand des
+            // GESPEICHERTEN Stands (item.*, nicht den lokalen Edit-State) —
+            // die Zuweisen-Aktion wirkt ja auf den gespeicherten Gegenstand.
+            const keineKopie = item.einzigartig || item.zeigeInGraph;
+            return (
+              <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                  {keineKopie
+                    ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst — einzigartig/MacGuffin, keine Kopie möglich)"
+                    : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
+                </label>
+                <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                  <select
+                    value={zuweisenZiel}
+                    onChange={(e) => setZuweisenZiel(e.target.value)}
+                    style={{ minWidth: 0, maxWidth: "100%" }}
+                  >
+                    <option value="">Person wählen...</option>
+                    {alleOptionen.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                    {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" onClick={save}>
+          Speichern
+        </button>
+        {/* In der Kacheldarstellung gibt es keine Zeile mehr, an der ein
+            Entfernen-Knopf haengen koennte — und hier ist er ohnehin besser
+            aufgehoben, weil man den Gegenstand dabei vor sich sieht. */}
+        <button
+          type="button"
+          onClick={onRemoved}
+          style={{ marginLeft: "auto", borderColor: "var(--signal)", color: "var(--signal)" }}
+        >
+          Entfernen
+        </button>
+      </div>
+    </Fenster>
+  );
+
+  if (kachel) {
+    return (
+      <>
+        <button type="button" className="gg-kachel" onClick={openEdit} title={item.name}>
+          <span className="gg-kachel-bild">
+            {item.bildUrl ? <img src={item.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
+            {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
+          </span>
+          <span className="gg-kachel-name">{item.name}</span>
+          <span className="gg-kachel-zeile">
+            {item.typ}
+            {item.preis > 0 && ` · ${item.preis}¥`}
+          </span>
+          <span className="gg-kachel-marken">
+            {item.sichtbarkeit === "GM" && <span className="gg-marke" data-ton="signal">SL</span>}
+            {item.zeigeInGraph && <span className="gg-marke" data-ton="neon">Graph</span>}
+            {item.istVorlage && <span className="gg-marke">Vorlage</span>}
+          </span>
+        </button>
+        {fenster}
+      </>
+    );
+  }
+
   return (
     <div style={{ borderBottom: "1px solid var(--linie)", padding: "6px 0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -249,215 +500,15 @@ export function GegenstandRow({
           </span>
         </span>
         <span style={{ display: "flex", gap: 6 }}>
-          <button type="button" onClick={expanded ? () => setExpanded(false) : openEdit}>
-            {expanded ? "Schließen" : "Bearbeiten"}
+          <button type="button" onClick={openEdit}>
+            Bearbeiten
           </button>
           <button type="button" onClick={onRemoved}>
             Entfernen
           </button>
         </span>
       </div>
-      {expanded && (
-        <div
-          style={{
-            marginTop: 8,
-            paddingLeft: 10,
-            borderLeft: "2px solid var(--linie)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            minWidth: 0,
-            maxWidth: "100%",
-          }}
-        >
-          {item.istVorlage && (
-            <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: 0 }}>
-              📋 Vorlage — hat keinen Besitzer
-            </p>
-          )}
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-            <select value={typ} onChange={(e) => setTyp(e.target.value)}>
-              {!TYP_OPTIONEN.includes(typ) && <option value={typ}>{typ} (alt)</option>}
-              {TYP_OPTIONEN.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Preis (¥){" "}
-              <input
-                type="number"
-                min={0}
-                value={preis}
-                onChange={(e) => setPreis(Number(e.target.value))}
-                style={{ width: 90 }}
-              />
-            </label>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 6 }}>
-              Seltenheit
-              <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
-            </label>
-          </div>
-
-          {KRAFT_TYPEN.has(typ) && (
-            <div>
-              <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
-              <div>
-                <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Bild</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
-              <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
-              {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
-              {item.bildUrl && (
-                <button type="button" onClick={removeBild}>
-                  Bild entfernen
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
-            <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
-          </div>
-          <div>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
-            <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
-          </div>
-
-          <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
-
-          <VisibilitySelector
-            label="Sichtbarkeit"
-            modus={sichtbarkeit}
-            sichtbarFuer={sichtbarFuer}
-            onChange={(m, f) => {
-              setSichtbarkeit(m);
-              setSichtbarFuer(f);
-            }}
-            pcOptions={pcOptions}
-          />
-
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
-              ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
-            </button>
-            {showOptions && (
-              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
-                  Im Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
-                </label>
-                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
-                  Einzigartig (genau ein Exemplar in der Welt, z.B. das Amulett)
-                </label>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                  <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
-                    <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
-                    verfolgen
-                  </label>
-                  {hatMenge && (
-                    <input
-                      type="number"
-                      min={0}
-                      value={menge}
-                      onChange={(e) => setMenge(Number(e.target.value))}
-                      style={{ width: 70, flex: "0 0 auto" }}
-                    />
-                  )}
-                </div>
-                <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input
-                    type="checkbox"
-                    checked={automatischImShop}
-                    onChange={(e) => setAutomatischImShop(e.target.checked)}
-                  />{" "}
-                  Automatisch in Shops gleicher Seltenheitsstufe verfügbar (wirkt sich erst aus, sobald es Shops
-                  gibt — noch nicht gebaut)
-                </label>
-              </div>
-            )}
-          </div>
-
-          {!item.istVorlage && (
-            <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-              <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-                Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
-              </label>
-              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                <select
-                  value={besitzerZiel}
-                  onChange={(e) => setBesitzerZiel(e.target.value)}
-                  style={{ minWidth: 0, maxWidth: "100%" }}
-                >
-                  <option value="">Person wählen...</option>
-                  <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
-                  {alleOptionen
-                    .filter((p) => p.id !== personId)
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </select>
-                <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
-                  {besitzerLaeuft ? "..." : "Übertragen"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {item.istVorlage &&
-            (() => {
-              // Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt
-              // werden — Zuweisen übergibt dann den Gegenstand selbst
-              // (verschiebt ihn, wie Besitzer wechseln), statt eine Kopie zu
-              // erzeugen. Das Backend entscheidet dasselbe anhand des
-              // GESPEICHERTEN Stands (item.*, nicht den lokalen Edit-State) —
-              // die Zuweisen-Aktion wirkt ja auf den gespeicherten Gegenstand.
-              const keineKopie = item.einzigartig || item.zeigeInGraph;
-              return (
-                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-                    {keineKopie
-                      ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst — einzigartig/MacGuffin, keine Kopie möglich)"
-                      : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
-                  </label>
-                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                    <select
-                      value={zuweisenZiel}
-                      onChange={(e) => setZuweisenZiel(e.target.value)}
-                      style={{ minWidth: 0, maxWidth: "100%" }}
-                    >
-                      <option value="">Person wählen...</option>
-                      {alleOptionen.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
-                      {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
-          <button type="button" onClick={save} style={{ alignSelf: "flex-start" }}>
-            Speichern
-          </button>
-        </div>
-      )}
+      {fenster}
     </div>
   );
 }
