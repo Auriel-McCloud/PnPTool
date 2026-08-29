@@ -326,6 +326,21 @@ Spieler legen nur die **Art** fest (ausgerüstet/Rucksack/gelagert), nicht das g
 
 **Randnotiz:** `TraitDef`-Kennungen enthalten Umlaute (`neotopia:AttributKörperlich:Körperkraft`). Im Browser wird das beim Aufruf automatisch kodiert; in Skripten muss man `quote()` verwenden, sonst scheitert die Anfrage.
 
+## Offen: Drogen und temporäre Effekte (29.08.2026 notiert, nicht gebaut)
+
+Mark: *„wir brauchen dann auch eine Logik die Drogen temporär zu den Werten rechnet… die geben teilweise Statusboni über den möglichen Wert."*
+
+Im Regelwerk gibt es ab Zeile 172 bereits eine Drogentabelle mit Name, Wirkung, Nebenwirkung und Preis. Beispiel „Dash" (Combat Speed): *Geschicklichkeit +2, Initiative +2 für 3 Runden; danach −2 auf alle Würfe für 10 Minuten.*
+
+Was das verlangt — deutlich mehr als ein Zahlenfeld:
+
+- **Effekte dürfen das Maximum überschreiten.** Geschicklichkeit 6 + 2 ergibt 8, obwohl 6 die Obergrenze ist. Die Anzeige muss den Grundwert und den Aufschlag unterscheidbar zeigen, sonst hält man 8 für den echten Wert.
+- **Effekte haben eine Dauer** (Runden, Minuten) und oft eine **Nachwirkung**, die erst danach greift. Es braucht also einen Zustand „aktiv seit" und eine Vorstellung von Zeit im Spiel.
+- **Effekte wirken auf Verschiedenes**: einzelne Attribute, abgeleitete Werte (Initiative), oder pauschal auf alle Würfe.
+- Marks weitere Idee: eine Droge, die das I.C.E. eines Technomancers anhebt — trifft also auch berechnete Werte.
+
+Betrifft `traits/bogen.py` (dort werden die abgeleiteten Werte gebildet) und das Charakterblatt. **Vor dem Bauen eine eigene Design-Runde**, insbesondere zur Frage, wie viel Zeitverwaltung das Werkzeug übernehmen soll und was die Spielleitung von Hand macht.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
