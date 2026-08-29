@@ -131,7 +131,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       }
       fuss={
         <>
-          <div style={{ color: "var(--text-leise)" }}>{ich.name}</div>
+          <div style={{ color: "var(--text-leise)" }}>{ich.benutzername}</div>
           <div>{ich.personName ?? "kein Charakter"}</div>
         </>
       }

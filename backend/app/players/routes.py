@@ -1,26 +1,23 @@
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
+from app.entities.repository import PERSON_FIELDS, get_node
 from app.players import repository
 from app.players.schemas import (
-    BeitrittRequest,
-    CharakterWahlRequest,
-    FreierCharakter,
-    SitzungResponse,
+    CharakterZuordnenRequest,
+    LoginRequest,
+    PasswortRequest,
+    SpielerAnlegenRequest,
     SpielerMeResponse,
-    ZugangscodeResponse,
+    SpielerResponse,
 )
 
-# Beitritt läuft ohne Anmeldung — der Code ist der Nachweis.
-beitritt_router = APIRouter(prefix="/api/beitritt", tags=["players"])
-# Alles Weitere setzt eine Spieler-Sitzung voraus.
-spieler_router = APIRouter(prefix="/api/spieler", tags=["players"])
-# Verwaltung durch den Spielleiter.
+# Anmeldung laeuft ohne bestehende Sitzung.
+login_router = APIRouter(prefix="/api/spieler", tags=["players"])
+# Verwaltung durch die Spielleitung.
 gm_router = APIRouter(
-    prefix="/api/campaigns/{campaign_id}/zugang",
+    prefix="/api/campaigns/{campaign_id}/spieler",
     tags=["players"],
     dependencies=[Depends(require_campaign_gm)],
 )
@@ -28,132 +25,100 @@ gm_router = APIRouter(
 SESSION_COOKIE = "pnptool_session"
 
 
-async def require_player(claims: dict = Depends(get_current_claims)) -> dict:
-    """Sitzungsdaten des angemeldeten Spielers.
+def _antwort(spieler: dict) -> SpielerMeResponse:
+    return SpielerMeResponse(
+        spielerId=spieler["id"],
+        benutzername=spieler["benutzername"],
+        campaignId=spieler["campaignId"],
+        campaignName=spieler["campaignName"],
+        personId=spieler["personId"],
+        personName=spieler["personName"],
+        hatPasswort=bool(spieler.get("passwortHash")),
+    )
 
-    Wirft 401 statt 403, wenn die Sitzung nicht mehr existiert: für den
-    Aufrufer ist das gleichbedeutend mit "nicht angemeldet", und er soll sich
-    neu verbinden statt es erneut zu versuchen.
-    """
+
+async def require_spieler(claims: dict = Depends(get_current_claims)) -> dict:
     if claims.get("role") != "PLAYER":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "player role required")
-    sitzung = await repository.get_session(claims["sub"])
-    if sitzung is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "session no longer exists")
-    return sitzung
+    spieler = await repository.get_spieler(claims["sub"])
+    if spieler is None:
+        # Zugang inzwischen geloescht - fuer den Aufrufer dasselbe wie
+        # "nicht angemeldet", er soll sich neu anmelden.
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Zugang existiert nicht mehr")
+    return spieler
 
 
-@beitritt_router.post("", response_model=SpielerMeResponse)
-async def beitreten(body: BeitrittRequest, response: Response):
-    kampagne = await repository.finde_kampagne_zu_code(body.code)
-    if kampagne is None:
-        # Den empfangenen Code mitschreiben: bei "ungültig" ist sonst nicht zu
-        # unterscheiden, ob jemand sich vertippt hat oder die Tastatur etwas
-        # eingefügt hat.
-        # warning statt info: uvicorn filtert info-Meldungen der Anwendung weg,
-        # die Diagnose wäre sonst unsichtbar.
-        logging.getLogger("pnptool.beitritt").warning(
-            "Beitritt abgelehnt — empfangen: %r, normalisiert: %r",
-            body.code,
-            repository.normalisiere_code(body.code),
-        )
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zugangscode ungültig")
+@login_router.post("/login", response_model=SpielerMeResponse)
+async def login(body: LoginRequest, response: Response):
+    """Anmeldung mit Benutzername, Passwort nur falls gesetzt.
 
-    sitzung = await repository.create_session(kampagne["id"], body.name.strip())
-    token = create_access_token({"role": "PLAYER", "sub": sitzung["id"], "name": sitzung["name"]})
-    response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
-    return SpielerMeResponse(
-        sessionId=sitzung["id"],
-        name=sitzung["name"],
-        campaignId=kampagne["id"],
-        campaignName=kampagne["name"],
-    )
-
-
-@spieler_router.get("/me", response_model=SpielerMeResponse)
-async def spieler_me(sitzung: dict = Depends(require_player)):
-    return SpielerMeResponse(
-        sessionId=sitzung["id"],
-        name=sitzung["name"],
-        campaignId=sitzung["campaignId"],
-        campaignName=sitzung["campaignName"],
-        personId=sitzung["personId"],
-        personName=sitzung["personName"],
-    )
-
-
-@spieler_router.get("/charaktere", response_model=list[FreierCharakter])
-async def waehlbare_charaktere(sitzung: dict = Depends(require_player)):
-    return await repository.freie_charaktere(sitzung["campaignId"])
-
-
-@spieler_router.post("/charakter", response_model=SpielerMeResponse)
-async def charakter_beanspruchen(body: CharakterWahlRequest, sitzung: dict = Depends(require_player)):
-    if not await repository.claim_charakter(sitzung["id"], body.personId):
-        # Entweder schon vergeben oder gar kein Spielercharakter dieser
-        # Kampagne — beides ist für den Aufrufer dieselbe Sackgasse.
-        raise HTTPException(status.HTTP_409_CONFLICT, "Charakter nicht verfügbar")
-    frisch = await repository.get_session(sitzung["id"])
-    assert frisch is not None
-    return SpielerMeResponse(
-        sessionId=frisch["id"],
-        name=frisch["name"],
-        campaignId=frisch["campaignId"],
-        campaignName=frisch["campaignName"],
-        personId=frisch["personId"],
-        personName=frisch["personName"],
-    )
-
-
-@spieler_router.post("/abmelden")
-async def spieler_abmelden(response: Response, claims: dict = Depends(get_current_claims)):
-    """Meldet ab und **beendet die Sitzung**.
-
-    Das Cookie allein zu löschen genügte nicht: die Sitzung blieb bestehen
-    und hielt den Charakter weiter fest, während der Spieler ohne Cookie
-    nicht mehr an sie herankam. Der Charakter war damit dauerhaft blockiert,
-    bis die Spielleitung die Sitzung von Hand entfernte.
-
-    Wer nur das Gerät zuklappt, verliert nichts — das Cookie hält 30 Tage.
-    Beendet wird ausschliesslich beim ausdrücklichen Abmelden.
+    Gross- und Kleinschreibung spielt keine Rolle. Ist kein Passwort
+    hinterlegt, genuegt der Name - in einer privaten Runde soll sich niemand
+    erst eines ausdenken muessen.
     """
-    if claims.get("role") == "PLAYER":
-        await repository.delete_session_by_id(claims["sub"])
+    spieler = await repository.finde_spieler(body.benutzername)
+    if spieler is None or not repository.pruefe_passwort(body.passwort, spieler.get("passwortHash")):
+        # Dieselbe Meldung fuer "gibt es nicht" und "falsches Passwort" -
+        # sonst liesse sich herausfinden, welche Namen vergeben sind.
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Benutzername oder Passwort stimmt nicht")
+
+    token = create_access_token({"role": "PLAYER", "sub": spieler["id"], "name": spieler["benutzername"]})
+    response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+    return _antwort(spieler)
+
+
+@login_router.get("/me", response_model=SpielerMeResponse)
+async def spieler_me(spieler: dict = Depends(require_spieler)):
+    return _antwort(spieler)
+
+
+@login_router.post("/passwort", response_model=SpielerMeResponse)
+async def passwort_setzen(body: PasswortRequest, spieler: dict = Depends(require_spieler)):
+    """Der Spieler vergibt sich selbst ein Passwort - oder entfernt es wieder."""
+    await repository.setze_passwort(spieler["id"], body.passwort)
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+@login_router.post("/abmelden")
+async def abmelden(response: Response):
+    """Meldet ab. Der Zugang bleibt bestehen - er gehoert dauerhaft zu diesem
+    Spieler, anders als die frueheren Beitrittssitzungen."""
     response.delete_cookie(SESSION_COOKIE)
     return {"ok": True}
 
 
-@gm_router.get("/code", response_model=ZugangscodeResponse)
-async def code_lesen(campaign_id: str):
-    return ZugangscodeResponse(code=await repository.get_zugangscode(campaign_id))
+@gm_router.get("", response_model=list[SpielerResponse])
+async def spieler_liste(campaign_id: str):
+    return await repository.list_spieler(campaign_id)
 
 
-@gm_router.post("/code", response_model=ZugangscodeResponse)
-async def code_erzeugen(campaign_id: str):
-    """Erzeugt einen neuen Code. Ein bereits vergebener wird damit ungültig.
+@gm_router.post("", response_model=SpielerResponse)
+async def spieler_anlegen(campaign_id: str, body: SpielerAnlegenRequest):
+    if body.personId:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, body.personId)
+        if person is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
-    Bestehende Sitzungen bleiben bestehen — der Code regelt nur den Beitritt,
-    nicht den weiteren Zugang. Wer draußen bleiben soll, wird über
-    DELETE .../sitzungen/{id} entfernt.
-    """
-    code = repository.erzeuge_code()
-    await repository.set_zugangscode(campaign_id, code)
-    return ZugangscodeResponse(code=code)
+    neu = await repository.create_spieler(campaign_id, body.benutzername, body.personId, body.passwort)
+    if neu is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diesen Benutzernamen gibt es schon")
 
-
-@gm_router.delete("/code", response_model=ZugangscodeResponse)
-async def code_entfernen(campaign_id: str):
-    """Schließt den Beitritt. Bestehende Sitzungen bleiben gültig."""
-    await repository.set_zugangscode(campaign_id, None)
-    return ZugangscodeResponse(code=None)
+    for s in await repository.list_spieler(campaign_id):
+        if s["id"] == neu["id"]:
+            return s
+    raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Anlegen fehlgeschlagen")
 
 
-@gm_router.get("/sitzungen", response_model=list[SitzungResponse])
-async def sitzungen(campaign_id: str):
-    return await repository.list_sessions(campaign_id)
+@gm_router.post("/{spieler_id}/charakter", response_model=list[SpielerResponse])
+async def charakter_zuordnen(campaign_id: str, spieler_id: str, body: CharakterZuordnenRequest):
+    if not await repository.setze_charakter(campaign_id, spieler_id, body.personId):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Spieler nicht gefunden")
+    return await repository.list_spieler(campaign_id)
 
 
-@gm_router.delete("/sitzungen/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def sitzung_entfernen(campaign_id: str, session_id: str):
-    if not await repository.delete_session(campaign_id, session_id):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Sitzung nicht gefunden")
+@gm_router.delete("/{spieler_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def spieler_entfernen(campaign_id: str, spieler_id: str):
+    if not await repository.delete_spieler(campaign_id, spieler_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Spieler nicht gefunden")

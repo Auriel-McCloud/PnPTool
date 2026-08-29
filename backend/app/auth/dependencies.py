@@ -74,14 +74,14 @@ async def get_viewer(
     if rolle == "PLAYER":
         # Spät importiert: app.players nutzt seinerseits auth, ein Import auf
         # Modulebene wäre zirkulär.
-        from app.players.repository import get_session
+        from app.players.repository import get_spieler
 
-        sitzung = await get_session(claims["sub"])
-        # Die Sitzung könnte inzwischen gelöscht worden sein (SL wirft raus),
-        # das Token bliebe aber bis zum Ablauf gültig.
-        if sitzung is None or sitzung["campaignId"] != campaign_id:
+        spieler = await get_spieler(claims["sub"])
+        # Der Zugang könnte inzwischen gelöscht worden sein, das Token bliebe
+        # aber bis zum Ablauf gültig.
+        if spieler is None or spieler["campaignId"] != campaign_id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "campaign not found")
-        return Viewer(role="PLAYER", person_id=sitzung["personId"])
+        return Viewer(role="PLAYER", person_id=spieler["personId"])
 
     raise HTTPException(status.HTTP_403_FORBIDDEN, "no access to this campaign")
 

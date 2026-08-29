@@ -1,39 +1,43 @@
 from pydantic import BaseModel, Field
 
 
-class BeitrittRequest(BaseModel):
-    code: str
-    # Damit der Spielleiter in der Sitzungsliste sieht, wer beigetreten ist.
-    name: str = Field(min_length=1, max_length=60)
+class LoginRequest(BaseModel):
+    benutzername: str = Field(min_length=1, max_length=60)
+    # Leer lassen, solange kein Passwort gesetzt ist.
+    passwort: str = ""
 
 
-class CharakterWahlRequest(BaseModel):
-    personId: str
+class PasswortRequest(BaseModel):
+    """Leerer Wert entfernt das Passwort wieder."""
+
+    passwort: str = ""
 
 
-class FreierCharakter(BaseModel):
-    id: str
-    name: str
+class SpielerAnlegenRequest(BaseModel):
+    benutzername: str = Field(min_length=1, max_length=60)
+    personId: str | None = None
+    passwort: str = ""
+
+
+class CharakterZuordnenRequest(BaseModel):
+    personId: str | None = None
 
 
 class SpielerMeResponse(BaseModel):
-    sessionId: str
-    name: str
+    spielerId: str
+    benutzername: str
     campaignId: str
     campaignName: str
-    # Erst nach dem Beanspruchen gesetzt
     personId: str | None = None
     personName: str | None = None
+    hatPasswort: bool = False
 
 
-class ZugangscodeResponse(BaseModel):
-    # None, wenn der Spielleiter den Zugang geschlossen hat
-    code: str | None = None
+class SpielerResponse(BaseModel):
+    """Sicht der Spielleitung auf einen Zugang."""
 
-
-class SitzungResponse(BaseModel):
     id: str
-    name: str
-    createdAt: str | None = None
+    benutzername: str
+    hatPasswort: bool
     personId: str | None = None
     personName: str | None = None

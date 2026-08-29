@@ -255,7 +255,26 @@ Der gewählte Charakter liegt als Modul-Zustand im API-Client (`setViewAs`/`getV
 
 End-to-end gegen die echte Testkampagne verifiziert (SL-Sicht vs. `?alsSpieler=<Kira>`): Personen 2→1 (Mr. Chrome verschwindet), Events 1→0, Verbindungen 4→2, Graph 6 Knoten/4 Kanten → 4/2, Gegenstände 7→2. Für den Beweis der Inline-Redaktion wurde ein Testgegenstand mit `gmSecret`-markiertem Satz angelegt: SL sah "Eine schlichte Silberkette. In Wahrheit ein Peilsender von Mr. Chrome.", die Spieler-Sicht nur "Eine schlichte Silberkette." — Notizen dort leer. Testgegenstand danach wieder gelöscht.
 
-## Spieler-Zugang (Phase 4, 29.08.2026)
+## Spieler-Zugang (Phase 4, überarbeitet 29.08.2026)
+
+> **Achtung, das Beitrittscode-Verfahren ist abgelöst.** Ältere Abschnitte weiter unten beschreiben es noch; maßgeblich ist dieser hier.
+
+**Spieler haben feste Benutzernamen, ein Charakter gehört dauerhaft dazu.**
+
+Grund für den Umbau: Der Code führte laufend zu Konflikten. Wer sich von einem zweiten Gerät anmeldete, fand seinen eigenen Charakter belegt — von der eigenen alten Sitzung. Beim Testen ist das mehrfach passiert, zuletzt hat sogar ein Testlauf von mir Mark den Charakter weggenommen.
+
+- `Spieler`-Knoten mit `benutzername`, optionalem `passwortHash`, `-[:GEHOERT_ZU]->` Kampagne und `-[:SPIELT]->` Person.
+- **Anmeldung ohne Rücksicht auf Groß-/Kleinschreibung**, Leerzeichen werden abgeschnitten.
+- **Passwort ist freiwillig.** Ohne gesetztes Passwort genügt der Name — in einer privaten Runde soll sich niemand erst eines ausdenken müssen. Wer eines vergibt (`POST /api/spieler/passwort`), wird ab dann danach gefragt; ein leerer Wert entfernt es wieder.
+- Anmeldung meldet bei falschem Namen **und** falschem Passwort dasselbe zurück, damit sich nicht herausfinden lässt, welche Namen vergeben sind.
+- Verwaltung unter **Spieler** im SL-Menü: anlegen, Charakter zuordnen, entfernen.
+- Es gibt **keine Charakterwahl durch den Spieler mehr** — die Zuordnung macht die Spielleitung.
+
+> ⚠️ **Ohne Passwort kann jeder, der den Namen kennt, den Zugang nutzen.** Für eine Runde im eigenen Heimnetz ist das die bewusste Entscheidung gegen Umstände. Sollte das Werkzeug je aus dem Heimnetz erreichbar sein, muss das neu bewertet werden.
+
+**Test-Zugang:** `Auriel`, ohne Passwort, spielt Ryu Tanaka.
+
+## Früheres Beitrittscode-Verfahren (abgelöst)
 
 **Ablauf:** Spielleitung erzeugt im Bereich *Zugang* einen sechsstelligen Code → Spieler öffnet dieselbe Adresse, klickt "Ich bin Spieler und habe einen Zugangscode", gibt Code und seinen Namen ein → wählt einen freien Spielercharakter → sieht ab da die Kampagne durch dessen Augen.
 

@@ -16,11 +16,13 @@ from app.main import app
 
 SCHREIBEND = {"POST", "PUT", "PATCH", "DELETE"}
 
-# Beitritt läuft bewusst ohne Anmeldung (der Code ist der Nachweis), die
-# übrigen sind die Sitzungsverwaltung des Spielers für sich selbst.
+# Anmeldung läuft naturgemäß ohne bestehende Sitzung; die übrigen sind
+# Selbstverwaltung des Spielers für den eigenen Zugang.
 OHNE_GM_ERLAUBT = {
-    "/api/beitritt",
-    "/api/spieler/charakter",
+    "/api/spieler/login",
+    # Passwort für sich selbst setzen — prüft über require_spieler, dass es
+    # der eigene Zugang ist, und ändert nur dieses eine Feld.
+    "/api/spieler/passwort",
     "/api/spieler/abmelden",
     "/api/auth/gm/login",
     "/api/auth/gm/logout",
@@ -99,7 +101,7 @@ def test_leseseite_ist_fuer_spieler_erreichbar():
             continue
         if not route.path.startswith("/api/campaigns/{campaign_id}"):
             continue
-        if "/zugang" in route.path:  # Sitzungsverwaltung ist GM-Sache
+        if "/spieler" in route.path:  # Spielerverwaltung ist Sache der Spielleitung
             continue
         wachen = _abhaengigkeiten(route.dependant)
         assert require_campaign_gm not in wachen, f"{route.path} bleibt für Spieler gesperrt"

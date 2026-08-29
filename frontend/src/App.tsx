@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { GmLoginPage } from "./auth/GmLoginPage";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
@@ -6,10 +6,9 @@ import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
-import { BeitrittPage, CharakterWahl } from "./players/BeitrittPage";
-import { playersApi } from "./players/api";
+import { SpielerLogin } from "./players/SpielerLogin";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
-import { ZugangVerwaltung } from "./players/ZugangVerwaltung";
+import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
@@ -38,7 +37,7 @@ const TITEL: Record<string, string> = {
   welt: "Personen · Orte · Ereignisse",
   gegenstaende: "Gegenstände",
   graph: "Beziehungsgeflecht",
-  zugang: "Spielerzugang",
+  zugang: "Spielerzugänge",
 };
 
 function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
@@ -117,7 +116,7 @@ function Dashboard() {
           {bereich === "welt" && <EntityManager key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
-          {bereich === "zugang" && <ZugangVerwaltung campaignId={kampagne.id} />}
+          {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>
@@ -127,7 +126,7 @@ function Dashboard() {
 /**
  * Weiche zwischen den drei Zuständen: Spielleitung, Spieler, niemand.
  *
- * Die Rolle kommt aus dem Sitzungs-Cookie (/api/auth/me), Spieler und
+ * Die Rolle kommt aus dem Sitzungs-Cookie (/api/auth/me). Spieler und
  * Spielleitung teilen sich dasselbe Cookie — es kann also immer nur eine
  * Rolle gleichzeitig aktiv sein. Für Marks Aufbau (ein Gerät, eine Rolle)
  * ist das richtig; wer beides zugleich braucht, nimmt ein zweites
@@ -135,44 +134,22 @@ function Dashboard() {
  */
 function Shell() {
   const { me, loading } = useAuth();
-  const [zeigeBeitritt, setZeigeBeitritt] = useState(false);
-  // Nach dem Beitritt fehlt noch der Charakter; danach die volle Ansicht.
-  const [hatCharakter, setHatCharakter] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (me?.role !== "PLAYER") {
-      setHatCharakter(null);
-      return;
-    }
-    playersApi
-      .me()
-      .then((s) => setHatCharakter(s.personId !== null))
-      .catch(() => setHatCharakter(false));
-  }, [me]);
+  const [zeigeSpielerLogin, setZeigeSpielerLogin] = useState(false);
 
   if (loading) return null;
 
+  // Der Charakter haengt fest am Zugang, es gibt also nichts mehr zu waehlen.
   if (me?.role === "PLAYER") {
-    if (hatCharakter === null) return null;
-    if (!hatCharakter)
-      return (
-        <CharakterWahl
-          onGewaehlt={() => setHatCharakter(true)}
-          onAbmelden={() => playersApi.abmelden().then(() => window.location.reload())}
-        />
-      );
     return <SpielerAnsicht onAbgemeldet={() => window.location.reload()} />;
   }
 
   if (me) return <Dashboard />;
 
-  if (zeigeBeitritt) {
-    return (
-      <BeitrittPage onBeigetreten={() => window.location.reload()} onZurueck={() => setZeigeBeitritt(false)} />
-    );
+  if (zeigeSpielerLogin) {
+    return <SpielerLogin onAngemeldet={() => window.location.reload()} onZurueck={() => setZeigeSpielerLogin(false)} />;
   }
 
-  return <GmLoginPage onBeitreten={() => setZeigeBeitritt(true)} />;
+  return <GmLoginPage onBeitreten={() => setZeigeSpielerLogin(true)} />;
 }
 
 function App() {

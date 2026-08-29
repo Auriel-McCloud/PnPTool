@@ -1,192 +1,177 @@
-import secrets
+"""Spieler-Zugänge: fester Benutzername statt flüchtiger Beitrittssitzung.
+
+Vorher gab es einen Kampagnen-Code, mit dem man beitrat und sich dann einen
+freien Charakter nahm. Das führte laufend zu Konflikten: wer sich von einem
+zweiten Gerät anmeldete, fand seinen Charakter belegt — von sich selbst.
+Jetzt gehört ein Charakter dauerhaft zu einem Benutzernamen.
+"""
+
 import uuid
+
+import bcrypt
 
 from app.db.neo4j_driver import get_driver
 
-# Verwechslungsarmes Alphabet: der Code wird am Spieltisch vorgelesen, also
-# ohne 0/O, 1/I/L, 8/B. Lieber ein kürzeres Alphabet als Rückfragen.
-_CODE_ALPHABET = "ACDEFGHJKMNPQRTUVWXY2345679"
-_CODE_LAENGE = 6
+
+def _hash(passwort: str) -> str:
+    return bcrypt.hashpw(passwort.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def erzeuge_code() -> str:
-    return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LAENGE))
+def pruefe_passwort(passwort: str, hash_wert: str | None) -> bool:
+    """Prüft das Passwort — ein leeres Feld heisst *kein Passwort nötig*.
 
-
-async def set_zugangscode(campaign_id: str, code: str | None) -> None:
-    """Setzt oder entfernt den Beitrittscode einer Kampagne."""
-    driver = get_driver()
-    async with driver.session() as session:
-        await session.run(
-            "MATCH (c:Campaign {id: $campaign_id}) SET c.zugangscode = $code",
-            campaign_id=campaign_id,
-            code=code,
-        )
-
-
-async def get_zugangscode(campaign_id: str) -> str | None:
-    driver = get_driver()
-    async with driver.session() as session:
-        result = await session.run(
-            "MATCH (c:Campaign {id: $campaign_id}) RETURN c.zugangscode AS code",
-            campaign_id=campaign_id,
-        )
-        record = await result.single()
-        return record["code"] if record else None
-
-
-def normalisiere_code(roh: str) -> str:
-    """Macht einen abgetippten Code vergleichbar.
-
-    Der Code wird am Spieltisch vorgelesen und auf Tablets eingetippt. Dabei
-    schleichen sich Leerzeichen ein (Autokorrektur hängt gern eines an),
-    manche schreiben ihn gruppiert als "FMT-26V", und Groß-/Kleinschreibung
-    soll ohnehin egal sein. All das wird hier weggeräumt, statt den Nutzer
-    mit "Code ungültig" im Regen stehen zu lassen.
+    Bewusst so: In einer privaten Runde soll niemand erst ein Passwort
+    ausdenken müssen. Wer eines setzt, wird ab dann danach gefragt.
     """
-    return "".join(z for z in roh if z.isalnum()).upper()
+    if not hash_wert:
+        return True
+    if not passwort:
+        return False
+    return bcrypt.checkpw(passwort.encode("utf-8"), hash_wert.encode("utf-8"))
 
 
-async def finde_kampagne_zu_code(code: str) -> dict | None:
-    """Sucht die Kampagne zu einem Beitrittscode."""
-    sauber = normalisiere_code(code)
-    if not sauber:
+async def create_spieler(campaign_id: str, benutzername: str, person_id: str | None, passwort: str = "") -> dict | None:
+    """Legt einen Spielerzugang an. Name muss in der Kampagne eindeutig sein."""
+    name = benutzername.strip()
+    if not name:
         return None
 
     driver = get_driver()
     async with driver.session() as session:
-        result = await session.run(
-            "MATCH (c:Campaign) WHERE c.zugangscode IS NOT NULL "
-            "AND toUpper(c.zugangscode) = $code "
-            "RETURN c.id AS id, c.name AS name",
-            code=sauber,
+        # Vergleich über die kleingeschriebene Fassung: "Auriel" und "auriel"
+        # sind derselbe Zugang.
+        vorhanden = await session.run(
+            """
+            MATCH (s:Spieler)-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
+            WHERE toLower(s.benutzername) = toLower($name)
+            RETURN s.id AS id
+            """,
+            campaign_id=campaign_id,
+            name=name,
         )
-        record = await result.single()
-        return dict(record) if record else None
+        if await vorhanden.single() is not None:
+            return None
 
-
-async def create_session(campaign_id: str, name: str) -> dict:
-    driver = get_driver()
-    session_id = str(uuid.uuid4())
-    async with driver.session() as session:
         result = await session.run(
             """
             MATCH (c:Campaign {id: $campaign_id})
-            CREATE (s:PlayerSession {id: $session_id, name: $name, createdAt: datetime()})
+            CREATE (s:Spieler {
+                id: $spieler_id, benutzername: $name, passwortHash: $hash, createdAt: datetime()
+            })
             CREATE (s)-[:GEHOERT_ZU]->(c)
-            RETURN s.id AS id, s.name AS name
+            WITH s, c
+            OPTIONAL MATCH (p:Person {id: $person_id, campaignId: c.id})
+            FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | CREATE (s)-[:SPIELT]->(p))
+            RETURN s.id AS id, s.benutzername AS benutzername
             """,
             campaign_id=campaign_id,
-            session_id=session_id,
+            spieler_id=str(uuid.uuid4()),
             name=name,
-        )
-        record = await result.single()
-        return dict(record)
-
-
-async def get_session(session_id: str) -> dict | None:
-    """Sitzung samt Kampagne und beanspruchtem Charakter.
-
-    `personId` ist None, solange kein Charakter beansprucht wurde — die
-    Sichtbarkeitsfilterung behandelt das korrekt (sieht dann nur, was für
-    alle sichtbar ist).
-    """
-    driver = get_driver()
-    async with driver.session() as session:
-        result = await session.run(
-            """
-            MATCH (s:PlayerSession {id: $session_id})-[:GEHOERT_ZU]->(c:Campaign)
-            OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
-            RETURN s.id AS id, s.name AS name, c.id AS campaignId, c.name AS campaignName,
-                   p.id AS personId, p.name AS personName
-            """,
-            session_id=session_id,
+            hash=_hash(passwort) if passwort else None,
+            person_id=person_id or "",
         )
         record = await result.single()
         return dict(record) if record else None
 
 
-async def freie_charaktere(campaign_id: str) -> list[dict]:
-    """Spielercharaktere, die noch niemand beansprucht hat."""
+async def finde_spieler(benutzername: str) -> dict | None:
+    """Sucht kampagnenübergreifend nach dem Benutzernamen, ohne Rücksicht auf
+    Gross- und Kleinschreibung — beim Anmelden weiss man die Kampagne nicht."""
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
-            MATCH (p:Person {campaignId: $campaign_id, personType: 'PC'})
-            WHERE NOT EXISTS { MATCH (:PlayerSession)-[:SPIELT]->(p) }
-            RETURN p.id AS id, p.name AS name ORDER BY p.name
+            MATCH (s:Spieler)-[:GEHOERT_ZU]->(c:Campaign)
+            WHERE toLower(s.benutzername) = toLower($name)
+            OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
+            RETURN s.id AS id, s.benutzername AS benutzername, s.passwortHash AS passwortHash,
+                   c.id AS campaignId, c.name AS campaignName,
+                   p.id AS personId, p.name AS personName
             """,
-            campaign_id=campaign_id,
+            name=benutzername.strip(),
         )
-        return [dict(record) async for record in result]
+        record = await result.single()
+        return dict(record) if record else None
 
 
-async def claim_charakter(session_id: str, person_id: str) -> bool:
-    """Beansprucht einen Charakter für die Sitzung.
-
-    Scheitert (False), wenn der Charakter schon jemandem gehört oder nicht zur
-    Kampagne der Sitzung zählt. Eine bestehende Zuordnung der Sitzung wird
-    ersetzt — wer sich vertippt hat, kann wechseln, solange frei ist.
-    """
+async def get_spieler(spieler_id: str) -> dict | None:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
-            MATCH (s:PlayerSession {id: $session_id})-[:GEHOERT_ZU]->(c:Campaign)
-            MATCH (p:Person {id: $person_id, campaignId: c.id, personType: 'PC'})
-            WHERE NOT EXISTS { MATCH (anderer:PlayerSession)-[:SPIELT]->(p) WHERE anderer.id <> $session_id }
-            OPTIONAL MATCH (s)-[alt:SPIELT]->()
-            DELETE alt
-            CREATE (s)-[:SPIELT]->(p)
-            RETURN p.id AS id
+            MATCH (s:Spieler {id: $spieler_id})-[:GEHOERT_ZU]->(c:Campaign)
+            OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
+            RETURN s.id AS id, s.benutzername AS benutzername, s.passwortHash AS passwortHash,
+                   c.id AS campaignId, c.name AS campaignName,
+                   p.id AS personId, p.name AS personName
             """,
-            session_id=session_id,
-            person_id=person_id,
+            spieler_id=spieler_id,
+        )
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def setze_passwort(spieler_id: str, passwort: str) -> bool:
+    """Setzt oder entfernt das Passwort. Leer bedeutet: keines mehr nötig."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (s:Spieler {id: $spieler_id}) SET s.passwortHash = $hash RETURN s.id AS id",
+            spieler_id=spieler_id,
+            hash=_hash(passwort) if passwort else None,
         )
         return await result.single() is not None
 
 
-async def list_sessions(campaign_id: str) -> list[dict]:
-    """Alle Sitzungen einer Kampagne — für die Übersicht des Spielleiters."""
+async def setze_charakter(campaign_id: str, spieler_id: str, person_id: str | None) -> bool:
+    """Ordnet den Charakter zu. Eine bestehende Zuordnung wird ersetzt."""
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
-            MATCH (s:PlayerSession)-[:GEHOERT_ZU]->(c:Campaign {id: $campaign_id})
+            MATCH (s:Spieler {id: $spieler_id})-[:GEHOERT_ZU]->(c:Campaign {id: $campaign_id})
+            OPTIONAL MATCH (s)-[alt:SPIELT]->()
+            DELETE alt
+            WITH s, c
+            OPTIONAL MATCH (p:Person {id: $person_id, campaignId: c.id})
+            FOREACH (_ IN CASE WHEN p IS NULL THEN [] ELSE [1] END | CREATE (s)-[:SPIELT]->(p))
+            RETURN s.id AS id
+            """,
+            campaign_id=campaign_id,
+            spieler_id=spieler_id,
+            person_id=person_id or "",
+        )
+        return await result.single() is not None
+
+
+async def list_spieler(campaign_id: str) -> list[dict]:
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (s:Spieler)-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
             OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
-            RETURN s.id AS id, s.name AS name, toString(s.createdAt) AS createdAt,
+            RETURN s.id AS id, s.benutzername AS benutzername,
+                   s.passwortHash IS NOT NULL AS hatPasswort,
                    p.id AS personId, p.name AS personName
-            ORDER BY s.createdAt
+            ORDER BY toLower(s.benutzername)
             """,
             campaign_id=campaign_id,
         )
         return [dict(record) async for record in result]
 
 
-async def delete_session(campaign_id: str, session_id: str) -> bool:
+async def delete_spieler(campaign_id: str, spieler_id: str) -> bool:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
-            MATCH (s:PlayerSession {id: $session_id})-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
+            MATCH (s:Spieler {id: $spieler_id})-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
             DETACH DELETE s
-            RETURN count(s) AS geloescht
+            RETURN count(s) AS weg
             """,
             campaign_id=campaign_id,
-            session_id=session_id,
-        )
-        record = await result.single()
-        return bool(record and record["geloescht"])
-
-
-async def delete_session_by_id(session_id: str) -> bool:
-    """Beendet eine Sitzung ohne Kampagnenbezug — für das Abmelden durch den
-    Spieler selbst, der seine Kampagne nicht mitschicken muss."""
-    driver = get_driver()
-    async with driver.session() as session:
-        result = await session.run(
-            "MATCH (s:PlayerSession {id: $session_id}) DETACH DELETE s RETURN count(s) AS weg",
-            session_id=session_id,
+            spieler_id=spieler_id,
         )
         record = await result.single()
         return bool(record and record["weg"])
