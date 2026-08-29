@@ -106,7 +106,9 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 - Dazu Suche (Name, Typ **und Besitzer** — "alle Waffen von Kira" ist die häufigere Frage als der exakte Name) und ein Besitzerfilter. Das Anlegen-Formular ist hinter "+ Neu" eingeklappt, damit es keine feste Höhe kostet.
 - Verifiziert auf Tablet (768×1024) und Handy (412×915): `document.body.scrollHeight` entspricht exakt der Bildschirmhöhe, der Inhaltsbereich hat keinen Überlauf.
 
-**Noch offen:** die Bereiche "Welt" und "Beziehungen" scrollen weiterhin — sie müssen sich erst selbst einteilen, bevor sie `statisch` bekommen können. Für "Welt" heißt das dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Der Graph hat eine feste Höhe von 520px und sollte stattdessen die Fläche füllen.
+**Der Graph füllt inzwischen ebenfalls die Fläche** statt einer starren Höhe von 520px und ist damit der zweite statische Bereich. Cytoscape braucht dafür einen `ResizeObserver` am Container — ein `window`-resize-Listener allein genügt nicht, weil sich die Zeichenfläche auch ohne Fensteränderung verschiebt (Bereichswechsel, ausfahrendes Menü).
+
+**Noch offen:** der Bereich "Welt" scrollt weiterhin — er muss sich erst selbst einteilen, bevor er `statisch` bekommen kann. Dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Bewusst nicht blind nach demselben Muster gebaut, solange das Kachel-Konzept nicht bestätigt ist.
 
 ## Verhältnis zum früheren Vorbehalt
 

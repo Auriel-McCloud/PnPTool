@@ -109,8 +109,11 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
     requestAnimationFrame(() => requestAnimationFrame(forceResize));
 
     window.addEventListener("resize", forceResize);
+    const beobachter = new ResizeObserver(forceResize);
+    beobachter.observe(containerRef.current);
 
     return () => {
+      beobachter.disconnect();
       window.removeEventListener("resize", forceResize);
       cy.destroy();
       cyRef.current = null;
@@ -146,8 +149,10 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
   }, [campaignId, focus, depth]);
 
   return (
-    <div>
-      <div style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center" }}>
+    // Fuellt die Flaeche des Bereichs (Leitprinzip "nie scrollen") statt einer
+    // festen Hoehe; die Kopfzeile behaelt ihre, der Graph bekommt den Rest.
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <div style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", flexShrink: 0 }}>
         {focus ? (
           <>
             <strong>Fokus: {focusLabel}</strong>
@@ -178,7 +183,8 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
         ref={containerRef}
         style={{
           width: "100%",
-          height: 520,
+          flex: 1,
+          minHeight: 0,
           // Neonröhre als Begrenzung, siehe .cl-roehre in shell/commlink.css.
           // --bereich-farbe kommt aus der Hülle (hier das Blau der Beziehungen).
           border: "1px solid var(--bereich-farbe, var(--neon))",
