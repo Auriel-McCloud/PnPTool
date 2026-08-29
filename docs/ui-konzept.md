@@ -110,6 +110,20 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 
 **Noch offen:** der Bereich "Welt" scrollt weiterhin — er muss sich erst selbst einteilen, bevor er `statisch` bekommen kann. Dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Bewusst nicht blind nach demselben Muster gebaut, solange das Kachel-Konzept nicht bestätigt ist.
 
+## Spieler-Ansicht: geplanter Umbau (29.08.2026, noch nicht gebaut)
+
+Marks Vorgaben nach dem ersten Blick aufs Tablet. Die derzeitige Spieler-Ansicht (Kontakte/Inventar/Orte/Beziehungen) ist ein Zwischenstand und wird davon weitgehend abgelöst.
+
+- **Das Hauptfenster ist das eigene Charakterblatt**, nicht eine Liste. Es öffnet als Erstes.
+- **Nur lesend**: keine Punkte hinzufügen oder abziehen. Werte ändert die Spielleitung bzw. später der Level-Up-Modus.
+- **Das Charakterblatt richtet sich dynamisch nach dem Charakter** — wer keine Sphären hat, sieht keine Sphären-Abschnitte, wer Drohnen führt, bekommt die entsprechenden Teile. Der Aufbau folgt also den gesetzten Werten, nicht einer festen Maske.
+- **Fremde Charakterblätter sind tabu** — weder von anderen Spielern noch von NPCs. (Serverseitig steht das noch aus: `GET /personen/{id}/werte` ist bislang ungefiltert, siehe CLAUDE.md.)
+- **Kontakte wie ein Telefonbuch**: eigenes Menü, Namensliste, nicht die jetzige Kartenansicht.
+- **Popups gehen animiert auf, und zwar von der Stelle, auf die getippt wurde.** Das jetzige Fenster erscheint schlicht — die Streuung der Position steht schon, die Herkunftsanimation fehlt.
+- **SL-Benachrichtigungen kommen aus einem Blitz-Symbol rechts** in der oberen Leiste und klappen von dort auf. Entspricht der schon länger notierten Phase-5-Idee (Symbol oben rechts als Ursprung), jetzt konkret als Blitz und rechtsbündig.
+
+Technisch vorbereitet ist dafür bereits: das Fenstersystem (`shell/Fenster.tsx`) muss einen Ursprungspunkt entgegennehmen und `transform-origin` daraus setzen; die Werte-Route braucht eine Sichtbarkeitsprüfung; das Charakterblatt braucht eine lesende Variante ohne Bedienelemente.
+
 ## Verhältnis zum früheren Vorbehalt
 
 Die Plandatei `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` hatte den Umbau verschoben, weil *"der Funktionsumfang pro Entität noch spürbar wächst"*. Bewusste Differenzierung dazu:
