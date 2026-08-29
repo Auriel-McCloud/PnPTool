@@ -3,6 +3,7 @@ import { entitiesApi, type Event, type Ort, type Person } from "../entities/api"
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { ABLAGEN, itemsApi, type Ablage, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
+import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "../items/aufbewahrung";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
@@ -46,7 +47,10 @@ function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: s
 export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
   const [bereich, setBereich] = useState("kontakte");
-  const [ablageFilter, setAblageFilter] = useState<Ablage>("AUSGERUESTET");
+  // Mehrere Bereiche gleichzeitig: am Körper hat man Ausrüstung und Rucksack
+  // dabei, im Auto zusätzlich dessen Inhalt, im Versteck etwas anderes.
+  const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
+  const [auswahlGesetzt, setAuswahlGesetzt] = useState(false);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
@@ -69,11 +73,25 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
   }, [ich]);
 
+  // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
+  const meineRoh = sachen.filter((g) => g.ownerId === ich?.personId);
+  const bereiche = ermittleBereiche(meineRoh);
+
+  useEffect(() => {
+    // Erst wenn die eigenen Sachen geladen sind, sonst steht die Vorauswahl
+    // unvollständig fest (siehe GegenstaendeUebersicht).
+    if (!auswahlGesetzt && meineRoh.length > 0) {
+      setBereichAuswahl(standardAuswahl(bereiche));
+      setAuswahlGesetzt(true);
+    }
+  }, [bereiche, meineRoh.length, auswahlGesetzt]);
+
   if (!ich) return null;
 
   // Was der Spieler selbst besitzt, steht zuerst — alles andere ist Beiwerk.
-  const meine = sachen.filter((g) => g.ownerId === ich.personId);
+  const meine = meineRoh;
   const fremde = sachen.filter((g) => g.ownerId !== ich.personId);
+  const sichtbareSachen = filtereNachBereichen(meine, bereiche, bereichAuswahl);
 
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
@@ -141,27 +159,28 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             })()}
 
           <div className="gg-reiter" style={{ marginBottom: 12 }}>
-            {ABLAGEN.map((a) => {
-              const anzahl = meine.filter((g) => g.ablage === a.wert).length;
-              return (
-                <button
-                  key={a.wert}
-                  type="button"
-                  data-aktiv={ablageFilter === a.wert}
-                  onClick={() => setAblageFilter(a.wert)}
-                >
-                  {a.symbol} {a.label} <span className="gg-reiter-zahl">{anzahl}</span>
-                </button>
-              );
-            })}
+            {bereiche.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                data-aktiv={bereichAuswahl.has(b.id)}
+                onClick={() =>
+                  setBereichAuswahl((alt) => {
+                    const neu = new Set(alt);
+                    if (neu.has(b.id)) neu.delete(b.id);
+                    else neu.add(b.id);
+                    return neu;
+                  })
+                }
+                title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
+              >
+                {b.symbol} {b.name} <span className="gg-reiter-zahl">{meine.filter(b.passt).length}</span>
+              </button>
+            ))}
           </div>
 
-          {meine.filter((g) => g.ablage === ablageFilter).length === 0 && (
-            <p style={{ color: "var(--text-leise)" }}>Hier ist nichts.</p>
-          )}
-          {meine
-            .filter((g) => g.ablage === ablageFilter)
-            .map((g) => (
+          {sichtbareSachen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Hier ist nichts.</p>}
+          {sichtbareSachen.map((g) => (
               <div key={g.id} style={{ borderBottom: "1px solid var(--linie)", padding: "10px 0" }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                   <strong style={{ color: "var(--text)" }}>{g.hatMenge ? `${g.name} ×${g.menge}` : g.name}</strong>
@@ -183,8 +202,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                     </button>
                   ))}
                 </div>
-              </div>
-            ))}
+            </div>
+          ))}
 
           {fremde.length > 0 && (
             <>

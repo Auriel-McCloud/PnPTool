@@ -3,7 +3,8 @@ import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaig
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
-import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
+import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
+import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
 import "./gegenstaende.css";
 
 /** Muss zu den Werten in gegenstaende.css passen (Raster-Ausmessung). */
@@ -45,9 +46,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [loading, setLoading] = useState(true);
   const [suche, setSuche] = useState("");
   const [besitzerFilter, setBesitzerFilter] = useState("");
-  // null = alle Ablagen. Reiter statt Gruppen-Überschriften, weil sich das
-  // Raster sonst nicht mehr sauber ausmessen liesse (Leitprinzip "nie scrollen").
-  const [ablageFilter, setAblageFilter] = useState<Ablage | null>(null);
+  // Mehrere Bereiche gleichzeitig: in der Praxis will man "Ausgerüstet und
+  // Rucksack" sehen, im Auto zusätzlich dessen Inhalt, im Versteck wiederum
+  // etwas anderes. Leere Auswahl = alles.
+  const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
+  const [auswahlGesetzt, setAuswahlGesetzt] = useState(false);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [seite, setSeite] = useState(0);
@@ -88,7 +91,6 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLowerCase();
     return items.filter((i) => {
-      if (ablageFilter && i.ablage !== ablageFilter) return false;
       if (besitzerFilter === VORLAGE_SENTINEL && i.ownerId !== null) return false;
       if (besitzerFilter && besitzerFilter !== VORLAGE_SENTINEL && i.ownerId !== besitzerFilter) return false;
       if (!s) return true;
@@ -100,16 +102,40 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         (i.ownerName ?? "").toLowerCase().includes(s)
       );
     });
-  }, [items, suche, besitzerFilter, ablageFilter]);
+  }, [items, suche, besitzerFilter]);
+
+  const bereiche = useMemo(() => ermittleBereiche(items), [items]);
+
+  // Beim ersten Laden auf "am Körper" vorwählen — aber nur einmal, sonst
+  // liesse sich die Auswahl nie wieder leeren.
+  useEffect(() => {
+    // Erst wenn Gegenstände geladen sind — vorher kennt ermittleBereiche nur
+    // "Ausgerüstet" und die Vorauswahl bliebe unvollständig stehen.
+    if (!auswahlGesetzt && items.length > 0) {
+      setBereichAuswahl(standardAuswahl(bereiche));
+      setAuswahlGesetzt(true);
+    }
+  }, [bereiche, items.length, auswahlGesetzt]);
+
+  const sichtbareItems = filtereNachBereichen(gefiltert, bereiche, bereichAuswahl);
+
+  function schalteBereich(id: string) {
+    setBereichAuswahl((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(id)) neu.delete(id);
+      else neu.add(id);
+      return neu;
+    });
+  }
 
   // Nach dem Filtern kann die aktuelle Seite hinter dem Ende liegen
-  const seiten = Math.max(1, Math.ceil(gefiltert.length / proSeite));
+  const seiten = Math.max(1, Math.ceil(sichtbareItems.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
-  const sichtbar = gefiltert.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+  const sichtbar = sichtbareItems.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
   useEffect(() => {
     setSeite(0);
-  }, [suche, besitzerFilter, ablageFilter]);
+  }, [suche, besitzerFilter, bereichAuswahl]);
 
   // Wer über seiner Grenze liegt — die Spielleitung soll es auf einen Blick
   // sehen und selbst entscheiden, was daraus folgt.
@@ -167,7 +193,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           {anlegenOffen ? "Abbrechen" : "+ Neu"}
         </button>
         <span className="gg-anzahl">
-          {gefiltert.length} von {items.length}
+          {sichtbareItems.length} von {items.length}
         </span>
       </div>
 
@@ -204,22 +230,22 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       )}
 
       <div className="gg-reiter">
-        <button type="button" data-aktiv={ablageFilter === null} onClick={() => setAblageFilter(null)}>
-          Alle <span className="gg-reiter-zahl">{items.length}</span>
-        </button>
-        {ABLAGEN.map((a) => {
-          const anzahl = items.filter((i) => i.ablage === a.wert).length;
-          return (
-            <button
-              key={a.wert}
-              type="button"
-              data-aktiv={ablageFilter === a.wert}
-              onClick={() => setAblageFilter(a.wert)}
-            >
-              {a.symbol} {a.label} <span className="gg-reiter-zahl">{anzahl}</span>
-            </button>
-          );
-        })}
+        {bereiche.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            data-aktiv={bereichAuswahl.has(b.id)}
+            onClick={() => schalteBereich(b.id)}
+            title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
+          >
+            {b.symbol} {b.name} <span className="gg-reiter-zahl">{gefiltert.filter(b.passt).length}</span>
+          </button>
+        ))}
+        {bereichAuswahl.size > 0 && (
+          <button type="button" onClick={() => setBereichAuswahl(new Set())} title="Auswahl aufheben">
+            alle zeigen
+          </button>
+        )}
       </div>
 
       <div className="gg-raster" ref={rasterRef}>

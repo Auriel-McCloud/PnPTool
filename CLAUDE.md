@@ -315,6 +315,15 @@ Spieler legen nur die **Art** fest (ausgerüstet/Rucksack/gelagert), nicht das g
 
 **Fahrzeuge werden beim Anlegen als `GELAGERT` vorbelegt** (`NICHT_AM_KOERPER` in `items/routes.py`). Sonst läge ein 180-kg-Motorrad "im Rucksack" und zählte gegen die Traglast seines Besitzers — genau das ist beim Testen passiert. Änderbar, ein Modellauto darf durchaus mitgeführt werden.
 
+**Aufbewahrungsbereiche sind datengetrieben, nicht fest** (`items/aufbewahrung.ts`). Statt der drei starren Ablage-Arten leitet die Oberfläche ab, was tatsächlich existiert:
+- *Ausgerüstet* gibt es immer.
+- Der zweite Bereich heißt nach dem **getragenen Behälter** ("Abgewetzter Rucksack"), sofern einer vom Typ Behälter/Fahrzeug ausgerüstet ist — sonst neutral *Mitgeführt*. Marks Einwand: nicht jeder hat einen Rucksack, und ohne einen trägt man Dinge trotzdem am Gürtel.
+- **Je Lagerort ein eigener Bereich** (Yamaha Rapier, Kiras Geheimversteck), aber nur wenn dort etwas liegt.
+
+**Mehrfachauswahl statt Entweder-oder:** man kann mehrere Bereiche gleichzeitig anzeigen. Der eigentliche Gedanke dahinter ist *Zugriff* — am Körper hat man Ausrüstung und Rucksack, im Auto zusätzlich dessen Inhalt, im Versteck wieder etwas anderes, aber eben nicht das Auto. Vorgewählt ist "am Körper"; leere Auswahl bedeutet alles.
+
+*Fallstrick dabei:* die Vorauswahl darf erst gesetzt werden, **wenn die Gegenstände geladen sind**. Läuft der Effekt vorher, kennt `ermittleBereiche` nur "Ausgerüstet", und die Vorauswahl bleibt unvollständig stehen — genau das ist beim ersten Anlauf passiert.
+
 **Randnotiz:** `TraitDef`-Kennungen enthalten Umlaute (`neotopia:AttributKörperlich:Körperkraft`). Im Browser wird das beim Aufruf automatisch kodiert; in Skripten muss man `quote()` verwenden, sonst scheitert die Anfrage.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
