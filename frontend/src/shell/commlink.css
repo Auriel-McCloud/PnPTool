@@ -22,15 +22,65 @@
 
 .cl-roehre {
   position: relative;
-  border: 1px solid var(--roehre-farbe, var(--neon));
+  /* Ohne eigenen Ton die Leitfarbe des Bereichs — dadurch wechselt die
+     Röhrenfarbe mit dem Bereich, statt überall gleich zu sein. */
+  border: 1px solid var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
   border-radius: var(--radius);
   background: var(--flaeche);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 0 8px -2px var(--roehre-farbe, var(--neon)),
-    inset 0 0 14px -8px var(--roehre-farbe, var(--neon));
+    0 0 8px -2px var(--roehre-farbe, var(--bereich-farbe, var(--neon))),
+    inset 0 0 14px -8px var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
   /* Röhren zünden nicht sofort sauber durch */
   animation: cl-zuenden 0.5s ease-out;
+}
+
+/* Müde Röhre: fällt gelegentlich kurz aus und zündet wieder.
+   Die Zyklen sind lang und ungleich (17s/23s/29s — teilerfremd, damit
+   nicht alle gleichzeitig zucken); den Versatz streut zusätzlich ein
+   zufälliger animation-delay aus dem Skript. */
+.cl-roehre[data-muede] {
+  animation:
+    cl-zuenden 0.5s ease-out,
+    cl-aussetzer 19s ease-in-out infinite;
+}
+
+.cl-roehre[data-muede="2"] {
+  animation:
+    cl-zuenden 0.5s ease-out,
+    cl-aussetzer 23s ease-in-out infinite;
+}
+
+.cl-roehre[data-muede="3"] {
+  animation:
+    cl-zuenden 0.5s ease-out,
+    cl-aussetzer 29s ease-in-out infinite;
+}
+
+@keyframes cl-aussetzer {
+  /* 96% der Zeit brennt sie ruhig — der Ausfall soll überraschen */
+  0%,
+  91% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 0.45;
+  }
+  93% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 0.25;
+  }
+  95.5% {
+    opacity: 0.9;
+  }
+  96% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .cl-roehre[data-ton="signal"] {
@@ -68,15 +118,13 @@
   }
 }
 
-/* --- Bereichsmenü ---------------------------------------------------- */
-
 /* --- Bereichsmenü -----------------------------------------------------
-   Ab Tablet-Breite eine schmale Symbolspalte, die dauerhaft stehen bleibt
-   und beim Antippen nach rechts ausfährt. Sie überlagert dabei den Inhalt,
-   statt ihn zu verschieben — sonst würde bei jedem Ausfahren die ganze
-   Seite umbrechen.
-   `.cl-menue` hält nur den Platz im Layout, `.cl-menue-tafel` ist das
-   sichtbare, ausfahrende Menü.                                          */
+   Ab Tablet-Breite eine schmale Symbolspalte, die dauerhaft stehen bleibt.
+   Angetippt fährt nur der eine betroffene Eintrag heraus und zeigt seinen
+   Namen — nicht das ganze Menü: das verdeckte den Inhalt und beantwortete
+   die eigentliche Frage nicht, nämlich was das angetippte Zeichen bedeutet.
+   `.cl-menue` hält nur den Platz im Layout, `.cl-menue-tafel` ist die
+   sichtbare Spalte.                                                      */
 
 .cl-menue {
   width: var(--rail-breite);
@@ -94,57 +142,70 @@
   flex-direction: column;
   background: var(--flaeche);
   border-right: 1px solid var(--linie);
-  overflow-x: hidden;
-  overflow-y: auto;
-  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  /* visible, damit der vorgefahrene Eintrag ueber die Spalte hinausragen
+     kann. Kostet das vertikale Scrollen der Spalte — bei der derzeitigen
+     Anzahl Bereiche unkritisch, bei deutlich mehr neu zu loesen. */
+  overflow: visible;
 }
 
-.cl-menue[data-ausgefahren="true"] .cl-menue-tafel {
-  width: var(--menue-breite);
-  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.55);
-  border-right-color: var(--linie-hell);
-}
-
-/* Beschriftungen sind in der Rail ausgeblendet und erscheinen beim
-   Ausfahren. `white-space: nowrap` verhindert, dass sie beim Zusammen-
-   fahren umbrechen und die Zeilen aufreissen. */
+/* In der Symbolspalte sind Beschriftungen unsichtbar; sichtbar wird nur
+   der eine vorgefahrene Eintrag. `nowrap` verhindert, dass sie beim
+   Zusammenfahren umbrechen und die Zeilen aufreissen. */
 .cl-bereich-name,
+.cl-marke-name,
 .cl-marke-zeile,
 .cl-menue-fuss,
 .cl-gruppe {
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.16s;
+  transition: opacity 0.18s;
 }
 
-.cl-menue[data-ausgefahren="true"] .cl-bereich-name,
-.cl-menue[data-ausgefahren="true"] .cl-marke-zeile,
-.cl-menue[data-ausgefahren="true"] .cl-menue-fuss,
-.cl-menue[data-ausgefahren="true"] .cl-gruppe {
+.cl-bereich[data-vor="true"] .cl-bereich-name {
   opacity: 1;
-  transition-delay: 0.08s;
+  transition-delay: 0.1s;
 }
 
-/* Der Markenkopf ist zugleich der Schalter, der die Rail ausfährt. */
+/* Der angetippte Eintrag faehrt aus der Spalte heraus und zeigt seinen
+   Namen — umrandet in genau dem Ton, der beim Wechsel nach oben fliegt. */
+.cl-bereich[data-vor="true"],
+.cl-bereich[data-vor="true"]:hover:not(:disabled) {
+  overflow: visible;
+  width: auto;
+  min-width: calc(var(--menue-breite) - 4px);
+  padding-right: 18px;
+  background: var(--flaeche-hoch);
+  color: var(--text);
+  border: 1px solid var(--ton, var(--neon));
+  border-left: 2px solid var(--ton, var(--neon));
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow:
+    0 0 14px -4px var(--ton, var(--neon)),
+    inset 0 0 18px -12px var(--ton, var(--neon));
+  position: relative;
+  z-index: 45;
+  animation: cl-vorfahren 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cl-vorfahren {
+  from {
+    min-width: var(--rail-breite);
+    opacity: 0.6;
+  }
+  to {
+    min-width: calc(var(--menue-breite) - 4px);
+    opacity: 1;
+  }
+}
+
 .cl-marke {
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 14px;
-  width: 100%;
   min-height: 58px;
   padding: 12px 18px;
-  background: none;
-  border: none;
   border-bottom: 1px solid var(--linie);
-  border-radius: 0;
-  text-align: left;
-  cursor: pointer;
-}
-
-.cl-marke:hover {
-  background: var(--flaeche-aktiv);
-  color: inherit;
-  border-color: var(--linie);
 }
 
 .cl-marke-zeichen {
@@ -165,14 +226,6 @@
   color: var(--neon);
   text-shadow: 0 0 14px var(--neon-schwach);
   white-space: nowrap;
-  /* In der Rail ausgeblendet, erscheint mit dem Ausfahren */
-  opacity: 0;
-  transition: opacity 0.16s;
-}
-
-.cl-menue[data-ausgefahren="true"] .cl-marke-name {
-  opacity: 1;
-  transition-delay: 0.08s;
 }
 
 .cl-marke-zeile {
@@ -189,6 +242,8 @@
 }
 
 .cl-gruppe {
+  overflow: hidden;
+  white-space: nowrap;
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -197,6 +252,9 @@
 }
 
 .cl-bereich {
+  /* beschneidet Name und "bald"-Marke, solange der Eintrag in der Spalte
+     steht; der vorgefahrene Eintrag hebt das unten wieder auf */
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -217,13 +275,16 @@
 .cl-bereich:hover:not(:disabled) {
   background: var(--flaeche-aktiv);
   color: var(--text);
+  /* neutralisiert border-color aus der globalen button:hover-Regel,
+     sonst faerbt die alle vier Seiten cyan */
+  border-color: transparent;
   border-left-color: var(--linie-hell);
 }
 
 .cl-bereich[aria-current="page"] {
-  color: var(--neon);
-  background: var(--neon-schwach);
-  border-left-color: var(--neon);
+  color: var(--text);
+  background: var(--flaeche-aktiv);
+  border-left-color: var(--bereich-farbe, var(--neon));
 }
 
 .cl-bereich:disabled {
@@ -250,6 +311,7 @@
 }
 
 .cl-menue-fuss {
+  overflow: hidden;
   padding: 12px 18px;
   border-top: 1px solid var(--linie);
   font-size: 12px;
@@ -366,6 +428,7 @@
 
   /* In der Schublade sind Beschriftungen immer sichtbar */
   .cl-menue .cl-bereich-name,
+  .cl-menue .cl-marke-name,
   .cl-menue .cl-marke-zeile,
   .cl-menue .cl-menue-fuss,
   .cl-menue .cl-gruppe {
@@ -445,14 +508,12 @@
   left: 0;
   right: 0;
   height: 40%;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--neon-schwach) 55%,
-    rgba(0, 229, 255, 0.5) 88%,
-    var(--neon) 96%,
-    rgba(0, 229, 255, 0.9) 100%
-  );
+  /* Farbe des Zielbereichs: der Wechsel trägt die Farbe dessen, wohin er
+     führt. Deckkraft über opacity statt fester rgba-Werte, damit jede
+     Bereichsfarbe funktioniert. */
+  background: linear-gradient(to bottom, transparent, var(--bereich-farbe, var(--neon)));
+  opacity: 0.55;
+  box-shadow: 0 1px 14px 3px var(--bereich-farbe, var(--neon));
   /* forwards: ohne Endzustand springt der Balken nach dem Durchlauf an
      seine Ausgangsposition zurück und bleibt quer über dem Inhalt liegen.
      Entfernt wird er zusätzlich vom Skript, das ist hier die Absicherung
@@ -463,7 +524,7 @@
 @keyframes cl-balken-lauf {
   from {
     top: -42%;
-    opacity: 1;
+    opacity: 0.55;
   }
   to {
     top: 102%;

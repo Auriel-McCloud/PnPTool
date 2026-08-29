@@ -20,10 +20,12 @@ const formStyle: React.CSSProperties = {
   background: "var(--flaeche)",
   // Neonröhre als Begrenzung (vgl. .cl-roehre in shell/commlink.css):
   // harter Kern, enger Schein nach aussen, weicher Abglanz nach innen.
-  // Bewusst nur auf Eingabeflächen — läge der Schein auch auf jedem
-  // Listeneintrag, flimmerte die ganze Seite.
-  border: "1px solid var(--neon)",
-  boxShadow: "0 0 8px -3px var(--neon), inset 0 0 16px -10px var(--neon)",
+  // --bereich-farbe kommt aus der Hülle, die Röhre trägt also den Ton des
+  // aktuellen Bereichs. Bewusst nur auf Eingabeflächen — läge der Schein
+  // auch auf jedem Listeneintrag, flimmerte die ganze Seite.
+  border: "1px solid var(--bereich-farbe, var(--neon))",
+  boxShadow:
+    "0 0 8px -3px var(--bereich-farbe, var(--neon)), inset 0 0 16px -10px var(--bereich-farbe, var(--neon))",
   borderRadius: 8,
   maxWidth: 640,
 };

@@ -18,12 +18,14 @@ import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
  * bewusst schon sichtbar (ausgegraut), damit die Richtung erkennbar ist.
  */
 const BEREICHE: Bereich[] = [
-  { id: "welt", name: "Welt", symbol: "◍" },
-  { id: "gegenstaende", name: "Gegenstände", symbol: "◈" },
-  { id: "graph", name: "Beziehungen", symbol: "⬡" },
-  { id: "kampf", name: "Kampfmodus", symbol: "⚔", bald: true },
-  { id: "regeln", name: "Regeln", symbol: "▤", bald: true },
-  { id: "notizen", name: "Notizen", symbol: "✎", bald: true },
+  { id: "welt", name: "Welt", symbol: "◍", farbe: "#00e5ff" },
+  // Violett wie die Gegenstands-Knoten im Graphen
+  { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "#a865d8" },
+  { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
+  // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
+  { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "#ff3d5c", bald: true },
+  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "#ffb648", bald: true },
+  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "#3ddc84", bald: true },
 ];
 
 const TITEL: Record<string, string> = {
