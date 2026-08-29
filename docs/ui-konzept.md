@@ -133,7 +133,10 @@ Das **Hauptfenster des Spielers** — erster Bereich, Startansicht. `traits/Char
 - **Kästchenreihen** (`traits/Kaestchen.tsx`) für Gesundheit, Willenskraft und I.C.E., wie auf dem Papierblatt in Fünfergruppen. Abgehakt wird durchgestrichen statt gefüllt, wie mit dem Stift. Kästchen jenseits des Maximums bleiben angedeutet stehen — man sieht, wie viel Luft nach oben wäre.
 - **Offline ist ein eigener Zustand**, nicht Wert 0: ohne Commlink erscheint statt der Reihe der Hinweis „nicht erreichbar, aber auch nicht angreifbar".
 - **Farbe je Wertegruppe** (`--cb-ton`): Körperlich rot, Gesellschaftlich bernstein, Geistig blau, Arete und Sphären violett, Fähigkeiten cyan. Die Punkte nehmen den Ton ihrer Gruppe auf.
-- Fähigkeiten sind dreißig Stück und laufen deshalb mehrspaltig, sonst entsteht eine Wand.
+- **Drei Spalten, spaltenweise gefüllt** — wie auf dem Papierblatt, wo die Fähigkeiten thematisch nach Spalten gruppiert sind (körperlich, gesellschaftlich, geistig, passend zu den Attributen darüber). Zeilenweise gefüllt ginge diese Zuordnung verloren.
+- **Die drei Spalten bleiben bis zum Tablet im Hochformat erhalten** (~800px) und darunter. Statt umzubrechen wird enger gesetzt: kleinere Punkte (`--dot-groesse`), kleinere Schrift, weniger Spaltenabstand. Erst auf Handybreite (unter 560px) fällt es auf eine Spalte.
+
+> Beim ersten Versuch lag die Umbruchgrenze bei 900px — das Tablet im Hochformat fiel damit auf zwei Spalten. **Layout immer im Hochformat prüfen**, das ist Marks eigentliches Format; im Querformat fällt so etwas nicht auf.
 
 **Vorbereitet, aber noch ohne Wirkung:** `onWertGewaehlt` — antippen einer Fähigkeit meldet Name, Wert und Kategorie nach oben. Daran hängt später die Probenrechnung (Fertigkeit → Attribut wählen → Würfelpool).
 

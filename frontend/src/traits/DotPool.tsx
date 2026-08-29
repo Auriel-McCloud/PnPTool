@@ -6,11 +6,12 @@ export function DotPool({
   value,
   max,
   onChange,
-  size = 14,
+  size,
 }: {
   value: number;
   max: number;
   onChange?: (value: number) => void;
+  /** Ohne Angabe aus --dot-groesse, damit enge Ansichten sie verkleinern können. */
   size?: number;
 }) {
   const dots = Array.from({ length: Math.max(max, 0) }, (_, i) => i + 1);
@@ -30,8 +31,8 @@ export function DotPool({
           onClick={() => handleClick(n)}
           role={onChange ? "button" : undefined}
           style={{
-            width: size,
-            height: size,
+            width: size ?? "var(--dot-groesse, 14px)",
+            height: size ?? "var(--dot-groesse, 14px)",
             borderRadius: "50%",
             border: n <= value
               ? "1.5px solid var(--cb-ton, var(--neon))"

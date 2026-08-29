@@ -121,13 +121,11 @@
   gap: 6px 20px;
 }
 
-@media (max-width: 900px) {
-  .cb-attribute {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
+/* Drei Spalten bleiben bis hinunter zum Tablet im Hochformat (rund 800px)
+   und weiter — dort ist die Aufteilung wichtiger als grosszuegige Abstaende,
+   also wird stattdessen enger gesetzt (siehe unten). Erst auf Handybreite
+   fällt es auf eine Spalte. */
+@media (max-width: 559px) {
   .cb-attribute {
     grid-template-columns: 1fr;
   }
@@ -167,17 +165,41 @@
   grid-auto-flow: row;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 559px) {
   .cb-werte {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     grid-template-rows: none;
     grid-auto-flow: row;
   }
 }
 
-@media (max-width: 600px) {
-  .cb-werte {
-    grid-template-columns: 1fr;
+/* Schmaler Bereich (Tablet hochkant bis kleines Fenster): dieselbe
+   Aufteilung, aber enger gesetzt — kleinere Schrift, kleinere Punkte,
+   weniger Abstand zwischen den Spalten. Sonst gingen sich drei Spalten
+   nicht aus und die Namen würden abgeschnitten. */
+@media (max-width: 900px) {
+  .cb-blatt {
+    --dot-groesse: 11px;
+  }
+
+  .cb-werte,
+  .cb-attribute {
+    gap: 0 10px;
+  }
+
+  .cb-wert {
+    gap: 6px;
+    padding: 0 2px;
+    min-height: 22px;
+  }
+
+  .cb-wert-name {
+    font-size: 12px;
+  }
+
+  .cb-gruppe-titel {
+    font-size: 10px;
+    letter-spacing: 0.1em;
   }
 }
 
