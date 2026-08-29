@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent }
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
-import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer } from "./api";
+import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type GegenstandMitBesitzer } from "./api";
 import "./gegenstaende.css";
 
 /** Muss zu den Werten in gegenstaende.css passen (Raster-Ausmessung). */
@@ -44,6 +44,9 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [loading, setLoading] = useState(true);
   const [suche, setSuche] = useState("");
   const [besitzerFilter, setBesitzerFilter] = useState("");
+  // null = alle Ablagen. Reiter statt Gruppen-Überschriften, weil sich das
+  // Raster sonst nicht mehr sauber ausmessen liesse (Leitprinzip "nie scrollen").
+  const [ablageFilter, setAblageFilter] = useState<Ablage | null>(null);
   const [seite, setSeite] = useState(0);
   const [neuName, setNeuName] = useState("");
   const [neuBesitzer, setNeuBesitzer] = useState("");
@@ -75,6 +78,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLowerCase();
     return items.filter((i) => {
+      if (ablageFilter && i.ablage !== ablageFilter) return false;
       if (besitzerFilter === VORLAGE_SENTINEL && i.ownerId !== null) return false;
       if (besitzerFilter && besitzerFilter !== VORLAGE_SENTINEL && i.ownerId !== besitzerFilter) return false;
       if (!s) return true;
@@ -86,7 +90,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         (i.ownerName ?? "").toLowerCase().includes(s)
       );
     });
-  }, [items, suche, besitzerFilter]);
+  }, [items, suche, besitzerFilter, ablageFilter]);
 
   // Nach dem Filtern kann die aktuelle Seite hinter dem Ende liegen
   const seiten = Math.max(1, Math.ceil(gefiltert.length / proSeite));
@@ -95,7 +99,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   useEffect(() => {
     setSeite(0);
-  }, [suche, besitzerFilter]);
+  }, [suche, besitzerFilter, ablageFilter]);
 
   async function removeItem(itemId: string) {
     await itemsApi.remove(campaignId, itemId);
@@ -173,6 +177,25 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           <button type="submit">Hinzufügen</button>
         </form>
       )}
+
+      <div className="gg-reiter">
+        <button type="button" data-aktiv={ablageFilter === null} onClick={() => setAblageFilter(null)}>
+          Alle <span className="gg-reiter-zahl">{items.length}</span>
+        </button>
+        {ABLAGEN.map((a) => {
+          const anzahl = items.filter((i) => i.ablage === a.wert).length;
+          return (
+            <button
+              key={a.wert}
+              type="button"
+              data-aktiv={ablageFilter === a.wert}
+              onClick={() => setAblageFilter(a.wert)}
+            >
+              {a.symbol} {a.label} <span className="gg-reiter-zahl">{anzahl}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((item) => (

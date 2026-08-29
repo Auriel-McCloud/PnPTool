@@ -5,7 +5,7 @@ import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySel
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { Fenster } from "../shell/Fenster";
-import { itemsApi, VORLAGE_SENTINEL, type Gegenstand } from "../items/api";
+import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
 
@@ -57,7 +57,19 @@ function visibilityLabel(item: Gegenstand): string {
   return "nur bestimmte Spieler";
 }
 
-const TYP_OPTIONEN = ["Waffe", "Rüstung", "Cyberware", "Droge", "Verbrauchsgegenstand", "Werkzeug", "Sonstiges"];
+// Fahrzeug und Behälter können ihrerseits Gegenstände aufnehmen — sie
+// erscheinen dadurch als Ablageziel (siehe items/repository.py).
+const TYP_OPTIONEN = [
+  "Waffe",
+  "Rüstung",
+  "Cyberware",
+  "Droge",
+  "Verbrauchsgegenstand",
+  "Werkzeug",
+  "Fahrzeug",
+  "Behälter",
+  "Sonstiges",
+];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
 const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
 
@@ -145,6 +157,9 @@ export function GegenstandRow({
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
   const [automatischImShop, setAutomatischImShop] = useState(item.automatischImShop);
+  const [ablage, setAblage] = useState<Ablage>(item.ablage);
+  const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
+  const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
   const [notesDoc, setNotesDoc] = useState<JSONContent>(EMPTY_DOC);
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
@@ -167,6 +182,11 @@ export function GegenstandRow({
     setHatMenge(item.hatMenge);
     setMenge(item.menge);
     setAutomatischImShop(item.automatischImShop);
+    setAblage(item.ablage);
+    setAblageZiel(item.ablageZielId ?? "");
+    // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
+    // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
+    itemsApi.ablageziele(campaignId, item.id).then(setZiele).catch(() => setZiele([]));
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -323,6 +343,37 @@ export function GegenstandRow({
         </div>
 
         <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ color: "var(--text-leise)" }}>Aufbewahrung</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {ABLAGEN.map((a) => (
+              <button
+                key={a.wert}
+                type="button"
+                onClick={() => setAblage(a.wert)}
+                style={
+                  ablage === a.wert
+                    ? { borderColor: "var(--neon)", color: "var(--neon)", background: "var(--neon-schwach)" }
+                    : undefined
+                }
+              >
+                {a.symbol} {a.label}
+              </button>
+            ))}
+          </div>
+          {ablage === "GELAGERT" && (
+            <select value={ablageZiel} onChange={(e) => setAblageZiel(e.target.value)}>
+              <option value="">— ohne festen Platz —</option>
+              {ziele.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.kind === "Ort" ? "Ort: " : "In: "}
+                  {z.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
 
         <VisibilitySelector
           label="Sichtbarkeit"

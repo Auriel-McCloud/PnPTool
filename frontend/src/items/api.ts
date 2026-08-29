@@ -20,6 +20,26 @@ export interface Gegenstand {
   bildUrl: string;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
+  /** Wo der Gegenstand steckt. GELAGERT verweist zusätzlich auf ein Ziel. */
+  ablage: Ablage;
+  ablageZielId: string | null;
+  ablageZielName: string | null;
+  ablageZielKind: string | null;
+}
+
+export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
+
+/** Reihenfolge und Beschriftung der Ablagen — von "am Körper" nach "weit weg". */
+export const ABLAGEN: { wert: Ablage; label: string; symbol: string }[] = [
+  { wert: "AUSGERUESTET", label: "Ausgerüstet", symbol: "⚔" },
+  { wert: "RUCKSACK", label: "Rucksack", symbol: "🎒" },
+  { wert: "GELAGERT", label: "Gelagert", symbol: "⌂" },
+];
+
+export interface AblageZiel {
+  id: string;
+  name: string;
+  kind: string;
 }
 
 export interface GegenstandMitBesitzer extends Gegenstand {
@@ -84,6 +104,11 @@ export const itemsApi = {
   create: (cid: string, personId: string, body: NeuerGegenstand) => api.post<Gegenstand>(base(cid, personId), body),
 
   listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
+  setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
+    api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
+  ablageziele: (cid: string, itemId: string) =>
+    api.get<AblageZiel[]>(`${campaignBase(cid)}/${itemId}/ablageziele`),
+
   createVorlage: (cid: string, body: NeuerGegenstand) => api.post<Gegenstand>(campaignBase(cid), body),
   update: (cid: string, itemId: string, body: GegenstandUpdate) =>
     api.patch<Gegenstand>(itemBase(cid, itemId), body),

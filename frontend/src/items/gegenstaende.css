@@ -165,3 +165,42 @@
   justify-content: center;
   color: var(--text-leise);
 }
+
+/* --- Reiter fuer die Ablage -------------------------------------------
+   Unterteilung durch Umschalten statt durch Gruppen-Ueberschriften: nur so
+   bleibt die Kachelzahl pro Seite ausmessbar.                            */
+
+.gg-reiter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gg-reiter button {
+  min-height: 38px;
+  padding-inline: 12px;
+  font-size: 13px;
+  background: none;
+  border-color: transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-leise);
+}
+
+.gg-reiter button:hover {
+  background: var(--flaeche);
+  color: var(--text);
+}
+
+.gg-reiter button[data-aktiv="true"] {
+  color: var(--bereich-farbe, var(--neon));
+  border-bottom-color: var(--bereich-farbe, var(--neon));
+  background: none;
+}
+
+.gg-reiter-zahl {
+  font-size: 11px;
+  color: var(--text-aus);
+  margin-left: 2px;
+}

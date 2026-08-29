@@ -281,6 +281,24 @@ End-to-end gegen die echte Testkampagne verifiziert (SL-Sicht vs. `?alsSpieler=<
 
 **Testdaten:** die Kampagne hat jetzt einen Spielercharakter **Ryu Tanaka** (vorher gab es keinen einzigen PC, was Vorschau und Spielertests unmöglich machte). Seine Notizen sind absichtlich SL-geheim, damit die Filterung sichtbar bleibt. Ein Zugangscode ist erzeugt; Testsitzungen wurden wieder entfernt, damit du selbst beitreten kannst.
 
+## Aufbewahrungsorte / Inventar (29.08.2026)
+
+Auf Marks Wunsch, Gegenstände unterteilen zu können: "ausgerüstet, im Rucksack, in einem Fahrzeug, im Versteck".
+
+**Modell:** `Gegenstand.ablage` ist `AUSGERUESTET` | `RUCKSACK` | `GELAGERT`. Gelagertes verweist über `-[:LIEGT_IN]->` auf ein konkretes Ziel — einen `Ort` oder einen anderen `Gegenstand`.
+
+**Ein Fahrzeug ist kein eigener Entitätstyp, sondern selbst ein Gegenstand.** Man besitzt es, es hat Preis, Bild und Beschreibung — dieselbe Struktur. Als Ablageziel gelten Gegenstände mit `typ` **Fahrzeug** oder **Behälter** (beide neu in `TYP_OPTIONEN`). Dasselbe Konzept trägt später Rucksäcke als echte Objekte und Schließfächer, ohne dass etwas dazukommen muss.
+
+**Erste Schreibberechtigung für Spieler:** `POST .../gegenstaende/{id}/ablage` dürfen auch Spieler aufrufen — aber nur an Gegenständen ihres eigenen Charakters und nur für dieses eine Feld. Die Route prüft die Besitzverhältnisse selbst und antwortet bei fremden Gegenständen mit **404 statt 403**, damit deren Existenz nicht verraten wird. Sie ist namentlich in der Ausnahmeliste von `tests/test_zugriffsschutz.py` eingetragen — jede weitere Ausnahme dort muss genauso streng selbst prüfen.
+
+Spieler legen nur die **Art** fest (ausgerüstet/Rucksack/gelagert), nicht das genaue Ziel — in welchem Fahrzeug oder an welchem Ort etwas liegt, bleibt Sache der Spielleitung.
+
+**Darstellung:** Unterteilt wird über **Reiter**, nicht über Gruppen-Überschriften. Gruppen im Kachelraster würden die Ausmessung der Kachelzahl pro Seite zunichtemachen (Leitprinzip "nie scrollen"). Der Bereich heißt für Spieler **Inventar**, für die Spielleitung weiterhin Gegenstände.
+
+**Cypher-Stolperstein:** zwischen `CREATE` und einem folgenden `MATCH` verlangt Neo4j ein `WITH` ("WITH is required between CREATE and MATCH"). Die Item-Abfragen haben deshalb zwei Varianten des `OPTIONAL MATCH` — `LIEGT_IN` und `LIEGT_IN_NACH_CREATE`. Die WITH-Variante **nur** dort einsetzen, wo außer `g` keine weitere Variable ins `RETURN` muss: `WITH g` wirft alles andere weg, was z.B. `list_alle_gegenstaende` (braucht `p` für den Besitzer) zerstören würde.
+
+**Testdaten:** Ryu Tanaka besitzt jetzt ein Fahrzeug (*Yamaha Rapier*) und eine *Monoklinge* — damit lässt sich das Einlagern in ein Fahrzeug und in *Kiras Geheimversteck* ausprobieren, ohne erst etwas anlegen zu müssen.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
