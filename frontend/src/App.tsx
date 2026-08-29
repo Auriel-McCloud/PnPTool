@@ -11,6 +11,7 @@ import { playersApi } from "./players/api";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { ZugangVerwaltung } from "./players/ZugangVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
+import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -79,6 +80,7 @@ function Dashboard() {
       <button type="button" className="cl-werkzeug" disabled title="Erklärungen einblenden — kommt noch">
         ?
       </button>
+      <VollbildKnopf />
       <button type="button" className="cl-werkzeug" onClick={() => logout()} title="Abmelden">
         ⏻
       </button>

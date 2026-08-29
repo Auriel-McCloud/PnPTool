@@ -7,6 +7,7 @@ import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "../item
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
+import { VollbildKnopf } from "../shell/VollbildKnopf";
 import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
 
@@ -118,9 +119,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       onBereichWechsel={setBereich}
       titel={`${ich.campaignName} — ${BEREICHE.find((b) => b.id === bereich)?.name ?? ""}`}
       werkzeuge={
-        <button type="button" className="cl-werkzeug" onClick={abmelden} title="Abmelden">
-          ⏻
-        </button>
+        <>
+          <VollbildKnopf />
+          <button type="button" className="cl-werkzeug" onClick={abmelden} title="Abmelden">
+            ⏻
+          </button>
+        </>
       }
       fuss={
         <>

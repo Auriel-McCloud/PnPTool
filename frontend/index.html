@@ -3,8 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <!-- viewport-fit + user-scalable: auf dem Tablet soll sich das Commlink wie
+         ein Gerät anfühlen, nicht wie eine Webseite, die man aus Versehen
+         verschiebt oder zoomt. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <!-- Macht die Seite über "Zum Startbildschirm hinzufügen" installierbar;
+         sie startet dann dauerhaft ohne Adressleiste. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#08080d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Commlink — NeotopiA</title>
   </head>
   <body>
     <div id="root"></div>
