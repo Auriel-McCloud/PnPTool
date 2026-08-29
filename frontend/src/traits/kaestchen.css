@@ -1,0 +1,51 @@
+/* Kaestchenreihe wie auf dem Papierblatt: zehn Felder in zwei Fuenfergruppen. */
+
+.kt-reihe {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.kt-feld {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border: 1px solid var(--linie-hell);
+  border-radius: 2px;
+  background: transparent;
+}
+
+/* verfuegbar: leuchtet im Ton des Werts */
+.kt-feld[data-art="frei"] {
+  border-color: var(--kt-ton);
+  background: color-mix(in srgb, var(--kt-ton) 22%, transparent);
+  box-shadow: 0 0 6px -2px var(--kt-ton);
+}
+
+/* abgehakt: durchgestrichen statt gefuellt, wie mit dem Stift */
+.kt-feld[data-art="verbraucht"] {
+  border-color: var(--kt-ton);
+  background:
+    linear-gradient(45deg, transparent 44%, var(--kt-ton) 44%, var(--kt-ton) 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, var(--kt-ton) 44%, var(--kt-ton) 56%, transparent 56%);
+  opacity: 0.75;
+}
+
+/* jenseits des Maximums: nur angedeutet */
+.kt-feld[data-art="ungenutzt"] {
+  border-color: var(--linie);
+  opacity: 0.4;
+}
+
+.kt-feld[data-luecke="true"] {
+  margin-left: 9px;
+}
+
+.kt-zahl {
+  margin-left: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-leise);
+  white-space: nowrap;
+}

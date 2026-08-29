@@ -33,8 +33,12 @@ export function DotPool({
             width: size,
             height: size,
             borderRadius: "50%",
-            border: "1.5px solid var(--text-leise)",
-            background: n <= value ? "var(--neon)" : "transparent",
+            border: n <= value
+              ? "1.5px solid var(--cb-ton, var(--neon))"
+              : "1.5px solid var(--linie-hell)",
+            // --cb-ton setzt die jeweilige Wertegruppe (Charakterblatt);
+            // ohne Vorgabe bleibt es beim Cyan der Oberfläche.
+            background: n <= value ? "var(--cb-ton, var(--neon))" : "transparent",
             cursor: onChange ? "pointer" : "default",
             display: "inline-block",
             flexShrink: 0,

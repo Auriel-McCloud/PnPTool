@@ -6,6 +6,7 @@ import { ABLAGEN, itemsApi, type Ablage, type GegenstandMitBesitzer, type Tragla
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "../items/aufbewahrung";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
+import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
 import { VollbildKnopf } from "../shell/VollbildKnopf";
 import "../items/gegenstaende.css";
@@ -21,11 +22,13 @@ import { playersApi, type SpielerMe } from "./api";
  * auch nicht, die Daten sind schlicht nicht da.
  */
 const BEREICHE: Bereich[] = [
-  { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "#00e5ff" },
+  // Das Charakterblatt steht vorn und ist die Startansicht — es ist das,
+  // worauf ein Spieler während der Runde am häufigsten schaut.
+  { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "#ffb648" },
   { id: "inventar", name: "Inventar", symbol: "◈", farbe: "#a865d8" },
+  { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "#00e5ff" },
   { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
-  { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "#ffb648", bald: true },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "#3ddc84", bald: true },
 ];
 
@@ -47,7 +50,7 @@ function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: s
 
 export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
-  const [bereich, setBereich] = useState("kontakte");
+  const [bereich, setBereich] = useState("blatt");
   // Mehrere Bereiche gleichzeitig: am Körper hat man Ausrüstung und Rucksack
   // dabei, im Auto zusätzlich dessen Inhalt, im Versteck etwas anderes.
   const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
@@ -133,6 +136,15 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         </>
       }
     >
+      {bereich === "blatt" &&
+        (ich.personId ? (
+          <Charakterblatt campaignId={ich.campaignId} personId={ich.personId} />
+        ) : (
+          <p style={{ color: "var(--text-leise)" }}>
+            Dir ist noch kein Charakter zugeordnet — deine Spielleitung muss dir einen zuweisen.
+          </p>
+        ))}
+
       {bereich === "kontakte" && (
         <>
           {personen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Du kennst noch niemanden.</p>}

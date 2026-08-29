@@ -124,6 +124,19 @@ Marks Vorgaben nach dem ersten Blick aufs Tablet. Die derzeitige Spieler-Ansicht
 
 Technisch vorbereitet ist dafür bereits: das Fenstersystem (`shell/Fenster.tsx`) muss einen Ursprungspunkt entgegennehmen und `transform-origin` daraus setzen; die Werte-Route braucht eine Sichtbarkeitsprüfung; das Charakterblatt braucht eine lesende Variante ohne Bedienelemente.
 
+## Charakterblatt (gebaut 29.08.2026)
+
+Das **Hauptfenster des Spielers** — erster Bereich, Startansicht. `traits/Charakterblatt.tsx`, Daten aus `GET .../personen/{id}/bogen`.
+
+- **Nur lesend.** `DotPool` ohne `onChange` zeigt Punkte, ohne sie ändern zu lassen. Werte setzt die Spielleitung, später der Level-Up-Modus.
+- **Dynamisch nach Weg:** der Katalog kommt bereits gefiltert vom Server. Ein Magier sieht Arete und Sphären, ein Technomancer NeuroWeaving, wer keinen Weg hat weder noch — und zwar nicht ausgeblendet, sondern gar nicht erst geliefert.
+- **Kästchenreihen** (`traits/Kaestchen.tsx`) für Gesundheit, Willenskraft und I.C.E., wie auf dem Papierblatt in Fünfergruppen. Abgehakt wird durchgestrichen statt gefüllt, wie mit dem Stift. Kästchen jenseits des Maximums bleiben angedeutet stehen — man sieht, wie viel Luft nach oben wäre.
+- **Offline ist ein eigener Zustand**, nicht Wert 0: ohne Commlink erscheint statt der Reihe der Hinweis „nicht erreichbar, aber auch nicht angreifbar".
+- **Farbe je Wertegruppe** (`--cb-ton`): Körperlich rot, Gesellschaftlich bernstein, Geistig blau, Arete und Sphären violett, Fähigkeiten cyan. Die Punkte nehmen den Ton ihrer Gruppe auf.
+- Fähigkeiten sind dreißig Stück und laufen deshalb mehrspaltig, sonst entsteht eine Wand.
+
+**Vorbereitet, aber noch ohne Wirkung:** `onWertGewaehlt` — antippen einer Fähigkeit meldet Name, Wert und Kategorie nach oben. Daran hängt später die Probenrechnung (Fertigkeit → Attribut wählen → Würfelpool).
+
 ## Verhältnis zum früheren Vorbehalt
 
 Die Plandatei `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` hatte den Umbau verschoben, weil *"der Funktionsumfang pro Entität noch spürbar wächst"*. Bewusste Differenzierung dazu:
