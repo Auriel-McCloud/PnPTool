@@ -194,6 +194,12 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
           display: isEmpty ? "none" : "block",
           position: "relative",
           overflow: "hidden",
+          // Die Hülle unterbindet Zoom-Gesten (touch-action: pan-x pan-y),
+          // hier werden sie aber gebraucht. "none" heisst: der Browser fasst
+          // die Gesten gar nicht an, Cytoscape wertet sie selbst aus.
+          // Cytoscape setzt das NICHT selbst — es tut das nur auf alten
+          // Microsoft-Browsern, sonst steht dort "auto".
+          touchAction: "none",
           // Absicherung, siehe Stolperstein 8 in CLAUDE.md: Cytoscapes
           // Canvas-Layer sind position:absolute mit left/right:auto und erben
           // damit text-align — bei "center" rutscht die gesamte Zeichenfläche

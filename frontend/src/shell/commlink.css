@@ -5,6 +5,14 @@
    =================================================================== */
 
 .cl-shell {
+  /* Wischen zum Scrollen ja, Auf- und Zuziehen nein: das Commlink soll sich
+     wie ein Gerät anfühlen, nicht wie eine Webseite, die beim Tippen
+     versehentlich verrutscht. user-scalable=no allein genügt dafür nicht,
+     das ignorieren Chrome und Safari absichtlich.
+     Der Graph hebt das auf seinem Container wieder auf (touch-action: none),
+     dort wertet Cytoscape die Gesten selbst aus. Achtung: Cytoscape setzt das
+     nicht von sich aus — es tut das nur auf alten Microsoft-Browsern. */
+  touch-action: pan-x pan-y;
   display: flex;
   /* feste Hoehe statt min-height: nur so hat ein Bereich eine ausmessbare
      Flaeche, in die genau hineinpasst was hineinpasst (Leitprinzip

@@ -105,6 +105,8 @@
 
 /* Die einzige Flaeche, auf der bewusst gescrollt werden darf */
 .fn-inhalt {
+  /* wie in der Hülle: scrollen ja, zoomen nein */
+  touch-action: pan-y;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 14px;
