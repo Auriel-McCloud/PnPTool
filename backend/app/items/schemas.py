@@ -11,6 +11,10 @@ class GegenstandCreate(BaseModel):
     # Punkte-Bonus (0-7, wie Waffenschaden/Rüstungsbonus im Regeln-Sheet),
     # nur relevant wenn typ Waffe/Rüstung ist, aber generisch gespeichert.
     kraft: int = 0
+    # Cyberwall eines Commlinks: bestimmt die Matrix-Verteidigung (I.C.E.)
+    # seines Trägers. Nur bei typ "Commlink" von Belang. 200¥ je Punkt bis 5,
+    # darüber 500¥ (siehe docs/regeln-neotopia.md).
+    cyberwall: int = 0
     # Freie Zusatzeigenschaften für alles, was kein eigenes Feld hat (Munition,
     # Schadensart, ...) — bewusst nicht als starres Schema pro Typ, damit neue
     # Gegenstandsarten keine Backend-Änderung brauchen.
@@ -69,6 +73,7 @@ class GegenstandUpdate(BaseModel):
     typ: str | None = None
     preis: int | None = None
     kraft: int | None = None
+    cyberwall: int | None = None
     eigenschaften: dict[str, str] | None = None
     zeigeInGraph: bool | None = None
     einzigartig: bool | None = None
@@ -99,6 +104,7 @@ class GegenstandResponse(BaseModel):
     typ: str
     preis: int
     kraft: int
+    cyberwall: int
     eigenschaften: dict[str, str]
     zeigeInGraph: bool
     einzigartig: bool

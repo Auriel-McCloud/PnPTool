@@ -71,6 +71,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "typ": body.typ,
         "preis": body.preis,
         "kraft": body.kraft,
+        "cyberwall": body.cyberwall,
         "eigenschaften": body.eigenschaften,
         "zeigeInGraph": body.zeigeInGraph,
         "einzigartig": body.einzigartig,

@@ -5,7 +5,7 @@ from app.db.neo4j_driver import get_driver
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
-    g.typ AS typ, g.preis AS preis, g.kraft AS kraft,
+    g.typ AS typ, g.preis AS preis, g.kraft AS kraft, g.cyberwall AS cyberwall,
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
@@ -48,6 +48,7 @@ def _decode(record: dict) -> dict:
     record["typ"] = record.get("typ") or "Sonstiges"
     record["preis"] = record.get("preis") or 0
     record["kraft"] = record.get("kraft") or 0
+    record["cyberwall"] = record.get("cyberwall") or 0
     record["einzigartig"] = _or_default(record.get("einzigartig"), True)
     record["hatMenge"] = _or_default(record.get("hatMenge"), False)
     record["menge"] = _or_default(record.get("menge"), 1)
@@ -73,7 +74,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
     create_clause = """
         CREATE (g:Gegenstand {
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
-            typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
+            typ: $typ, preis: $preis, kraft: $kraft, cyberwall: $cyberwall, eigenschaften: $eigenschaften,
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
@@ -105,6 +106,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             typ=data["typ"],
             preis=data["preis"],
             kraft=data["kraft"],
+            cyberwall=data.get("cyberwall") or 0,
             eigenschaften=json.dumps(data["eigenschaften"]),
             zeigeInGraph=data["zeigeInGraph"],
             einzigartig=data["einzigartig"],
@@ -455,3 +457,26 @@ async def traglast_uebersicht(campaign_id: str, attribut: str, pro_punkt: float)
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, attribut=attribut, pro_punkt=pro_punkt)
         return [dict(record) async for record in result]
+
+
+async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
+    """Cyberwall-Wert des Commlinks, das diese Person bei sich hat.
+
+    Zählt nur, was am Körper ist (ausgerüstet oder mitgeführt) — ein Commlink
+    im Versteck schützt niemanden. Bei mehreren gilt der beste Wert, nicht die
+    Summe: man ist über ein Gerät online, nicht über alle gleichzeitig.
+    Ergibt 0, wenn keines da ist; dann ist die Person offline.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+            WHERE g.typ = 'Commlink' AND g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
+            RETURN max(coalesce(g.cyberwall, 0)) AS wert
+            """,
+            campaign_id=campaign_id,
+            person_id=person_id,
+        )
+        record = await result.single()
+        return int(record["wert"] or 0) if record else 0

@@ -53,6 +53,16 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - Seine Verteidigung bestimmt sich über die Willenskraft.
 - Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren.
 
+## Matrix-Verteidigung (I.C.E. / Cyber Wall)
+
+**Wer kein Technomancer ist, bezieht den Wert vom Commlink.** Ohne Commlink ist er 0 — dann ist man aber auch **offline und schlicht nicht angreifbar**. Der Unterschied zwischen „ungeschützt" und „nicht erreichbar" liegt also nicht im Wert, sondern darin, ob überhaupt ein Gerät dabei ist. Ein Commlink im Versteck schützt niemanden; es zählt nur, was ausgerüstet oder mitgeführt wird. Bei mehreren Geräten gilt der beste Wert, nicht die Summe.
+
+Commlink-Preis: 200 ¥ je Cyberwall-Punkt bis 5, darüber 500 ¥ je Punkt.
+
+**Technomancer: Fassung + Geistesschärfe.** Er trägt seine Abwehr in sich und braucht kein Gerät, ist also nie offline.
+
+> ⚠️ **Weicht bewusst vom Regelblatt ab.** Dort steht in Zeile 99 „Die Verteidigungsfähigkeit eines Technomancers wird über seine Willenskraft bestimmt". Mark hat das am 29.08.2026 geändert: Die Willenskraft wird beim NeuroWeaving verbraucht, dieselbe Größe als Verteidigung hätte ihn nach jeder Aktion verwundbar gemacht. Fassung + Geistesschärfe bleibt stabil. **Das Excel ist an dieser Stelle noch nicht nachgezogen.**
+
 ## Kampf
 
 - **Initiative:** Matrixnutzer vor Nahkämpfern vor Fernkämpfern. In umgekehrter Reihenfolge sagen alle an, was sie vorhaben — die schnellste Person kann dadurch reagieren; gewürfelt wird dann in der richtigen Reihenfolge.
@@ -110,6 +120,5 @@ NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchier
 
 ## Offen / noch zu klären
 
-- **I.C.E. (Cyber Wall):** kommt vom Commlink (200 ¥ je Punkt bis 5, darüber 500 ¥). Ob der Wert am Charakter hängt oder am Gerät, ist fürs Datenmodell noch zu entscheiden.
-- Ob „Magier" und „Technomancer" eigene Charaktertypen sind oder sich schlicht daraus ergeben, dass Arete bzw. NeuroWeaving gesetzt ist.
+- Ob „Magier" und „Technomancer" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
 - Rüstungsmaxima je Zone (Kopf 2, Torso 4, Beine 2 laut Blatt) — ob das feste Grenzen sind oder nur die Vorlage.

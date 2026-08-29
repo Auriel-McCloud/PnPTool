@@ -3,6 +3,7 @@
 from app.traits.bogen import (
     bogen_uebersicht,
     gesundheit_max,
+    ice_max,
     initiative,
     sichtbare_kategorien,
     willenskraft_max,
@@ -83,3 +84,37 @@ class TestUebersicht:
         assert u["weg"] == "KEINER"
         assert u["gesundheitMax"] == 5
         assert u["willenskraftMax"] == 0
+
+
+class TestMatrixVerteidigung:
+    """I.C.E. — beim Technomancer aus Attributen, sonst vom Gerät."""
+
+    def test_technomancer_traegt_seine_abwehr_in_sich(self):
+        werte = {"Fassung": 3, "Geistesschärfe": 4}
+        # ohne jedes Geraet, trotzdem verteidigt
+        assert ice_max("TECHNOMANCER", werte, commlink_cyberwall=0) == 7
+
+    def test_technomancer_ignoriert_das_commlink(self):
+        werte = {"Fassung": 2, "Geistesschärfe": 2}
+        assert ice_max("TECHNOMANCER", werte, commlink_cyberwall=9) == 4
+
+    def test_andere_bekommen_den_wert_vom_commlink(self):
+        werte = {"Fassung": 5, "Geistesschärfe": 5}
+        # Attribute helfen hier nicht — es zaehlt allein das Geraet
+        assert ice_max("MAGIER", werte, commlink_cyberwall=3) == 3
+        assert ice_max("KEINER", werte, commlink_cyberwall=0) == 0
+
+    def test_ohne_commlink_gilt_man_als_offline(self):
+        u = bogen_uebersicht({"weg": "KEINER"}, {}, commlink_cyberwall=0)
+        assert u["offline"] is True
+        assert u["iceMax"] == 0
+
+    def test_mit_commlink_nicht_offline(self):
+        u = bogen_uebersicht({"weg": "KEINER"}, {}, commlink_cyberwall=4)
+        assert u["offline"] is False
+        assert u["iceMax"] == 4
+
+    def test_technomancer_ist_nie_offline(self):
+        u = bogen_uebersicht({"weg": "TECHNOMANCER"}, {"Fassung": 2, "Geistesschärfe": 3}, commlink_cyberwall=0)
+        assert u["offline"] is False
+        assert u["iceMax"] == 5

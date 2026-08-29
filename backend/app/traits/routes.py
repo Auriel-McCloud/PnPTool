@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, get_node
+from app.items.repository import commlink_cyberwall
 from app.traits import repository
 from app.traits.bogen import bogen_uebersicht, sichtbare_kategorien
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
@@ -54,11 +55,12 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
 
     nach_name = {w["name"]: w["rating"] for w in werte}
+    cyberwall = await commlink_cyberwall(campaign_id, person_id)
     erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
 
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
-        "uebersicht": bogen_uebersicht(person, nach_name),
+        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall),
         "katalog": [t for t in katalog if t["category"] in erlaubt],
         "werte": werte,
     }
