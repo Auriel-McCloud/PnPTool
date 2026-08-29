@@ -35,18 +35,31 @@ async def get_zugangscode(campaign_id: str) -> str | None:
         return record["code"] if record else None
 
 
-async def finde_kampagne_zu_code(code: str) -> dict | None:
-    """Sucht die Kampagne zu einem Beitrittscode.
+def normalisiere_code(roh: str) -> str:
+    """Macht einen abgetippten Code vergleichbar.
 
-    Vergleich case-insensitiv: der Code wird abgetippt, Groß-/Kleinschreibung
-    soll dabei keine Rolle spielen.
+    Der Code wird am Spieltisch vorgelesen und auf Tablets eingetippt. Dabei
+    schleichen sich Leerzeichen ein (Autokorrektur hängt gern eines an),
+    manche schreiben ihn gruppiert als "FMT-26V", und Groß-/Kleinschreibung
+    soll ohnehin egal sein. All das wird hier weggeräumt, statt den Nutzer
+    mit "Code ungültig" im Regen stehen zu lassen.
     """
+    return "".join(z for z in roh if z.isalnum()).upper()
+
+
+async def finde_kampagne_zu_code(code: str) -> dict | None:
+    """Sucht die Kampagne zu einem Beitrittscode."""
+    sauber = normalisiere_code(code)
+    if not sauber:
+        return None
+
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            "MATCH (c:Campaign) WHERE c.zugangscode IS NOT NULL AND toUpper(c.zugangscode) = toUpper($code) "
+            "MATCH (c:Campaign) WHERE c.zugangscode IS NOT NULL "
+            "AND toUpper(c.zugangscode) = $code "
             "RETURN c.id AS id, c.name AS name",
-            code=code,
+            code=sauber,
         )
         record = await result.single()
         return dict(record) if record else None

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
@@ -43,8 +45,18 @@ async def require_player(claims: dict = Depends(get_current_claims)) -> dict:
 
 @beitritt_router.post("", response_model=SpielerMeResponse)
 async def beitreten(body: BeitrittRequest, response: Response):
-    kampagne = await repository.finde_kampagne_zu_code(body.code.strip())
+    kampagne = await repository.finde_kampagne_zu_code(body.code)
     if kampagne is None:
+        # Den empfangenen Code mitschreiben: bei "ungültig" ist sonst nicht zu
+        # unterscheiden, ob jemand sich vertippt hat oder die Tastatur etwas
+        # eingefügt hat.
+        # warning statt info: uvicorn filtert info-Meldungen der Anwendung weg,
+        # die Diagnose wäre sonst unsichtbar.
+        logging.getLogger("pnptool.beitritt").warning(
+            "Beitritt abgelehnt — empfangen: %r, normalisiert: %r",
+            body.code,
+            repository.normalisiere_code(body.code),
+        )
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zugangscode ungültig")
 
     sitzung = await repository.create_session(kampagne["id"], body.name.strip())
