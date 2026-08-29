@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
@@ -43,6 +44,62 @@ async def campaign_owned_by(campaign_id: str, gm_id: str) -> bool:
             campaign_id=campaign_id,
         )
         return await result.single() is not None
+
+
+# Kampagnenweite Spieleinstellungen mit ihren Ausgangswerten.
+# Bewusst als offene Sammlung angelegt: Gewicht ist die erste solche Regel,
+# weitere (Munitionsverfolgung, Erfahrungspunkte-Automatik ...) kommen hier
+# dazu, ohne dass Schema oder Routen sich ändern müssen.
+EINSTELLUNGEN_DEFAULTS: dict = {
+    # Zeigt Gewicht und Kapazität an. Rein informativ — nichts wird verhindert,
+    # der Balken färbt sich nur rot. Die Spielleitung zieht die Konsequenzen.
+    "gewichtAktiv": True,
+    # Woraus sich die Traglast einer Person ergibt. In NeotopiA heißt das
+    # Attribut "Körperkraft", in anderen Systemen "Stärke" — deshalb nicht
+    # fest verdrahtet.
+    "traglastAttribut": "Körperkraft",
+    # Kilogramm je Attributpunkt.
+    "traglastProPunkt": 10.0,
+}
+
+
+async def get_einstellungen(campaign_id: str) -> dict:
+    """Spieleinstellungen einer Kampagne, fehlende auf Standardwert.
+
+    Gespeichert wird nur, was abweicht; alles Übrige kommt aus den Defaults.
+    So wirken neue Einstellungen sofort für Bestandskampagnen, ohne Migration.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (c:Campaign {id: $campaign_id}) RETURN c.einstellungen AS roh",
+            campaign_id=campaign_id,
+        )
+        record = await result.single()
+
+    werte = dict(EINSTELLUNGEN_DEFAULTS)
+    if record and record["roh"]:
+        try:
+            werte.update(json.loads(record["roh"]))
+        except (json.JSONDecodeError, TypeError):
+            # Kaputter Inhalt darf die Kampagne nicht unbenutzbar machen
+            pass
+    return werte
+
+
+async def set_einstellungen(campaign_id: str, aenderungen: dict) -> dict:
+    """Ändert einzelne Einstellungen; unbekannte Schlüssel werden verworfen."""
+    aktuell = await get_einstellungen(campaign_id)
+    aktuell.update({k: v for k, v in aenderungen.items() if k in EINSTELLUNGEN_DEFAULTS})
+
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            "MATCH (c:Campaign {id: $campaign_id}) SET c.einstellungen = $roh",
+            campaign_id=campaign_id,
+            roh=json.dumps(aktuell),
+        )
+    return aktuell
 
 
 async def get_campaign(campaign_id: str) -> dict | None:

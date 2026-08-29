@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.auth.routes import router as auth_router
+from app.campaigns.routes import einstellungen_router
 from app.campaigns.routes import router as campaigns_router
 from app.config import settings
 from app.entities.routes import router as entities_router
@@ -39,6 +40,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(campaigns_router)
+app.include_router(einstellungen_router)
 app.include_router(entities_router)
 app.include_router(graph_router)
 app.include_router(items_router)

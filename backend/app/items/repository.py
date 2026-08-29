@@ -10,6 +10,7 @@ RETURN_FIELDS = """
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
+    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -18,9 +19,10 @@ RETURN_FIELDS = """
 # Muss vor jedem RETURN_FIELDS stehen: OPTIONAL, weil die meisten Gegenstaende
 # am Koerper sind und gar kein Ziel haben.
 LIEGT_IN = "OPTIONAL MATCH (g)-[:LIEGT_IN]->(ziel)"
-# Nach einem CREATE verlangt Cypher ein WITH, bevor erneut gematcht werden
-# darf ("WITH is required between CREATE and MATCH"). Nur dort verwenden, wo
-# ausser g keine weitere Variable ins RETURN muss — WITH wirft alles andere weg.
+# Nach einem CREATE *oder* SET verlangt Cypher ein WITH, bevor erneut
+# gematcht werden darf ("WITH is required between SET and MATCH"). Nur dort
+# verwenden, wo ausser g keine weitere Variable ins RETURN muss — WITH wirft
+# alles andere weg.
 LIEGT_IN_NACH_CREATE = "WITH g " + LIEGT_IN
 
 
@@ -54,6 +56,10 @@ def _decode(record: dict) -> dict:
     record["automatischImShop"] = _or_default(record.get("automatischImShop"), False)
     # Bestandsdaten haben noch keine Ablage — was man besitzt, traegt man
     # ueblicherweise mit sich, deshalb RUCKSACK als Ausgangswert.
+    # 0.0 ist ein gültiger Wert (gewichtslos bzw. kein Behälter), deshalb
+    # _or_default statt `or` — sonst würde 0 auf den Default zurückfallen.
+    record["gewicht"] = float(_or_default(record.get("gewicht"), 0.0))
+    record["kapazitaet"] = float(_or_default(record.get("kapazitaet"), 0.0))
     record["ablage"] = record.get("ablage") or "RUCKSACK"
     return record
 
@@ -70,7 +76,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
-            sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage
+            sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
+            gewicht: $gewicht, kapazitaet: $kapazitaet
         })
     """
     if owner_person_id:
@@ -109,6 +116,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
+            gewicht=float(data.get("gewicht") or 0.0),
+            kapazitaet=float(data.get("kapazitaet") or 0.0),
         )
         record = await result.single()
         return _decode(dict(record)) if record else None
@@ -158,7 +167,7 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     query = f"""
         MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         SET {set_clause}
-        {LIEGT_IN}
+        {LIEGT_IN_NACH_CREATE}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -169,7 +178,7 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
 
 async def get_gegenstand(campaign_id: str, item_id: str) -> dict | None:
     driver = get_driver()
-    query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
+    query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN_NACH_CREATE} RETURN {RETURN_FIELDS}"
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
         record = await result.single()
@@ -285,7 +294,7 @@ async def remove_owner(campaign_id: str, item_id: str) -> dict | None:
         MATCH (p:Person)-[r:BESITZT]->(g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         DELETE r
         SET g.istVorlage = true
-        {LIEGT_IN}
+        {LIEGT_IN_NACH_CREATE}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -299,7 +308,7 @@ async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | 
     query = f"""
         MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         SET g.bildUrl = $bild_url
-        {LIEGT_IN}
+        {LIEGT_IN_NACH_CREATE}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -405,4 +414,44 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
             campaign_id=campaign_id,
             person_id=person_id,
         )
+        return [dict(record) async for record in result]
+
+
+# Gewicht eines Gegenstands inklusive Stückzahl: 20 Schuss Munition wiegen
+# zwanzigmal so viel wie einer.
+_GEWICHT = "coalesce(g.gewicht, 0.0) * (CASE WHEN g.hatMenge THEN coalesce(g.menge, 1) ELSE 1 END)"
+
+
+async def traglast_uebersicht(campaign_id: str, attribut: str, pro_punkt: float) -> list[dict]:
+    """Was jeder Träger schleppt und was er schleppen könnte.
+
+    Träger sind Personen (Traglast aus einem Attribut) und Gegenstände mit
+    eigener Kapazität (Fahrzeuge, Behälter). Orte bleiben aussen vor — ein
+    Versteck hat keine sinnvolle Obergrenze.
+
+    **Nicht rekursiv:** liegt ein gefüllter Rucksack im Auto, zählt gegen das
+    Auto nur das Eigengewicht des Rucksacks, nicht dessen Inhalt. Für eine
+    Anzeige ohne Regelwirkung ist das vertretbar; sollte daraus je eine echte
+    Mechanik werden, muss das hier nachgezogen werden.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{campaignId: $campaign_id}})
+        OPTIONAL MATCH (p)-[:BESITZT]->(g:Gegenstand)
+            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
+        WITH p, sum({_GEWICHT}) AS last
+        OPTIONAL MATCH (p)-[r:HAS_TRAIT]->(t:TraitDef {{name: $attribut}})
+        RETURN p.id AS id, p.name AS name, 'Person' AS art, p.personType AS personType,
+               last AS last, coalesce(r.rating, 0) * $pro_punkt AS kapazitaet
+
+        UNION
+
+        MATCH (b:Gegenstand {{campaignId: $campaign_id}})
+            WHERE coalesce(b.kapazitaet, 0) > 0
+        OPTIONAL MATCH (g:Gegenstand)-[:LIEGT_IN]->(b)
+        RETURN b.id AS id, b.name AS name, 'Gegenstand' AS art, NULL AS personType,
+               sum({_GEWICHT}) AS last, b.kapazitaet AS kapazitaet
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, attribut=attribut, pro_punkt=pro_punkt)
         return [dict(record) async for record in result]

@@ -50,6 +50,12 @@ class GegenstandCreate(BaseModel):
     # zeigt eine :LIEGT_IN-Beziehung auf das Ziel). Das meiste, was man
     # besitzt, trägt man mit sich, daher RUCKSACK als Ausgangswert.
     ablage: str = "RUCKSACK"
+    # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
+    gewicht: float = 0.0
+    # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
+    # Bei Personen ergibt sich die Traglast stattdessen aus einem Attribut,
+    # siehe campaigns/repository.py (EINSTELLUNGEN_DEFAULTS).
+    kapazitaet: float = 0.0
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -74,6 +80,8 @@ class GegenstandUpdate(BaseModel):
     # per PATCH, sonst könnten owned+istVorlage-Widersprüche entstehen.
     seltenheit: int | None = None
     automatischImShop: bool | None = None
+    gewicht: float | None = None
+    kapazitaet: float | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -103,6 +111,8 @@ class GegenstandResponse(BaseModel):
     sichtbarkeit: str
     sichtbarFuer: list[str]
     ablage: str
+    gewicht: float
+    kapazitaet: float
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None
     ablageZielName: str | None = None

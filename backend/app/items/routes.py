@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import repository
@@ -52,7 +53,17 @@ def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[s
     return "GM", []
 
 
+# Was man nicht am Körper trägt: ein Fahrzeug liegt nicht im Rucksack.
+# Sonst zählte sein Gewicht gegen die Traglast seines Besitzers.
+NICHT_AM_KOERPER = {"Fahrzeug"}
+
+
 def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, sichtbar_fuer: list[str]) -> dict:
+    ablage = body.ablage
+    # Nur vorbelegen, wenn nichts Abweichendes gewünscht war — ein Modellauto
+    # darf durchaus im Rucksack liegen, das kann jederzeit umgestellt werden.
+    if body.typ in NICHT_AM_KOERPER and ablage == "RUCKSACK":
+        ablage = "GELAGERT"
     return {
         "name": body.name,
         "description": body.description,
@@ -68,7 +79,9 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "istVorlage": ist_vorlage,
         "seltenheit": body.seltenheit,
         "automatischImShop": body.automatischImShop,
-        "ablage": body.ablage,
+        "ablage": ablage,
+        "gewicht": body.gewicht,
+        "kapazitaet": body.kapazitaet,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
     }
@@ -249,3 +262,25 @@ async def ablage_aendern(
     if item is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ablage konnte nicht gesetzt werden")
     return item
+
+
+@campaign_router.get("/traglast")
+async def traglast(campaign_id: str, viewer: Viewer = Depends(get_viewer)) -> list[dict]:
+    """Wer wie viel schleppt — für die Anzeige und den Überblick der Spielleitung.
+
+    Rein informativ: nichts wird dadurch verhindert. Wer über seiner Grenze
+    liegt, taucht in der Übersicht auf, die Konsequenzen zieht die
+    Spielleitung.
+    """
+    einstellungen = await get_einstellungen(campaign_id)
+    zeilen = await repository.traglast_uebersicht(
+        campaign_id,
+        str(einstellungen.get("traglastAttribut") or "Körperkraft"),
+        float(einstellungen.get("traglastProPunkt") or 10.0),
+    )
+    if viewer.role == "GM":
+        return zeilen
+    # Spieler sehen nur sich selbst und die eigenen Behälter; wie schwer ein
+    # fremdes Fahrzeug beladen ist, geht sie nichts an.
+    eigene = {i["id"] for i in await repository.list_gegenstaende(campaign_id, viewer.person_id or "")}
+    return [z for z in zeilen if z["id"] == viewer.person_id or z["id"] in eigene]
