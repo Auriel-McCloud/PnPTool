@@ -7,8 +7,9 @@
 .cb-blatt {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  max-width: 1100px;
+  gap: 9px;
+  /* Kein max-width: das Blatt soll die Fläche nutzen, sonst gehen sich die
+     drei Spalten auf dem Tablet nicht aus. */
 }
 
 /* --- Kopf: Name, Weg, Erfahrung --------------------------------------- */
@@ -19,13 +20,13 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--linie);
 }
 
 .cb-name {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--text);
 }
@@ -68,7 +69,7 @@
 .cb-zustand {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px 24px;
+  gap: 6px 24px;
 }
 
 .cb-spur {
@@ -111,10 +112,25 @@
 
 /* --- Wertegruppen ------------------------------------------------------ */
 
+/* Drei Spalten wie auf dem Papierblatt — nicht variabel, damit die
+   Aufteilung überall wiedererkennbar bleibt. Erst wenn es wirklich zu eng
+   wird, fällt es auf zwei und dann auf eine Spalte zurück. */
 .cb-attribute {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 20px;
+}
+
+@media (max-width: 900px) {
+  .cb-attribute {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cb-attribute {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cb-gruppe {
@@ -122,7 +138,7 @@
 }
 
 .cb-gruppe-titel {
-  margin: 0 0 6px;
+  margin: 0 0 3px;
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -131,11 +147,38 @@
   padding-bottom: 3px;
 }
 
-/* Fertigkeiten sind dreissig Stueck — mehrspaltig, sonst wird es eine Wand */
+/* Fertigkeiten sind dreissig Stueck. Ebenfalls drei Spalten wie auf dem
+   Blatt: zehn Zeilen sind gut ueberschaubar, und es passt zur Aufteilung
+   der Attribute darueber. */
 .cb-werte {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 1px 18px;
+  grid-template-columns: repeat(3, 1fr);
+  /* spaltenweise fuellen, damit die thematische Gruppierung des
+     Papierblatts erhalten bleibt (siehe Charakterblatt.tsx) */
+  grid-template-rows: repeat(var(--cb-zeilen, 1), auto);
+  grid-auto-flow: column;
+  gap: 0 20px;
+}
+
+/* Innerhalb einer Attributspalte steht nur eine Reihe */
+.cb-attribute .cb-werte {
+  grid-template-columns: 1fr;
+  grid-template-rows: none;
+  grid-auto-flow: row;
+}
+
+@media (max-width: 900px) {
+  .cb-werte {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+}
+
+@media (max-width: 600px) {
+  .cb-werte {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cb-wert {
@@ -144,8 +187,10 @@
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  min-height: 30px;
-  padding: 3px 6px;
+  /* knapper als die Touch-Mindesthoehe: dreissig Faehigkeiten mal 44px
+     sprengen jede Seite, und getippt wird hier ohnehin nur zum Wuerfeln */
+  min-height: 23px;
+  padding: 0 6px;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radius);
@@ -172,4 +217,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+
+/* Hinweis auf die Klickfolge der Schadensarten */
+.cb-tipp {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-aus);
 }

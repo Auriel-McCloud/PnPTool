@@ -7,6 +7,7 @@ from app.items.repository import commlink_cyberwall
 from app.traits import repository
 from app.traits.bogen import bogen_uebersicht, sichtbare_kategorien
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["traits"], dependencies=[Depends(require_campaign_zugang)])
 
@@ -72,3 +73,46 @@ async def set_wert(campaign_id: str, person_id: str, trait_def_id: str, body: Tr
     if result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person oder Fähigkeit nicht gefunden")
     return result
+
+
+class ZustandUpdate(BaseModel):
+    """Was ein Spieler an sich selbst ändern darf.
+
+    Ausdrücklich **nur Zustand**, keine Werte: Schaden abhaken und Willenskraft
+    verbrauchen gehört zum Spielen, Punkte vergeben nicht. Alles andere bleibt
+    der Spielleitung vorbehalten.
+    """
+
+    schadenSchlag: int | None = Field(default=None, ge=0)
+    schadenSchwer: int | None = Field(default=None, ge=0)
+    schadenAggraviert: int | None = Field(default=None, ge=0)
+    willenskraftVerbraucht: int | None = Field(default=None, ge=0)
+    iceSchaden: int | None = Field(default=None, ge=0)
+
+
+@router.patch("/personen/{person_id}/zustand")
+async def set_zustand(
+    campaign_id: str,
+    person_id: str,
+    body: ZustandUpdate,
+    viewer: Viewer = Depends(get_viewer),
+) -> dict:
+    """Schaden eintragen und Willenskraft verbrauchen.
+
+    Zweite Route, die auch Spieler schreiben dürfen — und wie beim Umlegen
+    von Gegenständen streng begrenzt: nur am eigenen Charakter und nur diese
+    Felder. 404 bei fremden Personen, damit deren Existenz nicht bestätigt
+    wird. Steht dafür in der Ausnahmeliste von tests/test_zugriffsschutz.py.
+    """
+    if viewer.role != "GM" and person_id != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    from app.entities.repository import update_node
+
+    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, body.model_dump())
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall)

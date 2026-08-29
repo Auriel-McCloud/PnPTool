@@ -53,6 +53,20 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - Seine Verteidigung bestimmt sich über die Willenskraft.
 - Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren.
 
+## Schadensarten
+
+Drei Arten, wie in der World of Darkness — auf dem Blatt in dieselbe Kästchenreihe eingetragen:
+
+| Zeichen | Art | Bedeutung |
+|---|---|---|
+| `/` | Schlagschaden | heilt schnell |
+| `X` | schwerer Schaden | heilt langsam |
+| durchgestrichenes `X` | aggravierter Schaden | heilt kaum |
+
+**Schwererer Schaden steht links.** Beim Eintragen von Hand füllt man von links auf und ersetzt leichteren durch schwereren; die Anzeige hält sich daran und sortiert aggraviert, dann schwer, dann Schlag. Übersteigt die Summe die Gesundheit, wird beim leichtesten gekürzt.
+
+Im Werkzeug schaltet ein Klick auf ein Kästchen weiter: unbeschädigt → `/` → `X` → durchgestrichen → wieder frei. Die Zeichen sind in CSS gezeichnet, nicht getippt — für aggravierten Schaden gibt es kein passendes Schriftzeichen.
+
 ## Matrix-Verteidigung (I.C.E. / Cyber Wall)
 
 **Wer kein Technomancer ist, bezieht den Wert vom Commlink.** Ohne Commlink ist er 0 — dann ist man aber auch **offline und schlicht nicht angreifbar**. Der Unterschied zwischen „ungeschützt" und „nicht erreichbar" liegt also nicht im Wert, sondern darin, ob überhaupt ein Gerät dabei ist. Ein Commlink im Versteck schützt niemanden; es zählt nur, was ausgerüstet oder mitgeführt wird. Bei mehreren Geräten gilt der beste Wert, nicht die Summe.

@@ -1,4 +1,7 @@
-/* Kaestchenreihe wie auf dem Papierblatt: zehn Felder in zwei Fuenfergruppen. */
+/* Kaestchenreihe wie auf dem Papierblatt: zehn Felder in zwei Fuenfergruppen.
+   Die Schadenszeichen sind gezeichnet statt getippt — fuer aggravierten
+   Schaden gibt es kein passendes Schriftzeichen, und gezeichnet passen alle
+   drei Arten optisch zusammen. */
 
 .kt-reihe {
   display: flex;
@@ -8,34 +11,68 @@
 }
 
 .kt-feld {
-  width: 15px;
-  height: 15px;
+  position: relative;
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
   border: 1px solid var(--linie-hell);
   border-radius: 2px;
   background: transparent;
 }
 
-/* verfuegbar: leuchtet im Ton des Werts */
-.kt-feld[data-art="frei"] {
-  border-color: var(--kt-ton);
-  background: color-mix(in srgb, var(--kt-ton) 22%, transparent);
-  box-shadow: 0 0 6px -2px var(--kt-ton);
+.kt-feld[data-klickbar="true"] {
+  cursor: pointer;
 }
 
-/* abgehakt: durchgestrichen statt gefuellt, wie mit dem Stift */
-.kt-feld[data-art="verbraucht"] {
+.kt-feld[data-klickbar="true"]:hover {
   border-color: var(--kt-ton);
-  background:
-    linear-gradient(45deg, transparent 44%, var(--kt-ton) 44%, var(--kt-ton) 56%, transparent 56%),
-    linear-gradient(-45deg, transparent 44%, var(--kt-ton) 44%, var(--kt-ton) 56%, transparent 56%);
-  opacity: 0.75;
+  box-shadow: 0 0 8px -2px var(--kt-ton);
+}
+
+/* unbeschaedigt: leuchtet im Ton des Werts */
+.kt-feld[data-art="frei"] {
+  border-color: var(--kt-ton);
+  background: color-mix(in srgb, var(--kt-ton) 18%, transparent);
 }
 
 /* jenseits des Maximums: nur angedeutet */
 .kt-feld[data-art="ungenutzt"] {
   border-color: var(--linie);
-  opacity: 0.4;
+  opacity: 0.35;
+}
+
+/* --- Schadenszeichen ---------------------------------------------------
+   Ein Strich "/" fuer Schlagschaden, ein Kreuz "X" fuer schweren, und ein
+   durchgestrichenes X fuer aggravierten. Gebaut aus Verlaeufen, damit die
+   Striche in jeder Groesse sauber sitzen.                                */
+
+.kt-feld[data-art="schlag"],
+.kt-feld[data-art="schwer"],
+.kt-feld[data-art="aggraviert"],
+.kt-feld[data-art="verbraucht"] {
+  border-color: var(--kt-ton);
+}
+
+/* "/" — ein Strich von links unten nach rechts oben */
+.kt-feld[data-art="schlag"] {
+  background: linear-gradient(45deg, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%);
+}
+
+/* "X" — beide Diagonalen */
+.kt-feld[data-art="schwer"],
+.kt-feld[data-art="verbraucht"] {
+  background:
+    linear-gradient(45deg, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%);
+}
+
+/* durchgestrichenes X — beide Diagonalen plus ein Querstrich */
+.kt-feld[data-art="aggraviert"] {
+  background:
+    linear-gradient(45deg, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%),
+    linear-gradient(to bottom, transparent 43%, var(--kt-ton) 43%, var(--kt-ton) 57%, transparent 57%);
+  box-shadow: inset 0 0 8px -3px var(--kt-ton);
 }
 
 .kt-feld[data-luecke="true"] {

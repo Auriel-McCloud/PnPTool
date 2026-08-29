@@ -6,7 +6,11 @@ export interface BogenUebersicht {
   weg: "KEINER" | "MAGIER" | "TECHNOMANCER";
   rasse: string;
   gesundheitMax: number;
+  /** Summe aller Arten — für die Kurzanzeige. */
   gesundheitSchaden: number;
+  schadenSchlag: number;
+  schadenSchwer: number;
+  schadenAggraviert: number;
   willenskraftMax: number;
   willenskraftVerbraucht: number;
   iceMax: number;
@@ -26,8 +30,19 @@ export interface Bogen {
   werte: TraitRating[];
 }
 
+export interface ZustandUpdate {
+  schadenSchlag?: number;
+  schadenSchwer?: number;
+  schadenAggraviert?: number;
+  willenskraftVerbraucht?: number;
+  iceSchaden?: number;
+}
+
 export const bogenApi = {
   laden: (cid: string, personId: string) => api.get<Bogen>(`/api/campaigns/${cid}/personen/${personId}/bogen`),
+  /** Zustand ändern — Schaden und Verbrauch, keine Werte. */
+  zustand: (cid: string, personId: string, aenderung: ZustandUpdate) =>
+    api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/zustand`, aenderung),
 };
 
 /** Reihenfolge und Beschriftung der Wertegruppen auf dem Blatt. */

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DotPool } from "./DotPool";
 import { Kaestchen } from "./Kaestchen";
-import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen } from "./bogenApi";
+import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import type { TraitDef } from "./api";
 import "./charakterblatt.css";
 
@@ -33,15 +33,62 @@ const WEG_TITEL: Record<string, string> = {
 export function Charakterblatt({
   campaignId,
   personId,
+  aenderbar = true,
   onWertGewaehlt,
 }: {
   campaignId: string;
   personId: string;
+  /** Schaden und Verbrauch eintragen. Werte bleiben in jedem Fall gesperrt. */
+  aenderbar?: boolean;
   /** Antippen einer Fähigkeit — für die spätere Probenrechnung. */
   onWertGewaehlt?: (name: string, wert: number, kategorie: string) => void;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+
+  /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
+  function uebernehmen(u: BogenUebersicht) {
+    setBogen((alt) => (alt ? { ...alt, uebersicht: u } : alt));
+  }
+
+  /**
+   * Klick auf ein Gesundheitskästchen schaltet die Schadensart weiter:
+   * unbeschädigt → Schlag → schwer → aggraviert → wieder frei.
+   *
+   * Gerechnet wird über die Anzahl je Art, nicht über einzelne Kästchen —
+   * so bleibt die Reihenfolge (schwerer Schaden links) von selbst erhalten.
+   */
+  async function schadenWeiterschalten(index: number) {
+    if (!bogen || !aenderbar) return;
+    const u = bogen.uebersicht;
+    const { schadenAggraviert: agg, schadenSchwer: schwer, schadenSchlag: schlag } = u;
+
+    let neu = { schadenAggraviert: agg, schadenSchwer: schwer, schadenSchlag: schlag };
+    if (index < agg) {
+      // aggraviert → wieder heil
+      neu = { ...neu, schadenAggraviert: agg - 1 };
+    } else if (index < agg + schwer) {
+      neu = { ...neu, schadenSchwer: schwer - 1, schadenAggraviert: agg + 1 };
+    } else if (index < agg + schwer + schlag) {
+      neu = { ...neu, schadenSchlag: schlag - 1, schadenSchwer: schwer + 1 };
+    } else {
+      neu = { ...neu, schadenSchlag: schlag + 1 };
+    }
+    uebernehmen(await bogenApi.zustand(campaignId, personId, neu));
+  }
+
+  async function willenskraftWeiterschalten(index: number) {
+    if (!bogen || !aenderbar) return;
+    const u = bogen.uebersicht;
+    // Verbraucht wird von rechts, frei gemacht von links — ein Klick auf ein
+    // freies Feld verbraucht, einer auf ein verbrauchtes gibt zurück.
+    const verbraucht = index < u.willenskraftMax - u.willenskraftVerbraucht ? u.willenskraftVerbraucht + 1 : u.willenskraftVerbraucht - 1;
+    uebernehmen(
+      await bogenApi.zustand(campaignId, personId, {
+        willenskraftVerbraucht: Math.max(0, Math.min(verbraucht, u.willenskraftMax)),
+      }),
+    );
+  }
 
   useEffect(() => {
     bogenApi
@@ -79,7 +126,15 @@ export function Charakterblatt({
     return (
       <section className="cb-gruppe" key={kategorie} style={{ "--cb-ton": ton } as React.CSSProperties}>
         <h3 className="cb-gruppe-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
-        <div className="cb-werte">
+        <div
+          className="cb-werte"
+          // Spaltenweise füllen wie auf dem Papierblatt: die ersten zehn
+          // Fähigkeiten stehen dort untereinander in der ersten Spalte
+          // (körperlich), die nächsten zehn in der zweiten (gesellschaftlich)
+          // und so fort — passend zu den Attributspalten darüber. Zeilenweise
+          // gefüllt ginge diese thematische Zuordnung verloren.
+          style={{ "--cb-zeilen": Math.ceil(eintraege.length / 3) } as React.CSSProperties}
+        >
           {eintraege.map((t) => {
             const wert = werte.get(t.id) ?? 0;
             return (
@@ -118,12 +173,29 @@ export function Charakterblatt({
 
       <section className="cb-zustand">
         <div className="cb-spur">
-          <span className="cb-spur-titel">Gesundheit</span>
-          <Kaestchen max={u.gesundheitMax} verbraucht={u.gesundheitSchaden} ton="#ff4d6b" />
+          <span className="cb-spur-titel">
+            Gesundheit
+            {aenderbar && <span className="cb-tipp">antippen: / → X → ✳</span>}
+          </span>
+          <Kaestchen
+            max={u.gesundheitMax}
+            schaden={{
+              schlag: u.schadenSchlag,
+              schwer: u.schadenSchwer,
+              aggraviert: u.schadenAggraviert,
+            }}
+            ton="#ff4d6b"
+            onKlick={aenderbar ? schadenWeiterschalten : undefined}
+          />
         </div>
         <div className="cb-spur">
           <span className="cb-spur-titel">Willenskraft</span>
-          <Kaestchen max={u.willenskraftMax} verbraucht={u.willenskraftVerbraucht} ton="#ffb648" />
+          <Kaestchen
+            max={u.willenskraftMax}
+            verbraucht={u.willenskraftVerbraucht}
+            ton="#ffb648"
+            onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
+          />
         </div>
         <div className="cb-spur">
           <span className="cb-spur-titel">
@@ -142,11 +214,13 @@ export function Charakterblatt({
         </div>
       </section>
 
+      {/* Gemeinsamer Teil zuerst — so sieht das Blatt für alle gleich aus.
+          Was nur Magier oder Technomancer haben, kommt darunter. */}
       <div className="cb-attribute">{ATTRIBUT_KATEGORIEN.map(reihe)}</div>
+      {reihe("Fertigkeit")}
       {reihe("Arete")}
       {reihe("Sphäre")}
       {reihe("NeuroWeaving")}
-      {reihe("Fertigkeit")}
     </div>
   );
 }

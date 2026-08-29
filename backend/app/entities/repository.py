@@ -6,7 +6,20 @@ _VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "no
 
 # Felder des Charakterbogens. "weg" und "rasse" sind leer, solange niemand
 # einen Charakter angelegt hat — NPCs brauchen sie meist gar nicht.
-_BOGEN_FELDER = ["weg", "rasse", "gesundheitSchaden", "willenskraftVerbraucht", "iceSchaden", "iceMax", "erfahrung", "erfahrungAusgegeben"]
+# Schaden wird nach Art getrennt gezählt (World of Darkness): Schlagschaden
+# heilt schnell, schwerer Schaden langsam, aggravierter kaum. Angezeigt wird
+# der schwerste zuerst, deshalb drei Zähler statt einer Summe.
+_BOGEN_FELDER = [
+    "weg",
+    "rasse",
+    "schadenSchlag",
+    "schadenSchwer",
+    "schadenAggraviert",
+    "willenskraftVerbraucht",
+    "iceSchaden",
+    "erfahrung",
+    "erfahrungAusgegeben",
+]
 
 PERSON_FIELDS = ["name", "personType", "description", "notes", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 ORT_FIELDS = ["name", "description", "notes", *_VISIBILITY_FIELDS]
@@ -23,10 +36,11 @@ def _return_clause(alias: str, fields: list[str]) -> str:
 _BOGEN_DEFAULTS: dict = {
     "weg": "KEINER",
     "rasse": "",
-    "gesundheitSchaden": 0,
+    "schadenSchlag": 0,
+    "schadenSchwer": 0,
+    "schadenAggraviert": 0,
     "willenskraftVerbraucht": 0,
     "iceSchaden": 0,
-    "iceMax": 0,
     "erfahrung": 0,
     "erfahrungAusgegeben": 0,
 }

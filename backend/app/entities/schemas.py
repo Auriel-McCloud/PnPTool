@@ -32,11 +32,13 @@ class PersonCreate(BaseModel):
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 5 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
     # + Fassung) und wird berechnet, nicht gespeichert.
-    gesundheitSchaden: int = 0
+    # Schaden nach Art getrennt — Schlagschaden "/", schwerer "X",
+    # aggravierter als durchgestrichenes X.
+    schadenSchlag: int = 0
+    schadenSchwer: int = 0
+    schadenAggraviert: int = 0
     willenskraftVerbraucht: int = 0
     iceSchaden: int = 0
-    # I.C.E. kommt vom Commlink und ist deshalb nicht ableitbar.
-    iceMax: int = 0
     # Erfahrung: gesamt vergeben und davon ausgegeben.
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
@@ -51,10 +53,11 @@ class PersonUpdate(BaseModel):
     name: str | None = None
     weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] | None = None
     rasse: str | None = None
-    gesundheitSchaden: int | None = None
+    schadenSchlag: int | None = None
+    schadenSchwer: int | None = None
+    schadenAggraviert: int | None = None
     willenskraftVerbraucht: int | None = None
     iceSchaden: int | None = None
-    iceMax: int | None = None
     erfahrung: int | None = None
     erfahrungAusgegeben: int | None = None
     personType: Literal["PC", "NPC"] | None = None
@@ -76,10 +79,11 @@ class PersonResponse(BaseModel):
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
     rasse: str = ""
-    gesundheitSchaden: int = 0
+    schadenSchlag: int = 0
+    schadenSchwer: int = 0
+    schadenAggraviert: int = 0
     willenskraftVerbraucht: int = 0
     iceSchaden: int = 0
-    iceMax: int = 0
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
     sichtbarkeit: str

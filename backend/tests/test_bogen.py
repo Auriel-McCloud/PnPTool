@@ -65,7 +65,7 @@ class TestSichtbareBereiche:
 class TestUebersicht:
     def test_schaden_kann_das_maximum_nicht_ueberschreiten(self):
         """Sinkt ein Attribut, darf der Schaden nicht über die Grenze ragen."""
-        person = {"gesundheitSchaden": 99, "willenskraftVerbraucht": 99}
+        person = {"schadenSchlag": 99, "willenskraftVerbraucht": 99}
         u = bogen_uebersicht(person, {"Widerstandsfähigkeit": 2, "Entschlossenheit": 1, "Fassung": 1})
         assert u["gesundheitSchaden"] == u["gesundheitMax"] == 7
         assert u["willenskraftVerbraucht"] == u["willenskraftMax"] == 2
@@ -118,3 +118,35 @@ class TestMatrixVerteidigung:
         u = bogen_uebersicht({"weg": "TECHNOMANCER"}, {"Fassung": 2, "Geistesschärfe": 3}, commlink_cyberwall=0)
         assert u["offline"] is False
         assert u["iceMax"] == 5
+
+
+class TestSchadensarten:
+    """Drei Arten nach World of Darkness, schwerer verdraengt leichteren."""
+
+    def test_arten_werden_getrennt_gezaehlt(self):
+        u = bogen_uebersicht(
+            {"schadenSchlag": 2, "schadenSchwer": 1, "schadenAggraviert": 1},
+            {"Widerstandsfähigkeit": 3},
+        )
+        assert (u["schadenSchlag"], u["schadenSchwer"], u["schadenAggraviert"]) == (2, 1, 1)
+        assert u["gesundheitSchaden"] == 4
+
+    def test_ueberzaehliger_schaden_kuerzt_beim_leichtesten(self):
+        """Bei 5 Kaestchen und 4+3+2 bleibt der schwere Schaden stehen."""
+        u = bogen_uebersicht(
+            {"schadenSchlag": 4, "schadenSchwer": 3, "schadenAggraviert": 2},
+            {},  # Gesundheit 5
+        )
+        assert u["gesundheitMax"] == 5
+        assert u["schadenAggraviert"] == 2
+        assert u["schadenSchwer"] == 3
+        assert u["schadenSchlag"] == 0
+        assert u["gesundheitSchaden"] == 5
+
+    def test_aggravierter_schaden_allein_kann_voll_ausfuellen(self):
+        u = bogen_uebersicht({"schadenAggraviert": 99}, {"Widerstandsfähigkeit": 1})
+        assert u["schadenAggraviert"] == u["gesundheitMax"] == 6
+
+    def test_negative_werte_werden_ignoriert(self):
+        u = bogen_uebersicht({"schadenSchlag": -3}, {})
+        assert u["schadenSchlag"] == 0

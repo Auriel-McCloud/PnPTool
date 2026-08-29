@@ -76,11 +76,24 @@ def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: in
     erfahrung = int(person.get("erfahrung") or 0)
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
 
+    # Schaden nach Art. Zusammen dürfen sie die Gesundheit nicht übersteigen;
+    # gekürzt wird beim leichtesten zuerst, denn schwerer Schaden verdrängt
+    # in der World of Darkness den leichteren, nicht umgekehrt.
+    aggraviert = max(0, int(person.get("schadenAggraviert") or 0))
+    schwer = max(0, int(person.get("schadenSchwer") or 0))
+    schlag = max(0, int(person.get("schadenSchlag") or 0))
+    aggraviert = min(aggraviert, g_max)
+    schwer = min(schwer, g_max - aggraviert)
+    schlag = min(schlag, g_max - aggraviert - schwer)
+
     return {
         "weg": weg,
         "rasse": person.get("rasse") or "",
         "gesundheitMax": g_max,
-        "gesundheitSchaden": min(int(person.get("gesundheitSchaden") or 0), g_max),
+        "schadenAggraviert": aggraviert,
+        "schadenSchwer": schwer,
+        "schadenSchlag": schlag,
+        "gesundheitSchaden": aggraviert + schwer + schlag,
         "willenskraftMax": w_max,
         "willenskraftVerbraucht": min(int(person.get("willenskraftVerbraucht") or 0), w_max),
         "iceMax": i_max,

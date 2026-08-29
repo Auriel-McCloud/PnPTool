@@ -30,6 +30,9 @@ OHNE_GM_ERLAUBT = {
     # umlegen. Sie prüft die Besitzverhältnisse selbst (siehe items/routes.py)
     # und darf ausschließlich das Ablage-Feld ändern.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ablage",
+    # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
+    # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",
 }
 
 
