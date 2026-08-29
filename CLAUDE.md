@@ -88,7 +88,7 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **Phase 2b** — Cytoscape-Graph-Ansicht: `GET /api/campaigns/{cid}/graph?focus=&depth=` liefert Cytoscape-JSON (voller Graph oder BFS-begrenzte Nachbarschaft), Frontend zeigt Personen/Orte/Events als farbige Knoten, Klick fokussiert auf Nachbarschaft. Cytoscape-Canvas-Offset-Bug (Stolperstein #8) gefunden, gefixt und vom Nutzer live am Handy bestätigt — Phase 2 damit komplett.
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
-- 🟡 **Phase 4 (angefangen, 28.08.2026)** — die Sichtbarkeits-Filterung ist jetzt **scharf geschaltet** und läuft in allen 10 Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=<personId>` (eigener Abschnitt unten). Was für vollständige Phase 4 noch fehlt: echter Spieler-Zugang (Zugangscode/Beitritts-Link, `PlayerSession`-Knoten — Constraint existiert bereits —, JWT mit `role=PLAYER`, Charakter beanspruchen) und eine Spieler-Oberfläche im Frontend.
+- ✅ **Phase 4 (29.08.2026)** — **Spieler-Zugang steht.** Sichtbarkeits-Filterung läuft in allen Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=` **und** über echte Spieler-Sitzungen. Beitritt per Zugangscode, Charakter beanspruchen, eigene Oberfläche. Siehe eigener Abschnitt unten. Offen bleibt nur die Live-Kommunikation (Phase 5).
 - ⬜ **Phase 5** — Live-WebSocket-Pop-ups vom SL an Spieler
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
 
@@ -254,6 +254,32 @@ Der gewählte Charakter liegt als Modul-Zustand im API-Client (`setViewAs`/`getV
 **Tests**: `backend/tests/test_visibility.py`, 38 Stück, reine Unit-Tests ohne DB. Laufen mit `.\.venv\Scripts\python.exe -m pytest` aus `backend/`. `pytest` ist als optionale Dev-Abhängigkeit im `pyproject.toml` (`pip install -e ".[dev]"`). Achtung: das `tests/`-Verzeichnis existierte vorher zwar, war aber **leer** — die in früheren CLAUDE.md-Einträgen erwähnten "Unit-Tests" waren offenbar ad-hoc und nie eingecheckt.
 
 End-to-end gegen die echte Testkampagne verifiziert (SL-Sicht vs. `?alsSpieler=<Kira>`): Personen 2→1 (Mr. Chrome verschwindet), Events 1→0, Verbindungen 4→2, Graph 6 Knoten/4 Kanten → 4/2, Gegenstände 7→2. Für den Beweis der Inline-Redaktion wurde ein Testgegenstand mit `gmSecret`-markiertem Satz angelegt: SL sah "Eine schlichte Silberkette. In Wahrheit ein Peilsender von Mr. Chrome.", die Spieler-Sicht nur "Eine schlichte Silberkette." — Notizen dort leer. Testgegenstand danach wieder gelöscht.
+
+## Spieler-Zugang (Phase 4, 29.08.2026)
+
+**Ablauf:** Spielleitung erzeugt im Bereich *Zugang* einen sechsstelligen Code → Spieler öffnet dieselbe Adresse, klickt "Ich bin Spieler und habe einen Zugangscode", gibt Code und seinen Namen ein → wählt einen freien Spielercharakter → sieht ab da die Kampagne durch dessen Augen.
+
+**Datenmodell:** `Campaign.zugangscode` (Klartext — die Spielleitung muss ihn vorlesen können), `PlayerSession {id, name, createdAt}` `-[:GEHOERT_ZU]->` `Campaign`, `PlayerSession -[:SPIELT]-> Person`. Ein PC kann nur einmal beansprucht werden.
+
+**Code-Format:** 6 Zeichen aus `ACDEFGHJKMNPQRTUVWXY2345679` — ohne 0/O, 1/I/L, 8/B, weil er am Spieltisch vorgelesen wird. Beitritt vergleicht case-insensitiv.
+
+**Rollen teilen sich ein Cookie.** Es kann pro Browser immer nur eine Rolle aktiv sein. Für Marks Aufbau (ein Gerät, eine Rolle) richtig; wer SL und Spieler gleichzeitig sein will, braucht ein zweites Browserprofil oder ein privates Fenster.
+
+**Neuer Code macht den alten ungültig, wirft aber niemanden raus** — der Code regelt nur den Beitritt. Wer draußen bleiben soll, wird im Bereich *Zugang* einzeln entfernt; sein Token wird dadurch sofort wertlos, weil `get_viewer` die Sitzung bei jedem Zugriff nachschlägt.
+
+**Sicherheitskritischer Umbau — hier besonders aufpassen:** Die Kampagnen-Router hingen pauschal an `require_campaign_gm`. Damit Spieler lesen können, wurde das auf `require_campaign_zugang` gelockert. Dadurch standen **20 schreibende Routen offen** — jede hat jetzt `dependencies=[Depends(require_campaign_gm)]` am Decorator.
+
+> **Bei jeder neuen Route auf einem Kampagnen-Router gilt:** schreibt sie etwas, muss sie `require_campaign_gm` mitbringen. `tests/test_zugriffsschutz.py` prüft das strukturell und schlägt sonst fehl. Diesen Test nicht abschalten — er ist die einzige Absicherung dagegen, dass Spieler Daten verändern.
+
+*Stolperstein beim Schreiben dieses Tests:* diese FastAPI-Fassung hängt Router **verzögert** ein (`_IncludedRouter` in `app.routes`). Eine naive Schleife über `app.routes` fand genau eine Route und wäre still grün geblieben — der Test steigt deshalb über `original_router` ab.
+
+**Was Spieler dürfen:** ausschließlich lesen. Der `alsSpieler`-Parameter wirkt nur für die Spielleitung; für Spieler wird er ignoriert, sonst könnte man sich durch fremde Charaktere klicken.
+
+**Spieler-Oberfläche** (`frontend/src/players/`): dieselbe Commlink-Hülle wie beim SL, nur mit weniger Bereichen (Kontakte, Meine Sachen, Orte, Beziehungen; Charakterblatt und Notizen als "bald") und ohne Bearbeiten. Sie versteckt selbst nichts — die Daten sind schlicht nicht da, gefiltert wird serverseitig.
+
+**Geprüft:** SL sieht 3 Personen/2 Orte/1 Event/4 Verbindungen/7 Gegenstände, der Spieler 2/1/0/2/1, Graph 7→4 Knoten. SL-Notizen am eigenen Charakter bleiben beim Spieler leer. Alle Schreibversuche 403, fremde Kampagne 404, `alsSpieler`-Missbrauch wirkungslos. Beitritt und Charakterwahl im Browser durchgespielt.
+
+**Testdaten:** die Kampagne hat jetzt einen Spielercharakter **Ryu Tanaka** (vorher gab es keinen einzigen PC, was Vorschau und Spielertests unmöglich machte). Seine Notizen sind absichtlich SL-geheim, damit die Filterung sichtbar bleibt. Ein Zugangscode ist erzeugt; Testsitzungen wurden wieder entfernt, damit du selbst beitreten kannst.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 

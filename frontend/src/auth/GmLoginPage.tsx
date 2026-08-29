@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, useAuth } from "./AuthContext";
 
-export function GmLoginPage() {
+export function GmLoginPage({ onBeitreten }: { onBeitreten?: () => void }) {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +51,15 @@ export function GmLoginPage() {
         <button type="submit" disabled={submitting}>
           {submitting ? "..." : "Anmelden"}
         </button>
+        {onBeitreten && (
+          <button
+            type="button"
+            onClick={onBeitreten}
+            style={{ display: "block", marginTop: 16, background: "none", border: "none", color: "var(--text-leise)" }}
+          >
+            Ich bin Spieler und habe einen Zugangscode
+          </button>
+        )}
       </form>
     </div>
   );

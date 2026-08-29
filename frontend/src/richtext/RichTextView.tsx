@@ -10,9 +10,10 @@ import "./richtext.css";
 const EXTENSIONS = [StarterKit, Table.configure({ resizable: false }), TableRow, TableHeader, TableCell, GmSecret];
 
 // Read-only Anzeige desselben Inhalts wie im RichTextEditor. GM-geheime
-// Abschnitte werden hier (SL-Ansicht) weiterhin sichtbar+markiert dargestellt —
-// die eigentliche Entfernung für Spieler passiert serverseitig, sobald es
-// Spieler-Routen gibt (Phase 4).
+// Abschnitte werden hier weiterhin sichtbar und markiert dargestellt — das ist
+// die SL-Sicht. Für Spieler sind sie gar nicht erst im Dokument: entfernt wird
+// serverseitig in entities/visibility.py, bevor die Antwort rausgeht. Diese
+// Komponente verlässt sich darauf und versteckt selbst nichts.
 export function RichTextView({ content }: { content: JSONContent }) {
   const editor = useEditor({ extensions: EXTENSIONS, content, editable: false });
   if (!editor) return null;

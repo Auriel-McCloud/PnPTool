@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { GmLoginPage } from "./auth/GmLoginPage";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
@@ -6,6 +6,10 @@ import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
+import { BeitrittPage, CharakterWahl } from "./players/BeitrittPage";
+import { playersApi } from "./players/api";
+import { SpielerAnsicht } from "./players/SpielerAnsicht";
+import { ZugangVerwaltung } from "./players/ZugangVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 
 /**
@@ -22,6 +26,7 @@ const BEREICHE: Bereich[] = [
   // Violett wie die Gegenstands-Knoten im Graphen
   { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "#a865d8" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
+  { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "#3ddc84" },
   // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
   { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "#ff3d5c", bald: true },
   { id: "regeln", name: "Regeln", symbol: "▤", farbe: "#ffb648", bald: true },
@@ -32,6 +37,7 @@ const TITEL: Record<string, string> = {
   welt: "Personen · Orte · Ereignisse",
   gegenstaende: "Gegenstände",
   graph: "Beziehungsgeflecht",
+  zugang: "Spielerzugang",
 };
 
 function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
@@ -108,18 +114,56 @@ function Dashboard() {
           {bereich === "welt" && <EntityManager key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "zugang" && <ZugangVerwaltung campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>
   );
 }
 
+/**
+ * Weiche zwischen den drei Zuständen: Spielleitung, Spieler, niemand.
+ *
+ * Die Rolle kommt aus dem Sitzungs-Cookie (/api/auth/me), Spieler und
+ * Spielleitung teilen sich dasselbe Cookie — es kann also immer nur eine
+ * Rolle gleichzeitig aktiv sein. Für Marks Aufbau (ein Gerät, eine Rolle)
+ * ist das richtig; wer beides zugleich braucht, nimmt ein zweites
+ * Browserprofil oder ein privates Fenster.
+ */
 function Shell() {
   const { me, loading } = useAuth();
-  if (loading) {
-    return null;
+  const [zeigeBeitritt, setZeigeBeitritt] = useState(false);
+  // Nach dem Beitritt fehlt noch der Charakter; danach die volle Ansicht.
+  const [hatCharakter, setHatCharakter] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (me?.role !== "PLAYER") {
+      setHatCharakter(null);
+      return;
+    }
+    playersApi
+      .me()
+      .then((s) => setHatCharakter(s.personId !== null))
+      .catch(() => setHatCharakter(false));
+  }, [me]);
+
+  if (loading) return null;
+
+  if (me?.role === "PLAYER") {
+    if (hatCharakter === null) return null;
+    if (!hatCharakter) return <CharakterWahl onGewaehlt={() => setHatCharakter(true)} />;
+    return <SpielerAnsicht onAbgemeldet={() => window.location.reload()} />;
   }
-  return me ? <Dashboard /> : <GmLoginPage />;
+
+  if (me) return <Dashboard />;
+
+  if (zeigeBeitritt) {
+    return (
+      <BeitrittPage onBeigetreten={() => window.location.reload()} onZurueck={() => setZeigeBeitritt(false)} />
+    );
+  }
+
+  return <GmLoginPage onBeitreten={() => setZeigeBeitritt(true)} />;
 }
 
 function App() {
