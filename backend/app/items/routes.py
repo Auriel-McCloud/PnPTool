@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm
+from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import repository
@@ -13,7 +13,7 @@ from app.items.schemas import GegenstandCreate, GegenstandMitBesitzer, Gegenstan
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
     tags=["items"],
-    dependencies=[Depends(require_campaign_gm)],
+    dependencies=[Depends(require_campaign_zugang)],
 )
 
 # Kampagnenweite Übersicht (alle Gegenstände aller Personen) — eigener Router,
@@ -21,7 +21,7 @@ router = APIRouter(
 campaign_router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/gegenstaende",
     tags=["items"],
-    dependencies=[Depends(require_campaign_gm)],
+    dependencies=[Depends(require_campaign_zugang)],
 )
 
 UPLOAD_DIR = Path("uploads")
@@ -65,7 +65,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
     }
 
 
-@router.post("", response_model=GegenstandResponse)
+@router.post("", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     owner = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if owner is None:
@@ -93,7 +93,7 @@ async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(
     return filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
 
 
-@campaign_router.post("", response_model=GegenstandResponse)
+@campaign_router.post("", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_vorlage(campaign_id: str, body: GegenstandCreate):
     """Legt einen besitzerlosen Gegenstand an — per Invariante immer eine
     Vorlage (siehe schemas.py). Für Gegenstände mit Besitzer siehe create_item."""
@@ -105,7 +105,7 @@ async def create_vorlage(campaign_id: str, body: GegenstandCreate):
     return item
 
 
-@campaign_router.patch("/{item_id}", response_model=GegenstandResponse)
+@campaign_router.patch("/{item_id}", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
     if item is None:
@@ -113,7 +113,7 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     return item
 
 
-@campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse)
+@campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(...)):
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
@@ -134,7 +134,7 @@ async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(..
     return item
 
 
-@campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse)
+@campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     source = await repository.get_gegenstand(campaign_id, item_id)
     if source is None:
@@ -159,7 +159,7 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     return result
 
 
-@campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse)
+@campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenRequest):
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
@@ -186,7 +186,7 @@ async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenReques
     return moved
 
 
-@campaign_router.post("/{item_id}/vorlage", response_model=GegenstandResponse)
+@campaign_router.post("/{item_id}/vorlage", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def vorlage_machen(campaign_id: str, item_id: str):
     """Entfernt den Besitzer eines Gegenstands — er wird zur besitzerlosen
     Vorlage (Gegenstück zu Besitzer wechseln, siehe schemas.py-Invariante)."""
@@ -196,7 +196,7 @@ async def vorlage_machen(campaign_id: str, item_id: str):
     return moved
 
 
-@campaign_router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@campaign_router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
 async def delete_item(campaign_id: str, item_id: str):
     if not await repository.delete_gegenstand(campaign_id, item_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")

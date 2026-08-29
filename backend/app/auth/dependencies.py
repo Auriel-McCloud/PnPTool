@@ -42,27 +42,55 @@ class Viewer:
 
 
 async def get_viewer(
+    campaign_id: str,
     als_spieler: str | None = Query(
         default=None,
         alias="alsSpieler",
-        description="Person-ID eines Spielercharakters. Liefert die Antwort gefiltert, "
-        "so wie dieser Spieler sie sähe (SL-Vorschau).",
+        description="Nur für den Spielleiter: Person-ID eines Spielercharakters. Liefert die "
+        "Antwort gefiltert, so wie dieser Spieler sie sähe (SL-Vorschau).",
     ),
-    claims: dict = Depends(require_campaign_gm),
+    claims: dict = Depends(get_current_claims),
 ) -> Viewer:
-    """Builds the viewing context for a read route.
+    """Baut den Blickwinkel für eine Leseroute — für Spielleitung wie Spieler.
 
-    Only the campaign's own GM gets here (require_campaign_gm), so the preview
-    cannot be used to peek into someone else's campaign. Passing ?alsSpieler=
-    downgrades the caller to that character's view for this one request.
+    Spielleitung: sieht alles; mit ?alsSpieler= wahlweise gefiltert wie der
+    betreffende Charakter (Vorschau).
 
-    Read routes only. Writes stay unconditionally GM-scoped — a preview must
-    never be able to change anything, so no write route takes this dependency.
+    Spieler: Blickwinkel kommt aus der eigenen Sitzung, der Parameter wird
+    ignoriert — sonst könnte sich ein Spieler durch fremde Charaktere klicken.
+    Ohne beanspruchten Charakter sieht er nur, was für alle sichtbar ist.
 
-    Phase 4 note: when players get real logins, this is the single place that
-    changes — it would return Viewer("PLAYER", <own character>) from the
-    player's session instead of from a query parameter.
+    Nur für Leserouten. Schreibende Routen verlangen require_campaign_gm.
     """
-    if als_spieler:
-        return Viewer(role="PLAYER", person_id=als_spieler)
-    return Viewer(role="GM")
+    rolle = claims.get("role")
+
+    if rolle == "GM":
+        if not await campaign_owned_by(campaign_id, claims["sub"]):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "campaign not found")
+        if als_spieler:
+            return Viewer(role="PLAYER", person_id=als_spieler)
+        return Viewer(role="GM")
+
+    if rolle == "PLAYER":
+        # Spät importiert: app.players nutzt seinerseits auth, ein Import auf
+        # Modulebene wäre zirkulär.
+        from app.players.repository import get_session
+
+        sitzung = await get_session(claims["sub"])
+        # Die Sitzung könnte inzwischen gelöscht worden sein (SL wirft raus),
+        # das Token bliebe aber bis zum Ablauf gültig.
+        if sitzung is None or sitzung["campaignId"] != campaign_id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "campaign not found")
+        return Viewer(role="PLAYER", person_id=sitzung["personId"])
+
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "no access to this campaign")
+
+
+async def require_campaign_zugang(viewer: Viewer = Depends(get_viewer)) -> Viewer:
+    """Zugang zur Kampagne, gleich in welcher Rolle.
+
+    Als Router-Absicherung gedacht: schreibende Routen müssen darüber hinaus
+    require_campaign_gm verlangen. Ein Test prüft, dass keine davon vergessen
+    wurde (tests/test_zugriffsschutz.py).
+    """
+    return viewer

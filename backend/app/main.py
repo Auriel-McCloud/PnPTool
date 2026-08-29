@@ -15,6 +15,7 @@ from app.items.routes import campaign_router as items_campaign_router
 from app.traits.routes import router as traits_router
 from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
+from app.players.routes import beitritt_router, gm_router as zugang_router, spieler_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -43,6 +44,9 @@ app.include_router(graph_router)
 app.include_router(items_router)
 app.include_router(items_campaign_router)
 app.include_router(traits_router)
+app.include_router(beitritt_router)
+app.include_router(spieler_router)
+app.include_router(zugang_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
