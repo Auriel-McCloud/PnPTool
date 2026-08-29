@@ -158,6 +158,8 @@ export function GegenstandRow({
   const [menge, setMenge] = useState(item.menge);
   const [automatischImShop, setAutomatischImShop] = useState(item.automatischImShop);
   const [ablage, setAblage] = useState<Ablage>(item.ablage);
+  const [gewicht, setGewicht] = useState(item.gewicht);
+  const [kapazitaet, setKapazitaet] = useState(item.kapazitaet);
   const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -183,6 +185,8 @@ export function GegenstandRow({
     setMenge(item.menge);
     setAutomatischImShop(item.automatischImShop);
     setAblage(item.ablage);
+    setGewicht(item.gewicht);
+    setKapazitaet(item.kapazitaet);
     setAblageZiel(item.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
@@ -207,6 +211,8 @@ export function GegenstandRow({
       hatMenge,
       menge: hatMenge ? menge : 1,
       automatischImShop,
+      gewicht,
+      kapazitaet,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -343,6 +349,32 @@ export function GegenstandRow({
         </div>
 
         <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            Gewicht (kg)
+            <input
+              type="number"
+              min={0}
+              step={0.1}
+              value={gewicht}
+              onChange={(e) => setGewicht(Number(e.target.value))}
+              style={{ width: 110 }}
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            Fasst (kg)
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={kapazitaet}
+              onChange={(e) => setKapazitaet(Number(e.target.value))}
+              style={{ width: 110 }}
+              title="Wie viel dieser Gegenstand aufnehmen kann. 0 = kein Behälter."
+            />
+          </label>
+        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={{ color: "var(--text-leise)" }}>Aufbewahrung</span>
@@ -523,6 +555,7 @@ export function GegenstandRow({
           <span className="gg-kachel-zeile">
             {item.typ}
             {item.preis > 0 && ` · ${item.preis}¥`}
+            {item.gewicht > 0 && ` · ${item.gewicht} kg`}
           </span>
           <span className="gg-kachel-marken">
             {item.sichtbarkeit === "GM" && <span className="gg-marke" data-ton="signal">SL</span>}

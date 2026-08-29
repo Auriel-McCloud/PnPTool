@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
-import { ABLAGEN, itemsApi, type Ablage, type GegenstandMitBesitzer } from "../items/api";
+import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
+import { ABLAGEN, itemsApi, type Ablage, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
@@ -46,6 +47,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
   const [bereich, setBereich] = useState("kontakte");
   const [ablageFilter, setAblageFilter] = useState<Ablage>("AUSGERUESTET");
+  const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
+  const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -62,6 +65,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     entitiesApi.listOrte(cid).then(setOrte).catch(() => setOrte([]));
     entitiesApi.listEvents(cid).then(setEvents).catch(() => setEvents([]));
     itemsApi.listAlle(cid).then(setSachen).catch(() => setSachen([]));
+    einstellungenApi.lesen(cid).then(setEinstellungen).catch(() => setEinstellungen(null));
+    itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
   }, [ich]);
 
   if (!ich) return null;
@@ -75,8 +80,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     // Ohne festes Ziel: der Spieler legt nur die Art fest, das genaue Wohin
     // (welches Fahrzeug, welcher Ort) bleibt Sache der Spielleitung.
     await itemsApi.setAblage(ich.campaignId, itemId, ziel, null);
-    const frisch = await itemsApi.listAlle(ich.campaignId);
+    const [frisch, last] = await Promise.all([
+      itemsApi.listAlle(ich.campaignId),
+      itemsApi.traglast(ich.campaignId),
+    ]);
     setSachen(frisch);
+    setTraglast(last);
   }
 
   async function abmelden() {
@@ -118,6 +127,19 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
       {bereich === "inventar" && (
         <>
+          {einstellungen?.gewichtAktiv &&
+            (() => {
+              const meineLast = traglast.find((z) => z.id === ich.personId);
+              if (!meineLast) return null;
+              const voll = meineLast.kapazitaet > 0 && meineLast.last > meineLast.kapazitaet;
+              return (
+                <p className="gg-kachel-last" data-voll={voll} style={{ marginBottom: 8, fontSize: 13 }}>
+                  Getragen: {formatiereLast(meineLast.last, meineLast.kapazitaet)}
+                  {voll && " — überladen"}
+                </p>
+              );
+            })()}
+
           <div className="gg-reiter" style={{ marginBottom: 12 }}>
             {ABLAGEN.map((a) => {
               const anzahl = meine.filter((g) => g.ablage === a.wert).length;

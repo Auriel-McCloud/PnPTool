@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { einstellungenApi, type Einstellungen } from "../campaigns/einstellungen";
 import { playersApi, type Sitzung } from "./api";
 
 /**
@@ -10,12 +11,18 @@ import { playersApi, type Sitzung } from "./api";
 export function ZugangVerwaltung({ campaignId }: { campaignId: string }) {
   const [code, setCode] = useState<string | null>(null);
   const [sitzungen, setSitzungen] = useState<Sitzung[]>([]);
+  const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [laden, setLaden] = useState(true);
 
   async function neuLaden() {
-    const [c, s] = await Promise.all([playersApi.codeLesen(campaignId), playersApi.sitzungen(campaignId)]);
+    const [c, s, e] = await Promise.all([
+      playersApi.codeLesen(campaignId),
+      playersApi.sitzungen(campaignId),
+      einstellungenApi.lesen(campaignId),
+    ]);
     setCode(c.code);
     setSitzungen(s);
+    setEinstellungen(e);
   }
 
   useEffect(() => {
@@ -60,6 +67,26 @@ export function ZugangVerwaltung({ campaignId }: { campaignId: string }) {
         <p style={{ color: "var(--text-leise)", fontSize: "0.85em", marginTop: 8 }}>
           Ein neuer Code macht den alten ungültig. Bereits verbundene Spieler bleiben verbunden — wer draußen
           bleiben soll, wird unten einzeln entfernt.
+        </p>
+      </section>
+
+      <section>
+        <h3>Spielregeln</h3>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <input
+            type="checkbox"
+            checked={einstellungen?.gewichtAktiv ?? true}
+            onChange={(e) =>
+              einstellungenApi.aendern(campaignId, { gewichtAktiv: e.target.checked }).then(neuLaden)
+            }
+          />
+          <span style={{ color: "var(--text)" }}>Gewicht und Traglast anzeigen</span>
+        </label>
+        <p style={{ color: "var(--text-leise)", fontSize: "0.85em", marginTop: 6 }}>
+          Rein informativ — nichts wird dadurch verhindert. Wer über seiner Grenze liegt, erscheint bei den
+          Gegenständen als Hinweis; was daraus folgt, entscheidest du. Traglast einer Person ={" "}
+          <span className="mono">{einstellungen?.traglastAttribut ?? "Körperkraft"}</span> ×{" "}
+          <span className="mono">{einstellungen?.traglastProPunkt ?? 10}</span> kg.
         </p>
       </section>
 

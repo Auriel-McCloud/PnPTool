@@ -21,6 +21,10 @@ export interface Gegenstand {
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
   /** Wo der Gegenstand steckt. GELAGERT verweist zusätzlich auf ein Ziel. */
+  /** Eigengewicht in kg; 0 = vernachlässigbar. */
+  gewicht: number;
+  /** Wie viel dieser Gegenstand fasst, in kg; 0 = kein Behälter. */
+  kapazitaet: number;
   ablage: Ablage;
   ablageZielId: string | null;
   ablageZielName: string | null;
@@ -35,6 +39,16 @@ export const ABLAGEN: { wert: Ablage; label: string; symbol: string }[] = [
   { wert: "RUCKSACK", label: "Rucksack", symbol: "🎒" },
   { wert: "GELAGERT", label: "Gelagert", symbol: "⌂" },
 ];
+
+export interface TraglastZeile {
+  id: string;
+  name: string;
+  art: "Person" | "Gegenstand";
+  personType: string | null;
+  last: number;
+  /** 0 = keine Grenze bekannt (z.B. Attribut nicht gesetzt). */
+  kapazitaet: number;
+}
 
 export interface AblageZiel {
   id: string;
@@ -84,7 +98,8 @@ export interface GegenstandUpdate {
   automatischImShop?: boolean;
   bildUrl?: string;
   sichtbarkeit?: SichtbarkeitModus;
-  sichtbarFuer?: string[];
+  sichtbarFuer?: string[];  gewicht?: number;
+  kapazitaet?: number;
 }
 
 type NeuerGegenstand = {
@@ -106,6 +121,7 @@ export const itemsApi = {
   listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
   setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
     api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
+  traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),
   ablageziele: (cid: string, itemId: string) =>
     api.get<AblageZiel[]>(`${campaignBase(cid)}/${itemId}/ablageziele`),
 

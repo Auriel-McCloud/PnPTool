@@ -204,3 +204,35 @@
   color: var(--text-aus);
   margin-left: 2px;
 }
+
+/* --- Ueberladen-Hinweis (nur Spielleitung) ---------------------------- */
+
+.gg-ueberladen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--signal);
+  background: var(--signal-schwach);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+}
+
+.gg-ueberladen .mono {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+/* Auslastung auf der Kachel */
+.gg-kachel-last {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-leise);
+}
+
+.gg-kachel-last[data-voll="true"] {
+  color: var(--signal);
+}

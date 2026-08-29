@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
-import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type GegenstandMitBesitzer } from "./api";
+import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import "./gegenstaende.css";
 
 /** Muss zu den Werten in gegenstaende.css passen (Raster-Ausmessung). */
@@ -47,6 +48,8 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   // null = alle Ablagen. Reiter statt Gruppen-Überschriften, weil sich das
   // Raster sonst nicht mehr sauber ausmessen liesse (Leitprinzip "nie scrollen").
   const [ablageFilter, setAblageFilter] = useState<Ablage | null>(null);
+  const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
+  const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [seite, setSeite] = useState(0);
   const [neuName, setNeuName] = useState("");
   const [neuBesitzer, setNeuBesitzer] = useState("");
@@ -56,9 +59,16 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const proSeite = useProSeite(rasterRef);
 
   async function refresh() {
-    const [p, i] = await Promise.all([entitiesApi.listPersonen(campaignId), itemsApi.listAlle(campaignId)]);
+    const [p, i, e, t] = await Promise.all([
+      entitiesApi.listPersonen(campaignId),
+      itemsApi.listAlle(campaignId),
+      einstellungenApi.lesen(campaignId),
+      itemsApi.traglast(campaignId),
+    ]);
     setPersonen(p);
     setItems(i);
+    setEinstellungen(e);
+    setTraglast(t);
   }
 
   useEffect(() => {
@@ -100,6 +110,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   useEffect(() => {
     setSeite(0);
   }, [suche, besitzerFilter, ablageFilter]);
+
+  // Wer über seiner Grenze liegt — die Spielleitung soll es auf einen Blick
+  // sehen und selbst entscheiden, was daraus folgt.
+  const ueberladen = traglast.filter((z) => z.kapazitaet > 0 && z.last > z.kapazitaet);
 
   async function removeItem(itemId: string) {
     await itemsApi.remove(campaignId, itemId);
@@ -176,6 +190,17 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           />
           <button type="submit">Hinzufügen</button>
         </form>
+      )}
+
+      {einstellungen?.gewichtAktiv && ueberladen.length > 0 && (
+        <div className="gg-ueberladen">
+          <strong>⚠ Überladen:</strong>
+          {ueberladen.map((z) => (
+            <span key={z.id}>
+              {z.name} <span className="mono">{formatiereLast(z.last, z.kapazitaet)}</span>
+            </span>
+          ))}
+        </div>
       )}
 
       <div className="gg-reiter">
