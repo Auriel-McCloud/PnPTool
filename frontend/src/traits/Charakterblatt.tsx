@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { DotPool } from "./DotPool";
+import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
 import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import type { TraitDef } from "./api";
@@ -127,7 +128,7 @@ export function Charakterblatt({
       <section className="cb-gruppe" key={kategorie} style={{ "--cb-ton": ton } as React.CSSProperties}>
         <h3 className="cb-gruppe-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
         <div
-          className="cb-werte"
+          className={eintraege.length === 1 ? "cb-werte cb-werte-einzeln" : "cb-werte"}
           // Spaltenweise füllen wie auf dem Papierblatt: die ersten zehn
           // Fähigkeiten stehen dort untereinander in der ersten Spalte
           // (körperlich), die nächsten zehn in der zweiten (gesellschaftlich)
@@ -210,7 +211,12 @@ export function Charakterblatt({
         </div>
         <div className="cb-spur">
           <span className="cb-spur-titel">Initiative</span>
-          <span className="cb-initiative">{u.initiative}</span>
+          {/* Die Zahl ist eine Wuerfelmenge, kein Wert — ohne das Symbol
+              liest sich "7" wie eine Initiative von 7. */}
+          <span className="cb-initiative">
+            {u.initiative}
+            <WuerfelZehn groesse={18} />
+          </span>
         </div>
       </section>
 

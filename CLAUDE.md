@@ -362,6 +362,36 @@ Was das verlangt — deutlich mehr als ein Zahlenfeld:
 
 Betrifft `traits/bogen.py` (dort werden die abgeleiteten Werte gebildet) und das Charakterblatt. **Vor dem Bauen eine eigene Design-Runde**, insbesondere zur Frage, wie viel Zeitverwaltung das Werkzeug übernehmen soll und was die Spielleitung von Hand macht.
 
+## Feinschliff Charakterblatt und Menuespalte (29.08.2026)
+
+Marks Wunsch: die Symbolspalte links schmaler, dafuer die Schrift eine Stufe
+groesser — und die Symbole selbst groesser (welche es werden, legt er noch fest).
+
+- `--rail-breite` 60px → **48px**, Symbole 16px → **20px**, Rand 13px (13+22+13
+  ergibt genau die 48px). Am Tablet hochkant (800px) bleiben damit 752px Buehne.
+- Wertenamen 13px → **14px**. Gemessen: bei 800px wird nichts abgeschnitten und
+  es entsteht kein Querlauf. Unter 700px faellt es auf 13px.
+- **Arete steht mittig.** Als einziger Wert seiner Gruppe klebte er im
+  Dreispaltenraster links am Rand. Gruppen mit genau einem Eintrag bekommen
+  `cb-werte-einzeln` (eine Spalte, `justify-content: center`, Breite begrenzt).
+- **Initiative zeigt einen W10 neben der Zahl** (`traits/WuerfelZehn.tsx`, reines
+  SVG, erbt die Textfarbe). Marks Begruendung: "ihre Initiative ist nicht 7,
+  sondern 7 Wuerfel" — ausgeschrieben sprengt es die Zeile, das Symbol nicht.
+  Die Komponente ist bewusst allgemein gehalten, die Wuerfelpools brauchen sie
+  spaeter genauso.
+
+**Dabei gefunden — Media Queries erhoehen die Spezifitaet nicht.** Der Block
+`@media (max-width: 900px)` stand *vor* den Grundregeln `.cb-wert` und
+`.cb-wert-name`. Bei gleicher Spezifitaet gewinnt die spaetere Regel, also war
+die Haelfte des Blocks (Schriftgroesse, Abstaende, Zeilenhoehe) wirkungslos —
+still, ohne Fehlermeldung. Der Block steht jetzt am Dateiende. **Merke: enger
+gesetzte Varianten gehoeren hinter die Regel, die sie ueberschreiben sollen.**
+
+**Bekannt und unveraendert:** zwischen 560px und 700px Fensterbreite werden
+lange Namen (Widerstandsfaehigkeit, Geisteswissenschaften) mit Auslassungspunkten
+gekuerzt — drei Spalten gehen sich dort schlicht nicht aus. Betrifft kein Geraet
+aus der Runde, faellt nur bei einem schmalen Browserfenster auf.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

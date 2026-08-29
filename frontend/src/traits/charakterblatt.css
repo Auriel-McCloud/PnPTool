@@ -105,6 +105,9 @@
 }
 
 .cb-initiative {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--mono);
   font-size: 22px;
   color: var(--text);
@@ -158,6 +161,16 @@
   gap: 0 20px;
 }
 
+/* Arete ist der einzige Wert seiner Gruppe. In einem Dreispaltenraster
+   klebt er dadurch links am Rand und wirkt wie vergessen — eine einzelne
+   Zeile steht mittig deutlich besser. Breite begrenzt, sonst zoege der
+   Name vom Punktepool bis ans andere Ende weg. */
+.cb-werte-einzeln {
+  grid-template-columns: minmax(0, 280px);
+  grid-template-rows: none;
+  justify-content: center;
+}
+
 /* Innerhalb einer Attributspalte steht nur eine Reihe */
 .cb-attribute .cb-werte {
   grid-template-columns: 1fr;
@@ -173,35 +186,7 @@
   }
 }
 
-/* Schmaler Bereich (Tablet hochkant bis kleines Fenster): dieselbe
-   Aufteilung, aber enger gesetzt — kleinere Schrift, kleinere Punkte,
-   weniger Abstand zwischen den Spalten. Sonst gingen sich drei Spalten
-   nicht aus und die Namen würden abgeschnitten. */
-@media (max-width: 900px) {
-  .cb-blatt {
-    --dot-groesse: 11px;
-  }
 
-  .cb-werte,
-  .cb-attribute {
-    gap: 0 10px;
-  }
-
-  .cb-wert {
-    gap: 6px;
-    padding: 0 2px;
-    min-height: 22px;
-  }
-
-  .cb-wert-name {
-    font-size: 12px;
-  }
-
-  .cb-gruppe-titel {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-  }
-}
 
 .cb-wert {
   display: flex;
@@ -234,7 +219,7 @@
 }
 
 .cb-wert-name {
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -248,4 +233,38 @@
   letter-spacing: 0.04em;
   text-transform: none;
   color: var(--text-aus);
+}
+
+/* Schmaler Bereich (Tablet hochkant bis kleines Fenster): dieselbe
+   Aufteilung, aber enger gesetzt — kleinere Punkte,
+   weniger Abstand zwischen den Spalten. Sonst gingen sich drei Spalten
+   nicht aus und die Namen würden abgeschnitten. */
+@media (max-width: 900px) {
+  .cb-blatt {
+    --dot-groesse: 11px;
+  }
+
+  .cb-werte,
+  .cb-attribute {
+    gap: 0 10px;
+  }
+
+  .cb-wert {
+    gap: 6px;
+    padding: 0 2px;
+    min-height: 22px;
+  }
+
+  .cb-gruppe-titel {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* Erst deutlich darunter wird die Schrift zum Problem: bei 800px (Tablet
+   hochkant) gehen sich 14px in drei Spalten nachweislich aus. */
+@media (max-width: 700px) {
+  .cb-wert-name {
+    font-size: 13px;
+  }
 }

@@ -215,8 +215,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 58px;
-  padding: 12px 18px;
+  min-height: 52px;
+  padding: 10px 13px;
   border-bottom: 1px solid var(--linie);
 }
 
@@ -272,8 +272,8 @@
   gap: 14px;
   width: 100%;
   min-height: var(--tipp);
-  /* 19px + halbe Symbolbreite = Mitte der 60px-Rail */
-  padding: 10px 19px;
+  /* 13px + halbe Symbolbreite = Mitte der 48px-Spalte */
+  padding: 10px 13px;
   background: none;
   border: none;
   border-left: 2px solid transparent;
@@ -304,10 +304,14 @@
   cursor: default;
 }
 
+/* Groesser als der Text daneben: in der schmalen Spalte ist das Symbol die
+   einzige Beschriftung, es traegt die ganze Orientierung. 22px Kasten, damit
+   es mit 13px Rand genau die 48px der Spalte ausfuellt. */
 .cl-bereich-symbol {
   width: 22px;
   text-align: center;
-  font-size: 16px;
+  font-size: 20px;
+  line-height: 1;
   flex-shrink: 0;
 }
 
