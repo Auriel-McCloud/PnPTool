@@ -2,6 +2,8 @@
 
 Aus `docs/reference/Neotopia.xlsx` herausgezogen (Blätter *Charakterblatt* und *Regeln*). Die Tabelle bleibt die Quelle der Wahrheit; dies hier ist die lesbare Fassung für die Umsetzung. **Bei Widersprüchen gilt die Tabelle bzw. Mark.**
 
+**Herkunft der Regeln:** NeotopiA lehnt sich an die World of Darkness an — Mark nennt *Hunter V5* und *Vampire V5* als nächste Verwandte. Das **Magiesystem stammt aus Mage M20** (Sphärenbeschreibungen decken sich), ist aber an Shadowrun angepasst worden. **Marks Änderungen stehen im Excel und haben Vorrang vor dem Originalregelwerk.** Das M20-Grundregelwerk liegt als gekauftes PDF lokal im Projektordner zum Nachschlagen; es ist bewusst von der Versionierung ausgenommen (Urheberrecht, und 123 MB nimmt GitHub ohnehin nicht an).
+
 ## Würfelsystem
 
 - Pool aus zehnseitigen Würfeln. **1–5 Misserfolg, 6–10 Erfolg.**

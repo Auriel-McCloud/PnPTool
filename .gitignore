@@ -6,3 +6,11 @@ backend/*.egg-info/
 backend/uploads/
 frontend/node_modules/
 frontend/dist/
+
+# Gekaufte Regelwerke als PDF: gehoeren nicht ins Repository (Urheberrecht),
+# und 100+ MB nimmt GitHub ohnehin nicht an. Liegen lokal im Projektordner
+# und dienen nur zum Nachschlagen.
+*.pdf
+
+# Doppelte Ablage: die Arbeitskopie liegt unter docs/reference/
+/Neotopia.xlsx
