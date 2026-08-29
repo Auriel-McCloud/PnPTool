@@ -343,12 +343,13 @@ Spieler legen nur die **Art** fest (ausgerüstet/Rucksack/gelagert), nicht das g
 
 ## Nächste Schritte
 
-*(Stand 28.08.2026, nach Runde 10 — der UI-Polish-Durchgang und die Gegenstands-Runden sind durch, Mark hat sie im Browser benutzt und laufend Feedback gegeben.)*
+*(Stand 29.08.2026. Seit dem letzten Eintrag dazugekommen: Fenstersystem, "nie scrollen" für Gegenstände und Graph, kompletter Spieler-Zugang inkl. Oberfläche, Aufbewahrungsorte und Gewicht.)*
 
-1. ~~Spieler-Sicht scharf schalten~~ — **erledigt inkl. Frontend-Umschalter, vom Nutzer am Handy bestätigt** (28.08.2026, siehe eigener Abschnitt oben). Sein Urteil: "technisch tut es was es soll", aber optisch "noch weit weg von wie es aussehen soll — keine Popups, viel zu viel Listen-Charakter" → das ist die längst dokumentierte Menüführungs-Vision, die damit ansteht (siehe Punkt 3). Kleinigkeit am Rande: in der Testkampagne gibt es **keinen einzigen PC**, beide Personen sind NPCs — für realistische Vorschau-Tests wäre einer sinnvoll.
-2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete), Cyber-/Bio-Ware-Slots, Waffen-/Rüstungswerte am Charakter (statt nur generischer Gegenstände), Companion-/Drohnen-Bögen (`HAS_TRAIT` ist dafür schon generisch genug), Würfeln.
-3. **Offene Design-Runden** (jeweils eigener Durchgang, Datenmodell noch komplett offen — Details in den Abschnitten oben): Party/Gruppen-Konzept + Suche/Filter für die Gegenstände-Übersicht · EP-System + die drei Charakterbogen-Modi (Erstellung/Spiel/Level-Up) · typspezifische Gegenstandsfelder (Cyberware→WVerlust, Drogen→Wirkung/Dauer) + Upgrade-/Verbesserungs-System · die große Menüführungs-Vision mit Gegenstands-Popups.
-4. **Kleinere bekannte Schulden** — verwaiste Bilddateien nach "Bild entfernen" (nur die `bildUrl` wird gelöscht, die Datei bleibt liegen) · der Breite-Bug im Optionen-Block (bewusst vertagt bis zum Popup-Umbau, siehe oben) · der Graph zeigt `SPEZIFISCH` optisch wie `ALLE`.
+1. **Bereich "Welt" scrollt noch als einziger** — er muss sich erst selbst einteilen, bevor er `statisch` bekommen kann. Dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Bewusst nicht blind nach dem Kachel-Muster umgebaut, solange Mark das nicht bestätigt hat. Zielbild bleibt der feinere Schnitt (PCs und NPCs getrennt, Orte und Events einzeln).
+2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber-/Bio-Ware-Slots, Waffen-/Rüstungswerte am Charakter, Companion-/Drohnen-Bögen, Würfeln.
+3. **Aus dem UI-Konzept noch offen**: Kampfmodus, Regeln-Bereich, Notizen, das Tooltip-System mit Schalter in der oberen Leiste — alle drei stehen als "bald" im Menü.
+4. **Offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Cyberware→WVerlust, Drogen→Wirkung/Dauer) + Upgrade-System.
+5. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel.
 
 **Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8000` (bewusst nur localhost, siehe LAN-Abschnitt unten; ohne `--reload`, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, lauscht dank `host:true` in `vite.config.ts` auf allen Interfaces (kein `--host`-Flag mehr nötig). Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
 
