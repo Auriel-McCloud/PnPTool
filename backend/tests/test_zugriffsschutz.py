@@ -26,6 +26,10 @@ OHNE_GM_ERLAUBT = {
     "/api/auth/gm/logout",
     # Kampagne anlegen hängt an require_gm, nicht an einer Kampagne
     "/api/campaigns",
+    # Einzige Schreibroute, die auch Spieler nutzen dürfen: den eigenen Kram
+    # umlegen. Sie prüft die Besitzverhältnisse selbst (siehe items/routes.py)
+    # und darf ausschließlich das Ablage-Feld ändern.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ablage",
 }
 
 

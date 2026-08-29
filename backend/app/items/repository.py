@@ -9,8 +9,19 @@ RETURN_FIELDS = """
     g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
-    g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer
+    g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
+    g.ablage AS ablage,
+    ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
+    CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
 """
+
+# Muss vor jedem RETURN_FIELDS stehen: OPTIONAL, weil die meisten Gegenstaende
+# am Koerper sind und gar kein Ziel haben.
+LIEGT_IN = "OPTIONAL MATCH (g)-[:LIEGT_IN]->(ziel)"
+# Nach einem CREATE verlangt Cypher ein WITH, bevor erneut gematcht werden
+# darf ("WITH is required between CREATE and MATCH"). Nur dort verwenden, wo
+# ausser g keine weitere Variable ins RETURN muss — WITH wirft alles andere weg.
+LIEGT_IN_NACH_CREATE = "WITH g " + LIEGT_IN
 
 
 def _or_default(value, default):
@@ -41,6 +52,9 @@ def _decode(record: dict) -> dict:
     record["istVorlage"] = _or_default(record.get("istVorlage"), False)
     record["seltenheit"] = _or_default(record.get("seltenheit"), 1)
     record["automatischImShop"] = _or_default(record.get("automatischImShop"), False)
+    # Bestandsdaten haben noch keine Ablage — was man besitzt, traegt man
+    # ueblicherweise mit sich, deshalb RUCKSACK als Ausgangswert.
+    record["ablage"] = record.get("ablage") or "RUCKSACK"
     return record
 
 
@@ -56,7 +70,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             typ: $typ, preis: $preis, kraft: $kraft, eigenschaften: $eigenschaften,
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
-            sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
+            sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage
         })
     """
     if owner_person_id:
@@ -64,10 +78,13 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})
             {create_clause}
             CREATE (p)-[:BESITZT]->(g)
+            {LIEGT_IN_NACH_CREATE}
             RETURN {RETURN_FIELDS}
         """
     else:
-        query = f"{create_clause}\n        RETURN {RETURN_FIELDS}"
+        query = f"""{create_clause}
+        {LIEGT_IN_NACH_CREATE}
+        RETURN {RETURN_FIELDS}"""
 
     async with driver.session() as session:
         result = await session.run(
@@ -91,6 +108,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             automatischImShop=data["automatischImShop"],
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
+            ablage=data.get("ablage") or "RUCKSACK",
         )
         record = await result.single()
         return _decode(dict(record)) if record else None
@@ -100,6 +118,7 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        {LIEGT_IN}
         RETURN {RETURN_FIELDS}
         ORDER BY g.name
     """
@@ -113,6 +132,7 @@ async def list_alle_gegenstaende(campaign_id: str) -> list[dict]:
     query = f"""
         MATCH (g:Gegenstand {{campaignId: $campaign_id}})
         OPTIONAL MATCH (p:Person)-[:BESITZT]->(g)
+        {LIEGT_IN}
         RETURN {RETURN_FIELDS}, p.id AS ownerId, p.name AS ownerName, p.personType AS ownerPersonType
         ORDER BY p.name, g.name
     """
@@ -128,7 +148,7 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
 
     driver = get_driver()
     if not changed:
-        query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) RETURN {RETURN_FIELDS}"
+        query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
         async with driver.session() as session:
             result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
             record = await result.single()
@@ -138,6 +158,7 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     query = f"""
         MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         SET {set_clause}
+        {LIEGT_IN}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -148,7 +169,7 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
 
 async def get_gegenstand(campaign_id: str, item_id: str) -> dict | None:
     driver = get_driver()
-    query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) RETURN {RETURN_FIELDS}"
+    query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
         record = await result.single()
@@ -209,6 +230,7 @@ async def assign_owner(
         MATCH (neu:Person {{id: $ziel_person_id, campaignId: $campaign_id}})
         SET g.istVorlage = false, g.sichtbarkeit = $sichtbarkeit, g.sichtbarFuer = $sichtbar_fuer
         CREATE (neu)-[:BESITZT]->(g)
+        {LIEGT_IN_NACH_CREATE}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -245,6 +267,7 @@ async def transfer_owner(campaign_id: str, item_id: str, ziel_person_id: str) ->
         MATCH (neu:Person {{id: $ziel_person_id, campaignId: $campaign_id}})
         DELETE r
         CREATE (neu)-[:BESITZT]->(g)
+        {LIEGT_IN_NACH_CREATE}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -262,6 +285,7 @@ async def remove_owner(campaign_id: str, item_id: str) -> dict | None:
         MATCH (p:Person)-[r:BESITZT]->(g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         DELETE r
         SET g.istVorlage = true
+        {LIEGT_IN}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -275,6 +299,7 @@ async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | 
     query = f"""
         MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         SET g.bildUrl = $bild_url
+        {LIEGT_IN}
         RETURN {RETURN_FIELDS}
     """
     async with driver.session() as session:
@@ -294,3 +319,90 @@ async def delete_gegenstand(campaign_id: str, item_id: str) -> bool:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
         record = await result.single()
         return dict(record)["deleted"] > 0
+
+
+# Wo ein Gegenstand steckt. AUSGERUESTET und RUCKSACK sind am Körper und
+# brauchen kein Ziel; GELAGERT verweist über :LIEGT_IN auf einen Ort oder
+# einen anderen Gegenstand (z.B. ein Fahrzeug).
+ABLAGE_ARTEN = {"AUSGERUESTET", "RUCKSACK", "GELAGERT"}
+
+
+async def set_ablage(campaign_id: str, item_id: str, ablage: str, ziel_id: str | None) -> dict | None:
+    """Legt einen Gegenstand um.
+
+    Ein Ziel ergibt nur bei GELAGERT Sinn und muss zur selben Kampagne
+    gehören — sonst könnte man Dinge in fremde Kampagnen schieben. Beim
+    Wechsel zurück an den Körper wird eine bestehende Verknüpfung gelöst.
+    """
+    if ablage not in ABLAGE_ARTEN:
+        return None
+
+    driver = get_driver()
+    async with driver.session() as session:
+        if ablage == "GELAGERT" and ziel_id:
+            query = f"""
+                MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+                MATCH (neu) WHERE neu.id = $ziel_id AND neu.campaignId = $campaign_id
+                  AND (neu:Ort OR neu:Gegenstand) AND neu.id <> $item_id
+                OPTIONAL MATCH (g)-[alt:LIEGT_IN]->()
+                DELETE alt
+                SET g.ablage = $ablage
+                CREATE (g)-[:LIEGT_IN]->(neu)
+                WITH g
+                {LIEGT_IN}
+                RETURN {RETURN_FIELDS}
+            """
+            params = {"item_id": item_id, "campaign_id": campaign_id, "ziel_id": ziel_id, "ablage": ablage}
+        else:
+            query = f"""
+                MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+                OPTIONAL MATCH (g)-[alt:LIEGT_IN]->()
+                DELETE alt
+                SET g.ablage = $ablage
+                WITH g
+                {LIEGT_IN}
+                RETURN {RETURN_FIELDS}
+            """
+            params = {"item_id": item_id, "campaign_id": campaign_id, "ablage": ablage}
+
+        result = await session.run(query, **params)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def get_owner_person_id(campaign_id: str, item_id: str) -> str | None:
+    """Wem gehört der Gegenstand? Für die Rechteprüfung beim Umlegen."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (p:Person)-[:BESITZT]->(g:Gegenstand {id: $item_id, campaignId: $campaign_id}) RETURN p.id AS id",
+            item_id=item_id,
+            campaign_id=campaign_id,
+        )
+        record = await result.single()
+        return record["id"] if record else None
+
+
+async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
+    """Orte und eigene Behälter-Gegenstände, in denen etwas liegen kann.
+
+    Als Behälter zählen Gegenstände der Person, die selbst etwas aufnehmen
+    können — derzeit über den Typ erkannt. Ein Gegenstand kann nicht in sich
+    selbst liegen; verschachtelte Behälter sind erlaubt, aber ungeprüft
+    (siehe CLAUDE.md).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (o:Ort {campaignId: $campaign_id})
+            RETURN o.id AS id, o.name AS name, 'Ort' AS kind
+            UNION
+            MATCH (p:Person {id: $person_id})-[:BESITZT]->(g:Gegenstand)
+            WHERE g.typ IN ['Fahrzeug', 'Behälter']
+            RETURN g.id AS id, g.name AS name, 'Gegenstand' AS kind
+            """,
+            campaign_id=campaign_id,
+            person_id=person_id,
+        )
+        return [dict(record) async for record in result]

@@ -45,6 +45,11 @@ class GegenstandCreate(BaseModel):
     # Datenfeld ohne Logik — die automatische Shop-Bestückung selbst ist noch
     # nicht gebaut (Phase 5), siehe CLAUDE.md.
     automatischImShop: bool = False
+    # Wo der Gegenstand steckt: AUSGERUESTET (angelegt/getragen), RUCKSACK
+    # (mitgeführt) oder GELAGERT (an einem Ort oder in einem Fahrzeug — dann
+    # zeigt eine :LIEGT_IN-Beziehung auf das Ziel). Das meiste, was man
+    # besitzt, trägt man mit sich, daher RUCKSACK als Ausgangswert.
+    ablage: str = "RUCKSACK"
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -97,6 +102,11 @@ class GegenstandResponse(BaseModel):
     bildUrl: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
+    ablage: str
+    # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
+    ablageZielId: str | None = None
+    ablageZielName: str | None = None
+    ablageZielKind: str | None = None
 
 
 class GegenstandMitBesitzer(GegenstandResponse):
@@ -105,3 +115,21 @@ class GegenstandMitBesitzer(GegenstandResponse):
     ownerId: str | None = None
     ownerName: str | None = None
     ownerPersonType: str | None = None
+
+
+class AblageRequest(BaseModel):
+    """Umlegen eines Gegenstands.
+
+    `zielId` ist nur bei ablage="GELAGERT" von Belang und wird sonst
+    ignoriert; ohne Ziel gilt der Gegenstand als unbestimmt gelagert.
+    """
+
+    ablage: str
+    zielId: str | None = None
+
+
+class AblageZiel(BaseModel):
+    id: str
+    name: str
+    # "Ort" oder "Gegenstand" — bestimmt nur die Darstellung
+    kind: str

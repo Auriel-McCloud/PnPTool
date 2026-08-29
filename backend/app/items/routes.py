@@ -8,7 +8,15 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import repository
-from app.items.schemas import GegenstandCreate, GegenstandMitBesitzer, GegenstandResponse, GegenstandUpdate, ZuweisenRequest
+from app.items.schemas import (
+    AblageRequest,
+    AblageZiel,
+    GegenstandCreate,
+    GegenstandMitBesitzer,
+    GegenstandResponse,
+    GegenstandUpdate,
+    ZuweisenRequest,
+)
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -60,6 +68,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "istVorlage": ist_vorlage,
         "seltenheit": body.seltenheit,
         "automatischImShop": body.automatischImShop,
+        "ablage": body.ablage,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
     }
@@ -200,3 +209,43 @@ async def vorlage_machen(campaign_id: str, item_id: str):
 async def delete_item(campaign_id: str, item_id: str):
     if not await repository.delete_gegenstand(campaign_id, item_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+
+@campaign_router.get("/{item_id}/ablageziele", response_model=list[AblageZiel])
+async def ablageziele(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Wohin dieser Gegenstand gelegt werden kann: Orte der Kampagne und
+    Behälter seines Besitzers (Fahrzeuge etc.)."""
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer is None:
+        # Vorlagen haben keinen Besitzer und damit auch keine eigenen Behälter
+        return await repository.moegliche_ablageziele(campaign_id, "")
+    return await repository.moegliche_ablageziele(campaign_id, besitzer)
+
+
+@campaign_router.post("/{item_id}/ablage", response_model=GegenstandResponse)
+async def ablage_aendern(
+    campaign_id: str,
+    item_id: str,
+    body: AblageRequest,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Legt einen Gegenstand um — ausgerüstet, im Rucksack oder gelagert.
+
+    **Die einzige Route, die auch Spieler schreiben dürfen**, und zwar streng
+    begrenzt: nur an Gegenständen, die ihrem eigenen Charakter gehören, und
+    nur dieses eine Feld. Alles andere bleibt der Spielleitung vorbehalten.
+    Deshalb hängt sie an get_viewer statt an require_campaign_gm und prüft
+    die Besitzverhältnisse selbst — sie steht dafür namentlich in der
+    Ausnahmeliste von tests/test_zugriffsschutz.py.
+    """
+    if viewer.role != "GM":
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer is None or besitzer != viewer.person_id:
+            # 404 statt 403: ein Spieler soll nicht erfahren, ob es den
+            # Gegenstand überhaupt gibt.
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    item = await repository.set_ablage(campaign_id, item_id, body.ablage, body.zielId)
+    if item is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ablage konnte nicht gesetzt werden")
+    return item
