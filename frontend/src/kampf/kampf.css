@@ -1,0 +1,206 @@
+/* ===================================================================
+   Kampfmodus — die Initiativliste sehen alle.
+   Wer dran ist, muss man von der anderen Tischseite erkennen können,
+   deshalb leuchtet die Zeile und nicht nur ein Häkchen.
+   =================================================================== */
+
+.ka-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.ka-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.ka-runde {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ka-runde strong {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--text);
+}
+
+.ka-weiter {
+  margin-left: auto;
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.ka-ende {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.ka-leer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-leise);
+}
+
+/* --- Die Liste --------------------------------------------------------- */
+
+.ka-liste {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ka-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie-hell);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+
+/* Wer dran ist: das muss man über den Tisch hinweg sehen. */
+.ka-zeile[data-dran="true"] {
+  border-color: var(--neon);
+  border-left-color: var(--neon);
+  background: var(--neon-schwach);
+  box-shadow: 0 0 18px -6px var(--neon);
+}
+
+/* Der eigene Charakter — damit man sich in der Liste wiederfindet. */
+.ka-zeile[data-meiner="true"] {
+  border-left-color: var(--warn);
+}
+
+.ka-zeile[data-erledigt="true"]:not([data-dran="true"]) {
+  opacity: 0.5;
+}
+
+.ka-platz {
+  min-width: 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+.ka-init {
+  min-width: 30px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--text);
+}
+
+.ka-art {
+  font-size: 15px;
+  color: var(--text-leise);
+}
+
+.ka-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ka-du {
+  flex-shrink: 0;
+  padding: 0 5px;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 2px;
+}
+
+.ka-notiz {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-aus);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ka-dran {
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.ka-knoepfe {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.ka-knoepfe button {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ka-knoepfe button[data-aktiv="true"] {
+  border-color: var(--gut);
+  color: var(--gut);
+}
+
+.ka-weg:hover:not(:disabled) {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+/* --- Ansagereihenfolge und Aufnahme ------------------------------------ */
+
+.ka-ansage {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-aus);
+}
+
+.ka-ansage span {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ka-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+}

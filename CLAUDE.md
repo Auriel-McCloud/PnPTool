@@ -1064,6 +1064,69 @@ je Aktion das beste. Eines weggelegt → Werte fallen auf das verbliebene zurüc
   (Zeilen 159-167: Rigger-Bonus und maximale Drohnenzahl) ist noch nicht
   abgebildet, und für "Rigger-Bonus" und "Max Drohnen" fehlen die Felder.
 
+## Kampfmodus (30.08.2026)
+
+Die Initiativliste, **die alle am Tisch sehen** — Marks Kernpunkt: jeder soll
+wissen, wann er dran ist, ohne zu fragen. Die Spielleitung führt sie, alle
+anderen lesen mit.
+
+**Reihenfolge nach Regelblatt** (Zeilen 57-59), sortiert **serverseitig**,
+damit niemand eine andere Reihenfolge sieht als sein Nachbar:
+
+- Initiative absteigend (Geistesschärfe + Geschicklichkeit + Cyberware),
+- bei Gleichstand **Matrix vor Nahkampf vor Fernkampf**,
+- bei völligem Gleichstand nach Namen — sonst springt die Liste bei jedem
+  Nachladen, und das mitten im Kampf.
+- Die **Ansagereihenfolge** (umgekehrt, Zeile 59) steht als Zeile darunter.
+
+`backend/app/kampf/`, ein `Kampf`-Knoten je Kampagne mit
+`KampfTeilnehmer`-Knoten daran. Teilnehmer als eigene Knoten, weil Neo4j keine
+Listen aus Objekten kann und ein Teilnehmer ohnehin auf eine Person oder einen
+Begleiter zeigt. Wer **weder noch** ist (namenlose Wache), braucht keinen — der
+Verweis ist optional.
+
+**`amZug` speichert eine Kennung, keine Position.** Kommt jemand mitten im
+Kampf dazu, verschiebt sich die Reihenfolge; eine Position zeigte danach auf
+jemand anderen.
+
+### Was die Spielleitung kann
+
+Kampf beginnen und beenden, Teilnehmer aufnehmen (Personen und Begleiter aus
+der Auswahl, oder frei benannt für die Wache Nummer drei), **Nächster ›**,
+jemanden direkt ans Ruder setzen, abhaken, entfernen — und **▤ öffnet den
+Bogen** des Betreffenden, egal ob PC, NPC oder Begleiter. Die Initiative wird
+beim Aufnehmen aus dem Bogen **vorgeschlagen**, nicht verordnet: Cyberware und
+Drogen kennt das Werkzeug noch nicht.
+
+### Nachladen statt Live-Verbindung
+
+Marks Frage, ob das nicht Phase 5 sei: der **Live**-Teil schon. Gebaut ist es
+mit einer Abfrage alle drei Sekunden (`useKampf`) — die Oberfläche sieht
+genauso aus, wie sie später aussehen wird, nur die Bezugsquelle wird
+ausgetauscht. Für eine Runde mit vier Leuten ist das nichts, und es läuft nur,
+solange die Seite sichtbar ist; ein Tablet in der Tasche zählt nicht mit.
+
+Die Schleife läuft in der Spieleransicht **dauerhaft**, nicht nur im
+Kampfbereich — damit später eine Meldung "du bist dran" von überall aufgehen
+kann.
+
+**Geprüft:** Straßensamurai 9 vor drei Gleichständen auf 7, dort Decker
+(Matrix) vor Ryu (Nahkampf) vor Wache (Fernkampf). Fünfmal weiter → Runde 2.
+Der Spieler sieht dieselbe Liste, seine Zeile mit "du" markiert, ohne
+Bedienknöpfe, und zieht nach dem Weiterschalten innerhalb des Takts nach.
+Schreibversuch als Spieler: 403.
+
+### Offen
+
+- **Meldung "du bist dran"** ausserhalb des Kampfbereichs — dafür ist die
+  Schleife schon da, es fehlt die Anzeige (gehört zum Blitz-Symbol aus dem
+  UI-Konzept).
+- **Rigger im Kampf**: die Regel steht (manuell gesteuerte Drohne addiert die
+  Fertigkeit, eine pro Runde, der Rest handelt selbstständig), die Zuordnung
+  Fertigkeit → Drohnenwert fehlt noch. Ohne sie keine Umsetzung.
+- Ausweichen und Parieren mit ihrem kumulativen −1 je Einsatz pro Runde
+  (Zeilen 62-63) sind nicht abgebildet.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

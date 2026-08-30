@@ -78,7 +78,9 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 **Noch nicht gebaut — Schritt 2 und später:**
 - Der feinere Bereichsschnitt. `EntityManager` hält Personen, Orte, Events und Verbindungen weiterhin in einer Ansicht namens "Welt"; PCs/NPCs/Orte/Events getrennt erfordert, diese Komponente zu zerlegen.
 - Das **Fenstersystem** (Gegenstand als fokussiertes Fenster statt Inline-Akkordeon) — das ist der eigentliche Kern gegen den Listen-Charakter und der größte verbleibende Brocken. Damit erledigt sich auch der vertagte Breite-Bug.
-- Kampfmodus, Regeln, Notizen sind im Menü als "bald" sichtbar, aber leer.
+- **Kampfmodus: gebaut** (30.08.2026). Initiativliste bei allen sichtbar, die
+  Spielleitung führt sie. Regeln, Notizen sind im Menü weiterhin als "bald"
+  sichtbar, aber leer.
 - **Tooltip-System: gebaut** (30.08.2026). Schieberegler links in der oberen Leiste, Zeichen neben jedem Wert des Charakterblatts, Erklärungen liegen als `Erklaerung`-Knoten je Regelwerk. Die Spielleitung schreibt sie direkt im Fenster. Noch offen: dieselben Zeichen bei Gegenstandstypen und im kommenden Regeln-Bereich, und die Texte selbst (kommen aus dem überarbeiteten Fremdmaterial).
 - SL-Popups: das Symbol ist oben angelegt, aber deaktiviert.
 

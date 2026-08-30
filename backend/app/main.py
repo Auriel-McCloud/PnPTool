@@ -17,6 +17,7 @@ from app.traits.routes import router as traits_router
 from app.regeln.routes import router as erklaerungen_router
 from app.regeln.routes import vorlagen_router
 from app.begleiter.routes import router as begleiter_router
+from app.kampf.routes import router as kampf_router
 from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
 from app.players.routes import gm_router as spieler_gm_router, login_router
@@ -52,6 +53,7 @@ app.include_router(traits_router)
 app.include_router(erklaerungen_router)
 app.include_router(vorlagen_router)
 app.include_router(begleiter_router)
+app.include_router(kampf_router)
 app.include_router(login_router)
 app.include_router(spieler_gm_router)
 

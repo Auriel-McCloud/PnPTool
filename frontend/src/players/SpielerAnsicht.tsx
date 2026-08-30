@@ -10,6 +10,7 @@ import {
 } from "../items/aufbewahrung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
+import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
@@ -42,6 +43,9 @@ const BEREICHE: Bereich[] = [
   // Sprites, Geister und Verbündete teilen sich ein Blatt mit den Drohnen —
   // deshalb ein Bereich für alle drei.
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "#c76bff" },
+  // Die Initiativliste sehen alle — darum geht es: jeder weiss, wann er dran
+  // ist, ohne zu fragen.
+  { id: "kampf", name: "Kampf", symbol: "⚔", farbe: "#ff3d5c" },
   { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "#00e5ff" },
   { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
@@ -82,6 +86,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Fläche aus. Ein geteiltes ref zeigte je nach Bereich ins Leere.
   const fahrzeugRasterRef = useRef<HTMLDivElement>(null);
   const begleiterRasterRef = useRef<HTMLDivElement>(null);
+  // Läuft dauerhaft mit, nicht nur im Kampfbereich: so kann später eine
+  // Meldung "du bist dran" von überall aufgehen.
+  const { kampf, geladen: kampfGeladen } = useKampf(ich?.campaignId ?? null);
   const [seite, setSeite] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
@@ -208,7 +215,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       titel={`${ich.campaignName} — ${BEREICHE.find((b) => b.id === bereich)?.name ?? ""}`}
       // Nur das Inventar teilt sich die Fläche selbst ein; die übrigen
       // Bereiche sind noch Listen und dürfen scrollen.
-      statisch={bereich === "inventar" || bereich === "fahrzeuge" || bereich === "begleiter"}
+      statisch={
+        bereich === "inventar" ||
+        bereich === "fahrzeuge" ||
+        bereich === "begleiter" ||
+        bereich === "kampf"
+      }
       werkzeuge={
         <>
           <VollbildKnopf />
@@ -252,6 +264,31 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             ))}
           </div>
           {fahrzeuge.length === 0 && <p className="gg-leer">Du besitzt kein Fahrzeug und keine Drohne.</p>}
+        </div>
+      )}
+
+      {bereich === "kampf" && (
+        <div className="ka-seite">
+          {!kampfGeladen && <p style={{ color: "var(--text-leise)" }}>Lade…</p>}
+          {kampfGeladen && !kampf && (
+            <p style={{ color: "var(--text-leise)" }}>Gerade wird nicht gekämpft.</p>
+          )}
+          {kampf && (
+            <>
+              <header className="ka-kopf">
+                <span className="ka-runde">
+                  Runde <strong>{kampf.runde}</strong>
+                </span>
+              </header>
+              <Initiativliste kampf={kampf} eigenePersonId={ich.personId} />
+              {kampf.teilnehmer.length > 1 && (
+                <p className="ka-ansage">
+                  <span>Ansage von hinten:</span>{" "}
+                  {[...kampf.teilnehmer].reverse().map((t) => t.name).join(" → ")}
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 
