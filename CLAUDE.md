@@ -1246,6 +1246,35 @@ Animation hat deshalb zwei Spitzen im ersten Drittel und danach Ruhe, dazu
 einen leichten `scaleY` vom unteren Rand her. Deutlich kräftiger als vorher
 (Marks Wunsch), aber immer noch am unteren Rand statt flächig.
 
+## Rüstung erklärt sich, Fahrzeuge zeigen ihr Blatt (30.08.2026)
+
+**Die Rüstungszahl auf der Kampfkarte ist antippbar** und erklärt, wie Schaden
+abgefangen wird: Rüstungsbonus aller getragenen Stücke gegen Waffenschaden plus
+Nettoerfolge, im Nahkampf zusätzlich die Körperkraft des Angreifers
+(Zeilen 66-67, 76). Steht die Rüstung auf 0, sagt das Fenster das deutlich —
+"jeder Treffer kommt ungebremst durch" ist eine nützlichere Auskunft als eine
+stumme Null. Der Geschicklichkeitsabzug ab Rüstung 3 wird genannt und ist in
+Treffen, Ausweichen und Parieren bereits eingerechnet.
+
+Der Hinweis steht mit dabei, dass **das Regelblatt keinen Widerstandswurf
+kennt** — dort fängt allein die Rüstung ab. Falls Widerstandsfähigkeit doch
+mitspielen soll, fehlt die Zahl noch.
+
+**Das Fahrzeugblatt erscheint jetzt immer** bei Typ Fahrzeug und Drohne, auch
+wenn nichts gepflegt ist — dass noch keine Stufe festgelegt wurde, ist selbst
+eine Auskunft. Vorher blieb ein Fahrzeug ohne Werte völlig stumm, und man
+rätselte, ob es kein Blatt hat oder ob die Anzeige fehlt (Marks Fund).
+
+### Testdaten dazu
+
+- **Acht Rüstungen** aus dem Regelblatt (Zeilen 127-136) als besitzerlose
+  Vorlagen, mit Bonus, Preis, Gewicht und der Zone als Eigenschaft.
+- **Ryu trägt Urban Defender Vest (2) + SynthWeave-Pants (1)** = Rüstung 3.
+  Damit greift der Abzug sichtbar: Treffen, Ausweichen und Parieren fielen von
+  3 auf 2. Wer das nicht will, nimmt ihm die Hose weg.
+- **Yamaha Rapier** hat jetzt ein Blatt: Stufe 3, davon Widerstand 1 und
+  Agilität 2, Preis 15.000¥ (Fahrzeug Stufe × 5.000, Zeile 119).
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

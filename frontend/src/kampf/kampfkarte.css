@@ -197,3 +197,53 @@
   font-size: 11px;
   color: var(--text-aus);
 }
+
+/* --- Erklärfenster (Rüstung) ------------------------------------------ */
+
+.kk-erklaerung {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.kk-erklaerung.kk-leise {
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+.kk-erklaerung.kk-warnend {
+  color: var(--warn);
+}
+
+.kk-rechenweg {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kk-rechenweg li {
+  padding: 8px 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-leise);
+}
+
+.kk-rechenweg span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.kk-rechenweg em {
+  font-style: normal;
+  color: var(--signal);
+}

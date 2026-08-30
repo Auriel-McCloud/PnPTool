@@ -65,6 +65,7 @@ export function Kampfkarte({
   // Angetippter Wert — für Arete heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
+  const [erklaertRuestung, setErklaertRuestung] = useState(false);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -186,11 +187,8 @@ export function Kampfkarte({
           <Zahl
             titel="Rüstung"
             wert={ruestung}
-            hinweis={
-              abzug > 0
-                ? `Wird vom Schaden abgezogen. Schwer genug für −${abzug} auf Geschicklichkeit — ist schon eingerechnet.`
-                : "Wird vom erlittenen Schaden abgezogen."
-            }
+            hinweis="Antippen: wie Schaden abgefangen wird"
+            onKlick={() => setErklaertRuestung(true)}
           />
         </div>
         {waffen.length === 0 ? (
@@ -316,6 +314,49 @@ export function Kampfkarte({
         }}
       >
         <Charakterblatt campaignId={campaignId} personId={personId} aenderbar={aenderbar} />
+      </Fenster>
+
+      <Fenster
+        offen={erklaertRuestung}
+        titel={`Rüstung ${ruestung}`}
+        unterzeile="Wie Schaden abgefangen wird"
+        kennung="ruestung-erklaerung"
+        onSchliessen={() => setErklaertRuestung(false)}
+      >
+        <p className="kk-erklaerung">
+          Der <strong>Rüstungsbonus</strong> aller getragenen Stücke wird zusammengezählt und dem
+          eingehenden Schaden entgegengesetzt (Regelblatt Zeile 66-67, 76).
+        </p>
+        <ul className="kk-rechenweg">
+          <li>
+            <span>Fernkampf</span> Waffenschaden + Nettoerfolge des Treffers <em>gegen</em> deine
+            Rüstung
+          </li>
+          <li>
+            <span>Nahkampf</span> Waffenschaden + Körperkraft des Angreifers + Nettoerfolge{" "}
+            <em>gegen</em> deine Rüstung
+          </li>
+        </ul>
+        {ruestung === 0 ? (
+          <p className="kk-erklaerung kk-warnend">
+            Du trägst nichts. Jeder Treffer kommt ungebremst durch.
+          </p>
+        ) : (
+          <p className="kk-erklaerung">
+            Du fängst derzeit <strong>{ruestung}</strong> ab.
+            {abzug > 0 && (
+              <>
+                {" "}
+                Ab Rüstung 3 wird es unbequem: <strong>−{abzug}</strong> auf Geschicklichkeit, schon
+                eingerechnet in Treffen, Ausweichen und Parieren.
+              </>
+            )}
+          </p>
+        )}
+        <p className="kk-erklaerung kk-leise">
+          Ein Widerstandswurf steht nicht im Regelblatt — dort fängt allein die Rüstung ab. Falls
+          Widerstandsfähigkeit doch mitspielen soll, fehlt die Zahl hier noch.
+        </p>
       </Fenster>
 
       <WillenskraftFrage

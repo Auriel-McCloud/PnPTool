@@ -441,3 +441,10 @@
 .gg-fahrzeugwert > span {
   color: var(--text-leise);
 }
+
+.gg-fahrzeug-leer {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-aus);
+}

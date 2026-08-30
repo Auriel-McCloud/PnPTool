@@ -18,6 +18,9 @@ import type { Ablage, Gegenstand } from "./api";
  * zur Knopfwand. Wo etwas liegt, entscheidet man beim Ansehen des Dings.
  */
 
+/** Bekommen ein eigenes Blatt (Neotopia.xlsx, Blatt "Drohne/Fahrzeug"). */
+const FAHRZEUGTYPEN = new Set(["Fahrzeug", "Drohne"]);
+
 function ablagen(behaelterName?: string): { wert: Ablage; label: string; symbol: string; erklaerung: string }[] {
   return [
     { wert: "AUSGERUESTET", label: "Am Körper", symbol: "⚔", erklaerung: "Griffbereit, ohne etwas aufmachen zu müssen." },
@@ -124,18 +127,30 @@ export function GegenstandKachel({
           </button>
         )}
 
-        {/* Blatt für Drohne/Fahrzeug (Neotopia.xlsx). Erscheint nur, wenn
-            überhaupt Werte gepflegt sind — ein Motorrad ohne Blatt soll kein
-            leeres Raster zeigen. */}
-        {(item.stufe > 0 || item.widerstand > 0 || item.angriff > 0 || item.agilitaet > 0) && (
+        {/* Blatt für Drohne und Fahrzeug (Neotopia.xlsx). Erscheint bei
+            diesen Typen **immer** — auch ungepflegt: dass noch nichts
+            eingetragen ist, ist selbst eine Auskunft. Vorher blieb ein
+            Fahrzeug ohne Werte völlig stumm, und man rätselte, ob es kein
+            Blatt hat oder ob die Anzeige fehlt. */}
+        {(FAHRZEUGTYPEN.has(item.typ) ||
+          item.stufe > 0 ||
+          item.widerstand > 0 ||
+          item.angriff > 0 ||
+          item.agilitaet > 0) && (
           <section className="gg-fahrzeugblatt">
-            <h3>Werte</h3>
+            <h3>{item.typ === "Drohne" ? "Drohnenwerte" : FAHRZEUGTYPEN.has(item.typ) ? "Fahrzeugwerte" : "Werte"}</h3>
+            {item.stufe === 0 && FAHRZEUGTYPEN.has(item.typ) && (
+              <p className="gg-fahrzeug-leer">
+                Noch keine Stufe festgelegt. Beim Kauf wird sie bestimmt und frei auf Widerstand,
+                Angriff und Agilität verteilt — das trägt die Spielleitung ein.
+              </p>
+            )}
             <div className="gg-fahrzeugwerte">
               {(
                 [
-                  ["Stufe", item.stufe, 15, "Zugleich die Gesundheit."],
-                  ["Widerstand", item.widerstand, 5, "Zieht vom erlittenen Schaden ab."],
-                  ["Angriff", item.angriff, 5, "Treffen und Schaden."],
+                  ["Stufe", item.stufe, 15, "Zugleich die Gesundheit — so viel hält es aus."],
+                  ["Widerstand", item.widerstand, 5, "Schadensreduktion."],
+                  ["Angriff", item.angriff, 5, "Treffen und Schaden, wenn es selbst handelt."],
                   ["Agilität", item.agilitaet, 5, "Geschwindigkeit."],
                 ] as const
               ).map(([beschriftung, wert, maximum, erklaerung]) => (
