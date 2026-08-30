@@ -719,6 +719,66 @@ gefunden.
 Fenster durchs Portal außerhalb von `.gg-seite` hängt und die dort gesetzten
 Variablen nicht erbt.
 
+## Fahrzeuge, Drohnen und Begleiter (30.08.2026)
+
+Marks Vorgabe: Fahrzeuge sind *bestimmte* Objekte, nicht bloss Behälter — ein
+Motorrad hat keinen Stauraum. Ein Rigger führt viele Drohnen und braucht dafür
+eine eigene Übersicht. Und Sprites, Geister und Verbündete gehören in einen
+gemeinsamen Bereich, weil sie eigene Blätter haben.
+
+**Ein Blatt für vier Dinge.** Das Papierblatt in `Neotopia.xlsx` ist mit
+*"Drohne / Fahrzeug / Sprite / Geist"* überschrieben — dieselben vier Werte
+(Stufe, Widerstand, Angriff, Agilität), dieselben vier freien Fertigkeiten,
+derselbe Gegenstand mit Schadensbonus. Die Stufe wird beim Erschaffen frei
+darauf verteilt; **Gesundheit = Stufe**, Widerstand = Schadensreduktion,
+Agilität = Geschwindigkeit.
+
+**Fahrzeug und Drohne bleiben Gegenstände**, Sprite und Geist werden ein
+eigener Knotentyp. Der Schnitt läuft entlang der Frage, ob man das Ding
+besitzt und mit sich führt: ein Fahrzeug hat Preis, Gewicht und einen
+Aufbewahrungsort und muss ins Inventar; einen Geist trägt man nicht im
+Rucksack, und alles, was Gegenstände an Inventarlogik mitbringen, wäre bei ihm
+sinnlos. Die Werte selbst sind in beiden Fällen dieselben.
+
+- `Gegenstand`: neue Felder `istBehaelter`, `stufe`, `widerstand`, `angriff`,
+  `agilitaet`, `fahrzeugFertigkeiten`. Neuer Typ **Drohne**.
+- `app/begleiter/`: Knoten `Begleiter` mit `art` (SPRITE/GEIST/BEGLEITER),
+  `-[:BEGLEITET]->` Person. Lesen darf jeder mit Zugang, schreiben nur die
+  Spielleitung.
+
+**`istBehaelter` ersetzt das Raten nach dem Typ.** Vorher galt "Typ Fahrzeug
+oder Behälter ⇒ es passt etwas hinein". Jetzt steht es am Gegenstand und wird
+in den Optionen angehakt. **Der Rückfall für Bestandsdaten muss an beiden
+Stellen derselbe sein** — `_decode` *und* die Abfrage in
+`moegliche_ablageziele`. Beim ersten Anlauf hatte ich in der Abfrage noch
+`typ IN ['Fahrzeug','Behälter']` stehen, während `_decode` schon
+`typ = 'Behälter'` lieferte: die Auswahl hätte ein Fahrzeug als Ziel
+angeboten, das die Oberfläche gar nicht als Fach führt.
+
+**Neue Bereiche im Menü** — beim Spieler *Fahrzeuge* und *Begleiter*, bei der
+Spielleitung *Begleiter* (Fahrzeuge liegen dort in der Gegenstandsübersicht,
+die ohnehin filtern kann). Beide neuen Spielerbereiche sind `statisch`:
+Kachelraster, ausgemessen, geblättert.
+
+**Ein Begleiter ist für seinen Besitzer immer sichtbar** — sonst müsste die
+Spielleitung bei jedem Sprite an die Freigabe denken, und vergässe sie es,
+stünde der Technomancer ohne sein Sprite da. Gleiches Muster wie bei den
+Gegenständen. Notizen bleiben trotzdem beim Spielleiter.
+
+**Testdaten:** Ryu hat jetzt ein Sprite *Kettenhund* (Stufe 4). Von mir
+erfunden, damit der Bereich nicht leer ist — kann weg.
+
+### Noch offen an dieser Ecke
+
+- Das Fahrzeugblatt lässt sich bisher nur über die Gegenstandsoptionen
+  pflegen; freie **Fertigkeiten** am Fahrzeug haben noch keine Oberfläche
+  (Feld und Speicherung stehen, `fahrzeugFertigkeiten`).
+- Die Regel *"Fertigkeiten werden zu den Drohnen-Attributen addiert, wenn sie
+  kompatibel sind"* und das Riggen (eigene Werte bis zur Stufe der Drohne)
+  sind nicht abgebildet.
+- Für Begleiter fehlt eine serverseitige Prüfung, dass die verteilten Punkte
+  die Stufe nicht übersteigen — die Oberfläche warnt nur.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
