@@ -404,3 +404,13 @@
   grid-auto-rows: var(--gg-kachel-hoehe, 168px);
   gap: var(--gg-abstand, 10px);
 }
+
+/* In einen Behälter hineinsehen — öffnet ein weiteres Fenster über diesem. */
+.gg-hineinsehen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--bereich-farbe, var(--neon));
+}

@@ -21,7 +21,9 @@ export function Fachfenster({
   onSchliessen,
   onUmlegen,
   behaelterName,
+  behaelterId,
   fachItem,
+  inhaltVon,
 }: {
   fach: Bereich | null;
   /** Bereits auf dieses Fach gefiltert. */
@@ -37,6 +39,12 @@ export function Fachfenster({
   /** Fehlt sie, ist der Inhalt nur anzusehen — so bei fremdem Besitz. */
   onUmlegen?: (item: Gegenstand, ablage: Ablage) => Promise<void> | void;
   behaelterName?: string;
+  behaelterId?: string;
+  /**
+   * Liefert für einen Behälter, wie viele Sachen darin liegen und wie man
+   * hineinsieht — damit sich aus einem Fach das nächste öffnen lässt.
+   */
+  inhaltVon?: (item: Gegenstand) => { anzahl: number; oeffnen: () => void } | undefined;
 }) {
   if (!fach) return null;
 
@@ -64,6 +72,8 @@ export function Fachfenster({
             <GegenstandKachel
               item={fachItem}
               behaelterName={behaelterName}
+              behaelterId={behaelterId}
+              // Kein "Hineinsehen" am Fach selbst — man steht ja schon darin.
               onUmlegen={onUmlegen ? (ablage) => onUmlegen(fachItem, ablage) : undefined}
             />
           </div>
@@ -83,6 +93,8 @@ export function Fachfenster({
               key={g.id}
               item={g}
               behaelterName={behaelterName}
+              behaelterId={behaelterId}
+              inhalt={inhaltVon?.(g)}
               onUmlegen={onUmlegen ? (ablage) => onUmlegen(g, ablage) : undefined}
             />
           ))}

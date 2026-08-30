@@ -37,10 +37,20 @@ export function GegenstandKachel({
   item,
   onUmlegen,
   behaelterName,
+  behaelterId,
+  inhalt,
 }: {
   item: Gegenstand;
   /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
   behaelterName?: string;
+  /**
+   * Kennung des getragenen Behälters. Nötig, um den Rucksack nicht in sich
+   * selbst legen zu können — der Ablageplatz "im Rucksack" ist für den
+   * Rucksack selbst kein Ort.
+   */
+  behaelterId?: string;
+  /** Nur bei Behältern und Fahrzeugen: hineinsehen, in einem weiteren Fenster. */
+  inhalt?: { anzahl: number; oeffnen: () => void };
   /**
    * Die einzige Änderung, die ein Spieler an einem Gegenstand vornehmen darf.
    * Fehlt sie, ist der Gegenstand nur anzusehen — so bei fremdem Besitz.
@@ -106,6 +116,14 @@ export function GegenstandKachel({
 
         {beschreibung && <RichTextView content={beschreibung} />}
 
+        {inhalt && (
+          <button type="button" className="gg-hineinsehen" onClick={inhalt.oeffnen}>
+            <span aria-hidden="true">{item.typ === "Fahrzeug" ? "⛭" : "▣"}</span>
+            Hineinsehen
+            <span className="gg-fach-zahl">{inhalt.anzahl}</span>
+          </button>
+        )}
+
         {item.kraft > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ color: "var(--text-leise)", fontSize: 13 }}>
@@ -138,18 +156,21 @@ export function GegenstandKachel({
             </p>
           )}
           <div className="gg-ablage-knoepfe">
-            {ablagen(behaelterName).map((a) => (
-              <button
-                key={a.wert}
-                type="button"
-                data-aktiv={item.ablage === a.wert}
-                disabled={laeuft || item.ablage === a.wert}
-                onClick={() => umlegen(a.wert)}
-                title={a.erklaerung}
-              >
-                <span aria-hidden="true">{a.symbol}</span> {a.label}
-              </button>
-            ))}
+            {ablagen(behaelterName)
+              // Nichts kann in sich selbst liegen.
+              .filter((a) => !(a.wert === "RUCKSACK" && item.id === behaelterId))
+              .map((a) => (
+                <button
+                  key={a.wert}
+                  type="button"
+                  data-aktiv={item.ablage === a.wert}
+                  disabled={laeuft || item.ablage === a.wert}
+                  onClick={() => umlegen(a.wert)}
+                  title={a.erklaerung}
+                >
+                  <span aria-hidden="true">{a.symbol}</span> {a.label}
+                </button>
+              ))}
           </div>
         </section>
         )}

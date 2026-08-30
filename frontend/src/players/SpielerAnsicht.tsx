@@ -62,7 +62,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // das die frühere Mehrfachauswahl über Reiter: was man am Körper trägt,
   // liegt offen, alles andere macht man auf — und sieht schon daran, dass
   // man nicht gleich schnell drankommt.
-  const [offenesFach, setOffenesFach] = useState<string | null>(null);
+  // Ein *Stapel* offener Fächer, keine einzelne Auswahl: aus dem Rucksack
+  // heraus soll sich der Behälter darin öffnen lassen, und darin wieder einer.
+  // Genau das meinte Mark mit "Pop-ups die zu Pop-ups führen".
+  const [fachStapel, setFachStapel] = useState<string[]>([]);
   // Kachelraster wie beim Spielleiter: gemessen statt gescrollt.
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
@@ -135,9 +138,33 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const aktuelleSeite = Math.min(seite, seiten - 1);
   const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
-  const gewaehltesFach = faecher.find((f) => f.id === offenesFach) ?? null;
   // Der getragene Behälter gibt dem mittleren Ablageplatz seinen Namen.
-  const getragenerBehaelter = faecher.find((f) => f.id === "MITGEFUEHRT")?.name;
+  const getragenesFach = faecher.find((f) => f.id === "MITGEFUEHRT");
+  const getragenerBehaelter = getragenesFach?.name;
+  const getragenerBehaelterId = sachen.find(
+    (g) => g.ablage === "AUSGERUESTET" && (g.typ === "Behälter" || g.typ === "Fahrzeug"),
+  )?.id;
+
+  /**
+   * Zu welchem Fach ein Behälter-Gegenstand gehört. Der getragene Rucksack
+   * sammelt unter "MITGEFUEHRT" ein, jeder andere Behälter unter seiner
+   * eigenen Kennung.
+   */
+  function fachIdFuer(item: Gegenstand) {
+    if (item.id === getragenerBehaelterId) return getragenesFach?.id;
+    return faecher.find((f) => f.id === item.id)?.id;
+  }
+
+  function inhaltVon(item: Gegenstand) {
+    const fachId = fachIdFuer(item);
+    if (!fachId) return undefined;
+    const fach = faecher.find((f) => f.id === fachId);
+    if (!fach) return undefined;
+    return {
+      anzahl: sachen.filter(fach.passt).length,
+      oeffnen: () => setFachStapel((alt) => [...alt, fachId]),
+    };
+  }
 
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
@@ -232,6 +259,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 key={g.id}
                 item={g}
                 behaelterName={getragenerBehaelter}
+                behaelterId={getragenerBehaelterId}
+                inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
               />
             ))}
@@ -270,7 +299,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                     key={f.id}
                     type="button"
                     className="gg-fach"
-                    onClick={() => setOffenesFach(f.id)}
+                    onClick={() => setFachStapel([f.id])}
                     // Auch leere Fächer lassen sich öffnen — man will
                     // nachsehen können, statt zu rätseln.
                     title={`${f.name} öffnen`}
@@ -286,20 +315,34 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             </div>
           )}
 
-          <Fachfenster
-            fach={gewaehltesFach}
-            offen={gewaehltesFach !== null}
-            items={gewaehltesFach ? sachen.filter(gewaehltesFach.passt) : []}
-            // Ist das Fach selbst ein Gegenstand (Fahrzeug, Kiste), gehört es
-            // mit ins Fenster — sonst käme man nicht mehr an es heran.
-            fachItem={gewaehltesFach ? sachen.find((g) => g.id === gewaehltesFach.id) : undefined}
-            behaelterName={getragenerBehaelter}
-            onSchliessen={() => setOffenesFach(null)}
-            // Fremdes lässt sich ansehen, aber nicht umlegen
-            onUmlegen={
-              gewaehltesFach?.id === "FREMD" ? undefined : (item, ziel) => umlegen(item.id, ziel)
-            }
-          />
+          {/* Ein Fenster je Stufe des Stapels. Schliessen räumt alles darüber
+              mit ab — sonst bliebe ein Fenster stehen, dessen Fach gar nicht
+              mehr offen ist. */}
+          {fachStapel.map((fachId, stufe) => {
+            const fach = faecher.find((f) => f.id === fachId);
+            if (!fach) return null;
+            return (
+              <Fachfenster
+                key={`${fachId}:${stufe}`}
+                fach={fach}
+                offen
+                items={sachen.filter(fach.passt)}
+                // Ist das Fach selbst ein Gegenstand (Fahrzeug, Kiste), gehört
+                // es mit ins Fenster — sonst käme man nicht mehr an es heran.
+                fachItem={
+                  fach.id === "MITGEFUEHRT"
+                    ? sachen.find((g) => g.id === getragenerBehaelterId)
+                    : sachen.find((g) => g.id === fach.id)
+                }
+                behaelterName={getragenerBehaelter}
+                behaelterId={getragenerBehaelterId}
+                inhaltVon={inhaltVon}
+                onSchliessen={() => setFachStapel((alt) => alt.slice(0, stufe))}
+                // Fremdes lässt sich ansehen, aber nicht umlegen
+                onUmlegen={fach.id === "FREMD" ? undefined : (item, ziel) => umlegen(item.id, ziel)}
+              />
+            );
+          })}
         </div>
       )}
 
