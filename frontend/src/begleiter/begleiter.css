@@ -70,29 +70,5 @@
   font-size: 13px;
 }
 
-/* Die Stufe steht allein und über den anderen: sie ist kein vierter Wert,
-   sondern das Budget, aus dem Widerstand, Angriff und Agilität bezahlt
-   werden — und zugleich die Gesundheit. */
-.bg-stufe {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--neon) 40%, transparent);
-  border-radius: var(--radius);
-  background: var(--neon-schwach);
-}
 
-.bg-stufe-titel {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--neon);
-}
 
-.bg-stufe-hinweis {
-  flex: 1 1 100%;
-  font-size: 11px;
-  color: var(--text-aus);
-}

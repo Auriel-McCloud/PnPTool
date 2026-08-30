@@ -1,0 +1,65 @@
+/* ===================================================================
+   Blatt für Drohne, Fahrzeug, Sprite und Geist — einmal gezeichnet.
+   Die Stufe steht allein darüber: sie ist das Budget, aus dem die drei
+   Werte bezahlt werden, und zugleich die Gesundheit.
+   =================================================================== */
+
+.sb-blatt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sb-titel {
+  margin: 0;
+}
+
+.sb-stufe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, transparent);
+  border-radius: var(--radius);
+  background: var(--neon-schwach);
+}
+
+.sb-stufe-titel {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.sb-stufe-hinweis {
+  flex: 1 1 100%;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-aus);
+}
+
+.sb-werte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 2px 20px;
+}
+
+.sb-wert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 26px;
+  font-size: 14px;
+}
+
+.sb-wert > span {
+  color: var(--text-leise);
+}
+
+.sb-warnung {
+  margin: 0;
+  font-size: 13px;
+  color: var(--warn);
+}

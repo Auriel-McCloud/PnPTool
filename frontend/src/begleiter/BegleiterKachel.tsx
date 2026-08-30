@@ -3,6 +3,7 @@ import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
+import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
 import "./begleiter.css";
 
@@ -14,22 +15,7 @@ import "./begleiter.css";
  * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schadensbonus.
  */
 
-/** Wofür die vier Werte im Spiel stehen — hier, weil es sonst niemand weiss. */
-const WERT_ERKLAERUNG: Record<string, string> = {
-  Stufe: "Zugleich die Gesundheit.",
-  Widerstand: "Zieht vom erlittenen Schaden ab.",
-  Angriff: "Treffen und Schaden.",
-  Agilität: "Geschwindigkeit.",
-};
-
 export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
-  // Die Stufe steht allein oben — sie ist das Budget, aus dem die drei
-  // darunter bezahlt werden, und zugleich die Gesundheit.
-  const werte: [string, number, number][] = [
-    ["Widerstand", begleiter.widerstand, 5],
-    ["Angriff", begleiter.angriff, 5],
-    ["Agilität", begleiter.agilitaet, 5],
-  ];
   const fertigkeiten = Object.entries(begleiter.fertigkeiten ?? {});
   const beschreibung = parseRichText(begleiter.beschreibung);
 
@@ -43,20 +29,7 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
 
       {beschreibung && <RichTextView content={beschreibung} />}
 
-      <section className="bg-stufe">
-        <span className="bg-stufe-titel">Stufe</span>
-        <DotPool value={begleiter.stufe} max={15} />
-        <span className="bg-stufe-hinweis">Zugleich die Gesundheit.</span>
-      </section>
-
-      <section className="bg-werte">
-        {werte.map(([name, wert, maximum]) => (
-          <div key={name} className="bg-wert" title={WERT_ERKLAERUNG[name]}>
-            <span>{name}</span>
-            <DotPool value={wert} max={maximum} />
-          </div>
-        ))}
-      </section>
+      <StufenBlatt werte={begleiter} stufenHinweis="Zugleich die Gesundheit." />
 
       {fertigkeiten.length > 0 && (
         <section className="bg-werte">

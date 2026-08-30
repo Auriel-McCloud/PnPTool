@@ -70,6 +70,13 @@ class GegenstandCreate(BaseModel):
     deckSchleichen: int = 0
     deckDaten: int = 0
     deckKompilieren: int = 0
+    # Fällt am Körper auf. Ein Sturmgewehr kann man nicht unauffällig tragen,
+    # ein Datenchip schon. Reine Anzeige — Folgen entscheidet die Spielleitung.
+    immerSichtbar: bool = False
+    # Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und wie viele
+    # Drohnen gleichzeitig geführt werden können (Zeilen 158-167).
+    riggerBonus: int = 0
+    maxDrohnen: int = 0
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -113,6 +120,9 @@ class GegenstandUpdate(BaseModel):
     deckSchleichen: int | None = None
     deckDaten: int | None = None
     deckKompilieren: int | None = None
+    immerSichtbar: bool | None = None
+    riggerBonus: int | None = None
+    maxDrohnen: int | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -155,6 +165,13 @@ class GegenstandResponse(BaseModel):
     deckSchleichen: int = 0
     deckDaten: int = 0
     deckKompilieren: int = 0
+    # Fällt am Körper auf. Ein Sturmgewehr kann man nicht unauffällig tragen,
+    # ein Datenchip schon. Reine Anzeige — Folgen entscheidet die Spielleitung.
+    immerSichtbar: bool = False
+    # Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und wie viele
+    # Drohnen gleichzeitig geführt werden können (Zeilen 158-167).
+    riggerBonus: int = 0
+    maxDrohnen: int = 0
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None
     ablageZielName: str | None = None

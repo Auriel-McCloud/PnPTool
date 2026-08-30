@@ -3,6 +3,7 @@ import { entitiesApi, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
+import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, begleiterApi, type Begleiter, type BegleiterArt } from "./api";
 import "../items/gegenstaende.css";
 import "./begleiter.css";
@@ -252,28 +253,16 @@ function BegleiterFenster({
           </select>
         </div>
 
-        <section className="bg-stufe">
-          <span className="bg-stufe-titel">Stufe</span>
-          <DotPool value={stufe} max={15} onChange={setStufe} />
-          <span className="bg-stufe-hinweis">
-            Das Budget für die Werte darunter — und zugleich die Gesundheit.
-          </span>
-        </section>
-
-        <section className="bg-werte">
-          {(
-            [
-              ["Widerstand", widerstand, setWiderstand, 5],
-              ["Angriff", angriff, setAngriff, 5],
-              ["Agilität", agilitaet, setAgilitaet, 5],
-            ] as const
-          ).map(([beschriftung, wert, setzen, maximum]) => (
-            <div key={beschriftung} className="bg-wert">
-              <span>{beschriftung}</span>
-              <DotPool value={wert} max={maximum} onChange={setzen} />
-            </div>
-          ))}
-        </section>
+        <StufenBlatt
+          werte={{ stufe, widerstand, angriff, agilitaet }}
+          stufenHinweis="Das Budget für die Werte darunter — und zugleich die Gesundheit."
+          onAendern={(feld, wert) => {
+            if (feld === "stufe") setStufe(wert);
+            else if (feld === "widerstand") setWiderstand(wert);
+            else if (feld === "angriff") setAngriff(wert);
+            else setAgilitaet(wert);
+          }}
+        />
 
         {stufe > 0 && verteilt > stufe && (
           <p style={{ color: "var(--warn)", fontSize: 13, margin: 0 }}>

@@ -415,13 +415,10 @@
   color: var(--bereich-farbe, var(--neon));
 }
 
-/* --- Blatt für Drohne und Fahrzeug ------------------------------------
-   Vier Werte plus freie Fertigkeiten, wie auf dem Papierblatt
-   "Drohne/Fahrzeug/Sprite/Geist".                                       */
+/* --- Freie Fertigkeiten am Fahrzeug -----------------------------------
+   Die vier festen Werte zeichnet traits/StufenBlatt.tsx; hier bleiben nur
+   die frei benannten Fertigkeiten darunter.                             */
 
-.gg-fahrzeugblatt h3 {
-  margin: 0 0 6px;
-}
 
 .gg-fahrzeugwerte {
   display: grid;
@@ -442,36 +439,18 @@
   color: var(--text-leise);
 }
 
-.gg-fahrzeug-leer {
-  margin: 0 0 8px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-aus);
-}
 
-/* Stufe allein über den Fahrzeugwerten — siehe begleiter.css, gleicher Grund. */
-.gg-stufe {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--neon) 40%, transparent);
+
+
+
+/* Auffällig am Körper — eine Warnung, keine Eigenschaft unter vielen. */
+.gg-sichtbar-hinweis {
+  margin: 0;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--signal) 45%, transparent);
   border-radius: var(--radius);
-  background: var(--neon-schwach);
-}
-
-.gg-stufe-titel {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--neon);
-}
-
-.gg-stufe-hinweis {
-  flex: 1 1 100%;
-  font-size: 11px;
+  background: var(--signal-schwach);
+  font-size: 13px;
   line-height: 1.45;
-  color: var(--text-aus);
+  color: var(--signal);
 }

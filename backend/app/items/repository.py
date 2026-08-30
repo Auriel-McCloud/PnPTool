@@ -15,6 +15,8 @@ RETURN_FIELDS = """
     g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
     g.deckBruteForce AS deckBruteForce, g.deckSchleichen AS deckSchleichen,
     g.deckDaten AS deckDaten, g.deckKompilieren AS deckKompilieren,
+    g.immerSichtbar AS immerSichtbar,
+    g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -94,6 +96,15 @@ def _decode(record: dict) -> dict:
     # jeweilige Matrix-Aktion.
     for feld in ("deckBruteForce", "deckSchleichen", "deckDaten", "deckKompilieren"):
         record[feld] = _or_default(record.get(feld), 0)
+    # Manches lässt sich nicht am Körper tragen, ohne dass es jeder sieht —
+    # ein Sturmgewehr fällt auf, ein Messer im Stiefel nicht. Reine Anzeige;
+    # welche Folgen das hat, entscheidet die Spielleitung.
+    record["immerSichtbar"] = _or_default(record.get("immerSichtbar"), False)
+    # Riggerkonsole (Regelblatt Zeilen 158-167). Der Bonus kann negativ sein —
+    # eine zusammengeschraubte Konsole macht das Steuern schwerer, nicht
+    # leichter. Deshalb kein ge=0 im Schema.
+    record["riggerBonus"] = _or_default(record.get("riggerBonus"), 0)
+    record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
     record["widerstand"] = _or_default(record.get("widerstand"), 0)
     record["angriff"] = _or_default(record.get("angriff"), 0)
@@ -124,7 +135,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
             fahrzeugFertigkeiten: $fahrzeugFertigkeiten,
             deckBruteForce: $deckBruteForce, deckSchleichen: $deckSchleichen,
-            deckDaten: $deckDaten, deckKompilieren: $deckKompilieren
+            deckDaten: $deckDaten, deckKompilieren: $deckKompilieren,
+            immerSichtbar: $immerSichtbar,
+            riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen
         })
     """
     if owner_person_id:
@@ -171,6 +184,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deckSchleichen=data.get("deckSchleichen") or 0,
             deckDaten=data.get("deckDaten") or 0,
             deckKompilieren=data.get("deckKompilieren") or 0,
+            immerSichtbar=bool(data.get("immerSichtbar")),
+            riggerBonus=data.get("riggerBonus") or 0,
+            maxDrohnen=data.get("maxDrohnen") or 0,
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",

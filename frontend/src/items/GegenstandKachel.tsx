@@ -3,6 +3,7 @@ import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
+import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
 
 /**
@@ -94,6 +95,12 @@ export function GegenstandKachel({
               sein. Wo etwas liegt, sagt der Ort — das ist die Auskunft, die
               man beim Durchsehen eines Fachs braucht. */}
           {item.ablageZielName && <span className="gg-marke">{item.ablageZielName}</span>}
+          {/* Nur am Körper von Belang: im Rucksack sieht es ohnehin niemand. */}
+          {item.immerSichtbar && item.ablage === "AUSGERUESTET" && (
+            <span className="gg-marke" data-ton="signal" title="Das sieht jeder">
+              sichtbar
+            </span>
+          )}
           {item.hatMenge && item.menge === 0 && (
             <span className="gg-marke" data-ton="signal">leer</span>
           )}
@@ -117,6 +124,14 @@ export function GegenstandKachel({
           />
         )}
 
+        {item.immerSichtbar && (
+          <p className="gg-sichtbar-hinweis">
+            {item.ablage === "AUSGERUESTET"
+              ? "Am Körper nicht zu übersehen — wer dich ansieht, sieht das hier."
+              : "Trägst du es offen, sieht es jeder."}
+          </p>
+        )}
+
         {beschreibung && <RichTextView content={beschreibung} />}
 
         {inhalt && (
@@ -137,41 +152,16 @@ export function GegenstandKachel({
           item.widerstand > 0 ||
           item.angriff > 0 ||
           item.agilitaet > 0) && (
-          <section className="gg-fahrzeugblatt">
-            <h3>{item.typ === "Drohne" ? "Drohnenwerte" : FAHRZEUGTYPEN.has(item.typ) ? "Fahrzeugwerte" : "Werte"}</h3>
-            {item.stufe === 0 && FAHRZEUGTYPEN.has(item.typ) && (
-              <p className="gg-fahrzeug-leer">
-                Noch keine Stufe festgelegt. Beim Kauf wird sie bestimmt und frei auf Widerstand,
-                Angriff und Agilität verteilt — das trägt die Spielleitung ein.
-              </p>
-            )}
-            {/* Die Stufe steht **allein oben**: sie ist kein vierter Wert
-                neben den anderen, sondern das Budget, aus dem sie bezahlt
-                werden — und zugleich die Gesundheit. In einer Reihe mit
-                Widerstand, Angriff und Agilität liest sie sich falsch. */}
-            <div className="gg-stufe">
-              <span className="gg-stufe-titel">Stufe</span>
-              <DotPool value={item.stufe} max={15} />
-              <span className="gg-stufe-hinweis">
-                Zugleich die Gesundheit. Wird beim Kauf festgelegt und frei auf die Werte darunter
-                verteilt.
-              </span>
-            </div>
-
-            <div className="gg-fahrzeugwerte">
-              {(
-                [
-                  ["Widerstand", item.widerstand, 5, "Schadensreduktion."],
-                  ["Angriff", item.angriff, 5, "Treffen und Schaden, wenn es selbst handelt."],
-                  ["Agilität", item.agilitaet, 5, "Geschwindigkeit."],
-                ] as const
-              ).map(([beschriftung, wert, maximum, erklaerung]) => (
-                <div key={beschriftung} className="gg-fahrzeugwert" title={erklaerung}>
-                  <span>{beschriftung}</span>
-                  <DotPool value={wert} max={maximum} />
-                </div>
-              ))}
-            </div>
+          <>
+            <StufenBlatt
+              titel={item.typ === "Drohne" ? "Drohnenwerte" : "Fahrzeugwerte"}
+              werte={item}
+              stufenHinweis={
+                item.stufe === 0
+                  ? "Noch keine Stufe festgelegt — das trägt die Spielleitung ein."
+                  : undefined
+              }
+            />
             {Object.keys(item.fahrzeugFertigkeiten ?? {}).length > 0 && (
               <div className="gg-fahrzeugwerte">
                 {Object.entries(item.fahrzeugFertigkeiten).map(([name, wert]) => (
@@ -182,7 +172,7 @@ export function GegenstandKachel({
                 ))}
               </div>
             )}
-          </section>
+          </>
         )}
 
         {item.kraft > 0 && (

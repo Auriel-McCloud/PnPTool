@@ -8,6 +8,7 @@ import { Fenster } from "../shell/Fenster";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
+import { StufenBlatt } from "./StufenBlatt";
 
 const CATEGORY_LABELS: Record<string, string> = {
   AttributKörperlich: "Attribute — Körperlich",
@@ -167,6 +168,9 @@ export function GegenstandRow({
   const [gewicht, setGewicht] = useState(item.gewicht);
   const [kapazitaet, setKapazitaet] = useState(item.kapazitaet);
   const [istBehaelter, setIstBehaelter] = useState(item.istBehaelter);
+  const [immerSichtbar, setImmerSichtbar] = useState(item.immerSichtbar);
+  const [riggerBonus, setRiggerBonus] = useState(item.riggerBonus);
+  const [maxDrohnen, setMaxDrohnen] = useState(item.maxDrohnen);
   // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
   const [stufe, setStufe] = useState(item.stufe);
   const [widerstand, setWiderstand] = useState(item.widerstand);
@@ -200,6 +204,9 @@ export function GegenstandRow({
     setGewicht(item.gewicht);
     setKapazitaet(item.kapazitaet);
     setIstBehaelter(item.istBehaelter);
+    setImmerSichtbar(item.immerSichtbar);
+    setRiggerBonus(item.riggerBonus);
+    setMaxDrohnen(item.maxDrohnen);
     setStufe(item.stufe);
     setWiderstand(item.widerstand);
     setAngriff(item.angriff);
@@ -231,6 +238,9 @@ export function GegenstandRow({
       gewicht,
       kapazitaet,
       istBehaelter,
+      immerSichtbar,
+      riggerBonus,
+      maxDrohnen,
       stufe,
       widerstand,
       angriff,
@@ -338,6 +348,36 @@ export function GegenstandRow({
           </label>
         </div>
 
+        {typ === "Riggerkonsole" && (
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+              Riggerkonsole (Regelblatt Zeilen 158-167). Der Bonus darf negativ sein — eine
+              zusammengeschraubte Konsole macht das Steuern schwerer.
+            </label>
+            <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Rigger-Bonus
+                <input
+                  type="number"
+                  value={riggerBonus}
+                  onChange={(e) => setRiggerBonus(Number(e.target.value))}
+                  style={{ width: 70 }}
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Max. Drohnen
+                <input
+                  type="number"
+                  min={0}
+                  value={maxDrohnen}
+                  onChange={(e) => setMaxDrohnen(Number(e.target.value))}
+                  style={{ width: 70 }}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
         {FAHRZEUG_TYPEN.has(typ) && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
             <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
@@ -345,32 +385,15 @@ export function GegenstandRow({
               Angriff und Agilität verteilt. Gesundheit = Stufe, Widerstand = Schadensreduktion,
               Agilität = Geschwindigkeit.
             </label>
-            {/* Stufe allein oben — sie ist das Budget, nicht ein vierter Wert */}
-            <div style={{ marginTop: 8, paddingBottom: 8, borderBottom: "1px solid var(--linie)" }}>
-              <div style={{ fontSize: "0.8em", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
-                Stufe
-              </div>
-              <DotPool value={stufe} max={15} onChange={setStufe} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
-              {(
-                [
-                  ["Widerstand", widerstand, setWiderstand, 5],
-                  ["Angriff", angriff, setAngriff, 5],
-                  ["Agilität", agilitaet, setAgilitaet, 5],
-                ] as const
-              ).map(([beschriftung, wert, setzen, maximum]) => (
-                <div key={beschriftung} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ minWidth: 96, fontSize: "0.9em" }}>{beschriftung}</span>
-                  <DotPool value={wert} max={maximum} onChange={setzen} />
-                </div>
-              ))}
-            </div>
-            {stufe > 0 && widerstand + angriff + agilitaet > stufe && (
-              <p style={{ color: "var(--warn)", fontSize: "0.85em", marginTop: 6 }}>
-                {widerstand + angriff + agilitaet} Punkte verteilt, die Stufe gibt {stufe} her.
-              </p>
-            )}
+            <StufenBlatt
+              werte={{ stufe, widerstand, angriff, agilitaet }}
+              onAendern={(feld, wert) => {
+                if (feld === "stufe") setStufe(wert);
+                else if (feld === "widerstand") setWiderstand(wert);
+                else if (feld === "angriff") setAngriff(wert);
+                else setAgilitaet(wert);
+              }}
+            />
           </div>
         )}
 
@@ -505,6 +528,14 @@ export function GegenstandRow({
                   />
                 )}
               </div>
+              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                <input
+                  type="checkbox"
+                  checked={immerSichtbar}
+                  onChange={(e) => setImmerSichtbar(e.target.checked)}
+                />{" "}
+                Fällt am Körper auf — ein Sturmgewehr sieht jeder, ein Messer im Stiefel nicht
+              </label>
               {/* Nicht aus dem Typ geraten: ein Motorrad ist ein Fahrzeug
                   ohne Stauraum, eine Kiste hat Stauraum ohne Räder. */}
               <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>

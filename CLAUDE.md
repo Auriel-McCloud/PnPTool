@@ -1300,6 +1300,63 @@ nächste sinnvolle Schritt.
 Gefühl deutlich zu teuer. Die Formel steht nur im Regeldokument, nicht im Code;
 geändert werden müssten die Preise der angelegten Fahrzeuge.
 
+## Nachtarbeit 30./31.08.2026
+
+Vier Dinge, für die keine Entscheidung von Mark nötig war.
+
+### 1. Ein Blatt statt vier Kopien
+
+`traits/StufenBlatt.tsx` — das Formular für Drohne, Fahrzeug, Sprite und Geist
+wird jetzt **einmal** gezeichnet und von vier Stellen benutzt. Vorher stand
+derselbe Block viermal da; als Mark die Stufe eine Zeile höher haben wollte,
+musste ich sie viermal verschieben und habe es beim ersten Mal halb vergessen.
+Genau dafür war der Hinweis "eine gemeinsame Komponente wäre der nächste
+Schritt" gedacht — hiermit erledigt. Die verwaisten CSS-Regeln
+(`bg-stufe`, `gg-stufe`, `gg-fahrzeugblatt h3`, …) sind mit weg.
+
+### 2. "Fällt am Körper auf"
+
+`Gegenstand.immerSichtbar`. Marks Wunsch: *"man kann ein Schwert oder ein
+Sturmgewehr nicht am Körper tragen ohne dass jeder es sofort sieht, man kann
+aber andere Sachen unter Kleidung verstecken."* Reine Anzeige, **keine
+Mechanik** — was daraus folgt, entscheidet die Spielleitung.
+
+Die Marke erscheint auf der Kachel **nur, wenn der Gegenstand ausgerüstet
+ist** — im Rucksack sieht ihn ohnehin niemand. Im Fenster steht ein Satz dazu,
+je nachdem ob man ihn gerade trägt oder nicht.
+
+### 3. Waffen und Riggerkonsolen als Vorlagen
+
+Dreizehn Waffen (Zeilen 140-146) und neun Riggerkonsolen (159-167), wie zuvor
+schon Decks und Rüstungen. **Preise sind Spannen im Regelblatt** — genommen ist
+jeweils der untere Wert, damit niemand ihn für einen Festpreis hält.
+
+`Gegenstand` bekam dafür `riggerBonus` und `maxDrohnen`. Der Bonus **darf
+negativ sein** (die zusammengeschraubte Konsole hat −2), deshalb kein `ge=0`
+im Schema. Beide Felder sind im SL-Formular editierbar, sobald der Typ
+Riggerkonsole ist.
+
+Sinnvoll gesetzt, aber erfunden: welche Waffen auffallen. Ein Raketenwerfer
+schon, ein Dolch nicht — bei der Monofilament-Peitsche war ich mir unsicher und
+habe sie als unauffällig eingestuft.
+
+### 4. "Du bist dran"
+
+`kampf/DranMeldung.tsx`. Die Initiativliste zu treffen ist das eine; zu
+merken, dass man an der Reihe ist, während man im Inventar kramt, das andere.
+Die Meldung erscheint am rechten Rand — **dort, wo laut UI-Konzept die
+Meldungen der Spielleitung auflaufen sollen**, also die Vorstufe zum
+Blitz-Symbol.
+
+Sie erscheint nur, wenn wirklich der eigene Charakter handelt **und** man
+nicht ohnehin im Kampfbereich steht (dort leuchtet die Zeile schon). Antippen
+bringt einen hin. Geprüft: erscheint bei Ryu am Zug, verschwindet beim Wechsel
+in den Kampfbereich, bleibt weg wenn der Straßensamurai dran ist, kommt bei
+Ryu wieder.
+
+Sie hängt an derselben Nachlade-Schleife wie die Liste — mit einer echten
+Live-Verbindung (Phase 5) wird sie ohne Änderung schneller.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

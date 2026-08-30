@@ -12,6 +12,7 @@ import { GegenstandKachel } from "../items/GegenstandKachel";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
+import { DranMeldung } from "../kampf/DranMeldung";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -215,6 +216,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   return (
     <>
     <Verwundung zustand={zustand} />
+    <DranMeldung
+      kampf={kampf}
+      eigenePersonId={ich.personId}
+      imKampfbereich={bereich === "kampf"}
+      onHin={() => setBereich("kampf")}
+    />
     <CommlinkShell
       bereiche={BEREICHE}
       aktiv={bereich}

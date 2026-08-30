@@ -33,6 +33,11 @@ export interface Gegenstand {
   angriff: number;
   agilitaet: number;
   fahrzeugFertigkeiten: Record<string, number>;
+  /** Fällt am Körper auf — ein Sturmgewehr sieht jeder, ein Chip nicht. */
+  immerSichtbar: boolean;
+  /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
+  riggerBonus: number;
+  maxDrohnen: number;
   ablage: Ablage;
   ablageZielId: string | null;
   ablageZielName: string | null;
@@ -64,6 +69,11 @@ export interface TraglastZeile {
   angriff: number;
   agilitaet: number;
   fahrzeugFertigkeiten: Record<string, number>;
+  /** Fällt am Körper auf — ein Sturmgewehr sieht jeder, ein Chip nicht. */
+  immerSichtbar: boolean;
+  /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
+  riggerBonus: number;
+  maxDrohnen: number;
 }
 
 export interface AblageZiel {
@@ -122,6 +132,9 @@ export interface GegenstandUpdate {
   angriff?: number;
   agilitaet?: number;
   fahrzeugFertigkeiten?: Record<string, number>;
+  immerSichtbar?: boolean;
+  riggerBonus?: number;
+  maxDrohnen?: number;
 }
 
 type NeuerGegenstand = {
