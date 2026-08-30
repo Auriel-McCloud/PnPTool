@@ -236,3 +236,62 @@
 .gg-kachel-last[data-voll="true"] {
   color: var(--signal);
 }
+
+/* --- Gegenstandsfenster aus Spielersicht ------------------------------
+   Das Umlegen sitzt hier im Fenster und nicht mehr unter jedem
+   Listeneintrag: dort war es die einzige hervorstechende Handlung und
+   machte die Übersicht zur Knopfwand.                                   */
+
+.gg-eigenschaften {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--linie);
+  border-bottom: 1px solid var(--linie);
+  font-size: 13px;
+}
+
+.gg-eigenschaften > div {
+  display: contents;
+}
+
+.gg-eigenschaften dt {
+  color: var(--text-leise);
+  letter-spacing: 0.04em;
+}
+
+.gg-eigenschaften dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.gg-ablage-wahl h3 {
+  margin: 0 0 6px;
+}
+
+.gg-ablage-ort {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.gg-ablage-knoepfe {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gg-ablage-knoepfe button {
+  flex: 1;
+  min-width: 118px;
+}
+
+/* Der Platz, an dem es gerade liegt: markiert und nicht anklickbar —
+   sonst sucht man, was der Knopf noch bewirken soll. */
+.gg-ablage-knoepfe button[data-aktiv="true"]:disabled {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: var(--neon-schwach);
+}

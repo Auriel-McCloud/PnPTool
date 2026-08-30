@@ -627,6 +627,47 @@ Passt es überhaupt nicht, steht es mittig.
 eine Sphäre als eine der acht Profi-Fertigkeiten. **Nicht eigenmächtig
 umbauen** — nachfragen.
 
+## Spieler-Inventar: Kacheln statt Liste (30.08.2026)
+
+Marks Befund: *"das Inventar ist nur nicht gerade übersichtlich, diese →
+Rucksack und → gelagert Buttons sollten im Gegenstand sein, und nicht außen,
+es gibt als Ryu keine Möglichkeit die Gegenstände zu öffnen, hier ist nur
+Text."*
+
+Beides stimmte. Die Spielersicht war eine flache Textliste, unter jedem
+Eintrag ein Knopfpaar zum Umlegen — die einzige hervorstechende Handlung der
+ganzen Seite, und das Einzige, was man antippen konnte. Die Gegenstände
+selbst liessen sich nicht öffnen.
+
+**Jetzt dasselbe Kachelraster wie bei der Spielleitung**, und die Kachel
+öffnet ein Fenster mit Bild, Beschreibung, Schaden/Rüstungsbonus,
+Eigenschaften — und dem Umlegen. Wo etwas liegt, entscheidet man beim Ansehen
+des Dings, nicht in der Übersicht.
+
+- `items/GegenstandKachel.tsx` ist bewusst **nicht** `GegenstandRow` der
+  Spielleitung: die trägt Sichtbarkeit, Besitzerwechsel, Vorlagen und
+  Bild-Upload mit sich, von denen ein Spieler nichts sehen soll.
+- Der aktuelle Aufbewahrungsort ist markiert **und abgeschaltet** — sonst
+  sucht man, was der Knopf noch bewirken soll.
+- Fremdes lässt sich ansehen, aber nicht umlegen (`onUmlegen` entfällt).
+- **"Anderswo gesehen" ist jetzt ein Reiter** statt eines angehängten zweiten
+  Blocks. Dadurch gibt es genau ein Raster, das sich ausmessen lässt, und die
+  Auswahl bleibt eine einzige Entscheidung. Die eigenen Bereiche prüfen dafür
+  zusätzlich den Besitz — sonst fischte "Mitgeführt" auch den Rucksackinhalt
+  anderer heraus.
+- Das Inventar ist der erste Spielerbereich mit `statisch`: feste Fläche,
+  gemessenes Raster, geblättert statt gescrollt. Die Ausmessung liegt jetzt
+  in `items/kachelraster.ts` und wird von beiden Seiten genutzt.
+
+**Selbst hineingelaufen — Hooks hinter einer Abbruchbedingung.** Der neue
+`useEffect`, der die Seitenzahl zurücksetzt, landete beim Einfügen *hinter*
+`if (!ich) return null;`. Beim ersten Aufbau (noch kein angemeldeter Spieler)
+lief er damit nicht, nach der Anmeldung schon — React bricht dann mit
+*"Rendered more hooks than during the previous render"* ab und die Seite
+blieb **komplett schwarz**. `npm run build` und TypeScript blieben grün; nur
+im Browser war es zu sehen. Bei neuen Hooks in `SpielerAnsicht` und ähnlichen
+Komponenten immer prüfen, ob sie vor der Abbruchbedingung stehen.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

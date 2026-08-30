@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
-import { ABLAGEN, itemsApi, type Ablage, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
-import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "../items/aufbewahrung";
+import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
+import {
+  ermittleBereiche,
+  filtereNachBereichen,
+  standardAuswahl,
+  // "Bereich" heisst in der Hülle bereits der Navigationsbereich links
+  type Bereich as Ablagebereich,
+} from "../items/aufbewahrung";
+import { GegenstandKachel } from "../items/GegenstandKachel";
+import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -55,6 +63,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // dabei, im Auto zusätzlich dessen Inhalt, im Versteck etwas anderes.
   const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
   const [auswahlGesetzt, setAuswahlGesetzt] = useState(false);
+  // Kachelraster wie beim Spielleiter: gemessen statt gescrollt.
+  const rasterRef = useRef<HTMLDivElement>(null);
+  const proSeite = useProSeite(rasterRef);
+  const [seite, setSeite] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
@@ -79,7 +91,25 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
   const meineRoh = sachen.filter((g) => g.ownerId === ich?.personId);
-  const bereiche = ermittleBereiche(meineRoh);
+  const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
+  // Was anderen gehört, ist ein Reiter wie jeder andere statt eines
+  // angehängten zweiten Blocks: dann gibt es genau ein Raster, das sich
+  // ausmessen lässt, und die Auswahl bleibt eine einzige Entscheidung.
+  // Ein Bereich prüft laut Schnittstelle einen `Gegenstand`; den Besitzer
+  // trägt erst die kampagnenweite Liste nach. Deshalb hier die einzige
+  // Stelle, an der das nachgeschlagen wird.
+  const gehoertMir = (g: Gegenstand) => (g as GegenstandMitBesitzer).ownerId === ich?.personId;
+  const bereiche: Ablagebereich[] = [
+    // Die eigenen Bereiche dürfen nur eigene Sachen einsammeln — sonst
+    // fischte "Mitgeführt" auch den Rucksackinhalt anderer heraus.
+    ...ermittleBereiche(meineRoh).map((b) => ({
+      ...b,
+      passt: (g: Gegenstand) => gehoertMir(g) && b.passt(g),
+    })),
+    ...(fremdeRoh.length > 0
+      ? [{ id: "FREMD", name: "Anderswo gesehen", symbol: "◇", passt: (g: Gegenstand) => !gehoertMir(g) }]
+      : []),
+  ];
 
   useEffect(() => {
     // Erst wenn die eigenen Sachen geladen sind, sonst steht die Vorauswahl
@@ -90,12 +120,21 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     }
   }, [bereiche, meineRoh.length, auswahlGesetzt]);
 
+  // Muss vor der Abbruchbedingung stehen: Hooks müssen bei jedem Aufbau in
+  // derselben Reihenfolge laufen, sonst bricht React ab ("Rendered more
+  // hooks than during the previous render").
+  useEffect(() => {
+    setSeite(0);
+  }, [bereichAuswahl, bereich]);
+
   if (!ich) return null;
 
-  // Was der Spieler selbst besitzt, steht zuerst — alles andere ist Beiwerk.
-  const meine = meineRoh;
-  const fremde = sachen.filter((g) => g.ownerId !== ich.personId);
-  const sichtbareSachen = filtereNachBereichen(meine, bereiche, bereichAuswahl);
+  // Über alle Sachen filtern, damit der Fremd-Reiter mitgreifen kann. Ist
+  // nichts gewählt, zeigt filtereNachBereichen ohnehin alles.
+  const sichtbareSachen = filtereNachBereichen(sachen, bereiche, bereichAuswahl);
+  const seiten = Math.max(1, Math.ceil(sichtbareSachen.length / proSeite));
+  const aktuelleSeite = Math.min(seite, seiten - 1);
+  const aufDieserSeite = sichtbareSachen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
@@ -121,6 +160,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       aktiv={bereich}
       onBereichWechsel={setBereich}
       titel={`${ich.campaignName} — ${BEREICHE.find((b) => b.id === bereich)?.name ?? ""}`}
+      // Nur das Inventar teilt sich die Fläche selbst ein; die übrigen
+      // Bereiche sind noch Listen und dürfen scrollen.
+      statisch={bereich === "inventar"}
       werkzeuge={
         <>
           <VollbildKnopf />
@@ -160,7 +202,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       )}
 
       {bereich === "inventar" && (
-        <>
+        // Wie beim Spielleiter: feste Fläche, gemessenes Raster, geblättert
+        // statt gescrollt (Leitprinzip aus docs/ui-konzept.md).
+        <div className="gg-seite" style={KACHEL_STIL}>
           {einstellungen?.gewichtAktiv &&
             (() => {
               const meineLast = traglast.find((z) => z.id === ich.personId);
@@ -190,46 +234,42 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 }
                 title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
               >
-                {b.symbol} {b.name} <span className="gg-reiter-zahl">{meine.filter(b.passt).length}</span>
+                {b.symbol} {b.name} <span className="gg-reiter-zahl">{sachen.filter(b.passt).length}</span>
               </button>
             ))}
           </div>
 
-          {sichtbareSachen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Hier ist nichts.</p>}
-          {sichtbareSachen.map((g) => (
-              <div key={g.id} style={{ borderBottom: "1px solid var(--linie)", padding: "10px 0" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  <strong style={{ color: "var(--text)" }}>{g.hatMenge ? `${g.name} ×${g.menge}` : g.name}</strong>
-                  <span style={{ color: "var(--text-leise)", fontSize: "0.85em" }}>
-                    {[g.typ, g.preis > 0 ? `${g.preis}¥` : null].filter(Boolean).join(" · ")}
-                    {g.ablageZielName && ` · in ${g.ablageZielName}`}
-                  </span>
-                </div>
-                {g.description && (
-                  <div style={{ marginTop: 4, color: "var(--text-leise)" }}>
-                    <RichTextView content={parseRichText(g.description)} />
-                  </div>
-                )}
-                {/* Die einzige Stelle, an der ein Spieler etwas verändern darf */}
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                  {ABLAGEN.filter((a) => a.wert !== g.ablage).map((a) => (
-                    <button key={a.wert} type="button" onClick={() => umlegen(g.id, a.wert)}>
-                      → {a.label}
-                    </button>
-                  ))}
-                </div>
-            </div>
-          ))}
+          <div className="gg-raster" ref={rasterRef} style={KACHEL_STIL}>
+            {aufDieserSeite.map((g) => (
+              <GegenstandKachel
+                key={g.id}
+                item={g}
+                // Fremdes lässt sich ansehen, aber nicht umlegen
+                onUmlegen={g.ownerId === ich.personId ? (ziel) => umlegen(g.id, ziel) : undefined}
+              />
+            ))}
+          </div>
 
-          {fremde.length > 0 && (
-            <>
-              <h3 style={{ marginTop: 20 }}>Anderswo gesehen</h3>
-              {fremde.map((g) => (
-                <Karte key={g.id} titel={g.name} unter={g.ownerName ?? undefined} text={g.description} />
-              ))}
-            </>
+          {sichtbareSachen.length === 0 && <p className="gg-leer">Hier ist nichts.</p>}
+
+          {seiten > 1 && (
+            <div className="gg-blaettern">
+              <button type="button" onClick={() => setSeite((n) => Math.max(0, n - 1))} disabled={aktuelleSeite === 0}>
+                ‹
+              </button>
+              <span>
+                {aktuelleSeite + 1} / {seiten}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSeite((n) => Math.min(seiten - 1, n + 1))}
+                disabled={aktuelleSeite >= seiten - 1}
+              >
+                ›
+              </button>
+            </div>
           )}
-        </>
+        </div>
       )}
 
       {bereich === "orte" && (
