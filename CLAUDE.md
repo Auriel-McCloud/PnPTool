@@ -1212,6 +1212,15 @@ etwas. Das Fenster nennt, wieviel danach übrig bleibt, und hat **Ja in Blau,
 Nein in Rot**, beide 56px hoch und weit auseinander. Dieselbe Farbsprache wie
 das Level Up: blau heisst weiter, rot heisst lass es.
 
+**Der Zusatz "auch für wilde Magie" hängt am Weg.** Marks Rückfrage: steht das
+auch bei einem NeuroWeaver oder jemandem ohne Magie? Stand es — falsch. Jetzt
+liest der Magier "auch für wilde Magie", der Technomancer "auch fürs
+NeuroWeaving", und wer weder noch ist, liest gar keinen Zusatz.
+
+**Die Frage steht nur noch in der Überschrift**: *"Willenskraft für einen
+Erfolg ausgeben?"* Vorher stand sie dreimal fast gleich da — als Titel, als
+Unterzeile und als erster Absatz. Das Wort "erzwungen" ist auf Marks Wunsch weg.
+
 **Wie Willenskraft zurückkommt** steht mit dabei — durch **Schlaf**, oder wenn
 der Charakter seiner **Ambition** oder seinem **Verlangen** entsprechend
 handelt, oder ein **Ziel** erreicht. Erste Fassung hiess "Zurück gibt sie nur
