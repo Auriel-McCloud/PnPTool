@@ -1007,6 +1007,55 @@ könnte jeder nachwürfeln, bis es passt. Also: Wurf-Ereignisse mit Zeitstempel,
 eine Anzeige für die Runde, vermutlich über dieselbe Live-Verbindung wie die
 SL-Popups (Phase 5). Eigene Design-Runde.
 
+## NeuroWeaving bekommt einen eigenen Wert, Decks geben Bonuswürfel (30.08.2026)
+
+Marks Frage: *"ich überlege ob es Sinn macht einen eigenen NeuroWeaving-Wert
+zu machen, und dann würde man NeuroWeaving + einen der 4 NeuroWeaving-Werte
+würfeln — das würde es vereinfachen oder?"* Ja. Damit ist NeuroWeaving
+strukturgleich zu Arete + Sphären, mit **einem** Unterschied: die vier
+Fertigkeiten zählen mit (Zeile 45/96), Sphären nicht (Zeile 87).
+
+- Neuer Katalogwert **NeuroWeaving** in eigener Kategorie `NeuroWeavingWert`
+  (Maximum 10, wie Arete). Die vier Fertigkeiten bleiben in `NeuroWeaving`.
+  Eigene Kategorie statt Namensprüfung, damit Preise, Sichtbarkeit und
+  Gruppierung sauber daran hängen — dieselbe Trennung wie Arete/Sphäre.
+- **Preise entsprechend**: der Wert kostet wie ein Attribut (Freebee 5,
+  Erfahrung ×4), die Fertigkeiten wie Fertigkeiten (2 bzw. ×2).
+- **Pool-Deckel 10** (`NEUROWEAVING_POOL_MAX` in `traits/magie.ts`): Wert +
+  Fertigkeit ergeben höchstens zehn Würfel. Bewusst ein Deckel auf dem *Pool*,
+  nicht auf den Werten — die dürfen weiter steigen, es gibt nur keine Würfel
+  mehr dafür. Die Probe zeigt "gedeckelt auf 10" statt still zu kürzen.
+
+### Cyberdecks
+
+`Gegenstand` bekommt **B/S/D/K** (`deckBruteForce`, `deckSchleichen`,
+`deckDaten`, `deckKompilieren`, Regelblatt Zeile 157). `deck_boni()` liefert
+sie je Person, und zwar:
+
+- nur aus **ausgerüsteten** Decks — eines im Rucksack nützt niemandem,
+- **je Aktion das höchste, nicht die Summe** (Marks Vorgabe). Sonst wäre das
+  Stapeln von Geräten die einzige sinnvolle Bauweise.
+
+Der Bogen liefert sie als `deckBoni` neben der Übersicht — sie gehören zur
+Ausrüstung, nicht zu den Werten der Person. Die Probe bietet sie im
+Ergebnisfenster als *eine* wählbare Zugabe an; man tut ja eines nach dem
+anderen.
+
+Geprüft mit zwei Wegwerf-Decks (4/1/2/2 und 1/3/2/5): heraus kam 4/3/2/5, also
+je Aktion das beste. Eines weggelegt → Werte fallen auf das verbliebene zurück.
+
+### Offen
+
+- **Wie hoch dürfen NeuroWeaving-Fertigkeiten steigen?** Mark wusste es nicht.
+  Derzeit 5 wie Fertigkeiten, der Wert selbst 10 wie Arete — der Pool-Deckel
+  greift also ab Wert 5 + Fertigkeit 5.
+- Welche Matrix-Aktion welchen Buchstaben nutzt, steht im Regelblatt; **womit
+  der Decker grundsätzlich würfelt** (Zeile 101: Intelligenz + Matrix) ist in
+  der Probe noch nicht verdrahtet — man wählt Fertigkeit und Attribut von Hand
+  und legt den Deck-Bonus dazu.
+- Die vorhandenen Decks in der Testkampagne haben noch **keine B/S/D/K-Werte**;
+  die Zahlen aus dem Regelblatt (Zeilen 159-169) müssten eingetragen werden.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
