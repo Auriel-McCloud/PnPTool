@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Charaktererstellung } from "./Charaktererstellung";
+import { InfoTipp } from "../regeln/InfoTipp";
+import { schluessel } from "../regeln/erklaerungen";
 import { LevelUp } from "./LevelUp";
 import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
@@ -178,17 +180,22 @@ export function Charakterblatt({
           {eintraege.map((t) => {
             const wert = werte.get(t.id) ?? 0;
             return (
-              <button
-                key={t.id}
-                type="button"
-                className="cb-wert"
-                onClick={() => onWertGewaehlt?.(t.name, wert, kategorie)}
-                disabled={!onWertGewaehlt}
-                title={onWertGewaehlt ? `${t.name} würfeln` : t.name}
-              >
-                <span className="cb-wert-name">{t.name}</span>
-                <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
-              </button>
+              // Umhüllung, weil das Erklärungszeichen selbst ein Knopf ist
+              // und nicht in der Wertezeile stecken darf — ein Knopf im Knopf
+              // ist ungültig und macht beide unbedienbar.
+              <div key={t.id} className="cb-wert-zeile">
+                <button
+                  type="button"
+                  className="cb-wert"
+                  onClick={() => onWertGewaehlt?.(t.name, wert, kategorie)}
+                  disabled={!onWertGewaehlt}
+                  title={onWertGewaehlt ? `${t.name} würfeln` : t.name}
+                >
+                  <span className="cb-wert-name">{t.name}</span>
+                  <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
+                </button>
+                <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(t.name)} titel={t.name} />
+              </div>
             );
           })}
         </div>
@@ -241,6 +248,7 @@ export function Charakterblatt({
         <div className="cb-spur">
           <span className="cb-spur-titel">
             Gesundheit
+            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("gesundheit")} titel="Gesundheit" />
             {aenderbar && <span className="cb-tipp">antippen: / → X → ✳</span>}
           </span>
           <Kaestchen
@@ -255,7 +263,10 @@ export function Charakterblatt({
           />
         </div>
         <div className="cb-spur">
-          <span className="cb-spur-titel">Willenskraft</span>
+          <span className="cb-spur-titel">
+            Willenskraft
+            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("willenskraft")} titel="Willenskraft" />
+          </span>
           <Kaestchen
             max={u.willenskraftMax}
             verbraucht={u.willenskraftVerbraucht}
@@ -266,6 +277,7 @@ export function Charakterblatt({
         <div className="cb-spur">
           <span className="cb-spur-titel">
             I.C.E.
+            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("ice")} titel="I.C.E. (Cyber Wall)" />
             {u.offline && <span className="cb-offline">offline</span>}
           </span>
           {u.offline ? (
@@ -275,7 +287,10 @@ export function Charakterblatt({
           )}
         </div>
         <div className="cb-spur">
-          <span className="cb-spur-titel">Initiative</span>
+          <span className="cb-spur-titel">
+            Initiative
+            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("initiative")} titel="Initiative" />
+          </span>
           {/* Die Zahl ist eine Wuerfelmenge, kein Wert — ohne das Symbol
               liest sich "7" wie eine Initiative von 7. */}
           <span className="cb-initiative">

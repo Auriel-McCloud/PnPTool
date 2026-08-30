@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./commlink.css";
+import { ErklaerungSchalter } from "../regeln/ErklaerungSchalter";
 
 export interface Bereich {
   id: string;
@@ -198,7 +199,12 @@ export function CommlinkShell({
           <span className="cl-leiste-titel" ref={titelRef}>
             {titel}
           </span>
-          {werkzeuge && <div className="cl-leiste-werkzeuge">{werkzeuge}</div>}
+          <div className="cl-leiste-werkzeuge">
+            {/* Gilt für die ganze Oberfläche, deshalb hier und nicht in den
+                einzelnen Ansichten (docs/ui-konzept.md). */}
+            <ErklaerungSchalter />
+            {werkzeuge}
+          </div>
         </header>
 
         <main className="cl-inhalt" data-statisch={statisch ? "true" : undefined} style={{ position: "relative" }}>

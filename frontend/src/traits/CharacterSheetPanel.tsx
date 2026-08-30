@@ -465,8 +465,19 @@ export function GegenstandRow({
 
         {!item.istVorlage && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            {/* Wem er gehoert, stand bisher nirgends im Formular. In der
+                kampagnenweiten Uebersicht ist die Besitzer-Ueberschrift oft
+                weggescrollt — und weil die Auswahl unten den aktuellen
+                Besitzer ausblendet, sah es aus, als liesse sich ein
+                Gegenstand keinem PC geben, obwohl er dem PC schon gehoert. */}
+            <div style={{ fontSize: "0.85em", marginBottom: 6 }}>
+              <span style={{ color: "var(--text-leise)" }}>Gehört </span>
+              <strong style={{ color: "var(--neon)" }}>
+                {alleOptionen.find((p) => p.id === personId)?.name ?? "niemandem"}
+              </strong>
+            </div>
             <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Besitzer wechseln (verschiebt diesen Gegenstand, erstellt keine Kopie)
+              An jemand anderen übergeben (verschiebt diesen Gegenstand, erstellt keine Kopie)
             </label>
             <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
               <select

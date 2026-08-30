@@ -1,0 +1,140 @@
+/* ===================================================================
+   Tooltip-System (docs/ui-konzept.md)
+   Das Zeichen sitzt neben dem Begriff und darf ihn nicht verdrängen —
+   es erscheint ohnehin nur, solange der Schalter oben an ist.
+   =================================================================== */
+
+.it-zeichen {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  margin-left: 4px;
+  border-radius: 50%;
+  border: 1px solid var(--neon);
+  background: transparent;
+  color: var(--neon);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0;
+  /* Das Zeichen ist klein, die Trefferfläche darf es nicht sein. Ein
+     unsichtbarer Rand ringsum bringt sie auf Fingergröße, ohne dass das
+     Zeichen selbst die Zeile auseinanderdrückt. */
+  position: relative;
+}
+
+.it-zeichen::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.it-zeichen:hover:not(:disabled) {
+  background: var(--neon-schwach);
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+/* Noch kein Text hinterlegt: sichtbar, aber zurückhaltend. Die Spielleitung
+   erkennt so auf einen Blick, wo noch etwas fehlt. */
+.it-leer {
+  border-color: var(--linie-hell);
+  color: var(--text-aus);
+}
+
+.it-leer:hover:not(:disabled) {
+  border-color: var(--text-leise);
+  color: var(--text-leise);
+  background: transparent;
+}
+
+.it-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.it-fehlt {
+  color: var(--text-leise);
+  font-style: italic;
+}
+
+.it-hinweis {
+  align-self: center;
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+/* --- Schalter in der oberen Leiste ------------------------------------ */
+
+.it-schalter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tipp);
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-leise);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.it-schalter:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text);
+}
+
+/* Schieberegler statt Häkchen — auf dem Tablet mit dem Daumen zu treffen */
+.it-regler {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1px solid var(--linie-hell);
+  background: var(--flaeche);
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.it-regler::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-aus);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.18s;
+}
+
+.it-schalter[data-an="true"] {
+  color: var(--neon);
+}
+
+.it-schalter[data-an="true"] .it-regler {
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+.it-schalter[data-an="true"] .it-regler::after {
+  transform: translateX(16px);
+  background: var(--neon);
+}
+
+/* Am Handy ist für die Beschriftung kein Platz */
+@media (max-width: 599px) {
+  .it-schalter-text {
+    display: none;
+  }
+
+  .it-schalter {
+    padding: 0 8px;
+  }
+}

@@ -104,7 +104,12 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     });
   }, [items, suche, besitzerFilter]);
 
-  const bereiche = useMemo(() => ermittleBereiche(items), [items]);
+  // Der Behältername passt nur, wenn genau eine Person gefiltert ist —
+  // sonst stünde der Rucksack eines Spielers über den Sachen aller.
+  const bereiche = useMemo(
+    () => ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL),
+    [items, besitzerFilter],
+  );
 
   // Beim ersten Laden auf "am Körper" vorwählen — aber nur einmal, sonst
   // liesse sich die Auswahl nie wieder leeren.

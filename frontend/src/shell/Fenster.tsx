@@ -47,6 +47,7 @@ export function Fenster({
   children: ReactNode;
 }) {
   const rahmenRef = useRef<HTMLDivElement>(null);
+  const { links, oben } = streuung(kennung);
   // Verschiebung von der Tipp-Stelle zur endgueltigen Fenstermitte. Erst nach
   // dem Aufbau messbar, denn vorher steht die Fenstergroesse nicht fest.
   const [herkunft, setHerkunft] = useState<{ x: number; y: number } | null>(null);
@@ -55,23 +56,41 @@ export function Fenster({
   // waere als Ruckler sichtbar. useLayoutEffect wird vor dem Zeichnen
   // ausgefuehrt, das Nachziehen bleibt deshalb unsichtbar.
   const [gemessen, setGemessen] = useState(false);
+  // Endgueltige Mitte in Pixeln. Die gestreute Lage ist nur ein Wunsch: auf
+  // einem schmalen Geraet ist das Fenster fast so breit wie der Bildschirm,
+  // und 64 % waeren dann halb ausserhalb. Erst nach dem Messen laesst sich
+  // das einfangen — vorher steht die Fenstergroesse nicht fest.
+  const [lage, setLage] = useState<{ x: number; y: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!offen) {
       setGemessen(false);
       setHerkunft(null);
+      setLage(null);
       return;
     }
-    const tipp = letzteTippPosition();
     const rahmen = rahmenRef.current;
-    if (tipp && rahmen) {
-      const r = rahmen.getBoundingClientRect();
-      setHerkunft({ x: tipp.x - (r.left + r.width / 2), y: tipp.y - (r.top + r.height / 2) });
-    } else {
-      setHerkunft(null);
-    }
+    if (!rahmen) return;
+
+    const r = rahmen.getBoundingClientRect();
+    const rand = 12;
+    const passt = (laenge: number, sicht: number) => laenge + 2 * rand < sicht;
+    const einfangen = (mitte: number, laenge: number, sicht: number) =>
+      passt(laenge, sicht)
+        ? Math.min(Math.max(mitte, laenge / 2 + rand), sicht - laenge / 2 - rand)
+        // Passt es ohnehin nicht, hilft Streuung nicht weiter: dann mittig.
+        : sicht / 2;
+
+    const x = einfangen((links / 100) * window.innerWidth, r.width, window.innerWidth);
+    const y = einfangen((oben / 100) * window.innerHeight, r.height, window.innerHeight);
+    setLage({ x, y });
+
+    const tipp = letzteTippPosition();
+    // Verschiebung zur *eingefangenen* Mitte, nicht zur gemessenen — sonst
+    // zoege das Fenster an der falschen Stelle vorbei.
+    setHerkunft(tipp ? { x: tipp.x - x, y: tipp.y - y } : null);
     setGemessen(true);
-  }, [offen, kennung]);
+  }, [offen, kennung, links, oben]);
 
   useEffect(() => {
     if (!offen) return;
@@ -91,8 +110,6 @@ export function Fenster({
 
   if (!offen) return null;
 
-  const { links, oben } = streuung(kennung);
-
   return (
     <div className="fn-hintergrund" onClick={onSchliessen}>
       <div
@@ -104,8 +121,8 @@ export function Fenster({
         tabIndex={-1}
         style={
           {
-            "--fn-links": `${links}%`,
-            "--fn-oben": `${oben}%`,
+            "--fn-links": lage ? `${lage.x}px` : `${links}%`,
+            "--fn-oben": lage ? `${lage.y}px` : `${oben}%`,
             // Solange ungemessen: aus dem Stand aufziehen (0/0).
             "--fn-von-x": `${herkunft?.x ?? 0}px`,
             "--fn-von-y": `${herkunft?.y ?? 0}px`,

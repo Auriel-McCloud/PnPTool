@@ -222,6 +222,10 @@
   justify-content: center;
 }
 
+.cb-werte-einzeln .cb-wert-zeile {
+  justify-content: center;
+}
+
 .cb-werte-einzeln .cb-wert {
   flex-direction: column;
   gap: 4px;
@@ -265,6 +269,21 @@
 }
 
 /* Ohne Klickabsicht kein Knopfverhalten — das Blatt ist zum Lesen da */
+/* Rasterzelle: Wertezeile und Erklärungszeichen nebeneinander. Das Zeichen
+   erscheint nur bei eingeschaltetem Schalter — fehlt es, verhält sich die
+   Zelle wie zuvor. Eigene Hülle, weil das Zeichen selbst ein Knopf ist und
+   nicht in der Wertezeile stecken darf. */
+.cb-wert-zeile {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.cb-wert-zeile > .cb-wert {
+  flex: 1;
+  min-width: 0;
+}
+
 .cb-wert:disabled {
   color: var(--text);
   cursor: default;

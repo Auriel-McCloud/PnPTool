@@ -522,6 +522,111 @@ genau wozu er da ist. Erfahrung *vergeben* bleibt der Spielleitung
 5. Ob die Erstellung auch der Spielleitung offenstehen soll, um einen NPC damit
    zu bauen — technisch geht es bereits, es gibt nur keinen Knopf dafür.
 
+## Tooltip-System, Fremdmaterial, Gegenstands-Klarstellungen (30.08.2026)
+
+### Fremdmaterial im Referenzordner bleibt lokal
+
+Mark hat `docs/reference/Regel Details - infotipp optionen.txt` abgelegt —
+Texte aus dem **Magus-Regelwerk**, die inhaltlich noch nicht auf NeotopiA
+passen. Sie sollen erst *im Werkzeug selbst* überarbeitet und auf Cyberpunk
+umgeschrieben werden (das ist der eigentliche Grund für die geplante
+Claude-/Gemini-Anbindung), bevor irgendetwas davon das Gerät verlässt.
+
+`.gitignore` sperrt deshalb **den ganzen Ordner** und nimmt nur
+`Neotopia.xlsx` aus — Marks eigenes Blatt. So ist auch alles geschützt, was
+er künftig dort ablegt, ohne dass jemand daran denken muss. Geprüft: die
+Datei war in keinem Commit und in keiner Verlaufsversion.
+
+### Tooltip-System (`backend/app/regeln/`, `frontend/src/regeln/`)
+
+Aus dem UI-Konzept, jetzt gebaut: **neben jedem Fachbegriff lässt sich eine
+Erklärung aufklappen, ein Schieberegler in der oberen Leiste schaltet die
+Zeichen überall zugleich an und aus.** Ohne den Schalter stünde neben 53
+Begriffen dauerhaft ein Fragezeichen; wer die Regeln kennt, will das nicht.
+
+- **Eigener Knoten `Erklaerung`**, nicht eine Eigenschaft am `TraitDef`.
+  Zwei Gründe: erklärt werden soll *alles* auf dem Blatt, und Gesundheit,
+  Initiative oder I.C.E. stehen gar nicht im Katalog. Und das Seeding setzt
+  die `TraitDef`-Felder bei jedem Start neu — Texte, die dort lägen, wären
+  bei der nächsten Katalogänderung in Gefahr.
+- **Schlüssel** über den Helfer `schluessel` in `regeln/erklaerungen.ts`:
+  `trait:Körperkraft`, `bogen:gesundheit`, `regel:<begriff>`. Nie von Hand
+  zusammenbauen, sonst laufen Anzeige und Ablage auseinander.
+- **Pro Regelwerk, nicht pro Kampagne** — was Widerstandsfähigkeit bedeutet,
+  ist in jeder NeotopiA-Runde dasselbe.
+- **Alle Texte werden einmal geladen** und liegen in einem Modulzustand.
+  Einzeln nachzuladen hiesse eine Anfrage je Antippen, und die Oberfläche
+  muss vorher wissen, wozu etwas hinterlegt ist — sonst stünde neben jedem
+  Begriff ein Zeichen, das ins Leere führt. Bewusst kein Kontext: die Zeichen
+  sitzen quer durch die Oberfläche, ein Provider müsste um alles herumgelegt
+  und in jeder neuen Ansicht mitgedacht werden.
+- **Schreiben darf nur die Spielleitung**, direkt im aufgeklappten Fenster.
+  `InfoTipp` fragt die Rolle über `useAuthFallsVorhanden()` selbst ab — die
+  Spielersicht steht ausserhalb des `AuthProvider`, deshalb die nicht
+  werfende Variante. Der Server prüft ohnehin (`require_campaign_gm`).
+- `quelle` unterscheidet `HAND` von `KI`: sobald Texte maschinell erzeugt
+  werden, bleibt erkennbar, was noch niemand gegengelesen hat. Das Fenster
+  schreibt es in die Unterzeile.
+- Ein blasses Zeichen heisst "dazu ist noch nichts da" — die Spielleitung
+  sieht so auf einen Blick, wo Text fehlt.
+
+**Ein Knopf darf nicht in einem Knopf stecken.** Die Wertezeile `.cb-wert`
+ist selbst ein Knopf (später: würfeln), das Erklärungszeichen auch. Deshalb
+die Hülle `.cb-wert-zeile`, die beide nebeneinander hält.
+
+### Erfahrungspreise nach Marks Zuordnung
+
+*"Sphären haben auch nur ×2 und Arete ×4 wie ein Attribut."* Damit deckt sich
+das Steigern mit den Freebees: **Arete zählt zu den Attributen, Sphären zu den
+Fertigkeiten** — an beiden Stellen gleich. NeuroWeaving blieb auf ×5, weil
+Mark "den Rest lassen wir so" gesagt hat; es ist beim Technomancer allerdings
+das Gegenstück zu den Sphären. Bei Gelegenheit nachfragen.
+
+### Erstellung auch für NPCs
+
+Knopf *"Erstellung durchlaufen"* bei jeder Person in der Welt-Ansicht, öffnet
+den Assistenten im Fenster. Auch für fertige Charaktere — die Spielleitung
+muss eine verkorkste Erstellung nachbessern können; beim Absenden werden alle
+Werte neu gesetzt. Im Fenster gibt die Erstellung ihre eigene Scrollfläche ab
+(`.fn-inhalt .er-buehne`), zwei ineinander wären unbedienbar.
+
+### Zwei Gegenstands-Klarstellungen
+
+**"Ich kann bei Besitzer wechseln nur NPCs auswählen."** Kein Fehler: die
+Auswahl blendet den *aktuellen* Besitzer aus, und die Monoklinge gehörte Ryu
+bereits. Das Formular sagte aber nirgends, wem der Gegenstand gehört — in der
+kampagnenweiten Übersicht ist die Besitzer-Überschrift oft weggescrollt.
+Jetzt steht **"Gehört Ryu Tanaka (PC)"** über der Auswahl, und diese heisst
+"An jemand anderen übergeben".
+
+**Reitername in der SL-Übersicht.** `ermittleBereiche` benannte den
+"mitgeführt"-Reiter nach dem ersten getragenen Behälter — quer über alle
+Charaktere also nach dem Rucksack irgendeines Spielers, obwohl darin die
+Sachen aller steckten. Der Parameter `einBesitzer` schaltet das ab, wenn
+nicht nach genau einer Person gefiltert ist.
+
+**Nicht nachstellbar:** Marks Bericht, Ryu sehe keine Gegenstände. Frisch
+angemeldet zeigt das Inventar korrekt *Ausgerüstet 3* (Rucksack, Hermes Ikon,
+Monoklinge), *Sonst gelagert 1* (Yamaha Rapier) und die Amulett-Karte unter
+"Anderswo gesehen"; die Daten stimmen serverseitig ebenfalls. Verdacht: eine
+Seite, die seit vielen HMR-Durchläufen offenstand (Stolperstein 7). Beim
+nächsten Auftreten zuerst neu laden.
+
+### Fenster bleiben auf dem Bildschirm
+
+Die gestreute Lage (36-64 %) war nur ein Wunsch: bei 800px Breite ist das
+Fenster 752px breit und ragte bei 64 % zur Hälfte hinaus. `Fenster.tsx` fängt
+die Mitte jetzt nach dem Messen ein und rechnet die Aufzieh-Verschiebung
+gegen die *eingefangene* Mitte — sonst zöge es an der falschen Stelle vorbei.
+Passt es überhaupt nicht, steht es mittig.
+
+### Zurückgestellt
+
+**Wie Sphären mit Fertigkeitspunkten steigerbar werden**, hat Mark vertagt
+(*"ich weiß die Logik noch nicht… frag mich später nochmal"*). Aktuell zählt
+eine Sphäre als eine der acht Profi-Fertigkeiten. **Nicht eigenmächtig
+umbauen** — nachfragen.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
@@ -531,6 +636,16 @@ genau wozu er da ist. Erfahrung *vergeben* bleibt der Spielleitung
 5. **Cytoscape Initial-Messung zu früh**: Falls der Container beim `cytoscape({container:...})`-Aufruf noch nicht final gelayoutet ist (z.B. direkt nach Tab-Wechsel), kann die interne Erstmessung falsch/zu klein ausfallen und bleibt es auch (Canvas nur "halb" befüllt, Klick-Koordinaten verschoben). Fix: `requestAnimationFrame` nach Konstruktion, das explizit `cy.resize()` + `cy.fit()` erzwingt, nachdem der Browser das Layout tatsächlich committed hat. War hier lange nur als Plan dokumentiert, aber nie tatsächlich im Code umgesetzt (Diskrepanz erst beim Debuggen von Stolperstein #8 aufgefallen) — jetzt in `CampaignGraphView.tsx` als doppeltes `requestAnimationFrame` + `window`-`resize`-Listener implementiert.
 6. **TypeScript + `verbatimModuleSyntax` + `@types/cytoscape`**: der `type Stylesheet = A | B` Union-Alias aus dem `export =`-Namespace lässt sich unter `verbatimModuleSyntax` nicht als `cytoscape.Stylesheet` referenzieren (TS-Fehler "no exported member"), obwohl er existiert — vermutlich weil `type`-Aliase (im Gegensatz zu `interface`s) beim Namespace-Merge über einen Default-Import unter dieser strikten Einstellung nicht sauber aufgelöst werden. Workaround: das nominale `interface StylesheetStyle` statt des Union-`type Stylesheet` referenzieren, funktioniert identisch für unseren Anwendungsfall.
 7. **Vite Hot-Reload + Cytoscape**: bei größeren Änderungen an Komponenten, die eine imperative Canvas-Bibliothek verwenden, lieber den Dev-Server komplett neu starten (`node_modules/.vite`-Cache löschen) statt sich auf HMR zu verlassen — HMR kann alte Instanzen hinterlassen, die mit neuen um denselben Container konkurrieren.
+8b. **Blindes Ersetzen kurzer CSS-Selektoren zerschneidet Regeln.** Beim
+   Einfuegen der `.cb-wert-zeile`-Regeln habe ich auf `".cb-wert {"` ersetzt —
+   und damit die *erste* Fundstelle getroffen, die zu
+   `.cb-werte-einzeln .cb-wert {` gehoerte. Uebrig blieb ein globales
+   `.cb-wert { flex-direction: column }`: **jede** Wertezeile im Blatt stand
+   danach untereinander statt nebeneinander. Der Build blieb gruen, TypeScript
+   auch — aufgefallen ist es erst beim Nachmessen im Browser. Bei kurzen
+   Selektoren immer genug Kontext mitnehmen (die Zeile davor) oder an einem
+   eindeutigen Anker einfuegen.
+
 8. **Cytoscape-Canvas verschoben durch `text-align: center`**: `index.css` setzt global `#root { text-align: center; }`. Cytoscapes interne `<canvas>`-Layer sind `position: absolute` mit `left`/`right: auto` (Cytoscape selbst setzt nie ein explizites `left`). Bei `left/right: auto` berechnet der Browser die "static position" eines ursprünglich inline-artigen Elements (canvas ist von Haus aus `display: inline`) unter Berücksichtigung des geerbten `text-align` — bei `center` verschiebt das die komplette Canvas nach rechts um ungefähr die halbe Canvas-Breite (reproduzierbar auf jedem Gerät mit `devicePixelRatio != 1`, unabhängig von Bildschirmgröße). Symptom: linke Hälfte des Graphen leer/schwarz, Klick-Koordinaten um denselben Betrag versetzt. War der Bug hinter dem lange als "Graph-Sizing-Bug" verfolgten Problem — **nicht** der ursprünglich vermutete `box-sizing`/`ResizeObserver`- oder `pixelRatio`-Bug. Gefunden per Headless-Browser-Debugging (`cy.pan()`/`cy.zoom()`/Node-Positionen waren intern korrekt — nur das `<canvas>`-DOM-Element selbst war falsch positioniert). Fix: `textAlign: "left"` explizit auf dem Graph-Container in `CampaignGraphView.tsx` setzen (überschreibt lokal das geerbte `center`, ohne die globale Zentrierung zu ändern).
 
 9b. **Cypher: `WITH` zwischen schreibender Klausel und `MATCH`.** Nach `CREATE`, `SET` oder `DELETE` verlangt Neo4j ein `WITH`, bevor erneut gematcht werden darf ("WITH is required between SET and MATCH"). Die Item-Abfragen haben deshalb zwei Varianten desselben `OPTIONAL MATCH`: `LIEGT_IN` und `LIEGT_IN_NACH_CREATE`. **Die WITH-Variante nur dort einsetzen, wo ausser `g` keine weitere Variable ins `RETURN` muss** — `WITH g` wirft alles andere weg und würde z.B. `list_alle_gegenstaende` zerstören, das `p` für den Besitzer braucht. Beim ersten Anlauf nur an `CREATE` gedacht; `SET` fiel erst beim Testen auf.

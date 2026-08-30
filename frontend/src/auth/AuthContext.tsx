@@ -40,6 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={{ me, loading, login, logout }}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Wie `useAuth`, wirft aber nicht.
+ *
+ * Die Spielersicht steht ausserhalb des Providers — sie hat einen eigenen
+ * Zugang. Bauteile, die auf beiden Seiten vorkommen (etwa die Erklärungen
+ * im Charakterblatt), müssen fragen dürfen "bin ich hier die Spielleitung?",
+ * ohne dass die halbe Oberfläche zusammenbricht, wenn die Antwort nein ist.
+ */
+export function useAuthFallsVorhanden(): AuthContextValue | null {
+  return useContext(AuthContext) ?? null;
+}
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {

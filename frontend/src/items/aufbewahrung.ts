@@ -27,7 +27,7 @@ const BEHAELTER_TYPEN = new Set(["Behälter", "Fahrzeug"]);
  * auf, wenn tatsächlich etwas darin liegt. So bildet die Auswahl ab, worauf
  * die Person gerade wirklich Zugriff hat.
  */
-export function ermittleBereiche(items: Gegenstand[]): Bereich[] {
+export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Bereich[] {
   const bereiche: Bereich[] = [
     {
       id: "AUSGERUESTET",
@@ -40,9 +40,14 @@ export function ermittleBereiche(items: Gegenstand[]): Bereich[] {
   // Ein getragener Behälter gibt dem "mitgeführt"-Bereich seinen Namen —
   // sonst heißt er neutral, denn ohne Rucksack trägt man Dinge trotzdem
   // am Gürtel oder in der Hand.
-  const getragenerBehaelter = items.find(
-    (g) => BEHAELTER_TYPEN.has(g.typ) && g.ablage === "AUSGERUESTET",
-  );
+  //
+  // Nur sinnvoll, solange die Gegenstände einer einzigen Person gehören. In
+  // der kampagnenweiten Übersicht der Spielleitung liegen sie quer über alle
+  // Charaktere; dort hieße der Reiter sonst nach dem Rucksack irgendeines
+  // Spielers, obwohl darin die Sachen aller stecken.
+  const getragenerBehaelter = einBesitzer
+    ? items.find((g) => BEHAELTER_TYPEN.has(g.typ) && g.ablage === "AUSGERUESTET")
+    : undefined;
   const mitgefuehrt = items.some((g) => g.ablage === "RUCKSACK");
   if (mitgefuehrt || getragenerBehaelter) {
     bereiche.push({
