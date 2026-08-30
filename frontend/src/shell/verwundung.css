@@ -19,19 +19,40 @@
     transparent calc(20% + var(--vw-anteil, 0) * 60%)
   );
   transition: background 1.2s ease-out;
+  transform-origin: bottom;
 }
 
-/* Zwei Kästchen übrig: jetzt pulst es. Langsam — Herzschlag, nicht Alarm. */
+/* Zwei Kästchen übrig: jetzt schlägt es.
+   Ein Herzschlag ist kein gleichmässiges Auf und Ab, sondern zwei Stösse
+   dicht hintereinander und dann eine Pause — genau das macht ihn erkennbar.
+   Deshalb zwei Spitzen im ersten Drittel und danach Ruhe. */
 .vw-schleier[data-kritisch="true"] {
-  animation: vw-puls 2.4s ease-in-out infinite;
+  animation: vw-herzschlag 1.6s ease-out infinite;
 }
 
-@keyframes vw-puls {
-  0%,
-  100% {
-    opacity: 0.75;
+@keyframes vw-herzschlag {
+  0% {
+    opacity: 0.55;
+    transform: scaleY(1);
   }
-  50% {
+  8% {
     opacity: 1;
+    transform: scaleY(1.06);
+  }
+  18% {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
+  26% {
+    opacity: 0.95;
+    transform: scaleY(1.04);
+  }
+  40% {
+    opacity: 0.55;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scaleY(1);
   }
 }

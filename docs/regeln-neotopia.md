@@ -182,6 +182,13 @@ Prothese 10.000 ¥ (Verlust 2), Prothesen-Gadget 5.000 ¥. Körperzonen: Kopf, A
 
 NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchieren oder Spielleitung fragen.
 
+## Willenskraft
+
+- Wird **ausgegeben, um Erfolge zu erzwingen**.
+- Wer sie ausgegeben hat, kann sie nicht mehr in **wilde Magie** oder
+  NeuroWeaving stecken — es zählt der Rest, nicht der Gesamtwert.
+- **Zurück gibt sie nur die Spielleitung.** Der Spieler verbraucht sie selbst.
+
 ## Offen / noch zu klären
 
 - Ob „Magier" und „Technomancer" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.

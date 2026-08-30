@@ -1187,6 +1187,42 @@ Ryus Schaden danach wieder zurückgesetzt.
 - **Riggen** steht weiter aus (Zuordnung Fertigkeit → Drohnenwert), ebenso das
   kumulative −1, das derzeit nur als Hinweis dasteht statt mitgezählt zu werden.
 
+## Willenskraft, Herzschlag, antippbares Arete (30.08.2026)
+
+### Willenskraft ist eine Einbahnstrasse für Spieler
+
+Marks Regel: *"der Spieler kann Willenskraft verbrauchen, aber nur der SL kann
+sie wieder herstellen."* Sonst wäre der Vorrat unbegrenzt und das Erzwingen von
+Erfolgen gratis.
+
+Die Regel steht als `zustand_verboten()` in `traits/bogen.py` — eine reine
+Funktion, damit sie prüfbar ist (`tests/test_zustand.py`), und die Route ruft
+sie nur auf. **Schaden bleibt bewusst in beide Richtungen offen**: Verletzungen
+heilen nach eigenen Regeln, und wer sich vertippt, soll das richtigstellen
+können.
+
+Die Oberfläche bietet den Klick gar nicht erst an, wenn er verboten wäre —
+niemand soll gegen eine stumme Wand tippen. Der Server lehnt trotzdem ab
+(403), die Anzeige ist kein Schutz.
+
+**Damit hängt zusammen:** wilde Magie darf nur die **übrige** Willenskraft
+nutzen, nicht den Gesamtwert. Wer sie ausgegeben hat, um Erfolge zu erzwingen,
+kann sie nicht nochmal in einen Zauber stecken. Vorher rechnete die Probe mit
+`willenskraftMax` — das war schlicht falsch.
+
+### Arete und NeuroWeaving sind auf der Kampfkarte antippbar
+
+Öffnet dieselbe Probe wie im Bogen, also die Reihe für wilde Magie mitsamt
+Rückstoss-Hinweis. Die Zahl-Kachel wird dafür zum Knopf (`kk-zahl-knopf`).
+
+### Herzschlag statt Pulsen
+
+Ein Herzschlag ist kein gleichmässiges Auf und Ab, sondern **zwei Stösse dicht
+hintereinander und dann eine Pause** — genau das macht ihn erkennbar. Die
+Animation hat deshalb zwei Spitzen im ersten Drittel und danach Ruhe, dazu
+einen leichten `scaleY` vom unteren Rand her. Deutlich kräftiger als vorher
+(Marks Wunsch), aber immer noch am unteren Rand statt flächig.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

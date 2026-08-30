@@ -107,7 +107,14 @@ export function Charakterblatt({
     const u = bogen.uebersicht;
     // Verbraucht wird von rechts, frei gemacht von links — ein Klick auf ein
     // freies Feld verbraucht, einer auf ein verbrauchtes gibt zurück.
-    const verbraucht = index < u.willenskraftMax - u.willenskraftVerbraucht ? u.willenskraftVerbraucht + 1 : u.willenskraftVerbraucht - 1;
+    //
+    // **Zurückgeben darf nur die Spielleitung** (Marks Regel): Willenskraft
+    // kehrt zurück, wenn sie es sagt, nicht auf Zuruf. Der Server lehnt es
+    // ohnehin ab — hier wird der Klick gar nicht erst angeboten, damit
+    // niemand gegen eine stumme Wand tippt.
+    const gibtZurueck = index >= u.willenskraftMax - u.willenskraftVerbraucht;
+    if (gibtZurueck && !bearbeitbar) return;
+    const verbraucht = gibtZurueck ? u.willenskraftVerbraucht - 1 : u.willenskraftVerbraucht + 1;
     uebernehmen(
       await bogenApi.zustand(campaignId, personId, {
         willenskraftVerbraucht: Math.max(0, Math.min(verbraucht, u.willenskraftMax)),
@@ -317,9 +324,9 @@ export function Charakterblatt({
         wahl={probe}
         katalog={bogen.katalog}
         werte={werte}
-        // Wilde Magie reicht bis zur Höhe der Willenskraft — die verbrauchte
-        // zählt dabei nicht mit, es geht um den Gesamtwert.
-        willenskraft={u.willenskraftMax}
+        // Nur die **übrige** Willenskraft: wer sie ausgegeben hat, um Erfolge
+        // zu erzwingen, kann sie nicht nochmal in einen Zauber stecken.
+        willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
         onSchliessen={() => setProbe(null)}
       />

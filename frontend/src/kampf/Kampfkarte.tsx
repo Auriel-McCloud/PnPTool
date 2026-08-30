@@ -7,6 +7,7 @@ import { Kaestchen } from "../traits/Kaestchen";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { Charakterblatt } from "../traits/Charakterblatt";
+import { Probe, type ProbeWahl } from "../traits/Probe";
 import "./kampfkarte.css";
 
 /**
@@ -60,6 +61,8 @@ export function Kampfkarte({
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
   const [vollerBogen, setVollerBogen] = useState(false);
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
+  // Angetippter Wert — für Arete heisst das: Willenskraft dazugeben.
+  const [probe, setProbe] = useState<ProbeWahl | null>(null);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -90,6 +93,9 @@ export function Kampfkarte({
   const kraft = wert(bogen, "Körperkraft");
   const abzug = geschickAbzug(ruestung);
   const geschickEffektiv = Math.max(0, geschick - abzug);
+  // Was noch da ist — verbrauchte Willenskraft steht für Zauber nicht mehr
+  // zur Verfügung.
+  const uebrigeWillenskraft = Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht);
 
   return (
     <div className="kk-karte">
@@ -123,7 +129,28 @@ export function Kampfkarte({
         </div>
         <div className="kk-spur">
           <span className="kk-titel">Willenskraft</span>
-          <Kaestchen max={u.willenskraftMax} verbraucht={u.willenskraftVerbraucht} ton="#ffb648" />
+          <Kaestchen
+            max={u.willenskraftMax}
+            verbraucht={u.willenskraftVerbraucht}
+            ton="#ffb648"
+            onKlick={
+              aenderbar
+                ? async (index) => {
+                    // Ausgeben ja, zurückholen nur als Spielleitung — dafür
+                    // gibt es den eigenen Bogen (siehe Charakterblatt).
+                    const frei = u.willenskraftMax - u.willenskraftVerbraucht;
+                    if (index >= frei) return;
+                    await bogenApi.zustand(campaignId, personId, {
+                      willenskraftVerbraucht: u.willenskraftVerbraucht + 1,
+                    });
+                    await laden();
+                  }
+                : undefined
+            }
+          />
+          <span className="kk-hinweis">
+            {uebrigeWillenskraft} übrig — für erzwungene Erfolge oder wilde Magie
+          </span>
         </div>
         <Zahl titel="Initiative" wert={u.initiative} wuerfel />
       </section>
@@ -195,8 +222,9 @@ export function Kampfkarte({
             <Zahl
               titel="Arete"
               wert={wert(bogen, "Arete")}
-              hinweis={`Kontrolliert. Wild bis zu ${u.willenskraftMax} Würfel mehr — mit Rückstoss.`}
+              hinweis={`Antippen, um Willenskraft dazuzugeben — noch ${uebrigeWillenskraft} übrig.`}
               wuerfel
+              onKlick={() => setProbe({ name: "Arete", wert: wert(bogen, "Arete"), kategorie: "Arete" })}
             />
           </div>
           <div className="kk-sphaeren">
@@ -227,8 +255,9 @@ export function Kampfkarte({
                     key={t.id}
                     titel={t.name}
                     wert={Math.min(10, wert(bogen, "NeuroWeaving") + f)}
-                    hinweis="NeuroWeaving + Fertigkeit, höchstens 10."
+                    hinweis={`NeuroWeaving + Fertigkeit, höchstens 10. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
                     wuerfel
+                    onKlick={() => setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" })}
                   />
                 );
               })}
@@ -289,6 +318,15 @@ export function Kampfkarte({
         <Charakterblatt campaignId={campaignId} personId={personId} aenderbar={aenderbar} />
       </Fenster>
 
+      <Probe
+        wahl={probe}
+        katalog={bogen.katalog}
+        werte={new Map(bogen.werte.map((w) => [w.traitDefId, w.rating]))}
+        willenskraft={uebrigeWillenskraft}
+        deckBoni={bogen.deckBoni}
+        onSchliessen={() => setProbe(null)}
+      />
+
       <Fenster
         offen={offenerBegleiter !== null}
         titel={offenerBegleiter?.name ?? ""}
@@ -307,20 +345,35 @@ function Zahl({
   wert,
   hinweis,
   wuerfel = false,
+  onKlick,
 }: {
   titel: string;
   wert: number;
   hinweis?: string;
   /** Steht die Zahl für Würfel? Dann das W10-Zeichen daneben. */
   wuerfel?: boolean;
+  /** Macht die Kachel antippbar — etwa um Willenskraft dazuzugeben. */
+  onKlick?: () => void;
 }) {
-  return (
-    <div className="kk-zahl" title={hinweis}>
+  const inhalt = (
+    <>
       <span className="kk-titel">{titel}</span>
       <span className="kk-ziffer">
         {wert}
         {wuerfel && <WuerfelZehn groesse={15} />}
       </span>
-    </div>
+    </>
+  );
+  if (!onKlick) {
+    return (
+      <div className="kk-zahl" title={hinweis}>
+        {inhalt}
+      </div>
+    );
+  }
+  return (
+    <button type="button" className="kk-zahl kk-zahl-knopf" title={hinweis} onClick={onKlick}>
+      {inhalt}
+    </button>
   );
 }

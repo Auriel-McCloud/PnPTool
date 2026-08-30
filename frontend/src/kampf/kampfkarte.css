@@ -178,3 +178,22 @@
 .kk-ganzer {
   align-self: flex-start;
 }
+
+/* Antippbare Zahl — etwa Arete, um Willenskraft dazuzugeben. */
+.kk-zahl-knopf {
+  align-items: flex-start;
+  text-align: left;
+  min-height: 0;
+  cursor: pointer;
+}
+
+.kk-zahl-knopf:hover:not(:disabled) {
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+  color: inherit;
+}
+
+.kk-hinweis {
+  font-size: 11px;
+  color: var(--text-aus);
+}

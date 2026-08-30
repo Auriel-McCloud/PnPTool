@@ -5,7 +5,12 @@ from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.items.repository import commlink_cyberwall, deck_boni
 from app.traits import erfahrung, erstellung, repository
-from app.traits.bogen import bogen_uebersicht, sichtbare_kategorien, willenskraft_max
+from app.traits.bogen import (
+    bogen_uebersicht,
+    sichtbare_kategorien,
+    willenskraft_max,
+    zustand_verboten,
+)
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
 from pydantic import BaseModel, Field
 
@@ -106,11 +111,25 @@ async def set_zustand(
     von Gegenständen streng begrenzt: nur am eigenen Charakter und nur diese
     Felder. 404 bei fremden Personen, damit deren Existenz nicht bestätigt
     wird. Steht dafür in der Ausnahmeliste von tests/test_zugriffsschutz.py.
+
+    **Willenskraft ist eine Einbahnstraße für Spieler**: ausgeben ja,
+    zurückholen nein. Sie kehrt zurück, wenn die Spielleitung es sagt.
     """
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
-    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, body.model_dump())
+    aenderung = body.model_dump()
+
+    # Die Regel selbst steht in bogen.py und ist dort geprüft.
+    if viewer.role != "GM":
+        vorher = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        if vorher is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+        grund = zustand_verboten(viewer.role, vorher, aenderung)
+        if grund:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, grund)
+
+    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, aenderung)
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 

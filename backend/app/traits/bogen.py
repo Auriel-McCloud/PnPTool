@@ -126,3 +126,25 @@ def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: in
         "erstellungAbgeschlossen": bool(person.get("erstellungAbgeschlossen"))
         or any(w > 0 for w in werte.values()),
     }
+
+
+def zustand_verboten(rolle: str, vorher: dict, aenderung: dict) -> str | None:
+    """Was ein Spieler an seinem Zustand **nicht** ändern darf.
+
+    Gibt den Grund zurück, oder None wenn alles in Ordnung ist.
+
+    Bisher genau eine Regel (Mark, 30.08.2026): **Willenskraft ausgeben darf
+    der Spieler, wiederherstellen nicht.** Sie kommt zurück, wenn die
+    Spielleitung es sagt — sonst wäre der Vorrat unbegrenzt und das Erzwingen
+    von Erfolgen gratis.
+
+    Schaden bleibt bewusst in beide Richtungen offen: Verletzungen heilen nach
+    eigenen Regeln über Nacht, und wer sich vertippt hat, soll das ohne
+    Nachfrage richtigstellen können.
+    """
+    if rolle == "GM":
+        return None
+    neu = aenderung.get("willenskraftVerbraucht")
+    if neu is not None and neu < int(vorher.get("willenskraftVerbraucht") or 0):
+        return "Willenskraft stellt die Spielleitung wieder her."
+    return None
