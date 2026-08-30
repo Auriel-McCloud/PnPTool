@@ -668,6 +668,40 @@ blieb **komplett schwarz**. `npm run build` und TypeScript blieben grün; nur
 im Browser war es zu sehen. Bei neuen Hooks in `SpielerAnsicht` und ähnlichen
 Komponenten immer prüfen, ob sie vor der Abbruchbedingung stehen.
 
+## Inventar als Fächer (30.08.2026)
+
+Zweiter Anlauf nach Marks *"mir gefällt das Inventar noch nicht… ich hätte
+gerne dass das mehr nach Computerspiel aussieht"*. Konzept und Begründung
+stehen in `docs/ui-konzept.md`; hier nur, was technisch daran hängt.
+
+**Fenster hängen jetzt am Seitenkörper (`createPortal`).** Das war die
+Voraussetzung für Fenster in Fenstern: `.fn-fenster` trägt eine `transform`,
+und ein `position: fixed` **innerhalb** eines transformierten Elements bezieht
+sich nicht mehr auf den Bildschirm, sondern auf dieses Element. Ohne Portal
+säße ein Fenster, das aus einem Fenster heraus aufgeht, im falschen
+Bezugsrahmen. Mit Portal stapeln sie sich richtig, weil das später gehängte
+später gezeichnet wird.
+
+**`Bereich` hat ein Feld `greifbar`.** Nur der ausgerüstete Bereich ist es;
+alles andere wird zum Fach in der unteren Leiste. Die frühere Mehrfachauswahl
+über Reiter ist damit weg — es gibt genau eine Hauptansicht und Fächer, die
+man aufmacht.
+
+**Eigene Fahrzeuge und Behälter werden zu Fächern, auch leere** — und tauchen
+dann *nicht* zusätzlich als loser Gegenstand im Depot auf, sonst stünde das
+Auto einmal als Fach und einmal als Ding darin. Damit man trotzdem an das
+Fahrzeug selbst herankommt (Beschreibung, Gewicht, Umlegen), zeigt das
+Fachfenster es zuoberst unter der Überschrift "Das Fahrzeug".
+
+**Umbenannt:** "Ausgerüstet" → **Am Körper**, "Sonst gelagert" → **Depot**
+(klang nach Restposten), "Gelagert" → **Weggelegt**. Der mittlere Ablageplatz
+heißt nach dem getragenen Behälter ("Abgewetzter Rucksack") statt abstrakt
+"Mitgeführt" — wer einen Rucksack trägt, legt Dinge da hinein.
+
+**`.gg-fachraster` trägt Rückfallwerte für `--gg-kachel-*`.** Nötig, weil das
+Fenster durchs Portal außerhalb von `.gg-seite` hängt und die dort gesetzten
+Variablen nicht erbt.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

@@ -18,17 +18,29 @@ import type { Ablage, Gegenstand } from "./api";
  * zur Knopfwand. Wo etwas liegt, entscheidet man beim Ansehen des Dings.
  */
 
-const ABLAGEN: { wert: Ablage; label: string; symbol: string; erklaerung: string }[] = [
-  { wert: "AUSGERUESTET", label: "Ausgerüstet", symbol: "⚔", erklaerung: "Am Mann, sofort einsatzbereit." },
-  { wert: "RUCKSACK", label: "Mitgeführt", symbol: "🎒", erklaerung: "Dabei, aber erst herauszuholen." },
-  { wert: "GELAGERT", label: "Gelagert", symbol: "⌂", erklaerung: "Liegt anderswo — nicht am Körper." },
-];
+function ablagen(behaelterName?: string): { wert: Ablage; label: string; symbol: string; erklaerung: string }[] {
+  return [
+    { wert: "AUSGERUESTET", label: "Am Körper", symbol: "⚔", erklaerung: "Griffbereit, ohne etwas aufmachen zu müssen." },
+    {
+      wert: "RUCKSACK",
+      // Wer einen Rucksack trägt, legt Dinge *da hinein* — und nicht in ein
+      // abstraktes "mitgeführt".
+      label: behaelterName ?? "Mitgeführt",
+      symbol: "🎒",
+      erklaerung: behaelterName ? `Verstaut im ${behaelterName}.` : "Dabei, aber erst herauszuholen.",
+    },
+    { wert: "GELAGERT", label: "Weggelegt", symbol: "⌷", erklaerung: "Liegt anderswo — nicht am Körper." },
+  ];
+}
 
 export function GegenstandKachel({
   item,
   onUmlegen,
+  behaelterName,
 }: {
   item: Gegenstand;
+  /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
+  behaelterName?: string;
   /**
    * Die einzige Änderung, die ein Spieler an einem Gegenstand vornehmen darf.
    * Fehlt sie, ist der Gegenstand nur anzusehen — so bei fremdem Besitz.
@@ -64,8 +76,14 @@ export function GegenstandKachel({
           {item.gewicht > 0 && ` · ${item.gewicht} kg`}
         </span>
         <span className="gg-kachel-marken">
-          {item.ablage === "AUSGERUESTET" && <span className="gg-marke" data-ton="neon">getragen</span>}
+          {/* Kein "getragen"-Zeichen: im Abschnitt "Am Körper" wäre es an
+              jeder Kachel dasselbe, und in einem Fach kann nichts getragen
+              sein. Wo etwas liegt, sagt der Ort — das ist die Auskunft, die
+              man beim Durchsehen eines Fachs braucht. */}
           {item.ablageZielName && <span className="gg-marke">{item.ablageZielName}</span>}
+          {item.hatMenge && item.menge === 0 && (
+            <span className="gg-marke" data-ton="signal">leer</span>
+          )}
         </span>
       </button>
 
@@ -115,12 +133,12 @@ export function GegenstandKachel({
           <h3>Wo ist es?</h3>
           {item.ablage === "GELAGERT" && item.ablageZielName && (
             <p className="gg-ablage-ort">
-              Liegt in <strong>{item.ablageZielName}</strong>. Wo genau etwas gelagert wird, legt die
-              Spielleitung fest.
+              Liegt in <strong>{item.ablageZielName}</strong>. Den genauen Platz bestimmt die Spielleitung —
+              du kannst es hier nur an dich nehmen.
             </p>
           )}
           <div className="gg-ablage-knoepfe">
-            {ABLAGEN.map((a) => (
+            {ablagen(behaelterName).map((a) => (
               <button
                 key={a.wert}
                 type="button"

@@ -147,3 +147,28 @@ Die Plandatei `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.
 - **Fenster statt Akkordeon** ist robust gegen dieses Argument — je mehr Felder eine Entität bekommt, desto mehr lohnt sich das Fenster.
 - **Bereichs-Navigation** ebenfalls: dass ein Charakterbogen später mehr Felder hat, ändert nichts daran, dass Orte und Gegenstände eigene Bereiche sind.
 - **Das Innere des Charakterbogens** ist das, was tatsächlich noch wächst (Box-Tracks, Cyberware, Begleiter-Blätter). Dort weiterhin zurückhalten und nicht durchdesignen.
+
+## Fächer statt Reiter (30.08.2026)
+
+Marks Bild fürs Inventar: *"man kann ja nicht so viel direkt am Körper tragen…
+ich frage mich ob es gut wäre wenn man die Ausrüstung sehen würde und man dort
+den Behälter auswählen kann, dass man Rucksack als Popup bekommt, das gibt dann
+auch die Illusion dass man auf den Rucksack nicht so schnell zugreifen kann wie
+auf direkt Ausgerüstetes."*
+
+- **Die Hauptansicht zeigt nur, was am Körper ist.** Sie scrollt nicht, das
+  Raster wird ausgemessen und geblättert.
+- **Alles andere sind Fächer** in einer Leiste am unteren Rand: der getragene
+  Behälter, jedes eigene Fahrzeug, jeder Lagerort, und was andere haben. Ein
+  Fach geht als Fenster auf — das Aufmachen *ist* die Handlung und trägt
+  zugleich die Aussage, dass man da nicht so schnell drankommt.
+- **Ein Fahrzeug ist auch dann ein Fach, wenn nichts darin liegt.** Man will
+  nachsehen können, statt zu rätseln, ob das Auto weg ist. Im Fenster steht
+  es selbst zuoberst, darunter sein Inhalt.
+- **Fenster in Fenstern sind erwünscht** (Marks Wort: sieht cyberpunkig aus).
+  Kachel im Fach → Gegenstandsfenster über dem Fachfenster.
+
+**Scrollen: die Regel ist geschärft.** *"Ich habe die Idee, dass das Scrollen in
+Popups ok ist, da das die Illusion des Screens nicht bricht, ich will nur in der
+Hauptansicht kein Scrollen."* Damit gilt: Hauptansichten teilen sich die Fläche
+ein und blättern; in Fenstern ist Scrollen ausdrücklich erlaubt.

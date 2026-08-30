@@ -5,12 +5,11 @@ import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaig
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
   ermittleBereiche,
-  filtereNachBereichen,
-  standardAuswahl,
   // "Bereich" heisst in der Hülle bereits der Navigationsbereich links
   type Bereich as Ablagebereich,
 } from "../items/aufbewahrung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
+import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
@@ -59,10 +58,11 @@ function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: s
 export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
   const [bereich, setBereich] = useState("blatt");
-  // Mehrere Bereiche gleichzeitig: am Körper hat man Ausrüstung und Rucksack
-  // dabei, im Auto zusätzlich dessen Inhalt, im Versteck etwas anderes.
-  const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
-  const [auswahlGesetzt, setAuswahlGesetzt] = useState(false);
+  // Welches Fach gerade offensteht (null = nur die Ausrüstung). Abgelöst hat
+  // das die frühere Mehrfachauswahl über Reiter: was man am Körper trägt,
+  // liegt offen, alles andere macht man auf — und sieht schon daran, dass
+  // man nicht gleich schnell drankommt.
+  const [offenesFach, setOffenesFach] = useState<string | null>(null);
   // Kachelraster wie beim Spielleiter: gemessen statt gescrollt.
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
@@ -107,34 +107,37 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       passt: (g: Gegenstand) => gehoertMir(g) && b.passt(g),
     })),
     ...(fremdeRoh.length > 0
-      ? [{ id: "FREMD", name: "Anderswo gesehen", symbol: "◇", passt: (g: Gegenstand) => !gehoertMir(g) }]
+      ? [
+          {
+            id: "FREMD",
+            name: "Anderswo gesehen",
+            symbol: "◇",
+            greifbar: false,
+            passt: (g: Gegenstand) => !gehoertMir(g),
+          },
+        ]
       : []),
   ];
-
-  useEffect(() => {
-    // Erst wenn die eigenen Sachen geladen sind, sonst steht die Vorauswahl
-    // unvollständig fest (siehe GegenstaendeUebersicht).
-    if (!auswahlGesetzt && meineRoh.length > 0) {
-      setBereichAuswahl(standardAuswahl(bereiche));
-      setAuswahlGesetzt(true);
-    }
-  }, [bereiche, meineRoh.length, auswahlGesetzt]);
 
   // Muss vor der Abbruchbedingung stehen: Hooks müssen bei jedem Aufbau in
   // derselben Reihenfolge laufen, sonst bricht React ab ("Rendered more
   // hooks than during the previous render").
   useEffect(() => {
     setSeite(0);
-  }, [bereichAuswahl, bereich]);
+  }, [bereich]);
 
   if (!ich) return null;
 
-  // Über alle Sachen filtern, damit der Fremd-Reiter mitgreifen kann. Ist
-  // nichts gewählt, zeigt filtereNachBereichen ohnehin alles.
-  const sichtbareSachen = filtereNachBereichen(sachen, bereiche, bereichAuswahl);
-  const seiten = Math.max(1, Math.ceil(sichtbareSachen.length / proSeite));
+  const amKoerper = bereiche.find((b) => b.greifbar);
+  const faecher = bereiche.filter((b) => !b.greifbar);
+  const getragen = amKoerper ? sachen.filter(amKoerper.passt) : [];
+  const seiten = Math.max(1, Math.ceil(getragen.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
-  const aufDieserSeite = sichtbareSachen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+  const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+
+  const gewaehltesFach = faecher.find((f) => f.id === offenesFach) ?? null;
+  // Der getragene Behälter gibt dem mittleren Ablageplatz seinen Namen.
+  const getragenerBehaelter = faecher.find((f) => f.id === "MITGEFUEHRT")?.name;
 
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
@@ -202,8 +205,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       )}
 
       {bereich === "inventar" && (
-        // Wie beim Spielleiter: feste Fläche, gemessenes Raster, geblättert
-        // statt gescrollt (Leitprinzip aus docs/ui-konzept.md).
+        // Feste Fläche, gemessenes Raster: die Hauptansicht scrollt nicht.
+        // In den Fächern darf sie es — dort bricht es die Illusion nicht.
         <div className="gg-seite" style={KACHEL_STIL}>
           {einstellungen?.gewichtAktiv &&
             (() => {
@@ -218,39 +221,23 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               );
             })()}
 
-          <div className="gg-reiter" style={{ marginBottom: 12 }}>
-            {bereiche.map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                data-aktiv={bereichAuswahl.has(b.id)}
-                onClick={() =>
-                  setBereichAuswahl((alt) => {
-                    const neu = new Set(alt);
-                    if (neu.has(b.id)) neu.delete(b.id);
-                    else neu.add(b.id);
-                    return neu;
-                  })
-                }
-                title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
-              >
-                {b.symbol} {b.name} <span className="gg-reiter-zahl">{sachen.filter(b.passt).length}</span>
-              </button>
-            ))}
-          </div>
+          <h3 className="gg-abschnitt">
+            <span>⚔ Am Körper</span>
+            <span className="gg-abschnitt-zahl">{getragen.length}</span>
+          </h3>
 
-          <div className="gg-raster" ref={rasterRef} style={KACHEL_STIL}>
+          <div className="gg-raster" ref={rasterRef}>
             {aufDieserSeite.map((g) => (
               <GegenstandKachel
                 key={g.id}
                 item={g}
-                // Fremdes lässt sich ansehen, aber nicht umlegen
-                onUmlegen={g.ownerId === ich.personId ? (ziel) => umlegen(g.id, ziel) : undefined}
+                behaelterName={getragenerBehaelter}
+                onUmlegen={(ziel) => umlegen(g.id, ziel)}
               />
             ))}
           </div>
 
-          {sichtbareSachen.length === 0 && <p className="gg-leer">Hier ist nichts.</p>}
+          {getragen.length === 0 && <p className="gg-leer">Du trägst nichts bei dir.</p>}
 
           {seiten > 1 && (
             <div className="gg-blaettern">
@@ -269,6 +256,50 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               </button>
             </div>
           )}
+
+          {/* Die Fächer unten wie eine Werkzeugleiste: Rucksack, Fahrzeug,
+              Versteck. Jedes geht als Fenster auf — das ist zugleich die
+              Handlung "aufmachen" und zeigt, dass man da nicht so schnell
+              drankommt wie an das, was man am Körper trägt. */}
+          {faecher.length > 0 && (
+            <div className="gg-faecher">
+              {faecher.map((f) => {
+                const anzahl = sachen.filter(f.passt).length;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="gg-fach"
+                    onClick={() => setOffenesFach(f.id)}
+                    // Auch leere Fächer lassen sich öffnen — man will
+                    // nachsehen können, statt zu rätseln.
+                    title={`${f.name} öffnen`}
+                  >
+                    <span className="gg-fach-symbol" aria-hidden="true">
+                      {f.symbol}
+                    </span>
+                    <span className="gg-fach-name">{f.name}</span>
+                    <span className="gg-fach-zahl">{anzahl}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <Fachfenster
+            fach={gewaehltesFach}
+            offen={gewaehltesFach !== null}
+            items={gewaehltesFach ? sachen.filter(gewaehltesFach.passt) : []}
+            // Ist das Fach selbst ein Gegenstand (Fahrzeug, Kiste), gehört es
+            // mit ins Fenster — sonst käme man nicht mehr an es heran.
+            fachItem={gewaehltesFach ? sachen.find((g) => g.id === gewaehltesFach.id) : undefined}
+            behaelterName={getragenerBehaelter}
+            onSchliessen={() => setOffenesFach(null)}
+            // Fremdes lässt sich ansehen, aber nicht umlegen
+            onUmlegen={
+              gewaehltesFach?.id === "FREMD" ? undefined : (item, ziel) => umlegen(item.id, ziel)
+            }
+          />
         </div>
       )}
 

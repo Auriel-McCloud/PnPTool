@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { letzteTippPosition } from "./tippPosition";
 import "./fenster.css";
 
@@ -110,7 +111,14 @@ export function Fenster({
 
   if (!offen) return null;
 
-  return (
+  // An den Seitenkoerper gehaengt statt an die Stelle im Baum, an der das
+  // Fenster steht. Grund: `.fn-fenster` traegt eine `transform`, und ein
+  // `position: fixed` **innerhalb** eines transformierten Elements bezieht
+  // sich nicht mehr auf den Bildschirm, sondern auf dieses Element. Ohne
+  // Portal saesse ein Fenster, das aus einem Fenster heraus aufgeht, im
+  // falschen Bezugsrahmen — und genau das soll es koennen (Marks Bild:
+  // "Pop-ups die zu Pop-ups fuehren").
+  return createPortal(
     <div className="fn-hintergrund" onClick={onSchliessen}>
       <div
         className={gemessen ? "fn-fenster fn-fenster-auf" : "fn-fenster"}
@@ -147,6 +155,7 @@ export function Fenster({
         {/* Die einzige Stelle, an der bewusst gescrollt werden darf */}
         <div className="fn-inhalt">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

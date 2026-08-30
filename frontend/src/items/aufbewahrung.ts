@@ -12,6 +12,13 @@ export interface Bereich {
   id: string;
   name: string;
   symbol: string;
+  /**
+   * Am Körper und sofort greifbar. Nur der ausgerüstete Bereich ist das —
+   * alles andere muss man erst aufmachen, und genau so wird es auch gezeigt
+   * (Spielersicht: Ausrüstung steht offen, der Rest sind Fächer, die als
+   * Fenster aufgehen).
+   */
+  greifbar: boolean;
   /** Trifft zu, wenn dieser Gegenstand in diesen Bereich gehört. */
   passt: (g: Gegenstand) => boolean;
 }
@@ -31,8 +38,9 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
   const bereiche: Bereich[] = [
     {
       id: "AUSGERUESTET",
-      name: "Ausgerüstet",
+      name: "Am Körper",
       symbol: "⚔",
+      greifbar: true,
       passt: (g) => g.ablage === "AUSGERUESTET",
     },
   ];
@@ -54,29 +62,57 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
       id: "MITGEFUEHRT",
       name: getragenerBehaelter ? getragenerBehaelter.name : "Mitgeführt",
       symbol: "🎒",
+      greifbar: false,
       passt: (g) => g.ablage === "RUCKSACK",
     });
   }
 
-  // Je Lagerort ein eigener Bereich — genau das erlaubt "ich sitze im Auto"
+  // Je Lagerort ein eigenes Fach — genau das erlaubt "ich sitze im Auto"
   // gegen "ich bin im Versteck".
-  const ziele = new Map<string, string>();
+  const symbolFuer = (typ?: string) => (typ === "Fahrzeug" ? "⛭" : typ === "Behälter" ? "▣" : "⌂");
+  const typVonZiel = new Map(items.map((g) => [g.id, g.typ]));
+  const faecher = new Map<string, { name: string; symbol: string }>();
+
   for (const g of items) {
     if (g.ablage === "GELAGERT" && g.ablageZielId && g.ablageZielName) {
-      ziele.set(g.ablageZielId, g.ablageZielName);
+      faecher.set(g.ablageZielId, {
+        name: g.ablageZielName,
+        symbol: symbolFuer(typVonZiel.get(g.ablageZielId)),
+      });
     }
   }
-  for (const [id, name] of ziele) {
-    bereiche.push({ id, name, symbol: "⌂", passt: (g) => g.ablageZielId === id });
+
+  // Ein eigenes Fahrzeug oder eine Kiste wird **auch dann** zum Fach, wenn
+  // gerade nichts darin liegt: man will hineinsehen können, statt sich zu
+  // fragen, ob das Auto verschwunden ist. Getragene Behälter sind schon
+  // oben als "mitgeführt" abgehandelt.
+  for (const g of items) {
+    if (BEHAELTER_TYPEN.has(g.typ) && g.ablage !== "AUSGERUESTET") {
+      faecher.set(g.id, { name: g.name, symbol: symbolFuer(g.typ) });
+    }
   }
 
-  // Gelagertes ohne festen Platz nicht verschlucken
-  if (items.some((g) => g.ablage === "GELAGERT" && !g.ablageZielId)) {
+  for (const [id, fach] of faecher) {
+    bereiche.push({
+      id,
+      name: fach.name,
+      symbol: fach.symbol,
+      greifbar: false,
+      passt: (g) => g.ablageZielId === id,
+    });
+  }
+
+  // Weggelegtes ohne festen Platz nicht verschlucken. Was selbst ein Fach
+  // ist, gehört nicht zusätzlich hier hinein — sonst stünde das Auto einmal
+  // als Fach und einmal als loser Gegenstand darin.
+  if (items.some((g) => g.ablage === "GELAGERT" && !g.ablageZielId && !faecher.has(g.id))) {
     bereiche.push({
       id: "GELAGERT_OFFEN",
-      name: "Sonst gelagert",
-      symbol: "⌂",
-      passt: (g) => g.ablage === "GELAGERT" && !g.ablageZielId,
+      // Hiess "Sonst gelagert" — das klang nach Restposten.
+      name: "Depot",
+      symbol: "⌷",
+      greifbar: false,
+      passt: (g) => g.ablage === "GELAGERT" && !g.ablageZielId && !faecher.has(g.id),
     });
   }
 
