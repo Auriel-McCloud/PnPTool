@@ -698,6 +698,18 @@ Fachfenster es zuoberst unter der Überschrift "Das Fahrzeug".
 heißt nach dem getragenen Behälter ("Abgewetzter Rucksack") statt abstrakt
 "Mitgeführt" — wer einen Rucksack trägt, legt Dinge da hinein.
 
+**Fächer stapeln sich (nachgezogen).** Aus dem Rucksack heraus soll sich ein
+Behälter darin öffnen lassen — deshalb ist der Zustand ein *Stapel*
+(`fachStapel: string[]`), kein einzelnes offenes Fach. Jede Stufe bekommt ein
+eigenes Fenster; Schliessen auf Stufe *i* kürzt den Stapel auf *i* und räumt
+damit alles darüber mit ab. Ein Behälter zeigt im Gegenstandsfenster einen
+Knopf **"Hineinsehen"**, der die nächste Stufe aufmacht.
+
+**Nichts kann in sich selbst liegen.** Der Ablageplatz "im Rucksack" wird für
+den Rucksack selbst ausgeblendet (`behaelterId` an `GegenstandKachel`).
+Vorher liess sich der getragene Behälter in sich hineinlegen — von Mark
+gefunden.
+
 **`.gg-fachraster` trägt Rückfallwerte für `--gg-kachel-*`.** Nötig, weil das
 Fenster durchs Portal außerhalb von `.gg-seite` hängt und die dort gesetzten
 Variablen nicht erbt.
@@ -711,6 +723,13 @@ Variablen nicht erbt.
 5. **Cytoscape Initial-Messung zu früh**: Falls der Container beim `cytoscape({container:...})`-Aufruf noch nicht final gelayoutet ist (z.B. direkt nach Tab-Wechsel), kann die interne Erstmessung falsch/zu klein ausfallen und bleibt es auch (Canvas nur "halb" befüllt, Klick-Koordinaten verschoben). Fix: `requestAnimationFrame` nach Konstruktion, das explizit `cy.resize()` + `cy.fit()` erzwingt, nachdem der Browser das Layout tatsächlich committed hat. War hier lange nur als Plan dokumentiert, aber nie tatsächlich im Code umgesetzt (Diskrepanz erst beim Debuggen von Stolperstein #8 aufgefallen) — jetzt in `CampaignGraphView.tsx` als doppeltes `requestAnimationFrame` + `window`-`resize`-Listener implementiert.
 6. **TypeScript + `verbatimModuleSyntax` + `@types/cytoscape`**: der `type Stylesheet = A | B` Union-Alias aus dem `export =`-Namespace lässt sich unter `verbatimModuleSyntax` nicht als `cytoscape.Stylesheet` referenzieren (TS-Fehler "no exported member"), obwohl er existiert — vermutlich weil `type`-Aliase (im Gegensatz zu `interface`s) beim Namespace-Merge über einen Default-Import unter dieser strikten Einstellung nicht sauber aufgelöst werden. Workaround: das nominale `interface StylesheetStyle` statt des Union-`type Stylesheet` referenzieren, funktioniert identisch für unseren Anwendungsfall.
 7. **Vite Hot-Reload + Cytoscape**: bei größeren Änderungen an Komponenten, die eine imperative Canvas-Bibliothek verwenden, lieber den Dev-Server komplett neu starten (`node_modules/.vite`-Cache löschen) statt sich auf HMR zu verlassen — HMR kann alte Instanzen hinterlassen, die mit neuen um denselben Container konkurrieren.
+8c. **Browser-Pruefungen veraendern echte Daten.** Ein Testlauf, der "den
+   ersten freien Ablage-Knopf" antippt, verschiebt tatsaechlich einen
+   Gegenstand — nach einem Durchgang lag Ryus Monoklinge im Rucksack statt am
+   Guertel. Bei Skripten, die Knoepfe druecken: entweder auf eigens angelegten
+   Testdaten arbeiten oder den Ausgangszustand am Ende wiederherstellen — und
+   danach nachsehen, ob er wirklich wieder stimmt.
+
 8b. **Blindes Ersetzen kurzer CSS-Selektoren zerschneidet Regeln.** Beim
    Einfuegen der `.cb-wert-zeile`-Regeln habe ich auf `".cb-wert {"` ersetzt —
    und damit die *erste* Fundstelle getroffen, die zu
