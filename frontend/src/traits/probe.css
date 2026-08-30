@@ -118,3 +118,112 @@
   color: var(--text-leise);
   font-weight: 600;
 }
+
+/* --- Sphären: keine Würfel, sondern was damit geht --------------------- */
+
+.pr-hinweis {
+  padding: 8px 12px;
+  border: 1px solid var(--linie-hell);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  text-align: left;
+  color: var(--text-leise);
+}
+
+.pr-sphaerentext {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.pr-stufen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pr-stufen li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-aus);
+}
+
+/* Erreichte Stufen heben sich ab — man sieht auf einen Blick, wie weit es
+   reicht, ohne die Zahl mit der Liste vergleichen zu müssen. */
+.pr-stufen li[data-erreicht="true"] {
+  color: var(--text-leise);
+}
+
+.pr-stufen li[data-aktuell="true"] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--kind-gegenstand) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--kind-gegenstand);
+}
+
+.pr-stufe-zahl {
+  flex-shrink: 0;
+  width: 18px;
+  font-family: var(--mono);
+  text-align: center;
+}
+
+.pr-stufen li[data-erreicht="true"] .pr-stufe-zahl {
+  color: var(--kind-gegenstand);
+}
+
+/* --- Wilde Magie ------------------------------------------------------- */
+
+.pr-wild {
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.pr-wild h3 {
+  margin: 0 0 4px;
+}
+
+.pr-wild-reihe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.pr-wild-reihe button {
+  min-width: 44px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pr-wild-zahl {
+  font-family: var(--mono);
+  font-size: 22px;
+  color: var(--text);
+}
+
+.pr-wild-zahl em {
+  font-style: normal;
+  font-size: 13px;
+  color: var(--text-aus);
+}
+
+/* Der Rückstoß ist kein Detail — wer wild zaubert, soll wissen, was folgt. */
+.pr-warnung {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--warn);
+  font-size: 13px;
+  line-height: 1.5;
+}

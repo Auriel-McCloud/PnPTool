@@ -316,6 +316,9 @@ export function Charakterblatt({
         wahl={probe}
         katalog={bogen.katalog}
         werte={werte}
+        // Wilde Magie reicht bis zur Höhe der Willenskraft — die verbrauchte
+        // zählt dabei nicht mit, es geht um den Gesamtwert.
+        willenskraft={u.willenskraftMax}
         onSchliessen={() => setProbe(null)}
       />
 

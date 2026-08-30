@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
+import { MAGIE_HINWEISE, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import "./probe.css";
 
 /**
@@ -25,11 +26,11 @@ const SPALTEN: { titel: string; kategorie: string; ton: string }[] = [
 ];
 
 /**
- * Werte, die laut Regelblatt (Zeile 27) normalerweise **ohne** Attribut
- * gewürfelt werden — Arete, Sphären, NeuroWeaving zählen zwar als Fertigkeit,
- * stehen beim Würfeln aber für sich.
+ * Arete geht **nicht** mit Attributen zusammen (Zeilen 81-86). Ein
+ * kontrollierter Zauber ist nur der Arete-Wert; dazunehmen lässt sich allein
+ * Willenskraft, und das mit Folgen — siehe `magie.ts`.
  */
-const OHNE_ATTRIBUT = new Set(["Arete", "Sphäre", "NeuroWeaving"]);
+const NUR_WILLENSKRAFT = new Set(["Arete", "NeuroWeaving"]);
 
 export interface ProbeWahl {
   name: string;
@@ -41,6 +42,7 @@ export function Probe({
   wahl,
   katalog,
   werte,
+  willenskraft,
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
@@ -52,18 +54,105 @@ export function Probe({
    * dann für jeden Eintrag `undefined` und alle Attribute stünden auf 0.
    */
   werte: Map<string, number>;
+  /** Obergrenze für Wilde Magie — so viele Bonuswürfel sind erlaubt. */
+  willenskraft: number;
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
+  // Bonuswürfel aus Willenskraft — nur bei Arete und NeuroWeaving.
+  const [wild, setWild] = useState(0);
 
   if (!wahl) return null;
 
-  const alleinMoeglich = OHNE_ATTRIBUT.has(wahl.kategorie);
-  const pool = wahl.wert + (attribut?.wert ?? 0);
+  const istSphaere = wahl.kategorie === "Sphäre";
+  const nurWillenskraft = NUR_WILLENSKRAFT.has(wahl.kategorie);
+  const pool = wahl.wert + (attribut?.wert ?? 0) + (nurWillenskraft ? wild : 0);
 
   function schliesseAlles() {
     setAttribut(null);
+    setWild(0);
     onSchliessen();
+  }
+
+  // --- Sphären: hier wird nicht gewürfelt (Zeile 87) --------------------
+  if (istSphaere) {
+    return (
+      <Fenster
+        offen
+        titel={`${wahl.name} ${wahl.wert}`}
+        unterzeile="Sphäre — was damit geht"
+        kennung={`sphaere:${wahl.name}`}
+        onSchliessen={schliesseAlles}
+      >
+        <p className="pr-regel pr-hinweis">{MAGIE_HINWEISE.sphaereNichtWuerfeln}</p>
+        {SPHAEREN[wahl.name] && <p className="pr-sphaerentext">{SPHAEREN[wahl.name]}</p>}
+        <ol className="pr-stufen">
+          {SPHAEREN_STUFEN.slice(1).map((text, i) => {
+            const stufe = i + 1;
+            return (
+              <li key={stufe} data-erreicht={stufe <= wahl.wert} data-aktuell={stufe === wahl.wert}>
+                <span className="pr-stufe-zahl">{stufe}</span>
+                <span>{text}</span>
+              </li>
+            );
+          })}
+        </ol>
+        {wahl.wert === 0 && <p className="pr-regel">Diese Sphäre steht dir noch nicht offen.</p>}
+      </Fenster>
+    );
+  }
+
+  // --- Arete und NeuroWeaving: nur Willenskraft dazu --------------------
+  if (nurWillenskraft) {
+    return (
+      <>
+        <Fenster
+          offen
+          titel={`${wahl.name} ${wahl.wert}`}
+          unterzeile={wahl.kategorie === "Arete" ? "Kontrolliert oder wild?" : "NeuroWeaving"}
+          kennung={`probe:${wahl.name}`}
+          onSchliessen={schliesseAlles}
+        >
+          <p className="pr-regel pr-hinweis">
+            {wahl.kategorie === "Arete" ? MAGIE_HINWEISE.areteKontrolliert : MAGIE_HINWEISE.neuroWeaving}
+          </p>
+
+          <div className="pr-pool">
+            <span className="pr-zahl">{pool}</span>
+            <WuerfelZehn groesse={54} />
+          </div>
+          <p className="pr-rechnung">
+            {wahl.name} {wahl.wert}
+            {wild > 0 && ` + ${wild} aus Willenskraft`}
+          </p>
+
+          {willenskraft > 0 ? (
+            <section className="pr-wild">
+              <h3>Wilde Magie</h3>
+              <p className="pr-regel">{MAGIE_HINWEISE.areteWild}</p>
+              <div className="pr-wild-reihe">
+                <button type="button" onClick={() => setWild((w) => Math.max(0, w - 1))} disabled={wild === 0}>
+                  −
+                </button>
+                <span className="pr-wild-zahl">
+                  {wild} <em>von {willenskraft}</em>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setWild((w) => Math.min(willenskraft, w + 1))}
+                  disabled={wild >= willenskraft}
+                >
+                  +
+                </button>
+              </div>
+              {wild > 0 && <p className="pr-warnung">{MAGIE_HINWEISE.areteRueckstoss}</p>}
+            </section>
+          ) : (
+            <p className="pr-regel">Ohne Willenskraft keine wilde Magie.</p>
+          )}
+        </Fenster>
+      </>
+    );
   }
 
   return (
@@ -75,17 +164,6 @@ export function Probe({
         kennung={`probe:${wahl.name}`}
         onSchliessen={schliesseAlles}
       >
-        {alleinMoeglich && (
-          <button
-            type="button"
-            className="pr-allein"
-            onClick={() => setAttribut({ name: "ohne Attribut", wert: 0 })}
-          >
-            Für sich allein — {wahl.wert} Würfel
-            <em>{wahl.kategorie === "Arete" ? "Arete" : wahl.kategorie} wird normalerweise ohne Attribut gewürfelt.</em>
-          </button>
-        )}
-
         <div className="pr-spalten">
           {SPALTEN.map((spalte) => (
             <section key={spalte.kategorie} style={{ "--cb-ton": spalte.ton } as React.CSSProperties}>
