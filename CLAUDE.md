@@ -1205,6 +1205,13 @@ Die Oberfläche bietet den Klick gar nicht erst an, wenn er verboten wäre —
 niemand soll gegen eine stumme Wand tippen. Der Server lehnt trotzdem ab
 (403), die Anzeige ist kein Schutz.
 
+**Vor dem Ausgeben kommt eine Rückfrage** (`traits/WillenskraftFrage.tsx`).
+Marks Einwand: ein Kästchen ist schnell versehentlich getroffen, und
+zurückholen kann es nur die Spielleitung — ein Fehlgriff kostet also echt
+etwas. Das Fenster nennt, wieviel danach übrig bleibt, und hat **Ja in Blau,
+Nein in Rot**, beide 56px hoch und weit auseinander. Dieselbe Farbsprache wie
+das Level Up: blau heisst weiter, rot heisst lass es.
+
 **Damit hängt zusammen:** wilde Magie darf nur die **übrige** Willenskraft
 nutzen, nicht den Gesamtwert. Wer sie ausgegeben hat, um Erfolge zu erzwingen,
 kann sie nicht nochmal in einen Zauber stecken. Vorher rechnete die Probe mit

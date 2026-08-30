@@ -1,0 +1,64 @@
+/* ===================================================================
+   Rückfrage vor dem Ausgeben von Willenskraft.
+   Ja blau, Nein rot — dieselbe Sprache wie im Level Up: blau heisst
+   weiter, rot heisst lass es.
+   =================================================================== */
+
+.wk-frage {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.wk-rest {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.wk-rest strong {
+  font-family: var(--mono);
+  font-size: 16px;
+  color: var(--text);
+}
+
+.wk-knoepfe {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+/* Gross und weit auseinander: ein Fehlgriff kostet hier echt etwas. */
+.wk-knoepfe button {
+  flex: 1;
+  min-height: 56px;
+  font-size: 17px;
+  letter-spacing: 0.1em;
+}
+
+.wk-ja {
+  border-color: #4da3ff;
+  color: #4da3ff;
+  background: color-mix(in srgb, #4da3ff 12%, transparent);
+}
+
+.wk-ja:hover:not(:disabled) {
+  border-color: #4da3ff;
+  color: #4da3ff;
+  background: color-mix(in srgb, #4da3ff 22%, transparent);
+  box-shadow: 0 0 18px -6px #4da3ff;
+}
+
+.wk-nein {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+  background: color-mix(in srgb, #ff4d6b 12%, transparent);
+}
+
+.wk-nein:hover:not(:disabled) {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+  background: color-mix(in srgb, #ff4d6b 22%, transparent);
+  box-shadow: 0 0 18px -6px #ff4d6b;
+}

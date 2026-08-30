@@ -4,6 +4,7 @@ import { InfoTipp } from "../regeln/InfoTipp";
 import { schluessel } from "../regeln/erklaerungen";
 import { LevelUp } from "./LevelUp";
 import { Probe, type ProbeWahl } from "./Probe";
+import { WillenskraftFrage } from "./WillenskraftFrage";
 import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
@@ -70,6 +71,7 @@ export function Charakterblatt({
   // Angetippter Wert: dafür geht die Rechenhilfe auf (Fertigkeit → Attribut
   // → Würfelzahl). Gewürfelt wird am Tisch, nicht hier.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
+  const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -114,7 +116,12 @@ export function Charakterblatt({
     // niemand gegen eine stumme Wand tippt.
     const gibtZurueck = index >= u.willenskraftMax - u.willenskraftVerbraucht;
     if (gibtZurueck && !bearbeitbar) return;
-    const verbraucht = gibtZurueck ? u.willenskraftVerbraucht - 1 : u.willenskraftVerbraucht + 1;
+    // Ausgeben erst nach Rückfrage — ein Fehlgriff kostet hier echt etwas.
+    if (!gibtZurueck) {
+      setFragtWillenskraft(true);
+      return;
+    }
+    const verbraucht = u.willenskraftVerbraucht - 1;
     uebernehmen(
       await bogenApi.zustand(campaignId, personId, {
         willenskraftVerbraucht: Math.max(0, Math.min(verbraucht, u.willenskraftMax)),
@@ -319,6 +326,20 @@ export function Charakterblatt({
           <span className="cb-ep-text">von {u.erfahrungGesamt} EP frei</span>
         </button>
       </header>
+
+      <WillenskraftFrage
+        offen={fragtWillenskraft}
+        uebrig={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
+        onNein={() => setFragtWillenskraft(false)}
+        onJa={async () => {
+          setFragtWillenskraft(false);
+          uebernehmen(
+            await bogenApi.zustand(campaignId, personId, {
+              willenskraftVerbraucht: u.willenskraftVerbraucht + 1,
+            }),
+          );
+        }}
+      />
 
       <Probe
         wahl={probe}

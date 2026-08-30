@@ -8,6 +8,7 @@ import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
+import { WillenskraftFrage } from "../traits/WillenskraftFrage";
 import "./kampfkarte.css";
 
 /**
@@ -63,6 +64,7 @@ export function Kampfkarte({
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
   // Angetippter Wert — für Arete heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
+  const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -135,15 +137,13 @@ export function Kampfkarte({
             ton="#ffb648"
             onKlick={
               aenderbar
-                ? async (index) => {
-                    // Ausgeben ja, zurückholen nur als Spielleitung — dafür
-                    // gibt es den eigenen Bogen (siehe Charakterblatt).
+                ? (index) => {
+                    // Ausgeben ja, zurückholen nur als Spielleitung. Und erst
+                    // nach Rückfrage — versehentlich getroffen ist der Punkt
+                    // sonst weg, und zurückholen kann ihn nur die SL.
                     const frei = u.willenskraftMax - u.willenskraftVerbraucht;
                     if (index >= frei) return;
-                    await bogenApi.zustand(campaignId, personId, {
-                      willenskraftVerbraucht: u.willenskraftVerbraucht + 1,
-                    });
-                    await laden();
+                    setFragtWillenskraft(true);
                   }
                 : undefined
             }
@@ -317,6 +317,19 @@ export function Kampfkarte({
       >
         <Charakterblatt campaignId={campaignId} personId={personId} aenderbar={aenderbar} />
       </Fenster>
+
+      <WillenskraftFrage
+        offen={fragtWillenskraft}
+        uebrig={uebrigeWillenskraft}
+        onNein={() => setFragtWillenskraft(false)}
+        onJa={async () => {
+          setFragtWillenskraft(false);
+          await bogenApi.zustand(campaignId, personId, {
+            willenskraftVerbraucht: u.willenskraftVerbraucht + 1,
+          });
+          await laden();
+        }}
+      />
 
       <Probe
         wahl={probe}
