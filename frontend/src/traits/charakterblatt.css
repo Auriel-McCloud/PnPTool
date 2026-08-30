@@ -41,14 +41,65 @@
 
 /* Erfahrung ist spaeter anklickbar (Steigern), deshalb schon jetzt
    hervorgehoben statt versteckt in einer Zeile. */
+/* Zugleich der Weg ins Level Up — deshalb ein Knopf und kein Kasten. */
 .cb-erfahrung {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 0;
+  min-height: 0;
   padding: 6px 14px;
   border: 1px solid var(--linie-hell);
   border-radius: var(--radius);
   background: var(--flaeche);
+}
+
+.cb-erfahrung:hover:not(:disabled) {
+  border-color: #4da3ff;
+  color: inherit;
+  background: color-mix(in srgb, #4da3ff 10%, transparent);
+}
+
+.cb-erfahrung:hover:not(:disabled) .cb-ep-zahl {
+  color: #4da3ff;
+}
+
+.cb-erfahrung:disabled {
+  cursor: default;
+}
+
+/* --- Kopfzeile des Papierblatts --------------------------------------- */
+
+.cb-person {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.cb-steckbrief {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cb-steckbrief-titel {
+  flex-shrink: 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.cb-steckbrief-text {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-leise);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cb-ep-zahl {
@@ -162,13 +213,20 @@
 }
 
 /* Arete ist der einzige Wert seiner Gruppe. In einem Dreispaltenraster
-   klebt er dadurch links am Rand und wirkt wie vergessen — eine einzelne
-   Zeile steht mittig deutlich besser. Breite begrenzt, sonst zoege der
-   Name vom Punktepool bis ans andere Ende weg. */
+   klebt er dadurch links am Rand und wirkt wie vergessen — mittig steht er
+   deutlich besser. Und weil neben ihm nichts steht, braucht der Name auch
+   nicht neben den Punkten zu kleben: er steht darueber. */
 .cb-werte-einzeln {
-  grid-template-columns: minmax(0, 280px);
+  grid-template-columns: max-content;
   grid-template-rows: none;
   justify-content: center;
+}
+
+.cb-werte-einzeln .cb-wert {
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 2px 12px;
 }
 
 /* Innerhalb einer Attributspalte steht nur eine Reihe */

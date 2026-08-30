@@ -43,17 +43,31 @@
     0 24px 60px -12px rgba(0, 0, 0, 0.85),
     0 0 22px -6px var(--fn-ton, var(--bereich-farbe, var(--neon))),
     inset 0 0 26px -18px var(--fn-ton, var(--bereich-farbe, var(--neon)));
-  animation: fn-auf 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Bis gemessen ist, bleibt es unsichtbar — sonst blitzt ein Bild lang das
+     fertige Fenster auf, bevor es von der Tipp-Stelle aufzieht. */
+  opacity: 0;
+}
+
+/* Zieht von der Stelle auf, an der getippt wurde (--fn-von-x/y ist die
+   Verschiebung dorthin, in Fenster.tsx gemessen). Ohne Tipp-Position sind
+   beide 0, dann waechst es schlicht aus seiner eigenen Mitte. */
+.fn-fenster-auf {
+  /* Grundzustand auch ohne laufende Animation sichtbar */
+  opacity: 1;
+  animation: fn-auf 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes fn-auf {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.94);
+    transform: translate(-50%, -50%) translate(var(--fn-von-x, 0), var(--fn-von-y, 0)) scale(0.16);
+  }
+  60% {
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
   }
 }
 
@@ -129,12 +143,19 @@
     max-height: none;
     border-width: 1px 0 0;
     border-radius: 12px 12px 0 0;
-    animation: fn-auf-handy 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: none;
+  }
+
+  /* Am Handy fuellt das Fenster den Bildschirm; ein Aufziehen aus der
+     Tipp-Stelle saehe hier nach Zerren aus. Es schiebt sich von unten
+     herein wie ein Blatt, das man hochzieht. */
+  .fn-fenster-auf {
+    animation: fn-auf-handy 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   @keyframes fn-auf-handy {
     from {
-      transform: translateY(14px);
+      transform: translateY(16px);
       opacity: 0;
     }
     to {

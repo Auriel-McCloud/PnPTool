@@ -35,6 +35,15 @@ OHNE_GM_ERLAUBT = {
     # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
     # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",
+    # Den eigenen Charakter erstellen. Prueft die Person selbst, laesst sich
+    # nur einmal aufrufen (danach 409) und laeuft vollstaendig durch
+    # traits/erstellung.pruefe — regelwidrige Verteilungen werden abgelehnt.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/erstellung",
+    # Eigene Erfahrung ausgeben. Prueft die Person selbst; der Preis wird
+    # serverseitig berechnet, nicht uebernommen, und gegen den vorhandenen
+    # Punktestand geprueft. Erfahrung *vergeben* bleibt der Spielleitung
+    # (eigene Route .../erfahrung mit require_campaign_gm).
+    "/api/campaigns/{campaign_id}/personen/{person_id}/steigern",
 }
 
 

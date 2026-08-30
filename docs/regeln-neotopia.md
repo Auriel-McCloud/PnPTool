@@ -120,6 +120,43 @@ Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 5. **15 Freebees**, Kosten: Attribut / Arete / NeuroWeaving **5** (darf das Startmaximum übersteigen), Fertigkeit **2** (höchstens +1), Willenskraft **1**, Kredit 10.000 ¥ = 1, Eigenkapital 10.000 ¥ = 2.
    *Das Startmaximum gilt nicht für Freebees.*
 
+> **Beim Umsetzen abgeleitet:** die Startmaximum-Spalte der Tabelle ist durchgehend
+> **4 + Anpassung** — ohne Anpassung 4, bei +1 dann 5, bei +2 dann 6, bei −1 dann 3.
+> Deshalb steht im Code (`backend/app/traits/erstellung.py`) nur die Grundzahl 4 und
+> wird mit dem Rassenmodifikator verrechnet, statt die Tabelle doppelt zu führen.
+
+### Hintergründe — **nicht aus dem Regelwerk**
+
+Im Excel kommen Hintergründe nicht vor. Mark wollte sie ("bis zu 5 Punkte als Freebees"),
+die Liste selbst ist deshalb ein Vorschlag fürs Setting und steht zum Umbau frei
+(`HINTERGRUENDE` in `erstellung.py`): Kontakte, Ressourcen, Straßenruf, Verbündete,
+Mentor, Unterschlupf, Schwarzmarkt, Konzernzugang, Ausrüstung, Geheimwissen.
+
+Ebenfalls gesetzt, aber nicht belegt: **1 Freebee je Hintergrundpunkt**, höchstens
+5 Punkte insgesamt und 5 auf einen einzelnen.
+
+### Kopfzeile des Blatts
+
+Aus dem Charakterblatt-Sheet (Zeilen 3-7), reiner Text ohne Regelwirkung:
+**Konzept · Alter · Ambition · Verlangen · Ziel · Kapital/Schulden.**
+
+## Erfahrung ausgeben — **nicht aus dem Regelwerk**
+
+Das Excel beschreibt die Erstellung, sagt aber nichts über spätere Steigerungen.
+Die Preise in `backend/app/traits/erfahrung.py` sind deshalb ein Vorschlag, angelehnt
+an die World of Darkness (Preis = aktueller Wert × Faktor, der fünfte Punkt kostet
+mehr als der zweite) und an das Freebee-Verhältnis der Erstellung:
+
+| Was | Faktor | Erster Punkt (von 0) |
+|---|---|---|
+| Attribut | × 4 | — (steht nie auf 0) |
+| Fertigkeit | × 2 | 3 |
+| Sphäre | × 5 | 7 |
+| NeuroWeaving | × 5 | 7 |
+| Arete | × 8 | 10 |
+| Hintergrund | × 3 | 3 |
+| Willenskraft | × 1 | — |
+
 ## Cyber-/Bioware
 
 **WVerlust = Willenskraftverlust.** Je nach Preis pro Bonuspunkt:
@@ -149,3 +186,6 @@ NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchier
 
 - Ob „Magier" und „Technomancer" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
 - Rüstungsmaxima je Zone (Kopf 2, Torso 4, Beine 2 laut Blatt) — ob das feste Grenzen sind oder nur die Vorlage.
+- **Sphären beim Freebee-Kauf**: Zeile 39 nennt nur „Attribut / Arete NeuroWeaving 5", Zeile 27 stellt Sphären
+  aber zu den Fertigkeiten. Umgesetzt ist vorerst der Fertigkeitspreis (2, höchstens +1).
+- **Hintergründe und Erfahrungspreise** — siehe oben, beides erfunden statt belegt.

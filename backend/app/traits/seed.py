@@ -75,6 +75,17 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Arete", "Arete", 10, 1),
 ]
 
+# Hintergründe stehen **nicht** im Regelwerk — siehe traits/erstellung.py.
+# Sie liegen trotzdem im selben Katalog wie alles andere: dadurch erscheinen
+# sie ohne Zusatzarbeit auf dem Blatt, lassen sich mit Erfahrung steigern und
+# vom Spielleiter überschreiben. Die Liste kommt aus erstellung.py, damit
+# Erstellung und Katalog nicht auseinanderlaufen können.
+from app.traits.erstellung import HINTERGRUENDE, HINTERGRUND_KATEGORIE, HINTERGRUND_MAX  # noqa: E402
+
+NEOTOPIA_TRAITS += [
+    (h["name"], HINTERGRUND_KATEGORIE, HINTERGRUND_MAX, i + 1) for i, h in enumerate(HINTERGRUENDE)
+]
+
 
 async def seed_traits() -> None:
     driver = get_driver()

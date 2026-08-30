@@ -392,6 +392,136 @@ lange Namen (Widerstandsfaehigkeit, Geisteswissenschaften) mit Auslassungspunkte
 gekuerzt — drei Spalten gehen sich dort schlicht nicht aus. Betrifft kein Geraet
 aus der Runde, faellt nur bei einem schmalen Browserfenster auf.
 
+## Nachtarbeit 29./30.08.2026 — Fenster, Erstellung, Level Up
+
+Marks Auftrag: Fensteranimation, Level-Up-System und ein **Prototyp der
+Charaktererstellung** ("das fine Tuning machen wir wenn ich wieder wach bin").
+Alles gebaut und durchgeklickt; was daran erfunden statt belegt ist, steht
+unten und in `docs/regeln-neotopia.md`.
+
+### Fenster ziehen aus der Tipp-Stelle auf
+
+`shell/tippPosition.ts` schreibt die letzte `pointerdown`-Position mit — **ein**
+Mitschnitt am Dokument in der Erfassungsphase, statt die Koordinaten durch rund
+zwanzig Klick-Handler zu reichen (und an jedem neuen zu vergessen). Das Fenster
+misst nach dem Aufbau seine eigene Mitte, rechnet die Verschiebung dorthin aus
+und legt sie als `--fn-von-x/y` an; die Keyframes greifen darauf zu.
+
+**Zwei Fallen, beide umschifft:** Die Animation darf erst starten, wenn gemessen
+ist — sonst liefe das erste Bild noch mit 0/0 und der Sprung wäre als Ruckler zu
+sehen. Deshalb hängt sie an der Klasse `.fn-fenster-auf`, die erst ein
+`useLayoutEffect` setzt (läuft vor dem Zeichnen, das Nachziehen bleibt
+unsichtbar). Und `.fn-fenster` steht auf `opacity: 0`, damit es vorher nicht
+aufblitzt — die Animation trägt `forwards`, sonst fiele es danach zurück.
+Tastaturbedienung löscht die gemerkte Position: ohne Finger soll das Fenster aus
+seiner eigenen Mitte wachsen statt aus einer zufälligen alten Ecke.
+
+Am Handy bleibt es beim Hereinschieben von unten — dort füllt das Fenster den
+Bildschirm, ein Aufziehen aus einem Punkt sähe nach Zerren aus.
+
+### Charaktererstellung (Prototyp)
+
+**Backend** `traits/erstellung.py` — die Regeln aus `Neotopia.xlsx` (Blatt
+*Regeln*, Zeilen 1-42) als Daten: Rassen mit Anpassungen und Punktekontingenten,
+die drei Fertigkeitspakete, Freebee-Preise, Hintergründe. Dazu `pruefe()`, das
+eine Einreichung gegen alles davon prüft und **alle** Verstöße auf einmal
+zurückgibt statt beim ersten abzubrechen.
+
+**Wichtig zur Form der Einreichung:** geschickt werden nicht die Endwerte,
+sondern die Punkte getrennt nach Herkunft (Kontingent / Paket / Hintergrund /
+Freebee). Anders ginge es nicht — ein Attribut über dem Startmaximum ist
+erlaubt, *wenn* Freebees dafür bezahlt wurden. Aus einer blossen Endzahl liesse
+sich das nicht mehr ablesen und die Prüfung wäre geraten.
+
+**Frontend** `traits/Charaktererstellung.tsx` — sieben Schritte (Weg, Rasse,
+Attribute, Fertigkeiten, Hintergrund, Freebees, Person). Die Oberfläche kennt
+**keine einzige Regel**: Rassen, Pakete und Preise kommen von
+`GET /erstellung/regeln`. Sie rechnet nur mit, was noch offen ist.
+
+Zum Leitprinzip *nie scrollen*: die Erstellung hält sich als einzige Ansicht
+nicht daran, und zwar mit Absicht. Neunzehn Fertigkeiten mit Punktreihen passen
+auf kein Tablet. Sie ist aber auch keine Übersicht, sondern ein Vorgang mit
+Anfang und Ende — wie ein Fenster. Gescrollt wird nur in `.er-buehne`, Kopf mit
+den Schritten und Fuss mit den Knöpfen stehen fest.
+
+**Bestandscharaktere sind geschützt:** `bogen_uebersicht` meldet
+`erstellungAbgeschlossen` auch dann, wenn zwar das Feld fehlt, aber schon Werte
+gesetzt sind. Ohne das hätte Ryu Tanaka beim nächsten Öffnen die Erstellung
+vorgesetzt bekommen — und wäre beim Durchklicken überschrieben worden.
+
+### Level Up
+
+`traits/erfahrung.py` + `traits/LevelUp.tsx`. **Blau ist bezahlbar, rot noch
+nicht** — die ganze Ansicht lebt von dieser einen Unterscheidung, damit man
+nicht Preise vergleichen muss. Der Weg dorthin führt über den EP-Kasten in der
+Kopfzeile des Blatts, der jetzt ein Knopf ist.
+
+Die Preise berechnet **immer der Server neu**; die Ansicht schickt nur mit,
+*was* gesteigert werden soll. Andernfalls könnte man sich seinen Preis selbst
+aussuchen.
+
+> **Die Erfahrungspreise stehen nicht im Regelwerk.** Das Excel beschreibt die
+> Erstellung, nicht das Steigern. Die Tabelle in `erfahrung.py` ist ein
+> Vorschlag (WoD-Muster: Preis = aktueller Wert × Faktor) und zum Ändern
+> gedacht — nur `FAKTOR` und `NEU_KOSTEN` anfassen, die Oberfläche zeigt die
+> Preise an, statt sie zu kennen.
+
+### Neue Felder am Charakter
+
+`konzept`, `alter`, `ambition`, `verlangen`, `ziel`, `kapital`, `schulden`,
+`willenskraftBonus`, `erstellungAbgeschlossen` — die Kopfzeile des Papierblatts
+(Charakterblatt-Sheet, Zeilen 3-7). Auf dem Blatt erscheint nur, was ausgefüllt
+ist; ein Raster leerer Beschriftungen sagt niemandem etwas.
+
+**Dabei eine Lücke geschlossen, bevor sie eine wurde:** diese Felder gehen über
+`PersonResponse` auch bei *fremden* Personen mit hinaus. Bei einem NPC ist genau
+das der Stoff, aus dem die Kampagne besteht — was er will, was er fürchtet,
+wieviel Geld er hat. Es gibt dafür keine eigene Sichtbarkeitsstufe, deshalb
+bekommt sie ausser dem Spielleiter nur, wem der Charakter gehört
+(`BOGEN_KOPF_FELDER` in `entities/visibility.py`). Gleiche Entscheidung wie
+seinerzeit bei den Gegenstandsnotizen: lieber ganz zurückhalten als halb
+redigieren.
+
+`willenskraftBonus` wird gespeichert statt abgeleitet — Willenskraft lässt sich
+mit Freebees und Erfahrung einzeln steigern, ohne dass sich Entschlossenheit
+oder Fassung ändern.
+
+### Zwei neue Routen, die auch Spieler schreiben dürfen
+
+Damit sind es vier (vorher: Ablage umlegen, Zustand eintragen):
+
+- `POST .../personen/{id}/erstellung` — nur am eigenen Charakter, **nur einmal**
+  (danach 409; die Spielleitung darf erneut einreichen, sie muss Fehler
+  korrigieren können), und alles läuft durch `erstellung.pruefe`.
+- `POST .../personen/{id}/steigern` — nur am eigenen Charakter, Preis
+  serverseitig gerechnet, gegen den vorhandenen Punktestand geprüft.
+
+Beide sind namentlich in `tests/test_zugriffsschutz.py` eingetragen. **Der Test
+hat beim ersten Lauf zugeschlagen** und beide Routen als ungeschützt gemeldet —
+genau wozu er da ist. Erfahrung *vergeben* bleibt der Spielleitung
+(`POST .../personen/{id}/erfahrung` mit `require_campaign_gm`).
+
+### Kleinigkeiten aus derselben Nacht
+
+- **Arete steht mittig, Name über den Punkten.** Als einziger Wert seiner Gruppe
+  klebte er im Dreispaltenraster links am Rand. Gruppen mit genau einem Eintrag
+  bekommen `cb-werte-einzeln`.
+- **Initiative zeigt einen W10** (`traits/WuerfelZehn.tsx`, reines SVG, erbt die
+  Textfarbe). Marks Begründung: "ihre Initiative ist nicht 7, sondern 7 Würfel".
+  Die Komponente ist allgemein gehalten, die Würfelpools brauchen sie genauso.
+- Level Up nimmt am Tablet **zwei** Spalten statt drei — anders als das Blatt
+  braucht jede Zeile zusätzlich einen Preis, drei Spalten schnitten die Namen ab.
+
+### Was Mark noch entscheiden muss
+
+1. **Hintergrundliste** — zehn Vorschläge, keiner davon aus dem Regelwerk.
+2. **Erfahrungspreise** — die Faktoren oben.
+3. **Sphären beim Freebee-Kauf**: wie Fertigkeit (2, aktuell) oder wie Arete (5)?
+4. **Fertigkeitspakete und Sphären**: aktuell zählt eine Sphäre als eine der acht
+   Profi-Fertigkeiten. Gewollt, oder sollen Sphären ein eigenes Kontingent haben?
+5. Ob die Erstellung auch der Spielleitung offenstehen soll, um einen NPC damit
+   zu bauen — technisch geht es bereits, es gibt nur keinen Knopf dafür.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

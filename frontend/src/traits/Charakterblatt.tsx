@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { Charaktererstellung } from "./Charaktererstellung";
+import { LevelUp } from "./LevelUp";
 import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
@@ -46,6 +48,9 @@ export function Charakterblatt({
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Drei Ansichten desselben Blatts (docs/ui-konzept.md): Erstellung einmalig,
+  // dann die Spielansicht, und das Ausgeben von Erfahrung bei Bedarf.
+  const [ansicht, setAnsicht] = useState<"blatt" | "levelup">("blatt");
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -91,11 +96,15 @@ export function Charakterblatt({
     );
   }
 
-  useEffect(() => {
-    bogenApi
+  function neuLaden() {
+    return bogenApi
       .laden(campaignId, personId)
       .then(setBogen)
       .catch(() => setFehler("Das Charakterblatt konnte nicht geladen werden."));
+  }
+
+  useEffect(() => {
+    neuLaden();
   }, [campaignId, personId]);
 
   // Gesetzte Werte nachschlagbar machen; der Katalog gibt die Reihenfolge vor,
@@ -119,6 +128,36 @@ export function Charakterblatt({
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Charakterblatt…</p>;
 
   const u = bogen.uebersicht;
+
+  // Vor der Erstellung gibt es kein Blatt zu zeigen — dann führt der Ablauf
+  // durch die Erstellung, und danach steht das fertige Blatt da.
+  if (!u.erstellungAbgeschlossen) {
+    return (
+      <Charaktererstellung
+        campaignId={campaignId}
+        personId={personId}
+        name={bogen.person.name}
+        onFertig={neuLaden}
+      />
+    );
+  }
+
+  if (ansicht === "levelup") {
+    return (
+      <div className="cb-blatt">
+        <header className="cb-kopf">
+          <div>
+            <h2 className="cb-name">{bogen.person.name}</h2>
+            <div className="cb-untertitel">Level Up</div>
+          </div>
+          <button type="button" onClick={() => { setAnsicht("blatt"); neuLaden(); }}>
+            Zurück zum Blatt
+          </button>
+        </header>
+        <LevelUp campaignId={campaignId} personId={personId} />
+      </div>
+    );
+  }
 
   function reihe(kategorie: string) {
     const eintraege = gruppen.get(kategorie);
@@ -166,11 +205,37 @@ export function Charakterblatt({
             {[u.rasse, WEG_TITEL[u.weg]].filter(Boolean).join(" · ") || "Ohne besonderen Weg"}
           </div>
         </div>
-        <div className="cb-erfahrung" title="Erfahrungspunkte">
+        <button
+          type="button"
+          className="cb-erfahrung"
+          onClick={() => setAnsicht("levelup")}
+          disabled={!aenderbar}
+          title={aenderbar ? "Erfahrung ausgeben" : "Erfahrungspunkte"}
+        >
           <span className="cb-ep-zahl">{u.erfahrungVerfuegbar}</span>
           <span className="cb-ep-text">von {u.erfahrungGesamt} EP frei</span>
-        </div>
+        </button>
       </header>
+
+      {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —
+          ein Raster leerer Beschriftungen sagt niemandem etwas. */}
+      {[u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) && (
+        <section className="cb-person">
+          {u.konzept && <Steckbrief titel="Konzept" text={u.konzept} />}
+          {u.ambition && <Steckbrief titel="Ambition" text={u.ambition} />}
+          {u.verlangen && <Steckbrief titel="Verlangen" text={u.verlangen} />}
+          {u.ziel && <Steckbrief titel="Ziel" text={u.ziel} />}
+          {(u.kapital > 0 || u.schulden > 0) && (
+            <Steckbrief
+              titel="Kapital"
+              text={
+                `${u.kapital.toLocaleString("de-AT")}¥` +
+                (u.schulden > 0 ? ` · davon ${u.schulden.toLocaleString("de-AT")}¥ Schulden` : "")
+              }
+            />
+          )}
+        </section>
+      )}
 
       <section className="cb-zustand">
         <div className="cb-spur">
@@ -227,6 +292,16 @@ export function Charakterblatt({
       {reihe("Arete")}
       {reihe("Sphäre")}
       {reihe("NeuroWeaving")}
+    </div>
+  );
+}
+
+/** Ein beschriftetes Textfeld aus der Kopfzeile des Papierblatts. */
+function Steckbrief({ titel, text }: { titel: string; text: string }) {
+  return (
+    <div className="cb-steckbrief">
+      <span className="cb-steckbrief-titel">{titel}</span>
+      <span className="cb-steckbrief-text">{text}</span>
     </div>
   );
 }

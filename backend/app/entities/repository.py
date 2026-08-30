@@ -19,6 +19,20 @@ _BOGEN_FELDER = [
     "iceSchaden",
     "erfahrung",
     "erfahrungAusgegeben",
+    # Willenskraft ist abgeleitet (Entschlossenheit + Fassung); einzeln
+    # gekaufte Punkte kommen als Bonus obendrauf.
+    "willenskraftBonus",
+    # Kopfzeile des Papierblatts (Neotopia.xlsx, Charakterblatt Zeilen 3-7).
+    "konzept",
+    "alter",
+    "ambition",
+    "verlangen",
+    "ziel",
+    "kapital",
+    "schulden",
+    # Solange die Erstellung nicht abgeschlossen ist, zeigt das Blatt den
+    # Erstellungsablauf statt der Spielansicht.
+    "erstellungAbgeschlossen",
 ]
 
 PERSON_FIELDS = ["name", "personType", "description", "notes", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
@@ -43,6 +57,15 @@ _BOGEN_DEFAULTS: dict = {
     "iceSchaden": 0,
     "erfahrung": 0,
     "erfahrungAusgegeben": 0,
+    "willenskraftBonus": 0,
+    "konzept": "",
+    "alter": "",
+    "ambition": "",
+    "verlangen": "",
+    "ziel": "",
+    "kapital": 0,
+    "schulden": 0,
+    "erstellungAbgeschlossen": False,
 }
 
 

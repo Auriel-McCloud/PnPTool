@@ -19,7 +19,18 @@ export interface BogenUebersicht {
   offline: boolean;
   initiative: number;
   erfahrungGesamt: number;
+  erfahrungAusgegeben: number;
   erfahrungVerfuegbar: number;
+  /** Kopfzeile des Papierblatts. Fremde Charaktere liefern hier leer. */
+  konzept: string;
+  alter: string;
+  ambition: string;
+  verlangen: string;
+  ziel: string;
+  kapital: number;
+  schulden: number;
+  /** Solange falsch, zeigt das Blatt die Erstellung statt der Spielansicht. */
+  erstellungAbgeschlossen: boolean;
 }
 
 export interface Bogen {
@@ -38,11 +49,105 @@ export interface ZustandUpdate {
   iceSchaden?: number;
 }
 
+// --- Charaktererstellung ------------------------------------------------
+// Spiegelt traits/erstellung.py. Die Zahlen kommen alle vom Server; hier
+// steht bewusst keine einzige Regel, sonst laufen beide Seiten auseinander.
+
+export interface Rasse {
+  name: string;
+  modifikatoren: Record<string, number>;
+  /** Die drei Kontingente, frei auf die Attributspalten verteilbar. */
+  freiePunkte: number[];
+  beschreibung: string;
+  startwerte: Record<string, number>;
+  startmaxima: Record<string, number>;
+}
+
+export interface FertigkeitsPaket {
+  id: string;
+  name: string;
+  beschreibung: string;
+  /** Wert und Anzahl der Fertigkeiten, die genau diesen Wert bekommen. */
+  verteilung: { wert: number; anzahl: number }[];
+  anzahl: number;
+}
+
+export interface Erstellungsregeln {
+  wege: { id: string; name: string; beschreibung: string }[];
+  rassen: Rasse[];
+  attributKategorien: { id: string; name: string; attribute: string[] }[];
+  fertigkeitsPakete: FertigkeitsPaket[];
+  hintergruende: { name: string; beschreibung: string }[];
+  hintergrundMax: number;
+  hintergrundPunkteGesamt: number;
+  freebees: {
+    gesamt: number;
+    kostenJeKategorie: Record<string, number>;
+    kostenWillenskraft: number;
+    kostenKredit: number;
+    kostenEigenkapital: number;
+    kapitalJeFreebee: number;
+    maxJeFertigkeit: number;
+  };
+  startkapital: number;
+}
+
+export interface ErstellungEingabe {
+  weg: string;
+  rasse: string;
+  schwerpunkte: Record<string, number>;
+  attributPunkte: Record<string, number>;
+  fertigkeitsPaket: string;
+  fertigkeitPunkte: Record<string, number>;
+  hintergrundPunkte: Record<string, number>;
+  freebeePunkte: Record<string, number>;
+  freebeeWillenskraft: number;
+  freebeeKredit: number;
+  freebeeEigenkapital: number;
+  konzept: string;
+  alter: string;
+  ambition: string;
+  verlangen: string;
+  ziel: string;
+}
+
+// --- Level Up -----------------------------------------------------------
+
+export interface Steigerungspreis {
+  traitDefId: string;
+  name: string;
+  category: string;
+  aktuell: number;
+  max: number;
+  kosten: number;
+}
+
+export interface Steigerungen {
+  verfuegbar: number;
+  gesamt: number;
+  werte: Steigerungspreis[];
+  willenskraft: { aktuell: number; kosten: number };
+}
+
 export const bogenApi = {
   laden: (cid: string, personId: string) => api.get<Bogen>(`/api/campaigns/${cid}/personen/${personId}/bogen`),
   /** Zustand ändern — Schaden und Verbrauch, keine Werte. */
   zustand: (cid: string, personId: string, aenderung: ZustandUpdate) =>
     api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/zustand`, aenderung),
+
+  regeln: (cid: string) => api.get<Erstellungsregeln>(`/api/campaigns/${cid}/erstellung/regeln`),
+  erstellen: (cid: string, personId: string, eingabe: ErstellungEingabe) =>
+    api.post<{ uebersicht: BogenUebersicht; freebeesVerbraucht: number }>(
+      `/api/campaigns/${cid}/personen/${personId}/erstellung`,
+      eingabe,
+    ),
+
+  preise: (cid: string, personId: string) =>
+    api.get<Steigerungen>(`/api/campaigns/${cid}/personen/${personId}/steigern`),
+  steigern: (cid: string, personId: string, was: { traitDefId?: string; willenskraft?: boolean }) =>
+    api.post<Steigerungen>(`/api/campaigns/${cid}/personen/${personId}/steigern`, was),
+  erfahrungVergeben: (cid: string, personId: string, punkte: number) =>
+    api.post<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/erfahrung`, { punkte }),
 };
 
 /** Reihenfolge und Beschriftung der Wertegruppen auf dem Blatt. */
@@ -54,6 +159,7 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   Arete: "Arete",
   Sphäre: "Sphären",
   NeuroWeaving: "NeuroWeaving",
+  Hintergrund: "Hintergründe",
 };
 
 export const ATTRIBUT_KATEGORIEN = [

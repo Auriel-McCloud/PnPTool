@@ -26,9 +26,14 @@ def gesundheit_max(werte: dict[str, int]) -> int:
     return GESUNDHEIT_GRUNDWERT + _wert(werte, "Widerstandsfähigkeit")
 
 
-def willenskraft_max(werte: dict[str, int]) -> int:
-    """Willenskraft = Entschlossenheit + Fassung."""
-    return _wert(werte, "Entschlossenheit") + _wert(werte, "Fassung")
+def willenskraft_max(werte: dict[str, int], bonus: int = 0) -> int:
+    """Willenskraft = Entschlossenheit + Fassung, plus gekaufte Punkte.
+
+    Der Bonus wird gespeichert statt abgeleitet: Willenskraft lässt sich mit
+    Freebees und später mit Erfahrung einzeln steigern, ohne dass sich eines
+    der beiden Attribute ändert.
+    """
+    return _wert(werte, "Entschlossenheit") + _wert(werte, "Fassung") + max(0, bonus)
 
 
 def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int:
@@ -71,7 +76,7 @@ def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: in
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
     g_max = gesundheit_max(werte)
-    w_max = willenskraft_max(werte)
+    w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0))
     i_max = ice_max(weg, werte, commlink_cyberwall)
     erfahrung = int(person.get("erfahrung") or 0)
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
@@ -103,5 +108,20 @@ def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: in
         "offline": weg != "TECHNOMANCER" and commlink_cyberwall <= 0,
         "initiative": initiative(werte),
         "erfahrungGesamt": erfahrung,
+        "erfahrungAusgegeben": ausgegeben,
         "erfahrungVerfuegbar": max(0, erfahrung - ausgegeben),
+        # Kopfzeile des Papierblatts (Zeilen 3-7). Reiner Text, den das
+        # Blatt anzeigt und die Erstellung füllt.
+        "konzept": person.get("konzept") or "",
+        "alter": person.get("alter") or "",
+        "ambition": person.get("ambition") or "",
+        "verlangen": person.get("verlangen") or "",
+        "ziel": person.get("ziel") or "",
+        "kapital": int(person.get("kapital") or 0),
+        "schulden": int(person.get("schulden") or 0),
+        # Bestandscharaktere kennen das Feld nicht — wer bereits Werte hat,
+        # gilt trotzdem als erstellt. Sonst bekaeme Ryu Tanaka beim naechsten
+        # Oeffnen die Erstellung vorgesetzt und wuerde dabei ueberschrieben.
+        "erstellungAbgeschlossen": bool(person.get("erstellungAbgeschlossen"))
+        or any(w > 0 for w in werte.values()),
     }

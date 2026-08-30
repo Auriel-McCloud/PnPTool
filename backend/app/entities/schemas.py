@@ -42,6 +42,17 @@ class PersonCreate(BaseModel):
     # Erfahrung: gesamt vergeben und davon ausgegeben.
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
+    willenskraftBonus: int = 0
+    # Kopfzeile des Papierblatts: Konzept, Alter, Ambition, Verlangen, Ziel,
+    # Kapital/Schulden. Reiner Text bzw. Zahlen, keine Regelmechanik.
+    konzept: str = ""
+    alter: str = ""
+    ambition: str = ""
+    verlangen: str = ""
+    ziel: str = ""
+    kapital: int = 0
+    schulden: int = 0
+    erstellungAbgeschlossen: bool = False
 
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -60,6 +71,15 @@ class PersonUpdate(BaseModel):
     iceSchaden: int | None = None
     erfahrung: int | None = None
     erfahrungAusgegeben: int | None = None
+    willenskraftBonus: int | None = None
+    konzept: str | None = None
+    alter: str | None = None
+    ambition: str | None = None
+    verlangen: str | None = None
+    ziel: str | None = None
+    kapital: int | None = None
+    schulden: int | None = None
+    erstellungAbgeschlossen: bool | None = None
     personType: Literal["PC", "NPC"] | None = None
     description: str | None = None
     notes: str | None = None
@@ -86,6 +106,15 @@ class PersonResponse(BaseModel):
     iceSchaden: int = 0
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
+    willenskraftBonus: int = 0
+    konzept: str = ""
+    alter: str = ""
+    ambition: str = ""
+    verlangen: str = ""
+    ziel: str = ""
+    kapital: int = 0
+    schulden: int = 0
+    erstellungAbgeschlossen: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

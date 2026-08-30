@@ -60,6 +60,18 @@ def is_visible_to(modus: str, sichtbar_fuer: list[str], viewer_role: str, viewer
     return False  # modus == "GM" -> nur der Spielleiter sieht es
 
 
+# Kopfzeile des Charakterbogens. Bei einem NPC ist genau das der Stoff, aus
+# dem die Kampagne besteht — was er will, was er fürchtet, wieviel Geld er hat.
+# Es gibt dafür keine eigene Sichtbarkeitsstufe, deshalb bekommt sie ausser dem
+# Spielleiter nur, wem der Charakter selbst gehört. Gleiche Entscheidung wie
+# bei den Gegenstandsnotizen: lieber ganz zurückhalten als halb redigieren.
+BOGEN_KOPF_FELDER = ("konzept", "alter", "ambition", "verlangen", "ziel", "kapital", "schulden")
+
+# Ersatzwerte müssen zum Typ in PersonResponse passen, sonst scheitert die
+# Prüfung und reisst die ganze Liste mit 500 herunter (Stolperstein 9).
+_KOPF_LEER: dict[str, object] = {"kapital": 0, "schulden": 0}
+
+
 def filter_entity_for_viewer(entity: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
     if not is_visible_to(
         entity.get("sichtbarkeit") or "GM", entity.get("sichtbarFuer") or [], viewer_role, viewer_person_id
@@ -79,6 +91,11 @@ def filter_entity_for_viewer(entity: dict, viewer_role: str, viewer_person_id: s
         result["notes"] = redact_rich_text(result.get("notes", ""), viewer_role)
     else:
         result["notes"] = ""
+
+    if viewer_role != "GM" and entity.get("id") != viewer_person_id:
+        for feld in BOGEN_KOPF_FELDER:
+            if feld in result:
+                result[feld] = _KOPF_LEER.get(feld, "")
     return result
 
 

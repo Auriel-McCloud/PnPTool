@@ -1,0 +1,444 @@
+/* ===================================================================
+   Charaktererstellung
+   Aufbau wie das fertige Blatt, damit der Übergang nicht überrascht:
+   gleiche Farben je Wertegruppe, gleiche Punktreihen.
+
+   Zum Leitprinzip "nie scrollen": die Übersichtsseiten halten sich daran,
+   die Erstellung kann es nicht. Neunzehn Fertigkeiten mit Punktreihen
+   passen auf kein Tablet. Sie ist aber auch keine Übersicht, sondern ein
+   Vorgang mit Anfang und Ende — wie ein Fenster, in dem Scrollen erlaubt
+   ist. Gescrollt wird deshalb ausschliesslich in .er-buehne; Kopfzeile mit
+   den Schritten und Fusszeile mit den Knöpfen stehen fest.
+   =================================================================== */
+
+.er-blatt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 10px;
+}
+
+/* --- Kopf mit Schrittanzeige ------------------------------------------ */
+
+.er-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.er-name {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.er-untertitel {
+  margin-top: 2px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.er-schritte {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.er-schritt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-aus);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.er-schritt-zahl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* Erledigte Schritte bleiben anklickbar — man will zurückblättern können,
+   ohne von vorn anzufangen. */
+.er-schritt-fertig {
+  color: var(--text-leise);
+}
+
+.er-schritt-fertig:hover:not(:disabled) {
+  color: var(--neon);
+  border-color: transparent;
+  background: transparent;
+}
+
+.er-schritt-aktiv {
+  color: var(--neon);
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+.er-schritt:disabled {
+  color: var(--text-aus);
+  opacity: 0.5;
+}
+
+/* Am Handy nehmen sieben Beschriftungen zuviel Platz — dann nur die Zahlen */
+@media (max-width: 719px) {
+  .er-schritt-titel {
+    display: none;
+  }
+
+  .er-schritt {
+    padding: 4px 6px;
+  }
+}
+
+/* --- Bühne: der einzige Bereich, der scrollt -------------------------- */
+
+.er-buehne {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-right: 4px;
+}
+
+.er-hinweis {
+  margin: 0 0 12px;
+  max-width: 74ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-leise);
+}
+
+/* --- Auswahlkarten (Weg, Rasse, Paket) -------------------------------- */
+
+.er-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.er-karten-schmal {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.er-karte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 0;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.er-karte:hover:not(:disabled) {
+  border-color: var(--linie-hell);
+  color: inherit;
+}
+
+.er-karte-aktiv,
+.er-karte-aktiv:hover:not(:disabled) {
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+  box-shadow: inset 0 0 24px -18px var(--neon);
+}
+
+.er-karte-titel {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.er-karte-aktiv .er-karte-titel {
+  color: var(--neon);
+}
+
+.er-karte-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-leise);
+  white-space: normal;
+}
+
+.er-karte-zahlen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.er-marke {
+  padding: 1px 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--linie-hell);
+  border-radius: 2px;
+  color: var(--text-leise);
+}
+
+.er-marke-plus {
+  color: var(--gut);
+  border-color: color-mix(in srgb, var(--gut) 45%, transparent);
+}
+
+.er-marke-minus {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.er-marke-leise {
+  opacity: 0.6;
+}
+
+/* --- Attributspalten --------------------------------------------------- */
+
+.er-spalten {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 20px;
+}
+
+@media (max-width: 719px) {
+  .er-spalten {
+    grid-template-columns: 1fr;
+  }
+}
+
+.er-spalte-titel {
+  margin: 14px 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cb-ton, var(--neon));
+  border-bottom: 1px solid color-mix(in srgb, var(--cb-ton, var(--neon)) 40%, transparent);
+  padding-bottom: 3px;
+}
+
+.er-kontingent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.er-kontingent-knopf {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  font-family: var(--mono);
+  background: var(--flaeche);
+}
+
+.er-kontingent-aktiv,
+.er-kontingent-aktiv:hover:not(:disabled) {
+  border-color: var(--cb-ton, var(--neon));
+  color: var(--cb-ton, var(--neon));
+  background: color-mix(in srgb, var(--cb-ton, var(--neon)) 12%, transparent);
+}
+
+.er-kontingent-rest {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-aus);
+}
+
+/* --- Wertezeilen ------------------------------------------------------- */
+
+.er-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 2px 20px;
+}
+
+.er-raster-breit {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.er-wert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+  min-width: 0;
+}
+
+.er-wert-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.er-wert-zusatz {
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-aus);
+}
+
+/* --- Offene Fertigkeitswerte ------------------------------------------ */
+
+.er-offen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.er-offen-marke {
+  padding: 3px 9px;
+  font-size: 12px;
+  border: 1px solid var(--neon);
+  border-radius: 2px;
+  color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+.er-offen-leer {
+  border-color: var(--linie);
+  color: var(--text-aus);
+  background: transparent;
+}
+
+/* --- Hintergründe ------------------------------------------------------ */
+
+.er-hintergrund {
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.er-hintergrund-text {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-aus);
+}
+
+/* --- Freebees ---------------------------------------------------------- */
+
+.er-wert-freebee {
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.er-freebee-wert {
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--text);
+  min-width: 42px;
+  text-align: right;
+}
+
+.er-freebee-plus {
+  margin-left: 2px;
+  font-style: normal;
+  color: var(--gut);
+}
+
+.er-freebee-knoepfe {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.er-freebee-knoepfe button {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* --- Personenfelder ---------------------------------------------------- */
+
+.er-person {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.er-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.er-feld > span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.er-feld-kurz input {
+  max-width: 140px;
+}
+
+/* --- Fehler und Fuss --------------------------------------------------- */
+
+.er-fehler {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+  background: var(--signal-schwach);
+  color: var(--signal);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.er-fuss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.er-fuss-hinweis {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-leise);
+}
+
+.er-weiter:not(:disabled) {
+  border-color: var(--neon);
+  color: var(--neon);
+}
