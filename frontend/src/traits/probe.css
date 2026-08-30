@@ -1,0 +1,120 @@
+/* ===================================================================
+   Probe — die Rechenhilfe.
+   Das Werkzeug würfelt nicht; es sagt nur, wie viele Würfel man nimmt.
+   Deshalb trägt die Zahl das ganze zweite Fenster.
+   =================================================================== */
+
+.pr-spalten {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 16px;
+}
+
+@media (max-width: 599px) {
+  .pr-spalten {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pr-spalte-titel {
+  margin: 8px 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cb-ton, var(--neon));
+  border-bottom: 1px solid color-mix(in srgb, var(--cb-ton, var(--neon)) 40%, transparent);
+  padding-bottom: 3px;
+}
+
+.pr-attribut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  margin-bottom: 3px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+
+.pr-attribut:hover:not(:disabled) {
+  border-color: var(--cb-ton, var(--neon));
+  color: var(--cb-ton, var(--neon));
+  background: var(--flaeche-hoch);
+}
+
+.pr-attribut-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+/* Schon hier die Summe zeigen: dann sieht man beim Wählen, worauf es
+   hinausläuft, statt erst im nächsten Fenster. */
+.pr-attribut-summe {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 16px;
+  color: var(--cb-ton, var(--neon));
+}
+
+.pr-allein {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border-color: var(--neon);
+  color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+.pr-allein em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+/* --- Das Ergebnis ------------------------------------------------------ */
+
+.pr-pool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px 0 4px;
+  color: var(--neon);
+}
+
+.pr-zahl {
+  font-family: var(--mono);
+  font-size: 96px;
+  line-height: 1;
+  color: var(--neon);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--neon) 40%, transparent);
+}
+
+.pr-rechnung {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-leise);
+}
+
+.pr-regel {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-aus);
+}
+
+.pr-regel strong {
+  color: var(--text-leise);
+  font-weight: 600;
+}

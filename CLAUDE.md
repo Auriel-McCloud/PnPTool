@@ -948,6 +948,40 @@ könnte weg, sobald klar ist, dass niemand sie vermisst — der Gegenstandsteil
 dort ist weiterhin die einzige personenbezogene Item-Ansicht neben dem
 kampagnenweiten Bereich.
 
+## Die Probe: eine Rechenhilfe, kein Würfel (30.08.2026)
+
+`traits/Probe.tsx`. Fertigkeit antippen → Fenster mit den neun Attributen in
+drei Spalten (jede Zeile zeigt schon die Summe, dann sieht man beim Wählen,
+worauf es hinausläuft) → zweites Fenster darüber mit der **Zahl gross**, dem
+W10 daneben, der Rechnung darunter und einer Zeile "1-5 Misserfolg · 6-10
+Erfolg".
+
+> **Das Werkzeug würfelt nicht.** Marks Vorgabe: gewürfelt wird am Tisch, mit
+> echten Würfeln. Die Anzeige sagt nur, wie viele man nehmen darf.
+
+**Arete, Sphären und NeuroWeaving bekommen "Für sich allein"** ganz oben —
+Zeile 27 des Regelblatts: sie zählen als Fertigkeit, werden aber normalerweise
+ohne Attribut gewürfelt.
+
+Der Aufhänger `onWertGewaehlt` am Charakterblatt bleibt bestehen und hat
+Vorrang: wer die Zeile für etwas anderes braucht (Kampfmodus), hängt sich dort
+ein, sonst geht die Rechenhilfe auf.
+
+*Selbst hineingelaufen:* die Werte-Karte des Blatts ist nach **TraitDef-Kennung**
+verschlüsselt, nicht nach Namen. Beim ersten Anlauf suchte `Probe` nach Namen —
+alle Attribute hätten 0 angezeigt. Vor dem Ausliefern gemerkt, aber der Build
+war grün.
+
+### Idee für später: doch würfeln lassen
+
+Mark: *"grundsätzlich soll das Programm nicht für einen würfeln… wir können
+einen globalen Schalter machen der das erlaubt, ähnlich wie der mit dem
+Gewicht, eventuell will mal jemand anders das Tool verwenden."* Zieht nach
+sich, dass **Spielleitung und Mitspieler die Ergebnisse sehen müssen** — sonst
+könnte jeder nachwürfeln, bis es passt. Also: Wurf-Ereignisse mit Zeitstempel,
+eine Anzeige für die Runde, vermutlich über dieselbe Live-Verbindung wie die
+SL-Popups (Phase 5). Eigene Design-Runde.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

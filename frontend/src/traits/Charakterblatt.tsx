@@ -3,6 +3,7 @@ import { Charaktererstellung } from "./Charaktererstellung";
 import { InfoTipp } from "../regeln/InfoTipp";
 import { schluessel } from "../regeln/erklaerungen";
 import { LevelUp } from "./LevelUp";
+import { Probe, type ProbeWahl } from "./Probe";
 import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
@@ -65,6 +66,9 @@ export function Charakterblatt({
   // Erhöhtes Maximum für einzelne Werte (eine Elder-NPC bei Schusswaffen 8).
   // Nur im Bearbeiten-Modus sichtbar — Spieler sollen davon nichts sehen.
   const [maximaZeigen, setMaximaZeigen] = useState(false);
+  // Angetippter Wert: dafür geht die Rechenhilfe auf (Fertigkeit → Attribut
+  // → Würfelzahl). Gewürfelt wird am Tisch, nicht hier.
+  const [probe, setProbe] = useState<ProbeWahl | null>(null);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -226,9 +230,12 @@ export function Charakterblatt({
                   <button
                     type="button"
                     className="cb-wert"
-                    onClick={() => onWertGewaehlt?.(t.name, wert, kategorie)}
-                    disabled={!onWertGewaehlt}
-                    title={onWertGewaehlt ? `${t.name} würfeln` : t.name}
+                    onClick={() =>
+                      onWertGewaehlt
+                        ? onWertGewaehlt(t.name, wert, kategorie)
+                        : setProbe({ name: t.name, wert, kategorie })
+                    }
+                    title={`${t.name} — wie viele Würfel?`}
                   >
                     <span className="cb-wert-name">{t.name}</span>
                     <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
@@ -304,6 +311,13 @@ export function Charakterblatt({
           <span className="cb-ep-text">von {u.erfahrungGesamt} EP frei</span>
         </button>
       </header>
+
+      <Probe
+        wahl={probe}
+        katalog={bogen.katalog}
+        werte={werte}
+        onSchliessen={() => setProbe(null)}
+      />
 
       {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —
           ein Raster leerer Beschriftungen sagt niemandem etwas. */}
