@@ -1053,8 +1053,16 @@ je Aktion das beste. Eines weggelegt → Werte fallen auf das verbliebene zurüc
   der Decker grundsätzlich würfelt** (Zeile 101: Intelligenz + Matrix) ist in
   der Probe noch nicht verdrahtet — man wählt Fertigkeit und Attribut von Hand
   und legt den Deck-Bonus dazu.
-- Die vorhandenen Decks in der Testkampagne haben noch **keine B/S/D/K-Werte**;
-  die Zahlen aus dem Regelblatt (Zeilen 159-169) müssten eingetragen werden.
+- **Erledigt:** alle elf Cyberdecks aus dem Regelblatt (Zeilen 159-169) liegen
+  als besitzerlose **Vorlagen** in der Testkampagne, mit B/S/D/K, Cyberwall-
+  Bonus und Preis. Vier waren schon da und wurden ergänzt, sieben neu angelegt.
+  Sie sind `einzigartig: false` — mehrere Spieler dürfen dasselbe Modell haben.
+  Für Proteus Poseidon, Tlaloc, Tachikoma und Hosaka nennt das Blatt **keinen
+  Preis**; dort steht 0, was hier "nicht im Regelwerk" heisst, nicht "gratis".
+- Die sechs **Commlinks** waren bereits vollständig (Cyberwall 1-6, Preise
+  100-8.000¥). **Riggerkonsolen** gibt es noch keine — die Tabelle daneben
+  (Zeilen 159-167: Rigger-Bonus und maximale Drohnenzahl) ist noch nicht
+  abgebildet, und für "Rigger-Bonus" und "Max Drohnen" fehlen die Felder.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
