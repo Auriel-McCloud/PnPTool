@@ -21,8 +21,14 @@ FAKTOR: dict[str, int] = {
     "AttributGesellschaftlich": 4,
     "AttributGeistig": 4,
     "Fertigkeit": 2,
-    "Sphäre": 5,
-    "Arete": 8,
+    # Mark, 30.08.2026: Sphären zählen zu den Fertigkeiten, Arete zu den
+    # Attributen — beim Steigern wie bei den Freebees. Arete kostet also
+    # wie ein Attribut, eine Sphäre wie eine Fertigkeit.
+    "Sphäre": 2,
+    "Arete": 4,
+    # NeuroWeaving blieb auf Marks Wunsch unverändert ("den Rest lassen wir
+    # so"). Es ist beim Technomancer allerdings das Gegenstück zu den
+    # Sphären, die jetzt 2 kosten — bei Gelegenheit nachfragen.
     "NeuroWeaving": 5,
     "Hintergrund": 3,
 }
@@ -32,8 +38,10 @@ FAKTOR: dict[str, int] = {
 # Erstellung nie auf 0.
 NEU_KOSTEN: dict[str, int] = {
     "Fertigkeit": 3,
-    "Sphäre": 7,
-    "Arete": 10,
+    "Sphäre": 3,
+    # Wie der Freebee-Preis eines Attributpunkts, damit der Einstieg in die
+    # Magie nicht teurer ist als bei der Erstellung.
+    "Arete": 5,
     "NeuroWeaving": 7,
     "Hintergrund": 3,
 }

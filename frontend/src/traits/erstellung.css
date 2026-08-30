@@ -442,3 +442,17 @@
   border-color: var(--neon);
   color: var(--neon);
 }
+
+/* --- Im Fenster (Spielleitung baut einen NPC) -------------------------
+   Dort scrollt bereits .fn-inhalt. Zwei ineinandergeschachtelte
+   Scrollflächen wären unbedienbar, deshalb gibt die Erstellung ihre
+   eigene hier ab und wächst stattdessen mit dem Inhalt. */
+
+.fn-inhalt .er-blatt {
+  height: auto;
+}
+
+.fn-inhalt .er-buehne {
+  overflow: visible;
+  flex: none;
+}

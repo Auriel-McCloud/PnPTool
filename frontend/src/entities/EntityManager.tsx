@@ -7,6 +7,8 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { RichTextView } from "../richtext/RichTextView";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
+import { Charaktererstellung } from "../traits/Charaktererstellung";
+import { Fenster } from "../shell/Fenster";
 import { getGraph } from "../graph/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
@@ -161,6 +163,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
   const [personType, setPersonType] = useState<"PC" | "NPC">("NPC");
   const personContent = useContentAndVisibility();
   const [openSheetFor, setOpenSheetFor] = useState<string | null>(null);
+  // Erstellung im Fenster statt inline: sie ist ein Vorgang mit Anfang und
+  // Ende, und die Personenliste dahinter soll stehenbleiben.
+  const [erstellungFuer, setErstellungFuer] = useState<Person | null>(null);
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
     await entitiesApi.createPerson(campaignId, { name: personName, personType, ...personContent.payload() });
@@ -255,9 +260,15 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
                 label="Notizen"
               />
             )}
-            <div style={{ marginTop: 6 }}>
+            <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" onClick={() => setOpenSheetFor(openSheetFor === p.id ? null : p.id)}>
                 {openSheetFor === p.id ? "Charakterblatt schließen" : "Charakterblatt öffnen"}
+              </button>
+              {/* Auch für fertige Charaktere: die Spielleitung muss eine
+                  verkorkste Erstellung nachbessern können. Beim Absenden
+                  werden alle Werte neu gesetzt. */}
+              <button type="button" onClick={() => setErstellungFuer(p)}>
+                Erstellung durchlaufen
               </button>
             </div>
             {openSheetFor === p.id && (
@@ -384,6 +395,29 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
           <button type="submit">Verbindung anlegen</button>
         </form>
       </section>
+
+      {/* Erstellung der Spielleitung: dieselbe Führung wie beim Spieler,
+          nur eben für NPCs. Nach dem Absenden stehen die Werte am Charakter,
+          die Liste dahinter wird neu geladen. */}
+      <Fenster
+        offen={erstellungFuer !== null}
+        titel={erstellungFuer ? `${erstellungFuer.name} erstellen` : ""}
+        unterzeile="Werte werden dabei neu gesetzt"
+        kennung="erstellung"
+        onSchliessen={() => setErstellungFuer(null)}
+      >
+        {erstellungFuer && (
+          <Charaktererstellung
+            campaignId={campaignId}
+            personId={erstellungFuer.id}
+            name={erstellungFuer.name}
+            onFertig={() => {
+              setErstellungFuer(null);
+              refreshAll();
+            }}
+          />
+        )}
+      </Fenster>
     </div>
   );
 }

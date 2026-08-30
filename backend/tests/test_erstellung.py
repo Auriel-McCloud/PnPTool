@@ -355,7 +355,20 @@ def test_steigern_wird_mit_jedem_punkt_teurer():
 def test_erster_punkt_hat_einen_eigenen_preis():
     """Die Formel gäbe bei 0 nichts her — geschenkt soll nichts sein."""
     assert erfahrung.kosten("Fertigkeit", 0) == 3
-    assert erfahrung.kosten("Arete", 0) == 10
+    assert erfahrung.kosten("Arete", 0) == 5
+
+
+def test_arete_kostet_wie_ein_attribut_sphaeren_wie_fertigkeiten():
+    """Marks Zuordnung vom 30.08.2026 — dieselbe wie bei den Freebees."""
+    assert erfahrung.kosten("Arete", 3) == erfahrung.kosten("AttributGeistig", 3)
+    assert erfahrung.kosten("Sphäre", 3) == erfahrung.kosten("Fertigkeit", 3)
+
+
+def test_freebee_zuordnung_deckt_sich_damit():
+    """Arete wie ein Attribut (5), Sphäre wie eine Fertigkeit (2)."""
+    preise = erstellung.FREEBEE_KOSTEN_JE_KATEGORIE
+    assert preise["Arete"] == preise["AttributGeistig"] == 5
+    assert preise["Sphäre"] == preise["Fertigkeit"] == 2
 
 
 def test_unbekannte_kategorie_ist_nicht_steigerbar():

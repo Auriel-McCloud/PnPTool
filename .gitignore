@@ -14,3 +14,11 @@ frontend/dist/
 
 # Doppelte Ablage: die Arbeitskopie liegt unter docs/reference/
 /Neotopia.xlsx
+
+# Fremdmaterial im Referenzordner bleibt lokal.
+# Die Texte stammen aus dem Magus-Regelwerk und passen inhaltlich noch nicht
+# auf NeotopiA — sie sollen erst im Werkzeug selbst überarbeitet und auf
+# Cyberpunk umgeschrieben werden (geplante Claude-/Gemini-Anbindung), bevor
+# irgendetwas davon das Gerät verlässt. Marks eigenes Blatt bleibt drin.
+docs/reference/*
+!docs/reference/Neotopia.xlsx
