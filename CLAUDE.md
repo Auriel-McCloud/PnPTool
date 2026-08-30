@@ -795,6 +795,13 @@ deinstalliert); zum Ändern neu zeichnen, nicht nachbearbeiten. Die
 Vite-Starter-Dateien `favicon.svg`/`icons.svg` (Bluesky-Symbolsatz) sind
 entfernt.
 
+> ⚠️ **`display: fullscreen` gilt nicht überall.** Auf dem **Desktop** kennt
+> Chrome den Modus nicht und fällt auf `standalone` zurück: eigenes Fenster
+> ohne Adressleiste, aber kein Vollbild. Das ist kein Fehler, sondern die
+> Obergrenze dessen, was dort geht — echtes Vollbild gibt es am Desktop nur
+> über F11 bzw. den Vollbildknopf in der Leiste. Randlos startet es nur auf
+> **Android**.
+
 > ⚠️ **Chrome installiert nur von einem sicheren Ursprung.** Über
 > `http://192.168.178.21:5173` gilt die Seite als unsicher; "Zum
 > Startbildschirm hinzufügen" legt dann nur eine Verknüpfung an, die im
@@ -804,6 +811,28 @@ entfernt.
 > Dev-Server mit HTTPS und selbstsigniertem Zertifikat betreiben und dieses am
 > Tablet vertrauen, (c) beim späteren Deploy hinter nginx ohnehin mit echtem
 > Zertifikat. Für den Heimgebrauch ist (a) der kürzeste Weg.
+
+### Vollbild überlebt das Sperren nicht (Krücke gebaut)
+
+Sperrt das Tablet den Bildschirm, beendet das System das Vollbild — und beim
+Entsperren steht man wieder mit Adressleiste da. Von selbst zurückschalten
+darf die Seite nicht: `requestFullscreen` ist **nur als Antwort auf eine
+Nutzeraktion** erlaubt, sonst könnte jede Seite ungefragt den Bildschirm
+übernehmen.
+
+`shell/vollbild.ts` merkt sich deshalb den Wunsch und stellt ihn **beim
+nächsten Antippen** wieder her. Scharf gestellt wird nur, wenn die Seite aus
+dem Verborgenen zurückkommt — wer selbst Escape drückt, will heraus und bleibt
+draussen. In der Praxis: entsperren, einmal irgendwohin tippen.
+
+**Das ist die Krücke für den Browser-Tab.** Als installierte App entfällt das
+Problem, weil dort das Fenster selbst randlos ist; der Vollbildknopf blendet
+sich dann aus (`alsAppGestartet()`).
+
+*Noch möglich, falls die Krücke nicht reicht:* ein **Wake Lock**, der den
+Bildschirm während einer Sitzung gar nicht erst schlafen lässt. Bewusst nicht
+eingebaut — das kostet Akku und gehört an einen Schalter, nicht in den
+Autopiloten.
 
 ## Offene Punkte von Mark (30.08.2026, noch nicht gebaut)
 
