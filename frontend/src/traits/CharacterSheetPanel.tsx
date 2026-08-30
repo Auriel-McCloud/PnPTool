@@ -67,6 +67,7 @@ const TYP_OPTIONEN = [
   "Verbrauchsgegenstand",
   "Werkzeug",
   "Fahrzeug",
+  "Drohne",
   "Behälter",
   "Commlink",
   "Cyberdeck",
@@ -74,6 +75,8 @@ const TYP_OPTIONEN = [
   "Sonstiges",
 ];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
+// Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)
+const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
 const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
 
 function kraftLabel(typ: string): string {
@@ -163,6 +166,12 @@ export function GegenstandRow({
   const [ablage, setAblage] = useState<Ablage>(item.ablage);
   const [gewicht, setGewicht] = useState(item.gewicht);
   const [kapazitaet, setKapazitaet] = useState(item.kapazitaet);
+  const [istBehaelter, setIstBehaelter] = useState(item.istBehaelter);
+  // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
+  const [stufe, setStufe] = useState(item.stufe);
+  const [widerstand, setWiderstand] = useState(item.widerstand);
+  const [angriff, setAngriff] = useState(item.angriff);
+  const [agilitaet, setAgilitaet] = useState(item.agilitaet);
   const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -190,6 +199,11 @@ export function GegenstandRow({
     setAblage(item.ablage);
     setGewicht(item.gewicht);
     setKapazitaet(item.kapazitaet);
+    setIstBehaelter(item.istBehaelter);
+    setStufe(item.stufe);
+    setWiderstand(item.widerstand);
+    setAngriff(item.angriff);
+    setAgilitaet(item.agilitaet);
     setAblageZiel(item.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
@@ -216,6 +230,11 @@ export function GegenstandRow({
       automatischImShop,
       gewicht,
       kapazitaet,
+      istBehaelter,
+      stufe,
+      widerstand,
+      angriff,
+      agilitaet,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -318,6 +337,36 @@ export function GegenstandRow({
             <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
           </label>
         </div>
+
+        {FAHRZEUG_TYPEN.has(typ) && (
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+              Werte (Neotopia-Blatt „Drohne/Fahrzeug"): die Stufe wird beim Kauf frei auf Widerstand,
+              Angriff und Agilität verteilt. Gesundheit = Stufe, Widerstand = Schadensreduktion,
+              Agilität = Geschwindigkeit.
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+              {(
+                [
+                  ["Stufe", stufe, setStufe, 15],
+                  ["Widerstand", widerstand, setWiderstand, 5],
+                  ["Angriff", angriff, setAngriff, 5],
+                  ["Agilität", agilitaet, setAgilitaet, 5],
+                ] as const
+              ).map(([beschriftung, wert, setzen, maximum]) => (
+                <div key={beschriftung} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ minWidth: 96, fontSize: "0.9em" }}>{beschriftung}</span>
+                  <DotPool value={wert} max={maximum} onChange={setzen} />
+                </div>
+              ))}
+            </div>
+            {stufe > 0 && widerstand + angriff + agilitaet > stufe && (
+              <p style={{ color: "var(--warn)", fontSize: "0.85em", marginTop: 6 }}>
+                {widerstand + angriff + agilitaet} Punkte verteilt, die Stufe gibt {stufe} her.
+              </p>
+            )}
+          </div>
+        )}
 
         {KRAFT_TYPEN.has(typ) && (
           <div>
@@ -450,6 +499,17 @@ export function GegenstandRow({
                   />
                 )}
               </div>
+              {/* Nicht aus dem Typ geraten: ein Motorrad ist ein Fahrzeug
+                  ohne Stauraum, eine Kiste hat Stauraum ohne Räder. */}
+              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
+                <input
+                  type="checkbox"
+                  checked={istBehaelter}
+                  onChange={(e) => setIstBehaelter(e.target.checked)}
+                />{" "}
+                Kann etwas aufnehmen — dann lässt sich hier etwas hineinlegen und der Gegenstand
+                erscheint als Fach im Inventar
+              </label>
               <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                 <input
                   type="checkbox"

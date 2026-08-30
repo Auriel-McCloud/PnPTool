@@ -15,6 +15,7 @@ from app.items.routes import router as items_router
 from app.items.routes import campaign_router as items_campaign_router
 from app.traits.routes import router as traits_router
 from app.regeln.routes import router as erklaerungen_router
+from app.begleiter.routes import router as begleiter_router
 from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
 from app.players.routes import gm_router as spieler_gm_router, login_router
@@ -48,6 +49,7 @@ app.include_router(items_router)
 app.include_router(items_campaign_router)
 app.include_router(traits_router)
 app.include_router(erklaerungen_router)
+app.include_router(begleiter_router)
 app.include_router(login_router)
 app.include_router(spieler_gm_router)
 

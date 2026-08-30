@@ -23,8 +23,14 @@ export interface Bereich {
   passt: (g: Gegenstand) => boolean;
 }
 
-/** Gegenstände, die selbst etwas aufnehmen können. */
-const BEHAELTER_TYPEN = new Set(["Behälter", "Fahrzeug"]);
+/**
+ * Ob dieser Gegenstand etwas aufnehmen kann.
+ *
+ * Steht am Gegenstand und wird **nicht** aus dem Typ geraten: ein Motorrad
+ * ist ein Fahrzeug ohne Stauraum, eine Kiste hat Stauraum ohne Räder. Wer
+ * ein Fahrzeug beladen können will, hakt das in den Optionen an.
+ */
+const istBehaelter = (g: Gegenstand) => g.istBehaelter;
 
 /**
  * Leitet die Bereiche aus den vorhandenen Gegenständen ab.
@@ -54,7 +60,7 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
   // Charaktere; dort hieße der Reiter sonst nach dem Rucksack irgendeines
   // Spielers, obwohl darin die Sachen aller stecken.
   const getragenerBehaelter = einBesitzer
-    ? items.find((g) => BEHAELTER_TYPEN.has(g.typ) && g.ablage === "AUSGERUESTET")
+    ? items.find((g) => istBehaelter(g) && g.ablage === "AUSGERUESTET")
     : undefined;
   const mitgefuehrt = items.some((g) => g.ablage === "RUCKSACK");
   if (mitgefuehrt || getragenerBehaelter) {
@@ -69,7 +75,8 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
 
   // Je Lagerort ein eigenes Fach — genau das erlaubt "ich sitze im Auto"
   // gegen "ich bin im Versteck".
-  const symbolFuer = (typ?: string) => (typ === "Fahrzeug" ? "⛭" : typ === "Behälter" ? "▣" : "⌂");
+  const symbolFuer = (typ?: string) =>
+    typ === "Fahrzeug" ? "⛭" : typ === "Drohne" ? "◭" : typ === "Behälter" ? "▣" : "⌂";
   const typVonZiel = new Map(items.map((g) => [g.id, g.typ]));
   const faecher = new Map<string, { name: string; symbol: string }>();
 
@@ -87,7 +94,7 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
   // fragen, ob das Auto verschwunden ist. Getragene Behälter sind schon
   // oben als "mitgeführt" abgehandelt.
   for (const g of items) {
-    if (BEHAELTER_TYPEN.has(g.typ) && g.ablage !== "AUSGERUESTET") {
+    if (istBehaelter(g) && g.ablage !== "AUSGERUESTET") {
       faecher.set(g.id, { name: g.name, symbol: symbolFuer(g.typ) });
     }
   }

@@ -124,6 +124,40 @@ export function GegenstandKachel({
           </button>
         )}
 
+        {/* Blatt für Drohne/Fahrzeug (Neotopia.xlsx). Erscheint nur, wenn
+            überhaupt Werte gepflegt sind — ein Motorrad ohne Blatt soll kein
+            leeres Raster zeigen. */}
+        {(item.stufe > 0 || item.widerstand > 0 || item.angriff > 0 || item.agilitaet > 0) && (
+          <section className="gg-fahrzeugblatt">
+            <h3>Werte</h3>
+            <div className="gg-fahrzeugwerte">
+              {(
+                [
+                  ["Stufe", item.stufe, 15, "Zugleich die Gesundheit."],
+                  ["Widerstand", item.widerstand, 5, "Zieht vom erlittenen Schaden ab."],
+                  ["Angriff", item.angriff, 5, "Treffen und Schaden."],
+                  ["Agilität", item.agilitaet, 5, "Geschwindigkeit."],
+                ] as const
+              ).map(([beschriftung, wert, maximum, erklaerung]) => (
+                <div key={beschriftung} className="gg-fahrzeugwert" title={erklaerung}>
+                  <span>{beschriftung}</span>
+                  <DotPool value={wert} max={maximum} />
+                </div>
+              ))}
+            </div>
+            {Object.keys(item.fahrzeugFertigkeiten ?? {}).length > 0 && (
+              <div className="gg-fahrzeugwerte">
+                {Object.entries(item.fahrzeugFertigkeiten).map(([name, wert]) => (
+                  <div key={name} className="gg-fahrzeugwert">
+                    <span>{name}</span>
+                    <DotPool value={wert} max={5} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {item.kraft > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ color: "var(--text-leise)", fontSize: 13 }}>

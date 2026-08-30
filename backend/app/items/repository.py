@@ -10,7 +10,9 @@ RETURN_FIELDS = """
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
-    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet,
+    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istBehaelter AS istBehaelter,
+    g.stufe AS stufe, g.widerstand AS widerstand, g.angriff AS angriff, g.agilitaet AS agilitaet,
+    g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -79,6 +81,22 @@ def _decode(record: dict) -> dict:
     # _or_default statt `or` — sonst würde 0 auf den Default zurückfallen.
     record["gewicht"] = float(_or_default(record.get("gewicht"), 0.0))
     record["kapazitaet"] = float(_or_default(record.get("kapazitaet"), 0.0))
+    # Ob etwas anderes hineinpasst. Frueher aus dem Typ geraten — ein Motorrad
+    # ist aber ein Fahrzeug ohne Stauraum, und eine Kiste ist einer ohne Raeder.
+    # Bestandsdaten: Behaelter ja, alles andere nein.
+    record["istBehaelter"] = _or_default(record.get("istBehaelter"), record.get("typ") == "Behälter")
+    # Werte des Drohnen-/Fahrzeugblatts (Neotopia.xlsx, Blatt DrohneFahrzeug).
+    # Gesundheit = Stufe, Widerstand = Schadensreduktion, Angriff = Treffen und
+    # Schaden, Agilitaet = Geschwindigkeit.
+    record["stufe"] = _or_default(record.get("stufe"), 0)
+    record["widerstand"] = _or_default(record.get("widerstand"), 0)
+    record["angriff"] = _or_default(record.get("angriff"), 0)
+    record["agilitaet"] = _or_default(record.get("agilitaet"), 0)
+    try:
+        roh = record.get("fahrzeugFertigkeiten")
+        record["fahrzeugFertigkeiten"] = json.loads(roh) if roh else {}
+    except (json.JSONDecodeError, TypeError):
+        record["fahrzeugFertigkeiten"] = {}
     record["ablage"] = record.get("ablage") or "RUCKSACK"
     return record
 
@@ -96,7 +114,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
-            gewicht: $gewicht, kapazitaet: $kapazitaet
+            gewicht: $gewicht, kapazitaet: $kapazitaet, istBehaelter: $istBehaelter,
+            stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
+            fahrzeugFertigkeiten: $fahrzeugFertigkeiten
         })
     """
     if owner_person_id:
@@ -133,6 +153,12 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istVorlage=data["istVorlage"],
             seltenheit=data["seltenheit"],
             automatischImShop=data["automatischImShop"],
+            istBehaelter=_or_default(data.get("istBehaelter"), data["typ"] == "Behälter"),
+            stufe=data.get("stufe") or 0,
+            widerstand=data.get("widerstand") or 0,
+            angriff=data.get("angriff") or 0,
+            agilitaet=data.get("agilitaet") or 0,
+            fahrzeugFertigkeiten=json.dumps(data.get("fahrzeugFertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -174,6 +200,9 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     changed = {k: v for k, v in data.items() if v is not None}
     if "eigenschaften" in changed:
         changed["eigenschaften"] = json.dumps(changed["eigenschaften"])
+    # Neo4j kennt keine Map-Eigenschaften — wie bei eigenschaften als Text.
+    if "fahrzeugFertigkeiten" in changed:
+        changed["fahrzeugFertigkeiten"] = json.dumps(changed["fahrzeugFertigkeiten"])
 
     driver = get_driver()
     if not changed:
@@ -411,10 +440,16 @@ async def get_owner_person_id(campaign_id: str, item_id: str) -> str | None:
 async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
     """Orte und eigene Behälter-Gegenstände, in denen etwas liegen kann.
 
-    Als Behälter zählen Gegenstände der Person, die selbst etwas aufnehmen
-    können — derzeit über den Typ erkannt. Ein Gegenstand kann nicht in sich
-    selbst liegen; verschachtelte Behälter sind erlaubt, aber ungeprüft
-    (siehe CLAUDE.md).
+    Behälter ist, was ausdrücklich als solcher markiert ist (`istBehaelter`) —
+    **nicht**, was einen bestimmten Typ trägt. Ein Motorrad ist ein Fahrzeug
+    ohne Stauraum, eine Kiste hat Stauraum ohne Räder.
+
+    Der Rückfall für Bestandsdaten muss derselbe sein wie in `_decode`, sonst
+    widersprechen sich Abfrage und Antwort: die Auswahl böte ein Fahrzeug als
+    Ziel an, während die Oberfläche es nicht als Fach führt.
+
+    Ein Gegenstand kann nicht in sich selbst liegen; verschachtelte Behälter
+    sind erlaubt, aber ungeprüft (siehe CLAUDE.md).
     """
     driver = get_driver()
     async with driver.session() as session:
@@ -424,7 +459,7 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
             RETURN o.id AS id, o.name AS name, 'Ort' AS kind
             UNION
             MATCH (p:Person {id: $person_id})-[:BESITZT]->(g:Gegenstand)
-            WHERE g.typ IN ['Fahrzeug', 'Behälter']
+            WHERE coalesce(g.istBehaelter, g.typ = 'Behälter')
             RETURN g.id AS id, g.name AS name, 'Gegenstand' AS kind
             """,
             campaign_id=campaign_id,

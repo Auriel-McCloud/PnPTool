@@ -414,3 +414,30 @@
   border-color: var(--bereich-farbe, var(--neon));
   color: var(--bereich-farbe, var(--neon));
 }
+
+/* --- Blatt für Drohne und Fahrzeug ------------------------------------
+   Vier Werte plus freie Fertigkeiten, wie auf dem Papierblatt
+   "Drohne/Fahrzeug/Sprite/Geist".                                       */
+
+.gg-fahrzeugblatt h3 {
+  margin: 0 0 6px;
+}
+
+.gg-fahrzeugwerte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 2px 20px;
+}
+
+.gg-fahrzeugwert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 26px;
+  font-size: 14px;
+}
+
+.gg-fahrzeugwert > span {
+  color: var(--text-leise);
+}

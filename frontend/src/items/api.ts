@@ -25,6 +25,14 @@ export interface Gegenstand {
   gewicht: number;
   /** Wie viel dieser Gegenstand fasst, in kg; 0 = kein Behälter. */
   kapazitaet: number;
+  /** Kann etwas aufnehmen. Steht am Gegenstand, wird nicht aus dem Typ geraten. */
+  istBehaelter: boolean;
+  /** Blatt für Drohne/Fahrzeug/Sprite/Geist — 0 heisst "kein Blatt geführt". */
+  stufe: number;
+  widerstand: number;
+  angriff: number;
+  agilitaet: number;
+  fahrzeugFertigkeiten: Record<string, number>;
   ablage: Ablage;
   ablageZielId: string | null;
   ablageZielName: string | null;
@@ -48,6 +56,14 @@ export interface TraglastZeile {
   last: number;
   /** 0 = keine Grenze bekannt (z.B. Attribut nicht gesetzt). */
   kapazitaet: number;
+  /** Kann etwas aufnehmen. Steht am Gegenstand, wird nicht aus dem Typ geraten. */
+  istBehaelter: boolean;
+  /** Blatt für Drohne/Fahrzeug/Sprite/Geist — 0 heisst "kein Blatt geführt". */
+  stufe: number;
+  widerstand: number;
+  angriff: number;
+  agilitaet: number;
+  fahrzeugFertigkeiten: Record<string, number>;
 }
 
 export interface AblageZiel {
@@ -100,6 +116,12 @@ export interface GegenstandUpdate {
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];  gewicht?: number;
   kapazitaet?: number;
+  istBehaelter?: boolean;
+  stufe?: number;
+  widerstand?: number;
+  angriff?: number;
+  agilitaet?: number;
+  fahrzeugFertigkeiten?: Record<string, number>;
 }
 
 type NeuerGegenstand = {

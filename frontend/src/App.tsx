@@ -6,6 +6,7 @@ import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
+import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { SpielerLogin } from "./players/SpielerLogin";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
@@ -25,6 +26,9 @@ const BEREICHE: Bereich[] = [
   { id: "welt", name: "Welt", symbol: "◍", farbe: "#00e5ff" },
   // Violett wie die Gegenstands-Knoten im Graphen
   { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "#a865d8" },
+  // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
+  // Blatt haben und keine Gegenstände sind.
+  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "#c76bff" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
   { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "#3ddc84" },
   // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
@@ -104,7 +108,7 @@ function Dashboard() {
       /* Bereiche, die sich selbst einteilen und ohne Scrollen auskommen.
          "Welt" fehlt noch — dort steht dieselbe Frage an wie bei den
          Gegenständen: Kacheln oder Tabelle, Blättern, Suche. */
-      statisch={bereich === "gegenstaende" || bereich === "graph"}
+      statisch={bereich === "gegenstaende" || bereich === "graph" || bereich === "begleiter"}
     >
       {loading && <p style={{ color: "var(--text-leise)" }}>Lade Kampagnen…</p>}
       {!loading && campaigns && campaigns.length === 0 && <CreateCampaignForm onCreate={createCampaign} />}
@@ -115,6 +119,7 @@ function Dashboard() {
 
           {bereich === "welt" && <EntityManager key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "begleiter" && <BegleiterVerwaltung key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
         </>

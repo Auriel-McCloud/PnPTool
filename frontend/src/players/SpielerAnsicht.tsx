@@ -9,6 +9,8 @@ import {
   type Bereich as Ablagebereich,
 } from "../items/aufbewahrung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
+import { begleiterApi, type Begleiter } from "../begleiter/api";
+import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText } from "../richtext/content";
@@ -33,6 +35,13 @@ const BEREICHE: Bereich[] = [
   // worauf ein Spieler während der Runde am häufigsten schaut.
   { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "#ffb648" },
   { id: "inventar", name: "Inventar", symbol: "◈", farbe: "#a865d8" },
+  // Eigener Bereich, weil ein Rigger sehr viele Drohnen führt und die im
+  // Inventar zwischen Munition und Kaugummi untergingen. Beide haben ein
+  // eigenes Blatt (Stufe, Widerstand, Angriff, Agilität).
+  { id: "fahrzeuge", name: "Fahrzeuge", symbol: "⛭", farbe: "#ff6b4d" },
+  // Sprites, Geister und Verbündete teilen sich ein Blatt mit den Drohnen —
+  // deshalb ein Bereich für alle drei.
+  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "#c76bff" },
   { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "#00e5ff" },
   { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
@@ -69,6 +78,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Kachelraster wie beim Spielleiter: gemessen statt gescrollt.
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
+  // Eigenes Raster: es steht in einem anderen Bereich und misst eine andere
+  // Fläche aus. Ein geteiltes ref zeigte je nach Bereich ins Leere.
+  const fahrzeugRasterRef = useRef<HTMLDivElement>(null);
+  const begleiterRasterRef = useRef<HTMLDivElement>(null);
   const [seite, setSeite] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
@@ -76,6 +89,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
+  const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -90,6 +104,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     itemsApi.listAlle(cid).then(setSachen).catch(() => setSachen([]));
     einstellungenApi.lesen(cid).then(setEinstellungen).catch(() => setEinstellungen(null));
     itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
+    begleiterApi.liste(cid).then(setBegleiter).catch(() => setBegleiter([]));
   }, [ich]);
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
@@ -102,6 +117,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // trägt erst die kampagnenweite Liste nach. Deshalb hier die einzige
   // Stelle, an der das nachgeschlagen wird.
   const gehoertMir = (g: Gegenstand) => (g as GegenstandMitBesitzer).ownerId === ich?.personId;
+  const fahrzeuge = meineRoh.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
   const bereiche: Ablagebereich[] = [
     // Die eigenen Bereiche dürfen nur eigene Sachen einsammeln — sonst
     // fischte "Mitgeführt" auch den Rucksackinhalt anderer heraus.
@@ -192,7 +208,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       titel={`${ich.campaignName} — ${BEREICHE.find((b) => b.id === bereich)?.name ?? ""}`}
       // Nur das Inventar teilt sich die Fläche selbst ein; die übrigen
       // Bereiche sind noch Listen und dürfen scrollen.
-      statisch={bereich === "inventar"}
+      statisch={bereich === "inventar" || bereich === "fahrzeuge" || bereich === "begleiter"}
       werkzeuge={
         <>
           <VollbildKnopf />
@@ -216,6 +232,43 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             Dir ist noch kein Charakter zugeordnet — deine Spielleitung muss dir einen zuweisen.
           </p>
         ))}
+
+      {bereich === "fahrzeuge" && (
+        <div className="gg-seite" style={KACHEL_STIL}>
+          <h3 className="gg-abschnitt">
+            <span>⛭ Fahrzeuge und Drohnen</span>
+            <span className="gg-abschnitt-zahl">{fahrzeuge.length}</span>
+          </h3>
+          <div className="gg-raster" ref={fahrzeugRasterRef}>
+            {fahrzeuge.map((g) => (
+              <GegenstandKachel
+                key={g.id}
+                item={g}
+                behaelterName={getragenerBehaelter}
+                behaelterId={getragenerBehaelterId}
+                inhalt={inhaltVon(g)}
+                onUmlegen={(ziel) => umlegen(g.id, ziel)}
+              />
+            ))}
+          </div>
+          {fahrzeuge.length === 0 && <p className="gg-leer">Du besitzt kein Fahrzeug und keine Drohne.</p>}
+        </div>
+      )}
+
+      {bereich === "begleiter" && (
+        <div className="gg-seite" style={KACHEL_STIL}>
+          <h3 className="gg-abschnitt">
+            <span>❊ Sprites, Geister und Verbündete</span>
+            <span className="gg-abschnitt-zahl">{begleiter.length}</span>
+          </h3>
+          <div className="gg-raster" ref={begleiterRasterRef}>
+            {begleiter.map((b) => (
+              <BegleiterKachel key={b.id} begleiter={b} />
+            ))}
+          </div>
+          {begleiter.length === 0 && <p className="gg-leer">Dir steht noch niemand zur Seite.</p>}
+        </div>
+      )}
 
       {bereich === "kontakte" && (
         <>

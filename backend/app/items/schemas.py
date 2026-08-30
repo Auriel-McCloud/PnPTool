@@ -54,6 +54,17 @@ class GegenstandCreate(BaseModel):
     # zeigt eine :LIEGT_IN-Beziehung auf das Ziel). Das meiste, was man
     # besitzt, trägt man mit sich, daher RUCKSACK als Ausgangswert.
     ablage: str = "RUCKSACK"
+    # Ob etwas anderes hineinpasst. **Nicht** aus dem Typ abgeleitet: ein
+    # Motorrad ist ein Fahrzeug ohne Stauraum, eine Kiste hat Stauraum ohne
+    # Räder. Ohne Angabe entscheidet das Repository nach dem Typ.
+    istBehaelter: bool | None = None
+    # Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx). Die Stufe wird
+    # beim Kauf frei auf diese Werte und die Fertigkeiten verteilt.
+    stufe: int = 0
+    widerstand: int = 0
+    angriff: int = 0
+    agilitaet: int = 0
+    fahrzeugFertigkeiten: dict[str, int] = {}
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -87,6 +98,12 @@ class GegenstandUpdate(BaseModel):
     automatischImShop: bool | None = None
     gewicht: float | None = None
     kapazitaet: float | None = None
+    istBehaelter: bool | None = None
+    stufe: int | None = None
+    widerstand: int | None = None
+    angriff: int | None = None
+    agilitaet: int | None = None
+    fahrzeugFertigkeiten: dict[str, int] | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -119,6 +136,12 @@ class GegenstandResponse(BaseModel):
     ablage: str
     gewicht: float
     kapazitaet: float
+    istBehaelter: bool = False
+    stufe: int = 0
+    widerstand: int = 0
+    angriff: int = 0
+    agilitaet: int = 0
+    fahrzeugFertigkeiten: dict[str, int] = {}
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None
     ablageZielName: str | None = None

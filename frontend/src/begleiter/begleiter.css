@@ -1,0 +1,71 @@
+/* ===================================================================
+   Begleiter — Sprites, Geister, Verbündete
+   Dasselbe Blatt wie Drohne und Fahrzeug (Neotopia.xlsx).
+   =================================================================== */
+
+.bg-beziehung {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.bg-beziehung > span {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.bg-werte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2px 20px;
+  padding: 8px 0;
+  border-top: 1px solid var(--linie);
+}
+
+.bg-wert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 26px;
+  font-size: 14px;
+}
+
+.bg-wert > span {
+  color: var(--text-leise);
+}
+
+.bg-waffe {
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.bg-waffe h3 {
+  margin: 0 0 4px;
+}
+
+/* --- Verwaltung durch die Spielleitung -------------------------------- */
+
+.bg-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bg-zeile {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bg-zeile > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
