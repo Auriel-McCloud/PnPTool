@@ -1127,6 +1127,66 @@ Schreibversuch als Spieler: 403.
 - Ausweichen und Parieren mit ihrem kumulativen −1 je Einsatz pro Runde
   (Zeilen 62-63) sind nicht abgebildet.
 
+## Kampfkarte und das mitblutende Gerät (30.08.2026)
+
+### Kampfkarte
+
+`kampf/Kampfkarte.tsx` — alles, was im Gefecht gebraucht wird, **fertig
+ausgerechnet**, statt es im Bogen zu suchen:
+
+- Gesundheit und Willenskraft als Kästchen, Initiative
+- **Treffen** je Kampffertigkeit (Geschicklichkeit + Fertigkeit, Zeile 62)
+- **Ausweichen** (Geschicklichkeit + Sportlichkeit) und **Parieren**
+  (Geschicklichkeit + Waffenfertigkeit), beide mit dem Hinweis auf das
+  kumulative −1 je weiterem Einsatz in derselben Runde (Zeilen 62-63)
+- **Rüstung** als Summe der ausgerüsteten Stücke, **Schaden** je Waffe —
+  im Nahkampf mit Körperkraft dazu (Zeile 67)
+- je nach Weg **Arete + Sphären** oder **NeuroWeaving + Fertigkeiten**,
+  dazu die **Deck-Boni**, wenn ein Cyberdeck ausgerüstet ist
+- **Begleiter und Fahrzeuge** als Kacheln, ihre Blätter gehen als Fenster auf
+- ganz unten *Ganzer Bogen* — Fenster über Fenster
+
+Die Spielleitung erreicht sie über ▤ in der Initiativliste (statt wie vorher
+den ganzen Bogen — im Gefecht braucht man die Werte, nicht die Biografie), der
+Spieler sieht seine eigene unter der Liste.
+
+**Der Rüstungsabzug ist eine Auslegung.** Zeilen 131-132 sagen, Rüstung 3
+kostet 1 Geschicklichkeit und 4 kostet 2 — aber nicht, ob der Wert je Stück
+oder in Summe zählt. Umgesetzt ist die **Summe**, sonst bliebe der Abzug bei
+drei leichten Westen aus, die zusammen mehr schützen als ein schwerer Anzug.
+Der Abzug ist in Treffen, Ausweichen und Parieren schon eingerechnet und steht
+als Hinweis an der Rüstung.
+
+### Das Gerät blutet mit
+
+`shell/Verwundung.tsx`. Vom unteren Rand steigt ein dunkles Rot auf, je mehr
+Gesundheit fehlt — **nicht flächig**: ein rot überzogener Bildschirm wäre nach
+zwei Minuten unerträglich, ein Schein am Rand bleibt lesbar. Bleiben zwei
+Kästchen oder weniger, pulst es langsam (2,4 s — Herzschlag, nicht Alarm).
+
+Liegt auf `z-index: 90`, also über dem Inhalt und unter den Fenstern, und
+nimmt keine Eingaben an. `prefers-reduced-motion` schaltet das Pulsen global ab
+(Regel in `index.css`).
+
+Der Zustand kommt über `useZustand` alle fünf Sekunden — nötig, weil auch die
+Spielleitung Schaden einträgt; ohne Nachfragen bliebe der Bildschirm heil,
+während die Figur längst blutet. Gleiche Bauart wie `useKampf`, läuft nur bei
+sichtbarer Seite.
+
+**Geprüft** bei 6 von 8 Schaden: Anteil 0,75, Pulsen an, über dem Inhalt, keine
+Fehler. Die Kampfkarte zeigte alle Blöcke mit den gerechneten Zahlen.
+Ryus Schaden danach wieder zurückgesetzt.
+
+### Offen an dieser Ecke
+
+- **Wie stark soll das Rot werden?** Aktuell bewusst zurückhaltend. Ohne Marks
+  Blick darauf ist jede Verstärkung geraten.
+- **Soaken**: das Regelblatt kennt nur "Rüstungsbonus wird abgezogen"
+  (Zeilen 66-67), keinen Widerstandswurf. Falls Widerstandsfähigkeit doch
+  mitspielt, fehlt die Zahl auf der Karte.
+- **Riggen** steht weiter aus (Zuordnung Fertigkeit → Drohnenwert), ebenso das
+  kumulative −1, das derzeit nur als Hinweis dasteht statt mitgezählt zu werden.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

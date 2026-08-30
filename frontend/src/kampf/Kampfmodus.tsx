@@ -4,7 +4,7 @@ import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { entitiesApi, type Person } from "../entities/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
-import { Charakterblatt } from "../traits/Charakterblatt";
+import { Kampfkarte } from "./Kampfkarte";
 import { KAMPFARTEN, kampfApi, type Kampfart, type Teilnehmer } from "./api";
 import { Initiativliste, useKampf } from "./Initiativliste";
 import "./kampf.css";
@@ -181,12 +181,12 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         offen={bogenFuer !== null}
         breit
         titel={bogenFuer?.name ?? ""}
-        unterzeile="Charakterbogen"
+        unterzeile="Kampfwerte"
         kennung={`kampfbogen:${bogenFuer?.id ?? ""}`}
         onSchliessen={() => setBogenFuer(null)}
       >
         {bogenFuer?.personId ? (
-          <Charakterblatt campaignId={campaignId} personId={bogenFuer.personId} bearbeitbar />
+          <Kampfkarte campaignId={campaignId} personId={bogenFuer.personId} aenderbar />
         ) : (
           <BegleiterImKampf begleiter={begleiter.find((b) => b.id === bogenFuer?.begleiterId)} />
         )}

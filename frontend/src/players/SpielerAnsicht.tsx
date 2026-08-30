@@ -11,6 +11,8 @@ import {
 import { GegenstandKachel } from "../items/GegenstandKachel";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { Initiativliste, useKampf } from "../kampf/Initiativliste";
+import { Kampfkarte } from "../kampf/Kampfkarte";
+import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
@@ -89,6 +91,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Läuft dauerhaft mit, nicht nur im Kampfbereich: so kann später eine
   // Meldung "du bist dran" von überall aufgehen.
   const { kampf, geladen: kampfGeladen } = useKampf(ich?.campaignId ?? null);
+  // Der eigene Zustand, damit der Bildschirm mitblutet — auch wenn die
+  // Spielleitung den Schaden einträgt und nicht man selbst.
+  const zustand = useZustand(ich?.campaignId ?? null, ich?.personId ?? null);
   const [seite, setSeite] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
@@ -208,6 +213,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   }
 
   return (
+    <>
+    <Verwundung zustand={zustand} />
     <CommlinkShell
       bereiche={BEREICHE}
       aktiv={bereich}
@@ -281,6 +288,16 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 </span>
               </header>
               <Initiativliste kampf={kampf} eigenePersonId={ich.personId} />
+              {/* Die eigenen Kampfwerte gleich darunter — im Gefecht will man
+                  nicht erst in den Bogen wechseln. */}
+              {ich.personId && (
+                <div className="ka-eigene">
+                  <h3 className="gg-abschnitt">
+                    <span>⚔ Deine Werte</span>
+                  </h3>
+                  <Kampfkarte campaignId={ich.campaignId} personId={ich.personId} aenderbar />
+                </div>
+              )}
               {kampf.teilnehmer.length > 1 && (
                 <p className="ka-ansage">
                   <span>Ansage von hinten:</span>{" "}
@@ -448,5 +465,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
       {bereich === "graph" && <CampaignGraphView campaignId={ich.campaignId} />}
     </CommlinkShell>
+    </>
   );
 }

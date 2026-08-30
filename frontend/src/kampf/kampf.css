@@ -204,3 +204,20 @@
   padding-top: 10px;
   border-top: 1px solid var(--linie);
 }
+
+/* Die eigenen Kampfwerte unter der Liste. Hier darf gescrollt werden —
+   die Liste bleibt oben stehen, die Karte wächst darunter. */
+.ka-eigene {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+}
+
+/* Die Liste teilt sich die Fläche dann mit der Karte statt sie zu füllen */
+.ka-seite:has(.ka-eigene) .ka-liste {
+  flex: 0 0 auto;
+  max-height: 40%;
+}

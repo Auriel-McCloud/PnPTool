@@ -1,0 +1,37 @@
+/* ===================================================================
+   Verwundung — das Gerät blutet mit.
+   Ein Schein vom unteren Rand, der mit dem Schaden steigt. Bewusst nicht
+   flächig: ein rot überzogener Bildschirm wäre nach zwei Minuten
+   unerträglich, ein Schimmer am Rand bleibt lesbar.
+   =================================================================== */
+
+.vw-schleier {
+  position: fixed;
+  inset: 0;
+  z-index: 90; /* über dem Inhalt, unter den Fenstern (200) */
+  pointer-events: none;
+  /* Höhe und Deckkraft wachsen mit dem Schaden. Der Exponent lässt die
+     ersten Treffer dezent bleiben und die letzten deutlich werden. */
+  background: linear-gradient(
+    to top,
+    rgba(180, 12, 40, calc(var(--vw-anteil, 0) * 0.55)) 0%,
+    rgba(150, 10, 34, calc(var(--vw-anteil, 0) * 0.28)) calc(var(--vw-anteil, 0) * 45%),
+    transparent calc(20% + var(--vw-anteil, 0) * 60%)
+  );
+  transition: background 1.2s ease-out;
+}
+
+/* Zwei Kästchen übrig: jetzt pulst es. Langsam — Herzschlag, nicht Alarm. */
+.vw-schleier[data-kritisch="true"] {
+  animation: vw-puls 2.4s ease-in-out infinite;
+}
+
+@keyframes vw-puls {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
