@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
-from app.items.repository import commlink_cyberwall, deck_boni
+from app.items.repository import commlink_cyberwall, deck_boni, willenskraft_verlust
 from app.traits import erfahrung, erstellung, repository
 from app.traits.bogen import (
     bogen_uebersicht,
@@ -62,11 +62,12 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
 
     nach_name = {w["name"]: w["rating"] for w in werte}
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
     erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
 
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
-        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall),
+        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom),
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
         "deckBoni": await deck_boni(campaign_id, person_id),
@@ -135,7 +136,8 @@ async def set_zustand(
 
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
-    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom)
 
 
 # =====================================================================
@@ -255,9 +257,10 @@ async def erstelle_charakter(
 
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
     return {
         "uebersicht": bogen_uebersicht(
-            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall
+            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom
         ),
         "freebeesVerbraucht": erstellung.freebee_kosten(
             auswahl, {t["name"]: t["category"] for t in katalog}
@@ -309,7 +312,8 @@ async def get_steigerungspreise(
     for eintrag in preise:
         eintrag["max"] = grenzen.get(eintrag["traitDefId"], eintrag["max"])
 
-    willenskraft = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0))
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    willenskraft = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0), chrom)
     return {
         "verfuegbar": max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0)),
         "gesamt": int(person.get("erfahrung") or 0),
@@ -347,7 +351,8 @@ async def steigere_wert(
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
 
     if body.willenskraft:
-        aktuell = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0))
+        chrom = await willenskraft_verlust(campaign_id, person_id)
+        aktuell = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0), chrom)
         preis = erfahrung.kosten_willenskraft(aktuell)
         if preis > verfuegbar:
             raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
@@ -416,4 +421,5 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
     )
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
-    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom)

@@ -169,7 +169,13 @@ mehr als der zweite) und an das Freebee-Verhältnis der Erstellung:
 | 10.000 ¥ | Bonus ÷ 3 (abgerundet) |
 | 20.000 ¥ | Bonus ÷ 4 (abgerundet) |
 
-Prothese 10.000 ¥ (Verlust 2), Prothesen-Gadget 5.000 ¥. Körperzonen: Kopf, Arme, Torso, Beine — je drei Plätze mit Bonus und Verlust.
+Prothese 10.000 ¥ (Verlust 2), Prothesen-Gadget 5.000 ¥.
+
+**Der Verlust senkt das Maximum der Willenskraft dauerhaft** und zählt nur für *eingebaute*
+(ausgerüstete) Ware. Umgesetzt in `backend/app/items/chrom.py`.
+
+*Beim Umsetzen aufgefallen:* auf den teuren Stufen kostet ein kleiner Bonus gar nichts —
+Bonus 2 bei 10.000 ¥ je Punkt ergibt abgerundet 0. Regelkonform, aber vielleicht ungewollt. Körperzonen: Kopf, Arme, Torso, Beine — je drei Plätze mit Bonus und Verlust.
 
 ## Drohnen und Fahrzeuge
 

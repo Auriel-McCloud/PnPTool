@@ -27,14 +27,23 @@ def gesundheit_max(werte: dict[str, int]) -> int:
     return GESUNDHEIT_GRUNDWERT + _wert(werte, "Widerstandsfähigkeit")
 
 
-def willenskraft_max(werte: dict[str, int], bonus: int = 0) -> int:
-    """Willenskraft = Entschlossenheit + Fassung, plus gekaufte Punkte.
+def willenskraft_max(werte: dict[str, int], bonus: int = 0, chrom_verlust: int = 0) -> int:
+    """Willenskraft = Entschlossenheit + Fassung, plus gekaufte Punkte,
+    minus was das eingebaute Chrom dauerhaft herausreisst.
 
     Der Bonus wird gespeichert statt abgeleitet: Willenskraft lässt sich mit
     Freebees und später mit Erfahrung einzeln steigern, ohne dass sich eines
     der beiden Attribute ändert.
+
+    Der Verlust durch Cyber- und Bioware (Regelblatt Zeilen 112-117) geht
+    **hier** ab und nicht erst bei der Anzeige: er senkt das Maximum, nicht
+    den aktuellen Stand. Wer sich zupflastert, hat dauerhaft weniger, nicht
+    bloss vorübergehend. Unter null geht es nicht.
     """
-    return _wert(werte, "Entschlossenheit") + _wert(werte, "Fassung") + max(0, bonus)
+    return max(
+        0,
+        _wert(werte, "Entschlossenheit") + _wert(werte, "Fassung") + max(0, bonus) - max(0, chrom_verlust),
+    )
 
 
 def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int:
@@ -73,11 +82,16 @@ def sichtbare_kategorien(weg: str, alle: set[str]) -> set[str]:
     return grundlage | BEREICHE_JE_WEG.get(weg, set())
 
 
-def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: int = 0) -> dict:
+def bogen_uebersicht(
+    person: dict,
+    werte: dict[str, int],
+    commlink_cyberwall: int = 0,
+    chrom_verlust: int = 0,
+) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
     g_max = gesundheit_max(werte)
-    w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0))
+    w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0), chrom_verlust)
     i_max = ice_max(weg, werte, commlink_cyberwall)
     erfahrung = int(person.get("erfahrung") or 0)
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
@@ -101,6 +115,9 @@ def bogen_uebersicht(person: dict, werte: dict[str, int], commlink_cyberwall: in
         "schadenSchlag": schlag,
         "gesundheitSchaden": aggraviert + schwer + schlag,
         "willenskraftMax": w_max,
+        # Getrennt ausgewiesen, damit das Blatt "5 (−2 durch Chrom)" zeigen
+        # kann statt einer stillen 3 — sonst sucht man den fehlenden Punkt.
+        "willenskraftVerlust": max(0, chrom_verlust),
         "willenskraftVerbraucht": min(int(person.get("willenskraftVerbraucht") or 0), w_max),
         "iceMax": i_max,
         "iceSchaden": min(int(person.get("iceSchaden") or 0), i_max),

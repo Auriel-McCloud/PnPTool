@@ -395,6 +395,13 @@ export function Charakterblatt({
           <span className="cb-spur-titel">
             Willenskraft
             <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("willenskraft")} titel="Willenskraft" />
+            {/* Sonst sucht man den fehlenden Punkt: das Maximum ist kleiner
+                als Entschlossenheit + Fassung, und man sieht nicht warum. */}
+            {u.willenskraftVerlust > 0 && (
+              <span className="cb-chrom" title="Dauerhaft verloren durch eingebautes Chrom">
+                −{u.willenskraftVerlust} Chrom
+              </span>
+            )}
           </span>
           <Kaestchen
             max={u.willenskraftMax}

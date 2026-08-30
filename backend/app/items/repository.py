@@ -17,6 +17,7 @@ RETURN_FIELDS = """
     g.deckDaten AS deckDaten, g.deckKompilieren AS deckKompilieren,
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
+    g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -103,6 +104,11 @@ def _decode(record: dict) -> dict:
     # Riggerkonsole (Regelblatt Zeilen 158-167). Der Bonus kann negativ sein —
     # eine zusammengeschraubte Konsole macht das Steuern schwerer, nicht
     # leichter. Deshalb kein ge=0 im Schema.
+    # Cyber- und Bioware kosten dauerhaft Willenskraft (Regelblatt Zeilen
+    # 112-117). Der Verlust hängt am Preis je Bonuspunkt: billiges Chrom
+    # reisst mehr aus einem heraus als teures.
+    record["wVerlust"] = _or_default(record.get("wVerlust"), 0)
+    record["koerperzone"] = record.get("koerperzone") or ""
     record["riggerBonus"] = _or_default(record.get("riggerBonus"), 0)
     record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
@@ -137,7 +143,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deckBruteForce: $deckBruteForce, deckSchleichen: $deckSchleichen,
             deckDaten: $deckDaten, deckKompilieren: $deckKompilieren,
             immerSichtbar: $immerSichtbar,
-            riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen
+            riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
+            wVerlust: $wVerlust, koerperzone: $koerperzone
         })
     """
     if owner_person_id:
@@ -187,6 +194,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             immerSichtbar=bool(data.get("immerSichtbar")),
             riggerBonus=data.get("riggerBonus") or 0,
             maxDrohnen=data.get("maxDrohnen") or 0,
+            wVerlust=data.get("wVerlust") or 0,
+            koerperzone=data.get("koerperzone") or "",
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -616,3 +625,30 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
         # Nur zurückgeben, was tatsächlich etwas beiträgt — eine Liste aus
         # lauter Nullen sagt nichts und verstellt die Anzeige.
         return {k: v for k, v in werte.items() if v > 0}
+
+
+# Typen, die im Körper stecken und dauerhaft Willenskraft kosten.
+CHROM_TYPEN = ("Cyberware", "Bioware")
+
+
+async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
+    """Dauerhafter Willenskraftverlust durch eingebautes Chrom.
+
+    Gezählt wird nur, was **ausgerüstet** ist — Cyberware im Rucksack ist
+    noch nicht eingebaut und kostet deshalb nichts. Wer sie ausbauen lässt,
+    legt sie weg, und der Verlust fällt weg.
+
+    Anders als der Deck-Bonus wird hier **summiert**: jedes Stück reisst
+    für sich etwas heraus (Regelblatt Zeilen 112-117).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET'
+        RETURN sum(coalesce(g.wVerlust, 0)) AS verlust
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id,
+                                   typen=list(CHROM_TYPEN))
+        record = await result.single()
+        return int(record["verlust"] or 0) if record else 0

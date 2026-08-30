@@ -11,6 +11,7 @@ from app.campaigns.routes import router as campaigns_router
 from app.config import settings
 from app.entities.routes import router as entities_router
 from app.graph.routes import router as graph_router
+from app.items.routes import chrom_router
 from app.items.routes import router as items_router
 from app.items.routes import campaign_router as items_campaign_router
 from app.traits.routes import router as traits_router
@@ -49,6 +50,7 @@ app.include_router(entities_router)
 app.include_router(graph_router)
 app.include_router(items_router)
 app.include_router(items_campaign_router)
+app.include_router(chrom_router)
 app.include_router(traits_router)
 app.include_router(erklaerungen_router)
 app.include_router(vorlagen_router)

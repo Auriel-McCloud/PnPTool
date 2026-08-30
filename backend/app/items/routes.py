@@ -9,6 +9,7 @@ from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import repository
+from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.schemas import (
     AblageRequest,
     AblageZiel,
@@ -285,3 +286,25 @@ async def traglast(campaign_id: str, viewer: Viewer = Depends(get_viewer)) -> li
     # fremdes Fahrzeug beladen ist, geht sie nichts an.
     eigene = {i["id"] for i in await repository.list_gegenstaende(campaign_id, viewer.person_id or "")}
     return [z for z in zeilen if z["id"] == viewer.person_id or z["id"] in eigene]
+
+
+
+# Eigener Router statt einer Route am Gegenstands-Prefix: dort läge der Pfad
+# unter /gegenstaende/chromstufen und würde von /gegenstaende/{item_id}
+# abgefangen — "chromstufen" sähe wie eine Kennung aus.
+chrom_router = APIRouter(
+    prefix="/api/campaigns/{campaign_id}/chromstufen",
+    tags=["items"],
+    dependencies=[Depends(require_campaign_zugang)],
+)
+
+
+@chrom_router.get("")
+async def chromstufen(campaign_id: str, bonus: int = 1) -> dict:
+    """Preis und Willenskraftverlust je Qualitätsstufe.
+
+    Damit die Oberfläche die Wahl zeigen kann, ohne die Formel nachzubauen —
+    sonst driften Anzeige und Abrechnung auseinander, sobald jemand an den
+    Zahlen dreht. Lesbar für alle mit Zugang; das sind Preise, kein Geheimnis.
+    """
+    return {"stufen": stufen_uebersicht(max(0, bonus)), "koerperzonen": KOERPERZONEN}

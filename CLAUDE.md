@@ -1357,6 +1357,74 @@ Ryu wieder.
 Sie hängt an derselben Nachlade-Schleife wie die Liste — mit einer echten
 Live-Verbindung (Phase 5) wird sie ohne Änderung schneller.
 
+## Cyber- und Bioware (31.08.2026)
+
+Marks Beobachtung: *"Vercyberungen oder Biowear erwähnen wir auch noch
+nirgendwo, und viele Charaktere sollten darauf basieren."* Stimmte — die Regel
+stand im Blatt (Zeilen 112-117) und im Werkzeug nirgends.
+
+**Die Regel in einem Satz:** je mehr du je Bonuspunkt zahlst, desto weniger
+Willenskraft kostet es dich dauerhaft. 500¥ je Punkt kosten Bonus × 2,
+20.000¥ je Punkt nur Bonus ÷ 4. Das ist das Cyberpunk-Dilemma in einer Zeile:
+billiges Chrom ist erschwinglich und frisst einen auf.
+
+- `items/chrom.py` — fünf Preisstufen als Daten, `verlust_fuer()` und
+  `preis_fuer()`. Zehn Tests, darunter einer, der die *Aussage* der Regel
+  festhält: teureres Chrom darf bei keinem Bonus mehr Willenskraft kosten.
+- `Gegenstand.wVerlust` und `Gegenstand.koerperzone`, neuer Typ **Bioware**.
+- `GET .../chromstufen?bonus=N` liefert Preis und Verlust je Stufe, damit die
+  Oberfläche die Formel nicht nachbaut. **Eigener Router**: unter
+  `/gegenstaende/chromstufen` hätte `/gegenstaende/{item_id}` den Pfad
+  abgefangen — "chromstufen" sähe wie eine Kennung aus.
+- Im SL-Formular wählt man die Stufe als Knopf; Preis und Verlust werden
+  zusammen gesetzt. Von Hand gerechnet vertut man sich.
+
+**Der Verlust senkt das Maximum, nicht den Stand** (`willenskraft_max` in
+`traits/bogen.py`). Und er zählt **nur, was ausgerüstet ist** — Cyberware im
+Rucksack ist noch nicht verbaut. Geprüft: Ryu 5 → 4 beim Einbauen, zurück auf
+5 im Rucksack, wieder 4 beim Einbauen.
+
+Das Blatt weist ihn getrennt aus (`−1 Chrom` neben der Willenskraft), sonst
+sucht man den fehlenden Punkt: das Maximum ist kleiner als Entschlossenheit +
+Fassung, und man sieht nicht warum.
+
+**Testdaten:** fünf Stück quer durch die Preisstufen (Reflex-Booster,
+Cyberaugen, Dermalpanzerung, Muskelstraffung, Beinprothese). **Ryu trägt
+Cyberaugen** und hat dadurch 4 statt 5 Willenskraft — ausbauen heisst
+ausrüsten rückgängig machen.
+
+**Beim Anlegen bemerkt:** auf den teuren Stufen kostet ein kleiner Bonus gar
+nichts. Bonus 2 bei 10.000¥ je Punkt ergibt 2÷3 = 0 Willenskraft — abgerundet
+wie im Blatt, aber "20.000¥ und es kostet dich nichts" könnte ungewollt sein.
+Für Mark zum Nachdenken, nicht eigenmächtig geändert.
+
+## Vorschlag zur Erstellung: Konzepte statt mehr Wege (31.08.2026)
+
+Marks Frage, wie Rigger und Decker in der Erstellung sichtbar werden. Meine
+Antwort, damit sie nicht verlorengeht:
+
+**Rigger und Decker sind Rollen, keine Wege.** Der Weg beantwortet "was ist
+dein Verhältnis zum Aussergewöhnlichen" — Chrom, Magie, Weben. Ein Magier kann
+decken, ein NeuroWeaver Drohnen fliegen. Als vierter und fünfter Weg wäre es
+eine Vermischung, als Unterkategorie des Chroms fiele der Decker-Magier durchs
+Raster.
+
+**Die Stelle dafür ist das Konzept** — das Feld steht schon auf dem Papierblatt
+(Zeile 3) und wird bei uns als Freitext erfragt. Daraus einen führenden Schritt
+machen: Vorlagen wie Rigger, Decker, Strassensamurai, Face, die zeigen, welche
+Fertigkeiten zählen und welche Ausrüstung dazugehört — aber nichts festlegen.
+Quer zum Weg, also frei kombinierbar. Dieselbe Bauart wie die
+Ambition-Vorschläge.
+
+**Und es fehlt ein Ausrüstungsschritt.** Startkapital 10.000¥ steht da,
+Freebees lassen sich in Geld tauschen — aber nirgends kann man es ausgeben.
+Die Kataloge sind inzwischen gefüllt (Waffen, Rüstungen, Decks, Konsolen,
+Cyberware). Ein letzter Schritt mit dem eigenen Geld und dem Katalog würde die
+Zahlen erst bedeutsam machen.
+
+Reihenfolge: Cyberware (erledigt) → Ausrüstungsschritt → Konzepte. **Mark hat
+noch nicht entschieden.**
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

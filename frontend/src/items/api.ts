@@ -38,6 +38,9 @@ export interface Gegenstand {
   /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
   riggerBonus: number;
   maxDrohnen: number;
+  /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
+  wVerlust: number;
+  koerperzone: string;
   ablage: Ablage;
   ablageZielId: string | null;
   ablageZielName: string | null;
@@ -74,6 +77,9 @@ export interface TraglastZeile {
   /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
   riggerBonus: number;
   maxDrohnen: number;
+  /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
+  wVerlust: number;
+  koerperzone: string;
 }
 
 export interface AblageZiel {
@@ -135,6 +141,8 @@ export interface GegenstandUpdate {
   immerSichtbar?: boolean;
   riggerBonus?: number;
   maxDrohnen?: number;
+  wVerlust?: number;
+  koerperzone?: string;
 }
 
 type NeuerGegenstand = {
@@ -146,7 +154,23 @@ type NeuerGegenstand = {
   zeigeInGraph?: boolean;
 };
 
+export interface Chromstufe {
+  name: string;
+  beschreibung: string;
+  preisJeBonus: number;
+  preis: number;
+  wVerlust: number;
+}
+
 export const itemsApi = {
+  /**
+   * Preis und Willenskraftverlust je Qualitätsstufe — vom Server gerechnet,
+   * damit die Formel nur an einer Stelle steht.
+   */
+  chromstufen: (cid: string, bonus: number) =>
+    api.get<{ stufen: Chromstufe[]; koerperzonen: string[] }>(
+      `/api/campaigns/${cid}/chromstufen?bonus=${bonus}`,
+    ),
   // Person-gescopt: nur für Gegenstände MIT Besitzer (Anlegen/Auflisten im
   // Kontext einer Person). Alle anderen Operationen sind campaign-gescopt,
   // da Vorlagen keinen Besitzer haben.

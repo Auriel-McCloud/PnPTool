@@ -433,3 +433,15 @@
   font-size: 11px;
   color: var(--text-aus);
 }
+
+/* Was das Chrom dauerhaft frisst — sonst sucht man den fehlenden Punkt. */
+.cb-chrom {
+  margin-left: 8px;
+  padding: 0 5px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+  border: 1px solid color-mix(in srgb, var(--signal) 50%, transparent);
+  border-radius: 2px;
+}

@@ -12,6 +12,8 @@ export interface BogenUebersicht {
   schadenSchwer: number;
   schadenAggraviert: number;
   willenskraftMax: number;
+  /** Wieviel davon das eingebaute Chrom dauerhaft frisst — 0 wenn keines. */
+  willenskraftVerlust: number;
   willenskraftVerbraucht: number;
   iceMax: number;
   iceSchaden: number;

@@ -8,6 +8,7 @@ import { Fenster } from "../shell/Fenster";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
+import type { Chromstufe } from "../items/api";
 import { StufenBlatt } from "./StufenBlatt";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -64,6 +65,7 @@ const TYP_OPTIONEN = [
   "Waffe",
   "Rüstung",
   "Cyberware",
+  "Bioware",
   "Droge",
   "Verbrauchsgegenstand",
   "Werkzeug",
@@ -76,6 +78,8 @@ const TYP_OPTIONEN = [
   "Sonstiges",
 ];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
+// Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117)
+const CHROM_TYPEN = new Set(["Cyberware", "Bioware"]);
 // Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
 const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
@@ -171,6 +175,10 @@ export function GegenstandRow({
   const [immerSichtbar, setImmerSichtbar] = useState(item.immerSichtbar);
   const [riggerBonus, setRiggerBonus] = useState(item.riggerBonus);
   const [maxDrohnen, setMaxDrohnen] = useState(item.maxDrohnen);
+  const [wVerlust, setWVerlust] = useState(item.wVerlust);
+  const [koerperzone, setKoerperzone] = useState(item.koerperzone);
+  const [chromstufen, setChromstufen] = useState<Chromstufe[]>([]);
+  const [zonen, setZonen] = useState<string[]>([]);
   // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
   const [stufe, setStufe] = useState(item.stufe);
   const [widerstand, setWiderstand] = useState(item.widerstand);
@@ -187,6 +195,19 @@ export function GegenstandRow({
   const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
+
+  // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
+  // nicht mehr. Nur nachladen, solange das Formular offen ist.
+  useEffect(() => {
+    if (!expanded || !CHROM_TYPEN.has(typ)) return;
+    itemsApi
+      .chromstufen(campaignId, Math.max(1, kraft))
+      .then((d) => {
+        setChromstufen(d.stufen);
+        setZonen(d.koerperzonen);
+      })
+      .catch(() => setChromstufen([]));
+  }, [expanded, typ, kraft, campaignId]);
 
   function openEdit() {
     setName(item.name);
@@ -207,6 +228,8 @@ export function GegenstandRow({
     setImmerSichtbar(item.immerSichtbar);
     setRiggerBonus(item.riggerBonus);
     setMaxDrohnen(item.maxDrohnen);
+    setWVerlust(item.wVerlust);
+    setKoerperzone(item.koerperzone);
     setStufe(item.stufe);
     setWiderstand(item.widerstand);
     setAngriff(item.angriff);
@@ -215,6 +238,16 @@ export function GegenstandRow({
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
     itemsApi.ablageziele(campaignId, item.id).then(setZiele).catch(() => setZiele([]));
+    // Preisstufen fürs Chrom — erst beim Öffnen, und nur wenn es eines ist.
+    if (CHROM_TYPEN.has(item.typ)) {
+      itemsApi
+        .chromstufen(campaignId, Math.max(1, item.kraft))
+        .then((d) => {
+          setChromstufen(d.stufen);
+          setZonen(d.koerperzonen);
+        })
+        .catch(() => setChromstufen([]));
+    }
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
@@ -241,6 +274,8 @@ export function GegenstandRow({
       immerSichtbar,
       riggerBonus,
       maxDrohnen,
+      wVerlust,
+      koerperzone,
       stufe,
       widerstand,
       angriff,
@@ -347,6 +382,68 @@ export function GegenstandRow({
             <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
           </label>
         </div>
+
+        {CHROM_TYPEN.has(typ) && (
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+              Cyber-/Bioware: der <strong>Bonus</strong> steht oben bei Kraft. Je mehr du je
+              Bonuspunkt zahlst, desto weniger Willenskraft kostet es dauerhaft (Regelblatt Zeilen
+              112-117) — billiges Chrom reisst am meisten heraus.
+            </label>
+            <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Bonus
+                <DotPool value={kraft} max={7} onChange={setKraft} />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Körperzone
+                <select value={koerperzone} onChange={(e) => setKoerperzone(e.target.value)}>
+                  <option value="">— offen —</option>
+                  {zonen.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {/* Stufe antippen setzt Preis und Verlust zugleich — von Hand
+                gerechnet vertut man sich, und die Formel steht im Server. */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+              {chromstufen.map((st) => {
+                const gewaehlt = preis === st.preis && wVerlust === st.wVerlust;
+                return (
+                  <button
+                    key={st.name}
+                    type="button"
+                    onClick={() => {
+                      setPreis(st.preis);
+                      setWVerlust(st.wVerlust);
+                    }}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      textAlign: "left",
+                      borderColor: gewaehlt ? "var(--neon)" : undefined,
+                      color: gewaehlt ? "var(--neon)" : undefined,
+                    }}
+                    title={st.beschreibung}
+                  >
+                    <span>{st.name}</span>
+                    <span className="mono">
+                      {st.preis.toLocaleString("de-AT")}¥ · −{st.wVerlust} Willenskraft
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
+              Kostet eingebaut dauerhaft <strong>{wVerlust}</strong> Willenskraft. Wirkt erst, wenn
+              der Gegenstand <em>ausgerüstet</em> ist — im Rucksack ist er noch nicht verbaut.
+            </p>
+          </div>
+        )}
 
         {typ === "Riggerkonsole" && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
