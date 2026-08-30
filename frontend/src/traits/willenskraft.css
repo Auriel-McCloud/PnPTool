@@ -62,3 +62,20 @@
   background: color-mix(in srgb, #ff4d6b 22%, transparent);
   box-shadow: 0 0 18px -6px #ff4d6b;
 }
+
+/* Wodurch sie zurückkommt — leiser als die Frage, aber lesbar. */
+.wk-rueckkehr {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-leise);
+}
+
+.wk-rueckkehr strong {
+  color: var(--text);
+  font-weight: 600;
+}

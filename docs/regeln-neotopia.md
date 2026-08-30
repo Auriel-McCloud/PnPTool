@@ -187,7 +187,10 @@ NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchier
 - Wird **ausgegeben, um Erfolge zu erzwingen**.
 - Wer sie ausgegeben hat, kann sie nicht mehr in **wilde Magie** oder
   NeuroWeaving stecken — es zählt der Rest, nicht der Gesamtwert.
-- **Zurück gibt sie nur die Spielleitung.** Der Spieler verbraucht sie selbst.
+- **Zurück kommt sie** durch **Schlaf**, oder wenn der Charakter seiner
+  **Ambition** oder seinem **Verlangen** entsprechend handelt, oder ein **Ziel**
+  erreicht. Eintragen tut das die Spielleitung — der Spieler verbraucht sie
+  selbst, stellt sie aber nicht wieder her.
 
 ## Offen / noch zu klären
 

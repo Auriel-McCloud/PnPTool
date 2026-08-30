@@ -1212,6 +1212,13 @@ etwas. Das Fenster nennt, wieviel danach übrig bleibt, und hat **Ja in Blau,
 Nein in Rot**, beide 56px hoch und weit auseinander. Dieselbe Farbsprache wie
 das Level Up: blau heisst weiter, rot heisst lass es.
 
+**Wie Willenskraft zurückkommt** steht mit dabei — durch **Schlaf**, oder wenn
+der Charakter seiner **Ambition** oder seinem **Verlangen** entsprechend
+handelt, oder ein **Ziel** erreicht. Erste Fassung hiess "Zurück gibt sie nur
+die Spielleitung"; Marks Einwand traf: das sagt nur, wen man fragen muss, nicht
+wofür es sich lohnt. Damit hängen die drei Textfelder der Bogen-Kopfzeile
+erstmals an einer Regel — sie sind nicht bloss Beiwerk.
+
 **Damit hängt zusammen:** wilde Magie darf nur die **übrige** Willenskraft
 nutzen, nicht den Gesamtwert. Wer sie ausgegeben hat, um Erfolge zu erzwingen,
 kann sie nicht nochmal in einen Zauber stecken. Vorher rechnete die Probe mit

@@ -5,8 +5,13 @@ import "./willenskraft.css";
  * Rückfrage vor dem Ausgeben von Willenskraft.
  *
  * Marks Einwand: ein Kästchen ist schnell versehentlich getroffen, und
- * **zurückholen kann es nur die Spielleitung** — ein Fehlgriff kostet also
- * echt etwas. Deshalb die Frage dazwischen.
+ * zurückholen kann es nur die Spielleitung — ein Fehlgriff kostet also echt
+ * etwas. Deshalb die Frage dazwischen.
+ *
+ * Sie nennt auch, **wodurch** Willenskraft zurückkommt: Schlaf, oder ein
+ * Handeln nach Ambition, Verlangen oder Ziel. Das ist die Auskunft, die man
+ * in dem Moment braucht — "die Spielleitung gibt sie zurück" sagt nur, wen
+ * man fragen muss, nicht wofür es sich lohnt.
  *
  * Ja und Nein in Blau und Rot, wie das Level Up: blau heisst weiter, rot
  * heisst lass es. Beide gross genug für den Daumen und weit genug
@@ -28,7 +33,7 @@ export function WillenskraftFrage({
     <Fenster
       offen={offen}
       titel="Willenskraft ausgeben?"
-      unterzeile="Zurück gibt sie nur die Spielleitung"
+      unterzeile="Für einen erzwungenen Erfolg"
       kennung="willenskraft-frage"
       onSchliessen={onNein}
     >
@@ -37,6 +42,14 @@ export function WillenskraftFrage({
       </p>
       <p className="wk-rest">
         Danach bleiben <strong>{Math.max(0, uebrig - 1)}</strong> von {uebrig} — auch für wilde Magie.
+      </p>
+      {/* Nicht "die Spielleitung gibt sie zurück" (Marks Einwand), sondern
+          *wodurch* sie zurückkommt — das ist die Auskunft, die man in dem
+          Moment braucht. */}
+      <p className="wk-rueckkehr">
+        Ein Punkt kommt durch <strong>Schlaf</strong> zurück — oder wenn du deiner{" "}
+        <strong>Ambition</strong> oder deinem <strong>Verlangen</strong> entsprechend handelst oder
+        ein <strong>Ziel</strong> erreichst.
       </p>
       <div className="wk-knoepfe">
         <button type="button" className="wk-ja" onClick={onJa}>
