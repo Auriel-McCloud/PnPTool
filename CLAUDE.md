@@ -959,9 +959,21 @@ Erfolg".
 > **Das Werkzeug würfelt nicht.** Marks Vorgabe: gewürfelt wird am Tisch, mit
 > echten Würfeln. Die Anzeige sagt nur, wie viele man nehmen darf.
 
-**Arete, Sphären und NeuroWeaving bekommen "Für sich allein"** ganz oben —
-Zeile 27 des Regelblatts: sie zählen als Fertigkeit, werden aber normalerweise
-ohne Attribut gewürfelt.
+**Arete geht nicht mit Attributen** (Zeilen 81-86, `traits/magie.ts`). Ein
+kontrollierter Zauber ist nur der Arete-Wert; dazunehmen lässt sich allein
+**Willenskraft** — das ist *Wilde Magie*, Bonuswürfel bis zur Höhe der eigenen
+Willenskraft. Die Anzeige hat dafür eine eigene Reihe mit −/+, begrenzt auf die
+Willenskraft, und blendet ab dem ersten wilden Würfel den **Rückstoss** ein:
+Zielwert vorher ansagen, danach Willenskraftwurf gegen die Erfolge, was nicht
+abgedeckt ist, kommt als Schlagschaden zurück.
+
+**Auf Sphären wird nicht gewürfelt** (Zeile 87). Antippen zeigt stattdessen,
+*was damit geht*: die Kurzbeschreibung der Sphäre und die fünf Stufen von
+"wahrnehmbar" bis "nach meiner Größe beurteilst du mich", die erreichte
+hervorgehoben. Sie sind Fähigkeit und Begrenzung, keine Bonuswürfel.
+
+Die Regeltexte dafür stehen in `traits/magie.ts` — aus Marks eigenem Blatt,
+nicht aus fremdem Material, deshalb dürfen sie im Code stehen.
 
 Der Aufhänger `onWertGewaehlt` am Charakterblatt bleibt bestehen und hat
 Vorrang: wer die Zeile für etwas anderes braucht (Kampfmodus), hängt sich dort
@@ -971,6 +983,19 @@ ein, sonst geht die Rechenhilfe auf.
 verschlüsselt, nicht nach Namen. Beim ersten Anlauf suchte `Probe` nach Namen —
 alle Attribute hätten 0 angezeigt. Vor dem Ausliefern gemerkt, aber der Build
 war grün.
+
+### Zwei Regelfragen, die dabei aufgetaucht sind
+
+1. **Wann folgt der Willenskraftwurf?** Zeile 80 ("Magie Regeln neu") sagt
+   *nach dem Zaubern* — also nach jedem. Zeile 84 sagt *nach jedem gelungenen
+   **wilden** Zauber*. Die Anzeige nennt den Rückstoss derzeit nur bei wilder
+   Magie. Gilt Zeile 80, muss der Hinweis immer stehen. **Mark fragen.**
+2. **Woraus besteht der Pool beim NeuroWeaving?** Zeile 96: die Punkte sind
+   *Bonuswürfel für die jeweilige Aktion*, und man darf auch Fertigkeiten ohne
+   Punkte einsetzen. Der Grundwurf ist damit ein anderer (beim Decken etwa
+   Intelligenz + Matrix, Zeile 101), auf den NeuroWeaving obendrauf kommt.
+   Derzeit behandelt die Anzeige NeuroWeaving wie Arete — die vorsichtige
+   Näherung, nicht die Regel. **Mark fragen.**
 
 ### Idee für später: doch würfeln lassen
 
