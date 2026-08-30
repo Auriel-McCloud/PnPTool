@@ -267,6 +267,18 @@ def test_freebees_duerfen_ueber_das_startmax():
     assert erstellung.endwerte(auswahl)["Körperkraft"] == 5
 
 
+def test_freebees_kommen_nicht_ueber_das_maximum_des_wertes():
+    """Der StartMax gilt nicht für Freebees — das Maximum des Wertes schon.
+
+    Von Mark beim Durchklicken gefunden: Körperkraft liess sich auf 9 kaufen.
+    """
+    # Mensch: Start 1 + 3 verteilt = 4. Zwei Freebees brächten 6 (erlaubt),
+    # drei brächten 7 — mehr als das Attributmaximum.
+    assert erstellung.pruefe(grundgeruest(freebeePunkte={"Körperkraft": 2}), KATALOG) == []
+    fehler = erstellung.pruefe(grundgeruest(freebeePunkte={"Körperkraft": 3}), KATALOG)
+    assert any("Körperkraft" in f and "7" in f for f in fehler)
+
+
 def test_fertigkeit_steigt_per_freebee_nur_um_einen_punkt():
     """Zeile 40: 'Fertigkeit 2 (max +1)'."""
     fehler = erstellung.pruefe(grundgeruest(freebeePunkte={"Nahkampf": 2}), KATALOG)

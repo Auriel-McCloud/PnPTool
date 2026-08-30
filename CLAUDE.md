@@ -864,6 +864,49 @@ Autopiloten.
 
    Gehört in den Kampfmodus, für den im Menü schon ein Platzhalter steht.
 
+## Erstellung nach Marks erstem Durchklicken (30.08.2026)
+
+- **"Normal" heisst jetzt "Weg des Chrom".** Marks Einwand: klingt fad. Wer
+  weder zaubert noch webt, ist nicht der Rest — er hat sich für Chrom
+  entschieden.
+- **Attributzeilen gestapelt**: Name darüber, Punkte darunter linksbündig.
+  Nebeneinander begannen die Punktreihen je nach Namenslänge woanders.
+- **Fertigkeitswahl liegt im Fenster** (`er-spaltenraster`, spaltenweise
+  gefüllt wie auf dem Blatt). Vorher hingen dreissig Fertigkeiten unter den
+  Paketkarten: man musste scrollen, und die Spalten gerieten durcheinander.
+- **Freebees arbeiten jetzt mit Punktreihen statt Plus-Knöpfen.** Damit sieht
+  man den aktuellen Wert *und* wo die Reihe endet. Sie stehen für **alle**
+  Werte offen, nicht nur für die bereits gewählten — vorher war eine neue
+  Fertigkeit per Freebee gar nicht erreichbar. Hintergründe sind mit dabei,
+  damit sich über die fünf freien Punkte hinaus welche kaufen lassen.
+
+**Echter Fehler, von Mark gefunden: Freebees kamen über das Maximum.** Er hat
+Körperkraft auf 9 gekauft. Zeile 24 des Regelblatts hebt nur den **StartMax**
+der Rasse für Freebees auf, nicht das Maximum des Wertes selbst — ein Attribut
+endet bei 6, eine Fertigkeit bei 5. `erstellung.pruefe` prüft das jetzt gegen
+`defaultMax` aus dem Katalog; die Punktreihe in der Oberfläche zeigt dieselbe
+Grenze.
+
+### Vorlagen für Ambition und Verlangen
+
+Zwanzig Archetypen als Anregung, abrufbar über einen Knopf neben den beiden
+Feldern. **Die Texte liegen nicht im Code**, sondern in
+`backend/data/vorlagen.local.json` — sie stammen aus dem Magus-Regelwerk und
+sollen das Gerät nicht verlassen, bevor sie auf NeotopiA umgeschrieben sind.
+Die Datei ist ignoriert; fehlt sie, liefert die Route eine leere Liste und der
+Knopf erscheint gar nicht. Erzeugt wurde sie mit einem Wegwerf-Skript aus
+`docs/reference/Regel Details - infotipp optionen.txt`.
+
+### Weiter offen an der Erstellung
+
+- **Mehr Hintergründe kaufbar**: Mark überlegt, ob es mehr als fünf freie
+  Punkte geben soll und ob beim Antippen eines Hintergrunds ein Fenster mit
+  der Erklärung aufgehen soll. Vorerst bleibt es bei fünf plus Zukauf über
+  Freebees.
+- Der eigene Schritt für Hintergründe ist streng genommen redundant, seit sie
+  auch bei den Freebees stehen — bewusst gelassen, weil die fünf Punkte sonst
+  zwischen allem anderen untergehen.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

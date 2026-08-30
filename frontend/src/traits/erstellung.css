@@ -290,6 +290,24 @@
   min-width: 0;
 }
 
+/* Name über den Punkten statt daneben. Nebeneinander beginnen die
+   Punktreihen je nach Namenslänge woanders — das wirkt unruhig, und beim
+   Vergleichen zweier Attribute sucht man die Reihe erst. */
+.er-wert-gestapelt {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 0;
+  padding: 4px 0 8px;
+}
+
+.er-wert-gestapelt .er-wert-name {
+  flex: none;
+  font-size: 13px;
+  color: var(--text-leise);
+  letter-spacing: 0.04em;
+}
+
 .er-wert-name {
   flex: 1;
   min-width: 0;
@@ -455,4 +473,35 @@
 .fn-inhalt .er-buehne {
   overflow: visible;
   flex: none;
+}
+
+/* Drei Spalten, spaltenweise gefüllt — dieselbe Aufteilung wie auf dem
+   fertigen Blatt. Zeilenweise gefüllt stünde dieselbe Fertigkeit in der
+   Erstellung woanders als später im Bogen. */
+.er-spaltenraster {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(var(--er-zeilen, 1), auto);
+  grid-auto-flow: column;
+  gap: 0 20px;
+}
+
+@media (max-width: 719px) {
+  .er-spaltenraster {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+}
+
+/* Feld und Vorschlagsknopf in einer Zeile */
+.er-feld-mit-knopf {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.er-feld-mit-knopf > input {
+  flex: 1;
+  min-width: 0;
 }

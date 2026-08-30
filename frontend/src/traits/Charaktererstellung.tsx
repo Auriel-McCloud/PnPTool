@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { DotPool } from "./DotPool";
+import { api } from "../api/client";
 import { traitsApi, type TraitDef } from "./api";
+import { Fenster } from "../shell/Fenster";
 import {
   bogenApi,
   KATEGORIE_TITEL,
@@ -105,6 +107,20 @@ export function Charaktererstellung({
 
   const waehlbareFertigkeiten = useMemo(
     () => katalog.filter((t) => wegKategorien.has(t.category)),
+    [katalog, wegKategorien],
+  );
+
+  /**
+   * Worauf sich Freebees setzen lassen: alles, was dieser Charakter haben
+   * kann — nicht nur, was schon einen Wert trägt. Vorher standen nur die
+   * bereits gewählten Fertigkeiten zur Verfügung, damit war eine neue
+   * Fertigkeit per Freebee gar nicht erreichbar.
+   */
+  const freebeeKandidaten = useMemo(
+    () =>
+      katalog.filter(
+        (t) => t.category.startsWith("Attribut") || wegKategorien.has(t.category) || t.category === "Hintergrund",
+      ),
     [katalog, wegKategorien],
   );
 
@@ -324,13 +340,8 @@ export function Charaktererstellung({
             regeln={regeln}
             frei={freebeesFrei}
             punkte={freebeePunkte}
-            kategorieVon={kategorieVon}
             grundwert={grundwert}
-            kandidaten={[
-              ...regeln.attributKategorien.flatMap((k) => k.attribute),
-              ...Object.keys(fertigkeitPunkte).filter((n) => (fertigkeitPunkte[n] || 0) > 0),
-              ...Object.keys(hintergrundPunkte).filter((n) => (hintergrundPunkte[n] || 0) > 0),
-            ]}
+            waehlbar={freebeeKandidaten}
             onPunkte={setFreebeePunkte}
             willenskraft={freebeeWillenskraft}
             onWillenskraft={setFreebeeWillenskraft}
@@ -343,6 +354,7 @@ export function Charaktererstellung({
 
         {aktuell.id === "person" && (
           <SchrittPerson
+            campaignId={campaignId}
             felder={{ konzept, alter, ambition, verlangen, ziel }}
             setzen={{ setKonzept, setAlter, setAmbition, setVerlangen, setZiel }}
           />
@@ -517,7 +529,10 @@ function SchrittAttribute({
               const start = rasse.startwerte[name];
               const wert = start + (punkte[name] || 0);
               return (
-                <div key={name} className="er-wert">
+                // Name darüber, Punkte darunter linksbündig: nebeneinander
+                // stehen die Punktreihen unterschiedlich weit rechts, weil
+                // die Namen verschieden lang sind — das sah unruhig aus.
+                <div key={name} className="er-wert er-wert-gestapelt">
                   <span className="er-wert-name">{name}</span>
                   <DotPool
                     value={wert}
@@ -559,17 +574,19 @@ function SchrittFertigkeiten({
   offen: Record<number, number>;
   onWert: (werte: Record<string, number>) => void;
 }) {
+  // Die Auswahl selbst steht in einem Fenster: dreissig Fertigkeiten unter
+  // die Paketkarten zu hängen zwang zum Scrollen, und die Spalten gerieten
+  // durcheinander. Im Fenster ist Scrollen erlaubt (docs/ui-konzept.md), und
+  // die Aufteilung ist dieselbe wie auf dem fertigen Blatt.
+  const [auswahlOffen, setAuswahlOffen] = useState(false);
   const gewaehlt = regeln.fertigkeitsPakete.find((p) => p.id === paket);
   const hoechster = gewaehlt ? Math.max(...gewaehlt.verteilung.map((v) => v.wert)) : 0;
+  const vergeben = Object.values(werte).filter((w) => w > 0).length;
 
-  /** Nach Kategorie gruppiert — Sphären stehen nicht zwischen Fertigkeiten. */
   const gruppen = fertigkeiten.reduce<Record<string, TraitDef[]>>((acc, t) => {
     (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
-  // Reihenfolge wie auf dem fertigen Blatt. Über die Schlüssel eines Objekts
-  // zu iterieren käme sonst in Katalogreihenfolge — Arete landete vor den
-  // Fähigkeiten, obwohl es auf dem Blatt darunter steht.
   const gruppenFolge = ["Fertigkeit", "Arete", "Sphäre", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
 
   return (
@@ -580,7 +597,10 @@ function SchrittFertigkeiten({
             key={p.id}
             type="button"
             className={`er-karte${paket === p.id ? " er-karte-aktiv" : ""}`}
-            onClick={() => onPaket(p.id)}
+            onClick={() => {
+              onPaket(p.id);
+              setAuswahlOffen(true);
+            }}
           >
             <span className="er-karte-titel">{p.name}</span>
             <span className="er-karte-text">{p.beschreibung}</span>
@@ -597,12 +617,6 @@ function SchrittFertigkeiten({
 
       {gewaehlt && (
         <>
-          <p className="er-hinweis">
-            Setze genau {gewaehlt.anzahl} Fertigkeiten. Ein Wert lässt sich nur vergeben, solange davon
-            noch einer frei ist — nochmal antippen nimmt ihn zurück.
-            {(gruppen.Arete || gruppen.Sphäre || gruppen.NeuroWeaving) &&
-              " Arete, Sphären und NeuroWeaving zählen dabei als Fertigkeit."}
-          </p>
           <div className="er-offen">
             {gewaehlt.verteilung.map((v) => (
               <span key={v.wert} className={`er-offen-marke${(offen[v.wert] ?? 0) === 0 ? " er-offen-leer" : ""}`}>
@@ -610,33 +624,62 @@ function SchrittFertigkeiten({
               </span>
             ))}
           </div>
+          <p className="er-hinweis">
+            {vergeben} von {gewaehlt.anzahl} Fertigkeiten gesetzt.
+            {(gruppen.Arete || gruppen.Sphäre || gruppen.NeuroWeaving) &&
+              " Arete, Sphären und NeuroWeaving zählen dabei mit."}
+          </p>
+          <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
+            Fertigkeiten wählen
+          </button>
 
-          {gruppenFolge.map((kategorie) => (
-            <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
-              <h3 className="er-spalte-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
-              <div className="er-raster">
-                {gruppen[kategorie].map((t) => {
-                  const wert = werte[t.name] || 0;
-                  return (
-                    <div key={t.id} className="er-wert">
-                      <span className="er-wert-name">{t.name}</span>
-                      <DotPool
-                        value={wert}
-                        max={hoechster}
-                        onChange={(neu) => {
-                          const ziel = neu === wert ? 0 : neu;
-                          // Nur setzen, wenn von diesem Wert noch einer frei
-                          // ist. Wegnehmen geht immer.
-                          if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
-                          onWert({ ...werte, [t.name]: ziel });
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+          <Fenster
+            offen={auswahlOffen}
+            titel={`Fertigkeiten — ${gewaehlt.name}`}
+            unterzeile={
+              Object.entries(offen)
+                .filter(([, anzahl]) => anzahl > 0)
+                .map(([wert, anzahl]) => `${anzahl}× auf ${wert}`)
+                .join(" · ") || "alles vergeben"
+            }
+            kennung="fertigkeitswahl"
+            onSchliessen={() => setAuswahlOffen(false)}
+          >
+            <p className="er-hinweis">
+              Ein Wert lässt sich nur vergeben, solange davon noch einer frei ist — nochmal antippen
+              nimmt ihn zurück.
+            </p>
+            {gruppenFolge.map((kategorie) => (
+              <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
+                <h3 className="er-spalte-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
+                <div
+                  className="er-spaltenraster"
+                  // Spaltenweise füllen wie auf dem Blatt: die ersten zehn
+                  // untereinander, dann die nächsten — nicht zeilenweise, sonst
+                  // steht dieselbe Fertigkeit hier woanders als dort.
+                  style={{ "--er-zeilen": Math.ceil(gruppen[kategorie].length / 3) } as React.CSSProperties}
+                >
+                  {gruppen[kategorie].map((t) => {
+                    const wert = werte[t.name] || 0;
+                    return (
+                      <div key={t.id} className="er-wert">
+                        <span className="er-wert-name">{t.name}</span>
+                        <DotPool
+                          value={wert}
+                          max={hoechster}
+                          onChange={(neu) => {
+                            const ziel = neu === wert ? 0 : neu;
+                            if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                            onWert({ ...werte, [t.name]: ziel });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </Fenster>
         </>
       )}
     </div>
@@ -689,9 +732,8 @@ function SchrittFreebees({
   regeln,
   frei,
   punkte,
-  kategorieVon,
+  waehlbar,
   grundwert,
-  kandidaten,
   onPunkte,
   willenskraft,
   onWillenskraft,
@@ -703,9 +745,9 @@ function SchrittFreebees({
   regeln: Erstellungsregeln;
   frei: number;
   punkte: Record<string, number>;
-  kategorieVon: Record<string, string>;
+  /** Alles, was dieser Charakter überhaupt haben kann — mit Obergrenze. */
+  waehlbar: TraitDef[];
   grundwert: (name: string) => number;
-  kandidaten: string[];
   onPunkte: (werte: Record<string, number>) => void;
   willenskraft: number;
   onWillenskraft: (n: number) => void;
@@ -716,64 +758,63 @@ function SchrittFreebees({
 }) {
   const preise = regeln.freebees.kostenJeKategorie;
 
-  function kosten(name: string) {
-    return preise[kategorieVon[name] ?? ""] ?? 0;
-  }
-
   /** Fertigkeiten und Sphären dürfen nur um einen Punkt steigen (Zeile 40). */
-  function obergrenze(name: string) {
-    const kategorie = kategorieVon[name] ?? "";
+  function obergrenzeZusatz(kategorie: string) {
     return kategorie === "Fertigkeit" || kategorie === "Sphäre" ? regeln.freebees.maxJeFertigkeit : 99;
   }
 
-  const gruppen = kandidaten.reduce<Record<string, string[]>>((acc, name) => {
-    const k = kategorieVon[name] ?? "Sonstiges";
-    if (!(acc[k] ??= []).includes(name)) acc[k].push(name);
+  const gruppen = waehlbar.reduce<Record<string, TraitDef[]>>((acc, t) => {
+    (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
+  const folge = [
+    ...regeln.attributKategorien.map((k) => k.id),
+    "Fertigkeit",
+    "Arete",
+    "Sphäre",
+    "NeuroWeaving",
+    "Hintergrund",
+  ].filter((k) => gruppen[k]?.length);
 
   return (
     <div>
       <p className="er-hinweis">
-        {regeln.freebees.gesamt} Freebees zum Nachbessern. Ein Attributpunkt kostet 5 und darf über das
-        Startmaximum hinaus, eine Fertigkeit 2 (aber nur um einen Punkt), Willenskraft 1. Geld gibt es
-        als Kredit (billiger, muss aber zurück) oder als Eigenkapital.
+        {regeln.freebees.gesamt} Freebees zum Nachbessern — auf <strong>alles</strong>, nicht nur auf
+        das, was schon steht. Die gefüllten Punkte sind der aktuelle Wert, die Reihe endet am Maximum
+        des Wertes: darüber geht es auch mit Freebees nicht. Über das Startmaximum deiner Rasse
+        allerdings schon. Ein Attributpunkt kostet 5, eine Fertigkeit 2 (und nur einen Punkt),
+        ein Hintergrund 1. Geld gibt es als Kredit (billiger, muss aber zurück) oder als Eigenkapital.
       </p>
 
-      {Object.entries(gruppen).map(([kategorie, namen]) => (
+      {folge.map((kategorie) => (
         <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
           <h3 className="er-spalte-titel">
             {KATEGORIE_TITEL[kategorie] ?? kategorie} · {preise[kategorie] ?? 0} je Punkt
           </h3>
           <div className="er-raster">
-            {namen.map((name) => {
-              const zusatz = punkte[name] || 0;
-              const preis = kosten(name);
+            {gruppen[kategorie].map((t) => {
+              const basis = grundwert(t.name);
+              const zusatz = punkte[t.name] || 0;
+              const preis = preise[kategorie] ?? 0;
               return (
-                <div key={name} className="er-wert er-wert-freebee">
-                  <span className="er-wert-name">{name}</span>
-                  <span className="er-freebee-wert">
-                    {grundwert(name)}
+                <div key={t.id} className="er-wert er-wert-gestapelt">
+                  <span className="er-wert-name">
+                    {t.name}
                     {zusatz > 0 && <em className="er-freebee-plus">+{zusatz}</em>}
                   </span>
-                  <span className="er-freebee-knoepfe">
-                    <button
-                      type="button"
-                      onClick={() => onPunkte({ ...punkte, [name]: Math.max(0, zusatz - 1) })}
-                      disabled={zusatz === 0}
-                      aria-label={`${name} zurücknehmen`}
-                    >
-                      −
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onPunkte({ ...punkte, [name]: zusatz + 1 })}
-                      disabled={preis > frei || zusatz >= obergrenze(name)}
-                      aria-label={`${name} steigern für ${preis} Freebees`}
-                    >
-                      +
-                    </button>
-                  </span>
+                  <DotPool
+                    value={basis + zusatz}
+                    max={t.defaultMax}
+                    onChange={(ziel) => {
+                      // Unter den bereits verteilten Grundwert geht es nicht —
+                      // das wäre eine Änderung an einem früheren Schritt.
+                      const neuerZusatz = Math.max(0, ziel - basis);
+                      if (neuerZusatz > obergrenzeZusatz(kategorie)) return;
+                      // Was schon gekauft ist, gibt der Preis wieder her.
+                      if ((neuerZusatz - zusatz) * preis > frei) return;
+                      onPunkte({ ...punkte, [t.name]: neuerZusatz });
+                    }}
+                  />
                 </div>
               );
             })}
@@ -848,10 +889,77 @@ function ZaehlerZeile({
   );
 }
 
+interface Vorlage {
+  name: string;
+  text: string;
+}
+
+/**
+ * Anregungen für Ambition und Verlangen.
+ *
+ * Die Texte liegen **nicht im Code**, sondern in einer lokalen Datei neben dem
+ * Server: sie stammen aus dem Magus-Regelwerk und sollen das Gerät nicht
+ * verlassen, bevor sie auf NeotopiA umgeschrieben sind. Fehlt die Datei,
+ * kommt eine leere Liste — dann erscheint der Knopf gar nicht erst.
+ */
+function VorschlagKnopf({
+  campaignId,
+  titel,
+  onWaehlen,
+}: {
+  campaignId: string;
+  titel: string;
+  onWaehlen: (name: string) => void;
+}) {
+  const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
+  const [offen, setOffen] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<Vorlage[]>(`/api/campaigns/${campaignId}/vorlagen/ambition`)
+      .then(setVorlagen)
+      .catch(() => setVorlagen([]));
+  }, [campaignId]);
+
+  if (vorlagen.length === 0) return null;
+
+  return (
+    <>
+      <button type="button" onClick={() => setOffen(true)} title={`Anregungen für ${titel}`}>
+        Vorschläge
+      </button>
+      <Fenster
+        offen={offen}
+        titel={`Anregungen — ${titel}`}
+        unterzeile={`${vorlagen.length} Archetypen; du kannst auch etwas Eigenes schreiben`}
+        kennung={`vorlagen:${titel}`}
+        onSchliessen={() => setOffen(false)}
+      >
+        {vorlagen.map((v) => (
+          <button
+            key={v.name}
+            type="button"
+            className="er-karte"
+            onClick={() => {
+              onWaehlen(v.name);
+              setOffen(false);
+            }}
+          >
+            <span className="er-karte-titel">{v.name}</span>
+            <span className="er-karte-text">{v.text}</span>
+          </button>
+        ))}
+      </Fenster>
+    </>
+  );
+}
+
 function SchrittPerson({
+  campaignId,
   felder,
   setzen,
 }: {
+  campaignId: string;
   felder: { konzept: string; alter: string; ambition: string; verlangen: string; ziel: string };
   setzen: {
     setKonzept: (v: string) => void;
@@ -882,19 +990,25 @@ function SchrittPerson({
       </label>
       <label className="er-feld">
         <span>Ambition</span>
+        <div className="er-feld-mit-knopf">
         <input
           value={felder.ambition}
           onChange={(e) => setzen.setAmbition(e.target.value)}
           placeholder="Woran arbeitet er, auch wenn es Jahre dauert?"
         />
+        <VorschlagKnopf campaignId={campaignId} titel="Ambition" onWaehlen={setzen.setAmbition} />
+        </div>
       </label>
       <label className="er-feld">
         <span>Verlangen</span>
+        <div className="er-feld-mit-knopf">
         <input
           value={felder.verlangen}
           onChange={(e) => setzen.setVerlangen(e.target.value)}
           placeholder="Wonach greift er, obwohl er es besser weiß?"
         />
+        <VorschlagKnopf campaignId={campaignId} titel="Verlangen" onWaehlen={setzen.setVerlangen} />
+        </div>
       </label>
       <label className="er-feld">
         <span>Ziel</span>

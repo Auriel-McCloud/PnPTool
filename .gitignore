@@ -22,3 +22,7 @@ frontend/dist/
 # irgendetwas davon das Gerät verlässt. Marks eigenes Blatt bleibt drin.
 docs/reference/*
 !docs/reference/Neotopia.xlsx
+
+# Aus dem Fremdmaterial gezogene Texte (Ambition/Verlangen-Vorlagen).
+# Gleicher Grund wie beim Referenzordner: erst umschreiben, dann teilen.
+backend/data/*.local.json

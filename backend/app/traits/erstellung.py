@@ -17,6 +17,11 @@ Ablauf laut Excel:
    Sphären und NeuroWeaving zählen dabei als Fertigkeit (Zeile 27).
 4. 15 Freebees zum Nachbessern (Zeilen 37-42).
 
+Freebees dürfen über den **StartMax** der Rasse hinaus (Zeile 24), aber nicht
+über das Maximum des Wertes selbst — ein Attribut endet bei 6, eine Fertigkeit
+bei 5. Das steht so nicht im Excel, ergibt sich aber daraus, dass die Maxima
+für den ganzen Charakterbogen gelten und nicht nur für die Erstellung.
+
 **Noch nicht aus dem Regelwerk belegt** (Mark klärt das beim Feinschliff):
 Hintergründe kommen im Excel nicht vor — die Liste unten ist ein Vorschlag
 fürs Setting. Ebenso der Freebee-Preis von 1 je Hintergrundpunkt; vorgegeben
@@ -96,9 +101,14 @@ RASSEN: dict[str, dict[str, Any]] = {
 WEGE: list[dict[str, str]] = [
     {
         "id": "KEINER",
-        "name": "Normal",
-        "beschreibung": "Kein Zugang zu Magie oder NeuroWeaving. Dafür ungeteilte Aufmerksamkeit "
-        "für Handwerk, Kampf und Kontakte — und niemand kann dich über die Matrix von innen angreifen.",
+        # Hiess "Normal" — Marks Einwand: klingt fad. Wer weder zaubert noch
+        # webt, ist nicht der Rest, sondern hat sich für einen anderen Weg
+        # entschieden.
+        "name": "Weg des Chrom",
+        "beschreibung": "Kein Zauber, kein Weben — Chrom. Ob du es im Körper trägst oder in der "
+        "Hand: du bist nicht geboren worden, du wurdest gebaut, Stück für Stück. Wo andere nach "
+        "Sphären greifen, greifst du zum Werkzeug. Und niemand kann dich über die Matrix von "
+        "innen angreifen.",
     },
     {
         "id": "MAGIER",
@@ -381,6 +391,16 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
     kosten = freebee_kosten(auswahl, kategorie_von)
     if kosten > FREEBEES_GESAMT:
         fehler.append(f"{kosten} Freebees ausgegeben, zur Verfügung stehen {FREEBEES_GESAMT}.")
+
+    # --- Endwerte gegen die Obergrenze des Wertes selbst -----------------
+    # Zeile 24 hebt nur den **StartMax** für Freebees auf, nicht das Maximum
+    # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 5, Arete bis 10.
+    # Ohne diese Prüfung liess sich Körperkraft auf 9 kaufen (von Mark gefunden).
+    maximum_von = {t["name"]: t["defaultMax"] for t in katalog}
+    for name, wert in endwerte(auswahl).items():
+        grenze = maximum_von.get(name)
+        if grenze is not None and wert > grenze:
+            fehler.append(f"{name} käme auf {wert}, mehr als {grenze} geht nicht.")
 
     return fehler
 

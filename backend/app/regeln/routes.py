@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -62,3 +65,37 @@ async def erklaerung_setzen(campaign_id: str, schluessel: str, body: ErklaerungI
     return await repository.setze_erklaerung(
         await _ruleset(campaign_id), schluessel, body.titel, body.text, body.quelle
     )
+
+
+# --- Vorlagen für Ambition und Verlangen --------------------------------
+
+# Liegt bewusst **neben** dem Code und nicht darin: die Texte stammen aus dem
+# Magus-Regelwerk und sollen das Gerät nicht verlassen, bevor sie auf NeotopiA
+# umgeschrieben sind (die Datei ist in .gitignore). Fehlt sie, liefert die
+# Route eine leere Liste — die Oberfläche blendet den Knopf dann aus.
+_VORLAGEN_DATEI = Path(__file__).resolve().parents[2] / "data" / "vorlagen.local.json"
+
+
+class Vorlage(BaseModel):
+    name: str
+    text: str
+
+
+vorlagen_router = APIRouter(
+    prefix="/api/campaigns/{campaign_id}/vorlagen",
+    tags=["regeln"],
+    dependencies=[Depends(require_campaign_zugang)],
+)
+
+
+@vorlagen_router.get("/ambition", response_model=list[Vorlage])
+async def ambition_vorlagen(campaign_id: str):
+    """Archetypen als Anregung für Ambition und Verlangen.
+
+    Reine Anregung — wer mag, schreibt etwas Eigenes ins Feld.
+    """
+    try:
+        inhalt = json.loads(_VORLAGEN_DATEI.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    return inhalt.get("ambition", [])
