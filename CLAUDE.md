@@ -897,6 +897,23 @@ Die Datei ist ignoriert; fehlt sie, liefert die Route eine leere Liste und der
 Knopf erscheint gar nicht. Erzeugt wurde sie mit einem Wegwerf-Skript aus
 `docs/reference/Regel Details - infotipp optionen.txt`.
 
+### Nach dem zweiten Durchklicken
+
+- **Freebees stehen dreispaltig** wie das Blatt (`er-spaltenraster`).
+- **Vorschläge zeigen nur den Namen**, der Text steht hinter einem
+  Fragezeichen und geht als weiteres Fenster auf — teils zwanzig Zeilen lang,
+  in der Liste war das unlesbar. Das Fragezeichen benutzt bewusst dieselbe
+  Klasse `.it-zeichen` wie das Tooltip-System, damit es überall gleich aussieht.
+- **Die Spielleitung sieht denselben dreispaltigen Bogen wie der Spieler** —
+  Knopf *"Bogen ansehen"* je Person. Die Bearbeitungsmaske daneben bleibt für
+  alles, was man *ändert*.
+
+**Fenster können jetzt `breit`.** Der Bogen passt in die üblichen 680px nicht:
+die Punktreihen brachen um und die Namen wurden gekürzt. `fn-fenster-breit`
+gibt 1040px. Dazu setzt `.fn-inhalt .cb-blatt` dieselben engeren Masse wie die
+900px-Media-Query — **die misst den Bildschirm, nicht das Fenster**, und griff
+deshalb nie. Wer künftig Blattinhalte in Fenster steckt, muss daran denken.
+
 ### Weiter offen an der Erstellung
 
 - **Mehr Hintergründe kaufbar**: Mark überlegt, ob es mehr als fünf freie

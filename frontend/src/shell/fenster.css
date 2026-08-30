@@ -72,6 +72,11 @@
 }
 
 /* Griff: am Handy Anfasser der Vollbildansicht, sonst nur Zierleiste */
+/* Für Inhalte, die Breite brauchen — etwa den dreispaltigen Bogen. */
+.fn-fenster-breit {
+  width: min(1040px, calc(100vw - 32px));
+}
+
 .fn-griff {
   width: 46px;
   height: 4px;

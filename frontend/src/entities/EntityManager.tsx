@@ -8,6 +8,7 @@ import { RichTextView } from "../richtext/RichTextView";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
 import { Charaktererstellung } from "../traits/Charaktererstellung";
+import { Charakterblatt } from "../traits/Charakterblatt";
 import { Fenster } from "../shell/Fenster";
 import { getGraph } from "../graph/api";
 
@@ -166,6 +167,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
   // Erstellung im Fenster statt inline: sie ist ein Vorgang mit Anfang und
   // Ende, und die Personenliste dahinter soll stehenbleiben.
   const [erstellungFuer, setErstellungFuer] = useState<Person | null>(null);
+  // Dasselbe dreispaltige Blatt, das der Spieler sieht — die Spielleitung
+  // will beim Erzählen denselben Überblick haben, nicht die Bearbeitungsmaske.
+  const [blattFuer, setBlattFuer] = useState<Person | null>(null);
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
     await entitiesApi.createPerson(campaignId, { name: personName, personType, ...personContent.payload() });
@@ -267,6 +271,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
               {/* Auch für fertige Charaktere: die Spielleitung muss eine
                   verkorkste Erstellung nachbessern können. Beim Absenden
                   werden alle Werte neu gesetzt. */}
+              <button type="button" onClick={() => setBlattFuer(p)}>
+                Bogen ansehen
+              </button>
               <button type="button" onClick={() => setErstellungFuer(p)}>
                 Erstellung durchlaufen
               </button>
@@ -399,6 +406,20 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
       {/* Erstellung der Spielleitung: dieselbe Führung wie beim Spieler,
           nur eben für NPCs. Nach dem Absenden stehen die Werte am Charakter,
           die Liste dahinter wird neu geladen. */}
+      {/* Das fertige Blatt wie beim Spieler: drei Spalten, Zustand
+          eintragbar, Erfahrung ausgebbar. Die Bearbeitungsmaske daneben
+          bleibt für alles, was man dort *ändert*. */}
+      <Fenster
+        offen={blattFuer !== null}
+        breit
+        titel={blattFuer?.name ?? ""}
+        unterzeile="Charakterbogen"
+        kennung={`bogen:${blattFuer?.id ?? ""}`}
+        onSchliessen={() => setBlattFuer(null)}
+      >
+        {blattFuer && <Charakterblatt campaignId={campaignId} personId={blattFuer.id} />}
+      </Fenster>
+
       <Fenster
         offen={erstellungFuer !== null}
         titel={erstellungFuer ? `${erstellungFuer.name} erstellen` : ""}

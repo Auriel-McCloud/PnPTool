@@ -34,6 +34,7 @@ export function Fenster({
   unterzeile,
   kennung,
   ton,
+  breit = false,
   onSchliessen,
   children,
 }: {
@@ -44,6 +45,12 @@ export function Fenster({
   kennung: string;
   /** Rahmenfarbe; ohne Angabe die Leitfarbe des Bereichs. */
   ton?: string;
+  /**
+   * Breiteres Fenster für Inhalte, die Breite brauchen — der Charakterbogen
+   * mit seinen drei Spalten passt in die üblichen 680px nicht, dort brechen
+   * die Punktreihen um.
+   */
+  breit?: boolean;
   onSchliessen: () => void;
   children: ReactNode;
 }) {
@@ -121,7 +128,9 @@ export function Fenster({
   return createPortal(
     <div className="fn-hintergrund" onClick={onSchliessen}>
       <div
-        className={gemessen ? "fn-fenster fn-fenster-auf" : "fn-fenster"}
+        className={
+          (gemessen ? "fn-fenster fn-fenster-auf" : "fn-fenster") + (breit ? " fn-fenster-breit" : "")
+        }
         ref={rahmenRef}
         role="dialog"
         aria-modal="true"

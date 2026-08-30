@@ -345,3 +345,29 @@
     font-size: 13px;
   }
 }
+
+/* Im Fenster (Spielleitung sieht den Bogen an): das Blatt füllt dort keine
+   eigene Fläche, sondern wächst mit dem Inhalt — gescrollt wird vom Fenster.
+   Ohne das ergäbe `height: 100%` in einem Behälter ohne feste Höhe nichts.
+   Ausserdem enger gesetzt: das Fenster ist schmaler als ein ganzer Bereich,
+   und die Media Query oben misst das Fenster nicht, sondern den Bildschirm —
+   ohne diese Zeilen brachen die Punktreihen um. */
+.fn-inhalt .cb-blatt {
+  height: auto;
+  --dot-groesse: 11px;
+}
+
+.fn-inhalt .cb-werte,
+.fn-inhalt .cb-attribute {
+  gap: 0 12px;
+}
+
+.fn-inhalt .cb-wert {
+  gap: 6px;
+  padding: 0 2px;
+  min-height: 22px;
+}
+
+.fn-inhalt .cb-wert-name {
+  font-size: 13px;
+}

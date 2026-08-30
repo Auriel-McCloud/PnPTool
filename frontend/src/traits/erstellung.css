@@ -505,3 +505,36 @@
   flex: 1;
   min-width: 0;
 }
+
+/* --- Vorlagenliste ----------------------------------------------------
+   Nur Namen, in Spalten. Die Erklärung steht hinter dem Fragezeichen —
+   die Texte sind teils zwanzig Zeilen lang und machten die Liste unlesbar. */
+
+.er-vorlagen {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px 16px;
+}
+
+.er-vorlage {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.er-vorlage-name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.er-vorlage-name:hover:not(:disabled) {
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+}

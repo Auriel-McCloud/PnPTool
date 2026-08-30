@@ -12,6 +12,7 @@ import {
   type Rasse,
 } from "./bogenApi";
 import "./erstellung.css";
+import "../regeln/infotipp.css";
 
 /**
  * Charaktererstellung — Prototyp.
@@ -791,13 +792,16 @@ function SchrittFreebees({
           <h3 className="er-spalte-titel">
             {KATEGORIE_TITEL[kategorie] ?? kategorie} · {preise[kategorie] ?? 0} je Punkt
           </h3>
-          <div className="er-raster">
+          <div
+            className="er-spaltenraster"
+            style={{ "--er-zeilen": Math.ceil(gruppen[kategorie].length / 3) } as React.CSSProperties}
+          >
             {gruppen[kategorie].map((t) => {
               const basis = grundwert(t.name);
               const zusatz = punkte[t.name] || 0;
               const preis = preise[kategorie] ?? 0;
               return (
-                <div key={t.id} className="er-wert er-wert-gestapelt">
+                <div key={t.id} className="er-wert">
                   <span className="er-wert-name">
                     {t.name}
                     {zusatz > 0 && <em className="er-freebee-plus">+{zusatz}</em>}
@@ -913,6 +917,7 @@ function VorschlagKnopf({
 }) {
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
   const [offen, setOffen] = useState(false);
+  const [erklaert, setErklaert] = useState<Vorlage | null>(null);
 
   useEffect(() => {
     api
@@ -935,20 +940,57 @@ function VorschlagKnopf({
         kennung={`vorlagen:${titel}`}
         onSchliessen={() => setOffen(false)}
       >
-        {vorlagen.map((v) => (
+        {/* Nur der Name in der Zeile — die Beschreibungen sind teils sehr
+            lang und machten die Liste unlesbar. Der ganze Text steht hinter
+            dem Fragezeichen, in einem Fenster, in dem man scrollen darf. */}
+        <div className="er-vorlagen">
+          {vorlagen.map((v) => (
+            <div key={v.name} className="er-vorlage">
+              <button
+                type="button"
+                className="er-vorlage-name"
+                onClick={() => {
+                  onWaehlen(v.name);
+                  setOffen(false);
+                }}
+              >
+                {v.name}
+              </button>
+              <button
+                type="button"
+                className="it-zeichen"
+                onClick={() => setErklaert(v)}
+                aria-label={`Was bedeutet ${v.name}?`}
+                title={`Was bedeutet ${v.name}?`}
+              >
+                ?
+              </button>
+            </div>
+          ))}
+        </div>
+      </Fenster>
+
+      {/* Fenster über dem Fenster — dafür hängen sie am Seitenkörper. */}
+      <Fenster
+        offen={erklaert !== null}
+        titel={erklaert?.name ?? ""}
+        kennung={`vorlage:${erklaert?.name ?? ""}`}
+        onSchliessen={() => setErklaert(null)}
+      >
+        <p className="it-text">{erklaert?.text}</p>
+        {erklaert && (
           <button
-            key={v.name}
             type="button"
-            className="er-karte"
+            className="er-weiter"
             onClick={() => {
-              onWaehlen(v.name);
+              onWaehlen(erklaert.name);
+              setErklaert(null);
               setOffen(false);
             }}
           >
-            <span className="er-karte-titel">{v.name}</span>
-            <span className="er-karte-text">{v.text}</span>
+            {erklaert.name} übernehmen
           </button>
-        ))}
+        )}
       </Fenster>
     </>
   );
