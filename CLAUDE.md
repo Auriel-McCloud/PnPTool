@@ -924,6 +924,30 @@ deshalb nie. Wer künftig Blattinhalte in Fenster steckt, muss daran denken.
   auch bei den Freebees stehen — bewusst gelassen, weil die fünf Punkte sonst
   zwischen allem anderen untergehen.
 
+## Ein Blatt statt zweier Ansichten (30.08.2026)
+
+Mark hatte die Wahl gestellt: das Bearbeitungsformular ebenfalls dreispaltig
+machen — oder **eine** Ansicht mit einem Schalter aufs Bearbeiten. Der zweite
+Weg ist der bessere und ist umgesetzt.
+
+`Charakterblatt` nimmt jetzt `bearbeitbar` (die Spielleitung setzt es). Dann
+steht in der Kopfzeile **⚙ Bearbeiten**; eingeschaltet werden aus den
+Wertezeilen gestrichelte Zeilen mit anklickbaren Punkten, und ein zweiter
+Schalter **Maxima** blendet je Wert ein `−  6  +` ein, um die Obergrenze
+einzelner Werte anzuheben (die Elder-NPC mit Schusswaffen 8).
+
+**Im Bearbeiten-Modus ist die Zeile kein Knopf mehr**, sondern ein `div`: das
+umschliessende `<button>` fing sonst den Klick ab, bevor er bei den Punkten
+ankam. Und nach jeder Änderung wird das ganze Blatt neu geladen, weil die
+abgeleiteten Werte daran hängen — Widerstandsfähigkeit auf 5 zu setzen hob die
+Gesundheit im Test korrekt von 7 auf 10.
+
+**Knöpfe umbenannt**: *Charakterblatt* öffnet den Bogen (mit dem Schalter),
+*Gegenstände* öffnet die alte Maske. Deren Werte-Liste ist damit doppelt und
+könnte weg, sobald klar ist, dass niemand sie vermisst — der Gegenstandsteil
+dort ist weiterhin die einzige personenbezogene Item-Ansicht neben dem
+kampagnenweiten Bereich.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

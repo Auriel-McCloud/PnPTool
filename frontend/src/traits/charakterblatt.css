@@ -371,3 +371,65 @@
 .fn-inhalt .cb-wert-name {
   font-size: 13px;
 }
+
+/* --- Bearbeiten im Blatt ----------------------------------------------
+   Dieselbe Zeile, nur mit anklickbaren Punkten. Ein zweites, anders
+   aufgebautes Formular daneben war unübersichtlich (Marks Einwand). */
+
+.cb-werkzeuge {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.cb-werkzeuge button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.cb-werkzeuge button[data-aktiv="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+/* Wie .cb-wert, aber ohne Knopf-Verhalten — die Punkte fangen den Klick. */
+.cb-wert-bearbeiten {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 23px;
+  padding: 0 6px;
+  border: 1px dashed var(--linie-hell);
+  border-radius: var(--radius);
+  background: none;
+}
+
+.cb-maxknoepfe {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.cb-maxknoepfe button {
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.cb-maxzahl {
+  min-width: 16px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-aus);
+}

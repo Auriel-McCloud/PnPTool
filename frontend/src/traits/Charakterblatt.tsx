@@ -7,7 +7,7 @@ import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
 import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
-import type { TraitDef } from "./api";
+import { traitsApi, type TraitDef } from "./api";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -39,12 +39,20 @@ export function Charakterblatt({
   campaignId,
   personId,
   aenderbar = true,
+  bearbeitbar = false,
   onWertGewaehlt,
 }: {
   campaignId: string;
   personId: string;
   /** Schaden und Verbrauch eintragen. Werte bleiben in jedem Fall gesperrt. */
   aenderbar?: boolean;
+  /**
+   * Zeigt der Spielleitung einen Schalter, mit dem sie die Werte im selben
+   * Blatt ändern kann. Ein zweites, anders aufgebautes Formular daneben hat
+   * Mark zurecht als unübersichtlich empfunden — dasselbe Blatt, nur mit
+   * anklickbaren Punkten, ist leichter zu lesen.
+   */
+  bearbeitbar?: boolean;
   /** Antippen einer Fähigkeit — für die spätere Probenrechnung. */
   onWertGewaehlt?: (name: string, wert: number, kategorie: string) => void;
 }) {
@@ -53,6 +61,10 @@ export function Charakterblatt({
   // Drei Ansichten desselben Blatts (docs/ui-konzept.md): Erstellung einmalig,
   // dann die Spielansicht, und das Ausgeben von Erfahrung bei Bedarf.
   const [ansicht, setAnsicht] = useState<"blatt" | "levelup">("blatt");
+  const [bearbeiten, setBearbeiten] = useState(false);
+  // Erhöhtes Maximum für einzelne Werte (eine Elder-NPC bei Schusswaffen 8).
+  // Nur im Bearbeiten-Modus sichtbar — Spieler sollen davon nichts sehen.
+  const [maximaZeigen, setMaximaZeigen] = useState(false);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -98,6 +110,16 @@ export function Charakterblatt({
     );
   }
 
+  /**
+   * Einen Wert setzen. Der Server rechnet die abgeleiteten Grössen neu, also
+   * wird das ganze Blatt nachgeladen — Gesundheit hängt an der
+   * Widerstandsfähigkeit, Willenskraft an zwei anderen Attributen.
+   */
+  async function wertSetzen(traitDefId: string, wert: number, maxOverride: number | null) {
+    await traitsApi.setWert(campaignId, personId, traitDefId, wert, maxOverride);
+    await neuLaden();
+  }
+
   function neuLaden() {
     return bogenApi
       .laden(campaignId, personId)
@@ -116,6 +138,11 @@ export function Charakterblatt({
     bogen?.werte.forEach((w) => m.set(w.traitDefId, w.rating));
     return m;
   }, [bogen]);
+
+  /** Wirksames Maximum: was der Spielleiter gesetzt hat, sonst der Katalogwert. */
+  function grenzeVon(t: TraitDef) {
+    return bogen?.werte.find((w) => w.traitDefId === t.id)?.max ?? t.defaultMax;
+  }
 
   const gruppen = useMemo(() => {
     const g = new Map<string, TraitDef[]>();
@@ -184,16 +211,48 @@ export function Charakterblatt({
               // und nicht in der Wertezeile stecken darf — ein Knopf im Knopf
               // ist ungültig und macht beide unbedienbar.
               <div key={t.id} className="cb-wert-zeile">
-                <button
-                  type="button"
-                  className="cb-wert"
-                  onClick={() => onWertGewaehlt?.(t.name, wert, kategorie)}
-                  disabled={!onWertGewaehlt}
-                  title={onWertGewaehlt ? `${t.name} würfeln` : t.name}
-                >
-                  <span className="cb-wert-name">{t.name}</span>
-                  <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
-                </button>
+                {bearbeiten ? (
+                  // Im Bearbeiten-Modus keine Schaltfläche: die Punkte selbst
+                  // sind anklickbar, ein Knopf darum herum finge den Klick ab.
+                  <div className="cb-wert cb-wert-bearbeiten">
+                    <span className="cb-wert-name">{t.name}</span>
+                    <DotPool
+                      value={wert}
+                      max={grenzeVon(t)}
+                      onChange={(neu) => wertSetzen(t.id, Math.max(0, neu), null)}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="cb-wert"
+                    onClick={() => onWertGewaehlt?.(t.name, wert, kategorie)}
+                    disabled={!onWertGewaehlt}
+                    title={onWertGewaehlt ? `${t.name} würfeln` : t.name}
+                  >
+                    <span className="cb-wert-name">{t.name}</span>
+                    <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
+                  </button>
+                )}
+                {bearbeiten && maximaZeigen && (
+                  <span className="cb-maxknoepfe">
+                    <button
+                      type="button"
+                      onClick={() => wertSetzen(t.id, wert, Math.max(1, grenzeVon(t) - 1))}
+                      title={`Maximum von ${t.name} senken`}
+                    >
+                      −
+                    </button>
+                    <span className="cb-maxzahl">{grenzeVon(t)}</span>
+                    <button
+                      type="button"
+                      onClick={() => wertSetzen(t.id, wert, grenzeVon(t) + 1)}
+                      title={`Maximum von ${t.name} anheben`}
+                    >
+                      +
+                    </button>
+                  </span>
+                )}
                 <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(t.name)} titel={t.name} />
               </div>
             );
@@ -212,6 +271,28 @@ export function Charakterblatt({
             {[u.rasse, WEG_TITEL[u.weg]].filter(Boolean).join(" · ") || "Ohne besonderen Weg"}
           </div>
         </div>
+        {bearbeitbar && (
+          <div className="cb-werkzeuge">
+            <button
+              type="button"
+              data-aktiv={bearbeiten}
+              onClick={() => setBearbeiten((b) => !b)}
+              title="Werte im Blatt ändern"
+            >
+              {bearbeiten ? "Fertig" : "⚙ Bearbeiten"}
+            </button>
+            {bearbeiten && (
+              <button
+                type="button"
+                data-aktiv={maximaZeigen}
+                onClick={() => setMaximaZeigen((m) => !m)}
+                title="Obergrenzen einzelner Werte anheben oder senken"
+              >
+                Maxima
+              </button>
+            )}
+          </div>
+        )}
         <button
           type="button"
           className="cb-erfahrung"

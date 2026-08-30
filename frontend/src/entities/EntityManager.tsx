@@ -266,13 +266,13 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
             )}
             <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" onClick={() => setOpenSheetFor(openSheetFor === p.id ? null : p.id)}>
-                {openSheetFor === p.id ? "Charakterblatt schließen" : "Charakterblatt öffnen"}
+                {openSheetFor === p.id ? "Gegenstände schließen" : "Gegenstände"}
               </button>
               {/* Auch für fertige Charaktere: die Spielleitung muss eine
                   verkorkste Erstellung nachbessern können. Beim Absenden
                   werden alle Werte neu gesetzt. */}
               <button type="button" onClick={() => setBlattFuer(p)}>
-                Bogen ansehen
+                Charakterblatt
               </button>
               <button type="button" onClick={() => setErstellungFuer(p)}>
                 Erstellung durchlaufen
@@ -413,11 +413,11 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
         offen={blattFuer !== null}
         breit
         titel={blattFuer?.name ?? ""}
-        unterzeile="Charakterbogen"
+        unterzeile="Ansehen — zum Ändern oben auf Bearbeiten"
         kennung={`bogen:${blattFuer?.id ?? ""}`}
         onSchliessen={() => setBlattFuer(null)}
       >
-        {blattFuer && <Charakterblatt campaignId={campaignId} personId={blattFuer.id} />}
+        {blattFuer && <Charakterblatt campaignId={campaignId} personId={blattFuer.id} bearbeitbar />}
       </Fenster>
 
       <Fenster
