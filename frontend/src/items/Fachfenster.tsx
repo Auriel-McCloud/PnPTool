@@ -22,18 +22,11 @@ export function Fachfenster({
   onUmlegen,
   behaelterName,
   behaelterId,
-  fachItem,
   inhaltVon,
 }: {
   fach: Bereich | null;
   /** Bereits auf dieses Fach gefiltert. */
   items: Gegenstand[];
-  /**
-   * Das Fach selbst, falls es ein Gegenstand ist (Fahrzeug, Kiste).
-   * Sonst käme man an das Auto nicht mehr heran: es steht dann nur noch als
-   * Fach in der Leiste und in keiner Liste mehr als Gegenstand.
-   */
-  fachItem?: Gegenstand;
   offen: boolean;
   onSchliessen: () => void;
   /** Fehlt sie, ist der Inhalt nur anzusehen — so bei fremdem Besitz. */
@@ -63,27 +56,6 @@ export function Fachfenster({
       kennung={`fach:${fach.id}`}
       onSchliessen={onSchliessen}
     >
-      {fachItem && (
-        <>
-          <h3 className="gg-abschnitt">
-            <span>{fachItem.typ === "Fahrzeug" ? "Das Fahrzeug" : "Der Behälter"}</span>
-          </h3>
-          <div className="gg-fachraster">
-            <GegenstandKachel
-              item={fachItem}
-              behaelterName={behaelterName}
-              behaelterId={behaelterId}
-              // Kein "Hineinsehen" am Fach selbst — man steht ja schon darin.
-              onUmlegen={onUmlegen ? (ablage) => onUmlegen(fachItem, ablage) : undefined}
-            />
-          </div>
-          <h3 className="gg-abschnitt">
-            <span>Inhalt</span>
-            <span className="gg-abschnitt-zahl">{items.length}</span>
-          </h3>
-        </>
-      )}
-
       {items.length === 0 ? (
         <p style={{ color: "var(--text-leise)", margin: 0 }}>Hier liegt nichts.</p>
       ) : (

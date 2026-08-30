@@ -687,11 +687,16 @@ alles andere wird zum Fach in der unteren Leiste. Die frühere Mehrfachauswahl
 über Reiter ist damit weg — es gibt genau eine Hauptansicht und Fächer, die
 man aufmacht.
 
-**Eigene Fahrzeuge und Behälter werden zu Fächern, auch leere** — und tauchen
-dann *nicht* zusätzlich als loser Gegenstand im Depot auf, sonst stünde das
-Auto einmal als Fach und einmal als Ding darin. Damit man trotzdem an das
-Fahrzeug selbst herankommt (Beschreibung, Gewicht, Umlegen), zeigt das
-Fachfenster es zuoberst unter der Überschrift "Das Fahrzeug".
+**Eigene Fahrzeuge und Behälter werden zu Fächern, auch leere.** Sie stehen
+zusätzlich als gewöhnlicher Gegenstand in dem Bereich, in dem sie liegen —
+das Fach zeigt nur, *was darin ist*, der Gegenstand hat Gewicht,
+Beschreibung und lässt sich umlegen. Beides wird gebraucht.
+
+*Zwischenschritt, den Mark verworfen hat:* das Fachfenster zeigte den
+Behälter zuerst selbst unter einer Überschrift "Der Behälter". Sein Einwand:
+*"das steht doch schon oben drüber, was das für ein Behälter ist, der Inhalt
+reicht."* Stimmt — der Fenstertitel nennt ihn bereits. Die Erreichbarkeit
+löst jetzt der Eintrag im Bereich statt eines eigenen Abschnitts.
 
 **Umbenannt:** "Ausgerüstet" → **Am Körper**, "Sonst gelagert" → **Depot**
 (klang nach Restposten), "Gelagert" → **Weggelegt**. Der mittlere Ablageplatz

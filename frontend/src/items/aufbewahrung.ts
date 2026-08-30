@@ -102,17 +102,18 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
     });
   }
 
-  // Weggelegtes ohne festen Platz nicht verschlucken. Was selbst ein Fach
-  // ist, gehört nicht zusätzlich hier hinein — sonst stünde das Auto einmal
-  // als Fach und einmal als loser Gegenstand darin.
-  if (items.some((g) => g.ablage === "GELAGERT" && !g.ablageZielId && !faecher.has(g.id))) {
+  // Weggelegtes ohne festen Platz nicht verschlucken — **auch Behälter und
+  // Fahrzeuge**. Sie sind zwar selbst Fächer, aber sie liegen zugleich
+  // irgendwo, und nur hier kommt man an sie als Gegenstand heran: Gewicht,
+  // Beschreibung, Umlegen. Das Fach zeigt bloss, was darin ist.
+  if (items.some((g) => g.ablage === "GELAGERT" && !g.ablageZielId)) {
     bereiche.push({
       id: "GELAGERT_OFFEN",
       // Hiess "Sonst gelagert" — das klang nach Restposten.
       name: "Depot",
       symbol: "⌷",
       greifbar: false,
-      passt: (g) => g.ablage === "GELAGERT" && !g.ablageZielId && !faecher.has(g.id),
+      passt: (g) => g.ablage === "GELAGERT" && !g.ablageZielId,
     });
   }
 

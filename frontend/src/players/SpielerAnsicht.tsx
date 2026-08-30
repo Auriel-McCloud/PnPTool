@@ -327,13 +327,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 fach={fach}
                 offen
                 items={sachen.filter(fach.passt)}
-                // Ist das Fach selbst ein Gegenstand (Fahrzeug, Kiste), gehört
-                // es mit ins Fenster — sonst käme man nicht mehr an es heran.
-                fachItem={
-                  fach.id === "MITGEFUEHRT"
-                    ? sachen.find((g) => g.id === getragenerBehaelterId)
-                    : sachen.find((g) => g.id === fach.id)
-                }
                 behaelterName={getragenerBehaelter}
                 behaelterId={getragenerBehaelterId}
                 inhaltVon={inhaltVon}
