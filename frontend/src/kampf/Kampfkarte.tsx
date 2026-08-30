@@ -321,6 +321,7 @@ export function Kampfkarte({
       <WillenskraftFrage
         offen={fragtWillenskraft}
         uebrig={uebrigeWillenskraft}
+        weg={u.weg}
         onNein={() => setFragtWillenskraft(false)}
         onJa={async () => {
           setFragtWillenskraft(false);

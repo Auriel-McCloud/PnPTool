@@ -20,28 +20,36 @@ import "./willenskraft.css";
 export function WillenskraftFrage({
   offen,
   uebrig,
+  weg,
   onJa,
   onNein,
 }: {
   offen: boolean;
   /** Wieviel danach noch übrig wäre — die eigentliche Entscheidungshilfe. */
   uebrig: number;
+  /**
+   * Wofür der Rest sonst noch gebraucht wird, hängt am Weg: wilde Magie gibt
+   * es nur beim Magier, NeuroWeaving nur beim Technomancer. Wer weder noch
+   * ist, soll nicht über Möglichkeiten lesen, die er nicht hat.
+   */
+  weg?: "KEINER" | "MAGIER" | "TECHNOMANCER";
   onJa: () => void;
   onNein: () => void;
 }) {
+  const wofuerSonst =
+    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "TECHNOMANCER" ? " — auch fürs NeuroWeaving." : ".";
   return (
     <Fenster
       offen={offen}
-      titel="Willenskraft ausgeben?"
-      unterzeile="Für einen erzwungenen Erfolg"
+      // Die Frage steht in der Überschrift und nirgends sonst — vorher stand
+      // sie dreimal fast gleich da.
+      titel="Willenskraft für einen Erfolg ausgeben?"
       kennung="willenskraft-frage"
       onSchliessen={onNein}
     >
-      <p className="wk-frage">
-        Einen Punkt Willenskraft für einen <strong>erzwungenen Erfolg</strong> ausgeben?
-      </p>
       <p className="wk-rest">
-        Danach bleiben <strong>{Math.max(0, uebrig - 1)}</strong> von {uebrig} — auch für wilde Magie.
+        Danach bleiben <strong>{Math.max(0, uebrig - 1)}</strong> von {uebrig}
+        {wofuerSonst}
       </p>
       {/* Nicht "die Spielleitung gibt sie zurück" (Marks Einwand), sondern
           *wodurch* sie zurückkommt — das ist die Auskunft, die man in dem

@@ -330,6 +330,7 @@ export function Charakterblatt({
       <WillenskraftFrage
         offen={fragtWillenskraft}
         uebrig={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
+        weg={u.weg}
         onNein={() => setFragtWillenskraft(false)}
         onJa={async () => {
           setFragtWillenskraft(false);

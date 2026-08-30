@@ -4,16 +4,9 @@
    weiter, rot heisst lass es.
    =================================================================== */
 
-.wk-frage {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--text);
-}
-
 .wk-rest {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-leise);
 }
 
