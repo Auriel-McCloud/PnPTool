@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/symbol-192.png" />
+    <!-- Startbild beim Oeffnen aus dem Startbildschirm heraus -->
+    <link rel="apple-touch-icon" href="/symbol-192.png" />
     <!-- viewport-fit + user-scalable: auf dem Tablet soll sich das Commlink wie
          ein Gerät anfühlen, nicht wie eine Webseite, die man aus Versehen
          verschiebt oder zoomt. -->
@@ -12,6 +14,10 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#08080d" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <!-- iOS kennt display:fullscreen nicht; das hier ist sein Gegenstueck -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Commlink" />
     <title>Commlink — NeotopiA</title>
   </head>
   <body>

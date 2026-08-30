@@ -779,6 +779,62 @@ erfunden, damit der Bereich nicht leer ist — kann weg.
 - Für Begleiter fehlt eine serverseitige Prüfung, dass die verteilten Punkte
   die Stufe nicht übersteigen — die Oberfläche warnt nur.
 
+## Als App auf dem Startbildschirm (30.08.2026)
+
+`frontend/public/manifest.webmanifest` + Verweise in `index.html`. `display`
+steht auf **fullscreen** (mit `display_override` auf standalone als Rückfall),
+Hintergrund und Themenfarbe auf `#08080d`, damit beim Start kein weisses Bild
+aufblitzt.
+
+**Eigene Symbole** (`symbol-192.png`, `symbol-512.png`, `symbol-maskable-512.png`)
+— das Sechseck mit Ring aus der Oberfläche, gezeichnet als Geometrie statt als
+Schriftzeichen: ob ein Gerät die Glyphe "⌬" hat, ist Glückssache. Die
+maskable-Fassung hat ein kleineres Motiv, weil Android die Ecken rund
+abschneidet. Erzeugt mit einem Wegwerf-Skript und Pillow (danach wieder
+deinstalliert); zum Ändern neu zeichnen, nicht nachbearbeiten. Die
+Vite-Starter-Dateien `favicon.svg`/`icons.svg` (Bluesky-Symbolsatz) sind
+entfernt.
+
+> ⚠️ **Chrome installiert nur von einem sicheren Ursprung.** Über
+> `http://192.168.178.21:5173` gilt die Seite als unsicher; "Zum
+> Startbildschirm hinzufügen" legt dann nur eine Verknüpfung an, die im
+> Browser-Tab aufgeht — **nicht** im Vollbild. Drei Wege: (a) auf dem Tablet
+> unter `chrome://flags/#unsafely-treat-insecure-origin-as-secure` die Adresse
+> `http://192.168.178.21:5173` eintragen und Chrome neu starten, (b) den
+> Dev-Server mit HTTPS und selbstsigniertem Zertifikat betreiben und dieses am
+> Tablet vertrauen, (c) beim späteren Deploy hinter nginx ohnehin mit echtem
+> Zertifikat. Für den Heimgebrauch ist (a) der kürzeste Weg.
+
+## Offene Punkte von Mark (30.08.2026, noch nicht gebaut)
+
+1. **Reihenfolge auf dem Begleiter-/Fahrzeugblatt.** Derzeit steht die Stufe
+   in einer Zeile mit Widerstand und Angriff. Sie gehört **allein ganz nach
+   oben**: sie ist kein gleichrangiger Wert, sondern das Gesamtbudget — die
+   Stufenpunkte *werden* in die anderen Werte gesteckt. Darunter dann Angriff,
+   Widerstand, Agilität. Betrifft `BegleiterKachel.tsx`,
+   `BegleiterVerwaltung.tsx` und den Fahrzeugblock in `CharacterSheetPanel.tsx`.
+
+2. **Gegenstände: Schalter "immer sichtbar".** Ein Schwert oder Sturmgewehr
+   kann man nicht am Körper tragen, ohne dass es jeder sofort sieht; anderes
+   lässt sich unter der Kleidung verstecken. Marks Worte: *"das ist nicht
+   wichtig, aber ich glaub es gefällt mir."* Also ein Feld am Gegenstand, das
+   nur anzeigt — offen bleibt, ob und wo es Folgen hat (Heimlichkeit?
+   Reaktionen von NPCs?).
+
+3. **Riggen im Kampfmodus** — Antwort auf meine Rückfrage, wann eine
+   Fertigkeit "kompatibel" ist:
+   - Steuert der Rigger eine Drohne **manuell**, addiert sich seine passende
+     Fertigkeit zum Wert der Drohne (Fahren → Fliegen/Bewegung, Schusswaffen →
+     Angriff).
+   - Handelt die Drohne **selbstständig**, zählen nur ihre eigenen Werte.
+   - **Pro Kampfrunde lässt sich nur eine Drohne manuell steuern**, alle
+     übrigen greifen automatisch an.
+   - Welche Fertigkeit auf welchen Drohnenwert geht, ist **noch nicht
+     festgelegt** — Mark will das gemeinsam definieren. Nicht eigenmächtig
+     entscheiden.
+
+   Gehört in den Kampfmodus, für den im Menü schon ein Platzhalter steht.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
