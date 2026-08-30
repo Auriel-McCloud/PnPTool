@@ -53,7 +53,11 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Technologie", "Fertigkeit", 5, 28),
     ("Wahrnehmung", "Fertigkeit", 5, 29),
     ("Matrix", "Fertigkeit", 5, 30),
-    # NeuroWeaving
+    # NeuroWeaving: erst der Wert selbst, dann die vier Fertigkeiten.
+    # Aufgebaut wie Arete + Sphären — mit dem Unterschied, dass die
+    # Fertigkeiten hier **mitgewürfelt** werden (Regelblatt Zeile 45/96),
+    # während Sphären nur beschreiben, was möglich ist.
+    ("NeuroWeaving", "NeuroWeavingWert", 10, 1),
     ("Brute Force", "NeuroWeaving", 5, 1),
     ("Schleichen", "NeuroWeaving", 5, 2),
     ("Daten Verarbeiten", "NeuroWeaving", 5, 3),

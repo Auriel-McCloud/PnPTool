@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
-from app.items.repository import commlink_cyberwall
+from app.items.repository import commlink_cyberwall, deck_boni
 from app.traits import erfahrung, erstellung, repository
 from app.traits.bogen import bogen_uebersicht, sichtbare_kategorien, willenskraft_max
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
@@ -62,6 +62,9 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
         "uebersicht": bogen_uebersicht(person, nach_name, cyberwall),
+        # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
+        # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
+        "deckBoni": await deck_boni(campaign_id, person_id),
         "katalog": [t for t in katalog if t["category"] in erlaubt],
         "werte": werte,
     }

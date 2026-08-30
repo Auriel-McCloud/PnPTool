@@ -227,3 +227,38 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* --- Cyberdeck: Bonuswürfel je Matrix-Aktion -------------------------- */
+
+.pr-deck {
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.pr-deck h3 {
+  margin: 0 0 6px;
+}
+
+.pr-deck-reihe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pr-deck-reihe button {
+  flex: 1 1 auto;
+  min-width: 130px;
+  font-size: 13px;
+}
+
+.pr-deck-reihe button[data-gewaehlt="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+/* Gewählter Partner beim NeuroWeaving */
+.pr-attribut[data-gewaehlt="true"] {
+  border-color: var(--cb-ton, var(--neon));
+  background: color-mix(in srgb, var(--cb-ton, var(--neon)) 14%, transparent);
+}

@@ -10,7 +10,8 @@ docs/regeln-neotopia.md.
 BEREICHE_JE_WEG: dict[str, set[str]] = {
     "KEINER": set(),
     "MAGIER": {"Arete", "Sphäre"},
-    "TECHNOMANCER": {"NeuroWeaving"},
+    # Der Wert selbst und die vier Fertigkeiten dazu.
+    "TECHNOMANCER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
 
 # Grundwert der Gesundheit, auf den die Widerstandsfähigkeit addiert wird.
@@ -67,7 +68,7 @@ def sichtbare_kategorien(weg: str, alle: set[str]) -> set[str]:
     Magier, NeuroWeaving nur ein Technomancer — wer nichts davon gewählt hat,
     bekommt diese Bereiche gar nicht erst zu sehen.
     """
-    besonders = {"Arete", "Sphäre", "NeuroWeaving"}
+    besonders = {"Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
     grundlage = {k for k in alle if k not in besonders}
     return grundlage | BEREICHE_JE_WEG.get(weg, set())
 

@@ -45,6 +45,7 @@ const TON: Record<string, string> = {
   Fertigkeit: "#00e5ff",
   Arete: "#c76bff",
   Sphäre: "#a865d8",
+  NeuroWeavingWert: "#3ddc84",
   NeuroWeaving: "#3ddc84",
   Hintergrund: "#8a8aa0",
 };
@@ -102,7 +103,7 @@ export function Charaktererstellung({
   /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl. */
   const wegKategorien = useMemo(() => {
     if (weg === "MAGIER") return new Set(["Fertigkeit", "Arete", "Sphäre"]);
-    if (weg === "TECHNOMANCER") return new Set(["Fertigkeit", "NeuroWeaving"]);
+    if (weg === "TECHNOMANCER") return new Set(["Fertigkeit", "NeuroWeavingWert", "NeuroWeaving"]);
     return new Set(["Fertigkeit"]);
   }, [weg]);
 
@@ -588,7 +589,7 @@ function SchrittFertigkeiten({
     (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
-  const gruppenFolge = ["Fertigkeit", "Arete", "Sphäre", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
+  const gruppenFolge = ["Fertigkeit", "Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
 
   return (
     <div>

@@ -13,6 +13,8 @@ RETURN_FIELDS = """
     g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istBehaelter AS istBehaelter,
     g.stufe AS stufe, g.widerstand AS widerstand, g.angriff AS angriff, g.agilitaet AS agilitaet,
     g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
+    g.deckBruteForce AS deckBruteForce, g.deckSchleichen AS deckSchleichen,
+    g.deckDaten AS deckDaten, g.deckKompilieren AS deckKompilieren,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -88,6 +90,10 @@ def _decode(record: dict) -> dict:
     # Werte des Drohnen-/Fahrzeugblatts (Neotopia.xlsx, Blatt DrohneFahrzeug).
     # Gesundheit = Stufe, Widerstand = Schadensreduktion, Angriff = Treffen und
     # Schaden, Agilitaet = Geschwindigkeit.
+    # Cyberdeck-Werte B/S/D/K (Regelblatt Zeile 157/158): Bonuswürfel für die
+    # jeweilige Matrix-Aktion.
+    for feld in ("deckBruteForce", "deckSchleichen", "deckDaten", "deckKompilieren"):
+        record[feld] = _or_default(record.get(feld), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
     record["widerstand"] = _or_default(record.get("widerstand"), 0)
     record["angriff"] = _or_default(record.get("angriff"), 0)
@@ -116,7 +122,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
             gewicht: $gewicht, kapazitaet: $kapazitaet, istBehaelter: $istBehaelter,
             stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
-            fahrzeugFertigkeiten: $fahrzeugFertigkeiten
+            fahrzeugFertigkeiten: $fahrzeugFertigkeiten,
+            deckBruteForce: $deckBruteForce, deckSchleichen: $deckSchleichen,
+            deckDaten: $deckDaten, deckKompilieren: $deckKompilieren
         })
     """
     if owner_person_id:
@@ -159,6 +167,10 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             angriff=data.get("angriff") or 0,
             agilitaet=data.get("agilitaet") or 0,
             fahrzeugFertigkeiten=json.dumps(data.get("fahrzeugFertigkeiten") or {}),
+            deckBruteForce=data.get("deckBruteForce") or 0,
+            deckSchleichen=data.get("deckSchleichen") or 0,
+            deckDaten=data.get("deckDaten") or 0,
+            deckKompilieren=data.get("deckKompilieren") or 0,
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -543,3 +555,48 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
         # Ohne Commlink kein Zugang — ein Deck allein bringt nichts, es
         # verstärkt nur eine vorhandene Verbindung.
         return grund + int(record["bonus"] or 0) if grund > 0 else 0
+
+
+# Welche Eigenschaft am Deck zu welcher Matrix-Aktion gehört (Zeile 157:
+# "Brute Force = B, Schleichen = S, Daten Verarbeiten = D, Kompilieren = K").
+DECK_WERTE = {
+    "Brute Force": "deckBruteForce",
+    "Schleichen": "deckSchleichen",
+    "Daten Verarbeiten": "deckDaten",
+    "Kompilieren": "deckKompilieren",
+}
+
+
+async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
+    """Bonuswürfel aus den ausgerüsteten Cyberdecks.
+
+    **Mehrere Decks addieren sich nicht** (Marks Vorgabe): es zählt je Aktion
+    der höchste Wert. Wer zwei Decks trägt, bekommt also das Beste aus beiden,
+    aber nicht die Summe — sonst wäre das Stapeln von Geräten die einzige
+    sinnvolle Bauweise.
+
+    Nur **ausgerüstete** Decks zählen; eines im Rucksack nützt niemandem.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET'
+        RETURN max(coalesce(g.deckBruteForce, 0)) AS bruteForce,
+               max(coalesce(g.deckSchleichen, 0)) AS schleichen,
+               max(coalesce(g.deckDaten, 0)) AS daten,
+               max(coalesce(g.deckKompilieren, 0)) AS kompilieren
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        if record is None:
+            return {}
+        werte = {
+            "Brute Force": record["bruteForce"] or 0,
+            "Schleichen": record["schleichen"] or 0,
+            "Daten Verarbeiten": record["daten"] or 0,
+            "Kompilieren": record["kompilieren"] or 0,
+        }
+        # Nur zurückgeben, was tatsächlich etwas beiträgt — eine Liste aus
+        # lauter Nullen sagt nichts und verstellt die Anzeige.
+        return {k: v for k, v in werte.items() if v > 0}

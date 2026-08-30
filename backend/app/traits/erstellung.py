@@ -128,7 +128,7 @@ WEGE: list[dict[str, str]] = [
 KATEGORIEN_JE_WEG = {
     "KEINER": set(),
     "MAGIER": {"Arete", "Sphäre"},
-    "TECHNOMANCER": {"NeuroWeaving"},
+    "TECHNOMANCER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
 
 # --- Fertigkeitspakete (Zeilen 28-30) -----------------------------------
@@ -157,7 +157,7 @@ FERTIGKEITS_PAKETE: dict[str, dict[str, Any]] = {
 
 # Kategorien, aus denen sich ein Fertigkeitspaket bedienen darf. Zeile 27:
 # "Arete, Sphären, bzw. NeuroWeaving zählen als Fähigkeit".
-FERTIGKEITS_KATEGORIEN = {"Fertigkeit", "Arete", "Sphäre", "NeuroWeaving"}
+FERTIGKEITS_KATEGORIEN = {"Fertigkeit", "Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
 
 # --- Hintergründe -------------------------------------------------------
 # VORSCHLAG, nicht aus dem Regelwerk. Bewusst wenige und klar unterscheidbare
@@ -191,7 +191,10 @@ FREEBEE_KOSTEN_JE_KATEGORIE: dict[str, int] = {
     "AttributGesellschaftlich": 5,
     "AttributGeistig": 5,
     "Arete": 5,
-    "NeuroWeaving": 5,
+    # Der NeuroWeaving-Wert zählt wie Arete zu den Attributen, die vier
+    # Fertigkeiten darunter wie Fertigkeiten.
+    "NeuroWeavingWert": 5,
+    "NeuroWeaving": 2,
     "Fertigkeit": 2,
     "Sphäre": 2,
     HINTERGRUND_KATEGORIE: 1,

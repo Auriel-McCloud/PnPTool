@@ -26,10 +26,11 @@ FAKTOR: dict[str, int] = {
     # wie ein Attribut, eine Sphäre wie eine Fertigkeit.
     "Sphäre": 2,
     "Arete": 4,
-    # NeuroWeaving blieb auf Marks Wunsch unverändert ("den Rest lassen wir
-    # so"). Es ist beim Technomancer allerdings das Gegenstück zu den
-    # Sphären, die jetzt 2 kosten — bei Gelegenheit nachfragen.
-    "NeuroWeaving": 5,
+    # Der NeuroWeaving-Wert steigt wie Arete (Attributpreis), die vier
+    # Fertigkeiten darunter wie Fertigkeiten — dieselbe Zuordnung wie bei
+    # Arete und Sphären.
+    "NeuroWeavingWert": 4,
+    "NeuroWeaving": 2,
     "Hintergrund": 3,
 }
 
@@ -42,7 +43,8 @@ NEU_KOSTEN: dict[str, int] = {
     # Wie der Freebee-Preis eines Attributpunkts, damit der Einstieg in die
     # Magie nicht teurer ist als bei der Erstellung.
     "Arete": 5,
-    "NeuroWeaving": 7,
+    "NeuroWeavingWert": 5,
+    "NeuroWeaving": 3,
     "Hintergrund": 3,
 }
 

@@ -19,6 +19,7 @@ const TON: Record<string, string> = {
   Fertigkeit: "#00e5ff",
   Arete: "#c76bff",
   Sphäre: "#a865d8",
+  NeuroWeavingWert: "#3ddc84",
   NeuroWeaving: "#3ddc84",
 };
 
@@ -319,6 +320,7 @@ export function Charakterblatt({
         // Wilde Magie reicht bis zur Höhe der Willenskraft — die verbrauchte
         // zählt dabei nicht mit, es geht um den Gesamtwert.
         willenskraft={u.willenskraftMax}
+        deckBoni={bogen.deckBoni}
         onSchliessen={() => setProbe(null)}
       />
 

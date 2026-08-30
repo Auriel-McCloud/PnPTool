@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
-import { MAGIE_HINWEISE, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
+import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import "./probe.css";
 
 /**
@@ -30,7 +30,18 @@ const SPALTEN: { titel: string; kategorie: string; ton: string }[] = [
  * kontrollierter Zauber ist nur der Arete-Wert; dazunehmen lässt sich allein
  * Willenskraft, und das mit Folgen — siehe `magie.ts`.
  */
-const NUR_WILLENSKRAFT = new Set(["Arete", "NeuroWeaving"]);
+const NUR_WILLENSKRAFT = new Set(["Arete", "NeuroWeavingWert", "NeuroWeaving"]);
+
+/**
+ * Beim NeuroWeaving treffen zwei Werte aufeinander: der NeuroWeaving-Wert
+ * selbst und eine der vier Fertigkeiten (Regelblatt Zeile 45/96 — anders als
+ * Sphären zählen sie **mit**). Von welcher Seite man kommt, entscheidet nur,
+ * was die Auswahl zeigt.
+ */
+const NEURO_PARTNER: Record<string, string> = {
+  NeuroWeavingWert: "NeuroWeaving",
+  NeuroWeaving: "NeuroWeavingWert",
+};
 
 export interface ProbeWahl {
   name: string;
@@ -43,6 +54,7 @@ export function Probe({
   katalog,
   werte,
   willenskraft,
+  deckBoni,
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
@@ -56,21 +68,33 @@ export function Probe({
   werte: Map<string, number>;
   /** Obergrenze für Wilde Magie — so viele Bonuswürfel sind erlaubt. */
   willenskraft: number;
+  /** Bonuswürfel aus dem ausgerüsteten Cyberdeck, je Matrix-Aktion. */
+  deckBoni?: Record<string, number>;
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
   // Bonuswürfel aus Willenskraft — nur bei Arete und NeuroWeaving.
   const [wild, setWild] = useState(0);
+  // Genau eine Deck-Aktion — man tut ja eines nach dem anderen.
+  const [deck, setDeck] = useState<{ name: string; wert: number } | null>(null);
 
   if (!wahl) return null;
 
   const istSphaere = wahl.kategorie === "Sphäre";
   const nurWillenskraft = NUR_WILLENSKRAFT.has(wahl.kategorie);
-  const pool = wahl.wert + (attribut?.wert ?? 0) + (nurWillenskraft ? wild : 0);
+  const partnerKategorie = NEURO_PARTNER[wahl.kategorie];
+  const roh = wahl.wert + (attribut?.wert ?? 0) + (nurWillenskraft ? wild : 0) + (deck?.wert ?? 0);
+  // Der Deckel gilt nur fürs NeuroWeaving; Arete allein geht bis 10 und
+  // sammelt darüber hinaus nur wilde Würfel.
+  const gedeckelt = Boolean(partnerKategorie) && roh > NEUROWEAVING_POOL_MAX;
+  const pool = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
+
+  const deckAktionen = Object.entries(deckBoni ?? {});
 
   function schliesseAlles() {
     setAttribut(null);
     setWild(0);
+    setDeck(null);
     onSchliessen();
   }
 
@@ -117,13 +141,44 @@ export function Probe({
             {wahl.kategorie === "Arete" ? MAGIE_HINWEISE.areteKontrolliert : MAGIE_HINWEISE.neuroWeaving}
           </p>
 
+          {partnerKategorie && (
+            <section>
+              <h3 className="pr-spalte-titel" style={{ "--cb-ton": "#3ddc84" } as React.CSSProperties}>
+                {wahl.kategorie === "NeuroWeavingWert" ? "Womit?" : "NeuroWeaving-Wert"}
+              </h3>
+              {katalog
+                .filter((t) => t.category === partnerKategorie)
+                .map((t) => {
+                  const wert = werte.get(t.id) ?? 0;
+                  const gewaehlt = attribut?.name === t.name;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className="pr-attribut"
+                      data-gewaehlt={gewaehlt}
+                      style={{ "--cb-ton": "#3ddc84" } as React.CSSProperties}
+                      onClick={() => setAttribut(gewaehlt ? null : { name: t.name, wert })}
+                    >
+                      <span className="pr-attribut-name">{t.name}</span>
+                      <span className="pr-attribut-summe">
+                        {Math.min(NEUROWEAVING_POOL_MAX, wahl.wert + wert + wild)}
+                      </span>
+                    </button>
+                  );
+                })}
+            </section>
+          )}
+
           <div className="pr-pool">
             <span className="pr-zahl">{pool}</span>
             <WuerfelZehn groesse={54} />
           </div>
           <p className="pr-rechnung">
             {wahl.name} {wahl.wert}
+            {attribut && ` + ${attribut.name} ${attribut.wert}`}
             {wild > 0 && ` + ${wild} aus Willenskraft`}
+            {gedeckelt && ` — gedeckelt auf ${NEUROWEAVING_POOL_MAX}`}
           </p>
 
           {willenskraft > 0 ? (
@@ -203,7 +258,28 @@ export function Probe({
         <p className="pr-rechnung">
           {wahl.name} {wahl.wert}
           {attribut && attribut.wert > 0 && ` + ${attribut.name} ${attribut.wert}`}
+          {deck && ` + ${deck.name} ${deck.wert}`}
         </p>
+
+        {/* Das Deck gibt Bonuswürfel je Aktion (Zeile 157). Nur anbieten,
+            wenn eines ausgerüstet ist — sonst steht hier eine leere Reihe. */}
+        {deckAktionen.length > 0 && (
+          <section className="pr-deck">
+            <h3>Cyberdeck</h3>
+            <div className="pr-deck-reihe">
+              {deckAktionen.map(([name, wert]) => (
+                <button
+                  key={name}
+                  type="button"
+                  data-gewaehlt={deck?.name === name}
+                  onClick={() => setDeck(deck?.name === name ? null : { name, wert })}
+                >
+                  {name} <strong>+{wert}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
         <p className="pr-regel">
           <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
         </p>

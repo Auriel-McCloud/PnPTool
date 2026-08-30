@@ -65,6 +65,11 @@ class GegenstandCreate(BaseModel):
     angriff: int = 0
     agilitaet: int = 0
     fahrzeugFertigkeiten: dict[str, int] = {}
+    # Cyberdeck: Bonuswürfel je Matrix-Aktion (B/S/D/K, Regelblatt Zeile 157).
+    deckBruteForce: int = 0
+    deckSchleichen: int = 0
+    deckDaten: int = 0
+    deckKompilieren: int = 0
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -104,6 +109,10 @@ class GegenstandUpdate(BaseModel):
     angriff: int | None = None
     agilitaet: int | None = None
     fahrzeugFertigkeiten: dict[str, int] | None = None
+    deckBruteForce: int | None = None
+    deckSchleichen: int | None = None
+    deckDaten: int | None = None
+    deckKompilieren: int | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -142,6 +151,10 @@ class GegenstandResponse(BaseModel):
     angriff: int = 0
     agilitaet: int = 0
     fahrzeugFertigkeiten: dict[str, int] = {}
+    deckBruteForce: int = 0
+    deckSchleichen: int = 0
+    deckDaten: int = 0
+    deckKompilieren: int = 0
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None
     ablageZielName: str | None = None

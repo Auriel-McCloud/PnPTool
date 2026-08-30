@@ -67,3 +67,15 @@ export const MAGIE_HINWEISE = {
     "NeuroWeaving-Punkte sind Bonuswürfel für die jeweilige Aktion, keine Begrenzung. Du darfst auch " +
     "Fertigkeiten einsetzen, in denen du keine Punkte hast.",
 };
+
+/**
+ * Obergrenze für den NeuroWeaving-Pool.
+ *
+ * Marks Vorgabe (30.08.2026): **NeuroWeaving-Wert + Fertigkeit ergeben
+ * höchstens 10.** Anders als bei Arete, wo der Wert allein bis 10 geht,
+ * treffen hier zwei Werte aufeinander — ohne Deckel käme man auf 15.
+ *
+ * Bewusst ein Deckel auf dem *Pool*, nicht auf den Werten selbst: die Werte
+ * dürfen weiter steigen, nur mehr Würfel gibt es dafür nicht.
+ */
+export const NEUROWEAVING_POOL_MAX = 10;

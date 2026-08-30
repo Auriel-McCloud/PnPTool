@@ -36,6 +36,12 @@ export interface BogenUebersicht {
 export interface Bogen {
   person: { id: string; name: string; personType: string };
   uebersicht: BogenUebersicht;
+  /**
+   * Bonuswürfel aus ausgerüsteten Cyberdecks, je Matrix-Aktion. Gehört nicht
+   * zu den Werten der Person, sondern zu ihrer Ausrüstung — mehrere Decks
+   * addieren sich nicht, es zählt je Aktion das beste.
+   */
+  deckBoni: Record<string, number>;
   /** Bereits nach dem Weg gefiltert: kein Magier, keine Sphären. */
   katalog: TraitDef[];
   werte: TraitRating[];
@@ -158,7 +164,8 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   Fertigkeit: "Fähigkeiten",
   Arete: "Arete",
   Sphäre: "Sphären",
-  NeuroWeaving: "NeuroWeaving",
+  NeuroWeavingWert: "NeuroWeaving",
+  NeuroWeaving: "NeuroWeaving-Fertigkeiten",
   Hintergrund: "Hintergründe",
 };
 
