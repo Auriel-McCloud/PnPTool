@@ -145,10 +145,22 @@ export function GegenstandKachel({
                 Angriff und Agilität verteilt — das trägt die Spielleitung ein.
               </p>
             )}
+            {/* Die Stufe steht **allein oben**: sie ist kein vierter Wert
+                neben den anderen, sondern das Budget, aus dem sie bezahlt
+                werden — und zugleich die Gesundheit. In einer Reihe mit
+                Widerstand, Angriff und Agilität liest sie sich falsch. */}
+            <div className="gg-stufe">
+              <span className="gg-stufe-titel">Stufe</span>
+              <DotPool value={item.stufe} max={15} />
+              <span className="gg-stufe-hinweis">
+                Zugleich die Gesundheit. Wird beim Kauf festgelegt und frei auf die Werte darunter
+                verteilt.
+              </span>
+            </div>
+
             <div className="gg-fahrzeugwerte">
               {(
                 [
-                  ["Stufe", item.stufe, 15, "Zugleich die Gesundheit — so viel hält es aus."],
                   ["Widerstand", item.widerstand, 5, "Schadensreduktion."],
                   ["Angriff", item.angriff, 5, "Treffen und Schaden, wenn es selbst handelt."],
                   ["Agilität", item.agilitaet, 5, "Geschwindigkeit."],

@@ -1275,6 +1275,31 @@ rätselte, ob es kein Blatt hat oder ob die Anzeige fehlt (Marks Fund).
 - **Yamaha Rapier** hat jetzt ein Blatt: Stufe 3, davon Widerstand 1 und
   Agilität 2, Preis 15.000¥ (Fahrzeug Stufe × 5.000, Zeile 119).
 
+## Die Stufe steht allein (30.08.2026)
+
+Mark hatte das schon einmal angemerkt, ich hatte es notiert und dann liegen
+lassen — beim zweiten Mal berechtigt eingefordert.
+
+**Die Stufe ist kein vierter Wert neben Widerstand, Angriff und Agilität**,
+sondern das **Budget**, aus dem die drei bezahlt werden, und zugleich die
+Gesundheit. In einer Reihe mit ihnen liest sie sich falsch. Sie steht jetzt
+überall allein und abgesetzt darüber, in einem eigenen Kasten mit dem Hinweis,
+wofür sie steht:
+
+- `items/GegenstandKachel.tsx` — Fahrzeug- und Drohnenblatt (Spielersicht)
+- `traits/CharacterSheetPanel.tsx` — Fahrzeugwerte bearbeiten
+- `begleiter/BegleiterKachel.tsx` — Begleiterblatt
+- `begleiter/BegleiterVerwaltung.tsx` — Begleiter bearbeiten
+
+Alle vier, weil dasselbe Blatt an vier Stellen gezeichnet wird. Wer hier etwas
+ändert, muss an alle denken — eine gemeinsame Komponente dafür wäre der
+nächste sinnvolle Schritt.
+
+**Offen (Marks Regelentscheidung):** der Fahrzeugpreis. `Stufe × 5.000¥`
+(Zeile 119) macht ein Motorrad mit Stufe 3 zu einem 15.000¥-Gerät — nach Marks
+Gefühl deutlich zu teuer. Die Formel steht nur im Regeldokument, nicht im Code;
+geändert werden müssten die Preise der angelegten Fahrzeuge.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

@@ -448,3 +448,30 @@
   line-height: 1.5;
   color: var(--text-aus);
 }
+
+/* Stufe allein über den Fahrzeugwerten — siehe begleiter.css, gleicher Grund. */
+.gg-stufe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, transparent);
+  border-radius: var(--radius);
+  background: var(--neon-schwach);
+}
+
+.gg-stufe-titel {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.gg-stufe-hinweis {
+  flex: 1 1 100%;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-aus);
+}

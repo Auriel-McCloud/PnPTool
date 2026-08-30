@@ -23,8 +23,9 @@ const WERT_ERKLAERUNG: Record<string, string> = {
 };
 
 export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
+  // Die Stufe steht allein oben — sie ist das Budget, aus dem die drei
+  // darunter bezahlt werden, und zugleich die Gesundheit.
   const werte: [string, number, number][] = [
-    ["Stufe", begleiter.stufe, 15],
     ["Widerstand", begleiter.widerstand, 5],
     ["Angriff", begleiter.angriff, 5],
     ["Agilität", begleiter.agilitaet, 5],
@@ -41,6 +42,12 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
       )}
 
       {beschreibung && <RichTextView content={beschreibung} />}
+
+      <section className="bg-stufe">
+        <span className="bg-stufe-titel">Stufe</span>
+        <DotPool value={begleiter.stufe} max={15} />
+        <span className="bg-stufe-hinweis">Zugleich die Gesundheit.</span>
+      </section>
 
       <section className="bg-werte">
         {werte.map(([name, wert, maximum]) => (

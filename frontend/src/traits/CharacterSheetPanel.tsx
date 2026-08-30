@@ -345,10 +345,16 @@ export function GegenstandRow({
               Angriff und Agilität verteilt. Gesundheit = Stufe, Widerstand = Schadensreduktion,
               Agilität = Geschwindigkeit.
             </label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+            {/* Stufe allein oben — sie ist das Budget, nicht ein vierter Wert */}
+            <div style={{ marginTop: 8, paddingBottom: 8, borderBottom: "1px solid var(--linie)" }}>
+              <div style={{ fontSize: "0.8em", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
+                Stufe
+              </div>
+              <DotPool value={stufe} max={15} onChange={setStufe} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
               {(
                 [
-                  ["Stufe", stufe, setStufe, 15],
                   ["Widerstand", widerstand, setWiderstand, 5],
                   ["Angriff", angriff, setAngriff, 5],
                   ["Agilität", agilitaet, setAgilitaet, 5],

@@ -252,10 +252,17 @@ function BegleiterFenster({
           </select>
         </div>
 
+        <section className="bg-stufe">
+          <span className="bg-stufe-titel">Stufe</span>
+          <DotPool value={stufe} max={15} onChange={setStufe} />
+          <span className="bg-stufe-hinweis">
+            Das Budget für die Werte darunter — und zugleich die Gesundheit.
+          </span>
+        </section>
+
         <section className="bg-werte">
           {(
             [
-              ["Stufe", stufe, setStufe, 15],
               ["Widerstand", widerstand, setWiderstand, 5],
               ["Angriff", angriff, setAngriff, 5],
               ["Agilität", agilitaet, setAgilitaet, 5],

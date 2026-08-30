@@ -177,6 +177,9 @@ Prothese 10.000 ¥ (Verlust 2), Prothesen-Gadget 5.000 ¥. Körperzonen: Kopf, A
 - Gesundheit = Stufe · Widerstand = Schadensreduktion · Angriff = Treffen und Schaden · Agilität = Geschwindigkeit.
 - Beim **Riggen** nutzt man die eigenen Werte, aber höchstens bis zur Stufe der Drohne.
 - Preise: Fahrzeug Stufe × 5.000 ¥ (ab 5 × 20.000, ab 10 × 40.000), Drohne Stufe × 500 ¥ (ab 5 × 1.000, ab 10 × 5.000).
+  **Mark will das überdenken** (30.08.2026): ein Motorrad mit Stufe 3 käme so auf 15.000 ¥ und
+  wäre damit kaum leistbar. Vermutlich braucht es eine eigene, günstigere Staffel für kleine
+  Fahrzeuge — oder die Stufe eines Motorrads ist schlicht niedriger als gedacht.
 
 ## Geld
 
