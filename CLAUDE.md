@@ -1441,6 +1441,72 @@ Zahlen erst bedeutsam machen.
 Reihenfolge: Cyberware (erledigt) → Ausrüstungsschritt → Konzepte. **Mark hat
 noch nicht entschieden.**
 
+## Vorgemerkt für Donnerstag (notiert 31.08.2026)
+
+Marks Liste vor der Pause. **Noch nichts davon gebaut.**
+
+### 1. Behälter, dessen Inhalt nicht mitwiegt
+
+Ein Rucksack soll sein **Eigengewicht** zur Traglast beitragen, seinen
+**Inhalt aber nicht** — Marks Vorbild ist der Bag of Holding aus D&D, und er
+hält es für NeotopiA durchaus denkbar. Also **keine feste Regel, sondern eine
+Unteroption am Behälter**: ein Schalter neben `istBehaelter`, etwa
+`inhaltWiegtNicht`.
+
+**Der Haken steckt im Datenmodell, nicht im Schalter.** Was man mitführt, hat
+heute `ablage: RUCKSACK` — das heisst nur "am Körper dabei", nicht "in diesem
+Rucksack". Der getragene Behälter *benennt* den Bereich bloss
+(`items/aufbewahrung.ts`). Ein Gegenstand zeigt erst über `LIEGT_IN` auf einen
+konkreten Behälter, und das nutzt bisher nur Gelagertes.
+
+Damit ein Behälter seinen Inhalt vom Gewicht ausnehmen kann, muss der Inhalt
+also **wirklich auf ihn zeigen**. Zwei Wege:
+
+- (a) Beim Umlegen auf "mitgeführt" zusätzlich `LIEGT_IN` auf den getragenen
+  Behälter setzen — dann bleibt `RUCKSACK` als Art, gewinnt aber ein Ziel.
+- (b) `RUCKSACK` als Ablage-Art ganz aufgeben und alles über `GELAGERT` +
+  Ziel führen, wobei "am Körper getragener Behälter" ein Ziel wie jedes
+  andere ist.
+
+(a) ist der kleinere Eingriff, (b) das sauberere Modell. **Vor dem Bauen
+entscheiden.** `traglast_uebersicht` in `items/repository.py` rechnet ohnehin
+schon nicht rekursiv — der gefüllte Rucksack im Auto zählt gegen das Auto nur
+mit Eigengewicht. Die neue Option ist dasselbe Prinzip, eine Ebene höher.
+
+### 2. Die drei Ablage-Knöpfe brauchen ein Ziel
+
+Im Gegenstandsfenster stehen drei Knöpfe (Am Körper / Behälter / Weggelegt) und
+nehmen die ganze Breite. **Mark mag die Knöpfe** — sie sollen bleiben. Was
+fehlt: bei "Weggelegt" muss man sagen können **wohin** (welches Fahrzeug,
+welcher Ort), und beim Behälter, in welchen.
+
+Marks Vorschlag: **das Fenster wächst nach unten** und zeigt die weiteren
+Möglichkeiten — **zentriert, nicht linksbündig.** Also kein zweites Fenster
+und keine Auswahlliste, sondern eine Reihe weiterer Knöpfe unter den drei
+bestehenden, die erst erscheint, wenn ein Ziel nötig ist.
+
+Beachten: Spieler dürfen bisher **nur die Art** ändern, nicht das Ziel — das
+war eine bewusste Entscheidung ("in welchem Fahrzeug etwas liegt, bleibt Sache
+der Spielleitung", siehe Abschnitt *Aufbewahrungsorte*). Wenn die Zielauswahl
+kommt, muss geklärt werden, ob das so bleibt. Die Route
+`POST .../gegenstaende/{id}/ablage` nimmt `zielId` schon an; sie ist in der
+Ausnahmeliste von `tests/test_zugriffsschutz.py` und prüft die Besitzverhältnisse
+selbst.
+
+### 3. Wegwerfen fehlt ganz
+
+Ein Spieler kann einen Gegenstand nirgends **loswerden**. Es braucht eine
+Möglichkeit, ihn komplett aus dem Inventar zu entfernen — **mit Rückfrage**,
+wie beim Ausgeben von Willenskraft (`traits/WillenskraftFrage.tsx` ist die
+Vorlage: Ja blau, Nein rot, gross und weit auseinander).
+
+Zu klären: wird der Gegenstand **gelöscht** oder nur besitzerlos (dann liegt er
+gedanklich am Boden und die Spielleitung kann ihn wieder vergeben)? Für ein
+einzigartiges Stück wäre Löschen fatal. Vermutlich: `remove_owner` statt
+`delete` — die Funktion gibt es schon, sie macht daraus eine Vorlage. Dann
+bräuchte es allerdings eine dritte Route für Spieler, und die muss wieder
+selbst prüfen.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.

@@ -174,3 +174,11 @@ auf direkt Ausgerüstetes."*
 Popups ok ist, da das die Illusion des Screens nicht bricht, ich will nur in der
 Hauptansicht kein Scrollen."* Damit gilt: Hauptansichten teilen sich die Fläche
 ein und blättern; in Fenstern ist Scrollen ausdrücklich erlaubt.
+
+## Offen am Gegenstandsfenster (31.08.2026, notiert)
+
+- **Ablage-Knöpfe mit Ziel.** Die drei Knöpfe bleiben, aber das Fenster soll
+  **nach unten wachsen** und die möglichen Ziele zeigen (welches Fahrzeug,
+  welcher Ort) — **zentriert, nicht linksbündig.** Kein zweites Fenster.
+- **Wegwerfen** mit Rückfrage im Stil der Willenskraft-Frage (Ja blau, Nein
+  rot). Offen, ob der Gegenstand gelöscht oder nur besitzerlos wird.
