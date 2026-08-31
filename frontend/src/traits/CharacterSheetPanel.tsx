@@ -418,7 +418,10 @@ export function GegenstandRow({
                     type="button"
                     onClick={() => {
                       setPreis(st.preis);
-                      setWVerlust(st.wVerlust);
+                      // Der **ungerundete** Bruch wird gespeichert, damit sich
+                      // mehrere Implantate zusammen addieren und erst die
+                      // Summe gerundet wird.
+                      setWVerlust(st.wVerlustGenau);
                     }}
                     style={{
                       display: "flex",
@@ -432,15 +435,24 @@ export function GegenstandRow({
                   >
                     <span>{st.name}</span>
                     <span className="mono">
-                      {st.preis.toLocaleString("de-AT")}¥ · −{st.wVerlust} Willenskraft
+                      {st.preis.toLocaleString("de-AT")}¥ · −{st.wVerlust}
+                      {st.wVerlustGenau !== st.wVerlust && (
+                        <em style={{ fontStyle: "normal", color: "var(--text-aus)" }}>
+                          {" "}
+                          ({st.wVerlustGenau.toLocaleString("de-AT")} gezählt)
+                        </em>
+                      )}
                     </span>
                   </button>
                 );
               })}
             </div>
             <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
-              Kostet eingebaut dauerhaft <strong>{wVerlust}</strong> Willenskraft. Wirkt erst, wenn
-              der Gegenstand <em>ausgerüstet</em> ist — im Rucksack ist er noch nicht verbaut.
+              Zählt mit <strong>{wVerlust.toLocaleString("de-AT")}</strong> gegen die Willenskraft.
+              Allein steht das für <strong>{Math.max(1, Math.floor(wVerlust)) || 0}</strong> Punkt
+              {(Math.max(1, Math.floor(wVerlust)) || 0) === 1 ? "" : "e"} — aber gerundet wird erst,
+              wenn alles Chrom zusammengezählt ist: zwei Stücke mit 0,67 kosten gemeinsam 1, nicht 2.
+              Wirkt nur, solange der Gegenstand <em>ausgerüstet</em> ist.
             </p>
           </div>
         )}

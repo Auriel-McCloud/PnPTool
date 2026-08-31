@@ -8,6 +8,11 @@ reisst doppelt so viel heraus wie der Bonus gross ist; die teuerste Arbeit nur
 ein Viertel davon. Das ist das eigentliche Cyberpunk-Dilemma und der Grund,
 warum ein armer Charakter nicht einfach "auch Chrom kaufen" kann.
 
+**Gerundet wird erst am Ende** (Marks Ergänzung vom 31.08.2026): die Brüche der
+einzelnen Stücke werden summiert, dann abgerundet, mindestens aber ein Punkt.
+Ohne das hätte jedes teure Implantat für sich aufgerundet und die teure Arbeit
+hätte sich nicht gelohnt.
+
 Der Verlust senkt das **Maximum** der Willenskraft, nicht den aktuellen Stand
 (siehe `traits/bogen.py`).
 """
@@ -44,17 +49,46 @@ PROTHESEN_GADGET_PREIS = 5_000
 KOERPERZONEN = ["Kopf", "Arme", "Torso", "Beine"]
 
 
-def verlust_fuer(bonus: int, preis_je_bonus: int) -> int:
-    """Willenskraftverlust für einen Bonus auf der gegebenen Preisstufe.
+def verlust_genau(bonus: int, preis_je_bonus: int) -> float:
+    """Der **ungerundete** Verlust eines einzelnen Stücks.
 
-    Immer **abgerundet** (so steht es im Blatt) und nie unter null. Ein
-    unbekannter Preis fällt auf die härteste Stufe zurück — lieber zu teuer
+    Ungerundet gespeichert, weil sich die Brüche über mehrere Stücke hinweg
+    aufsummieren (siehe `verlust_gesamt`). Würde jedes Stück für sich
+    gerundet, käme bei drei teuren Implantaten dreimal dieselbe Aufrundung
+    zusammen — und teures Chrom hätte sich nicht gelohnt.
+
+    Ein unbekannter Preis fällt auf die härteste Stufe zurück: lieber zu teuer
     veranschlagt als versehentlich gratis.
     """
     if bonus <= 0:
-        return 0
+        return 0.0
     stufe = next((s for s in STUFEN if s.preis_je_bonus == preis_je_bonus), STUFEN[0])
-    return max(0, int(bonus / stufe.teiler))
+    return max(0.0, bonus / stufe.teiler)
+
+
+def verlust_gesamt(einzelverluste: list[float]) -> int:
+    """Was alles eingebaute Chrom zusammen kostet.
+
+    Marks Regel (31.08.2026): **erst summieren, dann abrunden — aber mindestens
+    einen Punkt.** Ein einzelnes teures Implantat mit 0,67 kostet also 1; zwei
+    davon kosten zusammen 1,33, also weiterhin 1. So zahlt sich teure Arbeit
+    wirklich aus, statt bei jedem Stück erneut aufgerundet zu werden.
+
+    Der Mindestpunkt greift nur, wenn überhaupt etwas anfällt: ein bewusst mit
+    0 eingetragenes Implantat (rein kosmetisch) bleibt kostenlos.
+    """
+    summe = sum(max(0.0, w) for w in einzelverluste)
+    if summe <= 0:
+        return 0
+    return max(1, int(summe))
+
+
+def verlust_fuer(bonus: int, preis_je_bonus: int) -> int:
+    """Was ein Stück **allein** kostet — für die Anzeige beim Anlegen.
+
+    Dieselbe Regel wie bei mehreren, nur mit einem Posten: mindestens 1.
+    """
+    return verlust_gesamt([verlust_genau(bonus, preis_je_bonus)])
 
 
 def preis_fuer(bonus: int, preis_je_bonus: int) -> int:
@@ -75,6 +109,9 @@ def stufen_uebersicht(bonus: int = 1) -> list[dict]:
             "preisJeBonus": s.preis_je_bonus,
             "preis": preis_fuer(bonus, s.preis_je_bonus),
             "wVerlust": verlust_fuer(bonus, s.preis_je_bonus),
+            # Ungerundet mitgeliefert, damit die Oberfläche zeigen kann, was
+            # sich mit weiteren Implantaten aufsummiert.
+            "wVerlustGenau": round(verlust_genau(bonus, s.preis_je_bonus), 2),
         }
         for s in STUFEN
     ]

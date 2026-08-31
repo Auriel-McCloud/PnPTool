@@ -78,9 +78,11 @@ class GegenstandCreate(BaseModel):
     riggerBonus: int = 0
     maxDrohnen: int = 0
     # Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt.
-    # Ergibt sich aus Preis je Bonuspunkt (Zeilen 112-117) — billiges Chrom
-    # kostet mehr. Wird beim Anlegen gerechnet, hier nur gespeichert.
-    wVerlust: int = 0
+    # **Ungerundet** gespeichert (0,67 ist ein gültiger Wert): die Brüche
+    # mehrerer Implantate summieren sich, gerundet wird erst am Ende
+    # (app/items/chrom.py). Sonst würde jedes Stück für sich aufgerundet und
+    # teure Arbeit hätte sich nicht gelohnt.
+    wVerlust: float = 0.0
     koerperzone: str = ""
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
@@ -128,7 +130,7 @@ class GegenstandUpdate(BaseModel):
     immerSichtbar: bool | None = None
     riggerBonus: int | None = None
     maxDrohnen: int | None = None
-    wVerlust: int | None = None
+    wVerlust: float | None = None
     koerperzone: str | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -180,9 +182,11 @@ class GegenstandResponse(BaseModel):
     riggerBonus: int = 0
     maxDrohnen: int = 0
     # Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt.
-    # Ergibt sich aus Preis je Bonuspunkt (Zeilen 112-117) — billiges Chrom
-    # kostet mehr. Wird beim Anlegen gerechnet, hier nur gespeichert.
-    wVerlust: int = 0
+    # **Ungerundet** gespeichert (0,67 ist ein gültiger Wert): die Brüche
+    # mehrerer Implantate summieren sich, gerundet wird erst am Ende
+    # (app/items/chrom.py). Sonst würde jedes Stück für sich aufgerundet und
+    # teure Arbeit hätte sich nicht gelohnt.
+    wVerlust: float = 0.0
     koerperzone: str = ""
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None

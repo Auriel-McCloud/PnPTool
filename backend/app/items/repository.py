@@ -638,17 +638,21 @@ async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
     noch nicht eingebaut und kostet deshalb nichts. Wer sie ausbauen lässt,
     legt sie weg, und der Verlust fällt weg.
 
-    Anders als der Deck-Bonus wird hier **summiert**: jedes Stück reisst
-    für sich etwas heraus (Regelblatt Zeilen 112-117).
+    **Summiert wird ungerundet, gerundet erst am Ende** — und mindestens ein
+    Punkt fällt an, sobald überhaupt etwas anfällt (`chrom.verlust_gesamt`).
+    Deshalb holt die Abfrage die einzelnen Werte statt gleich zu summieren:
+    aus einer fertigen Summe liesse sich nicht mehr richtig runden.
     """
+    from app.items.chrom import verlust_gesamt
+
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
         WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET'
-        RETURN sum(coalesce(g.wVerlust, 0)) AS verlust
+        RETURN collect(coalesce(g.wVerlust, 0)) AS einzeln
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id,
                                    typen=list(CHROM_TYPEN))
         record = await result.single()
-        return int(record["verlust"] or 0) if record else 0
+        return verlust_gesamt([float(w) for w in (record["einzeln"] if record else [])])

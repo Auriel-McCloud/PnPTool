@@ -174,8 +174,36 @@ Prothese 10.000 ¥ (Verlust 2), Prothesen-Gadget 5.000 ¥.
 **Der Verlust senkt das Maximum der Willenskraft dauerhaft** und zählt nur für *eingebaute*
 (ausgerüstete) Ware. Umgesetzt in `backend/app/items/chrom.py`.
 
-*Beim Umsetzen aufgefallen:* auf den teuren Stufen kostet ein kleiner Bonus gar nichts —
-Bonus 2 bei 10.000 ¥ je Punkt ergibt abgerundet 0. Regelkonform, aber vielleicht ungewollt. Körperzonen: Kopf, Arme, Torso, Beine — je drei Plätze mit Bonus und Verlust.
+**Gerundet wird erst am Ende, mindestens aber ein Punkt** (Mark, 31.08.2026). Die Brüche der
+einzelnen Stücke werden zuerst summiert:
+
+| Chrom | roh | Verlust |
+|---|---|---|
+| ein Implantat Konzernqualität | 0,67 | **1** (Minimum) |
+| zwei davon | 1,33 | **1** |
+| drei davon | 2,0 | **2** |
+| Hinterhofarbeit, Bonus 3 | 6,0 | **6** |
+
+Damit zahlt sich teure Arbeit wirklich aus: würde jedes Stück für sich aufgerundet, kosteten zwei
+Konzernimplantate zusammen 2 statt 1. Ein bewusst mit 0 eingetragenes Stück (rein kosmetisch)
+bleibt kostenlos — das Minimum greift nur, wenn überhaupt etwas anfällt.
+
+## Ein Grundsatz fürs Rechnen
+
+**Rohwerte summieren, erst die Summe runden und begrenzen** (Mark, 31.08.2026 — ausgehend von der
+Chrom-Regel, ausdrücklich als allgemeines Prinzip gemeint).
+
+Wo mehrere Dinge in einen Wert einzahlen, wird nicht jeder Beitrag einzeln gerundet:
+
+- **Chrom**: Brüche summieren, dann abrunden (siehe oben).
+- **Rüstung**: die Boni aller getragenen Stücke werden addiert, und der Geschicklichkeitsabzug
+  richtet sich nach der **Summe** — drei leichte Westen wiegen zusammen schwer.
+- **Traglast**: Gewichte samt Stückzahl summiert, ein Vergleich erst am Ende.
+
+**Ausdrückliche Ausnahmen**, weil dort eine andere Regel gilt:
+
+- **Cyberdecks**: je Matrix-Aktion zählt das *höchste* Deck, nicht die Summe.
+- **Commlinks**: für die Cyberwall zählt das beste Gerät, nicht alle zusammen. Körperzonen: Kopf, Arme, Torso, Beine — je drei Plätze mit Bonus und Verlust.
 
 ## Drohnen und Fahrzeuge
 

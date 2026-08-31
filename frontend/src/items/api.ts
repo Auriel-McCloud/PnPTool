@@ -159,7 +159,14 @@ export interface Chromstufe {
   beschreibung: string;
   preisJeBonus: number;
   preis: number;
+  /** Was dieses Stück **allein** kostet — mindestens 1. */
   wVerlust: number;
+  /**
+   * Der ungerundete Bruch. Genau dieser wird gespeichert: die Brüche mehrerer
+   * Implantate summieren sich, gerundet wird erst am Ende. Zwei Stücke mit
+   * 0,67 kosten zusammen 1, nicht 2.
+   */
+  wVerlustGenau: number;
 }
 
 export const itemsApi = {

@@ -1393,10 +1393,26 @@ Cyberaugen, Dermalpanzerung, Muskelstraffung, Beinprothese). **Ryu trägt
 Cyberaugen** und hat dadurch 4 statt 5 Willenskraft — ausbauen heisst
 ausrüsten rückgängig machen.
 
-**Beim Anlegen bemerkt:** auf den teuren Stufen kostet ein kleiner Bonus gar
-nichts. Bonus 2 bei 10.000¥ je Punkt ergibt 2÷3 = 0 Willenskraft — abgerundet
-wie im Blatt, aber "20.000¥ und es kostet dich nichts" könnte ungewollt sein.
-Für Mark zum Nachdenken, nicht eigenmächtig geändert.
+### Nachgezogen: erst summieren, dann runden
+
+Marks Antwort auf die Beobachtung, dass teures Chrom gratis war: **ein Stück
+kostet mindestens 1 — aber gerundet wird erst, wenn alles zusammengezählt ist.**
+Zwei Konzernimplantate mit je 0,67 kosten gemeinsam 1, nicht 2.
+
+Dafür wird `Gegenstand.wVerlust` **ungerundet** gespeichert (`float`), und
+`chrom.verlust_gesamt()` summiert und rundet am Ende. Die Abfrage in
+`willenskraft_verlust()` holt deshalb die Einzelwerte (`collect`) statt gleich
+zu summieren — aus einer fertigen Summe liesse sich nicht mehr richtig runden.
+
+Geprüft: 0,67 → 1 · 1,33 → 1 · 2,0 → 2 · 6,0 → 6. Und ein Test hält den
+Vergleich fest, um den es ging: einzeln gerundet wäre es teurer.
+
+**Und daraus ein Grundsatz** (Marks Nachsatz: *"das könnten wir allgemein so
+machen, dass sich die Zahl selbst addiert und nur das gesamte abgezogen wird"*):
+**Rohwerte summieren, erst die Summe runden und begrenzen.** Steht jetzt in
+`docs/regeln-neotopia.md` samt den Stellen, wo es schon so ist (Rüstungsabzug,
+Traglast) und den ausdrücklichen Ausnahmen (Deck-Boni und Commlink-Cyberwall
+nehmen das beste Gerät, nicht die Summe).
 
 ## Vorschlag zur Erstellung: Konzepte statt mehr Wege (31.08.2026)
 
