@@ -1,18 +1,15 @@
-At the Moment the Project is German, I plan an English Translation in the Futur
+# 🎲 Pen & Paper Companion Tool (WIP)
 
-Das ist ein Pen and Paper Tool das eine Planungs Oberfläche für Spielleiter 
-bietet und interaktive Charakter Blätter.
-aktuell ist es auf ein Homebrew Cyberpunk System ausgelegt 
-das eine Mischung aus WoD und Shadowrun ist.
+> **Note:** At the moment, the interface and content are in German. An English translation is planned for the future!
 
-dieses Tool basiert auf einer Neo4J Datenbank, FastAPI & Python
+This is a companion tool for Pen & Paper RPGs, designed to provide Game Masters with a comprehensive planning interface alongside interactive character sheets. Currently, the logic is tailored to a homebrew Cyberpunk system (a hybrid of World of Darkness and Shadowrun mechanics).
 
-es ist komplett overengineert und ein Hobby Projekt
+### 🛠️ Tech Stack
+* **Backend:** Python, FastAPI
+* **Database:** Neo4j
 
-die nächsten Schritte wären DnD und Spittermond zu integrieren, ohne Inhalte, 
+*Disclaimer: This is a purely passion-driven, completely overengineered hobby project! (PS: The code is heavily AI-assisted / prompt-engineered).*
 
-das Tool soll zukünftig die Möglichkeit KIs über APIs zu verbinden.
-
-Tool in Arbeit 
-
-PS. es ist prompt engineert
+### 🚀 Roadmap & Next Steps
+* **System Expansion:** Integrating frameworks for D&D and Splittermond (mechanics and structure only, no copyrighted content).
+* **AI Integration:** Connecting AI models via API for smart GM/player assistance.
