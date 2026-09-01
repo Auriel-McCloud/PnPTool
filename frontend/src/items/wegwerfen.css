@@ -1,0 +1,161 @@
+/* ===================================================================
+   Wegwerfen: Rückfrage und Mülleimer.
+
+   Die Knopf-Sprache stammt aus willenskraft.css — gross, weit
+   auseinander, farbig getrennt. Umgekehrt belegt: hier ist das
+   Wegwerfen der Eingriff (rot) und das Behalten der harmlose
+   Ausgang (blau). Siehe Kommentar in WegwerfenFrage.tsx.
+   =================================================================== */
+
+.ww-hinweis {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.ww-beruhigung {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-leise);
+}
+
+.ww-beruhigung strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ww-einzigartig {
+  margin: 0;
+  font-size: 13px;
+  color: #ffb84d;
+}
+
+.ww-knoepfe {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+/* Gross und weit auseinander: ein Fehlgriff ärgert hier echt. */
+.ww-knoepfe button {
+  flex: 1;
+  min-height: 56px;
+  font-size: 17px;
+  letter-spacing: 0.1em;
+}
+
+.ww-weg {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+  background: color-mix(in srgb, #ff4d6b 12%, transparent);
+}
+
+.ww-weg:hover:not(:disabled) {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+  background: color-mix(in srgb, #ff4d6b 22%, transparent);
+  box-shadow: 0 0 18px -6px #ff4d6b;
+}
+
+.ww-behalten {
+  border-color: #4da3ff;
+  color: #4da3ff;
+  background: color-mix(in srgb, #4da3ff 12%, transparent);
+}
+
+.ww-behalten:hover:not(:disabled) {
+  border-color: #4da3ff;
+  color: #4da3ff;
+  background: color-mix(in srgb, #4da3ff 22%, transparent);
+  box-shadow: 0 0 18px -6px #4da3ff;
+}
+
+/* -------------------------------------------------------------------
+   Der Mistkübel-Knopf im Gegenstandsfenster.
+
+   Abgesetzt unten, leise und schmal: er soll auffindbar sein, aber
+   nicht neben den Ablage-Knöpfen um Aufmerksamkeit buhlen. Erst der
+   Griff danach ist eine Entscheidung, und die stellt die Rückfrage.
+   ------------------------------------------------------------------- */
+
+.gg-wegwerfen {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linie);
+  display: flex;
+  justify-content: center;
+}
+
+.gg-wegwerfen button {
+  border-color: transparent;
+  color: var(--text-leise);
+  background: transparent;
+  font-size: 13px;
+}
+
+.gg-wegwerfen button:hover:not(:disabled) {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+  background: color-mix(in srgb, #ff4d6b 12%, transparent);
+}
+
+/* -------------------------------------------------------------------
+   Die Mülleimer-Liste der Spielleitung.
+   ------------------------------------------------------------------- */
+
+.mu-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mu-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  text-align: left;
+}
+
+.mu-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.mu-name strong {
+  display: block;
+  color: var(--text);
+}
+
+.mu-herkunft {
+  display: block;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.mu-zeile button {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.mu-endgueltig {
+  border-color: #ff4d6b;
+  color: #ff4d6b;
+}
+
+.mu-endgueltig:hover:not(:disabled) {
+  background: color-mix(in srgb, #ff4d6b 18%, transparent);
+}
+
+.mu-leer {
+  margin: 0;
+  color: var(--text-leise);
+}

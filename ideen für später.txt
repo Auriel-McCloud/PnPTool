@@ -1,0 +1,25 @@
+Bei der Charakter Erstellung sollte das freebee vergeben und der Shop Parallel verfügbar sein, und man sollte im Shop direkt freebees ausgeben können
+
+Mehr magische items mit integrierten zaubern wie "Feuer Ball" auf einem Stab.
+
+Letzte nachricht bei Claude:
+"
+bitte notiere noch das wir etwas wie einen rucksack brauchen, das sein eigengewicht zum spieler hinzufügt, aber nicht seinen inhalt, in DnD gibt es nämlich einen bag of holding, einen magischen gegenstand, theoretisch könnte es den bei mir in Neotopia auch geben, aber ich würde die logik gerne vormerken, und uns gehen gerade die Wochen Tokens aus, und wir können erst am Donnerstag weitermachen, das sollte wir dann einführen. als Behälter unteroption, außerdem müssen wir noch schauen wie es funktioniert wenn man ein fahrzeug hat das man dinge darin reinlegt, denn aktuell gibt es 3 buttons die die ganzen platz einnimmt, ich mag die buttons, vielleicht erweitert sich dass popup einfach nach unten mit den weiteren optionen (zentriert nicht lingsbündung) und was es auch nicht gibt ist eine möglichkeit einen gegenstand wegzuwerfen, also komplett aus seinem inventar zu entfernen, das braucht natürlich wieder ein bist du sicher popup.
+
+"
+
+Oder eine Brille mit unsichtbar macht
+
+Außerdem verschieben wir das ganze auf den Planeten in Omikron2 eridani 
+
+Machen wir eine Kopie von Neotopia
+
+Andere Rassen wie die von Heimerdinger "Yordles"
+
+*Im SL Interface die Möglichkeit neue Rassen Anzulegen, alte Rassen auszublenden, umzubenennen.... 
+
+Gleiche für Skills, + eine Maximale Anzahl an Skills
+
+"Profil anlegen für Spiel Varianten"
+
+eine Spotify Anbindung damit bei scenen wechsel auch musik bzw. Playlists hinterlegt werden die zur Stimmung passen

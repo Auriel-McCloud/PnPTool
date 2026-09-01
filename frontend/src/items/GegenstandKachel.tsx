@@ -5,6 +5,8 @@ import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
+import { WegwerfenFrage } from "./WegwerfenFrage";
+import "./wegwerfen.css";
 
 /**
  * Ein Gegenstand aus Spielersicht: Kachel, die sich zum Fenster öffnet.
@@ -40,6 +42,7 @@ function ablagen(behaelterName?: string): { wert: Ablage; label: string; symbol:
 export function GegenstandKachel({
   item,
   onUmlegen,
+  onWegwerfen,
   behaelterName,
   behaelterId,
   inhalt,
@@ -60,9 +63,16 @@ export function GegenstandKachel({
    * Fehlt sie, ist der Gegenstand nur anzusehen — so bei fremdem Besitz.
    */
   onUmlegen?: (ablage: Ablage) => Promise<void> | void;
+  /**
+   * Wegwerfen. Fehlt sie, erscheint der Mistkübel gar nicht — bei fremdem
+   * Besitz soll man nichts entsorgen können, was einem nicht gehört.
+   * Löscht nichts; die Rückfrage davor stellt diese Komponente selbst.
+   */
+  onWegwerfen?: () => Promise<void> | void;
 }) {
   const [offen, setOffen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  const [frageOffen, setFrageOffen] = useState(false);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -72,6 +82,20 @@ export function GegenstandKachel({
     setLaeuft(true);
     try {
       await onUmlegen(ablage);
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  async function wegwerfen() {
+    if (!onWegwerfen) return;
+    setLaeuft(true);
+    try {
+      await onWegwerfen();
+      // Beide Fenster zu: der Gegenstand ist aus der Liste verschwunden, ein
+      // offenes Fenster darüber stünde ohne Bezug da.
+      setFrageOffen(false);
+      setOffen(false);
     } finally {
       setLaeuft(false);
     }
@@ -225,7 +249,27 @@ export function GegenstandKachel({
           </div>
         </section>
         )}
+
+        {/* Abgesetzt und leise: erst der Griff danach ist eine Entscheidung,
+            die die Rückfrage stellt. Siehe wegwerfen.css. */}
+        {onWegwerfen && (
+          <div className="gg-wegwerfen">
+            <button type="button" onClick={() => setFrageOffen(true)} disabled={laeuft}>
+              <span aria-hidden="true">🗑</span> Wegwerfen
+            </button>
+          </div>
+        )}
       </Fenster>
+
+      {onWegwerfen && (
+        <WegwerfenFrage
+          item={item}
+          offen={frageOffen}
+          laeuft={laeuft}
+          onWegwerfen={wegwerfen}
+          onAbbrechen={() => setFrageOffen(false)}
+        />
+      )}
     </>
   );
 }

@@ -41,6 +41,10 @@ export interface Gegenstand {
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
   koerperzone: string;
+  /** Liegt im Mülleimer der Spielleitung — überall sonst ausgeblendet. */
+  weggeworfen: boolean;
+  /** Wer es weggeworfen hat; leer, wenn es nie weggeworfen wurde. */
+  weggeworfenVon: string;
   ablage: Ablage;
   ablageZielId: string | null;
   ablageZielName: string | null;
@@ -200,6 +204,19 @@ export const itemsApi = {
   changeOwner: (cid: string, itemId: string, zielPersonId: string) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/besitzer`, { zielPersonId }),
   removeOwner: (cid: string, itemId: string) => api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlage`, {}),
+  /**
+   * Wegwerfen — **löscht nicht**, sondern legt den Gegenstand in den
+   * Mülleimer der Spielleitung. Die einzige Löschung ist `remove` von dort.
+   * Auch Spieler dürfen das, aber nur am eigenen Besitz (Server prüft).
+   */
+  wegwerfen: (cid: string, itemId: string) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/wegwerfen`, {}),
+  /** Mülleimer-Liste — nur für die Spielleitung. */
+  listWeggeworfen: (cid: string) =>
+    api.get<GegenstandMitBesitzer[]>(`${campaignBase(cid)}/weggeworfen`),
+  /** Zurück ins Spiel; landet als "gelagert" ohne festes Ziel. */
+  zurueckholen: (cid: string, itemId: string) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/zurueckholen`, {}),
   uploadBild: async (cid: string, itemId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);

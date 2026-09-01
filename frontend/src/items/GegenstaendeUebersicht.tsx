@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useAuthFallsVorhanden } from "../auth/AuthContext";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
+import { Muelleimer } from "./Muelleimer";
 import "./gegenstaende.css";
 
 /** Muss zu den Werten in gegenstaende.css passen (Raster-Ausmessung). */
@@ -57,6 +59,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [neuName, setNeuName] = useState("");
   const [neuBesitzer, setNeuBesitzer] = useState("");
   const [anlegenOffen, setAnlegenOffen] = useState(false);
+  const [muelleimerOffen, setMuelleimerOffen] = useState(false);
+  // Nur die Spielleitung sieht überhaupt, dass es einen Mülleimer gibt —
+  // dieselbe Auskunftsregel wie beim Backend (siehe routes.py::liste_weggeworfen).
+  const istGm = useAuthFallsVorhanden()?.me?.role === "GM";
 
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
@@ -197,6 +203,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         <button type="button" onClick={() => setAnlegenOffen((o) => !o)}>
           {anlegenOffen ? "Abbrechen" : "+ Neu"}
         </button>
+        {istGm && (
+          <button type="button" onClick={() => setMuelleimerOffen(true)} title="Weggeworfene Gegenstände">
+            🗑 Mülleimer
+          </button>
+        )}
         <span className="gg-anzahl">
           {sichtbareItems.length} von {items.length}
         </span>
@@ -287,6 +298,15 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
             ›
           </button>
         </div>
+      )}
+
+      {istGm && (
+        <Muelleimer
+          campaignId={campaignId}
+          offen={muelleimerOffen}
+          onSchliessen={() => setMuelleimerOffen(false)}
+          onGeaendert={refresh}
+        />
       )}
     </div>
   );

@@ -135,6 +135,10 @@ class GegenstandUpdate(BaseModel):
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
+    # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
+    # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
+    # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
+    # ohne die :LIEGT_IN-Verknüpfung zu lösen — dann zählte das Gewicht weiter.
 
 
 class ZuweisenRequest(BaseModel):
@@ -188,6 +192,13 @@ class GegenstandResponse(BaseModel):
     # teure Arbeit hätte sich nicht gelohnt.
     wVerlust: float = 0.0
     koerperzone: str = ""
+    # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
+    # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in
+    # der Mülleimer-Liste; zählt weder Gewicht noch Boni.
+    weggeworfen: bool = False
+    # Name dessen, der es weggeworfen hat — damit im Mülleimer steht, woher es
+    # kommt. Leer, wenn es nie weggeworfen wurde.
+    weggeworfenVon: str = ""
     # Nur bei GELAGERT gesetzt: worin bzw. wo der Gegenstand liegt.
     ablageZielId: str | None = None
     ablageZielName: str | None = None

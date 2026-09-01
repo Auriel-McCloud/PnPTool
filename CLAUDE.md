@@ -1500,12 +1500,34 @@ Möglichkeit, ihn komplett aus dem Inventar zu entfernen — **mit Rückfrage**,
 wie beim Ausgeben von Willenskraft (`traits/WillenskraftFrage.tsx` ist die
 Vorlage: Ja blau, Nein rot, gross und weit auseinander).
 
-Zu klären: wird der Gegenstand **gelöscht** oder nur besitzerlos (dann liegt er
-gedanklich am Boden und die Spielleitung kann ihn wieder vergeben)? Für ein
-einzigartiges Stück wäre Löschen fatal. Vermutlich: `remove_owner` statt
-`delete` — die Funktion gibt es schon, sie macht daraus eine Vorlage. Dann
-bräuchte es allerdings eine dritte Route für Spieler, und die muss wieder
-selbst prüfen.
+**Umgesetzt (01.09.2026).** Anders als oben vermutet: kein `remove_owner`,
+sondern ein neues Feld `Gegenstand.weggeworfen`/`weggeworfenVon`. Der Besitzer
+bleibt bestehen (steht im Mülleimer, woher das Stück kommt), nur die
+`LIEGT_IN`-Verknüpfung wird gelöst. Grund: `remove_owner` macht aus dem
+Gegenstand eine besitzerlose *Vorlage* — das hätte die Vorlagen-Invariante aus
+Runde 10 verletzt (eine weggeworfene Waffe ist keine Vorlage, aus der man
+Kopien zieht).
+
+- Backend: `wegwerfen`/`zurueckholen`/`list_weggeworfene` in `items/repository.py`.
+  Alle anderen Listen/Ablageziel-Abfragen filtern `weggeworfen` jetzt raus
+  (`NOT coalesce(g.weggeworfen, false)`).
+- Routen: `POST .../{id}/wegwerfen` — **auch Spieler**, nur am eigenen Besitz
+  (prüft selbst, 404 statt 403, wie beim Ablage-Umlegen). `GET .../weggeworfen`
+  und `POST .../{id}/zurueckholen` — nur SL. Endgültiges Löschen braucht **keine
+  eigene Route** — die generische `DELETE .../{id}` kennt keinen Unterschied
+  zwischen weggeworfen und nicht.
+- Frontend: `WegwerfenFrage.tsx` (Rückfrage, invertierte Willenskraft-Farben:
+  hier ist Wegwerfen der Eingriff und deshalb rot) hinter einem Mistkübel-Knopf
+  im Gegenstandsfenster (`GegenstandKachel.tsx`, nur wenn `onWegwerfen`
+  gesetzt ist — bei fremdem Besitz erscheint der Knopf gar nicht). Neue
+  Komponente `items/Muelleimer.tsx`: SL-Liste mit Zurückholen + "Endgültig
+  löschen" (`window.confirm`, kein eigenes Fenster — zweiter, selten
+  gebrauchter Schritt, wo Kürze reicht). Knopf "🗑 Mülleimer" in
+  `GegenstaendeUebersicht.tsx`, nur sichtbar für die SL (`me?.role === "GM"`).
+- Getestet: `npm run build` grün, alle 139 Backend-Tests grün (u.a.
+  `test_zugriffsschutz.py`, das `wegwerfen` bereits in der Ausnahmeliste hatte).
+  **Noch nicht** end-to-end im Browser gegen die Testkampagne durchgeklickt —
+  nur Build/Unit-Test-Ebene.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 

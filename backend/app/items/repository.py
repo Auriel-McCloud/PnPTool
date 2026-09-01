@@ -18,6 +18,7 @@ RETURN_FIELDS = """
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
+    g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -48,6 +49,10 @@ _NICHT_KOPIEREN = {
     "ownerId",
     "ownerName",
     "ownerPersonType",
+    # Der Mülleimer ist ein Zustand dieses einen Stücks, keine Eigenschaft
+    # der Vorlage — eine Kopie startet nie weggeworfen.
+    "weggeworfen",
+    "weggeworfenVon",
 }
 
 
@@ -121,6 +126,11 @@ def _decode(record: dict) -> dict:
     except (json.JSONDecodeError, TypeError):
         record["fahrzeugFertigkeiten"] = {}
     record["ablage"] = record.get("ablage") or "RUCKSACK"
+    # Weggeworfen: Bestandsdaten haben die Property nicht (Neo4j gibt null).
+    # Ohne Fallback schlägt die Pydantic-Validierung fehl und reisst die
+    # ganze Liste mit — siehe Stolperstein #9 in CLAUDE.md.
+    record["weggeworfen"] = _or_default(record.get("weggeworfen"), False)
+    record["weggeworfenVon"] = record.get("weggeworfenVon") or ""
     return record
 
 
@@ -210,6 +220,7 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false)
         {LIEGT_IN}
         RETURN {RETURN_FIELDS}
         ORDER BY g.name
@@ -223,10 +234,33 @@ async def list_alle_gegenstaende(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (g:Gegenstand {{campaignId: $campaign_id}})
+        WHERE NOT coalesce(g.weggeworfen, false)
         OPTIONAL MATCH (p:Person)-[:BESITZT]->(g)
         {LIEGT_IN}
         RETURN {RETURN_FIELDS}, p.id AS ownerId, p.name AS ownerName, p.personType AS ownerPersonType
         ORDER BY p.name, g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [_decode(dict(record)) async for record in result]
+
+
+async def list_weggeworfene(campaign_id: str) -> list[dict]:
+    """Der Mülleimer der Spielleitung.
+
+    Das Gegenstück zu allen anderen Listen: hier steht **nur**, was
+    weggeworfen wurde. Ein weggeworfener Gegenstand behält seinen Besitzer,
+    damit nachvollziehbar bleibt, aus wessen Inventar er stammt — er ist
+    bloss überall sonst ausgeblendet.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{campaignId: $campaign_id}})
+        WHERE coalesce(g.weggeworfen, false)
+        OPTIONAL MATCH (p:Person)-[:BESITZT]->(g)
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}, p.id AS ownerId, p.name AS ownerName, p.personType AS ownerPersonType
+        ORDER BY g.name
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
@@ -385,6 +419,57 @@ async def remove_owner(campaign_id: str, item_id: str) -> dict | None:
         return _decode(dict(record)) if record else None
 
 
+async def wegwerfen(campaign_id: str, item_id: str, von: str) -> dict | None:
+    """Legt einen Gegenstand in den Mülleimer der Spielleitung.
+
+    **Bewusst kein Löschen**: ein einzigartiges Stück wäre sonst für immer
+    fort, und ein weggeworfener Gegenstand liegt im Spiel gedanklich am
+    Boden — die Spielleitung kann ihn jederzeit wieder vergeben. Gelöscht
+    wird nur ausdrücklich, in einem zweiten Schritt.
+
+    Der Besitzer bleibt bestehen, damit im Mülleimer noch steht, aus wessen
+    Inventar das Stück stammt. Eine Ablage-Verknüpfung wird dagegen gelöst:
+    was weggeworfen wurde, liegt in keinem Rucksack mehr, und sonst zählte
+    sein Gewicht weiter gegen den Behälter.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        WHERE NOT coalesce(g.weggeworfen, false)
+        OPTIONAL MATCH (g)-[alt:LIEGT_IN]->()
+        DELETE alt
+        SET g.weggeworfen = true, g.weggeworfenVon = $von
+        {LIEGT_IN_NACH_CREATE}
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, von=von)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def zurueckholen(campaign_id: str, item_id: str) -> dict | None:
+    """Holt einen Gegenstand aus dem Mülleimer zurück.
+
+    Er landet als *gelagert ohne Ziel* wieder im Spiel — nicht am Körper
+    seines alten Besitzers: wer etwas weggeworfen hat, hat es nicht mehr in
+    der Hand. Wohin es tatsächlich kommt, entscheidet die Spielleitung
+    danach über das gewohnte Umlegen.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        WHERE coalesce(g.weggeworfen, false)
+        SET g.weggeworfen = false, g.weggeworfenVon = '', g.ablage = 'GELAGERT'
+        {LIEGT_IN_NACH_CREATE}
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
 async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | None:
     driver = get_driver()
     query = f"""
@@ -497,6 +582,7 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
             UNION
             MATCH (p:Person {id: $person_id})-[:BESITZT]->(g:Gegenstand)
             WHERE coalesce(g.istBehaelter, g.typ = 'Behälter')
+              AND NOT coalesce(g.weggeworfen, false)
             RETURN g.id AS id, g.name AS name, 'Gegenstand' AS kind
             """,
             campaign_id=campaign_id,
@@ -526,7 +612,7 @@ async def traglast_uebersicht(campaign_id: str, attribut: str, pro_punkt: float)
     query = f"""
         MATCH (p:Person {{campaignId: $campaign_id}})
         OPTIONAL MATCH (p)-[:BESITZT]->(g:Gegenstand)
-            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
+            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK'] AND NOT coalesce(g.weggeworfen, false)
         WITH p, sum({_GEWICHT}) AS last
         OPTIONAL MATCH (p)-[r:HAS_TRAIT]->(t:TraitDef {{name: $attribut}})
         RETURN p.id AS id, p.name AS name, 'Person' AS art, p.personType AS personType,
@@ -535,8 +621,9 @@ async def traglast_uebersicht(campaign_id: str, attribut: str, pro_punkt: float)
         UNION
 
         MATCH (b:Gegenstand {{campaignId: $campaign_id}})
-            WHERE coalesce(b.kapazitaet, 0) > 0
+            WHERE coalesce(b.kapazitaet, 0) > 0 AND NOT coalesce(b.weggeworfen, false)
         OPTIONAL MATCH (g:Gegenstand)-[:LIEGT_IN]->(b)
+            WHERE NOT coalesce(g.weggeworfen, false)
         RETURN b.id AS id, b.name AS name, 'Gegenstand' AS art, NULL AS personType,
                sum({_GEWICHT}) AS last, b.kapazitaet AS kapazitaet
     """
@@ -565,7 +652,7 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
         result = await session.run(
             """
             MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK']
+            WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK'] AND NOT coalesce(g.weggeworfen, false)
             RETURN
               max(CASE WHEN g.typ = 'Commlink' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS grund,
               sum(CASE WHEN g.typ = 'Cyberdeck' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS bonus
@@ -605,7 +692,7 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET'
+        WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
         RETURN max(coalesce(g.deckBruteForce, 0)) AS bruteForce,
                max(coalesce(g.deckSchleichen, 0)) AS schleichen,
                max(coalesce(g.deckDaten, 0)) AS daten,
@@ -648,7 +735,7 @@ async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET'
+        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
         RETURN collect(coalesce(g.wVerlust, 0)) AS einzeln
     """
     async with driver.session() as session:

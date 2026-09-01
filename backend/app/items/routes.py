@@ -226,6 +226,69 @@ async def delete_item(campaign_id: str, item_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
 
+@campaign_router.get("/weggeworfen", response_model=list[GegenstandMitBesitzer], dependencies=[Depends(require_campaign_gm)])
+async def liste_weggeworfen(campaign_id: str):
+    """Der Mülleimer — **nur für die Spielleitung.**
+
+    Muss vor `/{item_id}` stehen: sonst fängt die dortige Route den Pfad ab
+    und "weggeworfen" sähe wie eine Kennung aus (derselbe Grund wie beim
+    eigenen chrom_router weiter unten).
+
+    Bewusst nicht für Spieler: dass ein Stück noch existiert und
+    zurückgeholt werden könnte, ist eine Auskunft der Spielleitung.
+    """
+    return await repository.list_weggeworfene(campaign_id)
+
+
+@campaign_router.post("/{item_id}/wegwerfen", response_model=GegenstandResponse)
+async def item_wegwerfen(
+    campaign_id: str,
+    item_id: str,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Wirft einen Gegenstand weg — er landet im Mülleimer der Spielleitung.
+
+    **Zweite Schreibroute, die auch Spieler nutzen dürfen** (neben dem
+    Umlegen), und genauso streng begrenzt: nur am eigenen Besitz, und sie
+    löscht nichts. Steht deshalb namentlich in der Ausnahmeliste von
+    tests/test_zugriffsschutz.py und prüft die Besitzverhältnisse selbst.
+
+    Endgültig gelöscht wird nur von der Spielleitung, aus dem Mülleimer
+    heraus (DELETE .../{item_id}).
+    """
+    if viewer.role != "GM":
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer is None or besitzer != viewer.person_id:
+            # 404 statt 403, wie beim Umlegen: ein Spieler soll nicht
+            # erfahren, ob es den Gegenstand überhaupt gibt.
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    # Wer es weggeworfen hat, damit im Mülleimer steht, woher das Stück kommt.
+    # Der Viewer kennt nur die Person-ID, deshalb der Namensschlag.
+    von = "Spielleitung"
+    if viewer.role != "GM" and viewer.person_id:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, viewer.person_id)
+        von = person["name"] if person else ""
+    item = await repository.wegwerfen(campaign_id, item_id, von)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden oder schon weggeworfen")
+    return item
+
+
+@campaign_router.post("/{item_id}/zurueckholen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
+async def item_zurueckholen(campaign_id: str, item_id: str):
+    """Holt einen Gegenstand aus dem Mülleimer zurück ins Spiel.
+
+    Er kommt als *gelagert ohne Ziel* zurück, nicht an den Körper seines
+    alten Besitzers — wohin er tatsächlich gehört, entscheidet die
+    Spielleitung danach durch Umlegen.
+    """
+    item = await repository.zurueckholen(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden oder nicht weggeworfen")
+    return item
+
+
 @campaign_router.get("/{item_id}/ablageziele", response_model=list[AblageZiel])
 async def ablageziele(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
     """Wohin dieser Gegenstand gelegt werden kann: Orte der Kampagne und

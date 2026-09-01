@@ -32,6 +32,10 @@ OHNE_GM_ERLAUBT = {
     # umlegen. Sie prüft die Besitzverhältnisse selbst (siehe items/routes.py)
     # und darf ausschließlich das Ablage-Feld ändern.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ablage",
+    # Ebenso: den eigenen Kram wegwerfen. Prüft die Besitzverhältnisse selbst
+    # und **löscht nichts** — der Gegenstand wandert in den Mülleimer der
+    # Spielleitung, die ihn zurückholen oder endgültig entfernen kann.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/wegwerfen",
     # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
     # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",
@@ -44,6 +48,16 @@ OHNE_GM_ERLAUBT = {
     # Punktestand geprueft. Erfahrung *vergeben* bleibt der Spielleitung
     # (eigene Route .../erfahrung mit require_campaign_gm).
     "/api/campaigns/{campaign_id}/personen/{person_id}/steigern",
+}
+
+# Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.
+# Die Regel ist sonst umgekehrt: Spieler dürfen lesen. Jede Ausnahme braucht
+# einen Grund, sonst höhlt sie den Spielerzugang aus.
+NUR_SPIELLEITUNG_LESBAR = {
+    # Der Mülleimer. Dass ein weggeworfenes Stück noch existiert und
+    # zurückgeholt werden könnte, ist eine Auskunft der Spielleitung — ein
+    # Spieler soll nach dem Wegwerfen nicht nachsehen können, was noch da ist.
+    "/api/campaigns/{campaign_id}/gegenstaende/weggeworfen",
 }
 
 
@@ -112,8 +126,17 @@ def test_leseseite_ist_fuer_spieler_erreichbar():
             continue
         if "/spieler" in route.path:  # Spielerverwaltung ist Sache der Spielleitung
             continue
+        if route.path in NUR_SPIELLEITUNG_LESBAR:
+            continue
         wachen = _abhaengigkeiten(route.dependant)
         assert require_campaign_gm not in wachen, f"{route.path} bleibt für Spieler gesperrt"
         assert require_campaign_zugang in wachen, f"{route.path} prüft den Kampagnenzugang nicht"
         geprueft += 1
     assert geprueft > 0, "keine Leserouten gefunden — Test greift ins Leere"
+
+
+def test_nur_lesbare_ausnahmen_existieren_noch():
+    """Wie bei OHNE_GM_ERLAUBT: keine Ausnahmen für tote Routen stehenlassen."""
+    vorhanden = {r.path for r in alle_routen()}
+    verwaist = NUR_SPIELLEITUNG_LESBAR - vorhanden
+    assert not verwaist, f"Ausnahmen für nicht mehr existierende Routen: {verwaist}"
