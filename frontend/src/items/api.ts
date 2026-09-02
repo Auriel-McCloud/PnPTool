@@ -41,6 +41,14 @@ export interface Gegenstand {
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
   koerperzone: string;
+  /** Welcher der drei Plätze der Zone belegt ist (1-3); null = kein fester Platz. */
+  slot: number | null;
+  /** Zusätzlich zum Typ: kann gleichzeitig als Waffe zählen (z.B. Cyber-Klinge). */
+  istWaffe: boolean;
+  /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
+  traitBoni: Record<string, number>;
+  /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
+  ausruestungsfertigkeiten: Record<string, number>;
   /** Liegt im Mülleimer der Spielleitung — überall sonst ausgeblendet. */
   weggeworfen: boolean;
   /** Wer es weggeworfen hat; leer, wenn es nie weggeworfen wurde. */
@@ -147,6 +155,10 @@ export interface GegenstandUpdate {
   maxDrohnen?: number;
   wVerlust?: number;
   koerperzone?: string;
+  slot?: number | null;
+  istWaffe?: boolean;
+  traitBoni?: Record<string, number>;
+  ausruestungsfertigkeiten?: Record<string, number>;
 }
 
 type NeuerGegenstand = {

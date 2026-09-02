@@ -323,6 +323,23 @@ async def ablage_aendern(
             # Gegenstand überhaupt gibt.
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
+    # Slot-Kollision nur prüfen, wenn ausgerüstet wird UND das Stück
+    # überhaupt einen festen Platz hat (Chrom-/Bio-/MagWare mit Zone+Slot).
+    # Alles andere (Waffen, Kleidung, ...) hat keine Zone und blockiert nichts.
+    if body.ablage == "AUSGERUESTET":
+        vorhandenes_item = await repository.get_gegenstand(campaign_id, item_id)
+        if vorhandenes_item and vorhandenes_item.get("koerperzone") and vorhandenes_item.get("slot"):
+            besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+            if besitzer_id:
+                blockiert_von = await repository.slot_konflikt(
+                    campaign_id, besitzer_id, vorhandenes_item["koerperzone"], vorhandenes_item["slot"], item_id
+                )
+                if blockiert_von:
+                    raise HTTPException(
+                        status.HTTP_409_CONFLICT,
+                        f"Platz {vorhandenes_item['slot']} in {vorhandenes_item['koerperzone']} ist bereits von \"{blockiert_von}\" belegt",
+                    )
+
     item = await repository.set_ablage(campaign_id, item_id, body.ablage, body.zielId)
     if item is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ablage konnte nicht gesetzt werden")

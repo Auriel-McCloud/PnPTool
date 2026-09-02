@@ -44,6 +44,13 @@ export interface Bogen {
    * addieren sich nicht, es zählt je Aktion das beste.
    */
   deckBoni: Record<string, number>;
+  /** Bonuswürfel auf BESTEHENDE Werte aus ausgerüsteten Gegenständen
+   * (z.B. Cyberaugen +1 auf Wahrnehmung). Schlüssel ist der Fertigkeits-/
+   * Attributname; wird beim Anzeigen zum Grundwert dazuaddiert. */
+  ausruestungsBoni: Record<string, number>;
+  /** NEUE Fertigkeiten, die es ohne Ausrüstung nicht gibt (z.B. ein
+   * Zauberstab mit "Springen 3") — eigener Abschnitt auf dem Blatt. */
+  ausruestungsfertigkeiten: { name: string; bonus: number; quelle: string }[];
   /** Bereits nach dem Weg gefiltert: kein Magier, keine Sphären. */
   katalog: TraitDef[];
   werte: TraitRating[];

@@ -225,6 +225,7 @@ export function Charakterblatt({
         >
           {eintraege.map((t) => {
             const wert = werte.get(t.id) ?? 0;
+            const ausruestungsBonus = bogen?.ausruestungsBoni[t.name] ?? 0;
             return (
               // Umhüllung, weil das Erklärungszeichen selbst ein Knopf ist
               // und nicht in der Wertezeile stecken darf — ein Knopf im Knopf
@@ -234,7 +235,14 @@ export function Charakterblatt({
                   // Im Bearbeiten-Modus keine Schaltfläche: die Punkte selbst
                   // sind anklickbar, ein Knopf darum herum finge den Klick ab.
                   <div className="cb-wert cb-wert-bearbeiten">
-                    <span className="cb-wert-name">{t.name}</span>
+                    <span className="cb-wert-name">
+                      {t.name}
+                      {ausruestungsBonus !== 0 && (
+                        <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
+                          {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
+                        </span>
+                      )}
+                    </span>
                     <DotPool
                       value={wert}
                       max={grenzeVon(t)}
@@ -247,12 +255,19 @@ export function Charakterblatt({
                     className="cb-wert"
                     onClick={() =>
                       onWertGewaehlt
-                        ? onWertGewaehlt(t.name, wert, kategorie)
-                        : setProbe({ name: t.name, wert, kategorie })
+                        ? onWertGewaehlt(t.name, wert + ausruestungsBonus, kategorie)
+                        : setProbe({ name: t.name, wert: wert + ausruestungsBonus, kategorie })
                     }
                     title={`${t.name} — wie viele Würfel?`}
                   >
-                    <span className="cb-wert-name">{t.name}</span>
+                    <span className="cb-wert-name">
+                      {t.name}
+                      {ausruestungsBonus !== 0 && (
+                        <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
+                          {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
+                        </span>
+                      )}
+                    </span>
                     <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
                   </button>
                 )}
@@ -443,6 +458,39 @@ export function Charakterblatt({
       {reihe("Arete")}
       {reihe("Sphäre")}
       {reihe("NeuroWeaving")}
+
+      {/* Fertigkeiten, die es ohne Ausrüstung nicht gibt — eigener
+          Abschnitt, weil sie nicht zum Katalog gehören und verschwinden,
+          sobald der Gegenstand abgelegt wird. */}
+      {bogen.ausruestungsfertigkeiten.length > 0 && (
+        <section className="cb-gruppe" style={{ "--cb-ton": "#c76bff" } as React.CSSProperties}>
+          <h3 className="cb-gruppe-titel">Ausrüstungsfertigkeiten</h3>
+          <div className="cb-werte">
+            {bogen.ausruestungsfertigkeiten.map((f) => (
+              <div key={f.name} className="cb-wert-zeile">
+                <button
+                  type="button"
+                  className="cb-wert"
+                  onClick={() =>
+                    onWertGewaehlt
+                      ? onWertGewaehlt(f.name, f.bonus, "Ausruestungsfertigkeit")
+                      : setProbe({ name: f.name, wert: f.bonus, kategorie: "Ausruestungsfertigkeit" })
+                  }
+                  title={`${f.name} — von ${f.quelle}`}
+                >
+                  <span className="cb-wert-name">
+                    {f.name}
+                    <span className="cb-ausruestungsbonus" title={`Von ${f.quelle}`}>
+                      {f.quelle}
+                    </span>
+                  </span>
+                  <DotPool value={f.bonus} max={Math.max(f.bonus, 5)} onChange={undefined} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

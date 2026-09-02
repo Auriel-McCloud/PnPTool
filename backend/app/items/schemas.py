@@ -84,6 +84,26 @@ class GegenstandCreate(BaseModel):
     # teure Arbeit hätte sich nicht gelohnt.
     wVerlust: float = 0.0
     koerperzone: str = ""
+    # Welcher der drei Plätze dieser Zone belegt ist (1-3, Regelblatt: "je
+    # drei Plätze mit Bonus und Verlust"). None = kein fester Platz (z.B. bei
+    # allem, was keine Cyber-/Bio-/MagWare ist). Wird beim Ausrüsten gegen
+    # bereits belegte Plätze derselben Person geprüft (siehe
+    # items/repository.py::slot_konflikt).
+    slot: int | None = None
+    # Unabhängig vom Typ: Cyberware kann z.B. gleichzeitig eine ausfahrbare
+    # Klinge und damit eine Waffe sein. Bestimmt nur, ob Kraft/Schaden als
+    # Waffe zählt — keine eigene Mechanik, nur eine Kennzeichnung.
+    istWaffe: bool = False
+    # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
+    # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
+    # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
+    # den Cyberdeck-Boni (deckBruteForce etc.), aber frei statt fest verdrahtet.
+    traitBoni: dict[str, int] = {}
+    # NEUE Fertigkeiten, die es OHNE diesen Gegenstand gar nicht gibt (z.B.
+    # ein NeuroWeaving-Skill an einem Cyberdeck, oder "Springen" an
+    # magischen Stiefeln) — Name -> Bonuswürfel. Erscheinen nur, solange
+    # ausgerüstet, als eigener Abschnitt auf dem Charakterbogen.
+    ausruestungsfertigkeiten: dict[str, int] = {}
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -132,6 +152,10 @@ class GegenstandUpdate(BaseModel):
     maxDrohnen: int | None = None
     wVerlust: float | None = None
     koerperzone: str | None = None
+    slot: int | None = None
+    istWaffe: bool | None = None
+    traitBoni: dict[str, int] | None = None
+    ausruestungsfertigkeiten: dict[str, int] | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -192,6 +216,10 @@ class GegenstandResponse(BaseModel):
     # teure Arbeit hätte sich nicht gelohnt.
     wVerlust: float = 0.0
     koerperzone: str = ""
+    slot: int | None = None
+    istWaffe: bool = False
+    traitBoni: dict[str, int] = {}
+    ausruestungsfertigkeiten: dict[str, int] = {}
     # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in
     # der Mülleimer-Liste; zählt weder Gewicht noch Boni.

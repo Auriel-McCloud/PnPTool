@@ -66,6 +66,7 @@ const TYP_OPTIONEN = [
   "Rüstung",
   "Cyberware",
   "Bioware",
+  "MagWare",
   "Droge",
   "Verbrauchsgegenstand",
   "Werkzeug",
@@ -78,8 +79,12 @@ const TYP_OPTIONEN = [
   "Sonstiges",
 ];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
-// Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117)
-const CHROM_TYPEN = new Set(["Cyberware", "Bioware"]);
+// Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117).
+// MagWare läuft über dieselbe Formel — reine Flavor-Kategorie neben
+// Cyberware/Bioware, keine eigene Kostenmechanik (Mark, 02.09.2026).
+const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "MagWare"]);
+// Drei Plätze je Körperzone (Regelblatt: "je drei Plätze mit Bonus und Verlust").
+const SLOTS_PRO_ZONE = [1, 2, 3];
 // Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
 const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
@@ -177,6 +182,11 @@ export function GegenstandRow({
   const [maxDrohnen, setMaxDrohnen] = useState(item.maxDrohnen);
   const [wVerlust, setWVerlust] = useState(item.wVerlust);
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
+  const [slot, setSlot] = useState<number | null>(item.slot);
+  const [istWaffe, setIstWaffe] = useState(item.istWaffe);
+  const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
+  const [ausruestungsfertigkeiten, setAusruestungsfertigkeiten] = useState<Eigenschaft[]>([]);
+  const [traitKatalog, setTraitKatalog] = useState<TraitDef[]>([]);
   const [chromstufen, setChromstufen] = useState<Chromstufe[]>([]);
   const [zonen, setZonen] = useState<string[]>([]);
   // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
@@ -209,6 +219,13 @@ export function GegenstandRow({
       .catch(() => setChromstufen([]));
   }, [expanded, typ, kraft, campaignId]);
 
+  // Katalog fürs Trait-Boni-Dropdown — nur laden, wenn das Formular offen
+  // ist und Boni überhaupt angezeigt werden können.
+  useEffect(() => {
+    if (!expanded) return;
+    traitsApi.getKatalog(campaignId).then(setTraitKatalog).catch(() => setTraitKatalog([]));
+  }, [expanded, campaignId]);
+
   function openEdit() {
     setName(item.name);
     setTyp(item.typ);
@@ -230,6 +247,14 @@ export function GegenstandRow({
     setMaxDrohnen(item.maxDrohnen);
     setWVerlust(item.wVerlust);
     setKoerperzone(item.koerperzone);
+    setSlot(item.slot);
+    setIstWaffe(item.istWaffe);
+    setTraitBoni(
+      Object.entries(item.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
+    );
+    setAusruestungsfertigkeiten(
+      Object.entries(item.ausruestungsfertigkeiten).map(([key, value]) => ({ key, value: String(value) })),
+    );
     setStufe(item.stufe);
     setWiderstand(item.widerstand);
     setAngriff(item.angriff);
@@ -276,6 +301,16 @@ export function GegenstandRow({
       maxDrohnen,
       wVerlust,
       koerperzone,
+      slot,
+      istWaffe,
+      traitBoni: Object.fromEntries(
+        traitBoni.filter((p) => p.key.trim() && Number(p.value)).map((p) => [p.key.trim(), Number(p.value)]),
+      ),
+      ausruestungsfertigkeiten: Object.fromEntries(
+        ausruestungsfertigkeiten
+          .filter((p) => p.key.trim() && Number(p.value))
+          .map((p) => [p.key.trim(), Number(p.value)]),
+      ),
       stufe,
       widerstand,
       angriff,
@@ -406,6 +441,26 @@ export function GegenstandRow({
                   ))}
                 </select>
               </label>
+              {koerperzone && (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                  Platz
+                  <select
+                    value={slot ?? ""}
+                    onChange={(e) => setSlot(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <option value="">— egal —</option>
+                    {SLOTS_PRO_ZONE.map((s) => (
+                      <option key={s} value={s}>
+                        Platz {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                <input type="checkbox" checked={istWaffe} onChange={(e) => setIstWaffe(e.target.checked)} />
+                zählt zusätzlich als Waffe
+              </label>
             </div>
             {/* Stufe antippen setzt Preis und Verlust zugleich — von Hand
                 gerechnet vertut man sich, und die Formel steht im Server. */}
@@ -486,6 +541,94 @@ export function GegenstandRow({
             </div>
           </div>
         )}
+
+        {/* Boni auf bestehende Attribute/Fertigkeiten/Sphären UND neue
+            Ausrüstungsfertigkeiten — unabhängig vom Typ. Nicht nur Chrom:
+            ein Zauberstab mit "Springen 3" ist z.B. Typ Waffe/Sonstiges. */}
+        <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+            Bonus auf bestehende Werte (solange ausgerüstet)
+          </label>
+          {traitBoni.map((p, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <select
+                value={p.key}
+                onChange={(e) =>
+                  setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)))
+                }
+                style={{ flex: 1 }}
+              >
+                <option value="">— Wert wählen —</option>
+                {traitKatalog.map((t) => (
+                  <option key={t.id} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="Bonus"
+                value={p.value}
+                onChange={(e) =>
+                  setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))
+                }
+                style={{ width: 70 }}
+              />
+              <button type="button" onClick={() => setTraitBoni(traitBoni.filter((_, idx) => idx !== i))}>
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setTraitBoni([...traitBoni, { key: "", value: "1" }])}
+            style={{ marginTop: 4, fontSize: "0.85em" }}
+          >
+            + Bonus
+          </button>
+
+          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
+            Ausrüstungsfertigkeiten (nur durch diesen Gegenstand vorhanden, z.B. „Springen 3")
+          </label>
+          {ausruestungsfertigkeiten.map((p, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <input
+                placeholder="Name der Fertigkeit"
+                value={p.key}
+                onChange={(e) =>
+                  setAusruestungsfertigkeiten(
+                    ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)),
+                  )
+                }
+                style={{ flex: 1 }}
+              />
+              <input
+                type="number"
+                placeholder="Würfel"
+                value={p.value}
+                onChange={(e) =>
+                  setAusruestungsfertigkeiten(
+                    ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)),
+                  )
+                }
+                style={{ width: 70 }}
+              />
+              <button
+                type="button"
+                onClick={() => setAusruestungsfertigkeiten(ausruestungsfertigkeiten.filter((_, idx) => idx !== i))}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setAusruestungsfertigkeiten([...ausruestungsfertigkeiten, { key: "", value: "1" }])}
+            style={{ marginTop: 4, fontSize: "0.85em" }}
+          >
+            + Ausrüstungsfertigkeit
+          </button>
+        </div>
 
         {FAHRZEUG_TYPEN.has(typ) && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>

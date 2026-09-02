@@ -3,7 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
-from app.items.repository import commlink_cyberwall, deck_boni, willenskraft_verlust
+from app.items.repository import (
+    ausruestungs_trait_boni,
+    ausruestungsfertigkeiten_liste,
+    commlink_cyberwall,
+    deck_boni,
+    willenskraft_verlust,
+)
 from app.traits import erfahrung, erstellung, repository
 from app.traits.bogen import (
     bogen_uebersicht,
@@ -71,6 +77,14 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
         "deckBoni": await deck_boni(campaign_id, person_id),
+        # Bonuswürfel auf BESTEHENDE Werte aus ausgerüsteten Gegenständen
+        # (z.B. Cyberaugen +1 auf Wahrnehmung) — Schlüssel ist der TraitDef-
+        # Name, das Frontend addiert das direkt zur Anzeige des Werts dazu.
+        "ausruestungsBoni": await ausruestungs_trait_boni(campaign_id, person_id),
+        # NEUE Fertigkeiten, die es ohne die Ausrüstung nicht gibt (z.B. ein
+        # Zauberstab mit "Springen 3") — eigener Blattabschnitt, siehe
+        # CharacterSheetPanel.tsx.
+        "ausruestungsfertigkeiten": await ausruestungsfertigkeiten_liste(campaign_id, person_id),
         "katalog": [t for t in katalog if t["category"] in erlaubt],
         "werte": werte,
     }

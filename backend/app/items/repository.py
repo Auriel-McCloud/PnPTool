@@ -18,6 +18,8 @@ RETURN_FIELDS = """
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
+    g.slot AS slot, g.istWaffe AS istWaffe,
+    g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
@@ -114,6 +116,16 @@ def _decode(record: dict) -> dict:
     # reisst mehr aus einem heraus als teures.
     record["wVerlust"] = _or_default(record.get("wVerlust"), 0)
     record["koerperzone"] = record.get("koerperzone") or ""
+    # Slot: welcher der drei Plaetze in der Zone belegt ist. None ist ein
+    # gültiger Zustand (kein fester Platz) — deshalb kein _or_default mit 0.
+    record["slot"] = record.get("slot")
+    record["istWaffe"] = _or_default(record.get("istWaffe"), False)
+    for feld in ("traitBoni", "ausruestungsfertigkeiten"):
+        try:
+            roh = record.get(feld)
+            record[feld] = json.loads(roh) if roh else {}
+        except (json.JSONDecodeError, TypeError):
+            record[feld] = {}
     record["riggerBonus"] = _or_default(record.get("riggerBonus"), 0)
     record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
@@ -154,7 +166,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deckDaten: $deckDaten, deckKompilieren: $deckKompilieren,
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
-            wVerlust: $wVerlust, koerperzone: $koerperzone
+            wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
+            traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten
         })
     """
     if owner_person_id:
@@ -206,6 +219,10 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             maxDrohnen=data.get("maxDrohnen") or 0,
             wVerlust=data.get("wVerlust") or 0,
             koerperzone=data.get("koerperzone") or "",
+            slot=data.get("slot"),
+            istWaffe=bool(data.get("istWaffe")),
+            traitBoni=json.dumps(data.get("traitBoni") or {}),
+            ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -274,6 +291,10 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     # Neo4j kennt keine Map-Eigenschaften — wie bei eigenschaften als Text.
     if "fahrzeugFertigkeiten" in changed:
         changed["fahrzeugFertigkeiten"] = json.dumps(changed["fahrzeugFertigkeiten"])
+    if "traitBoni" in changed:
+        changed["traitBoni"] = json.dumps(changed["traitBoni"])
+    if "ausruestungsfertigkeiten" in changed:
+        changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
 
     driver = get_driver()
     if not changed:
@@ -715,7 +736,11 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
 
 
 # Typen, die im Körper stecken und dauerhaft Willenskraft kosten.
-CHROM_TYPEN = ("Cyberware", "Bioware")
+# MagWare läuft über dieselbe Formel wie Cyber-/Bioware (Mark, 02.09.2026):
+# der Willenskraftverlust regelt die Kosten bereits ausreichend, es braucht
+# keine eigene magische Kostenformel — MagWare ist bewusst nur eine dritte
+# Flavor-Kategorie neben Cyberware/Bioware, keine eigene Mechanik.
+CHROM_TYPEN = ("Cyberware", "Bioware", "MagWare")
 
 
 async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
@@ -743,3 +768,95 @@ async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
                                    typen=list(CHROM_TYPEN))
         record = await result.single()
         return verlust_gesamt([float(w) for w in (record["einzeln"] if record else [])])
+
+
+async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot: int, eigene_item_id: str) -> str | None:
+    """Prüft, ob ein anderes ausgerüstetes Stück derselben Person schon
+    denselben Platz belegt (Regelblatt: je Zone drei Plätze).
+
+    Nur AUSGERUESTETE Chrom-/Bio-/MagWare zählt — im Rucksack liegende Ware
+    ist nicht eingebaut und blockiert deshalb keinen Platz. Gibt den Namen
+    des blockierenden Gegenstands zurück, oder None wenn der Platz frei ist.
+    Ein Gegenstand blockiert sich beim eigenen Update nicht selbst.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+          AND g.koerperzone = $koerperzone AND g.slot = $slot AND g.id <> $eigene_item_id
+        RETURN g.name AS name
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            koerperzone=koerperzone,
+            slot=slot,
+            eigene_item_id=eigene_item_id,
+            typen=list(CHROM_TYPEN),
+        )
+        record = await result.single()
+        return record["name"] if record else None
+
+
+async def ausruestungs_trait_boni(campaign_id: str, person_id: str) -> dict[str, int]:
+    """Bonuswürfel auf bestehende Attribute/Fertigkeiten/Sphären aus
+    ausgerüsteten Gegenständen (`traitBoni`), aufsummiert über alle Stücke.
+
+    Anders als bei Cyberdecks (siehe `deck_boni`, dort zählt das Beste) wird
+    hier **summiert**: mehrere Implantate mit je +1 auf Wahrnehmung sollen
+    sich addieren, weil es unterschiedliche Verbesserungen sind statt
+    austauschbarer Geräte derselben Funktion.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+          AND g.traitBoni IS NOT NULL AND g.traitBoni <> '' AND g.traitBoni <> '{}'
+        RETURN collect(g.traitBoni) AS alle
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        summe: dict[str, int] = {}
+        for roh in (record["alle"] if record else []):
+            try:
+                boni = json.loads(roh)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            for name, wert in boni.items():
+                summe[name] = summe.get(name, 0) + int(wert)
+        return summe
+
+
+async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
+    """Neue Fertigkeiten, die ausschliesslich durch ausgerüstete Gegenstände
+    entstehen (`ausruestungsfertigkeiten`) — analog zu `deck_boni`, aber ohne
+    festen Typ-Bezug (jeder Gegenstandstyp kann das Feld tragen, nicht nur
+    Cyberdecks). Liefert je Fertigkeit den höchsten Bonus UND von welchem
+    Gegenstand er stammt, damit das Blatt zeigen kann, woher sie kommt.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+          AND g.ausruestungsfertigkeiten IS NOT NULL AND g.ausruestungsfertigkeiten <> ''
+          AND g.ausruestungsfertigkeiten <> '{}'
+        RETURN g.name AS itemName, g.ausruestungsfertigkeiten AS roh
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        eintraege: dict[str, dict] = {}
+        async for record in result:
+            try:
+                fertigkeiten = json.loads(record["roh"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+            for name, wert in fertigkeiten.items():
+                wert = int(wert)
+                bisher = eintraege.get(name)
+                if bisher is None or wert > bisher["bonus"]:
+                    eintraege[name] = {"name": name, "bonus": wert, "quelle": record["itemName"]}
+        return list(eintraege.values())
