@@ -1590,13 +1590,17 @@ Kopien zieht).
 
 ## Nächste Schritte
 
-*(Stand 29.08.2026. Seit dem letzten Eintrag dazugekommen: Fenstersystem, "nie scrollen" für Gegenstände und Graph, kompletter Spieler-Zugang inkl. Oberfläche, Aufbewahrungsorte und Gewicht.)*
+*(Stand 02.09.2026. Seit dem letzten Eintrag dazugekommen: Fenstersystem, "nie scrollen" für Gegenstände und Graph, kompletter Spieler-Zugang inkl. Oberfläche, Aufbewahrungsorte und Gewicht, Kampfmodus, Charaktererstellung/Level Up, Begleiter/Fahrzeug-Blätter und Cyber-/Bio-/MagWare.)*
 
-1. **Bereich "Welt" scrollt noch als einziger** — er muss sich erst selbst einteilen, bevor er `statisch` bekommen kann. Dieselbe Frage wie bei den Gegenständen: Kacheln oder Tabelle, Blättern, Suche. Bewusst nicht blind nach dem Kachel-Muster umgebaut, solange Mark das nicht bestätigt hat. Zielbild bleibt der feinere Schnitt (PCs und NPCs getrennt, Orte und Events einzeln).
-2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber-/Bio-Ware-Slots, Waffen-/Rüstungswerte am Charakter, Companion-/Drohnen-Bögen, Würfeln.
-3. **Aus dem UI-Konzept noch offen**: Kampfmodus, Regeln-Bereich, Notizen, das Tooltip-System mit Schalter in der oberen Leiste — alle drei stehen als "bald" im Menü.
-4. **Offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Cyberware→WVerlust, Drogen→Wirkung/Dauer) + Upgrade-System.
+1. **Nächster konkreter UI-Schritt: Bereich "Welt" aufteilen und statisch machen** — aktuell scrollt er als einziger. PCs, NPCs, Orte und Events sollen eigene Bereiche bzw. Tabs bekommen; dafür sind Kacheln oder Tabelle, Blättern und Suche zu entscheiden. Nicht blind nach dem Gegenstands-Kachelmuster umbauen, solange die gewünschte Darstellung nicht bestätigt ist.
+2. **Phase 5 — Messenger und Kontakte** — Marks neue Idee ist in `docs/phase-5-messenger.md` beschrieben: gerichtetes Kontaktwissen mit abgestuften Freigaben (gesehen → gesprochen → Kontakt ausgetauscht), Nachrichten zwischen PCs/NPCs/Spielleitung, Persona-5-inspirierter Verlauf in einem eigenen, intern scrollenden Fenster und Live-Zustellung über WebSockets. Vor dem Bauen stehen die Regelentscheidungen zur Kontaktstufe und zur ein- oder beidseitigen Bestätigung an.
+3. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Waffen-/Rüstungswerte am Charakter, Riggen und weitere noch offene Begleiter-/Drohnenregeln.
+4. **Weitere offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Drogen→Wirkung/Dauer) + Upgrade-System · Regeln-Bereich.
 5. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel.
+
+### Phase 5: Messenger und Kontakte (02.09.2026, vorgemerkt)
+
+Die vollständige Ideenskizze mit Kontaktstufen, vorgeschlagenem `KENNT`-Modell, Nachrichtenmodell, Berechtigungen, UI-Vorgaben und offenen Entscheidungen steht in `docs/phase-5-messenger.md`. Wichtig: Kontaktwissen ist **gerichtet und personenbezogen** — was PC A über NPC B weiss, kann anders aussehen als das Wissen von PC C. Die Hauptansicht bleibt scrollbar-frei; nur die Kontaktliste bzw. der Chatverlauf in einem Fenster darf intern scrollen. Noch keine Implementierung.
 
 **Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8000` (bewusst nur localhost, siehe LAN-Abschnitt unten; ohne `--reload`, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, lauscht dank `host:true` in `vite.config.ts` auf allen Interfaces (kein `--host`-Flag mehr nötig). Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
 
