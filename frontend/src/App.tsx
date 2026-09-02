@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { GmLoginPage } from "./auth/GmLoginPage";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
 import { useCampaign } from "./campaigns/useCampaign";
-import { EntityManager } from "./entities/EntityManager";
+import { EntityManager, type WeltAnsicht } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
@@ -17,14 +17,17 @@ import { VollbildKnopf } from "./shell/VollbildKnopf";
 /**
  * Bereiche der SL-Ansicht.
  *
- * Zielbild laut docs/ui-konzept.md ist ein feinerer Schnitt — Spieler-
- * charaktere und NPCs getrennt, dazu Orte und Events einzeln. Solange
- * EntityManager das alles in einer Ansicht hält, steht hier ein
- * gemeinsamer Bereich "Welt". Die noch nicht gebauten Bereiche sind
- * bewusst schon sichtbar (ausgegraut), damit die Richtung erkennbar ist.
+ * PCs, NPCs, Orte, Events und Verbindungen sind eigene Commlink-Bereiche.
+ * So bleibt die jeweilige Übersicht fokussiert; die Daten kommen weiterhin
+ * aus demselben EntityManager, damit die Verbindungs-Auswahl alle Entitäten
+ * kennt.
  */
 const BEREICHE: Bereich[] = [
-  { id: "welt", name: "Welt", symbol: "◍", farbe: "#00e5ff" },
+  { id: "pcs", name: "PCs", symbol: "◉", farbe: "#4d8bd8" },
+  { id: "npcs", name: "NPCs", symbol: "◌", farbe: "#d4894b" },
+  { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
+  { id: "events", name: "Events", symbol: "◆", farbe: "#d4894b" },
+  { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "#7c8fe8" },
   // Violett wie die Gegenstands-Knoten im Graphen
   { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "#a865d8" },
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
@@ -39,10 +42,22 @@ const BEREICHE: Bereich[] = [
 ];
 
 const TITEL: Record<string, string> = {
-  welt: "Personen · Orte · Ereignisse",
+  pcs: "Spielercharaktere",
+  npcs: "Nichtspielercharaktere",
+  orte: "Orte",
+  events: "Ereignisse",
+  verbindungen: "Beziehungen zwischen Entitäten",
   gegenstaende: "Gegenstände",
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
+};
+
+const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
+  pcs: "pcs",
+  npcs: "npcs",
+  orte: "orte",
+  events: "events",
+  verbindungen: "verbindungen",
 };
 
 function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
@@ -64,7 +79,7 @@ function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<
 function Dashboard() {
   const { me, logout } = useAuth();
   const { campaigns, loading, createCampaign } = useCampaign();
-  const [bereich, setBereich] = useState("welt");
+  const [bereich, setBereich] = useState("pcs");
   // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als
   // React-key der Ansichten: bei einem Wechsel werden sie neu aufgebaut und
   // laden ihre Daten frisch gefiltert.
@@ -106,11 +121,18 @@ function Dashboard() {
       titel={kampagne ? `${kampagne.name} — ${TITEL[bereich] ?? ""}` : "Keine Kampagne"}
       werkzeuge={werkzeuge}
       fuss={fuss}
-      /* Bereiche, die sich selbst einteilen und ohne Scrollen auskommen.
-         "Welt" fehlt noch — dort steht dieselbe Frage an wie bei den
-         Gegenständen: Kacheln oder Tabelle, Blättern, Suche. */
+      /* Jede fokussierte Weltansicht teilt sich ihre Fläche selbst ein;
+         lange Detailinhalte öffnen weiterhin im Fenster. */
       statisch={
-        bereich === "gegenstaende" || bereich === "graph" || bereich === "begleiter" || bereich === "kampf"
+        bereich === "pcs" ||
+        bereich === "npcs" ||
+        bereich === "orte" ||
+        bereich === "events" ||
+        bereich === "verbindungen" ||
+        bereich === "gegenstaende" ||
+        bereich === "graph" ||
+        bereich === "begleiter" ||
+        bereich === "kampf"
       }
     >
       {loading && <p style={{ color: "var(--text-leise)" }}>Lade Kampagnen…</p>}
@@ -120,7 +142,13 @@ function Dashboard() {
         <>
           <ViewAsSwitcher campaignId={kampagne.id} value={viewAs} onChange={setViewAs} />
 
-          {bereich === "welt" && <EntityManager key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {ENTITY_ANSICHT[bereich] && (
+            <EntityManager
+              key={`${viewAs ?? "gm"}:${bereich}`}
+              campaignId={kampagne.id}
+              ansicht={ENTITY_ANSICHT[bereich]!}
+            />
+          )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "kampf" && <Kampfmodus key={viewAs ?? "gm"} campaignId={kampagne.id} />}

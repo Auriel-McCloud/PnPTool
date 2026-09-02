@@ -14,6 +14,9 @@ import { getGraph } from "../graph/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
 const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid var(--linie)" };
+const ansichtStyle: React.CSSProperties = { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" };
+const listeStyle: React.CSSProperties = { flex: 1, minHeight: 0, overflowY: "auto", paddingRight: 6 };
+const kopfStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" };
 const formStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
@@ -34,6 +37,13 @@ const formStyle: React.CSSProperties = {
 };
 const fieldRowStyle: React.CSSProperties = { display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" };
 const textInputStyle: React.CSSProperties = { fontSize: "1rem", padding: "8px 10px", minWidth: 260 };
+
+/**
+ * Fokussierte Bereiche der SL-Weltansicht. "welt" bleibt als Rückwärts-
+ * kompatibilität für die bisherige Gesamtansicht erhalten; die Shell nutzt
+ * die fünf fokussierten Varianten.
+ */
+export type WeltAnsicht = "welt" | "pcs" | "npcs" | "orte" | "events" | "verbindungen";
 
 // Gebündelter State für die Felder, die Personen/Orte/Events gemeinsam haben:
 // Rich-Text-Beschreibung + Notizen, je mit eigener Sichtbarkeit.
@@ -124,7 +134,7 @@ function RichContentFields({
   );
 }
 
-export function EntityManager({ campaignId }: { campaignId: string }) {
+export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: string; ansicht?: WeltAnsicht }) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -161,7 +171,9 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
-  const [personType, setPersonType] = useState<"PC" | "NPC">("NPC");
+  const [personType, setPersonType] = useState<"PC" | "NPC">(ansicht === "pcs" ? "PC" : "NPC");
+  const personTypeFuerAnsicht: "PC" | "NPC" =
+    ansicht === "pcs" ? "PC" : ansicht === "npcs" ? "NPC" : personType;
   const personContent = useContentAndVisibility();
   const [openSheetFor, setOpenSheetFor] = useState<string | null>(null);
   // Erstellung im Fenster statt inline: sie ist ein Vorgang mit Anfang und
@@ -172,9 +184,13 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
   const [blattFuer, setBlattFuer] = useState<Person | null>(null);
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
-    await entitiesApi.createPerson(campaignId, { name: personName, personType, ...personContent.payload() });
+    await entitiesApi.createPerson(campaignId, {
+      name: personName,
+      personType: personTypeFuerAnsicht,
+      ...personContent.payload(),
+    });
     setPersonName("");
-    setPersonType("NPC");
+    setPersonType(ansicht === "pcs" ? "PC" : "NPC");
     personContent.reset();
     await refreshAll();
   }
@@ -245,11 +261,43 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
     return alleEntitaeten.find((e) => e.kind === kind && e.id === id)?.label ?? `${kind}:${id}`;
   }
 
+  const zeigePersonen = ansicht === "welt" || ansicht === "pcs" || ansicht === "npcs";
+  const personenInAnsicht =
+    ansicht === "pcs"
+      ? personen.filter((p) => p.personType === "PC")
+      : ansicht === "npcs"
+        ? personen.filter((p) => p.personType === "NPC")
+        : personen;
+  const zeigeOrte = ansicht === "welt" || ansicht === "orte";
+  const zeigeEvents = ansicht === "welt" || ansicht === "events";
+  const zeigeVerbindungen = ansicht === "welt" || ansicht === "verbindungen";
+  const personenUeberschrift =
+    ansicht === "pcs" ? "Spielercharaktere" : ansicht === "npcs" ? "Nichtspielercharaktere" : "Personen";
+  const personenLeertext =
+    ansicht === "pcs"
+      ? "Noch keine Spielercharaktere angelegt."
+      : ansicht === "npcs"
+        ? "Noch keine Nichtspielercharaktere angelegt."
+        : "Noch keine Personen angelegt.";
+
+  const titel = ansicht === "pcs" ? "Spielercharaktere" : ansicht === "npcs" ? "Nichtspielercharaktere" : ansicht === "orte" ? "Orte" : ansicht === "events" ? "Events" : ansicht === "verbindungen" ? "Verbindungen" : "Welt";
+  const status = ansicht === "pcs" ? `${personenInAnsicht.length} PCs` : ansicht === "npcs" ? `${personenInAnsicht.length} NPCs` : ansicht === "orte" ? `${orte.length} Orte` : ansicht === "events" ? `${events.length} Events` : ansicht === "verbindungen" ? `${verbindungen.length} Verbindungen` : `${personen.length} Personen · ${orte.length} Orte · ${events.length} Events`;
+  const istNurEineAnsicht = ansicht !== "welt";
+
   return (
-    <div>
-      <section style={sectionStyle}>
-        <h2>Personen</h2>
-        {personen.map((p) => (
+    <div style={ansichtStyle}>
+      {istNurEineAnsicht && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+        </div>
+      )}
+      <div style={istNurEineAnsicht ? listeStyle : undefined}>
+      {zeigePersonen && (
+        <section style={sectionStyle}>
+          <h2>{personenUeberschrift}</h2>
+          {personenInAnsicht.length === 0 && <p style={{ color: "var(--text-leise)" }}>{personenLeertext}</p>}
+          {personenInAnsicht.map((p) => (
           <div key={p.id} style={listItemStyle}>
             <strong>{p.name}</strong> <span style={{ color: "var(--text-leise)" }}>({p.personType})</span>
             <div style={{ margin: "4px 0" }}>
@@ -282,23 +330,32 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
               <CharacterSheetPanel campaignId={campaignId} person={p} pcOptions={pcOptions} alleOptionen={alleOptionen} />
             )}
           </div>
-        ))}
-        <form onSubmit={submitPerson} style={formStyle}>
-          <div style={fieldRowStyle}>
-            <input style={textInputStyle} placeholder="Name" value={personName} onChange={(e) => setPersonName(e.target.value)} required />
-            <select value={personType} onChange={(e) => setPersonType(e.target.value as "PC" | "NPC")}>
-              <option value="NPC">NPC</option>
-              <option value="PC">PC</option>
-            </select>
-          </div>
-          <RichContentFields state={personContent} pcOptions={pcOptions} />
-          <button type="submit">Person anlegen</button>
-        </form>
-      </section>
+          ))}
+          <form onSubmit={submitPerson} style={formStyle}>
+            <div style={fieldRowStyle}>
+              <input style={textInputStyle} placeholder="Name" value={personName} onChange={(e) => setPersonName(e.target.value)} required />
+              {ansicht === "welt" ? (
+                <select value={personType} onChange={(e) => setPersonType(e.target.value as "PC" | "NPC")}>
+                  <option value="NPC">NPC</option>
+                  <option value="PC">PC</option>
+                </select>
+              ) : (
+                <span style={{ color: "var(--text-leise)", padding: "9px 0" }}>
+                  Typ: {personTypeFuerAnsicht}
+                </span>
+              )}
+            </div>
+            <RichContentFields state={personContent} pcOptions={pcOptions} />
+            <button type="submit">{ansicht === "pcs" ? "PC anlegen" : ansicht === "npcs" ? "NPC anlegen" : "Person anlegen"}</button>
+          </form>
+        </section>
+      )}
 
-      <section style={sectionStyle}>
-        <h2>Orte</h2>
-        {orte.map((o) => (
+      {zeigeOrte && (
+        <section style={sectionStyle}>
+          <h2>Orte</h2>
+          {orte.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Orte angelegt.</p>}
+          {orte.map((o) => (
           <div key={o.id} style={listItemStyle}>
             <strong>{o.name}</strong>
             <div style={{ margin: "4px 0" }}>
@@ -314,17 +371,20 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
               />
             )}
           </div>
-        ))}
-        <form onSubmit={submitOrt} style={formStyle}>
-          <input style={textInputStyle} placeholder="Name" value={ortName} onChange={(e) => setOrtName(e.target.value)} required />
-          <RichContentFields state={ortContent} pcOptions={pcOptions} />
-          <button type="submit">Ort anlegen</button>
-        </form>
-      </section>
+          ))}
+          <form onSubmit={submitOrt} style={formStyle}>
+            <input style={textInputStyle} placeholder="Name" value={ortName} onChange={(e) => setOrtName(e.target.value)} required />
+            <RichContentFields state={ortContent} pcOptions={pcOptions} />
+            <button type="submit">Ort anlegen</button>
+          </form>
+        </section>
+      )}
 
-      <section style={sectionStyle}>
-        <h2>Events</h2>
-        {events.map((ev) => (
+      {zeigeEvents && (
+        <section style={sectionStyle}>
+          <h2>Events</h2>
+          {events.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Events angelegt.</p>}
+          {events.map((ev) => (
           <div key={ev.id} style={listItemStyle}>
             <strong>{ev.title}</strong> {ev.timestamp && <span style={{ color: "var(--text-leise)" }}>({ev.timestamp})</span>}
             <div style={{ margin: "4px 0" }}>
@@ -340,68 +400,73 @@ export function EntityManager({ campaignId }: { campaignId: string }) {
               />
             )}
           </div>
-        ))}
-        <form onSubmit={submitEvent} style={formStyle}>
-          <div style={fieldRowStyle}>
-            <input style={textInputStyle} placeholder="Titel" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
-            <input
-              style={textInputStyle}
-              placeholder="Zeitpunkt (z.B. Session 3)"
-              value={eventTimestamp}
-              onChange={(e) => setEventTimestamp(e.target.value)}
-            />
-          </div>
-          <RichContentFields state={eventContent} pcOptions={pcOptions} />
-          <button type="submit">Event anlegen</button>
-        </form>
-      </section>
+          ))}
+          <form onSubmit={submitEvent} style={formStyle}>
+            <div style={fieldRowStyle}>
+              <input style={textInputStyle} placeholder="Titel" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
+              <input
+                style={textInputStyle}
+                placeholder="Zeitpunkt (z.B. Session 3)"
+                value={eventTimestamp}
+                onChange={(e) => setEventTimestamp(e.target.value)}
+              />
+            </div>
+            <RichContentFields state={eventContent} pcOptions={pcOptions} />
+            <button type="submit">Event anlegen</button>
+          </form>
+        </section>
+      )}
 
-      <section style={sectionStyle}>
-        <h2>Verbindungen</h2>
-        {verbindungen.map((v) => (
+      {zeigeVerbindungen && (
+        <section style={sectionStyle}>
+          <h2>Verbindungen</h2>
+          {verbindungen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Verbindungen angelegt.</p>}
+          {verbindungen.map((v) => (
           <div key={v.id} style={listItemStyle}>
             {labelFor(v.vonKind, v.vonId)} <strong>— {v.typ} →</strong> {labelFor(v.zuKind, v.zuId)}
             <div>
               <SichtbarkeitBadge modus={v.sichtbarkeit} sichtbarFuer={v.sichtbarFuer} personenById={personenById} label="Sichtbarkeit" />
             </div>
           </div>
-        ))}
-        <form onSubmit={submitVerbindung} style={formStyle}>
-          <div style={fieldRowStyle}>
-            <select value={verbindungForm.vonId} onChange={(e) => setVerbindungForm({ ...verbindungForm, vonId: e.target.value })} required>
-              <option value="">Von...</option>
-              {alleEntitaeten.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
-            <input
-              style={textInputStyle}
-              placeholder="Beziehungstyp (z.B. kennt)"
-              value={verbindungForm.typ}
-              onChange={(e) => setVerbindungForm({ ...verbindungForm, typ: e.target.value })}
-              required
+          ))}
+          <form onSubmit={submitVerbindung} style={formStyle}>
+            <div style={fieldRowStyle}>
+              <select value={verbindungForm.vonId} onChange={(e) => setVerbindungForm({ ...verbindungForm, vonId: e.target.value })} required>
+                <option value="">Von...</option>
+                {alleEntitaeten.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                style={textInputStyle}
+                placeholder="Beziehungstyp (z.B. kennt)"
+                value={verbindungForm.typ}
+                onChange={(e) => setVerbindungForm({ ...verbindungForm, typ: e.target.value })}
+                required
+              />
+              <select value={verbindungForm.zuId} onChange={(e) => setVerbindungForm({ ...verbindungForm, zuId: e.target.value })} required>
+                <option value="">Zu...</option>
+                {alleEntitaeten.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <VisibilitySelector
+              label="Sichtbarkeit der Verbindung"
+              modus={verbindungForm.sichtbarkeit}
+              sichtbarFuer={verbindungForm.sichtbarFuer}
+              onChange={(m, f) => setVerbindungForm({ ...verbindungForm, sichtbarkeit: m, sichtbarFuer: f })}
+              pcOptions={pcOptions}
             />
-            <select value={verbindungForm.zuId} onChange={(e) => setVerbindungForm({ ...verbindungForm, zuId: e.target.value })} required>
-              <option value="">Zu...</option>
-              {alleEntitaeten.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <VisibilitySelector
-            label="Sichtbarkeit der Verbindung"
-            modus={verbindungForm.sichtbarkeit}
-            sichtbarFuer={verbindungForm.sichtbarFuer}
-            onChange={(m, f) => setVerbindungForm({ ...verbindungForm, sichtbarkeit: m, sichtbarFuer: f })}
-            pcOptions={pcOptions}
-          />
-          <button type="submit">Verbindung anlegen</button>
-        </form>
-      </section>
+            <button type="submit">Verbindung anlegen</button>
+          </form>
+        </section>
+      )}
+      </div>
 
       {/* Erstellung der Spielleitung: dieselbe Führung wie beim Spieler,
           nur eben für NPCs. Nach dem Absenden stehen die Werte am Charakter,
