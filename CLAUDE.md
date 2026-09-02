@@ -1526,8 +1526,20 @@ Kopien zieht).
   `GegenstaendeUebersicht.tsx`, nur sichtbar für die SL (`me?.role === "GM"`).
 - Getestet: `npm run build` grün, alle 139 Backend-Tests grün (u.a.
   `test_zugriffsschutz.py`, das `wegwerfen` bereits in der Ausnahmeliste hatte).
-  **Noch nicht** end-to-end im Browser gegen die Testkampagne durchgeklickt —
-  nur Build/Unit-Test-Ebene.
+- **End-to-end verifiziert (02.09.2026, per curl gegen die echte Testkampagne,
+  Backend musste dafür neu gestartet werden — lief noch mit dem Stand vor dem
+  Commit, siehe Stolperstein #2):** kompletter Zyklus mit einem eigens
+  angelegten Testgegenstand an der vorhandenen `Testfigur (zum Wegwerfen)` —
+  Wegwerfen → verschwindet aus der normalen Übersicht UND aus der Traglast →
+  taucht im Mülleimer mit korrektem `weggeworfenVon`/Besitzername auf →
+  Zurückholen → wieder in der Übersicht, korrekt als `GELAGERT` ohne Ziel →
+  erneut weggeworfen → endgültig gelöscht (generische `DELETE`-Route) →
+  überall verschwunden. Doppeltes Wegwerfen liefert 404. Berechtigungen mit
+  einer echten Spielersitzung (`Auriel`/Ryu Tanaka) geprüft: eigenes Item
+  wegwerfen → 200, fremdes (Kiras) Item wegwerfen → 404, Mülleimer-Liste als
+  Spieler lesen → 403. Alle Testgegenstände danach wieder gelöscht, Ryus und
+  Kiras Bestandsdaten unverändert — nur Browser-Klicktest selbst steht noch
+  aus, die Funktionslogik ist aber vollständig bestätigt.
 
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
