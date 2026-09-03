@@ -13,6 +13,8 @@ import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { WikiAnsicht } from "./wiki/WikiAnsicht";
+import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
+import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
@@ -99,9 +101,9 @@ function Dashboard() {
           Schalter fürs Tooltip-System. Sichtbar, aber deaktiviert — ein
           Schalter, der nichts tut, wäre irreführender als einer, der sagt,
           dass er noch nicht kann. */}
-      <button type="button" className="cl-werkzeug" disabled title="Pop-ups an Spieler — kommt noch">
-        ◎
-      </button>
+      {/* War laut docs/ui-konzept.md als "SL-Popups" vorgesehen und bis jetzt
+          deaktiviert — hier ist die Funktion dahinter. */}
+      {kampagne && <MitteilungSenden campaignId={kampagne.id} />}
       <button type="button" className="cl-werkzeug" disabled title="Erklärungen einblenden — kommt noch">
         ?
       </button>
@@ -119,7 +121,7 @@ function Dashboard() {
     </>
   );
 
-  return (
+  const shell = (
     <CommlinkShell
       bereiche={BEREICHE}
       aktiv={bereich}
@@ -165,6 +167,15 @@ function Dashboard() {
         </>
       )}
     </CommlinkShell>
+  );
+
+  // Ohne Kampagne gibt es keine Leitung, die man öffnen könnte.
+  if (!kampagne) return shell;
+
+  return (
+    <MitteilungenAnbieter campaignId={kampagne.id} personId={null} istSl>
+      {shell}
+    </MitteilungenAnbieter>
   );
 }
 

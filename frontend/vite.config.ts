@@ -12,6 +12,9 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
+        // Ohne ws:true reicht der Proxy nur HTTP weiter — die Live-Leitung
+        // für SL-Popups (/api/.../mitteilungen/live) käme nie beim Backend an.
+        ws: true,
       },
       // hochgeladene Gegenstands-Bilder werden vom Backend statisch ausgeliefert,
       // müssen aus demselben Grund wie /api mitgeproxyt werden

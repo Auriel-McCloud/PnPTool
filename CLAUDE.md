@@ -91,10 +91,114 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
 - ✅ **Phase 4 (29.08.2026)** — **Spieler-Zugang steht.** Sichtbarkeits-Filterung läuft in allen Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=` **und** über echte Spieler-Sitzungen. Beitritt per Zugangscode, Charakter beanspruchen, eigene Oberfläche. Siehe eigener Abschnitt unten. Offen bleibt nur die Live-Kommunikation (Phase 5).
-- 🟡 **Phase 5** — Messenger/Kontakte fachlich spezifiziert und der Kontakt-Fachkern begonnen; API, Persistenz, UI und Live-WebSocket-Pop-ups sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus). Die API-Vertragstests liegen als Vorlage in `backend/tests/test_kontakte_api.py` und überspringen sich selbst, solange `app.kontakte.routes` fehlt.
+- 🟡 **Phase 5** — **SL-Popups live über WebSocket gebaut** (eigener Abschnitt unten). Messenger/Kontakte sind fachlich spezifiziert und der Kontakt-Fachkern steht; dessen API, Persistenz und UI sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus). Die API-Vertragstests liegen als Vorlage in `backend/tests/test_kontakte_api.py` und überspringen sich selbst, solange `app.kontakte.routes` fehlt.
 - ✅ **Kampagnen-Wiki (03.09.2026)** — Planungs- und Wissenswerkzeug für Geschichten: Seitenbaum, TipTap-Editor mit Überschriften/Bildern/Verknüpfungen, automatisches Inhaltsverzeichnis, Rückverweise an Entitäten und „bis hierher freigeben". Eigener Bereich ❋ Wiki bei SL und Spieler. Spezifikation: `docs/produktvision-wiki.md`, Umsetzung: eigener Abschnitt unten.
 - ✅ **Theme-Fundament (03.09.2026)** — Vorarbeit fürs Wiki, damit es nicht dieselben harten Farbwerte erneut verdrahtet. Alle Farb-/Formwerte liegen jetzt als Tokens in `frontend/src/theme/`; ein zweites Theme (Hextechpunk) beweist, dass der Umbau trägt. Details und die Regel dazu: `docs/theming.md`.
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
+
+## SL-Popups: Live-Mitteilungen (gebaut 03.09.2026)
+
+Phase 5, erster Teil. Die Spielleitung schickt Ansagen an die Spieler —
+"Würfelt für Initiative", eine Warnung, später ein Bild oder eine Karte.
+Umgesetzt wie im UI-Konzept vorgesehen: **Blitz-Symbol rechts oben**, das
+Popup fährt von dort herein.
+
+**Ohne Absender.** Marks Vorgabe: *"Bei SL Nachrichten gibt es keinen
+Absender"* — die Ansage kommt aus der Spielwelt, nicht von einer Person.
+Deshalb zeigt das Popup nur ein ⚡ und die Uhrzeit.
+
+### Live über WebSocket
+
+`GET /api/campaigns/{cid}/mitteilungen/live` (WebSocket). Nach dem Verbinden
+kommt einmal der Stand, danach jede neue Ansage einzeln.
+
+Der Verteiler (`app/mitteilungen/verteiler.py`) hält die offenen Leitungen je
+Kampagne im Prozessspeicher. Für Marks Heimserver mit einem Uvicorn-Prozess
+richtig; mehrere Arbeiter bräuchten Redis als Verteiler.
+
+**Jede Leitung wird einzeln geprüft** (`darf_empfangen`), bevor gesendet wird
+— eine gerichtete Ansage darf nicht bei allen aufblinken, nur weil sie am
+selben Tisch sitzen.
+
+*Drei Fallstricke, alle behoben:*
+
+1. **`ws: true` im Vite-Proxy.** Ohne das reicht der Dev-Server nur HTTP
+   weiter, und die Live-Leitung erreicht das Backend nie. Der Fehler sähe aus
+   wie ein Backend-Problem, liegt aber im Proxy.
+2. **Der WebSocket hängt NICHT an `require_campaign_zugang`.** Diese
+   Abhängigkeit wirft `HTTPException`, worauf ein WebSocket nicht antworten
+   kann — der Client sähe einen wortlosen Abbruch. Die Prüfung passiert
+   deshalb von Hand (`_viewer_aus_cookie`) mit `close(code=1008)`.
+3. **Empfangen in der Schleife, obwohl der Client nichts schickt.** Ohne
+   `receive_text()` bemerkt der Server einen Verbindungsabbruch nicht und
+   sammelt tote Leitungen an.
+
+### Gespeichert, nicht nur gesendet
+
+Eine Mitteilung ist ein `:Mitteilung`-Knoten an der Kampagne. Wessen Tablet
+gerade schläft, soll die Initiative-Ansage **nachlesen** können statt sie zu
+verpassen. Beim Verbinden werden die letzten 50 nachgeladen.
+
+`gelesenVon` ist eine Liste von Person-IDs, kein Schalter: Sonst würde das
+Abhaken eines Spielers die Meldung bei allen anderen verschwinden lassen.
+
+### An alle oder an einzelne
+
+Beides, wie von Mark gewünscht. `empfaenger_aufloesen` prüft genannte IDs
+gegen die PCs der Kampagne — eine Person-ID aus einer fremden Kampagne
+rutscht nicht durch. `anAlle` gewinnt über eine mitgegebene Liste, sonst wäre
+unklar was gilt.
+
+### Zurückziehen
+
+`DELETE .../mitteilungen/{id}` sammelt ein versehentlich gesendetes Popup
+wieder ein — es verschwindet auch auf bereits offenen Bildschirmen.
+
+### Oberfläche
+
+- **Spieler:** `MitteilungenBlitz` (⚡ mit Zähler, öffnet den Verlauf),
+  `MitteilungPopup` (liegt per Portal über allem, auch über offenen Fenstern
+  — eine Ansage darf nicht hinter einem Gegenstandsfenster verschwinden).
+  Mehrere Ansagen kurz hintereinander werden in einer Schlange gezeigt, nicht
+  übereinander.
+- **Spielleitung:** `MitteilungSenden` hinter dem ◎-Symbol, das im UI-Konzept
+  schon als "SL-Popups" vorgesehen und bis jetzt deaktiviert war. Mit
+  Schnellansagen ("Würfelt für Initiative!"), weil mitten im Kampf niemand
+  tippt. Strg+Enter sendet.
+- **Wiederverbinden** mit wachsender Wartezeit (1s → max 15s). Android
+  schläfert Hintergrund-Tabs ein und trennt dabei; ohne das bliebe das
+  Commlink still.
+
+### Zugriffsschutz
+
+Die zwei `gelesen`-Routen sind schreibend, müssen aber von Spielern nutzbar
+sein — sonst bliebe das Blitz-Symbol ewig rot. Als begründete Ausnahme in
+`tests/test_zugriffsschutz.py` eingetragen. Sie ändern ausschließlich
+`gelesenVon` und nur für die eigene Person-ID **aus der Sitzung**, nicht aus
+dem Request-Body.
+
+### Bilder
+
+`art: "BILD"` und `bildUrl` sind im Datenmodell, den Schemas und der Anzeige
+bereits durchgereicht — Mark will Bilder senden können. **Der Upload-Weg in
+der Sende-Oberfläche fehlt noch**; bis dahin nimmt die API eine bereits
+hochgeladene URL entgegen.
+
+### Geprüft
+
+Backend: 198 Tests (17 neue, DB-frei). End-to-End mit **zwei getrennten
+Browser-Kontexten** (eigene Cookies: einer als SL, einer als Spieler),
+Testzugang und Ansagen danach restlos entfernt:
+
+- Rundruf kam **live** beim Spieler an, ohne Neuladen
+- gerichtete Ansage an einen anderen PC erschien beim ersten Spieler **nicht**
+  (`LEAK: false`)
+- gerichtete Ansage an den eigenen PC kam an
+- Zurückziehen liess das offene Popup verschwinden
+
+*Testfallstrick:* Beim ersten Lauf meldete der Server "zugestellt an 12" —
+das waren Leichen offener Tabs aus früheren Läufen, jeder mit eigener
+Leitung. Kein Codefehler, aber ein Grund, Tabs zwischen Läufen zu schliessen.
 
 ## Kampagnen-Wiki (gebaut 03.09.2026)
 

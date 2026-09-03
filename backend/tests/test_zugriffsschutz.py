@@ -48,6 +48,12 @@ OHNE_GM_ERLAUBT = {
     # Punktestand geprueft. Erfahrung *vergeben* bleibt der Spielleitung
     # (eigene Route .../erfahrung mit require_campaign_gm).
     "/api/campaigns/{campaign_id}/personen/{person_id}/steigern",
+    # Eine SL-Mitteilung als gelesen abhaken. Muss der Spieler selbst können,
+    # sonst bliebe das Blitz-Symbol ewig rot. Ändert ausschließlich die
+    # gelesenVon-Liste und nur für die eigene Person-ID (aus der Sitzung,
+    # nicht aus dem Body) — der Inhalt der Mitteilung bleibt unberührt.
+    "/api/campaigns/{campaign_id}/mitteilungen/{mitteilung_id}/gelesen",
+    "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

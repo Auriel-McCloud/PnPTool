@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { WikiAnsicht } from "../wiki/WikiAnsicht";
+import { MitteilungenAnbieter } from "../mitteilungen/MitteilungenKontext";
+import { MitteilungenBlitz } from "../mitteilungen/MitteilungenBlitz";
+import { MitteilungPopup } from "../mitteilungen/MitteilungPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
@@ -217,7 +220,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   }
 
   return (
-    <>
+    <MitteilungenAnbieter campaignId={ich.campaignId} personId={ich.personId}>
+    {/* Liegt ueber allem, auch ueber offenen Fenstern: eine Ansage der
+        Spielleitung darf nicht dahinter verschwinden. */}
+    <MitteilungPopup />
     <Verwundung zustand={zustand} />
     <DranMeldung
       kampf={kampf}
@@ -241,6 +247,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       }
       werkzeuge={
         <>
+          {/* Blitz rechts in der oberen Leiste — docs/ui-konzept.md */}
+          <MitteilungenBlitz personId={ich.personId} />
           <VollbildKnopf />
           <button type="button" className="cl-werkzeug" onClick={abmelden} title="Abmelden">
             ⏻
@@ -480,6 +488,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
           Was hier ankommt, hat der Server bereits gefiltert. */}
       {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
     </CommlinkShell>
-    </>
+    </MitteilungenAnbieter>
   );
 }

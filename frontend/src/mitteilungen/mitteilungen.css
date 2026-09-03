@@ -1,0 +1,236 @@
+/* ===================================================================
+   SL-Mitteilungen: Popups von der Spielleitung.
+   Konzept: docs/ui-konzept.md ("SL-Benachrichtigungen kommen aus einem
+   Blitz-Symbol rechts und klappen von dort auf").
+
+   Farben ausschliesslich ueber Tokens (theme/tokens.css).
+   =================================================================== */
+
+/* --- Blitz-Symbol in der Werkzeugleiste -------------------------------- */
+
+.mt-blitz {
+  position: relative;
+}
+
+.mt-blitz[data-ungelesen="true"] {
+  color: var(--warn);
+  border-color: var(--warn);
+  /* Ruhiger Herzschlag statt Blinken: es soll auffallen, ohne am Tisch zu
+     nerven. Bewusst 2,4s wie die Verwundungsanzeige. */
+  animation: mt-pochen 2.4s ease-in-out infinite;
+}
+
+@keyframes mt-pochen {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 12px -2px var(--warn); }
+}
+
+.mt-zahl {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--signal);
+  color: var(--grund);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Popup ------------------------------------------------------------
+   Liegt ueber allem, auch ueber Fenstern: eine Ansage der Spielleitung
+   soll nicht hinter einem offenen Gegenstandsfenster verschwinden.       */
+
+.mt-popup-huelle {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  pointer-events: none;
+}
+
+.mt-popup {
+  pointer-events: auto;
+  width: min(560px, 100%);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 24px 60px -12px rgb(0 0 0 / 0.7),
+    0 0 var(--glut-innen) -4px var(--warn);
+  /* Faehrt von oben herein — aus der Richtung des Blitz-Symbols. */
+  animation: mt-herein 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes mt-herein {
+  from { opacity: 0; transform: translateY(-24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.mt-popup-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--linie);
+}
+
+/* Kein Absender: die Mitteilung kommt aus der Spielwelt, nicht von einer
+   Person (docs/phase-5-messenger.md). Deshalb nur ein Symbol. */
+.mt-popup-zeichen {
+  color: var(--warn);
+  font-size: 18px;
+  text-shadow: 0 0 12px var(--warn);
+}
+
+.mt-popup-zeit {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.mt-popup-inhalt {
+  padding: 18px 16px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text);
+  max-height: 60svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mt-popup-inhalt img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+.mt-popup-fuss {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--linie);
+}
+
+/* Mehrere Ansagen hintereinander: zeigt, dass noch etwas wartet. */
+.mt-popup-rest {
+  margin-right: auto;
+  align-self: center;
+  font-size: 11px;
+  color: var(--text-aus);
+  font-family: var(--mono);
+}
+
+/* --- Verlauf (hinterm Blitz) ------------------------------------------ */
+
+.mt-liste {
+  max-height: 60svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mt-eintrag {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--linie);
+  border-left: 2px solid transparent;
+}
+
+.mt-eintrag[data-ungelesen="true"] {
+  border-left-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 6%, transparent);
+}
+
+.mt-eintrag-kopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mt-eintrag-zeit {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.mt-eintrag-ziel {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+
+.mt-eintrag-ziel[data-gerichtet="true"] {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.mt-eintrag-text {
+  color: var(--text);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* --- Sendeformular der Spielleitung ------------------------------------ */
+
+.mt-senden {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mt-schnell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mt-schnell button {
+  min-height: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.mt-ziel-wahl {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mt-pc {
+  min-height: 0;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.mt-pc[aria-pressed="true"] {
+  color: var(--neon);
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+}
+
+/* Verbindungsanzeige: still, aber ablesbar */
+.mt-leitung {
+  font-size: 10px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--text-aus);
+}
+
+.mt-leitung[data-verbunden="true"] {
+  color: var(--gut);
+}
