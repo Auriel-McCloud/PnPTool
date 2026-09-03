@@ -1,0 +1,411 @@
+/* ===================================================================
+   Kampagnen-Wiki (docs/produktvision-wiki.md)
+
+   Dreispaltig: Seitenbaum links, Editor in der Mitte, Inhaltsverzeichnis
+   rechts. Die Hauptansicht scrollt nicht (Leitprinzip aus ui-konzept.md);
+   gescrollt wird nur INNERHALB der Spalten, weil ein Kapitel naturgemäß
+   länger ist als der Bildschirm.
+
+   Farben ausschliesslich über Tokens (theme/tokens.css) — das Wiki soll
+   jedes Kampagnen-Theme mittragen.
+   =================================================================== */
+
+.wk {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+/* --- Seitenbaum links -------------------------------------------------- */
+
+.wk-baum {
+  width: 232px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--linie);
+  padding-right: 10px;
+}
+
+.wk-baum-kopf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.wk-baum-titel {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  flex: 1;
+}
+
+.wk-baum-liste {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  /* wie in der Hülle: wischen zum Scrollen ja, zoomen nein */
+  touch-action: pan-y;
+}
+
+.wk-zweig {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wk-eintrag {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-leise);
+  text-align: left;
+  font-size: 13px;
+  /* Der Baum wird tief; die globale Touch-Mindesthöhe würde ihn sprengen. */
+  min-height: 0;
+  cursor: pointer;
+}
+
+.wk-eintrag:hover:not(:disabled) {
+  background: var(--flaeche-aktiv);
+  color: var(--text);
+  border-color: transparent;
+  border-left-color: var(--linie-hell);
+}
+
+.wk-eintrag[aria-current="true"] {
+  color: var(--text);
+  background: var(--flaeche-aktiv);
+  border-left-color: var(--bereich-farbe, var(--neon));
+}
+
+.wk-eintrag-titel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Klappknopf für Unterseiten */
+.wk-klapp {
+  width: 18px;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-aus);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wk-klapp:hover {
+  color: var(--neon);
+  background: none;
+  border: none;
+}
+
+/* Platzhalter, damit Seiten ohne Kinder gleich eingerückt stehen */
+.wk-klapp-leer {
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.wk-kinder {
+  margin-left: 12px;
+  border-left: 1px solid var(--linie);
+  padding-left: 2px;
+}
+
+/* Freigabe-Zustand auf einen Blick: eine offene Seite ist im Wiki die
+   Ausnahme, deshalb wird sie markiert und nicht die geheime. */
+.wk-freigabe {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.wk-freigabe[data-modus="ALLE"] {
+  color: var(--gut);
+  border-color: color-mix(in srgb, var(--gut) 45%, transparent);
+}
+
+.wk-freigabe[data-modus="SPEZIFISCH"] {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+/* --- Mittelspalte ------------------------------------------------------ */
+
+.wk-mitte {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-kopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.wk-titel-feld {
+  flex: 1;
+  min-width: 160px;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  padding: 4px 2px;
+  min-height: 0;
+}
+
+.wk-titel-feld:hover {
+  border-bottom-color: var(--linie);
+}
+
+.wk-titel-feld:focus {
+  outline: none;
+  border-bottom-color: var(--neon);
+  box-shadow: none;
+}
+
+.wk-werkzeug {
+  min-height: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Speicherzustand — beruhigt, ohne aufdringlich zu sein */
+.wk-zustand {
+  font-size: 11px;
+  color: var(--text-aus);
+  font-family: var(--mono);
+  min-width: 92px;
+  text-align: right;
+}
+
+.wk-zustand[data-zustand="speichert"] {
+  color: var(--warn);
+}
+
+.wk-zustand[data-zustand="fehler"] {
+  color: var(--signal);
+}
+
+.wk-editor {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--flaeche);
+}
+
+.wk-editor .ProseMirror {
+  min-height: 100%;
+  outline: none;
+}
+
+/* --- Inhaltsverzeichnis rechts ----------------------------------------- */
+
+.wk-verzeichnis {
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--linie);
+  padding-left: 12px;
+}
+
+.wk-verzeichnis-titel {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.wk-verzeichnis-liste {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  touch-action: pan-y;
+}
+
+.wk-sprung {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid var(--linie);
+  border-radius: 0;
+  color: var(--text-leise);
+  font-size: 12px;
+  padding: 4px 8px;
+  min-height: 0;
+  cursor: pointer;
+}
+
+.wk-sprung:hover {
+  background: var(--flaeche-aktiv);
+  color: var(--neon);
+  border-color: var(--linie);
+  border-left-color: var(--neon);
+}
+
+/* Einrückung nach Überschriftenebene */
+.wk-sprung[data-stufe="2"] {
+  padding-left: 18px;
+}
+
+.wk-sprung[data-stufe="3"] {
+  padding-left: 28px;
+  font-size: 11px;
+}
+
+.wk-verweise {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+  flex-shrink: 0;
+}
+
+/* --- Verweis-Chip im Text ---------------------------------------------- */
+
+.wiki-verweis {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  margin: 0 1px;
+  border: 1px solid var(--verweis-ton, var(--neon));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--verweis-ton, var(--neon)) 12%, transparent);
+  color: var(--verweis-ton, var(--neon));
+  font-size: 0.92em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wiki-verweis:hover {
+  background: color-mix(in srgb, var(--verweis-ton, var(--neon)) 24%, transparent);
+}
+
+.wiki-verweis.ProseMirror-selectednode {
+  box-shadow: 0 0 0 2px var(--verweis-ton, var(--neon));
+}
+
+/* Bilder im Wiki */
+.wk-editor img,
+.wk-lesen img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+}
+
+.wk-editor img.ProseMirror-selectednode {
+  border-color: var(--neon);
+  box-shadow: 0 0 12px -4px var(--neon);
+}
+
+/* --- Auswahlfenster für Verknüpfungen ---------------------------------- */
+
+.wk-suche {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.wk-treffer {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.wk-treffer-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--linie);
+  border-radius: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wk-treffer-zeile:hover {
+  background: var(--flaeche-aktiv);
+  border-color: var(--linie);
+  color: var(--text);
+}
+
+.wk-treffer-typ {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ton, var(--text-aus));
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+/* --- Schmale Geräte ----------------------------------------------------
+   Unter 1000px hat ein dreispaltiges Layout keinen Sinn mehr. Baum und
+   Verzeichnis weichen; erreichbar bleiben sie über die Knöpfe im Kopf. */
+
+@media (max-width: 999px) {
+  .wk-baum,
+  .wk-verzeichnis {
+    display: none;
+  }
+
+  .wk-baum[data-offen="true"],
+  .wk-verzeichnis[data-offen="true"] {
+    display: flex;
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: 260px;
+    background: var(--flaeche);
+    padding: 12px;
+    box-shadow: 4px 0 24px rgb(0 0 0 / 0.5);
+  }
+
+  .wk-verzeichnis[data-offen="true"] {
+    inset: 0 0 0 auto;
+    box-shadow: -4px 0 24px rgb(0 0 0 / 0.5);
+  }
+}

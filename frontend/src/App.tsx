@@ -12,6 +12,7 @@ import { SpielerLogin } from "./players/SpielerLogin";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
+import { WikiAnsicht } from "./wiki/WikiAnsicht";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
@@ -39,6 +40,8 @@ const BEREICHE: Bereich[] = [
   { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "var(--bereich-zugang)" },
   // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
   { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "var(--bereich-kampf)" },
+  // Das Kampagnen-Wiki: Geschichten, Kapitel, Session-Notizen (docs/produktvision-wiki.md)
+  { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
   { id: "regeln", name: "Regeln", symbol: "▤", farbe: "var(--bereich-regeln)", bald: true },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
@@ -52,6 +55,7 @@ const TITEL: Record<string, string> = {
   gegenstaende: "Gegenstände",
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
+  wiki: "Kampagnen-Wiki",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -134,7 +138,8 @@ function Dashboard() {
         bereich === "gegenstaende" ||
         bereich === "graph" ||
         bereich === "begleiter" ||
-        bereich === "kampf"
+        bereich === "kampf" ||
+        bereich === "wiki"
       }
     >
       {loading && <p style={{ color: "var(--text-leise)" }}>Lade Kampagnen…</p>}
@@ -156,6 +161,7 @@ function Dashboard() {
           {bereich === "kampf" && <Kampfmodus key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
+          {bereich === "wiki" && <WikiAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

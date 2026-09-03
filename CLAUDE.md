@@ -91,10 +91,143 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
 - ✅ **Phase 4 (29.08.2026)** — **Spieler-Zugang steht.** Sichtbarkeits-Filterung läuft in allen Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=` **und** über echte Spieler-Sitzungen. Beitritt per Zugangscode, Charakter beanspruchen, eigene Oberfläche. Siehe eigener Abschnitt unten. Offen bleibt nur die Live-Kommunikation (Phase 5).
-- 🟡 **Phase 5** — Messenger/Kontakte fachlich spezifiziert und der Kontakt-Fachkern begonnen; API, Persistenz, UI und Live-WebSocket-Pop-ups sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus).
-- 🟡 **Nächste Produkt-Richtung: Kampagnen-Wiki** — beschlossen als Planungs- und Wissenswerkzeug für Geschichten, Kapitel, Dokument-Tabs, Seitenbaum, automatisches Inhaltsverzeichnis und echte Verknüpfungen zu Kampagnenobjekten. Fachliche Spezifikation: `docs/produktvision-wiki.md`.
+- 🟡 **Phase 5** — Messenger/Kontakte fachlich spezifiziert und der Kontakt-Fachkern begonnen; API, Persistenz, UI und Live-WebSocket-Pop-ups sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus). Die API-Vertragstests liegen als Vorlage in `backend/tests/test_kontakte_api.py` und überspringen sich selbst, solange `app.kontakte.routes` fehlt.
+- ✅ **Kampagnen-Wiki (03.09.2026)** — Planungs- und Wissenswerkzeug für Geschichten: Seitenbaum, TipTap-Editor mit Überschriften/Bildern/Verknüpfungen, automatisches Inhaltsverzeichnis, Rückverweise an Entitäten und „bis hierher freigeben". Eigener Bereich ❋ Wiki bei SL und Spieler. Spezifikation: `docs/produktvision-wiki.md`, Umsetzung: eigener Abschnitt unten.
 - ✅ **Theme-Fundament (03.09.2026)** — Vorarbeit fürs Wiki, damit es nicht dieselben harten Farbwerte erneut verdrahtet. Alle Farb-/Formwerte liegen jetzt als Tokens in `frontend/src/theme/`; ein zweites Theme (Hextechpunk) beweist, dass der Umbau trägt. Details und die Regel dazu: `docs/theming.md`.
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
+
+## Kampagnen-Wiki (gebaut 03.09.2026)
+
+Das Planungswerkzeug, das Mark eigentlich wollte: Geschichten schreiben,
+Kapitel organisieren und mit PCs/NPCs/Orten/Events verknüpfen. Vorbild
+OneNote/Google Docs, aber **im PnPTool statt als externe Abhängigkeit** —
+sonst lägen Berechtigungen, SL-Geheimnisse und Graphverknüpfungen doppelt.
+
+Spezifikation: `docs/produktvision-wiki.md`.
+
+### Ein Typ statt Dokument + Seite
+
+Bewusst **kein** separater `Dokument`-Knoten. Eine `WikiSeite` kann Kinder
+haben; was oben als Tab erscheint, ist schlicht eine Seite ohne Elternteil.
+Marks Einwand dazu war berechtigt: *"Ich verstehe noch nicht was der Vorteil
+am Dokument wäre."* Vorteile des einen Typs: jedes Kapitel kann später zur
+Unterseite werden (Kapitel → Szene) ohne Datenmigration, und Tabs sind
+dieselbe Struktur wie der Baum, nur eine Ebene höher gerendert.
+
+```text
+(:Campaign)-[:HAT_SEITE]->(:WikiSeite {campaignId})
+(:WikiSeite)-[:UNTERSEITE_VON]->(:WikiSeite)
+(:WikiSeite)-[:VERWEIST_AUF]->(:Person|:Ort|:Event|:Gegenstand)
+```
+
+`campaignId` steht wie bei den Entitäten zusätzlich am Knoten.
+
+### Aufbau
+
+- **Backend** `backend/app/wiki/`: `logic.py` (reine Fachregeln, DB-frei),
+  `visibility.py`, `repository.py`, `routes.py`, `schemas.py`
+- **Frontend** `frontend/src/wiki/`: `WikiAnsicht.tsx` (Dreispalter),
+  `WikiEditor.tsx`, `VerweisWaehler.tsx`, `api.ts`, `wiki.css`
+- **TipTap-Erweiterung** `frontend/src/richtext/EntitaetsVerweis.ts`
+
+Dreispaltig: Seitenbaum links, Editor Mitte, Inhaltsverzeichnis rechts. Die
+Hauptansicht scrollt nicht; gescrollt wird nur *innerhalb* der Spalten — ein
+Kapitel ist naturgemäß länger als der Bildschirm.
+
+### Inhaltsverzeichnis entsteht aus den Überschriften
+
+Wird bei jedem Abruf neu aus H1/H2/H3 erzeugt, nie gespeichert. Kann deshalb
+nicht veralten, wenn jemand eine Überschrift umbenennt. Anker mit
+Umlautumschrift (`Straße` → `strasse`), doppelte Überschriften bekommen
+`-2`, `-3` angehängt — sonst spränge der zweite Eintrag immer zum ersten.
+
+**Wichtig:** Das Verzeichnis wird aus dem *bereits gefilterten* Inhalt
+gebaut. Eine 🔒-markierte Überschrift verschwindet für Spieler komplett —
+stünde "Der Verräter" im Verzeichnis, wäre der Plot verraten, obwohl der
+Absatz darunter sauber redigiert ist.
+
+### Verknüpfungen sind echte Graphkanten
+
+Der Chip im Text (`EntitaetsVerweis`, `atom: true`) trägt `zielId`/`zielTyp`.
+Beim Speichern liest `_verweise_schreiben` sie aus dem Dokument und legt
+daraus `VERWEIST_AUF`-Kanten an — erst alle alten weg, dann die aktuellen
+neu, damit eine gelöschte Erwähnung auch die Kante entfernt.
+
+Daraus entstehen die Rückverweise: `GET .../wiki/verweise/{ziel_id}` liefert
+"Erwähnt in: Kapitel 1". Ebenfalls gefiltert — ein Spieler darf nicht aus der
+Trefferliste schließen, dass es eine geheime Seite über ihn gibt.
+
+Der Zieltyp geht direkt in die Cypher-Abfrage ein, deshalb `ERLAUBTE_ZIELTYPEN`
+als weisse Liste. Das Ziel muss zur selben Kampagne gehören.
+
+### "Bis hierher freigeben"
+
+Marks Idee für das *"was bisher geschah"*: Nach Session 3 einmal auf Kapitel 3
+klicken statt jede Seite einzeln. `seiten_bis_einschliesslich` nimmt die
+**Lesereihenfolge** (Tiefensuche durch den Baum), nicht die
+Erstellungsreihenfolge — maßgeblich ist, was im Seitenbaum davor steht.
+
+Vererbung wurde bewusst **nicht** gebaut (Marks Wahl): Unterseiten erben die
+Freigabe der Elternseite nicht, sonst gibt ein Klick versehentlich das
+Kapitel mit der Auflösung frei.
+
+### Sichtbarkeit
+
+Nutzt das bestehende Modell aus `entities/visibility.py` statt eigener Regeln:
+GM/ALLE/SPEZIFISCH plus die 🔒-Inline-Redaktion. Neue Seiten sind **immer
+SL-geheim**; fehlt das Feld, gilt sie als geheim (fail closed).
+
+Eine unsichtbare Seite gibt **404, nicht 403** — die Existenz einer geheimen
+Seite ist selbst geheim.
+
+*Fallstrick, bewusst gelöst:* Erst filtern, dann den Baum bauen. Eine
+freigegebene Szene unter einem geheimen Kapitel würde sonst mitsamt ihrem
+Elternteil verschwinden; `baum_bauen` hängt sie stattdessen auf die oberste
+Ebene. Derselbe Code fängt auch Zyklen ab (Endlosschleife beim Lesen).
+
+### Bilder
+
+Upload nach `uploads/<campaign_id>/` mit Präfix `wiki-`, gleiche Ablage wie
+die Gegenstandsbilder — beim Sichern gibt es nur einen Ordner. Der Dateiname
+wird neu vergeben (ein hochgeladener Name könnte aus dem Ordner ausbrechen),
+max. 8 MB, nur PNG/JPEG/WEBP/GIF.
+
+*Stolperstein:* `@tiptap/extension-image` in der neuesten Fassung verlangt
+`@tiptap/core@3.31`, das Projekt liegt auf `3.30.5`. Deshalb gezielt
+`@tiptap/extension-image@3.30.5` — **nicht** `--force`, das hätte zwei
+TipTap-Kerne nebeneinander installiert.
+
+### Löschen
+
+Unterseiten rücken eine Ebene nach oben statt mitgelöscht zu werden. Beim
+Aufräumen eines Kapitels sollen nicht unbemerkt alle Szenen verschwinden.
+Rückfrage vor dem Löschen, wie überall im Werkzeug.
+
+### Autosave
+
+1,2 s nach der letzten Eingabe. Der ausstehende Stand liegt in einem Ref,
+damit ein Seitenwechsel ihn noch wegschreiben kann, bevor er verworfen wird.
+
+### Für die KI vorbereitet, aber nicht gebaut
+
+Mark will später KI-Unterstützung *im* Wiki (Verknüpfungen vorschlagen,
+Zusammenfassungen schreiben, Inhalte erzeugen). Angelegt ist die Struktur
+dafür: Seiteninhalt ist als TipTap-JSON adressierbar, Verweise sind
+maschinenlesbar, die Werkzeugleiste hat Platz. **Noch nichts davon
+implementiert** — kein Modell, kein Endpunkt.
+
+### Geprüft
+
+Backend: 181 Tests (28 neue fürs Wiki, DB-frei). End-to-End gegen die
+Testkampagne mit eigenen Testseiten, danach restlos aufgeräumt (Bestand
+vorher = nachher):
+
+- neue Seite ist GM-geheim, Unterseite hängt korrekt im Baum
+- `STRENG GEHEIM` fehlt im Spielertext, öffentlicher Satz bleibt
+- geheime Überschrift fehlt im Spieler-Inhaltsverzeichnis
+- "bis hierher" gab 3 von 4 Seiten frei, Kapitel 2 blieb geheim → 404
+- Rückverweis am NPC gefunden
+- nach Löschen des Kapitels lebt die Szene weiter
 
 ## UI-Polish-Durchgang (28.08.2026) — Sichtbarkeit v2 + Rich-Text
 

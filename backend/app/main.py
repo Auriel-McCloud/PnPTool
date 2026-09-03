@@ -22,6 +22,7 @@ from app.kampf.routes import router as kampf_router
 from app.traits.seed import seed_traits
 from app.db.migrate import apply_migrations
 from app.players.routes import gm_router as spieler_gm_router, login_router
+from app.wiki.routes import router as wiki_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -58,6 +59,7 @@ app.include_router(begleiter_router)
 app.include_router(kampf_router)
 app.include_router(login_router)
 app.include_router(spieler_gm_router)
+app.include_router(wiki_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

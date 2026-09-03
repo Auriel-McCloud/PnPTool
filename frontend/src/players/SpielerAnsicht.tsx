@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
+import { WikiAnsicht } from "../wiki/WikiAnsicht";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
@@ -52,6 +53,8 @@ const BEREICHE: Bereich[] = [
   { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "var(--bereich-kontakte)" },
   { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
+  // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
+  { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
@@ -233,7 +236,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         bereich === "inventar" ||
         bereich === "fahrzeuge" ||
         bereich === "begleiter" ||
-        bereich === "kampf"
+        bereich === "kampf" ||
+        bereich === "wiki"
       }
       werkzeuge={
         <>
@@ -471,6 +475,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       )}
 
       {bereich === "graph" && <CampaignGraphView campaignId={ich.campaignId} />}
+
+      {/* Nur lesend: Anlegen, Aendern und Freigeben bleibt Sache der Spielleitung.
+          Was hier ankommt, hat der Server bereits gefiltert. */}
+      {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
     </CommlinkShell>
     </>
   );
