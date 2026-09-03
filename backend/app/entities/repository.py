@@ -35,9 +35,11 @@ _BOGEN_FELDER = [
     "erstellungAbgeschlossen",
 ]
 
-PERSON_FIELDS = ["name", "personType", "description", "notes", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
-ORT_FIELDS = ["name", "description", "notes", *_VISIBILITY_FIELDS]
-EVENT_FIELDS = ["title", "timestamp", "description", "notes", *_VISIBILITY_FIELDS]
+# bildUrl: Aussehen einer Person, eines Ortes oder einer Szene. Die
+# Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+ORT_FIELDS = ["name", "description", "notes", "bildUrl", *_VISIBILITY_FIELDS]
+EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", *_VISIBILITY_FIELDS]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
@@ -66,6 +68,9 @@ _BOGEN_DEFAULTS: dict = {
     "kapital": 0,
     "schulden": 0,
     "erstellungAbgeschlossen": False,
+    # Bestandsdaten kennen das Feld nicht; ohne Ersatz scheitert die
+    # Pydantic-Pruefung (Stolperstein 9).
+    "bildUrl": "",
 }
 
 

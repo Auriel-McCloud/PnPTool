@@ -10,6 +10,7 @@ import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
 import type { Chromstufe } from "../items/api";
 import { StufenBlatt } from "./StufenBlatt";
+import { BildBlitz } from "../mitteilungen/BildBlitz";
 
 const CATEGORY_LABELS: Record<string, string> = {
   AttributKörperlich: "Attribute — Körperlich",
@@ -665,9 +666,13 @@ export function GegenstandRow({
             <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
             {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
             {item.bildUrl && (
-              <button type="button" onClick={removeBild}>
-                Bild entfernen
-              </button>
+              <>
+                {/* Bild allen Spielern zeigen — "so sieht das Ding aus". */}
+                <BildBlitz campaignId={campaignId} bildUrl={item.bildUrl} name={item.name} />
+                <button type="button" onClick={removeBild}>
+                  Bild entfernen
+                </button>
+              </>
             )}
           </div>
         </div>

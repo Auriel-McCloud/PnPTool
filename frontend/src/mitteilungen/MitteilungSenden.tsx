@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { entitiesApi, type Person } from "../entities/api";
-import { sendeMitteilung, ziehZurueck } from "./api";
+import { bildFuerAnsage, sendeMitteilung, ziehZurueck } from "./api";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
@@ -26,6 +26,10 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
   const [anAlle, setAnAlle] = useState(true);
   const [ziele, setZiele] = useState<string[]>([]);
   const [sendet, setSendet] = useState(false);
+  // Hochgeladenes Bild, das mitgeschickt wird (leer = reine Textansage).
+  const [bildUrl, setBildUrl] = useState("");
+  const [laedtBild, setLaedtBild] = useState(false);
+  const dateiRef = useRef<HTMLInputElement>(null);
   const [rueckmeldung, setRueckmeldung] = useState<string | null>(null);
   const { mitteilungen, verbunden, neuLaden } = useMitteilungen();
 
@@ -40,7 +44,9 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
 
   async function senden(inhalt: string) {
     const sauber = inhalt.trim();
-    if (!sauber || sendet) return;
+    // Ein Bild spricht fuer sich — dann ist der Text freiwillig.
+    if (!sauber && !bildUrl) return;
+    if (sendet) return;
     if (!anAlle && ziele.length === 0) {
       setRueckmeldung("Kein Empfänger gewählt.");
       return;
@@ -49,12 +55,14 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
     setRueckmeldung(null);
     try {
       const { zugestellt } = await sendeMitteilung(campaignId, {
-        art: "TEXT",
+        art: bildUrl ? "BILD" : "TEXT",
         inhalt: sauber,
+        bildUrl,
         anAlle,
         empfaengerIds: anAlle ? [] : ziele,
       });
       setText("");
+      setBildUrl("");
       neuLaden();
       setRueckmeldung(
         zugestellt > 0
@@ -65,6 +73,21 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
       setRueckmeldung(e instanceof Error ? e.message : "Senden fehlgeschlagen");
     } finally {
       setSendet(false);
+    }
+  }
+
+  async function bildWaehlen(datei: File | undefined) {
+    if (!datei) return;
+    setLaedtBild(true);
+    setRueckmeldung(null);
+    try {
+      const { url } = await bildFuerAnsage(campaignId, datei);
+      setBildUrl(url);
+    } catch (e) {
+      setRueckmeldung(e instanceof Error ? e.message : "Bild konnte nicht hochgeladen werden");
+    } finally {
+      setLaedtBild(false);
+      if (dateiRef.current) dateiRef.current.value = "";
     }
   }
 
@@ -106,8 +129,36 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
             ))}
           </div>
 
+          <div className="mt-schnell">
+            <button type="button" onClick={() => dateiRef.current?.click()} disabled={laedtBild}>
+              {laedtBild ? "lädt…" : "▣ Bild wählen"}
+            </button>
+            {bildUrl && (
+              <button type="button" onClick={() => setBildUrl("")} style={{ color: "var(--signal)" }}>
+                Bild entfernen
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={dateiRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            style={{ display: "none" }}
+            onChange={(e) => bildWaehlen(e.target.files?.[0])}
+          />
+
+          {bildUrl && (
+            <div className="mt-vorschau">
+              <img src={bildUrl} alt="Vorschau" />
+              <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+                Wird als Bild gesendet. Der Text darunter ist die Bildunterschrift und darf leer bleiben.
+              </span>
+            </div>
+          )}
+
           <textarea
-            placeholder="Eigene Ansage…"
+            placeholder={bildUrl ? "Bildunterschrift (freiwillig)…" : "Eigene Ansage…"}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -161,7 +212,7 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
             <button
               type="button"
               onClick={() => senden(text)}
-              disabled={sendet || !text.trim()}
+              disabled={sendet || (!text.trim() && !bildUrl)}
               style={{ color: "var(--warn)", borderColor: "var(--warn)" }}
             >
               {sendet ? "sendet…" : "Senden"}
@@ -199,7 +250,10 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
                         ✕
                       </button>
                     </div>
-                    <div className="mt-eintrag-text">{m.inhalt}</div>
+                    {m.art === "BILD" && m.bildUrl && (
+                      <img src={m.bildUrl} alt="" style={{ maxWidth: 120, borderRadius: 4, marginBottom: 4 }} />
+                    )}
+                    {m.inhalt && <div className="mt-eintrag-text">{m.inhalt}</div>}
                   </div>
                 ))}
               </div>

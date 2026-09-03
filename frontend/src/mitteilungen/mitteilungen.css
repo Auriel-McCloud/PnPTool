@@ -234,3 +234,61 @@
 .mt-leitung[data-verbunden="true"] {
   color: var(--gut);
 }
+
+/* --- Blitz an einem Bild ----------------------------------------------
+   Sitzt direkt am Bild (NPC, Ort, Gegenstand) und schickt es allen.       */
+
+.mt-bild-blitz {
+  min-height: 0;
+  padding: 4px 9px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+
+.mt-bild-blitz:hover:not(:disabled) {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+  box-shadow: 0 0 var(--glut-aussen) -3px var(--warn);
+}
+
+/* Kompakt fuer Kacheln und Listenzeilen */
+.mt-bild-blitz[data-klein="true"] {
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.mt-bild-blitz[data-zustand="fertig"] {
+  color: var(--gut);
+  border-color: var(--gut);
+  background: color-mix(in srgb, var(--gut) 16%, transparent);
+}
+
+.mt-bild-blitz[data-zustand="fehler"] {
+  color: var(--signal);
+  border-color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 16%, transparent);
+}
+
+/* --- Bildvorschau im Sendefenster -------------------------------------- */
+
+.mt-vorschau {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+
+.mt-vorschau img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+}

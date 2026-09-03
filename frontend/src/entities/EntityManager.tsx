@@ -4,6 +4,7 @@ import { entitiesApi, type Event, type Ort, type Person, type SichtbarkeitModus,
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { SichtbarkeitBadge } from "./SichtbarkeitBadge";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { EntitaetsBild } from "./EntitaetsBild";
 import { RichTextView } from "../richtext/RichTextView";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
@@ -300,6 +301,14 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           {personenInAnsicht.map((p) => (
           <div key={p.id} style={listItemStyle}>
             <strong>{p.name}</strong> <span style={{ color: "var(--text-leise)" }}>({p.personType})</span>
+            <EntitaetsBild
+              campaignId={campaignId}
+              art="personen"
+              id={p.id}
+              name={p.name}
+              bildUrl={p.bildUrl ?? ""}
+              onGeaendert={refreshAll}
+            />
             <div style={{ margin: "4px 0" }}>
               <RichTextView content={parseRichText(p.description)} />
             </div>
@@ -358,6 +367,14 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           {orte.map((o) => (
           <div key={o.id} style={listItemStyle}>
             <strong>{o.name}</strong>
+            <EntitaetsBild
+              campaignId={campaignId}
+              art="orte"
+              id={o.id}
+              name={o.name}
+              bildUrl={o.bildUrl ?? ""}
+              onGeaendert={refreshAll}
+            />
             <div style={{ margin: "4px 0" }}>
               <RichTextView content={parseRichText(o.description)} />
             </div>
@@ -387,6 +404,14 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           {events.map((ev) => (
           <div key={ev.id} style={listItemStyle}>
             <strong>{ev.title}</strong> {ev.timestamp && <span style={{ color: "var(--text-leise)" }}>({ev.timestamp})</span>}
+            <EntitaetsBild
+              campaignId={campaignId}
+              art="events"
+              id={ev.id}
+              name={ev.title}
+              bildUrl={ev.bildUrl ?? ""}
+              onGeaendert={refreshAll}
+            />
             <div style={{ margin: "4px 0" }}>
               <RichTextView content={parseRichText(ev.description)} />
             </div>

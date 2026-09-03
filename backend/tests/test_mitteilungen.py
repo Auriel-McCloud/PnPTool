@@ -106,3 +106,38 @@ class TestArt:
     def test_bild_wird_als_art_akzeptiert(self):
         nachricht = m(art="BILD", inhalt="", bildUrl="/uploads/x/bild.png")
         assert darf_empfangen(nachricht, "PLAYER", "pc-1") is True
+
+
+class TestSchemaPruefung:
+    """Der Schemavertrag ist die Stelle, an der Unsinn abgefangen wird."""
+
+    def test_textmitteilung_ohne_text_wird_abgelehnt(self):
+        from pydantic import ValidationError
+
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        with pytest.raises(ValidationError):
+            MitteilungCreate(art="TEXT", inhalt="   ", anAlle=True)
+
+    def test_bildmitteilung_ohne_bild_wird_abgelehnt(self):
+        from pydantic import ValidationError
+
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        with pytest.raises(ValidationError):
+            MitteilungCreate(art="BILD", bildUrl="", anAlle=True)
+
+    def test_bildmitteilung_braucht_keinen_text(self):
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        # Ein Bild spricht fuer sich; die Bildunterschrift ist freiwillig.
+        m = MitteilungCreate(art="BILD", bildUrl="/uploads/x/npc.png", anAlle=True)
+        assert m.inhalt == ""
+
+    def test_gerichtete_mitteilung_ohne_empfaenger_wird_abgelehnt(self):
+        from pydantic import ValidationError
+
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        with pytest.raises(ValidationError):
+            MitteilungCreate(art="TEXT", inhalt="hallo", anAlle=False, empfaengerIds=[])

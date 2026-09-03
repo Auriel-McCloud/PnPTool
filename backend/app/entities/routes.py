@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import mimetypes
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities import repository
@@ -149,3 +153,54 @@ async def list_verbindungen(campaign_id: str, viewer: Viewer = Depends(get_viewe
 async def delete_verbindung(campaign_id: str, edge_id: str):
     if not await repository.delete_verbindung(campaign_id, edge_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Verbindung nicht gefunden")
+
+
+# --- Bilder ------------------------------------------------------------
+# Aussehen einer Person, eines Ortes oder einer Szene. Die Spielleitung kann
+# es per Blitz an alle Spieler schicken (app/mitteilungen).
+#
+# Gleiche Ablage wie die Gegenstandsbilder (uploads/<campaign_id>/): beim
+# Sichern gibt es nur einen Ordner.
+
+UPLOAD_DIR = Path("uploads")
+ERLAUBTE_BILDTYPEN = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+MAX_BILD_BYTES = 8 * 1024 * 1024
+
+# Welches Label und welche Felder hinter einem Pfadsegment stehen. Weisse
+# Liste, weil das Label direkt in die Cypher-Abfrage eingeht.
+_ENTITAETEN = {
+    "personen": ("Person", PERSON_FIELDS, "Person"),
+    "orte": ("Ort", ORT_FIELDS, "Ort"),
+    "events": ("Event", EVENT_FIELDS, "Event"),
+}
+
+
+@router.post("/{art}/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_entitaets_bild(campaign_id: str, art: str, node_id: str, file: UploadFile = File(...)):
+    if art not in _ENTITAETEN:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unbekannte Entität")
+    label, felder, bezeichnung = _ENTITAETEN[art]
+
+    if file.content_type not in ERLAUBTE_BILDTYPEN:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+
+    inhalt = await file.read()
+    if len(inhalt) > MAX_BILD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+
+    if await repository.get_node(label, felder, campaign_id, node_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{bezeichnung} nicht gefunden")
+
+    ordner = UPLOAD_DIR / campaign_id
+    ordner.mkdir(parents=True, exist_ok=True)
+    endung = mimetypes.guess_extension(file.content_type) or ""
+    # Neuer Name: ein hochgeladener Name koennte aus dem Ordner ausbrechen.
+    name = f"{art}-{uuid.uuid4()}{endung}"
+    (ordner / name).write_bytes(inhalt)
+
+    aktualisiert = await repository.update_node(
+        label, felder, campaign_id, node_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"}
+    )
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{bezeichnung} nicht gefunden")
+    return aktualisiert

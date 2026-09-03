@@ -38,6 +38,34 @@ export const markiereAllesGelesen = (campaignId: string) =>
 export const ziehZurueck = (campaignId: string, id: string) =>
   api.delete<void>(`${basis(campaignId)}/${id}`);
 
+
+/** Bild für eine Ansage hochladen. FormData, deshalb an api() vorbei —
+ *  Content-Type NICHT setzen, der Browser braucht die multipart-Grenze. */
+export async function bildFuerAnsage(campaignId: string, datei: File): Promise<{ url: string }> {
+  const daten = new FormData();
+  daten.append("file", datei);
+  // Nutzt die Wiki-Bildablage: derselbe Ordner, ein Sicherungsziel.
+  const antwort = await fetch(`/api/campaigns/${campaignId}/wiki/bilder`, {
+    method: "POST",
+    credentials: "include",
+    body: daten,
+  });
+  if (!antwort.ok) {
+    const fehler = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+    throw new Error(fehler.detail ?? "Upload fehlgeschlagen");
+  }
+  return antwort.json();
+}
+
+/**
+ * Ein vorhandenes Bild (NPC, Ort, Gegenstand) an alle schicken.
+ *
+ * Bewusst nur "an alle": Mark will Aussehen zeigen — "so sieht er aus" —
+ * und das betrifft alle am Tisch. Gerichtete Ansagen bleiben Text.
+ */
+export const zeigeBildAllen = (campaignId: string, bildUrl: string, bildunterschrift = "") =>
+  sendeMitteilung(campaignId, { art: "BILD", bildUrl, inhalt: bildunterschrift, anAlle: true });
+
 /** Was über die Leitung kommt. */
 export type LiveNachricht =
   | { typ: "stand"; daten: MitteilungenStand }

@@ -19,6 +19,8 @@ class PersonCreate(BaseModel):
     personType: Literal["PC", "NPC"] = "NPC"
     description: str = ""
     notes: str = ""
+    # Aussehen. Die Spielleitung kann es per Blitz an alle schicken.
+    bildUrl: str = ""
     # --- Charakterbogen ---------------------------------------------------
     # Der eingeschlagene Weg entscheidet, was auf dem Blatt überhaupt
     # erscheint: Sphären und Arete nur für Magier, NeuroWeaving nur für
@@ -62,6 +64,7 @@ class PersonCreate(BaseModel):
 
 class PersonUpdate(BaseModel):
     name: str | None = None
+    bildUrl: str | None = None
     weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] | None = None
     rasse: str | None = None
     schadenSchlag: int | None = None
@@ -95,6 +98,7 @@ class PersonResponse(BaseModel):
     personType: str
     description: str
     notes: str
+    bildUrl: str = ""
     # Charakterbogen — Ausgangswerte greifen für Bestandsdaten, die diese
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
@@ -125,6 +129,7 @@ class OrtCreate(BaseModel):
     name: str
     description: str = ""
     notes: str = ""
+    bildUrl: str = ""
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -135,6 +140,7 @@ class OrtUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     notes: str | None = None
+    bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -146,6 +152,7 @@ class OrtResponse(BaseModel):
     name: str
     description: str
     notes: str
+    bildUrl: str = ""
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str
@@ -157,6 +164,7 @@ class EventCreate(BaseModel):
     timestamp: str = ""
     description: str = ""
     notes: str = ""
+    bildUrl: str = ""
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -168,6 +176,7 @@ class EventUpdate(BaseModel):
     timestamp: str | None = None
     description: str | None = None
     notes: str | None = None
+    bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -180,6 +189,7 @@ class EventResponse(BaseModel):
     timestamp: str
     description: str
     notes: str
+    bildUrl: str = ""
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

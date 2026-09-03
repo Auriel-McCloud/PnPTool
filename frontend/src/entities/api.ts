@@ -13,6 +13,8 @@ export interface Person extends VisibilityFields {
   name: string;
   personType: "PC" | "NPC";
   description: string;
+  /** Aussehen; per Blitz an alle Spieler zeigbar. */
+  bildUrl?: string;
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
@@ -22,6 +24,7 @@ export interface Ort extends VisibilityFields {
   id: string;
   name: string;
   description: string;
+  bildUrl?: string;
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
@@ -32,6 +35,7 @@ export interface Event extends VisibilityFields {
   title: string;
   timestamp: string;
   description: string;
+  bildUrl?: string;
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];

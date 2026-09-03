@@ -177,12 +177,40 @@ sein — sonst bliebe das Blitz-Symbol ewig rot. Als begründete Ausnahme in
 `gelesenVon` und nur für die eigene Person-ID **aus der Sitzung**, nicht aus
 dem Request-Body.
 
-### Bilder
+### Bilder (nachgezogen 03.09.2026)
 
-`art: "BILD"` und `bildUrl` sind im Datenmodell, den Schemas und der Anzeige
-bereits durchgereicht — Mark will Bilder senden können. **Der Upload-Weg in
-der Sende-Oberfläche fehlt noch**; bis dahin nimmt die API eine bereits
-hochgeladene URL entgegen.
+Zwei Wege, beide gebaut:
+
+**1. Bild im Sendefenster hochladen.** "▣ Bild wählen", Vorschau, absenden.
+Der Text darunter wird zur Bildunterschrift und darf leer bleiben — ein Bild
+spricht für sich. Nutzt die Wiki-Bildablage, damit es nur einen Ordner zu
+sichern gibt.
+
+**2. Blitz direkt am Bild** (`mitteilungen/BildBlitz.tsx`). Marks Wunsch:
+*"ich würde auch gerne von einem NPC aus ein Bild an alle schicken können,
+also wie der NPC aussieht, oder von einem Gegenstand aus, da hätte ich dann
+gerne einen kleinen Blitz Button"*. Sitzt an NPCs/PCs, Orten, Events
+(`entities/EntitaetsBild.tsx`) und an Gegenständen
+(`traits/CharacterSheetPanel.tsx`) — dort, wo das Bild ohnehin schon steht.
+
+**Bewusst nur "an alle".** Marks Begründung: *"einzeln werde ich wohl nur
+Nachrichten verschicken wollen"*. Aussehen betrifft alle am Tisch.
+
+**Dafür brauchten Personen/Orte/Events erst ein Bild:** Bis dahin hatten nur
+Gegenstände `bildUrl`. Ergänzt in `PERSON_FIELDS`/`ORT_FIELDS`/`EVENT_FIELDS`,
+in Create/Update/Response und als Default `""` (Bestandsdaten liefern sonst
+None und reissen die Liste mit 500 herunter — Stolperstein 9). Neue Route
+`POST .../{art}/{node_id}/bild` mit weisser Liste für `art`, weil das Label
+direkt in die Cypher-Abfrage eingeht.
+
+Das ist zugleich Vorarbeit für den Messenger: `docs/phase-5-messenger.md`
+sieht `bildUrl` am NPC ohnehin vor.
+
+**Geprüft** end-to-end mit zwei Browser-Kontexten: PNG an einem Test-NPC
+hochgeladen (200, `content-type: image/png`), per Blitz an alle geschickt,
+beim Spieler im Popup angekommen — und **tatsächlich gerendert**
+(`naturalWidth > 0`, nicht nur der Pfad gesetzt). Test-NPC, Zugang und
+Ansage danach restlos entfernt.
 
 ### Geprüft
 
