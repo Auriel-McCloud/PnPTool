@@ -1,10 +1,16 @@
 /* ===================================================================
-   Commlink — Cyberpunk-Grundlage
-   Konzept: docs/ui-konzept.md
-   Neon auf Schwarz, Akzente aber bewusst sparsam: grelles Magenta/Cyan
-   flächig ermüdet bei langen Sitzungen am Tablet. Die Neonfarben tragen
-   deshalb Bedeutung (aktiv, geheim, Gefahr) statt Dekoration zu sein.
+   Commlink — Grundlage.
+   Konzept: docs/ui-konzept.md, Theme: docs/theming.md
+
+   Farbwerte stehen NICHT hier, sondern ausschliesslich in
+   theme/tokens.css. Diese Datei beschreibt nur noch Form und Verhalten
+   und greift auf Tokens zu. Dadurch faerbt ein Themewechsel
+   (Cyberpunk -> Hextechpunk) alles mit, ohne dass hier etwas
+   angefasst werden muss.
    =================================================================== */
+
+@import "./theme/tokens.css";
+@import "./theme/hextechpunk.css";
 
 *,
 *::before,
@@ -13,46 +19,6 @@
 }
 
 :root {
-  /* --- Flächen, von tief nach hoch ---------------------------------- */
-  --grund: #08080d; /* Seitenhintergrund, fast schwarz */
-  --flaeche: #101018; /* Karten, Panels */
-  --flaeche-hoch: #171722; /* Fenster, hervorgehobene Karten */
-  --flaeche-aktiv: #1e1e2c; /* Hover, ausgewählt */
-
-  /* --- Linien -------------------------------------------------------- */
-  --linie: #26263a; /* normale Trennlinie/Rahmen */
-  --linie-hell: #363650; /* betonter Rahmen */
-
-  /* --- Text ---------------------------------------------------------- */
-  --text: #e8e8f0;
-  --text-leise: #8a8aa0; /* Beschriftungen, Nebeninfo */
-  --text-aus: #5a5a70; /* deaktiviert */
-
-  /* --- Neon: sparsam einsetzen --------------------------------------- */
-  --neon: #00e5ff; /* Cyan — aktiv, Fokus, Primäraktion */
-  --neon-schwach: rgba(0, 229, 255, 0.14);
-  --signal: #ff2d95; /* Magenta — SL-geheim, Warnung, Löschen */
-  --signal-schwach: rgba(255, 45, 149, 0.14);
-  --gut: #3ddc84; /* Bestätigung */
-  --warn: #ffb648; /* Achtung, Vorschau-Modus */
-
-  /* --- Entitätsfarben (Graph + Badges halten sich daran) ------------- */
-  --kind-person: #4d8bd8;
-  --kind-ort: #2fa96a;
-  --kind-event: #d4894b;
-  --kind-gegenstand: #a865d8;
-
-  /* --- Maße ---------------------------------------------------------- */
-  --radius: 4px;
-  --menue-breite: 232px;
-  --rail-breite: 48px; /* schmale Symbolspalte, ab Tablet dauerhaft sichtbar */
-  --leiste-hoehe: 52px;
-  /* Touch-Mindestgröße: das Tablet ist Zielgerät, nicht die Maus. */
-  --tipp: 44px;
-
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
-
   font: 16px/1.5 var(--sans);
   color: var(--text);
   background: var(--grund);
@@ -65,11 +31,22 @@
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--grund);
-  /* Sehr dezenter Schimmer, damit Schwarz nicht tot wirkt */
+  background-color: var(--grund);
+  /* Drei Ebenen, von oben nach unten:
+     1. Schleier — dunkelt das Kampagnenbild ab, damit Text lesbar bleibt
+     2. Kampagnenbild — pro Kampagne setzbar, standardmaessig "none"
+     3. Schimmer — dezenter Farbverlauf, damit der Grund nicht tot wirkt */
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0, 229, 255, 0.05), transparent),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255, 45, 149, 0.04), transparent);
+    linear-gradient(
+      rgb(var(--grund-rgb) / var(--hintergrund-schleier)),
+      rgb(var(--grund-rgb) / var(--hintergrund-schleier))
+    ),
+    var(--hintergrund-bild),
+    radial-gradient(ellipse 80% 50% at 20% 0%, var(--schimmer-oben), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, var(--schimmer-unten), transparent);
+  background-position: center, var(--hintergrund-position), center, center;
+  background-size: cover, var(--hintergrund-groesse), auto, auto;
+  background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
@@ -95,7 +72,7 @@ h3 {
 h1 {
   font-size: 22px;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--versalien);
 }
 
 h2 {

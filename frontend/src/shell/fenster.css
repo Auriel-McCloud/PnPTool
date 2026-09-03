@@ -9,7 +9,7 @@
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(4, 4, 8, 0.72);
+  background: var(--abdunkelung);
   backdrop-filter: blur(3px);
   animation: fn-hintergrund-an 0.18s ease-out;
 }
@@ -39,8 +39,8 @@
   border: 1px solid var(--fn-ton, var(--bereich-farbe, var(--neon)));
   border-radius: var(--radius);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 24px 60px -12px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgb(0 0 0 / 0.8),
+    0 24px 60px -12px rgb(0 0 0 / 0.85),
     0 0 22px -6px var(--fn-ton, var(--bereich-farbe, var(--neon))),
     inset 0 0 26px -18px var(--fn-ton, var(--bereich-farbe, var(--neon)));
   /* Bis gemessen ist, bleibt es unsichtbar — sonst blitzt ein Bild lang das

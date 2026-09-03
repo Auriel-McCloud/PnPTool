@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./commlink.css";
 import { ErklaerungSchalter } from "../regeln/ErklaerungSchalter";
+import { ThemeSchalter } from "../theme/ThemeSchalter";
 
 export interface Bereich {
   id: string;
@@ -203,6 +204,7 @@ export function CommlinkShell({
             {/* Gilt für die ganze Oberfläche, deshalb hier und nicht in den
                 einzelnen Ansichten (docs/ui-konzept.md). */}
             <ErklaerungSchalter />
+            <ThemeSchalter />
             {werkzeuge}
           </div>
         </header>

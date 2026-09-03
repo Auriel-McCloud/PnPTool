@@ -27,7 +27,7 @@ export function SichtbarkeitBadge({
         // Magenta trägt in der Oberfläche durchgehend die Bedeutung
         // "SL-geheim" (siehe index.css), deshalb hier ebenso.
         background:
-          modus === "GM" ? "var(--signal-schwach)" : modus === "ALLE" ? "rgba(61,220,132,0.14)" : "rgba(255,182,72,0.14)",
+          modus === "GM" ? "var(--signal-schwach)" : modus === "ALLE" ? "color-mix(in srgb, var(--gut) 14%, transparent)" : "color-mix(in srgb, var(--warn) 14%, transparent)",
         color: modus === "GM" ? "var(--signal)" : modus === "ALLE" ? "var(--gut)" : "var(--warn)",
         border: `1px solid ${modus === "GM" ? "var(--signal)" : modus === "ALLE" ? "var(--gut)" : "var(--warn)"}`,
       }}

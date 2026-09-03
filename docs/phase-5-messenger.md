@@ -1,144 +1,163 @@
 # Phase 5: Messenger und Kontakte
 
-**Status:** vorgemerkt, noch nicht implementiert  
-**Stand:** 02.09.2026
+**Status:** Regeln beschlossen, Implementierung läuft  
+**Stand:** 03.09.2026
 
 ## Zielbild
 
-PnPTool bekommt einen In-World-Messenger im Commlink-Stil. PCs und NPCs sollen
-sich Einzelmitteilungen schicken können; PCs sollen auch untereinander
-schreiben können. Die Spielleitung kann Nachrichten direkt an Spieler schicken
-oder als NPC auftreten. Ein Chatfenster mit Nachrichtenblasen, Zeit-/Tages-
-trennern und Portraits darf sich an der Wirkung von *Persona 5* orientieren,
-übernimmt aber keine geschützten Grafiken oder konkrete UI-Assets.
+PnPTool bekommt einen In-World-Messenger im Commlink-Stil. PCs können mit NPCs
+schreiben, sobald die SL eine Kontaktanfrage als dieser NPC angenommen hat. Die
+SL schreibt im Messenger immer als ausgewählter NPC. Eine direkte Mitteilung der
+SL hat keinen Absender und wird später als Popup/Benachrichtigung umgesetzt
+(z.B. „Würfelt für Initiative“, Warnung, Bild oder Map).
 
-Im bestehenden Bereich **Kontakte** bekommt jeder erreichbare Kontakt eine
-Aktion **Message**. Die Unterhaltung öffnet sich als eigenes Fenster. Der
-Verlauf darf innerhalb dieses Fensters scrollen; die Hauptansicht und der
-Seitenkörper dürfen dadurch nicht scrollen.
+Der Chat ist ein eigenes Fenster. Nur der Nachrichtenverlauf darf darin intern
+scrollen; Hauptansicht und Seitenkörper behalten den bestehenden „nie scrollen“-
+Grundsatz.
 
-## Kontaktwissen ist personenbezogen und abgestuft
+## Kontaktwissen und Neo4j-Modell
 
-Das bestehende `VERBINDUNG`-Modell beschreibt das Wissen der Spielleitung über
-die Welt. Es ist nicht geeignet, um abzubilden, was *eine bestimmte Figur* über
-eine andere weiss. Kontaktwissen muss daher gerichtet sein: A kann B kennen,
-während B A noch nicht kennt.
-
-Für den ersten Entwurf sind drei Stufen vorgemerkt:
-
-1. **GESEHEN** — A hat B gesehen. Angezeigt werden ein Bild und eine vom
-   Spielleiter gepflegte Beschreibung oder ein Alias, z.B. „Troll aus der
-   3-Heavens-Bar“. Der echte Name wird nicht angezeigt. Nachrichten sind noch
-   nicht möglich.
-2. **GESPROCHEN** — A und B haben miteinander gesprochen. Die Spielleitung
-   kann für A einen Namen und eine Beschreibung freigeben oder eintragen.
-3. **KONTAKT_AUSGETAUSCHT** — A besitzt die Kontaktdaten von B und darf über
-   den Messenger Nachrichten empfangen bzw. senden, soweit die noch offene
-   Berechtigungsentscheidung das erlaubt.
-
-Die Namen der Stufen sind Vorschläge und werden vor der Implementierung noch
-bestätigt. Entscheidend ist: Anzeigename, Beschreibung und Bild sind Wissen
-von A über B und dürfen nicht einfach ungefiltert aus Bs vollständigem
-Personenknoten kommen. Ein NPC kann deshalb für verschiedene PCs
-unterschiedlich beschrieben sein.
-
-### Vorgeschlagene technische Form
-
-Für die MVP-Version reicht voraussichtlich eine gerichtete Beziehung:
+Kontaktwissen betrifft ein PC-NPC-Paar. Da das Wissen in diesem MVP vom PC über
+den NPC geführt wird, gibt es genau **eine kanonische Beziehung**:
 
 ```text
-(Person A)-[:KENNT {
-  stufe,
-  angezeigterName,
-  beschreibung,
-  bildUrl
-}]->(Person B)
+(:Person {personType: "PC"})-[:KENNT {
+  id: "...",
+  stufe: "GESEHEN" | "GESPROCHEN" | "KONTAKT_AUSGETAUSCHT",
+  echterNameBekannt: false,
+  kontaktAnfrageStatus: "KEINE" | "AUSSTEHEND" | "ANGENOMMEN" | "ABGELEHNT",
+  alias: "<persönlicher Alias oder leer>",
+  persoenlicheNotizen: "<TipTap-JSON>",
+  erstelltAm: "...",
+  aktualisiertAm: "..."
+}]->(:Person {personType: "NPC"})
 ```
 
-Das ist einfacher als ein zusätzlicher Kontaktknoten und bildet den häufigsten
-Fall — einen aktuellen Wissensstand je Quelle und Ziel — direkt ab. Falls später
-Wissensverlauf, mehrere Aliase oder Kontaktaufnahmen als Ereignisse gebraucht
-werden, kann daraus ein eigener `Kontaktwissen`-Knoten werden. Diese Entscheidung
-ist vor dem Bauen zu bestätigen.
+Die Beziehung wird nicht gespiegelt. „Beidseitig“ beschreibt die Berechtigung,
+nach angenommener Anfrage in demselben Chat in beide Richtungen zu schreiben;
+es bedeutet keine zweite Graphkante und kein zweites Wissensobjekt.
 
-## Nachrichtenmodell
+Die Stufen bedeuten:
 
-Nachrichten sind unveränderliche `Nachricht`-Knoten in der Kampagne. Sie
-verweisen auf Absender und Empfänger; der Absender kann eine Person (PC/NPC)
-oder die Spielleitung selbst sein. Für den ersten Schritt sind Einzelchats
-vorgesehen, keine Gruppenunterhaltungen.
+1. **GESEHEN** — automatisch aus einem sichtbaren Graphweg oder bewusst durch
+   die SL angelegt. Der Spieler sieht Alias, Bild und freigegebene
+   Erscheinungsbeschreibung, aber nicht den echten Namen.
+2. **GESPROCHEN** — die SL markiert, dass das Gespräch stattgefunden hat.
+   Freigegebene allgemeine NPC-Notizen werden sichtbar.
+3. **KONTAKT_AUSGETAUSCHT** — die SL nimmt die Kontaktanfrage des Spielers als
+   den ausgewählten NPC an. Der Einzelchat ist für beide Seiten freigeschaltet.
 
-Vorgemerkte Inhalte einer Nachricht:
+`echterNameBekannt` ist unabhängig von der Stufe eine eigene SL-Checkbox. Ist
+sie aus, wird der echte Name serverseitig nicht in eine Spielerantwort
+aufgenommen.
 
-- eindeutige ID und Kampagne,
-- Absender (Person oder Spielleitung),
-- Empfänger-Person,
-- Text,
-- Erstellungszeitpunkt,
-- optionaler Lesezeitpunkt bzw. ungelesen-Status.
+## NPC-Standard und persönlicher Alias
 
-Die Anzeige einer Unterhaltung wird zunächst aus den Nachrichten zweier
-Teilnehmer abgeleitet. Ein eigener `Konversation`-Knoten ist erst nötig, wenn
-Gruppenchats, archivierte Threads oder zusätzliche Chat-Metadaten dazukommen.
+Der NPC-Knoten enthält die gemeinsamen Fakten:
 
-## Berechtigungen
+- `name`: echter Name, ausschließlich serverseitig nach der Namensfreigabe;
+- `alias`: gemeinsamer Standardalias;
+- `bildUrl`: gemeinsames Bild/Aussehen;
+- `description`: gemeinsame Erscheinungsbeschreibung und allgemeine Daten;
+- `rasse`: Grundlage für einen Startwert wie „Unbekannter Ork“ oder
+  „Unbekannte Person“.
 
-Die Regeln müssen serverseitig gelten; die Oberfläche darf nur zusätzlich
-Buttons ausblenden:
+Beim Anlegen eines NPCs wird ein Standardalias erzeugt, wenn die SL keinen
+Alias angibt. Die SL kann diesen Standard ändern. Jeder PC kann zusätzlich auf
+seiner `KENNT`-Beziehung einen persönlichen Alias setzen; die SL kann den Alias
+für genau diesen PC ebenfalls ändern. Ist kein persönlicher Alias gesetzt,
+gilt der NPC-Standard. Der persönliche Alias bleibt auch nach Bekanntwerden des
+echten Namens erhalten. Die Antwort liefert den echten Namen getrennt und nur,
+wenn er sichtbar sein darf, damit die Oberfläche Alias und echten Namen
+nebeneinander darstellen kann.
 
-- Die Spielleitung sieht alle Kontakte und Nachrichten der Kampagne und darf
-  direkt an einen PC schreiben oder als NPC senden.
-- Ein Spieler sieht nur sein eigenes Kontaktwissen und Nachrichten, an denen
-  seine zugeordnete Person beteiligt ist.
-- Ein Spieler darf nicht über `alsSpieler` oder eine fremde Personen-ID in
-  andere Unterhaltungen wechseln.
-- Das Senden an eine Person soll an die Kontaktstufe gekoppelt sein. Ob dafür
-  nur der sendende Charakter `KONTAKT_AUSGETAUSCHT` haben muss oder beide Seiten
-den Kontakt bestätigt haben müssen, ist eine offene Regelentscheidung.
-- Die SL-Vorschau bleibt lesend. Ein Vorschauwechsel darf keine Nachrichten
-  erzeugen oder den Kontaktstatus verändern.
+Spieler ändern nur ihren eigenen persönlichen Alias. Die Änderung des
+NPC-Standards bleibt eine SL-Aktion, weil sie alle Kontakte ohne persönlichen
+Override betrifft.
 
-## UI-Vorgaben
+## Allgemeine und persönliche Notizen
 
-- Der Kontaktbereich bleibt eine eigene Commlink-Ansicht und darf eine interne
-  Liste mit `overflow-y: auto` haben.
-- Beim Öffnen einer Unterhaltung erscheint ein Fenster mit fester Fläche und
-  internem Chatverlauf. Nur dieser Verlauf scrollt; Kopfzeile und Eingabefeld
-  bleiben erreichbar.
-- Die Seite bzw. der gesamte Shell-Körper erhält für diesen Bereich keinen
-  zusätzlichen Gesamt-Scrollbalken. Das folgt dem bestehenden Grundsatz:
-  Übersichten teilen sich die Bildschirmfläche ein, lange Inhalte liegen in
-  Fenstern.
-- Nachrichtenblasen unterscheiden Absender und Empfänger klar. Portrait,
-  Alias und unbekannte Identität müssen zur jeweiligen Kontaktstufe passen.
-- Neue Nachrichten werden über das bereits vorgesehene Blitz-/Popup-Symbol
-  angekündigt. Das Popup soll von diesem Symbol aus aufgehen und minimierbar
-  sein — das verbindet den Messenger mit der allgemeinen Phase-5-Live-
-  Infrastruktur.
+Allgemeine Notizen hängen als eigene Knoten am NPC, damit mehrere Beiträge,
+Autoren und Freigaben möglich sind:
 
-## Reihenfolge der Umsetzung
+```text
+(:Person {personType: "NPC"})-[:HAT_NOTIZ]->(:NpcNotiz {
+  id: "...",
+  inhalt: "<TipTap-JSON>",
+  autorPersonId: "<PC-ID>" | null,
+  autorRolle: "PLAYER" | "GM",
+  freigegeben: false | true,
+  erstelltAm: "...",
+  aktualisiertAm: "..."
+})
+```
 
-1. Kontaktstufen, gerichtete Freigabe und die Frage „einseitiger oder
-   beidseitiger Kontakt“ gemeinsam festlegen.
-2. Kontaktwissen als lesbare und für die Spielleitung bearbeitbare Daten
-   anlegen; Sichtbarkeit und Fremdcharakter-Schutz mit Tests absichern.
-3. Nachrichten-API für Einzelchats bauen: lesen, senden, ungelesen markieren;
-   GM/NPC-Absender und Spielerberechtigungen getrennt testen.
-4. Kontaktansicht und das intern scrollende Chatfenster bauen.
-5. WebSocket-Zustellung, ungelesene Zähler und minimierbare Live-Popups in die
-   vorhandene Phase-5-Infrastruktur einhängen.
+Spieler dürfen eigene allgemeine Notizen anlegen und bearbeiten. Die SL kann
+alle Notizen bearbeiten und jede einzeln freigeben oder zurücknehmen. Ein
+Spieler sieht eigene Entwürfe sofort; fremde Beiträge erst nach Freigabe und
+ab `GESPROCHEN`. Die SL sieht alle Beiträge.
 
-Nicht Teil des ersten Messenger-Schritts sind Gruppen-Chats, Anhänge,
-Nachrichtenbearbeitung, Löschen und eine öffentliche Kontakt-Suche.
+Persönliche Notizen liegen auf der eigenen `KENNT`-Beziehung. Sie sind nur für
+den zugehörigen Spieler und die SL sichtbar und editierbar. Sie werden nie als
+allgemeine NPC-Notiz veröffentlicht.
 
-## Offene Entscheidungen vor dem Bauen
+## Automatisches GESEHEN aus dem Beziehungsgraphen
 
-- Endgültige Namen und genaue Bedeutung der drei Kontaktstufen.
-- Muss ein Kontakt nur beim Sender oder auf beiden Seiten bestätigt sein?
-- Darf ein PC einem NPC schreiben, sobald der PC den Kontakt hat, oder muss der
-  SL den NPC-Kontakt zusätzlich freigeben?
-- Schreibt die Spielleitung im Chat als „Spielleitung“, als ausgewählter NPC
-  oder beides?
-- Sind Nachrichten zunächst Klartext oder Rich-Text?
-- Gehört ein Portrait zum Personenknoten oder zur jeweiligen
-  Kontaktwissen-Beziehung?
+Für jeden PC können **sichtbare** `VERBINDUNG`-Kanten einen ungerichteten Weg
+bilden. Sichtbar bedeutet: Die Kante und beide Endpunkte wären für diesen PC
+sichtbar (`ALLE` oder passende `SPEZIFISCH`-Freigabe). Der Beziehungstyp bleibt
+rein beschreibend; auch Feindschaft oder Besitz kann Teil des Weges sein.
+
+Die Suche läuft maximal über **sieben Kanten**. Orte und Events erhalten das
+zusätzliche Feld `kontaktwissenWeitergeben` (Standard `true`). Wird es bei einem
+Ort oder Event deaktiviert, darf der Weg diesen Knoten zwar erreichen, dort aber
+nicht weiterlaufen. Das gilt auch für Bestandsdaten ohne dieses Feld, die aus
+Kompatibilitätsgründen als `true` behandelt werden.
+
+Beim ersten gültigen Weg wird genau eine PC→NPC-`KENNT`-Beziehung mit `GESEHEN`
+angelegt. Eine vorhandene Beziehung wird durch die Automatik niemals
+hochgestuft, zurückgesetzt oder gelöscht. `GESPROCHEN`, Namenskenntnis und
+`KONTAKT_AUSGETAUSCHT` bleiben bewusste Aktionen der SL bzw. der
+Kontaktanfrage.
+
+Temporäre Parties werden noch nicht modelliert. Wenn sie später existieren,
+können sie als eigene Graphknoten in dieselbe Wegsuche einbezogen werden.
+
+## Kontaktanfrage und Messenger
+
+Ein Spieler kann ab `GESPROCHEN` eine Kontaktanfrage an einen NPC senden. Die
+SL sieht ausstehende Anfragen und nimmt sie als ausgewählter NPC an oder lehnt
+sie ab. Annahme setzt die bestehende Beziehung auf
+`KONTAKT_AUSGETAUSCHT` und schaltet den Einzelchat in beide Richtungen frei.
+
+Nachrichten sind eigene, unveränderliche `Nachricht`-Knoten:
+
+```text
+(:Nachricht {
+  id: "...",
+  campaignId: "...",
+  inhalt: "<TipTap-JSON>",
+  inhaltFormat: "tiptap-json",
+  erstelltAm: "...",
+  gelesenAm: null | "...",
+  erstelltVonRolle: "PLAYER" | "GM"
+})-[:VON]->(:Person)
+(:Nachricht)-[:AN]->(:Person)
+```
+
+Eine SL-Nachricht zeigt niemals „Spielleitung“ als Absender: Beim Schreiben
+als NPC zeigt `VON` auf den ausgewählten NPC. Absenderlose SL-Popups bleiben
+eine spätere Funktion außerhalb dieses Nachrichtenmodells.
+
+Nachrichteninhalt wird als TipTap-JSON gespeichert. Klartext ist für Tests als
+einzelner Absatz kompatibel. Android-Smileys bleiben echte Unicode-Zeichen,
+auch zusammengesetzte Emoji-Sequenzen und Hautfarben; sie werden nicht in
+Bilddateien oder `:codes:` umgewandelt.
+
+## Bewusste Nicht-Ziele der ersten Runde
+
+- temporäre Parties und deren eigenes Datenmodell,
+- direkte SL-Popups, Bilder und Maps als Benachrichtigung,
+- WebSocket-Live-Zustellung,
+- Gruppen-Chats, Anhänge, Bearbeiten/Löschen gesendeter Nachrichten,
+- öffentliche Kontaktsuche.

@@ -49,7 +49,7 @@ export function ViewAsSwitcher({
         padding: "8px 12px",
         borderRadius: "var(--radius)",
         border: `1px solid ${aktiv ? "var(--warn)" : "var(--linie)"}`,
-        background: aktiv ? "rgba(255, 182, 72, 0.1)" : "var(--flaeche)",
+        background: aktiv ? "color-mix(in srgb, var(--warn) 10%, transparent)" : "var(--flaeche)",
       }}
     >
       <label style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>

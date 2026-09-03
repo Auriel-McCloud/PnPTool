@@ -14,6 +14,8 @@ Der volle Plan (Architektur-Entscheidungen, Datenmodell, Phasen-Roadmap) liegt h
 
 **Das UI-Konzept ("Commlink") steht in `docs/ui-konzept.md`** — Leitbild, Aufbau, Bereichsschnitt, Kampfmodus, Tooltip-System. Vor UI-Arbeit dort nachlesen, das ist die Quelle der Wahrheit fürs Aussehen.
 
+**Das Theming steht in `docs/theming.md`** — seit 03.09.2026 sind alle Farb- und Formwerte Tokens in `frontend/src/theme/`. **Harte Regel: außerhalb dieses Ordners steht kein Farbwert mehr im Code**, weder als `#hex` in CSS noch in TSX. Zwei Themes sind gebaut (Cyberpunk als Standard, Hextechpunk als Gegenprobe), umschaltbar über ◐ in der oberen Werkzeugleiste.
+
 ## Tech-Stack (entschieden, nicht neu diskutieren)
 
 - **Backend**: FastAPI (async), `neo4j` async driver, JWT in httpOnly-Cookie, `bcrypt` direkt (NICHT passlib — siehe "Bekannte Stolpersteine" unten)
@@ -89,7 +91,9 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
 - ✅ **Phase 4 (29.08.2026)** — **Spieler-Zugang steht.** Sichtbarkeits-Filterung läuft in allen Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=` **und** über echte Spieler-Sitzungen. Beitritt per Zugangscode, Charakter beanspruchen, eigene Oberfläche. Siehe eigener Abschnitt unten. Offen bleibt nur die Live-Kommunikation (Phase 5).
-- ⬜ **Phase 5** — Live-WebSocket-Pop-ups vom SL an Spieler
+- 🟡 **Phase 5** — Messenger/Kontakte fachlich spezifiziert und der Kontakt-Fachkern begonnen; API, Persistenz, UI und Live-WebSocket-Pop-ups sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus).
+- 🟡 **Nächste Produkt-Richtung: Kampagnen-Wiki** — beschlossen als Planungs- und Wissenswerkzeug für Geschichten, Kapitel, Dokument-Tabs, Seitenbaum, automatisches Inhaltsverzeichnis und echte Verknüpfungen zu Kampagnenobjekten. Fachliche Spezifikation: `docs/produktvision-wiki.md`.
+- ✅ **Theme-Fundament (03.09.2026)** — Vorarbeit fürs Wiki, damit es nicht dieselben harten Farbwerte erneut verdrahtet. Alle Farb-/Formwerte liegen jetzt als Tokens in `frontend/src/theme/`; ein zweites Theme (Hextechpunk) beweist, dass der Umbau trägt. Details und die Regel dazu: `docs/theming.md`.
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
 
 ## UI-Polish-Durchgang (28.08.2026) — Sichtbarkeit v2 + Rich-Text

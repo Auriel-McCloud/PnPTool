@@ -1,6 +1,12 @@
+/* Rich-Text (TipTap). Farben kommen aus theme/tokens.css.
+   Vorher standen hier helle Starter-Werte, die im dunklen Commlink
+   herausstachen und bei jedem weiteren Theme erneut gestoert haetten. */
+
+/* "SL-geheim" markierter Text: traegt dieselbe Bedeutungsfarbe wie
+   ueberall sonst im Werkzeug (--signal). */
 .gm-secret {
-  background-color: #fde2e2;
-  border-bottom: 2px dashed #a11;
+  background-color: color-mix(in srgb, var(--signal) 16%, transparent);
+  border-bottom: 2px dashed var(--signal);
   border-radius: 2px;
   padding: 0 2px;
 }
@@ -13,13 +19,13 @@
 
 .ProseMirror table td,
 .ProseMirror table th {
-  border: 1px solid #ccc;
+  border: 1px solid var(--linie);
   padding: 4px 8px;
   vertical-align: top;
 }
 
 .ProseMirror table th {
-  background: #f0f0f0;
+  background: var(--flaeche-aktiv);
   font-weight: bold;
 }
 

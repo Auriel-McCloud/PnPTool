@@ -36,13 +36,13 @@
   position: relative;
   /* Ohne eigenen Ton die Leitfarbe des Bereichs — dadurch wechselt die
      Röhrenfarbe mit dem Bereich, statt überall gleich zu sein. */
-  border: 1px solid var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
+  border: var(--roehre-breite) solid var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
   border-radius: var(--radius);
   background: var(--flaeche);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 0 8px -2px var(--roehre-farbe, var(--bereich-farbe, var(--neon))),
-    inset 0 0 14px -8px var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 0 var(--glut-aussen) -2px var(--roehre-farbe, var(--bereich-farbe, var(--neon))),
+    inset 0 0 var(--glut-innen) -8px var(--roehre-farbe, var(--bereich-farbe, var(--neon)));
   /* Röhren zünden nicht sofort sauber durch */
   animation: cl-zuenden 0.5s ease-out;
 }
@@ -192,8 +192,8 @@
   border-left: 2px solid var(--ton, var(--neon));
   border-radius: 0 var(--radius) var(--radius) 0;
   box-shadow:
-    0 0 14px -4px var(--ton, var(--neon)),
-    inset 0 0 18px -12px var(--ton, var(--neon));
+    0 0 calc(var(--glut-aussen) + 6px) -4px var(--ton, var(--neon)),
+    inset 0 0 calc(var(--glut-innen) + 4px) -12px var(--ton, var(--neon));
   position: relative;
   z-index: 45;
   animation: cl-vorfahren 0.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -350,7 +350,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  background: rgba(16, 16, 24, 0.86);
+  background: rgb(var(--flaeche-rgb) / 0.86);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--linie);
   position: sticky;
@@ -457,7 +457,7 @@
     width: var(--menue-breite);
     transform: translateX(-100%);
     transition: transform 0.22s ease;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    box-shadow: 4px 0 24px rgb(0 0 0 / 0.6);
   }
 
   .cl-menue[data-offen="true"] .cl-menue-tafel {
@@ -478,7 +478,7 @@
     position: fixed;
     inset: 0;
     z-index: 30;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgb(0 0 0 / 0.6);
     backdrop-filter: blur(2px);
   }
 
@@ -549,9 +549,9 @@
   /* Farbe des Zielbereichs: der Wechsel trägt die Farbe dessen, wohin er
      führt. Deckkraft über opacity statt fester rgba-Werte, damit jede
      Bereichsfarbe funktioniert. */
-  background: linear-gradient(to bottom, transparent, var(--bereich-farbe, var(--neon)));
-  opacity: 0.55;
-  box-shadow: 0 1px 14px 3px var(--bereich-farbe, var(--neon));
+  background: linear-gradient(to bottom, transparent, var(--ladebalken));
+  opacity: var(--ladebalken-deckkraft);
+  box-shadow: 0 1px 14px 3px var(--ladebalken);
   /* forwards: ohne Endzustand springt der Balken nach dem Durchlauf an
      seine Ausgangsposition zurück und bleibt quer über dem Inhalt liegen.
      Entfernt wird er zusätzlich vom Skript, das ist hier die Absicherung
@@ -562,7 +562,7 @@
 @keyframes cl-balken-lauf {
   from {
     top: -42%;
-    opacity: 0.55;
+    opacity: var(--ladebalken-deckkraft);
   }
   to {
     top: 102%;
@@ -593,23 +593,23 @@
   }
   10% {
     opacity: 0.5;
-    background: rgba(0, 229, 255, 0.05);
-    box-shadow: inset 0 0 120px rgba(0, 229, 255, 0.18);
+    background: color-mix(in srgb, var(--flacker-a) 5%, transparent);
+    box-shadow: inset 0 0 120px color-mix(in srgb, var(--flacker-a) 18%, transparent);
   }
   22% {
     opacity: 0;
   }
   34% {
     opacity: 0.42;
-    background: rgba(255, 45, 149, 0.05);
-    box-shadow: inset 0 0 90px rgba(255, 45, 149, 0.16);
+    background: color-mix(in srgb, var(--flacker-b) 5%, transparent);
+    box-shadow: inset 0 0 90px color-mix(in srgb, var(--flacker-b) 16%, transparent);
   }
   48% {
     opacity: 0.06;
   }
   62% {
     opacity: 0.34;
-    background: rgba(232, 232, 240, 0.045);
+    background: color-mix(in srgb, var(--flacker-c) 4.5%, transparent);
   }
   100% {
     opacity: 0;

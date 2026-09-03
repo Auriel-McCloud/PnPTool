@@ -23,22 +23,24 @@ import { VollbildKnopf } from "./shell/VollbildKnopf";
  * kennt.
  */
 const BEREICHE: Bereich[] = [
-  { id: "pcs", name: "PCs", symbol: "◉", farbe: "#4d8bd8" },
-  { id: "npcs", name: "NPCs", symbol: "◌", farbe: "#d4894b" },
-  { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
-  { id: "events", name: "Events", symbol: "◆", farbe: "#d4894b" },
-  { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "#7c8fe8" },
+  // Die Farben stehen als Tokens in theme/tokens.css (--bereich-*), damit ein
+  // Themewechsel sie mitzieht. Hier steht nur noch, WELCHES Token gilt.
+  { id: "pcs", name: "PCs", symbol: "◉", farbe: "var(--bereich-pcs)" },
+  { id: "npcs", name: "NPCs", symbol: "◌", farbe: "var(--bereich-npcs)" },
+  { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
+  { id: "events", name: "Events", symbol: "◆", farbe: "var(--bereich-events)" },
+  { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "var(--bereich-verbindungen)" },
   // Violett wie die Gegenstands-Knoten im Graphen
-  { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "#a865d8" },
+  { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "var(--bereich-gegenstaende)" },
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
   // Blatt haben und keine Gegenstände sind.
-  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "#c76bff" },
-  { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
-  { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "#3ddc84" },
+  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
+  { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
+  { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "var(--bereich-zugang)" },
   // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
-  { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "#ff3d5c" },
-  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "#ffb648", bald: true },
-  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "#3ddc84", bald: true },
+  { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "var(--bereich-kampf)" },
+  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "var(--bereich-regeln)", bald: true },
+  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
 const TITEL: Record<string, string> = {

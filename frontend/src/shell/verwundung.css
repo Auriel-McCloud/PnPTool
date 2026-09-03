@@ -14,8 +14,8 @@
      ersten Treffer dezent bleiben und die letzten deutlich werden. */
   background: linear-gradient(
     to top,
-    rgba(180, 12, 40, calc(var(--vw-anteil, 0) * 0.55)) 0%,
-    rgba(150, 10, 34, calc(var(--vw-anteil, 0) * 0.28)) calc(var(--vw-anteil, 0) * 45%),
+    rgb(var(--verwundung) / calc(var(--vw-anteil, 0) * 0.55)) 0%,
+    rgb(var(--verwundung-tief) / calc(var(--vw-anteil, 0) * 0.28)) calc(var(--vw-anteil, 0) * 45%),
     transparent calc(20% + var(--vw-anteil, 0) * 60%)
   );
   transition: background 1.2s ease-out;

@@ -37,22 +37,22 @@ import { playersApi, type SpielerMe } from "./api";
 const BEREICHE: Bereich[] = [
   // Das Charakterblatt steht vorn und ist die Startansicht — es ist das,
   // worauf ein Spieler während der Runde am häufigsten schaut.
-  { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "#ffb648" },
-  { id: "inventar", name: "Inventar", symbol: "◈", farbe: "#a865d8" },
+  { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "var(--bereich-blatt)" },
+  { id: "inventar", name: "Inventar", symbol: "◈", farbe: "var(--bereich-inventar)" },
   // Eigener Bereich, weil ein Rigger sehr viele Drohnen führt und die im
   // Inventar zwischen Munition und Kaugummi untergingen. Beide haben ein
   // eigenes Blatt (Stufe, Widerstand, Angriff, Agilität).
-  { id: "fahrzeuge", name: "Fahrzeuge", symbol: "⛭", farbe: "#ff6b4d" },
+  { id: "fahrzeuge", name: "Fahrzeuge", symbol: "⛭", farbe: "var(--bereich-fahrzeuge)" },
   // Sprites, Geister und Verbündete teilen sich ein Blatt mit den Drohnen —
   // deshalb ein Bereich für alle drei.
-  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "#c76bff" },
+  { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
   // Die Initiativliste sehen alle — darum geht es: jeder weiss, wann er dran
   // ist, ohne zu fragen.
-  { id: "kampf", name: "Kampf", symbol: "⚔", farbe: "#ff3d5c" },
-  { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "#00e5ff" },
-  { id: "orte", name: "Orte", symbol: "⌖", farbe: "#2fa96a" },
-  { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "#4d8bd8" },
-  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "#3ddc84", bald: true },
+  { id: "kampf", name: "Kampf", symbol: "⚔", farbe: "var(--bereich-kampf)" },
+  { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "var(--bereich-kontakte)" },
+  { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
+  { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
+  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
 function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: string }) {

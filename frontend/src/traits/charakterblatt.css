@@ -55,13 +55,13 @@
 }
 
 .cb-erfahrung:hover:not(:disabled) {
-  border-color: #4da3ff;
+  border-color: var(--ja);
   color: inherit;
-  background: color-mix(in srgb, #4da3ff 10%, transparent);
+  background: color-mix(in srgb, var(--ja) 10%, transparent);
 }
 
 .cb-erfahrung:hover:not(:disabled) .cb-ep-zahl {
-  color: #4da3ff;
+  color: var(--ja);
 }
 
 .cb-erfahrung:disabled {
@@ -454,8 +454,8 @@
   padding: 0 5px;
   font-size: 10px;
   font-weight: 600;
-  color: #3ddc84;
-  border: 1px solid color-mix(in srgb, #3ddc84 50%, transparent);
+  color: var(--gut);
+  border: 1px solid color-mix(in srgb, var(--gut) 50%, transparent);
   border-radius: 2px;
   white-space: nowrap;
 }

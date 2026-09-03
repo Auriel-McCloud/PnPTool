@@ -96,7 +96,7 @@
   font-weight: 600;
   padding: 1px 5px;
   border-radius: 2px;
-  background: rgba(8, 8, 13, 0.86);
+  background: rgb(var(--grund-rgb) / 0.86);
   color: var(--text);
 }
 

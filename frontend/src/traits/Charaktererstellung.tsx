@@ -39,15 +39,15 @@ const SCHRITTE = [
 
 /** Farben wie auf dem fertigen Blatt, damit man sich sofort zurechtfindet. */
 const TON: Record<string, string> = {
-  AttributKörperlich: "#ff6b4d",
-  AttributGesellschaftlich: "#ffb648",
-  AttributGeistig: "#4d8bd8",
-  Fertigkeit: "#00e5ff",
-  Arete: "#c76bff",
-  Sphäre: "#a865d8",
-  NeuroWeavingWert: "#3ddc84",
-  NeuroWeaving: "#3ddc84",
-  Hintergrund: "#8a8aa0",
+  AttributKörperlich: "var(--wert-koerperlich)",
+  AttributGesellschaftlich: "var(--wert-gesellschaftlich)",
+  AttributGeistig: "var(--wert-geistig)",
+  Fertigkeit: "var(--wert-fertigkeit)",
+  Arete: "var(--wert-arete)",
+  Sphäre: "var(--wert-sphaere)",
+  NeuroWeavingWert: "var(--wert-neuroweaving)",
+  NeuroWeaving: "var(--wert-neuroweaving)",
+  Hintergrund: "var(--wert-hintergrund)",
 };
 
 function summe(werte: Record<string, number>) {

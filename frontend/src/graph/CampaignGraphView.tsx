@@ -1,6 +1,7 @@
 import cytoscape from "cytoscape";
 import { useEffect, useRef, useState } from "react";
 import { getGraph } from "./api";
+import { tokens } from "../theme/theme";
 
 const KIND_SHAPE: Record<string, string> = {
   Person: "ellipse",
@@ -9,31 +10,50 @@ const KIND_SHAPE: Record<string, string> = {
   Gegenstand: "star",
 };
 
-// Cytoscape zeichnet auf Canvas und kennt keine CSS-Variablen — diese Werte
-// müssen die Entsprechungen aus index.css (--kind-*) von Hand spiegeln.
-// Beim Ändern dort also auch hier nachziehen.
-const KIND_COLOR: Record<string, string> = {
-  Person: "#4d8bd8",
-  Ort: "#2fa96a",
-  Event: "#d4894b",
-  Gegenstand: "#a865d8",
-};
+// Cytoscape zeichnet auf Canvas und kennt keine CSS-Variablen. Frueher standen
+// die Farben deshalb ein zweites Mal als Hexwerte hier — mit dem Hinweis "beim
+// Aendern dort nachziehen". Das haelt keinen Themewechsel aus.
+// Jetzt werden die Tokens zur Laufzeit aus dem aktiven Theme gelesen
+// (theme/theme.ts), es gibt also weiterhin nur eine Quelle der Wahrheit.
+function graphFarben() {
+  const t = tokens({
+    person: "--kind-person",
+    ort: "--kind-ort",
+    event: "--kind-event",
+    gegenstand: "--kind-gegenstand",
+    geheim: "--signal",
+    linie: "--linie-hell",
+    neon: "--neon",
+    textLeise: "--text-leise",
+    knotenText: "--text",
+  });
+  return {
+    kind: {
+      Person: t.person,
+      Ort: t.ort,
+      Event: t.event,
+      Gegenstand: t.gegenstand,
+    } as Record<string, string>,
+    geheim: t.geheim,
+    linie: t.linie,
+    neon: t.neon,
+    textLeise: t.textLeise,
+    knotenText: t.knotenText,
+  };
+}
 
-const FARBE_GEHEIM = "#ff2d95"; // --signal
-const FARBE_LINIE = "#3a3a52"; // --linie-hell, gedämpft für Kanten
-const FARBE_NEON = "#00e5ff"; // --neon, Auswahl
-const FARBE_TEXT_LEISE = "#9a9ab2"; // --text-leise, Kantenbeschriftung
+type GraphFarben = ReturnType<typeof graphFarben>;
 
-const stylesheet = [
+const stylesheetFuer = (f: GraphFarben) => [
   {
     selector: "node",
     style: {
-      "background-color": (ele: cytoscape.NodeSingular) => KIND_COLOR[ele.data("kind")] ?? "#888",
+      "background-color": (ele: cytoscape.NodeSingular) => f.kind[ele.data("kind")] ?? f.linie,
       shape: (ele: cytoscape.NodeSingular) => KIND_SHAPE[ele.data("kind")] ?? "ellipse",
       label: "data(label)",
-      color: "#fff",
+      color: f.knotenText,
       "text-outline-width": 2,
-      "text-outline-color": (ele: cytoscape.NodeSingular) => KIND_COLOR[ele.data("kind")] ?? "#888",
+      "text-outline-color": (ele: cytoscape.NodeSingular) => f.kind[ele.data("kind")] ?? f.linie,
       "font-size": 12,
       "text-valign": "center",
       "text-halign": "center",
@@ -41,26 +61,26 @@ const stylesheet = [
       height: 56,
       "border-width": 3,
       "border-color": (ele: cytoscape.NodeSingular) =>
-        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
+        ele.data("sichtbarkeit") === "GM" ? f.geheim : f.linie,
     } as cytoscape.Css.Node,
   },
   {
     selector: "node:selected",
-    style: { "border-width": 5, "border-color": FARBE_NEON } as cytoscape.Css.Node,
+    style: { "border-width": 5, "border-color": f.neon } as cytoscape.Css.Node,
   },
   {
     selector: "edge",
     style: {
       width: 2,
       "line-color": (ele: cytoscape.EdgeSingular) =>
-        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
+        ele.data("sichtbarkeit") === "GM" ? f.geheim : f.linie,
       "target-arrow-color": (ele: cytoscape.EdgeSingular) =>
-        ele.data("sichtbarkeit") === "GM" ? FARBE_GEHEIM : FARBE_LINIE,
+        ele.data("sichtbarkeit") === "GM" ? f.geheim : f.linie,
       "target-arrow-shape": "triangle",
       "curve-style": "bezier",
       label: "data(typ)",
       "font-size": 10,
-      color: FARBE_TEXT_LEISE,
+      color: f.textLeise,
       "text-rotation": "autorotate",
     } as cytoscape.Css.Edge,
   },
@@ -84,7 +104,7 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
 
     const cy = cytoscape({
       container: containerRef.current,
-      style: stylesheet as cytoscape.StylesheetStyle[],
+      style: stylesheetFuer(graphFarben()) as cytoscape.StylesheetStyle[],
       elements: [],
       minZoom: 0.2,
       maxZoom: 2.5,
@@ -147,6 +167,20 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
       cancelled = true;
     };
   }, [campaignId, focus, depth]);
+
+  // Themewechsel: Cytoscape zeichnet auf Canvas, ein Wechsel der CSS-Tokens
+  // erreicht es also nicht von selbst. Der MutationObserver horcht auf
+  // data-theme am <html> und schreibt das Stylesheet mit den neuen Tokens neu.
+  // Ohne das bliebe der Graph nach einem Themewechsel in den alten Farben
+  // stehen — genau der Fehler, den die frueher gespiegelten Hexwerte
+  // unvermeidlich gemacht haetten.
+  useEffect(() => {
+    const beobachter = new MutationObserver(() => {
+      cyRef.current?.style(stylesheetFuer(graphFarben()) as cytoscape.StylesheetStyle[]);
+    });
+    beobachter.observe(document.documentElement, { attributeFilter: ["data-theme"] });
+    return () => beobachter.disconnect();
+  }, []);
 
   return (
     // Fuellt die Flaeche des Bereichs (Leitprinzip "nie scrollen") statt einer

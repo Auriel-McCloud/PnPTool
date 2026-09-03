@@ -20,9 +20,9 @@ import "./probe.css";
 
 /** Reihenfolge und Beschriftung wie auf dem Blatt. */
 const SPALTEN: { titel: string; kategorie: string; ton: string }[] = [
-  { titel: "Körperlich", kategorie: "AttributKörperlich", ton: "#ff6b4d" },
-  { titel: "Gesellschaftlich", kategorie: "AttributGesellschaftlich", ton: "#ffb648" },
-  { titel: "Geistig", kategorie: "AttributGeistig", ton: "#4d8bd8" },
+  { titel: "Körperlich", kategorie: "AttributKörperlich", ton: "var(--wert-koerperlich)" },
+  { titel: "Gesellschaftlich", kategorie: "AttributGesellschaftlich", ton: "var(--wert-gesellschaftlich)" },
+  { titel: "Geistig", kategorie: "AttributGeistig", ton: "var(--wert-geistig)" },
 ];
 
 /**
@@ -143,7 +143,7 @@ export function Probe({
 
           {partnerKategorie && (
             <section>
-              <h3 className="pr-spalte-titel" style={{ "--cb-ton": "#3ddc84" } as React.CSSProperties}>
+              <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--wert-neuroweaving)" } as React.CSSProperties}>
                 {wahl.kategorie === "NeuroWeavingWert" ? "Womit?" : "NeuroWeaving-Wert"}
               </h3>
               {katalog
@@ -157,7 +157,7 @@ export function Probe({
                       type="button"
                       className="pr-attribut"
                       data-gewaehlt={gewaehlt}
-                      style={{ "--cb-ton": "#3ddc84" } as React.CSSProperties}
+                      style={{ "--cb-ton": "var(--wert-neuroweaving)" } as React.CSSProperties}
                       onClick={() => setAttribut(gewaehlt ? null : { name: t.name, wert })}
                     >
                       <span className="pr-attribut-name">{t.name}</span>

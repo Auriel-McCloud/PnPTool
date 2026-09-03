@@ -13,8 +13,8 @@
   min-height: 0;
   gap: 12px;
   /* Blau/Rot statt der üblichen Bereichsfarbe */
-  --lu-ja: #4da3ff;
-  --lu-nein: #ff4d6b;
+  --lu-ja: var(--ja);
+  --lu-nein: var(--nein);
 }
 
 .lu-kopf {

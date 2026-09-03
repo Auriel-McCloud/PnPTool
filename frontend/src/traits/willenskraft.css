@@ -31,29 +31,29 @@
 }
 
 .wk-ja {
-  border-color: #4da3ff;
-  color: #4da3ff;
-  background: color-mix(in srgb, #4da3ff 12%, transparent);
+  border-color: var(--ja);
+  color: var(--ja);
+  background: color-mix(in srgb, var(--ja) 12%, transparent);
 }
 
 .wk-ja:hover:not(:disabled) {
-  border-color: #4da3ff;
-  color: #4da3ff;
-  background: color-mix(in srgb, #4da3ff 22%, transparent);
-  box-shadow: 0 0 18px -6px #4da3ff;
+  border-color: var(--ja);
+  color: var(--ja);
+  background: color-mix(in srgb, var(--ja) 22%, transparent);
+  box-shadow: 0 0 18px -6px var(--ja);
 }
 
 .wk-nein {
-  border-color: #ff4d6b;
-  color: #ff4d6b;
-  background: color-mix(in srgb, #ff4d6b 12%, transparent);
+  border-color: var(--nein);
+  color: var(--nein);
+  background: color-mix(in srgb, var(--nein) 12%, transparent);
 }
 
 .wk-nein:hover:not(:disabled) {
-  border-color: #ff4d6b;
-  color: #ff4d6b;
-  background: color-mix(in srgb, #ff4d6b 22%, transparent);
-  box-shadow: 0 0 18px -6px #ff4d6b;
+  border-color: var(--nein);
+  color: var(--nein);
+  background: color-mix(in srgb, var(--nein) 22%, transparent);
+  box-shadow: 0 0 18px -6px var(--nein);
 }
 
 /* Wodurch sie zurückkommt — leiser als die Frage, aber lesbar. */

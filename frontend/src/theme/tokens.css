@@ -1,0 +1,181 @@
+/* ===================================================================
+   Theme-Tokens — die eine Quelle der Wahrheit fuer das Aussehen.
+   Konzept: docs/theming.md
+
+   REGEL: Ausserhalb dieses Ordners steht KEIN Farbwert mehr direkt im
+   Code. Weder in CSS (#hex, rgb(), hsl()) noch in TSX. Wer eine Farbe
+   braucht, nimmt ein Token von hier. Nur so kann ein zweites Theme
+   (Hextechpunk) die komplette Oberflaeche umfaerben, ohne dass irgendwo
+   ein vergessener Wert im alten Ton stehen bleibt.
+
+   Diese Datei definiert die Tokens UND haelt die Werte des
+   Standard-Themes "cyberpunk". Weitere Themes ueberschreiben nur die
+   Werte, nie die Namen — siehe hextechpunk.css.
+
+   Aufbau der Tokens:
+     1. Palette   — die rohen Farben eines Themes. Nur hier stehen Hexwerte.
+     2. Rollen    — was eine Farbe BEDEUTET (aktiv, geheim, gefahr).
+     3. Bereiche  — Leitfarbe je Menuepunkt.
+     4. Werte     — Farbe je Charakterblatt-Wertegruppe.
+     5. Kulisse   — Hintergrundbild, Schimmer, Ladebalken.
+     6. Form      — Radius, Maße, Schrift, Glut-Staerke.
+   =================================================================== */
+
+:root,
+[data-theme="cyberpunk"] {
+  /* == 1. Palette ==================================================== */
+  /* Nur an dieser Stelle stehen rohe Farbwerte. Alles Weitere verweist. */
+  --p-schwarz: #08080d;
+  --p-nacht: #101018;
+  --p-nacht-hoch: #171722;
+  --p-nacht-aktiv: #1e1e2c;
+  --p-grau: #26263a;
+  --p-grau-hell: #363650;
+  --p-weiss: #e8e8f0;
+  --p-weiss-leise: #8a8aa0;
+  --p-weiss-aus: #5a5a70;
+
+  --p-cyan: #00e5ff;
+  --p-magenta: #ff2d95;
+  --p-gruen: #3ddc84;
+  --p-bernstein: #ffb648;
+  --p-blau: #4da3ff;
+  --p-rot: #ff4d6b;
+
+  --p-blau-tief: #4d8bd8;
+  --p-gruen-tief: #2fa96a;
+  --p-orange: #d4894b;
+  --p-violett: #a865d8;
+  --p-violett-hell: #c76bff;
+  --p-indigo: #7c8fe8;
+  --p-koralle: #ff6b4d;
+  --p-tuerkis: #35e0d0;
+
+  /* == 2. Rollen ===================================================== */
+  /* Flaechen, von tief nach hoch */
+  --grund: var(--p-schwarz);
+  --flaeche: var(--p-nacht);
+  --flaeche-hoch: var(--p-nacht-hoch);
+  --flaeche-aktiv: var(--p-nacht-aktiv);
+
+  /* Als RGB-Tripel, damit Halbtransparenz ohne festes rgba() geht:
+     rgb(var(--grund-rgb) / 0.86) statt rgba(8, 8, 13, 0.86). */
+  --grund-rgb: 8 8 13;
+  --flaeche-rgb: 16 16 24;
+
+  /* Linien */
+  --linie: var(--p-grau);
+  --linie-hell: var(--p-grau-hell);
+
+  /* Text */
+  --text: var(--p-weiss);
+  --text-leise: var(--p-weiss-leise);
+  --text-aus: var(--p-weiss-aus);
+
+  /* Bedeutung tragende Akzente — sparsam einsetzen */
+  --neon: var(--p-cyan); /* aktiv, Fokus, Primaeraktion */
+  --neon-schwach: color-mix(in srgb, var(--neon) 14%, transparent);
+  --signal: var(--p-magenta); /* SL-geheim, Warnung, Loeschen */
+  --signal-schwach: color-mix(in srgb, var(--signal) 14%, transparent);
+  --gut: var(--p-gruen); /* Bestaetigung */
+  --warn: var(--p-bernstein); /* Achtung, Vorschau-Modus */
+
+  /* Entscheidungspaar: durchgehend gleiche Bedeutung in allen Rueckfragen
+     (Willenskraft, Wegwerfen, Level-Up). Vorher dreimal einzeln kodiert. */
+  --ja: var(--p-blau);
+  --nein: var(--p-rot);
+
+  /* Entitaetsfarben — Graph, Badges und Bereiche halten sich daran */
+  --kind-person: var(--p-blau-tief);
+  --kind-ort: var(--p-gruen-tief);
+  --kind-event: var(--p-orange);
+  --kind-gegenstand: var(--p-violett);
+
+  /* == 3. Bereiche =================================================== */
+  /* Leitfarbe je Menuepunkt. Faerbt Symbol, fliegenden Namen, Ladebalken
+     und die Neonroehren der Ansicht. Lag vorher in App.tsx/SpielerAnsicht.tsx. */
+  --bereich-pcs: var(--kind-person);
+  --bereich-npcs: var(--kind-event);
+  --bereich-orte: var(--kind-ort);
+  --bereich-events: var(--kind-event);
+  --bereich-verbindungen: var(--p-indigo);
+  --bereich-gegenstaende: var(--kind-gegenstand);
+  --bereich-begleiter: var(--p-violett-hell);
+  --bereich-graph: var(--kind-person);
+  --bereich-zugang: var(--gut);
+  --bereich-kampf: var(--p-rot);
+  --bereich-regeln: var(--warn);
+  --bereich-notizen: var(--gut);
+  --bereich-blatt: var(--warn);
+  --bereich-inventar: var(--kind-gegenstand);
+  --bereich-fahrzeuge: var(--p-koralle);
+  --bereich-kontakte: var(--neon);
+  --bereich-wiki: var(--neon);
+
+  /* == 4. Wertegruppen (Charakterblatt) ============================== */
+  /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,
+     Charaktererstellung.tsx und Probe.tsx. */
+  --wert-koerperlich: var(--p-koralle);
+  --wert-gesellschaftlich: var(--warn);
+  --wert-geistig: var(--kind-person);
+  --wert-fertigkeit: var(--neon);
+  --wert-arete: var(--p-violett-hell);
+  --wert-sphaere: var(--kind-gegenstand);
+  --wert-neuroweaving: var(--gut);
+  --wert-hintergrund: var(--text-leise);
+
+  /* Zustandsleisten */
+  --track-gesundheit: var(--nein);
+  --track-willenskraft: var(--warn);
+  --track-ice: var(--p-tuerkis);
+
+  /* Verwundungsschleier am Bildschirmrand */
+  --verwundung: 180 12 40;
+  --verwundung-tief: 150 10 34;
+
+  /* == 5. Kulisse ==================================================== */
+  /* Hintergrundbild pro Kampagne. "none" = nur Grundfarbe + Schimmer. */
+  --hintergrund-bild: none;
+  --hintergrund-position: center;
+  --hintergrund-groesse: cover;
+  /* Abdunklung ueber dem Bild, damit Text und Neonraender lesbar bleiben */
+  --hintergrund-schleier: 0.82;
+
+  /* Dezenter Schimmer, damit Schwarz nicht tot wirkt */
+  --schimmer-oben: color-mix(in srgb, var(--neon) 5%, transparent);
+  --schimmer-unten: color-mix(in srgb, var(--signal) 4%, transparent);
+
+  /* Der Balken, der beim Bereichswechsel herabfaehrt. Ohne eigenen Wert
+     nimmt er die Leitfarbe des Zielbereichs. */
+  --ladebalken: var(--bereich-farbe, var(--neon));
+  --ladebalken-deckkraft: 0.55;
+
+  /* Seltenes Neonflackern ueber der ganzen Oberflaeche */
+  --flacker-a: var(--neon);
+  --flacker-b: var(--signal);
+  --flacker-c: var(--text);
+
+  /* == 6. Form ======================================================= */
+  --radius: 4px;
+  --menue-breite: 232px;
+  --rail-breite: 48px;
+  --leiste-hoehe: 52px;
+  --tipp: 44px; /* Touch-Mindestgroesse, Tablet ist Zielgeraet */
+
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --versalien: 0.14em; /* Laufweite fuer Grossbuchstaben-Ueberschriften */
+
+  /* Wie stark Neonroehren glimmen. Ein ruhigeres Theme dreht das herunter,
+     ohne dass eine einzige Regel angefasst werden muss. */
+  --glut-aussen: 8px;
+  --glut-innen: 14px;
+  --roehre-breite: 1px;
+
+  /* Schatten frei stehender Fenster */
+  --fenster-schatten:
+    0 0 0 1px rgb(0 0 0 / 0.8),
+    0 24px 60px -12px rgb(0 0 0 / 0.85),
+    0 0 24px -8px var(--bereich-farbe, var(--neon));
+  --abdunkelung: rgb(4 4 8 / 0.72);
+}

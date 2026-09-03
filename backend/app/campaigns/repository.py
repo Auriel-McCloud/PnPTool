@@ -51,6 +51,10 @@ async def campaign_owned_by(campaign_id: str, gm_id: str) -> bool:
 # weitere (Munitionsverfolgung, Erfahrungspunkte-Automatik ...) kommen hier
 # dazu, ohne dass Schema oder Routen sich ändern müssen.
 EINSTELLUNGEN_DEFAULTS: dict = {
+    # Der Messenger ist eine optionale In-World-Funktion und wird pro
+    # Kampagne ausdrücklich aktiviert. Bestandskampagnen bleiben dadurch
+    # kompatibel und D&D-Kampagnen bekommen keinen unpassenden Chat.
+    "messengerAktiv": False,
     # Zeigt Gewicht und Kapazität an. Rein informativ — nichts wird verhindert,
     # der Balken färbt sich nur rot. Die Spielleitung zieht die Konsequenzen.
     "gewichtAktiv": True,

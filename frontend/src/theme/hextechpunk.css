@@ -1,0 +1,74 @@
+/* ===================================================================
+   Theme "hextechpunk" — Piltover statt Neon-Gasse.
+   Konzept: docs/theming.md
+
+   Ueberschreibt ausschliesslich WERTE aus tokens.css, niemals Namen.
+   Genau das ist der Beweis, dass der Theme-Umbau traegt: keine einzige
+   Regel in commlink.css, charakterblatt.css oder den Komponenten muss
+   dafuer angefasst werden.
+
+   Gestalterische Leitidee, bewusst anders als Cyberpunk:
+   - Kristall statt Gasentladung: das Leuchten ist ruhiger und kaelter,
+     dafuer traegt Gold die Bedeutung "wertvoll/geheim" statt Magenta.
+   - Blaugrund mit Messing: tiefes Marineblau als Kulisse, Gold als
+     Gegenpol — Piltovers Hextech-Werkstatt, nicht der Regen im Slum.
+   - Kantiger: kleinerer Radius, denn Hextech ist facettiert (Hexagon),
+     nicht abgerundet.
+   =================================================================== */
+
+[data-theme="hextechpunk"] {
+  /* == 1. Palette ==================================================== */
+  --p-schwarz: #070b16;
+  --p-nacht: #0f1729;
+  --p-nacht-hoch: #16223c;
+  --p-nacht-aktiv: #1d2d4e;
+  --p-grau: #27385c;
+  --p-grau-hell: #3a5183;
+  --p-weiss: #e6ecf9;
+  --p-weiss-leise: #92a6c9;
+  --p-weiss-aus: #5f7093;
+
+  /* Hextech-Kristall statt Neonroehre */
+  --p-cyan: #56d8ff;
+  /* Gold traegt hier, was im Cyberpunk das Magenta trug */
+  --p-magenta: #f0c46a;
+  --p-gruen: #52d6a4;
+  --p-bernstein: #f2a63c;
+  --p-blau: #6ba9ff;
+  --p-rot: #e8596d;
+
+  --p-blau-tief: #5b93e8;
+  --p-gruen-tief: #38b189;
+  --p-orange: #d69a52;
+  --p-violett: #9b7ede;
+  --p-violett-hell: #b995ff;
+  --p-indigo: #7f96e0;
+  --p-koralle: #ef7a52;
+  --p-tuerkis: #46d4d0;
+
+  /* Halbtransparenz-Tripel muessen zur neuen Palette passen */
+  --grund-rgb: 7 11 22;
+  --flaeche-rgb: 15 23 41;
+
+  /* == 5. Kulisse ==================================================== */
+  /* Gold oben, Kristallblau unten — Werkstattlicht statt Neonreklame */
+  --schimmer-oben: color-mix(in srgb, var(--p-magenta) 6%, transparent);
+  --schimmer-unten: color-mix(in srgb, var(--neon) 6%, transparent);
+
+  --verwundung: 200 40 60;
+  --verwundung-tief: 150 28 46;
+
+  /* == 6. Form ======================================================= */
+  /* Facettiert statt abgerundet */
+  --radius: 2px;
+
+  /* Kristall glimmt gleichmaessiger und weniger grell als eine Gasroehre */
+  --glut-aussen: 10px;
+  --glut-innen: 18px;
+
+  --fenster-schatten:
+    0 0 0 1px rgb(0 0 0 / 0.7),
+    0 24px 60px -12px rgb(2 6 16 / 0.9),
+    0 0 30px -10px var(--bereich-farbe, var(--neon));
+  --abdunkelung: rgb(4 8 18 / 0.74);
+}

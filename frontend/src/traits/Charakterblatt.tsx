@@ -14,14 +14,14 @@ import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
 const TON: Record<string, string> = {
-  AttributKörperlich: "#ff6b4d",
-  AttributGesellschaftlich: "#ffb648",
-  AttributGeistig: "#4d8bd8",
-  Fertigkeit: "#00e5ff",
-  Arete: "#c76bff",
-  Sphäre: "#a865d8",
-  NeuroWeavingWert: "#3ddc84",
-  NeuroWeaving: "#3ddc84",
+  AttributKörperlich: "var(--wert-koerperlich)",
+  AttributGesellschaftlich: "var(--wert-gesellschaftlich)",
+  AttributGeistig: "var(--wert-geistig)",
+  Fertigkeit: "var(--wert-fertigkeit)",
+  Arete: "var(--wert-arete)",
+  Sphäre: "var(--wert-sphaere)",
+  NeuroWeavingWert: "var(--wert-neuroweaving)",
+  NeuroWeaving: "var(--wert-neuroweaving)",
 };
 
 const WEG_TITEL: Record<string, string> = {
@@ -402,7 +402,7 @@ export function Charakterblatt({
               schwer: u.schadenSchwer,
               aggraviert: u.schadenAggraviert,
             }}
-            ton="#ff4d6b"
+            ton="var(--track-gesundheit)"
             onKlick={aenderbar ? schadenWeiterschalten : undefined}
           />
         </div>
@@ -421,7 +421,7 @@ export function Charakterblatt({
           <Kaestchen
             max={u.willenskraftMax}
             verbraucht={u.willenskraftVerbraucht}
-            ton="#ffb648"
+            ton="var(--wert-gesellschaftlich)"
             onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
           />
         </div>
@@ -434,7 +434,7 @@ export function Charakterblatt({
           {u.offline ? (
             <span className="cb-hinweis">Kein Commlink — nicht erreichbar, aber auch nicht angreifbar.</span>
           ) : (
-            <Kaestchen max={u.iceMax} verbraucht={u.iceSchaden} ton="#35e0d0" />
+            <Kaestchen max={u.iceMax} verbraucht={u.iceSchaden} ton="var(--track-ice)" />
           )}
         </div>
         <div className="cb-spur">
@@ -463,7 +463,7 @@ export function Charakterblatt({
           Abschnitt, weil sie nicht zum Katalog gehören und verschwinden,
           sobald der Gegenstand abgelegt wird. */}
       {bogen.ausruestungsfertigkeiten.length > 0 && (
-        <section className="cb-gruppe" style={{ "--cb-ton": "#c76bff" } as React.CSSProperties}>
+        <section className="cb-gruppe" style={{ "--cb-ton": "var(--wert-arete)" } as React.CSSProperties}>
           <h3 className="cb-gruppe-titel">Ausrüstungsfertigkeiten</h3>
           <div className="cb-werte">
             {bogen.ausruestungsfertigkeiten.map((f) => (

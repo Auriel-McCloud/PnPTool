@@ -113,7 +113,7 @@ export function Kampfkarte({
               schwer: u.schadenSchwer,
               aggraviert: u.schadenAggraviert,
             }}
-            ton="#ff4d6b"
+            ton="var(--track-gesundheit)"
             onKlick={
               aenderbar
                 ? async (index) => {
@@ -135,7 +135,7 @@ export function Kampfkarte({
           <Kaestchen
             max={u.willenskraftMax}
             verbraucht={u.willenskraftVerbraucht}
-            ton="#ffb648"
+            ton="var(--wert-gesellschaftlich)"
             onKlick={
               aenderbar
                 ? (index) => {
