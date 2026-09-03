@@ -386,7 +386,80 @@
    Unter 1000px hat ein dreispaltiges Layout keinen Sinn mehr. Baum und
    Verzeichnis weichen; erreichbar bleiben sie über die Knöpfe im Kopf. */
 
+/* --- Leerzustand -------------------------------------------------------
+   Ein leeres Wiki muss sagen, wie man anfaengt. Ein kleines "+" in der
+   Seitenspalte reicht dafuer nicht — auf schmalen Geraeten ist die Spalte
+   ueberdies gar nicht sichtbar.                                          */
+
+.wk-leer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.wk-leer-titel {
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  margin: 0;
+}
+
+.wk-leer-text {
+  max-width: 420px;
+  color: var(--text-aus);
+  font-size: 13px;
+  margin: 0;
+}
+
+.wk-leer-knopf {
+  margin-top: 4px;
+  padding: 10px 18px;
+  color: var(--bereich-farbe, var(--neon));
+  border: 1px solid var(--bereich-farbe, var(--neon));
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 12%, transparent);
+  letter-spacing: 0.06em;
+}
+
+.wk-leer-knopf:hover {
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 24%, transparent);
+  box-shadow: 0 0 var(--glut-aussen) -2px var(--bereich-farbe, var(--neon));
+  color: var(--bereich-farbe, var(--neon));
+}
+
+/* Schalter, die nur auf schmalen Geraeten gebraucht werden */
+.wk-nur-schmal {
+  display: none;
+}
+
+.wk-schublade-zu {
+  display: none;
+}
+
+/* --- Schmale Geräte ----------------------------------------------------
+   Unter 1000px hat ein dreispaltiges Layout keinen Sinn mehr. Baum und
+   Verzeichnis weichen aus dem Fluss und fahren bei Bedarf als Schublade
+   darueber — erreichbar ueber die Schalter in der Kopfzeile.
+
+   Wichtig: ohne diese Schalter waere am Tablet der "+"-Knopf unerreichbar
+   und man koennte ueberhaupt keine Seite anlegen.                        */
+
 @media (max-width: 999px) {
+  .wk {
+    position: relative;
+  }
+
+  .wk-nur-schmal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .wk-baum,
   .wk-verzeichnis {
     display: none;
@@ -398,8 +471,10 @@
     position: absolute;
     inset: 0 auto 0 0;
     z-index: 30;
-    width: 260px;
+    width: min(280px, 82vw);
     background: var(--flaeche);
+    border: 1px solid var(--linie);
+    border-radius: var(--radius);
     padding: 12px;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.5);
   }
@@ -407,5 +482,10 @@
   .wk-verzeichnis[data-offen="true"] {
     inset: 0 0 0 auto;
     box-shadow: -4px 0 24px rgb(0 0 0 / 0.5);
+  }
+
+  .wk-baum[data-offen="true"] .wk-schublade-zu,
+  .wk-verzeichnis[data-offen="true"] .wk-schublade-zu {
+    display: inline-flex;
   }
 }

@@ -216,6 +216,34 @@ dafür: Seiteninhalt ist als TipTap-JSON adressierbar, Verweise sind
 maschinenlesbar, die Werkzeugleiste hat Platz. **Noch nichts davon
 implementiert** — kein Modell, kein Endpunkt.
 
+### Einstieg: der Leerzustand (nachgebessert 03.09.2026)
+
+Beim ersten Test durch Mark war das Wiki **nicht bedienbar**: *"Aber wie
+erstelle ich etwas im Wiki? Die Seite ist komplett leer."* Zwei echte Fehler:
+
+1. **Unter 1000px blendet das CSS Baum und Verzeichnis aus** — und damit den
+   `+`-Knopf, der der einzige Weg zum Anlegen war. Der ausgeklappte Zustand
+   war zwar gestylt, aber **die Schalter zum Ausklappen fehlten**. Auf dem
+   Tablet (768px, Marks Zielgerät) gab es dadurch buchstäblich keine
+   Möglichkeit, eine Seite zu erstellen.
+2. Selbst am grossen Bildschirm stand nur "Keine Seite gewählt." — ein
+   winziges `+` in der Seitenspalte ist kein Einstieg.
+
+Behoben:
+- **Leerzustand in der Mittelspalte** mit grossem "+ Erste Seite anlegen"
+  und einem Satz, wozu das Wiki da ist. Auf jeder Breite sichtbar.
+- **☰ und ☷ in der Kopfzeile** (`.wk-nur-schmal`, nur unter 1000px) fahren
+  Baum bzw. Verzeichnis als Schublade darüber. Nach der Seitenwahl schliesst
+  die Schublade wieder.
+- **`window.prompt` ersetzt** durch `TitelFenster.tsx`. Der Prompt sieht
+  nicht nur fremd aus, er wird auf Tablets und in eingebetteten Ansichten
+  teils ganz unterdrückt — dann liesse sich gar keine Seite anlegen.
+
+*Lehre:* Eine Media-Query, die Bedienelemente ausblendet, braucht immer einen
+Gegenpart, der sie zurückholt. Der E2E-Test lief grün, weil er die API prüfte,
+nicht die Oberfläche — deshalb jetzt zusätzlich ein UI-Durchstich über CDP bei
+1400/768/412px.
+
 ### Geprüft
 
 Backend: 181 Tests (28 neue fürs Wiki, DB-frei). End-to-End gegen die
@@ -228,6 +256,11 @@ vorher = nachher):
 - "bis hierher" gab 3 von 4 Seiten frei, Kapitel 2 blieb geheim → 404
 - Rückverweis am NPC gefunden
 - nach Löschen des Kapitels lebt die Szene weiter
+
+Oberfläche über CDP bei 1400/768/412px: Seite anlegen klappt auf jeder Breite
+(Desktop über den Leerzustand-Knopf, Tablet/Handy über die Schublade), der
+Titel-Dialog erscheint und die Seite wird wirklich gespeichert. Testseiten
+danach restlos entfernt.
 
 ## UI-Polish-Durchgang (28.08.2026) — Sichtbarkeit v2 + Rich-Text
 

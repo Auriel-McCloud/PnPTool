@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WikiEditor } from "./WikiEditor";
+import { TitelFenster } from "./TitelFenster";
 import {
   bisHierherFreigeben,
   getBaum,
@@ -90,6 +91,14 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
   const [seite, setSeite] = useState<SeiteMitVerzeichnis | null>(null);
   const [zustand, setZustand] = useState<Zustand>("ruhig");
   const [fehler, setFehler] = useState<string | null>(null);
+  // Unter 1000px weichen Baum und Verzeichnis aus dem Layout; ohne diese
+  // Schalter waeren sie am Tablet gar nicht erreichbar — und mit ihnen der
+  // einzige Weg, ueberhaupt eine Seite anzulegen.
+  const [baumOffen, setBaumOffen] = useState(false);
+  const [verzeichnisOffen, setVerzeichnisOffen] = useState(false);
+  // Anlege-Fenster: { parentId } wenn offen, sonst null. Eigener Zustand
+  // statt window.prompt — das wird auf Tablets teils unterdrueckt.
+  const [anlegen, setAnlegen] = useState<{ parentId: string | null } | null>(null);
 
   const speicherTimer = useRef<number | undefined>(undefined);
   // Was noch nicht geschrieben ist. Als Ref, damit ein Seitenwechsel den
@@ -162,13 +171,12 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
     };
   }, [jetztSpeichern]);
 
-  async function neueSeite(parentId: string | null) {
-    const titel = window.prompt(parentId ? "Titel der Unterseite" : "Titel der neuen Seite");
-    if (!titel?.trim()) return;
+  async function seiteWirklichAnlegen(titel: string, parentId: string | null) {
     try {
-      const s = await seiteAnlegen(campaignId, { titel: titel.trim(), parentId });
+      const s = await seiteAnlegen(campaignId, { titel, parentId });
       await baumLaden();
       setAktiv(s.id);
+      setBaumOffen(false);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Seite konnte nicht angelegt werden");
     }
@@ -238,11 +246,11 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
 
   return (
     <div className="wk">
-      <aside className="wk-baum">
+      <aside className="wk-baum" data-offen={baumOffen}>
         <div className="wk-baum-kopf">
           <span className="wk-baum-titel">Seiten</span>
           {!nurLesen && (
-            <button type="button" className="wk-werkzeug" onClick={() => neueSeite(null)} title="Neue Seite">
+            <button type="button" className="wk-werkzeug" onClick={() => setAnlegen({ parentId: null })} title="Neue Seite">
               +
             </button>
           )}
@@ -254,7 +262,16 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
             </p>
           )}
           {baum.map((k) => (
-            <Zweig key={k.id} knoten={k} aktiv={aktiv} tiefe={0} onWaehlen={setAktiv} />
+            <Zweig
+              key={k.id}
+              knoten={k}
+              aktiv={aktiv}
+              tiefe={0}
+              onWaehlen={(id) => {
+                setAktiv(id);
+                setBaumOffen(false);
+              }}
+            />
           ))}
         </div>
       </aside>
@@ -266,11 +283,42 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
           </p>
         )}
 
-        {!seite && <p style={{ color: "var(--text-leise)" }}>Keine Seite gewählt.</p>}
+        {!seite && baum.length === 0 && (
+          <div className="wk-leer">
+            <p className="wk-leer-titel">Das Wiki ist noch leer</p>
+            <p className="wk-leer-text">
+              Hier entstehen Geschichten, Kapitel und Session-Notizen. Verknüpfe darin NPCs, Orte
+              und Events; Überschriften werden automatisch zum Inhaltsverzeichnis.
+            </p>
+            {!nurLesen ? (
+              <button type="button" className="wk-leer-knopf" onClick={() => setAnlegen({ parentId: null })}>
+                + Erste Seite anlegen
+              </button>
+            ) : (
+              <p className="wk-leer-text">Die Spielleitung hat noch nichts freigegeben.</p>
+            )}
+          </div>
+        )}
+
+        {!seite && baum.length > 0 && (
+          <div className="wk-leer">
+            <p className="wk-leer-text">Links eine Seite wählen.</p>
+          </div>
+        )}
 
         {seite && (
           <>
             <div className="wk-kopf">
+              {/* Nur unter 1000px sichtbar (siehe wiki.css): dort weichen die
+                  Spalten aus dem Layout und waeren sonst unerreichbar. */}
+              <button
+                type="button"
+                className="wk-werkzeug wk-nur-schmal"
+                onClick={() => setBaumOffen((o) => !o)}
+                title="Seitenbaum"
+              >
+                ☰
+              </button>
               <input
                 className="wk-titel-feld"
                 value={seite.titel}
@@ -286,7 +334,7 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
 
               {!nurLesen && (
                 <>
-                  <button type="button" className="wk-werkzeug" onClick={() => neueSeite(seite.id)} title="Unterseite anlegen">
+                  <button type="button" className="wk-werkzeug" onClick={() => setAnlegen({ parentId: seite.id })} title="Unterseite anlegen">
                     + Unterseite
                   </button>
                   <button
@@ -324,6 +372,14 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
                   </button>
                 </>
               )}
+              <button
+                type="button"
+                className="wk-werkzeug wk-nur-schmal"
+                onClick={() => setVerzeichnisOffen((o) => !o)}
+                title="Inhaltsverzeichnis"
+              >
+                ☷
+              </button>
             </div>
 
             <WikiEditor
@@ -337,7 +393,7 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
         )}
       </section>
 
-      <aside className="wk-verzeichnis">
+      <aside className="wk-verzeichnis" data-offen={verzeichnisOffen}>
         <div className="wk-verzeichnis-titel">Inhalt</div>
         <div className="wk-verzeichnis-liste">
           {(!seite || seite.inhaltsverzeichnis.length === 0) && (
@@ -358,6 +414,13 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
           ))}
         </div>
       </aside>
+
+      <TitelFenster
+        offen={anlegen !== null}
+        titel={anlegen?.parentId ? "Neue Unterseite" : "Neue Seite"}
+        onBestaetigen={(titel) => seiteWirklichAnlegen(titel, anlegen?.parentId ?? null)}
+        onSchliessen={() => setAnlegen(null)}
+      />
     </div>
   );
 }
