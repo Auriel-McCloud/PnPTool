@@ -1556,6 +1556,37 @@ Kopien zieht).
   Kiras Bestandsdaten unverändert — nur Browser-Klicktest selbst steht noch
   aus, die Funktionslogik ist aber vollständig bestätigt.
 
+## SL-Weltansicht in eigene Entitätsbereiche (03.09.2026)
+
+Die bisherige gemeinsame Weltansicht war eine lange Seite für Personen, Orte,
+Events und Verbindungen. Sie scrollte als einziger grosser Bereich und wurde
+bei mehreren Entitätstypen unübersichtlich. Die Spielleitung hat jetzt fünf
+fokussierte Commlink-Bereiche:
+
+- **PCs** — nur Personen mit `personType === "PC"`
+- **NPCs** — nur Personen mit `personType === "NPC"`
+- **Orte**
+- **Events**
+- **Verbindungen**
+
+`frontend/src/App.tsx` bildet diese Bereiche als eigene Menüpunkte ab und
+markiert sie wie Gegenstände und Graph als `statisch`. Der Inhalt wird dadurch
+nicht mehr über den Seitenkörper gescrollt. `frontend/src/entities/EntityManager.tsx`
+bekommt dafür den typisierten Parameter `ansicht` (`WeltAnsicht`) und rendert
+jeweils nur den gewählten Abschnitt in einer eigenen internen Scrollfläche.
+Die bisherige Gesamtansicht `"welt"` bleibt als Rückwärtskompatibilität im
+Komponentenvertrag erhalten, wird aber von der neuen Shell nicht mehr benutzt.
+
+In den PC-/NPC-Bereichen ist der Personentyp beim Anlegen fest vorgegeben und
+wird als passender `personType` gespeichert; in der alten Gesamtansicht bleibt
+die freie Auswahl erhalten. Die Verbindungs-Auswahl lädt weiterhin alle
+relevanten Entitäten, damit auch graph-sichtbare Gegenstände verknüpft werden
+können. Detail- und Charakterfenster behalten ihre eigenen Scrollflächen.
+
+**Geprüft:** Backend **139 Tests bestanden**, `npm run build` erfolgreich.
+Die bestehende Vite-Warnung zur Chunk-Grösse bleibt bestehen. Commit `9427d65`
+(`Weltansicht in eigene Entitätsbereiche aufgeteilt`) ist auf `origin/main`.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
@@ -1590,13 +1621,12 @@ Kopien zieht).
 
 ## Nächste Schritte
 
-*(Stand 02.09.2026. Seit dem letzten Eintrag dazugekommen: Fenstersystem, "nie scrollen" für Gegenstände und Graph, kompletter Spieler-Zugang inkl. Oberfläche, Aufbewahrungsorte und Gewicht, Kampfmodus, Charaktererstellung/Level Up, Begleiter/Fahrzeug-Blätter und Cyber-/Bio-/MagWare.)*
+*(Stand 03.09.2026. Seit dem letzten Eintrag dazugekommen: Fenstersystem, "nie scrollen" für Gegenstände und Graph, kompletter Spieler-Zugang inkl. Oberfläche, Aufbewahrungsorte und Gewicht, Kampfmodus, Charaktererstellung/Level Up, Begleiter-/Fahrzeug-Blätter, Cyber-/Bio-/MagWare und die fokussierte SL-Weltansicht.)*
 
-1. **Nächster konkreter UI-Schritt: Bereich "Welt" aufteilen und statisch machen** — aktuell scrollt er als einziger. PCs, NPCs, Orte und Events sollen eigene Bereiche bzw. Tabs bekommen; dafür sind Kacheln oder Tabelle, Blättern und Suche zu entscheiden. Nicht blind nach dem Gegenstands-Kachelmuster umbauen, solange die gewünschte Darstellung nicht bestätigt ist.
-2. **Phase 5 — Messenger und Kontakte** — Marks neue Idee ist in `docs/phase-5-messenger.md` beschrieben: gerichtetes Kontaktwissen mit abgestuften Freigaben (gesehen → gesprochen → Kontakt ausgetauscht), Nachrichten zwischen PCs/NPCs/Spielleitung, Persona-5-inspirierter Verlauf in einem eigenen, intern scrollenden Fenster und Live-Zustellung über WebSockets. Vor dem Bauen stehen die Regelentscheidungen zur Kontaktstufe und zur ein- oder beidseitigen Bestätigung an.
-3. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Waffen-/Rüstungswerte am Charakter, Riggen und weitere noch offene Begleiter-/Drohnenregeln.
-4. **Weitere offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Drogen→Wirkung/Dauer) + Upgrade-System · Regeln-Bereich.
-5. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel.
+1. **Phase 5 — Messenger und Kontakte** — Marks neue Idee ist in `docs/phase-5-messenger.md` beschrieben: gerichtetes Kontaktwissen mit abgestuften Freigaben (gesehen → gesprochen → Kontakt ausgetauscht), Nachrichten zwischen PCs/NPCs/Spielleitung, Persona-5-inspirierter Verlauf in einem eigenen, intern scrollenden Fenster und Live-Zustellung über WebSockets. Vor dem Bauen stehen die Regelentscheidungen zur Kontaktstufe und zur ein- oder beidseitigen Bestätigung an.
+2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Waffen-/Rüstungswerte am Charakter, Riggen und weitere noch offene Begleiter-/Drohnenregeln.
+3. **Weitere offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Drogen→Wirkung/Dauer) + Upgrade-System · Regeln-Bereich.
+4. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel.
 
 ### Phase 5: Messenger und Kontakte (02.09.2026, vorgemerkt)
 
