@@ -1,10 +1,24 @@
-"""API-nahe Vertragstests für Kontakte und Messenger."""
+"""API-nahe Vertragstests für Kontakte und Messenger.
+
+Diese Tests beschreiben den API-Vertrag, BEVOR er gebaut ist (TDD-Vorlage für
+Phase 5). Solange `app.kontakte.routes` fehlt, wird das ganze Modul
+übersprungen — sonst scheitert schon das Einsammeln der Tests und die
+gesamte Suite startet nicht mehr.
+
+Sobald die Messenger-API existiert, greift der Skip von selbst nicht mehr
+und die Tests laufen an.
+"""
 
 import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import HTTPException
+
+pytest.importorskip(
+    "app.kontakte.routes",
+    reason="Messenger-API noch nicht gebaut — Vorlage für Phase 5",
+)
 
 from app.auth.dependencies import Viewer
 from app.kontakte.routes import require_messenger_active
