@@ -16,7 +16,7 @@ import { WikiAnsicht } from "./wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
 import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
-import { RegelnAnsicht } from "./regeln/RegelnAnsicht";
+import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
@@ -46,12 +46,12 @@ const BEREICHE: Bereich[] = [
   { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "var(--bereich-kampf)" },
   // Das Kampagnen-Wiki: Geschichten, Kapitel, Session-Notizen (docs/produktvision-wiki.md)
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
-  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "var(--bereich-regeln)" },
+  { id: "augments", name: "Augments", symbol: "⚕", farbe: "var(--bereich-regeln)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
 const TITEL: Record<string, string> = {
-  regeln: "Regeln und Körperkarte",
+  augments: "Körperkarte: wo sitzt welches Implantat",
   pcs: "Spielercharaktere",
   npcs: "Nichtspielercharaktere",
   orte: "Orte",
@@ -156,7 +156,7 @@ function Dashboard() {
         bereich === "begleiter" ||
         bereich === "kampf" ||
         bereich === "wiki" ||
-        bereich === "regeln"
+        bereich === "augments"
       }
     >
       {loading && <p style={{ color: "var(--text-leise)" }}>Lade Kampagnen…</p>}
@@ -186,8 +186,8 @@ function Dashboard() {
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
           {bereich === "wiki" && <WikiAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
 
-          {/* Regeln: Koerperkarte (wo sitzt welches Implantat) + Erklaerungen. */}
-          {bereich === "regeln" && <RegelnAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {/* Augments: Koerperkarte (wo sitzt welches Implantat). */}
+          {bereich === "augments" && <AugmentsAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

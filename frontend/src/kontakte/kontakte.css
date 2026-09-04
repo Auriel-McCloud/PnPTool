@@ -1,0 +1,285 @@
+/*
+ * Kontakte und Messenger — Commlink-Optik.
+ *
+ * Nur Theme-Tokens, keine harten Farbwerte (docs/theming.md).
+ */
+
+.ko-huelle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-2);
+  min-height: 0;
+}
+
+.ko-leise {
+  color: var(--text-leise);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.ko-fehler {
+  color: var(--warn);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ Verzeichnis */
+
+.ko-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1);
+}
+
+.ko-eintrag {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--luft-2);
+  padding: var(--luft-1) var(--luft-2);
+  border: 1px solid color-mix(in srgb, var(--neon) 22%, var(--grund));
+  border-radius: var(--radius-1);
+  background: color-mix(in srgb, var(--neon) 4%, var(--grund));
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.ko-eintrag:hover {
+  border-color: color-mix(in srgb, var(--neon) 55%, var(--grund));
+  background: color-mix(in srgb, var(--neon) 9%, var(--grund));
+}
+
+.ko-bild {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--radius-1);
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--neon) 35%, var(--grund));
+}
+
+.ko-bild-leer {
+  display: grid;
+  place-items: center;
+  color: var(--text-leise);
+  background: color-mix(in srgb, var(--neon) 8%, var(--grund));
+}
+
+.ko-namen {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ko-alias {
+  display: flex;
+  align-items: center;
+  gap: var(--luft-1);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Der echte Name — nur sichtbar, wenn die SL ihn freigegeben hat. */
+.ko-echt {
+  color: var(--neon);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.ko-ungelesen {
+  font-style: normal;
+  font-size: 0.72rem;
+  min-width: 1.15rem;
+  text-align: center;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: var(--neon);
+  color: var(--grund);
+}
+
+.ko-stufe {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.ko-chatzeichen {
+  color: var(--neon);
+}
+
+/* --------------------------------------------------------------- Steckbrief */
+
+.ko-grossbild {
+  width: 100%;
+  max-height: 14rem;
+  object-fit: cover;
+  border-radius: var(--radius-1);
+  border: 1px solid color-mix(in srgb, var(--neon) 30%, var(--grund));
+}
+
+.ko-beschreibung {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ko-aliaszeile {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--luft-1);
+}
+
+.ko-aliaszeile label {
+  font-size: 0.78rem;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.ko-aliaszeile input {
+  min-width: 0;
+}
+
+.ko-anfrage {
+  align-self: flex-start;
+}
+
+/* -------------------------------------------------------------------- Chat */
+
+.ko-chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-2);
+  min-height: 0;
+}
+
+/*
+ * Der Verlauf ist die EINE Stelle, die scrollen darf — die Hauptansicht
+ * bleibt beim „nie scrollen"-Grundsatz (docs/ui-konzept.md).
+ */
+.ko-verlauf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1);
+  max-height: 22rem;
+  overflow-y: auto;
+  padding-right: var(--luft-1);
+}
+
+.ko-blase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  max-width: 78%;
+  padding: var(--luft-1) var(--luft-2);
+  border-radius: var(--radius-1);
+  border: 1px solid color-mix(in srgb, var(--neon) 20%, var(--grund));
+  background: color-mix(in srgb, var(--neon) 5%, var(--grund));
+}
+
+/* Eigene Nachrichten rechts, fremde links. */
+.ko-blase[data-eigen="true"] {
+  align-self: flex-end;
+  border-color: color-mix(in srgb, var(--neon) 45%, var(--grund));
+  background: color-mix(in srgb, var(--neon) 13%, var(--grund));
+}
+
+.ko-absender {
+  font-size: 0.72rem;
+  color: var(--neon);
+  letter-spacing: 0.04em;
+}
+
+.ko-text {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ko-zeit {
+  font-size: 0.68rem;
+  color: var(--text-leise);
+  align-self: flex-end;
+}
+
+.ko-eingabe {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--luft-1);
+  align-items: end;
+}
+
+.ko-eingabe textarea {
+  resize: vertical;
+  min-height: 2.6rem;
+  font: inherit;
+}
+
+/* ----------------------------------------------------------- SL-Verwaltung */
+
+.ko-anfragen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1);
+  padding: var(--luft-2);
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+  border-radius: var(--radius-1);
+  background: color-mix(in srgb, var(--neon) 7%, var(--grund));
+}
+
+.ko-anfrage-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--luft-1);
+}
+
+.ko-gm-tabelle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1);
+}
+
+.ko-gm-zeile {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto auto;
+  align-items: center;
+  gap: var(--luft-1);
+  padding: var(--luft-1) var(--luft-2);
+  border: 1px solid color-mix(in srgb, var(--neon) 18%, var(--grund));
+  border-radius: var(--radius-1);
+}
+
+.ko-gm-zeile select {
+  font: inherit;
+}
+
+.ko-pfeil {
+  color: var(--text-leise);
+}
+
+/* Kennzeichen, dass der echte Name freigegeben ist. */
+.ko-name-frei {
+  font-size: 0.72rem;
+  color: var(--neon);
+  white-space: nowrap;
+}
+
+@media (max-width: 780px) {
+  .ko-eintrag {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .ko-chatzeichen {
+    display: none;
+  }
+
+  .ko-gm-zeile {
+    grid-template-columns: 1fr auto;
+  }
+}

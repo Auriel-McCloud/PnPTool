@@ -437,24 +437,40 @@ class ChirurgieRequest(BaseModel):
 @campaign_router.post(
     "/{item_id}/chirurgie",
     response_model=GegenstandResponse,
-    dependencies=[Depends(require_campaign_gm)],
 )
 async def chirurgie_durchfuehren(
     campaign_id: str,
     item_id: str,
     body: ChirurgieRequest,
+    viewer: Viewer = Depends(get_viewer),
 ):
     """Implantat einsetzen oder chirurgisch entfernen.
 
-    **Nur die Spielleitung.** Mark: *"wenn die verbaut ist kann der Spieler
-    die nicht mehr entfernen außer bei speziellen Events (er besucht einen
-    Arzt oder ein Spieler hat die Medizin skills um das zu tun...)"* — die
-    Operation ist ein Ereignis in der Welt, keine Menüaktion. Spieler
-    beantragen sie über `.../entfernung-beantragen`.
+    **Einsetzen:** Spieler dürfen ihre eigenen Augments selbst einsetzen
+    (mit Bestätigungsdialog im Frontend: "bist du sicher? das sollte lieber
+    ein Experte für dich machen"). Die SL kann es auch für sie tun.
+
+    **Entfernen:** Nur die Spielleitung. Mark: *"wenn die verbaut ist kann
+    der Spieler die nicht mehr entfernen außer bei speziellen Events (er
+    besucht einen Arzt oder ein Spieler hat die Medizin skills um das zu
+    tun...)"* — das Entfernen ist ein Ereignis in der Welt, keine
+    Menüaktion. Spieler beantragen es über `.../entfernung-beantragen`.
     """
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    # Spieler dürfen NUR einsetzen — entfernen bleibt der SL vorbehalten.
+    if viewer.role != "GM":
+        if not body.einsetzen:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "Nur die Spielleitung darf Augments entfernen",
+            )
+        # Und auch nur ihre eigenen Gegenstände.
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer != viewer.person_id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Das gehört dir nicht")
 
     if body.einsetzen and not chirurgie.kann_einsetzen(item):
         raise HTTPException(

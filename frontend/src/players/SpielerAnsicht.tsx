@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { WikiAnsicht } from "../wiki/WikiAnsicht";
@@ -19,7 +19,7 @@ import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
-import { RegelnAnsicht } from "../regeln/RegelnAnsicht";
+import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -41,7 +41,7 @@ import { playersApi, type SpielerMe } from "./api";
  * Spieler sehen darf. Diese Ansicht versteckt nichts selbst — sie könnte es
  * auch nicht, die Daten sind schlicht nicht da.
  */
-const BEREICHE: Bereich[] = [
+const BEREICHE_STATISCH: Bereich[] = [
   // Das Charakterblatt steht vorn und ist die Startansicht — es ist das,
   // worauf ein Spieler während der Runde am häufigsten schaut.
   { id: "blatt", name: "Charakterblatt", symbol: "▤", farbe: "var(--bereich-blatt)" },
@@ -61,10 +61,16 @@ const BEREICHE: Bereich[] = [
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
-  // Koerperkarte: wo sitzt welches Implantat. Nur der eigene Koerper.
-  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "var(--bereich-regeln)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
+
+// Augments-Bereich: erscheint nur, wenn verbaute Augments vorhanden sind.
+const AUGMENTS_BEREICH: Bereich = {
+  id: "augments",
+  name: "Augments",
+  symbol: "⚕",
+  farbe: "var(--bereich-regeln)",
+};
 
 function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: string }) {
   return (
@@ -134,6 +140,18 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
   const meineRoh = sachen.filter((g) => g.ownerId === ich?.personId);
   const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
+
+  // Augments-Bereich erscheint nur, wenn verbaute Augments vorhanden sind.
+  const hatAugments = meineRoh.some((g) => g.verbaut);
+  const BEREICHE = useMemo(() => {
+    if (!hatAugments) return BEREICHE_STATISCH;
+    // Nach dem Wiki und vor den Notizen einfügen
+    const mitAugments = [...BEREICHE_STATISCH];
+    const wikiIdx = mitAugments.findIndex((b) => b.id === "wiki");
+    mitAugments.splice(wikiIdx + 1, 0, AUGMENTS_BEREICH);
+    return mitAugments;
+  }, [hatAugments]);
+
   // Was anderen gehört, ist ein Reiter wie jeder andere statt eines
   // angehängten zweiten Blocks: dann gibt es genau ein Raster, das sich
   // ausmessen lässt, und die Auswahl bleibt eine einzige Entscheidung.
@@ -210,6 +228,19 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   async function entfernungBeantragen(itemId: string) {
     if (!ich) return;
     await itemsApi.entfernungBeantragen(ich.campaignId, itemId);
+    const frisch = await itemsApi.listAlle(ich.campaignId);
+    setSachen(frisch);
+  }
+
+  async function augmentEinsetzen(itemId: string) {
+    if (!ich) return;
+    // eslint-disable-next-line no-alert
+    const sicher = window.confirm(
+      "Bist du sicher? Das sollte lieber ein Experte für dich machen.\n\n" +
+      "Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
+    );
+    if (!sicher) return;
+    await itemsApi.chirurgie(ich.campaignId, itemId, true);
     const frisch = await itemsApi.listAlle(ich.campaignId);
     setSachen(frisch);
   }
@@ -310,6 +341,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
+                onChirurgie={(einsetzen) => einsetzen ? augmentEinsetzen(g.id) : Promise.resolve()}
               />
             ))}
           </div>
@@ -413,6 +445,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
+                onChirurgie={(einsetzen) => einsetzen ? augmentEinsetzen(g.id) : Promise.resolve()}
               />
             ))}
           </div>
@@ -513,8 +546,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
           Was hier ankommt, hat der Server bereits gefiltert. */}
       {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
 
-      {bereich === "regeln" && (
-        <RegelnAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} />
+      {bereich === "augments" && (
+        <AugmentsAnsicht
+          campaignId={ich.campaignId}
+          eigenePersonId={ich.personId}
+        />
       )}
     </CommlinkShell>
     </MitteilungenAnbieter>

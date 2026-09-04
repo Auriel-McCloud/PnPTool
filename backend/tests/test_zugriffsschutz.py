@@ -72,6 +72,22 @@ OHNE_GM_ERLAUBT = {
     # Ergebnis des Paralysewurfs. Der Spieler würfelt physisch und meldet
     # geschafft/nicht geschafft — nur für den eigenen Charakter (darf_melden).
     "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/paralyse",
+    # --- Messenger: der Spieler handelt hier selbst -----------------------
+    # Eine Nachricht schreiben ist der Zweck des Messengers. Geprüft wird der
+    # Besitz des Kontakts (_kontakt_oder_404) und dass der Chat offen ist.
+    "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/chat",
+    # Kontaktanfrage stellen: die Handlung des Spielers. Setzt NUR das
+    # Kennzeichen OFFEN — entschieden wird an .../anfrage/entscheiden, und
+    # das verlangt die Spielleitung.
+    "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/anfrage",
+    # Eigener Merkzettel zu einem Kontakt.
+    "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/notizen",
+    # Eigener Alias ("der Schläger vom Hafen"). Der NPC-Standardalias bleibt
+    # der Spielleitung vorbehalten, weil er alle Kontakte betrifft.
+    "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/alias",
+    # Spieler darf Augments selbst einsetzen (nicht entfernen — das prüft
+    # die Route selbst: Entfernen gibt 403 für Spieler).
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/chirurgie",
     "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
 }
 
@@ -83,6 +99,12 @@ NUR_SPIELLEITUNG_LESBAR = {
     # zurückgeholt werden könnte, ist eine Auskunft der Spielleitung — ein
     # Spieler soll nach dem Wegwerfen nicht nachsehen können, was noch da ist.
     "/api/campaigns/{campaign_id}/gegenstaende/weggeworfen",
+    # Offene Kontaktanfragen. Wer wen anfragt, ist Wissen der Spielleitung —
+    # ein Spieler soll nicht sehen, dass ein Mitspieler denselben NPC
+    # kontaktiert. Die eigene Anfrage sieht er am Status seines Kontakts.
+    "/api/campaigns/{campaign_id}/kontakte/anfragen",
+    # Wer kennt wen: die Kontaktübersicht der ganzen Kampagne.
+    "/api/campaigns/{campaign_id}/kontakte/uebersicht",
 }
 
 
