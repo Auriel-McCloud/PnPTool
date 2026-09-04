@@ -1,0 +1,324 @@
+/* ===================================================================
+   Koerperkarte im Stil der Metroid-Ausruestungsanzeige:
+   Drahtgitter-Figur in der Mitte, Panels aussen, Linien dazwischen.
+   Farben ausschliesslich ueber Token (siehe theme/tokens.css).
+   =================================================================== */
+
+.kk-huelle {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.kk-kopfzeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kk-titel {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: var(--text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kk-titel em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+.kk-schalter {
+  min-height: 0;
+  padding: 6px 14px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* --- Buehne: Figur + Panels ----------------------------------------
+   Seitenverhaeltnis wie die Zeichenflaeche (900x430), damit die in
+   Prozent gesetzten Panels genau auf ihren Linien sitzen. */
+
+.kk-buehne {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 900 / 470;
+  /* Feines Raster wie im Vorbild — sehr zurueckhaltend. */
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--linie) 40%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--linie) 40%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.kk-zeichnung {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Die Figur ------------------------------------------------------ */
+
+/* Die KONTUR traegt die Figur, nicht die Fuellung — wie im Vorbild ein
+   Drahtgitter. Ein erster Versuch mit kraeftiger Fuellung ergab auf dem
+   dunklen Grund einen schwarzen Klumpen ohne erkennbare Zonen. */
+.kk-zone {
+  fill: color-mix(in srgb, var(--neon) 10%, var(--grund));
+  stroke: color-mix(in srgb, var(--neon) 70%, var(--grund));
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.kk-zone:hover {
+  stroke: var(--neon);
+  fill: color-mix(in srgb, var(--neon) 22%, var(--grund));
+}
+
+/* Belegt: leuchtet in der Leitfarbe. */
+.kk-zone[data-belegt="true"] {
+  fill: color-mix(in srgb, var(--neon) 34%, var(--grund));
+  stroke: var(--neon);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--neon) 60%, transparent));
+}
+
+/* Alle drei Plaetze voll: Warnfarbe, damit man es auf einen Blick sieht. */
+.kk-zone[data-voll="true"] {
+  fill: color-mix(in srgb, var(--warn) 38%, var(--grund));
+  stroke: var(--warn);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--warn) 70%, transparent));
+}
+
+.kk-zone[data-gewaehlt="true"] {
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 6px var(--neon));
+}
+
+/* Binnenzeichnung: Panzerungsfugen. Nimmt keine Klicks an. */
+.kk-detail {
+  fill: none;
+  stroke: color-mix(in srgb, var(--neon) 50%, var(--grund));
+  stroke-width: 0.9;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.kk-detail[data-belegt="true"] {
+  stroke: color-mix(in srgb, var(--neon) 90%, var(--grund));
+}
+
+/* --- Verbindungslinien und Andockpunkte ----------------------------- */
+
+.kk-leitung {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-leise) 60%, transparent);
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+.kk-leitung[data-gewaehlt="true"] {
+  stroke: var(--neon);
+  stroke-width: 2;
+}
+
+.kk-anker {
+  fill: var(--grund);
+  stroke: var(--text-leise);
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+.kk-anker[data-gewaehlt="true"] {
+  fill: var(--neon);
+  stroke: var(--neon);
+}
+
+/* --- Panels --------------------------------------------------------- */
+
+.kk-panel {
+  position: absolute;
+  padding: 6px 10px 8px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  min-width: 0;
+}
+
+.kk-panel:hover {
+  border-color: var(--neon);
+}
+
+.kk-panel[data-gewaehlt="true"] {
+  border-color: var(--neon);
+  box-shadow: 0 0 16px -4px var(--neon);
+}
+
+.kk-panelkopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 5px;
+  padding-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  border-bottom: 1px solid var(--linie);
+}
+
+.kk-panel[data-gewaehlt="true"] .kk-panelkopf {
+  color: var(--neon);
+  border-color: color-mix(in srgb, var(--neon) 50%, transparent);
+}
+
+.kk-panelkopf em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-leise);
+}
+
+.kk-panelliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kk-panelliste li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.kk-panelliste li[data-frei="true"] {
+  opacity: 0.42;
+}
+
+/* Der kleine Punkt vor jedem Eintrag — wie im Vorbild. */
+.kk-punkt {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--text-aus);
+  background: transparent;
+}
+
+.kk-punkt[data-an="true"] {
+  background: var(--neon);
+  border-color: var(--neon);
+  box-shadow: 0 0 6px -1px var(--neon);
+}
+
+.kk-eintrag {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kk-name {
+  color: var(--text);
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.kk-werte {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-leise);
+}
+
+.kk-frei {
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.kk-antrag {
+  color: var(--warn);
+}
+
+/* --- Chrom ohne feste Zone ------------------------------------------ */
+
+.kk-ohnezone h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.kk-ohnezone ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kk-ohnezone li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.kk-leer {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+/* --- Schmale Geraete ------------------------------------------------
+   Die absolute Anordnung bricht unter ~760px zusammen (Panels wuerden
+   sich ueberlappen). Dort: Figur oben, Panels darunter gestapelt. */
+
+@media (max-width: 760px) {
+  .kk-buehne {
+    aspect-ratio: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .kk-zeichnung {
+    position: static;
+    height: 260px;
+  }
+
+  /* Die Linien zeigen ins Leere, sobald die Panels wandern. */
+  .kk-leitung,
+  .kk-anker {
+    display: none;
+  }
+
+  .kk-panel {
+    position: static !important;
+    width: 100% !important;
+  }
+}

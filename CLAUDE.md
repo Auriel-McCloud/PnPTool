@@ -493,6 +493,74 @@ Reflex-Booster gegen die laufende Kampagne geprüft (Ryu Tanaka):
   ("Geistesschärfe 4 + Geschicklichkeit 3 + Chrom 6")
 - Testgegenstände restlos entfernt
 
+## Regeln-Bereich: Körperkarte (gebaut 04.09.2026)
+
+Mark: *"Wir wollten ja auch noch dieses Menü machen das anzeigt wo was
+verbaut ist, das könnten wir dann über das Menü Regeln"* — und als Vorbild
+ein Screenshot der **Metroid-Ausrüstungsanzeige**: *"in metroid fusion gab es
+etwas ähnliches, so in etwa hab ich mir das vorgestellt"*.
+
+Der Bereich **▤ Regeln** war bis dahin ein "bald"-Platzhalter.
+
+### Aufbau
+
+Drahtgitter-Figur in der Mitte, vier Panels aussen (Kopf/Torso/Beine rechts,
+Arme links), dünne Linien vom Panel zum Andockpunkt am jeweiligen Körperteil.
+Je Zone drei Plätze, belegte Zonen leuchten in der Leitfarbe, volle Zonen in
+der Warnfarbe.
+
+**SVG-Pfade statt Bilddateien** (`regeln/silhouetten.ts`): skaliert
+verlustfrei, nimmt beide Themes an, kein Bildmaterial zu pflegen.
+
+### Silhouette am Charakter, nicht an der Ansicht
+
+Mark wollte *"einen Button ... um zwischen einer männlichen und weiblichen
+Körper siluette wechseln zu können"*. Der Knopf sitzt oben rechts (♂/♀) — die
+Wahl wird aber als Feld `silhouette` **an der Person** gespeichert, nicht im
+Ansichtszustand. Sonst müsste man sie bei jedem Charakterwechsel neu
+einstellen. Geprüft: übersteht das Neuladen.
+
+Nur die Spielleitung darf umschalten; Spieler sehen ihren eigenen Körper.
+
+### Drei Fallstricke, alle teuer
+
+1. **`--leit` gibt es nicht.** Ich hatte die Variable erfunden. Folge: jede
+   `color-mix()`-Regel damit war ungültig, die Figur wurde ein schwarzer
+   Klumpen **ohne Kontur**. Die echte Leitfarbe heisst `--neon`. 21 Stellen
+   korrigiert. Lehre: neue CSS-Variablen gegen `theme/tokens.css` prüfen,
+   nicht aus dem Gedächtnis schreiben.
+2. **`color-mix(..., transparent)` senkt die Deckkraft.** Auf dunklem Grund
+   bleibt die Fläche dadurch fast schwarz. Richtig ist Mischen mit
+   `var(--grund)` — das ergibt eine echte, sichtbare Füllung.
+3. **Zonen dürfen sich nicht berühren.** Ein erster Entwurf mit
+   aneinandergrenzenden Pfaden ergab eine einzige Fläche ohne erkennbare
+   Zonen. Zwischen Kopf/Torso, Torso/Armen und Torso/Beinen bleibt jetzt Luft.
+
+Dazu zwei Messfehler auf meiner Seite: Die Figurenhöhe habe ich **zweimal
+geschätzt** (233, dann 215) und die Beine liefen beide Male aus dem Bild.
+Erst `getBBox()` lieferte den echten Wert: die Pfade laufen von **y=8 bis
+y=213**. Seitdem rechnet `Koerperkarte.tsx` mit gemessenen Konstanten.
+
+### Bedienung des Bereichswechsels (Stolperstein für Testskripte)
+
+Die Symbolspalte braucht **zwei Klicks**: der erste fährt die Namen aus
+("damit man lesen kann, was man wählt", `CommlinkShell.waehle`), der zweite
+wechselt. Zusätzlich läuft eine Flug-Animation, die den Inhalt erst nach
+~55 % umschaltet. Ein Testskript, das einmal klickt und sofort misst, sieht
+den alten Bereich und meldet einen Fehler, den es nicht gibt — genau das ist
+mir passiert.
+
+### Geprüft
+
+Am Bildschirm nachgesehen, nicht nur kompiliert:
+
+- 4 Zonen, 4 Panels, 4 Verbindungslinien, **keine Überlappungen**
+- Figur vollständig im Feld (22…448 von 470), `passt: true`
+- Testchrom in vier Zonen → "5 von 12 Plätzen belegt", Zonen leuchten
+- Umschalter ♂ → ♀ ändert die Silhouette sichtbar (schmalere Schultern,
+  Taille, Hüfte) und **bleibt nach dem Neuladen erhalten**
+- Testdaten restlos entfernt (0 Reste)
+
 ## Kampagnen-Wiki (gebaut 03.09.2026)
 
 Das Planungswerkzeug, das Mark eigentlich wollte: Geschichten schreiben,

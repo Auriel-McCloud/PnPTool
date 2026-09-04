@@ -13,6 +13,8 @@ export interface Person extends VisibilityFields {
   name: string;
   personType: "PC" | "NPC";
   description: string;
+  /** Welche Silhouette die Körperkarte zeigt. */
+  silhouette?: string;
   /** Aussehen; per Blitz an alle Spieler zeigbar. */
   bildUrl?: string;
   notes: string;
@@ -62,6 +64,9 @@ export const entitiesApi = {
   // Ungefiltert, für die Charakter-Auswahl der SL-Vorschau — siehe api.getAsGm.
   listPersonenAlsGm: (cid: string) => api.getAsGm<Person[]>(`${base(cid)}/personen`),
   createPerson: (cid: string, body: Omit<Person, "id">) => api.post<Person>(`${base(cid)}/personen`, body),
+  getPerson: (cid: string, id: string) => api.get<Person>(`${base(cid)}/personen/${id}`),
+  updatePerson: (cid: string, id: string, body: Partial<Person>) =>
+    api.patch<Person>(`${base(cid)}/personen/${id}`, body),
 
   listOrte: (cid: string) => api.get<Ort[]>(`${base(cid)}/orte`),
   createOrt: (cid: string, body: Omit<Ort, "id">) => api.post<Ort>(`${base(cid)}/orte`, body),

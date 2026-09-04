@@ -33,6 +33,10 @@ _BOGEN_FELDER = [
     # Solange die Erstellung nicht abgeschlossen ist, zeigt das Blatt den
     # Erstellungsablauf statt der Spielansicht.
     "erstellungAbgeschlossen",
+    # Welche Koerpersilhouette die Koerperkarte zeigt ("weiblich" |
+    # "maennlich"). Am Charakter gespeichert, nicht an der Ansicht: sonst
+    # muesste man bei jedem Wechsel neu umstellen.
+    "silhouette",
 ]
 
 # bildUrl: Aussehen einer Person, eines Ortes oder einer Szene. Die
@@ -52,6 +56,7 @@ def _return_clause(alias: str, fields: list[str]) -> str:
 _BOGEN_DEFAULTS: dict = {
     "weg": "KEINER",
     "rasse": "",
+    "silhouette": "maennlich",
     "schadenSchlag": 0,
     "schadenSchwer": 0,
     "schadenAggraviert": 0,

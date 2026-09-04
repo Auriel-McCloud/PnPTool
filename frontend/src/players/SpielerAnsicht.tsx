@@ -19,6 +19,7 @@ import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
+import { RegelnAnsicht } from "../regeln/RegelnAnsicht";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -60,6 +61,8 @@ const BEREICHE: Bereich[] = [
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
+  // Koerperkarte: wo sitzt welches Implantat. Nur der eigene Koerper.
+  { id: "regeln", name: "Regeln", symbol: "▤", farbe: "var(--bereich-regeln)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
@@ -509,6 +512,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       {/* Nur lesend: Anlegen, Aendern und Freigeben bleibt Sache der Spielleitung.
           Was hier ankommt, hat der Server bereits gefiltert. */}
       {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
+
+      {bereich === "regeln" && (
+        <RegelnAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} />
+      )}
     </CommlinkShell>
     </MitteilungenAnbieter>
   );

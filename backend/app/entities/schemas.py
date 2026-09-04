@@ -31,6 +31,7 @@ class PersonCreate(BaseModel):
     # Bestimmt Startwerte und Maxima bei der Erstellung (Mensch, Ork, Elf,
     # Zwerg, Troll). Frei als Text, weil Rassen dazukommen können.
     rasse: str = ""
+    silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 5 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
     # + Fassung) und wird berechnet, nicht gespeichert.
@@ -67,6 +68,7 @@ class PersonUpdate(BaseModel):
     bildUrl: str | None = None
     weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] | None = None
     rasse: str | None = None
+    silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
     schadenAggraviert: int | None = None
@@ -103,6 +105,7 @@ class PersonResponse(BaseModel):
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
     rasse: str = ""
+    silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0
     schadenAggraviert: int = 0
