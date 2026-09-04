@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { entitiesApi, type Person } from "../entities/api";
-import { bildFuerAnsage, sendeMitteilung, ziehZurueck } from "./api";
+import { bildFuerAnsage, sendeMitteilung, ziehZurueck, type Warnfarbe } from "./api";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
 /** Was am Tisch am häufigsten gebraucht wird — mitten im Kampf tippt niemand. */
+/** Ansagen, die als Warnung sinnvoll sind — der Schirm pulsiert dabei. */
+const SCHNELL_WARNUNG = ["Würfelt für Initiative!", "Gefahr!", "Hinterhalt!"];
+
 const SCHNELL = [
   "Würfelt für Initiative!",
   "Wahrnehmungsprobe, bitte.",
@@ -28,6 +31,10 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
   const [sendet, setSendet] = useState(false);
   // Hochgeladenes Bild, das mitgeschickt wird (leer = reine Textansage).
   const [bildUrl, setBildUrl] = useState("");
+  // Warnung: ganzer Schirm pulsiert. Bewusst eigener Schalter statt einer
+  // dritten Art im Dropdown — man greift im Kampf danach, nicht im Menue.
+  const [alsWarnung, setAlsWarnung] = useState(false);
+  const [warnfarbe, setWarnfarbe] = useState<Warnfarbe>("rot");
   const [laedtBild, setLaedtBild] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const [rueckmeldung, setRueckmeldung] = useState<string | null>(null);
@@ -45,7 +52,8 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
   async function senden(inhalt: string) {
     const sauber = inhalt.trim();
     // Ein Bild spricht fuer sich — dann ist der Text freiwillig.
-    if (!sauber && !bildUrl) return;
+    // Eine Warnung nicht: ein pulsierender Schirm ohne Ansage sagt nichts.
+    if (!sauber && (!bildUrl || alsWarnung)) return;
     if (sendet) return;
     if (!anAlle && ziele.length === 0) {
       setRueckmeldung("Kein Empfänger gewählt.");
@@ -55,9 +63,12 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
     setRueckmeldung(null);
     try {
       const { zugestellt } = await sendeMitteilung(campaignId, {
-        art: bildUrl ? "BILD" : "TEXT",
+        // Warnung schlaegt Bild: ein pulsierender Schirm mit Bild waere
+        // beides halb. Bild bleibt dem ruhigen Popup vorbehalten.
+        art: alsWarnung ? "WARNUNG" : bildUrl ? "BILD" : "TEXT",
         inhalt: sauber,
-        bildUrl,
+        bildUrl: alsWarnung ? "" : bildUrl,
+        farbe: warnfarbe,
         anAlle,
         empfaengerIds: anAlle ? [] : ziele,
       });
@@ -122,13 +133,14 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
       >
         <div className="mt-senden">
           <div className="mt-schnell">
-            {SCHNELL.map((s) => (
+            {(alsWarnung ? SCHNELL_WARNUNG : SCHNELL).map((s) => (
               <button key={s} type="button" onClick={() => senden(s)} disabled={sendet}>
                 {s}
               </button>
             ))}
           </div>
 
+          {!alsWarnung && (
           <div className="mt-schnell">
             <button type="button" onClick={() => dateiRef.current?.click()} disabled={laedtBild}>
               {laedtBild ? "lädt…" : "▣ Bild wählen"}
@@ -139,6 +151,7 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
               </button>
             )}
           </div>
+          )}
 
           <input
             ref={dateiRef}
@@ -158,7 +171,9 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
           )}
 
           <textarea
-            placeholder={bildUrl ? "Bildunterschrift (freiwillig)…" : "Eigene Ansage…"}
+            placeholder={
+              alsWarnung ? "Warntext — steht gross in der Mitte…" : bildUrl ? "Bildunterschrift (freiwillig)…" : "Eigene Ansage…"
+            }
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -167,6 +182,36 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
             }}
             style={{ minHeight: 80 }}
           />
+
+          <div className="mt-ziel-wahl">
+            <button
+              type="button"
+              className="mt-pc"
+              aria-pressed={alsWarnung}
+              onClick={() => setAlsWarnung((w) => !w)}
+              title="Der ganze Bildschirm pulsiert, die Ansage steht gross in der Mitte"
+              style={alsWarnung ? { color: "var(--signal)", borderColor: "var(--signal)" } : undefined}
+            >
+              ⚠ Als Warnung
+            </button>
+
+            {alsWarnung && (
+              <span className="wn-farbwahl">
+                {(["rot", "blau", "violett"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className="wn-farbknopf"
+                    aria-pressed={warnfarbe === f}
+                    onClick={() => setWarnfarbe(f)}
+                    style={{ "--wn-probe": `var(--warnung-${f})` } as React.CSSProperties}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
 
           <div className="mt-ziel-wahl">
             <button
@@ -212,10 +257,14 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
             <button
               type="button"
               onClick={() => senden(text)}
-              disabled={sendet || (!text.trim() && !bildUrl)}
-              style={{ color: "var(--warn)", borderColor: "var(--warn)" }}
+              disabled={sendet || (!text.trim() && (!bildUrl || alsWarnung))}
+              style={
+                alsWarnung
+                  ? { color: "var(--signal)", borderColor: "var(--signal)" }
+                  : { color: "var(--warn)", borderColor: "var(--warn)" }
+              }
             >
-              {sendet ? "sendet…" : "Senden"}
+              {sendet ? "sendet…" : alsWarnung ? "⚠ Warnung senden" : "Senden"}
             </button>
             <span style={{ fontSize: 11, color: "var(--text-aus)" }}>Strg+Enter</span>
           </div>

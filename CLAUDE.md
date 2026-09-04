@@ -206,6 +206,46 @@ direkt in die Cypher-Abfrage eingeht.
 Das ist zugleich Vorarbeit für den Messenger: `docs/phase-5-messenger.md`
 sieht `bildUrl` am NPC ohnehin vor.
 
+### Warnung: der ganze Schirm pulsiert (03.09.2026)
+
+Marks Wunsch: *"eine nachricht an alle pushen können bei der der Screen
+gefährlich pulsiert ... und in der Mitte dann die Nachricht erscheint, bei
+Initiative wäre das nämlich cool"*.
+
+Dritte Art `WARNUNG` neben `TEXT` und `BILD`. Eigene Art statt eines
+Zusatzhakens an `TEXT`, damit sie die Wirkung nicht durch Gewöhnung verliert —
+und damit der Verlauf sie später unterscheiden kann.
+
+**Die Farbe ist wählbar, nicht festgelegt** (`rot` | `blau` | `violett`).
+Mark: *"die Farbe müssten wir noch testen"* — also entscheidet er am Tisch,
+nicht ich im Code. Weisse Liste im Schema, weil der Wert in eine CSS-Variable
+fliesst.
+
+**Aufbau** (`mitteilungen/Warnung.tsx`, `.wn-*` in `mitteilungen.css`):
+Der Puls ist ein Radialverlauf — kräftig an den Rändern, in der Mitte
+durchsichtig, damit die Ansage lesbar bleibt. Ein flächig gefärbter Schirm
+wäre nach zwei Sekunden unlesbar; dieselbe Überlegung wie bei der
+Verwundungsanzeige, an der die Warnung sich orientiert. Der Takt sind zwei
+Stösse dicht hintereinander, dann Ruhe — ein Alarm, kein gleichmässiges
+Blinken.
+
+`z-index: 600` (über Fenstern 200 und dem normalen Popup 500). Die Hülle
+nimmt keine Klicks an, nur der Knopf in der Mitte. Warnfarben stehen als
+`--warnung-rot|blau|violett` in beiden Themes, im Hextechpunk kühler.
+
+**`prefers-reduced-motion`**: kein Pulsieren, aber die Ansage bleibt stehen.
+Ein Alarm darf nicht davon abhängen, dass jemand Animationen erträgt.
+
+**Warnung schlägt Bild**, und eine Warnung ohne Text wird abgelehnt — ein
+pulsierender Schirm ohne Ansage sagt niemandem, was los ist.
+
+**Geprüft** mit zwei Browser-Kontexten, alle drei Farben einzeln: Die
+*aufgelösten* Farbwerte wurden ausgelesen (`220 30 60`, `40 110 255`,
+`150 60 240`), nicht nur die Existenz des Elements — eine kaputte
+CSS-Variable wäre sonst durchgegangen. Puls läuft (`wn-pulsieren`), Text
+steht mittig, das normale Popup bleibt zu. Gegenprobe: eine normale
+Textansage löst *keine* Warnung aus. Testdaten restlos entfernt.
+
 **Geprüft** end-to-end mit zwei Browser-Kontexten: PNG an einem Test-NPC
 hochgeladen (200, `content-type: image/png`), per Blitz an alle geschickt,
 beim Spieler im Popup angekommen — und **tatsächlich gerendert**

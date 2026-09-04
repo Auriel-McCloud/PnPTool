@@ -292,3 +292,163 @@
   border-radius: var(--radius);
   border: 1px solid var(--linie);
 }
+
+/* ===================================================================
+   Vollbild-Warnung: der Schirm pulsiert, die Ansage steht in der Mitte.
+   Marks Bild fuer die Initiative.
+
+   Bewusst lauter als das normale Popup — und deshalb eine eigene Art,
+   damit es die Wirkung nicht durch Gewoehnung verliert.
+   =================================================================== */
+
+.wn-huelle {
+  position: fixed;
+  inset: 0;
+  /* Ueber allem, auch ueber Fenstern (200) und dem normalen Popup (500). */
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* Die Huelle selbst faengt keine Klicks; nur der Knopf in der Mitte. */
+  pointer-events: none;
+}
+
+/* Welcher Ton gilt. Der Wert kommt vom Server (rot|blau|violett) und wird
+   hier auf das Farbtripel des aktiven Themes abgebildet — so passt die
+   Warnung auch im Hextechpunk. */
+.wn-huelle[data-farbe="rot"] { --wn-ton: var(--warnung-rot); }
+.wn-huelle[data-farbe="blau"] { --wn-ton: var(--warnung-blau); }
+.wn-huelle[data-farbe="violett"] { --wn-ton: var(--warnung-violett); }
+
+/* Der Puls: kraeftig an den Raendern, in der Mitte durchsichtig, damit die
+   Ansage lesbar bleibt. Ein flaechig gefaerbter Schirm waere nach zwei
+   Sekunden unlesbar — dieselbe Ueberlegung wie bei der Verwundung. */
+.wn-puls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 120% 100% at 50% 50%,
+      transparent 30%,
+      rgb(var(--wn-ton) / 0.28) 72%,
+      rgb(var(--wn-ton) / 0.55) 100%
+    );
+  box-shadow: inset 0 0 160px 40px rgb(var(--wn-ton) / 0.4);
+  animation: wn-pulsieren 1.15s ease-in-out infinite;
+}
+
+/* Zwei Stoesse dicht hintereinander, dann Ruhe — wie ein Alarm, nicht wie
+   ein gleichmaessiges Blinken. */
+@keyframes wn-pulsieren {
+  0% { opacity: 0.55; }
+  12% { opacity: 1; }
+  30% { opacity: 0.6; }
+  42% { opacity: 0.92; }
+  70%, 100% { opacity: 0.5; }
+}
+
+.wn-mitte {
+  position: relative;
+  pointer-events: auto;
+  max-width: min(680px, 100%);
+  text-align: center;
+  padding: 28px 32px;
+  background: rgb(var(--grund-rgb) / 0.88);
+  border: 1px solid rgb(var(--wn-ton) / 0.9);
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 0 60px -10px rgb(var(--wn-ton) / 0.8);
+  animation: wn-auf 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wn-auf {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+.wn-zeichen {
+  font-size: 34px;
+  line-height: 1;
+  color: rgb(var(--wn-ton));
+  text-shadow: 0 0 24px rgb(var(--wn-ton) / 0.9);
+  margin-bottom: 10px;
+}
+
+.wn-text {
+  margin: 0 0 18px;
+  font-size: clamp(20px, 4vw, 30px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.wn-fuss {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.wn-rest {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.wn-knopf {
+  padding: 10px 22px;
+  color: rgb(var(--wn-ton));
+  border: 1px solid rgb(var(--wn-ton));
+  background: rgb(var(--wn-ton) / 0.14);
+  letter-spacing: 0.06em;
+}
+
+.wn-knopf:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgb(var(--wn-ton));
+  background: rgb(var(--wn-ton) / 0.3);
+  box-shadow: 0 0 20px -4px rgb(var(--wn-ton));
+}
+
+/* Wer Bewegung abgestellt hat, bekommt kein Pulsieren — die Ansage bleibt
+   aber sichtbar stehen. Ein Alarm darf nicht davon abhaengen, dass jemand
+   Animationen ertraegt. */
+@media (prefers-reduced-motion: reduce) {
+  .wn-puls {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+
+/* Farbwahl im Sendefenster */
+.wn-farbwahl {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.wn-farbknopf {
+  min-height: 0;
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid rgb(var(--wn-probe) / 0.6);
+  color: rgb(var(--wn-probe));
+  background: rgb(var(--wn-probe) / 0.12);
+}
+
+.wn-farbknopf[aria-pressed="true"] {
+  border-color: rgb(var(--wn-probe));
+  background: rgb(var(--wn-probe) / 0.3);
+  box-shadow: 0 0 14px -3px rgb(var(--wn-probe));
+}
+
+.wn-farbknopf:hover:not(:disabled) {
+  color: rgb(var(--wn-probe));
+  border-color: rgb(var(--wn-probe));
+  background: rgb(var(--wn-probe) / 0.24);
+}

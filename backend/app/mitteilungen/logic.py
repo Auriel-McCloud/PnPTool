@@ -9,9 +9,16 @@ Sie wird gespeichert und nicht nur gesendet: Wessen Tablet gerade schläft,
 soll die Initiative-Ansage nachlesen können statt sie zu verpassen.
 """
 
-# Was eine Mitteilung sein kann. TEXT ist gebaut; BILD ist vorgesehen und
-# wird bereits durchgereicht, damit später kein Datenmodell wandern muss.
-ARTEN = ("TEXT", "BILD")
+# Was eine Mitteilung sein kann.
+#   TEXT    — ruhiges Popup
+#   BILD    — Aussehen zeigen ("so sieht er aus")
+#   WARNUNG — der ganze Schirm pulsiert, die Ansage steht in der Mitte.
+#             Für Initiative und Gefahr; bewusst laut, deshalb sparsam.
+ARTEN = ("TEXT", "BILD", "WARNUNG")
+
+# Farbtöne der Warnung. Weisse Liste, weil der Wert in eine CSS-Variable
+# geht — und weil Mark am Tisch noch ausprobieren will, welcher wirkt.
+WARNFARBEN = ("rot", "blau", "violett")
 
 
 def empfaenger_aufloesen(an_alle: bool, empfaenger_ids: list[str], alle_pc_ids: list[str]) -> list[str]:

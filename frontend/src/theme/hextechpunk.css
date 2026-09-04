@@ -58,6 +58,11 @@
   --verwundung: 200 40 60;
   --verwundung-tief: 150 28 46;
 
+  /* Kristall statt Neon: kuehler und etwas heller */
+  --warnung-rot: 226 60 80;
+  --warnung-blau: 70 150 255;
+  --warnung-violett: 165 100 245;
+
   /* == 6. Form ======================================================= */
   /* Facettiert statt abgerundet */
   --radius: 2px;

@@ -5,6 +5,7 @@ import { WikiAnsicht } from "../wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "../mitteilungen/MitteilungenKontext";
 import { MitteilungenBlitz } from "../mitteilungen/MitteilungenBlitz";
 import { MitteilungPopup } from "../mitteilungen/MitteilungPopup";
+import { Warnung } from "../mitteilungen/Warnung";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
@@ -224,6 +225,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     {/* Liegt ueber allem, auch ueber offenen Fenstern: eine Ansage der
         Spielleitung darf nicht dahinter verschwinden. */}
     <MitteilungPopup />
+    {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
+        normalen Popup. Fuer Initiative und Gefahr. */}
+    <Warnung />
     <Verwundung zustand={zustand} />
     <DranMeldung
       kampf={kampf}

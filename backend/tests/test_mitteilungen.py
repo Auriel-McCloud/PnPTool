@@ -141,3 +141,50 @@ class TestSchemaPruefung:
 
         with pytest.raises(ValidationError):
             MitteilungCreate(art="TEXT", inhalt="hallo", anAlle=False, empfaengerIds=[])
+
+
+class TestWarnung:
+    """Vollbild-Warnung: der Schirm pulsiert, die Ansage steht in der Mitte.
+
+    Marks Bild fuer die Initiative — "bei Initiative waere das naemlich cool".
+    Die Farbe ist waehlbar, weil sie am Tisch noch getestet werden soll.
+    """
+
+    def test_warnung_ist_eine_eigene_art(self):
+        from app.mitteilungen.logic import ARTEN
+
+        assert "WARNUNG" in ARTEN
+
+    def test_warnung_braucht_einen_text(self):
+        from pydantic import ValidationError
+
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        # Ein pulsierender Schirm ohne Ansage sagt niemandem, was los ist.
+        with pytest.raises(ValidationError):
+            MitteilungCreate(art="WARNUNG", inhalt="", anAlle=True)
+
+    def test_warnung_nimmt_eine_farbe(self):
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        w = MitteilungCreate(art="WARNUNG", inhalt="Initiative!", farbe="violett", anAlle=True)
+        assert w.farbe == "violett"
+
+    def test_unbekannte_farbe_wird_abgelehnt(self):
+        from pydantic import ValidationError
+
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        # Die Farbe geht in eine CSS-Variable; nur bekannte Namen zulassen.
+        with pytest.raises(ValidationError):
+            MitteilungCreate(art="WARNUNG", inhalt="x", farbe="pink", anAlle=True)
+
+    def test_rot_ist_die_voreinstellung(self):
+        from app.mitteilungen.schemas import MitteilungCreate
+
+        assert MitteilungCreate(art="WARNUNG", inhalt="Gefahr", anAlle=True).farbe == "rot"
+
+    def test_warnung_erreicht_wie_andere_mitteilungen_nur_berechtigte(self):
+        warnung = m(art="WARNUNG", inhalt="Nur fuer dich", anAlle=False, empfaengerIds=["pc-1"])
+        assert darf_empfangen(warnung, "PLAYER", "pc-1") is True
+        assert darf_empfangen(warnung, "PLAYER", "pc-2") is False

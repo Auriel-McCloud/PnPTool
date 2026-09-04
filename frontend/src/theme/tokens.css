@@ -133,6 +133,12 @@
   --verwundung: 180 12 40;
   --verwundung-tief: 150 10 34;
 
+  /* Warnung: der ganze Schirm pulsiert. Drei Toene zur Wahl, weil am Tisch
+     noch erprobt wird, welcher wirkt (RGB-Tripel wegen Halbtransparenz). */
+  --warnung-rot: 220 30 60;
+  --warnung-blau: 40 110 255;
+  --warnung-violett: 150 60 240;
+
   /* == 5. Kulisse ==================================================== */
   /* Hintergrundbild pro Kampagne. "none" = nur Grundfarbe + Schimmer. */
   --hintergrund-bild: none;

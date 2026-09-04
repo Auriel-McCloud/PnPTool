@@ -1,13 +1,16 @@
 /** SL-Mitteilungen: Live-Popups von der Spielleitung. */
 import { api } from "../api/client";
 
-export type MitteilungsArt = "TEXT" | "BILD";
+export type MitteilungsArt = "TEXT" | "BILD" | "WARNUNG";
+/** Ton der Vollbild-Warnung. Waehlbar, weil am Tisch noch erprobt. */
+export type Warnfarbe = "rot" | "blau" | "violett";
 
 export interface Mitteilung {
   id: string;
   art: MitteilungsArt;
   inhalt: string;
   bildUrl: string;
+  farbe: Warnfarbe;
   anAlle: boolean;
   empfaengerIds: string[];
   gelesenVon: string[];
@@ -26,7 +29,14 @@ export const getMitteilungen = (campaignId: string) =>
 
 export const sendeMitteilung = (
   campaignId: string,
-  body: { art?: MitteilungsArt; inhalt?: string; bildUrl?: string; anAlle: boolean; empfaengerIds?: string[] },
+  body: {
+    art?: MitteilungsArt;
+    inhalt?: string;
+    bildUrl?: string;
+    farbe?: Warnfarbe;
+    anAlle: boolean;
+    empfaengerIds?: string[];
+  },
 ) => api.post<{ mitteilung: Mitteilung; zugestellt: number }>(basis(campaignId), body);
 
 export const markiereGelesen = (campaignId: string, id: string) =>

@@ -22,7 +22,9 @@ function zeit(iso: string): string {
 export function MitteilungPopup() {
   const { aktuell, wartend, bestaetigen } = useMitteilungen();
 
-  if (!aktuell) return null;
+  // Warnungen haben ihre eigene Darstellung (Warnung.tsx). Ohne diese
+  // Weiche laegen zwei Dialoge uebereinander.
+  if (!aktuell || aktuell.art === "WARNUNG") return null;
 
   return createPortal(
     <div className="mt-popup-huelle">
