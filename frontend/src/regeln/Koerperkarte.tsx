@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { entitiesApi, type Person } from "../entities/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
@@ -415,7 +415,32 @@ export function Koerperkarte({
                   <dd>{popupAugment.wVerlust}</dd>
                 </>
               )}
+              {popupAugment.initiativeBonus !== 0 && (
+                <>
+                  <dt>Initiative-Bonus</dt>
+                  <dd>{popupAugment.initiativeBonus > 0 ? "+" : ""}{popupAugment.initiativeBonus}</dd>
+                </>
+              )}
+              {popupAugment.zusatzaktionen !== 0 && (
+                <>
+                  <dt>Zusatzaktionen</dt>
+                  <dd>{popupAugment.zusatzaktionen === -1 ? "Jede Runde" : `${popupAugment.zusatzaktionen}× pro Kampf`}</dd>
+                </>
+              )}
+              {/* Eigenschaften als Key-Value-Paare */}
+              {Object.entries(popupAugment.eigenschaften || {}).map(([key, val]) => (
+                <React.Fragment key={key}>
+                  <dt>{key}</dt>
+                  <dd>{val}</dd>
+                </React.Fragment>
+              ))}
             </dl>
+            {popupAugment.description && (
+              <p className="kk-popup-beschreibung">{popupAugment.description}</p>
+            )}
+            {popupAugment.notes && (
+              <p className="kk-popup-notizen">{popupAugment.notes}</p>
+            )}
             <div className="kk-popup-knoepfe">
               <button
                 type="button"

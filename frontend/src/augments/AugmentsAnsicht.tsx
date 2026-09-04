@@ -70,6 +70,7 @@ export function AugmentsAnsicht({
         <Koerperkarte
           campaignId={campaignId}
           personId={gewaehlt}
+          aenderbar={!eigenePersonId}
         />
       )}
     </div>

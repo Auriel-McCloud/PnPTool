@@ -527,3 +527,20 @@
 .kk-popup-entfernen:hover {
   background: color-mix(in srgb, var(--signal) 85%, white) !important;
 }
+
+.kk-popup-beschreibung {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.kk-popup-notizen {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-leise);
+  background: color-mix(in srgb, var(--linie) 30%, transparent);
+  border-radius: var(--radius);
+}
