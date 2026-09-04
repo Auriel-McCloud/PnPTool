@@ -434,6 +434,13 @@ export function Koerperkarte({
                   <dd>{val}</dd>
                 </React.Fragment>
               ))}
+              {/* Fertigkeiten die das Augment gibt */}
+              {Object.entries(popupAugment.ausruestungsfertigkeiten || {}).map(([key, val]) => (
+                <React.Fragment key={`f-${key}`}>
+                  <dt>{key}</dt>
+                  <dd>+{val}</dd>
+                </React.Fragment>
+              ))}
             </dl>
             {popupAugment.description && (
               <p className="kk-popup-beschreibung">{popupAugment.description}</p>
