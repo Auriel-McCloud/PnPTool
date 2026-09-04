@@ -20,6 +20,7 @@ import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -120,6 +121,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
+  // Für den Bestätigungsdialog beim Einsetzen von Augments.
+  const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -234,15 +237,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   async function augmentEinsetzen(itemId: string) {
     if (!ich) return;
-    // eslint-disable-next-line no-alert
-    const sicher = window.confirm(
-      "Bist du sicher? Das solltest du lieber einen Experten machen lassen.\n\n" +
-      "Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
-    );
-    if (!sicher) return;
     await itemsApi.chirurgie(ich.campaignId, itemId, true);
     const frisch = await itemsApi.listAlle(ich.campaignId);
     setSachen(frisch);
+    setAugmentFrage(null);
+  }
+
+  function augmentFrageStellen(itemId: string) {
+    setAugmentFrage(itemId);
   }
 
   async function umlegen(itemId: string, ziel: Ablage) {
@@ -341,7 +343,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
-                onChirurgie={(einsetzen) => einsetzen ? augmentEinsetzen(g.id) : Promise.resolve()}
+                onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
               />
             ))}
           </div>
@@ -445,7 +447,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
-                onChirurgie={(einsetzen) => einsetzen ? augmentEinsetzen(g.id) : Promise.resolve()}
+                onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
               />
             ))}
           </div>
@@ -553,6 +555,20 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         />
       )}
     </CommlinkShell>
+
+    {/* Bestätigungsdialog für Augment-Einsetzen */}
+    {augmentFrage && (
+      <Bestaetigung
+        titel="Augment einsetzen"
+        text="Bist du sicher? Das solltest du lieber einen Experten machen lassen.
+
+Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
+        jaText="Einsetzen"
+        neinText="Abbrechen"
+        onJa={() => augmentEinsetzen(augmentFrage)}
+        onNein={() => setAugmentFrage(null)}
+      />
+    )}
     </MitteilungenAnbieter>
   );
 }

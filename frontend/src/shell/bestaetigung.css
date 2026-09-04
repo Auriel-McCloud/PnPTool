@@ -1,0 +1,93 @@
+/*
+ * Bestätigungsdialog — Commlink-Stil.
+ *
+ * Nur Theme-Tokens, keine harten Farbwerte (docs/theming.md).
+ */
+
+.best-huelle {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--grund) 85%, transparent);
+  backdrop-filter: blur(4px);
+  animation: best-ein 180ms ease;
+}
+
+@keyframes best-ein {
+  from {
+    opacity: 0;
+  }
+}
+
+.best-kasten {
+  max-width: 420px;
+  padding: 1.5rem 2rem;
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  background: var(--grund);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--neon) 25%, transparent);
+  animation: best-rein 220ms ease;
+}
+
+@keyframes best-rein {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+  }
+}
+
+.best-titel {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--neon);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.best-text {
+  margin: 0 0 1.5rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.best-knoepfe {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.best-knoepfe button {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.best-nein {
+  background: transparent;
+  border: 1px solid var(--linie);
+  color: var(--text-leise);
+}
+
+.best-nein:hover {
+  border-color: var(--text-leise);
+  color: var(--text);
+}
+
+.best-ja {
+  background: var(--neon);
+  border: 1px solid var(--neon);
+  color: var(--grund);
+  font-weight: 600;
+}
+
+.best-ja:hover {
+  background: color-mix(in srgb, var(--neon) 85%, white);
+}

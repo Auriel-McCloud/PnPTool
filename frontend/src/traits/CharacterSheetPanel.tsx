@@ -180,8 +180,6 @@ export function GegenstandRow({
   const [istBehaelter, setIstBehaelter] = useState(item.istBehaelter);
   const [immerSichtbar, setImmerSichtbar] = useState(item.immerSichtbar);
   const [riggerBonus, setRiggerBonus] = useState(item.riggerBonus);
-  const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus ?? 0);
-  const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen ?? 0);
   const [maxDrohnen, setMaxDrohnen] = useState(item.maxDrohnen);
   const [wVerlust, setWVerlust] = useState(item.wVerlust);
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
@@ -247,8 +245,6 @@ export function GegenstandRow({
     setIstBehaelter(item.istBehaelter);
     setImmerSichtbar(item.immerSichtbar);
     setRiggerBonus(item.riggerBonus);
-    setInitiativeBonus(item.initiativeBonus ?? 0);
-    setZusatzaktionen(item.zusatzaktionen ?? 0);
     setMaxDrohnen(item.maxDrohnen);
     setWVerlust(item.wVerlust);
     setKoerperzone(item.koerperzone);
@@ -303,8 +299,6 @@ export function GegenstandRow({
       istBehaelter,
       immerSichtbar,
       riggerBonus,
-      initiativeBonus,
-      zusatzaktionen,
       maxDrohnen,
       wVerlust,
       koerperzone,
@@ -518,40 +512,6 @@ export function GegenstandRow({
             </p>
           </div>
         )}
-
-        {/* Initiative-Modifikator. Bewusst fuer jeden Gegenstandstyp: der
-            Reflex-Booster ist Cyberware, "Dash" (Regelblatt Zeile 174) ist
-            eine Droge, und ein Artefakt koennte es auch. */}
-        <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", flexWrap: "wrap" }}>
-            Initiative-Bonus
-            <input
-              type="number"
-              value={initiativeBonus}
-              onChange={(e) => setInitiativeBonus(Number(e.target.value))}
-              style={{ width: 70 }}
-            />
-          </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", flexWrap: "wrap", marginTop: 8 }}>
-            Zusatzaktionen pro Kampf
-            <select
-              value={zusatzaktionen}
-              onChange={(e) => setZusatzaktionen(Number(e.target.value))}
-              style={{ minWidth: 150 }}
-            >
-              <option value={0}>keine</option>
-              <option value={1}>1× (Stufe 1)</option>
-              <option value={2}>2× (Stufe 2)</option>
-              <option value={-1}>jede Runde (Stufe 3)</option>
-            </select>
-          </label>
-          <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: "4px 0 0" }}>
-            Regelblatt Zeile 57 („CyberwareMod"). Reflex-Booster: +1 günstig, +3 militärisch,
-            +6 Prototyp. Chrom wirkt, sobald es <em>verbaut</em> ist; alles andere,
-            solange es <em>ausgerüstet</em> ist. „Jede Runde" schaltet zusätzlich die
-            Überhitzungs-Ampel frei.
-          </p>
-        </div>
 
         {typ === "Riggerkonsole" && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
