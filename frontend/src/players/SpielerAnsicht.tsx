@@ -236,7 +236,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     if (!ich) return;
     // eslint-disable-next-line no-alert
     const sicher = window.confirm(
-      "Bist du sicher? Das sollte lieber ein Experte für dich machen.\n\n" +
+      "Bist du sicher? Das solltest du lieber einen Experten machen lassen.\n\n" +
       "Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
     );
     if (!sicher) return;
