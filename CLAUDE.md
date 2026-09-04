@@ -8,7 +8,7 @@ WebApp für Mark's Pen-and-Paper-Rollenspielrunden, Homebrew-System **"NeotopiA"
 
 Zwei Nutzerrollen:
 1. **Spielleiter (GM)** — plant Kampagnen als **Beziehungsgraph**: Personen, Orte, Events mit typisierten Verbindungen zueinander (wer kennt wen, wer war wo, was geschah wann). Manche Inhalte sind strukturell immer GM-geheim (z.B. NPC-Hintergedanken).
-2. **Spieler** — eigene interaktive Charakterbögen (Dot-Pool-Attribute/Fähigkeiten, Box-Tracks für Gesundheit/Willenskraft), Live-Pop-ups vom SL während der Session (noch nicht gebaut).
+2. **Spieler** — eigene interaktive Charakterbögen (Dot-Pool-Attribute/Fähigkeiten, Box-Tracks für Gesundheit/Willenskraft), Live-Pop-ups vom SL während der Session (gebaut 03.09.2026: Text, Bild, Warnung).
 
 Der volle Plan (Architektur-Entscheidungen, Datenmodell, Phasen-Roadmap) liegt hier: `C:\Users\Mark\.claude\plans\gut-pnp-steht-f-r-temporal-waterfall.md` — bei Bedarf dort nachlesen, diese Datei hier ist die kompaktere Zusammenfassung + laufender Status.
 
@@ -21,7 +21,7 @@ Der volle Plan (Architektur-Entscheidungen, Datenmodell, Phasen-Roadmap) liegt h
 - **Backend**: FastAPI (async), `neo4j` async driver, JWT in httpOnly-Cookie, `bcrypt` direkt (NICHT passlib — siehe "Bekannte Stolpersteine" unten)
 - **Datenbank**: Neo4j 5 Community Edition, läuft in Docker
 - **Frontend**: React 19 + TypeScript + Vite, Cytoscape.js **direkt** (nicht der `react-cytoscapejs`-Wrapper — siehe unten)
-- **Auth**: GM hat echten Login (Username/Passwort). Spieler-Zugang (Zugangscode/Link) ist noch nicht gebaut (Phase 4)
+- **Auth**: GM hat echten Login (Username/Passwort). Spieler-Zugang (Zugangscode + eigenes Passwort) ist gebaut (Phase 4, 29.08.2026)
 - **Deployment-Ziel**: später Debian-Heimserver hinter nginx, aktuell Windows-Dev-Maschine. Docker Desktop ist installiert (WSL2-Backend)
 
 ## Projektstruktur
@@ -578,7 +578,10 @@ Ausgangspunkt: Marks Idee für eine dritte Chrom-Flavor-Kategorie (MagWare, magi
 - Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.
 - Waffen-/Rüstungs-Slots (Gegenstände am Körper) sind weiterhin nur generisch über Ablage geregelt, kein eigenes Ausrüstungs-Limit — nur Cyber-/Bio-/MagWare hat jetzt echte Körperzonen-Slots.
 - Kein Companion/Drohne-Sheet, obwohl `HAS_TRAIT` dafür schon generisch genug wäre (funktioniert für jeden Knotentyp, nicht nur Person) — nur noch nicht an eine Companion-Route angebunden.
-- Kein Würfeln.
+- **Kein Würfeln.** Der Kampfmodus (`app/kampf/`) verwaltet zwar Initiativliste,
+  Runden und "am Zug", aber die Initiativwerte werden von Hand eingetippt.
+  Nirgends im Projekt gibt es einen Würfelwurf — `grep` nach `random` findet
+  ausserhalb von UUIDs nur das Flackern der Commlink-Hülle.
 - `sortOrder`-Nummerierung im Seed ist grob (Reihenfolge aus dem Excel übernommen), nicht weiter kuratiert.
 - Optisches Layout ist weiterhin "unübersichtlich, nicht schön" (O-Ton Mark) — funktional korrekt, aber noch kein eigener Design-Durchgang für den Charakterbogen.
 - **Neue Idee von Mark (28.08.2026, noch nicht designed):** drei eigene Ansichten/Modi für den Charakterbogen — "Charaktererstellung" (Startpunkte-Regeln, Rassen-Boni etc. aus dem Regeln-Sheet), "Spiel" (Standard-Ansicht, das was jetzt existiert), "Level Up" (EP ausgeben). Dazu ein Erfahrungspunkte-Zähler pro Charakter + eine Möglichkeit für den SL, EP an alle oder einzelne Spieler zu vergeben (soll sich automatisch im Charakterbogen niederschlagen). Braucht eigene Logik/Design-Runde, bewusst noch nicht begonnen.
