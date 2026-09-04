@@ -87,6 +87,7 @@ def bogen_uebersicht(
     werte: dict[str, int],
     commlink_cyberwall: int = 0,
     chrom_verlust: int = 0,
+    initiative_mod: int = 0,
 ) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
@@ -124,7 +125,11 @@ def bogen_uebersicht(
         # Ohne Gerät ist man nicht angreifbar — für die Anzeige ein
         # Unterschied ums Ganze gegenüber "Wert 0, aber online".
         "offline": weg != "TECHNOMANCER" and commlink_cyberwall <= 0,
-        "initiative": initiative(werte),
+        # Regelblatt Zeile 57: + CyberwareMod. Der Reflex-Booster gibt je
+        # nach Stufe +1/+3/+6 (Zeilen 421-444).
+        "initiative": initiative(werte, initiative_mod),
+        # Getrennt ausgewiesen, damit das Blatt "9 (+3 Chrom)" zeigen kann.
+        "initiativeMod": initiative_mod,
         "erfahrungGesamt": erfahrung,
         "erfahrungAusgegeben": ausgegeben,
         "erfahrungVerfuegbar": max(0, erfahrung - ausgegeben),

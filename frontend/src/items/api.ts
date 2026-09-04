@@ -37,6 +37,8 @@ export interface Gegenstand {
   immerSichtbar: boolean;
   /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
   riggerBonus: number;
+  /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
+  initiativeBonus: number;
   maxDrohnen: number;
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
@@ -88,6 +90,8 @@ export interface TraglastZeile {
   immerSichtbar: boolean;
   /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
   riggerBonus: number;
+  /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
+  initiativeBonus: number;
   maxDrohnen: number;
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
@@ -152,6 +156,7 @@ export interface GegenstandUpdate {
   fahrzeugFertigkeiten?: Record<string, number>;
   immerSichtbar?: boolean;
   riggerBonus?: number;
+  initiativeBonus?: number;
   maxDrohnen?: number;
   wVerlust?: number;
   koerperzone?: string;

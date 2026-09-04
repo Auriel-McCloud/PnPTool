@@ -84,6 +84,30 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ablage": ablage,
         "gewicht": body.gewicht,
         "kapazitaet": body.kapazitaet,
+        # Cyber-/Bioware und Sonderwirkungen. Diese Liste war unvollständig:
+        # Felder, die hier fehlen, gehen beim Anlegen still verloren — sie
+        # lassen sich danach nur per PATCH nachtragen. Beim Ergänzen eines
+        # neuen Feldes im Schema also IMMER auch hier eintragen.
+        "wVerlust": body.wVerlust,
+        "koerperzone": body.koerperzone,
+        "slot": body.slot,
+        "istWaffe": body.istWaffe,
+        "traitBoni": body.traitBoni,
+        "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
+        "riggerBonus": body.riggerBonus,
+        "maxDrohnen": body.maxDrohnen,
+        "immerSichtbar": body.immerSichtbar,
+        "deckBruteForce": body.deckBruteForce,
+        "deckSchleichen": body.deckSchleichen,
+        "deckDaten": body.deckDaten,
+        "deckKompilieren": body.deckKompilieren,
+        "stufe": body.stufe,
+        "widerstand": body.widerstand,
+        "angriff": body.angriff,
+        "agilitaet": body.agilitaet,
+        "fahrzeugFertigkeiten": body.fahrzeugFertigkeiten,
+        # Reflex-Booster & Co. (Regelblatt Zeile 57, 421-444).
+        "initiativeBonus": body.initiativeBonus,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
     }

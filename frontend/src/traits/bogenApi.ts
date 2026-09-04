@@ -20,6 +20,8 @@ export interface BogenUebersicht {
   /** Ohne Commlink ist man nicht angreifbar — anderer Zustand als "Wert 0". */
   offline: boolean;
   initiative: number;
+  /** Anteil aus Cyberware (Reflex-Booster). Getrennt fuer die Anzeige. */
+  initiativeMod: number;
   erfahrungGesamt: number;
   erfahrungAusgegeben: number;
   erfahrungVerfuegbar: number;

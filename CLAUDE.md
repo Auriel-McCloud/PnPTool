@@ -320,6 +320,50 @@ Die Berechtigung prüft `darf_melden` feingranular — **nur der eigene
 Charakter**, die SL für alle; ein Teilnehmer ohne Person ("Wachmann 1") ist
 für Spieler tabu. Eintrag mit Begründung in `test_zugriffsschutz.py`.
 
+### Reflex-Booster: der CyberwareMod war immer 0
+
+Marks Hinweis: *"im Excel [existiert] ein Item das Reflex Booster heißt (ab
+Zeile 420) das deine Initiative erhöht, haben wir das auch schon
+berücksichtigt?"* — **Nein.** Die Formel hatte den Parameter, aber niemand
+füllte ihn: `cyberwareMod=0` stand fest verdrahtet in der Route.
+
+Quelle (Neotopia.xlsx, Blatt "Regeln", Zeilen 421-444): Reflex-Booster
+Stufe 1 **+1**, Stufe 2 **+3**, Stufe 3 **+6**. Zeile 174 kennt zusätzlich
+"Dash" (Combat Speed): **Initiative +2 für 3 Runden**.
+
+Deshalb ein **freies Zahlenfeld `initiativeBonus` am Gegenstand**, keine
+Reflex-Booster-Sonderregel — jedes Implantat, jede Droge, jedes Artefakt darf
+die Reihenfolge verschieben. Wirkt nur, solange **ausgerüstet** (ein Booster
+im Rucksack beschleunigt niemanden).
+
+Gerechnet wird an genau einer Stelle: `items/repository.py::initiative_modifikator`.
+Charakterbogen und Kampf-Pool holen sich denselben Wert — zwei Rechenwege für
+dieselbe Zahl wären eine Fehlerquelle. Das Blatt weist ihn getrennt aus
+("10 (+3 Chrom)"), sonst sucht man den zusätzlichen Punkt.
+
+### Stolperstein 12: `_create_data` zählt Felder einzeln auf
+
+Beim Prüfen fiel auf, dass der Booster zwar gespeichert schien, aber nicht
+wirkte. Ursache: `_create_data` in `app/items/routes.py` baut den Datensatz
+aus **einzeln aufgezählten** Feldern. Was dort fehlt, geht beim Anlegen still
+verloren.
+
+`initiativeBonus` fehlte — und mit ihm **`wVerlust`, `koerperzone`, `slot`,
+`istWaffe`, `traitBoni`, `riggerBonus` und ein Dutzend weitere**. Sie liessen
+sich nur per PATCH nachtragen. Ein Chrom-Implantat, das man anlegte, hatte
+also weder Willenskraftverlust noch Körperzone.
+
+Alle ergänzt. `backend/tests/test_gegenstand_felder.py` vergleicht jetzt das
+Schema mit der Übergabe und schlägt an, sobald ein neues Feld vergessen wird —
+gegengeprüft, indem das Feld testweise wieder entfernt wurde (Test wurde rot).
+
+**Zwei Fallen im Testskript**, beide kein Produktfehler:
+1. Der Besitzer steht im **Pfad** (`POST .../personen/{id}/gegenstaende`),
+   nicht im Body. Mit `besitzerId` im Body entsteht ein Gegenstand ohne
+   Besitzer.
+2. **PATCH ignoriert `ablage` absichtlich** — dafür gibt es
+   `POST .../gegenstaende/{id}/ablage`, der Körperzonen-Konflikte prüft.
+
 ### Sicherheitsfund: echte NPC-Namen waren sichtbar
 
 Bei der Frage "sollen Spieler die Initiative der anderen sehen?" antwortete
@@ -355,6 +399,15 @@ End-to-end mit zwei Browser-Kontexten (SL + Spieler gleichzeitig):
 - Testdaten entfernt; eine Ansage blieb zunächst liegen (Fehler im
   Aufräumskript, nicht im Code — `DELETE` liefert 204 und räumt korrekt),
   manuell nachgeräumt
+
+Reflex-Booster gegen die laufende Kampagne geprüft (Ryu Tanaka):
+
+- ohne Booster Initiative **7**, Chrom-Mod 0
+- Booster Stufe 2 (+3) ausgerüstet → Initiative **10**, Mod **3**
+- denselben Booster in den Rucksack gelegt → zurück auf **7**, Mod **0**
+- Prototyp-Booster (+6) im Kampf-Pool: **13** statt 7
+  ("Geistesschärfe 4 + Geschicklichkeit 3 + Chrom 6")
+- Testgegenstände restlos entfernt
 
 ## Kampagnen-Wiki (gebaut 03.09.2026)
 

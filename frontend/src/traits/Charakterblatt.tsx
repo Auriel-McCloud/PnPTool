@@ -447,6 +447,14 @@ export function Charakterblatt({
           <span className="cb-initiative">
             {u.initiative}
             <WuerfelZehn groesse={18} />
+            {/* Getrennt ausweisen, sonst sucht man den zusaetzlichen Punkt:
+                "9 (+3 Chrom)" statt einer stillen 9. */}
+            {Boolean(u.initiativeMod) && (
+              <em style={{ fontSize: "0.6em", fontStyle: "normal", color: "var(--text-leise)", marginLeft: 4 }}>
+                ({u.initiativeMod > 0 ? "+" : ""}
+                {u.initiativeMod} Chrom)
+              </em>
+            )}
           </span>
         </div>
       </section>

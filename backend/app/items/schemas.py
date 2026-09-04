@@ -99,6 +99,11 @@ class GegenstandCreate(BaseModel):
     # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
     # den Cyberdeck-Boni (deckBruteForce etc.), aber frei statt fest verdrahtet.
     traitBoni: dict[str, int] = {}
+    # Verschiebt die Initiative, solange ausgerüstet (Regelblatt Zeile 57:
+    # "CyberwareMod"). Reflex-Booster: +1 / +3 / +6 je nach Stufe (Zeilen
+    # 421-444), "Dash" +2 (Zeile 174). Freies Feld statt Sonderregel, damit
+    # auch Drogen und Artefakte die Reihenfolge verschieben können.
+    initiativeBonus: int = 0
     # NEUE Fertigkeiten, die es OHNE diesen Gegenstand gar nicht gibt (z.B.
     # ein NeuroWeaving-Skill an einem Cyberdeck, oder "Springen" an
     # magischen Stiefeln) — Name -> Bonuswürfel. Erscheinen nur, solange
@@ -155,6 +160,7 @@ class GegenstandUpdate(BaseModel):
     slot: int | None = None
     istWaffe: bool | None = None
     traitBoni: dict[str, int] | None = None
+    initiativeBonus: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -219,6 +225,7 @@ class GegenstandResponse(BaseModel):
     slot: int | None = None
     istWaffe: bool = False
     traitBoni: dict[str, int] = {}
+    initiativeBonus: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
     # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in

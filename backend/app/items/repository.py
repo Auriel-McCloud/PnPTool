@@ -20,6 +20,7 @@ RETURN_FIELDS = """
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
+    g.initiativeBonus AS initiativeBonus,
     g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
@@ -127,6 +128,10 @@ def _decode(record: dict) -> dict:
         except (json.JSONDecodeError, TypeError):
             record[feld] = {}
     record["riggerBonus"] = _or_default(record.get("riggerBonus"), 0)
+    # Initiative-Modifikator (Reflex-Booster & Co.). Bestandsdaten kennen das
+    # Feld nicht und liefern None — ohne Ersatz scheitert die Pydantic-Prüfung
+    # und reisst die ganze Liste mit 500 herunter (Stolperstein 9).
+    record["initiativeBonus"] = _or_default(record.get("initiativeBonus"), 0)
     record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
     record["widerstand"] = _or_default(record.get("widerstand"), 0)
@@ -167,7 +172,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
-            traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten
+            traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
+            initiativeBonus: $initiativeBonus
         })
     """
     if owner_person_id:
@@ -222,6 +228,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             slot=data.get("slot"),
             istWaffe=bool(data.get("istWaffe")),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
+            initiativeBonus=int(data.get("initiativeBonus") or 0),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
@@ -768,6 +775,29 @@ async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
                                    typen=list(CHROM_TYPEN))
         record = await result.single()
         return verlust_gesamt([float(w) for w in (record["einzeln"] if record else [])])
+
+
+async def initiative_modifikator(campaign_id: str, person_id: str) -> int:
+    """Initiative-Bonus aus getragener Cyberware (Regelblatt Zeile 57).
+
+    Der Reflex-Booster gibt je nach Stufe +1/+3/+6 (Zeilen 421-444). Gezählt
+    wird nur, was **ausgerüstet** ist — ein Booster im Rucksack beschleunigt
+    niemanden. Anders als beim Willenskraftverlust ist hier keine Rundung
+    nötig, deshalb summiert die Abfrage direkt.
+
+    Nicht auf CHROM_TYPEN eingeschränkt: auch eine Droge ("Dash", Zeile 174:
+    Initiative +2) oder ein Artefakt darf die Reihenfolge verschieben.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        RETURN coalesce(sum(coalesce(g.initiativeBonus, 0)), 0) AS summe
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return int(record["summe"]) if record else 0
 
 
 async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot: int, eigene_item_id: str) -> str | None:

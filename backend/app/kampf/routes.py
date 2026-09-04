@@ -6,6 +6,7 @@ from app.campaigns.repository import get_einstellungen
 from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
+from app.items.repository import initiative_modifikator
 from app.traits.repository import get_ratings_for_entity
 from app.wuerfel.logic import wuerfle
 
@@ -183,6 +184,15 @@ async def _werte_von(campaign_id: str, person_id: str) -> dict[str, int]:
     return {r["name"]: r["rating"] for r in roh}
 
 
+async def _chrom_mod(campaign_id: str, person_id: str) -> int:
+    """Initiative-Modifikator aus getragener Cyberware.
+
+    Dieselbe Quelle wie der Charakterbogen (`items/repository.py`) — zwei
+    Rechenwege für dieselbe Zahl wären eine Fehlerquelle.
+    """
+    return await initiative_modifikator(campaign_id, person_id)
+
+
 @router.get("/initiative/pool", response_model=InitiativePoolResponse)
 async def mein_initiative_pool(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     """Der eigene Initiative-Pool.
@@ -195,6 +205,7 @@ async def mein_initiative_pool(campaign_id: str, viewer: Viewer = Depends(get_vi
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
 
     werte = await _werte_von(campaign_id, viewer.person_id)
+    chrom = await _chrom_mod(campaign_id, viewer.person_id)
     einstellungen = await get_einstellungen(campaign_id)
 
     # Den eigenen Eintrag im laufenden Kampf suchen, damit die Oberfläche
@@ -208,10 +219,10 @@ async def mein_initiative_pool(campaign_id: str, viewer: Viewer = Depends(get_vi
         )
 
     return InitiativePoolResponse(
-        pool=initiative_pool(werte),
+        pool=initiative_pool(werte, chrom),
         geistesschaerfe=werte.get("Geistesschärfe", 0),
         geschicklichkeit=werte.get("Geschicklichkeit", 0),
-        cyberwareMod=0,
+        cyberwareMod=chrom,
         digitalErlaubt=bool(einstellungen.get("digitalesWuerfeln")),
         teilnehmerId=eigener["id"] if eigener else None,
         gemeldet=eigener["initiative"] if eigener else None,
@@ -277,7 +288,11 @@ async def wuerfle_npc_initiative(campaign_id: str):
             continue  # Die würfeln selbst
         pool = 0
         if t.get("personId"):
-            pool = initiative_pool(await _werte_von(campaign_id, t["personId"]))
+            # Auch NPCs tragen Chrom — ein Reflex-Booster wirkt für sie genauso.
+            pool = initiative_pool(
+                await _werte_von(campaign_id, t["personId"]),
+                await _chrom_mod(campaign_id, t["personId"]),
+            )
         elif t.get("begleiterId"):
             pool = initiative_pool(await _werte_von(campaign_id, t["begleiterId"]))
         # Ein namenloser Wachmann ohne Bogen bekommt einen Standardpool,

@@ -8,6 +8,7 @@ from app.items.repository import (
     ausruestungsfertigkeiten_liste,
     commlink_cyberwall,
     deck_boni,
+    initiative_modifikator,
     willenskraft_verlust,
 )
 from app.traits import erfahrung, erstellung, repository
@@ -69,11 +70,12 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     nach_name = {w["name"]: w["rating"] for w in werte}
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
     erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
 
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
-        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom),
+        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod),
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
         "deckBoni": await deck_boni(campaign_id, person_id),
@@ -151,7 +153,8 @@ async def set_zustand(
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
-    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod)
 
 
 # =====================================================================
@@ -272,9 +275,10 @@ async def erstelle_charakter(
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
     return {
         "uebersicht": bogen_uebersicht(
-            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom
+            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom, init_mod
         ),
         "freebeesVerbraucht": erstellung.freebee_kosten(
             auswahl, {t["name"]: t["category"] for t in katalog}
@@ -436,4 +440,5 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
-    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
+    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod)
