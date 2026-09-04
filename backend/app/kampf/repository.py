@@ -73,9 +73,39 @@ async def hole(campaign_id: str) -> dict | None:
         )
         teilnehmer = sortiere([_decode(r) async for r in result])
 
+        # Fuer die Spielersicht: Rasse je NPC (ergibt "Unbekannter Ork") und
+        # wem ein Begleiter gehoert. In derselben Sitzung, damit die Liste
+        # nicht aus zwei Zeitpunkten zusammengesetzt wird.
+        result = await session.run(
+            """
+            MATCH (p:Person {campaignId: $campaign_id})
+            RETURN p.id AS id, p.rasse AS rasse, p.personType AS personType
+            """,
+            campaign_id=campaign_id,
+        )
+        rassen: dict[str, str] = {}
+        npc_ids: set[str] = set()
+        async for r in result:
+            rassen[r["id"]] = r["rasse"] or ""
+            if r["personType"] == "NPC":
+                npc_ids.add(r["id"])
+
+        result = await session.run(
+            """
+            MATCH (b:Begleiter {campaignId: $campaign_id})-[:BEGLEITET]->(p:Person)
+            RETURN b.id AS begleiterId, p.id AS besitzerId
+            """,
+            campaign_id=campaign_id,
+        )
+        begleiter_besitzer = {r["begleiterId"]: r["besitzerId"] async for r in result}
+
     return {
         "id": kampf["id"],
         "runde": kampf["runde"] or 1,
+        # Nur fuer die serverseitige Filterung, nicht Teil der Antwort.
+        "_rassen": rassen,
+        "_npcIds": npc_ids,
+        "_begleiterBesitzer": begleiter_besitzer,
         # Kennung des Teilnehmers, der gerade handelt. Kennung statt Position,
         # weil sich die Reihenfolge ändern kann (jemand kommt dazu) — eine
         # Position zeigte danach auf jemand anderen.

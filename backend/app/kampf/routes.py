@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
+from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.kampf import repository
+from app.kampf.sichtbarkeit import fuer_spieler
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/kampf",
@@ -11,6 +12,19 @@ router = APIRouter(
 )
 
 Kampfart = str  # MATRIX | NAHKAMPF | FERNKAMPF — bewusst offen, siehe unten
+
+
+def _ohne_hilfsfelder(kampf: dict | None) -> dict | None:
+    """Entfernt die nur zur Filterung mitgelieferten Felder.
+
+    Schreibrouten sind der Spielleitung vorbehalten, dort ist nichts zu
+    verbergen — die Felder gehören aber trotzdem nicht in die Antwort.
+    """
+    if kampf is None:
+        return None
+    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer"):
+        kampf.pop(feld, None)
+    return kampf
 
 
 class TeilnehmerResponse(BaseModel):
@@ -56,18 +70,39 @@ class AmZugInput(BaseModel):
 
 
 @router.get("", response_model=KampfResponse | None)
-async def laufender_kampf(campaign_id: str):
+async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     """Die Initiativliste.
 
     **Für alle mit Zugang lesbar** — das ist der Sinn der Sache: jeder am Tisch
     soll sehen, wann er dran ist, ohne fragen zu müssen.
+
+    **Aber:** Spieler sehen NPCs nur unter Alias. Mark: *"die Spieler dürfen
+    nur die Alias Namen der NPCs sehen nicht ihre richtigen Namen!"* Gefiltert
+    wird hier serverseitig, nicht im Browser — im Netzwerkverkehr stünde der
+    echte Name sonst trotzdem.
     """
-    return await repository.hole(campaign_id)
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        return None
+
+    rassen = kampf.pop("_rassen", {})
+    npc_ids = kampf.pop("_npcIds", set())
+    begleiter_besitzer = kampf.pop("_begleiterBesitzer", {})
+
+    if viewer.role != "GM":
+        kampf["teilnehmer"] = fuer_spieler(
+            kampf["teilnehmer"],
+            rassen=rassen,
+            eigene_person_id=viewer.person_id,
+            begleiter_besitzer=begleiter_besitzer,
+            npc_ids=npc_ids,
+        )
+    return kampf
 
 
 @router.post("", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
 async def beginne(campaign_id: str):
-    return await repository.beginne(campaign_id)
+    return _ohne_hilfsfelder(await repository.beginne(campaign_id))
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
@@ -80,7 +115,7 @@ async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
     kampf = await repository.teilnehmer_hinzu(campaign_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return kampf
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.patch("/teilnehmer/{teilnehmer_id}", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -88,7 +123,7 @@ async def teilnehmer_aendern(campaign_id: str, teilnehmer_id: str, body: Teilneh
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return kampf
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.delete("/teilnehmer/{teilnehmer_id}", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -96,7 +131,7 @@ async def teilnehmer_entfernen(campaign_id: str, teilnehmer_id: str):
     kampf = await repository.teilnehmer_entfernen(campaign_id, teilnehmer_id)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return kampf
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.post("/weiter", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -105,7 +140,7 @@ async def weiter(campaign_id: str):
     kampf = await repository.weiter(campaign_id)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return kampf
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.post("/amzug", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -114,4 +149,4 @@ async def am_zug(campaign_id: str, body: AmZugInput):
     kampf = await repository.setze_am_zug(campaign_id, body.teilnehmerId)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return kampf
+    return _ohne_hilfsfelder(kampf)
