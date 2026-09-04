@@ -868,7 +868,10 @@ Ausgangspunkt: Marks Idee für eine dritte Chrom-Flavor-Kategorie (MagWare, magi
 - **Vertagt / nicht Teil dieser Runde**: die schematische Körper-Ansicht mit Strichmännchen und Augment-Markierungen (Mark: "das schaut sicher toll aus") — reine Zusatzidee, kein Blocker fürs Grundsystem. Kein Browser-Klicktest, nur API-Ebene geprüft (wie beim Mülleimer-Feature davor).
 
 **Nicht gemacht / bewusst zurückgestellt (Rest von Phase 3):**
-- Keine Box-Tracks (Gesundheit/Willenskraft/I.C.E./Arete) — die "Kästchen statt Punkte"-Werte aus dem Excel fehlen noch komplett.
+- ~~Keine Box-Tracks~~ **erledigt**: `bogen.py` hat `gesundheit_max`,
+  `willenskraft_max` und `ice_max`; Schaden wird nach Art getrennt gezählt
+  (Schlag/Schwer/Aggraviert) und im Charakterblatt sowie in der Kampfkarte
+  angezeigt. (Stand 04.09.2026 nachgeprüft — die Zeile war veraltet.)
 - Waffen-/Rüstungs-Slots (Gegenstände am Körper) sind weiterhin nur generisch über Ablage geregelt, kein eigenes Ausrüstungs-Limit — nur Cyber-/Bio-/MagWare hat jetzt echte Körperzonen-Slots.
 - Kein Companion/Drohne-Sheet, obwohl `HAS_TRAIT` dafür schon generisch genug wäre (funktioniert für jeden Knotentyp, nicht nur Person) — nur noch nicht an eine Companion-Route angebunden.
 - **Kein Würfeln.** Der Kampfmodus (`app/kampf/`) verwaltet zwar Initiativliste,
@@ -877,7 +880,7 @@ Ausgangspunkt: Marks Idee für eine dritte Chrom-Flavor-Kategorie (MagWare, magi
   ausserhalb von UUIDs nur das Flackern der Commlink-Hülle.
 - `sortOrder`-Nummerierung im Seed ist grob (Reihenfolge aus dem Excel übernommen), nicht weiter kuratiert.
 - Optisches Layout ist weiterhin "unübersichtlich, nicht schön" (O-Ton Mark) — funktional korrekt, aber noch kein eigener Design-Durchgang für den Charakterbogen.
-- **Neue Idee von Mark (28.08.2026, noch nicht designed):** drei eigene Ansichten/Modi für den Charakterbogen — "Charaktererstellung" (Startpunkte-Regeln, Rassen-Boni etc. aus dem Regeln-Sheet), "Spiel" (Standard-Ansicht, das was jetzt existiert), "Level Up" (EP ausgeben). Dazu ein Erfahrungspunkte-Zähler pro Charakter + eine Möglichkeit für den SL, EP an alle oder einzelne Spieler zu vergeben (soll sich automatisch im Charakterbogen niederschlagen). Braucht eigene Logik/Design-Runde, bewusst noch nicht begonnen.
+- **Idee von Mark (28.08.2026) — Erfahrung inzwischen gebaut** (`traits/erfahrung.py`, Routen `.../erfahrung` zum Vergeben und `.../steigern` zum Ausgeben). Offen bleiben die drei Bogen-Modi: drei eigene Ansichten/Modi für den Charakterbogen — "Charaktererstellung" (Startpunkte-Regeln, Rassen-Boni etc. aus dem Regeln-Sheet), "Spiel" (Standard-Ansicht, das was jetzt existiert), "Level Up" (EP ausgeben). Dazu ein Erfahrungspunkte-Zähler pro Charakter + eine Möglichkeit für den SL, EP an alle oder einzelne Spieler zu vergeben (soll sich automatisch im Charakterbogen niederschlagen). Braucht eigene Logik/Design-Runde, bewusst noch nicht begonnen.
 
 ## Sichtbarkeit scharf geschaltet + SL-Vorschau (28.08.2026)
 
