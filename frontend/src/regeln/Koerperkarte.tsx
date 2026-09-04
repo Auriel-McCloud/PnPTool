@@ -141,6 +141,19 @@ export function Koerperkarte({
   function Panel({ zone }: { zone: ZonenName }) {
     const stuecke = inZone(zone);
     const platz = PANELS[zone];
+    // Augments ohne Slot: der erste freie Platz, oder ans Ende.
+    const mitSlot = (nr: number) => stuecke.find((g) => g.slot === nr);
+    const ohneSlot = stuecke.filter((g) => g.slot == null);
+    let ohneSlotIdx = 0;
+    const fuerPlatz = (nr: number) => {
+      const direkt = mitSlot(nr);
+      if (direkt) return direkt;
+      // Nächstes Augment ohne Slot hier einfügen
+      if (ohneSlotIdx < ohneSlot.length) {
+        return ohneSlot[ohneSlotIdx++];
+      }
+      return null;
+    };
     return (
       <section
         className="kk-panel"
@@ -162,7 +175,7 @@ export function Koerperkarte({
         </h4>
         <ul className="kk-panelliste">
           {PLAETZE.map((nr) => {
-            const stueck = stuecke.find((g) => g.slot === nr);
+            const stueck = fuerPlatz(nr);
             return (
               <li
                 key={nr}
