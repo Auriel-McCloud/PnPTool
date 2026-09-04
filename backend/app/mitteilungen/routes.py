@@ -74,6 +74,7 @@ async def senden(campaign_id: str, body: MitteilungCreate):
         empfaenger_ids=empfaenger,
         bild_url=body.bildUrl,
         farbe=body.farbe,
+        initiative=body.initiative,
     )
     zugestellt = await verteiler.verteilen(campaign_id, mitteilung)
     return {"mitteilung": mitteilung, "zugestellt": zugestellt}

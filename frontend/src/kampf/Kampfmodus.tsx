@@ -114,6 +114,16 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         <span className="ka-runde">
           Runde <strong>{kampf.runde}</strong>
         </span>
+        {/* Marks ausdrueckliche Ausnahme: die NPCs wuerfelt das Tool, die
+            Spieler wuerfeln physisch und melden selbst. */}
+        <button
+          type="button"
+          onClick={() => mit(kampfApi.wuerfleNpcs(campaignId))}
+          disabled={laeuft}
+          title="Initiative aller NPCs und Begleiter automatisch würfeln"
+        >
+          ⚄ NPC-Initiative
+        </button>
         <button type="button" className="ka-weiter" onClick={() => mit(kampfApi.weiter(campaignId))} disabled={laeuft}>
           Nächster ›
         </button>

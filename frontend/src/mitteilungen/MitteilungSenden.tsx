@@ -35,6 +35,8 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
   // dritten Art im Dropdown — man greift im Kampf danach, nicht im Menue.
   const [alsWarnung, setAlsWarnung] = useState(false);
   const [warnfarbe, setWarnfarbe] = useState<Warnfarbe>("rot");
+  // Zeigt den Spielern gleich das Initiative-Feld im Popup.
+  const [mitInitiative, setMitInitiative] = useState(false);
   const [laedtBild, setLaedtBild] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const [rueckmeldung, setRueckmeldung] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
         inhalt: sauber,
         bildUrl: alsWarnung ? "" : bildUrl,
         farbe: warnfarbe,
+        initiative: alsWarnung && mitInitiative,
         anAlle,
         empfaengerIds: anAlle ? [] : ziele,
       });
@@ -209,6 +212,16 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
                     {f}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="mt-pc"
+                  aria-pressed={mitInitiative}
+                  onClick={() => setMitInitiative((w) => !w)}
+                  title="Die Spieler bekommen im Popup gleich ihren Würfelpool und ein Eingabefeld"
+                  style={{ minHeight: 0, padding: "5px 12px", fontSize: 12 }}
+                >
+                  ⚄ Initiative
+                </button>
               </span>
             )}
           </div>

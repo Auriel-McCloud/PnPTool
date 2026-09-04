@@ -227,7 +227,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     <MitteilungPopup />
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
-    <Warnung />
+    <Warnung campaignId={ich.campaignId} />
     <Verwundung zustand={zustand} />
     <DranMeldung
       kampf={kampf}

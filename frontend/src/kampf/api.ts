@@ -28,6 +28,18 @@ export interface Teilnehmer {
   begleiterId: string | null;
 }
 
+/** Was der Spieler vor dem Initiativwurf wissen muss. */
+export interface InitiativePool {
+  pool: number;
+  geistesschaerfe: number;
+  geschicklichkeit: number;
+  cyberwareMod: number;
+  /** Darf im Tool gewürfelt werden, oder liegen echte Würfel auf dem Tisch? */
+  digitalErlaubt: boolean;
+  teilnehmerId: string | null;
+  gemeldet: number | null;
+}
+
 export interface Kampf {
   id: string;
   runde: number;
@@ -42,6 +54,13 @@ function basis(cid: string) {
 
 export const kampfApi = {
   laden: (cid: string) => api.get<Kampf | null>(basis(cid)),
+  /** Der eigene Initiative-Pool (Geistesschärfe + Geschicklichkeit + Chrom). */
+  initiativePool: (cid: string) => api.get<InitiativePool>(`${basis(cid)}/initiative/pool`),
+  /** Selbst gewürfelten Wert melden — landet sofort in der Liste der SL. */
+  meldeInitiative: (cid: string, teilnehmerId: string, erfolge: number) =>
+    api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/initiative`, { erfolge }),
+  /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
+  wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   beginnen: (cid: string) => api.post<Kampf>(basis(cid)),
   beenden: (cid: string) => api.delete<void>(basis(cid)),
   hinzu: (cid: string, daten: Partial<Teilnehmer> & { name: string }) =>

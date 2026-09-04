@@ -11,6 +11,7 @@ export interface Mitteilung {
   inhalt: string;
   bildUrl: string;
   farbe: Warnfarbe;
+  initiative: boolean;
   anAlle: boolean;
   empfaengerIds: string[];
   gelesenVon: string[];
@@ -34,6 +35,7 @@ export const sendeMitteilung = (
     inhalt?: string;
     bildUrl?: string;
     farbe?: Warnfarbe;
+    initiative?: boolean;
     anAlle: boolean;
     empfaengerIds?: string[];
   },

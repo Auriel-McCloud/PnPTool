@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { InitiativeMelden } from "./InitiativeMelden";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
@@ -17,7 +18,7 @@ import "./mitteilungen.css";
  * lichtempfindliche Menschen ist Pulsieren keine Stimmung, sondern ein
  * Problem. Die Ansage bleibt dann trotzdem lesbar stehen.
  */
-export function Warnung() {
+export function Warnung({ campaignId }: { campaignId?: string | null }) {
   const { aktuell, wartend, bestaetigen } = useMitteilungen();
 
   if (!aktuell || aktuell.art !== "WARNUNG") return null;
@@ -35,6 +36,12 @@ export function Warnung() {
           ⚠
         </div>
         <p className="wn-text">{aktuell.inhalt}</p>
+
+        {/* Bei "Würfelt für Initiative!" gleich das Eingabefeld — Marks
+            Wunsch: melden ohne den Bereich zu wechseln. */}
+        {aktuell.initiative && campaignId && (
+          <InitiativeMelden campaignId={campaignId} />
+        )}
         <div className="wn-fuss">
           {wartend > 0 && <span className="wn-rest">noch {wartend} weitere</span>}
           <button

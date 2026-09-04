@@ -14,7 +14,7 @@ from app.db.neo4j_driver import get_driver
 
 _FELDER = """
     m.id AS id, m.art AS art, m.inhalt AS inhalt, m.bildUrl AS bildUrl,
-    m.farbe AS farbe,
+    m.farbe AS farbe, m.initiative AS initiative,
     m.anAlle AS anAlle, m.empfaengerIds AS empfaengerIds,
     m.gelesenVon AS gelesenVon, m.erstelltAm AS erstelltAm
 """
@@ -34,6 +34,7 @@ def _mit_defaults(record) -> dict:
     m["inhalt"] = m.get("inhalt") or ""
     m["bildUrl"] = m.get("bildUrl") or ""
     m["farbe"] = m.get("farbe") or "rot"
+    m["initiative"] = bool(m.get("initiative"))
     m["anAlle"] = bool(m.get("anAlle"))
     m["empfaengerIds"] = m.get("empfaengerIds") or []
     m["gelesenVon"] = m.get("gelesenVon") or []
@@ -49,6 +50,7 @@ async def create_mitteilung(
     empfaenger_ids: list[str],
     bild_url: str = "",
     farbe: str = "rot",
+    initiative: bool = False,
 ) -> dict:
     driver = get_driver()
     query = f"""
@@ -56,6 +58,7 @@ async def create_mitteilung(
         CREATE (m:Mitteilung {{
             id: $mid, campaignId: $campaign_id,
             art: $art, inhalt: $inhalt, bildUrl: $bild_url, farbe: $farbe,
+            initiative: $initiative,
             anAlle: $an_alle, empfaengerIds: $empfaenger_ids,
             gelesenVon: [], erstelltAm: $jetzt
         }})
@@ -71,6 +74,7 @@ async def create_mitteilung(
             inhalt=inhalt,
             bild_url=bild_url,
             farbe=farbe,
+            initiative=initiative,
             an_alle=an_alle,
             empfaenger_ids=empfaenger_ids,
             jetzt=_jetzt(),

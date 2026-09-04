@@ -64,6 +64,13 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     "traglastAttribut": "Körperkraft",
     # Kilogramm je Attributpunkt.
     "traglastProPunkt": 10.0,
+    # Würfeln die Spieler im Tool statt am Tisch? Mark spielt mit echten
+    # Würfeln — deshalb aus. Wer digital würfelt, schaltet es je Kampagne ein.
+    "digitalesWuerfeln": False,
+    # Die Ausnahme: die Spielleitung würfelt die Initiative ihrer NPCs
+    # automatisch, auch wenn die Spieler physisch würfeln. Mark: "die hätte
+    # ich schon gerne automatisch".
+    "digitalesWuerfelnSL": True,
 }
 
 

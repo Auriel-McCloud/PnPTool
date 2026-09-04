@@ -12,6 +12,10 @@ class MitteilungCreate(BaseModel):
     # Nur bei WARNUNG: Farbe des pulsierenden Schirms. Waehlbar, weil der
     # Ton am Tisch noch erprobt wird.
     farbe: Literal["rot", "blau", "violett"] = "rot"
+    # Nur bei WARNUNG: zeigt im Popup gleich das Initiative-Eingabefeld.
+    # Eigenes Feld statt Textvergleich ("Initiative" im Inhalt suchen) —
+    # der Text ist frei formulierbar und mal anders geschrieben.
+    initiative: bool = False
     # An alle oder an ausgewählte Charaktere — Mark wollte beides.
     anAlle: bool = True
     empfaengerIds: list[str] = []
@@ -36,6 +40,7 @@ class MitteilungResponse(BaseModel):
     inhalt: str = ""
     bildUrl: str = ""
     farbe: str = "rot"
+    initiative: bool = False
     anAlle: bool = True
     empfaengerIds: list[str] = []
     gelesenVon: list[str] = []

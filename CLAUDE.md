@@ -268,6 +268,94 @@ Testzugang und Ansagen danach restlos entfernt:
 das waren Leichen offener Tabs aus früheren Läufen, jeder mit eigener
 Leitung. Kein Codefehler, aber ein Grund, Tabs zwischen Läufen zu schliessen.
 
+## Würfeln und Initiative (gebaut 03.09.2026)
+
+### Das Würfelsystem (`app/wuerfel/logic.py`)
+
+Pool aus zehnseitigen Würfeln nach `docs/regeln-neotopia.md`:
+**1-5 Misserfolg, 6-10 Erfolg**; zwei Zehnen zählen wie vier Erfolge, drei wie
+sechs (also **zwei Erfolge je Zehn** ab der zweiten); Patzer, wenn mindestens
+die Hälfte der Würfel eine 1 zeigt (bei ungerader Anzahl aufgerundet).
+
+`werte_wurf()` ist absichtlich vom Würfeln getrennt: Mark spielt mit
+**physischen** Würfeln, das Tool rechnet dann nur nach. Gewürfelt wird mit
+`secrets` statt `random` — am Tisch nicht spürbar, aber ein vorhersagbarer
+Generator auf einem Server, den Spieler erreichen, ist unnötige Angriffsfläche.
+Pool auf `MAX_POOL = 100` begrenzt (Tippfehlerschutz).
+
+### Zwei Kampagnenoptionen
+
+Marks Vorgabe wörtlich: *"ich will es als Kampagnen weite Option, die lautet
+'Digitales Würfeln' und 'Digitales Würfeln SL'"*.
+
+- `digitalesWuerfeln` — **Standard aus.** Mark: *"da ich möchte das meine
+  Spieler physische würfel verwenden"*.
+- `digitalesWuerfelnSL` — **Standard an.** Die ausdrückliche Ausnahme: *"die
+  Ausnahme sind als SL nämlich die Initiative Würfel für meine im Kampf
+  teilnehmenden NPCs die hätte schon gerne automatisch"*.
+
+Dafür entstand `frontend/src/campaigns/EinstellungenFenster.tsx` (⚙ in der
+Werkzeugleiste) — die Einstellungen existierten bis dahin **nur im Backend**
+und waren nicht bedienbar.
+
+### Initiative melden — der eigentliche Wunsch
+
+Mark: *"das bei würfelt Initiative, bereits bei dem jeweiligen Spielern seine
+Initiative angezeigt wird, er die Möglichkeit hat seinen manuell gewürfelten
+wert einzugeben, damit das bei mir in der Initiative reinfolge automatisch
+angezeigt wird"*.
+
+Ablauf: SL schickt die Warnung mit Schalter **⚄ Initiative** → beim Spieler
+zeigt das Popup **seinen Pool** (Geistesschärfe + Geschicklichkeit + Chrom,
+Formel aus `traits/bogen.py`, damit Kampf und Bogen nie auseinanderlaufen) →
+er würfelt physisch, tippt die Erfolge → der Wert steht sofort in der Liste
+der SL.
+
+**Eigenes Feld `initiative: bool` an der Mitteilung**, kein Textvergleich auf
+"Initiative" — der Warntext ist frei formulierbar.
+
+`POST .../teilnehmer/{id}/initiative` ist die zweite Schreibroute ohne
+`require_campaign_gm` (nach "gelesen"): Der Spieler muss selbst melden können.
+Die Berechtigung prüft `darf_melden` feingranular — **nur der eigene
+Charakter**, die SL für alle; ein Teilnehmer ohne Person ("Wachmann 1") ist
+für Spieler tabu. Eintrag mit Begründung in `test_zugriffsschutz.py`.
+
+### Sicherheitsfund: echte NPC-Namen waren sichtbar
+
+Bei der Frage "sollen Spieler die Initiative der anderen sehen?" antwortete
+Mark: *"1 aber die Spieler dürfen nur die Alias Namen der NPCs sehen nicht
+ihre richtigen Namen!"* — daraufhin geprüft und **einen echten Leak gefunden**:
+`GET .../kampf` lieferte die Liste ungefiltert an jeden mit Kampagnenzugang.
+Ein Spieler las den Klarnamen eines NPC.
+
+Behoben in `app/kampf/sichtbarkeit.py`: NPCs erscheinen unter Alias
+("Unbekannter Ork" aus `kontakte/logic.py`, dieselbe Aliaslogik wie im
+Messenger — ein NPC soll im Kampf nicht anders heissen als im
+Kontaktverzeichnis). Zusätzlich verdeckt: SL-Notizen am fremden Eintrag und
+Begleiter von NPCs (sonst verriete "Kampfdrohne von Viktor" den Namen durch
+die Hintertür). PCs behalten ihren Namen — die Mitspieler kennen einander.
+
+Serverseitig gefiltert, nicht im Browser: im Netzwerkverkehr stünde der echte
+Name sonst trotzdem.
+
+**Bewiesen** mit einem Vorher/Nachher-Durchstich: vorher "LEAKTEST Viktor
+Kane", nachher "Unbekannter Ork".
+
+### Geprüft
+
+End-to-end mit zwei Browser-Kontexten (SL + Spieler gleichzeitig):
+
+- Warnung mit Initiative-Schalter kam an, Popup zeigte **Pool 7** und die
+  Herkunft "Geistesschärfe 4 + Geschicklichkeit 3"
+- Spieler tippte 5 **über die Oberfläche** (nicht per `fetch`) → Bestätigung
+  "Gemeldet: 5"
+- bei der SL stand sofort `Ryu Tanaka: 5` in der Liste
+- NPC-Initiative automatisch gewürfelt (Ergebnis 3)
+- der Spieler sah den NPC weiterhin als "Unbekannter Troll" — `leak: false`
+- Testdaten entfernt; eine Ansage blieb zunächst liegen (Fehler im
+  Aufräumskript, nicht im Code — `DELETE` liefert 204 und räumt korrekt),
+  manuell nachgeräumt
+
 ## Kampagnen-Wiki (gebaut 03.09.2026)
 
 Das Planungswerkzeug, das Mark eigentlich wollte: Geschichten schreiben,

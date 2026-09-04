@@ -15,6 +15,7 @@ import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { WikiAnsicht } from "./wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
+import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
@@ -95,6 +96,8 @@ function Dashboard() {
 
   const kampagne = campaigns?.[0];
 
+  const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+
   const werkzeuge = (
     <>
       {/* Geplante Werkzeuge (docs/ui-konzept.md): SL-Popups an Spieler und der
@@ -104,6 +107,15 @@ function Dashboard() {
       {/* War laut docs/ui-konzept.md als "SL-Popups" vorgesehen und bis jetzt
           deaktiviert — hier ist die Funktion dahinter. */}
       {kampagne && <MitteilungSenden campaignId={kampagne.id} />}
+      {kampagne && (
+        <button
+          type="button"
+          onClick={() => setEinstellungenOffen(true)}
+          title="Kampagnen-Einstellungen"
+        >
+          ⚙
+        </button>
+      )}
       <button type="button" className="cl-werkzeug" disabled title="Erklärungen einblenden — kommt noch">
         ?
       </button>
@@ -150,6 +162,12 @@ function Dashboard() {
       {!loading && kampagne && (
         <>
           <ViewAsSwitcher campaignId={kampagne.id} value={viewAs} onChange={setViewAs} />
+
+          <EinstellungenFenster
+            campaignId={kampagne.id}
+            offen={einstellungenOffen}
+            onSchliessen={() => setEinstellungenOffen(false)}
+          />
 
           {ENTITY_ANSICHT[bereich] && (
             <EntityManager

@@ -452,3 +452,91 @@
   border-color: rgb(var(--wn-probe));
   background: rgb(var(--wn-probe) / 0.24);
 }
+
+/* --- Initiative melden, direkt in der Warnung -------------------------
+   Marks Ablauf: Pool sehen, physisch wuerfeln, Erfolge eintippen. */
+
+.wn-init {
+  margin: 4px 0 16px;
+  padding: 14px;
+  border: 1px solid rgb(var(--wn-ton) / 0.45);
+  border-radius: var(--radius);
+  background: rgb(var(--wn-ton) / 0.08);
+}
+
+.wn-init-pool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wn-init-zahl {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(var(--wn-ton));
+  text-shadow: 0 0 20px rgb(var(--wn-ton) / 0.7);
+}
+
+.wn-init-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.wn-init-text em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+.wn-init-eingabe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wn-init-eingabe label {
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.wn-init-eingabe input {
+  width: 84px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 20px;
+  padding: 8px;
+}
+
+.wn-init-digital {
+  margin-top: 8px;
+  min-height: 0;
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.wn-init-hinweis {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.wn-init-fertig {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.wn-init-fehler {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--signal);
+}

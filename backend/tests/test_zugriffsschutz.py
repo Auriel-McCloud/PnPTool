@@ -53,6 +53,12 @@ OHNE_GM_ERLAUBT = {
     # gelesenVon-Liste und nur für die eigene Person-ID (aus der Sitzung,
     # nicht aus dem Body) — der Inhalt der Mitteilung bleibt unberührt.
     "/api/campaigns/{campaign_id}/mitteilungen/{mitteilung_id}/gelesen",
+    # Seine eigene Initiative meldet der Spieler selbst — das ist der Zweck
+    # der Sache (Mark: "er die Möglichkeit hat seinen manuell gewürfelten
+    # wert einzugeben"). Wer für WEN melden darf, prüft `darf_melden` in
+    # app/kampf/initiative.py: nur der eigene Charakter, die SL für alle.
+    # Der Wert wird zusätzlich auf Plausibilität geprüft (melde_wert).
+    "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/initiative",
     "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
 }
 

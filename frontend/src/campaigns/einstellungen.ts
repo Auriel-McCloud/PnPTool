@@ -14,6 +14,12 @@ export interface Einstellungen {
   traglastAttribut: string;
   /** Kilogramm je Attributpunkt. */
   traglastProPunkt: number;
+  /** Würfeln die Spieler im Tool statt am Tisch? */
+  digitalesWuerfeln: boolean;
+  /** Die SL würfelt die Initiative ihrer NPCs automatisch. */
+  digitalesWuerfelnSL: boolean;
+  /** Der In-World-Messenger ist eine optionale Kampagnenfunktion. */
+  messengerAktiv: boolean;
   [weitere: string]: unknown;
 }
 
