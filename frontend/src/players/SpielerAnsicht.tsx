@@ -172,9 +172,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const bereiche: Ablagebereich[] = [
     // Die eigenen Bereiche dürfen nur eigene Sachen einsammeln — sonst
     // fischte "Mitgeführt" auch den Rucksackinhalt anderer heraus.
+    // Verbautes Chrom erscheint nur in der Körperkarte, nie im Inventar.
     ...ermittleBereiche(meineRoh).map((b) => ({
       ...b,
-      passt: (g: Gegenstand) => gehoertMir(g) && b.passt(g),
+      passt: (g: Gegenstand) =>
+        gehoertMir(g) && b.passt(g) && !istVerbautesChrom(g as GegenstandMitBesitzer),
     })),
     ...(fremdeRoh.length > 0
       ? [

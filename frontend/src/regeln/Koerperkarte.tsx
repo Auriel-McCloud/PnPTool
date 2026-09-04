@@ -72,6 +72,8 @@ export function Koerperkarte({
   const [person, setPerson] = useState<Person | null>(null);
   const [chrom, setChrom] = useState<Gegenstand[]>([]);
   const [gewaehlt, setGewaehlt] = useState<ZonenName | null>(null);
+  const [popupZone, setPopupZone] = useState<ZonenName | null>(null);
+  const [popupAugment, setPopupAugment] = useState<Gegenstand | null>(null);
   const [laedt, setLaedt] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   // Chirurgie-Modus: SL kann Augments entfernen.
@@ -165,7 +167,14 @@ export function Koerperkarte({
           top: proz(platz.y, HOEHE),
           width: proz(platz.breite, BREITE),
         }}
-        onClick={() => setGewaehlt(gewaehlt === zone ? null : zone)}
+        onClick={() => {
+          if (gewaehlt === zone) {
+            // Zweiter Klick: Popup öffnen wenn Augments vorhanden
+            if (stuecke.length > 0) setPopupZone(zone);
+          } else {
+            setGewaehlt(zone);
+          }
+        }}
       >
         <h4 className="kk-panelkopf">
           {zone}
@@ -272,7 +281,13 @@ export function Koerperkarte({
                     data-belegt={anzahl > 0}
                     data-voll={anzahl >= PLAETZE.length}
                     data-gewaehlt={gewaehlt === zone}
-                    onClick={() => setGewaehlt(gewaehlt === zone ? null : zone)}
+                    onClick={() => {
+                      if (gewaehlt === zone) {
+                        if (anzahl > 0) setPopupZone(zone);
+                      } else {
+                        setGewaehlt(zone);
+                      }
+                    }}
                   >
                     <title>
                       {zone}: {anzahl} von {PLAETZE.length} belegt
@@ -346,6 +361,84 @@ export function Koerperkarte({
         <p className="kk-chirurgie-hinweis">
           Klicke auf ein Augment, um es zu entfernen.
         </p>
+      )}
+
+      {/* Zonen-Popup: zeigt Augments der Zone, klickbar für Details */}
+      {popupZone && (
+        <div className="kk-popup-huelle" onClick={() => setPopupZone(null)}>
+          <div className="kk-popup" onClick={(e) => e.stopPropagation()}>
+            <h3>{popupZone}</h3>
+            <ul className="kk-popup-liste">
+              {inZone(popupZone).map((aug) => (
+                <li
+                  key={aug.id}
+                  onClick={() => setPopupAugment(aug)}
+                  className="kk-popup-eintrag"
+                >
+                  <span className="kk-punkt" data-an="true" aria-hidden="true" />
+                  <span className="kk-name">{aug.name}</span>
+                  <span className="kk-werte">
+                    {aug.typ}
+                    {aug.wVerlust > 0 && ` · ${aug.wVerlust} WK`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="kk-popup-schliessen"
+              onClick={() => setPopupZone(null)}
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Augment-Detail-Popup */}
+      {popupAugment && (
+        <div className="kk-popup-huelle" onClick={() => setPopupAugment(null)}>
+          <div className="kk-popup kk-popup-detail" onClick={(e) => e.stopPropagation()}>
+            <h3>{popupAugment.name}</h3>
+            <dl className="kk-popup-daten">
+              <dt>Typ</dt>
+              <dd>{popupAugment.typ}</dd>
+              {popupAugment.koerperzone && (
+                <>
+                  <dt>Zone</dt>
+                  <dd>{popupAugment.koerperzone}{popupAugment.slot ? `, Platz ${popupAugment.slot}` : ""}</dd>
+                </>
+              )}
+              {popupAugment.wVerlust > 0 && (
+                <>
+                  <dt>Willenskraftverlust</dt>
+                  <dd>{popupAugment.wVerlust}</dd>
+                </>
+              )}
+            </dl>
+            <div className="kk-popup-knoepfe">
+              <button
+                type="button"
+                onClick={() => setPopupAugment(null)}
+              >
+                Zurück
+              </button>
+              {aenderbar && (
+                <button
+                  type="button"
+                  className="kk-popup-entfernen"
+                  onClick={() => {
+                    setZuEntfernen(popupAugment);
+                    setPopupAugment(null);
+                    setPopupZone(null);
+                  }}
+                >
+                  ⚕ Entfernen
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bestätigungsdialog */}

@@ -380,3 +380,150 @@
 .kk-panelliste li[data-chirurgie="true"] .kk-punkt[data-an="true"] {
   background: var(--signal);
 }
+
+/* Zonen-Popup */
+.kk-popup-huelle {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--grund) 85%, transparent);
+  backdrop-filter: blur(4px);
+  animation: kk-popup-ein 180ms ease;
+}
+
+@keyframes kk-popup-ein {
+  from { opacity: 0; }
+}
+
+.kk-popup {
+  min-width: 280px;
+  max-width: 420px;
+  padding: 1.5rem;
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  background: var(--grund);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--neon) 25%, transparent);
+  animation: kk-popup-rein 220ms ease;
+}
+
+@keyframes kk-popup-rein {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+  }
+}
+
+.kk-popup h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--neon);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kk-popup-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.kk-popup-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  margin: 0 -0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.kk-popup-eintrag:hover {
+  background: color-mix(in srgb, var(--neon) 15%, transparent);
+}
+
+.kk-popup-eintrag .kk-name {
+  flex: 1;
+}
+
+.kk-popup-eintrag .kk-werte {
+  font-size: 0.85em;
+  color: var(--text-leise);
+}
+
+.kk-popup-schliessen {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.kk-popup-schliessen:hover {
+  border-color: var(--text-leise);
+  color: var(--text);
+}
+
+/* Detail-Popup */
+.kk-popup-detail {
+  min-width: 320px;
+}
+
+.kk-popup-daten {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.kk-popup-daten dt {
+  color: var(--text-leise);
+}
+
+.kk-popup-daten dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.kk-popup-knoepfe {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.kk-popup-knoepfe button {
+  padding: 0.5rem 1.25rem;
+  font: inherit;
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid var(--linie);
+  background: transparent;
+  color: var(--text-leise);
+  transition: all 120ms ease;
+}
+
+.kk-popup-knoepfe button:hover {
+  border-color: var(--text-leise);
+  color: var(--text);
+}
+
+.kk-popup-entfernen {
+  background: var(--signal) !important;
+  border-color: var(--signal) !important;
+  color: var(--grund) !important;
+}
+
+.kk-popup-entfernen:hover {
+  background: color-mix(in srgb, var(--signal) 85%, white) !important;
+}
