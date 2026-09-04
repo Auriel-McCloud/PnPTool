@@ -39,6 +39,12 @@ export interface Gegenstand {
   riggerBonus: number;
   /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
   initiativeBonus: number;
+  /** Chrom sitzt im Körper — nur per Operation wieder heraus. */
+  verbaut: boolean;
+  /** Ein Spieler hat um die Ausbau-Operation gebeten. */
+  entfernungBeantragt?: boolean;
+  /** Zusatzaktionen pro Kampf: 1, 2 oder -1 (jede Runde). */
+  zusatzaktionen: number;
   maxDrohnen: number;
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
@@ -92,6 +98,12 @@ export interface TraglastZeile {
   riggerBonus: number;
   /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
   initiativeBonus: number;
+  /** Chrom sitzt im Körper — nur per Operation wieder heraus. */
+  verbaut: boolean;
+  /** Ein Spieler hat um die Ausbau-Operation gebeten. */
+  entfernungBeantragt?: boolean;
+  /** Zusatzaktionen pro Kampf: 1, 2 oder -1 (jede Runde). */
+  zusatzaktionen: number;
   maxDrohnen: number;
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
@@ -157,6 +169,8 @@ export interface GegenstandUpdate {
   immerSichtbar?: boolean;
   riggerBonus?: number;
   initiativeBonus?: number;
+  verbaut?: boolean;
+  zusatzaktionen?: number;
   maxDrohnen?: number;
   wVerlust?: number;
   koerperzone?: string;
@@ -206,6 +220,15 @@ export const itemsApi = {
   create: (cid: string, personId: string, body: NeuerGegenstand) => api.post<Gegenstand>(base(cid, personId), body),
 
   listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
+  /** Implantat einsetzen oder chirurgisch entfernen. Nur SL. */
+  chirurgie: (cid: string, itemId: string, einsetzen: boolean) =>
+    api.post<Gegenstand>(`/api/campaigns/${cid}/gegenstaende/${itemId}/chirurgie`, { einsetzen }),
+  /** Spieler bittet um die Ausbau-Operation; die SL entscheidet. */
+  entfernungBeantragen: (cid: string, itemId: string) =>
+    api.post<Gegenstand>(`/api/campaigns/${cid}/gegenstaende/${itemId}/entfernung-beantragen`),
+  /** Was bei dieser Person im Körper sitzt, nach Zone und Platz sortiert. */
+  verbautes: (cid: string, personId: string) =>
+    api.get<Gegenstand[]>(`/api/campaigns/${cid}/gegenstaende/verbaut/${personId}`),
   setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
     api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
   traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),

@@ -364,6 +364,90 @@ gegengeprüft, indem das Feld testweise wieder entfernt wurde (Test wurde rot).
 2. **PATCH ignoriert `ablage` absichtlich** — dafür gibt es
    `POST .../gegenstaende/{id}/ablage`, der Körperzonen-Konflikte prüft.
 
+### Chrom wird verbaut, nicht ausgerüstet (Modellkorrektur 04.09.2026)
+
+Marks Korrektur:
+
+> "Das ist keine 'Ausrüstung' die funktioniert nicht wenn die ausgerüstet ist,
+> die muss 'eingesetzt oder ein operiert werden' ... aber das sind keine
+> Gegenstände die er nach dem sie Mal eigebaut wurden wieder ablegen kann, da
+> sollten dann auch die Buttons dazu verschwinden. Stattdessen gibt es dann
+> chirurgisch entfernen."
+
+Bis hierher lag Cyber-/Bio-/MagWare im selben Topf wie eine Jacke:
+`ablage=AUSGERUESTET`, per Knopf ablegbar. Neues Feld **`verbaut`** trennt
+beides:
+
+- **nicht verbaut** — liegt herum, ist ein normaler Gegenstand (kaufen,
+  weitergeben, wegwerfen), wirkt **nicht**
+- **verbaut** — sitzt im Körper, wirkt, lässt sich **nur per Operation**
+  entfernen
+
+Die Regel steht als Cypher-Baustein `WIRKT` an genau einer Stelle
+(`items/repository.py`) und gilt für alle fünf Auswertungen:
+Willenskraftverlust, Initiative-Modifikator, Körperzonen-Belegung,
+Trait-Boni, Ausrüstungsfertigkeiten. Ein Cyberdeck bleibt bewusst
+ausgenommen — das ist ein Gerät, das man mitnimmt, kein Implantat.
+
+**Routen:** `POST .../chirurgie` (SL, einsetzen/entfernen, prüft beim
+Einsetzen den Körperplatz), `POST .../entfernung-beantragen` (Spieler bittet,
+SL entscheidet — Marks Wahl), `GET .../verbaut/{personId}` für die Übersicht.
+`POST .../ablage` antwortet bei verbautem Chrom mit **409**.
+
+**Migration** `migrations/2026_09_04_chrom_verbaut.py`: alle 6 Bestandsstücke
+auf "nicht verbaut" (Marks Entscheidung — er setzt sie bewusst einzeln ein;
+5 lagen ohnehin im Rucksack und wirkten nie). Idempotent.
+
+### Reflex-Booster: Zusatzaktion, Ampel, Paralyse
+
+Ablauf am Tisch: Der Spieler ist dran → Popup **"Reflex Booster
+aktivieren?"** → sagt er ja, würfelt er seinen **Standardpool ohne
+Boosterbonus** → der gemeldete Wert wird ein **zweiter Eintrag** in der
+Initiativliste → dieser verschwindet, sobald er dran war.
+
+**Ohne Bonus zu würfeln ist der Kern:** dadurch kommt die Zusatzaktion meist
+später. Ist der Wurf höher als der erste, handelt die Person direkt zweimal
+hintereinander — genau wie Mark es beschrieb. `zweitwurf_pool()` ignoriert
+den `cyberware_mod` deshalb absichtlich; das Argument steht nur da, damit
+niemand ihn später versehentlich durchreicht.
+
+**Zusatzaktionen pro Kampf** als eigenes Feld am Gegenstand (Marks Wahl):
+1 (Stufe 1), 2 (Stufe 2), −1 = jede Runde (Stufe 3), 0 = kein Booster.
+Nicht aus dem Initiative-Bonus abgeleitet, damit Hausregeln möglich bleiben.
+
+**Ampel (Überhitzung, Stufe 3):** drei Punkte. Jede Nutzung füllt einen, jede
+Runde ohne Nutzung leert einen (`kuehle_alle_ab` beim Rundenwechsel — niemand
+muss von Hand nachhalten). Volle Ampel → **Paralysewurf** am Ende der letzten
+Runde: Geistesschärfe + Willenskraft gegen 3 (Regelblatt Zeile 443). Der
+Spieler meldet geschafft/nicht geschafft. Misslungen: Ampel auf 0 **und**
+`setztAus=true` — der Eintrag wird ausgegraut, bis die SL
+`aussetzen-beendet` auslöst.
+
+**Sortierung:** Der Zusatzzug reiht sich ganz normal ein; bei Gleichstand
+steht er hinter dem Stammeintrag, sonst handelte die Zusatzaktion vor der
+eigentlichen.
+
+**Optik schon gebaut**, obwohl Mark sie vertagt hatte ("das können wir später
+machen"): `booster.css` lässt den Zusatzeintrag wackeln und flackern,
+respektiert `prefers-reduced-motion`. CSS ist billig — sonst wäre ein
+zweiter Durchgang durch dieselben Dateien nötig gewesen.
+
+**Stolperstein:** `weiter()` braucht **einen Zug mehr** als man denkt, weil
+`amZug` zu Kampfbeginn `null` ist — der erste Aufruf positioniert nur. Kostete
+eine Fehlersuche, obwohl der Code stimmte; das Testskript zählte falsch.
+
+### Geprüft
+
+- Booster **nicht verbaut**: Initiative 7, Chrom-Mod 0, WK-Verlust 0
+- **eingesetzt**: Initiative 13, Chrom-Mod 6, WK-Verlust 4
+- Ablegen bei verbautem Chrom → **409**
+- Zweitwurf-Pool **7 statt 13** (ohne Bonus, wie gewollt)
+- Booster gezündet mit 4 Erfolgen → zweiter Eintrag bei 4, Ampel 1
+- durchrotiert → Zusatzzug **weg**, Ampel bleibt
+- Paralyse "nicht geschafft" → Ampel 0, `setztAus=true`
+- **chirurgisch entfernt** → Initiative zurück auf 7
+- Testdaten restlos entfernt
+
 ### Sicherheitsfund: echte NPC-Namen waren sichtbar
 
 Bei der Frage "sollen Spieler die Initiative der anderen sehen?" antwortete

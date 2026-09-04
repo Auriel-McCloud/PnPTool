@@ -1,0 +1,191 @@
+/* ===================================================================
+   Reflex-Booster: Popup, Ampel, Zusatzzug in der Liste.
+   Farben ausschliesslich ueber Token (siehe theme/tokens.css).
+   =================================================================== */
+
+.bo-huelle {
+  position: fixed;
+  inset: 0;
+  z-index: 550;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.bo-fenster {
+  max-width: min(460px, 100%);
+  width: 100%;
+  padding: 22px;
+  text-align: center;
+  background: var(--flaeche);
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+  box-shadow: 0 0 50px -12px var(--signal);
+}
+
+.bo-titel {
+  margin: 0 0 10px;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--signal);
+}
+
+.bo-text {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.bo-hinweis {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+.bo-warnung {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--warn);
+}
+
+.bo-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.bo-knoepfe {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.bo-nein {
+  color: var(--text-leise);
+  border-color: var(--linie);
+}
+
+/* --- Zweitwurf ------------------------------------------------------ */
+
+.bo-pool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bo-poolzahl {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--signal);
+  text-shadow: 0 0 18px rgb(0 0 0 / 0.4);
+}
+
+.bo-poolinfo {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.bo-poolinfo em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+.bo-eingabe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bo-eingabe input {
+  width: 84px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 20px;
+  padding: 8px;
+}
+
+/* --- Ampel ---------------------------------------------------------- */
+
+.bo-ampel {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.bo-punkt {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--linie);
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.bo-punkt[data-an="true"] {
+  background: var(--warn);
+  border-color: var(--warn);
+  box-shadow: 0 0 8px -1px var(--warn);
+}
+
+/* Volle Ampel: der Paralysewurf steht an. */
+.bo-punkt[data-heiss="true"][data-an="true"] {
+  background: var(--signal);
+  border-color: var(--signal);
+  box-shadow: 0 0 10px -1px var(--signal);
+}
+
+/* --- Zusatzzug in der Initiativliste --------------------------------
+   Marks Wunsch: "ich hätte gerne das er wackelt und instabil flackert".
+   Bewusst zurueckhaltend gehalten — es steht neben ruhigen Zeilen. */
+
+.ka-zeile[data-zusatz="true"] {
+  animation: bo-wackeln 2.4s ease-in-out infinite;
+  border-left: 2px solid var(--signal);
+}
+
+.ka-zeile[data-zusatz="true"] .ka-init {
+  animation: bo-flackern 3.1s steps(1) infinite;
+}
+
+@keyframes bo-wackeln {
+  0%, 92%, 100% { transform: none; }
+  93% { transform: translateX(-1px) skewX(-0.4deg); }
+  95% { transform: translateX(1px) skewX(0.3deg); }
+  97% { transform: translateX(-1px); }
+}
+
+@keyframes bo-flackern {
+  0%, 88%, 100% { opacity: 1; }
+  90% { opacity: 0.35; }
+  92% { opacity: 1; }
+  94% { opacity: 0.5; }
+}
+
+/* Wer eine Runde aussetzt: ausgegraut, bis darueber rotiert wurde. */
+.ka-zeile[data-aussetzen="true"] {
+  opacity: 0.42;
+  filter: saturate(0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ka-zeile[data-zusatz="true"],
+  .ka-zeile[data-zusatz="true"] .ka-init {
+    animation: none;
+  }
+}

@@ -18,6 +18,7 @@ import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
+import { BoosterPopup } from "../kampf/BoosterPopup";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -202,6 +203,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     };
   }
 
+  /** Spieler bittet um die Ausbau-Operation; die SL entscheidet. */
+  async function entfernungBeantragen(itemId: string) {
+    if (!ich) return;
+    await itemsApi.entfernungBeantragen(ich.campaignId, itemId);
+    const frisch = await itemsApi.listAlle(ich.campaignId);
+    setSachen(frisch);
+  }
+
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
     // Ohne festes Ziel: der Spieler legt nur die Art fest, das genaue Wohin
@@ -228,6 +237,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
     <Warnung campaignId={ich.campaignId} />
+    {/* Reflex-Booster: fragt beim Drankommen, ob aktiviert werden soll. */}
+    <BoosterPopup
+      campaignId={ich.campaignId}
+      kampf={kampf}
+      eigenePersonId={ich.personId}
+      onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+    />
     <Verwundung zustand={zustand} />
     <DranMeldung
       kampf={kampf}
@@ -290,6 +306,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
+                onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
               />
             ))}
           </div>
@@ -392,6 +409,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
+                onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
               />
             ))}
           </div>

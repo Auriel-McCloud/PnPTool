@@ -59,6 +59,19 @@ OHNE_GM_ERLAUBT = {
     # app/kampf/initiative.py: nur der eigene Charakter, die SL für alle.
     # Der Wert wird zusätzlich auf Plausibilität geprüft (melde_wert).
     "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/initiative",
+    # Ein Spieler bittet darum, ein Implantat entfernen zu lassen. Setzt NUR
+    # ein Kennzeichen — operiert wird über .../chirurgie, und das verlangt
+    # die Spielleitung. Mark: "SL, aber ein Spieler kann 'Entfernung
+    # beantragen' (du bestätigst)". Prüft den Besitz selbst.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/entfernung-beantragen",
+    # Reflex-Booster zünden. Der Spieler entscheidet selbst im Popup, wenn er
+    # dran ist — das ist der ganze Sinn (Mark: "wenn er dran kommt per Pop-up
+    # gefragt 'Reflex Booster aktivieren?'"). Serverseitig geprüft: eigener
+    # Charakter, Booster verbaut, Zusatzaktion übrig, setzt nicht aus.
+    "/api/campaigns/{campaign_id}/kampf/booster/aktivieren",
+    # Ergebnis des Paralysewurfs. Der Spieler würfelt physisch und meldet
+    # geschafft/nicht geschafft — nur für den eigenen Charakter (darf_melden).
+    "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/paralyse",
     "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
 }
 

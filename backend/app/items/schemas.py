@@ -104,6 +104,13 @@ class GegenstandCreate(BaseModel):
     # 421-444), "Dash" +2 (Zeile 174). Freies Feld statt Sonderregel, damit
     # auch Drogen und Artefakte die Reihenfolge verschieben können.
     initiativeBonus: int = 0
+    # Cyber-/Bio-/MagWare: sitzt das Stück im Körper? Chrom ist keine
+    # Ausrüstung, die man an- und ablegt — es wird eingesetzt und nur per
+    # Operation wieder entfernt. Wirkt nur, wenn verbaut.
+    verbaut: bool = False
+    # Wie oft der Reflex-Booster pro Kampf eine Zusatzaktion erlaubt:
+    # 1 (Stufe 1), 2 (Stufe 2), -1 = jede Runde (Stufe 3), 0 = gar nicht.
+    zusatzaktionen: int = 0
     # NEUE Fertigkeiten, die es OHNE diesen Gegenstand gar nicht gibt (z.B.
     # ein NeuroWeaving-Skill an einem Cyberdeck, oder "Springen" an
     # magischen Stiefeln) — Name -> Bonuswürfel. Erscheinen nur, solange
@@ -161,6 +168,8 @@ class GegenstandUpdate(BaseModel):
     istWaffe: bool | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
+    verbaut: bool | None = None
+    zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -226,6 +235,9 @@ class GegenstandResponse(BaseModel):
     istWaffe: bool = False
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
+    verbaut: bool = False
+    entfernungBeantragt: bool = False
+    zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
     # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in

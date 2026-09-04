@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { KAMPFARTEN, kampfApi, type Kampf, type Teilnehmer } from "./api";
+import { Ampel } from "./BoosterPopup";
 import "./kampf.css";
+import "./booster.css";
 
 /**
  * Die Initiativliste — für alle am Tisch dieselbe.
@@ -92,6 +94,8 @@ export function Initiativliste({
             data-dran={dran}
             data-meiner={meiner}
             data-erledigt={t.erledigt}
+            data-zusatz={Boolean(t.zusatzzug)}
+            data-aussetzen={Boolean(t.setztAus)}
           >
             <span className="ka-platz">{i + 1}</span>
             <span className="ka-init" title="Initiative">
@@ -102,9 +106,16 @@ export function Initiativliste({
             </span>
             <span className="ka-name">
               {t.name}
+              {/* Der Zusatzzug traegt ein Zeichen, damit man ihn im Gewuehl
+                  nicht fuer einen zweiten Charakter haelt. */}
+              {t.zusatzzug && <em className="ka-du" title="Zusatzaktion aus dem Reflex-Booster">⚡ Zusatzzug</em>}
+              {t.setztAus && <em className="ka-notiz">setzt aus</em>}
               {meiner && <em className="ka-du">du</em>}
               {t.notiz && <em className="ka-notiz">{t.notiz}</em>}
             </span>
+
+            {/* Ueberhitzung nur am Stammeintrag und nur wenn sie laeuft. */}
+            {!t.zusatzzug && (t.ampel ?? 0) > 0 && <Ampel stand={t.ampel ?? 0} />}
 
             {dran && <span className="ka-dran">am Zug</span>}
 

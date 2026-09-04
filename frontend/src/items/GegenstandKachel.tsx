@@ -42,6 +42,8 @@ function ablagen(behaelterName?: string): { wert: Ablage; label: string; symbol:
 export function GegenstandKachel({
   item,
   onUmlegen,
+  onChirurgie,
+  onEntfernungBeantragen,
   onWegwerfen,
   behaelterName,
   behaelterId,
@@ -63,6 +65,10 @@ export function GegenstandKachel({
    * Fehlt sie, ist der Gegenstand nur anzusehen — so bei fremdem Besitz.
    */
   onUmlegen?: (ablage: Ablage) => Promise<void> | void;
+  /** Nur SL: einsetzen (true) oder chirurgisch entfernen (false). */
+  onChirurgie?: (einsetzen: boolean) => Promise<void> | void;
+  /** Nur Spieler: um die Ausbau-Operation bitten. */
+  onEntfernungBeantragen?: () => Promise<void> | void;
   /**
    * Wegwerfen. Fehlt sie, erscheint der Mistkübel gar nicht — bei fremdem
    * Besitz soll man nichts entsorgen können, was einem nicht gehört.
@@ -70,6 +76,10 @@ export function GegenstandKachel({
    */
   onWegwerfen?: () => Promise<void> | void;
 }) {
+  // Cyber-, Bio- und MagWare sind Implantate, keine Ausrüstung.
+  const CHROM = ["Cyberware", "Bioware", "MagWare"];
+  const istChrom = CHROM.includes(item.typ);
+
   const [offen, setOffen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [frageOffen, setFrageOffen] = useState(false);
@@ -219,9 +229,59 @@ export function GegenstandKachel({
           </dl>
         )}
 
+        {/* Verbautes Chrom sitzt im Körper — es gibt nichts umzulegen.
+            Mark: "das sind keine Gegenstände die er nach dem sie Mal
+            eigebaut wurden wieder ablegen kann, da sollten dann auch die
+            Buttons dazu verschwinden. Stattdessen gibt es dann chirurgisch
+            entfernen." */}
+        {istChrom && item.verbaut && (
+          <section className="gg-ablage-wahl">
+            <h3>Verbaut</h3>
+            <p className="gg-ablage-ort">
+              Sitzt {item.koerperzone ? <>in <strong>{item.koerperzone}</strong></> : "im Körper"}
+              {item.slot ? `, Platz ${item.slot}` : ""}. Implantate lassen sich nicht ablegen —
+              nur eine Operation bringt sie wieder heraus.
+            </p>
+            <div className="gg-ablage-knoepfe">
+              {onChirurgie ? (
+                <button type="button" onClick={() => void onChirurgie(false)} disabled={laeuft}>
+                  <span aria-hidden="true">⚕</span> Chirurgisch entfernen
+                </button>
+              ) : onEntfernungBeantragen ? (
+                <button
+                  type="button"
+                  onClick={() => void onEntfernungBeantragen()}
+                  disabled={laeuft || item.entfernungBeantragt}
+                  title="Die Spielleitung entscheidet, wann und wo operiert wird"
+                >
+                  <span aria-hidden="true">⚕</span>{" "}
+                  {item.entfernungBeantragt ? "Entfernung beantragt" : "Entfernung beantragen"}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        )}
+
+        {/* Noch nicht eingesetztes Chrom: der Weg hinein. */}
+        {istChrom && !item.verbaut && onChirurgie && (
+          <section className="gg-ablage-wahl">
+            <h3>Noch nicht eingesetzt</h3>
+            <p className="gg-ablage-ort">
+              Liegt herum und wirkt nicht. Erst eingesetzt zählt es — mit allem, was dazugehört
+              (Willenskraftverlust, Körperplatz).
+            </p>
+            <div className="gg-ablage-knoepfe">
+              <button type="button" onClick={() => void onChirurgie(true)} disabled={laeuft}>
+                <span aria-hidden="true">⚕</span> Einsetzen
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* Hierher gehört das Umlegen: man sieht sich das Ding an und
-            entscheidet dabei, wo es hin soll. */}
-        {onUmlegen && (
+            entscheidet dabei, wo es hin soll. Bei verbautem Chrom entfällt
+            es vollständig. */}
+        {onUmlegen && !(istChrom && item.verbaut) && (
         <section className="gg-ablage-wahl">
           <h3>Wo ist es?</h3>
           {item.ablage === "GELAGERT" && item.ablageZielName && (

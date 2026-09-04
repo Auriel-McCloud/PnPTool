@@ -3,12 +3,13 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node
 from app.entities.visibility import filter_gegenstaende_for_viewer
-from app.items import repository
+from app.items import chirurgie, repository
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.schemas import (
     AblageRequest,
@@ -108,6 +109,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "fahrzeugFertigkeiten": body.fahrzeugFertigkeiten,
         # Reflex-Booster & Co. (Regelblatt Zeile 57, 421-444).
         "initiativeBonus": body.initiativeBonus,
+        "verbaut": body.verbaut,
+        "zusatzaktionen": body.zusatzaktionen,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
     }
@@ -347,6 +350,17 @@ async def ablage_aendern(
             # Gegenstand überhaupt gibt.
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
+    # Verbautes Chrom lässt sich nicht umlegen — es sitzt im Körper, nicht im
+    # Rucksack. Mark: "das sind keine Gegenstände die er nach dem sie Mal
+    # eigebaut wurden wieder ablegen kann". Der Weg heraus führt über
+    # .../chirurgie, nicht über die Ablage.
+    aktuelles = await repository.get_gegenstand(campaign_id, item_id)
+    if aktuelles and not chirurgie.kann_ablegen(aktuelles):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
+        )
+
     # Slot-Kollision nur prüfen, wenn ausgerüstet wird UND das Stück
     # überhaupt einen festen Platz hat (Chrom-/Bio-/MagWare mit Zone+Slot).
     # Alles andere (Waffen, Kleidung, ...) hat keine Zone und blockiert nichts.
@@ -412,3 +426,98 @@ async def chromstufen(campaign_id: str, bonus: int = 1) -> dict:
     Zahlen dreht. Lesbar für alle mit Zugang; das sind Preise, kein Geheimnis.
     """
     return {"stufen": stufen_uebersicht(max(0, bonus)), "koerperzonen": KOERPERZONEN}
+
+
+class ChirurgieRequest(BaseModel):
+    """Einsetzen oder entfernen."""
+
+    einsetzen: bool
+
+
+@campaign_router.post(
+    "/{item_id}/chirurgie",
+    response_model=GegenstandResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def chirurgie_durchfuehren(
+    campaign_id: str,
+    item_id: str,
+    body: ChirurgieRequest,
+):
+    """Implantat einsetzen oder chirurgisch entfernen.
+
+    **Nur die Spielleitung.** Mark: *"wenn die verbaut ist kann der Spieler
+    die nicht mehr entfernen außer bei speziellen Events (er besucht einen
+    Arzt oder ein Spieler hat die Medizin skills um das zu tun...)"* — die
+    Operation ist ein Ereignis in der Welt, keine Menüaktion. Spieler
+    beantragen sie über `.../entfernung-beantragen`.
+    """
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    if body.einsetzen and not chirurgie.kann_einsetzen(item):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Nur Cyber-, Bio- oder MagWare kann eingesetzt werden — und nur einmal",
+        )
+    if not body.einsetzen and not chirurgie.kann_entfernen(item):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Stück ist nicht verbaut")
+
+    # Beim Einsetzen den Platz prüfen: zwei Implantate können nicht denselben
+    # Körperplatz belegen (Regelblatt: je Zone drei Plätze).
+    if body.einsetzen and item.get("koerperzone") and item.get("slot"):
+        besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer_id:
+            blockiert_von = await repository.slot_konflikt(
+                campaign_id, besitzer_id, item["koerperzone"], item["slot"], item_id
+            )
+            if blockiert_von:
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    f"Platz {item['slot']} in {item['koerperzone']} ist bereits von \"{blockiert_von}\" belegt",
+                )
+
+    ergebnis = await repository.setze_verbaut(campaign_id, item_id, body.einsetzen)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Operation fehlgeschlagen")
+    return ergebnis
+
+
+@campaign_router.post("/{item_id}/entfernung-beantragen", response_model=GegenstandResponse)
+async def entfernung_beantragen(
+    campaign_id: str,
+    item_id: str,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Ein Spieler bittet darum, ein Implantat entfernen zu lassen.
+
+    Setzt nur ein Kennzeichen; die Spielleitung entscheidet und operiert.
+    Deshalb ohne `require_campaign_gm` — mit eigener Besitzprüfung, wie bei
+    der Ablage-Route.
+    """
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if viewer.role != "GM":
+        if besitzer is None or besitzer != viewer.person_id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None or not chirurgie.kann_entfernen(item):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Stück ist nicht verbaut")
+
+    ergebnis = await repository.setze_entfernung_beantragt(campaign_id, item_id, True)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Antrag fehlgeschlagen")
+    return ergebnis
+
+
+@campaign_router.get("/verbaut/{person_id}", response_model=list[GegenstandResponse])
+async def verbautes_chrom(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Was bei dieser Person im Körper sitzt — für die Übersicht im Regelmenü.
+
+    Mark: *"Wir wollten ja auch noch dieses Menü machen das anzeigt wo was
+    verbaut ist"*. Nach Körperzone und Platz sortiert.
+    """
+    if viewer.role != "GM" and person_id != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    return await repository.verbautes_chrom(campaign_id, person_id)

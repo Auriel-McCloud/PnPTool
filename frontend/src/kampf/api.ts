@@ -21,6 +21,14 @@ export interface Teilnehmer {
   name: string;
   initiative: number;
   kampfart: Kampfart;
+  /** Zusatzzug aus dem Reflex-Booster; verschwindet nach seinem Zug. */
+  zusatzzug?: boolean;
+  stammtId?: string | null;
+  /** Überhitzung Stufe 3: 0-3 wie eine Ampel. */
+  ampel?: number;
+  zusatzGenutzt?: number;
+  /** Nach misslungenem Paralysewurf: setzt die nächste Runde aus. */
+  setztAus?: boolean;
   notiz: string;
   erledigt: boolean;
   personId: string | null;
@@ -38,6 +46,24 @@ export interface InitiativePool {
   digitalErlaubt: boolean;
   teilnehmerId: string | null;
   gemeldet: number | null;
+}
+
+/** Boosterzustand des eigenen Charakters. */
+export interface BoosterStatus {
+  hatBooster: boolean;
+  boosterName: string;
+  zusatzaktionenMax: number;
+  bereitsGenutzt: number;
+  darfAktivieren: boolean;
+  /** Womit der Zweitwurf gewürfelt wird — OHNE Boosterbonus. */
+  zweitwurfPool: number;
+  ampel: number;
+  ampelMax: number;
+  paralyseFaellig: boolean;
+  paralysePool: number;
+  paralyseSchwelle: number;
+  teilnehmerId: string | null;
+  setztAus: boolean;
 }
 
 export interface Kampf {
@@ -61,6 +87,17 @@ export const kampfApi = {
     api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/initiative`, { erfolge }),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
+  /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */
+  boosterStatus: (cid: string) => api.get<BoosterStatus>(`${basis(cid)}/booster/status`),
+  /** Booster zünden: zweiter Eintrag mit dem gemeldeten Zweitwurf. */
+  boosterAktivieren: (cid: string, erfolge: number) =>
+    api.post<Kampf>(`${basis(cid)}/booster/aktivieren`, { erfolge }),
+  /** Ergebnis des Paralysewurfs melden. */
+  paralyse: (cid: string, teilnehmerId: string, geschafft: boolean) =>
+    api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/paralyse`, { geschafft }),
+  /** Nur SL: Aussetzen aufheben, nachdem darüber rotiert wurde. */
+  aussetzenBeendet: (cid: string, teilnehmerId: string) =>
+    api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/aussetzen-beendet`),
   beginnen: (cid: string) => api.post<Kampf>(basis(cid)),
   beenden: (cid: string) => api.delete<void>(basis(cid)),
   hinzu: (cid: string, daten: Partial<Teilnehmer> & { name: string }) =>

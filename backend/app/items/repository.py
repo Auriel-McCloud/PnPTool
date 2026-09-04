@@ -20,7 +20,9 @@ RETURN_FIELDS = """
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
-    g.initiativeBonus AS initiativeBonus,
+    g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
+    g.entfernungBeantragt AS entfernungBeantragt,
+    g.zusatzaktionen AS zusatzaktionen,
     g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
     g.ablage AS ablage,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
@@ -132,6 +134,11 @@ def _decode(record: dict) -> dict:
     # Feld nicht und liefern None — ohne Ersatz scheitert die Pydantic-Prüfung
     # und reisst die ganze Liste mit 500 herunter (Stolperstein 9).
     record["initiativeBonus"] = _or_default(record.get("initiativeBonus"), 0)
+    # Chrom sitzt im Koerper statt im Rucksack. Bestandsdaten kennen das
+    # Feld nicht -> False, also "noch nicht eingesetzt".
+    record["verbaut"] = _or_default(record.get("verbaut"), False)
+    record["entfernungBeantragt"] = _or_default(record.get("entfernungBeantragt"), False)
+    record["zusatzaktionen"] = _or_default(record.get("zusatzaktionen"), 0)
     record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
     record["stufe"] = _or_default(record.get("stufe"), 0)
     record["widerstand"] = _or_default(record.get("widerstand"), 0)
@@ -173,7 +180,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
-            initiativeBonus: $initiativeBonus
+            initiativeBonus: $initiativeBonus, verbaut: $verbaut,
+            zusatzaktionen: $zusatzaktionen
         })
     """
     if owner_person_id:
@@ -229,6 +237,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istWaffe=bool(data.get("istWaffe")),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
+            verbaut=bool(data.get("verbaut")),
+            zusatzaktionen=int(data.get("zusatzaktionen") or 0),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
@@ -749,13 +759,26 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
 # Flavor-Kategorie neben Cyberware/Bioware, keine eigene Mechanik.
 CHROM_TYPEN = ("Cyberware", "Bioware", "MagWare")
 
+# Wann wirkt ein Gegenstand? Chrom, sobald es **verbaut** ist (es sitzt im
+# Koerper, die Ablage spielt keine Rolle mehr); alles andere, solange es
+# **ausgeruestet** ist. Als Cypher-Baustein, damit die Regel an einer Stelle
+# steht — sie wird an fuenf Stellen gebraucht (Willenskraftverlust, Initiative,
+# Koerperzonen, Trait-Boni, Ausruestungsfertigkeiten).
+WIRKT = """
+    NOT coalesce(g.weggeworfen, false)
+    AND CASE WHEN g.typ IN $chrom_typen
+             THEN coalesce(g.verbaut, false)
+             ELSE g.ablage = 'AUSGERUESTET' END
+"""
+
+
 
 async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
     """Dauerhafter Willenskraftverlust durch eingebautes Chrom.
 
-    Gezählt wird nur, was **ausgerüstet** ist — Cyberware im Rucksack ist
-    noch nicht eingebaut und kostet deshalb nichts. Wer sie ausbauen lässt,
-    legt sie weg, und der Verlust fällt weg.
+    Gezählt wird nur, was **verbaut** ist — Cyberware im Rucksack ist noch
+    nicht eingesetzt und kostet deshalb nichts. Erst die Operation macht sie
+    wirksam, und erst eine zweite entfernt sie wieder.
 
     **Summiert wird ungerundet, gerundet erst am Ende** — und mindestens ein
     Punkt fällt an, sobald überhaupt etwas anfällt (`chrom.verlust_gesamt`).
@@ -767,7 +790,7 @@ async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        WHERE g.typ IN $typen AND coalesce(g.verbaut, false) AND NOT coalesce(g.weggeworfen, false)
         RETURN collect(coalesce(g.wVerlust, 0)) AS einzeln
     """
     async with driver.session() as session:
@@ -785,17 +808,20 @@ async def initiative_modifikator(campaign_id: str, person_id: str) -> int:
     niemanden. Anders als beim Willenskraftverlust ist hier keine Rundung
     nötig, deshalb summiert die Abfrage direkt.
 
-    Nicht auf CHROM_TYPEN eingeschränkt: auch eine Droge ("Dash", Zeile 174:
-    Initiative +2) oder ein Artefakt darf die Reihenfolge verschieben.
+    Chrom zählt, sobald es **verbaut** ist; alles andere (Drogen wie "Dash"
+    aus Zeile 174, Artefakte), solange es **ausgerüstet** ist — beides in
+    einer Abfrage, damit die Zahl aus einer Quelle kommt.
     """
     driver = get_driver()
-    query = """
-        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE {WIRKT}
         RETURN coalesce(sum(coalesce(g.initiativeBonus, 0)), 0) AS summe
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
+        )
         record = await result.single()
         return int(record["summe"]) if record else 0
 
@@ -804,15 +830,15 @@ async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot
     """Prüft, ob ein anderes ausgerüstetes Stück derselben Person schon
     denselben Platz belegt (Regelblatt: je Zone drei Plätze).
 
-    Nur AUSGERUESTETE Chrom-/Bio-/MagWare zählt — im Rucksack liegende Ware
-    ist nicht eingebaut und blockiert deshalb keinen Platz. Gibt den Namen
+    Nur **verbaute** Chrom-/Bio-/MagWare zählt — im Rucksack liegende Ware
+    ist nicht eingesetzt und blockiert deshalb keinen Platz. Gibt den Namen
     des blockierenden Gegenstands zurück, oder None wenn der Platz frei ist.
     Ein Gegenstand blockiert sich beim eigenen Update nicht selbst.
     """
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ IN $typen AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        WHERE g.typ IN $typen AND coalesce(g.verbaut, false) AND NOT coalesce(g.weggeworfen, false)
           AND g.koerperzone = $koerperzone AND g.slot = $slot AND g.id <> $eigene_item_id
         RETURN g.name AS name
         LIMIT 1
@@ -841,14 +867,16 @@ async def ausruestungs_trait_boni(campaign_id: str, person_id: str) -> dict[str,
     austauschbarer Geräte derselben Funktion.
     """
     driver = get_driver()
-    query = """
-        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
-          AND g.traitBoni IS NOT NULL AND g.traitBoni <> '' AND g.traitBoni <> '{}'
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE {WIRKT}
+          AND g.traitBoni IS NOT NULL AND g.traitBoni <> '' AND g.traitBoni <> '{{}}'
         RETURN collect(g.traitBoni) AS alle
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
+        )
         record = await result.single()
         summe: dict[str, int] = {}
         for roh in (record["alle"] if record else []):
@@ -869,15 +897,17 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
     Gegenstand er stammt, damit das Blatt zeigen kann, woher sie kommt.
     """
     driver = get_driver()
-    query = """
-        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE {WIRKT}
           AND g.ausruestungsfertigkeiten IS NOT NULL AND g.ausruestungsfertigkeiten <> ''
-          AND g.ausruestungsfertigkeiten <> '{}'
+          AND g.ausruestungsfertigkeiten <> '{{}}'
         RETURN g.name AS itemName, g.ausruestungsfertigkeiten AS roh
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
+        )
         eintraege: dict[str, dict] = {}
         async for record in result:
             try:
@@ -890,3 +920,67 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
                 if bisher is None or wert > bisher["bonus"]:
                     eintraege[name] = {"name": name, "bonus": wert, "quelle": record["itemName"]}
         return list(eintraege.values())
+
+
+async def setze_verbaut(campaign_id: str, item_id: str, verbaut: bool) -> dict | None:
+    """Setzt ein Implantat ein oder entfernt es chirurgisch.
+
+    Beim Einsetzen wandert das Stück gleichzeitig aus der Ablage — es liegt
+    ja nicht mehr im Rucksack, sondern sitzt im Körper. Beim Entfernen
+    landet es wieder im Rucksack (die Klinik gibt es heraus), damit es
+    verkauft oder erneut eingesetzt werden kann.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+        SET g.verbaut = $verbaut,
+            g.ablage = CASE WHEN $verbaut THEN 'AUSGERUESTET' ELSE 'RUCKSACK' END,
+            g.entfernungBeantragt = false
+        RETURN g.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, item_id=item_id, verbaut=verbaut
+        )
+        if await result.single() is None:
+            return None
+    return await get_gegenstand(campaign_id, item_id)
+
+
+async def setze_entfernung_beantragt(campaign_id: str, item_id: str, beantragt: bool) -> dict | None:
+    """Ein Spieler bittet um die Ausbau-Operation; die Spielleitung entscheidet."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+            SET g.entfernungBeantragt = $beantragt
+            RETURN g.id AS id
+            """,
+            campaign_id=campaign_id, item_id=item_id, beantragt=beantragt,
+        )
+        if await result.single() is None:
+            return None
+    return await get_gegenstand(campaign_id, item_id)
+
+
+async def verbautes_chrom(campaign_id: str, person_id: str) -> list[dict]:
+    """Was sitzt bei dieser Person im Körper — für die Übersicht im Regelmenü.
+
+    Nach Körperzone und Platz sortiert, damit die Anzeige "Kopf 1-3, Torso
+    1-3, ..." ohne weiteres Sortieren stimmt.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ IN $typen AND coalesce(g.verbaut, false)
+          AND NOT coalesce(g.weggeworfen, false)
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.koerperzone, g.slot
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, typen=list(CHROM_TYPEN)
+        )
+        return [_decode(dict(r)) async for r in result]
