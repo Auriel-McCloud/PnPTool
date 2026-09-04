@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { entitiesApi, type Person } from "../entities/api";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import {
   ANDOCKPUNKTE,
   SILHOUETTEN,
@@ -73,6 +74,9 @@ export function Koerperkarte({
   const [gewaehlt, setGewaehlt] = useState<ZonenName | null>(null);
   const [laedt, setLaedt] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Chirurgie-Modus: SL kann Augments entfernen.
+  const [chirurgieModus, setChirurgieModus] = useState(false);
+  const [zuEntfernen, setZuEntfernen] = useState<Gegenstand | null>(null);
 
   const silhouette: Silhouette =
     (person?.silhouette as Silhouette) === "weiblich" ? "weiblich" : "maennlich";
@@ -120,6 +124,16 @@ export function Koerperkarte({
   const belegt = chrom.length;
   const plaetzeGesamt = ZONEN.length * PLAETZE.length;
 
+  async function augmentEntfernen(item: Gegenstand) {
+    try {
+      await itemsApi.chirurgie(campaignId, item.id, false);
+      setChrom(chrom.filter((g) => g.id !== item.id));
+    } catch (e) {
+      console.error("Chirurgie fehlgeschlagen", e);
+    }
+    setZuEntfernen(null);
+  }
+
   if (laedt) return <p style={{ color: "var(--text-leise)" }}>Lädt…</p>;
   if (fehler) return <p style={{ color: "var(--signal)" }}>{fehler}</p>;
 
@@ -150,15 +164,23 @@ export function Koerperkarte({
           {PLAETZE.map((nr) => {
             const stueck = stuecke.find((g) => g.slot === nr);
             return (
-              <li key={nr} data-frei={!stueck}>
+              <li
+                key={nr}
+                data-frei={!stueck}
+                data-chirurgie={chirurgieModus && Boolean(stueck)}
+                onClick={(e) => {
+                  if (chirurgieModus && stueck) {
+                    e.stopPropagation();
+                    setZuEntfernen(stueck);
+                  }
+                }}
+              >
                 <span className="kk-punkt" data-an={Boolean(stueck)} aria-hidden="true" />
                 {stueck ? (
                   <span className="kk-eintrag">
                     <span className="kk-name">{stueck.name}</span>
                     <span className="kk-werte">
                       {stueck.wVerlust > 0 && `${stueck.wVerlust} WK`}
-                      {stueck.initiativeBonus !== 0 &&
-                        `${stueck.wVerlust > 0 ? " · " : ""}Ini ${stueck.initiativeBonus > 0 ? "+" : ""}${stueck.initiativeBonus}`}
                       {stueck.entfernungBeantragt && (
                         <span className="kk-antrag" title="Der Spieler bittet um die Ausbau-Operation">
                           {" "}
@@ -292,6 +314,39 @@ export function Koerperkarte({
           Nichts verbaut. Implantate werden im Charakterbogen eingesetzt — bis dahin liegen sie
           nur herum und wirken nicht.
         </p>
+      )}
+
+      {/* Chirurgie-Symbol: nur SL sieht es, links unten in der Silhouette. */}
+      {aenderbar && belegt > 0 && (
+        <button
+          type="button"
+          className="kk-chirurgie"
+          data-aktiv={chirurgieModus}
+          onClick={() => setChirurgieModus(!chirurgieModus)}
+          title={chirurgieModus ? "Chirurgie-Modus beenden" : "Augments entfernen"}
+        >
+          ⚕
+        </button>
+      )}
+
+      {chirurgieModus && (
+        <p className="kk-chirurgie-hinweis">
+          Klicke auf ein Augment, um es zu entfernen.
+        </p>
+      )}
+
+      {/* Bestätigungsdialog */}
+      {zuEntfernen && (
+        <Bestaetigung
+          titel="Augment entfernen"
+          text={`Sicher, dass du „${zuEntfernen.name}" entfernen willst?
+
+Das Augment wandert zurück ins Inventar und muss neu eingesetzt werden.`}
+          jaText="Entfernen"
+          neinText="Abbrechen"
+          onJa={() => augmentEntfernen(zuEntfernen)}
+          onNein={() => setZuEntfernen(null)}
+        />
       )}
     </div>
   );

@@ -322,3 +322,61 @@
     width: 100% !important;
   }
 }
+
+/* Chirurgie-Button: links unten in der Hülle */
+.kk-chirurgie {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--linie);
+  border-radius: 50%;
+  background: var(--grund);
+  color: var(--text-leise);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 180ms ease;
+  z-index: 10;
+}
+
+.kk-chirurgie:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.kk-chirurgie[data-aktiv="true"] {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--grund);
+  animation: chirurgie-puls 1.2s ease-in-out infinite;
+}
+
+@keyframes chirurgie-puls {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 50%, transparent); }
+  50% { box-shadow: 0 0 12px 4px color-mix(in srgb, var(--signal) 30%, transparent); }
+}
+
+.kk-chirurgie-hinweis {
+  position: absolute;
+  left: 56px;
+  bottom: 16px;
+  font-size: 0.85rem;
+  color: var(--signal);
+  margin: 0;
+}
+
+/* Klickbare Augments im Chirurgie-Modus */
+.kk-panelliste li[data-chirurgie="true"] {
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background 120ms ease;
+}
+
+.kk-panelliste li[data-chirurgie="true"]:hover {
+  background: color-mix(in srgb, var(--signal) 20%, transparent);
+}
+
+.kk-panelliste li[data-chirurgie="true"] .kk-punkt[data-an="true"] {
+  background: var(--signal);
+}

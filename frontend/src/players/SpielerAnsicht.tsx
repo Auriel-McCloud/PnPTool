@@ -141,11 +141,17 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   }, [ich]);
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
-  const meineRoh = sachen.filter((g) => g.ownerId === ich?.personId);
+  const meineRohAlle = sachen.filter((g) => g.ownerId === ich?.personId);
   const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
 
+  // Verbaute Augments erscheinen in der Körperkarte, nicht im Inventar.
+  const CHROM_TYPEN = ["Cyberware", "Bioware", "MagWare"];
+  const istVerbautesChrom = (g: GegenstandMitBesitzer) =>
+    CHROM_TYPEN.includes(g.typ) && g.verbaut;
+  const meineRoh = meineRohAlle.filter((g) => !istVerbautesChrom(g));
+
   // Augments-Bereich erscheint nur, wenn verbaute Augments vorhanden sind.
-  const hatAugments = meineRoh.some((g) => g.verbaut);
+  const hatAugments = meineRohAlle.some((g) => g.verbaut);
   const BEREICHE = useMemo(() => {
     if (!hatAugments) return BEREICHE_STATISCH;
     // Nach dem Wiki und vor den Notizen einfügen
@@ -227,17 +233,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     };
   }
 
-  /** Spieler bittet um die Ausbau-Operation; die SL entscheidet. */
-  async function entfernungBeantragen(itemId: string) {
-    if (!ich) return;
-    await itemsApi.entfernungBeantragen(ich.campaignId, itemId);
-    const frisch = await itemsApi.listAlle(ich.campaignId);
-    setSachen(frisch);
-  }
-
   async function augmentEinsetzen(itemId: string) {
     if (!ich) return;
-    await itemsApi.chirurgie(ich.campaignId, itemId, true);
+    try {
+      await itemsApi.chirurgie(ich.campaignId, itemId, true);
+    } catch (e) {
+      console.error("chirurgie fehlgeschlagen", e);
+    }
     const frisch = await itemsApi.listAlle(ich.campaignId);
     setSachen(frisch);
     setAugmentFrage(null);
@@ -342,7 +344,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
-                onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
               />
             ))}
@@ -446,7 +447,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
-                onEntfernungBeantragen={() => entfernungBeantragen(g.id)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
               />
             ))}
