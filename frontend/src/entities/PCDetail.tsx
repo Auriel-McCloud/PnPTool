@@ -4,6 +4,7 @@ import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { PCInventar } from "./PCInventar";
+import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { entitiesApi } from "./api";
@@ -20,7 +21,7 @@ import "./pc-detail.css";
  * - Notizen
  */
 
-type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "beschreibung" | "notizen";
+type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "augments" | "beschreibung" | "notizen";
 
 interface PCDetailProps {
   campaignId: string;
@@ -101,6 +102,13 @@ export function PCDetail({
           </button>
           <button
             type="button"
+            className={unteransicht === "augments" ? "pcd-nav-aktiv" : ""}
+            onClick={() => setUnteransicht("augments")}
+          >
+            Augments
+          </button>
+          <button
+            type="button"
             className={unteransicht === "beschreibung" ? "pcd-nav-aktiv" : ""}
             onClick={() => setUnteransicht("beschreibung")}
           >
@@ -158,6 +166,13 @@ export function PCDetail({
               campaignId={campaignId}
               personId={person.id}
               personName={person.name}
+            />
+          )}
+
+          {unteransicht === "augments" && (
+            <AugmentsAnsicht
+              campaignId={campaignId}
+              eigenePersonId={person.id}
             />
           )}
 

@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { itemsApi, type Gegenstand, type Ablage, ABLAGEN } from "../items/api";
+import { itemsApi, type Gegenstand, type Ablage } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { GegenstandKachel } from "../items/GegenstandKachel";
 import "./pc-inventar.css";
 
 /**
  * Inventar eines einzelnen PCs für das PC-Detail-Popup.
- * Zeigt alle Gegenstände des Charakters und erlaubt das Anlegen neuer.
+ * Zeigt alle Gegenstände des Charakters mit klickbaren Kacheln.
  */
 
 interface PCInventarProps {
@@ -53,6 +54,11 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     refresh();
   }
 
+  async function wegwerfen(itemId: string) {
+    await itemsApi.wegwerfen(campaignId, itemId);
+    refresh();
+  }
+
   // Gruppiere nach Ablage
   const nachAblage = items.reduce<Record<string, Gegenstand[]>>((acc, item) => {
     const key = item.ablage ?? "RUCKSACK";
@@ -67,6 +73,11 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   };
 
   const ablageReihenfolge: Ablage[] = ["AUSGERUESTET", "RUCKSACK", "GELAGERT"];
+
+  // Finde Behälter (Rucksack etc.) für Label
+  const behaelter = items.find(
+    (i) => i.typ === "Behälter" && i.ablage === "AUSGERUESTET"
+  );
 
   if (loading) {
     return <p style={{ color: "var(--text-leise)" }}>Lade Inventar…</p>;
@@ -94,25 +105,16 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
               <span>{ablageNamen[ablage] ?? ablage}</span>
               <span className="pci-anzahl">{gegenstaende.length}</span>
             </h4>
-            <div className="pci-liste">
+            <div className="pci-kachel-liste">
               {gegenstaende.map((g) => (
-                <div key={g.id} className="pci-item">
-                  <div className="pci-item-info">
-                    <span className="pci-item-name">{g.name}</span>
-                    <span className="pci-item-typ">{g.typ}</span>
-                  </div>
-                  <select
-                    value={g.ablage ?? "RUCKSACK"}
-                    onChange={(e) => umlagern(g.id, e.target.value as Ablage)}
-                    className="pci-ablage-select"
-                  >
-                    {ABLAGEN.map((a) => (
-                      <option key={a.wert} value={a.wert}>
-                        {a.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <GegenstandKachel
+                  key={g.id}
+                  item={g}
+                  behaelterName={behaelter?.name}
+                  behaelterId={behaelter?.id}
+                  onUmlegen={(neueAblage) => umlagern(g.id, neueAblage)}
+                  onWegwerfen={() => wegwerfen(g.id)}
+                />
               ))}
             </div>
           </section>

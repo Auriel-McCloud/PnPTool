@@ -63,6 +63,14 @@
 
 /* --- Item-Liste --------------------------------------------------------- */
 
+.pci-kachel-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* --- Item-Liste (Fallback, falls GegenstandKachel nicht genutzt) -------- */
+
 .pci-liste {
   display: flex;
   flex-direction: column;
