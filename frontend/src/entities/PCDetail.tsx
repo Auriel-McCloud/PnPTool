@@ -70,7 +70,7 @@ export function PCDetail({
   return (
     <Fenster
       offen
-      breit={unteransicht === "blatt"}
+      breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments"}
       titel={person.name}
       unterzeile={spielerName ? `Gespielt von ${spielerName}` : "Kein Spieler zugeordnet"}
       kennung={`pc-detail:${person.id}`}
