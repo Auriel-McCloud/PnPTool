@@ -3,8 +3,7 @@ import type { Person } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
-import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
-import { type PersonOption } from "./VisibilitySelector";
+import { PCInventar } from "./PCInventar";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { entitiesApi } from "./api";
@@ -27,8 +26,6 @@ interface PCDetailProps {
   campaignId: string;
   person: Person;
   spielerName?: string;
-  pcOptions: PersonOption[];
-  alleOptionen: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
 }
@@ -37,8 +34,6 @@ export function PCDetail({
   campaignId,
   person,
   spielerName,
-  pcOptions,
-  alleOptionen,
   onSchliessen,
   onGeaendert,
 }: PCDetailProps) {
@@ -159,11 +154,10 @@ export function PCDetail({
           )}
 
           {unteransicht === "gegenstaende" && (
-            <CharacterSheetPanel
+            <PCInventar
               campaignId={campaignId}
-              person={person}
-              pcOptions={pcOptions}
-              alleOptionen={alleOptionen}
+              personId={person.id}
+              personName={person.name}
             />
           )}
 

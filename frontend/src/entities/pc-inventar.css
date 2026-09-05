@@ -1,0 +1,143 @@
+/* =======================================================================
+   PC-Inventar — Gegenstände eines einzelnen Charakters
+   ======================================================================= */
+
+.pci-inventar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pci-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pci-kopf h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.pci-neu-btn {
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--ja) 20%, transparent);
+  border: 1px solid var(--ja);
+  border-radius: var(--radius);
+  color: var(--ja);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.pci-neu-btn:hover {
+  background: color-mix(in srgb, var(--ja) 35%, transparent);
+}
+
+/* --- Sektionen ---------------------------------------------------------- */
+
+.pci-sektion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pci-ablage-titel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-leise);
+  border-bottom: 1px solid var(--linie);
+}
+
+.pci-anzahl {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-aus);
+}
+
+/* --- Item-Liste --------------------------------------------------------- */
+
+.pci-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pci-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
+}
+
+.pci-item:hover {
+  border-color: var(--neon);
+}
+
+.pci-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pci-item-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pci-item-typ {
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+
+.pci-ablage-select {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* --- Formular ----------------------------------------------------------- */
+
+.pci-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.pci-form input {
+  font-size: 1.1rem;
+  padding: 12px 14px;
+}
+
+.pci-form button {
+  padding: 12px 20px;
+  background: color-mix(in srgb, var(--ja) 20%, transparent);
+  border: 1px solid var(--ja);
+  border-radius: var(--radius);
+  color: var(--ja);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.pci-form button:hover {
+  background: color-mix(in srgb, var(--ja) 35%, transparent);
+}

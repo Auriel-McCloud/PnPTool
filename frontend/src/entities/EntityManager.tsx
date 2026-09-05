@@ -609,8 +609,6 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           campaignId={campaignId}
           person={pcDetailFuer}
           spielerName={spielerMap.get(pcDetailFuer.id)}
-          pcOptions={pcOptions}
-          alleOptionen={alleOptionen}
           onSchliessen={() => setPcDetailFuer(null)}
           onGeaendert={refreshAll}
         />
