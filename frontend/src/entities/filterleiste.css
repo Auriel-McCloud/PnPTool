@@ -1,0 +1,180 @@
+/* =======================================================================
+   Filterleiste — Suchen, Sortieren, nach Beziehungen filtern
+
+   Sitzt über den Kacheln von NPCs, Orten und Events. Nimmt die Leitfarbe
+   des Bereichs über --fl-farbe entgegen (von der Komponente gesetzt), damit
+   sie in jedem Bereich zum Rest passt — keine harten Farbwerte hier, siehe
+   docs/theming.md.
+   ======================================================================= */
+
+.fl-leiste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  /* Enger Schein in der Bereichsfarbe, wie die Eingabeflächen sonst auch. */
+  box-shadow: inset 0 0 20px -14px var(--fl-farbe, var(--neon));
+}
+
+.fl-zeile {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* --- Suchfeld ----------------------------------------------------------- */
+
+.fl-suchfeld {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+  /* min-width: 0 ist Pflicht: Flex-Kinder schrumpfen sonst nicht unter ihre
+     Inhaltsbreite und reissen die Leiste auf schmalen Geräten auf. */
+  min-width: 0;
+}
+
+.fl-lupe {
+  position: absolute;
+  left: 10px;
+  color: var(--text-leise);
+  pointer-events: none;
+  font-size: 1.05rem;
+}
+
+.fl-suchfeld input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 34px 9px 30px;
+  font-size: 0.95rem;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.fl-suchfeld input:focus {
+  outline: none;
+  border-color: var(--fl-farbe, var(--neon));
+  box-shadow: 0 0 8px -4px var(--fl-farbe, var(--neon));
+}
+
+/* Die eingebaute Löschtaste von type="search" sieht in jedem Browser anders
+   aus und bricht das Theme; wir zeichnen sie selbst. */
+.fl-suchfeld input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.fl-loeschen {
+  position: absolute;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  font-size: 0.8rem;
+  background: transparent;
+  border: none;
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.fl-loeschen:hover {
+  color: var(--signal);
+}
+
+/* --- Auswahlfelder ------------------------------------------------------ */
+
+.fl-wahl {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fl-wahl-breit {
+  flex: 1 1 200px;
+}
+
+.fl-wahl-text {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.fl-wahl select {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  max-width: 100%;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.fl-wahl select:focus {
+  outline: none;
+  border-color: var(--fl-farbe, var(--neon));
+}
+
+/* --- Fusszeile ---------------------------------------------------------- */
+
+.fl-fuss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fl-treffer {
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+
+.fl-fehler {
+  font-size: 0.8rem;
+  color: var(--warn);
+}
+
+.fl-zuruecksetzen {
+  margin-left: auto;
+  min-height: 0;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.fl-zuruecksetzen:hover {
+  border-color: var(--fl-farbe, var(--neon));
+  color: var(--fl-farbe, var(--neon));
+}
+
+/* --- Schmale Geräte ----------------------------------------------------- */
+/* Steht am Dateiende: eine Media Query erhöht die Spezifität nicht, bei
+   gleicher Spezifität gewinnt die spätere Regel (siehe CLAUDE.md). */
+
+@media (max-width: 599px) {
+  .fl-leiste {
+    padding: 8px 10px;
+  }
+
+  .fl-wahl,
+  .fl-wahl-breit {
+    flex: 1 1 100%;
+  }
+
+  .fl-zuruecksetzen {
+    margin-left: 0;
+  }
+}

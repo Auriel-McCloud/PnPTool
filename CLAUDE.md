@@ -2228,6 +2228,164 @@ können. Detail- und Charakterfenster behalten ihre eigenen Scrollflächen.
 Die bestehende Vite-Warnung zur Chunk-Grösse bleibt bestehen. Commit `9427d65`
 (`Weltansicht in eigene Entitätsbereiche aufgeteilt`) ist auf `origin/main`.
 
+## Orte und Events wie PCs, plus Suche und Beziehungsfilter (05.09.2026)
+
+PCs und NPCs hatten bereits Kacheln mit Detail-Popup; Orte und Events waren
+noch die alte Textliste mit angehängtem Formular. Jetzt tragen alle vier
+dasselbe Bedienkonzept — und NPCs, Orte und Events lassen sich durchsuchen,
+sortieren und **nach echten Graphbeziehungen filtern**.
+
+### Der Beziehungsfilter arbeitet auf `VERBINDUNG`-Kanten
+
+Marks Beispiele: *"welche NPCs befinden sich in der 3Heavens Bar, welche
+Gegner gibt es beim Event Überfall auf die Bank, und welche NPCs gehören zu
+einer Party"*. Alle drei sind **dieselbe Abfrage mit anderem Ziel** — es gibt
+kein Sonderfeld "Ort", "Rolle" oder "Fraktion" an der Person. Was die
+Spielleitung ohnehin im Bereich *Verbindungen* pflegt, wird damit zum Filter.
+
+Eine Party ist dabei eine Entität wie jede andere; die Zugehörigkeit ist eine
+gewöhnliche Verbindung. Das vertagte Party-Konzept aus der Vision braucht
+dafür kein eigenes Datenmodell.
+
+**Richtungsunabhängig.** Ob „Wirt → arbeitet in → Bar" oder „Bar → Stammgast →
+Wirt" angelegt wurde, ist eine Frage des Erzählens, nicht der Zugehörigkeit.
+Beides findet derselbe Filter (`_kante_beruehrt` prüft beide Seiten).
+
+### Nur anbieten, was es wirklich gibt
+
+Neue Route `GET .../filteroptionen?art=personen|orte|events` liefert die
+Beziehungsarten und Ziele, zu denen **echte Kanten** bestehen, mit Trefferzahl
+je Ziel. Ein Dropdown, das ins Leere führt, ist schlimmer als keins — man
+sucht dann den Fehler bei sich.
+
+Bewusst serverseitig: sonst müsste die Oberfläche alle Verbindungen laden,
+auch die, die sie gar nicht sehen darf. Die Beziehungsarten sind Freitext
+(„Gegner", „Stammgast", „gehört zu"), ein fester Katalog im Code würde am
+Tisch sofort danebenliegen.
+
+### Sichtbarkeit: die Reihenfolge ist der Punkt
+
+`_aufbereiten` in `entities/routes.py` läuft strikt in dieser Folge:
+**Sichtbarkeit → Suche → Beziehung → Reihenfolge.**
+
+Andersherum könnte ein Spieler einen 🔒-redigierten Satz finden, indem er
+danach sucht — dass er einen Treffer bekommt, wäre selbst die Auskunft. Der
+Beziehungsfilter arbeitet ebenso auf einer **bereits gefilterten** Kantenliste
+(`_sichtbare_kanten`), sonst stiesse ein Spieler über eine geheime Kante auf
+einen NPC, den er nicht kennen darf. Und `_beschriftungen` filtert die
+Ziel-Namen mit, sonst stünde der Name eines geheimen NPCs im Dropdown —
+dieselbe Überlegung wie beim Kampf-Alias.
+
+**Bewiesen**, nicht nur behauptet: ein Test-NPC hing per **GM-geheimer** Kante
+als „Gegner" am Überfall. SL sah ihn in der Trefferliste, eine echte
+Spielersitzung (`Auriel`/Ryu Tanaka) nicht (`LEAK: false`). Ebenso blieb
+„Mr. Chrome" aus den Filteroptionen des Spielers heraus, und die Suche nach
+„chrome" lieferte ihm nichts.
+
+### Suche
+
+Sucht in Name/Titel, Zeitpunkt, Beschreibung und Notizen. Zwei Dinge, die
+nicht offensichtlich sind:
+
+- **Umlaute sind egal** (`normalisiere`, NFKD): „uberfall" findet „Überfall".
+  Am Spieltisch tippt niemand Umlaute sauber, auf dem Tablet erst recht nicht.
+- **Der TipTap-Text wird ausgepackt** (`klartext`). Ohne das schlüge eine
+  Suche nach „text" in jedem Dokument an — das Wort steht als Typname in
+  jedem TipTap-JSON. Altbestand in Klartext geht unverändert durch.
+
+Mehrere Wörter werden als UND verknüpft, nicht als Phrase: beim Suchen tippt
+man Stichwörter, keine Sätze.
+
+### Sortierung
+
+A→Z, Z→A, **Geheim zuerst** (die Spielleitung will sehen, was noch nicht
+freigegeben ist), **Meiste Verbindungen**, bei Events zusätzlich **Nach
+Zeitpunkt** (ohne Angabe ans Ende — ein Event ohne Zeitpunkt ist noch nicht
+eingeordnet, es gehört nicht vor „Session 1").
+
+**Der Name ist immer der zweite Schlüssel.** Sonst springt die Liste bei
+Gleichstand von Aufruf zu Aufruf, und mitten im Spiel sucht man den Eintrag,
+der eben noch woanders stand.
+
+Ein unbekannter Sortierwert gibt **422**, nicht stillen Rückfall — ein
+Tippfehler soll auffallen (`Sortierung` als `Literal` in der Route).
+
+### Neu im Frontend
+
+- `entities/Filterleiste.tsx` — eine Komponente für alle drei Bereiche, nimmt
+  die Leitfarbe über `--fl-farbe` entgegen. Suche **verzögert um 300 ms**:
+  sonst geht bei jedem Tastendruck eine Anfrage raus und die Antworten
+  überholen einander über WLAN.
+- `OrtKacheln`/`EventKacheln`, `OrtDetail`/`EventDetail` — dasselbe Gerüst wie
+  PC/NPC (`pc-kacheln.css`, `pc-detail.css` werden mitgenutzt), nur mit den
+  Kennzahlen, die bei Ort und Event etwas aussagen: Verbindungszahl und
+  Sichtbarkeit statt LP/WK. Beim Event steht der Zeitpunkt dort, wo beim PC
+  der Spielername steht.
+- `BeziehungsListe.tsx` — zeigt im Detail-Popup, was an der Entität hängt, und
+  lässt Kanten lösen (mit Rückfrage). Eine Gegenseite ohne Namen wird
+  **weggelassen**: sie ist für diesen Blickwinkel unsichtbar, und eine Zeile
+  mit roher ID verriete ihre Existenz.
+- Anlegen/Bearbeiten/Löschen für Orte und Events über die Oberfläche, inkl.
+  Sichtbarkeitsauswahl und Bild-Upload. Neue Einträge sind SL-geheim (steht
+  als Hinweis im Anlege-Dialog).
+
+**Leerzustände unterscheiden** „noch nichts angelegt" von „nichts gefunden" —
+zwei sehr verschiedene Auskünfte. Ein Ladefehler erscheint jetzt als Meldung
+mit „Erneut versuchen"; vorher stand bei einem Serverfehler nur „noch nichts
+angelegt" da, und man suchte den Fehler in den Daten statt in der Verbindung.
+
+### Der Filter läuft serverseitig, nicht im Browser
+
+`refreshAll` hängt an einem `filterSchluessel` (`JSON.stringify` des aktiven
+Filters) — ein neues Objekt bei jedem Render würde den Effekt sonst endlos neu
+starten. Der Filterzustand ist **je Bereich getrennt**, damit ein Wechsel von
+NPCs zu Orten nicht die dort gesetzte Suche mitschleppt.
+
+Die geöffnete Entität wird über `orte.find(...)` aus dem frischen Stand
+nachgeschlagen statt aus dem Klickzustand — sonst zeigte das Popup nach dem
+Speichern noch die alten Werte und „Beziehungen (3)", obwohl gerade eine
+gelöst wurde.
+
+### Geprüft
+
+Backend **364 Tests** (34 neue in `tests/test_entitaeten_filter.py`, DB-frei),
+`npm run build` grün.
+
+Gegen die laufende Testkampagne mit eigens angelegten Testdaten (3Heavens Bar,
+Überfall auf die Bank, Party Nachtwache, sechs NPCs, acht Verbindungen —
+darunter eine bewusst SL-geheime):
+
+- „wer ist in der Bar" → Wirt **und** Stammgast (letzterer über die
+  *umgekehrte* Kantenrichtung)
+- „Gegner beim Überfall" → die zwei offenen Gegner, die Geisel **nicht**
+- „wer gehört zur Party" → die zwei Mitglieder
+- Spielersicht: der über die geheime Kante angehängte Wirt fehlt (`LEAK: false`)
+- Spieler darf lesen (200), **jeder** Schreibversuch 403; `alsSpieler` mit
+  fremder Person bleibt wirkungslos
+
+Oberfläche über CDP bei 1400/768/412px: Kacheln erscheinen, Suche greift
+(3 → 1 Treffer), Leerzustand ist sprechend, Zurücksetzen stellt wieder her,
+Detail-Popup öffnet mit Beziehungs-Tab, Beziehungsfilter über die *Dropdowns*
+liefert dieselben Ergebnisse wie die API, kein Querlauf auf keiner Breite.
+Kompletter CRUD-Zyklus geklickt: Ort anlegen → umbenennen → Sichtbarkeit auf
+ALLE (Kachel zeigt „🔒 SL" → „◉ Alle") → Löschen **abbrechen** (bleibt) →
+löschen (weg, Popup schliesst); Event mit Zeitpunkt anlegen und entfernen.
+Alle Testdaten danach restlos entfernt, Bestand vorher = nachher.
+
+*Testfallstrick, kein Produktfehler:* Ein synthetisches `blur`-Event bubbelt
+nicht, React hört `onBlur` aber über `focusout` — das Umbenennen schien nicht
+anzukommen. Mit `f.blur()` (der DOM-Methode) statt `dispatchEvent` greift es.
+Wer künftig Felder mit `onBlur`-Speicherung testet, muss daran denken.
+
+### Noch offen an dieser Ecke
+
+- **PCs haben keine Filterleiste** — es sind wenige, und sie tragen nicht
+  denselben Umfang an Beziehungen. Nachrüsten wäre eine Zeile.
+- **Verbindungen anlegen** geht weiterhin nur im eigenen Bereich, nicht direkt
+  aus dem Beziehungs-Tab heraus. Dort lässt sich bisher nur lösen.
+- Die Sortierung „Meiste Verbindungen" zählt **alle** sichtbaren Kanten, nicht
+  die zum gerade gewählten Filterziel.
+
 ## Bekannte Stolpersteine (nicht nochmal reinlaufen)
 
 1. **`passlib` + neueres `bcrypt`**: inkompatibel (passlib ist unmaintained, `bcrypt>=4.1` hat `__about__` entfernt). Lösung: `bcrypt`-Paket direkt nutzen, kein passlib. Ist bereits so umgesetzt in `auth/security.py`.
@@ -2266,8 +2424,8 @@ Die bestehende Vite-Warnung zur Chunk-Grösse bleibt bestehen. Commit `9427d65`
 
 1. **Phase 5 — Messenger und Kontakte** — Marks neue Idee ist in `docs/phase-5-messenger.md` beschrieben: gerichtetes Kontaktwissen mit abgestuften Freigaben (gesehen → gesprochen → Kontakt ausgetauscht), Nachrichten zwischen PCs/NPCs/Spielleitung, Persona-5-inspirierter Verlauf in einem eigenen, intern scrollenden Fenster und Live-Zustellung über WebSockets. Vor dem Bauen stehen die Regelentscheidungen zur Kontaktstufe und zur ein- oder beidseitigen Bestätigung an.
 2. **Rest von Phase 3** — Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Waffen-/Rüstungswerte am Charakter, Riggen und weitere noch offene Begleiter-/Drohnenregeln.
-3. **Weitere offene Design-Runden** (Datenmodell jeweils ungeklärt): Party/Gruppen-Konzept · EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Drogen→Wirkung/Dauer) + Upgrade-System · Regeln-Bereich.
-4. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel.
+3. **Weitere offene Design-Runden** (Datenmodell jeweils ungeklärt): EP-System mit den drei Charakterbogen-Modi · typspezifische Gegenstandsfelder (Drogen→Wirkung/Dauer) + Upgrade-System · Regeln-Bereich. *(Party/Gruppen ist seit 05.09.2026 praktisch gelöst: eine Party ist eine gewöhnliche Entität, die Zugehörigkeit eine `VERBINDUNG`, und der NPC-Filter findet sie. Ein eigenes Datenmodell braucht es nur, falls Partys wirklich kurzlebig/sitzungsgebunden werden sollen.)*
+4. **Kleinere Schulden** — verwaiste Bilddateien nach "Bild entfernen" · Graph zeigt `SPEZIFISCH` optisch wie `ALLE` · Traglast rechnet nicht rekursiv (gefüllter Rucksack im Auto zählt nur mit Eigengewicht) · Spieler dürfen bisher nur die Ablage-Art ändern, nicht das konkrete Ziel · Verbindungen lassen sich im Beziehungs-Tab lösen, aber nicht anlegen.
 
 ### Phase 5: Messenger und Kontakte (02.09.2026, vorgemerkt)
 

@@ -36,6 +36,25 @@
   transform: translateY(-2px);
 }
 
+/* Orte und Events nutzen dasselbe Kachelgerüst, sollen aber die Leitfarbe
+   ihres eigenen Bereichs tragen — sonst leuchtet in der Orte-Ansicht alles
+   in der PC-Farbe. Steht direkt hinter der Grundregel, weil gleiche
+   Spezifität gilt und die spätere Regel gewinnt. */
+.ort-kachel:hover {
+  border-color: var(--bereich-orte, var(--neon));
+  box-shadow: 0 0 12px -4px var(--bereich-orte, var(--neon));
+}
+
+.event-kachel:hover {
+  border-color: var(--bereich-events, var(--neon));
+  box-shadow: 0 0 12px -4px var(--bereich-events, var(--neon));
+}
+
+.npc-kachel:hover {
+  border-color: var(--bereich-npcs, var(--neon));
+  box-shadow: 0 0 12px -4px var(--bereich-npcs, var(--neon));
+}
+
 /* --- Bild-Bereich ------------------------------------------------------- */
 
 .pc-kachel-bild-bereich {
@@ -85,6 +104,32 @@
   background: var(--warn);
   border-color: var(--warn);
   color: var(--grund);
+}
+
+/* Halter für den gemeinsamen BildBlitz (mitteilungen/BildBlitz.tsx), den
+   Orte und Events statt eines eigenen Knopfes verwenden. Er bringt sein
+   eigenes Aussehen mit, braucht hier also nur die Position — und dieselbe
+   Einblendung beim Überfahren wie der PC-Blitz, damit die Kachel ruhig
+   bleibt, solange man nicht draufzeigt. */
+.pc-kachel-blitz-halter {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.pc-kachel:hover .pc-kachel-blitz-halter {
+  opacity: 1;
+}
+
+/* Am Tablet gibt es kein Überfahren — dort bleibt der Blitz sichtbar,
+   sonst käme man gar nicht an ihn heran. */
+@media (hover: none) {
+  .pc-kachel-blitz-halter,
+  .pc-kachel-blitz {
+    opacity: 1;
+  }
 }
 
 /* --- Info-Bereich ------------------------------------------------------- */

@@ -1,6 +1,15 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { entitiesApi, type Event, type Ort, type Person, type SichtbarkeitModus, type Verbindung } from "./api";
+import {
+  entitiesApi,
+  type EntityKind,
+  type Event,
+  type ListenFilter,
+  type Ort,
+  type Person,
+  type SichtbarkeitModus,
+  type Verbindung,
+} from "./api";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { SichtbarkeitBadge } from "./SichtbarkeitBadge";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -16,6 +25,11 @@ import { PCKacheln } from "./PCKacheln";
 import { PCDetail } from "./PCDetail";
 import { NPCKacheln } from "./NPCKacheln";
 import { NPCDetail } from "./NPCDetail";
+import { OrtKacheln } from "./OrtKacheln";
+import { OrtDetail } from "./OrtDetail";
+import { EventKacheln } from "./EventKacheln";
+import { EventDetail } from "./EventDetail";
+import { Filterleiste } from "./Filterleiste";
 import { playersApi, type SpielerZugang } from "../players/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
@@ -147,32 +161,71 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
   const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
   const [spieler, setSpieler] = useState<SpielerZugang[]>([]);
+  const [ladefehler, setLadefehler] = useState<string | null>(null);
+  const [laedt, setLaedt] = useState(true);
 
-  async function refreshAll() {
-    const [p, o, e, v, graph, sp] = await Promise.all([
-      entitiesApi.listPersonen(campaignId),
-      entitiesApi.listOrte(campaignId),
-      entitiesApi.listEvents(campaignId),
-      entitiesApi.listVerbindungen(campaignId),
-      getGraph(campaignId),
-      playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
-    ]);
-    setPersonen(p);
-    setOrte(o);
-    setEvents(e);
-    setVerbindungen(v);
-    setSpieler(sp);
-    // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
-    // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
-    // bewusst nicht auf, um die Verbindungen-Auswahl nicht zu überladen.
-    setGraphGegenstaende(
-      graph.nodes.filter((n) => n.data.kind === "Gegenstand").map((n) => ({ id: n.data.id, label: n.data.label }))
-    );
-  }
+  // Such-/Sortier-/Beziehungsfilter, je Bereich getrennt. Getrennt, damit ein
+  // Wechsel von NPCs zu Orten nicht die dort gesetzte Suche mitschleppt.
+  const [npcFilter, setNpcFilter] = useState<ListenFilter>({});
+  const [ortFilter, setOrtFilter] = useState<ListenFilter>({});
+  const [eventFilter, setEventFilter] = useState<ListenFilter>({});
+
+  // Welcher Filter für den aktuellen Bereich gilt. Personen werden im
+  // Backend nach personType eingeschränkt, nicht erst hier — sonst käme die
+  // Trefferzahl der Filterleiste nicht mit der Liste überein.
+  const aktiverFilter: ListenFilter =
+    ansicht === "npcs"
+      ? { ...npcFilter, personType: "NPC" }
+      : ansicht === "pcs"
+        ? { personType: "PC" }
+        : ansicht === "orte"
+          ? ortFilter
+          : ansicht === "events"
+            ? eventFilter
+            : {};
+
+  // Als String vergleichen: ein neues Objekt bei jedem Render würde den
+  // Effekt sonst endlos neu starten.
+  const filterSchluessel = JSON.stringify(aktiverFilter);
+
+  const refreshAll = useCallback(async () => {
+    setLaedt(true);
+    try {
+      const filter: ListenFilter = JSON.parse(filterSchluessel);
+      const personenFilter = ansicht === "pcs" || ansicht === "npcs" ? filter : {};
+      const [p, o, e, v, graph, sp] = await Promise.all([
+        entitiesApi.listPersonen(campaignId, personenFilter),
+        entitiesApi.listOrte(campaignId, ansicht === "orte" ? filter : {}),
+        entitiesApi.listEvents(campaignId, ansicht === "events" ? filter : {}),
+        entitiesApi.listVerbindungen(campaignId),
+        getGraph(campaignId),
+        playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
+      ]);
+      setPersonen(p);
+      setOrte(o);
+      setEvents(e);
+      setVerbindungen(v);
+      setSpieler(sp);
+      setLadefehler(null);
+      // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
+      // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
+      // bewusst nicht auf, um die Verbindungen-Auswahl nicht zu überladen.
+      setGraphGegenstaende(
+        graph.nodes.filter((n) => n.data.kind === "Gegenstand").map((n) => ({ id: n.data.id, label: n.data.label }))
+      );
+    } catch (fehler) {
+      // Ohne diese Meldung stünde bei einem Serverfehler nur "Noch keine
+      // Einträge" da — man suchte den Fehler dann in den Daten statt in der
+      // Verbindung.
+      setLadefehler(fehler instanceof Error ? fehler.message : "Daten konnten nicht geladen werden");
+    } finally {
+      setLaedt(false);
+    }
+  }, [campaignId, ansicht, filterSchluessel]);
 
   useEffect(() => {
     refreshAll();
-  }, [campaignId]);
+  }, [refreshAll]);
 
   const personenById = new Map(personen.map((p) => [p.id, p.name]));
   const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
@@ -181,6 +234,31 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const spielerMap = new Map(
     spieler.filter((s) => s.personId).map((s) => [s.personId!, s.benutzername])
   );
+
+  // Wie viele Verbindungen an jeder Entität hängen — für die Kacheln und die
+  // Sortierung "Meiste Verbindungen". Beide Richtungen zählen: ob die
+  // Spielleitung "Wirt → arbeitet in → Bar" oder umgekehrt angelegt hat, ist
+  // eine Frage des Erzählens, nicht der Zugehörigkeit.
+  const verbindungsZahl = useMemo(() => {
+    const zahl = new Map<string, number>();
+    for (const v of verbindungen) {
+      zahl.set(v.vonId, (zahl.get(v.vonId) ?? 0) + 1);
+      zahl.set(v.zuId, (zahl.get(v.zuId) ?? 0) + 1);
+    }
+    return zahl;
+  }, [verbindungen]);
+
+  // Namen der Gegenseiten für die Beziehungslisten in den Detail-Popups.
+  // Nur was hier steht, wird dort angezeigt — eine für diesen Blickwinkel
+  // unsichtbare Entität fehlt in der Tabelle und damit auch in der Liste.
+  const namensTabelle = useMemo(() => {
+    const tabelle = new Map<string, { name: string; kind: EntityKind }>();
+    for (const p of personen) tabelle.set(p.id, { name: p.name, kind: "Person" });
+    for (const o of orte) tabelle.set(o.id, { name: o.name, kind: "Ort" });
+    for (const ev of events) tabelle.set(ev.id, { name: ev.title, kind: "Event" });
+    for (const g of graphGegenstaende) tabelle.set(g.id, { name: g.label, kind: "Gegenstand" });
+    return tabelle;
+  }, [personen, orte, events, graphGegenstaende]);
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
@@ -204,6 +282,69 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   // Neuer NPC anlegen (Name-Eingabe-Popup)
   const [neuerNPCOffen, setNeuerNPCOffen] = useState(false);
   const [neuerNPCName, setNeuerNPCName] = useState("");
+  // Orte und Events: dasselbe Muster wie bei PCs/NPCs — Kachel öffnet ein
+  // Detail-Popup, ein Knopf oben legt neu an.
+  const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
+  const [eventDetailFuer, setEventDetailFuer] = useState<Event | null>(null);
+  const [neuerOrtOffen, setNeuerOrtOffen] = useState(false);
+  const [neuerOrtName, setNeuerOrtName] = useState("");
+  const [neuesEventOffen, setNeuesEventOffen] = useState(false);
+  const [neuesEventTitel, setNeuesEventTitel] = useState("");
+  const [neuesEventZeit, setNeuesEventZeit] = useState("");
+  const [anlegeFehler, setAnlegeFehler] = useState<string | null>(null);
+
+  // Die geöffnete Entität muss dem frisch geladenen Stand folgen, sonst zeigt
+  // das Popup nach dem Speichern noch die alten Werte (und "Beziehungen (3)",
+  // obwohl gerade eine gelöst wurde).
+  const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? null) : null;
+  const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? null) : null;
+
+  async function erstelleNeuenOrt(e: FormEvent) {
+    e.preventDefault();
+    if (!neuerOrtName.trim()) return;
+    setAnlegeFehler(null);
+    try {
+      await entitiesApi.createOrt(campaignId, {
+        name: neuerOrtName.trim(),
+        description: "",
+        notes: "",
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      setNeuerOrtName("");
+      setNeuerOrtOffen(false);
+      await refreshAll();
+    } catch (fehler) {
+      setAnlegeFehler(fehler instanceof Error ? fehler.message : "Anlegen fehlgeschlagen");
+    }
+  }
+
+  async function erstelleNeuesEvent(e: FormEvent) {
+    e.preventDefault();
+    if (!neuesEventTitel.trim()) return;
+    setAnlegeFehler(null);
+    try {
+      await entitiesApi.createEvent(campaignId, {
+        title: neuesEventTitel.trim(),
+        timestamp: neuesEventZeit.trim(),
+        description: "",
+        notes: "",
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      setNeuesEventTitel("");
+      setNeuesEventZeit("");
+      setNeuesEventOffen(false);
+      await refreshAll();
+    } catch (fehler) {
+      setAnlegeFehler(fehler instanceof Error ? fehler.message : "Anlegen fehlgeschlagen");
+    }
+  }
+
   async function erstelleNeuenPC(e: FormEvent) {
     e.preventDefault();
     if (!neuerPCName.trim()) return;
@@ -340,6 +481,15 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const status = ansicht === "pcs" ? `${personenInAnsicht.length} PCs` : ansicht === "npcs" ? `${personenInAnsicht.length} NPCs` : ansicht === "orte" ? `${orte.length} Orte` : ansicht === "events" ? `${events.length} Events` : ansicht === "verbindungen" ? `${verbindungen.length} Verbindungen` : `${personen.length} Personen · ${orte.length} Orte · ${events.length} Events`;
   const istNurEineAnsicht = ansicht !== "welt";
 
+  // Ist gerade gefiltert? Entscheidet, ob "nichts angelegt" oder "nichts
+  // gefunden" dasteht — zwei sehr verschiedene Auskünfte.
+  function gefiltert(f: ListenFilter) {
+    return Boolean(f.suche?.trim() || f.verbundenMit || f.verbindungsTyp);
+  }
+  const istNpcGefiltert = gefiltert(npcFilter);
+  const istOrtGefiltert = gefiltert(ortFilter);
+  const istEventGefiltert = gefiltert(eventFilter);
+
   return (
     <div style={ansichtStyle}>
       {/* PC-Ansicht: eigener Kopf mit Neuer-PC-Button */}
@@ -390,13 +540,117 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           </div>
         </div>
       )}
+      {/* Orte-Ansicht: eigener Kopf mit Neuer-Ort-Button */}
+      {ansicht === "orte" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeuerOrtOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-orte, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-orte, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-orte, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neuer Ort
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Events-Ansicht: eigener Kopf mit Neues-Event-Button */}
+      {ansicht === "events" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeuesEventOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-events, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-events, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-events, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neues Event
+            </button>
+          </div>
+        </div>
+      )}
       {/* Andere Ansichten: normaler Kopf */}
-      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && (
+      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
         </div>
       )}
+
+      {/* Filterleiste: NPCs, Orte und Events. PCs bleiben ohne — es sind
+          wenige, und sie tragen keine Beziehungen im selben Umfang. */}
+      {ansicht === "npcs" && (
+        <Filterleiste
+          campaignId={campaignId}
+          art="personen"
+          personType="NPC"
+          filter={npcFilter}
+          onFilter={setNpcFilter}
+          trefferzahl={personenInAnsicht.length}
+          farbe="var(--bereich-npcs, var(--neon))"
+        />
+      )}
+      {ansicht === "orte" && (
+        <Filterleiste
+          campaignId={campaignId}
+          art="orte"
+          filter={ortFilter}
+          onFilter={setOrtFilter}
+          trefferzahl={orte.length}
+          farbe="var(--bereich-orte, var(--neon))"
+        />
+      )}
+      {ansicht === "events" && (
+        <Filterleiste
+          campaignId={campaignId}
+          art="events"
+          filter={eventFilter}
+          onFilter={setEventFilter}
+          trefferzahl={events.length}
+          farbe="var(--bereich-events, var(--neon))"
+          mitZeitpunkt
+        />
+      )}
+
+      {/* Ladefehler sichtbar machen: sonst stünde nur "noch nichts angelegt"
+          da, und man suchte den Fehler in den Daten statt in der Verbindung. */}
+      {ladefehler && (
+        <p
+          style={{
+            padding: "10px 12px",
+            marginBottom: 12,
+            color: "var(--signal)",
+            border: "1px solid var(--signal)",
+            borderRadius: "var(--radius)",
+            background: "color-mix(in srgb, var(--signal) 8%, transparent)",
+          }}
+        >
+          {ladefehler}{" "}
+          <button type="button" onClick={refreshAll} style={{ minHeight: 0, padding: "3px 10px", marginLeft: 8 }}>
+            Erneut versuchen
+          </button>
+        </p>
+      )}
+
       <div style={istNurEineAnsicht ? listeStyle : undefined}>
       {/* PCs als Kacheln */}
       {ansicht === "pcs" && (
@@ -425,6 +679,13 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               // TODO: Blitz-Funktion implementieren
               console.log("Blitz:", p.name);
             }}
+            leertext={
+              laedt
+                ? "Lädt…"
+                : istNpcGefiltert
+                  ? "Kein NPC passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
+                  : "Noch keine Nichtspielercharaktere angelegt. Oben rechts anlegen."
+            }
           />
         </section>
       )}
@@ -495,7 +756,45 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         </section>
       )}
 
-      {zeigeOrte && (
+      {/* Orte als Kacheln — dasselbe Bedienkonzept wie PCs und NPCs */}
+      {ansicht === "orte" && (
+        <section style={sectionStyle}>
+          <OrtKacheln
+            campaignId={campaignId}
+            orte={orte}
+            verbindungen={verbindungsZahl}
+            onOrtKlick={(o) => setOrtDetailFuer(o)}
+            leertext={
+              laedt
+                ? "Lädt…"
+                : istOrtGefiltert
+                  ? "Kein Ort passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
+                  : "Noch keine Orte angelegt. Oben rechts anlegen."
+            }
+          />
+        </section>
+      )}
+
+      {/* Events als Kacheln */}
+      {ansicht === "events" && (
+        <section style={sectionStyle}>
+          <EventKacheln
+            campaignId={campaignId}
+            events={events}
+            verbindungen={verbindungsZahl}
+            onEventKlick={(ev) => setEventDetailFuer(ev)}
+            leertext={
+              laedt
+                ? "Lädt…"
+                : istEventGefiltert
+                  ? "Kein Event passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
+                  : "Noch keine Events angelegt. Oben rechts anlegen."
+            }
+          />
+        </section>
+      )}
+
+      {zeigeOrte && ansicht !== "orte" && (
         <section style={sectionStyle}>
           <h2>Orte</h2>
           {orte.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Orte angelegt.</p>}
@@ -532,7 +831,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         </section>
       )}
 
-      {zeigeEvents && (
+      {zeigeEvents && ansicht !== "events" && (
         <section style={sectionStyle}>
           <h2>Events</h2>
           {events.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Events angelegt.</p>}
@@ -685,6 +984,131 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           onGeaendert={refreshAll}
         />
       )}
+
+      {/* Ort-Detail-Popup — offenerOrt statt ortDetailFuer, damit es nach dem
+          Speichern den frischen Stand zeigt und nicht die alten Werte. */}
+      {offenerOrt && (
+        <OrtDetail
+          campaignId={campaignId}
+          ort={offenerOrt}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setOrtDetailFuer(null)}
+          onGeaendert={refreshAll}
+        />
+      )}
+
+      {/* Event-Detail-Popup */}
+      {offenesEvent && (
+        <EventDetail
+          campaignId={campaignId}
+          event={offenesEvent}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setEventDetailFuer(null)}
+          onGeaendert={refreshAll}
+        />
+      )}
+
+      {/* Neuer Ort anlegen */}
+      <Fenster
+        offen={neuerOrtOffen}
+        titel="Neuer Ort"
+        unterzeile="Gib dem Ort einen Namen"
+        kennung="neuer-ort"
+        ton="var(--bereich-orte)"
+        onSchliessen={() => {
+          setNeuerOrtOffen(false);
+          setNeuerOrtName("");
+          setAnlegeFehler(null);
+        }}
+      >
+        <form onSubmit={erstelleNeuenOrt} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <input
+            type="text"
+            value={neuerOrtName}
+            onChange={(e) => setNeuerOrtName(e.target.value)}
+            placeholder="Name des Ortes"
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            required
+          />
+          {anlegeFehler && <p style={{ color: "var(--signal)", margin: 0 }}>{anlegeFehler}</p>}
+          <p style={{ color: "var(--text-leise)", fontSize: "0.85rem", margin: 0 }}>
+            Neue Orte sind zunächst SL-geheim. Freigeben lässt sich das im Detail-Popup.
+          </p>
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            Ort erstellen
+          </button>
+        </form>
+      </Fenster>
+
+      {/* Neues Event anlegen */}
+      <Fenster
+        offen={neuesEventOffen}
+        titel="Neues Event"
+        unterzeile="Titel und, falls schon bekannt, der Zeitpunkt"
+        kennung="neues-event"
+        ton="var(--bereich-events)"
+        onSchliessen={() => {
+          setNeuesEventOffen(false);
+          setNeuesEventTitel("");
+          setNeuesEventZeit("");
+          setAnlegeFehler(null);
+        }}
+      >
+        <form onSubmit={erstelleNeuesEvent} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <input
+            type="text"
+            value={neuesEventTitel}
+            onChange={(e) => setNeuesEventTitel(e.target.value)}
+            placeholder="Titel des Events"
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            required
+          />
+          <input
+            type="text"
+            value={neuesEventZeit}
+            onChange={(e) => setNeuesEventZeit(e.target.value)}
+            placeholder="Zeitpunkt (z.B. Session 3) — darf leer bleiben"
+            style={{ fontSize: "1rem", padding: "10px 14px" }}
+          />
+          {anlegeFehler && <p style={{ color: "var(--signal)", margin: 0 }}>{anlegeFehler}</p>}
+          <p style={{ color: "var(--text-leise)", fontSize: "0.85rem", margin: 0 }}>
+            Neue Events sind zunächst SL-geheim. Freigeben lässt sich das im Detail-Popup.
+          </p>
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            Event erstellen
+          </button>
+        </form>
+      </Fenster>
 
       {/* Neuer PC anlegen */}
       <Fenster

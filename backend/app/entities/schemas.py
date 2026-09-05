@@ -227,3 +227,25 @@ class VerbindungResponse(BaseModel):
     bis: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
+
+
+class FilterZiel(BaseModel):
+    """Eine Entität, mit der tatsächlich mindestens eine Verbindung besteht."""
+
+    id: str
+    kind: str
+    label: str
+    anzahl: int
+
+
+class FilterOptionen(BaseModel):
+    """Womit sich eine Liste sinnvoll filtern lässt — aus dem echten Graphen.
+
+    Bewusst kein fester Katalog von Beziehungsarten: die Spielleitung tippt
+    den Typ frei ein ("Gegner", "Stammgast", "gehört zu"), und der Filter darf
+    nur anbieten, was auch wirklich angelegt ist. Ein Dropdown mit erfundenen
+    Vorschlägen führte sonst zu leeren Ergebnissen.
+    """
+
+    typen: list[str] = []
+    ziele: list[FilterZiel] = []

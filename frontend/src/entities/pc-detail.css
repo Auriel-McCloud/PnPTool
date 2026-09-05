@@ -42,6 +42,52 @@
   color: var(--bereich-pcs, var(--neon)) !important;
 }
 
+/* Orte und Events nutzen dasselbe Popup-Gerüst, sollen aber ihre eigene
+   Leitfarbe tragen. Stehen hinter der Grundregel: gleiche Spezifität, die
+   spätere Regel gewinnt. Das !important ist schon oben nötig und muss hier
+   deshalb mitgezogen werden. */
+.pcd-nav-orte .pcd-nav-aktiv {
+  background: color-mix(in srgb, var(--bereich-orte, var(--neon)) 15%, transparent) !important;
+  border-color: var(--bereich-orte, var(--neon)) !important;
+  color: var(--bereich-orte, var(--neon)) !important;
+}
+
+.pcd-nav-events .pcd-nav-aktiv {
+  background: color-mix(in srgb, var(--bereich-events, var(--neon)) 15%, transparent) !important;
+  border-color: var(--bereich-events, var(--neon)) !important;
+  color: var(--bereich-events, var(--neon)) !important;
+}
+
+/* --- Einzelfeld (Name, Zeitpunkt) --------------------------------------- */
+
+.pcd-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.pcd-feld label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.pcd-feld input {
+  padding: 9px 11px;
+  font-size: 1rem;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.pcd-feld input:focus {
+  outline: none;
+  border-color: var(--neon);
+}
+
 /* --- Bereich ------------------------------------------------------------ */
 
 .pcd-bereich {

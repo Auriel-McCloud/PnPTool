@@ -90,11 +90,13 @@ interface NPCKachelnProps {
   npcs: Person[];
   onNPCKlick: (person: Person) => void;
   onBlitz: (person: Person) => void;
+  /** Steht etwas anderes an als "noch nichts angelegt"? (z.B. Filter ohne Treffer) */
+  leertext?: string;
 }
 
-export function NPCKacheln({ campaignId, npcs, onNPCKlick, onBlitz }: NPCKachelnProps) {
+export function NPCKacheln({ campaignId, npcs, onNPCKlick, onBlitz, leertext }: NPCKachelnProps) {
   if (npcs.length === 0) {
-    return <p className="pc-kacheln-leer">Noch keine Nichtspielercharaktere angelegt.</p>;
+    return <p className="pc-kacheln-leer">{leertext ?? "Noch keine Nichtspielercharaktere angelegt."}</p>;
   }
 
   return (
