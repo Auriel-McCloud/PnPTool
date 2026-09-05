@@ -24,7 +24,8 @@ const REIHENFOLGE = [
   "Arete",
   "Sphäre",
   "NeuroWeaving",
-  "Hintergrund",
+  // Hintergründe bewusst ausgelassen — die kann nach der Charaktererstellung
+  // nur noch die SL vergeben, nicht der Spieler selbst steigern.
 ];
 
 export function LevelUp({

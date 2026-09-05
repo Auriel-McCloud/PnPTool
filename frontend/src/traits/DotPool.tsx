@@ -24,7 +24,7 @@ export function DotPool({
   }
 
   return (
-    <span style={{ display: "inline-flex", gap: 3, flexWrap: "wrap", verticalAlign: "middle" }}>
+    <span style={{ display: "inline-flex", gap: 3, flexWrap: "nowrap", verticalAlign: "middle" }}>
       {dots.map((n) => (
         <span
           key={n}
