@@ -12,6 +12,8 @@ import { Charaktererstellung } from "../traits/Charaktererstellung";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Fenster } from "../shell/Fenster";
 import { getGraph } from "../graph/api";
+import { PCKacheln } from "./PCKacheln";
+import { playersApi, type SpielerZugang } from "../players/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
 const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid var(--linie)" };
@@ -141,19 +143,22 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [events, setEvents] = useState<Event[]>([]);
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
   const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
+  const [spieler, setSpieler] = useState<SpielerZugang[]>([]);
 
   async function refreshAll() {
-    const [p, o, e, v, graph] = await Promise.all([
+    const [p, o, e, v, graph, sp] = await Promise.all([
       entitiesApi.listPersonen(campaignId),
       entitiesApi.listOrte(campaignId),
       entitiesApi.listEvents(campaignId),
       entitiesApi.listVerbindungen(campaignId),
       getGraph(campaignId),
+      playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
     ]);
     setPersonen(p);
     setOrte(o);
     setEvents(e);
     setVerbindungen(v);
+    setSpieler(sp);
     // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
     // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
     // bewusst nicht auf, um die Verbindungen-Auswahl nicht zu überladen.
@@ -169,6 +174,10 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const personenById = new Map(personen.map((p) => [p.id, p.name]));
   const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
   const alleOptionen: PersonOption[] = personen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
+  // Spieler-Map: personId -> Spielername (für PC-Kacheln)
+  const spielerMap = new Map(
+    spieler.filter((s) => s.personId).map((s) => [s.personId!, s.benutzername])
+  );
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
@@ -294,7 +303,30 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         </div>
       )}
       <div style={istNurEineAnsicht ? listeStyle : undefined}>
-      {zeigePersonen && (
+      {/* PCs als Kacheln, NPCs und Welt-Ansicht als Liste */}
+      {ansicht === "pcs" && (
+        <section style={sectionStyle}>
+          <PCKacheln
+            campaignId={campaignId}
+            pcs={personenInAnsicht}
+            spielerMap={spielerMap}
+            onPCKlick={(p) => setBlattFuer(p)}
+            onBlitz={(p) => {
+              // TODO: Blitz-Funktion implementieren
+              console.log("Blitz:", p.name);
+            }}
+          />
+          <form onSubmit={submitPerson} style={formStyle}>
+            <div style={fieldRowStyle}>
+              <input style={textInputStyle} placeholder="Name" value={personName} onChange={(e) => setPersonName(e.target.value)} required />
+            </div>
+            <RichContentFields state={personContent} pcOptions={pcOptions} />
+            <button type="submit">PC anlegen</button>
+          </form>
+        </section>
+      )}
+
+      {zeigePersonen && ansicht !== "pcs" && (
         <section style={sectionStyle}>
           <h2>{personenUeberschrift}</h2>
           {personenInAnsicht.length === 0 && <p style={{ color: "var(--text-leise)" }}>{personenLeertext}</p>}
@@ -355,7 +387,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               )}
             </div>
             <RichContentFields state={personContent} pcOptions={pcOptions} />
-            <button type="submit">{ansicht === "pcs" ? "PC anlegen" : ansicht === "npcs" ? "NPC anlegen" : "Person anlegen"}</button>
+            <button type="submit">{ansicht === "npcs" ? "NPC anlegen" : "Person anlegen"}</button>
           </form>
         </section>
       )}
