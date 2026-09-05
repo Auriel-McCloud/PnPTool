@@ -121,6 +121,57 @@
   background: color-mix(in srgb, var(--ja) 35%, transparent);
 }
 
+/* --- NPC Alias-Bereich -------------------------------------------------- */
+
+.pcd-alias-bereich {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.pcd-alias-bereich label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-leise);
+}
+
+.pcd-alias-bereich input {
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.pcd-alias-bereich input:focus {
+  border-color: var(--neon);
+  outline: none;
+}
+
+.pcd-alias-bereich button {
+  align-self: flex-start;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--ja) 20%, transparent);
+  border: 1px solid var(--ja);
+  border-radius: var(--radius);
+  color: var(--ja);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.pcd-alias-bereich button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .pcd-speichern:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -14,6 +14,8 @@ import { Fenster } from "../shell/Fenster";
 import { getGraph } from "../graph/api";
 import { PCKacheln } from "./PCKacheln";
 import { PCDetail } from "./PCDetail";
+import { NPCKacheln } from "./NPCKacheln";
+import { NPCDetail } from "./NPCDetail";
 import { playersApi, type SpielerZugang } from "../players/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
@@ -195,9 +197,13 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [blattFuer, setBlattFuer] = useState<Person | null>(null);
   // PC-Detail-Popup für die Kachel-Ansicht
   const [pcDetailFuer, setPcDetailFuer] = useState<Person | null>(null);
+  const [npcDetailFuer, setNpcDetailFuer] = useState<Person | null>(null);
   // Neuer PC anlegen (Name-Eingabe-Popup)
   const [neuerPCOffen, setNeuerPCOffen] = useState(false);
   const [neuerPCName, setNeuerPCName] = useState("");
+  // Neuer NPC anlegen (Name-Eingabe-Popup)
+  const [neuerNPCOffen, setNeuerNPCOffen] = useState(false);
+  const [neuerNPCName, setNeuerNPCName] = useState("");
   async function erstelleNeuenPC(e: FormEvent) {
     e.preventDefault();
     if (!neuerPCName.trim()) return;
@@ -213,6 +219,23 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     });
     setNeuerPCName("");
     setNeuerPCOffen(false);
+    await refreshAll();
+  }
+  async function erstelleNeuenNPC(e: FormEvent) {
+    e.preventDefault();
+    if (!neuerNPCName.trim()) return;
+    await entitiesApi.createPerson(campaignId, {
+      name: neuerNPCName.trim(),
+      personType: "NPC",
+      description: "",
+      notes: "",
+      sichtbarkeit: "GM",
+      sichtbarFuer: [],
+      notizenSichtbarkeit: "GM",
+      notizenSichtbarFuer: [],
+    });
+    setNeuerNPCName("");
+    setNeuerNPCOffen(false);
     await refreshAll();
   }
   async function submitPerson(e: FormEvent) {
@@ -343,8 +366,32 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           </div>
         </div>
       )}
+      {/* NPC-Ansicht: eigener Kopf mit Neuer-NPC-Button */}
+      {ansicht === "npcs" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeuerNPCOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-npcs, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-npcs, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-npcs, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neuer NPC
+            </button>
+          </div>
+        </div>
+      )}
       {/* Andere Ansichten: normaler Kopf */}
-      {istNurEineAnsicht && ansicht !== "pcs" && (
+      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
@@ -367,7 +414,22 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         </section>
       )}
 
-      {zeigePersonen && ansicht !== "pcs" && (
+      {/* NPCs als Kacheln */}
+      {ansicht === "npcs" && (
+        <section style={sectionStyle}>
+          <NPCKacheln
+            campaignId={campaignId}
+            npcs={personenInAnsicht}
+            onNPCKlick={(p) => setNpcDetailFuer(p)}
+            onBlitz={(p) => {
+              // TODO: Blitz-Funktion implementieren
+              console.log("Blitz:", p.name);
+            }}
+          />
+        </section>
+      )}
+
+      {zeigePersonen && ansicht !== "pcs" && ansicht !== "npcs" && (
         <section style={sectionStyle}>
           <h2>{personenUeberschrift}</h2>
           {personenInAnsicht.length === 0 && <p style={{ color: "var(--text-leise)" }}>{personenLeertext}</p>}
@@ -428,7 +490,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               )}
             </div>
             <RichContentFields state={personContent} pcOptions={pcOptions} />
-            <button type="submit">{ansicht === "npcs" ? "NPC anlegen" : "Person anlegen"}</button>
+            <button type="submit">Person anlegen</button>
           </form>
         </section>
       )}
@@ -614,6 +676,16 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         />
       )}
 
+      {/* NPC-Detail-Popup */}
+      {npcDetailFuer && (
+        <NPCDetail
+          campaignId={campaignId}
+          person={npcDetailFuer}
+          onSchliessen={() => setNpcDetailFuer(null)}
+          onGeaendert={refreshAll}
+        />
+      )}
+
       {/* Neuer PC anlegen */}
       <Fenster
         offen={neuerPCOffen}
@@ -649,6 +721,45 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
             }}
           >
             PC erstellen
+          </button>
+        </form>
+      </Fenster>
+
+      {/* Neuer NPC anlegen */}
+      <Fenster
+        offen={neuerNPCOffen}
+        titel="Neuer Nichtspielercharakter"
+        unterzeile="Gib dem NPC einen Namen"
+        kennung="neuer-npc"
+        onSchliessen={() => {
+          setNeuerNPCOffen(false);
+          setNeuerNPCName("");
+        }}
+      >
+        <form onSubmit={erstelleNeuenNPC} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <input
+            type="text"
+            value={neuerNPCName}
+            onChange={(e) => setNeuerNPCName(e.target.value)}
+            placeholder="NPC-Name"
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            required
+          />
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            NPC erstellen
           </button>
         </form>
       </Fenster>
