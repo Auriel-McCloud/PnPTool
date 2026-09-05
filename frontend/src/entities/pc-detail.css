@@ -1,0 +1,141 @@
+/* =======================================================================
+   PC-Detail — Popup für einzelnen Spielercharakter
+   ======================================================================= */
+
+.pcd-inhalt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* --- Navigation --------------------------------------------------------- */
+
+.pcd-nav {
+  display: flex;
+  gap: 4px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--linie);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.pcd-nav button {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.pcd-nav button:hover {
+  background: var(--flaeche);
+  color: var(--text);
+}
+
+.pcd-nav-aktiv {
+  background: color-mix(in srgb, var(--bereich-pcs, var(--neon)) 15%, transparent) !important;
+  border-color: var(--bereich-pcs, var(--neon)) !important;
+  color: var(--bereich-pcs, var(--neon)) !important;
+}
+
+/* --- Bereich ------------------------------------------------------------ */
+
+.pcd-bereich {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* --- Übersicht ---------------------------------------------------------- */
+
+.pcd-uebersicht {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.pcd-bild-bereich {
+  width: 200px;
+}
+
+.pcd-schnellzugriff h3 {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-leise);
+}
+
+.pcd-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pcd-buttons button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  text-align: left;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pcd-buttons button:hover {
+  background: var(--flaeche-hoch);
+  border-color: var(--neon);
+}
+
+/* --- Editor-Bereich ----------------------------------------------------- */
+
+.pcd-editor-bereich {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pcd-speichern {
+  align-self: flex-start;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ja) 20%, transparent);
+  border: 1px solid var(--ja);
+  border-radius: var(--radius);
+  color: var(--ja);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pcd-speichern:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ja) 35%, transparent);
+}
+
+.pcd-speichern:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+@media (max-width: 599px) {
+  .pcd-uebersicht {
+    grid-template-columns: 1fr;
+  }
+
+  .pcd-bild-bereich {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+}

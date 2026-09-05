@@ -13,6 +13,7 @@ import { Charakterblatt } from "../traits/Charakterblatt";
 import { Fenster } from "../shell/Fenster";
 import { getGraph } from "../graph/api";
 import { PCKacheln } from "./PCKacheln";
+import { PCDetail } from "./PCDetail";
 import { playersApi, type SpielerZugang } from "../players/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
@@ -192,6 +193,28 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   // Dasselbe dreispaltige Blatt, das der Spieler sieht — die Spielleitung
   // will beim Erzählen denselben Überblick haben, nicht die Bearbeitungsmaske.
   const [blattFuer, setBlattFuer] = useState<Person | null>(null);
+  // PC-Detail-Popup für die Kachel-Ansicht
+  const [pcDetailFuer, setPcDetailFuer] = useState<Person | null>(null);
+  // Neuer PC anlegen (Name-Eingabe-Popup)
+  const [neuerPCOffen, setNeuerPCOffen] = useState(false);
+  const [neuerPCName, setNeuerPCName] = useState("");
+  async function erstelleNeuenPC(e: FormEvent) {
+    e.preventDefault();
+    if (!neuerPCName.trim()) return;
+    await entitiesApi.createPerson(campaignId, {
+      name: neuerPCName.trim(),
+      personType: "PC",
+      description: "",
+      notes: "",
+      sichtbarkeit: "GM",
+      sichtbarFuer: [],
+      notizenSichtbarkeit: "GM",
+      notizenSichtbarFuer: [],
+    });
+    setNeuerPCName("");
+    setNeuerPCOffen(false);
+    await refreshAll();
+  }
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
     await entitiesApi.createPerson(campaignId, {
@@ -296,33 +319,51 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
 
   return (
     <div style={ansichtStyle}>
-      {istNurEineAnsicht && (
+      {/* PC-Ansicht: eigener Kopf mit Neuer-PC-Button */}
+      {ansicht === "pcs" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeuerPCOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-pcs, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-pcs, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-pcs, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neuer PC
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Andere Ansichten: normaler Kopf */}
+      {istNurEineAnsicht && ansicht !== "pcs" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
         </div>
       )}
       <div style={istNurEineAnsicht ? listeStyle : undefined}>
-      {/* PCs als Kacheln, NPCs und Welt-Ansicht als Liste */}
+      {/* PCs als Kacheln */}
       {ansicht === "pcs" && (
         <section style={sectionStyle}>
           <PCKacheln
             campaignId={campaignId}
             pcs={personenInAnsicht}
             spielerMap={spielerMap}
-            onPCKlick={(p) => setBlattFuer(p)}
+            onPCKlick={(p) => setPcDetailFuer(p)}
             onBlitz={(p) => {
               // TODO: Blitz-Funktion implementieren
               console.log("Blitz:", p.name);
             }}
           />
-          <form onSubmit={submitPerson} style={formStyle}>
-            <div style={fieldRowStyle}>
-              <input style={textInputStyle} placeholder="Name" value={personName} onChange={(e) => setPersonName(e.target.value)} required />
-            </div>
-            <RichContentFields state={personContent} pcOptions={pcOptions} />
-            <button type="submit">PC anlegen</button>
-          </form>
         </section>
       )}
 
@@ -560,6 +601,58 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
             }}
           />
         )}
+      </Fenster>
+
+      {/* PC-Detail-Popup */}
+      {pcDetailFuer && (
+        <PCDetail
+          campaignId={campaignId}
+          person={pcDetailFuer}
+          spielerName={spielerMap.get(pcDetailFuer.id)}
+          pcOptions={pcOptions}
+          alleOptionen={alleOptionen}
+          onSchliessen={() => setPcDetailFuer(null)}
+          onGeaendert={refreshAll}
+        />
+      )}
+
+      {/* Neuer PC anlegen */}
+      <Fenster
+        offen={neuerPCOffen}
+        titel="Neuer Spielercharakter"
+        unterzeile="Gib dem Charakter einen Namen"
+        kennung="neuer-pc"
+        onSchliessen={() => {
+          setNeuerPCOffen(false);
+          setNeuerPCName("");
+        }}
+      >
+        <form onSubmit={erstelleNeuenPC} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <input
+            type="text"
+            value={neuerPCName}
+            onChange={(e) => setNeuerPCName(e.target.value)}
+            placeholder="Charaktername"
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            required
+          />
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            PC erstellen
+          </button>
+        </form>
       </Fenster>
     </div>
   );
