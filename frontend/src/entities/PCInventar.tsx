@@ -59,14 +59,19 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     refresh();
   }
 
-  // Gruppiere nach Ablage
-  const nachAblage = items.reduce<Record<string, Gegenstand[]>>((acc, item) => {
+  // Trenne verbaute Augments von normalen Gegenständen
+  const verbaute = items.filter((i) => i.verbaut);
+  const nichtVerbaut = items.filter((i) => !i.verbaut);
+
+  // Gruppiere nicht-verbaute nach Ablage
+  const nachAblage = nichtVerbaut.reduce<Record<string, Gegenstand[]>>((acc, item) => {
     const key = item.ablage ?? "RUCKSACK";
     (acc[key] ??= []).push(item);
     return acc;
   }, {});
 
   const ablageNamen: Record<string, string> = {
+    VERBAUT: "Verbaut",
     AUSGERUESTET: "Ausgerüstet",
     RUCKSACK: "Rucksack",
     GELAGERT: "Gelagert",
@@ -94,6 +99,25 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
 
       {items.length === 0 && (
         <p style={{ color: "var(--text-leise)" }}>Noch keine Gegenstände.</p>
+      )}
+
+      {/* Verbaute Augments zuerst, mit eigener Markierung */}
+      {verbaute.length > 0 && (
+        <section className="pci-sektion pci-verbaut">
+          <h4 className="pci-ablage-titel">
+            <span>🔩 Verbaut</span>
+            <span className="pci-anzahl">{verbaute.length}</span>
+          </h4>
+          <div className="pci-kachel-liste">
+            {verbaute.map((g) => (
+              <GegenstandKachel
+                key={g.id}
+                item={g}
+                // Verbaute Augments können nicht umgelagert werden
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {ablageReihenfolge.map((ablage) => {

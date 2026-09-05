@@ -42,6 +42,17 @@
   gap: 8px;
 }
 
+/* Verbaute Augments visuell hervorheben */
+.pci-verbaut .pci-ablage-titel {
+  color: var(--neon);
+  border-bottom-color: var(--neon);
+}
+
+.pci-verbaut .pci-kachel-liste {
+  padding-left: 8px;
+  border-left: 2px solid var(--neon);
+}
+
 .pci-ablage-titel {
   display: flex;
   justify-content: space-between;
