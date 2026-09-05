@@ -25,6 +25,47 @@
   flex-shrink: 0;
 }
 
+.lu-aktionen {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.lu-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lu-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lu-btn-speichern {
+  background: color-mix(in srgb, var(--ja) 20%, transparent);
+  border-color: var(--ja);
+  color: var(--ja);
+}
+
+.lu-btn-speichern:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ja) 35%, transparent);
+}
+
+.lu-btn-zurueck {
+  background: color-mix(in srgb, var(--signal) 15%, transparent);
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.lu-btn-zurueck:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal) 30%, transparent);
+}
+
 .lu-konto {
   display: flex;
   align-items: baseline;
@@ -177,6 +218,13 @@
 
 .lu-voll .lu-preis {
   color: var(--text-aus);
+}
+
+/* Lokal geänderte Werte — noch nicht gespeichert */
+.lu-geaendert {
+  border-color: var(--neon);
+  background: color-mix(in srgb, var(--neon) 12%, transparent);
+  box-shadow: 0 0 8px -3px var(--neon);
 }
 
 /* Auch im Level-Up bleibt die gleiche Drei-Spalten-Aufteilung wie im
