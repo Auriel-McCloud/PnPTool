@@ -3,6 +3,7 @@ import { useAuthFallsVorhanden } from "../auth/AuthContext";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
+import { Fenster } from "../shell/Fenster";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
@@ -166,6 +167,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       await itemsApi.create(campaignId, neuBesitzer, { name: neuName });
     }
     setNeuName("");
+    setNeuBesitzer("");
     setAnlegenOffen(false);
     await refresh();
   }
@@ -200,8 +202,8 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
             </option>
           ))}
         </select>
-        <button type="button" onClick={() => setAnlegenOffen((o) => !o)}>
-          {anlegenOffen ? "Abbrechen" : "+ Neu"}
+        <button type="button" onClick={() => setAnlegenOffen(true)}>
+          + Neuer Gegenstand
         </button>
         {istGm && (
           <button type="button" onClick={() => setMuelleimerOffen(true)} title="Weggeworfene Gegenstände">
@@ -213,9 +215,25 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         </span>
       </div>
 
-      {anlegenOffen && (
-        <form onSubmit={addItem} className="gg-kopf">
-          <select value={neuBesitzer} onChange={(e) => setNeuBesitzer(e.target.value)} required>
+      {/* Neuer Gegenstand Popup */}
+      <Fenster
+        offen={anlegenOffen}
+        titel="Neuer Gegenstand"
+        unterzeile="Gegenstand erstellen oder Vorlage anlegen"
+        kennung="neuer-gegenstand"
+        onSchliessen={() => {
+          setAnlegenOffen(false);
+          setNeuName("");
+          setNeuBesitzer("");
+        }}
+      >
+        <form onSubmit={addItem} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <select
+            value={neuBesitzer}
+            onChange={(e) => setNeuBesitzer(e.target.value)}
+            required
+            style={{ fontSize: "1rem", padding: "10px 12px" }}
+          >
             <option value="">Besitzer wählen…</option>
             <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
             {alleOptionen.map((p) => (
@@ -225,14 +243,31 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
             ))}
           </select>
           <input
-            className="gg-suche"
+            type="text"
             placeholder="Name des Gegenstands"
             value={neuName}
             onChange={(e) => setNeuName(e.target.value)}
+            required
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
           />
-          <button type="submit">Hinzufügen</button>
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            Gegenstand erstellen
+          </button>
         </form>
-      )}
+      </Fenster>
 
       {einstellungen?.gewichtAktiv && ueberladen.length > 0 && (
         <div className="gg-ueberladen">
