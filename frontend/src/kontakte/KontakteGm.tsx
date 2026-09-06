@@ -41,11 +41,13 @@ export function KontakteGm({ campaignId }: Props) {
     try {
       const [k, personen] = await Promise.all([
         kontakteApi.uebersicht(campaignId),
-        entitiesApi.listPersonen(campaignId),
+        entitiesApi.listPersonenAlsGm(campaignId),
       ]);
       setKontakte(k);
       setPcs(personen.filter((p) => p.personType === "PC"));
       setNpcs(personen.filter((p) => p.personType === "NPC"));
+    } catch (err) {
+      console.error("Kontakte laden fehlgeschlagen:", err);
     } finally {
       setLoading(false);
     }
