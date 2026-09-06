@@ -190,6 +190,8 @@ export function GegenstandRow({
   const [traitKatalog, setTraitKatalog] = useState<TraitDef[]>([]);
   const [chromstufen, setChromstufen] = useState<Chromstufe[]>([]);
   const [zonen, setZonen] = useState<string[]>([]);
+  // Gewählte Chromstufe (preisJeBonus) für automatische Preisberechnung
+  const [gewaehlteChromstufe, setGewaehlteChromstufe] = useState<number | null>(null);
   // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
   const [stufe, setStufe] = useState(item.stufe);
   const [widerstand, setWiderstand] = useState(item.widerstand);
@@ -207,18 +209,34 @@ export function GegenstandRow({
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
 
+  // Summe aller Trait-Boni für Chrom-Preisberechnung
+  const gesamtBonus = traitBoni.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
+
   // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
   // nicht mehr. Nur nachladen, solange das Formular offen ist.
   useEffect(() => {
     if (!expanded || !CHROM_TYPEN.has(typ)) return;
+    const bonus = Math.max(1, gesamtBonus || kraft);
     itemsApi
-      .chromstufen(campaignId, Math.max(1, kraft))
+      .chromstufen(campaignId, bonus)
       .then((d) => {
         setChromstufen(d.stufen);
         setZonen(d.koerperzonen);
       })
       .catch(() => setChromstufen([]));
-  }, [expanded, typ, kraft, campaignId]);
+  }, [expanded, typ, gesamtBonus, kraft, campaignId]);
+
+  // Wenn sich traitBoni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen
+  useEffect(() => {
+    if (!expanded || !CHROM_TYPEN.has(typ) || gewaehlteChromstufe === null) return;
+    const stufe = chromstufen.find((s) => s.preisJeBonus === gewaehlteChromstufe);
+    if (stufe) {
+      const bonus = Math.max(1, gesamtBonus);
+      setPreis(bonus * gewaehlteChromstufe);
+      setWVerlust(stufe.wVerlustGenau * bonus);
+      setKraft(bonus);
+    }
+  }, [traitBoni, gewaehlteChromstufe, gesamtBonus, chromstufen, expanded, typ]);
 
   // Katalog fürs Trait-Boni-Dropdown — nur laden, wenn das Formular offen
   // ist und Boni überhaupt angezeigt werden können.
@@ -422,15 +440,16 @@ export function GegenstandRow({
         {CHROM_TYPEN.has(typ) && (
           <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
             <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Cyber-/Bioware: der <strong>Bonus</strong> steht oben bei Kraft. Je mehr du je
-              Bonuspunkt zahlst, desto weniger Willenskraft kostet es dauerhaft (Regelblatt Zeilen
-              112-117) — billiges Chrom reisst am meisten heraus.
+              Cyber-/Bioware: Füge unten <strong>Boni auf Werte</strong> hinzu und wähle hier die
+              <strong> Qualitätsstufe</strong>. Je mehr du je Bonuspunkt zahlst, desto weniger
+              Willenskraft kostet es dauerhaft (Regelblatt Zeilen 112-117).
             </label>
             <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Bonus
-                <DotPool value={kraft} max={7} onChange={setKraft} />
-              </label>
+              {gesamtBonus > 0 && (
+                <span style={{ fontSize: "0.9em", color: "var(--neon)" }}>
+                  Gesamt-Bonus: <strong>+{gesamtBonus}</strong>
+                </span>
+              )}
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
                 Körperzone
                 <select value={koerperzone} onChange={(e) => setKoerperzone(e.target.value)}>
@@ -467,25 +486,24 @@ export function GegenstandRow({
                 gerechnet vertut man sich, und die Formel steht im Server. */}
             <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
               {chromstufen.map((st) => {
-                const gewaehlt = preis === st.preis && wVerlust === st.wVerlust;
+                const istGewaehlt = gewaehlteChromstufe === st.preisJeBonus;
                 return (
                   <button
                     key={st.name}
                     type="button"
                     onClick={() => {
+                      setGewaehlteChromstufe(st.preisJeBonus);
                       setPreis(st.preis);
-                      // Der **ungerundete** Bruch wird gespeichert, damit sich
-                      // mehrere Implantate zusammen addieren und erst die
-                      // Summe gerundet wird.
                       setWVerlust(st.wVerlustGenau);
+                      setKraft(Math.max(1, gesamtBonus));
                     }}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       gap: 10,
                       textAlign: "left",
-                      borderColor: gewaehlt ? "var(--neon)" : undefined,
-                      color: gewaehlt ? "var(--neon)" : undefined,
+                      borderColor: istGewaehlt ? "var(--neon)" : undefined,
+                      color: istGewaehlt ? "var(--neon)" : undefined,
                     }}
                     title={st.beschreibung}
                   >
@@ -589,11 +607,12 @@ export function GegenstandRow({
           </button>
 
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
-            Ausrüstungsfertigkeiten (nur durch diesen Gegenstand vorhanden, z.B. „Springen 3")
+            Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand, z.B. „Augenstrahl 3")
           </label>
           {ausruestungsfertigkeiten.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
-              <select
+              <input
+                placeholder="Name der neuen Fertigkeit"
                 value={p.key}
                 onChange={(e) =>
                   setAusruestungsfertigkeiten(
@@ -601,14 +620,7 @@ export function GegenstandRow({
                   )
                 }
                 style={{ flex: 1 }}
-              >
-                <option value="">— Fertigkeit wählen —</option>
-                {traitKatalog.map((t) => (
-                  <option key={t.id} value={t.name}>
-                    {t.name} ({t.category})
-                  </option>
-                ))}
-              </select>
+              />
               <input
                 type="number"
                 placeholder="Würfel"
