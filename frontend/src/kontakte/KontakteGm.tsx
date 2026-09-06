@@ -3,6 +3,7 @@ import {
   kontakteApi,
   type KontaktGm,
   type Kontaktstufe,
+  type Nachricht,
   STUFEN,
 } from "./api";
 import type { Person } from "../entities/api";
@@ -35,6 +36,11 @@ export function KontakteGm({ campaignId }: Props) {
 
   // Löschen
   const [loeschenKontakt, setLoeschenKontakt] = useState<KontaktGm | null>(null);
+
+  // Chat-Viewer
+  const [chatKontakt, setChatKontakt] = useState<KontaktGm | null>(null);
+  const [chatNachrichten, setChatNachrichten] = useState<Nachricht[]>([]);
+  const [chatLaden, setChatLaden] = useState(false);
 
   const laden = useCallback(async () => {
     setLoading(true);
@@ -87,6 +93,20 @@ export function KontakteGm({ campaignId }: Props) {
     await kontakteApi.loeschen(campaignId, loeschenKontakt.id);
     setLoeschenKontakt(null);
     laden();
+  }
+
+  async function chatOeffnen(k: KontaktGm) {
+    setChatKontakt(k);
+    setChatLaden(true);
+    try {
+      const chat = await kontakteApi.chat(campaignId, k.id);
+      setChatNachrichten(chat.nachrichten);
+    } catch (err) {
+      console.error("Chat laden fehlgeschlagen:", err);
+      setChatNachrichten([]);
+    } finally {
+      setChatLaden(false);
+    }
   }
 
   if (loading && kontakte.length === 0) {
@@ -158,6 +178,7 @@ export function KontakteGm({ campaignId }: Props) {
                   <th>Stufe</th>
                   <th>Chat</th>
                   <th>Name bekannt</th>
+                  <th>Verlauf</th>
                   <th></th>
                 </tr>
               </thead>
@@ -208,6 +229,15 @@ export function KontakteGm({ campaignId }: Props) {
                     </td>
                     <td>
                       <button
+                        className="kontakte-gm-chat-btn"
+                        onClick={() => chatOeffnen(k)}
+                        title="Chat-Verlauf anzeigen"
+                      >
+                        💬
+                      </button>
+                    </td>
+                    <td>
+                      <button
                         className="kontakte-gm-loeschen"
                         onClick={() => setLoeschenKontakt(k)}
                         title="Kontakt löschen"
@@ -237,6 +267,41 @@ export function KontakteGm({ campaignId }: Props) {
           onJa={loeschen}
           onNein={() => setLoeschenKontakt(null)}
         />
+      )}
+
+      {/* Chat-Verlauf Popup */}
+      {chatKontakt && (
+        <div className="kontakte-gm-chat-overlay" onClick={() => setChatKontakt(null)}>
+          <div className="kontakte-gm-chat-popup" onClick={(e) => e.stopPropagation()}>
+            <header className="kontakte-gm-chat-header">
+              <h3>💬 {chatKontakt.pcName} ↔ {chatKontakt.npcName}</h3>
+              <button onClick={() => setChatKontakt(null)}>✕</button>
+            </header>
+            <div className="kontakte-gm-chat-verlauf">
+              {chatLaden && <p className="kontakte-gm-chat-laden">Lade...</p>}
+              {!chatLaden && chatNachrichten.length === 0 && (
+                <p className="kontakte-gm-chat-leer">Noch keine Nachrichten.</p>
+              )}
+              {chatNachrichten.map((n) => (
+                <div
+                  key={n.id}
+                  className={`kontakte-gm-chat-msg ${n.vonMir ? "von-pc" : "von-npc"}`}
+                >
+                  <span className="kontakte-gm-chat-absender">{n.absender || chatKontakt.pcName}:</span>
+                  <span className="kontakte-gm-chat-text">{n.inhalt}</span>
+                  <span className="kontakte-gm-chat-zeit">
+                    {new Date(n.erstelltAm).toLocaleString("de-AT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

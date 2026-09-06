@@ -192,6 +192,125 @@
   opacity: 1;
 }
 
+/* Chat-Button */
+.kontakte-gm-chat-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hintergrund);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1em;
+}
+
+.kontakte-gm-chat-btn:hover {
+  background: var(--akzent);
+}
+
+/* Chat-Verlauf Overlay */
+.kontakte-gm-chat-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.kontakte-gm-chat-popup {
+  background: var(--hintergrund-karte);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.kontakte-gm-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--hintergrund);
+  border-radius: 12px 12px 0 0;
+}
+
+.kontakte-gm-chat-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: var(--akzent);
+}
+
+.kontakte-gm-chat-header button {
+  background: transparent;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: var(--text-leise);
+  padding: 4px 8px;
+}
+
+.kontakte-gm-chat-header button:hover {
+  color: var(--text);
+}
+
+.kontakte-gm-chat-verlauf {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kontakte-gm-chat-laden,
+.kontakte-gm-chat-leer {
+  color: var(--text-leise);
+  text-align: center;
+  padding: 24px;
+}
+
+.kontakte-gm-chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 80%;
+}
+
+.kontakte-gm-chat-msg.von-pc {
+  align-self: flex-end;
+  background: var(--akzent);
+  color: var(--text-invers);
+}
+
+.kontakte-gm-chat-msg.von-npc {
+  align-self: flex-start;
+  background: var(--hintergrund);
+  border: 1px solid var(--border);
+}
+
+.kontakte-gm-chat-absender {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+.kontakte-gm-chat-text {
+  font-size: 0.95em;
+}
+
+.kontakte-gm-chat-zeit {
+  font-size: 0.7em;
+  opacity: 0.5;
+  align-self: flex-end;
+}
+
 /* Leer-Meldung */
 .kontakte-gm-leer {
   color: var(--text-leise);
