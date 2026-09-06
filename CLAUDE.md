@@ -91,7 +91,7 @@ Weiteren Account anlegen: `.\.venv\Scripts\python.exe scripts\create_gm.py --use
 - ✅ **UI-Polish-Durchgang (28.08.2026)** — siehe eigener Abschnitt unten, ersetzt die alte binäre Sichtbarkeit + fügt Rich-Text-Editor hinzu
 - 🟡 **Phase 3 (teilweise, 28.08.2026)** — Charakterblatt-Grundlage: TraitDef-Katalog (52 Werte aus Neotopia.xlsx geseedet), Punkte-Anzeige (DotPool, beliebiges Maximum inkl. Per-Charakter-Override), Gegenstände 1:N an Personen mit Auto-Sichtbarkeit für den Besitzer. Siehe eigener Abschnitt unten. **Noch offen für vollständige Phase 3:** Box-Tracks (Gesundheit/Willenskraft/I.C.E.), Cyber/Bio-Ware-Slots, Rüstung/Waffen, Companion/Drohne-Sheets, Würfeln.
 - ✅ **Phase 4 (29.08.2026)** — **Spieler-Zugang steht.** Sichtbarkeits-Filterung läuft in allen Lese-Routen, ansteuerbar über die SL-Vorschau `?alsSpieler=` **und** über echte Spieler-Sitzungen. Beitritt per Zugangscode, Charakter beanspruchen, eigene Oberfläche. Siehe eigener Abschnitt unten. Offen bleibt nur die Live-Kommunikation (Phase 5).
-- 🟡 **Phase 5** — **SL-Popups live über WebSocket gebaut** (eigener Abschnitt unten). Messenger/Kontakte sind fachlich spezifiziert und der Kontakt-Fachkern steht; dessen API, Persistenz und UI sind noch offen. Der Messenger bleibt eine optionale Kampagnenfunktion (`messengerAktiv`, standardmäßig aus). Die API-Vertragstests liegen als Vorlage in `backend/tests/test_kontakte_api.py` und überspringen sich selbst, solange `app.kontakte.routes` fehlt.
+- 🟢 **Phase 5** — **SL-Popups live über WebSocket gebaut** (eigener Abschnitt unten). **Messenger-Frontend fertig** (Persona-5-Stil, Neon-Cyberpunk): `frontend/src/kontakte/Messenger.tsx` mit schrägen Sprechblasen, animiertem Gitter-Hintergrund und Kontakt-Karten. Backend (Kontakte, Nachrichten) war bereits fertig. Offen: "Nur-Lesen"-Nachrichten für SL-Broadcasts.
 - ✅ **Kampagnen-Wiki (03.09.2026)** — Planungs- und Wissenswerkzeug für Geschichten: Seitenbaum, TipTap-Editor mit Überschriften/Bildern/Verknüpfungen, automatisches Inhaltsverzeichnis, Rückverweise an Entitäten und „bis hierher freigeben". Eigener Bereich ❋ Wiki bei SL und Spieler. Spezifikation: `docs/produktvision-wiki.md`, Umsetzung: eigener Abschnitt unten.
 - ✅ **Theme-Fundament (03.09.2026)** — Vorarbeit fürs Wiki, damit es nicht dieselben harten Farbwerte erneut verdrahtet. Alle Farb-/Formwerte liegen jetzt als Tokens in `frontend/src/theme/`; ein zweites Theme (Hextechpunk) beweist, dass der Umbau trägt. Details und die Regel dazu: `docs/theming.md`.
 - ⬜ **Phase 6+** — optionaler echter Spieler-Account, Debian/nginx-Deploy, Google Gemini API Integration (Mark hat Gemini Pro Account) für Regel-Chatbot/kreative Item-Ideen — noch unspezifiziert
@@ -2429,7 +2429,17 @@ Wer künftig Felder mit `onBlur`-Speicherung testet, muss daran denken.
 
 ### Phase 5: Messenger und Kontakte (02.09.2026, vorgemerkt)
 
-Die vollständige Ideenskizze mit Kontaktstufen, vorgeschlagenem `KENNT`-Modell, Nachrichtenmodell, Berechtigungen, UI-Vorgaben und offenen Entscheidungen steht in `docs/phase-5-messenger.md`. Wichtig: Kontaktwissen ist **gerichtet und personenbezogen** — was PC A über NPC B weiss, kann anders aussehen als das Wissen von PC C. Die Hauptansicht bleibt scrollbar-frei; nur die Kontaktliste bzw. der Chatverlauf in einem Fenster darf intern scrollen. Noch keine Implementierung.
+Die vollständige Ideenskizze mit Kontaktstufen, vorgeschlagenem `KENNT`-Modell, Nachrichtenmodell, Berechtigungen, UI-Vorgaben und offenen Entscheidungen steht in `docs/phase-5-messenger.md`. Wichtig: Kontaktwissen ist **gerichtet und personenbezogen** — was PC A über NPC B weiss, kann anders aussehen als das Wissen von PC C. Die Hauptansicht bleibt scrollbar-frei; nur die Kontaktliste bzw. der Chatverlauf in einem Fenster darf intern scrollen.
+
+**Stand 06.09.2026:** Frontend-Messenger im Persona-5-Stil fertig (`frontend/src/kontakte/Messenger.tsx`, `messenger.css`). Features:
+- Schräge Sprechblasen wie in Persona 5
+- Neon-Cyberpunk-Farbschema (CSS-Variablen aus tokens.css)
+- Animierter Gitter-Hintergrund mit Scanlines
+- Portraits bei jeder Nachricht
+- Dynamische Kontakt-Karten mit Ungelesen-Badge
+- In Spieler-Ansicht unter "Kontakte" eingehängt
+
+**Offen:** "Nur-Lesen"-Nachrichten (SL kann senden, Spieler kann nicht antworten) — braucht Backend-Feld `antwortGesperrt` auf Chat/Kontakt.
 
 **Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8000` (bewusst nur localhost, siehe LAN-Abschnitt unten; ohne `--reload`, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, lauscht dank `host:true` in `vite.config.ts` auf allen Interfaces (kein `--host`-Flag mehr nötig). Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
 
