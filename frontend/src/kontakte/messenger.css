@@ -1,0 +1,524 @@
+/*
+ * Messenger im Persona-5-Stil — Neon-Cyberpunk-Edition.
+ *
+ * Dynamische, schräge Sprechblasen mit Portraits. Animierter Hintergrund.
+ * Nur Theme-Tokens, keine harten Farbwerte (docs/theming.md).
+ */
+
+/* Lokale Spacing-Variablen (falls --luft-* nicht global definiert) */
+.msg-huelle {
+  --luft-1: 4px;
+  --luft-2: 8px;
+  --luft-3: 16px;
+  --luft-4: 32px;
+}
+
+/* ============================================================ HINTERGRUND */
+
+.msg-huelle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+/* Animierter Cyberpunk-Hintergrund mit Neon-Gitter */
+.msg-huelle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    /* Horizontale Linien */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      color-mix(in srgb, var(--neon) 8%, transparent) 40px,
+      color-mix(in srgb, var(--neon) 8%, transparent) 41px
+    ),
+    /* Vertikale Linien */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      color-mix(in srgb, var(--signal) 6%, transparent) 40px,
+      color-mix(in srgb, var(--signal) 6%, transparent) 41px
+    ),
+    /* Radialer Schimmer in der Mitte */
+    radial-gradient(
+      ellipse at 50% 80%,
+      color-mix(in srgb, var(--neon) 12%, transparent) 0%,
+      transparent 60%
+    ),
+    /* Basis */
+    var(--grund);
+  z-index: 0;
+  animation: msg-pulse 8s ease-in-out infinite;
+}
+
+@keyframes msg-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Scanlines für Retro-Effekt */
+.msg-huelle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgb(0 0 0 / 0.03) 2px,
+    rgb(0 0 0 / 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ============================================================ CHAT-LISTE */
+
+.msg-liste {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-2);
+  padding: var(--luft-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  /* Scrollbar im Neon-Stil */
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon) var(--grund);
+}
+
+.msg-liste::-webkit-scrollbar {
+  width: 6px;
+}
+
+.msg-liste::-webkit-scrollbar-track {
+  background: var(--grund);
+}
+
+.msg-liste::-webkit-scrollbar-thumb {
+  background: var(--neon);
+  border-radius: 3px;
+}
+
+/* ============================================================ KONTAKT-KARTE */
+
+.msg-kontakt {
+  display: flex;
+  align-items: center;
+  gap: var(--luft-2);
+  padding: var(--luft-2);
+  /* Persona-5-Stil: schräge Kante */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 0 100%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--neon) 15%, var(--grund)) 0%,
+    color-mix(in srgb, var(--signal) 8%, var(--grund)) 100%
+  );
+  border-left: 3px solid var(--neon);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.msg-kontakt:hover {
+  transform: translateX(8px) skewX(-1deg);
+  border-color: var(--signal);
+}
+
+.msg-kontakt:active {
+  transform: translateX(12px) skewX(-2deg) scale(0.98);
+}
+
+/* Portrait im schrägen Rahmen */
+.msg-portrait {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.msg-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Schräge Ecke oben rechts */
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  border: 2px solid var(--neon);
+}
+
+.msg-portrait-leer {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--neon) 20%, var(--grund));
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  border: 2px solid var(--neon);
+  color: var(--text-leise);
+  font-size: 1.5rem;
+}
+
+/* Ungelesen-Badge im Persona-Stil */
+.msg-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--signal);
+  color: var(--grund);
+  font-size: 0.7rem;
+  font-weight: 700;
+  /* Eckige Form wie "NEW" in Persona */
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  animation: msg-badge-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes msg-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.msg-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msg-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.msg-vorschau {
+  color: var(--text-leise);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-zeit {
+  font-size: 0.7rem;
+  color: var(--neon);
+  font-family: var(--mono);
+}
+
+/* ============================================================ CHAT-ANSICHT */
+
+.msg-chat {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header mit Zurück-Button */
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: var(--luft-2);
+  padding: var(--luft-2);
+  background: color-mix(in srgb, var(--neon) 8%, var(--grund));
+  border-bottom: 2px solid var(--neon);
+  /* Schräge Unterkante */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 20px) 100%, 0 100%);
+}
+
+.msg-zurueck {
+  background: transparent;
+  border: 2px solid var(--neon);
+  color: var(--neon);
+  padding: 8px 12px;
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.msg-zurueck:hover {
+  background: color-mix(in srgb, var(--neon) 20%, transparent);
+  transform: translateX(-4px);
+}
+
+.msg-partner {
+  display: flex;
+  align-items: center;
+  gap: var(--luft-2);
+}
+
+.msg-partner-bild {
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  border: 2px solid var(--neon);
+  object-fit: cover;
+}
+
+.msg-partner-name {
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Nur-Lesen-Indikator */
+.msg-readonly {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--warn);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border: 1px solid var(--warn);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+/* ============================================================ NACHRICHTEN */
+
+.msg-verlauf {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-3);
+  padding: var(--luft-3);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon) var(--grund);
+}
+
+/* Einzelne Nachricht im Persona-5-Stil */
+.msg-nachricht {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--luft-2);
+  max-width: 85%;
+  animation: msg-einblenden 0.3s ease-out;
+}
+
+@keyframes msg-einblenden {
+  from {
+    opacity: 0;
+    transform: translateY(20px) skewX(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) skewX(0);
+  }
+}
+
+/* Fremde Nachrichten: links, mit Portrait */
+.msg-nachricht[data-eigen="false"] {
+  align-self: flex-start;
+}
+
+/* Eigene Nachrichten: rechts, ohne Portrait */
+.msg-nachricht[data-eigen="true"] {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+/* Mini-Portrait bei fremden Nachrichten */
+.msg-mini-portrait {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  border: 2px solid var(--neon);
+  object-fit: cover;
+}
+
+/* Die Sprechblase selbst */
+.msg-blase {
+  position: relative;
+  padding: var(--luft-2) var(--luft-3);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--neon) 12%, var(--grund)) 0%,
+    color-mix(in srgb, var(--neon) 6%, var(--grund)) 100%
+  );
+  /* Dynamische schräge Form wie in Persona 5 */
+  clip-path: polygon(
+    0 8px,
+    8px 0,
+    100% 0,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    0 100%
+  );
+  border-left: 3px solid var(--neon);
+}
+
+/* Eigene Nachrichten: andere Farbe, gespiegelt */
+.msg-nachricht[data-eigen="true"] .msg-blase {
+  background: linear-gradient(
+    -135deg,
+    color-mix(in srgb, var(--signal) 15%, var(--grund)) 0%,
+    color-mix(in srgb, var(--signal) 8%, var(--grund)) 100%
+  );
+  border-left: none;
+  border-right: 3px solid var(--signal);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
+}
+
+.msg-absender {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--neon);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.msg-text {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.msg-uhrzeit {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-leise);
+  text-align: right;
+  margin-top: 6px;
+  font-family: var(--mono);
+}
+
+/* ============================================================ EINGABE */
+
+.msg-eingabe {
+  display: flex;
+  gap: var(--luft-2);
+  padding: var(--luft-2);
+  background: color-mix(in srgb, var(--neon) 5%, var(--grund));
+  border-top: 2px solid var(--neon);
+  /* Schräge Oberkante */
+  clip-path: polygon(0 6px, 20px 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.msg-eingabe textarea {
+  flex: 1;
+  resize: none;
+  min-height: 44px;
+  padding: var(--luft-2);
+  background: color-mix(in srgb, var(--neon) 8%, var(--grund));
+  border: 2px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+  color: var(--text);
+  font: inherit;
+  /* Passende Ecke */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+  transition: border-color 120ms ease;
+}
+
+.msg-eingabe textarea:focus {
+  outline: none;
+  border-color: var(--neon);
+}
+
+.msg-eingabe textarea::placeholder {
+  color: var(--text-leise);
+}
+
+.msg-senden {
+  padding: var(--luft-2) var(--luft-3);
+  background: var(--neon);
+  color: var(--grund);
+  border: none;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  /* Persona-5-Ecke */
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.msg-senden:hover:not(:disabled) {
+  background: var(--signal);
+  transform: skewX(-3deg);
+}
+
+.msg-senden:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================ LEER-ZUSTAND */
+
+.msg-leer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--luft-2);
+  padding: var(--luft-4);
+  text-align: center;
+  color: var(--text-leise);
+}
+
+.msg-leer-icon {
+  font-size: 3rem;
+  color: var(--neon);
+  animation: msg-float 3s ease-in-out infinite;
+}
+
+@keyframes msg-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ============================================================ NUR-LESEN */
+
+.msg-eingabe-gesperrt {
+  padding: var(--luft-3);
+  text-align: center;
+  background: color-mix(in srgb, var(--warn) 10%, var(--grund));
+  border-top: 2px solid var(--warn);
+  color: var(--warn);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================ RESPONSIVE */
+
+@media (max-width: 600px) {
+  .msg-nachricht {
+    max-width: 95%;
+  }
+
+  .msg-mini-portrait {
+    width: 28px;
+    height: 28px;
+  }
+
+  .msg-blase {
+    padding: var(--luft-1) var(--luft-2);
+  }
+}

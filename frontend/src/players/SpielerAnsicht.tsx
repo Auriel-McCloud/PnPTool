@@ -30,6 +30,8 @@ import { RichTextView } from "../richtext/RichTextView";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
 import { VollbildKnopf } from "../shell/VollbildKnopf";
+import { Messenger } from "../kontakte/Messenger";
+import { kontakteApi, type Kontakt } from "../kontakte/api";
 import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
 
@@ -116,11 +118,15 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [seite, setSeite] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
+  // personen wird für den Graphen geladen, auch wenn der Kontakte-Bereich
+  // jetzt den Messenger nutzt. Später könnte eine Übersicht "Bekannte NPCs" sinnvoll sein.
   const [personen, setPersonen] = useState<Person[]>([]);
+  void personen; // TypeScript: wird für den Graphen bereitgehalten
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
+  const [kontakte, setKontakte] = useState<Kontakt[]>([]);
   // Für den Bestätigungsdialog beim Einsetzen von Augments.
   const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
 
@@ -138,6 +144,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     einstellungenApi.lesen(cid).then(setEinstellungen).catch(() => setEinstellungen(null));
     itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
     begleiterApi.liste(cid).then(setBegleiter).catch(() => setBegleiter([]));
+    kontakteApi.meine(cid).then(setKontakte).catch(() => setKontakte([]));
   }, [ich]);
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
@@ -405,17 +412,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       )}
 
       {bereich === "kontakte" && (
-        <>
-          {personen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Du kennst noch niemanden.</p>}
-          {personen.map((p) => (
-            <Karte
-              key={p.id}
-              titel={p.name}
-              unter={p.id === ich.personId ? "du" : undefined}
-              text={p.description}
-            />
-          ))}
-        </>
+        <Messenger
+          campaignId={ich.campaignId}
+          kontakte={kontakte}
+          onKontakteAktualisieren={() => {
+            kontakteApi.meine(ich.campaignId).then(setKontakte).catch(() => {});
+          }}
+        />
       )}
 
       {bereich === "inventar" && (
