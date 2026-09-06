@@ -117,6 +117,7 @@ class PersonResponse(BaseModel):
     iceSchaden: int = 0
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
+    extraEP: int = 0
     willenskraftBonus: int = 0
     konzept: str = ""
     alter: str = ""
