@@ -85,7 +85,7 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
                 }}
                 title="Extra-EP vergeben"
               >
-                +1
+                1EP
               </button>
             )}
           </div>

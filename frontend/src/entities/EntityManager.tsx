@@ -402,16 +402,26 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   }
 
   // --- EP-Vergabe ---
-  async function erhoeheKampagnenEP() {
-    await einstellungenApi.epErhoehen(campaignId, 1);
-    setEpKampagneBestaetigung(false);
-    await refreshAll();
+  const [epKampagneBetrag, setEpKampagneBetrag] = useState(1);
+
+  async function erhoeheKampagnenEP(betrag: number) {
+    try {
+      await einstellungenApi.epErhoehen(campaignId, betrag);
+      setEpKampagneBestaetigung(false);
+      await refreshAll();
+    } catch (e) {
+      console.error("Kampagnen-EP Fehler:", e);
+    }
   }
 
   async function erhoeheExtraEP(person: Person) {
-    await entitiesApi.extraEpErhoehen(campaignId, person.id, 1);
-    setEpExtraBestaetigung(null);
-    await refreshAll();
+    try {
+      await entitiesApi.extraEpErhoehen(campaignId, person.id, 1);
+      setEpExtraBestaetigung(null);
+      await refreshAll();
+    } catch (e) {
+      console.error("Extra-EP Fehler:", e);
+    }
   }
 
   // --- Ort ---
@@ -519,28 +529,34 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         <div style={kopfStyle}>
           <div>
             <h2 style={{ marginBottom: 8 }}>{titel}</h2>
-            {/* Kampagnen-EP Anzeige */}
-            <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 4 }}>
+            {/* Kampagnen-EP Anzeige mit mehreren Buttons */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
               <span style={{ fontSize: "0.9em", color: "var(--text-leise)" }}>
                 Kampagnen-EP: <strong style={{ color: "var(--neon)" }}>{einstellungen?.kampagnenEP ?? 0}</strong>
               </span>
-              <button
-                type="button"
-                onClick={() => setEpKampagneBestaetigung(true)}
-                style={{
-                  padding: "4px 10px",
-                  background: "transparent",
-                  border: "1px solid var(--neon)",
-                  borderRadius: "var(--radius)",
-                  color: "var(--neon)",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: "0.85em",
-                }}
-                title="Alle PCs erhalten +1 EP"
-              >
-                +1 EP für alle
-              </button>
+              {[1, 3, 5, 10].map((betrag) => (
+                <button
+                  key={betrag}
+                  type="button"
+                  onClick={() => {
+                    setEpKampagneBetrag(betrag);
+                    setEpKampagneBestaetigung(true);
+                  }}
+                  style={{
+                    padding: "4px 10px",
+                    background: "transparent",
+                    border: "1px solid var(--neon)",
+                    borderRadius: "var(--radius)",
+                    color: "var(--neon)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "0.85em",
+                  }}
+                  title={`Alle PCs erhalten +${betrag} EP`}
+                >
+                  +{betrag} EP
+                </button>
+              ))}
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -1239,11 +1255,11 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       {/* EP-Bestätigungsdialoge */}
       {epKampagneBestaetigung && (
         <Bestaetigung
-          titel="EP für alle vergeben"
-          text="Alle Spielercharaktere erhalten +1 Erfahrungspunkt. Diese Aktion kann nicht rückgängig gemacht werden."
-          jaText="+1 EP vergeben"
+          titel={`+${epKampagneBetrag} EP für alle vergeben`}
+          text={`Alle Spielercharaktere erhalten +${epKampagneBetrag} Erfahrungspunkt${epKampagneBetrag > 1 ? "e" : ""}. Diese Aktion kann nicht rückgängig gemacht werden.`}
+          jaText={`+${epKampagneBetrag} EP vergeben`}
           neinText="Abbrechen"
-          onJa={erhoeheKampagnenEP}
+          onJa={() => erhoeheKampagnenEP(epKampagneBetrag)}
           onNein={() => setEpKampagneBestaetigung(false)}
         />
       )}
