@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
-from app.campaigns.repository import get_campaign
+from app.campaigns.repository import get_campaign, get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.items.repository import (
     ausruestungs_trait_boni,
@@ -64,6 +64,8 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
     campaign = await get_campaign(campaign_id)
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     katalog = await repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
 
@@ -75,7 +77,7 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
 
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
-        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod),
+        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
         "deckBoni": await deck_boni(campaign_id, person_id),
@@ -150,11 +152,13 @@ async def set_zustand(
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
 
 
 # =====================================================================
@@ -273,12 +277,14 @@ async def erstelle_charakter(
     )
 
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return {
         "uebersicht": bogen_uebersicht(
-            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom, init_mod
+            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom, init_mod, kampagnen_ep
         ),
         "freebeesVerbraucht": erstellung.freebee_kosten(
             auswahl, {t["name"]: t["category"] for t in katalog}
@@ -437,8 +443,10 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
         person_id,
         {"erfahrung": int(person.get("erfahrung") or 0) + body.punkte},
     )
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod)
+    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)

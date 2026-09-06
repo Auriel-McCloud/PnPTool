@@ -88,13 +88,17 @@ def bogen_uebersicht(
     commlink_cyberwall: int = 0,
     chrom_verlust: int = 0,
     initiative_mod: int = 0,
+    kampagnen_ep: int = 0,
 ) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
     g_max = gesundheit_max(werte)
     w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0), chrom_verlust)
     i_max = ice_max(weg, werte, commlink_cyberwall)
-    erfahrung = int(person.get("erfahrung") or 0)
+    # Gesamt-EP = individuelle Erfahrung + Kampagnen-EP + Extra-EP
+    erfahrung_person = int(person.get("erfahrung") or 0)
+    extra_ep = int(person.get("extraEP") or 0)
+    erfahrung = erfahrung_person + kampagnen_ep + extra_ep
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
 
     # Schaden nach Art. Zusammen dürfen sie die Gesundheit nicht übersteigen;
