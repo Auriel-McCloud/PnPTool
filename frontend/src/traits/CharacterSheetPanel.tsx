@@ -593,8 +593,7 @@ export function GegenstandRow({
           </label>
           {ausruestungsfertigkeiten.map((p, i) => (
             <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
-              <input
-                placeholder="Name der Fertigkeit"
+              <select
                 value={p.key}
                 onChange={(e) =>
                   setAusruestungsfertigkeiten(
@@ -602,7 +601,14 @@ export function GegenstandRow({
                   )
                 }
                 style={{ flex: 1 }}
-              />
+              >
+                <option value="">— Fertigkeit wählen —</option>
+                {traitKatalog.map((t) => (
+                  <option key={t.id} value={t.name}>
+                    {t.name} ({t.category})
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
                 placeholder="Würfel"
