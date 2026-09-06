@@ -109,12 +109,18 @@ export function Fenster({
     // Der Hintergrund darf nicht mitscrollen, während das Fenster offen ist
     const vorher = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    rahmenRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", beiTaste);
       document.body.style.overflow = vorher;
     };
   }, [offen, onSchliessen]);
+
+  // Initialer Fokus: nur beim ersten Öffnen, nicht bei jedem Render
+  useEffect(() => {
+    if (offen) {
+      rahmenRef.current?.focus();
+    }
+  }, [offen]);
 
   if (!offen) return null;
 
