@@ -10,6 +10,7 @@ import {
   type SichtbarkeitModus,
   type Verbindung,
 } from "./api";
+import { einstellungenApi, type Einstellungen } from "../campaigns/einstellungen";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { SichtbarkeitBadge } from "./SichtbarkeitBadge";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -20,6 +21,7 @@ import { CharacterSheetPanel } from "../traits/CharacterSheetPanel";
 import { Charaktererstellung } from "../traits/Charaktererstellung";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { getGraph } from "../graph/api";
 import { PCKacheln } from "./PCKacheln";
 import { PCDetail } from "./PCDetail";
@@ -161,6 +163,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
   const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
   const [spieler, setSpieler] = useState<SpielerZugang[]>([]);
+  const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [ladefehler, setLadefehler] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(true);
 
@@ -193,19 +196,21 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     try {
       const filter: ListenFilter = JSON.parse(filterSchluessel);
       const personenFilter = ansicht === "pcs" || ansicht === "npcs" ? filter : {};
-      const [p, o, e, v, graph, sp] = await Promise.all([
+      const [p, o, e, v, graph, sp, einst] = await Promise.all([
         entitiesApi.listPersonen(campaignId, personenFilter),
         entitiesApi.listOrte(campaignId, ansicht === "orte" ? filter : {}),
         entitiesApi.listEvents(campaignId, ansicht === "events" ? filter : {}),
         entitiesApi.listVerbindungen(campaignId),
         getGraph(campaignId),
         playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
+        einstellungenApi.lesen(campaignId).catch(() => null),
       ]);
       setPersonen(p);
       setOrte(o);
       setEvents(e);
       setVerbindungen(v);
       setSpieler(sp);
+      setEinstellungen(einst);
       setLadefehler(null);
       // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
       // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
@@ -292,6 +297,10 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [neuesEventTitel, setNeuesEventTitel] = useState("");
   const [neuesEventZeit, setNeuesEventZeit] = useState("");
   const [anlegeFehler, setAnlegeFehler] = useState<string | null>(null);
+
+  // EP-Vergabe: Bestätigungsdialoge
+  const [epKampagneBestaetigung, setEpKampagneBestaetigung] = useState(false);
+  const [epExtraBestaetigung, setEpExtraBestaetigung] = useState<Person | null>(null);
 
   // Die geöffnete Entität muss dem frisch geladenen Stand folgen, sonst zeigt
   // das Popup nach dem Speichern noch die alten Werte (und "Beziehungen (3)",
@@ -389,6 +398,19 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     setPersonName("");
     setPersonType(ansicht === "pcs" ? "PC" : "NPC");
     personContent.reset();
+    await refreshAll();
+  }
+
+  // --- EP-Vergabe ---
+  async function erhoeheKampagnenEP() {
+    await einstellungenApi.epErhoehen(campaignId, 1);
+    setEpKampagneBestaetigung(false);
+    await refreshAll();
+  }
+
+  async function erhoeheExtraEP(person: Person) {
+    await entitiesApi.extraEpErhoehen(campaignId, person.id, 1);
+    setEpExtraBestaetigung(null);
     await refreshAll();
   }
 
@@ -492,10 +514,35 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
 
   return (
     <div style={ansichtStyle}>
-      {/* PC-Ansicht: eigener Kopf mit Neuer-PC-Button */}
+      {/* PC-Ansicht: eigener Kopf mit EP-Anzeige und Neuer-PC-Button */}
       {ansicht === "pcs" && (
         <div style={kopfStyle}>
-          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div>
+            <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+            {/* Kampagnen-EP Anzeige */}
+            <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 4 }}>
+              <span style={{ fontSize: "0.9em", color: "var(--text-leise)" }}>
+                Kampagnen-EP: <strong style={{ color: "var(--neon)" }}>{einstellungen?.kampagnenEP ?? 0}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setEpKampagneBestaetigung(true)}
+                style={{
+                  padding: "4px 10px",
+                  background: "transparent",
+                  border: "1px solid var(--neon)",
+                  borderRadius: "var(--radius)",
+                  color: "var(--neon)",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.85em",
+                }}
+                title="Alle PCs erhalten +1 EP"
+              >
+                +1 EP für alle
+              </button>
+            </div>
+          </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
             <button
@@ -664,6 +711,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               // TODO: Blitz-Funktion implementieren
               console.log("Blitz:", p.name);
             }}
+            onExtraEP={(p) => setEpExtraBestaetigung(p)}
           />
         </section>
       )}
@@ -1187,6 +1235,28 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           </button>
         </form>
       </Fenster>
+
+      {/* EP-Bestätigungsdialoge */}
+      {epKampagneBestaetigung && (
+        <Bestaetigung
+          titel="EP für alle vergeben"
+          text="Alle Spielercharaktere erhalten +1 Erfahrungspunkt. Diese Aktion kann nicht rückgängig gemacht werden."
+          jaText="+1 EP vergeben"
+          neinText="Abbrechen"
+          onJa={erhoeheKampagnenEP}
+          onNein={() => setEpKampagneBestaetigung(false)}
+        />
+      )}
+      {epExtraBestaetigung && (
+        <Bestaetigung
+          titel={`Extra-EP für ${epExtraBestaetigung.name}`}
+          text={`${epExtraBestaetigung.name} erhält +1 Extra-Erfahrungspunkt (zusätzlich zu den Kampagnen-EP). Diese Aktion kann nicht rückgängig gemacht werden.`}
+          jaText="+1 Extra-EP"
+          neinText="Abbrechen"
+          onJa={() => erhoeheExtraEP(epExtraBestaetigung)}
+          onNein={() => setEpExtraBestaetigung(null)}
+        />
+      )}
     </div>
   );
 }

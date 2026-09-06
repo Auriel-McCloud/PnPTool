@@ -71,6 +71,9 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # automatisch, auch wenn die Spieler physisch würfeln. Mark: "die hätte
     # ich schon gerne automatisch".
     "digitalesWuerfelnSL": True,
+    # Kampagnenweite Erfahrungspunkte — alle PCs bekommen gemeinsam EP.
+    # Nur erhöhbar, nicht senkbar (irreversibel).
+    "kampagnenEP": 0,
 }
 
 

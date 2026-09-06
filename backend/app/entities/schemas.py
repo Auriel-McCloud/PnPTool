@@ -45,6 +45,9 @@ class PersonCreate(BaseModel):
     # Erfahrung: gesamt vergeben und davon ausgegeben.
     erfahrung: int = 0
     erfahrungAusgegeben: int = 0
+    # Extra-EP für diesen PC (individuelle Bonus-Punkte, zusätzlich zu
+    # den kampagnenweiten EP). Nur erhöhbar, nicht senkbar.
+    extraEP: int = 0
     willenskraftBonus: int = 0
     # Kopfzeile des Papierblatts: Konzept, Alter, Ambition, Verlangen, Ziel,
     # Kapital/Schulden. Reiner Text bzw. Zahlen, keine Regelmechanik.
@@ -76,6 +79,7 @@ class PersonUpdate(BaseModel):
     iceSchaden: int | None = None
     erfahrung: int | None = None
     erfahrungAusgegeben: int | None = None
+    extraEP: int | None = None
     willenskraftBonus: int | None = None
     konzept: str | None = None
     alter: str | None = None

@@ -19,6 +19,8 @@ _BOGEN_FELDER = [
     "iceSchaden",
     "erfahrung",
     "erfahrungAusgegeben",
+    # Extra-EP: individuelle Bonus-Punkte zusätzlich zu kampagnenweiten EP.
+    "extraEP",
     # Willenskraft ist abgeleitet (Entschlossenheit + Fassung); einzeln
     # gekaufte Punkte kommen als Bonus obendrauf.
     "willenskraftBonus",
@@ -64,6 +66,7 @@ _BOGEN_DEFAULTS: dict = {
     "iceSchaden": 0,
     "erfahrung": 0,
     "erfahrungAusgegeben": 0,
+    "extraEP": 0,
     "willenskraftBonus": 0,
     "konzept": "",
     "alter": "",

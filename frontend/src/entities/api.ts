@@ -20,6 +20,8 @@ export interface Person extends VisibilityFields {
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
+  /** Extra-EP: individuelle Bonus-Punkte (zusätzlich zu kampagnenweiten EP). */
+  extraEP?: number;
 }
 
 export interface Ort extends VisibilityFields {
@@ -115,6 +117,9 @@ export const entitiesApi = {
   updatePerson: (cid: string, id: string, body: Partial<Person>) =>
     api.patch<Person>(`${base(cid)}/personen/${id}`, body),
   deletePerson: (cid: string, id: string) => api.delete<void>(`${base(cid)}/personen/${id}`),
+  /** Erhöht die Extra-EP eines PCs (nur positiv, irreversibel). */
+  extraEpErhoehen: (cid: string, personId: string, betrag: number) =>
+    api.post<Person>(`${base(cid)}/personen/${personId}/extra-ep`, { betrag }),
 
   listOrte: (cid: string, filter?: ListenFilter) => api.get<Ort[]>(`${base(cid)}/orte${query(filter)}`),
   createOrt: (cid: string, body: Omit<Ort, "id">) => api.post<Ort>(`${base(cid)}/orte`, body),

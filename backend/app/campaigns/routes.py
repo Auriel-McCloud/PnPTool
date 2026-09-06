@@ -61,3 +61,18 @@ async def einstellungen_aendern(campaign_id: str, body: dict) -> dict:
 async def einstellungen_standard(campaign_id: str) -> dict:
     """Die Ausgangswerte — damit die Oberfläche weiß, was es überhaupt gibt."""
     return EINSTELLUNGEN_DEFAULTS
+
+
+@einstellungen_router.post("/ep-erhoehen", dependencies=[Depends(require_campaign_gm)])
+async def kampagnen_ep_erhoehen(campaign_id: str, body: dict) -> dict:
+    """Erhöht die kampagnenweiten EP um einen Betrag (nur positiv, irreversibel).
+    
+    Body: {"betrag": 1}  — muss > 0 sein.
+    """
+    from fastapi import HTTPException
+    betrag = body.get("betrag", 0)
+    if not isinstance(betrag, int) or betrag <= 0:
+        raise HTTPException(400, "Betrag muss eine positive Ganzzahl sein")
+    aktuell = await get_einstellungen(campaign_id)
+    neu = aktuell.get("kampagnenEP", 0) + betrag
+    return await set_einstellungen(campaign_id, {"kampagnenEP": neu})

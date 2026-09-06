@@ -20,6 +20,8 @@ export interface Einstellungen {
   digitalesWuerfelnSL: boolean;
   /** Der In-World-Messenger ist eine optionale Kampagnenfunktion. */
   messengerAktiv: boolean;
+  /** Kampagnenweite EP — alle PCs bekommen gemeinsam EP. */
+  kampagnenEP: number;
   [weitere: string]: unknown;
 }
 
@@ -27,6 +29,9 @@ export const einstellungenApi = {
   lesen: (cid: string) => api.get<Einstellungen>(`/api/campaigns/${cid}/einstellungen`),
   aendern: (cid: string, aenderungen: Partial<Einstellungen>) =>
     api.patch<Einstellungen>(`/api/campaigns/${cid}/einstellungen`, aenderungen),
+  /** Erhöht die kampagnenweiten EP um einen Betrag (nur positiv, irreversibel). */
+  epErhoehen: (cid: string, betrag: number) =>
+    api.post<Einstellungen>(`/api/campaigns/${cid}/einstellungen/ep-erhoehen`, { betrag }),
 };
 
 /** "2,5 / 30 kg" — kompakt und ohne unnötige Nachkommastellen. */

@@ -16,9 +16,10 @@ interface PCKachelProps {
   spielerName?: string;
   onKlick: () => void;
   onBlitz: () => void;
+  onExtraEP?: () => void;
 }
 
-function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz }: PCKachelProps) {
+function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP }: PCKachelProps) {
   const [uebersicht, setUebersicht] = useState<BogenUebersicht | null>(null);
 
   useEffect(() => {
@@ -60,6 +61,36 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz }: PCKache
         <div className="pc-kachel-name">{person.name}</div>
         {spielerName && <div className="pc-kachel-spieler">{spielerName}</div>}
 
+        {/* Extra-EP Anzeige mit + Button */}
+        {(person.extraEP ?? 0) > 0 || onExtraEP ? (
+          <div className="pc-kachel-extra-ep" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: "0.85em" }}>
+            <span style={{ color: "var(--text-leise)" }}>
+              Extra-EP: <strong style={{ color: "var(--neon)" }}>{person.extraEP ?? 0}</strong>
+            </span>
+            {onExtraEP && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExtraEP();
+                }}
+                style={{
+                  padding: "2px 6px",
+                  background: "transparent",
+                  border: "1px solid var(--neon)",
+                  borderRadius: "var(--radius)",
+                  color: "var(--neon)",
+                  cursor: "pointer",
+                  fontSize: "0.8em",
+                }}
+                title="Extra-EP vergeben"
+              >
+                +1
+              </button>
+            )}
+          </div>
+        ) : null}
+
         <div className="pc-kachel-werte">
           <div className="pc-kachel-wert pc-kachel-lp" title="Lebenspunkte">
             <span className="pc-kachel-wert-icon">♥</span>
@@ -93,9 +124,10 @@ interface PCKachelnProps {
   spielerMap?: Map<string, string>; // personId -> Spielername
   onPCKlick: (person: Person) => void;
   onBlitz: (person: Person) => void;
+  onExtraEP?: (person: Person) => void;
 }
 
-export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz }: PCKachelnProps) {
+export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz, onExtraEP }: PCKachelnProps) {
   if (pcs.length === 0) {
     return <p className="pc-kacheln-leer">Noch keine Spielercharaktere angelegt.</p>;
   }
@@ -110,6 +142,7 @@ export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz }: P
           spielerName={spielerMap?.get(p.id)}
           onKlick={() => onPCKlick(p)}
           onBlitz={() => onBlitz(p)}
+          onExtraEP={onExtraEP ? () => onExtraEP(p) : undefined}
         />
       ))}
     </div>

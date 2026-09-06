@@ -140,6 +140,22 @@ async def delete_person(campaign_id: str, node_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
 
+@router.post("/personen/{node_id}/extra-ep", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
+async def extra_ep_erhoehen(campaign_id: str, node_id: str, body: dict):
+    """Erhöht die Extra-EP eines PCs um einen Betrag (nur positiv, irreversibel).
+    
+    Body: {"betrag": 1}  — muss > 0 sein.
+    """
+    betrag = body.get("betrag", 0)
+    if not isinstance(betrag, int) or betrag <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Betrag muss eine positive Ganzzahl sein")
+    person = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if not person:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    neu = person.get("extraEP", 0) + betrag
+    return await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"extraEP": neu})
+
+
 @router.post("/orte", response_model=OrtResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_ort(campaign_id: str, body: OrtCreate):
     return await repository.create_node("Ort", ORT_FIELDS, campaign_id, body.model_dump())
