@@ -282,10 +282,11 @@ async def nachricht_senden(
     """
     roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
 
-    if not ist_mindestens_stufe(roh.get("stufe"), "KONTAKT_AUSGETAUSCHT"):
+    # Chat muss offen sein (eigenes Feld, unabhängig von Stufe)
+    if not roh.get("chatOffen"):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "Der Chat ist erst nach einer angenommenen Kontaktanfrage offen",
+            "Der Chat ist nicht geöffnet",
         )
 
     if viewer.role == "GM":

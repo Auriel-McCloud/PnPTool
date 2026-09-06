@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  alsText,
   kontakteApi,
   type KontaktGm,
   type Kontaktstufe,
@@ -271,38 +272,104 @@ export function KontakteGm({ campaignId }: Props) {
 
       {/* Chat-Verlauf Popup */}
       {chatKontakt && (
-        <div className="kontakte-gm-chat-overlay" onClick={() => setChatKontakt(null)}>
-          <div className="kontakte-gm-chat-popup" onClick={(e) => e.stopPropagation()}>
-            <header className="kontakte-gm-chat-header">
-              <h3>💬 {chatKontakt.pcName} ↔ {chatKontakt.npcName}</h3>
-              <button onClick={() => setChatKontakt(null)}>✕</button>
-            </header>
-            <div className="kontakte-gm-chat-verlauf">
-              {chatLaden && <p className="kontakte-gm-chat-laden">Lade...</p>}
-              {!chatLaden && chatNachrichten.length === 0 && (
-                <p className="kontakte-gm-chat-leer">Noch keine Nachrichten.</p>
-              )}
-              {chatNachrichten.map((n) => (
-                <div
-                  key={n.id}
-                  className={`kontakte-gm-chat-msg ${n.vonMir ? "von-pc" : "von-npc"}`}
-                >
-                  <span className="kontakte-gm-chat-absender">{n.absender || chatKontakt.pcName}:</span>
-                  <span className="kontakte-gm-chat-text">{n.inhalt}</span>
-                  <span className="kontakte-gm-chat-zeit">
-                    {new Date(n.erstelltAm).toLocaleString("de-AT", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ChatPopup
+          kontakt={chatKontakt}
+          campaignId={campaignId}
+          nachrichten={chatNachrichten}
+          laden={chatLaden}
+          onSchliessen={() => setChatKontakt(null)}
+          onGesendet={() => chatOeffnen(chatKontakt)}
+        />
       )}
+    </div>
+  );
+}
+
+/** Chat-Popup als eigene Komponente für State-Isolation */
+function ChatPopup({
+  kontakt,
+  campaignId,
+  nachrichten,
+  laden,
+  onSchliessen,
+  onGesendet,
+}: {
+  kontakt: KontaktGm;
+  campaignId: string;
+  nachrichten: Nachricht[];
+  laden: boolean;
+  onSchliessen: () => void;
+  onGesendet: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [senden, setSenden] = useState(false);
+
+  async function absenden(e: React.FormEvent) {
+    e.preventDefault();
+    if (!text.trim() || senden) return;
+    setSenden(true);
+    try {
+      await kontakteApi.senden(campaignId, kontakt.id, text.trim());
+      setText("");
+      onGesendet();
+    } finally {
+      setSenden(false);
+    }
+  }
+
+  return (
+    <div className="kontakte-gm-chat-overlay" onClick={onSchliessen}>
+      <div className="kontakte-gm-chat-popup" onClick={(e) => e.stopPropagation()}>
+        <header className="kontakte-gm-chat-header">
+          <h3>💬 {kontakt.pcName} ↔ {kontakt.npcName}</h3>
+          <button onClick={onSchliessen}>✕</button>
+        </header>
+        <div className="kontakte-gm-chat-verlauf">
+          {laden && <p className="kontakte-gm-chat-laden">Lade...</p>}
+          {!laden && nachrichten.length === 0 && (
+            <p className="kontakte-gm-chat-leer">Noch keine Nachrichten.</p>
+          )}
+          {nachrichten.map((n) => (
+            <div
+              key={n.id}
+              className={`kontakte-gm-chat-msg ${n.vonMir ? "von-npc" : "von-pc"}`}
+            >
+              <span className="kontakte-gm-chat-absender">
+                {n.vonMir ? kontakt.npcName : kontakt.pcName}:
+              </span>
+              <span className="kontakte-gm-chat-text">{alsText(n.inhalt)}</span>
+              <span className="kontakte-gm-chat-zeit">
+                {new Date(n.erstelltAm).toLocaleString("de-AT", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          ))}
+        </div>
+        {kontakt.chatOffen && (
+          <form className="kontakte-gm-chat-eingabe" onSubmit={absenden}>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={`Als ${kontakt.npcName} antworten...`}
+              disabled={senden}
+              autoFocus
+            />
+            <button type="submit" disabled={!text.trim() || senden}>
+              Senden
+            </button>
+          </form>
+        )}
+        {!kontakt.chatOffen && (
+          <p className="kontakte-gm-chat-gesperrt">
+            Chat ist geschlossen. Öffne ihn in der Tabelle.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
