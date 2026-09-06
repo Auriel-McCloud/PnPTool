@@ -1,7 +1,7 @@
 /** SL-Mitteilungen: Live-Popups von der Spielleitung. */
 import { api } from "../api/client";
 
-export type MitteilungsArt = "TEXT" | "BILD" | "WARNUNG";
+export type MitteilungsArt = "TEXT" | "BILD" | "WARNUNG" | "NACHRICHT";
 /** Ton der Vollbild-Warnung. Waehlbar, weil am Tisch noch erprobt. */
 export type Warnfarbe = "rot" | "blau" | "violett";
 

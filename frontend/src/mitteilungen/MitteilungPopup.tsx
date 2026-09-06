@@ -26,10 +26,12 @@ export function MitteilungPopup() {
   // Weiche laegen zwei Dialoge uebereinander.
   if (!aktuell || aktuell.art === "WARNUNG") return null;
 
+  const istNachricht = aktuell.art === "NACHRICHT";
+
   return createPortal(
     <div className="mt-popup-huelle">
       <div
-        className="mt-popup"
+        className={`mt-popup ${istNachricht ? "mt-popup-nachricht" : ""}`}
         role="alertdialog"
         aria-live="assertive"
         // Enter/Escape bestätigen: am Tablet tippt man, am Rechner drückt man.
@@ -41,7 +43,7 @@ export function MitteilungPopup() {
       >
         <div className="mt-popup-kopf">
           <span className="mt-popup-zeichen" aria-hidden="true">
-            ⚡
+            {istNachricht ? "💬" : "⚡"}
           </span>
           <span className="mt-popup-zeit">{zeit(aktuell.erstelltAm)}</span>
         </div>
@@ -66,9 +68,12 @@ export function MitteilungPopup() {
           <button
             type="button"
             onClick={bestaetigen}
-            style={{ color: "var(--warn)", borderColor: "var(--warn)" }}
+            style={{ 
+              color: istNachricht ? "var(--akzent)" : "var(--warn)", 
+              borderColor: istNachricht ? "var(--akzent)" : "var(--warn)" 
+            }}
           >
-            Verstanden
+            {istNachricht ? "OK" : "Verstanden"}
           </button>
         </div>
       </div>

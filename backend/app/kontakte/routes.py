@@ -18,6 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.kontakte import repository
+from app.mitteilungen import repository as mitteilungen_repo
+from app.mitteilungen.verteiler import verteiler
 from app.kontakte.logic import (
     effektiver_alias,
     erreichbare_npcs,
@@ -291,10 +293,28 @@ async def nachricht_senden(
 
     if viewer.role == "GM":
         von_id, an_id = roh["npcId"], roh["pcId"]
+        absender_name = roh.get("npcName") or "Unbekannt"
+        empfaenger_ids = [roh["pcId"]]
     else:
         von_id, an_id = roh["pcId"], roh["npcId"]
+        absender_name = roh.get("pcName") or "Unbekannt"
+        empfaenger_ids = []  # Leer = geht an SL
 
     gesendet = await repository.sende(campaign_id, von_id, an_id, body.inhalt, viewer.role)
+    
+    # Mitteilung erstellen für Live-Benachrichtigung
+    # Inhalt: "Neue Nachricht von [Name]" mit Vorschau
+    vorschau = body.inhalt[:50] + ("..." if len(body.inhalt) > 50 else "")
+    mitteilung = await mitteilungen_repo.create_mitteilung(
+        campaign_id=campaign_id,
+        art="NACHRICHT",
+        inhalt=f"{absender_name}: {vorschau}",
+        an_alle=False,
+        empfaenger_ids=empfaenger_ids,
+    )
+    # Broadcast über WebSocket
+    await verteiler.verteilen(campaign_id, mitteilung)
+    
     alias = effektiver_alias(
         (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse")),
         roh.get("persoenlicherAlias"),

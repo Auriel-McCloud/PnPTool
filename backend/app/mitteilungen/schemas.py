@@ -6,7 +6,7 @@ from pydantic import BaseModel, model_validator
 
 
 class MitteilungCreate(BaseModel):
-    art: Literal["TEXT", "BILD", "WARNUNG"] = "TEXT"
+    art: Literal["TEXT", "BILD", "WARNUNG", "NACHRICHT"] = "TEXT"
     inhalt: str = ""
     bildUrl: str = ""
     # Nur bei WARNUNG: Farbe des pulsierenden Schirms. Waehlbar, weil der
