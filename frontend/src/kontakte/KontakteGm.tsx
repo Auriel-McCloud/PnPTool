@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   alsText,
   kontakteApi,
@@ -40,8 +40,6 @@ export function KontakteGm({ campaignId }: Props) {
 
   // Chat-Viewer
   const [chatKontakt, setChatKontakt] = useState<KontaktGm | null>(null);
-  const [chatNachrichten, setChatNachrichten] = useState<Nachricht[]>([]);
-  const [chatLaden, setChatLaden] = useState(false);
 
   const laden = useCallback(async () => {
     setLoading(true);
@@ -94,20 +92,6 @@ export function KontakteGm({ campaignId }: Props) {
     await kontakteApi.loeschen(campaignId, loeschenKontakt.id);
     setLoeschenKontakt(null);
     laden();
-  }
-
-  async function chatOeffnen(k: KontaktGm) {
-    setChatKontakt(k);
-    setChatLaden(true);
-    try {
-      const chat = await kontakteApi.chat(campaignId, k.id);
-      setChatNachrichten(chat.nachrichten);
-    } catch (err) {
-      console.error("Chat laden fehlgeschlagen:", err);
-      setChatNachrichten([]);
-    } finally {
-      setChatLaden(false);
-    }
   }
 
   if (loading && kontakte.length === 0) {
@@ -231,7 +215,7 @@ export function KontakteGm({ campaignId }: Props) {
                     <td>
                       <button
                         className="kontakte-gm-chat-btn"
-                        onClick={() => chatOeffnen(k)}
+                        onClick={() => setChatKontakt(k)}
                         title="Chat-Verlauf anzeigen"
                       >
                         💬
@@ -275,34 +259,52 @@ export function KontakteGm({ campaignId }: Props) {
         <ChatPopup
           kontakt={chatKontakt}
           campaignId={campaignId}
-          nachrichten={chatNachrichten}
-          laden={chatLaden}
           onSchliessen={() => setChatKontakt(null)}
-          onGesendet={() => chatOeffnen(chatKontakt)}
         />
       )}
     </div>
   );
 }
 
-/** Chat-Popup als eigene Komponente für State-Isolation */
+/** Chat-Popup als eigene Komponente mit eigenem State */
 function ChatPopup({
   kontakt,
   campaignId,
-  nachrichten,
-  laden,
   onSchliessen,
-  onGesendet,
 }: {
   kontakt: KontaktGm;
   campaignId: string;
-  nachrichten: Nachricht[];
-  laden: boolean;
   onSchliessen: () => void;
-  onGesendet: () => void;
 }) {
+  const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
+  const [laden, setLaden] = useState(true);
   const [text, setText] = useState("");
   const [senden, setSenden] = useState(false);
+  const verlaufRef = useRef<HTMLDivElement>(null);
+
+  // Nachrichten laden beim Öffnen
+  const ladeNachrichten = useCallback(async () => {
+    try {
+      const chat = await kontakteApi.chat(campaignId, kontakt.id);
+      setNachrichten(chat.nachrichten);
+    } catch (err) {
+      console.error("Chat laden fehlgeschlagen:", err);
+      setNachrichten([]);
+    } finally {
+      setLaden(false);
+    }
+  }, [campaignId, kontakt.id]);
+
+  useEffect(() => {
+    ladeNachrichten();
+  }, [ladeNachrichten]);
+
+  // Nach unten scrollen bei neuen Nachrichten
+  useEffect(() => {
+    if (verlaufRef.current) {
+      verlaufRef.current.scrollTop = verlaufRef.current.scrollHeight;
+    }
+  }, [nachrichten]);
 
   async function absenden(e: React.FormEvent) {
     e.preventDefault();
@@ -311,7 +313,8 @@ function ChatPopup({
     try {
       await kontakteApi.senden(campaignId, kontakt.id, text.trim());
       setText("");
-      onGesendet();
+      // Nachrichten neu laden nach Senden
+      await ladeNachrichten();
     } finally {
       setSenden(false);
     }
@@ -324,7 +327,7 @@ function ChatPopup({
           <h3>💬 {kontakt.pcName} ↔ {kontakt.npcName}</h3>
           <button onClick={onSchliessen}>✕</button>
         </header>
-        <div className="kontakte-gm-chat-verlauf">
+        <div className="kontakte-gm-chat-verlauf" ref={verlaufRef}>
           {laden && <p className="kontakte-gm-chat-laden">Lade...</p>}
           {!laden && nachrichten.length === 0 && (
             <p className="kontakte-gm-chat-leer">Noch keine Nachrichten.</p>
@@ -360,7 +363,7 @@ function ChatPopup({
               autoFocus
             />
             <button type="submit" disabled={!text.trim() || senden}>
-              Senden
+              {senden ? "..." : "Senden"}
             </button>
           </form>
         )}
