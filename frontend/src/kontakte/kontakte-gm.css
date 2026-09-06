@@ -1,0 +1,200 @@
+/*
+ * SL-Kontaktverwaltung — kompakte Tabellen mit Toggles.
+ */
+
+.kontakte-gm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px;
+}
+
+.kontakte-gm-loading {
+  color: var(--text-leise);
+  padding: 32px;
+  text-align: center;
+}
+
+/* Neuen Kontakt anlegen */
+.kontakte-gm-neu {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--hintergrund-karte);
+}
+
+.kontakte-gm-neu legend {
+  padding: 0 8px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.kontakte-gm-neu-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.kontakte-gm-neu-form select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hintergrund);
+  color: var(--text);
+  min-width: 140px;
+}
+
+.kontakte-gm-pfeil {
+  color: var(--akzent);
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.kontakte-gm-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kontakte-gm-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--akzent);
+}
+
+.kontakte-gm-neu-form button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  background: var(--akzent);
+  color: var(--text-invers);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.kontakte-gm-neu-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kontakte-gm-neu-form button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+/* Pro-PC-Sektion */
+.kontakte-gm-pc {
+  background: var(--hintergrund-karte);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.kontakte-gm-pc h3 {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--hintergrund);
+  color: var(--akzent);
+  font-size: 1.1em;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Tabelle */
+.kontakte-gm-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.kontakte-gm-tabelle th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-leise);
+  font-size: 0.85em;
+  border-bottom: 1px solid var(--border);
+}
+
+.kontakte-gm-tabelle td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.kontakte-gm-tabelle tr:last-child td {
+  border-bottom: none;
+}
+
+.kontakte-gm-tabelle tr:hover {
+  background: var(--hintergrund);
+}
+
+/* NPC-Zelle mit Portrait */
+.kontakte-gm-npc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kontakte-gm-portrait {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+/* Dropdowns in der Tabelle */
+.kontakte-gm-tabelle select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hintergrund);
+  color: var(--text);
+  font-size: 0.9em;
+}
+
+/* Toggle-Buttons */
+.kontakte-gm-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hintergrund);
+  color: var(--text-leise);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9em;
+}
+
+.kontakte-gm-toggle.aktiv {
+  background: var(--akzent);
+  color: var(--text-invers);
+  border-color: var(--akzent);
+}
+
+.kontakte-gm-toggle:hover {
+  opacity: 0.85;
+}
+
+/* Löschen-Button */
+.kontakte-gm-loeschen {
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  font-size: 1.1em;
+}
+
+.kontakte-gm-loeschen:hover {
+  opacity: 1;
+}
+
+/* Leer-Meldung */
+.kontakte-gm-leer {
+  color: var(--text-leise);
+  text-align: center;
+  padding: 32px;
+}

@@ -46,7 +46,7 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
         echterNameBekannt=name_bekannt,
         kontaktAnfrageStatus=roh.get("kontaktAnfrageStatus") or "KEINE",
         persoenlicheNotizen=roh.get("persoenlicheNotizen") or "",
-        chatOffen=ist_mindestens_stufe(stufe, "KONTAKT_AUSGETAUSCHT"),
+        chatOffen=bool(roh.get("chatOffen")),
         ungelesen=int(roh.get("ungelesen") or 0),
     )
 
@@ -69,7 +69,7 @@ def kontakt_fuer_gm(roh: dict) -> KontaktGmResponse:
         echterNameBekannt=bool(roh.get("echterNameBekannt")),
         kontaktAnfrageStatus=roh.get("kontaktAnfrageStatus") or "KEINE",
         persoenlicheNotizen=roh.get("persoenlicheNotizen") or "",
-        chatOffen=ist_mindestens_stufe(stufe, "KONTAKT_AUSGETAUSCHT"),
+        chatOffen=bool(roh.get("chatOffen")),
         ungelesen=int(roh.get("ungelesen") or 0),
     )
 

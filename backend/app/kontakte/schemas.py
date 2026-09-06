@@ -72,6 +72,7 @@ class KontaktGmUpdate(BaseModel):
 
     stufe: Kontaktstufe | None = None
     echterNameBekannt: bool | None = None
+    chatOffen: bool | None = None
     # Der für diesen einen PC gesetzte Alias.
     alias: str | None = None
 
@@ -82,6 +83,7 @@ class KontaktCreate(BaseModel):
     pcId: str
     npcId: str
     stufe: Kontaktstufe = "GESEHEN"
+    chatOffen: bool = False
 
 
 class AnfrageEntscheidung(BaseModel):

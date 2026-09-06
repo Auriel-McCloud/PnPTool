@@ -108,7 +108,7 @@ async def anfragen(campaign_id: str):
 @router.post("", response_model=KontaktGmResponse, dependencies=[Depends(require_campaign_gm)])
 async def kontakt_anlegen(campaign_id: str, body: KontaktCreate):
     """Die Spielleitung legt Kontaktwissen von Hand an."""
-    roh = await repository.anlegen(campaign_id, body.pcId, body.npcId, body.stufe)
+    roh = await repository.anlegen(campaign_id, body.pcId, body.npcId, body.stufe, body.chatOffen)
     if roh is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "PC oder NPC nicht gefunden")
     return kontakt_fuer_gm(roh)

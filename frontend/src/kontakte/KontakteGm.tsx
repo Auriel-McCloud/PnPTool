@@ -1,0 +1,241 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  kontakteApi,
+  type KontaktGm,
+  type Kontaktstufe,
+  STUFEN,
+} from "./api";
+import type { Person } from "../entities/api";
+import { entitiesApi } from "../entities/api";
+import { Bestaetigung } from "../shell/Bestaetigung";
+import "./kontakte-gm.css";
+
+interface Props {
+  campaignId: string;
+}
+
+/**
+ * SL-Ansicht: Kontakte zwischen PCs und NPCs verwalten.
+ *
+ * Trennung zwischen „Stufe" (wie gut kennt man sich) und „Chat offen"
+ * (hat man die Nummer ausgetauscht). Man kann jemanden gut kennen,
+ * aber trotzdem keine Nummer haben — oder umgekehrt.
+ */
+export function KontakteGm({ campaignId }: Props) {
+  const [kontakte, setKontakte] = useState<KontaktGm[]>([]);
+  const [pcs, setPcs] = useState<Person[]>([]);
+  const [npcs, setNpcs] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Formular für neuen Kontakt
+  const [neuPcId, setNeuPcId] = useState("");
+  const [neuNpcId, setNeuNpcId] = useState("");
+  const [neuStufe, setNeuStufe] = useState<Kontaktstufe>("GESEHEN");
+  const [neuChatOffen, setNeuChatOffen] = useState(false);
+
+  // Löschen
+  const [loeschenKontakt, setLoeschenKontakt] = useState<KontaktGm | null>(null);
+
+  const laden = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [k, personen] = await Promise.all([
+        kontakteApi.uebersicht(campaignId),
+        entitiesApi.listPersonen(campaignId),
+      ]);
+      setKontakte(k);
+      setPcs(personen.filter((p) => p.personType === "PC"));
+      setNpcs(personen.filter((p) => p.personType === "NPC"));
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId]);
+
+  useEffect(() => {
+    laden();
+  }, [laden]);
+
+  async function anlegen() {
+    if (!neuPcId || !neuNpcId) return;
+    await kontakteApi.anlegen(campaignId, neuPcId, neuNpcId, neuStufe, neuChatOffen);
+    setNeuPcId("");
+    setNeuNpcId("");
+    setNeuStufe("GESEHEN");
+    setNeuChatOffen(false);
+    laden();
+  }
+
+  async function stufeAendern(k: KontaktGm, stufe: Kontaktstufe) {
+    await kontakteApi.aendern(campaignId, k.id, { stufe });
+    laden();
+  }
+
+  async function chatOffenToggle(k: KontaktGm) {
+    await kontakteApi.aendern(campaignId, k.id, { chatOffen: !k.chatOffen });
+    laden();
+  }
+
+  async function nameBekanntToggle(k: KontaktGm) {
+    await kontakteApi.aendern(campaignId, k.id, { echterNameBekannt: !k.echterNameBekannt });
+    laden();
+  }
+
+  async function loeschen() {
+    if (!loeschenKontakt) return;
+    await kontakteApi.loeschen(campaignId, loeschenKontakt.id);
+    setLoeschenKontakt(null);
+    laden();
+  }
+
+  if (loading && kontakte.length === 0) {
+    return <div className="kontakte-gm-loading">Lade Kontakte...</div>;
+  }
+
+  // Nach PC gruppiert
+  const nachPc = new Map<string, KontaktGm[]>();
+  for (const k of kontakte) {
+    const liste = nachPc.get(k.pcId) ?? [];
+    liste.push(k);
+    nachPc.set(k.pcId, liste);
+  }
+
+  return (
+    <div className="kontakte-gm">
+      {/* Neuen Kontakt anlegen */}
+      <fieldset className="kontakte-gm-neu">
+        <legend>Neuen Kontakt anlegen</legend>
+        <div className="kontakte-gm-neu-form">
+          <select value={neuPcId} onChange={(e) => setNeuPcId(e.target.value)}>
+            <option value="">PC wählen...</option>
+            {pcs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <span className="kontakte-gm-pfeil">→</span>
+          <select value={neuNpcId} onChange={(e) => setNeuNpcId(e.target.value)}>
+            <option value="">NPC wählen...</option>
+            {npcs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <select value={neuStufe} onChange={(e) => setNeuStufe(e.target.value as Kontaktstufe)}>
+            {STUFEN.map((s) => (
+              <option key={s.wert} value={s.wert}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <label className="kontakte-gm-checkbox">
+            <input
+              type="checkbox"
+              checked={neuChatOffen}
+              onChange={(e) => setNeuChatOffen(e.target.checked)}
+            />
+            Chat offen
+          </label>
+          <button onClick={anlegen} disabled={!neuPcId || !neuNpcId}>
+            Anlegen
+          </button>
+        </div>
+      </fieldset>
+
+      {/* Bestehende Kontakte nach PC */}
+      {Array.from(nachPc.entries()).map(([pcId, liste]) => {
+        const pc = pcs.find((p) => p.id === pcId);
+        return (
+          <section key={pcId} className="kontakte-gm-pc">
+            <h3>{pc?.name ?? "Unbekannt"}</h3>
+            <table className="kontakte-gm-tabelle">
+              <thead>
+                <tr>
+                  <th>NPC</th>
+                  <th>Stufe</th>
+                  <th>Chat</th>
+                  <th>Name bekannt</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {liste.map((k) => (
+                  <tr key={k.id}>
+                    <td className="kontakte-gm-npc">
+                      {k.bildUrl && (
+                        <img
+                          src={k.bildUrl}
+                          alt=""
+                          className="kontakte-gm-portrait"
+                        />
+                      )}
+                      <span>{k.npcName}</span>
+                    </td>
+                    <td>
+                      <select
+                        value={k.stufe}
+                        onChange={(e) =>
+                          stufeAendern(k, e.target.value as Kontaktstufe)
+                        }
+                      >
+                        {STUFEN.map((s) => (
+                          <option key={s.wert} value={s.wert}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        className={`kontakte-gm-toggle ${k.chatOffen ? "aktiv" : ""}`}
+                        onClick={() => chatOffenToggle(k)}
+                        title={k.chatOffen ? "Chat schließen" : "Chat öffnen"}
+                      >
+                        {k.chatOffen ? "📱 offen" : "📵 zu"}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className={`kontakte-gm-toggle ${k.echterNameBekannt ? "aktiv" : ""}`}
+                        onClick={() => nameBekanntToggle(k)}
+                        title={k.echterNameBekannt ? "Name verbergen" : "Name zeigen"}
+                      >
+                        {k.echterNameBekannt ? "✓ bekannt" : "? Alias"}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className="kontakte-gm-loeschen"
+                        onClick={() => setLoeschenKontakt(k)}
+                        title="Kontakt löschen"
+                      >
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        );
+      })}
+
+      {kontakte.length === 0 && !loading && (
+        <p className="kontakte-gm-leer">
+          Noch keine Kontakte vorhanden. Lege oben einen an.
+        </p>
+      )}
+
+      {loeschenKontakt && (
+        <Bestaetigung
+          titel="Kontakt löschen?"
+          text={`${loeschenKontakt.pcName} vergisst ${loeschenKontakt.npcName} komplett.`}
+          jaText="Ja, löschen"
+          onJa={loeschen}
+          onNein={() => setLoeschenKontakt(null)}
+        />
+      )}
+    </div>
+  );
+}

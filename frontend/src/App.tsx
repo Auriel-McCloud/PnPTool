@@ -17,6 +17,7 @@ import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
 import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
+import { KontakteGm } from "./kontakte/KontakteGm";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 
 /**
@@ -42,6 +43,8 @@ const BEREICHE: Bereich[] = [
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "var(--bereich-zugang)" },
+  // SL-Kontaktverwaltung: wer kennt wen, wer kann mit wem chatten
+  { id: "kontakte", name: "Kontakte", symbol: "📇", farbe: "var(--bereich-npcs)" },
   // Rot für den Kampf, Bernstein fürs Regelwerk, Grün für eigene Notizen
   { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "var(--bereich-kampf)" },
   // Das Kampagnen-Wiki: Geschichten, Kapitel, Session-Notizen (docs/produktvision-wiki.md)
@@ -61,6 +64,7 @@ const TITEL: Record<string, string> = {
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
+  kontakte: "Kontakte: wer kennt wen",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -188,6 +192,9 @@ function Dashboard() {
 
           {/* Augments: Koerperkarte (wo sitzt welches Implantat). */}
           {bereich === "augments" && <AugmentsAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+
+          {/* Kontakte: SL verwaltet wer wen kennt und wer mit wem chatten kann. */}
+          {bereich === "kontakte" && <KontakteGm key={viewAs ?? "gm"} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

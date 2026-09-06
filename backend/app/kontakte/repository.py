@@ -20,7 +20,7 @@ from app.kontakte.logic import normalisiere_nachrichteninhalt
 # Felder der KENNT-Kante plus das, was die Anzeige vom NPC braucht.
 KONTAKT_FELDER = """
     r.id AS id, r.stufe AS stufe, r.echterNameBekannt AS echterNameBekannt,
-    r.kontaktAnfrageStatus AS kontaktAnfrageStatus,
+    r.kontaktAnfrageStatus AS kontaktAnfrageStatus, r.chatOffen AS chatOffen,
     r.alias AS persoenlicherAlias, r.persoenlicheNotizen AS persoenlicheNotizen,
     pc.id AS pcId, pc.name AS pcName,
     npc.id AS npcId, npc.name AS npcName, npc.alias AS npcAlias,
@@ -72,7 +72,7 @@ async def hole(campaign_id: str, kontakt_id: str) -> dict | None:
         return dict(record) if record else None
 
 
-async def anlegen(campaign_id: str, pc_id: str, npc_id: str, stufe: str = "GESEHEN") -> dict | None:
+async def anlegen(campaign_id: str, pc_id: str, npc_id: str, stufe: str = "GESEHEN", chat_offen: bool = False) -> dict | None:
     """Legt Kontaktwissen an — oder gibt das vorhandene zurück.
 
     **Stuft niemals hoch.** Die Automatik darf ein bestehendes GESPROCHEN
@@ -88,6 +88,7 @@ async def anlegen(campaign_id: str, pc_id: str, npc_id: str, stufe: str = "GESEH
         ON CREATE SET
             r.id = $id,
             r.stufe = $stufe,
+            r.chatOffen = $chat_offen,
             r.echterNameBekannt = false,
             r.kontaktAnfrageStatus = 'KEINE',
             r.alias = '',
@@ -103,6 +104,7 @@ async def anlegen(campaign_id: str, pc_id: str, npc_id: str, stufe: str = "GESEH
             pc_id=pc_id,
             npc_id=npc_id,
             stufe=stufe,
+            chat_offen=chat_offen,
             id=str(uuid.uuid4()),
             jetzt=_jetzt(),
         )

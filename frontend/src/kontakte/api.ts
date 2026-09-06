@@ -72,13 +72,13 @@ export const kontakteApi = {
   /** Nur SL: offene Kontaktanfragen. */
   anfragen: (cid: string) => api.get<KontaktGm[]>(`${basis(cid)}/anfragen`),
   /** Nur SL: Kontaktwissen von Hand anlegen. */
-  anlegen: (cid: string, pcId: string, npcId: string, stufe: Kontaktstufe = "GESEHEN") =>
-    api.post<KontaktGm>(basis(cid), { pcId, npcId, stufe }),
-  /** Nur SL: Stufe, Namenskenntnis oder Alias ändern. */
+  anlegen: (cid: string, pcId: string, npcId: string, stufe: Kontaktstufe = "GESEHEN", chatOffen = false) =>
+    api.post<KontaktGm>(basis(cid), { pcId, npcId, stufe, chatOffen }),
+  /** Nur SL: Stufe, Namenskenntnis, Chat offen oder Alias ändern. */
   aendern: (
     cid: string,
     kontaktId: string,
-    daten: { stufe?: Kontaktstufe; echterNameBekannt?: boolean; alias?: string },
+    daten: { stufe?: Kontaktstufe; echterNameBekannt?: boolean; chatOffen?: boolean; alias?: string },
   ) => api.patch<KontaktGm>(`${basis(cid)}/${kontaktId}`, daten),
   loeschen: (cid: string, kontaktId: string) => api.delete<void>(`${basis(cid)}/${kontaktId}`),
 
