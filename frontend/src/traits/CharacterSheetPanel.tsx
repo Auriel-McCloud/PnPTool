@@ -185,6 +185,7 @@ export function GegenstandRow({
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
+  const [schaden, setSchaden] = useState(item.schaden);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
   const [ausruestungsfertigkeiten, setAusruestungsfertigkeiten] = useState<Eigenschaft[]>([]);
   const [traitKatalog, setTraitKatalog] = useState<TraitDef[]>([]);
@@ -209,8 +210,12 @@ export function GegenstandRow({
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
 
-  // Summe aller Trait-Boni für Chrom-Preisberechnung
-  const gesamtBonus = traitBoni.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
+  // Summe aller Boni für Chrom-Preisberechnung:
+  // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden
+  const traitBoniSumme = traitBoni.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
+  const ausrFertSumme = ausruestungsfertigkeiten.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
+  const waffenSchaden = istWaffe ? schaden : 0;
+  const gesamtBonus = traitBoniSumme + ausrFertSumme + waffenSchaden;
 
   // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
   // nicht mehr. Nur nachladen, solange das Formular offen ist.
@@ -226,7 +231,7 @@ export function GegenstandRow({
       .catch(() => setChromstufen([]));
   }, [expanded, typ, gesamtBonus, kraft, campaignId]);
 
-  // Wenn sich traitBoni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen
+  // Wenn sich Boni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen
   useEffect(() => {
     if (!expanded || !CHROM_TYPEN.has(typ) || gewaehlteChromstufe === null) return;
     const stufe = chromstufen.find((s) => s.preisJeBonus === gewaehlteChromstufe);
@@ -236,7 +241,7 @@ export function GegenstandRow({
       setWVerlust(stufe.wVerlustGenau * bonus);
       setKraft(bonus);
     }
-  }, [traitBoni, gewaehlteChromstufe, gesamtBonus, chromstufen, expanded, typ]);
+  }, [traitBoni, ausruestungsfertigkeiten, schaden, istWaffe, gewaehlteChromstufe, gesamtBonus, chromstufen, expanded, typ]);
 
   // Katalog fürs Trait-Boni-Dropdown — nur laden, wenn das Formular offen
   // ist und Boni überhaupt angezeigt werden können.
@@ -268,6 +273,7 @@ export function GegenstandRow({
     setKoerperzone(item.koerperzone);
     setSlot(item.slot);
     setIstWaffe(item.istWaffe);
+    setSchaden(item.schaden);
     setTraitBoni(
       Object.entries(item.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
     );
@@ -322,6 +328,7 @@ export function GegenstandRow({
       koerperzone,
       slot,
       istWaffe,
+      schaden,
       traitBoni: Object.fromEntries(
         traitBoni.filter((p) => p.key.trim() && Number(p.value)).map((p) => [p.key.trim(), Number(p.value)]),
       ),
@@ -481,6 +488,12 @@ export function GegenstandRow({
                 <input type="checkbox" checked={istWaffe} onChange={(e) => setIstWaffe(e.target.checked)} />
                 zählt zusätzlich als Waffe
               </label>
+              {istWaffe && (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                  Schaden
+                  <DotPool value={schaden} max={7} onChange={setSchaden} />
+                </label>
+              )}
             </div>
             {/* Stufe antippen setzt Preis und Verlust zugleich — von Hand
                 gerechnet vertut man sich, und die Formel steht im Server. */}

@@ -94,6 +94,10 @@ class GegenstandCreate(BaseModel):
     # Klinge und damit eine Waffe sein. Bestimmt nur, ob Kraft/Schaden als
     # Waffe zählt — keine eigene Mechanik, nur eine Kennzeichnung.
     istWaffe: bool = False
+    # Waffenschaden (0-7), separat vom Chrom-Bonus. Ein Cyberarm mit +2 auf
+    # Stärke und eingebauter Klinge (Schaden 3) zählt als Level 5 fürs Chrom,
+    # macht aber nur 3 Schaden. Nur relevant wenn istWaffe=True.
+    schaden: int = 0
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
     # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
@@ -166,6 +170,7 @@ class GegenstandUpdate(BaseModel):
     koerperzone: str | None = None
     slot: int | None = None
     istWaffe: bool | None = None
+    schaden: int | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
     verbaut: bool | None = None
@@ -233,6 +238,7 @@ class GegenstandResponse(BaseModel):
     koerperzone: str = ""
     slot: int | None = None
     istWaffe: bool = False
+    schaden: int = 0
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
     verbaut: bool = False

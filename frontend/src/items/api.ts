@@ -53,6 +53,8 @@ export interface Gegenstand {
   slot: number | null;
   /** Zusätzlich zum Typ: kann gleichzeitig als Waffe zählen (z.B. Cyber-Klinge). */
   istWaffe: boolean;
+  /** Waffenschaden (0-7), separat vom Chrom-Bonus. */
+  schaden: number;
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
@@ -176,6 +178,7 @@ export interface GegenstandUpdate {
   koerperzone?: string;
   slot?: number | null;
   istWaffe?: boolean;
+  schaden?: number;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
 }

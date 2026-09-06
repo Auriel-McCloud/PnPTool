@@ -18,7 +18,7 @@ RETURN_FIELDS = """
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
-    g.slot AS slot, g.istWaffe AS istWaffe,
+    g.slot AS slot, g.istWaffe AS istWaffe, g.schaden AS schaden,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
@@ -123,6 +123,7 @@ def _decode(record: dict) -> dict:
     # gültiger Zustand (kein fester Platz) — deshalb kein _or_default mit 0.
     record["slot"] = record.get("slot")
     record["istWaffe"] = _or_default(record.get("istWaffe"), False)
+    record["schaden"] = _or_default(record.get("schaden"), 0)
     for feld in ("traitBoni", "ausruestungsfertigkeiten"):
         try:
             roh = record.get(feld)
@@ -179,6 +180,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
+            schaden: $schaden,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen
@@ -235,6 +237,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             koerperzone=data.get("koerperzone") or "",
             slot=data.get("slot"),
             istWaffe=bool(data.get("istWaffe")),
+            schaden=int(data.get("schaden") or 0),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
             verbaut=bool(data.get("verbaut")),
