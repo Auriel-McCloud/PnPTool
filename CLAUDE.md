@@ -2441,7 +2441,59 @@ Die vollständige Ideenskizze mit Kontaktstufen, vorgeschlagenem `KENNT`-Modell,
 
 **Offen:** "Nur-Lesen"-Nachrichten (SL kann senden, Spieler kann nicht antworten) — braucht Backend-Feld `antwortGesperrt` auf Chat/Kontakt.
 
-**Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8000` (bewusst nur localhost, siehe LAN-Abschnitt unten; ohne `--reload`, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, lauscht dank `host:true` in `vite.config.ts` auf allen Interfaces (kein `--host`-Flag mehr nötig). Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
+**Server-Status:** Neo4j läuft durchgehend in Docker (Port 7687). Backend auf `127.0.0.1:8001` (Port 8001 wegen Zombie-Prozessen auf 8000, siehe Stolperstein #2). Frontend mit `npm run dev` auf Port 5173, Vite-Proxy zeigt auf 8001. Falls nach einem Reboot nichts erreichbar ist: siehe "Wie man lokal startet" oben.
+
+## Chat-Benachrichtigungen & Mitteilungen-Ausblenden (07.09.2026)
+
+**Neue Features:**
+
+1. **Chat-Benachrichtigungen:** Wenn ein Spieler eine Nachricht an einen NPC
+   schickt (oder umgekehrt), erscheint beim Empfänger ein Popup mit 💬-Icon.
+   - Spieler → NPC: SL bekommt Popup ("Ryu: Hey, hast du Zeit?")
+   - SL als NPC → Spieler: Spieler bekommt Popup ("Kira: Bin in 10 Minuten da")
+   - Nutzt das bestehende Mitteilungen-System (hat schon WebSocket-Support)
+   - Neue Mitteilungsart `NACHRICHT` neben TEXT/BILD/WARNUNG
+
+2. **SL-Popup-Filterung:** Die SL sieht keine Spieler-zu-NPC-Popups mehr
+   (nur die an sie gerichteten, wo `empfaengerIds` leer ist).
+
+3. **Mitteilungen ausblenden:** Jeder kann seine eigenen Benachrichtigungen
+   aus der Liste entfernen, ohne sie für andere zu löschen.
+   - Neues `verstecktVon`-Array in Neo4j (wie `gelesenVon`)
+   - ✕-Button pro Eintrag (rot, 70% Opacity, auf Hover 100%)
+   - "Alle ausblenden"-Button am Ende der Liste
+   - Routes: `POST .../mitteilungen/{id}/ausblenden`, `POST .../mitteilungen/ausblenden`
+
+**Warum Ausblenden statt Löschen?**
+> Mark: "Ich will dass sie ausblenden, weil die Liste sonst schnell
+> unübersichtlich wird."
+
+Ein "Löschen"-Button hätte Verwirrung gestiftet ("Lösche ich das für alle?").
+Ausblenden ist klar: nur für mich.
+
+## API-Dokumentation (07.09.2026)
+
+Neue ausführliche Dokumentation unter `docs/api/`:
+
+- `README.md` — Übersicht, Architektur-Entscheidungen, Konventionen
+- `mitteilungen.md` — Popups, WebSocket, Filterlogik, Ausblenden
+- `kontakte.md` — Messenger, Stufen, `chatOffen` vs `stufe`, Alias-Logik
+- `wiki.md` — Seiten, Freigaben, Verknüpfungen
+- `kampf.md` — Runden, Initiative, Status
+- `personen.md` — PCs/NPCs, Attribute, EP, Cyberware
+- `auth.md` — Login, JWT, Viewer
+- `kampagnen.md` — Themes, Container
+- `entitaeten.md` — Orte, Gegenstände, Fraktionen
+
+Jede Datei beschreibt Endpoints, Schemas, Sonderlogiken und Marks Design-
+Entscheidungen mit Zitaten.
+
+## Geplant: Spotify + Yamaha RX-V4A (nicht begonnen)
+
+Mark plant: Orte/Szenen bekommen eine Spotify-Playlist. Beim Wechsel zu
+diesem Ort startet die Musik automatisch auf dem Yamaha RX-V4A Verstärker
+(MusicCast-Protokoll, evtl. einfacher als Chromecast). Lautstärke/Pause/Play
+steuerbar.
 
 ## Zugriff vom Handy / LAN (eingerichtet, für Tests unterwegs)
 
