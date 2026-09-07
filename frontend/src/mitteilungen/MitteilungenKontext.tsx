@@ -96,9 +96,12 @@ export function MitteilungenAnbieter({
         }
         // Neue Mitteilung
         setMitteilungen((alt) => (alt.some((m) => m.id === n.daten.id) ? alt : [n.daten, ...alt]));
-        // Die Spielleitung sieht ihre eigene Ansage nicht als Popup — sie hat
-        // sie gerade selbst abgeschickt.
-        if (!istSlRef.current) {
+        // Die Spielleitung sieht ihre eigenen Mitteilungen (TEXT, BILD, WARNUNG)
+        // nicht als Popup — sie hat sie gerade selbst abgeschickt. NACHRICHT-
+        // Popups (Spieler-Chatnachrichten) sieht sie aber, damit sie weiss,
+        // dass jemand geschrieben hat.
+        const istEigene = istSlRef.current && n.daten.art !== "NACHRICHT";
+        if (!istEigene) {
           setSchlange((alt) => (alt.some((m) => m.id === n.daten.id) ? alt : [...alt, n.daten]));
         }
       },

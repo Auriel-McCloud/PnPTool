@@ -15,6 +15,8 @@ import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { WikiAnsicht } from "./wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
+import { MitteilungenBlitz } from "./mitteilungen/MitteilungenBlitz";
+import { MitteilungPopup } from "./mitteilungen/MitteilungPopup";
 import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { KontakteGm } from "./kontakte/KontakteGm";
@@ -113,6 +115,8 @@ function Dashboard() {
       {/* War laut docs/ui-konzept.md als "SL-Popups" vorgesehen und bis jetzt
           deaktiviert — hier ist die Funktion dahinter. */}
       {kampagne && <MitteilungSenden campaignId={kampagne.id} />}
+      {/* Blitz-Symbol für die SL, um Nachrichten zu sehen (Chat-Benachrichtigungen). */}
+      {kampagne && <MitteilungenBlitz personId={null} />}
       {kampagne && (
         <button
           type="button"
@@ -204,10 +208,12 @@ function Dashboard() {
   if (!kampagne) return shell;
 
   return (
-    <MitteilungenAnbieter campaignId={kampagne.id} personId={null} istSl>
-      {shell}
-    </MitteilungenAnbieter>
-  );
+      <MitteilungenAnbieter campaignId={kampagne.id} personId={null} istSl>
+        {shell}
+        {/* Popup für Chat-Benachrichtigungen (NACHRICHT-Art) von Spielern. */}
+        <MitteilungPopup />
+      </MitteilungenAnbieter>
+    );
 }
 
 /**

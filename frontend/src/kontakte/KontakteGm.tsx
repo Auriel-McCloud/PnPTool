@@ -315,6 +315,8 @@ function ChatPopup({
       setText("");
       // Nachrichten neu laden nach Senden
       await ladeNachrichten();
+    } catch (err) {
+      console.error("Fehler beim Senden:", err);
     } finally {
       setSenden(false);
     }
