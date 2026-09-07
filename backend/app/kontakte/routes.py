@@ -303,17 +303,21 @@ async def nachricht_senden(
     gesendet = await repository.sende(campaign_id, von_id, an_id, body.inhalt, viewer.role)
     
     # Mitteilung erstellen für Live-Benachrichtigung
-    # Inhalt: "Neue Nachricht von [Name]" mit Vorschau
     vorschau = body.inhalt[:50] + ("..." if len(body.inhalt) > 50 else "")
-    mitteilung = await mitteilungen_repo.create_mitteilung(
-        campaign_id=campaign_id,
-        art="NACHRICHT",
-        inhalt=f"{absender_name}: {vorschau}",
-        an_alle=False,
-        empfaenger_ids=empfaenger_ids,
-    )
-    # Broadcast über WebSocket
-    await verteiler.verteilen(campaign_id, mitteilung)
+    try:
+        mitteilung = await mitteilungen_repo.create_mitteilung(
+            campaign_id=campaign_id,
+            art="NACHRICHT",
+            inhalt=f"{absender_name}: {vorschau}",
+            an_alle=False,
+            empfaenger_ids=empfaenger_ids,
+        )
+        # Broadcast über WebSocket
+        await verteiler.verteilen(campaign_id, mitteilung)
+    except Exception as e:
+        # Fehler beim Benachrichtigen sollte das Senden nicht blockieren
+        import logging
+        logging.warning(f"Benachrichtigung fehlgeschlagen: {e}")
     
     alias = effektiver_alias(
         (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse")),

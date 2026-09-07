@@ -44,6 +44,7 @@ class MitteilungResponse(BaseModel):
     anAlle: bool = True
     empfaengerIds: list[str] = []
     gelesenVon: list[str] = []
+    verstecktVon: list[str] = []
     erstelltAm: str = ""
 
 

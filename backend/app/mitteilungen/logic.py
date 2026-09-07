@@ -47,12 +47,26 @@ def empfaenger_aufloesen(an_alle: bool, empfaenger_ids: list[str], alle_pc_ids: 
 def darf_empfangen(mitteilung: dict, viewer_role: str, viewer_person_id: str | None) -> bool:
     """Darf dieser Betrachter die Mitteilung sehen?
 
-    Die Spielleitung sieht alles (sie hat es geschrieben). Ein Spieler sieht
-    Rundrufe und was ausdrücklich an seinen Charakter ging.
-
-    Ein Spieler ohne beanspruchten Charakter bekommt nur Rundrufe — er kann
-    nicht Empfänger einer gerichteten Mitteilung sein.
+    Die Spielleitung sieht ihre eigenen Broadcasts (TEXT/BILD/WARNUNG) immer.
+    Bei NACHRICHT-Mitteilungen (Chat-Benachrichtigungen) sieht die SL nur die,
+    die an sie gerichtet sind (empfaengerIds leer = geht an SL).
+    
+    Ein Spieler sieht Rundrufe und was ausdrücklich an seinen Charakter ging.
+    Ein Spieler ohne beanspruchten Charakter bekommt nur Rundrufe.
     """
+    art = mitteilung.get("art", "TEXT")
+    
+    # Chat-Nachrichten haben eigene Logik
+    if art == "NACHRICHT":
+        empfaenger = mitteilung.get("empfaengerIds") or []
+        if viewer_role == "GM":
+            # SL bekommt nur Nachrichten wo empfaengerIds leer ist (= an SL)
+            return len(empfaenger) == 0
+        else:
+            # Spieler bekommt nur wenn seine ID drin ist
+            return viewer_person_id is not None and viewer_person_id in empfaenger
+    
+    # Normale SL-Mitteilungen (TEXT, BILD, WARNUNG)
     if viewer_role == "GM":
         return True
     if mitteilung.get("anAlle"):
@@ -74,14 +88,26 @@ def ist_ungelesen(mitteilung: dict, viewer_person_id: str | None) -> bool:
 
 
 def zaehle_ungelesen(mitteilungen: list[dict], viewer_role: str, viewer_person_id: str | None) -> int:
-    """Zahl fürs Blitz-Symbol — nur was diesen Betrachter betrifft."""
+    """Zahl fürs Blitz-Symbol — nur was diesen Betrachter betrifft und nicht ausgeblendet ist."""
     return sum(
         1
         for m in mitteilungen
-        if darf_empfangen(m, viewer_role, viewer_person_id) and ist_ungelesen(m, viewer_person_id)
+        if darf_empfangen(m, viewer_role, viewer_person_id) 
+        and not ist_versteckt(m, viewer_role, viewer_person_id)
+        and ist_ungelesen(m, viewer_person_id)
     )
 
 
+def ist_versteckt(mitteilung: dict, viewer_role: str, viewer_person_id: str | None) -> bool:
+    """Wurde diese Mitteilung vom Betrachter ausgeblendet?"""
+    viewer_id = viewer_person_id or f"gm:{viewer_role}"
+    return viewer_id in (mitteilung.get("verstecktVon") or [])
+
+
 def fuer_viewer(mitteilungen: list[dict], viewer_role: str, viewer_person_id: str | None) -> list[dict]:
-    """Filtert eine Liste auf das, was der Betrachter sehen darf."""
-    return [m for m in mitteilungen if darf_empfangen(m, viewer_role, viewer_person_id)]
+    """Filtert eine Liste auf das, was der Betrachter sehen darf und nicht ausgeblendet hat."""
+    return [
+        m for m in mitteilungen 
+        if darf_empfangen(m, viewer_role, viewer_person_id) 
+        and not ist_versteckt(m, viewer_role, viewer_person_id)
+    ]

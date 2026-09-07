@@ -96,6 +96,24 @@ async def alles_gelesen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     await repository.alles_gelesen(campaign_id, viewer.person_id)
 
 
+@router.post("/{mitteilung_id}/ausblenden", status_code=status.HTTP_204_NO_CONTENT)
+async def ausblenden(campaign_id: str, mitteilung_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Blendet eine Mitteilung für diesen Betrachter aus.
+    
+    Jeder kann seine eigenen Mitteilungen ausblenden — sie verschwinden
+    aus seiner Liste, bleiben aber für andere sichtbar.
+    """
+    viewer_id = viewer.person_id or f"gm:{viewer.role}"
+    await repository.ausblenden(campaign_id, mitteilung_id, viewer_id)
+
+
+@router.post("/ausblenden", status_code=status.HTTP_204_NO_CONTENT)
+async def alles_ausblenden(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Alle Mitteilungen für diesen Betrachter ausblenden."""
+    viewer_id = viewer.person_id or f"gm:{viewer.role}"
+    await repository.alles_ausblenden(campaign_id, viewer_id)
+
+
 @router.delete("/{mitteilung_id}", status_code=status.HTTP_204_NO_CONTENT,
                dependencies=[Depends(require_campaign_gm)])
 async def zurueckziehen(campaign_id: str, mitteilung_id: str):

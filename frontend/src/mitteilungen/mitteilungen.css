@@ -178,6 +178,46 @@
   border-color: color-mix(in srgb, var(--warn) 45%, transparent);
 }
 
+/* --- Ausblenden-Button --- */
+
+.mt-ausblenden {
+  margin-left: auto;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--warn);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.mt-eintrag:hover .mt-ausblenden {
+  opacity: 1;
+}
+
+.mt-ausblenden:hover {
+  border-color: var(--warn);
+}
+
+.mt-alle-ausblenden {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px;
+  color: var(--text-leise);
+  background: transparent;
+  border: 1px dashed var(--linie);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.mt-alle-ausblenden:hover {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
 .mt-eintrag-text {
   color: var(--text);
   font-size: 14px;

@@ -10,7 +10,7 @@ export default defineConfig({
       // Backend läuft nur auf Port 8000, der vom Handy aus per Firewall blockiert ist.
       // Deshalb API-Calls über denselben (bereits erreichbaren) Port 5173 proxyen.
       "/api": {
-        target: "http://localhost:8000",
+        target: "http://localhost:8001",
         changeOrigin: true,
         // Ohne ws:true reicht der Proxy nur HTTP weiter — die Live-Leitung
         // für SL-Popups (/api/.../mitteilungen/live) käme nie beim Backend an.
@@ -19,7 +19,7 @@ export default defineConfig({
       // hochgeladene Gegenstands-Bilder werden vom Backend statisch ausgeliefert,
       // müssen aus demselben Grund wie /api mitgeproxyt werden
       "/uploads": {
-        target: "http://localhost:8000",
+        target: "http://localhost:8001",
         changeOrigin: true,
       },
     },

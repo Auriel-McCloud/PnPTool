@@ -18,7 +18,7 @@ function zeit(iso: string): string {
  * kann, was während einer Pause kam.
  */
 export function MitteilungenBlitz({ personId }: { personId: string | null }) {
-  const { mitteilungen, ungelesen, verbunden, allesGelesen } = useMitteilungen();
+  const { mitteilungen, ungelesen, verbunden, allesGelesen, ausblenden, allesAusblenden } = useMitteilungen();
   const [offen, setOffen] = useState(false);
 
   return (
@@ -65,6 +65,14 @@ export function MitteilungenBlitz({ personId }: { personId: string | null }) {
                   <span className="mt-eintrag-ziel" data-gerichtet={!m.anAlle ? "true" : undefined}>
                     {m.anAlle ? "an alle" : "nur an dich"}
                   </span>
+                  <button
+                    type="button"
+                    className="mt-ausblenden"
+                    onClick={() => ausblenden(m.id)}
+                    title="Ausblenden"
+                  >
+                    ✕
+                  </button>
                 </div>
                 {m.art === "BILD" && m.bildUrl ? (
                   <img src={m.bildUrl} alt={m.inhalt || "Bild"} style={{ maxWidth: "100%", borderRadius: 4 }} />
@@ -78,6 +86,12 @@ export function MitteilungenBlitz({ personId }: { personId: string | null }) {
         {personId && ungelesen > 0 && (
           <button type="button" onClick={allesGelesen} style={{ marginTop: 10 }}>
             Alle als gelesen markieren
+          </button>
+        )}
+
+        {mitteilungen.length > 0 && (
+          <button type="button" onClick={allesAusblenden} className="mt-alle-ausblenden">
+            Alle ausblenden
           </button>
         )}
       </Fenster>

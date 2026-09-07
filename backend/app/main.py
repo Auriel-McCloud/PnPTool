@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+import logging
+import traceback
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from app.auth.routes import router as auth_router
 from app.campaigns.routes import einstellungen_router
@@ -38,6 +41,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PnPTool API", lifespan=lifespan)
+
+# Global exception handler für besseres Debugging
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.error(f"Unhandled exception: {exc}")
+    logging.error(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+    )
 
 app.add_middleware(
     CORSMiddleware,

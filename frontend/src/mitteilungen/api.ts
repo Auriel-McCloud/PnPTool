@@ -15,6 +15,7 @@ export interface Mitteilung {
   anAlle: boolean;
   empfaengerIds: string[];
   gelesenVon: string[];
+  verstecktVon: string[];
   erstelltAm: string;
 }
 
@@ -46,6 +47,12 @@ export const markiereGelesen = (campaignId: string, id: string) =>
 
 export const markiereAllesGelesen = (campaignId: string) =>
   api.post<void>(`${basis(campaignId)}/gelesen`);
+
+export const blendeAus = (campaignId: string, id: string) =>
+  api.post<void>(`${basis(campaignId)}/${id}/ausblenden`);
+
+export const blendeAllesAus = (campaignId: string) =>
+  api.post<void>(`${basis(campaignId)}/ausblenden`);
 
 export const ziehZurueck = (campaignId: string, id: string) =>
   api.delete<void>(`${basis(campaignId)}/${id}`);

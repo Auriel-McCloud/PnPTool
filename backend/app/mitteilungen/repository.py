@@ -16,7 +16,7 @@ _FELDER = """
     m.id AS id, m.art AS art, m.inhalt AS inhalt, m.bildUrl AS bildUrl,
     m.farbe AS farbe, m.initiative AS initiative,
     m.anAlle AS anAlle, m.empfaengerIds AS empfaengerIds,
-    m.gelesenVon AS gelesenVon, m.erstelltAm AS erstelltAm
+    m.gelesenVon AS gelesenVon, m.verstecktVon AS verstecktVon, m.erstelltAm AS erstelltAm
 """
 
 # Wie viele Mitteilungen beim Verbinden nachgeladen werden. Eine Sitzung
@@ -38,6 +38,7 @@ def _mit_defaults(record) -> dict:
     m["anAlle"] = bool(m.get("anAlle"))
     m["empfaengerIds"] = m.get("empfaengerIds") or []
     m["gelesenVon"] = m.get("gelesenVon") or []
+    m["verstecktVon"] = m.get("verstecktVon") or []
     m["erstelltAm"] = m.get("erstelltAm") or ""
     return m
 
@@ -124,6 +125,38 @@ async def alles_gelesen(campaign_id: str, person_id: str) -> int:
         WHERE NOT $pid IN coalesce(m.gelesenVon, [])
           AND (m.anAlle = true OR $pid IN coalesce(m.empfaengerIds, []))
         SET m.gelesenVon = coalesce(m.gelesenVon, []) + $pid
+        RETURN count(m) AS anzahl
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, pid=person_id)
+        record = await result.single()
+        return int(record["anzahl"]) if record else 0
+
+
+async def ausblenden(campaign_id: str, mitteilung_id: str, person_id: str) -> bool:
+    """Blendet eine Mitteilung für diese Person aus (verschwindet aus ihrer Liste)."""
+    driver = get_driver()
+    query = """
+        MATCH (m:Mitteilung {id: $mid, campaignId: $campaign_id})
+        SET m.verstecktVon = CASE
+            WHEN $pid IN coalesce(m.verstecktVon, []) THEN m.verstecktVon
+            ELSE coalesce(m.verstecktVon, []) + $pid
+        END
+        RETURN m.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, mid=mitteilung_id, pid=person_id)
+        return await result.single() is not None
+
+
+async def alles_ausblenden(campaign_id: str, person_id: str) -> int:
+    """Alle sichtbaren Mitteilungen dieser Person ausblenden."""
+    driver = get_driver()
+    query = """
+        MATCH (m:Mitteilung {campaignId: $campaign_id})
+        WHERE NOT $pid IN coalesce(m.verstecktVon, [])
+          AND (m.anAlle = true OR $pid IN coalesce(m.empfaengerIds, []))
+        SET m.verstecktVon = coalesce(m.verstecktVon, []) + $pid
         RETURN count(m) AS anzahl
     """
     async with driver.session() as session:

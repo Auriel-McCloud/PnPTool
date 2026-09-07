@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  blendeAllesAus,
+  blendeAus,
   getMitteilungen,
   markiereAllesGelesen,
   markiereGelesen,
@@ -25,6 +27,8 @@ interface MitteilungenWert {
   wartend: number;
   bestaetigen: () => void;
   allesGelesen: () => void;
+  ausblenden: (id: string) => void;
+  allesAusblenden: () => void;
   neuLaden: () => void;
 }
 
@@ -43,6 +47,8 @@ export function useMitteilungen(): MitteilungenWert {
       wartend: 0,
       bestaetigen: () => {},
       allesGelesen: () => {},
+      ausblenden: () => {},
+      allesAusblenden: () => {},
       neuLaden: () => {},
     };
   }
@@ -147,6 +153,20 @@ export function MitteilungenAnbieter({
     setSchlange([]);
   }, [campaignId, personId]);
 
+  const ausblenden = useCallback((id: string) => {
+    blendeAus(campaignId, id)
+      .then(() => setMitteilungen((alt) => alt.filter((m) => m.id !== id)))
+      .catch(() => { /* still */ });
+    setSchlange((alt) => alt.filter((m) => m.id !== id));
+  }, [campaignId]);
+
+  const allesAusblenden = useCallback(() => {
+    blendeAllesAus(campaignId)
+      .then(() => setMitteilungen([]))
+      .catch(() => { /* still */ });
+    setSchlange([]);
+  }, [campaignId]);
+
   const wert = useMemo(
     () => ({
       mitteilungen,
@@ -156,9 +176,11 @@ export function MitteilungenAnbieter({
       wartend: Math.max(0, schlange.length - 1),
       bestaetigen,
       allesGelesen,
+      ausblenden,
+      allesAusblenden,
       neuLaden,
     }),
-    [mitteilungen, ungelesen, verbunden, aktuell, schlange.length, bestaetigen, allesGelesen, neuLaden],
+    [mitteilungen, ungelesen, verbunden, aktuell, schlange.length, bestaetigen, allesGelesen, ausblenden, allesAusblenden, neuLaden],
   );
 
   return <Kontext.Provider value={wert}>{children}</Kontext.Provider>;
