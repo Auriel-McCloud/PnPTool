@@ -54,7 +54,7 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Wahrnehmung", "Fertigkeit", 5, 29),
     ("Matrix", "Fertigkeit", 5, 30),
     # NeuroWeaving: erst der Wert selbst, dann die vier Fertigkeiten.
-    # Aufgebaut wie Arete + Sphären — mit dem Unterschied, dass die
+    # Aufgebaut wie Hexkraft + Sphären — mit dem Unterschied, dass die
     # Fertigkeiten hier **mitgewürfelt** werden (Regelblatt Zeile 45/96),
     # während Sphären nur beschreiben, was möglich ist.
     ("NeuroWeaving", "NeuroWeavingWert", 10, 1),
@@ -72,11 +72,11 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Ursprung", "Sphäre", 5, 7),
     ("Geister", "Sphäre", 5, 8),
     ("Zeit", "Sphäre", 5, 9),
-    # Arete ist der Magiewert selbst (nicht zu verwechseln mit den Sphären,
+    # Hexkraft ist der Magiewert selbst (nicht zu verwechseln mit den Sphären,
     # die nur beschreiben was möglich ist). Auf dem Blatt eine Reihe von zehn
     # Kästchen, daher Maximum 10 statt 5 wie bei Fähigkeiten. Kostet in der
     # Erstellung 5 Freebees wie ein Attribut.
-    ("Arete", "Arete", 10, 1),
+    ("Hexkraft", "Hexkraft", 10, 1),
 ]
 
 # Hintergründe stehen **nicht** im Regelwerk — siehe traits/erstellung.py.

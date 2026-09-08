@@ -26,7 +26,7 @@ Aus `docs/reference/Neotopia.xlsx` herausgezogen (Blätter *Charakterblatt* und 
 - **Willenskraft = Entschlossenheit + Fassung**
 - **Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator**
 
-Auf dem Blatt sind Gesundheit, I.C.E., Arete/NeuroWeaving und Willenskraft **Kästchenreihen** (10 Kästchen, 5+5), keine Punktereihen. Der abgeleitete Wert bestimmt, wie viele davon zählen; abgehakt wird Schaden bzw. Verbrauch.
+Auf dem Blatt sind Gesundheit, I.C.E., Hexkraft/NeuroWeaving und Willenskraft **Kästchenreihen** (10 Kästchen, 5+5), keine Punktereihen. Der abgeleitete Wert bestimmt, wie viele davon zählen; abgehakt wird Schaden bzw. Verbrauch.
 
 ## Fähigkeiten (Maximum 5)
 
@@ -34,11 +34,11 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 
 ## Die zwei besonderen Wege
 
-**Auf dem Blatt steht ausdrücklich „Arete != NeuroWeaving"** — die beiden schließen sich aus. Wer keines von beidem gewählt hat, sieht weder Sphären noch NeuroWeaving-Fähigkeiten.
+**Auf dem Blatt steht ausdrücklich „Hexkraft != NeuroWeaving"** — die beiden schließen sich aus. Wer keines von beidem gewählt hat, sieht weder Sphären noch NeuroWeaving-Fähigkeiten.
 
-### Magie (Arete + Sphären)
+### Magie (Hexkraft + Sphären)
 
-- **Arete** ist der Magiewert. Ein *kontrollierter* Zauber würfelt nur den Arete-Wert.
+- **Hexkraft** ist der Magiewert. Ein *kontrollierter* Zauber würfelt nur den Hexkraft-Wert.
 - **Wilde Magie:** Bonuswürfel bis zur Höhe der Willenskraft dazunehmen; dafür muss vorher ein **Zielwert** festgelegt werden. Wird er unterschritten, ist die Probe gescheitert.
 - Nach einem gelungenen wilden Zauber: **Willenskraftwurf gegen die Zahl der Erfolge**. Die Differenz geht als Schaden auf die Lebenspunkte. Entfällt, wenn die Erfolge genau dem Zielwert entsprechen.
 - Kritische Treffer zählen beim Zielwert **nicht** als zusätzliche Erfolge — dort zählen nur Nettoerfolge.
@@ -47,7 +47,7 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 
 ### NeuroWeaving (Neuroweaver)
 
-- Gleiche Grundregeln wie Arete, auch beim Willenskrafteinsatz und seinen Folgen.
+- Gleiche Grundregeln wie Hexkraft, auch beim Willenskrafteinsatz und seinen Folgen.
 - **Aber:** die NeuroWeaving-Fähigkeiten **geben Bonuswürfel** (anders als Sphären) und wirken nicht als Begrenzung.
 - Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er keine Punkte hat.
 - Seine Verteidigung bestimmt sich über die Willenskraft.
@@ -115,9 +115,9 @@ Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
    - *Profi*: 1×4, 3×3, 3×2, 1×1 (8 Fähigkeiten)
    - *Ausgeglichen*: 3×3, 5×2, 7×1 (15 Fähigkeiten)
    - *Jack of all Trades*: 1×3, 8×2, 10×1 (19 Fähigkeiten)
-   - Arete, Sphären und NeuroWeaving zählen als Fähigkeit, werden aber normalerweise ohne Attribut gewürfelt.
+   - Hexkraft, Sphären und NeuroWeaving zählen als Fähigkeit, werden aber normalerweise ohne Attribut gewürfelt.
 4. **Startkapital 10.000 ¥.**
-5. **15 Freebees**, Kosten: Attribut / Arete / NeuroWeaving **5** (darf das Startmaximum übersteigen), Fertigkeit **2** (höchstens +1), Willenskraft **1**, Kredit 10.000 ¥ = 1, Eigenkapital 10.000 ¥ = 2.
+5. **15 Freebees**, Kosten: Attribut / Hexkraft / NeuroWeaving **5** (darf das Startmaximum übersteigen), Fertigkeit **2** (höchstens +1), Willenskraft **1**, Kredit 10.000 ¥ = 1, Eigenkapital 10.000 ¥ = 2.
    *Das Startmaximum gilt nicht für Freebees.*
 
 > **Beim Umsetzen abgeleitet:** die Startmaximum-Spalte der Tabelle ist durchgehend
@@ -153,7 +153,7 @@ mehr als der zweite) und an das Freebee-Verhältnis der Erstellung:
 | Fertigkeit | × 2 | 3 |
 | Sphäre | × 5 | 7 |
 | NeuroWeaving | × 5 | 7 |
-| Arete | × 8 | 10 |
+| Hexkraft | × 8 | 10 |
 | Hintergrund | × 3 | 3 |
 | Willenskraft | × 1 | — |
 
@@ -231,8 +231,8 @@ NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchier
 
 ## Offen / noch zu klären
 
-- Ob „Magier" und „Neuroweaver" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
+- Ob „Magier" und „Neuroweaver" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Hexkraft > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Hexkraft 0 keiner.
 - Rüstungsmaxima je Zone (Kopf 2, Torso 4, Beine 2 laut Blatt) — ob das feste Grenzen sind oder nur die Vorlage.
-- **Sphären beim Freebee-Kauf**: Zeile 39 nennt nur „Attribut / Arete NeuroWeaving 5", Zeile 27 stellt Sphären
+- **Sphären beim Freebee-Kauf**: Zeile 39 nennt nur „Attribut / Hexkraft NeuroWeaving 5", Zeile 27 stellt Sphären
   aber zu den Fertigkeiten. Umgesetzt ist vorerst der Fertigkeitspreis (2, höchstens +1).
 - **Hintergründe und Erfahrungspreise** — siehe oben, beides erfunden statt belegt.

@@ -173,7 +173,7 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   AttributGesellschaftlich: "Gesellschaftlich",
   AttributGeistig: "Geistig",
   Fertigkeit: "Fähigkeiten",
-  Arete: "Arete",
+  Hexkraft: "Hexkraft",
   Sphäre: "Sphären",
   NeuroWeavingWert: "NeuroWeaving",
   NeuroWeaving: "NeuroWeaving-Fertigkeiten",

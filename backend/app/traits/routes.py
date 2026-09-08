@@ -54,7 +54,7 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     es drei Abfragen, deren Ergebnisse zueinander passen muessen.
 
     Der Katalog ist bereits nach dem eingeschlagenen Weg gefiltert: wer kein
-    Magier ist, bekommt Sphaeren und Arete gar nicht erst zu sehen.
+    Magier ist, bekommt Sphaeren und Hexkraft gar nicht erst zu sehen.
     """
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")

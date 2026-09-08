@@ -21,14 +21,14 @@ FAKTOR: dict[str, int] = {
     "AttributGesellschaftlich": 4,
     "AttributGeistig": 4,
     "Fertigkeit": 2,
-    # Mark, 30.08.2026: Sphären zählen zu den Fertigkeiten, Arete zu den
-    # Attributen — beim Steigern wie bei den Freebees. Arete kostet also
+    # Mark, 30.08.2026: Sphären zählen zu den Fertigkeiten, Hexkraft zu den
+    # Attributen — beim Steigern wie bei den Freebees. Hexkraft kostet also
     # wie ein Attribut, eine Sphäre wie eine Fertigkeit.
     "Sphäre": 2,
-    "Arete": 4,
-    # Der NeuroWeaving-Wert steigt wie Arete (Attributpreis), die vier
+    "Hexkraft": 4,
+    # Der NeuroWeaving-Wert steigt wie Hexkraft (Attributpreis), die vier
     # Fertigkeiten darunter wie Fertigkeiten — dieselbe Zuordnung wie bei
-    # Arete und Sphären.
+    # Hexkraft und Sphären.
     "NeuroWeavingWert": 4,
     "NeuroWeaving": 2,
     "Hintergrund": 3,
@@ -42,7 +42,7 @@ NEU_KOSTEN: dict[str, int] = {
     "Sphäre": 3,
     # Wie der Freebee-Preis eines Attributpunkts, damit der Einstieg in die
     # Magie nicht teurer ist als bei der Erstellung.
-    "Arete": 5,
+    "Hexkraft": 5,
     "NeuroWeavingWert": 5,
     "NeuroWeaving": 3,
     "Hintergrund": 3,

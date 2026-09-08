@@ -6,10 +6,10 @@ docs/regeln-neotopia.md.
 """
 
 # Welche Wege welche Bereiche des Blatts freischalten. Auf dem Blatt steht
-# "Arete != NeuroWeaving": beides zugleich gibt es nicht.
+# "Hexkraft != NeuroWeaving": beides zugleich gibt es nicht.
 BEREICHE_JE_WEG: dict[str, set[str]] = {
     "KEINER": set(),
-    "MAGIER": {"Arete", "Sphäre"},
+    "MAGIER": {"Hexkraft", "Sphäre"},
     # Der Wert selbst und die vier Fertigkeiten dazu.
     "NEUROWEAVER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
@@ -73,11 +73,11 @@ def initiative(werte: dict[str, int], cyberware_mod: int = 0) -> int:
 def sichtbare_kategorien(weg: str, alle: set[str]) -> set[str]:
     """Welche Trait-Kategorien für diesen Charakter überhaupt gelten.
 
-    Attribute und Fertigkeiten hat jeder. Arete und Sphären sieht nur ein
+    Attribute und Fertigkeiten hat jeder. Hexkraft und Sphären sieht nur ein
     Magier, NeuroWeaving nur ein Neuroweaver — wer nichts davon gewählt hat,
     bekommt diese Bereiche gar nicht erst zu sehen.
     """
-    besonders = {"Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
+    besonders = {"Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
     grundlage = {k for k in alle if k not in besonders}
     return grundlage | BEREICHE_JE_WEG.get(weg, set())
 

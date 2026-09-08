@@ -13,7 +13,7 @@ Ablauf laut Excel:
 2. Die Rasse gibt drei Kontingente frei verteilbarer Attributpunkte
    (Mensch 7/5/3). Welches Kontingent auf körperlich, gesellschaftlich oder
    geistig fällt, entscheidet die Spielerin (Zeilen 20-22).
-3. Fertigkeiten kommen aus einem von drei Paketen (Zeilen 28-30). Arete,
+3. Fertigkeiten kommen aus einem von drei Paketen (Zeilen 28-30). Hexkraft,
    Sphären und NeuroWeaving zählen dabei als Fertigkeit (Zeile 27).
 4. 15 Freebees zum Nachbessern (Zeilen 37-42).
 
@@ -26,8 +26,8 @@ für den ganzen Charakterbogen gelten und nicht nur für die Erstellung.
 Hintergründe kommen im Excel nicht vor — die Liste unten ist ein Vorschlag
 fürs Setting. Ebenso der Freebee-Preis von 1 je Hintergrundpunkt; vorgegeben
 war nur Marks "bis zu 5 Punkte". Und ob Sphären beim Freebee-Kauf wie
-Fertigkeiten zählen (2) oder wie Arete (5) — Zeile 39 nennt nur
-"Attribut / Arete NeuroWeaving 5", Zeile 27 stellt Sphären aber zu den
+Fertigkeiten zählen (2) oder wie Hexkraft (5) — Zeile 39 nennt nur
+"Attribut / Hexkraft NeuroWeaving 5", Zeile 27 stellt Sphären aber zu den
 Fertigkeiten. Hier gilt vorerst der Fertigkeitspreis.
 """
 
@@ -113,8 +113,8 @@ WEGE: list[dict[str, str]] = [
     {
         "id": "MAGIER",
         "name": "Magier",
-        "beschreibung": "Arete und die neun Sphären. Die Sphären beschreiben, woran deine Magie "
-        "greift und wie groß es sein darf; gewürfelt wird Arete.",
+        "beschreibung": "Hexkraft und die neun Sphären. Die Sphären beschreiben, woran deine Magie "
+        "greift und wie groß es sein darf; gewürfelt wird Hexkraft.",
     },
     {
         "id": "NEUROWEAVER",
@@ -124,10 +124,10 @@ WEGE: list[dict[str, str]] = [
     },
 ]
 
-# Auf dem Blatt steht "Arete != NeuroWeaving" — beides zugleich gibt es nicht.
+# Auf dem Blatt steht "Hexkraft != NeuroWeaving" — beides zugleich gibt es nicht.
 KATEGORIEN_JE_WEG = {
     "KEINER": set(),
-    "MAGIER": {"Arete", "Sphäre"},
+    "MAGIER": {"Hexkraft", "Sphäre"},
     "NEUROWEAVER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
 
@@ -156,8 +156,8 @@ FERTIGKEITS_PAKETE: dict[str, dict[str, Any]] = {
 }
 
 # Kategorien, aus denen sich ein Fertigkeitspaket bedienen darf. Zeile 27:
-# "Arete, Sphären, bzw. NeuroWeaving zählen als Fähigkeit".
-FERTIGKEITS_KATEGORIEN = {"Fertigkeit", "Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
+# "Hexkraft, Sphären, bzw. NeuroWeaving zählen als Fähigkeit".
+FERTIGKEITS_KATEGORIEN = {"Fertigkeit", "Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
 
 # --- Hintergründe -------------------------------------------------------
 # VORSCHLAG, nicht aus dem Regelwerk. Bewusst wenige und klar unterscheidbare
@@ -190,8 +190,8 @@ FREEBEE_KOSTEN_JE_KATEGORIE: dict[str, int] = {
     "AttributKörperlich": 5,
     "AttributGesellschaftlich": 5,
     "AttributGeistig": 5,
-    "Arete": 5,
-    # Der NeuroWeaving-Wert zählt wie Arete zu den Attributen, die vier
+    "Hexkraft": 5,
+    # Der NeuroWeaving-Wert zählt wie Hexkraft zu den Attributen, die vier
     # Fertigkeiten darunter wie Fertigkeiten.
     "NeuroWeavingWert": 5,
     "NeuroWeaving": 2,
@@ -397,7 +397,7 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
 
     # --- Endwerte gegen die Obergrenze des Wertes selbst -----------------
     # Zeile 24 hebt nur den **StartMax** für Freebees auf, nicht das Maximum
-    # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 5, Arete bis 10.
+    # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 5, Hexkraft bis 10.
     # Ohne diese Prüfung liess sich Körperkraft auf 9 kaufen (von Mark gefunden).
     maximum_von = {t["name"]: t["defaultMax"] for t in katalog}
     for name, wert in endwerte(auswahl).items():

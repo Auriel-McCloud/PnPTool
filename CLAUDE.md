@@ -156,7 +156,7 @@ npm run dev
 1. **Shop-System** — Gegenstände kaufen/verkaufen, Händler-NPCs
 
 2. **Augment-Differenzierung** — ✅ Fertig:
-   - **Hexware**: Ermöglicht Magie (Arete/Sphären) — NICHT für Neuroweaver
+   - **Hexware**: Ermöglicht Magie (Hexkraft/Sphären) — NICHT für Neuroweaver
    - **Bioware**: Ermöglicht NeuroWeaving — NICHT für Magier
    - **Cyberware**: Für alle (Reflex-Booster etc.)
    - Exklusiv-Pfade: Magier vs. Neuroweaver (nicht beides)

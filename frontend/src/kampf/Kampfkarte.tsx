@@ -16,7 +16,7 @@ import "./kampfkarte.css";
  *
  * Mitten im Gefecht will niemand den ganzen Bogen durchsuchen. Hier stehen
  * die Würfelzahlen fertig ausgerechnet: Treffen, Ausweichen, Parieren,
- * Rüstung, Schaden — und je nach Charakter Arete, NeuroWeaving oder das Deck.
+ * Rüstung, Schaden — und je nach Charakter Hexkraft, NeuroWeaving oder das Deck.
  * Begleiter und Fahrzeuge hängen als Kacheln daran, ihre Blätter gehen als
  * eigenes Fenster auf.
  *
@@ -62,7 +62,7 @@ export function Kampfkarte({
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
   const [vollerBogen, setVollerBogen] = useState(false);
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
-  // Angetippter Wert — für Arete heisst das: Willenskraft dazugeben.
+  // Angetippter Wert — für Hexkraft heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   const [erklaertRuestung, setErklaertRuestung] = useState(false);
@@ -218,11 +218,11 @@ export function Kampfkarte({
           <h3>Magie</h3>
           <div className="kk-werte">
             <Zahl
-              titel="Arete"
-              wert={wert(bogen, "Arete")}
+              titel="Hexkraft"
+              wert={wert(bogen, "Hexkraft")}
               hinweis={`Antippen, um Willenskraft dazuzugeben — noch ${uebrigeWillenskraft} übrig.`}
               wuerfel
-              onKlick={() => setProbe({ name: "Arete", wert: wert(bogen, "Arete"), kategorie: "Arete" })}
+              onKlick={() => setProbe({ name: "Hexkraft", wert: wert(bogen, "Hexkraft"), kategorie: "Hexkraft" })}
             />
           </div>
           <div className="kk-sphaeren">

@@ -16,7 +16,7 @@ ALLE_KATEGORIEN = {
     "Fertigkeit",
     "NeuroWeaving",
     "Sphäre",
-    "Arete",
+    "Hexkraft",
 }
 
 
@@ -41,19 +41,19 @@ class TestSichtbareBereiche:
     def test_ohne_weg_weder_sphaeren_noch_neuroweaving(self):
         sichtbar = sichtbare_kategorien("KEINER", ALLE_KATEGORIEN)
         assert "Sphäre" not in sichtbar
-        assert "Arete" not in sichtbar
+        assert "Hexkraft" not in sichtbar
         assert "NeuroWeaving" not in sichtbar
 
-    def test_magier_sieht_sphaeren_und_arete_aber_kein_neuroweaving(self):
+    def test_magier_sieht_sphaeren_und_hexkraft_aber_kein_neuroweaving(self):
         sichtbar = sichtbare_kategorien("MAGIER", ALLE_KATEGORIEN)
-        assert {"Sphäre", "Arete"} <= sichtbar
+        assert {"Sphäre", "Hexkraft"} <= sichtbar
         assert "NeuroWeaving" not in sichtbar
 
     def test_neuroweaver_sieht_neuroweaving_aber_keine_sphaeren(self):
         sichtbar = sichtbare_kategorien("NEUROWEAVER", ALLE_KATEGORIEN)
         assert "NeuroWeaving" in sichtbar
         assert "Sphäre" not in sichtbar
-        assert "Arete" not in sichtbar
+        assert "Hexkraft" not in sichtbar
 
     def test_attribute_und_fertigkeiten_hat_jeder(self):
         for weg in ("KEINER", "MAGIER", "NEUROWEAVER"):

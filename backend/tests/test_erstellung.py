@@ -33,7 +33,7 @@ KATALOG = [
             5,
         ),
         ("Sphäre", ["Kräfte", "Leben"], 5),
-        ("Arete", ["Arete"], 10),
+        ("Hexkraft", ["Hexkraft"], 10),
         ("NeuroWeaving", ["Brute Force"], 5),
         ("Hintergrund", [h["name"] for h in erstellung.HINTERGRUENDE], 5),
     ]
@@ -232,10 +232,10 @@ def test_sphaeren_nur_fuer_magier():
     assert erstellung.pruefe({**auswahl, "weg": "MAGIER"}, KATALOG) == []
 
 
-def test_arete_zaehlt_als_fertigkeit():
+def test_hexkraft_zaehlt_als_fertigkeit():
     auswahl = grundgeruest(weg="MAGIER")
     auswahl["fertigkeitPunkte"] = {
-        "Arete": 4,
+        "Hexkraft": 4,
         "Kräfte": 3,
         "Leben": 3,
         "Wahrnehmung": 3,
@@ -367,19 +367,19 @@ def test_steigern_wird_mit_jedem_punkt_teurer():
 def test_erster_punkt_hat_einen_eigenen_preis():
     """Die Formel gäbe bei 0 nichts her — geschenkt soll nichts sein."""
     assert erfahrung.kosten("Fertigkeit", 0) == 3
-    assert erfahrung.kosten("Arete", 0) == 5
+    assert erfahrung.kosten("Hexkraft", 0) == 5
 
 
-def test_arete_kostet_wie_ein_attribut_sphaeren_wie_fertigkeiten():
+def test_hexkraft_kostet_wie_ein_attribut_sphaeren_wie_fertigkeiten():
     """Marks Zuordnung vom 30.08.2026 — dieselbe wie bei den Freebees."""
-    assert erfahrung.kosten("Arete", 3) == erfahrung.kosten("AttributGeistig", 3)
+    assert erfahrung.kosten("Hexkraft", 3) == erfahrung.kosten("AttributGeistig", 3)
     assert erfahrung.kosten("Sphäre", 3) == erfahrung.kosten("Fertigkeit", 3)
 
 
 def test_freebee_zuordnung_deckt_sich_damit():
-    """Arete wie ein Attribut (5), Sphäre wie eine Fertigkeit (2)."""
+    """Hexkraft wie ein Attribut (5), Sphäre wie eine Fertigkeit (2)."""
     preise = erstellung.FREEBEE_KOSTEN_JE_KATEGORIE
-    assert preise["Arete"] == preise["AttributGeistig"] == 5
+    assert preise["Hexkraft"] == preise["AttributGeistig"] == 5
     assert preise["Sphäre"] == preise["Fertigkeit"] == 2
 
 
