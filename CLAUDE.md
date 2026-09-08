@@ -153,7 +153,14 @@ npm run dev
 
 ## Geplante Features
 
-1. **Shop-System** — Gegenstände kaufen/verkaufen, Händler-NPCs
+1. **Shop-System + Händler-Spam** — großes Feature-Set:
+   - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
+   - Spieler kann "Kontakt austauschen" mit Händler
+   - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**
+   - **Spam-Frequenz skaliert mit I.C.E.** — niedriger Wert = mehr Spam!
+   - **Popups erscheinen zufällig am Screen** (nicht immer gleiche Position)
+   - Manche Spam-NPCs sind Scammer (SL-Storyline-Hooks)
+   - SL kann "Spam-Welle" auslösen für Atmosphäre
 
 2. **Augment-Differenzierung** — ✅ Fertig:
    - **Hexware**: Ermöglicht Magie (Hexkraft/Sphären) — NICHT für Neuroweaver
