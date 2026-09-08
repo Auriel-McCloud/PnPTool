@@ -346,7 +346,7 @@ def test_endwerte_summieren_start_verteilung_und_freebees():
 
 def test_regelwerk_ist_vollstaendig_fuer_die_oberflaeche():
     regeln = erstellung.regelwerk()
-    assert {w["id"] for w in regeln["wege"]} == {"KEINER", "MAGIER", "TECHNOMANCER"}
+    assert {w["id"] for w in regeln["wege"]} == {"KEINER", "MAGIER", "NEUROWEAVER"}
     assert {r["name"] for r in regeln["rassen"]} == {"Mensch", "Elf", "Ork", "Zwerg", "Troll"}
     assert len(regeln["fertigkeitsPakete"]) == 3
     assert regeln["freebees"]["gesamt"] == 15

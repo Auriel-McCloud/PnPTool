@@ -22,7 +22,7 @@ def _fuer_viewer(begleiter: dict, viewer: Viewer) -> dict | None:
 
     Wer einen Begleiter besitzt, sieht ihn immer. Sonst müsste die
     Spielleitung bei jedem Sprite daran denken, ihn für seinen eigenen
-    Technomancer freizugeben — und vergisst sie es, steht der Spieler ohne
+    Neuroweaver freizugeben — und vergisst sie es, steht der Spieler ohne
     sein Sprite da. Gleiches Muster wie bei den Gegenständen.
     """
     if viewer.role == "GM" or begleiter.get("besitzerId") == viewer.person_id:

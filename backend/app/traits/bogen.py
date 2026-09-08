@@ -11,7 +11,7 @@ BEREICHE_JE_WEG: dict[str, set[str]] = {
     "KEINER": set(),
     "MAGIER": {"Arete", "Sphäre"},
     # Der Wert selbst und die vier Fertigkeiten dazu.
-    "TECHNOMANCER": {"NeuroWeavingWert", "NeuroWeaving"},
+    "NEUROWEAVER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
 
 # Grundwert der Gesundheit, auf den die Widerstandsfähigkeit addiert wird.
@@ -49,7 +49,7 @@ def willenskraft_max(werte: dict[str, int], bonus: int = 0, chrom_verlust: int =
 def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int:
     """Matrix-Verteidigung (I.C.E. / Cyber Wall).
 
-    **Technomancer:** Fassung + Geistesschärfe. Er trägt seine Abwehr in sich
+    **Neuroweaver:** Fassung + Geistesschärfe. Er trägt seine Abwehr in sich
     und braucht kein Gerät. *Weicht bewusst von Zeile 99 des Regelblatts ab,
     wo Willenskraft steht* — Mark hat das am 29.08.2026 geändert, weil die
     Willenskraft beim NeuroWeaving verbraucht wird und ihn sonst jede Aktion
@@ -60,7 +60,7 @@ def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int
     Der Unterschied zwischen "ungeschützt" und "nicht erreichbar" liegt also
     nicht im Wert, sondern darin, ob überhaupt ein Gerät da ist.
     """
-    if weg == "TECHNOMANCER":
+    if weg == "NEUROWEAVER":
         return _wert(werte, "Fassung") + _wert(werte, "Geistesschärfe")
     return commlink_cyberwall
 
@@ -74,7 +74,7 @@ def sichtbare_kategorien(weg: str, alle: set[str]) -> set[str]:
     """Welche Trait-Kategorien für diesen Charakter überhaupt gelten.
 
     Attribute und Fertigkeiten hat jeder. Arete und Sphären sieht nur ein
-    Magier, NeuroWeaving nur ein Technomancer — wer nichts davon gewählt hat,
+    Magier, NeuroWeaving nur ein Neuroweaver — wer nichts davon gewählt hat,
     bekommt diese Bereiche gar nicht erst zu sehen.
     """
     besonders = {"Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
@@ -128,7 +128,7 @@ def bogen_uebersicht(
         "iceSchaden": min(int(person.get("iceSchaden") or 0), i_max),
         # Ohne Gerät ist man nicht angreifbar — für die Anzeige ein
         # Unterschied ums Ganze gegenüber "Wert 0, aber online".
-        "offline": weg != "TECHNOMANCER" and commlink_cyberwall <= 0,
+        "offline": weg != "NEUROWEAVER" and commlink_cyberwall <= 0,
         # Regelblatt Zeile 57: + CyberwareMod. Der Reflex-Booster gibt je
         # nach Stufe +1/+3/+6 (Zeilen 421-444).
         "initiative": initiative(werte, initiative_mod),

@@ -29,15 +29,15 @@ export function WillenskraftFrage({
   uebrig: number;
   /**
    * Wofür der Rest sonst noch gebraucht wird, hängt am Weg: wilde Magie gibt
-   * es nur beim Magier, NeuroWeaving nur beim Technomancer. Wer weder noch
+   * es nur beim Magier, NeuroWeaving nur beim Neuroweaver. Wer weder noch
    * ist, soll nicht über Möglichkeiten lesen, die er nicht hat.
    */
-  weg?: "KEINER" | "MAGIER" | "TECHNOMANCER";
+  weg?: "KEINER" | "MAGIER" | "NEUROWEAVER";
   onJa: () => void;
   onNein: () => void;
 }) {
   const wofuerSonst =
-    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "TECHNOMANCER" ? " — auch fürs NeuroWeaving." : ".";
+    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "NEUROWEAVER" ? " — auch fürs NeuroWeaving." : ".";
   return (
     <Fenster
       offen={offen}

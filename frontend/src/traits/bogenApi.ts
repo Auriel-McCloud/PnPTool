@@ -3,7 +3,7 @@ import type { TraitDef, TraitRating } from "./api";
 
 /** Abgeleitete Werte und Zustand — berechnet das Backend, siehe traits/bogen.py. */
 export interface BogenUebersicht {
-  weg: "KEINER" | "MAGIER" | "TECHNOMANCER";
+  weg: "KEINER" | "MAGIER" | "NEUROWEAVER";
   rasse: string;
   gesundheitMax: number;
   /** Summe aller Arten — für die Kurzanzeige. */

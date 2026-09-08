@@ -47,7 +47,7 @@ export const SPHAEREN: Record<string, string> = {
  *
  * **NeuroWeaving** (Zeilen 45/95/96): dieselben Willenskraft-Regeln wie
  * Arete, aber die Punkte gelten als **Bonuswürfel für die jeweilige Aktion**,
- * nicht als Begrenzung. Ein Technomancer darf auch Fertigkeiten einsetzen, in
+ * nicht als Begrenzung. Ein Neuroweaver darf auch Fertigkeiten einsetzen, in
  * denen er keine Punkte hat.
  */
 export const MAGIE_HINWEISE = {

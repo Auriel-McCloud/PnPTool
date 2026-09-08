@@ -45,11 +45,11 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - **Sphären beschreiben, was möglich ist, und geben keine Bonuswürfel.** Stufen: 1 wahrnehmbar · 2 bis ~50 cm³ · 3 bis ~4 m³ · 4 bis Hausgröße · 5 alles.
 - Sphären: Korrespondenz, Entropie, Kräfte, Leben, Materie, Gedanken, Ursprung, Geister, Zeit. *Schaden durch Kräfte ist automatisch +1.*
 
-### NeuroWeaving (Technomancer)
+### NeuroWeaving (Neuroweaver)
 
 - Gleiche Grundregeln wie Arete, auch beim Willenskrafteinsatz und seinen Folgen.
 - **Aber:** die NeuroWeaving-Fähigkeiten **geben Bonuswürfel** (anders als Sphären) und wirken nicht als Begrenzung.
-- Ein Technomancer darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er keine Punkte hat.
+- Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er keine Punkte hat.
 - Seine Verteidigung bestimmt sich über die Willenskraft.
 - Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren.
 
@@ -69,7 +69,7 @@ Im Werkzeug schaltet ein Klick auf ein Kästchen weiter: unbeschädigt → `/` �
 
 ## Matrix-Verteidigung (I.C.E. / Cyber Wall)
 
-**Wer kein Technomancer ist, bezieht den Wert vom Commlink.** Ohne Commlink ist er 0 — dann ist man aber auch **offline und schlicht nicht angreifbar**. Der Unterschied zwischen „ungeschützt" und „nicht erreichbar" liegt also nicht im Wert, sondern darin, ob überhaupt ein Gerät dabei ist. Ein Commlink im Versteck schützt niemanden; es zählt nur, was ausgerüstet oder mitgeführt wird. Bei mehreren Geräten gilt der beste Wert, nicht die Summe.
+**Wer kein Neuroweaver ist, bezieht den Wert vom Commlink.** Ohne Commlink ist er 0 — dann ist man aber auch **offline und schlicht nicht angreifbar**. Der Unterschied zwischen „ungeschützt" und „nicht erreichbar" liegt also nicht im Wert, sondern darin, ob überhaupt ein Gerät dabei ist. Ein Commlink im Versteck schützt niemanden; es zählt nur, was ausgerüstet oder mitgeführt wird. Bei mehreren Geräten gilt der beste Wert, nicht die Summe.
 
 **Cyberdecks addieren ihren Bonus obendrauf** (im Regelwerk als „Cywall+1" bis „Cywall+4" notiert). Mehrere Decks werden summiert — anders als Commlinks, weil es Zusatzausrüstung ist und kein Zugangsgerät. **Ein Deck allein nützt nichts:** ohne Commlink besteht keine Verbindung, die es verstärken könnte.
 
@@ -86,9 +86,9 @@ Commlink-Preis: 200 ¥ je Cyberwall-Punkt bis 5, darüber 500 ¥ je Punkt.
 
 Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 
-**Technomancer: Fassung + Geistesschärfe.** Er trägt seine Abwehr in sich und braucht kein Gerät, ist also nie offline.
+**Neuroweaver: Fassung + Geistesschärfe.** Er trägt seine Abwehr in sich und braucht kein Gerät, ist also nie offline.
 
-> ⚠️ **Weicht bewusst vom Regelblatt ab.** Dort steht in Zeile 99 „Die Verteidigungsfähigkeit eines Technomancers wird über seine Willenskraft bestimmt". Mark hat das am 29.08.2026 geändert: Die Willenskraft wird beim NeuroWeaving verbraucht, dieselbe Größe als Verteidigung hätte ihn nach jeder Aktion verwundbar gemacht. Fassung + Geistesschärfe bleibt stabil. **Das Excel ist an dieser Stelle noch nicht nachgezogen.**
+> ⚠️ **Weicht bewusst vom Regelblatt ab.** Dort steht in Zeile 99 „Die Verteidigungsfähigkeit eines Neuroweavers wird über seine Willenskraft bestimmt". Mark hat das am 29.08.2026 geändert: Die Willenskraft wird beim NeuroWeaving verbraucht, dieselbe Größe als Verteidigung hätte ihn nach jeder Aktion verwundbar gemacht. Fassung + Geistesschärfe bleibt stabil. **Das Excel ist an dieser Stelle noch nicht nachgezogen.**
 
 ## Kampf
 
@@ -231,7 +231,7 @@ NuYen (¥) ist Weltwährung, 1 ¥ = 1 €. Preise für Ungelistetes: recherchier
 
 ## Offen / noch zu klären
 
-- Ob „Magier" und „Technomancer" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
+- Ob „Magier" und „Neuroweaver" eigene Charaktertypen sind — **entschieden:** eigenes Feld `weg`, nicht aus Arete > 0 abgeleitet, sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
 - Rüstungsmaxima je Zone (Kopf 2, Torso 4, Beine 2 laut Blatt) — ob das feste Grenzen sind oder nur die Vorlage.
 - **Sphären beim Freebee-Kauf**: Zeile 39 nennt nur „Attribut / Arete NeuroWeaving 5", Zeile 27 stellt Sphären
   aber zu den Fertigkeiten. Umgesetzt ist vorerst der Fertigkeitspreis (2, höchstens +1).

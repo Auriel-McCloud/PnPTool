@@ -132,7 +132,7 @@ Technisch vorbereitet ist dafür bereits: das Fenstersystem (`shell/Fenster.tsx`
 Das **Hauptfenster des Spielers** — erster Bereich, Startansicht. `traits/Charakterblatt.tsx`, Daten aus `GET .../personen/{id}/bogen`.
 
 - **Nur lesend.** `DotPool` ohne `onChange` zeigt Punkte, ohne sie ändern zu lassen. Werte setzt die Spielleitung, später der Level-Up-Modus.
-- **Dynamisch nach Weg:** der Katalog kommt bereits gefiltert vom Server. Ein Magier sieht Arete und Sphären, ein Technomancer NeuroWeaving, wer keinen Weg hat weder noch — und zwar nicht ausgeblendet, sondern gar nicht erst geliefert.
+- **Dynamisch nach Weg:** der Katalog kommt bereits gefiltert vom Server. Ein Magier sieht Arete und Sphären, ein Neuroweaver NeuroWeaving, wer keinen Weg hat weder noch — und zwar nicht ausgeblendet, sondern gar nicht erst geliefert.
 - **Kästchenreihen** (`traits/Kaestchen.tsx`) für Gesundheit, Willenskraft und I.C.E., wie auf dem Papierblatt in Fünfergruppen. Abgehakt wird durchgestrichen statt gefüllt, wie mit dem Stift. Kästchen jenseits des Maximums bleiben angedeutet stehen — man sieht, wie viel Luft nach oben wäre.
 - **Offline ist ein eigener Zustand**, nicht Wert 0: ohne Commlink erscheint statt der Reihe der Hinweis „nicht erreichbar, aber auch nicht angreifbar".
 - **Farbe je Wertegruppe** (`--cb-ton`): Körperlich rot, Gesellschaftlich bernstein, Geistig blau, Arete und Sphären violett, Fähigkeiten cyan. Die Punkte nehmen den Ton ihrer Gruppe auf.

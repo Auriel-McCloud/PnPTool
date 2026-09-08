@@ -103,7 +103,7 @@ export function Charaktererstellung({
   /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl. */
   const wegKategorien = useMemo(() => {
     if (weg === "MAGIER") return new Set(["Fertigkeit", "Arete", "Sphäre"]);
-    if (weg === "TECHNOMANCER") return new Set(["Fertigkeit", "NeuroWeavingWert", "NeuroWeaving"]);
+    if (weg === "NEUROWEAVER") return new Set(["Fertigkeit", "NeuroWeavingWert", "NeuroWeaving"]);
     return new Set(["Fertigkeit"]);
   }, [weg]);
 

@@ -479,7 +479,7 @@ async def chirurgie_durchfuehren(
             "Nur Cyber-, Bio- oder Hexware kann eingesetzt werden — und nur einmal",
         )
     
-    # Weg-Prüfung: Magier können keine Bioware, Technomancer keine Hexware.
+    # Weg-Prüfung: Magier können keine Bioware, Neuroweaver keine Hexware.
     if body.einsetzen:
         besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
         if besitzer_id:
@@ -491,10 +491,10 @@ async def chirurgie_durchfuehren(
                     status.HTTP_409_CONFLICT,
                     "Magier können keine Bioware einsetzen — ihr Weg ist die Magie, nicht NeuroWeaving",
                 )
-            if weg == "TECHNOMANCER" and typ == "Hexware":
+            if weg == "NEUROWEAVER" and typ == "Hexware":
                 raise HTTPException(
                     status.HTTP_409_CONFLICT,
-                    "Technomancer können keine Hexware einsetzen — ihr Weg ist NeuroWeaving, nicht Magie",
+                    "Neuroweaver können keine Hexware einsetzen — ihr Weg ist NeuroWeaving, nicht Magie",
                 )
     
     if not body.einsetzen and not chirurgie.kann_entfernen(item):

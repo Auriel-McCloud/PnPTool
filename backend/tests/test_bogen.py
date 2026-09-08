@@ -49,14 +49,14 @@ class TestSichtbareBereiche:
         assert {"Sphäre", "Arete"} <= sichtbar
         assert "NeuroWeaving" not in sichtbar
 
-    def test_technomancer_sieht_neuroweaving_aber_keine_sphaeren(self):
-        sichtbar = sichtbare_kategorien("TECHNOMANCER", ALLE_KATEGORIEN)
+    def test_neuroweaver_sieht_neuroweaving_aber_keine_sphaeren(self):
+        sichtbar = sichtbare_kategorien("NEUROWEAVER", ALLE_KATEGORIEN)
         assert "NeuroWeaving" in sichtbar
         assert "Sphäre" not in sichtbar
         assert "Arete" not in sichtbar
 
     def test_attribute_und_fertigkeiten_hat_jeder(self):
-        for weg in ("KEINER", "MAGIER", "TECHNOMANCER"):
+        for weg in ("KEINER", "MAGIER", "NEUROWEAVER"):
             sichtbar = sichtbare_kategorien(weg, ALLE_KATEGORIEN)
             assert "Fertigkeit" in sichtbar
             assert "AttributKörperlich" in sichtbar
@@ -87,16 +87,16 @@ class TestUebersicht:
 
 
 class TestMatrixVerteidigung:
-    """I.C.E. — beim Technomancer aus Attributen, sonst vom Gerät."""
+    """I.C.E. — beim Neuroweaver aus Attributen, sonst vom Gerät."""
 
-    def test_technomancer_traegt_seine_abwehr_in_sich(self):
+    def test_neuroweaver_traegt_seine_abwehr_in_sich(self):
         werte = {"Fassung": 3, "Geistesschärfe": 4}
         # ohne jedes Geraet, trotzdem verteidigt
-        assert ice_max("TECHNOMANCER", werte, commlink_cyberwall=0) == 7
+        assert ice_max("NEUROWEAVER", werte, commlink_cyberwall=0) == 7
 
-    def test_technomancer_ignoriert_das_commlink(self):
+    def test_neuroweaver_ignoriert_das_commlink(self):
         werte = {"Fassung": 2, "Geistesschärfe": 2}
-        assert ice_max("TECHNOMANCER", werte, commlink_cyberwall=9) == 4
+        assert ice_max("NEUROWEAVER", werte, commlink_cyberwall=9) == 4
 
     def test_andere_bekommen_den_wert_vom_commlink(self):
         werte = {"Fassung": 5, "Geistesschärfe": 5}
@@ -114,8 +114,8 @@ class TestMatrixVerteidigung:
         assert u["offline"] is False
         assert u["iceMax"] == 4
 
-    def test_technomancer_ist_nie_offline(self):
-        u = bogen_uebersicht({"weg": "TECHNOMANCER"}, {"Fassung": 2, "Geistesschärfe": 3}, commlink_cyberwall=0)
+    def test_neuroweaver_ist_nie_offline(self):
+        u = bogen_uebersicht({"weg": "NEUROWEAVER"}, {"Fassung": 2, "Geistesschärfe": 3}, commlink_cyberwall=0)
         assert u["offline"] is False
         assert u["iceMax"] == 5
 

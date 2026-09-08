@@ -27,7 +27,7 @@ const TON: Record<string, string> = {
 const WEG_TITEL: Record<string, string> = {
   KEINER: "",
   MAGIER: "Magier",
-  TECHNOMANCER: "Technomancer",
+  NEUROWEAVER: "Neuroweaver",
 };
 
 /**
@@ -460,7 +460,7 @@ export function Charakterblatt({
       </section>
 
       {/* Gemeinsamer Teil zuerst — so sieht das Blatt für alle gleich aus.
-          Was nur Magier oder Technomancer haben, kommt darunter. */}
+          Was nur Magier oder Neuroweaver haben, kommt darunter. */}
       <div className="cb-attribute">{ATTRIBUT_KATEGORIEN.map(reihe)}</div>
       {reihe("Fertigkeit")}
       {reihe("Arete")}

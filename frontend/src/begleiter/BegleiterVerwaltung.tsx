@@ -14,7 +14,7 @@ import "./begleiter.css";
  * Sie hängen an einer Person und teilen sich das Blatt mit Drohnen und
  * Fahrzeugen. Wer einem Spielercharakter zugeordnet ist, wird beim Anlegen
  * automatisch für ihn sichtbar; sonst müsste die Spielleitung bei jedem
- * Sprite daran denken, und vergässe sie es, stünde der Technomancer ohne da.
+ * Sprite daran denken, und vergässe sie es, stünde der Neuroweaver ohne da.
  */
 
 const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER"];

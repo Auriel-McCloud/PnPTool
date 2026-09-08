@@ -240,7 +240,7 @@ export function Kampfkarte({
         </section>
       )}
 
-      {u.weg === "TECHNOMANCER" && (
+      {u.weg === "NEUROWEAVER" && (
         <section className="kk-block">
           <h3>NeuroWeaving</h3>
           <div className="kk-werte">

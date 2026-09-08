@@ -117,7 +117,7 @@ WEGE: list[dict[str, str]] = [
         "greift und wie groß es sein darf; gewürfelt wird Arete.",
     },
     {
-        "id": "TECHNOMANCER",
+        "id": "NEUROWEAVER",
         "name": "NeuroWeaver",
         "beschreibung": "NeuroWeaving statt Magie: die Matrix ohne Gerät. Deine I.C.E. trägst du "
         "in dir (Fassung + Geistesschärfe), NeuroWeaving-Fertigkeiten geben Bonuswürfel.",
@@ -128,7 +128,7 @@ WEGE: list[dict[str, str]] = [
 KATEGORIEN_JE_WEG = {
     "KEINER": set(),
     "MAGIER": {"Arete", "Sphäre"},
-    "TECHNOMANCER": {"NeuroWeavingWert", "NeuroWeaving"},
+    "NEUROWEAVER": {"NeuroWeavingWert", "NeuroWeaving"},
 }
 
 # --- Fertigkeitspakete (Zeilen 28-30) -----------------------------------

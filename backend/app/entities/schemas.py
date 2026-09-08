@@ -24,10 +24,10 @@ class PersonCreate(BaseModel):
     # --- Charakterbogen ---------------------------------------------------
     # Der eingeschlagene Weg entscheidet, was auf dem Blatt überhaupt
     # erscheint: Sphären und Arete nur für Magier, NeuroWeaving nur für
-    # Technomancer. Auf dem Blatt steht ausdrücklich "Arete != NeuroWeaving",
+    # Neuroweaver. Auf dem Blatt steht ausdrücklich "Arete != NeuroWeaving",
     # beides zugleich geht also nicht. Ein eigenes Feld statt aus Arete > 0
     # abzuleiten — sonst wäre ein frisch erstellter Magier mit Arete 0 keiner.
-    weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] = "KEINER"
+    weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] = "KEINER"
     # Bestimmt Startwerte und Maxima bei der Erstellung (Mensch, Ork, Elf,
     # Zwerg, Troll). Frei als Text, weil Rassen dazukommen können.
     rasse: str = ""
@@ -69,7 +69,7 @@ class PersonCreate(BaseModel):
 class PersonUpdate(BaseModel):
     name: str | None = None
     bildUrl: str | None = None
-    weg: Literal["KEINER", "MAGIER", "TECHNOMANCER"] | None = None
+    weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
     rasse: str | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None

@@ -580,7 +580,7 @@ Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
         onNein={() => setAugmentFrage(null)}
       />
     )}
-    {/* Fehlermeldung bei unerlaubtem Augment-Einbau (Magier/Technomancer) */}
+    {/* Fehlermeldung bei unerlaubtem Augment-Einbau (Magier/Neuroweaver) */}
     {fehlerMeldung && (
       <Bestaetigung
         titel="Operation fehlgeschlagen"
