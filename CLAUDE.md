@@ -154,7 +154,15 @@ npm run dev
 ## Geplante Features
 
 1. **Shop-System** — Gegenstände kaufen/verkaufen, Händler-NPCs
-2. **KI-Integration** — NPCs mit KI-Persönlichkeit (Gemini Pro)
+
+2. **KI-Integration** (Gemini Pro) — mehrere Anwendungsfälle:
+   - **NPC-Generator:** NPCs mit kurzer Beschreibung automatisch erstellen lassen
+   - **Bildgenerierung:** Portraits für Charaktere, Item-Bilder, Maps, Orte, Gebäude
+   - **Wiki-Import:** Word-Dokumente hochladen, KI wandelt in Wiki-Seiten um
+   - **Auto-Verknüpfung:** KI durchsucht Wiki und verknüpft Personen/Orte mit Objekten
+   - **Rechtschreib-/Grammatikprüfung:** Im Wiki-Editor
+   - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
+
 3. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung
-4. **Wiki-Import** — Word-Dokument hochladen, per KI in Seiten umwandeln
-5. **Deploy** — Debian/nginx statt localhost
+
+4. **Deploy** — Debian/nginx statt localhost
