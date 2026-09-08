@@ -155,11 +155,12 @@ npm run dev
 
 1. **Shop-System** — Gegenstände kaufen/verkaufen, Händler-NPCs
 
-2. **Augment-Differenzierung** — ✅ Schritt 1 erledigt (MagWare → Hexware):
+2. **Augment-Differenzierung** — ✅ Fertig:
    - **Hexware**: Ermöglicht Magie (Arete/Sphären) — NICHT für Neuroweaver
    - **Bioware**: Ermöglicht NeuroWeaving — NICHT für Magier
    - **Cyberware**: Für alle (Reflex-Booster etc.)
    - Exklusiv-Pfade: Magier vs. Neuroweaver (nicht beides)
+   - Backend-Validierung + Frontend-Fehlerpopup implementiert
 
 2. **KI-Integration** (Gemini Pro) — mehrere Anwendungsfälle:
    - **NPC-Generator:** NPCs mit kurzer Beschreibung automatisch erstellen lassen

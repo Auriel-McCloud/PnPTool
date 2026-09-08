@@ -129,6 +129,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [kontakte, setKontakte] = useState<Kontakt[]>([]);
   // Für den Bestätigungsdialog beim Einsetzen von Augments.
   const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
+  // Fehlermeldung anzeigen (z.B. "Magier können keine Bioware...")
+  const [fehlerMeldung, setFehlerMeldung] = useState<string | null>(null);
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -246,8 +248,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     if (!ich) return;
     try {
       await itemsApi.chirurgie(ich.campaignId, itemId, true);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("chirurgie fehlgeschlagen", e);
+      // Fehlermeldung vom Server anzeigen (z.B. "Magier können keine Bioware...")
+      if (e && typeof e === "object" && "message" in e) {
+        setFehlerMeldung((e as { message: string }).message);
+      }
     }
     const frisch = await itemsApi.listAlle(ich.campaignId);
     setSachen(frisch);
@@ -572,6 +578,17 @@ Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
         neinText="Abbrechen"
         onJa={() => augmentEinsetzen(augmentFrage)}
         onNein={() => setAugmentFrage(null)}
+      />
+    )}
+    {/* Fehlermeldung bei unerlaubtem Augment-Einbau (Magier/Technomancer) */}
+    {fehlerMeldung && (
+      <Bestaetigung
+        titel="Operation fehlgeschlagen"
+        text={fehlerMeldung}
+        jaText="OK"
+        neinText=""
+        onJa={() => setFehlerMeldung(null)}
+        onNein={() => setFehlerMeldung(null)}
       />
     )}
     </MitteilungenAnbieter>
