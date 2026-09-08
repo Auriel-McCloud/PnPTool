@@ -363,7 +363,7 @@ async def ablage_aendern(
         )
 
     # Slot-Kollision nur prüfen, wenn ausgerüstet wird UND das Stück
-    # überhaupt einen festen Platz hat (Chrom-/Bio-/MagWare mit Zone+Slot).
+    # überhaupt einen festen Platz hat (Chrom-/Bio-/Hexware mit Zone+Slot).
     # Alles andere (Waffen, Kleidung, ...) hat keine Zone und blockiert nichts.
     if body.ablage == "AUSGERUESTET":
         vorhandenes_item = await repository.get_gegenstand(campaign_id, item_id)
@@ -476,7 +476,7 @@ async def chirurgie_durchfuehren(
     if body.einsetzen and not chirurgie.kann_einsetzen(item):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "Nur Cyber-, Bio- oder MagWare kann eingesetzt werden — und nur einmal",
+            "Nur Cyber-, Bio- oder Hexware kann eingesetzt werden — und nur einmal",
         )
     if not body.einsetzen and not chirurgie.kann_entfernen(item):
         raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Stück ist nicht verbaut")

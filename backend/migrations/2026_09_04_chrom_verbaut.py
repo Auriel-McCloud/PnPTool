@@ -1,6 +1,6 @@
 """Einmalige Umstellung: Chrom ist verbaut, nicht ausgerüstet.
 
-Hintergrund (04.09.2026): Cyber-, Bio- und MagWare lag bis dahin als
+Hintergrund (04.09.2026): Cyber-, Bio- und Hexware lag bis dahin als
 `ablage=AUSGERUESTET` im selben Topf wie eine Jacke. Das neue Feld `verbaut`
 trennt beides.
 
@@ -15,7 +15,7 @@ import asyncio
 
 from app.db.neo4j_driver import get_driver
 
-CHROM_TYPEN = ["Cyberware", "Bioware", "MagWare"]
+CHROM_TYPEN = ["Cyberware", "Bioware", "Hexware"]
 
 
 async def main() -> None:

@@ -1,4 +1,4 @@
-"""Cyber-, Bio- und MagWare wird verbaut, nicht ausgerüstet.
+"""Cyber-, Bio- und Hexware wird verbaut, nicht ausgerüstet.
 
 Marks Korrektur: *"Das ist keine 'Ausrüstung' die funktioniert nicht wenn die
 ausgerüstet ist, die muss 'eingesetzt oder ein operiert werden' wenn die
@@ -35,7 +35,7 @@ class TestWasIstChrom:
         assert ist_chrom(g(typ="Bioware")) is True
 
     def test_magware_ist_chrom(self):
-        assert ist_chrom(g(typ="MagWare")) is True
+        assert ist_chrom(g(typ="Hexware")) is True
 
     def test_eine_jacke_ist_kein_chrom(self):
         assert ist_chrom(g(typ="Kleidung")) is False

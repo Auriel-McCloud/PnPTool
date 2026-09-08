@@ -67,7 +67,7 @@ const TYP_OPTIONEN = [
   "Rüstung",
   "Cyberware",
   "Bioware",
-  "MagWare",
+  "Hexware",
   "Droge",
   "Verbrauchsgegenstand",
   "Werkzeug",
@@ -81,9 +81,9 @@ const TYP_OPTIONEN = [
 ];
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
 // Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117).
-// MagWare läuft über dieselbe Formel — reine Flavor-Kategorie neben
+// Hexware läuft über dieselbe Formel — reine Flavor-Kategorie neben
 // Cyberware/Bioware, keine eigene Kostenmechanik (Mark, 02.09.2026).
-const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "MagWare"]);
+const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
 // Drei Plätze je Körperzone (Regelblatt: "je drei Plätze mit Bonus und Verlust").
 const SLOTS_PRO_ZONE = [1, 2, 3];
 // Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)

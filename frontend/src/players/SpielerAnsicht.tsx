@@ -152,7 +152,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
 
   // Verbaute Augments erscheinen in der Körperkarte, nicht im Inventar.
-  const CHROM_TYPEN = ["Cyberware", "Bioware", "MagWare"];
+  const CHROM_TYPEN = ["Cyberware", "Bioware", "Hexware"];
   const istVerbautesChrom = (g: GegenstandMitBesitzer) =>
     CHROM_TYPEN.includes(g.typ) && g.verbaut;
   const meineRoh = meineRohAlle.filter((g) => !istVerbautesChrom(g));

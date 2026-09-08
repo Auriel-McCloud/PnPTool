@@ -1,4 +1,4 @@
-"""Cyber-, Bio- und MagWare: verbaut statt ausgerüstet.
+"""Cyber-, Bio- und Hexware: verbaut statt ausgerüstet.
 
 Marks Korrektur vom 04.09.2026:
 
@@ -19,7 +19,7 @@ Knopf ablegbar). Das neue Feld `verbaut` trennt beides:
   entfernen, nicht ablegen.
 """
 
-CHROM_TYPEN = ("Cyberware", "Bioware", "MagWare")
+CHROM_TYPEN = ("Cyberware", "Bioware", "Hexware")
 
 # Ergebnis von pruefe_entfernung
 ENTFERNEN = "ENTFERNEN"
@@ -28,7 +28,7 @@ ANTRAG_LAEUFT = "ANTRAG_LAEUFT"
 
 
 def ist_chrom(gegenstand: dict) -> bool:
-    """Ist das ein Implantat (Cyber-, Bio- oder MagWare)?"""
+    """Ist das ein Implantat (Cyber-, Bio- oder Hexware)?"""
     return gegenstand.get("typ") in CHROM_TYPEN
 
 

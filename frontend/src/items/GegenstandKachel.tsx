@@ -73,8 +73,8 @@ export function GegenstandKachel({
    */
   onWegwerfen?: () => Promise<void> | void;
 }) {
-  // Cyber-, Bio- und MagWare sind Implantate, keine Ausrüstung.
-  const CHROM = ["Cyberware", "Bioware", "MagWare"];
+  // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
+  const CHROM = ["Cyberware", "Bioware", "Hexware"];
   const istChrom = CHROM.includes(item.typ);
 
   const [offen, setOffen] = useState(false);

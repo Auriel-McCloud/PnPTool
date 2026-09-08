@@ -86,7 +86,7 @@ class GegenstandCreate(BaseModel):
     koerperzone: str = ""
     # Welcher der drei Plätze dieser Zone belegt ist (1-3, Regelblatt: "je
     # drei Plätze mit Bonus und Verlust"). None = kein fester Platz (z.B. bei
-    # allem, was keine Cyber-/Bio-/MagWare ist). Wird beim Ausrüsten gegen
+    # allem, was keine Cyber-/Bio-/Hexware ist). Wird beim Ausrüsten gegen
     # bereits belegte Plätze derselben Person geprüft (siehe
     # items/repository.py::slot_konflikt).
     slot: int | None = None
@@ -108,7 +108,7 @@ class GegenstandCreate(BaseModel):
     # 421-444), "Dash" +2 (Zeile 174). Freies Feld statt Sonderregel, damit
     # auch Drogen und Artefakte die Reihenfolge verschieben können.
     initiativeBonus: int = 0
-    # Cyber-/Bio-/MagWare: sitzt das Stück im Körper? Chrom ist keine
+    # Cyber-/Bio-/Hexware: sitzt das Stück im Körper? Chrom ist keine
     # Ausrüstung, die man an- und ablegt — es wird eingesetzt und nur per
     # Operation wieder entfernt. Wirkt nur, wenn verbaut.
     verbaut: bool = False

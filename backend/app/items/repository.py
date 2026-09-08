@@ -756,11 +756,11 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
 
 
 # Typen, die im Körper stecken und dauerhaft Willenskraft kosten.
-# MagWare läuft über dieselbe Formel wie Cyber-/Bioware (Mark, 02.09.2026):
+# Hexware läuft über dieselbe Formel wie Cyber-/Bioware (Mark, 02.09.2026):
 # der Willenskraftverlust regelt die Kosten bereits ausreichend, es braucht
-# keine eigene magische Kostenformel — MagWare ist bewusst nur eine dritte
+# keine eigene magische Kostenformel — Hexware ist bewusst nur eine dritte
 # Flavor-Kategorie neben Cyberware/Bioware, keine eigene Mechanik.
-CHROM_TYPEN = ("Cyberware", "Bioware", "MagWare")
+CHROM_TYPEN = ("Cyberware", "Bioware", "Hexware")
 
 # Wann wirkt ein Gegenstand? Chrom, sobald es **verbaut** ist (es sitzt im
 # Koerper, die Ablage spielt keine Rolle mehr); alles andere, solange es
@@ -833,7 +833,7 @@ async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot
     """Prüft, ob ein anderes ausgerüstetes Stück derselben Person schon
     denselben Platz belegt (Regelblatt: je Zone drei Plätze).
 
-    Nur **verbaute** Chrom-/Bio-/MagWare zählt — im Rucksack liegende Ware
+    Nur **verbaute** Chrom-/Bio-/Hexware zählt — im Rucksack liegende Ware
     ist nicht eingesetzt und blockiert deshalb keinen Platz. Gibt den Namen
     des blockierenden Gegenstands zurück, oder None wenn der Platz frei ist.
     Ein Gegenstand blockiert sich beim eigenen Update nicht selbst.
