@@ -41,6 +41,8 @@ class KontaktResponse(BaseModel):
     persoenlicheNotizen: str = ""
     # Darf dieser Betrachter mit dem NPC schreiben?
     chatOffen: bool = False
+    # Nur-Lesen: Spieler kann empfangen aber nicht antworten (Händler-Werbung, Spam)
+    nurLesen: bool = False
     ungelesen: int = 0
 
 
@@ -73,6 +75,7 @@ class KontaktGmUpdate(BaseModel):
     stufe: Kontaktstufe | None = None
     echterNameBekannt: bool | None = None
     chatOffen: bool | None = None
+    nurLesen: bool | None = None
     # Der für diesen einen PC gesetzte Alias.
     alias: str | None = None
 
@@ -84,6 +87,7 @@ class KontaktCreate(BaseModel):
     npcId: str
     stufe: Kontaktstufe = "GESEHEN"
     chatOffen: bool = False
+    nurLesen: bool = False
 
 
 class AnfrageEntscheidung(BaseModel):
@@ -121,4 +125,5 @@ class ChatResponse(BaseModel):
     npcId: str
     alias: str
     chatOffen: bool
+    nurLesen: bool = False
     nachrichten: list[NachrichtResponse]

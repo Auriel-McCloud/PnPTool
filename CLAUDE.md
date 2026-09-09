@@ -161,6 +161,7 @@ npm run dev
    - **Popups erscheinen zufällig am Screen** (nicht immer gleiche Position)
    - Manche Spam-NPCs sind Scammer (SL-Storyline-Hooks)
    - SL kann "Spam-Welle" auslösen für Atmosphäre
+   - **Kampagnen-Option** — Werbung/Spam passt nicht in jedes Setting
 
 2. **Augment-Differenzierung** — ✅ Fertig:
    - **Hexware**: Ermöglicht Magie (Hexkraft/Sphären) — NICHT für Neuroweaver
@@ -180,3 +181,9 @@ npm run dev
 3. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung
 
 4. **Deploy** — Debian/nginx statt localhost
+
+5. **Ideenschmiede** (zu besprechen) — eigener Bereich außerhalb der Kampagne:
+   - Ideen-Sammlung die nicht Teil des aktiven Spiels ist
+   - Inhalte sollen leicht in die Kampagne verschoben werden können
+   - Mögliche Auffangstation für KI-generierte Inhalte (Charaktere, Gegenstände, Orte, Story-Elemente)
+   - Muss noch durchdacht werden ob das so sinnvoll ist
