@@ -187,3 +187,8 @@ npm run dev
    - Inhalte sollen leicht in die Kampagne verschoben werden können
    - Mögliche Auffangstation für KI-generierte Inhalte (Charaktere, Gegenstände, Orte, Story-Elemente)
    - Muss noch durchdacht werden ob das so sinnvoll ist
+
+6. **Rüstungssystem** (zu besprechen) — Rüstung als eigene Kästchen-Leiste:
+   - Rüstung gibt zusätzliche "Lebenskästchen" (vor den echten Gesundheitskästchen)
+   - Rüstung kann zerstört werden (anders als HP die heilen)
+   - Offen: Wie reagiert Rüstung auf verschiedene Schadensarten? (Brainstorming nötig)
