@@ -223,3 +223,18 @@ npm run dev
    - **Darstellung:** noch offen, muss cyberpunkig sein (keine Herzen!)
    - Ideen: Balken mit Zahl, Hex-Segmente, gestapelte Leisten, Chip-Symbole...
    - Bei bestehenden Farben bleiben!
+
+9. **KI-Chatbots für Gegenstände** — Zwei Typen:
+   - **Einfacher Chatbot** (Bibel, Teddybär, etc.):
+     - Spam-Popups (zufällig + kontextabhängig nach Schaden/Kampf)
+     - Chat-Button am Gegenstand für direktes Gespräch
+     - Sieht Kampf-Status (Initiative) für akkurate Kommentare
+     - *"Beim nächsten Mal weichst du besser aus..."*
+   - **Fortgeschrittener Chatbot** (Decker's Deck):
+     - Eigenes Matrix-Menü im Burgermenü (grün-schwarz)
+     - Zugriff auf eigene Stats, Gegenstände, Infos
+     - **Kann hacken/scannen** — aber Probe erforderlich!
+     - Flow: Deck fragt → Spieler würfelt → Deck reagiert auf Erfolg/Misserfolg
+   - **Persönlichkeit:** Freitext-Feld am Gegenstand
+     - KI-generierte Gegenstände bringen Persönlichkeits-Vorschläge mit
+     - Beispiele: "mürrischer alter Mann", "glaubt er ist ein Gott", "übertrieben hilfsbereit"
