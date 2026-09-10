@@ -188,16 +188,17 @@ npm run dev
    - Mögliche Auffangstation für KI-generierte Inhalte (Charaktere, Gegenstände, Orte, Story-Elemente)
    - Muss noch durchdacht werden ob das so sinnvoll ist
 
-6. **Rüstungssystem** (zu besprechen) — Rüstung als eigene Kästchen-Leiste:
-   - Rüstung gibt zusätzliche "Lebenskästchen" (vor den echten Gesundheitskästchen)
-   - Rüstung kann zerstört werden (anders als HP die heilen)
-   - **Schadens-Popup:** Schnelle Eingabe "3 × Tötlich" statt 3× klicken
-   - **Ein Rechenschritt** statt separatem Soak-Wurf
-   - **Schadenskonvertierung durch Rüstung?**
-     - Unheilbar → Tötlich → Schlag → ???
-   - **Offene Fragen:**
-     - Verschiedene Rüstungstypen = verschiedene Resistenzen?
-     - Biker-Jacke: Schläge gehen durch, schützt gegen Kugeln/Schnitte
-     - Bombenschutz: auch gegen Schläge immun
-     - Beide gehen kaputt wenn man lange genug draufhaut
-     - Wie bildet man das ab? Resistenz pro Schadensart? Schwellenwert?
+6. **Rüstungssystem** (Konzept steht!) — Rüstung als eigene Kästchen-Leiste:
+   - **Zwei Werte pro Rüstung:**
+     - **Kästchen** = wie viel die Rüstung aushält
+     - **Schwelle** = wie viel Schaden IMMER durchgeht (Name evtl. ändern)
+   - **Rüstung wird beschädigt:**
+     - Tötlich/Unheilbar → macht immer Rüstungskästchen kaputt (1:1)
+     - Schlag → macht nur kaputt wenn > doppelte Schwelle
+   - **Je kaputter, desto schlechter:** Schwelle steigt wenn Kästchen sinken
+   - **Schadens-Popup:** Spieler gibt nur "3 × Tötlich" ein, Tool rechnet automatisch:
+     - Was geht an HP (durch die Schwelle)
+     - Was macht Rüstung kaputt
+     - Neue Schwelle nach Beschädigung
+   - **Kumulierte Rüstung:** Helm + Jacke + Hose — Kästchen addieren, Schwelle = niedrigste?
+   - **Offen:** Besserer Name für "Schwelle"? (Durchlass? Lücke? Schutzgrenze?)
