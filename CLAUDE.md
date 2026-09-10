@@ -238,3 +238,8 @@ npm run dev
    - **Persönlichkeit:** Freitext-Feld am Gegenstand
      - KI-generierte Gegenstände bringen Persönlichkeits-Vorschläge mit
      - Beispiele: "mürrischer alter Mann", "glaubt er ist ein Gott", "übertrieben hilfsbereit"
+   - **Sprachausgabe auf Spieler-Tablets!** 🔊
+     - ElevenLabs: Beste Qualität, versteht Stil-Prompts ("klingt wie alter Mann")
+     - Edge TTS: Kostenlos, gute Qualität, viele Stimmen
+     - **Hybrid:** Edge für Standard, ElevenLabs für wichtige Momente
+     - Gegenstände reden WIRKLICH mit den Spielern!
