@@ -191,4 +191,13 @@ npm run dev
 6. **Rüstungssystem** (zu besprechen) — Rüstung als eigene Kästchen-Leiste:
    - Rüstung gibt zusätzliche "Lebenskästchen" (vor den echten Gesundheitskästchen)
    - Rüstung kann zerstört werden (anders als HP die heilen)
-   - Offen: Wie reagiert Rüstung auf verschiedene Schadensarten? (Brainstorming nötig)
+   - **Schadens-Popup:** Schnelle Eingabe "3 × Tötlich" statt 3× klicken
+   - **Ein Rechenschritt** statt separatem Soak-Wurf
+   - **Schadenskonvertierung durch Rüstung?**
+     - Unheilbar → Tötlich → Schlag → ???
+   - **Offene Fragen:**
+     - Verschiedene Rüstungstypen = verschiedene Resistenzen?
+     - Biker-Jacke: Schläge gehen durch, schützt gegen Kugeln/Schnitte
+     - Bombenschutz: auch gegen Schläge immun
+     - Beide gehen kaputt wenn man lange genug draufhaut
+     - Wie bildet man das ab? Resistenz pro Schadensart? Schwellenwert?
