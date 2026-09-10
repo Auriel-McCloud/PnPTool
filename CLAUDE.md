@@ -202,3 +202,15 @@ npm run dev
      - Neue Schwelle nach Beschädigung
    - **Kumulierte Rüstung:** Helm + Jacke + Hose — Kästchen addieren, Schwelle = niedrigste?
    - **Offen:** Besserer Name für "Schwelle"? (Durchlass? Lücke? Schutzgrenze?)
+
+7. **Augment-Preisstufen:**
+   - **Cyberware:** alle Stufen (Hinterhof 500¥ bis Maßanfertigung 20.000¥)
+   - **Bioware & Hexware:** erst ab Klinik (5.000¥+) — kein Hinterhof-Doc kann das!
+   - **Offen — Willenskraft-Overkill:** Was passiert beim totalen Minmaxer?
+     - Basis 2 (Entschlossenheit 1 + Fassung 1)
+     - +10 Freebees → 12
+     - Chrom kaufen bis runter auf 2
+     - +10 EP natürlich → 22
+     - Chrom-Attributboni (Entschl. + Fassung auf 6) → theoretisch 30+?
+     - Aber mehr Chrom = mehr Verlust... Teufelskreis?
+     - Wachsen die Kästchen unendlich? Cap? Überlegen!
