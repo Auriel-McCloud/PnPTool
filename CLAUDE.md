@@ -213,4 +213,13 @@ npm run dev
      - +10 EP natürlich → 22
      - Chrom-Attributboni (Entschl. + Fassung auf 6) → theoretisch 30+?
      - Aber mehr Chrom = mehr Verlust... Teufelskreis?
-     - Wachsen die Kästchen unendlich? Cap? Überlegen!
+     - **Lösung: "Wer soweit kommt, hat's verdient"** — kein Cap!
+
+8. **Kästchen-Overflow-Darstellung** (Willenskraft & Gesundheit):
+   - Problem: Hohe Werte (20+) = zu viele Kästchen, unübersichtlich
+   - **Logik:**
+     - ≤10 Kästchen: normal einzeln anzeigen
+     - >10: in 5er-Gruppen zusammenfassen + Rest
+   - **Darstellung:** noch offen, muss cyberpunkig sein (keine Herzen!)
+   - Ideen: Balken mit Zahl, Hex-Segmente, gestapelte Leisten, Chip-Symbole...
+   - Bei bestehenden Farben bleiben!
