@@ -155,6 +155,16 @@
   font-style: italic;
 }
 
+/* Treffer eintragen — sitzt zwischen den Zustandsleisten, darf sie aber
+   nicht überstrahlen: es ist eine Eingabehilfe, keine Hauptaktion. Deshalb
+   linksbündig und schmal statt über die ganze Spalte. */
+.cb-treffer {
+  justify-self: start;
+  align-self: end;
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
 .cb-initiative {
   display: flex;
   align-items: center;
@@ -212,7 +222,7 @@
   gap: 0 20px;
 }
 
-/* Arete ist der einzige Wert seiner Gruppe. In einem Dreispaltenraster
+/* Hexkraft ist der einzige Wert seiner Gruppe. In einem Dreispaltenraster
    klebt er dadurch links am Rand und wirkt wie vergessen — mittig steht er
    deutlich besser. Und weil neben ihm nichts steht, braucht der Name auch
    nicht neben den Punkten zu kleben: er steht darueber. */

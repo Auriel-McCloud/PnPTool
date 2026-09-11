@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
@@ -9,7 +11,16 @@ from app.items.repository import (
     commlink_cyberwall,
     deck_boni,
     initiative_modifikator,
+    ruestungsteile,
+    set_ablage,
+    update_gegenstand,
     willenskraft_verlust,
+)
+from app.kampf.ruestung import (
+    berechne_treffer,
+    pool,
+    uebersicht as ruestungs_uebersicht,
+    verteile_kaestchenschaden,
 )
 from app.traits import erfahrung, erstellung, repository
 from app.traits.bogen import (
@@ -89,6 +100,10 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         # Zauberstab mit "Springen 3") — eigener Blattabschnitt, siehe
         # CharacterSheetPanel.tsx.
         "ausruestungsfertigkeiten": await ausruestungsfertigkeiten_liste(campaign_id, person_id),
+        # Rüstung als dritte Kästchenreihe neben Gesundheit und Willenskraft
+        # (siehe docs/api/ruestung.md). Kommt fertig gerechnet vom Server,
+        # damit die Pool-Regel nicht im Blatt nachgebaut wird.
+        "ruestung": ruestungs_uebersicht(await ruestungsteile(campaign_id, person_id)),
         "katalog": [t for t in katalog if t["category"] in erlaubt],
         "werte": werte,
     }
@@ -159,6 +174,158 @@ async def set_zustand(
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+
+
+# =====================================================================
+# Rüstungstreffer (Formel: kampf/ruestung.py, Begründung: docs/api/ruestung.md)
+# =====================================================================
+
+# Dieselben drei Begriffe wie überall sonst im Tool (schadenSchlag/Schwer/
+# Aggraviert, Kaestchen.tsx::Schadensart) — am Tisch heissen sie
+# Schlag/Tödlich/Unheilbar, die Übersetzung passiert nur in der Oberfläche.
+RuestungsArt = Literal["schlag", "schwer", "aggraviert"]
+
+_SCHADEN_FELD = {"schlag": "schadenSchlag", "schwer": "schadenSchwer", "aggraviert": "schadenAggraviert"}
+
+
+class RuestungTrefferInput(BaseModel):
+    """Ein Treffer, wie er am Tisch angesagt wird: Art und Stärke.
+
+    Mehr braucht es nicht — die Rüstung wirkt als **ein Pool** (Marks
+    Vorgabe, ausdrücklich ohne Körperzonen), es gibt also nichts zu zielen.
+    Welche Teile der Kästchenschaden aufbraucht, entscheidet die Regel
+    (`ruestung.reihenfolge`: das dichteste zuerst).
+    """
+
+    art: RuestungsArt
+    staerke: int = Field(ge=0)
+
+
+class RuestungsteilFolge(BaseModel):
+    """Was ein einzelnes Rüstungsteil von diesem Treffer abbekommen hat."""
+
+    id: str
+    name: str
+    verlust: int
+    kaestchenNeu: int
+    # Um den eigenen Verlust gestiegen: das Teil ist jetzt löchriger.
+    durchlassNeu: int
+    # Bei 0 Kästchen wirkt es nicht mehr und gilt nicht mehr als
+    # ausgerüstet — es liegt danach im Mitgeführten.
+    zerstoert: bool
+
+
+class RuestungTrefferErgebnis(BaseModel):
+    # Was nach Abstufung/Halbierung tatsächlich angekommen ist — die
+    # Oberfläche soll zeigen können, was sie gerade bewirkt hat, ohne die
+    # Formel nachzubauen.
+    hpArt: RuestungsArt
+    hpMenge: int
+    # Wie viele Kästchen der Pool insgesamt verloren hat, und welche Teile
+    # es getroffen hat (leer = keine wirksame Rüstung, der Schaden kam
+    # ungebremst an).
+    kaestchenSchaden: int = 0
+    betroffen: list[RuestungsteilFolge] = []
+    uebersicht: dict
+
+
+@router.post("/personen/{person_id}/ruestung/treffer", response_model=RuestungTrefferErgebnis)
+async def ruestungstreffer(
+    campaign_id: str,
+    person_id: str,
+    body: RuestungTrefferInput,
+    viewer: Viewer = Depends(get_viewer),
+) -> RuestungTrefferErgebnis:
+    """"3× Tödlich" eintragen — Rüstung und Gesundheit rechnen automatisch mit.
+
+    Der Ablauf aus Marks Konzept: angesagt wird nur, **was** getroffen hat.
+    Alles Getragene wirkt dabei als **ein Pool** (`ruestung.pool`: Kästchen
+    summiert, Durchlass vom dichtesten Teil) — es gibt keine Körperzonen und
+    nichts zu zielen. Diese Route rechnet daraus, was an Kästchen draufgeht,
+    verteilt das auf die Teile (dichtestes zuerst, `verteile_kaestchenschaden`),
+    schreibt deren Durchlass fort und legt zerstörte Teile ins Mitgeführte
+    zurück — und bucht den abgestuften Rest auf die Gesundheit.
+
+    **Ohne wirksame Rüstung** (nichts angelegt, oder alles auf 0 Kästchen)
+    trifft der Schaden ungebremst und unverändert in seiner Art. Das ist
+    kein Fehlerfall: so lässt sich das Popup auch für ungerüstete Charaktere
+    benutzen.
+
+    Fünfte Route, die auch Spieler schreiben dürfen — wie `zustand` nur am
+    eigenen Charakter (404 bei fremden, damit deren Existenz nicht bestätigt
+    wird), und nur Schaden nach oben: die Menge wird **addiert**, nichts
+    überschrieben.
+    """
+    if viewer.role != "GM" and person_id != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    gesamt = pool(await ruestungsteile(campaign_id, person_id))
+    if gesamt is None:
+        # Keine wirksame Rüstung: voller Schaden, unveränderte Art.
+        ergebnis = {"hpArt": body.art, "hpMenge": body.staerke, "kaestchenSchaden": 0}
+        folgen: list[dict] = []
+    else:
+        # Vom Ergebnis gelten hier nur hpArt/hpMenge/kaestchenSchaden — die
+        # Kästchen-/Durchlasswerte darin beziehen sich auf den Pool als
+        # Ganzes, die echten Teile bekommen ihre Werte aus der Verteilung.
+        ergebnis = berechne_treffer(
+            body.art,
+            body.staerke,
+            gesamt["kaestchenAktuell"],
+            gesamt["kaestchenMax"],
+            gesamt["durchlassBasis"],
+            gesamt["durchlassAktuell"],
+        )
+        folgen = verteile_kaestchenschaden(gesamt["geordnet"], ergebnis["kaestchenSchaden"])
+        for folge in folgen:
+            await update_gegenstand(
+                campaign_id,
+                folge["id"],
+                {
+                    "ruestungKaestchenAktuell": folge["kaestchenNeu"],
+                    "ruestungDurchlassAktuell": folge["durchlassNeu"],
+                },
+            )
+            if folge["zerstoert"]:
+                # Zerschossene Rüstung gilt nicht mehr als ausgerüstet
+                # (Marks Vorgabe). Ins Mitgeführte statt in den Mülleimer:
+                # sie bleibt reparierbar — dasselbe Muster wie bei
+                # chirurgisch entferntem Chrom.
+                await set_ablage(campaign_id, folge["id"], "RUCKSACK", None)
+
+    if ergebnis["hpMenge"] > 0:
+        feld = _SCHADEN_FELD[ergebnis["hpArt"]]
+        person = await update_node(
+            "Person",
+            PERSON_FIELDS,
+            campaign_id,
+            person_id,
+            {feld: int(person.get(feld) or 0) + ergebnis["hpMenge"]},
+        )
+
+    einstellungen = await get_einstellungen(campaign_id)
+    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
+    return RuestungTrefferErgebnis(
+        hpArt=ergebnis["hpArt"],
+        hpMenge=ergebnis["hpMenge"],
+        kaestchenSchaden=ergebnis["kaestchenSchaden"],
+        betroffen=[RuestungsteilFolge(**f) for f in folgen],
+        uebersicht=bogen_uebersicht(
+            person,
+            {w["name"]: w["rating"] for w in werte},
+            cyberwall,
+            chrom,
+            init_mod,
+            einstellungen.get("kampagnenEP", 0),
+        ),
+    )
 
 
 # =====================================================================

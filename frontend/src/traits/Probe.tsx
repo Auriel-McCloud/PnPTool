@@ -26,11 +26,11 @@ const SPALTEN: { titel: string; kategorie: string; ton: string }[] = [
 ];
 
 /**
- * Arete geht **nicht** mit Attributen zusammen (Zeilen 81-86). Ein
- * kontrollierter Zauber ist nur der Arete-Wert; dazunehmen lässt sich allein
+ * Hexkraft geht **nicht** mit Attributen zusammen (Zeilen 81-86). Ein
+ * kontrollierter Zauber ist nur der Hexkraft-Wert; dazunehmen lässt sich allein
  * Willenskraft, und das mit Folgen — siehe `magie.ts`.
  */
-const NUR_WILLENSKRAFT = new Set(["Arete", "NeuroWeavingWert", "NeuroWeaving"]);
+const NUR_WILLENSKRAFT = new Set(["Hexkraft", "NeuroWeavingWert", "NeuroWeaving"]);
 
 /**
  * Beim NeuroWeaving treffen zwei Werte aufeinander: der NeuroWeaving-Wert
@@ -73,7 +73,7 @@ export function Probe({
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
-  // Bonuswürfel aus Willenskraft — nur bei Arete und NeuroWeaving.
+  // Bonuswürfel aus Willenskraft — nur bei Hexkraft und NeuroWeaving.
   const [wild, setWild] = useState(0);
   // Genau eine Deck-Aktion — man tut ja eines nach dem anderen.
   const [deck, setDeck] = useState<{ name: string; wert: number } | null>(null);
@@ -84,7 +84,7 @@ export function Probe({
   const nurWillenskraft = NUR_WILLENSKRAFT.has(wahl.kategorie);
   const partnerKategorie = NEURO_PARTNER[wahl.kategorie];
   const roh = wahl.wert + (attribut?.wert ?? 0) + (nurWillenskraft ? wild : 0) + (deck?.wert ?? 0);
-  // Der Deckel gilt nur fürs NeuroWeaving; Arete allein geht bis 10 und
+  // Der Deckel gilt nur fürs NeuroWeaving; Hexkraft allein geht bis 10 und
   // sammelt darüber hinaus nur wilde Würfel.
   const gedeckelt = Boolean(partnerKategorie) && roh > NEUROWEAVING_POOL_MAX;
   const pool = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
@@ -126,19 +126,19 @@ export function Probe({
     );
   }
 
-  // --- Arete und NeuroWeaving: nur Willenskraft dazu --------------------
+  // --- Hexkraft und NeuroWeaving: nur Willenskraft dazu --------------------
   if (nurWillenskraft) {
     return (
       <>
         <Fenster
           offen
           titel={`${wahl.name} ${wahl.wert}`}
-          unterzeile={wahl.kategorie === "Arete" ? "Kontrolliert oder wild?" : "NeuroWeaving"}
+          unterzeile={wahl.kategorie === "Hexkraft" ? "Kontrolliert oder wild?" : "NeuroWeaving"}
           kennung={`probe:${wahl.name}`}
           onSchliessen={schliesseAlles}
         >
           <p className="pr-regel pr-hinweis">
-            {wahl.kategorie === "Arete" ? MAGIE_HINWEISE.areteKontrolliert : MAGIE_HINWEISE.neuroWeaving}
+            {wahl.kategorie === "Hexkraft" ? MAGIE_HINWEISE.hexkraftKontrolliert : MAGIE_HINWEISE.neuroWeaving}
           </p>
 
           {partnerKategorie && (
@@ -184,7 +184,7 @@ export function Probe({
           {willenskraft > 0 ? (
             <section className="pr-wild">
               <h3>Wilde Magie</h3>
-              <p className="pr-regel">{MAGIE_HINWEISE.areteWild}</p>
+              <p className="pr-regel">{MAGIE_HINWEISE.hexkraftWild}</p>
               <div className="pr-wild-reihe">
                 <button type="button" onClick={() => setWild((w) => Math.max(0, w - 1))} disabled={wild === 0}>
                   −
@@ -200,7 +200,7 @@ export function Probe({
                   +
                 </button>
               </div>
-              {wild > 0 && <p className="pr-warnung">{MAGIE_HINWEISE.areteRueckstoss}</p>}
+              {wild > 0 && <p className="pr-warnung">{MAGIE_HINWEISE.hexkraftRueckstoss}</p>}
             </section>
           ) : (
             <p className="pr-regel">Ohne Willenskraft keine wilde Magie.</p>

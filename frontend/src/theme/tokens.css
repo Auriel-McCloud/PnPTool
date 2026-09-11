@@ -119,7 +119,7 @@
   --wert-gesellschaftlich: var(--warn);
   --wert-geistig: var(--kind-person);
   --wert-fertigkeit: var(--neon);
-  --wert-arete: var(--p-violett-hell);
+  --wert-hexkraft: var(--p-violett-hell);
   --wert-sphaere: var(--kind-gegenstand);
   --wert-neuroweaving: var(--gut);
   --wert-hintergrund: var(--text-leise);
@@ -128,6 +128,10 @@
   --track-gesundheit: var(--nein);
   --track-willenskraft: var(--warn);
   --track-ice: var(--p-tuerkis);
+  /* Rüstung ist die vierte Leiste (siehe docs/api/ruestung.md). Bewusst
+     nicht in Gesundheitsrot: sie steht *vor* der Gesundheit, wer sie mit
+     ihr verwechselt, liest den eigenen Zustand falsch. */
+  --track-ruestung: var(--p-koralle);
 
   /* Verwundungsschleier am Bildschirmrand */
   --verwundung: 180 12 40;

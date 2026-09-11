@@ -20,7 +20,7 @@ const REIHENFOLGE = [
   "AttributGesellschaftlich",
   "AttributGeistig",
   "Fertigkeit",
-  "Arete",
+  "Hexkraft",
   "Sphäre",
   "NeuroWeaving",
   // Hintergründe bewusst ausgelassen — die kann nach der Charaktererstellung
@@ -34,7 +34,7 @@ const FAKTOR: Record<string, number> = {
   AttributGeistig: 4,
   Fertigkeit: 2,
   Sphäre: 2,
-  Arete: 4,
+  Hexkraft: 4,
   NeuroWeavingWert: 4,
   NeuroWeaving: 2,
   Hintergrund: 3,
@@ -43,7 +43,7 @@ const FAKTOR: Record<string, number> = {
 const NEU_KOSTEN: Record<string, number> = {
   Fertigkeit: 3,
   Sphäre: 3,
-  Arete: 5,
+  Hexkraft: 5,
   NeuroWeavingWert: 5,
   NeuroWeaving: 3,
   Hintergrund: 3,

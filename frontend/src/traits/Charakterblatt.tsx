@@ -9,6 +9,8 @@ import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen } from "./Kaestchen";
 import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
+import { kampfApi } from "../kampf/api";
+import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
 import "./charakterblatt.css";
 
@@ -18,7 +20,7 @@ const TON: Record<string, string> = {
   AttributGesellschaftlich: "var(--wert-gesellschaftlich)",
   AttributGeistig: "var(--wert-geistig)",
   Fertigkeit: "var(--wert-fertigkeit)",
-  Arete: "var(--wert-arete)",
+  Hexkraft: "var(--wert-hexkraft)",
   Sphäre: "var(--wert-sphaere)",
   NeuroWeavingWert: "var(--wert-neuroweaving)",
   NeuroWeaving: "var(--wert-neuroweaving)",
@@ -35,7 +37,7 @@ const WEG_TITEL: Record<string, string> = {
  *
  * **Nur lesend.** Werte ändert die Spielleitung, später der Level-Up-Modus.
  * Der Aufbau richtet sich nach dem eingeschlagenen Weg: der Katalog kommt
- * bereits gefiltert vom Server, wer kein Magier ist bekommt Sphären und Arete
+ * bereits gefiltert vom Server, wer kein Magier ist bekommt Sphären und Hexkraft
  * also gar nicht erst geliefert.
  */
 export function Charakterblatt({
@@ -72,6 +74,10 @@ export function Charakterblatt({
   // → Würfelzahl). Gewürfelt wird am Tisch, nicht hier.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
+  // Läuft gerade ein Kampf? Nur dann steht die Initiative auf dem Blatt —
+  // ausserhalb des Kampfes ist sie eine Zahl, die niemand braucht.
+  const [imKampf, setImKampf] = useState(false);
+  const [trefferOffen, setTrefferOffen] = useState(false);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -140,9 +146,18 @@ export function Charakterblatt({
   }
 
   function neuLaden() {
-    return bogenApi
-      .laden(campaignId, personId)
-      .then(setBogen)
+    return Promise.all([
+      bogenApi.laden(campaignId, personId),
+      // Die Initiative steht nur im Kampf auf dem Blatt (siehe unten) —
+      // dafür muss es wissen, ob gerade einer läuft. Scheitert die Abfrage,
+      // gilt "kein Kampf": ein fehlender Nebenwert darf das Blatt nicht
+      // verhindern.
+      kampfApi.laden(campaignId).catch(() => null),
+    ])
+      .then(([geladen, kampf]) => {
+        setBogen(geladen);
+        setImKampf(kampf !== null);
+      })
       .catch(() => setFehler("Das Charakterblatt konnte nicht geladen werden."));
   }
 
@@ -342,6 +357,14 @@ export function Charakterblatt({
         </button>
       </header>
 
+      <RuestungsTreffer
+        campaignId={campaignId}
+        personId={personId}
+        offen={trefferOffen}
+        onSchliessen={() => setTrefferOffen(false)}
+        onAngewendet={neuLaden}
+      />
+
       <WillenskraftFrage
         offen={fragtWillenskraft}
         uebrig={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
@@ -425,6 +448,32 @@ export function Charakterblatt({
             onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
           />
         </div>
+        {/* Rüstung steht VOR der Gesundheit in der Wirkung, deshalb direkt
+            unter ihr und über I.C.E. — sie ist das, was zwischen einem
+            Treffer und den Kästchen darüber liegt (docs/api/ruestung.md).
+            Ohne getragene Rüstung mit Kästchen bleibt die Leiste weg: eine
+            Reihe "0/0" ist keine Auskunft. */}
+        {bogen.ruestung.kaestchenMax > 0 && (
+          <div className="cb-spur">
+            <span className="cb-spur-titel">
+              Rüstung
+              <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("ruestung")} titel="Rüstung" />
+              <span className="cb-chrom" title="So viel Schaden kommt so oder so durch — niedriger ist besser">
+                Durchlass {bogen.ruestung.durchlass}
+              </span>
+              {bogen.ruestung.teile.length > 1 && (
+                <span className="cb-hinweis">
+                  {bogen.ruestung.teile.length} Teile · zuerst {bogen.ruestung.teile[0].name}
+                </span>
+              )}
+            </span>
+            <Kaestchen
+              max={bogen.ruestung.kaestchenMax}
+              verbraucht={bogen.ruestung.kaestchenMax - bogen.ruestung.kaestchenAktuell}
+              ton="var(--track-ruestung)"
+            />
+          </div>
+        )}
         <div className="cb-spur">
           <span className="cb-spur-titel">
             I.C.E.
@@ -437,33 +486,48 @@ export function Charakterblatt({
             <Kaestchen max={u.iceMax} verbraucht={u.iceSchaden} ton="var(--track-ice)" />
           )}
         </div>
-        <div className="cb-spur">
-          <span className="cb-spur-titel">
-            Initiative
-            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("initiative")} titel="Initiative" />
-          </span>
-          {/* Die Zahl ist eine Wuerfelmenge, kein Wert — ohne das Symbol
-              liest sich "7" wie eine Initiative von 7. */}
-          <span className="cb-initiative">
-            {u.initiative}
-            <WuerfelZehn groesse={18} />
-            {/* Getrennt ausweisen, sonst sucht man den zusaetzlichen Punkt:
-                "9 (+3 Chrom)" statt einer stillen 9. */}
-            {Boolean(u.initiativeMod) && (
-              <em style={{ fontSize: "0.6em", fontStyle: "normal", color: "var(--text-leise)", marginLeft: 4 }}>
-                ({u.initiativeMod > 0 ? "+" : ""}
-                {u.initiativeMod} Chrom)
-              </em>
-            )}
-          </span>
-        </div>
+        {/* Initiative nur im Kampf: aussderhalb ist sie eine Zahl, die
+            niemand braucht, und sie stand hier bisher dauerhaft im Weg.
+            Gewürfelt wird sie ohnehin erst, wenn die Spielleitung dazu
+            auffordert (siehe mitteilungen/InitiativeMelden.tsx). */}
+        {imKampf && (
+          <div className="cb-spur">
+            <span className="cb-spur-titel">
+              Initiative
+              <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("initiative")} titel="Initiative" />
+            </span>
+            {/* Die Zahl ist eine Wuerfelmenge, kein Wert — ohne das Symbol
+                liest sich "7" wie eine Initiative von 7. */}
+            <span className="cb-initiative">
+              {u.initiative}
+              <WuerfelZehn groesse={18} />
+              {/* Getrennt ausweisen, sonst sucht man den zusaetzlichen Punkt:
+                  "9 (+3 Chrom)" statt einer stillen 9. */}
+              {Boolean(u.initiativeMod) && (
+                <em style={{ fontSize: "0.6em", fontStyle: "normal", color: "var(--text-leise)", marginLeft: 4 }}>
+                  ({u.initiativeMod > 0 ? "+" : ""}
+                  {u.initiativeMod} Chrom)
+                </em>
+              )}
+            </span>
+          </div>
+        )}
+        {/* Treffer eintragen gehört dorthin, wo die Leisten stehen — sonst
+            muss man für jeden Schaden in die Kampfkarte wechseln. Rüstung
+            lässt sich nicht per Klick auf ein Kästchen abhaken wie
+            Gesundheit: was ein Treffer anrichtet, rechnet der Server. */}
+        {aenderbar && (
+          <button type="button" className="cb-treffer" onClick={() => setTrefferOffen(true)}>
+            ⚡ Treffer eintragen
+          </button>
+        )}
       </section>
 
       {/* Gemeinsamer Teil zuerst — so sieht das Blatt für alle gleich aus.
           Was nur Magier oder Neuroweaver haben, kommt darunter. */}
       <div className="cb-attribute">{ATTRIBUT_KATEGORIEN.map(reihe)}</div>
       {reihe("Fertigkeit")}
-      {reihe("Arete")}
+      {reihe("Hexkraft")}
       {reihe("Sphäre")}
       {reihe("NeuroWeaving")}
 
@@ -471,7 +535,7 @@ export function Charakterblatt({
           Abschnitt, weil sie nicht zum Katalog gehören und verschwinden,
           sobald der Gegenstand abgelegt wird. */}
       {bogen.ausruestungsfertigkeiten.length > 0 && (
-        <section className="cb-gruppe" style={{ "--cb-ton": "var(--wert-arete)" } as React.CSSProperties}>
+        <section className="cb-gruppe" style={{ "--cb-ton": "var(--wert-hexkraft)" } as React.CSSProperties}>
           <h3 className="cb-gruppe-titel">Ausrüstungsfertigkeiten</h3>
           <div className="cb-werte">
             {bogen.ausruestungsfertigkeiten.map((f) => (

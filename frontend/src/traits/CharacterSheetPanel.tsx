@@ -198,6 +198,13 @@ export function GegenstandRow({
   const [widerstand, setWiderstand] = useState(item.widerstand);
   const [angriff, setAngriff] = useState(item.angriff);
   const [agilitaet, setAgilitaet] = useState(item.agilitaet);
+  // Rüstung: Kästchen + Durchlass (siehe docs/api/ruestung.md). Nur die
+  // Ausgangswerte (Max/Basis) sind hier editierbar — der aktuelle
+  // Beschädigungszustand ändert sich über Treffer in der Kampfkarte, nicht
+  // im Bearbeiten-Formular (genau wie die Gesundheit einer Person nicht hier
+  // eingetragen wird).
+  const [ruestungKaestchenMax, setRuestungKaestchenMax] = useState(item.ruestungKaestchenMax);
+  const [ruestungDurchlassBasis, setRuestungDurchlassBasis] = useState(item.ruestungDurchlassBasis);
   const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -284,6 +291,8 @@ export function GegenstandRow({
     setWiderstand(item.widerstand);
     setAngriff(item.angriff);
     setAgilitaet(item.agilitaet);
+    setRuestungKaestchenMax(item.ruestungKaestchenMax);
+    setRuestungDurchlassBasis(item.ruestungDurchlassBasis);
     setAblageZiel(item.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
@@ -341,6 +350,8 @@ export function GegenstandRow({
       widerstand,
       angriff,
       agilitaet,
+      ruestungKaestchenMax,
+      ruestungDurchlassBasis,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -687,6 +698,46 @@ export function GegenstandRow({
             <div>
               <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
             </div>
+          </div>
+        )}
+
+        {typ === "Rüstung" && (
+          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+              Kästchen + Durchlass (löst den Rüstungsbonus oben ab, siehe docs/api/ruestung.md):
+              <strong> Kästchen</strong> = wie viel die Rüstung aushält, bevor sie reißt.{" "}
+              <strong>Durchlass</strong> = wie groß ihre Lücke im Neuzustand ist — niedriger ist
+              besser, 0 heißt hermetisch dicht.
+            </label>
+            <div style={{ display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Kästchen (max)
+                <input
+                  type="number"
+                  min={0}
+                  value={ruestungKaestchenMax}
+                  onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
+                  style={{ width: 70 }}
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                Durchlass (Basis)
+                <input
+                  type="number"
+                  min={0}
+                  value={ruestungDurchlassBasis}
+                  onChange={(e) => setRuestungDurchlassBasis(Math.max(0, Number(e.target.value)))}
+                  style={{ width: 70 }}
+                />
+              </label>
+            </div>
+            {item.ruestungKaestchenMax > 0 && (
+              <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
+                Aktuell: <strong>{item.ruestungKaestchenAktuell}/{item.ruestungKaestchenMax}</strong> Kästchen,
+                Durchlass <strong>{item.ruestungDurchlassAktuell}</strong>. Ändert sich über Treffer in der
+                Kampfkarte, nicht hier — wie bei der Gesundheit einer Person.
+              </p>
+            )}
           </div>
         )}
 

@@ -21,12 +21,17 @@ ALLE_KATEGORIEN = {
 
 
 class TestAbgeleiteteWerte:
-    def test_gesundheit_ist_fuenf_plus_widerstand(self):
-        assert gesundheit_max({"Widerstandsfähigkeit": 3}) == 8
+    def test_gesundheit_ist_sechs_plus_widerstand(self):
+        assert gesundheit_max({"Widerstandsfähigkeit": 3}) == 9
 
     def test_gesundheit_ohne_gesetztes_attribut(self):
         """Ein frischer Charakter hat trotzdem die Grundgesundheit."""
-        assert gesundheit_max({}) == 5
+        assert gesundheit_max({}) == 6
+
+    def test_natuerliches_maximum_ist_zwoelf(self):
+        """Widerstandsfähigkeit geht bis 6 (traits/seed.py) — daraus die
+        runde 12, wegen der der Grundwert von 5 auf 6 gehoben wurde."""
+        assert gesundheit_max({"Widerstandsfähigkeit": 6}) == 12
 
     def test_willenskraft_ist_entschlossenheit_plus_fassung(self):
         assert willenskraft_max({"Entschlossenheit": 3, "Fassung": 2}) == 5
@@ -67,7 +72,7 @@ class TestUebersicht:
         """Sinkt ein Attribut, darf der Schaden nicht über die Grenze ragen."""
         person = {"schadenSchlag": 99, "willenskraftVerbraucht": 99}
         u = bogen_uebersicht(person, {"Widerstandsfähigkeit": 2, "Entschlossenheit": 1, "Fassung": 1})
-        assert u["gesundheitSchaden"] == u["gesundheitMax"] == 7
+        assert u["gesundheitSchaden"] == u["gesundheitMax"] == 8
         assert u["willenskraftVerbraucht"] == u["willenskraftMax"] == 2
 
     def test_verfuegbare_erfahrung_ist_gesamt_minus_ausgegeben(self):
@@ -82,7 +87,7 @@ class TestUebersicht:
     def test_leere_person_ergibt_brauchbare_werte(self):
         u = bogen_uebersicht({}, {})
         assert u["weg"] == "KEINER"
-        assert u["gesundheitMax"] == 5
+        assert u["gesundheitMax"] == 6
         assert u["willenskraftMax"] == 0
 
 
@@ -132,20 +137,21 @@ class TestSchadensarten:
         assert u["gesundheitSchaden"] == 4
 
     def test_ueberzaehliger_schaden_kuerzt_beim_leichtesten(self):
-        """Bei 5 Kaestchen und 4+3+2 bleibt der schwere Schaden stehen."""
+        """Bei 6 Kaestchen und 4+3+2 bleiben aggravierter und schwerer
+        Schaden stehen, gekuerzt wird allein der Schlagschaden (4 -> 1)."""
         u = bogen_uebersicht(
             {"schadenSchlag": 4, "schadenSchwer": 3, "schadenAggraviert": 2},
-            {},  # Gesundheit 5
+            {},  # Gesundheit 6
         )
-        assert u["gesundheitMax"] == 5
+        assert u["gesundheitMax"] == 6
         assert u["schadenAggraviert"] == 2
         assert u["schadenSchwer"] == 3
-        assert u["schadenSchlag"] == 0
-        assert u["gesundheitSchaden"] == 5
+        assert u["schadenSchlag"] == 1
+        assert u["gesundheitSchaden"] == 6
 
     def test_aggravierter_schaden_allein_kann_voll_ausfuellen(self):
         u = bogen_uebersicht({"schadenAggraviert": 99}, {"Widerstandsfähigkeit": 1})
-        assert u["schadenAggraviert"] == u["gesundheitMax"] == 6
+        assert u["schadenAggraviert"] == u["gesundheitMax"] == 7
 
     def test_negative_werte_werden_ignoriert(self):
         u = bogen_uebersicht({"schadenSchlag": -3}, {})

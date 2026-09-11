@@ -67,14 +67,37 @@ export interface Gegenstand {
   ablageZielId: string | null;
   ablageZielName: string | null;
   ablageZielKind: string | null;
+  /**
+   * Rüstung: Kästchen + Durchlass statt eines flachen Bonus — siehe
+   * docs/api/ruestung.md für die vollständige Begründung. 0 = dieses Stück
+   * nutzt das System nicht (Bestandsdaten oder Nicht-Rüstung).
+   *
+   * **Max**: Ausgangswert des Gegenstands ("wie robust gebaut").
+   * **Aktuell**: sinkt mit jedem Treffer, der die Rüstung beschädigt.
+   */
+  ruestungKaestchenMax: number;
+  ruestungKaestchenAktuell: number;
+  /**
+   * **Basis**: Ausgangs-Durchlass ("wie löchrig von Haus aus" — niedriger
+   * ist besser, 0 = dicht). **Aktuell**: steigt mit jedem Treffer, der die
+   * Rüstung beschädigt — bestimmt, wie viel beim NÄCHSTEN Treffer garantiert
+   * durchgeht.
+   */
+  ruestungDurchlassBasis: number;
+  ruestungDurchlassAktuell: number;
 }
 
 export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
 
-/** Reihenfolge und Beschriftung der Ablagen — von "am Körper" nach "weit weg". */
+/** Reihenfolge und Beschriftung der Ablagen — von "am Körper" nach "weit weg".
+ *
+ * `RUCKSACK` heisst hier **"Mitgeführt"** und nicht "Rucksack": der Zustand
+ * setzt keinen Rucksack voraus, man trägt Dinge auch am Gürtel oder in der
+ * Hand. Trägt jemand tatsächlich einen Behälter, benennt die Spielersicht
+ * den Bereich nach ihm (siehe items/aufbewahrung.ts::ermittleBereiche). */
 export const ABLAGEN: { wert: Ablage; label: string; symbol: string }[] = [
   { wert: "AUSGERUESTET", label: "Ausgerüstet", symbol: "⚔" },
-  { wert: "RUCKSACK", label: "Rucksack", symbol: "🎒" },
+  { wert: "RUCKSACK", label: "Mitgeführt", symbol: "🎒" },
   { wert: "GELAGERT", label: "Gelagert", symbol: "⌂" },
 ];
 
@@ -117,6 +140,11 @@ export interface AblageZiel {
   name: string;
   kind: string;
 }
+
+/** Deckt sich mit Kaestchen.tsx::Schadensart und den drei schadenXY-Feldern
+ * der Person — siehe backend/app/kampf/ruestung.py. Der Treffer selbst hängt
+ * an der Person, nicht am Gegenstand: siehe bogenApi.ruestungTreffer. */
+export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
 
 export interface GegenstandMitBesitzer extends Gegenstand {
   // Vorlagen haben keinen Besitzer (siehe VORLAGE_SENTINEL) — daher nullable.
@@ -181,6 +209,10 @@ export interface GegenstandUpdate {
   schaden?: number;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
+  ruestungKaestchenMax?: number;
+  ruestungKaestchenAktuell?: number;
+  ruestungDurchlassBasis?: number;
+  ruestungDurchlassAktuell?: number;
 }
 
 type NeuerGegenstand = {
@@ -234,6 +266,9 @@ export const itemsApi = {
     api.get<Gegenstand[]>(`/api/campaigns/${cid}/gegenstaende/verbaut/${personId}`),
   setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
     api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
+  /** Kästchen auffüllen und den Durchlass symmetrisch senken. Nur SL. */
+  ruestungReparieren: (cid: string, itemId: string, kaestchen: number) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/ruestung/reparieren`, { kaestchen }),
   traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),
   ablageziele: (cid: string, itemId: string) =>
     api.get<AblageZiel[]>(`${campaignBase(cid)}/${itemId}/ablageziele`),

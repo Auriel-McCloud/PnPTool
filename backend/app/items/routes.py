@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
@@ -20,6 +20,7 @@ from app.items.schemas import (
     GegenstandUpdate,
     ZuweisenRequest,
 )
+from app.kampf.ruestung import repariere
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -114,6 +115,13 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "zusatzaktionen": body.zusatzaktionen,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
+        # Rüstung: Kästchen + Durchlass (siehe kampf/ruestung.py). Aktuell
+        # bleibt hier ausdrücklich None, wenn nicht angegeben — das Repository
+        # setzt es dann auf Max/Basis (frisches Stück = unbeschädigt).
+        "ruestungKaestchenMax": body.ruestungKaestchenMax,
+        "ruestungKaestchenAktuell": body.ruestungKaestchenAktuell,
+        "ruestungDurchlassBasis": body.ruestungDurchlassBasis,
+        "ruestungDurchlassAktuell": body.ruestungDurchlassAktuell,
     }
 
 
@@ -362,6 +370,22 @@ async def ablage_aendern(
             "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
         )
 
+    # Zerschossene Rüstung lässt sich nicht wieder anlegen: mit 0 Kästchen
+    # trägt sie nichts zum Pool bei und schützt auch nicht (siehe
+    # docs/api/ruestung.md). Ohne diese Prüfung könnte man sie endlos wieder
+    # anziehen und würde rätseln, warum der Rüstungsbalken nicht steigt.
+    if (
+        body.ablage == "AUSGERUESTET"
+        and aktuelles
+        and aktuelles["typ"] == "Rüstung"
+        and aktuelles["ruestungKaestchenMax"] > 0
+        and aktuelles["ruestungKaestchenAktuell"] <= 0
+    ):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Zerschossene Rüstung schützt nicht — sie muss erst repariert werden",
+        )
+
     # Slot-Kollision nur prüfen, wenn ausgerüstet wird UND das Stück
     # überhaupt einen festen Platz hat (Chrom-/Bio-/Hexware mit Zone+Slot).
     # Alles andere (Waffen, Kleidung, ...) hat keine Zone und blockiert nichts.
@@ -557,3 +581,58 @@ async def verbautes_chrom(campaign_id: str, person_id: str, viewer: Viewer = Dep
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
     return await repository.verbautes_chrom(campaign_id, person_id)
+
+
+# =====================================================================
+# Rüstung: Kästchen + Durchlass (siehe kampf/ruestung.py für die Formel,
+# docs/api/ruestung.md für die ausführliche Begründung)
+#
+# Der Treffer selbst sitzt bewusst NICHT hier, sondern bei der Person
+# (traits/routes.py: .../personen/{person_id}/ruestung/treffer) — getroffen
+# wird eine Person, und ihre Rüstung wirkt als ein Pool: welche Teile der
+# Kästchenschaden aufbraucht, ist eine Regelfrage (`ruestung.reihenfolge`)
+# und keine Angabe des Aufrufers. Reparieren dagegen betrifft immer ein
+# bestimmtes Stück und bleibt deshalb hier am Gegenstand.
+# =====================================================================
+
+
+class RuestungReparierenRequest(BaseModel):
+    """Wie viele Kästchen die Reparatur wiederherstellt.
+
+    Nimmt bewusst nur das Ergebnis entgegen, keine Probe — die Hardware-Skill-
+    Probe bzw. der Händlerpreis dafür sind noch nicht gebaut (siehe
+    docs/api/ruestung.md, "Was noch fehlt"). Bis dahin trägt die SL das
+    Ergebnis von Hand ein.
+    """
+
+    kaestchen: int = Field(ge=0)
+
+
+@campaign_router.post(
+    "/{item_id}/ruestung/reparieren", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)]
+)
+async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungReparierenRequest):
+    """Kästchen auffüllen und den Durchlass symmetrisch senken (Mark:
+    "Reparatur senkt auch die Schwelle"). **Nur SL** — wie jede Vergabe von
+    Ressourcen ohne Gegenprobe im Tool (vgl. Erfahrung vergeben)."""
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+
+    ergebnis = repariere(
+        item["ruestungKaestchenAktuell"],
+        item["ruestungKaestchenMax"],
+        item["ruestungDurchlassBasis"],
+        item["ruestungDurchlassAktuell"],
+        body.kaestchen,
+    )
+    aktualisiert = await repository.update_gegenstand(
+        campaign_id,
+        item_id,
+        {"ruestungKaestchenAktuell": ergebnis["kaestchenNeu"], "ruestungDurchlassAktuell": ergebnis["durchlassNeu"]},
+    )
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reparatur fehlgeschlagen")
+    return aktualisiert

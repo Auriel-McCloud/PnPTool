@@ -33,7 +33,7 @@ class PersonCreate(BaseModel):
     rasse: str = ""
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
-    # (Gesundheit = 5 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
+    # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
     # + Fassung) und wird berechnet, nicht gespeichert.
     # Schaden nach Art getrennt — Schlagschaden "/", schwerer "X",
     # aggravierter als durchgestrichenes X.

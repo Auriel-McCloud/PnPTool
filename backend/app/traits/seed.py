@@ -110,3 +110,62 @@ async def seed_traits() -> None:
                 defaultMax=default_max,
                 sortOrder=sort_order,
             )
+
+        await _migriere_arete_zu_hexkraft(session)
+
+
+# Alte Kennung aus der Zeit, als der Magiewert "Arete" hiess.
+_ALT_ARETE_ID = "neotopia:Arete:Arete"
+_HEXKRAFT_ID = "neotopia:Hexkraft:Hexkraft"
+
+
+async def _migriere_arete_zu_hexkraft(session) -> None:
+    """Einmalige Datenkorrektur: aus "Arete" wurde "Hexkraft".
+
+    **Warum es diese Migration überhaupt braucht:** die TraitDef-Kennung ist
+    `ruleset:category:name` (siehe oben). Beim Umbenennen im Katalog änderte
+    sich damit auch die Kennung — `MERGE` legte also einen *neuen*, leeren
+    Knoten `Hexkraft` an, während der alte `Arete`-Knoten mit allen daran
+    hängenden Charakterwerten (`HAS_TRAIT`, dort liegt das `rating`) stehen
+    blieb. Ergebnis vor dieser Korrektur: das Charakterblatt zeigte die alte
+    Arete-Zeile mit den echten Punkten, die Kampfkarte den neuen, leeren
+    Hexkraft-Wert — und weil "Arete" für `bogen.sichtbare_kategorien` keine
+    Magie-Kategorie mehr ist, sah plötzlich *jeder* Charakter die Zeile.
+
+    Hängt die Werte deshalb auf den Hexkraft-Knoten um und räumt den alten
+    weg. Idempotent: nach dem ersten Lauf gibt es keinen Arete-Knoten mehr,
+    danach tut sie nichts.
+
+    Ist am Zielwert schon etwas eingetragen (jemand hat nach einem Neustart
+    bereits Hexkraft gesetzt), bleibt der neuere Wert stehen — überschrieben
+    wird nur eine noch leere 0.
+    """
+    ergebnis = await session.run(
+        """
+        MATCH (alt:TraitDef {id: $alt_id})
+        MATCH (n)-[h:HAS_TRAIT]->(alt)
+        MATCH (neu:TraitDef {id: $neu_id})
+        MERGE (n)-[nh:HAS_TRAIT]->(neu)
+          ON CREATE SET nh.rating = h.rating, nh.maxOverride = h.maxOverride
+          ON MATCH SET nh.rating = CASE WHEN coalesce(nh.rating, 0) = 0 THEN h.rating ELSE nh.rating END
+        DELETE h
+        RETURN count(*) AS umgehaengt
+        """,
+        alt_id=_ALT_ARETE_ID,
+        neu_id=_HEXKRAFT_ID,
+    )
+    datensatz = await ergebnis.single()
+    umgehaengt = datensatz["umgehaengt"] if datensatz else 0
+
+    # Erst wenn nichts mehr daran hängt — so kann die Migration niemals
+    # Charakterwerte mitnehmen, auch wenn oben etwas schiefgegangen wäre.
+    await session.run(
+        """
+        MATCH (alt:TraitDef {id: $alt_id})
+        WHERE NOT ()-[:HAS_TRAIT]->(alt)
+        DELETE alt
+        """,
+        alt_id=_ALT_ARETE_ID,
+    )
+    if umgehaengt:
+        print(f"[seed] Arete → Hexkraft: {umgehaengt} Charakterwert(e) umgehängt")

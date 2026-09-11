@@ -43,7 +43,7 @@ const TON: Record<string, string> = {
   AttributGesellschaftlich: "var(--wert-gesellschaftlich)",
   AttributGeistig: "var(--wert-geistig)",
   Fertigkeit: "var(--wert-fertigkeit)",
-  Arete: "var(--wert-arete)",
+  Hexkraft: "var(--wert-hexkraft)",
   Sphäre: "var(--wert-sphaere)",
   NeuroWeavingWert: "var(--wert-neuroweaving)",
   NeuroWeaving: "var(--wert-neuroweaving)",
@@ -102,7 +102,7 @@ export function Charaktererstellung({
 
   /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl. */
   const wegKategorien = useMemo(() => {
-    if (weg === "MAGIER") return new Set(["Fertigkeit", "Arete", "Sphäre"]);
+    if (weg === "MAGIER") return new Set(["Fertigkeit", "Hexkraft", "Sphäre"]);
     if (weg === "NEUROWEAVER") return new Set(["Fertigkeit", "NeuroWeavingWert", "NeuroWeaving"]);
     return new Set(["Fertigkeit"]);
   }, [weg]);
@@ -589,7 +589,7 @@ function SchrittFertigkeiten({
     (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
-  const gruppenFolge = ["Fertigkeit", "Arete", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
+  const gruppenFolge = ["Fertigkeit", "Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
 
   return (
     <div>
@@ -628,8 +628,8 @@ function SchrittFertigkeiten({
           </div>
           <p className="er-hinweis">
             {vergeben} von {gewaehlt.anzahl} Fertigkeiten gesetzt.
-            {(gruppen.Arete || gruppen.Sphäre || gruppen.NeuroWeaving) &&
-              " Arete, Sphären und NeuroWeaving zählen dabei mit."}
+            {(gruppen.Hexkraft || gruppen.Sphäre || gruppen.NeuroWeaving) &&
+              " Hexkraft, Sphären und NeuroWeaving zählen dabei mit."}
           </p>
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
             Fertigkeiten wählen
@@ -772,7 +772,7 @@ function SchrittFreebees({
   const folge = [
     ...regeln.attributKategorien.map((k) => k.id),
     "Fertigkeit",
-    "Arete",
+    "Hexkraft",
     "Sphäre",
     "NeuroWeaving",
     "Hintergrund",

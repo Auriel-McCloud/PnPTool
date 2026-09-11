@@ -7,8 +7,11 @@ Rundenbasiertes Kampfsystem mit Initiative-Verwaltung.
 Wenn es in NeotopiA zur Sache geht, wechselt das Spiel in den **Kampfmodus**:
 Rundenbasiert, mit Initiative-Reihenfolge und Zustandsverfolgung.
 
-**Nicht simuliert:** Würfelergebnisse, Schadenberechnung, Regelwerk. Das bleibt
-am Tisch — das Tool verwaltet nur *wer wann dran ist* und *was auf dem Feld steht*.
+**Nicht simuliert:** Würfelergebnisse, Regelwerk. Das bleibt am Tisch — das
+Tool verwaltet nur *wer wann dran ist* und *was auf dem Feld steht*.
+**Ausnahme:** Rüstungsschaden wird sehr wohl gerechnet, siehe
+[Rüstung](./ruestung.md) — dort ist die Formel komplex genug (Abnutzung,
+Abstufung), dass "am Tisch nachrechnen" fehleranfällig wäre.
 
 ---
 

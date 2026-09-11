@@ -3,6 +3,7 @@ import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { RuestungsTreffer } from "./RuestungsTreffer";
 import { Kaestchen } from "../traits/Kaestchen";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
@@ -66,6 +67,7 @@ export function Kampfkarte({
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   const [erklaertRuestung, setErklaertRuestung] = useState(false);
+  const [trefferOffen, setTrefferOffen] = useState(false);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -84,9 +86,21 @@ export function Kampfkarte({
 
   const ausgeruestet = useMemo(() => sachen.filter((g) => g.ablage === "AUSGERUESTET"), [sachen]);
   const waffen = ausgeruestet.filter((g) => g.typ === "Waffe");
-  const ruestung = ausgeruestet
-    .filter((g) => g.typ === "Rüstung")
-    .reduce((summe, g) => summe + g.kraft, 0);
+  const ruestungsteile = ausgeruestet.filter((g) => g.typ === "Rüstung");
+  const ruestung = ruestungsteile.reduce((summe, g) => summe + g.kraft, 0);
+  // Nur Teile, die das Kästchen-/Durchlass-System tatsächlich nutzen (siehe
+  // docs/api/ruestung.md) — der alte flache Bonus bleibt daneben bestehen,
+  // falls noch jemand nur den trägt. Zerstörte Teile stehen hier nicht mehr:
+  // sie werden beim Treffer selbst aus der Ausrüstung genommen.
+  const kaestchenTeile = ruestungsteile.filter((g) => g.ruestungKaestchenMax > 0);
+  // Der Pool, wie ihn der Server rechnet: Kästchen summiert, Durchlass vom
+  // dichtesten Teil. Reine Anzeige — gerechnet wird serverseitig, damit die
+  // Formel nur an einer Stelle steht.
+  const kaestchenAktuell = kaestchenTeile.reduce((s, g) => s + g.ruestungKaestchenAktuell, 0);
+  const kaestchenMax = kaestchenTeile.reduce((s, g) => s + g.ruestungKaestchenMax, 0);
+  const poolDurchlass = kaestchenTeile.length
+    ? Math.min(...kaestchenTeile.map((g) => g.ruestungDurchlassAktuell))
+    : 0;
   const fahrzeuge = sachen.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
 
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
@@ -184,13 +198,33 @@ export function Kampfkarte({
       <section className="kk-block">
         <h3>Schutz und Schaden</h3>
         <div className="kk-werte">
-          <Zahl
-            titel="Rüstung"
-            wert={ruestung}
-            hinweis="Antippen: wie Schaden abgefangen wird"
-            onKlick={() => setErklaertRuestung(true)}
-          />
+          {ruestung > 0 && (
+            <Zahl
+              titel="Rüstungsbonus"
+              wert={ruestung}
+              hinweis="Antippen: wie Schaden abgefangen wird (alter, flacher Bonus)"
+              onKlick={() => setErklaertRuestung(true)}
+            />
+          )}
         </div>
+        {kaestchenTeile.length > 0 && (
+          <div className="kk-spur">
+            <span className="kk-titel">Rüstung</span>
+            <Kaestchen max={kaestchenMax} verbraucht={kaestchenMax - kaestchenAktuell} ton="var(--wert-koerperlich)" />
+            <span className="kk-hinweis">
+              Durchlass {poolDurchlass} — so viel kommt so oder so durch
+              {kaestchenTeile.length > 1 && ` · ${kaestchenTeile.length} Teile, aufgebraucht wird das dichteste zuerst`}
+            </span>
+          </div>
+        )}
+        {/* Auch ohne Rüstung sinnvoll: dann kommt der Treffer eben ungebremst
+            an, und die Rechnung "was geht an die Gesundheit" spart man sich
+            trotzdem. */}
+        {aenderbar && (
+          <button type="button" onClick={() => setTrefferOffen(true)} style={{ marginTop: 6 }}>
+            ⚡ Treffer eintragen
+          </button>
+        )}
         {waffen.length === 0 ? (
           <p className="kk-leer">Nichts ausgerüstet.</p>
         ) : (
@@ -358,6 +392,14 @@ export function Kampfkarte({
           Widerstandsfähigkeit doch mitspielen soll, fehlt die Zahl hier noch.
         </p>
       </Fenster>
+
+      <RuestungsTreffer
+        campaignId={campaignId}
+        personId={personId}
+        offen={trefferOffen}
+        onSchliessen={() => setTrefferOffen(false)}
+        onAngewendet={laden}
+      />
 
       <WillenskraftFrage
         offen={fragtWillenskraft}

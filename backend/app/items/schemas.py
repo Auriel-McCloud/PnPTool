@@ -10,6 +10,10 @@ class GegenstandCreate(BaseModel):
     preis: int = 0
     # Punkte-Bonus (0-7, wie Waffenschaden/Rüstungsbonus im Regeln-Sheet),
     # nur relevant wenn typ Waffe/Rüstung ist, aber generisch gespeichert.
+    # Für Rüstung: alter, flacher Soak-Wert (Regelblatt Zeile 66-67/76). Bleibt
+    # aus Kompatibilitätsgründen bestehen; Rüstung mit ruestungKaestchenMax > 0
+    # nutzt stattdessen das Kästchen-/Durchlass-System (siehe unten und
+    # docs/api/ruestung.md), das den flachen Bonus fachlich ablöst.
     kraft: int = 0
     # Cyberwall eines Commlinks: bestimmt die Matrix-Verteidigung (I.C.E.)
     # seines Trägers. Nur bei typ "Commlink" von Belang. 200¥ je Punkt bis 5,
@@ -130,6 +134,22 @@ class GegenstandCreate(BaseModel):
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
+    # Rüstung: Kästchen + Durchlass statt eines flachen Bonus (siehe
+    # kampf/ruestung.py für die vollständige Herleitung, docs/api/ruestung.md
+    # für die ausführliche Begründung). 0 = dieses Stück nutzt das System
+    # nicht (z.B. Bestandsdaten oder alle Nicht-Rüstungsgegenstände).
+    #
+    # Max ist der Ausgangswert des Gegenstands ("wie robust ist die Rüstung
+    # gebaut"). Aktuell defaultet beim Anlegen auf Max (frisches Stück ist
+    # unbeschädigt) — None statt einer festen Zahl, damit "nicht angegeben"
+    # von "ausdrücklich beschädigt angelegt" unterscheidbar bleibt.
+    ruestungKaestchenMax: int = 0
+    ruestungKaestchenAktuell: int | None = None
+    # Basis ist der Ausgangs-Durchlass des Gegenstands ("wie löchrig ist er
+    # von Haus aus" — niedriger ist besser, 0 = dicht). Aktuell defaultet
+    # ebenso auf Basis.
+    ruestungDurchlassBasis: int = 0
+    ruestungDurchlassAktuell: int | None = None
 
 
 class GegenstandUpdate(BaseModel):
@@ -179,6 +199,10 @@ class GegenstandUpdate(BaseModel):
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
+    ruestungKaestchenMax: int | None = None
+    ruestungKaestchenAktuell: int | None = None
+    ruestungDurchlassBasis: int | None = None
+    ruestungDurchlassAktuell: int | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -256,6 +280,12 @@ class GegenstandResponse(BaseModel):
     ablageZielId: str | None = None
     ablageZielName: str | None = None
     ablageZielKind: str | None = None
+    # Rüstung: Kästchen + Durchlass. 0/0 = dieses Stück nutzt das System nicht
+    # (siehe GegenstandCreate für die Bedeutung der einzelnen Felder).
+    ruestungKaestchenMax: int = 0
+    ruestungKaestchenAktuell: int = 0
+    ruestungDurchlassBasis: int = 0
+    ruestungDurchlassAktuell: int = 0
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

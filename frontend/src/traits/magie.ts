@@ -34,8 +34,8 @@ export const SPHAEREN: Record<string, string> = {
 /**
  * Wie viele Würfel eine Probe hergibt und was sie kostet.
  *
- * **Arete** (Zeilen 81-86): Ein *kontrollierter* Zauber ist nur der
- * Arete-Wert. Wer mehr will, nimmt **Wilde Magie**: Bonuswürfel bis zur Höhe
+ * **Hexkraft** (Zeilen 81-86): Ein *kontrollierter* Zauber ist nur der
+ * Hexkraft-Wert. Wer mehr will, nimmt **Wilde Magie**: Bonuswürfel bis zur Höhe
  * der eigenen Willenskraft. Dafür muss vorher ein **Zielwert** an Erfolgen
  * angesagt werden — wird er unterschritten, ist die Probe gescheitert. Nach
  * einem gelungenen wilden Zauber folgt ein Willenskraftwurf gegen die Zahl
@@ -46,23 +46,23 @@ export const SPHAEREN: Record<string, string> = {
  * die Magie greift und wie groß es sein darf — keine Bonuswürfel.
  *
  * **NeuroWeaving** (Zeilen 45/95/96): dieselben Willenskraft-Regeln wie
- * Arete, aber die Punkte gelten als **Bonuswürfel für die jeweilige Aktion**,
+ * Hexkraft, aber die Punkte gelten als **Bonuswürfel für die jeweilige Aktion**,
  * nicht als Begrenzung. Ein Neuroweaver darf auch Fertigkeiten einsetzen, in
  * denen er keine Punkte hat.
  */
 export const MAGIE_HINWEISE = {
-  areteKontrolliert:
-    "Ein kontrollierter Zauber ist nur der Arete-Wert. Erfolge kannst du in Wucht oder in Dauer stecken.",
-  areteWild:
+  hexkraftKontrolliert:
+    "Ein kontrollierter Zauber ist nur der Hexkraft-Wert. Erfolge kannst du in Wucht oder in Dauer stecken.",
+  hexkraftWild:
     "Wilde Magie: Bonuswürfel bis zur Höhe deiner Willenskraft. Sag vorher einen Zielwert an — " +
     "wird er unterschritten, ist die Probe gescheitert.",
-  areteRueckstoss:
+  hexkraftRueckstoss:
     "Nach einem gelungenen wilden Zauber: Willenskraftwurf gegen die Zahl der Erfolge. Was die " +
     "Willenskraft nicht abdeckt, bekommst du als Schlagschaden. Erfolge genau auf dem Zielwert " +
     "kosten nichts.",
   sphaereNichtWuerfeln:
     "Auf Sphären wird nicht gewürfelt. Sie zeigen, woran deine Magie greift und wie groß es sein darf — " +
-    "gewürfelt wird Arete.",
+    "gewürfelt wird Hexkraft.",
   neuroWeaving:
     "NeuroWeaving-Punkte sind Bonuswürfel für die jeweilige Aktion, keine Begrenzung. Du darfst auch " +
     "Fertigkeiten einsetzen, in denen du keine Punkte hast.",
@@ -72,7 +72,7 @@ export const MAGIE_HINWEISE = {
  * Obergrenze für den NeuroWeaving-Pool.
  *
  * Marks Vorgabe (30.08.2026): **NeuroWeaving-Wert + Fertigkeit ergeben
- * höchstens 10.** Anders als bei Arete, wo der Wert allein bis 10 geht,
+ * höchstens 10.** Anders als bei Hexkraft, wo der Wert allein bis 10 geht,
  * treffen hier zwei Werte aufeinander — ohne Deckel käme man auf 15.
  *
  * Bewusst ein Deckel auf dem *Pool*, nicht auf den Werten selbst: die Werte

@@ -22,11 +22,15 @@ Aus `docs/reference/Neotopia.xlsx` herausgezogen (Blätter *Charakterblatt* und 
 
 ## Abgeleitete Werte — nicht frei gesetzt
 
-- **Gesundheit = 5 + Widerstandsfähigkeit**
+- **Gesundheit = 6 + Widerstandsfähigkeit** (Mark, 10.09.2026: von 5 auf 6
+  erhöht — Widerstandsfähigkeit geht bis 6, das ergibt 12 statt 11 Kästchen
+  als natürliches Maximum, mit Chrom 18 statt 17)
 - **Willenskraft = Entschlossenheit + Fassung**
 - **Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator**
 
 Auf dem Blatt sind Gesundheit, I.C.E., Hexkraft/NeuroWeaving und Willenskraft **Kästchenreihen** (10 Kästchen, 5+5), keine Punktereihen. Der abgeleitete Wert bestimmt, wie viele davon zählen; abgehakt wird Schaden bzw. Verbrauch.
+
+**Über die zehn gedruckten Kästchen hinaus:** Gesundheit erreicht natürlich schon 12 (6 + Widerstandsfähigkeit 6), Willenskraft und I.C.E. können mit Chrom bzw. Geräten ähnlich weit gehen. Das Tool zeichnet einfach so viele Kästchen, wie der Wert hergibt (`Kaestchen.tsx`, Fünfergruppen) — auf Papier muss man daneben weiterzählen. Wie hohe Werte platzsparender dargestellt werden, ist noch offen (CLAUDE.md, "Kästchen-Overflow-Darstellung").
 
 ## Fähigkeiten (Maximum 5)
 

@@ -145,7 +145,7 @@
 
 .lu-raster {
   display: grid;
-  /* Wie im Charakterblatt: drei Spalten halten Arete und Sphären
+  /* Wie im Charakterblatt: drei Spalten halten Hexkraft und Sphären
      erreichbar, statt sie unter einer langen Zweispaltenliste zu verstecken. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px 16px;
@@ -229,7 +229,7 @@
 
 /* Auch im Level-Up bleibt die gleiche Drei-Spalten-Aufteilung wie im
    Charakterblatt erhalten. Erst auf sehr schmalen Handybreiten wird eine
-   Spalte daraus, damit Arete und Sphären nicht unter der langen Liste
+   Spalte daraus, damit Hexkraft und Sphären nicht unter der langen Liste
    verschwinden. */
 @media (max-width: 900px) {
   .lu-blatt {

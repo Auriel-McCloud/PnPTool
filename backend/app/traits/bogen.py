@@ -15,7 +15,12 @@ BEREICHE_JE_WEG: dict[str, set[str]] = {
 }
 
 # Grundwert der Gesundheit, auf den die Widerstandsfähigkeit addiert wird.
-GESUNDHEIT_GRUNDWERT = 5
+#
+# **6 statt 5** (Mark, 10.09.2026): Widerstandsfähigkeit geht natürlich bis 6
+# (siehe traits/seed.py), macht also 12 statt 11 Kästchen als natürliches
+# Maximum — eine runde Zahl, die sich in Fünfergruppen ordentlich anzeigen
+# lässt. Mit Chrom-Attributboni entsprechend 18 statt 17.
+GESUNDHEIT_GRUNDWERT = 6
 
 
 def _wert(werte: dict[str, int], name: str) -> int:
@@ -23,7 +28,7 @@ def _wert(werte: dict[str, int], name: str) -> int:
 
 
 def gesundheit_max(werte: dict[str, int]) -> int:
-    """Gesundheit = 5 + Widerstandsfähigkeit."""
+    """Gesundheit = 6 + Widerstandsfähigkeit."""
     return GESUNDHEIT_GRUNDWERT + _wert(werte, "Widerstandsfähigkeit")
 
 

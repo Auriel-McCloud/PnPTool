@@ -183,7 +183,7 @@
 }
 
 .pc-kachel-wk .pc-kachel-wert-icon {
-  color: var(--wert-arete, var(--neon));
+  color: var(--wert-hexkraft, var(--neon));
 }
 
 .pc-kachel-kritisch {

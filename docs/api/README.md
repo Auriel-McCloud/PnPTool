@@ -29,6 +29,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Kontakte & Messenger](./kontakte.md) | In-Game-Kommunikation | ⭐ |
 | [Mitteilungen](./mitteilungen.md) | SL-Broadcasts, Live-Popups | ⭐ |
 | [Kampf](./kampf.md) | Rundenbasierter Kampf, Initiative | |
+| [Rüstung](./ruestung.md) | Kästchen + Durchlass, Abnutzung im Kampf | ⭐ |
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
 

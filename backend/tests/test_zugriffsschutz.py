@@ -89,6 +89,13 @@ OHNE_GM_ERLAUBT = {
     # die Route selbst: Entfernen gibt 403 für Spieler).
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/chirurgie",
     "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
+    # Einen erlittenen Treffer eintragen — wie `zustand` nur am eigenen
+    # Charakter (die Route prüft die Person selbst) und nur nach oben: der
+    # errechnete Schaden wird addiert, dazu Kästchen/Durchlass des
+    # getroffenen Rüstungsteils fortgeschrieben. Welches Teil das ist,
+    # entscheidet die Regel, nicht der Aufrufer.
+    # Siehe traits/routes.py::ruestungstreffer und docs/api/ruestung.md.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/ruestung/treffer",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

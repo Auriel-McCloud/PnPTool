@@ -1,4 +1,5 @@
 import { api } from "../api/client";
+import type { RuestungsArt } from "../items/api";
 import type { TraitDef, TraitRating } from "./api";
 
 /** Abgeleitete Werte und Zustand — berechnet das Backend, siehe traits/bogen.py. */
@@ -53,6 +54,8 @@ export interface Bogen {
   /** NEUE Fertigkeiten, die es ohne Ausrüstung nicht gibt (z.B. ein
    * Zauberstab mit "Springen 3") — eigener Abschnitt auf dem Blatt. */
   ausruestungsfertigkeiten: { name: string; bonus: number; quelle: string }[];
+  /** Rüstung als eigene Kästchenleiste neben Gesundheit und Willenskraft. */
+  ruestung: RuestungsUebersicht;
   /** Bereits nach dem Weg gefiltert: kein Magier, keine Sphären. */
   katalog: TraitDef[];
   werte: TraitRating[];
@@ -64,6 +67,49 @@ export interface ZustandUpdate {
   schadenAggraviert?: number;
   willenskraftVerbraucht?: number;
   iceSchaden?: number;
+}
+
+/**
+ * Rüstungszustand fürs Blatt — **fertig gerechnet vom Server**
+ * (`kampf/ruestung.py::uebersicht`). Alles Getragene ist ein Pool: Kästchen
+ * summiert, Durchlass vom dichtesten Teil. Bewusst nicht hier nachgerechnet,
+ * sonst läuft die Anzeige mit dem auseinander, was ein Treffer anrichtet.
+ */
+export interface RuestungsUebersicht {
+  kaestchenAktuell: number;
+  kaestchenMax: number;
+  /** Wie viel Schaden so oder so durchkommt. Niedriger ist besser. */
+  durchlass: number;
+  /** In Verbrauchsreihenfolge: das dichteste Teil wird zuerst aufgebraucht. */
+  teile: { id: string; name: string; kaestchenAktuell: number; kaestchenMax: number; durchlass: number }[];
+}
+
+/** Was ein einzelnes Rüstungsteil von einem Treffer abbekommen hat. */
+export interface RuestungsteilFolge {
+  id: string;
+  name: string;
+  verlust: number;
+  kaestchenNeu: number;
+  /** Um den eigenen Verlust gestiegen — das Teil ist jetzt löchriger. */
+  durchlassNeu: number;
+  /** Bei 0 Kästchen: wirkt nicht mehr, liegt danach im Mitgeführten. */
+  zerstoert: boolean;
+}
+
+/** Ergebnis eines Rüstungstreffers — siehe docs/api/ruestung.md. */
+export interface RuestungTrefferErgebnis {
+  /** Was nach Abstufung/Halbierung tatsächlich angekommen ist. */
+  hpArt: RuestungsArt;
+  hpMenge: number;
+  /** Was der Rüstungspool insgesamt an Kästchen verloren hat. */
+  kaestchenSchaden: number;
+  /**
+   * Welche Teile es getroffen hat, in Verbrauchsreihenfolge (dichtestes
+   * zuerst). Leer heisst: keine wirksame Rüstung, der Schaden kam
+   * ungebremst an.
+   */
+  betroffen: RuestungsteilFolge[];
+  uebersicht: BogenUebersicht;
 }
 
 // --- Charaktererstellung ------------------------------------------------
@@ -151,6 +197,18 @@ export const bogenApi = {
   /** Zustand ändern — Schaden und Verbrauch, keine Werte. */
   zustand: (cid: string, personId: string, aenderung: ZustandUpdate) =>
     api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/zustand`, aenderung),
+  /**
+   * Einen erlittenen Treffer eintragen ("3× Tödlich"). Die getragene Rüstung
+   * wirkt als ein Pool: der Server rechnet den Kästchenschaden, verbraucht
+   * die Teile in Reihenfolge (dichtestes zuerst), legt zerstörte ins
+   * Mitgeführte zurück und bucht den abgestuften Rest auf die Gesundheit.
+   * Mehr als Art und Stärke braucht es nicht — es gibt keine Körperzonen.
+   */
+  ruestungTreffer: (cid: string, personId: string, art: RuestungsArt, staerke: number) =>
+    api.post<RuestungTrefferErgebnis>(`/api/campaigns/${cid}/personen/${personId}/ruestung/treffer`, {
+      art,
+      staerke,
+    }),
 
   regeln: (cid: string) => api.get<Erstellungsregeln>(`/api/campaigns/${cid}/erstellung/regeln`),
   erstellen: (cid: string, personId: string, eingabe: ErstellungEingabe) =>

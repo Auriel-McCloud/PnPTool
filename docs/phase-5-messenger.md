@@ -15,6 +15,19 @@ Der Chat ist ein eigenes Fenster. Nur der Nachrichtenverlauf darf darin intern
 scrollen; Hauptansicht und Seitenkörper behalten den bestehenden „nie scrollen“-
 Grundsatz.
 
+## Offene Messenger-UI-Todos (10.09.2026)
+
+- **Zum neuesten Eintrag scrollen:** Beim Öffnen und nach dem Eingang bzw. Senden
+  einer Nachricht muss der Verlauf zuverlässig am Ende stehen. Das funktioniert
+  derzeit nicht in jeder Situation.
+- **Eingabefeld trotz mobiler Tastatur sichtbar halten:** Sobald die Tastatur
+  aufgeht, ist das Texteingabefeld häufig nicht mehr zu sehen. Der Chat muss
+  seine nutzbare Höhe an den Visual Viewport anpassen und den Composer sichtbar
+  halten.
+- **Persona-5-Darstellung ausbauen:** Die Nachrichten brauchen noch
+  asymmetrische Sprechblasen/Textboxen, deren Größe sich dynamisch am Inhalt
+  orientiert. Die aktuelle Darstellung ist noch zu einheitlich.
+
 ## Kontaktwissen und Neo4j-Modell
 
 Kontaktwissen betrifft ein PC-NPC-Paar. Da das Wissen in diesem MVP vom PC über
