@@ -22,6 +22,7 @@ import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { KontakteGm } from "./kontakte/KontakteGm";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
+import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -56,6 +57,8 @@ const BEREICHE: Bereich[] = [
   // Der Rassen-Baukasten: Völker bauen und je Kampagne freigeben. Wie die
   // Augments ein Regelwerks-Bereich, deshalb dieselbe Leitfarbe.
   { id: "rassen", name: "Rassen", symbol: "🧬", farbe: "var(--bereich-regeln)" },
+  // Ideenschmiede: Entwürfe und KI-generierte Ideen sammeln, prüfen, verschieben
+  { id: "ideenschmiede", name: "Schmiede", symbol: "🔧", farbe: "var(--bereich-schmiede)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
@@ -72,6 +75,7 @@ const TITEL: Record<string, string> = {
   wiki: "Kampagnen-Wiki",
   kontakte: "Kontakte: wer kennt wen",
   rassen: "Rassen: Baukasten und Freigabe",
+  ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -205,6 +209,9 @@ function Dashboard() {
 
           {/* Kontakte: SL verwaltet wer wen kennt und wer mit wem chatten kann. */}
           {bereich === "kontakte" && <KontakteGm key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+
+          {/* Ideenschmiede: Entwürfe und KI-Ideen sammeln, prüfen, verschieben. */}
+          {bereich === "ideenschmiede" && <IdeenschmiedeAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

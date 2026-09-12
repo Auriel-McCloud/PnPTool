@@ -111,6 +111,8 @@
   --bereich-fahrzeuge: var(--p-koralle);
   --bereich-kontakte: var(--neon);
   --bereich-wiki: var(--neon);
+  /* Ideenschmiede: Orange/Amber wie Werkbank-Glühen */
+  --bereich-schmiede: var(--warn);
 
   /* == 4. Wertegruppen (Charakterblatt) ============================== */
   /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,

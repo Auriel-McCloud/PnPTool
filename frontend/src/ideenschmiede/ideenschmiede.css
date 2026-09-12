@@ -1,0 +1,177 @@
+/**
+ * Ideenschmiede CSS — Cyberpunk-Stil passend zum Rest.
+ *
+ * Verwendet die Theme-Tokens aus theme/tokens.css.
+ */
+
+.ideenschmiede {
+  padding: 1rem;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--bg-dark);
+}
+
+.is-header h2 {
+  color: var(--text-bright);
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+}
+
+.is-header .is-beschreibung {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+/* Filter-Tabs */
+.is-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.is-filter button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-normal);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.is-filter button:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-cyan);
+}
+
+.is-filter button.aktiv {
+  background: var(--accent-cyan);
+  color: var(--bg-dark);
+  border-color: var(--accent-cyan);
+}
+
+/* Leer-Zustand */
+.is-leer {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.is-leer p:first-child {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Fehler */
+.is-fehler {
+  background: rgba(255, 60, 60, 0.15);
+  border: 1px solid var(--accent-red);
+  color: var(--accent-red);
+  padding: 1rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Liste */
+.is-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.is-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.75rem;
+  transition: border-color 0.15s;
+}
+
+.is-item:hover {
+  border-color: var(--accent-cyan);
+}
+
+.is-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 2rem;
+  text-align: center;
+}
+
+.is-inhalt {
+  flex: 1;
+  min-width: 0;
+}
+
+.is-inhalt strong {
+  display: block;
+  color: var(--text-bright);
+  margin-bottom: 0.2rem;
+}
+
+.is-typ {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-dark);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  margin-bottom: 0.3rem;
+}
+
+.is-beschreibung-kurz {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.3rem 0 0;
+  line-height: 1.4;
+}
+
+/* Aktionen */
+.is-aktionen {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.is-verschieben {
+  background: var(--accent-green);
+  color: var(--bg-dark);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: bold;
+  transition: opacity 0.15s;
+}
+
+.is-verschieben:hover {
+  opacity: 0.85;
+}
+
+.is-loeschen {
+  background: transparent;
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.is-loeschen:hover {
+  background: var(--accent-red);
+  color: var(--bg-dark);
+}
