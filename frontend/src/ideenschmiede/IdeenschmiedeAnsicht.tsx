@@ -10,6 +10,7 @@ import {
   getEntwuerfe,
   inKampagneVerschieben,
   entwurfLoeschen,
+  entwurfAnlegen,
   type EntwurfItem,
 } from "./api";
 import "./ideenschmiede.css";
@@ -40,6 +41,9 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [ladend, setLadend] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [filter, setFilter] = useState<EntwurfItem["typ"] | "alle">("alle");
+  const [neuerName, setNeuerName] = useState("");
+  const [neuerTyp, setNeuerTyp] = useState<EntwurfItem["typ"]>("WikiSeite");
+  const [anlegen, setAnlegen] = useState(false);
 
   const laden = useCallback(async () => {
     setLadend(true);
@@ -81,6 +85,20 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
     }
   };
 
+  const handleAnlegen = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!neuerName.trim()) return;
+    try {
+      await entwurfAnlegen(campaignId, neuerTyp, neuerName.trim());
+      setNeuerName("");
+      setAnlegen(false);
+      await laden();
+    } catch (err) {
+      alert("Fehler beim Anlegen");
+      console.error(err);
+    }
+  };
+
   const gefiltert = filter === "alle"
     ? entwuerfe
     : entwuerfe.filter((e) => e.typ === filter);
@@ -102,12 +120,45 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   return (
     <div className="ideenschmiede">
       <header className="is-header">
-        <h2>🔧 Ideenschmiede</h2>
+        <div className="is-header-zeile">
+          <h2>🔧 Ideenschmiede</h2>
+          <button className="is-neu-btn" onClick={() => setAnlegen(true)}>
+            + Neue Idee
+          </button>
+        </div>
         <p className="is-beschreibung">
           Hier landen Entwürfe und KI-generierte Ideen. Prüfe sie und verschiebe
           sie in die Kampagne, wenn sie bereit sind.
         </p>
       </header>
+
+      {/* Anlegen-Dialog */}
+      {anlegen && (
+        <form className="is-anlegen" onSubmit={handleAnlegen}>
+          <select
+            value={neuerTyp}
+            onChange={(e) => setNeuerTyp(e.target.value as EntwurfItem["typ"])}
+          >
+            <option value="WikiSeite">📄 Wiki-Seite</option>
+            <option value="Person">👤 Person</option>
+            <option value="Ort">📍 Ort</option>
+            <option value="Event">📅 Ereignis</option>
+            <option value="Gegenstand">📦 Gegenstand</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Name / Titel"
+            value={neuerName}
+            onChange={(e) => setNeuerName(e.target.value)}
+            autoFocus
+            required
+          />
+          <button type="submit">Anlegen</button>
+          <button type="button" onClick={() => setAnlegen(false)}>
+            Abbrechen
+          </button>
+        </form>
+      )}
 
       {entwuerfe.length === 0 ? (
         <div className="is-leer">

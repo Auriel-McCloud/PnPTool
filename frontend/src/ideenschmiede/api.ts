@@ -118,3 +118,71 @@ export async function entwurfLoeschen(
 
   await api.delete(endpunkte[typ]);
 }
+
+/**
+ * Legt einen neuen Entwurf an (istEntwurf=true).
+ */
+export async function entwurfAnlegen(
+  campaignId: string,
+  typ: EntwurfItem["typ"],
+  name: string
+): Promise<void> {
+  switch (typ) {
+    case "Person":
+      await api.post(`/campaigns/${campaignId}/personen`, {
+        name,
+        personType: "NPC",
+        description: "",
+        notes: "",
+        istEntwurf: true,
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      break;
+    case "Ort":
+      await api.post(`/campaigns/${campaignId}/orte`, {
+        name,
+        description: "",
+        notes: "",
+        istEntwurf: true,
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      break;
+    case "Event":
+      await api.post(`/campaigns/${campaignId}/events`, {
+        title: name,
+        timestamp: "",
+        description: "",
+        notes: "",
+        istEntwurf: true,
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      break;
+    case "WikiSeite":
+      await api.post(`/campaigns/${campaignId}/wiki/seiten`, {
+        titel: name,
+        inhalt: '{"type":"doc","content":[]}',
+        istEntwurf: true,
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+      });
+      break;
+    case "Gegenstand":
+      await api.post(`/campaigns/${campaignId}/vorlagen`, {
+        name,
+        description: "",
+        notes: "",
+        typ: "Sonstiges",
+        istEntwurf: true,
+      });
+      break;
+  }
+}
