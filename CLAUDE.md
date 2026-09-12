@@ -270,7 +270,18 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
 
 5. **Deploy** — Debian/nginx statt localhost
 
-6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✨ NEU
+6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✨ IN ARBEIT
+
+   **Backend fertig (2026-09-12):**
+   - `:Regelsystem` Node-Typ mit CRUD-Endpunkten (`/api/regelsysteme`)
+   - `(:Campaign)-[:NUTZT_REGELSYSTEM]->(:Regelsystem)` Beziehung
+   - `istEntwurf: bool` auf Person, Ort, Event, WikiSeite, Gegenstand
+   - NeotopiA wird beim Start automatisch angelegt
+
+   **Offen:**
+   - Frontend UI für Ideenschmiede-Tab
+   - PC-Vorlagen im Regelsystem
+   - KI-Import in Ideenschmiede
 
    ```
    ┌─────────────────────────────────────────────────────┐
