@@ -1,245 +1,338 @@
-/**
- * Ideenschmiede CSS — Cyberpunk-Stil passend zum Rest.
- *
- * Verwendet die Theme-Tokens aus theme/tokens.css.
- */
+/* ===================================================================
+   Ideenschmiede: Entwürfe sammeln, prüfen, in die Kampagne verschieben.
+   
+   Hält sich an die Commlink-Sprache: Neonröhren (.cl-roehre), Kacheln,
+   Tokens aus theme/tokens.css. Kein eigenes Farbschema.
+   =================================================================== */
 
 .ideenschmiede {
-  padding: 1rem;
-  height: 100%;
-  overflow-y: auto;
-  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
 }
 
-.is-header h2 {
-  color: var(--text-bright);
-  margin: 0;
-  font-size: 1.4rem;
+/* --- Kopfzeile ---------------------------------------------------- */
+
+.is-header {
+  flex-shrink: 0;
 }
 
 .is-header-zeile {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 6px;
 }
 
-.is-neu-btn {
-  background: var(--accent-cyan);
-  color: var(--bg-dark);
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  transition: opacity 0.15s;
-}
-
-.is-neu-btn:hover {
-  opacity: 0.85;
+.is-header h2 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bereich-farbe, var(--neon));
+  text-shadow: 0 0 12px var(--neon-schwach);
 }
 
 .is-header .is-beschreibung {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin: 0 0 1rem;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
 }
 
-/* Filter-Tabs */
+.is-neu-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--bereich-farbe, var(--neon));
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bereich-farbe, var(--neon));
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.is-neu-btn:hover {
+  background: var(--bereich-farbe, var(--neon));
+  color: var(--flaeche-tief);
+}
+
+/* --- Anlegen-Formular --------------------------------------------- */
+
+.is-anlegen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--bereich-farbe, var(--neon));
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  box-shadow: 0 0 12px -4px var(--bereich-farbe, var(--neon));
+}
+
+.is-anlegen select,
+.is-anlegen input[type="text"] {
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.is-anlegen input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+}
+
+.is-anlegen select:focus,
+.is-anlegen input:focus {
+  outline: none;
+  border-color: var(--bereich-farbe, var(--neon));
+}
+
+.is-anlegen button {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.is-anlegen button[type="submit"] {
+  border: 1px solid var(--gut);
+  background: var(--gut);
+  color: var(--flaeche-tief);
+}
+
+.is-anlegen button[type="submit"]:hover {
+  box-shadow: 0 0 10px var(--gut);
+}
+
+.is-anlegen button[type="button"] {
+  border: 1px solid var(--linie);
+  background: transparent;
+  color: var(--text-leise);
+}
+
+.is-anlegen button[type="button"]:hover {
+  border-color: var(--text-leise);
+  color: var(--text);
+}
+
+/* --- Filter-Tabs -------------------------------------------------- */
+
 .is-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--linie);
+  flex-shrink: 0;
 }
 
 .is-filter button {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-normal);
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  font-size: 0.85rem;
   transition: all 0.15s;
 }
 
 .is-filter button:hover {
-  background: var(--bg-hover);
-  border-color: var(--accent-cyan);
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
 }
 
 .is-filter button.aktiv {
-  background: var(--accent-cyan);
-  color: var(--bg-dark);
-  border-color: var(--accent-cyan);
+  border-color: var(--bereich-farbe, var(--neon));
+  background: var(--bereich-farbe, var(--neon));
+  color: var(--flaeche-tief);
+  text-shadow: none;
 }
 
-/* Leer-Zustand */
+/* --- Leer-Zustand ------------------------------------------------- */
+
 .is-leer {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.is-leer p:first-child {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-/* Fehler */
-.is-fehler {
-  background: rgba(255, 60, 60, 0.15);
-  border: 1px solid var(--accent-red);
-  color: var(--accent-red);
-  padding: 1rem;
-  border-radius: 4px;
-  text-align: center;
-}
-
-/* Anlegen-Formular */
-.is-anlegen {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--accent-cyan);
-  border-radius: 6px;
-}
-
-.is-anlegen select,
-.is-anlegen input {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--bg-dark);
-  color: var(--text-normal);
-  font-size: 0.9rem;
-}
-
-.is-anlegen input {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-leise);
   flex: 1;
 }
 
-.is-anlegen button {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  border: none;
+.is-leer p:first-child {
+  font-size: 24px;
+  margin: 0;
 }
 
-.is-anlegen button[type="submit"] {
-  background: var(--accent-cyan);
-  color: var(--bg-dark);
-  font-weight: bold;
+.is-leer p:last-child {
+  font-size: 13px;
+  max-width: 360px;
+  margin: 0;
 }
 
-.is-anlegen button[type="button"] {
-  background: var(--bg-dark);
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
+/* --- Fehler ------------------------------------------------------- */
+
+.is-fehler {
+  padding: 16px;
+  border: 1px solid var(--gefahr);
+  border-radius: var(--radius);
+  background: rgba(255, 60, 60, 0.08);
+  color: var(--gefahr);
+  text-align: center;
+  font-size: 13px;
 }
 
-/* Liste */
+/* --- Kachel-Raster ------------------------------------------------ */
+
 .is-liste {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
+/* Einzelne Kachel als Neonröhre */
 .is-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.75rem;
-  transition: border-color 0.15s;
+  gap: 10px;
+  padding: 12px;
+  /* Neonröhren-Stil aus commlink.css */
+  border: var(--roehre-breite) solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .is-item:hover {
-  border-color: var(--accent-cyan);
+  border-color: var(--bereich-farbe, var(--neon));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 0 var(--glut-aussen) -2px var(--bereich-farbe, var(--neon)),
+    inset 0 0 var(--glut-innen) -8px var(--bereich-farbe, var(--neon));
 }
 
 .is-icon {
-  font-size: 1.5rem;
+  font-size: 24px;
   flex-shrink: 0;
-  width: 2rem;
+  width: 32px;
   text-align: center;
+  /* Leichtes Leuchten wie die Bereichs-Symbole */
+  filter: drop-shadow(0 0 4px var(--bereich-farbe, var(--neon)));
 }
 
 .is-inhalt {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .is-inhalt strong {
   display: block;
-  color: var(--text-bright);
-  margin-bottom: 0.2rem;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  /* Abschneiden statt umbrechen */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .is-typ {
   display: inline-block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: var(--bg-dark);
-  padding: 0.1rem 0.4rem;
+  padding: 2px 6px;
   border-radius: 3px;
-  margin-bottom: 0.3rem;
+  background: var(--flaeche-tief);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
 }
 
 .is-beschreibung-kurz {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin: 0.3rem 0 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
   line-height: 1.4;
+  /* Maximal 2 Zeilen */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* Aktionen */
+/* --- Aktionen ----------------------------------------------------- */
+
 .is-aktionen {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .is-verschieben {
-  background: var(--accent-green);
-  color: var(--bg-dark);
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--gut);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--gut);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: bold;
-  transition: opacity 0.15s;
+  transition: all 0.15s;
 }
 
 .is-verschieben:hover {
-  opacity: 0.85;
+  background: var(--gut);
+  color: var(--flaeche-tief);
+  box-shadow: 0 0 8px var(--gut);
 }
 
 .is-loeschen {
+  padding: 6px 10px;
+  border: 1px solid var(--gefahr);
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--accent-red);
-  border: 1px solid var(--accent-red);
-  padding: 0.4rem 0.6rem;
-  border-radius: 4px;
+  color: var(--gefahr);
+  font-family: var(--mono);
+  font-size: 11px;
   cursor: pointer;
-  font-size: 0.85rem;
   transition: all 0.15s;
 }
 
 .is-loeschen:hover {
-  background: var(--accent-red);
-  color: var(--bg-dark);
+  background: var(--gefahr);
+  color: var(--flaeche-tief);
+  box-shadow: 0 0 8px var(--gefahr);
 }
