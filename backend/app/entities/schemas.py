@@ -21,6 +21,8 @@ class PersonCreate(BaseModel):
     notes: str = ""
     # Aussehen. Die Spielleitung kann es per Blitz an alle schicken.
     bildUrl: str = ""
+    # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+    istEntwurf: bool = False
     # --- Charakterbogen ---------------------------------------------------
     # Der eingeschlagene Weg entscheidet, was auf dem Blatt überhaupt
     # erscheint: Sphären und Hexkraft nur für Magier, NeuroWeaving nur für
@@ -69,6 +71,7 @@ class PersonCreate(BaseModel):
 class PersonUpdate(BaseModel):
     name: str | None = None
     bildUrl: str | None = None
+    istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
     rasse: str | None = None
     silhouette: str | None = None
@@ -105,6 +108,8 @@ class PersonResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+    istEntwurf: bool = False
     # Charakterbogen — Ausgangswerte greifen für Bestandsdaten, die diese
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
@@ -138,6 +143,7 @@ class OrtCreate(BaseModel):
     description: str = ""
     notes: str = ""
     bildUrl: str = ""
+    istEntwurf: bool = False  # Ideenschmiede
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -149,6 +155,7 @@ class OrtUpdate(BaseModel):
     description: str | None = None
     notes: str | None = None
     bildUrl: str | None = None
+    istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -161,6 +168,7 @@ class OrtResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    istEntwurf: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

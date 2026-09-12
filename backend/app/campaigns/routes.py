@@ -22,7 +22,8 @@ class CampaignCreateRequest(BaseModel):
 class CampaignResponse(BaseModel):
     id: str
     name: str
-    ruleset: str
+    regelsystemId: str = ""
+    regelsystem: str = "neotopia"
 
 
 @router.post("", response_model=CampaignResponse)

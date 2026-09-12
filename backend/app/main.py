@@ -31,6 +31,8 @@ from app.kontakte.routes import router as kontakte_router
 from app.wiki.routes import router as wiki_router
 from app.mitteilungen.routes import router as mitteilungen_router
 from app.mitteilungen.routes import ws_router as mitteilungen_ws_router
+from app.regelsysteme.routes import router as regelsysteme_router
+from app.regelsysteme.repository import seed_neotopia
 from app.db.neo4j_driver import close_driver
 
 
@@ -41,6 +43,8 @@ async def lifespan(app: FastAPI):
     # Nach seed_traits: die Rassen verweisen auf Attributnamen aus dem
     # Trait-Katalog, der also stehen muss.
     await seed_rassen()
+    # NeotopiA Regelsystem anlegen falls nicht vorhanden
+    await seed_neotopia()
     yield
     await close_driver()
 
@@ -85,6 +89,7 @@ app.include_router(wiki_router)
 app.include_router(kontakte_router)
 app.include_router(mitteilungen_router)
 app.include_router(mitteilungen_ws_router)
+app.include_router(regelsysteme_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
