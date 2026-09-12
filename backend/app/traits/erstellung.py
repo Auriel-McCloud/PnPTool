@@ -210,9 +210,9 @@ KAPITAL_JE_FREEBEE = 10_000
 FREEBEE_MAX_JE_FERTIGKEIT = 1
 
 
-def startwerte(rasse: str) -> dict[str, int]:
+def startwerte(rasse: str, rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, int]:
     """Attributwerte vor der Verteilung: Grundwert plus Rassenmodifikator."""
-    mods = RASSEN.get(rasse, {}).get("modifikatoren", {})
+    mods = (rassen or RASSEN).get(rasse, {}).get("modifikatoren", {})
     werte = {}
     for attribute in ATTRIBUTE_JE_KATEGORIE.values():
         for name in attribute:
@@ -220,9 +220,9 @@ def startwerte(rasse: str) -> dict[str, int]:
     return werte
 
 
-def startmaxima(rasse: str) -> dict[str, int]:
+def startmaxima(rasse: str, rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, int]:
     """Obergrenzen bei der Erstellung. Freebees dürfen darüber (Zeile 24)."""
-    mods = RASSEN.get(rasse, {}).get("modifikatoren", {})
+    mods = (rassen or RASSEN).get(rasse, {}).get("modifikatoren", {})
     maxima = {}
     for attribute in ATTRIBUTE_JE_KATEGORIE.values():
         for name in attribute:
@@ -230,7 +230,44 @@ def startmaxima(rasse: str) -> dict[str, int]:
     return maxima
 
 
-def regelwerk() -> dict[str, Any]:
+def lebensmaxima(
+    rasse: str, katalog: list[dict], rassen: dict[str, dict[str, Any]] | None = None
+) -> dict[str, int]:
+    """Dauerhafte Obergrenzen der Attribute: Katalogmaximum + Rassenmodifikator.
+
+    **Nicht zu verwechseln mit `startmaxima`.** Das sind zwei verschiedene
+    Deckel, und ihre Verwechslung war der Bug (Mark, 11.09.2026: *"die Wahl
+    der z.B. maximalen Stärke sollte sich ins Charakterblatt übertragen"*):
+
+    * `startmaxima` = 4 + Modifikator. Gilt **nur während der Erstellung**;
+      ein Mensch startet höchstens mit Körperkraft 4.
+    * `lebensmaxima` = Katalogmaximum (6) + Modifikator. Gilt **dauerhaft**;
+      ein Troll kommt bei Körperkraft auf 8, ein Elf bei
+      Widerstandsfähigkeit nur auf 5.
+
+    Hätte man `startmaxima` als Lebensdeckel ins Blatt geschrieben, wäre
+    jeder Mensch für immer bei 4 gefangen gewesen.
+
+    Liefert **alle Attribute**, nicht nur die von der Rasse berührten — auch
+    die unveränderten mit ihrem Katalogwert. Das ist nötig, weil die
+    Erstellung erneut eingereicht werden kann: stünden hier nur die
+    berührten, behielte ein Charakter, der von Zwerg auf Mensch geändert
+    wird, stillschweigend den Zwergen-Deckel auf Charisma (5 statt 6).
+
+    Fertigkeiten bleiben bewusst aussen vor: dort gibt es keine
+    Rassenmodifikatoren, und ein pauschales Überschreiben würde ein von der
+    Spielleitung angehobenes Maximum ("Elder-NPC mit Schusswaffen 8")
+    zunichtemachen.
+    """
+    mods = (rassen or RASSEN).get(rasse, {}).get("modifikatoren", {})
+    return {
+        eintrag["name"]: eintrag["defaultMax"] + mods.get(eintrag["name"], 0)
+        for eintrag in katalog
+        if eintrag["category"] in ATTRIBUT_KATEGORIEN
+    }
+
+
+def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """Alles, was die Oberfläche zum Führen durch die Erstellung braucht."""
     return {
         "wege": WEGE,
@@ -240,10 +277,11 @@ def regelwerk() -> dict[str, Any]:
                 "modifikatoren": daten["modifikatoren"],
                 "freiePunkte": daten["freiePunkte"],
                 "beschreibung": daten["beschreibung"],
-                "startwerte": startwerte(name),
-                "startmaxima": startmaxima(name),
+                "startwerte": startwerte(name, rassen),
+                "startmaxima": startmaxima(name, rassen),
+                "bildUrl": daten.get("bildUrl", ""),
             }
-            for name, daten in RASSEN.items()
+            for name, daten in (rassen or RASSEN).items()
         ],
         "attributKategorien": [
             {"id": k, "name": KATEGORIE_NAMEN[k], "attribute": ATTRIBUTE_JE_KATEGORIE[k]}
@@ -296,7 +334,9 @@ def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> in
     return summe
 
 
-def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
+def pruefe(
+    auswahl: dict[str, Any], katalog: list[dict], rassen: dict[str, dict[str, Any]] | None = None
+) -> list[str]:
     """Prüft eine eingereichte Erstellung. Leere Liste = in Ordnung.
 
     Gibt alle Verstöße auf einmal zurück statt beim ersten abzubrechen —
@@ -310,15 +350,16 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
     if weg not in KATEGORIEN_JE_WEG:
         fehler.append(f"Unbekannter Weg: {weg}")
 
+    verfuegbar = rassen or RASSEN
     rasse = auswahl.get("rasse") or ""
-    if rasse not in RASSEN:
+    if rasse not in verfuegbar:
         fehler.append(f"Unbekannte Rasse: {rasse}")
         return fehler  # ohne Rasse lässt sich nichts weiter prüfen
 
     # --- Attribute: Kontingente und Verteilung --------------------------
     kontingente = auswahl.get("schwerpunkte") or {}
     vergeben = sorted((int(kontingente.get(k, 0)) for k in ATTRIBUT_KATEGORIEN), reverse=True)
-    erwartet = sorted(RASSEN[rasse]["freiePunkte"], reverse=True)
+    erwartet = sorted(verfuegbar[rasse]["freiePunkte"], reverse=True)
     if vergeben != erwartet:
         fehler.append(
             f"{rasse} verteilt {'/'.join(map(str, erwartet))} Attributpunkte, "
@@ -326,8 +367,8 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
         )
 
     punkte = auswahl.get("attributPunkte") or {}
-    maxima = startmaxima(rasse)
-    start = startwerte(rasse)
+    maxima = startmaxima(rasse, verfuegbar)
+    start = startwerte(rasse, verfuegbar)
     for kategorie in ATTRIBUT_KATEGORIEN:
         namen = ATTRIBUTE_JE_KATEGORIE[kategorie]
         summe = sum(max(0, int(punkte.get(n, 0))) for n in namen)
@@ -399,7 +440,13 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
     # Zeile 24 hebt nur den **StartMax** für Freebees auf, nicht das Maximum
     # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 5, Hexkraft bis 10.
     # Ohne diese Prüfung liess sich Körperkraft auf 9 kaufen (von Mark gefunden).
+    #
+    # Bei Attributen, die die Rasse berührt, gilt **ihr** Deckel statt des
+    # Katalogwerts (Mark, 11.09.2026): ein Zwerg kam sonst per Freebees auf
+    # Charisma 6, obwohl sein Lebensmaximum 5 ist — und umgekehrt nie auf die
+    # 7 bei Widerstandsfähigkeit, die ihm zusteht.
     maximum_von = {t["name"]: t["defaultMax"] for t in katalog}
+    maximum_von.update(lebensmaxima(rasse, katalog, verfuegbar))
     for name, wert in endwerte(auswahl).items():
         grenze = maximum_von.get(name)
         if grenze is not None and wert > grenze:
@@ -408,14 +455,14 @@ def pruefe(auswahl: dict[str, Any], katalog: list[dict]) -> list[str]:
     return fehler
 
 
-def endwerte(auswahl: dict[str, Any]) -> dict[str, int]:
+def endwerte(auswahl: dict[str, Any], rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, int]:
     """Die fertigen Werte: Startwert + verteilte Punkte + Freebees.
 
     Hintergründe sind hier mit drin — sie liegen im selben Katalog wie
     Attribute und Fertigkeiten, nur in eigener Kategorie.
     """
     rasse = auswahl.get("rasse") or ""
-    werte = dict(startwerte(rasse))
+    werte = dict(startwerte(rasse, rassen))
     for name, punkte in (auswahl.get("attributPunkte") or {}).items():
         werte[name] = werte.get(name, 0) + max(0, int(punkte))
     for name, wert in (auswahl.get("fertigkeitPunkte") or {}).items():

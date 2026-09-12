@@ -23,6 +23,8 @@ from app.regeln.routes import vorlagen_router
 from app.begleiter.routes import router as begleiter_router
 from app.kampf.routes import router as kampf_router
 from app.traits.seed import seed_traits
+from app.rassen.routes import router as rassen_router
+from app.rassen.repository import seed_rassen
 from app.db.migrate import apply_migrations
 from app.players.routes import gm_router as spieler_gm_router, login_router
 from app.kontakte.routes import router as kontakte_router
@@ -36,6 +38,9 @@ from app.db.neo4j_driver import close_driver
 async def lifespan(app: FastAPI):
     await apply_migrations()
     await seed_traits()
+    # Nach seed_traits: die Rassen verweisen auf Attributnamen aus dem
+    # Trait-Katalog, der also stehen muss.
+    await seed_rassen()
     yield
     await close_driver()
 
@@ -69,6 +74,7 @@ app.include_router(items_router)
 app.include_router(items_campaign_router)
 app.include_router(chrom_router)
 app.include_router(traits_router)
+app.include_router(rassen_router)
 app.include_router(erklaerungen_router)
 app.include_router(vorlagen_router)
 app.include_router(begleiter_router)

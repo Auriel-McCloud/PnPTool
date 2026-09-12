@@ -35,6 +35,7 @@ C:\DEV\PnPTool\
 │   │   ├── kontakte.md       — Messenger, Stufen, Alias
 │   │   ├── kampf.md          — Runden, Initiative
 │   │   ├── ruestung.md       — Kästchen + Durchlass (NEU 10.09.2026)
+│   │   ├── rassen.md         — Baukasten, Balance, Freigabe (NEU 11.09.2026)
 │   │   ├── personen.md       — PCs/NPCs, Attribute, Cyberware
 │   │   ├── wiki.md           — Seiten, Freigaben
 │   │   ├── entitaeten.md     — Orte, Gegenstände, Fraktionen
@@ -112,6 +113,14 @@ npm run dev
   DB (siehe Stolperstein 6). Werte migriert, Frontend durchgehend umbenannt,
   Willenskraft-Logik greift damit auch in der Kampfkarte wieder
 
+**Zuletzt gebaut (11.09.2026):**
+- **Rassen-Baukasten** — eigener SL-Bereich (Kacheln + Editor-Fenster):
+  Völker bauen, Live-Bilanz gegen die 15er-Regel, Bild, Freigabe je
+  Kampagne. Infobox mit Beschreibung und Bild in der Charaktererstellung
+- **Rassenmaxima wirken endlich dauerhaft** — der Modifikator hebt jetzt
+  auch das Lebensmaximum (Troll: Körperkraft bis 8). Vorher verpuffte die
+  Rasse nach der Erstellung; 12 Attribute wurden rückwirkend nachgetragen
+
 **Vorher (07.09.2026):**
 - Chat-Benachrichtigungen (💬 Popup bei neuen Nachrichten)
 - Mitteilungen ausblenden (✕ Button, pro Person)
@@ -173,6 +182,20 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
   sind, ist Regelfrage, nicht Angabe des Aufrufers
 - **Reparatur noch ohne Probe/Preis** — SL trägt das Ergebnis von Hand ein,
   bis Hardware-Skill-Check und Shop-System stehen
+
+### Rassen (`docs/api/rassen.md`)
+- **Katalog global, Freigabe je Kampagne** — der SL hakt an, was in dieser
+  Runde wählbar ist; neu gebaute Rassen sind bewusst noch nicht freigegeben
+- **Balance-Regel aus den Daten gefunden, nicht erfunden:** freie Punkte +
+  positive Modifikatoren = 15, Nachteile = halbe Vorteile (aufgerundet).
+  Alle fünf gewachsenen Rassen erfüllen sie exakt
+- **Baukasten warnt, blockiert nicht** — ein übermächtiges NPC-Volk bleibt
+  möglich
+- **Nur Attribute** — Fertigkeitsboni o.ä. gäbe es nicht mehr nachrechenbar
+- **Erstellungsgrenze ≠ Lebensmaximum:** `startmaxima` = 4+Mod (nur bei der
+  Erstellung), `lebensmaxima` = 6+Mod (dauerhaft, als `maxOverride` am Blatt)
+- **Rassen-Kennung ist eine UUID ohne Namen** — Lehre aus Stolperstein 6,
+  damit Umbenennen im Baukasten nichts zerreisst
 
 ### Cyberware
 - **`verbaut` statt `ausgeruestet`** — Chrom sitzt im Körper
@@ -247,11 +270,53 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
 
 5. **Deploy** — Debian/nginx statt localhost
 
-6. **Ideenschmiede** (zu besprechen) — eigener Bereich außerhalb der Kampagne:
-   - Ideen-Sammlung die nicht Teil des aktiven Spiels ist
-   - Inhalte sollen leicht in die Kampagne verschoben werden können
-   - Mögliche Auffangstation für KI-generierte Inhalte (Charaktere, Gegenstände, Orte, Story-Elemente)
-   - Muss noch durchdacht werden ob das so sinnvoll ist
+6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → AI-Schmiede** ✨ NEU
+
+   ```
+   ┌─────────────────────────────────────────────────────┐
+   │  REGELSYSTEM (:Regelsystem)                         │
+   │  z.B. "NeotopiA", "D&D 5e", "WoD"                   │
+   │  ├── Regel-Wiki (Kampf, Magie, Proben...)           │
+   │  ├── Rassen, Sphären, Hexkraft-Stufen               │
+   │  ├── Preislisten, Standard-Ausrüstung               │
+   │  └── PC-Vorlagen (vorgefertigte Charaktere)         │
+   │      → Spieler kann wählen ODER selbst bauen        │
+   └─────────────────────────────────────────────────────┘
+              │ :NUTZT_REGELSYSTEM
+              ▼
+   ┌─────────────────────────────────────────────────────┐
+   │  KAMPAGNE (:Campaign)                               │
+   │  z.B. "Berlin 2087", "Tokyo 2090"                   │
+   │  ├── Story-Wiki (istEntwurf: false)                 │
+   │  │   → NPCs, Orte, Events dieser Kampagne           │
+   │  └── AI-Schmiede (istEntwurf: true)                 │
+   │      → WikiSeiten, NPCs, Orte, Gegenstände          │
+   │      → KI-generiert oder manuell                    │
+   │      → "In Kampagne verschieben" = Flag toggle      │
+   └─────────────────────────────────────────────────────┘
+   ```
+
+   **Regelsystem:**
+   - Anlegen durch SL oder KI-Import (z.B. aus Regelwerk-PDF)
+   - Enthält alles was für ALLE Kampagnen dieses Systems gilt
+   - Mehrere Kampagnen können dasselbe Regelsystem nutzen
+   - PC-Vorlagen: "Straßensamurai", "Netrunner", "Kampfmagier"...
+
+   **Kampagne:**
+   - Verknüpft mit genau einem Regelsystem
+   - Story-Wiki: Die "echten" Inhalte die im Spiel existieren
+   - AI-Schmiede: Entwürfe, Ideen, KI-Output — noch nicht kanonisch
+
+   **AI-Schmiede (pro Kampagne):**
+   - Flag `istEntwurf: true` auf WikiSeiten, Personen, Orten, Gegenständen
+   - KI-generierte Inhalte landen hier zur Prüfung
+   - SL kann bearbeiten, dann "In Kampagne verschieben"
+   - Verschieben = nur Flag toggle, keine Datenmigration
+
+   **PC-Erstellung (neu):**
+   - Spieler wählt: "Selbst erstellen" ODER "Vorlage wählen"
+   - Vorlagen kommen aus dem Regelsystem
+   - Kopiert Vorlage → Spieler passt Namen/Details an
 
 7. **Rüstungssystem** — ✅ Fertig (10.09.2026), siehe `docs/api/ruestung.md`:
    - **Zwei Werte pro Rüstung:** Kästchen (was sie aushält) + **Durchlass**

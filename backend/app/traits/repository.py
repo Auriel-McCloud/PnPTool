@@ -30,12 +30,27 @@ async def get_ratings_for_entity(campaign_id: str, entity_id: str) -> list[dict]
 async def set_rating(
     campaign_id: str, entity_id: str, trait_def_id: str, rating: int, max_override: int | None
 ) -> dict | None:
+    """Setzt einen Wert — und lässt ein vorhandenes Maximum in Ruhe.
+
+    **`max_override=None` heisst "nicht anfassen", nicht "löschen".** Das war
+    bis 11.09.2026 andersherum, mit einer stillen Nebenwirkung: das
+    Charakterblatt schickt beim Klick auf einen Punkt immer `null` mit (siehe
+    Charakterblatt.tsx), womit jede Wertänderung den **Rassendeckel**
+    gelöscht hat. Ein Elf mit Widerstandsfähigkeit 5 stand danach wieder auf
+    dem Katalogmaximum 6 — die Rasse war stillschweigend weg.
+
+    Ein Zurücksetzen auf den Katalogwert gibt es dadurch nicht mehr; das ist
+    richtig so, weil der Katalogwert für alles mit Rassenmodifikator ohnehin
+    der falsche wäre. Geändert wird das Maximum ausdrücklich über die
+    ±-Knöpfe im Blatt (die schicken eine Zahl) oder über den Rassen-Baukasten.
+    """
     driver = get_driver()
     query = """
         MATCH (n {id: $entity_id, campaignId: $campaign_id})
         MATCH (t:TraitDef {id: $trait_def_id})
         MERGE (n)-[r:HAS_TRAIT]->(t)
-        SET r.rating = $rating, r.maxOverride = $max_override
+        SET r.rating = $rating,
+            r.maxOverride = CASE WHEN $max_override IS NULL THEN r.maxOverride ELSE $max_override END
         RETURN t.id AS traitDefId, t.name AS name, t.category AS category,
                r.rating AS rating, coalesce(r.maxOverride, t.defaultMax) AS max
     """
@@ -71,6 +86,39 @@ async def set_ratings_bulk(campaign_id: str, entity_id: str, werte: dict[str, in
         RETURN count(r) AS gesetzt
     """
     paare = [{"name": name, "wert": int(wert)} for name, wert in werte.items()]
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, entity_id=entity_id, paare=paare, ruleset="neotopia"
+        )
+        record = await result.single()
+        return dict(record)["gesetzt"] if record else 0
+
+
+async def setze_maxima_bulk(campaign_id: str, entity_id: str, maxima: dict[str, int]) -> int:
+    """Setzt dauerhafte Obergrenzen (`maxOverride`) für mehrere Werte.
+
+    Für die Rassenmaxima bei der Erstellung: ein Troll darf bei Körperkraft
+    dauerhaft über das Katalogmaximum hinaus, ein Elf bei
+    Widerstandsfähigkeit darunter bleiben (siehe
+    `erstellung.py::lebensmaxima`).
+
+    Getrennt von `set_ratings_bulk`, weil dort **nur** der Wert geschrieben
+    wird: würde es das Maximum mitschreiben, überschriebe jede erneut
+    eingereichte Erstellung ein von der Spielleitung von Hand angehobenes
+    Maximum. Hier ist das Setzen ausdrücklich gewollt.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n {id: $entity_id, campaignId: $campaign_id})
+        UNWIND $paare AS paar
+        MATCH (t:TraitDef {ruleset: $ruleset, name: paar.name})
+        MERGE (n)-[r:HAS_TRAIT]->(t)
+        SET r.maxOverride = paar.max
+        RETURN count(r) AS gesetzt
+    """
+    paare = [{"name": name, "max": int(wert)} for name, wert in maxima.items()]
+    if not paare:
+        return 0
     async with driver.session() as session:
         result = await session.run(
             query, campaign_id=campaign_id, entity_id=entity_id, paare=paare, ruleset="neotopia"

@@ -7,7 +7,8 @@ import { Probe, type ProbeWahl } from "./Probe";
 import { WillenskraftFrage } from "./WillenskraftFrage";
 import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
-import { Kaestchen } from "./Kaestchen";
+import { Kaestchen, type Schadensart } from "./Kaestchen";
+import { ZustandFenster } from "./ZustandFenster";
 import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
@@ -78,10 +79,61 @@ export function Charakterblatt({
   // ausserhalb des Kampfes ist sie eine Zahl, die niemand braucht.
   const [imKampf, setImKampf] = useState(false);
   const [trefferOffen, setTrefferOffen] = useState(false);
+  // Welche Zustandsleiste als Vollansicht offen ist. Ab elf Kästchen ist
+  // das der Weg zum Eintragen — die Pufferzellen sind zu schmal zum Treffen.
+  const [zustandOffen, setZustandOffen] = useState<"gesundheit" | "willenskraft" | "ice" | null>(null);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
     setBogen((alt) => (alt ? { ...alt, uebersicht: u } : alt));
+  }
+
+  /**
+   * Schaden als Zahl eintragen (aus dem Zustandsfenster).
+   *
+   * Addiert auf die jeweilige Art — im Gegensatz zum Weiterschalten, das
+   * eine Stufe *umwandelt*. Gedeckelt wird serverseitig beim Lesen, hier
+   * genügt das Aufaddieren.
+   */
+  async function schadenEintragen(menge: number, art?: Schadensart) {
+    if (!bogen || !aenderbar || menge <= 0) return;
+    const u = bogen.uebersicht;
+    const feld =
+      art === "aggraviert"
+        ? { schadenAggraviert: u.schadenAggraviert + menge }
+        : art === "schwer"
+          ? { schadenSchwer: u.schadenSchwer + menge }
+          : { schadenSchlag: u.schadenSchlag + menge };
+    uebernehmen(await bogenApi.zustand(campaignId, personId, feld));
+  }
+
+  /**
+   * Heilen: **vom leichtesten Schaden zuerst**.
+   *
+   * Das entspricht der Reihenfolge, in der die Arten auch eingetragen
+   * werden (schwerer verdrängt leichteren), und ist die einzige Lesart, die
+   * am Tisch nicht erklärt werden muss: was am schnellsten weggeht, geht
+   * zuerst weg.
+   */
+  async function heilen(menge: number) {
+    if (!bogen || !aenderbar || menge <= 0) return;
+    const u = bogen.uebersicht;
+    let rest = menge;
+    const abziehen = (wert: number) => {
+      const weg = Math.min(rest, wert);
+      rest -= weg;
+      return wert - weg;
+    };
+    const schlag = abziehen(u.schadenSchlag);
+    const schwer = abziehen(u.schadenSchwer);
+    const aggraviert = abziehen(u.schadenAggraviert);
+    uebernehmen(
+      await bogenApi.zustand(campaignId, personId, {
+        schadenSchlag: schlag,
+        schadenSchwer: schwer,
+        schadenAggraviert: aggraviert,
+      }),
+    );
   }
 
   /**
@@ -283,7 +335,11 @@ export function Charakterblatt({
                         </span>
                       )}
                     </span>
-                    <DotPool value={wert} max={t.defaultMax} onChange={undefined} />
+                    {/* `grenzeVon` statt `defaultMax`: sonst zeichnet die
+                        Reihe stur sechs Punkte, und ein Troll mit
+                        Körperkraft 8 sähe aus wie einer mit 6 — die zwei
+                        Punkte, die ihn ausmachen, wären unsichtbar. */}
+                    <DotPool value={wert} max={grenzeVon(t)} onChange={undefined} />
                   </button>
                 )}
                 {bearbeiten && maximaZeigen && (
@@ -357,6 +413,73 @@ export function Charakterblatt({
         </button>
       </header>
 
+      <ZustandFenster
+        offen={zustandOffen === "gesundheit"}
+        titel="Gesundheit"
+        max={u.gesundheitMax}
+        ton="var(--track-gesundheit)"
+        werte={{
+          schaden: {
+            schlag: u.schadenSchlag,
+            schwer: u.schadenSchwer,
+            aggraviert: u.schadenAggraviert,
+          },
+        }}
+        onSchliessen={() => setZustandOffen(null)}
+        onSchaden={schadenEintragen}
+        onHeilen={heilen}
+        onKaestchenKlick={aenderbar ? schadenWeiterschalten : undefined}
+      />
+
+      <ZustandFenster
+        offen={zustandOffen === "willenskraft"}
+        titel="Willenskraft"
+        max={u.willenskraftMax}
+        ton="var(--wert-gesellschaftlich)"
+        werte={{ verbraucht: u.willenskraftVerbraucht }}
+        // Ausgeben ja, zurückholen nur die Spielleitung (bogen.py::
+        // zustand_verboten) — der Server lehnt es sonst ab, und ein Knopf,
+        // der zuverlässig scheitert, ist schlimmer als keiner.
+        heilenErlaubt={bearbeitbar}
+        heilenGesperrtHinweis="Willenskraft stellt die Spielleitung wieder her — durch Schlaf oder wenn du deiner Ambition, deinem Verlangen oder deinem Ziel entsprechend gehandelt hast."
+        onSchliessen={() => setZustandOffen(null)}
+        onSchaden={async (menge) =>
+          uebernehmen(
+            await bogenApi.zustand(campaignId, personId, {
+              willenskraftVerbraucht: u.willenskraftVerbraucht + menge,
+            }),
+          )
+        }
+        onHeilen={async (menge) =>
+          uebernehmen(
+            await bogenApi.zustand(campaignId, personId, {
+              willenskraftVerbraucht: Math.max(0, u.willenskraftVerbraucht - menge),
+            }),
+          )
+        }
+      />
+
+      <ZustandFenster
+        offen={zustandOffen === "ice"}
+        titel="I.C.E."
+        max={u.iceMax}
+        ton="var(--track-ice)"
+        werte={{ verbraucht: u.iceSchaden }}
+        onSchliessen={() => setZustandOffen(null)}
+        onSchaden={async (menge) =>
+          uebernehmen(
+            await bogenApi.zustand(campaignId, personId, { iceSchaden: u.iceSchaden + menge }),
+          )
+        }
+        onHeilen={async (menge) =>
+          uebernehmen(
+            await bogenApi.zustand(campaignId, personId, {
+              iceSchaden: Math.max(0, u.iceSchaden - menge),
+            }),
+          )
+        }
+      />
+
       <RuestungsTreffer
         campaignId={campaignId}
         personId={personId}
@@ -427,6 +550,7 @@ export function Charakterblatt({
             }}
             ton="var(--track-gesundheit)"
             onKlick={aenderbar ? schadenWeiterschalten : undefined}
+            onOeffnen={aenderbar ? () => setZustandOffen("gesundheit") : undefined}
           />
         </div>
         <div className="cb-spur">
@@ -446,6 +570,7 @@ export function Charakterblatt({
             verbraucht={u.willenskraftVerbraucht}
             ton="var(--wert-gesellschaftlich)"
             onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
+            onOeffnen={aenderbar ? () => setZustandOffen("willenskraft") : undefined}
           />
         </div>
         {/* Rüstung steht VOR der Gesundheit in der Wirkung, deshalb direkt
@@ -483,7 +608,12 @@ export function Charakterblatt({
           {u.offline ? (
             <span className="cb-hinweis">Kein Commlink — nicht erreichbar, aber auch nicht angreifbar.</span>
           ) : (
-            <Kaestchen max={u.iceMax} verbraucht={u.iceSchaden} ton="var(--track-ice)" />
+            <Kaestchen
+              max={u.iceMax}
+              verbraucht={u.iceSchaden}
+              ton="var(--track-ice)"
+              onOeffnen={aenderbar ? () => setZustandOffen("ice") : undefined}
+            />
           )}
         </div>
         {/* Initiative nur im Kampf: aussderhalb ist sie eine Zahl, die

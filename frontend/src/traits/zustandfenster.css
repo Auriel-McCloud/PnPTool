@@ -1,0 +1,112 @@
+/* Vollansicht einer Zustandsleiste: alle Kästchen, Zahlenpad, Heilen.
+   Farben ausschliesslich über Tokens; --zf-ton ist die Leitfarbe der
+   jeweiligen Leiste (Gesundheit rot, Willenskraft bernstein, ...). */
+
+.zf-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Die Kästchen dürfen hier umbrechen — es sind bis zu zwanzig, und sie
+   sollen gross genug für den Daumen bleiben. */
+.zf-alle .kt-reihe {
+  flex-wrap: wrap;
+}
+
+.zf-schnell {
+  display: flex;
+  gap: 6px;
+}
+
+.zf-schnell button {
+  flex: 1;
+  padding: 9px 0;
+  font-size: 14px;
+}
+
+.zf-heilknopf {
+  color: var(--gut);
+  border-color: color-mix(in srgb, var(--gut) 50%, var(--linie));
+}
+
+.zf-padzeile {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Knöpfe in Daumengrösse: am Spieltisch wird mit dem Finger getippt, nicht
+   mit der Maus gezielt. */
+.zf-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 174px;
+  flex: none;
+}
+
+.zf-pad button {
+  padding: 11px 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.zf-anzeige {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  color: var(--zf-ton);
+}
+
+.zf-arten {
+  display: flex;
+  gap: 6px;
+}
+
+.zf-arten button {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.zf-arten button[data-aktiv="true"] {
+  border-color: var(--zf-ton);
+  color: var(--zf-ton);
+}
+
+.zf-tun {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--linie);
+}
+
+.zf-tun button {
+  flex: 1;
+  padding: 11px 0;
+  font-weight: 600;
+}
+
+.zf-schaden {
+  border-color: var(--zf-ton);
+  color: var(--zf-ton);
+}
+
+.zf-heilen {
+  border-color: color-mix(in srgb, var(--gut) 60%, var(--linie));
+  color: var(--gut);
+}
+
+.zf-hinweis {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-aus);
+}

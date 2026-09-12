@@ -86,3 +86,89 @@
   color: var(--text-leise);
   white-space: nowrap;
 }
+
+/* --- Lange Leisten: Puffer + Endkästchen ------------------------------
+   Ab OVERFLOW_AB (10) Kästchen kippt die Reihe in diese Form. Der vordere
+   Teil ist eine Zellenleiste, die letzten fünf bleiben echte Kästchen mit
+   den gewohnten Zeichen — genau dort genau, wo gezählt wird. */
+
+.kt-lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Als Knopf darf die Leiste nicht wie ein Knopf aussehen: sie ist die
+   Anzeige, das Antippen nur der Weg zur Vollansicht. */
+.kt-oeffner {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kt-oeffner:hover .kt-puffer > i:not([data-art="ungenutzt"]) {
+  border-color: var(--kt-ton);
+}
+
+.kt-puffer {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 50px;
+}
+
+.kt-puffer > i {
+  position: relative;
+  flex: 1;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--flaeche-tief, var(--grund));
+  border: 1px solid var(--linie);
+  overflow: hidden;
+}
+
+/* Fünfergruppen bleiben ablesbar, sonst zählt man die Zellen nicht mehr. */
+.kt-puffer > i[data-luecke="true"] {
+  margin-right: 7px;
+}
+
+/* Schadensart über die Füllhöhe statt über ein Zeichen: in 6px breiten
+   Zellen ist ein Muster nicht mehr lesbar, eine Höhe schon. */
+.kt-puffer > i::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  background: var(--kt-ton);
+}
+
+.kt-puffer > i[data-art="schlag"]::after {
+  height: 33%;
+}
+
+.kt-puffer > i[data-art="schwer"]::after {
+  height: 66%;
+}
+
+.kt-puffer > i[data-art="aggraviert"]::after,
+.kt-puffer > i[data-art="verbraucht"]::after {
+  height: 100%;
+}
+
+.kt-puffer > i[data-art="schlag"],
+.kt-puffer > i[data-art="schwer"],
+.kt-puffer > i[data-art="aggraviert"],
+.kt-puffer > i[data-art="verbraucht"] {
+  border-color: var(--kt-ton);
+}
+
+.kt-enden {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}

@@ -122,7 +122,15 @@ export interface Rasse {
   /** Die drei Kontingente, frei auf die Attributspalten verteilbar. */
   freiePunkte: number[];
   beschreibung: string;
+  /** Bild für die Infobox; leer, wenn die Spielleitung keines hinterlegt hat. */
+  bildUrl: string;
   startwerte: Record<string, number>;
+  /**
+   * Obergrenze **bei der Erstellung** (4 + Modifikator). Nicht zu verwechseln
+   * mit dem dauerhaften Maximum: das ist Katalogmaximum + Modifikator und
+   * steht nach der Erstellung als `max` am Wert des Charakterbogens (siehe
+   * backend/app/traits/erstellung.py::lebensmaxima).
+   */
   startmaxima: Record<string, number>;
 }
 

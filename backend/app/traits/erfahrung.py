@@ -35,9 +35,22 @@ FAKTOR: dict[str, int] = {
 }
 
 # Was der Sprung von 0 auf 1 kostet — die Formel gäbe hier 0 her, und
-# geschenkt soll nichts sein. Attribute fehlen bewusst: die stehen nach der
-# Erstellung nie auf 0.
+# geschenkt soll nichts sein.
+#
+# **Attribute standen hier bewusst NICHT drin**, mit der Begründung "die
+# stehen nach der Erstellung nie auf 0". Das stimmt seit den Rassen mit
+# Minus-Modifikator nicht mehr (Mark, 11.09.2026): der Grundwert ist 1, ein
+# Zwerg hat Charisma −1 — wer dort keinen freien Punkt hineinsteckt, startet
+# also auf **0**. Ohne Eintrag lieferte `kosten` dafür `None`, und
+# `preisliste` warf den Wert stillschweigend aus dem EP-Blatt: Freds Charisma
+# war unsichtbar und damit dauerhaft unsteigerbar.
+#
+# Der Preis 5 folgt derselben Überlegung wie bei Hexkraft — er entspricht dem
+# Freebee-Preis eines Attributpunkts (siehe erstellung.py).
 NEU_KOSTEN: dict[str, int] = {
+    "AttributKörperlich": 5,
+    "AttributGesellschaftlich": 5,
+    "AttributGeistig": 5,
     "Fertigkeit": 3,
     "Sphäre": 3,
     # Wie der Freebee-Preis eines Attributpunkts, damit der Einstieg in die

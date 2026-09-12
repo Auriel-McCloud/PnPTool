@@ -6,6 +6,7 @@ import { useCampaign } from "./campaigns/useCampaign";
 import { EntityManager, type WeltAnsicht } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
+import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
 import { SpielerLogin } from "./players/SpielerLogin";
@@ -52,6 +53,9 @@ const BEREICHE: Bereich[] = [
   // Das Kampagnen-Wiki: Geschichten, Kapitel, Session-Notizen (docs/produktvision-wiki.md)
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
   { id: "augments", name: "Augments", symbol: "⚕", farbe: "var(--bereich-regeln)" },
+  // Der Rassen-Baukasten: Völker bauen und je Kampagne freigeben. Wie die
+  // Augments ein Regelwerks-Bereich, deshalb dieselbe Leitfarbe.
+  { id: "rassen", name: "Rassen", symbol: "🧬", farbe: "var(--bereich-regeln)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
@@ -67,6 +71,7 @@ const TITEL: Record<string, string> = {
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
   kontakte: "Kontakte: wer kennt wen",
+  rassen: "Rassen: Baukasten und Freigabe",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -189,6 +194,7 @@ function Dashboard() {
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "rassen" && <RassenUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "kampf" && <Kampfmodus key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}

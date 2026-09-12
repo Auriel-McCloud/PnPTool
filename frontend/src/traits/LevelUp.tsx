@@ -40,7 +40,14 @@ const FAKTOR: Record<string, number> = {
   Hintergrund: 3,
 };
 
+// Attribute waren hier lange nicht nötig ("die stehen nie auf 0") — seit
+// Rassen Attribute senken können, schon: ein Zwerg startet mit Charisma 0.
+// Ohne Eintrag fiel die Anzeige auf den vom Server gelieferten Preis zurück,
+// war also zufällig richtig; beim zweiten gestapelten Kauf hätte sie gelogen.
 const NEU_KOSTEN: Record<string, number> = {
+  AttributKörperlich: 5,
+  AttributGesellschaftlich: 5,
+  AttributGeistig: 5,
   Fertigkeit: 3,
   Sphäre: 3,
   Hexkraft: 5,

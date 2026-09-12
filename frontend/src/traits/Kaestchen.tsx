@@ -23,6 +23,16 @@ export const SCHADENSARTEN: { art: Schadensart; zeichen: string; name: string }[
  * es kein passendes Schriftzeichen, das durchgestrichene X entsteht deshalb
  * aus drei Strichen in CSS.
  */
+/**
+ * Ab hier wird die Reihe zu lang zum Zählen und kippt in die Leisten-Form.
+ * Zehn ist die Zahl vom Papierblatt (zwei Fünfergruppen) — darunter ändert
+ * sich also nichts an dem, was Mark gewohnt ist.
+ */
+export const OVERFLOW_AB = 10;
+
+/** So viele Kästchen bleiben am Ende immer einzeln stehen. */
+export const ENDKAESTCHEN = 5;
+
 export function Kaestchen({
   max,
   verbraucht = 0,
@@ -30,6 +40,8 @@ export function Kaestchen({
   gesamt = 10,
   ton = "var(--neon)",
   onKlick,
+  onOeffnen,
+  einzeln = false,
 }: {
   max: number;
   /** Einfacher Verbrauch ohne Arten (Willenskraft, I.C.E.). */
@@ -40,6 +52,19 @@ export function Kaestchen({
   ton?: string;
   /** Klick auf ein Kästchen — Position von links, 0-basiert. */
   onKlick?: (index: number) => void;
+  /**
+   * Die ganze Leiste antippen, um die Vollansicht zu öffnen. Ab
+   * `OVERFLOW_AB` ist das der einzige sinnvolle Weg: die Pufferzellen sind
+   * zu schmal, um einzeln getroffen zu werden — gezählt und eingetragen
+   * wird dann im Fenster.
+   */
+  onOeffnen?: () => void;
+  /**
+   * Immer alle Kästchen einzeln zeichnen, auch über `OVERFLOW_AB`. Genau
+   * dafür gibt es die Vollansicht im Zustandsfenster — dort wäre eine
+   * Leiste sinnlos, sie ist ja der Grund, warum man das Fenster geöffnet hat.
+   */
+  einzeln?: boolean;
 }) {
   const felder = Array.from({ length: Math.max(gesamt, max) }, (_, i) => {
     if (i >= max) return { art: "ungenutzt" as const };
@@ -54,6 +79,57 @@ export function Kaestchen({
   });
 
   const belegt = schaden ? schaden.aggraviert + schaden.schwer + schaden.schlag : verbraucht;
+
+  // --- Lange Leisten: Puffer als Zellen, die letzten fünf als Kästchen ---
+  //
+  // Genau dort genau, wo es zählt: bei 16 von 18 interessiert "fast voll",
+  // bei 2 von 18 zählt man. Deshalb ist der vordere Teil eine Zellenleiste
+  // (Schadensart über die Füllhöhe: ein Drittel Schlag, zwei Drittel
+  // tödlich, ganz unheilbar) und das Ende bleibt bei den gewohnten Zeichen
+  // vom Papierblatt. Läuft der Puffer leer, kippt die Anzeige sichtbar in
+  // den Ernstfall — und das ist genau der Moment, in dem es das soll.
+  if (max > OVERFLOW_AB && !einzeln) {
+    const pufferAnzahl = max - ENDKAESTCHEN;
+    const inhalt = (
+      <>
+        <span className="kt-puffer">
+          {felder.slice(0, pufferAnzahl).map((f, i) => (
+            <i
+              key={i}
+              data-art={f.art}
+              data-luecke={i > 0 && (i + 1) % 5 === 0 ? "true" : undefined}
+            />
+          ))}
+        </span>
+        <span className="kt-enden">
+          {felder.slice(pufferAnzahl, max).map((f, i) => (
+            <span key={i} className="kt-feld" data-art={f.art} />
+          ))}
+        </span>
+        <span className="kt-zahl">
+          {max - belegt} / {max}
+        </span>
+      </>
+    );
+    if (!onOeffnen) {
+      return (
+        <div className="kt-reihe kt-lang" style={{ "--kt-ton": ton } as React.CSSProperties}>
+          {inhalt}
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        className="kt-reihe kt-lang kt-oeffner"
+        style={{ "--kt-ton": ton } as React.CSSProperties}
+        onClick={onOeffnen}
+        title="Antippen: alle Kästchen, Schaden und Heilung eintragen"
+      >
+        {inhalt}
+      </button>
+    );
+  }
 
   return (
     <div className="kt-reihe" style={{ "--kt-ton": ton } as React.CSSProperties}>

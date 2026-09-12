@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kästchen-Overflow — Entwurf</title>
+<style>
+  /* Echte Tokens aus frontend/src/theme/tokens.css, damit der Eindruck stimmt. */
+  :root {
+    --p-schwarz:#08080d; --p-nacht:#101018; --p-grau:#26263a; --p-grau-hell:#363650;
+    --p-weiss:#e8e8f0; --p-weiss-leise:#8a8aa0; --p-weiss-aus:#5a5a70;
+    --p-rot:#ff4d6b; --p-bernstein:#ffb648; --p-tuerkis:#35e0d0; --p-koralle:#ff6b4d;
+    --p-cyan:#00e5ff; --p-gruen:#3ddc84;
+    --grund:var(--p-schwarz); --flaeche:var(--p-nacht); --flaeche-tief:#0c0c14;
+    --linie:var(--p-grau); --linie-hell:var(--p-grau-hell);
+    --text:var(--p-weiss); --text-leise:var(--p-weiss-leise); --text-aus:var(--p-weiss-aus);
+    --neon:var(--p-cyan); --radius:6px;
+    --track-gesundheit:var(--p-rot); --track-willenskraft:var(--p-bernstein);
+    --track-ice:var(--p-tuerkis); --track-ruestung:var(--p-koralle);
+  }
+  body { margin:0; padding:22px; background:var(--grund); color:var(--text);
+         font-family:"Segoe UI",system-ui,sans-serif; }
+  h1 { font-size:18px; letter-spacing:.08em; margin:0 0 6px; }
+  h2 { font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--neon);
+       margin:30px 0 8px; }
+  h3 { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-aus);
+       margin:16px 0 6px; font-weight:500; }
+  p.e { color:var(--text-leise); font-size:13px; max-width:74ch; line-height:1.6; margin:0 0 10px; }
+  .tafel { background:var(--flaeche); border:1px solid var(--linie); border-radius:var(--radius);
+           padding:14px 16px; margin-bottom:12px; }
+  .zeile { display:flex; align-items:center; gap:12px; padding:8px 0; }
+  .titel { width:104px; flex:none; font-size:11px; letter-spacing:.14em;
+           text-transform:uppercase; color:var(--text-leise); }
+  .zahl { width:62px; flex:none; text-align:right; font-variant-numeric:tabular-nums; font-size:14px; }
+  .lage { color:var(--text-aus); font-size:11px; font-style:italic; }
+
+  /* Zellenleiste: eine Zelle = ein Kästchen, Fünfergruppen */
+  .puffer { display:flex; gap:2px; flex:1; min-width:60px; }
+  .puffer > i { flex:1; height:15px; border-radius:2px; background:var(--flaeche-tief);
+                border:1px solid var(--linie); position:relative; overflow:hidden; }
+  .puffer > i:nth-child(5n):not(:last-child) { margin-right:7px; }
+  /* Schaden als Füllhöhe von unten: ein Drittel, zwei Drittel, ganz */
+  .puffer > i::after { content:""; position:absolute; left:0; right:0; bottom:0;
+                       background:var(--ton); }
+  .puffer > i[data-a="schlag"]::after     { height:33%; }
+  .puffer > i[data-a="schwer"]::after     { height:66%; }
+  .puffer > i[data-a="aggraviert"]::after { height:100%; }
+  .puffer > i[data-a]                     { border-color:var(--ton); }
+  /* Verbrauch ohne Arten (Willenskraft, I.C.E., Rüstung) */
+  .puffer > i[data-v]::after { height:100%; }
+  .puffer > i[data-v] { border-color:var(--ton); }
+
+  /* Große Kästchen */
+  .enden { display:flex; gap:5px; flex:none; }
+  .kasten { width:23px; height:23px; border:1px solid var(--linie-hell); border-radius:3px;
+            background:var(--flaeche-tief); display:flex; align-items:center;
+            justify-content:center; font-size:14px; line-height:1; color:var(--ton);
+            position:relative; overflow:hidden; }
+  .kasten.fuell::after { content:""; position:absolute; left:0; right:0; bottom:0;
+                         background:var(--ton); }
+  .kasten.fuell[data-a="schlag"]::after     { height:33%; }
+  .kasten.fuell[data-a="schwer"]::after     { height:66%; }
+  .kasten.fuell[data-a="aggraviert"]::after { height:100%; }
+
+  .beine { display:flex; gap:22px; flex-wrap:wrap; margin:8px 0 0; }
+  .bein { font-size:11px; color:var(--text-aus); display:flex; align-items:center; gap:6px; }
+  .probe { width:16px; height:15px; border:1px solid var(--track-gesundheit); border-radius:2px;
+           position:relative; overflow:hidden; background:var(--flaeche-tief); }
+  .probe::after { content:""; position:absolute; left:0; right:0; bottom:0;
+                  background:var(--track-gesundheit); }
+
+  /* Popup-Entwurf */
+  .popup { max-width:380px; border:1px solid var(--neon); border-radius:var(--radius);
+           background:var(--flaeche); box-shadow:0 0 40px -18px var(--neon); padding:16px; }
+  .popup h4 { margin:0 0 2px; font-size:15px; letter-spacing:.06em; color:var(--neon); }
+  .popup .unter { font-size:11px; color:var(--text-aus); margin:0 0 12px; }
+  .alle { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
+  .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:168px; }
+  .pad button, .schnell button, .arten button, .tun button {
+      background:var(--flaeche-tief); border:1px solid var(--linie); border-radius:4px;
+      color:var(--text); padding:9px 0; font-size:15px; cursor:pointer; }
+  .padzeile { display:flex; gap:14px; align-items:flex-start; margin-bottom:12px; }
+  .anzeige { flex:1; border:1px solid var(--linie); border-radius:4px; background:var(--flaeche-tief);
+             font-size:30px; text-align:center; padding:14px 0; font-variant-numeric:tabular-nums; }
+  .schnell { display:flex; gap:6px; margin-bottom:10px; }
+  .schnell button { flex:1; font-size:13px; }
+  .arten { display:flex; gap:6px; margin-bottom:10px; }
+  .arten button { flex:1; font-size:12px; }
+  .arten button[data-aktiv] { border-color:var(--track-gesundheit); color:var(--track-gesundheit); }
+  .tun { display:flex; gap:8px; }
+  .tun button { flex:1; font-weight:600; }
+  .tun .schaden { border-color:var(--track-gesundheit); color:var(--track-gesundheit); }
+  .tun .heilen  { border-color:var(--p-gruen); color:var(--p-gruen); }
+  .heilhinweis { margin:10px 0 0; font-size:11px; line-height:1.5; color:var(--text-aus); }
+</style>
+</head>
+<body>
+
+<h1>Kästchen-Overflow — Entwurf</h1>
+<p class="e">
+  Variante B, jetzt mit Füllhöhe statt Schraffur: <strong>ein Drittel = Schlag, zwei Drittel =
+  tödlich, ganz = unheilbar</strong>. Bei den schmalen Zellen liest sich das besser als eine
+  Schraffur — Muster brauchen Fläche, eine Füllhöhe nicht.
+</p>
+<div class="beine">
+  <span class="bein"><span class="probe" style="--h:33%"><i></i></span> Schlag (1/3)</span>
+  <span class="bein"><span class="probe" style="--h:66%"></span> tödlich (2/3)</span>
+  <span class="bein"><span class="probe" style="--h:100%"></span> unheilbar (voll)</span>
+</div>
+
+<h2>Ryu Tanaka — sein Zustandsbereich</h2>
+<p class="e">
+  <strong>Wichtig:</strong> Ryu hat Gesundheit 10 und derzeit null Schaden. Bei der Regel
+  „bis 10 einzeln" erscheint bei ihm also gar keine Leiste — die ersten beiden Blöcke sehen
+  deshalb aus wie heute. Erst darunter wird der Mechanismus sichtbar.
+</p>
+
+<h3>So, wie er gerade wirklich dasteht (10, unverletzt)</h3>
+<div class="tafel" id="ryu-jetzt"></div>
+
+<h3>Derselbe Ryu nach einem harten Kampf (3 Schlag, 2 tödlich, 1 unheilbar)</h3>
+<div class="tafel" id="ryu-verletzt"></div>
+
+<h3>Ryu später — Widerstandsfähigkeit auf 6 plus Chrom, Gesundheit 16</h3>
+<p class="e">Jetzt greift die Leiste: elf Zellen Puffer, fünf große Kästchen am Ende.</p>
+<div class="tafel" id="ryu-spaeter"></div>
+
+<h3>Und der kritische Moment — Puffer leer, nur noch zwei Kästchen frei</h3>
+<div class="tafel" id="ryu-kritisch"></div>
+
+<h2>Große Kästchen: Zeichen oder Füllhöhe?</h2>
+<p class="e">
+  In der Leiste ist die Füllhöhe gesetzt. Für die großen Kästchen hast du die Wahl: entweder
+  die gewohnten Zeichen vom Papierblatt, oder dieselbe Füllhöhe wie in der Leiste. Letzteres
+  wäre <em>eine</em> Bildsprache statt zweier — dafür ohne den Wiedererkennungswert von
+  <code>/ X ✳</code>.
+</p>
+<div class="tafel" id="vergleich-kaesten"></div>
+
+<h2>Das Popup beim Antippen</h2>
+<p class="e">
+  Alle Kästchen groß und einzeln, Zahlenpad statt Systemtastatur, darunter Heilen mit
+  Erklärung. Für Willenskraft entfiele „Heilen" beim Spieler — die stellt laut eurer Regel
+  nur die Spielleitung wieder her.
+</p>
+<div class="popup">
+  <h4>Gesundheit</h4>
+  <p class="unter">10 von 16 frei · 3 Schlag, 2 tödlich, 1 unheilbar</p>
+  <div class="alle" id="popup-alle"></div>
+
+  <div class="schnell">
+    <button>− 1</button><button>− 2</button><button>− 3</button><button>+ 1 heilen</button>
+  </div>
+
+  <div class="padzeile">
+    <div class="pad">
+      <button>7</button><button>8</button><button>9</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>1</button><button>2</button><button>3</button>
+      <button>0</button><button>⌫</button><button>C</button>
+    </div>
+    <div class="anzeige">6</div>
+  </div>
+
+  <div class="arten">
+    <button>Schlag</button><button data-aktiv>Tödlich</button><button>Unheilbar</button>
+  </div>
+  <div class="tun">
+    <button class="schaden">Schaden eintragen</button>
+    <button class="heilen">Heilen</button>
+  </div>
+  <p class="heilhinweis">
+    <strong>Heilen:</strong> Schlagschaden verschwindet nach einer Ruhepause von selbst,
+    tödlicher Schaden braucht Pflege oder eine Klinik, unheilbarer nur Magie oder Bioware.
+    Geheilt wird immer der leichteste Schaden zuerst.
+  </p>
+</div>
+
+<h2>Zum Vergleich: alle vier Leisten im neuen Stil</h2>
+<div class="tafel" id="alle-vier"></div>
+
+<script>
+/* Kleiner Renderer, damit sich die Zustände leicht durchspielen lassen.
+   schaden = {schlag, schwer, aggraviert}; bei Leisten ohne Arten: verbraucht. */
+const SCHWELLE = 10;   // bis hierher nur große Kästchen
+const ENDEN = 5;       // so viele große Kästchen bleiben immer stehen
+
+function zeichen(art) { return art === "aggraviert" ? "✳" : art === "schwer" ? "X" : "/"; }
+
+function artenListe({ schlag = 0, schwer = 0, aggraviert = 0 }) {
+  // Schwererer Schaden steht links — wie beim Ausfüllen von Hand.
+  return [...Array(aggraviert).fill("aggraviert"),
+          ...Array(schwer).fill("schwer"),
+          ...Array(schlag).fill("schlag")];
+}
+
+function leiste({ titel, max, ton, schaden, verbraucht = 0, stil = "zeichen", lage }) {
+  const belegt = schaden ? artenListe(schaden) : Array(verbraucht).fill("voll");
+  const frei = max - belegt.length;
+  const z = document.createElement("div");
+  z.className = "zeile"; z.style.setProperty("--ton", ton);
+
+  let html = `<span class="titel">${titel}</span>`;
+
+  if (max > SCHWELLE) {
+    const pufferN = max - ENDEN;
+    let zellen = "";
+    for (let i = 0; i < pufferN; i++) {
+      const a = belegt[i];
+      zellen += a ? (a === "voll" ? `<i data-v></i>` : `<i data-a="${a}"></i>`) : `<i></i>`;
+    }
+    html += `<span class="puffer">${zellen}</span>`;
+    let kaesten = "";
+    for (let i = pufferN; i < max; i++) {
+      const a = belegt[i];
+      if (!a) kaesten += `<span class="kasten"></span>`;
+      else if (a === "voll") kaesten += `<span class="kasten fuell" data-a="aggraviert"></span>`;
+      else kaesten += stil === "zeichen"
+        ? `<span class="kasten">${zeichen(a)}</span>`
+        : `<span class="kasten fuell" data-a="${a}"></span>`;
+    }
+    html += `<span class="enden">${kaesten}</span>`;
+  } else {
+    let kaesten = "";
+    for (let i = 0; i < max; i++) {
+      const a = belegt[i];
+      if (!a) kaesten += `<span class="kasten"></span>`;
+      else if (a === "voll") kaesten += `<span class="kasten fuell" data-a="aggraviert"></span>`;
+      else kaesten += stil === "zeichen"
+        ? `<span class="kasten">${zeichen(a)}</span>`
+        : `<span class="kasten fuell" data-a="${a}"></span>`;
+    }
+    html += `<span class="enden" style="flex-wrap:wrap">${kaesten}</span><span style="flex:1"></span>`;
+  }
+
+  html += `<span class="zahl">${frei} / ${max}</span>`;
+  if (lage) html += `<span class="lage">${lage}</span>`;
+  z.innerHTML = html;
+  return z;
+}
+
+const G = "var(--track-gesundheit)", W = "var(--track-willenskraft)",
+      I = "var(--track-ice)", R = "var(--track-ruestung)";
+
+const setze = (id, zeilen) => zeilen.forEach(z => document.getElementById(id).appendChild(leiste(z)));
+
+setze("ryu-jetzt", [
+  { titel:"Gesundheit", max:10, ton:G, schaden:{} },
+  { titel:"Willenskraft", max:5, ton:W, verbraucht:0 },
+  { titel:"I.C.E.", max:5, ton:I, verbraucht:0 },
+]);
+
+setze("ryu-verletzt", [
+  { titel:"Gesundheit", max:10, ton:G, schaden:{ schlag:3, schwer:2, aggraviert:1 } },
+  { titel:"Willenskraft", max:5, ton:W, verbraucht:2 },
+  { titel:"I.C.E.", max:5, ton:I, verbraucht:1 },
+]);
+
+setze("ryu-spaeter", [
+  { titel:"Gesundheit", max:16, ton:G, schaden:{ schlag:3, schwer:2, aggraviert:1 } },
+  { titel:"Willenskraft", max:14, ton:W, verbraucht:5 },
+  { titel:"Rüstung", max:12, ton:R, verbraucht:3 },
+]);
+
+setze("ryu-kritisch", [
+  { titel:"Gesundheit", max:16, ton:G, schaden:{ schlag:6, schwer:5, aggraviert:3 },
+    lage:"Puffer leer — jetzt zählt man" },
+]);
+
+setze("vergleich-kaesten", [
+  { titel:"mit Zeichen", max:16, ton:G, schaden:{ schlag:4, schwer:3, aggraviert:2 }, stil:"zeichen" },
+  { titel:"mit Füllhöhe", max:16, ton:G, schaden:{ schlag:4, schwer:3, aggraviert:2 }, stil:"fuellung" },
+]);
+
+setze("alle-vier", [
+  { titel:"Gesundheit", max:16, ton:G, schaden:{ schlag:2, schwer:1, aggraviert:1 } },
+  { titel:"Willenskraft", max:14, ton:W, verbraucht:6 },
+  { titel:"Rüstung", max:12, ton:R, verbraucht:4 },
+  { titel:"I.C.E.", max:11, ton:I, verbraucht:3 },
+]);
+
+/* Popup: alle 16 groß, wie im Entwurf beschrieben */
+const alle = document.getElementById("popup-alle");
+const belegt = artenListe({ schlag:3, schwer:2, aggraviert:1 });
+for (let i = 0; i < 16; i++) {
+  const s = document.createElement("span");
+  s.className = "kasten"; s.style.setProperty("--ton", G);
+  if (belegt[i]) s.textContent = zeichen(belegt[i]);
+  alle.appendChild(s);
+}
+</script>
+</body>
+</html>

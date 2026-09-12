@@ -1,0 +1,337 @@
+/* Rassen-Baukasten. Hält sich an die Kachel-Sprache der Gegenstände
+   (items/gegenstaende.css): Raster aus antippbaren Kacheln, Details im
+   Fenster. Farben ausschliesslich als Tokens — siehe docs/theming.md. */
+
+.ra-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.ra-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ra-anzahl {
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.ra-warnung {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  color: var(--warn);
+  font-size: 13px;
+}
+
+.ra-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.ra-kachel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--flaeche);
+}
+
+/* Nicht freigegebene Rassen bleiben sichtbar, treten aber zurück: sie
+   gehören zum Regelwerk, nur nicht zu dieser Runde. */
+.ra-kachel[data-frei="false"] {
+  opacity: 0.55;
+}
+
+.ra-kachel-flaeche {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ra-kachel-bild {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text-aus);
+  font-size: 32px;
+  overflow: hidden;
+}
+
+.ra-kachel-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ra-kachel-name {
+  font-weight: 600;
+}
+
+.ra-kachel-punkte {
+  font-size: 12px;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-kachel-mods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.ra-kachel-mods span {
+  padding: 1px 5px;
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  color: var(--nein);
+}
+
+.ra-kachel-mods span[data-vorteil="true"] {
+  color: var(--gut);
+}
+
+.ra-kachel-mods em {
+  color: var(--text-aus);
+  font-size: 11px;
+}
+
+.ra-kachel-warnung {
+  font-size: 11px;
+  color: var(--warn);
+}
+
+.ra-kachel-freigabe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--linie);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.ra-leer {
+  color: var(--text-aus);
+  font-style: italic;
+}
+
+/* --- Editor im Fenster ------------------------------------------------ */
+
+.ra-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Die Bilanz steht ganz oben: sie ist die eigentliche Auskunft des
+   Baukastens, nicht eine Fussnote unter dem Formular. */
+.ra-bilanz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--gut);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-bilanz[data-stimmt="false"] {
+  border-color: var(--warn);
+}
+
+.ra-bilanz-urteil {
+  margin-left: auto;
+  color: var(--gut);
+  font-weight: 600;
+}
+
+.ra-bilanz[data-stimmt="false"] .ra-bilanz-urteil {
+  color: var(--warn);
+}
+
+.ra-bilanz-nachteile {
+  color: var(--text-leise);
+}
+
+.ra-hinweise {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--warn);
+  font-size: 12px;
+}
+
+.ra-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ra-feld input,
+.ra-feld textarea {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+}
+
+.ra-hinweis {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-aus);
+  font-style: italic;
+}
+
+.ra-punkte {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ra-punkte label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ra-punkte em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-aus);
+}
+
+.ra-punkte input {
+  width: 64px;
+}
+
+.ra-punkte-summe {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-spalte h4 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-aus);
+}
+
+.ra-mod {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.ra-mod-name {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+  color: var(--text-aus);
+}
+
+/* Gesetzte Modifikatoren treten hervor — beim Durchsehen einer Rasse will
+   man sofort erkennen, was sie überhaupt anfasst. */
+.ra-mod[data-gesetzt="true"] .ra-mod-name {
+  color: var(--text);
+}
+
+.ra-mod-regler {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ra-mod-regler button {
+  width: 26px;
+  padding: 2px 0;
+  line-height: 1;
+}
+
+.ra-mod-wert {
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-aus);
+}
+
+.ra-mod-wert[data-vorteil="true"] {
+  color: var(--gut);
+}
+
+.ra-mod-wert[data-nachteil="true"] {
+  color: var(--nein);
+}
+
+.ra-bild {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ra-bild img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.ra-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--linie);
+}
+
+.ra-speichern {
+  font-weight: 600;
+}
+
+/* Abgesetzt und leise, wie das Wegwerfen bei Gegenständen: erst der Griff
+   danach ist eine Entscheidung, die Rückfrage stellt die Komponente. */
+.ra-loeschen {
+  margin-left: auto;
+  color: var(--nein);
+  font-size: 12px;
+}
+
+.ra-neu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}

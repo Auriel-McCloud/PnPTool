@@ -22,6 +22,7 @@ from app.kampf.ruestung import (
     uebersicht as ruestungs_uebersicht,
     verteile_kaestchenschaden,
 )
+from app.rassen import repository as rassen_repository
 from app.traits import erfahrung, erstellung, repository
 from app.traits.bogen import (
     bogen_uebersicht,
@@ -362,14 +363,34 @@ class ErstellungInput(BaseModel):
     ziel: str = ""
 
 
+async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
+    """Die in dieser Kampagne freigegebenen Rassen, im Format des Regelwerks.
+
+    Der Katalog liegt in der Datenbank und wird im Baukasten gepflegt (siehe
+    app/rassen/); die Erstellung kennt nur noch die **freigegebenen**. Marks
+    Vorgabe: *"es sollten nicht automatisch alle zur Verfügung stehen,
+    sondern nur ausgewählte."*
+    """
+    return {
+        r["name"]: {
+            "modifikatoren": r["modifikatoren"],
+            "freiePunkte": r["freiePunkte"],
+            "beschreibung": r["beschreibung"],
+            "bildUrl": r["bildUrl"],
+        }
+        for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
+    }
+
+
 @router.get("/erstellung/regeln")
-async def get_erstellungsregeln() -> dict:
+async def get_erstellungsregeln(campaign_id: str) -> dict:
     """Rassen, Pakete, Hintergründe, Freebee-Preise.
 
     Auch für Spieler lesbar — sie erstellen ihren Charakter selbst, und die
-    Regeln sind nichts Geheimes.
+    Regeln sind nichts Geheimes. Die Rassen kommen aus der Freigabe dieser
+    Kampagne, nicht mehr aus der fest verdrahteten Tabelle.
     """
-    return erstellung.regelwerk()
+    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id))
 
 
 @router.post("/personen/{person_id}/erstellung")
@@ -404,12 +425,13 @@ async def erstelle_charakter(
     katalog = await repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
 
     auswahl = body.model_dump()
-    fehler = erstellung.pruefe(auswahl, katalog)
+    verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
+    fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
     if fehler:
         # 422 statt 400: die Anfrage ist wohlgeformt, nur regelwidrig.
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"fehler": fehler})
 
-    werte = erstellung.endwerte(auswahl)
+    werte = erstellung.endwerte(auswahl, verfuegbare_rassen)
     # Alles aus dem Katalog, was nicht vorkommt, ausdrücklich auf 0 — sonst
     # bliebe bei einer Korrektur durch die Spielleitung ein alter Wert stehen.
     erlaubte_kategorien = (
@@ -421,6 +443,14 @@ async def erstelle_charakter(
         if eintrag["name"] not in werte and eintrag["category"] in erlaubte_kategorien:
             werte[eintrag["name"]] = 0
     await repository.set_ratings_bulk(campaign_id, person_id, werte)
+    # Der Rassendeckel gilt ein Leben lang, nicht nur bei der Erstellung —
+    # er muss deshalb als maxOverride ans Blatt (siehe
+    # erstellung.py::lebensmaxima). Ohne diesen Schritt fiel jedes Attribut
+    # nach der Erstellung auf das Katalogmaximum zurück, und die Rasse war
+    # danach wirkungslos.
+    await repository.setze_maxima_bulk(
+        campaign_id, person_id, erstellung.lebensmaxima(body.rasse, katalog, verfuegbare_rassen)
+    )
 
     vermoegen, schulden = erstellung.kapital(auswahl)
     aktualisiert = await update_node(

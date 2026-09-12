@@ -30,6 +30,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Mitteilungen](./mitteilungen.md) | SL-Broadcasts, Live-Popups | ⭐ |
 | [Kampf](./kampf.md) | Rundenbasierter Kampf, Initiative | |
 | [Rüstung](./ruestung.md) | Kästchen + Durchlass, Abnutzung im Kampf | ⭐ |
+| [Rassen](./rassen.md) | Baukasten, Balance-Regel, Freigabe je Kampagne | |
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
 

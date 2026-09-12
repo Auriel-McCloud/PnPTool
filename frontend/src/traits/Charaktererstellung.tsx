@@ -311,6 +311,7 @@ export function Charaktererstellung({
             punkte={attributPunkte}
             onKontingent={kontingentSetzen}
             onPunkte={setAttributPunkte}
+            katalog={katalog}
           />
         )}
 
@@ -340,6 +341,7 @@ export function Charaktererstellung({
         {aktuell.id === "freebees" && (
           <SchrittFreebees
             regeln={regeln}
+            rasse={gewaehlteRasse}
             frei={freebeesFrei}
             punkte={freebeePunkte}
             grundwert={grundwert}
@@ -448,35 +450,97 @@ function SchrittRasse({
   rasse: string;
   onWaehlen: (name: string) => void;
 }) {
+  const gewaehlt = regeln.rassen.find((r) => r.name === rasse);
   return (
-    <div className="er-karten er-karten-schmal">
-      {regeln.rassen.map((r) => {
-        const mods = Object.entries(r.modifikatoren);
-        return (
-          <button
-            key={r.name}
-            type="button"
-            className={`er-karte${rasse === r.name ? " er-karte-aktiv" : ""}`}
-            onClick={() => onWaehlen(r.name)}
-          >
-            <span className="er-karte-titel">{r.name}</span>
-            <span className="er-karte-text">{r.beschreibung}</span>
-            <span className="er-karte-zahlen">
-              <span className="er-marke">{r.freiePunkte.join(" / ")} Punkte</span>
-              {mods.length === 0 ? (
-                <span className="er-marke er-marke-leise">keine Anlagen</span>
-              ) : (
-                mods.map(([name, wert]) => (
-                  <span key={name} className={`er-marke ${wert > 0 ? "er-marke-plus" : "er-marke-minus"}`}>
-                    {name} {wert > 0 ? `+${wert}` : wert}
-                  </span>
-                ))
+    <>
+      {regeln.rassen.length === 0 && (
+        <p className="er-leer">
+          Für diese Kampagne hat die Spielleitung noch keine Rasse freigegeben — ohne sie lässt sich kein
+          Charakter bauen.
+        </p>
+      )}
+      <div className="er-karten er-karten-schmal">
+        {regeln.rassen.map((r) => {
+          const mods = Object.entries(r.modifikatoren);
+          return (
+            <button
+              key={r.name}
+              type="button"
+              className={`er-karte${rasse === r.name ? " er-karte-aktiv" : ""}`}
+              onClick={() => onWaehlen(r.name)}
+            >
+              {r.bildUrl && (
+                <span className="er-karte-bild">
+                  <img src={r.bildUrl} alt="" />
+                </span>
               )}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+              <span className="er-karte-titel">{r.name}</span>
+              <span className="er-karte-text">{r.beschreibung}</span>
+              <span className="er-karte-zahlen">
+                <span className="er-marke">{r.freiePunkte.join(" / ")} Punkte</span>
+                {mods.length === 0 ? (
+                  <span className="er-marke er-marke-leise">keine Anlagen</span>
+                ) : (
+                  mods.map(([name, wert]) => (
+                    <span key={name} className={`er-marke ${wert > 0 ? "er-marke-plus" : "er-marke-minus"}`}>
+                      {name} {wert > 0 ? `+${wert}` : wert}
+                    </span>
+                  ))
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {gewaehlt && <RassenInfobox rasse={gewaehlt} />}
+    </>
+  );
+}
+
+/**
+ * Was die gewählte Rasse für diesen Charakter bedeutet.
+ *
+ * Die Karten oben vergleichen, die Infobox erklärt: sie steht deshalb erst
+ * da, wenn eine Wahl getroffen ist, und wiederholt nicht die Marken der
+ * Karte, sondern übersetzt sie in Folgen. Vor allem die Obergrenze — dass
+ * ein Troll bei Körperkraft dauerhaft auf 8 statt 6 kommt, steht sonst
+ * nirgends, obwohl es die Entscheidung fürs ganze Charakterleben prägt.
+ */
+function RassenInfobox({ rasse }: { rasse: Rasse }) {
+  const mods = Object.entries(rasse.modifikatoren);
+  const vorteile = mods.filter(([, w]) => w > 0);
+  const nachteile = mods.filter(([, w]) => w < 0);
+  return (
+    <aside className="er-infobox">
+      {rasse.bildUrl && <img className="er-infobox-bild" src={rasse.bildUrl} alt={rasse.name} />}
+      <div className="er-infobox-text">
+        <h3>{rasse.name}</h3>
+        <p>{rasse.beschreibung}</p>
+        <p className="er-infobox-punkte">
+          Du verteilst <strong>{rasse.freiePunkte.join(" / ")}</strong> Punkte frei auf die drei
+          Attributspalten — welches Kontingent auf welche Spalte fällt, entscheidest du.
+        </p>
+        {vorteile.length > 0 && (
+          <p>
+            <strong>Anlagen:</strong>{" "}
+            {vorteile.map(([name, wert]) => `${name} +${wert} (Grenze ${rasse.startmaxima[name]} bei der Erstellung)`).join(", ")}
+          </p>
+        )}
+        {nachteile.length > 0 && (
+          <p>
+            <strong>Schwächen:</strong>{" "}
+            {nachteile.map(([name, wert]) => `${name} ${wert} (Grenze ${rasse.startmaxima[name]})`).join(", ")}
+          </p>
+        )}
+        {mods.length > 0 && (
+          <p className="er-infobox-leise">
+            Diese Anlagen gelten ein Leben lang: sie verschieben nicht nur den Start, sondern auch die
+            Obergrenze, bis zu der du das Attribut je steigern kannst.
+          </p>
+        )}
+      </div>
+    </aside>
   );
 }
 
@@ -488,6 +552,7 @@ function SchrittAttribute({
   punkte,
   onKontingent,
   onPunkte,
+  katalog,
 }: {
   regeln: Erstellungsregeln;
   rasse: Rasse;
@@ -496,19 +561,36 @@ function SchrittAttribute({
   punkte: Record<string, number>;
   onKontingent: (kategorie: string, wert: number) => void;
   onPunkte: (werte: Record<string, number>) => void;
+  /** Für das Lebensmaximum je Attribut (Katalogwert + Rassenmodifikator). */
+  katalog: TraitDef[];
 }) {
   // Gleiche Zahlen können mehrfach vorkommen (Elf 5/5/3) — dann ist die
   // Auswahl an dieser Stelle ohnehin eindeutig.
   const kontingente = [...new Set(rasse.freiePunkte)];
+
+  /**
+   * Wie weit dieses Attribut **je** kommen kann: Katalogmaximum plus
+   * Rassenmodifikator — dieselbe Rechnung wie serverseitig in
+   * `erstellung.py::lebensmaxima`. Fehlt der Katalogeintrag (sollte nicht
+   * vorkommen), bleibt die Erstellungsgrenze das Sichtbare.
+   */
+  function lebensmaximumVon(name: string) {
+    const eintrag = katalog.find((t) => t.name === name);
+    if (!eintrag) return rasse.startmaxima[name];
+    return eintrag.defaultMax + (rasse.modifikatoren[name] ?? 0);
+  }
 
   return (
     <div>
       <p className="er-hinweis">
         Jeder startet mit einem Punkt je Attribut, verändert durch die Anlagen deiner Rasse.
         Die drei Kontingente <strong>{rasse.freiePunkte.join(" / ")}</strong> verteilst du frei auf die
-        Spalten — und darin auf die einzelnen Attribute. Wie weit ein Attribut bei der Erstellung gehen
-        darf, zeigt die Länge seiner Punktreihe; sie richtet sich nach deinen Anlagen. Nur Freebees
-        dürfen darüber hinaus.
+        Spalten — und darin auf die einzelnen Attribute.
+        {" "}
+        <strong>Graue Punkte</strong> kommen von deiner Rasse und stehen fest.{" "}
+        <strong>Farbige</strong> vergibst du jetzt. <strong>Blasse</strong> zeigen, wie weit der Wert
+        später mit Erfahrung noch kommen kann — bei der Erstellung sind sie gesperrt, nur Freebees
+        dürfen ein Stück darüber hinaus.
       </p>
       <div className="er-spalten">
         {regeln.attributKategorien.map((kategorie) => (
@@ -530,15 +612,41 @@ function SchrittAttribute({
             {kategorie.attribute.map((name) => {
               const start = rasse.startwerte[name];
               const wert = start + (punkte[name] || 0);
+              const mod = rasse.modifikatoren[name] ?? 0;
               return (
                 // Name darüber, Punkte darunter linksbündig: nebeneinander
                 // stehen die Punktreihen unterschiedlich weit rechts, weil
                 // die Namen verschieden lang sind — das sah unruhig aus.
                 <div key={name} className="er-wert er-wert-gestapelt">
-                  <span className="er-wert-name">{name}</span>
+                  <span className="er-wert-name">
+                    {name}
+                    {/* Ohne diese Marke bleibt unerklärt, warum eine Reihe
+                        mehr oder weniger Punkte hat als die daneben — genau
+                        das hat Mark beim Bauen von Fred verwirrt. */}
+                    {mod !== 0 && (
+                      <span
+                        className={`er-marke ${mod > 0 ? "er-marke-plus" : "er-marke-minus"}`}
+                        title={
+                          mod > 0
+                            ? `${rasse.name}: +${mod}. Startet höher, und du kannst diesen Wert später bis ${6 + mod} steigern statt nur bis 6.`
+                            : `${rasse.name}: ${mod}. Startet niedriger, und mehr als ${6 + mod} wird aus diesem Wert nie.`
+                        }
+                      >
+                        {mod > 0 ? `+${mod}` : mod}
+                      </span>
+                    )}
+                  </span>
+                  {/* Die Reihe reicht bis zum **Lebensmaximum**, nicht nur
+                      bis zur Erstellungsgrenze: so sieht man, wie weit der
+                      Wert je kommen kann, und warum die Reihen verschieden
+                      lang sind. Grau = kommt von der Rasse und steht fest,
+                      farbig = jetzt vergebbar, blass = erst später mit
+                      Erfahrung. */}
                   <DotPool
                     value={wert}
-                    max={rasse.startmaxima[name]}
+                    max={lebensmaximumVon(name)}
+                    fest={start}
+                    waehlbarBis={rasse.startmaxima[name]}
                     onChange={(neu) => {
                       // Unter den rassenbedingten Startwert geht es nicht.
                       const punkteNeu = Math.max(0, neu - start);
@@ -549,6 +657,9 @@ function SchrittAttribute({
                       onPunkte({ ...punkte, [name]: punkteNeu });
                     }}
                   />
+                  <span className="er-wert-grenzen">
+                    bis {rasse.startmaxima[name]} jetzt · {lebensmaximumVon(name)} möglich
+                  </span>
                 </div>
               );
             })}
@@ -732,6 +843,7 @@ function SchrittHintergrund({
 
 function SchrittFreebees({
   regeln,
+  rasse,
   frei,
   punkte,
   waehlbar,
@@ -745,6 +857,14 @@ function SchrittFreebees({
   onEigenkapital,
 }: {
   regeln: Erstellungsregeln;
+  /**
+   * Nötig für die Obergrenze: Freebees dürfen über das **Start**maximum
+   * hinaus, aber nicht über das Lebensmaximum der Rasse. Ohne sie stand hier
+   * stur der Katalogwert 6 — ein Zwerg konnte Charisma auf 6 kaufen (sein
+   * Deckel ist 5) und kam nie auf die 7 bei Widerstandsfähigkeit, die ihm
+   * zusteht (Mark, 11.09.2026).
+   */
+  rasse: Rasse | undefined;
   frei: number;
   punkte: Record<string, number>;
   /** Alles, was dieser Charakter überhaupt haben kann — mit Obergrenze. */
@@ -809,7 +929,17 @@ function SchrittFreebees({
                   </span>
                   <DotPool
                     value={basis + zusatz}
-                    max={t.defaultMax}
+                    // Lebensmaximum der Rasse statt des Katalogwerts: der
+                    // Zwerg kommt bei Widerstandsfähigkeit auf 7, bei
+                    // Charisma aber nur auf 5. Dieselbe Grenze prüft das
+                    // Backend (erstellung.py::pruefe), sonst käme hier ein
+                    // Wert zustande, den es beim Einreichen ablehnt.
+                    max={t.defaultMax + (rasse?.modifikatoren[t.name] ?? 0)}
+                    // Was aus Rasse und Attributschritt schon feststeht, ist
+                    // hier nicht mehr verhandelbar — Freebees kommen nur
+                    // obendrauf. Grau statt anklickbar macht das sichtbar,
+                    // statt den Klick still verpuffen zu lassen.
+                    fest={basis}
                     onChange={(ziel) => {
                       // Unter den bereits verteilten Grundwert geht es nicht —
                       // das wäre eine Änderung an einem früheren Schritt.

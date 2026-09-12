@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kästchen-Overflow — Entwurf zum Vergleichen</title>
+<style>
+  /* Echte Tokens aus frontend/src/theme/tokens.css, damit der Eindruck stimmt. */
+  :root {
+    --p-schwarz:#08080d; --p-nacht:#101018; --p-nacht-hoch:#171722;
+    --p-grau:#26263a; --p-grau-hell:#363650;
+    --p-weiss:#e8e8f0; --p-weiss-leise:#8a8aa0; --p-weiss-aus:#5a5a70;
+    --p-rot:#ff4d6b; --p-bernstein:#ffb648; --p-tuerkis:#35e0d0; --p-koralle:#ff6b4d;
+    --p-cyan:#00e5ff;
+
+    --grund:var(--p-schwarz); --flaeche:var(--p-nacht); --flaeche-tief:#0c0c14;
+    --linie:var(--p-grau); --linie-hell:var(--p-grau-hell);
+    --text:var(--p-weiss); --text-leise:var(--p-weiss-leise); --text-aus:var(--p-weiss-aus);
+    --neon:var(--p-cyan); --radius:6px;
+
+    --track-gesundheit:var(--p-rot);
+    --track-willenskraft:var(--p-bernstein);
+    --track-ice:var(--p-tuerkis);
+    --track-ruestung:var(--p-koralle);
+  }
+
+  body {
+    margin:0; padding:24px; background:var(--grund); color:var(--text);
+    font-family:"Segoe UI",system-ui,sans-serif;
+  }
+  h1 { font-size:18px; letter-spacing:.08em; margin:0 0 4px; }
+  h2 { font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+       color:var(--neon); margin:28px 0 10px; }
+  .erklaerung { color:var(--text-leise); font-size:13px; max-width:70ch; line-height:1.6; margin:0 0 8px; }
+  .tafel { background:var(--flaeche); border:1px solid var(--linie);
+           border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; }
+  .zeile { display:flex; align-items:center; gap:14px; padding:9px 0; }
+  .titel { width:110px; flex:none; font-size:11px; letter-spacing:.14em;
+           text-transform:uppercase; color:var(--text-leise); }
+  .zahl { width:66px; flex:none; text-align:right; font-variant-numeric:tabular-nums;
+          font-size:14px; color:var(--text); }
+  .lage { color:var(--text-aus); font-size:11px; font-style:italic; }
+
+  /* ---------- Variante A: glatte Leiste ---------- */
+  .balken { position:relative; flex:1; height:14px; border-radius:7px;
+            background:var(--flaeche-tief); border:1px solid var(--linie); overflow:hidden; }
+  .balken > i { display:block; height:100%; background:var(--ton);
+                box-shadow:0 0 12px -4px var(--ton); }
+
+  /* ---------- Variante B: Zellen + Endkästchen ---------- */
+  .puffer { display:flex; gap:2px; flex:1; }
+  .puffer > i { flex:1; height:14px; border-radius:2px;
+                background:var(--flaeche-tief); border:1px solid var(--linie); }
+  .puffer > i[data-voll]   { background:var(--ton); border-color:var(--ton); }
+  /* Fünfergruppen sichtbar halten, sonst zählt man nicht mehr */
+  .puffer > i:nth-child(5n) { margin-right:7px; }
+
+  .enden { display:flex; gap:5px; flex:none; }
+  .kasten { width:22px; height:22px; border:1px solid var(--linie-hell);
+            border-radius:3px; background:var(--flaeche-tief);
+            display:flex; align-items:center; justify-content:center;
+            font-size:14px; line-height:1; color:var(--ton); }
+
+  /* Schadensarten: im Balken über die Füllung, in den Kästchen über die Zeichen */
+  .puffer > i[data-art="schlag"]     { background:repeating-linear-gradient(45deg,var(--ton) 0 2px,transparent 2px 4px); border-color:var(--ton); }
+  .puffer > i[data-art="schwer"]     { background:linear-gradient(var(--ton) 50%, transparent 50%); border-color:var(--ton); }
+  .puffer > i[data-art="aggraviert"] { background:var(--ton); border-color:var(--ton); }
+
+  .beine { display:flex; gap:26px; flex-wrap:wrap; margin-top:6px; }
+  .bein { font-size:11px; color:var(--text-aus); display:flex; align-items:center; gap:6px; }
+  .probe { width:26px; height:12px; border:1px solid var(--linie); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<h1>Kästchen-Overflow — zwei Varianten zum Vergleichen</h1>
+<p class="erklaerung">
+  Beide Male dieselben Daten. Oben nur Leiste und Zahl, unten Leiste plus die letzten fünf
+  Kästchen. Die Kästchen der Vollansicht säßen in beiden Fällen im Popup.
+</p>
+
+<h2>Variante A — nur Leiste und Zahl</h2>
+<p class="erklaerung">
+  Ruhig und überall gleich. Die Zahl daneben sagt exakt, wie viel übrig ist — was die
+  Leiste allein nicht könnte.
+</p>
+<div class="tafel">
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="balken"><i style="width:100%"></i></span>
+    <span class="zahl">18 / 18</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="balken"><i style="width:67%"></i></span>
+    <span class="zahl">12 / 18</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="balken"><i style="width:11%"></i></span>
+    <span class="zahl">2 / 18</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-willenskraft)">
+    <span class="titel">Willenskraft</span>
+    <span class="balken"><i style="width:58%"></i></span>
+    <span class="zahl">7 / 12</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-ruestung)">
+    <span class="titel">Rüstung</span>
+    <span class="balken"><i style="width:75%"></i></span>
+    <span class="zahl">9 / 12</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-ice)">
+    <span class="titel">I.C.E.</span>
+    <span class="balken"><i style="width:40%"></i></span>
+    <span class="zahl">4 / 10</span>
+  </div>
+</div>
+
+<h2>Variante B — Zellenleiste plus die letzten fünf</h2>
+<p class="erklaerung">
+  Die Leiste ist gezellt (eine Zelle = ein Kästchen, in Fünfergruppen), rechts stehen immer
+  die letzten fünf als echte Kästchen mit den gewohnten Zeichen. Beim Gesundheitsbalken
+  zeigt die Füllung zusätzlich die Schadensart: schraffiert = Schlag, halb = tödlich,
+  voll = unheilbar.
+</p>
+<div class="tafel">
+  <!-- 18 gesamt: 13 Zellen Puffer + 5 Kästchen -->
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="puffer">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </span>
+    <span class="enden">
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">18 / 18</span>
+  </div>
+
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="puffer">
+      <i data-art="aggraviert"></i><i data-art="schwer"></i><i data-art="schwer"></i>
+      <i data-art="schlag"></i><i data-art="schlag"></i><i data-art="schlag"></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </span>
+    <span class="enden">
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">12 / 18</span>
+  </div>
+
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="puffer">
+      <i data-art="aggraviert"></i><i data-art="aggraviert"></i><i data-art="aggraviert"></i>
+      <i data-art="schwer"></i><i data-art="schwer"></i><i data-art="schwer"></i>
+      <i data-art="schwer"></i><i data-art="schlag"></i><i data-art="schlag"></i>
+      <i data-art="schlag"></i><i data-art="schlag"></i><i data-art="schlag"></i><i data-art="schlag"></i>
+    </span>
+    <span class="enden">
+      <span class="kasten">✳</span><span class="kasten">X</span><span class="kasten">/</span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">2 / 18</span>
+    <span class="lage">Puffer leer — jetzt zählt man</span>
+  </div>
+</div>
+
+<div class="tafel">
+  <div class="zeile" style="--ton:var(--track-willenskraft)">
+    <span class="titel">Willenskraft</span>
+    <span class="puffer">
+      <i data-voll></i><i data-voll></i><i data-voll></i><i data-voll></i><i data-voll></i>
+      <i data-voll></i><i data-voll></i>
+    </span>
+    <span class="enden">
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">7 / 12</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-ruestung)">
+    <span class="titel">Rüstung</span>
+    <span class="puffer">
+      <i data-voll></i><i data-voll></i><i data-voll></i><i data-voll></i>
+      <i></i><i></i><i></i>
+    </span>
+    <span class="enden">
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">9 / 12</span>
+  </div>
+  <div class="zeile" style="--ton:var(--track-ice)">
+    <span class="titel">I.C.E.</span>
+    <span class="puffer"><i data-voll></i><i data-voll></i><i data-voll></i><i data-voll></i><i></i></span>
+    <span class="enden">
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span>
+    </span>
+    <span class="zahl">4 / 10</span>
+  </div>
+</div>
+
+<h2>Zum Vergleich: wie es heute aussieht</h2>
+<p class="erklaerung">18 einzelne Kästchen — der Grund, warum wir überhaupt darüber reden.</p>
+<div class="tafel">
+  <div class="zeile" style="--ton:var(--track-gesundheit)">
+    <span class="titel">Gesundheit</span>
+    <span class="enden" style="flex-wrap:wrap">
+      <span class="kasten">✳</span><span class="kasten">✳</span><span class="kasten">✳</span>
+      <span class="kasten">X</span><span class="kasten">X</span><span class="kasten">X</span>
+      <span class="kasten">X</span><span class="kasten">/</span><span class="kasten">/</span>
+      <span class="kasten">/</span><span class="kasten">/</span><span class="kasten">/</span>
+      <span class="kasten">/</span><span class="kasten"></span><span class="kasten"></span>
+      <span class="kasten"></span><span class="kasten"></span><span class="kasten"></span>
+    </span>
+  </div>
+</div>
+
+<div class="beine">
+  <span class="bein"><span class="probe" style="background:repeating-linear-gradient(45deg,var(--p-rot) 0 2px,transparent 2px 4px);border-color:var(--p-rot)"></span> Schlag</span>
+  <span class="bein"><span class="probe" style="background:linear-gradient(var(--p-rot) 50%,transparent 50%);border-color:var(--p-rot)"></span> tödlich</span>
+  <span class="bein"><span class="probe" style="background:var(--p-rot);border-color:var(--p-rot)"></span> unheilbar</span>
+  <span class="bein"><span class="probe"></span> frei</span>
+</div>
+
+</body>
+</html>

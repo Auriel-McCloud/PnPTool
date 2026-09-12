@@ -1083,16 +1083,21 @@ export function CharacterSheetPanel({
 
   async function setRating(t: MergedTrait, rating: number) {
     const clamped = Math.max(0, Math.min(rating, t.max));
-    const maxOverride = t.max !== t.defaultMax ? t.max : null;
-    await traitsApi.setWert(campaignId, person.id, t.traitDefId, clamped, maxOverride);
+    // `null` heisst "Maximum nicht anfassen" (siehe traits/repository.py::
+    // set_rating). Hier wird nur der Wert gesetzt — das Maximum kommt aus
+    // der Rasse oder von der Spielleitung und geht diesen Klick nichts an.
+    await traitsApi.setWert(campaignId, person.id, t.traitDefId, clamped, null);
     await refresh();
   }
 
   async function adjustMax(t: MergedTrait, delta: number) {
     const newMax = Math.max(1, t.max + delta);
     const newRating = Math.min(t.rating, newMax);
-    const maxOverride = newMax !== t.defaultMax ? newMax : null;
-    await traitsApi.setWert(campaignId, person.id, t.traitDefId, newRating, maxOverride);
+    // **Immer die Zahl schicken, nie null.** Vorher stand hier
+    // `newMax !== t.defaultMax ? newMax : null` — seit `null` "nicht
+    // anfassen" bedeutet, liesse sich ein Maximum damit nicht mehr auf den
+    // Katalogwert zurücksetzen: der Knopf hätte stumm nichts getan.
+    await traitsApi.setWert(campaignId, person.id, t.traitDefId, newRating, newMax);
     await refresh();
   }
 
