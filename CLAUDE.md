@@ -270,7 +270,7 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
 
 5. **Deploy** — Debian/nginx statt localhost
 
-6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → AI-Schmiede** ✨ NEU
+6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✨ NEU
 
    ```
    ┌─────────────────────────────────────────────────────┐
@@ -289,7 +289,7 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
    │  z.B. "Berlin 2087", "Tokyo 2090"                   │
    │  ├── Story-Wiki (istEntwurf: false)                 │
    │  │   → NPCs, Orte, Events dieser Kampagne           │
-   │  └── AI-Schmiede (istEntwurf: true)                 │
+   │  └── Ideenschmiede (istEntwurf: true)               │
    │      → WikiSeiten, NPCs, Orte, Gegenstände          │
    │      → KI-generiert oder manuell                    │
    │      → "In Kampagne verschieben" = Flag toggle      │
@@ -305,9 +305,9 @@ Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
    **Kampagne:**
    - Verknüpft mit genau einem Regelsystem
    - Story-Wiki: Die "echten" Inhalte die im Spiel existieren
-   - AI-Schmiede: Entwürfe, Ideen, KI-Output — noch nicht kanonisch
+   - Ideenschmiede: Entwürfe, Ideen, KI-Output — noch nicht kanonisch
 
-   **AI-Schmiede (pro Kampagne):**
+   **Ideenschmiede (pro Kampagne):**
    - Flag `istEntwurf: true` auf WikiSeiten, Personen, Orten, Gegenständen
    - KI-generierte Inhalte landen hier zur Prüfung
    - SL kann bearbeiten, dann "In Kampagne verschieben"
