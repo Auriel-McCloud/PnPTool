@@ -122,6 +122,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ruestungKaestchenAktuell": body.ruestungKaestchenAktuell,
         "ruestungDurchlassBasis": body.ruestungDurchlassBasis,
         "ruestungDurchlassAktuell": body.ruestungDurchlassAktuell,
+        # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+        "istEntwurf": body.istEntwurf,
     }
 
 

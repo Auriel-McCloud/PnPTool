@@ -31,6 +31,7 @@ _FELDER = """
     s.id AS id, s.titel AS titel, s.inhalt AS inhalt,
     s.sichtbarkeit AS sichtbarkeit, s.sichtbarFuer AS sichtbarFuer,
     s.sortierung AS sortierung, s.symbol AS symbol,
+    s.istEntwurf AS istEntwurf,
     s.erstelltAm AS erstelltAm, s.aktualisiertAm AS aktualisiertAm
 """
 
@@ -54,6 +55,7 @@ def _mit_defaults(record) -> dict:
     seite["titel"] = seite.get("titel") or "Ohne Titel"
     seite["erstelltAm"] = seite.get("erstelltAm") or ""
     seite["aktualisiertAm"] = seite.get("aktualisiertAm") or ""
+    seite["istEntwurf"] = seite.get("istEntwurf") or False
     seite.setdefault("parentId", None)
     return seite
 
@@ -174,6 +176,7 @@ async def create_seite(
     sichtbarkeit: str = "GM",
     sichtbar_fuer: list[str] | None = None,
     symbol: str = "",
+    ist_entwurf: bool = False,
 ) -> dict | None:
     """Legt eine Seite an. Standard ist SL-geheim (siehe wiki/visibility.py)."""
     driver = get_driver()
@@ -189,6 +192,7 @@ async def create_seite(
                 titel: $titel, inhalt: $inhalt,
                 sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbar_fuer,
                 sortierung: $sortierung, symbol: $symbol,
+                istEntwurf: $ist_entwurf,
                 erstelltAm: $jetzt, aktualisiertAm: $jetzt
             }})
             CREATE (c)-[:HAT_SEITE]->(s)
@@ -202,6 +206,7 @@ async def create_seite(
             sichtbar_fuer=sichtbar_fuer or [],
             sortierung=sortierung,
             symbol=symbol,
+            ist_entwurf=ist_entwurf,
             jetzt=jetzt,
         )
         record = await result.single()

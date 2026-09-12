@@ -130,6 +130,8 @@ class GegenstandCreate(BaseModel):
     # Bei Personen ergibt sich die Traglast stattdessen aus einem Attribut,
     # siehe campaigns/repository.py (EINSTELLUNGEN_DEFAULTS).
     kapazitaet: float = 0.0
+    # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+    istEntwurf: bool = False
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -173,6 +175,7 @@ class GegenstandUpdate(BaseModel):
     automatischImShop: bool | None = None
     gewicht: float | None = None
     kapazitaet: float | None = None
+    istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     istBehaelter: bool | None = None
     stufe: int | None = None
     widerstand: int | None = None
@@ -236,6 +239,7 @@ class GegenstandResponse(BaseModel):
     ablage: str
     gewicht: float
     kapazitaet: float
+    istEntwurf: bool = False  # Ideenschmiede
     istBehaelter: bool = False
     stufe: int = 0
     widerstand: int = 0

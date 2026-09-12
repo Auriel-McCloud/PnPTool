@@ -181,6 +181,7 @@ class EventCreate(BaseModel):
     description: str = ""
     notes: str = ""
     bildUrl: str = ""
+    istEntwurf: bool = False  # Ideenschmiede
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -193,6 +194,7 @@ class EventUpdate(BaseModel):
     description: str | None = None
     notes: str | None = None
     bildUrl: str | None = None
+    istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -206,6 +208,7 @@ class EventResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    istEntwurf: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

@@ -43,9 +43,10 @@ _BOGEN_FELDER = [
 
 # bildUrl: Aussehen einer Person, eines Ortes oder einer Szene. Die
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
-ORT_FIELDS = ["name", "description", "notes", "bildUrl", *_VISIBILITY_FIELDS]
-EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", *_VISIBILITY_FIELDS]
+# istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "istEntwurf", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+ORT_FIELDS = ["name", "description", "notes", "bildUrl", "istEntwurf", *_VISIBILITY_FIELDS]
+EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "istEntwurf", *_VISIBILITY_FIELDS]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
@@ -79,6 +80,8 @@ _BOGEN_DEFAULTS: dict = {
     # Bestandsdaten kennen das Feld nicht; ohne Ersatz scheitert die
     # Pydantic-Pruefung (Stolperstein 9).
     "bildUrl": "",
+    # Ideenschmiede: Bestandsdaten sind keine Entwürfe
+    "istEntwurf": False,
 }
 
 

@@ -10,7 +10,8 @@ RETURN_FIELDS = """
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
-    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istBehaelter AS istBehaelter,
+    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istEntwurf AS istEntwurf,
+    g.istBehaelter AS istBehaelter,
     g.stufe AS stufe, g.widerstand AS widerstand, g.angriff AS angriff, g.agilitaet AS agilitaet,
     g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
     g.deckBruteForce AS deckBruteForce, g.deckSchleichen AS deckSchleichen,
@@ -98,6 +99,8 @@ def _decode(record: dict) -> dict:
     # _or_default statt `or` — sonst würde 0 auf den Default zurückfallen.
     record["gewicht"] = float(_or_default(record.get("gewicht"), 0.0))
     record["kapazitaet"] = float(_or_default(record.get("kapazitaet"), 0.0))
+    # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+    record["istEntwurf"] = _or_default(record.get("istEntwurf"), False)
     # Ob etwas anderes hineinpasst. Frueher aus dem Typ geraten — ein Motorrad
     # ist aber ein Fahrzeug ohne Stauraum, und eine Kiste ist einer ohne Raeder.
     # Bestandsdaten: Behaelter ja, alles andere nein.
@@ -194,7 +197,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
-            ruestungDurchlassBasis: $ruestungDurchlassBasis, ruestungDurchlassAktuell: $ruestungDurchlassAktuell
+            ruestungDurchlassBasis: $ruestungDurchlassBasis, ruestungDurchlassAktuell: $ruestungDurchlassAktuell,
+            istEntwurf: $istEntwurf
         })
     """
     if owner_person_id:
@@ -270,6 +274,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ablage=data.get("ablage") or "RUCKSACK",
             gewicht=float(data.get("gewicht") or 0.0),
             kapazitaet=float(data.get("kapazitaet") or 0.0),
+            istEntwurf=bool(data.get("istEntwurf")),
         )
         record = await result.single()
         return _decode(dict(record)) if record else None

@@ -13,6 +13,8 @@ class SeiteCreate(BaseModel):
     inhalt: str = '{"type":"doc","content":[]}'
     parentId: str | None = None
     symbol: str = ""
+    # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
+    istEntwurf: bool = False
     # Standard SL-geheim — eine Planungsseite, die versehentlich offen steht,
     # verrät den Plot.
     sichtbarkeit: SichtbarkeitModus = "GM"
@@ -24,6 +26,7 @@ class SeiteUpdate(BaseModel):
     inhalt: str | None = None
     symbol: str | None = None
     sortierung: int | None = None
+    istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     # Bewusst nicht optional-mit-None-Bedeutung: siehe VerschiebeRequest.
@@ -45,6 +48,7 @@ class SeiteResponse(BaseModel):
     parentId: str | None = None
     symbol: str = ""
     sortierung: int = 0
+    istEntwurf: bool = False
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     erstelltAm: str = ""

@@ -96,6 +96,7 @@ async def seite_anlegen(campaign_id: str, body: SeiteCreate):
         sichtbarkeit=body.sichtbarkeit,
         sichtbar_fuer=body.sichtbarFuer,
         symbol=body.symbol,
+        ist_entwurf=body.istEntwurf,
     )
     if seite is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kampagne nicht gefunden")
