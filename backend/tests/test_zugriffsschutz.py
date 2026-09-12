@@ -89,6 +89,10 @@ OHNE_GM_ERLAUBT = {
     # die Route selbst: Entfernen gibt 403 für Spieler).
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/chirurgie",
     "/api/campaigns/{campaign_id}/mitteilungen/gelesen",
+    # Mitteilung(en) für sich selbst ausblenden. Löscht nichts — markiert nur,
+    # dass dieser User sie nicht mehr sehen will. Spieler handelt für sich.
+    "/api/campaigns/{campaign_id}/mitteilungen/ausblenden",
+    "/api/campaigns/{campaign_id}/mitteilungen/{mitteilung_id}/ausblenden",
     # Einen erlittenen Treffer eintragen — wie `zustand` nur am eigenen
     # Charakter (die Route prüft die Person selbst) und nur nach oben: der
     # errechnete Schaden wird addiert, dazu Kästchen/Durchlass des

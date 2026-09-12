@@ -31,6 +31,12 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
     """
     stufe = roh.get("stufe") or "GESEHEN"
     name_bekannt = bool(roh.get("echterNameBekannt"))
+    # chatOffen: explizit gesetzt ODER implizit durch Kontaktaustausch.
+    # Das Feld ist getrennt von stufe, damit die SL den Chat einzeln
+    # öffnen/schließen kann — aber Kontaktaustausch öffnet ihn automatisch.
+    chat_offen = roh.get("chatOffen")
+    if chat_offen is None:
+        chat_offen = ist_mindestens_stufe(stufe, "KONTAKT_AUSGETAUSCHT")
 
     return KontaktResponse(
         id=roh["id"],
@@ -46,7 +52,8 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
         echterNameBekannt=name_bekannt,
         kontaktAnfrageStatus=roh.get("kontaktAnfrageStatus") or "KEINE",
         persoenlicheNotizen=roh.get("persoenlicheNotizen") or "",
-        chatOffen=bool(roh.get("chatOffen")),
+        chatOffen=bool(chat_offen),
+        nurLesen=bool(roh.get("nurLesen")),
         ungelesen=int(roh.get("ungelesen") or 0),
     )
 
@@ -54,6 +61,10 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
 def kontakt_fuer_gm(roh: dict) -> KontaktGmResponse:
     """Die Spielleitung sieht alles — sie hat den NPC angelegt."""
     stufe = roh.get("stufe") or "GESEHEN"
+    # chatOffen: explizit gesetzt ODER implizit durch Kontaktaustausch
+    chat_offen = roh.get("chatOffen")
+    if chat_offen is None:
+        chat_offen = ist_mindestens_stufe(stufe, "KONTAKT_AUSGETAUSCHT")
     return KontaktGmResponse(
         id=roh["id"],
         npcId=roh["npcId"],
@@ -69,7 +80,8 @@ def kontakt_fuer_gm(roh: dict) -> KontaktGmResponse:
         echterNameBekannt=bool(roh.get("echterNameBekannt")),
         kontaktAnfrageStatus=roh.get("kontaktAnfrageStatus") or "KEINE",
         persoenlicheNotizen=roh.get("persoenlicheNotizen") or "",
-        chatOffen=bool(roh.get("chatOffen")),
+        chatOffen=bool(chat_offen),
+        nurLesen=bool(roh.get("nurLesen")),
         ungelesen=int(roh.get("ungelesen") or 0),
     )
 
