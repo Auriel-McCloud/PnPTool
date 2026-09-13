@@ -313,6 +313,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
               <option value="Ort">📍 Ort</option>
               <option value="Event">📅 Ereignis</option>
               <option value="Gegenstand">📦 Gegenstand</option>
+              <option value="Fraktion">⬡ Fraktion</option>
             </select>
           </label>
 
@@ -362,7 +363,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             >
               Alle ({anzahlProTyp.alle})
             </button>
-            {(["Person", "Ort", "Event", "WikiSeite", "Gegenstand"] as const).map((typ) =>
+            {(["Person", "Ort", "Event", "WikiSeite", "Gegenstand", "Fraktion"] as const).map((typ) =>
               anzahlProTyp[typ] ? (
                 <button
                   key={typ}
