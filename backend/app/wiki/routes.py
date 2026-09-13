@@ -62,9 +62,14 @@ async def seitenbaum(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     Erst filtern, dann den Baum bauen: Eine sichtbare Seite unter einem
     geheimen Kapitel würde sonst mitsamt ihrem Elternteil verschwinden.
     baum_bauen hängt sie stattdessen auf die oberste Ebene.
+    
+    Entwürfe (istEntwurf=true) werden ausgeblendet — sie gehören in die
+    Ideenschmiede, nicht ins normale Wiki.
     """
     seiten = await repository.list_seiten(campaign_id)
     sichtbar = filter_seiten_for_viewer(seiten, viewer.role, viewer.person_id)
+    # Entwürfe ausblenden
+    sichtbar = [s for s in sichtbar if not s.get("istEntwurf", False)]
     return [_ohne_inhalt(k) for k in baum_bauen(sichtbar)]
 
 

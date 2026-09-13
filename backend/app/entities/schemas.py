@@ -230,7 +230,59 @@ class EventResponse(BaseModel):
     notizenSichtbarFuer: list[str]
 
 
-EntityKind = Literal["Person", "Ort", "Event", "Gegenstand"]
+EntityKind = Literal["Person", "Ort", "Event", "Gegenstand", "Fraktion"]
+
+
+class FraktionCreate(BaseModel):
+    name: str
+    description: str = ""  # Was die Spielwelt über die Fraktion weiß/wahrnimmt
+    # Geheime Agenda: freundliche Übernahme, Putsch, stille Expansion — frei als
+    # Text statt fester Kategorien, weil sich das im Lauf der Kampagne wandelt.
+    ziele: str = ""
+    # Miliz, Kapital, Zugang zu Schmuggelrouten — was die Fraktion einsetzen kann.
+    ressourcen: str = ""
+    notes: str = ""
+    bildUrl: str = ""  # Legacy
+    bilder: list[BildEintrag] = []  # Bildergalerie
+    istEntwurf: bool = False  # Ideenschmiede
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+    # Gilt gemeinsam für notes, ziele und ressourcen — SL-Innenperspektive,
+    # dieselbe Aufteilung wie bei Person/Ort/Event (zwei Sichtbarkeitsebenen,
+    # nicht vier getrennte).
+    notizenSichtbarkeit: SichtbarkeitModus = "GM"
+    notizenSichtbarFuer: list[str] = []
+
+
+class FraktionUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    ziele: str | None = None
+    ressourcen: str | None = None
+    notes: str | None = None
+    bildUrl: str | None = None
+    bilder: list[BildEintrag] | None = None
+    istEntwurf: bool | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+    notizenSichtbarkeit: SichtbarkeitModus | None = None
+    notizenSichtbarFuer: list[str] | None = None
+
+
+class FraktionResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    ziele: str = ""
+    ressourcen: str = ""
+    notes: str
+    bildUrl: str = ""
+    bilder: list[BildEintrag] = []
+    istEntwurf: bool = False
+    sichtbarkeit: str
+    sichtbarFuer: list[str]
+    notizenSichtbarkeit: str
+    notizenSichtbarFuer: list[str]
 
 
 class VerbindungCreate(BaseModel):

@@ -48,6 +48,11 @@ _BOGEN_FELDER = [
 PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
 EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
+# Fraktion: Organisationen, Konzerne, Gangs — was sie wollen (ziele) und
+# womit sie es durchsetzen (ressourcen) sind eigene Felder statt Freitext in
+# notes, weil beides regelmäßig getrennt abgefragt wird ("was plant die
+# Zaibatsu?" vs. "was können sie aufbieten?").
+FRAKTION_FIELDS = ["name", "description", "ziele", "ressourcen", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
@@ -85,6 +90,9 @@ _BOGEN_DEFAULTS: dict = {
     "bilder": [],
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe
     "istEntwurf": False,
+    # Fraktion: Ziele/Ressourcen sind neu, Bestandsdaten kennen sie nicht
+    "ziele": "",
+    "ressourcen": "",
 }
 
 
@@ -94,6 +102,20 @@ def _mit_defaults(record: dict) -> dict:
     for feld, ersatz in _BOGEN_DEFAULTS.items():
         if feld in daten and daten[feld] is None:
             daten[feld] = ersatz
+    
+    # Migration: bildUrl → bilder-Array
+    if "bildUrl" in daten and "bilder" in daten:
+        if not daten["bilder"] and daten["bildUrl"]:
+            daten["bilder"] = [{"url": daten["bildUrl"], "istPrimaer": True}]
+    
+    # bilder aus JSON-String parsen (wurde so in Neo4j gespeichert)
+    if "bilder" in daten and isinstance(daten["bilder"], str):
+        import json
+        try:
+            daten["bilder"] = json.loads(daten["bilder"])
+        except (json.JSONDecodeError, TypeError):
+            daten["bilder"] = []
+    
     return daten
 
 
@@ -131,7 +153,13 @@ async def get_node(label: str, fields: list[str], campaign_id: str, node_id: str
 
 
 async def update_node(label: str, fields: list[str], campaign_id: str, node_id: str, data: dict) -> dict | None:
+    import json
     changed = {k: v for k, v in data.items() if v is not None}
+    
+    # bilder-Array als JSON-String speichern (Neo4j kann keine Maps in Arrays)
+    if "bilder" in changed and isinstance(changed["bilder"], list):
+        changed["bilder"] = json.dumps(changed["bilder"])
+    
     if not changed:
         return await get_node(label, fields, campaign_id, node_id)
 

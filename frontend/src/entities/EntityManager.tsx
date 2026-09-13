@@ -31,7 +31,10 @@ import { OrtKacheln } from "./OrtKacheln";
 import { OrtDetail } from "./OrtDetail";
 import { EventKacheln } from "./EventKacheln";
 import { EventDetail } from "./EventDetail";
+import { FraktionKacheln } from "./FraktionKacheln";
+import { FraktionDetail } from "./FraktionDetail";
 import { Filterleiste } from "./Filterleiste";
+import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
@@ -65,7 +68,7 @@ const textInputStyle: React.CSSProperties = { fontSize: "1rem", padding: "8px 10
  * kompatibilität für die bisherige Gesamtansicht erhalten; die Shell nutzt
  * die fünf fokussierten Varianten.
  */
-export type WeltAnsicht = "welt" | "pcs" | "npcs" | "orte" | "events" | "verbindungen";
+export type WeltAnsicht = "welt" | "pcs" | "npcs" | "orte" | "events" | "fraktionen" | "verbindungen";
 
 // Gebündelter State für die Felder, die Personen/Orte/Events gemeinsam haben:
 // Rich-Text-Beschreibung + Notizen, je mit eigener Sichtbarkeit.
@@ -160,6 +163,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [personen, setPersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [fraktionen, setFraktionen] = useState<Fraktion[]>([]);
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
   const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
   const [spieler, setSpieler] = useState<SpielerZugang[]>([]);
@@ -172,6 +176,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const [npcFilter, setNpcFilter] = useState<ListenFilter>({});
   const [ortFilter, setOrtFilter] = useState<ListenFilter>({});
   const [eventFilter, setEventFilter] = useState<ListenFilter>({});
+  const [fraktionFilter, setFraktionFilter] = useState<ListenFilter>({});
 
   // Welcher Filter für den aktuellen Bereich gilt. Personen werden im
   // Backend nach personType eingeschränkt, nicht erst hier — sonst käme die
@@ -185,7 +190,9 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           ? ortFilter
           : ansicht === "events"
             ? eventFilter
-            : {};
+            : ansicht === "fraktionen"
+              ? fraktionFilter
+              : {};
 
   // Als String vergleichen: ein neues Objekt bei jedem Render würde den
   // Effekt sonst endlos neu starten.
@@ -196,10 +203,11 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     try {
       const filter: ListenFilter = JSON.parse(filterSchluessel);
       const personenFilter = ansicht === "pcs" || ansicht === "npcs" ? filter : {};
-      const [p, o, e, v, graph, sp, einst] = await Promise.all([
+      const [p, o, e, f, v, graph, sp, einst] = await Promise.all([
         entitiesApi.listPersonen(campaignId, personenFilter),
         entitiesApi.listOrte(campaignId, ansicht === "orte" ? filter : {}),
         entitiesApi.listEvents(campaignId, ansicht === "events" ? filter : {}),
+        entitiesApi.listFraktionen(campaignId, ansicht === "fraktionen" ? filter : {}),
         entitiesApi.listVerbindungen(campaignId),
         getGraph(campaignId),
         playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
@@ -208,6 +216,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       setPersonen(p);
       setOrte(o);
       setEvents(e);
+      setFraktionen(f);
       setVerbindungen(v);
       setSpieler(sp);
       setEinstellungen(einst);
@@ -261,9 +270,10 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     for (const p of personen) tabelle.set(p.id, { name: p.name, kind: "Person" });
     for (const o of orte) tabelle.set(o.id, { name: o.name, kind: "Ort" });
     for (const ev of events) tabelle.set(ev.id, { name: ev.title, kind: "Event" });
+    for (const fr of fraktionen) tabelle.set(fr.id, { name: fr.name, kind: "Fraktion" });
     for (const g of graphGegenstaende) tabelle.set(g.id, { name: g.label, kind: "Gegenstand" });
     return tabelle;
-  }, [personen, orte, events, graphGegenstaende]);
+  }, [personen, orte, events, fraktionen, graphGegenstaende]);
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
@@ -291,11 +301,14 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   // Detail-Popup, ein Knopf oben legt neu an.
   const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
   const [eventDetailFuer, setEventDetailFuer] = useState<Event | null>(null);
+  const [fraktionDetailFuer, setFraktionDetailFuer] = useState<Fraktion | null>(null);
   const [neuerOrtOffen, setNeuerOrtOffen] = useState(false);
   const [neuerOrtName, setNeuerOrtName] = useState("");
   const [neuesEventOffen, setNeuesEventOffen] = useState(false);
   const [neuesEventTitel, setNeuesEventTitel] = useState("");
   const [neuesEventZeit, setNeuesEventZeit] = useState("");
+  const [neueFraktionOffen, setNeueFraktionOffen] = useState(false);
+  const [neueFraktionName, setNeueFraktionName] = useState("");
   const [anlegeFehler, setAnlegeFehler] = useState<string | null>(null);
 
   // EP-Vergabe: Bestätigungsdialoge
@@ -307,6 +320,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   // obwohl gerade eine gelöst wurde).
   const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? null) : null;
   const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? null) : null;
+  const offeneFraktion = fraktionDetailFuer ? (fraktionen.find((f) => f.id === fraktionDetailFuer.id) ?? null) : null;
 
   async function erstelleNeuenOrt(e: FormEvent) {
     e.preventDefault();
@@ -348,6 +362,30 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       setNeuesEventTitel("");
       setNeuesEventZeit("");
       setNeuesEventOffen(false);
+      await refreshAll();
+    } catch (fehler) {
+      setAnlegeFehler(fehler instanceof Error ? fehler.message : "Anlegen fehlgeschlagen");
+    }
+  }
+
+  async function erstelleNeueFraktion(e: FormEvent) {
+    e.preventDefault();
+    if (!neueFraktionName.trim()) return;
+    setAnlegeFehler(null);
+    try {
+      await entitiesApi.createFraktion(campaignId, {
+        name: neueFraktionName.trim(),
+        description: "",
+        ziele: "",
+        ressourcen: "",
+        notes: "",
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      setNeueFraktionName("");
+      setNeueFraktionOffen(false);
       await refreshAll();
     } catch (fehler) {
       setAnlegeFehler(fehler instanceof Error ? fehler.message : "Anlegen fehlgeschlagen");
@@ -521,6 +559,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   const istNpcGefiltert = gefiltert(npcFilter);
   const istOrtGefiltert = gefiltert(ortFilter);
   const istEventGefiltert = gefiltert(eventFilter);
+  const istFraktionGefiltert = gefiltert(fraktionFilter);
 
   return (
     <div style={ansichtStyle}>
@@ -651,8 +690,32 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           </div>
         </div>
       )}
+      {/* Fraktionen-Ansicht: eigener Kopf mit Neue-Fraktion-Button */}
+      {ansicht === "fraktionen" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeueFraktionOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-fraktionen, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-fraktionen, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neue Fraktion
+            </button>
+          </div>
+        </div>
+      )}
       {/* Andere Ansichten: normaler Kopf */}
-      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && (
+      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && ansicht !== "fraktionen" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
@@ -691,6 +754,16 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           trefferzahl={events.length}
           farbe="var(--bereich-events, var(--neon))"
           mitZeitpunkt
+        />
+      )}
+      {ansicht === "fraktionen" && (
+        <Filterleiste
+          campaignId={campaignId}
+          art="fraktionen"
+          filter={fraktionFilter}
+          onFilter={setFraktionFilter}
+          trefferzahl={fraktionen.length}
+          farbe="var(--bereich-fraktionen, var(--neon))"
         />
       )}
 
@@ -853,6 +926,25 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
                 : istEventGefiltert
                   ? "Kein Event passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
                   : "Noch keine Events angelegt. Oben rechts anlegen."
+            }
+          />
+        </section>
+      )}
+
+      {/* Fraktionen als Kacheln */}
+      {ansicht === "fraktionen" && (
+        <section style={sectionStyle}>
+          <FraktionKacheln
+            campaignId={campaignId}
+            fraktionen={fraktionen}
+            verbindungen={verbindungsZahl}
+            onFraktionKlick={(f) => setFraktionDetailFuer(f)}
+            leertext={
+              laedt
+                ? "Lädt…"
+                : istFraktionGefiltert
+                  ? "Keine Fraktion passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
+                  : "Noch keine Fraktionen angelegt. Oben rechts anlegen."
             }
           />
         </section>
@@ -1076,6 +1168,19 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         />
       )}
 
+      {/* Fraktion-Detail-Popup */}
+      {offeneFraktion && (
+        <FraktionDetail
+          campaignId={campaignId}
+          fraktion={offeneFraktion}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setFraktionDetailFuer(null)}
+          onGeaendert={refreshAll}
+        />
+      )}
+
       {/* Neuer Ort anlegen */}
       <Fenster
         offen={neuerOrtOffen}
@@ -1170,6 +1275,51 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
             }}
           >
             Event erstellen
+          </button>
+        </form>
+      </Fenster>
+
+      {/* Neue Fraktion anlegen */}
+      <Fenster
+        offen={neueFraktionOffen}
+        titel="Neue Fraktion"
+        unterzeile="Gib der Fraktion einen Namen"
+        kennung="neue-fraktion"
+        ton="var(--bereich-fraktionen)"
+        onSchliessen={() => {
+          setNeueFraktionOffen(false);
+          setNeueFraktionName("");
+          setAnlegeFehler(null);
+        }}
+      >
+        <form onSubmit={erstelleNeueFraktion} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+          <input
+            type="text"
+            value={neueFraktionName}
+            onChange={(e) => setNeueFraktionName(e.target.value)}
+            placeholder="Name der Fraktion"
+            autoFocus
+            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            required
+          />
+          {anlegeFehler && <p style={{ color: "var(--signal)", margin: 0 }}>{anlegeFehler}</p>}
+          <p style={{ color: "var(--text-leise)", fontSize: "0.85rem", margin: 0 }}>
+            Neue Fraktionen sind zunächst SL-geheim. Freigeben lässt sich das im Detail-Popup.
+          </p>
+          <button
+            type="submit"
+            style={{
+              padding: "12px 20px",
+              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+              border: "1px solid var(--ja)",
+              borderRadius: "var(--radius)",
+              color: "var(--ja)",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "1rem",
+            }}
+          >
+            Fraktion erstellen
           </button>
         </form>
       </Fenster>

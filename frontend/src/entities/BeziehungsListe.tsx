@@ -29,6 +29,7 @@ const ART_SYMBOL: Record<string, string> = {
   Ort: "⌖",
   Event: "◆",
   Gegenstand: "◈",
+  Fraktion: "⬡",
 };
 
 export function BeziehungsListe({

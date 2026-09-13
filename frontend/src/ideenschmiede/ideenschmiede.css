@@ -250,6 +250,10 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.is-item-klickbar {
+  cursor: pointer;
+}
+
 .is-item:hover {
   border-color: var(--bereich-farbe, var(--neon));
   box-shadow:
@@ -354,4 +358,78 @@
   background: var(--gefahr);
   color: var(--flaeche-tief);
   box-shadow: 0 0 8px var(--gefahr);
+}
+
+/* --- Detail-Popup ------------------------------------------------ */
+
+.is-detail-ladend,
+.is-detail-fehler {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-family: var(--mono);
+}
+
+.is-detail-inhalt {
+  padding: 8px 0;
+}
+
+.is-detail-feld {
+  margin-bottom: 16px;
+}
+
+.is-detail-feld label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  margin-bottom: 4px;
+}
+
+.is-detail-feld span,
+.is-detail-feld p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.is-detail-bild {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+}
+
+.is-detail-hinweis {
+  margin-top: 20px;
+  padding: 12px;
+  background: var(--flaeche-tief);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.is-detail-hinweis p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* --- Wiki-Editor im Popup ---------------------------------------- */
+
+.is-wiki-editor {
+  min-height: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.is-wiki-editor .ProseMirror {
+  min-height: 350px;
+  padding: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
 }

@@ -50,6 +50,9 @@
   --p-indigo: #7c8fe8;
   --p-koralle: #ff6b4d;
   --p-tuerkis: #35e0d0;
+  /* Gedecktes Messing für Organisationen/Fraktionen — bewusst kein Neonton,
+     eine Fraktion tritt gesetzter auf als eine Person oder ein Event. */
+  --p-messing: #c9a35a;
 
   /* == 2. Rollen ===================================================== */
   /* Flaechen, von tief nach hoch */
@@ -90,6 +93,7 @@
   --kind-ort: var(--p-gruen-tief);
   --kind-event: var(--p-orange);
   --kind-gegenstand: var(--p-violett);
+  --kind-fraktion: var(--p-messing);
 
   /* == 3. Bereiche =================================================== */
   /* Leitfarbe je Menuepunkt. Faerbt Symbol, fliegenden Namen, Ladebalken
@@ -111,6 +115,7 @@
   --bereich-fahrzeuge: var(--p-koralle);
   --bereich-kontakte: var(--neon);
   --bereich-wiki: var(--neon);
+  --bereich-fraktionen: var(--kind-fraktion);
   /* Ideenschmiede: Orange/Amber wie Werkbank-Glühen */
   --bereich-schmiede: var(--warn);
 

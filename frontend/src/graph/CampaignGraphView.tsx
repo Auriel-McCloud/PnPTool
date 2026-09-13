@@ -8,6 +8,7 @@ const KIND_SHAPE: Record<string, string> = {
   Ort: "round-rectangle",
   Event: "diamond",
   Gegenstand: "star",
+  Fraktion: "hexagon",
 };
 
 // Cytoscape zeichnet auf Canvas und kennt keine CSS-Variablen. Frueher standen
@@ -21,6 +22,7 @@ function graphFarben() {
     ort: "--kind-ort",
     event: "--kind-event",
     gegenstand: "--kind-gegenstand",
+    fraktion: "--kind-fraktion",
     geheim: "--signal",
     linie: "--linie-hell",
     neon: "--neon",
@@ -33,6 +35,7 @@ function graphFarben() {
       Ort: t.ort,
       Event: t.event,
       Gegenstand: t.gegenstand,
+      Fraktion: t.fraktion,
     } as Record<string, string>,
     geheim: t.geheim,
     linie: t.linie,

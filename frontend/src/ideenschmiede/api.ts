@@ -9,7 +9,7 @@ import { api } from "../api/client";
 
 export interface EntwurfItem {
   id: string;
-  typ: "Person" | "Ort" | "Event" | "WikiSeite" | "Gegenstand";
+  typ: "Person" | "Ort" | "Event" | "WikiSeite" | "Gegenstand" | "Fraktion";
   name: string;
   beschreibung: string;
   erstelltAm?: string;
@@ -17,77 +17,21 @@ export interface EntwurfItem {
 
 /**
  * Holt alle Entwürfe einer Kampagne (istEntwurf=true).
- * Sammelt aus verschiedenen Endpunkten und filtert.
+ * Verwendet die spezielle /entwuerfe Route.
  */
 export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
-  const entwuerfe: EntwurfItem[] = [];
-
-  // Hilfsfunktion: fetch mit Fallback auf leeres Array bei Fehler
-  async function safeFetch<T>(url: string): Promise<T[]> {
-    try {
-      return await api.get<T[]>(url);
-    } catch {
-      return [];
-    }
-  }
-
-  // Personen
-  const personen = await safeFetch<any>(`/api/campaigns/${campaignId}/personen`);
-  for (const p of personen.filter((x) => x.istEntwurf)) {
-    entwuerfe.push({
-      id: p.id,
-      typ: "Person",
-      name: p.name,
-      beschreibung: p.description || "",
-    });
-  }
-
-  // Orte
-  const orte = await safeFetch<any>(`/api/campaigns/${campaignId}/orte`);
-  for (const o of orte.filter((x) => x.istEntwurf)) {
-    entwuerfe.push({
-      id: o.id,
-      typ: "Ort",
-      name: o.name,
-      beschreibung: o.description || "",
-    });
-  }
-
-  // Events
-  const events = await safeFetch<any>(`/api/campaigns/${campaignId}/events`);
-  for (const e of events.filter((x) => x.istEntwurf)) {
-    entwuerfe.push({
+  try {
+    const entwuerfe = await api.get<any[]>(`/api/campaigns/${campaignId}/entwuerfe`);
+    return entwuerfe.map((e) => ({
       id: e.id,
-      typ: "Event",
-      name: e.title,
+      typ: e.typ === "person" ? "Person" : e.typ === "ort" ? "Ort" : e.typ === "event" ? "Event" : e.typ,
+      name: e.name || e.title || "Unbenannt",
       beschreibung: e.description || "",
-    });
+      erstelltAm: e.erstelltAm,
+    }));
+  } catch {
+    return [];
   }
-
-  // WikiSeiten
-  const seiten = await safeFetch<any>(`/api/campaigns/${campaignId}/wiki/seiten`);
-  for (const s of seiten.filter((x) => x.istEntwurf)) {
-    entwuerfe.push({
-      id: s.id,
-      typ: "WikiSeite",
-      name: s.titel,
-      beschreibung: "",
-      erstelltAm: s.erstelltAm,
-    });
-  }
-
-  // Gegenstände (Vorlagen ohne Besitzer)
-  const vorlagen = await safeFetch<any>(`/api/campaigns/${campaignId}/vorlagen`);
-  for (const g of vorlagen.filter((x) => x.istEntwurf)) {
-    entwuerfe.push({
-      id: g.id,
-      typ: "Gegenstand",
-      name: g.name,
-      beschreibung: g.description || "",
-    });
-  }
-
-  return entwuerfe;
 }
 
 /**
@@ -103,7 +47,8 @@ export async function inKampagneVerschieben(
     Ort: `/api/campaigns/${campaignId}/orte/${id}`,
     Event: `/api/campaigns/${campaignId}/events/${id}`,
     WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${id}`,
-    Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${id}`,
+    Gegenstand: `/api/campaigns/${campaignId}/gegenstaende/${id}`,
+    Fraktion: `/api/campaigns/${campaignId}/fraktionen/${id}`,
   };
 
   await api.patch(endpunkte[typ], { istEntwurf: false });
@@ -122,7 +67,8 @@ export async function entwurfLoeschen(
     Ort: `/api/campaigns/${campaignId}/orte/${id}`,
     Event: `/api/campaigns/${campaignId}/events/${id}`,
     WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${id}`,
-    Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${id}`,
+    Gegenstand: `/api/campaigns/${campaignId}/gegenstaende/${id}`,
+    Fraktion: `/api/campaigns/${campaignId}/fraktionen/${id}`,
   };
 
   await api.delete(endpunkte[typ]);
@@ -185,12 +131,26 @@ export async function entwurfAnlegen(
       });
       break;
     case "Gegenstand":
-      await api.post(`/api/campaigns/${campaignId}/vorlagen`, {
+      await api.post(`/api/campaigns/${campaignId}/gegenstaende`, {
         name,
         description: "",
         notes: "",
         typ: "Sonstiges",
         istEntwurf: true,
+      });
+      break;
+    case "Fraktion":
+      await api.post(`/api/campaigns/${campaignId}/fraktionen`, {
+        name,
+        description: "",
+        ziele: "",
+        ressourcen: "",
+        notes: "",
+        istEntwurf: true,
+        sichtbarkeit: "GM",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
       });
       break;
   }

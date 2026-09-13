@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { EntityKind, Ort, Verbindung } from "./api";
+import type { EntityKind, Fraktion, Verbindung } from "./api";
 import { entitiesApi } from "./api";
 import { BildGalerie } from "./BildGalerie";
 import { Fenster } from "../shell/Fenster";
@@ -12,19 +12,18 @@ import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs und NPCs
 
 /**
- * Detail-Popup für einen Ort.
+ * Detail-Popup für eine Fraktion.
  *
- * Gleiches Bedienkonzept wie PCDetail/NPCDetail: Navigation oben, Übersicht
- * mit Bild und Schnellzugriff, dann die einzelnen Bereiche. Statt
- * Charakterblatt und Augments gibt es hier, was einen Ort ausmacht — wer und
- * was mit ihm verbunden ist.
+ * Gleiches Bedienkonzept wie PCDetail/NPCDetail/OrtDetail: Navigation oben,
+ * Übersicht mit Bild und Schnellzugriff, dann die einzelnen Bereiche.
+ * Fraktionen haben zusätzlich Ziele und Ressourcen als eigene Felder.
  */
 
-type Unteransicht = "uebersicht" | "beschreibung" | "notizen" | "beziehungen";
+type Unteransicht = "uebersicht" | "beschreibung" | "ziele" | "ressourcen" | "notizen" | "beziehungen";
 
-interface OrtDetailProps {
+interface FraktionDetailProps {
   campaignId: string;
-  ort: Ort;
+  fraktion: Fraktion;
   /** Alle sichtbaren Verbindungen der Kampagne — gefiltert wird hier. */
   verbindungen: Verbindung[];
   /** ID → Name/Art für die Gegenseiten; muss sichtbarkeitsgefiltert sein. */
@@ -34,30 +33,32 @@ interface OrtDetailProps {
   onGeaendert: () => void;
 }
 
-export function OrtDetail({
+export function FraktionDetail({
   campaignId,
-  ort,
+  fraktion,
   verbindungen,
   namen,
   pcOptions,
   onSchliessen,
   onGeaendert,
-}: OrtDetailProps) {
+}: FraktionDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
-  const [name, setName] = useState(ort.name);
-  const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(ort.description));
-  const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(ort.notes));
+  const [name, setName] = useState(fraktion.name);
+  const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(fraktion.description));
+  const [zieleDoc, setZieleDoc] = useState<JSONContent>(parseRichText(fraktion.ziele));
+  const [ressourcenDoc, setRessourcenDoc] = useState<JSONContent>(parseRichText(fraktion.ressourcen));
+  const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(fraktion.notes));
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
 
-  const zeilen = beziehungsZeilen(ort.id, verbindungen, namen);
+  const zeilen = beziehungsZeilen(fraktion.id, verbindungen, namen);
 
-  async function speichere(felder: Partial<Ort>) {
+  async function speichere(felder: Partial<Fraktion>) {
     setSpeichert(true);
     setFehler(null);
     try {
-      await entitiesApi.updateOrt(campaignId, ort.id, felder);
+      await entitiesApi.updateFraktion(campaignId, fraktion.id, felder);
       onGeaendert();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
@@ -69,7 +70,7 @@ export function OrtDetail({
   async function loeschen() {
     setSpeichert(true);
     try {
-      await entitiesApi.deleteOrt(campaignId, ort.id);
+      await entitiesApi.deleteFraktion(campaignId, fraktion.id);
       setLoeschenOffen(false);
       onGeaendert();
       onSchliessen();
@@ -85,18 +86,20 @@ export function OrtDetail({
     <Fenster
       offen
       breit={unteransicht === "beziehungen"}
-      titel={ort.name}
-      unterzeile="Ort"
-      kennung={`ort-detail:${ort.id}`}
-      ton="var(--bereich-orte)"
+      titel={fraktion.name}
+      unterzeile="Fraktion"
+      kennung={`fraktion-detail:${fraktion.id}`}
+      ton="var(--bereich-fraktionen)"
       onSchliessen={onSchliessen}
     >
       <div className="pcd-inhalt">
-        <nav className="pcd-nav pcd-nav-orte">
+        <nav className="pcd-nav pcd-nav-fraktionen">
           {(
             [
               ["uebersicht", "Übersicht"],
               ["beschreibung", "Beschreibung"],
+              ["ziele", "Ziele"],
+              ["ressourcen", "Ressourcen"],
               ["notizen", "Notizen"],
               ["beziehungen", `Beziehungen (${zeilen.length})`],
             ] as [Unteransicht, string][]
@@ -120,45 +123,45 @@ export function OrtDetail({
               <div className="pcd-bild-bereich">
                 <BildGalerie
                   campaignId={campaignId}
-                  art="orte"
-                  id={ort.id}
-                  name={ort.name}
-                  bilder={ort.bilder || []}
-                  bildUrl={ort.bildUrl}
+                  art="fraktionen"
+                  id={fraktion.id}
+                  name={fraktion.name}
+                  bilder={fraktion.bilder || []}
+                  bildUrl={fraktion.bildUrl}
                   onGeaendert={onGeaendert}
                 />
               </div>
               <div className="pcd-schnellzugriff">
                 <div className="pcd-feld">
-                  <label htmlFor={`ort-name-${ort.id}`}>Name</label>
+                  <label htmlFor={`fraktion-name-${fraktion.id}`}>Name</label>
                   <input
-                    id={`ort-name-${ort.id}`}
+                    id={`fraktion-name-${fraktion.id}`}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onBlur={() => {
                       const sauber = name.trim();
-                      // Leerer Name würde den Ort in jeder Liste unauffindbar
+                      // Leerer Name würde die Fraktion in jeder Liste unauffindbar
                       // machen — dann lieber den alten behalten.
                       if (!sauber) {
-                        setName(ort.name);
+                        setName(fraktion.name);
                         return;
                       }
-                      if (sauber !== ort.name) speichere({ name: sauber });
+                      if (sauber !== fraktion.name) speichere({ name: sauber });
                     }}
                   />
                 </div>
 
                 <VisibilitySelector
                   label="Sichtbarkeit der Beschreibung"
-                  modus={ort.sichtbarkeit}
-                  sichtbarFuer={ort.sichtbarFuer}
+                  modus={fraktion.sichtbarkeit}
+                  sichtbarFuer={fraktion.sichtbarFuer}
                   onChange={(m, f) => speichere({ sichtbarkeit: m, sichtbarFuer: f })}
                   pcOptions={pcOptions}
                 />
                 <VisibilitySelector
                   label="Sichtbarkeit der Notizen"
-                  modus={ort.notizenSichtbarkeit}
-                  sichtbarFuer={ort.notizenSichtbarFuer}
+                  modus={fraktion.notizenSichtbarkeit}
+                  sichtbarFuer={fraktion.notizenSichtbarFuer}
                   onChange={(m, f) => speichere({ notizenSichtbarkeit: m, notizenSichtbarFuer: f })}
                   pcOptions={pcOptions}
                 />
@@ -166,6 +169,12 @@ export function OrtDetail({
                 <div className="pcd-buttons" style={{ marginTop: 12 }}>
                   <button type="button" onClick={() => setUnteransicht("beschreibung")}>
                     📝 Beschreibung bearbeiten
+                  </button>
+                  <button type="button" onClick={() => setUnteransicht("ziele")}>
+                    🎯 Ziele bearbeiten
+                  </button>
+                  <button type="button" onClick={() => setUnteransicht("ressourcen")}>
+                    💎 Ressourcen bearbeiten
                   </button>
                   <button type="button" onClick={() => setUnteransicht("beziehungen")}>
                     ⬡ Beziehungen ansehen ({zeilen.length})
@@ -175,7 +184,7 @@ export function OrtDetail({
                     onClick={() => setLoeschenOffen(true)}
                     style={{ color: "var(--signal)", borderColor: "var(--signal)" }}
                   >
-                    🗑 Ort löschen
+                    🗑 Fraktion löschen
                   </button>
                 </div>
               </div>
@@ -192,6 +201,40 @@ export function OrtDetail({
                 disabled={speichert}
               >
                 {speichert ? "Speichert…" : "Beschreibung speichern"}
+              </button>
+            </div>
+          )}
+
+          {unteransicht === "ziele" && (
+            <div className="pcd-editor-bereich">
+              <p className="pcd-hinweis">
+                Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion, Marktdominanz.
+              </p>
+              <RichTextEditor content={zieleDoc} onChange={setZieleDoc} minHeight={200} />
+              <button
+                type="button"
+                className="pcd-speichern"
+                onClick={() => speichere({ ziele: serializeRichText(zieleDoc) })}
+                disabled={speichert}
+              >
+                {speichert ? "Speichert…" : "Ziele speichern"}
+              </button>
+            </div>
+          )}
+
+          {unteransicht === "ressourcen" && (
+            <div className="pcd-editor-bereich">
+              <p className="pcd-hinweis">
+                Miliz, Kapital, Zugang, Technologie — was die Fraktion einsetzen kann.
+              </p>
+              <RichTextEditor content={ressourcenDoc} onChange={setRessourcenDoc} minHeight={200} />
+              <button
+                type="button"
+                className="pcd-speichern"
+                onClick={() => speichere({ ressourcen: serializeRichText(ressourcenDoc) })}
+                disabled={speichert}
+              >
+                {speichert ? "Speichert…" : "Ressourcen speichern"}
               </button>
             </div>
           )}
@@ -213,10 +256,9 @@ export function OrtDetail({
           {unteransicht === "beziehungen" && (
             <BeziehungsListe
               campaignId={campaignId}
-
               zeilen={zeilen}
               onGeaendert={onGeaendert}
-              farbe="var(--bereich-orte, var(--neon))"
+              farbe="var(--bereich-fraktionen, var(--neon))"
             />
           )}
         </div>
@@ -224,8 +266,8 @@ export function OrtDetail({
 
       {loeschenOffen && (
         <Bestaetigung
-          titel="Ort löschen?"
-          text={`„${ort.name}“ wird endgültig entfernt, samt aller ${zeilen.length} Verbindungen. Das lässt sich nicht rückgängig machen.`}
+          titel="Fraktion löschen?"
+          text={`„${fraktion.name}" wird endgültig entfernt, samt aller ${zeilen.length} Verbindungen. Das lässt sich nicht rückgängig machen.`}
           jaText="Ja, löschen"
           neinText="Abbrechen"
           onJa={loeschen}

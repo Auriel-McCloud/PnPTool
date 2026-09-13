@@ -32,12 +32,13 @@ const ART_SYMBOL: Record<string, string> = {
   Ort: "⌖",
   Event: "◆",
   Gegenstand: "◈",
+  Fraktion: "⬡",
 };
 
 export interface FilterleisteProps {
   campaignId: string;
   /** Welche Liste gefiltert wird — bestimmt die angebotenen Optionen. */
-  art: "personen" | "orte" | "events";
+  art: "personen" | "orte" | "events" | "fraktionen";
   /** Nur bei Personen: schränkt die Optionen auf PCs bzw. NPCs ein. */
   personType?: "PC" | "NPC";
   filter: ListenFilter;

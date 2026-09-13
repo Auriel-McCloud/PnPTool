@@ -1,7 +1,7 @@
 import { api } from "../api/client";
 
 export type SichtbarkeitModus = "GM" | "ALLE" | "SPEZIFISCH";
-export type EntityKind = "Person" | "Ort" | "Event" | "Gegenstand";
+export type EntityKind = "Person" | "Ort" | "Event" | "Gegenstand" | "Fraktion";
 
 export interface VisibilityFields {
   sichtbarkeit: SichtbarkeitModus;
@@ -17,6 +17,8 @@ export interface Person extends VisibilityFields {
   silhouette?: string;
   /** Aussehen; per Blitz an alle Spieler zeigbar. */
   bildUrl?: string;
+  /** Bildergalerie: mehrere Bilder mit Primärmarkierung. */
+  bilder?: { url: string; istPrimaer: boolean }[];
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
@@ -29,6 +31,8 @@ export interface Ort extends VisibilityFields {
   name: string;
   description: string;
   bildUrl?: string;
+  /** Bildergalerie: mehrere Bilder mit Primärmarkierung. */
+  bilder?: { url: string; istPrimaer: boolean }[];
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
@@ -40,6 +44,24 @@ export interface Event extends VisibilityFields {
   timestamp: string;
   description: string;
   bildUrl?: string;
+  /** Bildergalerie: mehrere Bilder mit Primärmarkierung. */
+  bilder?: { url: string; istPrimaer: boolean }[];
+  notes: string;
+  notizenSichtbarkeit: SichtbarkeitModus;
+  notizenSichtbarFuer: string[];
+}
+
+export interface Fraktion extends VisibilityFields {
+  id: string;
+  name: string;
+  description: string;
+  /** Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion. */
+  ziele: string;
+  /** Miliz, Kapital, Zugang — was sie einsetzen kann. */
+  ressourcen: string;
+  bildUrl?: string;
+  /** Bildergalerie: mehrere Bilder mit Primärmarkierung. */
+  bilder?: { url: string; istPrimaer: boolean }[];
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
@@ -134,12 +156,20 @@ export const entitiesApi = {
     api.patch<Event>(`${base(cid)}/events/${id}`, body),
   deleteEvent: (cid: string, id: string) => api.delete<void>(`${base(cid)}/events/${id}`),
 
+  listFraktionen: (cid: string, filter?: ListenFilter) =>
+    api.get<Fraktion[]>(`${base(cid)}/fraktionen${query(filter)}`),
+  createFraktion: (cid: string, body: Omit<Fraktion, "id">) => api.post<Fraktion>(`${base(cid)}/fraktionen`, body),
+  getFraktion: (cid: string, id: string) => api.get<Fraktion>(`${base(cid)}/fraktionen/${id}`),
+  updateFraktion: (cid: string, id: string, body: Partial<Fraktion>) =>
+    api.patch<Fraktion>(`${base(cid)}/fraktionen/${id}`, body),
+  deleteFraktion: (cid: string, id: string) => api.delete<void>(`${base(cid)}/fraktionen/${id}`),
+
   /**
    * Womit sich diese Liste tatsächlich filtern lässt — aus dem echten Graphen.
    * Bewusst serverseitig ermittelt: sonst müsste die Oberfläche alle
    * Verbindungen laden, auch die, die sie gar nicht sehen darf.
    */
-  filteroptionen: (cid: string, art: "personen" | "orte" | "events", personType?: "PC" | "NPC") =>
+  filteroptionen: (cid: string, art: "personen" | "orte" | "events" | "fraktionen", personType?: "PC" | "NPC") =>
     api.get<FilterOptionen>(
       `${base(cid)}/filteroptionen?art=${art}${personType ? `&personType=${personType}` : ""}`
     ),

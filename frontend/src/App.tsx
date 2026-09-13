@@ -39,6 +39,7 @@ const BEREICHE: Bereich[] = [
   { id: "npcs", name: "NPCs", symbol: "◌", farbe: "var(--bereich-npcs)" },
   { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
   { id: "events", name: "Events", symbol: "◆", farbe: "var(--bereich-events)" },
+  { id: "fraktionen", name: "Fraktionen", symbol: "⬡", farbe: "var(--bereich-fraktionen)" },
   { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "var(--bereich-verbindungen)" },
   // Violett wie die Gegenstands-Knoten im Graphen
   { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "var(--bereich-gegenstaende)" },
@@ -83,6 +84,7 @@ const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
   npcs: "npcs",
   orte: "orte",
   events: "events",
+  fraktionen: "fraktionen",
   verbindungen: "verbindungen",
 };
 

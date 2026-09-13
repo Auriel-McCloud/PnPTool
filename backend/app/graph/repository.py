@@ -6,7 +6,7 @@ async def get_all_nodes(campaign_id: str) -> list[dict]:
     query = """
         MATCH (n)
         WHERE n.campaignId = $campaign_id
-          AND (n:Person OR n:Ort OR n:Event OR (n:Gegenstand AND n.zeigeInGraph = true))
+          AND (n:Person OR n:Ort OR n:Event OR n:Fraktion OR (n:Gegenstand AND n.zeigeInGraph = true))
         RETURN n.id AS id, labels(n)[0] AS kind,
                coalesce(n.name, n.title) AS label,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer

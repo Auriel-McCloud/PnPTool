@@ -14,6 +14,7 @@ const TYP_TOKEN: Record<EntityKind, string> = {
   Ort: "--kind-ort",
   Event: "--kind-event",
   Gegenstand: "--kind-gegenstand",
+  Fraktion: "--kind-fraktion",
 };
 
 /**
@@ -53,13 +54,15 @@ export function VerweisWaehler({
       entitiesApi.listPersonen(campaignId),
       entitiesApi.listOrte(campaignId),
       entitiesApi.listEvents(campaignId),
+      entitiesApi.listFraktionen(campaignId),
     ])
-      .then(([personen, orte, events]) => {
+      .then(([personen, orte, events, fraktionen]) => {
         if (abgebrochen) return;
         setAlle([
           ...personen.map((p) => ({ id: p.id, label: p.name, typ: "Person" as const })),
           ...orte.map((o) => ({ id: o.id, label: o.name, typ: "Ort" as const })),
           ...events.map((e) => ({ id: e.id, label: e.title, typ: "Event" as const })),
+          ...fraktionen.map((f) => ({ id: f.id, label: f.name, typ: "Fraktion" as const })),
         ]);
       })
       .catch((e) => !abgebrochen && setFehler(e instanceof Error ? e.message : "Laden fehlgeschlagen"))

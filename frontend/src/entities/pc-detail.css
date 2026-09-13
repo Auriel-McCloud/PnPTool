@@ -236,3 +236,139 @@
     margin: 0 auto;
   }
 }
+
+/* --- Bildergalerie ------------------------------------------------------- */
+
+.bild-galerie {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bild-galerie-hauptbild {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--linie);
+}
+
+.bild-galerie-hauptbild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bild-galerie-aktionen {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+}
+
+.bild-galerie-primaer-wechsel {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.bild-galerie-primaer-wechsel button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.bild-galerie-primaer-wechsel button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.bild-galerie-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bild-galerie-thumb {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 2px solid var(--linie);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.bild-galerie-thumb:hover {
+  border-color: var(--neon);
+  transform: scale(1.05);
+}
+
+.bild-galerie-thumb.primaer {
+  border-color: var(--neon);
+  box-shadow: 0 0 4px var(--neon);
+}
+
+.bild-galerie-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bild-galerie-loeschen {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--signal);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.bild-galerie-thumb:hover .bild-galerie-loeschen {
+  opacity: 1;
+}
+
+.bild-galerie-neu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--flaeche);
+  color: var(--text-leise);
+  font-size: 20px;
+}
+
+.bild-galerie-neu:hover {
+  color: var(--neon);
+  border-color: var(--neon);
+}
+
+.bild-galerie-ladend {
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.bild-galerie-fehler {
+  font-size: 12px;
+  color: var(--signal);
+}

@@ -15,7 +15,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
  */
 export interface VerweisAttribute {
   zielId: string;
-  zielTyp: "Person" | "Ort" | "Event" | "Gegenstand";
+  zielTyp: "Person" | "Ort" | "Event" | "Gegenstand" | "Fraktion";
   label: string;
 }
 
@@ -33,6 +33,7 @@ const TYP_TOKEN: Record<string, string> = {
   Ort: "--kind-ort",
   Event: "--kind-event",
   Gegenstand: "--kind-gegenstand",
+  Fraktion: "--kind-fraktion",
 };
 
 export const EntitaetsVerweis = Node.create({

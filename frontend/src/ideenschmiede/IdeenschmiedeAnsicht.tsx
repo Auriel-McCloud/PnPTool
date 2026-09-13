@@ -1,14 +1,12 @@
 /**
- * Ideenschmiede: Entwürfe sammeln, prüfen, in die Kampagne verschieben.
+ * Ideenschmiede: Entwürfe sammeln, prüfen, bearbeiten, in die Kampagne verschieben.
  *
- * Zeigt alle Entitäten mit istEntwurf=true. Das können manuell angelegte
- * Ideen sein oder KI-generierte Inhalte, die noch geprüft werden müssen.
- *
- * Klick auf einen Entwurf öffnet ihn im Editor (je nach Typ).
+ * Zeigt alle Entitäten mit istEntwurf=true. Klick auf einen Entwurf öffnet
+ * das vollständige Detail-Popup zum Bearbeiten (Bilder, Notizen, Beziehungen).
  * "Übernehmen" setzt istEntwurf=false und verschiebt ihn in die Kampagne.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getEntwuerfe,
   inKampagneVerschieben,
@@ -16,7 +14,20 @@ import {
   entwurfAnlegen,
   type EntwurfItem,
 } from "./api";
+import { api } from "../api/client";
 import { Fenster } from "../shell/Fenster";
+import { OrtDetail } from "../entities/OrtDetail";
+import { EventDetail } from "../entities/EventDetail";
+import { NPCDetail } from "../entities/NPCDetail";
+import { FraktionDetail } from "../entities/FraktionDetail";
+import { WikiEditor } from "../wiki/WikiEditor";
+import { Bestaetigung } from "../shell/Bestaetigung";
+import type { Ort } from "../entities/api";
+import type { Event } from "../entities/api";
+import type { Person } from "../entities/api";
+import type { Fraktion } from "../entities/api";
+import type { Verbindung } from "../entities/api";
+import type { PersonOption } from "../entities/VisibilitySelector";
 import "./ideenschmiede.css";
 
 // Icons für die verschiedenen Typen
@@ -26,14 +37,16 @@ const TYP_ICONS: Record<EntwurfItem["typ"], string> = {
   Event: "📅",
   WikiSeite: "📄",
   Gegenstand: "📦",
+  Fraktion: "⬡",
 };
 
 const TYP_LABELS: Record<EntwurfItem["typ"], string> = {
   Person: "Person",
   Ort: "Ort",
   Event: "Ereignis",
-  WikiSeite: "Wiki-Seite",
+  WikiSeite: "Geschichte",
   Gegenstand: "Gegenstand",
+  Fraktion: "Fraktion",
 };
 
 interface Props {
@@ -52,12 +65,42 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [neuerTyp, setNeuerTyp] = useState<EntwurfItem["typ"]>("WikiSeite");
   const [anlegenLaeuft, setAnlegenLaeuft] = useState(false);
 
+  // Detail-Popups
+  const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
+  const [eventDetailFuer, setEventDetailFuer] = useState<Event | null>(null);
+  const [personDetailFuer, setPersonDetailFuer] = useState<Person | null>(null);
+  const [fraktionDetailFuer, setFraktionDetailFuer] = useState<Fraktion | null>(null);
+  const [wikiDetailFuer, setWikiDetailFuer] = useState<{ id: string; titel: string; inhalt: string } | null>(null);
+  const [loeschenOffen, setLoeschenOffen] = useState<EntwurfItem | null>(null);
+
+  // Daten für die Detail-Komponenten
+  const [allePersonen, setAllePersonen] = useState<Person[]>([]);
+  const [alleOrte, setAlleOrte] = useState<Ort[]>([]);
+  const [alleEvents, setAlleEvents] = useState<Event[]>([]);
+  const [alleFraktionen, setAlleFraktionen] = useState<Fraktion[]>([]);
+  const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
+
   const laden = useCallback(async () => {
     setLadend(true);
     setFehler(null);
     try {
-      const daten = await getEntwuerfe(campaignId);
-      setEntwuerfe(daten);
+      // Entwürfe laden
+      const entwuerfeDaten = await getEntwuerfe(campaignId);
+      setEntwuerfe(entwuerfeDaten);
+
+      // Alle Entities für die Detail-Popups laden (inkl. Nicht-Entwürfe)
+      const [personen, orte, events, fraktionen, verbindungenData] = await Promise.all([
+        api.get<Person[]>(`/api/campaigns/${campaignId}/personen`),
+        api.get<Ort[]>(`/api/campaigns/${campaignId}/orte`),
+        api.get<Event[]>(`/api/campaigns/${campaignId}/events`),
+        api.get<Fraktion[]>(`/api/campaigns/${campaignId}/fraktionen`),
+        api.get<Verbindung[]>(`/api/campaigns/${campaignId}/verbindungen`),
+      ]);
+      setAllePersonen(personen);
+      setAlleOrte(orte);
+      setAlleEvents(events);
+      setAlleFraktionen(fraktionen);
+      setVerbindungen(verbindungenData);
     } catch (e) {
       setFehler("Fehler beim Laden der Entwürfe");
       console.error(e);
@@ -69,6 +112,59 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   useEffect(() => {
     laden();
   }, [laden]);
+
+  // PC-Optionen für VisibilitySelector
+  const pcOptions: PersonOption[] = useMemo(
+    () =>
+      allePersonen
+        .filter((p) => p.personType === "PC")
+        .map((p) => ({ id: p.id, name: p.name })),
+    [allePersonen]
+  );
+
+  // Namens-Tabelle für Beziehungsanzeige
+  const namensTabelle = useMemo(() => {
+    const map = new Map<string, { name: string; kind: string }>();
+    for (const p of allePersonen) {
+      map.set(p.id, { name: p.name, kind: "person" });
+    }
+    for (const o of alleOrte) {
+      map.set(o.id, { name: o.name, kind: "ort" });
+    }
+    for (const e of alleEvents) {
+      map.set(e.id, { name: e.title, kind: "event" });
+    }
+    for (const f of alleFraktionen) {
+      map.set(f.id, { name: f.name, kind: "fraktion" });
+    }
+    return map;
+  }, [allePersonen, alleOrte, alleEvents, alleFraktionen]);
+
+  // Wie in EntityManager: nach einer Änderung den frischen Stand statt des
+  // einmaligen Snapshots vom Öffnen zeigen — sonst zeigt z.B. die
+  // Bildergalerie nach dem Ändern weiter die alten Bilder. Anders als dort
+  // kommt der frische Stand nicht aus der Liste (die Entwürfe herausfiltert),
+  // sondern per gezieltem Einzel-Abruf derselben Route wie beim Öffnen.
+  const detailRefreshen = useCallback(async () => {
+    try {
+      if (ortDetailFuer) {
+        const frisch = await api.get<Ort>(`/api/campaigns/${campaignId}/orte/${ortDetailFuer.id}`);
+        setOrtDetailFuer(frisch);
+      } else if (eventDetailFuer) {
+        const frisch = await api.get<Event>(`/api/campaigns/${campaignId}/events/${eventDetailFuer.id}`);
+        setEventDetailFuer(frisch);
+      } else if (personDetailFuer) {
+        const frisch = await api.get<Person>(`/api/campaigns/${campaignId}/personen/${personDetailFuer.id}`);
+        setPersonDetailFuer(frisch);
+      } else if (fraktionDetailFuer) {
+        const frisch = await api.get<Fraktion>(`/api/campaigns/${campaignId}/fraktionen/${fraktionDetailFuer.id}`);
+        setFraktionDetailFuer(frisch);
+      }
+    } catch (e) {
+      console.error("Fehler beim Aktualisieren des Details:", e);
+    }
+    await laden();
+  }, [campaignId, ortDetailFuer, eventDetailFuer, personDetailFuer, fraktionDetailFuer, laden]);
 
   const handleVerschieben = async (item: EntwurfItem) => {
     if (!confirm(`„${item.name}" wirklich in die Kampagne übernehmen?`)) return;
@@ -82,7 +178,14 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   };
 
   const handleLoeschen = async (item: EntwurfItem) => {
-    if (!confirm(`„${item.name}" wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+    setLoeschenOffen(item);
+  };
+
+  const handleLoeschenBestaetigt = async () => {
+    if (!loeschenOffen) return;
+    const item = loeschenOffen;
+    setLoeschenOffen(null);
+    
     try {
       await entwurfLoeschen(campaignId, item.typ, item.id);
       setEntwuerfe((prev) => prev.filter((e) => e.id !== item.id));
@@ -106,6 +209,53 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
       console.error(err);
     } finally {
       setAnlegenLaeuft(false);
+    }
+  };
+
+  /** Öffnet das passende Detail-Popup je nach Typ. */
+  const handleItemKlick = async (item: EntwurfItem) => {
+    try {
+      const endpoints: Record<EntwurfItem["typ"], string> = {
+        Person: `/api/campaigns/${campaignId}/personen/${item.id}`,
+        Ort: `/api/campaigns/${campaignId}/orte/${item.id}`,
+        Event: `/api/campaigns/${campaignId}/events/${item.id}`,
+        WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${item.id}`,
+        Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${item.id}`,
+        Fraktion: `/api/campaigns/${campaignId}/fraktionen/${item.id}`,
+      };
+
+      // Für Gegenstand gibt es noch kein Detail-Popup
+      if (item.typ === "Gegenstand") {
+        alert(`Gegenstand "${item.name}" — Detail-Ansicht noch nicht implementiert.`);
+        return;
+      }
+
+      const entity = await api.get<any>(endpoints[item.typ]);
+
+      switch (item.typ) {
+        case "Ort":
+          setOrtDetailFuer(entity as Ort);
+          break;
+        case "Event":
+          setEventDetailFuer(entity as Event);
+          break;
+        case "Person":
+          setPersonDetailFuer(entity as Person);
+          break;
+        case "Fraktion":
+          setFraktionDetailFuer(entity as Fraktion);
+          break;
+        case "WikiSeite":
+          setWikiDetailFuer({
+            id: entity.id,
+            titel: entity.titel,
+            inhalt: entity.inhalt || '{"type":"doc","content":[]}',
+          });
+          break;
+      }
+    } catch (e) {
+      console.error("Fehler beim Laden:", e);
+      alert("Fehler beim Öffnen des Entwurfs");
     }
   };
 
@@ -137,8 +287,8 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           </button>
         </div>
         <p className="is-beschreibung">
-          Hier landen Entwürfe und KI-generierte Ideen. Prüfe sie und verschiebe
-          sie in die Kampagne, wenn sie bereit sind.
+          Hier landen Entwürfe und KI-generierte Ideen. Klicke auf einen Entwurf
+          um ihn zu bearbeiten, oder verschiebe ihn in die Kampagne.
         </p>
       </header>
 
@@ -157,7 +307,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
               value={neuerTyp}
               onChange={(e) => setNeuerTyp(e.target.value as EntwurfItem["typ"])}
             >
-              <option value="WikiSeite">📄 Wiki-Seite</option>
+              <option value="WikiSeite">📄 Geschichte</option>
               <option value="Person">👤 Person / NPC</option>
               <option value="Ort">📍 Ort</option>
               <option value="Event">📅 Ereignis</option>
@@ -227,7 +377,11 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           {/* Liste */}
           <ul className="is-liste">
             {gefiltert.map((item) => (
-              <li key={`${item.typ}-${item.id}`} className="is-item">
+              <li
+                key={`${item.typ}-${item.id}`}
+                className="is-item is-item-klickbar"
+                onClick={() => handleItemKlick(item)}
+              >
                 <span className="is-icon">{TYP_ICONS[item.typ]}</span>
                 <div className="is-inhalt">
                   <strong>{item.name}</strong>
@@ -239,7 +393,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
                     </p>
                   )}
                 </div>
-                <div className="is-aktionen">
+                <div className="is-aktionen" onClick={(e) => e.stopPropagation()}>
                   <button
                     className="is-verschieben"
                     onClick={() => handleVerschieben(item)}
@@ -259,6 +413,87 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             ))}
           </ul>
         </>
+      )}
+
+      {/* Vollständige Detail-Popups zum Bearbeiten */}
+      {ortDetailFuer && (
+        <OrtDetail
+          campaignId={campaignId}
+          ort={ortDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setOrtDetailFuer(null)}
+          onGeaendert={detailRefreshen}
+        />
+      )}
+      {eventDetailFuer && (
+        <EventDetail
+          campaignId={campaignId}
+          event={eventDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setEventDetailFuer(null)}
+          onGeaendert={detailRefreshen}
+        />
+      )}
+      {personDetailFuer && (
+        <NPCDetail
+          campaignId={campaignId}
+          person={personDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setPersonDetailFuer(null)}
+          onGeaendert={detailRefreshen}
+        />
+      )}
+      {fraktionDetailFuer && (
+        <FraktionDetail
+          campaignId={campaignId}
+          fraktion={fraktionDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setFraktionDetailFuer(null)}
+          onGeaendert={detailRefreshen}
+        />
+      )}
+      {wikiDetailFuer && (
+        <Fenster
+          offen={true}
+          titel={`📄 ${wikiDetailFuer.titel}`}
+          kennung="ideenschmiede-wiki"
+          onSchliessen={() => {
+            setWikiDetailFuer(null);
+            laden();
+          }}
+        >
+          <div className="is-wiki-editor">
+            <WikiEditor
+              campaignId={campaignId}
+              seitenId={wikiDetailFuer.id}
+              inhalt={wikiDetailFuer.inhalt}
+              nurLesen={false}
+              onChange={(json) => {
+                // Auto-Save wird vom WikiEditor selbst gehandhabt
+              }}
+            />
+          </div>
+        </Fenster>
+      )}
+
+      {/* Bestätigungsdialog für Löschen */}
+      {loeschenOffen && (
+        <Bestaetigung
+          titel="Entwurf löschen?"
+          text={`„${loeschenOffen.name}" wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.`}
+          jaText="Ja, löschen"
+          neinText="Abbrechen"
+          onJa={handleLoeschenBestaetigt}
+          onNein={() => setLoeschenOffen(null)}
+        />
       )}
     </div>
   );

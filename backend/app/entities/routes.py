@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities import repository
 from app.entities import filterung
-from app.entities.repository import EVENT_FIELDS, ORT_FIELDS, PERSON_FIELDS
+from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
@@ -19,6 +19,9 @@ from app.entities.schemas import (
     EventResponse,
     EventUpdate,
     FilterOptionen,
+    FraktionCreate,
+    FraktionResponse,
+    FraktionUpdate,
     OrtCreate,
     OrtResponse,
     OrtUpdate,
@@ -66,15 +69,27 @@ async def _aufbereiten(
     sortierung: str | None,
     verbunden_mit: str | None = None,
     verbindungs_typ: str | None = None,
+    nur_entwuerfe: bool = False,
 ) -> list[dict]:
-    """Sichtbarkeit → Suche → Beziehung → Reihenfolge.
+    """Sichtbarkeit → Entwurf-Filter → Suche → Beziehung → Reihenfolge.
 
     Die Reihenfolge ist wesentlich: Erst wird weggefiltert, was der Blickwinkel
     nicht sehen darf, und **danach** gesucht. Andersherum könnte ein Spieler
     einen 🔒-redigierten Satz finden, indem er danach sucht — dass er einen
     Treffer bekommt, wäre selbst die Auskunft.
+
+    Entwürfe (istEntwurf=true) werden standardmäßig ausgeblendet — sie gehören
+    in die Ideenschmiede, nicht in die normale Ansicht. Mit nur_entwuerfe=True
+    werden stattdessen nur Entwürfe gezeigt.
     """
     sichtbar = filter_entities_for_viewer(knoten, viewer.role, viewer.person_id)
+    # Entwurf-Filter: standardmäßig ausblenden, für Ideenschmiede invertieren
+    print(f"[ENTWURF-FILTER] vor={len(sichtbar)}, nur_entwuerfe={nur_entwuerfe}")
+    if nur_entwuerfe:
+        sichtbar = [e for e in sichtbar if e.get("istEntwurf", False)]
+    else:
+        sichtbar = [e for e in sichtbar if not e.get("istEntwurf", False)]
+    print(f"[ENTWURF-FILTER] nach={len(sichtbar)}")
     sichtbar = filterung.nach_suche(sichtbar, suche, namensfeld)
 
     braucht_kanten = bool(verbunden_mit or verbindungs_typ) or sortierung == "verbindungen"
@@ -171,6 +186,9 @@ async def list_orte(
     viewer: Viewer = Depends(get_viewer),
 ):
     nodes = await repository.list_nodes("Ort", ORT_FIELDS, campaign_id)
+    import sys
+    sys.stdout.write(f"[ROUTE] list_orte: {len(nodes)} nodes\n")
+    sys.stdout.flush()
     return await _aufbereiten(
         nodes,
         campaign_id,
@@ -181,6 +199,67 @@ async def list_orte(
         verbunden_mit=verbundenMit,
         verbindungs_typ=verbindungsTyp,
     )
+
+
+@router.get("/entwuerfe", response_model=list[dict])
+async def list_entwuerfe(
+    campaign_id: str,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Gibt alle Entwürfe (istEntwurf=true) für die Ideenschmiede zurück."""
+    from app.entities import repository
+    
+    # Alle Entity-Typen sammeln
+    entwuerfe = []
+    
+    # Personen-Entwürfe
+    personen = await repository.list_nodes("Person", repository.PERSON_FIELDS, campaign_id)
+    for p in personen:
+        if p.get("istEntwurf", False):
+            p["typ"] = "person"
+            entwuerfe.append(p)
+    
+    # Orte-Entwürfe
+    orte = await repository.list_nodes("Ort", repository.ORT_FIELDS, campaign_id)
+    for o in orte:
+        if o.get("istEntwurf", False):
+            o["typ"] = "ort"
+            entwuerfe.append(o)
+    
+    # Events-Entwürfe
+    events = await repository.list_nodes("Event", repository.EVENT_FIELDS, campaign_id)
+    for e in events:
+        if e.get("istEntwurf", False):
+            e["typ"] = "event"
+            entwuerfe.append(e)
+    
+    # Fraktions-Entwürfe
+    fraktionen = await repository.list_nodes("Fraktion", repository.FRAKTION_FIELDS, campaign_id)
+    for f in fraktionen:
+        if f.get("istEntwurf", False):
+            f["typ"] = "Fraktion"
+            entwuerfe.append(f)
+    
+    # Wiki-Seiten-Entwürfe
+    from app.wiki import repository as wiki_repository
+    seiten = await wiki_repository.list_seiten(campaign_id)
+    for s in seiten:
+        if s.get("istEntwurf", False):
+            s["typ"] = "WikiSeite"
+            s["name"] = s.get("titel", "Unbenannt")
+            entwuerfe.append(s)
+    
+    # Gegenstands-Entwürfe
+    from app.items import repository as items_repository
+    gegenstaende = await items_repository.list_alle_gegenstaende(campaign_id)
+    for g in gegenstaende:
+        if g.get("istEntwurf", False):
+            g["typ"] = "Gegenstand"
+            entwuerfe.append(g)
+    
+    # Nach Sichtbarkeit filtern
+    sichtbar = filter_entities_for_viewer(entwuerfe, viewer.role, viewer.person_id)
+    return sichtbar
 
 
 @router.get("/orte/{node_id}", response_model=OrtResponse)
@@ -250,6 +329,53 @@ async def delete_event(campaign_id: str, node_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event nicht gefunden")
 
 
+@router.post("/fraktionen", response_model=FraktionResponse, dependencies=[Depends(require_campaign_gm)])
+async def create_fraktion(campaign_id: str, body: FraktionCreate):
+    return await repository.create_node("Fraktion", FRAKTION_FIELDS, campaign_id, body.model_dump())
+
+
+@router.get("/fraktionen", response_model=list[FraktionResponse])
+async def list_fraktionen(
+    campaign_id: str,
+    suche: str | None = Query(default=None, description="Sucht in Name, Beschreibung und Notizen."),
+    sortierung: filterung.Sortierung | None = Query(default=None),
+    verbundenMit: str | None = Query(default=None),
+    verbindungsTyp: str | None = Query(default=None),
+    viewer: Viewer = Depends(get_viewer),
+):
+    nodes = await repository.list_nodes("Fraktion", FRAKTION_FIELDS, campaign_id)
+    return await _aufbereiten(
+        nodes,
+        campaign_id,
+        viewer,
+        namensfeld="name",
+        suche=suche,
+        sortierung=sortierung,
+        verbunden_mit=verbundenMit,
+        verbindungs_typ=verbindungsTyp,
+    )
+
+
+@router.get("/fraktionen/{node_id}", response_model=FraktionResponse)
+async def get_fraktion(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
+    node = await repository.get_node("Fraktion", FRAKTION_FIELDS, campaign_id, node_id)
+    return _visible_or_404(node, viewer, "Fraktion")
+
+
+@router.patch("/fraktionen/{node_id}", response_model=FraktionResponse, dependencies=[Depends(require_campaign_gm)])
+async def update_fraktion(campaign_id: str, node_id: str, body: FraktionUpdate):
+    node = await repository.update_node("Fraktion", FRAKTION_FIELDS, campaign_id, node_id, body.model_dump())
+    if node is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fraktion nicht gefunden")
+    return node
+
+
+@router.delete("/fraktionen/{node_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
+async def delete_fraktion(campaign_id: str, node_id: str):
+    if not await repository.delete_node("Fraktion", campaign_id, node_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fraktion nicht gefunden")
+
+
 @router.post("/verbindungen", response_model=VerbindungResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_verbindung(campaign_id: str, body: VerbindungCreate):
     edge = await repository.create_verbindung(campaign_id, body.model_dump())
@@ -271,6 +397,7 @@ _FILTER_QUELLEN: tuple[tuple[str, list[str], str], ...] = (
     ("Person", PERSON_FIELDS, "name"),
     ("Ort", ORT_FIELDS, "name"),
     ("Event", EVENT_FIELDS, "title"),
+    ("Fraktion", FRAKTION_FIELDS, "name"),
 )
 
 
@@ -292,7 +419,7 @@ async def _beschriftungen(campaign_id: str, viewer: Viewer) -> dict[str, tuple[s
 @router.get("/filteroptionen", response_model=FilterOptionen)
 async def get_filteroptionen(
     campaign_id: str,
-    art: Literal["personen", "orte", "events"] = Query(
+    art: Literal["personen", "orte", "events", "fraktionen"] = Query(
         description="Für welche Liste die Optionen gelten sollen."
     ),
     personType: Literal["PC", "NPC"] | None = Query(default=None),
@@ -309,6 +436,7 @@ async def get_filteroptionen(
         "personen": ("Person", PERSON_FIELDS, "name"),
         "orte": ("Ort", ORT_FIELDS, "name"),
         "events": ("Event", EVENT_FIELDS, "title"),
+        "fraktionen": ("Fraktion", FRAKTION_FIELDS, "name"),
     }[art]
 
     knoten = await repository.list_nodes(label, felder, campaign_id, order_field=namensfeld)
@@ -344,6 +472,7 @@ _ENTITAETEN = {
     "personen": ("Person", PERSON_FIELDS, "Person"),
     "orte": ("Ort", ORT_FIELDS, "Ort"),
     "events": ("Event", EVENT_FIELDS, "Event"),
+    "fraktionen": ("Fraktion", FRAKTION_FIELDS, "Fraktion"),
 }
 
 
