@@ -377,7 +377,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         name: neueFraktionName.trim(),
         description: "",
         ziele: [],
-        ressourcen: "",
+        ressourcen: [],
         notes: "",
         sichtbarkeit: "GM",
         sichtbarFuer: [],

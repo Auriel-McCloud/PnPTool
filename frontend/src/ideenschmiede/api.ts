@@ -144,7 +144,7 @@ export async function entwurfAnlegen(
         name,
         description: "",
         ziele: [],
-        ressourcen: "",
+        ressourcen: [],
         notes: "",
         istEntwurf: true,
         sichtbarkeit: "GM",

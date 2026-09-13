@@ -11,12 +11,12 @@ class BildEintrag(BaseModel):
     istPrimaer: bool = False
 
 
-class ZielEintrag(BaseModel):
-    """Ein Ziel/Vorhaben einer Fraktion.
+class KurzLangEintrag(BaseModel):
+    """Ein Listeneintrag mit Kurzbeschreibung und ausformulierter Beschreibung.
 
-    Kurzbeschreibung (titel) wird in der Zielliste angezeigt, die lange
-    Beschreibung nur auf Abruf — so bleibt die Liste kompakt, aber die
-    Spielleitung kann jedes Vorhaben ausformulieren.
+    Genutzt für Fraktions-Ziele und -Ressourcen. Kurzbeschreibung (titel) wird
+    in der Liste angezeigt, die lange Beschreibung nur auf Abruf — so bleibt
+    die Liste kompakt, aber die Spielleitung kann jeden Eintrag ausformulieren.
     """
     titel: str = ""
     beschreibung: str = ""
@@ -250,9 +250,10 @@ class FraktionCreate(BaseModel):
     # Ziele als Liste: jedes Vorhaben hat eine Kurzbeschreibung (titel) und
     # eine ausformulierte Beschreibung. Die Liste bleibt damit flexibel statt
     # ein einziger Freitext-Block.
-    ziele: list[ZielEintrag] = []
-    # Miliz, Kapital, Zugang zu Schmuggelrouten — was die Fraktion einsetzen kann.
-    ressourcen: str = ""
+    ziele: list[KurzLangEintrag] = []
+    # Ressourcen als Liste, wie die Ziele: Miliz, Kapital, Zugang — jeder
+    # Eintrag mit Kurzbeschreibung und, bei Bedarf, Ausführung.
+    ressourcen: list[KurzLangEintrag] = []
     notes: str = ""
     bildUrl: str = ""  # Legacy
     bilder: list[BildEintrag] = []  # Bildergalerie
@@ -269,8 +270,8 @@ class FraktionCreate(BaseModel):
 class FraktionUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
-    ziele: list[ZielEintrag] | None = None
-    ressourcen: str | None = None
+    ziele: list[KurzLangEintrag] | None = None
+    ressourcen: list[KurzLangEintrag] | None = None
     notes: str | None = None
     bildUrl: str | None = None
     bilder: list[BildEintrag] | None = None
@@ -285,8 +286,8 @@ class FraktionResponse(BaseModel):
     id: str
     name: str
     description: str
-    ziele: list[ZielEintrag] = []
-    ressourcen: str = ""
+    ziele: list[KurzLangEintrag] = []
+    ressourcen: list[KurzLangEintrag] = []
     notes: str
     bildUrl: str = ""
     bilder: list[BildEintrag] = []

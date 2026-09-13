@@ -91,9 +91,9 @@ _BOGEN_DEFAULTS: dict = {
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe
     "istEntwurf": False,
     # Fraktion: Ziele/Ressourcen sind neu, Bestandsdaten kennen sie nicht.
-    # ziele ist eine Liste von ZielEintrag-Dicts (titel + beschreibung).
+    # ziele und ressourcen sind Listen von {titel, beschreibung}.
     "ziele": [],
-    "ressourcen": "",
+    "ressourcen": [],
 }
 
 
@@ -124,6 +124,14 @@ def _mit_defaults(record: dict) -> dict:
             daten["ziele"] = json.loads(daten["ziele"])
         except (json.JSONDecodeError, TypeError):
             daten["ziele"] = []
+
+    # ressourcen aus JSON-String parsen (Liste von {titel, beschreibung})
+    if "ressourcen" in daten and isinstance(daten["ressourcen"], str):
+        import json
+        try:
+            daten["ressourcen"] = json.loads(daten["ressourcen"])
+        except (json.JSONDecodeError, TypeError):
+            daten["ressourcen"] = []
 
     return daten
 
@@ -171,6 +179,9 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
     # ziele-Liste ebenfalls als JSON-String (Liste von {titel, beschreibung})
     if "ziele" in changed and isinstance(changed["ziele"], list):
         changed["ziele"] = json.dumps(changed["ziele"])
+    # ressourcen-Liste ebenfalls als JSON-String
+    if "ressourcen" in changed and isinstance(changed["ressourcen"], list):
+        changed["ressourcen"] = json.dumps(changed["ressourcen"])
     
     if not changed:
         return await get_node(label, fields, campaign_id, node_id)

@@ -51,8 +51,8 @@ export interface Event extends VisibilityFields {
   notizenSichtbarFuer: string[];
 }
 
-export interface ZielEintrag {
-  /** Kurzbeschreibung — wird in der Zielliste angezeigt. */
+export interface KurzLangEintrag {
+  /** Kurzbeschreibung — wird in der Liste angezeigt. */
   titel: string;
   /** Ausformulierte Beschreibung — nur auf Abruf sichtbar. */
   beschreibung: string;
@@ -63,9 +63,9 @@ export interface Fraktion extends VisibilityFields {
   name: string;
   description: string;
   /** Vorhaben der Fraktion — jedes mit Kurz- und Langbeschreibung. */
-  ziele: ZielEintrag[];
-  /** Miliz, Kapital, Zugang — was sie einsetzen kann. */
-  ressourcen: string;
+  ziele: KurzLangEintrag[];
+  /** Miliz, Kapital, Zugang — jedes mit Kurz- und Langbeschreibung. */
+  ressourcen: KurzLangEintrag[];
   bildUrl?: string;
   /** Bildergalerie: mehrere Bilder mit Primärmarkierung. */
   bilder?: { url: string; istPrimaer: boolean }[];

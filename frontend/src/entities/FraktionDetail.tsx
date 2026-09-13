@@ -1,7 +1,8 @@
 import { useState } from "react";
-import type { EntityKind, Fraktion, Verbindung, ZielEintrag } from "./api";
+import type { EntityKind, Fraktion, KurzLangEintrag, Verbindung } from "./api";
 import { entitiesApi } from "./api";
 import { BildGalerie } from "./BildGalerie";
+import { KurzLangListe } from "./KurzLangListe";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -45,10 +46,8 @@ export function FraktionDetail({
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [name, setName] = useState(fraktion.name);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(fraktion.description));
-  const [ziele, setZiele] = useState<ZielEintrag[]>(fraktion.ziele ?? []);
-  // Ziel-Editor: null = geschlossen; index null = neues Ziel, sonst bearbeitetes.
-  const [zielEditor, setZielEditor] = useState<{ index: number | null; titel: string; beschreibung: string } | null>(null);
-  const [ressourcenDoc, setRessourcenDoc] = useState<JSONContent>(parseRichText(fraktion.ressourcen));
+  const [ziele, setZiele] = useState<KurzLangEintrag[]>(fraktion.ziele ?? []);
+  const [ressourcen, setRessourcen] = useState<KurzLangEintrag[]>(fraktion.ressourcen ?? []);
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(fraktion.notes));
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -82,41 +81,6 @@ export function FraktionDetail({
     } finally {
       setSpeichert(false);
     }
-  }
-
-  // --- Ziele ---
-  // Der Editor speichert erst beim Bestätigen — so gibt es genau einen
-  // Speicherweg, und ein halb getipptes Ziel geht beim Schließen verloren
-  // statt still in die Liste zu wandern.
-
-  function oeffneZielEditor(index: number | null) {
-    if (index === null) {
-      setZielEditor({ index: null, titel: "", beschreibung: "" });
-    } else {
-      const z = ziele[index];
-      setZielEditor({ index, titel: z.titel, beschreibung: z.beschreibung });
-    }
-  }
-
-  function zielSpeichern() {
-    if (!zielEditor) return;
-    const eintrag: ZielEintrag = {
-      titel: zielEditor.titel.trim(),
-      beschreibung: zielEditor.beschreibung,
-    };
-    const neue =
-      zielEditor.index === null
-        ? [...ziele, eintrag]
-        : ziele.map((z, i) => (i === zielEditor.index ? eintrag : z));
-    setZiele(neue);
-    setZielEditor(null);
-    speichere({ ziele: neue });
-  }
-
-  function zielEntfernen(index: number) {
-    const neue = ziele.filter((_, i) => i !== index);
-    setZiele(neue);
-    speichere({ ziele: neue });
   }
 
   return (
@@ -243,63 +207,39 @@ export function FraktionDetail({
           )}
 
           {unteransicht === "ziele" && (
-            <div className="pcd-editor-bereich">
-              <p className="pcd-hinweis">
-                Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion, Marktdominanz.
-              </p>
-
-              <div className="ziel-liste">
-                {ziele.length === 0 && (
-                  <p style={{ color: "var(--text-leise)", fontStyle: "italic" }}>
-                    Noch keine Ziele. Leg eins an — jedes Ziel hat eine Kurzbeschreibung und,
-                    bei Bedarf, eine ausformulierte Beschreibung.
-                  </p>
-                )}
-
-                {ziele.map((ziel, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className="ziel-eintrag"
-                    onClick={() => oeffneZielEditor(i)}
-                    title="Bearbeiten"
-                  >
-                    <span className="ziel-titel">{ziel.titel.trim() || "Unbenanntes Ziel"}</span>
-                    <span
-                      className="ziel-wegwerfen"
-                      title="Ziel entfernen"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        zielEntfernen(i);
-                      }}
-                    >
-                      ✕
-                    </span>
-                  </button>
-                ))}
-
-                <button type="button" className="ziel-neu" onClick={() => oeffneZielEditor(null)}>
-                  + Neues Ziel
-                </button>
-              </div>
-            </div>
+            <KurzLangListe
+              eintraege={ziele}
+              onAendern={(neue) => {
+                setZiele(neue);
+                speichere({ ziele: neue });
+              }}
+              hinweis="Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion, Marktdominanz."
+              neuText="+ Neues Ziel"
+              leerText="Noch keine Ziele. Leg eins an — jedes Ziel hat eine Kurzbeschreibung und, bei Bedarf, eine ausformulierte Beschreibung."
+              einzahl="Ziel"
+              titelPlatzhalter="z.B. Freundliche Übernahme der Hafenlogistik"
+              beschreibungPlatzhalter="Ausführlich: warum, wie, womit, bis wann …"
+              kennung={`fraktion-ziel-editor:${fraktion.id}`}
+              speichert={speichert}
+            />
           )}
 
           {unteransicht === "ressourcen" && (
-            <div className="pcd-editor-bereich">
-              <p className="pcd-hinweis">
-                Miliz, Kapital, Zugang, Technologie — was die Fraktion einsetzen kann.
-              </p>
-              <RichTextEditor content={ressourcenDoc} onChange={setRessourcenDoc} minHeight={200} />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ ressourcen: serializeRichText(ressourcenDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Ressourcen speichern"}
-              </button>
-            </div>
+            <KurzLangListe
+              eintraege={ressourcen}
+              onAendern={(neue) => {
+                setRessourcen(neue);
+                speichere({ ressourcen: neue });
+              }}
+              hinweis="Miliz, Kapital, Zugang, Technologie — was die Fraktion einsetzen kann."
+              neuText="+ Neue Ressource"
+              leerText="Noch keine Ressourcen. Leg eine an — jede hat eine Kurzbeschreibung und, bei Bedarf, eine ausformulierte Beschreibung."
+              einzahl="Ressource"
+              titelPlatzhalter="z.B. 40 Mann starke Miliz"
+              beschreibungPlatzhalter="Ausführlich: Stärke, Ausrüstung, Grenzen …"
+              kennung={`fraktion-ressourcen-editor:${fraktion.id}`}
+              speichert={speichert}
+            />
           )}
 
           {unteransicht === "notizen" && (
@@ -336,53 +276,6 @@ export function FraktionDetail({
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
         />
-      )}
-
-      {/* Ziel-Editor: eigenes Popup wie alle anderen Dialoge — kein Inline-Formular.
-          Als Portal über dem Fraktion-Fenster, mit eigener Streuungs-Kennung,
-          damit es nicht in dessen Bezugsrahmen hängt. */}
-      {zielEditor && (
-        <Fenster
-          offen
-          titel={zielEditor.index === null ? "Neues Ziel" : "Ziel bearbeiten"}
-          unterzeile={zielEditor.index === null ? "Kurzbeschreibung und, bei Bedarf, Ausführung" : undefined}
-          kennung={`fraktion-ziel-editor:${fraktion.id}:${zielEditor.index ?? "neu"}`}
-          ton="var(--bereich-fraktionen)"
-          onSchliessen={() => setZielEditor(null)}
-        >
-          <div className="pcd-editor-bereich" style={{ padding: 8 }}>
-            <div>
-              <label className="pcd-label">Kurzbeschreibung</label>
-              <input
-                type="text"
-                className="ziel-input"
-                placeholder="z.B. Freundliche Übernahme der Hafenlogistik"
-                value={zielEditor.titel}
-                autoFocus
-                onChange={(e) => setZielEditor({ ...zielEditor, titel: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="pcd-label">Beschreibung</label>
-              <textarea
-                className="ziel-textarea"
-                placeholder="Ausführlich: warum, wie, womit, bis wann …"
-                value={zielEditor.beschreibung}
-                onChange={(e) => setZielEditor({ ...zielEditor, beschreibung: e.target.value })}
-              />
-            </div>
-
-            <div className="ziel-editor-aktionen">
-              <button type="button" className="pcd-abbrechen" onClick={() => setZielEditor(null)}>
-                Abbrechen
-              </button>
-              <button type="button" className="pcd-speichern" onClick={zielSpeichern} disabled={speichert}>
-                {speichert ? "Speichert…" : "Speichern"}
-              </button>
-            </div>
-          </div>
-        </Fenster>
       )}
     </Fenster>
   );
