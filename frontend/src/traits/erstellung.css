@@ -564,22 +564,10 @@
   background: var(--neon-schwach);
 }
 
-/* --- Rassen: Bild auf der Karte, Infobox darunter --------------------- */
+/* --- Rassen: Fragezeichen öffnet das Beschreibungsfenster --------------- */
 
-.er-karte-bild {
-  display: block;
-  width: 100%;
-  height: 88px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--flaeche-tief);
-}
-
-.er-karte-bild img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+/* Das Rassenbild erscheint erst im Fenster (über das ?), nicht auf der Karte —
+   so bleibt die Übersicht schlank, auch wenn es viele Rassen gibt. */
 
 /* Die Infobox erklärt die gewählte Rasse — jetzt in einem eigenen Fenster,
    also ohne eigenen Rahmen/Hintergrund: den hat das Fenster schon. */

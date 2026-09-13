@@ -473,11 +473,6 @@ function SchrittRasse({
               className={`er-karte${rasse === r.name ? " er-karte-aktiv" : ""}`}
               onClick={() => onWaehlen(r.name)}
             >
-              {r.bildUrl && (
-                <span className="er-karte-bild">
-                  <img src={r.bildUrl} alt="" />
-                </span>
-              )}
               <span className="er-karte-titel">
                 {r.name}
                 {/* Das Fragezeichen öffnet das Beschreibungsfenster, ohne die
