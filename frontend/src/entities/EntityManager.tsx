@@ -376,7 +376,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       await entitiesApi.createFraktion(campaignId, {
         name: neueFraktionName.trim(),
         description: "",
-        ziele: "",
+        ziele: [],
         ressourcen: "",
         notes: "",
         sichtbarkeit: "GM",

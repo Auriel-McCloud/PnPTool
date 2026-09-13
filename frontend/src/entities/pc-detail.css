@@ -372,3 +372,112 @@
   font-size: 12px;
   color: var(--signal);
 }
+
+/* --- Ziele-Liste (Fraktion) -------------------------------------------- */
+
+.pcd-hinweis {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-leise);
+}
+
+.pcd-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+  margin: 8px 0 4px;
+}
+
+.ziel-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ziel-eintrag {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  overflow: hidden;
+}
+
+.ziel-titel-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.ziel-titel-zeile:hover {
+  background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 8%, transparent);
+}
+
+.ziel-aufklapp {
+  color: var(--text-leise);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.ziel-titel {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.ziel-wegwerfen {
+  flex-shrink: 0;
+  color: var(--text-leise);
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+}
+
+.ziel-wegwerfen:hover {
+  color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+}
+
+.ziel-detail {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--linie);
+}
+
+.ziel-input,
+.ziel-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: color-mix(in srgb, var(--flaeche) 50%, transparent);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.ziel-textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ziel-neu {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 14%, transparent);
+  border: 1px dashed var(--bereich-fraktionen, var(--neon));
+  border-radius: var(--radius);
+  color: var(--bereich-fraktionen, var(--neon));
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ziel-neu:hover {
+  background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 24%, transparent);
+}

@@ -51,12 +51,19 @@ export interface Event extends VisibilityFields {
   notizenSichtbarFuer: string[];
 }
 
+export interface ZielEintrag {
+  /** Kurzbeschreibung — wird in der Zielliste angezeigt. */
+  titel: string;
+  /** Ausformulierte Beschreibung — nur auf Abruf sichtbar. */
+  beschreibung: string;
+}
+
 export interface Fraktion extends VisibilityFields {
   id: string;
   name: string;
   description: string;
-  /** Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion. */
-  ziele: string;
+  /** Vorhaben der Fraktion — jedes mit Kurz- und Langbeschreibung. */
+  ziele: ZielEintrag[];
   /** Miliz, Kapital, Zugang — was sie einsetzen kann. */
   ressourcen: string;
   bildUrl?: string;

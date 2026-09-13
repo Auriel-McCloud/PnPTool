@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { EntityKind, Fraktion, Verbindung } from "./api";
+import type { EntityKind, Fraktion, Verbindung, ZielEintrag } from "./api";
 import { entitiesApi } from "./api";
 import { BildGalerie } from "./BildGalerie";
 import { Fenster } from "../shell/Fenster";
@@ -45,7 +45,8 @@ export function FraktionDetail({
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [name, setName] = useState(fraktion.name);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(fraktion.description));
-  const [zieleDoc, setZieleDoc] = useState<JSONContent>(parseRichText(fraktion.ziele));
+  const [ziele, setZiele] = useState<ZielEintrag[]>(fraktion.ziele ?? []);
+  const [offenesZiel, setOffenesZiel] = useState<number | null>(null);
   const [ressourcenDoc, setRessourcenDoc] = useState<JSONContent>(parseRichText(fraktion.ressourcen));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(fraktion.notes));
   const [speichert, setSpeichert] = useState(false);
@@ -210,11 +211,88 @@ export function FraktionDetail({
               <p className="pcd-hinweis">
                 Was die Fraktion vorhat — freundliche Übernahme, Putsch, Expansion, Marktdominanz.
               </p>
-              <RichTextEditor content={zieleDoc} onChange={setZieleDoc} minHeight={200} />
+
+              <div className="ziel-liste">
+                {ziele.length === 0 && (
+                  <p style={{ color: "var(--text-leise)", fontStyle: "italic" }}>
+                    Noch keine Ziele. Leg eins an — jedes Ziel hat eine Kurzbeschreibung und,
+                    bei Bedarf, eine ausformulierte Beschreibung.
+                  </p>
+                )}
+
+                {ziele.map((ziel, i) => (
+                  <div key={i} className="ziel-eintrag">
+                    <button
+                      type="button"
+                      className="ziel-titel-zeile"
+                      onClick={() => setOffenesZiel(offenesZiel === i ? null : i)}
+                    >
+                      <span className="ziel-aufklapp">{offenesZiel === i ? "▾" : "▸"}</span>
+                      <span className="ziel-titel">{ziel.titel.trim() || "Unbenanntes Ziel"}</span>
+                      <span
+                        className="ziel-wegwerfen"
+                        title="Ziel entfernen"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const neue = ziele.filter((_, k) => k !== i);
+                          setZiele(neue);
+                          if (offenesZiel === i) setOffenesZiel(null);
+                          speichere({ ziele: neue });
+                        }}
+                      >
+                        ✕
+                      </span>
+                    </button>
+
+                    {offenesZiel === i && (
+                      <div className="ziel-detail">
+                        <label className="pcd-label">Kurzbeschreibung</label>
+                        <input
+                          type="text"
+                          className="ziel-input"
+                          placeholder="z.B. Freundliche Übernahme der Hafenlogistik"
+                          value={ziel.titel}
+                          onChange={(e) => {
+                            const neue = [...ziele];
+                            neue[i] = { ...ziel, titel: e.target.value };
+                            setZiele(neue);
+                          }}
+                          onBlur={() => speichere({ ziele })}
+                        />
+                        <label className="pcd-label">Beschreibung</label>
+                        <textarea
+                          className="ziel-textarea"
+                          placeholder="Ausführlich: warum, wie, womit, bis wann …"
+                          value={ziel.beschreibung}
+                          onChange={(e) => {
+                            const neue = [...ziele];
+                            neue[i] = { ...ziel, beschreibung: e.target.value };
+                            setZiele(neue);
+                          }}
+                          onBlur={() => speichere({ ziele })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="ziel-neu"
+                  onClick={() => {
+                    const neue = [...ziele, { titel: "", beschreibung: "" }];
+                    setZiele(neue);
+                    setOffenesZiel(neue.length - 1);
+                  }}
+                >
+                  + Neues Ziel
+                </button>
+              </div>
+
               <button
                 type="button"
                 className="pcd-speichern"
-                onClick={() => speichere({ ziele: serializeRichText(zieleDoc) })}
+                onClick={() => speichere({ ziele })}
                 disabled={speichert}
               >
                 {speichert ? "Speichert…" : "Ziele speichern"}

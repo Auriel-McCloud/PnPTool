@@ -90,8 +90,9 @@ _BOGEN_DEFAULTS: dict = {
     "bilder": [],
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe
     "istEntwurf": False,
-    # Fraktion: Ziele/Ressourcen sind neu, Bestandsdaten kennen sie nicht
-    "ziele": "",
+    # Fraktion: Ziele/Ressourcen sind neu, Bestandsdaten kennen sie nicht.
+    # ziele ist eine Liste von ZielEintrag-Dicts (titel + beschreibung).
+    "ziele": [],
     "ressourcen": "",
 }
 
@@ -115,7 +116,15 @@ def _mit_defaults(record: dict) -> dict:
             daten["bilder"] = json.loads(daten["bilder"])
         except (json.JSONDecodeError, TypeError):
             daten["bilder"] = []
-    
+
+    # ziele aus JSON-String parsen (Liste von {titel, beschreibung})
+    if "ziele" in daten and isinstance(daten["ziele"], str):
+        import json
+        try:
+            daten["ziele"] = json.loads(daten["ziele"])
+        except (json.JSONDecodeError, TypeError):
+            daten["ziele"] = []
+
     return daten
 
 
@@ -159,6 +168,9 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
     # bilder-Array als JSON-String speichern (Neo4j kann keine Maps in Arrays)
     if "bilder" in changed and isinstance(changed["bilder"], list):
         changed["bilder"] = json.dumps(changed["bilder"])
+    # ziele-Liste ebenfalls als JSON-String (Liste von {titel, beschreibung})
+    if "ziele" in changed and isinstance(changed["ziele"], list):
+        changed["ziele"] = json.dumps(changed["ziele"])
     
     if not changed:
         return await get_node(label, fields, campaign_id, node_id)

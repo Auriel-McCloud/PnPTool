@@ -143,7 +143,7 @@ export async function entwurfAnlegen(
       await api.post(`/api/campaigns/${campaignId}/fraktionen`, {
         name,
         description: "",
-        ziele: "",
+        ziele: [],
         ressourcen: "",
         notes: "",
         istEntwurf: true,

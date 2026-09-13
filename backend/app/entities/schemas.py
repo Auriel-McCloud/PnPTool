@@ -11,6 +11,17 @@ class BildEintrag(BaseModel):
     istPrimaer: bool = False
 
 
+class ZielEintrag(BaseModel):
+    """Ein Ziel/Vorhaben einer Fraktion.
+
+    Kurzbeschreibung (titel) wird in der Zielliste angezeigt, die lange
+    Beschreibung nur auf Abruf — so bleibt die Liste kompakt, aber die
+    Spielleitung kann jedes Vorhaben ausformulieren.
+    """
+    titel: str = ""
+    beschreibung: str = ""
+
+
 class SichtbarkeitInput(BaseModel):
     modus: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -236,9 +247,10 @@ EntityKind = Literal["Person", "Ort", "Event", "Gegenstand", "Fraktion"]
 class FraktionCreate(BaseModel):
     name: str
     description: str = ""  # Was die Spielwelt über die Fraktion weiß/wahrnimmt
-    # Geheime Agenda: freundliche Übernahme, Putsch, stille Expansion — frei als
-    # Text statt fester Kategorien, weil sich das im Lauf der Kampagne wandelt.
-    ziele: str = ""
+    # Ziele als Liste: jedes Vorhaben hat eine Kurzbeschreibung (titel) und
+    # eine ausformulierte Beschreibung. Die Liste bleibt damit flexibel statt
+    # ein einziger Freitext-Block.
+    ziele: list[ZielEintrag] = []
     # Miliz, Kapital, Zugang zu Schmuggelrouten — was die Fraktion einsetzen kann.
     ressourcen: str = ""
     notes: str = ""
@@ -257,7 +269,7 @@ class FraktionCreate(BaseModel):
 class FraktionUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
-    ziele: str | None = None
+    ziele: list[ZielEintrag] | None = None
     ressourcen: str | None = None
     notes: str | None = None
     bildUrl: str | None = None
@@ -273,7 +285,7 @@ class FraktionResponse(BaseModel):
     id: str
     name: str
     description: str
-    ziele: str = ""
+    ziele: list[ZielEintrag] = []
     ressourcen: str = ""
     notes: str
     bildUrl: str = ""
