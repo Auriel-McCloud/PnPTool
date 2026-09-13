@@ -476,10 +476,30 @@ _ENTITAETEN = {
 }
 
 
-@router.post("/{art}/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
-async def upload_entitaets_bild(campaign_id: str, art: str, node_id: str, file: UploadFile = File(...)):
-    if art not in _ENTITAETEN:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unbekannte Entität")
+@router.post("/personen/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_person_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+    return await _entitaets_bild_hochladen(campaign_id, "personen", node_id, file)
+
+
+@router.post("/orte/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_ort_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+    return await _entitaets_bild_hochladen(campaign_id, "orte", node_id, file)
+
+
+@router.post("/events/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_event_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+    return await _entitaets_bild_hochladen(campaign_id, "events", node_id, file)
+
+
+@router.post("/fraktionen/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_fraktion_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+    return await _entitaets_bild_hochladen(campaign_id, "fraktionen", node_id, file)
+
+
+async def _entitaets_bild_hochladen(campaign_id: str, art: str, node_id: str, file: UploadFile) -> dict:
+    # Vier explizite Routen statt einer mit `{art}`: eine generische Route
+    # würde auch `/rassen/{id}/bild` abfangen und "Unbekannte Entität"
+    # antworten, weil der entities-Router vor dem Rassen-Router registriert ist.
     label, felder, bezeichnung = _ENTITAETEN[art]
 
     if file.content_type not in ERLAUBTE_BILDTYPEN:

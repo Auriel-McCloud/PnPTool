@@ -450,7 +450,11 @@ function SchrittRasse({
   rasse: string;
   onWaehlen: (name: string) => void;
 }) {
-  const gewaehlt = regeln.rassen.find((r) => r.name === rasse);
+  // Beschreibung und Bild einer Rasse erscheinen erst auf Abruf in einem
+  // eigenen Fenster — nicht mehr als Infobox unter den Karten, die je nach
+  // Textmenge unterschiedlich hoch aufklappt und das Layout zerreisst.
+  const [infoRasse, setInfoRasse] = useState<Rasse | null>(null);
+
   return (
     <>
       {regeln.rassen.length === 0 && (
@@ -474,8 +478,31 @@ function SchrittRasse({
                   <img src={r.bildUrl} alt="" />
                 </span>
               )}
-              <span className="er-karte-titel">{r.name}</span>
-              <span className="er-karte-text">{r.beschreibung}</span>
+              <span className="er-karte-titel">
+                {r.name}
+                {/* Das Fragezeichen öffnet das Beschreibungsfenster, ohne die
+                    Rasse zu wählen — deshalb eigener Klick, der nicht auf die
+                    Karte durchschlägt. */}
+                <span
+                  className="er-karte-info"
+                  role="button"
+                  tabIndex={0}
+                  title="Beschreibung und Bild ansehen"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setInfoRasse(r);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setInfoRasse(r);
+                    }
+                  }}
+                >
+                  ?
+                </span>
+              </span>
               <span className="er-karte-zahlen">
                 <span className="er-marke">{r.freiePunkte.join(" / ")} Punkte</span>
                 {mods.length === 0 ? (
@@ -493,7 +520,17 @@ function SchrittRasse({
         })}
       </div>
 
-      {gewaehlt && <RassenInfobox rasse={gewaehlt} />}
+      {infoRasse && (
+        <Fenster
+          offen
+          titel={infoRasse.name}
+          unterzeile="Rasse"
+          kennung={`rasse-info:${infoRasse.name}`}
+          onSchliessen={() => setInfoRasse(null)}
+        >
+          <RassenInfobox rasse={infoRasse} />
+        </Fenster>
+      )}
     </>
   );
 }
@@ -501,9 +538,9 @@ function SchrittRasse({
 /**
  * Was die gewählte Rasse für diesen Charakter bedeutet.
  *
- * Die Karten oben vergleichen, die Infobox erklärt: sie steht deshalb erst
- * da, wenn eine Wahl getroffen ist, und wiederholt nicht die Marken der
- * Karte, sondern übersetzt sie in Folgen. Vor allem die Obergrenze — dass
+ * Steht jetzt in einem eigenen Fenster (über das Fragezeichen an der Karte
+ * geöffnet) statt als Infobox unter den Karten. Wiederholt nicht die Marken
+ * der Karte, sondern übersetzt sie in Folgen. Vor allem die Obergrenze — dass
  * ein Troll bei Körperkraft dauerhaft auf 8 statt 6 kommt, steht sonst
  * nirgends, obwohl es die Entscheidung fürs ganze Charakterleben prägt.
  */
@@ -512,10 +549,9 @@ function RassenInfobox({ rasse }: { rasse: Rasse }) {
   const vorteile = mods.filter(([, w]) => w > 0);
   const nachteile = mods.filter(([, w]) => w < 0);
   return (
-    <aside className="er-infobox">
+    <div className="er-infobox">
       {rasse.bildUrl && <img className="er-infobox-bild" src={rasse.bildUrl} alt={rasse.name} />}
       <div className="er-infobox-text">
-        <h3>{rasse.name}</h3>
         <p>{rasse.beschreibung}</p>
         <p className="er-infobox-punkte">
           Du verteilst <strong>{rasse.freiePunkte.join(" / ")}</strong> Punkte frei auf die drei
@@ -540,7 +576,7 @@ function RassenInfobox({ rasse }: { rasse: Rasse }) {
           </p>
         )}
       </div>
-    </aside>
+    </div>
   );
 }
 
