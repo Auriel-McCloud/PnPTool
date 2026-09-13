@@ -3,6 +3,7 @@ import type { EntityKind, Fraktion, KurzLangEintrag, Verbindung } from "./api";
 import { entitiesApi } from "./api";
 import { BildGalerie } from "./BildGalerie";
 import { KurzLangListe } from "./KurzLangListe";
+import { VerbindungAnlegen } from "./VerbindungAnlegen";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -52,6 +53,7 @@ export function FraktionDetail({
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [verbindungAnlegenOffen, setVerbindungAnlegenOffen] = useState(false);
 
   const zeilen = beziehungsZeilen(fraktion.id, verbindungen, namen);
 
@@ -257,12 +259,17 @@ export function FraktionDetail({
           )}
 
           {unteransicht === "beziehungen" && (
-            <BeziehungsListe
-              campaignId={campaignId}
-              zeilen={zeilen}
-              onGeaendert={onGeaendert}
-              farbe="var(--bereich-fraktionen, var(--neon))"
-            />
+            <div className="pcd-editor-bereich">
+              <BeziehungsListe
+                campaignId={campaignId}
+                zeilen={zeilen}
+                onGeaendert={onGeaendert}
+                farbe="var(--bereich-fraktionen, var(--neon))"
+              />
+              <button type="button" className="ziel-neu" onClick={() => setVerbindungAnlegenOffen(true)}>
+                + Neue Verbindung
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -275,6 +282,20 @@ export function FraktionDetail({
           neinText="Abbrechen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+
+      {verbindungAnlegenOffen && (
+        <VerbindungAnlegen
+          campaignId={campaignId}
+          eigenKind="Fraktion"
+          eigenId={fraktion.id}
+          eigenName={fraktion.name}
+          namen={namen}
+          pcOptions={pcOptions}
+          typVorschlaege={["Anführer", "Einfluss", "Verbündeter", "Feind", "Konkurrent", "Mitglied"]}
+          onGeaendert={onGeaendert}
+          onSchliessen={() => setVerbindungAnlegenOffen(false)}
         />
       )}
     </Fenster>

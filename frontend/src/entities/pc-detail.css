@@ -495,3 +495,49 @@
   color: var(--text);
   border-color: var(--text-leise);
 }
+
+/* --- Verbindung anlegen (Beziehungs-Tab) -------------------------------- */
+
+.typ-vorschlaege {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.typ-vorschlag {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.typ-vorschlag:hover {
+  color: var(--bereich-fraktionen, var(--neon));
+  border-color: var(--bereich-fraktionen, var(--neon));
+}
+
+.richtung-auswahl {
+  display: flex;
+  gap: 8px;
+}
+
+.richtung-auswahl button {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.richtung-auswahl button.richtung-aktiv {
+  color: var(--bereich-fraktionen, var(--neon));
+  border-color: var(--bereich-fraktionen, var(--neon));
+  background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 12%, transparent);
+  font-weight: 600;
+}
