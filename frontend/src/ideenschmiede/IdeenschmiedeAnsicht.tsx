@@ -444,6 +444,9 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         <NPCDetail
           campaignId={campaignId}
           person={personDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
           onSchliessen={() => setPersonDetailFuer(null)}
           onGeaendert={detailRefreshen}
         />

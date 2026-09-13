@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Person } from "./api";
+import type { EntityKind, Person, Verbindung } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -8,6 +8,9 @@ import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { entitiesApi } from "./api";
+import { BeziehungsTab, PERSON_TYP_VORSCHLAEGE } from "./BeziehungsTab";
+import { beziehungsZeilen } from "./BeziehungsListe";
+import type { PersonOption } from "./VisibilitySelector";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css";
 
@@ -19,14 +22,18 @@ import "./pc-detail.css";
  * - Gegenstände
  * - Beschreibung
  * - Notizen
+ * - Beziehungen
  */
 
-type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "augments" | "beschreibung" | "notizen";
+type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "augments" | "beschreibung" | "notizen" | "beziehungen";
 
 interface PCDetailProps {
   campaignId: string;
   person: Person;
   spielerName?: string;
+  verbindungen: Verbindung[];
+  namen: Map<string, { name: string; kind: EntityKind }>;
+  pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
 }
@@ -35,6 +42,9 @@ export function PCDetail({
   campaignId,
   person,
   spielerName,
+  verbindungen,
+  namen,
+  pcOptions,
   onSchliessen,
   onGeaendert,
 }: PCDetailProps) {
@@ -42,6 +52,8 @@ export function PCDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
   const [speichert, setSpeichert] = useState(false);
+
+  const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
   async function speichereBeschreibung() {
     setSpeichert(true);
@@ -70,7 +82,7 @@ export function PCDetail({
   return (
     <Fenster
       offen
-      breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments"}
+      breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
       titel={person.name}
       unterzeile={spielerName ? `Gespielt von ${spielerName}` : "Kein Spieler zugeordnet"}
       kennung={`pc-detail:${person.id}`}
@@ -120,6 +132,13 @@ export function PCDetail({
             onClick={() => setUnteransicht("notizen")}
           >
             Notizen
+          </button>
+          <button
+            type="button"
+            className={unteransicht === "beziehungen" ? "pcd-nav-aktiv" : ""}
+            onClick={() => setUnteransicht("beziehungen")}
+          >
+            Beziehungen ({beziehungsZahl})
           </button>
         </nav>
 
@@ -210,6 +229,21 @@ export function PCDetail({
                 {speichert ? "Speichert…" : "Notizen speichern"}
               </button>
             </div>
+          )}
+
+          {unteransicht === "beziehungen" && (
+            <BeziehungsTab
+              campaignId={campaignId}
+              eigenKind="Person"
+              eigenId={person.id}
+              eigenName={person.name}
+              verbindungen={verbindungen}
+              namen={namen}
+              pcOptions={pcOptions}
+              typVorschlaege={PERSON_TYP_VORSCHLAEGE}
+              farbe="var(--bereich-pcs)"
+              onGeaendert={onGeaendert}
+            />
           )}
         </div>
       </div>

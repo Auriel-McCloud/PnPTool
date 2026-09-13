@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Person } from "./api";
+import type { EntityKind, Person, Verbindung } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -8,6 +8,9 @@ import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { entitiesApi } from "./api";
+import { BeziehungsTab, PERSON_TYP_VORSCHLAEGE } from "./BeziehungsTab";
+import { beziehungsZeilen } from "./BeziehungsListe";
+import type { PersonOption } from "./VisibilitySelector";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Styling wie PCs
 
@@ -20,13 +23,17 @@ import "./pc-detail.css"; // Selbes Styling wie PCs
  * - Augments
  * - Beschreibung
  * - Notizen
+ * - Beziehungen
  */
 
-type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "augments" | "beschreibung" | "notizen";
+type Unteransicht = "uebersicht" | "blatt" | "gegenstaende" | "augments" | "beschreibung" | "notizen" | "beziehungen";
 
 interface NPCDetailProps {
   campaignId: string;
   person: Person;
+  verbindungen: Verbindung[];
+  namen: Map<string, { name: string; kind: EntityKind }>;
+  pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
 }
@@ -34,6 +41,9 @@ interface NPCDetailProps {
 export function NPCDetail({
   campaignId,
   person,
+  verbindungen,
+  namen,
+  pcOptions,
   onSchliessen,
   onGeaendert,
 }: NPCDetailProps) {
@@ -41,6 +51,8 @@ export function NPCDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
   const [speichert, setSpeichert] = useState(false);
+
+  const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
   async function speichereBeschreibung() {
     setSpeichert(true);
@@ -69,7 +81,7 @@ export function NPCDetail({
   return (
     <Fenster
       offen
-      breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments"}
+      breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
       titel={person.name}
       unterzeile="NPC"
       kennung={`npc-detail:${person.id}`}
@@ -119,6 +131,13 @@ export function NPCDetail({
             onClick={() => setUnteransicht("notizen")}
           >
             Notizen
+          </button>
+          <button
+            type="button"
+            className={unteransicht === "beziehungen" ? "pcd-nav-aktiv" : ""}
+            onClick={() => setUnteransicht("beziehungen")}
+          >
+            Beziehungen ({beziehungsZahl})
           </button>
         </nav>
 
@@ -209,6 +228,21 @@ export function NPCDetail({
                 {speichert ? "Speichert…" : "Notizen speichern"}
               </button>
             </div>
+          )}
+
+          {unteransicht === "beziehungen" && (
+            <BeziehungsTab
+              campaignId={campaignId}
+              eigenKind="Person"
+              eigenId={person.id}
+              eigenName={person.name}
+              verbindungen={verbindungen}
+              namen={namen}
+              pcOptions={pcOptions}
+              typVorschlaege={PERSON_TYP_VORSCHLAEGE}
+              farbe="var(--bereich-npcs)"
+              onGeaendert={onGeaendert}
+            />
           )}
         </div>
       </div>

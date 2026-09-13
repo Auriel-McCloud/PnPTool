@@ -37,6 +37,8 @@ interface VerbindungAnlegenProps {
   pcOptions: PersonOption[];
   /** Schnellvorschläge für den Beziehungstyp. */
   typVorschlaege: string[];
+  /** Leitfarbe für Rahmen und Bedienelemente (z.B. var(--bereich-pcs)). */
+  farbe?: string;
   onGeaendert: () => void;
   onSchliessen: () => void;
 }
@@ -49,6 +51,7 @@ export function VerbindungAnlegen({
   namen,
   pcOptions,
   typVorschlaege,
+  farbe = "var(--neon)",
   onGeaendert,
   onSchliessen,
 }: VerbindungAnlegenProps) {
@@ -111,10 +114,10 @@ export function VerbindungAnlegen({
       titel="Neue Verbindung"
       unterzeile={`Von „${eigenName}" aus`}
       kennung={`verbindung-anlegen:${eigenKind}:${eigenId}`}
-      ton="var(--bereich-fraktionen)"
+      ton={farbe}
       onSchliessen={onSchliessen}
     >
-      <div className="pcd-editor-bereich" style={{ padding: 8 }}>
+      <div className="pcd-editor-bereich" style={{ padding: 8, "--verbindung-farbe": farbe } as React.CSSProperties}>
         {fehler && <p style={{ color: "var(--signal)", margin: 0 }}>{fehler}</p>}
 
         <div>

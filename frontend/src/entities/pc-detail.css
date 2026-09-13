@@ -516,8 +516,8 @@
 }
 
 .typ-vorschlag:hover {
-  color: var(--bereich-fraktionen, var(--neon));
-  border-color: var(--bereich-fraktionen, var(--neon));
+  color: var(--verbindung-farbe, var(--neon));
+  border-color: var(--verbindung-farbe, var(--neon));
 }
 
 .richtung-auswahl {
@@ -536,8 +536,25 @@
 }
 
 .richtung-auswahl button.richtung-aktiv {
-  color: var(--bereich-fraktionen, var(--neon));
-  border-color: var(--bereich-fraktionen, var(--neon));
-  background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 12%, transparent);
+  color: var(--verbindung-farbe, var(--neon));
+  border-color: var(--verbindung-farbe, var(--neon));
+  background: color-mix(in srgb, var(--verbindung-farbe, var(--neon)) 12%, transparent);
   font-weight: 600;
+}
+
+/* "+ Neue Verbindung"-Knopf im Beziehungs-Tab — trägt die Leitfarbe der
+   jeweiligen Entität statt einer festen Fraktionsfarbe. */
+.verbindung-neu {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--verbindung-farbe, var(--neon)) 14%, transparent);
+  border: 1px dashed var(--verbindung-farbe, var(--neon));
+  border-radius: var(--radius);
+  color: var(--verbindung-farbe, var(--neon));
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.verbindung-neu:hover {
+  background: color-mix(in srgb, var(--verbindung-farbe, var(--neon)) 24%, transparent);
 }

@@ -1126,6 +1126,9 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           campaignId={campaignId}
           person={pcDetailFuer}
           spielerName={spielerMap.get(pcDetailFuer.id)}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
           onSchliessen={() => setPcDetailFuer(null)}
           onGeaendert={refreshAll}
         />
@@ -1136,6 +1139,9 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
         <NPCDetail
           campaignId={campaignId}
           person={npcDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
           onSchliessen={() => setNpcDetailFuer(null)}
           onGeaendert={refreshAll}
         />
