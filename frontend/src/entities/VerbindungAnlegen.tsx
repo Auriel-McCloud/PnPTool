@@ -56,6 +56,7 @@ export function VerbindungAnlegen({
   onSchliessen,
 }: VerbindungAnlegenProps) {
   const [zielId, setZielId] = useState("");
+  const [zielSuche, setZielSuche] = useState("");
   const [typ, setTyp] = useState("");
   const [richtung, setRichtung] = useState<"aus" | "ein">("aus");
   const [beschreibung, setBeschreibung] = useState("");
@@ -80,6 +81,17 @@ export function VerbindungAnlegen({
       if (ordnung[a.kind] !== ordnung[b.kind]) return ordnung[a.kind] - ordnung[b.kind];
       return a.name.localeCompare(b.name, "de");
     });
+
+  // Suche im Ziel-Feld: filtert nach Name und nach Typbezeichnung. Ohne
+  // Eingabe bleibt die vollständige, nach Typ sortierte Liste stehen.
+  const zielSucheNorm = zielSuche.trim().toLowerCase();
+  const gefilterteZiele = zielSucheNorm
+    ? ziele.filter(
+        (z) =>
+          z.name.toLowerCase().includes(zielSucheNorm) ||
+          KIND_LABEL[z.kind].toLowerCase().includes(zielSucheNorm),
+      )
+    : ziele;
 
   async function speichern() {
     const ziel = ziele.find((z) => z.id === zielId);
@@ -148,6 +160,14 @@ export function VerbindungAnlegen({
 
         <div>
           <label className="pcd-label">Mit wem oder was</label>
+          <input
+            type="text"
+            className="ziel-input"
+            placeholder="Suchen — Name oder Typ"
+            value={zielSuche}
+            onChange={(e) => setZielSuche(e.target.value)}
+            style={{ marginBottom: 6 }}
+          />
           <select
             className="ziel-input"
             value={zielId}
@@ -155,12 +175,17 @@ export function VerbindungAnlegen({
             required
           >
             <option value="">— wählen —</option>
-            {ziele.map((z) => (
+            {gefilterteZiele.map((z) => (
               <option key={z.id} value={z.id}>
                 {KIND_LABEL[z.kind]}: {z.name}
               </option>
             ))}
           </select>
+          {zielSucheNorm && gefilterteZiele.length === 0 && (
+            <p className="pcd-hinweis" style={{ marginTop: 6 }}>
+              Keine Treffer für „{zielSuche.trim()}".
+            </p>
+          )}
         </div>
 
         <div>
