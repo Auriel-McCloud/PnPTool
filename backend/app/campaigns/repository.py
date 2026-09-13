@@ -143,7 +143,12 @@ async def get_campaign(campaign_id: str) -> dict | None:
             OPTIONAL MATCH (c)-[:NUTZT_REGELSYSTEM]->(r:Regelsystem)
             RETURN c.id AS id, c.name AS name,
                    coalesce(r.id, '') AS regelsystemId,
-                   coalesce(r.name, c.ruleset, 'neotopia') AS regelsystem
+                   coalesce(r.name, c.ruleset, 'neotopia') AS regelsystem,
+                   // Katalog-Schlüssel: TraitDefs und Erklaerungen sind mit dem
+                   // Klein-Slug des Regelsystems verdrahtet ("neotopia"), nicht
+                   // mit dem Anzeigenamen ("NeotopiA"). Beide Konsumenten
+                   // (traits/routes.py, regeln/routes.py) erwarten diesen Slug.
+                   toLower(coalesce(r.name, c.ruleset, 'neotopia')) AS ruleset
             """,
             campaign_id=campaign_id,
         )
