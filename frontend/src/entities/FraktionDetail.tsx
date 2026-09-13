@@ -46,7 +46,8 @@ export function FraktionDetail({
   const [name, setName] = useState(fraktion.name);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(fraktion.description));
   const [ziele, setZiele] = useState<ZielEintrag[]>(fraktion.ziele ?? []);
-  const [offenesZiel, setOffenesZiel] = useState<number | null>(null);
+  // Ziel-Editor: null = geschlossen; index null = neues Ziel, sonst bearbeitetes.
+  const [zielEditor, setZielEditor] = useState<{ index: number | null; titel: string; beschreibung: string } | null>(null);
   const [ressourcenDoc, setRessourcenDoc] = useState<JSONContent>(parseRichText(fraktion.ressourcen));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(fraktion.notes));
   const [speichert, setSpeichert] = useState(false);
@@ -81,6 +82,41 @@ export function FraktionDetail({
     } finally {
       setSpeichert(false);
     }
+  }
+
+  // --- Ziele ---
+  // Der Editor speichert erst beim Bestätigen — so gibt es genau einen
+  // Speicherweg, und ein halb getipptes Ziel geht beim Schließen verloren
+  // statt still in die Liste zu wandern.
+
+  function oeffneZielEditor(index: number | null) {
+    if (index === null) {
+      setZielEditor({ index: null, titel: "", beschreibung: "" });
+    } else {
+      const z = ziele[index];
+      setZielEditor({ index, titel: z.titel, beschreibung: z.beschreibung });
+    }
+  }
+
+  function zielSpeichern() {
+    if (!zielEditor) return;
+    const eintrag: ZielEintrag = {
+      titel: zielEditor.titel.trim(),
+      beschreibung: zielEditor.beschreibung,
+    };
+    const neue =
+      zielEditor.index === null
+        ? [...ziele, eintrag]
+        : ziele.map((z, i) => (i === zielEditor.index ? eintrag : z));
+    setZiele(neue);
+    setZielEditor(null);
+    speichere({ ziele: neue });
+  }
+
+  function zielEntfernen(index: number) {
+    const neue = ziele.filter((_, i) => i !== index);
+    setZiele(neue);
+    speichere({ ziele: neue });
   }
 
   return (
@@ -221,82 +257,31 @@ export function FraktionDetail({
                 )}
 
                 {ziele.map((ziel, i) => (
-                  <div key={i} className="ziel-eintrag">
-                    <button
-                      type="button"
-                      className="ziel-titel-zeile"
-                      onClick={() => setOffenesZiel(offenesZiel === i ? null : i)}
+                  <button
+                    key={i}
+                    type="button"
+                    className="ziel-eintrag"
+                    onClick={() => oeffneZielEditor(i)}
+                    title="Bearbeiten"
+                  >
+                    <span className="ziel-titel">{ziel.titel.trim() || "Unbenanntes Ziel"}</span>
+                    <span
+                      className="ziel-wegwerfen"
+                      title="Ziel entfernen"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        zielEntfernen(i);
+                      }}
                     >
-                      <span className="ziel-aufklapp">{offenesZiel === i ? "▾" : "▸"}</span>
-                      <span className="ziel-titel">{ziel.titel.trim() || "Unbenanntes Ziel"}</span>
-                      <span
-                        className="ziel-wegwerfen"
-                        title="Ziel entfernen"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const neue = ziele.filter((_, k) => k !== i);
-                          setZiele(neue);
-                          if (offenesZiel === i) setOffenesZiel(null);
-                          speichere({ ziele: neue });
-                        }}
-                      >
-                        ✕
-                      </span>
-                    </button>
-
-                    {offenesZiel === i && (
-                      <div className="ziel-detail">
-                        <label className="pcd-label">Kurzbeschreibung</label>
-                        <input
-                          type="text"
-                          className="ziel-input"
-                          placeholder="z.B. Freundliche Übernahme der Hafenlogistik"
-                          value={ziel.titel}
-                          onChange={(e) => {
-                            const neue = [...ziele];
-                            neue[i] = { ...ziel, titel: e.target.value };
-                            setZiele(neue);
-                          }}
-                          onBlur={() => speichere({ ziele })}
-                        />
-                        <label className="pcd-label">Beschreibung</label>
-                        <textarea
-                          className="ziel-textarea"
-                          placeholder="Ausführlich: warum, wie, womit, bis wann …"
-                          value={ziel.beschreibung}
-                          onChange={(e) => {
-                            const neue = [...ziele];
-                            neue[i] = { ...ziel, beschreibung: e.target.value };
-                            setZiele(neue);
-                          }}
-                          onBlur={() => speichere({ ziele })}
-                        />
-                      </div>
-                    )}
-                  </div>
+                      ✕
+                    </span>
+                  </button>
                 ))}
 
-                <button
-                  type="button"
-                  className="ziel-neu"
-                  onClick={() => {
-                    const neue = [...ziele, { titel: "", beschreibung: "" }];
-                    setZiele(neue);
-                    setOffenesZiel(neue.length - 1);
-                  }}
-                >
+                <button type="button" className="ziel-neu" onClick={() => oeffneZielEditor(null)}>
                   + Neues Ziel
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ ziele })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Ziele speichern"}
-              </button>
             </div>
           )}
 
@@ -351,6 +336,53 @@ export function FraktionDetail({
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
         />
+      )}
+
+      {/* Ziel-Editor: eigenes Popup wie alle anderen Dialoge — kein Inline-Formular.
+          Als Portal über dem Fraktion-Fenster, mit eigener Streuungs-Kennung,
+          damit es nicht in dessen Bezugsrahmen hängt. */}
+      {zielEditor && (
+        <Fenster
+          offen
+          titel={zielEditor.index === null ? "Neues Ziel" : "Ziel bearbeiten"}
+          unterzeile={zielEditor.index === null ? "Kurzbeschreibung und, bei Bedarf, Ausführung" : undefined}
+          kennung={`fraktion-ziel-editor:${fraktion.id}:${zielEditor.index ?? "neu"}`}
+          ton="var(--bereich-fraktionen)"
+          onSchliessen={() => setZielEditor(null)}
+        >
+          <div className="pcd-editor-bereich" style={{ padding: 8 }}>
+            <div>
+              <label className="pcd-label">Kurzbeschreibung</label>
+              <input
+                type="text"
+                className="ziel-input"
+                placeholder="z.B. Freundliche Übernahme der Hafenlogistik"
+                value={zielEditor.titel}
+                autoFocus
+                onChange={(e) => setZielEditor({ ...zielEditor, titel: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="pcd-label">Beschreibung</label>
+              <textarea
+                className="ziel-textarea"
+                placeholder="Ausführlich: warum, wie, womit, bis wann …"
+                value={zielEditor.beschreibung}
+                onChange={(e) => setZielEditor({ ...zielEditor, beschreibung: e.target.value })}
+              />
+            </div>
+
+            <div className="ziel-editor-aktionen">
+              <button type="button" className="pcd-abbrechen" onClick={() => setZielEditor(null)}>
+                Abbrechen
+              </button>
+              <button type="button" className="pcd-speichern" onClick={zielSpeichern} disabled={speichert}>
+                {speichert ? "Speichert…" : "Speichern"}
+              </button>
+            </div>
+          </div>
+        </Fenster>
       )}
     </Fenster>
   );

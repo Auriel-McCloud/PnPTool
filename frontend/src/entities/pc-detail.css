@@ -385,7 +385,7 @@
   display: block;
   font-size: 0.8rem;
   color: var(--text-leise);
-  margin: 8px 0 4px;
+  margin: 0 0 6px;
 }
 
 .ziel-liste {
@@ -394,35 +394,25 @@
   gap: 8px;
 }
 
+/* Jeder Eintrag ist ein Button — Klick öffnet den Editor, ✕ entfernt. */
 .ziel-eintrag {
-  border: 1px solid var(--linie);
-  border-radius: var(--radius);
-  background: var(--flaeche);
-  overflow: hidden;
-}
-
-.ziel-titel-zeile {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
   padding: 10px 12px;
-  background: transparent;
-  border: none;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
   text-align: left;
   font-size: 0.95rem;
 }
 
-.ziel-titel-zeile:hover {
+.ziel-eintrag:hover {
+  border-color: var(--bereich-fraktionen, var(--neon));
   background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 8%, transparent);
-}
-
-.ziel-aufklapp {
-  color: var(--text-leise);
-  width: 14px;
-  flex-shrink: 0;
 }
 
 .ziel-titel {
@@ -444,11 +434,6 @@
   background: color-mix(in srgb, var(--signal) 12%, transparent);
 }
 
-.ziel-detail {
-  padding: 0 12px 12px;
-  border-top: 1px solid var(--linie);
-}
-
 .ziel-input,
 .ziel-textarea {
   width: 100%;
@@ -461,8 +446,14 @@
   color: var(--text);
 }
 
+.ziel-input:focus,
+.ziel-textarea:focus {
+  border-color: var(--bereich-fraktionen, var(--neon));
+  outline: none;
+}
+
 .ziel-textarea {
-  min-height: 80px;
+  min-height: 120px;
   resize: vertical;
   line-height: 1.5;
 }
@@ -480,4 +471,27 @@
 
 .ziel-neu:hover {
   background: color-mix(in srgb, var(--bereich-fraktionen, var(--neon)) 24%, transparent);
+}
+
+.ziel-editor-aktionen {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pcd-abbrechen {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.pcd-abbrechen:hover {
+  color: var(--text);
+  border-color: var(--text-leise);
 }
