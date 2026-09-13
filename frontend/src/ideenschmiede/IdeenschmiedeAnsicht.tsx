@@ -27,6 +27,7 @@ import type { Event } from "../entities/api";
 import type { Person } from "../entities/api";
 import type { Fraktion } from "../entities/api";
 import type { Verbindung } from "../entities/api";
+import type { EntityKind } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import "./ideenschmiede.css";
 
@@ -124,18 +125,18 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
 
   // Namens-Tabelle für Beziehungsanzeige
   const namensTabelle = useMemo(() => {
-    const map = new Map<string, { name: string; kind: string }>();
+    const map = new Map<string, { name: string; kind: EntityKind }>();
     for (const p of allePersonen) {
-      map.set(p.id, { name: p.name, kind: "person" });
+      map.set(p.id, { name: p.name, kind: "Person" });
     }
     for (const o of alleOrte) {
-      map.set(o.id, { name: o.name, kind: "ort" });
+      map.set(o.id, { name: o.name, kind: "Ort" });
     }
     for (const e of alleEvents) {
-      map.set(e.id, { name: e.title, kind: "event" });
+      map.set(e.id, { name: e.title, kind: "Event" });
     }
     for (const f of alleFraktionen) {
-      map.set(f.id, { name: f.name, kind: "fraktion" });
+      map.set(f.id, { name: f.name, kind: "Fraktion" });
     }
     return map;
   }, [allePersonen, alleOrte, alleEvents, alleFraktionen]);
@@ -442,9 +443,6 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         <NPCDetail
           campaignId={campaignId}
           person={personDetailFuer}
-          verbindungen={verbindungen}
-          namen={namensTabelle}
-          pcOptions={pcOptions}
           onSchliessen={() => setPersonDetailFuer(null)}
           onGeaendert={detailRefreshen}
         />
@@ -476,7 +474,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
               seitenId={wikiDetailFuer.id}
               inhalt={wikiDetailFuer.inhalt}
               nurLesen={false}
-              onChange={(json) => {
+              onChange={() => {
                 // Auto-Save wird vom WikiEditor selbst gehandhabt
               }}
             />

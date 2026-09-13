@@ -18,8 +18,8 @@ export function BildGalerie({
   onGeaendert,
 }: {
   campaignId: string;
-  /** Pfadsegment der API: personen | orte | events */
-  art: "personen" | "orte" | "events";
+  /** Pfadsegment der API: personen | orte | events | fraktionen */
+  art: "personen" | "orte" | "events" | "fraktionen";
   id: string;
   name: string;
   bilder: { url: string; istPrimaer: boolean }[];
