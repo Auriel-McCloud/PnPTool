@@ -3,6 +3,9 @@
  *
  * Zeigt alle Entitäten mit istEntwurf=true. Das können manuell angelegte
  * Ideen sein oder KI-generierte Inhalte, die noch geprüft werden müssen.
+ *
+ * Klick auf einen Entwurf öffnet ihn im Editor (je nach Typ).
+ * "Übernehmen" setzt istEntwurf=false und verschiebt ihn in die Kampagne.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -13,6 +16,7 @@ import {
   entwurfAnlegen,
   type EntwurfItem,
 } from "./api";
+import { Fenster } from "../shell/Fenster";
 import "./ideenschmiede.css";
 
 // Icons für die verschiedenen Typen
@@ -41,9 +45,12 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [ladend, setLadend] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [filter, setFilter] = useState<EntwurfItem["typ"] | "alle">("alle");
+
+  // Anlegen-Popup
+  const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [neuerName, setNeuerName] = useState("");
   const [neuerTyp, setNeuerTyp] = useState<EntwurfItem["typ"]>("WikiSeite");
-  const [anlegen, setAnlegen] = useState(false);
+  const [anlegenLaeuft, setAnlegenLaeuft] = useState(false);
 
   const laden = useCallback(async () => {
     setLadend(true);
@@ -64,7 +71,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   }, [laden]);
 
   const handleVerschieben = async (item: EntwurfItem) => {
-    if (!confirm(`„${item.name}" wirklich in die Kampagne verschieben?`)) return;
+    if (!confirm(`„${item.name}" wirklich in die Kampagne übernehmen?`)) return;
     try {
       await inKampagneVerschieben(campaignId, item.typ, item.id);
       setEntwuerfe((prev) => prev.filter((e) => e.id !== item.id));
@@ -87,15 +94,18 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
 
   const handleAnlegen = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!neuerName.trim()) return;
+    if (!neuerName.trim() || anlegenLaeuft) return;
+    setAnlegenLaeuft(true);
     try {
       await entwurfAnlegen(campaignId, neuerTyp, neuerName.trim());
       setNeuerName("");
-      setAnlegen(false);
+      setAnlegenOffen(false);
       await laden();
     } catch (err) {
       alert("Fehler beim Anlegen");
       console.error(err);
+    } finally {
+      setAnlegenLaeuft(false);
     }
   };
 
@@ -122,7 +132,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
       <header className="is-header">
         <div className="is-header-zeile">
           <h2>🔧 Ideenschmiede</h2>
-          <button className="is-neu-btn" onClick={() => setAnlegen(true)}>
+          <button className="is-neu-btn" onClick={() => setAnlegenOffen(true)}>
             + Neue Idee
           </button>
         </div>
@@ -132,40 +142,63 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         </p>
       </header>
 
-      {/* Anlegen-Dialog */}
-      {anlegen && (
-        <form className="is-anlegen" onSubmit={handleAnlegen}>
-          <select
-            value={neuerTyp}
-            onChange={(e) => setNeuerTyp(e.target.value as EntwurfItem["typ"])}
-          >
-            <option value="WikiSeite">📄 Wiki-Seite</option>
-            <option value="Person">👤 Person</option>
-            <option value="Ort">📍 Ort</option>
-            <option value="Event">📅 Ereignis</option>
-            <option value="Gegenstand">📦 Gegenstand</option>
-          </select>
-          <input
-            type="text"
-            placeholder="Name / Titel"
-            value={neuerName}
-            onChange={(e) => setNeuerName(e.target.value)}
-            autoFocus
-            required
-          />
-          <button type="submit">Anlegen</button>
-          <button type="button" onClick={() => setAnlegen(false)}>
-            Abbrechen
-          </button>
+      {/* Anlegen-Popup im Commlink-Stil */}
+      <Fenster
+        offen={anlegenOffen}
+        titel="Neue Idee anlegen"
+        kennung="ideenschmiede-anlegen"
+        onSchliessen={() => setAnlegenOffen(false)}
+      >
+        <form className="is-anlegen-form" onSubmit={handleAnlegen}>
+          <label className="is-label">
+            Typ
+            <select
+              className="is-select"
+              value={neuerTyp}
+              onChange={(e) => setNeuerTyp(e.target.value as EntwurfItem["typ"])}
+            >
+              <option value="WikiSeite">📄 Wiki-Seite</option>
+              <option value="Person">👤 Person / NPC</option>
+              <option value="Ort">📍 Ort</option>
+              <option value="Event">📅 Ereignis</option>
+              <option value="Gegenstand">📦 Gegenstand</option>
+            </select>
+          </label>
+
+          <label className="is-label">
+            Name
+            <input
+              type="text"
+              className="is-input"
+              placeholder="Name oder Titel der Idee"
+              value={neuerName}
+              onChange={(e) => setNeuerName(e.target.value)}
+              autoFocus
+              required
+            />
+          </label>
+
+          <div className="is-anlegen-aktionen">
+            <button type="submit" className="is-btn-anlegen" disabled={anlegenLaeuft}>
+              {anlegenLaeuft ? "Wird angelegt..." : "Anlegen"}
+            </button>
+            <button
+              type="button"
+              className="is-btn-abbrechen"
+              onClick={() => setAnlegenOffen(false)}
+            >
+              Abbrechen
+            </button>
+          </div>
         </form>
-      )}
+      </Fenster>
 
       {entwuerfe.length === 0 ? (
         <div className="is-leer">
           <p>🎨 Die Schmiede ist leer!</p>
           <p>
-            Erstelle neue Entwürfe über die anderen Bereiche (Personen, Orte, Wiki...)
-            und markiere sie als "Entwurf", oder lass die KI Ideen generieren.
+            Klicke auf „+ Neue Idee" um einen Entwurf anzulegen, oder lass später
+            die KI Ideen generieren.
           </p>
         </div>
       ) : (

@@ -129,6 +129,12 @@ npm run dev
 **Offen:** Shop-System, KI-Integration, Spotify/MusicCast, Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
 
+**Zuletzt behoben (11.09.2026):**
+- **Ideenschmiede-Ort anlegen:** Die Frontend-API verwendete für alle
+  Ideenschmiede-Endpunkte den Pfad ohne `/api` und landete dadurch beim Vite-
+  Server auf 404. Alle Pfade laufen jetzt über den Backend-Proxy; Anlegen und
+  Löschen eines Entwurfs per LAN-Adresse end-to-end geprüft.
+
 ### Aktuelle Messenger-UI-Todos (10.09.2026)
 - **Verlauf zuverlässig ans Ende scrollen:** Beim Öffnen des Messengers und nach
   neuen Nachrichten muss immer die neueste Nachricht sichtbar sein. Der aktuelle

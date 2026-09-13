@@ -5,6 +5,12 @@ from pydantic import BaseModel
 SichtbarkeitModus = Literal["GM", "ALLE", "SPEZIFISCH"]
 
 
+class BildEintrag(BaseModel):
+    """Ein Bild in der Galerie einer Entität."""
+    url: str
+    istPrimaer: bool = False
+
+
 class SichtbarkeitInput(BaseModel):
     modus: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -20,7 +26,8 @@ class PersonCreate(BaseModel):
     description: str = ""
     notes: str = ""
     # Aussehen. Die Spielleitung kann es per Blitz an alle schicken.
-    bildUrl: str = ""
+    bildUrl: str = ""  # Legacy: einzelnes Bild (abwärtskompatibel)
+    bilder: list[BildEintrag] = []  # NEU: Bildergalerie mit Primär-Flag
     # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
     istEntwurf: bool = False
     # --- Charakterbogen ---------------------------------------------------
@@ -71,6 +78,7 @@ class PersonCreate(BaseModel):
 class PersonUpdate(BaseModel):
     name: str | None = None
     bildUrl: str | None = None
+    bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
     rasse: str | None = None
@@ -108,6 +116,7 @@ class PersonResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    bilder: list[BildEintrag] = []  # Bildergalerie
     # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
     istEntwurf: bool = False
     # Charakterbogen — Ausgangswerte greifen für Bestandsdaten, die diese
@@ -142,7 +151,8 @@ class OrtCreate(BaseModel):
     name: str
     description: str = ""
     notes: str = ""
-    bildUrl: str = ""
+    bildUrl: str = ""  # Legacy
+    bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False  # Ideenschmiede
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -155,6 +165,7 @@ class OrtUpdate(BaseModel):
     description: str | None = None
     notes: str | None = None
     bildUrl: str | None = None
+    bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -168,6 +179,7 @@ class OrtResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]
@@ -180,7 +192,8 @@ class EventCreate(BaseModel):
     timestamp: str = ""
     description: str = ""
     notes: str = ""
-    bildUrl: str = ""
+    bildUrl: str = ""  # Legacy
+    bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False  # Ideenschmiede
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -194,6 +207,7 @@ class EventUpdate(BaseModel):
     description: str | None = None
     notes: str | None = None
     bildUrl: str | None = None
+    bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -208,6 +222,7 @@ class EventResponse(BaseModel):
     description: str
     notes: str
     bildUrl: str = ""
+    bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]

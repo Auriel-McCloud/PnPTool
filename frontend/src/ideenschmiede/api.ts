@@ -22,8 +22,17 @@ export interface EntwurfItem {
 export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
   const entwuerfe: EntwurfItem[] = [];
 
+  // Hilfsfunktion: fetch mit Fallback auf leeres Array bei Fehler
+  async function safeFetch<T>(url: string): Promise<T[]> {
+    try {
+      return await api.get<T[]>(url);
+    } catch {
+      return [];
+    }
+  }
+
   // Personen
-  const personen = await api.get<any[]>(`/campaigns/${campaignId}/personen`);
+  const personen = await safeFetch<any>(`/api/campaigns/${campaignId}/personen`);
   for (const p of personen.filter((x) => x.istEntwurf)) {
     entwuerfe.push({
       id: p.id,
@@ -34,7 +43,7 @@ export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
   }
 
   // Orte
-  const orte = await api.get<any[]>(`/campaigns/${campaignId}/orte`);
+  const orte = await safeFetch<any>(`/api/campaigns/${campaignId}/orte`);
   for (const o of orte.filter((x) => x.istEntwurf)) {
     entwuerfe.push({
       id: o.id,
@@ -45,7 +54,7 @@ export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
   }
 
   // Events
-  const events = await api.get<any[]>(`/campaigns/${campaignId}/events`);
+  const events = await safeFetch<any>(`/api/campaigns/${campaignId}/events`);
   for (const e of events.filter((x) => x.istEntwurf)) {
     entwuerfe.push({
       id: e.id,
@@ -56,7 +65,7 @@ export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
   }
 
   // WikiSeiten
-  const seiten = await api.get<any[]>(`/campaigns/${campaignId}/wiki/seiten`);
+  const seiten = await safeFetch<any>(`/api/campaigns/${campaignId}/wiki/seiten`);
   for (const s of seiten.filter((x) => x.istEntwurf)) {
     entwuerfe.push({
       id: s.id,
@@ -68,7 +77,7 @@ export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
   }
 
   // Gegenstände (Vorlagen ohne Besitzer)
-  const vorlagen = await api.get<any[]>(`/campaigns/${campaignId}/vorlagen`);
+  const vorlagen = await safeFetch<any>(`/api/campaigns/${campaignId}/vorlagen`);
   for (const g of vorlagen.filter((x) => x.istEntwurf)) {
     entwuerfe.push({
       id: g.id,
@@ -90,11 +99,11 @@ export async function inKampagneVerschieben(
   id: string
 ): Promise<void> {
   const endpunkte: Record<EntwurfItem["typ"], string> = {
-    Person: `/campaigns/${campaignId}/personen/${id}`,
-    Ort: `/campaigns/${campaignId}/orte/${id}`,
-    Event: `/campaigns/${campaignId}/events/${id}`,
-    WikiSeite: `/campaigns/${campaignId}/wiki/seiten/${id}`,
-    Gegenstand: `/campaigns/${campaignId}/vorlagen/${id}`,
+    Person: `/api/campaigns/${campaignId}/personen/${id}`,
+    Ort: `/api/campaigns/${campaignId}/orte/${id}`,
+    Event: `/api/campaigns/${campaignId}/events/${id}`,
+    WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${id}`,
+    Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${id}`,
   };
 
   await api.patch(endpunkte[typ], { istEntwurf: false });
@@ -109,11 +118,11 @@ export async function entwurfLoeschen(
   id: string
 ): Promise<void> {
   const endpunkte: Record<EntwurfItem["typ"], string> = {
-    Person: `/campaigns/${campaignId}/personen/${id}`,
-    Ort: `/campaigns/${campaignId}/orte/${id}`,
-    Event: `/campaigns/${campaignId}/events/${id}`,
-    WikiSeite: `/campaigns/${campaignId}/wiki/seiten/${id}`,
-    Gegenstand: `/campaigns/${campaignId}/vorlagen/${id}`,
+    Person: `/api/campaigns/${campaignId}/personen/${id}`,
+    Ort: `/api/campaigns/${campaignId}/orte/${id}`,
+    Event: `/api/campaigns/${campaignId}/events/${id}`,
+    WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${id}`,
+    Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${id}`,
   };
 
   await api.delete(endpunkte[typ]);
@@ -129,7 +138,7 @@ export async function entwurfAnlegen(
 ): Promise<void> {
   switch (typ) {
     case "Person":
-      await api.post(`/campaigns/${campaignId}/personen`, {
+      await api.post(`/api/campaigns/${campaignId}/personen`, {
         name,
         personType: "NPC",
         description: "",
@@ -142,7 +151,7 @@ export async function entwurfAnlegen(
       });
       break;
     case "Ort":
-      await api.post(`/campaigns/${campaignId}/orte`, {
+      await api.post(`/api/campaigns/${campaignId}/orte`, {
         name,
         description: "",
         notes: "",
@@ -154,7 +163,7 @@ export async function entwurfAnlegen(
       });
       break;
     case "Event":
-      await api.post(`/campaigns/${campaignId}/events`, {
+      await api.post(`/api/campaigns/${campaignId}/events`, {
         title: name,
         timestamp: "",
         description: "",
@@ -167,7 +176,7 @@ export async function entwurfAnlegen(
       });
       break;
     case "WikiSeite":
-      await api.post(`/campaigns/${campaignId}/wiki/seiten`, {
+      await api.post(`/api/campaigns/${campaignId}/wiki/seiten`, {
         titel: name,
         inhalt: '{"type":"doc","content":[]}',
         istEntwurf: true,
@@ -176,7 +185,7 @@ export async function entwurfAnlegen(
       });
       break;
     case "Gegenstand":
-      await api.post(`/campaigns/${campaignId}/vorlagen`, {
+      await api.post(`/api/campaigns/${campaignId}/vorlagen`, {
         name,
         description: "",
         notes: "",

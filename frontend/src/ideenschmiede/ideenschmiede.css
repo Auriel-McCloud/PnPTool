@@ -64,69 +64,88 @@
   color: var(--flaeche-tief);
 }
 
-/* --- Anlegen-Formular --------------------------------------------- */
+/* Anlegen-Formular im Popup */
 
-.is-anlegen {
+.is-anlegen-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--bereich-farbe, var(--neon));
-  border-radius: var(--radius);
-  background: var(--flaeche);
-  box-shadow: 0 0 12px -4px var(--bereich-farbe, var(--neon));
+  flex-direction: column;
+  gap: 16px;
 }
 
-.is-anlegen select,
-.is-anlegen input[type="text"] {
-  padding: 8px 10px;
+.is-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.is-select,
+.is-input {
+  padding: 10px 12px;
   border: 1px solid var(--linie);
   border-radius: var(--radius);
   background: var(--flaeche-tief);
   color: var(--text);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
+  transition: border-color 0.15s;
 }
 
-.is-anlegen input[type="text"] {
-  flex: 1;
-  min-width: 180px;
-}
-
-.is-anlegen select:focus,
-.is-anlegen input:focus {
+.is-select:focus,
+.is-input:focus {
   outline: none;
   border-color: var(--bereich-farbe, var(--neon));
 }
 
-.is-anlegen button {
-  padding: 8px 16px;
+.is-anlegen-aktionen {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.is-btn-anlegen {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid var(--gut);
   border-radius: var(--radius);
+  background: var(--gut);
+  color: var(--flaeche-tief);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: box-shadow 0.15s, opacity 0.15s;
 }
 
-.is-anlegen button[type="submit"] {
-  border: 1px solid var(--gut);
-  background: var(--gut);
-  color: var(--flaeche-tief);
+.is-btn-anlegen:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--gut);
 }
 
-.is-anlegen button[type="submit"]:hover {
-  box-shadow: 0 0 10px var(--gut);
+.is-btn-anlegen:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.is-anlegen button[type="button"] {
+.is-btn-abbrechen {
+  padding: 12px 20px;
   border: 1px solid var(--linie);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
-.is-anlegen button[type="button"]:hover {
+.is-btn-abbrechen:hover {
   border-color: var(--text-leise);
   color: var(--text);
 }
