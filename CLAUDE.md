@@ -266,6 +266,17 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    war, sah plötzlich jeder Charakter die Zeile. Vorlage für den Fix:
    `seed.py::_migriere_arete_zu_hexkraft` (Werte umhängen, alten Knoten erst
    löschen wenn nichts mehr dranhängt).
+7. **Neo4j NIE mit `docker run` starten — sonst Datenverlust!** Das
+   neo4j:5-Image deklariert `VOLUME /data`; ein `docker run` ohne explizites
+   `-v` erzeugt jedes Mal ein **anonymes Volume** → DB startet leer → wirkt
+   wie „Kampagne gelöscht". Die alten Daten liegen dann in verwaisten
+   anonymen Volumes. Immer `docker compose up -d neo4j` nutzen (benanntes
+   Volume `pnptool_neo4j_data`). Am 15.09.2026 behoben: aktuelle Daten aus
+   dem anonymen Volume ins benannte Volume kopiert, Container über compose
+   neu erstellt. Diagnose-Hinweis: `docker volume ls` zeigt anonyme
+   Hash-Volumes als Verräter; ein Re-Start eines alten Containers
+   (`docker start pnptool-neo4j-1`) endet mit Exit 3 (Server startet+stoppt
+   sofort) — stattdessen `docker rm` + `docker compose up -d neo4j`.
 
 ## Git-Workflow
 
@@ -277,7 +288,7 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 ## Server-Status
 
-- **Neo4j:** Docker, Port 7687
+- **Neo4j:** Docker Compose, Container `pnptool-neo4j-1`, Port 7687 — benanntes Volume `pnptool_neo4j_data` (nie `docker run`, siehe Stolperstein 7)
 - **Backend:** `127.0.0.1:8001` (Port 8001 wegen Zombie-Prozessen)
 - **Frontend:** `localhost:5173`, Vite-Proxy → 8001
 
