@@ -29,6 +29,8 @@
 
 .ka-symbol {
   flex-shrink: 0;
+  color: var(--text-leise);
+  opacity: 0.8;
 }
 
 .ka-name {

@@ -47,7 +47,7 @@ export function KampagnenAuswahl({
         aria-expanded={offen}
       >
         <span className="ka-symbol" aria-hidden="true">
-          📁
+          ▤
         </span>
         <span className="ka-name">{aktive?.name ?? "Keine Kampagne"}</span>
         <span className="ka-pfeil" aria-hidden="true">
