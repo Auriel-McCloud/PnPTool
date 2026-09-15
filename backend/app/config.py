@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     # für Text; bei Bedarf auf "pro" wechseln (z.B. gemini-3.8-flash o.ä.).
     gemini_model: str = "gemini-3.6-flash"
 
+    # Mistral AI ("La Plateforme", api.mistral.ai) — Alternative zu Gemini,
+    # z.B. wenn das Gemini-Kontingent aufgebraucht ist. Kein Google-Konto nötig.
+    mistral_api_key: str = ""
+    mistral_model: str = "mistral-small-latest"
+
+    # Welcher KI-Anbieter für die Ideenschmiede/KI-Generierung aktiv ist:
+    # "gemini" oder "mistral". Umschaltbar ohne Code-Änderung.
+    ki_provider: str = "gemini"
+
     cors_origins: list[str] = ["http://localhost:5173", "http://192.168.178.21:5173"]
 
 

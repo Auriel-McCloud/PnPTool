@@ -22,7 +22,7 @@ from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, create_node
 from app.entities.schemas import PersonCreate
-from app.ki.gemini import GeminiFehler, generiere_json
+from app.ki.client import KiFehler, generiere_json
 from app.ki.kontext import sammle_kontext
 from app.traits.repository import list_catalog, set_rating
 from app.wiki.repository import create_seite
@@ -231,6 +231,6 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
         anzahl_traits = await _setze_traits(campaign_id, person["id"], ruleset, ergebnis.get("traits") or [])
         return {"typ": "charakter", "id": person["id"], "name": name, "traits": anzahl_traits}
 
-    except GeminiFehler as e:
+    except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
         raise HTTPException(status_code=502, detail=str(e))
