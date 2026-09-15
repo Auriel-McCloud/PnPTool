@@ -19,10 +19,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
+from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, create_node
 from app.entities.schemas import PersonCreate
 from app.ki.gemini import GeminiFehler, generiere_json
 from app.ki.kontext import sammle_kontext
+from app.traits.repository import list_catalog, set_rating
 from app.wiki.repository import create_seite
 
 router = APIRouter(
@@ -61,8 +63,20 @@ _CHARAKTER_SCHEMA = {
         "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER"]},
         "kapital": {"type": "INTEGER"},
         "schulden": {"type": "INTEGER"},
+        # Werte auf dem Charakterbogen — nur Traits aus dem vorgegebenen Katalog.
+        "traits": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {"type": "STRING"},
+                    "rating": {"type": "INTEGER"},
+                },
+                "required": ["name", "rating"],
+            },
+        },
     },
-    "required": ["name", "beschreibung", "konzept", "rasse", "weg"],
+    "required": ["name", "beschreibung", "konzept", "rasse", "weg", "traits"],
 }
 
 # Erklärt die Kopfzeilen-Begriffe, damit Gemini nicht rät, was „Ambition"
@@ -119,6 +133,35 @@ def _als_int(wert, standard: int = 0) -> int:
         return standard
 
 
+async def _katalog_zu_text(ruleset: str) -> str:
+    """Trait-Katalog als kompakte, gruppierte Liste für den Prompt."""
+    katalog = await list_catalog(ruleset)
+    gruppen: dict[str, list[str]] = {}
+    for t in katalog:
+        gruppen.setdefault(t["category"], []).append(f"{t['name']} (max {t['defaultMax']})")
+    return "\n".join(f"{kategorie}: {', '.join(namen)}" for kategorie, namen in gruppen.items())
+
+
+async def _setze_traits(campaign_id: str, person_id: str, ruleset: str, wahl: list[dict]) -> int:
+    """Übernimmt Gemini's Trait-Wahl (name→rating) auf den Charakterbogen.
+
+    Nur Namen, die es im Katalog gibt, werden gesetzt; Werte werden auf
+    [0, defaultMax] geklemmt. Gibt die Anzahl gesetzter Traits zurück.
+    """
+    katalog = await list_catalog(ruleset)
+    name_zu_def = {t["name"]: t for t in katalog}
+    gesetzt = 0
+    for eintrag in wahl:
+        name = (eintrag.get("name") or "").strip()
+        definier = name_zu_def.get(name)
+        if definier is None:
+            continue
+        rating = max(0, min(_als_int(eintrag.get("rating")), definier["defaultMax"]))
+        await set_rating(campaign_id, person_id, definier["id"], rating, None)
+        gesetzt += 1
+    return gesetzt
+
+
 @router.post("/idee")
 async def ki_idee(campaign_id: str, body: KiIdeeInput):
     """Generiert eine Idee und legt sie als Entwurf in der Schmiede an."""
@@ -145,7 +188,20 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
 
         # charakter
         kontext = await sammle_kontext(campaign_id)
-        ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA)
+        campaign = await get_campaign(campaign_id)
+        ruleset = campaign["ruleset"] if campaign else "neotopia"
+        katalog_text = await _katalog_zu_text(ruleset)
+
+        prompt_komplett = _mit_kontext(prompt, kontext)
+        prompt_komplett += (
+            "\n\nTrait-Katalog für den Charakterbogen (Name — Kategorie, Max-Wert):\n"
+            f"{katalog_text}\n"
+            "Setze die 9 Attribute sinnvoll und nur die Fertigkeiten/Hintergründe, "
+            "die zum Charakter passen (rating > 0). Hexkraft und Sphären nur bei "
+            "Weg MAGIER, NeuroWeaving nur bei NEUROWEAVER."
+        )
+
+        ergebnis = await generiere_json(prompt_komplett, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA)
         name = (ergebnis.get("name") or "").strip() or "Unbenannter Charakter"
         beschreibung = (ergebnis.get("beschreibung") or "").strip()
         weg = ergebnis.get("weg") or "KEINER"
@@ -172,7 +228,8 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
                 sichtbarkeit="GM",
             ).model_dump(),
         )
-        return {"typ": "charakter", "id": person["id"], "name": name}
+        anzahl_traits = await _setze_traits(campaign_id, person["id"], ruleset, ergebnis.get("traits") or [])
+        return {"typ": "charakter", "id": person["id"], "name": name, "traits": anzahl_traits}
 
     except GeminiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
