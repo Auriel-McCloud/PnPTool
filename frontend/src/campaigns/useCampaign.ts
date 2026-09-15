@@ -20,20 +20,25 @@ export function useCampaign() {
   async function refresh() {
     const list = await api.get<Campaign[]>("/api/campaigns");
     setCampaigns(list);
+    // Aktive Kampagne konsistent halten — als funktionaler Update, damit
+    // nicht ein veralteter Closure-Wert (React StrictMode ruft den Effekt
+    // zweimal) gegen die Liste geprüft wird. Gespeicherte ID behalten, wenn
+    // sie noch existiert, sonst die erste nehmen.
+    setAktiveId((aktuell) => {
+      const id = list.some((c) => c.id === aktuell) ? aktuell : (list[0]?.id ?? null);
+      if (id) localStorage.setItem(SPEICHER_SCHLUESSEL, id);
+      return id;
+    });
     return list;
   }
 
   useEffect(() => {
     refresh()
-      .then((list) => {
-        // Fallback: gespeicherte Kampagne existiert nicht (mehr) → erste nehmen.
-        if (!list.some((c) => c.id === aktiveId)) {
-          setAktiveId(list[0]?.id ?? null);
-        }
+      .catch(() => {
+        // z.B. 401 — campaigns bleibt null, die Login-Weiche übernimmt.
       })
       .finally(() => setLoading(false));
-    // bewusst nur beim Aufbau — aktiveId hier nicht als Abhängigkeit,
-    // sonst würde der Effekt bei jedem Wechsel neu feuern.
+    // bewusst nur beim Aufbau
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
