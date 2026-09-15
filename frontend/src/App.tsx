@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { GmLoginPage } from "./auth/GmLoginPage";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
 import { useCampaign } from "./campaigns/useCampaign";
+import { KampagnenAuswahl } from "./campaigns/KampagnenAuswahl";
+import { Fenster } from "./shell/Fenster";
 import { EntityManager, type WeltAnsicht } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
@@ -88,16 +90,25 @@ const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
   verbindungen: "verbindungen",
 };
 
-function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
+function CreateCampaignForm({
+  onCreate,
+  hinweis = "Noch keine Kampagne vorhanden.",
+  onFertig,
+}: {
+  onCreate: (name: string) => Promise<unknown>;
+  hinweis?: string;
+  onFertig?: () => void;
+}) {
   const [name, setName] = useState("");
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     await onCreate(name);
     setName("");
+    onFertig?.();
   }
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-      <p style={{ width: "100%" }}>Noch keine Kampagne vorhanden.</p>
+      <p style={{ width: "100%" }}>{hinweis}</p>
       <input placeholder="Kampagnenname" value={name} onChange={(e) => setName(e.target.value)} required />
       <button type="submit">Kampagne anlegen</button>
     </form>
@@ -106,19 +117,31 @@ function CreateCampaignForm({ onCreate }: { onCreate: (name: string) => Promise<
 
 function Dashboard() {
   const { me, logout } = useAuth();
-  const { campaigns, loading, createCampaign } = useCampaign();
+  const { campaigns, loading, aktive, waehleKampagne, createCampaign } = useCampaign();
   const [bereich, setBereich] = useState("pcs");
   // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als
   // React-key der Ansichten: bei einem Wechsel werden sie neu aufgebaut und
   // laden ihre Daten frisch gefiltert.
   const [viewAs, setViewAs] = useState<string | null>(null);
 
-  const kampagne = campaigns?.[0];
+  const kampagne = aktive;
 
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+  const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
+
+  // Kennung, mit der jede Ansicht neu aufgebaut wird: Wechsel der Kampagne
+  // oder der Rollen-Sicht (viewAs) muss die Ansicht frisch laden lassen.
+  const ansichtKennung = `${kampagne?.id ?? "keine"}:${viewAs ?? "gm"}:${bereich}`;
 
   const werkzeuge = (
     <>
+      {/* Aktive Kampagne wechseln bzw. neu anlegen. */}
+      <KampagnenAuswahl
+        kampagnen={campaigns ?? []}
+        aktiveId={kampagne?.id ?? null}
+        onWaehlen={waehleKampagne}
+        onNeu={() => setNeueKampagneOffen(true)}
+      />
       {/* Geplante Werkzeuge (docs/ui-konzept.md): SL-Popups an Spieler und der
           Schalter fürs Tooltip-System. Sichtbar, aber deaktiviert — ein
           Schalter, der nichts tut, wäre irreführender als einer, der sagt,
@@ -155,7 +178,8 @@ function Dashboard() {
   );
 
   const shell = (
-    <CommlinkShell
+    <>
+      <CommlinkShell
       bereiche={BEREICHE}
       aktiv={bereich}
       onBereichWechsel={setBereich}
@@ -193,30 +217,45 @@ function Dashboard() {
 
           {ENTITY_ANSICHT[bereich] && (
             <EntityManager
-              key={`${viewAs ?? "gm"}:${bereich}`}
+              key={ansichtKennung}
               campaignId={kampagne.id}
               ansicht={ENTITY_ANSICHT[bereich]!}
             />
           )}
-          {bereich === "gegenstaende" && <GegenstaendeUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
-          {bereich === "begleiter" && <BegleiterVerwaltung key={viewAs ?? "gm"} campaignId={kampagne.id} />}
-          {bereich === "rassen" && <RassenUebersicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
-          {bereich === "kampf" && <Kampfmodus key={viewAs ?? "gm"} campaignId={kampagne.id} />}
-          {bereich === "graph" && <CampaignGraphView key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
-          {bereich === "wiki" && <WikiAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "wiki" && <WikiAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
 
           {/* Augments: Koerperkarte (wo sitzt welches Implantat). */}
-          {bereich === "augments" && <AugmentsAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "augments" && <AugmentsAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
 
           {/* Kontakte: SL verwaltet wer wen kennt und wer mit wem chatten kann. */}
-          {bereich === "kontakte" && <KontakteGm key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "kontakte" && <KontakteGm key={ansichtKennung} campaignId={kampagne.id} />}
 
           {/* Ideenschmiede: Entwürfe und KI-Ideen sammeln, prüfen, verschieben. */}
-          {bereich === "ideenschmiede" && <IdeenschmiedeAnsicht key={viewAs ?? "gm"} campaignId={kampagne.id} />}
+          {bereich === "ideenschmiede" && <IdeenschmiedeAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>
+
+      {/* Neue Kampagne anlegen — über das Dropdown in der Kopfleiste erreichbar. */}
+      <Fenster
+        offen={neueKampagneOffen}
+        titel="Neue Kampagne"
+        kennung="neue-kampagne"
+        onSchliessen={() => setNeueKampagneOffen(false)}
+      >
+        <CreateCampaignForm
+          hinweis="Name der neuen Kampagne:"
+          onCreate={createCampaign}
+          onFertig={() => setNeueKampagneOffen(false)}
+        />
+      </Fenster>
+    </>
   );
 
   // Ohne Kampagne gibt es keine Leitung, die man öffnen könnte.
