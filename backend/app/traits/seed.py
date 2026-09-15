@@ -61,15 +61,15 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     # --- Hexkraft (Magiewert) ---
     "Hexkraft": "Rohe magische Macht — wie stark und zuverlässig ein Zauber wirkt.",
     # --- Sphären (was die Magie bewirken kann, nicht wie stark) ---
-    "Korrespondenz": "Raum und Distanz manipulieren — Teleportation, Fernwirkung, Ortungen.",
-    "Entropie": "Zufall, Verfall und Chaos lenken — Pech/Glück erzwingen, Dinge zersetzen.",
-    "Kräfte": "Elementarenergie steuern — Feuer, Elektrizität, kinetische Wucht, Explosionen.",
-    "Leben": "Lebendiges Gewebe formen — Heilung, Mutation, biologische Verwandlung.",
-    "Materie": "Unbelebte Stoffe formen — Metall, Beton, Chemikalien verändern oder erschaffen.",
-    "Gedanken": "Bewusstsein beeinflussen — Gedanken lesen, Illusionen, Willen beugen.",
-    "Ursprung": "Grundmuster der Realität berühren — Schicksal, Wahrscheinlichkeit, Ursprungscode der Welt.",
-    "Geister": "Mit Geistern und der Astralebene interagieren — rufen, binden, bereisen.",
-    "Zeit": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Zeitsprünge.",
+    "Korrespondenz": "Raum und Distanz manipulieren — Fernwahrnehmung, Teleportation, Dinge über Entfernung greifen.",
+    "Entropie": "Zufall, Glück/Pech und Verfall lenken — Wahrscheinlichkeiten biegen, Systeme zersetzen, Schwachstellen finden.",
+    "Kräfte": "Elementarenergie steuern — Feuer, Elektrizität, Schall, Licht, kinetische Wucht.",
+    "Leben": "Lebendiges Gewebe formen — heilen, verwunden, mutieren, den eigenen Körper verändern.",
+    "Materie": "Unbelebte Stoffe formen — Metall, Beton, Chemikalien verwandeln, verstärken oder erschaffen.",
+    "Gedanken": "Bewusstsein beeinflussen — Gedanken lesen, Illusionen erzeugen, Willen beugen, Erinnerungen verändern.",
+    "Ursprung": "Reine Energie an der Quelle anzapfen — Quintessenz ziehen, Dinge aus dem Nichts erschaffen, Auren lesen.",
+    "Geister": "Mit der Astralebene und ihren Bewohnern interagieren — dorthin reisen, Geister rufen, binden, verbannen.",
+    "Zeit": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Sprünge vor oder zurück.",
     # --- NeuroWeaving (Matrix ohne Gerät) ---
     "NeuroWeaving": "Rohe Stärke beim Weben in der Matrix — wie stark und zuverlässig es wirkt.",
     "Brute Force": "Sicherheitssysteme direkt durchbrechen — roh, laut, aber effektiv.",
@@ -196,10 +196,11 @@ async def seed_traits() -> None:
 async def _seed_trait_erklaerungen(session, ruleset: str) -> None:
     """Befüllt die Erklärungen (Tooltip-Text) aus TRAIT_BESCHREIBUNGEN.
 
-    Nur wenn zu einem Schlüssel noch **gar nichts** existiert — eine
-    Hand-Überarbeitung durch die Spielleitung wird nie überschrieben. Quelle
-    "KI" markiert automatisch "maschinell erzeugt, noch nicht gegengelesen"
-    (siehe InfoTipp.tsx), damit klar bleibt, was noch niemand geprüft hat.
+    Ein von der Spielleitung von Hand geschriebener Text (`quelle='HAND'`)
+    wird **nie** überschrieben. Ein noch unbearbeiteter KI-Text
+    (`quelle='KI'`) darf dagegen aktualisiert werden — so kommen spätere
+    Verbesserungen an TRAIT_BESCHREIBUNGEN auch bei bereits gesäten
+    Kampagnen an, ohne echte Redaktionsarbeit der SL zu gefährden.
     """
     for name, text in TRAIT_BESCHREIBUNGEN.items():
         schluessel = f"trait:{name}"
@@ -208,6 +209,8 @@ async def _seed_trait_erklaerungen(session, ruleset: str) -> None:
             MERGE (e:Erklaerung {ruleset: $ruleset, schluessel: $schluessel})
             ON CREATE SET e.id = $ruleset + ':' + $schluessel,
                           e.titel = $name, e.text = $text, e.quelle = 'KI'
+            ON MATCH SET e.titel = CASE WHEN e.quelle = 'HAND' THEN e.titel ELSE $name END,
+                         e.text = CASE WHEN e.quelle = 'HAND' THEN e.text ELSE $text END
             """,
             ruleset=ruleset,
             schluessel=schluessel,
