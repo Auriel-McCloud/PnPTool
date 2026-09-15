@@ -127,7 +127,37 @@ npm run dev
 - API-Dokumentation (`docs/api/`)
 
 **Offen:** Shop-System, KI-Integration, Spotify/MusicCast, Deploy,
-Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`)
+Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
+PC-Vorlagen im Regelsystem, Kästchen-Overflow-Darstellung,
+Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
+erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
+`SpielEreignis`-Knoten + Cypher-Timeline)
+
+**Zuletzt gebaut (15.09.2026):**
+- **Fraktionen als eigener Entitätstyp** — eigener Bereich (Hexagon-Symbol),
+  Kacheln, Detail-Popup, Ideenschmiede-Integration, Graph-Darstellung,
+  Bildergalerie. Felder: name, description, ziele, ressourcen, notes.
+  `Anführer` und `Einfluss` sind bewusst keine Felder, sondern Verbindungen
+  (Einfluss pro Ort/Planet/Person = Kante Fraktion→Ort mit Typ „Einfluss")
+- **Ziele & Ressourcen als Kurz-Lang-Listen** — statt eines Freitext-Blocks
+  eine Liste von Einträgen mit Kurzbeschreibung + ausformulierter
+  Beschreibung, bearbeitet im Popup (gemeinsame Komponente `KurzLangListe`)
+- **Beziehungs-Menü in den Detail-Popups** — PCs, NPCs und Fraktionen können
+  jetzt direkt im Beziehungs-Tab neue Verbindungen anlegen (vorher nur im
+  Verbindungen-Bereich). Gemeinsame Komponente `BeziehungsTab` + Suchfeld im
+  Ziel-Dropdown. Vorschläge je Typ: Fraktionen „Anführer/Einfluss/Verbündeter",
+  Personen „Schulden bei/Gläubiger/Freund/Feind" (für den Kredit-Fall)
+- **Rassen-Fixes** — Bild-Upload repariert (Routing-Konflikt: generische
+  `/{art}/{node_id}/bild`-Route fing `/rassen/...` ab; jetzt vier explizite
+  Routen) und Rassenbeschreibung+Bild ins Fragezeichen-Popup statt Infobox
+  unter den Karten (Übersicht bleibt schlank)
+
+**Zuletzt behoben (15.09.2026):**
+- **Charakterblatt-Ladefehler:** `KeyError: 'ruleset'` — nach dem Umbau auf
+  `(:Campaign)-[:NUTZT_REGELSYSTEM]->(:Regelsystem)` lieferte `get_campaign`
+  kein `ruleset`-Feld mehr, `get_bogen` und `regeln/_ruleset` crashten.
+  `get_campaign` liefert jetzt zusätzlich `ruleset` als Klein-Slug
+  (`toLower(regelsystem-Name)`) zurück.
 
 **Zuletzt behoben (11.09.2026):**
 - **Ideenschmiede-Ort anlegen:** Die Frontend-API verwendete für alle
