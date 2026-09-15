@@ -6,7 +6,8 @@ async def list_catalog(ruleset: str) -> list[dict]:
     query = """
         MATCH (t:TraitDef {ruleset: $ruleset})
         RETURN t.id AS id, t.name AS name, t.category AS category,
-               t.defaultMax AS defaultMax, t.sortOrder AS sortOrder
+               t.defaultMax AS defaultMax, t.sortOrder AS sortOrder,
+               coalesce(t.description, '') AS description
         ORDER BY t.category, t.sortOrder
     """
     async with driver.session() as session:

@@ -7,6 +7,7 @@ class TraitDefResponse(BaseModel):
     category: str
     defaultMax: int
     sortOrder: int
+    description: str = ""
 
 
 class TraitRatingUpdate(BaseModel):

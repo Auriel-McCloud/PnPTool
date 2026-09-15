@@ -8,6 +8,77 @@ on the separate HAS_TRAIT relationship, not on TraitDef itself.
 
 from app.db.neo4j_driver import get_driver
 
+# Kurze Definitionen fürs Tooltip UND für den KI-Prompt (app/ki/routes.py
+# hängt genau diesen Text an den Katalog, damit die KI z.B. weiß, dass
+# Feuermagie über "Kräfte" läuft, nicht über "Überleben"). Angelehnt an die
+# Fertigkeits-Erklärungen aus dem WoD-Grundregelwerk (docs/reference/Regel
+# Details - infotipp optionen.txt), aber auf NeotopiA/Cyberpunk umgeschrieben
+# — kein "Magus"-Vokabular, sondern Straße, Konzerne, Chrom, Sprawl.
+TRAIT_BESCHREIBUNGEN: dict[str, str] = {
+    # --- Attribute Körperlich ---
+    "Körperkraft": "Rohe Muskelkraft — heben, tragen, zuschlagen, Türen eintreten.",
+    "Geschicklichkeit": "Reflexe, Balance, Feinmotorik — Zielen, Ausweichen, ruhige Hände.",
+    "Widerstandsfähigkeit": "Zähigkeit — Schmerzen, Erschöpfung und Schaden wegstecken.",
+    # --- Attribute Gesellschaftlich ---
+    "Charisma": "Natürliche Ausstrahlung — Sympathie gewinnen, ohne sich anzustrengen.",
+    "Manipulation": "Andere gezielt lenken — überreden, täuschen, unter Druck setzen.",
+    "Fassung": "Innere Ruhe unter Stress — Nerven behalten, wenn andere durchdrehen.",
+    # --- Attribute Geistig ---
+    "Intelligenz": "Logik und Wissen anwenden — Probleme lösen, Zusammenhänge erkennen.",
+    "Geistesschärfe": "Schnelle Auffassung — Details bemerken, rasch reagieren, im Vorteil bleiben.",
+    "Entschlossenheit": "Willenskraft — durchhalten, wenn es hart wird, sich nicht brechen lassen.",
+    # --- Fertigkeiten ---
+    "Diebeshandwerk": "Schlösser knacken, Taschendiebstahl, Tresore, Sicherheitssysteme umgehen.",
+    "Fahren": "Fahrzeuge sicher und unter Druck lenken — Verfolgungsjagden, Manöver.",
+    "Handgemenge": "Waffenloser Nahkampf — Schläge, Tritte, Würfe, Klammergriffe.",
+    "Handwerk": "Dinge von Hand bauen und reparieren — Mechanik, Elektronik, Werkstoffe.",
+    "Heimlichkeit": "Unbemerkt bleiben — sich lautlos bewegen, in Schatten verschmelzen.",
+    "Nahkampf": "Kampf mit Waffen — Messer, Stöcke, Klingen, Elektroschocker.",
+    "Schusswaffen": "Umgang mit Feuerwaffen — Handhabung, Wartung, Treffsicherheit.",
+    "Sportlichkeit": "Körperliche Fitness — Laufen, Klettern, Springen, Balance, Ausdauer.",
+    "Überleben": "In Wildnis oder Straße zurechtkommen — Nahrung, Unterschlupf, Fallen, Feuer machen.",
+    "Riggen": "Drohnen und Fahrzeuge per Fernsteuerung/Neuralverbindung führen.",
+    "Anführen": "Leute zum Mitziehen bringen — Befehle geben, ein Team koordinieren.",
+    "Ausflüchte": "Vertrauen gewinnen und ausnutzen — Lügen, Tricksen, Schwindeleien erkennen.",
+    "Darbietung": "Auftreten vor Publikum — Musik, Schauspiel, Reden, Performance.",
+    "Einschüchtern": "Angst einjagen — Drohgebärde, Präsenz, unterschwellige Gewaltandeutung.",
+    "Etiketten": "Gesellschaftliche Umgangsformen — Konzernkreise, High Society, Verhandlungen.",
+    "Menschenkenntnis": "Absichten und Lügen anderer durchschauen — Körpersprache, Tonfall lesen.",
+    "Szenenkenntnis": "In der Unterwelt zuhause — Straßencodes, Schwarzmarkt, wer wen kennt.",
+    "Tierkunde": "Umgang mit Tieren — verstehen, beruhigen, trainieren, versorgen.",
+    "Überzeugen": "Andere durch Argumente und Auftreten auf die eigene Seite ziehen.",
+    "Maker (Hardware)": "Cyberware, Drohnen und Gadgets bauen, modifizieren, aufrüsten.",
+    "Ermitteln": "Spuren finden und verknüpfen — Beweise sichern, Zusammenhänge aufdecken.",
+    "Finanzen": "Geldflüsse verstehen — Buchhaltung, Investitionen, Geldwäsche, Märkte lesen.",
+    "Geisteswissenschaften": "Geschichte, Sprachen, Kultur, Recht — akademisches Allgemeinwissen.",
+    "Medizin": "Wunden versorgen, Diagnosen stellen, medizinische Eingriffe durchführen.",
+    "Naturwissenschaften": "Physik, Chemie, Biologie — technische und wissenschaftliche Theorie.",
+    "Okkultismus": "Wissen über Magie, Sphären und das Übernatürliche — Theorie, nicht Praxis.",
+    "Politik": "Machtstrukturen durchschauen — Konzernpolitik, Straßenpolitik, Bündnisse.",
+    "Technologie": "Alltagselektronik bedienen und reparieren — Geräte, einfache Systeme.",
+    "Wahrnehmung": "Aufmerksamkeit für Details — etwas bemerken, bevor es zu spät ist.",
+    "Matrix": "Sich in der Matrix bewegen — Hacken, Icons lesen, digitale Spuren verfolgen.",
+    # --- Hexkraft (Magiewert) ---
+    "Hexkraft": "Rohe magische Macht — wie stark und zuverlässig ein Zauber wirkt.",
+    # --- Sphären (was die Magie bewirken kann, nicht wie stark) ---
+    "Korrespondenz": "Raum und Distanz manipulieren — Teleportation, Fernwirkung, Ortungen.",
+    "Entropie": "Zufall, Verfall und Chaos lenken — Pech/Glück erzwingen, Dinge zersetzen.",
+    "Kräfte": "Elementarenergie steuern — Feuer, Elektrizität, kinetische Wucht, Explosionen.",
+    "Leben": "Lebendiges Gewebe formen — Heilung, Mutation, biologische Verwandlung.",
+    "Materie": "Unbelebte Stoffe formen — Metall, Beton, Chemikalien verändern oder erschaffen.",
+    "Gedanken": "Bewusstsein beeinflussen — Gedanken lesen, Illusionen, Willen beugen.",
+    "Ursprung": "Grundmuster der Realität berühren — Schicksal, Wahrscheinlichkeit, Ursprungscode der Welt.",
+    "Geister": "Mit Geistern und der Astralebene interagieren — rufen, binden, bereisen.",
+    "Zeit": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Zeitsprünge.",
+    # --- NeuroWeaving (Matrix ohne Gerät) ---
+    "NeuroWeaving": "Rohe Stärke beim Weben in der Matrix — wie stark und zuverlässig es wirkt.",
+    "Brute Force": "Sicherheitssysteme direkt durchbrechen — roh, laut, aber effektiv.",
+    "Schleichen": "Unbemerkt durch Systeme bewegen — Spuren verwischen, ICE umgehen.",
+    "Daten Verarbeiten": "Große Datenmengen durchsuchen, filtern und auswerten.",
+    "Kompilieren": "Eigene Programme/Effekte in Echtzeit zusammenbauen.",
+}
+
+
 # (name, category, defaultMax, sortOrder) — aus Neotopia.xlsx (Charakterblatt-Sheet)
 NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     # Attribute Körperlich (6 Punkte)
@@ -90,6 +161,11 @@ NEOTOPIA_TRAITS += [
     (h["name"], HINTERGRUND_KATEGORIE, HINTERGRUND_MAX, i + 1) for i, h in enumerate(HINTERGRUENDE)
 ]
 
+# Hintergründe haben ihre Beschreibung schon in HINTERGRUENDE (erstellung.py)
+# — hier nachziehen, damit Tooltip/KI-Prompt aus derselben Quelle stammen wie
+# der Erstellungs-Assistent, statt den Text ein zweites Mal zu pflegen.
+TRAIT_BESCHREIBUNGEN.update({h["name"]: h["beschreibung"] for h in HINTERGRUENDE})
+
 
 async def seed_traits() -> None:
     driver = get_driver()
@@ -101,7 +177,8 @@ async def seed_traits() -> None:
                 """
                 MERGE (t:TraitDef {id: $id})
                 SET t.ruleset = $ruleset, t.name = $name, t.category = $category,
-                    t.defaultMax = $defaultMax, t.sortOrder = $sortOrder
+                    t.defaultMax = $defaultMax, t.sortOrder = $sortOrder,
+                    t.description = $description
                 """,
                 id=trait_id,
                 ruleset=ruleset,
@@ -109,9 +186,34 @@ async def seed_traits() -> None:
                 category=category,
                 defaultMax=default_max,
                 sortOrder=sort_order,
+                description=TRAIT_BESCHREIBUNGEN.get(name, ""),
             )
 
         await _migriere_arete_zu_hexkraft(session)
+        await _seed_trait_erklaerungen(session, ruleset)
+
+
+async def _seed_trait_erklaerungen(session, ruleset: str) -> None:
+    """Befüllt die Erklärungen (Tooltip-Text) aus TRAIT_BESCHREIBUNGEN.
+
+    Nur wenn zu einem Schlüssel noch **gar nichts** existiert — eine
+    Hand-Überarbeitung durch die Spielleitung wird nie überschrieben. Quelle
+    "KI" markiert automatisch "maschinell erzeugt, noch nicht gegengelesen"
+    (siehe InfoTipp.tsx), damit klar bleibt, was noch niemand geprüft hat.
+    """
+    for name, text in TRAIT_BESCHREIBUNGEN.items():
+        schluessel = f"trait:{name}"
+        await session.run(
+            """
+            MERGE (e:Erklaerung {ruleset: $ruleset, schluessel: $schluessel})
+            ON CREATE SET e.id = $ruleset + ':' + $schluessel,
+                          e.titel = $name, e.text = $text, e.quelle = 'KI'
+            """,
+            ruleset=ruleset,
+            schluessel=schluessel,
+            name=name,
+            text=text,
+        )
 
 
 # Alte Kennung aus der Zeit, als der Magiewert "Arete" hiess.

@@ -6,6 +6,7 @@ export interface TraitDef {
   category: string;
   defaultMax: number;
   sortOrder: number;
+  description: string;
 }
 
 export interface TraitRating {

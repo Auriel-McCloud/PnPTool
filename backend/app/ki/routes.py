@@ -133,33 +133,62 @@ def _als_int(wert, standard: int = 0) -> int:
         return standard
 
 
+# Attribute (Körperkraft, Entschlossenheit, ...) sind fundamental — 0 ist
+# regeltechnisch nicht vorgesehen, jeder Charakter hat mindestens 1 in jedem.
+# Fertigkeiten/Hintergründe dürfen dagegen 0 sein ("kann's einfach nicht").
+_ATTRIBUT_MINDESTWERT = 1
+
+
 async def _katalog_zu_text(ruleset: str) -> str:
-    """Trait-Katalog als kompakte, gruppierte Liste für den Prompt."""
+    """Trait-Katalog als kompakte, gruppierte Liste für den Prompt.
+
+    Mit Beschreibung pro Trait — sonst rät die KI aus dem bloßen Namen (z.B.
+    ordnet sie Feuermagie "Überleben" statt "Kräfte" zu, weil beide Namen ganz
+    grob nach "irgendwas Wildnis-Feuer-mäßiges" klingen).
+    """
     katalog = await list_catalog(ruleset)
     gruppen: dict[str, list[str]] = {}
     for t in katalog:
-        gruppen.setdefault(t["category"], []).append(f"{t['name']} (max {t['defaultMax']})")
-    return "\n".join(f"{kategorie}: {', '.join(namen)}" for kategorie, namen in gruppen.items())
+        eintrag = f"{t['name']} (max {t['defaultMax']})"
+        if t.get("description"):
+            eintrag += f": {t['description']}"
+        gruppen.setdefault(t["category"], []).append(eintrag)
+    return "\n".join(f"{kategorie}:\n  " + "\n  ".join(namen) for kategorie, namen in gruppen.items())
 
 
 async def _setze_traits(campaign_id: str, person_id: str, ruleset: str, wahl: list[dict]) -> int:
-    """Übernimmt Gemini's Trait-Wahl (name→rating) auf den Charakterbogen.
+    """Übernimmt Gemini's/Mistral's Trait-Wahl (name→rating) auf den Charakterbogen.
 
     Nur Namen, die es im Katalog gibt, werden gesetzt; Werte werden auf
     [0, defaultMax] geklemmt. Gibt die Anzahl gesetzter Traits zurück.
     """
     katalog = await list_catalog(ruleset)
     name_zu_def = {t["name"]: t for t in katalog}
-    gesetzt = 0
+    gesetzt: set[str] = set()
     for eintrag in wahl:
         name = (eintrag.get("name") or "").strip()
         definier = name_zu_def.get(name)
         if definier is None:
             continue
         rating = max(0, min(_als_int(eintrag.get("rating")), definier["defaultMax"]))
+        # Attribute dürfen nie 0 sein (siehe unten) — direkt hier abfangen,
+        # falls die KI ein Attribut explizit mit rating=0 zurückgibt statt
+        # es einfach wegzulassen.
+        if definier["category"].startswith("Attribut"):
+            rating = max(rating, _ATTRIBUT_MINDESTWERT)
         await set_rating(campaign_id, person_id, definier["id"], rating, None)
-        gesetzt += 1
-    return gesetzt
+        gesetzt.add(name)
+
+    # Attribute sind fundamental — jeder Charakter hat 1-6 in allen neun,
+    # nie 0 (0 hieße "Attribut existiert praktisch nicht", was regeltechnisch
+    # nicht vorgesehen ist). Die KI kann eines vergessen oder mit 0 angeben;
+    # das hier ist ein harter Nachbearbeitungsschritt, unabhängig vom Modell.
+    for t in katalog:
+        if t["category"].startswith("Attribut") and t["name"] not in gesetzt:
+            await set_rating(campaign_id, person_id, t["id"], _ATTRIBUT_MINDESTWERT, None)
+            gesetzt.add(t["name"])
+
+    return len(gesetzt)
 
 
 @router.post("/idee")
