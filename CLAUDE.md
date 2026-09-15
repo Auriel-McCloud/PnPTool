@@ -151,6 +151,12 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   `/{art}/{node_id}/bild`-Route fing `/rassen/...` ab; jetzt vier explizite
   Routen) und Rassenbeschreibung+Bild ins Fragezeichen-Popup statt Infobox
   unter den Karten (Übersicht bleibt schlank)
+- **KI-Integration (erste Iteration)** — Gemini generiert direkt in der
+  Ideenschmiede: „✨ KI"-Knopf öffnet ein Popup mit Typ (Charakter/Story-Part)
+  und Wunsch-Text. `story` wird eine Wiki-Seite, `charakter` ein NPC — beide
+  als Entwurf (`istEntwurf=true`). Backend `app/ki/` (dünner Gemini-Client +
+  `POST /ki/idee`), Modell konfigurierbar (`gemini_model`, Default
+  `gemini-3.6-flash`), API-Key liegt in `backend/.env` (gitignored)
 
 **Zuletzt behoben (15.09.2026):**
 - **Charakterblatt-Ladefehler:** `KeyError: 'ruleset'` — nach dem Umbau auf
