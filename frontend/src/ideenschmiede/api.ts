@@ -155,3 +155,13 @@ export async function entwurfAnlegen(
       break;
   }
 }
+
+export type KiTyp = "story" | "charakter";
+
+/**
+ * Lässt Gemini eine Idee generieren und als Entwurf in der Schmiede ablegen.
+ * `story` wird eine Wiki-Seite (Geschichte), `charakter` ein NPC.
+ */
+export async function kiIdee(campaignId: string, typ: KiTyp, prompt: string): Promise<void> {
+  await api.post(`/api/campaigns/${campaignId}/ki/idee`, { typ, prompt });
+}

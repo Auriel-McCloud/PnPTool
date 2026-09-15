@@ -33,6 +33,7 @@ from app.mitteilungen.routes import router as mitteilungen_router
 from app.mitteilungen.routes import ws_router as mitteilungen_ws_router
 from app.regelsysteme.routes import router as regelsysteme_router
 from app.regelsysteme.repository import seed_neotopia
+from app.ki.routes import router as ki_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -90,6 +91,7 @@ app.include_router(kontakte_router)
 app.include_router(mitteilungen_router)
 app.include_router(mitteilungen_ws_router)
 app.include_router(regelsysteme_router)
+app.include_router(ki_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

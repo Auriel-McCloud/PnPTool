@@ -12,7 +12,9 @@ import {
   inKampagneVerschieben,
   entwurfLoeschen,
   entwurfAnlegen,
+  kiIdee,
   type EntwurfItem,
+  type KiTyp,
 } from "./api";
 import { api } from "../api/client";
 import { Fenster } from "../shell/Fenster";
@@ -65,6 +67,13 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [neuerName, setNeuerName] = useState("");
   const [neuerTyp, setNeuerTyp] = useState<EntwurfItem["typ"]>("WikiSeite");
   const [anlegenLaeuft, setAnlegenLaeuft] = useState(false);
+
+  // KI-Popup (Gemini generiert Entwürfe)
+  const [kiOffen, setKiOffen] = useState(false);
+  const [kiTyp, setKiTyp] = useState<KiTyp>("charakter");
+  const [kiPrompt, setKiPrompt] = useState("");
+  const [kiLaeuft, setKiLaeuft] = useState(false);
+  const [kiFehler, setKiFehler] = useState<string | null>(null);
 
   // Detail-Popups
   const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
@@ -213,6 +222,26 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
     }
   };
 
+  /** Lässt Gemini eine Idee generieren und als Entwurf ablegen. */
+  const handleKiGenerieren = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kiPrompt.trim() || kiLaeuft) return;
+    setKiLaeuft(true);
+    setKiFehler(null);
+    try {
+      await kiIdee(campaignId, kiTyp, kiPrompt.trim());
+      setKiPrompt("");
+      setKiOffen(false);
+      await laden();
+    } catch (err) {
+      // Die Fehlermeldung des Backends (z.B. "Kein API-Key" oder ein
+      // Gemini-Fehler) ist lesbarer als ein roher "Fehler beim Generieren".
+      setKiFehler(err instanceof Error ? err.message : "Generieren fehlgeschlagen");
+    } finally {
+      setKiLaeuft(false);
+    }
+  };
+
   /** Öffnet das passende Detail-Popup je nach Typ. */
   const handleItemKlick = async (item: EntwurfItem) => {
     try {
@@ -283,9 +312,14 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
       <header className="is-header">
         <div className="is-header-zeile">
           <h2>🔧 Ideenschmiede</h2>
-          <button className="is-neu-btn" onClick={() => setAnlegenOffen(true)}>
-            + Neue Idee
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="is-neu-btn" onClick={() => setAnlegenOffen(true)}>
+              + Neue Idee
+            </button>
+            <button className="is-ki-btn" onClick={() => setKiOffen(true)} title="Mit Gemini eine Idee generieren">
+              ✨ KI
+            </button>
+          </div>
         </div>
         <p className="is-beschreibung">
           Hier landen Entwürfe und KI-generierte Ideen. Klicke auf einen Entwurf
@@ -338,6 +372,61 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
               type="button"
               className="is-btn-abbrechen"
               onClick={() => setAnlegenOffen(false)}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </form>
+      </Fenster>
+
+      {/* KI-Popup: Gemini generiert einen Entwurf */}
+      <Fenster
+        offen={kiOffen}
+        titel="✨ KI-Idee generieren"
+        kennung="ideenschmiede-ki"
+        onSchliessen={() => {
+          setKiOffen(false);
+          setKiFehler(null);
+        }}
+      >
+        <form className="is-anlegen-form" onSubmit={handleKiGenerieren}>
+          <label className="is-label">
+            Was soll entstehen?
+            <select className="is-select" value={kiTyp} onChange={(e) => setKiTyp(e.target.value as KiTyp)}>
+              <option value="charakter">👤 Charakter / NPC</option>
+              <option value="story">📄 Story-Part / Szene</option>
+            </select>
+          </label>
+
+          <label className="is-label">
+            Wunsch
+            <textarea
+              className="is-input"
+              rows={4}
+              style={{ resize: "vertical", minHeight: 80, width: "100%" }}
+              placeholder="z.B. Ein mürrischer alter Waffenhändler im Hafenviertel."
+              value={kiPrompt}
+              onChange={(e) => setKiPrompt(e.target.value)}
+              autoFocus
+              required
+            />
+          </label>
+
+          {kiFehler && (
+            <p style={{ margin: 0, color: "var(--signal)", fontSize: 12 }}>{kiFehler}</p>
+          )}
+
+          <div className="is-anlegen-aktionen">
+            <button type="submit" className="is-btn-anlegen" disabled={kiLaeuft || !kiPrompt.trim()}>
+              {kiLaeuft ? "Generiert…" : "Generieren"}
+            </button>
+            <button
+              type="button"
+              className="is-btn-abbrechen"
+              onClick={() => {
+                setKiOffen(false);
+                setKiFehler(null);
+              }}
             >
               Abbrechen
             </button>

@@ -64,6 +64,30 @@
   color: var(--flaeche-tief);
 }
 
+/* KI-Button — eigener Ton (Violett), damit er sich vom normalen Anlegen
+   abhebt; nutzt denselben Rahmenstil wie .is-neu-btn. */
+.is-ki-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--p-violett, var(--neon));
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--p-violett, var(--neon));
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.is-ki-btn:hover {
+  background: var(--p-violett, var(--neon));
+  color: var(--flaeche-tief);
+}
+
 /* Anlegen-Formular im Popup */
 
 .is-anlegen-form {
