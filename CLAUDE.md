@@ -1,6 +1,10 @@
 # PnPTool — Projektgedächtnis für Claude
 
-Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren.
+Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
+
+## Vor jedem Task: Wiki befragen
+
+**`docs/wiki/index.md` zuerst lesen**, bevor Regeln oder Architektur-Entscheidungen neu ausgedacht werden — v.a. bei Regelfragen, weil sich NeotopiA laufend weiterentwickelt und das Excel oft nicht mehr der aktuelle Stand ist (siehe `docs/wiki/comparisons/regelwerk-excel-vs-aktuell.md`). Das Wiki hält bereits entschiedene Fragen, offene Baustellen und die Versionsgeschichte fest — Ziel ist, dieselbe Entscheidung nicht zweimal zu treffen (oder zu widersprechen). **Nach jeder inhaltlichen Änderung die passende Wiki-Seite nachziehen**, nicht nur CLAUDE.md.
 
 ## Was ist PnPTool
 
@@ -11,6 +15,7 @@ WebApp für Mark's Pen-and-Paper-Rollenspielrunden, Homebrew-System **"NeotopiA"
 - **Spieler** — interaktive Charakterbögen, Messenger, empfängt Popups
 
 **Wichtige Dokumentation:**
+- `docs/wiki/index.md` — **Projekt-Wiki**: Regeln inkl. Versionsgeschichte, Architektur, offene Fragen (siehe oben — zuerst hier nachschlagen)
 - `docs/ui-konzept.md` — Leitbild fürs UI ("Commlink")
 - `docs/theming.md` — Alle Farben als Tokens in `frontend/src/theme/`
 - `docs/api/` — **Ausführliche API-Dokumentation** (Endpoints, Schemas, Logik)
@@ -324,6 +329,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 5. **Deploy** — Debian/nginx statt localhost
 
 6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✅ FERTIG
+
+7. **Decker / Neuroweaver Skill-System** — Vorschlag für Erweiterung auf 6 Skills:
+   - Aktuell: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren (4 Skills)
+   - Vorgeschlagene Erweiterung:
+     - **5. Electronic Warfare** (Verteidigung / Stören / Gegenangriffe)
+     - **6. Matrix-Navigation** (Bewegung, Host-Architektur verstehen)
+   - Ziel: Ausgewogenes Schere-Stein-Papier-System (Angriff ↔ Verteidigung ↔ Stealth ↔ Navigation)
+   - Status: Nur als Vorschlag notiert, noch nicht entschieden
 
    **Backend (2026-09-12):**
    - `:Regelsystem` Node-Typ mit CRUD-Endpunkten (`/api/regelsysteme`)

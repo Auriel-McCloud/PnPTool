@@ -103,6 +103,18 @@ oder zwischen widersprüchlichen Dokumenten. Tabelle + Verdikt + Quellen.
 
 ## Update-Policy
 
+**Vor jeder neuen Task-Bearbeitung:** `index.md` (und bei Regelfragen zusätzlich
+`comparisons/regelwerk-excel-vs-aktuell.md`) lesen, bevor eine Regel oder
+Architektur-Entscheidung neu ausgedacht wird — das ist der ganze Zweck dieses
+Wikis: **Erfindungen verhindern**, wenn die Frage längst entschieden (oder
+bewusst offen gelassen) wurde. Bei Unsicherheit lieber die Konzeptseite
+gegenlesen als eine Annahme treffen.
+
+**Nach jeder inhaltlichen Änderung am Projekt:** die betroffene Konzept-/
+Entitätsseite nachziehen (neuer „Entwicklung"-Eintrag mit Datum), `index.md`
+bei neuen Seiten aktualisieren, `log.md` ergänzen. Das Wiki verfällt sonst
+genauso wie eine unbenutzte Doku — sein Wert hängt davon ab, aktuell zu sein.
+
 Bei Widerspruch zwischen Quellen (z. B. Excel sagt X, `CLAUDE.md` sagt Y):
 1. Neuere Quelle gewinnt inhaltlich (Datum vergleichen)
 2. Beide Positionen mit Datum/Quelle nennen, nicht nur die aktuelle

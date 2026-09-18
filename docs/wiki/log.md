@@ -48,3 +48,15 @@ Matrix-Verteidigung des Neuroweavers auf Fassung+Geistesschärfe umgestellt
 (Excel sagt noch Willenskraft), Chrom-Rundungsregel, Rassen-Baukasten mit
 gefundener 15er-Balance-Formel, Drei-Ebenen-Architektur Regelsystem→Kampagne→
 Ideenschmiede. Details je Konzeptseite unter "Entwicklung".
+
+## [2026-09-18] update | Verbindliche Wiki-Pflicht in CLAUDE.md + SCHEMA.md verankert
+
+Mark: CLAUDE.md soll klein bleiben (Details wandern nach docs/api/ bzw. ins
+Wiki), aber das Wiki muss aktiv befragt werden, um "Erfindungen" (doppelte
+oder widersprüchliche Entscheidungen) zu vermeiden.
+
+- `CLAUDE.md`: neuer Abschnitt "Vor jedem Task: Wiki befragen" — `docs/wiki/index.md`
+  zuerst lesen, betroffene Wiki-Seite nach jeder inhaltlichen Änderung nachziehen.
+  Wiki-Link in die "Wichtige Dokumentation"-Liste aufgenommen.
+- `SCHEMA.md`: Update-Policy um explizite "vorher lesen / nachher nachziehen"-Regel
+  ergänzt, direkt über der Widerspruchs-Regel.
