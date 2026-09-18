@@ -64,10 +64,26 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
 - **10.09.2026 — Rüstung als vierte Zustandsleiste** eingeführt, Reihenfolge auf
   dem Blatt jetzt Gesundheit → Willenskraft → Rüstung → I.C.E. Siehe
   [[ruestung-kaestchen-durchlass]].
-- **Kästchen-Overflow noch ungelöst:** Bei Werten über 10 (durch Chrom o. Ä.)
-  ist die Darstellung (>10 Kästchen) noch offen — siehe `CLAUDE.md` Punkt 9.
-  Soll für Gesundheit, Willenskraft UND Rüstung gleich gelöst werden, muss
-  „cyberpunkig" aussehen (keine Herzen). Status: **offen**.
+- **Kästchen-Overflow gelöst** (`frontend/src/traits/Kaestchen.tsx`): ab 10
+  Kästchen kippt die Leiste in eine Puffer+Enden-Form — schmale Zellen mit
+  Füllhöhe (⅓/⅔/voll für Schlag/Tödlich/Unheilbar) für den vorderen Teil,
+  die letzten 5 Kästchen bleiben groß mit den gewohnten Zeichen. **18.09.2026
+  drei Fehler behoben** (Mark hat die Implementierung selbst am Spieltisch
+  geprüft und für nicht ganz stimmig befunden):
+  - Füllrichtung war zwischen Gesundheit (Puffer zuerst) und Willenskraft/
+    I.C.E. (Enden zuerst) uneinheitlich — jetzt beide von vorne (Puffer
+    zuerst), wie von Mark gewünscht: "die Schmalen zuerst, die Großen erst
+    wenn's kritisch wird"
+  - Die Gesundheitsleiste im Charakterblatt hatte einen zweiten, direkten
+    Schaden-Weg (Zahlenpad im `ZustandFenster`), der die Rüstung komplett
+    umging — im Kampfmodus gab es dafür schon den korrekten Weg über
+    `RuestungsTreffer`. Der direkte Weg ist jetzt für Gesundheit gesperrt.
+  - Ab 11 Kästchen wurde die Willenskraft-Leiste zum reinen Öffnen-Knopf,
+    und das dortige Zahlenpad kannte die Willenskraft-Sonderregeln (nur 1
+    auf einmal, Pflicht-Rückfrage, Spieler kann nicht heilen) nicht — ein
+    Charakter mit hoher Willenskraft bekam die Rückfrage nie, einer mit
+    niedriger schon. Jetzt läuft auch die Vollansicht über den echten
+    Klick-Handler mit Rückfrage.
 
 ## Widerspruch mit veralteten Docs
 

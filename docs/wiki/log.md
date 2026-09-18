@@ -60,3 +60,36 @@ oder widersprüchliche Entscheidungen) zu vermeiden.
   Wiki-Link in die "Wichtige Dokumentation"-Liste aufgenommen.
 - `SCHEMA.md`: Update-Policy um explizite "vorher lesen / nachher nachziehen"-Regel
   ergänzt, direkt über der Widerspruchs-Regel.
+
+## [2026-09-18] update | Kästchen-Overflow-Bugfix (Füllrichtung, Rüstungs-/Willenskraft-Umgehung)
+
+Mark hatte die Kästchen-Overflow-Darstellung schon gebaut (nicht im Wiki
+erfasst gewesen — Erstbefüllung hatte sie fälschlich als "offen" markiert,
+siehe `CLAUDE.md` Punkt 9 zum Zeitpunkt des ersten Ingests), fand sie aber
+"nicht 100%ig" beim Ausprobieren am Spieltisch. Code-Analyse (kein Erraten)
+fand drei konkrete, unabhängig behobene Fehler:
+
+1. Füllrichtung uneinheitlich zwischen Gesundheit (Puffer zuerst) und
+   Willenskraft/I.C.E. (Enden zuerst) — durchgerechnet mit Python, bestätigt.
+   Fix: beide füllen jetzt von vorne (Puffer zuerst), Marks ausdrücklicher
+   Wunsch nach Rückfrage ("die Schmalen zuerst, die Großen erst wenn's
+   kritisch wird").
+2. Charakterblatt-Gesundheitsleiste hatte einen zweiten, direkten
+   Schaden-Weg (Zahlenpad), der die Rüstungsrechnung (`RuestungsTreffer`,
+   ⚡-Knopf) komplett umging. Neues `ZustandFenster`-Prop `schadenErlaubt`
+   sperrt diesen Weg für Gesundheit.
+3. **Von Mark selbst am System entdeckt, nicht vorher vermutet:** Ryu
+   (22 Willenskraft) bekam nie die Pflicht-Rückfrage vor dem Ausgeben,
+   "Mark" (wenig Willenskraft) schon — weil ab 11 Kästchen die Leiste zum
+   Öffnen-Knopf kippt und das dortige Zahlenpad die Willenskraft-
+   Sonderregeln (1 auf einmal, Rückfrage, kein Selbst-Heilen) nicht kennt.
+   Fix: Zahlenpad für Willenskraft ebenfalls gesperrt, echter Klick-Handler
+   mit Rückfrage auch in der Vollansicht durchgereicht.
+
+Geändert: `frontend/src/traits/Kaestchen.tsx`, `ZustandFenster.tsx`,
+`Charakterblatt.tsx`, `frontend/src/kampf/Kampfkarte.tsx`. Verifiziert per
+`tsc --noEmit` (keine Typfehler) und Nachrechnen der Füllreihenfolge in
+Python — nicht im Browser durchgeklickt (Login-Automatisierung nicht
+abgeschlossen), Mark sollte am Tisch nochmal gegenprüfen.
+`docs/wiki/concepts/attribute-und-fertigkeiten.md` und `CLAUDE.md` Punkt 9
+nachgezogen (Status offen → fertig, mit Datum).

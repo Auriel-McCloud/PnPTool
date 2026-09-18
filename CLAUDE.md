@@ -133,7 +133,7 @@ npm run dev
 
 **Offen:** Shop-System, KI-Integration, Spotify/MusicCast, Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
-PC-Vorlagen im Regelsystem, Kästchen-Overflow-Darstellung,
+PC-Vorlagen im Regelsystem,
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
 erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
@@ -430,18 +430,24 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      - Aber mehr Chrom = mehr Verlust... Teufelskreis?
      - **Lösung: "Wer soweit kommt, hat's verdient"** — kein Cap!
 
-9. **Kästchen-Overflow-Darstellung** (Gesundheit, Willenskraft **und
-   Rüstung** — die Lösung soll für alle drei Leisten gelten):
-   - Problem: Hohe Werte = zu viele Kästchen, unübersichtlich. **Seit dem
-     Grundwert 6 schon im Normalfall relevant**: Gesundheit erreicht
-     natürlich 12 und liegt damit über den 10 gedruckten Kästchen des
-     Papierblatts (mit Chrom bis 18)
-   - **Logik:**
-     - ≤10 Kästchen: normal einzeln anzeigen
-     - >10: in 5er-Gruppen zusammenfassen + Rest
-   - **Darstellung:** noch offen, muss cyberpunkig sein (keine Herzen!)
-   - Ideen: Balken mit Zahl, Hex-Segmente, gestapelte Leisten, Chip-Symbole...
-   - Bei bestehenden Farben bleiben!
+9. **Kästchen-Overflow-Darstellung** — ✅ Fertig (Puffer+Enden-Leiste,
+   `frontend/src/traits/Kaestchen.tsx`), **18.09.2026 drei Fehler behoben:**
+   - **Füllrichtung war uneinheitlich:** Gesundheit (Schadensarten) füllte
+     von Index 0 (Puffer zuerst), Willenskraft/I.C.E. (`verbraucht`) aber von
+     hinten (Enden-Kästchen zuerst) — beide füllen jetzt von vorne
+   - **Rüstungs-Umgehung im Charakterblatt:** die Gesundheitsleiste öffnete
+     ein Zahlenpad, das Schaden direkt einträgt und dabei die Rüstung
+     komplett umgeht. Schaden geht jetzt nur noch über „⚡ Treffer eintragen“
+     (`RuestungsTreffer`), das Zahlenpad ist für Gesundheit gesperrt
+     (`ZustandFenster` neues Prop `schadenErlaubt`)
+   - **Willenskraft-Rückfrage fehlte ab 11 Kästchen:** ab `OVERFLOW_AB`
+     kippt die Leiste zum Öffnen-Knopf, und das Zahlenpad im Fenster kannte
+     die Willenskraft-Sonderregeln (1 auf einmal, Rückfrage, Spieler kann
+     nicht heilen) nicht — ein Charakter mit z.B. Willenskraft 22 bekam nie
+     die Rückfrage, einer mit 5 schon. Zahlenpad für Willenskraft jetzt
+     ebenfalls gesperrt, echter `willenskraftWeiterschalten`-Handler auch in
+     der Vollansicht durchgereicht
+   - Details: `docs/wiki/concepts/attribute-und-fertigkeiten.md`
 
 10. **KI-Chatbots für Gegenstände** — Zwei Typen:
    - **Einfacher Chatbot** (Bibel, Teddybär, etc.):
