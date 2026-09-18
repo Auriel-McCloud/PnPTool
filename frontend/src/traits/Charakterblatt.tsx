@@ -165,14 +165,15 @@ export function Charakterblatt({
   async function willenskraftWeiterschalten(index: number) {
     if (!bogen || !aenderbar) return;
     const u = bogen.uebersicht;
-    // Verbraucht wird von rechts, frei gemacht von links — ein Klick auf ein
-    // freies Feld verbraucht, einer auf ein verbrauchtes gibt zurück.
+    // Verbraucht wird von links, frei bleibt rechts — Puffer füllt sich
+    // zuerst (siehe Kaestchen.tsx), ein Klick auf ein verbrauchtes Feld
+    // gibt zurück, auf ein freies verbraucht.
     //
     // **Zurückgeben darf nur die Spielleitung** (Marks Regel): Willenskraft
     // kehrt zurück, wenn sie es sagt, nicht auf Zuruf. Der Server lehnt es
     // ohnehin ab — hier wird der Klick gar nicht erst angeboten, damit
     // niemand gegen eine stumme Wand tippt.
-    const gibtZurueck = index >= u.willenskraftMax - u.willenskraftVerbraucht;
+    const gibtZurueck = index < u.willenskraftVerbraucht;
     if (gibtZurueck && !bearbeitbar) return;
     // Ausgeben erst nach Rückfrage — ein Fehlgriff kostet hier echt etwas.
     if (!gibtZurueck) {
@@ -425,6 +426,13 @@ export function Charakterblatt({
             aggraviert: u.schadenAggraviert,
           },
         }}
+        // Schaden geht über den ⚡-Treffer (RuestungsTreffer) statt hier direkt
+        // eingetragen zu werden — sonst würde man die Rüstung glatt umgehen,
+        // die dort automatisch mitrechnet (Abstufung, Kästchenverlust).
+        // Heilen bleibt erlaubt: das betrifft die Gesundheit, nicht die
+        // Rüstung, und braucht keine Serverrechnung.
+        schadenErlaubt={false}
+        schadenGesperrtHinweis="Schaden geht über „⚡ Treffer eintragen“ unten auf dem Blatt — dort rechnet die Rüstung automatisch mit."
         onSchliessen={() => setZustandOffen(null)}
         onSchaden={schadenEintragen}
         onHeilen={heilen}
@@ -442,6 +450,16 @@ export function Charakterblatt({
         // der zuverlässig scheitert, ist schlimmer als keiner.
         heilenErlaubt={bearbeitbar}
         heilenGesperrtHinweis="Willenskraft stellt die Spielleitung wieder her — durch Schlaf oder wenn du deiner Ambition, deinem Verlangen oder deinem Ziel entsprechend gehandelt hast."
+        // Kein Zahlenpad-Weg: Willenskraft geht immer nur einzeln und mit
+        // Rückfrage (WillenskraftFrage), sonst könnte man sich hier mit
+        // "5 eintragen" an der 1-auf-einmal-Regel vorbeischummeln. Vor
+        // diesem Fix passierte das sogar unabsichtlich: ab 11 Kästchen wird
+        // die Übersichtsleiste zum Öffnen-Knopf (Kaestchen.tsx), und dieses
+        // Fenster hier bot bis dahin genau diesen ungeprüften Zahlenpad-Weg
+        // als einzige Möglichkeit an — Ryu mit 22 Willenskraft bekam nie die
+        // Rückfrage, ein Charakter mit z.B. 5 Willenskraft schon.
+        schadenErlaubt={false}
+        schadenGesperrtHinweis="Zum Ausgeben auf ein Kästchen tippen — einzeln, mit Rückfrage."
         onSchliessen={() => setZustandOffen(null)}
         onSchaden={async (menge) =>
           uebernehmen(
@@ -457,6 +475,7 @@ export function Charakterblatt({
             }),
           )
         }
+        onKaestchenKlick={aenderbar ? willenskraftWeiterschalten : undefined}
       />
 
       <ZustandFenster

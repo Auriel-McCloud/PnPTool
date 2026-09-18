@@ -45,6 +45,8 @@ export function ZustandFenster({
   werte,
   heilenErlaubt = true,
   heilenGesperrtHinweis,
+  schadenErlaubt = true,
+  schadenGesperrtHinweis,
   onSchliessen,
   onSchaden,
   onHeilen,
@@ -62,6 +64,16 @@ export function ZustandFenster({
    */
   heilenErlaubt?: boolean;
   heilenGesperrtHinweis?: string;
+  /**
+   * Bei Gesundheit geht Schaden über den Rüstungs-Treffer (⚡-Knopf,
+   * `RuestungsTreffer.tsx`), sonst würde man hier direkt Schaden eintragen
+   * und die Rüstung dabei glatt umgehen — der Server rechnet dort Rüstung,
+   * Abstufung und Kästchenverlust automatisch mit, das kann dieses Fenster
+   * nicht nachbilden. Willenskraft/I.C.E. haben keine Rüstung im Weg, dort
+   * bleibt es bei `true`.
+   */
+  schadenErlaubt?: boolean;
+  schadenGesperrtHinweis?: string;
   onSchliessen: () => void;
   /** Menge und Art; bei Leisten ohne Arten ist `art` undefined. */
   onSchaden: (menge: number, art?: Schadensart) => Promise<void> | void;
@@ -130,11 +142,12 @@ export function ZustandFenster({
         {/* Der häufigste Fall am Tisch sind ein bis drei Punkte — dafür soll
             niemand ein Zahlenpad bedienen müssen. */}
         <div className="zf-schnell">
-          {[1, 2, 3].map((n) => (
-            <button key={n} type="button" disabled={laeuft} onClick={() => fuehreAus(() => onSchaden(n, nachArt ? art : undefined))}>
-              − {n}
-            </button>
-          ))}
+          {schadenErlaubt &&
+            [1, 2, 3].map((n) => (
+              <button key={n} type="button" disabled={laeuft} onClick={() => fuehreAus(() => onSchaden(n, nachArt ? art : undefined))}>
+                − {n}
+              </button>
+            ))}
           {heilenErlaubt && (
             <button type="button" className="zf-heilknopf" disabled={laeuft} onClick={() => fuehreAus(() => onHeilen(1))}>
               + 1
@@ -142,29 +155,31 @@ export function ZustandFenster({
           )}
         </div>
 
-        <div className="zf-padzeile">
-          <div className="zf-pad">
-            {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((z) => (
-              <button key={z} type="button" onClick={() => ziffer(z)}>
-                {z}
+        {(schadenErlaubt || heilenErlaubt) && (
+          <div className="zf-padzeile">
+            <div className="zf-pad">
+              {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((z) => (
+                <button key={z} type="button" onClick={() => ziffer(z)}>
+                  {z}
+                </button>
+              ))}
+              <button type="button" onClick={() => ziffer("0")}>
+                0
               </button>
-            ))}
-            <button type="button" onClick={() => ziffer("0")}>
-              0
-            </button>
-            <button type="button" onClick={() => setEingabe((a) => a.slice(0, -1))}>
-              ⌫
-            </button>
-            <button type="button" onClick={() => setEingabe("")}>
-              C
-            </button>
+              <button type="button" onClick={() => setEingabe((a) => a.slice(0, -1))}>
+                ⌫
+              </button>
+              <button type="button" onClick={() => setEingabe("")}>
+                C
+              </button>
+            </div>
+            <div className="zf-anzeige" aria-live="polite">
+              {eingabe || "0"}
+            </div>
           </div>
-          <div className="zf-anzeige" aria-live="polite">
-            {eingabe || "0"}
-          </div>
-        </div>
+        )}
 
-        {nachArt && (
+        {nachArt && schadenErlaubt && (
           <div className="zf-arten">
             {ARTEN.map((a) => (
               <button
@@ -180,14 +195,16 @@ export function ZustandFenster({
         )}
 
         <div className="zf-tun">
-          <button
-            type="button"
-            className="zf-schaden"
-            disabled={laeuft || menge <= 0}
-            onClick={() => fuehreAus(() => onSchaden(menge, nachArt ? art : undefined))}
-          >
-            Schaden eintragen
-          </button>
+          {schadenErlaubt && (
+            <button
+              type="button"
+              className="zf-schaden"
+              disabled={laeuft || menge <= 0}
+              onClick={() => fuehreAus(() => onSchaden(menge, nachArt ? art : undefined))}
+            >
+              Schaden eintragen
+            </button>
+          )}
           {heilenErlaubt && (
             <button
               type="button"
@@ -200,6 +217,7 @@ export function ZustandFenster({
           )}
         </div>
 
+        {!schadenErlaubt && schadenGesperrtHinweis && <p className="zf-hinweis">{schadenGesperrtHinweis}</p>}
         {heilenErlaubt ? (
           nachArt && <p className="zf-hinweis">{HEILHINWEIS}</p>
         ) : (

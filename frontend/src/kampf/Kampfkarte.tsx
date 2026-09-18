@@ -156,8 +156,10 @@ export function Kampfkarte({
                     // Ausgeben ja, zurückholen nur als Spielleitung. Und erst
                     // nach Rückfrage — versehentlich getroffen ist der Punkt
                     // sonst weg, und zurückholen kann ihn nur die SL.
-                    const frei = u.willenskraftMax - u.willenskraftVerbraucht;
-                    if (index >= frei) return;
+                    // Verbraucht füllt von links (Puffer zuerst, siehe
+                    // Kaestchen.tsx) — ein Klick auf ein bereits verbrauchtes
+                    // Feld tut hier nichts (kein Rückgabe-Weg in der Kampfkarte).
+                    if (index < u.willenskraftVerbraucht) return;
                     setFragtWillenskraft(true);
                   }
                 : undefined

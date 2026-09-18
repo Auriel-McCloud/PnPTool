@@ -75,7 +75,13 @@ export function Kaestchen({
       if (i < schaden.aggraviert + schaden.schwer + schaden.schlag) return { art: "schlag" as const };
       return { art: "frei" as const };
     }
-    return { art: i < max - verbraucht ? ("frei" as const) : ("verbraucht" as const) };
+    // Von vorne auffüllen (Index 0 zuerst) — wie beim Schaden mit Arten:
+    // der Puffer (die schmalen Zellen) füllt sich zuerst, die großen
+    // Endkästchen bleiben frei, bis es wirklich knapp wird. Vorher füllte
+    // dies von hinten, wodurch der allererste Punkt Verbrauch schon in den
+    // auffälligen Endkästchen landete — genau verkehrt zur Absicht der
+    // Puffer/Enden-Aufteilung unten.
+    return { art: i < verbraucht ? ("verbraucht" as const) : ("frei" as const) };
   });
 
   const belegt = schaden ? schaden.aggraviert + schaden.schwer + schaden.schlag : verbraucht;
