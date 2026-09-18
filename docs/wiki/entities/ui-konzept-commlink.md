@@ -1,0 +1,53 @@
+---
+title: UI-Konzept — Das Commlink
+created: 2026-09-18
+updated: 2026-09-18
+type: entität
+tags: [ui, frontend]
+sources: [../../ui-konzept.md]
+status: teilweise-umgesetzt
+---
+
+# UI-Konzept — Das Commlink
+
+Festgehalten 28.08.2026. Leitbild: Oberfläche soll sich wie ein **Commlink**
+(Zukunfts-Smartphone der Spielwelt) anfühlen, nicht wie ein Verwaltungswerkzeug.
+Zielgerät: **Tablet**, Touch als Normalfall.
+
+## Kernprinzipien
+
+- **Kein Scrollen auf Übersichtsseiten** (Marks weitreichendste Vorgabe) —
+  feste Höhe, Raster mit fester Kachelzahl, Blättern statt Scrollen. Scrollen
+  bleibt nur in Popups/Fenstern erlaubt.
+- **Fenster statt Inline-Akkordeons** — ein Gegenstand öffnet sich als eigenes
+  fokussiertes Fenster; Position wechselt bewusst (nicht immer zentriert),
+  abgeleitet aus einer Streufunktion über die Item-ID (dasselbe Fenster immer
+  an derselben Stelle, verschiedene Fenster an verschiedenen).
+- **Eine Hülle für beide Rollen** (SL/Spieler) — SL bekommt mehr Bereiche/Felder,
+  Spieler die schlanke Ansicht. Einmal bauen, zweimal nutzen.
+- **Neonfarben tragen Bedeutung, nicht Dekoration** — Magenta „SL-geheim",
+  Cyan „aktiv/Fokus" (siehe [[theming-system]]).
+- **`prefers-reduced-motion` wird respektiert** — inkl. Flackern-Effekt.
+
+## Navigation (nach Marks Rückmeldung überarbeitet)
+
+Ab 600px: schmale Symbolspalte (60px), angetippt fährt nur der eine Eintrag
+heraus (nicht das ganze Menü), zweites Antippen wechselt den Bereich. Unter
+600px: Schublade hinter ☰. Bereichswechsel ist **inszeniert**: Name löst sich
+aus dem Menü, fliegt nach oben, Leuchtbalken fährt herab.
+
+## Stand der Umsetzung (Auszug, siehe `docs/ui-konzept.md` für Details)
+
+**Gebaut:** Commlink-Hülle (28.08.2026), Navigation-Überarbeitung, Fenstersystem
+(29.08.2026), Kampfmodus (30.08.2026), Tooltip-System (30.08.2026, Schieberegler
++ `Erklaerung`-Knoten je Regelwerk).
+
+**Noch nicht gebaut:** feinerer Bereichsschnitt (PCs/NPCs/Orte/Events aus
+`EntityManager` „Welt" heraustrennen), SL-Popup-Symbol ist angelegt aber
+deaktiviert.
+
+## Siehe auch
+
+- [[theming-system]] — technische Umsetzung der Farbwelt
+- [[mitteilungen-system]] — SL-Popup-Symbol (angelegt, noch deaktiviert)
+- [[architektur-drei-ebenen]] — „Schmiede"-Tab in derselben Shell
