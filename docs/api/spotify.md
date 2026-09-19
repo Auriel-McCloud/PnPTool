@@ -73,7 +73,9 @@ Basis: `/api/campaigns/{campaign_id}/spotify` — **nur die Spielleitung.**
 
 ### GET `/suche?q=...`
 
-Durchsucht Spotify nach Playlists (max. 12 Treffer).
+Durchsucht Spotify nach Playlists (max. 10 Treffer — Spotifys
+Development-Mode-Apps lehnen seit dem Februar-2026-Umbau `limit`-Werte
+über 10 mit `400 Invalid limit` ab, siehe `client.py::suche_playlists`).
 
 ```json
 [{ "uri": "spotify:playlist:...", "id": "...", "name": "Neon Nights",

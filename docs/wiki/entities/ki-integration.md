@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-19
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md]
@@ -19,8 +19,9 @@ Gemini generiert direkt in der Ideenschmiede (siehe
 
 Backend: `backend/app/ki/` (dünner Gemini-Client, `POST /ki/idee`), Modell
 konfigurierbar (`gemini_model`, Default `gemini-3.6-flash`), API-Key in
-`backend/.env` (gitignored). Zusätzlich `backend/app/ki/mistral.py` als
-Alternativ-Client.
+`backend/.env` (gitignored, nie im Git-Verlauf — siehe [[tech-stack]] für
+Details zur Secrets-Vorlage `.env.example`). Zusätzlich
+`backend/app/ki/mistral.py` als Alternativ-Client.
 
 ## Geplante Anwendungsfälle (`CLAUDE.md` Punkt 3, größtenteils noch offen)
 
@@ -36,4 +37,5 @@ Alternativ-Client.
 ## Siehe auch
 
 - [[architektur-drei-ebenen]] — wo generierte Inhalte landen (Ideenschmiede)
+- [[tech-stack]] — `.env`-Konfiguration, Secrets-Handling
 - [[../../../CLAUDE.md]] — vollständige Feature-Liste unter „Geplante Features"

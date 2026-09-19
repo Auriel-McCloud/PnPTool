@@ -83,7 +83,26 @@ kein `fetch()`.
 - Party-Anzeige am Ort/Event-Popup fehlt weiterhin (siehe
   [[party-feature]], "Offen").
 
+## Spotify-Fehlerbehebungen nach dem ersten Live-Test (19.09.2026)
+
+Zwei Fixes direkt nach dem gemeinsamen Durchspielen mit Mark:
+
+1. **Playlist-Suche schlug mit „Invalid limit" fehl** — Spotify hat mit dem
+   Februar-2026-Umbau die `search`-API für Development-Mode-Apps auf
+   `limit` max. 10 begrenzt; der Client war noch mit 12 gebaut (galt zum
+   Bauzeitpunkt als unauffällig). `client.py::suche_playlists` jetzt mit
+   `limit=10`.
+2. **Jede Liste (PCs/NPCs/Orte/Events) lieferte 500 „[Errno 22] Invalid
+   argument"** — Ursache lag nicht in der Spotify-Anbindung, sondern in
+   alten `print()`/`sys.stdout.write()`-Debugzeilen in
+   `entities/routes.py` (schon vor der Spotify-Arbeit vorhanden). Ein
+   Force-Kill des Backend-Prozesses während des Testens hinterließ einen
+   ungültigen stdout-Handle; jedes `print()` danach warf einen OSError,
+   den die globale Exception-Middleware als 500 zeigte. Fix: Debugzeilen
+   entfernt, Backend sauber neu gestartet.
+
 ## Siehe auch
 
 - [[../../api/spotify.md]] — vollständige Endpunkt-Referenz
 - [[party-feature]] — aktive Party als Auslöser
+- [[tech-stack]] — `.env`-Konfiguration, Secrets-Handling

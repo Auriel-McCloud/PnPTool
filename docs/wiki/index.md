@@ -47,10 +47,10 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung |
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
-| [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Einstellungen an einem Ort |
+| [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09. kalibriert) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes |
 | [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), viele geplante Use-Cases |
-| [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine |
+| [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
 | [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify |
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
 
