@@ -167,7 +167,9 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   `OrtDetail`/`FraktionDetail`/`EventDetail`) statt über einen eigenen
   Speichern-Knopf. "Party auflösen" hat jetzt den `Bestaetigung`-Dialog
   statt direkt zu löschen (Marks Standardregel: destruktive Aktionen
-  brauchen eine Rückfrage).
+  brauchen eine Rückfrage). Das Namensfeld sitzt bewusst ganz unten, nach
+  Notizen — Umbenennen ist der Notfall, man erkennt die Party an Mitgliedern
+  und Aufenthaltsort, nicht am Namen.
 
 **Zuletzt gebaut (15.09.2026):**
 - **Fraktionen als eigener Entitätstyp** — eigener Bereich (Hexagon-Symbol),

@@ -566,11 +566,6 @@ function PartyFenster({
           {party.aktiv ? "★ Aktive Party" : "☆ Als aktive Party festlegen"}
         </button>
 
-        <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
-          <span className="pt-label">Name</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={nameSpeichern} />
-        </label>
-
         <section>
           <h3 style={{ margin: "10px 0 6px" }}>Mitglieder ({party.mitglieder.length})</h3>
           {party.mitglieder.length === 0 && <p className="gg-leer">Noch niemand in dieser Party.</p>}
@@ -620,6 +615,14 @@ function PartyFenster({
             rows={2}
             style={{ resize: "vertical" }}
           />
+        </label>
+
+        {/* Ganz unten, bewusst abgesetzt: Umbenennen ist der Notfall, nicht
+            der Regelfall — man will die Party an Mitgliedern/Ort erkennen,
+            nicht am Namen herumspielen (Marks Wunsch 19.09.2026). */}
+        <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3, marginTop: 6 }}>
+          <span className="pt-label">Name</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={nameSpeichern} />
         </label>
 
         <div className="pt-zeile" style={{ marginTop: 10 }}>
