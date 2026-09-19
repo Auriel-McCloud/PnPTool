@@ -59,11 +59,22 @@ export function Verwundung({ zustand }: { zustand: BogenUebersicht | null }) {
   if (!zustand || zustand.gesundheitMax <= 0) return null;
 
   const uebrig = Math.max(0, zustand.gesundheitMax - zustand.gesundheitSchaden);
-  const anteil = 1 - uebrig / zustand.gesundheitMax;
-  if (anteil <= 0) return null;
+  const schadensAnteil = 1 - uebrig / zustand.gesundheitMax;
 
-  // Zwei Kästchen sind der Punkt, an dem es ernst wird — ab da pulst es.
-  const kritisch = uebrig > 0 && uebrig <= 2;
+  // Marks Feedback nach dem ersten Praxistest (19.09.2026): der Effekt kam
+  // "erst sehr spät" und war "sehr dezent". Jetzt bleibt bis zur Hälfte der
+  // Gesundheit komplett Ruhe (kein Kratzer soll schon leuchten), danach
+  // steigt die Intensität mit einer Wurzel-Kurve statt linear — dadurch
+  // wird die zweite Hälfte schneller sichtbar spürbar als vorher.
+  const SICHTBAR_AB = 0.5;
+  if (schadensAnteil <= SICHTBAR_AB) return null;
+  const anteil = Math.pow((schadensAnteil - SICHTBAR_AB) / (1 - SICHTBAR_AB), 0.6);
+
+  // Der Herzschlag beginnt jetzt ab drei Vierteln verlorener Gesundheit —
+  // vorher eine starre "nur noch 2 Kästchen übrig"-Schwelle, die bei hohen
+  // Gesundheitswerten (z.B. mit Chrom-Bonus) fast nie ausgelöst hat und sich
+  // dadurch ebenfalls "zu spät" anfühlte.
+  const kritisch = uebrig > 0 && schadensAnteil >= 0.75;
 
   return (
     <div

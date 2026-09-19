@@ -145,6 +145,21 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
 
 **Zuletzt gebaut (19.09.2026):**
+- **Verwundungsanzeige verstärkt** (Marks Feedback nach Praxistest: "beginnt
+  erst sehr spät" und "sehr dezent") — Schleier startet jetzt erst ab der
+  Hälfte verlorener Gesundheit (vorher ab dem ersten Kratzer, dafür kaum
+  sichtbar), steigt danach mit Wurzel-Kurve statt linear schneller an.
+  Herzschlag-Puls jetzt ab 75% Schaden relativ statt einer starren
+  "≤2 Kästchen übrig"-Schwelle, die bei hoher Gesundheit (Chrom-Bonus) kaum
+  je auslöste. `frontend/src/shell/Verwundung.tsx` + `verwundung.css`
+- **README/`.env.example` für Neueinrichter vervollständigt** — Marks Frage:
+  ob API-Keys nach GitHub transportiert werden (nein, `.env` ist seit jeher
+  gitignored und nie committed) und wie ein Neu-Aufsetzer eigene Keys
+  einträgt. `.env.example` deckt jetzt auch Gemini/Mistral/Spotify ab
+  (vorher nur Neo4j/JWT/CORS), README bekam einen Setup-Abschnitt mit
+  Tabelle, was Pflicht ist und was optional.
+
+**Zuletzt gebaut (19.09.2026, davor):**
 - **Spotify-Anbindung** — Orte und Events können eine Spotify-Playlist
   hinterlegen (Such-Popup, gleiches Muster wie `wiki/VerweisWaehler.tsx`).
   Läuft die aktive Party dort ein (Aufenthaltsort setzen oder eine Party mit

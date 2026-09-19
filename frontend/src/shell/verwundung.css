@@ -10,13 +10,14 @@
   inset: 0;
   z-index: 90; /* über dem Inhalt, unter den Fenstern (200) */
   pointer-events: none;
-  /* Höhe und Deckkraft wachsen mit dem Schaden. Der Exponent lässt die
-     ersten Treffer dezent bleiben und die letzten deutlich werden. */
+  /* Höhe und Deckkraft wachsen mit dem Schaden. Startet erst ab der Hälfte
+     verlorener Gesundheit (siehe Verwundung.tsx) und wird dafür schneller
+     kräftig — Marks Feedback: vorher "sehr spät" und "sehr dezent". */
   background: linear-gradient(
     to top,
-    rgb(var(--verwundung) / calc(var(--vw-anteil, 0) * 0.55)) 0%,
-    rgb(var(--verwundung-tief) / calc(var(--vw-anteil, 0) * 0.28)) calc(var(--vw-anteil, 0) * 45%),
-    transparent calc(20% + var(--vw-anteil, 0) * 60%)
+    rgb(var(--verwundung) / calc(var(--vw-anteil, 0) * 0.75)) 0%,
+    rgb(var(--verwundung-tief) / calc(var(--vw-anteil, 0) * 0.4)) calc(15% + var(--vw-anteil, 0) * 40%),
+    transparent calc(25% + var(--vw-anteil, 0) * 55%)
   );
   transition: background 1.2s ease-out;
   transform-origin: bottom;
