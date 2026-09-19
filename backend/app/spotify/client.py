@@ -101,8 +101,12 @@ async def eigenes_profil(access_token: str) -> dict:
     return resp.json()
 
 
-async def suche_playlists(access_token: str, suchtext: str, limit: int = 12) -> list[dict]:
-    """Durchsucht Spotify nach Playlists — fuer das Auswahl-Popup an Orten/Events."""
+async def suche_playlists(access_token: str, suchtext: str, limit: int = 10) -> list[dict]:
+    """Durchsucht Spotify nach Playlists — fuer das Auswahl-Popup an Orten/Events.
+
+    `limit` max. 10 — seit Spotifys Februar-2026-Umbau lehnt der Such-
+    Endpoint fuer Development-Mode-Apps hoehere Werte mit "Invalid limit" ab.
+    """
     async with httpx.AsyncClient(timeout=20) as http:
         resp = await http.get(
             f"{_API_BASE}/search",
