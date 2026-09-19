@@ -116,6 +116,9 @@
   --bereich-kontakte: var(--neon);
   --bereich-wiki: var(--neon);
   --bereich-fraktionen: var(--kind-fraktion);
+  /* Party: eigene Rolle, aber verwandt mit Personen — trägt dieselbe
+     Palettenfarbe wie Verbindungen (beides "wer mit wem"). */
+  --bereich-party: var(--p-indigo);
   /* Ideenschmiede: Orange/Amber wie Werkbank-Glühen */
   --bereich-schmiede: var(--warn);
 

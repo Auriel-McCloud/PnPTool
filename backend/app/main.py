@@ -21,6 +21,7 @@ from app.traits.routes import router as traits_router
 from app.regeln.routes import router as erklaerungen_router
 from app.regeln.routes import vorlagen_router
 from app.begleiter.routes import router as begleiter_router
+from app.party.routes import router as party_router
 from app.kampf.routes import router as kampf_router
 from app.traits.seed import seed_traits
 from app.rassen.routes import router as rassen_router
@@ -83,6 +84,7 @@ app.include_router(rassen_router)
 app.include_router(erklaerungen_router)
 app.include_router(vorlagen_router)
 app.include_router(begleiter_router)
+app.include_router(party_router)
 app.include_router(kampf_router)
 app.include_router(login_router)
 app.include_router(spieler_gm_router)

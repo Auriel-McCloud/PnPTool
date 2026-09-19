@@ -1,0 +1,63 @@
+/* ===================================================================
+   Party — wer gerade zusammen unterwegs ist.
+   =================================================================== */
+
+.pt-zeile {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pt-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pt-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.pt-mitglied {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.pt-typ {
+  color: var(--text-leise);
+  font-style: normal;
+  font-size: 12px;
+}
+
+.pt-hinweis {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+/* Die aktive Party leuchtet in der Leitfarbe — dieselbe Bedeutung wie ein
+   aktiver Kampf: "das hier wird gerade bespielt". */
+.pt-aktiv-schalter {
+  align-self: flex-start;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.pt-aktiv-schalter[data-aktiv="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.gg-kachel[data-aktiv="true"] {
+  border-color: var(--neon);
+  box-shadow: 0 0 12px -4px var(--neon);
+}
+
+.pt-marke-aktiv {
+  border-color: var(--neon);
+  color: var(--neon);
+}

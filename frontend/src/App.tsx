@@ -10,6 +10,7 @@ import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
+import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
 import { SpielerLogin } from "./players/SpielerLogin";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
@@ -48,6 +49,10 @@ const BEREICHE: Bereich[] = [
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
   // Blatt haben und keine Gegenstände sind.
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
+  // Wer gerade zusammen unterwegs ist — eigener Bereich, weil es eine
+  // eigene Beziehungslogik ist (Mitgliedschaft + Aufenthaltsort + Aktiv-
+  // Exklusivität), keine Fraktion mit Zielen/Ressourcen.
+  { id: "party", name: "Party", symbol: "👥", farbe: "var(--bereich-party)" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   { id: "zugang", name: "Zugang", symbol: "⚿", farbe: "var(--bereich-zugang)" },
   // SL-Kontaktverwaltung: wer kennt wen, wer kann mit wem chatten
@@ -77,6 +82,7 @@ const TITEL: Record<string, string> = {
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
   kontakte: "Kontakte: wer kennt wen",
+  party: "Party: wer gerade zusammen unterwegs ist",
   rassen: "Rassen: Baukasten und Freigabe",
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
 };
@@ -224,6 +230,7 @@ function Dashboard() {
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "party" && <PartyVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}
