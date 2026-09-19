@@ -209,8 +209,6 @@ class RuestungsteilFolge(BaseModel):
     name: str
     verlust: int
     kaestchenNeu: int
-    # Um den eigenen Verlust gestiegen: das Teil ist jetzt löchriger.
-    durchlassNeu: int
     # Bei 0 Kästchen wirkt es nicht mehr und gilt nicht mehr als
     # ausgerüstet — es liegt danach im Mitgeführten.
     zerstoert: bool
@@ -270,26 +268,22 @@ async def ruestungstreffer(
         ergebnis = {"hpArt": body.art, "hpMenge": body.staerke, "kaestchenSchaden": 0}
         folgen: list[dict] = []
     else:
-        # Vom Ergebnis gelten hier nur hpArt/hpMenge/kaestchenSchaden — die
-        # Kästchen-/Durchlasswerte darin beziehen sich auf den Pool als
-        # Ganzes, die echten Teile bekommen ihre Werte aus der Verteilung.
+        # Vom Ergebnis gilt hier nur hpArt/hpMenge/kaestchenSchaden — die
+        # Kästchenwerte darin beziehen sich auf den Pool als Ganzes, die
+        # echten Teile bekommen ihre Werte aus der Verteilung.
         ergebnis = berechne_treffer(
             body.art,
             body.staerke,
             gesamt["kaestchenAktuell"],
             gesamt["kaestchenMax"],
-            gesamt["durchlassBasis"],
-            gesamt["durchlassAktuell"],
+            gesamt["reduktionBasis"],
         )
         folgen = verteile_kaestchenschaden(gesamt["geordnet"], ergebnis["kaestchenSchaden"])
         for folge in folgen:
             await update_gegenstand(
                 campaign_id,
                 folge["id"],
-                {
-                    "ruestungKaestchenAktuell": folge["kaestchenNeu"],
-                    "ruestungDurchlassAktuell": folge["durchlassNeu"],
-                },
+                {"ruestungKaestchenAktuell": folge["kaestchenNeu"]},
             )
             if folge["zerstoert"]:
                 # Zerschossene Rüstung gilt nicht mehr als ausgerüstet

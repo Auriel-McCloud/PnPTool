@@ -136,7 +136,7 @@ class GegenstandCreate(BaseModel):
     # NPC-Besitzer -> SL-geheim), falls hier nicht explizit übersteuert.
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
-    # Rüstung: Kästchen + Durchlass statt eines flachen Bonus (siehe
+    # Rüstung: Kästchen + Schadensreduktion statt eines flachen Bonus (siehe
     # kampf/ruestung.py für die vollständige Herleitung, docs/api/ruestung.md
     # für die ausführliche Begründung). 0 = dieses Stück nutzt das System
     # nicht (z.B. Bestandsdaten oder alle Nicht-Rüstungsgegenstände).
@@ -147,11 +147,12 @@ class GegenstandCreate(BaseModel):
     # von "ausdrücklich beschädigt angelegt" unterscheidbar bleibt.
     ruestungKaestchenMax: int = 0
     ruestungKaestchenAktuell: int | None = None
-    # Basis ist der Ausgangs-Durchlass des Gegenstands ("wie löchrig ist er
-    # von Haus aus" — niedriger ist besser, 0 = dicht). Aktuell defaultet
-    # ebenso auf Basis.
-    ruestungDurchlassBasis: int = 0
-    ruestungDurchlassAktuell: int | None = None
+    # Wie viel Schaden die Rüstung pro Treffer direkt abfängt — höher ist
+    # besser (klassischer Soak-Wert). Kein eigener "Aktuell"-Wert mehr nötig:
+    # die tatsächlich wirksame Reduktion ergibt sich aus dem
+    # Kästchen-Verhältnis (siehe kampf/ruestung.py::reduktion_effektiv) und
+    # sinkt automatisch, je beschädigter die Rüstung ist.
+    ruestungReduktionBasis: int = 0
 
 
 class GegenstandUpdate(BaseModel):
@@ -204,8 +205,7 @@ class GegenstandUpdate(BaseModel):
     sichtbarFuer: list[str] | None = None
     ruestungKaestchenMax: int | None = None
     ruestungKaestchenAktuell: int | None = None
-    ruestungDurchlassBasis: int | None = None
-    ruestungDurchlassAktuell: int | None = None
+    ruestungReduktionBasis: int | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -284,12 +284,11 @@ class GegenstandResponse(BaseModel):
     ablageZielId: str | None = None
     ablageZielName: str | None = None
     ablageZielKind: str | None = None
-    # Rüstung: Kästchen + Durchlass. 0/0 = dieses Stück nutzt das System nicht
-    # (siehe GegenstandCreate für die Bedeutung der einzelnen Felder).
+    # Rüstung: Kästchen + Schadensreduktion. 0/0 = dieses Stück nutzt das
+    # System nicht (siehe GegenstandCreate für die Bedeutung der Felder).
     ruestungKaestchenMax: int = 0
     ruestungKaestchenAktuell: int = 0
-    ruestungDurchlassBasis: int = 0
-    ruestungDurchlassAktuell: int = 0
+    ruestungReduktionBasis: int = 0
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

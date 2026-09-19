@@ -602,8 +602,10 @@ export function Charakterblatt({
             <span className="cb-spur-titel">
               Rüstung
               <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("ruestung")} titel="Rüstung" />
-              <span className="cb-chrom" title="So viel Schaden kommt so oder so durch — niedriger ist besser">
-                Durchlass {bogen.ruestung.durchlass}
+              <span className="cb-chrom" title="Wie viel Schaden die Rüstung pro Treffer abfängt — höher ist besser">
+                Reduktion {bogen.ruestung.reduktionEffektiv}
+                {bogen.ruestung.reduktionEffektiv < bogen.ruestung.reduktionBasis &&
+                  ` / ${bogen.ruestung.reduktionBasis}`}
               </span>
               {bogen.ruestung.teile.length > 1 && (
                 <span className="cb-hinweis">

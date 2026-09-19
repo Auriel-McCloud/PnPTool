@@ -27,7 +27,7 @@ RETURN_FIELDS = """
     g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
     g.ablage AS ablage,
     g.ruestungKaestchenMax AS ruestungKaestchenMax, g.ruestungKaestchenAktuell AS ruestungKaestchenAktuell,
-    g.ruestungDurchlassBasis AS ruestungDurchlassBasis, g.ruestungDurchlassAktuell AS ruestungDurchlassAktuell,
+    g.ruestungReduktionBasis AS ruestungReduktionBasis,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
 """
@@ -161,13 +161,12 @@ def _decode(record: dict) -> dict:
     # ganze Liste mit — siehe Stolperstein #9 in CLAUDE.md.
     record["weggeworfen"] = _or_default(record.get("weggeworfen"), False)
     record["weggeworfenVon"] = record.get("weggeworfenVon") or ""
-    # Rüstung: Kästchen + Durchlass (siehe kampf/ruestung.py). 0 ist ein
-    # gültiger Wert (Bestandsdaten, oder ein Stück das das System nicht
+    # Rüstung: Kästchen + Schadensreduktion (siehe kampf/ruestung.py). 0 ist
+    # ein gültiger Wert (Bestandsdaten, oder ein Stück das das System nicht
     # nutzt) — deshalb _or_default statt `or`.
     record["ruestungKaestchenMax"] = _or_default(record.get("ruestungKaestchenMax"), 0)
     record["ruestungKaestchenAktuell"] = _or_default(record.get("ruestungKaestchenAktuell"), 0)
-    record["ruestungDurchlassBasis"] = _or_default(record.get("ruestungDurchlassBasis"), 0)
-    record["ruestungDurchlassAktuell"] = _or_default(record.get("ruestungDurchlassAktuell"), 0)
+    record["ruestungReduktionBasis"] = _or_default(record.get("ruestungReduktionBasis"), 0)
     return record
 
 
@@ -197,7 +196,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
-            ruestungDurchlassBasis: $ruestungDurchlassBasis, ruestungDurchlassAktuell: $ruestungDurchlassAktuell,
+            ruestungReduktionBasis: $ruestungReduktionBasis,
             istEntwurf: $istEntwurf
         })
     """
@@ -264,10 +263,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ruestungKaestchenAktuell=int(
                 _or_default(data.get("ruestungKaestchenAktuell"), data.get("ruestungKaestchenMax") or 0)
             ),
-            ruestungDurchlassBasis=int(data.get("ruestungDurchlassBasis") or 0),
-            ruestungDurchlassAktuell=int(
-                _or_default(data.get("ruestungDurchlassAktuell"), data.get("ruestungDurchlassBasis") or 0)
-            ),
+            ruestungReduktionBasis=int(data.get("ruestungReduktionBasis") or 0),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
@@ -355,16 +351,14 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     # nicht selbst ausdrücklich einen Aktuell-Wert mitschickt UND das Feld
     # bisher 0 war (das System also gerade erst "angeht") wird nachgezogen —
     # eine bereits beschädigte Rüstung, deren Max angepasst wird, bleibt
-    # unangetastet.
-    braucht_kaestchen_nachzug = "ruestungKaestchenMax" in changed and "ruestungKaestchenAktuell" not in changed
-    braucht_durchlass_nachzug = "ruestungDurchlassBasis" in changed and "ruestungDurchlassAktuell" not in changed
-    if braucht_kaestchen_nachzug or braucht_durchlass_nachzug:
+    # unangetastet. Seit dem Umbau auf Schadensreduktion (18.09.2026) betrifft
+    # das nur noch die Kästchen — die Reduktion selbst hat keinen eigenen
+    # "Aktuell"-Wert mehr, sie wird aus dem Kästchen-Verhältnis abgeleitet
+    # (kampf/ruestung.py::reduktion_effektiv).
+    if "ruestungKaestchenMax" in changed and "ruestungKaestchenAktuell" not in changed:
         bisheriges = await get_gegenstand(campaign_id, item_id)
-        war_inaktiv = bool(bisheriges) and bisheriges.get("ruestungKaestchenMax", 0) == 0
-        if braucht_kaestchen_nachzug and war_inaktiv:
+        if bisheriges and bisheriges.get("ruestungKaestchenMax", 0) == 0:
             changed["ruestungKaestchenAktuell"] = changed["ruestungKaestchenMax"]
-        if braucht_durchlass_nachzug and war_inaktiv:
-            changed["ruestungDurchlassAktuell"] = changed["ruestungDurchlassBasis"]
 
     if not changed:
         query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
@@ -1018,12 +1012,12 @@ async def setze_entfernung_beantragt(campaign_id: str, item_id: str, beantragt: 
 
 async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
     """Die getragenen Rüstungsteile dieser Person, die das Kästchen-/
-    Durchlass-System nutzen (`ruestungKaestchenMax > 0`).
+    Reduktions-System nutzen (`ruestungKaestchenMax > 0`).
 
     Grundlage für die Treffer-Auflösung: sie wirken als **ein Pool**
     (`kampf/ruestung.py::pool`), und in welcher Reihenfolge der
-    Kästchenschaden sie aufbraucht, entscheidet `ruestung.reihenfolge` (das
-    dichteste zuerst) — nicht diese Abfrage. Deshalb hier bewusst keine
+    Kästchenschaden sie aufbraucht, entscheidet `ruestung.reihenfolge` (die
+    beste Reduktion zuerst) — nicht diese Abfrage. Deshalb hier bewusst keine
     Sortierung nach Regelkriterien, sondern nur die Liste. Alte Rüstung mit bloßem
     `kraft`-Bonus taucht nicht auf; für die zählt weiter der flache
     Rüstungsbonus (siehe docs/api/ruestung.md).

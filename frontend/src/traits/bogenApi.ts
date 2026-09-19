@@ -72,16 +72,20 @@ export interface ZustandUpdate {
 /**
  * Rüstungszustand fürs Blatt — **fertig gerechnet vom Server**
  * (`kampf/ruestung.py::uebersicht`). Alles Getragene ist ein Pool: Kästchen
- * summiert, Durchlass vom dichtesten Teil. Bewusst nicht hier nachgerechnet,
- * sonst läuft die Anzeige mit dem auseinander, was ein Treffer anrichtet.
+ * summiert, Reduktion vom Teil mit der besten Basis. Bewusst nicht hier
+ * nachgerechnet, sonst läuft die Anzeige mit dem auseinander, was ein
+ * Treffer anrichtet.
  */
 export interface RuestungsUebersicht {
   kaestchenAktuell: number;
   kaestchenMax: number;
-  /** Wie viel Schaden so oder so durchkommt. Niedriger ist besser. */
-  durchlass: number;
-  /** In Verbrauchsreihenfolge: das dichteste Teil wird zuerst aufgebraucht. */
-  teile: { id: string; name: string; kaestchenAktuell: number; kaestchenMax: number; durchlass: number }[];
+  /** Voller Wert bei intakter Rüstung (>50% Kästchen übrig). */
+  reduktionBasis: number;
+  /** Tatsächlich wirksam im aktuellen Zustand — sinkt gestuft mit den
+   * Kästchen (>50%: voll, >25%: halb, sonst: viertel, 0: keine). Höher ist besser. */
+  reduktionEffektiv: number;
+  /** In Verbrauchsreihenfolge: das Teil mit der besten Reduktion wird zuerst aufgebraucht. */
+  teile: { id: string; name: string; kaestchenAktuell: number; kaestchenMax: number; reduktion: number }[];
 }
 
 /** Was ein einzelnes Rüstungsteil von einem Treffer abbekommen hat. */
@@ -90,8 +94,6 @@ export interface RuestungsteilFolge {
   name: string;
   verlust: number;
   kaestchenNeu: number;
-  /** Um den eigenen Verlust gestiegen — das Teil ist jetzt löchriger. */
-  durchlassNeu: number;
   /** Bei 0 Kästchen: wirkt nicht mehr, liegt danach im Mitgeführten. */
   zerstoert: boolean;
 }

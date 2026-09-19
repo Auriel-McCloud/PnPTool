@@ -68,7 +68,7 @@ export interface Gegenstand {
   ablageZielName: string | null;
   ablageZielKind: string | null;
   /**
-   * Rüstung: Kästchen + Durchlass statt eines flachen Bonus — siehe
+   * Rüstung: Kästchen + Schadensreduktion statt eines flachen Bonus — siehe
    * docs/api/ruestung.md für die vollständige Begründung. 0 = dieses Stück
    * nutzt das System nicht (Bestandsdaten oder Nicht-Rüstung).
    *
@@ -78,13 +78,12 @@ export interface Gegenstand {
   ruestungKaestchenMax: number;
   ruestungKaestchenAktuell: number;
   /**
-   * **Basis**: Ausgangs-Durchlass ("wie löchrig von Haus aus" — niedriger
-   * ist besser, 0 = dicht). **Aktuell**: steigt mit jedem Treffer, der die
-   * Rüstung beschädigt — bestimmt, wie viel beim NÄCHSTEN Treffer garantiert
-   * durchgeht.
+   * Wie viel Schaden die Rüstung pro Treffer direkt abfängt — höher ist
+   * besser. Kein eigener "Aktuell"-Wert: die tatsächlich wirksame Reduktion
+   * ergibt sich aus dem Kästchen-Verhältnis und sinkt automatisch, je
+   * beschädigter die Rüstung ist (siehe `RuestungsUebersicht.reduktionEffektiv`).
    */
-  ruestungDurchlassBasis: number;
-  ruestungDurchlassAktuell: number;
+  ruestungReduktionBasis: number;
 }
 
 export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
@@ -211,8 +210,7 @@ export interface GegenstandUpdate {
   ausruestungsfertigkeiten?: Record<string, number>;
   ruestungKaestchenMax?: number;
   ruestungKaestchenAktuell?: number;
-  ruestungDurchlassBasis?: number;
-  ruestungDurchlassAktuell?: number;
+  ruestungReduktionBasis?: number;
 }
 
 type NeuerGegenstand = {
@@ -266,7 +264,9 @@ export const itemsApi = {
     api.get<Gegenstand[]>(`/api/campaigns/${cid}/gegenstaende/verbaut/${personId}`),
   setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
     api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
-  /** Kästchen auffüllen und den Durchlass symmetrisch senken. Nur SL. */
+  /** Kästchen auffüllen. Die Reduktion braucht keine eigene Reparatur mehr —
+   * sie folgt automatisch aus dem wiederhergestellten Kästchen-Verhältnis.
+   * Nur SL. */
   ruestungReparieren: (cid: string, itemId: string, kaestchen: number) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/ruestung/reparieren`, { kaestchen }),
   traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),

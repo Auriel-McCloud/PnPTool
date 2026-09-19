@@ -115,13 +115,12 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "zusatzaktionen": body.zusatzaktionen,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,
-        # Rüstung: Kästchen + Durchlass (siehe kampf/ruestung.py). Aktuell
-        # bleibt hier ausdrücklich None, wenn nicht angegeben — das Repository
-        # setzt es dann auf Max/Basis (frisches Stück = unbeschädigt).
+        # Rüstung: Kästchen + Schadensreduktion (siehe kampf/ruestung.py).
+        # Aktuell bleibt hier ausdrücklich None, wenn nicht angegeben — das
+        # Repository setzt es dann auf Max (frisches Stück = unbeschädigt).
         "ruestungKaestchenMax": body.ruestungKaestchenMax,
         "ruestungKaestchenAktuell": body.ruestungKaestchenAktuell,
-        "ruestungDurchlassBasis": body.ruestungDurchlassBasis,
-        "ruestungDurchlassAktuell": body.ruestungDurchlassAktuell,
+        "ruestungReduktionBasis": body.ruestungReduktionBasis,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
     }
@@ -586,8 +585,8 @@ async def verbautes_chrom(campaign_id: str, person_id: str, viewer: Viewer = Dep
 
 
 # =====================================================================
-# Rüstung: Kästchen + Durchlass (siehe kampf/ruestung.py für die Formel,
-# docs/api/ruestung.md für die ausführliche Begründung)
+# Rüstung: Kästchen + Schadensreduktion (siehe kampf/ruestung.py für die
+# Formel, docs/api/ruestung.md für die ausführliche Begründung)
 #
 # Der Treffer selbst sitzt bewusst NICHT hier, sondern bei der Person
 # (traits/routes.py: .../personen/{person_id}/ruestung/treffer) — getroffen
@@ -614,9 +613,12 @@ class RuestungReparierenRequest(BaseModel):
     "/{item_id}/ruestung/reparieren", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)]
 )
 async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungReparierenRequest):
-    """Kästchen auffüllen und den Durchlass symmetrisch senken (Mark:
-    "Reparatur senkt auch die Schwelle"). **Nur SL** — wie jede Vergabe von
-    Ressourcen ohne Gegenprobe im Tool (vgl. Erfahrung vergeben)."""
+    """Kästchen auffüllen (Mark: "Reparatur senkt auch die Schwelle" — das
+    galt für den früheren Durchlass-Wert; die Schadensreduktion braucht seit
+    dem Umbau vom 18.09.2026 keine eigene Reparatur mehr, sie folgt
+    automatisch aus dem wiederhergestellten Kästchen-Verhältnis). **Nur SL**
+    — wie jede Vergabe von Ressourcen ohne Gegenprobe im Tool (vgl. Erfahrung
+    vergeben)."""
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
@@ -626,14 +628,12 @@ async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungRepa
     ergebnis = repariere(
         item["ruestungKaestchenAktuell"],
         item["ruestungKaestchenMax"],
-        item["ruestungDurchlassBasis"],
-        item["ruestungDurchlassAktuell"],
         body.kaestchen,
     )
     aktualisiert = await repository.update_gegenstand(
         campaign_id,
         item_id,
-        {"ruestungKaestchenAktuell": ergebnis["kaestchenNeu"], "ruestungDurchlassAktuell": ergebnis["durchlassNeu"]},
+        {"ruestungKaestchenAktuell": ergebnis["kaestchenNeu"]},
     )
     if aktualisiert is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reparatur fehlgeschlagen")
