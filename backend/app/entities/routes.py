@@ -84,12 +84,10 @@ async def _aufbereiten(
     """
     sichtbar = filter_entities_for_viewer(knoten, viewer.role, viewer.person_id)
     # Entwurf-Filter: standardmäßig ausblenden, für Ideenschmiede invertieren
-    print(f"[ENTWURF-FILTER] vor={len(sichtbar)}, nur_entwuerfe={nur_entwuerfe}")
     if nur_entwuerfe:
         sichtbar = [e for e in sichtbar if e.get("istEntwurf", False)]
     else:
         sichtbar = [e for e in sichtbar if not e.get("istEntwurf", False)]
-    print(f"[ENTWURF-FILTER] nach={len(sichtbar)}")
     sichtbar = filterung.nach_suche(sichtbar, suche, namensfeld)
 
     braucht_kanten = bool(verbunden_mit or verbindungs_typ) or sortierung == "verbindungen"
@@ -186,9 +184,6 @@ async def list_orte(
     viewer: Viewer = Depends(get_viewer),
 ):
     nodes = await repository.list_nodes("Ort", ORT_FIELDS, campaign_id)
-    import sys
-    sys.stdout.write(f"[ROUTE] list_orte: {len(nodes)} nodes\n")
-    sys.stdout.flush()
     return await _aufbereiten(
         nodes,
         campaign_id,
