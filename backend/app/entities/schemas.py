@@ -165,6 +165,11 @@ class OrtCreate(BaseModel):
     bildUrl: str = ""  # Legacy
     bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False  # Ideenschmiede
+    # Spotify-Playlist dieses Ortes/dieser Szene — startet automatisch, wenn
+    # die aktive Party hierher wechselt (siehe app/spotify/).
+    spotifyPlaylistUri: str = ""
+    spotifyPlaylistName: str = ""
+    spotifyPlaylistBild: str = ""
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -178,6 +183,9 @@ class OrtUpdate(BaseModel):
     bildUrl: str | None = None
     bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
+    spotifyPlaylistUri: str | None = None
+    spotifyPlaylistName: str | None = None
+    spotifyPlaylistBild: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -192,6 +200,9 @@ class OrtResponse(BaseModel):
     bildUrl: str = ""
     bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False
+    spotifyPlaylistUri: str = ""
+    spotifyPlaylistName: str = ""
+    spotifyPlaylistBild: str = ""
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str
@@ -206,6 +217,9 @@ class EventCreate(BaseModel):
     bildUrl: str = ""  # Legacy
     bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False  # Ideenschmiede
+    spotifyPlaylistUri: str = ""
+    spotifyPlaylistName: str = ""
+    spotifyPlaylistBild: str = ""
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
@@ -220,6 +234,9 @@ class EventUpdate(BaseModel):
     bildUrl: str | None = None
     bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
+    spotifyPlaylistUri: str | None = None
+    spotifyPlaylistName: str | None = None
+    spotifyPlaylistBild: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
@@ -235,6 +252,9 @@ class EventResponse(BaseModel):
     bildUrl: str = ""
     bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False
+    spotifyPlaylistUri: str = ""
+    spotifyPlaylistName: str = ""
+    spotifyPlaylistBild: str = ""
     sichtbarkeit: str
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str

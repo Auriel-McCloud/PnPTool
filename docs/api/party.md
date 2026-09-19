@@ -31,9 +31,9 @@ Deshalb ein eigener Bereich statt eine Erweiterung von Fraktionen.
    können in derselben Party stecken.
 4. **Höchstens eine Party pro Kampagne ist "aktiv"** — die gerade bespielte.
    Aktivieren einer Party deaktiviert automatisch alle anderen. Die aktive
-   Party ist als Grundlage für die geplante Musik-Anbindung gedacht: ihr
-   Aufenthaltsort soll später die passende Playlist auf dem Yamaha
-   RX-V4A/MusicCast auslösen (Spotify-Integration selbst noch nicht gebaut).
+   Party löst — sobald sie einen Aufenthaltsort mit hinterlegter Playlist
+   hat — automatisch die Spotify-Wiedergabe aus (siehe
+   `docs/api/spotify.md`).
 
 ---
 
@@ -104,13 +104,17 @@ Entfernt eine Person aus der Party, ohne sie einer neuen zuzuordnen.
 ```
 
 `zielKind` ist `"Ort"` oder `"Event"`. Mit `{ "zielId": null }` wird der
-Aufenthaltsort gelöst — die Party gilt dann als "unterwegs".
+Aufenthaltsort gelöst — die Party gilt dann als "unterwegs". Ist diese
+Party aktiv, löst der neue Aufenthaltsort automatisch die Spotify-Playlist
+aus, die dort hinterlegt ist (siehe `docs/api/spotify.md`); die Antwort
+trägt dann ein `musikHinweis`-Feld mit dem Ergebnis.
 
 ### POST `/{party_id}/aktivieren` — **Nur SL**
 
 Macht diese Party zur aktiven. **Alle anderen Partys der Kampagne werden
 serverseitig automatisch deaktiviert** — dieselbe Exklusivität wie bei einem
-laufenden Kampf.
+laufenden Kampf. Hat die Party bereits einen Aufenthaltsort, startet gleich
+dessen Playlist; die Antwort trägt dann `musikHinweis`.
 
 ### POST `/{party_id}/deaktivieren` — **Nur SL**
 
@@ -163,10 +167,13 @@ GM/ALLE/SPEZIFISCH-Modell.
 - **Inventar-Erweiterung:** Marks Idee, Party-Mitgliedern gegenseitig
   Gegenstände geben zu können (aktuell nur die SL darf Besitzer wechseln).
   Bewusst als Phase 2 zurückgestellt, damit die Grundfunktion nicht ausufert.
-- **Spotify/MusicCast-Anbindung:** die aktive Party + ihr Aufenthaltsort
-  sind die Datengrundlage, aber die eigentliche Musiksteuerung existiert im
-  Tool noch nicht (siehe `CLAUDE.md`, geplante Features).
 - **Party-Anzeige am Ort/Event selbst:** momentan sieht man den
   Aufenthaltsort nur von der Party-Kachel aus, nicht umgekehrt vom
   Ort-Detail-Popup ("welche Party ist gerade hier"). Naheliegende
   Ergänzung, noch nicht gebaut.
+
+## Spotify/MusicCast-Anbindung (19.09.2026, gebaut)
+
+Aktivieren einer Party mit gesetztem Aufenthaltsort — oder das Setzen eines
+neuen Aufenthaltsorts an der aktiven Party — startet automatisch die dort
+hinterlegte Spotify-Playlist. Details: [[../../docs/api/spotify.md]].

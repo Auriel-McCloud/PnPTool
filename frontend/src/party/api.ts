@@ -30,6 +30,8 @@ export interface Party {
   aufenthaltsortKind: string | null;
   sichtbarkeit: string;
   sichtbarFuer: string[];
+  /** Nur nach aktivieren()/aufenthaltsortSetzen() gesetzt — Spotify-Rückmeldung. */
+  musikHinweis?: string | null;
 }
 
 export type PartyEingabe = Partial<Pick<Party, "name" | "beschreibung" | "notizen" | "sichtbarkeit" | "sichtbarFuer">>;

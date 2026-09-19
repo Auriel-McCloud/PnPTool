@@ -52,11 +52,14 @@ vorgesehen ist.
 
 Der Auslöser für die Aktiv-Exklusivität war nicht reine Übersichtlichkeit,
 sondern eine konkrete Zukunftsanbindung: Mark plant Spotify über die Yamaha
-RX-V4A/MusicCast-Anlage, mit einer Playlist pro Szene/Ort (siehe `CLAUDE.md`,
-geplante Features, Punkt 4). Die aktive Party trägt ihren Aufenthaltsort —
-das ist die Datengrundlage, aus der später "welche Musik läuft gerade"
-abgeleitet werden kann. Die Musiksteuerung selbst existiert noch nicht, nur
-das Datenmodell ist vorbereitet.
+RX-V4A/MusicCast-Anlage, mit einer Playlist pro Szene/Ort. Die aktive Party
+trägt ihren Aufenthaltsort — das ist die Datengrundlage, aus der später
+"welche Musik läuft gerade" abgeleitet werden kann. **Am 19.09.2026
+umgesetzt** — siehe [[../../api/spotify.md]]: Aktivieren einer Party mit
+gesetztem Aufenthaltsort (oder das Setzen eines neuen Aufenthaltsorts an der
+aktiven Party) startet automatisch die dort hinterlegte Playlist auf Marks
+gerade aktivem Spotify-Gerät. Kein Yamaha-Direktzugriff — Spotify Connect
+übernimmt Geräteauswahl/Lautstärke, Mark steuert das am Handy selbst.
 
 ## Datenmodell
 
@@ -93,7 +96,6 @@ Wunsch, die Party nicht erst leer anzulegen und dann separat zu füllen.
   bewusst nicht Teil dieser ersten Fassung, um sie nicht ausufern zu lassen.
 - **Party-Anzeige am Ort/Event-Popup** — momentan nur von der Party-Kachel
   aus sichtbar, nicht umgekehrt.
-- Spotify/MusicCast-Steuerung selbst.
 
 ## Siehe auch
 

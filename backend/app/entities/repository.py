@@ -46,8 +46,10 @@ _BOGEN_FELDER = [
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
 PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
-ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
-EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
+# spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
+# Wechsel der aktiven Party an diesen Ort startet.
+ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
+EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder", "istEntwurf", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
 # Fraktion: Organisationen, Konzerne, Gangs — was sie wollen (ziele) und
 # womit sie es durchsetzen (ressourcen) sind eigene Felder statt Freitext in
 # notes, weil beides regelmäßig getrennt abgefragt wird ("was plant die
@@ -90,6 +92,11 @@ _BOGEN_DEFAULTS: dict = {
     "bilder": [],
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe
     "istEntwurf": False,
+    # Spotify: Bestandsdaten (Orte/Events vor dieser Funktion) kennen die
+    # Felder noch nicht.
+    "spotifyPlaylistUri": "",
+    "spotifyPlaylistName": "",
+    "spotifyPlaylistBild": "",
     # Fraktion: Ziele/Ressourcen sind neu, Bestandsdaten kennen sie nicht.
     # ziele und ressourcen sind Listen von {titel, beschreibung}.
     "ziele": [],

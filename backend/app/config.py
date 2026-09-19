@@ -28,6 +28,21 @@ class Settings(BaseSettings):
     # "gemini" oder "mistral". Umschaltbar ohne Code-Änderung.
     ki_provider: str = "gemini"
 
+    # Spotify Web API — globale Anbindung (ein Konto fürs ganze Tool, nicht
+    # pro Kampagne). client_id/secret kommen aus dem Spotify-Dashboard, die
+    # eigentliche Nutzerverbindung (Refresh-Token) liegt in Neo4j
+    # (SpotifyKonto-Knoten, siehe app/spotify/repository.py), nicht hier —
+    # sie entsteht erst durch den Verbinden-Knopf in der Oberflaeche.
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
+    # Muss exakt mit der im Spotify-Dashboard eingetragenen Redirect-URI
+    # uebereinstimmen. Spotify verlangt seit 2025 eine explizite Loopback-IP
+    # statt "localhost" — deshalb 127.0.0.1, nicht localhost.
+    spotify_redirect_uri: str = "http://127.0.0.1:8001/api/spotify/callback"
+    # Wohin nach dem Spotify-Login zurueckgeleitet wird (das Frontend, nicht
+    # die API). Fuer Marks Standard-Setup der Vite-Dev-Server.
+    frontend_base_url: str = "http://localhost:5173"
+
     cors_origins: list[str] = ["http://localhost:5173", "http://192.168.178.21:5173"]
 
 

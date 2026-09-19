@@ -1,0 +1,1 @@
+CREATE CONSTRAINT spotifykonto_id IF NOT EXISTS FOR (n:SpotifyKonto) REQUIRE n.id IS UNIQUE;

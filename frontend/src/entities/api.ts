@@ -36,6 +36,10 @@ export interface Ort extends VisibilityFields {
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
+  /** Spotify-Playlist dieses Ortes — startet, wenn die aktive Party hier ist. */
+  spotifyPlaylistUri?: string;
+  spotifyPlaylistName?: string;
+  spotifyPlaylistBild?: string;
 }
 
 export interface Event extends VisibilityFields {
@@ -49,6 +53,10 @@ export interface Event extends VisibilityFields {
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
+  /** Spotify-Playlist dieses Events — startet, wenn die aktive Party hier ist. */
+  spotifyPlaylistUri?: string;
+  spotifyPlaylistName?: string;
+  spotifyPlaylistBild?: string;
 }
 
 export interface KurzLangEintrag {

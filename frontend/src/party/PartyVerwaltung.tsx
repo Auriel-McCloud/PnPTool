@@ -474,6 +474,7 @@ function PartyFenster({
   const [ziel, setZiel] = useState(
     party.aufenthaltsortId ? `${party.aufenthaltsortKind}:${party.aufenthaltsortId}` : "",
   );
+  const [musikHinweis, setMusikHinweis] = useState<string | null>(null);
 
   // Wer noch keiner Party angehört, oder aktuell dieser hier — die Auswahl
   // soll niemanden zeigen, der bereits woanders Mitglied ist, sonst wirkt
@@ -523,20 +524,25 @@ function PartyFenster({
 
   async function aufenthaltsortSpeichern(neuesZiel: string) {
     setZiel(neuesZiel);
+    setMusikHinweis(null);
+    let ergebnis: Party;
     if (!neuesZiel) {
-      await partyApi.aufenthaltsortSetzen(campaignId, party.id, null, null);
+      ergebnis = await partyApi.aufenthaltsortSetzen(campaignId, party.id, null, null);
     } else {
       const [kind, id] = neuesZiel.split(":");
-      await partyApi.aufenthaltsortSetzen(campaignId, party.id, id, kind as "Ort" | "Event");
+      ergebnis = await partyApi.aufenthaltsortSetzen(campaignId, party.id, id, kind as "Ort" | "Event");
     }
+    if (ergebnis.musikHinweis) setMusikHinweis(ergebnis.musikHinweis);
     onGeaendert();
   }
 
   async function aktivSchalten() {
+    setMusikHinweis(null);
     if (party.aktiv) {
       await partyApi.deaktivieren(campaignId, party.id);
     } else {
-      await partyApi.aktivieren(campaignId, party.id);
+      const ergebnis = await partyApi.aktivieren(campaignId, party.id);
+      if (ergebnis.musikHinweis) setMusikHinweis(ergebnis.musikHinweis);
     }
     onGeaendert();
   }
@@ -565,6 +571,7 @@ function PartyFenster({
         >
           {party.aktiv ? "★ Aktive Party" : "☆ Als aktive Party festlegen"}
         </button>
+        {musikHinweis && <p className="pt-hinweis">{musikHinweis}</p>}
 
         <section>
           <h3 style={{ margin: "10px 0 6px" }}>Mitglieder ({party.mitglieder.length})</h3>

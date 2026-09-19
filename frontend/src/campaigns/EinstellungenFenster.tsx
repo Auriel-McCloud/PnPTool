@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { einstellungenApi, type Einstellungen } from "./einstellungen";
+import { spotifyApi, type SpotifyStatus } from "../spotify/api";
+import "../spotify/spotify.css";
 
 /**
  * Kampagnenweite Spieleinstellungen.
@@ -60,6 +62,8 @@ export function EinstellungenFenster({
   const [werte, setWerte] = useState<Einstellungen | null>(null);
   const [speichert, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [spotifyStatus, setSpotifyStatus] = useState<SpotifyStatus | null>(null);
+  const [spotifyHinweis, setSpotifyHinweis] = useState<string | null>(null);
 
   useEffect(() => {
     if (!offen) return;
@@ -67,7 +71,25 @@ export function EinstellungenFenster({
       .lesen(campaignId)
       .then(setWerte)
       .catch((e) => setFehler(e instanceof Error ? e.message : "Konnte nicht laden"));
+    spotifyApi.status().then(setSpotifyStatus).catch(() => setSpotifyStatus(null));
+
+    // Rücksprung vom Spotify-Login trägt ?spotify=verbunden|fehler in der
+    // Adresse — hier abfangen und die URL wieder säubern, sonst bliebe der
+    // Parameter beim nächsten Neuladen stehen.
+    const params = new URLSearchParams(window.location.search);
+    const ergebnis = params.get("spotify");
+    if (ergebnis) {
+      setSpotifyHinweis(ergebnis === "verbunden" ? "Mit Spotify verbunden." : "Verbindung fehlgeschlagen.");
+      params.delete("spotify");
+      const rest = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
+    }
   }, [campaignId, offen]);
+
+  async function spotifyTrennen() {
+    await spotifyApi.trennen();
+    setSpotifyStatus({ verbunden: false, anzeigename: null });
+  }
 
   async function aendern(feld: string, wert: unknown) {
     if (!werte) return;
@@ -130,6 +152,34 @@ export function EinstellungenFenster({
             titel="Messenger"
             erklaerung="In-World-Chat zwischen Charakteren. Noch im Bau."
           />
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            MUSIK
+          </h4>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+            {spotifyStatus === null && <span style={{ color: "var(--text-leise)", fontSize: 12 }}>Lädt…</span>}
+            {spotifyStatus && !spotifyStatus.verbunden && (
+              <a href="/api/spotify/verbinden" role="button" className="sp-verbinden">
+                🎵 Mit Spotify verbinden
+              </a>
+            )}
+            {spotifyStatus?.verbunden && (
+              <>
+                <span style={{ fontSize: 13 }}>
+                  Verbunden als <strong>{spotifyStatus.anzeigename}</strong>
+                </span>
+                <button type="button" onClick={spotifyTrennen} style={{ color: "var(--signal)" }}>
+                  Trennen
+                </button>
+              </>
+            )}
+          </div>
+          {spotifyHinweis && <p style={{ fontSize: 12, color: "var(--text-leise)" }}>{spotifyHinweis}</p>}
+          <p style={{ fontSize: 11, color: "var(--text-aus)" }}>
+            Ein Konto fürs ganze Tool. Playlists werden an Orten/Events hinterlegt — läuft die aktive Party
+            dort ein, startet die Wiedergabe automatisch auf deinem gerade verbundenen Spotify-Gerät.
+          </p>
 
           {speichert && (
             <p style={{ fontSize: 11, color: "var(--text-aus)", marginTop: 10 }}>speichert…</p>

@@ -10,12 +10,26 @@ from app.party.schemas import (
     PartyResponse,
     PartyUpdate,
 )
+from app.spotify import dienst as spotify_dienst
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/party",
     tags=["party"],
     dependencies=[Depends(require_campaign_zugang)],
 )
+
+
+async def _mit_musik_hinweis(campaign_id: str, party: dict) -> dict:
+    """Löst — wenn diese Party aktiv ist und einen Aufenthaltsort mit
+    hinterlegter Playlist hat — die Spotify-Wiedergabe aus und hängt einen
+    Hinweistext für die SL an (Marks Wunsch: Musik folgt der aktiven Party,
+    siehe docs/api/party.md). Kein Spotify-Fehler blockiert je die
+    eigentliche Party-Aktion — siehe app/spotify/dienst.py."""
+    if party.get("aktiv") and party.get("aufenthaltsortId") and party.get("aufenthaltsortKind"):
+        party["musikHinweis"] = await spotify_dienst.playlist_fuer_ziel_abspielen(
+            campaign_id, party["aufenthaltsortId"], party["aufenthaltsortKind"]
+        )
+    return party
 
 
 def _fuer_viewer(party: dict, viewer: Viewer) -> dict | None:
@@ -107,21 +121,24 @@ async def mitglied_entfernen(campaign_id: str, party_id: str, person_id: str):
 )
 async def aufenthaltsort_setzen(campaign_id: str, party_id: str, body: AufenthaltsortRequest):
     """Ort/Event zuweisen oder (mit leerem Body) lösen — die Party ist dann
-    "unterwegs", ohne festen Aufenthaltsort."""
+    "unterwegs", ohne festen Aufenthaltsort. Ist diese Party aktiv, löst der
+    neue Aufenthaltsort gleich die passende Spotify-Playlist aus."""
     ergebnis = await repository.aufenthaltsort_setzen(campaign_id, party_id, body.zielId, body.zielKind)
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Party oder Ziel nicht gefunden")
-    return ergebnis
+    return await _mit_musik_hinweis(campaign_id, ergebnis)
 
 
 @router.post("/{party_id}/aktivieren", response_model=PartyResponse, dependencies=[Depends(require_campaign_gm)])
 async def aktivieren(campaign_id: str, party_id: str):
     """Macht diese Party zur aktiven — alle anderen der Kampagne werden
-    automatisch deaktiviert (höchstens eine Party ist gleichzeitig aktiv)."""
+    automatisch deaktiviert (höchstens eine Party ist gleichzeitig aktiv).
+    Hat die Party bereits einen Aufenthaltsort, startet gleich dessen
+    Playlist (Musik folgt der aktiven Party, nicht nur ihrem Ortswechsel)."""
     ergebnis = await repository.aktivieren(campaign_id, party_id)
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Party nicht gefunden")
-    return ergebnis
+    return await _mit_musik_hinweis(campaign_id, ergebnis)
 
 
 @router.post("/{party_id}/deaktivieren", response_model=PartyResponse, dependencies=[Depends(require_campaign_gm)])

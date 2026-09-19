@@ -42,6 +42,7 @@ C:\DEV\PnPTool\
 │   │   ├── ruestung.md       — Kästchen + Schadensreduktion (NEU 10.09.2026, Reduktion statt Durchlass 18.09.2026)
 │   │   ├── rassen.md         — Baukasten, Balance, Freigabe (NEU 11.09.2026)
 │   │   ├── party.md          — Gruppen, Mitgliedschaft, aktive Party (NEU 18.09.2026)
+│   │   ├── spotify.md        — Playlist an Ort/Event, Musik folgt aktiver Party (NEU 19.09.2026)
 │   │   ├── personen.md       — PCs/NPCs, Attribute, Cyberware
 │   │   ├── wiki.md           — Seiten, Freigaben
 │   │   ├── entitaeten.md     — Orte, Gegenstände, Fraktionen
@@ -60,6 +61,7 @@ C:\DEV\PnPTool\
 │   │   ├── kampf/            — Rundenkampf
 │   │   ├── wiki/             — Weltenbau
 │   │   ├── party/            — Gruppen, Mitgliedschaft, aktive Party
+│   │   ├── spotify/          — Musik: OAuth, Playlist-Suche, Wiedergabe
 │   │   └── items/, traits/   — Gegenstände, Charakterwerte
 │   └── scripts/create_gm.py
 └── frontend/
@@ -102,6 +104,7 @@ npm run dev
 | Themes | ✅ | Zwei Themes, Token-basiert |
 | Rüstung | ✅ | Kästchen + Schadensreduktion, siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
+| Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
 **Zuletzt gebaut (10.09.2026):**
 - **Rüstungssystem: Kästchen + Durchlass** — Rüstung nutzt sich im Kampf ab,
@@ -134,12 +137,24 @@ npm run dev
 - Mitteilungen ausblenden (✕ Button, pro Person)
 - API-Dokumentation (`docs/api/`)
 
-**Offen:** Shop-System, KI-Integration, Spotify/MusicCast, Deploy,
+**Offen:** Shop-System, KI-Integration (erste Iteration gebaut), Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
 erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
+
+**Zuletzt gebaut (19.09.2026):**
+- **Spotify-Anbindung** — Orte und Events können eine Spotify-Playlist
+  hinterlegen (Such-Popup, gleiches Muster wie `wiki/VerweisWaehler.tsx`).
+  Läuft die aktive Party dort ein (Aufenthaltsort setzen oder eine Party mit
+  bereits gesetztem Ort aktivieren), startet die Wiedergabe automatisch auf
+  Marks gerade aktivem Spotify-Gerät — Zielgerät/Lautstärke wählt er selbst
+  am Handy per Spotify Connect, das Tool greift dort nicht ein. Daneben ein
+  manueller „▶"-Fallback-Knopf am Ort/Event. Ein Konto fürs ganze Tool
+  (kein Kampagnenbezug), Verbinden/Trennen in den Kampagnen-Einstellungen.
+  Kein Spotify-Fehler blockiert je die Party-Aktion selbst — nur ein
+  Hinweistext meldet Erfolg/Grund. Details: `docs/api/spotify.md`
 
 **Zuletzt gebaut (18.09.2026):**
 - **Party-Feature** — wieder aufgegriffene Vision vom 28.08.2026 (war beim

@@ -35,6 +35,8 @@ from app.mitteilungen.routes import ws_router as mitteilungen_ws_router
 from app.regelsysteme.routes import router as regelsysteme_router
 from app.regelsysteme.repository import seed_neotopia
 from app.ki.routes import router as ki_router
+from app.spotify.routes import router as spotify_router
+from app.spotify.routes import campaign_router as spotify_campaign_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -94,6 +96,8 @@ app.include_router(mitteilungen_router)
 app.include_router(mitteilungen_ws_router)
 app.include_router(regelsysteme_router)
 app.include_router(ki_router)
+app.include_router(spotify_router)
+app.include_router(spotify_campaign_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

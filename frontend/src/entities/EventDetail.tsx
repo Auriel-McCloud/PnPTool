@@ -8,6 +8,7 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
+import { PlaylistFeld } from "../spotify/PlaylistFeld";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs, NPCs und Orten
 
@@ -172,6 +173,18 @@ export function EventDetail({
                   onChange={(m, f) => speichere({ notizenSichtbarkeit: m, notizenSichtbarFuer: f })}
                   pcOptions={pcOptions}
                 />
+
+                <div style={{ marginTop: 12 }}>
+                  <PlaylistFeld
+                    campaignId={campaignId}
+                    zielId={event.id}
+                    zielKind="Event"
+                    playlistUri={event.spotifyPlaylistUri ?? ""}
+                    playlistName={event.spotifyPlaylistName ?? ""}
+                    playlistBild={event.spotifyPlaylistBild ?? ""}
+                    onGeaendert={speichere}
+                  />
+                </div>
 
                 <div className="pcd-buttons" style={{ marginTop: 12 }}>
                   <button type="button" onClick={() => setUnteransicht("beschreibung")}>

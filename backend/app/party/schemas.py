@@ -65,3 +65,7 @@ class PartyResponse(BaseModel):
     aufenthaltsortKind: str | None = None
     sichtbarkeit: str
     sichtbarFuer: list[str]
+    # Nur in der Antwort von aktivieren()/aufenthaltsort_setzen() gesetzt —
+    # meldet der SL, ob/was Spotify getan hat (siehe app/spotify/dienst.py).
+    # Kein persistiertes Feld, deshalb kein Default-Handling im Repository nötig.
+    musikHinweis: str | None = None

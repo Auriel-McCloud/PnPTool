@@ -61,10 +61,13 @@ Orte sind hierarchisch: Stadtteil → Gebäude → Räume.
 (:Ort {ortTyp: "raum", name: "Hinterzimmer"})
 ```
 
-### Szenen & Musik (geplant)
+### Szenen & Musik (19.09.2026, gebaut)
 
-> Mark plant: Orte/Szenen bekommen eine Spotify-Playlist. Beim Wechsel zu
-> diesem Ort startet die Musik automatisch auf dem Yamaha RX-V4A (MusicCast).
+Orte und Events können eine Spotify-Playlist hinterlegen
+(`spotifyPlaylistUri/Name/Bild`). Läuft die aktive Party hier ein, startet
+die Wiedergabe automatisch auf dem gerade aktiven Spotify-Gerät (Connect —
+Mark wählt Zielgerät/Lautstärke selbst am Handy). Details:
+[[../../docs/api/spotify.md]].
 
 ---
 
