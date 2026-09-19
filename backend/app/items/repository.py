@@ -344,6 +344,28 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
 
     driver = get_driver()
+
+    # Rüstung wird erstmals aktiviert (Max von 0 auf >0 gesetzt, z.B. beim
+    # Ausfüllen des Bearbeiten-Formulars für ein frisch angelegtes Stück) —
+    # dann muss Aktuell mitziehen, sonst bleibt es beim alten Default 0 und
+    # die Rüstung gilt sofort als "zerschossen" (siehe routes.py, die
+    # 409-Sperre gegen Wiederanlegen), obwohl sie nie getroffen wurde.
+    # `create_gegenstand` zieht das beim Anlegen schon nach; hier fehlte das
+    # Gegenstück fürs spätere Ausfüllen über PATCH. Nur wenn der Aufrufer
+    # nicht selbst ausdrücklich einen Aktuell-Wert mitschickt UND das Feld
+    # bisher 0 war (das System also gerade erst "angeht") wird nachgezogen —
+    # eine bereits beschädigte Rüstung, deren Max angepasst wird, bleibt
+    # unangetastet.
+    braucht_kaestchen_nachzug = "ruestungKaestchenMax" in changed and "ruestungKaestchenAktuell" not in changed
+    braucht_durchlass_nachzug = "ruestungDurchlassBasis" in changed and "ruestungDurchlassAktuell" not in changed
+    if braucht_kaestchen_nachzug or braucht_durchlass_nachzug:
+        bisheriges = await get_gegenstand(campaign_id, item_id)
+        war_inaktiv = bool(bisheriges) and bisheriges.get("ruestungKaestchenMax", 0) == 0
+        if braucht_kaestchen_nachzug and war_inaktiv:
+            changed["ruestungKaestchenAktuell"] = changed["ruestungKaestchenMax"]
+        if braucht_durchlass_nachzug and war_inaktiv:
+            changed["ruestungDurchlassAktuell"] = changed["ruestungDurchlassBasis"]
+
     if not changed:
         query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
         async with driver.session() as session:
