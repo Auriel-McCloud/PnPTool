@@ -556,3 +556,20 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      - Edge TTS: Kostenlos, gute Qualität, viele Stimmen
      - **Hybrid:** Edge für Standard, ElevenLabs für wichtige Momente
      - Gegenstände reden WIRKLICH mit den Spielern!
+
+11. **Charakterportrait im Spieler-Menü** — Spieler sehen aktuell kein
+    Charakterportrait und haben keine Möglichkeit, eines festzulegen.
+    Geplant: eigenes Popup "Neues Bild" (Commlink-Stil, wie gewohnt) mit
+    4 Optionen zur Auswahl:
+    1. Bild hochladen
+    2. Foto machen (Kamera)
+    3. Zeichentool
+    4. KI-Beschreibung → generiert Bild
+    Status: nur notiert, noch nicht entschieden/gebaut.
+
+12. **Steckbrief nachträglich bearbeiten** — Konzept, Ambition, Verlangen
+    und Ziel (`Charaktererstellung.tsx`) werden nur bei der Erstellung
+    gesetzt und im Charakterblatt (`Steckbrief`-Komponente) nur read-only
+    angezeigt. Spieler haben danach keine Möglichkeit, diese Felder zu
+    ändern. Braucht irgendwo eine Bearbeiten-Funktion (Popup-Stil).
+    Status: nur notiert, noch nicht entschieden/gebaut.
