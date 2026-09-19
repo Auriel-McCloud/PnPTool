@@ -70,6 +70,22 @@ teilweise-umgesetzt**, wartet auf Hardware-Skill-Check bzw. Shop-System.
 4. Pool-Regel für mehrere Teile, Verbrauchsreihenfolge nach Durchlass
 5. Suspensorium-Missbrauch identifiziert und durch Reihenfolge selbst gelöst
 6. Zerstörungs-/Wiederanlegen-Sperre ergänzt
+7. **18.09.2026 — Bug: frisch aktivierte Rüstung ließ sich nicht ausrüsten.**
+   Mark: neuen Gegenstand angelegt, im Bearbeiten-Formular zu einer Rüstung
+   gemacht (Typ + `ruestungKaestchenMax` gesetzt) — landete beim Anlegen aber
+   immer im Mitgeführten, egal als SL oder Spieler versucht. Ursache:
+   `create_gegenstand` zieht `ruestungKaestchenAktuell` auf `Max` nach, wenn
+   nicht ausdrücklich anders angegeben — das Bearbeiten-Formular geht aber
+   über `PATCH` (`update_gegenstand`), und dort fehlte dieses Nachziehen
+   komplett. `ruestungKaestchenAktuell` blieb beim alten Default `0` stehen,
+   womit die Wiederanlegen-Sperre (Punkt 6 oben) die frische, nie getroffene
+   Rüstung fälschlich als „zerschossen" behandelte. Fix in
+   `items/repository.py::update_gegenstand`: zieht `Aktuell` jetzt ebenfalls
+   nach — aber **nur** wenn das Stück vorher `ruestungKaestchenMax == 0`
+   hatte (das System also gerade erst aktiviert wird), nicht wenn eine
+   bereits aktive, beschädigte Rüstung nachträglich bearbeitet wird (sonst
+   würde jedes Umbenennen sie heimlich reparieren). Mit zwei Gegenproben
+   gegen die echte Kampagne verifiziert, kein Testgegenstand hinterlassen.
 
 ## Siehe auch
 

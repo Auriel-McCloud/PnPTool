@@ -119,3 +119,23 @@ Verschieben von Logik nötig, reines Duplikat-Löschen.
 `docs/wiki/entities/ui-konzept-commlink.md` um neuen Abschnitt
 „Kampagnenweite Einstellungen — ein Ort, nicht zwei" ergänzt, `CLAUDE.md`
 Stand-Sektion (18.09.2026) nachgezogen.
+
+## [2026-09-18] update | Bug: frisch aktivierte Rüstung nicht ausrüstbar
+
+Mark: neuen Gegenstand erstellt, im Bearbeiten-Formular zur Rüstung gemacht,
+landete beim Ausrüsten immer im Mitgeführten (SL und Spieler gleichermaßen).
+Ursache gefunden: `create_gegenstand` zieht `ruestungKaestchenAktuell` auf
+`Max` nach, `update_gegenstand` (der PATCH-Pfad des Bearbeiten-Formulars)
+tat das nicht — die 409-Wiederanlegen-Sperre gegen zerschossene Rüstung
+(siehe `docs/wiki/concepts/ruestung-kaestchen-durchlass.md` Punkt 6) griff
+dadurch bei jeder frisch aktivierten Rüstung sofort, obwohl nie getroffen.
+
+Fix in `backend/app/items/repository.py::update_gegenstand`: zieht
+`ruestungKaestchenAktuell`/`ruestungDurchlassAktuell` nach, aber nur wenn das
+Stück vorher `ruestungKaestchenMax == 0` hatte — bereits aktive, beschädigte
+Rüstung bleibt beim Bearbeiten anderer Felder unangetastet (durch zwei
+Gegenproben gegen die echte Kampagne bestätigt, testgegenstände wieder
+gelöscht, kein Unittest ergänzt mangels DB-Fixture im bestehenden Testmuster).
+
+`docs/wiki/concepts/ruestung-kaestchen-durchlass.md` Punkt 7 und `CLAUDE.md`
+nachgezogen.

@@ -182,6 +182,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   (`EinstellungenFenster.tsx`, über die Werkzeugleiste erreichbar). Der
   Schalter im Zugangs-Menü hatte dort nichts zu suchen und ist raus; der im
   Einstellungen-Fenster bleibt die einzige Stelle.
+- **Frisch aktivierte Rüstung ließ sich nicht ausrüsten** — neuer
+  Gegenstand, im Bearbeiten-Formular zur Rüstung gemacht, landete immer im
+  Mitgeführten. `update_gegenstand` (PATCH) zog `ruestungKaestchenAktuell`
+  anders als `create_gegenstand` nicht auf `Max` nach, blieb bei 0 stehen —
+  die 409-Sperre gegen zerschossene Rüstung griff dadurch sofort bei jedem
+  frisch aktivierten Stück. Fix zieht jetzt nach, aber nur beim Übergang von
+  `Max == 0`, nicht bei bereits aktiver (evtl. beschädigter) Rüstung. Details:
+  `docs/wiki/concepts/ruestung-kaestchen-durchlass.md` Punkt 7
 
 **Zuletzt behoben (15.09.2026):**
 - **Charakterblatt-Ladefehler:** `KeyError: 'ruleset'` — nach dem Umbau auf
