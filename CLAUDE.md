@@ -447,6 +447,11 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      die Rückfrage, einer mit 5 schon. Zahlenpad für Willenskraft jetzt
      ebenfalls gesperrt, echter `willenskraftWeiterschalten`-Handler auch in
      der Vollansicht durchgereicht
+   - **Rüstungstreffer hatte noch die alte Optik** (rohes
+     `<input type="number">` mit Systemtastatur statt Zahlenpad) — Mark
+     selbst am System gefunden. Zahlenpad aus `ZustandFenster.tsx` nach
+     `frontend/src/shell/Zahlenpad.tsx` extrahiert, jetzt von beiden
+     Fenstern verwendet
    - Details: `docs/wiki/concepts/attribute-und-fertigkeiten.md`
 
 10. **KI-Chatbots für Gegenstände** — Zwei Typen:

@@ -93,3 +93,14 @@ Python — nicht im Browser durchgeklickt (Login-Automatisierung nicht
 abgeschlossen), Mark sollte am Tisch nochmal gegenprüfen.
 `docs/wiki/concepts/attribute-und-fertigkeiten.md` und `CLAUDE.md` Punkt 9
 nachgezogen (Status offen → fertig, mit Datum).
+
+## [2026-09-18] update | Rüstungstreffer-Zahleneingabe vereinheitlicht
+
+Mark hat beim Gegenprüfen des Kästchen-Overflow-Fixes selbst einen vierten
+Punkt gefunden (mit Screenshots belegt): der „⚡ Treffer eintragen"-Knopf
+(Rüstungsrechnung) hatte noch ein rohes `<input type="number">` für die
+Stärke, optisch inkonsistent zum neuen Zahlenpad in Gesundheit/Willenskraft.
+Fix: `frontend/src/shell/Zahlenpad.tsx` — den Ziffernblock aus
+`ZustandFenster.tsx` als eigene Komponente extrahiert, jetzt in beiden
+Fenstern verwendet. `docs/wiki/concepts/attribute-und-fertigkeiten.md`
+nachgezogen.

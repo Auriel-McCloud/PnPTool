@@ -84,6 +84,12 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
     Charakter mit hoher Willenskraft bekam die Rückfrage nie, einer mit
     niedriger schon. Jetzt läuft auch die Vollansicht über den echten
     Klick-Handler mit Rückfrage.
+  - **Nachtrag (von Mark selbst am System gefunden):** der separate
+    „⚡ Treffer eintragen"-Knopf (Rüstungsrechnung, `RuestungsTreffer.tsx`)
+    hatte noch ein rohes `<input type="number">` für die Stärke — eigene
+    Optik, Systemtastatur statt Zahlenpad. Jetzt gemeinsame Komponente
+    `frontend/src/shell/Zahlenpad.tsx`, aus `ZustandFenster` extrahiert und
+    in beiden Fenstern verwendet.
 
 ## Widerspruch mit veralteten Docs
 
