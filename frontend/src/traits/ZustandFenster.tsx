@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
+import { Zahlenpad } from "../shell/Zahlenpad";
 import { Kaestchen, type Schadensart } from "./Kaestchen";
 import "./zustandfenster.css";
 
@@ -110,11 +111,6 @@ export function ZustandFenster({
     }
   }
 
-  function ziffer(z: string) {
-    // Zweistellig reicht: mehr Kästchen hat keine Leiste.
-    setEingabe((alt) => (alt.length >= 2 ? alt : (alt + z).replace(/^0+(?=\d)/, "")));
-  }
-
   return (
     <Fenster
       offen={offen}
@@ -156,27 +152,13 @@ export function ZustandFenster({
         </div>
 
         {(schadenErlaubt || heilenErlaubt) && (
-          <div className="zf-padzeile">
-            <div className="zf-pad">
-              {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((z) => (
-                <button key={z} type="button" onClick={() => ziffer(z)}>
-                  {z}
-                </button>
-              ))}
-              <button type="button" onClick={() => ziffer("0")}>
-                0
-              </button>
-              <button type="button" onClick={() => setEingabe((a) => a.slice(0, -1))}>
-                ⌫
-              </button>
-              <button type="button" onClick={() => setEingabe("")}>
-                C
-              </button>
-            </div>
-            <div className="zf-anzeige" aria-live="polite">
-              {eingabe || "0"}
-            </div>
-          </div>
+          <Zahlenpad
+            wert={eingabe}
+            ton={ton}
+            onZiffer={(z) => setEingabe((alt) => (alt.length >= 2 ? alt : (alt + z).replace(/^0+(?=\d)/, "")))}
+            onLoeschen={() => setEingabe((a) => a.slice(0, -1))}
+            onAlleLoeschen={() => setEingabe("")}
+          />
         )}
 
         {nachArt && schadenErlaubt && (

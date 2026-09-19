@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { RuestungsArt } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { Zahlenpad } from "../shell/Zahlenpad";
 import { bogenApi, type RuestungTrefferErgebnis } from "../traits/bogenApi";
 
 /**
@@ -42,7 +43,11 @@ export function RuestungsTreffer({
   onAngewendet: () => void | Promise<void>;
 }) {
   const [art, setArt] = useState<RuestungsArt>("schlag");
-  const [staerke, setStaerke] = useState(1);
+  // Als Zeichenkette geführt wie in ZustandFenster (Zahlenpad statt
+  // Systemtastatur) — vorher stand hier ein rohes <input type="number">,
+  // das je nach Gerät die Systemtastatur samt Spinner-Pfeilen aufklappte
+  // und optisch nicht zu den übrigen Zahlen-Eingaben im Tool passte.
+  const [staerkeEingabe, setStaerkeEingabe] = useState("1");
   const [laeuft, setLaeuft] = useState(false);
   const [ergebnis, setErgebnis] = useState<RuestungTrefferErgebnis | null>(null);
 
@@ -51,10 +56,12 @@ export function RuestungsTreffer({
   useEffect(() => {
     if (offen) {
       setArt("schlag");
-      setStaerke(1);
+      setStaerkeEingabe("1");
       setErgebnis(null);
     }
   }, [offen]);
+
+  const staerke = Number(staerkeEingabe) || 0;
 
   async function anwenden() {
     setLaeuft(true);
@@ -98,16 +105,17 @@ export function RuestungsTreffer({
           </div>
         </div>
 
-        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.9em" }}>
-          Stärke
-          <input
-            type="number"
-            min={0}
-            value={staerke}
-            onChange={(e) => setStaerke(Math.max(0, Number(e.target.value)))}
-            style={{ width: 70 }}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ fontSize: "0.9em", color: "var(--text-leise)" }}>Stärke</span>
+          <Zahlenpad
+            wert={staerkeEingabe}
+            onZiffer={(z) =>
+              setStaerkeEingabe((alt) => (alt.length >= 2 ? alt : (alt + z).replace(/^0+(?=\d)/, "")))
+            }
+            onLoeschen={() => setStaerkeEingabe((a) => a.slice(0, -1))}
+            onAlleLoeschen={() => setStaerkeEingabe("")}
           />
-        </label>
+        </div>
 
         <button type="button" onClick={anwenden} disabled={laeuft} style={{ fontWeight: 600 }}>
           Treffer anwenden

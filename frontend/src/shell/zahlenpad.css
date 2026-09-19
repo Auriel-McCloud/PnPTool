@@ -1,0 +1,37 @@
+/* Eigenes Zahlenpad statt Systemtastatur (Marks Vorgabe): die
+   Bildschirmtastatur frisst am Tablet den halben Schirm und schiebt das
+   Fenster weg. Knöpfe in Daumengrösse, Anzeige in der Leitfarbe des
+   Aufrufers über --zp-ton. */
+
+.zp-padzeile {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.zp-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 174px;
+  flex: none;
+}
+
+.zp-pad button {
+  padding: 11px 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.zp-anzeige {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  color: var(--zp-ton, var(--text));
+}
