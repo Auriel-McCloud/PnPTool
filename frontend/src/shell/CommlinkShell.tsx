@@ -239,8 +239,16 @@ export function CommlinkShell({
   );
 }
 
+/** Dauer der Störung; muss zur Animation in commlink.css passen. */
+const STOERUNG_MS = 1600;
+
 /**
  * Seltenes Neonflackern (alle 5–10 Minuten, zufällig).
+ *
+ * Sieht aus wie ein alter Fernseher mit Empfangsproblemen: mehrere Schübe
+ * aus Schwarz-Weiß-Bildrauschen ("Ameisenkrieg") legen sich kurz über den
+ * Schirm, während das Bild darunter verzerrt durchscheint (CSS-Modul
+ * commlink.css, Keyframes cl-flackern/cl-rauschen).
  *
  * Absichtlich selten: als Dauereffekt wäre es Belästigung statt Atmosphäre.
  * Wer Bewegung im System abgestellt hat, bekommt es gar nicht — Geflacker
@@ -257,7 +265,7 @@ function Stoerung() {
       const minuten = 5 + Math.random() * 5;
       timer.current = window.setTimeout(() => {
         setAktiv(true);
-        window.setTimeout(() => setAktiv(false), 500);
+        window.setTimeout(() => setAktiv(false), STOERUNG_MS);
         planen();
       }, minuten * 60_000);
     };
