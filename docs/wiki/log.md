@@ -224,3 +224,15 @@ Spotify-Punkt bei geplanten Features verlinkt).
 **Bewusst zurückgestellt (Phase 2):** Marks Inventar-Idee (Party-Mitgliedern
 gegenseitig Gegenstände geben können) — eigenes, unabhängiges Feature mit
 neuer Berechtigungsregel, sollte Phase 1 nicht aufblähen.
+
+## [2026-09-18] update | Anlegen-Popup statt Inline-Formular
+
+Mark hatte den fertigen Bereich getestet und bemängelt: "es ist leider
+nicht im Stil vom Rest, bitte mache den party anlege button so das ein
+popup aufgeht das nach dem namen fragt, vielleicht kann man in dem popup
+auch gleich angeben wer in der Party ist" — Verstoß gegen die UI-
+Konvention (Dialoge/Listen-Bearbeitung immer als Commlink-Popup, nie
+Inline-Formular). Fix nach dem Muster von `rassen/RassenUebersicht.tsx`
+(dort schon korrekt umgesetzt): "+ Neue Party" öffnet jetzt ein
+`Fenster`-Popup mit Namensfeld und einer Checkbox-Liste aller Personen zur
+Sofortauswahl, statt eines Inline-`<form>` auf der Übersichtsseite.

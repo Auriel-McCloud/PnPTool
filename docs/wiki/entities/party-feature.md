@@ -78,6 +78,14 @@ nach demselben Muster wie Begleiter/Rassen: Kachelraster mit
 Party-Kacheln (aktive Party leuchtet in der Leitfarbe), Fenster zum
 Bearbeiten mit Mitglieder-Verwaltung und Aufenthaltsort-Dropdown.
 
+**Anlegen als Popup, nicht Inline** (18.09.2026, Mark: "es ist leider nicht
+im Stil vom Rest" — Erstfassung hatte ein Inline-Formular auf der
+Übersichtsseite, gegen die Konvention "alle Dialoge als gestylte
+Commlink-Popups, nie native Browser-Dialoge oder Inline-Formulare"): der
+"+ Neue Party"-Knopf öffnet jetzt ein `Fenster`-Popup mit Namensfeld **und
+gleich einer Checkbox-Liste aller Personen** zur Sofort-Zuordnung — Marks
+Wunsch, die Party nicht erst leer anzulegen und dann separat zu füllen.
+
 ## Offen (Phase 2, bewusst zurückgestellt)
 
 - **Inventar-Erweiterung**: Marks Idee, Party-Mitgliedern gegenseitig
