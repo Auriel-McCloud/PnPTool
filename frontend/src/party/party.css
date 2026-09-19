@@ -15,6 +15,12 @@
   gap: 10px;
 }
 
+.pt-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .pt-label {
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -37,6 +43,33 @@
   margin: 6px 0 0;
   font-size: 12px;
   color: var(--text-aus);
+}
+
+/* Auswahlliste im Anlegen-Popup: Personen als Checkbox-Zeilen statt eines
+   Mehrfachauswahl-<select>, das am Tablet unbedienbar wäre. */
+.pt-auswahl-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+
+.pt-auswahl-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pt-auswahl-zeile:hover {
+  background: var(--flaeche-hoch);
 }
 
 /* Die aktive Party leuchtet in der Leitfarbe — dieselbe Bedeutung wie ein

@@ -27,7 +27,7 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
   const [events, setEvents] = useState<EntitiesEvent[]>([]);
   const [laden, setLaden] = useState(true);
   const [offen, setOffen] = useState<Party | null>(null);
-  const [neuName, setNeuName] = useState("");
+  const [anlegenOffen, setAnlegenOffen] = useState(false);
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
   const [seite, setSeite] = useState(0);
@@ -54,27 +54,15 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
   const aktuelleSeite = Math.min(seite, seiten - 1);
   const sichtbar = alle.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
-  async function anlegen(e: FormEvent) {
-    e.preventDefault();
-    if (!neuName.trim()) return;
-    await partyApi.anlegen(campaignId, { name: neuName.trim() });
-    setNeuName("");
-    await neuLaden();
-  }
-
   if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Partys…</p>;
 
   return (
     <div className="gg-seite" style={KACHEL_STIL}>
-      <form onSubmit={anlegen} className="pt-zeile" style={{ marginBottom: 10 }}>
-        <input
-          placeholder="Name der Party"
-          value={neuName}
-          onChange={(e) => setNeuName(e.target.value)}
-          style={{ flex: "1 1 200px", minWidth: 0 }}
-        />
-        <button type="submit">Anlegen</button>
-      </form>
+      <div className="gg-kopf">
+        <button type="button" onClick={() => setAnlegenOffen(true)}>
+          + Neue Party
+        </button>
+      </div>
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((p) => (
@@ -122,6 +110,18 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
         </div>
       )}
 
+      <PartyAnlegenFenster
+        offen={anlegenOffen}
+        campaignId={campaignId}
+        personen={personen}
+        onSchliessen={() => setAnlegenOffen(false)}
+        onAngelegt={async (neu) => {
+          setAnlegenOffen(false);
+          await neuLaden();
+          setOffen(neu);
+        }}
+      />
+
       {offen && (
         <PartyFenster
           campaignId={campaignId}
@@ -137,6 +137,108 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Anlegen-Popup: Name plus gleich die Mitgliederauswahl, damit man nicht
+ * extra ins Bearbeiten-Fenster wechseln muss, um die Gruppe zu füllen
+ * (Marks Wunsch — vorher gab es dafür nur ein Inline-Formular ohne
+ * Mitgliederauswahl, das aus dem Commlink-Stil fiel).
+ */
+function PartyAnlegenFenster({
+  offen,
+  campaignId,
+  personen,
+  onSchliessen,
+  onAngelegt,
+}: {
+  offen: boolean;
+  campaignId: string;
+  personen: Person[];
+  onSchliessen: () => void;
+  onAngelegt: (neu: Party) => void;
+}) {
+  const [name, setName] = useState("");
+  const [ausgewaehlt, setAusgewaehlt] = useState<Set<string>>(new Set());
+  const [sendet, setSendet] = useState(false);
+
+  // Frisch beginnen bei jedem Öffnen — sonst stehen noch die Häkchen der
+  // zuletzt angelegten Party da.
+  useEffect(() => {
+    if (offen) {
+      setName("");
+      setAusgewaehlt(new Set());
+    }
+  }, [offen]);
+
+  function umschalten(personId: string) {
+    setAusgewaehlt((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(personId)) neu.delete(personId);
+      else neu.add(personId);
+      return neu;
+    });
+  }
+
+  async function anlegen(e: FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSendet(true);
+    try {
+      let party = await partyApi.anlegen(campaignId, { name: name.trim() });
+      // Nacheinander statt Promise.all: jedes Hinzufügen liefert die neue
+      // Party zurück, und die Reihenfolge in der Mitgliederliste soll der
+      // Auswahlreihenfolge folgen, nicht der Antwortzeit der Requests.
+      for (const personId of ausgewaehlt) {
+        party = await partyApi.mitgliedHinzufuegen(campaignId, party.id, personId);
+      }
+      onAngelegt(party);
+    } finally {
+      setSendet(false);
+    }
+  }
+
+  return (
+    <Fenster
+      offen={offen}
+      titel="Neue Party"
+      unterzeile="Name und optional gleich die Mitglieder"
+      kennung="party-neu"
+      onSchliessen={onSchliessen}
+    >
+      <form onSubmit={anlegen} className="pt-formular">
+        <input
+          type="text"
+          placeholder="Name der Party"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoFocus
+        />
+
+        <div className="pt-feld">
+          <span className="pt-label">Mitglieder (optional)</span>
+          {personen.length === 0 ? (
+            <p className="pt-hinweis">Noch keine Personen in dieser Kampagne.</p>
+          ) : (
+            <div className="pt-auswahl-liste">
+              {personen.map((p) => (
+                <label key={p.id} className="pt-auswahl-zeile">
+                  <input type="checkbox" checked={ausgewaehlt.has(p.id)} onChange={() => umschalten(p.id)} />
+                  <span>{p.name}</span>
+                  <em className="pt-typ">{p.personType}</em>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button type="submit" disabled={sendet}>
+          {sendet ? "Wird angelegt…" : "Anlegen"}
+        </button>
+      </form>
+    </Fenster>
   );
 }
 
