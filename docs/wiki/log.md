@@ -179,3 +179,48 @@ gelöscht, kein Unittest ergänzt mangels DB-Fixture im bestehenden Testmuster).
 
 `docs/wiki/concepts/ruestung-kaestchen-durchlass.md` Punkt 7 und `CLAUDE.md`
 nachgezogen.
+
+## [2026-09-18] create | Party-Feature: wiederentdeckte Vision umgesetzt
+
+Mark wollte Spieler zu einer "Party"/"Spielgruppe" zusammenfassen können,
+um sie gemeinsam einem Ort oder Event zuzuordnen (z.B. "die Gruppe betritt
+eine Bar"), abgegrenzt von Fraktionen (dauerhafte Organisationen mit Zielen/
+Ressourcen). Beim Nachschauen im Git-Verlauf gefunden: **diese Idee gab es
+schon** — 28.08.2026 in `CLAUDE.md` festgehalten, beim großen
+Verschlankungs-Commit (2500→170 Zeilen) verlorengegangen, nur ein toter
+Verweis in `docs/ui-konzept.md` blieb übrig. Marks damalige Formulierung war
+sogar präziser: *"Spieler bilden nicht immer eine einzige feste Gruppe —
+sie können sich aufteilen, wodurch mehrere gleichzeitige, temporäre Partys
+entstehen."*
+
+Design-Entscheidungen im Gespräch geklärt:
+- Eine Person ist höchstens in einer Party gleichzeitig (automatischer
+  Wechsel statt Doppelmitgliedschaft)
+- Party ist ein dauerhaftes Objekt, kein Wegwerfobjekt
+- Gemischte Mitgliedschaft (PC+NPC+Begleiter) erlaubt
+- **Neu gegenüber der alten Notiz:** höchstens eine Party pro Kampagne ist
+  "aktiv" — Mark: die aktive Party soll später die Musik auslösen, die zu
+  ihrem Aufenthaltsort gehört (Spotify/Yamaha-MusicCast-Anbindung). Damit
+  bekommt die alte Vision einen konkreten neuen Zweck, den es 28.08. noch
+  nicht gab.
+
+Neues Backend-Modul `backend/app/party/` (Schema, Repository, Routes) nach
+dem Muster von `begleiter/` — zwei neue Beziehungstypen
+(`MITGLIED_VON`, `BEFINDET_SICH_AN`), beide mit "alte Kante weg, neue rein"-
+Logik wie bei der Gegenstands-Ablage. Neuer Frontend-Bereich (👥-Symbol,
+Kachelraster + Bearbeiten-Fenster) nach dem Muster von `begleiter/`.
+
+Verifiziert live gegen die echte Kampagne: Party anlegen, zwei Mitglieder
+aufnehmen, Aufenthaltsort setzen, Aktiv-Exklusivität geprüft (zweite Party
+aktivieren deaktiviert automatisch die erste), Mitgliedschaftswechsel ohne
+Doppelmitgliedschaft bestätigt — alle Testobjekte wieder gelöscht.
+`tsc --noEmit` fehlerfrei, alle 408 Backend-Tests weiterhin grün.
+
+Dokumentiert: `docs/api/party.md` (neu), `docs/wiki/entities/party-feature.md`
+(neu), `docs/wiki/entities/neo4j-datenmodell.md` (neue Beziehungstypen
+ergänzt), `CLAUDE.md` (Projektstruktur, Stand der Umsetzung, Zuletzt gebaut,
+Spotify-Punkt bei geplanten Features verlinkt).
+
+**Bewusst zurückgestellt (Phase 2):** Marks Inventar-Idee (Party-Mitgliedern
+gegenseitig Gegenstände geben können) — eigenes, unabhängiges Feature mit
+neuer Berechtigungsregel, sollte Phase 1 nicht aufblähen.

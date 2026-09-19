@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-18 | Seiten: 27
+> Zuletzt aktualisiert: 2026-09-18 | Seiten: 28
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -51,6 +51,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes |
 | [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), viele geplante Use-Cases |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine |
+| [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify |
 
 ## Vergleiche
 

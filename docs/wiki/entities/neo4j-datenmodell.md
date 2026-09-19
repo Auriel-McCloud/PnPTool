@@ -42,6 +42,8 @@ ohne expliziten Constraint (laut Code-Suche in den Repositories):
 | `ERLAUBT_RASSE` | Campaign → Rasse | siehe [[../concepts/rassen]] |
 | `GEHOERT_ZU` / `SPIELT` | PlayerSession → Campaign/Person | Spielerzugang |
 | `VON` (im Kontext `kontakte/`) | Nachricht → Person | siehe [[kontakte-messenger]] |
+| `MITGLIED_VON` | Person → Party | exklusiv, siehe [[party-feature]] |
+| `BEFINDET_SICH_AN` | Party → Ort/Event | optional, siehe [[party-feature]] |
 
 **Fast alles trägt zusätzlich `campaignId` als Property** statt (oder zusätzlich
 zu) expliziten Kanten zur Kampagne — schneller für Queries, laut

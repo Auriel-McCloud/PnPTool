@@ -31,6 +31,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Kampf](./kampf.md) | Rundenbasierter Kampf, Initiative | |
 | [Rüstung](./ruestung.md) | Kästchen + Schadensreduktion, Abnutzung im Kampf | ⭐ |
 | [Rassen](./rassen.md) | Baukasten, Balance-Regel, Freigabe je Kampagne | |
+| [Party](./party.md) | Gruppen, Mitgliedschaft, Aufenthaltsort, aktive Party | |
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
 

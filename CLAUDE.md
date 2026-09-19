@@ -41,6 +41,7 @@ C:\DEV\PnPTool\
 │   │   ├── kampf.md          — Runden, Initiative
 │   │   ├── ruestung.md       — Kästchen + Schadensreduktion (NEU 10.09.2026, Reduktion statt Durchlass 18.09.2026)
 │   │   ├── rassen.md         — Baukasten, Balance, Freigabe (NEU 11.09.2026)
+│   │   ├── party.md          — Gruppen, Mitgliedschaft, aktive Party (NEU 18.09.2026)
 │   │   ├── personen.md       — PCs/NPCs, Attribute, Cyberware
 │   │   ├── wiki.md           — Seiten, Freigaben
 │   │   ├── entitaeten.md     — Orte, Gegenstände, Fraktionen
@@ -58,6 +59,7 @@ C:\DEV\PnPTool\
 │   │   ├── kontakte/         — Messenger
 │   │   ├── kampf/            — Rundenkampf
 │   │   ├── wiki/             — Weltenbau
+│   │   ├── party/            — Gruppen, Mitgliedschaft, aktive Party
 │   │   └── items/, traits/   — Gegenstände, Charakterwerte
 │   └── scripts/create_gm.py
 └── frontend/
@@ -99,6 +101,7 @@ npm run dev
 | Wiki | ✅ | Seitenbaum, Freigaben, TipTap-Editor |
 | Themes | ✅ | Zwei Themes, Token-basiert |
 | Rüstung | ✅ | Kästchen + Schadensreduktion, siehe `docs/api/ruestung.md` |
+| Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 
 **Zuletzt gebaut (10.09.2026):**
 - **Rüstungssystem: Kästchen + Durchlass** — Rüstung nutzt sich im Kampf ab,
@@ -137,6 +140,17 @@ PC-Vorlagen im Regelsystem,
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
 erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
+
+**Zuletzt gebaut (18.09.2026):**
+- **Party-Feature** — wieder aufgegriffene Vision vom 28.08.2026 (war beim
+  CLAUDE.md-Verschlankungs-Commit verlorengegangen, nur ein toter Verweis in
+  `docs/ui-konzept.md` blieb übrig). Eigener Bereich (👥-Symbol): Gruppen
+  anlegen, Mitglieder zuweisen (eine Person immer nur in einer Party
+  gleichzeitig, automatischer Wechsel), Aufenthaltsort setzen (Ort oder
+  Event, analog zur Gegenstands-Ablage). **Höchstens eine Party pro
+  Kampagne ist aktiv** — Aktivieren deaktiviert automatisch alle anderen,
+  Grundlage für die geplante Spotify/MusicCast-Anbindung (Musik folgt dem
+  Aufenthaltsort der aktiven Party). Details: `docs/api/party.md`
 
 **Zuletzt gebaut (15.09.2026):**
 - **Fraktionen als eigener Entitätstyp** — eigener Bereich (Hexagon-Symbol),
@@ -368,7 +382,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - **Rechtschreib-/Grammatikprüfung:** Im Wiki-Editor
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
 
-4. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung
+4. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung.
+   **Datengrundlage steht seit 18.09.2026**: die aktive Party
+   (`docs/api/party.md`) trägt ihren Aufenthaltsort — die Musiksteuerung
+   selbst (Playlist-Zuordnung, MusicCast-API-Anbindung) ist noch nicht gebaut.
 
 5. **Deploy** — Debian/nginx statt localhost
 
