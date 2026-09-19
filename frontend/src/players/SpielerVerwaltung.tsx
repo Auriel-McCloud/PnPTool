@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ApiError } from "../api/client";
-import { einstellungenApi, type Einstellungen } from "../campaigns/einstellungen";
 import { entitiesApi, type Person } from "../entities/api";
 import { playersApi, type SpielerZugang } from "./api";
 
@@ -10,25 +9,25 @@ import { playersApi, type SpielerZugang } from "./api";
  * Ersetzt die frühere Code- und Sitzungsverwaltung. Ein Zugang gehört
  * dauerhaft zu einem Namen, deshalb gibt es hier nichts mehr, das von selbst
  * abläuft oder einen Charakter blockiert.
+ *
+ * Kampagnenweite Regel-Schalter (Gewicht/Traglast, digitales Würfeln, ...)
+ * gehören NICHT hierher — die liegen im Einstellungen-Fenster
+ * (`campaigns/EinstellungenFenster.tsx`). Hier stand früher ein doppelter
+ * "Gewicht und Traglast"-Schalter, der genau dasselbe Feld bediente wie der
+ * dortige — eine der ersten Baustellen des Projekts, nie aufgeräumt.
  */
 export function SpielerVerwaltung({ campaignId }: { campaignId: string }) {
   const [zugaenge, setZugaenge] = useState<SpielerZugang[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
-  const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [neuName, setNeuName] = useState("");
   const [neuPerson, setNeuPerson] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
   const [laden, setLaden] = useState(true);
 
   async function neuLaden() {
-    const [z, p, e] = await Promise.all([
-      playersApi.liste(campaignId),
-      entitiesApi.listPersonen(campaignId),
-      einstellungenApi.lesen(campaignId),
-    ]);
+    const [z, p] = await Promise.all([playersApi.liste(campaignId), entitiesApi.listPersonen(campaignId)]);
     setZugaenge(z);
     setPersonen(p);
-    setEinstellungen(e);
   }
 
   useEffect(() => {
@@ -124,24 +123,6 @@ export function SpielerVerwaltung({ campaignId }: { campaignId: string }) {
             </button>
           </div>
         ))}
-      </section>
-
-      <section>
-        <h3>Spielregeln</h3>
-        <label style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <input
-            type="checkbox"
-            checked={einstellungen?.gewichtAktiv ?? true}
-            onChange={(e) => einstellungenApi.aendern(campaignId, { gewichtAktiv: e.target.checked }).then(neuLaden)}
-          />
-          <span style={{ color: "var(--text)" }}>Gewicht und Traglast anzeigen</span>
-        </label>
-        <p style={{ color: "var(--text-leise)", fontSize: "0.85em", marginTop: 6 }}>
-          Rein informativ — nichts wird dadurch verhindert. Wer über seiner Grenze liegt, erscheint bei den
-          Gegenständen als Hinweis. Traglast einer Person ={" "}
-          <span className="mono">{einstellungen?.traglastAttribut ?? "Körperkraft"}</span> ×{" "}
-          <span className="mono">{einstellungen?.traglastProPunkt ?? 10}</span> kg.
-        </p>
       </section>
     </div>
   );
