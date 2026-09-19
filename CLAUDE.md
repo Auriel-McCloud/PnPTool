@@ -163,6 +163,26 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   `POST /ki/idee`), Modell konfigurierbar (`gemini_model`, Default
   `gemini-3.6-flash`), API-Key liegt in `backend/.env` (gitignored)
 
+**Zuletzt behoben (18.09.2026):**
+- **Kästchen-Overflow-Darstellung fertiggestellt** — war schon gebaut, aber
+  am Spieltisch als „nicht ganz stimmig" erkannt und in vier Runden
+  nachgebessert (volle Herleitung: `docs/wiki/concepts/attribute-und-fertigkeiten.md`,
+  Zusammenfassung: `CLAUDE.md` Punkt 9 weiter unten):
+  1. Füllrichtung zwischen Gesundheit und Willenskraft/I.C.E. vereinheitlicht
+  2. Gesundheits-Popup im Charakterblatt umging die Rüstungsrechnung — jetzt
+     gesperrt, Schaden geht nur noch über „⚡ Treffer eintragen"
+  3. Willenskraft-Rückfrage fehlte ab 11 Kästchen (Overflow-Schwelle) — jetzt
+     auch in der Vollansicht mit Rückfrage
+  4. Rüstungstreffer hatte noch ein rohes Zahlenfeld statt des Zahlenpads —
+     `Zahlenpad` nach `frontend/src/shell/` extrahiert, von beiden Fenstern
+     genutzt
+- **Doppelter Gewicht/Traglast-Schalter entfernt** — lag sowohl im
+  Zugangs-Menü (`SpielerVerwaltung.tsx`, eine der ersten Baustellen des
+  Projekts) als auch im eigentlichen Einstellungen-Fenster
+  (`EinstellungenFenster.tsx`, über die Werkzeugleiste erreichbar). Der
+  Schalter im Zugangs-Menü hatte dort nichts zu suchen und ist raus; der im
+  Einstellungen-Fenster bleibt die einzige Stelle.
+
 **Zuletzt behoben (15.09.2026):**
 - **Charakterblatt-Ladefehler:** `KeyError: 'ruleset'` — nach dem Umbau auf
   `(:Campaign)-[:NUTZT_REGELSYSTEM]->(:Regelsystem)` lieferte `get_campaign`

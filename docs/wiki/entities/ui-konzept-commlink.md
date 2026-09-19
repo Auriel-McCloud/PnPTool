@@ -46,6 +46,21 @@ aus dem Menü, fliegt nach oben, Leuchtbalken fährt herab.
 `EntityManager` „Welt" heraustrennen), SL-Popup-Symbol ist angelegt aber
 deaktiviert.
 
+## Kampagnenweite Einstellungen — ein Ort, nicht zwei
+
+`EinstellungenFenster.tsx` ist die **einzige** Stelle für Regel-Schalter, die
+für die ganze Kampagne gelten (digitales Würfeln, Gewicht/Traglast-Anzeige,
+Messenger an/aus). Über die Werkzeugleiste erreichbar (`App.tsx`,
+`einstellungenOffen`-State), unabhängig vom Bereichsmenü links.
+
+**18.09.2026 aufgeräumt:** Der „Zugang"-Bereich (`SpielerVerwaltung.tsx`,
+`bereich === "zugang"` in `App.tsx`) hatte einen eigenen, redundanten
+„Spielregeln"-Abschnitt mit demselben Gewicht/Traglast-Schalter — eine der
+ersten Baustellen des Projekts, nie aufgeräumt. Der Zugang-Bereich ist jetzt
+wieder rein das, was der Name sagt: Spielerzugänge anlegen und Charakteren
+zuordnen. Kampagnenweite Regeln gehören ins Einstellungen-Fenster, nicht in
+einen thematisch anderen Bereich.
+
 ## Siehe auch
 
 - [[theming-system]] — technische Umsetzung der Farbwelt

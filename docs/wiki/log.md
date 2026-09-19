@@ -104,3 +104,18 @@ Fix: `frontend/src/shell/Zahlenpad.tsx` — den Ziffernblock aus
 `ZustandFenster.tsx` als eigene Komponente extrahiert, jetzt in beiden
 Fenstern verwendet. `docs/wiki/concepts/attribute-und-fertigkeiten.md`
 nachgezogen.
+
+## [2026-09-18] update | Doppelter Gewicht/Traglast-Schalter entfernt
+
+Mark: der „Zugang"-Bereich hatte einen eigenen „Spielregeln"-Abschnitt mit
+demselben Gewicht/Traglast-Schalter wie das eigentliche Einstellungen-Fenster
+— „das war einfach eine der ersten Sachen, die wir gemacht haben", nie
+aufgeräumt. Fix: Abschnitt aus `frontend/src/players/SpielerVerwaltung.tsx`
+entfernt (inkl. ungenutztem `einstellungenApi`-Import und State), der
+Schalter existiert unverändert weiter in `campaigns/EinstellungenFenster.tsx`
+(über die Werkzeugleiste erreichbar, nicht bereichsgebunden) — kein
+Verschieben von Logik nötig, reines Duplikat-Löschen.
+
+`docs/wiki/entities/ui-konzept-commlink.md` um neuen Abschnitt
+„Kampagnenweite Einstellungen — ein Ort, nicht zwei" ergänzt, `CLAUDE.md`
+Stand-Sektion (18.09.2026) nachgezogen.
