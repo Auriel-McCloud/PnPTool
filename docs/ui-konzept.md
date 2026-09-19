@@ -73,6 +73,8 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 
 **Bewegung respektiert `prefers-reduced-motion`** — inklusive Flackern. Für lichtempfindliche Menschen ist Geflacker keine Stimmung, sondern ein Problem.
 
+**Neonflackern verstärkt (19.09.2026, Marks Feedback: "das Flackern ist zu kurz").** Dauer von 0,45s auf 1,6s mehr als verdreifacht, Optik komplett neu: statt reiner Farbtönung jetzt ein gestörter-Fernseher-Effekt aus drei übereinanderliegenden Schichten — Neon-Tint (Basis, wie zuvor), ein SVG-`feTurbulence`-Filter für echtes Schwarz-Weiß-Bildrauschen ("Ameisenkrieg", per `mix-blend-mode: overlay` über den Inhalt gelegt) und `backdrop-filter` (Blur/Kontrast/Sättigung/Hue), der das Bild darunter sichtbar verzerrt statt es zu verdecken. Alle drei laufen mit `steps(1, end)` in mehreren harten Schüben über die volle Dauer — das wirkt wie echte Empfangsaussetzer statt ein weiches Fade. Details: [[../wiki/entities/ui-konzept-commlink]].
+
 **Achtung Cytoscape:** der Graph zeichnet auf Canvas und kennt keine CSS-Variablen. `CampaignGraphView.tsx` spiegelt die Farbwerte deshalb von Hand (`KIND_COLOR`, `FARBE_*`) — bei Themeänderungen dort mitziehen.
 
 **Noch nicht gebaut — Schritt 2 und später:**

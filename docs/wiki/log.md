@@ -236,3 +236,25 @@ Inline-Formular). Fix nach dem Muster von `rassen/RassenUebersicht.tsx`
 (dort schon korrekt umgesetzt): "+ Neue Party" öffnet jetzt ein
 `Fenster`-Popup mit Namensfeld und einer Checkbox-Liste aller Personen zur
 Sofortauswahl, statt eines Inline-`<form>` auf der Übersichtsseite.
+
+## [2026-09-19] update | Neonflackern verstärkt (Ameisenkrieg-Rauschen + Bildverzerrung)
+
+Mark nach dem Praxistest: *"das flackern ist zu kurz, könntest du die länge
+mindestens verdreifachen"*, gewünschtes Bild: *"wie bei einem alten
+Fernseher wo das Bild kurzzeitig mit schwarz-weißen Ameisenkrieg-Flecken
+übersäht ist aber das Bild drunter noch verzerrt durchscheint"*.
+
+Umsetzung in `frontend/src/shell/CommlinkShell.tsx` (`Stoerung`) +
+`commlink.css` (`.cl-stoerung`):
+- Dauer 0,45s → 1,6s (mehr als verdreifacht, `STOERUNG_MS`)
+- Drei übereinanderliegende Schichten statt nur Farbtönung: Neon-Tint
+  (Basis, wie zuvor), SVG-`feTurbulence`-Filter für Schwarz-Weiß-Rauschen
+  (`mix-blend-mode: overlay`), `backdrop-filter` für sichtbare Verzerrung
+  des durchscheinenden Inhalts
+- `steps(1, end)` in mehreren harten Schüben statt weichem Fade
+
+`tsc --noEmit` fehlerfrei geprüft. Commit `6450f62`.
+
+Dokumentiert: `docs/wiki/entities/ui-konzept-commlink.md` (neuer Abschnitt
+„Das Gerät stört mit"), `docs/ui-konzept.md`, `CLAUDE.md` (Zuletzt gebaut),
+`docs/wiki/index.md` (Zusammenfassungszeile).

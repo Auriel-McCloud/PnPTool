@@ -4,7 +4,7 @@ created: 2026-09-18
 updated: 2026-09-19
 type: entität
 tags: [ui, frontend]
-sources: [../../ui-konzept.md]
+sources: [../../ui-konzept.md, ../../../frontend/src/shell/CommlinkShell.tsx, ../../../frontend/src/shell/commlink.css]
 status: teilweise-umgesetzt
 ---
 
@@ -89,6 +89,38 @@ beginne „erst sehr spät" und sei „sehr dezent"):
 - CSS-Verlauf (`verwundung.css`) parallel intensiviert: höhere
   Ziel-Deckkraft (0.75 statt 0.55) und ein kompakterer Übergang, damit die
   spätere Startschwelle nicht durch einen zu sanften Anstieg wieder verpufft.
+
+## Das Gerät stört mit (Neonflackern)
+
+`frontend/src/shell/CommlinkShell.tsx` (`Stoerung`-Komponente) +
+`commlink.css` (`.cl-stoerung`). Seltener Störeffekt (alle 5–10 Minuten,
+zufällig) — Marks Ausgangsbild: eine Neonröhre oder ein gestörter alter
+Fernseher.
+
+**19.09.2026, nach dem ersten Praxistest verstärkt** (Mark: „das Flackern
+ist zu kurz", gewünschtes Bild: *"wie bei einem alten Fernseher wo das
+Bild kurzzeitig mit schwarz-weißen Ameisenkrieg-Flecken übersäht ist, aber
+das Bild drunter noch verzerrt durchscheint"*):
+
+- **Dauer mehr als verdreifacht:** 0,45s → 1,6s (`STOERUNG_MS` in
+  `CommlinkShell.tsx`).
+- **Optik komplett neu, drei übereinanderliegende Schichten statt nur
+  Farbtönung:**
+  1. `.cl-stoerung` selbst — der bisherige Neon-Tint + Vignette
+     (`cl-flackern`), jetzt über 8 statt 3 Schübe verteilt
+  2. `::before` — echtes Schwarz-Weiß-Bildrauschen ("Ameisenkrieg") aus
+     einem SVG-`feTurbulence`-Filter (Graustufen, Kontrast hochgezogen),
+     per `mix-blend-mode: overlay` über den Inhalt gelegt statt ihn zu
+     ersetzen, mit leichter Verschiebung zwischen den Schüben
+     (`cl-rauschen`)
+  3. `::after` — `backdrop-filter` (Blur + Kontrast + Sättigung runter +
+     Hue-Shift) verzerrt das Bild darunter sichtbar, ohne es zu verdecken
+     — genau der gewünschte "durchscheint"-Effekt (`cl-verzerrung`)
+- **`steps(1, end)` statt weichem Fade:** harte Sprünge wirken wie echte
+  Empfangsaussetzer statt ein Ein-/Ausblenden. Mehrere kurze Schübe über
+  die 1,6s verteilt statt ein einzelner Blitz.
+- `prefers-reduced-motion` und die zufällige Taktung unverändert
+  respektiert.
 
 ## Siehe auch
 

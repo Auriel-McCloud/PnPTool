@@ -106,6 +106,19 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (19.09.2026, spät):**
+- **Neonflackern verstärkt** (Marks Feedback: „das Flackern ist zu kurz")
+  — Dauer von 0,45s auf 1,6s mehr als verdreifacht. Optik jetzt wie ein
+  gestörter alter Fernseher statt nur Farbtönung: SVG-`feTurbulence`-Filter
+  erzeugt echtes Schwarz-Weiß-Bildrauschen ("Ameisenkrieg"), per
+  `mix-blend-mode: overlay` über den Inhalt gelegt, dazu `backdrop-filter`
+  (Blur/Kontrast/Hue), der das Bild darunter sichtbar verzerrt statt es zu
+  verdecken. Mehrere harte Schübe (`steps(1, end)`) über die Dauer verteilt
+  statt eines einzelnen Fades. `frontend/src/shell/CommlinkShell.tsx`
+  (`Stoerung`-Komponente) + `commlink.css` (`cl-flackern`/`cl-rauschen`/
+  `cl-verzerrung`). `prefers-reduced-motion` und die zufällige
+  5–10-Minuten-Taktung unverändert erhalten.
+
 **Zuletzt gebaut (10.09.2026):**
 - **Rüstungssystem: Kästchen + Durchlass** — Rüstung nutzt sich im Kampf ab,
   statt konstant zu bleiben. Treffer-Endpoint rechnet HP-Schaden UND
