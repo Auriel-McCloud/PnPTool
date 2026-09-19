@@ -27,7 +27,9 @@ kommen bei entsprechendem Weg: **Sphären** (siehe [[magie-hexkraft]]) oder
 technisch als Fertigkeit, werden aber meist ohne Attribut gewürfelt.
 
 Tooltip-Texte für alle Attribute/Fertigkeiten liegen fertig ausformuliert in
-`docs/reference/Master/` (siehe [[../../reference/INDEX.md]]).
+`docs/reference/Master/` (siehe [[../../reference/INDEX.md]]) und sind seit
+19.09.2026 an die Tooltips angebunden (siehe [[ui-konzept-commlink]] §
+Tooltip-System: Kurztext + "Detail"-Knopf mit Langfassung).
 
 ## Abgeleitete Werte
 

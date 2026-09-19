@@ -20,6 +20,7 @@ class ErklaerungResponse(BaseModel):
     titel: str
     text: str
     quelle: str
+    langtext: str = ""
 
 
 class ErklaerungInput(BaseModel):
@@ -28,6 +29,11 @@ class ErklaerungInput(BaseModel):
     # HAND = jemand hat es geschrieben, KI = ein Modell hat es erzeugt und
     # niemand hat es bisher gegengelesen.
     quelle: str = Field(default="HAND", pattern="^(HAND|KI)$")
+    # Ausführlicher Text hinter dem "Detail"-Knopf im InfoTipp-Popup. Leer
+    # gelassen bleibt ein evtl. vorhandener Langtext unangetastet (siehe
+    # repository.setze_erklaerung) — die SL muss beim Kurztext-Editieren
+    # nicht zwingend auch die Langfassung mitschreiben.
+    langtext: str = ""
 
 
 async def _ruleset(campaign_id: str) -> str:
@@ -63,7 +69,7 @@ async def erklaerung_setzen(campaign_id: str, schluessel: str, body: ErklaerungI
     (`trait:Körperkraft`) — ohne das schneidet Starlette am Trennzeichen ab.
     """
     return await repository.setze_erklaerung(
-        await _ruleset(campaign_id), schluessel, body.titel, body.text, body.quelle
+        await _ruleset(campaign_id), schluessel, body.titel, body.text, body.quelle, body.langtext
     )
 
 

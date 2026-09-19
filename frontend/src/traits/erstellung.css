@@ -343,6 +343,14 @@
   white-space: nowrap;
 }
 
+/* InfoTipp-Zeichen neben Attribut-/Fertigkeitsnamen in der Erstellung
+   (erzwingen-Modus, siehe InfoTipp.tsx) — mittig zum Text, nicht die Zeile
+   sprengen. */
+.er-wert-name .it-zeichen {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
 .er-wert-zusatz {
   display: block;
   font-size: 11px;

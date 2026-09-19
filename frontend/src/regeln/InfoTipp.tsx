@@ -20,12 +20,18 @@ export function InfoTipp({
   campaignId,
   schluessel: sch,
   titel,
+  erzwingen,
 }: {
   campaignId: string;
   /** z.B. `trait:Körperkraft` — am besten über den Helfer `schluessel`. */
   schluessel: string;
   /** Überschrift des Fensters, falls noch kein Text hinterlegt ist. */
   titel: string;
+  /** Zeigt das Zeichen unabhängig vom "Erklärungen"-Schalter — für die
+   *  Charaktererstellung (Mark, 19.09.2026: "am wichtigsten", "immer"). Wer
+   *  neu am Tisch sitzt, kennt die Begriffe noch nicht und hat den Schalter
+   *  vermutlich nie gefunden, geschweige denn eingeschaltet. */
+  erzwingen?: boolean;
 }) {
   const erklaerungen = useErklaerungen(campaignId);
   // Schreiben darf nur die Spielleitung. Nicht als Eigenschaft von aussen,
@@ -34,12 +40,17 @@ export function InfoTipp({
   // lehnt fremde Schreibversuche ohnehin ab.
   const darfSchreiben = useAuthFallsVorhanden()?.me?.role === "GM";
   const [offen, setOffen] = useState(false);
+  // Eigenes Fenster für die Langfassung — dieselbe Begründung wie bei den
+  // Vorlagen-Erklärungen: ein zweites Popup über dem ersten, nicht ein
+  // ausklappender Block, der das erste Fenster in der Höhe springen lässt.
+  const [detailOffen, setDetailOffen] = useState(false);
   const [entwurf, setEntwurf] = useState<string | null>(null);
   const [sendet, setSendet] = useState(false);
 
-  if (!erklaerungen.an) return null;
+  if (!erklaerungen.an && !erzwingen) return null;
 
   const vorhanden = erklaerungen.zu(sch);
+  const hatDetail = Boolean(vorhanden?.langtext);
 
   async function sichern() {
     if (entwurf === null) return;
@@ -89,11 +100,18 @@ export function InfoTipp({
                 {darfSchreiben && " Du kannst die Erklärung hier schreiben."}
               </p>
             )}
-            {darfSchreiben && (
-              <button type="button" onClick={() => setEntwurf(vorhanden?.text ?? "")}>
-                {vorhanden?.text ? "Bearbeiten" : "Erklärung schreiben"}
-              </button>
-            )}
+            <div className="it-fuss">
+              {hatDetail && (
+                <button type="button" onClick={() => setDetailOffen(true)}>
+                  Detail
+                </button>
+              )}
+              {darfSchreiben && (
+                <button type="button" onClick={() => setEntwurf(vorhanden?.text ?? "")}>
+                  {vorhanden?.text ? "Bearbeiten" : "Erklärung schreiben"}
+                </button>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -116,6 +134,20 @@ export function InfoTipp({
           </>
         )}
       </Fenster>
+
+      {/* Fenster über dem Fenster — nach demselben Muster wie die
+          Vorlagen-Erklärungen in der Charaktererstellung. */}
+      {hatDetail && (
+        <Fenster
+          offen={detailOffen}
+          titel={vorhanden?.titel || titel}
+          unterzeile="Ausführliche Beschreibung"
+          kennung={`erklaerung-detail:${sch}`}
+          onSchliessen={() => setDetailOffen(false)}
+        >
+          <p className="it-text it-text-lang">{vorhanden?.langtext}</p>
+        </Fenster>
+      )}
     </>
   );
 }

@@ -68,6 +68,20 @@
   color: var(--text-aus);
 }
 
+/* Knopfzeile unter dem Kurztext: Detail links, Bearbeiten rechts (falls SL) */
+.it-fuss {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* Langfassung im zweiten Fenster — etwas mehr Zeilenabstand, die Texte
+   haben oft eine Stufenliste mit vielen kurzen Absätzen. */
+.it-text-lang {
+  line-height: 1.7;
+}
+
 /* --- Schalter in der oberen Leiste ------------------------------------ */
 
 .it-schalter {

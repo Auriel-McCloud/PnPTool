@@ -24,7 +24,7 @@ async def list_erklaerungen(ruleset: str) -> list[dict]:
     query = """
         MATCH (e:Erklaerung {ruleset: $ruleset})
         RETURN e.schluessel AS schluessel, e.titel AS titel, e.text AS text,
-               e.quelle AS quelle
+               e.quelle AS quelle, coalesce(e.langtext, '') AS langtext
         ORDER BY e.schluessel
     """
     async with driver.session() as session:
@@ -38,13 +38,24 @@ async def list_erklaerungen(ruleset: str) -> list[dict]:
                 # Modell erzeugt. Damit später erkennbar bleibt, was noch
                 # niemand gegengelesen hat.
                 "quelle": r["quelle"] or "HAND",
+                # Ausführlicher Text hinter dem "Detail"-Knopf im Popup —
+                # leer, solange (noch) keine Langfassung hinterlegt ist.
+                "langtext": r["langtext"] or "",
             }
             async for r in result
         ]
 
 
-async def setze_erklaerung(ruleset: str, schluessel: str, titel: str, text: str, quelle: str) -> dict:
-    """Legt an oder überschreibt. Leerer Text löscht den Eintrag."""
+async def setze_erklaerung(
+    ruleset: str, schluessel: str, titel: str, text: str, quelle: str, langtext: str = ""
+) -> dict:
+    """Legt an oder überschreibt. Leerer Text löscht den Eintrag.
+
+    `langtext` optional — die SL kann eine Erklärung schreiben, ohne sich um
+    die Langfassung zu kümmern; ein leerer Wert lässt einen evtl. bereits
+    gesäten Langtext (aus TRAIT_LANGBESCHREIBUNGEN) unangetastet, statt ihn
+    stillschweigend zu leeren.
+    """
     driver = get_driver()
     if not text.strip():
         async with driver.session() as session:
@@ -53,17 +64,25 @@ async def setze_erklaerung(ruleset: str, schluessel: str, titel: str, text: str,
                 ruleset=ruleset,
                 schluessel=schluessel,
             )
-        return {"schluessel": schluessel, "titel": "", "text": "", "quelle": "HAND"}
+        return {"schluessel": schluessel, "titel": "", "text": "", "quelle": "HAND", "langtext": ""}
 
     query = """
         MERGE (e:Erklaerung {ruleset: $ruleset, schluessel: $schluessel})
         SET e.id = $ruleset + ':' + $schluessel,
-            e.titel = $titel, e.text = $text, e.quelle = $quelle
-        RETURN e.schluessel AS schluessel, e.titel AS titel, e.text AS text, e.quelle AS quelle
+            e.titel = $titel, e.text = $text, e.quelle = $quelle,
+            e.langtext = CASE WHEN $langtext = '' THEN coalesce(e.langtext, '') ELSE $langtext END
+        RETURN e.schluessel AS schluessel, e.titel AS titel, e.text AS text,
+               e.quelle AS quelle, coalesce(e.langtext, '') AS langtext
     """
     async with driver.session() as session:
         result = await session.run(
-            query, ruleset=ruleset, schluessel=schluessel, titel=titel, text=text, quelle=quelle
+            query,
+            ruleset=ruleset,
+            schluessel=schluessel,
+            titel=titel,
+            text=text,
+            quelle=quelle,
+            langtext=langtext,
         )
         record = await result.single()
         return dict(record)

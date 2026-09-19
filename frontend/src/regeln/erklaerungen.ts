@@ -21,6 +21,9 @@ export interface Erklaerung {
   text: string;
   /** HAND = geschrieben, KI = erzeugt und noch von niemandem gegengelesen. */
   quelle: "HAND" | "KI";
+  /** Ausführlicher Text hinter dem "Detail"-Knopf — leer, wenn (noch) keine
+   *  Langfassung hinterlegt ist (dann bleibt der Detail-Knopf aus). */
+  langtext: string;
 }
 
 const SPEICHER_SCHLUESSEL = "pnptool.erklaerungen";
@@ -82,10 +85,11 @@ export async function speichereErklaerung(
   schluessel: string,
   titel: string,
   text: string,
+  langtext: string = "",
 ): Promise<void> {
   const gespeichert = await api.put<Erklaerung>(
     `/api/campaigns/${campaignId}/erklaerungen/${schluessel}`,
-    { titel, text, quelle: "HAND" },
+    { titel, text, quelle: "HAND", langtext },
   );
   // Neue Map, damit useSyncExternalStore die Änderung überhaupt bemerken kann
   texte = new Map(texte);

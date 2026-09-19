@@ -40,7 +40,8 @@ aus dem Menü, fliegt nach oben, Leuchtbalken fährt herab.
 
 **Gebaut:** Commlink-Hülle (28.08.2026), Navigation-Überarbeitung, Fenstersystem
 (29.08.2026), Kampfmodus (30.08.2026), Tooltip-System (30.08.2026, Schieberegler
-+ `Erklaerung`-Knoten je Regelwerk).
++ `Erklaerung`-Knoten je Regelwerk; 19.09.2026 um Kurztext+Detail-Popup und
+erzwungene Sichtbarkeit in der Charaktererstellung erweitert — siehe unten).
 
 **Noch nicht gebaut:** feinerer Bereichsschnitt (PCs/NPCs/Orte/Events aus
 `EntityManager` „Welt" heraustrennen), SL-Popup-Symbol ist angelegt aber
@@ -121,6 +122,34 @@ das Bild drunter noch verzerrt durchscheint"*):
   die 1,6s verteilt statt ein einzelner Blitz.
 - `prefers-reduced-motion` und die zufällige Taktung unverändert
   respektiert.
+
+## Tooltip-System: Kurztext + Detail-Popup
+
+`frontend/src/regeln/InfoTipp.tsx` — das Fragezeichen neben Attributen,
+Fertigkeiten und Regelbegriffen. **19.09.2026 erweitert:** die
+Regelwerk-Texte aus `docs/reference/Master/` und
+`docs/reference/Neotopia_Attribute_und_Fertigkeiten.md` lagen längst fertig
+ausformuliert, waren aber nie an die Tooltips angebunden — nur die
+Kurzbeschreibung aus `TRAIT_BESCHREIBUNGEN` (`backend/app/traits/seed.py`)
+kam an. Jetzt zwei Ebenen:
+
+- **Kurztext** direkt im ersten Popup (wie bisher).
+- **„Detail"-Knopf** darunter — nur sichtbar, wenn ein Langtext hinterlegt
+  ist (`Erklaerung.langtext`, neues Feld) — öffnet ein zweites Fenster mit
+  der vollen Beschreibung samt Stufenliste (Anfänger bis Weltklasse) und
+  empfohlenen Spezialitäten. Gleiches „Fenster über dem Fenster"-Muster wie
+  bei den Ambition/Verlangen-Vorlagen in der Erstellung.
+- HAND/KI-Schutzregel gilt für `langtext` genauso wie für den Kurztext: ein
+  von der SL bearbeiteter Eintrag wird beim nächsten Seed nicht überschrieben.
+
+**In der Charaktererstellung erzwungen sichtbar:** neuer `erzwingen`-Prop
+an `InfoTipp`, ignoriert den globalen „Erklärungen"-Schalter oben in der
+Leiste. Mark: „am wichtigsten" — wer neu am Tisch sitzt und einen Charakter
+baut, kennt die Begriffe noch nicht und hat den Schalter nie gefunden,
+geschweige denn eingeschaltet. Gilt für Attribute (Schritt 3), die
+Fertigkeiten-Auswahl im Popup (Schritt 4) und die Freebee-Käufe
+(Schritt 6) — überall dort, wo während der Erstellung Punkte auf Werte
+verteilt werden.
 
 ## Siehe auch
 

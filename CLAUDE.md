@@ -158,6 +158,18 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
 
 **Zuletzt gebaut (19.09.2026):**
+- **Tooltip-Popups: Kurztext + Detail-Knopf mit Langfassung** — die
+  Regelwerk-Texte aus `docs/reference/Master/` (Fertigkeiten+Sphären) und
+  `docs/reference/Neotopia_Attribute_und_Fertigkeiten.md` (Attribute+
+  NeuroWeaving) lagen fix fertig, waren aber nie an die Tooltips
+  angebunden. Jetzt: `Erklaerung.langtext` (Neo4j), `InfoTipp.tsx` zeigt
+  zuerst die Kurzfassung, ein "Detail"-Knopf öffnet ein zweites Popup mit
+  der ausführlichen Stufenbeschreibung — nur wenn ein Langtext hinterlegt
+  ist. **In der Charaktererstellung erzwungen sichtbar** (neuer `erzwingen`-
+  Prop, ignoriert den globalen "Erklärungen"-Schalter): Attribute,
+  Fertigkeiten-Auswahl und Freebees zeigen das Fragezeichen immer, weil wer
+  neu am Tisch sitzt die Begriffe noch nicht kennt und den Schalter nie
+  gefunden hätte.
 - **Kästchen-Overflow-Grenze auf 12 angehoben** (Marks Wunsch) — vorher
   kippte jede Zustandsleiste (Gesundheit, Willenskraft, Rüstung, I.C.E.) ab
   10 Kästchen in die Puffer+Enden-Leistenform. 12 ist genau das natürliche

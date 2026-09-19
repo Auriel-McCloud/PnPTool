@@ -3,6 +3,8 @@ import { DotPool } from "./DotPool";
 import { api } from "../api/client";
 import { traitsApi, type TraitDef } from "./api";
 import { Fenster } from "../shell/Fenster";
+import { InfoTipp } from "../regeln/InfoTipp";
+import { schluessel as erklaerungsSchluessel } from "../regeln/erklaerungen";
 import {
   bogenApi,
   KATEGORIE_TITEL,
@@ -304,6 +306,7 @@ export function Charaktererstellung({
 
         {aktuell.id === "attribute" && gewaehlteRasse && (
           <SchrittAttribute
+            campaignId={campaignId}
             regeln={regeln}
             rasse={gewaehlteRasse}
             schwerpunkte={schwerpunkte}
@@ -317,6 +320,7 @@ export function Charaktererstellung({
 
         {aktuell.id === "fertigkeiten" && (
           <SchrittFertigkeiten
+            campaignId={campaignId}
             regeln={regeln}
             fertigkeiten={waehlbareFertigkeiten}
             paket={paket}
@@ -340,6 +344,7 @@ export function Charaktererstellung({
 
         {aktuell.id === "freebees" && (
           <SchrittFreebees
+            campaignId={campaignId}
             regeln={regeln}
             rasse={gewaehlteRasse}
             frei={freebeesFrei}
@@ -576,6 +581,7 @@ function RassenInfobox({ rasse }: { rasse: Rasse }) {
 }
 
 function SchrittAttribute({
+  campaignId,
   regeln,
   rasse,
   schwerpunkte,
@@ -585,6 +591,7 @@ function SchrittAttribute({
   onPunkte,
   katalog,
 }: {
+  campaignId: string;
   regeln: Erstellungsregeln;
   rasse: Rasse;
   schwerpunkte: Record<string, number>;
@@ -651,6 +658,12 @@ function SchrittAttribute({
                 <div key={name} className="er-wert er-wert-gestapelt">
                   <span className="er-wert-name">
                     {name}
+                    <InfoTipp
+                      campaignId={campaignId}
+                      schluessel={erklaerungsSchluessel.trait(name)}
+                      titel={name}
+                      erzwingen
+                    />
                     {/* Ohne diese Marke bleibt unerklärt, warum eine Reihe
                         mehr oder weniger Punkte hat als die daneben — genau
                         das hat Mark beim Bauen von Fred verwirrt. */}
@@ -702,6 +715,7 @@ function SchrittAttribute({
 }
 
 function SchrittFertigkeiten({
+  campaignId,
   regeln,
   fertigkeiten,
   paket,
@@ -710,6 +724,7 @@ function SchrittFertigkeiten({
   offen,
   onWert,
 }: {
+  campaignId: string;
   regeln: Erstellungsregeln;
   fertigkeiten: TraitDef[];
   paket: string;
@@ -807,7 +822,15 @@ function SchrittFertigkeiten({
                     const wert = werte[t.name] || 0;
                     return (
                       <div key={t.id} className="er-wert">
-                        <span className="er-wert-name">{t.name}</span>
+                        <span className="er-wert-name">
+                          {t.name}
+                          <InfoTipp
+                            campaignId={campaignId}
+                            schluessel={erklaerungsSchluessel.trait(t.name)}
+                            titel={t.name}
+                            erzwingen
+                          />
+                        </span>
                         <DotPool
                           value={wert}
                           max={hoechster}
@@ -873,6 +896,7 @@ function SchrittHintergrund({
 }
 
 function SchrittFreebees({
+  campaignId,
   regeln,
   rasse,
   frei,
@@ -887,6 +911,7 @@ function SchrittFreebees({
   eigenkapital,
   onEigenkapital,
 }: {
+  campaignId: string;
   regeln: Erstellungsregeln;
   /**
    * Nötig für die Obergrenze: Freebees dürfen über das **Start**maximum
@@ -956,6 +981,12 @@ function SchrittFreebees({
                 <div key={t.id} className="er-wert">
                   <span className="er-wert-name">
                     {t.name}
+                    <InfoTipp
+                      campaignId={campaignId}
+                      schluessel={erklaerungsSchluessel.trait(t.name)}
+                      titel={t.name}
+                      erzwingen
+                    />
                     {zusatz > 0 && <em className="er-freebee-plus">+{zusatz}</em>}
                   </span>
                   <DotPool
