@@ -155,6 +155,19 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   Gegenständen (`gg-suche`, dieselbe CSS-Klasse). Rein clientseitig, kein
   eigener Endpunkt: filtert über Name, Beschreibung, Mitgliedernamen und
   Aufenthaltsort. Kein Debounce nötig, weil ohne Server-Roundtrip.
+- **Party-Bearbeiten-Fenster umgebaut** (Marks Feedback 19.09.2026, nach dem
+  ersten Praxistest): Mitglieder-Sektion jetzt ganz oben — man will vor
+  allem sehen, wer gerade dabei ist. Beschreibung/Notizen dafür ganz unten.
+  Mitglieder- und Ziel-Auswahl haben jetzt auch ein Suchfeld
+  (`PersonenAuswahlListe`/`MitgliedHinzufuegenListe`/`ZielAuswahl`, gleiches
+  Muster wie beim Anlegen-Popup) — Hinzufügen läuft jetzt per Klick auf die
+  Trefferzeile statt über ein Dropdown mit Extra-Knopf. "Aufenthaltsort" in
+  "Aufenthaltsort/Ereignis" umbenannt, weil beide Zieltypen gleichwertig
+  sind. Name/Beschreibung/Notizen speichern jetzt per `onBlur` (Muster aus
+  `OrtDetail`/`FraktionDetail`/`EventDetail`) statt über einen eigenen
+  Speichern-Knopf. "Party auflösen" hat jetzt den `Bestaetigung`-Dialog
+  statt direkt zu löschen (Marks Standardregel: destruktive Aktionen
+  brauchen eine Rückfrage).
 
 **Zuletzt gebaut (15.09.2026):**
 - **Fraktionen als eigener Entitätstyp** — eigener Bereich (Hexagon-Symbol),

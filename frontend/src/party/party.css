@@ -72,6 +72,39 @@
   background: var(--flaeche-hoch);
 }
 
+/* Sucheingabe über den Auswahllisten (Mitglieder, Aufenthaltsort/Ereignis) —
+   knapper als die Standard-Inputgröße, weil sie oft in schon dichten
+   Popups sitzt. */
+.pt-suchfeld {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+/* Mitglied-Hinzufügen-Zeile ist ein Button statt einer Checkbox: Klick fügt
+   sofort hinzu, kein Zwischenschritt über Auswählen+Bestätigen. */
+.pt-auswahl-hinzufuegen {
+  justify-content: flex-start;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  min-height: 0;
+  text-align: left;
+}
+
+.pt-auswahl-hinzufuegen:hover {
+  background: var(--flaeche-hoch);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.pt-plus {
+  margin-left: auto;
+  color: var(--neon);
+  font-weight: 600;
+}
+
 /* Die aktive Party leuchtet in der Leitfarbe — dieselbe Bedeutung wie ein
    aktiver Kampf: "das hier wird gerade bespielt". */
 .pt-aktiv-schalter {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { entitiesApi, type Event as EntitiesEvent, type Ort, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { partyApi, type Party } from "./api";
 import "../items/gegenstaende.css";
@@ -156,18 +157,83 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
 
       {offen && (
         <PartyFenster
+          key={offen.id}
           campaignId={campaignId}
-          party={offen}
+          party={alle.find((p) => p.id === offen.id) ?? offen}
           personen={personen}
           orte={orte}
           events={events}
           onSchliessen={() => setOffen(null)}
-          onGeaendert={async () => {
+          // Fenster bleibt nach jeder Änderung offen — der Sinn ist ja gerade,
+          // sofort zu sehen wer jetzt in der Party ist, nicht nach jedem
+          // Mitglied-Hinzufügen neu zu öffnen (Marks Feedback 19.09.2026).
+          onGeaendert={() => {
+            neuLaden();
+          }}
+          onGeloescht={async () => {
             await neuLaden();
             setOffen(null);
           }}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Durchsuchbare Personen-Checkbox-Liste — gemeinsam genutzt beim Anlegen
+ * (Mitglieder gleich mit auswählen) und beim Bearbeiten (weitere Mitglieder
+ * hinzufügen). Eigenes Suchfeld pro Instanz, weil beide Stellen unabhängig
+ * voneinander durchsucht werden — beim Anlegen alle Personen, beim
+ * Bearbeiten nur die noch nicht zugeordneten.
+ */
+function PersonenAuswahlListe({
+  personen,
+  ausgewaehlt,
+  onUmschalten,
+  leerText,
+}: {
+  personen: Person[];
+  ausgewaehlt: Set<string>;
+  onUmschalten: (personId: string) => void;
+  leerText: string;
+}) {
+  const [suche, setSuche] = useState("");
+
+  const gefiltert = useMemo(() => {
+    const s = suche.trim().toLowerCase();
+    if (!s) return personen;
+    return personen.filter(
+      (p) => p.name.toLowerCase().includes(s) || p.personType.toLowerCase().includes(s),
+    );
+  }, [personen, suche]);
+
+  if (personen.length === 0) {
+    return <p className="pt-hinweis">{leerText}</p>;
+  }
+
+  return (
+    <div className="pt-feld">
+      <input
+        type="search"
+        className="pt-suchfeld"
+        placeholder="Suchen — Name oder Typ…"
+        value={suche}
+        onChange={(e) => setSuche(e.target.value)}
+      />
+      <div className="pt-auswahl-liste">
+        {gefiltert.length === 0 ? (
+          <p className="pt-hinweis">Nichts gefunden.</p>
+        ) : (
+          gefiltert.map((p) => (
+            <label key={p.id} className="pt-auswahl-zeile">
+              <input type="checkbox" checked={ausgewaehlt.has(p.id)} onChange={() => onUmschalten(p.id)} />
+              <span>{p.name}</span>
+              <em className="pt-typ">{p.personType}</em>
+            </label>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -251,19 +317,12 @@ function PartyAnlegenFenster({
 
         <div className="pt-feld">
           <span className="pt-label">Mitglieder (optional)</span>
-          {personen.length === 0 ? (
-            <p className="pt-hinweis">Noch keine Personen in dieser Kampagne.</p>
-          ) : (
-            <div className="pt-auswahl-liste">
-              {personen.map((p) => (
-                <label key={p.id} className="pt-auswahl-zeile">
-                  <input type="checkbox" checked={ausgewaehlt.has(p.id)} onChange={() => umschalten(p.id)} />
-                  <span>{p.name}</span>
-                  <em className="pt-typ">{p.personType}</em>
-                </label>
-              ))}
-            </div>
-          )}
+          <PersonenAuswahlListe
+            personen={personen}
+            ausgewaehlt={ausgewaehlt}
+            onUmschalten={umschalten}
+            leerText="Noch keine Personen in dieser Kampagne."
+          />
         </div>
 
         <button type="submit" disabled={sendet}>
@@ -271,6 +330,121 @@ function PartyAnlegenFenster({
         </button>
       </form>
     </Fenster>
+  );
+}
+
+/**
+ * Mitglied-Hinzufügen-Liste im Bearbeiten-Fenster: Klick fügt sofort hinzu,
+ * kein Zwischenschritt über ein Dropdown. Bekommt nur noch nicht zugeordnete
+ * Personen — wer schon Mitglied ist, taucht hier nicht mehr auf.
+ */
+function MitgliedHinzufuegenListe({
+  personen,
+  onHinzufuegen,
+}: {
+  personen: Person[];
+  onHinzufuegen: (personId: string) => void;
+}) {
+  const [suche, setSuche] = useState("");
+
+  const gefiltert = useMemo(() => {
+    const s = suche.trim().toLowerCase();
+    if (!s) return personen;
+    return personen.filter(
+      (p) => p.name.toLowerCase().includes(s) || p.personType.toLowerCase().includes(s),
+    );
+  }, [personen, suche]);
+
+  if (personen.length === 0) {
+    return <p className="pt-hinweis">Alle Personen sind bereits einer Party zugeordnet.</p>;
+  }
+
+  return (
+    <div className="pt-feld">
+      <input
+        type="search"
+        className="pt-suchfeld"
+        placeholder="Person hinzufügen — suchen…"
+        value={suche}
+        onChange={(e) => setSuche(e.target.value)}
+      />
+      <div className="pt-auswahl-liste">
+        {gefiltert.length === 0 ? (
+          <p className="pt-hinweis">Nichts gefunden.</p>
+        ) : (
+          gefiltert.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="pt-auswahl-zeile pt-auswahl-hinzufuegen"
+              onClick={() => onHinzufuegen(p.id)}
+            >
+              <span>{p.name}</span>
+              <em className="pt-typ">{p.personType}</em>
+              <span className="pt-plus" aria-hidden="true">
+                +
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Ziel-Auswahl für "Aufenthaltsort/Ereignis" — durchsucht Orte und Events
+ * gemeinsam, weil beide gleichwertige Ziele sind (Marks Wunsch 19.09.2026:
+ * auch hier soll man suchen können statt eine lange Select-Liste
+ * durchzuscrollen).
+ */
+function ZielAuswahl({
+  orte,
+  events,
+  wert,
+  onWaehlen,
+}: {
+  orte: Ort[];
+  events: EntitiesEvent[];
+  wert: string;
+  onWaehlen: (neuesZiel: string) => void;
+}) {
+  const [suche, setSuche] = useState("");
+
+  const eintraege = useMemo(() => {
+    const alle = [
+      ...orte.map((o) => ({ wert: `Ort:${o.id}`, label: o.name, symbol: "⌖" })),
+      ...events.map((e) => ({ wert: `Event:${e.id}`, label: e.title, symbol: "◆" })),
+    ];
+    const s = suche.trim().toLowerCase();
+    return s ? alle.filter((e) => e.label.toLowerCase().includes(s)) : alle;
+  }, [orte, events, suche]);
+
+  return (
+    <div className="pt-feld">
+      <input
+        type="search"
+        className="pt-suchfeld"
+        placeholder="Suchen — Ort oder Ereignis…"
+        value={suche}
+        onChange={(e) => setSuche(e.target.value)}
+      />
+      <div className="pt-auswahl-liste">
+        <label className="pt-auswahl-zeile">
+          <input type="radio" name="pt-ziel" checked={wert === ""} onChange={() => onWaehlen("")} />
+          <span>— unterwegs, kein fester Ort —</span>
+        </label>
+        {eintraege.length === 0 && suche && <p className="pt-hinweis">Nichts gefunden.</p>}
+        {eintraege.map((e) => (
+          <label key={e.wert} className="pt-auswahl-zeile">
+            <input type="radio" name="pt-ziel" checked={wert === e.wert} onChange={() => onWaehlen(e.wert)} />
+            <span>
+              {e.symbol} {e.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -282,6 +456,7 @@ function PartyFenster({
   events,
   onSchliessen,
   onGeaendert,
+  onGeloescht,
 }: {
   campaignId: string;
   party: Party;
@@ -290,15 +465,15 @@ function PartyFenster({
   events: EntitiesEvent[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  onGeloescht: () => void;
 }) {
   const [name, setName] = useState(party.name);
   const [beschreibung, setBeschreibung] = useState(party.beschreibung);
   const [notizen, setNotizen] = useState(party.notizen);
-  const [neuesMitglied, setNeuesMitglied] = useState("");
+  const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [ziel, setZiel] = useState(
     party.aufenthaltsortId ? `${party.aufenthaltsortKind}:${party.aufenthaltsortId}` : "",
   );
-  const [sendet, setSendet] = useState(false);
 
   // Wer noch keiner Party angehört, oder aktuell dieser hier — die Auswahl
   // soll niemanden zeigen, der bereits woanders Mitglied ist, sonst wirkt
@@ -309,20 +484,35 @@ function PartyFenster({
     [personen, party.mitglieder],
   );
 
-  async function stammdatenSpeichern() {
-    setSendet(true);
-    try {
-      await partyApi.aendern(campaignId, party.id, { name, beschreibung, notizen });
-      onGeaendert();
-    } finally {
-      setSendet(false);
+  // Name, Beschreibung und Notizen speichern erst beim Verlassen des Felds
+  // (onBlur) statt über einen eigenen Speichern-Knopf — dasselbe Muster wie
+  // FraktionDetail/OrtDetail/EventDetail. Leerer Name würde die Party in
+  // jeder Liste unauffindbar machen, dann lieber den alten behalten.
+  async function nameSpeichern() {
+    const sauber = name.trim();
+    if (!sauber) {
+      setName(party.name);
+      return;
     }
+    if (sauber === party.name) return;
+    await partyApi.aendern(campaignId, party.id, { name: sauber });
+    onGeaendert();
   }
 
-  async function mitgliedHinzufuegen() {
-    if (!neuesMitglied) return;
-    await partyApi.mitgliedHinzufuegen(campaignId, party.id, neuesMitglied);
-    setNeuesMitglied("");
+  async function beschreibungSpeichern() {
+    if (beschreibung === party.beschreibung) return;
+    await partyApi.aendern(campaignId, party.id, { beschreibung });
+    onGeaendert();
+  }
+
+  async function notizenSpeichern() {
+    if (notizen === party.notizen) return;
+    await partyApi.aendern(campaignId, party.id, { notizen });
+    onGeaendert();
+  }
+
+  async function mitgliedHinzufuegen(personId: string) {
+    await partyApi.mitgliedHinzufuegen(campaignId, party.id, personId);
     onGeaendert();
   }
 
@@ -351,6 +541,12 @@ function PartyFenster({
     onGeaendert();
   }
 
+  async function loeschen() {
+    setLoeschenOffen(false);
+    await partyApi.entfernen(campaignId, party.id);
+    onGeloescht();
+  }
+
   return (
     <Fenster
       offen
@@ -370,49 +566,10 @@ function PartyFenster({
           {party.aktiv ? "★ Aktive Party" : "☆ Als aktive Party festlegen"}
         </button>
 
-        <div className="pt-zeile">
-          <input value={name} onChange={(e) => setName(e.target.value)} style={{ flex: "1 1 200px" }} />
-        </div>
-
         <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
-          <span className="pt-label">Beschreibung</span>
-          <textarea
-            value={beschreibung}
-            onChange={(e) => setBeschreibung(e.target.value)}
-            rows={2}
-            style={{ resize: "vertical" }}
-          />
+          <span className="pt-label">Name</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={nameSpeichern} />
         </label>
-
-        <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
-          <span className="pt-label">Notizen (nur SL)</span>
-          <textarea value={notizen} onChange={(e) => setNotizen(e.target.value)} rows={2} style={{ resize: "vertical" }} />
-        </label>
-
-        <button type="button" onClick={stammdatenSpeichern} disabled={sendet}>
-          {sendet ? "Wird gespeichert…" : "Speichern"}
-        </button>
-
-        <section>
-          <h3 style={{ margin: "10px 0 6px" }}>Aufenthaltsort</h3>
-          <select value={ziel} onChange={(e) => aufenthaltsortSpeichern(e.target.value)}>
-            <option value="">— unterwegs, kein fester Ort —</option>
-            <optgroup label="Orte">
-              {orte.map((o) => (
-                <option key={o.id} value={`Ort:${o.id}`}>
-                  {o.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Events">
-              {events.map((e) => (
-                <option key={e.id} value={`Event:${e.id}`}>
-                  {e.title}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        </section>
 
         <section>
           <h3 style={{ margin: "10px 0 6px" }}>Mitglieder ({party.mitglieder.length})</h3>
@@ -431,38 +588,60 @@ function PartyFenster({
               </button>
             </div>
           ))}
-          <div className="pt-zeile" style={{ marginTop: 6 }}>
-            <select value={neuesMitglied} onChange={(e) => setNeuesMitglied(e.target.value)} style={{ flex: "1 1 200px" }}>
-              <option value="">— Person wählen —</option>
-              {wählbarePersonen.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.personType})
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={mitgliedHinzufuegen} disabled={!neuesMitglied}>
-              Hinzufügen
-            </button>
-          </div>
+          <MitgliedHinzufuegenListe personen={wählbarePersonen} onHinzufuegen={mitgliedHinzufuegen} />
           <p className="pt-hinweis">
             Wer hier aufgenommen wird, verlässt automatisch eine etwaige vorherige Party — eine Person ist
             immer nur in höchstens einer Party gleichzeitig.
           </p>
         </section>
 
+        <section>
+          <h3 style={{ margin: "10px 0 6px" }}>Aufenthaltsort/Ereignis</h3>
+          <ZielAuswahl orte={orte} events={events} wert={ziel} onWaehlen={aufenthaltsortSpeichern} />
+        </section>
+
+        <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
+          <span className="pt-label">Beschreibung</span>
+          <textarea
+            value={beschreibung}
+            onChange={(e) => setBeschreibung(e.target.value)}
+            onBlur={beschreibungSpeichern}
+            rows={2}
+            style={{ resize: "vertical" }}
+          />
+        </label>
+
+        <label className="pt-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
+          <span className="pt-label">Notizen (nur SL)</span>
+          <textarea
+            value={notizen}
+            onChange={(e) => setNotizen(e.target.value)}
+            onBlur={notizenSpeichern}
+            rows={2}
+            style={{ resize: "vertical" }}
+          />
+        </label>
+
         <div className="pt-zeile" style={{ marginTop: 10 }}>
           <button
             type="button"
             style={{ borderColor: "var(--signal)", color: "var(--signal)", marginLeft: "auto" }}
-            onClick={async () => {
-              await partyApi.entfernen(campaignId, party.id);
-              onGeaendert();
-            }}
+            onClick={() => setLoeschenOffen(true)}
           >
             Party auflösen
           </button>
         </div>
       </div>
+
+      {loeschenOffen && (
+        <Bestaetigung
+          titel={`${party.name} auflösen?`}
+          text="Mitglieder verlieren nur ihre Zugehörigkeit zu dieser Party, die Personen selbst bleiben unangetastet."
+          jaText="Auflösen"
+          onJa={loeschen}
+          onNein={() => setLoeschenOffen(false)}
+        />
+      )}
     </Fenster>
   );
 }
