@@ -48,6 +48,13 @@ export function RuestungsTreffer({
   // das je nach Gerät die Systemtastatur samt Spinner-Pfeilen aufklappte
   // und optisch nicht zu den übrigen Zahlen-Eingaben im Tool passte.
   const [staerkeEingabe, setStaerkeEingabe] = useState("1");
+  // Die "1" ist nur ein Vorschlag (häufigster Fall am Tisch), kein Tippstart
+  // wie bei Gesundheit/Willenskraft (die beginnen leer). Ohne diese
+  // Unterscheidung hängt der erste Tastendruck an die Vorgabe an: "4"
+  // getippt ergibt "14" statt 4 — genau der Fehler, den Mark gemeldet hat.
+  // Der erste Tastendruck ersetzt die Vorgabe komplett, danach wird normal
+  // angehängt wie überall sonst.
+  const [staerkeIstVorschlag, setStaerkeIstVorschlag] = useState(true);
   const [laeuft, setLaeuft] = useState(false);
   const [ergebnis, setErgebnis] = useState<RuestungTrefferErgebnis | null>(null);
 
@@ -57,6 +64,7 @@ export function RuestungsTreffer({
     if (offen) {
       setArt("schlag");
       setStaerkeEingabe("1");
+      setStaerkeIstVorschlag(true);
       setErgebnis(null);
     }
   }, [offen]);
@@ -109,11 +117,21 @@ export function RuestungsTreffer({
           <span style={{ fontSize: "0.9em", color: "var(--text-leise)" }}>Stärke</span>
           <Zahlenpad
             wert={staerkeEingabe}
-            onZiffer={(z) =>
-              setStaerkeEingabe((alt) => (alt.length >= 2 ? alt : (alt + z).replace(/^0+(?=\d)/, "")))
-            }
-            onLoeschen={() => setStaerkeEingabe((a) => a.slice(0, -1))}
-            onAlleLoeschen={() => setStaerkeEingabe("")}
+            onZiffer={(z) => {
+              setStaerkeIstVorschlag(false);
+              setStaerkeEingabe((alt) => {
+                if (staerkeIstVorschlag) return z;
+                return alt.length >= 2 ? alt : (alt + z).replace(/^0+(?=\d)/, "");
+              });
+            }}
+            onLoeschen={() => {
+              setStaerkeIstVorschlag(false);
+              setStaerkeEingabe((a) => (staerkeIstVorschlag ? "" : a.slice(0, -1)));
+            }}
+            onAlleLoeschen={() => {
+              setStaerkeIstVorschlag(false);
+              setStaerkeEingabe("");
+            }}
           />
         </div>
 
