@@ -151,6 +151,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   Kampagne ist aktiv** — Aktivieren deaktiviert automatisch alle anderen,
   Grundlage für die geplante Spotify/MusicCast-Anbindung (Musik folgt dem
   Aufenthaltsort der aktiven Party). Details: `docs/api/party.md`
+- **Party-Suche** — Suchfeld in der Kachel-Übersicht, gleiches Muster wie bei
+  Gegenständen (`gg-suche`, dieselbe CSS-Klasse). Rein clientseitig, kein
+  eigener Endpunkt: filtert über Name, Beschreibung, Mitgliedernamen und
+  Aufenthaltsort. Kein Debounce nötig, weil ohne Server-Roundtrip.
 
 **Zuletzt gebaut (15.09.2026):**
 - **Fraktionen als eigener Entitätstyp** — eigener Bereich (Hexagon-Symbol),

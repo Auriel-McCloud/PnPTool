@@ -28,6 +28,7 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
   const [laden, setLaden] = useState(true);
   const [offen, setOffen] = useState<Party | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
+  const [suche, setSuche] = useState("");
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
   const [seite, setSeite] = useState(0);
@@ -50,18 +51,48 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
     neuLaden().finally(() => setLaden(false));
   }, [campaignId]);
 
-  const seiten = Math.max(1, Math.ceil(alle.length / proSeite));
+  // Sucht über Name, Beschreibung, Mitgliedernamen und Aufenthaltsort — analog
+  // zur Gegenstände-Suche ("alle Waffen von Kira" statt exaktem Namen), damit
+  // man bei vielen Partys nicht erst jede Kachel einzeln aufklappen muss.
+  const gefiltert = useMemo(() => {
+    const s = suche.trim().toLowerCase();
+    if (!s) return alle;
+    return alle.filter((p) => {
+      if (p.name.toLowerCase().includes(s)) return true;
+      if (p.beschreibung.toLowerCase().includes(s)) return true;
+      if (p.aufenthaltsortName?.toLowerCase().includes(s)) return true;
+      return p.mitglieder.some((m) => m.name.toLowerCase().includes(s));
+    });
+  }, [alle, suche]);
+
+  // Nach einer neuen Suche kann die aktuelle Seite hinter dem gefilterten
+  // Ende liegen — zurück auf die erste Seite, sonst wirkt die Liste leer.
+  useEffect(() => {
+    setSeite(0);
+  }, [suche]);
+
+  const seiten = Math.max(1, Math.ceil(gefiltert.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
-  const sichtbar = alle.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+  const sichtbar = gefiltert.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
   if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Partys…</p>;
 
   return (
     <div className="gg-seite" style={KACHEL_STIL}>
       <div className="gg-kopf">
+        <input
+          className="gg-suche"
+          type="search"
+          placeholder="Suchen — Name, Mitglied oder Aufenthaltsort"
+          value={suche}
+          onChange={(e) => setSuche(e.target.value)}
+        />
         <button type="button" onClick={() => setAnlegenOffen(true)}>
           + Neue Party
         </button>
+        <span className="gg-anzahl">
+          {gefiltert.length} von {alle.length}
+        </span>
       </div>
 
       <div className="gg-raster" ref={rasterRef}>
@@ -91,6 +122,7 @@ export function PartyVerwaltung({ campaignId }: { campaignId: string }) {
       </div>
 
       {alle.length === 0 && <p className="gg-leer">Noch keine Partys in dieser Kampagne.</p>}
+      {alle.length > 0 && gefiltert.length === 0 && <p className="gg-leer">Nichts gefunden.</p>}
 
       {seiten > 1 && (
         <div className="gg-blaettern">
