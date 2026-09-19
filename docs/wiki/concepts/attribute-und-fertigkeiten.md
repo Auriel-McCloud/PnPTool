@@ -90,6 +90,10 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
     Optik, Systemtastatur statt Zahlenpad. Jetzt gemeinsame Komponente
     `frontend/src/shell/Zahlenpad.tsx`, aus `ZustandFenster` extrahiert und
     in beiden Fenstern verwendet.
+  - **Zweiter Nachtrag:** die Zahlenpad-Vorgabe „1" bei der Stärke wurde
+    beim ersten Tastendruck angehängt statt ersetzt — „4" getippt ergab
+    „14". Fix: der erste Tastendruck ersetzt die Vorgabe komplett, danach
+    verhält sich das Pad wie überall sonst.
 
 ## Widerspruch mit veralteten Docs
 

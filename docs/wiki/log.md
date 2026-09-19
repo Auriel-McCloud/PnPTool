@@ -105,6 +105,14 @@ Fix: `frontend/src/shell/Zahlenpad.tsx` — den Ziffernblock aus
 Fenstern verwendet. `docs/wiki/concepts/attribute-und-fertigkeiten.md`
 nachgezogen.
 
+## [2026-09-18] update | Rüstungstreffer: Vorschlags-1 wurde angehängt statt ersetzt
+
+Mark: „steht automatisch 1 als Vorschlag, tippe ich 4 wird daraus 14 statt 4".
+Fix: `staerkeIstVorschlag`-Flag in `RuestungsTreffer.tsx` — der erste
+Tastendruck ersetzt die Vorgabe komplett (wie ein markiertes Eingabefeld),
+danach hängt das Pad normal an. Gesundheit/Willenskraft waren nicht
+betroffen, die starten leer statt mit einer Vorgabe.
+
 ## [2026-09-18] update | Doppelter Gewicht/Traglast-Schalter entfernt
 
 Mark: der „Zugang"-Bereich hatte einen eigenen „Spielregeln"-Abschnitt mit
