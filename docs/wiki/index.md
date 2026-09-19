@@ -29,7 +29,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Verteidigung Fassung+Geistesschärfe (schon 29.08. vom Excel abgewichen) |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen/Schaden, WebSocket noch nicht gebaut |
-| [[concepts/ruestung-kaestchen-durchlass]] | Komplettes neues System (10.09.) — Kästchen+Durchlass statt flachem Bonus, am längsten diskutierte Regel im Projekt |
+| [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster |
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
 | [[concepts/drohnen-fahrzeuge]] | Riggen-Regel, Preisformel von Mark selbst als fraglich markiert (offen) |

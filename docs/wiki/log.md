@@ -105,6 +105,38 @@ Fix: `frontend/src/shell/Zahlenpad.tsx` — den Ziffernblock aus
 Fenstern verwendet. `docs/wiki/concepts/attribute-und-fertigkeiten.md`
 nachgezogen.
 
+## [2026-09-18] update | Rüstung: Durchlass durch Schadensreduktion ersetzt
+
+Mark, nach dem ersten echten Praxistest am Spieltisch: "Durchlass ist ein
+dummer Wert, sorry... wir ersetzen ihn durch Schadensreduktion, wieviel
+Schaden von der Rüstung absorbiert wird, und alles darüber hinaus geht durch
+bzw. wird eben eins runter gesetzt." Kompletter Umbau des zweiten
+Rüstungswerts:
+
+- Bedeutung gedreht: "niedriger=besser, Größe der Lücke" → "höher=besser,
+  wie viel Schaden abgefangen wird" (klassischer Soak-Wert)
+- Design-Entscheidung im Gespräch geklärt: absorbiert = min(Stärke,
+  Reduktion), Rest kommt durch; Reduktion sinkt gestuft mit dem
+  Kästchen-Anteil (>50% voll, >25% halb, sonst ein Viertel) statt einen
+  eigenen Aktuell-Wert zu brauchen — Marks Idee, mit dem Vergleich
+  Lederjacke (bleibt konstant) vs. Bombenschutzanzug (wird spürbar
+  schwächer); Kästchen-System und Abstufung blieben unverändert
+- Zwei alte Test-Rüstungen in der echten Kampagne auf Marks Wunsch gelöscht
+  statt migriert ("einfach löschen")
+
+Geändert: `backend/app/kampf/ruestung.py` (Kernformel neu), `items/schemas.py`,
+`items/repository.py`, `items/routes.py`, `traits/routes.py`,
+`tests/test_ruestung.py` (alle 26 Tests neu geschrieben), sowie
+`frontend/src/items/api.ts`, `traits/bogenApi.ts`, `traits/Charakterblatt.tsx`,
+`traits/CharacterSheetPanel.tsx`, `kampf/Kampfkarte.tsx`. `docs/api/ruestung.md`
+komplett neu geschrieben (mit Abschnitt zur abgelösten Durchlass-Fassung),
+`docs/wiki/concepts/ruestung-kaestchen-durchlass.md` überarbeitet.
+
+Verifiziert: `tsc --noEmit` fehlerfrei, alle 408 Backend-Tests grün, live
+gegen die echte Kampagne getestet (Anlegen, Ausrüsten, Treffer mit
+absorbiert/durchkommend-Rechnung nachvollzogen, Reparatur) — alle
+Testgegenstände danach wieder gelöscht.
+
 ## [2026-09-18] update | Rüstungstreffer: Vorschlags-1 wurde angehängt statt ersetzt
 
 Mark: „steht automatisch 1 als Vorschlag, tippe ich 4 wird daraus 14 statt 4".

@@ -39,7 +39,7 @@ C:\DEV\PnPTool\
 │   │   ├── mitteilungen.md   — Popups, WebSocket, Ausblenden
 │   │   ├── kontakte.md       — Messenger, Stufen, Alias
 │   │   ├── kampf.md          — Runden, Initiative
-│   │   ├── ruestung.md       — Kästchen + Durchlass (NEU 10.09.2026)
+│   │   ├── ruestung.md       — Kästchen + Schadensreduktion (NEU 10.09.2026, Reduktion statt Durchlass 18.09.2026)
 │   │   ├── rassen.md         — Baukasten, Balance, Freigabe (NEU 11.09.2026)
 │   │   ├── personen.md       — PCs/NPCs, Attribute, Cyberware
 │   │   ├── wiki.md           — Seiten, Freigaben
@@ -98,7 +98,7 @@ npm run dev
 | 5 | ✅ | **Mitteilungen + Messenger fertig** |
 | Wiki | ✅ | Seitenbaum, Freigaben, TipTap-Editor |
 | Themes | ✅ | Zwei Themes, Token-basiert |
-| Rüstung | ✅ | Kästchen + Durchlass, siehe `docs/api/ruestung.md` |
+| Rüstung | ✅ | Kästchen + Schadensreduktion, siehe `docs/api/ruestung.md` |
 
 **Zuletzt gebaut (10.09.2026):**
 - **Rüstungssystem: Kästchen + Durchlass** — Rüstung nutzt sich im Kampf ab,
@@ -190,6 +190,19 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   frisch aktivierten Stück. Fix zieht jetzt nach, aber nur beim Übergang von
   `Max == 0`, nicht bei bereits aktiver (evtl. beschädigter) Rüstung. Details:
   `docs/wiki/concepts/ruestung-kaestchen-durchlass.md` Punkt 7
+- **Rüstung: Durchlass durch Schadensreduktion ersetzt** — Mark nach dem
+  ersten Praxistest: *"Durchlass ist ein dummer Wert, sorry"*. Kompletter
+  Umbau des zweiten Rüstungswerts von "niedriger=besser, Größe der Lücke"
+  auf "höher=besser, wie viel Schaden abgefangen wird" — klassischer
+  Soak-Wert. Kein eigener "Aktuell"-Wert mehr: die effektive Reduktion sinkt
+  gestuft mit dem Kästchen-Anteil (>50% voll, >25% halb, sonst ein Viertel),
+  Mark: *"eine Lederjacke mit 1 Absorption bleibt immer gleich, ein
+  Bombenschutzanzug der stark beschädigt wird wird schwächer"*. Betraf
+  Schema, Repository, beide Rüstungs-Routen, Kernformel
+  (`kampf/ruestung.py`, alle 26 Tests neu geschrieben) und vier
+  Frontend-Dateien. `docs/api/ruestung.md` komplett neu geschrieben,
+  Zwei alte Test-Rüstungen in der Kampagne gelöscht (auf Marks Wunsch, statt
+  Migration). Details: `docs/wiki/concepts/ruestung-kaestchen-durchlass.md`
 
 **Zuletzt behoben (15.09.2026):**
 - **Charakterblatt-Ladefehler:** `KeyError: 'ruleset'` — nach dem Umbau auf
@@ -237,20 +250,23 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 - **NPC-Namen verborgen** — Spieler sehen "Unbekannter Ork"
 
 ### Rüstung (`docs/api/ruestung.md`)
-- **Kästchen + Durchlass statt flachem Bonus** — Rüstung nutzt sich ab
-- **Durchlass: niedriger ist besser** — 0 = dicht, ist die Größe der Lücke,
-  nicht wie viel geblockt wird (Lederjacke hat hohen Durchlass, Bombenweste
-  startet bei 0)
+- **Kästchen + Schadensreduktion statt flachem Bonus** — Rüstung nutzt sich ab
+- **Reduktion: höher ist besser** (18.09.2026 gedreht — vorher "Durchlass",
+  niedriger=besser, von Mark nach dem Praxistest als unintuitiv verworfen:
+  *"Durchlass ist ein dummer Wert"*). Wie viel Schaden pro Treffer abgefangen
+  wird; sinkt gestuft mit dem Kästchen-Anteil (>50% voll, >25% halb, sonst
+  ein Viertel) statt einen eigenen "Aktuell"-Wert zu brauchen
 - **Abstufen statt Blocken** — Unheilbar→Tödlich→Schlag, nur Schlag wird
   halbiert (unterste Stufe)
-- **Basis- und Aktuell-Wert getrennt** — sonst wird beschädigte Rüstung
-  paradoxerweise *unzerstörbarer* statt kaputter (siehe Doku, war ein
-  echter Denkfehler unterwegs)
-- **Alles Getragene ist EIN Pool** — Kästchen summiert, Durchlass vom
-  dichtesten Teil. **Keine Körperzonen**, kein Zielen (zu kompliziert)
-- **Dichtestes Teil wird zuerst aufgebraucht**, Überlauf ins nächste. Killt
-  nebenbei den "kugelsicheres Suspensorium"-Trick von selbst: das dichte
-  Kleinteil ist nach einem Kästchen weg und der Pool-Durchlass springt hoch
+- **Kein separater Aktuell-Wert für die Reduktion mehr** — die effektive
+  Reduktion wird aus dem Kästchen-Verhältnis berechnet. Das war zugleich der
+  Fix für einen Bug (18.09.2026): der alte Durchlass-Aktuell-Wert zog beim
+  nachträglichen Aktivieren über PATCH nicht mit, wodurch frische Rüstung
+  fälschlich als zerschossen galt
+- **Alles Getragene ist EIN Pool** — Kästchen summiert, Reduktion vom Teil
+  mit der besten Basis. **Keine Körperzonen**, kein Zielen (zu kompliziert)
+- **Beste Reduktion wird zuerst aufgebraucht**, Überlauf ins nächste. Killt
+  nebenbei den "kugelsicheres Suspensorium"-Trick von selbst
 - **Zerstörte Rüstung (0 Kästchen) fliegt aus der Ausrüstung** — landet im
   Mitgeführten (reparierbar, wie ausgebautes Chrom), Wiederanlegen gibt 409
 - **Treffer hängt an der Person, nicht am Gegenstand** — welche Teile dran
@@ -429,19 +445,22 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - Vorlagen kommen aus dem Regelsystem
    - Kopiert Vorlage → Spieler passt Namen/Details an
 
-7. **Rüstungssystem** — ✅ Fertig (10.09.2026), siehe `docs/api/ruestung.md`:
-   - **Zwei Werte pro Rüstung:** Kästchen (was sie aushält) + **Durchlass**
-     (wie groß ihre Lücke ist — niedriger ist besser, umbenannt von "Schwelle")
+7. **Rüstungssystem** — ✅ Fertig (10.09.2026, Reduktion statt Durchlass seit
+   18.09.2026), siehe `docs/api/ruestung.md`:
+   - **Zwei Werte pro Rüstung:** Kästchen (was sie aushält) + **Reduktion**
+     (wie viel Schaden sie pro Treffer abfängt — höher ist besser; hieß
+     vorher "Durchlass" mit umgekehrter Bedeutung, von Mark nach dem
+     Praxistest verworfen: *"Durchlass ist ein dummer Wert"*)
    - **Abgestuft statt geblockt:** Unheilbar→Tödlich→Schlag, Schlag wird
      zusätzlich halbiert (unterste Stufe, kein weiteres Abstufen möglich)
-   - **Kästchenschaden:** Unheilbar/Tödlich anteilig aus Basis+Überschuss,
+   - **Kästchenschaden:** Unheilbar/Tödlich anteilig aus Absorbiert+Durchkommend,
      Schlag nur ab der Hälfte der aktuellen Kästchen (Trigger)
-   - **Je kaputter, desto schlechter:** Durchlass-Aktuell steigt mit jedem
-     Treffer; Kästchenschaden rechnet dagegen gegen die fixe Durchlass-Basis
-     (sonst wird beschädigte Rüstung paradox unzerstörbar, siehe Doku)
+   - **Je kaputter, desto schlechter:** die effektive Reduktion sinkt gestuft
+     mit dem Kästchen-Anteil (>50% voll, >25% halb, sonst ein Viertel) — kein
+     eigener "Aktuell"-Wert mehr nötig, dadurch auch keine Paradox-Gefahr mehr
    - **Kumulierte Rüstung:** alles Getragene ist ein Pool (Kästchen summiert,
-     Durchlass vom dichtesten Teil); aufgebraucht wird das dichteste zuerst,
-     zerstörte Teile fliegen aus der Ausrüstung. Keine Körperzonen
+     Reduktion vom Teil mit der besten Basis); aufgebraucht wird die beste
+     Reduktion zuerst, zerstörte Teile fliegen aus der Ausrüstung. Keine Körperzonen
    - **Offen:** Reparatur-Endpoint rechnet nur das Ergebnis, keine
      Hardware-Skill-Probe, kein Händlerpreis (braucht Skill-Check- bzw.
      Shop-System, siehe Punkt 1 und 8)
