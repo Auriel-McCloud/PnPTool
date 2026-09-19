@@ -145,6 +145,13 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
 
 **Zuletzt gebaut (19.09.2026):**
+- **Kästchen-Overflow-Grenze auf 12 angehoben** (Marks Wunsch) — vorher
+  kippte jede Zustandsleiste (Gesundheit, Willenskraft, Rüstung, I.C.E.) ab
+  10 Kästchen in die Puffer+Enden-Leistenform. 12 ist genau das natürliche
+  Gesundheitsmaximum ohne Chrom (Grundwert 6 + Widerstandsfähigkeit bis 6);
+  jeder Charakter sieht seine Lebenskästchen jetzt normal einzeln, bis
+  Chrom das Maximum tatsächlich darüber hebt. `frontend/src/traits/
+  Kaestchen.tsx::OVERFLOW_AB`.
 - **Verwundungsanzeige verstärkt** (Marks Feedback nach Praxistest: "beginnt
   erst sehr spät" und "sehr dezent") — Schleier startet jetzt erst ab der
   Hälfte verlorener Gesundheit (vorher ab dem ersten Kratzer, dafür kaum

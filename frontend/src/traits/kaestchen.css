@@ -88,7 +88,7 @@
 }
 
 /* --- Lange Leisten: Puffer + Endkästchen ------------------------------
-   Ab OVERFLOW_AB (10) Kästchen kippt die Reihe in diese Form. Der vordere
+   Ab OVERFLOW_AB (12) Kästchen kippt die Reihe in diese Form. Der vordere
    Teil ist eine Zellenleiste, die letzten fünf bleiben echte Kästchen mit
    den gewohnten Zeichen — genau dort genau, wo gezählt wird. */
 

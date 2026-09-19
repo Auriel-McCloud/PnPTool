@@ -1,7 +1,7 @@
 ---
 title: Attribute und Fertigkeiten
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-19
 type: konzept
 tags: [attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charakterblatt.md, ../../regeln-neotopia.md, ../../../backend/app/traits/]
@@ -94,6 +94,15 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
     beim ersten Tastendruck angehängt statt ersetzt — „4" getippt ergab
     „14". Fix: der erste Tastendruck ersetzt die Vorgabe komplett, danach
     verhält sich das Pad wie überall sonst.
+- **Overflow-Grenze auf 12 angehoben (19.09.2026, Marks Wunsch):** vorher
+  kippte jede Zustandsleiste ab 10 Kästchen in die Puffer+Enden-Form —
+  genau am natürlichen Gesundheitsmaximum ohne Chrom (Grundwert 6 +
+  Widerstandsfähigkeit bis 6 = 12), das damit für jeden Charakter sofort
+  in den Leisten-Modus kippte. `OVERFLOW_AB` jetzt 12: die Lebenskästchen
+  bleiben normal einzeln zählbar, bis Chrom das Maximum tatsächlich
+  darüber hebt (bis 18 mit Chrom). Betrifft alle vier Zustandsleisten
+  (Gesundheit, Willenskraft, Rüstung, I.C.E.), weil sie sich `Kaestchen.tsx`
+  teilen.
 
 ## Widerspruch mit veralteten Docs
 

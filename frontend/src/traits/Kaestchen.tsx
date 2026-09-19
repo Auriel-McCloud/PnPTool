@@ -25,10 +25,15 @@ export const SCHADENSARTEN: { art: Schadensart; zeichen: string; name: string }[
  */
 /**
  * Ab hier wird die Reihe zu lang zum Zählen und kippt in die Leisten-Form.
- * Zehn ist die Zahl vom Papierblatt (zwei Fünfergruppen) — darunter ändert
- * sich also nichts an dem, was Mark gewohnt ist.
+ * **12** statt zehn (19.09.2026, Marks Wunsch): das ist genau das
+ * natürliche Gesundheits-Maximum ohne Chrom (Grundwert 6 + Widerstands-
+ * fähigkeit bis 6, siehe `docs/wiki/concepts/attribute-und-fertigkeiten.md`)
+ * — jeder Charakter sieht seine Lebenskästchen also normal einzeln, bis
+ * Chrom das Maximum über 12 hebt. Gilt für alle Zustandsleisten
+ * (Gesundheit, Willenskraft, Rüstung, I.C.E.), weil sie sich dieselbe
+ * Komponente teilen — dieselbe Konsistenz wie bei der Füllrichtung.
  */
-export const OVERFLOW_AB = 10;
+export const OVERFLOW_AB = 12;
 
 /** So viele Kästchen bleiben am Ende immer einzeln stehen. */
 export const ENDKAESTCHEN = 5;
