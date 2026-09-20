@@ -489,3 +489,29 @@
     display: inline-flex;
   }
 }
+
+/* --- Handy: Editor-Text lesbar --------------------------------------
+   Das Layout bleibt vollflächig (kein separates Handy-Layout nötig) —
+   nur der Fließtext im Editor selbst war bei 16px Basisgröße am Handy
+   nicht mehr bequem lesbar/schreibbar (Mark, 20.09.2026). Betrifft
+   bewusst nur .ProseMirror im Wiki-Editor, nicht die globalen h1/h2/h3
+   (die tragen anderswo UI-Beschriftungen wie Kopfzeilen) und nicht die
+   Werkzeugleiste/den Baum, die eng bleiben sollen. */
+@media (max-width: 599px) {
+  .wk-editor .ProseMirror {
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  .wk-editor .ProseMirror h1 {
+    font-size: 26px;
+  }
+
+  .wk-editor .ProseMirror h2 {
+    font-size: 21px;
+  }
+
+  .wk-editor .ProseMirror h3 {
+    font-size: 18px;
+  }
+}

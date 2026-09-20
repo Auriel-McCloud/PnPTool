@@ -258,3 +258,20 @@ Umsetzung in `frontend/src/shell/CommlinkShell.tsx` (`Stoerung`) +
 Dokumentiert: `docs/wiki/entities/ui-konzept-commlink.md` (neuer Abschnitt
 „Das Gerät stört mit"), `docs/ui-konzept.md`, `CLAUDE.md` (Zuletzt gebaut),
 `docs/wiki/index.md` (Zusammenfassungszeile).
+
+## [2026-09-20] update | Wiki-Editor am Handy: lesbare Schriftgröße
+
+Mark berichtete, der Editor-Text im Story-Wiki sei am Handy nicht lesbar
+(zu klein), Vollbild-Layout sollte aber bleiben. Ursache: globale
+Basisschriftgröße 16px, keine Handy-spezifische Anpassung im Editor.
+
+Fix: `frontend/src/wiki/wiki.css`, neue `@media (max-width: 599px)`-Regel
+für `.wk-editor .ProseMirror` (18px/1.6, Überschriften 26/21/18px). Rein
+clientseitig, kein neuer/geänderter Endpunkt, daher kein `docs/api/`-Eintrag.
+`tsc -b` fehlerfrei.
+
+Dokumentiert: `docs/wiki/entities/ingame-wiki-feature.md` (neuer Abschnitt),
+`docs/wiki/index.md` (Zusammenfassungszeile), `CLAUDE.md` (Zuletzt gebaut).
+Betrifft nur einen Teilaspekt von CLAUDE.md Punkt 13 („Handy-Ansicht für
+Story-Wiki + Ideenschmiede") — Seitenbaum/Kachel-Übersicht/Verweis-Auswahl
+am Handy bleiben offen.

@@ -106,6 +106,17 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (20.09.2026):**
+- **Wiki-Editor am Handy: lesbare Schriftgröße** — Marks Problem war nicht
+  das Layout (das ist am Handy schon vollflächig), sondern dass der
+  Fließtext im Editor bei der globalen Basisgröße (16px) unlesbar klein
+  wirkte. Unter 600px bekommt `.wk-editor .ProseMirror` 18px/1.6 (Über-
+  schriften 26/21/18px) — bewusst nur der Editor-Inhalt, nicht die
+  restliche Wiki-UI (Baum, Werkzeugleiste bleiben eng). `frontend/src/
+  wiki/wiki.css`. Rein clientseitig, kein neuer Endpunkt. Punkt 13 unter
+  "Geplante Features" ist damit teilweise adressiert — Seitenbaum/
+  Kachel-Übersicht und Verweis-Auswahl am Handy stehen weiterhin aus.
+
 **Zuletzt gebaut (19.09.2026, spät):**
 - **Neonflackern verstärkt** (Marks Feedback: „das Flackern ist zu kurz")
   — Dauer von 0,45s auf 1,6s mehr als verdreifacht. Optik jetzt wie ein

@@ -1,7 +1,7 @@
 ---
 title: In-Game-Wiki-Feature
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-20
 type: entität
 tags: [wiki-feature, frontend, ui]
 sources: [../../api/wiki.md, ../../../CLAUDE.md]
@@ -53,6 +53,24 @@ Orte, Personen, Fraktionen, Geschichte, Regeln, Sonstiges.
 `-[:BESCHREIBT]->` `(:Person|Ort|Fraktion|...)`. Markdown-Inhalt mit internen
 Links (`[[Person:Viktor]]`), Bildern, Tabellen — kein HTML (XSS-Schutz beim
 Rendern).
+
+## Editor am Handy: lesbare Schriftgröße (20.09.2026)
+
+Mark: der Editor-Text am Handy war „so klein, dass ich nichts lesen kann" —
+gemeint war explizit *nicht* das Layout (das ist am Handy schon vollflächig
+über `Fenster.tsx`/`fenster.css`, siehe [[ui-konzept-commlink]]), sondern die
+Fließtextgröße selbst bei der globalen Basisgröße von 16px.
+
+Fix rein clientseitig in `frontend/src/wiki/wiki.css`: unter 600px bekommt
+`.wk-editor .ProseMirror` `font-size: 18px` / `line-height: 1.6`
+(Überschriften 26/21/18px). Bewusst nur der Editor-Inhalt betroffen, nicht
+Baum/Werkzeugleiste/Verzeichnis — die bleiben eng, damit am Handy noch
+mehrere Bedienelemente nebeneinander passen. Kein neuer Endpunkt, daher
+kein Eintrag in `docs/api/`.
+
+Noch offen aus demselben Feature-Wunsch (CLAUDE.md Punkt 13): Seitenbaum/
+Kachel-Übersicht und Verweis-Auswahl (`VerweisWaehler.tsx`) am Handy sind
+davon unberührt.
 
 ## Siehe auch
 
