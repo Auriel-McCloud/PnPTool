@@ -1,23 +1,31 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { entitiesApi, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, begleiterApi, type Begleiter, type BegleiterArt } from "./api";
+import { EinflussVerwaltung } from "./EinflussVerwaltung";
+import { CritterWerte, KiAttributBlatt } from "./KiAttributBlatt";
 import "../items/gegenstaende.css";
 import "./begleiter.css";
 
 /**
- * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete.
+ * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete, KIs, Critter.
  *
- * Sie hängen an einer Person und teilen sich das Blatt mit Drohnen und
+ * Sie hängen an einer Person und teilen sich das Grundblatt mit Drohnen und
  * Fahrzeugen. Wer einem Spielercharakter zugeordnet ist, wird beim Anlegen
  * automatisch für ihn sichtbar; sonst müsste die Spielleitung bei jedem
  * Sprite daran denken, und vergässe sie es, stünde der Neuroweaver ohne da.
+ *
+ * KI (19.09.2026) trägt zusätzlich die sechs nicht-körperlichen
+ * Person-Attribute plus Matrix-Präsenz und kann echten Entitäten
+ * Einfluss-Stufen zuweisen (`EinflussVerwaltung`). CRITTER trägt zusätzlich
+ * Loyalität und Ausbildung/Tricks.
  */
 
-const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER"];
+const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER", "KI", "CRITTER"];
 
 export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [alle, setAlle] = useState<Begleiter[]>([]);
@@ -147,6 +155,14 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
             await neuLaden();
             setOffen(null);
           }}
+          // Einfluss ändert sich sofort über die eigene API, ohne dass der
+          // Rest des Formulars mitgespeichert werden soll — das Fenster
+          // bleibt offen, damit man mehrere Ziele nacheinander zuweisen kann
+          // (dasselbe Muster wie Mitglied-Hinzufügen in PartyVerwaltung).
+          onEinflussGeaendert={(neu) => {
+            setAlle((alt) => alt.map((b) => (b.id === neu.id ? neu : b)));
+            setOffen(neu);
+          }}
         />
       )}
     </div>
@@ -159,12 +175,14 @@ function BegleiterFenster({
   personen,
   onSchliessen,
   onGeaendert,
+  onEinflussGeaendert,
 }: {
   campaignId: string;
   begleiter: Begleiter;
   personen: { id: string; label: string }[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  onEinflussGeaendert: (neu: Begleiter) => void;
 }) {
   const [name, setName] = useState(begleiter.name);
   const [art, setArt] = useState(begleiter.art);
@@ -182,7 +200,22 @@ function BegleiterFenster({
     Object.entries(begleiter.fertigkeiten ?? {}),
   );
   const [besitzer, setBesitzer] = useState(begleiter.besitzerId ?? "");
+  // KI-Attribute — Skala 1-6 wie bei Person.
+  const [charisma, setCharisma] = useState(begleiter.charisma);
+  const [manipulation, setManipulation] = useState(begleiter.manipulation);
+  const [fassung, setFassung] = useState(begleiter.fassung);
+  const [intelligenz, setIntelligenz] = useState(begleiter.intelligenz);
+  const [geistesschaerfe, setGeistesschaerfe] = useState(begleiter.geistesschaerfe);
+  const [entschlossenheit, setEntschlossenheit] = useState(begleiter.entschlossenheit);
+  const [matrixPraesenz, setMatrixPraesenz] = useState(begleiter.matrixPraesenz);
+  // CRITTER-Werte.
+  const [loyalitaet, setLoyalitaet] = useState(begleiter.loyalitaet);
+  const [ausbildung, setAusbildung] = useState(begleiter.ausbildung);
+  // Erfahrung — reine Budget-Anzeige, keine Kostenrechnung.
+  const [erfahrung, setErfahrung] = useState(begleiter.erfahrung);
+  const [erfahrungAusgegeben, setErfahrungAusgegeben] = useState(begleiter.erfahrungAusgegeben);
   const [sendet, setSendet] = useState(false);
+  const [loeschenOffen, setLoeschenOffen] = useState(false);
 
   const verteilt = widerstand + angriff + agilitaet + fertigkeiten.reduce((s, [, w]) => s + w, 0);
 
@@ -201,6 +234,17 @@ function BegleiterFenster({
         waffenSchaden,
         schadensart,
         fertigkeiten: Object.fromEntries(fertigkeiten.filter(([n]) => n.trim())),
+        charisma,
+        manipulation,
+        fassung,
+        intelligenz,
+        geistesschaerfe,
+        entschlossenheit,
+        matrixPraesenz,
+        loyalitaet,
+        ausbildung,
+        erfahrung,
+        erfahrungAusgegeben,
       });
       if (besitzer !== (begleiter.besitzerId ?? "")) {
         await begleiterApi.besitzer(campaignId, begleiter.id, besitzer || null);
@@ -209,6 +253,12 @@ function BegleiterFenster({
     } finally {
       setSendet(false);
     }
+  }
+
+  async function entfernen() {
+    setLoeschenOffen(false);
+    await begleiterApi.entfernen(campaignId, begleiter.id);
+    onGeaendert();
   }
 
   return (
@@ -252,6 +302,40 @@ function BegleiterFenster({
             ))}
           </select>
         </div>
+
+        {art === "KI" && (
+          <KiAttributBlatt
+            werte={{
+              charisma,
+              manipulation,
+              fassung,
+              intelligenz,
+              geistesschaerfe,
+              entschlossenheit,
+              matrixPraesenz,
+            }}
+            onAendern={(feld, wert) => {
+              if (feld === "charisma") setCharisma(wert);
+              else if (feld === "manipulation") setManipulation(wert);
+              else if (feld === "fassung") setFassung(wert);
+              else if (feld === "intelligenz") setIntelligenz(wert);
+              else if (feld === "geistesschaerfe") setGeistesschaerfe(wert);
+              else if (feld === "entschlossenheit") setEntschlossenheit(wert);
+              else if (feld === "matrixPraesenz") setMatrixPraesenz(wert);
+            }}
+          />
+        )}
+
+        {art === "CRITTER" && (
+          <CritterWerte
+            loyalitaet={loyalitaet}
+            ausbildung={ausbildung}
+            onAendern={(feld, wert) => {
+              if (feld === "loyalitaet") setLoyalitaet(wert);
+              else setAusbildung(wert);
+            }}
+          />
+        )}
 
         <StufenBlatt
           werte={{ stufe, widerstand, angriff, agilitaet }}
@@ -319,6 +403,42 @@ function BegleiterFenster({
           </div>
         </section>
 
+        <section>
+          <h3 style={{ margin: "0 0 6px" }}>Erfahrung</h3>
+          <p className="pcd-hinweis" style={{ marginBottom: 6 }}>
+            Reine Übersicht — Werte bleiben frei einstellbar, es gibt keine Kostenrechnung wie bei Personen.
+          </p>
+          <div className="bg-zeile">
+            <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+              Gesamt vergeben
+              <input
+                type="number"
+                min={0}
+                value={erfahrung}
+                onChange={(e) => setErfahrung(Math.max(0, Number(e.target.value)))}
+                style={{ width: 90 }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+              Davon ausgegeben
+              <input
+                type="number"
+                min={0}
+                value={erfahrungAusgegeben}
+                onChange={(e) => setErfahrungAusgegeben(Math.max(0, Number(e.target.value)))}
+                style={{ width: 90 }}
+              />
+            </label>
+            <span style={{ alignSelf: "flex-end", color: "var(--text-leise)", fontSize: 13 }}>
+              {Math.max(0, erfahrung - erfahrungAusgegeben)} verfügbar
+            </span>
+          </div>
+        </section>
+
+        {art === "KI" && (
+          <EinflussVerwaltung campaignId={campaignId} begleiter={begleiter} onGeaendert={onEinflussGeaendert} />
+        )}
+
         <div className="bg-zeile">
           <button type="button" onClick={sichern} disabled={sendet}>
             {sendet ? "Wird gespeichert…" : "Speichern"}
@@ -326,15 +446,22 @@ function BegleiterFenster({
           <button
             type="button"
             style={{ borderColor: "var(--signal)", color: "var(--signal)", marginLeft: "auto" }}
-            onClick={async () => {
-              await begleiterApi.entfernen(campaignId, begleiter.id);
-              onGeaendert();
-            }}
+            onClick={() => setLoeschenOffen(true)}
           >
             Entfernen
           </button>
         </div>
       </div>
+
+      {loeschenOffen && (
+        <Bestaetigung
+          titel={`${begleiter.name} entfernen?`}
+          text="Der Begleiter wird endgültig gelöscht, samt Einfluss-Verknüpfungen."
+          jaText="Entfernen"
+          onJa={entfernen}
+          onNein={() => setLoeschenOffen(false)}
+        />
+      )}
     </Fenster>
   );
 }

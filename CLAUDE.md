@@ -480,7 +480,7 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✅ FERTIG
 
-8. **KI-/Critter-Begleiterblatt + Einfluss-System** — 🟡 Backend fertig, Frontend offen:
+8. **KI-/Critter-Begleiterblatt + Einfluss-System** — ✅ Backend + Frontend fertig:
    - Zwei neue `BegleiterArt`-Werte auf dem bestehenden Begleiter-System
      (siehe `docs/wiki/entities/...` und `backend/app/begleiter/`):
      - **KI**: Stadt-KI (Babel) — kein eigener Entity-Typ, sondern ein
@@ -505,15 +505,21 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - **Erfahrung bei Begleitern**: `erfahrung`/`erfahrungAusgegeben` als
      reine Budget-Anzeige ohne Kostenrechnung (anders als bei Personen) —
      Werte bleiben frei einstellbar, nur Erinnerung für die SL.
-   - **Offen**: Frontend (`BegleiterVerwaltung.tsx`/`api.ts`) kennt die
-     neuen Felder/Arten noch nicht — bisher nur Backend (Schemas,
-     Repository, Routen) verifiziert. KI-Auto-Steigerung (Gemini/Mistral
-     lässt NPC/Begleiter/Critter/KI anhand Beschreibung + bereits erlebter
-     Events wachsen) ist eigenes, noch nicht begonnenes Vorhaben — braucht
-     zuerst ein Party-Besuchs-Log (`WAR_AN`-Kante mit Zeitstempel), weil
+   - **Frontend (20.09.2026)**: `BegleiterVerwaltung.tsx` (SL-Bearbeiten:
+     KI-Attribute + Critter-Werte + `EinflussVerwaltung` mit Ziel-Suche über
+     Orte/Fraktionen/Events/Gegenstände), `BegleiterKachel.tsx`
+     (Spieler-Ansehen inkl. `EinflussAnzeige`, reine Anzeige ohne Aktionen),
+     neue Symbole ⌬ (KI) / ❖ (Critter) in `ART_SYMBOLE`. `KiAttributBlatt`/
+     `CritterWerte` sind eigene, wiederverwendbare Komponenten
+     (`begleiter/KiAttributBlatt.tsx`) für beide Kontexte. `tsc -b` sauber.
+   - **Offen**: KI-Auto-Steigerung (Gemini/Mistral lässt NPC/Begleiter/
+     Critter/KI anhand Beschreibung + bereits erlebter Events wachsen) ist
+     eigenes, noch nicht begonnenes Vorhaben — braucht zuerst ein
+     Party-Besuchs-Log (`WAR_AN`-Kante mit Zeitstempel), weil
      `BEFINDET_SICH_AN` beim Ortswechsel überschrieben statt historisiert
      wird und "hat die Party das Event schon erlebt" sonst nicht beantwortbar
-     ist.
+     ist. Ein Live-Test im Browser steht noch aus (Mark prüft selbst im
+     laufenden Dev-Server).
 
 9. **Decker / Neuroweaver Skill-System** — Vorschlag für Erweiterung auf 6 Skills:
    - Aktuell: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren (4 Skills)

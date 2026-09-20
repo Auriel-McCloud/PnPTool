@@ -5,14 +5,18 @@ import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
+import { EinflussAnzeige } from "./EinflussVerwaltung";
+import { CritterWerte, KiAttributBlatt } from "./KiAttributBlatt";
 import "./begleiter.css";
 
 /**
  * Ein Begleiter als Kachel, die sein Blatt aufklappt.
  *
- * Das Blatt ist dasselbe wie bei Drohne und Fahrzeug (`Neotopia.xlsx`, Blatt
- * "Drohne / Fahrzeug / Sprite / Geist"): Stufe, Widerstand, Angriff,
+ * Das Grundblatt ist dasselbe wie bei Drohne und Fahrzeug (`Neotopia.xlsx`,
+ * Blatt "Drohne / Fahrzeug / Sprite / Geist"): Stufe, Widerstand, Angriff,
  * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schadensbonus.
+ * KI und CRITTER (19.09.2026) zeigen zusätzlich ihr Zusatzblatt — siehe
+ * `KiAttributBlatt`/`CritterWerte`/`EinflussAnzeige`.
  */
 
 export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
@@ -28,6 +32,11 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
       )}
 
       {beschreibung && <RichTextView content={beschreibung} />}
+
+      {begleiter.art === "KI" && <KiAttributBlatt werte={begleiter} />}
+      {begleiter.art === "CRITTER" && (
+        <CritterWerte loyalitaet={begleiter.loyalitaet} ausbildung={begleiter.ausbildung} />
+      )}
 
       <StufenBlatt werte={begleiter} stufenHinweis="Zugleich die Gesundheit." />
 
@@ -51,6 +60,8 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
           </div>
         </section>
       )}
+
+      {begleiter.art === "KI" && <EinflussAnzeige begleiter={begleiter} />}
     </>
   );
 }
