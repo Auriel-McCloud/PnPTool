@@ -459,8 +459,16 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - **NPC-Generator:** NPCs mit kurzer Beschreibung automatisch erstellen lassen
    - **Bildgenerierung:** Portraits für Charaktere, Item-Bilder, Maps, Orte, Gebäude
    - **Wiki-Import:** Word-Dokumente hochladen, KI wandelt in Wiki-Seiten um
-   - **Auto-Verknüpfung:** KI durchsucht Wiki und verknüpft Personen/Orte mit Objekten
-   - **Rechtschreib-/Grammatikprüfung:** Im Wiki-Editor
+   - **Auto-Verknüpfung** (präzisiert 20.09.2026, Marks Wunsch): KI durchsucht
+     Wiki-Text/Ideenschmiede-Einträge und verknüpft erwähnte Personen/Orte/
+     Events automatisch als echte Graphkanten (nicht nur Textsuche). Existiert
+     eine erwähnte Entität noch nicht, legt die KI dafür einen **Entwurf in
+     der Ideenschmiede an** (Vorschlag zur Prüfung durch den SL, kein
+     Autocommit in die Kampagne) und trägt die Beziehung gleich mit ein
+   - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026): Im
+     Wiki-Editor UND in der Ideenschmiede — neben Rechtschreibung/Grammatik
+     auch **Logik-/Konsistenzfehler** (z.B. Widersprüche zu bereits
+     bestehenden Fakten im Wiki)
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
 
 4. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung.
@@ -635,3 +643,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     angezeigt. Spieler haben danach keine Möglichkeit, diese Felder zu
     ändern. Braucht irgendwo eine Bearbeiten-Funktion (Popup-Stil).
     Status: nur notiert, noch nicht entschieden/gebaut.
+
+13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026) —
+    Mark will auch unterwegs (ohne Laptop) an seinen Geschichten
+    weiterschreiben. Beide Bereiche brauchen eine mobil taugliche Ansicht
+    (Editor, Seitenbaum/Kachel-Übersicht, Verweis-Auswahl) — aktuell auf
+    Desktop-Bedienung ausgelegt. Status: nur notiert, noch nicht
+    entschieden/gebaut.

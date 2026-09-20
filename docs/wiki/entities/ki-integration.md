@@ -28,8 +28,14 @@ Details zur Secrets-Vorlage `.env.example`). Zusätzlich
 - NPC-Generator aus Kurzbeschreibung — **teilweise umgesetzt** (siehe oben)
 - Bildgenerierung (Portraits, Item-Bilder, Maps) — **nicht umgesetzt**
 - Wiki-Import aus Word-Dokumenten — **nicht umgesetzt**
-- Auto-Verknüpfung (KI durchsucht Wiki, verknüpft Entitäten) — **nicht umgesetzt**
-- Rechtschreib-/Grammatikprüfung im Editor — **nicht umgesetzt**
+- Auto-Verknüpfung (KI durchsucht Wiki/Ideenschmiede, verknüpft erwähnte
+  Personen/Orte/Events als echte Graphkanten; existiert eine Entität noch
+  nicht, legt die KI dafür einen Entwurf in der Ideenschmiede an und trägt
+  die Beziehung gleich mit ein — präzisiert 20.09.2026, Marks Wunsch) —
+  **nicht umgesetzt**
+- Rechtschreib-/Grammatik-/Logikprüfung im Wiki-Editor und in der
+  Ideenschmiede (erweitert 20.09.2026 um Logik-/Konsistenzfehler, nicht nur
+  Rechtschreibung) — **nicht umgesetzt**
 - Chatbot-Gegenstände (Decker redet mit Deck, Priester mit Bibel) —
   **nicht umgesetzt**, siehe `CLAUDE.md` Punkt 10 für den vollen Entwurf
   inkl. geplanter TTS-Hybrid-Lösung (Edge TTS + ElevenLabs)
