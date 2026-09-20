@@ -480,7 +480,42 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✅ FERTIG
 
-7. **Decker / Neuroweaver Skill-System** — Vorschlag für Erweiterung auf 6 Skills:
+8. **KI-/Critter-Begleiterblatt + Einfluss-System** — 🟡 Backend fertig, Frontend offen:
+   - Zwei neue `BegleiterArt`-Werte auf dem bestehenden Begleiter-System
+     (siehe `docs/wiki/entities/...` und `backend/app/begleiter/`):
+     - **KI**: Stadt-KI (Babel) — kein eigener Entity-Typ, sondern ein
+       besonders mächtiger Sprite, damit Kampf/Zerstören (Brute Force →
+       Kompilieren) automatisch mitläuft. Trägt die 6 nicht-körperlichen
+       Person-Attribute (Charisma/Manipulation/Fassung/Intelligenz/
+       Geistesschärfe/Entschlossenheit, Skala 1-6 wie bei Person) plus neu
+       **Matrix-Präsenz** (1-6).
+     - **CRITTER**: Tiere/Haustiere (Shadowrun-Anlehnung statt "Tier").
+       Nutzt das Standard-Begleiterblatt unverändert (Widerstand/Angriff/
+       Agilität + Waffe/Schadensart bleibt exakt gleich — "ein trainiertes
+       Tier kann eine Waffe im Maul halten") plus **Loyalität** (1-6) und
+       **Ausbildung/Tricks** (0-5). Bewusst ohne feste Mechanik — Mark:
+       "wer soweit kommt hat's verdient", Wirkung entscheidet die SL am
+       Spieltisch nach Bauchgefühl.
+   - **Einfluss** (nur sinnvoll bei KI, aber technisch jeder Begleiter):
+     echte Graphkante `(:Begleiter)-[:HAT_EINFLUSS_AUF {stufe}]->(:Ort|
+     :Fraktion|:Event|:Gegenstand)` statt Freitext — die SL kann einer KI
+     im Kampf gezielt einen echten Ort/eine Fraktion wegnehmen (Kante
+     löschen) statt eine Beschreibung zu ändern. Endpunkte:
+     `POST/DELETE .../begleiter/{id}/einfluss(/...)`, GM-only.
+   - **Erfahrung bei Begleitern**: `erfahrung`/`erfahrungAusgegeben` als
+     reine Budget-Anzeige ohne Kostenrechnung (anders als bei Personen) —
+     Werte bleiben frei einstellbar, nur Erinnerung für die SL.
+   - **Offen**: Frontend (`BegleiterVerwaltung.tsx`/`api.ts`) kennt die
+     neuen Felder/Arten noch nicht — bisher nur Backend (Schemas,
+     Repository, Routen) verifiziert. KI-Auto-Steigerung (Gemini/Mistral
+     lässt NPC/Begleiter/Critter/KI anhand Beschreibung + bereits erlebter
+     Events wachsen) ist eigenes, noch nicht begonnenes Vorhaben — braucht
+     zuerst ein Party-Besuchs-Log (`WAR_AN`-Kante mit Zeitstempel), weil
+     `BEFINDET_SICH_AN` beim Ortswechsel überschrieben statt historisiert
+     wird und "hat die Party das Event schon erlebt" sonst nicht beantwortbar
+     ist.
+
+9. **Decker / Neuroweaver Skill-System** — Vorschlag für Erweiterung auf 6 Skills:
    - Aktuell: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren (4 Skills)
    - Vorgeschlagene Erweiterung:
      - **5. Electronic Warfare** (Verteidigung / Stören / Gegenangriffe)
