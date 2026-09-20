@@ -30,11 +30,11 @@ KATALOG = [
                 "Etiketten",
                 "Ermitteln",
             ],
-            5,
+            6,
         ),
         ("Sphäre", ["Kräfte", "Leben"], 5),
         ("Hexkraft", ["Hexkraft"], 10),
-        ("NeuroWeaving", ["Brute Force"], 5),
+        ("NeuroWeaving", ["Brute Force"], 6),
         ("Hintergrund", [h["name"] for h in erstellung.HINTERGRUENDE], 5),
     ]
     for name in namen

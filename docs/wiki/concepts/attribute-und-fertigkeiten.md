@@ -20,11 +20,12 @@ status: aktuell
 | Geschicklichkeit | Manipulation | Geistesschärfe |
 | Widerstandsfähigkeit | Fassung | Entschlossenheit |
 
-**30 Fertigkeiten**, Maximum 5, in drei Zehnerspalten (siehe
+**30 Fertigkeiten**, Maximum 6, in drei Zehnerspalten (siehe
 [[../../reference/Neotopia_Charakterblatt.md]] für die vollständige Liste). Dazu
-kommen bei entsprechendem Weg: **Sphären** (siehe [[magie-hexkraft]]) oder
-**NeuroWeaving-Fertigkeiten** (siehe [[neuroweaving-decking]]) — beide zählen
-technisch als Fertigkeit, werden aber meist ohne Attribut gewürfelt.
+kommen bei entsprechendem Weg: **Sphären** (siehe [[magie-hexkraft]], Maximum
+weiterhin 5) oder **NeuroWeaving-Fertigkeiten** (siehe [[neuroweaving-decking]],
+Maximum 6) — beide zählen technisch als Fertigkeit, werden aber meist ohne
+Attribut gewürfelt.
 
 Tooltip-Texte für alle Attribute/Fertigkeiten liegen fertig ausformuliert in
 `docs/reference/Master/` (siehe [[../../reference/INDEX.md]]) und sind seit
@@ -59,6 +60,15 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
 
 ## Entwicklung
 
+- **20.09.2026 — Fertigkeitsmaximum 5→6:** Mark wollte Einheitlichkeit mit
+  dem Attributmaximum (beide jetzt 6). Betrifft alle 30 Kern-Fertigkeiten
+  sowie die 4 NeuroWeaving-Fertigkeiten (zählen regeltechnisch als
+  Fertigkeit). Sphären bleiben bei 5 — feste Stufenbedeutung (1 wahrnehmbar
+  … 5 „alles"), eine 6. Stufe wäre inhaltlich unbelegt. Umsetzung: nur
+  `defaultMax` im Katalog (`backend/app/traits/seed.py`) geändert,
+  `seed_traits()` überschreibt bestehende `TraitDef`-Nodes beim nächsten
+  Start automatisch (`MERGE ... SET`) — keine manuelle Migration nötig.
+  Bereits vergebene Charakterwerte sind unberührt, nur die Obergrenze steigt.
 - **10.09.2026 — Gesundheit 5→6:** Widerstandsfähigkeit geht bis 6 (Maximum);
   mit Grundwert 6 macht das **12 statt 11 Kästchen** als natürliches Maximum
   (mit Chrom bis 18 statt 17). Keine Datenmigration nötig — der Wert ist

@@ -19,8 +19,10 @@ Ablauf laut Excel:
 
 Freebees dürfen über den **StartMax** der Rasse hinaus (Zeile 24), aber nicht
 über das Maximum des Wertes selbst — ein Attribut endet bei 6, eine Fertigkeit
-bei 5. Das steht so nicht im Excel, ergibt sich aber daraus, dass die Maxima
-für den ganzen Charakterbogen gelten und nicht nur für die Erstellung.
+ebenfalls bei 6 (20.09.2026 von 5 angehoben, Marks Wunsch nach Einheitlichkeit;
+Sphären bleiben bei 5, feste Stufenbedeutung). Das steht so nicht im Excel,
+ergibt sich aber daraus, dass die Maxima für den ganzen Charakterbogen gelten
+und nicht nur für die Erstellung.
 
 **Noch nicht aus dem Regelwerk belegt** (Mark klärt das beim Feinschliff):
 Hintergründe kommen im Excel nicht vor — die Liste unten ist ein Vorschlag
@@ -438,7 +440,8 @@ def pruefe(
 
     # --- Endwerte gegen die Obergrenze des Wertes selbst -----------------
     # Zeile 24 hebt nur den **StartMax** für Freebees auf, nicht das Maximum
-    # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 5, Hexkraft bis 10.
+    # des Wertes: ein Attribut geht bis 6, eine Fertigkeit bis 6 (seit
+    # 20.09.2026, vorher 5), Sphären bis 5, Hexkraft bis 10.
     # Ohne diese Prüfung liess sich Körperkraft auf 9 kaufen (von Mark gefunden).
     #
     # Bei Attributen, die die Rasse berührt, gilt **ihr** Deckel statt des

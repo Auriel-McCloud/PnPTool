@@ -90,7 +90,7 @@ Drei Pakete zur Wahl:
 | Freebee-Kauf | Kosten |
 |---|---|
 | Attribut / Arete / NeuroWeaving | 5 Punkte (kann StartMax übersteigen) |
-| Fertigkeit | 2 Punkte (max. +1) |
+| Fertigkeit | 2 Punkte (max. +1) — Fertigkeitsmaximum selbst am 20.09.2026 von 5 auf 6 angehoben, siehe `docs/regeln-neotopia.md` |
 | Willenskraft | 1 Punkt |
 | Kredit 10.000¥ | 1 Punkt |
 | Eigenkapital 10.000¥ | 2 Punkte |

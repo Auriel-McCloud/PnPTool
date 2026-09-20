@@ -32,6 +32,7 @@ Datenquelle, siehe [[../../reference/INDEX.md]]).
 | Erfahrung/Steigern nach Erstellung | Nicht im Excel enthalten | Erfunden, WoD-artige Faktor-Formel | siehe [[../concepts/erfahrung-und-steigern]] |
 | Hintergründe (Kontakte, Ressourcen, ...) | Nicht im Excel enthalten | Vorschlag, zum Umbau frei | siehe [[../concepts/charaktererschaffung]] |
 | Fahrzeug/Drohnen-Preisformel | Wie im Excel | Wie im Excel, aber **von Mark als fraglich markiert** (Motorrad zu teuer) | 30.08.2026 (Notiz, nicht behoben) |
+| Fertigkeitsmaximum | 5 | **6** (gleichgezogen mit Attributmaximum; Sphären bleiben bei 5) | 20.09.2026 |
 
 Jede Zeile hat eine ausführlichere Behandlung auf der jeweiligen Konzeptseite
 unter „Entwicklung" — hier nur der schnelle Überblick.
@@ -57,12 +58,16 @@ unter „Entwicklung" — hier nur der schnelle Überblick.
   mit Grundwert 6 macht das 12 statt 11 Kästchen als natürliches Maximum.
 - **Rassen-Baukasten**: Mark wollte nicht mehr nur die 5 Excel-Rassen fix im
   Code, sondern selbst welche bauen können, mit Kampagnen-Freigabe.
+- **Fertigkeitsmaximum 5→6**: Mark fand die Asymmetrie zum Attributmaximum
+  (6) unbegründet und wollte Einheitlichkeit. Sphären blieben bewusst bei 5,
+  weil ihre Stufen fest definiert sind (5 = „alles").
 
 ## Was NICHT geändert wurde (Excel gilt weiterhin 1:1)
 
 - Würfelsystem (10-seitig, 1-5 Fehlschlag, 6-10 Erfolg, Kritisch/Patzer) —
   siehe [[../concepts/wuerfelsystem]]
-- Attribute (9 Werte in 3 Spalten), Fertigkeiten (30 Stück) — siehe
+- Attribute (9 Werte in 3 Spalten), Fertigkeiten (30 Stück, aber Maximum seit
+  20.09.2026 auf 6 angehoben, siehe oben) — siehe
   [[../concepts/attribute-und-fertigkeiten]]
 - Freebee-Kosten, Fertigkeitspakete, Startkapital 10.000¥ — siehe
   [[../concepts/charaktererschaffung]]

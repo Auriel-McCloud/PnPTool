@@ -107,6 +107,14 @@ npm run dev
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
 **Zuletzt gebaut (20.09.2026):**
+- **Fertigkeitsmaximum 5→6** — auf Marks Wunsch mit dem Attributmaximum
+  gleichgezogen (beide jetzt 6). Betrifft die 30 Kern-Fertigkeiten und die 4
+  NeuroWeaving-Fertigkeiten (zählen regeltechnisch als Fertigkeit). Sphären
+  bleiben bei 5 — feste Stufenbedeutung (5 = „alles"). Nur `defaultMax` im
+  Katalog geändert (`backend/app/traits/seed.py`); `seed_traits()`
+  überschreibt bestehende `TraitDef`-Nodes automatisch beim nächsten
+  Start/Seed-Lauf, keine manuelle Migration nötig. Details siehe
+  `docs/wiki/concepts/attribute-und-fertigkeiten.md`.
 - **Wiki-Editor am Handy: lesbare Schriftgröße** — Marks Problem war nicht
   das Layout (das ist am Handy schon vollflächig), sondern dass der
   Fließtext im Editor bei der globalen Basisgröße (16px) unlesbar klein

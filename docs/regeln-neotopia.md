@@ -32,9 +32,9 @@ Auf dem Blatt sind Gesundheit, I.C.E., Hexkraft/NeuroWeaving und Willenskraft **
 
 **Über die zehn gedruckten Kästchen hinaus:** Gesundheit erreicht natürlich schon 12 (6 + Widerstandsfähigkeit 6), Willenskraft und I.C.E. können mit Chrom bzw. Geräten ähnlich weit gehen. Das Tool zeichnet einfach so viele Kästchen, wie der Wert hergibt (`Kaestchen.tsx`, Fünfergruppen) — auf Papier muss man daneben weiterzählen. Wie hohe Werte platzsparender dargestellt werden, ist noch offen (CLAUDE.md, "Kästchen-Overflow-Darstellung").
 
-## Fähigkeiten (Maximum 5)
+## Fähigkeiten (Maximum 6)
 
-Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Maker (Hardware) und Matrix gehören dazu.
+Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Maker (Hardware) und Matrix gehören dazu. **20.09.2026, Marks Wunsch:** von 5 auf 6 angehoben, damit es mit dem Attributmaximum einheitlich ist (Excel-Stand war noch 5). Die vier NeuroWeaving-Fertigkeiten (Brute Force, Schleichen, Daten Verarbeiten, Kompilieren) zogen mit, weil sie regeltechnisch als Fertigkeit zählen. Sphären bleiben bei 5 — feste Stufenbedeutung (1 wahrnehmbar … 5 „alles"), eine 6. Stufe wäre inhaltlich unbelegt.
 
 ## Die zwei besonderen Wege
 
