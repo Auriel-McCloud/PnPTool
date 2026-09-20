@@ -523,6 +523,15 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      neue Symbole ⌬ (KI) / ❖ (Critter) in `ART_SYMBOLE`. `KiAttributBlatt`/
      `CritterWerte` sind eigene, wiederverwendbare Komponenten
      (`begleiter/KiAttributBlatt.tsx`) für beide Kontexte. `tsc -b` sauber.
+   - **Kachelraster + Suche + Anlegen-Popup (20.09.2026)**: die Übersicht war
+     noch das alte Muster (Inline-Anlegen-Formular in der Kopfzeile, kein
+     Suchfeld) — jetzt wie GegenstaendeUebersicht/PartyVerwaltung: `gg-suche`
+     über Name/Art/Besitzer, "+ Neuer Begleiter" öffnet ein Commlink-Popup
+     mit Name, Art-Dropdown und durchsuchbarer Besitzer-Auswahl
+     (`BesitzerAuswahl`, Radiobuttons wie bei Party statt langem `<select>`
+     ohne Filter). Dieselbe Auswahlkomponente ersetzt auch das bisherige
+     `<select>` im Bearbeiten-Fenster, damit beide Stellen konsistent
+     durchsuchbar sind.
    - **Offen**: KI-Auto-Steigerung (Gemini/Mistral lässt NPC/Begleiter/
      Critter/KI anhand Beschreibung + bereits erlebter Events wachsen) ist
      eigenes, noch nicht begonnenes Vorhaben — braucht zuerst ein

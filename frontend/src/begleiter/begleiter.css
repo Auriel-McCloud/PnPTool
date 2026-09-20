@@ -70,5 +70,48 @@
   font-size: 13px;
 }
 
+/* --- Suchbare Besitzer-Auswahl im Anlegen-Popup ------------------------
+   Dasselbe Muster wie die Mitgliederauswahl bei Party (PartyVerwaltung.tsx):
+   ein Suchfeld über einer scrollbaren Radio-Liste, statt eines langen
+   <select> ohne Filter. */
+
+.bg-suchfeld {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.bg-auswahl-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+
+.bg-auswahl-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.bg-auswahl-zeile:hover {
+  background: var(--flaeche-hoch);
+}
+
+.bg-auswahl-typ {
+  color: var(--text-leise);
+  font-style: normal;
+  font-size: 12px;
+  margin-left: auto;
+}
+
 
 

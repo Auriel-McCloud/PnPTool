@@ -23,6 +23,10 @@ import "./begleiter.css";
  * Person-Attribute plus Matrix-Präsenz und kann echten Entitäten
  * Einfluss-Stufen zuweisen (`EinflussVerwaltung`). CRITTER trägt zusätzlich
  * Loyalität und Ausbildung/Tricks.
+ *
+ * **Kachelraster + Anlegen-Popup (20.09.2026)**: dasselbe Muster wie
+ * GegenstaendeUebersicht/PartyVerwaltung — Suchfeld über Name/Art/Besitzer,
+ * "+ Neuer Begleiter" öffnet ein Fenster statt eines Inline-Formulars.
  */
 
 const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER", "KI", "CRITTER"];
@@ -32,9 +36,8 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [laden, setLaden] = useState(true);
   const [offen, setOffen] = useState<Begleiter | null>(null);
-  const [neuName, setNeuName] = useState("");
-  const [neuArt, setNeuArt] = useState<BegleiterArt>("SPRITE");
-  const [neuBesitzer, setNeuBesitzer] = useState("");
+  const [anlegenOffen, setAnlegenOffen] = useState(false);
+  const [suche, setSuche] = useState("");
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
   const [seite, setSeite] = useState(0);
@@ -58,50 +61,48 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     [personen],
   );
 
-  const seiten = Math.max(1, Math.ceil(alle.length / proSeite));
-  const aktuelleSeite = Math.min(seite, seiten - 1);
-  const sichtbar = alle.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+  // Sucht über Name, Art und Besitzer — analog zur Gegenstände-/Party-Suche
+  // ("alle Sprites von Kira" statt exaktem Namen).
+  const gefiltert = useMemo(() => {
+    const s = suche.trim().toLowerCase();
+    if (!s) return alle;
+    return alle.filter(
+      (b) =>
+        b.name.toLowerCase().includes(s) ||
+        ART_NAMEN[b.art].toLowerCase().includes(s) ||
+        (b.besitzerName ?? "").toLowerCase().includes(s),
+    );
+  }, [alle, suche]);
 
-  async function anlegen(e: FormEvent) {
-    e.preventDefault();
-    if (!neuName.trim()) return;
-    await begleiterApi.anlegen(campaignId, {
-      name: neuName.trim(),
-      art: neuArt,
-      besitzerId: neuBesitzer || null,
-    });
-    setNeuName("");
-    await neuLaden();
-  }
+  // Nach einer neuen Suche kann die aktuelle Seite hinter dem gefilterten
+  // Ende liegen — zurück auf die erste Seite, sonst wirkt die Liste leer.
+  useEffect(() => {
+    setSeite(0);
+  }, [suche]);
+
+  const seiten = Math.max(1, Math.ceil(gefiltert.length / proSeite));
+  const aktuelleSeite = Math.min(seite, seiten - 1);
+  const sichtbar = gefiltert.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
   if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Begleiter…</p>;
 
   return (
     <div className="gg-seite" style={KACHEL_STIL}>
-      <form onSubmit={anlegen} className="bg-zeile" style={{ marginBottom: 10 }}>
+      <div className="gg-kopf">
         <input
-          placeholder="Name"
-          value={neuName}
-          onChange={(e) => setNeuName(e.target.value)}
-          style={{ flex: "1 1 200px", minWidth: 0 }}
+          className="gg-suche"
+          type="search"
+          placeholder="Suchen — Name, Art oder Besitzer"
+          value={suche}
+          onChange={(e) => setSuche(e.target.value)}
         />
-        <select value={neuArt} onChange={(e) => setNeuArt(e.target.value as BegleiterArt)}>
-          {ARTEN.map((a) => (
-            <option key={a} value={a}>
-              {ART_NAMEN[a]}
-            </option>
-          ))}
-        </select>
-        <select value={neuBesitzer} onChange={(e) => setNeuBesitzer(e.target.value)}>
-          <option value="">— ungebunden —</option>
-          {personenNamen.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <button type="submit">Anlegen</button>
-      </form>
+        <button type="button" onClick={() => setAnlegenOffen(true)}>
+          + Neuer Begleiter
+        </button>
+        <span className="gg-anzahl">
+          {gefiltert.length} von {alle.length}
+        </span>
+      </div>
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((b) => (
@@ -126,6 +127,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       </div>
 
       {alle.length === 0 && <p className="gg-leer">Noch keine Begleiter in dieser Kampagne.</p>}
+      {alle.length > 0 && gefiltert.length === 0 && <p className="gg-leer">Nichts gefunden.</p>}
 
       {seiten > 1 && (
         <div className="gg-blaettern">
@@ -144,6 +146,18 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           </button>
         </div>
       )}
+
+      <BegleiterAnlegenFenster
+        offen={anlegenOffen}
+        campaignId={campaignId}
+        personen={personenNamen}
+        onSchliessen={() => setAnlegenOffen(false)}
+        onAngelegt={async (neu) => {
+          setAnlegenOffen(false);
+          await neuLaden();
+          setOffen(neu);
+        }}
+      />
 
       {offen && (
         <BegleiterFenster
@@ -166,6 +180,161 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Durchsuchbare Besitzer-Auswahl (Radiobuttons statt eines langen `<select>`
+ * ohne Filter) — dasselbe Muster wie `PersonenAuswahlListe` in
+ * PartyVerwaltung.tsx, nur für eine Einfachauswahl statt Checkboxen, weil
+ * ein Begleiter höchstens eine Person begleitet.
+ */
+function BesitzerAuswahl({
+  personen,
+  wert,
+  onWaehlen,
+}: {
+  personen: { id: string; label: string }[];
+  wert: string;
+  onWaehlen: (personId: string) => void;
+}) {
+  const [suche, setSuche] = useState("");
+
+  const gefiltert = useMemo(() => {
+    const s = suche.trim().toLowerCase();
+    if (!s) return personen;
+    return personen.filter((p) => p.label.toLowerCase().includes(s));
+  }, [personen, suche]);
+
+  return (
+    <div className="bg-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 4 }}>
+      <input
+        type="search"
+        className="bg-suchfeld"
+        placeholder="Besitzer suchen…"
+        value={suche}
+        onChange={(e) => setSuche(e.target.value)}
+      />
+      <div className="bg-auswahl-liste">
+        <label className="bg-auswahl-zeile">
+          <input type="radio" name="bg-besitzer" checked={wert === ""} onChange={() => onWaehlen("")} />
+          <span>— ungebunden —</span>
+        </label>
+        {gefiltert.length === 0 && suche && <p className="pt-hinweis">Nichts gefunden.</p>}
+        {gefiltert.map((p) => (
+          <label key={p.id} className="bg-auswahl-zeile">
+            <input type="radio" name="bg-besitzer" checked={wert === p.id} onChange={() => onWaehlen(p.id)} />
+            <span>{p.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Anlegen-Popup: Name, Art und gleich die Besitzer-Auswahl (Verbindung) in
+ * einem Commlink-Fenster statt des früheren Inline-Formulars in der
+ * Kopfzeile — Mark, 20.09.2026: Suche + "+"-Popup wie bei den anderen
+ * Bereichen.
+ */
+function BegleiterAnlegenFenster({
+  offen,
+  campaignId,
+  personen,
+  onSchliessen,
+  onAngelegt,
+}: {
+  offen: boolean;
+  campaignId: string;
+  personen: { id: string; label: string }[];
+  onSchliessen: () => void;
+  onAngelegt: (neu: Begleiter) => void;
+}) {
+  const [name, setName] = useState("");
+  const [art, setArt] = useState<BegleiterArt>("SPRITE");
+  const [besitzer, setBesitzer] = useState("");
+  const [sendet, setSendet] = useState(false);
+
+  // Frisch beginnen bei jedem Öffnen — sonst stehen noch Name/Auswahl des
+  // zuletzt angelegten Begleiters da (dasselbe Muster wie PartyAnlegenFenster).
+  useEffect(() => {
+    if (offen) {
+      setName("");
+      setArt("SPRITE");
+      setBesitzer("");
+    }
+  }, [offen]);
+
+  async function anlegen(e: FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSendet(true);
+    try {
+      const neu = await begleiterApi.anlegen(campaignId, {
+        name: name.trim(),
+        art,
+        besitzerId: besitzer || null,
+      });
+      onAngelegt(neu);
+    } finally {
+      setSendet(false);
+    }
+  }
+
+  return (
+    <Fenster
+      offen={offen}
+      titel="Neuer Begleiter"
+      unterzeile="Name, Art und optional gleich die Verbindung zu einer Person"
+      kennung="begleiter-neu"
+      ton="var(--bereich-begleiter)"
+      onSchliessen={onSchliessen}
+    >
+      <form onSubmit={anlegen} className="bg-formular">
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoFocus
+        />
+
+        <div className="bg-zeile">
+          <span style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
+            Art
+          </span>
+          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt)}>
+            {ARTEN.map((a) => (
+              <option key={a} value={a}>
+                {ART_SYMBOLE[a]} {ART_NAMEN[a]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <span
+            style={{
+              display: "block",
+              fontSize: 11,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--neon)",
+              marginBottom: 4,
+            }}
+          >
+            Verbindung (optional)
+          </span>
+          <BesitzerAuswahl personen={personen} wert={besitzer} onWaehlen={setBesitzer} />
+        </div>
+
+        <button type="submit" disabled={sendet || !name.trim()}>
+          {sendet ? "Wird angelegt…" : "Anlegen"}
+        </button>
+      </form>
+    </Fenster>
   );
 }
 
@@ -292,15 +461,20 @@ function BegleiterFenster({
           />
         </label>
 
-        <div className="bg-zeile">
-          <select value={besitzer} onChange={(e) => setBesitzer(e.target.value)}>
-            <option value="">— ungebunden —</option>
-            {personen.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+        <div>
+          <span
+            style={{
+              display: "block",
+              fontSize: 11,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--neon)",
+              marginBottom: 4,
+            }}
+          >
+            Verbindung
+          </span>
+          <BesitzerAuswahl personen={personen} wert={besitzer} onWaehlen={setBesitzer} />
         </div>
 
         {art === "KI" && (
