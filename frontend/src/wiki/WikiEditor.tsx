@@ -10,6 +10,8 @@ import { GmSecret } from "../richtext/GmSecretMark";
 import { EntitaetsVerweis, type VerweisAttribute } from "../richtext/EntitaetsVerweis";
 import { VerweisWaehler } from "./VerweisWaehler";
 import { bildHochladen } from "./api";
+import { seitePruefen, type SweepSeite } from "../ideenschmiede/api";
+import { PruefungPopup } from "./PruefungPopup";
 import "../richtext/richtext.css";
 
 /**
@@ -62,11 +64,15 @@ function Werkzeugleiste({
   onVerweis,
   onBild,
   laedtBild,
+  onPruefen,
+  pruefLaeuft,
 }: {
   editor: Editor;
   onVerweis: () => void;
   onBild: () => void;
   laedtBild: boolean;
+  onPruefen: () => void;
+  pruefLaeuft: boolean;
 }) {
   return (
     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
@@ -124,6 +130,10 @@ function Werkzeugleiste({
       >
         🔒 SL-geheim
       </Knopf>
+      <span style={{ borderLeft: "1px solid var(--linie)", margin: "0 4px" }} />
+      <Knopf title="Rechtschreibung, Grammatik und Logik prüfen" onClick={onPruefen} disabled={pruefLaeuft}>
+        {pruefLaeuft ? "prüft…" : "🔍 Prüfen"}
+      </Knopf>
     </div>
   );
 }
@@ -145,6 +155,15 @@ export function WikiEditor({
   const [waehlerOffen, setWaehlerOffen] = useState(false);
   const [laedtBild, setLaedtBild] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
+
+  // Rechtschreib-/Grammatik-/Logikprüfung dieser einen Seite.
+  const [pruefLaeuft, setPruefLaeuft] = useState(false);
+  const [pruefFehler, setPruefFehler] = useState<string | null>(null);
+  const [pruefErgebnis, setPruefErgebnis] = useState<SweepSeite | null>(null);
+  // Erhöht sich bei jedem neuen Prüflauf — als key an PruefungPopup gereicht,
+  // damit dessen interner Zustand (übernommene Befunde ausblenden) bei einem
+  // neuen Lauf verlässlich neu beginnt statt den alten Stand zu behalten.
+  const [pruefStamp, setPruefStamp] = useState(0);
 
   const editor = useEditor(
     {
@@ -218,6 +237,45 @@ export function WikiEditor({
     editor?.chain().focus().verweisEinfuegen(attrs).run();
   }
 
+  async function pruefen() {
+    setPruefLaeuft(true);
+    setPruefFehler(null);
+    try {
+      const befunde = await seitePruefen(campaignId, seitenId);
+      setPruefErgebnis({ seitenId, titel: "", befunde });
+      setPruefStamp((n) => n + 1);
+    } catch (e) {
+      setPruefFehler(e instanceof Error ? e.message : "Prüfung fehlgeschlagen");
+    } finally {
+      setPruefLaeuft(false);
+    }
+  }
+
+  /** Markiert die zitierte Textstelle im Editor und scrollt sie in Sicht. */
+  function zurTextstelleSpringen(_seitenId: string, zitat: string) {
+    if (!editor) return;
+    let von = -1;
+    let bis = -1;
+    editor.state.doc.descendants((knoten, pos) => {
+      if (von >= 0 || !knoten.isText || !knoten.text) return true;
+      const index = knoten.text.indexOf(zitat);
+      if (index >= 0) {
+        von = pos + index;
+        bis = von + zitat.length;
+        return false;
+      }
+      return true;
+    });
+    if (von < 0) return;
+    editor.chain().focus().setTextSelection({ from: von, to: bis }).scrollIntoView().run();
+  }
+
+  /** Nach dem Übernehmen eines Befunds: Editor mit dem neuen Stand befüllen. */
+  function nachUebernahme(_seitenId: string, neuerInhalt: string) {
+    editor?.commands.setContent(JSON.parse(neuerInhalt));
+    onChange(neuerInhalt);
+  }
+
   return (
     <>
       {!nurLesen && (
@@ -226,7 +284,15 @@ export function WikiEditor({
           onVerweis={() => setWaehlerOffen(true)}
           onBild={() => dateiRef.current?.click()}
           laedtBild={laedtBild}
+          onPruefen={pruefen}
+          pruefLaeuft={pruefLaeuft}
         />
+      )}
+
+      {pruefFehler && (
+        <p style={{ color: "var(--signal)", fontSize: 12, margin: "0 0 8px" }}>
+          {pruefFehler} <button type="button" className="wk-werkzeug" onClick={() => setPruefFehler(null)}>ok</button>
+        </p>
       )}
 
       <input
@@ -246,6 +312,16 @@ export function WikiEditor({
         offen={waehlerOffen}
         onWaehlen={verweisEinfuegen}
         onSchliessen={() => setWaehlerOffen(false)}
+      />
+
+      <PruefungPopup
+        key={pruefStamp}
+        offen={pruefErgebnis !== null}
+        campaignId={campaignId}
+        ergebnisse={pruefErgebnis ? [pruefErgebnis] : []}
+        onSchliessen={() => setPruefErgebnis(null)}
+        onSpringen={zurTextstelleSpringen}
+        onUebernommen={nachUebernahme}
       />
     </>
   );

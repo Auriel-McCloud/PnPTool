@@ -165,3 +165,54 @@ export type KiTyp = "story" | "charakter";
 export async function kiIdee(campaignId: string, typ: KiTyp, prompt: string): Promise<void> {
   await api.post(`/api/campaigns/${campaignId}/ki/idee`, { typ, prompt });
 }
+
+/** Ein einzelner Befund der Rechtschreib-/Grammatik-/Logikprüfung. */
+export interface PruefBefund {
+  art: "rechtschreibung" | "grammatik" | "logik";
+  zitat: string;
+  vorschlag: string;
+  begruendung: string;
+}
+
+/** Prüft eine einzelne Wiki-Seite (Knopf direkt im Editor). */
+export async function seitePruefen(campaignId: string, seitenId: string): Promise<PruefBefund[]> {
+  const antwort = await api.post<{ befunde: PruefBefund[] }>(
+    `/api/campaigns/${campaignId}/ki/wiki/${seitenId}/pruefen`,
+  );
+  return antwort.befunde;
+}
+
+/** Ergebnis eines Sweeps: welche Seiten wurden geprüft/übersprungen, mit Befunden je Seite. */
+export interface SweepSeite {
+  seitenId: string;
+  titel: string;
+  befunde: PruefBefund[];
+}
+
+export interface SweepErgebnis {
+  geprueft: number;
+  uebersprungen: number;
+  ergebnisse: SweepSeite[];
+}
+
+/**
+ * Prüft ALLE Wiki-Seiten der Kampagne, überspringt unveränderte seit der
+ * letzten Prüfung. Für den "Prüf Fließtext!"-Knopf in den Einstellungen —
+ * bewusst kein automatischer Hintergrundlauf, Mark will das gezielt anstoßen.
+ */
+export async function wikiSweep(campaignId: string): Promise<SweepErgebnis> {
+  return api.post<SweepErgebnis>(`/api/campaigns/${campaignId}/ki/wiki/pruefen-alle`);
+}
+
+/** Übernimmt einen Korrekturvorschlag: ersetzt das Zitat direkt im Seitentext. */
+export async function befundUebernehmen(
+  campaignId: string,
+  seitenId: string,
+  zitat: string,
+  vorschlag: string,
+): Promise<{ ersetzt: boolean; inhalt: string }> {
+  return api.post(`/api/campaigns/${campaignId}/ki/wiki/${seitenId}/pruefung/uebernehmen`, {
+    zitat,
+    vorschlag,
+  });
+}

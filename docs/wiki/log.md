@@ -275,3 +275,39 @@ Dokumentiert: `docs/wiki/entities/ingame-wiki-feature.md` (neuer Abschnitt),
 Betrifft nur einen Teilaspekt von CLAUDE.md Punkt 13 („Handy-Ansicht für
 Story-Wiki + Ideenschmiede") — Seitenbaum/Kachel-Übersicht/Verweis-Auswahl
 am Handy bleiben offen.
+
+## [2026-09-20] create | Wiki-Rechtschreib-/Grammatik-/Logikprüfung
+
+Erster Teil von Marks angekündigtem KI-Auftrag ("Auto-Verknüpfung machen wir
+danach") — die Fehlerprüfung im Wiki-Editor. Neues Backend-Modul
+`backend/app/ki/wiki_pruefung.py`: `pruefe_seite()` (eine Seite, Editor-
+Knopf) und `sweep()` (alle Seiten, Einstellungen-Knopf, überspringt
+unveränderte via SHA-256-Hash `pruefHash` am `WikiSeite`-Knoten). Drei neue
+Endpunkte unter `/api/campaigns/{id}/ki/wiki/*`, dokumentiert in
+`docs/api/ki.md` (neu angelegt, `docs/api/README.md` verlinkt es).
+
+Logikfehler nutzen den freigegebenen Kampagnenkontext (`sammle_kontext()`,
+dieselbe Quelle wie der NPC-Generator). Erster Testlauf zeigte einen
+Fehlalarm: ein neu eingeführter, in der Welt noch unbekannter Name wurde als
+"Logikfehler" gemeldet — Prompt nachgeschärft ("NUR ein direkter Widerspruch
+zu einer bereits bestehenden Tatsache, ein unbekannter Name ist KEIN
+Fehler"), danach korrekt: nur echte Rechtschreib-/Grammatikfehler blieben.
+
+Frontend: `frontend/src/wiki/PruefungPopup.tsx` (neu, gemeinsam genutzt von
+`WikiEditor.tsx` und `campaigns/EinstellungenFenster.tsx`). Jeder Befund
+zeigt Zitat+Vorschlag, "✓ Übernehmen" ruft die Backend-Route (ersetzt den
+Text direkt im gespeicherten TipTap-Dokument, auch wenn die Seite nicht
+offen ist), "↷ Zur Textstelle" nur im Editor verdrahtet (sucht/markiert via
+`editor.state.doc.descendants()`).
+
+Verifiziert: Backend-Import-Check, Routenregistrierung (`openapi.json`
+zeigt alle drei Pfade), End-to-End gegen echte Neo4j-DB + echten
+Mistral-Call (5 Rechtschreibfehler + 1 Grammatikfehler korrekt erkannt,
+"Übernehmen" ersetzte den Text im Dokument, zweiter Sweep-Lauf übersprang
+die unveränderte Seite korrekt), `tsc -b` fehlerfrei.
+
+Dokumentiert: `docs/wiki/entities/ki-integration.md` (neuer Abschnitt),
+`docs/wiki/index.md` (Zusammenfassungszeile), `CLAUDE.md` (Zuletzt gebaut +
+Punkt 3 als teilweise erledigt markiert), `docs/api/ki.md` (neu),
+`docs/api/README.md` (Tabellenzeile). Skill-Referenz
+`ki-gemini-integration.md` um den vollen Bauverlauf ergänzt.

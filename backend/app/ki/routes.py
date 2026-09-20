@@ -24,6 +24,13 @@ from app.entities.repository import PERSON_FIELDS, create_node
 from app.entities.schemas import PersonCreate
 from app.ki.client import KiFehler, generiere_json
 from app.ki.kontext import sammle_kontext
+from app.ki.wiki_pruefung import (
+    SweepAntwort,
+    UebernehmenAntwort,
+    pruefe_seite,
+    sweep,
+    uebernehmen_befund,
+)
 from app.traits.repository import list_catalog, set_rating
 from app.wiki.repository import create_seite
 
@@ -96,6 +103,11 @@ _CHARAKTER_SYSTEM = (
 class KiIdeeInput(BaseModel):
     typ: Literal["story", "charakter"]
     prompt: str
+
+
+class UebernehmenInput(BaseModel):
+    zitat: str
+    vorschlag: str
 
 
 def _text_zu_dokument(text: str) -> str:
@@ -263,3 +275,46 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
     except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/wiki/{seiten_id}/pruefen")
+async def wiki_seite_pruefen(campaign_id: str, seiten_id: str):
+    """Prüft eine einzelne Wiki-Seite auf Rechtschreib-/Grammatik-/Logikfehler.
+
+    Der "🔍 Prüfen"-Knopf im Wiki-Editor (Story-Wiki und Ideenschmiede-
+    Wiki-Popup teilen sich dieselbe Editor-Komponente). Merkt sich den
+    geprüften Textstand — taucht diese Seite später im Sweep auf und hat
+    sich seither nichts geändert, wird sie dort übersprungen.
+    """
+    try:
+        befunde = await pruefe_seite(campaign_id, seiten_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return {"befunde": [b.model_dump() for b in befunde]}
+
+
+@router.post("/wiki/pruefen-alle", response_model=SweepAntwort)
+async def wiki_sweep(campaign_id: str):
+    """Prüft alle Wiki-Seiten der Kampagne, überspringt unveränderte.
+
+    Marks "Prüf Fließtext!"-Knopf in den Kampagnen-Einstellungen — bewusst
+    ein Sweep statt einer Dauerprüfung: er will das nur ab und zu anstoßen,
+    nicht bei jedem Tastendruck KI-Kosten verursachen.
+    """
+    try:
+        return await sweep(campaign_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/wiki/{seiten_id}/pruefung/uebernehmen", response_model=UebernehmenAntwort)
+async def wiki_befund_uebernehmen(campaign_id: str, seiten_id: str, body: UebernehmenInput):
+    """Übernimmt einen Korrekturvorschlag: ersetzt das Zitat im Seitentext.
+
+    Funktioniert auch für Seiten, die gerade nicht im Editor offen sind
+    (Sweep-Ergebnisse können viele Seiten gleichzeitig betreffen).
+    """
+    ergebnis = await uebernehmen_befund(campaign_id, seiten_id, body.zitat, body.vorschlag)
+    if ergebnis is None:
+        raise HTTPException(status_code=404, detail="Seite nicht gefunden")
+    return ergebnis

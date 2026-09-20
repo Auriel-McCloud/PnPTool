@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { einstellungenApi, type Einstellungen } from "./einstellungen";
 import { spotifyApi, type SpotifyStatus } from "../spotify/api";
+import { wikiSweep, type SweepErgebnis } from "../ideenschmiede/api";
+import { PruefungPopup } from "../wiki/PruefungPopup";
 import "../spotify/spotify.css";
 
 /**
@@ -65,6 +67,15 @@ export function EinstellungenFenster({
   const [spotifyStatus, setSpotifyStatus] = useState<SpotifyStatus | null>(null);
   const [spotifyHinweis, setSpotifyHinweis] = useState<string | null>(null);
 
+  // Wiki-Fließtextprüfung: kampagnenweiter Sweep (Rechtschreibung/Grammatik/
+  // Logik), überspringt Seiten, die seit der letzten Prüfung unverändert
+  // sind. Bewusst nur auf Knopfdruck — Mark will das gezielt ab und zu
+  // anstoßen, nicht bei jeder Kleinigkeit KI-Kosten verursachen.
+  const [pruefLaeuft, setPruefLaeuft] = useState(false);
+  const [pruefFehler, setPruefFehler] = useState<string | null>(null);
+  const [sweepErgebnis, setSweepErgebnis] = useState<SweepErgebnis | null>(null);
+  const [pruefStamp, setPruefStamp] = useState(0);
+
   useEffect(() => {
     if (!offen) return;
     einstellungenApi
@@ -91,6 +102,20 @@ export function EinstellungenFenster({
     setSpotifyStatus({ verbunden: false, anzeigename: null });
   }
 
+  async function pruefFliesstext() {
+    setPruefLaeuft(true);
+    setPruefFehler(null);
+    try {
+      const ergebnis = await wikiSweep(campaignId);
+      setSweepErgebnis(ergebnis);
+      setPruefStamp((n) => n + 1);
+    } catch (e) {
+      setPruefFehler(e instanceof Error ? e.message : "Prüfung fehlgeschlagen");
+    } finally {
+      setPruefLaeuft(false);
+    }
+  }
+
   async function aendern(feld: string, wert: unknown) {
     if (!werte) return;
     // Sofort anzeigen, dann speichern — sonst wirkt der Schalter träge.
@@ -112,6 +137,7 @@ export function EinstellungenFenster({
   if (!offen) return null;
 
   return (
+    <>
     <Fenster titel="Einstellungen" kennung="einstellungen" offen={offen} onSchliessen={onSchliessen}>
       {!werte && !fehler && <p style={{ color: "var(--text-leise)" }}>Lädt…</p>}
 
@@ -154,6 +180,27 @@ export function EinstellungenFenster({
           />
 
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            WIKI
+          </h4>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+            <button
+              type="button"
+              onClick={pruefFliesstext}
+              disabled={pruefLaeuft}
+              title="Prüft alle Wiki-Seiten auf Rechtschreibung, Grammatik und Logikfehler — überspringt Seiten, die sich seit der letzten Prüfung nicht geändert haben."
+            >
+              {pruefLaeuft ? "prüft…" : "🔍 Fließtext prüfen"}
+            </button>
+            {sweepErgebnis && (
+              <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+                {sweepErgebnis.geprueft} geprüft, {sweepErgebnis.uebersprungen} unverändert übersprungen
+              </span>
+            )}
+          </div>
+          {pruefFehler && <p style={{ fontSize: 12, color: "var(--signal)" }}>{pruefFehler}</p>}
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             MUSIK
           </h4>
 
@@ -189,5 +236,16 @@ export function EinstellungenFenster({
 
       {fehler && <p style={{ color: "var(--signal)", fontSize: 13 }}>{fehler}</p>}
     </Fenster>
+
+    {/* Popup im Popup ("Pop-ups die zu Pop-ups führen") — Fenster.tsx trägt
+        das über ein Portal, unabhängig von der Verschachtelungstiefe hier. */}
+    <PruefungPopup
+      key={pruefStamp}
+      offen={sweepErgebnis !== null && sweepErgebnis.ergebnisse.length > 0}
+      campaignId={campaignId}
+      ergebnisse={sweepErgebnis?.ergebnisse ?? []}
+      onSchliessen={() => setSweepErgebnis(null)}
+    />
+    </>
   );
 }

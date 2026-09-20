@@ -106,6 +106,33 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (20.09.2026, KI-Prüfung):**
+- **Wiki-Rechtschreib-/Grammatik-/Logikprüfung** — erster Teil von Punkt 3
+  ("KI-Integration") umgesetzt, Auto-Verknüpfung folgt als nächster Schritt.
+  Zwei Einstiege: ein "🔍 Prüfen"-Knopf direkt im Wiki-Editor (eine Seite,
+  Story-Wiki UND Ideenschmiede-Wiki-Popup teilen sich die Editor-
+  Komponente) und ein "🔍 Fließtext prüfen"-Knopf in den Kampagnen-
+  Einstellungen, der ALLE Wiki-Seiten der Kampagne durchgeht — bewusst kein
+  automatischer Hintergrundlauf, Mark will das gezielt ab und zu anstoßen.
+  Der Sweep überspringt jede Seite, deren Inhalt sich seit der letzten
+  Prüfung nicht geändert hat (SHA-256-Hash am `WikiSeite`-Knoten,
+  `pruefHash`), damit nicht bei jedem Lauf alles neu an die KI geht.
+  Logikfehler beziehen den freigegebenen Kampagnenkontext ein (dieselbe
+  Quelle wie beim KI-Charaktergenerator, `sammle_kontext`) — geprüft NUR
+  gegen echte Widersprüche zu bestehenden Fakten, ein neuer Name/Ort, der
+  in der Welt noch nicht vorkommt, wird nicht gemeldet (sonst hätte jede
+  neue Idee einen falschen "Fehler" ausgelöst). Jeder Befund hat ein
+  wörtliches Zitat + Vorschlag; "✓ Übernehmen" ersetzt die Textstelle
+  automatisch im gespeicherten Dokument — funktioniert auch für Seiten, die
+  gerade nicht offen sind. `backend/app/ki/wiki_pruefung.py` (neues Modul),
+  drei neue Endpunkte unter `/api/campaigns/{id}/ki/wiki/*`, siehe
+  `docs/api/ki.md` (neu). Frontend: `wiki/PruefungPopup.tsx` (geteilt
+  zwischen Editor und Einstellungen), `campaigns/EinstellungenFenster.tsx`.
+  Backend end-to-end gegen echte Neo4j-DB + Mistral verifiziert (Umlaut-
+  Rechtschreibfehler + ein Grammatikfehler korrekt erkannt und übernommen,
+  zweiter Sweep-Lauf übersprang die unveränderte Seite korrekt); `tsc -b`
+  fehlerfrei.
+
 **Zuletzt gebaut (20.09.2026):**
 - **Fertigkeitsmaximum 5→6** — auf Marks Wunsch mit dem Attributmaximum
   gleichgezogen (beide jetzt 6). Betrifft die 30 Kern-Fertigkeiten und die 4
@@ -484,10 +511,13 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      eine erwähnte Entität noch nicht, legt die KI dafür einen **Entwurf in
      der Ideenschmiede an** (Vorschlag zur Prüfung durch den SL, kein
      Autocommit in die Kampagne) und trägt die Beziehung gleich mit ein
-   - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026): Im
-     Wiki-Editor UND in der Ideenschmiede — neben Rechtschreibung/Grammatik
-     auch **Logik-/Konsistenzfehler** (z.B. Widersprüche zu bereits
-     bestehenden Fakten im Wiki)
+   - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026,
+     **gebaut** — siehe "Zuletzt gebaut" oben): Im Wiki-Editor UND in der
+     Ideenschmiede — Rechtschreibung/Grammatik sowie Logik-/Konsistenz-
+     fehler (Widersprüche zu bereits bestehenden Fakten im Wiki). Fehlt
+     noch: dieselbe Prüfung auch für die `RichTextEditor`-Felder
+     (Beschreibung/Notizen von Personen/Orten/Events/Fraktionen) — Mark
+     wollte erst nur den Wiki-Editor, das war explizit Schritt 1.
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
 
 4. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung.

@@ -515,3 +515,103 @@
     font-size: 18px;
   }
 }
+
+/* --- Rechtschreib-/Grammatik-/Logikprüfung (PruefungPopup.tsx) -------- */
+
+.wk-pr-seite + .wk-pr-seite {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linie);
+}
+
+.wk-pr-seitentitel {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.wk-pr-befund {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.wk-pr-befund:last-child {
+  border-bottom: none;
+}
+
+.wk-pr-art {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: var(--mono);
+}
+
+.wk-pr-text {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.wk-pr-zitat {
+  color: var(--signal);
+  text-decoration: line-through;
+}
+
+.wk-pr-pfeil {
+  color: var(--text-aus);
+}
+
+.wk-pr-vorschlag {
+  color: var(--gut);
+}
+
+.wk-pr-begruendung {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.wk-pr-aktionen {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wk-pr-uebernehmen {
+  padding: 5px 12px;
+  border: 1px solid var(--gut);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--gut);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.wk-pr-uebernehmen:hover:not(:disabled) {
+  background: var(--gut);
+  color: var(--flaeche-tief);
+}
+
+.wk-pr-uebernehmen:disabled {
+  opacity: 0.6;
+}
+
+.wk-pr-springen {
+  padding: 5px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.wk-pr-springen:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+}

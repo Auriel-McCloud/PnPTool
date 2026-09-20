@@ -16,11 +16,15 @@ import json
 _BESCHREIBUNG_MAX = 200
 
 
-def _tiptap_zu_text(roh: str) -> str:
+def tiptap_zu_text(roh: str) -> str:
     """TipTap-JSON (Richtext) zu Fließtext — oder Fließtext unverändert zurück.
 
     Manche Entitäten speichern ihre Beschreibung als TipTap-Dokument, andere
     als schlichten Text. Für den KI-Kontext zählt nur der reine Text.
+
+    Öffentlich (kein führender Unterstrich): wird auch von der Wiki-
+    Rechtschreib-/Grammatik-/Logikprüfung (app/ki/wiki_pruefung.py)
+    gebraucht, um denselben Text zu bekommen wie der KI-Kontext.
     """
     if not roh or not roh.strip().startswith("{"):
         return (roh or "").strip()
@@ -73,7 +77,7 @@ async def sammle_kontext(campaign_id: str) -> str:
     for e in eintraege:
         kind = e["kind"]
         name = (e["name"] or "").strip()
-        beschreibung = _tiptap_zu_text(e["description"])
+        beschreibung = tiptap_zu_text(e["description"])
         if len(beschreibung) > _BESCHREIBUNG_MAX:
             beschreibung = beschreibung[:_BESCHREIBUNG_MAX].rstrip() + "…"
 

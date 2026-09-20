@@ -316,6 +316,43 @@ async def freigeben(campaign_id: str, seiten_ids: list[str], sichtbarkeit: str, 
         return int(record["anzahl"]) if record else 0
 
 
+async def get_pruefhash(campaign_id: str, seiten_id: str) -> str:
+    """Hash des zuletzt geprüften Inhalts — leer, wenn noch nie geprüft.
+
+    Grundlage für den Sweep in app/ki/wiki_pruefung.py: stimmt der aktuelle
+    Hash mit diesem überein, hat sich der Text seit der letzten Prüfung
+    nicht geändert und wird übersprungen (spart KI-Aufrufe).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (s:WikiSeite {id: $seiten_id, campaignId: $campaign_id}) "
+            "RETURN coalesce(s.pruefHash, '') AS hash",
+            campaign_id=campaign_id,
+            seiten_id=seiten_id,
+        )
+        record = await result.single()
+        return record["hash"] if record else ""
+
+
+async def set_pruefhash(campaign_id: str, seiten_id: str, hash_wert: str) -> None:
+    """Merkt sich, welcher Textstand zuletzt geprüft wurde.
+
+    Bewusst nicht über SETZBAR/update_seite geroutet: der Hash ist ein
+    interner Buchhaltungswert der Prüfung, keine über PATCH beschreibbare
+    Seiteneigenschaft.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            "MATCH (s:WikiSeite {id: $seiten_id, campaignId: $campaign_id}) "
+            "SET s.pruefHash = $hash_wert",
+            campaign_id=campaign_id,
+            seiten_id=seiten_id,
+            hash_wert=hash_wert,
+        )
+
+
 async def rueckverweise(campaign_id: str, ziel_id: str) -> list[dict]:
     """Welche Wiki-Seiten erwähnen diese Entität? ("Erwähnt in: Kapitel 1")
 
