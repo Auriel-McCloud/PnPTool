@@ -199,6 +199,7 @@ npm run dev
 **Offen:** Shop-System, KI-Integration (erste Iteration gebaut), Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
+**Kampagnen-Export/Import** (mittlere Priorität — aktuell: Volumen-Kopier-Workaround für Deploy möglich),
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
 erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)
