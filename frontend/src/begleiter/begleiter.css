@@ -9,6 +9,16 @@
   color: var(--text-leise);
 }
 
+.bg-bild {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+  margin-bottom: 8px;
+}
+
 .bg-beziehung > span {
   display: inline-block;
   margin-right: 8px;

@@ -24,6 +24,12 @@ export interface Person extends VisibilityFields {
   notizenSichtbarFuer: string[];
   /** Extra-EP: individuelle Bonus-Punkte (zusätzlich zu kampagnenweiten EP). */
   extraEP?: number;
+  /** Critter (20.09.2026): Tiere/Haustiere sind echte NPCs mit dem vollen
+   * Charakterblatt statt einer eigenen Begleiter-Art — Mark: "wir machen
+   * critter zu richtigen NPCs". Verbindung zu ihrem Menschen läuft über
+   * `entitiesApi.critterBesitzer`, dieselbe BEGLEITET-Kante wie bei
+   * Sprite/Geist/KI. */
+  istCritter?: boolean;
 }
 
 export interface Ort extends VisibilityFields {
@@ -144,6 +150,14 @@ function query(filter?: ListenFilter): string {
   return s ? `?${s}` : "";
 }
 
+export interface CritterEintrag {
+  id: string;
+  name: string;
+  bildUrl: string;
+  besitzerId: string | null;
+  besitzerName: string | null;
+}
+
 export const entitiesApi = {
   listPersonen: (cid: string, filter?: ListenFilter) =>
     api.get<Person[]>(`${base(cid)}/personen${query(filter)}`),
@@ -157,6 +171,12 @@ export const entitiesApi = {
   /** Erhöht die Extra-EP eines PCs (nur positiv, irreversibel). */
   extraEpErhoehen: (cid: string, personId: string, betrag: number) =>
     api.post<Person>(`${base(cid)}/personen/${personId}/extra-ep`, { betrag }),
+
+  /** Critter — Tiere/Haustiere als echte NPCs (`istCritter: true`), eigene
+   * schlanke Liste für die Begleiter-Übersicht statt des vollen Bogens. */
+  listCritter: (cid: string) => api.get<CritterEintrag[]>(`${base(cid)}/critter`),
+  critterBesitzer: (cid: string, critterId: string, personId: string | null) =>
+    api.post<CritterEintrag>(`${base(cid)}/critter/${critterId}/besitzer`, { personId }),
 
   listOrte: (cid: string, filter?: ListenFilter) => api.get<Ort[]>(`${base(cid)}/orte${query(filter)}`),
   createOrt: (cid: string, body: Omit<Ort, "id">) => api.post<Ort>(`${base(cid)}/orte`, body),

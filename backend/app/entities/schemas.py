@@ -51,6 +51,15 @@ class PersonCreate(BaseModel):
     # Bestimmt Startwerte und Maxima bei der Erstellung (Mensch, Ork, Elf,
     # Zwerg, Troll). Frei als Text, weil Rassen dazukommen können.
     rasse: str = ""
+    # Critter (20.09.2026, Marks Entscheidung): Tiere/Haustiere sind echte
+    # NPCs mit dem vollen Charakterblatt statt eines eigenen Begleiter-Typs —
+    # "wir machen critter zu richtigen NPCs". Die Verbindung zu ihrem Menschen
+    # läuft über dieselbe BEGLEITET-Kante wie bei Sprite/Geist/KI, nur von
+    # Person zu Person statt von Begleiter zu Person (siehe
+    # app/entities/repository.py::critter_besitzer_setzen). Reines
+    # Markierungsfeld, damit die Begleiter-Übersicht sie herausfiltern kann,
+    # ohne jeden NPC nach einer BEGLEITET-Kante abzufragen.
+    istCritter: bool = False
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
@@ -93,6 +102,7 @@ class PersonUpdate(BaseModel):
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
     rasse: str | None = None
+    istCritter: bool | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
@@ -134,6 +144,7 @@ class PersonResponse(BaseModel):
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
     rasse: str = ""
+    istCritter: bool = False
     silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0

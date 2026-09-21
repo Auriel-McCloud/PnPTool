@@ -9,22 +9,25 @@ import type { EntityKind } from "../entities/api";
  * Gegenstand — einen Geist trägt man nicht im Rucksack, er hat kein Gewicht
  * und keinen Aufbewahrungsort.
  *
- * **KI und CRITTER (19.09.2026):** zwei weitere Arten auf demselben Blatt.
- * KI (z.B. eine Stadt-KI wie Babel) trägt zusätzlich die sechs
- * nicht-körperlichen Person-Attribute plus Matrix-Präsenz und kann echten
- * Entitäten (Ort/Fraktion/Event/Gegenstand) Einfluss-Stufen zuweisen —
- * siehe `einfluss`. CRITTER (Tiere/Haustiere, Shadowrun-Anlehnung) trägt
- * zusätzlich Loyalität und Ausbildung/Tricks.
+ * **KI (19.09.2026):** eine weitere Art auf demselben Blatt. Eine KI (z.B.
+ * eine Stadt-KI wie Babel) trägt zusätzlich die sechs nicht-körperlichen
+ * Person-Attribute plus Matrix-Präsenz und kann echten Entitäten
+ * (Ort/Fraktion/Event/Gegenstand) Einfluss-Stufen zuweisen — siehe
+ * `einfluss`.
+ *
+ * **CRITTER (20.09.2026, revidiert):** Tiere/Haustiere sind KEINE
+ * Begleiter-Art mehr, sondern echte NPCs (`Person` mit `istCritter=true`,
+ * siehe `entities/api.ts`) mit dem vollen Charakterblatt — Mark: "wir machen
+ * critter zu richtigen NPCs".
  */
 
-export type BegleiterArt = "SPRITE" | "GEIST" | "BEGLEITER" | "KI" | "CRITTER";
+export type BegleiterArt = "SPRITE" | "GEIST" | "BEGLEITER" | "KI";
 
 export const ART_NAMEN: Record<BegleiterArt, string> = {
   SPRITE: "Sprite",
   GEIST: "Geist",
   BEGLEITER: "Begleiter",
   KI: "KI",
-  CRITTER: "Critter",
 };
 
 export const ART_SYMBOLE: Record<BegleiterArt, string> = {
@@ -32,7 +35,6 @@ export const ART_SYMBOLE: Record<BegleiterArt, string> = {
   GEIST: "☁",
   BEGLEITER: "☗",
   KI: "⌬",
-  CRITTER: "❖",
 };
 
 /** Ziele, denen ein Begleiter (typischerweise eine KI) Einfluss zuweisen
@@ -56,6 +58,8 @@ export interface Begleiter {
   beziehung: string;
   beschreibung: string;
   notizen: string;
+  /** Aussehen; per Blitz an alle Spieler zeigbar. */
+  bildUrl: string;
   /** Zugleich die Gesundheit. Wird beim Erschaffen frei verteilt. */
   stufe: number;
   widerstand: number;
@@ -73,9 +77,6 @@ export interface Begleiter {
   geistesschaerfe: number;
   entschlossenheit: number;
   matrixPraesenz: number;
-  /** Zusatzblatt CRITTER: Bindung zum Besitzer und antrainierte Kunststücke. */
-  loyalitaet: number;
-  ausbildung: number;
   /** Reine Budget-Anzeige, keine Kostenrechnung wie bei Personen. */
   erfahrung: number;
   erfahrungAusgegeben: number;

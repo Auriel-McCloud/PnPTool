@@ -12,10 +12,16 @@ hier sinnlos oder irreführend.
 Die Werte selbst liegen in `app/traits/begleiterblatt.py`, damit Fahrzeug und
 Geist nicht auseinanderlaufen.
 
-**KI und CRITTER (19.09.2026):** zwei weitere `art`-Werte auf demselben
-Knoten, mit eigenen Zusatzfeldern (KI-Attribute, Loyalität/Ausbildung) und
-bei der KI zusätzlich einer eigenen Kantenart `HAT_EINFLUSS_AUF` zu
-Ort/Fraktion/Event/Gegenstand — siehe `einfluss_setzen`/`einfluss_entfernen`.
+**KI (19.09.2026):** ein weiterer `art`-Wert auf demselben Knoten, mit
+eigenen Zusatzfeldern (KI-Attribute) und einer eigenen Kantenart
+`HAT_EINFLUSS_AUF` zu Ort/Fraktion/Event/Gegenstand — siehe
+`einfluss_setzen`/`einfluss_entfernen`.
+
+**CRITTER (20.09.2026, revidiert):** Tiere/Haustiere sind KEIN Begleiter-Art
+mehr — Mark: "wir machen critter zu richtigen NPCs". Sie leben als echte
+`Person`-Knoten (`istCritter=true`) in `app/entities/`, mit dem vollen
+NPC-Charakterblatt statt des Drohne/Fahrzeug-Blatts. `loyalitaet`/
+`ausbildung` sind deshalb aus diesem Modul entfernt.
 """
 
 import json
@@ -26,13 +32,13 @@ from app.db.neo4j_driver import get_driver
 RETURN_FIELDS = """
     b.id AS id, b.name AS name, b.art AS art, b.beziehung AS beziehung,
     b.beschreibung AS beschreibung, b.notizen AS notizen,
+    b.bildUrl AS bildUrl,
     b.stufe AS stufe, b.widerstand AS widerstand, b.angriff AS angriff,
     b.agilitaet AS agilitaet, b.fertigkeiten AS fertigkeiten,
     b.waffe AS waffe, b.waffenSchaden AS waffenSchaden, b.schadensart AS schadensart,
     b.charisma AS charisma, b.manipulation AS manipulation, b.fassung AS fassung,
     b.intelligenz AS intelligenz, b.geistesschaerfe AS geistesschaerfe,
     b.entschlossenheit AS entschlossenheit, b.matrixPraesenz AS matrixPraesenz,
-    b.loyalitaet AS loyalitaet, b.ausbildung AS ausbildung,
     b.erfahrung AS erfahrung, b.erfahrungAusgegeben AS erfahrungAusgegeben,
     b.sichtbarkeit AS sichtbarkeit, b.sichtbarFuer AS sichtbarFuer,
     p.id AS besitzerId, p.name AS besitzerName, einfluss
@@ -58,11 +64,11 @@ _EINFLUSS_SUBQUERY = """
 # Felder, die per SET/CREATE geschrieben werden (ohne Einfluss — der läuft
 # über eigene Kanten, siehe unten).
 _SCHREIBBARE_FELDER = [
-    "name", "art", "beziehung", "beschreibung", "notizen",
+    "name", "art", "beziehung", "beschreibung", "notizen", "bildUrl",
     "stufe", "widerstand", "angriff", "agilitaet", "fertigkeiten",
     "waffe", "waffenSchaden", "schadensart",
     "charisma", "manipulation", "fassung", "intelligenz", "geistesschaerfe",
-    "entschlossenheit", "matrixPraesenz", "loyalitaet", "ausbildung",
+    "entschlossenheit", "matrixPraesenz",
     "erfahrung", "erfahrungAusgegeben",
     "sichtbarkeit", "sichtbarFuer",
 ]
@@ -78,12 +84,12 @@ def _decode(record: dict) -> dict:
     Pflichtfeld lässt sonst die ganze Liste mit 500 abstürzen.
     """
     daten = dict(record)
-    for feld in ("name", "art", "beziehung", "beschreibung", "notizen", "waffe", "schadensart"):
+    for feld in ("name", "art", "beziehung", "beschreibung", "notizen", "waffe", "schadensart", "bildUrl"):
         daten[feld] = daten.get(feld) or ""
     for feld in (
         "stufe", "widerstand", "angriff", "agilitaet", "waffenSchaden",
         "charisma", "manipulation", "fassung", "intelligenz", "geistesschaerfe",
-        "entschlossenheit", "matrixPraesenz", "loyalitaet", "ausbildung",
+        "entschlossenheit", "matrixPraesenz",
         "erfahrung", "erfahrungAusgegeben",
     ):
         daten[feld] = daten.get(feld) or 0
@@ -121,13 +127,13 @@ async def anlegen(campaign_id: str, besitzer_person_id: str | None, daten: dict)
         CREATE (b:Begleiter {
             id: $id, campaignId: $campaign_id, name: $name, art: $art,
             beziehung: $beziehung, beschreibung: $beschreibung, notizen: $notizen,
+            bildUrl: $bildUrl,
             stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
             fertigkeiten: $fertigkeiten, waffe: $waffe, waffenSchaden: $waffenSchaden,
             schadensart: $schadensart,
             charisma: $charisma, manipulation: $manipulation, fassung: $fassung,
             intelligenz: $intelligenz, geistesschaerfe: $geistesschaerfe,
             entschlossenheit: $entschlossenheit, matrixPraesenz: $matrixPraesenz,
-            loyalitaet: $loyalitaet, ausbildung: $ausbildung,
             erfahrung: $erfahrung, erfahrungAusgegeben: $erfahrungAusgegeben,
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
         })
@@ -163,6 +169,7 @@ async def anlegen(campaign_id: str, besitzer_person_id: str | None, daten: dict)
             beziehung=daten["beziehung"],
             beschreibung=daten["beschreibung"],
             notizen=daten["notizen"],
+            bildUrl=daten.get("bildUrl") or "",
             stufe=daten["stufe"],
             widerstand=daten["widerstand"],
             angriff=daten["angriff"],
@@ -178,8 +185,6 @@ async def anlegen(campaign_id: str, besitzer_person_id: str | None, daten: dict)
             geistesschaerfe=daten.get("geistesschaerfe") or 0,
             entschlossenheit=daten.get("entschlossenheit") or 0,
             matrixPraesenz=daten.get("matrixPraesenz") or 0,
-            loyalitaet=daten.get("loyalitaet") or 0,
-            ausbildung=daten.get("ausbildung") or 0,
             erfahrung=daten.get("erfahrung") or 0,
             erfahrungAusgegeben=daten.get("erfahrungAusgegeben") or 0,
             sichtbarkeit=daten["sichtbarkeit"],

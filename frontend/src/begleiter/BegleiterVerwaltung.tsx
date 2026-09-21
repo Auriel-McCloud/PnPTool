@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { entitiesApi, type Person } from "../entities/api";
+import { entitiesApi, type CritterEintrag, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
+import { parseRichText, serializeRichText } from "../richtext/content";
+import { RichTextEditor } from "../richtext/RichTextEditor";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, begleiterApi, type Begleiter, type BegleiterArt } from "./api";
+import { BegleiterBild } from "./BegleiterBild";
+import { CritterFenster } from "./CritterFenster";
 import { EinflussVerwaltung } from "./EinflussVerwaltung";
-import { CritterWerte, KiAttributBlatt } from "./KiAttributBlatt";
+import { KiAttributBlatt } from "./KiAttributBlatt";
 import "../items/gegenstaende.css";
 import "./begleiter.css";
 
 /**
- * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete, KIs, Critter.
+ * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete, KIs.
  *
  * Sie hängen an einer Person und teilen sich das Grundblatt mit Drohnen und
  * Fahrzeugen. Wer einem Spielercharakter zugeordnet ist, wird beim Anlegen
@@ -21,21 +25,49 @@ import "./begleiter.css";
  *
  * KI (19.09.2026) trägt zusätzlich die sechs nicht-körperlichen
  * Person-Attribute plus Matrix-Präsenz und kann echten Entitäten
- * Einfluss-Stufen zuweisen (`EinflussVerwaltung`). CRITTER trägt zusätzlich
- * Loyalität und Ausbildung/Tricks.
+ * Einfluss-Stufen zuweisen (`EinflussVerwaltung`).
+ *
+ * **CRITTER (20.09.2026, revidiert)**: Tiere/Haustiere sind keine
+ * Begleiter-Art mehr — Mark: "wir machen critter zu richtigen NPCs". Sie
+ * sind echte `Person`-Knoten (`istCritter`), erscheinen aber trotzdem in
+ * dieser Übersicht (gemischt mit den echten Begleitern) und lassen sich auch
+ * hier anlegen — nur mit dem vollen NPC-Charakterblatt statt des
+ * Drohne/Fahrzeug-Blatts, siehe `CritterFenster`.
  *
  * **Kachelraster + Anlegen-Popup (20.09.2026)**: dasselbe Muster wie
  * GegenstaendeUebersicht/PartyVerwaltung — Suchfeld über Name/Art/Besitzer,
  * "+ Neuer Begleiter" öffnet ein Fenster statt eines Inline-Formulars.
+ *
+ * **Bearbeiten-Fenster-Reihenfolge (20.09.2026, Mark: "man will das
+ * Charakterblatt sehen")**: Bild und Werte stehen oben, selten gebrauchte
+ * Verwaltung (Name/Art ändern, Verbindung, Beziehung) ganz unten — vorher
+ * stand die Verwaltung zuerst und verdrängte das eigentliche Blatt nach
+ * unten aus dem Blick.
  */
 
-const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER", "KI", "CRITTER"];
+const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER", "KI"];
+
+/** Eine Kachel in der gemeinsamen Übersicht — entweder ein echter Begleiter
+ * oder ein Critter (Person mit istCritter). Gemeinsames schlankes Format,
+ * damit Suche/Raster/Pagination beide Arten gleich behandeln können. */
+interface KachelEintrag {
+  id: string;
+  name: string;
+  bildUrl: string;
+  besitzerName: string | null;
+  suchtext: string;
+  art: "CRITTER" | BegleiterArt;
+  stufe: number;
+  quelle: { kind: "begleiter"; daten: Begleiter } | { kind: "critter"; daten: CritterEintrag };
+}
 
 export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [alle, setAlle] = useState<Begleiter[]>([]);
+  const [critter, setCritter] = useState<CritterEintrag[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
   const [laden, setLaden] = useState(true);
   const [offen, setOffen] = useState<Begleiter | null>(null);
+  const [critterOffen, setCritterOffen] = useState<CritterEintrag | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [suche, setSuche] = useState("");
   const rasterRef = useRef<HTMLDivElement>(null);
@@ -43,11 +75,13 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [seite, setSeite] = useState(0);
 
   async function neuLaden() {
-    const [b, p] = await Promise.all([
+    const [b, c, p] = await Promise.all([
       begleiterApi.liste(campaignId),
+      entitiesApi.listCritter(campaignId),
       entitiesApi.listPersonen(campaignId),
     ]);
     setAlle(b);
+    setCritter(c);
     setPersonen(p);
   }
 
@@ -61,18 +95,40 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     [personen],
   );
 
+  // Beide Arten zu einer gemeinsamen Kachel-Liste zusammenführen — Mark,
+  // 20.09.2026: Critter bleiben trotz eigenem NPC-Blatt Teil der
+  // Begleiter-Übersicht, nicht nur der normalen NPC-Liste.
+  const kacheln = useMemo<KachelEintrag[]>(() => {
+    const b: KachelEintrag[] = alle.map((x) => ({
+      id: x.id,
+      name: x.name,
+      bildUrl: x.bildUrl,
+      besitzerName: x.besitzerName,
+      suchtext: `${x.name} ${ART_NAMEN[x.art]} ${x.besitzerName ?? ""}`.toLowerCase(),
+      art: x.art,
+      stufe: x.stufe,
+      quelle: { kind: "begleiter", daten: x },
+    }));
+    const c: KachelEintrag[] = critter.map((x) => ({
+      id: x.id,
+      name: x.name,
+      bildUrl: x.bildUrl,
+      besitzerName: x.besitzerName,
+      suchtext: `${x.name} Critter ${x.besitzerName ?? ""}`.toLowerCase(),
+      art: "CRITTER",
+      stufe: 0,
+      quelle: { kind: "critter", daten: x },
+    }));
+    return [...b, ...c].sort((x, y) => x.name.localeCompare(y.name, "de"));
+  }, [alle, critter]);
+
   // Sucht über Name, Art und Besitzer — analog zur Gegenstände-/Party-Suche
   // ("alle Sprites von Kira" statt exaktem Namen).
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLowerCase();
-    if (!s) return alle;
-    return alle.filter(
-      (b) =>
-        b.name.toLowerCase().includes(s) ||
-        ART_NAMEN[b.art].toLowerCase().includes(s) ||
-        (b.besitzerName ?? "").toLowerCase().includes(s),
-    );
-  }, [alle, suche]);
+    if (!s) return kacheln;
+    return kacheln.filter((k) => k.suchtext.includes(s));
+  }, [kacheln, suche]);
 
   // Nach einer neuen Suche kann die aktuelle Seite hinter dem gefilterten
   // Ende liegen — zurück auf die erste Seite, sonst wirkt die Liste leer.
@@ -100,24 +156,34 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           + Neuer Begleiter
         </button>
         <span className="gg-anzahl">
-          {gefiltert.length} von {alle.length}
+          {gefiltert.length} von {kacheln.length}
         </span>
       </div>
 
       <div className="gg-raster" ref={rasterRef}>
-        {sichtbar.map((b) => (
-          <button key={b.id} type="button" className="gg-kachel" onClick={() => setOffen(b)} title={b.name}>
+        {sichtbar.map((k) => (
+          <button
+            key={k.id}
+            type="button"
+            className="gg-kachel"
+            onClick={() => (k.quelle.kind === "begleiter" ? setOffen(k.quelle.daten) : setCritterOffen(k.quelle.daten))}
+            title={k.name}
+          >
             <span className="gg-kachel-bild">
-              <span aria-hidden="true">{ART_SYMBOLE[b.art]}</span>
+              {k.bildUrl ? (
+                <img src={k.bildUrl} alt="" />
+              ) : (
+                <span aria-hidden="true">{k.art === "CRITTER" ? "❖" : ART_SYMBOLE[k.art]}</span>
+              )}
             </span>
-            <span className="gg-kachel-name">{b.name}</span>
+            <span className="gg-kachel-name">{k.name}</span>
             <span className="gg-kachel-zeile">
-              {ART_NAMEN[b.art]}
-              {b.stufe > 0 && ` · Stufe ${b.stufe}`}
+              {k.art === "CRITTER" ? "Critter" : ART_NAMEN[k.art]}
+              {k.stufe > 0 && ` · Stufe ${k.stufe}`}
             </span>
             <span className="gg-kachel-marken">
-              {b.besitzerName ? (
-                <span className="gg-marke">{b.besitzerName}</span>
+              {k.besitzerName ? (
+                <span className="gg-marke">{k.besitzerName}</span>
               ) : (
                 <span className="gg-marke">ungebunden</span>
               )}
@@ -126,8 +192,8 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
         ))}
       </div>
 
-      {alle.length === 0 && <p className="gg-leer">Noch keine Begleiter in dieser Kampagne.</p>}
-      {alle.length > 0 && gefiltert.length === 0 && <p className="gg-leer">Nichts gefunden.</p>}
+      {kacheln.length === 0 && <p className="gg-leer">Noch keine Begleiter in dieser Kampagne.</p>}
+      {kacheln.length > 0 && gefiltert.length === 0 && <p className="gg-leer">Nichts gefunden.</p>}
 
       {seiten > 1 && (
         <div className="gg-blaettern">
@@ -157,6 +223,13 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           await neuLaden();
           setOffen(neu);
         }}
+        onCritterAngelegt={async (neuerCritterId) => {
+          setAnlegenOffen(false);
+          await neuLaden();
+          const gefunden = await entitiesApi.listCritter(campaignId);
+          setCritter(gefunden);
+          setCritterOffen(gefunden.find((c) => c.id === neuerCritterId) ?? null);
+        }}
       />
 
       {offen && (
@@ -169,13 +242,27 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
             await neuLaden();
             setOffen(null);
           }}
-          // Einfluss ändert sich sofort über die eigene API, ohne dass der
-          // Rest des Formulars mitgespeichert werden soll — das Fenster
+          // Einfluss/Bild ändern sich sofort über die eigene API, ohne dass
+          // der Rest des Formulars mitgespeichert werden soll — das Fenster
           // bleibt offen, damit man mehrere Ziele nacheinander zuweisen kann
           // (dasselbe Muster wie Mitglied-Hinzufügen in PartyVerwaltung).
-          onEinflussGeaendert={(neu) => {
+          onSofortGeaendert={(neu) => {
             setAlle((alt) => alt.map((b) => (b.id === neu.id ? neu : b)));
             setOffen(neu);
+          }}
+        />
+      )}
+
+      {critterOffen && (
+        <CritterFenster
+          campaignId={campaignId}
+          critterId={critterOffen.id}
+          besitzerId={critterOffen.besitzerId}
+          personen={personenNamen}
+          onSchliessen={() => setCritterOffen(null)}
+          onGeaendert={async () => {
+            await neuLaden();
+            setCritterOffen(null);
           }}
         />
       )}
@@ -232,6 +319,24 @@ function BesitzerAuswahl({
   );
 }
 
+/** Kleine Überschrift für einen ausklappbaren/selten gebrauchten Abschnitt. */
+function AbschnittTitel({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        display: "block",
+        fontSize: 11,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        color: "var(--neon)",
+        marginBottom: 4,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 /**
  * Anlegen-Popup: Name, Art und gleich die Besitzer-Auswahl (Verbindung) in
  * einem Commlink-Fenster statt des früheren Inline-Formulars in der
@@ -244,15 +349,17 @@ function BegleiterAnlegenFenster({
   personen,
   onSchliessen,
   onAngelegt,
+  onCritterAngelegt,
 }: {
   offen: boolean;
   campaignId: string;
   personen: { id: string; label: string }[];
   onSchliessen: () => void;
   onAngelegt: (neu: Begleiter) => void;
+  onCritterAngelegt: (neuerCritterId: string) => void;
 }) {
   const [name, setName] = useState("");
-  const [art, setArt] = useState<BegleiterArt>("SPRITE");
+  const [art, setArt] = useState<BegleiterArt | "CRITTER">("SPRITE");
   const [besitzer, setBesitzer] = useState("");
   const [sendet, setSendet] = useState(false);
 
@@ -271,6 +378,27 @@ function BegleiterAnlegenFenster({
     if (!name.trim()) return;
     setSendet(true);
     try {
+      if (art === "CRITTER") {
+        // Critter (20.09.2026, revidiert): echter NPC statt Begleiter-Art —
+        // Mark: "wir machen critter zu richtigen NPCs", volles Charakterblatt
+        // statt des Drohne/Fahrzeug-Blatts.
+        const neu = await entitiesApi.createPerson(campaignId, {
+          name: name.trim(),
+          personType: "NPC",
+          description: "",
+          notes: "",
+          istCritter: true,
+          sichtbarkeit: "GM",
+          sichtbarFuer: [],
+          notizenSichtbarkeit: "GM",
+          notizenSichtbarFuer: [],
+        });
+        if (besitzer) {
+          await entitiesApi.critterBesitzer(campaignId, neu.id, besitzer);
+        }
+        onCritterAngelegt(neu.id);
+        return;
+      }
       const neu = await begleiterApi.anlegen(campaignId, {
         name: name.trim(),
         art,
@@ -305,28 +433,24 @@ function BegleiterAnlegenFenster({
           <span style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
             Art
           </span>
-          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt)}>
+          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt | "CRITTER")}>
             {ARTEN.map((a) => (
               <option key={a} value={a}>
                 {ART_SYMBOLE[a]} {ART_NAMEN[a]}
               </option>
             ))}
+            <option value="CRITTER">❖ Critter</option>
           </select>
         </div>
 
+        {art === "CRITTER" && (
+          <p className="pcd-hinweis" style={{ margin: 0 }}>
+            Bekommt das volle NPC-Charakterblatt statt des Drohne/Fahrzeug-Blatts.
+          </p>
+        )}
+
         <div>
-          <span
-            style={{
-              display: "block",
-              fontSize: 11,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "var(--neon)",
-              marginBottom: 4,
-            }}
-          >
-            Verbindung (optional)
-          </span>
+          <AbschnittTitel>Verbindung (optional)</AbschnittTitel>
           <BesitzerAuswahl personen={personen} wert={besitzer} onWaehlen={setBesitzer} />
         </div>
 
@@ -344,14 +468,14 @@ function BegleiterFenster({
   personen,
   onSchliessen,
   onGeaendert,
-  onEinflussGeaendert,
+  onSofortGeaendert,
 }: {
   campaignId: string;
   begleiter: Begleiter;
   personen: { id: string; label: string }[];
   onSchliessen: () => void;
   onGeaendert: () => void;
-  onEinflussGeaendert: (neu: Begleiter) => void;
+  onSofortGeaendert: (neu: Begleiter) => void;
 }) {
   const [name, setName] = useState(begleiter.name);
   const [art, setArt] = useState(begleiter.art);
@@ -377,14 +501,21 @@ function BegleiterFenster({
   const [geistesschaerfe, setGeistesschaerfe] = useState(begleiter.geistesschaerfe);
   const [entschlossenheit, setEntschlossenheit] = useState(begleiter.entschlossenheit);
   const [matrixPraesenz, setMatrixPraesenz] = useState(begleiter.matrixPraesenz);
-  // CRITTER-Werte.
-  const [loyalitaet, setLoyalitaet] = useState(begleiter.loyalitaet);
-  const [ausbildung, setAusbildung] = useState(begleiter.ausbildung);
   // Erfahrung — reine Budget-Anzeige, keine Kostenrechnung.
   const [erfahrung, setErfahrung] = useState(begleiter.erfahrung);
   const [erfahrungAusgegeben, setErfahrungAusgegeben] = useState(begleiter.erfahrungAusgegeben);
+  // Beschreibung als Rich-Text — dasselbe Muster wie bei Personen/Orten.
+  const [beschreibungDoc, setBeschreibungDoc] = useState(parseRichText(begleiter.beschreibung));
   const [sendet, setSendet] = useState(false);
+  const [speichertBeschreibung, setSpeichertBeschreibung] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  // Aktueller Begleiter-Stand für das Bild (das Fenster bekommt bei einem
+  // reinen Bild-Upload keinen neuen `begleiter`-Prop, siehe onSofortGeaendert).
+  const [aktuellerBegleiter, setAktuellerBegleiter] = useState(begleiter);
+
+  useEffect(() => {
+    setAktuellerBegleiter(begleiter);
+  }, [begleiter]);
 
   const verteilt = widerstand + angriff + agilitaet + fertigkeiten.reduce((s, [, w]) => s + w, 0);
 
@@ -410,8 +541,6 @@ function BegleiterFenster({
         geistesschaerfe,
         entschlossenheit,
         matrixPraesenz,
-        loyalitaet,
-        ausbildung,
         erfahrung,
         erfahrungAusgegeben,
       });
@@ -421,6 +550,19 @@ function BegleiterFenster({
       onGeaendert();
     } finally {
       setSendet(false);
+    }
+  }
+
+  async function beschreibungSpeichern() {
+    setSpeichertBeschreibung(true);
+    try {
+      const neu = await begleiterApi.aendern(campaignId, begleiter.id, {
+        beschreibung: serializeRichText(beschreibungDoc),
+      });
+      setAktuellerBegleiter(neu);
+      onSofortGeaendert(neu);
+    } finally {
+      setSpeichertBeschreibung(false);
     }
   }
 
@@ -439,44 +581,21 @@ function BegleiterFenster({
       onSchliessen={onSchliessen}
     >
       <div className="bg-formular">
-        <div className="bg-zeile">
-          <input value={name} onChange={(e) => setName(e.target.value)} style={{ flex: "1 1 200px" }} />
-          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt)}>
-            {ARTEN.map((a) => (
-              <option key={a} value={a}>
-                {ART_NAMEN[a]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BegleiterBild
+          campaignId={campaignId}
+          begleiterId={begleiter.id}
+          name={begleiter.name}
+          bildUrl={aktuellerBegleiter.bildUrl}
+          onGeaendert={async () => {
+            const neu = await begleiterApi.aendern(campaignId, begleiter.id, {});
+            setAktuellerBegleiter(neu);
+            onSofortGeaendert(neu);
+          }}
+        />
 
-        <label className="bg-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3 }}>
-          <span style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
-            Beziehung
-          </span>
-          <input
-            value={beziehung}
-            onChange={(e) => setBeziehung(e.target.value)}
-            placeholder="Wie steht er zu seinem Menschen?"
-          />
-        </label>
-
-        <div>
-          <span
-            style={{
-              display: "block",
-              fontSize: 11,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "var(--neon)",
-              marginBottom: 4,
-            }}
-          >
-            Verbindung
-          </span>
-          <BesitzerAuswahl personen={personen} wert={besitzer} onWaehlen={setBesitzer} />
-        </div>
-
+        {/* Das eigentliche Blatt zuerst — Mark, 20.09.2026: "man will das
+            Charakterblatt sehen". Name/Art/Verbindung/Beziehung folgen ganz
+            unten, siehe Verwaltungsabschnitt. */}
         {art === "KI" && (
           <KiAttributBlatt
             werte={{
@@ -496,17 +615,6 @@ function BegleiterFenster({
               else if (feld === "geistesschaerfe") setGeistesschaerfe(wert);
               else if (feld === "entschlossenheit") setEntschlossenheit(wert);
               else if (feld === "matrixPraesenz") setMatrixPraesenz(wert);
-            }}
-          />
-        )}
-
-        {art === "CRITTER" && (
-          <CritterWerte
-            loyalitaet={loyalitaet}
-            ausbildung={ausbildung}
-            onAendern={(feld, wert) => {
-              if (feld === "loyalitaet") setLoyalitaet(wert);
-              else setAusbildung(wert);
             }}
           />
         )}
@@ -610,21 +718,83 @@ function BegleiterFenster({
         </section>
 
         {art === "KI" && (
-          <EinflussVerwaltung campaignId={campaignId} begleiter={begleiter} onGeaendert={onEinflussGeaendert} />
+          <EinflussVerwaltung
+            campaignId={campaignId}
+            begleiter={aktuellerBegleiter}
+            onGeaendert={(neu) => {
+              setAktuellerBegleiter(neu);
+              onSofortGeaendert(neu);
+            }}
+          />
         )}
 
         <div className="bg-zeile">
           <button type="button" onClick={sichern} disabled={sendet}>
-            {sendet ? "Wird gespeichert…" : "Speichern"}
-          </button>
-          <button
-            type="button"
-            style={{ borderColor: "var(--signal)", color: "var(--signal)", marginLeft: "auto" }}
-            onClick={() => setLoeschenOffen(true)}
-          >
-            Entfernen
+            {sendet ? "Wird gespeichert…" : "Werte speichern"}
           </button>
         </div>
+
+        {/* Beschreibung — Fließtext, deshalb unter den Werten statt dazwischen. */}
+        <section>
+          <h3 style={{ margin: "0 0 6px" }}>Beschreibung</h3>
+          <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} minHeight={100} />
+          <button
+            type="button"
+            onClick={beschreibungSpeichern}
+            disabled={speichertBeschreibung}
+            style={{ marginTop: 6 }}
+          >
+            {speichertBeschreibung ? "Speichert…" : "Beschreibung speichern"}
+          </button>
+        </section>
+
+        {/* Selten gebrauchte Verwaltung ganz unten — Mark, 20.09.2026: "man
+            will das Charakterblatt sehen", nicht zuerst Name/Art/Verbindung
+            ändern müssen. */}
+        <section style={{ borderTop: "1px solid var(--linie)", paddingTop: 10, marginTop: 4 }}>
+          <h3 style={{ margin: "0 0 6px" }}>Verwaltung</h3>
+
+          <div className="bg-zeile">
+            <label style={{ display: "flex", flexDirection: "column", gap: 3, flex: "1 1 200px" }}>
+              <AbschnittTitel>Name</AbschnittTitel>
+              <input value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <AbschnittTitel>Art</AbschnittTitel>
+              <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt)}>
+                {ARTEN.map((a) => (
+                  <option key={a} value={a}>
+                    {ART_NAMEN[a]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="bg-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3, marginTop: 8 }}>
+            <AbschnittTitel>Beziehung</AbschnittTitel>
+            <input
+              value={beziehung}
+              onChange={(e) => setBeziehung(e.target.value)}
+              placeholder="Wie steht er zu seinem Menschen?"
+            />
+          </label>
+
+          <div style={{ marginTop: 8 }}>
+            <AbschnittTitel>Verbindung</AbschnittTitel>
+            <BesitzerAuswahl personen={personen} wert={besitzer} onWaehlen={setBesitzer} />
+          </div>
+
+          <div className="bg-zeile" style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              style={{ borderColor: "var(--signal)", color: "var(--signal)" }}
+              onClick={() => setLoeschenOffen(true)}
+            >
+              Entfernen
+            </button>
+          </div>
+        </section>
       </div>
 
       {loeschenOffen && (

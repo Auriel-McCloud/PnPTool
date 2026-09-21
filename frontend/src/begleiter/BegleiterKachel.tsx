@@ -6,7 +6,7 @@ import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
 import { EinflussAnzeige } from "./EinflussVerwaltung";
-import { CritterWerte, KiAttributBlatt } from "./KiAttributBlatt";
+import { KiAttributBlatt } from "./KiAttributBlatt";
 import "./begleiter.css";
 
 /**
@@ -15,8 +15,15 @@ import "./begleiter.css";
  * Das Grundblatt ist dasselbe wie bei Drohne und Fahrzeug (`Neotopia.xlsx`,
  * Blatt "Drohne / Fahrzeug / Sprite / Geist"): Stufe, Widerstand, Angriff,
  * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schadensbonus.
- * KI und CRITTER (19.09.2026) zeigen zusätzlich ihr Zusatzblatt — siehe
- * `KiAttributBlatt`/`CritterWerte`/`EinflussAnzeige`.
+ * KI (19.09.2026) zeigt zusätzlich ihr Zusatzblatt — siehe
+ * `KiAttributBlatt`/`EinflussAnzeige`. CRITTER (Tiere/Haustiere) sind seit
+ * 20.09.2026 keine Begleiter-Art mehr, sondern echte NPCs — siehe
+ * `entities/NPCDetail.tsx`.
+ *
+ * **Layout (20.09.2026, Mark: "man will das Charakterblatt sehen"):** das
+ * eigentliche Blatt (Werte) steht zuerst, selten gebrauchte Verwaltung
+ * (Name/Art ändern, Verbindung, Beziehung) ganz unten im Bearbeiten-Fenster
+ * — siehe `BegleiterVerwaltung.tsx`.
  */
 
 export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
@@ -25,18 +32,17 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
 
   return (
     <>
+      {begleiter.bildUrl && (
+        <img src={begleiter.bildUrl} alt={begleiter.name} className="bg-bild" />
+      )}
+
       {begleiter.beziehung && (
         <p className="bg-beziehung">
           <span>Beziehung</span> {begleiter.beziehung}
         </p>
       )}
 
-      {beschreibung && <RichTextView content={beschreibung} />}
-
       {begleiter.art === "KI" && <KiAttributBlatt werte={begleiter} />}
-      {begleiter.art === "CRITTER" && (
-        <CritterWerte loyalitaet={begleiter.loyalitaet} ausbildung={begleiter.ausbildung} />
-      )}
 
       <StufenBlatt werte={begleiter} stufenHinweis="Zugleich die Gesundheit." />
 
@@ -62,6 +68,8 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
       )}
 
       {begleiter.art === "KI" && <EinflussAnzeige begleiter={begleiter} />}
+
+      {beschreibung && <RichTextView content={beschreibung} />}
     </>
   );
 }
@@ -73,7 +81,11 @@ export function BegleiterKachel({ begleiter }: { begleiter: Begleiter }) {
     <>
       <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={begleiter.name}>
         <span className="gg-kachel-bild">
-          <span aria-hidden="true">{ART_SYMBOLE[begleiter.art]}</span>
+          {begleiter.bildUrl ? (
+            <img src={begleiter.bildUrl} alt="" />
+          ) : (
+            <span aria-hidden="true">{ART_SYMBOLE[begleiter.art]}</span>
+          )}
         </span>
         <span className="gg-kachel-name">{begleiter.name}</span>
         <span className="gg-kachel-zeile">

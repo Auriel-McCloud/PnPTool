@@ -50,29 +50,3 @@ export function KiAttributBlatt({
     </section>
   );
 }
-
-/** Loyalität (1-6) und Ausbildung/Tricks (0-5) — nur bei CRITTER. Bewusst
- * ohne feste Mechanik (Mark: "wer soweit kommt hat's verdient"), reine
- * Anzeige/Bearbeitung ohne abgeleitete Effekte. */
-export function CritterWerte({
-  loyalitaet,
-  ausbildung,
-  onAendern,
-}: {
-  loyalitaet: number;
-  ausbildung: number;
-  onAendern?: (feld: "loyalitaet" | "ausbildung", wert: number) => void;
-}) {
-  return (
-    <section className="bg-werte" style={{ "--cb-ton": "var(--wert-koerperlich)" } as React.CSSProperties}>
-      <div className="bg-wert" title="Wie treu es zu seinem Menschen steht.">
-        <span>Loyalität</span>
-        <DotPool value={loyalitaet} max={6} onChange={onAendern ? (w) => onAendern("loyalitaet", w) : undefined} />
-      </div>
-      <div className="bg-wert" title="Antrainierte Kunststücke — Kommandos, Vorführungen.">
-        <span>Ausbildung/Tricks</span>
-        <DotPool value={ausbildung} max={5} onChange={onAendern ? (w) => onAendern("ausbildung", w) : undefined} />
-      </div>
-    </section>
-  );
-}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.begleiter import repository
@@ -10,6 +10,7 @@ from app.begleiter.schemas import (
     EinflussSetzen,
 )
 from app.entities.visibility import is_visible_to, redact_rich_text
+from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/begleiter",
@@ -81,6 +82,33 @@ async def aendern(campaign_id: str, begleiter_id: str, body: BegleiterUpdate):
 @router.post("/{begleiter_id}/besitzer", response_model=BegleiterResponse, dependencies=[Depends(require_campaign_gm)])
 async def besitzer_setzen(campaign_id: str, begleiter_id: str, body: BesitzerRequest):
     ergebnis = await repository.besitzer_setzen(campaign_id, begleiter_id, body.personId)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter nicht gefunden")
+    return ergebnis
+
+
+@router.post("/{begleiter_id}/bild", response_model=BegleiterResponse, dependencies=[Depends(require_campaign_gm)])
+async def bild_hochladen(campaign_id: str, begleiter_id: str, file: UploadFile = File(...)):
+    """Bild eines Begleiters — dasselbe Vorgehen wie bei Personen/Orten
+    (`entities/routes.py::_entitaets_bild_hochladen`), eigene Route statt
+    Wiederverwendung, weil Begleiter kein Eintrag in `_ENTITAETEN` ist."""
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+
+    inhalt = await file.read()
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+
+    import mimetypes
+    import uuid
+
+    ordner = UPLOAD_DIR / campaign_id
+    ordner.mkdir(parents=True, exist_ok=True)
+    endung = mimetypes.guess_extension(file.content_type) or ""
+    name = f"begleiter-{uuid.uuid4()}{endung}"
+    (ordner / name).write_bytes(inhalt)
+
+    ergebnis = await repository.aendern(campaign_id, begleiter_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter nicht gefunden")
     return ergebnis

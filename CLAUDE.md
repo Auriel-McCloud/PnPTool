@@ -530,22 +530,29 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✅ FERTIG
 
-8. **KI-/Critter-Begleiterblatt + Einfluss-System** — ✅ Backend + Frontend fertig:
-   - Zwei neue `BegleiterArt`-Werte auf dem bestehenden Begleiter-System
-     (siehe `docs/wiki/entities/...` und `backend/app/begleiter/`):
-     - **KI**: Stadt-KI (Babel) — kein eigener Entity-Typ, sondern ein
-       besonders mächtiger Sprite, damit Kampf/Zerstören (Brute Force →
-       Kompilieren) automatisch mitläuft. Trägt die 6 nicht-körperlichen
-       Person-Attribute (Charisma/Manipulation/Fassung/Intelligenz/
-       Geistesschärfe/Entschlossenheit, Skala 1-6 wie bei Person) plus neu
-       **Matrix-Präsenz** (1-6).
-     - **CRITTER**: Tiere/Haustiere (Shadowrun-Anlehnung statt "Tier").
-       Nutzt das Standard-Begleiterblatt unverändert (Widerstand/Angriff/
-       Agilität + Waffe/Schadensart bleibt exakt gleich — "ein trainiertes
-       Tier kann eine Waffe im Maul halten") plus **Loyalität** (1-6) und
-       **Ausbildung/Tricks** (0-5). Bewusst ohne feste Mechanik — Mark:
-       "wer soweit kommt hat's verdient", Wirkung entscheidet die SL am
-       Spieltisch nach Bauchgefühl.
+8. **KI-Begleiterblatt + Critter-NPCs + Einfluss-System** — ✅ Backend + Frontend fertig:
+   - **KI**: neue `BegleiterArt` auf dem bestehenden Begleiter-System (siehe
+     `backend/app/begleiter/`) — Stadt-KI (Babel) — kein eigener Entity-Typ,
+     sondern ein besonders mächtiger Sprite, damit Kampf/Zerstören (Brute
+     Force → Kompilieren) automatisch mitläuft. Trägt die 6 nicht-körperlichen
+     Person-Attribute (Charisma/Manipulation/Fassung/Intelligenz/
+     Geistesschärfe/Entschlossenheit, Skala 1-6 wie bei Person) plus neu
+     **Matrix-Präsenz** (1-6).
+   - **CRITTER — revidiert (20.09.2026)**: Tiere/Haustiere sind **kein**
+     Begleiter-`art`-Wert mehr, sondern echte `Person`-Knoten
+     (`istCritter: true`) mit dem vollen NPC-Charakterblatt (Attribute 1-6,
+     Fertigkeiten 1-6, dieselbe Charaktererstellung wie jeder andere NPC) —
+     Mark: "wir machen critter zu richtigen NPCs". Ursprünglicher Entwurf
+     (Standard-Begleiterblatt + Loyalität/Ausbildung) wurde verworfen, weil
+     das Blatt "seltsam" wirkte und Critter eigentlich dasselbe Blatt wie
+     jeder NPC bekommen sollten. Verbindung zu ihrem Menschen läuft über
+     dieselbe `BEGLEITET`-Kante wie bei Sprite/Geist/KI, nur von Person zu
+     Person (`app/entities/repository.py::critter_besitzer_setzen`,
+     Route `POST .../critter/{id}/besitzer`). Eigene schlanke Liste
+     `GET .../critter` für die Begleiter-Übersicht (Name/Bild/Besitzer, nicht
+     der volle Bogen). Erscheinen als eigene Kachel-Art (Symbol ❖) gemischt
+     mit den echten Begleitern in `BegleiterVerwaltung.tsx`, öffnen aber ein
+     eigenes `CritterFenster.tsx` mit `Charakterblatt` statt `BegleiterBlatt`.
    - **Einfluss** (nur sinnvoll bei KI, aber technisch jeder Begleiter):
      echte Graphkante `(:Begleiter)-[:HAT_EINFLUSS_AUF {stufe}]->(:Ort|
      :Fraktion|:Event|:Gegenstand)` statt Freitext — die SL kann einer KI
@@ -555,22 +562,28 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - **Erfahrung bei Begleitern**: `erfahrung`/`erfahrungAusgegeben` als
      reine Budget-Anzeige ohne Kostenrechnung (anders als bei Personen) —
      Werte bleiben frei einstellbar, nur Erinnerung für die SL.
-   - **Frontend (20.09.2026)**: `BegleiterVerwaltung.tsx` (SL-Bearbeiten:
-     KI-Attribute + Critter-Werte + `EinflussVerwaltung` mit Ziel-Suche über
-     Orte/Fraktionen/Events/Gegenstände), `BegleiterKachel.tsx`
-     (Spieler-Ansehen inkl. `EinflussAnzeige`, reine Anzeige ohne Aktionen),
-     neue Symbole ⌬ (KI) / ❖ (Critter) in `ART_SYMBOLE`. `KiAttributBlatt`/
-     `CritterWerte` sind eigene, wiederverwendbare Komponenten
-     (`begleiter/KiAttributBlatt.tsx`) für beide Kontexte. `tsc -b` sauber.
+   - **Bild + Beschreibung bei Begleitern (20.09.2026)**: `bildUrl`-Feld
+     nachgezogen (Mark: "es gibt keine Möglichkeit ein Bild anzuhängen") —
+     eigene Route `POST .../begleiter/{id}/bild`, Upload/Anzeige/Entfernen
+     über `BegleiterBild.tsx` (dasselbe Muster wie `EntitaetsBild.tsx`, ohne
+     Galerie). Beschreibung ist jetzt Rich-Text (TipTap) statt reinem Feld
+     ohne Editor, im Bearbeiten-Fenster unterhalb der Werte speicherbar.
+   - **Charakterblatt-Layout überarbeitet (20.09.2026, Mark: "man will das
+     Charakterblatt sehen")**: Bild und Werte (KI-Attribute/Stufenblatt/
+     Fertigkeiten/Gegenstand/Erfahrung/Einfluss) stehen im Bearbeiten-Fenster
+     zuerst; selten gebrauchte Verwaltung (Name ändern, Art wechseln,
+     Beziehung, Verbindung zur Person, Löschen) ist in einen eigenen
+     "Verwaltung"-Abschnitt ganz unten verschoben. Vorher stand die
+     Verwaltung zuerst und verdrängte das eigentliche Blatt aus dem Blick.
    - **Kachelraster + Suche + Anlegen-Popup (20.09.2026)**: die Übersicht war
      noch das alte Muster (Inline-Anlegen-Formular in der Kopfzeile, kein
      Suchfeld) — jetzt wie GegenstaendeUebersicht/PartyVerwaltung: `gg-suche`
      über Name/Art/Besitzer, "+ Neuer Begleiter" öffnet ein Commlink-Popup
-     mit Name, Art-Dropdown und durchsuchbarer Besitzer-Auswahl
-     (`BesitzerAuswahl`, Radiobuttons wie bei Party statt langem `<select>`
-     ohne Filter). Dieselbe Auswahlkomponente ersetzt auch das bisherige
-     `<select>` im Bearbeiten-Fenster, damit beide Stellen konsistent
-     durchsuchbar sind.
+     mit Name, Art-Dropdown (inkl. Critter — legt im Hintergrund einen NPC
+     an) und durchsuchbarer Besitzer-Auswahl (`BesitzerAuswahl`, Radiobuttons
+     wie bei Party statt langem `<select>` ohne Filter). Dieselbe
+     Auswahlkomponente ersetzt auch das bisherige `<select>` im
+     Bearbeiten-Fenster, damit beide Stellen konsistent durchsuchbar sind.
    - **Offen**: KI-Auto-Steigerung (Gemini/Mistral lässt NPC/Begleiter/
      Critter/KI anhand Beschreibung + bereits erlebter Events wachsen) ist
      eigenes, noch nicht begonnenes Vorhaben — braucht zuerst ein

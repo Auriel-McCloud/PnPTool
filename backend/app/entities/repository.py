@@ -45,7 +45,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -67,6 +67,7 @@ def _return_clause(alias: str, fields: list[str]) -> str:
 _BOGEN_DEFAULTS: dict = {
     "weg": "KEINER",
     "rasse": "",
+    "istCritter": False,
     "silhouette": "maennlich",
     "schadenSchlag": 0,
     "schadenSchwer": 0,
@@ -221,6 +222,58 @@ async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
         record = await result.single()
         return dict(record)["deleted"] > 0
+
+
+async def list_critter(campaign_id: str) -> list[dict]:
+    """Alle Critter (Person mit istCritter=true) samt ihrem Menschen.
+
+    Eigene, schlanke Abfrage statt der vollen `PERSON_FIELDS` — die
+    Begleiter-Übersicht (`app/begleiter/routes.py`) braucht nur Name/Bild/
+    Beziehungsziel, nicht den kompletten Charakterbogen. Critter (20.09.2026,
+    Marks Entscheidung "wir machen critter zu richtigen NPCs") sind echte
+    `Person`-Knoten, verknüpft über dieselbe BEGLEITET-Kante wie
+    Sprite/Geist/KI — nur von Person zu Person statt von Begleiter zu Person.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {campaignId: $campaign_id, istCritter: true})
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
+        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+               p.id AS besitzerId, p.name AS besitzerName,
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
+        ORDER BY n.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(r) async for r in result]
+
+
+async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: str | None) -> dict | None:
+    """Bindet einen Critter an seinen Menschen — oder löst die Bindung.
+
+    Gleiches Muster wie `app/begleiter/repository.py::besitzer_setzen`, nur
+    von Person zu Person statt von Begleiter zu Person.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+        OPTIONAL MATCH (n)-[alt:BEGLEITET]->(:Person)
+        DELETE alt
+        WITH n
+        OPTIONAL MATCH (neu:Person {id: $person_id, campaignId: $campaign_id})
+        FOREACH (_ IN CASE WHEN neu IS NULL THEN [] ELSE [1] END |
+            CREATE (n)-[:BEGLEITET]->(neu)
+        )
+        WITH n
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
+        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+               p.id AS besitzerId, p.name AS besitzerName,
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, person_id=person_id)
+        record = await result.single()
+        return dict(record) if record else None
 
 
 async def create_verbindung(campaign_id: str, data: dict) -> dict:

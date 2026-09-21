@@ -6,12 +6,14 @@ from app.entities.schemas import SichtbarkeitModus
 
 # Sprite, Geist und Begleiter teilen sich ein Blatt (Neotopia.xlsx, Blatt
 # "Drohne/Fahrzeug/Sprite/Geist"). Die Art trennt sie nur in der Anzeige —
-# mechanisch sind sie dasselbe. KI und CRITTER bauen auf demselben Blatt auf,
-# bringen aber je eigene Zusatzfelder mit (siehe unten) — Mark, 19.09.2026:
-# eine Stadt-KI (Babel) ist ein besonders mächtiger Sprite, kein neuer
-# Entity-Typ, damit Kampf/Zerstören (Brute Force → Kompilieren) automatisch
-# mitläuft. CRITTER sind Tiere/Haustiere (Shadowrun-Anlehnung statt "Tier").
-BegleiterArt = Literal["SPRITE", "GEIST", "BEGLEITER", "KI", "CRITTER"]
+# mechanisch sind sie dasselbe. KI baut auf demselben Blatt auf, bringt aber
+# eigene Zusatzfelder mit (siehe unten) — Mark, 19.09.2026: eine Stadt-KI
+# (Babel) ist ein besonders mächtiger Sprite, kein neuer Entity-Typ, damit
+# Kampf/Zerstören (Brute Force → Kompilieren) automatisch mitläuft.
+# CRITTER (Tiere/Haustiere) sind seit 20.09.2026 KEIN Begleiter-Art mehr —
+# Mark: "wir machen critter zu richtigen NPCs". Sie leben als `Person`
+# (`istCritter=true`) in app/entities/ mit dem vollen NPC-Charakterblatt.
+BegleiterArt = Literal["SPRITE", "GEIST", "BEGLEITER", "KI"]
 
 # Ziele, denen eine KI (oder theoretisch jeder Begleiter) Einfluss auf die
 # Welt entzogen bzw. zugewiesen bekommen kann — echte Graphkanten statt
@@ -28,6 +30,10 @@ class BegleiterBasis(BaseModel):
     beziehung: str = ""
     beschreibung: str = ""
     notizen: str = ""
+    # Aussehen; per Blitz an alle Spieler zeigbar — dasselbe Muster wie bei
+    # Personen/Orten (EntitaetsBild), 20.09.2026 nachgezogen (Mark: "es gibt
+    # keine Möglichkeit ein Bild anzuhängen").
+    bildUrl: str = ""
     # Die Stufe wird beim Erschaffen frei auf die drei Werte und die
     # Fertigkeiten verteilt; Gesundheit = Stufe.
     stufe: int = Field(default=0, ge=0, le=15)
@@ -55,14 +61,6 @@ class BegleiterBasis(BaseModel):
     # Neu, nur für KIs: wie dominant/sichtbar sie in der Matrix ist.
     matrixPraesenz: int = Field(default=0, ge=0, le=6)
 
-    # --- Zusatzblatt CRITTER (art == "CRITTER") -----------------------
-    # Loyalität zum Besitzer (1-6, wie ein Attribut) und Ausbildung/Tricks
-    # (0-5, wie eine Fertigkeit). Wirkung erstmal ohne feste Mechanik —
-    # Mark, 19.09.2026: "wer soweit kommt hat's verdient", SL entscheidet
-    # am Spieltisch nach Bauchgefühl statt hartem Regeltext.
-    loyalitaet: int = Field(default=0, ge=0, le=6)
-    ausbildung: int = Field(default=0, ge=0, le=5)
-
     # --- Erfahrung -----------------------------------------------------
     # Reine Budget-Anzeige, keine Kostenrechnung wie bei Personen (Mark,
     # 19.09.2026: Werte bleiben frei einstellbar, das ist nur Erinnerung/
@@ -84,6 +82,7 @@ class BegleiterUpdate(BaseModel):
     beziehung: str | None = None
     beschreibung: str | None = None
     notizen: str | None = None
+    bildUrl: str | None = None
     stufe: int | None = Field(default=None, ge=0, le=15)
     widerstand: int | None = Field(default=None, ge=0, le=5)
     angriff: int | None = Field(default=None, ge=0, le=5)
@@ -99,8 +98,6 @@ class BegleiterUpdate(BaseModel):
     geistesschaerfe: int | None = Field(default=None, ge=0, le=6)
     entschlossenheit: int | None = Field(default=None, ge=0, le=6)
     matrixPraesenz: int | None = Field(default=None, ge=0, le=6)
-    loyalitaet: int | None = Field(default=None, ge=0, le=6)
-    ausbildung: int | None = Field(default=None, ge=0, le=5)
     erfahrung: int | None = Field(default=None, ge=0)
     erfahrungAusgegeben: int | None = Field(default=None, ge=0)
     sichtbarkeit: SichtbarkeitModus | None = None

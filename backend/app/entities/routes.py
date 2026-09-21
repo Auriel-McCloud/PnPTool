@@ -13,6 +13,7 @@ from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
     filter_verbindungen_for_viewer,
+    is_visible_to,
 )
 from app.entities.schemas import (
     EventCreate,
@@ -167,6 +168,32 @@ async def extra_ep_erhoehen(campaign_id: str, node_id: str, body: dict):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
     neu = person.get("extraEP", 0) + betrag
     return await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"extraEP": neu})
+
+
+@router.get("/critter", response_model=list[dict])
+async def list_critter(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Critter für die Begleiter-Übersicht (`begleiter/BegleiterVerwaltung.tsx`).
+
+    Critter sind seit 20.09.2026 echte NPCs (`Person`, `istCritter=true`,
+    siehe Modul-Docstring in `app/begleiter/repository.py`) — diese Route
+    liefert nur die schlanken Felder, die eine Kachel braucht (Name/Bild/
+    Besitzer), nicht den vollen Charakterbogen.
+    """
+    roh = await repository.list_critter(campaign_id)
+    sichtbar = [
+        c for c in roh
+        if is_visible_to(c.get("sichtbarkeit") or "GM", c.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
+    ]
+    return sichtbar
+
+
+@router.post("/critter/{node_id}/besitzer", response_model=dict, dependencies=[Depends(require_campaign_gm)])
+async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
+    person_id = body.get("personId")
+    ergebnis = await repository.critter_besitzer_setzen(campaign_id, node_id, person_id)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
+    return ergebnis
 
 
 @router.post("/orte", response_model=OrtResponse, dependencies=[Depends(require_campaign_gm)])
