@@ -743,9 +743,16 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     ändern. Braucht irgendwo eine Bearbeiten-Funktion (Popup-Stil).
     Status: nur notiert, noch nicht entschieden/gebaut.
 
-13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026) —
+13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026, Editor-Teil ✅ 20.09.2026) —
     Mark will auch unterwegs (ohne Laptop) an seinen Geschichten
     weiterschreiben. Beide Bereiche brauchen eine mobil taugliche Ansicht
-    (Editor, Seitenbaum/Kachel-Übersicht, Verweis-Auswahl) — aktuell auf
-    Desktop-Bedienung ausgelegt. Status: nur notiert, noch nicht
-    entschieden/gebaut.
+    (Editor, Seitenbaum/Kachel-Übersicht, Verweis-Auswahl).
+    
+    **Gebaut (20.09.2026):** Editor-Text am Handy lesbar — unter 600px kriegt
+    `.wk-editor .ProseMirror` 18px/1.6 (Überschriften 26/21/18px), bewusst
+    nur der Editor selbst, nicht Baum/Werkzeugleiste. `frontend/src/wiki/
+    wiki.css` neu hinzugefügt. Rein clientseitig, kein neuer Endpunkt.
+    
+    **Noch offen:** Seitenbaum, Kachel-Übersicht und Verweis-Auswahl am Handy
+    brauchen noch eigene mobile Layouts oder Touch-freundliche Gesten statt
+    Hover-Effekte.
