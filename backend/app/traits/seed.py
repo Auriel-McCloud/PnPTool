@@ -58,6 +58,8 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     "Technologie": "Alltagselektronik bedienen und reparieren — Geräte, einfache Systeme.",
     "Wahrnehmung": "Aufmerksamkeit für Details — etwas bemerken, bevor es zu spät ist.",
     "Matrix": "Sich in der Matrix bewegen — Hacken, Icons lesen, digitale Spuren verfolgen.",
+    # --- Attribut Matrix (nur KI, 20.09.2026) ---
+    "Matrix-Präsenz": "Wie dominant und sichtbar eine KI in der Matrix ist — ihre digitale Ausstrahlung.",
     # --- Hexkraft (Magiewert) ---
     "Hexkraft": "Rohe magische Macht — wie stark und zuverlässig ein Zauber wirkt.",
     # --- Sphären (was die Magie bewirken kann, nicht wie stark) ---
@@ -159,6 +161,11 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Intelligenz", "AttributGeistig", 6, 1),
     ("Geistesschärfe", "AttributGeistig", 6, 2),
     ("Entschlossenheit", "AttributGeistig", 6, 3),
+    # Attribut Matrix (20.09.2026, nur KI — ersetzt bei istKI=true die
+    # Körperlich-Spalte auf dem Blatt, siehe traits/bogen.py::
+    # sichtbare_kategorien). Nur ein Wert, weil eine körperlose KI keine
+    # drei separaten "Matrix-Attribute" braucht.
+    ("Matrix-Präsenz", "AttributMatrix", 6, 1),
     # Fertigkeiten (6 Punkte — 20.09.2026 von 5 auf 6 angehoben, damit sie
     # mit dem Attributmaximum gleichzieht, siehe CLAUDE.md)
     ("Diebeshandwerk", "Fertigkeit", 6, 1),

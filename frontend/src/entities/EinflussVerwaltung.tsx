@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { entitiesApi } from "../entities/api";
+import { entitiesApi, type EinflussEintrag, type EinflussZielKind } from "./api";
 import { itemsApi } from "../items/api";
 import { DotPool } from "../traits/DotPool";
-import { begleiterApi, type Begleiter, type EinflussZielKind } from "./api";
+import "../party/party.css";
+import "./pc-detail.css";
 
 /** Anzeigesymbol je Zielart — dieselben Symbole wie in den jeweiligen
  * Commlink-Bereichen (App.tsx/ZielAuswahl in PartyVerwaltung.tsx). */
@@ -32,22 +33,31 @@ interface WaehlbaresZiel {
  * 19.09.2026: "damit kann die SL ihr im Kampf gezielt einen echten Ort
  * wegnehmen"). Nur die Spielleitung bearbeitet das; Spieler sehen die Liste
  * nur an, siehe `EinflussAnzeige` weiter unten.
+ *
+ * **20.09.2026, revidiert:** läuft über `personId` statt eines
+ * `Begleiter`-Objekts — eine KI ist seit Marks Entscheidung "mach jetzt das
+ * Gleiche für die KI" eine echte `Person` (`istKI=true`), kein eigener
+ * Begleiter-Typ mehr. Verschoben von `begleiter/EinflussVerwaltung.tsx`
+ * nach `entities/`, weil Einfluss jetzt an Personen hängt statt an
+ * Begleitern.
  */
 export function EinflussVerwaltung({
   campaignId,
-  begleiter,
+  personId,
+  einfluss,
   onGeaendert,
 }: {
   campaignId: string;
-  begleiter: Begleiter;
-  onGeaendert: (neu: Begleiter) => void;
+  personId: string;
+  einfluss: EinflussEintrag[];
+  onGeaendert: (neu: EinflussEintrag[]) => void;
 }) {
   const [ziele, setZiele] = useState<WaehlbaresZiel[] | null>(null);
   const [suche, setSuche] = useState("");
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
 
   // Erst beim Aufklappen laden — die vier Listen zusammen können in einer
-  // großen Kampagne beträchtlich sein, und die meisten Begleiter sind keine
+  // großen Kampagne beträchtlich sein, und die meisten Personen sind keine
   // KI und brauchen das nie.
   async function ladenFallsNoetig() {
     if (ziele !== null) return;
@@ -69,7 +79,7 @@ export function EinflussVerwaltung({
     }
   }
 
-  const bereitsVerknuepft = new Set(begleiter.einfluss.map((e) => `${e.zielKind}:${e.zielId}`));
+  const bereitsVerknuepft = new Set(einfluss.map((e) => `${e.zielKind}:${e.zielId}`));
   const suchNorm = suche.trim().toLowerCase();
   const waehlbar = useMemo(() => {
     if (!ziele) return [];
@@ -78,25 +88,25 @@ export function EinflussVerwaltung({
       if (!suchNorm) return true;
       return z.name.toLowerCase().includes(suchNorm) || ZIEL_NAMEN[z.kind].toLowerCase().includes(suchNorm);
     });
-  }, [ziele, suchNorm, begleiter.einfluss]);
+  }, [ziele, suchNorm, einfluss]);
 
   async function hinzufuegen(ziel: WaehlbaresZiel) {
-    const neu = await begleiterApi.einflussSetzen(campaignId, begleiter.id, ziel.kind, ziel.id, 1);
+    const neu = await entitiesApi.einflussSetzen(campaignId, personId, ziel.kind, ziel.id, 1);
     onGeaendert(neu);
   }
 
   async function stufeAendern(zielKind: EinflussZielKind, zielId: string, stufe: number) {
     if (stufe <= 0) {
-      const neu = await begleiterApi.einflussEntfernen(campaignId, begleiter.id, zielKind, zielId);
+      const neu = await entitiesApi.einflussEntfernen(campaignId, personId, zielKind, zielId);
       onGeaendert(neu);
       return;
     }
-    const neu = await begleiterApi.einflussSetzen(campaignId, begleiter.id, zielKind, zielId, stufe);
+    const neu = await entitiesApi.einflussSetzen(campaignId, personId, zielKind, zielId, stufe);
     onGeaendert(neu);
   }
 
   async function entfernen(zielKind: EinflussZielKind, zielId: string) {
-    const neu = await begleiterApi.einflussEntfernen(campaignId, begleiter.id, zielKind, zielId);
+    const neu = await entitiesApi.einflussEntfernen(campaignId, personId, zielKind, zielId);
     onGeaendert(neu);
   }
 
@@ -107,13 +117,13 @@ export function EinflussVerwaltung({
         Echte Verknüpfungen zu Orten, Fraktionen, Events und Gegenständen — im Kampf gezielt entziehbar.
       </p>
 
-      {begleiter.einfluss.length === 0 && (
+      {einfluss.length === 0 && (
         <p className="gg-leer" style={{ marginBottom: 8 }}>
           Kontrolliert noch nichts.
         </p>
       )}
 
-      {begleiter.einfluss.map((e) => (
+      {einfluss.map((e) => (
         <div key={`${e.zielKind}:${e.zielId}`} className="bg-wert" style={{ marginBottom: 4 }}>
           <span>
             {ZIEL_SYMBOLE[e.zielKind]} {e.zielName}{" "}
@@ -180,12 +190,12 @@ export function EinflussVerwaltung({
 }
 
 /** Reine Anzeige für Spieler/Nicht-Bearbeiten-Kontexte — keine Aktionen. */
-export function EinflussAnzeige({ begleiter }: { begleiter: Begleiter }) {
-  if (begleiter.einfluss.length === 0) return null;
+export function EinflussAnzeige({ einfluss }: { einfluss: EinflussEintrag[] }) {
+  if (einfluss.length === 0) return null;
   return (
     <section>
       <h3 style={{ margin: "0 0 6px" }}>Einfluss</h3>
-      {begleiter.einfluss.map((e) => (
+      {einfluss.map((e) => (
         <div key={`${e.zielKind}:${e.zielId}`} className="bg-wert">
           <span>
             {ZIEL_SYMBOLE[e.zielKind]} {e.zielName}

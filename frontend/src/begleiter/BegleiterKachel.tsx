@@ -5,8 +5,6 @@ import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
-import { EinflussAnzeige } from "./EinflussVerwaltung";
-import { KiAttributBlatt } from "./KiAttributBlatt";
 import "./begleiter.css";
 
 /**
@@ -15,10 +13,10 @@ import "./begleiter.css";
  * Das Grundblatt ist dasselbe wie bei Drohne und Fahrzeug (`Neotopia.xlsx`,
  * Blatt "Drohne / Fahrzeug / Sprite / Geist"): Stufe, Widerstand, Angriff,
  * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schadensbonus.
- * KI (19.09.2026) zeigt zusätzlich ihr Zusatzblatt — siehe
- * `KiAttributBlatt`/`EinflussAnzeige`. CRITTER (Tiere/Haustiere) sind seit
- * 20.09.2026 keine Begleiter-Art mehr, sondern echte NPCs — siehe
- * `entities/NPCDetail.tsx`.
+ *
+ * KI und CRITTER sind seit 20.09.2026 keine Begleiter-Art mehr, sondern
+ * echte NPCs mit vollem Charakterblatt — siehe `KiFenster.tsx`/
+ * `CritterFenster.tsx` in diesem Ordner bzw. `entities/NPCDetail.tsx`.
  *
  * **Layout (20.09.2026, Mark: "man will das Charakterblatt sehen"):** das
  * eigentliche Blatt (Werte) steht zuerst, selten gebrauchte Verwaltung
@@ -42,8 +40,6 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
         </p>
       )}
 
-      {begleiter.art === "KI" && <KiAttributBlatt werte={begleiter} />}
-
       <StufenBlatt werte={begleiter} stufenHinweis="Zugleich die Gesundheit." />
 
       {fertigkeiten.length > 0 && (
@@ -66,8 +62,6 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
           </div>
         </section>
       )}
-
-      {begleiter.art === "KI" && <EinflussAnzeige begleiter={begleiter} />}
 
       {beschreibung && <RichTextView content={beschreibung} />}
     </>

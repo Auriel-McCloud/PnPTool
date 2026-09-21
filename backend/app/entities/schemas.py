@@ -31,6 +31,29 @@ VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "not
 VERBINDUNG_VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer"]
 
 
+# Ziele, denen eine KI Einfluss auf die Welt entzogen bzw. zugewiesen
+# bekommen kann — echte Graphkanten statt Freitext, damit die Spielleitung
+# ihr im Kampf gezielt einen echten Ort wegnehmen kann. Keine Personen:
+# Einfluss auf einen Menschen ist im Tool bereits Beziehung/Handlung, kein
+# Ressourcenwert. Verschoben von `app/begleiter/schemas.py` (20.09.2026,
+# revidiert): eine KI ist jetzt eine echte Person (`istKI=true`) statt einer
+# Begleiter-Art, das Konzept gehört daher hierher.
+EinflussZielKind = Literal["Ort", "Fraktion", "Event", "Gegenstand"]
+
+
+class EinflussEintrag(BaseModel):
+    zielKind: EinflussZielKind
+    zielId: str
+    zielName: str
+    stufe: int
+
+
+class EinflussSetzen(BaseModel):
+    zielKind: EinflussZielKind
+    zielId: str
+    stufe: int = 0
+
+
 class PersonCreate(BaseModel):
     name: str
     personType: Literal["PC", "NPC"] = "NPC"
@@ -60,6 +83,16 @@ class PersonCreate(BaseModel):
     # Markierungsfeld, damit die Begleiter-Übersicht sie herausfiltern kann,
     # ohne jeden NPC nach einer BEGLEITET-Kante abzufragen.
     istCritter: bool = False
+    # KI (20.09.2026, revidiert — Mark: "mach jetzt das Gleiche für die KI"):
+    # eine Stadt-KI wie Babel ist wie Critter eine echte Person statt einer
+    # eigenen Begleiter-Art, mit dem vollen Charakterblatt. Körperliche
+    # Attribute ergeben für eine körperlose KI keinen Sinn — bei istKI=true
+    # ersetzt die eigene Kategorie "AttributMatrix" (nur Matrix-Präsenz) die
+    # Körperlich-Spalte auf dem Blatt (siehe traits/bogen.py::
+    # sichtbare_kategorien, Charakterblatt.tsx). Einfluss auf Orte/Fraktionen/
+    # Events/Gegenstände läuft über echte Graphkanten von der Person aus
+    # (siehe entities/repository.py::person_einfluss_setzen).
+    istKI: bool = False
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
@@ -103,6 +136,7 @@ class PersonUpdate(BaseModel):
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
     rasse: str | None = None
     istCritter: bool | None = None
+    istKI: bool | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
@@ -145,6 +179,7 @@ class PersonResponse(BaseModel):
     weg: str = "KEINER"
     rasse: str = ""
     istCritter: bool = False
+    istKI: bool = False
     silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0

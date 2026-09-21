@@ -39,7 +39,7 @@ export interface BogenUebersicht {
 }
 
 export interface Bogen {
-  person: { id: string; name: string; personType: string };
+  person: { id: string; name: string; personType: string; istKI?: boolean };
   uebersicht: BogenUebersicht;
   /**
    * Bonuswürfel aus ausgerüsteten Cyberdecks, je Matrix-Aktion. Gehört nicht
@@ -240,6 +240,7 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   AttributKörperlich: "Körperlich",
   AttributGesellschaftlich: "Gesellschaftlich",
   AttributGeistig: "Geistig",
+  AttributMatrix: "Matrix",
   Fertigkeit: "Fähigkeiten",
   Hexkraft: "Hexkraft",
   Sphäre: "Sphären",
@@ -248,8 +249,16 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   Hintergrund: "Hintergründe",
 };
 
+/** Reihenfolge der Attributspalten — bei einer KI ersetzt `AttributMatrix`
+ * die (körperlose) `AttributKörperlich`-Spalte, siehe `Charakterblatt.tsx`. */
 export const ATTRIBUT_KATEGORIEN = [
   "AttributKörperlich",
+  "AttributGesellschaftlich",
+  "AttributGeistig",
+] as const;
+
+export const ATTRIBUT_KATEGORIEN_KI = [
+  "AttributMatrix",
   "AttributGesellschaftlich",
   "AttributGeistig",
 ] as const;

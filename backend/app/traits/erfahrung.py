@@ -20,6 +20,11 @@ FAKTOR: dict[str, int] = {
     "AttributKörperlich": 4,
     "AttributGesellschaftlich": 4,
     "AttributGeistig": 4,
+    # Matrix-Präsenz (nur KI, 20.09.2026) kostet wie ein gesellschaftliches
+    # Attribut — Mark: "in wahrheit als 4tes gesellschaftliches attribut,
+    # aber schreibe es dort hin wo die körperlichen wären" (eigene Spalte,
+    # gleicher Preis).
+    "AttributMatrix": 4,
     "Fertigkeit": 2,
     # Mark, 30.08.2026: Sphären zählen zu den Fertigkeiten, Hexkraft zu den
     # Attributen — beim Steigern wie bei den Freebees. Hexkraft kostet also
@@ -51,6 +56,7 @@ NEU_KOSTEN: dict[str, int] = {
     "AttributKörperlich": 5,
     "AttributGesellschaftlich": 5,
     "AttributGeistig": 5,
+    "AttributMatrix": 5,
     "Fertigkeit": 3,
     "Sphäre": 3,
     # Wie der Freebee-Preis eines Attributpunkts, damit der Einstieg in die

@@ -75,15 +75,24 @@ def initiative(werte: dict[str, int], cyberware_mod: int = 0) -> int:
     return _wert(werte, "Geistesschärfe") + _wert(werte, "Geschicklichkeit") + cyberware_mod
 
 
-def sichtbare_kategorien(weg: str, alle: set[str]) -> set[str]:
+def sichtbare_kategorien(weg: str, alle: set[str], ist_ki: bool = False) -> set[str]:
     """Welche Trait-Kategorien für diesen Charakter überhaupt gelten.
 
     Attribute und Fertigkeiten hat jeder. Hexkraft und Sphären sieht nur ein
     Magier, NeuroWeaving nur ein Neuroweaver — wer nichts davon gewählt hat,
     bekommt diese Bereiche gar nicht erst zu sehen.
+
+    **KI (20.09.2026):** eine körperlose KI hat keine körperlichen Attribute
+    — `AttributKörperlich` fällt weg, `AttributMatrix` (Matrix-Präsenz)
+    kommt stattdessen dazu. Für alle anderen ist es genau umgekehrt:
+    `AttributMatrix` ist ein reines KI-Attribut und bleibt sonst verborgen.
     """
     besonders = {"Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
     grundlage = {k for k in alle if k not in besonders}
+    if ist_ki:
+        grundlage = (grundlage - {"AttributKörperlich"}) | ({"AttributMatrix"} & alle)
+    else:
+        grundlage = grundlage - {"AttributMatrix"}
     return grundlage | BEREICHE_JE_WEG.get(weg, set())
 
 

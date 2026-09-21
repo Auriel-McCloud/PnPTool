@@ -16,6 +16,8 @@ from app.entities.visibility import (
     is_visible_to,
 )
 from app.entities.schemas import (
+    EinflussEintrag,
+    EinflussSetzen,
     EventCreate,
     EventResponse,
     EventUpdate,
@@ -193,6 +195,58 @@ async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
     ergebnis = await repository.critter_besitzer_setzen(campaign_id, node_id, person_id)
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
+    return ergebnis
+
+
+@router.get("/ki", response_model=list[dict])
+async def list_ki(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """KIs für die Begleiter-Übersicht — dasselbe Muster wie `list_critter`,
+    KI ist seit 20.09.2026 (revidiert) ebenfalls eine echte Person
+    (`istKI=true`) statt einer Begleiter-Art."""
+    roh = await repository.list_ki(campaign_id)
+    sichtbar = [
+        c for c in roh
+        if is_visible_to(c.get("sichtbarkeit") or "GM", c.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
+    ]
+    return sichtbar
+
+
+@router.post("/ki/{node_id}/besitzer", response_model=dict, dependencies=[Depends(require_campaign_gm)])
+async def ki_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
+    person_id = body.get("personId")
+    ergebnis = await repository.ki_besitzer_setzen(campaign_id, node_id, person_id)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "KI nicht gefunden")
+    return ergebnis
+
+
+@router.get("/personen/{node_id}/einfluss", response_model=list[EinflussEintrag])
+async def person_einfluss_liste(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
+    return await repository.person_einfluss_liste(campaign_id, node_id)
+
+
+@router.post(
+    "/personen/{node_id}/einfluss", response_model=list[EinflussEintrag], dependencies=[Depends(require_campaign_gm)]
+)
+async def person_einfluss_setzen(campaign_id: str, node_id: str, body: EinflussSetzen):
+    """Setzt die Einfluss-Stufe einer Person (typischerweise einer KI) auf
+    einen Ort/eine Fraktion/ein Event/einen Gegenstand — echte Graphkante,
+    damit die Spielleitung sie im Kampf gezielt kappen kann. **Nur SL.**"""
+    ergebnis = await repository.person_einfluss_setzen(campaign_id, node_id, body.zielKind, body.zielId, body.stufe)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person oder Ziel nicht gefunden")
+    return ergebnis
+
+
+@router.delete(
+    "/personen/{node_id}/einfluss/{ziel_kind}/{ziel_id}",
+    response_model=list[EinflussEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def person_einfluss_entfernen(campaign_id: str, node_id: str, ziel_kind: str, ziel_id: str):
+    ergebnis = await repository.person_einfluss_entfernen(campaign_id, node_id, ziel_kind, ziel_id)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person oder Einflussbereich nicht gefunden")
     return ergebnis
 
 

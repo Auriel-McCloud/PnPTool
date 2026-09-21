@@ -85,10 +85,10 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
+    erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog}, bool(person.get("istKI")))
 
     return {
-        "person": {"id": person["id"], "name": person["name"], "personType": person["personType"]},
+        "person": {"id": person["id"], "name": person["name"], "personType": person["personType"], "istKI": bool(person.get("istKI"))},
         "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
@@ -517,7 +517,7 @@ async def get_steigerungspreise(
 
     campaign = await get_campaign(campaign_id)
     katalog = await repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
-    erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
+    erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog}, bool(person.get("istKI")))
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     nach_name = {w["name"]: w["rating"] for w in werte}
     # Vom Spielleiter angehobene Maxima gelten auch beim Steigern.
@@ -590,7 +590,7 @@ async def steigere_wert(
         if eintrag is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
 
-        erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog})
+        erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog}, bool(person.get("istKI")))
         if eintrag["category"] not in erlaubt:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dem Charakter nicht offen.")
 

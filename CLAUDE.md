@@ -530,38 +530,52 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 6. **Drei-Ebenen-Architektur: Regelsystem → Kampagne → Ideenschmiede** ✅ FERTIG
 
-8. **KI-Begleiterblatt + Critter-NPCs + Einfluss-System** — ✅ Backend + Frontend fertig:
-   - **KI**: neue `BegleiterArt` auf dem bestehenden Begleiter-System (siehe
-     `backend/app/begleiter/`) — Stadt-KI (Babel) — kein eigener Entity-Typ,
-     sondern ein besonders mächtiger Sprite, damit Kampf/Zerstören (Brute
-     Force → Kompilieren) automatisch mitläuft. Trägt die 6 nicht-körperlichen
-     Person-Attribute (Charisma/Manipulation/Fassung/Intelligenz/
-     Geistesschärfe/Entschlossenheit, Skala 1-6 wie bei Person) plus neu
-     **Matrix-Präsenz** (1-6).
-   - **CRITTER — revidiert (20.09.2026)**: Tiere/Haustiere sind **kein**
-     Begleiter-`art`-Wert mehr, sondern echte `Person`-Knoten
-     (`istCritter: true`) mit dem vollen NPC-Charakterblatt (Attribute 1-6,
-     Fertigkeiten 1-6, dieselbe Charaktererstellung wie jeder andere NPC) —
-     Mark: "wir machen critter zu richtigen NPCs". Ursprünglicher Entwurf
-     (Standard-Begleiterblatt + Loyalität/Ausbildung) wurde verworfen, weil
-     das Blatt "seltsam" wirkte und Critter eigentlich dasselbe Blatt wie
-     jeder NPC bekommen sollten. Verbindung zu ihrem Menschen läuft über
-     dieselbe `BEGLEITET`-Kante wie bei Sprite/Geist/KI, nur von Person zu
-     Person (`app/entities/repository.py::critter_besitzer_setzen`,
-     Route `POST .../critter/{id}/besitzer`). Eigene schlanke Liste
-     `GET .../critter` für die Begleiter-Übersicht (Name/Bild/Besitzer, nicht
-     der volle Bogen). Erscheinen als eigene Kachel-Art (Symbol ❖) gemischt
-     mit den echten Begleitern in `BegleiterVerwaltung.tsx`, öffnen aber ein
-     eigenes `CritterFenster.tsx` mit `Charakterblatt` statt `BegleiterBlatt`.
-   - **Einfluss** (nur sinnvoll bei KI, aber technisch jeder Begleiter):
-     echte Graphkante `(:Begleiter)-[:HAT_EINFLUSS_AUF {stufe}]->(:Ort|
-     :Fraktion|:Event|:Gegenstand)` statt Freitext — die SL kann einer KI
-     im Kampf gezielt einen echten Ort/eine Fraktion wegnehmen (Kante
-     löschen) statt eine Beschreibung zu ändern. Endpunkte:
-     `POST/DELETE .../begleiter/{id}/einfluss(/...)`, GM-only.
-   - **Erfahrung bei Begleitern**: `erfahrung`/`erfahrungAusgegeben` als
-     reine Budget-Anzeige ohne Kostenrechnung (anders als bei Personen) —
-     Werte bleiben frei einstellbar, nur Erinnerung für die SL.
+8. **KI + Critter als echte NPCs + Einfluss-System + Matrix-Attribut** — ✅ Backend + Frontend fertig:
+   - **KI und CRITTER sind KEINE Begleiter-Art mehr (20.09.2026, zweifach
+     revidiert)** — erst Mark: "wir machen critter zu richtigen NPCs", dann
+     "mach jetzt das Gleiche für die KI". Beide sind echte `Person`-Knoten
+     (`istCritter`/`istKI` in `app/entities/schemas.py`) mit dem vollen
+     NPC-Charakterblatt (Attribute, Fertigkeiten, dieselbe Charaktererstellung
+     wie jeder andere NPC), nicht mehr dem Drohne/Fahrzeug-Blatt. Grund: das
+     Begleiter-Blatt wirkte für beide "seltsam" und beide sollten dasselbe
+     Blatt wie jeder NPC bekommen. Verbindung zu ihrem Menschen läuft über
+     dieselbe `BEGLEITET`-Kante wie bei Sprite/Geist, nur von Person zu
+     Person (`app/entities/repository.py::critter_besitzer_setzen`/
+     `ki_besitzer_setzen`, Routen `POST .../critter/{id}/besitzer` bzw.
+     `.../ki/{id}/besitzer`). Eigene schlanke Listen `GET .../critter` und
+     `GET .../ki` für die Begleiter-Übersicht (Name/Bild/Besitzer, nicht der
+     volle Bogen). Erscheinen als eigene Kachel-Arten (Symbole ❖ Critter /
+     ⌬ KI) gemischt mit den echten Begleitern in `BegleiterVerwaltung.tsx`,
+     öffnen aber eigene Fenster (`CritterFenster.tsx`/`KiFenster.tsx`) mit
+     dem echten `Charakterblatt` statt `BegleiterBlatt`.
+   - **Matrix-Attribut für KI (20.09.2026)**: neue Trait-Kategorie
+     `AttributMatrix` mit dem einen Wert **Matrix-Präsenz** (1-6, Skala wie
+     jedes andere Attribut) — ersetzt bei `istKI=true` die (körperlose)
+     `AttributKörperlich`-Spalte auf dem Blatt. `traits/bogen.py::
+     sichtbare_kategorien` bekam dafür einen `ist_ki`-Parameter; das
+     Charakterblatt wählt zwischen `ATTRIBUT_KATEGORIEN` und
+     `ATTRIBUT_KATEGORIEN_KI` (`traits/bogenApi.ts`) je nach
+     `bogen.person.istKI`. Mark, wörtlich zur Herkunft: "in wahrheit als
+     4tes gesellschaftliches attribut, aber schreibe es dort hin wo die
+     körperlichen wären" — kostet beim Steigern/bei Freebees wie ein
+     Attribut (`traits/erfahrung.py`), keine eigene Erstellungs-Regel (KI
+     wird direkt im Bearbeiten-Modus des Blatts aufgebaut, kein
+     Rassen-/Fertigkeitspaket-Assistent — "mach direkt das Charakterblatt,
+     ich glaub das ist einfacher").
+   - **Einfluss läuft jetzt an der Person, nicht mehr am Begleiter**: echte
+     Graphkante `(:Person)-[:HAT_EINFLUSS_AUF {stufe}]->(:Ort|:Fraktion|
+     :Event|:Gegenstand)` — die SL kann einer KI im Kampf gezielt einen
+     echten Ort/eine Fraktion wegnehmen (Kante löschen) statt eine
+     Beschreibung zu ändern. Endpunkte: `GET/POST .../personen/{id}/einfluss`,
+     `DELETE .../personen/{id}/einfluss/{zielKind}/{zielId}`, GM-only zum
+     Schreiben. Frontend-Komponente von `begleiter/` nach
+     `entities/EinflussVerwaltung.tsx` verschoben (Konzept hängt jetzt an
+     Personen, nicht an Begleitern).
+   - **Begleiter (Sprite/Geist/Begleiter) bleiben unverändert** auf dem
+     Drohne/Fahrzeug-Blatt — nur KI und Critter sind herausgelöst.
+   - **Erfahrung bei (echten) Begleitern**: `erfahrung`/`erfahrungAusgegeben`
+     als reine Budget-Anzeige ohne Kostenrechnung — Werte bleiben frei
+     einstellbar, nur Erinnerung für die SL.
    - **Bild + Beschreibung bei Begleitern (20.09.2026)**: `bildUrl`-Feld
      nachgezogen (Mark: "es gibt keine Möglichkeit ein Bild anzuhängen") —
      eigene Route `POST .../begleiter/{id}/bild`, Upload/Anzeige/Entfernen
@@ -569,21 +583,19 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      Galerie). Beschreibung ist jetzt Rich-Text (TipTap) statt reinem Feld
      ohne Editor, im Bearbeiten-Fenster unterhalb der Werte speicherbar.
    - **Charakterblatt-Layout überarbeitet (20.09.2026, Mark: "man will das
-     Charakterblatt sehen")**: Bild und Werte (KI-Attribute/Stufenblatt/
-     Fertigkeiten/Gegenstand/Erfahrung/Einfluss) stehen im Bearbeiten-Fenster
-     zuerst; selten gebrauchte Verwaltung (Name ändern, Art wechseln,
-     Beziehung, Verbindung zur Person, Löschen) ist in einen eigenen
-     "Verwaltung"-Abschnitt ganz unten verschoben. Vorher stand die
-     Verwaltung zuerst und verdrängte das eigentliche Blatt aus dem Blick.
+     Charakterblatt sehen")**: Bild und Werte (Stufenblatt/Fertigkeiten/
+     Gegenstand/Erfahrung) stehen im Bearbeiten-Fenster zuerst; selten
+     gebrauchte Verwaltung (Name ändern, Art wechseln, Beziehung, Verbindung
+     zur Person, Löschen) ist in einen eigenen "Verwaltung"-Abschnitt ganz
+     unten verschoben.
    - **Kachelraster + Suche + Anlegen-Popup (20.09.2026)**: die Übersicht war
      noch das alte Muster (Inline-Anlegen-Formular in der Kopfzeile, kein
      Suchfeld) — jetzt wie GegenstaendeUebersicht/PartyVerwaltung: `gg-suche`
      über Name/Art/Besitzer, "+ Neuer Begleiter" öffnet ein Commlink-Popup
-     mit Name, Art-Dropdown (inkl. Critter — legt im Hintergrund einen NPC
-     an) und durchsuchbarer Besitzer-Auswahl (`BesitzerAuswahl`, Radiobuttons
-     wie bei Party statt langem `<select>` ohne Filter). Dieselbe
-     Auswahlkomponente ersetzt auch das bisherige `<select>` im
-     Bearbeiten-Fenster, damit beide Stellen konsistent durchsuchbar sind.
+     mit Name, Art-Dropdown (inkl. Critter und KI — legen im Hintergrund
+     jeweils einen NPC an) und durchsuchbarer Besitzer-Auswahl
+     (`BesitzerAuswahl`, Radiobuttons wie bei Party statt langem `<select>`
+     ohne Filter).
    - **Offen**: KI-Auto-Steigerung (Gemini/Mistral lässt NPC/Begleiter/
      Critter/KI anhand Beschreibung + bereits erlebter Events wachsen) ist
      eigenes, noch nicht begonnenes Vorhaben — braucht zuerst ein

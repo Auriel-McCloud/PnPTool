@@ -9,7 +9,7 @@ import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen, type Schadensart } from "./Kaestchen";
 import { ZustandFenster } from "./ZustandFenster";
-import { ATTRIBUT_KATEGORIEN, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
+import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
@@ -20,6 +20,7 @@ const TON: Record<string, string> = {
   AttributKörperlich: "var(--wert-koerperlich)",
   AttributGesellschaftlich: "var(--wert-gesellschaftlich)",
   AttributGeistig: "var(--wert-geistig)",
+  AttributMatrix: "var(--bereich-begleiter)",
   Fertigkeit: "var(--wert-fertigkeit)",
   Hexkraft: "var(--wert-hexkraft)",
   Sphäre: "var(--wert-sphaere)",
@@ -676,7 +677,7 @@ export function Charakterblatt({
 
       {/* Gemeinsamer Teil zuerst — so sieht das Blatt für alle gleich aus.
           Was nur Magier oder Neuroweaver haben, kommt darunter. */}
-      <div className="cb-attribute">{ATTRIBUT_KATEGORIEN.map(reihe)}</div>
+      <div className="cb-attribute">{(bogen.person.istKI ? ATTRIBUT_KATEGORIEN_KI : ATTRIBUT_KATEGORIEN).map(reihe)}</div>
       {reihe("Fertigkeit")}
       {reihe("Hexkraft")}
       {reihe("Sphäre")}

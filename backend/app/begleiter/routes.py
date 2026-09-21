@@ -7,7 +7,6 @@ from app.begleiter.schemas import (
     BegleiterResponse,
     BegleiterUpdate,
     BesitzerRequest,
-    EinflussSetzen,
 )
 from app.entities.visibility import is_visible_to, redact_rich_text
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
@@ -111,32 +110,6 @@ async def bild_hochladen(campaign_id: str, begleiter_id: str, file: UploadFile =
     ergebnis = await repository.aendern(campaign_id, begleiter_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter nicht gefunden")
-    return ergebnis
-
-
-@router.post("/{begleiter_id}/einfluss", response_model=BegleiterResponse, dependencies=[Depends(require_campaign_gm)])
-async def einfluss_setzen(campaign_id: str, begleiter_id: str, body: EinflussSetzen):
-    """Setzt die Einfluss-Stufe eines Begleiters (typischerweise einer KI) auf
-    einen Ort/eine Fraktion/ein Event/einen Gegenstand — echte Graphkante,
-    damit die Spielleitung sie im Kampf gezielt kappen kann (siehe
-    `einfluss_entfernen`)."""
-    ergebnis = await repository.einfluss_setzen(
-        campaign_id, begleiter_id, body.zielKind, body.zielId, body.stufe
-    )
-    if ergebnis is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter oder Ziel nicht gefunden")
-    return ergebnis
-
-
-@router.delete(
-    "/{begleiter_id}/einfluss/{ziel_kind}/{ziel_id}",
-    response_model=BegleiterResponse,
-    dependencies=[Depends(require_campaign_gm)],
-)
-async def einfluss_entfernen(campaign_id: str, begleiter_id: str, ziel_kind: str, ziel_id: str):
-    ergebnis = await repository.einfluss_entfernen(campaign_id, begleiter_id, ziel_kind, ziel_id)
-    if ergebnis is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter oder Einflussbereich nicht gefunden")
     return ergebnis
 
 

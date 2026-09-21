@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { entitiesApi, type CritterEintrag, type Person } from "../entities/api";
+import { entitiesApi, type CritterEintrag, type KiEintrag, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -10,29 +10,27 @@ import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, begleiterApi, type Begleiter, type BegleiterArt } from "./api";
 import { BegleiterBild } from "./BegleiterBild";
 import { CritterFenster } from "./CritterFenster";
-import { EinflussVerwaltung } from "./EinflussVerwaltung";
-import { KiAttributBlatt } from "./KiAttributBlatt";
+import { KiFenster } from "./KiFenster";
 import "../items/gegenstaende.css";
 import "./begleiter.css";
 
 /**
- * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete, KIs.
+ * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete.
  *
  * Sie hängen an einer Person und teilen sich das Grundblatt mit Drohnen und
  * Fahrzeugen. Wer einem Spielercharakter zugeordnet ist, wird beim Anlegen
  * automatisch für ihn sichtbar; sonst müsste die Spielleitung bei jedem
  * Sprite daran denken, und vergässe sie es, stünde der Neuroweaver ohne da.
  *
- * KI (19.09.2026) trägt zusätzlich die sechs nicht-körperlichen
- * Person-Attribute plus Matrix-Präsenz und kann echten Entitäten
- * Einfluss-Stufen zuweisen (`EinflussVerwaltung`).
- *
- * **CRITTER (20.09.2026, revidiert)**: Tiere/Haustiere sind keine
- * Begleiter-Art mehr — Mark: "wir machen critter zu richtigen NPCs". Sie
- * sind echte `Person`-Knoten (`istCritter`), erscheinen aber trotzdem in
- * dieser Übersicht (gemischt mit den echten Begleitern) und lassen sich auch
- * hier anlegen — nur mit dem vollen NPC-Charakterblatt statt des
- * Drohne/Fahrzeug-Blatts, siehe `CritterFenster`.
+ * **KI und CRITTER sind seit 20.09.2026 KEINE Begleiter-Arten mehr** — erst
+ * Mark: "wir machen critter zu richtigen NPCs", dann "mach jetzt das Gleiche
+ * für die KI". Beide sind echte `Person`-Knoten (`istCritter`/`istKI`),
+ * erscheinen aber trotzdem in dieser Übersicht (gemischt mit den echten
+ * Begleitern) und lassen sich auch hier anlegen — mit dem vollen
+ * Charakterblatt statt des Drohne/Fahrzeug-Blatts, siehe `CritterFenster`/
+ * `KiFenster`. Bei KI ersetzt Matrix-Präsenz die körperlichen Attribute auf
+ * dem Blatt (`traits/bogenApi.ts::ATTRIBUT_KATEGORIEN_KI`), Einfluss-Kanten
+ * auf Orte/Fraktionen/Events/Gegenstände laufen über `entities/api.ts`.
  *
  * **Kachelraster + Anlegen-Popup (20.09.2026)**: dasselbe Muster wie
  * GegenstaendeUebersicht/PartyVerwaltung — Suchfeld über Name/Art/Besitzer,
@@ -45,29 +43,35 @@ import "./begleiter.css";
  * unten aus dem Blick.
  */
 
-const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER", "KI"];
+const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER"];
 
-/** Eine Kachel in der gemeinsamen Übersicht — entweder ein echter Begleiter
- * oder ein Critter (Person mit istCritter). Gemeinsames schlankes Format,
- * damit Suche/Raster/Pagination beide Arten gleich behandeln können. */
+/** Eine Kachel in der gemeinsamen Übersicht — ein echter Begleiter, ein
+ * Critter oder eine KI (beide Person mit istCritter/istKI). Gemeinsames
+ * schlankes Format, damit Suche/Raster/Pagination alle drei Arten gleich
+ * behandeln können. */
 interface KachelEintrag {
   id: string;
   name: string;
   bildUrl: string;
   besitzerName: string | null;
   suchtext: string;
-  art: "CRITTER" | BegleiterArt;
+  art: "CRITTER" | "KI_PERSON" | BegleiterArt;
   stufe: number;
-  quelle: { kind: "begleiter"; daten: Begleiter } | { kind: "critter"; daten: CritterEintrag };
+  quelle:
+    | { kind: "begleiter"; daten: Begleiter }
+    | { kind: "critter"; daten: CritterEintrag }
+    | { kind: "ki"; daten: KiEintrag };
 }
 
 export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [alle, setAlle] = useState<Begleiter[]>([]);
   const [critter, setCritter] = useState<CritterEintrag[]>([]);
+  const [kiListe, setKiListe] = useState<KiEintrag[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
   const [laden, setLaden] = useState(true);
   const [offen, setOffen] = useState<Begleiter | null>(null);
   const [critterOffen, setCritterOffen] = useState<CritterEintrag | null>(null);
+  const [kiOffen, setKiOffen] = useState<KiEintrag | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [suche, setSuche] = useState("");
   const rasterRef = useRef<HTMLDivElement>(null);
@@ -75,13 +79,15 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
   const [seite, setSeite] = useState(0);
 
   async function neuLaden() {
-    const [b, c, p] = await Promise.all([
+    const [b, c, k, p] = await Promise.all([
       begleiterApi.liste(campaignId),
       entitiesApi.listCritter(campaignId),
+      entitiesApi.listKi(campaignId),
       entitiesApi.listPersonen(campaignId),
     ]);
     setAlle(b);
     setCritter(c);
+    setKiListe(k);
     setPersonen(p);
   }
 
@@ -95,8 +101,8 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     [personen],
   );
 
-  // Beide Arten zu einer gemeinsamen Kachel-Liste zusammenführen — Mark,
-  // 20.09.2026: Critter bleiben trotz eigenem NPC-Blatt Teil der
+  // Alle drei Arten zu einer gemeinsamen Kachel-Liste zusammenführen — Mark,
+  // 20.09.2026: Critter und KI bleiben trotz eigenem NPC-Blatt Teil der
   // Begleiter-Übersicht, nicht nur der normalen NPC-Liste.
   const kacheln = useMemo<KachelEintrag[]>(() => {
     const b: KachelEintrag[] = alle.map((x) => ({
@@ -119,8 +125,18 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       stufe: 0,
       quelle: { kind: "critter", daten: x },
     }));
-    return [...b, ...c].sort((x, y) => x.name.localeCompare(y.name, "de"));
-  }, [alle, critter]);
+    const k: KachelEintrag[] = kiListe.map((x) => ({
+      id: x.id,
+      name: x.name,
+      bildUrl: x.bildUrl,
+      besitzerName: x.besitzerName,
+      suchtext: `${x.name} KI ${x.besitzerName ?? ""}`.toLowerCase(),
+      art: "KI_PERSON",
+      stufe: 0,
+      quelle: { kind: "ki", daten: x },
+    }));
+    return [...b, ...c, ...k].sort((x, y) => x.name.localeCompare(y.name, "de"));
+  }, [alle, critter, kiListe]);
 
   // Sucht über Name, Art und Besitzer — analog zur Gegenstände-/Party-Suche
   // ("alle Sprites von Kira" statt exaktem Namen).
@@ -142,6 +158,24 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
 
   if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Begleiter…</p>;
 
+  function symbolVon(k: KachelEintrag) {
+    if (k.art === "CRITTER") return "❖";
+    if (k.art === "KI_PERSON") return "⌬";
+    return ART_SYMBOLE[k.art];
+  }
+
+  function namenVon(k: KachelEintrag) {
+    if (k.art === "CRITTER") return "Critter";
+    if (k.art === "KI_PERSON") return "KI";
+    return ART_NAMEN[k.art];
+  }
+
+  function kachelOeffnen(k: KachelEintrag) {
+    if (k.quelle.kind === "begleiter") setOffen(k.quelle.daten);
+    else if (k.quelle.kind === "critter") setCritterOffen(k.quelle.daten);
+    else setKiOffen(k.quelle.daten);
+  }
+
   return (
     <div className="gg-seite" style={KACHEL_STIL}>
       <div className="gg-kopf">
@@ -162,23 +196,13 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((k) => (
-          <button
-            key={k.id}
-            type="button"
-            className="gg-kachel"
-            onClick={() => (k.quelle.kind === "begleiter" ? setOffen(k.quelle.daten) : setCritterOffen(k.quelle.daten))}
-            title={k.name}
-          >
+          <button key={k.id} type="button" className="gg-kachel" onClick={() => kachelOeffnen(k)} title={k.name}>
             <span className="gg-kachel-bild">
-              {k.bildUrl ? (
-                <img src={k.bildUrl} alt="" />
-              ) : (
-                <span aria-hidden="true">{k.art === "CRITTER" ? "❖" : ART_SYMBOLE[k.art]}</span>
-              )}
+              {k.bildUrl ? <img src={k.bildUrl} alt="" /> : <span aria-hidden="true">{symbolVon(k)}</span>}
             </span>
             <span className="gg-kachel-name">{k.name}</span>
             <span className="gg-kachel-zeile">
-              {k.art === "CRITTER" ? "Critter" : ART_NAMEN[k.art]}
+              {namenVon(k)}
               {k.stufe > 0 && ` · Stufe ${k.stufe}`}
             </span>
             <span className="gg-kachel-marken">
@@ -230,6 +254,13 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           setCritter(gefunden);
           setCritterOffen(gefunden.find((c) => c.id === neuerCritterId) ?? null);
         }}
+        onKiAngelegt={async (neueKiId) => {
+          setAnlegenOffen(false);
+          await neuLaden();
+          const gefunden = await entitiesApi.listKi(campaignId);
+          setKiListe(gefunden);
+          setKiOffen(gefunden.find((k) => k.id === neueKiId) ?? null);
+        }}
       />
 
       {offen && (
@@ -242,10 +273,9 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
             await neuLaden();
             setOffen(null);
           }}
-          // Einfluss/Bild ändern sich sofort über die eigene API, ohne dass
-          // der Rest des Formulars mitgespeichert werden soll — das Fenster
-          // bleibt offen, damit man mehrere Ziele nacheinander zuweisen kann
-          // (dasselbe Muster wie Mitglied-Hinzufügen in PartyVerwaltung).
+          // Bild ändert sich sofort über die eigene API, ohne dass der Rest
+          // des Formulars mitgespeichert werden soll — das Fenster bleibt
+          // offen (dasselbe Muster wie Mitglied-Hinzufügen in PartyVerwaltung).
           onSofortGeaendert={(neu) => {
             setAlle((alt) => alt.map((b) => (b.id === neu.id ? neu : b)));
             setOffen(neu);
@@ -263,6 +293,20 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           onGeaendert={async () => {
             await neuLaden();
             setCritterOffen(null);
+          }}
+        />
+      )}
+
+      {kiOffen && (
+        <KiFenster
+          campaignId={campaignId}
+          kiId={kiOffen.id}
+          besitzerId={kiOffen.besitzerId}
+          personen={personenNamen}
+          onSchliessen={() => setKiOffen(null)}
+          onGeaendert={async () => {
+            await neuLaden();
+            setKiOffen(null);
           }}
         />
       )}
@@ -341,7 +385,8 @@ function AbschnittTitel({ children }: { children: React.ReactNode }) {
  * Anlegen-Popup: Name, Art und gleich die Besitzer-Auswahl (Verbindung) in
  * einem Commlink-Fenster statt des früheren Inline-Formulars in der
  * Kopfzeile — Mark, 20.09.2026: Suche + "+"-Popup wie bei den anderen
- * Bereichen.
+ * Bereichen. Art umfasst neben den echten Begleiter-Arten auch Critter und
+ * KI — beide legen im Hintergrund einen NPC statt eines Begleiters an.
  */
 function BegleiterAnlegenFenster({
   offen,
@@ -350,6 +395,7 @@ function BegleiterAnlegenFenster({
   onSchliessen,
   onAngelegt,
   onCritterAngelegt,
+  onKiAngelegt,
 }: {
   offen: boolean;
   campaignId: string;
@@ -357,9 +403,10 @@ function BegleiterAnlegenFenster({
   onSchliessen: () => void;
   onAngelegt: (neu: Begleiter) => void;
   onCritterAngelegt: (neuerCritterId: string) => void;
+  onKiAngelegt: (neueKiId: string) => void;
 }) {
   const [name, setName] = useState("");
-  const [art, setArt] = useState<BegleiterArt | "CRITTER">("SPRITE");
+  const [art, setArt] = useState<BegleiterArt | "CRITTER" | "KI_PERSON">("SPRITE");
   const [besitzer, setBesitzer] = useState("");
   const [sendet, setSendet] = useState(false);
 
@@ -378,25 +425,29 @@ function BegleiterAnlegenFenster({
     if (!name.trim()) return;
     setSendet(true);
     try {
-      if (art === "CRITTER") {
-        // Critter (20.09.2026, revidiert): echter NPC statt Begleiter-Art —
-        // Mark: "wir machen critter zu richtigen NPCs", volles Charakterblatt
-        // statt des Drohne/Fahrzeug-Blatts.
+      if (art === "CRITTER" || art === "KI_PERSON") {
+        // Critter/KI (20.09.2026, revidiert): echter NPC statt Begleiter-Art
+        // — Mark: "wir machen critter zu richtigen NPCs" / "mach jetzt das
+        // Gleiche für die KI". Volles Charakterblatt statt des
+        // Drohne/Fahrzeug-Blatts.
         const neu = await entitiesApi.createPerson(campaignId, {
           name: name.trim(),
           personType: "NPC",
           description: "",
           notes: "",
-          istCritter: true,
+          istCritter: art === "CRITTER",
+          istKI: art === "KI_PERSON",
           sichtbarkeit: "GM",
           sichtbarFuer: [],
           notizenSichtbarkeit: "GM",
           notizenSichtbarFuer: [],
         });
         if (besitzer) {
-          await entitiesApi.critterBesitzer(campaignId, neu.id, besitzer);
+          if (art === "CRITTER") await entitiesApi.critterBesitzer(campaignId, neu.id, besitzer);
+          else await entitiesApi.kiBesitzer(campaignId, neu.id, besitzer);
         }
-        onCritterAngelegt(neu.id);
+        if (art === "CRITTER") onCritterAngelegt(neu.id);
+        else onKiAngelegt(neu.id);
         return;
       }
       const neu = await begleiterApi.anlegen(campaignId, {
@@ -433,19 +484,21 @@ function BegleiterAnlegenFenster({
           <span style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--neon)" }}>
             Art
           </span>
-          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt | "CRITTER")}>
+          <select value={art} onChange={(e) => setArt(e.target.value as BegleiterArt | "CRITTER" | "KI_PERSON")}>
             {ARTEN.map((a) => (
               <option key={a} value={a}>
                 {ART_SYMBOLE[a]} {ART_NAMEN[a]}
               </option>
             ))}
             <option value="CRITTER">❖ Critter</option>
+            <option value="KI_PERSON">⌬ KI</option>
           </select>
         </div>
 
-        {art === "CRITTER" && (
+        {(art === "CRITTER" || art === "KI_PERSON") && (
           <p className="pcd-hinweis" style={{ margin: 0 }}>
-            Bekommt das volle NPC-Charakterblatt statt des Drohne/Fahrzeug-Blatts.
+            Bekommt das volle NPC-Charakterblatt statt des Drohne/Fahrzeug-Blatts
+            {art === "KI_PERSON" && " — Matrix-Präsenz statt körperlicher Attribute"}.
           </p>
         )}
 
@@ -493,14 +546,6 @@ function BegleiterFenster({
     Object.entries(begleiter.fertigkeiten ?? {}),
   );
   const [besitzer, setBesitzer] = useState(begleiter.besitzerId ?? "");
-  // KI-Attribute — Skala 1-6 wie bei Person.
-  const [charisma, setCharisma] = useState(begleiter.charisma);
-  const [manipulation, setManipulation] = useState(begleiter.manipulation);
-  const [fassung, setFassung] = useState(begleiter.fassung);
-  const [intelligenz, setIntelligenz] = useState(begleiter.intelligenz);
-  const [geistesschaerfe, setGeistesschaerfe] = useState(begleiter.geistesschaerfe);
-  const [entschlossenheit, setEntschlossenheit] = useState(begleiter.entschlossenheit);
-  const [matrixPraesenz, setMatrixPraesenz] = useState(begleiter.matrixPraesenz);
   // Erfahrung — reine Budget-Anzeige, keine Kostenrechnung.
   const [erfahrung, setErfahrung] = useState(begleiter.erfahrung);
   const [erfahrungAusgegeben, setErfahrungAusgegeben] = useState(begleiter.erfahrungAusgegeben);
@@ -534,13 +579,6 @@ function BegleiterFenster({
         waffenSchaden,
         schadensart,
         fertigkeiten: Object.fromEntries(fertigkeiten.filter(([n]) => n.trim())),
-        charisma,
-        manipulation,
-        fassung,
-        intelligenz,
-        geistesschaerfe,
-        entschlossenheit,
-        matrixPraesenz,
         erfahrung,
         erfahrungAusgegeben,
       });
@@ -596,29 +634,6 @@ function BegleiterFenster({
         {/* Das eigentliche Blatt zuerst — Mark, 20.09.2026: "man will das
             Charakterblatt sehen". Name/Art/Verbindung/Beziehung folgen ganz
             unten, siehe Verwaltungsabschnitt. */}
-        {art === "KI" && (
-          <KiAttributBlatt
-            werte={{
-              charisma,
-              manipulation,
-              fassung,
-              intelligenz,
-              geistesschaerfe,
-              entschlossenheit,
-              matrixPraesenz,
-            }}
-            onAendern={(feld, wert) => {
-              if (feld === "charisma") setCharisma(wert);
-              else if (feld === "manipulation") setManipulation(wert);
-              else if (feld === "fassung") setFassung(wert);
-              else if (feld === "intelligenz") setIntelligenz(wert);
-              else if (feld === "geistesschaerfe") setGeistesschaerfe(wert);
-              else if (feld === "entschlossenheit") setEntschlossenheit(wert);
-              else if (feld === "matrixPraesenz") setMatrixPraesenz(wert);
-            }}
-          />
-        )}
-
         <StufenBlatt
           werte={{ stufe, widerstand, angriff, agilitaet }}
           stufenHinweis="Das Budget für die Werte darunter — und zugleich die Gesundheit."
@@ -717,17 +732,6 @@ function BegleiterFenster({
           </div>
         </section>
 
-        {art === "KI" && (
-          <EinflussVerwaltung
-            campaignId={campaignId}
-            begleiter={aktuellerBegleiter}
-            onGeaendert={(neu) => {
-              setAktuellerBegleiter(neu);
-              onSofortGeaendert(neu);
-            }}
-          />
-        )}
-
         <div className="bg-zeile">
           <button type="button" onClick={sichern} disabled={sendet}>
             {sendet ? "Wird gespeichert…" : "Werte speichern"}
@@ -800,7 +804,7 @@ function BegleiterFenster({
       {loeschenOffen && (
         <Bestaetigung
           titel={`${begleiter.name} entfernen?`}
-          text="Der Begleiter wird endgültig gelöscht, samt Einfluss-Verknüpfungen."
+          text="Der Begleiter wird endgültig gelöscht."
           jaText="Entfernen"
           onJa={entfernen}
           onNein={() => setLoeschenOffen(false)}

@@ -6,21 +6,16 @@ from app.entities.schemas import SichtbarkeitModus
 
 # Sprite, Geist und Begleiter teilen sich ein Blatt (Neotopia.xlsx, Blatt
 # "Drohne/Fahrzeug/Sprite/Geist"). Die Art trennt sie nur in der Anzeige —
-# mechanisch sind sie dasselbe. KI baut auf demselben Blatt auf, bringt aber
-# eigene Zusatzfelder mit (siehe unten) — Mark, 19.09.2026: eine Stadt-KI
-# (Babel) ist ein besonders mächtiger Sprite, kein neuer Entity-Typ, damit
-# Kampf/Zerstören (Brute Force → Kompilieren) automatisch mitläuft.
-# CRITTER (Tiere/Haustiere) sind seit 20.09.2026 KEIN Begleiter-Art mehr —
-# Mark: "wir machen critter zu richtigen NPCs". Sie leben als `Person`
-# (`istCritter=true`) in app/entities/ mit dem vollen NPC-Charakterblatt.
-BegleiterArt = Literal["SPRITE", "GEIST", "BEGLEITER", "KI"]
-
-# Ziele, denen eine KI (oder theoretisch jeder Begleiter) Einfluss auf die
-# Welt entzogen bzw. zugewiesen bekommen kann — echte Graphkanten statt
-# Freitext, damit die Spielleitung ihr im Kampf gezielt einen echten Ort
-# wegnehmen kann. Keine Personen: Einfluss auf einen Menschen ist im Tool
-# bereits Beziehung/Handlung, kein Ressourcenwert.
-EinflussZielKind = Literal["Ort", "Fraktion", "Event", "Gegenstand"]
+# mechanisch sind sie dasselbe.
+#
+# **KI und CRITTER sind seit 20.09.2026 KEINE Begleiter-Arten mehr** — Mark:
+# erst "wir machen critter zu richtigen NPCs", dann "mach jetzt das Gleiche
+# für die KI". Beide leben als echte `Person`-Knoten in `app/entities/`
+# (`istCritter`/`istKI`) mit dem vollen Charakterblatt statt dieses
+# Drohne/Fahrzeug-Blatts — Einfluss-Kanten, KI-Attribute (inkl.
+# Matrix-Präsenz als 4. Attribut-Kategorie) liegen entsprechend in
+# `app/entities/schemas.py`/`repository.py`/`routes.py`.
+BegleiterArt = Literal["SPRITE", "GEIST", "BEGLEITER"]
 
 
 class BegleiterBasis(BaseModel):
@@ -46,20 +41,6 @@ class BegleiterBasis(BaseModel):
     waffe: str = ""
     waffenSchaden: int = Field(default=0, ge=0, le=7)
     schadensart: str = ""
-
-    # --- Zusatzblatt KI (art == "KI") ---------------------------------
-    # Dieselbe Skala 1-6 wie bei Personen (Mark, 19.09.2026: "unsere Skala
-    # bei Attributen geht von 1-6... verwenden wir wirklich unser system wie
-    # bei einer person weiter"). Nur die geistigen/gesellschaftlichen
-    # Attribute — eine körperlose KI hat keine Körperlichen.
-    charisma: int = Field(default=0, ge=0, le=6)
-    manipulation: int = Field(default=0, ge=0, le=6)
-    fassung: int = Field(default=0, ge=0, le=6)
-    intelligenz: int = Field(default=0, ge=0, le=6)
-    geistesschaerfe: int = Field(default=0, ge=0, le=6)
-    entschlossenheit: int = Field(default=0, ge=0, le=6)
-    # Neu, nur für KIs: wie dominant/sichtbar sie in der Matrix ist.
-    matrixPraesenz: int = Field(default=0, ge=0, le=6)
 
     # --- Erfahrung -----------------------------------------------------
     # Reine Budget-Anzeige, keine Kostenrechnung wie bei Personen (Mark,
@@ -91,13 +72,6 @@ class BegleiterUpdate(BaseModel):
     waffe: str | None = None
     waffenSchaden: int | None = Field(default=None, ge=0, le=7)
     schadensart: str | None = None
-    charisma: int | None = Field(default=None, ge=0, le=6)
-    manipulation: int | None = Field(default=None, ge=0, le=6)
-    fassung: int | None = Field(default=None, ge=0, le=6)
-    intelligenz: int | None = Field(default=None, ge=0, le=6)
-    geistesschaerfe: int | None = Field(default=None, ge=0, le=6)
-    entschlossenheit: int | None = Field(default=None, ge=0, le=6)
-    matrixPraesenz: int | None = Field(default=None, ge=0, le=6)
     erfahrung: int | None = Field(default=None, ge=0)
     erfahrungAusgegeben: int | None = Field(default=None, ge=0)
     sichtbarkeit: SichtbarkeitModus | None = None
@@ -108,27 +82,9 @@ class BesitzerRequest(BaseModel):
     personId: str | None = None
 
 
-class EinflussEintrag(BaseModel):
-    """Ein Ziel, dem der Begleiter (typischerweise eine KI) Einfluss auf die
-    Welt entzogen bzw. zugewiesen hat — echte Graphkante mit Stufe, siehe
-    `EinflussZielKind`."""
-
-    zielKind: EinflussZielKind
-    zielId: str
-    zielName: str
-    stufe: int = Field(ge=0, le=6)
-
-
-class EinflussSetzen(BaseModel):
-    zielKind: EinflussZielKind
-    zielId: str
-    stufe: int = Field(ge=0, le=6)
-
-
 class BegleiterResponse(BegleiterBasis):
     id: str
     besitzerId: str | None = None
     besitzerName: str | None = None
-    einfluss: list[EinflussEintrag] = []
     sichtbarkeit: str
     sichtbarFuer: list[str]

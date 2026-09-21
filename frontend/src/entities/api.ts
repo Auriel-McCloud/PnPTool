@@ -30,6 +30,11 @@ export interface Person extends VisibilityFields {
    * `entitiesApi.critterBesitzer`, dieselbe BEGLEITET-Kante wie bei
    * Sprite/Geist/KI. */
   istCritter?: boolean;
+  /** KI (20.09.2026, revidiert): dasselbe Muster wie Critter — eine Stadt-KI
+   * ist eine echte Person statt einer Begleiter-Art. Ersetzt am Blatt die
+   * körperlichen Attribute durch Matrix-Präsenz (`AttributMatrix`, siehe
+   * `traits/bogenApi.ts::ATTRIBUT_KATEGORIEN_KI`). */
+  istKI?: boolean;
 }
 
 export interface Ort extends VisibilityFields {
@@ -158,6 +163,23 @@ export interface CritterEintrag {
   besitzerName: string | null;
 }
 
+/** Dieselbe schlanke Form wie `CritterEintrag`, für KI-Personen. */
+export type KiEintrag = CritterEintrag;
+
+/** Ein Einfluss-Eintrag einer Person (typischerweise einer KI) auf einen
+ * Ort/eine Fraktion/ein Event/einen Gegenstand — echte Graphkante statt
+ * Freitext, siehe `EinflussZielKind`. Verschoben von `begleiter/api.ts`
+ * (20.09.2026, revidiert): KI ist jetzt eine Person statt einer
+ * Begleiter-Art. */
+export type EinflussZielKind = Exclude<EntityKind, "Person">;
+
+export interface EinflussEintrag {
+  zielKind: EinflussZielKind;
+  zielId: string;
+  zielName: string;
+  stufe: number;
+}
+
 export const entitiesApi = {
   listPersonen: (cid: string, filter?: ListenFilter) =>
     api.get<Person[]>(`${base(cid)}/personen${query(filter)}`),
@@ -177,6 +199,21 @@ export const entitiesApi = {
   listCritter: (cid: string) => api.get<CritterEintrag[]>(`${base(cid)}/critter`),
   critterBesitzer: (cid: string, critterId: string, personId: string | null) =>
     api.post<CritterEintrag>(`${base(cid)}/critter/${critterId}/besitzer`, { personId }),
+
+  /** KI — dasselbe Muster wie Critter, seit 20.09.2026 (revidiert) ebenfalls
+   * eine echte Person (`istKI: true`) statt einer Begleiter-Art. */
+  listKi: (cid: string) => api.get<KiEintrag[]>(`${base(cid)}/ki`),
+  kiBesitzer: (cid: string, kiId: string, personId: string | null) =>
+    api.post<KiEintrag>(`${base(cid)}/ki/${kiId}/besitzer`, { personId }),
+
+  /** Einfluss-Kanten einer Person (typischerweise einer KI) auf Ort/
+   * Fraktion/Event/Gegenstand — GM-only zum Setzen/Entfernen. */
+  einflussListe: (cid: string, personId: string) =>
+    api.get<EinflussEintrag[]>(`${base(cid)}/personen/${personId}/einfluss`),
+  einflussSetzen: (cid: string, personId: string, zielKind: EinflussZielKind, zielId: string, stufe: number) =>
+    api.post<EinflussEintrag[]>(`${base(cid)}/personen/${personId}/einfluss`, { zielKind, zielId, stufe }),
+  einflussEntfernen: (cid: string, personId: string, zielKind: EinflussZielKind, zielId: string) =>
+    api.delete<EinflussEintrag[]>(`${base(cid)}/personen/${personId}/einfluss/${zielKind}/${zielId}`),
 
   listOrte: (cid: string, filter?: ListenFilter) => api.get<Ort[]>(`${base(cid)}/orte${query(filter)}`),
   createOrt: (cid: string, body: Omit<Ort, "id">) => api.post<Ort>(`${base(cid)}/orte`, body),
