@@ -681,6 +681,7 @@ export function Charakterblatt({
       {reihe("Fertigkeit")}
       {reihe("Hexkraft")}
       {reihe("Sphäre")}
+      {reihe("NeuroWeavingWert")}
       {reihe("NeuroWeaving")}
 
       {/* Fertigkeiten, die es ohne Ausrüstung nicht gibt — eigener
