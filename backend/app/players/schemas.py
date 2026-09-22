@@ -31,6 +31,11 @@ class SpielerMeResponse(BaseModel):
     personId: str | None = None
     personName: str | None = None
     hatPasswort: bool = False
+    # Charakterportrait des eigenen Charakters — Mark, 22.09.2026: "es gibt
+    # keine Möglichkeit ein Bild anzuhängen" für Spieler (analog zu
+    # Begleitern/Entitäten, die die SL schon längst per Bild-Upload pflegen
+    # kann). Selbstbedienung über /api/spieler/mein-bild.
+    personBildUrl: str | None = None
 
 
 class SpielerResponse(BaseModel):

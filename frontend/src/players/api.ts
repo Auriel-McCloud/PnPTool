@@ -9,6 +9,8 @@ export interface SpielerMe {
   personId: string | null;
   personName: string | null;
   hatPasswort: boolean;
+  /** Portrait des eigenen Charakters — siehe playersApi.meinBildHochladen. */
+  personBildUrl?: string | null;
 }
 
 /** Sicht der Spielleitung auf einen Zugang. */
@@ -27,6 +29,23 @@ export const playersApi = {
   abmelden: () => api.post("/api/spieler/abmelden"),
   /** Leeres Passwort entfernt den Schutz wieder. */
   passwortSetzen: (passwort: string) => api.post<SpielerMe>("/api/spieler/passwort", { passwort }),
+  /** Charakterportrait für den eigenen zugeordneten Charakter setzen. */
+  meinBildHochladen: async (datei: File): Promise<SpielerMe> => {
+    const daten = new FormData();
+    daten.append("file", datei);
+    // Content-Type nicht setzen: der Browser braucht die multipart-Grenze
+    // (gleiches Muster wie EntitaetsBild.tsx).
+    const antwort = await fetch("/api/spieler/mein-bild", {
+      method: "POST",
+      credentials: "include",
+      body: daten,
+    });
+    if (!antwort.ok) {
+      const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+      throw new Error(f.detail ?? "Upload fehlgeschlagen");
+    }
+    return antwort.json();
+  },
 
   // Verwaltung durch die Spielleitung
   liste: (cid: string) => api.get<SpielerZugang[]>(`/api/campaigns/${cid}/spieler`),

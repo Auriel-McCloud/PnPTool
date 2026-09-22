@@ -34,6 +34,7 @@ import { Messenger } from "../kontakte/Messenger";
 import { kontakteApi, type Kontakt } from "../kontakte/api";
 import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
+import { CharakterportraitPopup } from "./CharakterportraitPopup";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -131,6 +132,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
   // Fehlermeldung anzeigen (z.B. "Magier können keine Bioware...")
   const [fehlerMeldung, setFehlerMeldung] = useState<string | null>(null);
+  // Charakterportrait-Popup — eigenes Bild für den eigenen Charakter setzen.
+  const [portraitOffen, setPortraitOffen] = useState(false);
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -337,7 +340,27 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     >
       {bereich === "blatt" &&
         (ich.personId ? (
-          <Charakterblatt campaignId={ich.campaignId} personId={ich.personId} />
+          <>
+            {/* Eigenes Portrait — kleiner Knopf über dem Blatt, damit er
+                nicht mit den Werten konkurriert (Übersichtskarten bleiben
+                schlank, siehe pnptool-development-Muster). */}
+            <div className="cb-portrait-leiste">
+              <button
+                type="button"
+                className="cb-portrait-knopf"
+                onClick={() => setPortraitOffen(true)}
+                title="Charakterportrait setzen"
+              >
+                {ich.personBildUrl ? (
+                  <img src={ich.personBildUrl} alt={ich.personName ?? "Portrait"} />
+                ) : (
+                  <span className="cb-portrait-platzhalter">▣</span>
+                )}
+                <span>{ich.personBildUrl ? "Portrait ändern" : "Portrait setzen"}</span>
+              </button>
+            </div>
+            <Charakterblatt campaignId={ich.campaignId} personId={ich.personId} />
+          </>
         ) : (
           <p style={{ color: "var(--text-leise)" }}>
             Dir ist noch kein Charakter zugeordnet — deine Spielleitung muss dir einen zuweisen.
@@ -589,6 +612,18 @@ Ein eingesetztes Augment kann nur die Spielleitung wieder entfernen."
         neinText=""
         onJa={() => setFehlerMeldung(null)}
         onNein={() => setFehlerMeldung(null)}
+      />
+    )}
+    {/* Charakterportrait-Popup — Spieler-Selbstbedienung (22.09.2026). */}
+    {ich.personId && (
+      <CharakterportraitPopup
+        offen={portraitOffen}
+        ich={ich}
+        onSchliessen={() => setPortraitOffen(false)}
+        onGeaendert={(frisch) => {
+          setIch(frisch);
+          setPortraitOffen(false);
+        }}
       />
     )}
     </MitteilungenAnbieter>

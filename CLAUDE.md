@@ -895,15 +895,34 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      - **Hybrid:** Edge für Standard, ElevenLabs für wichtige Momente
      - Gegenstände reden WIRKLICH mit den Spielern!
 
-11. **Charakterportrait im Spieler-Menü** — Spieler sehen aktuell kein
-    Charakterportrait und haben keine Möglichkeit, eines festzulegen.
-    Geplant: eigenes Popup "Neues Bild" (Commlink-Stil, wie gewohnt) mit
-    4 Optionen zur Auswahl:
-    1. Bild hochladen
-    2. Foto machen (Kamera)
-    3. Zeichentool
-    4. KI-Beschreibung → generiert Bild
-    Status: nur notiert, noch nicht entschieden/gebaut.
+11. **Charakterportrait im Spieler-Menü** — MVP **gebaut** (22.09.2026):
+    - **Zwei der vier geplanten Optionen umgesetzt** (mit Mark als MVP-Scope
+      geklärt): Bild hochladen + Foto per Kamera (`capture="environment"`
+      am `<input type="file">`, fällt am Desktop ohne Kamera automatisch auf
+      normale Dateiauswahl zurück). **Offen, bewusst nicht Teil dieser
+      Fassung:** Zeichentool, KI-Beschreibung → generiert Bild (braucht
+      eine neue Bildgenerierungs-Backend-Integration, die es noch nicht
+      gibt — bisher liefert `app/ki/` nur Text/JSON über Gemini/Mistral).
+    - **Neue Route `POST /api/spieler/mein-bild`** (`app/players/routes.py`)
+      — bewusst OHNE `require_campaign_gm`, einzige Bild-Upload-Route im
+      Projekt, die nicht GM-only ist: der Spieler darf nur sein **eigenes**
+      zugeordnetes `Person`-Bild setzen (`spieler["personId"]` aus dem
+      JWT-Claim, kein Pfad-Parameter für die Person-ID). Schreibt auf
+      dasselbe `bildUrl`-Feld wie der SL-Upload (`entities/routes.py::
+      _entitaets_bild_hochladen`), gleicher Upload-Ordner
+      (`uploads/<campaign_id>/`), eigener Dateipräfix `portrait-` statt
+      `personen-`.
+    - `SpielerMeResponse` bekam `personBildUrl` (Backend liefert es über
+      `p.bildUrl AS personBildUrl` in `finde_spieler`/`get_spieler`,
+      `players/repository.py`).
+    - Frontend: `players/CharakterportraitPopup.tsx` (Commlink-Popup via
+      `Fenster`, Muster wie `KiTextPopup.tsx`), eigener kleiner Knopf über
+      dem Charakterblatt in `SpielerAnsicht.tsx` (`cb-portrait-leiste`,
+      zeigt das aktuelle Bild oder einen Platzhalter — Übersichtskarten
+      bleiben schlank, das Popup trägt die Upload-Aktionen).
+    - Verifiziert: `tsc -b` fehlerfrei, End-to-End gegen echte Neo4j-DB
+      (Spieler-Login → Bild-Upload → `GET /api/spieler/me` zeigt die neue
+      URL, Testdaten wieder entfernt).
 
 12. **Steckbrief nachträglich bearbeiten** — ✅ erledigt (22.09.2026).
     Konzept, Ambition, Verlangen und Ziel lassen sich jetzt über einen

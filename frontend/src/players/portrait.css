@@ -1,0 +1,125 @@
+/* ===================================================================
+   Charakterportrait-Popup (CharakterportraitPopup.tsx) — eigenes Bild
+   für den eigenen Charakter setzen (Spieler-Selbstbedienung, 22.09.2026).
+
+   Eigenes schlankes Set wie bei ki.css: dieselbe Commlink-Sprache
+   (Tokens aus theme/tokens.css), aber ohne Kopplung an ein anderes
+   Feature.
+   =================================================================== */
+
+.port-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  text-align: center;
+}
+
+.port-vorschau {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+}
+
+.port-leer {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 13px;
+}
+
+.port-aktionen {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.port-btn-primaer {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 20px;
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  background: var(--neon);
+  color: var(--flaeche-tief);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.port-btn-primaer:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--neon);
+}
+
+.port-btn-primaer:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.port-fehler {
+  margin: 0;
+  color: var(--signal);
+  font-size: 12px;
+}
+
+.port-hinweis {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+
+/* Knopf über dem Charakterblatt (Spieler-Sicht), öffnet das Popup. */
+.cb-portrait-leiste {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.cb-portrait-knopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cb-portrait-knopf:hover {
+  border-color: var(--neon);
+  color: var(--text);
+}
+
+.cb-portrait-knopf img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.cb-portrait-platzhalter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--text-leise);
+}
+

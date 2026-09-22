@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
-from app.entities.repository import PERSON_FIELDS, get_node
+from app.entities.repository import PERSON_FIELDS, get_node, update_node
+from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.players import repository
 from app.players.schemas import (
     CharakterZuordnenRequest,
@@ -34,6 +35,7 @@ def _antwort(spieler: dict) -> SpielerMeResponse:
         personId=spieler["personId"],
         personName=spieler["personName"],
         hatPasswort=bool(spieler.get("passwortHash")),
+        personBildUrl=spieler.get("personBildUrl"),
     )
 
 
@@ -76,6 +78,51 @@ async def spieler_me(spieler: dict = Depends(require_spieler)):
 async def passwort_setzen(body: PasswortRequest, spieler: dict = Depends(require_spieler)):
     """Der Spieler vergibt sich selbst ein Passwort - oder entfernt es wieder."""
     await repository.setze_passwort(spieler["id"], body.passwort)
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+@login_router.post("/mein-bild", response_model=SpielerMeResponse)
+async def eigenes_charakterportrait_hochladen(
+    file: UploadFile = File(...), spieler: dict = Depends(require_spieler)
+):
+    """Charakterportrait für den eigenen zugeordneten Charakter.
+
+    Anders als bei allen anderen Bild-Uploads im Projekt bewusst KEIN
+    `require_campaign_gm` — Mark, 22.09.2026: Spieler haben aktuell keine
+    Möglichkeit, selbst ein Bild für ihren Charakter zu setzen. Schreibt
+    direkt auf den zugeordneten `Person`-Knoten (dasselbe `bildUrl`-Feld wie
+    beim SL-Upload in entities/routes.py), nur MVP-Wege (Datei/Kamera) — ein
+    Zeichentool und KI-Bildgenerierung sind separat in CLAUDE.md offen
+    notiert, hier bewusst noch nicht gebaut.
+    """
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
+
+    inhalt = await file.read()
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
+
+    campaign_id = spieler["campaignId"]
+    person_id = spieler["personId"]
+    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    import mimetypes
+    import uuid
+
+    ordner = UPLOAD_DIR / campaign_id
+    ordner.mkdir(parents=True, exist_ok=True)
+    endung = mimetypes.guess_extension(file.content_type) or ""
+    name = f"portrait-{uuid.uuid4()}{endung}"
+    (ordner / name).write_bytes(inhalt)
+
+    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
+
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None
     return _antwort(frisch)
