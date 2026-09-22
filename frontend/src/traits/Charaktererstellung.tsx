@@ -59,11 +59,15 @@ function summe(werte: Record<string, number>) {
 export function Charaktererstellung({
   campaignId,
   personId,
-  name,
+  name: anfangsName,
   onFertig,
 }: {
   campaignId: string;
   personId: string;
+  /** Platzhaltername, den die Spielleitung beim Anlegen vergeben hat —
+   * Startwert des Namensfelds, keine feste Vorgabe mehr (Mark: "das sollte
+   * nicht zwingend der SL für ihn machen"). Der Spieler ändert ihn selbst
+   * im letzten Schritt, siehe SchrittPerson. */
   name: string;
   onFertig: () => void;
 }) {
@@ -89,6 +93,9 @@ export function Charaktererstellung({
   const [ambition, setAmbition] = useState("");
   const [verlangen, setVerlangen] = useState("");
   const [ziel, setZiel] = useState("");
+  // Der Name selbst ist jetzt Teil der Erstellung statt SL-Vorgabe — der
+  // Platzhalter (meist "Neuer PC") steht nur als Startwert im Feld.
+  const [name, setName] = useState(anfangsName);
 
   useEffect(() => {
     Promise.all([bogenApi.regeln(campaignId), traitsApi.getKatalog(campaignId)])
@@ -218,10 +225,12 @@ export function Charaktererstellung({
         return summe(hintergrundPunkte) <= (regeln?.hintergrundPunkteGesamt ?? 5);
       case "freebees":
         return freebeesFrei >= 0;
+      case "person":
+        return name.trim().length > 0;
       default:
         return true;
     }
-  }, [schritt, rasse, offeneAttributPunkte, paket, offeneFertigkeiten, hintergrundPunkte, regeln, freebeesFrei]);
+  }, [schritt, rasse, offeneAttributPunkte, paket, offeneFertigkeiten, hintergrundPunkte, regeln, freebeesFrei, name]);
 
   async function abschliessen() {
     setSendet(true);
@@ -243,6 +252,7 @@ export function Charaktererstellung({
       ambition,
       verlangen,
       ziel,
+      name,
     };
     try {
       await bogenApi.erstellen(campaignId, personId, eingabe);
@@ -364,8 +374,8 @@ export function Charaktererstellung({
         {aktuell.id === "person" && (
           <SchrittPerson
             campaignId={campaignId}
-            felder={{ konzept, alter, ambition, verlangen, ziel }}
-            setzen={{ setKonzept, setAlter, setAmbition, setVerlangen, setZiel }}
+            felder={{ name, konzept, alter, ambition, verlangen, ziel }}
+            setzen={{ setName, setKonzept, setAlter, setAmbition, setVerlangen, setZiel }}
           />
         )}
       </div>
@@ -407,7 +417,7 @@ export function Charaktererstellung({
             Weiter
           </button>
         ) : (
-          <button type="button" className="er-weiter" onClick={abschliessen} disabled={sendet}>
+          <button type="button" className="er-weiter" onClick={abschliessen} disabled={sendet || !name.trim()}>
             {sendet ? "Wird angelegt…" : "Charakter anlegen"}
           </button>
         )}
@@ -1196,8 +1206,9 @@ function SchrittPerson({
   setzen,
 }: {
   campaignId: string;
-  felder: { konzept: string; alter: string; ambition: string; verlangen: string; ziel: string };
+  felder: { name: string; konzept: string; alter: string; ambition: string; verlangen: string; ziel: string };
   setzen: {
+    setName: (v: string) => void;
     setKonzept: (v: string) => void;
     setAlter: (v: string) => void;
     setAmbition: (v: string) => void;
@@ -1212,6 +1223,19 @@ function SchrittPerson({
         hinarbeitet — <strong>Verlangen</strong>, was er sich nimmt, auch wenn es ihm schadet.
         Nichts davon ist Pflicht, und alles lässt sich später ändern.
       </p>
+      {/* Der Name steht hier zuoberst statt fest von der Spielleitung
+          vorgegeben zu sein (Mark: "das sollte nicht zwingend der SL für ihn
+          machen") — einziges Pflichtfeld dieses Schritts. */}
+      <label className="er-feld">
+        <span>Name</span>
+        <input
+          value={felder.name}
+          onChange={(e) => setzen.setName(e.target.value)}
+          placeholder="Wie heißt dein Charakter?"
+          required
+          autoFocus
+        />
+      </label>
       <label className="er-feld">
         <span>Konzept</span>
         <input

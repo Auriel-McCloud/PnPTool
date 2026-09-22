@@ -190,6 +190,8 @@ export interface ErstellungEingabe {
   ambition: string;
   verlangen: string;
   ziel: string;
+  /** Der Charaktername — jetzt vom Spieler selbst gesetzt, siehe SchrittPerson. */
+  name: string;
 }
 
 // --- Level Up -----------------------------------------------------------

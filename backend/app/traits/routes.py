@@ -399,6 +399,12 @@ class ErstellungInput(BaseModel):
     ambition: str = ""
     verlangen: str = ""
     ziel: str = ""
+    # Der Charaktername selbst — bisher legte die Spielleitung ihn beim
+    # Anlegen fest und der Spieler sah ihn nur read-only in der Erstellung.
+    # Mark: "das sollte nicht zwingend der SL für ihn machen". Leer bleibt
+    # unzulässig (Prüfung unten), ein Platzhalter wie "Neuer PC" darf aber
+    # ruhig ohne Änderung durchgehen, solange der Spieler ihn ersetzt hat.
+    name: str = ""
 
 
 async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
@@ -465,6 +471,8 @@ async def erstelle_charakter(
     auswahl = body.model_dump()
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
     fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
+    if not body.name.strip():
+        fehler.append("Der Charakter braucht einen Namen.")
     if fehler:
         # 422 statt 400: die Anfrage ist wohlgeformt, nur regelwidrig.
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"fehler": fehler})
@@ -500,6 +508,7 @@ async def erstelle_charakter(
             "weg": body.weg,
             "rasse": body.rasse,
             "willenskraftBonus": body.freebeeWillenskraft,
+            "name": body.name.strip(),
             "konzept": body.konzept,
             "alter": body.alter,
             "ambition": body.ambition,
