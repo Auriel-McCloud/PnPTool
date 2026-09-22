@@ -55,7 +55,7 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - **Aber:** die NeuroWeaving-Fähigkeiten **geben Bonuswürfel** (anders als Sphären) und wirken nicht als Begrenzung.
 - Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er keine Punkte hat.
 - Seine Verteidigung bestimmt sich über die Willenskraft.
-- Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren.
+- Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren, Electronic Warfare, Matrix-Navigation (letztere zwei seit 22.09.2026, Erweiterung auf 6 Skills — siehe `docs/wiki/concepts/neuroweaving-decking.md`).
 
 ## Schadensarten
 

@@ -78,6 +78,9 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     "Schleichen": "Unbemerkt durch Systeme bewegen — Spuren verwischen, ICE umgehen.",
     "Daten Verarbeiten": "Große Datenmengen durchsuchen, filtern und auswerten.",
     "Kompilieren": "Eigene Programme/Effekte in Echtzeit zusammenbauen.",
+    # 22.09.2026, Erweiterung auf 6 Skills (Marks Vorschlag, Mechanik geklärt).
+    "Electronic Warfare": "Rauschen erzeugen — tarnt die Gruppe vor Ortung, wie eine Rauchgranate im Netz.",
+    "Matrix-Navigation": "Dinge im Netz aufspüren, auch Verstecktes — genug Erfolge finden sogar Backdoors.",
 }
 
 
@@ -144,6 +147,10 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
     'Schleichen': 'Schleichen ist die Kunst des stillen Eindringens. Ein NeuroWeaver mit hoher Schleichen-Fertigkeit hinterlässt kaum Spuren, umgeht ICE und kann sich lange Zeit in fremden Systemen aufhalten, ohne entdeckt zu werden. Diese Fertigkeit ist essenziell für Spione, Datendiebe und alle, die lieber unentdeckt bleiben wollen als laute Feuergefechte in der Matrix.',
     'Daten Verarbeiten': 'Daten Verarbeiten erlaubt es dem NeuroWeaver, riesige Datenströme in Echtzeit zu analysieren. Ein erfahrener Weave kann in Sekunden relevante Informationen aus einem Konzernarchiv herausfiltern, versteckte Muster erkennen oder gezielt nach bestimmten Datensätzen suchen. Diese Fertigkeit ist besonders bei Aufträgen gefragt, bei denen es um Informationsbeschaffung geht.',
     'Kompilieren': 'Kompilieren ist die kreative Seite des NeuroWeaving. Der Weave kann in Echtzeit eigene kleine Programme, Werkzeuge oder sogar temporäre Konstrukte erschaffen – von simplen Hilfsroutinen bis hin zu komplexen Angriffs- oder Verteidigungsalgorithmen. Je höher die Fertigkeit, desto mächtiger und stabiler werden diese spontanen Schöpfungen.',
+    # 22.09.2026: Erweiterung auf 6 Skills, Mechanik mit Mark durchgesprochen
+    # (siehe CLAUDE.md Punkt 9 und docs/regeln-neotopia.md).
+    'Electronic Warfare': 'Electronic Warfare ist die defensive Seite des NeuroWeaving — sinnbildlich eine Rauchgranate im Netz. Der Weave erzeugt gezieltes Rauschen, das nicht angreift, sondern tarnt: Ortung und Erkennung der eigenen Gruppe werden erschwert. Eine einzige Probe bestimmt sowohl den Radius als auch die Dauer der Störung zugleich. Wie lange sie hält, hängt vom Moment ab — in einer ahnungslosen Umgebung kann sie eine ganze Szene tragen, in einem kritischen Moment oft nur Sekunden. Im Kampf wirkt sie immer nur als einmaliger Soforteffekt. Die Störung selbst ist auffälliger als Schleichen: sie tarnt, verschwindet aber nicht selbst im Rauschen.',
+    'Matrix-Navigation': 'Matrix-Navigation ist die Fähigkeit, sich im Netz zu orientieren und Dinge aufzuspüren — auch das, was verborgen bleiben soll. Eine Probe genügt, die Erfolgsstufen bestimmen die Tiefe des Fundes: wenige Erfolge finden das Offensichtliche, mehr Erfolge decken verdeckte Systeme auf, und genug Erfolge legen sogar Backdoors in einer Host-Architektur frei. Bewusst getrennt von Schleichen — Matrix-Navigation findet den Weg, Schleichen sorgt dafür, unentdeckt zu bleiben. Beide Fertigkeiten bleiben nötig, keine ersetzt die andere.',
 }
 
 
@@ -207,6 +214,11 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Schleichen", "NeuroWeaving", 6, 2),
     ("Daten Verarbeiten", "NeuroWeaving", 6, 3),
     ("Kompilieren", "NeuroWeaving", 6, 4),
+    # 22.09.2026, Erweiterung auf 6 Skills (CLAUDE.md Punkt 9): Electronic
+    # Warfare ("Rauschen") deckt die bisher fehlende defensive Seite ab,
+    # Matrix-Navigation das Aufspüren/Backdoors-Finden.
+    ("Electronic Warfare", "NeuroWeaving", 6, 5),
+    ("Matrix-Navigation", "NeuroWeaving", 6, 6),
     # Sphären — bleiben bei 5: feste Stufenbedeutung (1 wahrnehmbar … 5
     # "alles"), eine 6. Stufe wäre inhaltlich unbelegt (Mark, 20.09.2026).
     ("Korrespondenz", "Sphäre", 5, 1),

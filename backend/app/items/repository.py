@@ -16,6 +16,7 @@ RETURN_FIELDS = """
     g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
     g.deckBruteForce AS deckBruteForce, g.deckSchleichen AS deckSchleichen,
     g.deckDaten AS deckDaten, g.deckKompilieren AS deckKompilieren,
+    g.deckElectronicWarfare AS deckElectronicWarfare, g.deckMatrixNavigation AS deckMatrixNavigation,
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
@@ -109,8 +110,16 @@ def _decode(record: dict) -> dict:
     # Gesundheit = Stufe, Widerstand = Schadensreduktion, Angriff = Treffen und
     # Schaden, Agilitaet = Geschwindigkeit.
     # Cyberdeck-Werte B/S/D/K (Regelblatt Zeile 157/158): Bonuswürfel für die
-    # jeweilige Matrix-Aktion.
-    for feld in ("deckBruteForce", "deckSchleichen", "deckDaten", "deckKompilieren"):
+    # jeweilige Matrix-Aktion. EW/N (22.09.2026, Erweiterung auf 6 Skills)
+    # ergänzt Electronic Warfare und Matrix-Navigation, siehe CLAUDE.md Punkt 9.
+    for feld in (
+        "deckBruteForce",
+        "deckSchleichen",
+        "deckDaten",
+        "deckKompilieren",
+        "deckElectronicWarfare",
+        "deckMatrixNavigation",
+    ):
         record[feld] = _or_default(record.get(feld), 0)
     # Manches lässt sich nicht am Körper tragen, ohne dass es jeder sieht —
     # ein Sturmgewehr fällt auf, ein Messer im Stiefel nicht. Reine Anzeige;
@@ -188,6 +197,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             fahrzeugFertigkeiten: $fahrzeugFertigkeiten,
             deckBruteForce: $deckBruteForce, deckSchleichen: $deckSchleichen,
             deckDaten: $deckDaten, deckKompilieren: $deckKompilieren,
+            deckElectronicWarfare: $deckElectronicWarfare, deckMatrixNavigation: $deckMatrixNavigation,
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
@@ -244,6 +254,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deckSchleichen=data.get("deckSchleichen") or 0,
             deckDaten=data.get("deckDaten") or 0,
             deckKompilieren=data.get("deckKompilieren") or 0,
+            deckElectronicWarfare=data.get("deckElectronicWarfare") or 0,
+            deckMatrixNavigation=data.get("deckMatrixNavigation") or 0,
             immerSichtbar=bool(data.get("immerSichtbar")),
             riggerBonus=data.get("riggerBonus") or 0,
             maxDrohnen=data.get("maxDrohnen") or 0,
@@ -755,11 +767,14 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
 
 # Welche Eigenschaft am Deck zu welcher Matrix-Aktion gehört (Zeile 157:
 # "Brute Force = B, Schleichen = S, Daten Verarbeiten = D, Kompilieren = K").
+# 22.09.2026: EW/N ergänzt (Erweiterung auf 6 Skills, CLAUDE.md Punkt 9).
 DECK_WERTE = {
     "Brute Force": "deckBruteForce",
     "Schleichen": "deckSchleichen",
     "Daten Verarbeiten": "deckDaten",
     "Kompilieren": "deckKompilieren",
+    "Electronic Warfare": "deckElectronicWarfare",
+    "Matrix-Navigation": "deckMatrixNavigation",
 }
 
 
@@ -780,7 +795,9 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
         RETURN max(coalesce(g.deckBruteForce, 0)) AS bruteForce,
                max(coalesce(g.deckSchleichen, 0)) AS schleichen,
                max(coalesce(g.deckDaten, 0)) AS daten,
-               max(coalesce(g.deckKompilieren, 0)) AS kompilieren
+               max(coalesce(g.deckKompilieren, 0)) AS kompilieren,
+               max(coalesce(g.deckElectronicWarfare, 0)) AS electronicWarfare,
+               max(coalesce(g.deckMatrixNavigation, 0)) AS matrixNavigation
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
@@ -792,6 +809,8 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
             "Schleichen": record["schleichen"] or 0,
             "Daten Verarbeiten": record["daten"] or 0,
             "Kompilieren": record["kompilieren"] or 0,
+            "Electronic Warfare": record["electronicWarfare"] or 0,
+            "Matrix-Navigation": record["matrixNavigation"] or 0,
         }
         # Nur zurückgeben, was tatsächlich etwas beiträgt — eine Liste aus
         # lauter Nullen sagt nichts und verstellt die Anzeige.

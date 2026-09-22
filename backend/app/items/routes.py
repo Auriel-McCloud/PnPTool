@@ -104,6 +104,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "deckSchleichen": body.deckSchleichen,
         "deckDaten": body.deckDaten,
         "deckKompilieren": body.deckKompilieren,
+        "deckElectronicWarfare": body.deckElectronicWarfare,
+        "deckMatrixNavigation": body.deckMatrixNavigation,
         "stufe": body.stufe,
         "widerstand": body.widerstand,
         "angriff": body.angriff,

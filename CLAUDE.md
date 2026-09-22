@@ -521,10 +521,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      wollte erst nur den Wiki-Editor, das war explizit Schritt 1.
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
 
-4. **Spotify + Yamaha RX-V4A** — Playlist pro Ort/Szene, MusicCast-Steuerung.
-   **Datengrundlage steht seit 18.09.2026**: die aktive Party
-   (`docs/api/party.md`) trägt ihren Aufenthaltsort — die Musiksteuerung
-   selbst (Playlist-Zuordnung, MusicCast-API-Anbindung) ist noch nicht gebaut.
+4. **Spotify** — ✅ Fertig (siehe `docs/api/spotify.md`). Playlist an Ort/Event,
+   Wiedergabe folgt automatisch der aktiven Party. Yamaha RX-V4A/MusicCast-
+   Anbindung ist NICHT mehr geplant — Mark steuert Zielgerät/Lautstärke direkt
+   per Spotify Connect, das reicht (22.09.2026).
 
 5. **Deploy** — Debian/nginx statt localhost
 
@@ -605,13 +605,48 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      ist. Ein Live-Test im Browser steht noch aus (Mark prüft selbst im
      laufenden Dev-Server).
 
-9. **Decker / Neuroweaver Skill-System** — Vorschlag für Erweiterung auf 6 Skills:
-   - Aktuell: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren (4 Skills)
-   - Vorgeschlagene Erweiterung:
-     - **5. Electronic Warfare** (Verteidigung / Stören / Gegenangriffe)
-     - **6. Matrix-Navigation** (Bewegung, Host-Architektur verstehen)
+9. **Decker / Neuroweaver Skill-System** — ✅ Erweiterung auf 6 Skills **gebaut** (22.09.2026):
+   - Alle 6: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren, Electronic Warfare, Matrix-Navigation
+   - **5. Electronic Warfare — „Rauschen"** (sinnbildlich Rauchgranate im Netz):
+     rein tarnender Effekt, senkt NICHT gegnerische Verteidigung/Cyberwall,
+     sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe, ein
+     Erfolgswert bestimmt **beides zugleich**: Radius UND Dauer (kein
+     getrenntes Würfeln). Dauer ist kontextabhängig, nicht fix — in einer
+     ahnungslosen Umgebung kann es eine ganze Szene halten, in einem
+     kritischen Moment oft nur Sekunden, **im Kampf ist es immer ein
+     einmaliger Soforteffekt**. Auffälliger als Schleichen — die Störung
+     selbst ist bemerkbar, auch wenn sie tarnt.
+   - **6. Matrix-Navigation** — Dinge im Netz aufspüren, auch Verstecktes.
+     Eine Probe, Erfolgsstufen bestimmen die Tiefe des Fundes (Standard-Weave-
+     Logik wie die anderen drei): wenige Erfolge finden Offensichtliches, mehr
+     Erfolge decken verdeckte Systeme auf, genug Erfolge finden **Backdoors**
+     in Host-Architekturen. Bewusst getrennt von Schleichen — Navigation
+     findet den Weg, Schleichen sorgt fürs Unentdecktbleiben, keine
+     Überschneidung, beide bleiben nötig.
    - Ziel: Ausgewogenes Schere-Stein-Papier-System (Angriff ↔ Verteidigung ↔ Stealth ↔ Navigation)
-   - Status: Nur als Vorschlag notiert, noch nicht entschieden
+   - **Wer bekommt die Erweiterung (22.09.2026 entschieden):** NeuroWeaver,
+     Decker UND KI — alle drei. Decker bekommen die neuen Deck-Werte
+     zusätzlich zu B/S/D/K (`items/repository.py::DECK_WERTE`,
+     `deckBruteForce`/`deckSchleichen`/`deckDaten`/`deckKompilieren` →
+     erweitert um `deckElectronicWarfare`/`deckMatrixNavigation`). KI nutzt
+     vermutlich dieselben Fertigkeiten wie ein NeuroWeaver (kein eigenes
+     Gerät nötig, hat ja schon die Matrix-Präsenz statt Körper-Attribute) —
+     beim Bauen gegenprüfen, ob das für KI-Charaktere so Sinn ergibt oder
+     eine eigene Lösung braucht.
+   - **Nachgelagert (Marks Wunsch, bewusst aufgeschoben):** Cyberdecks müssen
+     noch als echte Gegenstände (`Gegenstand`-Knoten mit `typ = 'Cyberdeck'`)
+     ins System eingepflegt werden — aktuell nur Referenztabelle im Wiki
+     (`docs/reference/...`, Modelle wie Aztechnology Tlaloc/Tachikoma
+     Prime/Hosaka Ghost), nicht als anlegbare/ausrüstbare Items in der
+     Kampagne. Macht Mark später, nicht Teil dieser Erweiterung.
+   - Status: **Gebaut und verifiziert** (`backend/app/traits/seed.py`
+     Katalogeinträge + Beschreibungen, Cyberdeck-Werte in `items/schemas.py`/
+     `repository.py`/`routes.py`). Wiki nachgezogen:
+     `docs/wiki/concepts/neuroweaving-decking.md`, `docs/regeln-neotopia.md`.
+     Backend-Tests grün (61 relevante Tests), `tsc -b` fehlerfrei (Frontend
+     braucht keine Änderung — Probe/Kampfkarte/LevelUp iterieren generisch
+     über Katalog/`deckBoni`), gegen echte Neo4j-DB verifiziert (alle 6
+     TraitDefs korrekt angelegt, Max 6, sortOrder 1-6).
 
    **Backend (2026-09-12):**
    - `:Regelsystem` Node-Typ mit CRUD-Endpunkten (`/api/regelsysteme`)

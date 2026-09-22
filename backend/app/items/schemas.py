@@ -70,10 +70,13 @@ class GegenstandCreate(BaseModel):
     agilitaet: int = 0
     fahrzeugFertigkeiten: dict[str, int] = {}
     # Cyberdeck: Bonuswürfel je Matrix-Aktion (B/S/D/K, Regelblatt Zeile 157).
+    # EW/N (22.09.2026, Erweiterung auf 6 Skills) siehe CLAUDE.md Punkt 9.
     deckBruteForce: int = 0
     deckSchleichen: int = 0
     deckDaten: int = 0
     deckKompilieren: int = 0
+    deckElectronicWarfare: int = 0
+    deckMatrixNavigation: int = 0
     # Fällt am Körper auf. Ein Sturmgewehr kann man nicht unauffällig tragen,
     # ein Datenchip schon. Reine Anzeige — Folgen entscheidet die Spielleitung.
     immerSichtbar: bool = False
@@ -187,6 +190,8 @@ class GegenstandUpdate(BaseModel):
     deckSchleichen: int | None = None
     deckDaten: int | None = None
     deckKompilieren: int | None = None
+    deckElectronicWarfare: int | None = None
+    deckMatrixNavigation: int | None = None
     immerSichtbar: bool | None = None
     riggerBonus: int | None = None
     maxDrohnen: int | None = None
@@ -250,6 +255,8 @@ class GegenstandResponse(BaseModel):
     deckSchleichen: int = 0
     deckDaten: int = 0
     deckKompilieren: int = 0
+    deckElectronicWarfare: int = 0
+    deckMatrixNavigation: int = 0
     # Fällt am Körper auf. Ein Sturmgewehr kann man nicht unauffällig tragen,
     # ein Datenchip schon. Reine Anzeige — Folgen entscheidet die Spielleitung.
     immerSichtbar: bool = False
