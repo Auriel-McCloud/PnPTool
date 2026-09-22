@@ -22,6 +22,11 @@ Willenskrafteinsatz und dessen Folgen, **aber**:
   Matrix-Navigation.
 - Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er
   keine Punkte hat.
+- **Das Gegenstück zu Wilder Magie heißt hier „Overclock"** (Mark,
+  22.09.2026) — dieselbe Mechanik (Bonuswürfel bis zur Willenskraft, Zielwert
+  vorher ansagen, Rückstoß bei Erfolg), aber „Wilde Magie" als Bezeichnung war
+  reiner Copy-Paste-Rest und passte inhaltlich nicht: das Nervensystem wird
+  übers sichere Limit gepusht, nicht unkontrolliert Magie wirkt.
 - **Der NeuroWeaving-Grundwert selbst geht nur bis 6, nicht bis 10 wie
   Hexkraft** (Mark, 22.09.2026). Grund: Hexkraft wird bei einem kontrollierten
   Zauber allein gewürfelt und geht deshalb bis 10 — NeuroWeaving wird aber
@@ -93,6 +98,22 @@ vom Excel ab.
   (`LevelUp.tsx`) — beide zeigten nur die sechs Fertigkeiten darunter, nie
   den Wert selbst. Der Fertigkeiten-Schritt hatte es schon richtig, daher
   fiel es dort nicht auf. Ergänzt in beiden Dateien.
+- **22.09.2026 — NeuroWeaving-Grundwert fehlte auch im Charakterblatt
+  selbst.** Derselbe Fehler wie oben, dritte Stelle: `Charakterblatt.tsx`
+  zeigte `reihe("NeuroWeaving")` (die sechs Fertigkeiten), aber nie
+  `reihe("NeuroWeavingWert")` (den Grundwert). Ergänzt.
+- **22.09.2026 — Probenauswahl beim NeuroWeaving verlangte einen Pflichtklick
+  ohne echte Wahl.** Klickt man auf eine der sechs Fertigkeiten, gibt es nur
+  einen möglichen Partner (den NeuroWeaving-Grundwert — anders als bei
+  normalen Attributen mit drei Spalten zur Auswahl). `Probe.tsx` wird jetzt
+  automatisch vorbelegt, wenn genau ein Kandidat existiert (Mark: „ich habe
+  ja garkeine Wahl"). Der umgekehrte Fall — Klick auf den Grundwert, sechs
+  mögliche Fertigkeiten — bleibt bewusst eine echte Auswahl.
+- **22.09.2026 — „Wilde Magie" bei NeuroWeaving in „Overclock" umbenannt.**
+  War ein Copy-Paste-Rest aus der Hexkraft-Seite und passte inhaltlich nicht.
+  Gleiche Mechanik, neuer Name: `magie.ts::MAGIE_HINWEISE.overclock` /
+  `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
+  Namen jetzt abhängig vom Weg.
 
 ## Siehe auch
 

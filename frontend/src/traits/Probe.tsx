@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
@@ -77,6 +77,23 @@ export function Probe({
   const [wild, setWild] = useState(0);
   // Genau eine Deck-Aktion — man tut ja eines nach dem anderen.
   const [deck, setDeck] = useState<{ name: string; wert: number } | null>(null);
+
+  // Beim NeuroWeaving gibt es genau EINEN Grundwert (Kategorie
+  // "NeuroWeavingWert") — klickt man auf eine der sechs Fertigkeiten, bleibt
+  // als Partner keine echte Wahl übrig, nur ein Pflichtklick auf den
+  // einzigen Kandidaten. Den übernehmen wir automatisch (Mark, 22.09.2026:
+  // "ich habe ja garkeine Wahl"). Der umgekehrte Fall — Klick auf den
+  // Grundwert selbst, sechs mögliche Fertigkeiten — bleibt bewusst offen.
+  useEffect(() => {
+    if (!wahl) return;
+    const partner = NEURO_PARTNER[wahl.kategorie];
+    if (!partner) return;
+    const kandidaten = katalog.filter((t) => t.category === partner);
+    if (kandidaten.length === 1) {
+      const [t] = kandidaten;
+      setAttribut({ name: t.name, wert: werte.get(t.id) ?? 0 });
+    }
+  }, [wahl, katalog, werte]);
 
   if (!wahl) return null;
 
@@ -183,8 +200,10 @@ export function Probe({
 
           {willenskraft > 0 ? (
             <section className="pr-wild">
-              <h3>Wilde Magie</h3>
-              <p className="pr-regel">{MAGIE_HINWEISE.hexkraftWild}</p>
+              <h3>{wahl.kategorie === "Hexkraft" ? "Wilde Magie" : "Overclock"}</h3>
+              <p className="pr-regel">
+                {wahl.kategorie === "Hexkraft" ? MAGIE_HINWEISE.hexkraftWild : MAGIE_HINWEISE.overclock}
+              </p>
               <div className="pr-wild-reihe">
                 <button type="button" onClick={() => setWild((w) => Math.max(0, w - 1))} disabled={wild === 0}>
                   −
@@ -200,10 +219,16 @@ export function Probe({
                   +
                 </button>
               </div>
-              {wild > 0 && <p className="pr-warnung">{MAGIE_HINWEISE.hexkraftRueckstoss}</p>}
+              {wild > 0 && (
+                <p className="pr-warnung">
+                  {wahl.kategorie === "Hexkraft" ? MAGIE_HINWEISE.hexkraftRueckstoss : MAGIE_HINWEISE.overclockRueckstoss}
+                </p>
+              )}
             </section>
           ) : (
-            <p className="pr-regel">Ohne Willenskraft keine wilde Magie.</p>
+            <p className="pr-regel">
+              {wahl.kategorie === "Hexkraft" ? "Ohne Willenskraft keine wilde Magie." : "Ohne Willenskraft kein Overclock."}
+            </p>
           )}
         </Fenster>
       </>

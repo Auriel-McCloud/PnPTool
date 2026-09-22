@@ -48,7 +48,10 @@ export const SPHAEREN: Record<string, string> = {
  * **NeuroWeaving** (Zeilen 45/95/96): dieselben Willenskraft-Regeln wie
  * Hexkraft, aber die Punkte gelten als **Bonuswürfel für die jeweilige Aktion**,
  * nicht als Begrenzung. Ein Neuroweaver darf auch Fertigkeiten einsetzen, in
- * denen er keine Punkte hat.
+ * denen er keine Punkte hat. Das Gegenstück zu Wilder Magie heißt hier
+ * **Overclock** (Mark, 22.09.2026 — "Wilde Magie" für NeuroWeaving war reiner
+ * Copy-Paste-Rest, passte inhaltlich nicht): das Nervensystem übers sichere
+ * Limit hinaus pushen, statt unkontrolliert Magie zu wirken.
  */
 export const MAGIE_HINWEISE = {
   hexkraftKontrolliert:
@@ -66,6 +69,13 @@ export const MAGIE_HINWEISE = {
   neuroWeaving:
     "NeuroWeaving-Punkte sind Bonuswürfel für die jeweilige Aktion, keine Begrenzung. Du darfst auch " +
     "Fertigkeiten einsetzen, in denen du keine Punkte hast.",
+  overclock:
+    "Overclock: Bonuswürfel bis zur Höhe deiner Willenskraft — du treibst dein Nervensystem übers " +
+    "sichere Limit. Sag vorher einen Zielwert an — wird er unterschritten, ist die Probe gescheitert.",
+  overclockRueckstoss:
+    "Nach einem erfolgreichen Overclock: Willenskraftwurf gegen die Zahl der Erfolge. Was die " +
+    "Willenskraft nicht abdeckt, bekommst du als Schlagschaden. Erfolge genau auf dem Zielwert " +
+    "kosten nichts.",
 };
 
 /**

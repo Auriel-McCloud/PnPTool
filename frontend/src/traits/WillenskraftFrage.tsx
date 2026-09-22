@@ -37,7 +37,7 @@ export function WillenskraftFrage({
   onNein: () => void;
 }) {
   const wofuerSonst =
-    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "NEUROWEAVER" ? " — auch fürs NeuroWeaving." : ".";
+    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "NEUROWEAVER" ? " — auch für Overclock." : ".";
   return (
     <Fenster
       offen={offen}
