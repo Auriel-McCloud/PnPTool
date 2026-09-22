@@ -2,13 +2,26 @@
 Fraktionen im Wiki-Text und verknüpft sie automatisch als echte Graphkanten
 (CLAUDE.md Punkt 3, präzisiert 20.09.2026).
 
-Zwei Schritte, getrennt wie bei der Rechtschreib-/Logikprüfung
+Zwei Ebenen, in EINEM KI-Aufruf ermittelt (Mark ist kostenbewusst beim
+LLM-Verbrauch — zwei Requests für denselben Text wären unnötig teuer):
+
+- **Verweise** — jede erkannte Erwähnung bekommt einen echten
+  ``entitaetsverweis``-Chip an der zitierten Textstelle (die klassische
+  "Erwähnt in"-Verknüpfung zur Wiki-Seite).
+- **Beziehungen** (22.09.2026, Marks Wunsch) — wo der Text eine KONKRETE
+  Beziehung zwischen zwei erkannten Entitäten nahelegt (nicht nur zufällige
+  Nähe im selben Absatz), schlägt die KI Typ + Kurzbeschreibung vor. Das
+  ist eine echte ``VERBINDUNG``-Kante zwischen den beiden Entitäten selbst
+  (der Beziehungsgraph, sonst über den "Beziehungen"-Tab gepflegt) — etwas
+  ANDERES als der Verweis zur Wiki-Seite.
+
+Drei Schritte, getrennt wie bei der Rechtschreib-/Logikprüfung
 (``wiki_pruefung.py``):
 
-- ``vorschlaege`` — liest eine Seite, lässt die KI Erwähnungen erkennen und
-  gleicht sie in Python (NICHT durch die KI) gegen die freigegebenen
-  Entitäten ab. Nichts wird gespeichert.
-- ``anwenden`` — fügt für EINEN bestätigten Vorschlag einen echten
+- ``vorschlaege`` — liest eine Seite, lässt die KI Erwähnungen UND
+  Beziehungen erkennen, gleicht Namen in Python (NICHT durch die KI) gegen
+  die freigegebenen Entitäten ab. Nichts wird gespeichert.
+- ``anwenden`` — fügt für EINEN bestätigten Verweis-Vorschlag einen echten
   ``entitaetsverweis``-Chip an der zitierten Textstelle ein. Existiert die
   erkannte Entität noch nicht, wird zuerst ein Entwurf in der Ideenschmiede
   angelegt (istEntwurf=true, SL-geheim) und der Chip zeigt auf diesen neuen
@@ -16,6 +29,13 @@ Zwei Schritte, getrennt wie bei der Rechtschreib-/Logikprüfung
   ``wiki/repository.py::_verweise_schreiben`` aus — die echte
   VERWEIST_AUF-Kante entsteht also über denselben Weg wie ein von Hand über
   den „⧉ Verknüpfen"-Knopf eingefügter Verweis.
+- ``beziehung_anwenden`` — legt für EINEN bestätigten Beziehungs-Vorschlag
+  eine echte ``VERBINDUNG``-Kante zwischen den zwei Entitäten an (dieselbe
+  Route wie der "+ Neue Verbindung"-Knopf im Beziehungen-Tab). Fehlende
+  Entitäten werden dabei ebenfalls als Entwurf angelegt — mit Dedup-Check
+  (``_finde_oder_lege_an``), damit dieselbe neue Person nicht zweimal
+  entsteht, wenn sie sowohl in einem Verweis- als auch in einem
+  Beziehungs-Vorschlag auftaucht.
 
 Bewusst PRO VORSCHLAG einzeln anzuwenden statt eines Sammel-Übernehmens:
 neue Entitäten landen als Entwurf zur Prüfung durch den SL, kein
@@ -26,12 +46,14 @@ import json
 
 from pydantic import BaseModel
 
+from app.db.neo4j_driver import get_driver
 from app.entities.repository import (
     EVENT_FIELDS,
     FRAKTION_FIELDS,
     ORT_FIELDS,
     PERSON_FIELDS,
     create_node,
+    create_verbindung,
 )
 from app.entities.schemas import EventCreate, FraktionCreate, OrtCreate, PersonCreate
 from app.ki.client import generiere_json
@@ -45,19 +67,33 @@ _SYSTEM = (
     "Du hilfst, einen Wiki-Text eines deutschen Cyberpunk-Pen-and-Paper-"
     "Rollenspiels (NeotopiA) mit den Personen/Orten/Events/Fraktionen der "
     "Kampagne zu verknüpfen. Du bekommst eine Liste aller bereits bekannten "
-    "Entitäten und den zu durchsuchenden Text. Finde jede Textstelle, die "
-    "eine konkrete, benannte Person, einen konkreten Ort, ein konkretes "
-    "Ereignis oder eine konkrete Fraktion/Organisation erwähnt — auch wenn "
-    "sie NICHT in der bekannten Liste steht (dann ist es eine neue "
-    "Erwähnung). Ignoriere allgemeine Begriffe ohne Eigennamen (\"ein "
-    "Straßenhändler\", \"die Stadt\") — nur konkret benannte Dinge zählen. "
-    "Für jeden Treffer: 'zitat' ist die exakte, zusammenhängende Textstelle "
-    "wie sie WÖRTLICH im Text steht (kurz — nur der Name, nicht der ganze "
-    "Satz), 'typ' ist Person/Ort/Event/Fraktion, 'name' ist die kanonische "
-    "Namensform — steht die Entität in der bekannten Liste, MUSS 'name' "
-    "exakt (Zeichen für Zeichen) dem Listennamen entsprechen, sonst deine "
-    "beste Einschätzung des vollen Namens. Erwähne jede Entität nur EINMAL, "
-    "auch wenn sie mehrfach im Text vorkommt (nimm die erste Fundstelle)."
+    "Entitäten und den zu durchsuchenden Text. Zwei Aufgaben:\n\n"
+    "1) VERWEISE: Finde jede Textstelle, die eine konkrete, benannte "
+    "Person, einen konkreten Ort, ein konkretes Ereignis oder eine "
+    "konkrete Fraktion/Organisation erwähnt — auch wenn sie NICHT in der "
+    "bekannten Liste steht (dann ist es eine neue Erwähnung). Ignoriere "
+    "allgemeine Begriffe ohne Eigennamen (\"ein Straßenhändler\", \"die "
+    "Stadt\") — nur konkret benannte Dinge zählen. Für jeden Treffer: "
+    "'zitat' ist die exakte, zusammenhängende Textstelle wie sie WÖRTLICH "
+    "im Text steht (kurz — nur der Name, nicht der ganze Satz), 'typ' ist "
+    "Person/Ort/Event/Fraktion, 'name' ist die kanonische Namensform — "
+    "steht die Entität in der bekannten Liste, MUSS 'name' exakt (Zeichen "
+    "für Zeichen) dem Listennamen entsprechen, sonst deine beste "
+    "Einschätzung des vollen Namens. Erwähne jede Entität nur EINMAL, auch "
+    "wenn sie mehrfach im Text vorkommt (nimm die erste Fundstelle).\n\n"
+    "2) BEZIEHUNGEN: Wo der Text eine KONKRETE Beziehung zwischen zwei "
+    "erwähnten Entitäten ausdrückt (z.B. \"arbeitet für\", \"ist "
+    "verfeindet mit\", \"wohnt in\", \"Mitglied von\", \"hat Schulden "
+    "bei\", \"war dabei bei\"), melde sie separat. NUR bei einer wirklich "
+    "im Text ausgedrückten Beziehung — NIEMALS nur, weil zwei Namen im "
+    "selben Satz oder Absatz stehen, ohne dass eine Beziehung zwischen "
+    "ihnen beschrieben wird. name1/typ1 und name2/typ2 identifizieren die "
+    "beiden Seiten (dieselben Namens-/Typregeln wie bei VERWEISE oben — "
+    "wenn eine der beiden Seiten in der bekannten Liste steht, exakt deren "
+    "Namen verwenden). 'beziehungstyp' ist eine kurze Bezeichnung der "
+    "Beziehung aus Sicht von Seite 1 (z.B. \"Arbeitet für\", \"Feind\", "
+    "\"Mitglied von\", \"Schulden bei\"), 'beschreibung' ist ein kurzer "
+    "erklärender Satz, falls hilfreich (sonst leer)."
 )
 
 _SCHEMA = {
@@ -75,8 +111,23 @@ _SCHEMA = {
                 "required": ["zitat", "typ", "name"],
             },
         },
+        "beziehungen": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "typ1": {"type": "STRING", "enum": list(_TYPEN)},
+                    "name1": {"type": "STRING"},
+                    "typ2": {"type": "STRING", "enum": list(_TYPEN)},
+                    "name2": {"type": "STRING"},
+                    "beziehungstyp": {"type": "STRING"},
+                    "beschreibung": {"type": "STRING"},
+                },
+                "required": ["typ1", "name1", "typ2", "name2", "beziehungstyp"],
+            },
+        },
     },
-    "required": ["vorschlaege"],
+    "required": ["vorschlaege", "beziehungen"],
 }
 
 
@@ -90,12 +141,29 @@ class VerknuepfungsVorschlag(BaseModel):
     zielId: str | None = None
 
 
+class BeziehungsVorschlag(BaseModel):
+    typ1: str
+    name1: str
+    zielId1: str | None = None
+    typ2: str
+    name2: str
+    zielId2: str | None = None
+    beziehungstyp: str
+    beschreibung: str = ""
+
+
+class VorschlaegeAntwort(BaseModel):
+    verweise: list[VerknuepfungsVorschlag] = []
+    beziehungen: list[BeziehungsVorschlag] = []
+
+
 def _normalisiert(text: str) -> str:
     return " ".join(text.strip().casefold().split())
 
 
-async def vorschlaege(campaign_id: str, seiten_id: str) -> list[VerknuepfungsVorschlag]:
-    """Lässt die KI Erwähnungen erkennen, gleicht sie gegen den Graphen ab.
+async def vorschlaege(campaign_id: str, seiten_id: str) -> VorschlaegeAntwort:
+    """Lässt die KI Erwähnungen UND Beziehungen erkennen, gleicht Namen gegen
+    den Graphen ab.
 
     Der Namensabgleich (Vorschlag → bestehende ID) passiert bewusst hier in
     Python, nicht durch die KI: die KI kennt keine IDs, nur Namen — ein
@@ -104,10 +172,10 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> list[VerknuepfungsVor
     """
     seite = await repository.get_seite(campaign_id, seiten_id)
     if seite is None:
-        return []
+        return VorschlaegeAntwort()
     text = tiptap_zu_text(seite["inhalt"])
     if not text.strip():
-        return []
+        return VorschlaegeAntwort()
 
     entitaeten = await sammle_entitaeten(campaign_id)
     liste_text = "\n".join(f"- {e['kind']}: {e['name']}" for e in entitaeten if e["name"]) or "(noch keine)"
@@ -121,7 +189,7 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> list[VerknuepfungsVor
     # Schneller Nachschlage-Index: (typ, normalisierter Name) -> id.
     index = {(e["kind"], _normalisiert(e["name"])): e["id"] for e in entitaeten if e["name"]}
 
-    gefunden: list[VerknuepfungsVorschlag] = []
+    verweise: list[VerknuepfungsVorschlag] = []
     gesehen: set[str] = set()
     for eintrag in ergebnis.get("vorschlaege") or []:
         zitat = (eintrag.get("zitat") or "").strip()
@@ -135,9 +203,39 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> list[VerknuepfungsVor
             continue
         gesehen.add(zitat)
         ziel_id = index.get((typ, _normalisiert(name)))
-        gefunden.append(VerknuepfungsVorschlag(zitat=zitat, typ=typ, name=name, zielId=ziel_id))
+        verweise.append(VerknuepfungsVorschlag(zitat=zitat, typ=typ, name=name, zielId=ziel_id))
 
-    return gefunden
+    beziehungen: list[BeziehungsVorschlag] = []
+    gesehen_beziehungen: set[tuple] = set()
+    for eintrag in ergebnis.get("beziehungen") or []:
+        typ1 = eintrag.get("typ1") or ""
+        name1 = (eintrag.get("name1") or "").strip()
+        typ2 = eintrag.get("typ2") or ""
+        name2 = (eintrag.get("name2") or "").strip()
+        beziehungstyp = (eintrag.get("beziehungstyp") or "").strip()
+        if typ1 not in _TYPEN or typ2 not in _TYPEN or not name1 or not name2 or not beziehungstyp:
+            continue
+        # Dieselbe Entität mit sich selbst ergäbe eine sinnlose Kante.
+        if typ1 == typ2 and _normalisiert(name1) == _normalisiert(name2):
+            continue
+        schluessel = (typ1, _normalisiert(name1), typ2, _normalisiert(name2), beziehungstyp)
+        if schluessel in gesehen_beziehungen:
+            continue
+        gesehen_beziehungen.add(schluessel)
+        beziehungen.append(
+            BeziehungsVorschlag(
+                typ1=typ1,
+                name1=name1,
+                zielId1=index.get((typ1, _normalisiert(name1))),
+                typ2=typ2,
+                name2=name2,
+                zielId2=index.get((typ2, _normalisiert(name2))),
+                beziehungstyp=beziehungstyp,
+                beschreibung=(eintrag.get("beschreibung") or "").strip(),
+            )
+        )
+
+    return VorschlaegeAntwort(verweise=verweise, beziehungen=beziehungen)
 
 
 def _verweis_einfuegen(knoten, zitat: str, attrs: dict) -> bool:
@@ -221,6 +319,48 @@ async def _entwurf_anlegen(campaign_id: str, typ: str, name: str) -> str:
     return node["id"]
 
 
+async def _bestehende_id(campaign_id: str, typ: str, name: str) -> str | None:
+    """Sucht eine Entität dieses Typs mit exakt (normalisiert) diesem Namen.
+
+    Grundlage für den Dedup-Schutz in ``beziehung_anwenden``: taucht dieselbe
+    neue Person sowohl in einem Verweis- als auch in einem Beziehungs-
+    Vorschlag auf und wurde der Verweis zuerst angewandt, soll die Beziehung
+    NICHT eine zweite, doppelte Person anlegen, sondern die frisch entstandene
+    wiederfinden. `sammle_entitaeten` liefert nur FREIGEGEBENE Entitäten
+    (``istEntwurf=false``) — Entwürfe müssen hier also separat gesucht werden.
+    """
+    driver = get_driver()
+    namensfeld = "title" if typ == "Event" else "name"
+    query = f"""
+        MATCH (n:{typ} {{campaignId: $campaign_id}})
+        WHERE toLower(n.{namensfeld}) = toLower($name)
+        RETURN n.id AS id
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, name=name)
+        record = await result.single()
+        return record["id"] if record else None
+
+
+async def _finde_oder_lege_an(campaign_id: str, typ: str, name: str, ziel_id: str | None) -> tuple[str, bool]:
+    """Löst eine (typ, name, ziel_id)-Angabe zu einer echten ID auf.
+
+    Gibt (id, neu_angelegt) zurück. `ziel_id` kommt vom Frontend-Vorschlag
+    (mit den freigegebenen Entitäten zur Zeit der Erkennung abgeglichen) —
+    zwischenzeitlich kann aber genau diese Entität schon als Entwurf über
+    einen anderen Vorschlag entstanden sein (z.B. zuerst der Verweis, dann
+    die Beziehung, die dieselbe Person nennt). Deshalb bei fehlender
+    `ziel_id` zuerst nachschauen, bevor ein Duplikat entsteht.
+    """
+    if ziel_id:
+        return ziel_id, False
+    bestehend = await _bestehende_id(campaign_id, typ, name)
+    if bestehend:
+        return bestehend, False
+    return await _entwurf_anlegen(campaign_id, typ, name), True
+
+
 class AnwendenErgebnis(BaseModel):
     ersetzt: bool
     inhalt: str = ""
@@ -245,10 +385,7 @@ async def anwenden(
     if seite is None:
         return None
 
-    neu_angelegt = False
-    if not ziel_id:
-        ziel_id = await _entwurf_anlegen(campaign_id, typ, name)
-        neu_angelegt = True
+    ziel_id, neu_angelegt = await _finde_oder_lege_an(campaign_id, typ, name, ziel_id)
 
     try:
         dokument = json.loads(seite["inhalt"])
@@ -266,4 +403,60 @@ async def anwenden(
         inhalt=aktualisiert["inhalt"] if aktualisiert else neuer_inhalt,
         zielId=ziel_id,
         neuAngelegt=neu_angelegt,
+    )
+
+
+class BeziehungAnwendenInput(BaseModel):
+    typ1: str
+    name1: str
+    zielId1: str | None = None
+    typ2: str
+    name2: str
+    zielId2: str | None = None
+    beziehungstyp: str
+    beschreibung: str = ""
+
+
+class BeziehungAnwendenErgebnis(BaseModel):
+    verbindungId: str
+    zielId1: str
+    zielId2: str
+    neuAngelegt1: bool
+    neuAngelegt2: bool
+
+
+async def beziehung_anwenden(campaign_id: str, eingabe: BeziehungAnwendenInput) -> BeziehungAnwendenErgebnis:
+    """Legt eine echte VERBINDUNG-Kante zwischen zwei (ggf. neuen) Entitäten an.
+
+    Fehlt eine der beiden Seiten noch, wird sie zuerst als SL-geheimer
+    Entwurf angelegt (dieselbe Vorgabe wie bei den Verweisen: kein
+    Autocommit in die Kampagne) — mit Dedup-Schutz über
+    ``_finde_oder_lege_an``, falls dieselbe Entität bereits über einen
+    anderen Vorschlag (Verweis oder frühere Beziehung) entstanden ist.
+    """
+    ziel_id1, neu1 = await _finde_oder_lege_an(campaign_id, eingabe.typ1, eingabe.name1, eingabe.zielId1)
+    ziel_id2, neu2 = await _finde_oder_lege_an(campaign_id, eingabe.typ2, eingabe.name2, eingabe.zielId2)
+
+    verbindung = await create_verbindung(
+        campaign_id,
+        {
+            "vonKind": eingabe.typ1,
+            "vonId": ziel_id1,
+            "zuKind": eingabe.typ2,
+            "zuId": ziel_id2,
+            "typ": eingabe.beziehungstyp,
+            "beschreibung": eingabe.beschreibung,
+            "seit": "",
+            "bis": "",
+            "sichtbarkeit": "GM",
+            "sichtbarFuer": [],
+        },
+    )
+
+    return BeziehungAnwendenErgebnis(
+        verbindungId=verbindung["id"],
+        zielId1=ziel_id1,
+        zielId2=ziel_id2,
+        neuAngelegt1=neu1,
+        neuAngelegt2=neu2,
     )

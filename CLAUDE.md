@@ -106,33 +106,46 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
-**Zuletzt gebaut (22.09.2026, Auto-Verknüpfung):**
+**Zuletzt gebaut (22.09.2026, Auto-Verknüpfung + Beziehungen):**
 - **KI-Auto-Verknüpfung** (Punkt 3 unter "Geplante Features", letzter
   offener Baustein der KI-Integration) — „⧉✨ Auto-Verknüpfen"-Knopf im
   Wiki-Editor, neben „🔍 Prüfen". Zweistufig: „✨ Vorschläge holen" schickt
   den Seitentext + Namen aller freigegebenen Personen/Orte/Events/
   Fraktionen an die KI (neu: `app/ki/kontext.py::sammle_entitaeten`), die
-  erkannte Erwähnungen als Zitat+Typ+Name zurückgibt. Der Namensabgleich
-  gegen bestehende IDs passiert bewusst in Python (normalisierter
-  Stringvergleich), NIE durch die KI — sie kennt keine IDs, ein Tippfehler
-  darf nie eine falsche Verknüpfung erfinden. Jeder Treffer einzeln
-  bestätigt: bekannte Entität → „✓ Verknüpfen" fügt direkt einen
-  `entitaetsverweis`-Chip ein; unbekannte → „+ Entwurf anlegen &
-  verknüpfen" legt zuerst einen SL-geheimen Ideenschmiede-Entwurf an (kein
-  Autocommit in die Kampagne, Marks Vorgabe). Neues Modul
-  `backend/app/ki/auto_verknuepfung.py`, zwei neue Endpunkte unter
-  `/api/campaigns/{id}/ki/wiki/{seiten_id}/verknuepfung/*`, neue Datei
+  in EINEM Aufruf zwei Arten von Treffern liefert (Mark ist kostenbewusst —
+  zwei Requests für denselben Text wären unnötig teuer):
+  - **Verweise**: Zitat+Typ+Name → „✓ Verknüpfen" fügt direkt einen
+    `entitaetsverweis`-Chip ein (die "Erwähnt in"-Kante zur Wiki-Seite).
+  - **Beziehungen** (Marks Nachfrage, gleicher Tag: "erstellt das Tool bei
+    neuen Charakteren/Orten auch Verbindungen?") — wo der Text eine
+    KONKRETE Beziehung zwischen zwei erwähnten Entitäten ausdrückt (z.B.
+    "arbeitet für", NICHT nur zufällige Nähe im selben Absatz), schlägt die
+    KI Beziehungstyp+Kurzbeschreibung vor. „✓ Beziehung anlegen" erzeugt
+    eine echte `VERBINDUNG`-Kante zwischen den beiden Entitäten selbst —
+    dieselbe Route wie der „+ Neue Verbindung"-Knopf im Beziehungen-Tab.
+  Der Namensabgleich gegen bestehende IDs passiert bewusst in Python
+  (normalisierter Stringvergleich), NIE durch die KI — sie kennt keine
+  IDs, ein Tippfehler darf nie eine falsche Verknüpfung erfinden. Jeder
+  Treffer einzeln bestätigt; unbekannte Entitäten legen zuerst einen
+  SL-geheimen Ideenschmiede-Entwurf an (kein Autocommit in die Kampagne,
+  Marks Vorgabe). **Dedup-Schutz** (`_finde_oder_lege_an`): taucht dieselbe
+  neue Person in Verweis UND Beziehung auf, entsteht sie nur EINMAL — die
+  zweite Anwendung findet die zuerst angelegte wieder statt sie zu
+  duplizieren. Neues Modul `backend/app/ki/auto_verknuepfung.py`, drei
+  Endpunkte unter `/api/campaigns/{id}/ki/wiki/{seiten_id}/verknuepfung/*`
+  (`vorschlaege`, `anwenden`, `beziehung`), neue Datei
   `frontend/src/ki/AutoVerknuepfungPopup.tsx`.
   **Nebenbei-Fix:** `ERLAUBTE_ZIELTYPEN` in `wiki/repository.py` kannte
   „Fraktion" bisher gar nicht — ein Fraktions-Chip im Wiki-Text (auch von
   Hand über „⧉ Verknüpfen" eingefügt) blieb sichtbar, erzeugte aber nie
   eine echte `VERWEIST_AUF`-Kante. Jetzt ergänzt.
-  Backend end-to-end verifiziert: Server startet fehlerfrei, beide Routen
-  im OpenAPI-Schema, Chip-Einfügelogik isoliert getestet (Text wird korrekt
-  gesplittet, 🔒 SL-geheim-Marks bleiben auf beiden Textteilen erhalten);
-  `tsc --noEmit` fehlerfrei. Bewusst nur Einzelseiten-Knopf (kein Sweep über
-  alle Seiten, wie bei der Rechtschreibprüfung) — Mark will das erst bei
-  Bedarf. Ideenschmiede-Texte (nicht nur Story-Wiki) sind noch offen.
+  Backend end-to-end verifiziert: Server startet fehlerfrei, alle drei
+  Routen im OpenAPI-Schema, Chip-Einfügelogik isoliert getestet (Text wird
+  korrekt gesplittet, 🔒 SL-geheim-Marks bleiben auf beiden Textteilen
+  erhalten); `tsc --noEmit` fehlerfrei. Bewusst nur Einzelseiten-Knopf (kein
+  Sweep über alle Seiten, wie bei der Rechtschreibprüfung) — Mark will das
+  erst bei Bedarf. Ideenschmiede-Texte (nicht nur Story-Wiki) sind noch
+  offen.
 
 **Zuletzt gebaut (22.09.2026, Shop-System Kern-Baustein):**
 - **Shop-System, Kern-Baustein** (Punkt 1 unter "Geplante Features",

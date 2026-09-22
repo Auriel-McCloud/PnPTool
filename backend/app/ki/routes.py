@@ -33,8 +33,12 @@ from app.ki.wiki_pruefung import (
 )
 from app.ki.auto_verknuepfung import (
     AnwendenErgebnis,
+    BeziehungAnwendenErgebnis,
+    BeziehungAnwendenInput,
     VerknuepfungsVorschlag,
+    VorschlaegeAntwort,
     anwenden as verknuepfung_anwenden,
+    beziehung_anwenden as verknuepfung_beziehung_anwenden,
     vorschlaege as verknuepfung_vorschlaege,
 )
 from app.traits.repository import list_catalog, set_rating
@@ -403,16 +407,15 @@ class AnwendenVerknuepfungInput(BaseModel):
     zielId: str | None = None
 
 
-@router.post("/wiki/{seiten_id}/verknuepfung/vorschlaege", response_model=list[VerknuepfungsVorschlag])
+@router.post("/wiki/{seiten_id}/verknuepfung/vorschlaege", response_model=VorschlaegeAntwort)
 async def wiki_verknuepfung_vorschlaege(campaign_id: str, seiten_id: str):
-    """Auto-Verknüpfung, Schritt 1: erkennt Erwähnungen, schlägt nichts vor,
+    """Auto-Verknüpfung, Schritt 1: erkennt Erwähnungen UND Beziehungen in
 
-    was schon einen Verweis-Chip an genau dieser Stelle hat — das prüft das
-    Frontend beim Filtern nicht extra, aber ein bereits verlinktes Zitat
-    kommt aus `tiptap_zu_text` ohnehin nur als reiner Anzeigetext zurück,
-    ein erneuter Vorschlag dafür stört also nicht, wird aber beim Anwenden
-    einfach einen zweiten Chip einfügen — deshalb sinnvollerweise nur auf
-    frisch geschriebenen/geänderten Text anwenden.
+    einem einzigen KI-Aufruf (Mark ist kostenbewusst — zwei Requests für
+    denselben Text wären unnötig teuer). Verweise sind die klassische
+    "Erwähnt in"-Verknüpfung zur Wiki-Seite, Beziehungen sind echte
+    VERBINDUNG-Kanten zwischen den erwähnten Entitäten selbst (der
+    Beziehungsgraph, sonst über den "Beziehungen"-Tab gepflegt).
     """
     try:
         return await verknuepfung_vorschlaege(campaign_id, seiten_id)
@@ -435,3 +438,19 @@ async def wiki_verknuepfung_anwenden(campaign_id: str, seiten_id: str, body: Anw
     if ergebnis is None:
         raise HTTPException(status_code=404, detail="Seite nicht gefunden")
     return ergebnis
+
+
+@router.post(
+    "/wiki/{seiten_id}/verknuepfung/beziehung",
+    response_model=BeziehungAnwendenErgebnis,
+)
+async def wiki_verknuepfung_beziehung(campaign_id: str, seiten_id: str, body: BeziehungAnwendenInput):
+    """Auto-Verknüpfung, Schritt 2b: wendet EINEN bestätigten Beziehungs-
+
+    Vorschlag an — legt eine echte VERBINDUNG-Kante zwischen den zwei
+    Entitäten an (dieselbe Kante wie der "+ Neue Verbindung"-Knopf im
+    Beziehungen-Tab). `seiten_id` ist nur Teil des URL-Pfads für denselben
+    Aufbau wie die anderen Auto-Verknüpfungs-Routen — die Kante selbst
+    hängt nicht an der Wiki-Seite, sondern direkt an den zwei Entitäten.
+    """
+    return await verknuepfung_beziehung_anwenden(campaign_id, body)

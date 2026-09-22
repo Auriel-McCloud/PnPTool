@@ -62,29 +62,49 @@ die Rechtschreib-/Logikprüfung: Klick öffnet
 `frontend/src/ki/AutoVerknuepfungPopup.tsx`, „✨ Vorschläge holen" ruft
 `POST .../ki/wiki/{id}/verknuepfung/vorschlaege` — die KI bekommt den
 Seitentext plus die Namen ALLER freigegebenen Personen/Orte/Events/
-Fraktionen (`app/ki/kontext.py::sammle_entitaeten`, neu) und liefert für
-jede erkannte Erwähnung ein Zitat + Typ + Namen zurück. Der Namensabgleich
-gegen bestehende IDs passiert bewusst in Python
+Fraktionen (`app/ki/kontext.py::sammle_entitaeten`, neu) und liefert in
+EINEM Aufruf zwei Arten von Treffern zurück (Mark ist kostenbewusst — zwei
+Requests für denselben Text wären unnötig teuer):
+
+- **Verweise** — Zitat + Typ + Name. „✓ Verknüpfen" fügt einen
+  `entitaetsverweis`-Chip an der Textstelle ein — die klassische "Erwähnt
+  in"-Kante zur Wiki-Seite.
+- **Beziehungen** (22.09.2026, Marks Nachfrage) — wo der Text eine
+  KONKRETE Beziehung zwischen zwei erwähnten Entitäten ausdrückt (z.B.
+  "arbeitet für", nicht nur zufällige Nähe im selben Absatz), schlägt die
+  KI Beziehungstyp + Kurzbeschreibung vor. „✓ Beziehung anlegen" erzeugt
+  eine echte `VERBINDUNG`-Kante zwischen den beiden Entitäten selbst —
+  dieselbe Art Kante wie der „+ Neue Verbindung"-Knopf im Beziehungen-Tab,
+  fachlich etwas ANDERES als der Verweis zur Wiki-Seite.
+
+Der Namensabgleich gegen bestehende IDs passiert bewusst in Python
 (`auto_verknuepfung.py::vorschlaege`, normalisierter Stringvergleich), nie
 durch die KI selbst — eine leicht abweichende Schreibweise der KI darf nie
 eine falsche ID erfinden.
 
-Jeder Treffer einzeln mit „✓ Verknüpfen" (bekannte Entität) oder
-„+ Entwurf anlegen & verknüpfen" (unbekannte — legt zuerst einen
-SL-geheimen Entwurf in der Ideenschmiede an, Marks Vorgabe: Vorschlag zur
-Prüfung, kein Autocommit). `anwenden()` fügt an der zitierten Textstelle
-einen echten `entitaetsverweis`-Chip ein (`_verweis_einfuegen`, splittet
-den Textknoten, erhält Marks wie 🔒 SL-geheim auf beiden Seiten) und
-speichert die Seite — dieselbe `_verweise_schreiben()`-Pipeline wie ein von
-Hand über den „⧉ Verknüpfen"-Knopf eingefügter Verweis erzeugt danach die
-echte `VERWEIST_AUF`-Kante.
+Jeder Treffer einzeln bestätigt: bekannte Entität → direkt verknüpft;
+unbekannte → legt zuerst einen SL-geheimen Entwurf in der Ideenschmiede an
+(Marks Vorgabe: Vorschlag zur Prüfung, kein Autocommit). **Dedup-Schutz**
+(`_finde_oder_lege_an`/`_bestehende_id`): taucht dieselbe neue Person
+sowohl in einem Verweis- als auch in einem Beziehungs-Vorschlag auf,
+entsteht sie nur EINMAL — wird zuerst der Verweis angewandt, findet die
+Beziehung danach dieselbe frisch angelegte Person wieder statt eine zweite
+zu erzeugen.
+
+`anwenden()` fügt an der zitierten Textstelle den Chip ein
+(`_verweis_einfuegen`, splittet den Textknoten, erhält Marks wie 🔒
+SL-geheim auf beiden Seiten) und speichert die Seite — dieselbe
+`_verweise_schreiben()`-Pipeline wie ein von Hand eingefügter Verweis
+erzeugt danach die echte `VERWEIST_AUF`-Kante. `beziehung_anwenden()` ruft
+dieselbe `entities/repository.py::create_verbindung` wie der manuelle
+"+ Neue Verbindung"-Knopf.
 
 **Nebenbei-Fix:** `ERLAUBTE_ZIELTYPEN` in `wiki/repository.py` kannte
 `"Fraktion"` bisher nicht — ein Fraktions-Chip blieb im Text sichtbar,
 erzeugte aber nie eine echte Graphkante (betraf auch manuelle
 Verknüpfungen, nicht nur die neue Auto-Verknüpfung). Jetzt ergänzt.
 
-Backend end-to-end verifiziert: Server startet fehlerfrei, beide neuen
+Backend end-to-end verifiziert: Server startet fehlerfrei, alle drei neuen
 Routen im OpenAPI-Schema, `_verweis_einfuegen` isoliert getestet (Text wird
 korrekt gesplittet, SL-geheim-Marks bleiben auf beiden Textteilen erhalten,
 Namens-Normalisierung funktioniert). `tsc --noEmit` fehlerfrei.

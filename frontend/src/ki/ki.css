@@ -178,3 +178,23 @@
   color: var(--text-leise);
   font-style: italic;
 }
+
+.av-gruppe + .av-gruppe {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.av-gruppentitel {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.av-beziehungspfeil {
+  font-size: 11px;
+  color: var(--p-violett, var(--neon));
+  white-space: nowrap;
+}
