@@ -205,11 +205,18 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Technologie", "Fertigkeit", 6, 28),
     ("Wahrnehmung", "Fertigkeit", 6, 29),
     ("Matrix", "Fertigkeit", 6, 30),
-    # NeuroWeaving: erst der Wert selbst, dann die vier Fertigkeiten.
+    # NeuroWeaving: erst der Wert selbst, dann die sechs Fertigkeiten.
     # Aufgebaut wie Hexkraft + Sphären — mit dem Unterschied, dass die
     # Fertigkeiten hier **mitgewürfelt** werden (Regelblatt Zeile 45/96),
     # während Sphären nur beschreiben, was möglich ist.
-    ("NeuroWeaving", "NeuroWeavingWert", 10, 1),
+    #
+    # Max 6 statt 10 (Mark, 22.09.2026): anders als Hexkraft, das allein bis
+    # 10 geht, wird der NeuroWeaving-Wert **immer** mit einer Fertigkeit
+    # kombiniert (Pool-Deckel NEUROWEAVING_POOL_MAX=10 in traits/magie.ts).
+    # Bei Max 10 hätte der Wert allein schon den ganzen Pool füllen können —
+    # die Fertigkeit wäre kosmetisch gewesen. Max 6 wie eine normale
+    # Fertigkeit erzwingt echtes Kombinieren beider Werte.
+    ("NeuroWeaving", "NeuroWeavingWert", 6, 1),
     ("Brute Force", "NeuroWeaving", 6, 1),
     ("Schleichen", "NeuroWeaving", 6, 2),
     ("Daten Verarbeiten", "NeuroWeaving", 6, 3),

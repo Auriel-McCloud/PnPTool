@@ -647,6 +647,16 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      braucht keine Änderung — Probe/Kampfkarte/LevelUp iterieren generisch
      über Katalog/`deckBoni`), gegen echte Neo4j-DB verifiziert (alle 6
      TraitDefs korrekt angelegt, Max 6, sortOrder 1-6).
+   - **Zwei Folgefehler beim ersten Praxistest gefunden und behoben
+     (22.09.2026, Mark erstellt einen Neuroweaver "Cyborg"):**
+     1. NeuroWeaving-Grundwert fehlte in der Freebee- und LevelUp-Anzeige
+        (`NeuroWeavingWert` fehlte in der festen Reihenfolge in
+        `Charaktererstellung.tsx`/`LevelUp.tsx`) — ergänzt.
+     2. NeuroWeaving-Grundwert-Maximum war 10 (wie Hexkraft), sollte aber 6
+        sein: Hexkraft wird allein gewürfelt und geht deshalb bis 10,
+        NeuroWeaving wird aber immer mit einer Fertigkeit kombiniert
+        (Pool-Deckel 10, `magie.ts::NEUROWEAVING_POOL_MAX`) — bei Max 10 hätte
+        der Grundwert allein den Pool füllen können. Auf 6 gesenkt.
 
    **Backend (2026-09-12):**
    - `:Regelsystem` Node-Typ mit CRUD-Endpunkten (`/api/regelsysteme`)

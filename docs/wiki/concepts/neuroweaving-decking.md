@@ -22,6 +22,15 @@ Willenskrafteinsatz und dessen Folgen, **aber**:
   Matrix-Navigation.
 - Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er
   keine Punkte hat.
+- **Der NeuroWeaving-Grundwert selbst geht nur bis 6, nicht bis 10 wie
+  Hexkraft** (Mark, 22.09.2026). Grund: Hexkraft wird bei einem kontrollierten
+  Zauber allein gewürfelt und geht deshalb bis 10 — NeuroWeaving wird aber
+  **immer** mit genau einer der sechs Fertigkeiten kombiniert (Wert + Fertigkeit,
+  Pool-Deckel 10, siehe `frontend/src/traits/magie.ts::NEUROWEAVING_POOL_MAX`).
+  Bei Max 10 hätte der Grundwert allein schon den ganzen Pool füllen können —
+  die Fertigkeit wäre kosmetisch gewesen. Max 6 (wie eine normale Fertigkeit)
+  erzwingt, dass beide Werte tatsächlich kombiniert werden müssen, um auf 10
+  zu kommen.
 
 **Cyberwall/I.C.E.** wird für Decker (Hacker) mit Geräten benötigt. Decking
 nutzt i. d. R. Intelligenz + Matrix zum Hacken; Cyberdeck-Fertigkeiten
@@ -72,6 +81,18 @@ vom Excel ab.
   Skill-Namen. Gilt für NeuroWeaver, Decker UND KI. **Cyberdecks als echte
   Gegenstände im System (statt nur Referenztabelle im Wiki) bleibt bewusst
   offen** — Mark macht das separat, nicht Teil dieser Erweiterung.
+- **22.09.2026 — NeuroWeaving-Grundwert-Maximum 10 → 6.** Mark beim Erstellen
+  eines Neuroweavers gefunden: der Katalog erlaubte den Grundwert bis 10,
+  genauso wie Hexkraft — aber anders als Hexkraft (allein gewürfelt) wird
+  NeuroWeaving immer mit einer Fertigkeit kombiniert (Pool-Deckel 10). Bei
+  Max 10 hätte der Grundwert allein den Pool ausschöpfen können. Auf 6
+  gesenkt, damit echtes Kombinieren beider Werte nötig bleibt.
+- **22.09.2026 — Freebees/Erfahrung konnten den NeuroWeaving-Grundwert nicht
+  steigern.** `NeuroWeavingWert` fehlte in der festen Anzeige-Reihenfolge im
+  Freebee-Schritt der Erstellung (`Charaktererstellung.tsx`) und im LevelUp
+  (`LevelUp.tsx`) — beide zeigten nur die sechs Fertigkeiten darunter, nie
+  den Wert selbst. Der Fertigkeiten-Schritt hatte es schon richtig, daher
+  fiel es dort nicht auf. Ergänzt in beiden Dateien.
 
 ## Siehe auch
 
