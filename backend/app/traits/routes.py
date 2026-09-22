@@ -177,6 +177,50 @@ async def set_zustand(
     return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
 
 
+class SteckbriefUpdate(BaseModel):
+    """Der nachträglich änderbare Teil der Kopfzeile des Papierblatts.
+
+    Konzept steht bei der Erstellung fest genug, dass Mark es dort beliess —
+    Ambition, Verlangen und Ziel entwickeln sich dagegen im Spiel weiter
+    (CLAUDE.md, Punkt 12). Alter bleibt bewusst aussen vor.
+    """
+
+    konzept: str | None = None
+    ambition: str | None = None
+    verlangen: str | None = None
+    ziel: str | None = None
+
+
+@router.patch("/personen/{person_id}/steckbrief")
+async def set_steckbrief(
+    campaign_id: str,
+    person_id: str,
+    body: SteckbriefUpdate,
+    viewer: Viewer = Depends(get_viewer),
+) -> dict:
+    """Konzept, Ambition, Verlangen und Ziel nachträglich ändern.
+
+    Dieselbe Erlaubnis wie bei `zustand`: Spieler nur am eigenen Charakter
+    (404 bei fremden Personen), die Spielleitung überall. Anders als bei
+    Zustand keine Einbahnstraße — ein leerer String löscht ein Feld bewusst,
+    `update_node` filtert nur `None` heraus, nicht die leere Zeichenkette.
+    """
+    if viewer.role != "GM" and person_id != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, body.model_dump())
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+
+
 # =====================================================================
 # Rüstungstreffer (Formel: kampf/ruestung.py, Begründung: docs/api/ruestung.md)
 # =====================================================================

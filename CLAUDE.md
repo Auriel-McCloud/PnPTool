@@ -859,12 +859,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     4. KI-Beschreibung → generiert Bild
     Status: nur notiert, noch nicht entschieden/gebaut.
 
-12. **Steckbrief nachträglich bearbeiten** — Konzept, Ambition, Verlangen
-    und Ziel (`Charaktererstellung.tsx`) werden nur bei der Erstellung
-    gesetzt und im Charakterblatt (`Steckbrief`-Komponente) nur read-only
-    angezeigt. Spieler haben danach keine Möglichkeit, diese Felder zu
-    ändern. Braucht irgendwo eine Bearbeiten-Funktion (Popup-Stil).
-    Status: nur notiert, noch nicht entschieden/gebaut.
+12. **Steckbrief nachträglich bearbeiten** — ✅ erledigt (22.09.2026).
+    Konzept, Ambition, Verlangen und Ziel lassen sich jetzt über einen
+    "✎ Bearbeiten"-Knopf in der Kopfzeile des Charakterblatts ändern, nicht
+    mehr nur bei der Erstellung. Backend: `PATCH .../personen/{id}/steckbrief`
+    (traits/routes.py), gleiches Muster wie `zustand` — Spieler nur am
+    eigenen Charakter, Spielleitung überall. Frontend: `SteckbriefFenster` in
+    `Charakterblatt.tsx`, Commlink-Popup mit demselben Vorschläge-Knopf
+    (Archetypen) wie in der Erstellung. Alter bleibt bewusst read-only.
 
 13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026, Editor-Teil ✅ 20.09.2026) —
     Mark will auch unterwegs (ohne Laptop) an seinen Geschichten

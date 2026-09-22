@@ -1100,7 +1100,7 @@ interface Vorlage {
  * verlassen, bevor sie auf NeotopiA umgeschrieben sind. Fehlt die Datei,
  * kommt eine leere Liste — dann erscheint der Knopf gar nicht erst.
  */
-function VorschlagKnopf({
+export function VorschlagKnopf({
   campaignId,
   titel,
   onWaehlen,

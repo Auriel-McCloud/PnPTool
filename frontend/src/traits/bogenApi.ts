@@ -69,6 +69,14 @@ export interface ZustandUpdate {
   iceSchaden?: number;
 }
 
+/** Der nachträglich änderbare Teil der Kopfzeile — siehe traits/routes.py::SteckbriefUpdate. */
+export interface SteckbriefUpdate {
+  konzept?: string;
+  ambition?: string;
+  verlangen?: string;
+  ziel?: string;
+}
+
 /**
  * Rüstungszustand fürs Blatt — **fertig gerechnet vom Server**
  * (`kampf/ruestung.py::uebersicht`). Alles Getragene ist ein Pool: Kästchen
@@ -207,6 +215,13 @@ export const bogenApi = {
   /** Zustand ändern — Schaden und Verbrauch, keine Werte. */
   zustand: (cid: string, personId: string, aenderung: ZustandUpdate) =>
     api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/zustand`, aenderung),
+  /**
+   * Steckbrief nachträglich ändern — Konzept, Ambition, Verlangen, Ziel.
+   * Spieler dürfen das nur am eigenen Charakter, die Spielleitung überall
+   * (CLAUDE.md, Punkt 12).
+   */
+  steckbrief: (cid: string, personId: string, aenderung: SteckbriefUpdate) =>
+    api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/steckbrief`, aenderung),
   /**
    * Einen erlittenen Treffer eintragen ("3× Tödlich"). Die getragene Rüstung
    * wirkt als ein Pool: der Server rechnet den Kästchenschaden, verbraucht

@@ -39,6 +39,9 @@ OHNE_GM_ERLAUBT = {
     # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
     # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",
+    # Ebenso: Steckbrief nachtraeglich aendern (Konzept/Ambition/Verlangen/
+    # Ziel). Prueft die Person selbst, gleiches Muster wie zustand.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/steckbrief",
     # Den eigenen Charakter erstellen. Prueft die Person selbst, laesst sich
     # nur einmal aufrufen (danach 409) und laeuft vollstaendig durch
     # traits/erstellung.pruefe — regelwidrige Verteilungen werden abgelehnt.

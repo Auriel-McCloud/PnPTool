@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Charaktererstellung } from "./Charaktererstellung";
+import { Charaktererstellung, VorschlagKnopf } from "./Charaktererstellung";
 import { InfoTipp } from "../regeln/InfoTipp";
 import { schluessel } from "../regeln/erklaerungen";
 import { LevelUp } from "./LevelUp";
@@ -9,6 +9,7 @@ import { DotPool } from "./DotPool";
 import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen, type Schadensart } from "./Kaestchen";
 import { ZustandFenster } from "./ZustandFenster";
+import { Fenster } from "../shell/Fenster";
 import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
@@ -83,6 +84,9 @@ export function Charakterblatt({
   // Welche Zustandsleiste als Vollansicht offen ist. Ab elf Kästchen ist
   // das der Weg zum Eintragen — die Pufferzellen sind zu schmal zum Treffen.
   const [zustandOffen, setZustandOffen] = useState<"gesundheit" | "willenskraft" | "ice" | null>(null);
+  // Steckbrief nachträglich bearbeiten (CLAUDE.md, Punkt 12): Konzept,
+  // Ambition, Verlangen, Ziel sind nach der Erstellung sonst read-only.
+  const [steckbriefOffen, setSteckbriefOffen] = useState(false);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -535,8 +539,10 @@ export function Charakterblatt({
       />
 
       {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —
-          ein Raster leerer Beschriftungen sagt niemandem etwas. */}
-      {[u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) && (
+          ein Raster leerer Beschriftungen sagt niemandem etwas. Aber auch
+          leer sichtbar, wenn bearbeitbar ist: sonst gäbe es keine Stelle,
+          an der man zum ersten Mal etwas einträgt. */}
+      {([u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) || aenderbar) && (
         <section className="cb-person">
           {u.konzept && <Steckbrief titel="Konzept" text={u.konzept} />}
           {u.ambition && <Steckbrief titel="Ambition" text={u.ambition} />}
@@ -551,8 +557,32 @@ export function Charakterblatt({
               }
             />
           )}
+          {/* Nachträglich ändern (CLAUDE.md, Punkt 12): dieselbe Erlaubnis
+              wie Schaden/Willenskraft — eigener Charakter oder Spielleitung. */}
+          {aenderbar && (
+            <button
+              type="button"
+              className="cb-steckbrief-bearbeiten"
+              onClick={() => setSteckbriefOffen(true)}
+              title="Konzept, Ambition, Verlangen und Ziel bearbeiten"
+            >
+              ✎ Bearbeiten
+            </button>
+          )}
         </section>
       )}
+
+      <SteckbriefFenster
+        offen={steckbriefOffen}
+        campaignId={campaignId}
+        personId={personId}
+        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel }}
+        onSchliessen={() => setSteckbriefOffen(false)}
+        onGespeichert={(neu) => {
+          uebernehmen(neu);
+          setSteckbriefOffen(false);
+        }}
+      />
 
       <section className="cb-zustand">
         <div className="cb-spur">
@@ -727,5 +757,99 @@ function Steckbrief({ titel, text }: { titel: string; text: string }) {
       <span className="cb-steckbrief-titel">{titel}</span>
       <span className="cb-steckbrief-text">{text}</span>
     </div>
+  );
+}
+
+/**
+ * Konzept, Ambition, Verlangen und Ziel nachträglich bearbeiten.
+ *
+ * Schließt die Lücke aus CLAUDE.md Punkt 12: die Erstellung
+ * (`Charaktererstellung.tsx::SchrittPerson`) setzt diese Felder nur einmal,
+ * danach standen sie im Blatt bloß read-only. Alter bleibt aussen vor —
+ * Marks Entscheidung: das ändert sich anders als die übrigen drei nicht
+ * durchs Spielen.
+ *
+ * Denselben Vorschläge-Knopf wie bei der Erstellung wiederverwendet
+ * (Archetypen für Ambition/Verlangen) — gleiche Erfahrung, ob man das Feld
+ * zum ersten oder zehnten Mal ausfüllt.
+ */
+function SteckbriefFenster({
+  offen,
+  campaignId,
+  personId,
+  werte,
+  onSchliessen,
+  onGespeichert,
+}: {
+  offen: boolean;
+  campaignId: string;
+  personId: string;
+  werte: { konzept: string; ambition: string; verlangen: string; ziel: string };
+  onSchliessen: () => void;
+  onGespeichert: (neu: BogenUebersicht) => void;
+}) {
+  const [konzept, setKonzept] = useState(werte.konzept);
+  const [ambition, setAmbition] = useState(werte.ambition);
+  const [verlangen, setVerlangen] = useState(werte.verlangen);
+  const [ziel, setZiel] = useState(werte.ziel);
+  const [sendet, setSendet] = useState(false);
+
+  // Frisch aus dem aktuellen Blatt befüllen bei jedem Öffnen — sonst stünde
+  // nach einem Abbrechen und erneutem Öffnen der alte Entwurf da.
+  useEffect(() => {
+    if (offen) {
+      setKonzept(werte.konzept);
+      setAmbition(werte.ambition);
+      setVerlangen(werte.verlangen);
+      setZiel(werte.ziel);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offen]);
+
+  async function speichern() {
+    setSendet(true);
+    try {
+      onGespeichert(await bogenApi.steckbrief(campaignId, personId, { konzept, ambition, verlangen, ziel }));
+    } finally {
+      setSendet(false);
+    }
+  }
+
+  return (
+    <Fenster
+      offen={offen}
+      titel="Steckbrief bearbeiten"
+      unterzeile="Nichts davon ist Pflicht, und alles lässt sich jederzeit wieder ändern."
+      kennung={`steckbrief:${personId}`}
+      onSchliessen={onSchliessen}
+    >
+      <div className="er-person">
+        <label className="er-feld">
+          <span>Konzept</span>
+          <input value={konzept} onChange={(e) => setKonzept(e.target.value)} />
+        </label>
+        <label className="er-feld">
+          <span>Ambition</span>
+          <div className="er-feld-mit-knopf">
+            <input value={ambition} onChange={(e) => setAmbition(e.target.value)} />
+            <VorschlagKnopf campaignId={campaignId} titel="Ambition" onWaehlen={setAmbition} />
+          </div>
+        </label>
+        <label className="er-feld">
+          <span>Verlangen</span>
+          <div className="er-feld-mit-knopf">
+            <input value={verlangen} onChange={(e) => setVerlangen(e.target.value)} />
+            <VorschlagKnopf campaignId={campaignId} titel="Verlangen" onWaehlen={setVerlangen} />
+          </div>
+        </label>
+        <label className="er-feld">
+          <span>Ziel</span>
+          <input value={ziel} onChange={(e) => setZiel(e.target.value)} />
+        </label>
+        <button type="button" className="er-weiter" onClick={speichern} disabled={sendet}>
+          {sendet ? "Wird gespeichert…" : "Speichern"}
+        </button>
+      </div>
+    </Fenster>
   );
 }

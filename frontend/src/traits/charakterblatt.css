@@ -102,6 +102,24 @@
   white-space: nowrap;
 }
 
+/* Bearbeiten-Knopf für die Kopfzeile — klein und unauffällig am Ende der
+   Kopfzeile, statt neben Willenskraft/Maxima im cb-werkzeuge-Kopf: gehört
+   inhaltlich zum Steckbrief, nicht zur Werte-Bearbeitung. */
+.cb-steckbrief-bearbeiten {
+  align-self: center;
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+  background: transparent;
+}
+
+.cb-steckbrief-bearbeiten:hover:not(:disabled) {
+  color: var(--neon);
+  border-color: var(--neon);
+}
+
 .cb-ep-zahl {
   font-family: var(--mono);
   font-size: 24px;
