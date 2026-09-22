@@ -407,6 +407,19 @@ export function Charakterblatt({
             )}
           </div>
         )}
+        {/* Steckbrief bearbeiten (CLAUDE.md, Punkt 12) — direkt vor dem
+            EP-Knopf statt in der Kopfzeile des Papierblatts: Mark fand die
+            Stelle neben der Erfahrung passender als zwischen den Feldern. */}
+        {aenderbar && (
+          <button
+            type="button"
+            className="cb-steckbrief-bearbeiten"
+            onClick={() => setSteckbriefOffen(true)}
+            title="Konzept, Ambition, Verlangen und Ziel bearbeiten"
+          >
+            ✎ Steckbrief
+          </button>
+        )}
         <button
           type="button"
           className="cb-erfahrung"
@@ -539,10 +552,11 @@ export function Charakterblatt({
       />
 
       {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —
-          ein Raster leerer Beschriftungen sagt niemandem etwas. Aber auch
-          leer sichtbar, wenn bearbeitbar ist: sonst gäbe es keine Stelle,
-          an der man zum ersten Mal etwas einträgt. */}
-      {([u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) || aenderbar) && (
+          ein Raster leerer Beschriftungen sagt niemandem etwas. Der
+          ✎-Knopf zum Bearbeiten sitzt jetzt oben neben der Erfahrung, nicht
+          mehr hier — deshalb muss die Sektion bei leeren Feldern nicht mehr
+          erzwungen sichtbar sein. */}
+      {[u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) && (
         <section className="cb-person">
           {u.konzept && <Steckbrief titel="Konzept" text={u.konzept} />}
           {u.ambition && <Steckbrief titel="Ambition" text={u.ambition} />}
@@ -556,18 +570,6 @@ export function Charakterblatt({
                 (u.schulden > 0 ? ` · davon ${u.schulden.toLocaleString("de-AT")}¥ Schulden` : "")
               }
             />
-          )}
-          {/* Nachträglich ändern (CLAUDE.md, Punkt 12): dieselbe Erlaubnis
-              wie Schaden/Willenskraft — eigener Charakter oder Spielleitung. */}
-          {aenderbar && (
-            <button
-              type="button"
-              className="cb-steckbrief-bearbeiten"
-              onClick={() => setSteckbriefOffen(true)}
-              title="Konzept, Ambition, Verlangen und Ziel bearbeiten"
-            >
-              ✎ Bearbeiten
-            </button>
           )}
         </section>
       )}

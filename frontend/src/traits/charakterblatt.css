@@ -102,14 +102,15 @@
   white-space: nowrap;
 }
 
-/* Bearbeiten-Knopf für die Kopfzeile — klein und unauffällig am Ende der
-   Kopfzeile, statt neben Willenskraft/Maxima im cb-werkzeuge-Kopf: gehört
-   inhaltlich zum Steckbrief, nicht zur Werte-Bearbeitung. */
+/* Steckbrief-Knopf in der Kopfzeile, direkt links vom EP-Knopf (Mark:
+   "dort würde er besser aussehen" statt in der Papierblatt-Kopfzeile
+   selbst). align-self: center statt flex-start, damit er auf Höhe des
+   EP-Knopfs sitzt, nicht am oberen Rand der (höheren) cb-kopf-Zeile klebt. */
 .cb-steckbrief-bearbeiten {
   align-self: center;
-  min-height: 28px;
-  padding: 0 10px;
-  font-size: 11px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   color: var(--text-leise);
   background: transparent;
