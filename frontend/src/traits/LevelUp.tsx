@@ -22,6 +22,7 @@ const REIHENFOLGE = [
   "Fertigkeit",
   "Hexkraft",
   "Sphäre",
+  "NeuroWeavingWert",
   "NeuroWeaving",
   // Hintergründe bewusst ausgelassen — die kann nach der Charaktererstellung
   // nur noch die SL vergeben, nicht der Spieler selbst steigern.

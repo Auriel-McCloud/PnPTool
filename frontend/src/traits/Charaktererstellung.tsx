@@ -950,6 +950,7 @@ function SchrittFreebees({
     "Fertigkeit",
     "Hexkraft",
     "Sphäre",
+    "NeuroWeavingWert",
     "NeuroWeaving",
     "Hintergrund",
   ].filter((k) => gruppen[k]?.length);
