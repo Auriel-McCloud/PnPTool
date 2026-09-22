@@ -31,11 +31,19 @@ Willenskrafteinsatz und dessen Folgen, **aber**:
   Hexkraft** (Mark, 22.09.2026). Grund: Hexkraft wird bei einem kontrollierten
   Zauber allein gewürfelt und geht deshalb bis 10 — NeuroWeaving wird aber
   **immer** mit genau einer der sechs Fertigkeiten kombiniert (Wert + Fertigkeit,
-  Pool-Deckel 10, siehe `frontend/src/traits/magie.ts::NEUROWEAVING_POOL_MAX`).
+  Pool-Deckel 12, siehe `frontend/src/traits/magie.ts::NEUROWEAVING_POOL_MAX`).
   Bei Max 10 hätte der Grundwert allein schon den ganzen Pool füllen können —
   die Fertigkeit wäre kosmetisch gewesen. Max 6 (wie eine normale Fertigkeit)
-  erzwingt, dass beide Werte tatsächlich kombiniert werden müssen, um auf 10
-  zu kommen.
+  erzwingt, dass beide Werte tatsächlich kombiniert werden müssen, um auf den
+  Pool-Deckel zu kommen.
+- **Wilde Magie hat KEINEN Pool-Deckel, NeuroWeaving schon** — kein
+  Widerspruch, sondern zwei verschiedene Ausgangslagen (Mark, 22.09.2026
+  nachgefragt): Hexkraft trägt die Last allein (ein Wert bis 10 + beliebig
+  viele wilde Würfel obendrauf), NeuroWeaving kombiniert zwei Werte (Grundwert
+  + Fertigkeit), die ohne Deckel linear bis 12 (6+6) explodieren würden. Wilde
+  Magie hat dafür ihre eigene Bremse: das Rückstoß-Risiko (Schaden, wenn die
+  Erfolge die Willenskraft übersteigen) — NeuroWeaving/Overclock kennt dasselbe
+  Risiko, aber eben zusätzlich den Pool-Deckel.
 
 **Cyberwall/I.C.E.** wird für Decker (Hacker) mit Geräten benötigt. Decking
 nutzt i. d. R. Intelligenz + Matrix zum Hacken; Cyberdeck-Fertigkeiten
@@ -89,9 +97,16 @@ vom Excel ab.
 - **22.09.2026 — NeuroWeaving-Grundwert-Maximum 10 → 6.** Mark beim Erstellen
   eines Neuroweavers gefunden: der Katalog erlaubte den Grundwert bis 10,
   genauso wie Hexkraft — aber anders als Hexkraft (allein gewürfelt) wird
-  NeuroWeaving immer mit einer Fertigkeit kombiniert (Pool-Deckel 10). Bei
+  NeuroWeaving immer mit einer Fertigkeit kombiniert (Pool-Deckel). Bei
   Max 10 hätte der Grundwert allein den Pool ausschöpfen können. Auf 6
   gesenkt, damit echtes Kombinieren beider Werte nötig bleibt.
+- **22.09.2026 — NeuroWeaving-Pool-Deckel 10 → 12.** Seit der Erweiterung auf
+  6 Skills ist überall im Regelwerk 6 das neue Maximum — 10 als Pool-Deckel
+  wirkte dagegen unpassend niedrig. 12 ist außerdem schon das etablierte
+  "rundes Maximum" im Tool (natürliches Gesundheitsmaximum, siehe
+  `GESUNDHEIT_GRUNDWERT`). `magie.ts::NEUROWEAVING_POOL_MAX`, dazu zwei
+  hartkodierte 10er in `Kampfkarte.tsx` durch die Konstante ersetzt (waren
+  bisher nicht synchron mit dem Deckel in `Probe.tsx`).
 - **22.09.2026 — Freebees/Erfahrung konnten den NeuroWeaving-Grundwert nicht
   steigern.** `NeuroWeavingWert` fehlte in der festen Anzeige-Reihenfolge im
   Freebee-Schritt der Erstellung (`Charaktererstellung.tsx`) und im LevelUp

@@ -85,7 +85,14 @@ export const MAGIE_HINWEISE = {
  * höchstens 10.** Anders als bei Hexkraft, wo der Wert allein bis 10 geht,
  * treffen hier zwei Werte aufeinander — ohne Deckel käme man auf 15.
  *
+ * **22.09.2026, auf 12 angehoben:** seit der Erweiterung auf 6 Skills ist
+ * überall im Regelwerk 6 das neue Maximum (Attribute, Fertigkeiten,
+ * NeuroWeaving-Grundwert) — 10 wirkte als Pool-Deckel dagegen unpassend
+ * niedrig. 12 ist außerdem das natürliche Gesundheitsmaximum (siehe
+ * `GESUNDHEIT_GRUNDWERT` in `backend/app/traits/bogen.py`), passt also zur
+ * bereits etablierten "rundes Maximum bei 12"-Logik im Tool.
+ *
  * Bewusst ein Deckel auf dem *Pool*, nicht auf den Werten selbst: die Werte
  * dürfen weiter steigen, nur mehr Würfel gibt es dafür nicht.
  */
-export const NEUROWEAVING_POOL_MAX = 10;
+export const NEUROWEAVING_POOL_MAX = 12;

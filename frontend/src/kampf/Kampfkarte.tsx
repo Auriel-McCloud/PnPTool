@@ -10,6 +10,7 @@ import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
+import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
 import "./kampfkarte.css";
 
 /**
@@ -296,8 +297,8 @@ export function Kampfkarte({
                   <Zahl
                     key={t.id}
                     titel={t.name}
-                    wert={Math.min(10, wert(bogen, "NeuroWeaving") + f)}
-                    hinweis={`NeuroWeaving + Fertigkeit, höchstens 10. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
+                    wert={Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f)}
+                    hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
                     wuerfel
                     onKlick={() => setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" })}
                   />
