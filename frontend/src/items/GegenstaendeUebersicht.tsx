@@ -8,6 +8,8 @@ import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
 import { Muelleimer } from "./Muelleimer";
+import { TypKachelAuswahl } from "./TypKachelAuswahl";
+import { symbolFuerTyp } from "./typKatalog";
 import "./gegenstaende.css";
 
 /** Muss zu den Werten in gegenstaende.css passen (Raster-Ausmessung). */
@@ -59,6 +61,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [seite, setSeite] = useState(0);
   const [neuName, setNeuName] = useState("");
   const [neuBesitzer, setNeuBesitzer] = useState("");
+  const [neuTyp, setNeuTyp] = useState<string | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [muelleimerOffen, setMuelleimerOffen] = useState(false);
   // Nur die Spielleitung sieht überhaupt, dass es einen Mülleimer gibt —
@@ -160,14 +163,15 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   async function addItem(e: FormEvent) {
     e.preventDefault();
-    if (!neuName.trim() || !neuBesitzer) return;
+    if (!neuName.trim() || !neuBesitzer || !neuTyp) return;
     if (neuBesitzer === VORLAGE_SENTINEL) {
-      await itemsApi.createVorlage(campaignId, { name: neuName });
+      await itemsApi.createVorlage(campaignId, { name: neuName, typ: neuTyp });
     } else {
-      await itemsApi.create(campaignId, neuBesitzer, { name: neuName });
+      await itemsApi.create(campaignId, neuBesitzer, { name: neuName, typ: neuTyp });
     }
     setNeuName("");
     setNeuBesitzer("");
+    setNeuTyp(null);
     setAnlegenOffen(false);
     await refresh();
   }
@@ -219,54 +223,65 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       <Fenster
         offen={anlegenOffen}
         titel="Neuer Gegenstand"
-        unterzeile="Gegenstand erstellen oder Vorlage anlegen"
+        unterzeile={neuTyp ? `Typ: ${neuTyp}` : "Zuerst den Typ wählen"}
         kennung="neuer-gegenstand"
         onSchliessen={() => {
           setAnlegenOffen(false);
           setNeuName("");
           setNeuBesitzer("");
+          setNeuTyp(null);
         }}
       >
-        <form onSubmit={addItem} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
-          <select
-            value={neuBesitzer}
-            onChange={(e) => setNeuBesitzer(e.target.value)}
-            required
-            style={{ fontSize: "1rem", padding: "10px 12px" }}
-          >
-            <option value="">Besitzer wählen…</option>
-            <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
-            {alleOptionen.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Name des Gegenstands"
-            value={neuName}
-            onChange={(e) => setNeuName(e.target.value)}
-            required
-            autoFocus
-            style={{ fontSize: "1.1rem", padding: "12px 14px" }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: "12px 20px",
-              background: "color-mix(in srgb, var(--ja) 20%, transparent)",
-              border: "1px solid var(--ja)",
-              borderRadius: "var(--radius)",
-              color: "var(--ja)",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: "1rem",
-            }}
-          >
-            Gegenstand erstellen
-          </button>
-        </form>
+        {!neuTyp ? (
+          <TypKachelAuswahl onWaehlen={setNeuTyp} />
+        ) : (
+          <form onSubmit={addItem} style={{ display: "flex", flexDirection: "column", gap: 16, padding: 8 }}>
+            <span className="gg-typ-gewaehlt">
+              {symbolFuerTyp(neuTyp)} {neuTyp}
+              <button type="button" onClick={() => setNeuTyp(null)}>
+                ändern
+              </button>
+            </span>
+            <select
+              value={neuBesitzer}
+              onChange={(e) => setNeuBesitzer(e.target.value)}
+              required
+              style={{ fontSize: "1rem", padding: "10px 12px" }}
+            >
+              <option value="">Besitzer wählen…</option>
+              <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
+              {alleOptionen.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Name des Gegenstands"
+              value={neuName}
+              onChange={(e) => setNeuName(e.target.value)}
+              required
+              autoFocus
+              style={{ fontSize: "1.1rem", padding: "12px 14px" }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "12px 20px",
+                background: "color-mix(in srgb, var(--ja) 20%, transparent)",
+                border: "1px solid var(--ja)",
+                borderRadius: "var(--radius)",
+                color: "var(--ja)",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "1rem",
+              }}
+            >
+              Gegenstand erstellen
+            </button>
+          </form>
+        )}
       </Fenster>
 
       {einstellungen?.gewichtAktiv && ueberladen.length > 0 && (

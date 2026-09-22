@@ -162,7 +162,12 @@ class GegenstandUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     notes: str | None = None
-    typ: str | None = None
+    # typ bewusst NICHT hier (22.09.2026, Marks Entscheidung): der Typ wird
+    # beim Anlegen per Kachel-Auswahl gewählt (siehe TYP_KATALOG) und ist
+    # danach fix — sonst blieben alte typ-spezifische Werte (Schaden,
+    # Deck-Werte, Rüstungskästchen, ...) beim Wechsel unsichtbar in der DB
+    # stehen, weil kein Typwechsel sie je aufräumt. Mark: "wer's falsch
+    # gewählt hat, löscht und legt neu an". Gleiche Invariante wie istVorlage.
     preis: int | None = None
     kraft: int | None = None
     cyberwall: int | None = None

@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { itemsApi, type Gegenstand, type Ablage } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { GegenstandKachel } from "../items/GegenstandKachel";
+import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
+import { symbolFuerTyp } from "../items/typKatalog";
 import "./pc-inventar.css";
 
 /**
@@ -19,6 +21,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   const [items, setItems] = useState<Gegenstand[]>([]);
   const [loading, setLoading] = useState(true);
   const [neuName, setNeuName] = useState("");
+  const [neuTyp, setNeuTyp] = useState<string | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
 
   async function refresh() {
@@ -36,15 +39,16 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
 
   async function anlegen(e: FormEvent) {
     e.preventDefault();
-    if (!neuName.trim()) return;
+    if (!neuName.trim() || !neuTyp) return;
     await itemsApi.create(campaignId, personId, {
       name: neuName.trim(),
-      typ: "Sonstiges",
+      typ: neuTyp,
       description: "",
       notes: "",
       eigenschaften: {},
     });
     setNeuName("");
+    setNeuTyp(null);
     setAnlegenOffen(false);
     refresh();
   }
@@ -149,24 +153,35 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
       <Fenster
         offen={anlegenOffen}
         titel="Neuer Gegenstand"
-        unterzeile={`Für ${personName}`}
+        unterzeile={neuTyp ? `Für ${personName} · Typ: ${neuTyp}` : `Für ${personName} — zuerst den Typ wählen`}
         kennung="neuer-gegenstand"
         onSchliessen={() => {
           setAnlegenOffen(false);
           setNeuName("");
+          setNeuTyp(null);
         }}
       >
-        <form onSubmit={anlegen} className="pci-form">
-          <input
-            type="text"
-            value={neuName}
-            onChange={(e) => setNeuName(e.target.value)}
-            placeholder="Gegenstandsname"
-            autoFocus
-            required
-          />
-          <button type="submit">Anlegen</button>
-        </form>
+        {!neuTyp ? (
+          <TypKachelAuswahl onWaehlen={setNeuTyp} />
+        ) : (
+          <form onSubmit={anlegen} className="pci-form">
+            <span className="gg-typ-gewaehlt">
+              {symbolFuerTyp(neuTyp)} {neuTyp}
+              <button type="button" onClick={() => setNeuTyp(null)}>
+                ändern
+              </button>
+            </span>
+            <input
+              type="text"
+              value={neuName}
+              onChange={(e) => setNeuName(e.target.value)}
+              placeholder="Gegenstandsname"
+              autoFocus
+              required
+            />
+            <button type="submit">Anlegen</button>
+          </form>
+        )}
       </Fenster>
     </div>
   );

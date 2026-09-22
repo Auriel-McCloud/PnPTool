@@ -6,6 +6,8 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { Fenster } from "../shell/Fenster";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
+import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
+import { symbolFuerTyp } from "../items/typKatalog";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
 import { DotPool } from "./DotPool";
 import type { Chromstufe } from "../items/api";
@@ -61,24 +63,9 @@ function visibilityLabel(item: Gegenstand): string {
 }
 
 // Fahrzeug und Behälter können ihrerseits Gegenstände aufnehmen — sie
-// erscheinen dadurch als Ablageziel (siehe items/repository.py).
-const TYP_OPTIONEN = [
-  "Waffe",
-  "Rüstung",
-  "Cyberware",
-  "Bioware",
-  "Hexware",
-  "Droge",
-  "Verbrauchsgegenstand",
-  "Werkzeug",
-  "Fahrzeug",
-  "Drohne",
-  "Behälter",
-  "Commlink",
-  "Cyberdeck",
-  "Riggerkonsole",
-  "Sonstiges",
-];
+// erscheinen dadurch als Ablageziel (siehe items/repository.py). Der
+// Typ-Katalog selbst (für die Anlegen-Kacheln) liegt zentral in
+// items/typKatalog.ts.
 const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
 // Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117).
 // Hexware läuft über dieselbe Formel — reine Flavor-Kategorie neben
@@ -317,7 +304,6 @@ export function GegenstandRow({
   async function save() {
     await itemsApi.update(campaignId, item.id, {
       name,
-      typ,
       preis,
       kraft,
       seltenheit,
@@ -431,14 +417,11 @@ export function GegenstandRow({
         )}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-          <select value={typ} onChange={(e) => setTyp(e.target.value)}>
-            {!TYP_OPTIONEN.includes(typ) && <option value={typ}>{typ} (alt)</option>}
-            {TYP_OPTIONEN.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+          {/* Typ ist seit 22.09.2026 fix (siehe schemas.py) — nur Anzeige,
+              kein Dropdown mehr. Falsch gewählt? Löschen, neu anlegen. */}
+          <span className="gg-typ-gewaehlt" title="Der Typ lässt sich nach dem Anlegen nicht mehr ändern">
+            {typ}
+          </span>
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
             Preis (¥){" "}
             <input
@@ -1072,6 +1055,8 @@ export function CharacterSheetPanel({
   const [items, setItems] = useState<Gegenstand[]>([]);
   const [loading, setLoading] = useState(true);
   const [itemName, setItemName] = useState("");
+  const [itemTyp, setItemTyp] = useState<string | null>(null);
+  const [itemAnlegenOffen, setItemAnlegenOffen] = useState(false);
   const [showTraitOptions, setShowTraitOptions] = useState(false);
 
   async function refresh() {
@@ -1112,9 +1097,11 @@ export function CharacterSheetPanel({
 
   async function addItem(e: FormEvent) {
     e.preventDefault();
-    if (!itemName.trim()) return;
-    await itemsApi.create(campaignId, person.id, { name: itemName });
+    if (!itemName.trim() || !itemTyp) return;
+    await itemsApi.create(campaignId, person.id, { name: itemName, typ: itemTyp });
     setItemName("");
+    setItemTyp(null);
+    setItemAnlegenOffen(false);
     await refresh();
   }
 
@@ -1195,11 +1182,43 @@ export function CharacterSheetPanel({
             onRemoved={() => removeItem(item.id)}
           />
         ))}
-        <form onSubmit={addItem} style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <input placeholder="Neuer Gegenstand" value={itemName} onChange={(e) => setItemName(e.target.value)} />
-          <button type="submit">Hinzufügen</button>
-        </form>
+        <button type="button" onClick={() => setItemAnlegenOffen(true)} style={{ marginTop: 8 }}>
+          + Neuer Gegenstand
+        </button>
       </div>
+
+      <Fenster
+        offen={itemAnlegenOffen}
+        titel="Neuer Gegenstand"
+        unterzeile={itemTyp ? `Für ${person.name} · Typ: ${itemTyp}` : `Für ${person.name} — zuerst den Typ wählen`}
+        kennung="charakterblatt-neuer-gegenstand"
+        onSchliessen={() => {
+          setItemAnlegenOffen(false);
+          setItemName("");
+          setItemTyp(null);
+        }}
+      >
+        {!itemTyp ? (
+          <TypKachelAuswahl onWaehlen={setItemTyp} />
+        ) : (
+          <form onSubmit={addItem} style={{ display: "flex", flexDirection: "column", gap: 12, padding: 8 }}>
+            <span className="gg-typ-gewaehlt">
+              {symbolFuerTyp(itemTyp)} {itemTyp}
+              <button type="button" onClick={() => setItemTyp(null)}>
+                ändern
+              </button>
+            </span>
+            <input
+              placeholder="Neuer Gegenstand"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              autoFocus
+              required
+            />
+            <button type="submit">Hinzufügen</button>
+          </form>
+        )}
+      </Fenster>
     </div>
   );
 }

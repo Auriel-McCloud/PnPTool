@@ -172,7 +172,8 @@ export interface GegenstandUpdate {
   name?: string;
   description?: string;
   notes?: string;
-  typ?: string;
+  // typ bewusst NICHT hier — seit 22.09.2026 nach dem Anlegen fix (siehe
+  // Backend-Kommentar in schemas.py). Falsch gewählt? Löschen, neu anlegen.
   preis?: number;
   kraft?: number;
   eigenschaften?: Record<string, string>;
@@ -215,9 +216,12 @@ export interface GegenstandUpdate {
 
 type NeuerGegenstand = {
   name: string;
+  // Der Typ wird gleich beim Anlegen per Kachel-Auswahl gewählt (siehe
+  // typKatalog.ts/TypKachelAuswahl.tsx) und ist danach fix — Pflichtfeld,
+  // damit kein Gegenstand mehr "versehentlich Sonstiges" bleibt.
+  typ: string;
   description?: string;
   notes?: string;
-  typ?: string;
   eigenschaften?: Record<string, string>;
   zeigeInGraph?: boolean;
 };

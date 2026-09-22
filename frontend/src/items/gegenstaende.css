@@ -454,3 +454,65 @@
   line-height: 1.45;
   color: var(--signal);
 }
+
+/* --- Typ-Auswahl beim Anlegen (22.09.2026) -----------------------------
+   Ersetzt das Typ-Dropdown: der Typ ist nach dem Anlegen fix (Marks
+   Entscheidung), deshalb eine grosse, bewusste Kachel-Auswahl statt eines
+   kleinen Felds, das man spaeter eh nicht mehr aendern kann. */
+
+.gg-typraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.gg-typ-kachel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+}
+
+.gg-typ-kachel:hover {
+  border-color: var(--neon);
+  background: var(--flaeche-hoch);
+  color: inherit;
+  box-shadow: 0 0 12px -4px var(--neon);
+}
+
+.gg-typ-symbol {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.gg-typ-name {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.gg-typ-gewaehlt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text);
+  align-self: flex-start;
+}
+
+.gg-typ-gewaehlt button {
+  font-size: 11px;
+  padding: 2px 8px;
+}
