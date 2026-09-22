@@ -23,6 +23,26 @@ class CharakterZuordnenRequest(BaseModel):
     personId: str | None = None
 
 
+class VorgefertigterCharakter(BaseModel):
+    """Ein vorgebauter PC zur Auswahl beim ersten Einstieg (Ersteinstiegs-
+
+    Fenster, players/SpielerEinstieg.tsx) — bewusst schlank, kein voller
+    Bogen. Ergibt sich aus PCs ohne zugeordneten Spieler, kein eigenes
+    Markierungsfeld nötig.
+    """
+
+    id: str
+    name: str
+    bildUrl: str = ""
+    konzept: str = ""
+    rasse: str = ""
+    weg: str = "KEINER"
+
+
+class CharakterWaehlenRequest(BaseModel):
+    personId: str
+
+
 class SpielerMeResponse(BaseModel):
     spielerId: str
     benutzername: str

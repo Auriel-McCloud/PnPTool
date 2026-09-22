@@ -1,11 +1,15 @@
 /* ===================================================================
-   Charakterportrait-Popup (CharakterportraitPopup.tsx) — eigenes Bild
-   für den eigenen Charakter setzen (Spieler-Selbstbedienung, 22.09.2026).
+   Charakterportrait-Ansicht (CharakterportraitAnsicht.tsx) — eigener
+   Bereich im Spieler-Menü, um das eigene Charakterbild zu setzen.
 
    Eigenes schlankes Set wie bei ki.css: dieselbe Commlink-Sprache
    (Tokens aus theme/tokens.css), aber ohne Kopplung an ein anderes
    Feature.
    =================================================================== */
+
+.port-seite {
+  padding: var(--abstand);
+}
 
 .port-popup {
   display: flex;
@@ -13,6 +17,8 @@
   gap: 14px;
   align-items: center;
   text-align: center;
+  max-width: 360px;
+  margin: 0 auto;
 }
 
 .port-vorschau {
@@ -75,51 +81,3 @@
   font-family: var(--mono);
   letter-spacing: 0.04em;
 }
-
-/* Knopf über dem Charakterblatt (Spieler-Sicht), öffnet das Popup. */
-.cb-portrait-leiste {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
-.cb-portrait-knopf {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 6px;
-  border: 1px solid var(--linie);
-  border-radius: var(--radius);
-  background: var(--flaeche-tief);
-  color: var(--text-leise);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.cb-portrait-knopf:hover {
-  border-color: var(--neon);
-  color: var(--text);
-}
-
-.cb-portrait-knopf img {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: var(--radius);
-}
-
-.cb-portrait-platzhalter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius);
-  background: var(--flaeche);
-  color: var(--text-leise);
-}
-

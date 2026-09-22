@@ -161,6 +161,63 @@ async def list_spieler(campaign_id: str) -> list[dict]:
         return [dict(record) async for record in result]
 
 
+async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
+    """Vorgebaute PCs dieser Kampagne, die noch niemandem zugeordnet sind.
+
+    Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx): "vorgefertigter
+    Charakter" ist bewusst kein eigenes Feld, sondern schlicht ein PC ohne
+    SPIELT-Kante — Mark: "das macht am meisten Sinn". Nur abgeschlossene,
+    nicht-Entwurfs-Charaktere: was hier erscheint, muss sofort spielbar sein.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (p:Person {campaignId: $campaign_id, personType: 'PC'})
+            WHERE p.erstellungAbgeschlossen = true
+              AND coalesce(p.istEntwurf, false) = false
+              AND NOT EXISTS { MATCH (:Spieler)-[:SPIELT]->(p) }
+            RETURN p.id AS id, p.name AS name, coalesce(p.bildUrl, '') AS bildUrl,
+                   coalesce(p.konzept, '') AS konzept, coalesce(p.rasse, '') AS rasse,
+                   coalesce(p.weg, 'KEINER') AS weg
+            ORDER BY toLower(p.name)
+            """,
+            campaign_id=campaign_id,
+        )
+        return [dict(record) async for record in result]
+
+
+async def charakter_waehlen(spieler_id: str, campaign_id: str, person_id: str) -> bool:
+    """Weist einem Spieler ohne eigenen Charakter einen freien, vorgebauten PC
+    fix zu — atomar in einer einzigen Cypher-Anweisung.
+
+    Taucht zwischen dem Laden der Liste und diesem Aufruf eine SPIELT-Kante
+    eines anderen Spielers auf (zwei Leute tippen gleichzeitig denselben
+    Charakter an), greift die NOT EXISTS-Bedingung nicht mehr und die
+    Anweisung liefert keine Zeile — genau dann verliert, wer zu spät war,
+    statt dass zwei Spieler denselben Charakter bekommen. Ebenso, wenn der
+    Spieler selbst inzwischen schon einen Charakter hat.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (s:Spieler {id: $spieler_id})-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
+            WHERE NOT EXISTS { MATCH (s)-[:SPIELT]->() }
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id, personType: 'PC'})
+            WHERE p.erstellungAbgeschlossen = true
+              AND coalesce(p.istEntwurf, false) = false
+              AND NOT EXISTS { MATCH (:Spieler)-[:SPIELT]->(p) }
+            CREATE (s)-[:SPIELT]->(p)
+            RETURN s.id AS id
+            """,
+            spieler_id=spieler_id,
+            campaign_id=campaign_id,
+            person_id=person_id,
+        )
+        return await result.single() is not None
+
+
 async def delete_spieler(campaign_id: str, spieler_id: str) -> bool:
     driver = get_driver()
     async with driver.session() as session:

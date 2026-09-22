@@ -1,26 +1,23 @@
 import { useRef, useState } from "react";
-import { Fenster } from "../shell/Fenster";
 import { playersApi, type SpielerMe } from "./api";
 import "./portrait.css";
 
 /**
- * Charakterportrait-Popup für den Spieler selbst (Mark, 22.09.2026: "es gibt
- * keine Möglichkeit ein Bild anzuhängen" — bisher konnte nur die SL Bilder
- * für Personen setzen).
+ * Charakterportrait als eigener Bereich in der Spieler-Hülle (Mark,
+ * 22.09.2026: "damit im Charakterblatt mehr Platz ist" — das Blatt wächst
+ * je nach Chartyp mit zusätzlichen Skills/Werten, ein Bild-Verwaltungsknopf
+ * dort hätte nur Platz weggenommen). Ursprünglich als Popup über dem Blatt
+ * geplant, auf Marks Wunsch zu einem eigenen Burger-Menü-Punkt gemacht.
  *
  * MVP-Scope (mit Mark geklärt): nur Hochladen + Foto per Kamera. Ein
  * Zeichentool und KI-Bildgenerierung sind in CLAUDE.md unter Punkt 11 als
  * offen vermerkt, bewusst nicht Teil dieser ersten Fassung.
  */
-export function CharakterportraitPopup({
-  offen,
+export function CharakterportraitAnsicht({
   ich,
-  onSchliessen,
   onGeaendert,
 }: {
-  offen: boolean;
   ich: SpielerMe;
-  onSchliessen: () => void;
   /** Neuer SpielerMe-Stand nach erfolgreichem Upload. */
   onGeaendert: (frisch: SpielerMe) => void;
 }) {
@@ -46,13 +43,11 @@ export function CharakterportraitPopup({
   }
 
   return (
-    <Fenster
-      offen={offen}
-      titel="Charakterportrait"
-      unterzeile={ich.personName ?? undefined}
-      kennung="charakterportrait"
-      onSchliessen={onSchliessen}
-    >
+    <div className="port-seite">
+      <h3 className="gg-abschnitt">
+        <span>◒ Portrait</span>
+      </h3>
+
       <div className="port-popup">
         {ich.personBildUrl && (
           <img src={ich.personBildUrl} alt={ich.personName ?? "Portrait"} className="port-vorschau" />
@@ -92,6 +87,6 @@ export function CharakterportraitPopup({
 
         <p className="port-hinweis">Zeichentool und KI-generiertes Bild sind noch nicht verfügbar.</p>
       </div>
-    </Fenster>
+    </div>
   );
 }

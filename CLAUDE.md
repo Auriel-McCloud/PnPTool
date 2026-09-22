@@ -946,11 +946,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     - `SpielerMeResponse` bekam `personBildUrl` (Backend liefert es über
       `p.bildUrl AS personBildUrl` in `finde_spieler`/`get_spieler`,
       `players/repository.py`).
-    - Frontend: `players/CharakterportraitPopup.tsx` (Commlink-Popup via
-      `Fenster`, Muster wie `KiTextPopup.tsx`), eigener kleiner Knopf über
-      dem Charakterblatt in `SpielerAnsicht.tsx` (`cb-portrait-leiste`,
-      zeigt das aktuelle Bild oder einen Platzhalter — Übersichtskarten
-      bleiben schlank, das Popup trägt die Upload-Aktionen).
+    - **Eigener Burger-Menü-Punkt statt Popup über dem Blatt** (Mark,
+      22.09.2026, Korrektur nach dem ersten Wurf: "damit im Charakterblatt
+      mehr Platz ist" — das Blatt wächst je nach Chartyp schon mit
+      zusätzlichen Skills/Werten). Frontend:
+      `players/CharakterportraitAnsicht.tsx` — eigener statischer Bereich
+      `{ id: "portrait", symbol: "◒" }` in `BEREICHE_STATISCH`
+      (`SpielerAnsicht.tsx`), direkt nach dem Charakterblatt-Eintrag, kein
+      Popup-Fenster mehr nötig.
     - Verifiziert: `tsc -b` fehlerfrei, End-to-End gegen echte Neo4j-DB
       (Spieler-Login → Bild-Upload → `GET /api/spieler/me` zeigt die neue
       URL, Testdaten wieder entfernt).
