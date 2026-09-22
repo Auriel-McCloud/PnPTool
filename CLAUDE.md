@@ -106,6 +106,46 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (22.09.2026, Shop-System Kern-Baustein):**
+- **Shop-System, Kern-Baustein** (Punkt 1 unter "Geplante Features",
+  Spam/Scammer/I.C.E.-Skalierung bewusst zurückgestellt) — neues Modul
+  `backend/app/haendler/`. Ein Händler ist **keine eigene Entität**,
+  sondern eine `Person` mit `istHaendler=true` (analog `istKI`/`istCritter`)
+  — bewusst schlank, **kein Charakterblatt** (Marks Entscheidung), nur
+  Name/Bild/Beschreibung über die bestehenden `/personen`-Routen. Standort
+  läuft über dieselbe `BEFINDET_SICH_AN`-Kante wie bei Party, Kontakt/
+  Messenger übers bestehende `KENNT`-System — beides ohne neuen Code.
+  **Sortiment gemischt** (Marks Vorgabe): explizite `VERKAUFT {preis}`-Kante
+  für gezielt eingetragene Ware (mit Sonderpreis möglich, Auf-/Abschlag) UND
+  automatischer Bestand aus globalen Vorlagen (`automatischImShop=true`,
+  bereits vorbereitete Felder aus dem September). Neues Feld
+  `Person.spezialisierung: list[str]` filtert den automatischen Teil auf
+  passende Gegenstandstypen (leer = Gemischtwarenladen zeigt alles; Mark:
+  *"bei einem Waffenladen sollte es schließlich keinen Brokkoli geben"*) —
+  explizit eingetragene Ware ist davon unabhängig immer sichtbar.
+  **Bestand ergibt sich aus bestehenden Feldern, kein neues Konzept:**
+  Vorlage (`istVorlage`) → unendlich verfügbar, jeder Kauf kopiert
+  (`items/repository.py::assign_copy`); einzigartiges Stück → genau einmal
+  kaufbar, verschwindet nach dem Kauf aus dem Sortiment (Besitzerwechsel via
+  `transfer_owner`). **Kauf-Endpunkt** `POST .../haendler/{id}/kaufen`
+  prüft Guthaben serverseitig (`Person.kapital`, unabhängig vom
+  Bestätigungs-Popup im Frontend), zieht ab, übergibt die Ware; zu wenig
+  Guthaben → `409` mit `"Guthaben reicht nicht — Xg verfügbar, Yg nötig"`.
+  Spieler kaufen nur für sich selbst, SL für jeden PC (gleiches Muster wie
+  der Messenger). Backend end-to-end gegen echte Neo4j-DB verifiziert:
+  Spezialisierungs-Filter (Waffe erscheint, Brokkoli nicht), Kauf einer
+  Vorlage (Kapital korrekt abgezogen, Vorlage bleibt im Sortiment, Kopie im
+  Inventar des Käufers), Kauf eines Unikats zu Sonderpreis (verschwindet
+  danach aus dem Sortiment, zweiter Kauf korrekt 404), Standort-Zuweisung,
+  409 bei zu wenig Guthaben — alle Fälle über echte HTTP-Requests
+  durchgespielt, nicht nur unit-getestet. `pytest` komplett grün (die zwei
+  vorbestehenden Fehlschläge in `test_zugriffsschutz.py` — `spotify/suche`,
+  `/spieler/mein-bild` — stammen aus fremden, unfertigen Änderungen, nicht
+  von diesem Feature). **Noch offen:** Frontend (SL-Sortiment-Editor,
+  Spieler-Kaufansicht, Standort-Popup), Spam/Werbe-Mechanik, Scammer-
+  Storylines, I.C.E.-Spam-Skalierung — siehe Punkt 1 unten und
+  `docs/api/haendler.md`.
+
 **Zuletzt gebaut (22.09.2026, KI-Bugfix + ✨-Knopf):**
 - **Bugfix Ideenschmiede-Kontext (Mark-Bug):** der Story-Pfad in
   `backend/app/ki/routes.py::ki_idee` rief `generiere_json` bisher OHNE
@@ -228,7 +268,8 @@ npm run dev
 - Mitteilungen ausblenden (✕ Button, pro Person)
 - API-Dokumentation (`docs/api/`)
 
-**Offen:** Shop-System, KI-Integration (erste Iteration gebaut), Deploy,
+**Offen:** Shop-System-Frontend (Backend-Kern fertig, siehe oben), Shop-Spam/
+Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
 **Kampagnen-Export/Import** (mittlere Priorität — aktuell: Volumen-Kopier-Workaround für Deploy möglich),
@@ -518,6 +559,11 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 ## Geplante Features
 
 1. **Shop-System + Händler-Spam** — großes Feature-Set:
+   - **Kern gebaut (22.09.2026, Backend)**: Händler-NPCs (`Person`,
+     `istHaendler=true`) mit Sortiment (explizit + automatisch nach
+     Spezialisierung), Standort, Kauf mit serverseitiger Guthabenprüfung —
+     siehe "Zuletzt gebaut" oben und `docs/api/haendler.md`. Noch **kein
+     Frontend**.
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
    - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**

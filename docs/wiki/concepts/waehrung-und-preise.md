@@ -34,12 +34,21 @@ nicht.
 Fahrzeug/Drohnen-Preisstaffel wirkt für kleine Fahrzeuge zu teuer — siehe
 [[drohnen-fahrzeuge]] für Details. **Status: offen.**
 
-## Geplantes Shop-System (noch nicht gebaut)
+## Shop-System: Kern gebaut (22.09.2026)
 
-`CLAUDE.md` Punkt 1: Händler-NPCs mit Warenangebot, Spam-Nachrichten
-(Frequenz skaliert mit I.C.E.), Scammer-Storylines. **Status: geplant, nicht
-umgesetzt** — würde auch die Rüstungsreparatur-Kosten und
-Fahrzeug-Preisdiskussion mit auflösen können.
+`CLAUDE.md` Punkt 1: Händler-NPCs mit Sortiment (explizit eingetragene Ware
++ automatischer Bestand nach Spezialisierung gefiltert), Kauf mit
+serverseitiger Guthabenprüfung. **Status: Backend fertig und end-to-end
+verifiziert, Frontend noch offen.** Details: `docs/api/haendler.md`.
+
+Bestand nutzt die bestehende `einzigartig`/`istVorlage`-Unterscheidung
+(kein neues Konzept): Vorlagen unendlich kaufbar, einzigartige Stücke
+verschwinden nach dem Kauf aus dem Sortiment.
+
+Noch offen: Spam/Werbe-Mechanik (Frequenz skaliert mit I.C.E.),
+Scammer-Storylines, Frontend. Würde — sobald das Frontend steht — auch die
+Rüstungsreparatur-Kosten und die Fahrzeug-Preisdiskussion mit auflösen
+können.
 
 ## Siehe auch
 

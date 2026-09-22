@@ -34,6 +34,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Party](./party.md) | Gruppen, Mitgliedschaft, Aufenthaltsort, aktive Party | |
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
+| [Shop](./haendler.md) | Händler-NPCs, Sortiment (explizit + automatisch), Kauf mit Guthabenprüfung | |
 | [KI](./ki.md) | Ideenschmiede-Generierung, Wiki-Rechtschreib-/Grammatik-/Logikprüfung | |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration

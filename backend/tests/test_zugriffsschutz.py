@@ -103,6 +103,12 @@ OHNE_GM_ERLAUBT = {
     # entscheidet die Regel, nicht der Aufrufer.
     # Siehe traits/routes.py::ruestungstreffer und docs/api/ruestung.md.
     "/api/campaigns/{campaign_id}/personen/{person_id}/ruestung/treffer",
+    # --- Shop: der Spieler kauft für sich selbst ---------------------------
+    # Ein Kauf ist die Handlung des Spielers (Guthaben abziehen, Ware
+    # übernehmen). Die Route prüft selbst: Guthaben reicht, Käufer ist der
+    # eigene Charakter (SL kann für jeden PC kaufen, Spieler nur für sich).
+    # Siehe app/haendler/routes.py::kaufen.
+    "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

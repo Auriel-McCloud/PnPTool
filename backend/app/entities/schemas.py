@@ -93,6 +93,22 @@ class PersonCreate(BaseModel):
     # Events/Gegenstände läuft über echte Graphkanten von der Person aus
     # (siehe entities/repository.py::person_einfluss_setzen).
     istKI: bool = False
+    # Shop-System (22.09.2026, Kern-Baustein): ein Händler ist wie KI/Critter
+    # eine echte Person, aber bewusst SCHLANK — kein Charakterblatt (Marks
+    # Entscheidung), nur Name/Bild/Beschreibung + Sortiment (siehe
+    # app/haendler/). Kontakt/Messenger läuft über das bestehende
+    # KENNT-System, der Standort über dieselbe BEFINDET_SICH_AN-Kante wie bei
+    # Party (app/haendler/repository.py).
+    istHaendler: bool = False
+    # Nur relevant bei istHaendler=true: auf welche Gegenstandstypen sich der
+    # AUTOMATISCHE Shop-Bestand (Vorlagen mit automatischImShop=true) dieses
+    # Händlers beschränkt. Leer = Gemischtwarenladen, zeigt alle passenden
+    # Vorlagen. Gesetzt (z.B. ["Waffe"]) = nur diese Typen, egal wie
+    # generisch die Vorlage sonst automatisch verteilt würde — Mark:
+    # "bei einem Waffenladen sollte es schließlich keinen Brokkoli geben".
+    # Explizit im Sortiment eingetragene Ware (VERKAUFT-Kante,
+    # app/haendler/repository.py) ist davon unabhängig immer sichtbar.
+    spezialisierung: list[str] = []
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
@@ -137,6 +153,8 @@ class PersonUpdate(BaseModel):
     rasse: str | None = None
     istCritter: bool | None = None
     istKI: bool | None = None
+    istHaendler: bool | None = None
+    spezialisierung: list[str] | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
@@ -180,6 +198,8 @@ class PersonResponse(BaseModel):
     rasse: str = ""
     istCritter: bool = False
     istKI: bool = False
+    istHaendler: bool = False
+    spezialisierung: list[str] = []
     silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0
