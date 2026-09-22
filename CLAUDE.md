@@ -655,8 +655,28 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      2. NeuroWeaving-Grundwert-Maximum war 10 (wie Hexkraft), sollte aber 6
         sein: Hexkraft wird allein gewürfelt und geht deshalb bis 10,
         NeuroWeaving wird aber immer mit einer Fertigkeit kombiniert
-        (Pool-Deckel 10, `magie.ts::NEUROWEAVING_POOL_MAX`) — bei Max 10 hätte
+        (Pool-Deckel, `magie.ts::NEUROWEAVING_POOL_MAX`) — bei Max 10 hätte
         der Grundwert allein den Pool füllen können. Auf 6 gesenkt.
+   - **Drei weitere Fixes, gleicher Praxistest (22.09.2026):**
+     3. NeuroWeaving-Grundwert fehlte auch im Charakterblatt selbst (nicht
+        nur bei Freebees/LevelUp) — `reihe("NeuroWeavingWert")` fehlte in
+        `Charakterblatt.tsx`, ergänzt.
+     4. Probenauswahl bei NeuroWeaving verlangte einen Pflichtklick ohne
+        echte Wahl (nur ein möglicher Partner: der Grundwert selbst) —
+        `Probe.tsx` wählt jetzt automatisch vor, wenn genau ein Kandidat
+        existiert.
+     5. "Wilde Magie" bei NeuroWeaving in **"Overclock"** umbenannt (war
+        Copy-Paste-Rest, passte inhaltlich nicht) — gleiche Mechanik
+        (Bonuswürfel bis Willenskraft, Zielwert vorher ansagen, Rückstoß-
+        Willenskraftwurf bei Erfolg), neuer Name in `magie.ts`
+        (`MAGIE_HINWEISE.overclock`/`.overclockRueckstoss`), `Probe.tsx` und
+        `WillenskraftFrage.tsx`.
+   - **Pool-Deckel 10 → 12** (22.09.2026, Mark: "wirkt das natürlicher"
+     seit überall 6 das neue Skill-Maximum ist): `NEUROWEAVING_POOL_MAX` in
+     `magie.ts`, dazu zwei hartkodierte `10`en in `Kampfkarte.tsx` durch die
+     Konstante ersetzt (waren vorher nicht synchron mit `Probe.tsx`). Wilde
+     Magie bleibt bewusst ohne Pool-Deckel — andere Ausgangslage (ein Wert
+     allein bis 10 + Rückstoß-Risiko als Bremse statt Zahlenlimit).
 
    **Backend (2026-09-12):**
    - `:Regelsystem` Node-Typ mit CRUD-Endpunkten (`/api/regelsysteme`)

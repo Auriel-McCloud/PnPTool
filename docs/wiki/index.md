@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-20 | Seiten: 29
+> Zuletzt aktualisiert: 2026-09-22 | Seiten: 29
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -27,7 +27,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe (erfunden) |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie |
-| [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Verteidigung Fassung+Geistesschärfe (schon 29.08. vom Excel abgewichen) |
+| [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Erweiterung auf 6 Skills (22.09.), Overclock statt Wilde Magie, Pool-Deckel 10→12 |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen/Schaden, WebSocket noch nicht gebaut |
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster |

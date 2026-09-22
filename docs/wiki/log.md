@@ -311,3 +311,60 @@ Dokumentiert: `docs/wiki/entities/ki-integration.md` (neuer Abschnitt),
 Punkt 3 als teilweise erledigt markiert), `docs/api/ki.md` (neu),
 `docs/api/README.md` (Tabellenzeile). Skill-Referenz
 `ki-gemini-integration.md` um den vollen Bauverlauf ergänzt.
+
+## [2026-09-22] update | Decker/Neuroweaver/KI-Skills auf 6 erweitert + drei Folgefixes
+
+Marks Vorschlag vom 20.09. (siehe `CLAUDE.md` Punkt 9) umgesetzt: zwei neue
+NeuroWeaving-Fertigkeiten **Electronic Warfare** ("Rauschen" — Ortungs-
+tarnung, kein Angriff, Radius+Dauer aus einer Probe) und **Matrix-Navigation**
+(Erfolgsstufen finden Systeme bis hin zu Backdoors). Gilt für NeuroWeaver,
+Decker (neue Deck-Werte `deckElectronicWarfare`/`deckMatrixNavigation`) UND
+KI. Katalog: `backend/app/traits/seed.py`. Cyberdecks als echte Gegenstände
+bewusst nicht Teil dieser Arbeit (Mark macht das separat).
+
+Auch: Spotify-Eintrag in `CLAUDE.md` Punkt 4 auf "fertig, keine Yamaha-
+Anbindung geplant" korrigiert (war zuvor fälschlich noch als offen markiert).
+
+**Vier Folgefehler beim ersten Praxistest gefunden** (Mark erstellt einen
+Neuroweaver "Cyborg") — alle in `docs/wiki/concepts/neuroweaving-decking.md`
+unter "Entwicklung" im Detail:
+
+1. NeuroWeaving-Grundwert fehlte in der Freebee- und LevelUp-Anzeige
+   (`Charaktererstellung.tsx`/`LevelUp.tsx`) — feste Kategorienliste kannte
+   `NeuroWeavingWert` nicht, nur die sechs Fertigkeiten darunter.
+2. Grundwert-Maximum stand auf 10 (wie Hexkraft), sollte aber 6 sein: anders
+   als Hexkraft (allein gewürfelt) wird NeuroWeaving immer mit einer
+   Fertigkeit kombiniert — bei Max 10 hätte der Grundwert allein den
+   Pool-Deckel ausschöpfen können.
+3. Derselbe Anzeige-Fehler wie Punkt 1 auch im Charakterblatt selbst
+   (`Charakterblatt.tsx`) — dritte, unabhängige Fundstelle.
+4. Probenauswahl (`Probe.tsx`) verlangte beim Klick auf eine Fertigkeit
+   einen Pflichtklick auf den einzigen möglichen Partner (den Grundwert) —
+   jetzt automatisch vorausgewählt, wenn nur ein Kandidat existiert.
+
+**Zwei weitere Anpassungen auf Marks Wunsch:**
+
+5. "Wilde Magie" bei NeuroWeaving in **"Overclock"** umbenannt — war ein
+   Copy-Paste-Rest von der Hexkraft-Seite und passte inhaltlich nicht
+   (Nervensystem übers Limit pushen statt Magie wirken). Gleiche Mechanik
+   (Bonuswürfel bis Willenskraft, Zielwert ansagen, Rückstoß-Willenskraftwurf
+   bei Erfolg) — nur Name und Hinweistexte geändert, `magie.ts`/`Probe.tsx`/
+   `WillenskraftFrage.tsx`.
+6. NeuroWeaving-Pool-Deckel von 10 auf **12** angehoben — seit der
+   Skill-Erweiterung ist überall 6 das neue Maximum, 10 wirkte als
+   Pool-Deckel unpassend niedrig; 12 passt zum bereits etablierten "rundes
+   Maximum"-Muster im Tool (natürliches Gesundheitsmaximum). Wilde Magie hat
+   bewusst weiterhin **keinen** Pool-Deckel — andere Ausgangslage (ein Wert
+   allein bis 10, Rückstoß-Risiko als Bremse statt Zahlenlimit); auf
+   Nachfrage mit Mark bestätigt, kein Widerspruch.
+
+Verifiziert: Backend-Tests grün (61 relevante + Gesamtlauf bis auf einen
+vorbestehenden, unrelated Fehler bei der Spotify-Route), `tsc -b` fehlerfrei
+nach jedem Schritt, gegen echte Neo4j-DB verifiziert (6 TraitDefs korrekt
+angelegt, Max 6, sortOrder 1-6, Grundwert-Max 6 nach `seed_traits()`-Neustart
+übernommen).
+
+Dokumentiert: `CLAUDE.md` Punkt 9 (vollständig, alle sechs Fixes),
+`docs/regeln-neotopia.md`, `docs/wiki/concepts/neuroweaving-decking.md`
+(Haupt-Zielseite, "Entwicklung"-Abschnitt), `docs/wiki/index.md`
+(Zusammenfassungszeile + Datum).

@@ -20,7 +20,10 @@ muss ein **Zielwert** festgelegt werden — wird er unterschritten, ist die Prob
 gescheitert. Nach einem gelungenen wilden Zauber: Willenskraftwurf gegen die
 Erfolgszahl (entfällt bei exakter Übereinstimmung mit dem Zielwert); die
 Differenz wird als Schaden abgezogen. Kritische Treffer zählen beim Zielwert
-**nicht** als zusätzliche Erfolge.
+**nicht** als zusätzliche Erfolge. Bewusst **kein Pool-Deckel** — anders als
+beim NeuroWeaving-Gegenstück "Overclock" (siehe [[neuroweaving-decking]]),
+weil Hexkraft allein gewürfelt wird und nicht mit einem zweiten Wert
+kombiniert.
 
 **Sphären beschreiben, was möglich ist — sie geben keine Bonuswürfel** (anders
 als NeuroWeaving-Fertigkeiten, siehe [[neuroweaving-decking]]). Stufen:
