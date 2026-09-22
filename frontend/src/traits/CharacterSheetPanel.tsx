@@ -760,11 +760,21 @@ export function GegenstandRow({
 
         <div>
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
-          <RichTextEditor content={descriptionDoc} onChange={setDescriptionDoc} minHeight={60} />
+          <RichTextEditor
+            content={descriptionDoc}
+            onChange={setDescriptionDoc}
+            minHeight={60}
+            kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Beschreibung" }}
+          />
         </div>
         <div>
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
-          <RichTextEditor content={notesDoc} onChange={setNotesDoc} minHeight={50} />
+          <RichTextEditor
+            content={notesDoc}
+            onChange={setNotesDoc}
+            minHeight={50}
+            kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Notizen" }}
+          />
         </div>
 
         <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />

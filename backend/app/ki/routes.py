@@ -110,6 +110,17 @@ class UebernehmenInput(BaseModel):
     vorschlag: str
 
 
+class ObjektTextInput(BaseModel):
+    """Für den ✨ KI-Knopf neben „SL-geheim" an Beschreibung/Notizen-Feldern."""
+
+    objektTyp: str
+    objektName: str
+    # Bisheriger Text des Feldes (reiner Text, vom Frontend per editor.getText()
+    # geholt) — gibt der KI Anschluss an das, was schon dasteht.
+    bisherigerText: str = ""
+    prompt: str
+
+
 def _text_zu_dokument(text: str) -> str:
     """Fließtext in ein TipTap-Dokument umwandeln (Absätze = Paragraph-Nodes).
 
@@ -128,13 +139,27 @@ def _text_zu_dokument(text: str) -> str:
 
 
 def _mit_kontext(prompt: str, kontext: str) -> str:
-    """Hängt die freigegebene Kampagnenwelt an den Wunsch, wenn es eine gibt."""
+    """Hängt die freigegebene Kampagnenwelt an den Wunsch, wenn es eine gibt.
+
+    Bewusst scharf formuliert (22.09.2026, Mark-Bug): Gemini erfand bei einem
+    Story-Part "Proxima Centauri", obwohl die Kampagne bereits "Omikron²
+    Eridiani" als Sternensystem freigegeben hatte — die weiche Formulierung
+    von vorher ("füge das Neue darin ein") reichte nicht. Jetzt eine
+    ausdrückliche Vorrang-Regel: Bestehendes verwenden statt Neues erfinden,
+    wenn es thematisch passt.
+    """
     if not kontext:
         return prompt
     return (
         f"{prompt}\n\n"
-        f"Freigegebene Welt der Kampagne — füge das Neue darin ein und knüpfe es "
-        f"an passende bestehende Personen, Orte oder Fraktionen an:\n{kontext}"
+        f"Freigegebene Welt der Kampagne — das ist ALLES, was in dieser Kampagne "
+        f"bereits existiert (Personen, Orte, Events, Fraktionen, Gegenstände, "
+        f"Wiki-Wissen). Für alles, was du erwähnst (Orte, Sternensysteme, "
+        f"Fraktionen, Personen, Organisationen, ...): verwende VORRANGIG etwas "
+        f"aus dieser Liste, wenn es thematisch passt — erfinde nur dann etwas "
+        f"komplett Neues, wenn wirklich nichts Passendes existiert. Erfinde "
+        f"insbesondere KEINEN neuen Namen für etwas, das in der Liste bereits "
+        f"unter einem anderen Namen vorkommt:\n{kontext}"
     )
 
 
@@ -212,7 +237,9 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
 
     try:
         if body.typ == "story":
-            ergebnis = await generiere_json(prompt, _SYSTEM, _STORY_SCHEMA)
+            kontext = await sammle_kontext(campaign_id)
+            prompt_komplett = _mit_kontext(prompt, kontext)
+            ergebnis = await generiere_json(prompt_komplett, _SYSTEM, _STORY_SCHEMA)
             titel = (ergebnis.get("titel") or "").strip() or "Unbenannter Story-Part"
             inhalt = (ergebnis.get("inhalt") or "").strip()
             seite = await create_seite(
@@ -318,3 +345,45 @@ async def wiki_befund_uebernehmen(campaign_id: str, seiten_id: str, body: Uebern
     if ergebnis is None:
         raise HTTPException(status_code=404, detail="Seite nicht gefunden")
     return ergebnis
+
+
+_OBJEKT_TEXT_SYSTEM = (
+    _SYSTEM
+    + " Du schreibst einen kurzen Fließtext-Zusatz für die Beschreibung oder "
+    "Notizen eines einzelnen Kampagnenobjekts (Person, Ort, Event, Fraktion "
+    "oder Gegenstand) — kein ganzer Artikel, keine Überschriften, nur "
+    "zusammenhängender Fließtext in ein bis drei Absätzen, der zum bisherigen "
+    "Text passt und ihn sinnvoll fortsetzt oder ergänzt, ohne ihn zu wiederholen."
+)
+
+
+@router.post("/objekt-text")
+async def ki_objekt_text(campaign_id: str, body: ObjektTextInput):
+    """Generiert einen Textvorschlag für ein einzelnes Objekt (✨-Knopf im
+    RichTextEditor, neben „SL-geheim"). Liefert nur den Vorschlag zur
+    Vorschau zurück — die Übernahme (Anhängen ans Feld) macht das Frontend,
+    hier wird nichts gespeichert.
+    """
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=422, detail="Der Wunsch darf nicht leer sein.")
+
+    kontext = await sammle_kontext(campaign_id)
+    teile = [
+        f"{body.objektTyp}: {body.objektName}",
+    ]
+    if body.bisherigerText.strip():
+        teile.append(f"Bisheriger Text dieses Feldes:\n{body.bisherigerText.strip()}")
+    teile.append(f"Wunsch: {prompt}")
+    objekt_prompt = "\n\n".join(teile)
+
+    try:
+        ergebnis = await generiere_json(
+            _mit_kontext(objekt_prompt, kontext),
+            _OBJEKT_TEXT_SYSTEM,
+            {"type": "OBJECT", "properties": {"text": {"type": "STRING"}}, "required": ["text"]},
+        )
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    return {"text": (ergebnis.get("text") or "").strip()}

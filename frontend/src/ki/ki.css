@@ -1,0 +1,123 @@
+/* ===================================================================
+   ✨ KI-Text-Popup (KiTextPopup.tsx) — Vorschlag-Vorschau für den
+   Beschreibung/Notizen-KI-Knopf im RichTextEditor.
+
+   Eigenes, schlankes Set statt der Ideenschmiede-Klassen zu importieren:
+   dieselbe Commlink-Sprache (Tokens aus theme/tokens.css, .is-*-artiger
+   Aufbau), aber ohne Kopplung an ein anderes Feature.
+   =================================================================== */
+
+.ki-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ki-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ki-input {
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+
+.ki-input:focus {
+  outline: none;
+  border-color: var(--p-violett, var(--neon));
+}
+
+.ki-aktionen {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.ki-btn-primaer {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid var(--p-violett, var(--neon));
+  border-radius: var(--radius);
+  background: var(--p-violett, var(--neon));
+  color: var(--flaeche-tief);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.ki-btn-primaer:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--p-violett, var(--neon));
+}
+
+.ki-btn-primaer:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ki-btn-sekundaer {
+  padding: 12px 20px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ki-btn-sekundaer:hover {
+  border-color: var(--text-leise);
+  color: var(--text);
+}
+
+.ki-fehler {
+  margin: 0;
+  color: var(--signal);
+  font-size: 12px;
+}
+
+.ki-vorschau-hinweis {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.ki-vorschau-text {
+  padding: 12px;
+  border: 1px solid var(--p-violett, var(--neon));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--p-violett, var(--neon)) 8%, var(--flaeche-tief));
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ✨ Knopf in der RichTextEditor-Werkzeugleiste — eigener Ton (Violett),
+   passend zum Ideenschmiede-KI-Knopf (.is-ki-btn). */
+.rt-ki-btn {
+  color: var(--p-violett, var(--neon));
+  border-color: var(--p-violett, var(--neon)) !important;
+}

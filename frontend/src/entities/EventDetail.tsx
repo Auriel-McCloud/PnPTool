@@ -207,7 +207,12 @@ export function EventDetail({
 
           {unteransicht === "beschreibung" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} minHeight={200} />
+              <RichTextEditor
+                content={beschreibungDoc}
+                onChange={setBeschreibungDoc}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Beschreibung" }}
+              />
               <button
                 type="button"
                 className="pcd-speichern"
@@ -221,7 +226,12 @@ export function EventDetail({
 
           {unteransicht === "notizen" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={notizenDoc} onChange={setNotizenDoc} minHeight={200} />
+              <RichTextEditor
+                content={notizenDoc}
+                onChange={setNotizenDoc}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Notizen" }}
+              />
               <button
                 type="button"
                 className="pcd-speichern"

@@ -197,7 +197,12 @@ export function OrtDetail({
 
           {unteransicht === "beschreibung" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} minHeight={200} />
+              <RichTextEditor
+                content={beschreibungDoc}
+                onChange={setBeschreibungDoc}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Beschreibung" }}
+              />
               <button
                 type="button"
                 className="pcd-speichern"
@@ -211,7 +216,12 @@ export function OrtDetail({
 
           {unteransicht === "notizen" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={notizenDoc} onChange={setNotizenDoc} minHeight={200} />
+              <RichTextEditor
+                content={notizenDoc}
+                onChange={setNotizenDoc}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Notizen" }}
+              />
               <button
                 type="button"
                 className="pcd-speichern"

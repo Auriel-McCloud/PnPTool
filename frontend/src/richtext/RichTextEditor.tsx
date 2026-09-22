@@ -4,7 +4,9 @@ import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
+import { useState } from "react";
 import { GmSecret } from "./GmSecretMark";
+import { KiTextPopup } from "../ki/KiTextPopup";
 import "./richtext.css";
 
 const EXTENSIONS = [
@@ -55,11 +57,26 @@ export function RichTextEditor({
   content,
   onChange,
   minHeight = 120,
+  kiKontext,
 }: {
   content: JSONContent;
   onChange: (doc: JSONContent) => void;
   minHeight?: number;
+  /**
+   * Aktiviert den ✨ KI-Knopf neben „SL-geheim" (Mark, 22.09.2026: an jeder
+   * Stelle, an der man in Beschreibung/Notizen klickt). Ohne diese Prop
+   * bleibt der Knopf verborgen — Aufrufer ohne campaignId/Objektbezug (z.B.
+   * ein Anlege-Formular für eine noch nicht existierende Entität) brauchen
+   * ihn nicht anzubieten.
+   */
+  kiKontext?: {
+    campaignId: string;
+    objektTyp: string;
+    objektName: string;
+    feldLabel: string;
+  };
 }) {
+  const [kiOffen, setKiOffen] = useState(false);
   const editor = useEditor({
     extensions: EXTENSIONS,
     content,
@@ -67,6 +84,18 @@ export function RichTextEditor({
   });
 
   if (!editor) return null;
+
+  function textAnhaengen(text: string) {
+    if (!editor) return;
+    // Ans Ende des Dokuments anhängen (Marks Wunsch: bisheriger Inhalt
+    // bleibt erhalten). Leere Zeile trennt Absätze, wie bei der
+    // Ideenschmiede-Story-Generierung (_text_zu_dokument im Backend).
+    editor.chain().focus("end").run();
+    const absaetze = text.split("\n\n").map((a) => a.trim()).filter(Boolean);
+    for (const absatz of absaetze.length ? absaetze : [text]) {
+      editor.chain().focus("end").insertContent({ type: "paragraph", content: [{ type: "text", text: absatz }] }).run();
+    }
+  }
 
   return (
     <div style={{ border: "1px solid var(--linie)", borderRadius: 6 }}>
@@ -102,10 +131,27 @@ export function RichTextEditor({
         >
           🔒 SL-geheim
         </ToolbarButton>
+        {kiKontext && (
+          <ToolbarButton title="Mit KI einen Textvorschlag für dieses Feld generieren" onClick={() => setKiOffen(true)}>
+            <span className="rt-ki-btn">✨ KI</span>
+          </ToolbarButton>
+        )}
       </div>
       <div style={{ padding: 10, minHeight }}>
         <EditorContent editor={editor} />
       </div>
+      {kiKontext && (
+        <KiTextPopup
+          offen={kiOffen}
+          campaignId={kiKontext.campaignId}
+          objektTyp={kiKontext.objektTyp}
+          objektName={kiKontext.objektName}
+          feldLabel={kiKontext.feldLabel}
+          bisherigerText={editor.getText()}
+          onSchliessen={() => setKiOffen(false)}
+          onUebernehmen={textAnhaengen}
+        />
+      )}
     </div>
   );
 }

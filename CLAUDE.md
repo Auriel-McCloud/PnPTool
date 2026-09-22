@@ -106,6 +106,38 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (22.09.2026, KI-Bugfix + ✨-Knopf):**
+- **Bugfix Ideenschmiede-Kontext (Mark-Bug):** der Story-Pfad in
+  `backend/app/ki/routes.py::ki_idee` rief `generiere_json` bisher OHNE
+  `sammle_kontext()` auf — nur der Charakter-Pfad bekam die freigegebene
+  Kampagnenwelt mitgeliefert. Folge: bei einer Story-Generierung erfand
+  Gemini "Proxima Centauri", obwohl die Kampagne bereits "Omikron²
+  Eridiani" als Sternensystem freigegeben hatte. Fix: Story-Pfad bekommt
+  jetzt denselben `sammle_kontext()` + `_mit_kontext()` wie Charakter.
+  Zusätzlich `_mit_kontext()` verschärft — vorher weiche Formulierung
+  ("füge das Neue darin ein"), jetzt eine explizite Vorrang-Regel:
+  bestehende Objekte bevorzugt wiederverwenden, nur bei echter Lücke etwas
+  komplett Neues erfinden, keinen neuen Namen für etwas bereits
+  Freigegebenes erfinden.
+- **✨ KI-Knopf an jeder Beschreibung/Notizen** (Marks Wunsch): neben
+  🔒 SL-geheim im `RichTextEditor.tsx` erscheint jetzt ein ✨ KI-Knopf,
+  sobald die neue optionale `kiKontext`-Prop gesetzt ist (campaignId,
+  Objekttyp, Objektname, Feldlabel) — betrifft alle Stellen, die
+  `RichTextEditor` einbetten: PC/NPC/Ort/Event/Fraktion-Detail,
+  Gegenstand-Beschreibung/Notizen (`CharacterSheetPanel.tsx`),
+  Begleiter/Critter/KI-Fenster. Klick öffnet `ki/KiTextPopup.tsx`: freier
+  Wunsch-Prompt → Backend generiert einen Vorschlag (neuer Endpunkt
+  `POST /api/campaigns/{id}/ki/objekt-text`, bekommt Objektname +
+  bisherigen Feldtext + Kampagnenkontext) → **Vorschau im Popup, „✓
+  Übernehmen" hängt den Text erst dann ans Ende des Feldes an** (Mark
+  wollte explizit keine Direktschreibung, wie bei der Wiki-Prüfung erst
+  zur Kontrolle anzeigen; bisheriger Inhalt bleibt erhalten, kein Ersetzen).
+  Neue Dateien: `frontend/src/ki/api.ts`, `ki/KiTextPopup.tsx`, `ki/ki.css`.
+  Backend end-to-end gegen echte Route verifiziert (`/objekt-text` im
+  OpenAPI-Schema, Server startet fehlerfrei); `tsc --noEmit` fehlerfrei.
+  Auto-Verknüpfung (KI verlinkt erwähnte Entitäten als Graphkanten) bleibt
+  weiterhin offen, als Nächstes angekündigt.
+
 **Zuletzt gebaut (20.09.2026, KI-Prüfung):**
 - **Wiki-Rechtschreib-/Grammatik-/Logikprüfung** — erster Teil von Punkt 3
   ("KI-Integration") umgesetzt, Auto-Verknüpfung folgt als nächster Schritt.

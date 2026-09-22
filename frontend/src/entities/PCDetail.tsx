@@ -201,6 +201,7 @@ export function PCDetail({
                 content={beschreibungDoc}
                 onChange={setBeschreibungDoc}
                 minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />
               <button
                 type="button"
@@ -219,6 +220,7 @@ export function PCDetail({
                 content={notizenDoc}
                 onChange={setNotizenDoc}
                 minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Notizen" }}
               />
               <button
                 type="button"

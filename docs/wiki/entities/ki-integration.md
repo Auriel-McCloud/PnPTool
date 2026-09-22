@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-20
+updated: 2026-09-22
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md]
@@ -22,6 +22,37 @@ konfigurierbar (`gemini_model`, Default `gemini-3.6-flash`), API-Key in
 `backend/.env` (gitignored, nie im Git-Verlauf — siehe [[tech-stack]] für
 Details zur Secrets-Vorlage `.env.example`). Zusätzlich
 `backend/app/ki/mistral.py` als Alternativ-Client.
+
+## Bugfix: Kontextlücke im Story-Pfad (22.09.2026) — behoben
+
+Mark meldete: bei einer Story-Generierung erfand Gemini "Proxima Centauri"
+als Sternensystem, obwohl die Kampagne bereits "Omikron² Eridiani"
+freigegeben hatte. Ursache: `ki_idee()` in `routes.py` rief für `typ=story`
+`generiere_json` **ohne** `sammle_kontext()` auf — nur der `charakter`-Pfad
+bekam die freigegebene Kampagnenwelt mitgeliefert. Fix: beide Pfade nutzen
+jetzt `sammle_kontext()` + `_mit_kontext()`. Zusätzlich die Prompt-Formel in
+`_mit_kontext()` verschärft: statt der weichen Bitte „füge das Neue darin
+ein" jetzt eine ausdrückliche Vorrang-Regel — bestehende Objekte bevorzugt
+wiederverwenden, nur bei echter Lücke etwas komplett Neues erfinden, nie
+einen neuen Namen für etwas bereits Freigegebenes erfinden.
+
+## ✨ KI-Knopf an Beschreibung/Notizen (22.09.2026) — umgesetzt
+
+Dritter Anwendungsfall auf derselben Anbindung: neben 🔒 SL-geheim im
+`RichTextEditor.tsx` erscheint ein ✨ KI-Knopf, sobald die aufrufende Stelle
+die optionale `kiKontext`-Prop setzt (campaignId, Objekttyp, Objektname,
+Feldlabel „Beschreibung"/„Notizen"). Betrifft alle Einbettungsstellen:
+PC/NPC/Ort/Event/Fraktion-Detail-Popups, Gegenstand-Beschreibung/Notizen
+(`CharacterSheetPanel.tsx`), Begleiter/Critter/KI-Fenster.
+
+Ablauf: Klick öffnet `frontend/src/ki/KiTextPopup.tsx` mit freiem
+Wunsch-Prompt → `POST /api/campaigns/{id}/ki/objekt-text`
+(`backend/app/ki/routes.py::ki_objekt_text`) generiert einen Vorschlag aus
+Objektname, bisherigem Feldtext (Anschluss an Vorhandenes) und dem vollen
+Kampagnenkontext → **Vorschau im Popup**, erst „✓ Übernehmen" hängt den Text
+ans Ende des Editor-Inhalts an (Marks Wunsch, 22.09.2026: keine
+Direktschreibung, wie bei der Wiki-Prüfung erst zur Kontrolle anzeigen;
+bisheriger Inhalt bleibt erhalten, kein Ersetzen).
 
 ## Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.2026) — umgesetzt
 
@@ -51,6 +82,8 @@ nicht offen ist. `docs/api/ki.md` dokumentiert die drei neuen Endpunkte.
 ## Geplante Anwendungsfälle (`CLAUDE.md` Punkt 3)
 
 - NPC-Generator aus Kurzbeschreibung — **umgesetzt** (siehe oben)
+- ✨ Freier KI-Text-Zusatz an Beschreibung/Notizen jeder Entität —
+  **umgesetzt** (siehe oben)
 - Bildgenerierung (Portraits, Item-Bilder, Maps) — **nicht umgesetzt**
 - Wiki-Import aus Word-Dokumenten — **nicht umgesetzt**
 - Auto-Verknüpfung (KI durchsucht Wiki/Ideenschmiede, verknüpft erwähnte

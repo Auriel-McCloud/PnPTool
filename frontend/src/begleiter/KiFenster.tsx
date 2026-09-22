@@ -133,7 +133,12 @@ export function KiFenster({
 
           {unteransicht === "beschreibung" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} minHeight={200} />
+              <RichTextEditor
+                content={beschreibungDoc}
+                onChange={setBeschreibungDoc}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
+              />
               <button type="button" className="pcd-speichern" onClick={beschreibungSpeichern} disabled={speichert}>
                 {speichert ? "Speichert…" : "Beschreibung speichern"}
               </button>

@@ -741,7 +741,12 @@ function BegleiterFenster({
         {/* Beschreibung — Fließtext, deshalb unter den Werten statt dazwischen. */}
         <section>
           <h3 style={{ margin: "0 0 6px" }}>Beschreibung</h3>
-          <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} minHeight={100} />
+          <RichTextEditor
+            content={beschreibungDoc}
+            onChange={setBeschreibungDoc}
+            minHeight={100}
+            kiKontext={{ campaignId, objektTyp: "Begleiter", objektName: begleiter.name, feldLabel: "Beschreibung" }}
+          />
           <button
             type="button"
             onClick={beschreibungSpeichern}
