@@ -54,6 +54,45 @@ ans Ende des Editor-Inhalts an (Marks Wunsch, 22.09.2026: keine
 Direktschreibung, wie bei der Wiki-Prüfung erst zur Kontrolle anzeigen;
 bisheriger Inhalt bleibt erhalten, kein Ersetzen).
 
+## ✨ Auto-Verknüpfung (22.09.2026) — umgesetzt
+
+Vierter Anwendungsfall: „⧉✨ Auto-Verknüpfen"-Knopf im `WikiEditor.tsx`
+(neben 🔍 Prüfen, dieselbe Reihe wie ⧉ Verknüpfen manuell). Zweistufig, wie
+die Rechtschreib-/Logikprüfung: Klick öffnet
+`frontend/src/ki/AutoVerknuepfungPopup.tsx`, „✨ Vorschläge holen" ruft
+`POST .../ki/wiki/{id}/verknuepfung/vorschlaege` — die KI bekommt den
+Seitentext plus die Namen ALLER freigegebenen Personen/Orte/Events/
+Fraktionen (`app/ki/kontext.py::sammle_entitaeten`, neu) und liefert für
+jede erkannte Erwähnung ein Zitat + Typ + Namen zurück. Der Namensabgleich
+gegen bestehende IDs passiert bewusst in Python
+(`auto_verknuepfung.py::vorschlaege`, normalisierter Stringvergleich), nie
+durch die KI selbst — eine leicht abweichende Schreibweise der KI darf nie
+eine falsche ID erfinden.
+
+Jeder Treffer einzeln mit „✓ Verknüpfen" (bekannte Entität) oder
+„+ Entwurf anlegen & verknüpfen" (unbekannte — legt zuerst einen
+SL-geheimen Entwurf in der Ideenschmiede an, Marks Vorgabe: Vorschlag zur
+Prüfung, kein Autocommit). `anwenden()` fügt an der zitierten Textstelle
+einen echten `entitaetsverweis`-Chip ein (`_verweis_einfuegen`, splittet
+den Textknoten, erhält Marks wie 🔒 SL-geheim auf beiden Seiten) und
+speichert die Seite — dieselbe `_verweise_schreiben()`-Pipeline wie ein von
+Hand über den „⧉ Verknüpfen"-Knopf eingefügter Verweis erzeugt danach die
+echte `VERWEIST_AUF`-Kante.
+
+**Nebenbei-Fix:** `ERLAUBTE_ZIELTYPEN` in `wiki/repository.py` kannte
+`"Fraktion"` bisher nicht — ein Fraktions-Chip blieb im Text sichtbar,
+erzeugte aber nie eine echte Graphkante (betraf auch manuelle
+Verknüpfungen, nicht nur die neue Auto-Verknüpfung). Jetzt ergänzt.
+
+Backend end-to-end verifiziert: Server startet fehlerfrei, beide neuen
+Routen im OpenAPI-Schema, `_verweis_einfuegen` isoliert getestet (Text wird
+korrekt gesplittet, SL-geheim-Marks bleiben auf beiden Textteilen erhalten,
+Namens-Normalisierung funktioniert). `tsc --noEmit` fehlerfrei.
+
+Sweep über alle Seiten auf einmal (wie bei der Rechtschreibprüfung) bewusst
+NICHT gebaut — Mark wollte erstmal nur den Einzelseiten-Knopf, Sweep bei
+Bedarf später.
+
 ## Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.2026) — umgesetzt
 
 Zweites Feature auf derselben KI-Anbindung, eigenes Modul
@@ -90,7 +129,9 @@ nicht offen ist. `docs/api/ki.md` dokumentiert die drei neuen Endpunkte.
   Personen/Orte/Events als echte Graphkanten; existiert eine Entität noch
   nicht, legt die KI dafür einen Entwurf in der Ideenschmiede an und trägt
   die Beziehung gleich mit ein — präzisiert 20.09.2026, Marks Wunsch) —
-  **nicht umgesetzt**, als NÄCHSTES angekündigt ("machen wir danach")
+  **umgesetzt** (22.09.2026, siehe oben). Bisher nur im Wiki-Editor
+  (Einzelseite); Ideenschmiede-Texte und ein Sweep über alle Seiten sind
+  noch offen.
 - Rechtschreib-/Grammatik-/Logikprüfung im Wiki-Editor und in der
   Ideenschmiede — **umgesetzt** (siehe oben). Dieselbe Prüfung für die
   `RichTextEditor`-Felder an Personen/Orten/Events/Fraktionen ist noch

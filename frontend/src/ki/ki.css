@@ -121,3 +121,60 @@
   color: var(--p-violett, var(--neon));
   border-color: var(--p-violett, var(--neon)) !important;
 }
+
+/* --- Auto-Verknüpfung (AutoVerknuepfungPopup.tsx) --------------------- */
+
+.av-vorschlag {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.av-vorschlag:last-of-type {
+  border-bottom: none;
+}
+
+.av-vorschlag-kopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.av-icon {
+  font-size: 15px;
+}
+
+.av-name {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  flex: 1;
+}
+
+.av-typ {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--flaeche-tief);
+  color: var(--text-aus);
+}
+
+.av-neu {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+
+.av-zitat {
+  font-size: 12px;
+  color: var(--text-leise);
+  font-style: italic;
+}

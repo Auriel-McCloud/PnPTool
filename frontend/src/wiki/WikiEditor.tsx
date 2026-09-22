@@ -12,6 +12,7 @@ import { VerweisWaehler } from "./VerweisWaehler";
 import { bildHochladen } from "./api";
 import { seitePruefen, type SweepSeite } from "../ideenschmiede/api";
 import { PruefungPopup } from "./PruefungPopup";
+import { AutoVerknuepfungPopup } from "../ki/AutoVerknuepfungPopup";
 import "../richtext/richtext.css";
 
 /**
@@ -66,6 +67,7 @@ function Werkzeugleiste({
   laedtBild,
   onPruefen,
   pruefLaeuft,
+  onAutoVerknuepfen,
 }: {
   editor: Editor;
   onVerweis: () => void;
@@ -73,6 +75,7 @@ function Werkzeugleiste({
   laedtBild: boolean;
   onPruefen: () => void;
   pruefLaeuft: boolean;
+  onAutoVerknuepfen: () => void;
 }) {
   return (
     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
@@ -134,6 +137,9 @@ function Werkzeugleiste({
       <Knopf title="Rechtschreibung, Grammatik und Logik prüfen" onClick={onPruefen} disabled={pruefLaeuft}>
         {pruefLaeuft ? "prüft…" : "🔍 Prüfen"}
       </Knopf>
+      <Knopf title="Erwähnte Personen/Orte/Events/Fraktionen automatisch erkennen und verknüpfen" onClick={onAutoVerknuepfen}>
+        ⧉✨ Auto-Verknüpfen
+      </Knopf>
     </div>
   );
 }
@@ -164,6 +170,9 @@ export function WikiEditor({
   // damit dessen interner Zustand (übernommene Befunde ausblenden) bei einem
   // neuen Lauf verlässlich neu beginnt statt den alten Stand zu behalten.
   const [pruefStamp, setPruefStamp] = useState(0);
+
+  // Auto-Verknüpfung (⧉✨): eigenes Popup, das erkannte Erwähnungen listet.
+  const [autoVerknuepfenOffen, setAutoVerknuepfenOffen] = useState(false);
 
   const editor = useEditor(
     {
@@ -276,6 +285,12 @@ export function WikiEditor({
     onChange(neuerInhalt);
   }
 
+  /** Nach jeder angewandten Auto-Verknüpfung: Editor mit dem neuen Stand befüllen. */
+  function nachVerknuepfung(neuerInhalt: string) {
+    editor?.commands.setContent(JSON.parse(neuerInhalt));
+    onChange(neuerInhalt);
+  }
+
   return (
     <>
       {!nurLesen && (
@@ -286,6 +301,7 @@ export function WikiEditor({
           laedtBild={laedtBild}
           onPruefen={pruefen}
           pruefLaeuft={pruefLaeuft}
+          onAutoVerknuepfen={() => setAutoVerknuepfenOffen(true)}
         />
       )}
 
@@ -322,6 +338,14 @@ export function WikiEditor({
         onSchliessen={() => setPruefErgebnis(null)}
         onSpringen={zurTextstelleSpringen}
         onUebernommen={nachUebernahme}
+      />
+
+      <AutoVerknuepfungPopup
+        offen={autoVerknuepfenOffen}
+        campaignId={campaignId}
+        seitenId={seitenId}
+        onSchliessen={() => setAutoVerknuepfenOffen(false)}
+        onUebernommen={nachVerknuepfung}
       />
     </>
   );

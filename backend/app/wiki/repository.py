@@ -23,7 +23,13 @@ from app.wiki.logic import verweise_sammeln
 # Entitätstypen, auf die eine Seite verweisen darf. Weisse Liste, damit ein
 # manipuliertes Dokument keine beliebigen Labels in den Graphen schreibt —
 # der Typ geht direkt in die Cypher-Abfrage ein.
-ERLAUBTE_ZIELTYPEN = {"Person", "Ort", "Event", "Gegenstand"}
+#
+# "Fraktion" ergänzt (22.09.2026, Auto-Verknüpfung): das Frontend konnte
+# schon vorher Fraktions-Chips einfügen (EntitaetsVerweis.ts kennt den Typ),
+# aber diese Whitelist liess sie beim Speichern stillschweigend fallen —
+# der Chip blieb im Text sichtbar, aber ohne echte VERWEIST_AUF-Kante und
+# ohne Rückverweis am NPC. Betraf manuelle Verknüpfungen genauso wie die KI.
+ERLAUBTE_ZIELTYPEN = {"Person", "Ort", "Event", "Gegenstand", "Fraktion"}
 
 LEERES_DOKUMENT = '{"type":"doc","content":[]}'
 

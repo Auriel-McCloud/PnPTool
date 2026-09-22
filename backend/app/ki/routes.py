@@ -31,6 +31,12 @@ from app.ki.wiki_pruefung import (
     sweep,
     uebernehmen_befund,
 )
+from app.ki.auto_verknuepfung import (
+    AnwendenErgebnis,
+    VerknuepfungsVorschlag,
+    anwenden as verknuepfung_anwenden,
+    vorschlaege as verknuepfung_vorschlaege,
+)
 from app.traits.repository import list_catalog, set_rating
 from app.wiki.repository import create_seite
 
@@ -387,3 +393,45 @@ async def ki_objekt_text(campaign_id: str, body: ObjektTextInput):
         raise HTTPException(status_code=502, detail=str(e))
 
     return {"text": (ergebnis.get("text") or "").strip()}
+
+
+class AnwendenVerknuepfungInput(BaseModel):
+    zitat: str
+    typ: str
+    name: str
+    # None = Entität existiert noch nicht, "anwenden" legt einen Entwurf an.
+    zielId: str | None = None
+
+
+@router.post("/wiki/{seiten_id}/verknuepfung/vorschlaege", response_model=list[VerknuepfungsVorschlag])
+async def wiki_verknuepfung_vorschlaege(campaign_id: str, seiten_id: str):
+    """Auto-Verknüpfung, Schritt 1: erkennt Erwähnungen, schlägt nichts vor,
+
+    was schon einen Verweis-Chip an genau dieser Stelle hat — das prüft das
+    Frontend beim Filtern nicht extra, aber ein bereits verlinktes Zitat
+    kommt aus `tiptap_zu_text` ohnehin nur als reiner Anzeigetext zurück,
+    ein erneuter Vorschlag dafür stört also nicht, wird aber beim Anwenden
+    einfach einen zweiten Chip einfügen — deshalb sinnvollerweise nur auf
+    frisch geschriebenen/geänderten Text anwenden.
+    """
+    try:
+        return await verknuepfung_vorschlaege(campaign_id, seiten_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post(
+    "/wiki/{seiten_id}/verknuepfung/anwenden",
+    response_model=AnwendenErgebnis,
+)
+async def wiki_verknuepfung_anwenden(campaign_id: str, seiten_id: str, body: AnwendenVerknuepfungInput):
+    """Auto-Verknüpfung, Schritt 2: wendet EINEN bestätigten Vorschlag an.
+
+    Ohne `zielId` legt das zuerst einen Entwurf in der Ideenschmiede an
+    (Marks Vorgabe: Vorschlag zur Prüfung, kein Autocommit) und verknüpft
+    dorthin.
+    """
+    ergebnis = await verknuepfung_anwenden(campaign_id, seiten_id, body.zitat, body.typ, body.name, body.zielId)
+    if ergebnis is None:
+        raise HTTPException(status_code=404, detail="Seite nicht gefunden")
+    return ergebnis

@@ -91,3 +91,26 @@ async def sammle_kontext(campaign_id: str) -> str:
             zeilen.append(f"- {kind}: {name}{zusatz}")
 
     return "\n".join(zeilen)
+
+
+async def sammle_entitaeten(campaign_id: str) -> list[dict]:
+    """Freigegebene Personen/Orte/Events/Fraktionen mit ID.
+
+    Grundlage für die Auto-Verknüpfung (app/ki/auto_verknuepfung.py): die KI
+    bekommt nur die Namen (kein Kontext-Fließtext), erkennt darin eine
+    Erwähnung im Wiki-Text und liefert den exakten Namen zurück — die
+    Zuordnung Name → ID passiert danach in Python (siehe
+    ``auto_verknuepfung._passende_id``), nie durch die KI selbst.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n {campaignId: $campaign_id})
+        WHERE (n:Person OR n:Ort OR n:Event OR n:Fraktion)
+          AND coalesce(n.istEntwurf, false) = false
+        RETURN n.id AS id, labels(n)[0] AS kind,
+               coalesce(n.name, n.title, '') AS name
+        ORDER BY kind, name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(record) async for record in result]
