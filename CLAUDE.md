@@ -1468,22 +1468,31 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
 15. **Critter-Desktop-Pet / Tamagotchi (notiert 24.09.2026, Mark: „total
     irrer Vorschlag" — explizit ganz zum Schluss als Bonus-Feature, NICHT
     vor allen anderen offenen Punkten angehen)** — Ein Critter des Spielers
-    läuft als Desktop-Pet frei über den Bildschirm, statt nur ein Datensatz
-    im Charakterbogen zu sein:
+    läuft als Pet-Overlay frei über die offene PnPTool-Seite, statt nur ein
+    Datensatz im Charakterbogen zu sein:
     - Bedürfnisse: füttern (Spieler muss Tierfutter im Shop kaufen/
       verbrauchen), baden/pflegen — vernachlässigt das Tier verliert es
       Lebenspunkte.
     - Verhalten/Persönlichkeit: kann während es über den Schirm läuft
       Chaos anstellen (Dinge „kaputt machen", Häufchen hinterlassen) —
       reiner Flavor/Spaß, keine Spielmechanik-Konsequenz nötig.
-    - **Der eigentliche Clou:** Party-Mitglieder sind im Spiel physisch
-      beieinander — das Critter soll deshalb serverseitig zwischen den
-      Bildschirmen ALLER Spieler einer Party wandern können: läuft bei
-      einem Monitor rechts raus, taucht beim nächsten Spieler-Client links
-      wieder auf. Technisch vermutlich ein eigener Always-on-top-Overlay-
-      Prozess/Fenster pro Spieler-Client (Electron/Tauri-artig oder
-      Browser-Overlay mit OS-Berechtigungen — noch nicht recherchiert) plus
-      ein Server-seitiger Zustand (Position, aktueller Client, Bedürfnisse)
-      der zwischen den Spieler-Verbindungen synchronisiert wird. Komplett
-      unspezifiziert, reine Ideensammlung bisher — braucht eine eigene
-      Recherche-/Architektur-Session, bevor überhaupt Code entsteht.
+    - **Wander-Feature:** Party-Mitglieder sind im Spiel physisch
+      beieinander — das Critter soll serverseitig zwischen den offenen
+      PnPTool-Sitzungen ALLER Spieler einer Party wandern können: läuft bei
+      einem Client rechts aus dem sichtbaren Bereich raus, taucht beim
+      nächsten Spieler-Client links wieder auf.
+    - **Umsetzungsentscheidung (24.09.2026, Mark: „Weg 1 reicht absolut")**:
+      Zielplattform sind Android-Tablets der Spieler, daher **bewusst kein
+      natives Overlay über das ganze Betriebssystem** (Weg 2 — eigene
+      Android-App mit `SYSTEM_ALERT_WINDOW`-Berechtigung, verworfen als
+      Overkill). Stattdessen **Weg 1**: das Critter lebt rein als
+      DOM-Overlay *innerhalb* der offenen PnPTool-Webapp/PWA, wandert nur
+      über den sichtbaren Seitenbereich, verschwindet wenn die App
+      geschlossen/gewechselt wird. Reines CSS/JS im Frontend, kein
+      Zusatzprozess, kein OS-Zugriff nötig. Server hält nur den Zustand
+      (Position, aktueller Client, Bedürfnisse) und synct ihn per
+      WebSocket zwischen den Spieler-Sitzungen — dieselbe Live-Infrastruktur
+      wie beim Mitteilungssystem. Komplett unspezifiziert, reine
+      Ideensammlung bisher — braucht noch eine eigene Konzept-Session
+      (welches Critter-Sprite/welche Größe, wie oft/wie zufällig es
+      wandert), bevor Code entsteht.
