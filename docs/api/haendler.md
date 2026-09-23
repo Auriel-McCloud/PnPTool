@@ -190,14 +190,23 @@ nächsten Besuch wieder Normalpreis, es sei denn die SL trägt separat über
 die bestehende explizite `VERKAUFT {preis}`-Route einen dauerhaften
 Sonderpreis ein (das ist bereits vorhanden, unabhängig von diesem Feature).
 
-**Offene technische Frage (noch nicht gelöst):** die bestehende
-`mitteilungen`-Infrastruktur (`docs/api/mitteilungen.md`) sendet nur
-SL→Spieler per WebSocket-Push; `POST` ist dort "Nur SL". Eine
-Verhandlungsanfrage braucht die **umgekehrte Richtung** (Spieler→SL, live,
-mit Rückantwort die den Preis im offenen Spieler-Popup aktualisiert) — das
-ist ein neuer Mechanismus, kein Wiederverwenden von `mitteilungen`. Muss vor
-dem Bauen entworfen werden (vermutlich eigener WebSocket-Kanal oder
-Erweiterung des bestehenden Kanals um eine zweite Richtung).
+**Technischer Kanal (korrigiert 23.09.2026 — Spieler→SL-Live-Push existiert
+bereits, keine neue Architektur nötig):** `docs/api/mitteilungen.md` selbst
+ist zwar `POST` = "Nur SL", aber `docs/api/kontakte.md` zeigt den
+Rückkanal: `POST .../kontakte/{kontakt_id}/chat` dürfen **Spieler und SL**
+aufrufen; schreibt ein Spieler, erzeugt das intern automatisch eine
+`NACHRICHT`-Mitteilung mit `empfaengerIds = []` (= an SL), die genauso per
+WebSocket gepusht wird wie eine SL-Mitteilung. Umgekehrt kann die SL gezielt
+an einen einzelnen Spieler pushen (`anAlle:false, empfaengerIds:[spielerId]`).
+Verhandeln braucht also **keinen neuen Mechanismus**, sondern eine neue
+Mitteilungsart nach demselben Muster wie `NACHRICHT`: statt Freitext trägt
+sie strukturierte Nutzlast (Gegenstand/Posten, aktueller Preis). Spieler-Klick
+auf "Verhandeln" erzeugt diese Mitteilung Richtung SL (wie beim Chat, nicht
+über die "Nur SL"-Route), SL bekommt ein Popup statt Chattext, antwortet mit
+Rabatt-Wahl → das erzeugt eine gezielte Mitteilung zurück an genau diesen
+Spieler, die den Preis im offenen Verhandeln-Popup aktualisiert. Kein
+`chatOffen`-Kontakt mit dem Händler nötig — das ist ein eigener
+Mitteilungstyp, kein Wiederverwenden der Chat-UI.
 
 **Bewusst zurückgestellt:** ein echtes Quest/Auftrag-System für
 "Ware gratis/50% off gegen erledigte Sidequest" — dafür braucht es eigene

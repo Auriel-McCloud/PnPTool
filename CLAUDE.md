@@ -946,9 +946,11 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      löst ein SL-Popup mit Preis + Händler-`notizen` + neuem Freitextfeld
      `moeglicheSidequests` aus, SL vergibt 5/10/15%/individuellen Rabatt nur
      für diesen einen Kauf. Kein Würfelsystem (existiert im Tool noch gar
-     nicht). **Offene Architekturfrage vor dem Bauen:** braucht Spieler→SL-
-     Live-Kanal, den es noch nicht gibt (`mitteilungen` geht nur SL→Spieler).
-     Quest-System für Sidequest-Rabatte bewusst zurückgestellt. Volle Spec:
+     nicht). **Technischer Kanal existiert bereits** — kein neuer Mechanismus
+     nötig: analog zum Messenger-Chat (`docs/api/kontakte.md`, Spieler→SL via
+     `NACHRICHT`-Mitteilung mit `empfaengerIds=[]`), braucht nur eine neue
+     Mitteilungsart mit strukturierter Nutzlast statt Freitext. Quest-System
+     für Sidequest-Rabatte bewusst zurückgestellt. Volle Spec:
      `docs/api/haendler.md` Abschnitt "Verhandeln".
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
