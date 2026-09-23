@@ -31,6 +31,14 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 - **🔍-Prüfen-Knopf im RichTextEditor** (Personen/Orte/Events/Fraktionen/
   Gegenstände/Begleiter): nie im Browser angeklickt, nur `tsc -b` und
   Backend-Import geprüft. Siehe „Zuletzt gebaut" unten.
+- **Rüstungs-Reparatur-UI** (`RuestungReparatur.tsx` im Bearbeiten-Fenster
+  einer Rüstung, `VerhandlungPopup.tsx` beim Spieler): nie im Browser
+  angeklickt, nur `tsc -b` geprüft. Die Backend-Logik dahinter (Würfe,
+  Materialverbrauch, Preisformel, Deckel, Annehmen/Ablehnen) wurde per
+  echtem End-to-End-Skript gegen laufendes Backend + Neo4j durchgespielt
+  und ist verifiziert — offen ist nur die Optik/Bedienung der beiden neuen
+  Popups selbst (Layout, ob der Commlink-Stil passt, ob das Verhandlungs-
+  Popup beim Spieler zuverlässig aufpoppt). Siehe „Zuletzt gebaut" unten.
 
 ## Vor jedem Task: Wiki befragen
 
@@ -132,9 +140,53 @@ npm run dev
 | 5 | ✅ | **Mitteilungen + Messenger fertig** |
 | Wiki | ✅ | Seitenbaum, Freigaben, TipTap-Editor |
 | Themes | ✅ | Zwei Themes, Token-basiert |
-| Rüstung | ✅ | Kästchen + Schadensreduktion, siehe `docs/api/ruestung.md` |
+| Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (23.09.2026, Rüstungs-Reparatur — Frontend + Verhandlungs-Popup):**
+- **Backend war bereits fertig** (Formeln `repariere`/`hardware_probe_pool`/
+  `selbstreparatur_ergebnis`/`haendler_reparatur_preis` in `kampf/ruestung.py`,
+  Routen `ruestung/reparieren-selbst` + `ruestung/reparatur-preis` +
+  `reparaturmaterial` in `items/routes.py`, generisches Verhandlungs-Popup-
+  Backend in `app/verhandlung/`) — dieser Durchgang ergänzt nur noch das
+  fehlende Frontend, siehe `docs/api/ruestung.md` Abschnitt „Reparatur" für
+  die vollständige Formelherleitung.
+- **SL-seitige Reparatur-UI** (`frontend/src/kampf/RuestungReparatur.tsx`):
+  sitzt im Bearbeiten-Fenster einer Rüstung (`GegenstandRow` in
+  `CharacterSheetPanel.tsx`), erscheint nur wenn tatsächlich Kästchen fehlen.
+  Wahl "Selbst reparieren" (zeigt Würfe/Augen/Erfolge, Schwelle, Überschuss,
+  verbrauchtes Material samt Restmenge, Ergebnis-Kästchen) vs. "Beim
+  Händler" (berechneter Vorschlagspreis editierbar, Deckel-Hinweis bei
+  Totalschaden, Knopf "Angebot an Spieler senden").
+- **Neues Feld `istReparaturmaterial`/`reparaturKapazitaet`** jetzt auch im
+  Bearbeiten-Formular jedes Gegenstands editierbar (Checkbox + Kapazitäts-
+  Zahl unter "Optionen") — vorher nur im Backend-Schema vorhanden.
+- **Spieler-seitiges Verhandlungs-Popup** (`frontend/src/verhandlung/
+  VerhandlungPopup.tsx`): zeigt Positionen + Gesamtbetrag, Annehmen/
+  Ablehnen, danach kurz das Ergebnis (bezahlt/nicht bezahlt, Restguthaben).
+  Zustellung über denselben Live-Kanal wie SL-Mitteilungen — `Mitteilungen
+  Kontext.tsx` trägt jetzt zusätzlich eine eigene Verhandlungs-Schlange
+  (eigener Umschlag `_typ: "verhandlung"`, herausgefiltert bevor er die
+  normale Mitteilungsliste erreicht) samt Aufhol-Abruf beim Verbinden
+  (`GET .../verhandlungen`, da es dafür anders als bei Mitteilungen keinen
+  "stand"-Schnappschuss über den WebSocket gibt).
+- **Neuer API-Client** `frontend/src/verhandlung/api.ts` (anbieten/offene/
+  antworten/zurueckziehen) und Erweiterung von `items/api.ts` um
+  `ruestungReparierenSelbst`/`ruestungReparaturPreis`/`reparaturmaterialListe`
+  + die Typen `ReparaturWurf`/`ReparaturPreisAntwort`.
+- **Verifiziert:** `tsc -b` fehlerfrei, Backend-Import + Routenregistrierung
+  geprüft, vollständiger `pytest`-Lauf (424 von 426 grün — die 2 Fehlschläge
+  betreffen Spotify/Spieler-Routen aus einer anderen, unabhängigen Baustelle
+  und bestehen unverändert auch ohne diese Änderung). **Echter End-to-End-
+  Testlauf gegen eigenen Uvicorn-Testport + echte Neo4j** (Test-Rüstung
+  beschädigt, Selbst-Reparatur inkl. Materialverbrauch 2→1 durchgespielt,
+  Händlerpreis berechnet, Deckel-Grenzfall bei Totalschaden exakt bestätigt
+  — 750¥ = 75 % von 1000¥ Neuwert —, Verhandlung erstellt/vom Spieler
+  angenommen, Kapitalabzug + volle Reparatur verifiziert) — danach
+  vollständig aufgeräumt, keine Spuren in der echten Kampagne.
+- **Kein echter Browser-Klicktest der neuen Popups** — siehe „Offen: Was
+  Mark selbst testen muss" oben.
 
 **Zuletzt gebaut (23.09.2026, Rechtschreib-/Grammatik-/Logikprüfung für RichTextEditor):**
 - **Prüfung jetzt auch an Personen/Orten/Events/Fraktionen/Gegenstände/
@@ -580,13 +632,13 @@ npm run dev
 Sortiment-Ansicht, und je nach Laden/Händlertyp eine eigene Optik/Theme;
 Umsetzung erst wenn Mark zuhause ist, da er das Ergebnis am eigenen Bildschirm
 beurteilen will; **zusätzlich 23.09.2026:** das SL↔Spieler-Verhandlungs-Popup,
-das gerade für die Rüstungs-Reparatur gebaut wird, soll später hier
-wiederverwendet werden — für Kaufverhandlungen beim Händler, potenziell über
-mehrere Positionen gleichzeitig, sprich ein **Warenkorb-Konzept** für den
-Shop wird hier mit gebraucht. Noch nicht spezifiziert, nur als Anforderung
-notiert.), Shop-Spam/
+das für die Rüstungs-Reparatur gebaut wurde (siehe „Zuletzt gebaut" unten),
+soll später hier wiederverwendet werden — für Kaufverhandlungen beim Händler,
+potenziell über mehrere Positionen gleichzeitig, sprich ein
+**Warenkorb-Konzept** für den Shop wird hier mit gebraucht. Backend dafür
+schon vorbereitet (`app/verhandlung/schemas.py` trägt eine Liste von
+Positionen statt eines Skalars), UI noch nicht spezifiziert.), Shop-Spam/
 Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
-Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
 **Kampagnen-Export/Import** (mittlere Priorität — aktuell: Volumen-Kopier-Workaround für Deploy möglich),
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
@@ -888,6 +940,16 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      Ideenschmiede-Entwurf, kein Autocommit). Details siehe "Zuletzt gebaut"
      oben und `docs/api/haendler.md`. **Frontend noch offen** (SL-Popup mit
      Vorschlagsliste + Einzeln-Übernehmen-Knöpfen).
+   - **Verhandeln — spezifiziert, noch nicht gebaut (23.09.2026)**: Spieler
+     bekommt bei jedem Kauf-/Reparaturposten (Shop UND Rüstungsreparatur,
+     außer Charaktererstellung + "online" gekauft) einen "Verhandeln"-Knopf,
+     löst ein SL-Popup mit Preis + Händler-`notizen` + neuem Freitextfeld
+     `moeglicheSidequests` aus, SL vergibt 5/10/15%/individuellen Rabatt nur
+     für diesen einen Kauf. Kein Würfelsystem (existiert im Tool noch gar
+     nicht). **Offene Architekturfrage vor dem Bauen:** braucht Spieler→SL-
+     Live-Kanal, den es noch nicht gibt (`mitteilungen` geht nur SL→Spieler).
+     Quest-System für Sidequest-Rabatte bewusst zurückgestellt. Volle Spec:
+     `docs/api/haendler.md` Abschnitt "Verhandeln".
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
    - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**
