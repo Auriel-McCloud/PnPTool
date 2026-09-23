@@ -152,6 +152,7 @@ export function NPCDetail({
                   id={person.id}
                   name={person.name}
                   bildUrl={person.bildUrl ?? ""}
+                  beschreibung={person.description}
                   onGeaendert={onGeaendert}
                 />
               </div>

@@ -123,6 +123,7 @@ export function EventDetail({
                   id={event.id}
                   name={event.title}
                   bildUrl={event.bildUrl ?? ""}
+                  beschreibung={event.description}
                   onGeaendert={onGeaendert}
                 />
               </div>

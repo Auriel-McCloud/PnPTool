@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
+import { KiBildPopup } from "../ki/KiBildPopup";
+import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
+import { extrahiereReinenText } from "../richtext/content";
 
 /**
  * Bild einer Entität: anzeigen, hochladen, entfernen — und per Blitz allen
@@ -15,6 +18,7 @@ export function EntitaetsBild({
   id,
   name,
   bildUrl,
+  beschreibung,
   onGeaendert,
 }: {
   campaignId: string;
@@ -23,19 +27,26 @@ export function EntitaetsBild({
   id: string;
   name: string;
   bildUrl: string;
+  /** Roher description-Text der Entität — Grundlage für den KI-Bild-Prompt-
+   * Vorschlag. Optional: ohne sie schlägt die KI nur aus dem Namen vor. */
+  beschreibung?: string;
   onGeaendert: () => void;
 }) {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [kiOffen, setKiOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
 
-  async function hochladen(datei: File | undefined) {
-    if (!datei) return;
+  // Für den KI-Bild-Prompt: welcher Objekttyp das für die KI ist (Deutsch,
+  // geht 1:1 in den Prompt-Vorschlag-Aufruf).
+  const objektTyp = art === "personen" ? "Person" : art === "orte" ? "Ort" : "Event";
+
+  async function hochladenAnFormData(datei: File | Blob, dateiname: string) {
     setLaedt(true);
     setFehler(null);
     try {
       const daten = new FormData();
-      daten.append("file", datei);
+      daten.append("file", datei, dateiname);
       // Content-Type nicht setzen: der Browser braucht die multipart-Grenze.
       const antwort = await fetch(`/api/campaigns/${campaignId}/${art}/${id}/bild`, {
         method: "POST",
@@ -49,8 +60,17 @@ export function EntitaetsBild({
       onGeaendert();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Upload fehlgeschlagen");
+      throw e;
     } finally {
       setLaedt(false);
+    }
+  }
+
+  async function hochladen(datei: File | undefined) {
+    if (!datei) return;
+    try {
+      await hochladenAnFormData(datei, datei.name);
+    } finally {
       if (dateiRef.current) dateiRef.current.value = "";
     }
   }
@@ -103,6 +123,15 @@ export function EntitaetsBild({
         {laedt ? "lädt…" : bildUrl ? "Bild tauschen" : "▣ Bild"}
       </button>
 
+      <button
+        type="button"
+        onClick={() => setKiOffen(true)}
+        disabled={laedt}
+        style={{ minHeight: 0, padding: "4px 10px", fontSize: 12, color: "var(--p-violett, var(--neon))" }}
+      >
+        ✨ KI-Bild
+      </button>
+
       {bildUrl && (
         <>
           <BildBlitz campaignId={campaignId} bildUrl={bildUrl} name={name} klein />
@@ -119,6 +148,22 @@ export function EntitaetsBild({
       )}
 
       {fehler && <span style={{ color: "var(--signal)", fontSize: 12 }}>{fehler}</span>}
+
+      <KiBildPopup
+        offen={kiOffen}
+        objektTyp={objektTyp}
+        objektName={name}
+        onSchliessen={() => setKiOffen(false)}
+        onPromptVorschlagen={() =>
+          kiBildPrompt(campaignId, {
+            objektTyp,
+            objektName: name,
+            bisherigeBeschreibung: beschreibung ? extrahiereReinenText(beschreibung) : "",
+          })
+        }
+        onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
+        onUebernehmen={(blob) => hochladenAnFormData(blob, "ki-bild.png")}
+      />
     </div>
   );
 }
