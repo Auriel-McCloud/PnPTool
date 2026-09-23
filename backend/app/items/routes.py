@@ -20,7 +20,14 @@ from app.items.schemas import (
     GegenstandUpdate,
     ZuweisenRequest,
 )
-from app.kampf.ruestung import repariere
+from app.kampf.ruestung import (
+    haendler_reparatur_preis,
+    hardware_probe_pool,
+    repariere,
+    selbstreparatur_ergebnis,
+)
+from app.traits.repository import get_ratings_for_entity
+from app.wuerfel.logic import wuerfle
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/personen/{person_id}/gegenstaende",
@@ -604,25 +611,169 @@ async def verbautes_chrom(campaign_id: str, person_id: str, viewer: Viewer = Dep
 class RuestungReparierenRequest(BaseModel):
     """Wie viele Kästchen die Reparatur wiederherstellt.
 
-    Nimmt bewusst nur das Ergebnis entgegen, keine Probe — die Hardware-Skill-
-    Probe bzw. der Händlerpreis dafür sind noch nicht gebaut (siehe
-    docs/api/ruestung.md, "Was noch fehlt"). Bis dahin trägt die SL das
-    Ergebnis von Hand ein.
+    Nimmt das Ergebnis direkt entgegen, ohne Probe oder Material — der
+    manuelle Weg für Sonderfälle (Questbelohnung, Improvisation am Tisch).
+    Der reguläre Weg mit Hardware-Probe und Material ist
+    `.../ruestung/reparieren-selbst`, der Händlerweg mit Preisverhandlung
+    läuft über `.../ruestung/reparatur-preis` + `POST /verhandlungen`.
     """
 
     kaestchen: int = Field(ge=0)
+
+
+class RuestungReparierenSelbstRequest(BaseModel):
+    """Selbst-Reparieren: Hardware-Skill-Probe + Material, kein Geld.
+
+    Marks Vorgabe (siehe kampf/ruestung.py für die Herleitung): Schwelle =
+    halbes Kästchen-Max, abgerundet; Erfolgsüberschuss darüber wird zu
+    reparierten Kästchen, gedeckelt durch die Kapazität des eingesetzten
+    Materials. Verbraucht **immer** 1 Stück Material, auch bei Fehlschlag.
+    """
+
+    materialGegenstandId: str
+
+
+class ReparaturWurf(BaseModel):
+    """Wurfergebnis + Auswertung der Selbst-Reparatur, fürs Popup."""
+
+    augen: list[int]
+    erfolge: int
+    patzer: bool
+    pool: int
+    schwelle: int
+    ueberschuss: int
+    repariert: int
+    materialKapazitaet: int
+    materialName: str
+    materialRestmenge: int
+    gegenstand: GegenstandResponse
+
+
+class ReparaturPreisAntwort(BaseModel):
+    """Reine Berechnung für den Händlerpreis — kein Seiteneffekt.
+
+    `fehlendeKaestchen` bezieht sich standardmässig auf ALLE fehlenden
+    Kästchen dieses Gegenstands (kaestchenMax - kaestchenAktuell); über den
+    Query-Parameter lässt sich auch der Preis einer Teil-Reparatur ansehen.
+    """
+
+    fehlendeKaestchen: int
+    kaestchenMax: int
+    neuwert: int
+    preis: int
+    deckel: int
+
+
+@campaign_router.post(
+    "/{item_id}/ruestung/reparieren-selbst",
+    response_model=ReparaturWurf,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def ruestung_reparieren_selbst(campaign_id: str, item_id: str, body: RuestungReparierenSelbstRequest):
+    """Selbst-Reparieren: würfelt die Hardware-Probe, verbraucht Material,
+    repariert Kästchen. **Nur SL** ausgelöst, wie die Kampf-Würfe der NPCs —
+    ein Spieler würfelt physisch, hier würfelt der Server stellvertretend für
+    die klare Materialbuchhaltung (ein Spielerwurf könnte den Materialabzug
+    umgehen, wenn der Client die Anfrage einfach nicht schickt).
+    """
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+
+    besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Gegenstand ohne Besitzer kann nicht repariert werden")
+
+    material = await repository.get_gegenstand(campaign_id, body.materialGegenstandId)
+    if material is None or not material.get("istReparaturmaterial"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Reparaturmaterial")
+    if material.get("menge", 1) <= 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Material ist aufgebraucht")
+
+    werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, besitzer_id)}
+    pool = hardware_probe_pool(werte)
+    wurf = wuerfle(pool)
+    ergebnis = selbstreparatur_ergebnis(
+        wurf["erfolge"], item["ruestungKaestchenMax"], material["reparaturKapazitaet"]
+    )
+
+    # Material verbrauchen — IMMER, auch bei 0 reparierten Kästchen (Marks
+    # ausdrückliche Vorgabe: realistisches Risiko).
+    material_neue_menge = max(0, material["menge"] - 1)
+    await repository.update_gegenstand(campaign_id, body.materialGegenstandId, {"menge": material_neue_menge})
+
+    reparatur = repariere(item["ruestungKaestchenAktuell"], item["ruestungKaestchenMax"], ergebnis["repariert"])
+    aktualisiert = await repository.update_gegenstand(
+        campaign_id, item_id, {"ruestungKaestchenAktuell": reparatur["kaestchenNeu"]}
+    )
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reparatur fehlgeschlagen")
+
+    return ReparaturWurf(
+        augen=wurf["augen"],
+        erfolge=wurf["erfolge"],
+        patzer=wurf["patzer"],
+        pool=pool,
+        schwelle=ergebnis["schwelle"],
+        ueberschuss=ergebnis["ueberschuss"],
+        repariert=ergebnis["repariert"],
+        materialKapazitaet=material["reparaturKapazitaet"],
+        materialName=material["name"],
+        materialRestmenge=material_neue_menge,
+        gegenstand=aktualisiert,
+    )
+
+
+@campaign_router.get("/{item_id}/ruestung/reparatur-preis", response_model=ReparaturPreisAntwort)
+async def ruestung_reparatur_preis(
+    campaign_id: str, item_id: str, fehlendeKaestchen: int | None = None, viewer: Viewer = Depends(get_viewer)
+):
+    """Reiner Berechnungs-Endpunkt für den Händlerpreis, kein Seiteneffekt —
+    Grundlage für den SL-Vorschlag im Verhandlungs-Popup (siehe
+    docs/api/ruestung.md, "Reparatur beim Händler" für die Formelherleitung).
+    """
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+
+    max_fehlend = item["ruestungKaestchenMax"] - item["ruestungKaestchenAktuell"]
+    n = max_fehlend if fehlendeKaestchen is None else max(0, min(fehlendeKaestchen, max_fehlend))
+    preis = haendler_reparatur_preis(n, item["ruestungKaestchenMax"], item["preis"])
+    deckel = haendler_reparatur_preis(item["ruestungKaestchenMax"], item["ruestungKaestchenMax"], item["preis"])
+    return ReparaturPreisAntwort(
+        fehlendeKaestchen=n,
+        kaestchenMax=item["ruestungKaestchenMax"],
+        neuwert=item["preis"],
+        preis=preis,
+        deckel=deckel,
+    )
+
+
+@campaign_router.get("/{item_id}/reparaturmaterial", response_model=list[GegenstandResponse])
+async def reparaturmaterial_liste(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Welches Reparaturmaterial der Besitzer dieser Rüstung zur Auswahl hat
+    (für das Selbst-Reparieren-Popup)."""
+    besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer_id is None:
+        return []
+    return await repository.list_reparaturmaterial_von(campaign_id, besitzer_id)
 
 
 @campaign_router.post(
     "/{item_id}/ruestung/reparieren", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)]
 )
 async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungReparierenRequest):
-    """Kästchen auffüllen (Mark: "Reparatur senkt auch die Schwelle" — das
-    galt für den früheren Durchlass-Wert; die Schadensreduktion braucht seit
-    dem Umbau vom 18.09.2026 keine eigene Reparatur mehr, sie folgt
-    automatisch aus dem wiederhergestellten Kästchen-Verhältnis). **Nur SL**
-    — wie jede Vergabe von Ressourcen ohne Gegenprobe im Tool (vgl. Erfahrung
-    vergeben)."""
+    """Kästchen manuell auffüllen, ohne Probe oder Material — der SL trägt das
+    Ergebnis von Hand ein (Sonderfälle: Questbelohnung, Improvisation am
+    Tisch). Die Schadensreduktion braucht seit dem Umbau vom 18.09.2026 keine
+    eigene Reparatur mehr, sie folgt automatisch aus dem wiederhergestellten
+    Kästchen-Verhältnis. **Nur SL** — wie jede Vergabe von Ressourcen ohne
+    Gegenprobe im Tool (vgl. Erfahrung vergeben).
+    """
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")

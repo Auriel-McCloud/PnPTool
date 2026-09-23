@@ -310,6 +310,25 @@ async def list_gegenstaende(campaign_id: str, owner_person_id: str) -> list[dict
         return [_decode(dict(record)) async for record in result]
 
 
+async def list_reparaturmaterial_von(campaign_id: str, owner_person_id: str) -> list[dict]:
+    """Reparaturmaterial im Besitz dieser Person, das noch etwas taugt
+    (Menge > 0) — für die Auswahl bei der Selbst-Reparatur (kampf/ruestung.py
+    ::selbstreparatur_ergebnis braucht die Kapazität eines konkreten Stücks).
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false) AND coalesce(g.istReparaturmaterial, false)
+          AND coalesce(g.menge, 1) > 0
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.reparaturKapazitaet
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, owner_id=owner_person_id)
+        return [_decode(dict(record)) async for record in result]
+
+
 async def list_alle_gegenstaende(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
