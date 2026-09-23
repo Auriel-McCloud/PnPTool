@@ -16,6 +16,7 @@ import json
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
@@ -594,18 +595,16 @@ async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
     return {"prompt": prompt}
 
 
-_BILD_ART_ENTITAETEN = {"personen", "orte", "events", "fraktionen"}
-
-
-@router.post("/bild-generieren/{art}/{node_id}")
-async def ki_bild_generieren(campaign_id: str, art: str, node_id: str, body: BildGenerierenInput):
-    """Generiert ein Bild (Schritt 2) und speichert es auf der Entität —
-    Person/Ort/Event/Fraktion. Für Gegenstände siehe die eigene Route unten
-    (andere URL-Struktur: `item_id` statt `node_id`, eigener Router in
-    items/routes.py)."""
-    if art not in _BILD_ART_ENTITAETEN:
-        raise HTTPException(status_code=400, detail=f"Unbekannte Art '{art}' (erwartet: {', '.join(sorted(_BILD_ART_ENTITAETEN))})")
-
+@router.post("/bild-generieren")
+async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
+    """Generiert ein Bild (Schritt 2) und liefert es als rohe Bytes zur
+    Vorschau zurück — speichert NICHTS. Das Popup zeigt das Bild an; erst
+    „Übernehmen“ schickt es (als Datei) an die jeweils bestehende
+    Upload-Route (Personen/Orte/Events/Fraktionen/Gegenstände/eigenes
+    Portrait), genau wie ein manuell hochgeladenes Bild — dieselbe Route,
+    kein zweiter Ablage-Mechanismus. `campaign_id` wird hier nur für den
+    require_campaign_gm-Guard des Routers gebraucht, nicht für die
+    Bildgenerierung selbst (die hängt an keiner Entität)."""
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
@@ -615,30 +614,4 @@ async def ki_bild_generieren(campaign_id: str, art: str, node_id: str, body: Bil
     except BildgenerierungFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    from app.entities.routes import speichere_entitaets_bild_bytes
-
-    aktualisiert = await speichere_entitaets_bild_bytes(campaign_id, art, node_id, inhalt, content_type)
-    if aktualisiert is None:
-        raise HTTPException(status_code=404, detail="Entität nicht gefunden")
-    return aktualisiert
-
-
-@router.post("/bild-generieren-gegenstand/{item_id}")
-async def ki_bild_generieren_gegenstand(campaign_id: str, item_id: str, body: BildGenerierenInput):
-    """Gegenstück zu `ki_bild_generieren`, aber für Gegenstände (eigener
-    Ablage-Mechanismus in items/routes.py, kein `_ENTITAETEN`-Eintrag dort)."""
-    prompt = body.prompt.strip()
-    if not prompt:
-        raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
-
-    try:
-        inhalt, content_type = await generiere_bild(body.provider, prompt)
-    except BildgenerierungFehler as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-    from app.items.routes import speichere_gegenstand_bild_bytes
-
-    aktualisiert = await speichere_gegenstand_bild_bytes(campaign_id, item_id, inhalt, content_type)
-    if aktualisiert is None:
-        raise HTTPException(status_code=404, detail="Gegenstand nicht gefunden")
-    return aktualisiert
+    return Response(content=inhalt, media_type=content_type)

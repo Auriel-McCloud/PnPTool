@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel
-from typing import Literal
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
@@ -9,7 +8,7 @@ from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.entities.schemas import PersonCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
-from app.ki.routes import _bild_prompt_vorschlagen
+from app.ki.routes import BildGenerierenInput, _bild_prompt_vorschlagen
 from app.players import repository
 from app.players.schemas import (
     CharakterWaehlenRequest,
@@ -231,11 +230,6 @@ class MeinBildPromptAntwort(BaseModel):
     prompt: str
 
 
-class MeinBildGenerierenRequest(BaseModel):
-    provider: Literal["lokal", "cloud"]
-    prompt: str
-
-
 @login_router.post("/mein-bild-ki-prompt", response_model=MeinBildPromptAntwort)
 async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_spieler)):
     """Prompt-Vorschlag für das eigene Charakterportrait (Schritt 1 des
@@ -258,13 +252,14 @@ async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_sp
     return MeinBildPromptAntwort(prompt=prompt)
 
 
-@login_router.post("/mein-bild-ki", response_model=SpielerMeResponse)
+@login_router.post("/mein-bild-ki")
 async def eigenes_charakterportrait_ki_generieren(
-    body: MeinBildGenerierenRequest, spieler: dict = Depends(require_spieler)
+    body: BildGenerierenInput, spieler: dict = Depends(require_spieler)
 ):
-    """Generiert das eigene Charakterportrait per KI (Schritt 2) und speichert
-    es — Gegenstück zu `eigenes_charakterportrait_hochladen`, nur mit
-    generiertem statt hochgeladenem Bild."""
+    """Generiert eine Bildvorschau für das eigene Charakterportrait (Schritt
+    2) — speichert NICHTS. Übernehmen läuft über dieselbe Upload-Route wie
+    ein manuell hochgeladenes Bild (`/mein-bild`, POST mit multipart/form-data),
+    das Frontend baut daraus eine Datei und schickt sie dorthin."""
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
 
@@ -272,30 +267,12 @@ async def eigenes_charakterportrait_ki_generieren(
     if not prompt:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Der Prompt darf nicht leer sein.")
 
-    campaign_id = spieler["campaignId"]
-    person_id = spieler["personId"]
-    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
-
     try:
         inhalt, content_type = await generiere_bild(body.provider, prompt)
     except BildgenerierungFehler as e:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
 
-    import mimetypes
-    import uuid
-
-    ordner = UPLOAD_DIR / campaign_id
-    ordner.mkdir(parents=True, exist_ok=True)
-    endung = mimetypes.guess_extension(content_type) or ".png"
-    name = f"portrait-ki-{uuid.uuid4()}{endung}"
-    (ordner / name).write_bytes(inhalt)
-
-    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
-
-    frisch = await repository.get_spieler(spieler["id"])
-    assert frisch is not None
-    return _antwort(frisch)
+    return Response(content=inhalt, media_type=content_type)
 
 
 @login_router.post("/abmelden")
