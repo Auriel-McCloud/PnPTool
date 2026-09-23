@@ -25,6 +25,7 @@ from app.entities.schemas import PersonCreate
 from app.items.repository import create_gegenstand
 from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
+from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json
 from app.ki.kontext import sammle_kontext
 from app.ki.wiki_pruefung import (
@@ -152,13 +153,29 @@ class UebernehmenInput(BaseModel):
 
 
 class ObjektTextInput(BaseModel):
-    """Für den ✨ KI-Knopf neben „SL-geheim" an Beschreibung/Notizen-Feldern."""
+    """Für den ✨ KI-Knopf neben „SL-geheim“ an Beschreibung/Notizen-Feldern."""
 
     objektTyp: str
     objektName: str
     # Bisheriger Text des Feldes (reiner Text, vom Frontend per editor.getText()
     # geholt) — gibt der KI Anschluss an das, was schon dasteht.
     bisherigerText: str = ""
+    prompt: str
+
+
+class BildPromptInput(BaseModel):
+    """Für den 'KI-Bild generieren'-Knopf an Personen-/Orts-/Gegenstands-Bildern."""
+
+    objektTyp: str
+    objektName: str
+    bisherigeBeschreibung: str = ""
+
+
+class BildGenerierenInput(BaseModel):
+    """Provider je Aufruf wählbar (Commlink-Popup-Dropdown), anders als der
+    Text-Provider (KI_PROVIDER in .env) — siehe app/ki/bildgenerierung.py."""
+
+    provider: Literal["lokal", "cloud"]
     prompt: str
 
 
@@ -522,3 +539,106 @@ async def wiki_verknuepfung_beziehung(campaign_id: str, seiten_id: str, body: Be
     hängt nicht an der Wiki-Seite, sondern direkt an den zwei Entitäten.
     """
     return await verknuepfung_beziehung_anwenden(campaign_id, body)
+
+
+# --- Bildgenerierung ----------------------------------------------------
+# Ein Knopf am jeweils bestehenden Bild-Upload-Popup (Person/Ort/Gegenstand):
+# 1. Prompt-Vorschlag aus Name+Beschreibung (Text-KI, wiederverwendet
+#    dieselbe sammle_kontext()/generiere_json()-Infrastruktur wie oben).
+# 2. Nutzer bestätigt/editiert den Prompt, dann eigentliche Bildgenerierung
+#    (lokal Fooocus ODER cloud Gemini, Nutzer wählt je Aufruf — siehe
+#    app/ki/bildgenerierung.py). Speichert über denselben Upload-Mechanismus
+#    wie ein manuell hochgeladenes Bild (entities/items routes.py), keine
+#    zweite Ablage-Logik.
+
+_BILD_PROMPT_SYSTEM = (
+    _SYSTEM
+    + " Du formulierst einen kurzen, bildhaften Prompt (2-4 Sätze, auf "
+    "Englisch, für einen SDXL-Bildgenerator) für ein Portrait/eine Szene/ein "
+    "Gegenstandsbild im Digital-Art-/Cyberpunk-Stil. Beschreibe Aussehen, "
+    "Kleidung/Material, Stimmung und Umgebung so konkret wie möglich — keine "
+    "Namen, keine Spielmechanik, kein Fließtext-Artikel."
+)
+
+_BILD_PROMPT_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {"prompt": {"type": "STRING"}},
+    "required": ["prompt"],
+}
+
+
+async def _bild_prompt_vorschlagen(campaign_id: str, objekt_typ: str, objekt_name: str, beschreibung: str) -> str:
+    """Gemeinsame Logik für den Prompt-Vorschlag — von der GM-Route UND der
+    Spieler-Portrait-Route genutzt (players/routes.py ruft das direkt auf,
+    da sie außerhalb dieses require_campaign_gm-Routers liegt)."""
+    kontext = await sammle_kontext(campaign_id)
+    teile = [f"{objekt_typ}: {objekt_name}"]
+    if beschreibung.strip():
+        teile.append(f"Bisherige Beschreibung:\n{beschreibung.strip()}")
+    prompt = "\n\n".join(teile)
+    try:
+        ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _BILD_PROMPT_SYSTEM, _BILD_PROMPT_SCHEMA)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return (ergebnis.get("prompt") or "").strip()
+
+
+@router.post("/bild-prompt")
+async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
+    """Schlägt einen Bild-Prompt vor (Schritt 1 des KI-Bild-Popups) — der
+    Nutzer sieht ihn vorausgefüllt im Textfeld und kann ihn vor dem
+    Generieren noch anpassen (Marks Entscheidung, siehe Aufgabenbeschreibung)."""
+    prompt = await _bild_prompt_vorschlagen(campaign_id, body.objektTyp, body.objektName, body.bisherigeBeschreibung)
+    if not prompt:
+        raise HTTPException(status_code=502, detail="Die KI hat keinen Prompt-Vorschlag geliefert.")
+    return {"prompt": prompt}
+
+
+_BILD_ART_ENTITAETEN = {"personen", "orte", "events", "fraktionen"}
+
+
+@router.post("/bild-generieren/{art}/{node_id}")
+async def ki_bild_generieren(campaign_id: str, art: str, node_id: str, body: BildGenerierenInput):
+    """Generiert ein Bild (Schritt 2) und speichert es auf der Entität —
+    Person/Ort/Event/Fraktion. Für Gegenstände siehe die eigene Route unten
+    (andere URL-Struktur: `item_id` statt `node_id`, eigener Router in
+    items/routes.py)."""
+    if art not in _BILD_ART_ENTITAETEN:
+        raise HTTPException(status_code=400, detail=f"Unbekannte Art '{art}' (erwartet: {', '.join(sorted(_BILD_ART_ENTITAETEN))})")
+
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
+
+    try:
+        inhalt, content_type = await generiere_bild(body.provider, prompt)
+    except BildgenerierungFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    from app.entities.routes import speichere_entitaets_bild_bytes
+
+    aktualisiert = await speichere_entitaets_bild_bytes(campaign_id, art, node_id, inhalt, content_type)
+    if aktualisiert is None:
+        raise HTTPException(status_code=404, detail="Entität nicht gefunden")
+    return aktualisiert
+
+
+@router.post("/bild-generieren-gegenstand/{item_id}")
+async def ki_bild_generieren_gegenstand(campaign_id: str, item_id: str, body: BildGenerierenInput):
+    """Gegenstück zu `ki_bild_generieren`, aber für Gegenstände (eigener
+    Ablage-Mechanismus in items/routes.py, kein `_ENTITAETEN`-Eintrag dort)."""
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=422, detail="Der Prompt darf nicht leer sein.")
+
+    try:
+        inhalt, content_type = await generiere_bild(body.provider, prompt)
+    except BildgenerierungFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    from app.items.routes import speichere_gegenstand_bild_bytes
+
+    aktualisiert = await speichere_gegenstand_bild_bytes(campaign_id, item_id, inhalt, content_type)
+    if aktualisiert is None:
+        raise HTTPException(status_code=404, detail="Gegenstand nicht gefunden")
+    return aktualisiert
