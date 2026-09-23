@@ -1464,3 +1464,26 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     Beschriftung ändert sich für diesen Charaktertyp. Noch zu klären: wie
     die Umbenennung technisch je Charakter greift (globaler Schalter vs.
     pro Person) und welche Sphären welchen Göttern entsprechen.
+
+15. **Critter-Desktop-Pet / Tamagotchi (notiert 24.09.2026, Mark: „total
+    irrer Vorschlag" — explizit ganz zum Schluss als Bonus-Feature, NICHT
+    vor allen anderen offenen Punkten angehen)** — Ein Critter des Spielers
+    läuft als Desktop-Pet frei über den Bildschirm, statt nur ein Datensatz
+    im Charakterbogen zu sein:
+    - Bedürfnisse: füttern (Spieler muss Tierfutter im Shop kaufen/
+      verbrauchen), baden/pflegen — vernachlässigt das Tier verliert es
+      Lebenspunkte.
+    - Verhalten/Persönlichkeit: kann während es über den Schirm läuft
+      Chaos anstellen (Dinge „kaputt machen", Häufchen hinterlassen) —
+      reiner Flavor/Spaß, keine Spielmechanik-Konsequenz nötig.
+    - **Der eigentliche Clou:** Party-Mitglieder sind im Spiel physisch
+      beieinander — das Critter soll deshalb serverseitig zwischen den
+      Bildschirmen ALLER Spieler einer Party wandern können: läuft bei
+      einem Monitor rechts raus, taucht beim nächsten Spieler-Client links
+      wieder auf. Technisch vermutlich ein eigener Always-on-top-Overlay-
+      Prozess/Fenster pro Spieler-Client (Electron/Tauri-artig oder
+      Browser-Overlay mit OS-Berechtigungen — noch nicht recherchiert) plus
+      ein Server-seitiger Zustand (Position, aktueller Client, Bedürfnisse)
+      der zwischen den Spieler-Verbindungen synchronisiert wird. Komplett
+      unspezifiziert, reine Ideensammlung bisher — braucht eine eigene
+      Recherche-/Architektur-Session, bevor überhaupt Code entsteht.
