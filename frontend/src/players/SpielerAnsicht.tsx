@@ -35,6 +35,7 @@ import { kontakteApi, type Kontakt } from "../kontakte/api";
 import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
 import { CharakterportraitAnsicht } from "./CharakterportraitAnsicht";
+import { SpielerEinstieg } from "./SpielerEinstieg";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -212,7 +213,25 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     setSeite(0);
   }, [bereich]);
 
+  async function abmelden() {
+    await playersApi.abmelden();
+    onAbgemeldet();
+  }
+
   if (!ich) return null;
+
+  // Ohne zugeordneten Charakter: Ersteinstieg statt der vollen Hülle — die
+  // eigentliche Auswahl (selbst bauen ODER vorgefertigten PC übernehmen).
+  if (!ich.personId) {
+    return (
+      <SpielerEinstieg
+        campaignName={ich.campaignName}
+        benutzername={ich.benutzername}
+        onZugewiesen={setIch}
+        onAbmelden={abmelden}
+      />
+    );
+  }
 
   const amKoerper = bereiche.find((b) => b.greifbar);
   const faecher = bereiche.filter((b) => !b.greifbar);
@@ -280,11 +299,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     ]);
     setSachen(frisch);
     setTraglast(last);
-  }
-
-  async function abmelden() {
-    await playersApi.abmelden();
-    onAbgemeldet();
   }
 
   return (

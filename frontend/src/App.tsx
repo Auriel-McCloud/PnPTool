@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
-import { GmLoginPage } from "./auth/GmLoginPage";
+import { AnmeldeFenster } from "./auth/AnmeldeFenster";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
 import { useCampaign } from "./campaigns/useCampaign";
 import { KampagnenAuswahl } from "./campaigns/KampagnenAuswahl";
@@ -12,7 +12,6 @@ import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
-import { SpielerLogin } from "./players/SpielerLogin";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
@@ -288,7 +287,6 @@ function Dashboard() {
  */
 function Shell() {
   const { me, loading } = useAuth();
-  const [zeigeSpielerLogin, setZeigeSpielerLogin] = useState(false);
 
   if (loading) return null;
 
@@ -299,11 +297,10 @@ function Shell() {
 
   if (me) return <Dashboard />;
 
-  if (zeigeSpielerLogin) {
-    return <SpielerLogin onAngemeldet={() => window.location.reload()} onZurueck={() => setZeigeSpielerLogin(false)} />;
-  }
-
-  return <GmLoginPage onBeitreten={() => setZeigeSpielerLogin(true)} />;
+  // Gemeinsames Anmeldefenster (Mark, 22.09.2026): Spieler sehen den
+  // Anmelde-Weg zuerst, die SL muss extra klicken — deutlich mehr
+  // Spieler- als SL-Logins am Tisch, das vermeidet Verwechslungen.
+  return <AnmeldeFenster />;
 }
 
 function App() {

@@ -1,0 +1,210 @@
+/* =======================================================================
+   Ersteinstieg für Spieler ohne zugeordneten Charakter.
+   Commlink-Stil: cl-roehre-Rahmen, Theme-Tokens, keine harten Farben.
+   ======================================================================= */
+
+.ei-buehne {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.ei-kasten {
+  width: 100%;
+  max-width: 640px;
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ei-kopf h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.ei-unter {
+  margin: 4px 0 0;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ei-hinweis {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* --- Wahl: selbst bauen vs. vorgefertigt -------------------------------- */
+
+.ei-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.ei-karte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 16px;
+  text-align: left;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  min-height: 0;
+}
+
+.ei-karte:hover:not(:disabled) {
+  border-color: var(--neon);
+  background: var(--neon-schwach);
+  color: inherit;
+}
+
+.ei-karte-symbol {
+  font-size: 26px;
+  color: var(--neon);
+}
+
+.ei-karte-titel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ei-karte-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-leise);
+  white-space: normal;
+}
+
+/* --- Vorgefertigte PC-Auswahl -------------------------------------------- */
+
+.ei-zurueck {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--text-leise);
+  padding-inline: 0;
+}
+
+.ei-zurueck:hover:not(:disabled) {
+  color: var(--neon);
+  border-color: transparent;
+  background: transparent;
+}
+
+.ei-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.ei-pc-karte {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  text-align: left;
+  min-height: 0;
+}
+
+.ei-pc-karte:hover:not(:disabled) {
+  border-color: var(--bereich-pcs, var(--neon));
+  box-shadow: 0 0 12px -4px var(--bereich-pcs, var(--neon));
+  color: inherit;
+}
+
+.ei-pc-bild-bereich {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grund);
+  overflow: hidden;
+}
+
+.ei-pc-bild-bereich img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ei-pc-bild-leer {
+  font-size: 3rem;
+  color: var(--linie-hell);
+  opacity: 0.5;
+}
+
+.ei-pc-info {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ei-pc-info strong {
+  font-size: 0.95rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ei-pc-konzept {
+  font-size: 0.8rem;
+  color: var(--text-leise);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ei-pc-tags {
+  font-size: 0.75rem;
+  color: var(--text-aus);
+  font-family: var(--mono);
+}
+
+/* --- Fuss ---------------------------------------------------------------- */
+
+.ei-fehler {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+  background: var(--signal-schwach);
+  color: var(--signal);
+  font-size: 13px;
+}
+
+.ei-abmelden {
+  align-self: center;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  color: var(--text-aus);
+  font-size: 12px;
+}
+
+.ei-abmelden:hover:not(:disabled) {
+  color: var(--text-leise);
+  border-color: transparent;
+  background: transparent;
+}
+
+@media (max-width: 599px) {
+  .ei-kasten {
+    padding: 20px 18px;
+  }
+}

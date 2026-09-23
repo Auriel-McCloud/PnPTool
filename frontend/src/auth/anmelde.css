@@ -1,0 +1,85 @@
+/* =======================================================================
+   Gemeinsames Anmeldefenster (Spieler + Spielleitung).
+   Commlink-Stil: cl-roehre-Rahmen, Theme-Tokens, keine harten Farben.
+   ======================================================================= */
+
+.an-buehne {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.an-kasten {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 32px 24px;
+}
+
+.an-titel {
+  margin: 0 0 6px;
+  font-size: 19px;
+}
+
+.an-hinweis {
+  margin: 0 0 20px;
+  color: var(--text-leise);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.an-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.an-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-leise);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.an-feld em {
+  font-style: normal;
+  color: var(--text-aus);
+  font-size: 0.9em;
+}
+
+.an-fehler {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--signal);
+  border-radius: var(--radius);
+  background: var(--signal-schwach);
+  color: var(--signal);
+  font-size: 13px;
+}
+
+.an-absenden {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.an-wechsel {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--text-aus);
+  font-size: 12px;
+}
+
+.an-wechsel:hover:not(:disabled) {
+  color: var(--text-leise);
+  border-color: transparent;
+  background: transparent;
+}
+
+@media (max-width: 599px) {
+  .an-kasten {
+    padding: 20px 18px;
+  }
+}

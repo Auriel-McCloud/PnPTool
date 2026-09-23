@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFil
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
-from app.entities.repository import PERSON_FIELDS, get_node, update_node
+from app.entities.repository import PERSON_FIELDS, create_node, get_node, update_node
+from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
-from app.entities.repository import PERSON_FIELDS as _PERSON_FIELDS, create_node
 from app.entities.schemas import PersonCreate
 from app.players import repository
 from app.players.schemas import (
@@ -78,6 +78,73 @@ async def spieler_me(spieler: dict = Depends(require_spieler)):
     return _antwort(spieler)
 
 
+@login_router.get("/vorgefertigte", response_model=list[VorgefertigterCharakter])
+async def vorgefertigte_liste(spieler: dict = Depends(require_spieler)):
+    """Vorgebaute PCs zur Auswahl im Ersteinstiegs-Fenster.
+
+    Nur sinnvoll, solange der Spieler noch keinen eigenen Charakter hat —
+    die Route liefert trotzdem immer die aktuelle Liste, die Sperre gegen
+    einen zweiten Charakter sitzt in `charakter_waehlen`.
+    """
+    return await repository.verfuegbare_pcs(spieler["campaignId"])
+
+
+@login_router.post("/charakter-waehlen", response_model=SpielerMeResponse)
+async def charakter_waehlen(body: CharakterWaehlenRequest, spieler: dict = Depends(require_spieler)):
+    """Wählt einen vorgebauten, noch freien PC fix für diesen Spieler.
+
+    Atomar geprüft in `repository.charakter_waehlen` — zwei Spieler, die
+    gleichzeitig denselben Charakter antippen, können ihn nicht beide
+    bekommen. 409 sowohl wenn der Spieler bereits einen Charakter hat als
+    auch wenn der gewählte PC inzwischen vergeben oder nicht mehr frei ist;
+    beides braucht dieselbe Reaktion beim Spieler ("neu laden, nochmal
+    wählen"), eine feinere Unterscheidung wäre hier kein echter Zugewinn.
+    """
+    if spieler.get("personId"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Du hast bereits einen Charakter.")
+
+    erfolg = await repository.charakter_waehlen(spieler["id"], spieler["campaignId"], body.personId)
+    if not erfolg:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Dieser Charakter ist gerade nicht mehr frei — bitte die Liste neu laden.",
+        )
+
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+@login_router.post("/charakter-neu", response_model=SpielerMeResponse)
+async def charakter_neu_bauen(spieler: dict = Depends(require_spieler)):
+    """Legt einen frischen, leeren PC an und ordnet ihn sofort dem Spieler zu —
+    Startpunkt für die selbstständige Charaktererstellung im Ersteinstiegs-
+    Fenster. Der Name ist ein Platzhalter; die Erstellung lässt ihn den
+    echten Namen selbst vergeben (siehe traits/routes.py::ErstellungInput).
+    """
+    if spieler.get("personId"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Du hast bereits einen Charakter.")
+
+    campaign_id = spieler["campaignId"]
+    neue_person = await create_node(
+        "Person",
+        PERSON_FIELDS,
+        campaign_id,
+        PersonCreate(name="Neuer Charakter", personType="PC").model_dump(),
+    )
+    erfolg = await repository.charakter_waehlen(spieler["id"], campaign_id, neue_person["id"])
+    if not erfolg:
+        # Kann eigentlich nur bei einem zwischenzeitlich doch gesetzten
+        # eigenen Charakter passieren (Doppelklick) — der frische, noch
+        # ungebundene PC bliebe sonst als Leiche stehen.
+        await entities_repository.delete_node("Person", campaign_id, neue_person["id"])
+        raise HTTPException(status.HTTP_409_CONFLICT, "Du hast bereits einen Charakter.")
+
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
 @login_router.post("/passwort", response_model=SpielerMeResponse)
 async def passwort_setzen(body: PasswortRequest, spieler: dict = Depends(require_spieler)):
     """Der Spieler vergibt sich selbst ein Passwort - oder entfernt es wieder."""
@@ -126,6 +193,30 @@ async def eigenes_charakterportrait_hochladen(
     (ordner / name).write_bytes(inhalt)
 
     await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
+
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+@login_router.delete("/mein-bild", response_model=SpielerMeResponse)
+async def eigenes_charakterportrait_entfernen(spieler: dict = Depends(require_spieler)):
+    """Entfernt das Charakterportrait wieder — Gegenstück zum Upload oben.
+
+    Setzt `bildUrl` nur zurück (gleiches Muster wie `EntitaetsBild.tsx::
+    entfernen`, PATCH mit leerem String), löscht die Datei aber nicht vom
+    Datenträger — genau wie beim SL-Upload bleibt sie verwaist liegen statt
+    Nebenwirkungen auf andere Referenzen zu riskieren.
+    """
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+
+    campaign_id = spieler["campaignId"]
+    person_id = spieler["personId"]
+    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": ""})
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None

@@ -22,11 +22,29 @@ export interface SpielerZugang {
   personName: string | null;
 }
 
+/** Ein vorgebauter PC zur Auswahl im Ersteinstiegs-Fenster — schlanke Form,
+ * kein voller Bogen. Ergibt sich aus PCs ohne zugeordneten Spieler. */
+export interface VorgefertigterCharakter {
+  id: string;
+  name: string;
+  bildUrl?: string;
+  konzept?: string;
+  rasse?: string;
+  weg?: string;
+}
+
 export const playersApi = {
   anmelden: (benutzername: string, passwort: string) =>
     api.post<SpielerMe>("/api/spieler/login", { benutzername, passwort }),
   me: () => api.get<SpielerMe>("/api/spieler/me"),
   abmelden: () => api.post("/api/spieler/abmelden"),
+  /** Vorgebaute PCs, die noch niemandem zugeordnet sind (Ersteinstieg). */
+  vorgefertigteListe: () => api.get<VorgefertigterCharakter[]>("/api/spieler/vorgefertigte"),
+  /** Wählt einen vorgebauten, noch freien PC fix — atomar serverseitig geprüft. */
+  charakterWaehlen: (personId: string) =>
+    api.post<SpielerMe>("/api/spieler/charakter-waehlen", { personId }),
+  /** Legt einen frischen PC an und startet damit die eigene Charaktererstellung. */
+  charakterNeu: () => api.post<SpielerMe>("/api/spieler/charakter-neu"),
   /** Leeres Passwort entfernt den Schutz wieder. */
   passwortSetzen: (passwort: string) => api.post<SpielerMe>("/api/spieler/passwort", { passwort }),
   /** Charakterportrait für den eigenen zugeordneten Charakter setzen. */
@@ -46,6 +64,8 @@ export const playersApi = {
     }
     return antwort.json();
   },
+  /** Entfernt das Charakterportrait wieder. */
+  meinBildEntfernen: () => api.delete<SpielerMe>("/api/spieler/mein-bild"),
 
   // Verwaltung durch die Spielleitung
   liste: (cid: string) => api.get<SpielerZugang[]>(`/api/campaigns/${cid}/spieler`),
