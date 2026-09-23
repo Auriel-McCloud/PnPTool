@@ -395,3 +395,38 @@ Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + Punkt 3 "KI-Integration" +
 Punkt 11 "Charakterportrait im Spieler-Menü"), `docs/api/ki.md`,
 `docs/api/auth.md`, `docs/wiki/entities/ki-integration.md`,
 `docs/wiki/index.md` (Zusammenfassungszeile).
+
+## [2026-09-23] update | Wiki-Import per Dokument-Upload (.docx/.pdf)
+
+Siebter Anwendungsfall auf `entities/ki-integration.md`: neues Modul
+`backend/app/ki/wiki_import.py`. SL lädt ein Word- oder PDF-Dokument hoch
+(`POST .../ki/wiki/import`, Multipart) — die KI erkennt die Struktur
+(Überschriften/Kapitel: .docx-Formatvorlagen "Heading 1".."Heading 9" als
+`#`-Präfixe mitgegeben, .pdf rein am Textmuster) und teilt den Text
+automatisch in eine oder mehrere Wiki-Seiten-Entwürfe auf
+(`istEntwurf=true`, Eltern-Kind-Hierarchie über `elternIndex` aus der
+KI-Antwort). Dokumente über 60.000 Zeichen werden abgelehnt statt
+unvollständig importiert.
+
+Pro neu angelegter Seite läuft automatisch die bestehende
+Auto-Verknüpfung (`auto_verknuepfung.py`, unverändert wiederverwendet,
+alle Vorschläge sofort angewandt statt einzeln bestätigt wie beim
+manuellen Knopf). Frontend: `frontend/src/ki/WikiImportPopup.tsx`
+(Commlink-Stil), Knopf `⇪✨` in `WikiAnsicht.tsx` neben "+ Neue Seite",
+Ergebnis-Liste springt zur Prüfung in die bestehende Ideenschmiede.
+
+Verifiziert: Backend-Import ok, Route im OpenAPI-Schema, `tsc -b`
+fehlerfrei, echter E2E-Testlauf gegen laufendes Backend + echte Neo4j +
+echten Mistral-Call — Test-.docx mit 2 Kapiteln + 2 Unterkapiteln ergab 5
+korrekt verschachtelte Entwurfs-Seiten; eine vorab angelegte Person wurde
+per Auto-Verknüpfung korrekt wiedererkannt (keine Dublette), mehrere
+unbekannte erwähnte Entitäten automatisch als Entwürfe samt
+Beziehungskanten angelegt. **Offen:** kein Klicktest von
+`WikiImportPopup.tsx` im laufenden Frontend (nur `tsc -b`); PDF-Pfad
+ungetestet (nur .docx real durchlaufen); die 60.000-Zeichen-Grenze ist
+eine Schätzung, kein ermitteltes Kontextfenster-Limit.
+
+Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + Punkt 3 "KI-Integration",
+Wiki-Import von offen auf gebaut gesetzt), `docs/api/ki.md`,
+`docs/wiki/entities/ki-integration.md`, `docs/wiki/index.md`
+(Zusammenfassungszeile).

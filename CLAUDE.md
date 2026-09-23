@@ -106,6 +106,67 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.09.2026, Wiki-Import):**
+- **Wiki-Import per Dokument-Upload** (Punkt 3 unter "Geplante Features",
+  "Wiki-Import" — von offen auf gebaut) — SL lädt ein Word- (.docx) oder
+  PDF-Dokument (.pdf) hoch, die KI erkennt die Struktur (Überschriften/
+  Kapitel) und teilt es automatisch in eine oder mehrere Wiki-Seiten-
+  Entwürfe auf (`istEntwurf=true`, wie jede andere Ideenschmiede-Idee —
+  kein Autocommit, SL prüft und übernimmt jeden Entwurf einzeln).
+  - **Neues Modul** `backend/app/ki/wiki_import.py`: `dokument_zu_text()`
+    liest .docx via `python-docx` (Überschriften-Formatvorlagen "Heading
+    1".."Heading 9" werden als `#`/`##`-Präfixe mitgegeben, damit die KI
+    die Gliederung sieht statt sie zu erraten) oder .pdf via `pypdf`
+    (reiner Fließtext, PDF kennt keine Formatvorlagen — dort erkennt die
+    KI Kapitel nur am Textmuster). Grenze `MAX_ZEICHEN = 60_000`: ein
+    größeres Dokument wird bewusst abgelehnt (`DokumentZuGrossFehler`)
+    statt unvollständig/abgeschnitten importiert zu werden.
+  - `gliedere_dokument()` schickt den Text + Kampagnenkontext
+    (`sammle_kontext()`, dieselbe Infrastruktur wie jede andere
+    KI-Generierung) an die Text-KI und bekommt eine Liste von
+    Seiten-Vorschlägen zurück (Titel + Inhalt + optionaler `elternIndex`
+    für Unterseiten — die KI erkennt die Hierarchie selbst aus
+    Kapitel/Unterkapitel, der SL gibt nichts manuell vor).
+  - `importiere()` legt daraus echte Wiki-Seiten an (`wiki/repository.
+    create_seite`, derselbe Weg wie der Ideenschmiede-Story-Typ) —
+    Unterseiten zuerst ohne, dann mit `parentId` verknüpft (Eltern-IDs
+    stehen erst nach dem Anlegen fest). **Pro neu angelegter Seite läuft
+    automatisch die bestehende Auto-Verknüpfung** (`auto_verknuepfung.py`,
+    unverändert wiederverwendet) — anders als der manuelle „⧉✨
+    Auto-Verknüpfung"-Knopf (der jeden Fund einzeln zur Bestätigung
+    zeigt) wendet der Import ALLE gefundenen Verweise/Beziehungen direkt
+    an; neue Entitäten landen dabei trotzdem nur als Entwurf, kein
+    Autocommit in die Kampagne selbst.
+  - **Neue Route** `POST /api/campaigns/{id}/ki/wiki/import`
+    (multipart/form-data, Feld `datei`, nur SL) — liefert die Liste der
+    angelegten Entwürfe (`id`, `titel`, `parentId`, `verknuepfungen`:
+    Anzahl automatisch angewandter Auto-Verknüpfungen).
+  - **Frontend:** `frontend/src/ki/WikiImportPopup.tsx` (Commlink-Stil,
+    Vorbild `KiBildPopup.tsx`) — Datei wählen → Importieren → Ergebnis-
+    Liste (Eltern-Kind eingerückt) → „Zur Ideenschmiede" springt in den
+    bestehenden Entwurfs-Prüfung/Freigabe-Flow, kein neuer Mechanismus.
+    Knopf `⇪✨` in `WikiAnsicht.tsx` neben dem bestehenden „+ Neue Seite"-
+    Knopf im Seitenbaum-Kopf.
+  - **Verifiziert (23.09.2026, echter Testlauf)**: Test-.docx mit 2 Top-
+    Level-Kapiteln + 2 Unterkapiteln (python-docx-generiert, Heading 1/2)
+    gegen laufendes Backend + echte Neo4j + echten Mistral-Call
+    (`KI_PROVIDER=mistral`) importiert — 5 Entwurfs-Seiten entstanden,
+    Unterkapitel korrekt als `UNTERSEITE_VON` der jeweiligen Elternseite
+    verknüpft. Eine bereits bestehende Person ("Nachtfalke", vorher
+    freigegeben angelegt) wurde in allen vier erwähnenden Seiten korrekt
+    per Auto-Verknüpfung erkannt und verlinkt (keine Dublette); mehrere im
+    Text erwähnte, aber noch unbekannte Entitäten (Ort "Omikron² Eridiani",
+    "Hafenviertel", "Docks", "Rotlichtviertel", Fraktion "Chrom-Kartelle",
+    Person "Techniker") wurden automatisch als Entwürfe angelegt und mit
+    echten `VERBINDUNG`-Kanten zueinander verknüpft. **Offen:** kein
+    echter Klicktest von `WikiImportPopup.tsx` im Frontend-Dev-Server (nur
+    `tsc -b` geprüft) — Mark muss das Popup selbst im Browser gegenprüfen.
+    Blocker/Grenzen: PDF-Gliederungserkennung ist ungetestet (kein
+    Test-PDF gebaut, nur die .docx-Route real durchlaufen) und dürfte
+    schwächer sein als bei .docx, weil pypdf keine Formatvorlagen liefert
+    — die 60.000-Zeichen-Grenze ist eine Schätzung, keine belastbar
+    ermittelte Kontextfenster-Grenze.
+
 **Zuletzt gebaut (23.09.2026, KI-Bildgenerierung):**
 - **Bildgenerierung für Personen/Orte/Events/Fraktionen/Gegenstände + eigenes
   Spieler-Portrait** (Punkt 3 unter "Geplante Features", "Bildgenerierung" —
@@ -803,7 +864,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      `tsc -b` geprüft) — Mark muss das visuell gegenprüfen; der
      Fooocus-Wrapper muss von Mark manuell als Hintergrundprozess
      eingerichtet werden, sonst schlägt der "lokal"-Provider fehl.
-   - **Wiki-Import:** Word-Dokumente hochladen, KI wandelt in Wiki-Seiten um
+   - **Wiki-Import** — ✅ **gebaut (23.09.2026)**, siehe "Zuletzt gebaut"
+     oben: SL lädt .docx/.pdf hoch, KI teilt anhand erkannter Struktur
+     (Überschriften/Kapitel) in Wiki-Seiten-Entwürfe auf inkl.
+     Eltern-Kind-Hierarchie, Auto-Verknüpfung läuft pro Seite automatisch.
    - **Auto-Verknüpfung** (präzisiert 20.09.2026, Marks Wunsch; **gebaut**
      22.09.2026 — siehe "Zuletzt gebaut" oben) — KI durchsucht den
      Wiki-Seitentext und verknüpft erwähnte Personen/Orte/Events/Fraktionen

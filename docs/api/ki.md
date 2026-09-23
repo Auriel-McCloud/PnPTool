@@ -183,6 +183,65 @@ von Hand geändert wurde), bleibt sie unverändert und `ersetzt` ist `false`:
 
 ---
 
+## POST `/wiki/import` (gebaut 23.09.2026)
+
+Dokument-Import: SL lädt ein Word- (.docx) oder PDF-Dokument (.pdf) hoch,
+die KI erkennt die Struktur (Überschriften/Kapitel) und teilt den Text
+automatisch in eine oder mehrere Wiki-Seiten-Entwürfe auf. Multipart-Upload,
+Feld `datei`.
+
+**Ablauf** (`app/ki/wiki_import.py`):
+1. `dokument_zu_text()` extrahiert reinen Text — .docx via `python-docx`
+   (Überschriften-Formatvorlagen "Heading 1".."Heading 9" werden als
+   `#`/`##`-Präfixe mitgegeben, damit die KI die Gliederung sieht statt sie
+   zu erraten), .pdf via `pypdf` (reiner Fließtext, keine Formatvorlagen —
+   dort erkennt die KI Kapitel nur am Textmuster). Dokumente über
+   `MAX_ZEICHEN = 60_000` werden mit `422` abgelehnt statt unvollständig
+   importiert.
+2. `gliedere_dokument()` schickt Text + Kampagnenkontext
+   (`sammle_kontext()`) an die Text-KI, die eine Liste von
+   Seiten-Vorschlägen liefert (Titel, Inhalt, optionaler `elternIndex` für
+   erkannte Unterseiten — die Hierarchie erkennt die KI selbst aus
+   Kapitel/Unterkapitel).
+3. `importiere()` legt daraus echte `istEntwurf=true`-Wiki-Seiten an
+   (`wiki/repository.create_seite`, derselbe Weg wie der Ideenschmiede-
+   Story-Typ unter `POST /idee`) — Unterseiten werden nachträglich per
+   `parentId` verknüpft, sobald alle Eltern-IDs bekannt sind.
+4. **Pro neu angelegter Seite läuft automatisch die bestehende
+   Auto-Verknüpfung** (`app/ki/auto_verknuepfung.py`, unverändert
+   wiederverwendet, siehe `docs/wiki/entities/ki-integration.md`) — anders
+   als der manuelle „⧉✨ Auto-Verknüpfung"-Knopf im Wiki-Editor (der jeden
+   Fund einzeln zur Bestätigung zeigt) wendet der Import ALLE gefundenen
+   Verweise und Beziehungen direkt an. Neue erwähnte Entitäten landen dabei
+   trotzdem nur als Entwurf in der Ideenschmiede — kein Autocommit in die
+   Kampagne selbst.
+
+**Response:**
+```json
+{
+  "seiten": [
+    { "id": "uuid", "titel": "Der Fall Neonschatten", "parentId": null, "verknuepfungen": 7 },
+    { "id": "uuid", "titel": "Die erste Spur", "parentId": "uuid-des-elternteils", "verknuepfungen": 5 }
+  ]
+}
+```
+
+`verknuepfungen` zählt, wie viele Auto-Verknüpfungs-Vorschläge (Verweise +
+Beziehungen zusammen) für diese Seite automatisch angewandt wurden.
+
+`422` bei falschem Dateiformat (nur `.docx`/`.pdf` erlaubt), zu großem
+Dokument oder unlesbarem Inhalt; `502` wenn die KI keine Seiten ableiten
+konnte oder ein anderer KI-Fehler auftrat.
+
+Verifiziert (23.09.2026): Test-.docx mit 2 Top-Level-Kapiteln + 2
+Unterkapiteln gegen laufendes Backend + echte Neo4j + echten Mistral-Call
+importiert — 5 Entwurfs-Seiten mit korrekter Eltern-Kind-Struktur, Auto-
+Verknüpfung erkannte eine bereits bestehende Person korrekt (keine
+Dublette) und legte mehrere unbekannte erwähnte Entitäten samt
+Beziehungskanten automatisch als Entwürfe an.
+
+---
+
 ## Datenmodell
 
 Ein Feld am `WikiSeite`-Knoten: `pruefHash` (SHA-256 des zuletzt geprüften

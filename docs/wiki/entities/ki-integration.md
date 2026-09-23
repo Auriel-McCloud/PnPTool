@@ -144,7 +144,7 @@ nicht offen ist. `docs/api/ki.md` dokumentiert die drei neuen Endpunkte.
 - ✨ Freier KI-Text-Zusatz an Beschreibung/Notizen jeder Entität —
   **umgesetzt** (siehe oben)
 - Bildgenerierung (Portraits, Item-Bilder, Maps) — **nicht umgesetzt**
-- Wiki-Import aus Word-Dokumenten — **nicht umgesetzt**
+- Wiki-Import aus Word-Dokumenten — **umgesetzt** (23.09.2026, siehe unten)
 - Auto-Verknüpfung (KI durchsucht Wiki/Ideenschmiede, verknüpft erwähnte
   Personen/Orte/Events als echte Graphkanten; existiert eine Entität noch
   nicht, legt die KI dafür einen Entwurf in der Ideenschmiede an und trägt
@@ -228,6 +228,57 @@ getestet. **Zwei offene Punkte:** `KiBildPopup.tsx` wurde nur gegen `tsc -b`
 geprüft, kein echter Klicktest im laufenden Frontend — Mark muss das selbst
 gegenprüfen; der Fooocus-Wrapper muss manuell als Hintergrundprozess
 eingerichtet sein, sonst schlägt der "lokal"-Provider fehl.
+
+## Wiki-Import per Dokument-Upload (23.09.2026) — umgesetzt
+
+Siebter Anwendungsfall, eigenes Modul `backend/app/ki/wiki_import.py`. SL
+lädt ein Word- (.docx) oder PDF-Dokument (.pdf) hoch (`POST
+.../ki/wiki/import`, Multipart) — die KI erkennt die Struktur
+(Überschriften/Kapitel) und teilt den Text automatisch in eine oder
+mehrere Wiki-Seiten-Entwürfe auf, statt dass der SL manuell Seite für
+Seite anlegt.
+
+- **Text-Extraktion**: .docx über `python-docx` — Überschriften-
+  Formatvorlagen ("Heading 1".."Heading 9") werden als `#`/`##`-Präfixe
+  mitgegeben, damit die KI die Gliederung direkt sieht statt sie zu
+  erraten. .pdf über `pypdf` — reiner Fließtext, PDF kennt keine
+  Formatvorlagen, dort muss die KI Kapitel rein am Textmuster erkennen
+  (schwächer als bei .docx, siehe unten). Ein Dokument über
+  `MAX_ZEICHEN = 60_000` wird abgelehnt statt unvollständig importiert.
+- **Gliederung**: derselbe Kontext (`sammle_kontext()`) wie jede andere
+  KI-Generierung wird mitgeschickt, die KI liefert eine Liste von
+  Seiten-Vorschlägen (Titel, Inhalt, optionaler `elternIndex` für erkannte
+  Unterseiten) — bei einem kurzen unstrukturierten Text kann das auch nur
+  eine einzige Seite sein.
+- **Anlegen**: genau derselbe Weg wie der Ideenschmiede-Story-Typ
+  (`wiki/repository.create_seite`, `istEntwurf=true`) — Unterseiten werden
+  in einem zweiten Durchlauf per `parentId` verknüpft, sobald die
+  Eltern-IDs feststehen.
+- **Auto-Verknüpfung läuft automatisch pro Seite** (Marks ausdrückliche
+  Vorgabe für den Import): anders als der manuelle „⧉✨
+  Auto-Verknüpfung"-Knopf, der jeden Fund einzeln zur Bestätigung zeigt,
+  wendet der Import ALLE erkannten Verweise/Beziehungen sofort an —
+  wiederverwendet unverändert `auto_verknuepfung.py` (siehe Abschnitt
+  oben), keine zweite Parallel-Logik. Neue erwähnte Entitäten landen
+  trotzdem nur als Entwurf, kein Autocommit in die Kampagne selbst.
+
+Frontend: `frontend/src/ki/WikiImportPopup.tsx` (Commlink-Stil, Vorbild
+`KiBildPopup.tsx`) — Datei wählen, importieren, Ergebnis-Liste (Eltern-
+Kind eingerückt, zeigt Anzahl automatisch angewandter Verknüpfungen je
+Seite), „Zur Ideenschmiede" springt in den bestehenden Prüfungs-/
+Freigabe-Flow. Knopf `⇪✨` in `WikiAnsicht.tsx` neben „+ Neue Seite".
+
+**Verifiziert (23.09.2026, echter E2E-Testlauf):** Test-.docx mit
+python-docx erzeugt (2 Top-Level-Kapitel, 2 Unterkapitel via Heading 1/2)
+gegen laufendes Backend + echte Neo4j + echten Mistral-Call importiert —
+5 Entwurfs-Seiten mit korrekter `UNTERSEITE_VON`-Struktur entstanden.
+Eine vorab freigegebene Person ("Nachtfalke") wurde in allen erwähnenden
+Seiten korrekt wiedererkannt (keine Dublette), mehrere unbekannte
+erwähnte Entitäten (Orte, eine Fraktion, eine weitere Person) automatisch
+als Entwürfe samt `VERBINDUNG`-Kanten angelegt. **Offen:** kein echter
+Browser-Klicktest des Popups (nur `tsc -b`); PDF-Pfad ungetestet (nur
+.docx real durchlaufen); die 60.000-Zeichen-Grenze ist eine Schätzung,
+kein belastbar ermitteltes Kontextfenster-Limit.
 
 ## Siehe auch
 
