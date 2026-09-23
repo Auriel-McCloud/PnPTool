@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-22
+updated: 2026-09-23
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md]
@@ -184,6 +184,50 @@ bestätigten Vorschlag. Details: `docs/api/haendler.md`.
 Backend end-to-end gegen echte Neo4j-DB verifiziert (Wiederverwendung UND
 Neuerfindung getestet). Frontend für den Sortiment-Vorschlag noch offen
 (SL-Popup mit Vorschlagsliste).
+
+## Bildgenerierung (23.09.2026) — umgesetzt
+
+Sechster Anwendungsfall, eigenes Modul `backend/app/ki/bildgenerierung.py`:
+`generiere_bild(provider, prompt) -> (bytes, content_type)` mit zwei
+**pro Aufruf** wählbaren Providern (Commlink-Popup-Dropdown, anders als der
+global per `.env` gesetzte Text-Provider `KI_PROVIDER`):
+
+- **cloud** — Google Gemini `gemini-2.5-flash-image` (`generateContent` mit
+  `responseModalities: ["IMAGE"]`, gleicher REST-Stil wie der Text-Client,
+  kein SDK).
+- **lokal** — `pnptool_server.py` in `C:\DEV\Fooocus`, ein eigener
+  Wrapper-Prozess **außerhalb dieses Repos** (nicht eingecheckt, eigenes
+  venv). Fooocus 2.5.5/Gradio 3.41.2 hat keine eigene REST-API; der Wrapper
+  importiert `modules.async_worker` direkt. Muss von Mark manuell separat
+  gestartet werden (z.B. Autostart) — läuft er nicht, meldet die Route eine
+  klare Verbindungsfehlermeldung statt eines rohen Timeouts.
+
+Zweistufiges Popup, wie schon bei der Wiki-Prüfung/Auto-Verknüpfung erst
+zur Kontrolle anzeigen statt sofort zu speichern: `POST .../ki/bild-prompt`
+schlägt einen editierbaren Bild-Prompt aus Name+Beschreibung vor (Text-KI,
+dieselbe `sammle_kontext()`-Infrastruktur), `POST .../ki/bild-generieren`
+liefert die rohen Bild-Bytes als Vorschau — **speichert nichts**. Erst
+"✓ Übernehmen" im Frontend-Popup (`frontend/src/ki/KiBildPopup.tsx`) schickt
+das Bild über die jeweils bestehende Datei-Upload-Route der Entität, kein
+zweiter Ablage-Mechanismus (ein erster Versuch mit eigenen
+Byte-Speicher-Helfern in `entities/routes.py`/`items/routes.py` wurde noch
+am selben Tag wieder verworfen zugunsten dieses einfacheren Wegs).
+
+Eingebunden an Person/Event (`EntitaetsBild.tsx`), Ort/Fraktion
+(`BildGalerie.tsx`), Gegenstand (`CharacterSheetPanel.tsx`) für die SL sowie
+am eigenen Charakterportrait für den Spieler
+(`players/CharakterportraitAnsicht.tsx`, eigene Routen
+`/api/spieler/mein-bild-ki-prompt` + `/mein-bild-ki`, siehe
+`docs/api/auth.md`). Details zu Request/Response: `docs/api/ki.md`.
+
+**Verifiziert:** Backend-Import ok, alle Routen im OpenAPI-Schema, `tsc -b`
+fehlerfrei, ein echter E2E-Call gegen laufendes Backend + echte Neo4j-Daten
++ echten Gemini-Key lieferte einen funktionierenden Bild-Prompt-Vorschlag.
+Bildgenerierung selbst für beide Provider (Cloud UND lokal) je einmal live
+getestet. **Zwei offene Punkte:** `KiBildPopup.tsx` wurde nur gegen `tsc -b`
+geprüft, kein echter Klicktest im laufenden Frontend — Mark muss das selbst
+gegenprüfen; der Fooocus-Wrapper muss manuell als Hintergrundprozess
+eingerichtet sein, sonst schlägt der "lokal"-Provider fehl.
 
 ## Siehe auch
 

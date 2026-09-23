@@ -134,6 +134,56 @@ vorgefertigten PC wählen).
 
 ---
 
+## Eigenes Charakterportrait (Spieler-Router `/api/spieler`)
+
+Drei Wege für den Spieler, sein eigenes zugeordnetes `Person`-Bild zu
+setzen — alle bewusst OHNE `require_campaign_gm` (einzige Bild-Upload-Routen
+im Projekt, die nicht GM-only sind: der Spieler darf nur sein **eigenes**
+Bild setzen, `personId` kommt aus dem JWT-Claim, kein Pfad-Parameter).
+
+### POST `/api/spieler/mein-bild`
+
+Datei-Upload (`multipart/form-data`, Feld `file`, PNG/JPEG/WEBP/GIF, max.
+8 MB). Schreibt auf dasselbe `bildUrl`-Feld wie der SL-Upload, gleicher
+Ordner (`uploads/<campaign_id>/`), Dateipräfix `portrait-` statt
+`personen-`. **Response:** `SpielerMeResponse` (u.a. `personBildUrl`).
+
+### DELETE `/api/spieler/mein-bild`
+
+Setzt `bildUrl` zurück (nicht die Datei selbst — bleibt wie beim SL-Pendant
+verwaist auf dem Datenträger liegen).
+
+### POST `/api/spieler/mein-bild-ki-prompt` (gebaut 23.09.2026)
+
+Schritt 1 der KI-Bildgenerierung fürs eigene Portrait — identische Logik
+wie `POST /api/campaigns/{id}/ki/bild-prompt` (siehe
+[docs/api/ki.md](./ki.md), ruft dieselbe `_bild_prompt_vorschlagen()`
+auf), nur ohne Pfadparameter: Objekttyp/-name/-beschreibung kommen aus dem
+zugeordneten Charakter selbst, nicht aus dem Body. `400` wenn dem Spieler
+noch kein Charakter zugeordnet ist, `404` wenn der Charakter nicht (mehr)
+existiert.
+
+**Response:**
+```json
+{ "prompt": "A grizzled fixer in a rain-soaked alley, neon signage reflecting..." }
+```
+
+### POST `/api/spieler/mein-bild-ki` (gebaut 23.09.2026)
+
+Schritt 2 — identisch zu `POST .../ki/bild-generieren`
+([docs/api/ki.md](./ki.md)): liefert die rohen Bild-Bytes zur Vorschau
+zurück, speichert nichts. Übernehmen läuft über `POST /mein-bild` oben
+(Frontend baut aus dem Blob eine `File`).
+
+```json
+{ "provider": "lokal" | "cloud", "prompt": "..." }
+```
+
+Frontend: `KiBildPopup` in `players/CharakterportraitAnsicht.tsx`, neben
+Datei-Upload und Kamera-Aufnahme.
+
+---
+
 ## Berechtigungsprüfung
 
 Jeder Endpunkt prüft:

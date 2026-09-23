@@ -106,6 +106,84 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.09.2026, KI-Bildgenerierung):**
+- **Bildgenerierung für Personen/Orte/Events/Fraktionen/Gegenstände + eigenes
+  Spieler-Portrait** (Punkt 3 unter "Geplante Features", "Bildgenerierung" —
+  siehe dort) — neues Modul `backend/app/ki/bildgenerierung.py` mit
+  `generiere_bild(provider, prompt) -> (bytes, content_type)`, zwei Provider
+  **pro Aufruf wählbar** (Commlink-Popup-Dropdown, anders als der
+  Text-Provider `KI_PROVIDER` in `.env`, der global gilt):
+  - **`cloud`** — Google Gemini `gemini-2.5-flash-image`
+    (`generateContent` mit `responseModalities: ["IMAGE"]`, gleicher
+    REST-Stil wie `gemini.py`, kein SDK). Braucht nur den bestehenden
+    `gemini_api_key`.
+  - **`lokal`** — spricht `pnptool_server.py` in `C:\DEV\Fooocus` an
+    (eigener Wrapper-Prozess, **bewusst außerhalb dieses Repos**, nicht
+    eingecheckt — Fooocus 2.5.5/Gradio 3.41.2 hat keine eigene REST-API,
+    der Wrapper importiert `modules.async_worker` direkt). Neue Settings in
+    `config.py`: `fooocus_url` (Default `http://127.0.0.1:7865`),
+    `fooocus_breite`/`fooocus_hoehe` (768×768), `fooocus_performance`
+    (`"Speed"`), `fooocus_timeout_sekunden` (300, GTX 1070 kann bei SDXL
+    mehrere Minuten brauchen). Läuft der Wrapper nicht, liefert das Modul
+    eine klare Fehlermeldung statt eines rohen Timeouts.
+  - Beide liefern dieselbe Form (rohe Bytes + Content-Type) an den
+    Aufrufer zurück — keine zwei Speicherpfade.
+  - **Neue Routen** unter `/api/campaigns/{id}/ki/` (nur SL,
+    `require_campaign_gm`): `POST bild-prompt` (Body: `objektTyp`,
+    `objektName`, `bisherigeBeschreibung` → `{"prompt": "..."}`, schlägt
+    einen Bild-Prompt aus Name+Beschreibung vor, dieselbe
+    `sammle_kontext()`/`generiere_json()`-Infrastruktur wie die übrige
+    KI-Anbindung) und `POST bild-generieren` (Body: `provider`
+    (`"lokal"`|`"cloud"`), `prompt` → liefert die rohen Bild-Bytes als
+    Vorschau zurück, **speichert nichts**). Spieler-Pendants (eigenes
+    Charakterportrait, bewusst ohne `require_campaign_gm`, gleiche
+    Begründung wie beim bestehenden `POST /mein-bild`):
+    `POST /api/spieler/mein-bild-ki-prompt` und
+    `POST /api/spieler/mein-bild-ki` (`backend/app/players/routes.py`,
+    rufen dieselbe `_bild_prompt_vorschlagen()`/`generiere_bild()` auf).
+    Übernommen wird die Vorschau über die jeweils **bestehende**
+    Datei-Upload-Route (Frontend baut aus dem Blob eine `File` und schickt
+    sie dorthin) — kein zweiter Ablage-Mechanismus, keine neuen
+    Byte-Speicher-Helfer nötig (ein erster Versuch mit eigenen Helfern in
+    `entities/routes.py`/`items/routes.py` wurde noch am selben Tag wieder
+    entfernt, siehe Commit "Route liefert Vorschau statt sofort zu
+    speichern").
+  - **Frontend:** neue generische Komponente `frontend/src/ki/KiBildPopup.tsx`
+    (Fenster-Stil, angelehnt an `KiTextPopup.tsx`) — Ablauf: Öffnen schlägt
+    automatisch einen Prompt vor → Nutzer kann ihn im Textfeld editieren →
+    Provider wählen (☁ Cloud/Gemini oder ▣ Lokal/Fooocus) →
+    "✨ Generieren" → Bildvorschau → "✓ Übernehmen" (speichert über die
+    bestehende Upload-Route) / "↺ Neu versuchen" / "Verwerfen". Aufrufer
+    bringt nur `objektTyp`/`objektName`/`bisherigeBeschreibung` und die drei
+    Callback-Funktionen mit (`onPromptVorschlagen`/`onGenerieren`/
+    `onUebernehmen`) — eine Komponente statt fünf Kopien. Eingebunden an:
+    `EntitaetsBild.tsx` (Person/Event, genutzt von NPCDetail/PCDetail/
+    EventDetail), `BildGalerie.tsx` (Ort/Fraktion, eigenes Kachel-Kästchen
+    im Galerie-Raster), `CharacterSheetPanel.tsx`
+    (`GegenstandRow`-Bearbeiten-Formular), `players/
+    CharakterportraitAnsicht.tsx` (Spieler-eigenes Portrait, neben
+    Datei-Upload und Kamera-Aufnahme). API-Helfer in `frontend/src/ki/api.ts`
+    (SL-Weg) und `frontend/src/players/api.ts` (Spieler-Weg).
+  - **Verifiziert:** Backend-Import ok, alle vier Routen im OpenAPI-Schema
+    registriert, `tsc -b` fehlerfrei, ein echter E2E-Call gegen laufendes
+    Backend + echte Neo4j-Daten + echten Gemini-Key lieferte einen
+    funktionierenden Bild-Prompt-Vorschlag (Status 200, sinnvoller
+    Cyberpunk-Prompt-Text). Die eigentliche Bildgenerierung wurde für
+    beide Provider (Cloud/Gemini UND lokal/Fooocus) je einmal erfolgreich
+    live getestet.
+  - **Zwei ehrliche Einschränkungen, noch offen:**
+    1. **Kein Browser-Test des Popups** — `KiBildPopup.tsx` wurde nur gegen
+       `tsc -b` geprüft, kein echter Klicktest im laufenden
+       Frontend-Dev-Server. Mark muss das selbst am Spieltisch/Dev-Server
+       visuell gegenprüfen, bevor es als fertig gilt.
+    2. **Fooocus-Wrapper liegt außerhalb des Repos und läuft nicht von
+       selbst** — `C:\DEV\Fooocus\pnptool_server.py` ist bewusst nicht
+       Teil von PnPTool (eigenes venv, eigener Prozess) und muss von Mark
+       manuell als Hintergrundprozess eingerichtet werden (z.B. Autostart).
+       Ohne laufenden Wrapper schlägt der "lokal"-Provider im Popup mit
+       einer Verbindungsfehlermeldung fehl — der "cloud"-Provider
+       (Gemini) funktioniert unabhängig davon.
+
 **Zuletzt gebaut (23.09.2026, Gegenstandstyp fix + KI-Gegenstände + Händler-KI-Vorschlag):**
 - **Gegenstandstyp nach Anlegen fix** (Marks Kritik: "mir gefällt nicht das
   man gegenstände zu etwas anderem machen kann") — `typ` aus
@@ -709,7 +787,18 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 
 3. **KI-Integration** (Gemini Pro) — mehrere Anwendungsfälle:
    - **NPC-Generator:** NPCs mit kurzer Beschreibung automatisch erstellen lassen
-   - **Bildgenerierung:** Portraits für Charaktere, Item-Bilder, Maps, Orte, Gebäude
+   - **Bildgenerierung** — ✅ **gebaut (23.09.2026)**, siehe "Zuletzt gebaut"
+     oben: Provider-Abstraktion lokal (Fooocus, eigener Wrapper außerhalb
+     des Repos) / cloud (Gemini `gemini-2.5-flash-image`), KI schlägt einen
+     editierbaren Bild-Prompt aus Name+Beschreibung vor, Popup mit
+     Vorschau vor dem Speichern — eingebunden an Person/Event/Ort/
+     Fraktion/Gegenstand (SL) sowie am eigenen Charakterportrait (Spieler).
+     Cloud-Pfad voll E2E verifiziert (inkl. echter Bildgenerierung), lokaler
+     Pfad einmal live gegen den Fooocus-Wrapper getestet. **Offen:** kein
+     echter Klicktest von `KiBildPopup.tsx` im Frontend-Dev-Server (nur
+     `tsc -b` geprüft) — Mark muss das visuell gegenprüfen; der
+     Fooocus-Wrapper muss von Mark manuell als Hintergrundprozess
+     eingerichtet werden, sonst schlägt der "lokal"-Provider fehl.
    - **Wiki-Import:** Word-Dokumente hochladen, KI wandelt in Wiki-Seiten um
    - **Auto-Verknüpfung** (präzisiert 20.09.2026, Marks Wunsch; **gebaut**
      22.09.2026 — siehe "Zuletzt gebaut" oben) — KI durchsucht den
@@ -1046,10 +1135,10 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     - **Zwei der vier geplanten Optionen umgesetzt** (mit Mark als MVP-Scope
       geklärt): Bild hochladen + Foto per Kamera (`capture="environment"`
       am `<input type="file">`, fällt am Desktop ohne Kamera automatisch auf
-      normale Dateiauswahl zurück). **Offen, bewusst nicht Teil dieser
-      Fassung:** Zeichentool, KI-Beschreibung → generiert Bild (braucht
-      eine neue Bildgenerierungs-Backend-Integration, die es noch nicht
-      gibt — bisher liefert `app/ki/` nur Text/JSON über Gemini/Mistral).
+      normale Dateiauswahl zurück). **KI-Bildgenerierung** kam am
+      23.09.2026 als dritter Weg dazu (siehe Löschen-Eintrag unten und
+      "Zuletzt gebaut" oben). **Offen, bewusst nicht Teil dieser Fassung:**
+      Zeichentool.
     - **Neue Route `POST /api/spieler/mein-bild`** (`app/players/routes.py`)
       — bewusst OHNE `require_campaign_gm`, einzige Bild-Upload-Route im
       Projekt, die nicht GM-only ist: der Spieler darf nur sein **eigenes**
@@ -1078,8 +1167,13 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
       per `Bestaetigung`-Dialog nach, dann `DELETE /api/spieler/mein-bild`
       (`players/routes.py::eigenes_charakterportrait_entfernen`) — setzt
       `bildUrl` zurück, Datei bleibt wie beim SL-Pendant auf dem
-      Datenträger liegen. Damit sind jetzt **alle** MVP-Wege vollständig;
-      offen bleiben weiterhin nur Zeichentool und KI-Bildgenerierung.
+      Datenträger liegen.
+    - **KI-Bildgenerierung ergänzt (23.09.2026)** — dritter Weg neben
+      Datei-Upload und Kamera: `KiBildPopup` in
+      `players/CharakterportraitAnsicht.tsx` eingebunden
+      (`POST /api/spieler/mein-bild-ki-prompt` + `/mein-bild-ki`, siehe
+      "Zuletzt gebaut" oben). Damit sind jetzt **alle** MVP-Wege
+      vollständig; nur das Zeichentool bleibt offen.
 
 12. **Steckbrief nachträglich bearbeiten** — ✅ erledigt (22.09.2026).
     Konzept, Ambition, Verlangen und Ziel lassen sich jetzt über einen

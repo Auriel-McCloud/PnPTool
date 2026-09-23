@@ -368,3 +368,30 @@ Dokumentiert: `CLAUDE.md` Punkt 9 (vollständig, alle sechs Fixes),
 `docs/regeln-neotopia.md`, `docs/wiki/concepts/neuroweaving-decking.md`
 (Haupt-Zielseite, "Entwicklung"-Abschnitt), `docs/wiki/index.md`
 (Zusammenfassungszeile + Datum).
+
+## [2026-09-23] update | KI-Bildgenerierung (lokal Fooocus + cloud Gemini)
+
+Sechster Anwendungsfall auf `entities/ki-integration.md`: neues Modul
+`backend/app/ki/bildgenerierung.py`, zwei pro Aufruf wählbare Provider
+(Dropdown im neuen `frontend/src/ki/KiBildPopup.tsx`) — cloud (Gemini
+`gemini-2.5-flash-image`) und lokal (Fooocus über einen eigenen
+Wrapper-Prozess `C:\DEV\Fooocus\pnptool_server.py`, bewusst außerhalb des
+Repos). Neue Routen `POST .../ki/bild-prompt` (Prompt-Vorschlag) und
+`POST .../ki/bild-generieren` (liefert nur eine Vorschau, speichert nichts)
+sowie die Spieler-Pendants `/api/spieler/mein-bild-ki-prompt` +
+`/mein-bild-ki` fürs eigene Charakterportrait. Eingebunden an Person/Event/
+Ort/Fraktion/Gegenstand (SL) und Spieler-Portrait. Details: `docs/api/ki.md`,
+`docs/api/auth.md`, `docs/wiki/entities/ki-integration.md`.
+
+Verifiziert: Backend-Import, alle Routen im OpenAPI-Schema, `tsc -b`
+fehlerfrei, echter E2E-Call (Prompt-Vorschlag) gegen laufendes Backend +
+echte Neo4j-Daten + echten Gemini-Key erfolgreich; Bildgenerierung für
+beide Provider je einmal live getestet. **Offen:** kein Klicktest von
+`KiBildPopup.tsx` im laufenden Frontend (nur `tsc -b` geprüft) — Mark prüft
+das selbst; der Fooocus-Wrapper muss manuell als Hintergrundprozess laufen,
+sonst schlägt der "lokal"-Provider fehl.
+
+Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + Punkt 3 "KI-Integration" +
+Punkt 11 "Charakterportrait im Spieler-Menü"), `docs/api/ki.md`,
+`docs/api/auth.md`, `docs/wiki/entities/ki-integration.md`,
+`docs/wiki/index.md` (Zusammenfassungszeile).
