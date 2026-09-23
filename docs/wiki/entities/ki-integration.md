@@ -160,6 +160,31 @@ nicht offen ist. `docs/api/ki.md` dokumentiert die drei neuen Endpunkte.
   **nicht umgesetzt**, siehe `CLAUDE.md` Punkt 10 für den vollen Entwurf
   inkl. geplanter TTS-Hybrid-Lösung (Edge TTS + ElevenLabs)
 
+## KI-Gegenstandsgenerator + KI-Sortiment-Vorschlag (23.09.2026) — umgesetzt
+
+Fünfter Anwendungsfall: dritter Ideenschmiede-Typ `gegenstand` neben
+`story`/`charakter` (`typ: "gegenstand"` in `ki/routes.py::ki_idee`). Der Typ
+ist seit dem Typwechsel-Verbot (22.09.2026, siehe [[architektur-drei-ebenen]]
+für den Bezug) nach dem Anlegen fix — deshalb erzwingt das generierte JSON-
+Schema den festen Katalog `GEGENSTAND_TYPEN` (`items/schemas.py`) als Enum;
+erfindet die KI trotzdem etwas Ungültiges, fällt der Wert hart auf
+"Sonstiges" zurück. Entsteht wie Charakter/Story als besitzerloser,
+SL-geheimer Entwurf.
+
+Darauf aufbauend: **KI-Sortiment-Vorschlag für Händler**, neues Modul
+`backend/app/haendler/ki_vorschlag.py`. Bevorzugt bestehende, bereits
+freigegebene Gegenstands-Vorlagen der Kampagne wiederzuverwenden (Abgleich
+über echte IDs, nicht per KI-Text — dieselbe Regel wie bei der
+Auto-Verknüpfung oben), erfindet nur bei einer echten Lücke etwas Neues
+(landet dann zuerst als Ideenschmiede-Entwurf, kein Autocommit). Zweistufig
+wie die Auto-Verknüpfung: `GET .../ki-vorschlaege` liefert eine
+Vorschauliste, `POST .../ki-vorschlaege/anwenden` übernimmt EINEN
+bestätigten Vorschlag. Details: `docs/api/haendler.md`.
+
+Backend end-to-end gegen echte Neo4j-DB verifiziert (Wiederverwendung UND
+Neuerfindung getestet). Frontend für den Sortiment-Vorschlag noch offen
+(SL-Popup mit Vorschlagsliste).
+
 ## Siehe auch
 
 - [[architektur-drei-ebenen]] — wo generierte Inhalte landen (Ideenschmiede)

@@ -120,6 +120,20 @@ Response:
 
 ---
 
+## Frontend: gemeinsames Anmeldefenster (23.09.2026)
+
+`frontend/src/auth/AnmeldeFenster.tsx` ersetzt die getrennten
+`GmLoginPage.tsx`/`SpielerLogin.tsx` — eine Commlink-Karte für beide Rollen,
+Spieler sehen das Login-Formular zuerst (deutlich mehr Spieler- als
+SL-Logins am Tisch), "Ich bin die Spielleitung" wechselt auf das
+SL-Formular. Ein Spieler-Account ohne zugeordneten Charakter (`personId`
+fehlt) sieht nach dem Login `frontend/src/players/SpielerEinstieg.tsx`
+statt der vollen Commlink-Hülle — siehe `CLAUDE.md` Punkt 6
+("PC-Erstellung / Ersteinstieg") für die beiden Wege (selbst erstellen /
+vorgefertigten PC wählen).
+
+---
+
 ## Berechtigungsprüfung
 
 Jeder Endpunkt prüft:

@@ -138,8 +138,9 @@ zu wenig Guthaben mit der erwarteten Meldung. `pytest` komplett grün.
 ## Noch offen
 
 - **Frontend** — SL-Sortiment-Editor, Spieler-Kaufansicht (Commlink-Popup),
-  Standort-Zuweisung-Popup. Kompletter Kern-Endpunktsatz steht, nichts davon
-  ist im Frontend angebunden.
+  Standort-Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup (siehe unten).
+  Kompletter Kern-Endpunktsatz steht, nichts davon ist im Frontend
+  angebunden.
 - **Spam/Werbung** — Händler schickt Nur-Lesen-Nachrichten, Frequenz
   skaliert mit I.C.E., Popups an zufälliger Screen-Position, SL kann eine
   "Spam-Welle" auslösen, Kampagnen-Option zum Ein/Ausschalten.
@@ -148,3 +149,36 @@ zu wenig Guthaben mit der erwarteten Meldung. `pytest` komplett grün.
   (`docs/api/ruestung.md`), Fahrzeug/Drohnen-Preisfrage
   (`docs/wiki/concepts/drohnen-fahrzeuge.md`) könnten über denselben
   Sortiments-Mechanismus laufen, sobald das Frontend steht.
+
+## KI-Sortiment-Vorschlag (23.09.2026)
+
+Neues Modul `backend/app/haendler/ki_vorschlag.py`, baut auf dem
+KI-Gegenstandsgenerator der Ideenschmiede auf (`docs/api/ki.md`,
+`GEGENSTAND_TYPEN` aus `items/schemas.py`). Schlägt passende Sortiment-Waren
+für einen bestimmten Händler vor, basierend auf Name/Beschreibung/
+Spezialisierung.
+
+**Bevorzugt Wiederverwendung:** die KI bekommt eine Liste aller bereits
+freigegebenen (`istEntwurf=false`) Gegenstands-Vorlagen der Kampagne, die
+noch NICHT im Sortiment dieses Händlers stehen, und soll zuerst daraus
+wählen (Namensabgleich über die echte ID, nicht per KI-Text — dieselbe
+Regel wie bei der Auto-Verknüpfung, Tippfehler dürfen keine falsche
+Zuordnung erzeugen). Nur bei einer echten Lücke erfindet sie etwas Neues.
+
+**Zweistufig, wie `auto_verknuepfung.py`:**
+
+| Methode | Pfad | Wer | Zweck |
+|---|---|---|---|
+| GET | `/{haendler_id}/ki-vorschlaege?anzahl=5` | nur SL | Vorschauliste, nichts wird gespeichert |
+| POST | `/{haendler_id}/ki-vorschlaege/anwenden` | nur SL | Übernimmt EINEN bestätigten Vorschlag |
+
+Eine neu erfundene Ware landet beim Anwenden zuerst als
+Ideenschmiede-Entwurf (`istEntwurf=true`), bevor sie ins Sortiment kommt —
+kein Autocommit. Bewusst pro Vorschlag einzeln anzuwenden, kein
+Sammel-Übernehmen (SL prüft jede neue Ware). `GET .../ki-vorschlaege` steht
+in `NUR_SPIELLEITUNG_LESBAR` (`tests/test_zugriffsschutz.py`) — Vorschläge
+sind SL-Entscheidungsgrundlage, kein Spieler-Angebot.
+
+Backend end-to-end gegen echte Neo4j-DB verifiziert (Wiederverwendung UND
+Neuerfindung beide getestet, Testdaten danach entfernt). **Frontend noch
+offen** — SL-Popup mit Vorschlagsliste + Einzeln-Übernehmen-Knöpfen.

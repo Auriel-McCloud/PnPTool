@@ -146,6 +146,44 @@ npm run dev
   `NUR_SPIELLEITUNG_LESBAR` aufgenommen (Vorschläge sind
   SL-Entscheidungsgrundlage, kein Spieler-Angebot).
 
+**Zuletzt gebaut (23.09.2026, nachts — Portrait-Löschen + Ersteinstieg):**
+- **Charakterportrait: Löschen-Button** — Gegenstück zum Upload aus Punkt 11
+  unten. „✕ Entfernen“ (nur sichtbar, wenn schon ein Bild gesetzt ist) fragt
+  erst per `Bestaetigung`-Dialog nach (Marks Standardregel für destruktive
+  Aktionen), erst danach `DELETE /api/spieler/mein-bild` (neue Route,
+  `backend/app/players/routes.py::eigenes_charakterportrait_entfernen`) —
+  setzt `bildUrl` nur zurück, löscht die Datei nicht vom Datenträger (gleiches
+  Muster wie beim SL-`EntitaetsBild.tsx::entfernen`). Frontend:
+  `frontend/src/players/CharakterportraitAnsicht.tsx` + neue Klasse
+  `port-btn-loeschen` in `portrait.css`.
+- **Ersteinstieg für neue Spieler ohne Charakter** — war bisher nur eine
+  Design-Notiz unter Punkt 6 (\"PC-Erstellung (neu)\"), jetzt gebaut. Ein
+  Spieler-Account ohne `personId` sieht in `SpielerAnsicht.tsx` statt der
+  vollen Commlink-Hülle den neuen Bildschirm `frontend/src/players/
+  SpielerEinstieg.tsx` mit zwei Wegen:
+  - **Selbst erstellen** — `POST /api/spieler/charakter-neu` legt sofort
+    einen leeren PC an und ordnet ihn per `SPIELT`-Kante zu; die bestehende
+    Charaktererstellung greift danach automatisch (`erstellungAbgeschlossen
+    =false`), Namensvergabe passiert dort wie gewohnt.
+  - **Vorgefertigten PC fix wählen** — `GET /api/spieler/vorgefertigte`
+    listet alle abgeschlossenen, nicht-Entwurfs-PCs der Kampagne **ohne**
+    `SPIELT`-Kante (Mark: \"das macht am meisten Sinn\" — ein vorgefertigter
+    Charakter ist bewusst kein eigenes Datenfeld, sondern schlicht ein noch
+    nicht zugeordneter PC). `POST /api/spieler/charakter-waehlen` weist ihn
+    **atomar** in einer einzigen Cypher-Anweisung zu (`backend/app/players/
+    repository.py::charakter_waehlen`) — tippen zwei Spieler gleichzeitig
+    denselben Charakter an, gewinnt nur einer, der andere bekommt `409` und
+    lädt die (dann veraltete) Liste neu. Vorher per `Bestaetigung`-Dialog
+    bestätigt: \"gehört danach dauerhaft dir\".
+  - Beide Pfade sperren serverseitig gegen einen zweiten eigenen Charakter
+    (409 „Du hast bereits einen Charakter“).
+  - **Anmeldefenster vereinheitlicht** (nebenbei, gleicher Commit): altes
+    `GmLoginPage.tsx`/`SpielerLogin.tsx` durch ein gemeinsames
+    `frontend/src/auth/AnmeldeFenster.tsx` ersetzt — Spieler sehen das
+    Login-Formular zuerst, SL-Login ist ein Extra-Klick (\"Ich bin die
+    Spielleitung\"), weil am Tisch deutlich mehr Spieler- als SL-Logins
+    passieren.
+
 **Zuletzt gebaut (22.09.2026, Auto-Verknüpfung + Beziehungen):**
 - **KI-Auto-Verknüpfung** (Punkt 3 unter "Geplante Features", letzter
   offener Baustein der KI-Integration) — „⧉✨ Auto-Verknüpfen"-Knopf im
@@ -645,6 +683,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      Spezialisierung), Standort, Kauf mit serverseitiger Guthabenprüfung —
      siehe "Zuletzt gebaut" oben und `docs/api/haendler.md`. Noch **kein
      Frontend**.
+   - **KI-Sortiment-Vorschlag gebaut (23.09.2026, Backend)**: neues Modul
+     `backend/app/haendler/ki_vorschlag.py`, zwei Endpunkte
+     (`GET .../ki-vorschlaege`, `POST .../ki-vorschlaege/anwenden`) —
+     bevorzugt bestehende Gegenstands-Vorlagen der Kampagne wiederzuverwenden,
+     erfindet nur bei einer echten Lücke etwas Neues (dann als
+     Ideenschmiede-Entwurf, kein Autocommit). Details siehe "Zuletzt gebaut"
+     oben und `docs/api/haendler.md`. **Frontend noch offen** (SL-Popup mit
+     Vorschlagsliste + Einzeln-Übernehmen-Knöpfen).
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
    - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**
@@ -682,6 +728,14 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
      (Beschreibung/Notizen von Personen/Orten/Events/Fraktionen) — Mark
      wollte erst nur den Wiki-Editor, das war explizit Schritt 1.
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
+   - **KI-Gegenstandsgenerator** (**gebaut** 23.09.2026 — siehe "Zuletzt
+     gebaut" oben): dritter Ideenschmiede-Typ neben Story/Charakter
+     (`typ: "gegenstand"` in `app/ki/routes.py::ki_idee`), Typ per festem
+     Katalog `GEGENSTAND_TYPEN` (`app/items/schemas.py`, muss inhaltlich mit
+     `frontend/src/items/typKatalog.ts` übereinstimmen) als Enum erzwungen —
+     ungültige Werte fallen hart auf "Sonstiges" zurück, weil der Typ nach
+     dem Anlegen nicht mehr änderbar ist. Entsteht als besitzerloser,
+     SL-geheimer Entwurf wie Charakter/Story.
 
 4. **Spotify** — ✅ Fertig (siehe `docs/api/spotify.md`). Playlist an Ort/Event,
    Wiedergabe folgt automatisch der aktiven Party. Yamaha RX-V4A/MusicCast-
@@ -898,10 +952,19 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - SL kann bearbeiten, dann "In Kampagne verschieben"
    - Verschieben = nur Flag toggle, keine Datenmigration
 
-   **PC-Erstellung (neu):**
-   - Spieler wählt: "Selbst erstellen" ODER "Vorlage wählen"
-   - Vorlagen kommen aus dem Regelsystem
-   - Kopiert Vorlage → Spieler passt Namen/Details an
+   **PC-Erstellung / Ersteinstieg — ✅ gebaut (23.09.2026):**
+   - Spieler-Account ohne `personId` sieht statt der vollen Commlink-Hülle
+     `frontend/src/players/SpielerEinstieg.tsx` und wählt: "Selbst
+     erstellen" (`POST /api/spieler/charakter-neu`, legt sofort einen
+     leeren PC an, danach greift die normale Charaktererstellung) ODER
+     "Vorgefertigten Charakter wählen" (`GET /api/spieler/vorgefertigte` +
+     `POST /api/spieler/charakter-waehlen`, atomare Zuweisung eines
+     bestehenden, noch niemandem zugeordneten abgeschlossenen PCs). Details
+     siehe "Zuletzt gebaut" oben. Ein "vorgefertigter PC" ist bewusst kein
+     eigenes Datenfeld — sondern schlicht ein PC ohne `SPIELT`-Kante.
+   - Nicht (mehr) aus dem Regelsystem selbst, sondern aus bestehenden
+     Kampagnen-PCs — die ursprünglich angedachten separaten Regelsystem-
+     Vorlagen sind damit hinfällig.
 
 7. **Rüstungssystem** — ✅ Fertig (10.09.2026, Reduktion statt Durchlass seit
    18.09.2026), siehe `docs/api/ruestung.md`:
@@ -1010,6 +1073,13 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     - Verifiziert: `tsc -b` fehlerfrei, End-to-End gegen echte Neo4j-DB
       (Spieler-Login → Bild-Upload → `GET /api/spieler/me` zeigt die neue
       URL, Testdaten wieder entfernt).
+    - **Löschen-Button ergänzt (23.09.2026)** — „✕ Entfernen“ neben den
+      Upload-Knöpfen (nur sichtbar, wenn schon ein Bild gesetzt ist), fragt
+      per `Bestaetigung`-Dialog nach, dann `DELETE /api/spieler/mein-bild`
+      (`players/routes.py::eigenes_charakterportrait_entfernen`) — setzt
+      `bildUrl` zurück, Datei bleibt wie beim SL-Pendant auf dem
+      Datenträger liegen. Damit sind jetzt **alle** MVP-Wege vollständig;
+      offen bleiben weiterhin nur Zeichentool und KI-Bildgenerierung.
 
 12. **Steckbrief nachträglich bearbeiten** — ✅ erledigt (22.09.2026).
     Konzept, Ambition, Verlangen und Ziel lassen sich jetzt über einen
@@ -1033,3 +1103,12 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     **Noch offen:** Seitenbaum, Kachel-Übersicht und Verweis-Auswahl am Handy
     brauchen noch eigene mobile Layouts oder Touch-freundliche Gesten statt
     Hover-Effekte.
+
+14. **Flavor-Option „Priester" (notiert 23.09.2026, offene Idee, nicht begonnen)** —
+    alternatives Namens-Reskin für Magier-Charaktere: Hexkraft → Glaube,
+    Wilde Magie → Blasphemie, die Sphären umbenannt auf Götter/Domänen
+    (bestehende und eventuell neu erfundene). Reine Flavor-/Anzeige-Ebene,
+    keine neue Mechanik — Regeln/Werte bleiben identisch zu Hexkraft, nur
+    Beschriftung ändert sich für diesen Charaktertyp. Noch zu klären: wie
+    die Umbenennung technisch je Charakter greift (globaler Schalter vs.
+    pro Person) und welche Sphären welchen Göttern entsprechen.

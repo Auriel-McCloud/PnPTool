@@ -50,6 +50,13 @@ Scammer-Storylines, Frontend. Würde — sobald das Frontend steht — auch die
 Rüstungsreparatur-Kosten und die Fahrzeug-Preisdiskussion mit auflösen
 können.
 
+**KI-Sortiment-Vorschlag (23.09.2026):** neues Modul
+`backend/app/haendler/ki_vorschlag.py` — die KI schlägt passende Waren für
+einen bestimmten Händler vor (bevorzugt bestehende Vorlagen, erfindet nur
+bei echter Lücke etwas Neues), SL bestätigt jeden Vorschlag einzeln.
+Backend end-to-end verifiziert, Frontend-Popup noch offen. Details:
+`docs/api/haendler.md`.
+
 ## Siehe auch
 
 - [[../../reference/Neotopia_Gegenstaende.md]] — alle Preistabellen im Volltext

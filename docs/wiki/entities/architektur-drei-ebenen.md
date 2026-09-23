@@ -54,9 +54,12 @@ als Klein-Slug zurück (`toLower(regelsystem-Name)`).
 
 ## Offen
 
-- **PC-Vorlagen im Regelsystem** — Spieler soll zwischen „selbst erstellen" und
-  „Vorlage wählen" wählen können (Vorlage aus dem Regelsystem kopiert, Spieler
-  passt an). **Status: geplant, nicht umgesetzt** (Phase 2).
+- **PC-Vorlagen im Regelsystem** — ursprüngliche Idee war eine eigene Vorlage
+  im Regelsystem, die pro Kampagne kopiert wird. **Umgesetzt wurde
+  stattdessen (23.09.2026)**: der Ersteinstieg holt sich "vorgefertigte" PCs
+  direkt aus den bestehenden Kampagnen-Charakteren (jeder abgeschlossene PC
+  ohne `SPIELT`-Kante gilt als frei wählbar) — kein eigenes Vorlagen-Konzept
+  im Regelsystem mehr nötig. Details: `docs/api/auth.md`, `CLAUDE.md` Punkt 6.
 - KI-Import in die Ideenschmiede — siehe [[ki-integration]].
 
 ## Siehe auch

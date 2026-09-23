@@ -36,3 +36,21 @@ SL, wird in praktisch allen Endpunkten zur Filterung/Rechteprüfung verwendet
 
 - [[neo4j-datenmodell]] — `GEHOERT_ZU`/`SPIELT` für PlayerSession
 - [[architektur-drei-ebenen]] — Campaign als Zugangs-Container
+
+## Ersteinstieg für neue Spieler (23.09.2026)
+
+Ein Spieler-Account ohne `SPIELT`-Kante (`personId` fehlt in
+`GET /api/spieler/me`) sieht nach dem Login `frontend/src/players/
+SpielerEinstieg.tsx` statt der vollen Commlink-Hülle: "Selbst erstellen"
+(`POST /api/spieler/charakter-neu`, legt sofort einen leeren PC an,
+danach greift die normale Charaktererstellung) oder "Vorgefertigten
+Charakter wählen" (`GET /api/spieler/vorgefertigte` listet abgeschlossene,
+noch niemandem zugeordnete PCs; `POST /api/spieler/charakter-waehlen`
+weist atomar zu — zwei gleichzeitige Zugriffe auf denselben PC können ihn
+nicht beide bekommen). Ein "vorgefertigter PC" ist bewusst kein eigenes
+Datenfeld, sondern schlicht ein PC ohne `SPIELT`-Kante. Details:
+`docs/api/auth.md`, `CLAUDE.md` Punkt 6.
+
+Zusätzlich (gleicher Commit): `AnmeldeFenster.tsx` ersetzt die getrennten
+SL-/Spieler-Login-Seiten durch eine gemeinsame Commlink-Karte, Spieler
+sehen den Login-Weg zuerst.

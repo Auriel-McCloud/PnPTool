@@ -13,17 +13,25 @@ Aufrufer als `502` an (die KI ist eine externe Abhängigkeit, kein Bug im Tool).
 
 ## POST `/idee`
 
-Generiert einen Story-Part oder Charakter und legt ihn als Entwurf
-(`istEntwurf=true`) in der Ideenschmiede ab.
+Generiert einen Story-Part, einen Charakter oder einen Gegenstand und legt
+ihn als Entwurf (`istEntwurf=true`) in der Ideenschmiede ab.
 
 ```json
-{ "typ": "story" | "charakter", "prompt": "Ein misstrauischer Türsteher..." }
+{ "typ": "story" | "charakter" | "gegenstand", "prompt": "Ein misstrauischer Türsteher..." }
 ```
 
 `story` → neue Wiki-Seite. `charakter` → NPC mit vollem Profil (Konzept,
-Ambition, Rasse, Weg, Traits aus dem Katalog). Beide beziehen die
-freigegebene Kampagnenwelt als Kontext ein (`app/ki/kontext.py`), damit sich
-das Neue in Bestehendes einfügt statt isoliert daneben zu stehen.
+Ambition, Rasse, Weg, Traits aus dem Katalog). `gegenstand` (**gebaut**
+23.09.2026) → Gegenstands-Vorlage (besitzerlos): Name, Beschreibung, Typ,
+Preis, Seltenheit. Der Typ MUSS einer aus dem festen Katalog
+`GEGENSTAND_TYPEN` (`app/items/schemas.py`, deckungsgleich mit
+`frontend/src/items/typKatalog.ts`) sein — als Enum im generierten Schema
+erzwungen; erfindet die KI trotzdem etwas Ungültiges, fällt es hart auf
+"Sonstiges" zurück (der Typ ist nach dem Anlegen nicht mehr änderbar). Alle
+drei beziehen die freigegebene Kampagnenwelt als Kontext ein
+(`app/ki/kontext.py`), damit sich das Neue in Bestehendes einfügt statt
+isoliert daneben zu stehen — bevorzugt Bestehendes wiederverwenden, nur bei
+echter Lücke etwas komplett Neues erfinden.
 
 ---
 
@@ -115,6 +123,8 @@ braucht keine Historie, nur den letzten Stand.
 ## Siehe auch
 
 - [Wiki](./wiki.md) — Seitenmodell, Freigabesystem
+- [Händler](./haendler.md) — KI-Sortiment-Vorschlag baut auf dem
+  KI-Gegenstandsgenerator auf (`app/haendler/ki_vorschlag.py`)
 - `CLAUDE.md`, Punkt 3 ("KI-Integration") — offene Punkte: Auto-Verknüpfung
   (Entwürfe für unbekannte erwähnte Entitäten anlegen) folgt als nächster
   Schritt auf derselben Baustelle

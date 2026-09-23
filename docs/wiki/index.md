@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-22 | Seiten: 29
+> Zuletzt aktualisiert: 2026-09-23 | Seiten: 29
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -34,7 +34,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
 | [[concepts/drohnen-fahrzeuge]] | Riggen-Regel, Preisformel von Mark selbst als fraglich markiert (offen) |
 | [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel |
-| [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.) |
+| [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.) |
 
 ## Entitäten — Architektur & Features
 
@@ -48,8 +48,8 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
 | [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09. kalibriert), Neonflackern verstärkt (19.09.) |
-| [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes |
-| [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.), Auto-Verknüpfung offen |
+| [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |
+| [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.), Auto-Verknüpfung, KI-Gegenstandsgenerator + Händler-Sortiment-Vorschlag (23.09.) |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
 | [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify |
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
