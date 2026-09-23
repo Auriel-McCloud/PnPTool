@@ -245,21 +245,119 @@ Mark: *"es muss dann auch eine Möglichkeit geben die Rüstung zu reparieren,
 entweder mit dem Hardware Skill, oder bei einem Händler und es kostet
 Geld"*.
 
-Die reine Rechnung ist gebaut (`kampf/ruestung.py::repariere`,
-`POST .../ruestung/reparieren`, nur SL): sie stellt eine angegebene Menge
-Kästchen wieder her. **Seit dem Umbau auf Schadensreduktion braucht das
-keinen zweiten Schritt mehr** — vorher musste die Reparatur auch den
-Durchlass symmetrisch senken (Mark damals: *"Reparatur senkt auch die
-Schwelle"*); jetzt folgt die Reduktion automatisch aus dem
-wiederhergestellten Kästchen-Verhältnis.
+Zwei Wege, dieselbe Zielgröße (Kästchen auffüllen), implementiert in
+`kampf/ruestung.py` (Formeln) und `items/routes.py` (Routen):
 
-**Was noch fehlt:** die Hardware-Skill-Probe und der Händler-Preis dahinter.
-Der Endpunkt nimmt aktuell nur das *Ergebnis* entgegen (wie viele Kästchen),
-die SL trägt es von Hand ein — genau wie Erfahrung vergeben. Eine echte Probe
-bräuchte einen Fertigkeitswurf gegen eine Schwierigkeit (analog zum
-Paralysewurf beim Reflex-Booster, `kampf/booster.py`), ein Preis pro Kästchen
-bräuchte das noch nicht existierende Shop-System (siehe CLAUDE.md, Punkt 1).
-Beides ist bewusst zurückgestellt, bis diese Systeme stehen.
+### Weg A: Selbst reparieren (Hardware-Probe + Material)
+
+`POST .../ruestung/reparieren-selbst`, nur SL ausgelöst (wie die
+Kampf-Würfe der NPCs — der Spieler bekommt nur das Ergebnis mitgeteilt,
+würfelt aber nicht selbst über die API).
+
+**Schwelle** (`reparatur_schwelle`): `floor(kaestchenMax / 2)` — je
+robuster die Rüstung gebaut ist, desto mehr Können braucht ihre Reparatur.
+Nur der *Überschuss* über diese Schwelle wird zu reparierten Kästchen.
+Beispiel: Max 10 → Schwelle 5. Bei 8 Erfolgen werden 3 Kästchen repariert
+(Überschuss), bei 5 oder weniger **0** — die Probe hat nicht gereicht, um
+überhaupt etwas zu bewirken, nicht nur "weniger".
+
+**Würfelpool** (`hardware_probe_pool`): Maker (Hardware) + Intelligenz.
+Intelligenz statt Geistesschärfe, weil Reparieren planvolles Vorgehen ist
+("Probleme lösen, Zusammenhänge erkennen") und kein Reflex.
+
+**Material** (`selbstreparatur_ergebnis`): jeder Versuch verbraucht immer
+**genau 1 Stück** Reparaturmaterial (`istReparaturmaterial = true` am
+Gegenstand), unabhängig vom Ausgang der Probe — auch bei einem
+Fehlschlag ist das Material weg. Reparaturmaterial ist nach Kapazität
+gestuft (`reparaturKapazitaet`, z.B. kleines Kit vs. Werkstattsatz); diese
+Kapazität ist ein **harter Deckel pro Versuch**: `repariert =
+min(ueberschuss, materialKapazitaet)`, selbst ein kritischer Erfolg
+repariert nie mehr, als das eingesetzte Material an Kästchen abdeckt.
+
+```json
+// Request — der Server würfelt selbst (Owner der Rüstung liefert die
+// Werte für Maker (Hardware) + Intelligenz), der Client schickt nur, mit
+// welchem Material repariert werden soll
+{ "materialGegenstandId": "..." }
+
+// Response (ReparaturWurf)
+{
+  "augen": [6, 4, 5, 2, 6, 3],
+  "erfolge": 8,
+  "patzer": false,
+  "pool": 11,
+  "schwelle": 5,
+  "ueberschuss": 3,
+  "repariert": 3,
+  "materialKapazitaet": 5,
+  "materialName": "Reparatur-Kit (klein)",
+  "materialRestmenge": 1,
+  "gegenstand": { /* GegenstandResponse, Kästchen aktualisiert */ }
+}
+```
+
+`GET .../{item_id}/reparaturmaterial` listet, welches Reparaturmaterial
+der Besitzer dieser Rüstung zur Auswahl hat (Grundlage für das
+Auswahl-Dropdown im Selbst-Reparieren-Popup).
+
+### Weg B: Beim Händler (reines Geld, keine Probe)
+
+Kein Wurf — dafür eine Preisverhandlung über das generische
+Verhandlungs-Popup-System (`app/verhandlung/`, siehe unten).
+
+**Preisformel** (`haendler_reparatur_preis`), quadratisch/progressiv mit
+hartem 75%-Deckel bei Totalschaden:
+
+Der naheliegende Ansatz ist ein Grenzpreis je Kästchen, der mit dem Anteil
+am Kästchen-Max quadratisch wächst: `kosten(i) = basispreis · (i /
+kaestchenMax)²` für das i-te fehlende Kästchen, aufsummiert über N. Das
+braucht aber einen `basispreis`, den man für jede Rüstung einzeln
+kalibrieren müsste, damit der Deckel bei N=kaestchenMax passt. Stattdessen
+wird `basispreis` direkt so gewählt, dass die Summe bei **N =
+kaestchenMax** (Totalschaden) exakt `deckelAnteil · neuwert` (0,75 ·
+Neuwert) ergibt — nach Auflösen bleibt für ein beliebiges N:
+
+```
+kosten(N) = deckelAnteil · neuwert · (Σ_{i=1}^{N} i²) / (Σ_{i=1}^{max} i²)
+```
+
+— der Anteil der Quadratsumme bis N an der Quadratsumme bis Max, skaliert
+auf den Deckel. Erfüllt den Deckel bei Totalschaden **exakt per
+Konstruktion** (Anteil = 1 bei N = max), bleibt aber progressiv: der
+Grenzpreis für das i-te Kästchen wächst mit i² — glatte Rüstung reparieren
+ist billig, die letzten Risse vor "wie neu" sind das teure Handwerk.
+`int()` rundet für positive Werte immer ab (floor), der Deckel wird also
+nie durch Rundung überschritten.
+
+`GET .../{item_id}/ruestung/reparatur-preis?fehlendeKaestchen=N` ist ein
+reiner Berechnungs-Endpunkt ohne Seiteneffekt — liefert den Vorschlagspreis
+als Grundlage, den die SL im Popup noch **editieren** kann, bevor sie ihn
+losschickt:
+
+```json
+// Response (ReparaturPreisAntwort)
+{ "fehlendeKaestchen": 10, "neuwert": 1000, "preis": 750, "deckel": 750 }
+```
+
+Den eigentlichen Vorschlag verschickt die SL danach über das generische
+Verhandlungs-Popup-Backend (`POST /api/campaigns/{campaign_id}/
+verhandlungen`, siehe `docs/api/verhandlung.md` falls vorhanden, sonst
+`app/verhandlung/schemas.py`/`routes.py` direkt) — Positionsliste mit
+einem Eintrag ("Rüstungsreparatur: <Name>"), Betrag = der ggf. angepasste
+Preis. Der Spieler bekommt das Angebot als Live-Popup
+(`VerhandlungPopup.tsx`) und nimmt an oder lehnt ab
+(`POST .../verhandlungen/{id}/antworten`); bei Annahme zieht das Backend
+das Kapital ab und repariert die Kästchen in einem Schritt (kein
+zusätzlicher Aufruf des alten `reparieren`-Endpunkts nötig).
+
+### Der alte, generische `reparieren`-Endpunkt bleibt
+
+`POST .../ruestung/reparieren` (nur SL, nimmt `kaestchen` direkt entgegen)
+bleibt für Sonderfälle erhalten — Questbelohnung, Improvisation am Tisch,
+alles was weder eine Probe noch eine Verhandlung durchlaufen soll. **Seit
+dem Umbau auf Schadensreduktion braucht das keinen zweiten Schritt mehr**
+— die Reduktion folgt automatisch aus dem wiederhergestellten
+Kästchen-Verhältnis.
 
 ## Endpunkte
 
