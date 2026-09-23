@@ -10,10 +10,15 @@ ein klassischer Soak-Wert) — die Tests hier prüfen die neue Fassung.
 
 from app.kampf.ruestung import (
     berechne_treffer,
+    haendler_reparatur_preis,
+    hardware_probe_pool,
     pool,
     reduktion_effektiv,
     reihenfolge,
+    reparatur_schwelle,
     repariere,
+    selbstreparatur_ergebnis,
+    summe_quadrate,
     uebersicht,
     verteile_kaestchenschaden,
 )
@@ -230,3 +235,107 @@ class TestReparatur:
     def test_kann_nicht_ueber_max_reparieren(self):
         r = repariere(kaestchen_aktuell=8, kaestchen_max=9, betrag=5)
         assert r["kaestchenNeu"] == 9
+
+
+class TestReparaturSchwelle:
+    """Marks Vorgabe: die Hälfte des Kästchen-Max, abgerundet."""
+
+    def test_gerades_max_halbiert_glatt(self):
+        assert reparatur_schwelle(10) == 5
+
+    def test_ungerades_max_rundet_ab(self):
+        assert reparatur_schwelle(9) == 4
+
+    def test_kleine_ruestung(self):
+        assert reparatur_schwelle(1) == 0
+        assert reparatur_schwelle(0) == 0
+
+
+class TestHardwareProbePool:
+    def test_maker_und_intelligenz_addieren_sich(self):
+        assert hardware_probe_pool({"Maker (Hardware)": 3, "Intelligenz": 4}) == 7
+
+    def test_fehlende_werte_zaehlen_als_null(self):
+        assert hardware_probe_pool({}) == 0
+
+
+class TestSelbstreparaturErgebnis:
+    """Marks Beispiel: Max 10 -> Schwelle 5. 8 Erfolge -> 3 Kästchen (der
+    Überschuss über die Schwelle), nicht die vollen 8."""
+
+    def test_marks_beispiel_8_erfolge_bei_max_10(self):
+        r = selbstreparatur_ergebnis(erfolge=8, kaestchen_max=10, material_kapazitaet=99)
+        assert r == {"schwelle": 5, "ueberschuss": 3, "repariert": 3}
+
+    def test_erfolge_genau_auf_der_schwelle_repariert_nichts(self):
+        r = selbstreparatur_ergebnis(erfolge=5, kaestchen_max=10, material_kapazitaet=99)
+        assert r["repariert"] == 0
+
+    def test_erfolge_unter_der_schwelle_repariert_nichts(self):
+        r = selbstreparatur_ergebnis(erfolge=0, kaestchen_max=10, material_kapazitaet=99)
+        assert r["repariert"] == 0
+
+    def test_material_kapazitaet_ist_der_harte_deckel(self):
+        """Ein kritischer Wurf (viel Überschuss) hilft nichts, wenn das
+        eingesetzte Material nur wenig Kästchen abdeckt."""
+        r = selbstreparatur_ergebnis(erfolge=20, kaestchen_max=10, material_kapazitaet=2)
+        assert r["ueberschuss"] == 15
+        assert r["repariert"] == 2
+
+    def test_material_kapazitaet_null_repariert_trotz_erfolg_nichts(self):
+        r = selbstreparatur_ergebnis(erfolge=10, kaestchen_max=10, material_kapazitaet=0)
+        assert r["repariert"] == 0
+
+
+class TestSummeQuadrate:
+    def test_bekannte_werte(self):
+        assert summe_quadrate(1) == 1
+        assert summe_quadrate(2) == 5  # 1+4
+        assert summe_quadrate(3) == 14  # 1+4+9
+        assert summe_quadrate(0) == 0
+
+
+class TestHaendlerReparaturPreis:
+    """Marks Vorgabe: quadratisch/progressiv, Deckel 75% vom Neuwert bei
+    Totalschaden (N=kaestchenMax)."""
+
+    def test_deckel_bei_totalschaden_wird_exakt_erreicht(self):
+        """Bei N=kaestchenMax ist der Anteil per Konstruktion 1 -> die volle
+        75% des Neuwerts, abgerundet durch int()."""
+        preis = haendler_reparatur_preis(fehlende_kaestchen=10, kaestchen_max=10, neuwert=1000)
+        assert preis == 750
+
+    def test_deckel_wird_nie_ueberschritten_auch_bei_ueberschuss(self):
+        """Mehr fehlende Kästchen als kaestchenMax angeben, kann bei falscher
+        Eingabe passieren -> wird auf kaestchenMax gekappt, nicht auf 0."""
+        preis = haendler_reparatur_preis(fehlende_kaestchen=999, kaestchen_max=10, neuwert=1000)
+        assert preis == 750
+
+    def test_progressiv_die_letzten_kaestchen_sind_teurer_als_die_ersten(self):
+        """Grenzkosten des i-ten Kästchens wachsen mit i² -> das letzte
+        Kästchen einer Reihe kostet mehr als das erste."""
+        max_ = 10
+        neuwert = 1000
+        kosten_erstes = haendler_reparatur_preis(1, max_, neuwert)
+        kosten_bis_2 = haendler_reparatur_preis(2, max_, neuwert) - kosten_erstes
+        kosten_letztes = haendler_reparatur_preis(max_, max_, neuwert) - haendler_reparatur_preis(
+            max_ - 1, max_, neuwert
+        )
+        assert kosten_erstes < kosten_bis_2 < kosten_letztes
+
+    def test_keine_fehlenden_kaestchen_kostet_nichts(self):
+        assert haendler_reparatur_preis(0, 10, 1000) == 0
+
+    def test_neuwert_null_kostet_nichts(self):
+        assert haendler_reparatur_preis(5, 10, 0) == 0
+
+    def test_kaestchen_max_null_kostet_nichts_kein_divisionsfehler(self):
+        assert haendler_reparatur_preis(5, 0, 1000) == 0
+
+    def test_halber_schaden_kostet_deutlich_weniger_als_die_haelfte_des_deckels(self):
+        """Quadratisch statt linear: die Hälfte der Kästchen kostet weniger
+        als die Hälfte des Deckelpreises (Anteil bei N=max/2 ist ~1/4, nicht
+        1/2)."""
+        halb = haendler_reparatur_preis(5, 10, 1000)
+        voll = haendler_reparatur_preis(10, 10, 1000)
+        assert halb < voll / 2
