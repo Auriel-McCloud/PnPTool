@@ -197,6 +197,20 @@ async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(..
     return item
 
 
+async def speichere_gegenstand_bild_bytes(campaign_id: str, item_id: str, inhalt: bytes, content_type: str) -> dict | None:
+    """Gegenstück zu `upload_bild`, aber für Bytes statt eines `UploadFile` —
+    genutzt vom KI-Bildgenerator (`app/ki/routes.py`). Dieselbe Ordnerstruktur/
+    Namenskonvention wie der normale Upload, kein zweiter Ablage-Mechanismus.
+    """
+    campaign_dir = UPLOAD_DIR / campaign_id
+    campaign_dir.mkdir(parents=True, exist_ok=True)
+    ext = mimetypes.guess_extension(content_type) or ".png"
+    filename = f"ki-{uuid.uuid4()}{ext}"
+    (campaign_dir / filename).write_bytes(inhalt)
+
+    return await repository.set_bild_url(campaign_id, item_id, f"/uploads/{campaign_id}/{filename}")
+
+
 @campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     source = await repository.get_gegenstand(campaign_id, item_id)

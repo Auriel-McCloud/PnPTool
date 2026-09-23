@@ -601,3 +601,27 @@ async def _entitaets_bild_hochladen(campaign_id: str, art: str, node_id: str, fi
     if aktualisiert is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"{bezeichnung} nicht gefunden")
     return aktualisiert
+
+
+async def speichere_entitaets_bild_bytes(campaign_id: str, art: str, node_id: str, inhalt: bytes, content_type: str) -> dict | None:
+    """Gegenstück zu `_entitaets_bild_hochladen`, aber für Bytes statt eines
+    `UploadFile` — genutzt vom KI-Bildgenerator (`app/ki/routes.py`), der ein
+    generiertes Bild speichert statt eines hochgeladenen. Dieselbe Ordner-
+    struktur/Namenskonvention, damit es keinen zweiten Ablage-Mechanismus gibt.
+    """
+    if art not in _ENTITAETEN:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Unbekannte Entitätsart '{art}'")
+    label, felder, bezeichnung = _ENTITAETEN[art]
+
+    if await repository.get_node(label, felder, campaign_id, node_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{bezeichnung} nicht gefunden")
+
+    ordner = UPLOAD_DIR / campaign_id
+    ordner.mkdir(parents=True, exist_ok=True)
+    endung = mimetypes.guess_extension(content_type) or ".png"
+    name = f"{art}-ki-{uuid.uuid4()}{endung}"
+    (ordner / name).write_bytes(inhalt)
+
+    return await repository.update_node(
+        label, felder, campaign_id, node_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"}
+    )
