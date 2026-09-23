@@ -1,0 +1,1 @@
+CREATE CONSTRAINT verhandlung_id IF NOT EXISTS FOR (n:Verhandlung) REQUIRE n.id IS UNIQUE;

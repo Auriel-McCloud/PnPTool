@@ -118,6 +118,11 @@ OHNE_GM_ERLAUBT = {
     # eigene Charakter (SL kann für jeden PC kaufen, Spieler nur für sich).
     # Siehe app/haendler/routes.py::kaufen.
     "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen",
+    # --- Verhandlung: der Spieler antwortet auf ein Angebot -----------------
+    # Annehmen/Ablehnen ist die Handlung des Spielers, nicht der SL. Prüft
+    # selbst: nur der eigene Charakter (empfaengerPersonId), nur solange die
+    # Verhandlung noch OFFEN ist. Siehe app/verhandlung/routes.py::antworten.
+    "/api/campaigns/{campaign_id}/verhandlungen/{verhandlung_id}/antwort",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.
