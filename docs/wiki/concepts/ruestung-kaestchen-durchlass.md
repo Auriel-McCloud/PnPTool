@@ -108,6 +108,29 @@ Aktuell-Wert für die Reduktion mehr (sie wird berechnet, nicht gespeichert)
    Kampagne wurden auf Marks Wunsch gelöscht statt migriert. Praxistest
    live gegen die echte Kampagne verifiziert (Ausrüsten, Treffer, Reparatur),
    keine Testspuren hinterlassen.
+9. **23.09.2026 — Reparatur bekommt echte Mechanik statt reiner
+   SL-Handeintragung.** Vorher nahm `POST .../ruestung/reparieren` nur das
+   fertige Ergebnis entgegen ("wie viele Kästchen"), ohne Probe oder Preis
+   dahinter (siehe `docs/api/ruestung.md` "Reparatur", damaliger Stand
+   "was noch fehlt"). Jetzt zwei echte Wege: **Selbst reparieren** —
+   Hardware+Intelligenz-Probe gegen `floor(kaestchenMax/2)`, Erfolgsüberschuss
+   = reparierte Kästchen, verbraucht immer 1 Stück Reparaturmaterial
+   (neues Item-Flag `istReparaturmaterial`/`reparaturKapazitaet` als harter
+   Deckel pro Versuch, auch bei Fehlschlag verbraucht). **Beim Händler** —
+   kein Wurf, quadratisch/progressive Preisformel mit hartem 75%-Deckel bei
+   Totalschaden (Herleitung: `docs/api/ruestung.md` "Reparatur beim
+   Händler"), SL-Vorschlag editierbar, geht über das neue **generische
+   Verhandlungs-Popup-System** (`app/verhandlung/`) an den Spieler zum
+   Annehmen/Ablehnen — bewusst generisch gehalten (Positionsliste statt
+   Einzelbetrag), damit später auch Shop-Kaufverhandlungen mit mehreren
+   Positionen darüber laufen können (siehe CLAUDE.md "Offen"). Frontend:
+   `RuestungReparatur.tsx` (SL-Wahl Selbst/Händler),
+   `VerhandlungPopup.tsx` (Spieler-Annahme). Backend per echtem
+   End-to-End-Testlauf gegen eigenen Uvicorn-Port + echte Neo4j verifiziert
+   (Materialverbrauch, Deckel-Grenzfall bei Totalschaden, Verhandlung
+   Annehmen→Kapitalabzug→Reparatur), danach sauber aufgeräumt — **kein
+   Klicktest der neuen Popups im Browser**, das steht in CLAUDE.md als
+   offener Punkt für Mark.
 
 ## Siehe auch
 
