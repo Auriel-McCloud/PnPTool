@@ -1,6 +1,28 @@
 from app.entities.schemas import SichtbarkeitModus
 from pydantic import BaseModel
 
+# Gemeinsamer Typ-Katalog — muss inhaltlich mit frontend/src/items/typKatalog.ts
+# übereinstimmen (dort die Kachel-Auswahl beim Anlegen, hier u.a. die Enum für
+# die KI-Gegenstandsgenerierung, app/ki/routes.py). Der Typ ist seit
+# 22.09.2026 nach dem Anlegen fix (siehe GegenstandUpdate unten).
+GEGENSTAND_TYPEN = [
+    "Waffe",
+    "Rüstung",
+    "Cyberware",
+    "Bioware",
+    "Hexware",
+    "Droge",
+    "Verbrauchsgegenstand",
+    "Werkzeug",
+    "Fahrzeug",
+    "Drohne",
+    "Behälter",
+    "Commlink",
+    "Cyberdeck",
+    "Riggerkonsole",
+    "Sonstiges",
+]
+
 
 class GegenstandCreate(BaseModel):
     name: str

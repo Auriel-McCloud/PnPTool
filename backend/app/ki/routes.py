@@ -22,6 +22,9 @@ from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign
 from app.entities.repository import PERSON_FIELDS, create_node
 from app.entities.schemas import PersonCreate
+from app.items.repository import create_gegenstand
+from app.items.routes import _create_data
+from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.client import KiFehler, generiere_json
 from app.ki.kontext import sammle_kontext
 from app.ki.wiki_pruefung import (
@@ -96,6 +99,34 @@ _CHARAKTER_SCHEMA = {
     "required": ["name", "beschreibung", "konzept", "rasse", "weg", "traits"],
 }
 
+_GEGENSTAND_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+        "typ": {"type": "STRING", "enum": GEGENSTAND_TYPEN},
+        "preis": {"type": "INTEGER"},
+        # Seltenheit 1 (überall verfügbar) bis 5 (Speziallabor/Schwarzmarkt) —
+        # Grundlage für die automatische Shop-Bestückung (docs/api/haendler.md).
+        "seltenheit": {"type": "INTEGER"},
+    },
+    "required": ["name", "beschreibung", "typ", "preis", "seltenheit"],
+}
+
+# Der Typ ist seit 22.09.2026 nach dem Anlegen fix (siehe items/schemas.py) —
+# die KI muss ihn deshalb beim ersten Wurf richtig treffen, kein Nachbessern
+# per Dropdown mehr möglich. Deshalb der Katalog explizit im Prompt.
+_GEGENSTAND_SYSTEM = (
+    _SYSTEM
+    + " Erfinde einen einzelnen Gegenstand aus der Welt von NeotopiA — Waffe, "
+    "Ausrüstung, Kuriosität, was zum Wunsch passt. typ MUSS exakt einer der "
+    "folgenden Werte sein (nichts anderes, keine Erfindung): "
+    + ", ".join(GEGENSTAND_TYPEN)
+    + ". preis in Nuyen, realistisch für den Typ (eine Lederjacke kostet "
+    "anders als ein Cyberdeck). seltenheit 1 (überall erhältlich) bis 5 "
+    "(nur Speziallabor/Schwarzmarkt)."
+)
+
 # Erklärt die Kopfzeilen-Begriffe, damit Gemini nicht rät, was „Ambition"
 # von „Verlangen" unterscheidet.
 _CHARAKTER_SYSTEM = (
@@ -111,7 +142,7 @@ _CHARAKTER_SYSTEM = (
 
 
 class KiIdeeInput(BaseModel):
-    typ: Literal["story", "charakter"]
+    typ: Literal["story", "charakter", "gegenstand"]
     prompt: str
 
 
@@ -263,6 +294,43 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             if seite is None:
                 raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
             return {"typ": "story", "id": seite["id"], "name": titel}
+
+        if body.typ == "gegenstand":
+            # Bevorzugt Bestehendes wiederverwenden, nur bei echter Lücke
+            # etwas Neues erfinden — dasselbe Vorrang-Prinzip wie bei Story/
+            # Charakter (_mit_kontext), Marks Entscheidung 22.09.2026: "beides,
+            # bevorzugt Bestehendes wiederverwenden, nur bei Lücken etwas
+            # Neues vorschlagen".
+            kontext = await sammle_kontext(campaign_id)
+            prompt_komplett = _mit_kontext(prompt, kontext)
+            ergebnis = await generiere_json(prompt_komplett, _GEGENSTAND_SYSTEM, _GEGENSTAND_SCHEMA)
+            name = (ergebnis.get("name") or "").strip() or "Unbenannter Gegenstand"
+            typ = ergebnis.get("typ") or "Sonstiges"
+            if typ not in GEGENSTAND_TYPEN:
+                # Die KI hat trotz Enum-Vorgabe daneben gegriffen — der Typ
+                # ist nach dem Anlegen fix (schemas.py), deshalb hier ein
+                # harter Fallback statt eines ungültigen/erfundenen Werts.
+                typ = "Sonstiges"
+            seltenheit = max(1, min(_als_int(ergebnis.get("seltenheit"), 1), 5))
+            gegenstand_body = GegenstandCreate(
+                name=name,
+                description=(ergebnis.get("beschreibung") or "").strip(),
+                typ=typ,
+                preis=max(0, _als_int(ergebnis.get("preis"))),
+                seltenheit=seltenheit,
+                istEntwurf=True,
+            )
+            # _create_data ist derselbe Helfer wie in items/routes.py::create_vorlage
+            # (SL-Vorlage anlegen) — garantiert dieselbe Feldbefüllung, keine
+            # zweite, abweichende Kopie der Anlege-Logik.
+            gegenstand = await create_gegenstand(
+                campaign_id,
+                None,  # besitzerlos = Vorlage, wie jeder andere Ideenschmiede-Entwurf
+                _create_data(gegenstand_body, True, "GM", []),
+            )
+            if gegenstand is None:
+                raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
+            return {"typ": "gegenstand", "id": gegenstand["id"], "name": name}
 
         # charakter
         kontext = await sammle_kontext(campaign_id)

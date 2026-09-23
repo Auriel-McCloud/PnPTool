@@ -17,6 +17,8 @@ from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
 from app.entities.visibility import is_visible_to
 from app.haendler import repository
+from app.haendler import ki_vorschlag
+from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort
 from app.haendler.schemas import (
     HaendlerEintrag,
     KaufRequest,
@@ -169,3 +171,38 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu)
+
+
+@router.get(
+    "/{haendler_id}/ki-vorschlaege",
+    response_model=VorschlaegeAntwort,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def ki_vorschlaege(campaign_id: str, haendler_id: str, anzahl: int = 5):
+    """Lässt die KI passende Sortiment-Lücken für diesen Händler vorschlagen.
+
+    Bevorzugt bestehende Gegenstands-Vorlagen der Kampagne wiederzuverwenden,
+    erfindet nur bei einer echten Lücke etwas Neues (siehe ki_vorschlag.py).
+    Nichts wird hier gespeichert — der SL bestätigt jeden Vorschlag einzeln
+    über /ki-vorschlaege/anwenden.
+    """
+    await _haendler_oder_404(campaign_id, haendler_id, Viewer(role="GM", person_id=None))
+    return await ki_vorschlag.vorschlaege(campaign_id, haendler_id, anzahl)
+
+
+@router.post(
+    "/{haendler_id}/ki-vorschlaege/anwenden",
+    response_model=AnwendenErgebnis,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def ki_vorschlag_anwenden(campaign_id: str, haendler_id: str, body: SortimentVorschlag):
+    """Übernimmt EINEN bestätigten KI-Vorschlag ins Sortiment.
+
+    Bei einer neu erfundenen Ware entsteht zuerst eine Vorlage
+    (istEntwurf=true, wie jeder andere KI-Gegenstand aus der Ideenschmiede),
+    danach kommt sie genau wie eine bestehende Vorlage ins Sortiment.
+    """
+    ergebnis = await ki_vorschlag.anwenden(campaign_id, haendler_id, body)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler oder Gegenstand nicht gefunden")
+    return ergebnis

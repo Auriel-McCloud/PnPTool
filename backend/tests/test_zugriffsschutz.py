@@ -125,6 +125,10 @@ NUR_SPIELLEITUNG_LESBAR = {
     "/api/campaigns/{campaign_id}/kontakte/anfragen",
     # Wer kennt wen: die Kontaktübersicht der ganzen Kampagne.
     "/api/campaigns/{campaign_id}/kontakte/uebersicht",
+    # KI-Sortiment-Vorschläge für einen Händler — was die KI vorschlägt, ist
+    # eine Entscheidungsgrundlage der Spielleitung (Vorschläge sind noch
+    # nicht Teil des Sortiments), kein Kaufangebot für Spieler.
+    "/api/campaigns/{campaign_id}/haendler/{haendler_id}/ki-vorschlaege",
     # Der Rassen-Baukasten: zeigt **alle** Rassen des Regelwerks samt der
     # Angabe, welche in dieser Kampagne freigegeben sind. Was in dieser Runde
     # spielbar ist, sieht der Spieler unter .../rassen — dass es daneben noch

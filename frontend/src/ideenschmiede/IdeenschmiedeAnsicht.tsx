@@ -395,6 +395,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             <select className="is-select" value={kiTyp} onChange={(e) => setKiTyp(e.target.value as KiTyp)}>
               <option value="charakter">👤 Charakter / NPC</option>
               <option value="story">📄 Story-Part / Szene</option>
+              <option value="gegenstand">📦 Gegenstand</option>
             </select>
           </label>
 

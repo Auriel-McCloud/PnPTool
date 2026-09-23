@@ -106,6 +106,46 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.09.2026, Gegenstandstyp fix + KI-Gegenstände + Händler-KI-Vorschlag):**
+- **Gegenstandstyp nach Anlegen fix** (Marks Kritik: "mir gefällt nicht das
+  man gegenstände zu etwas anderem machen kann") — `typ` aus
+  `GegenstandUpdate` entfernt (`backend/app/items/schemas.py`), keine
+  Aufräum-Logik für Typwechsel mehr nötig (gleiche Invariante wie
+  `istVorlage`). Anlegen läuft jetzt über eine **Kachel-Auswahl** statt
+  Dropdown (Marks Wunsch: "ganz viele kacheln... und ich auf die klicke die
+  ich gerne hätte") — neuer gemeinsamer Typ-Katalog
+  `frontend/src/items/typKatalog.ts` + `TypKachelAuswahl.tsx`, eingebaut an
+  allen drei Anlege-Stellen (`GegenstaendeUebersicht.tsx`, `PCInventar.tsx`,
+  `CharacterSheetPanel.tsx`). Falsch gewählt → löschen, neu anlegen.
+- **KI-Gegenstandsgenerator in der Ideenschmiede** — dritter KI-Ideen-Typ
+  neben Story/Charakter (`typ: "gegenstand"` in `ki/routes.py::ki_idee`).
+  Backend-seitiger Typ-Katalog `GEGENSTAND_TYPEN`
+  (`items/schemas.py`, muss inhaltlich mit dem Frontend-Katalog
+  übereinstimmen) als Enum im KI-Schema erzwungen — ungültige/erfundene
+  Typen fallen hart auf "Sonstiges" zurück, weil der Typ ja fix ist.
+  Entsteht als besitzerloser, SL-geheimer Ideenschmiede-Entwurf
+  (istEntwurf=true), genau wie Charakter/Story. Frontend:
+  `ideenschmiede/api.ts::KiTyp` um `"gegenstand"` erweitert, Auswahl im
+  KI-Popup der Ideenschmiede.
+- **KI-Sortiment-Vorschlag für Händler** — neues Modul
+  `backend/app/haendler/ki_vorschlag.py`, zwei Endpunkte:
+  `GET .../haendler/{id}/ki-vorschlaege` (SL-only, Vorschauliste, nichts
+  wird gespeichert) und `POST .../ki-vorschlaege/anwenden` (übernimmt EINEN
+  bestätigten Vorschlag). Bevorzugt **bestehende** Gegenstands-Vorlagen der
+  Kampagne wiederzuverwenden (Namensabgleich läuft über die echte ID, die
+  KI bekommt nur bereits freigegebene — istEntwurf=false — Vorlagen als
+  Kandidatenliste, gefiltert auf "noch nicht im Sortiment dieses
+  Händlers"), erfindet nur bei einer echten Lücke etwas Neues (dann landet
+  die neue Ware als Ideenschmiede-Entwurf, bevor sie ins Sortiment kommt —
+  kein Autocommit, dieselbe Vorgabe wie bei der Auto-Verknüpfung). Bewusst
+  pro Vorschlag einzeln anzuwenden, kein Sammel-Übernehmen. Frontend
+  (SL-Popup mit Vorschlagsliste + Einzeln-Übernehmen-Knöpfen) noch **offen**
+  — Backend end-to-end gegen echte Neo4j-DB verifiziert (Wiederverwendung
+  UND Neuerfindung beide getestet, Testdaten danach entfernt).
+  `test_zugriffsschutz.py`: `ki-vorschlaege` (GET) in
+  `NUR_SPIELLEITUNG_LESBAR` aufgenommen (Vorschläge sind
+  SL-Entscheidungsgrundlage, kein Spieler-Angebot).
+
 **Zuletzt gebaut (22.09.2026, Auto-Verknüpfung + Beziehungen):**
 - **KI-Auto-Verknüpfung** (Punkt 3 unter "Geplante Features", letzter
   offener Baustein der KI-Integration) — „⧉✨ Auto-Verknüpfen"-Knopf im
