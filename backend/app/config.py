@@ -28,6 +28,24 @@ class Settings(BaseSettings):
     # "gemini" oder "mistral". Umschaltbar ohne Code-Änderung.
     ki_provider: str = "gemini"
 
+    # Gemini-Modell für BILDgenerierung (anderes Modell als Text: gemini_model
+    # oben kann kein Bild). "Nano Banana"-Familie, siehe app/ki/bildgenerierung.py.
+    gemini_image_model: str = "gemini-2.5-flash-image"
+
+    # Fooocus (lokaler SDXL-Bildgenerator, C:\DEV\Fooocus) läuft als eigener
+    # Prozess (pnptool_server.py), NICHT Teil dieses Backends — muss separat
+    # gestartet werden. Auflösung/Performance bewusst klein für 8GB-VRAM-GPUs
+    # (GTX 1070); bei mehr VRAM in der .env hochsetzen.
+    fooocus_url: str = "http://127.0.0.1:7865"
+    fooocus_breite: int = 768
+    fooocus_hoehe: int = 768
+    # "Speed" (30 Steps) ist der Kompromiss aus Wartezeit/Qualität auf 8GB-
+    # Karten; "Extreme Speed" (8 Steps) ist schneller, aber schlechter.
+    fooocus_performance: str = "Speed"
+    # SDXL braucht auf schwacher GPU mehrere Minuten — Standard-httpx-Timeouts
+    # wären hier zu kurz.
+    fooocus_timeout_sekunden: int = 300
+
     # Spotify Web API — globale Anbindung (ein Konto fürs ganze Tool, nicht
     # pro Kampagne). client_id/secret kommen aus dem Spotify-Dashboard, die
     # eigentliche Nutzerverbindung (Refresh-Token) liegt in Neo4j
