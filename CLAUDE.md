@@ -2,6 +2,33 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Offen: Was Mark selbst testen muss (Stand 23.09.2026)
+
+Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
+bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
+Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
+
+- **KI-Bildgenerierung** (`KiBildPopup.tsx`): nie im Browser angeklickt, nur
+  `tsc -b` geprüft. Popup öffnet sich an Person/Event/Ort/Fraktion/Gegenstand
+  sowie am eigenen Spieler-Portrait. Cloud-Pfad (Gemini) UND lokaler Pfad
+  (Fooocus) wurden je einmal echt getestet (siehe „Zuletzt gebaut") — die
+  Optik/Bedienung im Popup selbst aber nicht.
+- **Fooocus-Wrapper** (`C:\DEV\Fooocus\pnptool_server.py`): liegt außerhalb
+  des Repos, kein Autostart. Muss manuell gestartet werden
+  (`cd C:\DEV\Fooocus && .venv\Scripts\python.exe pnptool_server.py`), sonst
+  schlägt der „lokal"-Provider im Popup fehl. Cloud-Provider funktioniert
+  immer, auch ohne das.
+- **Wiki-Import** (`WikiImportPopup.tsx`, Knopf „⇪✨" neben „+ Neue Seite" in
+  der Wiki-Ansicht): nie im Browser angeklickt, nur `tsc -b` geprüft und ein
+  Backend-only-E2E-Test (5 verschachtelte Entwürfe, Auto-Verknüpfung lief).
+  Optik/Bedienung im Popup selbst ungetestet.
+  - **PDF-Import ungetestet** — nur `.docx` real durchgespielt. PDFs liefern
+    keine Formatvorlagen, die automatische Kapitel-Gliederung könnte deutlich
+    schwächer ausfallen als bei Word-Dateien.
+  - **60.000-Zeichen-Obergrenze** pro Dokument ist eine Schätzung, kein
+    empirisch ermittelter Wert — bei Bedarf nachjustieren, falls größere
+    Dokumente gebraucht werden oder die Grenze zu früh/spät greift.
+
 ## Vor jedem Task: Wiki befragen
 
 **`docs/wiki/index.md` zuerst lesen**, bevor Regeln oder Architektur-Entscheidungen neu ausgedacht werden — v.a. bei Regelfragen, weil sich NeotopiA laufend weiterentwickelt und das Excel oft nicht mehr der aktuelle Stand ist (siehe `docs/wiki/comparisons/regelwerk-excel-vs-aktuell.md`). Das Wiki hält bereits entschiedene Fragen, offene Baustellen und die Versionsgeschichte fest — Ziel ist, dieselbe Entscheidung nicht zweimal zu treffen (oder zu widersprechen). **Nach jeder inhaltlichen Änderung die passende Wiki-Seite nachziehen**, nicht nur CLAUDE.md.
