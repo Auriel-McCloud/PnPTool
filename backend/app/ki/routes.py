@@ -15,7 +15,7 @@ und das Frontend reicht nur den freien Wunsch des Spielleiters durch.
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -45,6 +45,13 @@ from app.ki.auto_verknuepfung import (
     anwenden as verknuepfung_anwenden,
     beziehung_anwenden as verknuepfung_beziehung_anwenden,
     vorschlaege as verknuepfung_vorschlaege,
+)
+from app.ki.wiki_import import (
+    DokumentFormatFehler,
+    DokumentZuGrossFehler,
+    ERLAUBTE_ENDUNGEN,
+    ImportAntwort,
+    importiere as wiki_importiere,
 )
 from app.traits.repository import list_catalog, set_rating
 from app.wiki.repository import create_seite
@@ -397,6 +404,32 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
 
     except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/wiki/import", response_model=ImportAntwort)
+async def wiki_import(campaign_id: str, datei: UploadFile = File(...)):
+    """Dokument-Import: SL lädt ein Word/PDF-Dokument hoch, die KI teilt es
+
+    automatisch anhand seiner Struktur (Überschriften/Kapitel) in eine oder
+    mehrere Wiki-Seiten-Entwürfe auf (istEntwurf=true, wie jede andere
+    Ideenschmiede-Idee — SL muss jeden Entwurf noch einzeln prüfen und
+    übernehmen, kein Autocommit). Pro erzeugter Seite läuft anschliessend
+    automatisch die bestehende Auto-Verknüpfung.
+    """
+    dateiname = datei.filename or ""
+    if not any(dateiname.lower().endswith(e) for e in ERLAUBTE_ENDUNGEN):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Nur folgende Dateiformate werden unterstützt: {', '.join(sorted(ERLAUBTE_ENDUNGEN))}",
+        )
+
+    inhalt = await datei.read()
+    try:
+        return await wiki_importiere(campaign_id, dateiname, inhalt)
+    except (DokumentFormatFehler, DokumentZuGrossFehler) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
