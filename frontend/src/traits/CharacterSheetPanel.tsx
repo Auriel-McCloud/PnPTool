@@ -16,6 +16,7 @@ import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
+import { RuestungReparatur } from "../kampf/RuestungReparatur";
 
 const CATEGORY_LABELS: Record<string, string> = {
   AttributKörperlich: "Attribute — Körperlich",
@@ -195,6 +196,11 @@ export function GegenstandRow({
   // eingetragen wird).
   const [ruestungKaestchenMax, setRuestungKaestchenMax] = useState(item.ruestungKaestchenMax);
   const [ruestungReduktionBasis, setRuestungReduktionBasis] = useState(item.ruestungReduktionBasis);
+  // Reparaturmaterial: verbrauchbar an einer Rüstung im Selbst-Reparieren-
+  // Popup (siehe RuestungReparatur.tsx). Kein eigener Typ — ein Flag auf
+  // jedem beliebigen Gegenstand (Klebeband, Nanopaste, Ersatzteile).
+  const [istReparaturmaterial, setIstReparaturmaterial] = useState(item.istReparaturmaterial);
+  const [reparaturKapazitaet, setReparaturKapazitaet] = useState(item.reparaturKapazitaet);
   const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -284,6 +290,8 @@ export function GegenstandRow({
     setAgilitaet(item.agilitaet);
     setRuestungKaestchenMax(item.ruestungKaestchenMax);
     setRuestungReduktionBasis(item.ruestungReduktionBasis);
+    setIstReparaturmaterial(item.istReparaturmaterial);
+    setReparaturKapazitaet(item.reparaturKapazitaet);
     setAblageZiel(item.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
@@ -342,6 +350,8 @@ export function GegenstandRow({
       agilitaet,
       ruestungKaestchenMax,
       ruestungReduktionBasis,
+      istReparaturmaterial,
+      reparaturKapazitaet,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -735,6 +745,12 @@ export function GegenstandRow({
                 Ändert sich über Treffer in der Kampfkarte, nicht hier — wie bei der Gesundheit einer Person.
               </p>
             )}
+            {/* Reparieren nur mit Besitzer (Selbst-Reparatur würfelt dessen
+                Hardware-Pool, der Händlerweg braucht ein Kapital-Ziel) und
+                nur, wenn tatsächlich etwas fehlt. */}
+            {personId && item.ruestungKaestchenMax > 0 && item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && (
+              <RuestungReparatur campaignId={campaignId} personId={personId} item={item} onChanged={onChanged} />
+            )}
           </div>
         )}
 
@@ -912,6 +928,29 @@ export function GegenstandRow({
                 Kann etwas aufnehmen — dann lässt sich hier etwas hineinlegen und der Gegenstand
                 erscheint als Fach im Inventar
               </label>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
+                  <input
+                    type="checkbox"
+                    checked={istReparaturmaterial}
+                    onChange={(e) => setIstReparaturmaterial(e.target.checked)}
+                  />{" "}
+                  Reparaturmaterial — verbrauchbar beim Selbst-Reparieren einer Rüstung
+                </label>
+                {istReparaturmaterial && (
+                  <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                    Kapazität
+                    <input
+                      type="number"
+                      min={0}
+                      value={reparaturKapazitaet}
+                      onChange={(e) => setReparaturKapazitaet(Math.max(0, Number(e.target.value)))}
+                      style={{ width: 60 }}
+                      title="Wie viele Kästchen ein Stück höchstens abdeckt, selbst bei einer sehr guten Probe"
+                    />
+                  </label>
+                )}
+              </div>
               <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
                 <input
                   type="checkbox"
