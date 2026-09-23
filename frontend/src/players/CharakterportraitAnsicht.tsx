@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { playersApi, type SpielerMe } from "./api";
 import "./portrait.css";
 
@@ -23,6 +24,7 @@ export function CharakterportraitAnsicht({
 }) {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [loeschenFrage, setLoeschenFrage] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +41,20 @@ export function CharakterportraitAnsicht({
       setLaedt(false);
       if (dateiRef.current) dateiRef.current.value = "";
       if (kameraRef.current) kameraRef.current.value = "";
+    }
+  }
+
+  async function loeschen() {
+    setLoeschenFrage(false);
+    setLaedt(true);
+    setFehler(null);
+    try {
+      const frisch = await playersApi.meinBildEntfernen();
+      onGeaendert(frisch);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Löschen fehlgeschlagen");
+    } finally {
+      setLaedt(false);
     }
   }
 
@@ -83,10 +99,31 @@ export function CharakterportraitAnsicht({
           <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => kameraRef.current?.click()}>
             {laedt ? "Lädt…" : "📷 Foto machen"}
           </button>
+          {ich.personBildUrl && (
+            <button
+              type="button"
+              className="port-btn-loeschen"
+              disabled={laedt}
+              onClick={() => setLoeschenFrage(true)}
+            >
+              ✕ Entfernen
+            </button>
+          )}
         </div>
 
         <p className="port-hinweis">Zeichentool und KI-generiertes Bild sind noch nicht verfügbar.</p>
       </div>
+
+      {loeschenFrage && (
+        <Bestaetigung
+          titel="Portrait entfernen"
+          text="Bist du sicher? Dein Charakterportrait wird entfernt."
+          jaText="Entfernen"
+          neinText="Abbrechen"
+          onJa={loeschen}
+          onNein={() => setLoeschenFrage(false)}
+        />
+      )}
     </div>
   );
 }

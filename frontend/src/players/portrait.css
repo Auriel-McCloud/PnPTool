@@ -70,6 +70,32 @@
   cursor: not-allowed;
 }
 
+.port-btn-loeschen {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 20px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--signal);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.port-btn-loeschen:hover:not(:disabled) {
+  border-color: var(--signal);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--signal) 40%, transparent);
+}
+
+.port-btn-loeschen:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .port-fehler {
   margin: 0;
   color: var(--signal);
