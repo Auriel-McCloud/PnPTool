@@ -124,6 +124,7 @@ export function OrtDetail({
                   art="orte"
                   id={ort.id}
                   name={ort.name}
+                  beschreibung={ort.description}
                   bilder={ort.bilder || []}
                   bildUrl={ort.bildUrl}
                   onGeaendert={onGeaendert}

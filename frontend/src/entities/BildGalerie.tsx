@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { KiBildPopup } from "../ki/KiBildPopup";
+import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
+import { extrahiereReinenText } from "../richtext/content";
 
 /**
  * Bildergalerie für Entitäten: mehrere Bilder anzeigen, hochladen,
@@ -13,6 +16,7 @@ export function BildGalerie({
   art,
   id,
   name,
+  beschreibung,
   bilder,
   bildUrl, // Fallback für alte Daten
   onGeaendert,
@@ -22,6 +26,9 @@ export function BildGalerie({
   art: "personen" | "orte" | "events" | "fraktionen";
   id: string;
   name: string;
+  /** Roher description-Text der Entität — Grundlage für den KI-Bild-Prompt-
+   * Vorschlag. Optional: ohne sie schlägt die KI nur aus dem Namen vor. */
+  beschreibung?: string;
   bilder: { url: string; istPrimaer: boolean }[];
   /** Fallback: altes Einzelbild-Feld */
   bildUrl?: string;
@@ -30,7 +37,12 @@ export function BildGalerie({
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState<string | null>(null); // URL des zu löschenden Bildes
+  const [kiOffen, setKiOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
+
+  // Für den KI-Bild-Prompt: welcher Objekttyp das für die KI ist.
+  const objektTyp =
+    art === "personen" ? "Person" : art === "orte" ? "Ort" : art === "events" ? "Event" : "Fraktion";
 
   // Migration: Wenn kein bilder-Array aber ein bildUrl existiert, konvertieren
   const effektiveBilder = bilder.length > 0 
@@ -41,52 +53,60 @@ export function BildGalerie({
 
   const primaerBild = effektiveBilder.find((b) => b.istPrimaer)?.url || effektiveBilder[0]?.url || "";
 
-  async function hochladen(datei: File | undefined) {
-    if (!datei) return;
+  async function hochladenBytes(datei: File | Blob, dateiname: string) {
     setLaedt(true);
     setFehler(null);
     try {
       const daten = new FormData();
-      daten.append("file", datei);
-      
+      daten.append("file", datei, dateiname);
+
       // Bild hochladen
       const uploadAntwort = await fetch(`/api/campaigns/${campaignId}/${art}/${id}/bild`, {
         method: "POST",
         credentials: "include",
         body: daten,
       });
-      
+
       if (!uploadAntwort.ok) {
         const f = await uploadAntwort.json().catch(() => ({ detail: uploadAntwort.statusText }));
         throw new Error(f.detail ?? "Upload fehlgeschlagen");
       }
-      
+
       // Neue URL aus der Antwort holen
       const uploadDaten = await uploadAntwort.json();
       const neueUrl = uploadDaten.bildUrl;
-      
+
       // Bilder-Array aktualisieren (mit effektiveBilder für Migration)
       const neueBilder = [...effektiveBilder, { url: neueUrl, istPrimaer: effektiveBilder.length === 0 }];
-      
+
       // Wenn es das erste Bild ist, auch als bildUrl setzen
       const neuesBildUrl = effektiveBilder.length === 0 ? neueUrl : undefined;
-      
+
       // PATCH mit neuem bilder-Array
       await fetch(`/api/campaigns/${campaignId}/${art}/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           bilder: neueBilder,
           ...(neuesBildUrl && { bildUrl: neuesBildUrl }),
         }),
       });
-      
+
       onGeaendert();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Upload fehlgeschlagen");
+      throw e;
     } finally {
       setLaedt(false);
+    }
+  }
+
+  async function hochladen(datei: File | undefined) {
+    if (!datei) return;
+    try {
+      await hochladenBytes(datei, datei.name);
+    } finally {
       if (dateiRef.current) dateiRef.current.value = "";
     }
   }
@@ -206,6 +226,16 @@ export function BildGalerie({
         >
           <span>+</span>
         </div>
+
+        {/* KI-Bild generieren — eigenes Kästchen statt Knopf in der Reihe,
+            passt zum Kachel-Raster der Galerie. */}
+        <div
+          className="bild-galerie-thumb bild-galerie-neu"
+          onClick={() => setKiOffen(true)}
+          title="KI-Bild generieren"
+        >
+          <span aria-hidden="true">✨</span>
+        </div>
       </div>
 
       <input
@@ -230,6 +260,22 @@ export function BildGalerie({
           onNein={() => setLoeschenOffen(null)}
         />
       )}
+
+      <KiBildPopup
+        offen={kiOffen}
+        objektTyp={objektTyp}
+        objektName={name}
+        onSchliessen={() => setKiOffen(false)}
+        onPromptVorschlagen={() =>
+          kiBildPrompt(campaignId, {
+            objektTyp,
+            objektName: name,
+            bisherigeBeschreibung: beschreibung ? extrahiereReinenText(beschreibung) : "",
+          })
+        }
+        onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
+        onUebernehmen={(blob) => hochladenBytes(blob, "ki-bild.png")}
+      />
     </div>
   );
 }
