@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { KiBildPopup } from "../ki/KiBildPopup";
 import { playersApi, type SpielerMe } from "./api";
 import "./portrait.css";
 
@@ -10,9 +11,9 @@ import "./portrait.css";
  * dort hätte nur Platz weggenommen). Ursprünglich als Popup über dem Blatt
  * geplant, auf Marks Wunsch zu einem eigenen Burger-Menü-Punkt gemacht.
  *
- * MVP-Scope (mit Mark geklärt): nur Hochladen + Foto per Kamera. Ein
- * Zeichentool und KI-Bildgenerierung sind in CLAUDE.md unter Punkt 11 als
- * offen vermerkt, bewusst nicht Teil dieser ersten Fassung.
+ * MVP-Scope (mit Mark geklärt): Hochladen, Foto per Kamera, KI-generiertes
+ * Bild. Ein Zeichentool ist in CLAUDE.md unter Punkt 11 als offen vermerkt,
+ * bewusst nicht Teil dieser Fassung.
  */
 export function CharakterportraitAnsicht({
   ich,
@@ -25,6 +26,7 @@ export function CharakterportraitAnsicht({
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenFrage, setLoeschenFrage] = useState(false);
+  const [kiOffen, setKiOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
 
@@ -99,6 +101,9 @@ export function CharakterportraitAnsicht({
           <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => kameraRef.current?.click()}>
             {laedt ? "Lädt…" : "📷 Foto machen"}
           </button>
+          <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => setKiOffen(true)}>
+            ✨ KI-Bild generieren
+          </button>
           {ich.personBildUrl && (
             <button
               type="button"
@@ -111,7 +116,7 @@ export function CharakterportraitAnsicht({
           )}
         </div>
 
-        <p className="port-hinweis">Zeichentool und KI-generiertes Bild sind noch nicht verfügbar.</p>
+        <p className="port-hinweis">Ein Zeichentool ist noch nicht verfügbar.</p>
       </div>
 
       {loeschenFrage && (
@@ -124,6 +129,20 @@ export function CharakterportraitAnsicht({
           onNein={() => setLoeschenFrage(false)}
         />
       )}
+
+      <KiBildPopup
+        offen={kiOffen}
+        objektTyp="Person"
+        objektName={ich.personName ?? "Charakter"}
+        onSchliessen={() => setKiOffen(false)}
+        onPromptVorschlagen={() => playersApi.meinBildKiPrompt()}
+        onGenerieren={(provider, prompt) => playersApi.meinBildKiGenerieren(provider, prompt)}
+        onUebernehmen={async (blob) => {
+          const datei = new File([blob], "portrait-ki.png", { type: blob.type || "image/png" });
+          const frisch = await playersApi.meinBildHochladen(datei);
+          onGeaendert(frisch);
+        }}
+      />
     </div>
   );
 }
