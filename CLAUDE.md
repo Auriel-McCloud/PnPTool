@@ -2,12 +2,25 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Offen: Was Mark selbst testen muss (Stand 23.09.2026)
+## Offen: Was Mark selbst testen muss (Stand 23.09.2026, nachts)
 
 Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
+- **Messenger-Mobil-Fixes** (`Messenger.tsx`/`messenger.css`, siehe „Zuletzt
+  gebaut" unten): Hart-Scroll ans Ende, Tastatur-Sichtbarkeit via Visual
+  Viewport API, dynamische Sprechblasen-Form — nur `tsc -b` geprüft, das
+  Browser-Tool kann `localhost` nicht erreichen (Netzwerksperre), deshalb
+  **kein DevTools-Mobil-Emulationstest möglich**, nur Code-Review. Bitte am
+  echten Handy testen, v.a. ob der Composer bei geöffneter Tastatur wirklich
+  sichtbar bleibt (`visualViewport`-Verhalten variiert je nach
+  Android/iOS-Browser).
+- **Wiki-Mobil-Drawer** (`WikiAnsicht.tsx`/`wiki.css`, siehe „Zuletzt gebaut"
+  unten): Seitenbaum/Inhaltsverzeichnis als Slide-in mit Backdrop und
+  Schließen-Knopf, Kachel-Raster der Ideenschmiede + Verweis-Auswähler mit
+  größeren Touch-Zielen. Ebenfalls nur `tsc -b` geprüft, kein Browser-Test
+  möglich (siehe oben).
 - **KI-Bildgenerierung** (`KiBildPopup.tsx`): nie im Browser angeklickt, nur
   `tsc -b` geprüft. Popup öffnet sich an Person/Event/Ort/Fraktion/Gegenstand
   sowie am eigenen Spieler-Portrait. Cloud-Pfad (Gemini) UND lokaler Pfad
@@ -143,6 +156,63 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (23.09.2026/24.09.2026, nachts — Messenger-Mobil-Fixes + Wiki-Mobil-Drawer):**
+- **Kontext:** Mark hatte Token-Kontingent übrig und ließ nachts autonom zwei
+  bereits mit ihm durchgesprochene, klar spezifizierte Baustellen bauen
+  (Chat und CLAUDE.md-Punkt 3 der Messenger-Todos, Punkt 13 „Handy-Ansicht").
+  Cronjob als Sicherheitsnetz lief mit, falls die Tokens vorzeitig ausgehen —
+  wurde nicht gebraucht, alles in einem Durchgang geschafft.
+- **Messenger (`frontend/src/kontakte/Messenger.tsx`/`messenger.css`):**
+  - Hart-Scroll ans Verlaufsende **nur mobil** (`matchMedia("(max-width:
+    600px)")`), Desktop bleibt beim bisherigen `behavior: "smooth"` — dort
+    war das Scrollen schon zuverlässig, das Problem betraf nur Mobilgeräte.
+  - Composer bei geöffneter mobiler Tastatur sichtbar: `window.
+    visualViewport`-Listener setzt die Höhe der Chat-Hülle auf die
+    tatsächlich sichtbare Viewport-Höhe und scrollt den Composer nach jeder
+    Größenänderung ins Bild (`resize`/`scroll`-Events, mobil-only).
+  - Sprechblasen bekommen eine leicht variierende Schräg-Ecke
+    (`--msg-schraeg`, 6–15px, deterministisch aus der Nachrichten-ID
+    gehasht) statt der bisher zwei starren Formen (eigen/fremd identisch
+    geschnitten) — wirkt dadurch weniger uniform, Persona-5-typischer.
+    **Bewusst nur Form/Größe geändert**, Farben und Ausrichtung (eigen
+    rechts/Signal-Ton, fremd links/Neon-Ton) unangetastet, wie von Mark
+    vorgegeben. `.msg-blase` ist jetzt `display: inline-block` statt einer
+    impliziten Blockbreite — folgt dem Textinhalt, keine feste Breite mehr.
+- **Wiki-Mobil-Drawer** (Punkt 13, zweiter Teil — Editor-Lesbarkeit war
+  schon am 20.09.2026 erledigt):
+  - **Seitenbaum + Inhaltsverzeichnis** (`WikiAnsicht.tsx`/`wiki.css`):
+    unter 999px (bestehender Breakpoint) jetzt ein echtes Slide-in mit
+    Backdrop (`wk-abdunklung`, Antippen schließt beide Schubladen) und
+    Einfahr-Animation (von links bzw. rechts). Der `.wk-schublade-zu`-Knopf
+    (✕) war in CSS schon vorbereitet, aber nie im JSX verdrahtet — jetzt an
+    beiden Schubladen sichtbar. Größere Touch-Ziele im aufgeklappten Baum
+    (44px Mindesthöhe je Zeile/Klapp-Knopf), Desktop-Dichte unangetastet
+    (eigener `[data-offen="true"]`-Scope in der Media Query).
+  - **Ideenschmiede-Kachelraster** (`ideenschmiede.css`, betrifft Story-Wiki
+    UND Ideenschmiede gemeinsam, wie Punkt 13 verlangt — beide teilen sich
+    `.is-liste`/`.is-item`): unter 599px eine Spalte statt Grid-Fallback,
+    Aktionsknöpfe (Übernehmen/Löschen) jetzt nebeneinander mit 40px
+    Mindesthöhe statt in der schmalen Reihe zusammengequetscht, Filter-Tabs
+    horizontal scrollbar. **Bewusst NICHT** die generische `gg-raster`-
+    Komponente (Gegenstände/Party/Begleiter/Fraktionen) angefasst — war
+    Marks ausdrückliche Vorgabe, kleiner Scope.
+  - **Verweis-Auswähler** (`VerweisWaehler.tsx`, CSS in `wiki.css`): bleibt
+    ein Popup (kein Vollbild-Overlay, wie von Mark vorgegeben) — Suchfeld
+    jetzt `position: sticky` am oberen Rand der Trefferliste (16px
+    Schriftgröße gegen den iOS-Zoom-Sprung beim Fokussieren), Trefferzeilen
+    mit 48px Mindesthöhe statt der bisherigen knappen Polsterung.
+  - Slide-in gilt aktuell dem Baum/Verzeichnis, nicht einem eigenen
+    Hamburger-Symbol — der bestehende ☰/☷-Knopf im Seitenkopf (schon vor
+    dieser Runde vorhanden) übernimmt diese Rolle unverändert.
+- **Verifiziert:** `tsc -b` fehlerfrei für beide Baustellen. **Kein
+  Browser-Test** — das Browser-Werkzeug dieser Session kann `localhost`
+  nicht erreichen (Netzwerksperre auf private/interne Adressen), daher war
+  auch die eigentlich geplante DevTools-Mobil-Emulation nicht möglich. Nur
+  Code-Review + Typprüfung. Mark muss beides am echten Handy gegenprüfen,
+  siehe „Offen" oben — insbesondere das `visualViewport`-Verhalten bei der
+  Tastatur-Sichtbarkeit, das je nach Mobilbrowser unterschiedlich zuverlässig
+  ist.
 
 **Zuletzt gebaut (23.09.2026, Rüstungs-Reparatur — Frontend + Verhandlungs-Popup):**
 - **Backend war bereits fertig** (Formeln `repariere`/`hardware_probe_pool`/
@@ -800,17 +870,16 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
   Server auf 404. Alle Pfade laufen jetzt über den Backend-Proxy; Anlegen und
   Löschen eines Entwurfs per LAN-Adresse end-to-end geprüft.
 
-### Aktuelle Messenger-UI-Todos (10.09.2026)
-- **Verlauf zuverlässig ans Ende scrollen:** Beim Öffnen des Messengers und nach
-  neuen Nachrichten muss immer die neueste Nachricht sichtbar sein. Der aktuelle
-  Ansatz tut das auf mobilen Geräten nicht zuverlässig.
-- **Eingabefeld bei geöffneter Tastatur sichtbar halten:** Wenn die mobile
-  Tastatur erscheint, verschwindet das Texteingabefeld derzeit häufig aus dem
-  sichtbaren Bereich. Der Chat muss den verfügbaren Visual-Viewport entsprechend
-  neu einteilen bzw. zum Composer verschieben.
-- **Persona-5-Chatoptik vervollständigen:** Die Nachrichten sollen noch
-  asymmetrische Sprechblasen/Textboxen mit dynamisch an den Inhalt angepasster
-  Größe bekommen. Die derzeitige Darstellung ist dafür noch zu gleichförmig.
+### Aktuelle Messenger-UI-Todos (10.09.2026) — ✅ erledigt (24.09.2026, nachts)
+Alle drei Punkte gebaut, siehe „Zuletzt gebaut" oben (Messenger-Mobil-Fixes).
+Kein Browser-Test möglich (Netzwerksperre der Session), Mark muss am echten
+Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
+- ~~**Verlauf zuverlässig ans Ende scrollen**~~ — Hart-Scroll nur mobil.
+- ~~**Eingabefeld bei geöffneter Tastatur sichtbar halten**~~ — Visual
+  Viewport API.
+- ~~**Persona-5-Chatoptik vervollständigen**~~ — dynamische Sprechblasenform
+  (Größe folgt Inhalt, variierende Schräg-Ecke), Farben/Ausrichtung
+  bewusst unverändert.
 
 ## Wichtige Design-Entscheidungen
 
@@ -1368,7 +1437,7 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     `Charakterblatt.tsx`, Commlink-Popup mit demselben Vorschläge-Knopf
     (Archetypen) wie in der Erstellung. Alter bleibt bewusst read-only.
 
-13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026, Editor-Teil ✅ 20.09.2026) —
+13. **Handy-Ansicht für Story-Wiki + Ideenschmiede** (notiert 20.09.2026, Editor-Teil ✅ 20.09.2026, Rest ✅ 24.09.2026 nachts) —
     Mark will auch unterwegs (ohne Laptop) an seinen Geschichten
     weiterschreiben. Beide Bereiche brauchen eine mobil taugliche Ansicht
     (Editor, Seitenbaum/Kachel-Übersicht, Verweis-Auswahl).
@@ -1377,10 +1446,15 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
     `.wk-editor .ProseMirror` 18px/1.6 (Überschriften 26/21/18px), bewusst
     nur der Editor selbst, nicht Baum/Werkzeugleiste. `frontend/src/wiki/
     wiki.css` neu hinzugefügt. Rein clientseitig, kein neuer Endpunkt.
-    
-    **Noch offen:** Seitenbaum, Kachel-Übersicht und Verweis-Auswahl am Handy
-    brauchen noch eigene mobile Layouts oder Touch-freundliche Gesten statt
-    Hover-Effekte.
+
+    **Gebaut (24.09.2026, nachts):** Seitenbaum + Inhaltsverzeichnis als
+    echtes Slide-in-Drawer mit Backdrop und Schließen-Knopf (vorher nur
+    Ein-/Ausblenden ohne Overlay-Fläche), Ideenschmiede-Kachelraster mit
+    größeren Touch-Zielen (nur die Wiki-eigene Ansicht, nicht die generische
+    `gg-raster`-Komponente), Verweis-Auswähler mit sticky Suchfeld + größeren
+    Trefferzeilen. Details siehe „Zuletzt gebaut" oben. **Kein Browser-Test**
+    (Netzwerksperre der Session verhinderte DevTools-Mobil-Emulation), nur
+    `tsc -b` — Mark muss am echten Handy gegenprüfen, siehe „Offen" oben.
 
 14. **Flavor-Option „Priester" (notiert 23.09.2026, offene Idee, nicht begonnen)** —
     alternatives Namens-Reskin für Magier-Charaktere: Hexkraft → Glaube,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { alsText, kontakteApi, type Chat, type Kontakt, type Nachricht } from "./api";
 import "./messenger.css";
 
@@ -101,6 +101,8 @@ function MessengerChat({
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const endeRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const eingabeRef = useRef<HTMLDivElement>(null);
 
   async function laden() {
     try {
@@ -121,9 +123,48 @@ function MessengerChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, kontakt.id]);
 
+  // Mobil (< 600px, gleicher Breakpoint wie messenger.css) wird beim Öffnen
+  // UND bei jeder neuen Nachricht immer hart ans Ende gescrollt — auf dem
+  // Handy will man den Chat nie manuell runterziehen. Am Desktop lief das
+  // "smooth"-Scrollen schon zuverlässig, bleibt also unangetastet.
   useEffect(() => {
-    endeRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const mobil = window.matchMedia("(max-width: 600px)").matches;
+    if (mobil) {
+      endeRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    } else {
+      endeRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   }, [chat?.nachrichten.length]);
+
+  // Composer bei geöffneter mobiler Tastatur sichtbar halten: die virtuelle
+  // Tastatur verkleinert den Visual Viewport, ohne dass sich Layout-Viewport
+  // oder document.scrollingElement ändern — das CSS allein kriegt das nicht
+  // mit. Wir schieben die Chat-Hülle per Inline-Style auf die tatsächlich
+  // sichtbare Höhe und scrollen den Composer danach ins Bild.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    function anpassen() {
+      const mobil = window.matchMedia("(max-width: 600px)").matches;
+      if (!mobil || !chatRef.current) return;
+      // Höhe des sichtbaren Bereichs (schrumpft, wenn die Tastatur aufgeht).
+      chatRef.current.style.height = `${vv!.height}px`;
+      // Kurz warten, bis der Browser das neue Layout übernommen hat, dann
+      // Composer + Verlaufsende wieder ins Bild holen.
+      requestAnimationFrame(() => {
+        eingabeRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      });
+    }
+
+    anpassen();
+    vv.addEventListener("resize", anpassen);
+    vv.addEventListener("scroll", anpassen);
+    return () => {
+      vv.removeEventListener("resize", anpassen);
+      vv.removeEventListener("scroll", anpassen);
+    };
+  }, []);
 
   async function senden() {
     const sauber = text.trim();
@@ -144,7 +185,7 @@ function MessengerChat({
 
   return (
     <div className="msg-huelle">
-      <div className="msg-chat">
+      <div className="msg-chat" ref={chatRef}>
         {/* Header */}
         <header className="msg-header">
           <button type="button" className="msg-zurueck" onClick={onZurueck}>
@@ -183,7 +224,7 @@ function MessengerChat({
             ⚠ Du kannst hier nicht antworten
           </div>
         ) : (
-          <div className="msg-eingabe">
+          <div className="msg-eingabe" ref={eingabeRef}>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -232,6 +273,17 @@ function NachrichtBlase({
       })
     : "";
 
+  // Persona 5 wirkt lebendig, weil keine zwei Sprechblasen exakt gleich
+  // geschnitten sind. Statt einer starren Form pro Seite (eigen/fremd)
+  // streuen wir die Schräg-Ecke leicht — deterministisch aus der
+  // Nachrichten-ID gehasht, damit dieselbe Nachricht beim Neuladen nicht
+  // "hüpft". Reine Formvariation, Farben/Ausrichtung bleiben unverändert.
+  let hash = 0;
+  for (let i = 0; i < nachricht.id.length; i++) {
+    hash = (hash * 31 + nachricht.id.charCodeAt(i)) >>> 0;
+  }
+  const schraeg = 6 + (hash % 10); // 6–15px Eckenschnitt
+
   return (
     <div className="msg-nachricht" data-eigen={nachricht.vonMir}>
       {/* Portrait nur bei fremden Nachrichten */}
@@ -252,7 +304,7 @@ function NachrichtBlase({
         </span>
       )}
 
-      <div className="msg-blase">
+      <div className="msg-blase" style={{ "--msg-schraeg": `${schraeg}px` } as CSSProperties}>
         {!nachricht.vonMir && nachricht.absender && (
           <span className="msg-absender">{nachricht.absender}</span>
         )}

@@ -261,6 +261,18 @@ export function WikiAnsicht({
 
   return (
     <div className="wk">
+      {/* Abdunkel-Fläche hinter dem Baum/Verzeichnis-Schieber am Handy —
+          Antippen daneben schließt, wie bei jedem mobilen Drawer erwartet. */}
+      {(baumOffen || verzeichnisOffen) && (
+        <div
+          className="wk-abdunklung"
+          onClick={() => {
+            setBaumOffen(false);
+            setVerzeichnisOffen(false);
+          }}
+        />
+      )}
+
       <aside className="wk-baum" data-offen={baumOffen}>
         <div className="wk-baum-kopf">
           <span className="wk-baum-titel">Seiten</span>
@@ -279,6 +291,15 @@ export function WikiAnsicht({
               </button>
             </>
           )}
+          <button
+            type="button"
+            className="wk-werkzeug wk-schublade-zu"
+            onClick={() => setBaumOffen(false)}
+            title="Seitenbaum schließen"
+            aria-label="Seitenbaum schließen"
+          >
+            ✕
+          </button>
         </div>
         <div className="wk-baum-liste">
           {baum.length === 0 && (
@@ -419,7 +440,18 @@ export function WikiAnsicht({
       </section>
 
       <aside className="wk-verzeichnis" data-offen={verzeichnisOffen}>
-        <div className="wk-verzeichnis-titel">Inhalt</div>
+        <div className="wk-verzeichnis-titel-zeile">
+          <div className="wk-verzeichnis-titel">Inhalt</div>
+          <button
+            type="button"
+            className="wk-werkzeug wk-schublade-zu"
+            onClick={() => setVerzeichnisOffen(false)}
+            title="Inhaltsverzeichnis schließen"
+            aria-label="Inhaltsverzeichnis schließen"
+          >
+            ✕
+          </button>
+        </div>
         <div className="wk-verzeichnis-liste">
           {(!seite || seite.inhaltsverzeichnis.length === 0) && (
             <p style={{ color: "var(--text-leise)", fontSize: 12 }}>

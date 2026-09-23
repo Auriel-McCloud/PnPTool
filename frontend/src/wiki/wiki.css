@@ -253,6 +253,18 @@
   flex-shrink: 0;
 }
 
+.wk-verzeichnis-titel-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.wk-verzeichnis-titel-zeile .wk-verzeichnis-titel {
+  margin-bottom: 0;
+}
+
 .wk-verzeichnis-liste {
   overflow-y: auto;
   flex: 1;
@@ -465,6 +477,21 @@
     display: none;
   }
 
+  /* Abdunkel-Fläche hinter dem Drawer — Antippen schließt ihn, wie bei jedem
+     mobilen Slide-in-Menü erwartet. */
+  .wk-abdunklung {
+    position: absolute;
+    inset: 0;
+    z-index: 29;
+    background: rgb(0 0 0 / 0.55);
+    animation: wk-abdunklung-ein 160ms ease-out;
+  }
+
+  @keyframes wk-abdunklung-ein {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .wk-baum[data-offen="true"],
   .wk-verzeichnis[data-offen="true"] {
     display: flex;
@@ -477,16 +504,47 @@
     border-radius: var(--radius);
     padding: 12px;
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.5);
+    animation: wk-schublade-links-ein 200ms ease-out;
+  }
+
+  @keyframes wk-schublade-links-ein {
+    from { transform: translateX(-12px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   .wk-verzeichnis[data-offen="true"] {
     inset: 0 0 0 auto;
     box-shadow: -4px 0 24px rgb(0 0 0 / 0.5);
+    animation-name: wk-schublade-rechts-ein;
+  }
+
+  @keyframes wk-schublade-rechts-ein {
+    from { transform: translateX(12px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   .wk-baum[data-offen="true"] .wk-schublade-zu,
   .wk-verzeichnis[data-offen="true"] .wk-schublade-zu {
     display: inline-flex;
+  }
+
+  /* Größere Touch-Ziele im aufgeklappten Seitenbaum — der Desktop-Baum darf
+     eng bleiben (viele Zeilen auf einmal sichtbar), aber im Vollbild-Drawer
+     am Handy ist Platz und Fingerbedienung wichtiger als Dichte. */
+  .wk-baum[data-offen="true"] .wk-eintrag {
+    padding: 11px 8px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  .wk-baum[data-offen="true"] .wk-klapp,
+  .wk-baum[data-offen="true"] .wk-klapp-leer {
+    width: 28px;
+    min-height: 44px;
+  }
+
+  .wk-baum[data-offen="true"] .wk-klapp {
+    font-size: 13px;
   }
 }
 
@@ -614,4 +672,34 @@
 .wk-pr-springen:hover {
   border-color: var(--neon);
   color: var(--neon);
+}
+
+/* --- Handy: Verweis-Auswähler (VerweisWaehler.tsx) --------------------
+   Bleibt ein Popup (Fenster.tsx), aber Touch-Ziele werden größer und die
+   Suche bleibt beim Scrollen der Trefferliste oben sichtbar — bei vierzig
+   NPCs will man nicht erst hochscrollen, um den Suchbegriff zu ändern. */
+@media (max-width: 599px) {
+  .wk-suche {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 10px;
+    margin: -14px -14px 8px;
+    width: calc(100% + 28px);
+    background: var(--flaeche-hoch);
+    border-bottom: 1px solid var(--linie);
+    min-height: 44px;
+    font-size: 16px; /* verhindert Zoom-Sprung beim Fokussieren auf iOS */
+  }
+
+  .wk-treffer-zeile {
+    padding: 12px 10px;
+    min-height: 48px;
+    gap: 12px;
+  }
+
+  .wk-treffer-typ {
+    font-size: 11px;
+    padding: 3px 7px;
+  }
 }

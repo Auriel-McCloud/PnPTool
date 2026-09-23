@@ -384,6 +384,52 @@
   box-shadow: 0 0 8px var(--gefahr);
 }
 
+/* --- Handy: Kachel-Raster -----------------------------------------
+   Unter 600px verlieren die Kacheln ihre Mindestbreite von 280px, sonst
+   quetscht sich der Grid-Fallback zu Tode. Statt der Icon-Inhalt-Aktionen-
+   Reihe (die bei schmalen Kacheln Touch-Ziele auf ~20px zusammendrückt)
+   stapeln sich Kopf und Aktionen, die Aktionsknöpfe liegen dafür
+   nebeneinander mit echter Touch-Mindesthöhe. */
+@media (max-width: 599px) {
+  .is-liste {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .is-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .is-item > .is-icon {
+    align-self: flex-start;
+  }
+
+  .is-aktionen {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .is-verschieben,
+  .is-loeschen {
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .is-filter {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .is-filter button {
+    flex-shrink: 0;
+    min-height: 36px;
+  }
+}
+
 /* --- Detail-Popup ------------------------------------------------ */
 
 .is-detail-ladend,

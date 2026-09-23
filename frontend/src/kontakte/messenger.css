@@ -345,19 +345,24 @@
 /* Die Sprechblase selbst */
 .msg-blase {
   position: relative;
+  /* Größe folgt dem Inhalt statt einer festen Breite — max-width kommt vom
+     Eltern-Container (.msg-nachricht), kein eigenes width/min-width hier. */
+  display: inline-block;
   padding: var(--luft-2) var(--luft-3);
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--neon) 12%, var(--grund)) 0%,
     color-mix(in srgb, var(--neon) 6%, var(--grund)) 100%
   );
-  /* Dynamische schräge Form wie in Persona 5 */
+  /* Dynamische schräge Form wie in Persona 5 — die Eckengröße variiert pro
+     Nachricht (--msg-schraeg, inline gesetzt), damit keine zwei Blasen
+     exakt gleich geschnitten wirken. */
   clip-path: polygon(
-    0 8px,
-    8px 0,
+    0 var(--msg-schraeg, 8px),
+    var(--msg-schraeg, 8px) 0,
     100% 0,
-    100% calc(100% - 8px),
-    calc(100% - 8px) 100%,
+    100% calc(100% - var(--msg-schraeg, 8px)),
+    calc(100% - var(--msg-schraeg, 8px)) 100%,
     0 100%
   );
   border-left: 3px solid var(--neon);
@@ -374,11 +379,11 @@
   border-right: 3px solid var(--signal);
   clip-path: polygon(
     0 0,
-    calc(100% - 8px) 0,
-    100% 8px,
+    calc(100% - var(--msg-schraeg, 8px)) 0,
+    100% var(--msg-schraeg, 8px),
     100% 100%,
-    8px 100%,
-    0 calc(100% - 8px)
+    var(--msg-schraeg, 8px) 100%,
+    0 calc(100% - var(--msg-schraeg, 8px))
   );
 }
 
