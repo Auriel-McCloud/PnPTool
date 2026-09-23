@@ -6,6 +6,7 @@ import { MitteilungenAnbieter } from "../mitteilungen/MitteilungenKontext";
 import { MitteilungenBlitz } from "../mitteilungen/MitteilungenBlitz";
 import { MitteilungPopup } from "../mitteilungen/MitteilungPopup";
 import { Warnung } from "../mitteilungen/Warnung";
+import { VerhandlungPopup } from "../verhandlung/VerhandlungPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
@@ -306,6 +307,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     {/* Liegt ueber allem, auch ueber offenen Fenstern: eine Ansage der
         Spielleitung darf nicht dahinter verschwinden. */}
     <MitteilungPopup />
+    {/* Eingehendes Verhandlungsangebot (z.B. Rüstungsreparatur beim
+        Händler) — eigenes Popup, weil Annehmen/Ablehnen eine andere
+        Handlung ist als das reine "Verstanden" der SL-Mitteilungen. */}
+    <VerhandlungPopup />
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
     <Warnung campaignId={ich.campaignId} />
