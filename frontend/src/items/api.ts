@@ -84,6 +84,36 @@ export interface Gegenstand {
    * beschädigter die Rüstung ist (siehe `RuestungsUebersicht.reduktionEffektiv`).
    */
   ruestungReduktionBasis: number;
+  /** Reparaturmaterial: verbrauchbar an einer Rüstung im Selbst-Reparieren-Popup.
+   * `reparaturKapazitaet` deckelt, wie viele Kästchen ein Stück davon höchstens
+   * abdeckt — siehe kampf/ruestung.py::selbstreparatur_ergebnis. */
+  istReparaturmaterial: boolean;
+  reparaturKapazitaet: number;
+}
+
+/** Fürs Selbst-Reparieren-Popup — Wurfergebnis + Auswertung, siehe
+ * docs/api/ruestung.md, „Reparatur". */
+export interface ReparaturWurf {
+  augen: number[];
+  erfolge: number;
+  patzer: boolean;
+  pool: number;
+  schwelle: number;
+  ueberschuss: number;
+  repariert: number;
+  materialKapazitaet: number;
+  materialName: string;
+  materialRestmenge: number;
+  gegenstand: Gegenstand;
+}
+
+/** Reine Preisberechnung für den Händler-Vorschlag, kein Seiteneffekt. */
+export interface ReparaturPreisAntwort {
+  fehlendeKaestchen: number;
+  kaestchenMax: number;
+  neuwert: number;
+  preis: number;
+  deckel: number;
 }
 
 export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
@@ -212,6 +242,8 @@ export interface GegenstandUpdate {
   ruestungKaestchenMax?: number;
   ruestungKaestchenAktuell?: number;
   ruestungReduktionBasis?: number;
+  istReparaturmaterial?: boolean;
+  reparaturKapazitaet?: number;
 }
 
 type NeuerGegenstand = {
@@ -273,6 +305,24 @@ export const itemsApi = {
    * Nur SL. */
   ruestungReparieren: (cid: string, itemId: string, kaestchen: number) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/ruestung/reparieren`, { kaestchen }),
+  /**
+   * Selbst-Reparieren: würfelt serverseitig die Hardware-Probe (Maker +
+   * Intelligenz des Besitzers), verbraucht immer 1 Stück Material, repariert
+   * Kästchen bis zur Kapazität des Materials. Nur SL — siehe
+   * docs/api/ruestung.md, „Reparatur".
+   */
+  ruestungReparierenSelbst: (cid: string, itemId: string, materialGegenstandId: string) =>
+    api.post<ReparaturWurf>(`${itemBase(cid, itemId)}/ruestung/reparieren-selbst`, { materialGegenstandId }),
+  /** Reine Preisberechnung für den Händler-Vorschlag, kein Seiteneffekt. */
+  ruestungReparaturPreis: (cid: string, itemId: string, fehlendeKaestchen?: number) =>
+    api.get<ReparaturPreisAntwort>(
+      `${itemBase(cid, itemId)}/ruestung/reparatur-preis${
+        fehlendeKaestchen != null ? `?fehlendeKaestchen=${fehlendeKaestchen}` : ""
+      }`,
+    ),
+  /** Reparaturmaterial im Besitz der Trägerin dieser Rüstung, für die Auswahl. */
+  reparaturmaterialListe: (cid: string, itemId: string) =>
+    api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/reparaturmaterial`),
   traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),
   ablageziele: (cid: string, itemId: string) =>
     api.get<AblageZiel[]>(`${campaignBase(cid)}/${itemId}/ablageziele`),
