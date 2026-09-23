@@ -150,6 +150,63 @@ zu wenig Guthaben mit der erwarteten Meldung. `pytest` komplett grün.
   (`docs/wiki/concepts/drohnen-fahrzeuge.md`) könnten über denselben
   Sortiments-Mechanismus laufen, sobald das Frontend steht.
 
+## Verhandeln (Spezifikation 23.09.2026, noch nicht gebaut)
+
+Marks Wunsch: wenn ein Spieler beim Händler (oder bei der Rüstungsreparatur,
+siehe `docs/api/ruestung.md`) Geld ausgeben soll, will er die Möglichkeit
+haben zu verhandeln, statt den Preis stumm zu akzeptieren. **Gilt überall,
+wo ein Spieler im Spiel Geld für etwas ausgibt** — außer Charaktererstellung
+(Startausrüstung) und "online" gekaufter Ware (eigenes, noch offenes Thema,
+siehe unten). Betrifft also sowohl das noch offene Shop-Frontend als auch
+das noch offene Reparatur-Frontend — beide sollten den Knopf von Anfang an
+mitbauen, nicht nachrüsten.
+
+**Auslöser:** ein "Verhandeln"-Knopf direkt bei jedem einzelnen Posten (pro
+Gegenstand im Sortiment, bzw. pro Reparaturposten) — kein pauschaler Knopf
+für den ganzen Warenkorb. Klick sendet eine Verhandlungsanfrage an die SL.
+
+**Kein Würfelwurf.** Es existiert aktuell kein generisches Proben-System im
+Tool (keine Attribut+Fertigkeit-gegen-Schwierigkeit-Mechanik). Verhandeln
+läuft rein am Tisch/Rollenspiel ab — der Spieler klickt, die SL entscheidet
+nach Bauchgefühl. Keine Würfel-Anbindung vorgesehen.
+
+**SL-Popup zeigt:**
+- Was der Spieler kaufen/reparieren will (Name, Menge) + aktueller Preis
+- Händler-Persönlichkeit — das **bestehende `notizen`-Feld** der `Person`
+  (SL-only, existiert schon, siehe `docs/api/personen.md`), einfach mit
+  angezeigt. Kein neues strukturiertes Feld.
+- **Neues Feld** `Person.moeglicheSidequests: str` (SL-only, nur bei
+  `istHaendler=true` relevant) — freier Text, reine Gedächtnisstütze für die
+  SL ("könnte contra Ware auch etwas brauchen/wollen"). Bewusst **kein**
+  Quest-Datenmodell (Status/Belohnung/Verknüpfung) — das ist ein eigenes,
+  größeres Thema und wird hier nur vorgemerkt, nicht gebaut.
+- Rabatt-Schnellauswahl 5% / 10% / 15% + Freitextfeld für einen individuellen
+  Preis
+- SL bestätigt (oder lehnt ab/ignoriert → Normalpreis bleibt)
+
+**Gültigkeit:** der gewährte Preis gilt **nur für diesen einen Kauf gerade**,
+nicht dauerhaft. Kein Sonderpreis-Gedächtnis pro Spieler/Händler — beim
+nächsten Besuch wieder Normalpreis, es sei denn die SL trägt separat über
+die bestehende explizite `VERKAUFT {preis}`-Route einen dauerhaften
+Sonderpreis ein (das ist bereits vorhanden, unabhängig von diesem Feature).
+
+**Offene technische Frage (noch nicht gelöst):** die bestehende
+`mitteilungen`-Infrastruktur (`docs/api/mitteilungen.md`) sendet nur
+SL→Spieler per WebSocket-Push; `POST` ist dort "Nur SL". Eine
+Verhandlungsanfrage braucht die **umgekehrte Richtung** (Spieler→SL, live,
+mit Rückantwort die den Preis im offenen Spieler-Popup aktualisiert) — das
+ist ein neuer Mechanismus, kein Wiederverwenden von `mitteilungen`. Muss vor
+dem Bauen entworfen werden (vermutlich eigener WebSocket-Kanal oder
+Erweiterung des bestehenden Kanals um eine zweite Richtung).
+
+**Bewusst zurückgestellt:** ein echtes Quest/Auftrag-System für
+"Ware gratis/50% off gegen erledigte Sidequest" — dafür braucht es eigene
+Konzepte (Status, Belohnung, Verknüpfung zum Händler), die noch nicht
+spezifiziert sind. `moeglicheSidequests` oben ist nur die Notiz-Vorstufe.
+
+**Online-Käufe** — eigener offener Punkt: welche Regeln dort gelten (kein
+Verhandeln vermutlich, da kein Gegenüber), ist noch nicht durchdacht.
+
 ## KI-Sortiment-Vorschlag (23.09.2026)
 
 Neues Modul `backend/app/haendler/ki_vorschlag.py`, baut auf dem
