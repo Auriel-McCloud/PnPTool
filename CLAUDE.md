@@ -465,7 +465,11 @@ npm run dev
 - Mitteilungen ausblenden (✕ Button, pro Person)
 - API-Dokumentation (`docs/api/`)
 
-**Offen:** Shop-System-Frontend (Backend-Kern fertig, siehe oben), Shop-Spam/
+**Offen:** Shop-System-Frontend (Backend-Kern fertig, siehe oben — Mark-Wunsch
+23.09.2026: soll optisch sehr ansprechend werden, z.B. ein Karussell für die
+Sortiment-Ansicht, und je nach Laden/Händlertyp eine eigene Optik/Theme;
+Umsetzung erst wenn Mark zuhause ist, da er das Ergebnis am eigenen Bildschirm
+beurteilen will), Shop-Spam/
 Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
