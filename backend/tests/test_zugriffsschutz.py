@@ -149,6 +149,9 @@ NUR_SPIELLEITUNG_LESBAR = {
     # andere Völker gibt (oder welche die Spielleitung gerade baut), ist ihre
     # Sache.
     "/api/campaigns/{campaign_id}/rassen/katalog",
+    # Kompletter Kampagnen-Export als ZIP — enthält u.a. alle Spieler-
+    # Zugänge samt Passwort-Hash. Ausdrücklich nur die Spielleitung.
+    "/api/campaigns/{campaign_id}/export",
 }
 
 

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
 from app.auth.dependencies import require_gm
+from app.campaigns.export_import import export_campaign_zip, import_campaign_zip
 from app.campaigns.repository import (
     EINSTELLUNGEN_DEFAULTS,
     create_campaign,
@@ -12,6 +14,11 @@ from app.campaigns.repository import (
 )
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
+
+# Maximale Grösse einer Import-ZIP — grosszügiger als ein einzelnes Bild
+# (items/routes.py::MAX_BILD_BYTES), weil hier viele Bilder + der komplette
+# Graph in einer Datei stecken.
+MAX_IMPORT_BYTES = 200 * 1024 * 1024
 
 
 class CampaignCreateRequest(BaseModel):
@@ -34,6 +41,47 @@ async def create(body: CampaignCreateRequest, claims: dict = Depends(require_gm)
 @router.get("", response_model=list[CampaignResponse])
 async def list_mine(claims: dict = Depends(require_gm)):
     return await list_campaigns_for_gm(claims["sub"])
+
+
+# --- Export/Import -----------------------------------------------------
+# "/import" MUSS vor "/{campaign_id}/export" bzw. jeder anderen
+# {campaign_id}-Route dieses Prefixes registriert sein: FastAPI matcht nach
+# Registrierungsreihenfolge, nicht nach Spezifität (siehe Fallstricke in
+# pnptool-development-Skill) — sonst würde "/api/campaigns/import" von einer
+# {campaign_id}-Route mit campaign_id="import" abgefangen.
+
+
+@router.post("/import", response_model=CampaignResponse)
+async def import_campaign(claims: dict = Depends(require_gm), datei: UploadFile = File(...)):
+    """Importiert eine per `/export` erzeugte ZIP-Datei als NEUE Kampagne.
+
+    Jeder eingeloggte GM darf importieren — es entsteht dabei immer eine neue
+    Kampagne mit neuer ID, die ausschliesslich dem importierenden GM gehört
+    (`OWNS`-Kante). Es wird nie eine bestehende Kampagne überschrieben.
+    """
+    inhalt = await datei.read()
+    if len(inhalt) > MAX_IMPORT_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 200 MB)")
+    try:
+        return await import_campaign_zip(inhalt, claims["sub"])
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+
+
+@router.get("/{campaign_id}/export", dependencies=[Depends(require_campaign_gm)])
+async def export_campaign(campaign_id: str):
+    """Liefert die komplette Kampagne (alle Knoten/Kanten/Bilder/Spieler-
+    Accounts) als ZIP-Datei zum Download. Nur die Spielleitung dieser
+    Kampagne (require_campaign_gm prüft Besitz)."""
+    try:
+        inhalt, dateiname = await export_campaign_zip(campaign_id)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
+    return Response(
+        content=inhalt,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}"'},
+    )
 
 
 # Kampagnenweite Spieleinstellungen. Lesen darf jeder mit Zugang — die
