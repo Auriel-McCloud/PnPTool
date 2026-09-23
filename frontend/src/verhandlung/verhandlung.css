@@ -1,0 +1,280 @@
+/* ===================================================================
+   Verhandlungs-Popup (VerhandlungPopup.tsx) — SL-Preisvorschlag beim
+   Spieler, Annehmen/Ablehnen. Eigenes, schlankes Set nach dem Vorbild von
+   mitteilungen/mitteilungen.css (.mt-popup-*), aber in Gold/Kapital-Ton
+   (--akzent) statt Warn-Orange: ein Handelsangebot ist keine Gefahrenansage.
+
+   SL-seitige Reparatur-UI (RuestungReparatur.tsx) lebt ebenfalls hier, da
+   beide zum selben Feature gehören und dieselben Farbtöne teilen.
+   =================================================================== */
+
+.vh-popup-huelle {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  pointer-events: none;
+}
+
+.vh-popup {
+  pointer-events: auto;
+  width: min(480px, 100%);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--akzent, var(--neon));
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 24px 60px -12px rgb(0 0 0 / 0.7),
+    0 0 var(--glut-innen) -4px var(--akzent, var(--neon));
+  animation: vh-herein 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vh-popup-entschieden {
+  border-color: var(--gut);
+}
+
+@keyframes vh-herein {
+  from { opacity: 0; transform: translateY(-24px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.vh-popup-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.vh-popup-zeichen {
+  color: var(--akzent, var(--neon));
+  font-size: 18px;
+  text-shadow: 0 0 12px var(--akzent, var(--neon));
+}
+
+.vh-popup-entschieden .vh-popup-zeichen {
+  color: var(--gut);
+  text-shadow: 0 0 12px var(--gut);
+}
+
+.vh-popup-titel {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.vh-popup-inhalt {
+  padding: 18px 16px;
+  color: var(--text);
+  max-height: 60svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.vh-positionen {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vh-position {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.vh-position-betrag {
+  font-family: var(--mono);
+  color: var(--text-leise);
+}
+
+.vh-gesamt {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+  font-size: 15px;
+}
+
+.vh-gesamt strong {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--akzent, var(--neon));
+}
+
+.vh-popup-entschieden .vh-gesamt strong {
+  color: var(--gut);
+}
+
+.vh-restguthaben {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.vh-fehler {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--signal);
+}
+
+.vh-popup-fuss {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--linie);
+}
+
+.vh-popup-rest {
+  margin-right: auto;
+  align-self: center;
+  font-size: 11px;
+  color: var(--text-aus);
+  font-family: var(--mono);
+}
+
+.vh-btn-annehmen {
+  color: var(--gut);
+  border-color: var(--gut);
+}
+
+.vh-btn-annehmen:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gut) 18%, transparent);
+  box-shadow: 0 0 12px -3px var(--gut);
+}
+
+.vh-btn-ablehnen {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.vh-btn-ablehnen:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal) 14%, transparent);
+}
+
+.vh-btn-ok {
+  color: var(--gut);
+  border-color: var(--gut);
+}
+
+/* --- SL-seitige Reparatur-UI (RuestungReparatur.tsx) -------------------- */
+
+.rr-wahl {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rr-wahl button {
+  flex: 1;
+}
+
+.rr-wahl button[aria-pressed="true"] {
+  color: var(--akzent, var(--neon));
+  border-color: var(--akzent, var(--neon));
+  background: color-mix(in srgb, var(--akzent, var(--neon)) 12%, transparent);
+}
+
+.rr-abschnitt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rr-material-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rr-material {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+}
+
+.rr-material[aria-pressed="true"] {
+  border-color: var(--akzent, var(--neon));
+  background: color-mix(in srgb, var(--akzent, var(--neon)) 10%, transparent);
+}
+
+.rr-material-kapazitaet {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-aus);
+}
+
+.rr-wurf-ergebnis {
+  padding: 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rr-wurf-ergebnis[data-erfolg="true"] {
+  border-color: var(--gut);
+}
+
+.rr-wurf-augen {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.rr-wurf-repariert {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rr-wurf-repariert[data-erfolg="true"] {
+  color: var(--gut);
+}
+
+.rr-preis-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rr-preis-eingabe {
+  width: 120px;
+  font-family: var(--mono);
+  font-size: 18px;
+  text-align: right;
+}
+
+.rr-preis-deckel-hinweis {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-aus);
+}
+
+.rr-fehler {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--signal);
+}
