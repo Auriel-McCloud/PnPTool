@@ -198,3 +198,24 @@
   color: var(--p-violett, var(--neon));
   white-space: nowrap;
 }
+
+/* --- ✨ KI-Bild-Popup (KiBildPopup.tsx) -------------------------------- */
+
+.ki-bild-provider {
+  display: flex;
+  gap: 8px;
+}
+
+.ki-bild-provider button {
+  flex: 1;
+  padding: 8px 12px;
+}
+
+.ki-bild-vorschau {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--p-violett, var(--neon));
+  background: var(--flaeche-tief);
+}

@@ -20,6 +20,42 @@ export async function kiObjektText(campaignId: string, input: KiObjektTextInput)
   return antwort.text;
 }
 
+/** Für den 'KI-Bild generieren'-Knopf an Personen-/Orts-/Gegenstands-Bildern. */
+export interface KiBildPromptInput {
+  objektTyp: string;
+  objektName: string;
+  bisherigeBeschreibung?: string;
+}
+
+/** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag aus Name+Beschreibung. */
+export async function kiBildPrompt(campaignId: string, input: KiBildPromptInput): Promise<string> {
+  const antwort = await api.post<{ prompt: string }>(`/api/campaigns/${campaignId}/ki/bild-prompt`, input);
+  return antwort.prompt;
+}
+
+/**
+ * Schritt 2: generiert ein Bild und liefert es als Blob zur Vorschau —
+ * speichert NICHTS. „Übernehmen" schickt den Blob als Datei an die jeweils
+ * bestehende Bild-Upload-Route (siehe KiBildPopup.tsx).
+ */
+export async function kiBildGenerieren(
+  campaignId: string,
+  provider: "lokal" | "cloud",
+  prompt: string,
+): Promise<Blob> {
+  const antwort = await fetch(`/api/campaigns/${campaignId}/ki/bild-generieren`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provider, prompt }),
+  });
+  if (!antwort.ok) {
+    const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+    throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
+  }
+  return antwort.blob();
+}
+
 /** Ein von der KI erkannter Verknüpfungsvorschlag (Auto-Verknüpfung). */
 export interface VerknuepfungsVorschlag {
   zitat: string;

@@ -66,6 +66,26 @@ export const playersApi = {
   },
   /** Entfernt das Charakterportrait wieder. */
   meinBildEntfernen: () => api.delete<SpielerMe>("/api/spieler/mein-bild"),
+  /** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag fürs eigene Portrait. */
+  meinBildKiPrompt: async (): Promise<string> => {
+    const antwort = await api.post<{ prompt: string }>("/api/spieler/mein-bild-ki-prompt");
+    return antwort.prompt;
+  },
+  /** Schritt 2: generiert eine Bildvorschau — speichert NICHTS, siehe
+   * KiBildPopup.tsx. Übernehmen läuft über meinBildHochladen oben. */
+  meinBildKiGenerieren: async (provider: "lokal" | "cloud", prompt: string): Promise<Blob> => {
+    const antwort = await fetch("/api/spieler/mein-bild-ki", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, prompt }),
+    });
+    if (!antwort.ok) {
+      const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+      throw new Error(f.detail ?? "Bildgenerierung fehlgeschlagen");
+    }
+    return antwort.blob();
+  },
 
   // Verwaltung durch die Spielleitung
   liste: (cid: string) => api.get<SpielerZugang[]>(`/api/campaigns/${cid}/spieler`),
