@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WikiEditor } from "./WikiEditor";
 import { TitelFenster } from "./TitelFenster";
+import { WikiImportPopup } from "../ki/WikiImportPopup";
 import {
   bisHierherFreigeben,
   getBaum,
@@ -85,7 +86,18 @@ function Zweig({
   );
 }
 
-export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: string; nurLesen?: boolean }) {
+export function WikiAnsicht({
+  campaignId,
+  nurLesen = false,
+  onNavigateToIdeenschmiede,
+}: {
+  campaignId: string;
+  nurLesen?: boolean;
+  /** Springt in die Ideenschmiede — genutzt vom Wiki-Import-Ergebnis, um
+   * die neuen Entwürfe direkt zur Prüfung zu öffnen. Ohne SL-Rolle (Spieler-
+   * Lesesicht) gibt es keine Ideenschmiede, daher optional. */
+  onNavigateToIdeenschmiede?: () => void;
+}) {
   const [baum, setBaum] = useState<BaumKnoten[]>([]);
   const [aktiv, setAktiv] = useState<string | null>(null);
   const [seite, setSeite] = useState<SeiteMitVerzeichnis | null>(null);
@@ -99,6 +111,9 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
   // Anlege-Fenster: { parentId } wenn offen, sonst null. Eigener Zustand
   // statt window.prompt — das wird auf Tablets teils unterdrueckt.
   const [anlegen, setAnlegen] = useState<{ parentId: string | null } | null>(null);
+  // Dokument-Import-Popup (⇪✨): KI teilt ein hochgeladenes Word/PDF-
+  // Dokument automatisch in Wiki-Seiten-Entwürfe auf.
+  const [importOffen, setImportOffen] = useState(false);
 
   const speicherTimer = useRef<number | undefined>(undefined);
   // Was noch nicht geschrieben ist. Als Ref, damit ein Seitenwechsel den
@@ -250,9 +265,19 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
         <div className="wk-baum-kopf">
           <span className="wk-baum-titel">Seiten</span>
           {!nurLesen && (
-            <button type="button" className="wk-werkzeug" onClick={() => setAnlegen({ parentId: null })} title="Neue Seite">
-              +
-            </button>
+            <>
+              <button type="button" className="wk-werkzeug" onClick={() => setAnlegen({ parentId: null })} title="Neue Seite">
+                +
+              </button>
+              <button
+                type="button"
+                className="wk-werkzeug"
+                onClick={() => setImportOffen(true)}
+                title="Dokument importieren — KI teilt es automatisch in Wiki-Seiten auf"
+              >
+                ⇪✨
+              </button>
+            </>
           )}
         </div>
         <div className="wk-baum-liste">
@@ -421,6 +446,26 @@ export function WikiAnsicht({ campaignId, nurLesen = false }: { campaignId: stri
         onBestaetigen={(titel) => seiteWirklichAnlegen(titel, anlegen?.parentId ?? null)}
         onSchliessen={() => setAnlegen(null)}
       />
+
+      {!nurLesen && (
+        <WikiImportPopup
+          offen={importOffen}
+          campaignId={campaignId}
+          onSchliessen={() => {
+            setImportOffen(false);
+            // Neue Entwurfs-Seiten sollen im Baum sichtbar sein, sobald der
+            // SL das Popup schließt — sie tauchen zwar nur in der
+            // Ideenschmiede auf (istEntwurf=true wird hier ausgeblendet),
+            // aber ein Neuladen hier stellt sicher, dass ein späterer
+            // "Übernehmen" in der Ideenschmiede sie sofort zeigt.
+            baumLaden();
+          }}
+          onZurIdeenschmiede={() => {
+            setImportOffen(false);
+            onNavigateToIdeenschmiede?.();
+          }}
+        />
+      )}
     </div>
   );
 }

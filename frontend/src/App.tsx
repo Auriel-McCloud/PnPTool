@@ -234,7 +234,13 @@ function Dashboard() {
           {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
-          {bereich === "wiki" && <WikiAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "wiki" && (
+            <WikiAnsicht
+              key={ansichtKennung}
+              campaignId={kampagne.id}
+              onNavigateToIdeenschmiede={() => setBereich("ideenschmiede")}
+            />
+          )}
 
           {/* Augments: Koerperkarte (wo sitzt welches Implantat). */}
           {bereich === "augments" && <AugmentsAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
