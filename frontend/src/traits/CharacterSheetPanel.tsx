@@ -13,6 +13,9 @@ import { DotPool } from "./DotPool";
 import type { Chromstufe } from "../items/api";
 import { StufenBlatt } from "./StufenBlatt";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
+import { KiBildPopup } from "../ki/KiBildPopup";
+import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
+import { extrahiereReinenText } from "../richtext/content";
 
 const CATEGORY_LABELS: Record<string, string> = {
   AttributKörperlich: "Attribute — Körperlich",
@@ -203,6 +206,7 @@ export function GegenstandRow({
   const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
+  const [kiBildOffen, setKiBildOffen] = useState(false);
 
   // Summe aller Boni für Chrom-Preisberechnung:
   // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden
@@ -381,6 +385,17 @@ export function GegenstandRow({
     setUploading(true);
     try {
       await itemsApi.uploadBild(campaignId, item.id, file);
+      onChanged();
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function kiBildUebernehmen(blob: Blob) {
+    setUploading(true);
+    try {
+      const datei = new File([blob], "ki-bild.png", { type: blob.type || "image/png" });
+      await itemsApi.uploadBild(campaignId, item.id, datei);
       onChanged();
     } finally {
       setUploading(false);
@@ -725,9 +740,12 @@ export function GegenstandRow({
 
         <div>
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Bild</label>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
             <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
+            <button type="button" onClick={() => setKiBildOffen(true)} disabled={uploading} style={{ color: "var(--p-violett, var(--neon))" }}>
+              ✨ KI-Bild
+            </button>
             {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
             {item.bildUrl && (
               <>
@@ -739,6 +757,22 @@ export function GegenstandRow({
               </>
             )}
           </div>
+
+          <KiBildPopup
+            offen={kiBildOffen}
+            objektTyp="Gegenstand"
+            objektName={item.name}
+            onSchliessen={() => setKiBildOffen(false)}
+            onPromptVorschlagen={() =>
+              kiBildPrompt(campaignId, {
+                objektTyp: "Gegenstand",
+                objektName: item.name,
+                bisherigeBeschreibung: item.description ? extrahiereReinenText(item.description) : "",
+              })
+            }
+            onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
+            onUebernehmen={kiBildUebernehmen}
+          />
         </div>
 
         <div>
