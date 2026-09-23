@@ -138,3 +138,39 @@ export async function verknuepfungBeziehungAnwenden(
     beschreibung: vorschlag.beschreibung,
   });
 }
+
+/** Eine per Dokument-Import angelegte Wiki-Seiten-Entwurf (Auto-Verknüpfung
+ * bereits gelaufen — `verknuepfungen` zählt, wie viele Vorschläge dabei
+ * angewandt wurden). */
+export interface ImportierteSeite {
+  id: string;
+  titel: string;
+  parentId: string | null;
+  verknuepfungen: number;
+}
+
+export interface ImportAntwort {
+  seiten: ImportierteSeite[];
+}
+
+/**
+ * Wiki-Import: lädt ein .docx/.pdf-Dokument hoch, die KI teilt es anhand der
+ * erkannten Struktur (Überschriften/Kapitel) in Wiki-Seiten-Entwürfe auf und
+ * verknüpft sie automatisch (bestehende Auto-Verknüpfungs-Logik je Seite).
+ * `fetch` statt des `api`-Helfers, weil hier ein `FormData`-Body (kein JSON)
+ * geschickt wird — derselbe Ansatz wie `kiBildGenerieren` oben.
+ */
+export async function wikiImportieren(campaignId: string, datei: File): Promise<ImportAntwort> {
+  const formData = new FormData();
+  formData.append("datei", datei);
+  const antwort = await fetch(`/api/campaigns/${campaignId}/ki/wiki/import`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  if (!antwort.ok) {
+    const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+    throw new Error(f.detail ?? "Import fehlgeschlagen");
+  }
+  return antwort.json();
+}
