@@ -60,6 +60,13 @@
   --flaeche: var(--p-nacht);
   --flaeche-hoch: var(--p-nacht-hoch);
   --flaeche-aktiv: var(--p-nacht-aktiv);
+  /* Dunkelste Flaeche — Textfarbe auf grellen Akzentflaechen (violette/
+     neonfarbene Knoepfe) und Hintergrund von Eingabefeldern. War an 22
+     Stellen im Code referenziert, aber nie definiert (23.09.2026 gefunden:
+     der KI-Bild-Popup-Knopf "Lokal (Fooocus)" zeigte dadurch fast
+     unlesbaren Text — die ungueltige Variable liess `color` auf den
+     geerbten hellen Wert zurueckfallen, statt dunkel auf hell zu setzen). */
+  --flaeche-tief: var(--p-schwarz);
 
   /* Als RGB-Tripel, damit Halbtransparenz ohne festes rgba() geht:
      rgb(var(--grund-rgb) / 0.86) statt rgba(8, 8, 13, 0.86). */
