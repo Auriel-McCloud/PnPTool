@@ -557,7 +557,12 @@ npm run dev
 23.09.2026: soll optisch sehr ansprechend werden, z.B. ein Karussell für die
 Sortiment-Ansicht, und je nach Laden/Händlertyp eine eigene Optik/Theme;
 Umsetzung erst wenn Mark zuhause ist, da er das Ergebnis am eigenen Bildschirm
-beurteilen will), Shop-Spam/
+beurteilen will; **zusätzlich 23.09.2026:** das SL↔Spieler-Verhandlungs-Popup,
+das gerade für die Rüstungs-Reparatur gebaut wird, soll später hier
+wiederverwendet werden — für Kaufverhandlungen beim Händler, potenziell über
+mehrere Positionen gleichzeitig, sprich ein **Warenkorb-Konzept** für den
+Shop wird hier mit gebraucht. Noch nicht spezifiziert, nur als Anforderung
+notiert.), Shop-Spam/
 Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
 Rüstungs-Reparatur (Hardware-Probe + Preis, siehe `docs/api/ruestung.md`),
 PC-Vorlagen im Regelsystem,
