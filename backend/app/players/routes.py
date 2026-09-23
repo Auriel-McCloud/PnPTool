@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from pydantic import BaseModel
+from typing import Literal
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
@@ -6,6 +8,8 @@ from app.entities.repository import PERSON_FIELDS, create_node, get_node, update
 from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.entities.schemas import PersonCreate
+from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
+from app.ki.routes import _bild_prompt_vorschlagen
 from app.players import repository
 from app.players.schemas import (
     CharakterWaehlenRequest,
@@ -165,8 +169,8 @@ async def eigenes_charakterportrait_hochladen(
     Möglichkeit, selbst ein Bild für ihren Charakter zu setzen. Schreibt
     direkt auf den zugeordneten `Person`-Knoten (dasselbe `bildUrl`-Feld wie
     beim SL-Upload in entities/routes.py), nur MVP-Wege (Datei/Kamera) — ein
-    Zeichentool und KI-Bildgenerierung sind separat in CLAUDE.md offen
-    notiert, hier bewusst noch nicht gebaut.
+    Zeichentool ist separat in CLAUDE.md offen notiert; KI-Bildgenerierung
+    gibt es jetzt über `/mein-bild-ki-prompt` + `/mein-bild-ki` unten.
     """
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
@@ -217,6 +221,77 @@ async def eigenes_charakterportrait_entfernen(spieler: dict = Depends(require_sp
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
 
     await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": ""})
+
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+class MeinBildPromptAntwort(BaseModel):
+    prompt: str
+
+
+class MeinBildGenerierenRequest(BaseModel):
+    provider: Literal["lokal", "cloud"]
+    prompt: str
+
+
+@login_router.post("/mein-bild-ki-prompt", response_model=MeinBildPromptAntwort)
+async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_spieler)):
+    """Prompt-Vorschlag für das eigene Charakterportrait (Schritt 1 des
+    KI-Bild-Popups) — nutzt dieselbe Logik wie der SL-Weg in ki/routes.py,
+    hier aber ohne require_campaign_gm (Spieler dürfen ihr eigenes Portrait
+    generieren, siehe Begründung beim Datei-Upload oben)."""
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+
+    campaign_id = spieler["campaignId"]
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, spieler["personId"])
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    prompt = await _bild_prompt_vorschlagen(
+        campaign_id, "Person", person.get("name", ""), person.get("beschreibung", "") or ""
+    )
+    if not prompt:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Die KI hat keinen Prompt-Vorschlag geliefert.")
+    return MeinBildPromptAntwort(prompt=prompt)
+
+
+@login_router.post("/mein-bild-ki", response_model=SpielerMeResponse)
+async def eigenes_charakterportrait_ki_generieren(
+    body: MeinBildGenerierenRequest, spieler: dict = Depends(require_spieler)
+):
+    """Generiert das eigene Charakterportrait per KI (Schritt 2) und speichert
+    es — Gegenstück zu `eigenes_charakterportrait_hochladen`, nur mit
+    generiertem statt hochgeladenem Bild."""
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Der Prompt darf nicht leer sein.")
+
+    campaign_id = spieler["campaignId"]
+    person_id = spieler["personId"]
+    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    try:
+        inhalt, content_type = await generiere_bild(body.provider, prompt)
+    except BildgenerierungFehler as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e))
+
+    import mimetypes
+    import uuid
+
+    ordner = UPLOAD_DIR / campaign_id
+    ordner.mkdir(parents=True, exist_ok=True)
+    endung = mimetypes.guess_extension(content_type) or ".png"
+    name = f"portrait-ki-{uuid.uuid4()}{endung}"
+    (ordner / name).write_bytes(inhalt)
+
+    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None

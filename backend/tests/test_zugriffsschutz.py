@@ -24,6 +24,15 @@ OHNE_GM_ERLAUBT = {
     # der eigene Zugang ist, und ändert nur dieses eine Feld.
     "/api/spieler/passwort",
     "/api/spieler/abmelden",
+    # Eigenes Charakterportrait setzen/entfernen — dieselbe Ausnahme wie
+    # überall hier: require_spieler prüft die eigene Sitzung, geändert wird
+    # nur `bildUrl` des zugeordneten Charakters (siehe players/routes.py).
+    # War schon vor der KI-Bildgenerierung eine Lücke in dieser Liste
+    # (Datei-Upload-Route bestand schon), hier mit den zwei neuen
+    # KI-Bildrouten zusammen nachgetragen.
+    "/api/spieler/mein-bild",
+    "/api/spieler/mein-bild-ki-prompt",
+    "/api/spieler/mein-bild-ki",
     "/api/auth/gm/login",
     "/api/auth/gm/logout",
     # Kampagne anlegen hängt an require_gm, nicht an einer Kampagne
