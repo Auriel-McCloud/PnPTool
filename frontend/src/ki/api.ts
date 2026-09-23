@@ -20,6 +20,25 @@ export async function kiObjektText(campaignId: string, input: KiObjektTextInput)
   return antwort.text;
 }
 
+/** Ein einzelner Befund der Rechtschreib-/Grammatik-/Logikprüfung (siehe
+ * auch ideenschmiede/api.ts — identisches Format, hier nur für den
+ * seitenlosen 🔍-Knopf im generischen RichTextEditor). */
+export interface PruefBefund {
+  art: "rechtschreibung" | "grammatik" | "logik";
+  zitat: string;
+  vorschlag: string;
+  begruendung: string;
+}
+
+/** Prüft ein freies Beschreibungs-/Notizen-Feld — kein Seitenbezug, kein
+ * Speichern; das Übernehmen passiert lokal im Editor (siehe RichTextEditor.tsx). */
+export async function kiObjektTextPruefen(campaignId: string, text: string): Promise<PruefBefund[]> {
+  const antwort = await api.post<{ befunde: PruefBefund[] }>(`/api/campaigns/${campaignId}/ki/objekt-text/pruefen`, {
+    text,
+  });
+  return antwort.befunde;
+}
+
 /** Für den 'KI-Bild generieren'-Knopf an Personen-/Orts-/Gegenstands-Bildern. */
 export interface KiBildPromptInput {
   objektTyp: string;

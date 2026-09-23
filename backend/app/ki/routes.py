@@ -32,6 +32,7 @@ from app.ki.kontext import sammle_kontext
 from app.ki.wiki_pruefung import (
     SweepAntwort,
     UebernehmenAntwort,
+    pruefe_freitext,
     pruefe_seite,
     sweep,
     uebernehmen_befund,
@@ -516,6 +517,27 @@ async def ki_objekt_text(campaign_id: str, body: ObjektTextInput):
         raise HTTPException(status_code=502, detail=str(e))
 
     return {"text": (ergebnis.get("text") or "").strip()}
+
+
+class ObjektTextPruefenInput(BaseModel):
+    """Für den 🔍-Knopf im RichTextEditor, neben dem ✨-KI-Knopf."""
+
+    text: str
+
+
+@router.post("/objekt-text/pruefen")
+async def ki_objekt_text_pruefen(campaign_id: str, body: ObjektTextPruefenInput):
+    """Prüft ein Beschreibungs-/Notizen-Feld auf Rechtschreib-/Grammatik-/
+
+    Logikfehler — dieselbe Prüfung wie im Wiki-Editor (app/ki/wiki_pruefung.py),
+    nur ohne Seitenbezug/Prüfhash. Liefert die Befunde zur Vorschau zurück;
+    das Übernehmen passiert clientseitig im Editor, hier wird nichts gespeichert.
+    """
+    try:
+        befunde = await pruefe_freitext(campaign_id, body.text)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return {"befunde": [b.model_dump() for b in befunde]}
 
 
 class AnwendenVerknuepfungInput(BaseModel):

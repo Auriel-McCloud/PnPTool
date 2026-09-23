@@ -28,6 +28,9 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   - **60.000-Zeichen-Obergrenze** pro Dokument ist eine Schätzung, kein
     empirisch ermittelter Wert — bei Bedarf nachjustieren, falls größere
     Dokumente gebraucht werden oder die Grenze zu früh/spät greift.
+- **🔍-Prüfen-Knopf im RichTextEditor** (Personen/Orte/Events/Fraktionen/
+  Gegenstände/Begleiter): nie im Browser angeklickt, nur `tsc -b` und
+  Backend-Import geprüft. Siehe „Zuletzt gebaut" unten.
 
 ## Vor jedem Task: Wiki befragen
 
@@ -132,6 +135,25 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion, siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (23.09.2026, Rechtschreib-/Grammatik-/Logikprüfung für RichTextEditor):**
+- **Prüfung jetzt auch an Personen/Orten/Events/Fraktionen/Gegenstände/
+  Begleitern** (CLAUDE.md Punkt 3 "Fehlt noch" — jetzt geschlossen), nicht
+  mehr nur im Wiki-Editor. Neue Backend-Route
+  `POST .../ki/objekt-text/pruefen` (`app/ki/wiki_pruefung.py::pruefe_freitext`,
+  ruft dieselbe `_pruefe_text`-Logik samt Kampagnenkontext wie die
+  Wiki-Prüfung auf — nur ohne Seitenbezug/Prüfhash, da diese Felder nicht
+  zum Sweep gehören und der Knopf gezielt geklickt wird). Frontend: neuer
+  🔍-Knopf direkt neben dem ✨-KI-Knopf in `richtext/RichTextEditor.tsx`
+  (nur sichtbar, wenn `kiKontext` gesetzt ist — genau die Stellen, die auch
+  den ✨-Knopf schon hatten: Personen/Orte/Events/Fraktionen/Gegenstände/
+  Begleiter-Beschreibung+Notizen). Neues Popup `ki/ObjektPruefungPopup.tsx`
+  (Optik/Verhalten wie `wiki/PruefungPopup.tsx`, aber "Übernehmen" ersetzt
+  die Textstelle direkt im offenen TipTap-Editor statt über die API zu
+  speichern — der Aufrufer muss wie gewohnt selbst speichern). Verifiziert:
+  `tsc -b` und Backend-Import fehlerfrei; **kein echter Klicktest im
+  Frontend-Dev-Server** (kein KI-Call verifiziert) — Mark muss das am
+  eigenen Bildschirm gegenprüfen.
 
 **Zuletzt gebaut (23.09.2026, Wiki-Import):**
 - **Wiki-Import per Dokument-Upload** (Punkt 3 unter "Geplante Features",
@@ -912,10 +934,8 @@ erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
    - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026,
      **gebaut** — siehe "Zuletzt gebaut" oben): Im Wiki-Editor UND in der
      Ideenschmiede — Rechtschreibung/Grammatik sowie Logik-/Konsistenz-
-     fehler (Widersprüche zu bereits bestehenden Fakten im Wiki). Fehlt
-     noch: dieselbe Prüfung auch für die `RichTextEditor`-Felder
-     (Beschreibung/Notizen von Personen/Orten/Events/Fraktionen) — Mark
-     wollte erst nur den Wiki-Editor, das war explizit Schritt 1.
+     fehler (Widersprüche zu bereits bestehenden Fakten im Wiki). **Auch für
+     RichTextEditor-Felder gebaut (23.09.2026)** — siehe "Zuletzt gebaut" oben.
    - **Chatbot** (nice-to-have, Gag): Gegenstände mit Persönlichkeit — Decker redet mit seinem Deck, verrückter Priester redet mit seiner Bibel (und sie antwortet...)
    - **KI-Gegenstandsgenerator** (**gebaut** 23.09.2026 — siehe "Zuletzt
      gebaut" oben): dritter Ideenschmiede-Typ neben Story/Charakter

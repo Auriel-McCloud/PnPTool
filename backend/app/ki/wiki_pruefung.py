@@ -145,6 +145,19 @@ async def _pruefe_text(text: str, kontext: str) -> list[PruefBefund]:
     return befunde
 
 
+async def pruefe_freitext(campaign_id: str, text: str) -> list[PruefBefund]:
+    """Prüft einen freien Text ohne Seitenbezug (Beschreibung/Notizen-Feld
+
+    einer Person/eines Orts/Events/einer Fraktion) — für den 🔍-Knopf im
+    generischen ``RichTextEditor`` (CLAUDE.md Punkt 3, "Fehlt noch: dieselbe
+    Prüfung auch für die RichTextEditor-Felder"). Kein Prüfhash: anders als
+    Wiki-Seiten gehören diese Felder nicht zum Sweep, der Knopf wird bewusst
+    gezielt geklickt statt automatisch mitzulaufen.
+    """
+    kontext = await sammle_kontext(campaign_id)
+    return await _pruefe_text(text, kontext)
+
+
 async def pruefe_seite(campaign_id: str, seiten_id: str) -> list[PruefBefund]:
     """Prüft eine einzelne Seite und merkt sich den geprüften Textstand."""
     seite = await repository.get_seite(campaign_id, seiten_id)
