@@ -178,6 +178,16 @@ class GegenstandCreate(BaseModel):
     # Kästchen-Verhältnis (siehe kampf/ruestung.py::reduktion_effektiv) und
     # sinkt automatisch, je beschädigter die Rüstung ist.
     ruestungReduktionBasis: int = 0
+    # Reparaturmaterial (23.09.2026, Rüstungs-Reparatur): dieser Gegenstand
+    # kann bei der Selbst-Reparatur einer Rüstung eingesetzt werden. Gestuft
+    # wie Chrom-Qualitätsstufen (items/chrom.py) — kleines improvisiertes Kit
+    # deckt wenig, hochwertiges Ersatzteil-Paket mehr. Kapazität ist der
+    # harte Deckel pro Versuch: selbst ein guter Wurf repariert nie mehr, als
+    # das eingesetzte Material an Kästchen abdeckt (kampf/ruestung.py::
+    # selbstreparatur_ergebnis). Verbraucht wird IMMER genau 1 Stück pro
+    # Versuch (auch bei 0 reparierten Kästchen — realistisches Risiko).
+    istReparaturmaterial: bool = False
+    reparaturKapazitaet: int = 0
 
 
 class GegenstandUpdate(BaseModel):
@@ -238,6 +248,8 @@ class GegenstandUpdate(BaseModel):
     ruestungKaestchenMax: int | None = None
     ruestungKaestchenAktuell: int | None = None
     ruestungReduktionBasis: int | None = None
+    istReparaturmaterial: bool | None = None
+    reparaturKapazitaet: int | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -323,6 +335,8 @@ class GegenstandResponse(BaseModel):
     ruestungKaestchenMax: int = 0
     ruestungKaestchenAktuell: int = 0
     ruestungReduktionBasis: int = 0
+    istReparaturmaterial: bool = False
+    reparaturKapazitaet: int = 0
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

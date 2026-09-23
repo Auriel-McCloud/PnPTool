@@ -29,6 +29,7 @@ RETURN_FIELDS = """
     g.ablage AS ablage,
     g.ruestungKaestchenMax AS ruestungKaestchenMax, g.ruestungKaestchenAktuell AS ruestungKaestchenAktuell,
     g.ruestungReduktionBasis AS ruestungReduktionBasis,
+    g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
 """
@@ -176,6 +177,10 @@ def _decode(record: dict) -> dict:
     record["ruestungKaestchenMax"] = _or_default(record.get("ruestungKaestchenMax"), 0)
     record["ruestungKaestchenAktuell"] = _or_default(record.get("ruestungKaestchenAktuell"), 0)
     record["ruestungReduktionBasis"] = _or_default(record.get("ruestungReduktionBasis"), 0)
+    # Reparaturmaterial: gestuft wie Chrom-Qualitätsstufen (0/False = dieser
+    # Gegenstand ist keines, das ist die weit überwiegende Mehrheit).
+    record["istReparaturmaterial"] = _or_default(record.get("istReparaturmaterial"), False)
+    record["reparaturKapazitaet"] = _or_default(record.get("reparaturKapazitaet"), 0)
     return record
 
 
@@ -207,6 +212,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
             ruestungReduktionBasis: $ruestungReduktionBasis,
+            istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
             istEntwurf: $istEntwurf
         })
     """
@@ -276,6 +282,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
                 _or_default(data.get("ruestungKaestchenAktuell"), data.get("ruestungKaestchenMax") or 0)
             ),
             ruestungReduktionBasis=int(data.get("ruestungReduktionBasis") or 0),
+            istReparaturmaterial=bool(data.get("istReparaturmaterial")),
+            reparaturKapazitaet=int(data.get("reparaturKapazitaet") or 0),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],

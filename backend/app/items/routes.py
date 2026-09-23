@@ -123,6 +123,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ruestungKaestchenMax": body.ruestungKaestchenMax,
         "ruestungKaestchenAktuell": body.ruestungKaestchenAktuell,
         "ruestungReduktionBasis": body.ruestungReduktionBasis,
+        "istReparaturmaterial": body.istReparaturmaterial,
+        "reparaturKapazitaet": body.reparaturKapazitaet,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
     }

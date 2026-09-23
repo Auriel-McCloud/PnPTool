@@ -322,10 +322,10 @@ def verteile_kaestchenschaden(geordnet: list[dict], kaestchen_schaden: int) -> l
 def repariere(kaestchen_aktuell: int, kaestchen_max: int, betrag: int) -> dict:
     """Kästchen auffüllen.
 
-    `betrag` ist, wie viele Kästchen repariert werden (Ergebnis einer
-    Hardware-Probe oder das, wofür beim Händler bezahlt wurde — **dieser Teil
-    fehlt im Tool noch**, siehe docs/api/ruestung.md "Was noch fehlt"). Diese
-    Funktion kennt nur die Rechnung, nicht die Probe oder den Preis.
+    `betrag` ist, wie viele Kästchen repariert werden — das Ergebnis einer
+    Hardware-Probe (`selbstreparatur_ergebnis`) oder das, wofür beim Händler
+    bezahlt wurde (`haendler_reparatur_preis`). Diese Funktion kennt nur die
+    Rechnung, nicht die Probe oder den Preis.
 
     Die Reduktion braucht seit dem Umbau auf gestufte Werte **keine eigene
     Reparatur mehr** — sie folgt automatisch aus dem wiederhergestellten
@@ -334,3 +334,111 @@ def repariere(kaestchen_aktuell: int, kaestchen_max: int, betrag: int) -> dict:
     betrag = max(0, betrag)
     kaestchen_neu = min(kaestchen_max, kaestchen_aktuell + betrag)
     return {"kaestchenNeu": kaestchen_neu}
+
+
+# =====================================================================
+# Reparatur (23.09.2026, Marks Entscheidungen per clarify — siehe
+# docs/api/ruestung.md "Reparatur" für die volle Herleitung)
+#
+# Zwei Wege, dieselbe Zielgröße (Kästchen auffüllen):
+#
+# (A) SELBST REPARIEREN — Hardware-Skill-Probe + Material, kein Geld.
+# (B) HÄNDLER — reine Geldsache, kein Wurf, dafür eine Verhandlung
+#     (SL macht einen Preisvorschlag, der Spieler nimmt an oder lehnt ab —
+#     siehe app/mitteilungen/ für den Verhandlungs-Popup-Mechanismus).
+# =====================================================================
+
+
+def reparatur_schwelle(kaestchen_max: int) -> int:
+    """Ab wie vielen Erfolgen die Hardware-Probe überhaupt etwas repariert.
+
+    **Die Hälfte des Kästchen-Max, abgerundet** (Marks Vorgabe) — je robuster
+    die Rüstung gebaut ist, desto mehr Können braucht ihre Reparatur. Nur der
+    ÜBERSCHUSS über diese Schwelle wird zu reparierten Kästchen, siehe
+    `selbstreparatur_ergebnis`.
+    """
+    return max(0, kaestchen_max) // 2
+
+
+def hardware_probe_pool(werte: dict[str, int]) -> int:
+    """Der Würfelpool für die Reparatur-Probe: Maker (Hardware) + Intelligenz.
+
+    Intelligenz statt Geistesschärfe, weil Reparieren planvolles Vorgehen ist
+    ("Probleme lösen, Zusammenhänge erkennen", TRAIT_BESCHREIBUNGEN in
+    traits/seed.py) und kein Reflex — anders als z.B. die Initiative-Formel.
+    """
+    return max(0, int(werte.get("Maker (Hardware)", 0)) + int(werte.get("Intelligenz", 0)))
+
+
+def selbstreparatur_ergebnis(erfolge: int, kaestchen_max: int, material_kapazitaet: int) -> dict:
+    """Was die Hardware-Probe tatsächlich repariert.
+
+    Marks Vorgabe, an einem Beispiel: Max 10 → Schwelle 5. Bei 8 Erfolgen
+    werden **3** Kästchen repariert (der Überschuss über die Schwelle), bei
+    5 oder weniger Erfolgen **0** — die Probe hat nicht gereicht, um
+    überhaupt etwas zu bewirken, nicht nur "weniger".
+
+    `material_kapazitaet` ist der harte Deckel: selbst ein sehr guter Wurf
+    repariert nie mehr, als das eingesetzte Material an Kästchen abdeckt
+    (kleines Kit an einer schwer beschädigten Rüstung bleibt also begrenzt
+    wirksam, auch bei einem Kritischen Erfolg).
+    """
+    schwelle = reparatur_schwelle(kaestchen_max)
+    ueberschuss = max(0, erfolge - schwelle)
+    repariert = min(ueberschuss, max(0, material_kapazitaet))
+    return {"schwelle": schwelle, "ueberschuss": ueberschuss, "repariert": repariert}
+
+
+def summe_quadrate(n: int) -> int:
+    """1² + 2² + ... + n² — geschlossene Formel, kein Schleifen-Summieren."""
+    n = max(0, n)
+    return n * (n + 1) * (2 * n + 1) // 6
+
+
+def haendler_reparatur_preis(
+    fehlende_kaestchen: int, kaestchen_max: int, neuwert: int, deckel_anteil: float = 0.75
+) -> int:
+    """Was der Händler für die Reparatur von `fehlende_kaestchen` Kästchen verlangt.
+
+    **Herleitung** (Marks Vorgabe: quadratisch/progressiv, mit hartem
+    75%-Deckel bei Totalschaden):
+
+    Der naheliegende Ansatz ist ein Grenzpreis je Kästchen, der mit dem
+    Anteil am Kästchen-Max quadratisch wächst:
+
+        kosten(i) = basispreis · (i / kaestchenMax)²   für das i-te fehlende
+                    Kästchen (i = 1..N), aufsummiert über N.
+
+    Das allein braucht aber einen `basispreis`, den man für jede Rüstung
+    einzeln kalibrieren müsste, damit der Deckel bei N=kaestchenMax passt.
+    Stattdessen wird `basispreis` direkt so gewählt, dass die Summe bei
+    **N = kaestchenMax** (Totalschaden) exakt `deckel_anteil · neuwert`
+    ergibt — nach Auflösen von
+
+        Σ_{i=1}^{max} basispreis · (i/max)²  =  deckel_anteil · neuwert
+
+    nach `basispreis` und Zurückeinsetzen bleibt für ein beliebiges N:
+
+        kosten(N) = deckel_anteil · neuwert · (Σ_{i=1}^{N} i²) / (Σ_{i=1}^{max} i²)
+
+    — der Anteil der Quadratsumme bis N an der Quadratsumme bis Max, skaliert
+    auf den Deckel. Das ist **dieselbe** quadratische Formel wie oben (nur
+    ohne den Umweg über einen separat zu kalibrierenden Basispreis), erfüllt
+    den Deckel bei Totalschaden **exakt per Konstruktion** (Anteil = 1 bei
+    N=max) und ist trotzdem progressiv: der Grenzpreis für das i-te Kästchen
+    wächst mit i² — die letzten Kästchen vor dem Ziel sind spürbar teurer als
+    die ersten (glatte Rüstung reparieren ist billig, die letzten Risse vor
+    "wie neu" sind das teure Handwerk).
+
+    `int()` rundet für positive Werte immer ab (floor) — der Deckel wird also
+    **nie** überschritten, auch nicht durch Rundung.
+    """
+    if kaestchen_max <= 0 or neuwert <= 0:
+        return 0
+    n = max(0, min(fehlende_kaestchen, kaestchen_max))
+    gesamt_quadrate = summe_quadrate(kaestchen_max)
+    if gesamt_quadrate <= 0:
+        return 0
+    anteil = summe_quadrate(n) / gesamt_quadrate
+    deckel = neuwert * deckel_anteil
+    return int(deckel * anteil)
