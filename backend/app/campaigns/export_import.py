@@ -39,11 +39,25 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+from neo4j.time import Date, DateTime, Duration, Time
+
 from app.campaigns.repository import get_campaign
 from app.db.neo4j_driver import get_driver
 
 EXPORT_FORMAT_VERSION = 1
 UPLOAD_DIR = Path("uploads")
+
+
+class _Neo4jJSONEncoder(json.JSONEncoder):
+    """Neo4j liefert eigene Zeittypen (z.B. `Campaign.createdAt: datetime()`),
+    die `json.dumps` nicht kennt — als ISO-Text exportieren, `str()` deckt
+    alle vier Typen einheitlich ab (DateTime/Date/Time/Duration)."""
+
+    def default(self, o):
+        if isinstance(o, (DateTime, Date, Time, Duration)):
+            return str(o)
+        return super().default(o)
+
 
 # Weisse Liste: nur diese Labels/Kantentypen dürfen aus einem Importpaket
 # tatsächlich als Cypher-Label/-Beziehungstyp verwendet werden. Cypher kann
@@ -138,7 +152,7 @@ async def export_campaign_zip(campaign_id: str) -> tuple[bytes, str]:
     puffer = io.BytesIO()
     with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
-        zf.writestr("daten.json", json.dumps({"nodes": nodes, "edges": edges}, ensure_ascii=False))
+        zf.writestr("daten.json", json.dumps({"nodes": nodes, "edges": edges}, ensure_ascii=False, cls=_Neo4jJSONEncoder))
         for datei in bild_dateien:
             if datei.is_file():
                 zf.write(datei, arcname=f"bilder/{datei.name}")
