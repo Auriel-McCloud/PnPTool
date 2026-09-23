@@ -46,9 +46,12 @@ Bestand nutzt die bestehende `einzigartig`/`istVorlage`-Unterscheidung
 verschwinden nach dem Kauf aus dem Sortiment.
 
 Noch offen: Spam/Werbe-Mechanik (Frequenz skaliert mit I.C.E.),
-Scammer-Storylines, Frontend. Würde — sobald das Frontend steht — auch die
-Rüstungsreparatur-Kosten und die Fahrzeug-Preisdiskussion mit auflösen
-können.
+Scammer-Storylines, Frontend, Fahrzeug-Preisdiskussion. **Die
+Rüstungsreparatur-Kosten sind seit 23.09.2026 geklärt** (eigene, vom
+Shop-System unabhängige Preisformel — quadratisch/progressiv mit hartem
+75%-Deckel bei Totalschaden, siehe `docs/api/ruestung.md` "Reparatur beim
+Händler" und `ruestung-kaestchen-durchlass.md` Punkt 9) und brauchten das
+Shop-System letztlich gar nicht.
 
 **KI-Sortiment-Vorschlag (23.09.2026):** neues Modul
 `backend/app/haendler/ki_vorschlag.py` — die KI schlägt passende Waren für
@@ -61,4 +64,4 @@ Backend end-to-end verifiziert, Frontend-Popup noch offen. Details:
 
 - [[../../reference/Neotopia_Gegenstaende.md]] — alle Preistabellen im Volltext
 - [[cyberware-bioware]] — Preis→Willenskraftverlust
-- [[ruestung-kaestchen-durchlass]] — Reparaturkosten noch offen
+- [[ruestung-kaestchen-durchlass]] — Reparaturkosten geklärt (23.09.2026, Punkt 9)
