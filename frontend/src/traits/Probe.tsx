@@ -3,6 +3,7 @@ import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
 import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
+import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./probe.css";
 
 /**
@@ -55,6 +56,7 @@ export function Probe({
   werte,
   willenskraft,
   deckBoni,
+  magieFlavor,
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
@@ -70,6 +72,8 @@ export function Probe({
   willenskraft: number;
   /** Bonuswürfel aus dem ausgerüsteten Cyberdeck, je Matrix-Aktion. */
   deckBoni?: Record<string, number>;
+  /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
+  magieFlavor?: MagieFlavor;
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
@@ -105,6 +109,10 @@ export function Probe({
   // sammelt darüber hinaus nur wilde Würfel.
   const gedeckelt = Boolean(partnerKategorie) && roh > NEUROWEAVING_POOL_MAX;
   const pool = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
+  // Häretiker-Flavor: übersetzt "Hexkraft"/Sphärennamen/"Wilde Magie", sonst
+  // unverändert. Zentrale Stelle statt an jeder Textausgabe einzeln.
+  const wahlName = magieBegriff(magieFlavor, wahl.name);
+  const wildeMagieName = magieBegriff(magieFlavor, "Wilde Magie");
 
   const deckAktionen = Object.entries(deckBoni ?? {});
 
@@ -120,7 +128,7 @@ export function Probe({
     return (
       <Fenster
         offen
-        titel={`${wahl.name} ${wahl.wert}`}
+        titel={`${wahlName} ${wahl.wert}`}
         unterzeile="Sphäre — was damit geht"
         kennung={`sphaere:${wahl.name}`}
         onSchliessen={schliesseAlles}
@@ -149,7 +157,7 @@ export function Probe({
       <>
         <Fenster
           offen
-          titel={`${wahl.name} ${wahl.wert}`}
+          titel={`${wahlName} ${wahl.wert}`}
           unterzeile={wahl.kategorie === "Hexkraft" ? "Kontrolliert oder wild?" : "NeuroWeaving"}
           kennung={`probe:${wahl.name}`}
           onSchliessen={schliesseAlles}
@@ -192,7 +200,7 @@ export function Probe({
             <WuerfelZehn groesse={54} />
           </div>
           <p className="pr-rechnung">
-            {wahl.name} {wahl.wert}
+            {wahlName} {wahl.wert}
             {attribut && ` + ${attribut.name} ${attribut.wert}`}
             {wild > 0 && ` + ${wild} aus Willenskraft`}
             {gedeckelt && ` — gedeckelt auf ${NEUROWEAVING_POOL_MAX}`}
@@ -200,7 +208,7 @@ export function Probe({
 
           {willenskraft > 0 ? (
             <section className="pr-wild">
-              <h3>{wahl.kategorie === "Hexkraft" ? "Wilde Magie" : "Overclock"}</h3>
+              <h3>{wahl.kategorie === "Hexkraft" ? wildeMagieName : "Overclock"}</h3>
               <p className="pr-regel">
                 {wahl.kategorie === "Hexkraft" ? MAGIE_HINWEISE.hexkraftWild : MAGIE_HINWEISE.overclock}
               </p>
@@ -227,7 +235,7 @@ export function Probe({
             </section>
           ) : (
             <p className="pr-regel">
-              {wahl.kategorie === "Hexkraft" ? "Ohne Willenskraft keine wilde Magie." : "Ohne Willenskraft kein Overclock."}
+              {wahl.kategorie === "Hexkraft" ? `Ohne Willenskraft keine ${wildeMagieName}.` : "Ohne Willenskraft kein Overclock."}
             </p>
           )}
         </Fenster>
@@ -239,7 +247,7 @@ export function Probe({
     <>
       <Fenster
         offen
-        titel={`${wahl.name} ${wahl.wert}`}
+        titel={`${wahlName} ${wahl.wert}`}
         unterzeile="Womit kombinierst du?"
         kennung={`probe:${wahl.name}`}
         onSchliessen={schliesseAlles}
@@ -272,7 +280,7 @@ export function Probe({
       {/* Zweites Fenster über dem ersten — die Zahl ist die ganze Auskunft. */}
       <Fenster
         offen={attribut !== null}
-        titel={attribut ? `${wahl.name} + ${attribut.name}` : ""}
+        titel={attribut ? `${wahlName} + ${attribut.name}` : ""}
         kennung="probe-pool"
         onSchliessen={() => setAttribut(null)}
       >
@@ -281,7 +289,7 @@ export function Probe({
           <WuerfelZehn groesse={54} />
         </div>
         <p className="pr-rechnung">
-          {wahl.name} {wahl.wert}
+          {wahlName} {wahl.wert}
           {attribut && attribut.wert > 0 && ` + ${attribut.name} ${attribut.wert}`}
           {deck && ` + ${deck.name} ${deck.wert}`}
         </p>

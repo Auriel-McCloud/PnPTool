@@ -11,6 +11,7 @@ import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
 import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
+import { magieBegriff } from "../traits/magieBegriffe";
 import "./kampfkarte.css";
 
 /**
@@ -263,7 +264,7 @@ export function Kampfkarte({
           <h3>Magie</h3>
           <div className="kk-werte">
             <Zahl
-              titel="Hexkraft"
+              titel={magieBegriff(u.magieFlavor, "Hexkraft")}
               wert={wert(bogen, "Hexkraft")}
               hinweis={`Antippen, um Willenskraft dazuzugeben — noch ${uebrigeWillenskraft} übrig.`}
               wuerfel
@@ -277,7 +278,7 @@ export function Kampfkarte({
                 const w = bogen.werte.find((x) => x.traitDefId === t.id)?.rating ?? 0;
                 return (
                   <span key={t.id} data-leer={w === 0}>
-                    {t.name} <strong>{w}</strong>
+                    {magieBegriff(u.magieFlavor, t.name)} <strong>{w}</strong>
                   </span>
                 );
               })}
@@ -416,6 +417,7 @@ export function Kampfkarte({
         offen={fragtWillenskraft}
         uebrig={uebrigeWillenskraft}
         weg={u.weg}
+        magieFlavor={u.magieFlavor}
         onNein={() => setFragtWillenskraft(false)}
         onJa={async () => {
           setFragtWillenskraft(false);
@@ -432,6 +434,7 @@ export function Kampfkarte({
         werte={new Map(bogen.werte.map((w) => [w.traitDefId, w.rating]))}
         willenskraft={uebrigeWillenskraft}
         deckBoni={bogen.deckBoni}
+        magieFlavor={u.magieFlavor}
         onSchliessen={() => setProbe(null)}
       />
 
