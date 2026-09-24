@@ -14,6 +14,7 @@ import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL,
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
+import { magieBegriff } from "./magieBegriffe";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -275,7 +276,7 @@ export function Charakterblatt({
             Zurück zum Blatt
           </button>
         </header>
-        <LevelUp campaignId={campaignId} personId={personId} />
+        <LevelUp campaignId={campaignId} personId={personId} magieFlavor={u.magieFlavor} />
       </div>
     );
   }
@@ -286,7 +287,9 @@ export function Charakterblatt({
     const ton = TON[kategorie] ?? "var(--neon)";
     return (
       <section className="cb-gruppe" key={kategorie} style={{ "--cb-ton": ton } as React.CSSProperties}>
-        <h3 className="cb-gruppe-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
+        <h3 className="cb-gruppe-titel">
+          {kategorie === "Hexkraft" ? magieBegriff(u.magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+        </h3>
         <div
           className={eintraege.length === 1 ? "cb-werte cb-werte-einzeln" : "cb-werte"}
           // Spaltenweise füllen wie auf dem Papierblatt: die ersten zehn
@@ -299,6 +302,9 @@ export function Charakterblatt({
           {eintraege.map((t) => {
             const wert = werte.get(t.id) ?? 0;
             const ausruestungsBonus = bogen?.ausruestungsBoni[t.name] ?? 0;
+            // Häretiker-Flavor: nur Hexkraft/Sphären-Namen sind in der
+            // Mapping-Tabelle, alles andere kommt unverändert zurück.
+            const anzeigeName = magieBegriff(u.magieFlavor, t.name);
             return (
               // Umhüllung, weil das Erklärungszeichen selbst ein Knopf ist
               // und nicht in der Wertezeile stecken darf — ein Knopf im Knopf
@@ -309,7 +315,7 @@ export function Charakterblatt({
                   // sind anklickbar, ein Knopf darum herum finge den Klick ab.
                   <div className="cb-wert cb-wert-bearbeiten">
                     <span className="cb-wert-name">
-                      {t.name}
+                      {anzeigeName}
                       {ausruestungsBonus !== 0 && (
                         <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
                           {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
@@ -331,10 +337,10 @@ export function Charakterblatt({
                         ? onWertGewaehlt(t.name, wert + ausruestungsBonus, kategorie)
                         : setProbe({ name: t.name, wert: wert + ausruestungsBonus, kategorie })
                     }
-                    title={`${t.name} — wie viele Würfel?`}
+                    title={`${anzeigeName} — wie viele Würfel?`}
                   >
                     <span className="cb-wert-name">
-                      {t.name}
+                      {anzeigeName}
                       {ausruestungsBonus !== 0 && (
                         <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
                           {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
@@ -353,7 +359,7 @@ export function Charakterblatt({
                     <button
                       type="button"
                       onClick={() => wertSetzen(t.id, wert, Math.max(1, grenzeVon(t) - 1))}
-                      title={`Maximum von ${t.name} senken`}
+                      title={`Maximum von ${anzeigeName} senken`}
                     >
                       −
                     </button>
@@ -361,13 +367,13 @@ export function Charakterblatt({
                     <button
                       type="button"
                       onClick={() => wertSetzen(t.id, wert, grenzeVon(t) + 1)}
-                      title={`Maximum von ${t.name} anheben`}
+                      title={`Maximum von ${anzeigeName} anheben`}
                     >
                       +
                     </button>
                   </span>
                 )}
-                <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(t.name)} titel={t.name} />
+                <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(anzeigeName)} titel={anzeigeName} />
               </div>
             );
           })}
@@ -382,7 +388,8 @@ export function Charakterblatt({
         <div>
           <h2 className="cb-name">{bogen.person.name}</h2>
           <div className="cb-untertitel">
-            {[u.rasse, WEG_TITEL[u.weg]].filter(Boolean).join(" · ") || "Ohne besonderen Weg"}
+            {[u.rasse, u.magieFlavor === "HAERETIKER" ? "Häretiker" : WEG_TITEL[u.weg]].filter(Boolean).join(" · ") ||
+              "Ohne besonderen Weg"}
           </div>
         </div>
         {bearbeitbar && (
@@ -529,6 +536,7 @@ export function Charakterblatt({
         offen={fragtWillenskraft}
         uebrig={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         weg={u.weg}
+        magieFlavor={u.magieFlavor}
         onNein={() => setFragtWillenskraft(false)}
         onJa={async () => {
           setFragtWillenskraft(false);
@@ -548,6 +556,7 @@ export function Charakterblatt({
         // zu erzwingen, kann sie nicht nochmal in einen Zauber stecken.
         willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
+        magieFlavor={u.magieFlavor}
         onSchliessen={() => setProbe(null)}
       />
 
