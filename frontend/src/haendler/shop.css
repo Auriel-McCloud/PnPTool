@@ -1,0 +1,443 @@
+/* ===================================================================
+   Shop-System (24.09.2026) — Marks Konzept: Seltenheitsrahmen als klares
+   optisches Signal, jede Stufe eine andere "Handschrift":
+     1 gewoehnlich   — grau, ruhig
+     2 ungewoehnlich — blau umrandet
+     3 selten        — silbern, glitzernd (mehr als ungewoehnlich, aber
+                        noch nicht so protzig wie legendaer)
+     4 legendaer     — orange, gezackter Rahmen
+     5 mystisch      — violett, gluehend UND wabernd
+
+   Die Zahl kommt 1:1 aus Gegenstand.seltenheit (siehe items/schemas.py).
+   =================================================================== */
+
+.shop-seite {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.shop-zurueck {
+  align-self: flex-start;
+  background: none;
+  border-color: transparent;
+  color: var(--text-leise);
+  padding: 4px 0;
+}
+
+.shop-zurueck:hover {
+  color: var(--bereich-farbe, var(--neon));
+  background: none;
+}
+
+/* --- Uebersicht: Kachelraster aller Haendler --------------------------- */
+
+.shop-haendler-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.shop-haendler-kachel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  padding: 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+
+.shop-haendler-kachel:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  box-shadow: 0 0 16px -6px var(--bereich-farbe, var(--neon));
+}
+
+/* Physischer Shop: eigenes Hintergrundbild als Kulisse hinter der Kachel. */
+.shop-haendler-kachel[data-hat-bild="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--shop-bild);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.shop-haendler-kachel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shop-haendler-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.shop-haendler-art {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.shop-haendler-art[data-art="DIGITAL"] {
+  color: var(--neon);
+}
+
+.shop-haendler-spez {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* --- Einzelne Shop-Seite: physisch (fancy) ----------------------------- */
+
+.shop-kopf-physisch {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  min-height: 160px;
+  padding: 16px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  flex-shrink: 0;
+}
+
+.shop-kopf-physisch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--shop-bild);
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.shop-kopf-physisch::after {
+  /* Abdunklung, damit Text und Haendlerbild lesbar bleiben */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(var(--grund-rgb) / 0.92), rgb(var(--grund-rgb) / 0.25));
+  z-index: 0;
+}
+
+.shop-kopf-physisch > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shop-haendler-portrait {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--bereich-farbe, var(--neon));
+  box-shadow: 0 0 16px -4px var(--bereich-farbe, var(--neon));
+  flex-shrink: 0;
+}
+
+.shop-kopf-text h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.shop-kopf-text p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-leise);
+  max-width: 60ch;
+}
+
+/* --- Einzelne Shop-Seite: digital (schlicht) --------------------------- */
+
+.shop-kopf-digital {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.shop-kopf-digital-symbol {
+  font-size: 22px;
+  color: var(--neon);
+}
+
+.shop-kopf-digital h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+
+.shop-kopf-digital-hinweis {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+/* --- Warenraster --------------------------------------------------------- */
+
+.shop-waren-raster {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  align-content: start;
+  padding: 4px 2px;
+}
+
+.shop-ware {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  border: 2px solid var(--linie-hell);
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.shop-ware-bild {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  background: var(--grund);
+  border-radius: 3px;
+  font-size: 30px;
+  color: var(--linie-hell);
+  overflow: hidden;
+}
+
+.shop-ware-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-ware-name {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.shop-ware-preis {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.shop-ware-preis-alt {
+  font-size: 11px;
+  color: var(--text-aus);
+  text-decoration: line-through;
+}
+
+.shop-ware-preis-neu {
+  color: var(--gut);
+  font-weight: 600;
+}
+
+.shop-ware-rabatt-band {
+  position: absolute;
+  top: 6px;
+  right: -26px;
+  transform: rotate(35deg);
+  padding: 2px 30px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--signal);
+  color: var(--flaeche-tief);
+  box-shadow: 0 0 10px -2px var(--signal);
+}
+
+/* --- Seltenheitsrahmen (Marks Farbschema, 24.09.2026) ------------------ */
+
+/* 1 — gewoehnlich: grau, ruhig */
+.shop-ware[data-seltenheit="1"] {
+  border-color: var(--linie-hell);
+}
+
+/* 2 — ungewoehnlich: blau umrandet */
+.shop-ware[data-seltenheit="2"] {
+  border-color: var(--p-blau);
+  box-shadow: 0 0 10px -4px var(--p-blau);
+}
+
+/* 3 — selten: silbern, glitzernd — ein wenig mehr als ungewoehnlich, aber
+   noch nicht so protzig wie legendaer. Das Glitzern läuft als schmaler
+   heller Schimmer über den Rahmen. */
+.shop-ware[data-seltenheit="3"] {
+  border-color: #c8c8d8;
+  background-image: linear-gradient(var(--flaeche), var(--flaeche)),
+    linear-gradient(120deg, #c8c8d8, #ffffff, #c8c8d8, #9a9ab0, #ffffff, #c8c8d8);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-size: 100% 100%, 240% 240%;
+  animation: shop-glitzern 3.5s linear infinite;
+}
+
+@keyframes shop-glitzern {
+  0% { background-position: 0 0, 0% 50%; }
+  100% { background-position: 0 0, 200% 50%; }
+}
+
+/* 4 — legendaer: orange, gezackter Rahmen (per clip-path-Zacken-Overlay) */
+.shop-ware[data-seltenheit="4"] {
+  border-color: var(--p-orange);
+  box-shadow: 0 0 12px -3px var(--p-orange);
+}
+
+.shop-ware[data-seltenheit="4"]::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border: 2px solid var(--p-orange);
+  clip-path: polygon(
+    0% 8%, 4% 0%, 10% 6%, 16% 0%, 22% 6%, 28% 0%, 34% 6%, 40% 0%, 46% 6%, 50% 0%,
+    54% 6%, 60% 0%, 66% 6%, 72% 0%, 78% 6%, 84% 0%, 90% 6%, 96% 0%, 100% 8%,
+    100% 92%, 96% 100%, 90% 94%, 84% 100%, 78% 94%, 72% 100%, 66% 94%, 60% 100%,
+    54% 94%, 50% 100%, 46% 94%, 40% 100%, 34% 94%, 28% 100%, 22% 94%, 16% 100%,
+    10% 94%, 4% 100%, 0% 92%
+  );
+}
+
+/* 5 — mystisch: violett gluehend, wabernder Rand-Effekt */
+.shop-ware[data-seltenheit="5"] {
+  border-color: var(--p-violett-hell);
+  box-shadow: 0 0 16px -2px var(--p-violett-hell), inset 0 0 10px -6px var(--p-violett-hell);
+  animation: shop-mystisch-glut 2.2s ease-in-out infinite;
+}
+
+.shop-ware[data-seltenheit="5"]::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  border-radius: calc(var(--radius) + 4px);
+  border: 2px solid var(--p-violett-hell);
+  filter: blur(2px);
+  animation: shop-wabern 3.2s ease-in-out infinite;
+}
+
+@keyframes shop-mystisch-glut {
+  0%, 100% { box-shadow: 0 0 16px -2px var(--p-violett-hell), inset 0 0 10px -6px var(--p-violett-hell); }
+  50% { box-shadow: 0 0 26px 2px var(--p-violett-hell), inset 0 0 14px -4px var(--p-violett-hell); }
+}
+
+@keyframes shop-wabern {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+  33% { transform: scale(1.015) rotate(0.6deg); opacity: 0.9; }
+  66% { transform: scale(0.99) rotate(-0.5deg); opacity: 0.6; }
+}
+
+/* Wer Bewegung reduziert haben will, bekommt Glitzern/Wabern nicht — die
+   Farbe und der Rahmen selbst bleiben (Signalwirkung geht nicht verloren). */
+@media (prefers-reduced-motion: reduce) {
+  .shop-ware[data-seltenheit="3"],
+  .shop-ware[data-seltenheit="5"],
+  .shop-ware[data-seltenheit="5"]::after {
+    animation: none;
+  }
+}
+
+/* --- Bestellungen (digitaler Kauf) -------------------------------------- */
+
+.shop-bestellung-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.shop-bestellung-status {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.shop-bestellung-status[data-status="OFFEN"] {
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.shop-bestellung-status[data-status="GELIEFERT"] {
+  color: var(--gut);
+  border: 1px solid var(--gut);
+}
+
+.shop-leer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-leise);
+}
+
+/* --- Kauf-/Verhandel-Popup (ShopWare) ----------------------------------- */
+
+.shop-ware-hinweis {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.shop-ware-fehler {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--signal);
+}
+
+.shop-ware-knoepfe {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-ware-kaufen-btn {
+  border-color: var(--gut);
+  color: var(--gut);
+}
+
+.shop-ware-verhandel-form input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.shop-ware-erfolg {
+  margin: 0;
+  color: var(--gut);
+}

@@ -37,6 +37,7 @@ import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
 import { CharakterportraitAnsicht } from "./CharakterportraitAnsicht";
 import { SpielerEinstieg } from "./SpielerEinstieg";
+import { ShopUebersicht } from "../haendler/ShopUebersicht";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -56,6 +57,8 @@ const BEREICHE_STATISCH: Bereich[] = [
   // Bild-Verwaltungsknopf obendrauf hätte dort nur Platz weggenommen.
   { id: "portrait", name: "Portrait", symbol: "◒", farbe: "var(--bereich-regeln)" },
   { id: "inventar", name: "Inventar", symbol: "◈", farbe: "var(--bereich-inventar)" },
+  // Shop-System (24.09.2026): eigener Burgermenü-Punkt, Marks Vorgabe.
+  { id: "shop", name: "Shop", symbol: "¥", farbe: "var(--bereich-shop)" },
   // Eigener Bereich, weil ein Rigger sehr viele Drohnen führt und die im
   // Inventar zwischen Munition und Kaugummi untergingen. Beide haben ein
   // eigenes Blatt (Stufe, Widerstand, Angriff, Agilität).
@@ -337,6 +340,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       // Bereiche sind noch Listen und dürfen scrollen.
       statisch={
         bereich === "inventar" ||
+        bereich === "shop" ||
         bereich === "fahrzeuge" ||
         bereich === "begleiter" ||
         bereich === "kampf" ||
@@ -379,6 +383,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             Dir ist noch kein Charakter zugeordnet — deine Spielleitung muss dir einen zuweisen.
           </p>
         ))}
+
+      {bereich === "shop" && (
+        <ShopUebersicht campaignId={ich.campaignId} eigenePersonId={ich.personId} istGm={false} />
+      )}
 
       {bereich === "fahrzeuge" && (
         <div className="gg-seite" style={KACHEL_STIL}>

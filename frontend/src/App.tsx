@@ -8,6 +8,7 @@ import { Fenster } from "./shell/Fenster";
 import { EntityManager, type WeltAnsicht } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
+import { ShopUebersicht } from "./haendler/ShopUebersicht";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { PartyVerwaltung } from "./party/PartyVerwaltung";
@@ -45,6 +46,11 @@ const BEREICHE: Bereich[] = [
   { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "var(--bereich-verbindungen)" },
   // Violett wie die Gegenstands-Knoten im Graphen
   { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "var(--bereich-gegenstaende)" },
+  // Shop-System (24.09.2026): Händler und ihr Sortiment — eigener Punkt
+  // statt Unterreiter bei Gegenständen, weil hier gekauft wird, nicht nur
+  // verwaltet. Gedecktes Gold statt der Gegenstandsfarbe: der Shop selbst
+  // ist ein Ort des Handelns, kein reiner Datensatz.
+  { id: "shop", name: "Shop", symbol: "¥", farbe: "var(--bereich-shop)" },
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
   // Blatt haben und keine Gegenstände sind.
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
@@ -77,6 +83,7 @@ const TITEL: Record<string, string> = {
   events: "Ereignisse",
   verbindungen: "Beziehungen zwischen Entitäten",
   gegenstaende: "Gegenstände",
+  shop: "Shop",
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
@@ -200,6 +207,7 @@ function Dashboard() {
         bereich === "events" ||
         bereich === "verbindungen" ||
         bereich === "gegenstaende" ||
+        bereich === "shop" ||
         bereich === "graph" ||
         bereich === "begleiter" ||
         bereich === "kampf" ||
@@ -230,6 +238,7 @@ function Dashboard() {
             />
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "shop" && <ShopUebersicht key={ansichtKennung} campaignId={kampagne.id} eigenePersonId={null} istGm />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "party" && <PartyVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}

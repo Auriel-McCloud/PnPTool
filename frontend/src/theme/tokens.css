@@ -111,6 +111,9 @@
   --bereich-events: var(--kind-event);
   --bereich-verbindungen: var(--p-indigo);
   --bereich-gegenstaende: var(--kind-gegenstand);
+  /* Shop: gedecktes Gold/Messing wie Fraktionen, aber eigener Ton — Handel
+     statt Organisation. */
+  --bereich-shop: var(--p-messing);
   --bereich-begleiter: var(--p-violett-hell);
   --bereich-graph: var(--kind-person);
   --bereich-zugang: var(--gut);

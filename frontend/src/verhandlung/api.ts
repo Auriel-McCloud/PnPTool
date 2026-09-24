@@ -9,7 +9,7 @@
  */
 import { api } from "../api/client";
 
-export type VerhandlungsArt = "RUESTUNG_REPARATUR";
+export type VerhandlungsArt = "RUESTUNG_REPARATUR" | "SHOP_KAUF";
 
 export interface VerhandlungPosition {
   bezeichnung: string;

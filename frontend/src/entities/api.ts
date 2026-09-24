@@ -35,6 +35,14 @@ export interface Person extends VisibilityFields {
    * körperlichen Attribute durch Matrix-Präsenz (`AttributMatrix`, siehe
    * `traits/bogenApi.ts::ATTRIBUT_KATEGORIEN_KI`). */
   istKI?: boolean;
+  /** Shop-System (24.09.2026): Person ist ein Händler, siehe app/haendler/. */
+  istHaendler?: boolean;
+  spezialisierung?: string[];
+  /** PHYSISCH = Fancy-Laden mit Verhandeln, DIGITAL = schlichter Online-Shop
+   * ohne Verhandeln, mit SL-freizugebender Lieferverzögerung. */
+  vertriebsart?: "PHYSISCH" | "DIGITAL";
+  /** Eigenes Hintergrundbild der Shop-Seite (getrennt vom Portrait bildUrl). */
+  shopHintergrundUrl?: string;
 }
 
 export interface Ort extends VisibilityFields {
