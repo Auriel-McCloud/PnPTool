@@ -1502,14 +1502,60 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     (Netzwerksperre der Session verhinderte DevTools-Mobil-Emulation), nur
     `tsc -b` — Mark muss am echten Handy gegenprüfen, siehe „Offen" oben.
 
-14. **Flavor-Option „Priester" (notiert 23.09.2026, offene Idee, nicht begonnen)** —
-    alternatives Namens-Reskin für Magier-Charaktere: Hexkraft → Glaube,
-    Wilde Magie → Blasphemie, die Sphären umbenannt auf Götter/Domänen
-    (bestehende und eventuell neu erfundene). Reine Flavor-/Anzeige-Ebene,
-    keine neue Mechanik — Regeln/Werte bleiben identisch zu Hexkraft, nur
-    Beschriftung ändert sich für diesen Charaktertyp. Noch zu klären: wie
-    die Umbenennung technisch je Charakter greift (globaler Schalter vs.
-    pro Person) und welche Sphären welchen Göttern entsprechen.
+14. **Flavor-Option „Häretiker" (Konzept fertig 24.09.2026, Code noch nicht
+    begonnen)** — alternatives Namens-Reskin für Magier-Charaktere, für
+    Spieler die einen "Gotteskrieger" spielen wollen: jemand der gegen
+    jede Wahrscheinlichkeit an seinem Glauben festhält, in einer Welt
+    (Konzerne, Chrome, Materialismus), die Glauben für tot erklärt hat —
+    ein Häretiker nicht weil er falsch glaubt, sondern weil er *überhaupt
+    noch* glaubt. Namensfindung: Priester → Kleriker → Prediger →
+    Gotteskrieger alle erwogen und verworfen, am Ende **Häretiker** (vom
+    griech. *hairesis* — "eigene Wahl/Richtung", jemand der abseits der
+    anerkannten Lehre glaubt) — trägt den Widerstand direkt im Wortsinn,
+    ohne dass man's erklären muss.
+
+    **Begriffe:** Hexkraft → **Glauben**, Wilde Magie → **Blasphemie**.
+
+    **Sphären → Götter, bewusst aus 8 verschiedenen realen Mythologien
+    (Marks Wunsch: kein einzelnes Pantheon, weltweite Mischung inkl.
+    mesoamerikanisch/japanisch/indisch), jeweils nach der mechanischen
+    Wirkung der Sphäre ausgesucht:**
+    - **Zeit** (Vorausschau, Verlangsamung, kurze Zeitsprünge) →
+      **Chronos** (griechisch — Gott/Personifikation der Zeit)
+    - **Korrespondenz** (Fernwahrnehmung, Teleportation, Distanz
+      überbrücken) → **Ehecatl** (aztekisch — Windgott, bewegt sich frei
+      über Distanzen)
+    - **Gedanken** (Gedanken lesen, Illusionen, Willen beugen, Erinnerung
+      verändern) → **Tezcatlipoca** (aztekisch — „Rauchender Spiegel",
+      Gott der Täuschung und Wahrsagerei)
+    - **Entropie** (Zufall, Glück/Pech lenken, Verfall) → **Kali**
+      (indisch — Göttin der Zerstörung, des Wandels, der Vergänglichkeit)
+    - **Kräfte** (Feuer, Elektrizität, Schall, Licht, kinetische Wucht) →
+      **Donar** (germanisch — bewusst NICHT „Thor" genannt, Mark: klingt
+      sonst zu „Kommerz"/Marvel-geprägt; Donar ist die kontinental-
+      germanische Namensform desselben Sturm-/Blitzgottes)
+    - **Leben** (heilen, verwunden, mutieren, eigenen Körper verändern) →
+      **Enki** (mesopotamisch/sumerisch — formte Menschen aus Lehm, Herr
+      des Lebenswassers)
+    - **Materie** (Metall, Beton, Chemikalien formen/verwandeln) →
+      **Ogun** (Yoruba/westafrikanisch — Gott des Eisens, der Schmiede-
+      kunst und der Technik)
+    - **Ursprung** (Quintessenz anzapfen, aus dem Nichts erschaffen,
+      Auren lesen) → **Atum** (ägyptisch — selbst erschaffener Urgott,
+      Quelle von allem Seienden)
+    - **Geister** (Astralebene, Geister rufen/binden/verbannen) →
+      **Izanami** (japanisch — Göttin des Todes, Herrscherin der
+      Geisterwelt Yomi)
+
+    **Noch offen (nicht begonnen):** wie die Umbenennung technisch je
+    Charakter greift (globaler Schalter vs. Flag pro Person), und Marks
+    Wunsch aus dem Gespräch: **Beschreibungstexte pro Sphäre/Gott**, die
+    erklären wie die jeweilige Gottheit/Domäne mechanisch wirkt (siehe
+    Tooltip-Infrastruktur `Erklaerung.langtext`, bereits für Attribute/
+    Fertigkeiten/Sphären gebaut, 19.09.2026 — hier wiederverwenden statt
+    neu bauen). Die Kurzbeschreibungen der Wirkung oben sind der Rohstoff
+    dafür, müssen aber noch zu vollen Texten ausgearbeitet werden, die
+    auch den jeweiligen Gott selbst kurz einführen.
 
 15. **Critter-Desktop-Pet / Tamagotchi (notiert 24.09.2026, Mark: „total
     irrer Vorschlag" — explizit ganz zum Schluss als Bonus-Feature, NICHT
