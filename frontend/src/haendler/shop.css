@@ -470,3 +470,91 @@
 .shop-alltagswunsch-zeile input {
   flex: 1;
 }
+
+/* --- SL-Sortiment-Editor (24.09.2026) ------------------------------------ */
+
+.shop-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.shop-editor select,
+.shop-editor input {
+  width: 100%;
+}
+
+.shop-editor-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.shop-editor-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.shop-editor-zeile-name {
+  flex: 1;
+  min-width: 140px;
+  font-size: 13px;
+}
+
+.shop-editor-marke {
+  margin-left: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-aus);
+}
+
+.shop-editor-zeile-preis {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.shop-editor-zeile-preis s {
+  color: var(--text-aus);
+  margin-right: 4px;
+}
+
+.shop-editor-zeile-knoepfe {
+  display: flex;
+  gap: 6px;
+}
+
+.shop-editor-rabatt-form {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--linie);
+}
+
+.shop-editor-hinzufuegen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shop-editor-hinzufuegen select {
+  flex: 2;
+  min-width: 160px;
+}
+
+.shop-editor-hinzufuegen input {
+  flex: 1;
+  min-width: 100px;
+}

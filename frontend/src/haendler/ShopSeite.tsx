@@ -3,6 +3,7 @@ import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api"
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
+import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
 import "./shop.css";
 
 /**
@@ -35,6 +36,7 @@ export function ShopSeite({
   const [gegenstaende, setGegenstaende] = useState<GegenstandMitBesitzer[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState<string | null>(null);
+  const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
 
   async function laden() {
     const [h, s, g] = await Promise.all([
@@ -121,9 +123,16 @@ export function ShopSeite({
 
   return (
     <div className="shop-seite">
-      <button type="button" onClick={onSchliessen} className="shop-zurueck">
-        ← Zurück zur Übersicht
-      </button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <button type="button" onClick={onSchliessen} className="shop-zurueck">
+          ← Zurück zur Übersicht
+        </button>
+        {istGm && (
+          <button type="button" onClick={() => setBearbeitenOffen(true)}>
+            Bearbeiten
+          </button>
+        )}
+      </div>
 
       {istDigital ? (
         <div className="shop-kopf-digital">
@@ -187,6 +196,16 @@ export function ShopSeite({
           </div>
           {wunschRückmeldung && <p className="shop-ware-erfolg">{wunschRückmeldung}</p>}
         </div>
+      )}
+
+      {istGm && (
+        <HaendlerBearbeiten
+          campaignId={campaignId}
+          haendlerId={haendlerId}
+          offen={bearbeitenOffen}
+          onSchliessen={() => setBearbeitenOffen(false)}
+          onGeaendert={laden}
+        />
       )}
     </div>
   );
