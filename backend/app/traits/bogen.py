@@ -127,6 +127,9 @@ def bogen_uebersicht(
 
     return {
         "weg": weg,
+        # Häretiker-Flavor (24.09.2026): rein kosmetisch, siehe schemas.py.
+        # Für Bestandscharaktere ohne das Feld gilt "MAGIER" (Normalfall).
+        "magieFlavor": person.get("magieFlavor") or "MAGIER",
         "rasse": person.get("rasse") or "",
         "gesundheitMax": g_max,
         "schadenAggraviert": aggraviert,

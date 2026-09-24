@@ -119,6 +119,22 @@ WEGE: list[dict[str, str]] = [
         "greift und wie groß es sein darf; gewürfelt wird Hexkraft.",
     },
     {
+        # Häretiker (24.09.2026, Marks Konzept, siehe CLAUDE.md Punkt 14):
+        # mechanisch 100% identisch zu Magier — dieselbe Sphären-/Hexkraft-
+        # Logik, nur andere Begriffe (Hexkraft→Glauben, Wilde Magie→
+        # Blasphemie, Sphären→Götternamen). Eigene Karte bei der Erstellung,
+        # aber KEIN eigener "weg"-Wert: das Frontend schickt bei dieser Wahl
+        # weg="MAGIER" + magieFlavor="HAERETIKER" (siehe
+        # frontend/src/traits/Charaktererstellung.tsx::SchrittWeg), damit die
+        # gesamte Magie-Mechanik (bogen.py, items/routes.py, ki/routes.py)
+        # nicht dupliziert werden muss.
+        "id": "HAERETIKER",
+        "name": "Häretiker",
+        "beschreibung": "Glauben und dieselben neun Sphären — hier unter den Namen der Götter, an "
+        "die du glaubst, obwohl die Welt Glauben für tot erklärt hat. Mechanisch identisch zum "
+        "Magier: gewürfelt wird Glauben, die Sphären beschreiben, woran deine Macht greift.",
+    },
+    {
         "id": "NEUROWEAVER",
         "name": "NeuroWeaver",
         "beschreibung": "NeuroWeaving statt Magie: die Matrix ohne Gerät. Deine I.C.E. trägst du "
@@ -127,6 +143,8 @@ WEGE: list[dict[str, str]] = [
 ]
 
 # Auf dem Blatt steht "Hexkraft != NeuroWeaving" — beides zugleich gibt es nicht.
+# "HAERETIKER" ist keine eigene Werte-Kategorie-Gruppe (siehe oben) — dieser
+# Wert kommt in `weg` nie an, nur in `magieFlavor`, deshalb kein Eintrag hier.
 KATEGORIEN_JE_WEG = {
     "KEINER": set(),
     "MAGIER": {"Hexkraft", "Sphäre"},
@@ -317,6 +335,19 @@ def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]
         },
         "startkapital": STARTKAPITAL,
     }
+
+
+def normalisiere_weg(weg: str) -> tuple[str, str]:
+    """Häretiker ist kein eigener Weg (siehe WEGE oben) — nur ein anderes
+    Vokabular für denselben Magier-Weg. Gibt (weg, magieFlavor) zurück:
+    der erste Wert ist das, was `KATEGORIEN_JE_WEG`/`pruefe`/`endwerte`
+    kennen, der zweite bestimmt nur die Anzeige (siehe traits/seed.py::
+    HAERETIKER_LABELS). So bleibt die gesamte Magie-Mechanik (hier, in
+    bogen.py, items/routes.py, ki/routes.py) auf einer einzigen Quelle.
+    """
+    if weg == "HAERETIKER":
+        return "MAGIER", "HAERETIKER"
+    return weg, "MAGIER"
 
 
 def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> int:

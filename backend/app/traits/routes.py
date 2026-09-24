@@ -469,6 +469,11 @@ async def erstelle_charakter(
     katalog = await repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
 
     auswahl = body.model_dump()
+    # Häretiker ist kein eigener Weg für die Mechanik (siehe WEGE in
+    # erstellung.py) — auf "MAGIER" normalisieren, bevor geprüft/gerechnet
+    # wird, und den gewählten Flavor separat mitschreiben.
+    weg_intern, magie_flavor = erstellung.normalisiere_weg(body.weg)
+    auswahl["weg"] = weg_intern
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
     fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
     if not body.name.strip():
@@ -482,7 +487,7 @@ async def erstelle_charakter(
     # bliebe bei einer Korrektur durch die Spielleitung ein alter Wert stehen.
     erlaubte_kategorien = (
         {"Fertigkeit", erstellung.HINTERGRUND_KATEGORIE}
-        | erstellung.KATEGORIEN_JE_WEG.get(body.weg, set())
+        | erstellung.KATEGORIEN_JE_WEG.get(weg_intern, set())
         | set(erstellung.ATTRIBUT_KATEGORIEN)
     )
     for eintrag in katalog:
@@ -505,7 +510,8 @@ async def erstelle_charakter(
         campaign_id,
         person_id,
         {
-            "weg": body.weg,
+            "weg": weg_intern,
+            "magieFlavor": magie_flavor,
             "rasse": body.rasse,
             "willenskraftBonus": body.freebeeWillenskraft,
             "name": body.name.strip(),
