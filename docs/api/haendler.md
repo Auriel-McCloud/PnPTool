@@ -120,10 +120,46 @@ Basis: `/api/campaigns/{campaign_id}/haendler`
 | GET | `/{id}/sortiment` | alle mit Zugang | Was dieser Händler verkauft |
 | POST | `/{id}/sortiment` | nur SL | Ware explizit eintragen (optional Sonderpreis) |
 | DELETE | `/{id}/sortiment/{gegenstandId}` | nur SL | Explizite Ware wieder entfernen (wirkt nicht auf automatische) |
-| POST | `/{id}/kaufen` | SL + Spieler (eigener Charakter) | Kauf durchführen |
+| PUT | `/{id}/sortiment/{gegenstandId}/rabatt` | nur SL | Sonderangebot setzen (`prozent`, `hinweis`), `prozent=0` nimmt es weg |
+| POST | `/{id}/kaufen` | SL + Spieler (eigener Charakter) | Kauf durchführen — bei `vertriebsart=DIGITAL` entsteht eine Bestellung statt sofortiger Übergabe |
+| GET | `/bestellungen/offen` | nur SL | Alle offenen Online-Bestellungen der Kampagne |
+| GET | `/bestellungen/eigene` | alle mit Zugang | Eigene Bestellungen (Spieler-Sicht) |
+| POST | `/bestellungen/{id}/liefern` | nur SL | Lieferung freigeben — übergibt die Ware jetzt tatsächlich |
 
 Anlegen/Bearbeiten des Händlers selbst: `POST`/`PATCH .../personen` mit
-`istHaendler: true` (siehe `docs/api/personen.md`).
+`istHaendler: true`, `vertriebsart: "PHYSISCH"|"DIGITAL"`,
+`shopHintergrundUrl: str` (siehe `docs/api/personen.md`).
+
+## Vertriebsart, Sonderangebote, Online-Bestellungen (24.09.2026)
+
+Marks Konzept: Shop-Optik/-Mechanik hängt komplett an
+`Person.vertriebsart`:
+
+- **PHYSISCH** (Standard): "Fancy"-Optik im Frontend (Hintergrundbild,
+  Händlerporträt), Verhandeln möglich (siehe unten), Ware sofort im
+  Inventar des Käufers.
+- **DIGITAL**: schlichte Online-Shop-Optik, **kein Verhandeln**, Kauf
+  zieht das Kapital sofort ab, legt aber nur eine `Bestellung` an — die
+  Ware wird erst übergeben, wenn die SL `POST .../bestellungen/{id}/liefern`
+  aufruft. Kein fester Liefertermin, bewusst nur ein Knopf ("jetzt
+  liefern", Marks Vorgabe: SL entscheidet spontan, wann es ankommt).
+
+**Sonderangebote** sitzen auf der `VERKAUFT`-Kante (`rabattProzent: int`,
+`rabattHinweis: str`) — nur bei explizit eingetragener Ware möglich, nicht
+bei automatischen Katalog-Einträgen (die haben keine eigene Kante). Der
+tatsächliche Kaufpreis wird serverseitig aus `preis` und `rabattProzent`
+berechnet (`repository.py::effektiver_preis`); der Client bekommt beide
+Werte, um den Grundpreis durchgestrichen neben dem Angebotspreis zu zeigen.
+
+**Bestellung** (`Bestellung`-Knoten, nicht an `Gegenstand`/`Person`
+gebunden außer über Felder) trägt Status `OFFEN`→`GELIEFERT`. Bei einer
+Vorlage bleibt das Sortiment beim Bestellen unverändert (unendlich
+verfügbar); bei einem Unikat verschwindet die Ware sofort aus dem
+Sortiment (ist ja verkauft), nur die physische Übergabe wartet auf die
+Lieferung. Eine zweite Lieferung auf dieselbe Bestellung liefert `409`.
+
+`shopHintergrundUrl` ist ein einfaches String-Feld an `Person` — kein
+eigener Upload-Endpunkt, wird wie andere Bild-URLs gesetzt.
 
 ## Verifiziert (22.09.2026)
 
@@ -135,12 +171,24 @@ eines Unikats zu explizitem Sonderpreis (verschwindet danach aus dem
 Sortiment, zweiter Kaufversuch korrekt `404`), Standort-Zuweisung, `409` bei
 zu wenig Guthaben mit der erwarteten Meldung. `pytest` komplett grün.
 
+## Verifiziert (24.09.2026 — Vertriebsart/Rabatt/Bestellungen/Verhandeln)
+
+Echtes E2E-Skript gegen laufendes Backend (eigener Testserver) + echte
+Neo4j: Rabatt setzen/entfernen inkl. korrekter Preisberechnung, digitaler
+Kauf (Kapital sofort weg, Ware NICHT im Inventar vor Lieferung, danach
+schon), doppelte Lieferung korrekt mit `409` abgelehnt, Verhandeln
+`SHOP_KAUF` von Angebot bis angenommenem Kauf komplett durchgespielt. Alle
+Schritte grün, Testdaten danach entfernt. **Frontend** (`frontend/src/haendler/`)
+nur `tsc -b` geprüft, kein Browser-Klicktest (siehe CLAUDE.md "Offen").
+
 ## Noch offen
 
-- **Frontend** — SL-Sortiment-Editor, Spieler-Kaufansicht (Commlink-Popup),
-  Standort-Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup (siehe unten).
-  Kompletter Kern-Endpunktsatz steht, nichts davon ist im Frontend
-  angebunden.
+- **Frontend** — SL-Sortiment-Editor (Sortiment eintragen/entfernen/Rabatt
+  setzen ist im Backend fertig, aber kein Bearbeiten-Popup), Standort-
+  Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup (siehe unten), KI-Item-
+  Erzeugung für Alltagsgegenstände (Internet-Preisrecherche, NIE für Waffen/
+  Rüstung — Marks explizite Vorgabe). Kauf-Flow und Bestellungen-Ansicht
+  selbst sind seit 24.09.2026 im Frontend angebunden.
 - **Spam/Werbung** — Händler schickt Nur-Lesen-Nachrichten, Frequenz
   skaliert mit I.C.E., Popups an zufälliger Screen-Position, SL kann eine
   "Spam-Welle" auslösen, Kampagnen-Option zum Ein/Ausschalten.
@@ -150,7 +198,7 @@ zu wenig Guthaben mit der erwarteten Meldung. `pytest` komplett grün.
   (`docs/wiki/concepts/drohnen-fahrzeuge.md`) könnten über denselben
   Sortiments-Mechanismus laufen, sobald das Frontend steht.
 
-## Verhandeln (Spezifikation 23.09.2026, noch nicht gebaut)
+## Verhandeln (Spezifikation 23.09.2026, Backend gebaut 24.09.2026)
 
 Marks Wunsch: wenn ein Spieler beim Händler (oder bei der Rüstungsreparatur,
 siehe `docs/api/ruestung.md`) Geld ausgeben soll, will er die Möglichkeit

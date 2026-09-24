@@ -58,6 +58,20 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   Knopf in den Kampagnen-Einstellungen, ⧉✨-Knopf im `RichTextEditor`/
   Ideenschmiede) nie im Browser angeklickt, nur `tsc -b` und
   `vite build` geprüft.
+- **Shop-Frontend** (`frontend/src/haendler/`, siehe „Zuletzt gebaut" unten):
+  Backend komplett per echtem E2E-Test gegen laufendes Backend + Neo4j
+  verifiziert (Vertriebsart, Rabatt, Bestellung, Verhandeln-SHOP_KAUF — alle
+  grün). Frontend nie im Browser angeklickt (localhost für das Browser-Tool
+  gesperrt), nur `tsc -b` geprüft. **Insbesondere die CSS-Seltenheitsrahmen**
+  (`haendler/shop.css`: grau/blau/silbern-glitzernd/orange-gezackt/violett-
+  wabernd) sind reine Code-Vermutung — bitte am Dev-Server ansehen, ob die
+  Optik so wirkt wie gedacht (v.a. der Zacken-Clip-Path bei Legendär und das
+  Wabern bei Mystisch — clip-path-Polygone lassen sich am Bildschirm nicht
+  vorab durchrechnen). Noch nicht gebaut: KI-Item-Erzeugung für
+  Alltagsgegenstände (Internet-Preisrecherche), SL-Editor für Sortiment/
+  Rabatt (Backend-Endpunkte fertig, aber noch kein Bearbeiten-Popup),
+  KI-Sortiment-Vorschlag-Frontend (Backend `ki_vorschlag.py` existiert
+  bereits, kein Popup dafür).
 - **Rüstungs-Reparatur-UI** (`RuestungReparatur.tsx` im Bearbeiten-Fenster
   einer Rüstung, `VerhandlungPopup.tsx` beim Spieler): nie im Browser
   angeklickt, nur `tsc -b` geprüft. Die Backend-Logik dahinter (Würfe,
@@ -250,6 +264,46 @@ npm run dev
   CSS-Klassen (aus bestehenden `ki.css`/`wiki.css`) lösen auf. Backend
   weiterhin grün (`test_wiki.py`, 28 Tests). **Kein Klicktest** — Optik/
   Bedienung im Browser ungetestet, siehe „Offen“ oben.
+
+**Zuletzt gebaut (24.09.2026 — Shop-Frontend Phase 1+2):**
+- **Was:** Marks vollständige Shop-Anforderung (Hintergrundbild pro Shop,
+  physisch vs. digital getrennte Optik/Mechanik, Seltenheitsrahmen,
+  Sonderangebote, Verhandeln beim Kauf, NuYen/€ 1:1 — bereits offizielle
+  Regel) als eigener Burgermenü-Punkt "Shop", SL- und Spieler-Ansicht.
+  KI-Item-Erzeugung für Alltagsgegenstände ist noch NICHT gebaut (nächste
+  Phase), ebenso kein SL-Editor fürs Sortiment selbst (Backend fertig,
+  Frontend fehlt) und kein KI-Sortiment-Vorschlag-Popup.
+- **Backend** (2 Commits — `entities/schemas.py`+`repository.py`,
+  `haendler/schemas.py`+`repository.py`+`routes.py`,
+  `verhandlung/schemas.py`+`logic.py`): `Person.vertriebsart`
+  ("PHYSISCH"|"DIGITAL") und `shopHintergrundUrl` neu. Sonderangebote als
+  `rabattProzent`/`rabattHinweis` auf der VERKAUFT-Kante, serverseitig
+  berechneter Effektivpreis. Neuer `Bestellung`-Knoten für digitale Käufe:
+  Kapital wird beim Kauf sofort abgezogen, Ware kommt erst wenn die SL über
+  `POST .../bestellungen/{id}/liefern` freigibt (kein fester Termin — nur
+  ein Knopf, Marks Vorgabe). Verhandeln um `SHOP_KAUF` erweitert (nutzt das
+  bereits generische System vom Rüstungs-Reparatur-Feature unverändert
+  weiter — kein neuer Mechanismus nötig).
+- **Frontend** (1 Commit, neues Modul `frontend/src/haendler/`):
+  `ShopUebersicht.tsx` (Kachelraster aller Händler + Bestellungen-Liste,
+  SL sieht alle offenen, Spieler nur eigene), `ShopSeite.tsx` (verzweigt
+  komplett nach Vertriebsart: physisch zeigt Hintergrundbild+Händlerporträt
+  +Verhandeln-Knopf, digital eine schlichte Kopfzeile ohne Verhandeln),
+  `ShopWare.tsx` (Kaufen/Verhandeln-Popup pro Ware). `shop.css` trägt das
+  komplette Seltenheitsrahmen-Farbschema (1 grau, 2 blau, 3 silbern+CSS-
+  Glitzer-Animation, 4 orange+`clip-path`-Zacken, 5 violett+glühende
+  `box-shadow`-Pulsanimation+waberndes `::after`-Overlay). Burgermenü-Punkt
+  "Shop" in `App.tsx` (SL) und `SpielerAnsicht.tsx` (Spieler) eingehängt,
+  eigenes Theme-Token `--bereich-shop` (Messing-Gold) in `tokens.css`.
+- **Verifiziert:** Backend per echtem E2E-Skript gegen laufendes Backend
+  (eigener Testserver, Port 8030) + echte Neo4j: Vertriebsart physisch/
+  digital, Rabatt setzen/entfernen inkl. korrekter Preisberechnung, digitaler
+  Kauf (Kapital sofort weg, Ware NICHT im Inventar vor Lieferung, danach
+  schon), doppelte Lieferung korrekt mit 409 abgelehnt, Verhandeln SHOP_KAUF
+  von Angebot bis angenommenem Kauf komplett durchgespielt — alle Schritte
+  grün. Frontend nur `tsc -b` geprüft (0 Fehler), **kein Klicktest**: das
+  Browser-Tool kann `localhost` nicht erreichen. Siehe „Offen“ oben,
+  insbesondere die Bitte, die CSS-Rarity-Effekte optisch gegenzuprüfen.
 
 **Zuletzt gebaut (24.09.2026 — Häretiker-Flavor-Option):**
 - **Was:** Häretiker als zweite, mechanisch identische Alternative zu

@@ -1,7 +1,7 @@
 ---
 title: Währung und Preise
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-24
 type: konzept
 tags: [wirtschaft, versionsgeschichte, offen]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md]
@@ -59,6 +59,24 @@ einen bestimmten Händler vor (bevorzugt bestehende Vorlagen, erfindet nur
 bei echter Lücke etwas Neues), SL bestätigt jeden Vorschlag einzeln.
 Backend end-to-end verifiziert, Frontend-Popup noch offen. Details:
 `docs/api/haendler.md`.
+
+**Shop-Frontend Phase 1+2 (24.09.2026):** Backend um Vertriebsart
+(`PHYSISCH`/`DIGITAL`), Sonderangebote (`rabattProzent`) und Online-
+Bestellungen erweitert — ein digitaler Kauf zieht das Kapital sofort ab,
+übergibt die Ware aber erst, wenn die SL manuell "liefert" (kein fester
+Termin, nur ein Freigabe-Knopf). Verhandeln (bisher nur bei
+Rüstungsreparatur) um `SHOP_KAUF` erweitert, ohne den Mechanismus selbst
+anzufassen — komplett generisch vorbereitet gewesen. Frontend erster Wurf:
+eigener Burgermenü-Punkt "Shop" (SL + Spieler), Kachelraster aller Händler,
+je eine "Fancy"-Seite für physische Shops (Hintergrundbild + Händlerporträt
++ Verhandeln-Knopf) und eine schlichte Seite für digitale
+(kein Verhandeln), Seltenheitsrahmen als CSS-Effekt (grau/blau/silbern-
+glitzernd/orange-gezackt/violett-wabernd, Marks exaktes Farbschema).
+**Status: Backend end-to-end verifiziert, Frontend nur `tsc -b` geprüft,
+CSS-Rarity-Effekte optisch ungegengeprüft (Browser-Tool erreicht kein
+localhost).** Noch offen: KI-Item-Erzeugung für Alltagsgegenstände (nie
+für Waffen/Rüstung), SL-Editor fürs Sortiment, KI-Sortiment-Vorschlag-
+Popup. Details: `docs/api/haendler.md`, `CLAUDE.md` "Zuletzt gebaut".
 
 ## Siehe auch
 

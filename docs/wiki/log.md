@@ -3,6 +3,17 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] update | concepts/waehrung-und-preise
+
+Shop-Frontend Phase 1+2: Backend um Vertriebsart (PHYSISCH/DIGITAL),
+Sonderangebote (rabattProzent) und Online-Bestellungen mit SL-Freigabe
+erweitert; Verhandeln um SHOP_KAUF erweitert (bestehender generischer
+Mechanismus, unverändert). Frontend erster Wurf: eigener Burgermenü-Punkt
+"Shop", Kachelraster, physisch/digital getrennte Shop-Seiten,
+CSS-Seltenheitsrahmen (grau/blau/silbern-glitzernd/orange-gezackt/
+violett-wabernd). Backend end-to-end verifiziert, Frontend nur `tsc -b`
+geprüft (kein Browser-Klicktest möglich).
+
 ## [2026-09-24] update | concepts/magie-hexkraft
 
 Häretiker-Flavor-Option ergänzt: zweite, mechanisch identische Alternative
