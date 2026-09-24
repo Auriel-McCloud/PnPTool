@@ -1,4 +1,5 @@
 import { Fenster } from "../shell/Fenster";
+import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./willenskraft.css";
 
 /**
@@ -21,6 +22,7 @@ export function WillenskraftFrage({
   offen,
   uebrig,
   weg,
+  magieFlavor,
   onJa,
   onNein,
 }: {
@@ -33,11 +35,17 @@ export function WillenskraftFrage({
    * ist, soll nicht über Möglichkeiten lesen, die er nicht hat.
    */
   weg?: "KEINER" | "MAGIER" | "NEUROWEAVER";
+  /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
+  magieFlavor?: MagieFlavor;
   onJa: () => void;
   onNein: () => void;
 }) {
   const wofuerSonst =
-    weg === "MAGIER" ? " — auch für wilde Magie." : weg === "NEUROWEAVER" ? " — auch für Overclock." : ".";
+    weg === "MAGIER"
+      ? ` — auch für ${magieBegriff(magieFlavor, "Wilde Magie")}.`
+      : weg === "NEUROWEAVER"
+        ? " — auch für Overclock."
+        : ".";
   return (
     <Fenster
       offen={offen}

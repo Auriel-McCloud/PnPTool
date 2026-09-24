@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { DotPool } from "./DotPool";
 import { bogenApi, KATEGORIE_TITEL, type Steigerungen, type Steigerungspreis } from "./bogenApi";
+import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./levelup.css";
 
 /**
@@ -70,10 +71,13 @@ function berechneKostenWillenskraft(von: number): number {
 export function LevelUp({
   campaignId,
   personId,
+  magieFlavor,
   onGeaendert,
 }: {
   campaignId: string;
   personId: string;
+  /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
+  magieFlavor?: MagieFlavor;
   /** Damit das Blatt die neuen Werte übernimmt, wenn man zurückwechselt. */
   onGeaendert?: () => void;
 }) {
@@ -249,12 +253,15 @@ export function LevelUp({
       <div className="lu-buehne">
         {kategorien.map((kategorie) => (
           <section key={kategorie}>
-            <h3 className="lu-gruppe-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
+            <h3 className="lu-gruppe-titel">
+              {kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+            </h3>
             <div className="lu-raster">
               {gruppen[kategorie].map((e) => {
                 const voll = e.aktuell >= e.max;
                 const leistbar = !voll && e.kosten <= stand.verfuegbar;
                 const geaendert = (kaeufe[e.traitDefId] ?? 0) > 0;
+                const anzeigeName = magieBegriff(magieFlavor, e.name);
                 return (
                   <button
                     key={e.traitDefId}
@@ -262,9 +269,9 @@ export function LevelUp({
                     className={`lu-wert${leistbar ? " lu-leistbar" : ""}${voll ? " lu-voll" : ""}${geaendert ? " lu-geaendert" : ""}`}
                     onClick={() => leistbar && kaufen(e.traitDefId)}
                     disabled={!leistbar || laeuft}
-                    title={voll ? `${e.name} steht auf dem Maximum ${e.max}` : `${e.kosten} EP für den nächsten Punkt`}
+                    title={voll ? `${anzeigeName} steht auf dem Maximum ${e.max}` : `${e.kosten} EP für den nächsten Punkt`}
                   >
-                    <span className="lu-name">{e.name}</span>
+                    <span className="lu-name">{anzeigeName}</span>
                     <DotPool value={e.aktuell} max={e.max} />
                     <span className="lu-preis">{voll ? "max" : `${e.kosten}`}</span>
                   </button>
