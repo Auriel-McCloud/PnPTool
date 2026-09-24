@@ -130,6 +130,14 @@ Anlegen/Bearbeiten des Händlers selbst: `POST`/`PATCH .../personen` mit
 `istHaendler: true`, `vertriebsart: "PHYSISCH"|"DIGITAL"`,
 `shopHintergrundUrl: str` (siehe `docs/api/personen.md`).
 
+**Frontend (24.09.2026):** `haendler/HaendlerBearbeiten.tsx` — SL-Popup
+(„Bearbeiten"-Knopf auf der Shop-Seite) für genau diese Sortiment-/
+Standort-Endpunkte: Vorlage aus Dropdown hinzufügen (optionaler
+Sonderpreis), explizite Ware entfernen, Rabatt setzen/entfernen, Standort
+zuweisen. Automatisch gelistete Katalog-Einträge sind absichtlich nicht
+entfernbar/rabattierbar (keine eigene Kante, siehe oben) — nur explizite
+Ware zeigt die Knöpfe.
+
 ## Vertriebsart, Sonderangebote, Online-Bestellungen (24.09.2026)
 
 Marks Konzept: Shop-Optik/-Mechanik hängt komplett an
@@ -183,10 +191,9 @@ nur `tsc -b` geprüft, kein Browser-Klicktest (siehe CLAUDE.md "Offen").
 
 ## Noch offen
 
-- **Frontend** — SL-Sortiment-Editor (Sortiment eintragen/entfernen/Rabatt
-  setzen ist im Backend fertig, aber kein Bearbeiten-Popup), Standort-
-  Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup. Kauf-Flow, Bestellungen-
-  Ansicht und KI-Alltagsgegenstand-Erzeugung sind seit 24.09.2026 im
+- **Frontend** — KI-Sortiment-Vorschlag-Popup. Kauf-Flow, Bestellungen-
+  Ansicht, KI-Alltagsgegenstand-Erzeugung und SL-Sortiment-Editor
+  (Ware hinzufügen/entfernen, Rabatt, Standort) sind seit 24.09.2026 im
   Frontend angebunden (nur `tsc -b`, kein Browser-Klicktest).
 - **Spam/Werbung** — Händler schickt Nur-Lesen-Nachrichten, Frequenz
   skaliert mit I.C.E., Popups an zufälliger Screen-Position, SL kann eine

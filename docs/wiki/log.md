@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] update | concepts/waehrung-und-preise (SL-Sortiment-Editor)
+
+Neue Frontend-Komponente `haendler/HaendlerBearbeiten.tsx` — SL-Popup für
+die seit 22.09./24.09. im Backend fertigen Sortiment-/Standort-Endpunkte:
+Vorlage aus Dropdown hinzufügen (optionaler Sonderpreis), explizite Ware
+entfernen, Rabatt setzen/entfernen, Standort zuweisen. Damit ist das
+Shop-Frontend bis auf den KI-Sortiment-Vorschlag komplett angebunden. Nur
+`tsc -b` geprüft, kein Browser-Klicktest.
+
 ## [2026-09-24] update | Doku-Stand nachgezogen (Shop/KI/Häretiker)
 
 CLAUDE.md „Geplante Features“ und die Wiki-Seiten `waehrung-und-preise` plus

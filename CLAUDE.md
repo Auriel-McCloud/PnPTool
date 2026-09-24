@@ -10,15 +10,16 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
 - **Shop-System komplett** (`frontend/src/haendler/`, siehe „Zuletzt gebaut“
   unten und `docs/api/haendler.md`): Übersicht, physisch/digital getrennte
-  Shop-Seite, Seltenheitsrahmen, Verhandeln-Integration, Bestellungen, und
-  neu die **KI-Alltagsgegenstand-Erzeugung** (Spieler fragt Verkäufer,
-  z.B. „Hast du Panzerklebeband?“, KI schlägt Preis vor, SL-Popup
-  entscheidet). Backend komplett per echtem E2E-Test gegen laufendes
-  Backend + Neo4j + echten KI-Provider verifiziert (harmloser Wunsch UND
-  Waffen-Ausschluss beide grün). **Frontend nie im Browser angeklickt**,
-  nur `tsc -b` geprüft (`vite build` läuft, aber Optik/Bedienung
-  ungetestet) — Seltenheitsrahmen-Effekte (Glitzern/Zacken/Wabern) sind
-  reine Code-Vermutung, bitte am Spieltisch gegenprüfen.
+  Shop-Seite, Seltenheitsrahmen, Verhandeln-Integration, Bestellungen,
+  KI-Alltagsgegenstand-Erzeugung (Spieler fragt Verkäufer, KI schlägt Preis
+  vor, SL-Popup entscheidet) und der SL-Sortiment-Editor (Ware
+  hinzufügen/entfernen, Rabatt, Standort — `HaendlerBearbeiten.tsx`).
+  Backend komplett per echtem E2E-Test gegen laufendes Backend + Neo4j +
+  echten KI-Provider verifiziert (harmloser Wunsch UND Waffen-Ausschluss
+  beide grün). **Frontend nie im Browser angeklickt**, nur `tsc -b`
+  geprüft (`vite build` läuft, aber Optik/Bedienung ungetestet) —
+  Seltenheitsrahmen-Effekte (Glitzern/Zacken/Wabern) sind reine
+  Code-Vermutung, bitte am Spieltisch gegenprüfen.
 - **Kampagnen-Export/Import** (`EinstellungenFenster.tsx`, Sektion
   „KAMPAGNE“, siehe „Zuletzt gebaut“ unten): Export-Knopf, Import-Upload.
   Backend-Logik komplett per echtem E2E-Testlauf gegen laufendes Backend +
