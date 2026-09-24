@@ -359,6 +359,41 @@ async def set_pruefhash(campaign_id: str, seiten_id: str, hash_wert: str) -> Non
         )
 
 
+async def get_verknuepfhash(campaign_id: str, seiten_id: str) -> str:
+    """Hash des zuletzt auf Auto-Verknüpfung durchsuchten Inhalts — leer,
+    wenn noch nie durchsucht.
+
+    Eigenes Feld statt des Prüfhashs (``get_pruefhash``): Rechtschreib-/
+    Logikprüfung und Auto-Verknüpfung laufen unabhängig voneinander, eine
+    Seite kann seit der letzten Prüfung geändert, aber seit der letzten
+    Verknüpfungssuche unverändert sein (oder umgekehrt) — ein gemeinsamer
+    Hash würde die jeweils andere Suche fälschlich überspringen.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (s:WikiSeite {id: $seiten_id, campaignId: $campaign_id}) "
+            "RETURN coalesce(s.verknuepfHash, '') AS hash",
+            campaign_id=campaign_id,
+            seiten_id=seiten_id,
+        )
+        record = await result.single()
+        return record["hash"] if record else ""
+
+
+async def set_verknuepfhash(campaign_id: str, seiten_id: str, hash_wert: str) -> None:
+    """Merkt sich, welcher Textstand zuletzt auf Auto-Verknüpfung durchsucht wurde."""
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            "MATCH (s:WikiSeite {id: $seiten_id, campaignId: $campaign_id}) "
+            "SET s.verknuepfHash = $hash_wert",
+            campaign_id=campaign_id,
+            seiten_id=seiten_id,
+            hash_wert=hash_wert,
+        )
+
+
 async def rueckverweise(campaign_id: str, ziel_id: str) -> list[dict]:
     """Welche Wiki-Seiten erwähnen diese Entität? ("Erwähnt in: Kapitel 1")
 

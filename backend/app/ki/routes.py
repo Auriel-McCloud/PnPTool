@@ -41,11 +41,14 @@ from app.ki.auto_verknuepfung import (
     AnwendenErgebnis,
     BeziehungAnwendenErgebnis,
     BeziehungAnwendenInput,
+    SweepVorschlaegeAntwort,
     VerknuepfungsVorschlag,
     VorschlaegeAntwort,
     anwenden as verknuepfung_anwenden,
     beziehung_anwenden as verknuepfung_beziehung_anwenden,
+    sweep as verknuepfung_sweep,
     vorschlaege as verknuepfung_vorschlaege,
+    vorschlaege_fuer_text as verknuepfung_vorschlaege_fuer_text,
 )
 from app.ki.wiki_import import (
     DokumentFormatFehler,
@@ -540,6 +543,31 @@ async def ki_objekt_text_pruefen(campaign_id: str, body: ObjektTextPruefenInput)
     return {"befunde": [b.model_dump() for b in befunde]}
 
 
+class ObjektTextVerknuepfenInput(BaseModel):
+    """Für den ⧉✨-Knopf im RichTextEditor bzw. der Ideenschmiede."""
+
+    text: str
+
+
+@router.post("/objekt-text/verknuepfung/vorschlaege", response_model=VorschlaegeAntwort)
+async def ki_objekt_text_verknuepfung(campaign_id: str, body: ObjektTextVerknuepfenInput):
+    """Auto-Verknüpfung für einen freien Text ohne Wiki-Seitenbezug.
+
+    Dieselbe Erkennung wie im Wiki-Editor (app/ki/auto_verknuepfung.py), nur
+    ohne Seiten-ID — für Ideenschmiede-Entwurfstexte und die generischen
+    Beschreibungs-/Notizen-Felder (RichTextEditor). Ohne Wiki-Seite gibt es
+    keinen Ort für einen Verweis-Chip, deshalb liefert diese Route zwar auch
+    `verweise` zurück (zur Information), nur `beziehungen` sind über
+    `/wiki/{seitenId}/verknuepfung/beziehung`-artige Anwenden-Routen wirklich
+    verknüpfbar — siehe `wiki_verknuepfung_beziehung` unten, `seitenId` ist
+    dort ohnehin nur Teil des URL-Pfads, die Kante hängt nicht an einer Seite.
+    """
+    try:
+        return await verknuepfung_vorschlaege_fuer_text(campaign_id, body.text)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 class AnwendenVerknuepfungInput(BaseModel):
     zitat: str
     typ: str
@@ -560,6 +588,24 @@ async def wiki_verknuepfung_vorschlaege(campaign_id: str, seiten_id: str):
     """
     try:
         return await verknuepfung_vorschlaege(campaign_id, seiten_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/wiki/verknuepfung/sweep-vorschlaege", response_model=SweepVorschlaegeAntwort)
+async def wiki_verknuepfung_sweep(campaign_id: str):
+    """Auto-Verknüpfung über ALLE Wiki-Seiten der Kampagne auf einmal.
+
+    Für Altbestand, der vor der Auto-Verknüpfung (22.09.2026) angelegt wurde
+    und nie einzeln durchsucht wurde. Überspringt Seiten, deren Text sich
+    seit dem letzten Sweep nicht geändert hat (eigener Hash, unabhängig vom
+    Rechtschreib-/Logik-Prüfhash). Legt nichts automatisch an — die Vorschläge
+    werden gesammelt zurückgegeben, jeder einzeln über die bestehenden
+    `/wiki/{seiten_id}/verknuepfung/anwenden`- bzw. `/beziehung`-Routen
+    bestätigt (Marks Vorgabe: kein Autocommit in die Kampagne).
+    """
+    try:
+        return await verknuepfung_sweep(campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 

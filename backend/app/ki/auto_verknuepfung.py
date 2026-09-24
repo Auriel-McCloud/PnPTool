@@ -42,6 +42,7 @@ neue Entitäten landen als Entwurf zur Prüfung durch den SL, kein
 automatischer Autocommit in die Kampagne (Marks Vorgabe, 20.09.2026).
 """
 
+import hashlib
 import json
 
 from pydantic import BaseModel
@@ -162,13 +163,9 @@ def _normalisiert(text: str) -> str:
 
 
 async def vorschlaege(campaign_id: str, seiten_id: str) -> VorschlaegeAntwort:
-    """Lässt die KI Erwähnungen UND Beziehungen erkennen, gleicht Namen gegen
-    den Graphen ab.
+    """Lässt die KI Erwähnungen UND Beziehungen einer Wiki-Seite erkennen.
 
-    Der Namensabgleich (Vorschlag → bestehende ID) passiert bewusst hier in
-    Python, nicht durch die KI: die KI kennt keine IDs, nur Namen — ein
-    Tippfehler oder eine leicht andere Schreibweise der KI dürfte niemals
-    eine falsche ID erfinden.
+    Dünner Wrapper um ``_erkennen`` — lädt nur Seite und bekannte Entitäten.
     """
     seite = await repository.get_seite(campaign_id, seiten_id)
     if seite is None:
@@ -178,6 +175,33 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> VorschlaegeAntwort:
         return VorschlaegeAntwort()
 
     entitaeten = await sammle_entitaeten(campaign_id)
+    return await _erkennen(entitaeten, text)
+
+
+async def vorschlaege_fuer_text(campaign_id: str, text: str) -> VorschlaegeAntwort:
+    """Wie ``vorschlaege``, aber für einen freien Text ohne Wiki-Seitenbezug
+    (Ideenschmiede-Entwurfstext, Beschreibungs-/Notizen-Feld einer Entität).
+
+    Genutzt vom ✨-Knopf im generischen ``RichTextEditor`` — dort sind nur die
+    **Beziehungen** anwendbar (echte VERBINDUNG-Kante), da ein Verweis-Chip
+    ohne Wiki-Seite kein Ziel zum Einfügen hätte; das Frontend blendet die
+    mitgelieferten ``verweise`` deshalb aus.
+    """
+    if not text.strip():
+        return VorschlaegeAntwort()
+    entitaeten = await sammle_entitaeten(campaign_id)
+    return await _erkennen(entitaeten, text)
+
+
+async def _erkennen(entitaeten: list[dict], text: str) -> VorschlaegeAntwort:
+    """Ein KI-Aufruf: erkennt Erwähnungen UND Beziehungen in `text`, gleicht
+    Namen gegen die mitgegebenen (bereits geladenen) Entitäten ab.
+
+    Der Namensabgleich (Vorschlag → bestehende ID) passiert bewusst hier in
+    Python, nicht durch die KI: die KI kennt keine IDs, nur Namen — ein
+    Tippfehler oder eine leicht andere Schreibweise der KI dürfte niemals
+    eine falsche ID erfinden.
+    """
     liste_text = "\n".join(f"- {e['kind']}: {e['name']}" for e in entitaeten if e["name"]) or "(noch keine)"
 
     prompt = (
@@ -236,6 +260,67 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> VorschlaegeAntwort:
         )
 
     return VorschlaegeAntwort(verweise=verweise, beziehungen=beziehungen)
+
+
+def _hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+class SeitenVorschlaege(BaseModel):
+    """Erkannte Vorschläge einer einzelnen Seite im Sweep — dieselben Felder
+    wie ``VorschlaegeAntwort``, nur mit Seitenbezug für die Sammelübersicht."""
+
+    seitenId: str
+    titel: str
+    verweise: list[VerknuepfungsVorschlag] = []
+    beziehungen: list[BeziehungsVorschlag] = []
+
+
+class SweepVorschlaegeAntwort(BaseModel):
+    geprueft: int
+    uebersprungen: int
+    ergebnisse: list[SeitenVorschlaege] = []
+
+
+async def sweep(campaign_id: str) -> SweepVorschlaegeAntwort:
+    """Geht ALLE Wiki-Seiten der Kampagne auf Auto-Verknüpfung durch.
+
+    Wie der Rechtschreib-/Logik-Sweep (``wiki_pruefung.sweep``): überspringt
+    Seiten, deren Text sich seit dem letzten Durchlauf nicht geändert hat
+    (eigener Hash, siehe ``wiki/repository.get_verknuepfhash``), damit nicht
+    bei jedem Klick die ganze Kampagne neu gegen die KI läuft. Legt NICHTS
+    automatisch an — liefert nur die Vorschläge zur Sammelübersicht, jeder
+    einzeln bestätigt (Marks Vorgabe: kein Autocommit).
+    """
+    seiten = await repository.list_seiten(campaign_id)
+    entitaeten = await sammle_entitaeten(campaign_id)
+
+    geprueft = 0
+    uebersprungen = 0
+    ergebnisse: list[SeitenVorschlaege] = []
+
+    for seite in seiten:
+        text = tiptap_zu_text(seite["inhalt"])
+        aktueller_hash = _hash(text)
+        letzter_hash = await repository.get_verknuepfhash(campaign_id, seite["id"])
+        if text.strip() and aktueller_hash == letzter_hash:
+            uebersprungen += 1
+            continue
+
+        geprueft += 1
+        antwort = await _erkennen(entitaeten, text) if text.strip() else VorschlaegeAntwort()
+        await repository.set_verknuepfhash(campaign_id, seite["id"], aktueller_hash)
+        if antwort.verweise or antwort.beziehungen:
+            ergebnisse.append(
+                SeitenVorschlaege(
+                    seitenId=seite["id"],
+                    titel=seite["titel"],
+                    verweise=antwort.verweise,
+                    beziehungen=antwort.beziehungen,
+                )
+            )
+
+    return SweepVorschlaegeAntwort(geprueft=geprueft, uebersprungen=uebersprungen, ergebnisse=ergebnisse)
 
 
 def _verweis_einfuegen(knoten, zitat: str, attrs: dict) -> bool:

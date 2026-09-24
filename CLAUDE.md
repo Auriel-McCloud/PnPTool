@@ -52,6 +52,12 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 - **🔍-Prüfen-Knopf im RichTextEditor** (Personen/Orte/Events/Fraktionen/
   Gegenstände/Begleiter): nie im Browser angeklickt, nur `tsc -b` und
   Backend-Import geprüft. Siehe „Zuletzt gebaut" unten.
+- **Auto-Verknüpfung: Sweep + Freitext-Backend** (`app/ki/auto_verknuepfung.py`,
+  siehe „Zuletzt gebaut" unten): Backend fertig und per echtem E2E-Test
+  gegen laufendes Backend + Neo4j verifiziert. **Frontend-Anbindung fehlt
+  noch komplett** — kein Sweep-Knopf in den Kampagnen-Einstellungen, kein
+  ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup. Erst nach dem Bauen
+  dieser UI (nächste Session) wird das für Mark überhaupt klickbar.
 - **Rüstungs-Reparatur-UI** (`RuestungReparatur.tsx` im Bearbeiten-Fenster
   einer Rüstung, `VerhandlungPopup.tsx` beim Spieler): nie im Browser
   angeklickt, nur `tsc -b` geprüft. Die Backend-Logik dahinter (Würfe,
@@ -174,6 +180,52 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (24.09.2026 — Auto-Verknüpfung: Sweep + Freitext-Route):**
+- **Was:** Die bisher nur pro Wiki-Seite laufende Auto-Verknüpfung
+  (Erwähnungen/Beziehungen erkennen, echte Graphkanten anlegen) um zwei
+  fehlende Wege ergänzt: einen Sweep über ALLE Wiki-Seiten der Kampagne
+  (für Altbestand, der vor der Funktion angelegt wurde) und eine
+  Freitext-Variante ohne Seitenbezug (für Ideenschmiede-Entwürfe und die
+  Beschreibungs-/Notizen-Felder im generischen `RichTextEditor`). Reines
+  Backend — Frontend-Anbindung ist der nächste Schritt.
+- **`backend/app/ki/auto_verknuepfung.py`:** `_erkennen()` als gemeinsamer
+  Kern aus dem bisherigen `vorschlaege()` herausgezogen (ein KI-Aufruf,
+  Namensabgleich in Python). Neue `sweep()`: läuft wie
+  `wiki_pruefung.sweep()` über alle Seiten, überspringt unveränderte per
+  eigenem Hash (`WikiSeite.verknuepfHash`, getrennt vom Prüfhash — die zwei
+  Sweeps laufen unabhängig, ein gemeinsamer Hash würde den jeweils anderen
+  fälschlich überspringen lassen). Neue `vorschlaege_fuer_text()` für den
+  freitext-Fall.
+- **`backend/app/wiki/repository.py`:** `get_verknuepfhash`/
+  `set_verknuepfhash`, analog zu `get_pruefhash`/`set_pruefhash`.
+- **Neue Routen** (`backend/app/ki/routes.py`):
+  `POST .../ki/wiki/verknuepfung/sweep-vorschlaege` (liefert
+  `SweepVorschlaegeAntwort` mit `geprueft`/`uebersprungen`/`ergebnisse` je
+  Seite) und `POST .../ki/objekt-text/verknuepfung/vorschlaege` (Body
+  `{text}`, liefert dieselbe `VorschlaegeAntwort` wie die Seiten-Route).
+  Beide legen NICHTS automatisch an — Anwenden läuft über die bereits
+  bestehenden `/wiki/{seitenId}/verknuepfung/anwenden`- bzw. `/beziehung`-
+  Routen (bei der Freitext-Variante ist `seitenId` dort nur Teil des
+  URL-Pfads, die Beziehungs-Kante hängt nicht an einer Wiki-Seite — ein
+  Verweis-Chip lässt sich ohne Seite dagegen nicht einfügen, deshalb sind
+  aus einem Freitext nur `beziehungen` wirklich anwendbar, `verweise` ist
+  informativ).
+- **Verifiziert:** echter E2E-Lauf gegen laufendes Backend (Testport 8123)
+  + echte Neo4j — Testkampagne mit zwei Wiki-Seiten (eine mit Erwähnungen
+  + einer Beziehung, eine leer), Sweep 1 erkennt beide (0 übersprungen),
+  bekannter Ort korrekt auf bestehende ID gemappt, unbekannte Person/
+  Fraktion als `zielId: null` (würden bei Anwenden zu Entwürfen). Sweep 2
+  ohne Textänderung: beide Seiten korrekt übersprungen (Hash-Skip
+  funktioniert). Freitext-Route liefert dieselben Vorschläge für einen
+  seitenlosen Text. `anwenden`-Route auf einen Sweep-Vorschlag angewandt →
+  echte VERWEIST_AUF-Kante entstanden, Rückverweis abrufbar. Bestehende
+  `test_wiki.py` (28 Tests) weiterhin grün. Backend-Import sauber, Routen
+  im OpenAPI-Schema bestätigt. Testkampagne + Testserver danach entfernt/
+  gestoppt. **Offen:** Frontend — Sweep-Knopf in den
+  Kampagnen-Einstellungen (analog zum bestehenden „🔍 Fließtext prüfen“)
+  und ein ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup (analog zum
+  Wiki-Editor), kein Klicktest möglich (siehe „Offen“ oben).
 
 **Zuletzt gebaut (24.09.2026 — Häretiker-Flavor-Option):**
 - **Was:** Häretiker als zweite, mechanisch identische Alternative zu
@@ -1150,8 +1202,12 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      eine erwähnte Entität noch nicht, legt die KI dafür einen **Entwurf in
      der Ideenschmiede an** (Vorschlag zur Prüfung durch den SL, kein
      Autocommit in die Kampagne) und trägt die Beziehung gleich mit ein.
-     Bisher nur Story-Wiki (Einzelseite); Ideenschmiede-Texte und ein Sweep
-     über alle Seiten sind noch offen.
+     Bisher nur Story-Wiki (Einzelseite). **Sweep über alle Wiki-Seiten UND
+     Freitext-Route für Ideenschmiede/Objekt-Texte gebaut (24.09.2026,
+     Backend)** — siehe "Zuletzt gebaut" oben. **Frontend-Anbindung noch
+     offen** (Sweep-Knopf in den Einstellungen analog zum Rechtschreib-
+     Sweep, ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup analog zum
+     Wiki-Editor).
    - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026,
      **gebaut** — siehe "Zuletzt gebaut" oben): Im Wiki-Editor UND in der
      Ideenschmiede — Rechtschreibung/Grammatik sowie Logik-/Konsistenz-
