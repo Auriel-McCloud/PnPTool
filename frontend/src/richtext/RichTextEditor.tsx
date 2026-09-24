@@ -8,6 +8,7 @@ import { useState } from "react";
 import { GmSecret } from "./GmSecretMark";
 import { KiTextPopup } from "../ki/KiTextPopup";
 import { ObjektPruefungPopup } from "../ki/ObjektPruefungPopup";
+import { ObjektVerknuepfungPopup } from "../ki/ObjektVerknuepfungPopup";
 import { kiObjektTextPruefen, type PruefBefund } from "../ki/api";
 import "./richtext.css";
 
@@ -86,6 +87,7 @@ export function RichTextEditor({
   const [pruefLaeuft, setPruefLaeuft] = useState(false);
   const [pruefFehler, setPruefFehler] = useState<string | null>(null);
   const [pruefBefunde, setPruefBefunde] = useState<PruefBefund[] | null>(null);
+  const [verknuepfenOffen, setVerknuepfenOffen] = useState(false);
   const editor = useEditor({
     extensions: EXTENSIONS,
     content,
@@ -187,6 +189,14 @@ export function RichTextEditor({
             {pruefLaeuft ? "prüft…" : "🔍 Prüfen"}
           </ToolbarButton>
         )}
+        {kiKontext && (
+          <ToolbarButton
+            title="Erwähnte Personen/Orte/Events/Fraktionen automatisch erkennen und verknüpfen"
+            onClick={() => setVerknuepfenOffen(true)}
+          >
+            ⧉✨ Auto-Verknüpfen
+          </ToolbarButton>
+        )}
       </div>
       {pruefFehler && (
         <p style={{ color: "var(--signal)", fontSize: 12, margin: "6px 10px 0" }}>
@@ -214,6 +224,14 @@ export function RichTextEditor({
           befunde={pruefBefunde ?? []}
           onSchliessen={() => setPruefBefunde(null)}
           onUebernehmen={befundUebernehmen}
+        />
+      )}
+      {kiKontext && (
+        <ObjektVerknuepfungPopup
+          offen={verknuepfenOffen}
+          campaignId={kiKontext.campaignId}
+          text={editor.getText()}
+          onSchliessen={() => setVerknuepfenOffen(false)}
         />
       )}
     </div>

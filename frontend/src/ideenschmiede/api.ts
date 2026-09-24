@@ -6,6 +6,7 @@
  */
 
 import { api } from "../api/client";
+import type { BeziehungsVorschlag, VerknuepfungsVorschlag } from "../ki/api";
 
 export interface EntwurfItem {
   id: string;
@@ -217,4 +218,28 @@ export async function befundUebernehmen(
     zitat,
     vorschlag,
   });
+}
+
+/** Ein einzelner Vorschlag im Sweep — Verweise UND Beziehungen einer Seite. */
+export interface SweepVerknuepfungSeite {
+  seitenId: string;
+  titel: string;
+  verweise: VerknuepfungsVorschlag[];
+  beziehungen: BeziehungsVorschlag[];
+}
+
+export interface SweepVerknuepfungErgebnis {
+  geprueft: number;
+  uebersprungen: number;
+  ergebnisse: SweepVerknuepfungSeite[];
+}
+
+/**
+ * Auto-Verknüpfung über ALLE Wiki-Seiten der Kampagne auf einmal — für
+ * Altbestand, der vor der Funktion angelegt wurde. Überspringt Seiten,
+ * deren Text sich seit dem letzten Sweep nicht geändert hat (eigener Hash,
+ * unabhängig vom Rechtschreib-Sweep). Legt nichts automatisch an.
+ */
+export async function wikiVerknuepfungSweep(campaignId: string): Promise<SweepVerknuepfungErgebnis> {
+  return api.post<SweepVerknuepfungErgebnis>(`/api/campaigns/${campaignId}/ki/wiki/verknuepfung/sweep-vorschlaege`);
 }

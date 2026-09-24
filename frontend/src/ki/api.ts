@@ -75,6 +75,12 @@ export async function kiBildGenerieren(
   return antwort.blob();
 }
 
+/** Auto-Verknüpfung für einen freien Text ohne Wiki-Seitenbezug (Ideenschmiede-
+ * Entwurfstext, Beschreibungs-/Notizen-Feld einer Entität). */
+export async function objektTextVerknuepfung(campaignId: string, text: string): Promise<VorschlaegeAntwort> {
+  return api.post<VorschlaegeAntwort>(`/api/campaigns/${campaignId}/ki/objekt-text/verknuepfung/vorschlaege`, { text });
+}
+
 /** Ein von der KI erkannter Verknüpfungsvorschlag (Auto-Verknüpfung). */
 export interface VerknuepfungsVorschlag {
   zitat: string;

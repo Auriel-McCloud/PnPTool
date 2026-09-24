@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { einstellungenApi, kampagnenExportApi, type Einstellungen } from "./einstellungen";
 import { spotifyApi, type SpotifyStatus } from "../spotify/api";
-import { wikiSweep, type SweepErgebnis } from "../ideenschmiede/api";
+import { wikiSweep, wikiVerknuepfungSweep, type SweepErgebnis, type SweepVerknuepfungErgebnis } from "../ideenschmiede/api";
 import { PruefungPopup } from "../wiki/PruefungPopup";
+import { SweepVerknuepfungPopup } from "../ideenschmiede/SweepVerknuepfungPopup";
 import "../spotify/spotify.css";
 
 /**
@@ -81,6 +82,15 @@ export function EinstellungenFenster({
   const [sweepErgebnis, setSweepErgebnis] = useState<SweepErgebnis | null>(null);
   const [pruefStamp, setPruefStamp] = useState(0);
 
+  // Auto-Verknüpfung: kampagnenweiter Sweep über alle Wiki-Seiten, erkennt
+  // erwähnte Personen/Orte/Events/Fraktionen und ihre Beziehungen — für
+  // Altbestand, der vor Einführung der Funktion angelegt wurde. Läuft
+  // unabhängig vom Fließtext-Sweep oben (eigener Hash, eigener Knopf).
+  const [verknuepfLaeuft, setVerknuepfLaeuft] = useState(false);
+  const [verknuepfFehler, setVerknuepfFehler] = useState<string | null>(null);
+  const [verknuepfErgebnis, setVerknuepfErgebnis] = useState<SweepVerknuepfungErgebnis | null>(null);
+  const [verknuepfStamp, setVerknuepfStamp] = useState(0);
+
   // Kampagnen-Export/Import: kompletter Datentransfer als ZIP (siehe
   // docs/api/campaigns-export-import.md). Export ist ein simpler Download,
   // Import läuft asynchron über einen Datei-Upload.
@@ -125,6 +135,20 @@ export function EinstellungenFenster({
       setPruefFehler(e instanceof Error ? e.message : "Prüfung fehlgeschlagen");
     } finally {
       setPruefLaeuft(false);
+    }
+  }
+
+  async function verknuepfungSweep() {
+    setVerknuepfLaeuft(true);
+    setVerknuepfFehler(null);
+    try {
+      const ergebnis = await wikiVerknuepfungSweep(campaignId);
+      setVerknuepfErgebnis(ergebnis);
+      setVerknuepfStamp((n) => n + 1);
+    } catch (e) {
+      setVerknuepfFehler(e instanceof Error ? e.message : "Verknüpfung fehlgeschlagen");
+    } finally {
+      setVerknuepfLaeuft(false);
     }
   }
 
@@ -227,6 +251,23 @@ export function EinstellungenFenster({
           </div>
           {pruefFehler && <p style={{ fontSize: 12, color: "var(--signal)" }}>{pruefFehler}</p>}
 
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+            <button
+              type="button"
+              onClick={verknuepfungSweep}
+              disabled={verknuepfLaeuft}
+              title="Durchsucht alle Wiki-Seiten nach erwähnten Personen/Orten/Events/Fraktionen und ihren Beziehungen — überspringt Seiten, die sich seit dem letzten Sweep nicht geändert haben."
+            >
+              {verknuepfLaeuft ? "sucht…" : "⧉✨ Auto-Verknüpfung — alle Seiten"}
+            </button>
+            {verknuepfErgebnis && (
+              <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+                {verknuepfErgebnis.geprueft} geprüft, {verknuepfErgebnis.uebersprungen} unverändert übersprungen
+              </span>
+            )}
+          </div>
+          {verknuepfFehler && <p style={{ fontSize: 12, color: "var(--signal)" }}>{verknuepfFehler}</p>}
+
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             MUSIK
           </h4>
@@ -318,6 +359,13 @@ export function EinstellungenFenster({
       campaignId={campaignId}
       ergebnisse={sweepErgebnis?.ergebnisse ?? []}
       onSchliessen={() => setSweepErgebnis(null)}
+    />
+    <SweepVerknuepfungPopup
+      key={verknuepfStamp}
+      offen={verknuepfErgebnis !== null}
+      campaignId={campaignId}
+      ergebnisse={verknuepfErgebnis?.ergebnisse ?? []}
+      onSchliessen={() => setVerknuepfErgebnis(null)}
     />
     </>
   );

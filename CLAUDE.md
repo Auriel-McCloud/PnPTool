@@ -52,12 +52,12 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 - **🔍-Prüfen-Knopf im RichTextEditor** (Personen/Orte/Events/Fraktionen/
   Gegenstände/Begleiter): nie im Browser angeklickt, nur `tsc -b` und
   Backend-Import geprüft. Siehe „Zuletzt gebaut" unten.
-- **Auto-Verknüpfung: Sweep + Freitext-Backend** (`app/ki/auto_verknuepfung.py`,
-  siehe „Zuletzt gebaut" unten): Backend fertig und per echtem E2E-Test
-  gegen laufendes Backend + Neo4j verifiziert. **Frontend-Anbindung fehlt
-  noch komplett** — kein Sweep-Knopf in den Kampagnen-Einstellungen, kein
-  ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup. Erst nach dem Bauen
-  dieser UI (nächste Session) wird das für Mark überhaupt klickbar.
+- **Auto-Verknüpfung: Sweep + Freitext-UI** (`app/ki/auto_verknuepfung.py` +
+  neue Frontend-Popups, siehe „Zuletzt gebaut" unten): Backend per echtem
+  E2E-Test gegen laufendes Backend + Neo4j verifiziert. Frontend (Sweep-
+  Knopf in den Kampagnen-Einstellungen, ⧉✨-Knopf im `RichTextEditor`/
+  Ideenschmiede) nie im Browser angeklickt, nur `tsc -b` und
+  `vite build` geprüft.
 - **Rüstungs-Reparatur-UI** (`RuestungReparatur.tsx` im Bearbeiten-Fenster
   einer Rüstung, `VerhandlungPopup.tsx` beim Spieler): nie im Browser
   angeklickt, nur `tsc -b` geprüft. Die Backend-Logik dahinter (Würfe,
@@ -226,6 +226,30 @@ npm run dev
   Kampagnen-Einstellungen (analog zum bestehenden „🔍 Fließtext prüfen“)
   und ein ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup (analog zum
   Wiki-Editor), kein Klicktest möglich (siehe „Offen“ oben).
+
+**Frontend nachgezogen (24.09.2026, gleicher Tag):**
+- **`frontend/src/ki/ObjektVerknuepfungPopup.tsx`** (neu): ⧉✨-Knopf im
+  generischen `RichTextEditor` (Personen/Orte/Events/Fraktionen/
+  Gegenstände/Begleiter, inkl. Ideenschmiede-Entwürfe dieser Typen) neben
+  dem bestehenden „🔍 Prüfen“. Da hier — anders als bei einer Wiki-Seite —
+  kein Ort für einen Verweis-Chip existiert, sind **Verweise nur
+  informativ**, nur **Beziehungen** haben einen „Anlegen“-Knopf.
+- **`frontend/src/ideenschmiede/SweepVerknuepfungPopup.tsx`** (neu): Sweep-
+  Ergebnis-Popup, analog zu `wiki/PruefungPopup.tsx` — eine Gruppe pro
+  Wiki-Seite mit Verweisen/Beziehungen, jeder Vorschlag einzeln über die
+  bestehenden Anwenden-Routen bestätigt.
+- **`frontend/src/campaigns/EinstellungenFenster.tsx`**: neuer Knopf
+  „⧉✨ Auto-Verknüpfung — alle Seiten“ im WIKI-Abschnitt, unter dem
+  bestehenden Fließtext-Sweep-Knopf — eigener Lade-/Fehler-/Ergebnis-State,
+  läuft unabhängig vom Rechtschreib-Sweep.
+- **`frontend/src/ki/api.ts`**: `objektTextVerknuepfung()`.
+  **`frontend/src/ideenschmiede/api.ts`**: `wikiVerknuepfungSweep()` +
+  `SweepVerknuepfungSeite`/`SweepVerknuepfungErgebnis`.
+- **Verifiziert:** `tsc -b --force` sauber, echter `vite build`
+  (Produktions-Build) erfolgreich durchgelaufen — alle neuen Imports/
+  CSS-Klassen (aus bestehenden `ki.css`/`wiki.css`) lösen auf. Backend
+  weiterhin grün (`test_wiki.py`, 28 Tests). **Kein Klicktest** — Optik/
+  Bedienung im Browser ungetestet, siehe „Offen“ oben.
 
 **Zuletzt gebaut (24.09.2026 — Häretiker-Flavor-Option):**
 - **Was:** Häretiker als zweite, mechanisch identische Alternative zu
