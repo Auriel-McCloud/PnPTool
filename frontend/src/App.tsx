@@ -122,7 +122,7 @@ function CreateCampaignForm({
 
 function Dashboard() {
   const { me, logout } = useAuth();
-  const { campaigns, loading, aktive, waehleKampagne, createCampaign } = useCampaign();
+  const { campaigns, loading, aktive, waehleKampagne, createCampaign, nachImportUebernehmen } = useCampaign();
   const [bereich, setBereich] = useState("pcs");
   // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als
   // React-key der Ansichten: bei einem Wechsel werden sie neu aufgebaut und
@@ -216,8 +216,10 @@ function Dashboard() {
 
           <EinstellungenFenster
             campaignId={kampagne.id}
+            campaignName={kampagne.name}
             offen={einstellungenOffen}
             onSchliessen={() => setEinstellungenOffen(false)}
+            onImportiert={(neu) => nachImportUebernehmen(neu.id)}
           />
 
           {ENTITY_ANSICHT[bereich] && (

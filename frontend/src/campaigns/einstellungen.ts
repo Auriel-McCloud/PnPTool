@@ -34,6 +34,37 @@ export const einstellungenApi = {
     api.post<Einstellungen>(`/api/campaigns/${cid}/einstellungen/ep-erhoehen`, { betrag }),
 };
 
+/** Export/Import einer kompletten Kampagne als ZIP-Datei (siehe
+ * backend/app/campaigns/export_import.py und docs/api/campaigns-export-import.md). */
+export const kampagnenExportApi = {
+  /** Löst den Download über einen unsichtbaren Anker aus — Cookie-Auth
+   * läuft bei einem normalen `<a href>`-Klick automatisch mit, ein
+   * `fetch()`-Umweg über Blob wäre hier unnötig komplex. */
+  exportieren(cid: string, campaignName: string) {
+    const a = document.createElement("a");
+    a.href = `/api/campaigns/${cid}/export`;
+    a.download = `${campaignName || "kampagne"}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+  /** Multipart-Upload der ZIP-Datei; legt serverseitig eine neue Kampagne an. */
+  async importieren(datei: File): Promise<{ id: string; name: string }> {
+    const form = new FormData();
+    form.append("datei", datei);
+    const response = await fetch("/api/campaigns/import", {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(body.detail ?? "Import fehlgeschlagen");
+    }
+    return response.json();
+  },
+};
+
 /** "2,5 / 30 kg" — kompakt und ohne unnötige Nachkommastellen. */
 export function formatiereLast(last: number, kapazitaet: number): string {
   const z = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));

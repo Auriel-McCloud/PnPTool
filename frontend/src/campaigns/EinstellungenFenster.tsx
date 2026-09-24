@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
-import { einstellungenApi, type Einstellungen } from "./einstellungen";
+import { einstellungenApi, kampagnenExportApi, type Einstellungen } from "./einstellungen";
 import { spotifyApi, type SpotifyStatus } from "../spotify/api";
 import { wikiSweep, type SweepErgebnis } from "../ideenschmiede/api";
 import { PruefungPopup } from "../wiki/PruefungPopup";
@@ -54,12 +54,17 @@ function Schalter({
 
 export function EinstellungenFenster({
   campaignId,
+  campaignName,
   offen,
   onSchliessen,
+  onImportiert,
 }: {
   campaignId: string;
+  campaignName: string;
   offen: boolean;
   onSchliessen: () => void;
+  /** Nach erfolgreichem Import: neue Kampagne (id/name) an die Auswahl melden. */
+  onImportiert: (kampagne: { id: string; name: string }) => void;
 }) {
   const [werte, setWerte] = useState<Einstellungen | null>(null);
   const [speichert, setSpeichert] = useState(false);
@@ -75,6 +80,13 @@ export function EinstellungenFenster({
   const [pruefFehler, setPruefFehler] = useState<string | null>(null);
   const [sweepErgebnis, setSweepErgebnis] = useState<SweepErgebnis | null>(null);
   const [pruefStamp, setPruefStamp] = useState(0);
+
+  // Kampagnen-Export/Import: kompletter Datentransfer als ZIP (siehe
+  // docs/api/campaigns-export-import.md). Export ist ein simpler Download,
+  // Import läuft asynchron über einen Datei-Upload.
+  const [importLaeuft, setImportLaeuft] = useState(false);
+  const [importFehler, setImportFehler] = useState<string | null>(null);
+  const [importErfolg, setImportErfolg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!offen) return;
@@ -113,6 +125,21 @@ export function EinstellungenFenster({
       setPruefFehler(e instanceof Error ? e.message : "Prüfung fehlgeschlagen");
     } finally {
       setPruefLaeuft(false);
+    }
+  }
+
+  async function kampagneImportieren(datei: File) {
+    setImportLaeuft(true);
+    setImportFehler(null);
+    setImportErfolg(null);
+    try {
+      const neu = await kampagnenExportApi.importieren(datei);
+      setImportErfolg(`„${neu.name}" wurde als neue Kampagne angelegt.`);
+      onImportiert(neu);
+    } catch (e) {
+      setImportFehler(e instanceof Error ? e.message : "Import fehlgeschlagen");
+    } finally {
+      setImportLaeuft(false);
     }
   }
 
@@ -227,6 +254,52 @@ export function EinstellungenFenster({
             Ein Konto fürs ganze Tool. Playlists werden an Orten/Events hinterlegt — läuft die aktive Party
             dort ein, startet die Wiedergabe automatisch auf deinem gerade verbundenen Spotify-Gerät.
           </p>
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            KAMPAGNE
+          </h4>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => kampagnenExportApi.exportieren(campaignId, campaignName)}
+              title="Lädt die komplette Kampagne (alle Daten, Bilder und Spieler-Zugänge) als ZIP-Datei herunter."
+            >
+              ⬇ Kampagne exportieren
+            </button>
+
+            <label
+              className="cl-roehre"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                fontSize: 13,
+                fontFamily: "var(--mono)",
+                cursor: importLaeuft ? "wait" : "pointer",
+              }}
+            >
+              {importLaeuft ? "importiert…" : "⬆ Kampagne importieren"}
+              <input
+                type="file"
+                accept=".zip,application/zip"
+                disabled={importLaeuft}
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const datei = e.target.files?.[0];
+                  e.target.value = "";
+                  if (datei) kampagneImportieren(datei);
+                }}
+              />
+            </label>
+          </div>
+          <p style={{ fontSize: 11, color: "var(--text-aus)" }}>
+            Import legt immer eine <strong>neue</strong> Kampagne an, nie eine bestehende wird überschrieben.
+            Enthält die ZIP-Datei Spieler-Zugänge, gelten deren bisherige Passwörter unverändert weiter.
+          </p>
+          {importFehler && <p style={{ fontSize: 12, color: "var(--signal)" }}>{importFehler}</p>}
+          {importErfolg && <p style={{ fontSize: 12, color: "var(--text-leise)" }}>{importErfolg}</p>}
 
           {speichert && (
             <p style={{ fontSize: 11, color: "var(--text-aus)", marginTop: 10 }}>speichert…</p>

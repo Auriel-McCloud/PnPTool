@@ -56,5 +56,13 @@ export function useCampaign() {
 
   const aktive = campaigns?.find((c) => c.id === aktiveId) ?? null;
 
-  return { campaigns, loading, aktive, aktiveId, waehleKampagne, createCampaign };
+  /** Nach einem Kampagnen-Import (siehe EinstellungenFenster): Liste neu
+   * laden und direkt zur frisch importierten Kampagne wechseln. */
+  const nachImportUebernehmen = useCallback(async (id: string) => {
+    await refresh();
+    waehleKampagne(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waehleKampagne]);
+
+  return { campaigns, loading, aktive, aktiveId, waehleKampagne, createCampaign, nachImportUebernehmen };
 }
