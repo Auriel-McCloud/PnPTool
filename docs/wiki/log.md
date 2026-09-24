@@ -3,6 +3,16 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] update | Doku-Stand nachgezogen (Shop/KI/Häretiker)
+
+CLAUDE.md „Geplante Features“ und die Wiki-Seiten `waehrung-und-preise` plus
+`ki-integration` waren hinter dem Code zurück: Shop-Spieler-Frontend,
+Verhandeln, KI-Alltagsgegenstand, Auto-Verknüpfung-Sweep-Frontend,
+Bildgenerierung, RichText-Prüfung und Häretiker-Technik standen noch als
+offen. Nachgezogen, ohne die echten Restpunkte (SL-Sortiment-Editor,
+KI-Vorschlag-Popup, Händler-Spam, Chatbots, Deploy, Critter-Pet) zu
+streichen.
+
 ## [2026-09-24] update | concepts/waehrung-und-preise (KI-Alltagsgegenstand-Erzeugung)
 
 Neues Modul `backend/app/haendler/alltagswunsch.py`: Spieler fragt einen

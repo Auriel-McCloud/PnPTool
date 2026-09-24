@@ -203,10 +203,9 @@ Marks Wunsch: wenn ein Spieler beim Händler (oder bei der Rüstungsreparatur,
 siehe `docs/api/ruestung.md`) Geld ausgeben soll, will er die Möglichkeit
 haben zu verhandeln, statt den Preis stumm zu akzeptieren. **Gilt überall,
 wo ein Spieler im Spiel Geld für etwas ausgibt** — außer Charaktererstellung
-(Startausrüstung) und "online" gekaufter Ware (eigenes, noch offenes Thema,
-siehe unten). Betrifft also sowohl das noch offene Shop-Frontend als auch
-das noch offene Reparatur-Frontend — beide sollten den Knopf von Anfang an
-mitbauen, nicht nachrüsten.
+(Startausrüstung) und DIGITAL/online gekaufter Ware (kein Verhandeln, so
+entschieden und gebaut 24.09.2026). Shop-Frontend und Reparatur-Frontend
+sind gebaut; Browser-Klicktest offen.
 
 **Auslöser:** ein "Verhandeln"-Knopf direkt bei jedem einzelnen Posten (pro
 Gegenstand im Sortiment, bzw. pro Reparaturposten) — kein pauschaler Knopf
@@ -260,8 +259,8 @@ Mitteilungstyp, kein Wiederverwenden der Chat-UI.
 Konzepte (Status, Belohnung, Verknüpfung zum Händler), die noch nicht
 spezifiziert sind. `moeglicheSidequests` oben ist nur die Notiz-Vorstufe.
 
-**Online-Käufe** — eigener offener Punkt: welche Regeln dort gelten (kein
-Verhandeln vermutlich, da kein Gegenüber), ist noch nicht durchdacht.
+**Online-Käufe / DIGITAL (gebaut 24.09.2026):** kein Verhandeln, Kauf legt
+eine Bestellung an, Kapital geht sofort ab, Ware erst nach SL-Liefer-Freigabe.
 
 ## KI-Sortiment-Vorschlag (23.09.2026)
 

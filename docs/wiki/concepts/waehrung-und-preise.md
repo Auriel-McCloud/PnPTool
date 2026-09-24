@@ -39,14 +39,15 @@ Fahrzeug/Drohnen-Preisstaffel wirkt für kleine Fahrzeuge zu teuer — siehe
 `CLAUDE.md` Punkt 1: Händler-NPCs mit Sortiment (explizit eingetragene Ware
 + automatischer Bestand nach Spezialisierung gefiltert), Kauf mit
 serverseitiger Guthabenprüfung. **Status: Backend fertig und end-to-end
-verifiziert, Frontend noch offen.** Details: `docs/api/haendler.md`.
+verifiziert, Spieler-Frontend gebaut (24.09.2026).** Details: `docs/api/haendler.md`.
 
 Bestand nutzt die bestehende `einzigartig`/`istVorlage`-Unterscheidung
 (kein neues Konzept): Vorlagen unendlich kaufbar, einzigartige Stücke
 verschwinden nach dem Kauf aus dem Sortiment.
 
 Noch offen: Spam/Werbe-Mechanik (Frequenz skaliert mit I.C.E.),
-Scammer-Storylines, Frontend, Fahrzeug-Preisdiskussion. **Die
+Scammer-Storylines, SL-Editor für Sortiment/Rabatt, KI-Sortiment-Vorschlag-Popup,
+Fahrzeug-Preisdiskussion. **Die
 Rüstungsreparatur-Kosten sind seit 23.09.2026 geklärt** (eigene, vom
 Shop-System unabhängige Preisformel — quadratisch/progressiv mit hartem
 75%-Deckel bei Totalschaden, siehe `docs/api/ruestung.md` "Reparatur beim
@@ -74,9 +75,8 @@ je eine "Fancy"-Seite für physische Shops (Hintergrundbild + Händlerporträt
 glitzernd/orange-gezackt/violett-wabernd, Marks exaktes Farbschema).
 **Status: Backend end-to-end verifiziert, Frontend nur `tsc -b` geprüft,
 CSS-Rarity-Effekte optisch ungegengeprüft (Browser-Tool erreicht kein
-localhost).** Noch offen: KI-Item-Erzeugung für Alltagsgegenstände (nie
-für Waffen/Rüstung), SL-Editor fürs Sortiment, KI-Sortiment-Vorschlag-
-Popup. Details: `docs/api/haendler.md`, `CLAUDE.md` "Zuletzt gebaut".
+localhost).** KI-Alltagsgegenstand-Erzeugung ist gebaut (siehe unten).
+Noch offen: SL-Editor fürs Sortiment, KI-Sortiment-Vorschlag-Popup. Details: `docs/api/haendler.md`, `CLAUDE.md` "Zuletzt gebaut".
 
 **KI-Alltagsgegenstand-Erzeugung (24.09.2026):** neues Modul
 `backend/app/haendler/alltagswunsch.py` — Spieler fragt einen Verkäufer im

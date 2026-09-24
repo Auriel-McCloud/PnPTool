@@ -2,7 +2,7 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Offen: Was Mark selbst testen muss (Stand 24.09.2026, morgens)
+## Offen: Was Mark selbst testen muss (Stand 24.09.2026, nachmittags)
 
 Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
@@ -69,20 +69,6 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   Knopf in den Kampagnen-Einstellungen, ⧉✨-Knopf im `RichTextEditor`/
   Ideenschmiede) nie im Browser angeklickt, nur `tsc -b` und
   `vite build` geprüft.
-- **Shop-Frontend** (`frontend/src/haendler/`, siehe „Zuletzt gebaut" unten):
-  Backend komplett per echtem E2E-Test gegen laufendes Backend + Neo4j
-  verifiziert (Vertriebsart, Rabatt, Bestellung, Verhandeln-SHOP_KAUF — alle
-  grün). Frontend nie im Browser angeklickt (localhost für das Browser-Tool
-  gesperrt), nur `tsc -b` geprüft. **Insbesondere die CSS-Seltenheitsrahmen**
-  (`haendler/shop.css`: grau/blau/silbern-glitzernd/orange-gezackt/violett-
-  wabernd) sind reine Code-Vermutung — bitte am Dev-Server ansehen, ob die
-  Optik so wirkt wie gedacht (v.a. der Zacken-Clip-Path bei Legendär und das
-  Wabern bei Mystisch — clip-path-Polygone lassen sich am Bildschirm nicht
-  vorab durchrechnen). Noch nicht gebaut: KI-Item-Erzeugung für
-  Alltagsgegenstände (Internet-Preisrecherche), SL-Editor für Sortiment/
-  Rabatt (Backend-Endpunkte fertig, aber noch kein Bearbeiten-Popup),
-  KI-Sortiment-Vorschlag-Frontend (Backend `ki_vorschlag.py` existiert
-  bereits, kein Popup dafür).
 - **Rüstungs-Reparatur-UI** (`RuestungReparatur.tsx` im Bearbeiten-Fenster
   einer Rüstung, `VerhandlungPopup.tsx` beim Spieler): nie im Browser
   angeklickt, nur `tsc -b` geprüft. Die Backend-Logik dahinter (Würfe,
@@ -197,7 +183,7 @@ npm run dev
 |-------|--------|--------------|
 | 1 | ✅ | Grundgerüst, Docker, Auth |
 | 2 | ✅ | CRUD, Cytoscape-Graph |
-| 3 | 🟡 | Charakterblatt (Attribute ✅, Box-Tracks ⬜) |
+| 3 | ✅ | Charakterblatt (Attribute, Kästchen/Box-Tracks) |
 | 4 | ✅ | Spieler-Zugang, Sichtbarkeit |
 | 5 | ✅ | **Mitteilungen + Messenger fertig** |
 | Wiki | ✅ | Seitenbaum, Freigaben, TipTap-Editor |
@@ -1252,31 +1238,20 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
 ## Geplante Features
 
 1. **Shop-System + Händler-Spam** — großes Feature-Set:
-   - **Kern gebaut (22.09.2026, Backend)**: Händler-NPCs (`Person`,
-     `istHaendler=true`) mit Sortiment (explizit + automatisch nach
-     Spezialisierung), Standort, Kauf mit serverseitiger Guthabenprüfung —
-     siehe "Zuletzt gebaut" oben und `docs/api/haendler.md`. Noch **kein
-     Frontend**.
-   - **KI-Sortiment-Vorschlag gebaut (23.09.2026, Backend)**: neues Modul
-     `backend/app/haendler/ki_vorschlag.py`, zwei Endpunkte
-     (`GET .../ki-vorschlaege`, `POST .../ki-vorschlaege/anwenden`) —
-     bevorzugt bestehende Gegenstands-Vorlagen der Kampagne wiederzuverwenden,
-     erfindet nur bei einer echten Lücke etwas Neues (dann als
-     Ideenschmiede-Entwurf, kein Autocommit). Details siehe "Zuletzt gebaut"
-     oben und `docs/api/haendler.md`. **Frontend noch offen** (SL-Popup mit
-     Vorschlagsliste + Einzeln-Übernehmen-Knöpfen).
-   - **Verhandeln — spezifiziert, noch nicht gebaut (23.09.2026)**: Spieler
-     bekommt bei jedem Kauf-/Reparaturposten (Shop UND Rüstungsreparatur,
-     außer Charaktererstellung + "online" gekauft) einen "Verhandeln"-Knopf,
-     löst ein SL-Popup mit Preis + Händler-`notizen` + neuem Freitextfeld
-     `moeglicheSidequests` aus, SL vergibt 5/10/15%/individuellen Rabatt nur
-     für diesen einen Kauf. Kein Würfelsystem (existiert im Tool noch gar
-     nicht). **Technischer Kanal existiert bereits** — kein neuer Mechanismus
-     nötig: analog zum Messenger-Chat (`docs/api/kontakte.md`, Spieler→SL via
-     `NACHRICHT`-Mitteilung mit `empfaengerIds=[]`), braucht nur eine neue
-     Mitteilungsart mit strukturierter Nutzlast statt Freitext. Quest-System
-     für Sidequest-Rabatte bewusst zurückgestellt. Volle Spec:
-     `docs/api/haendler.md` Abschnitt "Verhandeln".
+   - **Kern + Spieler-Frontend gebaut (22.–24.09.2026):** Händler-NPCs
+     (`Person`, `istHaendler=true`) mit Sortiment, Standort, Kauf mit
+     serverseitiger Guthabenprüfung, Vertriebsart PHYSISCH/DIGITAL,
+     Sonderangebote, Online-Bestellungen. Frontend: Burgermenü Shop,
+     Kachelraster, getrennte Shop-Seiten, Seltenheitsrahmen. Browser-Klicktest
+     offen, siehe „Offen“ oben. Details: `docs/api/haendler.md`.
+   - **KI-Sortiment-Vorschlag gebaut (23.09.2026, Backend):** Modul
+     `haendler/ki_vorschlag.py`. **Frontend noch offen** (SL-Popup).
+   - **Verhandeln gebaut (24.09.2026):** Knopf pro Posten (Shop physisch +
+     Rüstungsreparatur, nicht Charaktererstellung, nicht DIGITAL). SL-Popup
+     mit Preis + notizen + moeglicheSidequests, Rabatt 5/10/15%/individuell
+     nur für diesen einen Kauf. Quest-System bewusst zurückgestellt.
+   - **Noch offen, SL-Werkzeuge:** Editor für Sortiment/Rabatt/Hintergrund
+     (Backend fertig, kein Bearbeiten-Popup).
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
    - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**
@@ -1294,7 +1269,7 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    - Backend-Validierung + Frontend-Fehlerpopup implementiert
 
 3. **KI-Integration** (Gemini Pro) — mehrere Anwendungsfälle:
-   - **NPC-Generator:** NPCs mit kurzer Beschreibung automatisch erstellen lassen
+   - **NPC-Generator:** ✅ gebaut (Ideenschmiede, typ charakter)
    - **Bildgenerierung** — ✅ **gebaut (23.09.2026)**, siehe "Zuletzt gebaut"
      oben: Provider-Abstraktion lokal (Fooocus, eigener Wrapper außerhalb
      des Repos) / cloud (Gemini `gemini-2.5-flash-image`), KI schlägt einen
@@ -1319,11 +1294,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      der Ideenschmiede an** (Vorschlag zur Prüfung durch den SL, kein
      Autocommit in die Kampagne) und trägt die Beziehung gleich mit ein.
      Bisher nur Story-Wiki (Einzelseite). **Sweep über alle Wiki-Seiten UND
-     Freitext-Route für Ideenschmiede/Objekt-Texte gebaut (24.09.2026,
-     Backend)** — siehe "Zuletzt gebaut" oben. **Frontend-Anbindung noch
-     offen** (Sweep-Knopf in den Einstellungen analog zum Rechtschreib-
-     Sweep, ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede-Popup analog zum
-     Wiki-Editor).
+     Freitext-Route plus Frontend gebaut (24.09.2026)** — Sweep-Knopf in den
+     Kampagnen-Einstellungen, ⧉✨-Knopf im `RichTextEditor`/Ideenschmiede.
+     Browser-Klicktest offen, siehe „Offen“ oben.
    - **Rechtschreib-/Grammatik-/Logikprüfung** (erweitert 20.09.2026,
      **gebaut** — siehe "Zuletzt gebaut" oben): Im Wiki-Editor UND in der
      Ideenschmiede — Rechtschreibung/Grammatik sowie Logik-/Konsistenz-
@@ -1509,9 +1482,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    - "✓ Übernehmen" verschiebt in die Kampagne (setzt istEntwurf=false)
    - "✗" löscht den Entwurf
 
-   **Offen:**
-   - PC-Vorlagen im Regelsystem (Phase 2)
-   - KI-Import in Ideenschmiede (braucht KI-Integration)
+   **Offen (Stand 24.09.2026):** nichts mehr aus der Ursprungsliste —
+   PC-Vorlagen ersetzt durch Spieler-Ersteinstieg (23.09., Kampagnen-PCs
+   ohne SPIELT-Kante), KI-Import als Wiki-Import (23.09.) gebaut.
 
    ```
    ┌─────────────────────────────────────────────────────┐
@@ -1584,9 +1557,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    - **Kumulierte Rüstung:** alles Getragene ist ein Pool (Kästchen summiert,
      Reduktion vom Teil mit der besten Basis); aufgebraucht wird die beste
      Reduktion zuerst, zerstörte Teile fliegen aus der Ausrüstung. Keine Körperzonen
-   - **Offen:** Reparatur-Endpoint rechnet nur das Ergebnis, keine
-     Hardware-Skill-Probe, kein Händlerpreis (braucht Skill-Check- bzw.
-     Shop-System, siehe Punkt 1 und 8)
+   - **Reparatur gebaut (23.09.2026):** Selbst-Reparatur (Hardware-Probe,
+     Materialverbrauch) und Händler-Reparatur (Preisformel, 75%-Deckel,
+     Verhandeln). UI-Klicktest offen, siehe „Offen“ oben.
 
 8. **Augment-Preisstufen:**
    - **Cyberware:** alle Stufen (Hinterhof 500¥ bis Maßanfertigung 20.000¥)
@@ -1761,15 +1734,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       **Izanami** (japanisch — Göttin des Todes, Herrscherin der
       Geisterwelt Yomi)
 
-    **Noch offen (nicht begonnen):** wie die Umbenennung technisch je
-    Charakter greift (globaler Schalter vs. Flag pro Person), und Marks
-    Wunsch aus dem Gespräch: **Beschreibungstexte pro Sphäre/Gott**, die
-    erklären wie die jeweilige Gottheit/Domäne mechanisch wirkt (siehe
-    Tooltip-Infrastruktur `Erklaerung.langtext`, bereits für Attribute/
-    Fertigkeiten/Sphären gebaut, 19.09.2026 — hier wiederverwenden statt
-    neu bauen). Die Kurzbeschreibungen der Wirkung oben sind der Rohstoff
-    dafür, müssen aber noch zu vollen Texten ausgearbeitet werden, die
-    auch den jeweiligen Gott selbst kurz einführen.
+    Technische Frage (globaler Schalter vs. Flag pro Person) und die
+    Beschreibungstexte pro Sphäre/Gott: **erledigt 24.09.2026** — siehe
+    „Gebaut“ darunter (`magieFlavor` pro Person, Tooltips geseedet).
 
     **Gebaut (24.09.2026):** `magieFlavor`-Feld pro Person
     (`MAGIER`/`HAERETIKER`), `weg` bleibt intern immer `MAGIER` — keine

@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-23
+updated: 2026-09-24
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md]
@@ -109,9 +109,10 @@ Routen im OpenAPI-Schema, `_verweis_einfuegen` isoliert getestet (Text wird
 korrekt gesplittet, SL-geheim-Marks bleiben auf beiden Textteilen erhalten,
 Namens-Normalisierung funktioniert). `tsc --noEmit` fehlerfrei.
 
-Sweep über alle Seiten auf einmal (wie bei der Rechtschreibprüfung) bewusst
-NICHT gebaut — Mark wollte erstmal nur den Einzelseiten-Knopf, Sweep bei
-Bedarf später.
+Sweep über alle Seiten plus Freitext-Route für Ideenschmiede/Objekt-Texte
+**nachgezogen (24.09.2026)** — eigener Hash `WikiSeite.verknuepfHash`
+(getrennt vom Prüfhash). Frontend: Sweep-Knopf in den Kampagnen-
+Einstellungen, ⧉✨-Knopf im `RichTextEditor`. Browser-Klicktest offen.
 
 ## Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.2026) — umgesetzt
 
@@ -143,19 +144,18 @@ nicht offen ist. `docs/api/ki.md` dokumentiert die drei neuen Endpunkte.
 - NPC-Generator aus Kurzbeschreibung — **umgesetzt** (siehe oben)
 - ✨ Freier KI-Text-Zusatz an Beschreibung/Notizen jeder Entität —
   **umgesetzt** (siehe oben)
-- Bildgenerierung (Portraits, Item-Bilder, Maps) — **nicht umgesetzt**
+- Bildgenerierung (Portraits, Item-Bilder, Maps) — **umgesetzt** (23.09.2026, siehe unten)
 - Wiki-Import aus Word-Dokumenten — **umgesetzt** (23.09.2026, siehe unten)
 - Auto-Verknüpfung (KI durchsucht Wiki/Ideenschmiede, verknüpft erwähnte
   Personen/Orte/Events als echte Graphkanten; existiert eine Entität noch
   nicht, legt die KI dafür einen Entwurf in der Ideenschmiede an und trägt
   die Beziehung gleich mit ein — präzisiert 20.09.2026, Marks Wunsch) —
-  **umgesetzt** (22.09.2026, siehe oben). Bisher nur im Wiki-Editor
-  (Einzelseite); Ideenschmiede-Texte und ein Sweep über alle Seiten sind
-  noch offen.
+  **umgesetzt** (22.09.2026, siehe oben). Sweep über alle Wiki-Seiten und
+  Freitext-Route plus Frontend (24.09.2026) — Browser-Klicktest offen.
 - Rechtschreib-/Grammatik-/Logikprüfung im Wiki-Editor und in der
   Ideenschmiede — **umgesetzt** (siehe oben). Dieselbe Prüfung für die
-  `RichTextEditor`-Felder an Personen/Orten/Events/Fraktionen ist noch
-  offen, war bewusst nicht Teil von Schritt 1.
+  `RichTextEditor`-Felder an Personen/Orten/Events/Fraktionen **umgesetzt**
+  (23.09.2026) — Browser-Klicktest offen.
 - Chatbot-Gegenstände (Decker redet mit Deck, Priester mit Bibel) —
   **nicht umgesetzt**, siehe `CLAUDE.md` Punkt 10 für den vollen Entwurf
   inkl. geplanter TTS-Hybrid-Lösung (Edge TTS + ElevenLabs)
