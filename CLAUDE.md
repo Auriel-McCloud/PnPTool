@@ -59,7 +59,17 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   echtem End-to-End-Skript gegen laufendes Backend + Neo4j durchgespielt
   und ist verifiziert — offen ist nur die Optik/Bedienung der beiden neuen
   Popups selbst (Layout, ob der Commlink-Stil passt, ob das Verhandlungs-
-  Popup beim Spieler zuverlässig aufpoppt). Siehe „Zuletzt gebaut" unten.
+  Popup beim Spieler zuverlässig aufpoppt). Siehe „Zuletzt gebaut“ unten.
+- **Häretiker-Flavor-Option** (Charaktererstellung, Charakterblatt,
+  Kampfkarte, Probenrechner, Level-Up), siehe „Zuletzt gebaut“ unten und
+  CLAUDE.md Punkt 14: Backend + Frontend komplett per echtem
+  Backend-only-E2E-Test gegen laufendes Backend + Neo4j verifiziert
+  (Häretiker-Weg-Karte, Katalog-Identität, Tooltip-Texte). Optik/Bedienung
+  im Browser nie angeklickt, nur `tsc -b` geprüft — bitte einmal bei der
+  Charaktererstellung „Häretiker“ statt „Magier“ wählen und prüfen, ob die
+  Sphären-Namen (Chronos, Ehecatl, …) und „Glauben“/„Blasphemie“ überall
+  im UI stimmig auftauchen (Charakterblatt, Kampfkarte, Probenrechner,
+  Level-Up, Willenskraft-Rückfrage).
 
 ## Vor jedem Task: Wiki befragen
 
@@ -164,6 +174,38 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (24.09.2026 — Häretiker-Flavor-Option):**
+- **Was:** Häretiker als zweite, mechanisch identische Alternative zu
+  „Magier“ in der Charaktererstellung. Reine Anzeige-/Flavor-Ebene: kein
+  neuer Spielmechanik-Zweig, keine Code-Duplikation der Magie-Logik.
+- **Backend** (3 Commits — `entities/schemas.py`+`repository.py`,
+  `traits/erstellung.py`+`routes.py`+`bogen.py`, `traits/seed.py`): neues
+  Feld `magieFlavor: "MAGIER"|"HAERETIKER"` pro Person, `weg` bleibt
+  mechanisch immer `"MAGIER"` — `normalisiere_weg()` übersetzt den vom
+  Frontend gesendeten Wert. Häretiker als zweiter Eintrag in der
+  `WEGE`-Liste. Alle 9 Sphären + Hexkraft (→ Glauben) + Wilde Magie
+  (→ Blasphemie) mit ausformulierten Tooltip-Texten geseedet, Götter wie
+  in Punkt 14 zugeordnet (Chronos, Ehecatl, Tezcatlipoca, Kali, Donar,
+  Enki, Ogun, Atum, Izanami).
+- **Frontend** (4 Commits): neues zentrales Modul
+  `frontend/src/traits/magieBegriffe.ts` als Single Source of Truth fürs
+  Vokabular (analog zum Backend-Seed) — eingebunden in
+  Charaktererstellung (Weg-Karte + Fertigkeits-/Freebee-Schritt),
+  Charakterblatt, Kampfkarte, Probenrechner, Level-Up,
+  Willenskraft-Rückfrage. `tsc -b` fehlerfrei.
+- **Verifiziert:** echtes Backend-only-E2E-Skript gegen laufendes Backend
+  (eigener Testserver, Port 8020) + echte Neo4j: Häretiker-Weg-Karte in
+  den Regeln vorhanden und beschreibt „Glauben“, Charaktererstellung für
+  Magier UND Häretiker mit identischem Regelwerk durchgespielt (200 OK),
+  Katalog (59 Trait-Defs, interne IDs) bei beiden Wegen identisch,
+  Hexkraft-TraitDef bei beiden dieselbe ID, `weg` intern korrekt auf
+  `MAGIER` normalisiert, `magieFlavor` korrekt gesetzt, alle 9
+  Götter-Tooltips + Glauben-Tooltip abrufbar und ausformuliert (enthalten
+  „Blasphemie“ bzw. den jeweiligen Götternamen im Langtext). Test-Personen
+  + Testkampagnen danach aus Neo4j entfernt, Testserver gestoppt,
+  Wegwerf-Skripte gelöscht.
+- **Offen:** Optik/Bedienung im Browser nie angeklickt, siehe „Offen“ oben.
 
 **Zuletzt gebaut (24.09.2026, nachts/morgens — Kampagnen-Export/Import):**
 - **Kontext:** Nachts autonom gebaut, während Mark schlief (Token-Kontingent
@@ -1502,8 +1544,8 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     (Netzwerksperre der Session verhinderte DevTools-Mobil-Emulation), nur
     `tsc -b` — Mark muss am echten Handy gegenprüfen, siehe „Offen" oben.
 
-14. **Flavor-Option „Häretiker" (Konzept fertig 24.09.2026, Code noch nicht
-    begonnen)** — alternatives Namens-Reskin für Magier-Charaktere, für
+14. **Flavor-Option „Häretiker" (fertig gebaut 24.09.2026, siehe „Zuletzt
+    gebaut" unten)** — alternatives Namens-Reskin für Magier-Charaktere, für
     Spieler die einen "Gotteskrieger" spielen wollen: jemand der gegen
     jede Wahrscheinlichkeit an seinem Glauben festhält, in einer Welt
     (Konzerne, Chrome, Materialismus), die Glauben für tot erklärt hat —
@@ -1556,6 +1598,25 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     neu bauen). Die Kurzbeschreibungen der Wirkung oben sind der Rohstoff
     dafür, müssen aber noch zu vollen Texten ausgearbeitet werden, die
     auch den jeweiligen Gott selbst kurz einführen.
+
+    **Gebaut (24.09.2026):** `magieFlavor`-Feld pro Person
+    (`MAGIER`/`HAERETIKER`), `weg` bleibt intern immer `MAGIER` — keine
+    neue Spielmechanik, reine Anzeige-Ebene (`normalisiere_weg()` in
+    `traits/erstellung.py`). Häretiker als zweite Weg-Karte bei der
+    Charaktererstellung wählbar. Alle 9 Sphären + Hexkraft→Glauben +
+    Wilde Magie→Blasphemie mit ausformulierten Tooltip-Texten geseedet
+    (`traits/seed.py::_seed_haeretiker_erklaerungen`, Götter wie oben
+    zugeordnet). Frontend: zentrales Mapping-Modul
+    `frontend/src/traits/magieBegriffe.ts` (Single Source of Truth,
+    analog zum Backend-Seed) statt Text-Duplikation — eingebunden in
+    Charaktererstellung, Charakterblatt, Kampfkarte, Probenrechner,
+    Level-Up, Willenskraft-Rückfrage. Per echtem E2E-Skript gegen
+    laufendes Backend + Neo4j verifiziert: Häretiker-Weg-Karte in den
+    Regeln vorhanden, Katalog (interne Trait-IDs) bei Magier und
+    Häretiker identisch, `weg` intern normalisiert, `magieFlavor` korrekt
+    gesetzt, alle 9 Götter-Tooltips + Glauben-Tooltip abrufbar und
+    ausformuliert. **Offen:** Optik/Bedienung im Browser nie angeklickt,
+    siehe „Offen" oben.
 
 15. **Critter-Desktop-Pet / Tamagotchi (notiert 24.09.2026, Mark: „total
     irrer Vorschlag" — explizit ganz zum Schluss als Bonus-Feature, NICHT

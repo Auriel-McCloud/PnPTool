@@ -26,7 +26,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten |
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe (erfunden) |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel |
-| [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie |
+| [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie, Häretiker-Flavor (24.09.) |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Erweiterung auf 6 Skills (22.09.), Overclock statt Wilde Magie, Pool-Deckel 10→12 |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen/Schaden, WebSocket noch nicht gebaut |
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |

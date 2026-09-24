@@ -1,7 +1,7 @@
 ---
 title: Magie — Hexkraft und Sphären
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-24
 type: konzept
 tags: [magie, versionsgeschichte]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -43,6 +43,18 @@ Hexkraft 0 fälschlich kein Magier.
 
 ## Entwicklung
 
+- **24.09.2026 — Flavor-Option „Häretiker".** Zweite, mechanisch identische
+  Alternative zu „Magier" bei der Charaktererstellung: neues Feld
+  `magieFlavor` (`MAGIER`/`HAERETIKER`) pro Person, `weg` bleibt
+  mechanisch immer `MAGIER` — reine Anzeige-Ebene, keine neue
+  Spielmechanik. Hexkraft → **Glauben**, Wilde Magie → **Blasphemie**, die
+  neun Sphären bekommen Götternamen aus acht Mythologien (Chronos,
+  Ehecatl, Tezcatlipoca, Kali, Donar, Enki, Ogun, Atum, Izanami — siehe
+  CLAUDE.md Punkt 14 für die vollständige Zuordnung samt Begründung).
+  Zentrales Vokabular-Mapping in `backend/app/traits/seed.py`
+  (`_seed_haeretiker_erklaerungen`) und `frontend/src/traits/magieBegriffe.ts`
+  (Single Source of Truth, keine Text-Duplikation über die UI-Komponenten
+  verteilt).
 - **10.09.2026 — Arete → Hexkraft umbenannt.** Reine Namensänderung für
   Konsistenz (Backend hieß schon Hexkraft, Frontend noch Arete), brachte aber
   einen echten Doppelgänger-Bug mit sich — siehe

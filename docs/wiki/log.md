@@ -3,6 +3,17 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] update | concepts/magie-hexkraft
+
+Häretiker-Flavor-Option ergänzt: zweite, mechanisch identische Alternative
+zu „Magier" bei der Charaktererstellung, reine Anzeige-Ebene (neues Feld
+`magieFlavor`, `weg` bleibt intern immer `MAGIER`). Hexkraft→Glauben, Wilde
+Magie→Blasphemie, neun Sphären→Götternamen aus acht Mythologien (Details
+CLAUDE.md Punkt 14). Backend + Frontend über 7 Commits gebaut, echtes
+Backend-only-E2E-Skript gegen laufendes Backend + echte Neo4j bestanden
+(Katalog-Identität Magier/Häretiker, alle Tooltip-Texte abrufbar),
+Testdaten danach entfernt.
+
 ## [2026-09-24] create | entities/kampagnen-export-import
 
 Nachts autonom gebaut (Mark schlief, Token-Kontingent lief nach Fertigstellung
