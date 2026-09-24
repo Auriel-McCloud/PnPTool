@@ -173,6 +173,7 @@ class PersonUpdate(BaseModel):
     istHaendler: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
+    shopHintergrundUrl: str | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
@@ -220,6 +221,7 @@ class PersonResponse(BaseModel):
     istHaendler: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"
+    shopHintergrundUrl: str = ""
     silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0

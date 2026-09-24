@@ -104,6 +104,7 @@ class HaendlerEintrag(BaseModel):
     beschreibung: str
     spezialisierung: list[str]
     vertriebsart: str
+    shopHintergrundUrl: str = ""
     ortId: str | None = None
     ortName: str | None = None
     sichtbarkeit: str

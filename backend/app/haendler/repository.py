@@ -26,6 +26,7 @@ from datetime import datetime, timezone
 _HAENDLER_FELDER = """
     h.id AS id, h.name AS name, h.bildUrl AS bildUrl, h.description AS beschreibung,
     h.spezialisierung AS spezialisierung, h.vertriebsart AS vertriebsart,
+    h.shopHintergrundUrl AS shopHintergrundUrl,
     ort.id AS ortId, coalesce(ort.name, NULL) AS ortName,
     h.sichtbarkeit AS sichtbarkeit, h.sichtbarFuer AS sichtbarFuer
 """
@@ -37,6 +38,7 @@ def _decode_haendler(record: dict) -> dict:
     daten["beschreibung"] = daten.get("beschreibung") or ""
     daten["spezialisierung"] = daten.get("spezialisierung") or []
     daten["vertriebsart"] = daten.get("vertriebsart") or "PHYSISCH"
+    daten["shopHintergrundUrl"] = daten.get("shopHintergrundUrl") or ""
     daten["sichtbarkeit"] = daten.get("sichtbarkeit") or "GM"
     daten["sichtbarFuer"] = daten.get("sichtbarFuer") or []
     return daten
