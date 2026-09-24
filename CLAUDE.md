@@ -2,12 +2,20 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Offen: Was Mark selbst testen muss (Stand 23.09.2026, nachts)
+## Offen: Was Mark selbst testen muss (Stand 24.09.2026, morgens)
 
 Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
+- **Kampagnen-Export/Import** (`EinstellungenFenster.tsx`, Sektion
+  „KAMPAGNE“, siehe „Zuletzt gebaut“ unten): Export-Knopf, Import-Upload.
+  Backend-Logik komplett per echtem E2E-Testlauf gegen laufendes Backend +
+  Neo4j verifiziert (Export → Import → alle Prüfungen bestanden). Nur die
+  Frontend-Bedienung selbst ist ungetestet — nie im Browser angeklickt,
+  nur `tsc -b` geprüft. Bitte einmal am Dev-Server exportieren und
+  importieren, v.a. ob der Downloaddateiname stimmt und nach Import
+  automatisch zur neuen Kampagne gewechselt wird.
 - **Messenger-Mobil-Fixes** (`Messenger.tsx`/`messenger.css`, siehe „Zuletzt
   gebaut" unten): Hart-Scroll ans Ende, Tastatur-Sichtbarkeit via Visual
   Viewport API, dynamische Sprechblasen-Form — nur `tsc -b` geprüft, das
@@ -156,6 +164,44 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (24.09.2026, nachts/morgens — Kampagnen-Export/Import):**
+- **Kontext:** Nachts autonom gebaut, während Mark schlief (Token-Kontingent
+  übrig, dann Rate-Limit erreicht kurz vor Frontend-Fertigstellung — ein
+  Cronjob hat morgens Repo-Stand geprüft, Verifikation nachgeholt und die
+  Doku-Kaskade nachgezogen).
+- **Backend** (`app/campaigns/export_import.py`, neue Routen in
+  `app/campaigns/routes.py`): generische Cypher-Sammlung aller
+  kampagnen-eigenen Knoten/Kanten (`campaignId`-Feld + zwei Sonderfälle
+  `Spieler`/`KampfTeilnehmer`), ID-Neuvergabe per Text-Ersetzungsrunde auf
+  dem rohen JSON, Weisslisten (`KNOWN_LABELS`/`KNOWN_REL_TYPES`) gegen
+  manipulierte Importpakete, globale Katalogknoten (Rasse/TraitDef/
+  Regelsystem) bewusst ohne Neuvergabe. Vollständige Herleitung:
+  `docs/api/campaigns-export-import.md`.
+- **Frontend** (`EinstellungenFenster.tsx`, neue Sektion „KAMPAGNE“):
+  Export-Knopf (unsichtbarer `<a download>`-Anker, Cookie-Auth läuft mit),
+  Import-Upload (`.cl-roehre`-Label mit verstecktem Datei-Input, Multipart-
+  `fetch`). Nach Import wechselt `useCampaign().nachImportUebernehmen` die
+  Kampagnenauswahl automatisch zur neu importierten Kampagne.
+- **Verifiziert:** 6 Unit-Tests für `remap_ids` (reine Funktion, keine DB).
+  Echter E2E-Lauf gegen laufendes Backend + echte Neo4j: Testkampagne mit
+  PC/NPC/Ort/Gegenstand/Wiki-Seite/Spieler-Account → Export → Import → alle
+  Prüfungen bestanden, referenzielle Integrität intakt, globale
+  Katalogdaten unverändert. Beide Testkampagnen danach wieder aus der
+  echten Neo4j entfernt. Zusätzlich beim morgendlichen Cronjob-Check: 13
+  weitere, aus früheren Sessions liegen gebliebene verwaiste Test-Knoten
+  (ohne zugehörigen Campaign-Knoten, älterer Testmüll — Händler-/
+  Verhandlungs-Feature-Tests) sowie ein verwaister Test-Spieler gefunden
+  und ebenfalls entfernt; Neo4j enthält jetzt nur noch globale
+  Katalogdaten, keine Kampagnen. `tsc -b` fehlerfrei, Backend-Import +
+  Routen im OpenAPI-Schema geprüft (`/api/campaigns/import`,
+  `/api/campaigns/{id}/export`). **Offen:** kein Klicktest im laufenden
+  Frontend, siehe „Offen“ oben.
+- **Bekannter Vorbestand (nicht durch dieses Feature verursacht):** zwei
+  Tests in `test_zugriffsschutz.py` schlagen unabhängig fehl
+  (`/api/spieler/charakter-neu`+`charakter-waehlen` ohne GM-Prüfung,
+  `/spotify/suche` fälschlich GM-only) — per `git stash`-Vergleich
+  bestätigt, dass sie auch auf dem Stand vor diesem Feature fehlschlagen.
 
 **Zuletzt gebaut (23.09.2026/24.09.2026, nachts — Messenger-Mobil-Fixes + Wiki-Mobil-Drawer):**
 - **Kontext:** Mark hatte Token-Kontingent übrig und ließ nachts autonom zwei
@@ -710,7 +756,7 @@ schon vorbereitet (`app/verhandlung/schemas.py` trägt eine Liste von
 Positionen statt eines Skalars), UI noch nicht spezifiziert.), Shop-Spam/
 Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
 PC-Vorlagen im Regelsystem,
-**Kampagnen-Export/Import** (mittlere Priorität — aktuell: Volumen-Kopier-Workaround für Deploy möglich),
+**Kampagnen-Export/Import** — gebaut 24.09.2026 (siehe „Zuletzt gebaut“ unten),
 Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
 erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
 `SpielEreignis`-Knoten + Cypher-Timeline)

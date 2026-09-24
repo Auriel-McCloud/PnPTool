@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-23 | Seiten: 29
+> Zuletzt aktualisiert: 2026-09-24 | Seiten: 30
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -53,6 +53,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
 | [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify |
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
+| [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP exportieren/importieren, generische Cypher-Sammlung, ID-Neuvergabe per Text-Ersetzung (24.09.) |
 
 ## Vergleiche
 

@@ -3,6 +3,18 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] create | entities/kampagnen-export-import
+
+Nachts autonom gebaut (Mark schlief, Token-Kontingent lief nach Fertigstellung
+in ein Rate-Limit — Cronjob hat den Rest am Morgen verifiziert/aufgeräumt).
+Neue Seite `entities/kampagnen-export-import.md` + `docs/api/
+campaigns-export-import.md`. SL kann eine komplette Kampagne (Knoten, Kanten,
+Bilder, Spieler-Accounts) als ZIP exportieren und als neue Kampagne wieder
+importieren. Generische Cypher-Sammlung statt Sonderfall je Entitätstyp,
+ID-Neuvergabe per Text-Ersetzungsrunde auf dem rohen JSON, Weisslisten gegen
+manipulierte Importpakete. Echter E2E-Testlauf gegen laufendes Backend +
+echte Neo4j bestanden, beide Testkampagnen danach entfernt.
+
 ## [2026-09-18] create | Wiki initialisiert
 
 - Domain: NeotopiA-Regelsystem (mit Versionsgeschichte) + PnPTool-Architektur
