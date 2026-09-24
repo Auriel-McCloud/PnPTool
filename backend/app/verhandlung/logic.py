@@ -14,6 +14,7 @@ Antwort passiert sein).
 
 from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
+from app.haendler import repository as haendler_repository
 from app.items import repository as items_repository
 from app.kampf.ruestung import repariere
 
@@ -59,10 +60,51 @@ async def _ausfuehren_ruestung_reparatur(campaign_id: str, verhandlung: dict) ->
     return {"gegenstand": aktualisiert, "kapitalNeu": kapital - preis}
 
 
+async def _ausfuehren_shop_kauf(campaign_id: str, verhandlung: dict) -> dict:
+    """Kontext: {"haendlerId": str, "gegenstandId": str}. Führt den Kauf zum
+    verhandelten Preis (Verhandlung.gesamtbetrag) durch — der eigentliche
+    Kauf-Code liegt bewusst in haendler/repository.py, damit Vorlage-Kopie
+    vs. Unikat-Besitzerwechsel nicht doppelt gepflegt wird (dasselbe Muster
+    wie /haendler/{id}/kaufen, nur mit dem Verhandlungspreis statt dem
+    Sortimentspreis). Nur bei physischen Käufen einsetzbar — digitale Käufe
+    (Vertriebsart DIGITAL) kennen kein Verhandeln, siehe
+    docs/api/haendler.md."""
+    kontext = verhandlung["kontext"]
+    haendler_id = kontext["haendlerId"]
+    gegenstand_id = kontext["gegenstandId"]
+    person_id = verhandlung["empfaengerPersonId"]
+    preis = verhandlung["gesamtbetrag"]
+
+    person = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        raise VerhandlungsFehler("Käufer nicht mehr gefunden")
+
+    kapital = int(person.get("kapital") or 0)
+    if kapital < preis:
+        raise VerhandlungsFehler(f"Guthaben reicht nicht mehr — {kapital}¥ verfügbar, {preis}¥ nötig")
+
+    gegenstand = await items_repository.get_gegenstand(campaign_id, gegenstand_id)
+    if gegenstand is None:
+        raise VerhandlungsFehler("Die Ware ist nicht mehr auffindbar")
+
+    if gegenstand["istVorlage"]:
+        gekauft = await items_repository.assign_copy(campaign_id, gegenstand, person_id, "SPEZIFISCH", [person_id])
+    else:
+        gekauft = await items_repository.transfer_owner(campaign_id, gegenstand_id, person_id)
+        await haendler_repository.verkauft_entfernen(campaign_id, haendler_id, gegenstand_id)
+    if gekauft is None:
+        raise VerhandlungsFehler("Kauf fehlgeschlagen")
+
+    kapital_neu = kapital - preis
+    await entities_repository.update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"kapital": kapital_neu})
+    return {"gegenstand": gekauft, "kapitalNeu": kapital_neu}
+
+
 # Dispatch-Tabelle: Verhandlungsart -> Ausführungsfunktion. Erweitern statt
 # umbauen, wenn eine neue Art dazukommt.
 _AUSFUEHRUNG = {
     "RUESTUNG_REPARATUR": _ausfuehren_ruestung_reparatur,
+    "SHOP_KAUF": _ausfuehren_shop_kauf,
 }
 
 

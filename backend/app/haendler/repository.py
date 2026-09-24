@@ -20,9 +20,12 @@ gelöscht.
 
 from app.db.neo4j_driver import get_driver
 
+import uuid
+from datetime import datetime, timezone
+
 _HAENDLER_FELDER = """
     h.id AS id, h.name AS name, h.bildUrl AS bildUrl, h.description AS beschreibung,
-    h.spezialisierung AS spezialisierung,
+    h.spezialisierung AS spezialisierung, h.vertriebsart AS vertriebsart,
     ort.id AS ortId, coalesce(ort.name, NULL) AS ortName,
     h.sichtbarkeit AS sichtbarkeit, h.sichtbarFuer AS sichtbarFuer
 """
@@ -33,6 +36,7 @@ def _decode_haendler(record: dict) -> dict:
     daten["bildUrl"] = daten.get("bildUrl") or ""
     daten["beschreibung"] = daten.get("beschreibung") or ""
     daten["spezialisierung"] = daten.get("spezialisierung") or []
+    daten["vertriebsart"] = daten.get("vertriebsart") or "PHYSISCH"
     daten["sichtbarkeit"] = daten.get("sichtbarkeit") or "GM"
     daten["sichtbarFuer"] = daten.get("sichtbarFuer") or []
     return daten
@@ -99,7 +103,8 @@ async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None
 
 _EXPLIZIT_FELDER = """
     g.id AS gegenstandId, g.name AS name, g.bildUrl AS bildUrl, g.typ AS typ,
-    r.preis AS preis, g.istVorlage AS istVorlage
+    r.preis AS preis, g.istVorlage AS istVorlage,
+    coalesce(r.rabattProzent, 0) AS rabattProzent, coalesce(r.rabattHinweis, '') AS rabattHinweis
 """
 
 _AUTOMATISCH_FELDER = """
@@ -149,7 +154,7 @@ async def sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
         automatische_eintraege = [dict(r) async for r in automatisch if dict(r)["gegenstandId"] not in explizite_ids]
 
     ergebnis = [{**e, "automatisch": False} for e in explizite_eintraege]
-    ergebnis += [{**e, "automatisch": True} for e in automatische_eintraege]
+    ergebnis += [{**e, "automatisch": True, "rabattProzent": 0, "rabattHinweis": ""} for e in automatische_eintraege]
     for e in ergebnis:
         e["bildUrl"] = e.get("bildUrl") or ""
         e["preis"] = e.get("preis") or 0
@@ -157,14 +162,15 @@ async def sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
 
 
 async def effektiver_preis(campaign_id: str, haendler_id: str, gegenstand_id: str) -> int | None:
-    """Der Preis, zu dem dieser Händler dieses Stück verkauft — oder None,
-    wenn es nicht (mehr) in seinem Sortiment ist. Prüft explizit vor
-    automatisch, weil ein expliziter Eintrag den automatischen überschreibt
-    (siehe sortiment())."""
+    """Der tatsächliche Kaufpreis (Grundpreis minus Rabatt), zu dem dieser
+    Händler dieses Stück verkauft — oder None, wenn es nicht (mehr) in
+    seinem Sortiment ist. Prüft explizit vor automatisch, weil ein
+    expliziter Eintrag den automatischen überschreibt (siehe sortiment())."""
     fuer_sortiment = await sortiment(campaign_id, haendler_id)
     for eintrag in fuer_sortiment:
         if eintrag["gegenstandId"] == gegenstand_id:
-            return eintrag["preis"]
+            rabatt = eintrag.get("rabattProzent") or 0
+            return eintrag["preis"] * (100 - rabatt) // 100
     return None
 
 
@@ -196,3 +202,150 @@ async def verkauft_entfernen(campaign_id: str, haendler_id: str, gegenstand_id: 
         result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id, gegenstand_id=gegenstand_id)
         record = await result.single()
         return bool(record and record["geloescht"])
+
+
+async def rabatt_setzen(
+    campaign_id: str, haendler_id: str, gegenstand_id: str, prozent: int, hinweis: str
+) -> bool:
+    """Sonderangebot auf einen EXPLIZITEN Sortiment-Eintrag (Rabatt braucht
+    eine VERKAUFT-Kante als Träger, siehe schemas.py::SortimentEintrag).
+    prozent=0 nimmt den Rabatt wieder weg."""
+    driver = get_driver()
+    query = """
+        MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
+              -[r:VERKAUFT]->(g:Gegenstand {id: $gegenstand_id})
+        SET r.rabattProzent = $prozent, r.rabattHinweis = $hinweis
+        RETURN count(r) AS gesetzt
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            haendler_id=haendler_id,
+            gegenstand_id=gegenstand_id,
+            prozent=prozent,
+            hinweis=hinweis,
+        )
+        record = await result.single()
+        return bool(record and record["gesetzt"])
+
+
+# --- Bestellungen (digitaler Shop) ------------------------------------------
+#
+# Ein digitaler Kauf (Vertriebsart DIGITAL) übergibt die Ware nicht sofort —
+# stattdessen entsteht eine Bestellung, die SL löst die Lieferung manuell per
+# Knopf aus (kein fester Termin, Marks Vorgabe 24.09.2026). Eigener
+# Node-Typ statt Wiederverwendung von :Verhandlung — eine Bestellung hat
+# keinen Annehmen/Ablehnen-Schritt (Kapital ist beim Bestellen schon weg),
+# nur einen Status offen->geliefert.
+
+_BESTELLUNG_FELDER = """
+    b.id AS id, b.haendlerId AS haendlerId, b.haendlerName AS haendlerName,
+    b.kaeuferPersonId AS kaeuferPersonId, b.gegenstandId AS gegenstandId,
+    b.gegenstandName AS gegenstandName, b.preis AS preis, b.status AS status,
+    b.bestelltAm AS bestelltAm, b.geliefertAm AS geliefertAm
+"""
+
+
+def _jetzt() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _decode_bestellung(record: dict) -> dict:
+    b = dict(record)
+    b["status"] = b.get("status") or "OFFEN"
+    b["geliefertAm"] = b.get("geliefertAm") or ""
+    return b
+
+
+async def bestellung_anlegen(
+    campaign_id: str,
+    haendler_id: str,
+    haendler_name: str,
+    kaeufer_person_id: str,
+    gegenstand_id: str,
+    gegenstand_name: str,
+    preis: int,
+) -> dict:
+    driver = get_driver()
+    query = f"""
+        MATCH (c:Campaign {{id: $campaign_id}})
+        CREATE (b:Bestellung {{
+            id: $bid, campaignId: $campaign_id,
+            haendlerId: $haendler_id, haendlerName: $haendler_name,
+            kaeuferPersonId: $kaeufer_person_id,
+            gegenstandId: $gegenstand_id, gegenstandName: $gegenstand_name,
+            preis: $preis, status: 'OFFEN', bestelltAm: $jetzt, geliefertAm: ''
+        }})
+        CREATE (c)-[:HAT_BESTELLUNG]->(b)
+        RETURN {_BESTELLUNG_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            bid=str(uuid.uuid4()),
+            haendler_id=haendler_id,
+            haendler_name=haendler_name,
+            kaeufer_person_id=kaeufer_person_id,
+            gegenstand_id=gegenstand_id,
+            gegenstand_name=gegenstand_name,
+            preis=preis,
+            jetzt=_jetzt(),
+        )
+        record = await result.single()
+        return _decode_bestellung(dict(record))
+
+
+async def offene_bestellungen(campaign_id: str) -> list[dict]:
+    """Alle offenen Bestellungen dieser Kampagne — für die SL-Liste mit dem
+    'Jetzt liefern'-Knopf (alle Händler zusammen, nicht pro Händler gescoped,
+    da die SL global den Überblick behalten soll)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (b:Bestellung {{campaignId: $campaign_id, status: 'OFFEN'}})
+        RETURN {_BESTELLUNG_FELDER}
+        ORDER BY b.bestelltAm ASC
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [_decode_bestellung(dict(r)) async for r in result]
+
+
+async def bestellungen_fuer_person(campaign_id: str, person_id: str) -> list[dict]:
+    """Eigene Bestellungen (offen + geliefert) — für die Spieler-Ansicht im
+    Online-Shop, damit sichtbar ist, was noch unterwegs ist."""
+    driver = get_driver()
+    query = f"""
+        MATCH (b:Bestellung {{campaignId: $campaign_id, kaeuferPersonId: $person_id}})
+        RETURN {_BESTELLUNG_FELDER}
+        ORDER BY b.bestelltAm DESC
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [_decode_bestellung(dict(r)) async for r in result]
+
+
+async def bestellung_hole(campaign_id: str, bestellung_id: str) -> dict | None:
+    driver = get_driver()
+    query = f"""
+        MATCH (b:Bestellung {{id: $bid, campaignId: $campaign_id}})
+        RETURN {_BESTELLUNG_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, bid=bestellung_id)
+        record = await result.single()
+        return _decode_bestellung(dict(record)) if record else None
+
+
+async def bestellung_liefern(campaign_id: str, bestellung_id: str) -> dict | None:
+    driver = get_driver()
+    query = f"""
+        MATCH (b:Bestellung {{id: $bid, campaignId: $campaign_id, status: 'OFFEN'}})
+        SET b.status = 'GELIEFERT', b.geliefertAm = $jetzt
+        RETURN {_BESTELLUNG_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, bid=bestellung_id, jetzt=_jetzt())
+        record = await result.single()
+        return _decode_bestellung(dict(record)) if record else None

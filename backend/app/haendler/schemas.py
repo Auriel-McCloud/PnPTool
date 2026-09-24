@@ -9,7 +9,8 @@ nur das Shop-spezifische ab: Sortiment (welche Ware zu welchem Preis) und
 Kaufen (Guthaben prüfen, Ware übergeben).
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class SortimentEintrag(BaseModel):
@@ -30,6 +31,13 @@ class SortimentEintrag(BaseModel):
     # Einträge lassen sich nicht direkt entfernen, nur über die Vorlage
     # selbst oder die Spezialisierung des Händlers).
     automatisch: bool
+    # Sonderangebot (24.09.2026): nur bei explizit eingetragener Ware
+    # möglich (Rabatt braucht eine VERKAUFT-Kante als Träger) — 0 = kein
+    # Rabatt. Der tatsächliche Kaufpreis wird serverseitig aus preis und
+    # rabattProzent berechnet (repository.py::effektiver_preis), preis oben
+    # bleibt der Grundpreis für die Anzeige ("durchgestrichen").
+    rabattProzent: int = 0
+    rabattHinweis: str = ""
 
 
 class SortimentHinzufuegenRequest(BaseModel):
@@ -48,8 +56,42 @@ class KaufRequest(BaseModel):
 
 
 class KaufResponse(BaseModel):
-    gegenstand: dict
+    # Bei sofortiger Übergabe (physischer Shop) gesetzt. Bei digitalem Kauf
+    # None — die Ware existiert dem Spieler gegenüber noch nicht, siehe
+    # bestellung.
+    gegenstand: dict | None = None
     kapitalNeu: int
+    # Nur bei digitalem Kauf gesetzt (Vertriebsart DIGITAL): die angelegte
+    # Bestellung, die SL löst die tatsächliche Lieferung später manuell aus
+    # (siehe BestellungResponse, POST .../bestellungen/{id}/liefern).
+    bestellung: dict | None = None
+
+
+class RabattRequest(BaseModel):
+    """Sonderangebot auf einen expliziten Sortiment-Eintrag. prozent=0 nimmt
+    den Rabatt wieder weg (Normalpreis)."""
+
+    prozent: int = Field(ge=0, le=95)
+    hinweis: str = ""
+
+
+class BestellungResponse(BaseModel):
+    """Eine Online-Bestellung bei einem digitalen Händler (Vertriebsart
+    DIGITAL) — Ware kommt nicht sofort, die SL gibt die Lieferung manuell
+    frei (kein fester Termin, Marks Vorgabe 24.09.2026: "nur ein Knopf
+    'jetzt liefern'"). Kapital wird bereits bei der Bestellung abgezogen,
+    nicht erst bei Lieferung."""
+
+    id: str
+    haendlerId: str
+    haendlerName: str
+    kaeuferPersonId: str
+    gegenstandId: str
+    gegenstandName: str
+    preis: int
+    status: Literal["OFFEN", "GELIEFERT"] = "OFFEN"
+    bestelltAm: str = ""
+    geliefertAm: str = ""
 
 
 class HaendlerEintrag(BaseModel):
@@ -61,6 +103,7 @@ class HaendlerEintrag(BaseModel):
     bildUrl: str
     beschreibung: str
     spezialisierung: list[str]
+    vertriebsart: str
     ortId: str | None = None
     ortName: str | None = None
     sichtbarkeit: str

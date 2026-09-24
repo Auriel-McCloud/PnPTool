@@ -118,6 +118,13 @@ class PersonCreate(BaseModel):
     # Explizit im Sortiment eingetragene Ware (VERKAUFT-Kante,
     # app/haendler/repository.py) ist davon unabhängig immer sichtbar.
     spezialisierung: list[str] = []
+    # Shop-Frontend (24.09.2026, Marks Konzept): PHYSISCH zeigt Laden-Bild +
+    # Händler-Portrait, Verhandeln ist möglich, Ware wird bei Kauf sofort
+    # übergeben. DIGITAL zeigt eine schlichte Online-Shop-Ansicht (kein
+    # Verhandeln, kein Laden-Bild), Kauf legt stattdessen eine Bestellung
+    # an — die SL löst die Lieferung manuell per Knopf aus (kein fester
+    # Termin), siehe app/haendler/repository.py::Bestellung.
+    vertriebsart: Literal["PHYSISCH", "DIGITAL"] = "PHYSISCH"
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
@@ -165,6 +172,7 @@ class PersonUpdate(BaseModel):
     istKI: bool | None = None
     istHaendler: bool | None = None
     spezialisierung: list[str] | None = None
+    vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     silhouette: str | None = None
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
@@ -211,6 +219,7 @@ class PersonResponse(BaseModel):
     istKI: bool = False
     istHaendler: bool = False
     spezialisierung: list[str] = []
+    vertriebsart: str = "PHYSISCH"
     silhouette: str = "maennlich"
     schadenSchlag: int = 0
     schadenSchwer: int = 0

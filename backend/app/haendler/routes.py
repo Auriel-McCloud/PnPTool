@@ -20,9 +20,11 @@ from app.haendler import repository
 from app.haendler import ki_vorschlag
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort
 from app.haendler.schemas import (
+    BestellungResponse,
     HaendlerEintrag,
     KaufRequest,
     KaufResponse,
+    RabattRequest,
     SortimentEintrag,
     SortimentHinzufuegenRequest,
     StandortRequest,
@@ -110,6 +112,24 @@ async def sortiment_entfernen(campaign_id: str, haendler_id: str, gegenstand_id:
     return await repository.sortiment(campaign_id, haendler_id)
 
 
+@router.put(
+    "/{haendler_id}/sortiment/{gegenstand_id}/rabatt",
+    response_model=list[SortimentEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def rabatt_setzen(campaign_id: str, haendler_id: str, gegenstand_id: str, body: RabattRequest):
+    """Sonderangebot auf einen expliziten Sortiment-Eintrag. prozent=0 nimmt
+    den Rabatt wieder weg (Normalpreis). Nur bei explizit eingetragener Ware
+    möglich — automatische Katalog-Einträge tragen keine VERKAUFT-Kante mit
+    eigenem Preis, siehe repository.py::rabatt_setzen."""
+    if not await repository.rabatt_setzen(campaign_id, haendler_id, gegenstand_id, body.prozent, body.hinweis):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Diese Ware ist nicht explizit im Sortiment eingetragen — Rabatt nur auf explizite Einträge möglich",
+        )
+    return await repository.sortiment(campaign_id, haendler_id)
+
+
 @router.post("/{haendler_id}/kaufen", response_model=KaufResponse)
 async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: Viewer = Depends(get_viewer)):
     """Kauft ein Stück aus dem Sortiment dieses Händlers.
@@ -119,8 +139,16 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     SL kann für jeden PC kaufen** (z.B. NPC schenkt/verkauft etwas spontan im
     Spiel). Server prüft Guthaben noch einmal selbst — ein Bestätigungs-Popup
     im Frontend ersetzt diese Prüfung nicht, sie ist nur UX.
+
+    **Vertriebsart DIGITAL** (24.09.2026, Marks Konzept): die Ware wird nicht
+    sofort übergeben, sondern es entsteht eine Bestellung — Kapital ist
+    sofort weg, die SL löst die tatsächliche Lieferung später manuell aus
+    (POST .../bestellungen/{id}/liefern). Bei Vorlagen bleibt das Sortiment
+    unverändert (wie bisher); bei Unikaten verschwindet die Ware trotzdem
+    sofort aus dem Sortiment (ist ja verkauft), nur die physische Übergabe
+    wartet.
     """
-    await _haendler_oder_404(campaign_id, haendler_id, viewer)
+    haendler = await _haendler_oder_404(campaign_id, haendler_id, viewer)
 
     if viewer.role == "GM":
         if not body.kaeuferPersonId:
@@ -150,6 +178,23 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     if gegenstand is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
+    kapital_neu = kapital - preis
+
+    if haendler.get("vertriebsart") == "DIGITAL":
+        # Kapital sofort abziehen, Ware NICHT übergeben — nur eine
+        # Bestellung anlegen. Bei einem Unikat trotzdem sofort aus dem
+        # Sortiment nehmen (ist verkauft), die physische Übergabe kommt erst
+        # bei der Lieferung.
+        if not gegenstand["istVorlage"]:
+            await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
+        await entities_repository.update_node(
+            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
+        )
+        bestellung = await repository.bestellung_anlegen(
+            campaign_id, haendler_id, haendler["name"], kaeufer_id, body.gegenstandId, gegenstand["name"], preis
+        )
+        return KaufResponse(gegenstand=None, kapitalNeu=kapital_neu, bestellung=bestellung)
+
     if gegenstand["istVorlage"]:
         # Unendlich verfügbar: eine unabhängige Kopie für den Käufer, die
         # Vorlage selbst bleibt im Sortiment stehen (dasselbe Muster wie
@@ -165,12 +210,59 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     if gekauft is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
 
-    kapital_neu = kapital - preis
     await entities_repository.update_node(
         "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu)
+
+
+@router.get("/bestellungen/offen", response_model=list[BestellungResponse], dependencies=[Depends(require_campaign_gm)])
+async def bestellungen_offen(campaign_id: str):
+    """Alle offenen Online-Bestellungen dieser Kampagne — SL-Liste mit dem
+    'Jetzt liefern'-Knopf, über alle digitalen Händler hinweg."""
+    return await repository.offene_bestellungen(campaign_id)
+
+
+@router.get("/bestellungen/eigene", response_model=list[BestellungResponse])
+async def bestellungen_eigene(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Eigene Bestellungen (offen + geliefert) — Spieler-Ansicht im
+    Online-Shop, zeigt was noch unterwegs ist."""
+    if not viewer.person_id:
+        return []
+    return await repository.bestellungen_fuer_person(campaign_id, viewer.person_id)
+
+
+@router.post(
+    "/bestellungen/{bestellung_id}/liefern",
+    response_model=BestellungResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def bestellung_liefern(campaign_id: str, bestellung_id: str):
+    """SL gibt die Lieferung frei — kein fester Termin, nur ein Knopf zum
+    gewünschten Zeitpunkt (Marks Vorgabe 24.09.2026). Übergibt die Ware erst
+    jetzt tatsächlich an den Käufer."""
+    bestellung = await repository.bestellung_hole(campaign_id, bestellung_id)
+    if bestellung is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bestellung nicht gefunden")
+    if bestellung["status"] != "OFFEN":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Bestellung wurde bereits geliefert")
+
+    gegenstand = await items_repository.get_gegenstand(campaign_id, bestellung["gegenstandId"])
+    if gegenstand is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht mehr auffindbar")
+
+    if gegenstand["istVorlage"]:
+        await items_repository.assign_copy(
+            campaign_id, gegenstand, bestellung["kaeuferPersonId"], "SPEZIFISCH", [bestellung["kaeuferPersonId"]]
+        )
+    else:
+        await items_repository.transfer_owner(campaign_id, bestellung["gegenstandId"], bestellung["kaeuferPersonId"])
+
+    aktualisiert = await repository.bestellung_liefern(campaign_id, bestellung_id)
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Bestellung wurde bereits geliefert")
+    return aktualisiert
 
 
 @router.get(
