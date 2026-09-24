@@ -13,6 +13,7 @@ import {
   type FertigkeitsPaket,
   type Rasse,
 } from "./bogenApi";
+import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -109,9 +110,11 @@ export function Charaktererstellung({
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
 
-  /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl. */
+  /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl.
+   * Häretiker ist mechanisch Magier (siehe erstellung.py::normalisiere_weg)
+   * — dieselben Kategorien, nur andere Anzeigebeschriftung im Blatt später. */
   const wegKategorien = useMemo(() => {
-    if (weg === "MAGIER") return new Set(["Fertigkeit", "Hexkraft", "Sphäre"]);
+    if (weg === "MAGIER" || weg === "HAERETIKER") return new Set(["Fertigkeit", "Hexkraft", "Sphäre"]);
     if (weg === "NEUROWEAVER") return new Set(["Fertigkeit", "NeuroWeavingWert", "NeuroWeaving"]);
     return new Set(["Fertigkeit"]);
   }, [weg]);
@@ -341,6 +344,7 @@ export function Charaktererstellung({
             werte={fertigkeitPunkte}
             offen={offeneFertigkeiten}
             onWert={setFertigkeitPunkte}
+            magieFlavor={weg === "HAERETIKER" ? "HAERETIKER" : "MAGIER"}
           />
         )}
 
@@ -368,6 +372,7 @@ export function Charaktererstellung({
             onKredit={setFreebeeKredit}
             eigenkapital={freebeeEigenkapital}
             onEigenkapital={setFreebeeEigenkapital}
+            magieFlavor={weg === "HAERETIKER" ? "HAERETIKER" : "MAGIER"}
           />
         )}
 
@@ -733,6 +738,7 @@ function SchrittFertigkeiten({
   werte,
   offen,
   onWert,
+  magieFlavor,
 }: {
   campaignId: string;
   regeln: Erstellungsregeln;
@@ -742,6 +748,8 @@ function SchrittFertigkeiten({
   werte: Record<string, number>;
   offen: Record<number, number>;
   onWert: (werte: Record<string, number>) => void;
+  /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
+  magieFlavor?: MagieFlavor;
 }) {
   // Die Auswahl selbst steht in einem Fenster: dreissig Fertigkeiten unter
   // die Paketkarten zu hängen zwang zum Scrollen, und die Spalten gerieten
@@ -820,7 +828,9 @@ function SchrittFertigkeiten({
             </p>
             {gruppenFolge.map((kategorie) => (
               <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
-                <h3 className="er-spalte-titel">{KATEGORIE_TITEL[kategorie] ?? kategorie}</h3>
+                <h3 className="er-spalte-titel">
+                  {kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+                </h3>
                 <div
                   className="er-spaltenraster"
                   // Spaltenweise füllen wie auf dem Blatt: die ersten zehn
@@ -830,14 +840,15 @@ function SchrittFertigkeiten({
                 >
                   {gruppen[kategorie].map((t) => {
                     const wert = werte[t.name] || 0;
+                    const anzeigeName = magieBegriff(magieFlavor, t.name);
                     return (
                       <div key={t.id} className="er-wert">
                         <span className="er-wert-name">
-                          {t.name}
+                          {anzeigeName}
                           <InfoTipp
                             campaignId={campaignId}
-                            schluessel={erklaerungsSchluessel.trait(t.name)}
-                            titel={t.name}
+                            schluessel={erklaerungsSchluessel.trait(anzeigeName)}
+                            titel={anzeigeName}
                             erzwingen
                           />
                         </span>
@@ -920,6 +931,7 @@ function SchrittFreebees({
   onKredit,
   eigenkapital,
   onEigenkapital,
+  magieFlavor,
 }: {
   campaignId: string;
   regeln: Erstellungsregeln;
@@ -943,6 +955,8 @@ function SchrittFreebees({
   onKredit: (n: number) => void;
   eigenkapital: number;
   onEigenkapital: (n: number) => void;
+  /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
+  magieFlavor?: MagieFlavor;
 }) {
   const preise = regeln.freebees.kostenJeKategorie;
 
@@ -978,7 +992,8 @@ function SchrittFreebees({
       {folge.map((kategorie) => (
         <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
           <h3 className="er-spalte-titel">
-            {KATEGORIE_TITEL[kategorie] ?? kategorie} · {preise[kategorie] ?? 0} je Punkt
+            {(kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie))} ·{" "}
+            {preise[kategorie] ?? 0} je Punkt
           </h3>
           <div
             className="er-spaltenraster"
@@ -988,14 +1003,15 @@ function SchrittFreebees({
               const basis = grundwert(t.name);
               const zusatz = punkte[t.name] || 0;
               const preis = preise[kategorie] ?? 0;
+              const anzeigeName = magieBegriff(magieFlavor, t.name);
               return (
                 <div key={t.id} className="er-wert">
                   <span className="er-wert-name">
-                    {t.name}
+                    {anzeigeName}
                     <InfoTipp
                       campaignId={campaignId}
-                      schluessel={erklaerungsSchluessel.trait(t.name)}
-                      titel={t.name}
+                      schluessel={erklaerungsSchluessel.trait(anzeigeName)}
+                      titel={anzeigeName}
                       erzwingen
                     />
                     {zusatz > 0 && <em className="er-freebee-plus">+{zusatz}</em>}
