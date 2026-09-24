@@ -154,6 +154,76 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
 }
 
 
+# --- Häretiker-Flavor (24.09.2026, siehe CLAUDE.md Punkt 14) ------------
+#
+# "Häretiker" ist KEIN eigener Weg und KEINE eigene Mechanik — nur ein
+# zweites Vokabular für exakt denselben Magier-Weg (siehe
+# traits/erstellung.py::normalisiere_weg). Ein Häretiker-Charakter hat
+# intern weg="MAGIER" und dieselben TraitDefs (Hexkraft, Korrespondenz,
+# Entropie, ...); nur `magieFlavor="HAERETIKER"` sagt der Oberfläche, dass
+# sie andere Beschriftungen zeigen soll. Diese Zuordnung ist deshalb die
+# EINZIGE Stelle, an der Häretiker-Begriffe definiert sind — Frontend und
+# ggf. spätere Server-Texte lesen von hier, statt die Zuordnung zu
+# duplizieren.
+#
+# Sphären → Götter aus 8 verschiedenen Mythologien, je nach mechanischer
+# Wirkung der Sphäre ausgesucht (Marks Wunsch: weltweite Mischung statt
+# einem Pantheon). "Donar" bewusst statt "Thor" (Mark: zu Marvel-geprägt).
+HAERETIKER_LABELS: dict[str, str] = {
+    "Hexkraft": "Glauben",
+    "Korrespondenz": "Ehecatl",
+    "Gedanken": "Tezcatlipoca",
+    "Entropie": "Kali",
+    "Kräfte": "Donar",
+    "Leben": "Enki",
+    "Materie": "Ogun",
+    "Ursprung": "Atum",
+    "Geister": "Izanami",
+    "Zeit": "Chronos",
+}
+
+# "Wilde Magie" ist kein Trait-Name (kein Katalogeintrag), sondern ein reiner
+# UI-Begriff in Probe.tsx/magie.ts/WillenskraftFrage.tsx — deshalb hier als
+# eigene Konstante statt in HAERETIKER_LABELS, das nur Trait-Namen abbildet.
+HAERETIKER_BLASPHEMIE = "Blasphemie"
+
+# Kurzbeschreibungen (Tooltip-Kurztext) für die Häretiker-Begriffe, analog zu
+# TRAIT_BESCHREIBUNGEN. Geseedet unter eigenem Schlüssel (trait:<Flavorname>,
+# z.B. trait:Chronos) — die Mechanik-Erklärung unter trait:Zeit bleibt für
+# Magier-Charaktere unverändert bestehen, beide Texte leben nebeneinander.
+HAERETIKER_BESCHREIBUNGEN: dict[str, str] = {
+    "Glauben": "Reine Kraft des Glaubens — wie unerschütterlich und wirksam ein Wunder wirkt.",
+    "Chronos": "Zeit wahrnehmen und verschieben, im Namen Chronos' — Vorausschau, Verlangsamung, kurze Zeitsprünge.",
+    "Ehecatl": "Raum und Distanz überwinden, im Namen Ehecatls — Fernwahrnehmung, Teleportation, Dinge über Entfernung greifen.",
+    "Tezcatlipoca": "Bewusstsein beeinflussen, im Namen Tezcatlipocas — Gedanken lesen, Illusionen erzeugen, Willen beugen.",
+    "Kali": "Zufall, Verfall und Wandel lenken, im Namen Kalis — Wahrscheinlichkeiten biegen, Schwachstellen finden.",
+    "Donar": "Elementarenergie steuern, im Namen Donars — Feuer, Blitz, Schall, kinetische Wucht.",
+    "Enki": "Lebendiges Gewebe formen, im Namen Enkis — heilen, verwunden, mutieren, den eigenen Körper verändern.",
+    "Ogun": "Unbelebte Stoffe formen, im Namen Oguns — Metall, Beton, Chemikalien verwandeln oder erschaffen.",
+    "Atum": "Reine Schöpfungskraft anzapfen, im Namen Atums — Quintessenz ziehen, Dinge aus dem Nichts erschaffen.",
+    "Izanami": "Mit der Astralebene und ihren Bewohnern verkehren, im Namen Izanamis — dorthin reisen, Geister rufen, binden, verbannen.",
+}
+
+# Ausführliche Tooltip-Texte (Detail-Knopf) — kombinieren die mechanische
+# Wirkung (identisch zur jeweiligen Sphäre/Hexkraft, nur umformuliert) mit
+# einer kurzen Vorstellung der Gottheit/Mythologie (Marks Wunsch aus dem
+# Gespräch vom 24.09.2026: "das will ich dann in der Beschreibung haben wie
+# die Sphäre/Gott funktioniert"). Die Stufentexte sind bewusst inhaltsgleich
+# zu TRAIT_LANGBESCHREIBUNGEN — nur "Magier" wurde zu "Häretiker".
+HAERETIKER_LANGBESCHREIBUNGEN: dict[str, str] = {
+    "Glauben": "Glauben ist die rohe Kraft eines Häretikers — wie unerschütterlich und zuverlässig sein Wunder wirkt. Wo ein Magier von Hexkraft spricht, spricht ein Häretiker von Glauben: derselbe Wert, dieselbe Formel, nur eine andere Sprache dafür, dass in einer Welt aus Konzernen, Chrom und Materialismus noch jemand fest genug an etwas Größeres glaubt, um damit Wirkung zu erzielen.\\n\\nEin kontrollierter Akt des Glaubens würfelt nur den Glauben-Wert. Wer mehr will, riskiert Blasphemie: Bonuswürfel bis zur Höhe der eigenen Willenskraft, aber vorher muss ein Zielwert angesagt werden — wird er unterschritten, ist die Probe gescheitert. Nach einer gelungenen Blasphemie folgt ein Willenskraftwurf gegen die Zahl der Erfolge; was die Willenskraft nicht abdeckt, trifft den Häretiker als Schlagschaden — der Preis dafür, mehr vom Göttlichen zu verlangen, als der eigene Glaube sicher trägt.",
+    "Chronos": "Chronos ist in der griechischen Mythologie die Personifikation der Zeit selbst — nicht ein Gott unter vielen, sondern die Kraft, die allem Werden und Vergehen zugrunde liegt. Ein Häretiker, der sich auf Chronos beruft, glaubt, dass Zeit kein starres Gesetz ist, sondern etwas, das sich mit genug Glauben biegen lässt.\\n\\nMechanisch ist diese Sphäre mit der eines Magiers unter \\\"Zeit\\\" identisch: sie erlaubt es, Zeit wahrzunehmen, zu verlangsamen oder kurze Sprünge zu machen. Zeitreisen bleiben extrem gefährlich — Magie/Glauben existiert erst seit rund 100 Jahren wieder, ein Zeitreisender kann leicht in einer Ära stranden, in der es noch keinen Glauben gab, der ihn zurückholen könnte.\\n\\nStufen:\\n• Zeit wahrnehmen: den Fluss der Zeit spüren, kurze Vorausschau betreiben.\\n•• Zeit verlangsamen / beschleunigen: den Zeitfluss für sich selbst oder andere leicht verändern.\\n••• Zeitliche Anker setzen / kurze Sprünge: kurze Zeitsprünge machen oder Ereignisse zeitlich verzögern.\\n•••• Zeitliche Isolation / längere Sprünge: Bereiche zeitlich isolieren oder längere Sprünge wagen (mit hohem Risiko).\\n••••• Zeitreise / Zeitimmunität: sich außerhalb der Zeit bewegen — mit extrem hohem Risiko, in einer glaubenslosen Zeit zu stranden.",
+    "Ehecatl": "Ehecatl ist in der aztekischen Mythologie der Windgott, eine Erscheinungsform Quetzalcoatls — er bewegt sich frei über jede Distanz, trägt Samen und Regen von Ort zu Ort und kennt keine Grenze, die ihm der Raum setzt. Ein Häretiker, der sich auf ihn beruft, glaubt, dass Entfernung nur eine Frage der eigenen Hingabe ist.\\n\\nMechanisch identisch zur Sphäre \\\"Korrespondenz\\\" eines Magiers: sie erlaubt es, Entfernungen zu überwinden, Dinge an anderen Orten wahrzunehmen oder Gegenstände über große Distanzen zu beeinflussen. Fortgeschrittene Anwender reißen Tore zwischen Orten oder nehmen mehrere Orte gleichzeitig wahr.\\n\\nStufen:\\n• Unmittelbare Raumwahrnehmung: Dinge in der unmittelbaren Umgebung spüren, auch ungesehen.\\n•• Raum spüren, berühren, verdichten und hindurchgreifen: Sinne über Entfernungen ausstrecken, kleine Gegenstände durch winzige Raumlöcher ziehen.\\n••• Raum durchstoßen / Tore öffnen oder verschließen: kleine, temporäre Tore zwischen Orten erschaffen und selbst hindurchtreten.\\n•••• Raum zerreißen / Bannzeichen / Selbst-Kolokation: permanente Tore erschaffen, Bereiche isolieren oder an mehreren Orten gleichzeitig erscheinen.\\n••••• Raumveränderung / Kolokation: Entfernungen und Dimensionen frei verändern, Orte oder Gegenstände übereinander legen.",
+    "Tezcatlipoca": "Tezcatlipoca — der \\\"Rauchende Spiegel\\\" — ist in der aztekischen Mythologie der Gott der Täuschung, der Wahrsagerei und der verborgenen Wahrheit, der in einem obsidianen Spiegel die Gedanken und Schicksale der Menschen liest. Ein Häretiker, der sich auf ihn beruft, glaubt, dass kein Geist vor einem Blick geschützt ist, der fest genug glauben will.\\n\\nMechanisch identisch zur Sphäre \\\"Gedanken\\\" eines Magiers: sie erlaubt es, in die Köpfe anderer einzudringen, Illusionen zu erzeugen, Erinnerungen zu verändern oder Willen zu brechen. Fortgeschrittene Anwender formen ganze Persönlichkeiten um oder erzeugen kollektive Halluzinationen.",
+    "Kali": "Kali ist in der hinduistischen Mythologie die Göttin der Zerstörung, der Zeit und des radikalen Wandels — schrecklich und notwendig zugleich, denn ohne ihren Verfall gäbe es keinen Raum für Neues. Ein Häretiker, der sich auf Kali beruft, glaubt, dass Zufall und Verfall keine blinden Kräfte sind, sondern einer Ordnung folgen, die sich lenken lässt, wenn man nur genug glaubt.\\n\\nMechanisch identisch zur Sphäre \\\"Entropie\\\" eines Magiers: sie gibt die Macht, Strömungen von Wahrscheinlichkeit und Verfall zu beeinflussen — Pech bringen, Systeme altern lassen, glückliche Zufälle erzwingen oder Schwächen gezielt ausnutzen. Erst ab Rang 4 verursacht sie direkt schweren, schwer heilbaren Schaden; davor wirkt sie vor allem auf Umgebung und Wahrscheinlichkeit.\\n\\nStufen:\\n• Gespür für Schwächen, Glück und Verhängnis: Strömungen der Wahrscheinlichkeit spüren, Schwachstellen erkennen, Lügen oder Druck erahnen.\\n•• Wahrscheinlichkeit kontrollieren: zufällige Ereignisse leicht in eine gewünschte Richtung lenken.\\n••• Berechenbare Muster beeinflussen: die Geschwindigkeit steuern, mit der materielle Objekte versagen oder verfallen.\\n•••• Lebende Dinge beeinflussen: Gesundheit oder Verfall direkt in lebende Körper bringen — Segen oder Fluch.\\n••••• Gedanken beeinflussen / Meme formen / Bindender Eid: Ideen, Überzeugungen und Erinnerungen formen oder zerstören.",
+    "Donar": "Donar ist die kontinental-germanische Namensform des Sturm- und Blitzgottes, den man im Norden Thor nannte — Herr über Donner, Blitz und die rohe Gewalt des Wetters. Ein Häretiker, der sich auf Donar statt auf den kommerzialisierten \\\"Thor\\\" beruft, sucht die ältere, unverstellte Form desselben Glaubens.\\n\\nMechanisch identisch zur Sphäre \\\"Kräfte\\\" eines Magiers: sie erlaubt es, elementare Energien zu beschwören, zu lenken und zu verwandeln — Feuerbälle, Blitzschläge, Schallwellen, Gravitationsbrunnen oder Lichtmanipulation. Auf höheren Rängen lassen sich große Gebiete beeinflussen (Wetter, Feuerstürme).\\n\\nStufen:\\n• Kräfte wahrnehmen: elementare Energien spüren (Infrarot, Elektrizität, Schall etc.).\\n•• Kräfte beeinflussen / elementare Berührung: bestehende Energien lenken oder schwache Effekte erzeugen.\\n••• Geringe Kräfte umwandeln / Telekinese: Energien verwandeln und telekinetische Effekte wirken.\\n•••• Mächtige Kräfte kontrollieren / Wetterhexerei: große Gebiete beeinflussen, mächtige elementare Effekte erzeugen.\\n••••• Mächtige Kräfte verwandeln / Infernos beschwören: extrem zerstörerische elementare Phänomene hervorrufen.",
+    "Enki": "Enki ist in der sumerisch-mesopotamischen Mythologie der Gott der Weisheit, des Süßwassers und des Lebens — er formte nach der Überlieferung die Menschen aus Lehm und gilt als Herr über Fruchtbarkeit und Heilung. Ein Häretiker, der sich auf Enki beruft, glaubt, dass Leben etwas ist, das sich formen, heilen oder verändern lässt, wenn man nur an seinen Ursprung glaubt.\\n\\nMechanisch identisch zur Sphäre \\\"Leben\\\" eines Magiers: sie erlaubt es, lebendiges Gewebe zu heilen, zu verletzen, zu mutieren oder radikal zu verändern — neue Gliedmaßen, biologische Waffen oder die Verwandlung des eigenen Körpers. Auf höchsten Rängen lassen sich sogar neue Lebensformen erschaffen.\\n\\nStufen:\\n• Leben spüren: die Anwesenheit und den Gesundheitszustand naher Lebewesen spüren.\\n•• Einfache Lebensformen ändern / Selbstheilung: einfache Organismen verändern, sich selbst heilen.\\n••• Einfache Lebensformen verwandeln / Selbstveränderung: radikale Veränderungen an einfachen Organismen, starke Selbstveränderung.\\n•••• Komplexe Lebensformen ändern / Selbstverwandlung: komplexe Organismen (inklusive Menschen) radikal verändern.\\n••••• Komplexe Lebensformen verwandeln & erschaffen: jede gewünschte Lebensform annehmen oder erschaffen.",
+    "Ogun": "Ogun ist in der Yoruba-Mythologie Westafrikas der Gott des Eisens, der Schmiedekunst, der Jagd und der Technik — Schutzherr aller, die mit Werkzeug und Metall arbeiten, von Schmieden bis zu modernen Maschinisten. Ein Häretiker, der sich auf Ogun beruft, glaubt, dass tote Materie durch harten Glauben und harte Arbeit geformt werden will.\\n\\nMechanisch identisch zur Sphäre \\\"Materie\\\" eines Magiers: sie erlaubt es, alle Arten von unbelebter Materie zu formen, zu verwandeln oder aus Energie zu erschaffen — Metall, Beton, Glas oder komplexe chemische Verbindungen.\\n\\nStufen:\\n• Materiewahrnehmung: Eigenschaften und Struktur von Materialien spüren.\\n•• Einfache Transmutation: eine Substanz in eine andere verwandeln (ohne Aggregatszustand zu ändern).\\n••• Materie formen / komplexe Transmutation: Materie formen, komplexere Verwandlungen durchführen.\\n•••• Materie erschaffen / permanente Veränderung: Materie aus Energie erschaffen, dauerhafte Veränderungen vornehmen.\\n••••• Materie vollständig beherrschen: nahezu vollständige Kontrolle über alle Formen von Materie.",
+    "Atum": "Atum ist in der ägyptischen Mythologie der selbst erschaffene Urgott, der aus dem Nichts (Nun) hervorging und aus sich selbst heraus die erste Götterordnung schuf — die Quelle von allem, was existiert. Ein Häretiker, der sich auf Atum beruft, glaubt, dass reine Schöpfung möglich ist, wenn der Glaube nur an den Ursprung selbst reicht.\\n\\nMechanisch identisch zur Sphäre \\\"Ursprung\\\" eines Magiers: sie erlaubt es, Quintessenz direkt anzuzapfen, Gegenstände mit roher magischer Energie zu erfüllen oder sogar Machtorte zu erschaffen. Auf höheren Rängen lässt sich Paradoxon beeinflussen und Dinge aus reiner Energie formen.\\n\\nStufen:\\n• Quintessenz spüren: Quintessenz in Objekten und Lebewesen spüren.\\n•• Quintessenz kanalisieren: Quintessenz aus der Umgebung ziehen und in Objekte leiten.\\n••• Quintessenz formen / Machtorte erschaffen: Quintessenz formen, Machtorte erschaffen.\\n•••• Quintessenz beherrschen / Paradoxon beeinflussen: starke Kontrolle über Quintessenz, Paradoxon reduzieren.\\n••••• Quintessenz vollständig beherrschen: Quintessenz frei formen, extreme Effekte wirken.",
+    "Izanami": "Izanami ist in der japanischen Mythologie die Göttin des Todes und Schöpfung zugleich — nach ihrem Tod bei der Geburt des Feuergottes wurde sie Herrscherin über Yomi, das Land der Toten, und wacht seither über die Grenze zwischen den Lebenden und den Geistern. Ein Häretiker, der sich auf Izanami beruft, glaubt, dass diese Grenze durchlässig ist, wenn man nur fest genug daran glaubt.\\n\\nMechanisch identisch zur Sphäre \\\"Geister\\\" eines Magiers: sie erlaubt es, in die Astralebene zu reisen, Geister zu rufen, zu binden oder zu verbannen. Anders als in älteren Traditionen gibt es in Neotopia keine klassische Umbra — nur die Astralebene, ähnlich gefährlich und fremdartig. Geister lassen sich auch in Fetische binden oder gegen andere Wesen einsetzen.",
+}
+
+
 # (name, category, defaultMax, sortOrder) — aus Neotopia.xlsx (Charakterblatt-Sheet)
 NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     # Attribute Körperlich (6 Punkte)
@@ -285,6 +355,7 @@ async def seed_traits() -> None:
 
         await _migriere_arete_zu_hexkraft(session)
         await _seed_trait_erklaerungen(session, ruleset)
+        await _seed_haeretiker_erklaerungen(session, ruleset)
 
 
 async def _seed_trait_erklaerungen(session, ruleset: str) -> None:
@@ -307,6 +378,37 @@ async def _seed_trait_erklaerungen(session, ruleset: str) -> None:
     for name, text in TRAIT_BESCHREIBUNGEN.items():
         schluessel = f"trait:{name}"
         langtext = TRAIT_LANGBESCHREIBUNGEN.get(name, "")
+        await session.run(
+            """
+            MERGE (e:Erklaerung {ruleset: $ruleset, schluessel: $schluessel})
+            ON CREATE SET e.id = $ruleset + ':' + $schluessel,
+                          e.titel = $name, e.text = $text, e.quelle = 'KI',
+                          e.langtext = $langtext
+            ON MATCH SET e.titel = CASE WHEN e.quelle = 'HAND' THEN e.titel ELSE $name END,
+                         e.text = CASE WHEN e.quelle = 'HAND' THEN e.text ELSE $text END,
+                         e.langtext = CASE WHEN e.quelle = 'HAND' THEN e.langtext ELSE $langtext END
+            """,
+            ruleset=ruleset,
+            schluessel=schluessel,
+            name=name,
+            text=text,
+            langtext=langtext,
+        )
+
+
+async def _seed_haeretiker_erklaerungen(session, ruleset: str) -> None:
+    """Befüllt die Tooltip-Erklärungen für die Häretiker-Begriffe.
+
+    Eigene Schlüssel (trait:Glauben, trait:Chronos, ...) neben den
+    bestehenden Magier-Schlüsseln (trait:Hexkraft, trait:Zeit, ...) — beide
+    Sätze leben nebeneinander, weil dieselbe TraitDef (z.B. "Zeit") je nach
+    `magieFlavor` des Charakters unter verschiedenem Namen angezeigt wird
+    (siehe HAERETIKER_LABELS oben, InfoTipp.tsx). Dieselbe HAND/KI-
+    Schutzregel wie bei `_seed_trait_erklaerungen`.
+    """
+    for name, text in HAERETIKER_BESCHREIBUNGEN.items():
+        schluessel = f"trait:{name}"
+        langtext = HAERETIKER_LANGBESCHREIBUNGEN.get(name, "")
         await session.run(
             """
             MERGE (e:Erklaerung {ruleset: $ruleset, schluessel: $schluessel})
