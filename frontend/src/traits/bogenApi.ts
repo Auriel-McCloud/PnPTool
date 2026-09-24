@@ -5,6 +5,9 @@ import type { TraitDef, TraitRating } from "./api";
 /** Abgeleitete Werte und Zustand — berechnet das Backend, siehe traits/bogen.py. */
 export interface BogenUebersicht {
   weg: "KEINER" | "MAGIER" | "NEUROWEAVER";
+  /** Häretiker (24.09.2026): reines Anzeige-Flag, "weg" bleibt "MAGIER".
+   * Steuert nur, welche Begriffe das Blatt zeigt (siehe magieBegriffe.ts). */
+  magieFlavor: "MAGIER" | "HAERETIKER";
   rasse: string;
   gesundheitMax: number;
   /** Summe aller Arten — für die Kurzanzeige. */
