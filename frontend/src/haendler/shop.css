@@ -441,3 +441,32 @@
   margin: 0;
   color: var(--gut);
 }
+
+/* --- KI-Alltagswunsch (24.09.2026) --------------------------------------- */
+
+.shop-alltagswunsch {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  background: var(--flaeche);
+  border: 1px dashed var(--linie-hell);
+  border-radius: var(--radius);
+}
+
+.shop-alltagswunsch-titel {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bereich-farbe, var(--neon));
+}
+
+.shop-alltagswunsch-zeile {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.shop-alltagswunsch-zeile input {
+  flex: 1;
+}

@@ -7,6 +7,7 @@ import { MitteilungenBlitz } from "../mitteilungen/MitteilungenBlitz";
 import { MitteilungPopup } from "../mitteilungen/MitteilungPopup";
 import { Warnung } from "../mitteilungen/Warnung";
 import { VerhandlungPopup } from "../verhandlung/VerhandlungPopup";
+import { AlltagswunschErgebnisPopup } from "../haendler/AlltagswunschErgebnisPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
@@ -314,6 +315,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         Händler) — eigenes Popup, weil Annehmen/Ablehnen eine andere
         Handlung ist als das reine "Verstanden" der SL-Mitteilungen. */}
     <VerhandlungPopup />
+    {/* Rückmeldung, sobald die SL einen KI-Alltagswunsch entschieden hat
+        (24.09.2026) — muss nicht abgewartet werden, kommt einfach an. */}
+    <AlltagswunschErgebnisPopup />
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
     <Warnung campaignId={ich.campaignId} />

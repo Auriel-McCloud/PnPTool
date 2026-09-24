@@ -50,6 +50,27 @@ export interface BestellungResponse {
   geliefertAm: string;
 }
 
+/** KI-Alltagsgegenstand-Wunsch (24.09.2026) — Spieler fragt einen Verkäufer
+ * nach etwas, das nicht im Sortiment steht (Marks Beispiel: Panzerklebeband).
+ * Die KI schätzt Preis + Typ, geht sofort als Popup an die SL. NIE für
+ * Waffen/Rüstung — technisch erzwungen, siehe app/haendler/alltagswunsch.py. */
+export interface AlltagswunschResponse {
+  id: string;
+  haendlerId: string;
+  haendlerName: string;
+  spielerPersonId: string;
+  spielerName: string;
+  wunschText: string;
+  vorschlagName: string;
+  vorschlagBeschreibung: string;
+  vorschlagPreis: number;
+  vorschlagTyp: string;
+  status: "OFFEN" | "ANGENOMMEN" | "ABGELEHNT" | "AUTO_ABGELEHNT";
+  ablehnungsGrund: string | null;
+  gegenstandId: string | null;
+  erstelltAm: string;
+}
+
 function base(cid: string, haendlerId: string) {
   return `/api/campaigns/${cid}/haendler/${haendlerId}`;
 }
@@ -81,4 +102,34 @@ export const haendlerApi = {
     api.get<BestellungResponse[]>(`/api/campaigns/${cid}/haendler/bestellungen/eigene`),
   bestellungLiefern: (cid: string, bestellungId: string) =>
     api.post<BestellungResponse>(`/api/campaigns/${cid}/haendler/bestellungen/${bestellungId}/liefern`),
+
+  /** Spieler fragt nach einem Alltagsgegenstand, der nicht im Sortiment
+   * steht — KI erzeugt sofort einen Vorschlag inkl. Preis, geht als Popup
+   * an die SL. Eine erkannte Waffen-/Rüstungsanfrage kommt automatisch mit
+   * status "AUTO_ABGELEHNT" zurück, ohne die SL zu behelligen. */
+  alltagswunschStellen: (cid: string, haendlerId: string, text: string) =>
+    api.post<AlltagswunschResponse>(`${base(cid, haendlerId)}/alltagswunsch`, { text }),
+  /** SL-Liste: alle offenen KI-Wünsche über alle Händler hinweg (Popup-
+   * Aufholliste beim Laden, analog zu Verhandlungen). */
+  alltagswuenscheOffen: (cid: string) =>
+    api.get<AlltagswunschResponse[]>(`/api/campaigns/${cid}/haendler/alltagswuensche/offen`),
+  /** Eigene Wünsche (alle Status) — Spieler sieht, was gerade geprüft wird. */
+  alltagswuenscheEigene: (cid: string) =>
+    api.get<AlltagswunschResponse[]>(`/api/campaigns/${cid}/haendler/alltagswuensche/eigene`),
+  /** SL entscheidet: annehmen (Gegenstand entsteht sofort im Sortiment)
+   * oder ablehnen (mit optionalem Grund für den Spieler). */
+  alltagswunschBeantworten: (
+    cid: string,
+    wunschId: string,
+    angenommen: boolean,
+    ueberschreibung?: { name?: string; beschreibung?: string; preis?: number },
+    ablehnungsGrund?: string,
+  ) =>
+    api.post<AlltagswunschResponse>(`/api/campaigns/${cid}/haendler/alltagswuensche/${wunschId}/antwort`, {
+      angenommen,
+      name: ueberschreibung?.name,
+      beschreibung: ueberschreibung?.beschreibung,
+      preis: ueberschreibung?.preis,
+      ablehnungsGrund,
+    }),
 };

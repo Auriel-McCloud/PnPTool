@@ -21,6 +21,7 @@ import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
 import { MitteilungenBlitz } from "./mitteilungen/MitteilungenBlitz";
 import { MitteilungPopup } from "./mitteilungen/MitteilungPopup";
+import { AlltagswunschFreigabePopup } from "./haendler/AlltagswunschFreigabePopup";
 import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { KontakteGm } from "./kontakte/KontakteGm";
@@ -289,6 +290,10 @@ function Dashboard() {
         {shell}
         {/* Popup für Chat-Benachrichtigungen (NACHRICHT-Art) von Spielern. */}
         <MitteilungPopup />
+        {/* KI-Alltagswunsch-Freigabe (24.09.2026): ein Spieler hat einen
+            Verkäufer nach etwas Alltäglichem gefragt, die KI schlägt Preis
+            vor — die SL entscheidet hier. */}
+        <AlltagswunschFreigabePopup />
       </MitteilungenAnbieter>
     );
 }

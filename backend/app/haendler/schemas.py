@@ -113,3 +113,44 @@ class HaendlerEintrag(BaseModel):
 
 class StandortRequest(BaseModel):
     ortId: str | None = None
+
+
+class AlltagswunschRequest(BaseModel):
+    """Spieler fragt einen Verkäufer nach einem Alltagsgegenstand, den es im
+    Sortiment nicht gibt (Marks Beispiel: Panzerklebeband)."""
+
+    text: str = Field(min_length=1, max_length=300)
+
+
+class AlltagswunschResponse(BaseModel):
+    """Ein KI-bewerteter Alltagsgegenstand-Wunsch, siehe alltagswunsch.py.
+
+    AUTO_ABGELEHNT = die KI hat sofort erkannt, dass es Kampf-/Sicherheits-
+    ausrüstung wäre (nie automatisch erzeugt) — die SL sieht diesen Fall gar
+    nicht erst, es wird niemand mit unsinnigen Anfragen behelligt."""
+
+    id: str
+    haendlerId: str
+    haendlerName: str
+    spielerPersonId: str
+    text: str
+    status: Literal["OFFEN", "ANGENOMMEN", "ABGELEHNT", "AUTO_ABGELEHNT"] = "OFFEN"
+    vorschlagName: str
+    vorschlagTyp: str
+    vorschlagBeschreibung: str = ""
+    vorschlagPreis: int
+    ablehnungsGrund: str = ""
+    gegenstandId: str | None = None
+    erstelltAm: str = ""
+    beantwortetAm: str = ""
+
+
+class AlltagswunschAntwortRequest(BaseModel):
+    """SL-Entscheidung — Name/Beschreibung/Preis lassen sich vor der Annahme
+    noch anpassen (die KI schätzt nur, die SL hat das letzte Wort)."""
+
+    angenommen: bool
+    name: str = ""
+    beschreibung: str = ""
+    preis: int = 0
+    ablehnungsGrund: str = ""

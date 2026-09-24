@@ -9,6 +9,7 @@ import {
   type Mitteilung,
 } from "./api";
 import { verhandlungApi, type Verhandlung } from "../verhandlung/api";
+import { haendlerApi, type AlltagswunschResponse } from "../haendler/api";
 
 /**
  * Hält den Stand der SL-Mitteilungen und die Live-Leitung.
@@ -47,6 +48,22 @@ interface MitteilungenWert {
    * zurück (mit `ergebnis` bei Annahme) — der Aufrufer zeigt damit die
    * Erfolgsmeldung, bevor er das Popup schließt. */
   verhandlungAntworten: (angenommen: boolean) => Promise<Verhandlung | null>;
+  /** SL-Seite (24.09.2026): ein Spieler fragt einen Verkäufer nach einem
+   * Alltagsgegenstand, die KI hat schon einen Preisvorschlag gemacht —
+   * wartet auf SL-Freigabe. null = nichts wartet. */
+  alltagswunschAktuell: AlltagswunschResponse | null;
+  alltagswunschWartend: number;
+  /** SL entscheidet über `alltagswunschAktuell`. Bei Annahme kann Name/
+   * Beschreibung/Preis der KI überschrieben werden. */
+  alltagswunschEntscheiden: (
+    angenommen: boolean,
+    ueberschreibung?: { name?: string; beschreibung?: string; preis?: number },
+    ablehnungsGrund?: string,
+  ) => Promise<AlltagswunschResponse | null>;
+  /** Spieler-Seite: Ergebnis eines eigenen Wunsches, den die SL gerade
+   * entschieden hat (ANGENOMMEN/ABGELEHNT) — als kurze Rückmeldung. */
+  alltagswunschErgebnisAktuell: AlltagswunschResponse | null;
+  alltagswunschErgebnisBestaetigen: () => void;
 }
 
 const Kontext = createContext<MitteilungenWert | null>(null);
@@ -70,6 +87,11 @@ export function useMitteilungen(): MitteilungenWert {
       verhandlungAktuell: null,
       verhandlungenWartend: 0,
       verhandlungAntworten: async () => null,
+      alltagswunschAktuell: null,
+      alltagswunschWartend: 0,
+      alltagswunschEntscheiden: async () => null,
+      alltagswunschErgebnisAktuell: null,
+      alltagswunschErgebnisBestaetigen: () => {},
     };
   }
   return wert;
@@ -96,6 +118,14 @@ export function MitteilungenAnbieter({
   // damit ein Angebot nicht durch ein SL-Popup verdrängt werden kann und
   // umgekehrt.
   const [verhandlungSchlange, setVerhandlungSchlange] = useState<Verhandlung[]>([]);
+  // SL-Schlange für KI-Alltagswunsch-Freigaben (24.09.2026) — analog zu
+  // Verhandlungen, aber eigener Typ, weil die Entscheidung (annehmen mit
+  // evtl. Überschreibung / ablehnen mit Grund) anders aussieht.
+  const [alltagswunschSchlange, setAlltagswunschSchlange] = useState<AlltagswunschResponse[]>([]);
+  // Spieler-Seite: Ergebnis eines eigenen Wunsches, den die SL gerade
+  // entschieden hat — eigene, kurze Schlange (kein Freigabe-Popup, nur
+  // Rückmeldung "angenommen"/"abgelehnt").
+  const [alltagswunschErgebnisSchlange, setAlltagswunschErgebnisSchlange] = useState<AlltagswunschResponse[]>([]);
 
   // In Refs, damit der Live-Effekt nicht bei jeder Änderung neu verbindet.
   const personIdRef = useRef(personId);
@@ -130,6 +160,24 @@ export function MitteilungenAnbieter({
     };
   }, [campaignId, personId]);
 
+  // Aufhol-Liste für die SL: offene KI-Alltagswünsche, die sie beim letzten
+  // Verbinden verpasst hat (z.B. Tab war zu). Nur für die SL relevant.
+  useEffect(() => {
+    if (!istSl) return;
+    let abgebrochen = false;
+    haendlerApi
+      .alltagswuenscheOffen(campaignId)
+      .then((offene) => {
+        if (!abgebrochen) setAlltagswunschSchlange(offene);
+      })
+      .catch(() => {
+        /* still */
+      });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [campaignId, istSl]);
+
   useEffect(() => {
     const trennen = verbindeLive(
       campaignId,
@@ -159,6 +207,21 @@ export function MitteilungenAnbieter({
           });
           return;
         }
+        // KI-Alltagswunsch (24.09.2026, siehe haendler/routes.py): OFFEN
+        // geht an die SL zur Freigabe, alles andere (ANGENOMMEN/ABGELEHNT)
+        // ist die Antwort an genau den fragenden Spieler.
+        if (daten._typ === "alltagswunsch") {
+          const w = daten as unknown as AlltagswunschResponse;
+          if (w.status === "OFFEN") {
+            setAlltagswunschSchlange((alt) => (alt.some((x) => x.id === w.id) ? alt : [...alt, w]));
+          } else {
+            setAlltagswunschSchlange((alt) => alt.filter((x) => x.id !== w.id));
+            setAlltagswunschErgebnisSchlange((alt) =>
+              alt.some((x) => x.id === w.id) ? alt : [...alt, w],
+            );
+          }
+          return;
+        }
         // Neue Mitteilung
         setMitteilungen((alt) => (alt.some((m) => m.id === n.daten.id) ? alt : [n.daten, ...alt]));
         // Die Spielleitung sieht ihre eigenen Mitteilungen (TEXT, BILD, WARNUNG)
@@ -182,6 +245,8 @@ export function MitteilungenAnbieter({
 
   const aktuell = schlange[0] ?? null;
   const verhandlungAktuell = verhandlungSchlange[0] ?? null;
+  const alltagswunschAktuell = alltagswunschSchlange[0] ?? null;
+  const alltagswunschErgebnisAktuell = alltagswunschErgebnisSchlange[0] ?? null;
 
   const bestaetigen = useCallback(() => {
     const m = schlange[0];
@@ -238,6 +303,31 @@ export function MitteilungenAnbieter({
     [verhandlungSchlange, campaignId],
   );
 
+  const alltagswunschEntscheiden = useCallback(
+    async (
+      angenommen: boolean,
+      ueberschreibung?: { name?: string; beschreibung?: string; preis?: number },
+      ablehnungsGrund?: string,
+    ): Promise<AlltagswunschResponse | null> => {
+      const w = alltagswunschSchlange[0];
+      if (!w) return null;
+      const aktualisiert = await haendlerApi.alltagswunschBeantworten(
+        campaignId,
+        w.id,
+        angenommen,
+        ueberschreibung,
+        ablehnungsGrund,
+      );
+      setAlltagswunschSchlange((alt) => alt.filter((x) => x.id !== w.id));
+      return aktualisiert;
+    },
+    [alltagswunschSchlange, campaignId],
+  );
+
+  const alltagswunschErgebnisBestaetigen = useCallback(() => {
+    setAlltagswunschErgebnisSchlange((alt) => alt.slice(1));
+  }, []);
+
   const wert = useMemo(
     () => ({
       mitteilungen,
@@ -253,6 +343,11 @@ export function MitteilungenAnbieter({
       verhandlungAktuell,
       verhandlungenWartend: Math.max(0, verhandlungSchlange.length - 1),
       verhandlungAntworten,
+      alltagswunschAktuell,
+      alltagswunschWartend: Math.max(0, alltagswunschSchlange.length - 1),
+      alltagswunschEntscheiden,
+      alltagswunschErgebnisAktuell,
+      alltagswunschErgebnisBestaetigen,
     }),
     [
       mitteilungen,
@@ -268,6 +363,11 @@ export function MitteilungenAnbieter({
       verhandlungAktuell,
       verhandlungSchlange.length,
       verhandlungAntworten,
+      alltagswunschAktuell,
+      alltagswunschSchlange.length,
+      alltagswunschEntscheiden,
+      alltagswunschErgebnisAktuell,
+      alltagswunschErgebnisBestaetigen,
     ],
   );
 

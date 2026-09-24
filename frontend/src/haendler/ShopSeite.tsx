@@ -90,6 +90,35 @@ export function ShopSeite({
     });
   }
 
+  // --- KI-Alltagswunsch (24.09.2026, nur Spieler) ---------------------------
+  // Fragt nach etwas, das nicht im Sortiment steht. Kein Warten nötig — die
+  // KI antwortet sofort, die Anfrage geht parallel als Popup an die SL
+  // (siehe AlltagswunschFreigabePopup). NIE für Waffen/Rüstung, harter
+  // Backend-Filter, siehe app/haendler/alltagswunsch.py.
+  const [wunschText, setWunschText] = useState("");
+  const [wunschLäuft, setWunschLäuft] = useState(false);
+  const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
+
+  async function wunschStellen() {
+    const text = wunschText.trim();
+    if (!text) return;
+    setWunschLäuft(true);
+    setWunschRückmeldung(null);
+    try {
+      const antwort = await haendlerApi.alltagswunschStellen(campaignId, haendlerId, text);
+      if (antwort.status === "AUTO_ABGELEHNT") {
+        setWunschRückmeldung(antwort.ablehnungsGrund || "Das führt dieser Verkäufer nicht.");
+      } else {
+        setWunschRückmeldung(`„${antwort.vorschlagName}“ (${antwort.vorschlagPreis}¥) wartet auf die Freigabe deiner Spielleitung.`);
+      }
+      setWunschText("");
+    } catch (e) {
+      setWunschRückmeldung(e instanceof Error ? e.message : "Anfrage fehlgeschlagen");
+    } finally {
+      setWunschLäuft(false);
+    }
+  }
+
   return (
     <div className="shop-seite">
       <button type="button" onClick={onSchliessen} className="shop-zurueck">
@@ -136,6 +165,29 @@ export function ShopSeite({
         ))}
         {sortiment.length === 0 && <p className="shop-leer">Dieser Shop führt gerade nichts.</p>}
       </div>
+
+      {!istGm && (
+        <div className="shop-alltagswunsch">
+          <p className="shop-alltagswunsch-titel">Etwas Bestimmtes gesucht?</p>
+          <p className="shop-ware-hinweis">
+            Frag {haendler.name} nach einem Alltagsgegenstand, der nicht im Regal steht — z.B. „Hast du
+            Panzerklebeband?“. Waffen und Rüstung führt dieser Weg nie.
+          </p>
+          <div className="shop-alltagswunsch-zeile">
+            <input
+              value={wunschText}
+              onChange={(e) => setWunschText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && wunschStellen()}
+              placeholder="Hast du…?"
+              disabled={wunschLäuft}
+            />
+            <button type="button" onClick={wunschStellen} disabled={wunschLäuft || !wunschText.trim()}>
+              Fragen
+            </button>
+          </div>
+          {wunschRückmeldung && <p className="shop-ware-erfolg">{wunschRückmeldung}</p>}
+        </div>
+      )}
     </div>
   );
 }

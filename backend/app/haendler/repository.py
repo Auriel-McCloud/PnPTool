@@ -351,3 +351,147 @@ async def bestellung_liefern(campaign_id: str, bestellung_id: str) -> dict | Non
         result = await session.run(query, campaign_id=campaign_id, bid=bestellung_id, jetzt=_jetzt())
         record = await result.single()
         return _decode_bestellung(dict(record)) if record else None
+
+
+# --- KI-Alltagsgegenstand-Wünsche (24.09.2026) -------------------------------
+#
+# Ein Spieler fragt einen Verkäufer nach etwas, das nicht im Sortiment steht
+# (Marks Beispiel: Panzerklebeband) — die KI (siehe alltagswunsch.py) schätzt
+# Preis+Typ, die SL bestätigt oder lehnt ab. Eigener Node-Typ statt
+# Wiederverwendung von :Verhandlung: das ist kein Preis-Feilschen um ein
+# bekanntes Sortiment-Stück, sondern eine neue Ware, die es beim Händler noch
+# gar nicht gibt — und die KI kann schon VOR der SL automatisch ablehnen
+# (AUTO_ABGELEHNT), das passt nicht ins Verhandlungs-Statusmodell
+# (OFFEN/ANGENOMMEN/ABGELEHNT).
+
+_ALLTAGSWUNSCH_FELDER = """
+    w.id AS id, w.haendlerId AS haendlerId, w.haendlerName AS haendlerName,
+    w.spielerPersonId AS spielerPersonId, w.text AS text, w.status AS status,
+    w.vorschlagName AS vorschlagName, w.vorschlagTyp AS vorschlagTyp,
+    w.vorschlagBeschreibung AS vorschlagBeschreibung, w.vorschlagPreis AS vorschlagPreis,
+    w.ablehnungsGrund AS ablehnungsGrund, w.gegenstandId AS gegenstandId,
+    w.erstelltAm AS erstelltAm, w.beantwortetAm AS beantwortetAm
+"""
+
+
+def _decode_alltagswunsch(record: dict) -> dict:
+    w = dict(record)
+    w["status"] = w.get("status") or "OFFEN"
+    w["vorschlagBeschreibung"] = w.get("vorschlagBeschreibung") or ""
+    w["ablehnungsGrund"] = w.get("ablehnungsGrund") or ""
+    w["gegenstandId"] = w.get("gegenstandId") or None
+    w["beantwortetAm"] = w.get("beantwortetAm") or ""
+    return w
+
+
+async def alltagswunsch_anlegen(
+    campaign_id: str,
+    haendler_id: str,
+    haendler_name: str,
+    spieler_person_id: str,
+    text: str,
+    status: str,
+    vorschlag_name: str,
+    vorschlag_typ: str,
+    vorschlag_beschreibung: str,
+    vorschlag_preis: int,
+    ablehnungs_grund: str,
+) -> dict:
+    driver = get_driver()
+    query = f"""
+        MATCH (c:Campaign {{id: $campaign_id}})
+        CREATE (w:Alltagswunsch {{
+            id: $wid, campaignId: $campaign_id,
+            haendlerId: $haendler_id, haendlerName: $haendler_name,
+            spielerPersonId: $spieler_person_id, text: $text, status: $status,
+            vorschlagName: $vorschlag_name, vorschlagTyp: $vorschlag_typ,
+            vorschlagBeschreibung: $vorschlag_beschreibung, vorschlagPreis: $vorschlag_preis,
+            ablehnungsGrund: $ablehnungs_grund, gegenstandId: '',
+            erstelltAm: $jetzt, beantwortetAm: ''
+        }})
+        CREATE (c)-[:HAT_ALLTAGSWUNSCH]->(w)
+        RETURN {_ALLTAGSWUNSCH_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            wid=str(uuid.uuid4()),
+            haendler_id=haendler_id,
+            haendler_name=haendler_name,
+            spieler_person_id=spieler_person_id,
+            text=text,
+            status=status,
+            vorschlag_name=vorschlag_name,
+            vorschlag_typ=vorschlag_typ,
+            vorschlag_beschreibung=vorschlag_beschreibung,
+            vorschlag_preis=vorschlag_preis,
+            ablehnungs_grund=ablehnungs_grund,
+            jetzt=_jetzt(),
+        )
+        record = await result.single()
+        return _decode_alltagswunsch(dict(record))
+
+
+async def alltagswunsch_hole(campaign_id: str, wunsch_id: str) -> dict | None:
+    driver = get_driver()
+    query = f"""
+        MATCH (w:Alltagswunsch {{id: $wid, campaignId: $campaign_id}})
+        RETURN {_ALLTAGSWUNSCH_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, wid=wunsch_id)
+        record = await result.single()
+        return _decode_alltagswunsch(dict(record)) if record else None
+
+
+async def alltagswuensche_offen(campaign_id: str) -> list[dict]:
+    """Für die SL-Liste — nur echte Entscheidungen (AUTO_ABGELEHNT braucht
+    sie nicht zu sehen, das war schon erledigt)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (w:Alltagswunsch {{campaignId: $campaign_id, status: 'OFFEN'}})
+        RETURN {_ALLTAGSWUNSCH_FELDER}
+        ORDER BY w.erstelltAm ASC
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [_decode_alltagswunsch(dict(r)) async for r in result]
+
+
+async def alltagswuensche_fuer_person(campaign_id: str, person_id: str) -> list[dict]:
+    """Eigene Wünsche (alle Status) — Spieler-Ansicht, damit sichtbar ist,
+    was gerade geprüft wird oder wie entschieden wurde."""
+    driver = get_driver()
+    query = f"""
+        MATCH (w:Alltagswunsch {{campaignId: $campaign_id, spielerPersonId: $person_id}})
+        RETURN {_ALLTAGSWUNSCH_FELDER}
+        ORDER BY w.erstelltAm DESC
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [_decode_alltagswunsch(dict(r)) async for r in result]
+
+
+async def alltagswunsch_antwort(
+    campaign_id: str, wunsch_id: str, status: str, ablehnungs_grund: str, gegenstand_id: str | None
+) -> dict | None:
+    driver = get_driver()
+    query = f"""
+        MATCH (w:Alltagswunsch {{id: $wid, campaignId: $campaign_id, status: 'OFFEN'}})
+        SET w.status = $status, w.ablehnungsGrund = $ablehnungs_grund,
+            w.gegenstandId = $gegenstand_id, w.beantwortetAm = $jetzt
+        RETURN {_ALLTAGSWUNSCH_FELDER}
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            wid=wunsch_id,
+            status=status,
+            ablehnungs_grund=ablehnungs_grund,
+            gegenstand_id=gegenstand_id or "",
+            jetzt=_jetzt(),
+        )
+        record = await result.single()
+        return _decode_alltagswunsch(dict(record)) if record else None

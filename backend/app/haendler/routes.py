@@ -17,9 +17,13 @@ from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
 from app.entities.visibility import is_visible_to
 from app.haendler import repository
+from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort
 from app.haendler.schemas import (
+    AlltagswunschAntwortRequest,
+    AlltagswunschRequest,
+    AlltagswunschResponse,
     BestellungResponse,
     HaendlerEintrag,
     KaufRequest,
@@ -30,6 +34,7 @@ from app.haendler.schemas import (
     StandortRequest,
 )
 from app.items import repository as items_repository
+from app.mitteilungen.verteiler import verteiler
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/haendler",
@@ -298,3 +303,82 @@ async def ki_vorschlag_anwenden(campaign_id: str, haendler_id: str, body: Sortim
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler oder Gegenstand nicht gefunden")
     return ergebnis
+
+
+# --- KI-Alltagsgegenstand-Erzeugung (24.09.2026) -----------------------------
+#
+# Spieler fragt einen Verkäufer nach etwas, das nicht im Sortiment steht
+# (Marks Beispiel: Panzerklebeband) — siehe alltagswunsch.py für die
+# Bewertung/Preisfindung. NIE für Waffen/Rüstung (harte Vorgabe, technisch
+# über eine Typ-Whitelist + KI-Selbsteinschätzung erzwungen).
+
+
+async def _alltagswunsch_an_sl(campaign_id: str, wunsch: dict) -> None:
+    """Push an die SL. `darf_empfangen` (mitteilungen/logic.py) lässt GM-
+    Verbindungen unabhängig von empfaengerIds immer durch — daher genügt ein
+    leeres Empfänger-Feld, es ist nur für den Spieler-Fall unten relevant."""
+    umschlag = {**wunsch, "_typ": "alltagswunsch", "empfaengerIds": []}
+    await verteiler.verteilen(campaign_id, umschlag)
+
+
+async def _alltagswunsch_an_spieler(campaign_id: str, wunsch: dict, person_id: str) -> None:
+    """Push an genau diesen Spieler (Ergebnis der SL-Entscheidung)."""
+    umschlag = {**wunsch, "_typ": "alltagswunsch", "empfaengerIds": [person_id]}
+    await verteiler.verteilen(campaign_id, umschlag)
+
+
+@router.post("/{haendler_id}/alltagswunsch", response_model=AlltagswunschResponse)
+async def alltagswunsch_stellen(
+    campaign_id: str, haendler_id: str, body: AlltagswunschRequest, viewer: Viewer = Depends(get_viewer)
+):
+    """Spieler fragt nach einem Alltagsgegenstand — geht sofort als Popup an
+    die SL (Marks Klärungsantwort: Spieler muss nicht auf die Antwort
+    warten). Eine von der KI selbst erkannte Waffen-/Rüstungsanfrage wird
+    SOFORT automatisch abgelehnt, ohne die SL zu behelligen."""
+    if not viewer.person_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
+    await _haendler_oder_404(campaign_id, haendler_id, viewer)
+
+    wunsch = await alltagswunsch.wunsch_erstellen(campaign_id, haendler_id, viewer.person_id, body.text)
+    if wunsch is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler nicht gefunden")
+
+    if wunsch["status"] == "OFFEN":
+        # Nur echte SL-Entscheidungen werden gepusht — ein automatisch
+        # abgelehnter Wunsch braucht kein SL-Popup, der Spieler bekommt die
+        # Ablehnung direkt in der Antwort dieser Route zu sehen.
+        await _alltagswunsch_an_sl(campaign_id, wunsch)
+    return wunsch
+
+
+@router.get(
+    "/alltagswuensche/offen", response_model=list[AlltagswunschResponse], dependencies=[Depends(require_campaign_gm)]
+)
+async def alltagswuensche_offen(campaign_id: str):
+    """SL-Liste offener KI-Alltagsgegenstand-Wünsche (Popup-Aufholliste)."""
+    return await repository.alltagswuensche_offen(campaign_id)
+
+
+@router.get("/alltagswuensche/eigene", response_model=list[AlltagswunschResponse])
+async def alltagswuensche_eigene(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Eigene Wünsche (alle Status) — Spieler sieht, was gerade geprüft wird."""
+    if not viewer.person_id:
+        return []
+    return await repository.alltagswuensche_fuer_person(campaign_id, viewer.person_id)
+
+
+@router.post(
+    "/alltagswuensche/{wunsch_id}/antwort",
+    response_model=AlltagswunschResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def alltagswunsch_beantworten(campaign_id: str, wunsch_id: str, body: AlltagswunschAntwortRequest):
+    """SL entscheidet. Bei Annahme entsteht der Gegenstand sofort und landet
+    im Sortiment des Händlers — der normale Kauf-Flow greift danach."""
+    aktualisiert = await alltagswunsch.wunsch_beantworten(
+        campaign_id, wunsch_id, body.angenommen, body.name, body.beschreibung, body.preis, body.ablehnungsGrund
+    )
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieser Wunsch wurde bereits beantwortet oder existiert nicht")
+    await _alltagswunsch_an_spieler(campaign_id, aktualisiert, aktualisiert["spielerPersonId"])
+    return aktualisiert

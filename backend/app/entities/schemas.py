@@ -125,6 +125,8 @@ class PersonCreate(BaseModel):
     # an — die SL löst die Lieferung manuell per Knopf aus (kein fester
     # Termin), siehe app/haendler/repository.py::Bestellung.
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] = "PHYSISCH"
+    # Shop-Frontend (24.09.2026): eigenes Hintergrundbild je (physischem) Shop.
+    shopHintergrundUrl: str = ""
     silhouette: str = "maennlich"
     # Zustand: abgehakte Kästchen. Die Obergrenze ist abgeleitet
     # (Gesundheit = 6 + Widerstandsfähigkeit, Willenskraft = Entschlossenheit
