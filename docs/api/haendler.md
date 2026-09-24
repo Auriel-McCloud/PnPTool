@@ -185,10 +185,9 @@ nur `tsc -b` geprüft, kein Browser-Klicktest (siehe CLAUDE.md "Offen").
 
 - **Frontend** — SL-Sortiment-Editor (Sortiment eintragen/entfernen/Rabatt
   setzen ist im Backend fertig, aber kein Bearbeiten-Popup), Standort-
-  Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup (siehe unten), KI-Item-
-  Erzeugung für Alltagsgegenstände (Internet-Preisrecherche, NIE für Waffen/
-  Rüstung — Marks explizite Vorgabe). Kauf-Flow und Bestellungen-Ansicht
-  selbst sind seit 24.09.2026 im Frontend angebunden.
+  Zuweisung-Popup, KI-Sortiment-Vorschlag-Popup. Kauf-Flow, Bestellungen-
+  Ansicht und KI-Alltagsgegenstand-Erzeugung sind seit 24.09.2026 im
+  Frontend angebunden (nur `tsc -b`, kein Browser-Klicktest).
 - **Spam/Werbung** — Händler schickt Nur-Lesen-Nachrichten, Frequenz
   skaliert mit I.C.E., Popups an zufälliger Screen-Position, SL kann eine
   "Spam-Welle" auslösen, Kampagnen-Option zum Ein/Ausschalten.
@@ -296,3 +295,61 @@ sind SL-Entscheidungsgrundlage, kein Spieler-Angebot.
 Backend end-to-end gegen echte Neo4j-DB verifiziert (Wiederverwendung UND
 Neuerfindung beide getestet, Testdaten danach entfernt). **Frontend noch
 offen** — SL-Popup mit Vorschlagsliste + Einzeln-Übernehmen-Knöpfen.
+
+## KI-Alltagsgegenstand-Erzeugung (24.09.2026)
+
+Marks Konzept: ein Spieler fragt einen Verkäufer im Shop nach etwas, das
+nicht im Sortiment steht ("Hast du Panzerklebeband?"). Die KI schätzt
+Realpreis + Typ und erzeugt einen fertigen Gegenstand — **anders als
+`ki_vorschlag.py` (SL fragt aktiv nach Sortiment-Ideen) ist dieser Weg
+spielergetrieben und braucht sofortige SL-Freigabe, bevor irgendetwas
+entsteht.** Neues Modul `backend/app/haendler/alltagswunsch.py`, nutzt
+denselben KI-Client (`app/ki/gemini.py`/`mistral.py`) wie `ki_vorschlag.py`.
+
+**Harter Ausschluss von Waffen/Rüstung — Sicherheits-/Balance-Vorgabe, kein
+Stilwunsch.** Zwei unabhängige Sperren, nicht nur ein Prompt-Hinweis:
+1. Die KI bekommt nur eine Whitelist erlaubter `GEGENSTAND_TYPEN`
+   (Verbrauchsgegenstand, Werkzeug, Behälter, Sonstiges — nie Waffe/Rüstung)
+   und MUSS einen dieser Typen zurückgeben.
+2. Zusätzlich schätzt die KI selbst ein, ob die Anfrage überhaupt eine
+   Waffe/Rüstung/Kampfausrüstung meint (`istVerboten: bool` im selben
+   KI-Aufruf) — ein Spieler, der "eine Panzerung fürs Handy" verlangt, soll
+   nicht durch eine zu enge Typ-Liste durchrutschen, nur weil die KI dann
+   hilfsweise "Sonstiges" wählt. Beide Signale zusammen ergeben
+   `AUTO_ABGELEHNT`, ohne dass die SL überhaupt gefragt wird.
+
+**Ablauf:**
+```
+POST /{haendler_id}/alltagswunsch { "text": "Hast du Panzerklebeband?" }
+```
+- KI antwortet sofort mit Name/Beschreibung/Preis/Typ (oder lehnt automatisch
+  ab, siehe oben) — der Spieler muss nicht warten, kann weiterspielen.
+- Ist der Vorschlag zulässig (`status=OFFEN`), geht er **sofort als Popup an
+  die SL** über denselben Live-Kanal wie Verhandlungen (`_typ:
+  "alltagswunsch"` im Mitteilungs-Umschlag, siehe `verhandlung/routes.py`
+  als Vorbild). Die SL kann Name/Beschreibung/Preis vor der Freigabe
+  überschreiben, oder mit optionalem Grund ablehnen.
+- Bei Annahme entsteht der Gegenstand sofort (als Vorlage,
+  `istEntwurf=false` — kein Ideenschmiede-Umweg nötig, das ist ein
+  einzelner Alltagsgegenstand, keine Sortiment-Strategie) und landet direkt
+  im Sortiment des fragenden Händlers zum vereinbarten Preis. Der normale
+  Kauf-Flow (`POST .../kaufen`) greift danach unverändert.
+- Der Spieler bekommt die Entscheidung als eigenes Ergebnis-Popup, sobald
+  die SL fertig ist — kein Polling, kein Chat-Text.
+
+| Methode | Pfad | Wer | Zweck |
+|---|---|---|---|
+| POST | `/{haendler_id}/alltagswunsch` | Spieler (eigener Charakter) | Wunsch stellen, KI antwortet sofort |
+| GET | `/alltagswuensche/offen` | nur SL | Aufhol-Liste offener Freigaben |
+| GET | `/alltagswuensche/eigene` | Spieler | Eigene Wünsche, alle Status |
+| POST | `/alltagswuensche/{id}/antwort` | nur SL | Annehmen (mit optionaler Überschreibung) oder ablehnen |
+
+**Verifiziert (24.09.2026):** echtes E2E-Skript gegen laufendes Backend +
+echte Neo4j + echten KI-Provider: harmloser Wunsch (Panzerklebeband) korrekt
+mit Preis/Typ vorgeschlagen, SL-Freigabe erzeugt Gegenstand im Sortiment,
+danach normal käuflich; eindeutige Waffenanfrage ("Pistole oder
+Kampfmesser") korrekt `AUTO_ABGELEHNT`, taucht nicht in der SL-Liste auf,
+kein Gegenstand entsteht. **Frontend fertig, nur `tsc -b` geprüft, kein
+Browser-Klicktest** (SL-Popup `AlltagswunschFreigabePopup.tsx`,
+Spieler-Eingabe direkt in `ShopSeite.tsx`, Ergebnis-Popup
+`AlltagswunschErgebnisPopup.tsx`).

@@ -8,6 +8,17 @@ Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Serv
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
+- **Shop-System komplett** (`frontend/src/haendler/`, siehe „Zuletzt gebaut“
+  unten und `docs/api/haendler.md`): Übersicht, physisch/digital getrennte
+  Shop-Seite, Seltenheitsrahmen, Verhandeln-Integration, Bestellungen, und
+  neu die **KI-Alltagsgegenstand-Erzeugung** (Spieler fragt Verkäufer,
+  z.B. „Hast du Panzerklebeband?“, KI schlägt Preis vor, SL-Popup
+  entscheidet). Backend komplett per echtem E2E-Test gegen laufendes
+  Backend + Neo4j + echten KI-Provider verifiziert (harmloser Wunsch UND
+  Waffen-Ausschluss beide grün). **Frontend nie im Browser angeklickt**,
+  nur `tsc -b` geprüft (`vite build` läuft, aber Optik/Bedienung
+  ungetestet) — Seltenheitsrahmen-Effekte (Glitzern/Zacken/Wabern) sind
+  reine Code-Vermutung, bitte am Spieltisch gegenprüfen.
 - **Kampagnen-Export/Import** (`EinstellungenFenster.tsx`, Sektion
   „KAMPAGNE“, siehe „Zuletzt gebaut“ unten): Export-Knopf, Import-Upload.
   Backend-Logik komplett per echtem E2E-Testlauf gegen laufendes Backend +
@@ -194,6 +205,33 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (24.09.2026 — KI-Alltagsgegenstand-Erzeugung im Shop):**
+- **Was:** Spieler kann im Shop einen Verkäufer nach einem Alltagsgegenstand
+  fragen, der nicht im Sortiment steht (Marks Beispiel: Panzerklebeband) —
+  die KI schätzt sofort Preis + Typ, der Spieler muss nicht warten. Der
+  Vorschlag geht parallel als Popup an die SL zur Freigabe (annehmen mit
+  optionaler Überschreibung, oder ablehnen). Bei Annahme landet der
+  Gegenstand sofort im Sortiment, der normale Kauf-Flow greift danach.
+- **Harter Waffen-/Rüstungs-Ausschluss** (Marks explizite Sicherheits-/
+  Balance-Vorgabe, kein Stilwunsch): zwei unabhängige Sperren — Typ-
+  Whitelist (nie Waffe/Rüstung als erlaubter Rückgabewert) UND eigene
+  KI-Selbsteinschätzung `istVerboten`, damit Umgehungsversuche über
+  Formulierungstricks nicht durchrutschen. Beide zusammen ergeben
+  `AUTO_ABGELEHNT`, ohne die SL zu behelligen.
+- **Neu:** `backend/app/haendler/alltagswunsch.py` (KI-Bewertung + Filter),
+  Routen/Repository-Erweiterung in `haendler/routes.py`+`repository.py`,
+  Live-Push über denselben Mitteilungs-Kanal wie Verhandlungen (neuer
+  `_typ: "alltagswunsch"`). Frontend:
+  `haendler/AlltagswunschFreigabePopup.tsx` (SL),
+  `haendler/AlltagswunschErgebnisPopup.tsx` (Spieler-Rückmeldung),
+  Eingabefeld direkt in `ShopSeite.tsx`, `MitteilungenKontext.tsx` um
+  eigene Schlangen erweitert (analog zu Verhandlungen).
+- **Verifiziert:** echtes E2E-Skript gegen laufendes Backend + echte Neo4j +
+  echten KI-Provider — harmloser Wunsch korrekt vorgeschlagen/angenommen/
+  käuflich, eindeutige Waffenanfrage korrekt `AUTO_ABGELEHNT` ohne
+  SL-Popup und ohne erzeugten Gegenstand. `tsc -b` sauber. **Kein
+  Klicktest** — siehe „Offen" oben.
 
 **Zuletzt gebaut (24.09.2026 — Auto-Verknüpfung: Sweep + Freitext-Route):**
 - **Was:** Die bisher nur pro Wiki-Seite laufende Auto-Verknüpfung

@@ -78,6 +78,14 @@ localhost).** Noch offen: KI-Item-Erzeugung für Alltagsgegenstände (nie
 für Waffen/Rüstung), SL-Editor fürs Sortiment, KI-Sortiment-Vorschlag-
 Popup. Details: `docs/api/haendler.md`, `CLAUDE.md` "Zuletzt gebaut".
 
+**KI-Alltagsgegenstand-Erzeugung (24.09.2026):** neues Modul
+`backend/app/haendler/alltagswunsch.py` — Spieler fragt einen Verkäufer im
+Shop nach etwas, das nicht im Sortiment steht (z.B. Panzerklebeband), die
+KI schätzt sofort Preis + Typ, geht als Popup an die SL zur Freigabe. Harter
+Ausschluss von Waffen/Rüstung über zwei unabhängige Sperren (Typ-Whitelist +
+KI-Selbsteinschätzung). Backend und Frontend fertig, E2E-verifiziert. Siehe
+`docs/api/haendler.md`.
+
 ## Siehe auch
 
 - [[../../reference/Neotopia_Gegenstaende.md]] — alle Preistabellen im Volltext

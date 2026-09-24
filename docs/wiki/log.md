@@ -3,6 +3,19 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-24] update | concepts/waehrung-und-preise (KI-Alltagsgegenstand-Erzeugung)
+
+Neues Modul `backend/app/haendler/alltagswunsch.py`: Spieler fragt einen
+Verkäufer im Shop nach einem Alltagsgegenstand, der nicht im Sortiment
+steht (z.B. Panzerklebeband), die KI schätzt sofort Preis + Typ und schickt
+den Vorschlag als Popup an die SL zur Freigabe — der Spieler muss nicht
+warten. Harter Ausschluss von Waffen/Rüstung über zwei unabhängige Sperren
+(Typ-Whitelist + KI-Selbsteinschätzung `istVerboten`). Backend UND Frontend
+fertig (SL-Freigabe-Popup, Spieler-Ergebnis-Popup, Eingabefeld im Shop),
+per echtem E2E-Test gegen laufendes Backend + Neo4j + echten KI-Provider
+verifiziert (harmloser Wunsch UND Waffen-Ausschluss beide grün). Frontend
+nur `tsc -b` geprüft, kein Browser-Klicktest.
+
 ## [2026-09-24] update | concepts/waehrung-und-preise
 
 Shop-Frontend Phase 1+2: Backend um Vertriebsart (PHYSISCH/DIGITAL),
