@@ -71,6 +71,15 @@ class PersonCreate(BaseModel):
     # beides zugleich geht also nicht. Ein eigenes Feld statt aus Hexkraft > 0
     # abzuleiten — sonst wäre ein frisch erstellter Magier mit Hexkraft 0 keiner.
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] = "KEINER"
+    # Häretiker (24.09.2026, Marks Konzept): reines Flavor-Reskin für Magier,
+    # gleichberechtigt bei der Erstellung wählbar — mechanisch 100% identisch
+    # (gleiche Werte, gleiche Formeln, gleiche Sphären-Stufen). Technisch
+    # bleibt `weg` dafür auf "MAGIER" stehen (keine Code-Verdopplung der
+    # Magie-Mechanik in bogen.py/items/routes.py/ki/routes.py); dieses Feld
+    # trägt nur, WELCHE Begriffe die Oberfläche zeigt: Hexkraft→Glauben,
+    # Wilde Magie→Blasphemie, die 9 Sphären→Götternamen (siehe
+    # traits/seed.py::HAERETIKER_LABELS, CLAUDE.md Punkt 14).
+    magieFlavor: Literal["MAGIER", "HAERETIKER"] = "MAGIER"
     # Bestimmt Startwerte und Maxima bei der Erstellung (Mensch, Ork, Elf,
     # Zwerg, Troll). Frei als Text, weil Rassen dazukommen können.
     rasse: str = ""
@@ -150,6 +159,7 @@ class PersonUpdate(BaseModel):
     bilder: list[BildEintrag] | None = None  # Bildergalerie
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     weg: Literal["KEINER", "MAGIER", "NEUROWEAVER"] | None = None
+    magieFlavor: Literal["MAGIER", "HAERETIKER"] | None = None
     rasse: str | None = None
     istCritter: bool | None = None
     istKI: bool | None = None
@@ -195,6 +205,7 @@ class PersonResponse(BaseModel):
     # Charakterbogen — Ausgangswerte greifen für Bestandsdaten, die diese
     # Felder noch nicht haben (Ersatz kommt aus dem Repository).
     weg: str = "KEINER"
+    magieFlavor: str = "MAGIER"
     rasse: str = ""
     istCritter: bool = False
     istKI: bool = False

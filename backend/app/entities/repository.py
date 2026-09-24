@@ -11,6 +11,10 @@ _VISIBILITY_FIELDS = ["sichtbarkeit", "sichtbarFuer", "notizenSichtbarkeit", "no
 # der schwerste zuerst, deshalb drei Zähler statt einer Summe.
 _BOGEN_FELDER = [
     "weg",
+    # Häretiker-Flavor (24.09.2026): rein kosmetisches Zweitfeld neben "weg" —
+    # bestimmt nur, welche Begriffe die Oberfläche für einen Magier-Charakter
+    # zeigt (Magier-Vokabular oder Häretiker-Vokabular). Siehe schemas.py.
+    "magieFlavor",
     "rasse",
     "schadenSchlag",
     "schadenSchwer",
@@ -66,6 +70,8 @@ def _return_clause(alias: str, fields: list[str]) -> str:
 # komplette Liste mit 500 herunter (siehe Stolperstein 9 in CLAUDE.md).
 _BOGEN_DEFAULTS: dict = {
     "weg": "KEINER",
+    # Häretiker-Flavor: Bestandscharaktere kennen das Feld noch nicht.
+    "magieFlavor": "MAGIER",
     "rasse": "",
     "istCritter": False,
     "istKI": False,
