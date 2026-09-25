@@ -31,6 +31,7 @@ import type { Fraktion } from "../entities/api";
 import type { Verbindung } from "../entities/api";
 import type { EntityKind } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
+import { extrahiereReinenText } from "../richtext/content";
 import "./ideenschmiede.css";
 
 // Icons für die verschiedenen Typen
@@ -480,8 +481,10 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
                   <span className="is-typ">{TYP_LABELS[item.typ]}</span>
                   {item.beschreibung && (
                     <p className="is-beschreibung-kurz">
-                      {item.beschreibung.slice(0, 120)}
-                      {item.beschreibung.length > 120 ? "..." : ""}
+                      {(() => {
+                        const klartext = extrahiereReinenText(item.beschreibung);
+                        return klartext.length > 120 ? `${klartext.slice(0, 120)}...` : klartext;
+                      })()}
                     </p>
                   )}
                 </div>
