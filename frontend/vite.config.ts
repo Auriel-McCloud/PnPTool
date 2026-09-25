@@ -12,6 +12,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // auch über LAN-IP erreichbar (z.B. vom Handy), nicht nur localhost
+    // Vite blockt seit v5 unbekannte Host-Header (Rebinding-Schutz). Der
+    // nginx-Reverse-Proxy auf bebop reicht den Host-Header pnptool.aurielmc.cloud
+    // unverändert durch, den Vite sonst als "nicht erlaubt" ablehnt (403).
+    allowedHosts: ["pnptool.aurielmc.cloud"],
     proxy: {
       // Backend läuft nur auf Port 8000, der vom Handy aus per Firewall blockiert ist.
       // Deshalb API-Calls über denselben (bereits erreichbaren) Port 5173 proxyen.
