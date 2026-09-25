@@ -4,6 +4,7 @@ import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
+import { extrahiereReinenText } from "../richtext/content";
 import "./shop.css";
 
 /**
@@ -151,7 +152,7 @@ export function ShopSeite({
           {haendler.bildUrl && <img className="shop-haendler-portrait" src={haendler.bildUrl} alt="" />}
           <div className="shop-kopf-text">
             <h2>{haendler.name}</h2>
-            {haendler.beschreibung && <p>{haendler.beschreibung}</p>}
+            {haendler.beschreibung && <p>{extrahiereReinenText(haendler.beschreibung)}</p>}
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { entitiesApi, type Person } from "../entities/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { extrahiereReinenText } from "../richtext/content";
 import {
   ANDOCKPUNKTE,
   SILHOUETTEN,
@@ -443,10 +444,10 @@ export function Koerperkarte({
               ))}
             </dl>
             {popupAugment.description && (
-              <p className="kk-popup-beschreibung">{popupAugment.description}</p>
+              <p className="kk-popup-beschreibung">{extrahiereReinenText(popupAugment.description)}</p>
             )}
             {popupAugment.notes && (
-              <p className="kk-popup-notizen">{popupAugment.notes}</p>
+              <p className="kk-popup-notizen">{extrahiereReinenText(popupAugment.notes)}</p>
             )}
             <div className="kk-popup-knoepfe">
               <button

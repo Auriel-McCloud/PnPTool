@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { ChatFenster } from "./ChatFenster";
 import { STUFEN, kontakteApi, type Kontakt } from "./api";
+import { extrahiereReinenText } from "../richtext/content";
 import "./kontakte.css";
 
 /**
@@ -107,7 +108,7 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
         >
           {offen.bildUrl && <img className="ko-grossbild" src={offen.bildUrl} alt="" />}
 
-          {offen.beschreibung && <p className="ko-beschreibung">{offen.beschreibung}</p>}
+          {offen.beschreibung && <p className="ko-beschreibung">{extrahiereReinenText(offen.beschreibung)}</p>}
 
           <div className="ko-aliaszeile">
             <label htmlFor="ko-alias">Dein Name für ihn/sie</label>
