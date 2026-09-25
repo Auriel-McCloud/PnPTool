@@ -10,6 +10,16 @@ const backendTarget = process.env.VITE_BACKEND_URL || "http://localhost:8001"
 
 export default defineConfig({
   plugins: [react()],
+  // Zwingt Vite, beim Serverstart den GESAMTEN Quellbaum nach Abhängigkeiten
+  // zu durchsuchen und vorab zu bündeln, statt sie erst beim ersten Besuch
+  // einer Seite "live" zu entdecken. Ohne das löst jeder neu betretene
+  // Programmteil (z.B. das erste Öffnen der Ideenschmiede) einen vollen
+  // Seiten-Reload aus ("new dependency optimized") — mitten im Tippen sehr
+  // störend und wirkt wie ein Absturz zurück zur Übersicht. Kostet ein paar
+  // Sekunden längeren Start, dafür danach keine Überraschungs-Reloads mehr.
+  optimizeDeps: {
+    entries: ["src/**/*.{ts,tsx}"],
+  },
   server: {
     host: true, // auch über LAN-IP erreichbar (z.B. vom Handy), nicht nur localhost
     // Vite blockt seit v5 unbekannte Host-Header (Rebinding-Schutz). Der
