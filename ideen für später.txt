@@ -18,6 +18,13 @@ Andere Rassen wie die von Heimerdinger "Yordles"
 
 Gegenstände müssen innerhalb der Party und an Leute am gleichen Ort weitergegeben werden können — Pop-up beim Empfänger mit Annehmen/Ablehnen.
 
+Gleiches gilt für Geld: Geld muss innerhalb der Party und an Leute am gleichen Ort übertragbar sein (gleicher Annehmen/Ablehnen-Mechanismus wie bei Gegenständen). Außerdem muss die SL Geld von NPCs direkt an Spieler als Belohnung übertragen können.
+
+Neue Gegenstands-Typen:
+- Credstick: digitaler Geldträger, man kann Geld darauf laden und wieder herunterladen (auf den eigenen Besitz). Wie ein normaler Gegenstand weitergebbar oder als Fundstück auffindbar — wer den Credstick hat, hat Zugriff auf das geladene Geld.
+- Heiltrank: Verbrauchsgegenstand, heilt beim Einsatz automatisch (eigene Mechanik, kein reiner Fluff-Gegenstand).
+- Granate / Alchemisten-Trank zum Werfen: Gegenstück zum Heiltrank — Schaden oder Effekte, aber OHNE eigene Mechanik (rein erzählerisch/durch die SL bestimmt). Wichtig: darf nicht einfach "verpuffen" — der Einsatz muss sichtbar gemacht werden, z.B. indem der Schaden berechnet und angezeigt wird, damit man mitbekommt dass er tatsächlich eingesetzt wurde.
+
 *Im SL Interface die Möglichkeit neue Rassen Anzulegen, alte Rassen auszublenden, umzubenennen.... 
 
 Gleiche für Skills, + eine Maximale Anzahl an Skills
