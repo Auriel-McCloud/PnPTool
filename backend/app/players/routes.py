@@ -135,7 +135,7 @@ async def charakter_neu_bauen(spieler: dict = Depends(require_spieler)):
         campaign_id,
         PersonCreate(name="Neuer Charakter", personType="PC").model_dump(),
     )
-    erfolg = await repository.charakter_waehlen(spieler["id"], campaign_id, neue_person["id"])
+    erfolg = await repository.bindet_neuen_charakter(spieler["id"], campaign_id, neue_person["id"])
     if not erfolg:
         # Kann eigentlich nur bei einem zwischenzeitlich doch gesetzten
         # eigenen Charakter passieren (Doppelklick) — der frische, noch

@@ -218,6 +218,33 @@ async def charakter_waehlen(spieler_id: str, campaign_id: str, person_id: str) -
         return await result.single() is not None
 
 
+async def bindet_neuen_charakter(spieler_id: str, campaign_id: str, person_id: str) -> bool:
+    """Bindet einen frisch angelegten, noch leeren PC an den Spieler, der ihn
+    gerade selbst erstellt (`charakter_neu_bauen`) — bewusst eine eigene
+    Anweisung statt `charakter_waehlen` wiederzuverwenden: die verlangt
+    `erstellungAbgeschlossen = true` (für vorgefertigte, fertige PCs), was ein
+    gerade erst angelegter Entwurf nie erfüllt. Vorher führte das dazu, dass
+    "Charakter selbst erstellen" immer mit 409 scheiterte, egal wie frisch
+    der Spieler war.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (s:Spieler {id: $spieler_id})-[:GEHOERT_ZU]->(:Campaign {id: $campaign_id})
+            WHERE NOT EXISTS { MATCH (s)-[:SPIELT]->() }
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id, personType: 'PC'})
+            WHERE NOT EXISTS { MATCH (:Spieler)-[:SPIELT]->(p) }
+            CREATE (s)-[:SPIELT]->(p)
+            RETURN s.id AS id
+            """,
+            spieler_id=spieler_id,
+            campaign_id=campaign_id,
+            person_id=person_id,
+        )
+        return await result.single() is not None
+
+
 async def delete_spieler(campaign_id: str, spieler_id: str) -> bool:
     driver = get_driver()
     async with driver.session() as session:
