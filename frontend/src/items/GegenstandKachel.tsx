@@ -6,6 +6,7 @@ import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
 import { WegwerfenFrage } from "./WegwerfenFrage";
+import { WeitergebenPopup } from "./WeitergebenPopup";
 import "./wegwerfen.css";
 
 /**
@@ -44,6 +45,9 @@ export function GegenstandKachel({
   onUmlegen,
   onChirurgie,
   onWegwerfen,
+  onWeitergeben,
+  campaignId,
+  eigenePersonId,
   behaelterName,
   behaelterId,
   inhalt,
@@ -72,6 +76,17 @@ export function GegenstandKachel({
    * Löscht nichts; die Rückfrage davor stellt diese Komponente selbst.
    */
   onWegwerfen?: () => Promise<void> | void;
+  /**
+   * Weitergeben an ein Party-Mitglied. Fehlt sie, erscheint der Knopf gar
+   * nicht — genau wie beim Wegwerfen nur am eigenen Besitz sinnvoll.
+   * Zusammen mit `campaignId`/`eigenePersonId` nötig, weil das Popup selbst
+   * die Party-Mitglieder nachlädt (verhandlung/routes.py::gegenstand_weitergeben
+   * prüft serverseitig ohnehin noch einmal, wer wirklich in derselben
+   * Party ist — das hier ist nur die Auswahl-Anzeige).
+   */
+  onWeitergeben?: (empfaengerPersonId: string) => Promise<void> | void;
+  campaignId?: string;
+  eigenePersonId?: string;
 }) {
   // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
   const CHROM = ["Cyberware", "Bioware", "Hexware"];
@@ -80,6 +95,7 @@ export function GegenstandKachel({
   const [offen, setOffen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [frageOffen, setFrageOffen] = useState(false);
+  const [weitergebenOffen, setWeitergebenOffen] = useState(false);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -103,6 +119,20 @@ export function GegenstandKachel({
       // offenes Fenster darüber stünde ohne Bezug da.
       setFrageOffen(false);
       setOffen(false);
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  async function weitergeben(empfaengerPersonId: string) {
+    if (!onWeitergeben) return;
+    setLaeuft(true);
+    try {
+      await onWeitergeben(empfaengerPersonId);
+      // Nicht die Kachel schließen: der Gegenstand gehört bis zur Annahme
+      // noch dem Absender, er bleibt also in der Liste stehen — anders als
+      // beim Wegwerfen, das sofort wirkt.
+      setWeitergebenOffen(false);
     } finally {
       setLaeuft(false);
     }
@@ -276,11 +306,18 @@ export function GegenstandKachel({
 
         {/* Abgesetzt und leise: erst der Griff danach ist eine Entscheidung,
             die die Rückfrage stellt. Siehe wegwerfen.css. */}
-        {onWegwerfen && (
+        {(onWegwerfen || onWeitergeben) && (
           <div className="gg-wegwerfen">
-            <button type="button" onClick={() => setFrageOffen(true)} disabled={laeuft}>
-              <span aria-hidden="true">🗑</span> Wegwerfen
-            </button>
+            {onWeitergeben && (
+              <button type="button" onClick={() => setWeitergebenOffen(true)} disabled={laeuft}>
+                <span aria-hidden="true">🤝</span> Weitergeben
+              </button>
+            )}
+            {onWegwerfen && (
+              <button type="button" onClick={() => setFrageOffen(true)} disabled={laeuft}>
+                <span aria-hidden="true">🗑</span> Wegwerfen
+              </button>
+            )}
           </div>
         )}
       </Fenster>
@@ -292,6 +329,17 @@ export function GegenstandKachel({
           laeuft={laeuft}
           onWegwerfen={wegwerfen}
           onAbbrechen={() => setFrageOffen(false)}
+        />
+      )}
+
+      {onWeitergeben && campaignId && eigenePersonId && (
+        <WeitergebenPopup
+          item={item}
+          offen={weitergebenOffen}
+          campaignId={campaignId}
+          eigenePersonId={eigenePersonId}
+          onWeitergeben={weitergeben}
+          onAbbrechen={() => setWeitergebenOffen(false)}
         />
       )}
     </>

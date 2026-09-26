@@ -7,6 +7,7 @@ import { MitteilungenBlitz } from "../mitteilungen/MitteilungenBlitz";
 import { MitteilungPopup } from "../mitteilungen/MitteilungPopup";
 import { Warnung } from "../mitteilungen/Warnung";
 import { VerhandlungPopup } from "../verhandlung/VerhandlungPopup";
+import { verhandlungApi } from "../verhandlung/api";
 import { AlltagswunschErgebnisPopup } from "../haendler/AlltagswunschErgebnisPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
 import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
@@ -306,6 +307,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     setTraglast(last);
   }
 
+  async function weitergeben(itemId: string, empfaengerPersonId: string) {
+    if (!ich) return;
+    // Der Gegenstand bleibt bis zur Annahme beim Absender — kein Refresh
+    // der Sachen-Liste nötig, es hat sich (noch) nichts geändert. Das
+    // Verhandlungs-Popup beim Empfänger übernimmt den eigentlichen Transfer.
+    await verhandlungApi.gegenstandWeitergeben(ich.campaignId, itemId, empfaengerPersonId);
+  }
+
   return (
     <MitteilungenAnbieter campaignId={ich.campaignId} personId={ich.personId}>
     {/* Liegt ueber allem, auch ueber offenen Fenstern: eine Ansage der
@@ -576,8 +585,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterId={getragenerBehaelterId}
                 inhaltVon={inhaltVon}
                 onSchliessen={() => setFachStapel((alt) => alt.slice(0, stufe))}
-                // Fremdes lässt sich ansehen, aber nicht umlegen
+                // Fremdes lässt sich ansehen, aber nicht umlegen oder weitergeben
                 onUmlegen={fach.id === "FREMD" ? undefined : (item, ziel) => umlegen(item.id, ziel)}
+                onWeitergeben={fach.id === "FREMD" ? undefined : (item, empfaengerId) => weitergeben(item.id, empfaengerId)}
+                campaignId={ich.campaignId}
+                eigenePersonId={ich.personId ?? undefined}
               />
             );
           })}

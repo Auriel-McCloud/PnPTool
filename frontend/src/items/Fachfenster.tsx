@@ -20,6 +20,9 @@ export function Fachfenster({
   offen,
   onSchliessen,
   onUmlegen,
+  onWeitergeben,
+  campaignId,
+  eigenePersonId,
   behaelterName,
   behaelterId,
   inhaltVon,
@@ -31,6 +34,10 @@ export function Fachfenster({
   onSchliessen: () => void;
   /** Fehlt sie, ist der Inhalt nur anzusehen — so bei fremdem Besitz. */
   onUmlegen?: (item: Gegenstand, ablage: Ablage) => Promise<void> | void;
+  /** Weitergeben an ein Party-Mitglied — siehe GegenstandKachel.tsx. */
+  onWeitergeben?: (item: Gegenstand, empfaengerPersonId: string) => Promise<void> | void;
+  campaignId?: string;
+  eigenePersonId?: string;
   behaelterName?: string;
   behaelterId?: string;
   /**
@@ -68,6 +75,9 @@ export function Fachfenster({
               behaelterId={behaelterId}
               inhalt={inhaltVon?.(g)}
               onUmlegen={onUmlegen ? (ablage) => onUmlegen(g, ablage) : undefined}
+              onWeitergeben={onWeitergeben ? (empfaengerId) => onWeitergeben(g, empfaengerId) : undefined}
+              campaignId={campaignId}
+              eigenePersonId={eigenePersonId}
             />
           ))}
         </div>

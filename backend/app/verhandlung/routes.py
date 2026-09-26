@@ -9,10 +9,13 @@ WebSockets zu brauchen.
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.items import repository as items_repository
 from app.mitteilungen.verteiler import verteiler
+from app.party import repository as party_repository
 from app.verhandlung import logic, repository
 from app.verhandlung.logic import VerhandlungsFehler
 from app.verhandlung.schemas import (
+    GegenstandWeitergebenRequest,
     VerhandlungAntwortRequest,
     VerhandlungCreate,
     VerhandlungResponse,
@@ -47,6 +50,58 @@ async def anbieten(campaign_id: str, body: VerhandlungCreate):
         body.art,
         [p.model_dump() for p in body.positionen],
         body.kontext,
+    )
+    await _verteilen(campaign_id, verhandlung)
+    return verhandlung
+
+
+@router.post("/gegenstand-weitergeben", response_model=VerhandlungResponse, status_code=status.HTTP_201_CREATED)
+async def gegenstand_weitergeben(
+    campaign_id: str,
+    body: GegenstandWeitergebenRequest,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Ein Spieler bietet einem Party-Mitglied einen eigenen Gegenstand an.
+
+    Anders als bei SL-Verhandlungen (Reparatur, Kauf) ist hier kein Geld
+    beteiligt — das Popup dient nur der Zustimmung: niemandem darf ungefragt
+    etwas ins Inventar geschoben werden. Deshalb auch kein `gesamtbetrag`
+    im Sinne eines Preises; `create_verhandlung` errechnet ihn zwar (Summe
+    der Positionen), aber die Positionsliste bleibt hier absichtlich leer an
+    echtem Geld — nur eine Bezeichnung fürs Popup.
+    """
+    if viewer.role == "GM" or not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur Spieler können Gegenstände weitergeben")
+    absender_id = viewer.person_id
+
+    if body.empfaengerPersonId == absender_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kann nicht an sich selbst weitergeben")
+
+    besitzer = await items_repository.get_owner_id(campaign_id, body.gegenstandId)
+    if besitzer != absender_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur eigene Gegenstände können weitergegeben werden")
+
+    gegenstand = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
+    if gegenstand is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    # Nur an jemanden aus derselben Party — "gleicher Ort" im Sinne von
+    # Marks Notiz. Personen ohne eigenen Standort haben nur die Party als
+    # Ortsbezug (siehe party/repository.py), deshalb dieser Weg statt eines
+    # direkten Standortvergleichs.
+    eigene_party = await party_repository.get_party_von_person(campaign_id, absender_id)
+    if eigene_party is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Du bist in keiner Party")
+    mitglieder_ids = {m["id"] for m in eigene_party["mitglieder"]}
+    if body.empfaengerPersonId not in mitglieder_ids:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur an Mitglieder der eigenen Party möglich")
+
+    verhandlung = await repository.create_verhandlung(
+        campaign_id,
+        body.empfaengerPersonId,
+        "GEGENSTAND_WEITERGABE",
+        [{"bezeichnung": gegenstand["name"], "betrag": 0}],
+        {"gegenstandId": body.gegenstandId, "absenderPersonId": absender_id},
     )
     await _verteilen(campaign_id, verhandlung)
     return verhandlung

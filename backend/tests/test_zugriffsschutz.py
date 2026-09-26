@@ -45,6 +45,11 @@ OHNE_GM_ERLAUBT = {
     # und **löscht nichts** — der Gegenstand wandert in den Mülleimer der
     # Spielleitung, die ihn zurückholen oder endgültig entfernen kann.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/wegwerfen",
+    # Ebenso: eigenen Gegenstand an ein Party-Mitglied weitergeben. Prüft
+    # Besitz + Party-Zugehörigkeit selbst (siehe verhandlung/routes.py) und
+    # verschiebt nichts sofort — legt nur ein Annehmen/Ablehnen-Angebot an,
+    # dasselbe Verhandlungssystem wie SL-Angebote (Reparatur, Kauf).
+    "/api/campaigns/{campaign_id}/verhandlungen/gegenstand-weitergeben",
     # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
     # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",

@@ -42,6 +42,10 @@ export function VerhandlungPopup() {
 
   const entschieden = angezeigt.status !== "OFFEN";
   const angenommenErgebnis = angezeigt.status === "ANGENOMMEN";
+  // Gegenstands-Weitergabe unter Spielern ist kein Geldgeschäft — eigener
+  // Titel/Text statt "Angebot der Spielleitung" mit ¥-Beträgen, die hier
+  // ohnehin immer 0 sind (siehe verhandlung/routes.py::gegenstand_weitergeben).
+  const istWeitergabe = angezeigt.art === "GEGENSTAND_WEITERGABE";
 
   return createPortal(
     <div className="vh-popup-huelle">
@@ -54,14 +58,20 @@ export function VerhandlungPopup() {
       >
         <div className="vh-popup-kopf">
           <span className="vh-popup-zeichen" aria-hidden="true">
-            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : "¥"}
+            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istWeitergabe ? "🎁" : "¥"}
           </span>
           <span className="vh-popup-titel">
             {entschieden
               ? angenommenErgebnis
-                ? "Angebot angenommen"
-                : "Angebot abgelehnt"
-              : "Angebot der Spielleitung"}
+                ? istWeitergabe
+                  ? "Angenommen"
+                  : "Angebot angenommen"
+                : istWeitergabe
+                  ? "Abgelehnt"
+                  : "Angebot abgelehnt"
+              : istWeitergabe
+                ? "Gegenstand angeboten"
+                : "Angebot der Spielleitung"}
           </span>
         </div>
 
@@ -71,15 +81,17 @@ export function VerhandlungPopup() {
               {angezeigt.positionen.map((p, i) => (
                 <li key={i} className="vh-position">
                   <span className="vh-position-bezeichnung">{p.bezeichnung}</span>
-                  <span className="vh-position-betrag">{p.betrag.toLocaleString("de-AT")}¥</span>
+                  {!istWeitergabe && <span className="vh-position-betrag">{p.betrag.toLocaleString("de-AT")}¥</span>}
                 </li>
               ))}
             </ul>
           )}
-          <div className="vh-gesamt">
-            <span>{entschieden ? (angenommenErgebnis ? "Bezahlt" : "Nicht bezahlt") : "Gesamt"}</span>
-            <strong>{angezeigt.gesamtbetrag.toLocaleString("de-AT")}¥</strong>
-          </div>
+          {!istWeitergabe && (
+            <div className="vh-gesamt">
+              <span>{entschieden ? (angenommenErgebnis ? "Bezahlt" : "Nicht bezahlt") : "Gesamt"}</span>
+              <strong>{angezeigt.gesamtbetrag.toLocaleString("de-AT")}¥</strong>
+            </div>
+          )}
           {angenommenErgebnis && angezeigt.ergebnis?.kapitalNeu != null && (
             <p className="vh-restguthaben">
               Verbleibendes Guthaben: <strong>{Number(angezeigt.ergebnis.kapitalNeu).toLocaleString("de-AT")}¥</strong>

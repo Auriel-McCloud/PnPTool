@@ -100,11 +100,37 @@ async def _ausfuehren_shop_kauf(campaign_id: str, verhandlung: dict) -> dict:
     return {"gegenstand": gekauft, "kapitalNeu": kapital_neu}
 
 
+async def _ausfuehren_gegenstand_weitergabe(campaign_id: str, verhandlung: dict) -> dict:
+    """Kontext: {"gegenstandId": str}. Übergibt einen Gegenstand von Spieler
+    zu Spieler — kein Geld beteiligt, deshalb keine Kapitalprüfung wie bei
+    den anderen Verhandlungsarten. Prüft trotzdem noch einmal live, dass der
+    Gegenstand tatsächlich noch beim erwarteten Absender liegt (zwischen
+    Angebot und Antwort kann er anderweitig verschwunden sein, z.B. verkauft
+    oder weggeworfen)."""
+    kontext = verhandlung["kontext"]
+    gegenstand_id = kontext["gegenstandId"]
+    empfaenger_id = verhandlung["empfaengerPersonId"]
+
+    gegenstand = await items_repository.get_gegenstand(campaign_id, gegenstand_id)
+    if gegenstand is None:
+        raise VerhandlungsFehler("Der Gegenstand ist nicht mehr auffindbar")
+
+    aktueller_besitzer = await items_repository.get_owner_id(campaign_id, gegenstand_id)
+    if aktueller_besitzer != kontext.get("absenderPersonId"):
+        raise VerhandlungsFehler("Der Gegenstand gehört nicht mehr dem Absender")
+
+    uebergeben = await items_repository.transfer_owner(campaign_id, gegenstand_id, empfaenger_id)
+    if uebergeben is None:
+        raise VerhandlungsFehler("Übergabe fehlgeschlagen")
+    return {"gegenstand": uebergeben}
+
+
 # Dispatch-Tabelle: Verhandlungsart -> Ausführungsfunktion. Erweitern statt
 # umbauen, wenn eine neue Art dazukommt.
 _AUSFUEHRUNG = {
     "RUESTUNG_REPARATUR": _ausfuehren_ruestung_reparatur,
     "SHOP_KAUF": _ausfuehren_shop_kauf,
+    "GEGENSTAND_WEITERGABE": _ausfuehren_gegenstand_weitergabe,
 }
 
 
