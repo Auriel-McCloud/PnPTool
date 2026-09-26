@@ -2,11 +2,19 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Offen: Was Mark selbst testen muss (Stand 24.09.2026, nachmittags)
+## Offen: Was Mark selbst testen muss (Stand 26.09.2026)
 
 Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
+
+- **Gegenstands-Weitergabe innerhalb der Party** (`WeitergebenPopup.tsx`,
+  `VerhandlungPopup.tsx` für `GEGENSTAND_WEITERGABE`, siehe „Zuletzt gebaut“
+  unten und `docs/wiki/entities/gegenstand-transfer.md`): Backend-Import und
+  `tsc -b` sauber, Zugriffsschutz-Whitelist ergänzt. **Nie im Browser
+  angeklickt** — bitte als Spieler einen Gegenstand an ein Party-Mitglied
+  anbieten und prüfen, ob das Annehmen/Ablehnen-Popup beim Empfänger kommt
+  und der Besitz danach stimmt.
 
 - **Shop-System komplett** (`frontend/src/haendler/`, siehe „Zuletzt gebaut“
   unten und `docs/api/haendler.md`): Übersicht, physisch/digital getrennte
@@ -192,6 +200,23 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (26.09.2026 — Gegenstands-Weitergabe innerhalb der Party):**
+- **Was:** Spieler kann einem Mitglied derselben Party einen eigenen
+  Gegenstand anbieten. Empfänger bekommt das bestehende Verhandlungs-Popup
+  (ohne ¥) und nimmt an oder lehnt ab. Bei Annahme wandert `BESITZT` per
+  `transfer_owner`. Neue Art `GEGENSTAND_WEITERGABE` in der bestehenden
+  Dispatch-Tabelle, keine zweite Popup-Infrastruktur.
+- **Grenzen (bewusst):** nur Party-intern, nur Spieler (SL → 403), nicht an
+  sich selbst, Besitz wird bei Annahme noch einmal geprüft. „Gleicher Ort“
+  außerhalb der Party, Geld-Transfer, NPC-Belohnung, Credstick/Heiltrank/
+  Granate: nicht gebaut, Datenmodell nicht durchgesprochen — siehe Geplante
+  Features Punkt 16 und `docs/wiki/entities/gegenstand-transfer.md`.
+- **Neu:** Route `POST .../verhandlungen/gegenstand-weitergeben`,
+  `WeitergebenPopup.tsx`, Knopf in `GegenstandKachel` (Spieler-Ansicht über
+  `Fachfenster`). API: `docs/api/verhandlung.md`.
+- **Verifiziert:** `tsc -b` sauber, Backend-Import ok, Zugriffsschutz-Test
+  für die neue Spieler-Route grün. **Kein Klicktest** — siehe „Offen“ oben.
 
 **Zuletzt gebaut (24.09.2026 — KI-Alltagsgegenstand-Erzeugung im Shop):**
 - **Was:** Spieler kann im Shop einen Verkäufer nach einem Alltagsgegenstand
@@ -1789,3 +1814,23 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       Ideensammlung bisher — braucht noch eine eigene Konzept-Session
       (welches Critter-Sprite/welche Größe, wie oft/wie zufällig es
       wandert), bevor Code entsteht.
+
+16. **Inventar-Transfer + neue Gegenstandstypen** (notiert 26.09.2026 in
+    `ideen für später.txt`; Wiki: `docs/wiki/entities/gegenstand-transfer.md`):
+    - **Gegenstände innerhalb der Party weitergeben** — ✅ gebaut 26.09.2026
+      (`GEGENSTAND_WEITERGABE`, Annehmen/Ablehnen über das bestehende
+      Verhandlungs-Popup). Browser-Klicktest offen, siehe „Offen“ oben.
+    - **Gleicher Ort außerhalb der Party** — nicht gebaut. PCs haben keinen
+      eigenen `BEFINDET_SICH_AN`-Standort, nur die Party. Datenmodell offen.
+    - **Geld-Weitergabe** (Party / gleicher Ort, gleicher Consent-Flow) —
+      nicht gebaut. Kapital an `Person.kapital`.
+    - **SL: NPC-Geld als Belohnung an Spieler** — nicht gebaut. Ob der
+      Spieler ablehnen darf, ist offen.
+    - **Credstick** — neuer Typ, Geld laden/entladen, weitergeben/finden.
+      Offen: nur Tresor oder direkt im Shop zahlbar? Steht nicht in
+      `GEGENSTAND_TYPEN`.
+    - **Heiltrank** — Verbrauch, heilt automatisch. Offen: eigener Typ oder
+      Eigenschaft auf `Verbrauchsgegenstand`?
+    - **Granate / Alchemisten-Wurftrank** — Schaden/Effekte ohne volle
+      Mechanik, Einsatz muss sichtbar sein (nicht still verpuffen). Offen:
+      Mitteilung/Popup oder Kampfkarte?

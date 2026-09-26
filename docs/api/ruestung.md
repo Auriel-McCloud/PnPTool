@@ -341,12 +341,11 @@ losschickt:
 
 Den eigentlichen Vorschlag verschickt die SL danach über das generische
 Verhandlungs-Popup-Backend (`POST /api/campaigns/{campaign_id}/
-verhandlungen`, siehe `docs/api/verhandlung.md` falls vorhanden, sonst
-`app/verhandlung/schemas.py`/`routes.py` direkt) — Positionsliste mit
+verhandlungen`, siehe `docs/api/verhandlung.md`) — Positionsliste mit
 einem Eintrag ("Rüstungsreparatur: <Name>"), Betrag = der ggf. angepasste
 Preis. Der Spieler bekommt das Angebot als Live-Popup
 (`VerhandlungPopup.tsx`) und nimmt an oder lehnt ab
-(`POST .../verhandlungen/{id}/antworten`); bei Annahme zieht das Backend
+(`POST .../verhandlungen/{id}/antwort`); bei Annahme zieht das Backend
 das Kapital ab und repariert die Kästchen in einem Schritt (kein
 zusätzlicher Aufruf des alten `reparieren`-Endpunkts nötig).
 

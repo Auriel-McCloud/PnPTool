@@ -73,7 +73,7 @@ neuroweaving, kampf, ruestung, cyberware, drohnen, erfahrung, wirtschaft, rassen
 
 **Features:** mitteilungen, kontakte, wiki-feature (= das In-Game-Wiki-Feature des
 Tools, nicht dieses Meta-Wiki!), rassen-baukasten, theming, ki-integration, ui,
-regelsystem-kampagne-ideenschmiede
+regelsystem-kampagne-ideenschmiede, party, verhandlung, inventar
 
 **Meta:** versionsgeschichte, widerspruch, offen, geplant
 

@@ -3,6 +3,20 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-26] create | entities/gegenstand-transfer
+
+Neue Seite für Inventar-Transfer. Party-interne Gegenstands-Weitergabe
+(`GEGENSTAND_WEITERGABE`, Commit `50321a6`) ist gebaut: Spieler bietet einem
+Party-Mitglied einen eigenen Gegenstand an, Empfänger nimmt an/lehnt ab über
+das bestehende Verhandlungs-Popup. API-Referenz neu: `docs/api/verhandlung.md`
+(vorher nur als „falls vorhanden“ in `ruestung.md` erwähnt).
+
+Nicht gebaut, nur notiert (Datenmodell nicht durchgesprochen): Geld-Weitergabe,
+SL-NPC-Belohnung, Credstick, Heiltrank, Granate/Wurftrank, Weitergabe an Leute
+am gleichen Ort außerhalb der Party. Party-Seite „Offen: Inventar-Erweiterung“
+nachgezogen (Teil erledigt). Währung-Seite um die geplanten Geld-/Credstick-
+Punkte ergänzt.
+
 ## [2026-09-24] update | concepts/waehrung-und-preise (SL-Sortiment-Editor)
 
 Neue Frontend-Komponente `haendler/HaendlerBearbeiten.tsx` — SL-Popup für

@@ -1,7 +1,7 @@
 ---
 title: Party-Feature
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-26
 type: entität
 tags: [party, backend, frontend, geplant]
 sources: [../../api/party.md, ../../../backend/app/party/]
@@ -91,14 +91,17 @@ Wunsch, die Party nicht erst leer anzulegen und dann separat zu füllen.
 
 ## Offen (Phase 2, bewusst zurückgestellt)
 
-- **Inventar-Erweiterung**: Marks Idee, Party-Mitgliedern gegenseitig
-  Gegenstände geben zu können (aktuell nur SL darf Besitzer wechseln) —
-  bewusst nicht Teil dieser ersten Fassung, um sie nicht ausufern zu lassen.
+- **Inventar-Erweiterung**: Party-Mitgliedern gegenseitig Gegenstände geben
+  — **Teil erledigt 26.09.2026** (`GEGENSTAND_WEITERGABE`, siehe
+  [[gegenstand-transfer]]). Offen bleibt: Weitergabe an Leute am gleichen Ort
+  außerhalb der Party (PCs haben keinen eigenen Standort), Geld-Transfer,
+  SL-NPC-Belohnung.
 - **Party-Anzeige am Ort/Event-Popup** — momentan nur von der Party-Kachel
   aus sichtbar, nicht umgekehrt.
 
 ## Siehe auch
 
 - [[../../api/party.md]] — vollständige Endpunkt-Referenz
+- [[gegenstand-transfer]] — Party-interne Gegenstands-Weitergabe (26.09.2026)
 - [[neo4j-datenmodell]] — `MITGLIED_VON`/`BEFINDET_SICH_AN` im Gesamtkontext
 - [[../../../CLAUDE.md]] — Spotify/MusicCast als geplantes Feature (Punkt 4)

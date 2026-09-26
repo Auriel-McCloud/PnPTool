@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-26
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -23,7 +23,7 @@ Zwischentabellen (siehe [[../../api/README.md]]).
 `Gegenstand`, `Rasse` — jeweils mit eindeutiger `id`-Constraint. Weitere Typen
 ohne expliziten Constraint (laut Code-Suche in den Repositories):
 `Mitteilung`, `WikiSeite`, `Kampf`, `Nachricht`, `Kontakt`/`KENNT`-Beziehung,
-`Fraktion`, `Regelsystem`, `Erklaerung`.
+`Fraktion`, `Regelsystem`, `Erklaerung`, `Party`, `Verhandlung`.
 
 ## Zentrale Beziehungstypen (aus `repository.py`-Dateien)
 
@@ -84,5 +84,6 @@ Baukasten nichts zerreißt.
 ## Siehe auch
 
 - [[architektur-drei-ebenen]] — wie Regelsystem/Campaign/Ideenschmiede sich im Graph verschachteln
+- [[gegenstand-transfer]] — `BESITZT`-Wechsel per Verhandlung (26.09.2026)
 - [[../concepts/rassen]] — konkretes Beispiel für saubere Kennungs-Gestaltung
 - [[../../../CLAUDE.md]] — vollständige Stolperstein-Liste

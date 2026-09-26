@@ -35,6 +35,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
 | [Shop](./haendler.md) | Händler-NPCs, Sortiment (explizit + automatisch), Kauf mit Guthabenprüfung | |
+| [Verhandlungen](./verhandlung.md) | Angebot → Annehmen/Ablehnen (Reparatur, Shop-Kauf, Gegenstands-Weitergabe) | ⭐ |
 | [KI](./ki.md) | Ideenschmiede-Generierung, Wiki-Rechtschreib-/Grammatik-/Logikprüfung | |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration

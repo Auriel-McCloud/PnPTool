@@ -1,10 +1,10 @@
 ---
 title: Währung und Preise
 created: 2026-09-18
-updated: 2026-09-24
+updated: 2026-09-26
 type: konzept
 tags: [wirtschaft, versionsgeschichte, offen]
-sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md]
+sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md, ../../../CLAUDE.md]
 status: aktuell
 ---
 
@@ -86,8 +86,23 @@ Ausschluss von Waffen/Rüstung über zwei unabhängige Sperren (Typ-Whitelist +
 KI-Selbsteinschätzung). Backend und Frontend fertig, E2E-verifiziert. Siehe
 `docs/api/haendler.md`.
 
+## Geplant: Geld-Weitergabe und Credstick (26.09.2026, nicht gebaut)
+
+Notiert in `ideen für später.txt`. **Datenmodell nicht durchgesprochen.**
+
+- **Spieler-zu-Spieler:** NuYen innerhalb der Party (und später am gleichen
+  Ort) mit demselben Annehmen/Ablehnen-Popup wie Gegenstände. Kapital sitzt
+  an `Person.kapital`, nicht an einem Item.
+- **SL-NPC-Belohnung:** Geld von NPCs direkt an Spieler. Ob der Spieler
+  ablehnen darf, ist offen.
+- **Credstick:** neuer Gegenstandstyp, Geld drauf-/runterladen, weitergeben
+  oder finden. Offen: nur Tresor oder direkt im Shop zahlbar?
+
+Details und Abgrenzung zu Heiltrank/Granate: [[../entities/gegenstand-transfer]].
+
 ## Siehe auch
 
 - [[../../reference/Neotopia_Gegenstaende.md]] — alle Preistabellen im Volltext
+- [[../entities/gegenstand-transfer]] — Geld-Weitergabe/Credstick geplant (26.09.)
 - [[cyberware-bioware]] — Preis→Willenskraftverlust
 - [[ruestung-kaestchen-durchlass]] — Reparaturkosten geklärt (23.09.2026, Punkt 9)

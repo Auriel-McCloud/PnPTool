@@ -1,7 +1,7 @@
 ---
 title: Mitteilungen-System (SL-Popups)
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-26
 type: entität
 tags: [mitteilungen, websocket, frontend]
 sources: [../../api/mitteilungen.md, ../../../CLAUDE.md]
@@ -36,6 +36,14 @@ Initiative-Aufrufe und dramatische Momente; optional mit Initiative-Eingabefeld
 direkt im Popup, siehe [[../concepts/kampf-und-initiative]].
 `prefers-reduced-motion`: kein Puls, Ansage bleibt stehen.
 
+## Mitbenutzung: Verhandlungen
+
+Seit der Rüstungsreparatur (23.09.) teilen Verhandlungen denselben
+WebSocket-Umschlag (`_typ: "verhandlung"`), ohne eigenen Kanal. Arten:
+`RUESTUNG_REPARATUR`, `SHOP_KAUF`, seit 26.09. `GEGENSTAND_WEITERGABE`
+(Spieler-zu-Spieler, siehe [[gegenstand-transfer]]). API:
+[[../../api/verhandlung.md]].
+
 ## Ausblenden statt Löschen
 
 Jeder Betrachter räumt seine **eigene** Liste auf (`ausblenden`), unabhängig
@@ -59,5 +67,6 @@ Nodes, reine Broadcast-Pakete (siehe [[neo4j-datenmodell]]).
 ## Siehe auch
 
 - [[kontakte-messenger]] — NACHRICHT-Art wird von hier automatisch erzeugt
+- [[gegenstand-transfer]] — Verhandlungsart `GEGENSTAND_WEITERGABE` (26.09.)
 - [[../concepts/kampf-und-initiative]] — Initiative-Eingabe im WARNUNG-Popup
 - [[neo4j-datenmodell]] — Datenmodell-Gesamtüberblick
