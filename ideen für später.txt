@@ -16,6 +16,8 @@ Machen wir eine Kopie von Neotopia
 
 Andere Rassen wie die von Heimerdinger "Yordles"
 
+Gegenstände müssen innerhalb der Party und an Leute am gleichen Ort weitergegeben werden können — Pop-up beim Empfänger mit Annehmen/Ablehnen.
+
 *Im SL Interface die Möglichkeit neue Rassen Anzulegen, alte Rassen auszublenden, umzubenennen.... 
 
 Gleiche für Skills, + eine Maximale Anzahl an Skills
