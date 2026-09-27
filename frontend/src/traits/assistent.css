@@ -51,6 +51,69 @@
   color: currentColor;
 }
 
+/* Hypercube-Wireframe-Bewegung: äußere und innere Form rotieren
+   gegenläufig in unterschiedlichem Tempo, die Speichen dazwischen
+   schieben sich (wachsen/schrumpfen entlang ihrer eigenen Achse) —
+   zusammen der Tesseract-Schatten-Effekt, den Mark sich gewünscht hat. */
+.as-hyper-aussen {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: as-rotieren 7s linear infinite;
+}
+
+.as-hyper-innen {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: as-rotieren-gegen 4.5s linear infinite;
+}
+
+@keyframes as-rotieren {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes as-rotieren-gegen {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.as-hyper-links line {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: as-schub 2.2s ease-in-out infinite;
+}
+
+.as-hyper-links line:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.as-hyper-links line:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.as-hyper-links line:nth-child(4) {
+  animation-delay: 1.2s;
+}
+
+@keyframes as-schub {
+  0%, 100% {
+    transform: scale(0.6);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.85;
+  }
+}
+
 .as-puls {
   animation: as-puls 1.6s ease-in-out infinite;
 }

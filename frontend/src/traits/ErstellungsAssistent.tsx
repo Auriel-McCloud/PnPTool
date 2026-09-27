@@ -78,28 +78,38 @@ export function ErstellungsAssistent({
   );
 }
 
-/** Cyberware-Drohnenauge — für Chrom/NeuroWeaver. */
+/** Cyberware-Drohnenauge — für Chrom/NeuroWeaver. Hypercube-Wireframe:
+ * äußerer und innerer Rahmen rotieren gegenläufig, die Speichen dazwischen
+ * schieben sich rhythmisch (Tesseract-Schatten-Optik). */
 function KonstruktIcon() {
   return (
     <svg viewBox="0 0 48 48" width="36" height="36" className="as-svg">
-      <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="24" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="24" r="3" fill="currentColor" className="as-puls" />
-      <line x1="24" y1="4" x2="24" y2="10" stroke="currentColor" strokeWidth="2" />
-      <line x1="24" y1="38" x2="24" y2="44" stroke="currentColor" strokeWidth="2" />
-      <line x1="4" y1="24" x2="10" y2="24" stroke="currentColor" strokeWidth="2" />
-      <line x1="38" y1="24" x2="44" y2="24" stroke="currentColor" strokeWidth="2" />
+      <g className="as-hyper-links">
+        <line x1="24" y1="6" x2="24" y2="15" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+        <line x1="42" y1="24" x2="33" y2="24" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+        <line x1="24" y1="42" x2="24" y2="33" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+        <line x1="6" y1="24" x2="15" y2="24" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+      </g>
+      <polygon points="24,6 42,24 24,42 6,24" fill="none" stroke="currentColor" strokeWidth="1.6" className="as-hyper-aussen" />
+      <polygon points="24,15 33,24 24,33 15,24" fill="none" stroke="currentColor" strokeWidth="1.6" className="as-hyper-innen" />
+      <circle cx="24" cy="24" r="2.5" fill="currentColor" className="as-puls" />
     </svg>
   );
 }
 
-/** Magisches Sigill — für Magier/Häretiker. */
+/** Magisches Sigill — für Magier/Häretiker. Dieselbe Hypercube-Bewegung,
+ * nur mit Dreiecksformen statt Quadraten (arkaner statt technisch). */
 function SigillIcon() {
   return (
     <svg viewBox="0 0 48 48" width="36" height="36" className="as-svg">
-      <polygon points="24,4 42,36 6,36" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="26" r="14" fill="none" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="26" r="3" fill="currentColor" className="as-puls" />
+      <g className="as-hyper-links">
+        <line x1="24" y1="4" x2="24" y2="13" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+        <line x1="41" y1="34" x2="33.5" y2="29.5" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+        <line x1="7" y1="34" x2="14.5" y2="29.5" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+      </g>
+      <polygon points="24,4 41,34 7,34" fill="none" stroke="currentColor" strokeWidth="1.6" className="as-hyper-aussen" />
+      <polygon points="24,13 33.5,29.5 14.5,29.5" fill="none" stroke="currentColor" strokeWidth="1.6" className="as-hyper-innen" />
+      <circle cx="24" cy="26" r="2.5" fill="currentColor" className="as-puls" />
     </svg>
   );
 }
