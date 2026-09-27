@@ -106,17 +106,20 @@ WEGE: list[dict[str, str]] = [
         # Hiess "Normal" — Marks Einwand: klingt fad. Wer weder zaubert noch
         # webt, ist nicht der Rest, sondern hat sich für einen anderen Weg
         # entschieden.
-        "name": "Weg des Chrom",
-        "beschreibung": "Kein Zauber, kein Weben — Chrom. Ob du es im Körper trägst oder in der "
-        "Hand: du bist nicht geboren worden, du wurdest gebaut, Stück für Stück. Wo andere nach "
-        "Sphären greifen, greifst du zum Werkzeug. Und niemand kann dich über die Matrix von "
-        "innen angreifen.",
+        "name": "Weg des Chroms",
+        "beschreibung": "Du bist nicht geboren worden, du wurdest gebaut — Stück für Stück, Naht "
+        "für Naht. Reflexe, die schneller sind als dein Gedanke. Augen, die durch Wände sehen. "
+        "Arme, die Stahl biegen, und ein Rückgrat aus Legierung, das nicht bricht. Jedes Teil "
+        "hast du dir verdient, gekauft oder aus jemandem herausgeschnitten. Fleisch war die "
+        "Rohfassung. Du bist die Endversion.",
     },
     {
         "id": "MAGIER",
         "name": "Magier",
-        "beschreibung": "Hexkraft und die neun Sphären. Die Sphären beschreiben, woran deine Magie "
-        "greift und wie groß es sein darf; gewürfelt wird Hexkraft.",
+        "beschreibung": "Die Welt unterliegt deiner Vorstellungskraft. Es gibt „die“ Wirklichkeit "
+        "— und es gibt deine. Warum hältst du der Welt keinen Spiegel vor und zeigst ihr, wie "
+        "schön sie sein könnte? Oder wie grausam. Du bittest nicht um Erlaubnis, du korrigierst: "
+        "Feuer, wo Regen war. Eine Tür, wo eine Wand stand. Nichts, wo eben noch jemand stand.",
     },
     {
         # Häretiker (24.09.2026, Marks Konzept, siehe CLAUDE.md Punkt 14):
@@ -130,15 +133,21 @@ WEGE: list[dict[str, str]] = [
         # nicht dupliziert werden muss.
         "id": "HAERETIKER",
         "name": "Häretiker",
-        "beschreibung": "Glauben und dieselben neun Sphären — hier unter den Namen der Götter, an "
-        "die du glaubst, obwohl die Welt Glauben für tot erklärt hat. Mechanisch identisch zum "
-        "Magier: gewürfelt wird Glauben, die Sphären beschreiben, woran deine Macht greift.",
+        "beschreibung": "Nonne, Priester, Glaubenskrieger, Inquisitor — du glaubst an eine höhere "
+        "Macht, in einer Welt, die den Glauben für tot erklärt hat. Und sie antwortet dir. Du "
+        "betest nicht um Trost, du betest um Wirkung: Der Häretiker formt die Welt nach dem "
+        "Willen seines Gottes. Segen für die, die zu dir halten. Und für die anderen das, was in "
+        "den alten Büchern steht.",
     },
     {
         "id": "NEUROWEAVER",
         "name": "NeuroWeaver",
-        "beschreibung": "NeuroWeaving statt Magie: die Matrix ohne Gerät. Deine I.C.E. trägst du "
-        "in dir (Fassung + Geistesschärfe), NeuroWeaving-Fertigkeiten geben Bonuswürfel.",
+        "beschreibung": "Das Universum ist im Wandel. Du spürst es in den Pixeln, du spürst es im "
+        "Datenstrom, du riechst es in der Virtuellen Realität. Vieles, was einst war, ist "
+        "verloren — es lebt niemand mehr, der sich erinnert, was es außerhalb der Matrix gab. Du "
+        "bist die nächste Generation. Dein Körper ist nur noch Ballast, deine Realität ist die "
+        "Matrix, und sie unterwirft sich deinem Willen. Nichts läuft mehr ohne sie. Nichts läuft "
+        "mehr ohne dich.",
     },
 ]
 
