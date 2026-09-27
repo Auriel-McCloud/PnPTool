@@ -185,7 +185,12 @@ FERTIGKEITS_PAKETE: dict[str, dict[str, Any]] = {
 }
 
 # Kategorien, aus denen sich ein Fertigkeitspaket bedienen darf. Zeile 27:
-# "Hexkraft, Sphären, bzw. NeuroWeaving zählen als Fähigkeit".
+# "Hexkraft, Sphären, bzw. NeuroWeaving zählen als Fähigkeit" — gilt seit
+# 27.09.2026 nur noch für Sphären/NeuroWeaving (die "Was ist möglich"-Werte).
+# Hexkraft/NeuroWeavingWert selbst sind aus dem Fertigkeitskontingent raus
+# und stehen als fixer Sockel da (siehe MAGIE_FIXWERT unten) — bleiben aber
+# in dieser Menge, weil ein Profi-Spieler seinen "1"-Slot optional noch
+# darauf verwenden darf (siehe pruefe()).
 FERTIGKEITS_KATEGORIEN = {"Fertigkeit", "Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
 
 # --- Hintergründe -------------------------------------------------------
@@ -237,6 +242,25 @@ KAPITAL_JE_FREEBEE = 10_000
 
 # Zeile 40: eine Fertigkeit lässt sich per Freebee nur um einen Punkt heben.
 FREEBEE_MAX_JE_FERTIGKEIT = 1
+
+# --- Magiewert-Sockel (Mark, 27.09.2026) --------------------------------
+# Vorher zählten Hexkraft/NeuroWeavingWert wie jede andere Fertigkeit zum
+# Fertigkeitspaket — ein Magier/NeuroWeaver konnte also seine GESAMTEN
+# Fertigkeitsslots in Hexkraft+Sphären (bzw. NeuroWeavingWert+NeuroWeaving)
+# stecken und stand ohne jede Alltagsfertigkeit da (0 auf Wahrnehmung,
+# Nahkampf, allem) — ein Handicap, das Chrom (kein eigener Magiewert)
+# strukturell gar nicht treffen kann. Deshalb: Hexkraft/NeuroWeavingWert
+# sind jetzt ein FESTER, kostenloser Sockel (wie der Attribut-Grundwert),
+# kein frei wählbarer Fertigkeitsslot mehr. Nur mit dem Profi-Paket lässt
+# sich zusätzlich der einzige "1"-Slot des Pakets darauf verwenden (+1,
+# macht 4 statt 3) — "Profis können sonst eh nicht viel" (Mark). Freebees
+# dürfen den fertigen Wert wie jeden anderen darüber hinaus anheben
+# (FREEBEE_KOSTEN_JE_KATEGORIE gilt unverändert).
+MAGIE_FIXWERT = 3
+MAGIE_FIXWERT_PROFI_BONUS = 1
+# category → Trait-Name, damit endwerte() weiß, wem der Sockel zusteht.
+MAGIE_WERT_JE_KATEGORIE = {"Hexkraft": "Hexkraft", "NeuroWeavingWert": "NeuroWeaving"}
+MAGIE_TRAIT_JE_WEG = {"MAGIER": "Hexkraft", "NEUROWEAVER": "NeuroWeaving"}
 
 
 def startwerte(rasse: str, rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, int]:
@@ -343,6 +367,11 @@ def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]
             "maxJeFertigkeit": FREEBEE_MAX_JE_FERTIGKEIT,
         },
         "startkapital": STARTKAPITAL,
+        # Magiewert-Sockel (siehe MAGIE_FIXWERT oben): Hexkraft/NeuroWeaving
+        # stehen fix, kein Fertigkeitsslot mehr — das Frontend braucht die
+        # Zahlen, um den Sockel anzuzeigen und den Profi-Bonus anzubieten.
+        "magieFixwert": MAGIE_FIXWERT,
+        "magieFixwertProfiBonus": MAGIE_FIXWERT_PROFI_BONUS,
     }
 
 
@@ -449,6 +478,17 @@ def pruefe(
                 fehler.append(f"Unbekannte Fertigkeit: {name}")
             elif kategorie not in erlaubte:
                 fehler.append(f"{name} steht diesem Weg nicht offen.")
+            elif kategorie in MAGIE_WERT_JE_KATEGORIE:
+                # Neu (27.09.2026): Hexkraft/NeuroWeavingWert sind kein frei
+                # wählbarer Fertigkeitsslot mehr, sondern ein fixer Sockel
+                # (siehe endwerte()). Über einen Fertigkeitsslot lässt sich
+                # nur noch der Profi-Bonus dazukaufen — sonst nichts.
+                if paket_id != "PROFI" or gewaehlt[name] != MAGIE_FIXWERT_PROFI_BONUS:
+                    fehler.append(
+                        f"{name} steht fix auf {MAGIE_FIXWERT}; nur mit dem Profi-Paket "
+                        f"lässt sich per Fertigkeitsslot {MAGIE_FIXWERT_PROFI_BONUS} Punkt "
+                        f"dazukaufen (macht {MAGIE_FIXWERT + MAGIE_FIXWERT_PROFI_BONUS})."
+                    )
 
     # --- Hintergründe ----------------------------------------------------
     hintergruende = {n: int(w) for n, w in (auswahl.get("hintergrundPunkte") or {}).items() if int(w) > 0}
@@ -511,6 +551,14 @@ def endwerte(auswahl: dict[str, Any], rassen: dict[str, dict[str, Any]] | None =
     for name, wert in (auswahl.get("fertigkeitPunkte") or {}).items():
         if int(wert) > 0:
             werte[name] = werte.get(name, 0) + int(wert)
+    # Magiewert-Sockel (siehe MAGIE_FIXWERT oben): Hexkraft/NeuroWeaving
+    # bekommen den festen Grundwert kostenlos, unabhängig davon, ob/was in
+    # fertigkeitPunkte dafür stand — der darf laut pruefe() ohnehin nur noch
+    # der Profi-Bonus sein, der hier einfach oben draufkommt.
+    magie_trait = MAGIE_TRAIT_JE_WEG.get(auswahl.get("weg") or "")
+    if magie_trait:
+        bonus = max(0, int((auswahl.get("fertigkeitPunkte") or {}).get(magie_trait, 0)))
+        werte[magie_trait] = MAGIE_FIXWERT + bonus
     for name, wert in (auswahl.get("hintergrundPunkte") or {}).items():
         if int(wert) > 0:
             werte[name] = werte.get(name, 0) + int(wert)

@@ -174,6 +174,11 @@ export interface Erstellungsregeln {
     maxJeFertigkeit: number;
   };
   startkapital: number;
+  /** Magiewert-Sockel (27.09.2026): Hexkraft/NeuroWeaving stehen fix auf
+   * diesem Wert, sind kein frei wählbarer Fertigkeitsslot mehr — nur der
+   * Profi-Bonus lässt sich noch per Fertigkeitsslot dazukaufen. */
+  magieFixwert: number;
+  magieFixwertProfiBonus: number;
 }
 
 export interface ErstellungEingabe {

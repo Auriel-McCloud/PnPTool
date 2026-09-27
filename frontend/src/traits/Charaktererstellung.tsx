@@ -205,10 +205,19 @@ export function Charaktererstellung({
 
   const freebeesFrei = (regeln?.freebees.gesamt ?? 0) - freebeesVerbraucht;
 
-  /** Grundwert eines Wertes vor Freebees — für die Anzeige im Freebee-Schritt. */
+  /** Grundwert eines Wertes vor Freebees — für die Anzeige im Freebee-Schritt.
+   * Hexkraft/NeuroWeaving (seit 27.09.2026): der feste Sockel zählt mit —
+   * fertigkeitPunkte trägt für sie nur noch den optionalen Profi-Bonus,
+   * nicht mehr den vollen Wert (siehe erstellung.py::MAGIE_FIXWERT). */
   function grundwert(name: string) {
     if (gewaehlteRasse?.startwerte[name] !== undefined) {
       return gewaehlteRasse.startwerte[name] + (attributPunkte[name] || 0);
+    }
+    if ((weg === "MAGIER" || weg === "HAERETIKER") && name === "Hexkraft") {
+      return regeln!.magieFixwert + (fertigkeitPunkte[name] || 0);
+    }
+    if (weg === "NEUROWEAVER" && name === "NeuroWeaving") {
+      return regeln!.magieFixwert + (fertigkeitPunkte[name] || 0);
     }
     return (fertigkeitPunkte[name] || 0) + (hintergrundPunkte[name] || 0);
   }
@@ -764,7 +773,18 @@ function SchrittFertigkeiten({
     (acc[t.category] ??= []).push(t);
     return acc;
   }, {});
-  const gruppenFolge = ["Fertigkeit", "Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
+  // Hexkraft/NeuroWeavingWert sind seit 27.09.2026 kein normaler
+  // Fertigkeitsslot mehr (siehe erstellung.py::MAGIE_FIXWERT) — eigener
+  // Block unten statt in der freien Auswahl-Raster.
+  const gruppenFolge = ["Fertigkeit", "Sphäre", "NeuroWeaving"].filter((k) => gruppen[k]?.length);
+  const magieKategorie: "Hexkraft" | "NeuroWeavingWert" | null = gruppen.Hexkraft
+    ? "Hexkraft"
+    : gruppen.NeuroWeavingWert
+      ? "NeuroWeavingWert"
+      : null;
+  const magieTrait = magieKategorie ? gruppen[magieKategorie][0] : null;
+  const magieAnzeigeName = magieKategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : "NeuroWeaving";
+  const magieBonus = magieTrait ? werte[magieTrait.name] || 0 : 0;
 
   return (
     <div>
@@ -803,9 +823,41 @@ function SchrittFertigkeiten({
           </div>
           <p className="er-hinweis">
             {vergeben} von {gewaehlt.anzahl} Fertigkeiten gesetzt.
-            {(gruppen.Hexkraft || gruppen.Sphäre || gruppen.NeuroWeaving) &&
-              ` ${magieBegriff(magieFlavor, "Hexkraft")}, ${magieBegriff(magieFlavor, "Sphären")} und NeuroWeaving zählen dabei mit.`}
+            {(gruppen.Sphäre || gruppen.NeuroWeaving) && ` ${magieBegriff(magieFlavor, "Sphären")} und NeuroWeaving zählen dabei mit.`}
           </p>
+
+          {magieTrait && (
+            <section style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
+              <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
+              <div className="er-wert">
+                <span className="er-wert-name">
+                  {magieAnzeigeName}
+                  <InfoTipp
+                    campaignId={campaignId}
+                    schluessel={erklaerungsSchluessel.trait(magieAnzeigeName)}
+                    titel={magieAnzeigeName}
+                    erzwingen
+                  />
+                </span>
+                <DotPool
+                  value={regeln.magieFixwert + magieBonus}
+                  max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
+                  fest={regeln.magieFixwert}
+                  onChange={(neu) => {
+                    const bonus = Math.max(0, neu - regeln.magieFixwert);
+                    if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
+                    onWert({ ...werte, [magieTrait.name]: bonus });
+                  }}
+                />
+              </div>
+              <p className="er-hinweis">
+                {magieAnzeigeName} steht fix auf {regeln.magieFixwert} — kostet keinen Fertigkeitsslot.
+                {gewaehlt.id === "PROFI" &&
+                  ` Als Profi lässt sich der einzige 1er-Slot stattdessen hierauf legen (macht ${regeln.magieFixwert + regeln.magieFixwertProfiBonus}).`}
+              </p>
+            </section>
+          )}
+
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
             Fertigkeiten wählen
           </button>
@@ -829,11 +881,7 @@ function SchrittFertigkeiten({
             {gruppenFolge.map((kategorie) => (
               <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
                 <h3 className="er-spalte-titel">
-                  {kategorie === "Hexkraft"
-                    ? magieBegriff(magieFlavor, "Hexkraft")
-                    : kategorie === "Sphäre"
-                      ? magieBegriff(magieFlavor, "Sphären")
-                      : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+                  {kategorie === "Sphäre" ? magieBegriff(magieFlavor, "Sphären") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
                 </h3>
                 <div
                   className="er-spaltenraster"

@@ -34,6 +34,7 @@ KATALOG = [
         ),
         ("Sphäre", ["Kräfte", "Leben"], 5),
         ("Hexkraft", ["Hexkraft"], 10),
+        ("NeuroWeavingWert", ["NeuroWeaving"], 6),
         ("NeuroWeaving", ["Brute Force"], 6),
         ("Hintergrund", [h["name"] for h in erstellung.HINTERGRUENDE], 5),
     ]
@@ -232,10 +233,34 @@ def test_sphaeren_nur_fuer_magier():
     assert erstellung.pruefe({**auswahl, "weg": "MAGIER"}, KATALOG) == []
 
 
-def test_hexkraft_zaehlt_als_fertigkeit():
+def test_hexkraft_ist_ein_fixer_sockel_kein_fertigkeitsslot():
+    """Seit 27.09.2026: Hexkraft steht fix auf MAGIE_FIXWERT, kostet keinen
+    Fertigkeitsslot mehr — das Profi-Paket bleibt bei acht vollen Slots für
+    normale Fertigkeiten/Sphären."""
     auswahl = grundgeruest(weg="MAGIER")
     auswahl["fertigkeitPunkte"] = {
-        "Hexkraft": 4,
+        "Kräfte": 4,
+        "Leben": 3,
+        "Wahrnehmung": 3,
+        "Heimlichkeit": 3,
+        "Matrix": 2,
+        "Fahren": 2,
+        "Etiketten": 2,
+        "Nahkampf": 1,
+    }
+    assert erstellung.pruefe(auswahl, KATALOG) == []
+    werte = erstellung.endwerte(auswahl)
+    assert werte["Hexkraft"] == erstellung.MAGIE_FIXWERT
+
+
+def test_hexkraft_ueber_fertigkeitsslot_faellt_ohne_profi_bonus_auf():
+    """Wer Hexkraft trotzdem als vollen Fertigkeitsslot einträgt (hier der
+    4er-Slot, keine Profi-Bonus-1), bekommt einen Fehler statt eines
+    stillen Mehrwerts. Verteilung selbst bleibt paketkonform (1×4, 3×3,
+    3×2, 1×1), damit ausschließlich der Hexkraft-Fehler geprüft wird."""
+    auswahl = grundgeruest(weg="MAGIER")
+    auswahl["fertigkeitPunkte"] = {
+        "Hexkraft": 4,  # kein Profi-Bonus-Wert (der wäre 1) — muss auffallen
         "Kräfte": 3,
         "Leben": 3,
         "Wahrnehmung": 3,
@@ -244,7 +269,43 @@ def test_hexkraft_zaehlt_als_fertigkeit():
         "Heimlichkeit": 2,
         "Nahkampf": 1,
     }
+    fehler = erstellung.pruefe(auswahl, KATALOG)
+    assert any("Hexkraft" in f and "fix" in f for f in fehler)
+
+
+def test_profi_darf_hexkraft_per_einserslot_auf_vier_heben():
+    """Mark: 'Profis können sonst eh nicht viel' — der einzige 1er-Slot des
+    Profi-Pakets darf statt einer normalen Fertigkeit auf Hexkraft gehen."""
+    auswahl = grundgeruest(weg="MAGIER")
+    auswahl["fertigkeitPunkte"] = {
+        "Hexkraft": 1,  # der Profi-Bonus: macht 3+1=4
+        "Schusswaffen": 4,
+        "Heimlichkeit": 3,
+        "Nahkampf": 3,
+        "Wahrnehmung": 3,
+        "Matrix": 2,
+        "Fahren": 2,
+        "Etiketten": 2,
+    }
     assert erstellung.pruefe(auswahl, KATALOG) == []
+    assert erstellung.endwerte(auswahl)["Hexkraft"] == erstellung.MAGIE_FIXWERT + erstellung.MAGIE_FIXWERT_PROFI_BONUS
+
+
+def test_neuroweaver_hat_denselben_fixen_sockel():
+    """Derselbe Sockel gilt für NeuroWeavingWert (Chrom-Weg)."""
+    auswahl = grundgeruest(weg="NEUROWEAVER")
+    auswahl["fertigkeitPunkte"] = {
+        "Brute Force": 4,
+        "Schusswaffen": 3,
+        "Heimlichkeit": 3,
+        "Wahrnehmung": 3,
+        "Matrix": 2,
+        "Fahren": 2,
+        "Etiketten": 2,
+        "Nahkampf": 1,
+    }
+    assert erstellung.pruefe(auswahl, KATALOG) == []
+    assert erstellung.endwerte(auswahl)["NeuroWeaving"] == erstellung.MAGIE_FIXWERT
 
 
 # --- Freebees -----------------------------------------------------------
@@ -346,7 +407,7 @@ def test_endwerte_summieren_start_verteilung_und_freebees():
 
 def test_regelwerk_ist_vollstaendig_fuer_die_oberflaeche():
     regeln = erstellung.regelwerk()
-    assert {w["id"] for w in regeln["wege"]} == {"KEINER", "MAGIER", "NEUROWEAVER"}
+    assert {w["id"] for w in regeln["wege"]} == {"KEINER", "MAGIER", "HAERETIKER", "NEUROWEAVER"}
     assert {r["name"] for r in regeln["rassen"]} == {"Mensch", "Elf", "Ork", "Zwerg", "Troll"}
     assert len(regeln["fertigkeitsPakete"]) == 3
     assert regeln["freebees"]["gesamt"] == 15
