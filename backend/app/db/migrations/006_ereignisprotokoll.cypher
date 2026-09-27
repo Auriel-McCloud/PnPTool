@@ -1,0 +1,11 @@
+CREATE CONSTRAINT sitzung_id IF NOT EXISTS FOR (n:Sitzung) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT achievement_id IF NOT EXISTS FOR (n:Achievement) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT achievementverleihung_id IF NOT EXISTS FOR (n:AchievementVerleihung) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT kiprotokolleintrag_id IF NOT EXISTS FOR (n:KiProtokollEintrag) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT gegenstandsbewegung_id IF NOT EXISTS FOR (n:GegenstandsBewegung) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT geldbewegung_id IF NOT EXISTS FOR (n:GeldBewegung) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT aufenthalt_id IF NOT EXISTS FOR (n:Aufenthalt) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT npcwissenszuwachs_id IF NOT EXISTS FOR (n:NpcWissenszuwachs) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT kampflogeintrag_id IF NOT EXISTS FOR (n:KampfLogEintrag) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT verhandlungsausgang_id IF NOT EXISTS FOR (n:VerhandlungsAusgang) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT charakterentwicklung_id IF NOT EXISTS FOR (n:CharakterEntwicklung) REQUIRE n.id IS UNIQUE;

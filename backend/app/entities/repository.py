@@ -43,6 +43,12 @@ _BOGEN_FELDER = [
     # "maennlich"). Am Charakter gespeichert, nicht an der Ansicht: sonst
     # muesste man bei jedem Wechsel neu umstellen.
     "silhouette",
+    # Ereignisprotokoll (27.09.2026, docs/wiki/entities/ereignisprotokoll.md):
+    # war beim Bau des Achievement-Triggers CHARAKTER_ERSTELLT ("Hello
+    # World") als fehlende Voraussetzung entdeckt — "wann wurde X erstellt"
+    # war bis dahin für JEDEN Charakter unbeantwortbar. Wird von PersonCreate
+    # per default_factory gesetzt, nicht rückwirkend für Bestandsdaten.
+    "erstelltAm",
 ]
 
 # bildUrl: Aussehen einer Person, eines Ortes oder einer Szene. Die
@@ -100,6 +106,10 @@ _BOGEN_DEFAULTS: dict = {
     # Bestandsdaten kennen das Feld nicht; ohne Ersatz scheitert die
     # Pydantic-Pruefung (Stolperstein 9).
     "bildUrl": "",
+    # Ereignisprotokoll: Bestandscharaktere haben kein Erstellungsdatum
+    # (kann rückwirkend niemand mehr wissen) — bleibt bewusst leer statt
+    # eines erfundenen Datums.
+    "erstelltAm": "",
     # Bildergalerie: leeres Array als Standard
     "bilder": [],
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe

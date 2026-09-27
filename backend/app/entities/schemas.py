@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 SichtbarkeitModus = Literal["GM", "ALLE", "SPEZIFISCH"]
 
@@ -160,6 +161,10 @@ class PersonCreate(BaseModel):
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
+    # Ereignisprotokoll (27.09.2026): Zeitpunkt der Erstellung, ISO-Format.
+    # default_factory statt fixem Default, damit jeder neue Aufruf den
+    # tatsächlichen Zeitpunkt bekommt statt eines eingefrorenen Import-Werts.
+    erstelltAm: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class PersonUpdate(BaseModel):
@@ -246,6 +251,7 @@ class PersonResponse(BaseModel):
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str
     notizenSichtbarFuer: list[str]
+    erstelltAm: str = ""
 
 
 class OrtCreate(BaseModel):
