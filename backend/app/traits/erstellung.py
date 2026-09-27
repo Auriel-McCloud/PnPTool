@@ -144,7 +144,7 @@ WEGE: list[dict[str, str]] = [
         "name": "NeuroWeaver",
         "beschreibung": "Das Universum ist im Wandel. Du spürst es in den Pixeln, du spürst es im "
         "Datenstrom, du riechst es in der Virtuellen Realität. Vieles, was einst war, ist "
-        "verloren — es lebt niemand mehr, der sich erinnert, was es außerhalb der Matrix gab. Du "
+        "verloren, da niemand mehr lebt, der sich erinnert, was es außerhalb der Matrix gab. Du "
         "bist die nächste Generation. Dein Körper ist nur noch Ballast, deine Realität ist die "
         "Matrix, und sie unterwirft sich deinem Willen. Nichts läuft mehr ohne sie. Nichts läuft "
         "mehr ohne dich.",
