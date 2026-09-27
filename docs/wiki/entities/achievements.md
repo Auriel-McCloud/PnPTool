@@ -3,7 +3,7 @@ title: Achievements
 created: 2026-09-27
 updated: 2026-09-27
 type: entität
-tags: [ereignisprotokoll, ki-integration, datenmodell, geplant]
+tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, geplant]
 sources: [../../../CLAUDE.md, ereignisprotokoll.md]
 status: entschieden-nicht-umgesetzt
 ---

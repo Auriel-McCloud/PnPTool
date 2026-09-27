@@ -1895,7 +1895,14 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       Log-Kategorien geprüft, kein persistenter Vorschlags-Knoten nötig
       — live aus dem Log berechnet wie der bestehende KI-Sortiment-
       Vorschlag; KI-Text bezieht auslösenden Log-Eintrag+Ort+Sitzung ein;
-      zusätzlich spontane manuelle Vergabe über eigenen Baukasten),
+      zusätzlich spontane manuelle Vergabe über eigenen Baukasten;
+      **UI (27.09.2026):** 🏆-Symbol in der oberen Werkzeugleiste
+      (`cl-leiste-werkzeuge`, kein neuer Burgermenü-Eintrag) — Spieler
+      sehen ein Scroll-Popup mit eigenen Achievements (neuestes zuerst), SL
+      bekommt ein volles Verwaltungsfenster (Katalog, Baukasten,
+      Trigger-Vorschläge, manuelle Vergabe); neue Verleihungen poppen
+      automatisch auf, außer während eines laufenden Kampfs — dort erst
+      bei Kampfende nachgeliefert, um nicht mitten im Gefecht abzulenken),
     - **Zwei weitere Kategorien nachgezogen (27.09.2026, gleicher Tag):**
       `KampfLogEintrag` (Treffer/kritisch/bewusstlos/tot/Kampfende je Runde
       — **Angreifer wird automatisch aus `Kampf.amZug` übernommen**, Mark:

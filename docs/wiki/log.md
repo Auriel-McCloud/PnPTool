@@ -3,6 +3,30 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-27] update | entities/achievements (UI)
+
+Fünfte Runde: Mark beantwortet "wo finde ich die Achievements? gibts dafür
+ein neues Burgermenü?" — Antwort war zunächst ehrlich "noch gar nichts
+gebaut, reines Konzept", danach hat Mark die UI selbst festgelegt:
+
+**🏆-Symbol in der oberen Werkzeugleiste** (`cl-leiste-werkzeuge` in
+`CommlinkShell.tsx`, derselbe Slot wie Erklärungs-/Theme-Schalter) statt
+einem neuen Burgermenü-Eintrag in der Symbolspalte. Klick-Verhalten je
+Rolle unterschiedlich: **Spieler** sehen ein scrollbares Popup mit den
+eigenen Achievements, neuestes zuerst, jederzeit erneut aufklappbar;
+**SL** bekommt stattdessen ein volles Verwaltungsfenster im
+Burgermenü-Stil ("damit man sich mit dem Entwerfen leichter tut") —
+Katalog, Baukasten, offene Auto-Trigger-Vorschläge, manuelle Vergabe.
+
+**Auto-Popup bei neuer Verleihung, außer während eines laufenden Kampfs**
+(Mark: "die man während dem Kampf erhält sollten nach dem Kampf
+aufpoppen") — Verleihungen während `Kampf` aktiv werden zurückgehalten und
+erst beim Kampfende (`DELETE .../kampf`) nachgeliefert, damit ein Popup
+nicht mitten im Gefecht ablenkt. Wiederverwendet dieselbe Live-Push-
+Infrastruktur wie das bestehende Mitteilungssystem.
+
+`index.md` Zusammenfassungszeile nachgezogen.
+
 ## [2026-09-27] create | entities/achievements
 
 Vierte und letzte Runde des Ereignisprotokoll-Gesprächs: eigene Seite für
