@@ -10,16 +10,17 @@
  * nachziehen.
  */
 
-/** Trait-Name (Magier-Vokabular) → Häretiker-Vokabular. */
+/** Trait-Name (Magier-Vokabular) → Häretiker-Vokabular.
+ * 27.09.2026: Ehecatl → Shu, Atum → Izanagi getauscht (siehe seed.py). */
 export const HAERETIKER_LABELS: Record<string, string> = {
   Hexkraft: "Glauben",
-  Korrespondenz: "Ehecatl",
+  Korrespondenz: "Shu",
   Gedanken: "Tezcatlipoca",
   Entropie: "Kali",
   Kräfte: "Donar",
   Leben: "Enki",
   Materie: "Ogun",
-  Ursprung: "Atum",
+  Ursprung: "Izanagi",
   Geister: "Izanami",
   Zeit: "Chronos",
 };

@@ -1736,8 +1736,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     - **Zeit** (Vorausschau, Verlangsamung, kurze Zeitsprünge) →
       **Chronos** (griechisch — Gott/Personifikation der Zeit)
     - **Korrespondenz** (Fernwahrnehmung, Teleportation, Distanz
-      überbrücken) → **Ehecatl** (aztekisch — Windgott, bewegt sich frei
-      über Distanzen)
+      überbrücken) → **Shu** (ägyptisch — Gott der Luft und des Raumes,
+      trennt Himmel und Erde und trägt den Abstand zwischen ihnen; ersetzt
+      27.09.2026 Ehecatl, weil Tezcatlipoca schon aztekisch belegt war)
     - **Gedanken** (Gedanken lesen, Illusionen, Willen beugen, Erinnerung
       verändern) → **Tezcatlipoca** (aztekisch — „Rauchender Spiegel",
       Gott der Täuschung und Wahrsagerei)
@@ -1754,8 +1755,10 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       **Ogun** (Yoruba/westafrikanisch — Gott des Eisens, der Schmiede-
       kunst und der Technik)
     - **Ursprung** (Quintessenz anzapfen, aus dem Nichts erschaffen,
-      Auren lesen) → **Atum** (ägyptisch — selbst erschaffener Urgott,
-      Quelle von allem Seienden)
+      Auren lesen) → **Izanagi** (japanisch — Schöpfergott, erschuf mit
+      Izanami die Inseln Japans und die ersten Götter; ersetzt 27.09.2026
+      Atum, bewusst als Paar mit Izanami/Geister — beide Texte verweisen
+      aufeinander über den Mythos von Izanagi und Izanami)
     - **Geister** (Astralebene, Geister rufen/binden/verbannen) →
       **Izanami** (japanisch — Göttin des Todes, Herrscherin der
       Geisterwelt Yomi)

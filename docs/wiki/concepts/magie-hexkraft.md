@@ -49,8 +49,9 @@ Hexkraft 0 fälschlich kein Magier.
   mechanisch immer `MAGIER` — reine Anzeige-Ebene, keine neue
   Spielmechanik. Hexkraft → **Glauben**, Wilde Magie → **Blasphemie**, die
   neun Sphären bekommen Götternamen aus acht Mythologien (Chronos,
-  Ehecatl, Tezcatlipoca, Kali, Donar, Enki, Ogun, Atum, Izanami — siehe
-  CLAUDE.md Punkt 14 für die vollständige Zuordnung samt Begründung).
+  Shu, Tezcatlipoca, Kali, Donar, Enki, Ogun, Izanagi, Izanami — 27.09.2026:
+  Ehecatl→Shu und Atum→Izanagi getauscht, siehe CLAUDE.md Punkt 14 für die
+  vollständige Zuordnung samt Begründung).
   Zentrales Vokabular-Mapping in `backend/app/traits/seed.py`
   (`_seed_haeretiker_erklaerungen`) und `frontend/src/traits/magieBegriffe.ts`
   (Single Source of Truth, keine Text-Duplikation über die UI-Komponenten
