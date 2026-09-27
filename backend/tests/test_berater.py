@@ -23,6 +23,7 @@ def test_leere_werte_geben_keine_falschen_positiven_ausser_den_erwartbaren():
 def test_ausgewogener_charakter_bekommt_keine_warnungen():
     werte = {
         "Nahkampf": 2,
+        "Sportlichkeit": 2,
         "Wahrnehmung": 2,
     }
     hinweise = berater.berate(werte, weg="KEINER")
@@ -40,6 +41,25 @@ def test_wahrnehmung_null_triggert_eigene_warnung():
     assert "KEINE_WAHRNEHMUNG" in {h["code"] for h in hinweise}
     hinweise = berater.berate({"Wahrnehmung": 1, "Nahkampf": 2}, weg="KEINER")
     assert "KEINE_WAHRNEHMUNG" not in {h["code"] for h in hinweise}
+
+
+def test_keine_sportlichkeit_nur_wenn_andere_kampfwerte_gesetzt_sind():
+    """Ist die GESAMTE Kampf-Summe schon 0, greift KEIN_KAMPFWERT — ein
+    zusätzlicher Sportlichkeits-Hinweis zum selben Grundproblem wäre
+    redundant. Erst wenn andere Kampfwerte gesetzt sind, aber ausgerechnet
+    Sportlichkeit bei 0 liegt, feuert die spezifischere Warnung."""
+    nur_nahkampf = berater.berate({"Nahkampf": 3, "Sportlichkeit": 0}, weg="KEINER")
+    codes = {h["code"] for h in nur_nahkampf}
+    assert "KEINE_SPORTLICHKEIT" in codes
+    assert "KEIN_KAMPFWERT" not in codes
+
+    alles_leer = berater.berate({"Sportlichkeit": 0}, weg="KEINER")
+    codes_leer = {h["code"] for h in alles_leer}
+    assert "KEIN_KAMPFWERT" in codes_leer
+    assert "KEINE_SPORTLICHKEIT" not in codes_leer
+
+    mit_sportlichkeit = berater.berate({"Nahkampf": 3, "Sportlichkeit": 2}, weg="KEINER")
+    assert "KEINE_SPORTLICHKEIT" not in {h["code"] for h in mit_sportlichkeit}
 
 
 def test_magie_ueberladen_nur_ab_schwelle_und_nur_fuer_magie_wege():

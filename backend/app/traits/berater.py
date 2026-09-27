@@ -19,6 +19,13 @@ Auf Marks Wunsch reduziert auf GENAU DREI Warnungen, in fester Priorität
 sind bewusst raus ("bin mir nichtmal sicher ob ich die überhaupt drinnen
 haben will").
 
+27.09.2026, dritte Rückmeldung: vierte Warnung für Sportlichkeit=0 ergänzt
+("das brauchst du zum Ausweichen") — eingestuft als Priorität 4 (nach den
+ursprünglichen drei), weil sie enger/spezifischer ist als KEIN_KAMPFWERT.
+Feuert NUR, wenn schon andere Kampfwerte gesetzt sind (kampf_summe > 0) —
+ist die gesamte Kampf-Summe 0, deckt KEIN_KAMPFWERT das bereits ab und ein
+zweiter Hinweis zum selben Grundproblem wäre redundant.
+
 Bewusst ohne KI-Aufruf: das hier sind Reaktionen auf klar messbare Zahlen
 (Wert X = 0, Kategorie Y unausgeglichen), keine kreative Textarbeit. Läuft
 rein lokal bei jedem Klick, kostet nichts, hängt nicht an einem externen
@@ -49,10 +56,15 @@ KAMPF_FERTIGKEITEN = {
 # Praxis nie auftauchte.
 MAGIE_SUMME_WARNSCHWELLE = 6
 
-# Priorität der drei verbliebenen Warnungen, niedrigste Zahl zuerst gezeigt
-# (Mark: "1. Sphären, 2. Wahrnehmung, 3. Kämpfen" — in dieser Reihenfolge,
-# nicht in der Reihenfolge, in der sie berechnet werden).
-_PRIORITAET = {"MAGIE_UEBERLADEN": 0, "KEINE_WAHRNEHMUNG": 1, "KEIN_KAMPFWERT": 2}
+# Priorität der vier Warnungen, niedrigste Zahl zuerst gezeigt (Mark:
+# "1. Sphären, 2. Wahrnehmung, 3. Kämpfen" — Sportlichkeit kam als vierte,
+# spezifischere Ergänzung dazu).
+_PRIORITAET = {
+    "MAGIE_UEBERLADEN": 0,
+    "KEINE_WAHRNEHMUNG": 1,
+    "KEIN_KAMPFWERT": 2,
+    "KEINE_SPORTLICHKEIT": 3,
+}
 
 
 def berate(
@@ -68,10 +80,10 @@ def berate(
 
     Gibt eine Liste von Hinweisen zurück, jeder mit `code` (stabil, fürs
     Frontend/Tests) und `text` (der eigentliche Spruch) — sortiert nach
-    Priorität (Magie-Überladung zuerst, dann Wahrnehmung, dann Kampf).
-    Leere Liste heißt nicht "perfekt ausbalanciert", nur "nichts
-    Auffälliges gefunden". `attribut_kategorien` wird aktuell nicht mehr
-    ausgewertet (Parameter bleibt für Aufrufer-Kompatibilität bestehen).
+    Priorität (Magie-Überladung, dann Wahrnehmung, dann Kampf, dann
+    Sportlichkeit). Leere Liste heißt nicht "perfekt ausbalanciert", nur
+    "nichts Auffälliges gefunden". `attribut_kategorien` wird aktuell nicht
+    mehr ausgewertet (Parameter bleibt für Aufrufer-Kompatibilität bestehen).
     """
     hinweise: list[dict[str, str]] = []
 
@@ -100,6 +112,12 @@ def berate(
             "code": "KEIN_KAMPFWERT",
             "text": "Komplett wehrlos, wenn's kracht. Mit dem Wert hast du wohl noch "
             "nicht mal einen Bud-Spencer-Film gesehen.",
+        })
+    elif werte.get("Sportlichkeit", 0) == 0:
+        hinweise.append({
+            "code": "KEINE_SPORTLICHKEIT",
+            "text": "0 auf Sportlichkeit? Das brauchst du zum Ausweichen — sonst "
+            "bleibst du einfach stehen, wenn's brenzlig wird.",
         })
 
     hinweise.sort(key=lambda h: _PRIORITAET.get(h["code"], 99))

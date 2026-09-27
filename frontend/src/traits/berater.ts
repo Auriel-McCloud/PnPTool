@@ -13,6 +13,10 @@
  * viele Popups und sind raus; die Magie-Schwelle war fälschlich 10 statt
  * der gewünschten 6, wodurch die eigentlich wichtigste Warnung nie auftauchte.
  *
+ * 27.09.2026, dritte Rückmeldung: vierte Warnung für Sportlichkeit=0 ergänzt
+ * ("das brauchst du zum Ausweichen") — Priorität 4, feuert nur wenn schon
+ * andere Kampfwerte gesetzt sind (sonst deckt KEIN_KAMPFWERT es schon ab).
+ *
  * Bewusst ohne KI: reine Reaktion auf messbare Zahlen, kein Sprachmodell,
  * keine Kosten, funktioniert auch offline/wenn die KI-Anbindung down ist.
  */
@@ -41,7 +45,12 @@ const NEUROWEAVING_FERTIGKEITEN_NAMEN = [
 export const MAGIE_SUMME_WARNSCHWELLE = 6;
 
 /** Deckt sich mit berater.py::_PRIORITAET — niedrigste Zahl zuerst gezeigt. */
-const PRIORITAET: Record<string, number> = { MAGIE_UEBERLADEN: 0, KEINE_WAHRNEHMUNG: 1, KEIN_KAMPFWERT: 2 };
+const PRIORITAET: Record<string, number> = {
+  MAGIE_UEBERLADEN: 0,
+  KEINE_WAHRNEHMUNG: 1,
+  KEIN_KAMPFWERT: 2,
+  KEINE_SPORTLICHKEIT: 3,
+};
 
 export interface BeraterHinweis {
   code: string;
@@ -91,6 +100,11 @@ export function berate(
     hinweise.push({
       code: "KEIN_KAMPFWERT",
       text: "Komplett wehrlos, wenn's kracht. Mit dem Wert hast du wohl noch nicht mal einen Bud-Spencer-Film gesehen.",
+    });
+  } else if ((werte["Sportlichkeit"] || 0) === 0) {
+    hinweise.push({
+      code: "KEINE_SPORTLICHKEIT",
+      text: "0 auf Sportlichkeit? Das brauchst du zum Ausweichen — sonst bleibst du einfach stehen, wenn's brenzlig wird.",
     });
   }
 
