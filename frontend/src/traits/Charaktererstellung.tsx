@@ -14,6 +14,7 @@ import {
   type Rasse,
 } from "./bogenApi";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
+import { ErstellungsAssistent } from "./ErstellungsAssistent";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -222,6 +223,29 @@ export function Charaktererstellung({
     return (fertigkeitPunkte[name] || 0) + (hintergrundPunkte[name] || 0);
   }
 
+  /** Aktueller Gesamtstand für den Erstellungsassistenten (Karl-Klammer,
+   * siehe berater.ts) — Attribute mit Rassen-Startwert, Fertigkeiten wie
+   * gewählt, Hexkraft/NeuroWeaving mit dem festen Sockel. Bewusst ohne
+   * Freebees/Hintergründe: der Assistent warnt während der Grundverteilung,
+   * nicht erst am Ende. */
+  const assistentWerte = useMemo(() => {
+    const w: Record<string, number> = { ...fertigkeitPunkte };
+    if (gewaehlteRasse) {
+      for (const [name, start] of Object.entries(gewaehlteRasse.startwerte)) {
+        w[name] = start + (attributPunkte[name] || 0);
+      }
+    }
+    if (regeln) {
+      if (weg === "MAGIER" || weg === "HAERETIKER") {
+        w["Hexkraft"] = regeln.magieFixwert + (fertigkeitPunkte["Hexkraft"] || 0);
+      }
+      if (weg === "NEUROWEAVER") {
+        w["NeuroWeaving"] = regeln.magieFixwert + (fertigkeitPunkte["NeuroWeaving"] || 0);
+      }
+    }
+    return w;
+  }, [fertigkeitPunkte, gewaehlteRasse, attributPunkte, regeln, weg]);
+
   /** Ob der aktuelle Schritt abgeschlossen ist — steuert nur den Weiter-Knopf. */
   const schrittFertig = useMemo(() => {
     switch (SCHRITTE[schritt].id) {
@@ -393,6 +417,17 @@ export function Charaktererstellung({
           />
         )}
       </div>
+
+      {/* Karl-Klammer-Assistent (27.09.2026): live während Attribute/
+          Fertigkeiten, keine harten Regeln, nur Hinweise. Erst ab der
+          Rassenwahl sinnvoll — davor ist jeder Wert 0. */}
+      {gewaehlteRasse && ["attribute", "fertigkeiten"].includes(aktuell.id) && (
+        <ErstellungsAssistent
+          werte={assistentWerte}
+          weg={weg}
+          attributKategorien={regeln.attributKategorien}
+        />
+      )}
 
       {fehler.length > 0 && (
         <ul className="er-fehler">

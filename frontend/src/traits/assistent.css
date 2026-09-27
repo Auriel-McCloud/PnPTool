@@ -1,0 +1,136 @@
+/* ===================================================================
+   Erstellungsassistent (Karl-Klammer), 27.09.2026.
+   Zwei Farbvarianten je Weg (--wert-hexkraft violett / --wert-neuroweaving
+   grün, siehe theme/tokens.css) — Neonröhre wie überall im Commlink-Stil.
+   =================================================================== */
+
+.as-box {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 360px;
+  animation: as-auf 0.25s ease-out;
+}
+
+@keyframes as-auf {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.as-box-magisch {
+  color: var(--wert-hexkraft);
+}
+
+.as-box-chrom {
+  color: var(--wert-neuroweaving);
+}
+
+.as-figur {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background: var(--flaeche-hoch);
+  box-shadow: 0 0 10px color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.as-svg {
+  color: currentColor;
+}
+
+.as-puls {
+  animation: as-puls 1.6s ease-in-out infinite;
+}
+
+@keyframes as-puls {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.as-blase {
+  position: relative;
+  background: var(--flaeche-hoch);
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 0 12px color-mix(in srgb, currentColor 30%, transparent);
+}
+
+/* Sprechblasen-Schnabel Richtung Figur (unten links). */
+.as-blase::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 14px;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 7px solid currentColor;
+}
+
+.as-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.as-fuss {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.as-weiter {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: currentColor;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.as-schliessen {
+  font-size: 11px;
+  color: var(--text-leise);
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  margin-left: auto;
+}
+
+.as-schliessen:hover {
+  color: var(--text);
+}
+
+/* Am Handy nicht über die ganze Breite hängen, aber trotzdem lesbar bleiben. */
+@media (max-width: 480px) {
+  .as-box {
+    right: 8px;
+    left: 8px;
+    bottom: 8px;
+    max-width: none;
+  }
+}
