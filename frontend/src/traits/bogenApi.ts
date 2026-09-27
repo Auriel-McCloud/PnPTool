@@ -254,7 +254,7 @@ export const bogenApi = {
   /** KI-Abschlusskommentar zum Build (27.09.2026) — EIN Aufruf pro Klick,
    * ausdrücklich per Knopf (siehe ErstellungsKommentar.tsx), nie automatisch. */
   kommentar: (cid: string, werte: Record<string, number>, weg: string, magieFlavor: string) =>
-    api.post<{ kommentar: string }>(`/api/campaigns/${cid}/erstellung/kommentar`, { werte, weg, magieFlavor }),
+    api.post<{ achievement: string; kommentar: string }>(`/api/campaigns/${cid}/erstellung/kommentar`, { werte, weg, magieFlavor }),
 
   preise: (cid: string, personId: string) =>
     api.get<Steigerungen>(`/api/campaigns/${cid}/personen/${personId}/steigern`),

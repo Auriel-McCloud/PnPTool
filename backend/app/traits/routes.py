@@ -458,20 +458,30 @@ _KOMMENTAR_SYSTEM = (
     "billig anmacht — das ist nicht witzig, sondern peinlich. Stattdessen: "
     "warmherzig-schräg, wie ein overenthusiastischer Kommentator bei einer "
     "Gameshow, der auch bei einer schwachen Leistung noch Charme und "
-    "Wortwitz findet statt Häme. Gib EINEN kurzen Kommentar ab (2-4 Sätze, "
-    "Deutsch) zur fertigen Attribut-/Fertigkeitsverteilung eines gerade "
-    "gebauten Charakters. Nimm konkret Bezug auf die Zahlen (was besonders "
-    "hoch/niedrig ist, was auffällt), keine Allgemeinplätze. Wenn Warnungen "
-    "mitgeliefert werden, darfst du sie aufgreifen und pointiert einordnen, "
-    "musst es aber nicht wörtlich wiederholen. Kein Rollenspiel-Fließtext "
-    "über die Spielwelt, kein Regel-Erklärbär, keine Kraftausdrücke oder "
-    "vulgäre Sprache — nur der Kommentar selbst."
+    "Wortwitz findet statt Häme.\n\n"
+    "Format: du verleihst ein spöttisch-liebevolles Achievement, wie ein "
+    "Videospiel es beim Abschluss eines Levels tut. Gib ZWEI Teile zurück:\n"
+    "- 'achievement': ein kurzer, prägnanter Titel in Großbuchstaben (2-5 "
+    "Wörter), der die Haltung des Spielers zu den Balance-Hinweisen einfängt "
+    "— z.B. 'BEFEHLSEMPFÄNGER' für jemanden, der brav auf die Warnungen "
+    "gehört hat, oder 'UNVERBESSERLICHER REBELL' für jemanden, der sie "
+    "ignoriert hat. Sei kreativ, keine Wiederholung dieser Beispiele.\n"
+    "- 'kommentar': 2-4 Sätze, die zuerst konkret auf die Zahlen eingehen "
+    "(was besonders hoch/niedrig ist, was auffällt) und DANN explizit "
+    "thematisieren, ob der Spieler die mitgelieferten Hinweise beherzigt "
+    "oder bewusst in den Wind geschlagen hat — der Statuszeile im Prompt "
+    "('Status: ...') folgend. Keine Allgemeinplätze. Kein Rollenspiel-"
+    "Fließtext über die Spielwelt, kein Regel-Erklärbär, keine "
+    "Kraftausdrücke oder vulgäre Sprache."
 )
 
 _KOMMENTAR_SCHEMA = {
     "type": "OBJECT",
-    "properties": {"kommentar": {"type": "STRING"}},
-    "required": ["kommentar"],
+    "properties": {
+        "achievement": {"type": "STRING"},
+        "kommentar": {"type": "STRING"},
+    },
+    "required": ["achievement", "kommentar"],
 }
 
 
@@ -487,6 +497,14 @@ async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput)
     generiere_json()-Infrastruktur, nur ohne require_campaign_gm: Spieler
     bauen ihren Charakter selbst und dürfen den Kommentar dazu auch selbst
     anfordern.
+
+    27.09.2026, Marks Wunsch: der Kommentar bekommt ein spielerisches
+    "NEW ACHIEVEMENT"-Format und geht explizit darauf ein, ob am Ende noch
+    Karl-Klammer-Warnungen offen sind (= ignoriert, "Rebell") oder nicht
+    (= beherzigt, "Befehlsempfänger") — dafür bekommt die KI den Status
+    unmissverständlich als eigene Zeile im Prompt, nicht nur implizit über
+    die Warnliste (das reichte Mistral in der Praxis nicht zum verlässlichen
+    Einordnen).
     """
     weg_intern, magie_flavor = erstellung.normalisiere_weg(body.weg)
     if body.magieFlavor == "HAERETIKER":
@@ -503,7 +521,10 @@ async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput)
     if daten["magie_label"] is not None:
         zeilen.append(f"{daten['magie_label']}: {daten['magie_wert']}")
     if daten["warnungen"]:
-        zeilen.append("Auffälligkeiten: " + " / ".join(daten["warnungen"]))
+        zeilen.append("Ignorierte Hinweise: " + " / ".join(daten["warnungen"]))
+        zeilen.append("Status: hat die Balance-Hinweise NICHT beherzigt, baut stur weiter wie er will.")
+    else:
+        zeilen.append("Status: hat aktuell keine offenen Balance-Hinweise — wirkt ausgeglichen gebaut.")
     prompt = "\n".join(zeilen)
 
     try:
@@ -512,9 +533,10 @@ async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput)
         raise HTTPException(status_code=502, detail=str(e))
 
     kommentar = (ergebnis.get("kommentar") or "").strip()
+    achievement = (ergebnis.get("achievement") or "").strip()
     if not kommentar:
         raise HTTPException(status_code=502, detail="Die KI hat keinen Kommentar geliefert.")
-    return {"kommentar": kommentar}
+    return {"achievement": achievement, "kommentar": kommentar}
 
 
 @router.post("/personen/{person_id}/erstellung")

@@ -26,13 +26,15 @@ export function ErstellungsKommentar({
   magieFlavor: string;
 }) {
   const [zustand, setZustand] = useState<"start" | "laedt" | "fertig" | "fehler">("start");
+  const [achievement, setAchievement] = useState("");
   const [text, setText] = useState("");
   const magisch = weg === "MAGIER" || weg === "HAERETIKER";
 
   async function anfordern() {
     setZustand("laedt");
     try {
-      const { kommentar } = await bogenApi.kommentar(campaignId, werte, weg, magieFlavor);
+      const { achievement, kommentar } = await bogenApi.kommentar(campaignId, werte, weg, magieFlavor);
+      setAchievement(achievement);
       setText(kommentar);
       setZustand("fertig");
     } catch (e) {
@@ -56,7 +58,17 @@ export function ErstellungsKommentar({
       </div>
       <div className="as-blase">
         {zustand === "laedt" && <p className="as-text">Moment … die Statistik wird durchgesagt.</p>}
-        {zustand === "fertig" && <p className="as-text">{text}</p>}
+        {zustand === "fertig" && (
+          <>
+            {achievement && (
+              <p className="ak-achievement">
+                <span className="ak-achievement-label">New Achievement</span>
+                <span className="ak-achievement-titel">{achievement}</span>
+              </p>
+            )}
+            <p className="as-text">{text}</p>
+          </>
+        )}
         {zustand === "fehler" && (
           <>
             <p className="as-text">{text}</p>

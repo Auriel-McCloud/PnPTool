@@ -205,3 +205,28 @@
 .ak-knopf:hover {
   background: var(--neon-schwach);
 }
+
+/* "New Achievement"-Kopfzeile über dem KI-Kommentar — Videospiel-Optik:
+   kleine graue Eyebrow-Zeile + großer, fetter Titel in Farbe. */
+.ak-achievement {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid currentColor;
+}
+
+.ak-achievement-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.ak-achievement-titel {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
