@@ -1,28 +1,24 @@
 /* ===================================================================
    Erstellungsassistent (Karl-Klammer), 27.09.2026.
+   Eingebettet im normalen Textfluss (im Fertigkeiten-Popup, direkt über
+   der Sphären-/Glaubensdomänen-Sektion) — keine schwebende Box mehr:
+   verdeckte sonst die eigentliche Punktevergabe, für die sie gedacht ist.
    Zwei Farbvarianten je Weg (--wert-hexkraft violett / --wert-neuroweaving
    grün, siehe theme/tokens.css) — Neonröhre wie überall im Commlink-Stil.
    =================================================================== */
 
 .as-box {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  /* Über dem Popup-Hintergrund (.fn-hintergrund, z-index 200) — sonst
-     verschwindet der Assistent genau dann, wenn man im Fertigkeiten-Popup
-     Punkte vergibt (Mark, 27.09.2026 gefunden). */
-  z-index: 250;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  max-width: 360px;
-  animation: as-auf 0.25s ease-out;
+  margin-bottom: 4px;
+  animation: as-auf 0.2s ease-out;
 }
 
 @keyframes as-auf {
   from {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-6px);
   }
   to {
     opacity: 1;
@@ -43,8 +39,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid currentColor;
   background: var(--flaeche-hoch);
@@ -70,6 +66,8 @@
 
 .as-blase {
   position: relative;
+  flex: 1;
+  min-width: 0;
   background: var(--flaeche-hoch);
   border: 1px solid currentColor;
   border-radius: 10px;
@@ -77,12 +75,12 @@
   box-shadow: 0 0 12px color-mix(in srgb, currentColor 30%, transparent);
 }
 
-/* Sprechblasen-Schnabel Richtung Figur (auf Figurenhöhe, oben links). */
+/* Sprechblasen-Schnabel Richtung Figur (auf Figurenhöhe, links). */
 .as-blase::after {
   content: "";
   position: absolute;
   left: -7px;
-  top: 18px;
+  top: 16px;
   width: 0;
   height: 0;
   border-top: 6px solid transparent;
@@ -126,14 +124,4 @@
 
 .as-schliessen:hover {
   color: var(--text);
-}
-
-/* Am Handy nicht über die ganze Breite hängen, aber trotzdem lesbar bleiben. */
-@media (max-width: 480px) {
-  .as-box {
-    right: 8px;
-    left: 8px;
-    bottom: 8px;
-    max-width: none;
-  }
 }

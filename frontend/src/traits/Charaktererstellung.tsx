@@ -378,6 +378,9 @@ export function Charaktererstellung({
             offen={offeneFertigkeiten}
             onWert={setFertigkeitPunkte}
             magieFlavor={weg === "HAERETIKER" ? "HAERETIKER" : "MAGIER"}
+            weg={weg}
+            assistentWerte={assistentWerte}
+            attributKategorien={regeln.attributKategorien}
           />
         )}
 
@@ -417,17 +420,6 @@ export function Charaktererstellung({
           />
         )}
       </div>
-
-      {/* Karl-Klammer-Assistent (27.09.2026): live während Attribute/
-          Fertigkeiten, keine harten Regeln, nur Hinweise. Erst ab der
-          Rassenwahl sinnvoll — davor ist jeder Wert 0. */}
-      {gewaehlteRasse && ["attribute", "fertigkeiten"].includes(aktuell.id) && (
-        <ErstellungsAssistent
-          werte={assistentWerte}
-          weg={weg}
-          attributKategorien={regeln.attributKategorien}
-        />
-      )}
 
       {fehler.length > 0 && (
         <ul className="er-fehler">
@@ -783,6 +775,9 @@ function SchrittFertigkeiten({
   offen,
   onWert,
   magieFlavor,
+  weg,
+  assistentWerte,
+  attributKategorien,
 }: {
   campaignId: string;
   regeln: Erstellungsregeln;
@@ -794,6 +789,10 @@ function SchrittFertigkeiten({
   onWert: (werte: Record<string, number>) => void;
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
+  /** Für den Erstellungsassistenten (27.09.2026, siehe berater.ts). */
+  weg: string;
+  assistentWerte: Record<string, number>;
+  attributKategorien: { id: string; attribute: string[] }[];
 }) {
   // Die Auswahl selbst steht in einem Fenster: dreissig Fertigkeiten unter
   // die Paketkarten zu hängen zwang zum Scrollen, und die Spalten gerieten
@@ -803,6 +802,14 @@ function SchrittFertigkeiten({
   const gewaehlt = regeln.fertigkeitsPakete.find((p) => p.id === paket);
   const hoechster = gewaehlt ? Math.max(...gewaehlt.verteilung.map((v) => v.wert)) : 0;
   const vergeben = Object.values(werte).filter((w) => w > 0).length;
+
+  // Mark, 27.09.2026: der Assistent soll nicht von Anfang an dastehen und
+  // nicht "auf einmal alles" melden, nur weil noch fast nichts vergeben ist
+  // — frühestens ab der Hälfte der tatsächlich vergebenen Punkte (nicht nur
+  // der Anzahl belegter Slots, ein 4er-Slot zählt mehr als ein 1er).
+  const gesamtPunkte = gewaehlt ? gewaehlt.verteilung.reduce((a, v) => a + v.wert * v.anzahl, 0) : 0;
+  const vergebenePunkte = Object.values(werte).reduce((a, w) => a + Math.max(0, w), 0);
+  const assistentAktiv = gesamtPunkte > 0 && vergebenePunkte >= gesamtPunkte / 2;
 
   const gruppen = fertigkeiten.reduce<Record<string, TraitDef[]>>((acc, t) => {
     (acc[t.category] ??= []).push(t);
@@ -906,12 +913,14 @@ function SchrittFertigkeiten({
                     }}
                   />
                 </div>
-                <p className="er-hinweis">
-                  {magieAnzeigeName} steht fix auf {regeln.magieFixwert} — kostet keinen Fertigkeitsslot.
-                  {gewaehlt.id === "PROFI" &&
-                    ` Als Profi lässt sich der einzige 1er-Slot stattdessen hierauf legen (macht ${regeln.magieFixwert + regeln.magieFixwertProfiBonus}).`}
-                </p>
               </section>
+            )}
+
+            {/* Karl-Klammer-Assistent (27.09.2026): erst ab der Hälfte der
+                vergebenen Punkte, direkt über der Sphären-/Glaubensdomänen-
+                Sektion — nicht von Anfang an, nicht schwebend über allem. */}
+            {assistentAktiv && (
+              <ErstellungsAssistent werte={assistentWerte} weg={weg} attributKategorien={attributKategorien} />
             )}
 
             {gruppenFolge.map((kategorie) => (

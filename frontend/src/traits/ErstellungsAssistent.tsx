@@ -10,8 +10,13 @@ import "./assistent.css";
  * wie magieBegriffe.ts, nur visuell statt textlich. Reagiert live auf
  * berater.ts (kein KI-Aufruf, siehe dortiger Docstring).
  *
- * Rein informativ: erscheint unten rechts, lässt sich wegklicken, blockiert
- * nichts (Mark: "nur anzeigen, nie blockieren").
+ * Eingebettet in den normalen Textfluss (nicht schwebend/fixiert) — sitzt
+ * im Fertigkeiten-Popup direkt über der Sphären-/Glaubensdomänen-Sektion,
+ * dort wo die Warnungen inhaltlich hingehören. Rein informativ: lässt sich
+ * wegklicken, blockiert nichts (Mark: "nur anzeigen, nie blockieren").
+ * Der Aufrufer entscheidet, WANN das Widget überhaupt gemountet wird (Mark:
+ * nicht von Anfang an, frühestens ab der Hälfte der vergebenen Punkte) —
+ * diese Komponente selbst kennt keine Schwelle.
  */
 export function ErstellungsAssistent({
   werte,
@@ -76,7 +81,7 @@ export function ErstellungsAssistent({
 /** Cyberware-Drohnenauge — für Chrom/NeuroWeaver. */
 function KonstruktIcon() {
   return (
-    <svg viewBox="0 0 48 48" width="40" height="40" className="as-svg">
+    <svg viewBox="0 0 48 48" width="36" height="36" className="as-svg">
       <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="2" />
       <circle cx="24" cy="24" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
       <circle cx="24" cy="24" r="3" fill="currentColor" className="as-puls" />
@@ -91,7 +96,7 @@ function KonstruktIcon() {
 /** Magisches Sigill — für Magier/Häretiker. */
 function SigillIcon() {
   return (
-    <svg viewBox="0 0 48 48" width="40" height="40" className="as-svg">
+    <svg viewBox="0 0 48 48" width="36" height="36" className="as-svg">
       <polygon points="24,4 42,36 6,36" fill="none" stroke="currentColor" strokeWidth="2" />
       <circle cx="24" cy="26" r="14" fill="none" stroke="currentColor" strokeWidth="2" />
       <circle cx="24" cy="26" r="3" fill="currentColor" className="as-puls" />
