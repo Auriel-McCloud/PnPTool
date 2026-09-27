@@ -75,12 +75,12 @@ def berate(
     """
     hinweise: list[dict[str, str]] = []
 
-    if weg in ("MAGIER", "NEUROWEAVER"):
-        zusatz_kategorie = "Sphäre" if weg == "MAGIER" else "NeuroWeaving"
+    if weg in ("MAGIER", "HAERETIKER", "NEUROWEAVER"):
+        zusatz_kategorie = "Sphäre" if weg in ("MAGIER", "HAERETIKER") else "NeuroWeaving"
         zusatz_namen = _kategorie_traits(zusatz_kategorie)
         zusatz_summe = sum(werte.get(n, 0) for n in zusatz_namen)
         if zusatz_summe > MAGIE_SUMME_WARNSCHWELLE:
-            begriff = "Sphären" if weg == "MAGIER" else "NeuroWeaving-Fertigkeiten"
+            begriff = "Sphären" if weg in ("MAGIER", "HAERETIKER") else "NeuroWeaving-Fertigkeiten"
             hinweise.append({
                 "code": "MAGIE_UEBERLADEN",
                 "text": f"Du hast schon {zusatz_summe} Punkte in {begriff} versenkt — "

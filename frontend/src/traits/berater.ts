@@ -68,11 +68,11 @@ export function berate(
 ): BeraterHinweis[] {
   const hinweise: BeraterHinweis[] = [];
 
-  if (weg === "MAGIER" || weg === "NEUROWEAVER") {
-    const zusatzNamen = weg === "MAGIER" ? SPHAEREN_NAMEN : NEUROWEAVING_FERTIGKEITEN_NAMEN;
+  if (weg === "MAGIER" || weg === "HAERETIKER" || weg === "NEUROWEAVER") {
+    const zusatzNamen = weg === "MAGIER" || weg === "HAERETIKER" ? SPHAEREN_NAMEN : NEUROWEAVING_FERTIGKEITEN_NAMEN;
     const zusatzSumme = summe(werte, zusatzNamen);
     if (zusatzSumme > MAGIE_SUMME_WARNSCHWELLE) {
-      const begriff = weg === "MAGIER" ? "Sphären" : "NeuroWeaving-Fertigkeiten";
+      const begriff = weg === "MAGIER" || weg === "HAERETIKER" ? "Sphären" : "NeuroWeaving-Fertigkeiten";
       hinweise.push({
         code: "MAGIE_UEBERLADEN",
         text: `Du hast schon ${zusatzSumme} Punkte in ${begriff} versenkt — empfohlen sind nicht mehr als ${MAGIE_SUMME_WARNSCHWELLE}.`,

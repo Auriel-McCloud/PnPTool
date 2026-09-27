@@ -60,6 +60,19 @@ def test_magie_ueberladen_gilt_auch_fuer_neuroweaver_mit_eigenem_begriff():
     assert "NeuroWeaving-Fertigkeiten" in treffer["text"]
 
 
+def test_magie_ueberladen_gilt_auch_fuer_haeretiker():
+    """Häretiker ist mechanisch Magier, nur anderes Vokabular (siehe
+    erstellung.py::normalisiere_weg) — die Warnung darf nicht an der
+    weg-Prüfung scheitern, nur weil das Frontend den Weg 'HAERETIKER'
+    statt 'MAGIER' schickt. Regressionstest für genau diesen Bug."""
+    hoch = {"Kräfte": 6, "Leben": 6}  # Summe 12 > Schwelle 6
+    hinweise = berater.berate(hoch, weg="HAERETIKER")
+    codes = {h["code"] for h in hinweise}
+    assert "MAGIE_UEBERLADEN" in codes
+    treffer = next(h for h in hinweise if h["code"] == "MAGIE_UEBERLADEN")
+    assert "Sphären" in treffer["text"]
+
+
 def test_prioritaet_sortiert_magie_vor_wahrnehmung_vor_kampf():
     """Bei mehreren gleichzeitigen Treffern muss die Sphären-Warnung immer
     zuerst kommen, dann Wahrnehmung, dann Kampf — unabhängig davon, in
