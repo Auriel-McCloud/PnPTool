@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type Person } from "../entities/api";
 import { EntitaetsBild } from "../entities/EntitaetsBild";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -70,6 +72,12 @@ export function CritterFenster({
     }
   }
 
+  // Autosave — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
+    await entitiesApi.updatePerson(campaignId, critterId, { description: serializeRichText(doc) });
+    onGeaendert();
+  });
+
   async function loeschen() {
     setLoeschenOffen(false);
     await entitiesApi.deletePerson(campaignId, critterId);
@@ -128,7 +136,10 @@ export function CritterFenster({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />

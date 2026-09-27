@@ -7,6 +7,7 @@ import { BeziehungsTab } from "./BeziehungsTab";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { beziehungsZeilen } from "./BeziehungsListe";
@@ -78,6 +79,12 @@ export function FraktionDetail({
       setSpeichert(false);
     }
   }
+
+  // Autosave für Beschreibung/Notizen — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave((doc: JSONContent) =>
+    speichere({ description: serializeRichText(doc) }),
+  );
+  const autosaveNotizen = useAutosave((doc: JSONContent) => speichere({ notes: serializeRichText(doc) }));
 
   async function loeschen() {
     setSpeichert(true);
@@ -208,7 +215,10 @@ export function FraktionDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Fraktion", objektName: fraktion.name, feldLabel: "Beschreibung" }}
               />
@@ -261,7 +271,10 @@ export function FraktionDetail({
 
           {unteransicht === "notizen" && (
             <div className="pcd-editor-bereich">
-              <RichTextEditor content={notizenDoc} onChange={setNotizenDoc} minHeight={200} />
+              <RichTextEditor content={notizenDoc} onChange={(doc) => {
+                setNotizenDoc(doc);
+                autosaveNotizen(doc);
+              }} minHeight={200} />
               <button
                 type="button"
                 className="pcd-speichern"

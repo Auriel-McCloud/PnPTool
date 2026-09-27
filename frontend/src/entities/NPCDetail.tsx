@@ -6,6 +6,7 @@ import { Charakterblatt } from "../traits/Charakterblatt";
 import { PCInventar } from "./PCInventar";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { entitiesApi } from "./api";
 import { BeziehungsTab, PERSON_TYP_VORSCHLAEGE } from "./BeziehungsTab";
@@ -77,6 +78,16 @@ export function NPCDetail({
       setSpeichert(false);
     }
   }
+
+  // Autosave für Beschreibung/Notizen — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
+    await entitiesApi.updatePerson(campaignId, person.id, { description: serializeRichText(doc) });
+    onGeaendert();
+  });
+  const autosaveNotizen = useAutosave(async (doc: JSONContent) => {
+    await entitiesApi.updatePerson(campaignId, person.id, { notes: serializeRichText(doc) });
+    onGeaendert();
+  });
 
   return (
     <Fenster
@@ -199,7 +210,10 @@ export function NPCDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />
@@ -218,7 +232,10 @@ export function NPCDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={notizenDoc}
-                onChange={setNotizenDoc}
+                onChange={(doc) => {
+                  setNotizenDoc(doc);
+                  autosaveNotizen(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Notizen" }}
               />

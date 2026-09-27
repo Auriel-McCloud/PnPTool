@@ -5,6 +5,7 @@ import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
@@ -64,6 +65,12 @@ export function EventDetail({
       setSpeichert(false);
     }
   }
+
+  // Autosave für Beschreibung/Notizen — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave((doc: JSONContent) =>
+    speichere({ description: serializeRichText(doc) }),
+  );
+  const autosaveNotizen = useAutosave((doc: JSONContent) => speichere({ notes: serializeRichText(doc) }));
 
   async function loeschen() {
     setSpeichert(true);
@@ -210,7 +217,10 @@ export function EventDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Beschreibung" }}
               />
@@ -229,7 +239,10 @@ export function EventDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={notizenDoc}
-                onChange={setNotizenDoc}
+                onChange={(doc) => {
+                  setNotizenDoc(doc);
+                  autosaveNotizen(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Notizen" }}
               />

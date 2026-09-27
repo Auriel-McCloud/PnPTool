@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type EinflussEintrag, type Person } from "../entities/api";
 import { EntitaetsBild } from "../entities/EntitaetsBild";
 import { EinflussVerwaltung } from "../entities/EinflussVerwaltung";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -71,6 +73,12 @@ export function KiFenster({
     }
   }
 
+  // Autosave — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
+    await entitiesApi.updatePerson(campaignId, kiId, { description: serializeRichText(doc) });
+    onGeaendert();
+  });
+
   async function loeschen() {
     setLoeschenOffen(false);
     await entitiesApi.deletePerson(campaignId, kiId);
@@ -135,7 +143,10 @@ export function KiFenster({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />

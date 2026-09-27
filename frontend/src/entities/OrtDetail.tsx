@@ -5,6 +5,7 @@ import { BildGalerie } from "./BildGalerie";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
@@ -66,6 +67,14 @@ export function OrtDetail({
       setSpeichert(false);
     }
   }
+
+  // Autosave für Beschreibung/Notizen — 1200ms nach der letzten Eingabe,
+  // plus Flush beim Verlassen (siehe shell/autosave.ts). Der bestehende
+  // Speichern-Knopf bleibt als manueller Sofort-Weg zusätzlich bestehen.
+  const autosaveBeschreibung = useAutosave((doc: JSONContent) =>
+    speichere({ description: serializeRichText(doc) }),
+  );
+  const autosaveNotizen = useAutosave((doc: JSONContent) => speichere({ notes: serializeRichText(doc) }));
 
   async function loeschen() {
     setSpeichert(true);
@@ -200,7 +209,10 @@ export function OrtDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={beschreibungDoc}
-                onChange={setBeschreibungDoc}
+                onChange={(doc) => {
+                  setBeschreibungDoc(doc);
+                  autosaveBeschreibung(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Beschreibung" }}
               />
@@ -219,7 +231,10 @@ export function OrtDetail({
             <div className="pcd-editor-bereich">
               <RichTextEditor
                 content={notizenDoc}
-                onChange={setNotizenDoc}
+                onChange={(doc) => {
+                  setNotizenDoc(doc);
+                  autosaveNotizen(doc);
+                }}
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Notizen" }}
               />

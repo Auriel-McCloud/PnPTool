@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type CritterEintrag, type KiEintrag, type Person } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
@@ -604,6 +606,13 @@ function BegleiterFenster({
     }
   }
 
+  // Autosave — siehe shell/autosave.ts.
+  const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
+    const neu = await begleiterApi.aendern(campaignId, begleiter.id, { beschreibung: serializeRichText(doc) });
+    setAktuellerBegleiter(neu);
+    onSofortGeaendert(neu);
+  });
+
   async function entfernen() {
     setLoeschenOffen(false);
     await begleiterApi.entfernen(campaignId, begleiter.id);
@@ -743,7 +752,10 @@ function BegleiterFenster({
           <h3 style={{ margin: "0 0 6px" }}>Beschreibung</h3>
           <RichTextEditor
             content={beschreibungDoc}
-            onChange={setBeschreibungDoc}
+            onChange={(doc) => {
+              setBeschreibungDoc(doc);
+              autosaveBeschreibung(doc);
+            }}
             minHeight={100}
             kiKontext={{ campaignId, objektTyp: "Begleiter", objektName: begleiter.name, feldLabel: "Beschreibung" }}
           />

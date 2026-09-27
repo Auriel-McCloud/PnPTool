@@ -3,6 +3,7 @@ import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { RichTextEditor } from "../richtext/RichTextEditor";
+import { useAutosave } from "../shell/autosave";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { Fenster } from "../shell/Fenster";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
@@ -417,6 +418,19 @@ export function GegenstandRow({
     onChanged();
   }
 
+  // Autosave nur für Beschreibung/Notizen (Mark, 27.09.2026: der Rest des
+  // Formulars bleibt hinter dem bestehenden "Speichern"-Knopf) — eigenes
+  // PATCH statt des großen save(), damit ein Autosave-Tick nicht versehentlich
+  // noch unfertige Werte in anderen Feldern mit wegschreibt.
+  const autosaveDescription = useAutosave(async (doc: JSONContent) => {
+    await itemsApi.update(campaignId, item.id, { description: serializeRichText(doc) });
+    onChanged();
+  });
+  const autosaveNotes = useAutosave(async (doc: JSONContent) => {
+    await itemsApi.update(campaignId, item.id, { notes: serializeRichText(doc) });
+    onChanged();
+  });
+
   // Das Detail öffnet als eigenes Fenster statt inline aufzuklappen: hält die
   // Übersicht statisch (Leitprinzip "nie scrollen") und gibt dem Ding eine
   // feste Größe — das alte Akkordeon riss die Karte bei langen Inhalten in
@@ -795,7 +809,10 @@ export function GegenstandRow({
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
           <RichTextEditor
             content={descriptionDoc}
-            onChange={setDescriptionDoc}
+            onChange={(doc) => {
+              setDescriptionDoc(doc);
+              autosaveDescription(doc);
+            }}
             minHeight={60}
             kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Beschreibung" }}
           />
@@ -804,7 +821,10 @@ export function GegenstandRow({
           <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
           <RichTextEditor
             content={notesDoc}
-            onChange={setNotesDoc}
+            onChange={(doc) => {
+              setNotesDoc(doc);
+              autosaveNotes(doc);
+            }}
             minHeight={50}
             kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Notizen" }}
           />
