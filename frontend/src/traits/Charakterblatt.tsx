@@ -288,7 +288,11 @@ export function Charakterblatt({
     return (
       <section className="cb-gruppe" key={kategorie} style={{ "--cb-ton": ton } as React.CSSProperties}>
         <h3 className="cb-gruppe-titel">
-          {kategorie === "Hexkraft" ? magieBegriff(u.magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+          {kategorie === "Hexkraft"
+            ? magieBegriff(u.magieFlavor, "Hexkraft")
+            : kategorie === "Sphäre"
+              ? magieBegriff(u.magieFlavor, "Sphären")
+              : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
         </h3>
         <div
           className={eintraege.length === 1 ? "cb-werte cb-werte-einzeln" : "cb-werte"}

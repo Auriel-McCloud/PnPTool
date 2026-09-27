@@ -254,7 +254,11 @@ export function LevelUp({
         {kategorien.map((kategorie) => (
           <section key={kategorie}>
             <h3 className="lu-gruppe-titel">
-              {kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+              {kategorie === "Hexkraft"
+                ? magieBegriff(magieFlavor, "Hexkraft")
+                : kategorie === "Sphäre"
+                  ? magieBegriff(magieFlavor, "Sphären")
+                  : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
             </h3>
             <div className="lu-raster">
               {gruppen[kategorie].map((e) => {

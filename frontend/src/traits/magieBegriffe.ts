@@ -28,16 +28,21 @@ export const HAERETIKER_LABELS: Record<string, string> = {
  * (Probe.tsx/magie.ts/WillenskraftFrage.tsx) — eigene Konstante. */
 export const HAERETIKER_BLASPHEMIE = "Blasphemie";
 
+/** "Sphären" ist die Kategorie-Überschrift (KATEGORIE_TITEL["Sphäre"] in
+ * bogenApi.ts), kein Trait-Name — eigene Konstante wie HAERETIKER_BLASPHEMIE. */
+export const HAERETIKER_DOMAENEN = "Glaubensdomänen";
+
 export type MagieFlavor = "MAGIER" | "HAERETIKER";
 
 /**
- * Übersetzt einen Magier-Begriff (Trait-Name oder "Wilde Magie") in den
- * passenden Häretiker-Begriff, falls `flavor === "HAERETIKER"` — sonst
- * unverändert. Zentrale Stelle für jede UI-Anzeige, die Hexkraft/Wilde
- * Magie/Sphärennamen zeigt.
+ * Übersetzt einen Magier-Begriff (Trait-Name, "Wilde Magie" oder die
+ * Kategorie-Überschrift "Sphären") in den passenden Häretiker-Begriff, falls
+ * `flavor === "HAERETIKER"` — sonst unverändert. Zentrale Stelle für jede
+ * UI-Anzeige, die Hexkraft/Wilde Magie/Sphärennamen zeigt.
  */
 export function magieBegriff(flavor: MagieFlavor | undefined, magierBegriff: string): string {
   if (flavor !== "HAERETIKER") return magierBegriff;
   if (magierBegriff === "Wilde Magie") return HAERETIKER_BLASPHEMIE;
+  if (magierBegriff === "Sphären") return HAERETIKER_DOMAENEN;
   return HAERETIKER_LABELS[magierBegriff] ?? magierBegriff;
 }

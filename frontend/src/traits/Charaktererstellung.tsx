@@ -804,7 +804,7 @@ function SchrittFertigkeiten({
           <p className="er-hinweis">
             {vergeben} von {gewaehlt.anzahl} Fertigkeiten gesetzt.
             {(gruppen.Hexkraft || gruppen.Sphäre || gruppen.NeuroWeaving) &&
-              " Hexkraft, Sphären und NeuroWeaving zählen dabei mit."}
+              ` ${magieBegriff(magieFlavor, "Hexkraft")}, ${magieBegriff(magieFlavor, "Sphären")} und NeuroWeaving zählen dabei mit.`}
           </p>
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
             Fertigkeiten wählen
@@ -829,7 +829,11 @@ function SchrittFertigkeiten({
             {gruppenFolge.map((kategorie) => (
               <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
                 <h3 className="er-spalte-titel">
-                  {kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+                  {kategorie === "Hexkraft"
+                    ? magieBegriff(magieFlavor, "Hexkraft")
+                    : kategorie === "Sphäre"
+                      ? magieBegriff(magieFlavor, "Sphären")
+                      : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
                 </h3>
                 <div
                   className="er-spaltenraster"
@@ -992,7 +996,11 @@ function SchrittFreebees({
       {folge.map((kategorie) => (
         <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
           <h3 className="er-spalte-titel">
-            {(kategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : (KATEGORIE_TITEL[kategorie] ?? kategorie))} ·{" "}
+            {(kategorie === "Hexkraft"
+              ? magieBegriff(magieFlavor, "Hexkraft")
+              : kategorie === "Sphäre"
+                ? magieBegriff(magieFlavor, "Sphären")
+                : (KATEGORIE_TITEL[kategorie] ?? kategorie))} ·{" "}
             {preise[kategorie] ?? 0} je Punkt
           </h3>
           <div
