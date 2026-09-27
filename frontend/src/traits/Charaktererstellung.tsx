@@ -827,6 +827,10 @@ function SchrittFertigkeiten({
   const magieTrait = magieKategorie ? gruppen[magieKategorie][0] : null;
   const magieAnzeigeName = magieKategorie === "Hexkraft" ? magieBegriff(magieFlavor, "Hexkraft") : "NeuroWeaving";
   const magieBonus = magieTrait ? werte[magieTrait.name] || 0 : 0;
+  // Vor welche Gruppe der Sockel-Block gehört: Hexkraft/Glauben über die
+  // Sphären (Glaubensdomänen), NeuroWeavingWert über die NeuroWeaving-
+  // Fertigkeiten — nie über "Fähigkeiten" (Mark, 27.09.2026 gefunden).
+  const magieVorGruppe = magieKategorie === "Hexkraft" ? "Sphäre" : magieKategorie === "NeuroWeavingWert" ? "NeuroWeaving" : null;
 
   return (
     <div>
@@ -884,86 +888,96 @@ function SchrittFertigkeiten({
             kennung="fertigkeitswahl"
             onSchliessen={() => setAuswahlOffen(false)}
           >
+            {/* Karl-Klammer-Assistent (27.09.2026): ganz oben im Popup,
+                noch vor jedem anderen Inhalt — erst ab der Hälfte der
+                vergebenen Punkte, nicht von Anfang an. */}
+            {assistentAktiv && (
+              <ErstellungsAssistent werte={assistentWerte} weg={weg} attributKategorien={attributKategorien} />
+            )}
+
             <p className="er-hinweis">
               Ein Wert lässt sich nur vergeben, solange davon noch einer frei ist — nochmal antippen
               nimmt ihn zurück.
             </p>
 
-            {magieTrait && (
-              <section style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
-                <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
-                <div className="er-wert">
-                  <span className="er-wert-name">
-                    {magieAnzeigeName}
-                    <InfoTipp
-                      campaignId={campaignId}
-                      schluessel={erklaerungsSchluessel.trait(magieAnzeigeName)}
-                      titel={magieAnzeigeName}
-                      erzwingen
-                    />
-                  </span>
-                  <DotPool
-                    value={regeln.magieFixwert + magieBonus}
-                    max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
-                    fest={regeln.magieFixwert}
-                    onChange={(neu) => {
-                      const bonus = Math.max(0, neu - regeln.magieFixwert);
-                      if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
-                      onWert({ ...werte, [magieTrait.name]: bonus });
-                    }}
-                  />
-                </div>
-              </section>
-            )}
-
-            {/* Karl-Klammer-Assistent (27.09.2026): erst ab der Hälfte der
-                vergebenen Punkte, direkt über der Sphären-/Glaubensdomänen-
-                Sektion — nicht von Anfang an, nicht schwebend über allem. */}
-            {assistentAktiv && (
-              <ErstellungsAssistent werte={assistentWerte} weg={weg} attributKategorien={attributKategorien} />
-            )}
-
-            {gruppenFolge.map((kategorie) => (
-              <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
-                <h3 className="er-spalte-titel">
-                  {kategorie === "Sphäre" ? magieBegriff(magieFlavor, "Sphären") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
-                </h3>
-                <div
-                  className="er-spaltenraster"
-                  // Spaltenweise füllen wie auf dem Blatt: die ersten zehn
-                  // untereinander, dann die nächsten — nicht zeilenweise, sonst
-                  // steht dieselbe Fertigkeit hier woanders als dort.
-                  style={{ "--er-zeilen": Math.ceil(gruppen[kategorie].length / 3) } as React.CSSProperties}
-                >
-                  {gruppen[kategorie].map((t) => {
-                    const wert = werte[t.name] || 0;
-                    const anzeigeName = magieBegriff(magieFlavor, t.name);
-                    return (
-                      <div key={t.id} className="er-wert">
-                        <span className="er-wert-name">
-                          {anzeigeName}
-                          <InfoTipp
-                            campaignId={campaignId}
-                            schluessel={erklaerungsSchluessel.trait(anzeigeName)}
-                            titel={anzeigeName}
-                            erzwingen
-                          />
-                        </span>
-                        <DotPool
-                          value={wert}
-                          max={hoechster}
-                          onChange={(neu) => {
-                            const ziel = neu === wert ? 0 : neu;
-                            if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
-                            onWert({ ...werte, [t.name]: ziel });
-                          }}
+            {/* Hexkraft/NeuroWeavingWert (Sockel) müssen direkt über ihrer
+                zugehörigen Gruppe stehen (Glauben/Hexkraft über Sphären,
+                NeuroWeavingWert über den NeuroWeaving-Fertigkeiten) — nicht
+                pauschal über allem, sonst steht der Sockel über "Fähigkeiten"
+                statt über "Glaubensdomänen" (Mark, 27.09.2026 gefunden). */}
+            {gruppenFolge.flatMap((kategorie) => {
+              const knoten: React.ReactNode[] = [];
+              if (kategorie === magieVorGruppe && magieTrait) {
+                knoten.push(
+                  <section key={`${kategorie}-magie`} style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
+                    <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
+                    <div className="er-wert">
+                      <span className="er-wert-name">
+                        {magieAnzeigeName}
+                        <InfoTipp
+                          campaignId={campaignId}
+                          schluessel={erklaerungsSchluessel.trait(magieAnzeigeName)}
+                          titel={magieAnzeigeName}
+                          erzwingen
                         />
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+                      </span>
+                      <DotPool
+                        value={regeln.magieFixwert + magieBonus}
+                        max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
+                        fest={regeln.magieFixwert}
+                        onChange={(neu) => {
+                          const bonus = Math.max(0, neu - regeln.magieFixwert);
+                          if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
+                          onWert({ ...werte, [magieTrait.name]: bonus });
+                        }}
+                      />
+                    </div>
+                  </section>,
+                );
+              }
+              knoten.push(
+                <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
+                  <h3 className="er-spalte-titel">
+                    {kategorie === "Sphäre" ? magieBegriff(magieFlavor, "Sphären") : (KATEGORIE_TITEL[kategorie] ?? kategorie)}
+                  </h3>
+                  <div
+                    className="er-spaltenraster"
+                    // Spaltenweise füllen wie auf dem Blatt: die ersten zehn
+                    // untereinander, dann die nächsten — nicht zeilenweise, sonst
+                    // steht dieselbe Fertigkeit hier woanders als dort.
+                    style={{ "--er-zeilen": Math.ceil(gruppen[kategorie].length / 3) } as React.CSSProperties}
+                  >
+                    {gruppen[kategorie].map((t) => {
+                      const wert = werte[t.name] || 0;
+                      const anzeigeName = magieBegriff(magieFlavor, t.name);
+                      return (
+                        <div key={t.id} className="er-wert">
+                          <span className="er-wert-name">
+                            {anzeigeName}
+                            <InfoTipp
+                              campaignId={campaignId}
+                              schluessel={erklaerungsSchluessel.trait(anzeigeName)}
+                              titel={anzeigeName}
+                              erzwingen
+                            />
+                          </span>
+                          <DotPool
+                            value={wert}
+                            max={hoechster}
+                            onChange={(neu) => {
+                              const ziel = neu === wert ? 0 : neu;
+                              if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                              onWert({ ...werte, [t.name]: ziel });
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>,
+              );
+              return knoten;
+            })}
           </Fenster>
         </>
       )}
