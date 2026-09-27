@@ -861,38 +861,6 @@ function SchrittFertigkeiten({
             {(gruppen.Sphäre || gruppen.NeuroWeaving) && ` ${magieBegriff(magieFlavor, "Sphären")} und NeuroWeaving zählen dabei mit.`}
           </p>
 
-          {magieTrait && (
-            <section style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
-              <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
-              <div className="er-wert">
-                <span className="er-wert-name">
-                  {magieAnzeigeName}
-                  <InfoTipp
-                    campaignId={campaignId}
-                    schluessel={erklaerungsSchluessel.trait(magieAnzeigeName)}
-                    titel={magieAnzeigeName}
-                    erzwingen
-                  />
-                </span>
-                <DotPool
-                  value={regeln.magieFixwert + magieBonus}
-                  max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
-                  fest={regeln.magieFixwert}
-                  onChange={(neu) => {
-                    const bonus = Math.max(0, neu - regeln.magieFixwert);
-                    if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
-                    onWert({ ...werte, [magieTrait.name]: bonus });
-                  }}
-                />
-              </div>
-              <p className="er-hinweis">
-                {magieAnzeigeName} steht fix auf {regeln.magieFixwert} — kostet keinen Fertigkeitsslot.
-                {gewaehlt.id === "PROFI" &&
-                  ` Als Profi lässt sich der einzige 1er-Slot stattdessen hierauf legen (macht ${regeln.magieFixwert + regeln.magieFixwertProfiBonus}).`}
-              </p>
-            </section>
-          )}
-
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
             Fertigkeiten wählen
           </button>
@@ -913,6 +881,39 @@ function SchrittFertigkeiten({
               Ein Wert lässt sich nur vergeben, solange davon noch einer frei ist — nochmal antippen
               nimmt ihn zurück.
             </p>
+
+            {magieTrait && (
+              <section style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
+                <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
+                <div className="er-wert">
+                  <span className="er-wert-name">
+                    {magieAnzeigeName}
+                    <InfoTipp
+                      campaignId={campaignId}
+                      schluessel={erklaerungsSchluessel.trait(magieAnzeigeName)}
+                      titel={magieAnzeigeName}
+                      erzwingen
+                    />
+                  </span>
+                  <DotPool
+                    value={regeln.magieFixwert + magieBonus}
+                    max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
+                    fest={regeln.magieFixwert}
+                    onChange={(neu) => {
+                      const bonus = Math.max(0, neu - regeln.magieFixwert);
+                      if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
+                      onWert({ ...werte, [magieTrait.name]: bonus });
+                    }}
+                  />
+                </div>
+                <p className="er-hinweis">
+                  {magieAnzeigeName} steht fix auf {regeln.magieFixwert} — kostet keinen Fertigkeitsslot.
+                  {gewaehlt.id === "PROFI" &&
+                    ` Als Profi lässt sich der einzige 1er-Slot stattdessen hierauf legen (macht ${regeln.magieFixwert + regeln.magieFixwertProfiBonus}).`}
+                </p>
+              </section>
+            )}
+
             {gruppenFolge.map((kategorie) => (
               <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>
                 <h3 className="er-spalte-titel">

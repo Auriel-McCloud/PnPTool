@@ -7,10 +7,13 @@
 .as-box {
   position: fixed;
   right: 16px;
-  bottom: 16px;
-  z-index: 60;
+  top: 16px;
+  /* Über dem Popup-Hintergrund (.fn-hintergrund, z-index 200) — sonst
+     verschwindet der Assistent genau dann, wenn man im Fertigkeiten-Popup
+     Punkte vergibt (Mark, 27.09.2026 gefunden). */
+  z-index: 250;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 10px;
   max-width: 360px;
   animation: as-auf 0.25s ease-out;
@@ -19,7 +22,7 @@
 @keyframes as-auf {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(-12px);
   }
   to {
     opacity: 1;
@@ -74,12 +77,12 @@
   box-shadow: 0 0 12px color-mix(in srgb, currentColor 30%, transparent);
 }
 
-/* Sprechblasen-Schnabel Richtung Figur (unten links). */
+/* Sprechblasen-Schnabel Richtung Figur (auf Figurenhöhe, oben links). */
 .as-blase::after {
   content: "";
   position: absolute;
   left: -7px;
-  bottom: 14px;
+  top: 18px;
   width: 0;
   height: 0;
   border-top: 6px solid transparent;
