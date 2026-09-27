@@ -1,6 +1,10 @@
 """Tests für den Charaktererstellungs-Berater (Karl-Klammer-Warnungen).
 
 Reine Regelprüfung, keine Datenbank — wie test_erstellung.py.
+
+27.09.2026, zweite Rückmeldung: nur noch drei Warn-Codes (MAGIE_UEBERLADEN,
+KEINE_WAHRNEHMUNG, KEIN_KAMPFWERT) in fester Priorität — Sozial/Wissen/
+schiefe Attribute sind entfallen, siehe berater.py-Docstring.
 """
 
 from app.traits import berater
@@ -13,8 +17,6 @@ def test_leere_werte_geben_keine_falschen_positiven_ausser_den_erwartbaren():
     codes = {h["code"] for h in hinweise}
     assert "KEIN_KAMPFWERT" in codes
     assert "KEINE_WAHRNEHMUNG" in codes
-    assert "KEIN_SOZIALWERT" in codes
-    assert "KEIN_WISSENSWERT" in codes
     assert "MAGIE_UEBERLADEN" not in codes  # kein Magie-Weg
 
 
@@ -22,21 +24,8 @@ def test_ausgewogener_charakter_bekommt_keine_warnungen():
     werte = {
         "Nahkampf": 2,
         "Wahrnehmung": 2,
-        "Überzeugen": 2,
-        "Technologie": 2,
-        "Körperkraft": 2,
-        "Charisma": 2,
-        "Intelligenz": 2,
     }
-    hinweise = berater.berate(
-        werte,
-        weg="KEINER",
-        attribut_kategorien={
-            "AttributKörperlich": ["Körperkraft"],
-            "AttributGesellschaftlich": ["Charisma"],
-            "AttributGeistig": ["Intelligenz"],
-        },
-    )
+    hinweise = berater.berate(werte, weg="KEINER")
     assert hinweise == []
 
 
@@ -53,44 +42,33 @@ def test_wahrnehmung_null_triggert_eigene_warnung():
     assert "KEINE_WAHRNEHMUNG" not in {h["code"] for h in hinweise}
 
 
-def test_attribute_schief_braucht_mindestabstand_von_fuenf():
-    kategorien = {
-        "AttributKörperlich": ["Körperkraft"],
-        "AttributGesellschaftlich": ["Charisma"],
-        "AttributGeistig": ["Intelligenz"],
-    }
-    # Abstand 4 — noch keine Warnung.
-    knapp = berater.berate(
-        {"Körperkraft": 1, "Charisma": 3, "Intelligenz": 5},
-        weg="KEINER",
-        attribut_kategorien=kategorien,
-    )
-    assert "ATTRIBUTE_SCHIEF" not in {h["code"] for h in knapp}
-    # Abstand 5 — jetzt schon.
-    schief = berater.berate(
-        {"Körperkraft": 1, "Charisma": 3, "Intelligenz": 6},
-        weg="KEINER",
-        attribut_kategorien=kategorien,
-    )
-    assert "ATTRIBUTE_SCHIEF" in {h["code"] for h in schief}
-
-
 def test_magie_ueberladen_nur_ab_schwelle_und_nur_fuer_magie_wege():
-    sphaeren_hoch = {"Kräfte": 6, "Leben": 5}  # Summe 11 > Schwelle 10
+    sphaeren_hoch = {"Kräfte": 4, "Leben": 4}  # Summe 8 > Schwelle 6
     # KEINER hat gar keine Sphären — keine Warnung, unabhängig von der Zahl.
     assert "MAGIE_UEBERLADEN" not in {h["code"] for h in berater.berate(sphaeren_hoch, weg="KEINER")}
     # MAGIER mit derselben Summe: Warnung.
     assert "MAGIE_UEBERLADEN" in {h["code"] for h in berater.berate(sphaeren_hoch, weg="MAGIER")}
-    # Knapp unter der Schwelle: keine Warnung.
-    knapp = {"Kräfte": 5, "Leben": 5}  # Summe genau 10
+    # Knapp unter/auf der Schwelle: keine Warnung.
+    knapp = {"Kräfte": 3, "Leben": 3}  # Summe genau 6
     assert "MAGIE_UEBERLADEN" not in {h["code"] for h in berater.berate(knapp, weg="MAGIER")}
 
 
 def test_magie_ueberladen_gilt_auch_fuer_neuroweaver_mit_eigenem_begriff():
-    hoch = {"Brute Force": 6, "Schleichen": 6}  # Summe 12
+    hoch = {"Brute Force": 4, "Schleichen": 4}  # Summe 8
     hinweise = berater.berate(hoch, weg="NEUROWEAVER")
     treffer = next(h for h in hinweise if h["code"] == "MAGIE_UEBERLADEN")
     assert "NeuroWeaving-Fertigkeiten" in treffer["text"]
+
+
+def test_prioritaet_sortiert_magie_vor_wahrnehmung_vor_kampf():
+    """Bei mehreren gleichzeitigen Treffern muss die Sphären-Warnung immer
+    zuerst kommen, dann Wahrnehmung, dann Kampf — unabhängig davon, in
+    welcher Reihenfolge sie intern berechnet werden (Marks Vorgabe:
+    "1. Sphären, 2. Wahrnehmung, 3. Kämpfen")."""
+    werte = {"Kräfte": 4, "Leben": 4}  # Magie-Überladung, alles andere leer
+    hinweise = berater.berate(werte, weg="MAGIER")
+    codes = [h["code"] for h in hinweise]
+    assert codes == ["MAGIE_UEBERLADEN", "KEINE_WAHRNEHMUNG", "KEIN_KAMPFWERT"]
 
 
 # --- kommentar_daten (KI-Abschlussbericht, 27.09.2026) ------------------
@@ -138,6 +116,6 @@ def test_kommentar_daten_schliesst_magiewerte_aus_den_fertigkeiten_aus():
 
 
 def test_kommentar_daten_traegt_dieselben_warnungen_wie_berate():
-    werte = {}  # leerer Bogen — alle Standardwarnungen greifen
+    werte = {}  # leerer Bogen — beide verbliebenen Standardwarnungen greifen
     daten = berater.kommentar_daten(werte, "KEINER", _ATTRIBUT_KATEGORIEN)
-    assert len(daten["warnungen"]) >= 3
+    assert len(daten["warnungen"]) >= 2

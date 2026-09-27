@@ -9,6 +9,16 @@ verbieten ("wer soweit kommt hat's verdient", CLAUDE.md) gibt es einen
 Assistenten, der bei offensichtlichen Lücken auf sie hinweist — SICHTBAR,
 NIEMALS BLOCKIEREND (Mark: "nur anzeigen, nie blockieren").
 
+27.09.2026, zweite Rückmeldung: die erste Fassung hatte 6 Warn-Codes und
+brachte damit zu viele Popups — dazu fehlte ausgerechnet die eigentlich
+gewünschte Sphären/Götter-Warnung, weil ihre Schwelle (10) zu hoch lag.
+Auf Marks Wunsch reduziert auf GENAU DREI Warnungen, in fester Priorität
+(wichtigstes zuerst, siehe `_PRIORITAET` und die Sortierung am Ende von
+`berate()`): 1. Magie-Überladung (>6 Punkte Sphären/Götter/NeuroWeaving),
+2. keine Wahrnehmung, 3. kein Kampfwert. Sozial/Wissen/schiefe Attribute
+sind bewusst raus ("bin mir nichtmal sicher ob ich die überhaupt drinnen
+haben will").
+
 Bewusst ohne KI-Aufruf: das hier sind Reaktionen auf klar messbare Zahlen
 (Wert X = 0, Kategorie Y unausgeglichen), keine kreative Textarbeit. Läuft
 rein lokal bei jedem Klick, kostet nichts, hängt nicht an einem externen
@@ -30,46 +40,19 @@ KAMPF_FERTIGKEITEN = {
     "Fahren",
     "Riggen",
 }
-SOZIALE_FERTIGKEITEN = {
-    "Anführen",
-    "Ausflüchte",
-    "Darbietung",
-    "Einschüchtern",
-    "Etiketten",
-    "Menschenkenntnis",
-    "Überzeugen",
-    "Szenenkenntnis",
-}
-WISSENS_FERTIGKEITEN = {
-    "Diebeshandwerk",
-    "Handwerk",
-    "Heimlichkeit",
-    "Maker (Hardware)",
-    "Ermitteln",
-    "Finanzen",
-    "Geisteswissenschaften",
-    "Medizin",
-    "Naturwissenschaften",
-    "Okkultismus",
-    "Politik",
-    "Technologie",
-    "Matrix",
-    "Tierkunde",
-}
 
 # Ab dieser Summe (Sphären ODER NeuroWeaving-Fertigkeiten, ohne den fixen
 # Hexkraft/NeuroWeaving-Sockel selbst) warnt der Berater vor Überladung.
-# Mark, 27.09.2026: "6 ist ok" für den fixen Sockel (siehe MAGIE_FIXWERT in
-# erstellung.py) — dieser Schwellenwert hier ist der ZUSÄTZLICHE Vorschlag
-# aus dem ursprünglichen Gespräch (Punkt 5), unabhängig vom Sockel-Fix.
-MAGIE_SUMME_WARNSCHWELLE = 10
+# Mark, 27.09.2026 (zweite Rückmeldung): "6 Punkte" ist der eigentlich
+# gewünschte Schwellenwert aus dem ursprünglichen Gespräch — die erste
+# Fassung hatte hier fälschlich 10 stehen, wodurch die Warnung in der
+# Praxis nie auftauchte.
+MAGIE_SUMME_WARNSCHWELLE = 6
 
-
-def _attribut_summen(werte: dict[str, int], attribut_kategorien: dict[str, list[str]]) -> dict[str, int]:
-    return {
-        kategorie: sum(werte.get(name, 0) for name in namen)
-        for kategorie, namen in attribut_kategorien.items()
-    }
+# Priorität der drei verbliebenen Warnungen, niedrigste Zahl zuerst gezeigt
+# (Mark: "1. Sphären, 2. Wahrnehmung, 3. Kämpfen" — in dieser Reihenfolge,
+# nicht in der Reihenfolge, in der sie berechnet werden).
+_PRIORITAET = {"MAGIE_UEBERLADEN": 0, "KEINE_WAHRNEHMUNG": 1, "KEIN_KAMPFWERT": 2}
 
 
 def berate(
@@ -84,55 +67,13 @@ def berate(
     Fertigkeiten-/Attributverteilung, nicht erst beim Abschluss.
 
     Gibt eine Liste von Hinweisen zurück, jeder mit `code` (stabil, fürs
-    Frontend/Tests) und `text` (der eigentliche Spruch). Leere Liste heißt
-    nicht "perfekt ausbalanciert", nur "nichts Auffälliges gefunden".
+    Frontend/Tests) und `text` (der eigentliche Spruch) — sortiert nach
+    Priorität (Magie-Überladung zuerst, dann Wahrnehmung, dann Kampf).
+    Leere Liste heißt nicht "perfekt ausbalanciert", nur "nichts
+    Auffälliges gefunden". `attribut_kategorien` wird aktuell nicht mehr
+    ausgewertet (Parameter bleibt für Aufrufer-Kompatibilität bestehen).
     """
     hinweise: list[dict[str, str]] = []
-
-    kampf_summe = sum(werte.get(n, 0) for n in KAMPF_FERTIGKEITEN)
-    if kampf_summe == 0:
-        hinweise.append({
-            "code": "KEIN_KAMPFWERT",
-            "text": "Komplett wehrlos, wenn's kracht. Mit dem Wert hast du wohl noch "
-            "nicht mal einen Bud-Spencer-Film gesehen.",
-        })
-
-    if werte.get("Wahrnehmung", 0) == 0:
-        hinweise.append({
-            "code": "KEINE_WAHRNEHMUNG",
-            "text": "0 auf Wahrnehmung? Du merkst nicht mal, wenn dir wer die "
-            "Cyberware klaut.",
-        })
-
-    sozial_summe = sum(werte.get(n, 0) for n in SOZIALE_FERTIGKEITEN)
-    if sozial_summe == 0:
-        hinweise.append({
-            "code": "KEIN_SOZIALWERT",
-            "text": "Kein einziger sozialer Wert. Viel Spaß, das mit Fäusten zu "
-            "verhandeln.",
-        })
-
-    wissen_summe = sum(werte.get(n, 0) for n in WISSENS_FERTIGKEITEN)
-    if wissen_summe == 0:
-        hinweise.append({
-            "code": "KEIN_WISSENSWERT",
-            "text": "Nichts an Wissen oder Technik. Frag lieber nicht, wie ein "
-            "Kühlschrank von innen aussieht.",
-        })
-
-    if attribut_kategorien:
-        summen = _attribut_summen(werte, attribut_kategorien)
-        vorhandene = {k: s for k, s in summen.items() if s > 0}
-        if len(vorhandene) >= 2:
-            hoch = max(vorhandene.values())
-            niedrig = min(vorhandene.values())
-            # Deutlich schiefe Verteilung, nicht jede kleine Differenz.
-            if hoch >= niedrig + 5:
-                hinweise.append({
-                    "code": "ATTRIBUTE_SCHIEF",
-                    "text": "Sehr einseitig unterwegs — auf der einen Seite stark, "
-                    "auf der anderen kaum vorhanden. Sehr schwach, aber schlau, was?",
-                })
 
     if weg in ("MAGIER", "NEUROWEAVER"):
         zusatz_kategorie = "Sphäre" if weg == "MAGIER" else "NeuroWeaving"
@@ -146,6 +87,22 @@ def berate(
                 f"empfohlen sind nicht mehr als {MAGIE_SUMME_WARNSCHWELLE}.",
             })
 
+    if werte.get("Wahrnehmung", 0) == 0:
+        hinweise.append({
+            "code": "KEINE_WAHRNEHMUNG",
+            "text": "0 auf Wahrnehmung? Du merkst nicht mal, wenn dir wer die "
+            "Cyberware klaut.",
+        })
+
+    kampf_summe = sum(werte.get(n, 0) for n in KAMPF_FERTIGKEITEN)
+    if kampf_summe == 0:
+        hinweise.append({
+            "code": "KEIN_KAMPFWERT",
+            "text": "Komplett wehrlos, wenn's kracht. Mit dem Wert hast du wohl noch "
+            "nicht mal einen Bud-Spencer-Film gesehen.",
+        })
+
+    hinweise.sort(key=lambda h: _PRIORITAET.get(h["code"], 99))
     return hinweise
 
 
