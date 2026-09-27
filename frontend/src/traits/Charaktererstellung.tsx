@@ -15,6 +15,7 @@ import {
 } from "./bogenApi";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ErstellungsAssistent } from "./ErstellungsAssistent";
+import { ErstellungsKommentar } from "./ErstellungsKommentar";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -875,6 +876,18 @@ function SchrittFertigkeiten({
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
             Fertigkeiten wählen
           </button>
+
+          {/* KI-Abschlusskommentar (27.09.2026, Marks Idee: "Dungeon Crawler
+              Carl"-Stil) — erst wenn das Fenster zu ist UND alle Slots
+              vergeben sind, noch vor dem "Weiter"-Knopf der Fußzeile. */}
+          {!auswahlOffen && Object.values(offen).every((n) => n === 0) && (
+            <ErstellungsKommentar
+              campaignId={campaignId}
+              werte={assistentWerte}
+              weg={weg}
+              magieFlavor={magieFlavor ?? "MAGIER"}
+            />
+          )}
 
           <Fenster
             offen={auswahlOffen}

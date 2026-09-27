@@ -1,6 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
@@ -22,8 +23,9 @@ from app.kampf.ruestung import (
     uebersicht as ruestungs_uebersicht,
     verteile_kaestchenschaden,
 )
+from app.ki.client import KiFehler, generiere_json
 from app.rassen import repository as rassen_repository
-from app.traits import erfahrung, erstellung, repository
+from app.traits import berater, erfahrung, erstellung, repository
 from app.traits.bogen import (
     bogen_uebersicht,
     sichtbare_kategorien,
@@ -31,7 +33,6 @@ from app.traits.bogen import (
     zustand_verboten,
 )
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
-from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["traits"], dependencies=[Depends(require_campaign_zugang)])
 
@@ -435,6 +436,79 @@ async def get_erstellungsregeln(campaign_id: str) -> dict:
     Kampagne, nicht mehr aus der fest verdrahteten Tabelle.
     """
     return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id))
+
+
+class ErstellungKommentarInput(BaseModel):
+    """Zwischenstand der LAUFENDEN Erstellung — noch nicht eingereicht,
+    kein DB-Zugriff nötig für die Zahlen selbst (siehe traits/berater.py)."""
+
+    werte: dict[str, int] = Field(default_factory=dict)
+    weg: str = "KEINER"
+    magieFlavor: str = "MAGIER"
+
+
+_KOMMENTAR_SYSTEM = (
+    "Du bist eine durchgeknallte, alles kommentierende KI in einem Cyberpunk-"
+    "Pen-and-Paper-Rollenspiel (NeotopiA) — im Ton wie das Erzähler-System aus "
+    "\"Dungeon Crawler Carl\": bissig, respektlos, aber im Kern wohlwollend und "
+    "unterhaltsam, nie wirklich gemein. Du bekommst die fertige "
+    "Attribut-/Fertigkeitsverteilung eines gerade gebauten Charakters und gibst "
+    "dazu EINEN kurzen, pointierten Kommentar ab (2-4 Sätze, Deutsch) — wie ein "
+    "Fernseh-Kommentator, der ein Build bewertet. Nimm konkret Bezug auf die "
+    "Zahlen (was besonders hoch/niedrig ist, was auffällt), keine "
+    "Allgemeinplätze. Wenn Warnungen mitgeliefert werden, darfst du sie "
+    "aufgreifen und pointiert zuspitzen, musst es aber nicht wörtlich "
+    "wiederholen. Kein Rollenspiel-Fließtext über die Spielwelt, kein "
+    "Regel-Erklärbär — nur der Kommentar selbst."
+)
+
+_KOMMENTAR_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {"kommentar": {"type": "STRING"}},
+    "required": ["kommentar"],
+}
+
+
+@router.post("/erstellung/kommentar")
+async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput) -> dict:
+    """KI-Abschlusskommentar zum fertigen Fertigkeiten-Build (27.09.2026).
+
+    EIN Aufruf pro Klick, ausdrücklich über einen Knopf im Frontend
+    (ErstellungsKommentar.tsx) — nie automatisch, Mark ist kostenbewusst
+    beim LLM-Verbrauch. Anders als /erstellung/berater (rein regelbasiert,
+    kostenlos) generiert dieser Text tatsächlich über die KI-Anbindung,
+    genau wie der ✨-Knopf bei Objekttexten (app/ki/routes.py) — dieselbe
+    generiere_json()-Infrastruktur, nur ohne require_campaign_gm: Spieler
+    bauen ihren Charakter selbst und dürfen den Kommentar dazu auch selbst
+    anfordern.
+    """
+    weg_intern, magie_flavor = erstellung.normalisiere_weg(body.weg)
+    if body.magieFlavor == "HAERETIKER":
+        magie_flavor = "HAERETIKER"
+    regeln = erstellung.regelwerk(await _rassen_der_kampagne(campaign_id))
+    daten = berater.kommentar_daten(body.werte, weg_intern, regeln["attributKategorien"], magie_flavor)
+
+    zeilen = [f"Weg: {daten['weg_anzeige']}"]
+    zeilen.append(
+        "Attribute: " + ", ".join(f"{k} {v}" for k, v in daten["attribut_summen"].items())
+    )
+    if daten["top_fertigkeiten"]:
+        zeilen.append(f"Stärkste Fertigkeiten: {daten['top_fertigkeiten']}")
+    if daten["magie_label"] is not None:
+        zeilen.append(f"{daten['magie_label']}: {daten['magie_wert']}")
+    if daten["warnungen"]:
+        zeilen.append("Auffälligkeiten: " + " / ".join(daten["warnungen"]))
+    prompt = "\n".join(zeilen)
+
+    try:
+        ergebnis = await generiere_json(prompt, _KOMMENTAR_SYSTEM, _KOMMENTAR_SCHEMA)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    kommentar = (ergebnis.get("kommentar") or "").strip()
+    if not kommentar:
+        raise HTTPException(status_code=502, detail="Die KI hat keinen Kommentar geliefert.")
+    return {"kommentar": kommentar}
 
 
 @router.post("/personen/{person_id}/erstellung")

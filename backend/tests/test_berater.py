@@ -91,3 +91,53 @@ def test_magie_ueberladen_gilt_auch_fuer_neuroweaver_mit_eigenem_begriff():
     hinweise = berater.berate(hoch, weg="NEUROWEAVER")
     treffer = next(h for h in hinweise if h["code"] == "MAGIE_UEBERLADEN")
     assert "NeuroWeaving-Fertigkeiten" in treffer["text"]
+
+
+# --- kommentar_daten (KI-Abschlussbericht, 27.09.2026) ------------------
+
+_ATTRIBUT_KATEGORIEN = [
+    {"name": "Körperlich", "attribute": ["Körperkraft", "Geschicklichkeit"]},
+    {"name": "Gesellschaftlich", "attribute": ["Charisma"]},
+    {"name": "Geistig", "attribute": ["Intelligenz"]},
+]
+
+
+def test_kommentar_daten_summiert_attribute_und_top_fertigkeiten():
+    werte = {
+        "Körperkraft": 4, "Geschicklichkeit": 2, "Charisma": 1, "Intelligenz": 3,
+        "Nahkampf": 3, "Wahrnehmung": 1,
+    }
+    daten = berater.kommentar_daten(werte, "KEINER", _ATTRIBUT_KATEGORIEN)
+    assert daten["attribut_summen"] == {"Körperlich": 6, "Gesellschaftlich": 1, "Geistig": 3}
+    assert "Nahkampf 3" in daten["top_fertigkeiten"]
+    assert daten["magie_label"] is None
+    assert daten["magie_wert"] is None
+    assert daten["weg_anzeige"] == "Weg des Chroms"
+
+
+def test_kommentar_daten_zeigt_magiewert_und_flavor():
+    werte = {"Hexkraft": 4, "Kräfte": 3}
+    magier = berater.kommentar_daten(werte, "MAGIER", _ATTRIBUT_KATEGORIEN, magie_flavor="MAGIER")
+    assert magier["magie_label"] == "Hexkraft"
+    assert magier["magie_wert"] == 4
+    assert magier["weg_anzeige"] == "Magier"
+
+    haeretiker = berater.kommentar_daten(werte, "MAGIER", _ATTRIBUT_KATEGORIEN, magie_flavor="HAERETIKER")
+    assert haeretiker["magie_label"] == "Glauben"
+    assert haeretiker["weg_anzeige"] == "Häretiker"
+
+
+def test_kommentar_daten_schliesst_magiewerte_aus_den_fertigkeiten_aus():
+    """Hexkraft/Sphären tauchen nur in magie_label/magie_wert auf, nicht
+    nochmal als normale Fertigkeit in top_fertigkeiten."""
+    werte = {"Hexkraft": 4, "Kräfte": 5, "Nahkampf": 2}
+    daten = berater.kommentar_daten(werte, "MAGIER", _ATTRIBUT_KATEGORIEN)
+    assert "Kräfte" not in daten["top_fertigkeiten"]
+    assert "Hexkraft" not in daten["top_fertigkeiten"]
+    assert "Nahkampf 2" in daten["top_fertigkeiten"]
+
+
+def test_kommentar_daten_traegt_dieselben_warnungen_wie_berate():
+    werte = {}  # leerer Bogen — alle Standardwarnungen greifen
+    daten = berater.kommentar_daten(werte, "KEINER", _ATTRIBUT_KATEGORIEN)
+    assert len(daten["warnungen"]) >= 3

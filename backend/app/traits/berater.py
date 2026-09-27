@@ -168,3 +168,61 @@ def _kategorie_traits(kategorie: str) -> list[str]:
     if kategorie == "NeuroWeaving":
         return _NEUROWEAVING_FERTIGKEITEN_NAMEN
     return []
+
+
+# --- Statistik für den KI-Abschlusskommentar (27.09.2026) ---------------
+# Getrennt von berate() (das produziert feste, kostenlose Sprüche) — hier
+# geht es um rohe Zahlen, die die KI selbst pointiert einordnet. Nur EIN
+# Aufruf pro Charakter, per explizitem Knopf (siehe traits/routes.py::
+# erstellung_kommentar, ErstellungsKommentar.tsx) — Mark ist kostenbewusst
+# beim LLM-Verbrauch, deshalb hier bewusst kein Auto-Trigger.
+_ALLE_MAGIE_NAMEN = {"Hexkraft", "NeuroWeaving", *_SPHAEREN_NAMEN, *_NEUROWEAVING_FERTIGKEITEN_NAMEN}
+
+
+def kommentar_daten(
+    werte: dict[str, int],
+    weg: str,
+    attribut_kategorien: list[dict[str, Any]],
+    magie_flavor: str = "MAGIER",
+) -> dict[str, Any]:
+    """Fasst den aktuellen Erstellungsstand für den KI-Kommentar zusammen.
+
+    `attribut_kategorien` im Format von erstellung.regelwerk()["attributKategorien"]
+    (Liste aus {"name": ..., "attribute": [...]}) — lesbare Namen statt
+    Kategorie-Ids, damit sie direkt in den Prompt können.
+    """
+    attribut_summen = {
+        k["name"]: sum(werte.get(n, 0) for n in k["attribute"]) for k in attribut_kategorien
+    }
+    alle_attribut_namen = {n for k in attribut_kategorien for n in k["attribute"]}
+
+    fertigkeiten = {
+        n: w
+        for n, w in werte.items()
+        if w > 0 and n not in alle_attribut_namen and n not in _ALLE_MAGIE_NAMEN
+    }
+    top_fertigkeiten = ", ".join(f"{n} {w}" for n, w in sorted(fertigkeiten.items(), key=lambda kv: -kv[1])[:5])
+
+    magie_label: str | None = None
+    magie_wert: int | None = None
+    if weg == "MAGIER":
+        magie_label = "Glauben" if magie_flavor == "HAERETIKER" else "Hexkraft"
+        magie_wert = werte.get("Hexkraft", 0)
+    elif weg == "NEUROWEAVER":
+        magie_label = "NeuroWeaving-Wert"
+        magie_wert = werte.get("NeuroWeaving", 0)
+
+    weg_anzeige = {
+        "KEINER": "Weg des Chroms",
+        "MAGIER": "Häretiker" if magie_flavor == "HAERETIKER" else "Magier",
+        "NEUROWEAVER": "NeuroWeaver",
+    }.get(weg, weg)
+
+    return {
+        "weg_anzeige": weg_anzeige,
+        "attribut_summen": attribut_summen,
+        "top_fertigkeiten": top_fertigkeiten,
+        "magie_label": magie_label,
+        "magie_wert": magie_wert,
+        "warnungen": [h["text"] for h in berate(werte, weg, {k["name"]: k["attribute"] for k in attribut_kategorien})],
+    }

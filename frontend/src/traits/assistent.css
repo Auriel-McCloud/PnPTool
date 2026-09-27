@@ -188,3 +188,20 @@
 .as-schliessen:hover {
   color: var(--text);
 }
+
+/* Auslöse-Knopf für den KI-Abschlusskommentar (ErstellungsKommentar.tsx,
+   27.09.2026) — bewusst zurückhaltend, kein Auto-Trigger dahinter. */
+.ak-knopf {
+  align-self: flex-start;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--neon);
+  background: transparent;
+  border: 1px solid var(--neon);
+  border-radius: 8px;
+  padding: 6px 14px;
+}
+
+.ak-knopf:hover {
+  background: var(--neon-schwach);
+}
