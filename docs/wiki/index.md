@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-26 | Seiten: 31
+> Zuletzt aktualisiert: 2026-09-27 | Seiten: 33
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -47,7 +47,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung, Editor-Schriftgröße am Handy (20.09.) |
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
-| [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09. kalibriert), Neonflackern verstärkt (19.09.) |
+| [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09. kalibriert), Neonflackern verstärkt (19.09.), Autosave für Beschreibung/Notizen wie im Wiki (27.09.) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |
 | [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.), Auto-Verknüpfung, KI-Gegenstandsgenerator + Händler-Sortiment-Vorschlag (23.09.), KI-Bildgenerierung lokal/cloud für Entitäten + Spieler-Portrait (23.09.), Wiki-Import aus Word/PDF-Dokumenten (23.09.), Auto-Verknüpfung-Sweep + Freitext-UI (24.09.) |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
@@ -55,6 +55,8 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
 | [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP exportieren/importieren, generische Cypher-Sammlung, ID-Neuvergabe per Text-Ersetzung (24.09.) |
 | [[entities/gegenstand-transfer]] | Party-interne Gegenstands-Weitergabe via Verhandlungs-Popup gebaut (26.09.); Geld, NPC-Belohnung, Credstick/Heiltrank/Granate und „gleicher Ort“ noch offen |
+| [[entities/ereignisprotokoll]] | Sitzungs-Log (27.09.): eigener Knotentyp je Kategorie (KI-Protokoll, Gegenstandsbewegung, Geldbewegung, Aufenthalt, Achievement-Verleihung, NPC-Wissenszuwachs, Kampf-Log mit Auto-Angreifer-Zuordnung, Verhandlungsausgänge, Charakterentwicklung inkl. Rassenwechsel), reales Datum Pflicht + In-Game-Datum als späteres Zusatzfeature, Papierkorb statt Hard-Delete — Datenmodell entschieden, noch nicht gebaut; dabei Lücke gefunden: `Person.erstelltAm` fehlt noch komplett |
+| [[entities/achievements]] | Achievement-Konzept (27.09.): `einzigartig`-Häkchen (wie bei Gegenständen) trennt campaign-weit einmalige Titel ("First Kill") von pro-Person wiederholbaren ("Mörder"); Auto-Erkennung live aus dem Ereignisprotokoll berechnet (kein Vorschlags-Knoten nötig) + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Ort+Sitzung |
 
 ## Vergleiche
 

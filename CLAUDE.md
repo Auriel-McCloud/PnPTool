@@ -8,6 +8,12 @@ Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Serv
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
+- **Autosave für Beschreibung/Notizen** (siehe „Zuletzt gebaut“ unten,
+  27.09.2026): `tsc -b` sauber, aber nie im Browser angeklickt. Bitte am
+  Tablet prüfen — Text in ein Beschreibungs-/Notizenfeld tippen, ~2 Sekunden
+  warten, Standby auslösen (oder hart neu laden) und schauen, ob der Text
+  erhalten bleibt, in mindestens einem Detail-Popup (z.B. Ort) und im
+  Gegenstand-Bearbeiten-Fenster.
 - **Gegenstands-Weitergabe innerhalb der Party** (`WeitergebenPopup.tsx`,
   `VerhandlungPopup.tsx` für `GEGENSTAND_WEITERGABE`, siehe „Zuletzt gebaut“
   unten und `docs/wiki/entities/gegenstand-transfer.md`): Backend-Import und
@@ -200,6 +206,28 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (27.09.2026 — Autosave für Beschreibung/Notizen überall):**
+- **Was:** Alle Beschreibungs-/Notizen-RichTextEditoren außerhalb des Wikis
+  (Ort/Fraktion/Event/NPC/PC/Begleiter/Critter/KI-Detail-Popups sowie das
+  Gegenstand-Bearbeiten-Fenster) speichern jetzt automatisch 1200ms nach der
+  letzten Eingabe, plus Sofort-Flush beim Verlassen der Komponente — exakt
+  dasselbe Timing/Verhalten wie im Wiki (`wiki/WikiAnsicht.tsx`). Grund:
+  Mark verliert auf dem Tablet regelmäßig ungespeicherten Text, wenn das
+  Gerät in den Standby geht und die Seite danach neu lädt.
+- **Bewusst NICHT autosaved:** Namensfelder (bleiben beim etablierten
+  `onBlur`-Muster), die Popup-Editoren für Ziele/Ressourcen
+  (`KurzLangListe.tsx`) und `VerbindungAnlegen.tsx`, sowie alle übrigen
+  Felder im Gegenstand-Bearbeiten-Fenster (Preis, Kraft, Eigenschaften, …) —
+  die bleiben hinter dem bestehenden "Speichern"-Knopf (Marks Entscheidung
+  27.09.2026: nur Beschreibung/Notizen automatisch, der Rest wie gehabt).
+  Ohne Statusanzeige (kein "speichert…/gespeichert" wie im Wiki) — Mark
+  wollte es still im Hintergrund.
+- **Neu:** `frontend/src/shell/autosave.ts` — generischer `useAutosave(fn)`-
+  Hook (Debounce + Unmount-Flush), von jedem betroffenen Detail-Popup gegen
+  seine eigene Speicherfunktion aufgerufen, kein Duplikat der Wiki-Logik.
+- **Verifiziert:** `tsc -b` sauber. **Kein Klicktest** — siehe „Offen“ oben,
+  bitte am Tablet gegenprüfen, ob Standby+Reload den Text jetzt wirklich hält.
 
 **Zuletzt gebaut (26.09.2026 — Gegenstands-Weitergabe innerhalb der Party):**
 - **Was:** Spieler kann einem Mitglied derselben Party einen eigenen
@@ -979,9 +1007,9 @@ Positionen statt eines Skalars), UI noch nicht spezifiziert.), Shop-Spam/
 Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
 PC-Vorlagen im Regelsystem,
 **Kampagnen-Export/Import** — gebaut 24.09.2026 (siehe „Zuletzt gebaut“ unten),
-Event-Log/Timeline („was ist im Spiel passiert" — niedrige Priorität,
-erst grob klären was getrackt werden soll; KQL dafür Overkill, eher
-`SpielEreignis`-Knoten + Cypher-Timeline)
+**Ereignisprotokoll/Sitzungs-Log** — Datenmodell komplett entschieden
+(27.09.2026, siehe Punkt 17 unten und `docs/wiki/entities/ereignisprotokoll.md`),
+noch nicht gebaut,
 
 **Zuletzt gebaut (19.09.2026):**
 - **Tooltip-Popups: Kurztext + Detail-Knopf mit Langfassung** — die
@@ -1837,3 +1865,68 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     - **Granate / Alchemisten-Wurftrank** — Schaden/Effekte ohne volle
       Mechanik, Einsatz muss sichtbar sein (nicht still verpuffen). Offen:
       Mitteilung/Popup oder Kampfkarte?
+
+17. **Ereignisprotokoll / Sitzungs-Log** (notiert + Datenmodell komplett
+    entschieden 27.09.2026, Auslöser: Mark verlor eine KI-Nachricht, die
+    nirgends dauerhaft gespeichert war) — vollständige Herleitung, Beispiele
+    und Cypher-Skizzen: `docs/wiki/entities/ereignisprotokoll.md`.
+    **Noch nicht gebaut, kein Code/keine Migration.**
+    - **Grundprinzip:** eigener Knotentyp je Kategorie (nicht ein generischer
+      `typ`-Knoten — passt zum bestehenden Projektstil, keine allgemeinen
+      Felder für Sonderfälle), aber alle mit gemeinsamen Basis-Properties
+      (`zeitpunkt`, `ingameZeitpunkt`, `sitzungId`, `slNotiz`, `geloescht`)
+      für eine spätere Cypher-`UNION`-Zeitleiste über alle Kategorien.
+    - **Anker-Knoten `Sitzung`** pro Spielabend (echtes Datum Pflicht,
+      In-Game-Datum als Freitext-Platzhalter — ein echtes Kalendersystem ist
+      ein eigenes, späteres Feature, Mark: "müssen wir dann schön machen").
+    - **Sechs Kategorien:** `KiProtokollEintrag` (loggt jede KI-Ausgabe
+      dauerhaft, egal ob übernommen — schließt genau die Lücke, die den
+      Auslöser bildete), `GegenstandsBewegung` (volle Besitzerkette:
+      gefunden/gekauft/verkauft/weitergegeben/gestohlen/zerstört/repariert),
+      `GeldBewegung` (Kapital, per `handelId` mit einer passenden
+      Gegenstandsbewegung verknüpfbar statt eigenem Handels-Knoten),
+      `Aufenthalt` (Party-/Personenbewegung mit Zeitstempel — löst nebenbei
+      den in Punkt 8 genannten Blocker fürs geplante Party-Besuchs-Log),
+      `Achievement`+`AchievementVerleihung` (**vollständig ausspezifiziert
+      27.09.2026, eigene Seite** `docs/wiki/entities/achievements.md` —
+      `einzigartig`-Häkchen wie bei Gegenständen trennt campaign-weit
+      einmalige Titel wie "First Kill" von pro-Person wiederholbaren wie
+      "Mörder"; Trigger-Katalog mit 7 `auslöseArt`-Werten gegen die anderen
+      Log-Kategorien geprüft, kein persistenter Vorschlags-Knoten nötig
+      — live aus dem Log berechnet wie der bestehende KI-Sortiment-
+      Vorschlag; KI-Text bezieht auslösenden Log-Eintrag+Ort+Sitzung ein;
+      zusätzlich spontane manuelle Vergabe über eigenen Baukasten),
+    - **Zwei weitere Kategorien nachgezogen (27.09.2026, gleicher Tag):**
+      `KampfLogEintrag` (Treffer/kritisch/bewusstlos/tot/Kampfende je Runde
+      — **Angreifer wird automatisch aus `Kampf.amZug` übernommen**, Mark:
+      "wenn mein Spieler dran ist, und ein NPC leben verliert, der Spieler
+      diesen NPC verletzt hat, und umgekehrt natürlich auch!"; optionales
+      Override-Feld für Ausnahmefälle) und `VerhandlungsAusgang` (Ergebnis
+      jeder beantworteten Verhandlung — Shop-Kauf, Rüstungsreparatur,
+      Gegenstands-Weitergabe —, auch abgelehnte Angebote, mit
+      Positions-Schnappschuss statt Live-Referenz auf den Verhandlungs-Knoten).
+    - **`CharakterEntwicklung` ausspezifiziert (27.09.2026, dritte Runde):**
+      Punkt-Käufe/Willenskraft/EP-Vergabe mit optionaler SL-Begründung (nutzt
+      das bestehende `slNotiz`-Feld — Mark: "ja ich finde das gut wenn es die
+      Option einer Begründung gibt! vor allem bei den extra XP macht das
+      Sinn"), plus `RASSE_GEAENDERT` für nachträgliche Rassenwechsel (Mark:
+      "kann ja auch storytechnisch begründet passieren... Body Swap oder
+      sowas"). Charaktererstellung selbst bewusst NICHT geloggt (Mark: "es
+      reicht wann der Charakter erstellt wurde"). **Dabei gefunden: `Person`
+      hat noch gar kein `erstelltAm`-Feld** — muss beim Bauen als
+      Voraussetzung zuerst ergänzt werden (`entities/repository.py`),
+      bestehende Charaktere bleiben ohne rückwirkendes Datum.
+    - **Neo4j bleibt die richtige Wahl fürs Logging** (Marks Nachfrage,
+      27.09.2026, ob ein Zeitreihen-/Log-Tool besser wäre) — fast jeder
+      Log-Eintrag hängt per Kante an bestehenden Knoten (Person, Gegenstand,
+      Ort), ein zweites System bräuchte für jede Abfrage einen Rück-Join in
+      den Graph. Bei diesem Datenvolumen wäre das Overkill in die andere
+      Richtung.
+    - **Löschen:** Papierkorb-Konvention wie überall (`geloescht`-Flag), SL
+      darf nachträglich korrigieren/ergänzen — kein starres Audit-Log.
+    - **Vorgemerkt, gleiches Muster, noch nicht durchgesprochen:**
+      Verwundungs-/Todesmeilensteine (teilweise schon durch
+      `KampfLogEintrag` abgedeckt), Beziehungsänderungen (evtl. reicht die
+      bestehende `VERBINDUNG`-Kante), freies SL-Ereignis ohne feste Entität.
+    - **Offen:** UI/Ansicht der Zeitleiste komplett unentworfen; genaue
+      Feldliste kann sich beim Bauen noch verschieben.

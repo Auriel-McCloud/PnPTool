@@ -1,7 +1,7 @@
 ---
 title: UI-Konzept — Das Commlink
 created: 2026-09-18
-updated: 2026-09-19
+updated: 2026-09-27
 type: entität
 tags: [ui, frontend]
 sources: [../../ui-konzept.md, ../../../frontend/src/shell/CommlinkShell.tsx, ../../../frontend/src/shell/commlink.css]
@@ -150,6 +150,30 @@ geschweige denn eingeschaltet. Gilt für Attribute (Schritt 3), die
 Fertigkeiten-Auswahl im Popup (Schritt 4) und die Freebee-Käufe
 (Schritt 6) — überall dort, wo während der Erstellung Punkte auf Werte
 verteilt werden.
+
+## Autosave für Beschreibung/Notizen (27.09.2026)
+
+Bislang speicherte nur das Ingame-Wiki automatisch (`wiki/WikiAnsicht.tsx`,
+1200ms nach der letzten Eingabe + Flush beim Verlassen); alle übrigen
+Beschreibungs-/Notizen-Editoren hingen hinter einem manuellen
+"Speichern"-Knopf. Mark verliert auf dem Tablet regelmäßig ungespeicherten
+Text: Standby setzt ein, beim Wiederaufwecken lädt die Seite neu, der Knopf
+wurde nie geklickt.
+
+**Generischer Hook statt Kopie der Wiki-Logik:** `frontend/src/shell/autosave.ts`
+(`useAutosave(speichern)`) — Debounce + Unmount-Flush, exakt dasselbe Timing
+wie im Wiki, aber wiederverwendbar für jeden Aufrufer mit eigener
+Speicherfunktion. Eingebaut in alle Beschreibungs-/Notizen-Felder in
+Ort-/Fraktion-/Event-/NPC-/PC-/Begleiter-/Critter-/KI-Detail sowie im
+Gegenstand-Bearbeiten-Fenster (`CharacterSheetPanel.tsx`).
+
+**Bewusst außen vor gelassen** (Marks Entscheidung nach Rückfrage):
+Namensfelder bleiben beim etablierten `onBlur`-Muster, `KurzLangListe.tsx`
+(Ziele/Ressourcen-Popups) und `VerbindungAnlegen.tsx` bleiben manuell, das
+Gegenstand-Fenster bekommt Autosave NUR für Beschreibung/Notizen — der Rest
+des großen Formulars (Preis, Kraft, Eigenschaften, …) bleibt hinter dem
+bestehenden "Speichern"-Knopf. Keine Statusanzeige ("speichert…") wie im
+Wiki — still im Hintergrund, auf Marks ausdrücklichen Wunsch.
 
 ## Siehe auch
 

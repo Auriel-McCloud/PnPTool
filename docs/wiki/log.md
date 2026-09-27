@@ -3,6 +3,125 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-27] create | entities/achievements
+
+Vierte und letzte Runde des Ereignisprotokoll-Gesprächs: eigene Seite für
+Achievements, ausgelagert aus `ereignisprotokoll.md` (Thema eigenständig
+genug für mehr Tiefe). Mark wollte "beides" — automatische Erkennung UND
+spontane manuelle Vergabe — plus Beispiele: "First Blood"/"erster Kill",
+"meisten Schaden genommen/verteilt", "erster gekaufter Gegenstand außerhalb
+der Erstellung", "Hello World", "erste Verhandlung".
+
+**Kernentscheidung: `einzigartig`-Häkchen, wiederverwendet von
+`Gegenstand.einzigartig`** (Marks eigener Vorschlag nach Rückfrage) — trennt
+campaign-weit einmalige Titel ("First Kill", nur der Allererste) von
+pro-Person wiederholbaren ("Mörder", jeder kriegt seins). Kein
+Zusatzfeld nötig, ob ein Titel den Träger wechseln kann (Rekord vs.
+Meilenstein) — ergibt sich automatisch aus der Auslöseart: ein
+"war der Erste"-Trigger kann nach der ersten Vergabe nie wieder zutreffen,
+ein Rekord-Trigger ("höchster Schaden") wird bei jedem neuen Log-Eintrag neu
+geprüft und kann den Titel weiterreichen, exakt wie ein einzigartiger
+Gegenstand den Besitzer wechselt.
+
+Sieben `auslöseArt`-Werte als erster Trigger-Katalog spezifiziert
+(`ERSTER_KILL`, `MOERDER`, `MEISTE_SCHADEN_GENOMMEN`/`_VERTEILT`,
+`ERSTER_KAUF`, `ERSTE_VERHANDLUNG`, `CHARAKTER_ERSTELLT`), alle direkt gegen
+die im Ereignisprotokoll spezifizierten Log-Kategorien geprüft. Bewusst
+**kein persistenter Vorschlags-Knoten** — Trigger sind jederzeit live aus
+dem bestehenden Log neu berechenbar, gleiches Muster wie der bestehende
+KI-Sortiment-Vorschlag (`GET .../ki-vorschlaege`, nichts gespeichert bis
+Bestätigung).
+
+KI-Text bezieht den auslösenden Log-Eintrag + Ort/Event/Sitzung als
+Zusatzkontext ein (Mark: "thematisch auf die letzten Ereignisse, den Ort
+und das Event bezogen"), dieselbe `sammle_kontext()`-Infrastruktur wie
+überall sonst, Vorschau vor dem Speichern wie beim ✨-Knopf-Muster.
+
+Spontane Vergabe: eigener Baukasten (analog Rassen-Baukasten), jederzeit
+anlegbar und zuweisbar, mit optionalem KI-Text oder freiem SL-Text.
+
+`ereignisprotokoll.md` (Abschnitt 5 verweist jetzt hierher), `index.md`,
+`CLAUDE.md` Punkt 17 nachgezogen.
+
+## [2026-09-27] update | entities/ereignisprotokoll (Kampf-Log + Verhandlungsausgänge)
+
+Mark wollte den Kampf-Aspekt genauer klären: *"wenn mein Spieler dran ist,
+und ein NPC leben verliert, der Spieler diesen NPC verletzt hat, und
+umgekehrt natürlich auch!"* — neue Kategorie `KampfLogEintrag` mit
+**automatischer Angreifer-Zuordnung** aus der bestehenden Zugreihenfolge
+(`Kampf.amZug`, siehe `backend/app/kampf/repository.py`), kein manuelles
+Zusatzfeld im Regelfall nötig, nur ein optionales Override für
+Ausnahmen (Umweltschaden, Treffer außerhalb der Zugreihenfolge).
+
+Zweite neue Kategorie `VerhandlungsAusgang` (Marks Zustimmung: "die
+Verhandlungsausgänge finde ich auch gut") — Ergebnis jeder beantworteten
+Verhandlung (Shop-Kauf, Rüstungsreparatur, Gegenstands-Weitergabe), auch
+abgelehnter Angebote, mit einem Positions-Schnappschuss statt Live-Referenz
+(ein später geänderter Händlerpreis darf die Historie nicht rückwirkend
+verfälschen).
+
+Zusätzlich Marks Frage beantwortet, ob Neo4j fürs Logging die richtige
+Wahl ist oder ein Zeitreihen-Tool besser wäre: **Neo4j bleibt richtig**,
+neuer Abschnitt in der Seite begründet das (Log-Einträge hängen per Kante
+an bestehenden Knoten, ein zweites Tool bräuchte für jede Abfrage einen
+Rück-Join in den Graph — bei diesem Datenvolumen unnötiger Aufwand).
+
+`CLAUDE.md` Punkt 17 nachgezogen (zwei neue Kategorien + Neo4j-Begründung),
+`index.md` Zusammenfassungszeile aktualisiert.
+
+## [2026-09-27] update | entities/ereignisprotokoll (Charakterentwicklung)
+
+Dritte Runde zur Frage "was fehlt noch bei der Charakterentwicklung":
+neue Kategorie `CharakterEntwicklung` — Steigerungs-Käufe, Willenskraft,
+EP-Vergabe (mit optionaler Begründung, nutzt das bestehende `slNotiz`-Feld,
+Mark: "vor allem bei den extra XP macht das Sinn") und nachträgliche
+Rassenwechsel (`RASSE_GEAENDERT`, Mark: "kann ja auch storytechnisch
+begründet passieren... Body Swap oder sowas"). Charaktererstellung selbst
+bewusst NICHT geloggt (Mark: "es reicht wann der Charakter erstellt wurde").
+
+**Beim Durchsuchen des Codes eine echte Lücke gefunden:** `Person` hat
+aktuell überhaupt kein `erstelltAm`-Feld (`entities/repository.py`) — jeder
+Charakter entsteht ohne Zeitstempel. Muss vor dem eigentlichen
+Ereignisprotokoll-Bau als Voraussetzung ergänzt werden, sonst bleibt "wann
+wurde X erstellt" für jeden bestehenden UND neuen Charakter unbeantwortbar.
+
+`CLAUDE.md` Punkt 17, `index.md` nachgezogen.
+
+## [2026-09-27] create | entities/ereignisprotokoll
+
+Auslöser: Mark verlor eine KI-generierte Nachricht, die nirgends dauerhaft
+gespeichert war — daraus wurde ein vollständiges Design-Gespräch fürs
+Sitzungs-Logging, weit über den ursprünglichen Anlass hinaus. Neue Seite
+`entities/ereignisprotokoll.md`: eigener Knotentyp je Kategorie (nicht ein
+generischer `typ`-Knoten — Mark entschied sich für saubere Einzeltypen,
+passend zum bestehenden Projektstil), gemeinsame Basis-Properties
+(`zeitpunkt`, `ingameZeitpunkt`, `sitzungId`, `slNotiz`, `geloescht`) für
+eine spätere Cypher-`UNION`-Zeitleiste.
+
+Sechs konkret spezifizierte Kategorien: `KiProtokollEintrag` (loggt jede
+KI-Ausgabe dauerhaft, unabhängig von Übernahme — schließt genau die Lücke,
+die Mark getroffen hat), `GegenstandsBewegung` (volle Besitzerkette,
+Marks MacGuffin-Beispiel durchgespielt), `GeldBewegung` (Kapital, per
+`handelId` mit passender Gegenstandsbewegung verknüpfbar statt eigenem
+Handels-Knoten), `Aufenthalt` (Party-/Personenbewegung — löst nebenbei den
+in `CLAUDE.md` Punkt 8 notierten Blocker für die geplante
+KI-Auto-Steigerung), `Achievement`+`AchievementVerleihung` (Inhalt bewusst
+offen, nur Verleihungs-Logging schon gedacht), `NpcWissenszuwachs`.
+
+Zeitstempel: reales Datum Pflicht (Marks Anliegen war ausdrücklich "an
+welchem Abend ist das passiert"), In-Game-Datum als optionales
+Freitextfeld — echtes Kalendersystem explizit vertagt ("müssen wir dann
+schön machen"). Löschen folgt der bestehenden Papierkorb-Konvention
+(SL darf nachträglich korrigieren, nichts wird hart gelöscht).
+
+Für später vorgemerkt, gleiches Muster: Kampf-Log, Charakterentwicklung,
+Verwundungs-/Todesmeilensteine, Beziehungsänderungen (evtl. reicht die
+bestehende `VERBINDUNG`-Kante), freies SL-Ereignis ohne feste Entität.
+
+**Reines Konzept-Dokument — kein Code, keine Migration, kein Backend.**
+`SCHEMA.md` (neuer Tag `ereignisprotokoll`), `index.md` (neue Zeile),
+`CLAUDE.md` (neuer Punkt 17 unter "Geplante Features") nachgezogen.
+
 ## [2026-09-26] create | entities/gegenstand-transfer
 
 Neue Seite für Inventar-Transfer. Party-interne Gegenstands-Weitergabe
@@ -510,3 +629,28 @@ Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + Punkt 3 "KI-Integration",
 Wiki-Import von offen auf gebaut gesetzt), `docs/api/ki.md`,
 `docs/wiki/entities/ki-integration.md`, `docs/wiki/index.md`
 (Zusammenfassungszeile).
+
+## [2026-09-27] update | entities/ui-konzept-commlink
+
+Autosave für Beschreibung/Notizen außerhalb des Wikis: Mark verliert am
+Tablet regelmäßig ungespeicherten Text (Standby → Reload → Text weg). Neuer
+generischer Hook `frontend/src/shell/autosave.ts` (`useAutosave`), gleiches
+Timing wie im Ingame-Wiki (1200ms Debounce + Flush beim Verlassen), aber
+eigenständig statt eine Kopie der Wiki-Logik.
+
+Eingebaut in alle Beschreibungs-/Notizen-RichTextEditoren: Ort-, Fraktion-,
+Event-, NPC-, PC-, Begleiter-, Critter-, KI-Detail-Popups sowie das
+Gegenstand-Bearbeiten-Fenster (`CharacterSheetPanel.tsx`, dort NUR
+Beschreibung/Notizen — der Rest des Formulars bleibt hinter dem
+bestehenden "Speichern"-Knopf, Marks ausdrückliche Entscheidung). Bewusst
+ausgenommen: Namensfelder (bleiben `onBlur`), `KurzLangListe.tsx`
+(Ziele/Ressourcen), `VerbindungAnlegen.tsx`. Keine Statusanzeige wie im
+Wiki — still im Hintergrund.
+
+Verifiziert: `tsc -b` sauber, alle Diffs vor dem Commit einzeln
+gegengelesen. **Kein Klicktest** — Mark bittet, am Tablet zu prüfen, ob
+Standby+Reload den Text jetzt hält.
+
+Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + neuer "Offen"-Punkt),
+`docs/wiki/entities/ui-konzept-commlink.md` (neuer Abschnitt),
+`docs/wiki/index.md` (Zusammenfassungszeile).
