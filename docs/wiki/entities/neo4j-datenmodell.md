@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-09-26
+updated: 2026-09-28
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -23,7 +23,9 @@ Zwischentabellen (siehe [[../../api/README.md]]).
 `Gegenstand`, `Rasse` — jeweils mit eindeutiger `id`-Constraint. Weitere Typen
 ohne expliziten Constraint (laut Code-Suche in den Repositories):
 `Mitteilung`, `WikiSeite`, `Kampf`, `Nachricht`, `Kontakt`/`KENNT`-Beziehung,
-`Fraktion`, `Regelsystem`, `Erklaerung`, `Party`, `Verhandlung`.
+`Fraktion`, `Regelsystem`, `Erklaerung`, `Party`, `Verhandlung`,
+`Zusatzfertigkeit` (28.09.2026, campaign-gebunden, kein ruleset-weiter
+Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]).
 
 ## Zentrale Beziehungstypen (aus `repository.py`-Dateien)
 
@@ -44,6 +46,7 @@ ohne expliziten Constraint (laut Code-Suche in den Repositories):
 | `VON` (im Kontext `kontakte/`) | Nachricht → Person | siehe [[kontakte-messenger]] |
 | `MITGLIED_VON` | Person → Party | exklusiv, siehe [[party-feature]] |
 | `BEFINDET_SICH_AN` | Party → Ort/Event | optional, siehe [[party-feature]] |
+| `HAT_ZUSATZFERTIGKEIT` | Person → Zusatzfertigkeit | `rating`, campaign-gebunden statt `HAS_TRAIT`, siehe [[zusatzfertigkeiten]] |
 
 **Fast alles trägt zusätzlich `campaignId` als Property** statt (oder zusätzlich
 zu) expliziten Kanten zur Kampagne — schneller für Queries, laut

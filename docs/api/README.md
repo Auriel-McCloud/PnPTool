@@ -37,6 +37,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Shop](./haendler.md) | Händler-NPCs, Sortiment (explizit + automatisch), Kauf mit Guthabenprüfung | |
 | [Verhandlungen](./verhandlung.md) | Angebot → Annehmen/Ablehnen (Reparatur, Shop-Kauf, Gegenstands-Weitergabe) | ⭐ |
 | [KI](./ki.md) | Ideenschmiede-Generierung, Wiki-Rechtschreib-/Grammatik-/Logikprüfung | |
+| [Zusatzfertigkeiten](./zusatzfertigkeiten.md) | Campaign-gebundener Katalog optionaler Fertigkeiten, Freebee/EP-Wahl, KI-Vorschlag | |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration
 

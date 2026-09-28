@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-09-27 | Seiten: 33
+> Zuletzt aktualisiert: 2026-09-28 | Seiten: 34
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -57,6 +57,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/gegenstand-transfer]] | Party-interne Gegenstands-Weitergabe via Verhandlungs-Popup gebaut (26.09.); Geld, NPC-Belohnung, Credstick/Heiltrank/Granate und „gleicher Ort“ noch offen |
 | [[entities/ereignisprotokoll]] | Sitzungs-Log (27.09.): eigener Knotentyp je Kategorie (KI-Protokoll, Gegenstandsbewegung, Geldbewegung, Aufenthalt, Achievement-Verleihung, NPC-Wissenszuwachs, Kampf-Log mit Auto-Angreifer-Zuordnung, Verhandlungsausgänge, Charakterentwicklung inkl. Rassenwechsel), reales Datum Pflicht + In-Game-Datum als späteres Zusatzfeature, Papierkorb statt Hard-Delete — Datenmodell entschieden, noch nicht gebaut; dabei Lücke gefunden: `Person.erstelltAm` fehlt noch komplett |
 | [[entities/achievements]] | Achievement-Konzept (27.09.): `einzigartig`-Häkchen (wie bei Gegenständen) trennt campaign-weit einmalige Titel ("First Kill") von pro-Person wiederholbaren ("Mörder"); Auto-Erkennung live aus dem Ereignisprotokoll berechnet (kein Vorschlags-Knoten nötig) + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Ort+Sitzung; UI: 🏆-Symbol in der Werkzeugleiste (Spieler: Scroll-Popup neueste zuerst, SL: volles Verwaltungs-Fenster), Auto-Popup außer während laufendem Kampf (dann Nachlieferung bei Kampfende) |
+| [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten (Sprengstoffe, Esoterik, Gesetzeskunde, Kosmologie, Rätsel) gebaut (28.09.): kein globaler Katalog+Freigabe wie bei Rassen, SL pflegt eine einfache Tabelle, sofort wählbar; "+ Zusatzfertigkeit"-Popup identisch in Erstellung UND LevelUp; Freebee-/EP-Kosten wie normale Fertigkeit, eigenes kleines Freebee-Kontingent bei Erstellung; KI-Vorschlag-Knopf |
 
 ## Vergleiche
 

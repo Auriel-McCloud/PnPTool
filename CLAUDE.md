@@ -8,6 +8,15 @@ Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Serv
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
+- **Zusatzfertigkeiten** (28.09.2026, siehe „Zuletzt gebaut“ unten und
+  `docs/wiki/entities/zusatzfertigkeiten.md`): Backend komplett per echtem
+  E2E-Test + KI-Vorschlag-Aufruf verifiziert, `tsc -b`/`vite build` sauber.
+  **Nie im Browser angeklickt** — bitte im Kampagnen-Menü ein paar Einträge
+  anlegen (mit UND ohne KI-Vorschlag), als Spieler in der Charaktererstellung
+  UND im LevelUp über "+ Zusatzfertigkeit" wählen/steigern, prüfen ob die
+  Kostenanzeige (Freebees vs. EP) stimmt und die Wahl im Charakterblatt
+  auftaucht.
+
 - **Autosave für Beschreibung/Notizen** (siehe „Zuletzt gebaut“ unten,
   27.09.2026): `tsc -b` sauber, aber nie im Browser angeklickt. Bitte am
   Tablet prüfen — Text in ein Beschreibungs-/Notizenfeld tippen, ~2 Sekunden
@@ -206,6 +215,55 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (28.09.2026 — Zusatzfertigkeiten):**
+- **Was:** Neues Backend-Modul `app/zusatzfertigkeiten/` — campaign-gebundener
+  Katalog optionaler Fertigkeiten (Sprengstoffe, Esoterik, Gesetzeskunde,
+  Kosmologie, Rätsel, siehe `docs/reference/Master/Optionale_Fertigkeiten.md`),
+  bisher nur als Konzept-Dokument vorhanden. SL pflegt eine einfache Tabelle
+  (Name, Kurz-, Detailbeschreibung) je Kampagne — kein globaler Katalog +
+  Freigabe-Schalter wie bei Rassen, jeder Eintrag ist sofort wählbar (Marks
+  Vorgabe). Eigene Relation `(:Person)-[:HAT_ZUSATZFERTIGKEIT {rating}]->
+  (:Zusatzfertigkeit)`, läuft NICHT über den TraitDef-Katalog/`HAS_TRAIT`
+  (der ist ruleset-weit, nicht campaign-gebunden).
+- **Kosten (eigene Design-Entscheidung, nicht mit Mark abgestimmt):**
+  Freebee-/EP-Kosten wie eine normale Fertigkeit (Freebee 2/Stufe,
+  EP-Faktor 2, Neu-Kosten 3 — dieselben Tabellen wie `FREEBEE_KOSTEN_JE_
+  KATEGORIE["Fertigkeit"]`/`erfahrung.FAKTOR["Fertigkeit"]`). Das
+  Neu-Erlernen während der Erstellung zieht aus einem EIGENEN kleinen
+  Freebee-Kontingent (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6`, neues Feld
+  `Person.zusatzfertigkeitenFreebeesAusgegeben`), nicht aus dem
+  Haupt-Freebee-Pool — der wird nur bei der finalen `/erstellung`-Route rein
+  aus dem eingereichten Body berechnet, ohne DB-Zustand, ein separat
+  auslösbarer Popup-Knopf kann während des laufenden Assistenten nicht
+  hineinrechnen, ohne den ganzen Erstellungs-Flow umzubauen.
+- **"+ Zusatzfertigkeit"-Popup:** identisch an zwei Stellen eingehängt
+  (`Charaktererstellung.tsx` UND `LevelUp.tsx`, dieselbe Komponente
+  `zusatzfertigkeiten/ZusatzfertigkeitPopup.tsx`) — zeigt die in der
+  Kampagne noch nicht gewählten Einträge mit Kurzbeschreibung + Suchfeld,
+  Klick fügt mit Stufe 1 hinzu (Backend entscheidet Freebee vs. EP anhand
+  `erstellungAbgeschlossen`). Charakterblatt zeigt gewählte
+  Zusatzfertigkeiten als eigenen Abschnitt (nicht ins feste `reihe(...)`-
+  Raster gemischt, weil die Liste pro Person variabel ist).
+- **SL-Tabelle:** neuer Burgermenü-Punkt "Zusatzfertigkeiten"
+  (`ZusatzfertigkeitenVerwaltung.tsx`) — schlichte Tabelle (Marks Vorgabe),
+  Zeile öffnet Bearbeiten-Popup (Name/Kurz-/Detailbeschreibung, `onBlur`-
+  Speichern wie beim Rassen-Editor, Löschen mit Bestätigung), "✨
+  KI-Vorschläge"-Popup (`ki_vorschlag.py`, zweistufig wie beim Händler-
+  Sortiment: Liste ansehen, editierbar, jeder Vorschlag einzeln
+  übernehmen — kein Sammel-Übernehmen).
+- **Löschen aus dem Katalog:** hartes `DETACH DELETE` inkl. der Kanten zu
+  Personen (anders als bei Rassen, wo `Person.rasse` als reiner Text
+  bestehen bleibt) — eine Zusatzfertigkeit hat kein eigenes Textfeld am
+  Charakter, sie IST die Kante zum Katalogknoten.
+- **Verifiziert:** `tsc -b` + `vite build` sauber, Backend-Import +
+  `openapi()['paths']`-Grep, `pytest` (446 grün, 2 vorbestehende
+  unabhängige Fehlschläge per `git stash`-Vergleich abgegrenzt), echter
+  End-to-End-Test gegen laufende Neo4j (Anlegen/Bearbeiten/Löschen,
+  Person wählt in Erstellungsphase [Freebee] UND Spielphase [EP],
+  steigert, Löschen kaskadiert korrekt) UND echter KI-Vorschlag-Aufruf
+  (Gemini/Mistral, 3 Vorschläge erhalten, einer übernommen). **Kein
+  Browser-Klicktest** — siehe „Offen“ oben.
 
 **Zuletzt gebaut (27.09.2026 — Autosave für Beschreibung/Notizen überall):**
 - **Was:** Alle Beschreibungs-/Notizen-RichTextEditoren außerhalb des Wikis

@@ -3,6 +3,25 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-28] create | entities/zusatzfertigkeiten
+
+Neues Backend-Modul `app/zusatzfertigkeiten/` gebaut: campaign-gebundener
+Katalog optionaler Fertigkeiten (Sprengstoffe, Esoterik, Gesetzeskunde,
+Kosmologie, Rätsel — bisher nur `docs/reference/Master/
+Optionale_Fertigkeiten.md`, nirgends im Code). Kein globaler Fixkatalog und
+kein Freigabe-Schalter wie bei Rassen (Marks Vorgabe: SL pflegt eine
+einfache Tabelle je Kampagne, jeder Eintrag sofort wählbar). Eigene
+Relation `HAT_ZUSATZFERTIGKEIT`, nicht `HAS_TRAIT`. "+ Zusatzfertigkeit"-
+Popup identisch in Charaktererstellung UND LevelUp. Kosten wie normale
+Fertigkeit (Freebee 2/Stufe, EP-Faktor 2/Neu-Kosten 3) — eigene, mit Mark
+noch nicht gegengeprüfte Design-Entscheidung, ebenso das separate
+Freebee-Kontingent (6 Punkte) für Neu-Erlernen während der Erstellung.
+KI-Vorschlag-Knopf (zweistufig wie beim Händler-Sortiment) echt mit
+Gemini/Mistral getestet. Vollständig per Backend-E2E-Test verifiziert,
+Frontend nur `tsc -b`/`vite build`, kein Browser-Klicktest.
+
+`index.md` Zusammenfassungszeile + Seitenzahl nachgezogen.
+
 ## [2026-09-27] update | entities/achievements (UI)
 
 Fünfte Runde: Mark beantwortet "wo finde ich die Achievements? gibts dafür
