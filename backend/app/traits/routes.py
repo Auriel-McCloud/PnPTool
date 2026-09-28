@@ -393,17 +393,12 @@ class ErstellungInput(BaseModel):
     fertigkeitPunkte: dict[str, int] = Field(default_factory=dict)
     hintergrundPunkte: dict[str, int] = Field(default_factory=dict)
     freebeePunkte: dict[str, int] = Field(default_factory=dict)
-    # Zusatzfertigkeiten (28.09.2026, Marks Korrektur): Auswahl passiert im
-    # Fertigkeiten-Schritt (siehe Charaktererstellung.tsx::ZusatzfertigkeitAuswahl),
-    # Bezahlung im Freebees-Schritt aus demselben Hauptpool wie alles andere.
-    # Schlüssel ist die Zusatzfertigkeit-ID (nicht der Name — die Katalog-IDs
-    # sind campaign-gebunden und eindeutig), Wert die Freebee-Punkte darauf
-    # (0 oder 1, siehe FREEBEE_MAX_JE_FERTIGKEIT). Eine Zusatzfertigkeit OHNE
-    # Eintrag hier bekommt trotzdem rating 1, wenn sie in dieser Liste steht
-    # — die Wahl selbst (Fertigkeiten-Schritt) ist unabhängig vom Freebee-Kauf
-    # (Freebees-Schritt): 0 Punkte macht das Rating am Ende nicht 0, sondern
-    # 1 (siehe erstelle_charakter unten).
+    # Zusatzfertigkeiten: Paketpunkte aus dem Fertigkeiten-Schritt
+    # (Schlüssel = Katalog-ID, 0 = gewählt ohne Slot). Zählen in dieselbe
+    # Paketverteilung wie normale Fertigkeiten.
     zusatzfertigkeitPunkte: dict[str, int] = Field(default_factory=dict)
+    # Freebee-Aufschlag darauf (0 oder 1), aus dem gemeinsamen Hauptpool.
+    zusatzfertigkeitFreebees: dict[str, int] = Field(default_factory=dict)
     freebeeWillenskraft: int = Field(default=0, ge=0)
     freebeeKredit: int = Field(default=0, ge=0)
     freebeeEigenkapital: int = Field(default=0, ge=0)
@@ -595,7 +590,7 @@ async def erstelle_charakter(
     auswahl["weg"] = weg_intern
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
     fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
-    for zid in body.zusatzfertigkeitPunkte:
+    for zid in set(body.zusatzfertigkeitPunkte) | set(body.zusatzfertigkeitFreebees):
         if zid not in zusatzfertigkeit_ids:
             fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")
     if not body.name.strip():
@@ -616,25 +611,17 @@ async def erstelle_charakter(
         if eintrag["name"] not in werte and eintrag["category"] in erlaubte_kategorien:
             werte[eintrag["name"]] = 0
     await repository.set_ratings_bulk(campaign_id, person_id, werte)
-    # Zusatzfertigkeiten: HAT_ZUSATZFERTIGKEIT-Kanten setzen. Rating = die im
-    # Freebees-Schritt darauf verwendeten Punkte (0 oder 1, siehe
-    # FREEBEE_MAX_JE_FERTIGKEIT) — exakt wie eine frische, bei 0 startende
-    # Fertigkeit. Eine im Fertigkeiten-Schritt gewählte, aber im
-    # Freebees-Schritt NICHT bezahlte Zusatzfertigkeit bekommt keine Kante
-    # (Mark, Punkt 5: "gewählten+bezahlten" landen im Charakterblatt). Bei
-    # erneuter Einreichung (SL-Korrektur) fällt eine zwischenzeitlich wieder
-    # abgewählte/nicht mehr bezahlte Zusatzfertigkeit weg, genau wie ein aus
-    # dem Fertigkeitspaket entferntes Trait auf 0 zurückfällt.
+    # Zusatzfertigkeiten: jede im Fertigkeiten-Schritt gewählte ID bekommt
+    # eine Kante (auch mit rating 0 — sie wandert ins Blatt und kann dort
+    # bzw. per Freebees/EP Punkte bekommen). Rating = Paket + Freebee.
     bereits_gewaehlt = await zusatzfertigkeiten_repository.gewaehlte_ids(campaign_id, person_id)
-    neu_gewaehlt = {
-        zid for zid, zusatz in (body.zusatzfertigkeitPunkte or {}).items() if int(zusatz) > 0
-    }
+    neu_gewaehlt = set(body.zusatzfertigkeitPunkte or {})
     for zid in bereits_gewaehlt - neu_gewaehlt:
         await zusatzfertigkeiten_repository.entferne_von_person(campaign_id, person_id, zid)
+    freebees_zf = body.zusatzfertigkeitFreebees or {}
     for zid in neu_gewaehlt:
-        await zusatzfertigkeiten_repository.hinzufuegen(
-            campaign_id, person_id, zid, int(body.zusatzfertigkeitPunkte[zid])
-        )
+        rating = int(body.zusatzfertigkeitPunkte.get(zid, 0)) + int(freebees_zf.get(zid, 0))
+        await zusatzfertigkeiten_repository.hinzufuegen(campaign_id, person_id, zid, rating)
     # Der Rassendeckel gilt ein Leben lang, nicht nur bei der Erstellung —
     # er muss deshalb als maxOverride ans Blatt (siehe
     # erstellung.py::lebensmaxima). Ohne diesen Schritt fiel jedes Attribut

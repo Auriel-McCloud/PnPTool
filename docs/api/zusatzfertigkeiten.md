@@ -98,11 +98,13 @@ bei fremden Personen, wie überall sonst im Tool) — Zugriffsschutz-Test in
 (`backend/app/traits/routes.py::erstelle_charakter`, kein eigenes
 `docs/api/`-Kapitel — Charaktererstellung ist bisher nicht dort
 dokumentiert) trägt jetzt ein zusätzliches Feld
-`zusatzfertigkeitPunkte: dict[str, int]` (Zusatzfertigkeit-ID → Freebee-
-Punkte, 0 oder 1) im `ErstellungInput`-Body. Der Server prüft die IDs gegen
-den campaign-gebundenen Katalog, rechnet die Kosten in die
-Freebee-Gesamtrechnung ein und setzt am Ende die
-`HAT_ZUSATZFERTIGKEIT`-Kanten — nur für Einträge mit Punkten > 0.
+`zusatzfertigkeitPunkte: dict[str, int]` (Zusatzfertigkeit-ID → Paketpunkte,
+0 = gewählt ohne Slot) und `zusatzfertigkeitFreebees: dict[str, int]` (0 oder 1
+Freebee-Aufschlag) im `ErstellungInput`-Body. Der Server prüft die IDs gegen
+den campaign-gebundenen Katalog, zählt Paketpunkte in dieselbe Fertigkeits-
+Paketverteilung, rechnet nur den Freebee-Aufschlag in die Freebee-Gesamtrechnung
+ein und setzt am Ende die `HAT_ZUSATZFERTIGKEIT`-Kanten — auch bei rating 0
+(gewählt, noch ohne Punkte). Rating = Paket + Freebee.
 
 ### Antwortformat der Personen-Routen
 

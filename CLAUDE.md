@@ -222,6 +222,19 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (28.09.2026, Abend — Zusatzfertigkeiten als Punktzeilen):**
+- **Was:** Mark fand die Klick-Liste ohne Punkte falsch. Gewünscht: Button
+  „Zusatzfertigkeiten“ im Fertigkeiten-Popup → nested Auswahl-Fenster →
+  gewählte Skills erscheinen als normale Punktzeilen im selben Raster
+  (Paket-Slots) und wandern ins Charakterblatt.
+- **UI:** Button oben im Fertigkeiten-Fenster (nicht unter Sphären versteckt).
+  Nested `Fenster` mit `ZusatzfertigkeitAuswahl`. Gewählte Einträge mit
+  `DotPool` wie Diebeshandwerk, zählen in dieselbe Paketverteilung.
+- **Backend:** `ErstellungInput.zusatzfertigkeitPunkte` = Paketpunkte (0 =
+  gewählt ohne Slot). Neues Feld `zusatzfertigkeitFreebees` (0 oder 1) für
+  den Freebee-Aufschlag. Rating = Paket + Freebee. Kante auch bei rating 0.
+- **Verifiziert:** `tsc -b` sauber. Kein Browser-Klicktest von hier.
+
 **Zuletzt gebaut (28.09.2026, später am Tag — Zusatzfertigkeiten-Erstellung KORRIGIERT):**
 - **Was:** Mark hat die Erstellungs-Integration von Zusatzfertigkeiten (siehe
   Eintrag direkt unten) noch am selben Tag ausdrücklich zurückgewiesen,

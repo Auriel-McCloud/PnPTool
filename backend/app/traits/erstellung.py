@@ -402,15 +402,11 @@ def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> in
     summe += FREEBEE_KOSTEN_WILLENSKRAFT * max(0, int(auswahl.get("freebeeWillenskraft") or 0))
     summe += FREEBEE_KOSTEN_KREDIT * max(0, int(auswahl.get("freebeeKredit") or 0))
     summe += FREEBEE_KOSTEN_EIGENKAPITAL * max(0, int(auswahl.get("freebeeEigenkapital") or 0))
-    # Zusatzfertigkeiten (28.09.2026, Mark korrigierte das eigene Freebee-
-    # Budget vom selben Tag: "sollten dann auch mit den normalen freebees
-    # abgerechnet werden können"): eine im Fertigkeiten-Schritt gewählte
-    # Zusatzfertigkeit kostet denselben Preis wie eine neu gekaufte normale
-    # Fertigkeit (2), bezahlt aus demselben Hauptpool. Eigener Record statt
-    # eines Eintrags in `freebeePunkte`, weil der Schlüssel eine
-    # Zusatzfertigkeit-ID ist, kein Traitname aus dem Katalog.
+    # Zusatzfertigkeiten: nur der Freebee-Aufschlag kostet (2 je Punkt),
+    # die Paketpunkte aus dem Fertigkeiten-Schritt sind schon durch das
+    # Fertigkeitspaket abgegolten — analog zu einer normalen Fertigkeit.
     summe += FREEBEE_KOSTEN_JE_KATEGORIE["Fertigkeit"] * sum(
-        1 for p in (auswahl.get("zusatzfertigkeitPunkte") or {}).values() if int(p) > 0
+        1 for p in (auswahl.get("zusatzfertigkeitFreebees") or {}).values() if int(p) > 0
     )
     return summe
 
@@ -470,8 +466,16 @@ def pruefe(
         fehler.append(f"Unbekanntes Fertigkeitspaket: {paket_id}")
     else:
         gewaehlt = {n: int(w) for n, w in (auswahl.get("fertigkeitPunkte") or {}).items() if int(w) > 0}
+        # Zusatzfertigkeiten (28.09.2026, Mark: Button → Auswahl → erscheinen
+        # im Raster und bekommen dieselben Paketpunkte): ihre Paket-Werte
+        # zählen in dieselbe Verteilung, sind aber keine TraitDef-Namen.
+        zusatz_paket = {
+            zid: int(w)
+            for zid, w in (auswahl.get("zusatzfertigkeitPunkte") or {}).items()
+            if int(w) > 0
+        }
         ist: dict[int, int] = {}
-        for wert in gewaehlt.values():
+        for wert in list(gewaehlt.values()) + list(zusatz_paket.values()):
             ist[wert] = ist.get(wert, 0) + 1
         if ist != paket["verteilung"]:
             beschreibe = lambda v: ", ".join(f"{a}× auf {w}" for w, a in sorted(v.items(), reverse=True)) or "nichts"
@@ -524,13 +528,9 @@ def pruefe(
                 f"{name}: Freebees heben eine Fertigkeit um höchstens "
                 f"{FREEBEE_MAX_JE_FERTIGKEIT} Punkt."
             )
-    # Zusatzfertigkeiten (28.09.2026, Marks Korrektur desselben Tages: "sollten
-    # dann auch mit den normalen freebees abgerechnet werden können"): die
-    # ID-Existenzprüfung braucht Datenbankzugriff und läuft deshalb in
-    # traits/routes.py::erstelle_charakter — hier nur die reine Regel, dass
-    # eine Zusatzfertigkeit per Freebee höchstens um FREEBEE_MAX_JE_FERTIGKEIT
-    # (1) steigt, genau wie eine normale Fertigkeit.
-    for zid, zusatz in (auswahl.get("zusatzfertigkeitPunkte") or {}).items():
+    # Zusatzfertigkeiten: Paketpunkte unbegrenzt im Rahmen des Pakets
+    # (Prüfung oben), Freebee-Aufschlag höchstens FREEBEE_MAX_JE_FERTIGKEIT.
+    for zid, zusatz in (auswahl.get("zusatzfertigkeitFreebees") or {}).items():
         zusatz = int(zusatz)
         if zusatz < 0 or zusatz > FREEBEE_MAX_JE_FERTIGKEIT:
             fehler.append(

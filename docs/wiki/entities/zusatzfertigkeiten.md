@@ -57,6 +57,17 @@ Neu-Erlernen UND jedes Steigern über EP, exakt wie ein normaler
 Fertigkeitskauf (`traits/routes.py::steigere_wert`). **Das bleibt
 unverändert** — nur die Erstellungsphase wurde umgebaut.
 
+## Button + Punktzeilen im Fertigkeiten-Raster (28.09.2026, Abend)
+
+Mark, nach dem ersten Umbau: die Klick-Liste ohne Punkte reicht nicht.
+Gewünscht: Button „Zusatzfertigkeiten“ im Fertigkeiten-Popup → nested
+Auswahl-Fenster → gewählte Skills erscheinen als normale Punktzeilen
+(DotPool) im selben Raster, verbrauchen Paket-Slots, wandern ins Blatt.
+
+- `ErstellungInput.zusatzfertigkeitPunkte` = Paketpunkte (0 = gewählt ohne Slot)
+- `ErstellungInput.zusatzfertigkeitFreebees` = Freebee-Aufschlag (0 oder 1)
+- Rating = Paket + Freebee; Kante auch bei rating 0
+
 ## Umbau: Auswahl im Fertigkeiten-Schritt, Bezahlung im Freebees-Schritt (28.09.2026)
 
 Mark, wörtlich, zur ersten Version (Popup-Button in der Erstellungs-

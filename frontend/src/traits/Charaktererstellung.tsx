@@ -101,15 +101,11 @@ export function Charaktererstellung({
   // Der Name selbst ist jetzt Teil der Erstellung statt SL-Vorgabe — der
   // Platzhalter (meist "Neuer PC") steht nur als Startwert im Feld.
   const [name, setName] = useState(anfangsName);
-  // Zusatzfertigkeiten (28.09.2026, Marks Korrektur): Auswahl passiert im
-  // Fertigkeiten-Schritt (ZusatzfertigkeitAuswahl, rein lokaler State, kein
-  // Server-Write), Bezahlung im Freebees-Schritt aus demselben Hauptpool —
-  // genau wie bei einer normalen Fertigkeit. `zusatzfertigkeiten` hält die
-  // im Katalog gewählten Einträge (für Name/Kurzbeschreibung), `zusatz
-  // fertigkeitFreebees` die im Freebees-Schritt darauf verwendeten Punkte
-  // (0 oder 1, siehe FREEBEE_MAX_JE_FERTIGKEIT) — keyed nach Zusatz
-  // fertigkeit-ID statt Traitname, weil der Katalog campaign-gebunden ist.
+  // Zusatzfertigkeiten: Button im Fertigkeiten-Popup öffnet die Katalogwahl.
+  // Gewählte Einträge erscheinen als normale Punktzeilen im selben Raster
+  // (Paket-Slots) und später im Freebees-Schritt. Kein Server-Write bis Submit.
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
+  const [zusatzfertigkeitPaketPunkte, setZusatzfertigkeitPaketPunkte] = useState<Record<string, number>>({});
   const [zusatzfertigkeitFreebees, setZusatzfertigkeitFreebees] = useState<Record<string, number>>({});
 
   function zusatzfertigkeitWaehlen(z: Zusatzfertigkeit) {
@@ -118,9 +114,12 @@ export function Charaktererstellung({
 
   function zusatzfertigkeitAbwaehlen(id: string) {
     setZusatzfertigkeiten((alt) => alt.filter((z) => z.id !== id));
-    // Wegfallende Auswahl reisst auch einen darauf gesetzten Freebee-Punkt
-    // mit — sonst bliebe eine "Geisterbezahlung" auf einer Fertigkeit
-    // stehen, die gar nicht mehr gewählt ist.
+    setZusatzfertigkeitPaketPunkte((alt) => {
+      if (!(id in alt)) return alt;
+      const neu = { ...alt };
+      delete neu[id];
+      return neu;
+    });
     setZusatzfertigkeitFreebees((alt) => {
       if (!(id in alt)) return alt;
       const neu = { ...alt };
@@ -213,8 +212,11 @@ export function Charaktererstellung({
     for (const wert of Object.values(fertigkeitPunkte)) {
       if (wert > 0) offen[wert] = (offen[wert] ?? 0) - 1;
     }
+    for (const wert of Object.values(zusatzfertigkeitPaketPunkte)) {
+      if (wert > 0) offen[wert] = (offen[wert] ?? 0) - 1;
+    }
     return offen;
-  }, [gewaehltesPaket, fertigkeitPunkte]);
+  }, [gewaehltesPaket, fertigkeitPunkte, zusatzfertigkeitPaketPunkte]);
 
   const kategorieVon = useMemo(
     () => Object.fromEntries(katalog.map((t) => [t.name, t.category])),
@@ -316,7 +318,10 @@ export function Charaktererstellung({
       fertigkeitPunkte,
       hintergrundPunkte,
       freebeePunkte,
-      zusatzfertigkeitPunkte: zusatzfertigkeitFreebees,
+      zusatzfertigkeitPunkte: Object.fromEntries(
+        zusatzfertigkeiten.map((z) => [z.id, zusatzfertigkeitPaketPunkte[z.id] || 0]),
+      ),
+      zusatzfertigkeitFreebees,
       freebeeWillenskraft,
       freebeeKredit,
       freebeeEigenkapital,
@@ -411,6 +416,7 @@ export function Charaktererstellung({
             onPaket={(p) => {
               setPaket(p);
               setFertigkeitPunkte({});
+              setZusatzfertigkeitPaketPunkte({});
             }}
             werte={fertigkeitPunkte}
             offen={offeneFertigkeiten}
@@ -420,6 +426,8 @@ export function Charaktererstellung({
             assistentWerte={assistentWerte}
             attributKategorien={regeln.attributKategorien}
             zusatzfertigkeiten={zusatzfertigkeiten}
+            zusatzfertigkeitPaketPunkte={zusatzfertigkeitPaketPunkte}
+            onZusatzfertigkeitPaket={setZusatzfertigkeitPaketPunkte}
             onZusatzfertigkeitWaehlen={zusatzfertigkeitWaehlen}
             onZusatzfertigkeitAbwaehlen={zusatzfertigkeitAbwaehlen}
           />
@@ -451,6 +459,7 @@ export function Charaktererstellung({
             onEigenkapital={setFreebeeEigenkapital}
             magieFlavor={weg === "HAERETIKER" ? "HAERETIKER" : "MAGIER"}
             zusatzfertigkeiten={zusatzfertigkeiten}
+            zusatzfertigkeitPaketPunkte={zusatzfertigkeitPaketPunkte}
             zusatzfertigkeitPunkte={zusatzfertigkeitFreebees}
             onZusatzfertigkeitPunkte={setZusatzfertigkeitFreebees}
           />
@@ -823,6 +832,8 @@ function SchrittFertigkeiten({
   assistentWerte,
   attributKategorien,
   zusatzfertigkeiten,
+  zusatzfertigkeitPaketPunkte,
+  onZusatzfertigkeitPaket,
   onZusatzfertigkeitWaehlen,
   onZusatzfertigkeitAbwaehlen,
 }: {
@@ -840,9 +851,9 @@ function SchrittFertigkeiten({
   weg: string;
   assistentWerte: Record<string, number>;
   attributKategorien: { id: string; attribute: string[] }[];
-  /** Zusatzfertigkeiten (28.09.2026, Marks Korrektur): Auswahl gehört hierher,
-   * nicht in einen eigenständigen Popup-Button in der Kopfzeile. */
   zusatzfertigkeiten: Zusatzfertigkeit[];
+  zusatzfertigkeitPaketPunkte: Record<string, number>;
+  onZusatzfertigkeitPaket: (werte: Record<string, number>) => void;
   onZusatzfertigkeitWaehlen: (z: Zusatzfertigkeit) => void;
   onZusatzfertigkeitAbwaehlen: (id: string) => void;
 }) {
@@ -851,9 +862,12 @@ function SchrittFertigkeiten({
   // durcheinander. Im Fenster ist Scrollen erlaubt (docs/ui-konzept.md), und
   // die Aufteilung ist dieselbe wie auf dem fertigen Blatt.
   const [auswahlOffen, setAuswahlOffen] = useState(false);
+  const [katalogOffen, setKatalogOffen] = useState(false);
   const gewaehlt = regeln.fertigkeitsPakete.find((p) => p.id === paket);
   const hoechster = gewaehlt ? Math.max(...gewaehlt.verteilung.map((v) => v.wert)) : 0;
-  const vergeben = Object.values(werte).filter((w) => w > 0).length;
+  const vergeben =
+    Object.values(werte).filter((w) => w > 0).length +
+    Object.values(zusatzfertigkeitPaketPunkte).filter((w) => w > 0).length;
 
   // Mark, 27.09.2026: der Assistent soll nicht von Anfang an dastehen und
   // nicht "auf einmal alles" melden, nur weil noch fast nichts vergeben ist
@@ -966,6 +980,38 @@ function SchrittFertigkeiten({
               nimmt ihn zurück.
             </p>
 
+            <button type="button" className="er-weiter" onClick={() => setKatalogOffen(true)}>
+              Zusatzfertigkeiten
+            </button>
+
+            {zusatzfertigkeiten.length > 0 && (
+              <section style={{ "--cb-ton": TON.Fertigkeit } as React.CSSProperties}>
+                <h3 className="er-spalte-titel">Zusatzfertigkeiten</h3>
+                <div
+                  className="er-spaltenraster"
+                  style={{ "--er-zeilen": Math.ceil(zusatzfertigkeiten.length / 3) } as React.CSSProperties}
+                >
+                  {zusatzfertigkeiten.map((z) => {
+                    const wert = zusatzfertigkeitPaketPunkte[z.id] || 0;
+                    return (
+                      <div key={z.id} className="er-wert">
+                        <span className="er-wert-name">{z.name}</span>
+                        <DotPool
+                          value={wert}
+                          max={hoechster}
+                          onChange={(neu) => {
+                            const ziel = neu === wert ? 0 : neu;
+                            if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                            onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: ziel });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {/* Hexkraft/NeuroWeavingWert (Sockel) müssen direkt über ihrer
                 zugehörigen Gruppe stehen (Glauben/Hexkraft über Sphären,
                 NeuroWeavingWert über den NeuroWeaving-Fertigkeiten) — nicht
@@ -1045,27 +1091,20 @@ function SchrittFertigkeiten({
               return knoten;
             })}
 
-            {/* Zusatzfertigkeiten (28.09.2026, Marks Korrektur): Auswahl
-                gehört hierher, in den Fertigkeiten-Schritt selbst — vorher
-                sass sie in einem eigenständigen Popup-Button in der
-                Kopfzeile, den Mark ausdrücklich zurückgewiesen hat
-                ("erscheinen die einfach nicht wenn sie nicht zuvor schon
-                bei der Fertigkeiten Vergabe ausgewählt wurden"). Rein
-                lokaler State, kein Server-Write — Bezahlung folgt erst im
-                Freebees-Schritt aus dem Hauptpool. */}
-            <section>
-              <h3 className="er-spalte-titel">Zusatzfertigkeiten</h3>
-              <p className="er-hinweis">
-                Von der Spielleitung freigegebene Sonderfertigkeiten dieser Kampagne. Eine Auswahl
-                hier reserviert nur den Platz — bezahlt wird im Freebees-Schritt.
-              </p>
+            <Fenster
+              offen={katalogOffen}
+              titel="Zusatzfertigkeiten"
+              unterzeile="Auswählen — danach erscheinen sie oben im Raster und können Punkte bekommen."
+              kennung="zusatzfertigkeit-katalog"
+              onSchliessen={() => setKatalogOffen(false)}
+            >
               <ZusatzfertigkeitAuswahl
                 campaignId={campaignId}
                 gewaehlteIds={zusatzfertigkeiten.map((z) => z.id)}
                 onWaehlen={onZusatzfertigkeitWaehlen}
                 onAbwaehlen={onZusatzfertigkeitAbwaehlen}
               />
-            </section>
+            </Fenster>
           </Fenster>
         </>
       )}
@@ -1132,6 +1171,7 @@ function SchrittFreebees({
   onEigenkapital,
   magieFlavor,
   zusatzfertigkeiten,
+  zusatzfertigkeitPaketPunkte,
   zusatzfertigkeitPunkte,
   onZusatzfertigkeitPunkte,
 }: {
@@ -1165,6 +1205,7 @@ function SchrittFreebees({
    * ausgewählt wurden") — Bezahlung aus demselben Hauptpool, Kategorie
    * "Fertigkeit" (2 Freebees, höchstens 1 Punkt beim Ersterwerb). */
   zusatzfertigkeiten: Zusatzfertigkeit[];
+  zusatzfertigkeitPaketPunkte: Record<string, number>;
   zusatzfertigkeitPunkte: Record<string, number>;
   onZusatzfertigkeitPunkte: (werte: Record<string, number>) => void;
 }) {
@@ -1271,6 +1312,7 @@ function SchrittFreebees({
             style={{ "--er-zeilen": Math.ceil(zusatzfertigkeiten.length / 3) } as React.CSSProperties}
           >
             {zusatzfertigkeiten.map((z) => {
+              const basis = zusatzfertigkeitPaketPunkte[z.id] || 0;
               const zusatz = zusatzfertigkeitPunkte[z.id] || 0;
               const preis = preise["Fertigkeit"] ?? 0;
               return (
@@ -1280,10 +1322,11 @@ function SchrittFreebees({
                     {zusatz > 0 && <em className="er-freebee-plus">+{zusatz}</em>}
                   </span>
                   <DotPool
-                    value={zusatz}
-                    max={regeln.freebees.maxJeFertigkeit}
+                    value={basis + zusatz}
+                    max={basis + regeln.freebees.maxJeFertigkeit}
+                    fest={basis}
                     onChange={(ziel) => {
-                      const neuerZusatz = Math.max(0, ziel);
+                      const neuerZusatz = Math.max(0, ziel - basis);
                       if (neuerZusatz > regeln.freebees.maxJeFertigkeit) return;
                       if ((neuerZusatz - zusatz) * preis > frei) return;
                       onZusatzfertigkeitPunkte({ ...zusatzfertigkeitPunkte, [z.id]: neuerZusatz });

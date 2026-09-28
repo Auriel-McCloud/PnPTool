@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-28] update | entities/zusatzfertigkeiten (Button + Punktzeilen)
+
+Mark: Auswahl-Liste ohne Punkte reicht nicht. Umbau: Button „Zusatzfertigkeiten“
+oben im Fertigkeiten-Popup öffnet ein nested Fenster zur Katalogwahl; gewählte
+Einträge erscheinen als DotPool-Zeilen im selben Raster und verbrauchen
+Paket-Slots. Freebees bleiben Aufschlag (+1, Kosten 2). Backend:
+`zusatzfertigkeitPunkte` = Paket, neu `zusatzfertigkeitFreebees` = Freebee.
+Kante auch bei rating 0 (wandern ins Blatt).
+
 ## [2026-09-28] update | entities/zusatzfertigkeiten (Erstellung korrigiert)
 
 Mark hat die morgens gebaute Erstellungs-Integration (eigenständiger
