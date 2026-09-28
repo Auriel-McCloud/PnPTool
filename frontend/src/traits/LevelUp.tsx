@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { DotPool } from "./DotPool";
 import { bogenApi, KATEGORIE_TITEL, type Steigerungen, type Steigerungspreis } from "./bogenApi";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
+import { ZusatzfertigkeitPopup } from "../zusatzfertigkeiten/ZusatzfertigkeitPopup";
+import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./levelup.css";
 
 /**
@@ -89,6 +91,43 @@ export function LevelUp({
 
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
+
+  // Zusatzfertigkeiten (28.09.2026): eigener Popup-Button, derselbe wie in
+  // der Charaktererstellung — kein Sonderfall. Das Steigern einer bereits
+  // gewählten Zusatzfertigkeit läuft direkt über den Server (eigene Route),
+  // nicht über die lokale Kauf-Sammel-Logik oben: die kennt nur den
+  // TraitDef-Katalog, Zusatzfertigkeiten sind eine eigene Relation.
+  const [zusatzfertigkeitenOffen, setZusatzfertigkeitenOffen] = useState(false);
+  const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<PersonZusatzfertigkeit[]>([]);
+  const [steigertGerade, setSteigertGerade] = useState<string | null>(null);
+
+  function zusatzfertigkeitenLaden() {
+    zusatzfertigkeitenApi
+      .vonPerson(campaignId, personId)
+      .then((antwort) => setZusatzfertigkeiten(antwort.gewaehlt))
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    zusatzfertigkeitenLaden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, personId]);
+
+  async function zusatzfertigkeitSteigern(id: string) {
+    setSteigertGerade(id);
+    try {
+      const antwort = await zusatzfertigkeitenApi.steigern(campaignId, personId, id);
+      setZusatzfertigkeiten(antwort.gewaehlt);
+      // Der Server hat EP abgebucht — Originalstand neu laden, damit die
+      // übrige Anzeige (verfügbare EP) stimmt.
+      const neuerStand = await bogenApi.preise(campaignId, personId);
+      setOriginal(neuerStand);
+    } catch (e) {
+      setFehler((e as Error).message || "Das Steigern hat nicht geklappt.");
+    } finally {
+      setSteigertGerade(null);
+    }
+  }
 
   useEffect(() => {
     bogenApi
@@ -220,6 +259,13 @@ export function LevelUp({
           </span>
         </div>
         <div className="lu-aktionen">
+          <button
+            type="button"
+            className="lu-btn lu-btn-zusatzfertigkeit"
+            onClick={() => setZusatzfertigkeitenOffen(true)}
+          >
+            + Zusatzfertigkeit
+          </button>
           {hatAenderungen && (
             <>
               <button
@@ -303,7 +349,44 @@ export function LevelUp({
             </button>
           </div>
         </section>
+
+        {/* Zusatzfertigkeiten (28.09.2026): eigener Abschnitt, nicht ins
+            feste Fertigkeiten-Raster gemischt — die Liste ist pro Person
+            variabel (campaign-gebundener Katalog, kein TraitDef). */}
+        {zusatzfertigkeiten.length > 0 && (
+          <section>
+            <h3 className="lu-gruppe-titel">Zusatzfertigkeiten</h3>
+            <div className="lu-raster">
+              {zusatzfertigkeiten.map((z) => {
+                const voll = z.rating >= 6;
+                const laedtGerade = steigertGerade === z.id;
+                return (
+                  <button
+                    key={z.id}
+                    type="button"
+                    className={`lu-wert${!voll ? " lu-leistbar" : " lu-voll"}`}
+                    onClick={() => !voll && !laedtGerade && zusatzfertigkeitSteigern(z.id)}
+                    disabled={voll || laedtGerade || laeuft}
+                    title={voll ? `${z.name} steht auf dem Maximum 6` : `${z.kurzbeschreibung || z.name} — steigern kostet EP`}
+                  >
+                    <span className="lu-name">{z.name}</span>
+                    <DotPool value={z.rating} max={6} />
+                    <span className="lu-preis">{voll ? "max" : laedtGerade ? "…" : "EP"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
+
+      <ZusatzfertigkeitPopup
+        campaignId={campaignId}
+        personId={personId}
+        offen={zusatzfertigkeitenOffen}
+        onSchliessen={() => setZusatzfertigkeitenOffen(false)}
+        onHinzugefuegt={(antwort) => setZusatzfertigkeiten(antwort.gewaehlt)}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
 import { magieBegriff } from "./magieBegriffe";
+import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -88,6 +89,9 @@ export function Charakterblatt({
   // Steckbrief nachträglich bearbeiten (CLAUDE.md, Punkt 12): Konzept,
   // Ambition, Verlangen, Ziel sind nach der Erstellung sonst read-only.
   const [steckbriefOffen, setSteckbriefOffen] = useState(false);
+  // Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht ins
+  // feste reihe(...)-Raster gemischt — die Liste ist pro Person variabel.
+  const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<PersonZusatzfertigkeit[]>([]);
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
@@ -223,6 +227,13 @@ export function Charakterblatt({
   useEffect(() => {
     neuLaden();
   }, [campaignId, personId]);
+
+  useEffect(() => {
+    zusatzfertigkeitenApi
+      .vonPerson(campaignId, personId)
+      .then((antwort) => setZusatzfertigkeiten(antwort.gewaehlt))
+      .catch(() => {});
+  }, [campaignId, personId, ansicht]);
 
   // Gesetzte Werte nachschlagbar machen; der Katalog gibt die Reihenfolge vor,
   // damit auch ungesetzte Werte mit 0 erscheinen statt zu fehlen.
@@ -755,6 +766,34 @@ export function Charakterblatt({
                     </span>
                   </span>
                   <DotPool value={f.bonus} max={Math.max(f.bonus, 5)} onChange={undefined} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {/* Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht
+          ins feste reihe(...)-Raster gemischt — die Liste ist pro Person
+          variabel (campaign-gebundener Katalog, kein TraitDef). Steigern
+          passiert im LevelUp, hier nur Anzeige + Probenauslöser. */}
+      {zusatzfertigkeiten.length > 0 && (
+        <section className="cb-gruppe" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
+          <h3 className="cb-gruppe-titel">Zusatzfertigkeiten</h3>
+          <div className="cb-werte">
+            {zusatzfertigkeiten.map((z) => (
+              <div key={z.id} className="cb-wert-zeile">
+                <button
+                  type="button"
+                  className="cb-wert"
+                  onClick={() =>
+                    onWertGewaehlt
+                      ? onWertGewaehlt(z.name, z.rating, "Zusatzfertigkeit")
+                      : setProbe({ name: z.name, wert: z.rating, kategorie: "Zusatzfertigkeit" })
+                  }
+                  title={z.kurzbeschreibung || `${z.name} — wie viele Würfel?`}
+                >
+                  <span className="cb-wert-name">{z.name}</span>
+                  <DotPool value={z.rating} max={6} onChange={undefined} />
                 </button>
               </div>
             ))}

@@ -66,6 +66,16 @@
   background: color-mix(in srgb, var(--signal) 30%, transparent);
 }
 
+.lu-btn-zusatzfertigkeit {
+  background: color-mix(in srgb, var(--p-violett, var(--neon)) 15%, transparent);
+  border-color: var(--p-violett, var(--neon));
+  color: var(--p-violett, var(--neon));
+}
+
+.lu-btn-zusatzfertigkeit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-violett, var(--neon)) 30%, transparent);
+}
+
 .lu-konto {
   display: flex;
   align-items: baseline;

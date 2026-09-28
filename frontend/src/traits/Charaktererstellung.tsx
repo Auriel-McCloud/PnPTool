@@ -16,6 +16,8 @@ import {
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ErstellungsAssistent } from "./ErstellungsAssistent";
 import { ErstellungsKommentar } from "./ErstellungsKommentar";
+import { ZusatzfertigkeitPopup } from "../zusatzfertigkeiten/ZusatzfertigkeitPopup";
+import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -99,6 +101,12 @@ export function Charaktererstellung({
   // Der Name selbst ist jetzt Teil der Erstellung statt SL-Vorgabe — der
   // Platzhalter (meist "Neuer PC") steht nur als Startwert im Feld.
   const [name, setName] = useState(anfangsName);
+  // Zusatzfertigkeiten (28.09.2026): eigener Popup-Button, identisch an
+  // dieser Stelle UND im LevelUp — derselbe Popup, kein Sonderfall. Rein
+  // informell während der Erstellung: die Wahl selbst passiert serverseitig
+  // sofort (eigenes Freebee-Kontingent), das Blatt zeigt sie erst danach.
+  const [zusatzfertigkeitenOffen, setZusatzfertigkeitenOffen] = useState(false);
+  const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<PersonZusatzfertigkeit[]>([]);
 
   useEffect(() => {
     Promise.all([bogenApi.regeln(campaignId), traitsApi.getKatalog(campaignId)])
@@ -108,6 +116,13 @@ export function Charaktererstellung({
       })
       .catch(() => setFehler(["Die Erstellungsregeln konnten nicht geladen werden."]));
   }, [campaignId]);
+
+  useEffect(() => {
+    zusatzfertigkeitenApi
+      .vonPerson(campaignId, personId)
+      .then((antwort) => setZusatzfertigkeiten(antwort.gewaehlt))
+      .catch(() => {});
+  }, [campaignId, personId]);
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
@@ -340,7 +355,15 @@ export function Charaktererstellung({
             </li>
           ))}
         </ol>
+        {/* Zusatzfertigkeiten (28.09.2026): eigener Popup-Button, an
+            beliebiger Stelle im Ablauf nutzbar — die Wahl steht neben der
+            eigentlichen Erstellung und braucht keinen eigenen Schritt. */}
+        <button type="button" className="er-zusatzfertigkeit-btn" onClick={() => setZusatzfertigkeitenOffen(true)}>
+          + Zusatzfertigkeit
+          {zusatzfertigkeiten.length > 0 && <em> ({zusatzfertigkeiten.length})</em>}
+        </button>
       </header>
+
 
       <div className="er-buehne">
         {aktuell.id === "weg" && (
@@ -464,6 +487,13 @@ export function Charaktererstellung({
           </button>
         )}
       </footer>
+      <ZusatzfertigkeitPopup
+        campaignId={campaignId}
+        personId={personId}
+        offen={zusatzfertigkeitenOffen}
+        onSchliessen={() => setZusatzfertigkeitenOffen(false)}
+        onHinzugefuegt={(antwort) => setZusatzfertigkeiten(antwort.gewaehlt)}
+      />
     </div>
   );
 }

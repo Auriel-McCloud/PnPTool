@@ -1,0 +1,215 @@
+/* Zusatzfertigkeiten-Verwaltung. Schlichte Tabelle statt Kachelraster
+   (Marks Vorgabe: "eine einfache Tabelle") — Farben ausschliesslich als
+   Tokens, siehe docs/theming.md. */
+
+.zf-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.zf-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.zf-anzahl {
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.zf-ki-btn {
+  color: var(--p-violett, var(--neon));
+  border-color: var(--p-violett, var(--neon));
+}
+
+.zf-leer {
+  color: var(--text-aus);
+  font-style: italic;
+}
+
+.zf-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.zf-tabelle th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  border-bottom: 1px solid var(--linie);
+}
+
+.zf-zeile {
+  cursor: pointer;
+}
+
+.zf-zeile:hover {
+  background: var(--flaeche-tief);
+}
+
+.zf-zeile td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.zf-zeile-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.zf-zeile-kurz {
+  color: var(--text-leise);
+}
+
+.zf-zeile-kurz em {
+  color: var(--text-aus);
+}
+
+/* --- Editor im Fenster ------------------------------------------------ */
+
+.zf-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.zf-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.zf-feld input,
+.zf-feld textarea {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+}
+
+.zf-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--linie);
+}
+
+.zf-loeschen {
+  margin-left: auto;
+  color: var(--nein);
+  font-size: 12px;
+}
+
+.zf-neu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}
+
+/* --- KI-Vorschläge ------------------------------------------------------ */
+
+.zf-ki-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.zf-ki-fehler {
+  color: var(--signal);
+  font-size: 13px;
+}
+
+.zf-ki-neu {
+  align-self: flex-start;
+}
+
+.zf-ki-vorschlag {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.zf-ki-vorschlag[data-uebernommen="true"] {
+  opacity: 0.55;
+}
+
+.zf-ki-uebernehmen {
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+/* --- Spieler-Auswahl-Popup ---------------------------------------------- */
+
+.zfp-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.zfp-suche {
+  width: 100%;
+}
+
+.zfp-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zfp-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.zfp-eintrag:hover:not(:disabled) {
+  border-color: var(--neon);
+}
+
+.zfp-eintrag:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.zfp-eintrag-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.zfp-eintrag-kurz {
+  flex: 1;
+  color: var(--text-leise);
+  font-size: 13px;
+}
+
+.zfp-eintrag-knopf {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--neon);
+  white-space: nowrap;
+}
+

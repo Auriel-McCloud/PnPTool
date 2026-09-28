@@ -10,6 +10,7 @@ import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
 import { ShopUebersicht } from "./haendler/ShopUebersicht";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
+import { ZusatzfertigkeitenVerwaltung } from "./zusatzfertigkeiten/ZusatzfertigkeitenVerwaltung";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
@@ -71,6 +72,10 @@ const BEREICHE: Bereich[] = [
   // Der Rassen-Baukasten: Völker bauen und je Kampagne freigeben. Wie die
   // Augments ein Regelwerks-Bereich, deshalb dieselbe Leitfarbe.
   { id: "rassen", name: "Rassen", symbol: "🧬", farbe: "var(--bereich-regeln)" },
+  // Zusatzfertigkeiten (28.09.2026): campaign-gebundener Katalog optionaler
+  // Fertigkeiten (Sprengstoffe, Esoterik, ...) — SL pflegt Name+Beschreibung,
+  // Spieler wählen über einen eigenen Popup an Erstellung/LevelUp.
+  { id: "zusatzfertigkeiten", name: "Zusatzfertigkeiten", symbol: "◬", farbe: "var(--bereich-regeln)" },
   // Ideenschmiede: Entwürfe und KI-generierte Ideen sammeln, prüfen, verschieben
   { id: "ideenschmiede", name: "Schmiede", symbol: "🔧", farbe: "var(--bereich-schmiede)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
@@ -91,6 +96,7 @@ const TITEL: Record<string, string> = {
   kontakte: "Kontakte: wer kennt wen",
   party: "Party: wer gerade zusammen unterwegs ist",
   rassen: "Rassen: Baukasten und Freigabe",
+  zusatzfertigkeiten: "Zusatzfertigkeiten: Katalog optionaler Fertigkeiten",
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
 };
 
@@ -243,6 +249,9 @@ function Dashboard() {
           {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "party" && <PartyVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "zusatzfertigkeiten" && (
+            <ZusatzfertigkeitenVerwaltung key={ansichtKennung} campaignId={kampagne.id} />
+          )}
           {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zugang" && <SpielerVerwaltung campaignId={kampagne.id} />}
