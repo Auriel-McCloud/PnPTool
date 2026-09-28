@@ -49,6 +49,14 @@ _BOGEN_FELDER = [
     # war bis dahin für JEDEN Charakter unbeantwortbar. Wird von PersonCreate
     # per default_factory gesetzt, nicht rückwirkend für Bestandsdaten.
     "erstelltAm",
+    # Zusatzfertigkeiten (28.09.2026, app/zusatzfertigkeiten/): eigenes,
+    # separat budgetiertes Freebee-Kontingent für den "+ Zusatzfertigkeit"-
+    # Popup während der Erstellung — bewusst NICHT Teil des Haupt-Freebee-
+    # Pools (FREEBEES_GESAMT in erstellung.py), weil dieser nur innerhalb
+    # der EINEN Erstellungs-Einreichung (ErstellungInput) berechnet wird und
+    # keinen persistenten Zähler hat, an den sich ein separat auslösbarer
+    # Popup-Knopf anhängen könnte. Siehe zusatzfertigkeiten/routes.py.
+    "zusatzfertigkeitenFreebeesAusgegeben",
 ]
 
 # bildUrl: Aussehen einer Person, eines Ortes oder einer Szene. Die
@@ -110,6 +118,9 @@ _BOGEN_DEFAULTS: dict = {
     # (kann rückwirkend niemand mehr wissen) — bleibt bewusst leer statt
     # eines erfundenen Datums.
     "erstelltAm": "",
+    # Zusatzfertigkeiten: Bestandscharaktere haben noch nichts davon
+    # ausgegeben.
+    "zusatzfertigkeitenFreebeesAusgegeben": 0,
     # Bildergalerie: leeres Array als Standard
     "bilder": [],
     # Ideenschmiede: Bestandsdaten sind keine Entwürfe

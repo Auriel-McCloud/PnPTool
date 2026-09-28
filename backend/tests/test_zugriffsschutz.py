@@ -128,6 +128,14 @@ OHNE_GM_ERLAUBT = {
     # selbst: nur der eigene Charakter (empfaengerPersonId), nur solange die
     # Verhandlung noch OFFEN ist. Siehe app/verhandlung/routes.py::antworten.
     "/api/campaigns/{campaign_id}/verhandlungen/{verhandlung_id}/antwort",
+    # --- Zusatzfertigkeiten: der Spieler wählt/steigert am eigenen Charakter -
+    # Eine noch nicht gewählte Zusatzfertigkeit mit Stufe 1 anlegen — analog
+    # zu `steigern` (Fertigkeit von 0 auf 1 kaufen). Prüft die Person selbst,
+    # zieht Freebee ODER EP ab je nach Erstellungsphase. Siehe
+    # app/zusatzfertigkeiten/routes.py::zusatzfertigkeit_hinzufuegen.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/zusatzfertigkeiten",
+    # Ebenso: eine bereits gewählte Zusatzfertigkeit um einen Punkt steigern.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/zusatzfertigkeiten/{zusatzfertigkeit_id}/steigern",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.
@@ -157,6 +165,10 @@ NUR_SPIELLEITUNG_LESBAR = {
     # Kompletter Kampagnen-Export als ZIP — enthält u.a. alle Spieler-
     # Zugänge samt Passwort-Hash. Ausdrücklich nur die Spielleitung.
     "/api/campaigns/{campaign_id}/export",
+    # KI-Vorschläge für neue Zusatzfertigkeiten — was die KI vorschlägt, ist
+    # eine Entscheidungsgrundlage der Spielleitung (noch nicht Teil des
+    # Katalogs, keine Auskunft für Spieler). Siehe haendler-Analogie oben.
+    "/api/campaigns/{campaign_id}/zusatzfertigkeiten/ki-vorschlaege",
 }
 
 

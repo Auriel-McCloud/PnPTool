@@ -165,6 +165,10 @@ class PersonCreate(BaseModel):
     # default_factory statt fixem Default, damit jeder neue Aufruf den
     # tatsächlichen Zeitpunkt bekommt statt eines eingefrorenen Import-Werts.
     erstelltAm: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # Zusatzfertigkeiten (28.09.2026): eigenes, kleines Freebee-Kontingent
+    # für den "+ Zusatzfertigkeit"-Popup während der Erstellung, siehe
+    # app/zusatzfertigkeiten/routes.py.
+    zusatzfertigkeitenFreebeesAusgegeben: int = 0
 
 
 class PersonUpdate(BaseModel):
@@ -206,6 +210,7 @@ class PersonUpdate(BaseModel):
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
     notizenSichtbarFuer: list[str] | None = None
+    zusatzfertigkeitenFreebeesAusgegeben: int | None = None
 
 
 class PersonResponse(BaseModel):
@@ -252,6 +257,7 @@ class PersonResponse(BaseModel):
     notizenSichtbarkeit: str
     notizenSichtbarFuer: list[str]
     erstelltAm: str = ""
+    zusatzfertigkeitenFreebeesAusgegeben: int = 0
 
 
 class OrtCreate(BaseModel):

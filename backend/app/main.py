@@ -40,6 +40,8 @@ from app.spotify.routes import campaign_router as spotify_campaign_router
 from app.haendler.routes import router as haendler_router
 from app.verhandlung.routes import router as verhandlung_router
 from app.ereignisprotokoll.routes import router as ereignisprotokoll_router
+from app.zusatzfertigkeiten.routes import router as zusatzfertigkeiten_router
+from app.zusatzfertigkeiten.routes import personen_router as zusatzfertigkeiten_personen_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -104,6 +106,8 @@ app.include_router(spotify_campaign_router)
 app.include_router(haendler_router)
 app.include_router(verhandlung_router)
 app.include_router(ereignisprotokoll_router)
+app.include_router(zusatzfertigkeiten_router)
+app.include_router(zusatzfertigkeiten_personen_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
