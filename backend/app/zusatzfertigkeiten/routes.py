@@ -5,21 +5,21 @@ Kein Freigabe-Schalter wie bei Rassen — die Tabelle in `repository.py` IST
 schon die Freigabe für diese Kampagne (Marks Vorgabe, siehe dortiger
 Modul-Docstring).
 
-**Kosten-Design (eigene Entscheidung, siehe Abschlussbericht):** dieselbe
-Freebee-/EP-Kostentabelle wie eine normale Fertigkeit (`FREEBEE_KOSTEN_JE_
-KATEGORIE["Fertigkeit"]` bei der Erstellung, `erfahrung.kosten("Fertigkeit",
-...)` beim Steigern nach der Erstellung). Das neu Erlernen einer
-Zusatzfertigkeit während der Erstellung zieht aus einem EIGENEN, kleinen
-Freebee-Kontingent (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET`), nicht aus dem
-Haupt-Freebee-Pool (`erstellung.FREEBEES_GESAMT`): der Hauptpool wird erst
-bei der finalen `/erstellung`-Einreichung atomar geprüft (`pruefe()`/
-`freebee_kosten()` rechnen rein aus dem eingereichten `ErstellungInput`-Body,
-ohne Datenbankzustand) — ein separat auslösbarer Popup-Knopf, der schon
-WÄHREND des mehrstufigen Assistenten sofort einen DB-Schreibzugriff macht,
-kann in diese Rechnung nicht eingehängt werden, ohne den gesamten
-Erstellungs-Flow umzubauen. Ein eigenes kleines Budget (analog zu
-`HINTERGRUND_PUNKTE_GESAMT`, das ebenfalls ausserhalb des Haupt-Fertigkeits-
-pakets separat budgetiert ist) ist die am wenigsten invasive Lösung.
+**Kosten-Design, KORRIGIERT 28.09.2026 (Mark, wörtlich: "bei den freebees
+erscheinen die einfach nicht wenn sie nicht zuvor schon bei der Fertigkeiten
+Vergabe ausgewählt wurden, und wenn diese dort ausgewählt wurden werden die
+skills im CharakterBlatt erweitert und sollten dann auch mit den normalen
+freebees abgerechnet werden könne"):** es gibt **kein** separates
+Freebee-Kontingent für die Erstellungsphase mehr. Die Auswahl EINER
+Zusatzfertigkeit passiert im Fertigkeiten-Schritt der Charaktererstellung
+(rein lokaler React-State, kein Server-Write — siehe
+`frontend/src/traits/Charaktererstellung.tsx::ZusatzfertigkeitAuswahl`),
+die Bezahlung im Freebees-Schritt aus dem gemeinsamen Hauptpool
+(`traits/erstellung.py::freebee_kosten`/`pruefe`, Feld
+`ErstellungInput.zusatzfertigkeitPunkte`). Diese Route hier
+(`zusatzfertigkeit_hinzufuegen`) wird während der Erstellungsphase deshalb
+NICHT mehr genutzt — sie bleibt ausschließlich für die Spielphase (LevelUp,
+EP-Abzug), siehe `zusatzfertigkeit_hinzufuegen` unten.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -29,7 +29,6 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.ki.client import KiFehler
 from app.traits import erfahrung
-from app.traits.erstellung import FREEBEE_KOSTEN_JE_KATEGORIE
 from app.zusatzfertigkeiten import ki_vorschlag, repository
 from app.zusatzfertigkeiten.ki_vorschlag import ZusatzfertigkeitVorschlag
 from app.zusatzfertigkeiten.schemas import (
@@ -44,13 +43,6 @@ router = APIRouter(
     tags=["zusatzfertigkeiten"],
     dependencies=[Depends(require_campaign_zugang)],
 )
-
-# Freebee-Kosten je NEU erlernter Zusatzfertigkeit während der Erstellung —
-# derselbe Punktpreis wie eine normale Fertigkeit (siehe Moduldocstring).
-FREEBEE_KOSTEN = FREEBEE_KOSTEN_JE_KATEGORIE["Fertigkeit"]
-# Eigenes, kleines Kontingent nur für Zusatzfertigkeiten — reicht für drei
-# Stück bei der Erstellung. Siehe Moduldocstring zur Begründung.
-ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6
 
 
 @router.get("", response_model=list[ZusatzfertigkeitResponse])
@@ -126,12 +118,17 @@ class PersonZusatzfertigkeitenAntwort(BaseModel):
 
 async def _antwort(campaign_id: str, person: dict) -> PersonZusatzfertigkeitenAntwort:
     gewaehlt = await repository.zusatzfertigkeiten_der_person(campaign_id, person["id"])
-    ausgegeben = int(person.get("zusatzfertigkeitenFreebeesAusgegeben") or 0)
     verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
     return PersonZusatzfertigkeitenAntwort(
         gewaehlt=gewaehlt,
         erstellungAbgeschlossen=bool(person.get("erstellungAbgeschlossen")),
-        freebeesUebrig=max(0, ZUSATZFERTIGKEIT_FREEBEE_BUDGET - ausgegeben),
+        # Kein eigenes Freebee-Kontingent mehr (Moduldocstring, 28.09.2026):
+        # während der Erstellungsphase läuft die Wahl über den
+        # Fertigkeiten-/Freebees-Schritt der Charaktererstellung, nicht über
+        # diese Route. Bleibt 0 als reiner Platzhalter für die noch von
+        # ZusatzfertigkeitPopup.tsx erwartete Antwortform (LevelUp-Personen
+        # haben ohnehin immer erstellungAbgeschlossen=true).
+        freebeesUebrig=0,
         erfahrungVerfuegbar=verfuegbar,
     )
 
@@ -166,11 +163,13 @@ async def get_person_zusatzfertigkeiten(campaign_id: str, person_id: str, viewer
 async def zusatzfertigkeit_hinzufuegen(
     campaign_id: str, person_id: str, body: ZusatzfertigkeitHinzufuegenInput, viewer: Viewer = Depends(get_viewer)
 ):
-    """Eine noch nicht gewählte Zusatzfertigkeit mit Stufe 1 anlegen.
+    """Eine noch nicht gewählte Zusatzfertigkeit mit Stufe 1 anlegen — **nur
+    in der Spielphase** (LevelUp), EP-Abzug wie eine normale Fertigkeit.
 
-    Spieler dürfen das an ihrem eigenen Charakter — genau wie das normale
-    Steigern (traits/routes.py::steigere_wert). Zieht Freebee ODER EP ab,
-    je nachdem ob die Erstellung schon abgeschlossen ist (Moduldocstring).
+    Während der Erstellungsphase läuft die Wahl über den
+    Fertigkeiten-/Freebees-Schritt der Charaktererstellung (siehe
+    `traits/routes.py::erstelle_charakter`), nicht über diese Route — sie
+    lehnt vor Erstellungsabschluss deshalb ab (Moduldocstring, 28.09.2026).
     """
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
@@ -178,6 +177,13 @@ async def zusatzfertigkeit_hinzufuegen(
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    if not person.get("erstellungAbgeschlossen"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Vor Erstellungsabschluss werden Zusatzfertigkeiten im "
+            "Fertigkeiten-Schritt der Charaktererstellung gewählt, nicht hier.",
+        )
 
     zusatzfertigkeit = await repository.hole(campaign_id, body.zusatzfertigkeitId)
     if zusatzfertigkeit is None:
@@ -187,30 +193,16 @@ async def zusatzfertigkeit_hinzufuegen(
     if body.zusatzfertigkeitId in bereits:
         raise HTTPException(status.HTTP_409_CONFLICT, f"{zusatzfertigkeit['name']} ist bereits gewählt.")
 
-    if person.get("erstellungAbgeschlossen"):
-        # Spielphase: wie eine ganz normale Fertigkeit von 0 auf 1 kaufen.
-        preis = erfahrung.kosten("Fertigkeit", 0) or 0
-        verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
-        if preis > verfuegbar:
-            raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
-        await repository.hinzufuegen(campaign_id, person_id, body.zusatzfertigkeitId, 1)
-        aktualisiert = await update_node(
-            "Person", PERSON_FIELDS, campaign_id, person_id,
-            {"erfahrungAusgegeben": int(person.get("erfahrungAusgegeben") or 0) + preis},
-        )
-    else:
-        # Erstellungsphase: eigenes kleines Freebee-Kontingent (Moduldocstring).
-        ausgegeben = int(person.get("zusatzfertigkeitenFreebeesAusgegeben") or 0)
-        uebrig = max(0, ZUSATZFERTIGKEIT_FREEBEE_BUDGET - ausgegeben)
-        if FREEBEE_KOSTEN > uebrig:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, f"{FREEBEE_KOSTEN} Freebees nötig, {uebrig} vorhanden."
-            )
-        await repository.hinzufuegen(campaign_id, person_id, body.zusatzfertigkeitId, 1)
-        aktualisiert = await update_node(
-            "Person", PERSON_FIELDS, campaign_id, person_id,
-            {"zusatzfertigkeitenFreebeesAusgegeben": ausgegeben + FREEBEE_KOSTEN},
-        )
+    # Spielphase: wie eine ganz normale Fertigkeit von 0 auf 1 kaufen.
+    preis = erfahrung.kosten("Fertigkeit", 0) or 0
+    verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
+    if preis > verfuegbar:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
+    await repository.hinzufuegen(campaign_id, person_id, body.zusatzfertigkeitId, 1)
+    aktualisiert = await update_node(
+        "Person", PERSON_FIELDS, campaign_id, person_id,
+        {"erfahrungAusgegeben": int(person.get("erfahrungAusgegeben") or 0) + preis},
+    )
 
     return await _antwort(campaign_id, aktualisiert or person)
 

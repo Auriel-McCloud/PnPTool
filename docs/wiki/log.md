@@ -3,6 +3,24 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-28] update | entities/zusatzfertigkeiten (Erstellung korrigiert)
+
+Mark hat die morgens gebaute Erstellungs-Integration (eigenständiger
+Popup-Button + separates Freebee-Budget) noch am selben Tag zurückgewiesen:
+*"bei den freebees erscheinen die einfach nicht wenn sie nicht zuvor schon
+bei der Fertigkeiten Vergabe ausgewählt wurden [...] sollten dann auch mit
+den normalen freebees abgerechnet werden könne."* Umgebaut: Auswahl jetzt im
+bestehenden Fertigkeiten-Schritt (neue Komponente
+`ZusatzfertigkeitAuswahl.tsx`, rein clientseitig), Bezahlung im
+Freebees-Schritt aus dem gemeinsamen Hauptpool (neues Backend-Feld
+`ErstellungInput.zusatzfertigkeitPunkte`). Eigenes Freebee-Budget
+(`ZUSATZFERTIGKEIT_FREEBEE_BUDGET`, `Person.zusatzfertigkeitenFreebees
+Ausgegeben`) vollständig entfernt. LevelUp und Charakterblatt-Anzeige
+unverändert. Verifiziert: `tsc -b`, `pytest` (446 grün, 2 vorbestehende
+unabhängige Fehlschläge unverändert), echter E2E-Test gegen Neo4j (Freebee-
+Rechnung, Kanten-Existenz, Nicht-Auftauchen ungewählter Einträge, Ablehnung
+bei Überziehung). `docs/api/zusatzfertigkeiten.md` + `CLAUDE.md` nachgezogen.
+
 ## [2026-09-28] create | entities/zusatzfertigkeiten
 
 Neues Backend-Modul `app/zusatzfertigkeiten/` gebaut: campaign-gebundener

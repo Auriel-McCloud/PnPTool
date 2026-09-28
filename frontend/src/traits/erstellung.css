@@ -44,21 +44,6 @@
   color: var(--neon);
 }
 
-/* Zusatzfertigkeiten (28.09.2026): eigener Popup-Knopf in der Kopfzeile,
-   neben den Schritten — passt zu keinem einzelnen Schritt, gehört also
-   nicht in die er-buehne. */
-.er-zusatzfertigkeit-btn {
-  align-self: center;
-  color: var(--p-violett, var(--neon));
-  border-color: var(--p-violett, var(--neon));
-}
-
-.er-zusatzfertigkeit-btn em {
-  font-style: normal;
-  color: var(--text-leise);
-  margin-left: 4px;
-}
-
 
 .er-schritte {
   display: flex;

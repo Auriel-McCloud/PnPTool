@@ -8,14 +8,20 @@ Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Serv
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
-- **Zusatzfertigkeiten** (28.09.2026, siehe „Zuletzt gebaut“ unten und
-  `docs/wiki/entities/zusatzfertigkeiten.md`): Backend komplett per echtem
-  E2E-Test + KI-Vorschlag-Aufruf verifiziert, `tsc -b`/`vite build` sauber.
+- **Zusatzfertigkeiten** (28.09.2026, KORRIGIERT später am selben Tag —
+  siehe „Zuletzt gebaut“ unten und `docs/wiki/entities/zusatzfertigkeiten.md`):
+  Backend komplett per echtem E2E-Test verifiziert, `tsc -b` sauber.
   **Nie im Browser angeklickt** — bitte im Kampagnen-Menü ein paar Einträge
-  anlegen (mit UND ohne KI-Vorschlag), als Spieler in der Charaktererstellung
-  UND im LevelUp über "+ Zusatzfertigkeit" wählen/steigern, prüfen ob die
-  Kostenanzeige (Freebees vs. EP) stimmt und die Wahl im Charakterblatt
-  auftaucht.
+  anlegen (mit UND ohne KI-Vorschlag), dann als Spieler eine
+  Charaktererstellung durchspielen: im Schritt "Fertigkeiten" nach dem
+  Fertigkeitspaket-Klick im sich öffnenden Fenster ganz unten die neue
+  Zusatzfertigkeiten-Auswahl testen, danach im Schritt "Freebees" prüfen ob
+  die gewählte(n) dort als normale Punktreihe(n) auftauchen und sich aus dem
+  gemeinsamen Freebee-Pool bezahlen lassen — eine NICHT gewählte darf dort
+  nicht erscheinen. Nach Abschluss im Charakterblatt kontrollieren, ob die
+  bezahlte Zusatzfertigkeit als normaler Eintrag auftaucht. Im LevelUp
+  bleibt der bisherige "+ Zusatzfertigkeit"-Popup unverändert — dort auch
+  kurz gegenprüfen, dass EP-Abzug weiterhin funktioniert.
 
 - **Autosave für Beschreibung/Notizen** (siehe „Zuletzt gebaut“ unten,
   27.09.2026): `tsc -b` sauber, aber nie im Browser angeklickt. Bitte am
@@ -215,6 +221,51 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (28.09.2026, später am Tag — Zusatzfertigkeiten-Erstellung KORRIGIERT):**
+- **Was:** Mark hat die Erstellungs-Integration von Zusatzfertigkeiten (siehe
+  Eintrag direkt unten) noch am selben Tag ausdrücklich zurückgewiesen,
+  wörtlich: *"Nein das passt nicht, bei den freebees erscheinen die einfach
+  nicht wenn sie nicht zuvor schon bei der Fertigkeiten Vergabe ausgewählt
+  wurden, und wenn diese dort ausgewählt wurden werden die skills im
+  CharakterBlatt erweitert und sollten dann auch mit den normalen freebees
+  abgerechnet werden könne weil sie in keinem Untermenü mehr sind."*
+- **Entfernt:** eigenständiger "+ Zusatzfertigkeit"-Popup-Button in der
+  Kopfzeile der Charaktererstellung, komplettes eigenes Freebee-Budget
+  (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET`, `Person.zusatzfertigkeitenFreebees
+  Ausgegeben` — raus aus `_BOGEN_DEFAULTS`/`PERSON_FIELDS`/allen drei
+  Person-Schemas).
+- **Neu:** Auswahl passiert im bestehenden Fertigkeiten-Schritt
+  (`Charaktererstellung.tsx::SchrittFertigkeiten`, neue Komponente
+  `zusatzfertigkeiten/ZusatzfertigkeitAuswahl.tsx` — rein clientseitig,
+  Katalog laden + `onWaehlen`/`onAbwaehlen`, KEIN Server-Write). Bezahlung im
+  Freebees-Schritt (`SchrittFreebees`, neuer Abschnitt) aus dem GEMEINSAMEN
+  Hauptpool, Kategorie "Fertigkeit" (2 Freebees, höchstens 1 Punkt). Neues
+  Backend-Feld `ErstellungInput.zusatzfertigkeitPunkte: dict[str, int]`
+  (Zusatzfertigkeit-ID → Freebee-Punkte), eingerechnet in
+  `erstellung.freebee_kosten()`/`pruefe()`, setzt beim Submit die
+  `HAT_ZUSATZFERTIGKEIT`-Kanten (nur für bezahlte Einträge, entfernt bei
+  erneuter Einreichung zwischenzeitlich abgewählte).
+- **Unverändert:** LevelUp (`ZusatzfertigkeitPopup.tsx` in `LevelUp.tsx`,
+  sofortiger EP-Abzug — strukturell korrekt, kein Sammelschritt nötig) und
+  Charakterblatt-Anzeige (Dateneinspeisung kommt jetzt aus der neuen
+  Erstellungslogik, die Anzeige selbst brauchte keine Anpassung).
+- **Verifiziert:** `tsc -b` sauber, Backend-Import + `openapi()['paths']`-
+  Grep, `pytest` (446 grün, dieselben 2 vorbestehenden unabhängigen
+  Fehlschläge wie vorher), echter End-to-End-Test gegen laufende Neo4j:
+  Kampagne + Mensch-Rasse freigegeben, zwei Zusatzfertigkeiten angelegt,
+  Erstellung mit nur einer + 1 Freebee-Punkt eingereicht — bestätigt
+  korrekte Freebee-Gesamtrechnung (+2), korrekte `HAT_ZUSATZFERTIGKEIT`-
+  Kante (rating=1) nur für die gewählte, die nicht gewählte taucht nirgends
+  auf, überzogene Freebee-Einreichung wird mit 422 abgelehnt. Testdaten
+  aufgeräumt. **Kein Browser-Klicktest** — siehe „Offen" oben.
+- **Wo Mark das jetzt findet:** Charaktererstellung → Schritt "Fertigkeiten"
+  → Fertigkeitspaket wählen → im sich öffnenden Auswahl-Fenster ganz unten,
+  unter den normalen Fertigkeiten-Kategorien, ein neuer Abschnitt
+  "Zusatzfertigkeiten" mit Klick-Liste (kein separater Knopf mehr in der
+  Kopfzeile). Bezahlt wird danach im Schritt "Freebees", dort erscheint jede
+  im Fertigkeiten-Schritt gewählte Zusatzfertigkeit als eigene Punktreihen-
+  Zeile direkt unter den normalen Fertigkeiten.
 
 **Zuletzt gebaut (28.09.2026 — Zusatzfertigkeiten):**
 - **Was:** Neues Backend-Modul `app/zusatzfertigkeiten/` — campaign-gebundener

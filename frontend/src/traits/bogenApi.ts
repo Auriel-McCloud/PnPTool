@@ -190,6 +190,11 @@ export interface ErstellungEingabe {
   fertigkeitPunkte: Record<string, number>;
   hintergrundPunkte: Record<string, number>;
   freebeePunkte: Record<string, number>;
+  /** Zusatzfertigkeiten (28.09.2026, Marks Korrektur): im Fertigkeiten-
+   * Schritt gewählte Zusatzfertigkeit-IDs samt im Freebees-Schritt darauf
+   * verwendeter Punkte (0 oder 1) — bezahlt aus demselben Hauptpool wie
+   * alles andere, siehe backend/app/traits/erstellung.py::freebee_kosten. */
+  zusatzfertigkeitPunkte: Record<string, number>;
   freebeeWillenskraft: number;
   freebeeKredit: number;
   freebeeEigenkapital: number;

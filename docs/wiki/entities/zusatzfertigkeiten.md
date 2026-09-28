@@ -34,32 +34,91 @@ normale Fertigkeit auf der üblichen 0-6-Skala. Kanten:
 läuft bewusst NICHT über `HAS_TRAIT`/`TraitDef` (der Katalog ist
 ruleset-weit, nicht campaign-gebunden).
 
-### Kosten — eigene Design-Entscheidung, mit Mark noch nicht gegengeprüft
+### Kosten — KORRIGIERT 28.09.2026, siehe unten "Umbau"
 
-Gleiche Freebee-/EP-Kostentabelle wie eine normale Fertigkeit: Freebee 2
+~~Gleiche Freebee-/EP-Kostentabelle wie eine normale Fertigkeit: Freebee 2
 Punkte/Stufe (`FREEBEE_KOSTEN_JE_KATEGORIE["Fertigkeit"]`), EP-Tarif Faktor 2
 / Neu-Kosten 3 (`erfahrung.FAKTOR`/`NEU_KOSTEN["Fertigkeit"]`) — kein eigener
-teurerer Tarif fürs Erstlernen. Naheliegendste, am wenigsten invasive Wahl.
+teurerer Tarif fürs Erstlernen. Naheliegendste, am wenigsten invasive Wahl.~~
+*(EP-Tarif in der Spielphase gilt weiterhin unverändert — nur der
+Erstellungsphase-Teil unten war der überholte Stand.)*
 
-Das Neu-Erlernen einer Zusatzfertigkeit **während der Erstellung** zieht aus
+~~Das Neu-Erlernen einer Zusatzfertigkeit **während der Erstellung** zieht aus
 einem eigenen, kleinen Freebee-Kontingent
 (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6`, neues Feld
 `Person.zusatzfertigkeitenFreebeesAusgegeben`) — **nicht** aus dem
-Haupt-Freebee-Pool (`erstellung.FREEBEES_GESAMT`). Grund: der Hauptpool wird
-ausschließlich bei der finalen `POST .../erstellung`-Einreichung berechnet,
-rein aus dem im selben Request eingereichten `ErstellungInput`-Body, ohne
-DB-Zustand — ein separat auslösbarer Popup-Knopf, der schon während des
-laufenden mehrstufigen Assistenten sofort einen DB-Schreibzugriff macht,
-kann in diese Rechnung nicht eingehängt werden, ohne den gesamten
-Erstellungs-Flow umzubauen. Ein eigenes kleines Budget (analog zu
-`HINTERGRUND_PUNKTE_GESAMT`, ebenfalls separat budgetiert außerhalb des
-Haupt-Fertigkeitspakets) ist die am wenigsten invasive Lösung — **Mark
-sollte gegenprüfen, ob 6 Punkte (reicht für 3 Zusatzfertigkeiten) die
-richtige Größenordnung ist.**
+Haupt-Freebee-Pool (`erstellung.FREEBEES_GESAMT`).~~ **ÜBERHOLT (28.09.2026,
+noch am selben Tag von Mark korrigiert)** — siehe "Umbau" unten. Das
+separate Budget existierte nur wenige Stunden und wurde nie in echten
+Kampagnendaten verwendet.
 
 Nach Erstellungsabschluss (`Person.erstellungAbgeschlossen`) läuft jedes
 Neu-Erlernen UND jedes Steigern über EP, exakt wie ein normaler
-Fertigkeitskauf (`traits/routes.py::steigere_wert`).
+Fertigkeitskauf (`traits/routes.py::steigere_wert`). **Das bleibt
+unverändert** — nur die Erstellungsphase wurde umgebaut.
+
+## Umbau: Auswahl im Fertigkeiten-Schritt, Bezahlung im Freebees-Schritt (28.09.2026)
+
+Mark, wörtlich, zur ersten Version (Popup-Button in der Erstellungs-
+Kopfzeile + eigenes Freebee-Budget): *"Nein das passt nicht, bei den
+freebees erscheinen die einfach nicht wenn sie nicht zuvor schon bei der
+Fertigkeiten Vergabe ausgewählt wurden, und wenn diese dort ausgewählt
+wurden werden die skills im CharakterBlatt erweitert und sollten dann auch
+mit den normalen freebees abgerechnet werden könne weil sie in keinem
+Untermenü mehr sind."*
+
+Konkret geändert:
+
+1. **Kein separates Freebee-Budget mehr.** `ZUSATZFERTIGKEIT_FREEBEE_BUDGET`
+   und `Person.zusatzfertigkeitenFreebeesAusgegeben` sind vollständig
+   entfernt (aus `_BOGEN_DEFAULTS`/`PERSON_FIELDS`, allen drei
+   Person-Schemas, `zusatzfertigkeiten/routes.py`).
+2. **Auswahl passiert im Fertigkeiten-Schritt** der Charaktererstellung
+   (`frontend/src/traits/Charaktererstellung.tsx::SchrittFertigkeiten`,
+   neuer Abschnitt "Zusatzfertigkeiten" im Fertigkeitswahl-Fenster). Rein
+   lokaler React-State (`zusatzfertigkeiten: Zusatzfertigkeit[]`) — KEIN
+   Server-Write, genau wie Attribut-/Fertigkeits-/Hintergrundwahl auch erst
+   beim finalen Submit (`bogenApi.erstellen`) persistiert wird. Neue,
+   schlanke Komponente `zusatzfertigkeiten/ZusatzfertigkeitAuswahl.tsx`
+   (Katalog laden, Liste anzeigen, `onWaehlen(z)`/`onAbwaehlen(id)` ohne
+   API-Write) statt `ZusatzfertigkeitPopup.tsx` mit Modus-Flag zu verbiegen
+   — der bleibt unverändert für LevelUp (siehe Punkt 6).
+3. **Bezahlung im Freebees-Schritt** (`SchrittFreebees`, neuer Abschnitt
+   direkt nach den normalen Fertigkeiten-Kategorien) aus dem GEMEINSAMEN
+   Hauptpool (`regeln.freebees.gesamt`), dieselbe `freebeesVerbraucht`-
+   Rechnung wie jede andere Kategorie. Kosten-Kategorie "Fertigkeit" (2
+   Freebees, höchstens 1 Punkt beim Ersterwerb — `FREEBEE_MAX_JE_
+   FERTIGKEIT`, dieselbe Regel wie bei normalen Fertigkeiten). State
+   `zusatzfertigkeitFreebees: Record<zusatzfertigkeitId, punkte>` — keyed
+   nach Zusatzfertigkeit-ID statt Traitname (eigener Record statt
+   Wiederverwendung von `freebeePunkte`, weil die Kategorie-Zuordnung dort
+   über Traitnamen aus dem TraitDef-Katalog läuft, Zusatzfertigkeiten aber
+   campaign-gebunden und nicht Teil dieses Katalogs sind).
+4. **Nicht im Fertigkeiten-Schritt gewählte Zusatzfertigkeiten erscheinen im
+   Freebees-Schritt nicht.** Die Liste im Freebees-Schritt iteriert exakt
+   über den `zusatzfertigkeiten`-State aus Schritt 2, kein separater
+   Katalog-Fetch.
+5. **Backend:** `ErstellungInput.zusatzfertigkeitPunkte: dict[str, int]`
+   (Zusatzfertigkeit-ID → Freebee-Punkte, 0 oder 1). `erstelle_charakter`
+   prüft die IDs gegen den campaign-gebundenen Katalog, addiert die Kosten
+   in `erstellung.freebee_kosten()` (Kategorie "Fertigkeit" je gewählter,
+   bezahlter Eintrag) und in `erstellung.pruefe()` (Freebee-Obergrenze pro
+   Eintrag), setzt danach die `HAT_ZUSATZFERTIGKEIT`-Kanten mit
+   `rating = zusatzfertigkeitPunkte[id]` — nur für Einträge mit Punkten > 0
+   (gewählt, aber nicht bezahlt landet NICHT auf dem Charakterblatt, exakt
+   wie Mark es verlangt hat: "gewählten+bezahlten"). Bei erneuter
+   Einreichung (SL-Korrektur) werden zwischenzeitlich abgewählte/nicht mehr
+   bezahlte Einträge über `zusatzfertigkeiten_repository.entferne_von_person`
+   wieder entfernt — analog zum "auf 0 zurückfallen" bei normalen Traits.
+6. **LevelUp bleibt vollständig unverändert.** Der Popup-Button mit
+   sofortigem EP-Abzug (`ZusatzfertigkeitPopup.tsx` in `LevelUp.tsx`) ist
+   strukturell korrekt: kein Vorab-Sammelschritt, jeder Punktkauf ist ohnehin
+   ein sofortiger Server-Roundtrip, genau wie das normale
+   `steigere_wert`-Einzelkauf-Muster. `zusatzfertigkeiten/routes.py::
+   zusatzfertigkeit_hinzufuegen` (POST) lehnt jetzt VOR Erstellungsabschluss
+   explizit mit 409 ab ("... werden im Fertigkeiten-Schritt der
+   Charaktererstellung gewählt, nicht hier"), weil dieser Codepfad während
+   der Erstellungsphase nicht mehr genutzt wird.
 
 ### Löschen aus dem Katalog
 
@@ -102,41 +161,53 @@ ein Absatz). Echt verifiziert (28.09.2026) mit realem Gemini/Mistral-Aufruf
   neuer Burgermenü-Punkt): schlichte Tabelle (Marks Vorgabe "eine einfache
   Tabelle"), Zeile öffnet Bearbeiten-Popup mit `onBlur`-Speichern (wie
   Rassen-Editor), Löschen mit `Bestaetigung`-Rückfrage, "+ Neu"-Popup, "✨
-  KI-Vorschläge"-Popup mit editierbaren Kandidaten.
-- **Spieler-Popup** (`zusatzfertigkeiten/ZusatzfertigkeitPopup.tsx`):
-  identisch wiederverwendet in `Charaktererstellung.tsx` (Kopfzeile,
-  unabhängig vom aktuellen Schritt) UND `LevelUp.tsx` (Kopfzeile, neben
-  Speichern/Zurücksetzen) — derselbe Popup-Button, kein Sonderfall (Marks
-  Vorgabe). Zeigt die noch nicht gewählten Einträge mit Kurzbeschreibung +
-  Suchfeld (ab >6 Einträgen), Klick fügt sofort hinzu und zeigt danach den
-  neuen Freebee-/EP-Stand.
+  KI-Vorschläge"-Popup mit editierbaren Kandidaten. **Unverändert seit
+  28.09.2026 Vormittag.**
+- **Charaktererstellung** (28.09.2026, nach dem Umbau — siehe Abschnitt
+  oben): KEIN eigenständiger Popup-Button in der Kopfzeile mehr. Auswahl im
+  Fertigkeiten-Schritt (`Charaktererstellung.tsx::SchrittFertigkeiten`,
+  neuer Abschnitt "Zusatzfertigkeiten" unten im Fertigkeitswahl-Fenster,
+  Komponente `zusatzfertigkeiten/ZusatzfertigkeitAuswahl.tsx`), Bezahlung im
+  Freebees-Schritt (`SchrittFreebees`, neuer Abschnitt direkt nach den
+  Fertigkeiten-Kategorien) — ganz normale `DotPool`-Zeile wie jede andere
+  Fertigkeit, kein Untermenü/Popup mehr.
+- **LevelUp-Popup** (`zusatzfertigkeiten/ZusatzfertigkeitPopup.tsx`,
+  eingebunden in `LevelUp.tsx`): **unverändert**, sofortiger Server-Write mit
+  EP-Abzug — strukturell korrekt, weil LevelUp ohnehin jeden Punktkauf
+  einzeln an den Server schickt (kein Sammelschritt).
 - **Charakterblatt** (`Charakterblatt.tsx`): eigener kleiner Abschnitt nach
   den Ausrüstungsfertigkeiten, NICHT ins feste `reihe(...)`-Raster der
   Hauptfertigkeiten gemischt — die Liste ist pro Person variabel. Klick löst
   wie jede andere Fertigkeit eine Probe aus (Kategorie `"Zusatzfertigkeit"`).
-  Steigern nur im LevelUp, nicht direkt im Blatt.
+  Steigern nur im LevelUp, nicht direkt im Blatt. **Unverändert** — die
+  Dateneinspeisung kommt jetzt aus der neuen Erstellungslogik
+  (`HAT_ZUSATZFERTIGKEIT`-Kanten, direkt beim `erstelle_charakter`-Submit
+  gesetzt statt über den alten Popup-Sofort-Write), die Anzeige selbst
+  brauchte keine Anpassung.
 
 ### Verifiziert
 
-`tsc -b` + `vite build` sauber, Backend-Import + `openapi()['paths']`-Grep,
-volles `pytest` (446 grün, 2 vorbestehende unabhängige Fehlschläge einer
-parallelen Session per `git stash`-Vergleich abgegrenzt), echter
-End-to-End-Test gegen laufende Neo4j (Katalog anlegen/bearbeiten/löschen,
-Person wählt in Erstellungsphase [Freebee-Abzug] UND Spielphase
-[EP-Abzug], steigert, Löschen kaskadiert korrekt auf die Personen-Kante)
-sowie ein echter KI-Vorschlag-Aufruf. **Kein Browser-Klicktest** — siehe
-CLAUDE.md "Offen: Was Mark selbst testen muss".
+`tsc -b` sauber, Backend-Import + `openapi()['paths']`-Grep, volles
+`pytest` (446 grün, 2 vorbestehende unabhängige Fehlschläge einer
+parallelen Session — `ereignisprotokoll`/`haendler`-Baustelle, unabhängig
+per `git stash`-Vergleich bestätigt), echter End-to-End-Test gegen laufende
+Neo4j (28.09.2026, nach dem Umbau): Kampagne + Mensch-Rasse freigegeben,
+zwei Zusatzfertigkeiten im Katalog angelegt, Erstellung mit NUR einer davon
++ 1 Freebee-Punkt eingereicht — bestätigt (a) `freebeesVerbraucht` korrekt
+um +2 erhöht, (b) `HAT_ZUSATZFERTIGKEIT`-Kante mit `rating=1` existiert nur
+für die gewählte, (c) die nicht gewählte taucht weder in der
+Personen-Antwort noch in der DB auf, (d) eine überzogene Freebee-Einreichung
+(>15 gesamt) wird korrekt mit 422 abgelehnt. Testdaten aufgeräumt. **Kein
+Browser-Klicktest** — siehe CLAUDE.md "Offen: Was Mark selbst testen muss".
 
 ## Noch nicht entschieden / offen
 
-- **Freebee-Budget-Größe** (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6`): eigene
-  Schätzung, nicht mit Mark abgestimmt.
 - **Ob Zusatzfertigkeiten auch für NPCs/Begleiter gedacht sind** — bisher nur
   an `Person` (deckt PC/NPC/Critter/KI gleichermaßen ab, kein eigener
-  Ausschluss), aber die Popups hängen nur an Spieler-Flows
-  (Charaktererstellung, LevelUp). Die SL könnte theoretisch über die
-  Backend-Route auch NPCs Zusatzfertigkeiten geben, hat dafür aber keinen
-  eigenen UI-Weg (nur über die Person-Route direkt).
+  Ausschluss), aber die Erstellungs-/LevelUp-Flows hängen nur an
+  Spieler-Charakteren. Die SL könnte theoretisch über die Backend-Route
+  auch NPCs Zusatzfertigkeiten geben, hat dafür aber keinen eigenen UI-Weg
+  (nur über die Person-Route direkt).
 
 ## Siehe auch
 

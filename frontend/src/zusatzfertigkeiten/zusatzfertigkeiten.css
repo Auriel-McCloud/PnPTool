@@ -189,6 +189,15 @@
   border-color: var(--neon);
 }
 
+.zfp-eintrag-aktiv {
+  border-color: var(--neon);
+  background: var(--flaeche-tief);
+}
+
+.zfp-eintrag-aktiv .zfp-eintrag-knopf {
+  color: var(--ja, var(--neon));
+}
+
 .zfp-eintrag:disabled {
   opacity: 0.6;
   cursor: default;

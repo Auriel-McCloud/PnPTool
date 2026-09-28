@@ -402,6 +402,16 @@ def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> in
     summe += FREEBEE_KOSTEN_WILLENSKRAFT * max(0, int(auswahl.get("freebeeWillenskraft") or 0))
     summe += FREEBEE_KOSTEN_KREDIT * max(0, int(auswahl.get("freebeeKredit") or 0))
     summe += FREEBEE_KOSTEN_EIGENKAPITAL * max(0, int(auswahl.get("freebeeEigenkapital") or 0))
+    # Zusatzfertigkeiten (28.09.2026, Mark korrigierte das eigene Freebee-
+    # Budget vom selben Tag: "sollten dann auch mit den normalen freebees
+    # abgerechnet werden können"): eine im Fertigkeiten-Schritt gewählte
+    # Zusatzfertigkeit kostet denselben Preis wie eine neu gekaufte normale
+    # Fertigkeit (2), bezahlt aus demselben Hauptpool. Eigener Record statt
+    # eines Eintrags in `freebeePunkte`, weil der Schlüssel eine
+    # Zusatzfertigkeit-ID ist, kein Traitname aus dem Katalog.
+    summe += FREEBEE_KOSTEN_JE_KATEGORIE["Fertigkeit"] * sum(
+        1 for p in (auswahl.get("zusatzfertigkeitPunkte") or {}).values() if int(p) > 0
+    )
     return summe
 
 
@@ -514,6 +524,20 @@ def pruefe(
                 f"{name}: Freebees heben eine Fertigkeit um höchstens "
                 f"{FREEBEE_MAX_JE_FERTIGKEIT} Punkt."
             )
+    # Zusatzfertigkeiten (28.09.2026, Marks Korrektur desselben Tages: "sollten
+    # dann auch mit den normalen freebees abgerechnet werden können"): die
+    # ID-Existenzprüfung braucht Datenbankzugriff und läuft deshalb in
+    # traits/routes.py::erstelle_charakter — hier nur die reine Regel, dass
+    # eine Zusatzfertigkeit per Freebee höchstens um FREEBEE_MAX_JE_FERTIGKEIT
+    # (1) steigt, genau wie eine normale Fertigkeit.
+    for zid, zusatz in (auswahl.get("zusatzfertigkeitPunkte") or {}).items():
+        zusatz = int(zusatz)
+        if zusatz < 0 or zusatz > FREEBEE_MAX_JE_FERTIGKEIT:
+            fehler.append(
+                f"Zusatzfertigkeit {zid}: Freebees heben höchstens um "
+                f"{FREEBEE_MAX_JE_FERTIGKEIT} Punkt."
+            )
+
     kosten = freebee_kosten(auswahl, kategorie_von)
     if kosten > FREEBEES_GESAMT:
         fehler.append(f"{kosten} Freebees ausgegeben, zur Verfügung stehen {FREEBEES_GESAMT}.")

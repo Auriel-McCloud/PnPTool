@@ -157,6 +157,28 @@ async def gewaehlte_ids(campaign_id: str, person_id: str) -> set[str]:
         return {rec["id"] async for rec in result}
 
 
+async def entferne_von_person(campaign_id: str, person_id: str, zusatzfertigkeit_id: str) -> None:
+    """Entfernt NUR die Kante zu dieser Person — der Katalogeintrag bleibt.
+
+    Für die Charaktererstellung (28.09.2026, Marks Korrektur): bei einem
+    erneuten Einreichen (SL korrigiert) muss eine zwischenzeitlich wieder
+    abgewählte Zusatzfertigkeit vom Charakter verschwinden, genau wie ein
+    aus dem Katalog entfernter normaler Fertigkeitswert auf 0 fällt (siehe
+    traits/routes.py::erstelle_charakter).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[r:HAT_ZUSATZFERTIGKEIT]->(z:Zusatzfertigkeit {id: $zid})
+            DELETE r
+            """,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            zid=zusatzfertigkeit_id,
+        )
+
+
 async def hinzufuegen(campaign_id: str, person_id: str, zusatzfertigkeit_id: str, rating: int = 1) -> dict | None:
     """Legt eine noch nicht gewählte Zusatzfertigkeit mit `rating` an.
 

@@ -33,6 +33,7 @@ from app.traits.bogen import (
     zustand_verboten,
 )
 from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
+from app.zusatzfertigkeiten import repository as zusatzfertigkeiten_repository
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["traits"], dependencies=[Depends(require_campaign_zugang)])
 
@@ -392,6 +393,17 @@ class ErstellungInput(BaseModel):
     fertigkeitPunkte: dict[str, int] = Field(default_factory=dict)
     hintergrundPunkte: dict[str, int] = Field(default_factory=dict)
     freebeePunkte: dict[str, int] = Field(default_factory=dict)
+    # Zusatzfertigkeiten (28.09.2026, Marks Korrektur): Auswahl passiert im
+    # Fertigkeiten-Schritt (siehe Charaktererstellung.tsx::ZusatzfertigkeitAuswahl),
+    # Bezahlung im Freebees-Schritt aus demselben Hauptpool wie alles andere.
+    # Schlüssel ist die Zusatzfertigkeit-ID (nicht der Name — die Katalog-IDs
+    # sind campaign-gebunden und eindeutig), Wert die Freebee-Punkte darauf
+    # (0 oder 1, siehe FREEBEE_MAX_JE_FERTIGKEIT). Eine Zusatzfertigkeit OHNE
+    # Eintrag hier bekommt trotzdem rating 1, wenn sie in dieser Liste steht
+    # — die Wahl selbst (Fertigkeiten-Schritt) ist unabhängig vom Freebee-Kauf
+    # (Freebees-Schritt): 0 Punkte macht das Rating am Ende nicht 0, sondern
+    # 1 (siehe erstelle_charakter unten).
+    zusatzfertigkeitPunkte: dict[str, int] = Field(default_factory=dict)
     freebeeWillenskraft: int = Field(default=0, ge=0)
     freebeeKredit: int = Field(default=0, ge=0)
     freebeeEigenkapital: int = Field(default=0, ge=0)
@@ -569,6 +581,11 @@ async def erstelle_charakter(
 
     campaign = await get_campaign(campaign_id)
     katalog = await repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    # Zusatzfertigkeiten (28.09.2026, Marks Korrektur): campaign-gebundener
+    # Katalog, nicht Teil des ruleset-weiten TraitDef-Katalogs — eigene
+    # Existenzprüfung der eingereichten IDs.
+    zusatzfertigkeiten_katalog = await zusatzfertigkeiten_repository.liste(campaign_id)
+    zusatzfertigkeit_ids = {z["id"] for z in zusatzfertigkeiten_katalog}
 
     auswahl = body.model_dump()
     # Häretiker ist kein eigener Weg für die Mechanik (siehe WEGE in
@@ -578,6 +595,9 @@ async def erstelle_charakter(
     auswahl["weg"] = weg_intern
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
     fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
+    for zid in body.zusatzfertigkeitPunkte:
+        if zid not in zusatzfertigkeit_ids:
+            fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")
     if not body.name.strip():
         fehler.append("Der Charakter braucht einen Namen.")
     if fehler:
@@ -596,6 +616,25 @@ async def erstelle_charakter(
         if eintrag["name"] not in werte and eintrag["category"] in erlaubte_kategorien:
             werte[eintrag["name"]] = 0
     await repository.set_ratings_bulk(campaign_id, person_id, werte)
+    # Zusatzfertigkeiten: HAT_ZUSATZFERTIGKEIT-Kanten setzen. Rating = die im
+    # Freebees-Schritt darauf verwendeten Punkte (0 oder 1, siehe
+    # FREEBEE_MAX_JE_FERTIGKEIT) — exakt wie eine frische, bei 0 startende
+    # Fertigkeit. Eine im Fertigkeiten-Schritt gewählte, aber im
+    # Freebees-Schritt NICHT bezahlte Zusatzfertigkeit bekommt keine Kante
+    # (Mark, Punkt 5: "gewählten+bezahlten" landen im Charakterblatt). Bei
+    # erneuter Einreichung (SL-Korrektur) fällt eine zwischenzeitlich wieder
+    # abgewählte/nicht mehr bezahlte Zusatzfertigkeit weg, genau wie ein aus
+    # dem Fertigkeitspaket entferntes Trait auf 0 zurückfällt.
+    bereits_gewaehlt = await zusatzfertigkeiten_repository.gewaehlte_ids(campaign_id, person_id)
+    neu_gewaehlt = {
+        zid for zid, zusatz in (body.zusatzfertigkeitPunkte or {}).items() if int(zusatz) > 0
+    }
+    for zid in bereits_gewaehlt - neu_gewaehlt:
+        await zusatzfertigkeiten_repository.entferne_von_person(campaign_id, person_id, zid)
+    for zid in neu_gewaehlt:
+        await zusatzfertigkeiten_repository.hinzufuegen(
+            campaign_id, person_id, zid, int(body.zusatzfertigkeitPunkte[zid])
+        )
     # Der Rassendeckel gilt ein Leben lang, nicht nur bei der Erstellung —
     # er muss deshalb als maxOverride ans Blatt (siehe
     # erstellung.py::lebensmaxima). Ohne diesen Schritt fiel jedes Attribut

@@ -37,20 +37,26 @@ Dieselbe Freebee-/EP-Kostentabelle wie eine normale Fertigkeit:
 | EP, erster Punkt (0→1) | 3 (`erfahrung.NEU_KOSTEN["Fertigkeit"]`) |
 | EP, weitere Punkte | aktueller Wert × 2 (`erfahrung.FAKTOR["Fertigkeit"]`) |
 
-**Eine noch nicht gewählte Zusatzfertigkeit neu erlernen** kostet je nach
-Erstellungsphase der Person unterschiedlich:
+**KORRIGIERT 28.09.2026** (Mark, wörtlich: *"bei den freebees erscheinen die
+einfach nicht wenn sie nicht zuvor schon bei der Fertigkeiten Vergabe
+ausgewählt wurden [...] sollten dann auch mit den normalen freebees
+abgerechnet werden könne"*) — es gibt **kein** eigenes Freebee-Kontingent
+mehr für die Erstellungsphase:
 
 - **Während der Erstellung** (`Person.erstellungAbgeschlossen == false`):
-  zieht aus einem **eigenen, kleinen Freebee-Kontingent**
-  (`ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6`, gespeichert in
-  `Person.zusatzfertigkeitenFreebeesAusgegeben`), **nicht** aus dem
-  Haupt-Freebee-Pool (`erstellung.FREEBEES_GESAMT`). Grund: der Hauptpool
-  wird ausschließlich bei der finalen `POST .../erstellung`-Einreichung aus
-  dem eingereichten Body berechnet (kein DB-Zustand) — ein Popup-Knopf, der
-  schon während des laufenden Assistenten sofort schreibt, kann dort nicht
-  mitrechnen.
+  eine Zusatzfertigkeit wird im Fertigkeiten-Schritt der Charaktererstellung
+  gewählt (rein clientseitig, kein Server-Write) und im Freebees-Schritt aus
+  dem **gemeinsamen Hauptpool** (`erstellung.FREEBEES_GESAMT`) bezahlt —
+  Kategorie "Fertigkeit", 2 Freebees, höchstens 1 Punkt beim Ersterwerb
+  (`FREEBEE_MAX_JE_FERTIGKEIT`). Alles läuft über den bestehenden
+  `POST .../personen/{id}/erstellung`-Endpunkt (siehe unten,
+  `zusatzfertigkeitPunkte`), NICHT über die Personen-Zusatzfertigkeiten-
+  Route.
 - **Nach Erstellungsabschluss**: normaler EP-Kauf, genau wie
-  `POST .../steigern` im Haupt-Fertigkeitskatalog.
+  `POST .../steigern` im Haupt-Fertigkeitskatalog — dafür bleibt die
+  Personen-Route `POST .../personen/{id}/zusatzfertigkeiten` zuständig
+  (jetzt ausschließlich für die Spielphase/LevelUp, lehnt vor
+  Erstellungsabschluss mit 409 ab).
 
 **Eine bereits gewählte Zusatzfertigkeit steigern** kostet immer EP — auch
 während der Erstellungsphase gibt es dafür keine Freebee-Variante (analog
@@ -80,12 +86,23 @@ Personen-Basis: `/api/campaigns/{campaign_id}/personen/{person_id}/zusatzfertigk
 | GET | `/ki-vorschlaege?anzahl=5` | nur SL | 3-5 KI-Kandidaten (speichert nichts) |
 | POST | `/ki-vorschlaege/uebernehmen` | nur SL | Einen bestätigten Vorschlag anlegen |
 | GET | `` (Personen) | SL / eigener Spieler | Gewählte Zusatzfertigkeiten samt Kontingent |
-| POST | `` (Personen) | SL / eigener Spieler | Eine noch nicht gewählte hinzufügen (Stufe 1) |
+| POST | `` (Personen) | SL / eigener Spieler | Eine noch nicht gewählte hinzufügen (Stufe 1) — **nur Spielphase, lehnt vor Erstellungsabschluss mit 409 ab** (28.09.2026, siehe Kosten-Abschnitt) |
 | POST | `/{id}/steigern` (Personen) | SL / eigener Spieler | Eine gewählte um einen Punkt steigern |
 
 Spieler dürfen die Personen-Routen nur am eigenen Charakter (404 statt 403
 bei fremden Personen, wie überall sonst im Tool) — Zugriffsschutz-Test in
 `backend/tests/test_zugriffsschutz.py::OHNE_GM_ERLAUBT`.
+
+**Zusätzlicher Endpunkt für die Erstellungsphase (28.09.2026):**
+`POST /api/campaigns/{campaign_id}/personen/{person_id}/erstellung`
+(`backend/app/traits/routes.py::erstelle_charakter`, kein eigenes
+`docs/api/`-Kapitel — Charaktererstellung ist bisher nicht dort
+dokumentiert) trägt jetzt ein zusätzliches Feld
+`zusatzfertigkeitPunkte: dict[str, int]` (Zusatzfertigkeit-ID → Freebee-
+Punkte, 0 oder 1) im `ErstellungInput`-Body. Der Server prüft die IDs gegen
+den campaign-gebundenen Katalog, rechnet die Kosten in die
+Freebee-Gesamtrechnung ein und setzt am Ende die
+`HAT_ZUSATZFERTIGKEIT`-Kanten — nur für Einträge mit Punkten > 0.
 
 ### Antwortformat der Personen-Routen
 
@@ -95,14 +112,15 @@ bei fremden Personen, wie überall sonst im Tool) — Zugriffsschutz-Test in
     {"id": "uuid", "name": "Sprengstoffe", "kurzbeschreibung": "...", "detailbeschreibung": "...", "rating": 2}
   ],
   "erstellungAbgeschlossen": true,
-  "freebeesUebrig": 4,
+  "freebeesUebrig": 0,
   "erfahrungVerfuegbar": 45
 }
 ```
 
-`freebeesUebrig` ist nur vor Erstellungsabschluss relevant,
-`erfahrungVerfuegbar` nur danach — beide werden trotzdem immer mitgeliefert,
-damit das Frontend nicht zwei unterschiedliche Antwortformen behandeln muss.
+`freebeesUebrig` liefert seit 28.09.2026 immer `0` (kein eigenes
+Freebee-Kontingent mehr — bleibt als reiner Formfeld-Platzhalter erhalten,
+damit das Antwortschema stabil bleibt), `erfahrungVerfuegbar` ist wie zuvor
+nur nach Erstellungsabschluss relevant.
 
 ## KI-Vorschlag
 
@@ -130,13 +148,13 @@ ein Absatz).
 (:Person)-[:HAT_ZUSATZFERTIGKEIT {rating: 2}]->(:Zusatzfertigkeit)
 ```
 
-`Person.zusatzfertigkeitenFreebeesAusgegeben` (int, Default 0) — zusätzliches
-Bogenfeld für das eigene Freebee-Kontingent, siehe Kosten-Abschnitt oben.
+**Kein zusätzliches Bogenfeld mehr.** `Person.zusatzfertigkeitenFreebees
+Ausgegeben` (eigenes Freebee-Kontingent) wurde am 28.09.2026 komplett
+entfernt (`_BOGEN_DEFAULTS`/`PERSON_FIELDS`/alle drei Person-Schemas) — es
+existierten keine echten Kampagnendaten damit, Migration war nicht nötig.
 
 ## Was noch fehlt
 
 - Kein eigener UI-Weg für die SL, einem NPC/Begleiter eine Zusatzfertigkeit
   zu geben (die Personen-Route würde es technisch erlauben, aber die
-  Popups hängen nur an Spieler-Flows).
-- `ZUSATZFERTIGKEIT_FREEBEE_BUDGET = 6` ist eine Schätzung, nicht mit Mark
-  abgestimmt.
+  Erstellungs-/LevelUp-Flows hängen nur an Spieler-Charakteren).
