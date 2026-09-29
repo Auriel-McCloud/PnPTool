@@ -47,7 +47,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung, Editor-Schriftgröße am Handy (20.09.) |
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
-| [[entities/ui-konzept-commlink]] | „Nie scrollen"-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09. kalibriert), Neonflackern verstärkt (19.09.), Autosave für Beschreibung/Notizen wie im Wiki (27.09.) |
+| [[entities/ui-konzept-commlink]] | Nie-scrollen-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09.), Neonflackern (19.09.), Autosave Beschreibung/Notizen (27.09.), Burgermenü blättert per Pfeil statt Scrollbar (29.09.) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |
 | [[entities/ki-integration]] | Gemini in der Ideenschmiede (erste Iteration), Wiki-Rechtschreib-/Grammatik-/Logikprüfung (20.09.), Auto-Verknüpfung, KI-Gegenstandsgenerator + Händler-Sortiment-Vorschlag (23.09.), KI-Bildgenerierung lokal/cloud für Entitäten + Spieler-Portrait (23.09.), Wiki-Import aus Word/PDF-Dokumenten (23.09.), Auto-Verknüpfung-Sweep + Freitext-UI (24.09.) |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |

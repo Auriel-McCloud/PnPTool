@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import "./commlink.css";
 import { ErklaerungSchalter } from "../regeln/ErklaerungSchalter";
 import { ThemeSchalter } from "../theme/ThemeSchalter";
@@ -72,8 +72,84 @@ export function CommlinkShell({
 
   const titelRef = useRef<HTMLSpanElement>(null);
   const timer = useRef<number[]>([]);
+  const blickRef = useRef<HTMLDivElement>(null);
+  const listeRef = useRef<HTMLDivElement>(null);
+  const [start, setStart] = useState(0);
+  const [kapazitaet, setKapazitaet] = useState(bereiche.length);
 
   useEffect(() => () => timer.current.forEach(clearTimeout), []);
+
+  /**
+   * Die Symbolspalte blättert, sie scrollt nicht. overflow-y: auto setzt eine
+   * Scrollbar in die Rail und clippt den vorgefahrenen Namen (CSS macht aus
+   * einer nicht-visible Achse automatisch beide). Stattdessen nur so viele
+   * Einträge zeigen, wie ins Blickfeld passen; kleine Pfeile oben/unten
+   * blättern weiter. Handy-Schublade zeigt die volle Liste ohne Pfeile.
+   */
+  useLayoutEffect(() => {
+    const blick = blickRef.current;
+    const liste = listeRef.current;
+    if (!blick || !liste) return;
+
+    const messen = () => {
+      if (!window.matchMedia("(min-width: 600px)").matches) {
+        setStart(0);
+        setKapazitaet(bereiche.length);
+        return;
+      }
+      const budget = blick.clientHeight;
+      if (budget <= 0) return;
+      const kinder = Array.from(liste.children) as HTMLElement[];
+      if (kinder.length === 0) {
+        setKapazitaet(bereiche.length);
+        return;
+      }
+      let used = 0;
+      let passt = 0;
+      for (const kind of kinder) {
+        const h = kind.offsetHeight;
+        if (passt > 0 && used + h > budget + 0.5) break;
+        used += h;
+        passt += 1;
+      }
+      const schnitt = used / Math.max(passt, 1);
+      let naechste: number;
+      if (kinder.length > passt) {
+        naechste = Math.max(1, passt);
+      } else if (start + kinder.length < bereiche.length && budget - used >= schnitt * 0.9) {
+        naechste = kinder.length + 1;
+      } else {
+        naechste = kinder.length;
+      }
+      setKapazitaet((alt) => (alt === naechste ? alt : naechste));
+      setStart((s) => Math.min(s, Math.max(0, bereiche.length - naechste)));
+    };
+
+    messen();
+    const ro = new ResizeObserver(messen);
+    ro.observe(blick);
+    ro.observe(liste);
+    return () => ro.disconnect();
+  }, [bereiche.length, start]);
+
+  const maxStart = Math.max(0, bereiche.length - kapazitaet);
+  const passtNicht = bereiche.length > kapazitaet;
+  const kannHoch = start > 0;
+  const kannRunter = start < maxStart;
+  const sichtbare = bereiche.slice(start, start + kapazitaet);
+
+  useEffect(() => {
+    if (vor && !bereiche.slice(start, start + kapazitaet).some((b) => b.id === vor)) {
+      setVor(null);
+    }
+  }, [vor, start, kapazitaet, bereiche]);
+
+  function blattre(richtung: 1 | -1) {
+    setStart((s) => {
+      if (richtung < 0) return Math.max(0, s - kapazitaet);
+      return Math.min(s + kapazitaet, maxStart);
+    });
+  }
 
   function waehle(b: Bereich, event: React.MouseEvent<HTMLButtonElement>) {
     // In der eingefahrenen Symbolspalte sieht man nur Zeichen, keine Namen.
@@ -150,37 +226,64 @@ export function CommlinkShell({
             </span>
           </div>
 
-          <div className="cl-bereiche">
-            {bereiche.map((b, i) => {
-              const ersterBald = b.bald && !bereiche[i - 1]?.bald;
-              return (
-                <div key={b.id}>
-                  {ersterBald && <div className="cl-gruppe">In Arbeit</div>}
-                  <button
-                    type="button"
-                    className="cl-bereich"
-                    aria-current={b.id === aktiv ? "page" : undefined}
-                    data-vor={vor === b.id ? "true" : undefined}
-                    disabled={b.bald}
-                    title={b.name}
-                    onClick={(e) => waehle(b, e)}
-                    /* --ton färbt Rahmen und Schein des vorgefahrenen Eintrags
-                       in genau der Farbe, die anschließend nach oben fliegt. */
-                    style={{ "--ton": b.farbe } as React.CSSProperties}
-                  >
-                    <span
-                      className="cl-bereich-symbol"
-                      aria-hidden="true"
-                      style={b.bald ? undefined : { color: b.farbe }}
-                    >
-                      {b.symbol}
-                    </span>
-                    <span className="cl-bereich-name">{b.name}</span>
-                    {b.bald && <span className="cl-bereich-bald">bald</span>}
-                  </button>
-                </div>
-              );
-            })}
+          <div className="cl-bereiche-schacht">
+            {passtNicht && (
+              <button
+                type="button"
+                className="cl-bereiche-pfeil"
+                data-lage="hoch"
+                aria-label="Nach oben"
+                title="Nach oben"
+                disabled={!kannHoch}
+                onClick={() => blattre(-1)}
+              />
+            )}
+            <div className="cl-bereiche-blick" ref={blickRef}>
+              <div className="cl-bereiche" ref={listeRef}>
+                {sichtbare.map((b, i) => {
+                  const globalI = start + i;
+                  const ersterBald = b.bald && !bereiche[globalI - 1]?.bald;
+                  return (
+                    <div key={b.id}>
+                      {ersterBald && <div className="cl-gruppe">In Arbeit</div>}
+                      <button
+                        type="button"
+                        className="cl-bereich"
+                        aria-current={b.id === aktiv ? "page" : undefined}
+                        data-vor={vor === b.id ? "true" : undefined}
+                        disabled={b.bald}
+                        title={b.name}
+                        onClick={(e) => waehle(b, e)}
+                        /* --ton färbt Rahmen und Schein des vorgefahrenen Eintrags
+                           in genau der Farbe, die anschließend nach oben fliegt. */
+                        style={{ "--ton": b.farbe } as React.CSSProperties}
+                      >
+                        <span
+                          className="cl-bereich-symbol"
+                          aria-hidden="true"
+                          style={b.bald ? undefined : { color: b.farbe }}
+                        >
+                          {b.symbol}
+                        </span>
+                        <span className="cl-bereich-name">{b.name}</span>
+                        {b.bald && <span className="cl-bereich-bald">bald</span>}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {passtNicht && (
+              <button
+                type="button"
+                className="cl-bereiche-pfeil"
+                data-lage="runter"
+                aria-label="Nach unten"
+                title="Nach unten"
+                disabled={!kannRunter}
+                onClick={() => blattre(1)}
+              />
+            )}
           </div>
 
           {fuss && <div className="cl-menue-fuss">{fuss}</div>}

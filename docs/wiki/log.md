@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-29] update | Burgermenü blättert ohne Scrollbar
+
+Symbolspalte: keine `overflow-y: auto`-Leiste mehr. Flache Pfeile oben/unten
+blättern eine Seite, vorgefahrener Name bleibt sichtbar. Handy-Schublade
+weiter volle Liste, Scrollbar unsichtbar.
+
 ## [2026-09-29] update | kampagnen-export-import Weissliste + Nacht-Dump
 
 Import-Weissliste um Zusatzfertigkeiten, Shop-Bestellung/Alltagswunsch und

@@ -155,8 +155,9 @@
   background: var(--flaeche);
   border-right: 1px solid var(--linie);
   /* visible, damit der vorgefahrene Eintrag ueber die Spalte hinausragen
-     kann. Kostet das vertikale Scrollen der Spalte — bei der derzeitigen
-     Anzahl Bereiche unkritisch, bei deutlich mehr neu zu loesen. */
+     kann. Vertikal wird geblaettert (Pfeile), nicht gescrollt —
+     overflow-y: auto wuerde den Namen abschneiden und eine Scrollbar
+     in die Symbolspalte setzen. */
   overflow: visible;
 }
 
@@ -248,11 +249,91 @@
   margin-top: 1px;
 }
 
-.cl-bereiche {
-  padding: 10px 0;
+/* Schacht: flache Pfeile oben/unten, Blickfeld dazwischen.
+   Es wird geblaettert, nicht gescrollt — overflow-y: auto ist verboten
+   (Scrollbar + Clip des vorgefahrenen Namens). */
+.cl-bereiche-schacht {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-bereiche-blick {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.cl-bereiche {
+  padding: 10px 0;
+  overflow: visible;
+}
+
+/* `button.` schlaegt die globale min-height/padding/border-Regel,
+   sonst werden die Pfeile zu 44px-Knoepfen mit Rahmen. */
+button.cl-bereiche-pfeil {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 14px;
+  min-height: 14px;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  padding-inline: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-leise);
+  letter-spacing: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+button.cl-bereiche-pfeil::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+button.cl-bereiche-pfeil[data-lage="hoch"] {
+  border-bottom: 1px solid var(--linie);
+}
+
+button.cl-bereiche-pfeil[data-lage="hoch"]::before {
+  border-bottom: 5px solid currentColor;
+}
+
+button.cl-bereiche-pfeil[data-lage="runter"] {
+  border-top: 1px solid var(--linie);
+}
+
+button.cl-bereiche-pfeil[data-lage="runter"]::before {
+  border-top: 5px solid currentColor;
+}
+
+button.cl-bereiche-pfeil:hover:not(:disabled) {
+  color: var(--neon);
+  background: var(--flaeche-aktiv);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+button.cl-bereiche-pfeil:active:not(:disabled) {
+  transform: none;
+}
+
+button.cl-bereiche-pfeil:disabled {
+  opacity: 0.28;
+  cursor: default;
+  color: var(--text-leise);
+  background: transparent;
+  border-color: transparent;
 }
 
 .cl-gruppe {
@@ -515,6 +596,24 @@
   .cl-menue .cl-menue-fuss,
   .cl-menue .cl-gruppe {
     opacity: 1;
+  }
+
+  /* Handy: nativ scrollen, keine Pfeile. Die Schublade ist breit genug
+     für die Namen — overflow-y clippt sie nicht. Scrollbar bleibt tot. */
+  .cl-bereiche-blick {
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .cl-bereiche-blick::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  button.cl-bereiche-pfeil {
+    display: none;
   }
 
   .cl-abdunkelung[data-offen="true"] {

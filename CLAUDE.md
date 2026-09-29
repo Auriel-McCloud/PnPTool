@@ -217,6 +217,14 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (29.09.2026 — Burgermenü blättert, keine Scrollbar):**
+- **Was:** Die Scrollbar in der Symbolspalte ist raus. Zu lange Liste:
+  flaches Pfeilchen oben/unten, Klick blättert eine Seite. Der vorgefahrene
+  Name bleibt sichtbar (kein `overflow-y: auto`). Handy-Schublade unverändert
+  die volle Liste, Scrollbar unsichtbar.
+- **Dateien:** `frontend/src/shell/CommlinkShell.tsx`, `shell/commlink.css`.
+- **Verifiziert:** `tsc -b` sauber. Klicktest am Spieltisch.
+
 **Zuletzt gebaut (29.09.2026 — Export-Weissliste + Nacht-Dump auf bebop):**
 - **Was:** Import-Weissliste um alles nachgezogen, was seit dem Export-Bau
   (24.09.) dazukam: Zusatzfertigkeiten, Shop-Bestellung/Alltagswunsch,
@@ -234,7 +242,7 @@ npm run dev
   Kategoriefilter, Suche, chronologische Liste. Nur SL. Zeitleiste liefert
   jetzt `kurz` (Art/Anlass) mit. Burgermenü: ausblenden + Reihenfolge am
   GM-Account, **PC und Tablet getrennt** (`GET/PATCH /api/auth/gm/menue`).
-  Handy scrollt die volle Liste. Fallback: Symbolspalte `overflow-y: auto`.
+  Handy zeigt die volle Liste. Zu lang: Pfeile blättern, keine Scrollbar.
 - **Dateien:** `frontend/src/ereignisprotokoll/`, `shell/menue.ts`,
   `shell/MenueAnpassen.tsx`, `backend/app/auth/menue.py`. Tests:
   `tests/test_gm_menue.py`.
