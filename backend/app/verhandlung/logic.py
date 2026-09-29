@@ -14,6 +14,7 @@ Antwort passiert sein).
 
 from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
+from app.ereignisprotokoll import hooks
 from app.haendler import repository as haendler_repository
 from app.items import repository as items_repository
 from app.kampf.ruestung import repariere
@@ -57,6 +58,12 @@ async def _ausfuehren_ruestung_reparatur(campaign_id: str, verhandlung: dict) ->
     await entities_repository.update_node(
         "Person", PERSON_FIELDS, campaign_id, person_id, {"kapital": kapital - preis}
     )
+    await hooks.gegenstand(
+        campaign_id, art="REPARIERT", gegenstand_id=gegenstand_id, neuer_besitzer_id=person_id,
+    )
+    await hooks.geld(
+        campaign_id, betrag=preis, art="AUSGABE", von_person_id=person_id,
+    )
     return {"gegenstand": aktualisiert, "kapitalNeu": kapital - preis}
 
 
@@ -87,6 +94,7 @@ async def _ausfuehren_shop_kauf(campaign_id: str, verhandlung: dict) -> dict:
     if gegenstand is None:
         raise VerhandlungsFehler("Die Ware ist nicht mehr auffindbar")
 
+    alter_besitzer = await items_repository.get_owner_id(campaign_id, gegenstand_id)
     if gegenstand["istVorlage"]:
         gekauft = await items_repository.assign_copy(campaign_id, gegenstand, person_id, "SPEZIFISCH", [person_id])
     else:
@@ -97,6 +105,14 @@ async def _ausfuehren_shop_kauf(campaign_id: str, verhandlung: dict) -> dict:
 
     kapital_neu = kapital - preis
     await entities_repository.update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"kapital": kapital_neu})
+    await hooks.handel(
+        campaign_id,
+        gegenstand_id=gekauft["id"],
+        neuer_besitzer_id=person_id,
+        betrag=preis,
+        von_person_id=haendler_id,
+        alter_besitzer_id=alter_besitzer,
+    )
     return {"gegenstand": gekauft, "kapitalNeu": kapital_neu}
 
 
@@ -122,6 +138,13 @@ async def _ausfuehren_gegenstand_weitergabe(campaign_id: str, verhandlung: dict)
     uebergeben = await items_repository.transfer_owner(campaign_id, gegenstand_id, empfaenger_id)
     if uebergeben is None:
         raise VerhandlungsFehler("Übergabe fehlgeschlagen")
+    await hooks.gegenstand(
+        campaign_id,
+        art="WEITERGEGEBEN",
+        gegenstand_id=gegenstand_id,
+        alter_besitzer_id=kontext.get("absenderPersonId"),
+        neuer_besitzer_id=empfaenger_id,
+    )
     return {"gegenstand": uebergeben}
 
 

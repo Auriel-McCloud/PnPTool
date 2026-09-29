@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-29] update | ereignisprotokoll Auto-Hooks
+
+Fachmodule schreiben ins Sitzungs-Log über `hooks.py`: Kampf, Verhandlung,
+Shop/Items/Geld, Party-Aufenthalt, Charakterentwicklung, KI-Hauptpfade.
+Tests ohne Neo4j. Frontend und NPC-Wissen weiter offen.
+
 ## [2026-09-29] update | ereignisprotokoll Doku-Nachzug
 
 Backend-Modul stand seit Commit `233c939` (27.09.), Wiki/CLAUDE.md sagten

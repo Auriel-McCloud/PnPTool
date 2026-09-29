@@ -4,11 +4,11 @@ Sitzungs-Log: eigener Knotentyp je Kategorie, gemeinsame Basis-Felder für
 eine UNION-Zeitleiste. Kein generisches `typ`-Feld.
 
 Modul: `backend/app/ereignisprotokoll/` (`schemas.py`, `repository.py`,
-`routes.py`). Migration: `backend/app/db/migrations/006_ereignisprotokoll.cypher`.
+`routes.py`, `hooks.py`). Migration: `backend/app/db/migrations/006_ereignisprotokoll.cypher`.
 Herleitung: `docs/wiki/entities/ereignisprotokoll.md`.
 **Kein Frontend** (Stand 29.09.2026).
 
-Commit `233c939` (27.09.2026). Doku nachgezogen 29.09.2026.
+Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
 
 ## Stand
 
@@ -17,14 +17,15 @@ Commit `233c939` (27.09.2026). Doku nachgezogen 29.09.2026.
 - **Writer** (`log_ki_eintrag`, `log_gegenstandsbewegung`, `log_geldbewegung`,
   `log_aufenthalt`, `log_npc_wissenszuwachs`, `log_kampf_eintrag`,
   `log_verhandlungsausgang`, `log_charakterentwicklung`) liegen im Modul.
-  Im committed Stand rufen die Fachmodule sie **nicht** auf — ohne Hook
-  bleibt das Log leer, auch wenn die Lese-Routen existieren.
-- **Uncommitted (Working Tree, nicht auf `main`):** Auto-Hooks für
-  Kampf-Treffer, Verhandlungsausgang, EP/Steigerung/Willenskraft,
-  Rassenwechsel, plus `aktive_sitzung_id` und `angreifer_person_id`.
+  Fachmodule rufen sie über `hooks.py` (aktive Sitzung zentral).
+- **Auto-Hooks:** Kampf-Treffer, Verhandlungsausgang, Shop-Kauf + digitale
+  Lieferung, Reparatur, Weitergabe/Wegwerfen, Party-Aufenthalt, EP/Steigerung/
+  Willenskraft/Rasse, KI-Hauptpfade (Idee, Objekt-Text, Bild, Wiki-Prüfung,
+  Auto-Verknüpfung, Erstellungs-Kommentar). Kauf teilt sich `handelId`.
 - **Nicht gebaut:** Zeitleisten-UI, Achievements (nur ID-Constraints in der
-  Migration; Konzept `docs/wiki/entities/achievements.md`), Auto-Hooks für
-  KI, Gegenstände, Geld, Aufenthalt, NPC-Wissen.
+  Migration; Konzept `docs/wiki/entities/achievements.md`), NPC-Wissens-Hooks,
+  KI-Nebenpfade (Sortiment, Alltagswunsch, Zusatzfertigkeiten-Vorschlag,
+  Wiki-Import, Spieler-Portrait).
 
 ## Kategorien (`LOG_LABELS`)
 

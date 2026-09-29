@@ -9,6 +9,7 @@ WebSockets zu brauchen.
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.ereignisprotokoll import hooks
 from app.items import repository as items_repository
 from app.mitteilungen.verteiler import verteiler
 from app.party import repository as party_repository
@@ -38,6 +39,13 @@ async def _verteilen(campaign_id: str, verhandlung: dict) -> None:
     """
     umschlag = {**verhandlung, "_typ": "verhandlung", "empfaengerIds": [verhandlung["empfaengerPersonId"]]}
     await verteiler.verteilen(campaign_id, umschlag)
+
+
+async def _log_ausgang(campaign_id: str, verhandlung: dict, angenommen: bool) -> None:
+    """Ereignisprotokoll: VerhandlungsAusgang, egal ob angenommen oder
+    abgelehnt (Mark, 27.09.2026: Ablehnungen sind für den Rückblick genauso
+    interessant — "die Party hat das Angebot des Fixers ausgeschlagen")."""
+    await hooks.verhandlungsausgang(campaign_id, verhandlung, angenommen)
 
 
 @router.post("", response_model=VerhandlungResponse, status_code=status.HTTP_201_CREATED,
@@ -149,6 +157,7 @@ async def antworten(
         if aktualisiert is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Verhandlung nicht gefunden")
         await _verteilen(campaign_id, aktualisiert)
+        await _log_ausgang(campaign_id, aktualisiert, angenommen=False)
         return aktualisiert
 
     try:
@@ -161,6 +170,7 @@ async def antworten(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Verhandlung nicht gefunden")
     aktualisiert["ergebnis"] = ergebnis
     await _verteilen(campaign_id, aktualisiert)
+    await _log_ausgang(campaign_id, aktualisiert, angenommen=True)
     return aktualisiert
 
 

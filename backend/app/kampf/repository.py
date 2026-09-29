@@ -136,6 +136,30 @@ async def hole(campaign_id: str) -> dict | None:
     }
 
 
+async def angreifer_person_id(campaign_id: str) -> str | None:
+    """Wer ist gerade dran? Grundlage für die automatische Angreifer-
+    Zuordnung im Ereignisprotokoll (Marks Vorgabe, docs/wiki/entities/
+    ereignisprotokoll.md, Abschnitt KampfLogEintrag): "wenn mein Spieler
+    dran ist und ein NPC Leben verliert, hat der Spieler diesen NPC
+    verletzt — und umgekehrt". Liefert None, wenn kein Kampf läuft, niemand
+    am Zug ist, oder der Teilnehmer am Zug kein Person-Knoten ist (z.B. ein
+    reiner Begleiter ohne eigene Person, oder Umweltschaden).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (k:Kampf {campaignId: $campaign_id})
+            WHERE k.amZug IS NOT NULL
+            MATCH (k)-[:KAEMPFT]->(t:KampfTeilnehmer {id: k.amZug})-[:IST]->(p:Person)
+            RETURN p.id AS personId
+            """,
+            campaign_id=campaign_id,
+        )
+        record = await result.single()
+        return record["personId"] if record else None
+
+
 async def beginne(campaign_id: str) -> dict:
     """Startet einen Kampf. Ein laufender wird dabei ersetzt."""
     await beende(campaign_id)

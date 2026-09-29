@@ -99,6 +99,28 @@ async def get_sitzung(campaign_id: str, sitzung_id: str) -> dict | None:
         return _decode_sitzung(dict(record)) if record else None
 
 
+async def aktive_sitzung_id(campaign_id: str) -> str | None:
+    """Die zuletzt angelegte Sitzung dieser Kampagne — Fallback-Zuordnung für
+    automatische Log-Hooks (Kampf-Treffer, Verhandlungsausgang, ...), die
+    selbst keine sitzungId übergeben. Die SL legt üblicherweise zu
+    Spielbeginn eine neue Sitzung an ("Session 14"); solange sie das tut,
+    landen automatisch erzeugte Einträge unter dem richtigen Abend. Ohne
+    jede Sitzung (frische Kampagne, SL vergisst es) bleibt sitzungId einfach
+    leer statt zu raten — kein Fehlerfall, nur unzugeordnet.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (s:Sitzung {campaignId: $campaign_id})
+        RETURN s.id AS id
+        ORDER BY s.erstelltAm DESC
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        record = await result.single()
+        return record["id"] if record else None
+
+
 async def aendere_sitzung(campaign_id: str, sitzung_id: str, daten: dict) -> dict | None:
     geaendert = {k: v for k, v in daten.items() if v is not None}
     if not geaendert:

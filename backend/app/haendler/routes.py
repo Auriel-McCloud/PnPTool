@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
+from app.ereignisprotokoll import hooks
 from app.entities.visibility import is_visible_to
 from app.haendler import repository
 from app.haendler import alltagswunsch
@@ -198,6 +199,9 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         bestellung = await repository.bestellung_anlegen(
             campaign_id, haendler_id, haendler["name"], kaeufer_id, body.gegenstandId, gegenstand["name"], preis
         )
+        await hooks.geld(
+            campaign_id, betrag=preis, art="AUSGABE", von_person_id=kaeufer_id,
+        )
         return KaufResponse(gegenstand=None, kapitalNeu=kapital_neu, bestellung=bestellung)
 
     if gegenstand["istVorlage"]:
@@ -217,6 +221,15 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
 
     await entities_repository.update_node(
         "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
+    )
+
+    await hooks.handel(
+        campaign_id,
+        gegenstand_id=gekauft["id"],
+        neuer_besitzer_id=kaeufer_id,
+        betrag=preis,
+        von_person_id=haendler_id,
+        alter_besitzer_id=None if gegenstand["istVorlage"] else haendler_id,
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu)
@@ -258,15 +271,22 @@ async def bestellung_liefern(campaign_id: str, bestellung_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht mehr auffindbar")
 
     if gegenstand["istVorlage"]:
-        await items_repository.assign_copy(
+        geliefert = await items_repository.assign_copy(
             campaign_id, gegenstand, bestellung["kaeuferPersonId"], "SPEZIFISCH", [bestellung["kaeuferPersonId"]]
         )
     else:
-        await items_repository.transfer_owner(campaign_id, bestellung["gegenstandId"], bestellung["kaeuferPersonId"])
+        geliefert = await items_repository.transfer_owner(campaign_id, bestellung["gegenstandId"], bestellung["kaeuferPersonId"])
 
     aktualisiert = await repository.bestellung_liefern(campaign_id, bestellung_id)
     if aktualisiert is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Diese Bestellung wurde bereits geliefert")
+    if geliefert:
+        await hooks.gegenstand(
+            campaign_id,
+            art="GEKAUFT",
+            gegenstand_id=geliefert["id"],
+            neuer_besitzer_id=bestellung["kaeuferPersonId"],
+        )
     return aktualisiert
 
 

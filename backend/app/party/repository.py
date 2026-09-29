@@ -35,6 +35,7 @@ setzen, kein Verwaisen möglich):
 import uuid
 
 from app.db.neo4j_driver import get_driver
+from app.ereignisprotokoll import hooks
 
 RETURN_FIELDS = """
     party.id AS id, party.name AS name, party.beschreibung AS beschreibung,
@@ -209,7 +210,12 @@ async def aufenthaltsort_setzen(campaign_id: str, party_id: str, ziel_id: str | 
             """
             result = await session.run(query, campaign_id=campaign_id, party_id=party_id)
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        decoded = _decode(dict(record)) if record else None
+        if decoded and ziel_id and ziel_kind in ("Ort", "Event"):
+            await hooks.aufenthalt(
+                campaign_id, ort_id=ziel_id, ort_kind=ziel_kind, party_id=party_id,
+            )
+        return decoded
 
 
 async def aktivieren(campaign_id: str, party_id: str) -> dict | None:

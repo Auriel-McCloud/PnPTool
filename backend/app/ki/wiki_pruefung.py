@@ -31,6 +31,7 @@ import json
 
 from pydantic import BaseModel
 
+from app.ereignisprotokoll import hooks
 from app.ki.client import generiere_json
 from app.ki.kontext import sammle_kontext, tiptap_zu_text
 from app.wiki import repository
@@ -121,10 +122,20 @@ def _prompt(text: str, kontext: str) -> str:
     return "\n\n".join(teile)
 
 
-async def _pruefe_text(text: str, kontext: str) -> list[PruefBefund]:
+async def _pruefe_text(
+    text: str, kontext: str, *, campaign_id: str, betrifft_id: str | None = None,
+) -> list[PruefBefund]:
     if not text.strip():
         return []
     ergebnis = await generiere_json(_prompt(text, kontext), _SYSTEM, _SCHEMA)
+    await hooks.ki(
+        campaign_id,
+        anlass="wiki-pruefung",
+        prompt=text,
+        antwort_text=json.dumps(ergebnis, ensure_ascii=False),
+        uebernommen=False,
+        betrifft_id=betrifft_id,
+    )
     befunde = []
     for eintrag in ergebnis.get("befunde") or []:
         zitat = (eintrag.get("zitat") or "").strip()
@@ -155,7 +166,7 @@ async def pruefe_freitext(campaign_id: str, text: str) -> list[PruefBefund]:
     gezielt geklickt statt automatisch mitzulaufen.
     """
     kontext = await sammle_kontext(campaign_id)
-    return await _pruefe_text(text, kontext)
+    return await _pruefe_text(text, kontext, campaign_id=campaign_id)
 
 
 async def pruefe_seite(campaign_id: str, seiten_id: str) -> list[PruefBefund]:
@@ -165,7 +176,9 @@ async def pruefe_seite(campaign_id: str, seiten_id: str) -> list[PruefBefund]:
         return []
     text = tiptap_zu_text(seite["inhalt"])
     kontext = await sammle_kontext(campaign_id)
-    befunde = await _pruefe_text(text, kontext)
+    befunde = await _pruefe_text(
+        text, kontext, campaign_id=campaign_id, betrifft_id=seiten_id,
+    )
     await repository.set_pruefhash(campaign_id, seiten_id, _hash(text))
     return befunde
 
@@ -188,7 +201,9 @@ async def sweep(campaign_id: str) -> SweepAntwort:
             continue
 
         geprueft += 1
-        befunde = await _pruefe_text(text, kontext)
+        befunde = await _pruefe_text(
+            text, kontext, campaign_id=campaign_id, betrifft_id=seite["id"],
+        )
         await repository.set_pruefhash(campaign_id, seite["id"], aktueller_hash)
         if befunde:
             ergebnisse.append(

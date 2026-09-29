@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities import repository
 from app.entities import filterung
+from app.ereignisprotokoll import hooks
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.entities.visibility import (
     filter_entities_for_viewer,
@@ -144,9 +145,27 @@ async def get_person(campaign_id: str, node_id: str, viewer: Viewer = Depends(ge
 
 @router.patch("/personen/{node_id}", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
 async def update_person(campaign_id: str, node_id: str, body: PersonUpdate):
-    node = await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, body.model_dump())
+    daten = body.model_dump()
+    # Ereignisprotokoll (27.09.2026, CharakterEntwicklung RASSE_GEAENDERT):
+    # `rasse` ist ein generisches PATCH-Feld ohne eigenen Endpunkt — deshalb
+    # hier per Vorher/Nachher-Vergleich erkannt statt an einer eigenen Route.
+    # Mark: "kann ja auch storytechnisch begründet passieren... Body Swap
+    # oder sowas" — jeder tatsächliche Wechsel wird geloggt, unabhängig vom
+    # Grund.
+    vorherige_rasse = None
+    if daten.get("rasse") is not None:
+        vorher = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+        vorherige_rasse = vorher.get("rasse") if vorher else None
+
+    node = await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, daten)
     if node is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    if daten.get("rasse") is not None and daten["rasse"] != vorherige_rasse:
+        await hooks.charakterentwicklung(
+            campaign_id, person_id=node_id, art="RASSE_GEAENDERT",
+            alt=vorherige_rasse or "", neu=daten["rasse"],
+        )
     return node
 
 

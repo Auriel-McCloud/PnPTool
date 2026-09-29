@@ -57,6 +57,7 @@ from app.entities.repository import (
     create_verbindung,
 )
 from app.entities.schemas import EventCreate, FraktionCreate, OrtCreate, PersonCreate
+from app.ereignisprotokoll import hooks
 from app.ki.client import generiere_json
 from app.ki.kontext import sammle_entitaeten, tiptap_zu_text
 from app.wiki import repository
@@ -175,7 +176,7 @@ async def vorschlaege(campaign_id: str, seiten_id: str) -> VorschlaegeAntwort:
         return VorschlaegeAntwort()
 
     entitaeten = await sammle_entitaeten(campaign_id)
-    return await _erkennen(entitaeten, text)
+    return await _erkennen(entitaeten, text, campaign_id=campaign_id, betrifft_id=seiten_id)
 
 
 async def vorschlaege_fuer_text(campaign_id: str, text: str) -> VorschlaegeAntwort:
@@ -190,10 +191,12 @@ async def vorschlaege_fuer_text(campaign_id: str, text: str) -> VorschlaegeAntwo
     if not text.strip():
         return VorschlaegeAntwort()
     entitaeten = await sammle_entitaeten(campaign_id)
-    return await _erkennen(entitaeten, text)
+    return await _erkennen(entitaeten, text, campaign_id=campaign_id)
 
 
-async def _erkennen(entitaeten: list[dict], text: str) -> VorschlaegeAntwort:
+async def _erkennen(
+    entitaeten: list[dict], text: str, *, campaign_id: str, betrifft_id: str | None = None,
+) -> VorschlaegeAntwort:
     """Ein KI-Aufruf: erkennt Erwähnungen UND Beziehungen in `text`, gleicht
     Namen gegen die mitgegebenen (bereits geladenen) Entitäten ab.
 
@@ -209,6 +212,14 @@ async def _erkennen(entitaeten: list[dict], text: str) -> VorschlaegeAntwort:
         f"Zu durchsuchender Text:\n{text}"
     )
     ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA)
+    await hooks.ki(
+        campaign_id,
+        anlass="auto-verknuepfung",
+        prompt=text,
+        antwort_text=json.dumps(ergebnis, ensure_ascii=False),
+        uebernommen=False,
+        betrifft_id=betrifft_id,
+    )
 
     # Schneller Nachschlage-Index: (typ, normalisierter Name) -> id.
     index = {(e["kind"], _normalisiert(e["name"])): e["id"] for e in entitaeten if e["name"]}
@@ -308,7 +319,11 @@ async def sweep(campaign_id: str) -> SweepVorschlaegeAntwort:
             continue
 
         geprueft += 1
-        antwort = await _erkennen(entitaeten, text) if text.strip() else VorschlaegeAntwort()
+        antwort = (
+            await _erkennen(entitaeten, text, campaign_id=campaign_id, betrifft_id=seite["id"])
+            if text.strip()
+            else VorschlaegeAntwort()
+        )
         await repository.set_verknuepfhash(campaign_id, seite["id"], aktueller_hash)
         if antwort.verweise or antwort.beziehungen:
             ergebnisse.append(

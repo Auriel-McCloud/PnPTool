@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
+from app.ereignisprotokoll import hooks
+from app.kampf import repository as kampf_repository
 from app.items.repository import (
     ausruestungs_trait_boni,
     ausruestungsfertigkeiten_liste,
@@ -246,6 +248,12 @@ class RuestungTrefferInput(BaseModel):
 
     art: RuestungsArt
     staerke: int = Field(ge=0)
+    # Ereignisprotokoll (27.09.2026): Angreifer wird normalerweise automatisch
+    # aus Kampf.amZug abgeleitet (Marks Vorgabe: "wenn mein Spieler dran ist,
+    # und ein NPC leben verliert, hat der Spieler diesen NPC verletzt").
+    # Override nur für Ausnahmefälle: Treffer außerhalb der Zugreihenfolge,
+    # Umwelt-/Fallenschaden ohne Angreifer, nachträgliche SL-Korrektur.
+    angreiferPersonId: str | None = None
 
 
 class RuestungsteilFolge(BaseModel):
@@ -347,6 +355,25 @@ async def ruestungstreffer(
             person_id,
             {feld: int(person.get(feld) or 0) + ergebnis["hpMenge"]},
         )
+
+    # Ereignisprotokoll: KampfLogEintrag mit automatischer Angreifer-
+    # Zuordnung aus Kampf.amZug (Marks Vorgabe, docs/wiki/entities/
+    # ereignisprotokoll.md) — Override per Body hat Vorrang, sonst wird
+    # nachgeschaut, wer laut laufendem Kampf gerade dran ist. Außerhalb
+    # eines Kampfs (kein Zug bekannt) bleibt Angreifer leer.
+    angreifer_id = body.angreiferPersonId or await kampf_repository.angreifer_person_id(campaign_id)
+    laufender_kampf = await kampf_repository.hole(campaign_id)
+    await hooks.kampf_treffer(
+        campaign_id,
+        art="KRITISCH" if ergebnis["hpArt"] == "aggraviert" else "TREFFER",
+        ziel_person_id=person_id,
+        angreifer_person_id=angreifer_id,
+        kampf_id=(laufender_kampf or {}).get("id", ""),
+        runde=(laufender_kampf or {}).get("runde", 0),
+        hp_art=ergebnis["hpArt"],
+        hp_menge=ergebnis["hpMenge"],
+        kaestchen_schaden=ergebnis["kaestchenSchaden"],
+    )
 
     einstellungen = await get_einstellungen(campaign_id)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
@@ -543,6 +570,13 @@ async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput)
     achievement = (ergebnis.get("achievement") or "").strip()
     if not kommentar:
         raise HTTPException(status_code=502, detail="Die KI hat keinen Kommentar geliefert.")
+    await hooks.ki(
+        campaign_id,
+        anlass="erstellung-kommentar",
+        prompt=prompt,
+        antwort_text=f"{achievement}\n{kommentar}".strip(),
+        uebernommen=False,
+    )
     return {"achievement": achievement, "kommentar": kommentar}
 
 
@@ -758,15 +792,22 @@ async def steigere_wert(
         preis = erfahrung.kosten_willenskraft(aktuell)
         if preis > verfuegbar:
             raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
+        neuer_bonus = int(person.get("willenskraftBonus") or 0) + 1
         await update_node(
             "Person",
             PERSON_FIELDS,
             campaign_id,
             person_id,
             {
-                "willenskraftBonus": int(person.get("willenskraftBonus") or 0) + 1,
+                "willenskraftBonus": neuer_bonus,
                 "erfahrungAusgegeben": ausgegeben + preis,
             },
+        )
+        # Ereignisprotokoll: Willenskraft-Steigerung ist EINE der drei
+        # CharakterEntwicklung-Arten (docs/wiki/entities/ereignisprotokoll.md).
+        await hooks.charakterentwicklung(
+            campaign_id, person_id=person_id, art="WILLENSKRAFT",
+            alt=str(neuer_bonus - 1), neu=str(neuer_bonus), kosten_oder_menge=preis,
         )
     else:
         if not body.traitDefId:
@@ -800,12 +841,22 @@ async def steigere_wert(
             person_id,
             {"erfahrungAusgegeben": ausgegeben + preis},
         )
+        # Ereignisprotokoll: Punktkauf ist die zweite CharakterEntwicklung-Art.
+        await hooks.charakterentwicklung(
+            campaign_id, person_id=person_id, art="STEIGERUNG",
+            trait_def_id=body.traitDefId, trait_name=eintrag["name"],
+            alt=str(aktuell), neu=str(aktuell + 1), kosten_oder_menge=preis,
+        )
 
     return await get_steigerungspreise(campaign_id, person_id, viewer)
 
 
 class ErfahrungInput(BaseModel):
     punkte: int = Field(ge=0)
+    # Ereignisprotokoll (27.09.2026, Marks Wunsch): optionale Begründung,
+    # landet direkt in slNotiz des CharakterEntwicklung-Eintrags — kein
+    # eigenes Feld nötig (siehe docs/wiki/entities/ereignisprotokoll.md).
+    begruendung: str = ""
 
 
 @router.post("/personen/{person_id}/erfahrung", dependencies=[Depends(require_campaign_gm)])
@@ -814,12 +865,19 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    alte_erfahrung = int(person.get("erfahrung") or 0)
     aktualisiert = await update_node(
         "Person",
         PERSON_FIELDS,
         campaign_id,
         person_id,
-        {"erfahrung": int(person.get("erfahrung") or 0) + body.punkte},
+        {"erfahrung": alte_erfahrung + body.punkte},
+    )
+    # Ereignisprotokoll: EP-Vergabe ist die dritte CharakterEntwicklung-Art.
+    await hooks.charakterentwicklung(
+        campaign_id, person_id=person_id, art="ERFAHRUNG_VERGEBEN",
+        alt=str(alte_erfahrung), neu=str(alte_erfahrung + body.punkte),
+        kosten_oder_menge=body.punkte, sl_notiz=body.begruendung,
     )
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)

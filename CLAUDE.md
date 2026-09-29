@@ -217,6 +217,23 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (29.09.2026 — Ereignisprotokoll-Auto-Hooks):**
+- **Was:** Fachmodule schreiben echte Spielereignisse ins Sitzungs-Log.
+  Zentrale Schicht `backend/app/ereignisprotokoll/hooks.py` (holt die
+  aktive Sitzung, Tests mocken ohne Neo4j). Tests:
+  `backend/tests/test_ereignisprotokoll_hooks.py` (4/4 grün). Volle Suite
+  450 passed; 2 Zugriffsschutz-Fehler sind vorbestehend (nicht durch die
+  Hooks).
+- **Verdrahtet:** Kampf-Treffer (`Kampf.amZug`), Verhandlungsausgang
+  (annehmen und ablehnen), Shop-Kauf + digitale Bestell-Lieferung,
+  Rüstungsreparatur, Gegenstands-Weitergabe/Wegwerfen, Party-Aufenthalt,
+  EP/Steigerung/Willenskraft, Rassenwechsel, KI (Idee, Objekt-Text,
+  Bild-Prompt/-Generieren, Wiki-Prüfung, Auto-Verknüpfung, Erstellungs-
+  Kommentar). Kauf bündelt Gegenstand+Geld über gemeinsame `handelId`.
+- **Weiter fehlend:** Frontend/Zeitleiste, Achievements, NPC-Wissens-
+  Hooks, KI-Sortiment/Alltagswunsch/Zusatzfertigkeiten-Vorschlag,
+  Wiki-Import, Spieler-Portrait-Bild.
+
 **Zuletzt gebaut (29.09.2026 — Doku-Nachzug Ereignisprotokoll-Backend):**
 - **Was:** Das Backend fürs Sitzungs-Log steht seit Commit `233c939`
   (27.09.2026), war in CLAUDE.md/Wiki aber noch als „kein Code“ markiert.
@@ -1127,7 +1144,7 @@ npm run dev
 - API-Dokumentation (`docs/api/`)
 
 **Offen (Stand 29.09.2026):** Shop-Spam/Scammer, KI-Chatbots an Gegenständen,
-Ereignisprotokoll-Frontend + Auto-Hooks (Backend-Modul steht, siehe Punkt 17),
+Ereignisprotokoll-Frontend (Auto-Hooks Backend verdrahtet, siehe Punkt 17),
 Achievements, Inventar-Rest (Geld/Credstick/Heiltrank/Granate/gleicher Ort),
 Critter-Pet, Portrait-Zeichentool, KI-Auto-Steigerung, Cyberdecks als Items.
 Shop-Spieler-Frontend, SL-Sortiment-Editor, Kampagnen-Export/Import,
@@ -1995,10 +2012,11 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     `docs/api/ereignisprotokoll.md`.
     **Backend gebaut:** Modul `app/ereignisprotokoll/` — Sitzungen, acht
     Log-Kategorien, UNION-Zeitleiste, Korrektur + Papierkorb,
-    `Person.erstelltAm`. Writer-Funktionen existieren; auf `main` rufen die
-    Fachmodule sie nicht auf. **Auto-Hooks uncommitted** (Kampf, Verhandlung,
-    EP/Steigerung/Willenskraft, Rasse). **Frontend fehlt.** Achievements
-    bleiben Konzept (`docs/wiki/entities/achievements.md`).
+    `Person.erstelltAm`. **Auto-Hooks verdrahtet 29.09.2026** über
+    `hooks.py` (Kampf, Verhandlung, Shop/Items/Geld, Aufenthalt,
+    Charakterentwicklung, KI-Hauptpfade). **Frontend fehlt.** Achievements
+    bleiben Konzept (`docs/wiki/entities/achievements.md`). NPC-Wissen und
+    ein paar KI-Nebenpfade (Sortiment/Alltagswunsch/Wiki-Import) noch ohne Hook.
     - **Grundprinzip:** eigener Knotentyp je Kategorie (nicht ein generischer
       `typ`-Knoten — passt zum bestehenden Projektstil, keine allgemeinen
       Felder für Sonderfälle), aber alle mit gemeinsamen Basis-Properties

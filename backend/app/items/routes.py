@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node
+from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
@@ -255,6 +256,13 @@ async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenReques
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Übertragung fehlgeschlagen")
     if updates:
         moved = await repository.update_gegenstand(campaign_id, item_id, updates)
+    await hooks.gegenstand(
+        campaign_id,
+        art="WEITERGEGEBEN",
+        gegenstand_id=item_id,
+        alter_besitzer_id=alter_besitzer,
+        neuer_besitzer_id=body.zielPersonId,
+    )
     return moved
 
 
@@ -320,6 +328,12 @@ async def item_wegwerfen(
     item = await repository.wegwerfen(campaign_id, item_id, von)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden oder schon weggeworfen")
+    await hooks.gegenstand(
+        campaign_id,
+        art="ENTSORGT",
+        gegenstand_id=item_id,
+        alter_besitzer_id=viewer.person_id if viewer.role != "GM" else None,
+    )
     return item
 
 

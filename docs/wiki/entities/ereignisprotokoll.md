@@ -21,7 +21,7 @@ komplett durchgesprochen: Kategorien, Knoten-vs.-Kante-Entscheidung,
 Korrektur-/Löschregel, Zeitstempel-Frage.
 
 **Status dieser Seite: Backend gebaut (27.09.2026, Commit `233c939`),
-Frontend und die meisten Auto-Hooks fehlen.** Datenmodell unten bleibt die
+Auto-Hooks verdrahtet (29.09.2026), Frontend fehlt.** Datenmodell unten bleibt die
 Herleitung; der Code-Stand steht im nächsten Abschnitt. API:
 [[../../api/ereignisprotokoll.md]].
 
@@ -45,19 +45,24 @@ für Sitzung, die acht Log-Labels, plus Achievement/AchievementVerleihung
 - **`Person.erstelltAm`:** steht in `PERSON_FIELDS` + PersonCreate
   `default_factory`. Bestandsdaten ohne rückwirkendes Datum.
 
-**Committed fehlen die Auto-Hooks.** Die Writer liegen bereit, aber
-`ki/`, `items/`, `party/`, `traits/`, `verhandlung/` rufen sie auf `main`
-nicht auf — ein laufendes Spiel schreibt also nichts ins Log.
+**Auto-Hooks (29.09.2026):** Schicht `hooks.py`. Fachmodule rufen die Hooks,
+nicht das Repository direkt — aktive Sitzung kommt immer über
+`aktive_sitzung_id`. Tests ohne Neo4j in
+`backend/tests/test_ereignisprotokoll_hooks.py`.
 
-**Uncommitted (Working Tree, nicht auf `main`, Stand 29.09.2026):**
-`aktive_sitzung_id`, `angreifer_person_id`, plus Hooks an
-Rüstungstreffer, Verhandlungs-Antwort, EP/Steigerung/Willenskraft,
-Rassenwechsel per Personen-PATCH.
+- Kampf-Treffer (`traits/routes.py`, Angreifer aus `Kampf.amZug`)
+- Verhandlungsausgang (annehmen und ablehnen)
+- Shop-Kauf / digitale Lieferung / Rüstungsreparatur / Weitergabe / Wegwerfen
+- Party-Aufenthalt (`BEFINDET_SICH_AN` bleibt die aktuelle Kante)
+- EP, Steigerung, Willenskraft, Rassenwechsel
+- KI: Idee, Objekt-Text, Bild-Prompt/Generieren, Wiki-Prüfung,
+  Auto-Verknüpfung, Erstellungs-Kommentar
 
 ## Noch nicht gebaut
 
 - Frontend / Zeitleisten-UI (wo im Commlink, wer sieht was) — unentworfen.
-- Auto-Hooks für KI, Gegenstände, Geld, Aufenthalt, NPC-Wissen.
+- NPC-Wissens-Hooks; KI-Nebenpfade (Händler-Sortiment, Alltagswunsch,
+  Zusatzfertigkeiten-Vorschlag, Wiki-Import, Spieler-Portrait-Bild).
 - Achievements (Konzept [[achievements]], nur Constraints in der Migration).
 - Echtes In-Game-Kalendersystem (bleibt Freitext).
 
@@ -416,8 +421,8 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Mark klärt das separat.
 - UI/Ansicht der Zeitleiste (wo im Commlink? eigener Bereich? nur SL oder
   auch Spieler-Rückblick?) — **noch nicht entworfen**.
-- Auto-Hooks der Fachmodule — Writer existieren, committed sind sie nicht
-  verdrahtet (uncommitted Diff für Kampf/Verhandlung/Steigerung/Rasse).
+- Auto-Hooks der Hauptpfade — **erledigt 29.09.2026** (`hooks.py`). Offen
+  bleiben NPC-Wissen und ein paar KI-Nebenpfade.
 - Ob `Aufenthalt` das bestehende `BEFINDET_SICH_AN` ersetzt oder nur
   zusätzlich mitläuft (aktueller Stand weiter per Kante, Historie separat
   per Log) — **naheliegend ist "zusätzlich"**, nicht entschieden.
@@ -457,6 +462,10 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   hinterher. Auto-Hooks der Fachmodule committed weiter fehlend
   (uncommitted Diff im Working Tree). Frontend weiter ungebaut.
   API-Referenz `docs/api/ereignisprotokoll.md`.
+- **29.09.2026, später** — Auto-Hooks verdrahtet: `hooks.py` plus
+  Fachstellen (Kampf, Verhandlung, Shop/Items/Geld, Aufenthalt,
+  Charakterentwicklung, KI-Hauptpfade). Tests ohne Neo4j.
+  Frontend weiter ungebaut.
 
 ## Siehe auch
 

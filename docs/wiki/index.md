@@ -55,7 +55,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
 | [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP exportieren/importieren, generische Cypher-Sammlung, ID-Neuvergabe per Text-Ersetzung (24.09.) |
 | [[entities/gegenstand-transfer]] | Party-interne Gegenstands-Weitergabe via Verhandlungs-Popup gebaut (26.09.); Geld, NPC-Belohnung, Credstick/Heiltrank/Granate und „gleicher Ort“ noch offen |
-| [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09. (`233c939`) — Sitzungen, 8 Kategorien, Zeitleiste, Papierkorb, `Person.erstelltAm`. Auto-Hooks uncommitted, Frontend fehlt. Achievements nur Konzept |
+| [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09. (`233c939`), Auto-Hooks 29.09. (`hooks.py`). Frontend fehlt. Achievements nur Konzept |
 | [[entities/achievements]] | Achievement-Konzept (27.09.): `einzigartig`-Häkchen (wie bei Gegenständen) trennt campaign-weit einmalige Titel ("First Kill") von pro-Person wiederholbaren ("Mörder"); Auto-Erkennung live aus dem Ereignisprotokoll berechnet (kein Vorschlags-Knoten nötig) + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Ort+Sitzung; UI: 🏆-Symbol in der Werkzeugleiste (Spieler: Scroll-Popup neueste zuerst, SL: volles Verwaltungs-Fenster), Auto-Popup außer während laufendem Kampf (dann Nachlieferung bei Kampfende) |
 | [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten. SL-Tabelle + KI. In der Erstellung: Button im Fertigkeiten-Popup öffnet Auswahl, danach normale Punktzeilen im Raster (Paket) und Freebees; LevelUp eigener Popup mit EP |
 

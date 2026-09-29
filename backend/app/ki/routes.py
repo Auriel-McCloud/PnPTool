@@ -28,6 +28,7 @@ from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json
+from app.ereignisprotokoll import hooks
 from app.ki.kontext import sammle_kontext
 from app.ki.wiki_pruefung import (
     SweepAntwort,
@@ -322,6 +323,10 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             )
             if seite is None:
                 raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
+            await hooks.ki(
+                campaign_id, anlass="idee-story", prompt=prompt,
+                antwort_text=inhalt, uebernommen=True, betrifft_id=seite["id"],
+            )
             return {"typ": "story", "id": seite["id"], "name": titel}
 
         if body.typ == "gegenstand":
@@ -359,6 +364,10 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             )
             if gegenstand is None:
                 raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
+            await hooks.ki(
+                campaign_id, anlass="idee-gegenstand", prompt=prompt,
+                antwort_text=name, uebernommen=True, betrifft_id=gegenstand["id"],
+            )
             return {"typ": "gegenstand", "id": gegenstand["id"], "name": name}
 
         # charakter
@@ -404,6 +413,10 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             ).model_dump(),
         )
         anzahl_traits = await _setze_traits(campaign_id, person["id"], ruleset, ergebnis.get("traits") or [])
+        await hooks.ki(
+            campaign_id, anlass="idee-charakter", prompt=prompt,
+            antwort_text=name, uebernommen=True, betrifft_id=person["id"],
+        )
         return {"typ": "charakter", "id": person["id"], "name": name, "traits": anzahl_traits}
 
     except KiFehler as e:
@@ -519,7 +532,12 @@ async def ki_objekt_text(campaign_id: str, body: ObjektTextInput):
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    return {"text": (ergebnis.get("text") or "").strip()}
+    text = (ergebnis.get("text") or "").strip()
+    await hooks.ki(
+        campaign_id, anlass="objekt-text", prompt=objekt_prompt,
+        antwort_text=text, uebernommen=False,
+    )
+    return {"text": text}
 
 
 class ObjektTextPruefenInput(BaseModel):
@@ -693,6 +711,10 @@ async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
     prompt = await _bild_prompt_vorschlagen(campaign_id, body.objektTyp, body.objektName, body.bisherigeBeschreibung)
     if not prompt:
         raise HTTPException(status_code=502, detail="Die KI hat keinen Prompt-Vorschlag geliefert.")
+    await hooks.ki(
+        campaign_id, anlass="bild-prompt", prompt=body.objektName,
+        antwort_text=prompt, uebernommen=False,
+    )
     return {"prompt": prompt}
 
 
@@ -715,4 +737,8 @@ async def ki_bild_generieren(campaign_id: str, body: BildGenerierenInput):
     except BildgenerierungFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
+    await hooks.ki(
+        campaign_id, anlass="bild-generieren", prompt=prompt,
+        antwort_text=f"{body.provider}: {len(inhalt)} Bytes", uebernommen=False,
+    )
     return Response(content=inhalt, media_type=content_type)
