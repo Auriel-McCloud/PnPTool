@@ -107,6 +107,56 @@ def test_remap_referenz_auf_globalen_katalogknoten_bleibt_unveraendert():
     assert RASSE_ID not in id_map
 
 
+def test_remap_akzeptiert_kampagnen_typen_seit_export_bau():
+    """Labels/Kanten, die nach dem Export (24.09.) dazukamen, müssen durch
+    die Import-Weissliste — sonst scheitert ein Backup-ZIP am Zurückspielen."""
+    rohtext = _daten(
+        nodes=[
+            _campaign_node(),
+            {"id": "sitzung-1", "labels": ["Sitzung"], "props": {"id": "sitzung-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "ki-1", "labels": ["KiProtokollEintrag"], "props": {"id": "ki-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "zf-1", "labels": ["Zusatzfertigkeit"], "props": {"id": "zf-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "best-1", "labels": ["Bestellung"], "props": {"id": "best-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "alltag-1", "labels": ["Alltagswunsch"], "props": {"id": "alltag-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "gb-1", "labels": ["GegenstandsBewegung"], "props": {"id": "gb-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "geld-1", "labels": ["GeldBewegung"], "props": {"id": "geld-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "auf-1", "labels": ["Aufenthalt"], "props": {"id": "auf-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "wissen-1", "labels": ["NpcWissenszuwachs"], "props": {"id": "wissen-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "kampf-log-1", "labels": ["KampfLogEintrag"], "props": {"id": "kampf-log-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "vh-1", "labels": ["VerhandlungsAusgang"], "props": {"id": "vh-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "ce-1", "labels": ["CharakterEntwicklung"], "props": {"id": "ce-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "ach-1", "labels": ["Achievement"], "props": {"id": "ach-1", "campaignId": CAMPAIGN_ID}},
+            {"id": "av-1", "labels": ["AchievementVerleihung"], "props": {"id": "av-1", "campaignId": CAMPAIGN_ID}},
+        ],
+        edges=[
+            {"fromId": CAMPAIGN_ID, "relType": "HAT_SITZUNG", "props": {}, "toId": "sitzung-1", "toLabels": ["Sitzung"]},
+            {"fromId": CAMPAIGN_ID, "relType": "HAT_EREIGNIS", "props": {}, "toId": "ki-1", "toLabels": ["KiProtokollEintrag"]},
+            {"fromId": PERSON_ID, "relType": "HAT_ZUSATZFERTIGKEIT", "props": {"rating": 1}, "toId": "zf-1", "toLabels": ["Zusatzfertigkeit"]},
+            {"fromId": CAMPAIGN_ID, "relType": "HAT_BESTELLUNG", "props": {}, "toId": "best-1", "toLabels": ["Bestellung"]},
+            {"fromId": CAMPAIGN_ID, "relType": "HAT_ALLTAGSWUNSCH", "props": {}, "toId": "alltag-1", "toLabels": ["Alltagswunsch"]},
+            {"fromId": "ki-1", "relType": "BETRIFFT", "props": {}, "toId": "sitzung-1", "toLabels": ["Sitzung"]},
+            {"fromId": "gb-1", "relType": "ALTER_BESITZER", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "gb-1", "relType": "NEUER_BESITZER", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "kampf-log-1", "relType": "ANGREIFER", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "wissen-1", "relType": "NPC", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "auf-1", "relType": "PARTY", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "auf-1", "relType": "ORT", "props": {}, "toId": ORT_ID, "toLabels": ["Ort"]},
+            {"fromId": "ce-1", "relType": "PERSON", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "best-1", "relType": "ANGEBOTEN_VON", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "ki-1", "relType": "AUSLOESER", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "ki-1", "relType": "EMPFAENGER", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+            {"fromId": "ce-1", "relType": "ZIEL", "props": {}, "toId": PERSON_ID, "toLabels": ["Person"]},
+        ],
+    )
+    neuer_text, id_map, _ = remap_ids(rohtext, CAMPAIGN_ID)
+    neu = json.loads(neuer_text)
+    labels = {n["labels"][0] for n in neu["nodes"]}
+    assert "Sitzung" in labels
+    assert "Zusatzfertigkeit" in labels
+    assert "KiProtokollEintrag" in labels
+    assert id_map["sitzung-1"] != "sitzung-1"
+
+
 def test_remap_lehnt_unbekanntes_label_ab():
     rohtext = _daten(
         nodes=[_campaign_node(), {"id": "x-1", "labels": ["EingeschleustesLabel"], "props": {"id": "x-1"}}],

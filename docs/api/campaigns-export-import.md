@@ -41,7 +41,12 @@ ausgeschlossen (UUIDv4, 122 Zufallsbits).
 Beziehungstypen nicht parametrisieren (nur Eigenschaftswerte), ein
 unbekanntes Label/ein unbekannter Kantentyp im Importpaket bricht den
 Import sofort mit `ValueError` ab, statt den Namen ungeprüft in die Abfrage
-einzusetzen.
+einzusetzen. Stand 29.09.2026: Weissliste enthält auch Zusatzfertigkeit,
+Bestellung/Alltagswunsch und alle Ereignisprotokoll-Knoten (Sitzung,
+KiProtokollEintrag, Gegenstands-/Geldbewegung, Aufenthalt, NpcWissenszuwachs,
+KampfLogEintrag, VerhandlungsAusgang, CharakterEntwicklung, Achievement,
+AchievementVerleihung) plus die zugehörigen Kantentypen. Ein ZIP ohne diese
+Einträge in der Liste lässt sich nicht zurückspielen.
 
 ## Endpunkte
 

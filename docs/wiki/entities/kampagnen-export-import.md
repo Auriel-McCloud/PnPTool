@@ -1,7 +1,7 @@
 ---
 title: Kampagnen-Export/Import
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-29
 type: entität
 tags: [export-import, backend, datenmodell, zip]
 sources: [../../api/campaigns-export-import.md, ../../../CLAUDE.md]
@@ -58,6 +58,20 @@ unverändert). Beide Testkampagnen danach wieder entfernt. 6 Unit-Tests für
 
 **Offen:** kein Klicktest im laufenden Frontend — Mark sollte Export-Knopf
 und Import-Upload einmal am Dev-Server ausprobieren.
+
+## 29.09.2026 — Weissliste nachgezogen + Nacht-Dump
+
+Nach dem ersten Export-Bau kamen Zusatzfertigkeiten, Shop-Bestellungen und
+das Ereignisprotokoll dazu. Die Import-Weissliste kannte die neuen Labels
+nicht — ein aktuelles ZIP wäre beim Zurückspielen mit `ValueError`
+gescheitert. Nachgezogen in `KNOWN_LABELS`/`KNOWN_REL_TYPES`.
+
+Zusätzlich **Nacht-Dump auf bebop** (nicht der Kampagnen-ZIP, sondern das
+Neo4j-Volume + Uploads): `scripts/bebop-pnptool-backup.sh`, cron 03:15
+Europe/Vienna. Tägliche Dateien 30 Tage unter `/var/backups/pnptool/daily/`,
+der Stand vom 1. jedes Monats ein Jahr unter `.../monthly/`. Neo4j wird für
+den Dump kurz gestoppt (konsistent), Backend bleibt stehen. Restore nur
+manuell, nie automatisch.
 
 ## Siehe auch
 

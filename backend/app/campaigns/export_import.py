@@ -68,6 +68,13 @@ KNOWN_LABELS = {
     "Campaign", "Person", "Ort", "Event", "Fraktion", "Gegenstand", "Party",
     "Begleiter", "WikiSeite", "Mitteilung", "Verhandlung", "Kampf",
     "KampfTeilnehmer", "Spieler", "Nachricht",
+    # nach dem ersten Export-Bau (24.09.) dazugekommen — ohne diese Einträge
+    # scheitert der Import eines aktuellen Backup-ZIPs an der Weissliste
+    "Zusatzfertigkeit", "Bestellung", "Alltagswunsch",
+    "Sitzung", "KiProtokollEintrag", "GegenstandsBewegung", "GeldBewegung",
+    "Aufenthalt", "NpcWissenszuwachs", "KampfLogEintrag",
+    "VerhandlungsAusgang", "CharakterEntwicklung",
+    "Achievement", "AchievementVerleihung",
 }
 
 KNOWN_REL_TYPES = {
@@ -77,6 +84,10 @@ KNOWN_REL_TYPES = {
     "BEFINDET_SICH_AN", "VERKAUFT", "KAEMPFT", "IST", "SPIELT",
     "GEHOERT_ZU", "HAT_EINFLUSS_AUF", "HAS_TRAIT", "ERLAUBT_RASSE",
     "NUTZT_REGELSYSTEM",
+    "HAT_ZUSATZFERTIGKEIT", "HAT_BESTELLUNG", "HAT_ALLTAGSWUNSCH",
+    "HAT_SITZUNG", "HAT_EREIGNIS", "BETRIFFT",
+    "ALTER_BESITZER", "NEUER_BESITZER", "ANGREIFER", "AUSLOESER",
+    "EMPFAENGER", "NPC", "PARTY", "ORT", "PERSON", "ZIEL", "ANGEBOTEN_VON",
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{20,40}$")

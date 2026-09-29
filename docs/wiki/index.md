@@ -53,7 +53,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
 | [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify; Party-interne Gegenstands-Weitergabe (26.09.) |
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
-| [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP exportieren/importieren, generische Cypher-Sammlung, ID-Neuvergabe per Text-Ersetzung (24.09.) |
+| [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP (24.09.); Weissliste 29.09. um Protokoll/Zusatzfertigkeiten/Shop nachgezogen; Nacht-Dump auf bebop (täglich 30 Tage, 1. im Monat 1 Jahr) |
 | [[entities/gegenstand-transfer]] | Party-interne Gegenstands-Weitergabe via Verhandlungs-Popup gebaut (26.09.); Geld, NPC-Belohnung, Credstick/Heiltrank/Granate und „gleicher Ort“ noch offen |
 | [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09., Auto-Hooks + SL-Zeitleiste 29.09. Achievements nur Konzept |
 | [[entities/achievements]] | Achievement-Konzept (27.09.): `einzigartig`-Häkchen (wie bei Gegenständen) trennt campaign-weit einmalige Titel ("First Kill") von pro-Person wiederholbaren ("Mörder"); Auto-Erkennung live aus dem Ereignisprotokoll berechnet (kein Vorschlags-Knoten nötig) + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Ort+Sitzung; UI: 🏆-Symbol in der Werkzeugleiste (Spieler: Scroll-Popup neueste zuerst, SL: volles Verwaltungs-Fenster), Auto-Popup außer während laufendem Kampf (dann Nachlieferung bei Kampfende) |

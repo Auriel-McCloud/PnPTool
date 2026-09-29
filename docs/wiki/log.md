@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-29] update | kampagnen-export-import Weissliste + Nacht-Dump
+
+Import-Weissliste um Zusatzfertigkeiten, Shop-Bestellung/Alltagswunsch und
+Ereignisprotokoll-Knoten nachgezogen. Nacht-Dump auf bebop
+(`scripts/bebop-pnptool-backup.sh`): Neo4j-Volume + Uploads, 30 Tage täglich,
+1. im Monat ein Jahr.
+
 ## [2026-09-29] update | ereignisprotokoll Zeitleiste-Frontend + Burgermenü
 
 SL-Bereich `Protokoll` (nur SL): Sitzung, Kategoriefilter, Suche, Liste.

@@ -217,6 +217,18 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (29.09.2026 — Export-Weissliste + Nacht-Dump auf bebop):**
+- **Was:** Import-Weissliste um alles nachgezogen, was seit dem Export-Bau
+  (24.09.) dazukam: Zusatzfertigkeiten, Shop-Bestellung/Alltagswunsch,
+  Ereignisprotokoll (Sitzung + 8 Log-Typen + Achievement-Knoten). Ohne das
+  würde ein Backup-ZIP beim Zurückspielen an unbekannten Labels scheitern.
+  Nacht-Dump auf bebop: Neo4j-Volume + Uploads, täglich 30 Tage, der 1.
+  jedes Monats ein Jahr (`scripts/bebop-pnptool-backup.sh`, cron 03:15).
+- **Dateien:** `backend/app/campaigns/export_import.py`,
+  `tests/test_campaign_export_import.py`, `scripts/bebop-pnptool-backup.sh`.
+- **Verifiziert:** 7/7 Unit-Tests `remap_ids`. Dump-Skript liegt im Repo,
+  Cron 03:15 auf bebop (erster Lauf nach Deploy).
+
 **Zuletzt gebaut (29.09.2026 — Zeitleiste-Frontend + Burgermenü-Customizen):**
 - **Was:** SL-Bereich `Protokoll` (▤) im Burger: Sitzung wählen/anlegen,
   Kategoriefilter, Suche, chronologische Liste. Nur SL. Zeitleiste liefert
