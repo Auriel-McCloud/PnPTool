@@ -217,6 +217,17 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (29.09.2026 — Zeitleiste-Frontend + Burgermenü-Customizen):**
+- **Was:** SL-Bereich `Protokoll` (▤) im Burger: Sitzung wählen/anlegen,
+  Kategoriefilter, Suche, chronologische Liste. Nur SL. Zeitleiste liefert
+  jetzt `kurz` (Art/Anlass) mit. Burgermenü: ausblenden + Reihenfolge am
+  GM-Account, **PC und Tablet getrennt** (`GET/PATCH /api/auth/gm/menue`).
+  Handy scrollt die volle Liste. Fallback: Symbolspalte `overflow-y: auto`.
+- **Dateien:** `frontend/src/ereignisprotokoll/`, `shell/menue.ts`,
+  `shell/MenueAnpassen.tsx`, `backend/app/auth/menue.py`. Tests:
+  `tests/test_gm_menue.py`.
+- **Noch nicht:** Korrektur/Papierkorb in der UI, Achievements, NPC-Wissen.
+
 **Zuletzt gebaut (29.09.2026 — Ereignisprotokoll-Auto-Hooks):**
 - **Was:** Fachmodule schreiben echte Spielereignisse ins Sitzungs-Log.
   Zentrale Schicht `backend/app/ereignisprotokoll/hooks.py` (holt die
@@ -230,7 +241,7 @@ npm run dev
   EP/Steigerung/Willenskraft, Rassenwechsel, KI (Idee, Objekt-Text,
   Bild-Prompt/-Generieren, Wiki-Prüfung, Auto-Verknüpfung, Erstellungs-
   Kommentar). Kauf bündelt Gegenstand+Geld über gemeinsame `handelId`.
-- **Weiter fehlend:** Frontend/Zeitleiste, Achievements, NPC-Wissens-
+- **Weiter fehlend:** Korrektur/Papierkorb in der Zeitleisten-UI, Achievements, NPC-Wissens-
   Hooks, KI-Sortiment/Alltagswunsch/Zusatzfertigkeiten-Vorschlag,
   Wiki-Import, Spieler-Portrait-Bild.
 
@@ -1144,7 +1155,6 @@ npm run dev
 - API-Dokumentation (`docs/api/`)
 
 **Offen (Stand 29.09.2026):** Shop-Spam/Scammer, KI-Chatbots an Gegenständen,
-Ereignisprotokoll-Frontend (Auto-Hooks Backend verdrahtet, siehe Punkt 17),
 Achievements, Inventar-Rest (Geld/Credstick/Heiltrank/Granate/gleicher Ort),
 Critter-Pet, Portrait-Zeichentool, KI-Auto-Steigerung, Cyberdecks als Items.
 Shop-Spieler-Frontend, SL-Sortiment-Editor, Kampagnen-Export/Import,
@@ -2014,7 +2024,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
     Log-Kategorien, UNION-Zeitleiste, Korrektur + Papierkorb,
     `Person.erstelltAm`. **Auto-Hooks verdrahtet 29.09.2026** über
     `hooks.py` (Kampf, Verhandlung, Shop/Items/Geld, Aufenthalt,
-    Charakterentwicklung, KI-Hauptpfade). **Frontend fehlt.** Achievements
+    Charakterentwicklung, KI-Hauptpfade). **Frontend 29.09.2026:** Burger
+    `Protokoll` nur SL, Sitzung+Filter+Liste; Korrektur/Papierkorb später.
+    Burgermenü ausblenden/Reihenfolge am GM-Account, PC≠Tablet. Achievements
     bleiben Konzept (`docs/wiki/entities/achievements.md`). NPC-Wissen und
     ein paar KI-Nebenpfade (Sortiment/Alltagswunsch/Wiki-Import) noch ohne Hook.
     - **Grundprinzip:** eigener Knotentyp je Kategorie (nicht ein generischer

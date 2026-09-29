@@ -77,6 +77,26 @@ Oder für Spieler:
 
 ---
 
+### GET `/api/auth/gm/menue`
+
+SL-Burgermenü-Layouts. **403** wenn nicht GM.
+
+```json
+{
+  "pc": { "ordnung": ["pcs", "wiki"], "ausgeblendet": ["rassen"] },
+  "tablet": { "ordnung": [], "ausgeblendet": [] }
+}
+```
+
+Leere `ordnung` = Default-Reihenfolge aus dem Frontend. Handy ignoriert die
+Layouts und scrollt die volle Liste.
+
+### PATCH `/api/auth/gm/menue`
+
+Gleiches JSON, speichert an `GMUser.menueLayouts`. PC und Tablet getrennt.
+
+---
+
 ### POST `/api/auth/logout`
 
 Löscht den Session-Cookie. **204 No Content.**

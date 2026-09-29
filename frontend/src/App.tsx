@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { AnmeldeFenster } from "./auth/AnmeldeFenster";
 import { ViewAsSwitcher } from "./auth/ViewAsSwitcher";
@@ -17,6 +17,16 @@ import { Kampfmodus } from "./kampf/Kampfmodus";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
+import { MenueAnpassen } from "./shell/MenueAnpassen";
+import {
+  erkenneGeraet,
+  LEER_LAYOUTS,
+  menueApi,
+  sichtbareBereiche,
+  type Geraet,
+  type MenueLayouts,
+} from "./shell/menue";
+import { ProtokollAnsicht } from "./ereignisprotokoll/ProtokollAnsicht";
 import { WikiAnsicht } from "./wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "./mitteilungen/MitteilungenKontext";
 import { MitteilungSenden } from "./mitteilungen/MitteilungSenden";
@@ -68,6 +78,8 @@ const BEREICHE: Bereich[] = [
   { id: "kampf", name: "Kampfmodus", symbol: "⚔", farbe: "var(--bereich-kampf)" },
   // Das Kampagnen-Wiki: Geschichten, Kapitel, Session-Notizen (docs/produktvision-wiki.md)
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
+  // Sitzungs-Log: nur SL, Auto-Hooks füllen es. Eigener Burger-Punkt (29.09.).
+  { id: "protokoll", name: "Protokoll", symbol: "▤", farbe: "var(--bereich-protokoll)" },
   { id: "augments", name: "Augments", symbol: "⚕", farbe: "var(--bereich-regeln)" },
   // Der Rassen-Baukasten: Völker bauen und je Kampagne freigeben. Wie die
   // Augments ein Regelwerks-Bereich, deshalb dieselbe Leitfarbe.
@@ -93,6 +105,7 @@ const TITEL: Record<string, string> = {
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
+  protokoll: "Ereignisprotokoll",
   kontakte: "Kontakte: wer kennt wen",
   party: "Party: wer gerade zusammen unterwegs ist",
   rassen: "Rassen: Baukasten und Freigabe",
@@ -138,6 +151,9 @@ function Dashboard() {
   const { me, logout } = useAuth();
   const { campaigns, loading, aktive, waehleKampagne, createCampaign, nachImportUebernehmen } = useCampaign();
   const [bereich, setBereich] = useState("pcs");
+  const [menueLayouts, setMenueLayouts] = useState<MenueLayouts>(LEER_LAYOUTS);
+  const [geraet, setGeraet] = useState<Geraet>(() => (typeof window === "undefined" ? "pc" : erkenneGeraet()));
+  const [menueOffen, setMenueOffen] = useState(false);
   // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als
   // React-key der Ansichten: bei einem Wechsel werden sie neu aufgebaut und
   // laden ihre Daten frisch gefiltert.
@@ -147,6 +163,21 @@ function Dashboard() {
 
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
   const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
+
+  useEffect(() => {
+    menueApi.laden().then(setMenueLayouts).catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    const tick = () => setGeraet(erkenneGeraet());
+    window.addEventListener("resize", tick);
+    return () => window.removeEventListener("resize", tick);
+  }, []);
+
+  const menueBereiche = useMemo(() => {
+    const slot = geraet === "tablet" ? menueLayouts.tablet : menueLayouts.pc;
+    return sichtbareBereiche(BEREICHE, slot, geraet, bereich);
+  }, [menueLayouts, geraet, bereich]);
 
   // Kennung, mit der jede Ansicht neu aufgebaut wird: Wechsel der Kampagne
   // oder der Rollen-Sicht (viewAs) muss die Ansicht frisch laden lassen.
@@ -191,6 +222,9 @@ function Dashboard() {
 
   const fuss = (
     <>
+      <button type="button" onClick={() => setMenueOffen(true)} title="Burgermenü anpassen">
+        ☰
+      </button>
       <div style={{ color: "var(--text-leise)" }}>{me?.username}</div>
       <div>{me?.role === "GM" ? "Spielleitung" : me?.role}</div>
     </>
@@ -199,7 +233,7 @@ function Dashboard() {
   const shell = (
     <>
       <CommlinkShell
-      bereiche={BEREICHE}
+      bereiche={menueBereiche}
       aktiv={bereich}
       onBereichWechsel={setBereich}
       titel={kampagne ? `${kampagne.name} — ${TITEL[bereich] ?? ""}` : "Keine Kampagne"}
@@ -219,6 +253,7 @@ function Dashboard() {
         bereich === "begleiter" ||
         bereich === "kampf" ||
         bereich === "wiki" ||
+        bereich === "protokoll" ||
         bereich === "augments"
       }
     >
@@ -263,6 +298,8 @@ function Dashboard() {
             />
           )}
 
+          {bereich === "protokoll" && <ProtokollAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
+
           {/* Augments: Koerperkarte (wo sitzt welches Implantat). */}
           {bereich === "augments" && <AugmentsAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
 
@@ -288,6 +325,17 @@ function Dashboard() {
           onFertig={() => setNeueKampagneOffen(false)}
         />
       </Fenster>
+      <MenueAnpassen
+        offen={menueOffen}
+        onSchliessen={() => setMenueOffen(false)}
+        bereiche={BEREICHE}
+        layouts={menueLayouts}
+        geraet={geraet}
+        onSpeichern={async (layouts) => {
+          const gespeichert = await menueApi.speichern(layouts);
+          setMenueLayouts(gespeichert);
+        }}
+      />
     </>
   );
 

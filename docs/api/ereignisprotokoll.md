@@ -6,7 +6,8 @@ eine UNION-Zeitleiste. Kein generisches `typ`-Feld.
 Modul: `backend/app/ereignisprotokoll/` (`schemas.py`, `repository.py`,
 `routes.py`, `hooks.py`). Migration: `backend/app/db/migrations/006_ereignisprotokoll.cypher`.
 Herleitung: `docs/wiki/entities/ereignisprotokoll.md`.
-**Kein Frontend** (Stand 29.09.2026).
+Frontend: SL-Bereich `Protokoll` in `frontend/src/ereignisprotokoll/`
+(Sitzung, Kategoriefilter, Suche, Liste). Korrektur/Papierkorb später.
 
 Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
 
@@ -22,7 +23,7 @@ Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
   Lieferung, Reparatur, Weitergabe/Wegwerfen, Party-Aufenthalt, EP/Steigerung/
   Willenskraft/Rasse, KI-Hauptpfade (Idee, Objekt-Text, Bild, Wiki-Prüfung,
   Auto-Verknüpfung, Erstellungs-Kommentar). Kauf teilt sich `handelId`.
-- **Nicht gebaut:** Zeitleisten-UI, Achievements (nur ID-Constraints in der
+- **Nicht gebaut:** Korrektur/Papierkorb in der UI, Achievements (nur ID-Constraints in der
   Migration; Konzept `docs/wiki/entities/achievements.md`), NPC-Wissens-Hooks,
   KI-Nebenpfade (Sortiment, Alltagswunsch, Zusatzfertigkeiten-Vorschlag,
   Wiki-Import, Spieler-Portrait).
@@ -74,6 +75,8 @@ Teilupdate derselben Felder.
 
 UNION über alle acht Labels, neueste zuerst. Optional auf eine Sitzung
 filtern. Enthält KI-Rohtext und Bewegungen aller Personen — deshalb GM-only.
+Felder: `id`, `kategorie`, `zeitpunkt`, `ingameZeitpunkt`, `sitzungId`,
+`slNotiz`, `kurz` (Art/Anlass, eine Zeile).
 
 ## Kategorie-Listen
 

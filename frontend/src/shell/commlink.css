@@ -251,6 +251,8 @@
 .cl-bereiche {
   padding: 10px 0;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .cl-gruppe {
@@ -332,6 +334,48 @@
   border-top: 1px solid var(--linie);
   font-size: 12px;
   color: var(--text-aus);
+}
+
+.cl-menue-fuss button {
+  min-width: var(--tipp);
+  min-height: var(--tipp);
+  padding: 0;
+}
+
+.cl-menue-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.cl-menue-slots button[data-an="true"] {
+  color: var(--neon);
+  border-color: var(--neon);
+}
+
+.cl-menue-anpassen-liste {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cl-menue-anpassen-liste li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cl-menue-anpassen-liste label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
 }
 
 /* --- Hauptspalte ------------------------------------------------------ */

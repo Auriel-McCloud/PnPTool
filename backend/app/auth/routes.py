@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 
-from app.auth.dependencies import get_current_claims
-from app.auth.repository import get_gm_by_username
+from app.auth.dependencies import get_current_claims, require_gm
+from app.auth.repository import get_gm_by_username, get_menue_layouts, set_menue_layouts
 from app.auth.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -46,3 +46,24 @@ async def gm_logout(response: Response):
 @router.get("/me", response_model=MeResponse)
 async def me(claims: dict = Depends(get_current_claims)):
     return MeResponse(role=claims.get("role", "UNKNOWN"), username=claims.get("username"))
+
+
+class MenueSlot(BaseModel):
+    ordnung: list[str] = []
+    ausgeblendet: list[str] = []
+
+
+class MenueLayouts(BaseModel):
+    pc: MenueSlot = MenueSlot()
+    tablet: MenueSlot = MenueSlot()
+
+
+@router.get("/gm/menue", response_model=MenueLayouts, dependencies=[Depends(require_gm)])
+async def menue_lesen(claims: dict = Depends(require_gm)):
+    """PC- und Tablet-Layout des SL-Burgermenüs. Handy scrollt und ignoriert das."""
+    return await get_menue_layouts(claims["sub"])
+
+
+@router.patch("/gm/menue", response_model=MenueLayouts, dependencies=[Depends(require_gm)])
+async def menue_schreiben(body: MenueLayouts, claims: dict = Depends(require_gm)):
+    return await set_menue_layouts(claims["sub"], body.model_dump())

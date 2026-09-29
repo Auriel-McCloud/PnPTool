@@ -21,7 +21,8 @@ komplett durchgesprochen: Kategorien, Knoten-vs.-Kante-Entscheidung,
 Korrektur-/Löschregel, Zeitstempel-Frage.
 
 **Status dieser Seite: Backend gebaut (27.09.2026, Commit `233c939`),
-Auto-Hooks verdrahtet (29.09.2026), Frontend fehlt.** Datenmodell unten bleibt die
+Auto-Hooks verdrahtet (29.09.2026), Frontend gebaut (29.09.2026, SL-Bereich
+Protokoll, Sitzung+Filter+Liste; Korrektur/Papierkorb später).** Datenmodell unten bleibt die
 Herleitung; der Code-Stand steht im nächsten Abschnitt. API:
 [[../../api/ereignisprotokoll.md]].
 
@@ -60,7 +61,7 @@ nicht das Repository direkt — aktive Sitzung kommt immer über
 
 ## Noch nicht gebaut
 
-- Frontend / Zeitleisten-UI (wo im Commlink, wer sieht was) — unentworfen.
+- Korrektur/Papierkorb in der Zeitleisten-UI.
 - NPC-Wissens-Hooks; KI-Nebenpfade (Händler-Sortiment, Alltagswunsch,
   Zusatzfertigkeiten-Vorschlag, Wiki-Import, Spieler-Portrait-Bild).
 - Achievements (Konzept [[achievements]], nur Constraints in der Migration).
@@ -419,8 +420,8 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
 
 - Was ein Achievement inhaltlich ist/bewirkt — **bewusst zurückgestellt**,
   Mark klärt das separat.
-- UI/Ansicht der Zeitleiste (wo im Commlink? eigener Bereich? nur SL oder
-  auch Spieler-Rückblick?) — **noch nicht entworfen**.
+- UI/Ansicht der Zeitleiste — **erledigt 29.09.2026** (Burger `Protokoll`,
+  nur SL, Sitzung+Kategoriefilter+Suche; Korrektur/Papierkorb später).
 - Auto-Hooks der Hauptpfade — **erledigt 29.09.2026** (`hooks.py`). Offen
   bleiben NPC-Wissen und ein paar KI-Nebenpfade.
 - Ob `Aufenthalt` das bestehende `BEFINDET_SICH_AN` ersetzt oder nur
@@ -466,6 +467,10 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Fachstellen (Kampf, Verhandlung, Shop/Items/Geld, Aufenthalt,
   Charakterentwicklung, KI-Hauptpfade). Tests ohne Neo4j.
   Frontend weiter ungebaut.
+- **29.09.2026, Abend** — SL-Zeitleiste: Burger `Protokoll` (nur SL),
+  Sitzung wählen/anlegen, Kategoriefilter, Suche. Zeitleiste-UNION liefert
+  `kurz`. Burgermenü-Layouts am GM-Account, PC≠Tablet. Korrektur/Papierkorb
+  in der UI später.
 
 ## Siehe auch
 

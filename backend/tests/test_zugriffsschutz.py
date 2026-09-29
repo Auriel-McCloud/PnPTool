@@ -169,6 +169,10 @@ NUR_SPIELLEITUNG_LESBAR = {
     # eine Entscheidungsgrundlage der Spielleitung (noch nicht Teil des
     # Katalogs, keine Auskunft für Spieler). Siehe haendler-Analogie oben.
     "/api/campaigns/{campaign_id}/zusatzfertigkeiten/ki-vorschlaege",
+    # Ereignisprotokoll: Zeitleiste und KI-Rohtext sind SL-Wissen.
+    "/api/campaigns/{campaign_id}/ereignisprotokoll/zeitleiste",
+    "/api/campaigns/{campaign_id}/ereignisprotokoll/ki",
+    "/api/campaigns/{campaign_id}/ereignisprotokoll/npc-wissenszuwachs",
 }
 
 

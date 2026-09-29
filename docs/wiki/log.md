@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-29] update | ereignisprotokoll Zeitleiste-Frontend + Burgermenü
+
+SL-Bereich `Protokoll` (nur SL): Sitzung, Kategoriefilter, Suche, Liste.
+`kurz` in der Zeitleiste-UNION. Burgermenü ausblenden/Reihenfolge am
+GM-Account, PC≠Tablet (`/api/auth/gm/menue`). Handy scrollt. Korrektur/
+Papierkorb in der UI später.
+
 ## [2026-09-29] update | ereignisprotokoll Auto-Hooks
 
 Fachmodule schreiben ins Sitzungs-Log über `hooks.py`: Kampf, Verhandlung,

@@ -131,6 +131,8 @@
   --bereich-party: var(--p-indigo);
   /* Ideenschmiede: Orange/Amber wie Werkbank-Glühen */
   --bereich-schmiede: var(--warn);
+  /* Protokoll: Cyan wie Commlink-Telemetrie, eigener Bereichston */
+  --bereich-protokoll: var(--neon);
 
   /* == 4. Wertegruppen (Charakterblatt) ============================== */
   /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,

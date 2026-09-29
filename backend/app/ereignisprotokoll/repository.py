@@ -753,12 +753,23 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
     driver = get_driver()
     sitzung_filter = "AND e.sitzungId = $sitzung_id" if sitzung_id else ""
     teile = []
+    kurz = {
+        "ki": "coalesce(e.anlass, '')",
+        "gegenstand": "coalesce(e.art, '')",
+        "geld": "coalesce(e.art, '') + CASE WHEN e.betrag IS NULL THEN '' ELSE ' ' + toString(e.betrag) + '¥' END",
+        "aufenthalt": "''",
+        "npcwissen": "coalesce(e.wieErfahren, '')",
+        "kampf": "coalesce(e.art, '')",
+        "verhandlung": "coalesce(e.art, '') + CASE WHEN coalesce(e.angenommen, false) THEN ' angenommen' ELSE ' abgelehnt' END",
+        "charakterentwicklung": "coalesce(e.art, '')",
+    }
     for kategorie, label in LOG_LABELS.items():
         teile.append(f"""
         MATCH (e:{label} {{campaignId: $campaign_id}})
         WHERE NOT coalesce(e.geloescht, false) {sitzung_filter}
         RETURN e.id AS id, '{kategorie}' AS kategorie, e.zeitpunkt AS zeitpunkt,
-               e.ingameZeitpunkt AS ingameZeitpunkt, e.sitzungId AS sitzungId, e.slNotiz AS slNotiz
+               e.ingameZeitpunkt AS ingameZeitpunkt, e.sitzungId AS sitzungId, e.slNotiz AS slNotiz,
+               {kurz[kategorie]} AS kurz
         """)
     query = "\nUNION\n".join(teile) + "\nORDER BY zeitpunkt DESC"
     async with driver.session() as session:
