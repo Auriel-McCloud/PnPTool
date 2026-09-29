@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-29] update | ereignisprotokoll Doku-Nachzug
+
+Backend-Modul stand seit Commit `233c939` (27.09.), Wiki/CLAUDE.md sagten
+noch „kein Code“. Status auf `teilweise-umgesetzt`: Sitzungen, 8 Kategorien,
+Zeitleiste, Papierkorb, `Person.erstelltAm`. Auto-Hooks uncommitted,
+Frontend fehlt, Achievements nur Konzept. Neu: `docs/api/ereignisprotokoll.md`.
+`index.md`, `neo4j-datenmodell.md`, `achievements.md`, `CLAUDE.md` nachgezogen.
+
 ## [2026-09-28] update | zusatzfertigkeiten wiki-konsistent für Kontextreset
 
 Aktueller Stand (Button + Paket-Punktzeilen, Commit `2bf1adc`, live bebop)

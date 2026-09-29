@@ -1,7 +1,7 @@
 ---
 title: Achievements
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-09-29
 type: entität
 tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, geplant]
 sources: [../../../CLAUDE.md, ereignisprotokoll.md]
@@ -10,8 +10,11 @@ status: entschieden-nicht-umgesetzt
 
 # Achievements
 
-**Status: Konzept komplett entschieden, noch nicht gebaut.** Auslöser: beim
-Durchsprechen des Ereignisprotokolls (siehe [[ereignisprotokoll]]) kam Mark
+**Status: Konzept komplett entschieden, noch nicht gebaut.** Die Migration
+`006_ereignisprotokoll.cypher` legt nur die ID-Constraints an, es gibt kein
+App-Modul und keine UI. Das Ereignisprotokoll-Backend (Voraussetzung für
+Auto-Erkennung) steht seit 27.09.2026, siehe [[ereignisprotokoll]].
+Auslöser: beim Durchsprechen des Ereignisprotokolls kam Mark
 selbst auf Achievements zurück, mit einer Liste von Beispielen und dem
 ausdrücklichen Wunsch nach **beidem**: automatischer Erkennung aus dem Log
 UND spontaner Vergabe von Hand.

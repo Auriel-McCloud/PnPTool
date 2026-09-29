@@ -137,7 +137,7 @@ WebApp für Mark's Pen-and-Paper-Rollenspielrunden, Homebrew-System **"NeotopiA"
 - **Backend**: FastAPI, neo4j async driver, JWT in httpOnly-Cookie, bcrypt direkt
 - **Datenbank**: Neo4j 5 in Docker
 - **Frontend**: React 19 + TypeScript + Vite, Cytoscape.js direkt (kein Wrapper)
-- **Deployment**: Aktuell Windows-Dev, später Debian/nginx
+- **Deployment**: Lokal Windows-Dev; produktiv auf bebop unter `pnptool.aurielmc.cloud` (seit 25.09.2026)
 
 ## Projektstruktur
 
@@ -216,6 +216,22 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (29.09.2026 — Doku-Nachzug Ereignisprotokoll-Backend):**
+- **Was:** Das Backend fürs Sitzungs-Log steht seit Commit `233c939`
+  (27.09.2026), war in CLAUDE.md/Wiki aber noch als „kein Code“ markiert.
+  Doku auf den echten Stand gezogen, kein neuer Feature-Code in diesem
+  Nachzug.
+- **Gebaut (committed):** Modul `backend/app/ereignisprotokoll/` —
+  Sitzungen, acht Log-Kategorien, UNION-Zeitleiste, SL-Korrektur,
+  Papierkorb, Migration `006_ereignisprotokoll.cypher`, `Person.erstelltAm`.
+  Writer-Funktionen existieren; die Fachmodule rufen sie auf `main` nicht
+  auf. API: `docs/api/ereignisprotokoll.md`.
+- **Uncommitted (Working Tree, nicht auf `main`):** Auto-Hooks für
+  Kampf-Treffer, Verhandlungsausgang, EP/Steigerung/Willenskraft,
+  Rassenwechsel, plus `aktive_sitzung_id` / `angreifer_person_id`.
+- **Nicht gebaut:** Frontend/Zeitleiste, Achievements, Auto-Hooks für KI,
+  Gegenstände, Geld, Aufenthalt, NPC-Wissen.
 
 **Zuletzt gebaut (28.09.2026, Abend — Zusatzfertigkeiten als Punktzeilen):**
 - **Was:** Mark fand die Klick-Liste ohne Punkte falsch. Gewünscht: Button
@@ -1110,23 +1126,13 @@ npm run dev
 - Mitteilungen ausblenden (✕ Button, pro Person)
 - API-Dokumentation (`docs/api/`)
 
-**Offen:** Shop-System-Frontend (Backend-Kern fertig, siehe oben — Mark-Wunsch
-23.09.2026: soll optisch sehr ansprechend werden, z.B. ein Karussell für die
-Sortiment-Ansicht, und je nach Laden/Händlertyp eine eigene Optik/Theme;
-Umsetzung erst wenn Mark zuhause ist, da er das Ergebnis am eigenen Bildschirm
-beurteilen will; **zusätzlich 23.09.2026:** das SL↔Spieler-Verhandlungs-Popup,
-das für die Rüstungs-Reparatur gebaut wurde (siehe „Zuletzt gebaut" unten),
-soll später hier wiederverwendet werden — für Kaufverhandlungen beim Händler,
-potenziell über mehrere Positionen gleichzeitig, sprich ein
-**Warenkorb-Konzept** für den Shop wird hier mit gebraucht. Backend dafür
-schon vorbereitet (`app/verhandlung/schemas.py` trägt eine Liste von
-Positionen statt eines Skalars), UI noch nicht spezifiziert.), Shop-Spam/
-Scammer-Mechanik, KI-Integration (erste Iteration gebaut), Deploy,
-PC-Vorlagen im Regelsystem,
-**Kampagnen-Export/Import** — gebaut 24.09.2026 (siehe „Zuletzt gebaut“ unten),
-**Ereignisprotokoll/Sitzungs-Log** — Datenmodell komplett entschieden
-(27.09.2026, siehe Punkt 17 unten und `docs/wiki/entities/ereignisprotokoll.md`),
-noch nicht gebaut,
+**Offen (Stand 29.09.2026):** Shop-Spam/Scammer, KI-Chatbots an Gegenständen,
+Ereignisprotokoll-Frontend + Auto-Hooks (Backend-Modul steht, siehe Punkt 17),
+Achievements, Inventar-Rest (Geld/Credstick/Heiltrank/Granate/gleicher Ort),
+Critter-Pet, Portrait-Zeichentool, KI-Auto-Steigerung, Cyberdecks als Items.
+Shop-Spieler-Frontend, SL-Sortiment-Editor, Kampagnen-Export/Import,
+Zusatzfertigkeiten: gebaut, Klicktest durch Mark offen (siehe oben).
+Deploy ist erledigt (bebop, `pnptool.aurielmc.cloud`).
 
 **Zuletzt gebaut (19.09.2026):**
 - **Tooltip-Popups: Kurztext + Detail-Knopf mit Langfassung** — die
@@ -1421,8 +1427,8 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      Rüstungsreparatur, nicht Charaktererstellung, nicht DIGITAL). SL-Popup
      mit Preis + notizen + moeglicheSidequests, Rabatt 5/10/15%/individuell
      nur für diesen einen Kauf. Quest-System bewusst zurückgestellt.
-   - **Noch offen, SL-Werkzeuge:** Editor für Sortiment/Rabatt/Hintergrund
-     (Backend fertig, kein Bearbeiten-Popup).
+   - **SL-Sortiment-Editor gebaut:** `HaendlerBearbeiten.tsx` (Ware
+     hinzufügen/entfernen, Rabatt, Standort) — Browser-Klicktest offen.
    - Händler-NPCs mit Warenangebot (KI-generierte Produktbilder)
    - Spieler kann "Kontakt austauschen" mit Händler
    - Händler schickt dann Werbung als **Nur-Lesen-Nachrichten**
@@ -1983,11 +1989,16 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       Mechanik, Einsatz muss sichtbar sein (nicht still verpuffen). Offen:
       Mitteilung/Popup oder Kampfkarte?
 
-17. **Ereignisprotokoll / Sitzungs-Log** (notiert + Datenmodell komplett
-    entschieden 27.09.2026, Auslöser: Mark verlor eine KI-Nachricht, die
-    nirgends dauerhaft gespeichert war) — vollständige Herleitung, Beispiele
-    und Cypher-Skizzen: `docs/wiki/entities/ereignisprotokoll.md`.
-    **Noch nicht gebaut, kein Code/keine Migration.**
+17. **Ereignisprotokoll / Sitzungs-Log** (Datenmodell 27.09.2026, Backend
+    Commit `233c939` gleichen Tags, Doku nachgezogen 29.09.2026) —
+    `docs/wiki/entities/ereignisprotokoll.md`, API
+    `docs/api/ereignisprotokoll.md`.
+    **Backend gebaut:** Modul `app/ereignisprotokoll/` — Sitzungen, acht
+    Log-Kategorien, UNION-Zeitleiste, Korrektur + Papierkorb,
+    `Person.erstelltAm`. Writer-Funktionen existieren; auf `main` rufen die
+    Fachmodule sie nicht auf. **Auto-Hooks uncommitted** (Kampf, Verhandlung,
+    EP/Steigerung/Willenskraft, Rasse). **Frontend fehlt.** Achievements
+    bleiben Konzept (`docs/wiki/entities/achievements.md`).
     - **Grundprinzip:** eigener Knotentyp je Kategorie (nicht ein generischer
       `typ`-Knoten — passt zum bestehenden Projektstil, keine allgemeinen
       Felder für Sonderfälle), aber alle mit gemeinsamen Basis-Properties
@@ -2037,9 +2048,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       "kann ja auch storytechnisch begründet passieren... Body Swap oder
       sowas"). Charaktererstellung selbst bewusst NICHT geloggt (Mark: "es
       reicht wann der Charakter erstellt wurde"). **Dabei gefunden: `Person`
-      hat noch gar kein `erstelltAm`-Feld** — muss beim Bauen als
-      Voraussetzung zuerst ergänzt werden (`entities/repository.py`),
-      bestehende Charaktere bleiben ohne rückwirkendes Datum.
+      hat kein `erstelltAm` gehabt — seit dem Backend-Commit ergänzt
+      (`PERSON_FIELDS` + Create-Default); bestehende Charaktere bleiben
+      ohne rückwirkendes Datum.
     - **Neo4j bleibt die richtige Wahl fürs Logging** (Marks Nachfrage,
       27.09.2026, ob ein Zeitreihen-/Log-Tool besser wäre) — fast jeder
       Log-Eintrag hängt per Kante an bestehenden Knoten (Person, Gegenstand,
@@ -2052,5 +2063,5 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       Verwundungs-/Todesmeilensteine (teilweise schon durch
       `KampfLogEintrag` abgedeckt), Beziehungsänderungen (evtl. reicht die
       bestehende `VERBINDUNG`-Kante), freies SL-Ereignis ohne feste Entität.
-    - **Offen:** UI/Ansicht der Zeitleiste komplett unentworfen; genaue
-      Feldliste kann sich beim Bauen noch verschieben.
+    - **Offen:** UI/Ansicht der Zeitleiste komplett unentworfen. Auto-Hooks
+      der Fachmodule (außer dem uncommitteden Diff) und Achievements fehlen.

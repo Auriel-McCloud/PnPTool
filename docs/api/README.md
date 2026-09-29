@@ -38,6 +38,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Verhandlungen](./verhandlung.md) | Angebot → Annehmen/Ablehnen (Reparatur, Shop-Kauf, Gegenstands-Weitergabe) | ⭐ |
 | [KI](./ki.md) | Ideenschmiede-Generierung, Wiki-Rechtschreib-/Grammatik-/Logikprüfung | |
 | [Zusatzfertigkeiten](./zusatzfertigkeiten.md) | Campaign-gebundener Katalog optionaler Fertigkeiten, Freebee/EP-Wahl, KI-Vorschlag | |
+| [Ereignisprotokoll](./ereignisprotokoll.md) | Sitzungs-Log: 8 Kategorien, Zeitleiste, Papierkorb — Backend da, Frontend fehlt | |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration
 

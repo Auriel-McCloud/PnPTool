@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-09-28
+updated: 2026-09-29
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -25,7 +25,12 @@ ohne expliziten Constraint (laut Code-Suche in den Repositories):
 `Mitteilung`, `WikiSeite`, `Kampf`, `Nachricht`, `Kontakt`/`KENNT`-Beziehung,
 `Fraktion`, `Regelsystem`, `Erklaerung`, `Party`, `Verhandlung`,
 `Zusatzfertigkeit` (28.09.2026, campaign-gebunden, kein ruleset-weiter
-Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]).
+Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]). Seit 27.09.2026
+außerdem `Sitzung` plus acht Log-Labels (`KiProtokollEintrag`,
+`GegenstandsBewegung`, `GeldBewegung`, `Aufenthalt`, `NpcWissenszuwachs`,
+`KampfLogEintrag`, `VerhandlungsAusgang`, `CharakterEntwicklung`) und
+Constraints für `Achievement`/`AchievementVerleihung` (App-Modul dafür
+noch nicht gebaut) — siehe [[ereignisprotokoll]].
 
 ## Zentrale Beziehungstypen (aus `repository.py`-Dateien)
 
@@ -47,6 +52,7 @@ Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]).
 | `MITGLIED_VON` | Person → Party | exklusiv, siehe [[party-feature]] |
 | `BEFINDET_SICH_AN` | Party → Ort/Event | optional, siehe [[party-feature]] |
 | `HAT_ZUSATZFERTIGKEIT` | Person → Zusatzfertigkeit | `rating`, campaign-gebunden statt `HAS_TRAIT`, siehe [[zusatzfertigkeiten]] |
+| `HAT_SITZUNG` | Campaign → Sitzung | Spielabend-Anker fürs [[ereignisprotokoll]] |
 
 **Fast alles trägt zusätzlich `campaignId` als Property** statt (oder zusätzlich
 zu) expliziten Kanten zur Kampagne — schneller für Queries, laut

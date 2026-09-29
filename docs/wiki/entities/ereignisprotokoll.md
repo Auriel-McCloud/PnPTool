@@ -1,11 +1,11 @@
 ---
 title: Ereignisprotokoll (Sitzungs-Log)
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-09-29
 type: entität
-tags: [ereignisprotokoll, datenmodell, ki-integration, inventar, wirtschaft, party, kampf, verhandlung, erfahrung, rassen, geplant, offen]
-sources: [../../../CLAUDE.md, ../../../ideen für später.txt]
-status: entschieden-nicht-umgesetzt
+tags: [ereignisprotokoll, datenmodell, ki-integration, inventar, wirtschaft, party, kampf, verhandlung, erfahrung, rassen, backend]
+sources: [../../../CLAUDE.md, ../../../backend/app/ereignisprotokoll/, ../../../docs/api/ereignisprotokoll.md]
+status: teilweise-umgesetzt
 ---
 
 # Ereignisprotokoll (Sitzungs-Log)
@@ -20,8 +20,46 @@ eine vage Notiz unter "Geplante Features" (`CLAUDE.md`, "Event-Log/Timeline
 komplett durchgesprochen: Kategorien, Knoten-vs.-Kante-Entscheidung,
 Korrektur-/Löschregel, Zeitstempel-Frage.
 
-**Status dieser Seite: Datenmodell entschieden, noch nicht gebaut.** Reines
-Konzept-Dokument — kein Code, keine Migration, keine Routen existieren.
+**Status dieser Seite: Backend gebaut (27.09.2026, Commit `233c939`),
+Frontend und die meisten Auto-Hooks fehlen.** Datenmodell unten bleibt die
+Herleitung; der Code-Stand steht im nächsten Abschnitt. API:
+[[../../api/ereignisprotokoll.md]].
+
+## Gebaut (27.09.2026, Doku nachgezogen 29.09.2026)
+
+Modul `backend/app/ereignisprotokoll/` — `schemas.py`, `repository.py`,
+`routes.py`. Router in `app/main.py`. Migration
+`backend/app/db/migrations/006_ereignisprotokoll.cypher` (ID-Constraints
+für Sitzung, die acht Log-Labels, plus Achievement/AchievementVerleihung
+— die Achievement-Knoten haben noch kein App-Modul).
+
+- **Sitzung:** Anlegen/Listen/Ändern. Echtes `datum` Pflicht, `ingameDatum`
+  Freitext.
+- **Acht Writer + Listen:** `KiProtokollEintrag`, `GegenstandsBewegung`,
+  `GeldBewegung`, `Aufenthalt`, `NpcWissenszuwachs`, `KampfLogEintrag`,
+  `VerhandlungsAusgang`, `CharakterEntwicklung`.
+- **Zeitleiste:** Cypher-UNION über alle Labels, optional je Sitzung.
+- **Papierkorb:** `PATCH /{kategorie}/{id}` Korrektur, `PUT …/geloescht`.
+  Kein Hard-Delete. Es gibt **keine POST-Routen** zum Anlegen — das sollen
+  Hooks aus Fachmodulen über die Writer tun.
+- **`Person.erstelltAm`:** steht in `PERSON_FIELDS` + PersonCreate
+  `default_factory`. Bestandsdaten ohne rückwirkendes Datum.
+
+**Committed fehlen die Auto-Hooks.** Die Writer liegen bereit, aber
+`ki/`, `items/`, `party/`, `traits/`, `verhandlung/` rufen sie auf `main`
+nicht auf — ein laufendes Spiel schreibt also nichts ins Log.
+
+**Uncommitted (Working Tree, nicht auf `main`, Stand 29.09.2026):**
+`aktive_sitzung_id`, `angreifer_person_id`, plus Hooks an
+Rüstungstreffer, Verhandlungs-Antwort, EP/Steigerung/Willenskraft,
+Rassenwechsel per Personen-PATCH.
+
+## Noch nicht gebaut
+
+- Frontend / Zeitleisten-UI (wo im Commlink, wer sieht was) — unentworfen.
+- Auto-Hooks für KI, Gegenstände, Geld, Aufenthalt, NPC-Wissen.
+- Achievements (Konzept [[achievements]], nur Constraints in der Migration).
+- Echtes In-Game-Kalendersystem (bleibt Freitext).
 
 ## Grundprinzip: ein eigener Knotentyp pro Kategorie
 
@@ -378,11 +416,13 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Mark klärt das separat.
 - UI/Ansicht der Zeitleiste (wo im Commlink? eigener Bereich? nur SL oder
   auch Spieler-Rückblick?) — **noch nicht entworfen**.
-- Genaue Feldliste je Kategorie kann sich beim tatsächlichen Bauen noch
-  verschieben (dies ist ein Konzept-Dokument, kein fertiges Schema).
+- Auto-Hooks der Fachmodule — Writer existieren, committed sind sie nicht
+  verdrahtet (uncommitted Diff für Kampf/Verhandlung/Steigerung/Rasse).
 - Ob `Aufenthalt` das bestehende `BEFINDET_SICH_AN` ersetzt oder nur
   zusätzlich mitläuft (aktueller Stand weiter per Kante, Historie separat
   per Log) — **naheliegend ist "zusätzlich"**, nicht entschieden.
+- `Person.erstelltAm` — **erledigt 27.09.2026** (Feld + Default; Bestandsdaten
+  ohne rückwirkendes Datum).
 
 ## Entwicklung
 
@@ -408,9 +448,15 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   `RASSE_GEAENDERT` für nachträgliche Rassenwechsel (Mark: "kann ja auch
   storytechnisch begründet passieren... Body Swap oder sowas"). Explizit
   NICHT geloggt: die Charaktererstellung selbst. Dabei eine echte Lücke im
-  bestehenden Code gefunden: `Person` hat aktuell gar kein `erstelltAm`-Feld
-  — muss beim Bauen zuerst ergänzt werden, sonst bleibt "wann wurde X
-  erstellt" für jeden Charakter unbeantwortbar.
+  bestehenden Code gefunden: `Person` hatte kein `erstelltAm`-Feld —
+  **beim Backend-Bau 27.09.2026 ergänzt** (Create-Default, Bestandsdaten
+  ohne rückwirkendes Datum).
+- **29.09.2026** — Doku-Nachzug: Status von „kein Code“ auf
+  `teilweise-umgesetzt`. Backend-Modul, Routen, Migration und
+  `Person.erstelltAm` waren seit `233c939` da, Wiki/CLAUDE.md hinkten
+  hinterher. Auto-Hooks der Fachmodule committed weiter fehlend
+  (uncommitted Diff im Working Tree). Frontend weiter ungebaut.
+  API-Referenz `docs/api/ereignisprotokoll.md`.
 
 ## Siehe auch
 
@@ -420,7 +466,8 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
 - [[../concepts/waehrung-und-preise]] — `Person.kapital`, geplante Geld-Weitergabe
 - [[ki-integration]] — alle KI-Anwendungsfälle, die `KiProtokollEintrag` erfassen soll
 - [[mitteilungen-system]] — bereits dauerhaft gespeicherte Broadcasts (Abgrenzung: die sind schon geloggt, KI-Vorschauen bisher nicht)
-- [[../../../CLAUDE.md]] — Punkt 17 unter "Geplante Features"
+- [[../../../CLAUDE.md]] — Punkt 17 unter Geplante Features
+- [[../../api/ereignisprotokoll.md]] — Endpunkte, Kategorien, Stand der Hooks
 - [[../../api/kampf.md]] — laufende Kampf-/Initiative-Verwaltung, `Kampf.amZug`
 - [[kampf-und-initiative]] — Regelkonzept Kampf, Grundlage für `KampfLogEintrag`
 - [[../concepts/erfahrung-und-steigern]] — EP-Preisformel, Grundlage für `CharakterEntwicklung`
