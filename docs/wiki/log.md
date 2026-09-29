@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-28] update | zusatzfertigkeiten wiki-konsistent für Kontextreset
+
+Aktueller Stand (Button + Paket-Punktzeilen, Commit `2bf1adc`, live bebop)
+als eigener Abschnitt in `entities/zusatzfertigkeiten.md`; Mittags-Umbau
+als „teilweise überholt“ markiert; Frontend-Bullet und CLAUDE.md-Klicktest
+nachgezogen; `concepts/charaktererschaffung.md` verlinkt.
+
 ## [2026-09-28] update | entities/zusatzfertigkeiten (Button + Punktzeilen)
 
 Mark: Auswahl-Liste ohne Punkte reicht nicht. Umbau: Button „Zusatzfertigkeiten“

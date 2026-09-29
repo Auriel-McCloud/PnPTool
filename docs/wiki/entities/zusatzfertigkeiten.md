@@ -57,18 +57,37 @@ Neu-Erlernen UND jedes Steigern über EP, exakt wie ein normaler
 Fertigkeitskauf (`traits/routes.py::steigere_wert`). **Das bleibt
 unverändert** — nur die Erstellungsphase wurde umgebaut.
 
-## Button + Punktzeilen im Fertigkeiten-Raster (28.09.2026, Abend)
+## Aktueller Stand: Button + Punktzeilen (28.09.2026 Abend, Commit `2bf1adc`)
 
-Mark, nach dem ersten Umbau: die Klick-Liste ohne Punkte reicht nicht.
-Gewünscht: Button „Zusatzfertigkeiten“ im Fertigkeiten-Popup → nested
-Auswahl-Fenster → gewählte Skills erscheinen als normale Punktzeilen
-(DotPool) im selben Raster, verbrauchen Paket-Slots, wandern ins Blatt.
+Mark, nach dem Mittags-Umbau (Klick-Liste ohne Punkte, ganz unten unter
+Sphären): *es gibt keinen Button, und ich kann keine Punkte darin
+verteilen.* Gewünscht und so gebaut:
 
-- `ErstellungInput.zusatzfertigkeitPunkte` = Paketpunkte (0 = gewählt ohne Slot)
-- `ErstellungInput.zusatzfertigkeitFreebees` = Freebee-Aufschlag (0 oder 1)
-- Rating = Paket + Freebee; Kante auch bei rating 0
+1. Button **„Zusatzfertigkeiten“** oben im Fertigkeiten-Popup (direkt unter
+   dem Hinweis, nicht unter Sphären versteckt).
+2. Nested `Fenster` mit `ZusatzfertigkeitAuswahl` — Katalog wählen/abwählen,
+   rein clientseitig, kein Server-Write.
+3. Gewählte Einträge erscheinen als normale `DotPool`-Zeilen **im selben
+   Raster** und verbrauchen dieselben Paket-Slots (7×1 / 5×2 / 3×3 bei
+   Ausgeglichen usw.).
+4. Im Freebees-Schritt nur die Gewählten, Grundwert = Paketpunkte, +1 aus
+   dem gemeinsamen Hauptpool (Kosten 2).
+5. Ins Charakterblatt wandern sie auch mit rating 0. Rating = Paket + Freebee.
 
-## Umbau: Auswahl im Fertigkeiten-Schritt, Bezahlung im Freebees-Schritt (28.09.2026)
+Backend: `ErstellungInput.zusatzfertigkeitPunkte` = Paketpunkte (0 = gewählt
+ohne Slot); `zusatzfertigkeitFreebees` = Freebee-Aufschlag 0 oder 1.
+`HAT_ZUSATZFERTIGKEIT` für jede gewählte ID, auch rating 0.
+
+Live auf bebop nach Rebuild. **Browser-Klicktest durch Mark noch offen.**
+
+## Zwischenstand (28.09.2026 Mittag) — teilweise überholt
+
+Der Mittags-Umbau (kein Extra-Budget, Auswahl im Fertigkeiten-Schritt,
+Bezahlung über den Haupt-Freebee-Pool) gilt **inhaltlich weiter**, aber die
+UI und die Feldbedeutung wurden am Abend überschrieben (siehe Abschnitt
+oben). Konkret überholt: die Inline-Klick-Liste ohne Punkte; die Deutung von
+`zusatzfertigkeitPunkte` als Freebee 0/1; „Kante nur bei Punkten > 0“;
+„kein Button/Popup mehr in der Erstellung“.
 
 Mark, wörtlich, zur ersten Version (Popup-Button in der Erstellungs-
 Kopfzeile + eigenes Freebee-Budget): *"Nein das passt nicht, bei den
@@ -174,14 +193,9 @@ ein Absatz). Echt verifiziert (28.09.2026) mit realem Gemini/Mistral-Aufruf
   Rassen-Editor), Löschen mit `Bestaetigung`-Rückfrage, "+ Neu"-Popup, "✨
   KI-Vorschläge"-Popup mit editierbaren Kandidaten. **Unverändert seit
   28.09.2026 Vormittag.**
-- **Charaktererstellung** (28.09.2026, nach dem Umbau — siehe Abschnitt
-  oben): KEIN eigenständiger Popup-Button in der Kopfzeile mehr. Auswahl im
-  Fertigkeiten-Schritt (`Charaktererstellung.tsx::SchrittFertigkeiten`,
-  neuer Abschnitt "Zusatzfertigkeiten" unten im Fertigkeitswahl-Fenster,
-  Komponente `zusatzfertigkeiten/ZusatzfertigkeitAuswahl.tsx`), Bezahlung im
-  Freebees-Schritt (`SchrittFreebees`, neuer Abschnitt direkt nach den
-  Fertigkeiten-Kategorien) — ganz normale `DotPool`-Zeile wie jede andere
-  Fertigkeit, kein Untermenü/Popup mehr.
+- **Charaktererstellung** (Abend `2bf1adc`): Button oben im Fertigkeiten-
+  Popup öffnet nested Katalog-Fenster; Gewählte als `DotPool` im Raster
+  (Paket-Slots); Freebees nur Aufschlag. Nicht mehr die Inline-Liste unten.
 - **LevelUp-Popup** (`zusatzfertigkeiten/ZusatzfertigkeitPopup.tsx`,
   eingebunden in `LevelUp.tsx`): **unverändert**, sofortiger Server-Write mit
   EP-Abzug — strukturell korrekt, weil LevelUp ohnehin jeden Punktkauf

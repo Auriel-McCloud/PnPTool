@@ -1,7 +1,7 @@
 ---
 title: Charaktererschaffung
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-28
 type: konzept
 tags: [charaktererschaffung, attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../backend/app/traits/erstellung.py]
@@ -45,6 +45,10 @@ Kein grundlegender Regelwechsel seit dem Excel bei der Erschaffung selbst — di
 Veränderungen liegen bei den **abgeleiteten** und **später gebauten** Systemen
 (Gesundheit, Rassen-Baukasten, Erfahrung), nicht in der Erschaffungslogik selbst.
 Siehe [[rassen]] für den größten Umbau (Baukasten statt Fixtabelle, 11.09.2026).
+**Zusatzfertigkeiten (28.09.2026):** optionale Skills aus einem Kampagnen-
+Katalog, nicht im TraitDef-Set. In der Erstellung Button im Fertigkeiten-
+Popup → Auswahl → Punktzeilen im Paket-Raster + Freebees; siehe
+[[zusatzfertigkeiten]].
 
 ## Offene Fragen
 
@@ -56,4 +60,5 @@ Siehe [[rassen]] für den größten Umbau (Baukasten statt Fixtabelle, 11.09.202
 
 - [[attribute-und-fertigkeiten]] — was verteilt wird
 - [[rassen]] — Modifikatoren und der Baukasten
+- [[zusatzfertigkeiten]] — optionale Kampagnen-Skills in der Erstellung
 - [[waehrung-und-preise]] — Startkapital-Kontext

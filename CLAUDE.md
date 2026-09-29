@@ -8,20 +8,15 @@ Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Serv
 bzw. GPU-Hardware nur eingeschränkt oder gar nicht verifiziert. Bitte am
 Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
-- **Zusatzfertigkeiten** (28.09.2026, KORRIGIERT später am selben Tag —
-  siehe „Zuletzt gebaut“ unten und `docs/wiki/entities/zusatzfertigkeiten.md`):
-  Backend komplett per echtem E2E-Test verifiziert, `tsc -b` sauber.
-  **Nie im Browser angeklickt** — bitte im Kampagnen-Menü ein paar Einträge
-  anlegen (mit UND ohne KI-Vorschlag), dann als Spieler eine
-  Charaktererstellung durchspielen: im Schritt "Fertigkeiten" nach dem
-  Fertigkeitspaket-Klick im sich öffnenden Fenster ganz unten die neue
-  Zusatzfertigkeiten-Auswahl testen, danach im Schritt "Freebees" prüfen ob
-  die gewählte(n) dort als normale Punktreihe(n) auftauchen und sich aus dem
-  gemeinsamen Freebee-Pool bezahlen lassen — eine NICHT gewählte darf dort
-  nicht erscheinen. Nach Abschluss im Charakterblatt kontrollieren, ob die
-  bezahlte Zusatzfertigkeit als normaler Eintrag auftaucht. Im LevelUp
-  bleibt der bisherige "+ Zusatzfertigkeit"-Popup unverändert — dort auch
-  kurz gegenprüfen, dass EP-Abzug weiterhin funktioniert.
+- **Zusatzfertigkeiten** (28.09.2026, Abend-Stand — Button + Punktzeilen,
+  live auf bebop als `2bf1adc`; siehe „Zuletzt gebaut“ und
+  `docs/wiki/entities/zusatzfertigkeiten.md`): bitte hart neu laden, dann
+  im Kampagnen-Menü Einträge anlegen (mit UND ohne KI). Charaktererstellung
+  → Fertigkeiten-Popup: oben der Button **Zusatzfertigkeiten** öffnet die
+  Katalogwahl; gewählte Skills erscheinen als normale Kreise im Raster
+  (Paket-Slots, wie Diebeshandwerk). Freebees: nur die Gewählten, +1 aus
+  dem Hauptpool. Charakterblatt: Eintrag auch bei rating 0. LevelUp:
+  bisheriger "+ Zusatzfertigkeit"-Popup mit EP, unverändert.
 
 - **Autosave für Beschreibung/Notizen** (siehe „Zuletzt gebaut“ unten,
   27.09.2026): `tsc -b` sauber, aber nie im Browser angeklickt. Bitte am
