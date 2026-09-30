@@ -215,6 +215,15 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (30.09.2026 — Ideenschmiede-Gegenstand öffnet das normale Fenster):**
+- **Was:** Klick auf einen Gegenstands-Entwurf in der Ideenschmiede öffnet
+  dasselbe Bearbeiten-Fenster wie in der Gegenstands-Übersicht (kein
+  Alert mehr „noch nicht implementiert“). GET
+  `/api/campaigns/{id}/gegenstaende/{item_id}` nach den statischen Pfaden.
+- **Dateien:** `IdeenschmiedeAnsicht.tsx`, `CharacterSheetPanel.tsx`
+  (`nurFenster`), `items/routes.py`, `items/api.ts`.
+- **Verifiziert:** `tsc -b` sauber, Route im OpenAPI, Mülleimer-GET bleibt.
+
 **Zuletzt gebaut (30.09.2026 — $\beta^+$ in Namen wird als β⁺ gezeigt):**
 - **Was:** `$...$` in Namen (z.B. Gegenstand `$\beta^+$-Isotop`) wird in
   Kachel und Fenster-Titel als β⁺-Isotop gesetzt, kursiv-serif wie im Shot.

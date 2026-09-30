@@ -289,6 +289,7 @@ export const itemsApi = {
   create: (cid: string, personId: string, body: NeuerGegenstand) => api.post<Gegenstand>(base(cid, personId), body),
 
   listAlle: (cid: string) => api.get<GegenstandMitBesitzer[]>(campaignBase(cid)),
+  get: (cid: string, itemId: string) => api.get<Gegenstand>(itemBase(cid, itemId)),
   /** Implantat einsetzen oder chirurgisch entfernen. Nur SL. */
   chirurgie: (cid: string, itemId: string, einsetzen: boolean) =>
     api.post<Gegenstand>(`/api/campaigns/${cid}/gegenstaende/${itemId}/chirurgie`, { einsetzen }),

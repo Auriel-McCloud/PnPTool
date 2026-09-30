@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-30] update | Ideenschmiede-Gegenstand öffnet Detailfenster
+
+Klick auf einen Gegenstands-Entwurf öffnet dasselbe Bearbeiten-Fenster wie
+in der Übersicht. GET einzelner Gegenstand ergänzt.
+
 ## [2026-09-30] update | Formeln in Namen ($\\beta^+$ → β⁺)
 
 `$...$` in Namen wird in Kachel und Fenster-Titel als Unicode gesetzt

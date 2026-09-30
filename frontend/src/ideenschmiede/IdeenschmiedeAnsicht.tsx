@@ -24,6 +24,8 @@ import { NPCDetail } from "../entities/NPCDetail";
 import { FraktionDetail } from "../entities/FraktionDetail";
 import { WikiEditor } from "../wiki/WikiEditor";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { GegenstandRow } from "../traits/CharacterSheetPanel";
+import { itemsApi, type Gegenstand } from "../items/api";
 import type { Ort } from "../entities/api";
 import type { Event } from "../entities/api";
 import type { Person } from "../entities/api";
@@ -82,6 +84,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [personDetailFuer, setPersonDetailFuer] = useState<Person | null>(null);
   const [fraktionDetailFuer, setFraktionDetailFuer] = useState<Fraktion | null>(null);
   const [wikiDetailFuer, setWikiDetailFuer] = useState<{ id: string; titel: string; inhalt: string } | null>(null);
+  const [gegenstandDetailFuer, setGegenstandDetailFuer] = useState<Gegenstand | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState<EntwurfItem | null>(null);
 
   // Daten für die Detail-Komponenten
@@ -132,6 +135,10 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         .map((p) => ({ id: p.id, name: p.name })),
     [allePersonen]
   );
+  const alleOptionen: PersonOption[] = useMemo(
+    () => allePersonen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` })),
+    [allePersonen],
+  );
 
   // Namens-Tabelle für Beziehungsanzeige
   const namensTabelle = useMemo(() => {
@@ -170,12 +177,15 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
       } else if (fraktionDetailFuer) {
         const frisch = await api.get<Fraktion>(`/api/campaigns/${campaignId}/fraktionen/${fraktionDetailFuer.id}`);
         setFraktionDetailFuer(frisch);
+      } else if (gegenstandDetailFuer) {
+        const frisch = await itemsApi.get(campaignId, gegenstandDetailFuer.id);
+        setGegenstandDetailFuer(frisch);
       }
     } catch (e) {
       console.error("Fehler beim Aktualisieren des Details:", e);
     }
     await laden();
-  }, [campaignId, ortDetailFuer, eventDetailFuer, personDetailFuer, fraktionDetailFuer, laden]);
+  }, [campaignId, ortDetailFuer, eventDetailFuer, personDetailFuer, fraktionDetailFuer, gegenstandDetailFuer, laden]);
 
   const handleVerschieben = async (item: EntwurfItem) => {
     if (!confirm(`„${item.name}" wirklich in die Kampagne übernehmen?`)) return;
@@ -246,18 +256,16 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   /** Öffnet das passende Detail-Popup je nach Typ. */
   const handleItemKlick = async (item: EntwurfItem) => {
     try {
-      const endpoints: Record<EntwurfItem["typ"], string> = {
+      const endpoints: Record<Exclude<EntwurfItem["typ"], "Gegenstand">, string> = {
         Person: `/api/campaigns/${campaignId}/personen/${item.id}`,
         Ort: `/api/campaigns/${campaignId}/orte/${item.id}`,
         Event: `/api/campaigns/${campaignId}/events/${item.id}`,
         WikiSeite: `/api/campaigns/${campaignId}/wiki/seiten/${item.id}`,
-        Gegenstand: `/api/campaigns/${campaignId}/vorlagen/${item.id}`,
         Fraktion: `/api/campaigns/${campaignId}/fraktionen/${item.id}`,
       };
 
-      // Für Gegenstand gibt es noch kein Detail-Popup
       if (item.typ === "Gegenstand") {
-        alert(`Gegenstand "${item.name}" — Detail-Ansicht noch nicht implementiert.`);
+        setGegenstandDetailFuer(await itemsApi.get(campaignId, item.id));
         return;
       }
 
@@ -553,6 +561,25 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           pcOptions={pcOptions}
           onSchliessen={() => setFraktionDetailFuer(null)}
           onGeaendert={detailRefreshen}
+        />
+      )}
+      {gegenstandDetailFuer && (
+        <GegenstandRow
+          campaignId={campaignId}
+          item={gegenstandDetailFuer}
+          pcOptions={pcOptions}
+          alleOptionen={alleOptionen}
+          nurFenster
+          onChanged={() => {
+            void laden();
+          }}
+          onRemoved={() => {
+            void itemsApi.remove(campaignId, gegenstandDetailFuer.id).then(() => {
+              setGegenstandDetailFuer(null);
+              void laden();
+            });
+          }}
+          onFensterSchliessen={() => setGegenstandDetailFuer(null)}
         />
       )}
       {wikiDetailFuer && (

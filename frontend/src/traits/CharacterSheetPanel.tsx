@@ -138,6 +138,8 @@ export function GegenstandRow({
   onChanged,
   onRemoved,
   kachel = false,
+  nurFenster = false,
+  onFensterSchliessen,
 }: {
   campaignId: string;
   // Fehlt bei Vorlagen (die haben per Invariante keinen Besitzer).
@@ -153,8 +155,15 @@ export function GegenstandRow({
    * Charakterblatt bleibt die kompakte Zeile.
    */
   kachel?: boolean;
+  /**
+   * Nur das Bearbeiten-Fenster, sofort offen — für die Ideenschmiede, wo
+   * der Klick auf den Entwurf schon passiert ist. Schließen ruft
+   * `onFensterSchliessen`.
+   */
+  nurFenster?: boolean;
+  onFensterSchliessen?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(nurFenster);
   const [showOptions, setShowOptions] = useState(false);
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
@@ -315,6 +324,17 @@ export function GegenstandRow({
     setExpanded(true);
   }
 
+  useEffect(() => {
+    if (nurFenster) openEdit();
+    // Nur beim Öffnen aus der Ideenschmiede — openEdit liest `item` vom ersten Render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function fensterZu() {
+    setExpanded(false);
+    onFensterSchliessen?.();
+  }
+
   async function save() {
     await itemsApi.update(campaignId, item.id, {
       name,
@@ -359,7 +379,7 @@ export function GegenstandRow({
       sichtbarkeit,
       sichtbarFuer,
     });
-    setExpanded(false);
+    fensterZu();
     onChanged();
   }
 
@@ -438,7 +458,7 @@ export function GegenstandRow({
   const fenster = (
     <Fenster
       offen={expanded}
-      onSchliessen={() => setExpanded(false)}
+      onSchliessen={fensterZu}
       kennung={item.id}
       titel={item.name}
       unterzeile={
@@ -1077,6 +1097,8 @@ export function GegenstandRow({
       </div>
     </Fenster>
   );
+
+  if (nurFenster) return fenster;
 
   if (kachel) {
     return (

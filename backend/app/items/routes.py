@@ -609,6 +609,22 @@ async def verbautes_chrom(campaign_id: str, person_id: str, viewer: Viewer = Dep
     return await repository.verbautes_chrom(campaign_id, person_id)
 
 
+@campaign_router.get("/{item_id}", response_model=GegenstandResponse)
+async def get_item(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Einzelnen Gegenstand laden — auch Ideenschmiede-Entwürfe.
+
+    Steht nach den statischen GET-Pfaden (`/weggeworfen`, `/traglast`,
+    `/verbaut/{person_id}`), sonst würden die als Kennung gelesen.
+    """
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    sichtbar = filter_gegenstaende_for_viewer([item], viewer.role, viewer.person_id)
+    if not sichtbar:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return sichtbar[0]
+
+
 # =====================================================================
 # Rüstung: Kästchen + Schadensreduktion (siehe kampf/ruestung.py für die
 # Formel, docs/api/ruestung.md für die ausführliche Begründung)
