@@ -66,11 +66,20 @@ export function EventDetail({
     }
   }
 
+  // Still: kein onGeaendert/refreshAll, sonst unmountet das Popup (siehe autosave.ts).
+  async function speichereStill(felder: Partial<Event>) {
+    try {
+      await entitiesApi.updateEvent(campaignId, event.id, felder);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
+    }
+  }
+
   // Autosave für Beschreibung/Notizen — siehe shell/autosave.ts.
   const autosaveBeschreibung = useAutosave((doc: JSONContent) =>
-    speichere({ description: serializeRichText(doc) }),
+    speichereStill({ description: serializeRichText(doc) }),
   );
-  const autosaveNotizen = useAutosave((doc: JSONContent) => speichere({ notes: serializeRichText(doc) }));
+  const autosaveNotizen = useAutosave((doc: JSONContent) => speichereStill({ notes: serializeRichText(doc) }));
 
   async function loeschen() {
     setSpeichert(true);

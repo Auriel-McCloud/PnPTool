@@ -67,16 +67,15 @@ export function KiFenster({
       await entitiesApi.updatePerson(campaignId, kiId, {
         description: serializeRichText(beschreibungDoc),
       });
-      onGeaendert();
     } finally {
       setSpeichert(false);
     }
   }
 
-  // Autosave — siehe shell/autosave.ts.
+  // Autosave still — kein onGeaendert, sonst schließt der Parent das Fenster
+  // (siehe autosave.ts und BegleiterVerwaltung).
   const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
     await entitiesApi.updatePerson(campaignId, kiId, { description: serializeRichText(doc) });
-    onGeaendert();
   });
 
   async function loeschen() {

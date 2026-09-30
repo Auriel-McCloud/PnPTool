@@ -79,14 +79,12 @@ export function NPCDetail({
     }
   }
 
-  // Autosave für Beschreibung/Notizen — siehe shell/autosave.ts.
+  // Autosave still — kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
   const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
     await entitiesApi.updatePerson(campaignId, person.id, { description: serializeRichText(doc) });
-    onGeaendert();
   });
   const autosaveNotizen = useAutosave(async (doc: JSONContent) => {
     await entitiesApi.updatePerson(campaignId, person.id, { notes: serializeRichText(doc) });
-    onGeaendert();
   });
 
   return (

@@ -18,12 +18,10 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   dem Hauptpool. Charakterblatt: Eintrag auch bei rating 0. LevelUp:
   bisheriger "+ Zusatzfertigkeit"-Popup mit EP, unverändert.
 
-- **Autosave für Beschreibung/Notizen** (siehe „Zuletzt gebaut“ unten,
-  27.09.2026): `tsc -b` sauber, aber nie im Browser angeklickt. Bitte am
-  Tablet prüfen — Text in ein Beschreibungs-/Notizenfeld tippen, ~2 Sekunden
-  warten, Standby auslösen (oder hart neu laden) und schauen, ob der Text
-  erhalten bleibt, in mindestens einem Detail-Popup (z.B. Ort) und im
-  Gegenstand-Bearbeiten-Fenster.
+- **Autosave für Beschreibung/Notizen** (27.09. + Fix 30.09., siehe „Zuletzt
+  gebaut“): Reload-Bug (Popup zu/auf, Tab weg) ist im Code raus. Bitte am
+  Spieltisch: in Beschreibung tippen, ~2 Sek. Pause — Fenster und Tab müssen
+  bleiben, Text nach Reload noch da. Ort-Popup und Gegenstand-Fenster.
 - **Gegenstands-Weitergabe innerhalb der Party** (`WeitergebenPopup.tsx`,
   `VerhandlungPopup.tsx` für `GEGENSTAND_WEITERGABE`, siehe „Zuletzt gebaut“
   unten und `docs/wiki/entities/gegenstand-transfer.md`): Backend-Import und
@@ -216,6 +214,17 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (30.09.2026 — Autosave lädt das Popup nicht mehr neu):**
+- **Was:** Beschreibung/Notizen-Autosave macht nur noch das PATCH, ohne
+  `onGeaendert`/`refreshAll`. Der Reload hat das Fenster unmountet: Animation
+  nochmal, Tab zurück auf Übersicht — „zwei Wörter, Popup zu, wieder auf“.
+  Critter/KI: Beschreibungsspeichern schließt das Fenster nicht mehr.
+  Ort/Event/Fraktion: fehlt die Entität kurz in der Liste, bleibt der Snapshot.
+- **Dateien:** `frontend/src/shell/autosave.ts`, Detail-Popups, `EntityManager.tsx`,
+  `CharacterSheetPanel.tsx`, Critter-/KiFenster.
+- **Verifiziert:** `tsc -b` sauber. Klicktest: Beschreibung tippen, Pause, Tab
+  muss bleiben.
 
 **Zuletzt gebaut (29.09.2026 — Burgermenü blättert, keine Scrollbar):**
 - **Was:** Die Scrollbar in der Symbolspalte ist raus. Zu lange Liste:

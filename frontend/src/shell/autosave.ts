@@ -21,6 +21,12 @@ const AUTOSAVE_MS = 1200;
  * bleiben davon unberührt, da diese Funktion nur ihr eigenes `speichern`
  * ruft, nie einen fremden Ladezustand setzt.
  *
+ * Der `speichern`-Callback darf NICHT die Elternliste neu laden
+ * (`onGeaendert` / `refreshAll`) und das Fenster nicht schließen: der Reload
+ * unmountet das Popup, die Öffnen-Animation läuft nochmal, der Tab springt
+ * auf die Übersicht. Genau das ist Marks "zwei Wörter, Popup zu, wieder
+ * auf, nicht mehr im Beschreibungstab" (30.09.2026). Nur das PATCH selbst.
+ *
  * Rückgabe: `planen(wert)` — bei jeder Änderung aufrufen (z.B. im
  * `onChange` des Editors), nicht in einem `useEffect` auf den State selbst,
  * damit ein reines Neuladen/Öffnen keinen Speichervorgang auslöst.

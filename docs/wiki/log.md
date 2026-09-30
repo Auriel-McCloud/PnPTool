@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-30] update | Autosave ohne Popup-Reload
+
+Beschreibung/Notizen-Autosave patched still, ohne Listen-Reload. Der Reload
+hat das Detail-Fenster unmountet (Animation, Tab zurück auf Übersicht).
+
 ## [2026-09-29] update | Burgermenü blättert ohne Scrollbar
 
 Symbolspalte: keine `overflow-y: auto`-Leiste mehr. Flache Pfeile oben/unten

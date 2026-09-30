@@ -68,13 +68,22 @@ export function OrtDetail({
     }
   }
 
+  // Still: kein onGeaendert/refreshAll, sonst unmountet das Popup (siehe autosave.ts).
+  async function speichereStill(felder: Partial<Ort>) {
+    try {
+      await entitiesApi.updateOrt(campaignId, ort.id, felder);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
+    }
+  }
+
   // Autosave für Beschreibung/Notizen — 1200ms nach der letzten Eingabe,
   // plus Flush beim Verlassen (siehe shell/autosave.ts). Der bestehende
   // Speichern-Knopf bleibt als manueller Sofort-Weg zusätzlich bestehen.
   const autosaveBeschreibung = useAutosave((doc: JSONContent) =>
-    speichere({ description: serializeRichText(doc) }),
+    speichereStill({ description: serializeRichText(doc) }),
   );
-  const autosaveNotizen = useAutosave((doc: JSONContent) => speichere({ notes: serializeRichText(doc) }));
+  const autosaveNotizen = useAutosave((doc: JSONContent) => speichereStill({ notes: serializeRichText(doc) }));
 
   async function loeschen() {
     setSpeichert(true);

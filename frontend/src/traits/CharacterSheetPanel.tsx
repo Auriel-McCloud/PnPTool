@@ -422,13 +422,12 @@ export function GegenstandRow({
   // Formulars bleibt hinter dem bestehenden "Speichern"-Knopf) — eigenes
   // PATCH statt des großen save(), damit ein Autosave-Tick nicht versehentlich
   // noch unfertige Werte in anderen Feldern mit wegschreibt.
+  // Still: kein onChanged/refresh, sonst unmountet das Fenster (siehe autosave.ts).
   const autosaveDescription = useAutosave(async (doc: JSONContent) => {
     await itemsApi.update(campaignId, item.id, { description: serializeRichText(doc) });
-    onChanged();
   });
   const autosaveNotes = useAutosave(async (doc: JSONContent) => {
     await itemsApi.update(campaignId, item.id, { notes: serializeRichText(doc) });
-    onChanged();
   });
 
   // Das Detail öffnet als eigenes Fenster statt inline aufzuklappen: hält die

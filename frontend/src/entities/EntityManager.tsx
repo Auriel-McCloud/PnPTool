@@ -317,10 +317,14 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
 
   // Die geöffnete Entität muss dem frisch geladenen Stand folgen, sonst zeigt
   // das Popup nach dem Speichern noch die alten Werte (und "Beziehungen (3)",
-  // obwohl gerade eine gelöst wurde).
-  const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? null) : null;
-  const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? null) : null;
-  const offeneFraktion = fraktionDetailFuer ? (fraktionen.find((f) => f.id === fraktionDetailFuer.id) ?? null) : null;
+  // obwohl gerade eine gelöst wurde). Fehlt sie kurz in der Liste (Filter,
+  // Reload), bleibt der Snapshot — sonst unmountet das Fenster und der Tab
+  // springt auf die Übersicht.
+  const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? ortDetailFuer) : null;
+  const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? eventDetailFuer) : null;
+  const offeneFraktion = fraktionDetailFuer
+    ? (fraktionen.find((f) => f.id === fraktionDetailFuer.id) ?? fraktionDetailFuer)
+    : null;
 
   async function erstelleNeuenOrt(e: FormEvent) {
     e.preventDefault();
