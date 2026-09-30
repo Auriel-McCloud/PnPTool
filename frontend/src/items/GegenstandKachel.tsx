@@ -2,6 +2,7 @@ import { useState } from "react";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { Fenster } from "../shell/Fenster";
+import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
@@ -140,12 +141,14 @@ export function GegenstandKachel({
 
   return (
     <>
-      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={item.name}>
+      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
         <span className="gg-kachel-bild">
           {item.bildUrl ? <img src={item.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
           {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
         </span>
-        <span className="gg-kachel-name">{item.name}</span>
+        <span className="gg-kachel-name">
+          <FormelText text={item.name} />
+        </span>
         <span className="gg-kachel-zeile">
           {item.typ}
           {item.gewicht > 0 && ` · ${item.gewicht} kg`}
@@ -170,7 +173,7 @@ export function GegenstandKachel({
 
       <Fenster
         offen={offen}
-        titel={item.hatMenge ? `${item.name} ×${item.menge}` : item.name}
+        titel={item.hatMenge ? `${formelKlartext(item.name)} ×${item.menge}` : item.name}
         unterzeile={[item.typ, item.preis > 0 ? `${item.preis.toLocaleString("de-AT")}¥` : null, item.gewicht > 0 ? `${item.gewicht} kg` : null]
           .filter(Boolean)
           .join(" · ")}

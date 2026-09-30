@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { letzteTippPosition } from "./tippPosition";
+import { FormelText, formelKlartext } from "./formelText";
 import "./fenster.css";
 
 /**
@@ -140,7 +141,7 @@ export function Fenster({
         ref={rahmenRef}
         role="dialog"
         aria-modal="true"
-        aria-label={titel}
+        aria-label={formelKlartext(titel)}
         tabIndex={-1}
         style={
           {
@@ -159,7 +160,9 @@ export function Fenster({
 
         <header className="fn-kopf">
           <div className="fn-kopf-text">
-            <h2 className="fn-titel">{titel}</h2>
+            <h2 className="fn-titel">
+              <FormelText text={titel} />
+            </h2>
             {unterzeile && <div className="fn-unterzeile">{unterzeile}</div>}
           </div>
           <button type="button" className="fn-schliessen" onClick={onSchliessen} aria-label="Schließen">

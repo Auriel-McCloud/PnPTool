@@ -215,6 +215,15 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (30.09.2026 — $\beta^+$ in Namen wird als β⁺ gezeigt):**
+- **Was:** `$...$` in Namen (z.B. Gegenstand `$\beta^+$-Isotop`) wird in
+  Kachel und Fenster-Titel als β⁺-Isotop gesetzt, kursiv-serif wie im Shot.
+  Kein KaTeX — nur gängige griechische Buchstaben und Hochstellung.
+  Namensfeld beim Tippen bleibt Rohtext.
+- **Dateien:** `frontend/src/shell/formelText.tsx`, `Fenster.tsx`,
+  Gegenstands-Kacheln.
+- **Verifiziert:** `tsc -b` sauber. Name `$\beta^+$-Isotop` am Spieltisch.
+
 **Zuletzt gebaut (30.09.2026 — Autosave lädt das Popup nicht mehr neu):**
 - **Was:** Beschreibung/Notizen-Autosave macht nur noch das PATCH, ohne
   `onGeaendert`/`refreshAll`. Der Reload hat das Fenster unmountet: Animation

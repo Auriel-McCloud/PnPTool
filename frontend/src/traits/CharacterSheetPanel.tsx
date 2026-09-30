@@ -6,6 +6,7 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { Fenster } from "../shell/Fenster";
+import { FormelText, formelKlartext } from "../shell/formelText";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -1080,12 +1081,14 @@ export function GegenstandRow({
   if (kachel) {
     return (
       <>
-        <button type="button" className="gg-kachel" onClick={openEdit} title={item.name}>
+        <button type="button" className="gg-kachel" onClick={openEdit} title={formelKlartext(item.name)}>
           <span className="gg-kachel-bild">
             {item.bildUrl ? <img src={item.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
             {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
           </span>
-          <span className="gg-kachel-name">{item.name}</span>
+          <span className="gg-kachel-name">
+            <FormelText text={item.name} />
+          </span>
           <span className="gg-kachel-zeile">
             {item.typ}
             {item.preis > 0 && ` · ${item.preis}¥`}
@@ -1109,7 +1112,7 @@ export function GegenstandRow({
           {item.bildUrl && (
             <img src={item.bildUrl} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
           )}
-          {item.name}
+          <FormelText text={item.name} />
           {item.hatMenge && <strong>×{item.menge}</strong>}
           <span style={{ fontSize: "0.75em", color: "var(--text-leise)" }}>
             [{item.typ}

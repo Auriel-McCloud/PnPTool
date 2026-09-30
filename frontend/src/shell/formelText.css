@@ -1,0 +1,8 @@
+/* Inline-Mathe in Namen: serifen-kursiv wie im LaTeX-Screenshot, ohne
+   letter-spacing/uppercase der Commlink-Versalien. */
+.formel-math {
+  font-style: italic;
+  font-family: "Liberation Serif", "Times New Roman", Times, serif;
+  letter-spacing: 0;
+  text-transform: none;
+}

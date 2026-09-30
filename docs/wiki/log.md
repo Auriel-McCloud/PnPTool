@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-30] update | Formeln in Namen ($\\beta^+$ → β⁺)
+
+`$...$` in Namen wird in Kachel und Fenster-Titel als Unicode gesetzt
+(β⁺-Isotop), ohne KaTeX.
+
 ## [2026-09-30] update | Autosave ohne Popup-Reload
 
 Beschreibung/Notizen-Autosave patched still, ohne Listen-Reload. Der Reload
