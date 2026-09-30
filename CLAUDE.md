@@ -239,7 +239,9 @@ npm run dev
   (`generiere_text`), `ki/routes.py`, Migration `007_ki_beratung.cypher`,
   `BeratungPopup.tsx`, `IdeenschmiedeAnsicht.tsx`.
 - **Verifiziert:** pytest Zugriffsschutz + `test_ki_beratung`, `tsc -b`,
-  OpenAPI-Pfade. Kein Browser-Klicktest (localhost-Sperre).
+  OpenAPI-Pfade. Live auf bebop (`86f9267`, Images `--build` 30.09.2026).
+  Kein Browser-Klicktest (localhost-Sperre) — morgen auf
+  pnptool.aurielmc.cloud hart neu laden.
 
 **Zuletzt gebaut (30.09.2026 — Ideenschmiede-Gegenstand öffnet das normale Fenster):**
 - **Was:** Klick auf einen Gegenstands-Entwurf in der Ideenschmiede öffnet
@@ -1590,7 +1592,13 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      SL-geheimer Entwurf wie Charakter/Story.
    - **SL-Beratungschat** (**gebaut** 30.09.2026): Ideenschmiede-Knopf ⌬
      Beratung. Redet über Freigegebenes, legt erst auf Knopf einen Entwurf
-     an. Siehe docs/api/ki.md.
+     an. Siehe `docs/api/ki.md`.
+   - **Jev / TypeSafe System One** (30.09.2026, **geparkt**): kein Chatbot,
+     typed Entscheider (`choice`/`score`/`noul`). Original nicht lokal.
+     Auf der GTX 1070 nur Laya (~421M) sinnvoll. Kampagnenwiki/Bögen nicht
+     stillschweigend an TypeSafe. Schnitt und Hosting sind **nicht**
+     entschieden. Wieder anfassen, wenn Mark „Jev“ schreibt. Siehe
+     `docs/wiki/entities/ki-integration.md`.
 
 4. **Spotify** — ✅ Fertig (siehe `docs/api/spotify.md`). Playlist an Ort/Event,
    Wiedergabe folgt automatisch der aktiven Party. Yamaha RX-V4A/MusicCast-

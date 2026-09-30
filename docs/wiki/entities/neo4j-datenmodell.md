@@ -56,6 +56,8 @@ siehe [[ki-integration]].
 | `BEFINDET_SICH_AN` | Party → Ort/Event | optional, siehe [[party-feature]] |
 | `HAT_ZUSATZFERTIGKEIT` | Person → Zusatzfertigkeit | `rating`, campaign-gebunden statt `HAS_TRAIT`, siehe [[zusatzfertigkeiten]] |
 | `HAT_SITZUNG` | Campaign → Sitzung | Spielabend-Anker fürs [[ereignisprotokoll]] |
+| `HAT_BERATUNG` | Campaign → KiBeratung | SL-Beratungschat, siehe [[ki-integration]] |
+| `ENTHAELT` | KiBeratung → KiBeratungNachricht | Chatzeilen; nie in `sammle_kontext` |
 
 **Fast alles trägt zusätzlich `campaignId` als Property** statt (oder zusätzlich
 zu) expliziten Kanten zur Kampagne — schneller für Queries, laut

@@ -7,6 +7,9 @@
 
 Chat neben ✨ KI: nur Freigegebenes als Kanon, Entwurf erst auf Knopf
 (`istEntwurf`). Knoten KiBeratung/KiBeratungNachricht, nicht in sammle_kontext.
+Live auf bebop `86f9267` (git pull + `--build` backend/frontend).
+Jev/TypeSafe System One recherchiert und **geparkt** (kein Code, Hosting/Schnitt
+offen) — siehe [[entities/ki-integration]].
 
 ## [2026-09-30] update | Gegenstand-Fenster mit Reitern
 

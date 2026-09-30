@@ -292,7 +292,27 @@ SL freigibt.
 
 Knoten `KiBeratung` / `KiBeratungNachricht`, Migration `007_ki_beratung.cypher`.
 Routen unter `/api/campaigns/{id}/ki/beratung` (nur SL). Frontend:
-`BeratungPopup.tsx`, Knopf ⌬ Beratung neben ✨ KI.
+`BeratungPopup.tsx`, Knopf ⌬ Beratung neben ✨ KI. Letzte 30 Turns ans
+Modell; Ereignisprotokoll `anlass=beratung`. Live auf bebop `86f9267`
+(30.09.2026). Browser-Klicktest offen.
+
+## Jev / Entscheidungsmodell (30.09.2026) — geparkt
+
+Kein Chatbot. TypeSafe System One (Jev): State + typisierte Fragen
+(`choice` / `score` / `noul`) → Antwort plus Wahrscheinlichkeit. Kann keine
+Textstellen, keine neuen Namen, keine Regelprüfung. Original-Gewichte
+geschlossen, nur Hosted-API. Auf Marks GTX 1070 (8 GB) passt lokal nur
+Laya (~421M); OpenJev will ≥24 GB VRAM.
+
+**Nicht gebaut. Nicht entschieden:** Schnitt (wo Code/Modell/Gemini), Hosting
+(TypeSafe vs. Laya vs. Hybrid). Kampagnenwiki und Bögen nicht stillschweigend
+an TypeSafe. Wieder anfassen, wenn Mark „Jev“ schreibt.
+
+Falls später: Vermittlung `entscheide()` **neben** `client.py`, nie statt.
+Rangvorschlag nur als Merkzettel: Verknüpfungs-Abgleich > Wiki-Triage >
+weiche Achievements > Charakter-Weg-Gate. AUTO-Achievements und `pruefe()`
+bleiben Code. Flavor bleibt Gemini/Mistral. Der Beratungschat oben ist
+Text-KI, nicht Jev.
 
 ## Siehe auch
 

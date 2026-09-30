@@ -40,6 +40,8 @@ echter Lücke etwas komplett Neues erfinden.
 SL-Chat in der Ideenschmiede. Redet, legt nichts an, bis „Entwurf anlegen“.
 Kontext: nur Freigegebenes (`sammle_kontext`). Gespräche liegen in
 `KiBeratung`/`KiBeratungNachricht` und erscheinen **nicht** im Kanon.
+Ans Modell gehen die letzten 30 Turns. Leere Nachricht oder >8000 Zeichen
+→ `422`. Ereignisprotokoll: `anlass=beratung`, `uebernommen=false`.
 
 ### GET `/beratung`
 
@@ -297,6 +299,5 @@ braucht keine Historie, nur den letzten Stand.
 - [Auth](./auth.md) — Spieler-Pendant der Bildgenerierung
   (`/api/spieler/mein-bild-ki-prompt` + `/mein-bild-ki`) fürs eigene
   Charakterportrait, dort dokumentiert weil zum Spieler-Router gehörend
-- `CLAUDE.md`, Punkt 3 ("KI-Integration") — offene Punkte: Auto-Verknüpfung
-  (Entwürfe für unbekannte erwähnte Entitäten anlegen) folgt als nächster
-  Schritt auf derselben Baustelle
+- CLAUDE.md, Punkt 3 (KI-Integration) — Beratung gebaut 30.09.2026;
+  Jev/Entscheidungsmodell geparkt (kein Code)
