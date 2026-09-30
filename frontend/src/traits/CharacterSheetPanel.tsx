@@ -19,6 +19,9 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { RuestungReparatur } from "../kampf/RuestungReparatur";
+import "../entities/pc-detail.css";
+
+type GgAnsicht = "uebersicht" | "beschreibung" | "umbauen" | "notizen" | "besitz";
 
 const CATEGORY_LABELS: Record<string, string> = {
   AttributKörperlich: "Attribute — Körperlich",
@@ -164,6 +167,7 @@ export function GegenstandRow({
   onFensterSchliessen?: () => void;
 }) {
   const [expanded, setExpanded] = useState(nurFenster);
+  const [ansicht, setAnsicht] = useState<GgAnsicht>("uebersicht");
   const [showOptions, setShowOptions] = useState(false);
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
@@ -321,6 +325,7 @@ export function GegenstandRow({
     setNotesDoc(parseRichText(item.notes));
     setSichtbarkeit(item.sichtbarkeit);
     setSichtbarFuer(item.sichtbarFuer);
+    setAnsicht("uebersicht");
     setExpanded(true);
   }
 
@@ -333,6 +338,27 @@ export function GegenstandRow({
   function fensterZu() {
     setExpanded(false);
     onFensterSchliessen?.();
+  }
+
+  async function nameSpeichern() {
+    const sauber = name.trim();
+    if (!sauber) {
+      setName(item.name);
+      return;
+    }
+    if (sauber !== item.name) await itemsApi.update(campaignId, item.id, { name: sauber });
+  }
+
+  async function ablageSetzen(wert: Ablage, zielId?: string | null) {
+    setAblage(wert);
+    if (wert !== "GELAGERT") setAblageZiel("");
+    const ziel = wert === "GELAGERT" ? (zielId !== undefined ? zielId : ablageZiel || null) : null;
+    try {
+      await itemsApi.setAblage(campaignId, item.id, wert, ziel);
+    } catch {
+      setAblage(item.ablage);
+      setAblageZiel(item.ablageZielId ?? "");
+    }
   }
 
   async function save() {
@@ -379,7 +405,6 @@ export function GegenstandRow({
       sichtbarkeit,
       sichtbarFuer,
     });
-    fensterZu();
     onChanged();
   }
 
@@ -458,642 +483,726 @@ export function GegenstandRow({
   const fenster = (
     <Fenster
       offen={expanded}
+      breit={ansicht === "uebersicht" || ansicht === "umbauen"}
       onSchliessen={fensterZu}
       kennung={item.id}
       titel={item.name}
       unterzeile={
         <>
-          {item.typ}
-          {item.preis > 0 && ` · ${item.preis}¥`} · {visibilityLabel(item)}
+          {typ}
           {item.istVorlage && " · Vorlage"}
         </>
       }
+      ton="var(--bereich-gegenstaende)"
     >
-        {item.istVorlage && (
-          <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: 0 }}>
-            📋 Vorlage — hat keinen Besitzer
-          </p>
-        )}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-          {/* Typ ist seit 22.09.2026 fix (siehe schemas.py) — nur Anzeige,
-              kein Dropdown mehr. Falsch gewählt? Löschen, neu anlegen. */}
-          <span className="gg-typ-gewaehlt" title="Der Typ lässt sich nach dem Anlegen nicht mehr ändern">
-            {typ}
-          </span>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-            Preis (¥){" "}
-            <input
-              type="number"
-              min={0}
-              value={preis}
-              onChange={(e) => setPreis(Number(e.target.value))}
-              style={{ width: 90 }}
-            />
-          </label>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 6 }}>
-            Seltenheit
-            <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
-          </label>
-        </div>
-
-        {CHROM_TYPEN.has(typ) && (
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Cyber-/Bioware: Füge unten <strong>Boni auf Werte</strong> hinzu und wähle hier die
-              <strong> Qualitätsstufe</strong>. Je mehr du je Bonuspunkt zahlst, desto weniger
-              Willenskraft kostet es dauerhaft (Regelblatt Zeilen 112-117).
-            </label>
-            <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
-              {gesamtBonus > 0 && (
-                <span style={{ fontSize: "0.9em", color: "var(--neon)" }}>
-                  Gesamt-Bonus: <strong>+{gesamtBonus}</strong>
-                </span>
-              )}
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Körperzone
-                <select value={koerperzone} onChange={(e) => setKoerperzone(e.target.value)}>
-                  <option value="">— offen —</option>
-                  {zonen.map((z) => (
-                    <option key={z} value={z}>
-                      {z}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {koerperzone && (
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                  Platz
-                  <select
-                    value={slot ?? ""}
-                    onChange={(e) => setSlot(e.target.value ? Number(e.target.value) : null)}
-                  >
-                    <option value="">— egal —</option>
-                    {SLOTS_PRO_ZONE.map((s) => (
-                      <option key={s} value={s}>
-                        Platz {s}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
-                <input type="checkbox" checked={istWaffe} onChange={(e) => setIstWaffe(e.target.checked)} />
-                zählt zusätzlich als Waffe
-              </label>
-              {istWaffe && (
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                  Schaden
-                  <DotPool value={schaden} max={7} onChange={setSchaden} />
-                </label>
-              )}
-            </div>
-            {/* Stufe antippen setzt Preis und Verlust zugleich — von Hand
-                gerechnet vertut man sich, und die Formel steht im Server. */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
-              {chromstufen.map((st) => {
-                const istGewaehlt = gewaehlteChromstufe === st.preisJeBonus;
-                return (
-                  <button
-                    key={st.name}
-                    type="button"
-                    onClick={() => {
-                      setGewaehlteChromstufe(st.preisJeBonus);
-                      setPreis(st.preis);
-                      setWVerlust(st.wVerlustGenau);
-                      setKraft(Math.max(1, gesamtBonus));
-                    }}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 10,
-                      textAlign: "left",
-                      borderColor: istGewaehlt ? "var(--neon)" : undefined,
-                      color: istGewaehlt ? "var(--neon)" : undefined,
-                    }}
-                    title={st.beschreibung}
-                  >
-                    <span>{st.name}</span>
-                    <span className="mono">
-                      {st.preis.toLocaleString("de-AT")}¥ · −{st.wVerlust}
-                      {st.wVerlustGenau !== st.wVerlust && (
-                        <em style={{ fontStyle: "normal", color: "var(--text-aus)" }}>
-                          {" "}
-                          ({st.wVerlustGenau.toLocaleString("de-AT")} gezählt)
-                        </em>
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
-              Zählt mit <strong>{wVerlust.toLocaleString("de-AT")}</strong> gegen die Willenskraft.
-              Allein steht das für <strong>{Math.max(1, Math.floor(wVerlust)) || 0}</strong> Punkt
-              {(Math.max(1, Math.floor(wVerlust)) || 0) === 1 ? "" : "e"} — aber gerundet wird erst,
-              wenn alles Chrom zusammengezählt ist: zwei Stücke mit 0,67 kosten gemeinsam 1, nicht 2.
-              Wirkt nur, solange der Gegenstand <em>ausgerüstet</em> ist.
-            </p>
-          </div>
-        )}
-
-        {typ === "Riggerkonsole" && (
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Riggerkonsole (Regelblatt Zeilen 158-167). Der Bonus darf negativ sein — eine
-              zusammengeschraubte Konsole macht das Steuern schwerer.
-            </label>
-            <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Rigger-Bonus
-                <input
-                  type="number"
-                  value={riggerBonus}
-                  onChange={(e) => setRiggerBonus(Number(e.target.value))}
-                  style={{ width: 70 }}
-                />
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Max. Drohnen
-                <input
-                  type="number"
-                  min={0}
-                  value={maxDrohnen}
-                  onChange={(e) => setMaxDrohnen(Number(e.target.value))}
-                  style={{ width: 70 }}
-                />
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* Boni auf bestehende Attribute/Fertigkeiten/Sphären UND neue
-            Ausrüstungsfertigkeiten — unabhängig vom Typ. Nicht nur Chrom:
-            ein Zauberstab mit "Springen 3" ist z.B. Typ Waffe/Sonstiges. */}
-        <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-            Bonus auf bestehende Werte (solange ausgerüstet)
-          </label>
-          {traitBoni.map((p, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
-              <select
-                value={p.key}
-                onChange={(e) =>
-                  setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)))
-                }
-                style={{ flex: 1 }}
-              >
-                <option value="">— Wert wählen —</option>
-                {traitKatalog.map((t) => (
-                  <option key={t.id} value={t.name}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                placeholder="Bonus"
-                value={p.value}
-                onChange={(e) =>
-                  setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))
-                }
-                style={{ width: 70 }}
-              />
-              <button type="button" onClick={() => setTraitBoni(traitBoni.filter((_, idx) => idx !== i))}>
-                ×
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setTraitBoni([...traitBoni, { key: "", value: "1" }])}
-            style={{ marginTop: 4, fontSize: "0.85em" }}
-          >
-            + Bonus
-          </button>
-
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
-            Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand, z.B. „Augenstrahl 3")
-          </label>
-          {ausruestungsfertigkeiten.map((p, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
-              <input
-                placeholder="Name der neuen Fertigkeit"
-                value={p.key}
-                onChange={(e) =>
-                  setAusruestungsfertigkeiten(
-                    ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)),
-                  )
-                }
-                style={{ flex: 1 }}
-              />
-              <input
-                type="number"
-                placeholder="Würfel"
-                value={p.value}
-                onChange={(e) =>
-                  setAusruestungsfertigkeiten(
-                    ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)),
-                  )
-                }
-                style={{ width: 70 }}
-              />
-              <button
-                type="button"
-                onClick={() => setAusruestungsfertigkeiten(ausruestungsfertigkeiten.filter((_, idx) => idx !== i))}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setAusruestungsfertigkeiten([...ausruestungsfertigkeiten, { key: "", value: "1" }])}
-            style={{ marginTop: 4, fontSize: "0.85em" }}
-          >
-            + Ausrüstungsfertigkeit
-          </button>
-        </div>
-
-        {FAHRZEUG_TYPEN.has(typ) && (
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Werte (Neotopia-Blatt „Drohne/Fahrzeug"): die Stufe wird beim Kauf frei auf Widerstand,
-              Angriff und Agilität verteilt. Gesundheit = Stufe, Widerstand = Schadensreduktion,
-              Agilität = Geschwindigkeit.
-            </label>
-            <StufenBlatt
-              werte={{ stufe, widerstand, angriff, agilitaet }}
-              onAendern={(feld, wert) => {
-                if (feld === "stufe") setStufe(wert);
-                else if (feld === "widerstand") setWiderstand(wert);
-                else if (feld === "angriff") setAngriff(wert);
-                else setAgilitaet(wert);
-              }}
-            />
-          </div>
-        )}
-
-        {KRAFT_TYPEN.has(typ) && (
-          <div>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
-            <div>
-              <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
-            </div>
-          </div>
-        )}
-
-        {typ === "Rüstung" && (
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              Kästchen + Schadensreduktion (löst den Rüstungsbonus oben ab, siehe docs/api/ruestung.md):
-              <strong> Kästchen</strong> = wie viel die Rüstung aushält, bevor sie reißt.{" "}
-              <strong>Reduktion</strong> = wie viel Schaden sie pro Treffer direkt abfängt — höher ist
-              besser. Sinkt automatisch, je beschädigter die Rüstung ist.
-            </label>
-            <div style={{ display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Kästchen (max)
-                <input
-                  type="number"
-                  min={0}
-                  value={ruestungKaestchenMax}
-                  onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
-                  style={{ width: 70 }}
-                />
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                Reduktion
-                <input
-                  type="number"
-                  min={0}
-                  value={ruestungReduktionBasis}
-                  onChange={(e) => setRuestungReduktionBasis(Math.max(0, Number(e.target.value)))}
-                  style={{ width: 70 }}
-                />
-              </label>
-            </div>
-            {item.ruestungKaestchenMax > 0 && (
-              <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
-                Aktuell: <strong>{item.ruestungKaestchenAktuell}/{item.ruestungKaestchenMax}</strong> Kästchen.
-                Ändert sich über Treffer in der Kampfkarte, nicht hier — wie bei der Gesundheit einer Person.
-              </p>
-            )}
-            {/* Reparieren nur mit Besitzer (Selbst-Reparatur würfelt dessen
-                Hardware-Pool, der Händlerweg braucht ein Kapital-Ziel) und
-                nur, wenn tatsächlich etwas fehlt. */}
-            {personId && item.ruestungKaestchenMax > 0 && item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && (
-              <RuestungReparatur campaignId={campaignId} personId={personId} item={item} onChanged={onChanged} />
-            )}
-          </div>
-        )}
-
-        <div>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Bild</label>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            {item.bildUrl && <img src={item.bildUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />}
-            <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
-            <button type="button" onClick={() => setKiBildOffen(true)} disabled={uploading} style={{ color: "var(--p-violett, var(--neon))" }}>
-              ✨ KI-Bild
+      <div className="pcd-inhalt">
+        <nav className="pcd-nav pcd-nav-gegenstaende">
+          {(
+            [
+              ["uebersicht", "Übersicht"],
+              ["beschreibung", "Beschreibung"],
+              ["umbauen", "Umbauen"],
+              ["notizen", "Notizen"],
+              ["besitz", "Besitz"],
+            ] as [GgAnsicht, string][]
+          ).map(([wert, text]) => (
+            <button
+              key={wert}
+              type="button"
+              className={ansicht === wert ? "pcd-nav-aktiv" : ""}
+              onClick={() => setAnsicht(wert)}
+            >
+              {text}
             </button>
-            {uploading && <span style={{ fontSize: "0.85em" }}>lädt hoch...</span>}
-            {item.bildUrl && (
-              <>
-                {/* Bild allen Spielern zeigen — "so sieht das Ding aus". */}
-                <BildBlitz campaignId={campaignId} bildUrl={item.bildUrl} name={item.name} />
-                <button type="button" onClick={removeBild}>
-                  Bild entfernen
-                </button>
-              </>
-            )}
-          </div>
+          ))}
+        </nav>
 
-          <KiBildPopup
-            offen={kiBildOffen}
-            objektTyp="Gegenstand"
-            objektName={item.name}
-            onSchliessen={() => setKiBildOffen(false)}
-            onPromptVorschlagen={() =>
-              kiBildPrompt(campaignId, {
-                objektTyp: "Gegenstand",
-                objektName: item.name,
-                bisherigeBeschreibung: item.description ? extrahiereReinenText(item.description) : "",
-              })
-            }
-            onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
-            onUebernehmen={kiBildUebernehmen}
-          />
-        </div>
-
-        <div>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beschreibung</label>
-          <RichTextEditor
-            content={descriptionDoc}
-            onChange={(doc) => {
-              setDescriptionDoc(doc);
-              autosaveDescription(doc);
-            }}
-            minHeight={60}
-            kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Beschreibung" }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Notizen</label>
-          <RichTextEditor
-            content={notesDoc}
-            onChange={(doc) => {
-              setNotesDoc(doc);
-              autosaveNotes(doc);
-            }}
-            minHeight={50}
-            kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Notizen" }}
-          />
-        </div>
-
-        <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
-
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            Gewicht (kg)
-            <input
-              type="number"
-              min={0}
-              step={0.1}
-              value={gewicht}
-              onChange={(e) => setGewicht(Number(e.target.value))}
-              style={{ width: 110 }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            Fasst (kg)
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={kapazitaet}
-              onChange={(e) => setKapazitaet(Number(e.target.value))}
-              style={{ width: 110 }}
-              title="Wie viel dieser Gegenstand aufnehmen kann. 0 = kein Behälter."
-            />
-          </label>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={{ color: "var(--text-leise)" }}>Aufbewahrung</span>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {ABLAGEN.map((a) => (
-              <button
-                key={a.wert}
-                type="button"
-                onClick={() => setAblage(a.wert)}
-                style={
-                  ablage === a.wert
-                    ? { borderColor: "var(--neon)", color: "var(--neon)", background: "var(--neon-schwach)" }
-                    : undefined
-                }
-              >
-                {a.symbol} {a.label}
-              </button>
-            ))}
-          </div>
-          {ablage === "GELAGERT" && (
-            <select value={ablageZiel} onChange={(e) => setAblageZiel(e.target.value)}>
-              <option value="">— ohne festen Platz —</option>
-              {ziele.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.kind === "Ort" ? "Ort: " : "In: "}
-                  {z.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        <VisibilitySelector
-          label="Sichtbarkeit"
-          modus={sichtbarkeit}
-          sichtbarFuer={sichtbarFuer}
-          onChange={(m, f) => {
-            setSichtbarkeit(m);
-            setSichtbarFuer(f);
-          }}
-          pcOptions={pcOptions}
-        />
-
-        <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-          <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
-            ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
-          </button>
-          {showOptions && (
-            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
-                Im Beziehungsgraph anzeigen (für plot-relevante Gegenstände/MacGuffins)
-              </label>
-              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
-                Einzigartig (genau ein Exemplar in der Welt, z.B. das Amulett)
-              </label>
-              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
-                  verfolgen
-                </label>
-                {hatMenge && (
-                  <input
-                    type="number"
-                    min={0}
-                    value={menge}
-                    onChange={(e) => setMenge(Number(e.target.value))}
-                    style={{ width: 70, flex: "0 0 auto" }}
+        <div className="pcd-bereich">
+          {ansicht === "uebersicht" && (
+            <div className="pcd-uebersicht">
+              <div className="pcd-bild-bereich">
+                {item.bildUrl ? (
+                  <img
+                    src={item.bildUrl}
+                    alt=""
+                    style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "var(--radius)" }}
                   />
-                )}
-              </div>
-              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                <input
-                  type="checkbox"
-                  checked={immerSichtbar}
-                  onChange={(e) => setImmerSichtbar(e.target.checked)}
-                />{" "}
-                Fällt am Körper auf — ein Sturmgewehr sieht jeder, ein Messer im Stiefel nicht
-              </label>
-              {/* Nicht aus dem Typ geraten: ein Motorrad ist ein Fahrzeug
-                  ohne Stauraum, eine Kiste hat Stauraum ohne Räder. */}
-              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                <input
-                  type="checkbox"
-                  checked={istBehaelter}
-                  onChange={(e) => setIstBehaelter(e.target.checked)}
-                />{" "}
-                Kann etwas aufnehmen — dann lässt sich hier etwas hineinlegen und der Gegenstand
-                erscheint als Fach im Inventar
-              </label>
-              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <label style={{ fontSize: "0.9em", flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
-                  <input
-                    type="checkbox"
-                    checked={istReparaturmaterial}
-                    onChange={(e) => setIstReparaturmaterial(e.target.checked)}
-                  />{" "}
-                  Reparaturmaterial — verbrauchbar beim Selbst-Reparieren einer Rüstung
-                </label>
-                {istReparaturmaterial && (
-                  <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
-                    Kapazität
-                    <input
-                      type="number"
-                      min={0}
-                      value={reparaturKapazitaet}
-                      onChange={(e) => setReparaturKapazitaet(Math.max(0, Number(e.target.value)))}
-                      style={{ width: 60 }}
-                      title="Wie viele Kästchen ein Stück höchstens abdeckt, selbst bei einer sehr guten Probe"
-                    />
-                  </label>
-                )}
-              </div>
-              <label style={{ fontSize: "0.9em", minWidth: 0, overflowWrap: "break-word" }}>
-                <input
-                  type="checkbox"
-                  checked={automatischImShop}
-                  onChange={(e) => setAutomatischImShop(e.target.checked)}
-                />{" "}
-                Automatisch in Shops gleicher Seltenheitsstufe verfügbar (wirkt sich erst aus, sobald es Shops
-                gibt — noch nicht gebaut)
-              </label>
-            </div>
-          )}
-        </div>
-
-        {!item.istVorlage && (
-          <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-            {/* Wem er gehoert, stand bisher nirgends im Formular. In der
-                kampagnenweiten Uebersicht ist die Besitzer-Ueberschrift oft
-                weggescrollt — und weil die Auswahl unten den aktuellen
-                Besitzer ausblendet, sah es aus, als liesse sich ein
-                Gegenstand keinem PC geben, obwohl er dem PC schon gehoert. */}
-            <div style={{ fontSize: "0.85em", marginBottom: 6 }}>
-              <span style={{ color: "var(--text-leise)" }}>Gehört </span>
-              <strong style={{ color: "var(--neon)" }}>
-                {alleOptionen.find((p) => p.id === personId)?.name ?? "niemandem"}
-              </strong>
-            </div>
-            <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-              An jemand anderen übergeben (verschiebt diesen Gegenstand, erstellt keine Kopie)
-            </label>
-            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-              <select
-                value={besitzerZiel}
-                onChange={(e) => setBesitzerZiel(e.target.value)}
-                style={{ minWidth: 0, maxWidth: "100%" }}
-              >
-                <option value="">Person wählen...</option>
-                <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
-                {alleOptionen
-                  .filter((p) => p.id !== personId)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
-              <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
-                {besitzerLaeuft ? "..." : "Übertragen"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {item.istVorlage &&
-          (() => {
-            // Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt
-            // werden — Zuweisen übergibt dann den Gegenstand selbst
-            // (verschiebt ihn, wie Besitzer wechseln), statt eine Kopie zu
-            // erzeugen. Das Backend entscheidet dasselbe anhand des
-            // GESPEICHERTEN Stands (item.*, nicht den lokalen Edit-State) —
-            // die Zuweisen-Aktion wirkt ja auf den gespeicherten Gegenstand.
-            const keineKopie = item.einzigartig || item.zeigeInGraph;
-            return (
-              <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
-                <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-                  {keineKopie
-                    ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst — einzigartig/MacGuffin, keine Kopie möglich)"
-                    : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
-                </label>
-                <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                  <select
-                    value={zuweisenZiel}
-                    onChange={(e) => setZuweisenZiel(e.target.value)}
-                    style={{ minWidth: 0, maxWidth: "100%" }}
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--grund)",
+                      border: "1px solid var(--linie)",
+                      borderRadius: "var(--radius)",
+                      fontSize: 48,
+                      color: "var(--text-leise)",
+                    }}
                   >
-                    <option value="">Person wählen...</option>
-                    {alleOptionen.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
+                    {symbolFuerTyp(typ)}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                  <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} />
+                  <button type="button" onClick={() => setKiBildOffen(true)} disabled={uploading}>
+                    ✨ KI-Bild
+                  </button>
+                  {item.bildUrl && (
+                    <>
+                      <BildBlitz campaignId={campaignId} bildUrl={item.bildUrl} name={item.name} />
+                      <button type="button" onClick={removeBild}>
+                        Bild entfernen
+                      </button>
+                    </>
+                  )}
+                </div>
+                {uploading && <p style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>lädt hoch…</p>}
+                <KiBildPopup
+                  offen={kiBildOffen}
+                  objektTyp="Gegenstand"
+                  objektName={item.name}
+                  onSchliessen={() => setKiBildOffen(false)}
+                  onPromptVorschlagen={() =>
+                    kiBildPrompt(campaignId, {
+                      objektTyp: "Gegenstand",
+                      objektName: item.name,
+                      bisherigeBeschreibung: item.description ? extrahiereReinenText(item.description) : "",
+                    })
+                  }
+                  onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
+                  onUebernehmen={kiBildUebernehmen}
+                />
+              </div>
+
+              <div className="pcd-schnellzugriff">
+                {item.istVorlage && (
+                  <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: "0 0 8px" }}>
+                    Vorlage — hat keinen Besitzer
+                  </p>
+                )}
+                <div className="pcd-feld">
+                  <label htmlFor={`gg-name-${item.id}`}>Name</label>
+                  <input
+                    id={`gg-name-${item.id}`}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={() => void nameSpeichern()}
+                  />
+                </div>
+                <p style={{ margin: "0 0 12px", color: "var(--text-leise)", fontSize: "0.85em" }}>
+                  <span className="gg-typ-gewaehlt">{typ}</span>
+                  {" · "}
+                  {visibilityLabel(item)}
+                </p>
+
+                <div className="pcd-feld">
+                  <label>Wo es geführt wird</label>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {ABLAGEN.map((a) => (
+                      <button
+                        key={a.wert}
+                        type="button"
+                        onClick={() => void ablageSetzen(a.wert)}
+                        style={
+                          ablage === a.wert
+                            ? { borderColor: "var(--neon)", color: "var(--neon)", background: "var(--neon-schwach)" }
+                            : undefined
+                        }
+                      >
+                        {a.symbol} {a.label}
+                      </button>
                     ))}
-                  </select>
-                  <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
-                    {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
+                  </div>
+                  {ablage === "GELAGERT" && (
+                    <select
+                      value={ablageZiel}
+                      onChange={(e) => {
+                        setAblageZiel(e.target.value);
+                        void ablageSetzen("GELAGERT", e.target.value || null);
+                      }}
+                    >
+                      <option value="">— ohne festen Platz —</option>
+                      {ziele.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          {z.kind === "Ort" ? "Ort: " : "In: "}
+                          {z.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="pcd-feld">
+                  <label>Steckbrief</label>
+                  <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text)" }}>
+                    {KRAFT_TYPEN.has(typ) && (
+                      <li>
+                        {kraftLabel(typ)}: {kraft}
+                      </li>
+                    )}
+                    {(typ === "Waffe" || istWaffe) && <li>Schaden: {schaden}</li>}
+                    {typ === "Rüstung" && (
+                      <li>
+                        Rüstung: {item.ruestungKaestchenAktuell}/{ruestungKaestchenMax} Kästchen, Reduktion{" "}
+                        {ruestungReduktionBasis}
+                      </li>
+                    )}
+                    {CHROM_TYPEN.has(typ) && (
+                      <li>
+                        {koerperzone ? `${koerperzone}${slot ? ` Platz ${slot}` : ""}` : "keine Zone"}
+                        {wVerlust > 0 && ` · −${wVerlust.toLocaleString("de-AT")} Willenskraft`}
+                      </li>
+                    )}
+                    {traitBoni.filter((p) => p.key.trim()).map((p) => (
+                      <li key={`b-${p.key}`}>
+                        {p.key} +{p.value}
+                      </li>
+                    ))}
+                    {ausruestungsfertigkeiten.filter((p) => p.key.trim()).map((p) => (
+                      <li key={`f-${p.key}`}>
+                        {p.key} {p.value}
+                      </li>
+                    ))}
+                    {FAHRZEUG_TYPEN.has(typ) && (
+                      <li>
+                        Stufe {stufe} · Widerstand {widerstand} · Angriff {angriff} · Agilität {agilitaet}
+                      </li>
+                    )}
+                    {typ === "Riggerkonsole" && (
+                      <li>
+                        Rigger {riggerBonus >= 0 ? "+" : ""}
+                        {riggerBonus} · max. {maxDrohnen} Drohnen
+                      </li>
+                    )}
+                    {istBehaelter && kapazitaet > 0 && <li>Fasst {kapazitaet} kg</li>}
+                    {hatMenge && <li>Menge: {menge}</li>}
+                  </ul>
+                </div>
+
+                <div className="pcd-buttons" style={{ marginTop: 12 }}>
+                  <button type="button" onClick={() => setAnsicht("beschreibung")}>
+                    📝 Beschreibung
+                  </button>
+                  <button type="button" onClick={() => setAnsicht("umbauen")}>
+                    🔧 Umbauen / erweitern
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onRemoved}
+                    style={{ color: "var(--signal)", borderColor: "var(--signal)" }}
+                  >
+                    Entfernen
                   </button>
                 </div>
               </div>
-            );
-          })()}
+            </div>
+          )}
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <button type="button" onClick={save}>
-          Speichern
-        </button>
-        {/* In der Kacheldarstellung gibt es keine Zeile mehr, an der ein
-            Entfernen-Knopf haengen koennte — und hier ist er ohnehin besser
-            aufgehoben, weil man den Gegenstand dabei vor sich sieht. */}
-        <button
-          type="button"
-          onClick={onRemoved}
-          style={{ marginLeft: "auto", borderColor: "var(--signal)", color: "var(--signal)" }}
-        >
-          Entfernen
-        </button>
+          {ansicht === "beschreibung" && (
+            <div className="pcd-editor-bereich">
+              <RichTextEditor
+                content={descriptionDoc}
+                onChange={(doc) => {
+                  setDescriptionDoc(doc);
+                  autosaveDescription(doc);
+                }}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Beschreibung" }}
+              />
+            </div>
+          )}
+
+          {ansicht === "notizen" && (
+            <div className="pcd-editor-bereich">
+              <RichTextEditor
+                content={notesDoc}
+                onChange={(doc) => {
+                  setNotesDoc(doc);
+                  autosaveNotes(doc);
+                }}
+                minHeight={200}
+                kiKontext={{ campaignId, objektTyp: "Gegenstand", objektName: item.name, feldLabel: "Notizen" }}
+              />
+            </div>
+          )}
+
+          {ansicht === "umbauen" && (
+            <div className="pcd-editor-bereich">
+              <p style={{ color: "var(--text-leise)", fontSize: "0.85em", margin: 0 }}>
+                Hier ändert sich, was das Ding tut. Speichern, wenn der Umbau sitzt.
+              </p>
+              {CHROM_TYPEN.has(typ) && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Cyber-/Bioware: Boni unten, hier die Qualitätsstufe. Je mehr du je Bonuspunkt zahlst, desto
+                    weniger Willenskraft kostet es dauerhaft.
+                  </label>
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    {gesamtBonus > 0 && (
+                      <span style={{ fontSize: "0.9em", color: "var(--neon)" }}>
+                        Gesamt-Bonus: <strong>+{gesamtBonus}</strong>
+                      </span>
+                    )}
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Körperzone
+                      <select value={koerperzone} onChange={(e) => setKoerperzone(e.target.value)}>
+                        <option value="">— offen —</option>
+                        {zonen.map((z) => (
+                          <option key={z} value={z}>
+                            {z}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {koerperzone && (
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                        Platz
+                        <select value={slot ?? ""} onChange={(e) => setSlot(e.target.value ? Number(e.target.value) : null)}>
+                          <option value="">— egal —</option>
+                          {SLOTS_PRO_ZONE.map((s) => (
+                            <option key={s} value={s}>
+                              Platz {s}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                      <input type="checkbox" checked={istWaffe} onChange={(e) => setIstWaffe(e.target.checked)} />
+                      zählt zusätzlich als Waffe
+                    </label>
+                    {istWaffe && (
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                        Schaden
+                        <DotPool value={schaden} max={7} onChange={setSchaden} />
+                      </label>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+                    {chromstufen.map((st) => {
+                      const istGewaehlt = gewaehlteChromstufe === st.preisJeBonus;
+                      return (
+                        <button
+                          key={st.name}
+                          type="button"
+                          onClick={() => {
+                            setGewaehlteChromstufe(st.preisJeBonus);
+                            setPreis(st.preis);
+                            setWVerlust(st.wVerlustGenau);
+                            setKraft(Math.max(1, gesamtBonus));
+                          }}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 10,
+                            textAlign: "left",
+                            borderColor: istGewaehlt ? "var(--neon)" : undefined,
+                            color: istGewaehlt ? "var(--neon)" : undefined,
+                          }}
+                          title={st.beschreibung}
+                        >
+                          <span>{st.name}</span>
+                          <span className="mono">
+                            {st.preis.toLocaleString("de-AT")}¥ · −{st.wVerlust}
+                            {st.wVerlustGenau !== st.wVerlust && (
+                              <em style={{ fontStyle: "normal", color: "var(--text-aus)" }}>
+                                {" "}
+                                ({st.wVerlustGenau.toLocaleString("de-AT")} gezählt)
+                              </em>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
+                    Zählt mit <strong>{wVerlust.toLocaleString("de-AT")}</strong> gegen die Willenskraft.
+                  </p>
+                </div>
+              )}
+
+              {typ === "Riggerkonsole" && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Riggerkonsole</label>
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Rigger-Bonus
+                      <input
+                        type="number"
+                        value={riggerBonus}
+                        onChange={(e) => setRiggerBonus(Number(e.target.value))}
+                        style={{ width: 70 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Max. Drohnen
+                      <input
+                        type="number"
+                        min={0}
+                        value={maxDrohnen}
+                        onChange={(e) => setMaxDrohnen(Number(e.target.value))}
+                        style={{ width: 70 }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                  Bonus auf bestehende Werte (solange ausgerüstet)
+                </label>
+                {traitBoni.map((p, i) => (
+                  <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                    <select
+                      value={p.key}
+                      onChange={(e) =>
+                        setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)))
+                      }
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">— Wert wählen —</option>
+                      {traitKatalog.map((t) => (
+                        <option key={t.id} value={t.name}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Bonus"
+                      value={p.value}
+                      onChange={(e) =>
+                        setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))
+                      }
+                      style={{ width: 70 }}
+                    />
+                    <button type="button" onClick={() => setTraitBoni(traitBoni.filter((_, idx) => idx !== i))}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setTraitBoni([...traitBoni, { key: "", value: "1" }])}
+                  style={{ marginTop: 4, fontSize: "0.85em" }}
+                >
+                  + Bonus
+                </button>
+
+                <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
+                  Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand)
+                </label>
+                {ausruestungsfertigkeiten.map((p, i) => (
+                  <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                    <input
+                      placeholder="Name der neuen Fertigkeit"
+                      value={p.key}
+                      onChange={(e) =>
+                        setAusruestungsfertigkeiten(
+                          ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, key: e.target.value } : x)),
+                        )
+                      }
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Würfel"
+                      value={p.value}
+                      onChange={(e) =>
+                        setAusruestungsfertigkeiten(
+                          ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)),
+                        )
+                      }
+                      style={{ width: 70 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAusruestungsfertigkeiten(ausruestungsfertigkeiten.filter((_, idx) => idx !== i))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setAusruestungsfertigkeiten([...ausruestungsfertigkeiten, { key: "", value: "1" }])}
+                  style={{ marginTop: 4, fontSize: "0.85em" }}
+                >
+                  + Ausrüstungsfertigkeit
+                </button>
+              </div>
+
+              {FAHRZEUG_TYPEN.has(typ) && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Werte (Blatt Drohne/Fahrzeug): Stufe auf Widerstand, Angriff und Agilität.
+                  </label>
+                  <StufenBlatt
+                    werte={{ stufe, widerstand, angriff, agilitaet }}
+                    onAendern={(feld, wert) => {
+                      if (feld === "stufe") setStufe(wert);
+                      else if (feld === "widerstand") setWiderstand(wert);
+                      else if (feld === "angriff") setAngriff(wert);
+                      else setAgilitaet(wert);
+                    }}
+                  />
+                </div>
+              )}
+
+              {KRAFT_TYPEN.has(typ) && (
+                <div>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
+                  <div>
+                    <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
+                  </div>
+                </div>
+              )}
+
+              {typ === "Rüstung" && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Kästchen + Schadensreduktion. Aktueller Zustand ändert sich über Treffer, nicht hier.
+                  </label>
+                  <div style={{ display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Kästchen (max)
+                      <input
+                        type="number"
+                        min={0}
+                        value={ruestungKaestchenMax}
+                        onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
+                        style={{ width: 70 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Reduktion
+                      <input
+                        type="number"
+                        min={0}
+                        value={ruestungReduktionBasis}
+                        onChange={(e) => setRuestungReduktionBasis(Math.max(0, Number(e.target.value)))}
+                        style={{ width: 70 }}
+                      />
+                    </label>
+                  </div>
+                  {item.ruestungKaestchenMax > 0 && (
+                    <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
+                      Aktuell:{" "}
+                      <strong>
+                        {item.ruestungKaestchenAktuell}/{item.ruestungKaestchenMax}
+                      </strong>{" "}
+                      Kästchen.
+                    </p>
+                  )}
+                  {personId &&
+                    item.ruestungKaestchenMax > 0 &&
+                    item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && (
+                      <RuestungReparatur campaignId={campaignId} personId={personId} item={item} onChanged={onChanged} />
+                    )}
+                </div>
+              )}
+
+              <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
+
+              <button type="button" onClick={save}>
+                Umbau speichern
+              </button>
+            </div>
+          )}
+
+          {ansicht === "besitz" && (
+            <div className="pcd-editor-bereich">
+              <div className="pcd-feld">
+                <label>Preis (¥)</label>
+                <input type="number" min={0} value={preis} onChange={(e) => setPreis(Number(e.target.value))} />
+              </div>
+              <div className="pcd-feld">
+                <label>Seltenheit</label>
+                <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  Gewicht (kg)
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    value={gewicht}
+                    onChange={(e) => setGewicht(Number(e.target.value))}
+                    style={{ width: 110 }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  Fasst (kg)
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={kapazitaet}
+                    onChange={(e) => setKapazitaet(Number(e.target.value))}
+                    style={{ width: 110 }}
+                    title="Wie viel dieser Gegenstand aufnehmen kann. 0 = kein Behälter."
+                  />
+                </label>
+              </div>
+
+              <VisibilitySelector
+                label="Sichtbarkeit"
+                modus={sichtbarkeit}
+                sichtbarFuer={sichtbarFuer}
+                onChange={(m, f) => {
+                  setSichtbarkeit(m);
+                  setSichtbarFuer(f);
+                }}
+                pcOptions={pcOptions}
+              />
+
+              <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                <button type="button" onClick={() => setShowOptions((v) => !v)} style={{ fontSize: "0.85em" }}>
+                  ⚙ {showOptions ? "Optionen ausblenden" : "Optionen anzeigen"}
+                </button>
+                {showOptions && (
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
+                      Im Beziehungsgraph anzeigen
+                    </label>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
+                      Einzigartig
+                    </label>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                      <label style={{ fontSize: "0.9em" }}>
+                        <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
+                        verfolgen
+                      </label>
+                      {hatMenge && (
+                        <input
+                          type="number"
+                          min={0}
+                          value={menge}
+                          onChange={(e) => setMenge(Number(e.target.value))}
+                          style={{ width: 70 }}
+                        />
+                      )}
+                    </div>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input
+                        type="checkbox"
+                        checked={immerSichtbar}
+                        onChange={(e) => setImmerSichtbar(e.target.checked)}
+                      />{" "}
+                      Fällt am Körper auf
+                    </label>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input
+                        type="checkbox"
+                        checked={istBehaelter}
+                        onChange={(e) => setIstBehaelter(e.target.checked)}
+                      />{" "}
+                      Kann etwas aufnehmen
+                    </label>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                      <label style={{ fontSize: "0.9em" }}>
+                        <input
+                          type="checkbox"
+                          checked={istReparaturmaterial}
+                          onChange={(e) => setIstReparaturmaterial(e.target.checked)}
+                        />{" "}
+                        Reparaturmaterial
+                      </label>
+                      {istReparaturmaterial && (
+                        <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                          Kapazität
+                          <input
+                            type="number"
+                            min={0}
+                            value={reparaturKapazitaet}
+                            onChange={(e) => setReparaturKapazitaet(Math.max(0, Number(e.target.value)))}
+                            style={{ width: 60 }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input
+                        type="checkbox"
+                        checked={automatischImShop}
+                        onChange={(e) => setAutomatischImShop(e.target.checked)}
+                      />{" "}
+                      Automatisch in Shops gleicher Seltenheit
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {!item.istVorlage && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <div style={{ fontSize: "0.85em", marginBottom: 6 }}>
+                    <span style={{ color: "var(--text-leise)" }}>Gehört </span>
+                    <strong style={{ color: "var(--neon)" }}>
+                      {alleOptionen.find((p) => p.id === personId)?.name ?? "niemandem"}
+                    </strong>
+                  </div>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    An jemand anderen übergeben
+                  </label>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                    <select value={besitzerZiel} onChange={(e) => setBesitzerZiel(e.target.value)}>
+                      <option value="">Person wählen...</option>
+                      <option value={VORLAGE_SENTINEL}>— Vorlage (kein Besitzer) —</option>
+                      {alleOptionen
+                        .filter((p) => p.id !== personId)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                    <button type="button" onClick={besitzerWechseln} disabled={!besitzerZiel || besitzerLaeuft}>
+                      {besitzerLaeuft ? "..." : "Übertragen"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {item.istVorlage &&
+                (() => {
+                  const keineKopie = item.einzigartig || item.zeigeInGraph;
+                  return (
+                    <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                      <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                        {keineKopie
+                          ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst)"
+                          : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
+                      </label>
+                      <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                        <select value={zuweisenZiel} onChange={(e) => setZuweisenZiel(e.target.value)}>
+                          <option value="">Person wählen...</option>
+                          {alleOptionen.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                          {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              <button type="button" onClick={save}>
+                Besitz speichern
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </Fenster>
   );

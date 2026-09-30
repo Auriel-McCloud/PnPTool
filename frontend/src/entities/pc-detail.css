@@ -58,6 +58,12 @@
   color: var(--bereich-events, var(--neon)) !important;
 }
 
+.pcd-nav-gegenstaende .pcd-nav-aktiv {
+  background: color-mix(in srgb, var(--bereich-gegenstaende, var(--neon)) 15%, transparent) !important;
+  border-color: var(--bereich-gegenstaende, var(--neon)) !important;
+  color: var(--bereich-gegenstaende, var(--neon)) !important;
+}
+
 /* --- Einzelfeld (Name, Zeitpunkt) --------------------------------------- */
 
 .pcd-feld {

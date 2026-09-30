@@ -215,6 +215,16 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (30.09.2026 — Gegenstand-Fenster mit Reitern wie Ort/NPC):**
+- **Was:** Bearbeiten-Fenster ist kein langes Formular mehr. Reiter:
+  Übersicht (Name, Bild, wo geführt, Steckbrief je Typ), Beschreibung,
+  Umbauen (Wirkung), Notizen, Besitz (Preis/Seltenheit/Optionen). Preis
+  und Seltenheit nicht mehr auf Seite 1. Name speichert onBlur, Ablage
+  sofort. Speichern schließt das Fenster nicht mehr.
+- **Dateien:** `frontend/src/traits/CharacterSheetPanel.tsx`,
+  `entities/pc-detail.css`.
+- **Verifiziert:** `tsc -b` sauber. Klicktest am Spieltisch.
+
 **Zuletzt gebaut (30.09.2026 — Ideenschmiede-Gegenstand öffnet das normale Fenster):**
 - **Was:** Klick auf einen Gegenstands-Entwurf in der Ideenschmiede öffnet
   dasselbe Bearbeiten-Fenster wie in der Gegenstands-Übersicht (kein
