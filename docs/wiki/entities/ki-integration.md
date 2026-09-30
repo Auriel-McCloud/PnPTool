@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-24
+updated: 2026-09-30
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md]
@@ -279,6 +279,20 @@ als Entwürfe samt `VERBINDUNG`-Kanten angelegt. **Offen:** kein echter
 Browser-Klicktest des Popups (nur `tsc -b`); PDF-Pfad ungetestet (nur
 .docx real durchlaufen); die 60.000-Zeichen-Grenze ist eine Schätzung,
 kein belastbar ermitteltes Kontextfenster-Limit.
+
+## SL-Beratungschat (30.09.2026) — umgesetzt
+
+Zweite Tür neben ✨ KI in der Ideenschmiede: ein Gespräch, das **nicht**
+sofort eine Kachel anlegt. Kontext ist ausschließlich die freigegebene
+Kampagne (`sammle_kontext`, Entwürfe und der Chat selbst zählen nicht).
+Was nur in der Bubble steht, ist Skizze. „Entwurf anlegen“ ruft denselben
+Pfad wie ✨ KI (`_idee_anlegen`, Typ story/charakter/gegenstand) und legt
+`istEntwurf=true` an — der nächste Chat sieht das trotzdem nicht, bis die
+SL freigibt.
+
+Knoten `KiBeratung` / `KiBeratungNachricht`, Migration `007_ki_beratung.cypher`.
+Routen unter `/api/campaigns/{id}/ki/beratung` (nur SL). Frontend:
+`BeratungPopup.tsx`, Knopf ⌬ Beratung neben ✨ KI.
 
 ## Siehe auch
 

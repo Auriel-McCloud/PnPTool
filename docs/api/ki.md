@@ -35,6 +35,47 @@ echter Lücke etwas komplett Neues erfinden.
 
 ---
 
+## Beratung (gebaut 30.09.2026)
+
+SL-Chat in der Ideenschmiede. Redet, legt nichts an, bis „Entwurf anlegen“.
+Kontext: nur Freigegebenes (`sammle_kontext`). Gespräche liegen in
+`KiBeratung`/`KiBeratungNachricht` und erscheinen **nicht** im Kanon.
+
+### GET `/beratung`
+
+Liste der Gespräche (neueste zuerst): `id`, `titel`, `erstelltAm`, `aktualisiertAm`.
+
+### POST `/beratung`
+
+Leeres Gespräch. Response inkl. `nachrichten: []`.
+
+### GET `/beratung/{beratung_id}`
+
+Gespräch inkl. `nachrichten` (`rolle` user/assistant, `text`, `zeitpunkt`, `reihenfolge`).
+
+### DELETE `/beratung/{beratung_id}`
+
+Löscht Gespräch und Nachrichten. Kampagne unberührt.
+
+### POST `/beratung/{beratung_id}/nachricht`
+
+```json
+{ "text": "Passt ein Club im Hafen zu Chrysalis?" }
+```
+
+Response: die Assistenten-Nachricht. `502` bei Provider-Fehler.
+
+### POST `/beratung/{beratung_id}/entwurf`
+
+```json
+{ "typ": "story" | "charakter" | "gegenstand" }
+```
+
+Dieselbe Anlege-Logik wie `POST /idee`, Prompt ist der Gesprächsverlauf.
+Ergebnis ist `istEntwurf=true`.
+
+---
+
 ## Bildgenerierung (gebaut 23.09.2026)
 
 Zweistufiger "KI-Bild generieren"-Knopf am jeweils bestehenden

@@ -1,9 +1,9 @@
 """Wählt den aktiven KI-Anbieter (Gemini oder Mistral) — eine Stelle statt
 überall `if settings.ki_provider == ...` zu wiederholen.
 
-`routes.py` importiert nur `generiere_json` von hier und weiß nichts davon,
-welcher Anbieter gerade läuft. Umschalten geht über `KI_PROVIDER` in der
-.env, ohne Code-Änderung.
+`routes.py` importiert nur `generiere_json` / `generiere_text` von hier und
+weiß nichts davon, welcher Anbieter gerade läuft. Umschalten geht über
+`KI_PROVIDER` in der .env, ohne Code-Änderung.
 """
 
 from app.config import settings
@@ -25,6 +25,19 @@ async def generiere_json(
             return await mistral.generiere_json(prompt, system, schema)
         if provider == "gemini":
             return await gemini.generiere_json(prompt, system, schema)
+        raise KiFehler(f"Unbekannter KI_PROVIDER '{settings.ki_provider}' (erwartet: gemini, mistral)")
+    except (gemini.GeminiFehler, mistral.MistralFehler) as e:
+        raise KiFehler(str(e)) from e
+
+
+async def generiere_text(nachrichten: list[dict], system: str = "") -> str:
+    """Freier Chat-Text (Beratung). Dieselbe Provider-Wahl wie generiere_json."""
+    provider = settings.ki_provider.lower()
+    try:
+        if provider == "mistral":
+            return await mistral.generiere_text(nachrichten, system)
+        if provider == "gemini":
+            return await gemini.generiere_text(nachrichten, system)
         raise KiFehler(f"Unbekannter KI_PROVIDER '{settings.ki_provider}' (erwartet: gemini, mistral)")
     except (gemini.GeminiFehler, mistral.MistralFehler) as e:
         raise KiFehler(str(e)) from e

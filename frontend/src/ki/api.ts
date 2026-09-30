@@ -199,3 +199,51 @@ export async function wikiImportieren(campaignId: string, datei: File): Promise<
   }
   return antwort.json();
 }
+
+export interface BeratungNachricht {
+  id: string;
+  rolle: "user" | "assistant";
+  text: string;
+  zeitpunkt: string;
+  reihenfolge: number;
+}
+
+export interface Beratung {
+  id: string;
+  titel: string;
+  erstelltAm?: string;
+  aktualisiertAm?: string;
+  nachrichten?: BeratungNachricht[];
+}
+
+export async function beratungListe(campaignId: string): Promise<Beratung[]> {
+  return api.get(`/api/campaigns/${campaignId}/ki/beratung`);
+}
+
+export async function beratungNeu(campaignId: string): Promise<Beratung> {
+  return api.post(`/api/campaigns/${campaignId}/ki/beratung`);
+}
+
+export async function beratungLaden(campaignId: string, id: string): Promise<Beratung> {
+  return api.get(`/api/campaigns/${campaignId}/ki/beratung/${id}`);
+}
+
+export async function beratungLoeschen(campaignId: string, id: string): Promise<void> {
+  await api.delete(`/api/campaigns/${campaignId}/ki/beratung/${id}`);
+}
+
+export async function beratungNachricht(
+  campaignId: string,
+  id: string,
+  text: string,
+): Promise<BeratungNachricht> {
+  return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/nachricht`, { text });
+}
+
+export async function beratungEntwurf(
+  campaignId: string,
+  id: string,
+  typ: "story" | "charakter" | "gegenstand",
+): Promise<{ typ: string; id: string; name: string }> {
+  return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/entwurf`, { typ });
+}

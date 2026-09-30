@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-09-30] update | SL-Beratungschat in der Ideenschmiede
+
+Chat neben ✨ KI: nur Freigegebenes als Kanon, Entwurf erst auf Knopf
+(`istEntwurf`). Knoten KiBeratung/KiBeratungNachricht, nicht in sammle_kontext.
+
 ## [2026-09-30] update | Gegenstand-Fenster mit Reitern
 
 Gegenstands-Detail wie Ort/NPC: Übersicht (Name, Bild, Ablage, Steckbrief),

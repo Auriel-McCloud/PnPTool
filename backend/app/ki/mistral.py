@@ -90,6 +90,53 @@ async def generiere_json(
         raise MistralFehler("Mistral lieferte kein gültiges JSON")
 
 
+async def generiere_text(nachrichten: list[dict], system: str = "") -> str:
+    """Freier Fließtext über mehrere Turns — ohne JSON-response_format."""
+    if not settings.mistral_api_key:
+        raise MistralFehler("Kein Mistral-API-Key konfiguriert (backend/.env)")
+    if not nachrichten:
+        raise MistralFehler("Keine Nachricht an Mistral")
+
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    for eintrag in nachrichten:
+        rolle = "user" if eintrag.get("rolle") == "user" else "assistant"
+        messages.append({"role": rolle, "content": eintrag["text"]})
+
+    body = {
+        "model": settings.mistral_model,
+        "messages": messages,
+        "temperature": 0.8,
+    }
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(
+            _API_URL,
+            headers={"Authorization": f"Bearer {settings.mistral_api_key}"},
+            json=body,
+        )
+
+    if resp.status_code != 200:
+        detail = ""
+        try:
+            detail = resp.json().get("message", "") or resp.json().get("error", {}).get("message", "")
+        except Exception:
+            pass
+        raise MistralFehler(
+            f"Mistral-Aufruf fehlgeschlagen (HTTP {resp.status_code})"
+            + (f": {detail}" if detail else "")
+        )
+
+    try:
+        text = (resp.json()["choices"][0]["message"]["content"] or "").strip()
+    except (KeyError, IndexError, TypeError):
+        raise MistralFehler("Mistral lieferte eine unerwartete Antwort")
+    if not text:
+        raise MistralFehler("Mistral lieferte keinen Text")
+    return text
+
+
 def _ohne_gemini_typnamen(schema: dict) -> dict:
     """Wandelt Gemini-Schema-Typnamen (GROSS) in Standard-JSON-Schema (klein) um.
 

@@ -27,7 +27,8 @@ from app.items.repository import create_gegenstand
 from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
-from app.ki.client import KiFehler, generiere_json
+from app.ki.client import KiFehler, generiere_json, generiere_text
+from app.ki import beratung as beratung_repo
 from app.ereignisprotokoll import hooks
 from app.ki.kontext import sammle_kontext
 from app.ki.wiki_pruefung import (
@@ -71,6 +72,17 @@ _SYSTEM = (
     "Du bist ein Spielleiter-Assistent für das Cyberpunk-Pen-and-Paper-Rollenspiel "
     "NeotopiA (WoD-artige Attribute, Shadowrun-Cyberware, Mage-Sphären). "
     "Du schreibst dicht, stimmig und auf Deutsch."
+)
+
+_BERATUNG_SYSTEM = (
+    _SYSTEM
+    + " Du BERÄTST die Spielleitung: denkst mit, stellst Rückfragen, skizzierst "
+    "Optionen. Du legst nichts in der Welt an. Nur die folgende freigegebene "
+    "Kampagne ist Kanon — alles, was nur in diesem Gespräch vorkommt, ist eine "
+    "unverbindliche Skizze, bis die Spielleitung daraus einen Entwurf macht. "
+    "Erfinde keine Fakten über bestehende Entitäten, die nicht im Kanon stehen. "
+    "Neue Ideen klar als Vorschlag kennzeichnen, nicht als etabliert. "
+    "Antworten auf Deutsch, knapp und brauchbar."
 )
 
 _STORY_SCHEMA = {
@@ -158,6 +170,14 @@ _CHARAKTER_SYSTEM = (
 class KiIdeeInput(BaseModel):
     typ: Literal["story", "charakter", "gegenstand"]
     prompt: str
+
+
+class BeratungNachrichtInput(BaseModel):
+    text: str
+
+
+class BeratungEntwurfInput(BaseModel):
+    typ: Literal["story", "charakter", "gegenstand"]
 
 
 class UebernehmenInput(BaseModel):
@@ -305,9 +325,13 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=422, detail="Der Wunsch darf nicht leer sein.")
+    return await _idee_anlegen(campaign_id, body.typ, prompt)
 
+
+async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
+    """Gemeinsamer Anlege-Pfad für ✨ KI und für „Entwurf aus Beratung“."""
     try:
-        if body.typ == "story":
+        if typ == "story":
             kontext = await sammle_kontext(campaign_id)
             prompt_komplett = _mit_kontext(prompt, kontext)
             ergebnis = await generiere_json(prompt_komplett, _SYSTEM, _STORY_SCHEMA)
@@ -329,7 +353,7 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             )
             return {"typ": "story", "id": seite["id"], "name": titel}
 
-        if body.typ == "gegenstand":
+        if typ == "gegenstand":
             # Bevorzugt Bestehendes wiederverwenden, nur bei echter Lücke
             # etwas Neues erfinden — dasselbe Vorrang-Prinzip wie bei Story/
             # Charakter (_mit_kontext), Marks Entscheidung 22.09.2026: "beides,
@@ -339,17 +363,17 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
             prompt_komplett = _mit_kontext(prompt, kontext)
             ergebnis = await generiere_json(prompt_komplett, _GEGENSTAND_SYSTEM, _GEGENSTAND_SCHEMA)
             name = (ergebnis.get("name") or "").strip() or "Unbenannter Gegenstand"
-            typ = ergebnis.get("typ") or "Sonstiges"
-            if typ not in GEGENSTAND_TYPEN:
+            gegenstand_typ = ergebnis.get("typ") or "Sonstiges"
+            if gegenstand_typ not in GEGENSTAND_TYPEN:
                 # Die KI hat trotz Enum-Vorgabe daneben gegriffen — der Typ
                 # ist nach dem Anlegen fix (schemas.py), deshalb hier ein
                 # harter Fallback statt eines ungültigen/erfundenen Werts.
-                typ = "Sonstiges"
+                gegenstand_typ = "Sonstiges"
             seltenheit = max(1, min(_als_int(ergebnis.get("seltenheit"), 1), 5))
             gegenstand_body = GegenstandCreate(
                 name=name,
                 description=(ergebnis.get("beschreibung") or "").strip(),
-                typ=typ,
+                typ=gegenstand_typ,
                 preis=max(0, _als_int(ergebnis.get("preis"))),
                 seltenheit=seltenheit,
                 istEntwurf=True,
@@ -422,6 +446,97 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
     except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
         raise HTTPException(status_code=502, detail=str(e))
+
+
+def _beratung_system(kontext: str) -> str:
+    if not kontext.strip():
+        return (
+            _BERATUNG_SYSTEM
+            + " Die Kampagne hat noch keine freigegebenen Entitäten — "
+            "es gibt also noch keinen Kanon."
+        )
+    return _BERATUNG_SYSTEM + "\n\nFreigegebene Welt (Kanon):\n" + kontext
+
+
+@router.get("/beratung")
+async def beratung_liste(campaign_id: str):
+    """Gesprächsliste — nur SL, nie Spieler, nie im Kampagnenkontext."""
+    return await beratung_repo.liste(campaign_id)
+
+
+@router.post("/beratung")
+async def beratung_neu(campaign_id: str):
+    daten = await beratung_repo.anlegen(campaign_id)
+    if daten is None:
+        raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
+    return daten
+
+
+@router.get("/beratung/{beratung_id}")
+async def beratung_lesen(campaign_id: str, beratung_id: str):
+    daten = await beratung_repo.laden(campaign_id, beratung_id)
+    if daten is None:
+        raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
+    return daten
+
+
+@router.delete("/beratung/{beratung_id}")
+async def beratung_loeschen(campaign_id: str, beratung_id: str):
+    if not await beratung_repo.loeschen(campaign_id, beratung_id):
+        raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
+    return {"ok": True}
+
+
+@router.post("/beratung/{beratung_id}/nachricht")
+async def beratung_nachricht(
+    campaign_id: str, beratung_id: str, body: BeratungNachrichtInput
+):
+    """Eine User-Nachricht, Antwort der KI. Kontext: nur Freigegebenes."""
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="Die Nachricht darf nicht leer sein.")
+    if len(text) > 8000:
+        raise HTTPException(status_code=422, detail="Nachricht zu lang.")
+
+    stand = await beratung_repo.laden(campaign_id, beratung_id)
+    if stand is None:
+        raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
+
+    kontext = await sammle_kontext(campaign_id)
+    an_modell = beratung_repo.fuer_modell(stand["nachrichten"])
+    an_modell.append({"rolle": "user", "text": text})
+    try:
+        antwort = await generiere_text(an_modell, _beratung_system(kontext))
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    await beratung_repo.nachricht_anhaengen(campaign_id, beratung_id, "user", text)
+    gespeichert = await beratung_repo.nachricht_anhaengen(
+        campaign_id, beratung_id, "assistant", antwort
+    )
+    await hooks.ki(
+        campaign_id,
+        anlass="beratung",
+        prompt=text,
+        antwort_text=antwort,
+        uebernommen=False,
+        betrifft_id=beratung_id,
+    )
+    return gespeichert
+
+
+@router.post("/beratung/{beratung_id}/entwurf")
+async def beratung_entwurf(
+    campaign_id: str, beratung_id: str, body: BeratungEntwurfInput
+):
+    """Legt aus dem Gespräch einen Ideenschmiede-Entwurf an (istEntwurf=true)."""
+    stand = await beratung_repo.laden(campaign_id, beratung_id)
+    if stand is None:
+        raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
+    if not stand["nachrichten"]:
+        raise HTTPException(status_code=422, detail="Noch kein Gespräch für einen Entwurf.")
+    prompt = beratung_repo.gespraech_als_prompt(stand["nachrichten"])
+    return await _idee_anlegen(campaign_id, body.typ, prompt)
 
 
 @router.post("/wiki/import", response_model=ImportAntwort)

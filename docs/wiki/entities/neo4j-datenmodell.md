@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-09-29
+updated: 2026-09-30
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -30,7 +30,10 @@ außerdem `Sitzung` plus acht Log-Labels (`KiProtokollEintrag`,
 `GegenstandsBewegung`, `GeldBewegung`, `Aufenthalt`, `NpcWissenszuwachs`,
 `KampfLogEintrag`, `VerhandlungsAusgang`, `CharakterEntwicklung`) und
 Constraints für `Achievement`/`AchievementVerleihung` (App-Modul dafür
-noch nicht gebaut) — siehe [[ereignisprotokoll]].
+noch nicht gebaut) — siehe [[ereignisprotokoll]]. Seit 30.09.2026 außerdem
+`KiBeratung` und `KiBeratungNachricht` (SL-Beratungschat, Kampagnen-Kante
+`HAT_BERATUNG`, Nachrichten per `ENTHAELT`) — nie Teil von `sammle_kontext`,
+siehe [[ki-integration]].
 
 ## Zentrale Beziehungstypen (aus `repository.py`-Dateien)
 

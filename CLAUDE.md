@@ -83,6 +83,12 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   - **60.000-Zeichen-Obergrenze** pro Dokument ist eine Schätzung, kein
     empirisch ermittelter Wert — bei Bedarf nachjustieren, falls größere
     Dokumente gebraucht werden oder die Grenze zu früh/spät greift.
+- **SL-Beratungschat** (`BeratungPopup.tsx`, Knopf ⌬ Beratung in der
+  Ideenschmiede): nie im Browser angeklickt, nur `tsc -b` + pytest +
+  OpenAPI. Bitte ein Gespräch führen, prüfen dass ✨ KI unangetastet bleibt,
+  und einmal „Entwurf anlegen“ — Kachel muss als Entwurf landen, nächster
+  Chat darf sie nicht als Kanon kennen. Backend-Neustart nötig (Migration
+  `007_ki_beratung.cypher`).
 - **🔍-Prüfen-Knopf im RichTextEditor** (Personen/Orte/Events/Fraktionen/
   Gegenstände/Begleiter): nie im Browser angeklickt, nur `tsc -b` und
   Backend-Import geprüft. Siehe „Zuletzt gebaut" unten.
@@ -224,6 +230,16 @@ npm run dev
 - **Dateien:** `frontend/src/traits/CharacterSheetPanel.tsx`,
   `entities/pc-detail.css`.
 - **Verifiziert:** `tsc -b` sauber. Klicktest am Spieltisch.
+
+**Zuletzt gebaut (30.09.2026 — SL-Beratungschat in der Ideenschmiede):**
+- **Was:** Knopf ⌬ Beratung neben ✨ KI. Gespräch nur über Freigegebenes;
+  Entwurf erst auf Knopf (`istEntwurf`). Nächster Chat sieht Unfreigegebenes
+  nicht. ✨ KI unverändert.
+- **Dateien:** `app/ki/beratung.py`, `gemini.py`/`mistral.py`/`client.py`
+  (`generiere_text`), `ki/routes.py`, Migration `007_ki_beratung.cypher`,
+  `BeratungPopup.tsx`, `IdeenschmiedeAnsicht.tsx`.
+- **Verifiziert:** pytest Zugriffsschutz + `test_ki_beratung`, `tsc -b`,
+  OpenAPI-Pfade. Kein Browser-Klicktest (localhost-Sperre).
 
 **Zuletzt gebaut (30.09.2026 — Ideenschmiede-Gegenstand öffnet das normale Fenster):**
 - **Was:** Klick auf einen Gegenstands-Entwurf in der Ideenschmiede öffnet
@@ -1572,6 +1588,9 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      ungültige Werte fallen hart auf "Sonstiges" zurück, weil der Typ nach
      dem Anlegen nicht mehr änderbar ist. Entsteht als besitzerloser,
      SL-geheimer Entwurf wie Charakter/Story.
+   - **SL-Beratungschat** (**gebaut** 30.09.2026): Ideenschmiede-Knopf ⌬
+     Beratung. Redet über Freigegebenes, legt erst auf Knopf einen Entwurf
+     an. Siehe docs/api/ki.md.
 
 4. **Spotify** — ✅ Fertig (siehe `docs/api/spotify.md`). Playlist an Ort/Event,
    Wiedergabe folgt automatisch der aktiven Party. Yamaha RX-V4A/MusicCast-

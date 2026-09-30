@@ -82,3 +82,54 @@ async def generiere_json(
             except json.JSONDecodeError:
                 pass
         raise GeminiFehler("Gemini lieferte kein gültiges JSON")
+
+
+async def generiere_text(nachrichten: list[dict], system: str = "") -> str:
+    """Freier Fließtext über mehrere Turns — kein JSON-Schema.
+
+    `nachrichten` sind Dicts mit `rolle` (user/assistant) und `text`.
+    Gemini heißt die Modell-Seite ``model``, nicht assistant.
+    """
+    if not settings.gemini_api_key:
+        raise GeminiFehler("Kein Gemini-API-Key konfiguriert (backend/.env)")
+    if not nachrichten:
+        raise GeminiFehler("Keine Nachricht an Gemini")
+
+    contents = []
+    for eintrag in nachrichten:
+        rolle = "user" if eintrag.get("rolle") == "user" else "model"
+        contents.append({"role": rolle, "parts": [{"text": eintrag["text"]}]})
+
+    body: dict = {
+        "contents": contents,
+        "generationConfig": {"temperature": 0.8},
+    }
+    if system:
+        body["systemInstruction"] = {"parts": [{"text": system}]}
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(
+            _url(),
+            params={"key": settings.gemini_api_key},
+            json=body,
+        )
+
+    if resp.status_code != 200:
+        detail = ""
+        try:
+            detail = resp.json().get("error", {}).get("message", "")
+        except Exception:
+            pass
+        raise GeminiFehler(
+            f"Gemini-Aufruf fehlgeschlagen (HTTP {resp.status_code})"
+            + (f": {detail}" if detail else "")
+        )
+
+    try:
+        teile = resp.json()["candidates"][0]["content"]["parts"]
+        text = "".join(p.get("text", "") for p in teile).strip()
+    except (KeyError, IndexError, TypeError):
+        raise GeminiFehler("Gemini lieferte eine unerwartete Antwort")
+    if not text:
+        raise GeminiFehler("Gemini lieferte keinen Text")
+    return text

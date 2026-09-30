@@ -26,6 +26,7 @@ import { WikiEditor } from "../wiki/WikiEditor";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, type Gegenstand } from "../items/api";
+import { BeratungPopup } from "../ki/BeratungPopup";
 import type { Ort } from "../entities/api";
 import type { Event } from "../entities/api";
 import type { Person } from "../entities/api";
@@ -77,6 +78,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [kiPrompt, setKiPrompt] = useState("");
   const [kiLaeuft, setKiLaeuft] = useState(false);
   const [kiFehler, setKiFehler] = useState<string | null>(null);
+  const [beratungOffen, setBeratungOffen] = useState(false);
 
   // Detail-Popups
   const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
@@ -328,6 +330,9 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             <button className="is-ki-btn" onClick={() => setKiOffen(true)} title="Mit Gemini eine Idee generieren">
               ✨ KI
             </button>
+            <button className="is-ki-btn" onClick={() => setBeratungOffen(true)} title="Mit der KI beraten, ohne sofort anzulegen">
+              ⌬ Beratung
+            </button>
           </div>
         </div>
         <p className="is-beschreibung">
@@ -443,6 +448,16 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           </div>
         </form>
       </Fenster>
+
+      <BeratungPopup
+        offen={beratungOffen}
+        campaignId={campaignId}
+        onSchliessen={() => setBeratungOffen(false)}
+        onEntwurf={() => {
+          setBeratungOffen(false);
+          void laden();
+        }}
+      />
 
       {entwuerfe.length === 0 ? (
         <div className="is-leer">

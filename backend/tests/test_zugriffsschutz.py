@@ -173,6 +173,9 @@ NUR_SPIELLEITUNG_LESBAR = {
     "/api/campaigns/{campaign_id}/ereignisprotokoll/zeitleiste",
     "/api/campaigns/{campaign_id}/ereignisprotokoll/ki",
     "/api/campaigns/{campaign_id}/ereignisprotokoll/npc-wissenszuwachs",
+    # SL-Beratungschat: Gespräche sind Spielleitungs-Werkzeug, kein Spielerwissen.
+    "/api/campaigns/{campaign_id}/ki/beratung",
+    "/api/campaigns/{campaign_id}/ki/beratung/{beratung_id}",
 }
 
 

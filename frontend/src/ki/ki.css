@@ -115,6 +115,80 @@
   overflow-y: auto;
 }
 
+/* --- SL-Beratungschat (BeratungPopup.tsx) ----------------------------- */
+
+.ki-beratung {
+  min-height: 280px;
+}
+
+.ki-b-threads {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ki-b-chip {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ki-b-chip-aktiv {
+  border-color: var(--p-violett, var(--neon));
+  color: var(--p-violett, var(--neon));
+}
+
+.ki-b-verlauf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.ki-b-blase {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.ki-b-user {
+  align-self: flex-end;
+  border: 1px solid var(--p-violett, var(--neon));
+  color: var(--text);
+}
+
+.ki-b-bot {
+  align-self: flex-start;
+  border: 1px solid var(--linie);
+  background: var(--flaeche-tief);
+  color: var(--text);
+}
+
+.ki-b-wartet {
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ✨ Knopf in der RichTextEditor-Werkzeugleiste — eigener Ton (Violett),
    passend zum Ideenschmiede-KI-Knopf (.is-ki-btn). */
 .rt-ki-btn {
