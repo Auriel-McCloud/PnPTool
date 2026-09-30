@@ -683,12 +683,6 @@ export function GegenstandRow({
                 </div>
 
                 <div className="pcd-buttons" style={{ marginTop: 12 }}>
-                  <button type="button" onClick={() => setAnsicht("beschreibung")}>
-                    📝 Beschreibung
-                  </button>
-                  <button type="button" onClick={() => setAnsicht("umbauen")}>
-                    🔧 Umbauen / erweitern
-                  </button>
                   <button
                     type="button"
                     onClick={onRemoved}
