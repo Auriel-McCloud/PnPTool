@@ -681,16 +681,6 @@ export function GegenstandRow({
                     {hatMenge && <li>Menge: {menge}</li>}
                   </ul>
                 </div>
-
-                <div className="pcd-buttons" style={{ marginTop: 12 }}>
-                  <button
-                    type="button"
-                    onClick={onRemoved}
-                    style={{ color: "var(--signal)", borderColor: "var(--signal)" }}
-                  >
-                    Entfernen
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -1191,9 +1181,26 @@ export function GegenstandRow({
                   );
                 })()}
 
-              <button type="button" onClick={save}>
-                Besitz speichern
-              </button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button type="button" onClick={save}>
+                  Besitz speichern
+                </button>
+                <button
+                  type="button"
+                  onClick={onRemoved}
+                  style={{
+                    marginLeft: "auto",
+                    fontSize: "0.8rem",
+                    padding: "4px 10px",
+                    minHeight: 0,
+                    color: "var(--text-leise)",
+                    borderColor: "var(--linie)",
+                    background: "transparent",
+                  }}
+                >
+                  Entfernen
+                </button>
+              </div>
             </div>
           )}
         </div>
