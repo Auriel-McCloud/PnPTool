@@ -6,6 +6,7 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
 import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
@@ -168,6 +169,7 @@ export function GegenstandRow({
 }) {
   const [expanded, setExpanded] = useState(nurFenster);
   const [ansicht, setAnsicht] = useState<GgAnsicht>("uebersicht");
+  const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
@@ -481,6 +483,7 @@ export function GegenstandRow({
   // feste Größe — das alte Akkordeon riss die Karte bei langen Inhalten in
   // die Breite. Kachel wie Zeile öffnen dasselbe Fenster.
   const fenster = (
+    <>
     <Fenster
       offen={expanded}
       breit={ansicht === "uebersicht" || ansicht === "umbauen"}
@@ -1187,7 +1190,7 @@ export function GegenstandRow({
                 </button>
                 <button
                   type="button"
-                  onClick={onRemoved}
+                  onClick={() => setLoeschenOffen(true)}
                   style={{
                     marginLeft: "auto",
                     fontSize: "0.8rem",
@@ -1206,6 +1209,20 @@ export function GegenstandRow({
         </div>
       </div>
     </Fenster>
+      {loeschenOffen && (
+        <Bestaetigung
+          titel="Gegenstand entfernen?"
+          text={`„${formelKlartext(item.name)}“ wirklich entfernen?`}
+          jaText="Ja, entfernen"
+          neinText="Abbrechen"
+          onJa={() => {
+            setLoeschenOffen(false);
+            onRemoved();
+          }}
+          onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+    </>
   );
 
   if (nurFenster) return fenster;
@@ -1256,7 +1273,7 @@ export function GegenstandRow({
           <button type="button" onClick={openEdit}>
             Bearbeiten
           </button>
-          <button type="button" onClick={onRemoved}>
+          <button type="button" onClick={() => setLoeschenOffen(true)}>
             Entfernen
           </button>
         </span>
