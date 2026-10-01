@@ -236,8 +236,9 @@ export async function beratungNachricht(
   campaignId: string,
   id: string,
   text: string,
+  provider?: "" | "gemini" | "mistral",
 ): Promise<BeratungNachricht> {
-  return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/nachricht`, { text });
+  return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/nachricht`, { text, provider: provider || null });
 }
 
 export async function beratungEntwurf(

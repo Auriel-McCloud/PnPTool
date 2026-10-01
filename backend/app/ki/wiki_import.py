@@ -176,7 +176,7 @@ async def gliedere_dokument(campaign_id: str, text: str) -> list[SeitenVorschlag
             f"\n\nFreigegebene Welt der Kampagne (nur zur Einordnung, nicht Teil "
             f"des zu importierenden Textes):\n{kontext}"
         )
-    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA)
+    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA, campaign_id=campaign_id)
 
     vorschlaege: list[SeitenVorschlag] = []
     for eintrag in ergebnis.get("seiten") or []:

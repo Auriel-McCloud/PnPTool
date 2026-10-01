@@ -211,7 +211,7 @@ async def _erkennen(
         f"Bekannte Entitäten dieser Kampagne:\n{liste_text}\n\n"
         f"Zu durchsuchender Text:\n{text}"
     )
-    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA)
+    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA, campaign_id=campaign_id)
     await hooks.ki(
         campaign_id,
         anlass="auto-verknuepfung",

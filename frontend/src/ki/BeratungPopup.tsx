@@ -41,6 +41,9 @@ export function BeratungPopup({
   const [entwurfTyp, setEntwurfTyp] = useState<KiTyp>("charakter");
   const [entwurfLaeuft, setEntwurfLaeuft] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  // Überschreibt für diese eine Unterhaltung den Kampagnen-Standard — zum
+  // direkten Vergleich, ohne die Kampagnen-Einstellung extra umzustellen.
+  const [providerOverride, setProviderOverride] = useState<"" | "gemini" | "mistral">("");
   const endeRef = useRef<HTMLDivElement | null>(null);
 
   const listeLaden = useCallback(async () => {
@@ -100,7 +103,7 @@ export function BeratungPopup({
         nachrichten: [...(thread.nachrichten ?? []), optimistic],
       });
       setEingabe("");
-      const antwort = await beratungNachricht(campaignId, thread.id, text);
+      const antwort = await beratungNachricht(campaignId, thread.id, text, providerOverride);
       const frisch = await beratungLaden(campaignId, thread.id);
       setAktiv(frisch);
       void listeLaden();
@@ -156,6 +159,19 @@ export function BeratungPopup({
             <button type="button" className="ki-btn-sekundaer" onClick={() => void neu()}>
               + Neu
             </button>
+            {/* Nur für diese Unterhaltung — überschreibt den Kampagnen-Standard
+                aus den Einstellungen, zum direkten Vergleich. */}
+            <select
+              className="ki-input"
+              value={providerOverride}
+              onChange={(e) => setProviderOverride(e.target.value as "" | "gemini" | "mistral")}
+              title="Nur für diese Unterhaltung — Standard ist der Kampagnen-Einstellung überlassen."
+              style={{ width: "auto", minWidth: 0 }}
+            >
+              <option value="">Standard</option>
+              <option value="gemini">Gemini</option>
+              <option value="mistral">Mistral</option>
+            </select>
             {liste.map((t) => (
               <button
                 key={t.id}

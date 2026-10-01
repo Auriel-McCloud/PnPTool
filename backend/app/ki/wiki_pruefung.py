@@ -127,7 +127,7 @@ async def _pruefe_text(
 ) -> list[PruefBefund]:
     if not text.strip():
         return []
-    ergebnis = await generiere_json(_prompt(text, kontext), _SYSTEM, _SCHEMA)
+    ergebnis = await generiere_json(_prompt(text, kontext), _SYSTEM, _SCHEMA, campaign_id=campaign_id)
     await hooks.ki(
         campaign_id,
         anlass="wiki-pruefung",

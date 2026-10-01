@@ -4,6 +4,14 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
+- **KI-Provider-Umschalter neu** (siehe „Zuletzt gebaut" 01.10.2026 —
+  Kampagnen-Textprovider + Beratungs-Override): Tests (`test_ki_beratung.py`,
+  `test_ki_idee_typen.py`, voller Backend-Suite) und `tsc -b`/`vite build`
+  grün, aber nie im Browser angeklickt. Bitte Einstellungen-Popup → Abschnitt
+  „KI" öffnen, Mistral wählen, eine Ideenschmiede-Generierung auslösen und
+  prüfen ob sie merklich anders klingt; danach im Beratungs-Popup den
+  kleinen Dropdown neben „+ Neu" testen (sollte die Kampagnen-Einstellung
+  für eine Nachricht übersteuern können, ohne sie zu verändern).
 - **Verbindungen-Bereich neu** (siehe „Zuletzt gebaut" 01.10.2026 —
   durchsuchbare Auswahl + Suchleiste): nie im Browser angeklickt, nur
   `tsc -b`/`vite build` geprüft. Bitte am Spieltisch den Verbindungen-Punkt
@@ -228,6 +236,29 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (01.10.2026 — Kampagnen-wählbarer Text-KI-Provider + Beratungs-Override):**
+- **Was:** Mark empfand die Mistral-Beratung als "trocken" und wollte
+  gegen Gemini vergleichen können — bisher war `KI_PROVIDER` nur global per
+  `.env` gesetzt, Serverneustart nötig. Jetzt dreistufig (hoch nach niedrig):
+  Beratungs-Dropdown-Override je Nachricht → Kampagnen-Einstellung
+  `kiProvider` (Einstellungen-Popup, Abschnitt „KI") → `.env`-Fallback.
+  Betrifft alle Text-Endpunkte (Ideenschmiede, Auto-Verknüpfung, Wiki-
+  Prüfung/Import, Erstellungs-Kommentar, Händler-/Zusatzfertigkeiten-
+  Vorschläge, Beratung); Bildgenerierung bleibt unverändert eigenständig.
+- **Dateien:** `backend/app/ki/client.py` (`_aufloesen` dreistufig,
+  `generiere_json`/`generiere_text` nehmen `campaign_id`/`provider`),
+  `campaigns/repository.py` (`EINSTELLUNGEN_DEFAULTS["kiProvider"]`),
+  alle bisherigen `generiere_json`-Aufrufstellen geben jetzt `campaign_id`
+  mit, `ki/routes.py` (`BeratungNachrichtInput.provider`). Frontend:
+  `einstellungen.ts`, `EinstellungenFenster.tsx` (neuer „KI"-Abschnitt),
+  `ki/api.ts`, `BeratungPopup.tsx` (Dropdown neben „+ Neu").
+- **Verifiziert:** `test_ki_beratung.py` + `test_ki_idee_typen.py` grün,
+  volle Backend-Suite nur die zwei vorbestehenden (nicht von dieser Änderung
+  verursachten) `test_zugriffsschutz.py`-Fehler, `tsc -b`/`vite build`
+  sauber. **Nie im Browser angeklickt** — siehe „Offen" oben.
+- API: `docs/api/ki.md`, Wiki: `docs/wiki/entities/ki-integration.md`.
+  Deploy: live auf bebop.
 
 **Zuletzt gebaut (01.10.2026 — Verbindungen-Bereich: durchsuchbare Auswahl + Suchleiste):**
 - **Was:** Der eigenständige Verbindungen-Bereich hatte noch die alte

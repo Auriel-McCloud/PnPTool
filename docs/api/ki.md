@@ -5,9 +5,22 @@ Wiki-Textprüfung. Basis: `/api/campaigns/{campaign_id}/ki`. **Nur SL.**
 
 ## Anbieter
 
-`KI_PROVIDER` in `backend/.env` (`gemini` oder `mistral`) wählt den Anbieter
-ohne Code-Änderung — siehe `app/ki/client.py`. Fehler jeder Art kommen beim
-Aufrufer als `502` an (die KI ist eine externe Abhängigkeit, kein Bug im Tool).
+Drei Ebenen, höchste Priorität zuerst:
+
+1. **Beratungs-Dropdown** (nur `POST /beratung/{id}/nachricht`, Feld `provider`):
+   überschreibt für eine einzelne Nachricht, ohne etwas zu speichern — zum
+   direkten A/B-Vergleich innerhalb eines Gesprächs.
+2. **Kampagnen-Einstellung** `kiProvider` (Einstellungen-Popup, Abschnitt
+   „KI"): `""` (Server-Standard), `"gemini"` oder `"mistral"`. Gilt für
+   *alle* Text-Endpunkte dieser Kampagne (Ideenschmiede, Auto-Verknüpfung,
+   Wiki-Prüfung/Import, Erstellungs-Kommentar, Händler-/Zusatzfertigkeiten-
+   Vorschläge, Beratung ohne Override).
+3. `KI_PROVIDER` in `backend/.env` (`gemini` oder `mistral`) — Server-weiter
+   Fallback, wenn eine Kampagne nichts Eigenes eingestellt hat.
+
+Auflösung zentral in `app/ki/client.py::_aufloesen`; unbekannte/leere Werte
+fallen zur nächsten Ebene durch. Fehler jeder Art kommen beim Aufrufer als
+`502` an (die KI ist eine externe Abhängigkeit, kein Bug im Tool).
 
 ---
 

@@ -562,7 +562,7 @@ async def erstellung_kommentar(campaign_id: str, body: ErstellungKommentarInput)
     prompt = "\n".join(zeilen)
 
     try:
-        ergebnis = await generiere_json(prompt, _KOMMENTAR_SYSTEM, _KOMMENTAR_SCHEMA)
+        ergebnis = await generiere_json(prompt, _KOMMENTAR_SYSTEM, _KOMMENTAR_SCHEMA, campaign_id=campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 

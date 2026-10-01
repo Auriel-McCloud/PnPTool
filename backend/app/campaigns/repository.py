@@ -92,6 +92,12 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # Kampagnenweite Erfahrungspunkte — alle PCs bekommen gemeinsam EP.
     # Nur erhöhbar, nicht senkbar (irreversibel).
     "kampagnenEP": 0,
+    # Welcher KI-Anbieter für Text-Generierung dieser Kampagne genutzt wird:
+    # "" (leer) = Server-Standard aus KI_PROVIDER (.env), sonst "gemini" oder
+    # "mistral" als bewusste Kampagnen-Entscheidung. So kann Mark z.B. eine
+    # Kampagne auf Mistral stellen, ohne den Server für alle umzustellen.
+    # Siehe app/ki/client.py::_provider_fuer.
+    "kiProvider": "",
 }
 
 

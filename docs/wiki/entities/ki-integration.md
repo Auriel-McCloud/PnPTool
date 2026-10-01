@@ -321,6 +321,28 @@ Frontend: dieselben Optionen in `IdeenschmiedeAnsicht.tsx` und
 `BeratungPopup.tsx`. Tests: `backend/tests/test_ki_idee_typen.py`.
 Commit `e67dc54`. API: [[../../api/ki.md]].
 
+## Kampagnen-wählbarer Text-Provider (01.10.2026) — umgesetzt
+
+Mark fand die Mistral-Antworten der Beratung "trocken" im Vergleich zu
+Gemini, wollte aber nicht am Server umschalten müssen, um beide zu
+vergleichen. Statt eines Umschalters an jeder einzelnen KI-Stelle (viele
+UI-Flächen, inkonsistenter Ton innerhalb einer Kampagne) eine neue
+Kampagnen-Einstellung `kiProvider` (`""`/`"gemini"`/`"mistral"`,
+Einstellungen-Popup Abschnitt „KI") als Default für *alle* Text-Endpunkte,
+plus ein zusätzlicher Dropdown nur im Beratungs-Popup für einen einmaligen
+Override pro Nachricht (A/B-Vergleich ohne die Kampagne umzustellen).
+
+`app/ki/client.py::_aufloesen` löst in drei Stufen auf: Aufruf-Override >
+Kampagnen-Einstellung > `.env`-`KI_PROVIDER`. `generiere_json`/`generiere_text`
+nehmen jetzt `campaign_id` (lädt die Einstellung selbst nach) bzw.
+`provider` entgegen; alle bisherigen Aufrufstellen (Ideenschmiede, Auto-
+Verknüpfung, Wiki-Prüfung/Import, Erstellungs-Kommentar, Händler-/
+Zusatzfertigkeiten-Vorschläge) geben `campaign_id` durch. Bildgenerierung
+bleibt unverändert eigenständig (siehe oben) — dort war "pro Aufruf wählbar"
+schon immer der Fall.
+
+API: [[../../api/ki.md]]. Deploy: `7196788`+ auf bebop.
+
 ## Jev / Entscheidungsmodell (30.09.2026) — geparkt
 
 Kein Chatbot. TypeSafe System One (Jev): State + typisierte Fragen

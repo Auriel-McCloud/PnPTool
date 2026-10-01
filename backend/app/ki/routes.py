@@ -280,6 +280,10 @@ class KiIdeeInput(BaseModel):
 
 class BeratungNachrichtInput(BaseModel):
     text: str
+    # Überschreibt für diese eine Nachricht den Kampagnen-Standard —
+    # Dropdown im Beratungs-Popup, für den direkten A/B-Vergleich innerhalb
+    # eines Gesprächs. None/"" lässt die Kampagnen-Einstellung gelten.
+    provider: str | None = None
 
 
 class BeratungEntwurfInput(BaseModel):
@@ -440,7 +444,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         if typ == "story":
             kontext = await sammle_kontext(campaign_id)
             prompt_komplett = _mit_kontext(prompt, kontext)
-            ergebnis = await generiere_json(prompt_komplett, _SYSTEM, _STORY_SCHEMA)
+            ergebnis = await generiere_json(prompt_komplett, _SYSTEM, _STORY_SCHEMA, campaign_id=campaign_id)
             titel = (ergebnis.get("titel") or "").strip() or "Unbenannter Story-Part"
             inhalt = (ergebnis.get("inhalt") or "").strip()
             seite = await create_seite(
@@ -467,7 +471,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             # Neues vorschlagen".
             kontext = await sammle_kontext(campaign_id)
             prompt_komplett = _mit_kontext(prompt, kontext)
-            ergebnis = await generiere_json(prompt_komplett, _GEGENSTAND_SYSTEM, _GEGENSTAND_SCHEMA)
+            ergebnis = await generiere_json(prompt_komplett, _GEGENSTAND_SYSTEM, _GEGENSTAND_SCHEMA, campaign_id=campaign_id)
             name = (ergebnis.get("name") or "").strip() or "Unbenannter Gegenstand"
             gegenstand_typ = ergebnis.get("typ") or "Sonstiges"
             if gegenstand_typ not in GEGENSTAND_TYPEN:
@@ -502,7 +506,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
 
         if typ == "ort":
             kontext = await sammle_kontext(campaign_id)
-            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _ORT_SYSTEM, _WELT_SCHEMA)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _ORT_SYSTEM, _WELT_SCHEMA, campaign_id=campaign_id)
             name = (ergebnis.get("name") or "").strip() or "Unbenannter Ort"
             node = await create_node(
                 "Ort",
@@ -523,7 +527,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
 
         if typ == "event":
             kontext = await sammle_kontext(campaign_id)
-            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _EVENT_SYSTEM, _EVENT_SCHEMA)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _EVENT_SYSTEM, _EVENT_SCHEMA, campaign_id=campaign_id)
             titel = (ergebnis.get("titel") or "").strip() or "Unbenanntes Ereignis"
             node = await create_node(
                 "Event",
@@ -545,7 +549,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
 
         if typ == "fraktion":
             kontext = await sammle_kontext(campaign_id)
-            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _FRAKTION_SYSTEM, _FRAKTION_SCHEMA)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _FRAKTION_SYSTEM, _FRAKTION_SCHEMA, campaign_id=campaign_id)
             name = (ergebnis.get("name") or "").strip() or "Unbenannte Fraktion"
             node = await create_node(
                 "Fraktion",
@@ -569,7 +573,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         if typ == "verbindung":
             kontext = await sammle_kontext(campaign_id)
             ergebnis = await generiere_json(
-                _mit_kontext(prompt, kontext), _VERBINDUNG_SYSTEM, _VERBINDUNG_SCHEMA
+                _mit_kontext(prompt, kontext), _VERBINDUNG_SYSTEM, _VERBINDUNG_SCHEMA, campaign_id=campaign_id
             )
             von_typ = ergebnis.get("vonTyp") or ""
             zu_typ = ergebnis.get("zuTyp") or ""
@@ -617,7 +621,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             "Weg MAGIER, NeuroWeaving nur bei NEUROWEAVER."
         )
 
-        ergebnis = await generiere_json(prompt_komplett, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA)
+        ergebnis = await generiere_json(prompt_komplett, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA, campaign_id=campaign_id)
         name = (ergebnis.get("name") or "").strip() or "Unbenannter Charakter"
         beschreibung = (ergebnis.get("beschreibung") or "").strip()
         weg = ergebnis.get("weg") or "KEINER"
@@ -714,7 +718,7 @@ async def beratung_nachricht(
     an_modell = beratung_repo.fuer_modell(stand["nachrichten"])
     an_modell.append({"rolle": "user", "text": text})
     try:
-        antwort = await generiere_text(an_modell, _beratung_system(kontext))
+        antwort = await generiere_text(an_modell, _beratung_system(kontext), provider=body.provider, campaign_id=campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -851,6 +855,7 @@ async def ki_objekt_text(campaign_id: str, body: ObjektTextInput):
             _mit_kontext(objekt_prompt, kontext),
             _OBJEKT_TEXT_SYSTEM,
             {"type": "OBJECT", "properties": {"text": {"type": "STRING"}}, "required": ["text"]},
+            campaign_id=campaign_id,
         )
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -1020,7 +1025,7 @@ async def _bild_prompt_vorschlagen(campaign_id: str, objekt_typ: str, objekt_nam
         teile.append(f"Bisherige Beschreibung:\n{beschreibung.strip()}")
     prompt = "\n\n".join(teile)
     try:
-        ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _BILD_PROMPT_SYSTEM, _BILD_PROMPT_SCHEMA)
+        ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _BILD_PROMPT_SYSTEM, _BILD_PROMPT_SCHEMA, campaign_id=campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
     return (ergebnis.get("prompt") or "").strip()

@@ -73,7 +73,7 @@ async def vorschlaege(campaign_id: str, anzahl: int = 5) -> VorschlaegeAntwort:
         f"Bereits existierende Zusatzfertigkeiten dieser Kampagne:\n{liste_text}\n\n"
         f"Schlage {anzahl} NEUE, davon verschiedene Zusatzfertigkeiten vor."
     )
-    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA)
+    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA, campaign_id=campaign_id)
 
     bekannte_namen = {z["name"].strip().lower() for z in bestehende}
     vorschlags_liste: list[ZusatzfertigkeitVorschlag] = []

@@ -22,6 +22,9 @@ export interface Einstellungen {
   messengerAktiv: boolean;
   /** Kampagnenweite EP — alle PCs bekommen gemeinsam EP. */
   kampagnenEP: number;
+  /** Welcher KI-Anbieter für Text-Generierung dieser Kampagne gilt:
+   * "" = Server-Standard, sonst "gemini" oder "mistral". */
+  kiProvider: "" | "gemini" | "mistral";
   [weitere: string]: unknown;
 }
 

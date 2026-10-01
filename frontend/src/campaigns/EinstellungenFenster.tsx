@@ -231,6 +231,27 @@ export function EinstellungenFenster({
           />
 
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            KI
+          </h4>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
+            <strong style={{ fontSize: 14 }}>Textgenerierung</strong>
+            <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+              Betrifft Ideenschmiede, Beratung, Auto-Verknüpfung und alle anderen Text-Vorschläge dieser
+              Kampagne. Bildgenerierung ist davon unabhängig (eigene Wahl im Bild-Popup).
+            </span>
+            <select
+              value={werte.kiProvider || ""}
+              onChange={(e) => aendern("kiProvider", e.target.value)}
+              style={{ marginTop: 4, maxWidth: 260 }}
+            >
+              <option value="">Server-Standard</option>
+              <option value="gemini">Gemini</option>
+              <option value="mistral">Mistral</option>
+            </select>
+          </label>
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             WIKI
           </h4>
 

@@ -85,6 +85,7 @@ async def wunsch_erstellen(campaign_id: str, haendler_id: str, spieler_person_id
             f"Verkäufer: {haendler['name']}\nWunsch des Spielers: {text}",
             _SYSTEM,
             _SCHEMA,
+            campaign_id=campaign_id,
         )
     except Exception:
         # KI nicht erreichbar (Key fehlt, Kontingent leer, Netzwerkfehler) —

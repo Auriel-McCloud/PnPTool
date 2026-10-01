@@ -119,7 +119,7 @@ async def vorschlaege(campaign_id: str, haendler_id: str, anzahl: int = 5) -> Vo
         f"im Sortiment dieses Händlers:\n{liste_text}\n\n"
         f"Schlage {anzahl} Waren für das Sortiment vor."
     )
-    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA)
+    ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA, campaign_id=campaign_id)
 
     vorschlags_liste: list[SortimentVorschlag] = []
     gesehen: set[str] = set()
