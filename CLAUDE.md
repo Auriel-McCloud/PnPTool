@@ -22,6 +22,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
+- **Sticky-Werkzeugleiste neu** (siehe „Zuletzt gebaut" 01.10.2026 —
+  Editor-Werkzeugleiste bleibt beim Scrollen sichtbar): nie im Browser
+  angeklickt. Bitte bei einer langen Beschreibung/Notiz prüfen, dass
+  „🔒 SL-geheim" & Co. beim Scrollen oben kleben bleiben statt mit
+  hochzuscrollen.
+
 - **KI-Provider-Umschalter neu** (siehe „Zuletzt gebaut" 01.10.2026 —
   Kampagnen-Textprovider + Beratungs-Override): Tests (`test_ki_beratung.py`,
   `test_ki_idee_typen.py`, voller Backend-Suite) und `tsc -b`/`vite build`
@@ -254,6 +260,26 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (01.10.2026 — Editor-Werkzeugleiste bleibt beim Scrollen sichtbar):**
+- **Was:** Mark musste bei langen Beschreibungen/Notizen immer ganz nach
+  oben scrollen, um den „🔒 SL-geheim"-Knopf zu erreichen — die
+  Werkzeugleiste des `RichTextEditor` (Beschreibung/Notizen an jeder
+  Entität) gehörte zum Inhalt, der mit dem umgebenden Fenster
+  (`.fn-inhalt`) mitscrollt, statt fix zu bleiben. Der Wiki-Editor hatte
+  dieses Problem nie, weil dort nur die reine Textfläche scrollt
+  (`.wk-editor { overflow-y: auto }`), die Werkzeugleiste liegt außerhalb.
+- **Fix:** `position: sticky; top: 0` auf die Werkzeugleiste in
+  `RichTextEditor.tsx` — bleibt jetzt oben kleben, sobald ein scrollender
+  Vorfahre existiert (z.B. `.fn-inhalt` im Anlege-/Detail-Popup), ohne
+  Layout-Änderung an den vielen Einbettungsstellen (NPC/PC/Ort/Event/
+  Fraktion/Begleiter/Charakterbogen).
+- **Datei:** `frontend/src/richtext/RichTextEditor.tsx`.
+- **Verifiziert:** `tsc -b` + `vite build` sauber. **Nie im Browser
+  angeklickt** — bitte bei einer langen Beschreibung prüfen, dass die
+  Werkzeugleiste tatsächlich oben kleben bleibt und nicht verdeckt/
+  abgeschnitten wirkt.
+- Deploy: live auf bebop (`3347961`).
 
 **Zuletzt gebaut (01.10.2026 — Fix: KI-Fraktion mit Zielen/Ressourcen anlegbar):**
 - **Was:** Mark bekam beim „Entwurf anlegen" aus der Beratung einen
