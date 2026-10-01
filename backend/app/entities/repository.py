@@ -166,6 +166,21 @@ def _mit_defaults(record: dict) -> dict:
 
 
 async def create_node(label: str, fields: list[str], campaign_id: str, data: dict) -> dict:
+    import json
+
+    # Listen-von-Maps-Felder (bilder/ziele/ressourcen) vor dem Schreiben als
+    # JSON-String serialisieren — Neo4j kann keine Maps in Arrays speichern,
+    # nur primitive Typen oder Arrays davon (siehe update_node, dieselbe
+    # Einschränkung gilt beim Anlegen genauso). Vorher traf das nur
+    # update_node; create_node bekam das nie nachgezogen, weshalb z.B. eine
+    # KI-generierte Fraktion mit sofort befüllten ziele/ressourcen beim
+    # Anlegen mit einem Neo4j-TypeError scheiterte, während eine leer
+    # angelegte und später per PATCH befüllte Fraktion nie betroffen war.
+    daten = dict(data)
+    for feld in ("bilder", "ziele", "ressourcen"):
+        if feld in daten and isinstance(daten[feld], list):
+            daten[feld] = json.dumps(daten[feld])
+
     driver = get_driver()
     node_id = str(uuid.uuid4())
     props = ", ".join(f"{f}: ${f}" for f in fields)
@@ -176,7 +191,7 @@ async def create_node(label: str, fields: list[str], campaign_id: str, data: dic
         RETURN {_return_clause('n', fields)}
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **data)
+        result = await session.run(query, campaign_id=campaign_id, node_id=node_id, **daten)
         record = await result.single()
         return _mit_defaults(record)
 
