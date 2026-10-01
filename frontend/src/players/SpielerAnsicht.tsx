@@ -105,7 +105,17 @@ function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: s
 
 export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
-  const [bereich, setBereich] = useState("blatt");
+  // Mobile Browser/PWAs werfen die Seite im Hintergrund aus dem Speicher —
+  // beim Entsperren lädt sie neu. Der zuletzt offene Bereich wird deshalb
+  // gemerkt, damit dieser Neustart nicht wie ein Rücksprung zum Blatt wirkt.
+  const BEREICH_SCHLUESSEL = "pnptool:bereich:spieler";
+  const [bereich, setBereichRoh] = useState(
+    () => (typeof localStorage !== "undefined" && localStorage.getItem(BEREICH_SCHLUESSEL)) || "blatt",
+  );
+  const setBereich = (b: string) => {
+    setBereichRoh(b);
+    localStorage.setItem(BEREICH_SCHLUESSEL, b);
+  };
   // Welches Fach gerade offensteht (null = nur die Ausrüstung). Abgelöst hat
   // das die frühere Mehrfachauswahl über Reiter: was man am Körper trägt,
   // liegt offen, alles andere macht man auf — und sieht schon daran, dass

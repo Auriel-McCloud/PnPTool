@@ -150,7 +150,17 @@ function CreateCampaignForm({
 function Dashboard() {
   const { me, logout } = useAuth();
   const { campaigns, loading, aktive, waehleKampagne, createCampaign, nachImportUebernehmen } = useCampaign();
-  const [bereich, setBereich] = useState("pcs");
+  // Mobile Browser/PWAs werfen die Seite im Hintergrund aus dem Speicher —
+  // beim Entsperren lädt sie neu. Der zuletzt offene Bereich wird deshalb
+  // gemerkt, damit dieser Neustart nicht wie ein Rücksprung zur Startseite wirkt.
+  const BEREICH_SCHLUESSEL = "pnptool:bereich:gm";
+  const [bereich, setBereichRoh] = useState(
+    () => (typeof localStorage !== "undefined" && localStorage.getItem(BEREICH_SCHLUESSEL)) || "pcs",
+  );
+  const setBereich = (b: string) => {
+    setBereichRoh(b);
+    localStorage.setItem(BEREICH_SCHLUESSEL, b);
+  };
   const [menueLayouts, setMenueLayouts] = useState<MenueLayouts>(LEER_LAYOUTS);
   const [geraet, setGeraet] = useState<Geraet>(() => (typeof window === "undefined" ? "pc" : erkenneGeraet()));
   const [menueOffen, setMenueOffen] = useState(false);
