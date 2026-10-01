@@ -255,6 +255,25 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (01.10.2026 — Fix: KI-Fraktion mit Zielen/Ressourcen anlegbar):**
+- **Was:** Mark bekam beim „Entwurf anlegen" aus der Beratung einen
+  Neo4j-TypeError (`Property values can only be of primitive types or
+  arrays thereof`), sobald eine KI-generierte Fraktion gleich mit
+  `ziele`/`ressourcen` befüllt wurde. Ursache: `ziele`/`ressourcen` (und
+  `bilder`) sind Listen von Objekten (`{titel, beschreibung}`) — Neo4j kann
+  das nicht direkt als Property speichern, nur primitive Typen/Arrays
+  davon. `update_node` serialisierte das schon immer als JSON-String vor
+  dem Schreiben, `create_node` hatte diese Behandlung nie bekommen — eine
+  manuell angelegte, leer startende Fraktion traf den Bug deshalb nie,
+  jede mit sofort befüllten Zielen (KI-Idee, Beratungs-Entwurf) immer.
+- **Datei:** `backend/app/entities/repository.py::create_node`.
+- **Verifiziert:** echter Anlege-Aufruf gegen lokale Neo4j mit genau den
+  Beispieldaten aus Marks Fehlermeldung (Fraktion "Reinigung der
+  Lithosphäre") — Ziele kommen korrekt als Liste zurück. Volle
+  Backend-Suite: 467 passed, nur die zwei vorbestehenden
+  `test_zugriffsschutz.py`-Fehler (siehe frühere Einträge).
+- Deploy: live auf bebop (`b463454`).
+
 **Zuletzt gebaut (01.10.2026 — Bereich übersteht Reload nach Entsperren):**
 - **Was:** Mark berichtete, dass PnPTool auf Handy/Tablet nach jedem
   Entsperren auf der Startseite landet. Ursache: mobile Browser/PWAs werfen
