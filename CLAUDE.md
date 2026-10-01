@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
+
+- **Verbindungen-Bereich neu** (siehe „Zuletzt gebaut" 01.10.2026 —
+  durchsuchbare Auswahl + Suchleiste): nie im Browser angeklickt, nur
+  `tsc -b`/`vite build` geprüft. Bitte am Spieltisch den Verbindungen-Punkt
+  öffnen und das neue „+ Neue Verbindung"-Popup samt beiden Suchfeldern
+  sowie die Suchleiste über der Liste ausprobieren.
+
 ## Offen: Was Mark selbst testen muss (Stand 26.09.2026)
 
 Diese Punkte wurden von Agenten gebaut, aber mangels laufendem Frontend-Dev-Server
@@ -220,6 +228,26 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (01.10.2026 — Verbindungen-Bereich: durchsuchbare Auswahl + Suchleiste):**
+- **Was:** Der eigenständige Verbindungen-Bereich hatte noch die alte
+  Zwei-Dropdown-Inline-Form ohne Suche — bei vielen Entitäten ("da kommt
+  wirklich alles rein") unbenutzbar. Jetzt wie NPCs/Orte/Events: Kopf mit
+  „+ Neue Verbindung"-Button öffnet ein Commlink-Popup; beide Endpunkte
+  (Von/Zu) haben je ein eigenes Suchfeld über der Auswahlliste (Name oder
+  Typ). Die Liste selbst hat jetzt ebenfalls eine Suchleiste
+  (Name/Typ/Beschreibung) statt nur Anzeige.
+- **Dateien:** `entities/EntitaetsAuswahl.tsx` (neu, durchsuchbare
+  Endpunkt-Wahl — auch von `VerbindungAnlegen.tsx`-Pattern inspiriert, aber
+  wiederverwendbar), `entities/VerbindungAnlegenGlobal.tsx` (neu, Popup mit
+  zwei freien Endpunkten), `entities/VerbindungenListe.tsx` (neu, Suchleiste
+  + Liste), `EntityManager.tsx` (alte Inline-Form/-Liste entfernt, Kopf mit
+  Button ergänzt).
+- **Verifiziert:** `tsc -b` und `vite build` sauber. **Frontend nie im
+  Browser angeklickt** — bitte am Spieltisch: Verbindungen-Bereich öffnen,
+  „+ Neue Verbindung" klicken, in beiden Auswahlfeldern tippen und prüfen,
+  dass die Trefferliste filtert, danach eine Verbindung anlegen und die
+  Suche in der Liste darunter ausprobieren.
 
 **Zuletzt gebaut (01.10.2026 — Verbindungen nachträglich bearbeiten):**
 - **Was:** Bestehende `VERBINDUNG`-Kanten lassen sich korrigieren

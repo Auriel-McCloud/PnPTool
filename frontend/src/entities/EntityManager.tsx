@@ -34,7 +34,8 @@ import { EventDetail } from "./EventDetail";
 import { FraktionKacheln } from "./FraktionKacheln";
 import { FraktionDetail } from "./FraktionDetail";
 import { Filterleiste } from "./Filterleiste";
-import { VerbindungBearbeiten } from "./VerbindungBearbeiten";
+import { VerbindungenListe } from "./VerbindungenListe";
+import { VerbindungAnlegenGlobal } from "./VerbindungAnlegenGlobal";
 import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
 
@@ -492,47 +493,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   }
 
   // --- Verbindung ---
-  const [verbindungForm, setVerbindungForm] = useState({
-    vonId: "",
-    zuId: "",
-    typ: "",
-    sichtbarkeit: "GM" as SichtbarkeitModus,
-    sichtbarFuer: [] as string[],
-  });
-  const [verbindungBearbeiten, setVerbindungBearbeiten] = useState<Verbindung | null>(null);
-  const alleEntitaeten = [
-    ...personen.map((p) => ({ id: p.id, kind: "Person" as const, label: `Person: ${p.name}` })),
-    ...orte.map((o) => ({ id: o.id, kind: "Ort" as const, label: `Ort: ${o.name}` })),
-    ...events.map((ev) => ({ id: ev.id, kind: "Event" as const, label: `Event: ${ev.title}` })),
-    ...graphGegenstaende.map((g) => ({ id: g.id, kind: "Gegenstand" as const, label: `Gegenstand: ${g.label}` })),
-  ];
-  function kindOf(id: string) {
-    return alleEntitaeten.find((e) => e.id === id)?.kind;
-  }
-  async function submitVerbindung(e: FormEvent) {
-    e.preventDefault();
-    const vonKind = kindOf(verbindungForm.vonId);
-    const zuKind = kindOf(verbindungForm.zuId);
-    if (!vonKind || !zuKind) return;
-    await entitiesApi.createVerbindung(campaignId, {
-      vonKind,
-      vonId: verbindungForm.vonId,
-      zuKind,
-      zuId: verbindungForm.zuId,
-      typ: verbindungForm.typ,
-      beschreibung: "",
-      seit: "",
-      bis: "",
-      sichtbarkeit: verbindungForm.sichtbarkeit,
-      sichtbarFuer: verbindungForm.sichtbarFuer,
-    });
-    setVerbindungForm({ vonId: "", zuId: "", typ: "", sichtbarkeit: "GM", sichtbarFuer: [] });
-    await refreshAll();
-  }
-
-  function labelFor(kind: string, id: string) {
-    return alleEntitaeten.find((e) => e.kind === kind && e.id === id)?.label ?? `${kind}:${id}`;
-  }
+  const [verbindungAnlegenOffen, setVerbindungAnlegenOffen] = useState(false);
 
   const zeigePersonen = ansicht === "welt" || ansicht === "pcs" || ansicht === "npcs";
   const personenInAnsicht =
@@ -720,8 +681,32 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           </div>
         </div>
       )}
+      {/* Verbindungen-Ansicht: eigener Kopf mit Neue-Verbindung-Button */}
+      {ansicht === "verbindungen" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setVerbindungAnlegenOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-verbindungen, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-verbindungen, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-verbindungen, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neue Verbindung
+            </button>
+          </div>
+        </div>
+      )}
       {/* Andere Ansichten: normaler Kopf */}
-      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && ansicht !== "fraktionen" && (
+      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && ansicht !== "fraktionen" && ansicht !== "verbindungen" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
@@ -1040,57 +1025,28 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
 
       {zeigeVerbindungen && (
         <section style={sectionStyle}>
-          <h2>Verbindungen</h2>
-          {verbindungen.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Verbindungen angelegt.</p>}
-          {verbindungen.map((v) => (
-          <div key={v.id} style={listItemStyle}>
-            {labelFor(v.vonKind, v.vonId)} <strong>— {v.typ} →</strong> {labelFor(v.zuKind, v.zuId)}
-            <div>
-              <SichtbarkeitBadge modus={v.sichtbarkeit} sichtbarFuer={v.sichtbarFuer} personenById={personenById} label="Sichtbarkeit" />
-              <button type="button" onClick={() => setVerbindungBearbeiten(v)}>
-                Bearbeiten
-              </button>
-            </div>
-          </div>
-          ))}
-          <form onSubmit={submitVerbindung} style={formStyle}>
-            <div style={fieldRowStyle}>
-              <select value={verbindungForm.vonId} onChange={(e) => setVerbindungForm({ ...verbindungForm, vonId: e.target.value })} required>
-                <option value="">Von...</option>
-                {alleEntitaeten.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                style={textInputStyle}
-                placeholder="Beziehungstyp (z.B. kennt)"
-                value={verbindungForm.typ}
-                onChange={(e) => setVerbindungForm({ ...verbindungForm, typ: e.target.value })}
-                required
-              />
-              <select value={verbindungForm.zuId} onChange={(e) => setVerbindungForm({ ...verbindungForm, zuId: e.target.value })} required>
-                <option value="">Zu...</option>
-                {alleEntitaeten.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <VisibilitySelector
-              label="Sichtbarkeit der Verbindung"
-              modus={verbindungForm.sichtbarkeit}
-              sichtbarFuer={verbindungForm.sichtbarFuer}
-              onChange={(m, f) => setVerbindungForm({ ...verbindungForm, sichtbarkeit: m, sichtbarFuer: f })}
-              pcOptions={pcOptions}
-            />
-            <button type="submit">Verbindung anlegen</button>
-          </form>
+          {ansicht === "welt" && <h2>Verbindungen</h2>}
+          <VerbindungenListe
+            campaignId={campaignId}
+            verbindungen={verbindungen}
+            namen={namensTabelle}
+            pcOptions={pcOptions}
+            onGeaendert={refreshAll}
+            farbe="var(--bereich-verbindungen, var(--neon))"
+          />
         </section>
       )}
       </div>
+
+      {verbindungAnlegenOffen && (
+        <VerbindungAnlegenGlobal
+          campaignId={campaignId}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onGeaendert={refreshAll}
+          onSchliessen={() => setVerbindungAnlegenOffen(false)}
+        />
+      )}
 
       {/* Erstellung der Spielleitung: dieselbe Führung wie beim Spieler,
           nur eben für NPCs. Nach dem Absenden stehen die Werte am Charakter,
@@ -1193,17 +1149,6 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           pcOptions={pcOptions}
           onSchliessen={() => setFraktionDetailFuer(null)}
           onGeaendert={refreshAll}
-        />
-      )}
-
-      {verbindungBearbeiten && (
-        <VerbindungBearbeiten
-          campaignId={campaignId}
-          verbindung={verbindungBearbeiten}
-          namen={namensTabelle}
-          pcOptions={pcOptions}
-          onGeaendert={refreshAll}
-          onSchliessen={() => setVerbindungBearbeiten(null)}
         />
       )}
 
