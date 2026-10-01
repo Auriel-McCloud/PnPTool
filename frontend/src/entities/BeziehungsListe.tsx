@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import type { EntityKind, Verbindung } from "./api";
 import { entitiesApi } from "./api";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { VerbindungBearbeiten } from "./VerbindungBearbeiten";
+import type { PersonOption } from "./VisibilitySelector";
 
 /**
- * Zeigt, was an einer Entität hängt — und lässt Verbindungen lösen.
+ * Zeigt, was an einer Entität hängt — und lässt Verbindungen lösen oder
+ * nachträglich korrigieren (Typ, Beschreibung, Sichtbarkeit).
  *
  * Die Verbindungen sind echte `VERBINDUNG`-Kanten im Graphen, nicht ein
  * Textfeld an der Entität. Wer hier "Gegner" bei einem Event einträgt, hat
@@ -35,15 +38,20 @@ const ART_SYMBOL: Record<string, string> = {
 export function BeziehungsListe({
   campaignId,
   zeilen,
+  namen,
+  pcOptions,
   onGeaendert,
   farbe,
 }: {
   campaignId: string;
   zeilen: BeziehungsZeile[];
+  namen: Map<string, { name: string; kind: EntityKind }>;
+  pcOptions: PersonOption[];
   onGeaendert: () => void;
   farbe: string;
 }) {
   const [loeschKandidat, setLoeschKandidat] = useState<BeziehungsZeile | null>(null);
+  const [bearbeiten, setBearbeiten] = useState<Verbindung | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -54,7 +62,10 @@ export function BeziehungsListe({
     if (loeschKandidat && !zeilen.some((z) => z.verbindung.id === loeschKandidat.verbindung.id)) {
       setLoeschKandidat(null);
     }
-  }, [zeilen, loeschKandidat]);
+    if (bearbeiten && !zeilen.some((z) => z.verbindung.id === bearbeiten.id)) {
+      setBearbeiten(null);
+    }
+  }, [zeilen, loeschKandidat, bearbeiten]);
 
   async function loesen() {
     if (!loeschKandidat) return;
@@ -105,16 +116,28 @@ export function BeziehungsListe({
               {ART_SYMBOL[z.gegenueberKind] ?? "·"} {z.gegenueber}
             </span>
             {z.verbindung.sichtbarkeit === "GM" && (
-              <span title="Nur für die Spielleitung sichtbar" style={{ fontSize: "0.8rem" }}>
-                🔒
+              <span title="Nur für die Spielleitung sichtbar" style={{ fontSize: "0.8rem", color: "var(--text-leise)" }}>
+                SL
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => setBearbeiten(z.verbindung)}
+              title="Verbindung bearbeiten"
+              style={{
+                marginLeft: "auto",
+                minHeight: 0,
+                padding: "4px 10px",
+                fontSize: 12,
+              }}
+            >
+              Bearbeiten
+            </button>
             <button
               type="button"
               onClick={() => setLoeschKandidat(z)}
               title="Verbindung lösen"
               style={{
-                marginLeft: "auto",
                 minHeight: 0,
                 padding: "4px 10px",
                 fontSize: 12,
@@ -128,6 +151,18 @@ export function BeziehungsListe({
       </ul>
 
       {fehler && <p style={{ color: "var(--signal)", marginTop: 8 }}>{fehler}</p>}
+
+      {bearbeiten && (
+        <VerbindungBearbeiten
+          campaignId={campaignId}
+          verbindung={bearbeiten}
+          namen={namen}
+          pcOptions={pcOptions}
+          farbe={farbe}
+          onGeaendert={onGeaendert}
+          onSchliessen={() => setBearbeiten(null)}
+        />
+      )}
 
       {/* Rückfrage wie überall im Werkzeug — eine gelöste Verbindung ist
           nicht wiederherstellbar und ändert zugleich die Filter.
@@ -151,7 +186,7 @@ export function BeziehungsListe({
 export function beziehungsZeilen(
   eigeneId: string,
   verbindungen: Verbindung[],
-  namen: Map<string, { name: string; kind: EntityKind }>
+  namen: Map<string, { name: string; kind: EntityKind }>,
 ): BeziehungsZeile[] {
   const zeilen: BeziehungsZeile[] = [];
   for (const v of verbindungen) {

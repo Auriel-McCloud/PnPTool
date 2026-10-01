@@ -261,8 +261,9 @@ export function OrtDetail({
           {unteransicht === "beziehungen" && (
             <BeziehungsListe
               campaignId={campaignId}
-
               zeilen={zeilen}
+              namen={namen}
+              pcOptions={pcOptions}
               onGeaendert={onGeaendert}
               farbe="var(--bereich-orte, var(--neon))"
             />

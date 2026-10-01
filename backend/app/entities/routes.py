@@ -34,6 +34,7 @@ from app.entities.schemas import (
     PersonUpdate,
     VerbindungCreate,
     VerbindungResponse,
+    VerbindungUpdate,
 )
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["entities"], dependencies=[Depends(require_campaign_zugang)])
@@ -483,6 +484,14 @@ async def create_verbindung(campaign_id: str, body: VerbindungCreate):
 async def list_verbindungen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     edges = await repository.list_verbindungen(campaign_id)
     return filter_verbindungen_for_viewer(edges, viewer.role, viewer.person_id)
+
+
+@router.patch("/verbindungen/{edge_id}", response_model=VerbindungResponse, dependencies=[Depends(require_campaign_gm)])
+async def update_verbindung(campaign_id: str, edge_id: str, body: VerbindungUpdate):
+    edge = await repository.update_verbindung(campaign_id, edge_id, body.model_dump())
+    if edge is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Verbindung nicht gefunden")
+    return edge
 
 
 # Beschriftung eines Filterziels. Gegenstände erscheinen nur, wenn sie

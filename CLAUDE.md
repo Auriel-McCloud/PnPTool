@@ -221,6 +221,16 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (01.10.2026 — Verbindungen nachträglich bearbeiten):**
+- **Was:** Bestehende `VERBINDUNG`-Kanten lassen sich korrigieren
+  (Beziehungstyp, Beschreibung, Sichtbarkeit). Endpunkte bleiben;
+  tauschen = lösen + neu anlegen. Button „Bearbeiten“ in der
+  Beziehungsliste und im Bereich Verbindungen.
+- **Dateien:** `entities/repository.py`/`routes.py`/`schemas.py`,
+  `VerbindungBearbeiten.tsx`, `BeziehungsListe.tsx`.
+- **Verifiziert:** `tests/test_verbindung_bearbeiten.py` 4/4, `tsc -b`
+  sauber.
+
 **Zuletzt gebaut (01.10.2026 — KI-Idee/Beratung: alle Welttypen):**
 - **Was:** ✨ KI und „Entwurf aus Beratung“ legen dieselben Typen an:
   Charakter, Story, Gegenstand, Ort, Ereignis, Fraktion, Verbindung.

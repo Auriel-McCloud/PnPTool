@@ -176,3 +176,21 @@ Das Frontend kann Entitäten als **Cytoscape-Graph** darstellen:
 - Edges = Beziehungen (LIEGT_IN, KONTROLLIERT, VERFEINDET_MIT, ...)
 
 Farben kommen aus dem Kampagnen-Theme via CSS-Variablen.
+
+---
+
+## Verbindungen (Graphkanten, Stand 01.10.2026)
+
+Echte `VERBINDUNG`-Kanten, nicht Felder an den Knoten. Freier `typ`-String
+(kein Katalog). Sichtbarkeit wie bei Entitäten (`GM` / `ALLE` / `SPEZIFISCH`).
+
+| Methode | Pfad | Wer |
+|---|---|---|
+| GET | `/api/campaigns/{id}/verbindungen` | SL + Spieler (gefiltert) |
+| POST | `/api/campaigns/{id}/verbindungen` | nur SL |
+| PATCH | `/api/campaigns/{id}/verbindungen/{edge_id}` | nur SL |
+| DELETE | `/api/campaigns/{id}/verbindungen/{edge_id}` | nur SL |
+
+PATCH ändert `typ`, `beschreibung`, `seit`, `bis`, `sichtbarkeit`,
+`sichtbarFuer`. Endpunkte (`vonKind`/`vonId`/`zuKind`/`zuId`) sind
+unveränderlich. Leerer `typ` wird abgelehnt.

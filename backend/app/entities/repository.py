@@ -486,6 +486,44 @@ async def list_verbindungen(campaign_id: str) -> list[dict]:
         return [dict(record) async for record in result]
 
 
+_VERBINDUNG_RETURN = """
+        r.id AS id, labels(a)[0] AS vonKind, a.id AS vonId,
+        labels(b)[0] AS zuKind, b.id AS zuId,
+        r.typ AS typ, r.beschreibung AS beschreibung,
+        r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer
+"""
+
+
+async def update_verbindung(campaign_id: str, edge_id: str, data: dict) -> dict | None:
+    """Typ/Beschreibung/Sichtbarkeit einer bestehenden Kante. Endpunkte bleiben."""
+    changed = {
+        k: v
+        for k, v in data.items()
+        if v is not None and k in {"typ", "beschreibung", "seit", "bis", "sichtbarkeit", "sichtbarFuer"}
+    }
+    driver = get_driver()
+    if changed:
+        set_clause = ", ".join(f"r.{f} = ${f}" for f in changed)
+        query = f"""
+            MATCH (a)-[r:VERBINDUNG {{id: $edge_id}}]->(b)
+            WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+            SET {set_clause}
+            RETURN {_VERBINDUNG_RETURN}
+        """
+        params = {"campaign_id": campaign_id, "edge_id": edge_id, **changed}
+    else:
+        query = f"""
+            MATCH (a)-[r:VERBINDUNG {{id: $edge_id}}]->(b)
+            WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+            RETURN {_VERBINDUNG_RETURN}
+        """
+        params = {"campaign_id": campaign_id, "edge_id": edge_id}
+    async with driver.session() as session:
+        result = await session.run(query, **params)
+        record = await result.single()
+        return dict(record) if record else None
+
+
 async def delete_verbindung(campaign_id: str, edge_id: str) -> bool:
     driver = get_driver()
     query = """

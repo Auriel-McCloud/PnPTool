@@ -40,7 +40,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 
 | Seite | Zusammenfassung |
 |---|---|
-| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick, 6-Schichten-Check |
+| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick; VERBINDUNG seit 01.10. per PATCH (Typ/Sichtbarkeit) |
 | [[entities/architektur-drei-ebenen]] | Regelsystem→Kampagne→Ideenschmiede, fertig 12.09. |
 | [[entities/mitteilungen-system]] | SL-Popups, kein Absender, WebSocket+Reconnect, Warnfarbe offen |
 | [[entities/kontakte-messenger]] | Persona-5-Messenger, Stufe vs. chatOffen, Nachrichten als eigene Nodes |

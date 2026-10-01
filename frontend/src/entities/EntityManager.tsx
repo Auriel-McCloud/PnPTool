@@ -34,6 +34,7 @@ import { EventDetail } from "./EventDetail";
 import { FraktionKacheln } from "./FraktionKacheln";
 import { FraktionDetail } from "./FraktionDetail";
 import { Filterleiste } from "./Filterleiste";
+import { VerbindungBearbeiten } from "./VerbindungBearbeiten";
 import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
 
@@ -498,6 +499,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
     sichtbarkeit: "GM" as SichtbarkeitModus,
     sichtbarFuer: [] as string[],
   });
+  const [verbindungBearbeiten, setVerbindungBearbeiten] = useState<Verbindung | null>(null);
   const alleEntitaeten = [
     ...personen.map((p) => ({ id: p.id, kind: "Person" as const, label: `Person: ${p.name}` })),
     ...orte.map((o) => ({ id: o.id, kind: "Ort" as const, label: `Ort: ${o.name}` })),
@@ -1045,6 +1047,9 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
             {labelFor(v.vonKind, v.vonId)} <strong>— {v.typ} →</strong> {labelFor(v.zuKind, v.zuId)}
             <div>
               <SichtbarkeitBadge modus={v.sichtbarkeit} sichtbarFuer={v.sichtbarFuer} personenById={personenById} label="Sichtbarkeit" />
+              <button type="button" onClick={() => setVerbindungBearbeiten(v)}>
+                Bearbeiten
+              </button>
             </div>
           </div>
           ))}
@@ -1188,6 +1193,17 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           pcOptions={pcOptions}
           onSchliessen={() => setFraktionDetailFuer(null)}
           onGeaendert={refreshAll}
+        />
+      )}
+
+      {verbindungBearbeiten && (
+        <VerbindungBearbeiten
+          campaignId={campaignId}
+          verbindung={verbindungBearbeiten}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onGeaendert={refreshAll}
+          onSchliessen={() => setVerbindungBearbeiten(null)}
         />
       )}
 

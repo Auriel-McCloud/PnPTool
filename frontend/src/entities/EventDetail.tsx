@@ -269,8 +269,9 @@ export function EventDetail({
           {unteransicht === "beziehungen" && (
             <BeziehungsListe
               campaignId={campaignId}
-
               zeilen={zeilen}
+              namen={namen}
+              pcOptions={pcOptions}
               onGeaendert={onGeaendert}
               farbe="var(--bereich-events, var(--neon))"
             />

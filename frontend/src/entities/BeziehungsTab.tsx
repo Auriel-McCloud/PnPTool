@@ -63,7 +63,14 @@ export function BeziehungsTab({
       className="pcd-editor-bereich"
       style={{ "--verbindung-farbe": farbe } as React.CSSProperties}
     >
-      <BeziehungsListe campaignId={campaignId} zeilen={zeilen} onGeaendert={onGeaendert} farbe={farbe} />
+      <BeziehungsListe
+        campaignId={campaignId}
+        zeilen={zeilen}
+        namen={namen}
+        pcOptions={pcOptions}
+        onGeaendert={onGeaendert}
+        farbe={farbe}
+      />
 
       <button type="button" className="verbindung-neu" onClick={() => setAnlegenOffen(true)}>
         + Neue Verbindung

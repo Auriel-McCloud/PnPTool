@@ -257,5 +257,7 @@ export const entitiesApi = {
   listVerbindungen: (cid: string) => api.get<Verbindung[]>(`${base(cid)}/verbindungen`),
   createVerbindung: (cid: string, body: Omit<Verbindung, "id">) =>
     api.post<Verbindung>(`${base(cid)}/verbindungen`, body),
+  updateVerbindung: (cid: string, id: string, body: Partial<Verbindung>) =>
+    api.patch<Verbindung>(`${base(cid)}/verbindungen/${id}`, body),
   deleteVerbindung: (cid: string, id: string) => api.delete<void>(`${base(cid)}/verbindungen/${id}`),
 };

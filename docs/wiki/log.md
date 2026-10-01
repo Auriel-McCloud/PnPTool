@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-01] update | Verbindungen nachträglich bearbeiten
+
+PATCH auf `VERBINDUNG`-Kanten: Typ, Beschreibung, Sichtbarkeit.
+Endpunkte unveränderlich. UI `VerbindungBearbeiten` in Beziehungsliste
+und Bereich Verbindungen. Siehe [[entities/neo4j-datenmodell]].
+
 ## [2026-10-01] update | KI-Idee/Beratung: Ort Event Fraktion Verbindung
 
 ✨ KI und Beratung-Entwurf können dieselben Welttypen anlegen:

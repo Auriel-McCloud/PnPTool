@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 SichtbarkeitModus = Literal["GM", "ALLE", "SPEZIFISCH"]
 
@@ -425,6 +425,31 @@ class VerbindungCreate(BaseModel):
     bis: str = ""
     sichtbarkeit: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
+
+
+class VerbindungUpdate(BaseModel):
+    """Typ, Beschreibung und Sichtbarkeit einer bestehenden Kante.
+
+    Endpunkte (von/zu) bleiben absichtlich unveränderlich — wer die
+    Beteiligten tauschen will, löst die Kante und legt neu an.
+    """
+
+    typ: str | None = None
+    beschreibung: str | None = None
+    seit: str | None = None
+    bis: str | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+
+    @field_validator("typ")
+    @classmethod
+    def typ_nicht_leer(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        sauber = v.strip()
+        if not sauber:
+            raise ValueError("Beziehungstyp darf nicht leer sein")
+        return sauber
 
 
 class VerbindungResponse(BaseModel):

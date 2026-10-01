@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-09-30
+updated: 2026-10-01
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -94,6 +94,16 @@ Baukasten nichts zerreißt.
 - Pydantic-Response-Felder ohne Fallback → `null` → Validierung schlägt fehl
   auf der **ganzen Liste**, nicht nur beim betroffenen Datensatz. Lösung:
   `coalesce`-Fallback in `_decode()` bei jeder neuen Property.
+
+## VERBINDUNG nachträglich ändern (01.10.2026)
+
+Kanten hatten nur POST/GET/DELETE — Tippfehler und falsche Sichtbarkeit
+waren nicht korrigierbar. Seit 01.10.2026 `PATCH
+/api/campaigns/{id}/verbindungen/{edge_id}` (nur SL): `typ`,
+`beschreibung`, `seit`, `bis`, `sichtbarkeit`, `sichtbarFuer`. Die
+Endpunkte (von/zu) bleiben unveränderlich; wer die Beteiligten tauschen
+will, löst die Kante und legt neu an. UI: `VerbindungBearbeiten` aus
+der Beziehungsliste und dem Bereich Verbindungen.
 
 ## Siehe auch
 
