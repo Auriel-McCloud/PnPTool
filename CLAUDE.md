@@ -1596,10 +1596,13 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
      `frontend/src/items/typKatalog.ts` übereinstimmen) als Enum erzwungen —
      ungültige Werte fallen hart auf "Sonstiges" zurück, weil der Typ nach
      dem Anlegen nicht mehr änderbar ist. Entsteht als besitzerloser,
-     SL-geheimer Entwurf wie Charakter/Story.
+     SL-geheimer Entwurf wie Charakter/Story. **Seit 01.10.2026** nicht mehr
+     der letzte Typ: ✨ KI und Beratung teilen sieben Typen (inkl. Ort,
+     Event, Fraktion, Verbindung) — `docs/api/ki.md`.
    - **SL-Beratungschat** (**gebaut** 30.09.2026): Ideenschmiede-Knopf ⌬
      Beratung. Redet über Freigegebenes, legt erst auf Knopf einen Entwurf
-     an. Siehe `docs/api/ki.md`.
+     an — **seit 01.10.2026** dieselben Typen wie ✨ KI (inkl. Fraktion,
+     Ort, Event, Verbindung). Siehe `docs/api/ki.md`.
    - **Jev / TypeSafe System One** (30.09.2026, **geparkt**): kein Chatbot,
      typed Entscheider (`choice`/`score`/`noul`). Original nicht lokal.
      Auf der GTX 1070 nur Laya (~421M) sinnvoll. Kampagnenwiki/Bögen nicht

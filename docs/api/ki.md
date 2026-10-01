@@ -13,16 +13,27 @@ Aufrufer als `502` an (die KI ist eine externe Abhängigkeit, kein Bug im Tool).
 
 ## POST `/idee`
 
-Generiert eine Idee und legt sie an. Typen:
+Generiert eine Idee. ✨ KI und Beratung-Entwurf teilen `_idee_anlegen`.
 
 ```json
-{ "typ": "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung", "prompt": "…" }
+{ "typ": "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung", "prompt": "Ein misstrauischer Türsteher..." }
 ```
 
-`story` → Wiki-Seite. `charakter` → NPC. `gegenstand` → Vorlage.
-`ort` / `event` / `fraktion` → Welt-Entwurf in der Schmiede.
-`verbindung` → echte `VERBINDUNG`-Kante; fehlende Enden als Entwurf
-(Person/Ort/Event/Fraktion). Alle Pfade mit Kampagnenkontext.
+| `typ` | Ergebnis | `istEntwurf` |
+|---|---|---|
+| `story` | Wiki-Seite (Titel + Fließtext) | ja |
+| `charakter` | NPC inkl. Konzept, Rasse, Weg, Traits aus dem Katalog | ja |
+| `gegenstand` | besitzerlose Vorlage; `typ` aus `GEGENSTAND_TYPEN` (sonst „Sonstiges“) | ja |
+| `ort` | Ort | ja |
+| `event` | Event | ja |
+| `fraktion` | Fraktion inkl. Ziele/Ressourcen | ja |
+| `verbindung` | echte `VERBINDUNG`-Kante; fehlende Enden (Person/Ort/Event/Fraktion) als Entwurf | Kante selbst kein Entwurf |
+
+Alle Pfade mit Kampagnenkontext (`sammle_kontext` / `_mit_kontext`):
+Bestehendes bevorzugen, nur bei Lücke neu erfinden. Ereignisprotokoll
+`anlass=idee-<typ>`, `uebernommen=true`.
+
+Nicht über diesen Endpunkt: Rassen, Begleiter, Zusatzfertigkeiten.
 
 ---
 
@@ -65,6 +76,7 @@ Response: die Assistenten-Nachricht. `502` bei Provider-Fehler.
 ```
 
 Dieselbe Anlege-Logik wie `POST /idee`, Prompt ist der Gesprächsverlauf.
+Typen seit 01.10.2026 dieselben sieben (siehe Tabelle oben).
 
 ---
 

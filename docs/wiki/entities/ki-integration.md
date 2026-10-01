@@ -1,10 +1,10 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-09-30
+updated: 2026-10-01
 type: entität
 tags: [ki-integration, backend, geplant]
-sources: [../../../CLAUDE.md]
+sources: [../../../CLAUDE.md, ../../api/ki.md, ../../../backend/app/ki/routes.py]
 status: teilweise-umgesetzt
 ---
 
@@ -170,7 +170,8 @@ für den Bezug) nach dem Anlegen fix — deshalb erzwingt das generierte JSON-
 Schema den festen Katalog `GEGENSTAND_TYPEN` (`items/schemas.py`) als Enum;
 erfindet die KI trotzdem etwas Ungültiges, fällt der Wert hart auf
 "Sonstiges" zurück. Entsteht wie Charakter/Story als besitzerloser,
-SL-geheimer Entwurf.
+SL-geheimer Entwurf. **Seit 01.10.2026** nicht mehr der letzte Typ — siehe
+Abschnitt „KI-Idee alle Welttypen“.
 
 Darauf aufbauend: **KI-Sortiment-Vorschlag für Händler**, neues Modul
 `backend/app/haendler/ki_vorschlag.py`. Bevorzugt bestehende, bereits
@@ -287,15 +288,38 @@ Zweite Tür neben ✨ KI in der Ideenschmiede: ein Gespräch, das **nicht**
 sofort eine Kachel anlegt. Kontext ist ausschließlich die freigegebene
 Kampagne (`sammle_kontext`, Entwürfe und der Chat selbst zählen nicht).
 Was nur in der Bubble steht, ist Skizze. „Entwurf anlegen“ ruft denselben
-Pfad wie ✨ KI (`_idee_anlegen`, Typ story/charakter/gegenstand/ort/event/fraktion/verbindung) und legt
-`istEntwurf=true` an (Verbindung: echte Kante) — der nächste Chat sieht Entwürfe trotzdem nicht, bis die
-SL freigibt.
+Pfad wie ✨ KI (`_idee_anlegen`) und legt `istEntwurf=true` an (Verbindung:
+echte Kante) — der nächste Chat sieht Entwürfe trotzdem nicht, bis die
+SL freigibt. Typen seit 01.10.2026: siehe Abschnitt darunter.
 
 Knoten `KiBeratung` / `KiBeratungNachricht`, Migration `007_ki_beratung.cypher`.
 Routen unter `/api/campaigns/{id}/ki/beratung` (nur SL). Frontend:
 `BeratungPopup.tsx`, Knopf ⌬ Beratung neben ✨ KI. Letzte 30 Turns ans
 Modell; Ereignisprotokoll `anlass=beratung`. Live auf bebop `86f9267`
 (30.09.2026). Browser-Klicktest offen.
+
+## KI-Idee alle Welttypen (01.10.2026) — umgesetzt
+
+Mark: Fraktion aus der Beratung anlegen — Dropdown hatte nur Charakter,
+Story, Gegenstand. ✨ KI und „Entwurf aus Beratung“ teilen denselben Pfad
+`_idee_anlegen` / `KiIdeeTyp`.
+
+| `typ` | landet als | Anlass im Ereignisprotokoll |
+|---|---|---|
+| `story` | Wiki-Seite, Entwurf | `idee-story` |
+| `charakter` | NPC, Entwurf | `idee-charakter` |
+| `gegenstand` | Vorlage, Entwurf | `idee-gegenstand` |
+| `ort` | Ort, Entwurf | `idee-ort` |
+| `event` | Event, Entwurf | `idee-event` |
+| `fraktion` | Fraktion (inkl. Ziele/Ressourcen), Entwurf | `idee-fraktion` |
+| `verbindung` | echte `VERBINDUNG`-Kante unter Beziehungen; fehlende Enden (Person/Ort/Event/Fraktion) als Entwurf | `idee-verbindung` |
+
+Nicht in diesem Dropdown: Rassen, Begleiter, Zusatzfertigkeiten — eigene
+KI-Knöpfe, keine Schmiede-Entwürfe.
+
+Frontend: dieselben Optionen in `IdeenschmiedeAnsicht.tsx` und
+`BeratungPopup.tsx`. Tests: `backend/tests/test_ki_idee_typen.py`.
+Commit `e67dc54`. API: [[../../api/ki.md]].
 
 ## Jev / Entscheidungsmodell (30.09.2026) — geparkt
 

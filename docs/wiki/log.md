@@ -7,6 +7,8 @@
 
 ✨ KI und Beratung-Entwurf können dieselben Welttypen anlegen:
 story/charakter/gegenstand/ort/event/fraktion plus Verbindung als Kante.
+Abschnitt in [[entities/ki-integration]], Tabelle in `docs/api/ki.md`.
+Commit `e67dc54`.
 
 ## [2026-09-30] update | SL-Beratungschat in der Ideenschmiede
 
