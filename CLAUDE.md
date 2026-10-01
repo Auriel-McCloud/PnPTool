@@ -2,13 +2,25 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
+## Backlog: Mark denkt noch nach (nicht einfach lostbauen)
 
-- **Bereich-Reload-Fix neu** (siehe „Zuletzt gebaut" 01.10.2026 — Bereich
-  übersteht Reload nach Entsperren): nie auf echtem Mobilgerät getestet,
-  nur `tsc -b`/`vite build` geprüft. Bitte Handy/Tablet kurz sperren und
-  wieder entsperren, prüfen ob du im selben Bereich landest statt auf der
-  Startseite.
+- **Offene Popups sollen den Mobil-Reload überstehen** (01.10.2026): Nach
+  dem Bereich-Fix (siehe unten) landet man zwar im richtigen Bereich, aber
+  ein offenes Popup (Detail-Fenster, Inventar-Fach, Beratung, ...) ist nach
+  dem erzwungenen Reload trotzdem wieder zu — mobile Browser/PWAs werfen
+  Tabs im Hintergrund aus dem Speicher (OS-Verhalten, nicht verhinderbar).
+  Technisch lösbar, aber NICHT mit einem einzigen generischen Mechanismus
+  wie beim Bereich: jedes Popup ist State + oft eine ID (z.B. "NPC-Detail
+  für Person X", ein ganzer Fach-Stapel im Inventar) — jedes bräuchte
+  eigene Wiederherstellungs-Logik nach dem Neuladen der Daten.
+  Mark will erst am Spieltisch beobachten, **welche Popups seine Spieler**
+  tatsächlich oft offen haben, wenn das Handy gesperrt wird (Vermutung:
+  Inventar-Fach oder Charakter-Detail, nicht Einstellungen/Verhandlung),
+  bevor gezielt für die 1-2 wichtigsten gebaut wird — lohnt sich nicht für
+  alle ~15 Popups im Tool. **Nicht von selbst anfangen, erst wenn Mark
+  sagt, welche Popups es betreffen soll.**
+
+## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
 - **KI-Provider-Umschalter neu** (siehe „Zuletzt gebaut" 01.10.2026 —
   Kampagnen-Textprovider + Beratungs-Override): Tests (`test_ki_beratung.py`,
@@ -254,9 +266,11 @@ npm run dev
   bzw. `:spieler`, getrennt da unterschiedliche Bereichs-IDs je Rolle) und
   beim Start daraus initialisiert.
 - **Dateien:** `App.tsx` (`Dashboard`), `players/SpielerAnsicht.tsx`.
-- **Verifiziert:** `tsc -b` + `vite build` sauber. **Nie auf echtem
-  Mobilgerät getestet** — bitte kurz Handy sperren/entsperren und prüfen,
-  ob der zuletzt offene Bereich erhalten bleibt.
+- **Verifiziert:** `tsc -b` + `vite build` sauber. **Von Mark am echten
+  Mobilgerät bestätigt** (01.10.2026): Bereich bleibt nach Entsperren
+  erhalten. Offene Popups (Detail-Fenster, Fächer, ...) bleiben beim Reload
+  weiterhin zu — siehe Backlog-Eintrag unten, Mark denkt noch über die
+  gewünschte UX nach.
 - Deploy: live auf bebop (`39ed150`).
 
 **Zuletzt gebaut (01.10.2026 — Kampagnen-wählbarer Text-KI-Provider + Beratungs-Override):**
