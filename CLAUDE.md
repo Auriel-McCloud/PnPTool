@@ -4,6 +4,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
+- **Bereich-Reload-Fix neu** (siehe „Zuletzt gebaut" 01.10.2026 — Bereich
+  übersteht Reload nach Entsperren): nie auf echtem Mobilgerät getestet,
+  nur `tsc -b`/`vite build` geprüft. Bitte Handy/Tablet kurz sperren und
+  wieder entsperren, prüfen ob du im selben Bereich landest statt auf der
+  Startseite.
+
 - **KI-Provider-Umschalter neu** (siehe „Zuletzt gebaut" 01.10.2026 —
   Kampagnen-Textprovider + Beratungs-Override): Tests (`test_ki_beratung.py`,
   `test_ki_idee_typen.py`, voller Backend-Suite) und `tsc -b`/`vite build`
@@ -236,6 +242,22 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (01.10.2026 — Bereich übersteht Reload nach Entsperren):**
+- **Was:** Mark berichtete, dass PnPTool auf Handy/Tablet nach jedem
+  Entsperren auf der Startseite landet. Ursache: mobile Browser/PWAs werfen
+  Tabs im Hintergrund aus dem Speicher, die Seite lädt beim Zurückkehren
+  komplett neu — React-State (`bereich`) ist weg, es gab nichts, das den
+  zuletzt offenen Bereich merkt. Kein Bug, normales OS-Verhalten; lässt
+  sich nicht verhindern, aber der Reload selbst kann unsichtbar bleiben.
+  `bereich` wird jetzt in `localStorage` gespiegelt (`pnptool:bereich:gm`
+  bzw. `:spieler`, getrennt da unterschiedliche Bereichs-IDs je Rolle) und
+  beim Start daraus initialisiert.
+- **Dateien:** `App.tsx` (`Dashboard`), `players/SpielerAnsicht.tsx`.
+- **Verifiziert:** `tsc -b` + `vite build` sauber. **Nie auf echtem
+  Mobilgerät getestet** — bitte kurz Handy sperren/entsperren und prüfen,
+  ob der zuletzt offene Bereich erhalten bleibt.
+- Deploy: live auf bebop (`39ed150`).
 
 **Zuletzt gebaut (01.10.2026 — Kampagnen-wählbarer Text-KI-Provider + Beratungs-Override):**
 - **Was:** Mark empfand die Mistral-Beratung als "trocken" und wollte
