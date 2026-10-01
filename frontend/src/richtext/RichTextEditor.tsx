@@ -147,7 +147,24 @@ export function RichTextEditor({
 
   return (
     <div style={{ border: "1px solid var(--linie)", borderRadius: 6 }}>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: 6, borderBottom: "1px solid var(--linie)" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          flexWrap: "wrap",
+          padding: 6,
+          borderBottom: "1px solid var(--linie)",
+          // Bleibt beim Scrollen im Fenster oben kleben: sonst muss man bei
+          // langem Text immer erst nach oben scrollen, um z.B. "SL-geheim"
+          // zu erreichen (Marks Meldung, 01.10.2026). Greift automatisch,
+          // sobald ein scrollender Vorfahre existiert (z.B. .fn-inhalt) —
+          // ohne einen gibt es nichts zu kleben, dann bleibt es normal oben.
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+          background: "var(--flaeche-hoch)",
+        }}
+      >
         <ToolbarButton title="Fett" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
           B
         </ToolbarButton>
