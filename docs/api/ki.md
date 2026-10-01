@@ -13,25 +13,16 @@ Aufrufer als `502` an (die KI ist eine externe Abhängigkeit, kein Bug im Tool).
 
 ## POST `/idee`
 
-Generiert einen Story-Part, einen Charakter oder einen Gegenstand und legt
-ihn als Entwurf (`istEntwurf=true`) in der Ideenschmiede ab.
+Generiert eine Idee und legt sie an. Typen:
 
 ```json
-{ "typ": "story" | "charakter" | "gegenstand", "prompt": "Ein misstrauischer Türsteher..." }
+{ "typ": "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung", "prompt": "…" }
 ```
 
-`story` → neue Wiki-Seite. `charakter` → NPC mit vollem Profil (Konzept,
-Ambition, Rasse, Weg, Traits aus dem Katalog). `gegenstand` (**gebaut**
-23.09.2026) → Gegenstands-Vorlage (besitzerlos): Name, Beschreibung, Typ,
-Preis, Seltenheit. Der Typ MUSS einer aus dem festen Katalog
-`GEGENSTAND_TYPEN` (`app/items/schemas.py`, deckungsgleich mit
-`frontend/src/items/typKatalog.ts`) sein — als Enum im generierten Schema
-erzwungen; erfindet die KI trotzdem etwas Ungültiges, fällt es hart auf
-"Sonstiges" zurück (der Typ ist nach dem Anlegen nicht mehr änderbar). Alle
-drei beziehen die freigegebene Kampagnenwelt als Kontext ein
-(`app/ki/kontext.py`), damit sich das Neue in Bestehendes einfügt statt
-isoliert daneben zu stehen — bevorzugt Bestehendes wiederverwenden, nur bei
-echter Lücke etwas komplett Neues erfinden.
+`story` → Wiki-Seite. `charakter` → NPC. `gegenstand` → Vorlage.
+`ort` / `event` / `fraktion` → Welt-Entwurf in der Schmiede.
+`verbindung` → echte `VERBINDUNG`-Kante; fehlende Enden als Entwurf
+(Person/Ort/Event/Fraktion). Alle Pfade mit Kampagnenkontext.
 
 ---
 
@@ -70,11 +61,10 @@ Response: die Assistenten-Nachricht. `502` bei Provider-Fehler.
 ### POST `/beratung/{beratung_id}/entwurf`
 
 ```json
-{ "typ": "story" | "charakter" | "gegenstand" }
+{ "typ": "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung" }
 ```
 
 Dieselbe Anlege-Logik wie `POST /idee`, Prompt ist der Gesprächsverlauf.
-Ergebnis ist `istEntwurf=true`.
 
 ---
 

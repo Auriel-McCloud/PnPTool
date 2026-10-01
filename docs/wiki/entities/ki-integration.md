@@ -14,8 +14,9 @@ status: teilweise-umgesetzt
 
 Gemini generiert direkt in der Ideenschmiede (siehe
 [[architektur-drei-ebenen]]): „✨ KI"-Knopf öffnet ein Popup mit Typ
-(Charakter/Story-Part) und Wunschtext. `story` wird eine Wiki-Seite,
-`charakter` ein NPC — beide als Entwurf (`istEntwurf=true`).
+(Charakter/Story-Part/Gegenstand/Ort/Ereignis/Fraktion/Verbindung) und Wunschtext. `story` wird eine Wiki-Seite,
+`charakter` ein NPC, `ort`/`event`/`fraktion` Welt-Entwürfe — als Entwurf
+(`istEntwurf=true`). `verbindung` ist eine echte Kante.
 
 Backend: `backend/app/ki/` (dünner Gemini-Client, `POST /ki/idee`), Modell
 konfigurierbar (`gemini_model`, Default `gemini-3.6-flash`), API-Key in
@@ -286,8 +287,8 @@ Zweite Tür neben ✨ KI in der Ideenschmiede: ein Gespräch, das **nicht**
 sofort eine Kachel anlegt. Kontext ist ausschließlich die freigegebene
 Kampagne (`sammle_kontext`, Entwürfe und der Chat selbst zählen nicht).
 Was nur in der Bubble steht, ist Skizze. „Entwurf anlegen“ ruft denselben
-Pfad wie ✨ KI (`_idee_anlegen`, Typ story/charakter/gegenstand) und legt
-`istEntwurf=true` an — der nächste Chat sieht das trotzdem nicht, bis die
+Pfad wie ✨ KI (`_idee_anlegen`, Typ story/charakter/gegenstand/ort/event/fraktion/verbindung) und legt
+`istEntwurf=true` an (Verbindung: echte Kante) — der nächste Chat sieht Entwürfe trotzdem nicht, bis die
 SL freigibt.
 
 Knoten `KiBeratung` / `KiBeratungNachricht`, Migration `007_ki_beratung.cypher`.

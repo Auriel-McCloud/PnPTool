@@ -18,9 +18,8 @@ import {
   type Beratung,
   type BeratungNachricht,
 } from "./api";
+import type { KiTyp } from "../ideenschmiede/api";
 import "./ki.css";
-
-type EntwurfTyp = "story" | "charakter" | "gegenstand";
 
 export function BeratungPopup({
   offen,
@@ -39,7 +38,7 @@ export function BeratungPopup({
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [entwurfOffen, setEntwurfOffen] = useState(false);
-  const [entwurfTyp, setEntwurfTyp] = useState<EntwurfTyp>("charakter");
+  const [entwurfTyp, setEntwurfTyp] = useState<KiTyp>("charakter");
   const [entwurfLaeuft, setEntwurfLaeuft] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const endeRef = useRef<HTMLDivElement | null>(null);
@@ -252,15 +251,21 @@ export function BeratungPopup({
             <select
               className="ki-input"
               value={entwurfTyp}
-              onChange={(e) => setEntwurfTyp(e.target.value as EntwurfTyp)}
+              onChange={(e) => setEntwurfTyp(e.target.value as KiTyp)}
             >
               <option value="charakter">Person / NPC</option>
               <option value="story">Story-Part / Szene</option>
               <option value="gegenstand">Gegenstand</option>
+              <option value="ort">Ort</option>
+              <option value="event">Ereignis</option>
+              <option value="fraktion">Fraktion</option>
+              <option value="verbindung">Verbindung</option>
             </select>
           </label>
           <p className="ki-vorschau-hinweis">
-            Landet als Entwurf in der Schmiede, nicht in der Kampagne.
+            {entwurfTyp === "verbindung"
+              ? "Landet als Kante unter Beziehungen. Fehlende Personen/Orte/Events/Fraktionen werden als Entwurf angelegt."
+              : "Landet als Entwurf in der Schmiede, nicht in der Kampagne."}
           </p>
           {fehler && <p className="ki-fehler">{fehler}</p>}
           <div className="ki-aktionen">

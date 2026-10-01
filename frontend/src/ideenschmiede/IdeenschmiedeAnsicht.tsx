@@ -407,9 +407,13 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           <label className="is-label">
             Was soll entstehen?
             <select className="is-select" value={kiTyp} onChange={(e) => setKiTyp(e.target.value as KiTyp)}>
-              <option value="charakter">👤 Charakter / NPC</option>
-              <option value="story">📄 Story-Part / Szene</option>
-              <option value="gegenstand">📦 Gegenstand</option>
+              <option value="charakter">Charakter / NPC</option>
+              <option value="story">Story-Part / Szene</option>
+              <option value="gegenstand">Gegenstand</option>
+              <option value="ort">Ort</option>
+              <option value="event">Ereignis</option>
+              <option value="fraktion">Fraktion</option>
+              <option value="verbindung">Verbindung</option>
             </select>
           </label>
 
@@ -426,6 +430,12 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
               required
             />
           </label>
+
+          {kiTyp === "verbindung" && (
+            <p style={{ margin: 0, color: "var(--text-leise)", fontSize: 12 }}>
+              Landet als Kante unter Beziehungen. Fehlende Enden werden als Entwurf angelegt.
+            </p>
+          )}
 
           {kiFehler && (
             <p style={{ margin: 0, color: "var(--signal)", fontSize: 12 }}>{kiFehler}</p>

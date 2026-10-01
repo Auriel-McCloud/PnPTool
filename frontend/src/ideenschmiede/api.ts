@@ -157,13 +157,13 @@ export async function entwurfAnlegen(
   }
 }
 
-export type KiTyp = "story" | "charakter" | "gegenstand";
+export type KiTyp = "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung";
 
 /**
  * Lässt Gemini eine Idee generieren und als Entwurf in der Schmiede ablegen.
  * `story` wird eine Wiki-Seite (Geschichte), `charakter` ein NPC, `gegenstand`
- * eine Gegenstands-Vorlage (Typ per festem Katalog, danach nicht mehr
- * änderbar — siehe items/typKatalog.ts).
+ * eine Gegenstands-Vorlage, `ort`/`event`/`fraktion` Welt-Entwürfe,
+ * `verbindung` eine echte Kante (fehlende Enden als Entwurf).
  */
 export async function kiIdee(campaignId: string, typ: KiTyp, prompt: string): Promise<void> {
   await api.post(`/api/campaigns/${campaignId}/ki/idee`, { typ, prompt });

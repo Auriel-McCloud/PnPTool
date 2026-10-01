@@ -243,7 +243,7 @@ export async function beratungNachricht(
 export async function beratungEntwurf(
   campaignId: string,
   id: string,
-  typ: "story" | "charakter" | "gegenstand",
+  typ: "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung",
 ): Promise<{ typ: string; id: string; name: string }> {
   return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/entwurf`, { typ });
 }

@@ -1,11 +1,13 @@
 """KI-Endpunkte: Gemini generiert Inhalte direkt in die Ideenschmiede.
 
-Zwei Typen, beide landen als Entwurf (`istEntwurf=true`) in der Schmiede:
+Typen landen als Entwurf (`istEntwurf=true`) in der Schmiede — außer
+``verbindung``, die eine echte Kante anlegt (fehlende Enden als Entwurf):
 
-- ``story``     — ein Story-Part. Gemini schreibt Titel + Fließtext, daraus
-  wird eine Wiki-Seite (Geschichte).
-- ``charakter`` — eine Charakter-Vorlage. Gemini erfindet Name + Beschreibung,
-  daraus wird ein NPC.
+- ``story``      — Wiki-Seite (Geschichte)
+- ``charakter``  — NPC
+- ``gegenstand`` — Gegenstands-Vorlage
+- ``ort`` / ``event`` / ``fraktion`` — Welt-Entitäten
+- ``verbindung`` — VERBINDUNG zwischen zwei Entitäten
 
 Die Prompts und Ausgabe-Schemata stehen bewusst hier und nicht im Frontend:
 damit hat nur eine Stelle Kontrolle darüber, was Gemini als Auftrag bekommt,
@@ -21,8 +23,8 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign
-from app.entities.repository import PERSON_FIELDS, create_node
-from app.entities.schemas import PersonCreate
+from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node
+from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
 from app.items.repository import create_gegenstand
 from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
@@ -139,6 +141,105 @@ _GEGENSTAND_SCHEMA = {
     "required": ["name", "beschreibung", "typ", "preis", "seltenheit"],
 }
 
+_WELT_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+    },
+    "required": ["name", "beschreibung"],
+}
+
+_EVENT_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "titel": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+        "timestamp": {"type": "STRING"},
+    },
+    "required": ["titel", "beschreibung"],
+}
+
+_KURZ_LANG_ITEM = {
+    "type": "OBJECT",
+    "properties": {
+        "titel": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+    },
+    "required": ["titel"],
+}
+
+_FRAKTION_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+        "ziele": {"type": "ARRAY", "items": _KURZ_LANG_ITEM},
+        "ressourcen": {"type": "ARRAY", "items": _KURZ_LANG_ITEM},
+    },
+    "required": ["name", "beschreibung"],
+}
+
+_VERBINDUNG_TYPEN = ("Person", "Ort", "Event", "Fraktion")
+
+_VERBINDUNG_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "vonName": {"type": "STRING"},
+        "vonTyp": {"type": "STRING", "enum": list(_VERBINDUNG_TYPEN)},
+        "zuName": {"type": "STRING"},
+        "zuTyp": {"type": "STRING", "enum": list(_VERBINDUNG_TYPEN)},
+        "typ": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+    },
+    "required": ["vonName", "vonTyp", "zuName", "zuTyp", "typ"],
+}
+
+_ORT_SYSTEM = (
+    _SYSTEM
+    + " Erschaffe einen einzelnen Ort in NeotopiA. name ist der Eigenname, "
+    "beschreibung was man dort sieht, hört, riecht — kein Abenteuerplot."
+)
+
+_EVENT_SYSTEM = (
+    _SYSTEM
+    + " Erschaffe ein einzelnes Ereignis/eine Szene in NeotopiA. titel ist der "
+    "Name, beschreibung was passiert ist oder passieren wird. timestamp nur "
+    "setzen, wenn der Wunsch ein Datum/eine Uhrzeit vorgibt, sonst leer."
+)
+
+_FRAKTION_SYSTEM = (
+    _SYSTEM
+    + " Erschaffe eine einzelne Fraktion/Organisation in NeotopiA. name, "
+    "beschreibung (was die Spielwelt über sie weiß). ziele und ressourcen "
+    "sind kurze Listen mit titel + beschreibung — typisch 1–4 Einträge, "
+    "keine Romane."
+)
+
+_VERBINDUNG_SYSTEM = (
+    _SYSTEM
+    + " Lege EINE Beziehung zwischen zwei Entitäten. vonTyp/zuTyp nur "
+    "Person, Ort, Event oder Fraktion. Bevorzuge Namen aus der "
+    "freigegebenen Welt; nur wenn wirklich nichts passt, neue Namen. "
+    "typ ist die kurze Kantenbezeichnung (kennt, besitzt, feindet, …)."
+)
+
+
+def _kurz_lang(roh) -> list[KurzLangEintrag]:
+    """Ziele/Ressourcen der KI in KurzLangEintrag-Form."""
+    if not isinstance(roh, list):
+        return []
+    out: list[KurzLangEintrag] = []
+    for eintrag in roh:
+        if not isinstance(eintrag, dict):
+            continue
+        titel = (eintrag.get("titel") or "").strip()
+        if not titel:
+            continue
+        out.append(KurzLangEintrag(titel=titel, beschreibung=(eintrag.get("beschreibung") or "").strip()))
+    return out
+
+
 # Der Typ ist seit 22.09.2026 nach dem Anlegen fix (siehe items/schemas.py) —
 # die KI muss ihn deshalb beim ersten Wurf richtig treffen, kein Nachbessern
 # per Dropdown mehr möglich. Deshalb der Katalog explizit im Prompt.
@@ -167,8 +268,13 @@ _CHARAKTER_SYSTEM = (
 )
 
 
+# Dieselben Typen für ✨-Idee und „Entwurf aus Beratung“ — alles, was die
+# Schmiede (plus Verbindungen) anlegen kann.
+KiIdeeTyp = Literal["story", "charakter", "gegenstand", "ort", "event", "fraktion", "verbindung"]
+
+
 class KiIdeeInput(BaseModel):
-    typ: Literal["story", "charakter", "gegenstand"]
+    typ: KiIdeeTyp
     prompt: str
 
 
@@ -177,7 +283,7 @@ class BeratungNachrichtInput(BaseModel):
 
 
 class BeratungEntwurfInput(BaseModel):
-    typ: Literal["story", "charakter", "gegenstand"]
+    typ: KiIdeeTyp
 
 
 class UebernehmenInput(BaseModel):
@@ -393,6 +499,108 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 antwort_text=name, uebernommen=True, betrifft_id=gegenstand["id"],
             )
             return {"typ": "gegenstand", "id": gegenstand["id"], "name": name}
+
+        if typ == "ort":
+            kontext = await sammle_kontext(campaign_id)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _ORT_SYSTEM, _WELT_SCHEMA)
+            name = (ergebnis.get("name") or "").strip() or "Unbenannter Ort"
+            node = await create_node(
+                "Ort",
+                ORT_FIELDS,
+                campaign_id,
+                OrtCreate(
+                    name=name,
+                    description=(ergebnis.get("beschreibung") or "").strip(),
+                    istEntwurf=True,
+                    sichtbarkeit="GM",
+                ).model_dump(),
+            )
+            await hooks.ki(
+                campaign_id, anlass="idee-ort", prompt=prompt,
+                antwort_text=name, uebernommen=True, betrifft_id=node["id"],
+            )
+            return {"typ": "ort", "id": node["id"], "name": name}
+
+        if typ == "event":
+            kontext = await sammle_kontext(campaign_id)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _EVENT_SYSTEM, _EVENT_SCHEMA)
+            titel = (ergebnis.get("titel") or "").strip() or "Unbenanntes Ereignis"
+            node = await create_node(
+                "Event",
+                EVENT_FIELDS,
+                campaign_id,
+                EventCreate(
+                    title=titel,
+                    timestamp=(ergebnis.get("timestamp") or "").strip(),
+                    description=(ergebnis.get("beschreibung") or "").strip(),
+                    istEntwurf=True,
+                    sichtbarkeit="GM",
+                ).model_dump(),
+            )
+            await hooks.ki(
+                campaign_id, anlass="idee-event", prompt=prompt,
+                antwort_text=titel, uebernommen=True, betrifft_id=node["id"],
+            )
+            return {"typ": "event", "id": node["id"], "name": titel}
+
+        if typ == "fraktion":
+            kontext = await sammle_kontext(campaign_id)
+            ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _FRAKTION_SYSTEM, _FRAKTION_SCHEMA)
+            name = (ergebnis.get("name") or "").strip() or "Unbenannte Fraktion"
+            node = await create_node(
+                "Fraktion",
+                FRAKTION_FIELDS,
+                campaign_id,
+                FraktionCreate(
+                    name=name,
+                    description=(ergebnis.get("beschreibung") or "").strip(),
+                    ziele=_kurz_lang(ergebnis.get("ziele")),
+                    ressourcen=_kurz_lang(ergebnis.get("ressourcen")),
+                    istEntwurf=True,
+                    sichtbarkeit="GM",
+                ).model_dump(),
+            )
+            await hooks.ki(
+                campaign_id, anlass="idee-fraktion", prompt=prompt,
+                antwort_text=name, uebernommen=True, betrifft_id=node["id"],
+            )
+            return {"typ": "fraktion", "id": node["id"], "name": name}
+
+        if typ == "verbindung":
+            kontext = await sammle_kontext(campaign_id)
+            ergebnis = await generiere_json(
+                _mit_kontext(prompt, kontext), _VERBINDUNG_SYSTEM, _VERBINDUNG_SCHEMA
+            )
+            von_typ = ergebnis.get("vonTyp") or ""
+            zu_typ = ergebnis.get("zuTyp") or ""
+            von_name = (ergebnis.get("vonName") or "").strip()
+            zu_name = (ergebnis.get("zuName") or "").strip()
+            kanten_typ = (ergebnis.get("typ") or "").strip()
+            if von_typ not in _VERBINDUNG_TYPEN or zu_typ not in _VERBINDUNG_TYPEN or not von_name or not zu_name or not kanten_typ:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Die KI hat keine gültige Verbindung geliefert.",
+                )
+            angelegt = await verknuepfung_beziehung_anwenden(
+                campaign_id,
+                BeziehungAnwendenInput(
+                    typ1=von_typ,
+                    name1=von_name,
+                    typ2=zu_typ,
+                    name2=zu_name,
+                    beziehungstyp=kanten_typ,
+                    beschreibung=(ergebnis.get("beschreibung") or "").strip(),
+                ),
+            )
+            name = f"{von_name} — {kanten_typ} — {zu_name}"
+            await hooks.ki(
+                campaign_id, anlass="idee-verbindung", prompt=prompt,
+                antwort_text=name, uebernommen=True, betrifft_id=angelegt.verbindungId,
+            )
+            return {"typ": "verbindung", "id": angelegt.verbindungId, "name": name}
+
+        if typ != "charakter":
+            raise HTTPException(status_code=422, detail="Unbekannter Ideen-Typ.")
 
         # charakter
         kontext = await sammle_kontext(campaign_id)

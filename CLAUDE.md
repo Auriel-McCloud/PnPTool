@@ -221,6 +221,13 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (01.10.2026 — KI-Idee/Beratung: alle Welttypen):**
+- **Was:** ✨ KI und „Entwurf aus Beratung“ legen dieselben Typen an:
+  Charakter, Story, Gegenstand, Ort, Ereignis, Fraktion, Verbindung.
+  Verbindung ist eine echte Kante; fehlende Enden als Entwurf.
+- **Dateien:** `backend/app/ki/routes.py`, Schmiede- und Beratung-Dropdown.
+  Tests: `tests/test_ki_idee_typen.py`.
+
 **Zuletzt gebaut (30.09.2026 — Gegenstand-Fenster mit Reitern wie Ort/NPC):**
 - **Was:** Bearbeiten-Fenster ist kein langes Formular mehr. Reiter:
   Übersicht (Name, Bild, wo geführt, Steckbrief je Typ), Beschreibung,
