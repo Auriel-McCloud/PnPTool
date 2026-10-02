@@ -163,11 +163,13 @@
 
 /* In der Symbolspalte sind Beschriftungen unsichtbar; sichtbar wird nur
    der eine vorgefahrene Eintrag. `nowrap` verhindert, dass sie beim
-   Zusammenfahren umbrechen und die Zeilen aufreissen. */
+   Zusammenfahren umbrechen und die Zeilen aufreissen.
+   Der Anpassen-Knopf im Fuß bleibt sichtbar — sonst gäbe es Customizen
+   nur in der Handy-Schublade, wo das Layout gar nicht greift. */
 .cl-bereich-name,
 .cl-marke-name,
 .cl-marke-zeile,
-.cl-menue-fuss,
+.cl-menue-fuss-text,
 .cl-gruppe {
   white-space: nowrap;
   opacity: 0;
@@ -410,17 +412,23 @@ button.cl-bereiche-pfeil:disabled {
 }
 
 .cl-menue-fuss {
+  flex-shrink: 0;
   overflow: hidden;
-  padding: 12px 18px;
+  padding: 6px 2px 8px;
   border-top: 1px solid var(--linie);
   font-size: 12px;
   color: var(--text-aus);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .cl-menue-fuss button {
   min-width: var(--tipp);
   min-height: var(--tipp);
+  width: var(--tipp);
   padding: 0;
+  opacity: 1;
 }
 
 .cl-menue-slots {
@@ -593,9 +601,14 @@ button.cl-bereiche-pfeil:disabled {
   .cl-menue .cl-bereich-name,
   .cl-menue .cl-marke-name,
   .cl-menue .cl-marke-zeile,
-  .cl-menue .cl-menue-fuss,
+  .cl-menue .cl-menue-fuss-text,
   .cl-menue .cl-gruppe {
     opacity: 1;
+  }
+
+  .cl-menue-fuss {
+    padding: 12px 18px;
+    align-items: stretch;
   }
 
   /* Handy: nativ scrollen, keine Pfeile. Die Schublade ist breit genug

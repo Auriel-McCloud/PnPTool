@@ -380,10 +380,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         </>
       }
       fuss={
-        <>
+        <div className="cl-menue-fuss-text">
           <div style={{ color: "var(--text-leise)" }}>{ich.benutzername}</div>
           <div>{ich.personName ?? "kein Charakter"}</div>
-        </>
+        </div>
       }
     >
       {bereich === "blatt" &&

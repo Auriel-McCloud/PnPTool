@@ -235,8 +235,10 @@ function Dashboard() {
       <button type="button" onClick={() => setMenueOffen(true)} title="Burgermenü anpassen">
         ☰
       </button>
-      <div style={{ color: "var(--text-leise)" }}>{me?.username}</div>
-      <div>{me?.role === "GM" ? "Spielleitung" : me?.role}</div>
+      <div className="cl-menue-fuss-text">
+        <div style={{ color: "var(--text-leise)" }}>{me?.username}</div>
+        <div>{me?.role === "GM" ? "Spielleitung" : me?.role}</div>
+      </div>
     </>
   );
 

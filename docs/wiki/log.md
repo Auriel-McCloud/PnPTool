@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-02] update | Burgermenü-Customizen in der Symbolspalte
+
+☰-Knopf „Burgermenü anpassen“ war in der PC/Tablet-Rail unsichtbar
+(`opacity: 0` am ganzen Fuß). Jetzt sichtbar, Name/Rolle nur in der
+Handy-Schublade. Siehe [[entities/ui-konzept-commlink]].
+
 ## [2026-10-01] update | Verbindungen nachträglich bearbeiten
 
 PATCH auf `VERBINDUNG`-Kanten: Typ, Beschreibung, Sichtbarkeit.

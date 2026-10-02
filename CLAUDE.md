@@ -261,6 +261,16 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (02.10.2026 — Burgermenü-Customizen in der Symbolspalte sichtbar):**
+- **Was:** Der ☰-Knopf „Burgermenü anpassen“ saß im Menü-Fuß, und der
+  ganze Fuß hatte in der PC/Tablet-Symbolspalte `opacity: 0` (wie die
+  Namen). Customizen war deshalb nur in der Handy-Schublade zu sehen —
+  genau dort, wo Hide/Order ignoriert werden. Knopf bleibt in der Rail
+  sichtbar, Name/Rolle weiterhin nur in der Schublade.
+- **Dateien:** `frontend/src/shell/commlink.css`, `App.tsx`,
+  `players/SpielerAnsicht.tsx`.
+- **Verifiziert:** `tsc -b` sauber. Klicktest am PC/Tablet durch Mark.
+
 **Zuletzt gebaut (01.10.2026 — Editor-Werkzeugleiste bleibt beim Scrollen sichtbar):**
 - **Was:** Mark musste bei langen Beschreibungen/Notizen immer ganz nach
   oben scrollen, um den „🔒 SL-geheim"-Knopf zu erreichen — die

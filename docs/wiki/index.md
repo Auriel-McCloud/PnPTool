@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-01 | Seiten: 34
+> Zuletzt aktualisiert: 2026-10-02 | Seiten: 34
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -47,7 +47,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung, Editor-Schriftgröße am Handy (20.09.) |
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
-| [[entities/ui-konzept-commlink]] | Nie-scrollen-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09.), Neonflackern (19.09.), Autosave Beschreibung/Notizen (27.09.), Burgermenü blättert per Pfeil statt Scrollbar (29.09.) |
+| [[entities/ui-konzept-commlink]] | Nie-scrollen-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09.), Neonflackern (19.09.), Autosave Beschreibung/Notizen (27.09.), Burgermenü blättert per Pfeil statt Scrollbar (29.09.), ☰-Customizen in der Rail sichtbar (02.10.) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |
 | [[entities/ki-integration]] | Gemini in der Ideenschmiede; ✨ KI + Beratung legen seit 01.10. Charakter/Story/Gegenstand/Ort/Event/Fraktion/Verbindung an. Prüfung, Auto-Verknüpfung, Bild, Wiki-Import, Beratungschat (30.09.), Jev geparkt |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |

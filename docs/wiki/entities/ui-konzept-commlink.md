@@ -1,7 +1,7 @@
 ---
 title: UI-Konzept — Das Commlink
 created: 2026-09-18
-updated: 2026-09-27
+updated: 2026-10-02
 type: entität
 tags: [ui, frontend]
 sources: [../../ui-konzept.md, ../../../frontend/src/shell/CommlinkShell.tsx, ../../../frontend/src/shell/commlink.css]
@@ -42,6 +42,11 @@ es trotzdem nicht passt: flache Pfeile oben/unten blättern eine Seite —
 **keine Scrollbar**. `overflow-y: auto` clippt den vorgefahrenen Namen und
 hat Mark ausdrücklich verworfen. Handy-Schublade zeigt die volle Liste
 (Scrollbar unsichtbar).
+
+**☰-Knopf in der Rail (02.10.2026).** Der Anpassen-Knopf saß im Menü-Fuß,
+und der Fuß war in der Symbolspalte unsichtbar (`opacity: 0` wie die
+Namen). Customizen gab es nur in der Handy-Schublade, wo Hide/Order
+ohnehin ignoriert werden. Fuß-Text bleibt versteckt, der Knopf nicht.
 
 ## Stand der Umsetzung (Auszug, siehe `docs/ui-konzept.md` für Details)
 
