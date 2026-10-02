@@ -194,9 +194,9 @@ Sechster Anwendungsfall, eigenes Modul `backend/app/ki/bildgenerierung.py`:
 **pro Aufruf** wählbaren Providern (Commlink-Popup-Dropdown, anders als der
 global per `.env` gesetzte Text-Provider `KI_PROVIDER`):
 
-- **cloud** — Google Gemini `gemini-2.5-flash-image` (`generateContent` mit
+- **cloud** — Google Gemini `gemini-3.1-flash-image` (`generateContent` mit
   `responseModalities: ["IMAGE"]`, gleicher REST-Stil wie der Text-Client,
-  kein SDK).
+  kein SDK). `gemini-2.5-flash-image` ist seit 02.10.2026 abgeschaltet.
 - **lokal** — `pnptool_server.py` in `C:\DEV\Fooocus`, ein eigener
   Wrapper-Prozess **außerhalb dieses Repos** (nicht eingecheckt, eigenes
   venv). Fooocus 2.5.5/Gradio 3.41.2 hat keine eigene REST-API; der Wrapper

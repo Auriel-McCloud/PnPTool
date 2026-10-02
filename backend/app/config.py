@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # Gemini-Modell für BILDgenerierung (anderes Modell als Text: gemini_model
     # oben kann kein Bild). "Nano Banana"-Familie, siehe app/ki/bildgenerierung.py.
-    gemini_image_model: str = "gemini-2.5-flash-image"
+    gemini_image_model: str = "gemini-3.1-flash-image"
 
     # Fooocus (lokaler SDXL-Bildgenerator, C:\DEV\Fooocus) läuft als eigener
     # Prozess (pnptool_server.py), NICHT Teil dieses Backends — muss separat

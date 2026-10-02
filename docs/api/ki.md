@@ -134,7 +134,7 @@ manueller Upload, kein zweiter Ablage-Mechanismus).
 { "provider": "lokal" | "cloud", "prompt": "A grizzled fixer in a rain-soaked alley..." }
 ```
 
-- **`cloud`** — Google Gemini `gemini-2.5-flash-image`
+- **`cloud`** — Google Gemini `gemini-3.1-flash-image`
   (`generateContent` mit `responseModalities: ["IMAGE"]`), braucht nur den
   bestehenden `gemini_api_key` in `backend/.env`.
 - **`lokal`** — spricht `pnptool_server.py` in `C:\DEV\Fooocus` an (eigener

@@ -1074,10 +1074,11 @@ npm run dev
   `generiere_bild(provider, prompt) -> (bytes, content_type)`, zwei Provider
   **pro Aufruf wählbar** (Commlink-Popup-Dropdown, anders als der
   Text-Provider `KI_PROVIDER` in `.env`, der global gilt):
-  - **`cloud`** — Google Gemini `gemini-2.5-flash-image`
+  - **`cloud`** — Google Gemini `gemini-3.1-flash-image`
     (`generateContent` mit `responseModalities: ["IMAGE"]`, gleicher
     REST-Stil wie `gemini.py`, kein SDK). Braucht nur den bestehenden
-    `gemini_api_key`.
+    `gemini_api_key`. `gemini-2.5-flash-image` ist seit 02.10.2026
+    abgeschaltet.
   - **`lokal`** — spricht `pnptool_server.py` in `C:\DEV\Fooocus` an
     (eigener Wrapper-Prozess, **bewusst außerhalb dieses Repos**, nicht
     eingecheckt — Fooocus 2.5.5/Gradio 3.41.2 hat keine eigene REST-API,
@@ -1748,7 +1749,7 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    - **NPC-Generator:** ✅ gebaut (Ideenschmiede, typ charakter)
    - **Bildgenerierung** — ✅ **gebaut (23.09.2026)**, siehe "Zuletzt gebaut"
      oben: Provider-Abstraktion lokal (Fooocus, eigener Wrapper außerhalb
-     des Repos) / cloud (Gemini `gemini-2.5-flash-image`), KI schlägt einen
+     des Repos) / cloud (Gemini `gemini-3.1-flash-image`), KI schlägt einen
      editierbaren Bild-Prompt aus Name+Beschreibung+Notizen vor, Popup mit
      Vorschau vor dem Speichern — eingebunden an Person/Event/Ort/
      Fraktion/Gegenstand (SL) sowie am eigenen Charakterportrait (Spieler).

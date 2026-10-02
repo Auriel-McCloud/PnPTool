@@ -15,8 +15,9 @@ Zwei Wege:
   das per Verbindungsfehler und liefert eine klare Fehlermeldung statt eines
   rohen Timeouts.
 - **cloud** — Gemini `generateContent` mit `responseModalities: ["IMAGE"]`,
-  derselbe REST-Stil wie `gemini.py` (kein separates SDK). Bild kommt als
-  Base64 in `candidates[0].content.parts[].inlineData.data` zurück.
+  Modell aus `settings.gemini_image_model` (Default `gemini-3.1-flash-image`,
+  Nachfolger von `gemini-2.5-flash-image`). Derselbe REST-Stil wie `gemini.py`
+  (kein separates SDK). Bild kommt als Base64 in einem `inlineData`-Part.
 
 Beide liefern am Ende dieselbe Form: rohe Bild-Bytes + Content-Type, die der
 Aufrufer (`routes.py`) über den bestehenden Upload-Mechanismus speichert
@@ -124,17 +125,50 @@ async def _generiere_gemini(prompt: str) -> tuple[bytes, str]:
         raise BildgenerierungFehler(f"Gemini-Bildaufruf fehlgeschlagen (HTTP {resp.status_code})" + (f": {detail}" if detail else ""))
 
     try:
-        parts = resp.json()["candidates"][0]["content"]["parts"]
-    except (KeyError, IndexError, TypeError):
+        payload = resp.json()
+    except Exception:
+        raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")
+    return bild_aus_gemini_antwort(payload)
+
+
+def bild_aus_gemini_antwort(payload: dict) -> tuple[bytes, str]:
+    """Zieht Bild-Bytes aus einer Gemini-generateContent-JSON-Antwort.
+
+    Gemini 3.x legt das Bild oft hinter einem Text-/Thought-Part; Safety-Blöcke
+    kommen ohne `content.parts`. Beides darf nicht mehr als generisches
+    „unerwartete Antwort“ enden.
+    """
+    if not isinstance(payload, dict):
         raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")
 
-    for part in parts:
-        inline = part.get("inlineData")
-        if inline and inline.get("data"):
-            mime = inline.get("mimeType", "image/png")
-            return base64.b64decode(inline["data"]), mime
+    candidates = payload.get("candidates") or []
+    block = (payload.get("promptFeedback") or {}).get("blockReason")
+    finish_reasons: list[str] = []
+    texte: list[str] = []
 
-    # Gemini kann statt eines Bildes einen Ablehnungstext liefern (z.B. bei
-    # Sicherheitsfiltern) — den dem Nutzer zeigen statt eines generischen Fehlers.
-    text = "".join(p.get("text", "") for p in parts).strip()
-    raise BildgenerierungFehler(text or "Gemini lieferte kein Bild (evtl. Sicherheitsfilter)")
+    for cand in candidates:
+        if not isinstance(cand, dict):
+            continue
+        reason = cand.get("finishReason") or cand.get("finish_reason")
+        if reason:
+            finish_reasons.append(str(reason))
+        content = cand.get("content") or {}
+        parts = content.get("parts") or []
+        for part in parts:
+            if not isinstance(part, dict):
+                continue
+            text = (part.get("text") or "").strip()
+            if text:
+                texte.append(text)
+            inline = part.get("inlineData") or part.get("inline_data") or {}
+            if inline.get("data"):
+                mime = inline.get("mimeType") or inline.get("mime_type") or "image/png"
+                return base64.b64decode(inline["data"]), mime
+
+    if texte:
+        raise BildgenerierungFehler(" ".join(texte))
+
+    grund = block or (finish_reasons[0] if finish_reasons else "")
+    if grund:
+        raise BildgenerierungFehler(f"Gemini lieferte kein Bild (Grund: {grund})")
+    raise BildgenerierungFehler("Gemini lieferte eine unerwartete Antwort")

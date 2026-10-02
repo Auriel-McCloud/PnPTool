@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-02] update | Bildgenerierung Gemini 3.1
+
+Cloud-Provider wechselt auf `gemini-3.1-flash-image`
+(`gemini-2.5-flash-image` seit 02.10.2026 abgeschaltet). Parser zieht
+Bild auch hinter Text-Parts und nennt Safety-Grund statt
+„unerwartete Antwort“. Siehe [[entities/ki-integration]], `docs/api/ki.md`.
+
 ## [2026-10-02] update | Backlog zweiter SL-Tisch
 
 Nur notiert, nicht gebaut: eigener SL/eigene Welt; Kampagnen nicht
