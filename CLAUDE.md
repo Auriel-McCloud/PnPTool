@@ -20,6 +20,17 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   alle ~15 Popups im Tool. **Nicht von selbst anfangen, erst wenn Mark
   sagt, welche Popups es betreffen soll.**
 
+- **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
+  Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
+  kann das schon (`GMUser -[:OWNS]-> Campaign`). Offen, nicht bauen:
+  Kampagnen **nicht für alle sichtbar** (Liste/Sichtbarkeit); Kampagne in
+  Status **unbespielt** ablegen, damit ein anderer SL sie spielen kann
+  (Vorlage/Übernahme, Datenmodell offen). Echter Multi-User-Knackpunkt
+  ist **Spotify**: Wiedergabe hängt an einem Konto und kommt sonst immer
+  auf Marks Gerät. Rest der Isolation (Kampagne, Uploads, Sichtbarkeit)
+  ist App-Filter, reicht für einen vertrauten zweiten Tisch. **Nicht
+  von selbst anfangen.**
+
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
 - **Sticky-Werkzeugleiste neu** (siehe „Zuletzt gebaut" 01.10.2026 —

@@ -1,7 +1,7 @@
 ---
 title: Spotify-Anbindung
 created: 2026-09-19
-updated: 2026-09-19
+updated: 2026-10-02
 type: entität
 tags: [spotify, musik, party, backend, frontend]
 sources: [../../api/spotify.md, ../../../backend/app/spotify/]
@@ -33,6 +33,13 @@ Vision aus dem Party-Feature ([[party-feature]]) ist jetzt umgesetzt.
    setzen oder Party aktivieren gelingt immer; ein `musikHinweis`-Text in
    der Antwort erklärt nur, ob/was Spotify getan hat ("nicht verbunden",
    "kein aktives Gerät", "Wiedergabe gestartet: ...").
+
+## Später (nicht bauen, 02.10.2026)
+
+Zweiter SL-Tisch: Kampagnen ggf. nicht für alle sichtbar; Status
+**unbespielt**, damit ein anderer SL eine Kampagne übernehmen kann.
+Spotify ist der einzige echte Multi-User-Teil — ein Konto fürs ganze
+Tool spielt sonst immer auf Marks Gerät. Siehe CLAUDE.md Backlog.
 
 ## Warum Client Credentials NICHT reichen
 

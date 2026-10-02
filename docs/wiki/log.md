@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-02] update | Backlog zweiter SL-Tisch
+
+Nur notiert, nicht gebaut: eigener SL/eigene Welt; Kampagnen nicht
+für alle sichtbar; Status unbespielt zur Übernahme; Spotify pro User
+(sonst Marks Gerät). CLAUDE.md Backlog, [[entities/spotify-anbindung]].
+
 ## [2026-10-02] update | Bild-Autotext zieht Notizen heran
 
 KI-Bild-Prompt nimmt Beschreibung **und** Entitäts-Notizen.
