@@ -17,6 +17,7 @@ export function BildGalerie({
   id,
   name,
   beschreibung,
+  notizen,
   bilder,
   bildUrl, // Fallback für alte Daten
   onGeaendert,
@@ -29,6 +30,8 @@ export function BildGalerie({
   /** Roher description-Text der Entität — Grundlage für den KI-Bild-Prompt-
    * Vorschlag. Optional: ohne sie schlägt die KI nur aus dem Namen vor. */
   beschreibung?: string;
+  /** Roher notes-Text — Aussehen steht oft hier statt in der Beschreibung. */
+  notizen?: string;
   bilder: { url: string; istPrimaer: boolean }[];
   /** Fallback: altes Einzelbild-Feld */
   bildUrl?: string;
@@ -271,6 +274,7 @@ export function BildGalerie({
             objektTyp,
             objektName: name,
             bisherigeBeschreibung: beschreibung ? extrahiereReinenText(beschreibung) : "",
+            notizen: notizen ? extrahiereReinenText(notizen) : "",
           })
         }
         onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}

@@ -19,6 +19,7 @@ export function EntitaetsBild({
   name,
   bildUrl,
   beschreibung,
+  notizen,
   onGeaendert,
 }: {
   campaignId: string;
@@ -30,6 +31,8 @@ export function EntitaetsBild({
   /** Roher description-Text der Entität — Grundlage für den KI-Bild-Prompt-
    * Vorschlag. Optional: ohne sie schlägt die KI nur aus dem Namen vor. */
   beschreibung?: string;
+  /** Roher notes-Text — Aussehen steht oft hier statt in der Beschreibung. */
+  notizen?: string;
   onGeaendert: () => void;
 }) {
   const [laedt, setLaedt] = useState(false);
@@ -159,6 +162,7 @@ export function EntitaetsBild({
             objektTyp,
             objektName: name,
             bisherigeBeschreibung: beschreibung ? extrahiereReinenText(beschreibung) : "",
+            notizen: notizen ? extrahiereReinenText(notizen) : "",
           })
         }
         onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}

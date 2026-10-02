@@ -140,6 +140,7 @@ export function EventDetail({
                   name={event.title}
                   bildUrl={event.bildUrl ?? ""}
                   beschreibung={event.description}
+                  notizen={event.notes}
                   onGeaendert={onGeaendert}
                 />
               </div>

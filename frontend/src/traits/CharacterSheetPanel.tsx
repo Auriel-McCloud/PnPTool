@@ -573,6 +573,7 @@ export function GegenstandRow({
                       objektTyp: "Gegenstand",
                       objektName: item.name,
                       bisherigeBeschreibung: item.description ? extrahiereReinenText(item.description) : "",
+                      notizen: item.notes ? extrahiereReinenText(item.notes) : "",
                     })
                   }
                   onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}

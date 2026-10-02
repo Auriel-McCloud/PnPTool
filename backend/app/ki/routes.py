@@ -312,6 +312,7 @@ class BildPromptInput(BaseModel):
     objektTyp: str
     objektName: str
     bisherigeBeschreibung: str = ""
+    notizen: str = ""
 
 
 class BildGenerierenInput(BaseModel):
@@ -991,7 +992,7 @@ async def wiki_verknuepfung_beziehung(campaign_id: str, seiten_id: str, body: Be
 
 # --- Bildgenerierung ----------------------------------------------------
 # Ein Knopf am jeweils bestehenden Bild-Upload-Popup (Person/Ort/Gegenstand):
-# 1. Prompt-Vorschlag aus Name+Beschreibung (Text-KI, wiederverwendet
+# 1. Prompt-Vorschlag aus Name+Beschreibung+Notizen (Text-KI, wiederverwendet
 #    dieselbe sammle_kontext()/generiere_json()-Infrastruktur wie oben).
 # 2. Nutzer bestätigt/editiert den Prompt, dann eigentliche Bildgenerierung
 #    (lokal Fooocus ODER cloud Gemini, Nutzer wählt je Aufruf — siehe
@@ -1005,7 +1006,8 @@ _BILD_PROMPT_SYSTEM = (
     "Englisch, für einen SDXL-Bildgenerator) für ein Portrait/eine Szene/ein "
     "Gegenstandsbild im Digital-Art-/Cyberpunk-Stil. Beschreibe Aussehen, "
     "Kleidung/Material, Stimmung und Umgebung so konkret wie möglich — keine "
-    "Namen, keine Spielmechanik, kein Fließtext-Artikel."
+    "Namen, keine Spielmechanik, kein Fließtext-Artikel. Zieh Beschreibung "
+    "und Notizen heran, vor allem sichtbare Merkmale."
 )
 
 _BILD_PROMPT_SCHEMA = {
@@ -1015,15 +1017,39 @@ _BILD_PROMPT_SCHEMA = {
 }
 
 
-async def _bild_prompt_vorschlagen(campaign_id: str, objekt_typ: str, objekt_name: str, beschreibung: str) -> str:
+def _bild_prompt_quelle(
+    objekt_typ: str,
+    objekt_name: str,
+    beschreibung: str = "",
+    notizen: str = "",
+) -> str:
+    """Baut den Text, den die Bild-Prompt-KI als Quelle bekommt.
+
+    Beschreibung und Notizen getrennt, weil Aussehen oft in den Notizen
+    steht und vorher stillschweigend ignoriert wurde.
+    """
+    teile = [f"{objekt_typ}: {objekt_name}"]
+    beschreibung = (beschreibung or "").strip()
+    notizen = (notizen or "").strip()
+    if beschreibung:
+        teile.append(f"Bisherige Beschreibung:\n{beschreibung}")
+    if notizen:
+        teile.append(f"Notizen:\n{notizen}")
+    return "\n\n".join(teile)
+
+
+async def _bild_prompt_vorschlagen(
+    campaign_id: str,
+    objekt_typ: str,
+    objekt_name: str,
+    beschreibung: str,
+    notizen: str = "",
+) -> str:
     """Gemeinsame Logik für den Prompt-Vorschlag — von der GM-Route UND der
     Spieler-Portrait-Route genutzt (players/routes.py ruft das direkt auf,
     da sie außerhalb dieses require_campaign_gm-Routers liegt)."""
     kontext = await sammle_kontext(campaign_id)
-    teile = [f"{objekt_typ}: {objekt_name}"]
-    if beschreibung.strip():
-        teile.append(f"Bisherige Beschreibung:\n{beschreibung.strip()}")
-    prompt = "\n\n".join(teile)
+    prompt = _bild_prompt_quelle(objekt_typ, objekt_name, beschreibung, notizen)
     try:
         ergebnis = await generiere_json(_mit_kontext(prompt, kontext), _BILD_PROMPT_SYSTEM, _BILD_PROMPT_SCHEMA, campaign_id=campaign_id)
     except KiFehler as e:
@@ -1036,7 +1062,10 @@ async def ki_bild_prompt(campaign_id: str, body: BildPromptInput):
     """Schlägt einen Bild-Prompt vor (Schritt 1 des KI-Bild-Popups) — der
     Nutzer sieht ihn vorausgefüllt im Textfeld und kann ihn vor dem
     Generieren noch anpassen (Marks Entscheidung, siehe Aufgabenbeschreibung)."""
-    prompt = await _bild_prompt_vorschlagen(campaign_id, body.objektTyp, body.objektName, body.bisherigeBeschreibung)
+    prompt = await _bild_prompt_vorschlagen(
+        campaign_id, body.objektTyp, body.objektName,
+        body.bisherigeBeschreibung, body.notizen,
+    )
     if not prompt:
         raise HTTPException(status_code=502, detail="Die KI hat keinen Prompt-Vorschlag geliefert.")
     await hooks.ki(

@@ -261,6 +261,16 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (02.10.2026 — Bild-Autotext zieht Notizen heran):**
+- **Was:** KI-Bild-Prompt („Auto text“) nahm nur Name+Beschreibung.
+  Aussehen in den Entitäts-Notizen wurde ignoriert. Jetzt gehen
+  Beschreibung und Notizen beide in die Quelle; leere Notizen bleiben
+  raus. Spieler-Portrait liest `description`/`notes` (vorher das
+  nicht existente Feld `beschreibung`).
+- **Dateien:** `app/ki/routes.py` (`_bild_prompt_quelle`),
+  `players/routes.py`, `EntitaetsBild`/`BildGalerie` + Aufrufer.
+- **Verifiziert:** `pytest tests/test_bild_prompt_quelle.py` 3/3, `tsc -b`.
+
 **Zuletzt gebaut (02.10.2026 — Spieler-Notizen, privat, kein Wiki):**
 - **Was:** Der Burger-Punkt „Notizen / bald“ ist für Spieler live: Liste
   mit Titel+Text (TipTap, Autosave), nur der eigene Zugang sieht sie.
@@ -1728,7 +1738,7 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    - **Bildgenerierung** — ✅ **gebaut (23.09.2026)**, siehe "Zuletzt gebaut"
      oben: Provider-Abstraktion lokal (Fooocus, eigener Wrapper außerhalb
      des Repos) / cloud (Gemini `gemini-2.5-flash-image`), KI schlägt einen
-     editierbaren Bild-Prompt aus Name+Beschreibung vor, Popup mit
+     editierbaren Bild-Prompt aus Name+Beschreibung+Notizen vor, Popup mit
      Vorschau vor dem Speichern — eingebunden an Person/Event/Ort/
      Fraktion/Gegenstand (SL) sowie am eigenen Charakterportrait (Spieler).
      Cloud-Pfad voll E2E verifiziert (inkl. echter Bildgenerierung), lokaler

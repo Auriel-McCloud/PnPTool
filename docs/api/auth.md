@@ -178,7 +178,7 @@ verwaist auf dem Datenträger liegen).
 Schritt 1 der KI-Bildgenerierung fürs eigene Portrait — identische Logik
 wie `POST /api/campaigns/{id}/ki/bild-prompt` (siehe
 [docs/api/ki.md](./ki.md), ruft dieselbe `_bild_prompt_vorschlagen()`
-auf), nur ohne Pfadparameter: Objekttyp/-name/-beschreibung kommen aus dem
+auf), nur ohne Pfadparameter: Objekttyp/-name/Beschreibung/Notizen kommen aus dem
 zugeordneten Charakter selbst, nicht aus dem Body. `400` wenn dem Spieler
 noch kein Charakter zugeordnet ist, `404` wenn der Charakter nicht (mehr)
 existiert.

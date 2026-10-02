@@ -44,9 +44,10 @@ export interface KiBildPromptInput {
   objektTyp: string;
   objektName: string;
   bisherigeBeschreibung?: string;
+  notizen?: string;
 }
 
-/** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag aus Name+Beschreibung. */
+/** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag aus Name+Beschreibung+Notizen. */
 export async function kiBildPrompt(campaignId: string, input: KiBildPromptInput): Promise<string> {
   const antwort = await api.post<{ prompt: string }>(`/api/campaigns/${campaignId}/ki/bild-prompt`, input);
   return antwort.prompt;

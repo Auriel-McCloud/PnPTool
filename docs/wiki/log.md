@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-02] update | Bild-Autotext zieht Notizen heran
+
+KI-Bild-Prompt nimmt Beschreibung **und** Entitäts-Notizen.
+Spieler-Portrait liest `description`/`notes` statt des toten Felds
+`beschreibung`. Siehe [[entities/ki-integration]], `docs/api/ki.md`.
+
 ## [2026-10-02] update | Spieler-Notizen privat
 
 Privater Schmierzettel (Titel+Text) am Spieler-Zugang, SL sieht nichts.

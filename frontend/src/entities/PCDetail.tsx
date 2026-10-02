@@ -163,6 +163,7 @@ export function PCDetail({
                   name={person.name}
                   bildUrl={person.bildUrl ?? ""}
                   beschreibung={person.description}
+                  notizen={person.notes}
                   onGeaendert={onGeaendert}
                 />
               </div>

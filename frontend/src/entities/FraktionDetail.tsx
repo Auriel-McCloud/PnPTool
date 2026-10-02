@@ -155,6 +155,7 @@ export function FraktionDetail({
                   id={fraktion.id}
                   name={fraktion.name}
                   beschreibung={fraktion.description}
+                  notizen={fraktion.notes}
                   bilder={fraktion.bilder || []}
                   bildUrl={fraktion.bildUrl}
                   onGeaendert={onGeaendert}

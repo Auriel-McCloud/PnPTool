@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
+from app.entities.filterung import klartext
 from app.entities.repository import PERSON_FIELDS, create_node, get_node, update_node
 from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
@@ -245,7 +246,11 @@ async def eigenes_charakterportrait_ki_prompt(spieler: dict = Depends(require_sp
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
 
     prompt = await _bild_prompt_vorschlagen(
-        campaign_id, "Person", person.get("name", ""), person.get("beschreibung", "") or ""
+        campaign_id,
+        "Person",
+        person.get("name", ""),
+        klartext(person.get("description") or ""),
+        klartext(person.get("notes") or ""),
     )
     if not prompt:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Die KI hat keinen Prompt-Vorschlag geliefert.")

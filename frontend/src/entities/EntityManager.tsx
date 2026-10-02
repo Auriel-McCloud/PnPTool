@@ -831,6 +831,8 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               id={p.id}
               name={p.name}
               bildUrl={p.bildUrl ?? ""}
+              beschreibung={p.description}
+              notizen={p.notes}
               onGeaendert={refreshAll}
             />
             <div style={{ margin: "4px 0" }}>
@@ -954,6 +956,8 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               id={o.id}
               name={o.name}
               bildUrl={o.bildUrl ?? ""}
+              beschreibung={o.description}
+              notizen={o.notes}
               onGeaendert={refreshAll}
             />
             <div style={{ margin: "4px 0" }}>
@@ -991,6 +995,8 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
               id={ev.id}
               name={ev.title}
               bildUrl={ev.bildUrl ?? ""}
+              beschreibung={ev.description}
+              notizen={ev.notes}
               onGeaendert={refreshAll}
             />
             <div style={{ margin: "4px 0" }}>

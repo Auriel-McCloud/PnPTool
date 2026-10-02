@@ -125,6 +125,8 @@ export function CritterFenster({
                 id={critterId}
                 name={person.name}
                 bildUrl={person.bildUrl ?? ""}
+                beschreibung={person.description}
+                notizen={person.notes}
                 onGeaendert={onGeaendert}
               />
               <Charakterblatt campaignId={campaignId} personId={critterId} bearbeitbar />

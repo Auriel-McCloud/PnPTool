@@ -206,7 +206,7 @@ global per `.env` gesetzte Text-Provider `KI_PROVIDER`):
 
 Zweistufiges Popup, wie schon bei der Wiki-Prüfung/Auto-Verknüpfung erst
 zur Kontrolle anzeigen statt sofort zu speichern: `POST .../ki/bild-prompt`
-schlägt einen editierbaren Bild-Prompt aus Name+Beschreibung vor (Text-KI,
+schlägt einen editierbaren Bild-Prompt aus Name+Beschreibung+Notizen vor (Text-KI,
 dieselbe `sammle_kontext()`-Infrastruktur), `POST .../ki/bild-generieren`
 liefert die rohen Bild-Bytes als Vorschau — **speichert nichts**. Erst
 "✓ Übernehmen" im Frontend-Popup (`frontend/src/ki/KiBildPopup.tsx`) schickt

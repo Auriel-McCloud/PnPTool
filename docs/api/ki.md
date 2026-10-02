@@ -104,13 +104,13 @@ Spieler-Router gehört — gleiche Logik, kein `require_campaign_gm`).
 
 ### POST `/bild-prompt`
 
-Schritt 1: schlägt einen Bild-Prompt aus Name + bisheriger Beschreibung vor
+Schritt 1: schlägt einen Bild-Prompt aus Name + Beschreibung + Notizen vor
 (Text-KI, dieselbe `sammle_kontext()`/`generiere_json()`-Infrastruktur wie
 oben). Der Nutzer sieht ihn vorausgefüllt und kann ihn vor dem Generieren
-noch anpassen.
+noch anpassen. Aussehen steht oft in den Notizen, nicht in der Beschreibung.
 
 ```json
-{ "objektTyp": "Person", "objektName": "Rattenschieber Kez", "bisherigeBeschreibung": "..." }
+{ "objektTyp": "Person", "objektName": "Rattenschieber Kez", "bisherigeBeschreibung": "...", "notizen": "..." }
 ```
 
 **Response:**
