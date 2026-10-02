@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-10-01
+updated: 2026-10-02
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -25,7 +25,9 @@ ohne expliziten Constraint (laut Code-Suche in den Repositories):
 `Mitteilung`, `WikiSeite`, `Kampf`, `Nachricht`, `Kontakt`/`KENNT`-Beziehung,
 `Fraktion`, `Regelsystem`, `Erklaerung`, `Party`, `Verhandlung`,
 `Zusatzfertigkeit` (28.09.2026, campaign-gebunden, kein ruleset-weiter
-Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]). Seit 27.09.2026
+Katalog wie `TraitDef` — siehe [[zusatzfertigkeiten]]). Seit 02.10.2026
+`SpielerNotiz` am Zugang (`HAT_NOTIZ`), privat, kein Wiki — siehe
+`docs/api/spielernotizen.md`. Seit 27.09.2026
 außerdem `Sitzung` plus acht Log-Labels (`KiProtokollEintrag`,
 `GegenstandsBewegung`, `GeldBewegung`, `Aufenthalt`, `NpcWissenszuwachs`,
 `KampfLogEintrag`, `VerhandlungsAusgang`, `CharakterEntwicklung`) und
@@ -55,6 +57,7 @@ siehe [[ki-integration]].
 | `MITGLIED_VON` | Person → Party | exklusiv, siehe [[party-feature]] |
 | `BEFINDET_SICH_AN` | Party → Ort/Event | optional, siehe [[party-feature]] |
 | `HAT_ZUSATZFERTIGKEIT` | Person → Zusatzfertigkeit | `rating`, campaign-gebunden statt `HAS_TRAIT`, siehe [[zusatzfertigkeiten]] |
+| `HAT_NOTIZ` | Spieler → SpielerNotiz | privater Schmierzettel, nur dieser Zugang |
 | `HAT_SITZUNG` | Campaign → Sitzung | Spielabend-Anker fürs [[ereignisprotokoll]] |
 | `HAT_BERATUNG` | Campaign → KiBeratung | SL-Beratungschat, siehe [[ki-integration]] |
 | `ENTHAELT` | KiBeratung → KiBeratungNachricht | Chatzeilen; nie in `sammle_kontext` |

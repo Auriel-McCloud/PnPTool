@@ -261,6 +261,15 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (02.10.2026 — Spieler-Notizen, privat, kein Wiki):**
+- **Was:** Der Burger-Punkt „Notizen / bald“ ist für Spieler live: Liste
+  mit Titel+Text (TipTap, Autosave), nur der eigene Zugang sieht sie.
+  SL-Punkt entfernt (SL hat Notizen an jeder Entität). Kein Wiki —
+  keine Seiten, keine Freigabe, keine Verknüpfungen.
+- **Dateien:** `backend/app/spielernotizen/`, `frontend/src/spielernotizen/`,
+  Export-Weissliste `SpielerNotiz`/`HAT_NOTIZ`, Migration `008_spielernotiz`.
+- **Verifiziert:** `pytest tests/test_spielernotizen.py` 5/5, `tsc -b`.
+
 **Zuletzt gebaut (02.10.2026 — Burgermenü-Customizen in der Symbolspalte sichtbar):**
 - **Was:** Der ☰-Knopf „Burgermenü anpassen“ saß im Menü-Fuß, und der
   ganze Fuß hatte in der PC/Tablet-Symbolspalte `opacity: 0` (wie die

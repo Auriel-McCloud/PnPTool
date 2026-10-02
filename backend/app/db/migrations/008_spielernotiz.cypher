@@ -1,0 +1,1 @@
+CREATE CONSTRAINT spielernotiz_id IF NOT EXISTS FOR (n:SpielerNotiz) REQUIRE n.id IS UNIQUE;

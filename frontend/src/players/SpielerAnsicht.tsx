@@ -40,6 +40,7 @@ import { playersApi, type SpielerMe } from "./api";
 import { CharakterportraitAnsicht } from "./CharakterportraitAnsicht";
 import { SpielerEinstieg } from "./SpielerEinstieg";
 import { ShopUebersicht } from "../haendler/ShopUebersicht";
+import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -76,7 +77,7 @@ const BEREICHE_STATISCH: Bereich[] = [
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
-  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
+  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)" },
 ];
 
 // Augments-Bereich: erscheint nur, wenn verbaute Augments vorhanden sind.
@@ -628,6 +629,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       {/* Nur lesend: Anlegen, Aendern und Freigeben bleibt Sache der Spielleitung.
           Was hier ankommt, hat der Server bereits gefiltert. */}
       {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
+
+      {bereich === "notizen" && <SpielerNotizen />}
 
       {bereich === "augments" && (
         <AugmentsAnsicht

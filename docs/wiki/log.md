@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-02] update | Spieler-Notizen privat
+
+Privater Schmierzettel (Titel+Text) am Spieler-Zugang, SL sieht nichts.
+SL-Menüpunkt „Notizen / bald“ entfernt. Kein Wiki. API
+`docs/api/spielernotizen.md`, Knoten `SpielerNotiz` / Kante `HAT_NOTIZ`.
+
 ## [2026-10-02] update | Burgermenü-Customizen in der Symbolspalte
 
 ☰-Knopf „Burgermenü anpassen“ war in der PC/Tablet-Rail unsichtbar

@@ -33,6 +33,11 @@ OHNE_GM_ERLAUBT = {
     "/api/spieler/mein-bild",
     "/api/spieler/mein-bild-ki-prompt",
     "/api/spieler/mein-bild-ki",
+    # Eigene private Notizen. require_spieler prüft die Sitzung, die
+    # Repository-Abfrage hängt jede Notiz an genau diesen Zugang — fremde
+    # IDs sind 404, die Spielleitung sieht sie nicht.
+    "/api/spieler/notizen",
+    "/api/spieler/notizen/{notiz_id}",
     "/api/auth/gm/login",
     "/api/auth/gm/logout",
     # Kampagne anlegen hängt an require_gm, nicht an einer Kampagne

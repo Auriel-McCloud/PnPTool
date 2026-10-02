@@ -83,8 +83,7 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 - Der feinere Bereichsschnitt. `EntityManager` hält Personen, Orte, Events und Verbindungen weiterhin in einer Ansicht namens "Welt"; PCs/NPCs/Orte/Events getrennt erfordert, diese Komponente zu zerlegen.
 - Das **Fenstersystem** (Gegenstand als fokussiertes Fenster statt Inline-Akkordeon) — das ist der eigentliche Kern gegen den Listen-Charakter und der größte verbleibende Brocken. Damit erledigt sich auch der vertagte Breite-Bug.
 - **Kampfmodus: gebaut** (30.08.2026). Initiativliste bei allen sichtbar, die
-  Spielleitung führt sie. Regeln, Notizen sind im Menü weiterhin als "bald"
-  sichtbar, aber leer.
+  Spielleitung führt sie. Notizen: Spieler-Liste gebaut 02.10.2026.
 - **Tooltip-System: gebaut** (30.08.2026). Schieberegler links in der oberen Leiste, Zeichen neben jedem Wert des Charakterblatts, Erklärungen liegen als `Erklaerung`-Knoten je Regelwerk. Die Spielleitung schreibt sie direkt im Fenster. Noch offen: dieselben Zeichen bei Gegenstandstypen und im kommenden Regeln-Bereich, und die Texte selbst (kommen aus dem überarbeiteten Fremdmaterial).
 - SL-Popups: das Symbol ist oben angelegt, aber deaktiviert.
 
@@ -92,7 +91,7 @@ Das ist kein Kampfmodus-Feature, sondern zieht sich durch die gesamte Oberfläch
 
 - **Typografie**: aktuell System-Schriften mit Versalien und weiter Laufweite für Navigation und Überschriften, Monospace für die Marke. Bewusst keine Webfonts (Ladezeit, Offline, keine Fremdanfragen) — falls doch eine markantere Schrift gewünscht ist, wäre sie lokal einzubinden.
 - Welche Symbole genau in die obere Leiste gehören (über SL-Popups und Tooltip-Schalter hinaus).
-- Ob "Notizen" spielereigene Notizen meint oder die bestehenden SL-Notizfelder.
+- Spielereigene Notizen: gebaut 02.10.2026 als private Liste (Titel+Text) nur für Spieler. SL-Menüpunkt entfernt.
 - "Kontakte" ist vermutlich die Spielersicht auf Personen — Verhältnis zu den SL-Bereichen PCs/NPCs noch zu klären.
 - Ob die Störeffekte abschaltbar sein sollen (Empfehlung: ja, mindestens für längere Sitzungen).
 - Der **Regeln-Bereich** ist weiterhin ein komplett neuer Inhaltstyp (siehe Plandatei): vermutlich eine Rich-Text-Seite pro Kampagne, campaign-weit statt an eine Entität gebunden.

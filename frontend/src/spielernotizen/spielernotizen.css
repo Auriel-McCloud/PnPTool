@@ -1,0 +1,101 @@
+/* Private Spieler-Notizen. Schlichte Tabelle, Tokens only. */
+
+.sn-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.sn-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sn-suche {
+  flex: 1;
+  min-width: 140px;
+}
+
+.sn-anzahl {
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.sn-leer {
+  color: var(--text-aus);
+  font-style: italic;
+}
+
+.sn-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.sn-tabelle th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  border-bottom: 1px solid var(--linie);
+}
+
+.sn-zeile {
+  cursor: pointer;
+}
+
+.sn-zeile:hover {
+  background: var(--flaeche-hoch);
+}
+
+.sn-zeile td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.sn-zeile-titel {
+  font-weight: 600;
+}
+
+.sn-zeile-datum {
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.sn-editor,
+.sn-anlegen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sn-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.sn-titel {
+  font-size: 15px;
+}
+
+.sn-editor-fuss {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sn-loeschen {
+  margin-right: auto;
+  color: var(--signal);
+  border-color: var(--signal);
+}

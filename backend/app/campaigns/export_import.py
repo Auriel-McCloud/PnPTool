@@ -75,6 +75,7 @@ KNOWN_LABELS = {
     "Aufenthalt", "NpcWissenszuwachs", "KampfLogEintrag",
     "VerhandlungsAusgang", "CharakterEntwicklung",
     "Achievement", "AchievementVerleihung",
+    "SpielerNotiz",
 }
 
 KNOWN_REL_TYPES = {
@@ -88,6 +89,7 @@ KNOWN_REL_TYPES = {
     "HAT_SITZUNG", "HAT_EREIGNIS", "BETRIFFT",
     "ALTER_BESITZER", "NEUER_BESITZER", "ANGREIFER", "AUSLOESER",
     "EMPFAENGER", "NPC", "PARTY", "ORT", "PERSON", "ZIEL", "ANGEBOTEN_VON",
+    "HAT_NOTIZ",
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{20,40}$")

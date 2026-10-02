@@ -90,7 +90,6 @@ const BEREICHE: Bereich[] = [
   { id: "zusatzfertigkeiten", name: "Zusatzfertigkeiten", symbol: "◬", farbe: "var(--bereich-regeln)" },
   // Ideenschmiede: Entwürfe und KI-generierte Ideen sammeln, prüfen, verschieben
   { id: "ideenschmiede", name: "Schmiede", symbol: "🔧", farbe: "var(--bereich-schmiede)" },
-  { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)", bald: true },
 ];
 
 const TITEL: Record<string, string> = {
