@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EntityKind, Person, Verbindung } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
@@ -13,6 +13,8 @@ import { BeziehungsTab, PERSON_TYP_VORSCHLAEGE } from "./BeziehungsTab";
 import { beziehungsZeilen } from "./BeziehungsListe";
 import type { PersonOption } from "./VisibilitySelector";
 import type { JSONContent } from "@tiptap/react";
+import { HaendlerEinstellungenFenster } from "../haendler/HaendlerEinstellungenFenster";
+import { HaendlerBearbeiten } from "../haendler/HaendlerBearbeiten";
 import "./pc-detail.css"; // Selbes Styling wie PCs
 
 /**
@@ -52,6 +54,18 @@ export function NPCDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
   const [speichert, setSpeichert] = useState(false);
+
+  // Händler-Flag (istHaendler) sofort nach dem Umschalten im Popup zeigen,
+  // ohne auf den nächsten Reload der Liste zu warten — dasselbe Muster wie
+  // BegleiterFenster::onSofortGeaendert, nötig weil EntityManager den
+  // npcDetailFuer-Prop nach refreshAll() nicht automatisch erneuert.
+  const [aktuellePerson, setAktuellePerson] = useState(person);
+  useEffect(() => {
+    setAktuellePerson(person);
+  }, [person]);
+  const [haendlerEinstellungenOffen, setHaendlerEinstellungenOffen] = useState(false);
+  const [sortimentOffen, setSortimentOffen] = useState(false);
+  const istHaendler = aktuellePerson.istHaendler ?? false;
 
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
@@ -181,6 +195,20 @@ export function NPCDetail({
                   <button type="button" onClick={() => setUnteransicht("notizen")}>
                     🗒️ Notizen bearbeiten
                   </button>
+                  {istHaendler ? (
+                    <>
+                      <button type="button" onClick={() => setSortimentOffen(true)}>
+                        🛒 Sortiment &amp; Shop bearbeiten
+                      </button>
+                      <button type="button" onClick={() => setHaendlerEinstellungenOffen(true)}>
+                        ⚙ Händler-Einstellungen
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setHaendlerEinstellungenOffen(true)}>
+                      🛒 Zum Händler machen
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -265,6 +293,29 @@ export function NPCDetail({
           )}
         </div>
       </div>
+
+      {haendlerEinstellungenOffen && (
+        <HaendlerEinstellungenFenster
+          campaignId={campaignId}
+          person={aktuellePerson}
+          offen={haendlerEinstellungenOffen}
+          onSchliessen={() => setHaendlerEinstellungenOffen(false)}
+          onGeaendert={(neu) => {
+            setAktuellePerson(neu);
+            onGeaendert();
+          }}
+        />
+      )}
+
+      {sortimentOffen && (
+        <HaendlerBearbeiten
+          campaignId={campaignId}
+          haendlerId={person.id}
+          offen={sortimentOffen}
+          onSchliessen={() => setSortimentOffen(false)}
+          onGeaendert={onGeaendert}
+        />
+      )}
     </Fenster>
   );
 }

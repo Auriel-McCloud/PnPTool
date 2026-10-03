@@ -294,6 +294,25 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (03.10.2026 — Händler-Button im NPC-Detail-Popup):**
+- **Was:** `istHaendler` liess sich bisher nur direkt über die API setzen —
+  im UI gab es dafür keine Oberfläche (Mark fragte danach, Lücke entdeckt).
+  Neu: NPC-Detail-Popup (Übersicht-Tab) zeigt bei normalen NPCs den Knopf
+  "🛒 Zum Händler machen", bei bestehenden Händlern stattdessen "🛒
+  Sortiment & Shop bearbeiten" (öffnet das bestehende `HaendlerBearbeiten`)
+  und "⚙ Händler-Einstellungen". Das neue Einstellungen-Popup setzt
+  `istHaendler`, Spezialisierung (Checkboxen aus `TYP_KATALOG`) und
+  Vertriebsart (PHYSISCH/DIGITAL) über die normale `PATCH /personen`-Route;
+  ein Commlink-Bestätigungsdialog nimmt `istHaendler` wieder zurück
+  (Sortiment/Bestellungen bleiben dabei erhalten, nur das Flag kippt).
+- **Dateien:** neu `frontend/src/haendler/HaendlerEinstellungenFenster.tsx`,
+  `frontend/src/entities/NPCDetail.tsx` (Schnellzugriff-Knöpfe +
+  `aktuellePerson`-State für sofortige Anzeige nach dem Umschalten, analog
+  `BegleiterFenster::onSofortGeaendert`).
+- **Verifiziert:** `tsc --noEmit` sauber. **Nie im Browser angeklickt** —
+  Mark sollte das Umschalten einmal live testen (Popup-Reihenfolge,
+  Spezialisierungs-Checkboxen).
+
 **Zuletzt gebaut (03.10.2026 — Beziehungstyp-Konsistenz + Beziehungen aus Beschreibungen):**
 - **Was:** Zwei Teile auf Marks Wunsch ("eine knackige, max. 5 Wörter
   Beschreibung, die einem Schema folgen soll, wenn's die Art Verbindung
