@@ -192,7 +192,7 @@ WebApp für Mark's Pen-and-Paper-Rollenspielrunden, Homebrew-System **"NeotopiA"
 - **Backend**: FastAPI, neo4j async driver, JWT in httpOnly-Cookie, bcrypt direkt
 - **Datenbank**: Neo4j 5 in Docker
 - **Frontend**: React 19 + TypeScript + Vite, Cytoscape.js direkt (kein Wrapper)
-- **Deployment**: Lokal Windows-Dev; produktiv auf bebop unter `pnptool.aurielmc.cloud` (seit 25.09.2026)
+- **Deployment**: Lokal Windows-Dev (`npm run dev`); produktiv auf bebop unter `pnptool.aurielmc.cloud` (seit 25.09.2026), Frontend-Image nginx + `vite build` (seit 03.10.2026)
 
 ## Projektstruktur
 
@@ -271,6 +271,18 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (03.10.2026 — PWA-Start: Production-Build statt Vite-Dev):**
+- **Was:** Die installierte Handy-App zeigte oft eine weiße Seite; Neu-Laden
+  reichte nicht, erst Schließen/Öffnen. Ursache: Live-Frontend war der
+  Vite-Dev-Server (~280 Einzeldateien + HMR). `index.html` ohne Hintergrund,
+  Auth-Start `return null`, `/api/auth/me` ohne Timeout. Jetzt: Docker-Image
+  baut `vite build` und liefert über nginx zwei gehashte Dateien. Dunkler
+  Inline-Hintergrund, Startschirm „Commlink“, Auth-Check bricht nach 12s ab.
+- **Dateien:** `frontend/Dockerfile`, `frontend/nginx.conf`, `index.html`,
+  `App.tsx`, `auth/AuthContext.tsx`, `api/client.ts`, `index.css`.
+- **Verifiziert:** `tsc -b` + `vite build` sauber (kein `/@vite/client` im
+  Bundle). Live-HTML nach Deploy ohne Vite-Dev-Scripts.
 
 **Zuletzt gebaut (02.10.2026 — Bild-Autotext zieht Notizen heran):**
 - **Was:** KI-Bild-Prompt („Auto text“) nahm nur Name+Beschreibung.

@@ -378,7 +378,13 @@ function Dashboard() {
 function Shell() {
   const { me, loading } = useAuth();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="cl-start" role="status">
+        Commlink
+      </div>
+    );
+  }
 
   // Der Charakter haengt fest am Zugang, es gibt also nichts mehr zu waehlen.
   if (me?.role === "PLAYER") {

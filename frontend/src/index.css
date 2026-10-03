@@ -58,6 +58,17 @@ body {
   min-height: 100svh;
 }
 
+/* Sichtbar, solange /api/auth/me läuft — sonst bleibt die PWA leer. */
+.cl-start {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  color: var(--text-leise);
+  font: 13px/1 var(--mono);
+  letter-spacing: var(--versalien);
+  text-transform: uppercase;
+}
+
 /* --- Typografie ------------------------------------------------------ */
 
 h1,

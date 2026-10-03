@@ -56,7 +56,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(withViewAs(path)),
+  get: <T>(path: string, init?: RequestInit) =>
+    request<T>(withViewAs(path), init ?? {}),
   // Umgeht die Vorschau bewusst. Nötig für die Charakter-Auswahl des
   // Umschalters selbst: würde die Personenliste mitgefiltert, verschwände
   // womöglich genau der Charakter, den man gerade betrachtet, aus dem

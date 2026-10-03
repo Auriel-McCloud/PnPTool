@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de" style="background:#08080d">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="192x192" href="/symbol-192.png" />
@@ -20,7 +20,10 @@
     <meta name="apple-mobile-web-app-title" content="Commlink" />
     <title>Commlink — NeotopiA</title>
   </head>
-  <body>
+  <!-- Hex hier bewusst: Tokens existieren erst nach dem CSS-Bundle.
+       Muss --p-schwarz / Manifest background_color entsprechen, sonst
+       blitzt die PWA beim Kaltstart weiß auf. -->
+  <body style="margin:0;background:#08080d">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

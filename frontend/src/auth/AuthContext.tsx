@@ -20,11 +20,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const ac = new AbortController();
+    const timer = window.setTimeout(() => ac.abort(), 12_000);
+    let lebendig = true;
     api
-      .get<Me>("/api/auth/me")
-      .then(setMe)
-      .catch(() => setMe(null))
-      .finally(() => setLoading(false));
+      .get<Me>("/api/auth/me", { signal: ac.signal })
+      .then((wert) => {
+        if (lebendig) setMe(wert);
+      })
+      .catch(() => {
+        if (lebendig) setMe(null);
+      })
+      .finally(() => {
+        window.clearTimeout(timer);
+        if (lebendig) setLoading(false);
+      });
+    return () => {
+      lebendig = false;
+      window.clearTimeout(timer);
+      ac.abort();
+    };
   }, []);
 
   async function login(username: string, password: string) {

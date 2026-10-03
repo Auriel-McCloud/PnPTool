@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-03] update | Frontend Production-Build für PWA
+
+Live-Frontend ist nginx + `vite build`, nicht mehr Vite-Dev.
+Weiße Handy-PWA-Starts (hundert Module + leeres Auth-`null`) sollten
+damit weg sein. Siehe CLAUDE.md Zuletzt gebaut 03.10.2026.
+
 ## [2026-10-02] update | Bildgenerierung Gemini 3.1
 
 Cloud-Provider wechselt auf `gemini-3.1-flash-image`
