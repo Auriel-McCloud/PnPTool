@@ -165,6 +165,14 @@ export async function verknuepfungBeziehungAnwenden(
   });
 }
 
+/** Liest Beschreibung+Notizen ALLER Personen/Orte/Events/Fraktionen in einem
+ * KI-Aufruf und schlägt daraus neue Beziehungen vor — der „✨ Beziehungen aus
+ * Beschreibungen"-Knopf im Verbindungen-Bereich. Nur `beziehungen` kommt
+ * zurück (kein Seitenbezug, also keine Verweise). */
+export async function beziehungenAusBeschreibungen(campaignId: string): Promise<VorschlaegeAntwort> {
+  return api.post<VorschlaegeAntwort>(`/api/campaigns/${campaignId}/ki/verknuepfung/beziehungen-aus-beschreibungen`);
+}
+
 /** Eine per Dokument-Import angelegte Wiki-Seiten-Entwurf (Auto-Verknüpfung
  * bereits gelaufen — `verknuepfungen` zählt, wie viele Vorschläge dabei
  * angewandt wurden). */

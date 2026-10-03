@@ -311,6 +311,31 @@ Ein Feld am `WikiSeite`-Knoten: `pruefHash` (SHA-256 des zuletzt geprüften
 Fließtexts, leer wenn noch nie geprüft). Kein eigener Node-Typ — die Prüfung
 braucht keine Historie, nur den letzten Stand.
 
+---
+
+## POST `/verknuepfung/beziehungen-aus-beschreibungen` (gebaut 03.10.2026)
+
+Liest Beschreibung + SL-Notizen ALLER Personen/Orte/Events/Fraktionen in
+einem KI-Aufruf und schlägt daraus neue `VERBINDUNG`-Kanten vor — der
+"✨ Beziehungen aus Beschreibungen"-Knopf im Verbindungen-Bereich. Anders als
+die Wiki-Auto-Verknüpfung braucht das keine Wiki-Seite: beide Seiten jedes
+Vorschlags sind bestehende Entitäten (`zielId` nie `null`). Bereits
+bestehende Verbindungen werden der KI mitgeschickt und serverseitig gegen
+Dubletten geprüft (auch in Gegenrichtung).
+
+**Response:** `VorschlaegeAntwort` mit nur `beziehungen` befüllt (keine
+`verweise`, da kein Textbezug). Anwenden läuft über dieselbe
+`/wiki/{seitenId}/verknuepfung/beziehung`-Route wie die Wiki-Auto-Verknüpfung
+(Platzhalter-`seitenId`, die Kante hängt an den Entitäten).
+
+Beziehungstyp-Konsistenz (03.10.2026): dieser Endpunkt UND die
+Wiki-Auto-Verknüpfung UND der ✨-Idee/Beratung-Typ `verbindung` bekommen alle
+die Liste bereits in der Kampagne verwendeter Beziehungstyp-Strings
+(`entities/repository.py::list_verbindungstypen`) mit und müssen einen
+passenden exakt wiederverwenden statt eine neue Formulierung fürs selbe
+Konzept zu erfinden ("kennt" statt "ist bekannt mit"); alle drei Prompts
+verlangen zusätzlich maximal 5 Wörter pro Beziehungstyp.
+
 ## Siehe auch
 
 - [Wiki](./wiki.md) — Seitenmodell, Freigabesystem

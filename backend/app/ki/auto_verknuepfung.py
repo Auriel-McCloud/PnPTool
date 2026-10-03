@@ -56,10 +56,11 @@ from app.entities.repository import (
     create_node,
     create_verbindung,
 )
+from app.entities.repository import list_verbindungen as list_entitaets_verbindungen
 from app.entities.schemas import EventCreate, FraktionCreate, OrtCreate, PersonCreate
 from app.ereignisprotokoll import hooks
 from app.ki.client import generiere_json
-from app.ki.kontext import sammle_entitaeten, tiptap_zu_text
+from app.ki.kontext import sammle_entitaeten, sammle_entitaeten_mit_text, sammle_verbindungstypen_text, tiptap_zu_text
 from app.wiki import repository
 from app.wiki.logic import VERWEIS_TYP
 
@@ -92,10 +93,15 @@ _SYSTEM = (
     "ihnen beschrieben wird. name1/typ1 und name2/typ2 identifizieren die "
     "beiden Seiten (dieselben Namens-/Typregeln wie bei VERWEISE oben — "
     "wenn eine der beiden Seiten in der bekannten Liste steht, exakt deren "
-    "Namen verwenden). 'beziehungstyp' ist eine kurze Bezeichnung der "
-    "Beziehung aus Sicht von Seite 1 (z.B. \"Arbeitet für\", \"Feind\", "
-    "\"Mitglied von\", \"Schulden bei\"), 'beschreibung' ist ein kurzer "
-    "erklärender Satz, falls hilfreich (sonst leer)."
+    "'beziehungstyp' ist eine KURZE Bezeichnung der Beziehung aus Sicht von "
+    "Seite 1 — MAXIMAL 5 Wörter, je kürzer desto besser (z.B. \"Arbeitet "
+    "für\", \"Feind\", \"Mitglied von\", \"Schulden bei\"). Du bekommst eine "
+    "Liste bereits in dieser Kampagne verwendeter Beziehungstypen — passt "
+    "einer davon (auch nur sinngemäß), verwende ihn EXAKT (Zeichen für "
+    "Zeichen) statt eine eigene Formulierung für dasselbe Konzept zu "
+    "erfinden (\"kennt\" statt \"ist bekannt mit\"); nur wenn wirklich "
+    "keiner passt, einen neuen kurzen Typ prägen. 'beschreibung' ist ein "
+    "kurzer erklärender Satz, falls hilfreich (sonst leer)."
 )
 
 _SCHEMA = {
@@ -206,9 +212,11 @@ async def _erkennen(
     eine falsche ID erfinden.
     """
     liste_text = "\n".join(f"- {e['kind']}: {e['name']}" for e in entitaeten if e["name"]) or "(noch keine)"
+    typen_text = await sammle_verbindungstypen_text(campaign_id)
 
     prompt = (
         f"Bekannte Entitäten dieser Kampagne:\n{liste_text}\n\n"
+        f"Bereits verwendete Beziehungstypen dieser Kampagne: {typen_text}\n\n"
         f"Zu durchsuchender Text:\n{text}"
     )
     ergebnis = await generiere_json(prompt, _SYSTEM, _SCHEMA, campaign_id=campaign_id)
@@ -336,6 +344,150 @@ async def sweep(campaign_id: str) -> SweepVorschlaegeAntwort:
             )
 
     return SweepVorschlaegeAntwort(geprueft=geprueft, uebersprungen=uebersprungen, ergebnisse=ergebnisse)
+
+
+# --- Beziehungen aus Beschreibungen (03.10.2026, Marks Wunsch) ----------
+# Anders als die Wiki-Auto-Verknüpfung oben (ein Text, eine Seite) liest das
+# hier Beschreibung + Notizen ALLER Personen/Orte/Events/Fraktionen auf
+# einmal und lässt die KI daraus Beziehungen ableiten — "unsere Charaktere/
+# Orte/Fraktionen beschreiben sich ja oft schon gegenseitig, warum nicht
+# daraus Verbindungen vorschlagen". Ein einziger KI-Aufruf für die ganze
+# Kampagne (Mark ist kostenbewusst), kein Sweep mit Einzelaufrufen pro
+# Entität. Legt NICHTS automatisch an — dieselbe Zwei-Schritt-Logik
+# (Vorschlag holen, einzeln bestätigen) wie überall sonst in diesem Modul.
+
+_BEZIEHUNGEN_KAMPAGNE_SYSTEM = (
+    "Du hilfst, den Beziehungsgraphen eines deutschen Cyberpunk-Pen-and-"
+    "Paper-Rollenspiels (NeotopiA) zu vervollständigen. Du bekommst eine "
+    "Liste aller Personen/Orte/Events/Fraktionen der Kampagne mit ihrer "
+    "Beschreibung und ihren SL-Notizen. Finde darin KONKRETE Beziehungen "
+    "zwischen zwei dieser Entitäten (z.B. \"arbeitet für\", \"ist verfeindet "
+    "mit\", \"wohnt in\", \"Mitglied von\", \"hat Schulden bei\", \"kennt\"). "
+    "NUR bei einer wirklich im Text ausgedrückten Beziehung — NIEMALS raten "
+    "oder nur, weil zwei Entitäten thematisch verwandt klingen. Du bekommst "
+    "außerdem eine Liste BEREITS BESTEHENDER Verbindungen dieser Kampagne — "
+    "melde KEINE Beziehung, die dort (in gleicher oder sehr ähnlicher Form) "
+    "schon existiert, nur wirklich neue. name1/typ1 und name2/typ2 "
+    "identifizieren die beiden Seiten — 'name' MUSS exakt (Zeichen für "
+    "Zeichen) dem Namen aus der Liste entsprechen, 'typ' ist Person/Ort/"
+    "Event/Fraktion. 'beziehungstyp' ist eine KURZE Bezeichnung der "
+    "Beziehung aus Sicht von Seite 1 — MAXIMAL 5 Wörter, je kürzer desto "
+    "besser. Du bekommst eine Liste bereits in dieser Kampagne verwendeter "
+    "Beziehungstypen — passt einer davon (auch nur sinngemäß), verwende ihn "
+    "EXAKT statt eine eigene Formulierung für dasselbe Konzept zu erfinden "
+    "(\"kennt\" statt \"ist bekannt mit\"); nur wenn wirklich keiner passt, "
+    "einen neuen kurzen Typ prägen. 'beschreibung' ist ein kurzer "
+    "erklärender Satz, falls hilfreich (sonst leer)."
+)
+
+_BEZIEHUNGEN_KAMPAGNE_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "beziehungen": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "typ1": {"type": "STRING", "enum": list(_TYPEN)},
+                    "name1": {"type": "STRING"},
+                    "typ2": {"type": "STRING", "enum": list(_TYPEN)},
+                    "name2": {"type": "STRING"},
+                    "beziehungstyp": {"type": "STRING"},
+                    "beschreibung": {"type": "STRING"},
+                },
+                "required": ["typ1", "name1", "typ2", "name2", "beziehungstyp"],
+            },
+        },
+    },
+    "required": ["beziehungen"],
+}
+
+
+async def beziehungsvorschlaege_aus_beschreibungen(campaign_id: str) -> VorschlaegeAntwort:
+    """Liest Beschreibung+Notizen aller Entitäten, schlägt neue Beziehungen vor.
+
+    Der Knopf im Verbindungen-Bereich ("✨ Beziehungen aus Beschreibungen").
+    Ein KI-Aufruf für die ganze Kampagne; bereits bestehende Verbindungen
+    werden mitgeschickt, damit die KI keine Dubletten vorschlägt (zusätzlich
+    zum Dedup-Check unten, der exakte/sehr nahe Übereinstimmungen filtert).
+    """
+    entitaeten = await sammle_entitaeten_mit_text(campaign_id)
+    entitaeten_mit_text = [e for e in entitaeten if e["text"]]
+    if len(entitaeten_mit_text) < 2:
+        return VorschlaegeAntwort()
+
+    bestehend = await list_entitaets_verbindungen(campaign_id)
+    namen_index = {e["id"]: (e["kind"], e["name"]) for e in entitaeten}
+    bestehend_schluessel: set[tuple] = set()
+    bestehend_zeilen: list[str] = []
+    for kante in bestehend:
+        von = namen_index.get(kante.get("vonId"))
+        zu = namen_index.get(kante.get("zuId"))
+        if not von or not zu:
+            continue
+        typ = str(kante.get("typ") or "").strip()
+        bestehend_schluessel.add((von[0], _normalisiert(von[1]), zu[0], _normalisiert(zu[1]), _normalisiert(typ)))
+        bestehend_zeilen.append(f"- {von[1]} — {typ} → {zu[1]}")
+
+    liste_text = "\n".join(
+        f"- {e['kind']}: {e['name']} — {e['text']}" for e in entitaeten_mit_text
+    )
+    bestehend_text = "\n".join(bestehend_zeilen) or "(noch keine)"
+    typen_text = await sammle_verbindungstypen_text(campaign_id)
+
+    prompt = (
+        f"Personen/Orte/Events/Fraktionen der Kampagne mit Beschreibung/Notizen:\n{liste_text}\n\n"
+        f"Bereits bestehende Verbindungen dieser Kampagne:\n{bestehend_text}\n\n"
+        f"Bereits verwendete Beziehungstypen dieser Kampagne: {typen_text}"
+    )
+    ergebnis = await generiere_json(
+        prompt, _BEZIEHUNGEN_KAMPAGNE_SYSTEM, _BEZIEHUNGEN_KAMPAGNE_SCHEMA, campaign_id=campaign_id
+    )
+    await hooks.ki(
+        campaign_id,
+        anlass="beziehungen-aus-beschreibungen",
+        prompt=liste_text,
+        antwort_text=json.dumps(ergebnis, ensure_ascii=False),
+        uebernommen=False,
+    )
+
+    index = {(e["kind"], _normalisiert(e["name"])): e["id"] for e in entitaeten if e["name"]}
+
+    beziehungen: list[BeziehungsVorschlag] = []
+    gesehen: set[tuple] = set()
+    for eintrag in ergebnis.get("beziehungen") or []:
+        typ1 = eintrag.get("typ1") or ""
+        name1 = (eintrag.get("name1") or "").strip()
+        typ2 = eintrag.get("typ2") or ""
+        name2 = (eintrag.get("name2") or "").strip()
+        beziehungstyp = (eintrag.get("beziehungstyp") or "").strip()
+        if typ1 not in _TYPEN or typ2 not in _TYPEN or not name1 or not name2 or not beziehungstyp:
+            continue
+        if typ1 == typ2 and _normalisiert(name1) == _normalisiert(name2):
+            continue
+        schluessel = (typ1, _normalisiert(name1), typ2, _normalisiert(name2), _normalisiert(beziehungstyp))
+        if schluessel in gesehen or schluessel in bestehend_schluessel:
+            continue
+        # Auch die Gegenrichtung mit demselben Typ zählt als Dublette —
+        # "A kennt B" und "B kennt A" sind dieselbe bestehende Kante.
+        gegenrichtung = (typ2, _normalisiert(name2), typ1, _normalisiert(name1), _normalisiert(beziehungstyp))
+        if gegenrichtung in bestehend_schluessel:
+            continue
+        gesehen.add(schluessel)
+        beziehungen.append(
+            BeziehungsVorschlag(
+                typ1=typ1,
+                name1=name1,
+                zielId1=index.get((typ1, _normalisiert(name1))),
+                typ2=typ2,
+                name2=name2,
+                zielId2=index.get((typ2, _normalisiert(name2))),
+                beziehungstyp=beziehungstyp,
+                beschreibung=(eintrag.get("beschreibung") or "").strip(),
+            )
+        )
+
+    return VorschlaegeAntwort(beziehungen=beziehungen)
 
 
 def _verweis_einfuegen(knoten, zitat: str, attrs: dict) -> bool:

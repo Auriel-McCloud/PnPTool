@@ -32,7 +32,7 @@ from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
 from app.ereignisprotokoll import hooks
-from app.ki.kontext import sammle_kontext
+from app.ki.kontext import sammle_kontext, sammle_verbindungstypen_text
 from app.ki.wiki_pruefung import (
     SweepAntwort,
     UebernehmenAntwort,
@@ -50,6 +50,7 @@ from app.ki.auto_verknuepfung import (
     VorschlaegeAntwort,
     anwenden as verknuepfung_anwenden,
     beziehung_anwenden as verknuepfung_beziehung_anwenden,
+    beziehungsvorschlaege_aus_beschreibungen,
     sweep as verknuepfung_sweep,
     vorschlaege as verknuepfung_vorschlaege,
     vorschlaege_fuer_text as verknuepfung_vorschlaege_fuer_text,
@@ -248,7 +249,11 @@ _VERBINDUNG_SYSTEM = (
     + " Lege EINE Beziehung zwischen zwei Entitäten. vonTyp/zuTyp nur "
     "Person, Ort, Event oder Fraktion. Bevorzuge Namen aus der "
     "freigegebenen Welt; nur wenn wirklich nichts passt, neue Namen. "
-    "typ ist die kurze Kantenbezeichnung (kennt, besitzt, feindet, …)."
+    "typ ist die kurze Kantenbezeichnung (kennt, besitzt, feindet, …) — "
+    "MAXIMAL 5 Wörter, je kürzer desto besser. Passt einer der bereits "
+    "verwendeten Beziehungstypen (siehe unten), verwende ihn EXAKT statt "
+    "eine eigene Formulierung für dasselbe Konzept zu erfinden; nur wenn "
+    "wirklich keiner passt, einen neuen kurzen Typ prägen."
 )
 
 
@@ -606,8 +611,12 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
 
         if typ == "verbindung":
             kontext = await sammle_kontext(campaign_id)
+            typen_text = await sammle_verbindungstypen_text(campaign_id)
+            prompt_mit_typen = (
+                f"{prompt}\n\nBereits verwendete Beziehungstypen dieser Kampagne: {typen_text}"
+            )
             ergebnis = await generiere_json(
-                _mit_kontext(prompt, kontext), _VERBINDUNG_SYSTEM, _VERBINDUNG_SCHEMA, campaign_id=campaign_id
+                _mit_kontext(prompt_mit_typen, kontext), _VERBINDUNG_SYSTEM, _VERBINDUNG_SCHEMA, campaign_id=campaign_id
             )
             von_typ = ergebnis.get("vonTyp") or ""
             zu_typ = ergebnis.get("zuTyp") or ""
@@ -987,6 +996,26 @@ async def wiki_verknuepfung_sweep(campaign_id: str):
     """
     try:
         return await verknuepfung_sweep(campaign_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/verknuepfung/beziehungen-aus-beschreibungen", response_model=VorschlaegeAntwort)
+async def beziehungen_aus_beschreibungen(campaign_id: str):
+    """Liest Beschreibung+Notizen ALLER Personen/Orte/Events/Fraktionen in
+    einem KI-Aufruf und schlägt daraus neue VERBINDUNG-Kanten vor.
+
+    Der "✨ Beziehungen aus Beschreibungen"-Knopf im Verbindungen-Bereich
+    (03.10.2026, Marks Wunsch) — anders als die Wiki-Auto-Verknüpfung oben
+    braucht das keine Wiki-Seite, sondern durchsucht direkt die Charakter-/
+    Orts-/Fraktionsbögen. Beide Seiten einer vorgeschlagenen Beziehung
+    existieren bereits (das sind bestehende Entitäten, keine Erwähnungen in
+    freiem Text), `zielId` ist daher nie `None` — Anwenden läuft trotzdem
+    über dieselbe `/wiki/{seitenId}/verknuepfung/beziehung`-Route wie überall
+    sonst (Platzhalter-`seitenId`, die Kante hängt an den Entitäten).
+    """
+    try:
+        return await beziehungsvorschlaege_aus_beschreibungen(campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 

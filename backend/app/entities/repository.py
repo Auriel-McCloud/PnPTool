@@ -479,6 +479,28 @@ async def create_verbindung(campaign_id: str, data: dict) -> dict:
         return response
 
 
+async def list_verbindungstypen(campaign_id: str) -> list[str]:
+    """Alle bereits verwendeten Beziehungstyp-Strings dieser Kampagne, sortiert.
+
+    Grundlage für die KI-Prompts, die eine neue VERBINDUNG-Kante vorschlagen
+    (Auto-Verknüpfung, Idee/Beratung-Typ "verbindung", Beziehungs-Vorschläge
+    aus Beschreibungen, 03.10.2026) — ohne diese Liste erfindet die KI bei
+    jedem Aufruf eine eigene Formulierung ("kennt", "ist bekannt mit",
+    "Bekannter von", ...) statt einen bestehenden Typ wiederzuverwenden.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (a)-[r:VERBINDUNG]->(b)
+        WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+          AND r.typ IS NOT NULL AND r.typ <> ''
+        RETURN DISTINCT r.typ AS typ
+        ORDER BY typ
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [record["typ"] async for record in result]
+
+
 async def list_verbindungen(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = """

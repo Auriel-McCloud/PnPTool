@@ -31,7 +31,17 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   ist App-Filter, reicht für einen vertrauten zweiten Tisch. **Nicht
   von selbst anfangen.**
 
-## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
+## Offen: Was Mark selbst testen muss (Stand 03.10.2026)
+
+- **Beziehungstyp-Konsistenz + „Beziehungen aus Beschreibungen"-Knopf neu**
+  (siehe „Zuletzt gebaut" 03.10.2026): nie im Browser angeklickt, nur
+  `pytest`/`tsc -b` geprüft. Bitte am Spieltisch: im Verbindungen-Bereich
+  den neuen Knopf „✨ Beziehungen aus Beschreibungen" neben „+ Neue
+  Verbindung" klicken, prüfen ob aus Beschreibung/Notizen bestehender
+  NPCs/Orte/Fraktionen sinnvolle neue Verbindungen vorgeschlagen werden und
+  ob vorgeschlagene Beziehungstypen zu bereits verwendeten passen (z.B.
+  „kennt" statt einer neuen Formulierung, wenn „kennt" schon existiert).
+
 
 - **Lesegröße-Zoom neu** (siehe „Zuletzt gebaut" 03.10.2026 — Zoom in
   Beschreibungs-/Notizenboxen): nie im Browser angeklickt, nur `tsc -b`.
@@ -283,6 +293,40 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (03.10.2026 — Beziehungstyp-Konsistenz + Beziehungen aus Beschreibungen):**
+- **Was:** Zwei Teile auf Marks Wunsch ("eine knackige, max. 5 Wörter
+  Beschreibung, die einem Schema folgen soll, wenn's die Art Verbindung
+  schon gibt"). 1) Alle drei KI-Wege, die eine `VERBINDUNG`-Kante
+  vorschlagen (Wiki-Auto-Verknüpfung, ✨-Idee/Beratung-Typ "verbindung",
+  neuer Knopf siehe unten) bekommen jetzt die Liste bereits in der Kampagne
+  verwendeter Beziehungstyp-Strings mit und MÜSSEN einen passenden exakt
+  wiederverwenden statt eine neue Formulierung fürs selbe Konzept zu
+  erfinden ("kennt" statt "ist bekannt mit"); Prompt verlangt zusätzlich
+  explizit maximal 5 Wörter. 2) Neuer Knopf "✨ Beziehungen aus
+  Beschreibungen" im Verbindungen-Bereich: ein KI-Aufruf liest Beschreibung
+  + SL-Notizen ALLER bestehenden Personen/Orte/Events/Fraktionen auf einmal
+  und schlägt daraus neue Verbindungen vor (z.B. wenn "Kez schuldet dem
+  Zaibatsu Geld" schon in einer Beschreibung steht, aber nie als Kante
+  angelegt wurde). Bereits bestehende Verbindungen werden mitgeschickt
+  (Dedup gegen Dubletten, auch in Gegenrichtung). Beide Seiten je
+  Vorschlag sind bestehende Entitäten (zielId nie None); dieselbe
+  Zwei-Schritt-Bestätigung wie überall (kein Autocommit).
+- **Dateien:** `backend/app/entities/repository.py` (`list_verbindungstypen`),
+  `backend/app/ki/kontext.py` (`sammle_verbindungstypen_text`,
+  `sammle_entitaeten_mit_text`), `backend/app/ki/auto_verknuepfung.py`
+  (Prompt-Erweiterung + neue `beziehungsvorschlaege_aus_beschreibungen`),
+  `backend/app/ki/routes.py` (Prompt-Erweiterung `_VERBINDUNG_SYSTEM`, neue
+  Route `/verknuepfung/beziehungen-aus-beschreibungen`). Frontend:
+  `ki/api.ts` (`beziehungenAusBeschreibungen`), neu
+  `entities/BeziehungenAusBeschreibungenPopup.tsx`, `EntityManager.tsx`
+  (Knopf im Verbindungen-Kopf).
+- **Verifiziert:** neue `tests/test_beziehungen_aus_beschreibungen.py` (4
+  Fälle: zu wenig Text → kein KI-Aufruf, Vorschlag mit zielId, Dedup gegen
+  bestehende Kante inkl. Gegenrichtung, Datenklasse), volle Backend-Suite
+  484 passed (nur die 2 vorbestehenden, nicht von dieser Änderung
+  verursachten `test_zugriffsschutz.py`-Fehler), `tsc -b` sauber. **Nie im
+  Browser angeklickt** — siehe „Offen" oben.
 
 **Zuletzt gebaut (03.10.2026 — Lesegröße-Zoom in Beschreibungs-/Notizenboxen):**
 - **Was:** A−/A+-Knöpfe skalieren die Schriftgröße jeder TipTap-Box

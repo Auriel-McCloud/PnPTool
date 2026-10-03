@@ -36,6 +36,7 @@ import { FraktionDetail } from "./FraktionDetail";
 import { Filterleiste } from "./Filterleiste";
 import { VerbindungenListe } from "./VerbindungenListe";
 import { VerbindungAnlegenGlobal } from "./VerbindungAnlegenGlobal";
+import { BeziehungenAusBeschreibungenPopup } from "./BeziehungenAusBeschreibungenPopup";
 import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
 
@@ -494,6 +495,7 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
 
   // --- Verbindung ---
   const [verbindungAnlegenOffen, setVerbindungAnlegenOffen] = useState(false);
+  const [beziehungenAusBeschreibungenOffen, setBeziehungenAusBeschreibungenOffen] = useState(false);
 
   const zeigePersonen = ansicht === "welt" || ansicht === "pcs" || ansicht === "npcs";
   const personenInAnsicht =
@@ -687,6 +689,21 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setBeziehungenAusBeschreibungenOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "transparent",
+                border: "1px solid var(--bereich-verbindungen, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-verbindungen, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ✨ Beziehungen aus Beschreibungen
+            </button>
             <button
               type="button"
               onClick={() => setVerbindungAnlegenOffen(true)}
@@ -1051,6 +1068,15 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
           pcOptions={pcOptions}
           onGeaendert={refreshAll}
           onSchliessen={() => setVerbindungAnlegenOffen(false)}
+        />
+      )}
+
+      {beziehungenAusBeschreibungenOffen && (
+        <BeziehungenAusBeschreibungenPopup
+          campaignId={campaignId}
+          offen={beziehungenAusBeschreibungenOffen}
+          onGeaendert={refreshAll}
+          onSchliessen={() => setBeziehungenAusBeschreibungenOffen(false)}
         />
       )}
 

@@ -93,6 +93,21 @@ async def sammle_kontext(campaign_id: str) -> str:
     return "\n".join(zeilen)
 
 
+async def sammle_verbindungstypen_text(campaign_id: str) -> str:
+    """Bereits verwendete Beziehungstyp-Strings als kurze Liste für den Prompt.
+
+    Beziehungstyp ist bewusst Freitext, kein Enum (siehe
+    `entities/schemas.py::FilterOptionen`) — die KI soll trotzdem BEVORZUGT
+    einen schon existierenden Typ treffen ("kennt" statt "ist bekannt mit"),
+    damit der Beziehungsgraph nicht mit Varianten desselben Konzepts
+    zuwuchert (Marks Wunsch, 03.10.2026).
+    """
+    from app.entities.repository import list_verbindungstypen
+
+    typen = await list_verbindungstypen(campaign_id)
+    return ", ".join(typen) if typen else "(noch keine)"
+
+
 async def sammle_entitaeten(campaign_id: str) -> list[dict]:
     """Freigegebene Personen/Orte/Events/Fraktionen mit ID.
 
@@ -114,3 +129,50 @@ async def sammle_entitaeten(campaign_id: str) -> list[dict]:
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
         return [dict(record) async for record in result]
+
+
+_ENTITAET_TEXT_MAX = 500
+
+
+async def sammle_entitaeten_mit_text(campaign_id: str) -> list[dict]:
+    """Freigegebene Personen/Orte/Events/Fraktionen mit ID, Name und Text.
+
+    Anders als ``sammle_entitaeten`` (nur Namen, für die Wiki-Erkennung)
+    liefert das hier Beschreibung UND SL-Notizen zusammen — Grundlage für
+    "Beziehungen aus Beschreibungen vorschlagen" (03.10.2026, Marks Wunsch):
+    die KI soll Beziehungen erkennen, die irgendwo im Charakterbogen stehen,
+    nicht nur im Wiki-Fließtext. Notizen sind bewusst dabei, da dort oft die
+    konkreten Beziehungsdetails stehen (Mark: "schauen wir mal rein").
+    Je Entität gekappt, damit eine voll ausgebaute Kampagne ins
+    Kontextfenster passt (dieselbe Überlegung wie ``_BESCHREIBUNG_MAX``
+    oben, nur grosszügiger, weil hier beide Felder zusammenkommen).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n {campaignId: $campaign_id})
+        WHERE (n:Person OR n:Ort OR n:Event OR n:Fraktion)
+          AND coalesce(n.istEntwurf, false) = false
+        RETURN n.id AS id, labels(n)[0] AS kind,
+               coalesce(n.name, n.title, '') AS name,
+               coalesce(n.description, '') AS description,
+               coalesce(n.notes, '') AS notes
+        ORDER BY kind, name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        eintraege = [dict(record) async for record in result]
+
+    ergebnis: list[dict] = []
+    for e in eintraege:
+        teile = []
+        beschreibung = tiptap_zu_text(e["description"]).strip()
+        if beschreibung:
+            teile.append(f"Beschreibung: {beschreibung}")
+        notizen = tiptap_zu_text(e["notes"]).strip()
+        if notizen:
+            teile.append(f"Notizen: {notizen}")
+        text = "; ".join(teile)
+        if len(text) > _ENTITAET_TEXT_MAX:
+            text = text[:_ENTITAET_TEXT_MAX].rstrip() + "…"
+        ergebnis.append({"id": e["id"], "kind": e["kind"], "name": (e["name"] or "").strip(), "text": text})
+    return ergebnis
