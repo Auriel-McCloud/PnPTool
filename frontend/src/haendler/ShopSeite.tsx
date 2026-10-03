@@ -38,6 +38,15 @@ export function ShopSeite({
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState<string | null>(null);
   const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
+  // KI-Alltagswunsch (24.09.2026, nur Spieler) — Hooks MÜSSEN vor dem frühen
+  // "noch nicht geladen"-Return weiter unten stehen (React verlangt in
+  // jedem Render exakt dieselbe Hook-Reihenfolge; standen sie danach, rief
+  // der erste Render mit haendler=null weniger Hooks auf als jeder weitere
+  // Render nach dem Laden — "Rendered more hooks than during the previous
+  // render", React-Fehler #310, Shop-Seite blieb schwarz/leer).
+  const [wunschText, setWunschText] = useState("");
+  const [wunschLäuft, setWunschLäuft] = useState(false);
+  const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
 
   async function laden() {
     const [h, s, g] = await Promise.all([
@@ -97,10 +106,8 @@ export function ShopSeite({
   // Fragt nach etwas, das nicht im Sortiment steht. Kein Warten nötig — die
   // KI antwortet sofort, die Anfrage geht parallel als Popup an die SL
   // (siehe AlltagswunschFreigabePopup). NIE für Waffen/Rüstung, harter
-  // Backend-Filter, siehe app/haendler/alltagswunsch.py.
-  const [wunschText, setWunschText] = useState("");
-  const [wunschLäuft, setWunschLäuft] = useState(false);
-  const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
+  // Backend-Filter, siehe app/haendler/alltagswunsch.py. (State-Deklaration
+  // liegt jetzt oben vor dem frühen Return, siehe Kommentar dort.)
 
   async function wunschStellen() {
     const text = wunschText.trim();
