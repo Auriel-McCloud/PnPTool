@@ -10,6 +10,7 @@ import { KiTextPopup } from "../ki/KiTextPopup";
 import { ObjektPruefungPopup } from "../ki/ObjektPruefungPopup";
 import { ObjektVerknuepfungPopup } from "../ki/ObjektVerknuepfungPopup";
 import { kiObjektTextPruefen, type PruefBefund } from "../ki/api";
+import { TextZoomKnoepfe } from "./TextZoomKnoepfe";
 import "./richtext.css";
 
 const EXTENSIONS = [
@@ -146,7 +147,7 @@ export function RichTextEditor({
   }
 
   return (
-    <div style={{ border: "1px solid var(--linie)", borderRadius: 6 }}>
+    <div style={{ border: "1px solid var(--linie)", borderRadius: 6 }} className="rt-zoom-bereich">
       <div
         style={{
           display: "flex",
@@ -214,6 +215,8 @@ export function RichTextEditor({
             ⧉✨ Auto-Verknüpfen
           </ToolbarButton>
         )}
+        <span style={{ borderLeft: "1px solid var(--linie)", margin: "0 4px" }} />
+        <TextZoomKnoepfe />
       </div>
       {pruefFehler && (
         <p style={{ color: "var(--signal)", fontSize: 12, margin: "6px 10px 0" }}>

@@ -33,6 +33,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
+- **Lesegröße-Zoom neu** (siehe „Zuletzt gebaut" 03.10.2026 — Zoom in
+  Beschreibungs-/Notizenboxen): nie im Browser angeklickt, nur `tsc -b`.
+  Bitte eine Beschreibung öffnen, A+/A− in der Werkzeugleiste (Editor) bzw.
+  über dem Text (Leseansicht) antippen — Schrift sollte in 5 Stufen
+  (100–175%) wachsen/schrumpfen, Einstellung nach Reload erhalten bleiben
+  und beim zweiten gleichzeitig offenen Popup mitziehen.
 - **KI-Entwürfe mit Notizen neu** (siehe „Zuletzt gebaut" 03.10.2026 —
   KI-Entwürfe befüllen jetzt auch die Notizen): nie im Browser angeklickt,
   nur pytest. Bitte eine Beratung führen, ruhig Details reinwerfen, dann
@@ -277,6 +283,22 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (03.10.2026 — Lesegröße-Zoom in Beschreibungs-/Notizenboxen):**
+- **Was:** A−/A+-Knöpfe skalieren die Schriftgröße jeder TipTap-Box
+  (Beschreibung, Notizen) mehrstufig (100/115/130/150/175%). Gilt in
+  `RichTextEditor` (Werkzeugleiste) UND `RichTextView` (reine Leseansicht,
+  z.B. Spieler-Ansicht/Kachel-Vorschau) — Mark wollte beides. Merkt sich
+  global über `localStorage`, wirkt sofort auf alle gleichzeitig offenen
+  Boxen (CustomEvent, kein Context/Provider nötig).
+- **Dateien:** `frontend/src/richtext/textzoom.ts` (neu, Hook + CSS-Variable
+  `--rt-zoom` auf `document.documentElement`), `TextZoomKnoepfe.tsx` (neu),
+  `richtext.css` (`.rt-zoom-bereich .ProseMirror` — bewusst scoped, NICHT
+  das bloße `.ProseMirror`, sonst zöge es den Wiki-Editor mit), `main.tsx`
+  (`zoomAnwenden()` früh beim Start, analog zum Theme), `RichTextEditor.tsx`/
+  `RichTextView.tsx`.
+- **Verifiziert:** `tsc -b` sauber. Browser-Klicktest steht noch aus (siehe
+  „Offen: Was Mark selbst testen muss" oben).
 
 **Zuletzt gebaut (03.10.2026 — PWA-Start: Production-Build statt Vite-Dev):**
 - **Was:** Die installierte Handy-App zeigte oft eine weiße Seite; Neu-Laden

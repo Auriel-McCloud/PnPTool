@@ -36,3 +36,56 @@
 .ProseMirror:focus {
   outline: none;
 }
+
+/* Lesegröße-Zoom (shell/textzoom.ts): --rt-zoom steht global auf
+   document.documentElement, 1 = 100%. Skaliert über font-size statt
+   transform: scale, damit der Textfluss/die Breite erhalten bleibt — ein
+   gezoomter Absatz soll umbrechen, nicht aus der Box ragen. Bewusst nur
+   innerhalb von .rt-zoom-bereich (RichTextEditor/RichTextView), NICHT auf
+   das bloße .ProseMirror — sonst zöge der Zoom unbeabsichtigt auch den
+   Wiki-Editor mit, der dieselbe richtext.css importiert. */
+.rt-zoom-bereich .ProseMirror {
+  font-size: calc(1em * var(--rt-zoom, 1));
+}
+
+/* --- Zoom-Knöpfe (A− / A+) --------------------------------------------- */
+
+.rt-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rt-zoom-knopf {
+  font-weight: bold;
+  background: var(--flaeche);
+  color: var(--text-leise);
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  padding: 4px 8px;
+  min-height: 0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rt-zoom-knopf:hover:not(:disabled) {
+  color: var(--neon);
+  border-color: var(--neon);
+  background: var(--flaeche);
+}
+
+.rt-zoom-wert {
+  min-width: 34px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
+/* Werkzeugleiste über RichTextView (nur der Zoom-Knopf, kein Editor) —
+   rechtsbündig und knapp, damit sie neben kurzen Texten nicht dominiert. */
+.rt-view-werkzeuge {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
