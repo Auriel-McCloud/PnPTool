@@ -44,7 +44,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 140px;
+  min-height: 180px;
   padding: 14px;
   background: var(--flaeche);
   border: 1px solid var(--linie);
@@ -60,7 +60,10 @@
   box-shadow: 0 0 16px -6px var(--bereich-farbe, var(--neon));
 }
 
-/* Physischer Shop: eigenes Hintergrundbild als Kulisse hinter der Kachel. */
+/* Physischer Shop: eigenes Hintergrundbild als Kulisse hinter der Kachel.
+   Mark, 04.10.2026: Bild soll "zumindest gut sichtbar" sein — vorher 0.35,
+   wirkte auf der kleinen Kachel fast unsichtbar. Zusaetzlicher dunkler
+   Verlauf von unten haelt Name/Spezialisierung trotzdem lesbar. */
 .shop-haendler-kachel[data-hat-bild="true"]::before {
   content: "";
   position: absolute;
@@ -68,7 +71,15 @@
   background-image: var(--shop-bild);
   background-size: cover;
   background-position: center;
-  opacity: 0.35;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.shop-haendler-kachel[data-hat-bild="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(var(--grund-rgb) / 0.85), transparent 65%);
   z-index: 0;
 }
 
@@ -108,8 +119,8 @@
   display: flex;
   align-items: flex-end;
   gap: 16px;
-  min-height: 160px;
-  padding: 16px;
+  min-height: 240px;
+  padding: 20px;
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--flaeche);
@@ -142,13 +153,20 @@
 }
 
 .shop-haendler-portrait {
-  width: 96px;
-  height: 96px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--bereich-farbe, var(--neon));
   box-shadow: 0 0 16px -4px var(--bereich-farbe, var(--neon));
   flex-shrink: 0;
+}
+
+@media (max-width: 599px) {
+  .shop-haendler-portrait {
+    width: 100px;
+    height: 100px;
+  }
 }
 
 .shop-kopf-text h2 {
