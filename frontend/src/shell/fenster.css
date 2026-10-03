@@ -160,6 +160,15 @@
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  /* flex-basis "auto" (NICHT die Kurzform "flex: 1", die 0% waere) —
+     holt sich nur dann zusaetzliche Hoehe, wenn .fn-fenster tatsaechlich
+     eine feste Hoehe hat (maximiert/Handy-Vollbild). Passt der Inhalt
+     ohnehin hinein oder ist das Fenster per max-height begrenzt, bleibt
+     die Groesse unveraendert wie bisher — kein Verhaltensunterschied im
+     Normalfall. Erst dieser Freiraum reicht tiefer stehende Beschreibungs-/
+     Notizfelder (pc-detail.css, richtext.css) bis an den Fensterrand durch. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* --- Handy: bildschirmfuellend ---------------------------------------- */

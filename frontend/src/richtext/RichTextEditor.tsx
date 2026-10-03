@@ -223,8 +223,8 @@ export function RichTextEditor({
           {pruefFehler}
         </p>
       )}
-      <div style={{ padding: 10, minHeight }}>
-        <EditorContent editor={editor} />
+      <div style={{ padding: 10, minHeight, display: "flex", flexDirection: "column", flex: "1 1 auto" }} className="rt-editor-flaeche">
+        <EditorContent editor={editor} className="rt-editor-content" />
       </div>
       {kiKontext && (
         <KiTextPopup

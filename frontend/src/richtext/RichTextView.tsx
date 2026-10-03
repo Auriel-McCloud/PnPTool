@@ -27,7 +27,9 @@ export function RichTextView({ content }: { content: JSONContent }) {
       <div className="rt-view-werkzeuge">
         <TextZoomKnoepfe />
       </div>
-      <EditorContent editor={editor} />
+      <div className="rt-editor-flaeche">
+        <EditorContent editor={editor} className="rt-editor-content" />
+      </div>
     </div>
   );
 }

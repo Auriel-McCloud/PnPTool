@@ -100,6 +100,13 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* Flex-Container fuer den jeweils aktiven Reiter: so kann dessen Inhalt
+     (z.B. .pcd-editor-bereich) die Resthoehe ausfuellen, wenn .fn-inhalt
+     tatsaechlich mehr Platz hat als der Inhalt braucht. Andere Reiter
+     (Uebersicht, Blatt, ...) ohne eigenes flex-grow bleiben unveraendert
+     bei ihrer natuerlichen Groesse. */
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Übersicht ---------------------------------------------------------- */
@@ -154,6 +161,14 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Nur wirksam als direktes Kind von .pcd-bereich (selbst flex:1 in einem
+     flex:1-Kopf, siehe oben) — holt sich dort die Resthoehe des Popups statt
+     bei der natuerlichen Hoehe des Editors aufzuhoeren. In Nicht-Fenster-
+     Kontexten (z.B. KurzLangListe-Editor, VerbindungAnlegen: eigenes kleines
+     Popup ohne wachsenden Elternrahmen) bleibt das Verhalten unveraendert,
+     weil dort kein Vorfahre zusaetzliche Hoehe anbietet. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .pcd-speichern {

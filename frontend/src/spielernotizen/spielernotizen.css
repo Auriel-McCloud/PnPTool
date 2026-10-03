@@ -76,6 +76,14 @@
   gap: 8px;
 }
 
+/* Nur der Editor eines bestehenden Eintrags soll mit dem Popup mitwachsen
+   (Beschreibungs-/Notizfeld-Wunsch) — das Anlegen-Formular hat ohnehin nur
+   ein Titelfeld, kein Textfeld zum Strecken. */
+.sn-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .sn-label {
   font-size: 11px;
   letter-spacing: 0.08em;

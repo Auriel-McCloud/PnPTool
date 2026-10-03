@@ -48,6 +48,39 @@
   font-size: calc(1em * var(--rt-zoom, 1));
 }
 
+/* Laesst die Editor-Flaeche mit dem Popup mitwachsen (Mark, 03.10.2026:
+   "die Breite passt sich an, die Laenge noch nicht"). Nur wirksam, wenn ein
+   Vorfahre tatsaechlich mehr Hoehe anbietet als der Inhalt braucht — z.B.
+   .pcd-bereich in einem maximierten Fenster (shell/fenster.css). In normal
+   grossen Popups oder ausserhalb eines wachsenden Vorfahren (Anlege-
+   Formulare, Kacheln) bleibt alles beim Alten, da flex-grow ohne
+   ueberschuessigen Platz nichts zu verteilen hat. */
+.rt-zoom-bereich {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rt-editor-flaeche {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rt-editor-flaeche .rt-editor-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rt-editor-flaeche .rt-editor-content .ProseMirror {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* --- Zoom-Knöpfe (A− / A+) --------------------------------------------- */
 
 .rt-zoom {
