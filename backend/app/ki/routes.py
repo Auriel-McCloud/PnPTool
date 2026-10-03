@@ -101,6 +101,9 @@ _CHARAKTER_SCHEMA = {
     "properties": {
         "name": {"type": "STRING"},
         "beschreibung": {"type": "STRING"},
+        # SL-internes Notizfeld — alle Details aus Wunsch/Gespräch, die nicht
+        # in die knappe beschreibung passen (siehe _NOTIZEN_HINWEIS).
+        "notizen": {"type": "STRING"},
         # Kopfzeile des Papierblatts — reiner Text, keine Regelmechanik.
         "konzept": {"type": "STRING"},
         "alter": {"type": "STRING"},
@@ -124,7 +127,7 @@ _CHARAKTER_SCHEMA = {
             },
         },
     },
-    "required": ["name", "beschreibung", "konzept", "rasse", "weg", "traits"],
+    "required": ["name", "beschreibung", "notizen", "konzept", "rasse", "weg", "traits"],
 }
 
 _GEGENSTAND_SCHEMA = {
@@ -132,13 +135,15 @@ _GEGENSTAND_SCHEMA = {
     "properties": {
         "name": {"type": "STRING"},
         "beschreibung": {"type": "STRING"},
+        # SL-internes Notizfeld — siehe _NOTIZEN_HINWEIS.
+        "notizen": {"type": "STRING"},
         "typ": {"type": "STRING", "enum": GEGENSTAND_TYPEN},
         "preis": {"type": "INTEGER"},
         # Seltenheit 1 (überall verfügbar) bis 5 (Speziallabor/Schwarzmarkt) —
         # Grundlage für die automatische Shop-Bestückung (docs/api/haendler.md).
         "seltenheit": {"type": "INTEGER"},
     },
-    "required": ["name", "beschreibung", "typ", "preis", "seltenheit"],
+    "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit"],
 }
 
 _WELT_SCHEMA = {
@@ -146,8 +151,10 @@ _WELT_SCHEMA = {
     "properties": {
         "name": {"type": "STRING"},
         "beschreibung": {"type": "STRING"},
+        # SL-internes Notizfeld — siehe _NOTIZEN_HINWEIS.
+        "notizen": {"type": "STRING"},
     },
-    "required": ["name", "beschreibung"],
+    "required": ["name", "beschreibung", "notizen"],
 }
 
 _EVENT_SCHEMA = {
@@ -155,9 +162,11 @@ _EVENT_SCHEMA = {
     "properties": {
         "titel": {"type": "STRING"},
         "beschreibung": {"type": "STRING"},
+        # SL-internes Notizfeld — siehe _NOTIZEN_HINWEIS.
+        "notizen": {"type": "STRING"},
         "timestamp": {"type": "STRING"},
     },
-    "required": ["titel", "beschreibung"],
+    "required": ["titel", "beschreibung", "notizen"],
 }
 
 _KURZ_LANG_ITEM = {
@@ -174,10 +183,12 @@ _FRAKTION_SCHEMA = {
     "properties": {
         "name": {"type": "STRING"},
         "beschreibung": {"type": "STRING"},
+        # SL-internes Notizfeld — siehe _NOTIZEN_HINWEIS.
+        "notizen": {"type": "STRING"},
         "ziele": {"type": "ARRAY", "items": _KURZ_LANG_ITEM},
         "ressourcen": {"type": "ARRAY", "items": _KURZ_LANG_ITEM},
     },
-    "required": ["name", "beschreibung"],
+    "required": ["name", "beschreibung", "notizen"],
 }
 
 _VERBINDUNG_TYPEN = ("Person", "Ort", "Event", "Fraktion")
@@ -195,10 +206,24 @@ _VERBINDUNG_SCHEMA = {
     "required": ["vonName", "vonTyp", "zuName", "zuTyp", "typ"],
 }
 
+# Trennt, was im Spiel sichtbar ist (beschreibung), von dem, was nur die SL
+# sieht (notizen) — Mark empfand die generierten Entwürfe als zu knapp: die
+# knackige Zusammenfassung kam gut an, aber Details aus dem Wunsch/Gespräch
+# gingen verloren, weil es dafür kein Zielfeld gab (01.10.2026).
+_NOTIZEN_HINWEIS = (
+    " beschreibung bleibt eine knackige, kurze Zusammenfassung — das, was im "
+    "Spiel sichtbar oder vorlesbar wäre. notizen ist das SL-interne Notizfeld: "
+    "dort kommt ALLES rein, was im Wunsch/Gespräch an Details steckt und nicht "
+    "in die knappe beschreibung passt — Hintergründe, Zahlen, Motive, "
+    "Beziehungen, lose Ideen, offene Fragen. Lieber ausführlich als knapp; "
+    "nichts Erwähntes soll verloren gehen."
+)
+
 _ORT_SYSTEM = (
     _SYSTEM
     + " Erschaffe einen einzelnen Ort in NeotopiA. name ist der Eigenname, "
     "beschreibung was man dort sieht, hört, riecht — kein Abenteuerplot."
+    + _NOTIZEN_HINWEIS
 )
 
 _EVENT_SYSTEM = (
@@ -206,6 +231,7 @@ _EVENT_SYSTEM = (
     + " Erschaffe ein einzelnes Ereignis/eine Szene in NeotopiA. titel ist der "
     "Name, beschreibung was passiert ist oder passieren wird. timestamp nur "
     "setzen, wenn der Wunsch ein Datum/eine Uhrzeit vorgibt, sonst leer."
+    + _NOTIZEN_HINWEIS
 )
 
 _FRAKTION_SYSTEM = (
@@ -214,6 +240,7 @@ _FRAKTION_SYSTEM = (
     "beschreibung (was die Spielwelt über sie weiß). ziele und ressourcen "
     "sind kurze Listen mit titel + beschreibung — typisch 1–4 Einträge, "
     "keine Romane."
+    + _NOTIZEN_HINWEIS
 )
 
 _VERBINDUNG_SYSTEM = (
@@ -252,6 +279,7 @@ _GEGENSTAND_SYSTEM = (
     + ". preis in Nuyen, realistisch für den Typ (eine Lederjacke kostet "
     "anders als ein Cyberdeck). seltenheit 1 (überall erhältlich) bis 5 "
     "(nur Speziallabor/Schwarzmarkt)."
+    + _NOTIZEN_HINWEIS
 )
 
 # Erklärt die Kopfzeilen-Begriffe, damit Gemini nicht rät, was „Ambition"
@@ -265,6 +293,7 @@ _CHARAKTER_SYSTEM = (
     "weg: KEINER, MAGIER oder NEUROWEAVER — nur MAGIER, wenn der Charakter Magie "
     "wirkt, nur NEUROWEAVER, wenn er NeuroWeaving nutzt, sonst KEINER. "
     "kapital und schulden sind Zahlen (Nuyen)."
+    + _NOTIZEN_HINWEIS
 )
 
 
@@ -484,6 +513,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             gegenstand_body = GegenstandCreate(
                 name=name,
                 description=(ergebnis.get("beschreibung") or "").strip(),
+                notes=(ergebnis.get("notizen") or "").strip(),
                 typ=gegenstand_typ,
                 preis=max(0, _als_int(ergebnis.get("preis"))),
                 seltenheit=seltenheit,
@@ -516,6 +546,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 OrtCreate(
                     name=name,
                     description=(ergebnis.get("beschreibung") or "").strip(),
+                    notes=(ergebnis.get("notizen") or "").strip(),
                     istEntwurf=True,
                     sichtbarkeit="GM",
                 ).model_dump(),
@@ -538,6 +569,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                     title=titel,
                     timestamp=(ergebnis.get("timestamp") or "").strip(),
                     description=(ergebnis.get("beschreibung") or "").strip(),
+                    notes=(ergebnis.get("notizen") or "").strip(),
                     istEntwurf=True,
                     sichtbarkeit="GM",
                 ).model_dump(),
@@ -559,6 +591,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 FraktionCreate(
                     name=name,
                     description=(ergebnis.get("beschreibung") or "").strip(),
+                    notes=(ergebnis.get("notizen") or "").strip(),
                     ziele=_kurz_lang(ergebnis.get("ziele")),
                     ressourcen=_kurz_lang(ergebnis.get("ressourcen")),
                     istEntwurf=True,
@@ -636,6 +669,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 name=name,
                 personType="NPC",
                 description=beschreibung,
+                notes=(ergebnis.get("notizen") or "").strip(),
                 konzept=(ergebnis.get("konzept") or "").strip(),
                 alter=(ergebnis.get("alter") or "").strip(),
                 ambition=(ergebnis.get("ambition") or "").strip(),

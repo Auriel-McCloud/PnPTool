@@ -33,6 +33,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Offen: Was Mark selbst testen muss (Stand 01.10.2026)
 
+- **KI-Entwürfe mit Notizen neu** (siehe „Zuletzt gebaut" 03.10.2026 —
+  KI-Entwürfe befüllen jetzt auch die Notizen): nie im Browser angeklickt,
+  nur pytest. Bitte eine Beratung führen, ruhig Details reinwerfen, dann
+  „Entwurf anlegen" klicken und im angelegten Entwurf das Notizen-Feld
+  prüfen — sollte jetzt die Details aus dem Gespräch enthalten, während die
+  Beschreibung weiterhin knapp bleibt. Gilt auch für den ✨-KI-Knopf direkt.
 - **Sticky-Werkzeugleiste neu** (siehe „Zuletzt gebaut" 01.10.2026 —
   Editor-Werkzeugleiste bleibt beim Scrollen sichtbar): nie im Browser
   angeklickt. Bitte bei einer langen Beschreibung/Notiz prüfen, dass
@@ -332,6 +338,27 @@ npm run dev
   Werkzeugleiste tatsächlich oben kleben bleibt und nicht verdeckt/
   abgeschnitten wirkt.
 - Deploy: live auf bebop (`3347961`).
+
+**Zuletzt gebaut (03.10.2026 — KI-Entwürfe befüllen jetzt auch die Notizen):**
+- **Was:** Mark empfand generierte Entwürfe (✨ KI und „Entwurf anlegen“ aus
+  der Beratung) als zu knapp: die `beschreibung` kam als knackige
+  Zusammenfassung gut an, aber Details aus Wunsch/Gespräch gingen verloren,
+  weil die KI dafür kein Zielfeld hatte. Alle fünf Ausgabe-Schemata
+  (Charakter/Gegenstand/Ort/Event/Fraktion) haben jetzt ein zusätzliches
+  `notizen`-Feld; ein gemeinsamer Prompt-Baustein (`_NOTIZEN_HINWEIS`) weist
+  die KI an: `beschreibung` bleibt knapp/im-Spiel-sichtbar, `notizen` ist das
+  SL-interne Notizfeld und bekommt alles, was sonst verloren ginge. Greift
+  automatisch für ✨ KI UND Beratungs-Entwurf (beide teilen `_idee_anlegen`).
+- **Datei:** `backend/app/ki/routes.py` (Schemata, Systemprompts, alle fünf
+  `_idee_anlegen`-Zweige außer story/verbindung — Story hat kein Notizfeld,
+  Verbindung ist eine Kante ohne eigenes Notizfeld).
+- **Verifiziert:** `pytest tests/test_ki_idee_typen.py` (2 neue Fälle: Notizen
+  landen im `notes`-Feld, fehlendes `notizen` in der KI-Antwort bricht
+  nichts), volle Backend-Suite 484 passed (nur die 2 vorbestehenden
+  `test_zugriffsschutz.py`-Fehler, unabhängig), OpenAPI-Import sauber.
+  **Noch nicht am Spieltisch getestet** — bitte eine Beratung führen, Details
+  erwähnen, „Entwurf anlegen" klicken und prüfen, ob die Notizen das Gesagte
+  wirklich vollständiger wiedergeben als vorher.
 
 **Zuletzt gebaut (01.10.2026 — Fix: KI-Fraktion mit Zielen/Ressourcen anlegbar):**
 - **Was:** Mark bekam beim „Entwurf anlegen" aus der Beratung einen

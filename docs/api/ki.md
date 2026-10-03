@@ -42,6 +42,11 @@ Generiert eine Idee. ✨ KI und Beratung-Entwurf teilen `_idee_anlegen`.
 | `fraktion` | Fraktion inkl. Ziele/Ressourcen | ja |
 | `verbindung` | echte `VERBINDUNG`-Kante; fehlende Enden (Person/Ort/Event/Fraktion) als Entwurf | Kante selbst kein Entwurf |
 
+Charakter/Gegenstand/Ort/Event/Fraktion liefern zusätzlich `notizen`
+(03.10.2026): `beschreibung` bleibt eine knackige, im Spiel sichtbare
+Zusammenfassung, `notizen` ist das SL-interne Notizfeld und bekommt alle
+Details aus Wunsch/Gespräch, die sonst verloren gingen.
+
 Alle Pfade mit Kampagnenkontext (`sammle_kontext` / `_mit_kontext`):
 Bestehendes bevorzugen, nur bei Lücke neu erfinden. Ereignisprotokoll
 `anlass=idee-<typ>`, `uebernommen=true`.

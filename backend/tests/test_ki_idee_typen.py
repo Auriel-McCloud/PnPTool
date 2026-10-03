@@ -48,6 +48,52 @@ def test_ort_wird_als_ort_angelegt_nicht_als_charakter():
     _run(run())
 
 
+def test_notizen_aus_der_ki_antwort_landen_im_notes_feld():
+    """Details, die nicht in die knappe beschreibung passen, gehen ins SL-Notizfeld."""
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(
+                    return_value={
+                        "name": "Hafen",
+                        "beschreibung": "nass",
+                        "notizen": "Hier stehen alle Details aus dem Gespräch.",
+                    }
+                ),
+            ),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "o1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "ort", "ein Hafen")
+            daten = create.await_args.args[3]
+            assert daten["notes"] == "Hier stehen alle Details aus dem Gespräch."
+
+    _run(run())
+
+
+def test_fehlende_notizen_in_der_antwort_brechen_nichts():
+    """Ältere/gemockte Antworten ohne notizen-Feld bleiben gültig (leerer String)."""
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={"name": "Hafen", "beschreibung": "nass"}),
+            ),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "o1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "ort", "ein Hafen")
+            daten = create.await_args.args[3]
+            assert daten["notes"] == ""
+
+    _run(run())
+
+
 def test_fraktion_bekommt_ziele_und_ressourcen():
     async def run():
         with (
