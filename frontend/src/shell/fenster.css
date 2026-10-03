@@ -77,6 +77,26 @@
   width: min(1040px, calc(100vw - 32px));
 }
 
+/* Maximiert: füllt praktisch den ganzen Bildschirm (mit Rand), unabhängig
+   davon, wie das Fenster vorher gezogen wurde. !important noetig, weil die
+   Lage sonst ueber die Inline-Variablen --fn-links/--fn-oben kommt. */
+.fn-fenster-maximiert {
+  left: 16px !important;
+  top: 16px !important;
+  transform: none !important;
+  width: calc(100vw - 32px) !important;
+  height: calc(100svh - 32px) !important;
+  max-height: none !important;
+}
+
+/* Während des Ziehens: kein Text markieren, Greifhand zeigen */
+.fn-fenster-zieht,
+.fn-fenster-zieht .fn-griff,
+.fn-fenster-zieht .fn-kopf {
+  user-select: none;
+  cursor: grabbing;
+}
+
 .fn-griff {
   width: 46px;
   height: 4px;
@@ -84,6 +104,7 @@
   border-radius: 2px;
   background: var(--linie-hell);
   flex-shrink: 0;
+  cursor: grab;
 }
 
 .fn-kopf {
@@ -93,6 +114,7 @@
   padding: 10px 14px 12px;
   border-bottom: 1px solid var(--linie);
   flex-shrink: 0;
+  cursor: grab;
 }
 
 .fn-kopf-text {
@@ -114,12 +136,17 @@
   color: var(--text-leise);
 }
 
-.fn-schliessen {
+.fn-schliessen,
+.fn-maximieren {
   flex-shrink: 0;
   min-width: var(--tipp);
   min-height: var(--tipp);
   font-size: 16px;
   line-height: 1;
+}
+
+.fn-maximieren[aria-pressed="true"] {
+  color: var(--neon);
 }
 
 /* Die einzige Flaeche, auf der bewusst gescrollt werden darf */
@@ -149,6 +176,17 @@
     border-width: 1px 0 0;
     border-radius: 12px 12px 0 0;
     animation: none;
+  }
+
+  /* Fenster ist hier ohnehin bildschirmfuellend: weder Ziehen noch
+     Maximieren bringen etwas — Kopf bleibt normale Leiste, Knopf verborgen. */
+  .fn-griff,
+  .fn-kopf {
+    cursor: default;
+  }
+
+  .fn-maximieren {
+    display: none;
   }
 
   /* Am Handy fuellt das Fenster den Bildschirm; ein Aufziehen aus der

@@ -20,6 +20,24 @@ function streuung(kennung: string): { links: number; oben: number } {
   return { links: 36 + (a % 29), oben: 38 + ((a >> 8) % 25) };
 }
 
+/** Mindestabstand zum Bildschirmrand — beim Einfangen wie beim Ziehen. */
+const FN_RAND = 12;
+
+/** Rueckt eine Mitte so, dass das Fenster (Laenge) im Sichtbereich bleibt.
+ * Passt es ohnehin nicht hinein, hilft Ruecken nicht weiter — dann mittig. */
+function einfangen(mitte: number, laenge: number, sicht: number): number {
+  const passt = laenge + 2 * FN_RAND < sicht;
+  return passt
+    ? Math.min(Math.max(mitte, laenge / 2 + FN_RAND), sicht - laenge / 2 - FN_RAND)
+    : sicht / 2;
+}
+
+/** Ab hier freistehendes Fenster statt Vollbild-Blatt — dort gilt weder
+ * Ziehen noch Maximieren (am Handy ist es ohnehin schon bildschirmfuellend). */
+function freistehendMoeglich(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(min-width: 600px)").matches;
+}
+
 /**
  * Fokussiertes Fenster für die Detailansicht eines einzelnen Dings.
  *
@@ -70,26 +88,29 @@ export function Fenster({
   // und 64 % waeren dann halb ausserhalb. Erst nach dem Messen laesst sich
   // das einfangen — vorher steht die Fenstergroesse nicht fest.
   const [lage, setLage] = useState<{ x: number; y: number } | null>(null);
+  // Vom Nutzer gezogene Abweichung von `lage` — eigener State statt direkt in
+  // `lage` geschrieben, damit ein Wiederöffnen (Reset weiter unten) wieder bei
+  // der gestreuten Grundposition beginnt statt bei der zuletzt gezogenen.
+  const [verschoben, setVerschoben] = useState<{ x: number; y: number } | null>(null);
+  const [zieht, setZieht] = useState(false);
+  const [maximiert, setMaximiert] = useState(false);
+  const ziehStart = useRef<{ x: number; y: number; lageX: number; lageY: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!offen) {
       setGemessen(false);
       setHerkunft(null);
       setLage(null);
+      setVerschoben(null);
+      setZieht(false);
+      setMaximiert(false);
+      ziehStart.current = null;
       return;
     }
     const rahmen = rahmenRef.current;
     if (!rahmen) return;
 
     const r = rahmen.getBoundingClientRect();
-    const rand = 12;
-    const passt = (laenge: number, sicht: number) => laenge + 2 * rand < sicht;
-    const einfangen = (mitte: number, laenge: number, sicht: number) =>
-      passt(laenge, sicht)
-        ? Math.min(Math.max(mitte, laenge / 2 + rand), sicht - laenge / 2 - rand)
-        // Passt es ohnehin nicht, hilft Streuung nicht weiter: dann mittig.
-        : sicht / 2;
-
     const x = einfangen((links / 100) * window.innerWidth, r.width, window.innerWidth);
     const y = einfangen((oben / 100) * window.innerHeight, r.height, window.innerHeight);
     setLage({ x, y });
@@ -100,6 +121,36 @@ export function Fenster({
     setHerkunft(tipp ? { x: tipp.x - x, y: tipp.y - y } : null);
     setGemessen(true);
   }, [offen, kennung, links, oben]);
+
+  // Ziehen per Griff oder Kopfzeile. Pointer Capture auf dem Element, das den
+  // Handler trägt (nicht e.target) — sonst verliert ein schneller Zug den
+  // Anschluss, sobald der Zeiger ueber ein Kindelement wandert.
+  function ziehBeginnen(e: React.PointerEvent) {
+    if (maximiert || !freistehendMoeglich()) return;
+    // Klicks auf Knöpfe im Kopf (Schließen, Maximieren) sollen normal wirken.
+    if ((e.target as HTMLElement).closest("button")) return;
+    const rahmen = rahmenRef.current;
+    if (!rahmen || !lage) return;
+    e.preventDefault();
+    ziehStart.current = { x: e.clientX, y: e.clientY, lageX: verschoben?.x ?? lage.x, lageY: verschoben?.y ?? lage.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setZieht(true);
+  }
+
+  function ziehBewegen(e: React.PointerEvent) {
+    const start = ziehStart.current;
+    const rahmen = rahmenRef.current;
+    if (!start || !rahmen) return;
+    const r = rahmen.getBoundingClientRect();
+    const x = einfangen(start.lageX + (e.clientX - start.x), r.width, window.innerWidth);
+    const y = einfangen(start.lageY + (e.clientY - start.y), r.height, window.innerHeight);
+    setVerschoben({ x, y });
+  }
+
+  function ziehBeenden() {
+    ziehStart.current = null;
+    setZieht(false);
+  }
 
   useEffect(() => {
     if (!offen) return;
@@ -132,12 +183,21 @@ export function Fenster({
   // Portal saesse ein Fenster, das aus einem Fenster heraus aufgeht, im
   // falschen Bezugsrahmen — und genau das soll es koennen (Marks Bild:
   // "Pop-ups die zu Pop-ups fuehren").
+  const effektiv = verschoben ?? lage;
+  const klassen = [
+    "fn-fenster",
+    gemessen ? "fn-fenster-auf" : "",
+    breit ? "fn-fenster-breit" : "",
+    maximiert ? "fn-fenster-maximiert" : "",
+    zieht ? "fn-fenster-zieht" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return createPortal(
     <div className="fn-hintergrund" onClick={onSchliessen}>
       <div
-        className={
-          (gemessen ? "fn-fenster fn-fenster-auf" : "fn-fenster") + (breit ? " fn-fenster-breit" : "")
-        }
+        className={klassen}
         ref={rahmenRef}
         role="dialog"
         aria-modal="true"
@@ -145,8 +205,8 @@ export function Fenster({
         tabIndex={-1}
         style={
           {
-            "--fn-links": lage ? `${lage.x}px` : `${links}%`,
-            "--fn-oben": lage ? `${lage.y}px` : `${oben}%`,
+            "--fn-links": effektiv ? `${effektiv.x}px` : `${links}%`,
+            "--fn-oben": effektiv ? `${effektiv.y}px` : `${oben}%`,
             // Solange ungemessen: aus dem Stand aufziehen (0/0).
             "--fn-von-x": `${herkunft?.x ?? 0}px`,
             "--fn-von-y": `${herkunft?.y ?? 0}px`,
@@ -156,15 +216,39 @@ export function Fenster({
         /* sonst schlösse jeder Klick im Fenster es gleich wieder */
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="fn-griff" aria-hidden="true" />
+        <div
+          className="fn-griff"
+          aria-hidden="true"
+          onPointerDown={ziehBeginnen}
+          onPointerMove={ziehBewegen}
+          onPointerUp={ziehBeenden}
+          onPointerCancel={ziehBeenden}
+        />
 
-        <header className="fn-kopf">
+        <header
+          className="fn-kopf"
+          onPointerDown={ziehBeginnen}
+          onPointerMove={ziehBewegen}
+          onPointerUp={ziehBeenden}
+          onPointerCancel={ziehBeenden}
+          onDoubleClick={() => freistehendMoeglich() && setMaximiert((m) => !m)}
+        >
           <div className="fn-kopf-text">
             <h2 className="fn-titel">
               <FormelText text={titel} />
             </h2>
             {unterzeile && <div className="fn-unterzeile">{unterzeile}</div>}
           </div>
+          <button
+            type="button"
+            className="fn-maximieren"
+            onClick={() => setMaximiert((m) => !m)}
+            aria-label={maximiert ? "Verkleinern" : "Maximieren"}
+            aria-pressed={maximiert}
+            title={maximiert ? "Verkleinern" : "Maximieren"}
+          >
+            {maximiert ? "⧉" : "⛶"}
+          </button>
           <button type="button" className="fn-schliessen" onClick={onSchliessen} aria-label="Schließen">
             ✕
           </button>
