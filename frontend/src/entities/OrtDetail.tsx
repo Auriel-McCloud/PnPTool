@@ -49,7 +49,7 @@ export function OrtDetail({
   const [name, setName] = useState(ort.name);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(ort.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(ort.notes));
-  const [speichert, setSpeichert] = useState(false);
+  const [, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
 
@@ -226,14 +226,6 @@ export function OrtDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Beschreibung" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ description: serializeRichText(beschreibungDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Beschreibung speichern"}
-              </button>
             </div>
           )}
 
@@ -248,14 +240,6 @@ export function OrtDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Ort", objektName: ort.name, feldLabel: "Notizen" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ notes: serializeRichText(notizenDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Notizen speichern"}
-              </button>
             </div>
           )}
 

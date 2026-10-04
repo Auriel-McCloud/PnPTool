@@ -50,7 +50,6 @@ export function CritterFenster({
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("blatt");
   const [beschreibungDoc, setBeschreibungDoc] = useState(parseRichText(""));
   const [besitzerSuche, setBesitzerSuche] = useState("");
-  const [speichert, setSpeichert] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
 
   useEffect(() => {
@@ -59,17 +58,6 @@ export function CritterFenster({
       setBeschreibungDoc(parseRichText(p.description));
     });
   }, [campaignId, critterId]);
-
-  async function beschreibungSpeichern() {
-    setSpeichert(true);
-    try {
-      await entitiesApi.updatePerson(campaignId, critterId, {
-        description: serializeRichText(beschreibungDoc),
-      });
-    } finally {
-      setSpeichert(false);
-    }
-  }
 
   // Autosave still — kein onGeaendert, sonst schließt der Parent das Fenster
   // (siehe autosave.ts und BegleiterVerwaltung).
@@ -144,9 +132,6 @@ export function CritterFenster({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />
-              <button type="button" className="pcd-speichern" onClick={beschreibungSpeichern} disabled={speichert}>
-                {speichert ? "Speichert…" : "Beschreibung speichern"}
-              </button>
             </div>
           )}
 

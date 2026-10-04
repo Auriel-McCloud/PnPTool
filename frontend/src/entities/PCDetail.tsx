@@ -52,33 +52,8 @@ export function PCDetail({
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
-  const [speichert, setSpeichert] = useState(false);
 
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
-
-  async function speichereBeschreibung() {
-    setSpeichert(true);
-    try {
-      await entitiesApi.updatePerson(campaignId, person.id, {
-        description: serializeRichText(beschreibungDoc),
-      });
-      onGeaendert();
-    } finally {
-      setSpeichert(false);
-    }
-  }
-
-  async function speichereNotizen() {
-    setSpeichert(true);
-    try {
-      await entitiesApi.updatePerson(campaignId, person.id, {
-        notes: serializeRichText(notizenDoc),
-      });
-      onGeaendert();
-    } finally {
-      setSpeichert(false);
-    }
-  }
 
   // Autosave still — kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
   const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
@@ -217,14 +192,6 @@ export function PCDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Beschreibung" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={speichereBeschreibung}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Beschreibung speichern"}
-              </button>
             </div>
           )}
 
@@ -239,14 +206,6 @@ export function PCDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Person", objektName: person.name, feldLabel: "Notizen" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={speichereNotizen}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Notizen speichern"}
-              </button>
             </div>
           )}
 

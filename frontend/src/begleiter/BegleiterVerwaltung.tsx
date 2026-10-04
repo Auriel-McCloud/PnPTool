@@ -554,7 +554,6 @@ function BegleiterFenster({
   // Beschreibung als Rich-Text — dasselbe Muster wie bei Personen/Orten.
   const [beschreibungDoc, setBeschreibungDoc] = useState(parseRichText(begleiter.beschreibung));
   const [sendet, setSendet] = useState(false);
-  const [speichertBeschreibung, setSpeichertBeschreibung] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   // Aktueller Begleiter-Stand für das Bild (das Fenster bekommt bei einem
   // reinen Bild-Upload keinen neuen `begleiter`-Prop, siehe onSofortGeaendert).
@@ -590,19 +589,6 @@ function BegleiterFenster({
       onGeaendert();
     } finally {
       setSendet(false);
-    }
-  }
-
-  async function beschreibungSpeichern() {
-    setSpeichertBeschreibung(true);
-    try {
-      const neu = await begleiterApi.aendern(campaignId, begleiter.id, {
-        beschreibung: serializeRichText(beschreibungDoc),
-      });
-      setAktuellerBegleiter(neu);
-      onSofortGeaendert(neu);
-    } finally {
-      setSpeichertBeschreibung(false);
     }
   }
 
@@ -759,14 +745,6 @@ function BegleiterFenster({
             minHeight={100}
             kiKontext={{ campaignId, objektTyp: "Begleiter", objektName: begleiter.name, feldLabel: "Beschreibung" }}
           />
-          <button
-            type="button"
-            onClick={beschreibungSpeichern}
-            disabled={speichertBeschreibung}
-            style={{ marginTop: 6 }}
-          >
-            {speichertBeschreibung ? "Speichert…" : "Beschreibung speichern"}
-          </button>
         </section>
 
         {/* Selten gebrauchte Verwaltung ganz unten — Mark, 20.09.2026: "man
