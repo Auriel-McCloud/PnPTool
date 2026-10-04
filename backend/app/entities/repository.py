@@ -82,6 +82,10 @@ _BOGEN_DEFAULTS: dict = {
     "istCritter": False,
     "istKI": False,
     "istHaendler": False,
+    # Shop-Feature (Ort-Seite): Bestandsorte kennen das Feld noch nicht —
+    # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
+    # (derselbe Stolperstein wie bei istHaendler/istCritter/istKI oben).
+    "istShop": False,
     "spezialisierung": [],
     "vertriebsart": "PHYSISCH",
     "shopHintergrundUrl": "",
