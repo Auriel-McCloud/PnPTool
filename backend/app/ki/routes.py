@@ -23,10 +23,11 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign
-from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node
+from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node, get_node
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
-from app.items.repository import create_gegenstand
-from app.items.routes import _create_data
+from app.haendler import repository as haendler_repository
+from app.items.repository import assign_copy, assign_owner, create_gegenstand
+from app.items.routes import _create_data, _default_sichtbarkeit
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
@@ -702,6 +703,220 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
     except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.
         raise HTTPException(status_code=502, detail=str(e))
+
+
+# --- Massen-KI-Anlage (03.10.2026, Marks Wunsch) -------------------------
+#
+# "Lege mir N Gegenstände von Händler X / Stadtteile von Babel / NPCs in
+# einer Bar an" — derselbe ✨-Weg wie eine einzelne Idee, nur N mal in Folge
+# mit wachsendem "bereits erzeugt"-Hinweis in jedem einzelnen Aufruf, statt
+# einem einzigen Array-Aufruf: so bekommt JEDER neue Eintrag die vollständige
+# Namensliste der vorigen zu sehen (robuster gegen Dopplungen als ein
+# Array-Schema mit bloßer "sei kreativ"-Anweisung) UND es bleibt exakt der
+# bereits getestete Einzel-Anlege-Pfad (_idee_anlegen) — keine zweite,
+# abweichende Anlegelogik für Gegenstand/Charakter/Ort. Kostenbewusst im
+# selben Sinn wie der Wiki-Sweep: N kleine Aufrufe statt eines unkontrolliert
+# teuren, dafür mit harter Obergrenze.
+_MASSEN_ANZAHL_MIN = 1
+_MASSEN_ANZAHL_MAX = 12
+
+# V1 bewusst auf diese drei beschränkt (Marks Wunsch) — story/event/fraktion/
+# verbindung liessen sich über denselben Mechanismus ergänzen, sind aber
+# (noch) nicht angefragt.
+MassenIdeeTyp = Literal["gegenstand", "charakter", "ort"]
+
+_MASSEN_ZIEL_TYPEN = ("Person", "Ort", "Event", "Fraktion")
+_MASSEN_ZIEL_FELDER = {"Person": PERSON_FIELDS, "Ort": ORT_FIELDS, "Event": EVENT_FIELDS, "Fraktion": FRAKTION_FIELDS}
+
+# Welchem _VERBINDUNG_TYPEN-Entitätstyp entspricht ein frisch erzeugter
+# Massen-Eintrag dieses Typs — Grundlage für die generische Beziehungskante
+# (charakter -> Person, ort -> Ort). "gegenstand" fehlt bewusst: Gegenstände
+# hängen nie an einer VERBINDUNG-Kante, sondern an BESITZT/VERKAUFT (siehe
+# _gegenstand_verknuepfen).
+_MASSEN_ENTITAETS_TYP = {"charakter": "Person", "ort": "Ort"}
+
+# Default-Kantenbezeichnung, falls das Frontend keine eigene mitgibt —
+# nur ein Vorschlag, die SL kann jede Kante später wie gewohnt umbenennen.
+_MASSEN_STANDARD_BEZIEHUNG = {
+    ("charakter", "Person"): "kennt",
+    ("charakter", "Ort"): "ist in",
+    ("charakter", "Event"): "war dabei bei",
+    ("charakter", "Fraktion"): "ist Mitglied von",
+    ("ort", "Ort"): "liegt in",
+    ("ort", "Person"): "gehört zu",
+    ("ort", "Event"): "ist Schauplatz von",
+    ("ort", "Fraktion"): "wird kontrolliert von",
+}
+
+
+class MassenIdeeInput(BaseModel):
+    typ: MassenIdeeTyp
+    prompt: str
+    anzahl: int = 5
+    # Optionales Ziel, an das jeder erzeugte Eintrag verknüpft wird (z.B.
+    # alle Gegenstände landen im Sortiment des Händlers, alle NPCs bekommen
+    # eine Beziehungskante zum Ort "Bar").
+    zielTyp: Literal["Person", "Ort", "Event", "Fraktion"] | None = None
+    zielId: str | None = None
+    beziehungstyp: str | None = None
+
+
+class MassenBeratungInput(BaseModel):
+    typ: MassenIdeeTyp
+    anzahl: int = 5
+    zielTyp: Literal["Person", "Ort", "Event", "Fraktion"] | None = None
+    zielId: str | None = None
+    beziehungstyp: str | None = None
+
+
+class MassenEintrag(BaseModel):
+    id: str
+    name: str
+    # True, wenn die optionale Ziel-Verknüpfung für DIESEN Eintrag geklappt
+    # hat (z.B. False für Gegenstand+Ort, wofür es noch keinen Mechanismus
+    # gibt — siehe _gegenstand_verknuepfen).
+    verknuepft: bool = False
+
+
+class MassenErgebnis(BaseModel):
+    typ: str
+    eintraege: list[MassenEintrag] = []
+
+
+async def _ziel_node(campaign_id: str, ziel_typ: str, ziel_id: str) -> dict | None:
+    felder = _MASSEN_ZIEL_FELDER.get(ziel_typ)
+    if felder is None:
+        return None
+    return await get_node(ziel_typ, felder, campaign_id, ziel_id)
+
+
+def _massen_zusatz(
+    index: int, anzahl: int, bereits: list[str], ziel_typ: str | None, ziel_name: str | None
+) -> str:
+    """Hängt an den Wunsch: welcher Eintrag das in der Serie ist, was schon
+    erzeugt wurde (nicht wiederholen!) und worauf sich alles bezieht."""
+    teile = [f"(Serie: Eintrag {index + 1} von {anzahl} zu genau diesem Wunsch.)"]
+    if bereits:
+        teile.append(
+            "Bereits in dieser Serie erzeugt: " + ", ".join(bereits) + ". "
+            "WICHTIG: erzeuge jetzt einen EINZELNEN, klar unterschiedlichen "
+            "Eintrag — eigener Name, eigene Werte/Persönlichkeit/Zweck je "
+            "nach Typ. Auf keinen Fall eine Wiederholung oder blosse "
+            "Variation eines schon erzeugten Eintrags."
+        )
+    if ziel_name:
+        teile.append(f"Bezieht sich auf: {ziel_typ} '{ziel_name}'.")
+    return "\n\n" + " ".join(teile)
+
+
+async def _gegenstand_verknuepfen(campaign_id: str, gegenstand_id: str, preis: int, ziel_typ: str, ziel_node: dict, ziel_id: str) -> bool:
+    """Ordnet einen frisch erzeugten Gegenstand-Entwurf dem Ziel zu.
+
+    Ziel ist ein Händler (istHaendler=true): Ware kommt ins Sortiment
+    (VERKAUFT-Kante, wie ki_vorschlag.anwenden) — der Gegenstand bleibt eine
+    besitzerlose Vorlage, Invariante istVorlage<=>kein Besitzer bleibt intakt.
+    Ziel ist eine normale Person: genau der bestehende "Zuweisen"-Knopf
+    (items/routes.py::zuweisen) — Kopie für normale Ware, Besitzerwechsel für
+    Einzigartiges/Graph-Gegenstände. Ziel Ort/Event/Fraktion: (noch) kein
+    Platzierungs-Mechanismus für Gegenstände vorhanden, bleibt unverknüpft.
+    """
+    if ziel_typ == "Person":
+        if ziel_node.get("istHaendler"):
+            return await haendler_repository.verkauft_hinzufuegen(campaign_id, ziel_id, gegenstand_id, preis)
+        sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel_node.get("personType") or "NPC", ziel_id)
+        gegenstand = {"id": gegenstand_id, "einzigartig": False, "zeigeInGraph": False, "bildUrl": None}
+        ergebnis = await assign_copy(campaign_id, gegenstand, ziel_id, sichtbarkeit, sichtbar_fuer)
+        return ergebnis is not None
+    return False
+
+
+async def _massen_anlegen(
+    campaign_id: str,
+    typ: str,
+    prompt: str,
+    anzahl: int,
+    ziel_typ: str | None,
+    ziel_id: str | None,
+    beziehungstyp: str | None,
+) -> MassenErgebnis:
+    anzahl = max(_MASSEN_ANZAHL_MIN, min(anzahl, _MASSEN_ANZAHL_MAX))
+
+    ziel_node: dict | None = None
+    ziel_name: str | None = None
+    if ziel_id:
+        if not ziel_typ or ziel_typ not in _MASSEN_ZIEL_TYPEN:
+            raise HTTPException(status_code=422, detail="zielTyp fehlt oder ist ungültig.")
+        ziel_node = await _ziel_node(campaign_id, ziel_typ, ziel_id)
+        if ziel_node is None:
+            raise HTTPException(status_code=404, detail="Ziel-Entität nicht gefunden.")
+        ziel_name = ziel_node.get("name") or ziel_node.get("title") or ""
+
+    eintraege: list[MassenEintrag] = []
+    bereits_namen: list[str] = []
+    for i in range(anzahl):
+        zusatz = _massen_zusatz(i, anzahl, bereits_namen, ziel_typ, ziel_name)
+        ergebnis = await _idee_anlegen(campaign_id, typ, prompt + zusatz)
+        name = ergebnis["name"]
+        bereits_namen.append(name)
+        verknuepft = False
+
+        if ziel_id and ziel_node is not None:
+            if typ == "gegenstand":
+                preis = ergebnis.get("preis") or 0
+                verknuepft = await _gegenstand_verknuepfen(
+                    campaign_id, ergebnis["id"], preis, ziel_typ, ziel_node, ziel_id
+                )
+            elif typ in _MASSEN_ENTITAETS_TYP:
+                neuer_typ = _MASSEN_ENTITAETS_TYP[typ]
+                kanten_typ = (
+                    beziehungstyp.strip()
+                    if beziehungstyp and beziehungstyp.strip()
+                    else _MASSEN_STANDARD_BEZIEHUNG.get((typ, ziel_typ), "verbunden mit")
+                )
+                await verknuepfung_beziehung_anwenden(
+                    campaign_id,
+                    BeziehungAnwendenInput(
+                        typ1=neuer_typ,
+                        name1=name,
+                        zielId1=ergebnis["id"],
+                        typ2=ziel_typ,
+                        name2=ziel_name or "",
+                        zielId2=ziel_id,
+                        beziehungstyp=kanten_typ,
+                        beschreibung="",
+                    ),
+                )
+                verknuepft = True
+
+        eintraege.append(MassenEintrag(id=ergebnis["id"], name=name, verknuepft=verknuepft))
+
+    return MassenErgebnis(typ=typ, eintraege=eintraege)
+
+
+@router.post("/massenidee", response_model=MassenErgebnis)
+async def ki_massenidee(campaign_id: str, body: MassenIdeeInput):
+    """✨-Massen-Anlage: EIN Wunsch + Anzahl → N unterschiedliche Entwürfe,
+    optional alle an ein Ziel verknüpft (Sortiment/Beziehung je nach Typ)."""
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=422, detail="Der Wunsch darf nicht leer sein.")
+    return await _massen_anlegen(
+        campaign_id, body.typ, prompt, body.anzahl, body.zielTyp, body.zielId, body.beziehungstyp
+    )
+
+
+@router.post("/beratung/{beratung_id}/massenentwurf", response_model=MassenErgebnis)
+async def beratung_massenentwurf(campaign_id: str, beratung_id: str, body: MassenBeratungInput):
+    """Wie /beratung/{id}/entwurf, nur N Entwürfe aus demselben Gespräch."""
+    stand = await beratung_repo.laden(campaign_id, beratung_id)
+    if stand is None:
+        raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
+    if not stand["nachrichten"]:
+        raise HTTPException(status_code=422, detail="Noch kein Gespräch für einen Entwurf.")
+    prompt = beratung_repo.gespraech_als_prompt(stand["nachrichten"])
+    return await _massen_anlegen(
+        campaign_id, body.typ, prompt, body.anzahl, body.zielTyp, body.zielId, body.beziehungstyp
+    )
 
 
 def _beratung_system(kontext: str) -> str:
