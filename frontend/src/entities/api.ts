@@ -59,6 +59,11 @@ export interface Ort extends VisibilityFields {
   spotifyPlaylistUri?: string;
   spotifyPlaylistName?: string;
   spotifyPlaylistBild?: string;
+  /** Shop (04.10.2026): Ort ist der Laden. */
+  istShop?: boolean;
+  spezialisierung?: string[];
+  vertriebsart?: "PHYSISCH" | "DIGITAL";
+  shopHintergrundUrl?: string;
 }
 
 export interface Event extends VisibilityFields {

@@ -156,7 +156,12 @@ export function ShopSeite({
           data-hat-bild={Boolean(haendler.shopHintergrundUrl)}
           style={{ "--shop-bild": haendler.shopHintergrundUrl ? `url(${haendler.shopHintergrundUrl})` : "none" } as React.CSSProperties}
         >
-          {haendler.bildUrl && <img className="shop-haendler-portrait" src={haendler.bildUrl} alt="" />}
+          {(haendler.haendler ?? []).filter((g) => g.bildUrl).map((g) => (
+            <img key={g.id} className="shop-haendler-portrait" src={g.bildUrl} alt={g.name} />
+          ))}
+          {!(haendler.haendler ?? []).some((g) => g.bildUrl) && haendler.bildUrl && (
+            <img className="shop-haendler-portrait" src={haendler.bildUrl} alt="" />
+          )}
           <div className="shop-kopf-text">
             <h2>{haendler.name}</h2>
             {haendler.beschreibung && <p>{extrahiereReinenText(haendler.beschreibung)}</p>}

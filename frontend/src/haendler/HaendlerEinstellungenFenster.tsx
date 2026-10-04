@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { entitiesApi, type Person } from "../entities/api";
+import { haendlerApi } from "./api";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { TYP_OPTIONEN } from "../items/typKatalog";
@@ -61,6 +62,11 @@ export function HaendlerEinstellungenFenster({
         spezialisierung,
         vertriebsart,
       });
+      const shops = await haendlerApi.alle(campaignId);
+      const shop = shops.find((s) => (s.haendler ?? []).some((g) => g.id === person.id));
+      if (shop) {
+        await entitiesApi.updateOrt(campaignId, shop.id, { spezialisierung, vertriebsart });
+      }
       onGeaendert(neu);
     } finally {
       setSendet(false);

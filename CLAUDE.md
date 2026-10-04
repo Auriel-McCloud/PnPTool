@@ -294,6 +294,17 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (04.10.2026 — Shop hängt am Ort, nicht an der Person):**
+- **Was:** Mark wollte den Laden als Ort (Beschreibung, Kulisse, Sortiment,
+  Spezialisierung, Vertriebsart), die Person bleibt Händler für Kontakt/
+  Messenger/Verhandeln (nur Porträt im Shop). Ein Ort kann mehrere Händler
+  haben; Ware hängt am Ort (`VERKAUFT` von `Ort`, Kante `BETREIBT`).
+  Bestehende Shops werden beim ersten Laden der Shop-Liste idempotent
+  gehoben (`shops_auf_orte_heben`).
+- **Dateien:** `haendler/repository.py`, `haendler/schemas.py`,
+  `entities/schemas.py`/`repository.py`, Shop-Frontend, Export-Weissliste.
+- **Verifiziert:** `pytest tests/test_shop_am_ort.py` + `tsc -b`.
+
 **Zuletzt gebaut (03.10.2026 — Händler-Button im NPC-Detail-Popup):**
 - **Was:** `istHaendler` liess sich bisher nur direkt über die API setzen —
   im UI gab es dafür keine Oberfläche (Mark fragte danach, Lücke entdeckt).

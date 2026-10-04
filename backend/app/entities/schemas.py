@@ -270,6 +270,10 @@ class OrtCreate(BaseModel):
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
+    istShop: bool = False
+    spezialisierung: list[str] = []
+    vertriebsart: Literal["PHYSISCH", "DIGITAL"] = "PHYSISCH"
+    shopHintergrundUrl: str = ""
 
 
 class OrtUpdate(BaseModel):
@@ -286,6 +290,10 @@ class OrtUpdate(BaseModel):
     sichtbarFuer: list[str] | None = None
     notizenSichtbarkeit: SichtbarkeitModus | None = None
     notizenSichtbarFuer: list[str] | None = None
+    istShop: bool | None = None
+    spezialisierung: list[str] | None = None
+    vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
+    shopHintergrundUrl: str | None = None
 
 
 class OrtResponse(BaseModel):
@@ -303,6 +311,10 @@ class OrtResponse(BaseModel):
     sichtbarFuer: list[str]
     notizenSichtbarkeit: str
     notizenSichtbarFuer: list[str]
+    istShop: bool = False
+    spezialisierung: list[str] = []
+    vertriebsart: str = "PHYSISCH"
+    shopHintergrundUrl: str = ""
 
 
 class EventCreate(BaseModel):

@@ -17,6 +17,12 @@ export interface SortimentEintrag {
   rabattHinweis: string;
 }
 
+export interface HaendlerGesicht {
+  id: string;
+  name: string;
+  bildUrl: string;
+}
+
 export interface HaendlerEintrag {
   id: string;
   name: string;
@@ -29,6 +35,7 @@ export interface HaendlerEintrag {
   ortName: string | null;
   sichtbarkeit: string;
   sichtbarFuer: string[];
+  haendler: HaendlerGesicht[];
 }
 
 export interface KaufResponse {

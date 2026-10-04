@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-04] update | Shop hängt am Ort
+
+Ort = Laden (Beschreibung, Kulisse, Sortiment). Person bleibt Händler
+für Kontakt/Verhandeln, nur Porträt. Mehrere Händler pro Ort möglich.
+Kante `BETREIBT`, `VERKAUFT` vom Ort. Siehe CLAUDE.md 04.10.2026.
+
 ## [2026-10-03] update | Frontend Production-Build für PWA
 
 Live-Frontend ist nginx + `vite build`, nicht mehr Vite-Dev.

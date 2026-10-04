@@ -94,9 +94,16 @@ class BestellungResponse(BaseModel):
     geliefertAm: str = ""
 
 
+class HaendlerGesicht(BaseModel):
+    """Porträt eines Händlers am Laden — Person bleibt für Kontakt/Verhandeln."""
+
+    id: str
+    name: str
+    bildUrl: str = ""
+
+
 class HaendlerEintrag(BaseModel):
-    """Schlanke Übersicht für Kachel/Kontaktliste — kein Charakterblatt
-    (Marks Entscheidung: Händler bleiben bewusst schlank)."""
+    """Ein Shop (Ort) für Kachel/Seite — Ware hängt am Ort, Gesichter extra."""
 
     id: str
     name: str
@@ -109,6 +116,7 @@ class HaendlerEintrag(BaseModel):
     ortName: str | None = None
     sichtbarkeit: str
     sichtbarFuer: list[str]
+    haendler: list[HaendlerGesicht] = []
 
 
 class StandortRequest(BaseModel):

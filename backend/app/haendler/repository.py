@@ -4,18 +4,16 @@ und entities/repository.py orchestriert (Guthaben prüfen, Ware kopieren/
 übergeben) — dieselbe Aufteilung wie bei kontakte/routes.py, das
 mitteilungen_repo für den Seiteneffekt aufruft.
 
-**Kein eigenes Node-Label.** Ein Händler ist ein `Person`-Knoten mit
-`istHaendler=true` (siehe app/entities/schemas.py). Die VERKAUFT-Kante trägt
-nur den Preis:
+**Ort = der Shop** (04.10.2026). Ware, Spezialisierung, Vertriebsart und
+Kulisse hängen am `Ort`. Die Person bleibt Händler (`istHaendler=true`) für
+Kontakte/Messenger/Verhandeln und hängt per `BETREIBT` am Laden — ein Ort
+kann mehrere Händler haben.
 
-    (:Person {istHaendler:true})-[:VERKAUFT {preis: int}]->(:Gegenstand)
+    (:Person {istHaendler:true})-[:BETREIBT]->(:Ort {istShop:true})-[:VERKAUFT {preis: int}]->(:Gegenstand)
 
-Zeigt sie auf eine **Vorlage** (istVorlage=true), ist die Ware unendlich
-verfügbar — jeder Kauf kopiert sie (wie beim bestehenden Zuweisen-Endpunkt,
-items/routes.py::zuweisen). Zeigt sie auf ein **einzigartiges, dem Händler
-gehörendes Stück** (BESITZT-Kante vom Händler), ist sie nach dem ersten Kauf
-weg — der Käufer übernimmt es per Besitzerwechsel, die VERKAUFT-Kante wird
-gelöscht.
+Zeigt VERKAUFT auf eine **Vorlage** (istVorlage=true), ist die Ware unendlich
+verfügbar. Zeigt sie auf ein **einzigartiges Stück**, ist sie nach dem ersten
+Kauf weg.
 """
 
 from app.db.neo4j_driver import get_driver
@@ -23,82 +21,183 @@ from app.db.neo4j_driver import get_driver
 import uuid
 from datetime import datetime, timezone
 
-_HAENDLER_FELDER = """
-    h.id AS id, h.name AS name, h.bildUrl AS bildUrl, h.description AS beschreibung,
-    h.spezialisierung AS spezialisierung, h.vertriebsart AS vertriebsart,
-    h.shopHintergrundUrl AS shopHintergrundUrl,
-    ort.id AS ortId, coalesce(ort.name, NULL) AS ortName,
-    h.sichtbarkeit AS sichtbarkeit, h.sichtbarFuer AS sichtbarFuer
+_SHOP_FELDER = """
+    o.id AS id, o.name AS name, o.description AS beschreibung,
+    o.spezialisierung AS spezialisierung, o.vertriebsart AS vertriebsart,
+    coalesce(o.shopHintergrundUrl, o.bildUrl, '') AS shopHintergrundUrl,
+    o.sichtbarkeit AS sichtbarkeit, o.sichtbarFuer AS sichtbarFuer
 """
 
 
-def _decode_haendler(record: dict) -> dict:
+def _decode_shop(record: dict) -> dict:
     daten = dict(record)
-    daten["bildUrl"] = daten.get("bildUrl") or ""
     daten["beschreibung"] = daten.get("beschreibung") or ""
     daten["spezialisierung"] = daten.get("spezialisierung") or []
     daten["vertriebsart"] = daten.get("vertriebsart") or "PHYSISCH"
     daten["shopHintergrundUrl"] = daten.get("shopHintergrundUrl") or ""
     daten["sichtbarkeit"] = daten.get("sichtbarkeit") or "GM"
     daten["sichtbarFuer"] = daten.get("sichtbarFuer") or []
+    gesichter = []
+    for roh in daten.get("haendler") or []:
+        if not roh or not roh.get("id"):
+            continue
+        gesichter.append({
+            "id": roh["id"],
+            "name": roh.get("name") or "",
+            "bildUrl": roh.get("bildUrl") or "",
+        })
+    daten["haendler"] = gesichter
+    # Erstes Gesicht als bildUrl — ältere Aufrufer (Kachel/Verhandeln) erwarten das Feld.
+    daten["bildUrl"] = gesichter[0]["bildUrl"] if gesichter else ""
+    daten["ortId"] = daten["id"]
+    daten["ortName"] = daten["name"]
     return daten
 
 
+async def shops_auf_orte_heben(campaign_id: str) -> None:
+    """Hebt Shop-Felder und VERKAUFT-Kanten von der Person auf den Ort.
+
+    Idempotent. Händler ohne Ort bekommen einen Laden-Ort aus ihrem Namen,
+    damit kein Sortiment verloren geht.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        ohne_ort = [
+            dict(r)
+            async for r in await session.run(
+                """
+                MATCH (h:Person {campaignId: $cid, istHaendler: true})
+                WHERE NOT (h)-[:BEFINDET_SICH_AN]->(:Ort)
+                  AND NOT (h)-[:BETREIBT]->(:Ort)
+                RETURN h.id AS id, h.name AS name,
+                       coalesce(h.description, '') AS description,
+                       coalesce(h.shopHintergrundUrl, '') AS kulisse,
+                       coalesce(h.sichtbarkeit, 'GM') AS sichtbarkeit,
+                       coalesce(h.sichtbarFuer, []) AS sichtbarFuer
+                """,
+                cid=campaign_id,
+            )
+        ]
+        for h in ohne_ort:
+            ort_id = str(uuid.uuid4())
+            await session.run(
+                """
+                MATCH (c:Campaign {id: $cid})
+                MATCH (h:Person {id: $hid, campaignId: $cid})
+                CREATE (o:Ort {
+                    id: $oid, campaignId: $cid, name: $name,
+                    description: $description, bildUrl: $kulisse,
+                    shopHintergrundUrl: $kulisse,
+                    sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
+                })
+                MERGE (c)-[:HAT_ENTITAET]->(o)
+                CREATE (h)-[:BEFINDET_SICH_AN]->(o)
+                """,
+                cid=campaign_id,
+                hid=h["id"],
+                oid=ort_id,
+                name=h["name"] or "Laden",
+                description=h["description"],
+                kulisse=h["kulisse"],
+                sichtbarkeit=h["sichtbarkeit"],
+                sichtbarFuer=h["sichtbarFuer"],
+            )
+
+        await session.run(
+            """
+            MATCH (h:Person {campaignId: $cid, istHaendler: true})-[:BEFINDET_SICH_AN]->(o:Ort)
+            SET o.istShop = true,
+                o.spezialisierung = CASE
+                    WHEN o.spezialisierung IS NOT NULL AND size(o.spezialisierung) > 0
+                    THEN o.spezialisierung ELSE coalesce(h.spezialisierung, []) END,
+                o.vertriebsart = coalesce(o.vertriebsart, h.vertriebsart, 'PHYSISCH'),
+                o.shopHintergrundUrl = CASE
+                    WHEN o.shopHintergrundUrl IS NOT NULL AND o.shopHintergrundUrl <> ''
+                    THEN o.shopHintergrundUrl
+                    ELSE coalesce(h.shopHintergrundUrl, o.bildUrl, '') END
+            MERGE (h)-[:BETREIBT]->(o)
+            """,
+            cid=campaign_id,
+        )
+        await session.run(
+            """
+            MATCH (h:Person {campaignId: $cid, istHaendler: true})-[r:VERKAUFT]->(g:Gegenstand)
+            MATCH (h)-[:BETREIBT]->(o:Ort)
+            MERGE (o)-[r2:VERKAUFT]->(g)
+            SET r2.preis = coalesce(r2.preis, r.preis),
+                r2.rabattProzent = coalesce(r2.rabattProzent, r.rabattProzent, 0),
+                r2.rabattHinweis = coalesce(r2.rabattHinweis, r.rabattHinweis, '')
+            DELETE r
+            """,
+            cid=campaign_id,
+        )
+
+
 async def liste(campaign_id: str) -> list[dict]:
-    """Alle Händler dieser Kampagne, mit Standort — für Kachel-Übersicht und
-    Kontaktliste. Schlank wie list_critter/list_ki (app/entities/repository.py),
-    kein Charakterblatt."""
+    """Alle Shops (Orte) dieser Kampagne, mit Händler-Gesichtern."""
+    await shops_auf_orte_heben(campaign_id)
     driver = get_driver()
     query = f"""
-        MATCH (h:Person {{campaignId: $campaign_id, istHaendler: true}})
-        OPTIONAL MATCH (h)-[:BEFINDET_SICH_AN]->(ort:Ort)
-        RETURN {_HAENDLER_FELDER}
-        ORDER BY h.name
+        MATCH (o:Ort {{campaignId: $campaign_id, istShop: true}})
+        OPTIONAL MATCH (h:Person {{istHaendler: true}})-[:BETREIBT]->(o)
+        WITH o, collect({{id: h.id, name: h.name, bildUrl: h.bildUrl}}) AS haendler
+        RETURN {_SHOP_FELDER}, haendler
+        ORDER BY o.name
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
-        return [_decode_haendler(dict(r)) async for r in result]
+        return [_decode_shop(dict(r)) async for r in result]
 
 
-async def hole(campaign_id: str, haendler_id: str) -> dict | None:
+async def hole(campaign_id: str, shop_id: str) -> dict | None:
+    await shops_auf_orte_heben(campaign_id)
     driver = get_driver()
     query = f"""
-        MATCH (h:Person {{id: $haendler_id, campaignId: $campaign_id, istHaendler: true}})
-        OPTIONAL MATCH (h)-[:BEFINDET_SICH_AN]->(ort:Ort)
-        RETURN {_HAENDLER_FELDER}
+        MATCH (o:Ort {{id: $shop_id, campaignId: $campaign_id, istShop: true}})
+        OPTIONAL MATCH (h:Person {{istHaendler: true}})-[:BETREIBT]->(o)
+        WITH o, collect({{id: h.id, name: h.name, bildUrl: h.bildUrl}}) AS haendler
+        RETURN {_SHOP_FELDER}, haendler
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id)
+        result = await session.run(query, campaign_id=campaign_id, shop_id=shop_id)
         record = await result.single()
-        return _decode_haendler(dict(record)) if record else None
+        return _decode_shop(dict(record)) if record else None
 
 
 async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None) -> dict | None:
-    """Setzt oder löst den Laden-Standort — dieselbe Kante wie bei Party
-    (party/repository.py::aufenthaltsort_setzen), nur ohne Event als Ziel:
-    ein Laden ist immer ein fester Ort, keine Szene."""
+    """Bindet einen Händler an einen Laden-Ort (BETREIBT + BEFINDET_SICH_AN)."""
     driver = get_driver()
     async with driver.session() as session:
         if ort_id:
             query = """
                 MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
                 MATCH (neu:Ort {id: $ort_id, campaignId: $campaign_id})
-                OPTIONAL MATCH (h)-[alt:BEFINDET_SICH_AN]->()
-                DELETE alt
+                OPTIONAL MATCH (h)-[altOrt:BEFINDET_SICH_AN]->()
+                OPTIONAL MATCH (h)-[altBetrieb:BETREIBT]->()
+                DELETE altOrt, altBetrieb
+                SET neu.istShop = true
                 CREATE (h)-[:BEFINDET_SICH_AN]->(neu)
-                RETURN h.id AS id
+                CREATE (h)-[:BETREIBT]->(neu)
+                RETURN neu.id AS id
             """
-            result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id, ort_id=ort_id)
+            result = await session.run(
+                query, campaign_id=campaign_id, haendler_id=haendler_id, ort_id=ort_id
+            )
         else:
             query = """
                 MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
-                OPTIONAL MATCH (h)-[alt:BEFINDET_SICH_AN]->()
-                DELETE alt
+                OPTIONAL MATCH (h)-[altOrt:BEFINDET_SICH_AN]->()
+                OPTIONAL MATCH (h)-[altBetrieb:BETREIBT]->()
+                DELETE altOrt, altBetrieb
                 RETURN h.id AS id
             """
             result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id)
         record = await result.single()
-    return await hole(campaign_id, haendler_id) if record else None
+    if not record:
+        return None
+    if ort_id:
+        return await hole(campaign_id, ort_id)
+    return None
 
 
 # --- Sortiment --------------------------------------------------------------
@@ -128,30 +227,30 @@ async def sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
     async with driver.session() as session:
         explizit = await session.run(
             f"""
-            MATCH (h:Person {{id: $haendler_id, campaignId: $campaign_id, istHaendler: true}})
+            MATCH (o:Ort {{id: $shop_id, campaignId: $campaign_id, istShop: true}})
                   -[r:VERKAUFT]->(g:Gegenstand)
             RETURN {_EXPLIZIT_FELDER}
             ORDER BY g.name
             """,
             campaign_id=campaign_id,
-            haendler_id=haendler_id,
+            shop_id=haendler_id,
         )
         explizite_eintraege = [dict(r) async for r in explizit]
         explizite_ids = {e["gegenstandId"] for e in explizite_eintraege}
 
         automatisch = await session.run(
             """
-            MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
+            MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
             MATCH (g:Gegenstand {
                 campaignId: $campaign_id, istVorlage: true,
                 automatischImShop: true, istEntwurf: false
             })
-            WHERE size(h.spezialisierung) = 0 OR g.typ IN h.spezialisierung
+            WHERE size(coalesce(o.spezialisierung, [])) = 0 OR g.typ IN o.spezialisierung
             RETURN """ + _AUTOMATISCH_FELDER + """
             ORDER BY g.name
             """,
             campaign_id=campaign_id,
-            haendler_id=haendler_id,
+            shop_id=haendler_id,
         )
         automatische_eintraege = [dict(r) async for r in automatisch if dict(r)["gegenstandId"] not in explizite_ids]
 
@@ -179,15 +278,15 @@ async def effektiver_preis(campaign_id: str, haendler_id: str, gegenstand_id: st
 async def verkauft_hinzufuegen(campaign_id: str, haendler_id: str, gegenstand_id: str, preis: int) -> bool:
     driver = get_driver()
     query = """
-        MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
         MATCH (g:Gegenstand {id: $gegenstand_id, campaignId: $campaign_id})
-        MERGE (h)-[r:VERKAUFT]->(g)
+        MERGE (o)-[r:VERKAUFT]->(g)
         SET r.preis = $preis
-        RETURN h.id AS id
+        RETURN o.id AS id
     """
     async with driver.session() as session:
         result = await session.run(
-            query, campaign_id=campaign_id, haendler_id=haendler_id, gegenstand_id=gegenstand_id, preis=preis
+            query, campaign_id=campaign_id, shop_id=haendler_id, gegenstand_id=gegenstand_id, preis=preis
         )
         return await result.single() is not None
 
@@ -195,13 +294,13 @@ async def verkauft_hinzufuegen(campaign_id: str, haendler_id: str, gegenstand_id
 async def verkauft_entfernen(campaign_id: str, haendler_id: str, gegenstand_id: str) -> bool:
     driver = get_driver()
     query = """
-        MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
               -[r:VERKAUFT]->(g:Gegenstand {id: $gegenstand_id})
         DELETE r
         RETURN count(r) AS geloescht
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id, gegenstand_id=gegenstand_id)
+        result = await session.run(query, campaign_id=campaign_id, shop_id=haendler_id, gegenstand_id=gegenstand_id)
         record = await result.single()
         return bool(record and record["geloescht"])
 
@@ -214,7 +313,7 @@ async def rabatt_setzen(
     prozent=0 nimmt den Rabatt wieder weg."""
     driver = get_driver()
     query = """
-        MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
               -[r:VERKAUFT]->(g:Gegenstand {id: $gegenstand_id})
         SET r.rabattProzent = $prozent, r.rabattHinweis = $hinweis
         RETURN count(r) AS gesetzt
@@ -223,7 +322,7 @@ async def rabatt_setzen(
         result = await session.run(
             query,
             campaign_id=campaign_id,
-            haendler_id=haendler_id,
+            shop_id=haendler_id,
             gegenstand_id=gegenstand_id,
             prozent=prozent,
             hinweis=hinweis,
