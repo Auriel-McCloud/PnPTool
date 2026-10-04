@@ -264,6 +264,60 @@ async def seed_rassen() -> None:
         )
 
     await _rassenmaxima_nachtragen()
+    await _rassen_fairness_nachtragen()
+
+
+# Freie Punkte VOR Marks Fairness-Fix (05.10.2026, siehe app/rassen/balance.py
+# und traits/erstellung.py::RASSEN) — nur zum Wiedererkennen unten, damit die
+# Nachbesserung ausschliesslich unveränderte, alte Datensätze anhebt.
+_FREIE_PUNKTE_VOR_FAIRNESS_FIX = {
+    "Ork": [6, 5, 3],
+    "Elf": [5, 5, 3],
+    "Zwerg": [5, 5, 3],
+    "Troll": [5, 4, 3],
+}
+
+
+async def _rassen_fairness_nachtragen() -> int:
+    """Hebt bestehende Rassen-Datensätze auf die neuen, fairen freiePunkte.
+
+    `seed_rassen()` legt nur **fehlende** Rassen neu an — eine schon
+    vorhandene Rasse wird nie angefasst, auch wenn sich die eingebaute
+    Formel ändert (genau das hat Mark hier gewollt: der Baukasten darf nicht
+    bei jedem Serverstart überschreiben, was die Spielleitung selbst
+    eingestellt hat). Nach dem Fairness-Fix (05.10.2026: "ein Minus Punkt
+    gibt einen Punkt zurück, es soll also immer 24 rauskommen") stehen in
+    jeder *bestehenden* Kampagne aber noch die alten, unfairen Werte für
+    Ork/Elf/Zwerg/Troll in der Datenbank — reine Code-Änderung reicht hier
+    nicht. Setzt deshalb gezielt nur die vier betroffenen Rassen um, und
+    **nur**, wenn dort noch exakt der alte Wert steht: eine Rasse, die der
+    Spielleiter zwischenzeitlich im Baukasten selbst verändert hat, bleibt
+    unangetastet.
+    """
+    from app.traits.erstellung import RASSEN
+
+    driver = get_driver()
+    gesetzt = 0
+    async with driver.session() as session:
+        for name, alt in _FREIE_PUNKTE_VOR_FAIRNESS_FIX.items():
+            neu = RASSEN[name]["freiePunkte"]
+            result = await session.run(
+                """
+                MATCH (r:Rasse {ruleset: $ruleset, name: $name})
+                WHERE r.freiePunkte = $alt
+                SET r.freiePunkte = $neu
+                RETURN count(r) AS n
+                """,
+                ruleset=RULESET,
+                name=name,
+                alt=alt,
+                neu=neu,
+            )
+            record = await result.single()
+            gesetzt += record["n"] if record else 0
+    if gesetzt:
+        print(f"[seed] Rassen-Fairness nachgetragen: {gesetzt} Rasse(n)")
+    return gesetzt
 
 
 async def _rassenmaxima_nachtragen() -> int:

@@ -110,10 +110,17 @@ Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 | Rasse | Frei | Startmax | Anpassungen |
 |---|---|---|---|
 | Mensch | 7 / 5 / 3 | 4 / 4 / 4 | — |
-| Ork | 6 / 5 / 3 | 3 / 5 / 4 | Intelligenz −1, Körperkraft +1 |
-| Elf | 5 / 5 / 3 | 3 / 5 / 5 | Widerstandsfähigkeit −1, Charisma +1, Geschicklichkeit +1 |
-| Zwerg | 5 / 5 / 3 | 3 / 5 / 5 | Charisma −1, Widerstandsfähigkeit +1, Fassung +1 |
-| Troll | 5 / 4 / 3 | 6 / 5 / 3 | Körperkraft +2, Widerstandsfähigkeit +1, Geistesschärfe −1, Geschicklichkeit −1 |
+| Ork | 6 / 6 / 3 | 3 / 5 / 4 | Intelligenz −1, Körperkraft +1 |
+| Elf | 5 / 6 / 3 | 3 / 5 / 5 | Widerstandsfähigkeit −1, Charisma +1, Geschicklichkeit +1 |
+| Zwerg | 5 / 6 / 3 | 3 / 5 / 5 | Charisma −1, Widerstandsfähigkeit +1, Fassung +1 |
+| Troll | 5 / 6 / 3 | 6 / 5 / 3 | Körperkraft +2, Widerstandsfähigkeit +1, Geistesschärfe −1, Geschicklichkeit −1 |
+
+> ⚠️ **Weicht bewusst vom Regelblatt ab** (05.10.2026, Marks Fairness-
+> Wunsch: "ein Minus Punkt gibt einen Punkt zurück, es soll also immer 24
+> rauskommen"). Die "Frei"-Spalte für Ork/Elf/Zwerg/Troll liegt hier um
+> genau ihre Anzahl Nachteile höher als ursprünglich im Excel — ohne das
+> kamen diese vier Rassen am Ende auf weniger Gesamtpunkte (9 Grundwert +
+> 15 Budget) als der Mensch. Details und Formel: `docs/api/rassen.md`.
 
 3. **Fähigkeiten** — eines von drei Paketen:
    - *Profi*: 1×4, 3×3, 3×2, 1×1 (8 Fähigkeiten)
