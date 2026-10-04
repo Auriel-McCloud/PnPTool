@@ -31,8 +31,15 @@ function NotizEditor({
     setDoc(parseRichText(notiz.inhalt));
   }, [notiz.id]);
 
-  const merken = useAutosave((wert: JSONContent) => {
-    void spielernotizenApi.aendern(notiz.id, { inhalt: serializeRichText(wert) });
+  // Nach jedem Autosave den frischen Stand an den Elternzustand zurückgeben —
+  // sonst bleibt `liste`/`offen` beim letzten Ladezeitpunkt stehen. Beim
+  // nächsten Öffnen (Zeile klicken -> setOffen(n) mit dem alten `n` aus
+  // `liste`) initialisiert NotizEditor seinen State dann aus dem veralteten
+  // `notiz.inhalt` und zeigt scheinbar "nichts" an, obwohl das PATCH oben
+  // längst durch ist (Mark, 04.10.2026: Text weg beim Verlassen+Reinklicken).
+  const merken = useAutosave(async (wert: JSONContent) => {
+    const aktualisiert = await spielernotizenApi.aendern(notiz.id, { inhalt: serializeRichText(wert) });
+    onAktualisiert(aktualisiert);
   });
 
   async function titelSpeichern() {
@@ -204,8 +211,12 @@ export function SpielerNotizen() {
           <NotizEditor
             notiz={offen}
             onAktualisiert={(n) => {
-              setOffen(n);
+              // `offen` nur aktualisieren, wenn es noch dieselbe Notiz ist —
+              // sonst reisst ein verspäteter Autosave-Flush (z.B. der
+              // Unmount-Flush aus autosave.ts beim Schliessen) das Fenster
+              // wieder auf, nachdem der Spieler es längst zugemacht hat.
               setListe((alt) => alt.map((x) => (x.id === n.id ? n : x)));
+              setOffen((alt) => (alt && alt.id === n.id ? n : alt));
             }}
             onLoeschen={() => setLoeschKandidat(offen)}
           />
