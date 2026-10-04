@@ -257,3 +257,64 @@ export async function beratungEntwurf(
 ): Promise<{ typ: string; id: string; name: string }> {
   return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/entwurf`, { typ });
 }
+
+/**
+ * Massen-KI-Anlage (03.10.2026, Marks Wunsch): EIN Wunsch + Anzahl → N klar
+ * unterschiedliche Entwürfe, optional alle an ein bestehendes Ziel verknüpft
+ * (Gegenstände landen im Sortiment eines Händlers bzw. werden einer Person
+ * zugewiesen, Charaktere/Orte bekommen eine Beziehungskante zum Ziel).
+ */
+export type MassenTyp = "gegenstand" | "charakter" | "ort";
+export type MassenZielTyp = "Person" | "Ort" | "Event" | "Fraktion";
+
+export interface MassenZiel {
+  zielTyp: MassenZielTyp;
+  zielId: string;
+  /** Freitext-Kantenbezeichnung — nur für charakter/ort relevant, bei
+   * gegenstand ignoriert (Sortiment/Zuweisen kennt keine Kantenbezeichnung). */
+  beziehungstyp?: string;
+}
+
+export interface MassenEintrag {
+  id: string;
+  name: string;
+  /** Ob die optionale Ziel-Verknüpfung für DIESEN Eintrag geklappt hat —
+   * z.B. false bei Gegenstand + Ziel Ort/Event/Fraktion (dafür gibt es noch
+   * keinen Platzierungs-Mechanismus). */
+  verknuepft: boolean;
+}
+
+export interface MassenErgebnis {
+  typ: string;
+  eintraege: MassenEintrag[];
+}
+
+function massenBody(typ: MassenTyp, anzahl: number, ziel?: MassenZiel) {
+  return {
+    typ,
+    anzahl,
+    zielTyp: ziel?.zielTyp ?? null,
+    zielId: ziel?.zielId ?? null,
+    beziehungstyp: ziel?.beziehungstyp?.trim() || null,
+  };
+}
+
+export async function massenIdee(
+  campaignId: string,
+  typ: MassenTyp,
+  prompt: string,
+  anzahl: number,
+  ziel?: MassenZiel,
+): Promise<MassenErgebnis> {
+  return api.post(`/api/campaigns/${campaignId}/ki/massenidee`, { ...massenBody(typ, anzahl, ziel), prompt });
+}
+
+export async function beratungMassenentwurf(
+  campaignId: string,
+  id: string,
+  typ: MassenTyp,
+  anzahl: number,
+  ziel?: MassenZiel,
+): Promise<MassenErgebnis> {
+  return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/massenentwurf`, massenBody(typ, anzahl, ziel));
+}

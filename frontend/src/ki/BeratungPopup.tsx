@@ -8,18 +8,49 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { entitiesApi } from "../entities/api";
 import {
   beratungEntwurf,
   beratungLaden,
   beratungListe,
   beratungLoeschen,
+  beratungMassenentwurf,
   beratungNachricht,
   beratungNeu,
   type Beratung,
   type BeratungNachricht,
+  type MassenErgebnis,
+  type MassenTyp,
+  type MassenZielTyp,
 } from "./api";
 import type { KiTyp } from "../ideenschmiede/api";
 import "./ki.css";
+
+/** Typen, für die die Massen-Anlage angeboten wird — deckungsgleich mit
+ * MassenTyp im Backend (Mark: Gegenstände/NPCs/Orte zuerst, 03.10.2026). */
+const MASSEN_TYPEN: readonly string[] = ["gegenstand", "charakter", "ort"];
+
+interface ZielOption {
+  id: string;
+  label: string;
+}
+
+async function ladeZielOptionen(campaignId: string, zielTyp: MassenZielTyp): Promise<ZielOption[]> {
+  if (zielTyp === "Person") {
+    const liste = await entitiesApi.listPersonen(campaignId);
+    return liste.map((p) => ({ id: p.id, label: p.istHaendler ? `${p.name} (Händler)` : p.name }));
+  }
+  if (zielTyp === "Ort") {
+    const liste = await entitiesApi.listOrte(campaignId);
+    return liste.map((o) => ({ id: o.id, label: o.name }));
+  }
+  if (zielTyp === "Event") {
+    const liste = await entitiesApi.listEvents(campaignId);
+    return liste.map((e) => ({ id: e.id, label: e.title }));
+  }
+  const liste = await entitiesApi.listFraktionen(campaignId);
+  return liste.map((f) => ({ id: f.id, label: f.name }));
+}
 
 export function BeratungPopup({
   offen,
@@ -40,6 +71,15 @@ export function BeratungPopup({
   const [entwurfOffen, setEntwurfOffen] = useState(false);
   const [entwurfTyp, setEntwurfTyp] = useState<KiTyp>("charakter");
   const [entwurfLaeuft, setEntwurfLaeuft] = useState(false);
+  // Massen-Anlage (03.10.2026): "N unterschiedliche Entwürfe statt einem",
+  // nur für MASSEN_TYPEN anbieten — siehe ladeZielOptionen/massenAnlegen unten.
+  const [massenModus, setMassenModus] = useState(false);
+  const [massenAnzahl, setMassenAnzahl] = useState(5);
+  const [massenZielTyp, setMassenZielTyp] = useState<"" | MassenZielTyp>("");
+  const [massenZielId, setMassenZielId] = useState("");
+  const [massenBeziehungstyp, setMassenBeziehungstyp] = useState("");
+  const [zielOptionen, setZielOptionen] = useState<ZielOption[]>([]);
+  const [massenErgebnis, setMassenErgebnis] = useState<MassenErgebnis | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   // Überschreibt für diese eine Unterhaltung den Kampagnen-Standard — zum
   // direkten Vergleich, ohne die Kampagnen-Einstellung extra umzustellen.
@@ -128,6 +168,64 @@ export function BeratungPopup({
       onEntwurf();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Entwurf fehlgeschlagen");
+    } finally {
+      setEntwurfLaeuft(false);
+    }
+  }
+
+  // Zurücksetzen, sobald das Popup zugeht oder der Typ wechselt — sonst
+  // hängt ein Ziel aus "Gegenstand" noch an, wenn man auf "Ort" wechselt.
+  useEffect(() => {
+    if (!entwurfOffen) {
+      setMassenModus(false);
+      setMassenErgebnis(null);
+    }
+  }, [entwurfOffen]);
+
+  useEffect(() => {
+    setMassenZielTyp("");
+    setMassenZielId("");
+    setMassenBeziehungstyp("");
+    setMassenErgebnis(null);
+    if (!MASSEN_TYPEN.includes(entwurfTyp)) setMassenModus(false);
+  }, [entwurfTyp]);
+
+  useEffect(() => {
+    setMassenZielId("");
+    if (!massenZielTyp) {
+      setZielOptionen([]);
+      return;
+    }
+    let aktuelleAnfrage = true;
+    void ladeZielOptionen(campaignId, massenZielTyp).then((optionen) => {
+      if (aktuelleAnfrage) setZielOptionen(optionen);
+    });
+    return () => {
+      aktuelleAnfrage = false;
+    };
+  }, [campaignId, massenZielTyp]);
+
+  async function massenAnlegen() {
+    if (!aktiv) return;
+    setEntwurfLaeuft(true);
+    setFehler(null);
+    setMassenErgebnis(null);
+    try {
+      const ziel =
+        massenZielTyp && massenZielId
+          ? { zielTyp: massenZielTyp, zielId: massenZielId, beziehungstyp: massenBeziehungstyp }
+          : undefined;
+      const ergebnis = await beratungMassenentwurf(
+        campaignId,
+        aktiv.id,
+        entwurfTyp as MassenTyp,
+        massenAnzahl,
+        ziel,
+      );
+      setMassenErgebnis(ergebnis);
+      onEntwurf();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Massen-Anlage fehlgeschlagen");
     } finally {
       setEntwurfLaeuft(false);
     }
@@ -278,24 +376,124 @@ export function BeratungPopup({
               <option value="verbindung">Verbindung</option>
             </select>
           </label>
+
+          {MASSEN_TYPEN.includes(entwurfTyp) && !massenErgebnis && (
+            <label className="ki-label" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={massenModus}
+                onChange={(e) => setMassenModus(e.target.checked)}
+              />
+              Mehrere auf einmal anlegen (z.B. "5 Gegenstände von Händler X")
+            </label>
+          )}
+
+          {massenModus && !massenErgebnis && (
+            <>
+              <label className="ki-label">
+                Anzahl
+                <input
+                  type="number"
+                  className="ki-input"
+                  min={1}
+                  max={12}
+                  value={massenAnzahl}
+                  onChange={(e) => setMassenAnzahl(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                />
+              </label>
+              <label className="ki-label">
+                Verknüpfen mit (optional)
+                <select
+                  className="ki-input"
+                  value={massenZielTyp}
+                  onChange={(e) => setMassenZielTyp(e.target.value as "" | MassenZielTyp)}
+                >
+                  <option value="">Keine Verknüpfung</option>
+                  <option value="Person">Person</option>
+                  <option value="Ort">Ort</option>
+                  <option value="Event">Ereignis</option>
+                  <option value="Fraktion">Fraktion</option>
+                </select>
+              </label>
+              {massenZielTyp && (
+                <label className="ki-label">
+                  Ziel
+                  <select
+                    className="ki-input"
+                    value={massenZielId}
+                    onChange={(e) => setMassenZielId(e.target.value)}
+                  >
+                    <option value="">— auswählen —</option>
+                    {zielOptionen.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {massenZielTyp && massenZielId && entwurfTyp !== "gegenstand" && (
+                <label className="ki-label">
+                  Beziehung (optional, z.B. "arbeitet in")
+                  <input
+                    className="ki-input"
+                    value={massenBeziehungstyp}
+                    onChange={(e) => setMassenBeziehungstyp(e.target.value)}
+                    placeholder="leer = sinnvoller Standard"
+                  />
+                </label>
+              )}
+              <p className="ki-vorschau-hinweis">
+                {entwurfTyp === "gegenstand" && massenZielTyp === "Person"
+                  ? "Landet im Sortiment, wenn das Ziel ein Händler ist — sonst wird die Ware direkt zugewiesen."
+                  : entwurfTyp === "gegenstand" && massenZielTyp
+                    ? "Für Orte/Ereignisse/Fraktionen gibt es noch keine automatische Verknüpfung für Gegenstände — sie landen trotzdem als Entwürfe."
+                    : "Jeder Eintrag unterscheidet sich bewusst vom vorigen, keine Wiederholung."}
+              </p>
+            </>
+          )}
+
           <p className="ki-vorschau-hinweis">
             {entwurfTyp === "verbindung"
               ? "Landet als Kante unter Beziehungen. Fehlende Personen/Orte/Events/Fraktionen werden als Entwurf angelegt."
               : "Landet als Entwurf in der Schmiede, nicht in der Kampagne."}
           </p>
           {fehler && <p className="ki-fehler">{fehler}</p>}
+
+          {massenErgebnis && (
+            <div className="ki-vorschau-hinweis">
+              <strong>{massenErgebnis.eintraege.length} Entwürfe angelegt:</strong>
+              <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
+                {massenErgebnis.eintraege.map((e) => (
+                  <li key={e.id}>
+                    {e.name}
+                    {e.verknuepft ? " — verknüpft" : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="ki-aktionen">
-            <button
-              type="button"
-              className="ki-btn-primaer"
-              disabled={entwurfLaeuft}
-              onClick={() => void entwurfAnlegen()}
-            >
-              {entwurfLaeuft ? "Legt an…" : "Anlegen"}
-            </button>
-            <button type="button" className="ki-btn-sekundaer" onClick={() => setEntwurfOffen(false)}>
-              Abbrechen
-            </button>
+            {massenErgebnis ? (
+              <button type="button" className="ki-btn-primaer" onClick={() => setEntwurfOffen(false)}>
+                Fertig
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="ki-btn-primaer"
+                  disabled={entwurfLaeuft || (massenModus && !!massenZielTyp && !massenZielId)}
+                  onClick={() => void (massenModus ? massenAnlegen() : entwurfAnlegen())}
+                >
+                  {entwurfLaeuft ? "Legt an…" : massenModus ? `${massenAnzahl} anlegen` : "Anlegen"}
+                </button>
+                <button type="button" className="ki-btn-sekundaer" onClick={() => setEntwurfOffen(false)}>
+                  Abbrechen
+                </button>
+              </>
+            )}
           </div>
         </div>
       </Fenster>
