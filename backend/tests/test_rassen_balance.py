@@ -28,14 +28,15 @@ class TestGewachseneRassen:
 
 class TestBilanz:
     def test_vorteile_kosten_freie_punkte(self):
-        """+2 Vorteile verlangen 13 statt 15 freie Punkte."""
-        b = bilanz({"Körperkraft": 1, "Charisma": 1, "Intelligenz": -1}, [5, 5, 3])
+        """+2 Vorteile, 1 Nachteil verlangen 14 statt 15 freie Punkte
+        (der eine Nachteil gibt seit 05.10.2026 einen Punkt zurück)."""
+        b = bilanz({"Körperkraft": 1, "Charisma": 1, "Intelligenz": -1}, [5, 6, 3])
         assert b["summe"] == 15 and b["stimmt"]
 
     def test_zu_viele_punkte_werden_gemeldet(self):
         b = bilanz({"Körperkraft": 2, "Intelligenz": -1}, [7, 5, 3])
         assert not b["stimmt"]
-        assert b["summe"] == 17
+        assert b["summe"] == 16
         assert any("über dem Budget" in h for h in b["hinweise"])
 
     def test_zu_wenige_nachteile_werden_gemeldet(self):
@@ -45,12 +46,17 @@ class TestBilanz:
         assert not b["stimmt"]
         assert any("Zu wenig Nachteile" in h for h in b["hinweise"])
 
-    def test_nachteile_bringen_keine_punkte(self):
-        """Marks Entscheidung: Nachteile sind Pflichtbeigabe, keine Währung.
-        Ein Volk mit −3 Charisma darf deshalb nicht mehr freie Punkte haben."""
-        mit_vielen_nachteilen = bilanz({"Charisma": -3}, [15, 0, 0])
+    def test_nachteile_geben_jetzt_punkte_zurueck(self):
+        """Mark, 05.10.2026 (Fairness-Wunsch): "ein Minus Punkt gibt einen
+        Punkt zurück, es soll also immer 24 rauskommen" — das Gegenteil der
+        alten Regel (vorher brachten Nachteile gar nichts, siehe Git-
+        Historie dieser Datei). Bei gleichbleibenden freien Punkten senkt
+        ein zusätzlicher Nachteil die Bilanz jetzt um genau 1 — der
+        Rassenbauer muss dann einen freien Punkt draufpacken, um wieder auf
+        das Budget zu kommen, bekommt also den Punkt am Ende tatsächlich."""
+        mit_nachteil = bilanz({"Charisma": -1}, [15, 0, 0])
         ohne = bilanz({}, [15, 0, 0])
-        assert mit_vielen_nachteilen["summe"] == ohne["summe"]
+        assert mit_nachteil["summe"] == ohne["summe"] - 1
 
     def test_rasse_ohne_modifikatoren_braucht_keine_nachteile(self):
         b = bilanz({}, [7, 5, 3])

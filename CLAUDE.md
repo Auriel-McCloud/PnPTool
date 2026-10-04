@@ -294,6 +294,30 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (04.10.2026 — Rassen-Fairness: Nachteile geben jetzt einen Punkt zurück):**
+- **Was:** Mark meldete einen vermuteten Logikfehler bei den Rassen ("ich
+  glaube es wird nur der erste - Wert gerechnet, aber alle + Werte... Und
+  das führt zu einem Ungleichgewicht"). Nachgerechnet: kein Rechenfehler
+  (jeder Nachteil wurde schon immer korrekt summiert, 15/15 Tests grün),
+  aber die Formel selbst war unfair — Nachteile brachten keine freien
+  Punkte ein, also kamen Rassen mit Schwächen am Ende auf weniger
+  Gesamtpunkte (24 − Σ Nachteile) als der Mensch (immer 24). Mark wollte
+  stattdessen: "ein Minus Punkt gibt einen Punkt zurück, es soll also immer
+  24 rauskommen". Neue Formel: Freie Punkte + Σ Vorteile − Σ Nachteile = 15
+  (statt vorher ohne das Minus). Die fünf eingebauten Rassen wurden
+  entsprechend neu balanciert: Ork 6/5/3→6/6/3, Elf/Zwerg 5/5/3→5/6/3, Troll
+  5/4/3→5/6/3 — alle landen jetzt exakt bei 24. Die "Nachteile = aufgerundet
+  halbe Vorteile"-Mindestregel bleibt (verhindert weiterhin ein reines
+  Vorteils-Volk ohne erzählerische Schwäche, ist aber kein Budget-Mechanismus
+  mehr, das erledigt die neue Formel von selbst).
+- **Dateien:** `rassen/balance.py` (Formel + Docstring), `traits/erstellung.py`
+  (RASSEN-Werte), `tests/test_rassen_balance.py`, `rassen/RassenUebersicht.tsx`
+  (Hinweistext), `docs/api/rassen.md`, `docs/regeln-neotopia.md`.
+- **Verifiziert:** `pytest tests/test_rassen_balance.py tests/test_rassen_grenzen.py`
+  + volle Suite + `tsc -b`/`vite build`. Im Browser: Rassen-Baukasten zeigt
+  alle fünf Rassen als "✓ ausgewogen" mit der neuen Bilanz; eine testweise
+  angelegte Troll-Erstellung kommt in Summe auf 24 Attributpunkte.
+
 **Zuletzt gebaut (04.10.2026 — Shop hängt am Ort, nicht an der Person):**
 - **Was:** Mark wollte den Laden als Ort (Beschreibung, Kulisse, Sortiment,
   Spezialisierung, Vertriebsart), die Person bleibt Händler für Kontakt/

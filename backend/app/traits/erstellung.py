@@ -72,17 +72,23 @@ RASSEN: dict[str, dict[str, Any]] = {
     },
     "Elf": {
         "modifikatoren": {"Charisma": 1, "Geschicklichkeit": 1, "Widerstandsfähigkeit": -1},
-        "freiePunkte": [5, 5, 3],
+        # War [5, 5, 3] (13) — +1 im zweiten Kontingent macht 14, siehe Ork.
+        "freiePunkte": [5, 6, 3],
         "beschreibung": "Gewandt und einnehmend, körperlich aber nicht sonderlich zäh.",
     },
     "Ork": {
         "modifikatoren": {"Körperkraft": 1, "Intelligenz": -1},
-        "freiePunkte": [6, 5, 3],
+        # War [6, 5, 3] (nur 14 — Nachteile brachten keine Punkte). Seit
+        # Marks Fairness-Wunsch (05.10.2026: "ein Minus Punkt gibt einen
+        # Punkt zurück, es soll immer 24 rauskommen") +1 im zweiten
+        # Kontingent, macht 15 — siehe app/rassen/balance.py.
+        "freiePunkte": [6, 6, 3],
         "beschreibung": "Kräftig gebaut, und nach dem Menschen am breitesten aufgestellt.",
     },
     "Zwerg": {
         "modifikatoren": {"Widerstandsfähigkeit": 1, "Fassung": 1, "Charisma": -1},
-        "freiePunkte": [5, 5, 3],
+        # War [5, 5, 3] (13) — +1 im zweiten Kontingent macht 14, siehe Ork.
+        "freiePunkte": [5, 6, 3],
         "beschreibung": "Hält aus und behält die Ruhe; Sympathien gewinnt er weniger leicht.",
     },
     "Troll": {
@@ -92,7 +98,9 @@ RASSEN: dict[str, dict[str, Any]] = {
             "Geistesschärfe": -1,
             "Geschicklichkeit": -1,
         },
-        "freiePunkte": [5, 4, 3],
+        # War [5, 4, 3] (12) — 2 Nachteile geben jetzt 2 Punkte zurück,
+        # macht 14. Beide im zweiten Kontingent (4 -> 6), siehe Ork.
+        "freiePunkte": [5, 6, 3],
         "beschreibung": "Wuchtig und schwer umzuwerfen, dafür langsam von Auffassung und Hand.",
     },
 }

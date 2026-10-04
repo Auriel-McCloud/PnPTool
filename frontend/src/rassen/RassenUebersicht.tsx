@@ -29,7 +29,8 @@ function Bilanzstreifen({ rasse }: { rasse: Rasse }) {
   return (
     <div className="ra-bilanz" data-stimmt={b.stimmt}>
       <span className="ra-bilanz-rechnung">
-        {b.punkte} Punkte + {b.vorteile} Vorteile = <strong>{b.summe}</strong> / {b.budget}
+        {b.punkte} Punkte + {b.vorteile} Vorteile − {b.nachteile} Nachteile = <strong>{b.summe}</strong> /{" "}
+        {b.budget}
       </span>
       <span className="ra-bilanz-nachteile">
         Nachteile {b.nachteile}/{b.nachteileSoll}
@@ -329,7 +330,8 @@ function RasseEditor({
             <p className="ra-hinweis">
               Wirken auf Startwert, Erstellungsgrenze <strong>und</strong> das dauerhafte Maximum: +2
               Körperkraft heisst, dieses Volk kommt bis 8 statt 6. Jeder Vorteilspunkt kostet einen freien
-              Punkt; Nachteile bringen keine Punkte, gehören aber dazu.
+              Punkt, jeder Nachteilspunkt gibt einen zurück — am Ende kommt für jede Rasse immer 24
+              heraus (9 Grundwert + 15 Budget).
             </p>
             {spalten.map((spalte) => (
               <div key={spalte.id} className="ra-spalte">

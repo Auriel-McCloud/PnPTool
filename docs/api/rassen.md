@@ -24,26 +24,34 @@ Regelwerk aufzunehmen und sie in dieser Runde zuzulassen sind zwei
 Entscheidungen. Bestehende Kampagnen haben beim Einführen alle fünf
 eingebauten Rassen bekommen, damit sich für sie nichts ändert.
 
-## Die Balance-Regel — gefunden, nicht erfunden
+## Die Balance-Regel — gefunden, dann korrigiert
 
-Beim Nachrechnen der fünf gewachsenen Rassen kam heraus, dass sie **exakt**
-derselben Formel folgen, die nie jemand aufgeschrieben hatte:
+Beim Nachrechnen der fünf gewachsenen Rassen (11.09.2026) kam heraus, dass
+sie **exakt** derselben Formel folgten, die nie jemand aufgeschrieben hatte
+— allerdings mit einem Webfehler: Nachteile brachten keine freien Punkte
+ein, also kam bei Rassen mit Schwächen am Ende **weniger** heraus als beim
+Mensch (24 − Σ Nachteile statt immer 24). Mark fand das unfair (04.10.2026)
+und wollte stattdessen (05.10.2026): "ein Minus Punkt gibt einen Punkt
+zurück, es soll also immer 24 rauskommen". Seitdem gilt:
 
-| Rasse  | Freie Punkte | Σ Vorteile | Summe | Σ Nachteile |
-|--------|--------------|------------|-------|-------------|
-| Mensch | 7+5+3 = 15   | 0          | 15    | 0           |
-| Ork    | 6+5+3 = 14   | +1         | 15    | 1           |
-| Elf    | 5+5+3 = 13   | +2         | 15    | 1           |
-| Zwerg  | 5+5+3 = 13   | +2         | 15    | 1           |
-| Troll  | 5+4+3 = 12   | +3         | 15    | 2           |
+| Rasse  | Freie Punkte | Σ Vorteile | Σ Nachteile | Summe | Gesamt (9 + Summe) |
+|--------|--------------|------------|-------------|-------|--------------------|
+| Mensch | 7+5+3 = 15   | 0          | 0           | 15    | 24                 |
+| Ork    | 6+6+3 = 15   | +1         | 1           | 15    | 24                 |
+| Elf    | 5+6+3 = 14   | +2         | 1           | 15    | 24                 |
+| Zwerg  | 5+6+3 = 14   | +2         | 1           | 15    | 24                 |
+| Troll  | 5+6+3 = 14   | +3         | 2           | 15    | 24                 |
 
-1. **Freie Punkte + Summe der positiven Modifikatoren = 15.** Ein
-   Vorteilspunkt kostet genau einen freien Punkt. Er ist mehr wert (er hebt
-   zusätzlich die Obergrenze), aber nicht gratis.
-2. **Nachteile = aufgerundet die Hälfte der Vorteile.** Sie sind **keine
-   Währung**: Nachteile bringen keine freien Punkte ein. Sonst liesse sich
-   ein Min-Max-Volk bauen ("−3 Charisma, +3 Körperkraft") — und genau das ist
-   in keiner der fünf Rassen passiert.
+1. **Freie Punkte + Σ Vorteile − Σ Nachteile = 15.** Ein Vorteilspunkt
+   kostet einen freien Punkt (er ist trotzdem mehr wert, weil er zusätzlich
+   die Obergrenze hebt), ein Nachteilspunkt bringt umgekehrt einen freien
+   Punkt zurück. Damit landet jede Rasse bei genau 9 (Grundwert über 9
+   Attribute) + 15 = **24** Gesamtpunkten, unabhängig von ihren Vor-/
+   Nachteilen.
+2. **Nachteile = aufgerundet die Hälfte der Vorteile.** Diese Mindestzahl
+   bleibt bestehen, ist aber kein Budget-Mechanismus mehr (das erledigt
+   Regel 1 jetzt von selbst) — sie verhindert weiterhin ein reines
+   Vorteils-Volk ohne jede erzählerische Schwäche.
 
 `backend/tests/test_rassen_balance.py` hält beides fest. Schlägt der erste
 Test fehl, ist entweder eine Rasse aus der Balance geraten oder die Formel
@@ -129,7 +137,7 @@ Formel im Frontend nachzubauen.
   beschreibung: "Wuchtig und schwer umzuwerfen…",
   bildUrl: "/uploads/…",
   modifikatoren: '{"Körperkraft": 2, …}',  // JSON-Text, Neo4j kann keine Maps
-  freiePunkte: [5, 4, 3],                  // Zahlenlisten kann es dagegen
+  freiePunkte: [5, 6, 3],                  // Zahlenlisten kann es dagegen
   sortOrder: 5
 })
 
