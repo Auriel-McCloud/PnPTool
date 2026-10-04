@@ -232,14 +232,6 @@ export function FraktionDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Fraktion", objektName: fraktion.name, feldLabel: "Beschreibung" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ description: serializeRichText(beschreibungDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Beschreibung speichern"}
-              </button>
             </div>
           )}
 
@@ -285,14 +277,6 @@ export function FraktionDetail({
                 setNotizenDoc(doc);
                 autosaveNotizen(doc);
               }} minHeight={200} />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ notes: serializeRichText(notizenDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Notizen speichern"}
-              </button>
             </div>
           )}
 

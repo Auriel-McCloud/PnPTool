@@ -47,7 +47,7 @@ export function EventDetail({
   const [zeitpunkt, setZeitpunkt] = useState(event.timestamp);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(event.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(event.notes));
-  const [speichert, setSpeichert] = useState(false);
+  const [, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
 
@@ -234,14 +234,6 @@ export function EventDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Beschreibung" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ description: serializeRichText(beschreibungDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Beschreibung speichern"}
-              </button>
             </div>
           )}
 
@@ -256,14 +248,6 @@ export function EventDetail({
                 minHeight={200}
                 kiKontext={{ campaignId, objektTyp: "Event", objektName: event.title, feldLabel: "Notizen" }}
               />
-              <button
-                type="button"
-                className="pcd-speichern"
-                onClick={() => speichere({ notes: serializeRichText(notizenDoc) })}
-                disabled={speichert}
-              >
-                {speichert ? "Speichert…" : "Notizen speichern"}
-              </button>
             </div>
           )}
 
