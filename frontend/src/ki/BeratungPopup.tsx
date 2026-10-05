@@ -17,6 +17,7 @@ import {
   beratungMassenentwurf,
   beratungNachricht,
   beratungNeu,
+  massenjobStatus,
   type Beratung,
   type BeratungNachricht,
   type MassenErgebnis,
@@ -87,11 +88,29 @@ export function BeratungPopup({
   const [massenBeziehungstyp, setMassenBeziehungstyp] = useState("");
   const [zielOptionen, setZielOptionen] = useState<ZielOption[]>([]);
   const [massenErgebnis, setMassenErgebnis] = useState<MassenErgebnis | null>(null);
+  // Fortschritt des Hintergrund-Jobs (05.10.2026, siehe massenAnlegen unten)
+  // — null solange kein Job läuft, sonst "X von Y" fürs Knopf-Label.
+  const [massenFortschritt, setMassenFortschritt] = useState<{ erstellt: number; gesamt: number } | null>(null);
+  // Zählt bei jedem massenAnlegen()-Aufruf UND beim Abbrechen/Unmount hoch —
+  // eine laufende Polling-Schleife prüft das vor jedem setState und bricht
+  // sich selbst ab, sobald ihre eigene Generation nicht mehr die aktuelle
+  // ist. Der Hintergrund-Job selbst läuft davon unberührt weiter (das ist ja
+  // der Witz); es geht nur darum, keine veralteten Zustände mehr anzuzeigen.
+  const massenJobGeneration = useRef(0);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   // Überschreibt für diese eine Unterhaltung den Kampagnen-Standard — zum
   // direkten Vergleich, ohne die Kampagnen-Einstellung extra umzustellen.
   const [providerOverride, setProviderOverride] = useState<"" | "gemini" | "mistral">("");
   const endeRef = useRef<HTMLDivElement | null>(null);
+
+  // Stoppt eine laufende Fortschritts-Abfrage beim Schließen des Popups oder
+  // Verlassen der Seite — der Hintergrund-Job selbst läuft serverseitig
+  // unbeeindruckt weiter, das hier verhindert nur sinnlose weitere Polls.
+  useEffect(() => {
+    return () => {
+      massenJobGeneration.current++;
+    };
+  }, []);
 
   const listeLaden = useCallback(async () => {
     const daten = await beratungListe(campaignId);
@@ -214,27 +233,56 @@ export function BeratungPopup({
 
   async function massenAnlegen() {
     if (!aktiv) return;
+    const generation = ++massenJobGeneration.current;
     setEntwurfLaeuft(true);
     setFehler(null);
     setMassenErgebnis(null);
+    setMassenFortschritt(null);
     try {
       const ziel =
         massenZielTyp && massenZielId
           ? { zielTyp: massenZielTyp, zielId: massenZielId, beziehungstyp: massenBeziehungstyp }
           : undefined;
-      const ergebnis = await beratungMassenentwurf(
+      const gestartet = await beratungMassenentwurf(
         campaignId,
         aktiv.id,
         entwurfTyp as MassenTyp,
         massenAnzahl,
         ziel,
       );
-      setMassenErgebnis(ergebnis);
-      onEntwurf();
+      if (massenJobGeneration.current !== generation) return; // abgebrochen/weitergeklickt
+      setMassenFortschritt({ erstellt: 0, gesamt: gestartet.gesamt });
+
+      // Die eigentliche Erzeugung läuft jetzt serverseitig weiter, komplett
+      // unabhängig von dieser Browser-Verbindung (05.10.2026, Mark: "Failed
+      // to fetch" auf Mobilfunk bei größeren Massen-Anlagen — vorher hing
+      // die ganze Arbeit an genau dieser einen Anfrage, siehe massenjobs.py).
+      // Hier wird nur noch der Fortschritt abgefragt, bis er fertig ist.
+      while (massenJobGeneration.current === generation) {
+        await new Promise((r) => setTimeout(r, 1500));
+        if (massenJobGeneration.current !== generation) return;
+        const stand = await massenjobStatus(campaignId, gestartet.jobId);
+        if (massenJobGeneration.current !== generation) return;
+        setMassenFortschritt({ erstellt: stand.erstellt, gesamt: stand.gesamt });
+        if (stand.fertig) {
+          if (stand.fehler) {
+            setFehler(stand.fehler);
+          } else if (stand.ergebnis) {
+            setMassenErgebnis(stand.ergebnis);
+            onEntwurf();
+          }
+          break;
+        }
+      }
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : "Massen-Anlage fehlgeschlagen");
+      if (massenJobGeneration.current === generation) {
+        setFehler(e instanceof Error ? e.message : "Massen-Anlage fehlgeschlagen");
+      }
     } finally {
-      setEntwurfLaeuft(false);
+      if (massenJobGeneration.current === generation) {
+        setEntwurfLaeuft(false);
+        setMassenFortschritt(null);
+      }
     }
   }
 
@@ -466,6 +514,12 @@ export function BeratungPopup({
               ? "Landet als Kante unter Beziehungen. Fehlende Personen/Orte/Events/Fraktionen werden als Entwurf angelegt."
               : "Landet als Entwurf in der Schmiede, nicht in der Kampagne."}
           </p>
+          {massenModus && entwurfLaeuft && (
+            <p className="ki-vorschau-hinweis">
+              Läuft jetzt am Server weiter — auch wenn die Verbindung zwischendurch abbricht (z.B. Mobilfunk), geht
+              nichts verloren. Einfach später nochmal reinschauen.
+            </p>
+          )}
           {fehler && <p className="ki-fehler">{fehler}</p>}
 
           {massenErgebnis && (
@@ -495,9 +549,25 @@ export function BeratungPopup({
                   disabled={entwurfLaeuft || (massenModus && !!massenZielTyp && !massenZielId)}
                   onClick={() => void (massenModus ? massenAnlegen() : entwurfAnlegen())}
                 >
-                  {entwurfLaeuft ? "Legt an…" : massenModus ? `${massenAnzahl} anlegen` : "Anlegen"}
+                  {entwurfLaeuft
+                    ? massenFortschritt
+                      ? `${massenFortschritt.erstellt} von ${massenFortschritt.gesamt}…`
+                      : "Startet…"
+                    : massenModus
+                      ? `${massenAnzahl} anlegen`
+                      : "Anlegen"}
                 </button>
-                <button type="button" className="ki-btn-sekundaer" onClick={() => setEntwurfOffen(false)}>
+                <button
+                  type="button"
+                  className="ki-btn-sekundaer"
+                  onClick={() => {
+                    // Beendet nur das Mitverfolgen hier — ein bereits
+                    // gestarteter Hintergrund-Job legt seine Einträge trotzdem
+                    // fertig an (siehe massenAnlegen/massenjobs.py).
+                    massenJobGeneration.current++;
+                    setEntwurfOffen(false);
+                  }}
+                >
                   Abbrechen
                 </button>
               </>

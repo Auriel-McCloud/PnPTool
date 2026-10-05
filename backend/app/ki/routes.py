@@ -32,6 +32,7 @@ from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
+from app.ki import massenjobs
 from app.ereignisprotokoll import hooks
 from app.ki.kontext import sammle_kontext, sammle_verbindungstypen_text
 from app.ki.wiki_pruefung import (
@@ -790,6 +791,25 @@ class MassenErgebnis(BaseModel):
     eintraege: list[MassenEintrag] = []
 
 
+class MassenJobGestartet(BaseModel):
+    """Sofortige Antwort beim Start — die eigentliche Arbeit läuft im
+    Hintergrund weiter (siehe massenjobs.py), unabhängig von dieser Anfrage."""
+
+    jobId: str
+    gesamt: int
+
+
+class MassenJobStatus(BaseModel):
+    """Antwort auf das Polling — 'fertig' erst wahr, wenn alle Einträge
+    erzeugt sind ODER ein Fehler abgebrochen hat (dann ist `fehler` gesetzt)."""
+
+    fertig: bool
+    erstellt: int
+    gesamt: int
+    ergebnis: MassenErgebnis | None = None
+    fehler: str | None = None
+
+
 async def _ziel_node(campaign_id: str, ziel_typ: str, ziel_id: str) -> dict | None:
     felder = _MASSEN_ZIEL_FELDER.get(ziel_typ)
     if felder is None:
@@ -845,7 +865,11 @@ async def _massen_anlegen(
     ziel_typ: str | None,
     ziel_id: str | None,
     beziehungstyp: str | None,
+    job: massenjobs.MassenJob | None = None,
 ) -> MassenErgebnis:
+    """`job` ist optional gesetzt, wenn dies als Hintergrund-Job läuft (siehe
+    massenjobs.py) — dann wird der Fortschritt nach jedem Eintrag eingetragen,
+    damit das Frontend per Polling '3 von 9' anzeigen kann."""
     anzahl = max(_MASSEN_ANZAHL_MIN, min(anzahl, _MASSEN_ANZAHL_MAX))
 
     ziel_node: dict | None = None
@@ -896,33 +920,71 @@ async def _massen_anlegen(
                 verknuepft = True
 
         eintraege.append(MassenEintrag(id=ergebnis["id"], name=name, verknuepft=verknuepft))
+        if job is not None:
+            job.erstellt = len(eintraege)
 
     return MassenErgebnis(typ=typ, eintraege=eintraege)
 
 
-@router.post("/massenidee", response_model=MassenErgebnis)
+@router.post("/massenidee", response_model=MassenJobGestartet)
 async def ki_massenidee(campaign_id: str, body: MassenIdeeInput):
     """✨-Massen-Anlage: EIN Wunsch + Anzahl → N unterschiedliche Entwürfe,
-    optional alle an ein Ziel verknüpft (Sortiment/Beziehung je nach Typ)."""
+    optional alle an ein Ziel verknüpft (Sortiment/Beziehung je nach Typ).
+
+    Läuft als Hintergrund-Job (05.10.2026, Mark-Bugreport: auf Mobilfunk
+    bricht der Browser eine Anfrage, die mehrere Minuten offen bleibt, eher
+    ab als sie zu Ende zu warten — "Failed to fetch", ohne dass auch nur ein
+    Eintrag entsteht). Diese Route antwortet sofort mit einer Job-ID, das
+    Frontend fragt den Fortschritt über /massenjob/{jobId} ab."""
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=422, detail="Der Wunsch darf nicht leer sein.")
-    return await _massen_anlegen(
-        campaign_id, body.typ, prompt, body.anzahl, body.zielTyp, body.zielId, body.beziehungstyp
-    )
+    anzahl = max(_MASSEN_ANZAHL_MIN, min(body.anzahl, _MASSEN_ANZAHL_MAX))
+
+    async def _arbeit(job: massenjobs.MassenJob) -> MassenErgebnis:
+        return await _massen_anlegen(
+            campaign_id, body.typ, prompt, anzahl, body.zielTyp, body.zielId, body.beziehungstyp, job=job
+        )
+
+    job_id = massenjobs.starten(anzahl, _arbeit)
+    return MassenJobGestartet(jobId=job_id, gesamt=anzahl)
 
 
-@router.post("/beratung/{beratung_id}/massenentwurf", response_model=MassenErgebnis)
+@router.post("/beratung/{beratung_id}/massenentwurf", response_model=MassenJobGestartet)
 async def beratung_massenentwurf(campaign_id: str, beratung_id: str, body: MassenBeratungInput):
-    """Wie /beratung/{id}/entwurf, nur N Entwürfe aus demselben Gespräch."""
+    """Wie /massenidee, nur N Entwürfe aus demselben Beratungsgespräch —
+    ebenfalls ein Hintergrund-Job, siehe ki_massenidee oben."""
     stand = await beratung_repo.laden(campaign_id, beratung_id)
     if stand is None:
         raise HTTPException(status_code=404, detail="Beratung nicht gefunden")
     if not stand["nachrichten"]:
         raise HTTPException(status_code=422, detail="Noch kein Gespräch für einen Entwurf.")
     prompt = beratung_repo.gespraech_als_prompt(stand["nachrichten"])
-    return await _massen_anlegen(
-        campaign_id, body.typ, prompt, body.anzahl, body.zielTyp, body.zielId, body.beziehungstyp
+    anzahl = max(_MASSEN_ANZAHL_MIN, min(body.anzahl, _MASSEN_ANZAHL_MAX))
+
+    async def _arbeit(job: massenjobs.MassenJob) -> MassenErgebnis:
+        return await _massen_anlegen(
+            campaign_id, body.typ, prompt, anzahl, body.zielTyp, body.zielId, body.beziehungstyp, job=job
+        )
+
+    job_id = massenjobs.starten(anzahl, _arbeit)
+    return MassenJobGestartet(jobId=job_id, gesamt=anzahl)
+
+
+@router.get("/massenjob/{job_id}", response_model=MassenJobStatus)
+async def massenjob_status(campaign_id: str, job_id: str):
+    """Polling-Ziel für beide Massen-Anlage-Routen oben. `campaign_id` wird
+    nicht gebraucht (die Job-ID ist bereits eindeutig), bleibt aber im Pfad,
+    damit require_campaign_gm (Router-Abhängigkeit) greift — ein Job gehört
+    zu einer Beratung/Kampagne, und nur deren SL soll den Fortschritt sehen."""
+    job = massenjobs.status(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job nicht gefunden — entweder abgeschlossen und schon abgeholt, oder der Server wurde neugestartet.",
+        )
+    return MassenJobStatus(
+        fertig=job.fertig, erstellt=job.erstellt, gesamt=job.gesamt, ergebnis=job.ergebnis, fehler=job.fehler
     )
 
 
