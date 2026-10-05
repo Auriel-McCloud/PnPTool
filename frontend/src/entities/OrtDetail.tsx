@@ -10,6 +10,7 @@ import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
 import { PlaylistFeld } from "../spotify/PlaylistFeld";
+import { OrtLadenFenster } from "../haendler/OrtLadenFenster";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs und NPCs
 
@@ -52,6 +53,7 @@ export function OrtDetail({
   const [, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [ladenOffen, setLadenOffen] = useState(false);
 
   const zeilen = beziehungsZeilen(ort.id, verbindungen, namen);
 
@@ -203,6 +205,9 @@ export function OrtDetail({
                   <button type="button" onClick={() => setUnteransicht("beziehungen")}>
                     ⬡ Beziehungen ansehen ({zeilen.length})
                   </button>
+                  <button type="button" onClick={() => setLadenOffen(true)}>
+                    🛒 {ort.istShop ? "Laden verwalten" : "Zu einem Laden machen"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setLoeschenOffen(true)}
@@ -264,6 +269,17 @@ export function OrtDetail({
           neinText="Abbrechen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+
+      {ladenOffen && (
+        <OrtLadenFenster
+          campaignId={campaignId}
+          ortId={ort.id}
+          ortName={ort.name}
+          offen={ladenOffen}
+          onSchliessen={() => setLadenOffen(false)}
+          onGeaendert={onGeaendert}
         />
       )}
     </Fenster>

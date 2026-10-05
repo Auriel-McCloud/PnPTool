@@ -68,13 +68,13 @@ async def einzeln(campaign_id: str, haendler_id: str, viewer: Viewer = Depends(g
     return await _haendler_oder_404(campaign_id, haendler_id, viewer)
 
 
-@router.put("/{haendler_id}/standort", response_model=HaendlerEintrag, dependencies=[Depends(require_campaign_gm)])
+@router.put("/{haendler_id}/standort", response_model=HaendlerEintrag | None, dependencies=[Depends(require_campaign_gm)])
 async def standort_setzen(campaign_id: str, haendler_id: str, body: StandortRequest):
     """Der Laden — an welchem Ort dieser Händler zu finden ist. Leerer Body
     löst die Bindung (Händler ohne festen Standort, nur per Messenger
     erreichbar)."""
     ergebnis = await repository.standort_setzen(campaign_id, haendler_id, body.ortId)
-    if ergebnis is None:
+    if ergebnis is False:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler oder Ort nicht gefunden")
     return ergebnis
 

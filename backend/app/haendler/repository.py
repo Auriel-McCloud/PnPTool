@@ -88,7 +88,8 @@ async def shops_auf_orte_heben(campaign_id: str) -> None:
                     id: $oid, campaignId: $cid, name: $name,
                     description: $description, bildUrl: $kulisse,
                     shopHintergrundUrl: $kulisse,
-                    sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer
+                    sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer,
+                    notes: '', notizenSichtbarkeit: 'GM', notizenSichtbarFuer: []
                 })
                 MERGE (c)-[:HAT_ENTITAET]->(o)
                 CREATE (h)-[:BEFINDET_SICH_AN]->(o)
@@ -164,8 +165,19 @@ async def hole(campaign_id: str, shop_id: str) -> dict | None:
         return _decode_shop(dict(record)) if record else None
 
 
-async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None) -> dict | None:
-    """Bindet einen Händler an einen Laden-Ort (BETREIBT + BEFINDET_SICH_AN)."""
+async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None) -> dict | None | bool:
+    """Bindet einen Händler an einen Laden-Ort (BETREIBT + BEFINDET_SICH_AN).
+
+    Rückgabe ist dreiwertig, weil "erfolgreich entbunden" (kein Ort mehr,
+    nichts zum Zurückgeben) und "Händler/Ort nicht gefunden" sich sonst
+    beide als None nicht unterscheiden ließen — die Route braucht die
+    Unterscheidung, um bei Erfolg kein 404 zu werfen (Regression
+    05.10.2026: "Entfernen" in HaendlerBearbeiten/OrtLadenFenster räumte
+    die Kante serverseitig korrekt weg, meldete dem Frontend aber trotzdem
+    404, weil beide Fälle vorher identisch None zurückgaben). False =
+    Händler nicht gefunden (echtes 404), None = erfolgreich entbunden,
+    dict = neuer Standort gesetzt.
+    """
     driver = get_driver()
     async with driver.session() as session:
         if ort_id:
@@ -180,9 +192,7 @@ async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None
                 CREATE (h)-[:BETREIBT]->(neu)
                 RETURN neu.id AS id
             """
-            result = await session.run(
-                query, campaign_id=campaign_id, haendler_id=haendler_id, ort_id=ort_id
-            )
+            result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id, ort_id=ort_id)
         else:
             query = """
                 MATCH (h:Person {id: $haendler_id, campaignId: $campaign_id, istHaendler: true})
@@ -194,7 +204,7 @@ async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None
             result = await session.run(query, campaign_id=campaign_id, haendler_id=haendler_id)
         record = await result.single()
     if not record:
-        return None
+        return False
     if ort_id:
         return await hole(campaign_id, ort_id)
     return None

@@ -142,3 +142,84 @@ def test_export_weissliste_kennt_betreibt():
     from app.campaigns.export_import import KNOWN_REL_TYPES
 
     assert "BETREIBT" in KNOWN_REL_TYPES
+
+
+def test_haendler_ohne_ort_erzeugt_vollstaendigen_ort():
+    """Regression (05.10.2026): ein Händler OHNE Standort ließ
+    shops_auf_orte_heben() einen Ort ohne notes/notizenSichtbarkeit/
+    notizenSichtbarFuer anlegen — GET /orte riss danach für die GANZE
+    Kampagne mit einem string_type/list_type-Fehler ab, sobald auch nur
+    EIN Händler ohne Standort existierte. Gefunden beim Bau des
+    "Ort zu einem Laden machen"-Knopfs, bevor er live ging."""
+    from app.entities import repository as entities_repository
+    from app.entities.repository import ORT_FIELDS
+
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        try:
+            hid = str(uuid.uuid4())
+            driver = get_driver()
+            async with driver.session() as session:
+                await session.run(
+                    """
+                    MATCH (c:Campaign {id: $cid})
+                    CREATE (h:Person {
+                        id: $hid, campaignId: $cid, name: 'Chibi Testhändler',
+                        personType: 'NPC', istHaendler: true,
+                        sichtbarkeit: 'GM', sichtbarFuer: []
+                    })
+                    CREATE (c)-[:HAT_ENTITAET]->(h)
+                    """,
+                    cid=cid,
+                    hid=hid,
+                )
+
+            # Löst dieselbe lazy Migration aus wie GET /haendler.
+            await repository.shops_auf_orte_heben(cid)
+
+            # Das war der Absturz: GET /orte über die generische
+            # entities/repository.py-Liste, NICHT über haendler/repository.py.
+            orte = await entities_repository.list_nodes("Ort", ORT_FIELDS, cid)
+            assert len(orte) == 1
+            assert orte[0]["name"] == "Chibi Testhändler"
+            assert orte[0]["notes"] == ""
+            assert orte[0]["notizenSichtbarkeit"] == "GM"
+            assert orte[0]["notizenSichtbarFuer"] == []
+            assert orte[0]["istShop"] is True
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_standort_entfernen_meldet_keinen_404():
+    """Regression (05.10.2026): standort_setzen(ort_id=None) räumte die
+    Kante serverseitig korrekt weg, gab aber in JEDEM Fall None zurück —
+    die Route konnte "erfolgreich entbunden" nicht von "Händler nicht
+    gefunden" unterscheiden und warf immer 404, obwohl die Aktion
+    geklappt hatte (gefunden beim Test des "Entfernen"-Knopfs im neuen
+    Ort-Laden-Fenster)."""
+    from app.entities import repository as entities_repository
+    from app.entities.repository import PERSON_FIELDS
+
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        try:
+            ort_id, h1, h2, _ware = await _zwei_haendler_ein_ort(cid)
+            await repository.shops_auf_orte_heben(cid)
+
+            # Erfolgreiches Entbinden: Person existiert und ist Händler.
+            ergebnis = await repository.standort_setzen(cid, h1, None)
+            assert ergebnis is not False  # nicht "nicht gefunden"
+            assert ergebnis is None  # kein Shop-Eintrag mehr für DIESEN Händler
+
+            person = await entities_repository.get_node("Person", PERSON_FIELDS, cid, h1)
+            assert person is not None  # Person existiert weiterhin
+
+            # Echtes 404: Person existiert gar nicht.
+            nicht_gefunden = await repository.standort_setzen(cid, str(uuid.uuid4()), None)
+            assert nicht_gefunden is False
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
