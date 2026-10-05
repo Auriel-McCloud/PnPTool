@@ -208,3 +208,94 @@ def test_default_beziehungstyp_greift_ohne_eigene_angabe():
             assert eingabe.beziehungstyp == "wird kontrolliert von"
 
     _run(run())
+
+
+# --- Hintergrund-Job statt blockierender Anfrage (05.10.2026) --------------
+#
+# Mark-Bugreport: "Failed to fetch" bei groesseren Massen-Anlagen auf
+# Mobilfunk — die Route antwortete bisher erst, wenn ALLE N KI-Aufrufe durch
+# waren (siehe massenjobs.py fuer die Begruendung). Diese Tests prüfen die
+# Routen selbst: sie müssen sofort eine Job-ID liefern, nicht das Ergebnis,
+# und der Fortschritt muss über /massenjob/{id} abrufbar sein.
+
+
+def test_massenidee_route_antwortet_sofort_mit_job_id_nicht_mit_ergebnis():
+    from app.ki.routes import MassenIdeeInput, ki_massenidee
+
+    async def run():
+        with patch(
+            "app.ki.routes._idee_anlegen",
+            AsyncMock(side_effect=_idee_side_effect(["Ort A", "Ort B"])),
+        ):
+            antwort = await ki_massenidee(
+                "c1", MassenIdeeInput(typ="ort", prompt="zwei Stadtteile", anzahl=2)
+            )
+            # Die Antwort ist der Job-Start, nicht das fertige MassenErgebnis —
+            # das wäre bei einer synchronen Antwort ein `eintraege`-Feld.
+            assert antwort.jobId
+            assert antwort.gesamt == 2
+            assert not hasattr(antwort, "eintraege")
+
+    _run(run())
+
+
+def test_massenidee_job_wird_ueber_polling_fertig_mit_korrektem_ergebnis():
+    from app.ki.routes import MassenIdeeInput, ki_massenidee, massenjob_status
+
+    async def run():
+        with patch(
+            "app.ki.routes._idee_anlegen",
+            AsyncMock(side_effect=_idee_side_effect(["Ort A", "Ort B", "Ort C"])),
+        ):
+            gestartet = await ki_massenidee(
+                "c1", MassenIdeeInput(typ="ort", prompt="drei Stadtteile", anzahl=3)
+            )
+            for _ in range(20):
+                stand = await massenjob_status("c1", gestartet.jobId)
+                if stand.fertig:
+                    break
+                await asyncio.sleep(0.01)
+            assert stand.fertig is True
+            assert stand.erstellt == 3
+            assert stand.fehler is None
+            assert stand.ergebnis is not None
+            assert len(stand.ergebnis.eintraege) == 3
+            assert {e.name for e in stand.ergebnis.eintraege} == {"Ort A", "Ort B", "Ort C"}
+
+    _run(run())
+
+
+def test_beratung_massenentwurf_route_startet_ebenfalls_nur_einen_job():
+    from app.ki.routes import MassenBeratungInput, beratung_massenentwurf
+
+    async def run():
+        with (
+            patch(
+                "app.ki.routes.beratung_repo.laden",
+                AsyncMock(return_value={"nachrichten": [{"rolle": "user", "text": "Lege 2 Orte an"}]}),
+            ),
+            patch(
+                "app.ki.routes._idee_anlegen",
+                AsyncMock(side_effect=_idee_side_effect(["Ort X", "Ort Y"])),
+            ),
+        ):
+            antwort = await beratung_massenentwurf(
+                "c1", "b1", MassenBeratungInput(typ="ort", anzahl=2)
+            )
+            assert antwort.jobId
+            assert antwort.gesamt == 2
+
+    _run(run())
+
+
+def test_massenjob_status_unbekannte_id_gibt_404():
+    from fastapi import HTTPException
+
+    from app.ki.routes import massenjob_status
+
+    async def run():
+        with pytest.raises(HTTPException) as exc:
+            await massenjob_status("c1", "existiert-nicht")
+        assert exc.value.status_code == 404
+
+    _run(run())

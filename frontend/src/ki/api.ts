@@ -289,6 +289,26 @@ export interface MassenErgebnis {
   eintraege: MassenEintrag[];
 }
 
+/** Sofortige Antwort beim Start einer Massen-Anlage (05.10.2026) — die
+ * eigentliche Erzeugung läuft serverseitig unabhängig von dieser Anfrage
+ * weiter (siehe massenjobStatus), damit eine abreissende Mobilfunk-
+ * Verbindung sie nicht mehr abbricht ("Failed to fetch"-Bugreport, Mark). */
+export interface MassenJobGestartet {
+  jobId: string;
+  gesamt: number;
+}
+
+/** Antwort auf das Fortschritts-Polling — `fertig` wird erst wahr, wenn
+ * entweder alle Einträge angelegt sind (`ergebnis` gesetzt) oder die
+ * Erzeugung mit einem Fehler abgebrochen ist (`fehler` gesetzt). */
+export interface MassenJobStatus {
+  fertig: boolean;
+  erstellt: number;
+  gesamt: number;
+  ergebnis: MassenErgebnis | null;
+  fehler: string | null;
+}
+
 function massenBody(typ: MassenTyp, anzahl: number, ziel?: MassenZiel) {
   return {
     typ,
@@ -305,7 +325,7 @@ export async function massenIdee(
   prompt: string,
   anzahl: number,
   ziel?: MassenZiel,
-): Promise<MassenErgebnis> {
+): Promise<MassenJobGestartet> {
   return api.post(`/api/campaigns/${campaignId}/ki/massenidee`, { ...massenBody(typ, anzahl, ziel), prompt });
 }
 
@@ -315,6 +335,12 @@ export async function beratungMassenentwurf(
   typ: MassenTyp,
   anzahl: number,
   ziel?: MassenZiel,
-): Promise<MassenErgebnis> {
+): Promise<MassenJobGestartet> {
   return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/massenentwurf`, massenBody(typ, anzahl, ziel));
+}
+
+/** Fragt den Fortschritt eines per massenIdee/beratungMassenentwurf
+ * gestarteten Hintergrund-Jobs ab — zum Pollen, bis `fertig` wahr ist. */
+export async function massenjobStatus(campaignId: string, jobId: string): Promise<MassenJobStatus> {
+  return api.get(`/api/campaigns/${campaignId}/ki/massenjob/${jobId}`);
 }
