@@ -15,6 +15,7 @@ import type { PersonOption } from "./VisibilitySelector";
 import type { JSONContent } from "@tiptap/react";
 import { HaendlerEinstellungenFenster } from "../haendler/HaendlerEinstellungenFenster";
 import { HaendlerBearbeiten } from "../haendler/HaendlerBearbeiten";
+import { haendlerApi } from "../haendler/api";
 import "./pc-detail.css"; // Selbes Styling wie PCs
 
 /**
@@ -64,7 +65,22 @@ export function NPCDetail({
   }, [person]);
   const [haendlerEinstellungenOffen, setHaendlerEinstellungenOffen] = useState(false);
   const [sortimentOffen, setSortimentOffen] = useState(false);
+  // Shop hängt seit 04.10. am ORT, nicht an der Person (siehe
+  // haendler/repository.py) — "haendlerId" für HaendlerBearbeiten/-api ist
+  // also die Ort-id des Ladens, den diese Person betreibt, NICHT die
+  // Person-id selbst. Ohne Auflösung hier würde HaendlerBearbeiten mit
+  // person.id als Shop-id anfragen und 404en (gefunden 05.10.2026 beim Bau
+  // des "Ort zu einem Laden machen"-Knopfs — nie im Browser angeklickt,
+  // nur tsc -b geprüft, daher unbemerkt).
+  const [ladenOrtId, setLadenOrtId] = useState<string | null>(null);
   const istHaendler = aktuellePerson.istHaendler ?? false;
+
+  async function sortimentOeffnen() {
+    const shops = await haendlerApi.alle(campaignId);
+    const shop = shops.find((s) => s.haendler.some((h: { id: string }) => h.id === person.id));
+    setLadenOrtId(shop?.id ?? null);
+    setSortimentOffen(true);
+  }
 
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
@@ -172,7 +188,7 @@ export function NPCDetail({
                   </button>
                   {istHaendler ? (
                     <>
-                      <button type="button" onClick={() => setSortimentOffen(true)}>
+                      <button type="button" onClick={sortimentOeffnen}>
                         🛒 Sortiment &amp; Shop bearbeiten
                       </button>
                       <button type="button" onClick={() => setHaendlerEinstellungenOffen(true)}>
@@ -266,10 +282,10 @@ export function NPCDetail({
         />
       )}
 
-      {sortimentOffen && (
+      {sortimentOffen && ladenOrtId && (
         <HaendlerBearbeiten
           campaignId={campaignId}
-          haendlerId={person.id}
+          haendlerId={ladenOrtId}
           offen={sortimentOffen}
           onSchliessen={() => setSortimentOffen(false)}
           onGeaendert={onGeaendert}

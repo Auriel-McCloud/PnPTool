@@ -97,7 +97,9 @@ export const haendlerApi = {
       hinweis,
     }),
   standortSetzen: (cid: string, haendlerId: string, ortId: string | null) =>
-    api.put<HaendlerEintrag>(`${base(cid, haendlerId)}/standort`, { ortId }),
+    // null = Standort entfernt, serverseitig gibt es dann keinen Shop-Eintrag
+    // mehr für DIESEN Händler zurück (repository.py::standort_setzen).
+    api.put<HaendlerEintrag | null>(`${base(cid, haendlerId)}/standort`, { ortId }),
   kaufen: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string) =>
     api.post<KaufResponse>(`${base(cid, haendlerId)}/kaufen`, { gegenstandId, kaeuferPersonId }),
 

@@ -86,6 +86,18 @@ _BOGEN_DEFAULTS: dict = {
     # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
     # (derselbe Stolperstein wie bei istHaendler/istCritter/istKI oben).
     "istShop": False,
+    # Derselbe Stolperstein traf notes/notizenSichtbarkeit/notizenSichtbarFuer
+    # konkret: haendler/repository.py::shops_auf_orte_heben() legt für einen
+    # Händler ohne Standort einen neuen Ort per Hand-Cypher an und vergaß
+    # diese drei Felder — GET /orte riss mit einem string_type/list_type-
+    # Fehler komplett ab, sobald auch nur EIN Händler ohne Standort existierte
+    # (05.10.2026, beim Bau des "Ort zu einem Laden machen"-Knopfs gefunden).
+    # Die CREATE-Query wurde ergänzt; dieser Fallback bleibt zusätzlich als
+    # Netz für jeden anderen Hand-Cypher-Pfad, der dieselben drei Felder
+    # vergisst.
+    "notes": "",
+    "notizenSichtbarkeit": "GM",
+    "notizenSichtbarFuer": [],
     "spezialisierung": [],
     "vertriebsart": "PHYSISCH",
     "shopHintergrundUrl": "",
