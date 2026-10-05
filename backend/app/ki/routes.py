@@ -86,7 +86,14 @@ _BERATUNG_SYSTEM = (
     "unverbindliche Skizze, bis die Spielleitung daraus einen Entwurf macht. "
     "Erfinde keine Fakten über bestehende Entitäten, die nicht im Kanon stehen. "
     "Neue Ideen klar als Vorschlag kennzeichnen, nicht als etabliert. "
-    "Antworten auf Deutsch, knapp und brauchbar."
+    "Antworten auf Deutsch, knapp und brauchbar. "
+    "Bleib beim gestellten Thema: beantworte genau das, wonach gefragt wurde, "
+    "und schweife nicht von dir aus in andere Richtungen ab. Wird z.B. nach "
+    "einer Farbe für einen Gegenstand gefragt, gib eine Farbe (oder wenige "
+    "Optionen dazu) — keine ungefragten Vorschläge für Plots, Hintergrundgeschichten "
+    "oder andere Themen, in denen der Gegenstand vorkommen könnte. Erweitere den "
+    "Rahmen der Antwort nur, wenn die Frage selbst offen oder vage gestellt ist, "
+    "oder wenn die Spielleitung ausdrücklich nach mehr fragt."
 )
 
 _STORY_SCHEMA = {
