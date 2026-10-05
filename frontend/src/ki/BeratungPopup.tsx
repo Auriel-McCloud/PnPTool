@@ -74,7 +74,14 @@ export function BeratungPopup({
   // Massen-Anlage (03.10.2026): "N unterschiedliche Entwürfe statt einem",
   // nur für MASSEN_TYPEN anbieten — siehe ladeZielOptionen/massenAnlegen unten.
   const [massenModus, setMassenModus] = useState(false);
-  const [massenAnzahl, setMassenAnzahl] = useState(5);
+  // Anzahl-Feld (05.10.2026, Mark-Bug): nicht direkt als number führen, sonst
+  // clamped onChange bei JEDER Eingabe sofort auf den Min-/Max-Wert zurück —
+  // ein geleertes Feld wird augenblicklich wieder zu "1", man kann die
+  // führende Ziffer nie ersetzen, nur noch Ziffern anhängen (1, 10, 11, 12…).
+  // Rohtext separat halten, der echte (geclampte) Wert ist abgeleitet; erst
+  // beim Verlassen des Feldes (onBlur) wird der Rohtext normalisiert.
+  const [massenAnzahlEingabe, setMassenAnzahlEingabe] = useState("5");
+  const massenAnzahl = Math.max(1, Math.min(12, parseInt(massenAnzahlEingabe, 10) || 1));
   const [massenZielTyp, setMassenZielTyp] = useState<"" | MassenZielTyp>("");
   const [massenZielId, setMassenZielId] = useState("");
   const [massenBeziehungstyp, setMassenBeziehungstyp] = useState("");
@@ -397,8 +404,9 @@ export function BeratungPopup({
                   className="ki-input"
                   min={1}
                   max={12}
-                  value={massenAnzahl}
-                  onChange={(e) => setMassenAnzahl(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                  value={massenAnzahlEingabe}
+                  onChange={(e) => setMassenAnzahlEingabe(e.target.value)}
+                  onBlur={() => setMassenAnzahlEingabe(String(massenAnzahl))}
                 />
               </label>
               <label className="ki-label">
