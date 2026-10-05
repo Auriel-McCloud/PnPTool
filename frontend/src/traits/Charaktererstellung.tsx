@@ -984,33 +984,9 @@ function SchrittFertigkeiten({
               Zusatzfertigkeiten
             </button>
 
-            {zusatzfertigkeiten.length > 0 && (
-              <section style={{ "--cb-ton": TON.Fertigkeit } as React.CSSProperties}>
-                <h3 className="er-spalte-titel">Zusatzfertigkeiten</h3>
-                <div
-                  className="er-spaltenraster"
-                  style={{ "--er-zeilen": Math.ceil(zusatzfertigkeiten.length / 3) } as React.CSSProperties}
-                >
-                  {zusatzfertigkeiten.map((z) => {
-                    const wert = zusatzfertigkeitPaketPunkte[z.id] || 0;
-                    return (
-                      <div key={z.id} className="er-wert">
-                        <span className="er-wert-name">{z.name}</span>
-                        <DotPool
-                          value={wert}
-                          max={hoechster}
-                          onChange={(neu) => {
-                            const ziel = neu === wert ? 0 : neu;
-                            if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
-                            onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: ziel });
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+            {/* Zusatzfertigkeiten stehen jetzt im Raster unten, direkt nach
+                der Fertigkeit-Gruppe (05.10.2026, Mark: zwischen Fertigkeiten
+                und Hexkraft/Glauben/NeuroWeaving, nicht ganz oben). */}
 
             {/* Hexkraft/NeuroWeavingWert (Sockel) müssen direkt über ihrer
                 zugehörigen Gruppe stehen (Glauben/Hexkraft über Sphären,
@@ -1088,6 +1064,39 @@ function SchrittFertigkeiten({
                   </div>
                 </section>,
               );
+              // Zusatzfertigkeiten (05.10.2026, Mark): zwischen Fertigkeiten
+              // und Hexkraft/Glauben/NeuroWeaving — direkt nach der
+              // Fertigkeit-Gruppe, noch vor dem Magie-Sockel/Sphären/
+              // NeuroWeaving-Block der nächsten Iteration.
+              if (kategorie === "Fertigkeit" && zusatzfertigkeiten.length > 0) {
+                knoten.push(
+                  <section key="zusatzfertigkeiten" style={{ "--cb-ton": TON.Fertigkeit } as React.CSSProperties}>
+                    <h3 className="er-spalte-titel">Zusatzfertigkeiten</h3>
+                    <div
+                      className="er-spaltenraster"
+                      style={{ "--er-zeilen": Math.ceil(zusatzfertigkeiten.length / 3) } as React.CSSProperties}
+                    >
+                      {zusatzfertigkeiten.map((z) => {
+                        const wert = zusatzfertigkeitPaketPunkte[z.id] || 0;
+                        return (
+                          <div key={z.id} className="er-wert">
+                            <span className="er-wert-name">{z.name}</span>
+                            <DotPool
+                              value={wert}
+                              max={hoechster}
+                              onChange={(neu) => {
+                                const ziel = neu === wert ? 0 : neu;
+                                if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                                onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: ziel });
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>,
+                );
+              }
               return knoten;
             })}
 

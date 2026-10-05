@@ -735,6 +735,38 @@ export function Charakterblatt({
           Was nur Magier oder Neuroweaver haben, kommt darunter. */}
       <div className="cb-attribute">{(bogen.person.istKI ? ATTRIBUT_KATEGORIEN_KI : ATTRIBUT_KATEGORIEN).map(reihe)}</div>
       {reihe("Fertigkeit")}
+
+      {/* Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht
+          ins feste reihe(...)-Raster gemischt — die Liste ist pro Person
+          variabel (campaign-gebundener Katalog, kein TraitDef). Steigern
+          passiert im LevelUp, hier nur Anzeige + Probenauslöser.
+          Platzierung (05.10.2026, Mark): zwischen Fertigkeiten und
+          Hexkraft/Glauben/NeuroWeaving, nicht ganz unten. */}
+      {zusatzfertigkeiten.length > 0 && (
+        <section className="cb-gruppe" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
+          <h3 className="cb-gruppe-titel">Zusatzfertigkeiten</h3>
+          <div className="cb-werte">
+            {zusatzfertigkeiten.map((z) => (
+              <div key={z.id} className="cb-wert-zeile">
+                <button
+                  type="button"
+                  className="cb-wert"
+                  onClick={() =>
+                    onWertGewaehlt
+                      ? onWertGewaehlt(z.name, z.rating, "Zusatzfertigkeit")
+                      : setProbe({ name: z.name, wert: z.rating, kategorie: "Zusatzfertigkeit" })
+                  }
+                  title={z.kurzbeschreibung || `${z.name} — wie viele Würfel?`}
+                >
+                  <span className="cb-wert-name">{z.name}</span>
+                  <DotPool value={z.rating} max={6} onChange={undefined} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {reihe("Hexkraft")}
       {reihe("Sphäre")}
       {reihe("NeuroWeavingWert")}
@@ -766,34 +798,6 @@ export function Charakterblatt({
                     </span>
                   </span>
                   <DotPool value={f.bonus} max={Math.max(f.bonus, 5)} onChange={undefined} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      {/* Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht
-          ins feste reihe(...)-Raster gemischt — die Liste ist pro Person
-          variabel (campaign-gebundener Katalog, kein TraitDef). Steigern
-          passiert im LevelUp, hier nur Anzeige + Probenauslöser. */}
-      {zusatzfertigkeiten.length > 0 && (
-        <section className="cb-gruppe" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
-          <h3 className="cb-gruppe-titel">Zusatzfertigkeiten</h3>
-          <div className="cb-werte">
-            {zusatzfertigkeiten.map((z) => (
-              <div key={z.id} className="cb-wert-zeile">
-                <button
-                  type="button"
-                  className="cb-wert"
-                  onClick={() =>
-                    onWertGewaehlt
-                      ? onWertGewaehlt(z.name, z.rating, "Zusatzfertigkeit")
-                      : setProbe({ name: z.name, wert: z.rating, kategorie: "Zusatzfertigkeit" })
-                  }
-                  title={z.kurzbeschreibung || `${z.name} — wie viele Würfel?`}
-                >
-                  <span className="cb-wert-name">{z.name}</span>
-                  <DotPool value={z.rating} max={6} onChange={undefined} />
                 </button>
               </div>
             ))}
