@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { EntityKind, Person, Verbindung } from "./api";
+import { anzeigeName } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -67,7 +68,7 @@ export function PCDetail({
     <Fenster
       offen
       breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
-      titel={person.name}
+      titel={anzeigeName(person.name, person.alias)}
       unterzeile={spielerName ? `Gespielt von ${spielerName}` : "Kein Spieler zugeordnet"}
       kennung={`pc-detail:${person.id}`}
       onSchliessen={onSchliessen}

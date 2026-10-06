@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type Person } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { EntitaetsBild } from "../entities/EntitaetsBild";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -81,7 +82,7 @@ export function CritterFenster({
     <Fenster
       offen
       breit
-      titel={`❖ ${person.name}`}
+      titel={`❖ ${anzeigeName(person.name, person.alias)}`}
       unterzeile="Critter — volles NPC-Charakterblatt"
       kennung={`critter-detail:${critterId}`}
       onSchliessen={onSchliessen}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { EntityKind, Person, Verbindung } from "./api";
+import { anzeigeName } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -96,7 +97,7 @@ export function NPCDetail({
     <Fenster
       offen
       breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
-      titel={person.name}
+      titel={anzeigeName(person.name, person.alias)}
       unterzeile="NPC"
       kennung={`npc-detail:${person.id}`}
       onSchliessen={onSchliessen}

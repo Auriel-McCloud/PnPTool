@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Person } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css"; // Selbes Styling wie PCs
 
@@ -56,7 +57,7 @@ function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
       </div>
 
       <div className="pc-kachel-info">
-        <div className="pc-kachel-name">{person.name}</div>
+        <div className="pc-kachel-name">{anzeigeName(person.name, person.alias)}</div>
 
         <div className="pc-kachel-werte">
           <div className="pc-kachel-wert pc-kachel-lp" title="Lebenspunkte">

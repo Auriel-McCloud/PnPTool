@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type CritterEintrag, type KiEintrag, type Person } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -54,6 +55,7 @@ const ARTEN: BegleiterArt[] = ["SPRITE", "GEIST", "BEGLEITER"];
 interface KachelEintrag {
   id: string;
   name: string;
+  alias: string | null;
   bildUrl: string;
   besitzerName: string | null;
   suchtext: string;
@@ -110,9 +112,10 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     const b: KachelEintrag[] = alle.map((x) => ({
       id: x.id,
       name: x.name,
+      alias: x.alias,
       bildUrl: x.bildUrl,
       besitzerName: x.besitzerName,
-      suchtext: `${x.name} ${ART_NAMEN[x.art]} ${x.besitzerName ?? ""}`.toLowerCase(),
+      suchtext: `${x.name} ${x.alias ?? ""} ${ART_NAMEN[x.art]} ${x.besitzerName ?? ""}`.toLowerCase(),
       art: x.art,
       stufe: x.stufe,
       quelle: { kind: "begleiter", daten: x },
@@ -120,9 +123,10 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     const c: KachelEintrag[] = critter.map((x) => ({
       id: x.id,
       name: x.name,
+      alias: x.alias,
       bildUrl: x.bildUrl,
       besitzerName: x.besitzerName,
-      suchtext: `${x.name} Critter ${x.besitzerName ?? ""}`.toLowerCase(),
+      suchtext: `${x.name} ${x.alias ?? ""} Critter ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "CRITTER",
       stufe: 0,
       quelle: { kind: "critter", daten: x },
@@ -130,9 +134,10 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
     const k: KachelEintrag[] = kiListe.map((x) => ({
       id: x.id,
       name: x.name,
+      alias: x.alias,
       bildUrl: x.bildUrl,
       besitzerName: x.besitzerName,
-      suchtext: `${x.name} KI Æ ${x.besitzerName ?? ""}`.toLowerCase(),
+      suchtext: `${x.name} ${x.alias ?? ""} KI Æ ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "KI_PERSON",
       stufe: 0,
       quelle: { kind: "ki", daten: x },
@@ -202,11 +207,11 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((k) => (
-          <button key={k.id} type="button" className="gg-kachel" onClick={() => kachelOeffnen(k)} title={k.name}>
+          <button key={k.id} type="button" className="gg-kachel" onClick={() => kachelOeffnen(k)} title={anzeigeName(k.name, k.alias)}>
             <span className="gg-kachel-bild">
               {k.bildUrl ? <img src={k.bildUrl} alt="" /> : <span aria-hidden="true">{symbolVon(k)}</span>}
             </span>
-            <span className="gg-kachel-name">{k.name}</span>
+            <span className="gg-kachel-name">{anzeigeName(k.name, k.alias)}</span>
             <span className="gg-kachel-zeile">
               {namenVon(k)}
               {k.stufe > 0 && ` · Stufe ${k.stufe}`}
@@ -614,7 +619,7 @@ function BegleiterFenster({
   return (
     <Fenster
       offen
-      titel={`${ART_SYMBOLE[art]} ${begleiter.name}`}
+      titel={`${ART_SYMBOLE[art]} ${anzeigeName(begleiter.name, alias)}`}
       unterzeile="Blatt wie bei Drohne und Fahrzeug"
       kennung={`begleiter-bearbeiten:${begleiter.id}`}
       onSchliessen={onSchliessen}
