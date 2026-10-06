@@ -65,6 +65,7 @@ export function Charaktererstellung({
   campaignId,
   personId,
   name: anfangsName,
+  istPflanzenCritter = false,
   onFertig,
 }: {
   campaignId: string;
@@ -74,6 +75,10 @@ export function Charaktererstellung({
    * nicht zwingend der SL für ihn machen"). Der Spieler ändert ihn selbst
    * im letzten Schritt, siehe SchrittPerson. */
   name: string;
+  /** Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches Flag
+   * — swapt nur die Beschriftung von "Alter" zu "Wachstumsstadium" im
+   * letzten Schritt (siehe SchrittPerson), keine Mechanik. */
+  istPflanzenCritter?: boolean;
   onFertig: () => void;
 }) {
   const [regeln, setRegeln] = useState<Erstellungsregeln | null>(null);
@@ -470,6 +475,7 @@ export function Charaktererstellung({
             campaignId={campaignId}
             felder={{ name, konzept, alter, ambition, verlangen, ziel }}
             setzen={{ setName, setKonzept, setAlter, setAmbition, setVerlangen, setZiel }}
+            istPflanzenCritter={istPflanzenCritter}
           />
         )}
       </div>
@@ -1522,6 +1528,7 @@ function SchrittPerson({
   campaignId,
   felder,
   setzen,
+  istPflanzenCritter = false,
 }: {
   campaignId: string;
   felder: { name: string; konzept: string; alter: string; ambition: string; verlangen: string; ziel: string };
@@ -1533,6 +1540,7 @@ function SchrittPerson({
     setVerlangen: (v: string) => void;
     setZiel: (v: string) => void;
   };
+  istPflanzenCritter?: boolean;
 }) {
   return (
     <div className="er-person">
@@ -1563,8 +1571,12 @@ function SchrittPerson({
         />
       </label>
       <label className="er-feld er-feld-kurz">
-        <span>Alter</span>
-        <input value={felder.alter} onChange={(e) => setzen.setAlter(e.target.value)} placeholder="34" />
+        <span>{istPflanzenCritter ? "Wachstumsstadium" : "Alter"}</span>
+        <input
+          value={felder.alter}
+          onChange={(e) => setzen.setAlter(e.target.value)}
+          placeholder={istPflanzenCritter ? "Keimling, ausgewachsen, überaltert …" : "34"}
+        />
       </label>
       <label className="er-feld">
         <span>Ambition</span>

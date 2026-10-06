@@ -11,6 +11,7 @@ import { parseRichText, serializeRichText } from "../richtext/content";
 import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
 import { PlaylistFeld } from "../spotify/PlaylistFeld";
 import { OrtLadenFenster } from "../haendler/OrtLadenFenster";
+import { FloraFaunaListe } from "./FloraFaunaListe";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs und NPCs
 
@@ -23,7 +24,7 @@ import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs und NPCs
  * was mit ihm verbunden ist.
  */
 
-type Unteransicht = "uebersicht" | "beschreibung" | "notizen" | "beziehungen";
+type Unteransicht = "uebersicht" | "beschreibung" | "notizen" | "beziehungen" | "flora-fauna";
 
 interface OrtDetailProps {
   campaignId: string;
@@ -105,7 +106,7 @@ export function OrtDetail({
   return (
     <Fenster
       offen
-      breit={unteransicht === "beziehungen"}
+      breit={unteransicht === "beziehungen" || unteransicht === "flora-fauna"}
       titel={ort.name}
       unterzeile="Ort"
       kennung={`ort-detail:${ort.id}`}
@@ -120,6 +121,7 @@ export function OrtDetail({
               ["beschreibung", "Beschreibung"],
               ["notizen", "Notizen"],
               ["beziehungen", `Beziehungen (${zeilen.length})`],
+              ["flora-fauna", "Flora & Fauna"],
             ] as [Unteransicht, string][]
           ).map(([wert, text]) => (
             <button
@@ -257,6 +259,10 @@ export function OrtDetail({
               onGeaendert={onGeaendert}
               farbe="var(--bereich-orte, var(--neon))"
             />
+          )}
+
+          {unteransicht === "flora-fauna" && (
+            <FloraFaunaListe campaignId={campaignId} ortId={ort.id} ortName={ort.name} pcOptions={pcOptions} />
           )}
         </div>
       </div>

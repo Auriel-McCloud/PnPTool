@@ -76,6 +76,8 @@ KNOWN_LABELS = {
     "VerhandlungsAusgang", "CharakterEntwicklung",
     "Achievement", "AchievementVerleihung",
     "SpielerNotiz",
+    # Flora & Fauna (06.10.2026): neue Gewächs-Entität.
+    "Gewaechs",
 }
 
 KNOWN_REL_TYPES = {
@@ -90,6 +92,8 @@ KNOWN_REL_TYPES = {
     "ALTER_BESITZER", "NEUER_BESITZER", "ANGREIFER", "AUSLOESER",
     "EMPFAENGER", "NPC", "PARTY", "ORT", "PERSON", "ZIEL", "ANGEBOTEN_VON",
     "HAT_NOTIZ",
+    # Flora & Fauna (06.10.2026): Critter/Gewächs <-> Ort, many-to-many.
+    "LEBT_IN",
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{20,40}$")
