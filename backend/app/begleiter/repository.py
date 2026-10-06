@@ -25,6 +25,7 @@ from app.db.neo4j_driver import get_driver
 
 RETURN_FIELDS = """
     b.id AS id, b.name AS name, b.art AS art, b.beziehung AS beziehung,
+    b.alias AS alias,
     b.beschreibung AS beschreibung, b.notizen AS notizen,
     b.bildUrl AS bildUrl,
     b.stufe AS stufe, b.widerstand AS widerstand, b.angriff AS angriff,
@@ -37,7 +38,7 @@ RETURN_FIELDS = """
 
 # Felder, die per SET/CREATE geschrieben werden.
 _SCHREIBBARE_FELDER = [
-    "name", "art", "beziehung", "beschreibung", "notizen", "bildUrl",
+    "name", "art", "beziehung", "alias", "beschreibung", "notizen", "bildUrl",
     "stufe", "widerstand", "angriff", "agilitaet", "fertigkeiten",
     "waffe", "waffenSchaden", "schadensart",
     "erfahrung", "erfahrungAusgegeben",
@@ -52,7 +53,7 @@ def _decode(record: dict) -> dict:
     Pflichtfeld lässt sonst die ganze Liste mit 500 abstürzen.
     """
     daten = dict(record)
-    for feld in ("name", "art", "beziehung", "beschreibung", "notizen", "waffe", "schadensart", "bildUrl"):
+    for feld in ("name", "art", "beziehung", "alias", "beschreibung", "notizen", "waffe", "schadensart", "bildUrl"):
         daten[feld] = daten.get(feld) or ""
     for feld in ("stufe", "widerstand", "angriff", "agilitaet", "waffenSchaden", "erfahrung", "erfahrungAusgegeben"):
         daten[feld] = daten.get(feld) or 0
@@ -87,7 +88,7 @@ async def anlegen(campaign_id: str, besitzer_person_id: str | None, daten: dict)
         MATCH (c:Campaign {id: $campaign_id})
         CREATE (b:Begleiter {
             id: $id, campaignId: $campaign_id, name: $name, art: $art,
-            beziehung: $beziehung, beschreibung: $beschreibung, notizen: $notizen,
+            beziehung: $beziehung, alias: $alias, beschreibung: $beschreibung, notizen: $notizen,
             bildUrl: $bildUrl,
             stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
             fertigkeiten: $fertigkeiten, waffe: $waffe, waffenSchaden: $waffenSchaden,
@@ -123,6 +124,7 @@ async def anlegen(campaign_id: str, besitzer_person_id: str | None, daten: dict)
             name=daten["name"],
             art=daten["art"],
             beziehung=daten["beziehung"],
+            alias=daten.get("alias") or "",
             beschreibung=daten["beschreibung"],
             notizen=daten["notizen"],
             bildUrl=daten.get("bildUrl") or "",

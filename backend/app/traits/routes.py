@@ -187,12 +187,19 @@ class SteckbriefUpdate(BaseModel):
     Konzept steht bei der Erstellung fest genug, dass Mark es dort beliess —
     Ambition, Verlangen und Ziel entwickeln sich dagegen im Spiel weiter
     (CLAUDE.md, Punkt 12). Alter bleibt bewusst aussen vor.
+
+    Alias (06.10.2026, Mark: "könnte sich ja auch ändern") gehört aus
+    demselben Grund hierher statt nur in die Erstellung: es ist der Name,
+    den ein PC in den Kontakten für diese Person sieht, bis der echte Name
+    freigegeben ist (app/kontakte/logic.py::effektiver_alias) — vorher gab
+    es dafür keine editierbare Stelle.
     """
 
     konzept: str | None = None
     ambition: str | None = None
     verlangen: str | None = None
     ziel: str | None = None
+    alias: str | None = None
 
 
 @router.patch("/personen/{person_id}/steckbrief")

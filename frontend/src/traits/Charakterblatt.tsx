@@ -580,8 +580,11 @@ export function Charakterblatt({
           ✎-Knopf zum Bearbeiten sitzt jetzt oben neben der Erfahrung, nicht
           mehr hier — deshalb muss die Sektion bei leeren Feldern nicht mehr
           erzwungen sichtbar sein. */}
-      {[u.konzept, u.ambition, u.verlangen, u.ziel].some(Boolean) && (
+      {[u.konzept, u.ambition, u.verlangen, u.ziel, u.alias].some(Boolean) && (
         <section className="cb-person">
+          {/* Alias zuerst: Identität vor Innenleben — und er ist der Teil,
+              den andere (Kontakte) überhaupt zu sehen bekommen. */}
+          {u.alias && <Steckbrief titel="Alias" text={u.alias} />}
           {u.konzept && <Steckbrief titel="Konzept" text={u.konzept} />}
           {u.ambition && <Steckbrief titel="Ambition" text={u.ambition} />}
           {u.verlangen && <Steckbrief titel="Verlangen" text={u.verlangen} />}
@@ -602,7 +605,7 @@ export function Charakterblatt({
         offen={steckbriefOffen}
         campaignId={campaignId}
         personId={personId}
-        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel }}
+        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel, alias: u.alias }}
         onSchliessen={() => setSteckbriefOffen(false)}
         onGespeichert={(neu) => {
           uebernehmen(neu);
@@ -842,7 +845,7 @@ function SteckbriefFenster({
   offen: boolean;
   campaignId: string;
   personId: string;
-  werte: { konzept: string; ambition: string; verlangen: string; ziel: string };
+  werte: { konzept: string; ambition: string; verlangen: string; ziel: string; alias: string };
   onSchliessen: () => void;
   onGespeichert: (neu: BogenUebersicht) => void;
 }) {
@@ -850,6 +853,7 @@ function SteckbriefFenster({
   const [ambition, setAmbition] = useState(werte.ambition);
   const [verlangen, setVerlangen] = useState(werte.verlangen);
   const [ziel, setZiel] = useState(werte.ziel);
+  const [alias, setAlias] = useState(werte.alias);
   const [sendet, setSendet] = useState(false);
 
   // Frisch aus dem aktuellen Blatt befüllen bei jedem Öffnen — sonst stünde
@@ -860,6 +864,7 @@ function SteckbriefFenster({
       setAmbition(werte.ambition);
       setVerlangen(werte.verlangen);
       setZiel(werte.ziel);
+      setAlias(werte.alias);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offen]);
@@ -867,7 +872,7 @@ function SteckbriefFenster({
   async function speichern() {
     setSendet(true);
     try {
-      onGespeichert(await bogenApi.steckbrief(campaignId, personId, { konzept, ambition, verlangen, ziel }));
+      onGespeichert(await bogenApi.steckbrief(campaignId, personId, { konzept, ambition, verlangen, ziel, alias }));
     } finally {
       setSendet(false);
     }
@@ -882,6 +887,14 @@ function SteckbriefFenster({
       onSchliessen={onSchliessen}
     >
       <div className="er-person">
+        <label className="er-feld">
+          <span>Alias</span>
+          <input
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            placeholder="Was ein PC in den Kontakten sieht, bis der echte Name bekannt ist"
+          />
+        </label>
         <label className="er-feld">
           <span>Konzept</span>
           <input value={konzept} onChange={(e) => setKonzept(e.target.value)} />

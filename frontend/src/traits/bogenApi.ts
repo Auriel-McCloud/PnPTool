@@ -34,6 +34,9 @@ export interface BogenUebersicht {
   alter: string;
   ambition: string;
   verlangen: string;
+  /** Name, unter dem ein PC diese Person in den Kontakten sieht, bis der
+   * echte Name freigegeben ist (app/kontakte/logic.py::effektiver_alias). */
+  alias: string;
   ziel: string;
   kapital: number;
   schulden: number;
@@ -78,6 +81,7 @@ export interface SteckbriefUpdate {
   ambition?: string;
   verlangen?: string;
   ziel?: string;
+  alias?: string;
 }
 
 /**

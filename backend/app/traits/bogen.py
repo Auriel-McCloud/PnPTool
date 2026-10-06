@@ -161,6 +161,10 @@ def bogen_uebersicht(
         "ambition": person.get("ambition") or "",
         "verlangen": person.get("verlangen") or "",
         "ziel": person.get("ziel") or "",
+        # Alias (06.10.2026): derselbe Wert, den app/kontakte/ als
+        # npc.alias fuer die Kontakt-Anzeige liest — hier nur, damit das
+        # Blatt ihn ueberhaupt zeigen/aendern kann.
+        "alias": person.get("alias") or "",
         "kapital": int(person.get("kapital") or 0),
         "schulden": int(person.get("schulden") or 0),
         # Bestandscharaktere kennen das Feld nicht — wer bereits Werte hat,

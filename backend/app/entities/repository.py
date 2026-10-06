@@ -36,6 +36,15 @@ _BOGEN_FELDER = [
     "ziel",
     "kapital",
     "schulden",
+    # Alias (06.10.2026, Mark: "könnte sich ja auch ändern" — deshalb neben
+    # Ambition/Verlangen/Ziel im selben nachträglich änderbaren Steckbrief,
+    # nicht nur beim Anlegen setzbar). Zweck: `app/kontakte/` liest genau
+    # dieses Feld als `npc.alias` — der Name, den ein PC für einen NPC sieht,
+    # bis die Spielleitung den echten Namen freigibt oder der Spieler einen
+    # eigenen persönlichen Alias setzt (siehe kontakte/logic.py::
+    # effektiver_alias). Vorher gab es keine Stelle, an der die Spielleitung
+    # diesen NPC-Standardalias überhaupt eintragen konnte.
+    "alias",
     # Solange die Erstellung nicht abgeschlossen ist, zeigt das Blatt den
     # Erstellungsablauf statt der Spielansicht.
     "erstellungAbgeschlossen",
@@ -116,6 +125,7 @@ _BOGEN_DEFAULTS: dict = {
     "ambition": "",
     "verlangen": "",
     "ziel": "",
+    "alias": "",
     "kapital": 0,
     "schulden": 0,
     "erstellungAbgeschlossen": False,

@@ -13,6 +13,11 @@ export interface Person extends VisibilityFields {
   name: string;
   personType: "PC" | "NPC";
   description: string;
+  /** Name, unter dem ein PC diese Person in den Kontakten sieht, bis der
+   * echte Name freigegeben ist — bearbeitbar im Steckbrief (Charakterblatt.tsx),
+   * genau wie Ambition/Verlangen/Ziel (Mark, 06.10.2026: "könnte sich ja
+   * auch ändern"). Siehe app/kontakte/logic.py::effektiver_alias. */
+  alias?: string;
   /** Welche Silhouette die Körperkarte zeigt. */
   silhouette?: string;
   /** Aussehen; per Blitz an alle Spieler zeigbar. */

@@ -153,6 +153,12 @@ class PersonCreate(BaseModel):
     ambition: str = ""
     verlangen: str = ""
     ziel: str = ""
+    # Name, unter dem ein PC diese Person in den Kontakten sieht, bis der
+    # echte Name freigegeben ist (app/kontakte/logic.py::effektiver_alias).
+    # Kann sich ändern wie Ambition/Verlangen/Ziel, deshalb kein Pflichtfeld
+    # bei der Erstellung, sondern genau wie die drei nachträglich im
+    # Steckbrief editierbar (siehe traits/routes.py::SteckbriefUpdate).
+    alias: str = ""
     kapital: int = 0
     schulden: int = 0
     erstellungAbgeschlossen: bool = False
@@ -196,6 +202,7 @@ class PersonUpdate(BaseModel):
     ambition: str | None = None
     verlangen: str | None = None
     ziel: str | None = None
+    alias: str | None = None
     kapital: int | None = None
     schulden: int | None = None
     erstellungAbgeschlossen: bool | None = None
@@ -244,6 +251,7 @@ class PersonResponse(BaseModel):
     ambition: str = ""
     verlangen: str = ""
     ziel: str = ""
+    alias: str = ""
     kapital: int = 0
     schulden: int = 0
     erstellungAbgeschlossen: bool = False
