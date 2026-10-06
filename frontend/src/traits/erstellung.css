@@ -498,10 +498,25 @@
 /* --- Im Fenster (Spielleitung baut einen NPC) -------------------------
    Dort scrollt bereits .fn-inhalt. Zwei ineinandergeschachtelte
    Scrollflächen wären unbedienbar, deshalb gibt die Erstellung ihre
-   eigene hier ab und wächst stattdessen mit dem Inhalt. */
+   eigene hier ab und wächst stattdessen mit dem Inhalt.
+
+   `min-height: auto` ist hier Pflicht, nicht nur `height: auto`: ohne das
+   bleibt `.er-blatt` ein ganz normales Flex-Kind von `.fn-inhalt` mit der
+   geerbten Basisregel `min-height: 0` (oben, für den eigenständigen
+   Vollbild-Fall gedacht, wo `.er-buehne` selbst scrollt). Reicht der Platz
+   in `.fn-inhalt` nicht für den ganzen restlichen Inhalt (Bild, Erstellung,
+   Einfluss, Verwaltung), quetscht Flexbox `.er-blatt` mit `min-height: 0`
+   unter seine tatsächliche Inhaltsgröße zusammen — und weil `.er-buehne`
+   zugleich `overflow: visible` bekommt, läuft ihr Inhalt optisch über diese
+   zu klein gewordene Box hinaus und legt sich über Einfluss/Verwaltung
+   darunter (Mark, 06.10.2026: \"permanent das Menü\" beim Æ-Anlegen). Mit
+   `min-height: auto` greift Flexbox' automatische Mindestgröße wieder, das
+   Fenster wächst stattdessen wie gewollt und `.fn-inhalt` übernimmt das
+   Scrollen. */
 
 .fn-inhalt .er-blatt {
   height: auto;
+  min-height: auto;
 }
 
 .fn-inhalt .er-buehne {
