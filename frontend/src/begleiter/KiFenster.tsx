@@ -83,7 +83,7 @@ export function KiFenster({
       offen
       breit
       titel={`⌬ ${person.name}`}
-      unterzeile="KI — volles Charakterblatt mit Matrix-Präsenz"
+      unterzeile="Æ — volles Charakterblatt mit Matrix-Präsenz"
       kennung={`ki-detail:${kiId}`}
       onSchliessen={onSchliessen}
     >
@@ -210,7 +210,7 @@ export function KiFenster({
       {loeschenOffen && (
         <Bestaetigung
           titel={`${person.name} entfernen?`}
-          text="Die KI wird endgültig gelöscht, samt Charakterblatt und Einfluss-Verknüpfungen."
+          text="Die Æ wird endgültig gelöscht, samt Charakterblatt und Einfluss-Verknüpfungen."
           jaText="Entfernen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}

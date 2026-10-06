@@ -132,7 +132,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       name: x.name,
       bildUrl: x.bildUrl,
       besitzerName: x.besitzerName,
-      suchtext: `${x.name} KI ${x.besitzerName ?? ""}`.toLowerCase(),
+      suchtext: `${x.name} KI Æ ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "KI_PERSON",
       stufe: 0,
       quelle: { kind: "ki", daten: x },
@@ -168,7 +168,11 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
 
   function namenVon(k: KachelEintrag) {
     if (k.art === "CRITTER") return "Critter";
-    if (k.art === "KI_PERSON") return "KI";
+    // Anzeige-Label bewusst "Æ" statt "KI" (Mark, 05.10.2026): kollidiert
+    // sonst mit den "KI-Kristall"-Gegenständen und dem generischen KI-Begriff
+    // fürs Tool selbst. Intern bleibt es "KI_PERSON"/istKI — nur das, was
+    // die Spielleitung sieht, ändert sich.
+    if (k.art === "KI_PERSON") return "Æ";
     return ART_NAMEN[k.art];
   }
 
@@ -493,7 +497,7 @@ function BegleiterAnlegenFenster({
               </option>
             ))}
             <option value="CRITTER">❖ Critter</option>
-            <option value="KI_PERSON">⌬ KI</option>
+            <option value="KI_PERSON">⌬ Æ</option>
           </select>
         </div>
 
