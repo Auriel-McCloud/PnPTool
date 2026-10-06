@@ -23,6 +23,11 @@ class BegleiterBasis(BaseModel):
     art: BegleiterArt = "BEGLEITER"
     # Feld "Beziehnung" auf dem Papierblatt: wie er zu seinem Menschen steht.
     beziehung: str = ""
+    # Alias (06.10.2026, Mark: "könnte sich ja auch ändern") — reines
+    # Flavor-Feld wie bei Personen (entities/schemas.py::PersonCreate.alias),
+    # ohne Kontakte-Anbindung: Begleiter sind keine Person-Knoten und tauchen
+    # nicht im KENNT-System auf.
+    alias: str = ""
     beschreibung: str = ""
     notizen: str = ""
     # Aussehen; per Blitz an alle Spieler zeigbar — dasselbe Muster wie bei
@@ -61,6 +66,7 @@ class BegleiterUpdate(BaseModel):
     name: str | None = None
     art: BegleiterArt | None = None
     beziehung: str | None = None
+    alias: str | None = None
     beschreibung: str | None = None
     notizen: str | None = None
     bildUrl: str | None = None

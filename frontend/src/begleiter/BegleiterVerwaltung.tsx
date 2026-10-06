@@ -539,6 +539,7 @@ function BegleiterFenster({
   const [name, setName] = useState(begleiter.name);
   const [art, setArt] = useState(begleiter.art);
   const [beziehung, setBeziehung] = useState(begleiter.beziehung);
+  const [alias, setAlias] = useState(begleiter.alias);
   const [stufe, setStufe] = useState(begleiter.stufe);
   const [widerstand, setWiderstand] = useState(begleiter.widerstand);
   const [angriff, setAngriff] = useState(begleiter.angriff);
@@ -576,6 +577,7 @@ function BegleiterFenster({
         name,
         art,
         beziehung,
+        alias,
         stufe,
         widerstand,
         angriff,
@@ -780,6 +782,15 @@ function BegleiterFenster({
               value={beziehung}
               onChange={(e) => setBeziehung(e.target.value)}
               placeholder="Wie steht er zu seinem Menschen?"
+            />
+          </label>
+
+          <label className="bg-zeile" style={{ flexDirection: "column", alignItems: "stretch", gap: 3, marginTop: 8 }}>
+            <AbschnittTitel>Alias</AbschnittTitel>
+            <input
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              placeholder="Name, unter dem andere ihn kennen"
             />
           </label>
 

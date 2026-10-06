@@ -36,6 +36,9 @@ export interface Begleiter {
   art: BegleiterArt;
   /** Wie er zu seinem Menschen steht — Feld "Beziehnung" auf dem Blatt. */
   beziehung: string;
+  /** Name, unter dem andere diesen Begleiter kennen — reines Flavor-Feld,
+   * ohne Anbindung an die Kontakte (Begleiter sind keine Person-Knoten). */
+  alias: string;
   beschreibung: string;
   notizen: string;
   /** Aussehen; per Blitz an alle Spieler zeigbar. */
