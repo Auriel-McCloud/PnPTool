@@ -202,8 +202,10 @@ export interface GegenstandUpdate {
   name?: string;
   description?: string;
   notes?: string;
-  // typ bewusst NICHT hier — seit 22.09.2026 nach dem Anlegen fix (siehe
-  // Backend-Kommentar in schemas.py). Falsch gewählt? Löschen, neu anlegen.
+  // typ (06.10.2026): GM-only Korrektur, siehe Backend-Kommentar in
+  // schemas.py — falsch von der KI eingeordnete Gegenstände müssen
+  // korrigierbar sein, ohne sie löschen und neu anlegen zu müssen.
+  typ?: string;
   preis?: number;
   kraft?: number;
   eigenschaften?: Record<string, string>;

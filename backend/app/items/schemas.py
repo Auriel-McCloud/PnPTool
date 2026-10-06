@@ -194,12 +194,20 @@ class GegenstandUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     notes: str | None = None
-    # typ bewusst NICHT hier (22.09.2026, Marks Entscheidung): der Typ wird
-    # beim Anlegen per Kachel-Auswahl gewählt (siehe TYP_KATALOG) und ist
-    # danach fix — sonst blieben alte typ-spezifische Werte (Schaden,
-    # Deck-Werte, Rüstungskästchen, ...) beim Wechsel unsichtbar in der DB
-    # stehen, weil kein Typwechsel sie je aufräumt. Mark: "wer's falsch
-    # gewählt hat, löscht und legt neu an". Gleiche Invariante wie istVorlage.
+    # typ war bis 06.10.2026 bewusst NICHT hier (Marks Entscheidung vom
+    # 22.09.2026: "wer's falsch gewählt hat, löscht und legt neu an") —
+    # jetzt doch erlaubt, aber NUR für die Spielleitung (dieselbe
+    # require_campaign_gm-Absicherung wie der ganze PATCH-Endpunkt): die
+    # KI-Gegenstandserstellung (app/ki/routes.py) ordnet gelegentlich den
+    # falschen Typ zu, und "löschen und neu anlegen" ist dort kein
+    # brauchbarer Korrekturweg mehr. Ursprüngliche Sorge bleibt real und
+    # ungelöst: typ-spezifische Werte des ALTEN Typs (Schaden,
+    # Rüstungskästchen, Deck-Werte, ...) räumt ein Typwechsel nicht auf,
+    # sie bleiben unsichtbar in der DB stehen, bis jemand sie von Hand
+    # löscht oder der Gegenstand gelöscht wird. Für den eigentlichen
+    # Anwendungsfall (frisch von der KI angelegt, bevor jemand die
+    # Umbauen-Werte überhaupt angefasst hat) ist das meist kein Problem.
+    typ: str | None = None
     preis: int | None = None
     kraft: int | None = None
     cyberwall: int | None = None

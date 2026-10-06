@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
+import { useAuthFallsVorhanden } from "../auth/AuthContext";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
@@ -171,6 +172,11 @@ export function GegenstandRow({
   const [ansicht, setAnsicht] = useState<GgAnsicht>("uebersicht");
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  // Typ ändern (06.10.2026, nur SL): eigenes Popup statt Inline-Dropdown,
+  // damit dieselbe große Kachel-Auswahl wie beim Anlegen wiederverwendet
+  // werden kann (TypKachelAuswahl) statt einer zweiten Picker-UI.
+  const [typAendernOffen, setTypAendernOffen] = useState(false);
+  const istGm = useAuthFallsVorhanden()?.me?.role === "GM";
   const [name, setName] = useState(item.name);
   const [typ, setTyp] = useState(item.typ);
   const [preis, setPreis] = useState(item.preis);
@@ -407,6 +413,15 @@ export function GegenstandRow({
       sichtbarkeit,
       sichtbarFuer,
     });
+    onChanged();
+  }
+
+  // Nur SL (Button ist ohnehin istGm-gated, aber der Endpunkt selbst ist
+  // zusätzlich per require_campaign_gm abgesichert — doppelt hält besser).
+  async function typAendern(neuerTyp: string) {
+    setTypAendernOffen(false);
+    await itemsApi.update(campaignId, item.id, { typ: neuerTyp });
+    setTyp(neuerTyp);
     onChanged();
   }
 
@@ -722,6 +737,26 @@ export function GegenstandRow({
               <p style={{ color: "var(--text-leise)", fontSize: "0.85em", margin: 0 }}>
                 Hier ändert sich, was das Ding tut. Speichern, wenn der Umbau sitzt.
               </p>
+
+              {istGm && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    borderTop: "1px solid var(--linie)",
+                    paddingTop: 8,
+                  }}
+                >
+                  <span style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Typ: <strong style={{ color: "var(--text)" }}>{symbolFuerTyp(typ)} {typ}</strong>
+                  </span>
+                  <button type="button" onClick={() => setTypAendernOffen(true)} style={{ fontSize: "0.85em" }}>
+                    Typ ändern
+                  </button>
+                </div>
+              )}
               {CHROM_TYPEN.has(typ) && (
                 <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
                   <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
@@ -1222,6 +1257,26 @@ export function GegenstandRow({
           }}
           onNein={() => setLoeschenOffen(false)}
         />
+      )}
+
+      {typAendernOffen && (
+        <Fenster
+          offen
+          titel="Gegenstandstyp ändern"
+          unterzeile={`${item.name} · aktuell: ${symbolFuerTyp(typ)} ${typ}`}
+          kennung={`typ-aendern:${item.id}`}
+          ton="var(--bereich-gegenstaende)"
+          onSchliessen={() => setTypAendernOffen(false)}
+        >
+          <div style={{ padding: 8 }}>
+            <p style={{ color: "var(--text-leise)", fontSize: "0.85em", marginTop: 0 }}>
+              Nur für die Spielleitung — z.B. um einen von der KI falsch eingeordneten Gegenstand zu
+              korrigieren. Typ-spezifische Werte des alten Typs (Schaden, Rüstungskästchen, Deck-Werte, …)
+              bleiben in der Datenbank stehen, auch wenn sie beim neuen Typ nicht mehr angezeigt werden.
+            </p>
+            <TypKachelAuswahl onWaehlen={typAendern} />
+          </div>
+        </Fenster>
       )}
     </>
   );
