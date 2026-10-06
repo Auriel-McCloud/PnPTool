@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { useHintergrundSchliessen } from "./hintergrundSchliessen";
 import "./bestaetigung.css";
 
 /**
@@ -21,8 +22,12 @@ export function Bestaetigung({
   jaText?: string;
   neinText?: string;
 }) {
+  // Nur schliessen, wenn der Klick auch daneben BEGONNEN hat — sonst
+  // schliesst eine über den Rand gezogene Textauswahl im Bestätigungstext
+  // versehentlich den Dialog (siehe hintergrundSchliessen.ts).
+  const hintergrundProps = useHintergrundSchliessen(onNein);
   return createPortal(
-    <div className="best-huelle" onClick={onNein}>
+    <div className="best-huelle" {...hintergrundProps}>
       <div className="best-kasten" onClick={(e) => e.stopPropagation()}>
         <h2 className="best-titel">{titel}</h2>
         <p className="best-text">{text}</p>

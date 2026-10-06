@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { entitiesApi, type Person } from "../entities/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { useHintergrundSchliessen } from "../shell/hintergrundSchliessen";
 import { extrahiereReinenText } from "../richtext/content";
 import {
   ANDOCKPUNKTE,
@@ -75,6 +76,13 @@ export function Koerperkarte({
   const [gewaehlt, setGewaehlt] = useState<ZonenName | null>(null);
   const [popupZone, setPopupZone] = useState<ZonenName | null>(null);
   const [popupAugment, setPopupAugment] = useState<Gegenstand | null>(null);
+  // Nur schliessen, wenn der Klick auch daneben BEGONNEN hat — sonst
+  // schliesst eine über den Rand gezogene Textauswahl (z.B. in einer langen
+  // Augment-Beschreibung) versehentlich das Popup. Zwei getrennte Instanzen,
+  // da Zonen- und Augment-Popup eigene Schliessen-Callbacks haben (siehe
+  // shell/hintergrundSchliessen.ts).
+  const zonenHintergrund = useHintergrundSchliessen(() => setPopupZone(null));
+  const augmentHintergrund = useHintergrundSchliessen(() => setPopupAugment(null));
   const [laedt, setLaedt] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   // Chirurgie-Modus: SL kann Augments entfernen.
@@ -366,7 +374,7 @@ export function Koerperkarte({
 
       {/* Zonen-Popup: zeigt Augments der Zone, klickbar für Details */}
       {popupZone && (
-        <div className="kk-popup-huelle" onClick={() => setPopupZone(null)}>
+        <div className="kk-popup-huelle" {...zonenHintergrund}>
           <div className="kk-popup" onClick={(e) => e.stopPropagation()}>
             <h3>{popupZone}</h3>
             <ul className="kk-popup-liste">
@@ -398,7 +406,7 @@ export function Koerperkarte({
 
       {/* Augment-Detail-Popup */}
       {popupAugment && (
-        <div className="kk-popup-huelle" onClick={() => setPopupAugment(null)}>
+        <div className="kk-popup-huelle" {...augmentHintergrund}>
           <div className="kk-popup kk-popup-detail" onClick={(e) => e.stopPropagation()}>
             <h3>{popupAugment.name}</h3>
             <dl className="kk-popup-daten">

@@ -10,6 +10,7 @@ import {
 import type { Person } from "../entities/api";
 import { entitiesApi } from "../entities/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { useHintergrundSchliessen } from "../shell/hintergrundSchliessen";
 import "./kontakte-gm.css";
 
 interface Props {
@@ -281,6 +282,10 @@ function ChatPopup({
   const [text, setText] = useState("");
   const [senden, setSenden] = useState(false);
   const verlaufRef = useRef<HTMLDivElement>(null);
+  // Nur schliessen, wenn der Klick auch daneben BEGONNEN hat — sonst
+  // schliesst eine über den Rand gezogene Textauswahl im Chatverlauf
+  // versehentlich das Popup (siehe shell/hintergrundSchliessen.ts).
+  const hintergrundProps = useHintergrundSchliessen(onSchliessen);
 
   // Nachrichten laden beim Öffnen
   const ladeNachrichten = useCallback(async () => {
@@ -323,7 +328,7 @@ function ChatPopup({
   }
 
   return (
-    <div className="kontakte-gm-chat-overlay" onClick={onSchliessen}>
+    <div className="kontakte-gm-chat-overlay" {...hintergrundProps}>
       <div className="kontakte-gm-chat-popup" onClick={(e) => e.stopPropagation()}>
         <header className="kontakte-gm-chat-header">
           <h3>💬 {kontakt.pcName} ↔ {kontakt.npcName}</h3>

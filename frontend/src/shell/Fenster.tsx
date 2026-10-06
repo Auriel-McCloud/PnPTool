@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useHintergrundSchliessen } from "./hintergrundSchliessen";
 import { letzteTippPosition } from "./tippPosition";
 import { FormelText, formelKlartext } from "./formelText";
 import "./fenster.css";
@@ -74,6 +75,10 @@ export function Fenster({
   children: ReactNode;
 }) {
   const rahmenRef = useRef<HTMLDivElement>(null);
+  // Schliesst nur bei Klick daneben, der dort auch BEGONNEN hat — sonst
+  // schliesst eine über den Rand hinaus gezogene Textauswahl das Fenster
+  // (Mark, 06.10.2026). Siehe hintergrundSchliessen.ts für die Herleitung.
+  const hintergrundProps = useHintergrundSchliessen(onSchliessen);
   const { links, oben } = streuung(kennung);
   // Verschiebung von der Tipp-Stelle zur endgueltigen Fenstermitte. Erst nach
   // dem Aufbau messbar, denn vorher steht die Fenstergroesse nicht fest.
@@ -195,7 +200,7 @@ export function Fenster({
     .join(" ");
 
   return createPortal(
-    <div className="fn-hintergrund" onClick={onSchliessen}>
+    <div className="fn-hintergrund" {...hintergrundProps}>
       <div
         className={klassen}
         ref={rahmenRef}
