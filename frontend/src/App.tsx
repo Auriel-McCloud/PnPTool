@@ -56,8 +56,12 @@ const BEREICHE: Bereich[] = [
   { id: "events", name: "Events", symbol: "◆", farbe: "var(--bereich-events)" },
   { id: "fraktionen", name: "Fraktionen", symbol: "⬡", farbe: "var(--bereich-fraktionen)" },
   { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "var(--bereich-verbindungen)" },
-  // Violett wie die Gegenstands-Knoten im Graphen
-  { id: "gegenstaende", name: "Gegenstände", symbol: "◈", farbe: "var(--bereich-gegenstaende)" },
+  // Violett wie die Gegenstands-Knoten im Graphen. Rucksack statt ◈ (Mark,
+  // 06.10.2026): das Rautensymbol sagte im Menü nichts aus, der Rucksack ist
+  // das Inventar-Bild, das jeder sofort liest. Die Farbe trägt weiter der
+  // Rahmen/Schein des Eintrags (--ton). ◈ bleibt Gegenstands-Kürzel in
+  // Graph, Filtern und Kacheln.
+  { id: "gegenstaende", name: "Gegenstände", symbol: "🎒", farbe: "var(--bereich-gegenstaende)" },
   // Shop-System (24.09.2026): Händler und ihr Sortiment — eigener Punkt
   // statt Unterreiter bei Gegenständen, weil hier gekauft wird, nicht nur
   // verwaltet. Gedecktes Gold statt der Gegenstandsfarbe: der Shop selbst

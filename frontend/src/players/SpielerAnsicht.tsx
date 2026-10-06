@@ -59,7 +59,8 @@ const BEREICHE_STATISCH: Bereich[] = [
   // wächst je nach Chartyp schon mit zusätzlichen Skills/Werten, ein
   // Bild-Verwaltungsknopf obendrauf hätte dort nur Platz weggenommen.
   { id: "portrait", name: "Portrait", symbol: "◒", farbe: "var(--bereich-regeln)" },
-  { id: "inventar", name: "Inventar", symbol: "◈", farbe: "var(--bereich-inventar)" },
+  // Rucksack wie bei der SL-Ansicht „Gegenstände“ (Mark, 06.10.2026).
+  { id: "inventar", name: "Inventar", symbol: "🎒", farbe: "var(--bereich-inventar)" },
   // Shop-System (24.09.2026): eigener Burgermenü-Punkt, Marks Vorgabe.
   { id: "shop", name: "Shop", symbol: "¥", farbe: "var(--bereich-shop)" },
   // Eigener Bereich, weil ein Rigger sehr viele Drohnen führt und die im
