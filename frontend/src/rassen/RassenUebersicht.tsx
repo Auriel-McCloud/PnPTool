@@ -221,13 +221,24 @@ function RasseEditor({
     setMods(rasse.modifikatoren);
   }, [rasse.id]);
 
-  function modSetzen(attribut: string, wert: number) {
+  // Nimmt ein Delta statt eines fertigen Zielwerts und rechnet innerhalb des
+  // setMods-Updaters vom AKTUELLEN Stand weiter (06.10.2026, Bugfix: die
+  // vorige Fassung las den alten Wert aus dem Render-Closure und übergab
+  // schon den fertigen Zielwert — mehrere Klicks, die vor einem Re-Render
+  // feuern (schnelles Mehrfachklicken, Doppelklick, automatisierte Tests),
+  // lasen dadurch alle denselben veralteten Wert und überschrieben sich
+  // gegenseitig, sodass nur der letzte Klick ankam. Mit dem funktionalen
+  // Update aus `alt` kann das nicht mehr passieren, egal wie schnell
+  // geklickt wird.
+  function modAendern(attribut: string, delta: number) {
     setMods((alt) => {
+      const aktuell = alt[attribut] ?? 0;
+      const ziel = Math.max(MOD_MIN, Math.min(MOD_MAX, aktuell + delta));
       const neu = { ...alt };
       // 0 heisst "kein Modifikator" — dann raus aus der Liste, sonst stünde
       // in der Übersicht "+0 Charisma".
-      if (wert === 0) delete neu[attribut];
-      else neu[attribut] = wert;
+      if (ziel === 0) delete neu[attribut];
+      else neu[attribut] = ziel;
       return neu;
     });
   }
@@ -344,7 +355,7 @@ function RasseEditor({
                       <div className="ra-mod-regler">
                         <button
                           type="button"
-                          onClick={() => modSetzen(attribut, Math.max(MOD_MIN, wert - 1))}
+                          onClick={() => modAendern(attribut, -1)}
                           disabled={wert <= MOD_MIN}
                           aria-label={`${attribut} senken`}
                         >
@@ -356,7 +367,7 @@ function RasseEditor({
                         </span>
                         <button
                           type="button"
-                          onClick={() => modSetzen(attribut, Math.min(MOD_MAX, wert + 1))}
+                          onClick={() => modAendern(attribut, 1)}
                           disabled={wert >= MOD_MAX}
                           aria-label={`${attribut} heben`}
                         >
