@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 import { entitiesApi, type EinflussEintrag, type Person } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { EntitaetsBild } from "../entities/EntitaetsBild";
 import { EinflussVerwaltung } from "../entities/EinflussVerwaltung";
 import { parseRichText, serializeRichText } from "../richtext/content";
@@ -82,7 +83,7 @@ export function KiFenster({
     <Fenster
       offen
       breit
-      titel={`⌬ ${person.name}`}
+      titel={`⌬ ${anzeigeName(person.name, person.alias)}`}
       unterzeile="Æ — volles Charakterblatt mit Matrix-Präsenz"
       kennung={`ki-detail:${kiId}`}
       onSchliessen={onSchliessen}

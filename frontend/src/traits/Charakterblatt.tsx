@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Charaktererstellung, VorschlagKnopf } from "./Charaktererstellung";
 import { InfoTipp } from "../regeln/InfoTipp";
+import { anzeigeName } from "../entities/api";
 import { schluessel } from "../regeln/erklaerungen";
 import { LevelUp } from "./LevelUp";
 import { Probe, type ProbeWahl } from "./Probe";
@@ -280,7 +281,7 @@ export function Charakterblatt({
       <div className="cb-blatt">
         <header className="cb-kopf">
           <div>
-            <h2 className="cb-name">{bogen.person.name}</h2>
+            <h2 className="cb-name">{anzeigeName(bogen.person.name, u.alias)}</h2>
             <div className="cb-untertitel">Level Up</div>
           </div>
           <button type="button" onClick={() => { setAnsicht("blatt"); neuLaden(); }}>
@@ -401,7 +402,7 @@ export function Charakterblatt({
     <div className="cb-blatt">
       <header className="cb-kopf">
         <div>
-          <h2 className="cb-name">{bogen.person.name}</h2>
+          <h2 className="cb-name">{anzeigeName(bogen.person.name, u.alias)}</h2>
           <div className="cb-untertitel">
             {[u.rasse, u.magieFlavor === "HAERETIKER" ? "Häretiker" : WEG_TITEL[u.weg]].filter(Boolean).join(" · ") ||
               "Ohne besonderen Weg"}

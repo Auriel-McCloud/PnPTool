@@ -5,6 +5,7 @@ import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
+import { anzeigeName } from "../entities/api";
 import "./begleiter.css";
 
 /**
@@ -73,7 +74,7 @@ export function BegleiterKachel({ begleiter }: { begleiter: Begleiter }) {
 
   return (
     <>
-      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={begleiter.name}>
+      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={anzeigeName(begleiter.name, begleiter.alias)}>
         <span className="gg-kachel-bild">
           {begleiter.bildUrl ? (
             <img src={begleiter.bildUrl} alt="" />
@@ -81,7 +82,7 @@ export function BegleiterKachel({ begleiter }: { begleiter: Begleiter }) {
             <span aria-hidden="true">{ART_SYMBOLE[begleiter.art]}</span>
           )}
         </span>
-        <span className="gg-kachel-name">{begleiter.name}</span>
+        <span className="gg-kachel-name">{anzeigeName(begleiter.name, begleiter.alias)}</span>
         <span className="gg-kachel-zeile">
           {ART_NAMEN[begleiter.art]}
           {begleiter.stufe > 0 && ` · Stufe ${begleiter.stufe}`}
@@ -93,7 +94,7 @@ export function BegleiterKachel({ begleiter }: { begleiter: Begleiter }) {
 
       <Fenster
         offen={offen}
-        titel={`${ART_SYMBOLE[begleiter.art]} ${begleiter.name}`}
+        titel={`${ART_SYMBOLE[begleiter.art]} ${anzeigeName(begleiter.name, begleiter.alias)}`}
         unterzeile={[ART_NAMEN[begleiter.art], begleiter.besitzerName].filter(Boolean).join(" · ")}
         kennung={`begleiter:${begleiter.id}`}
         onSchliessen={() => setOffen(false)}

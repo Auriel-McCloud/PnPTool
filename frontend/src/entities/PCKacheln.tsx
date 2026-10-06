@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Person } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css";
 
@@ -58,7 +59,7 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
       </div>
 
       <div className="pc-kachel-info">
-        <div className="pc-kachel-name">{person.name}</div>
+        <div className="pc-kachel-name">{anzeigeName(person.name, person.alias)}</div>
         {spielerName && <div className="pc-kachel-spieler">{spielerName}</div>}
 
         {/* Extra-EP Anzeige mit + Button */}

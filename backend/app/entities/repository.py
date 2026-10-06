@@ -300,7 +300,7 @@ async def list_critter(campaign_id: str) -> list[dict]:
     query = """
         MATCH (n:Person {campaignId: $campaign_id, istCritter: true})
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
-        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+        RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
         ORDER BY n.name
@@ -328,7 +328,7 @@ async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: 
         )
         WITH n
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
-        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+        RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
     """
@@ -352,7 +352,7 @@ async def list_ki(campaign_id: str) -> list[dict]:
     query = """
         MATCH (n:Person {campaignId: $campaign_id, istKI: true})
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
-        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+        RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
         ORDER BY n.name
@@ -379,7 +379,7 @@ async def ki_besitzer_setzen(campaign_id: str, ki_id: str, person_id: str | None
         )
         WITH n
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
-        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+        RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
     """

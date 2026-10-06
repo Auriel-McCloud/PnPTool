@@ -7,6 +7,7 @@ import { RuestungsTreffer } from "./RuestungsTreffer";
 import { Kaestchen } from "../traits/Kaestchen";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
+import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
@@ -351,7 +352,7 @@ export function Kampfkarte({
       <Fenster
         offen={vollerBogen}
         breit
-        titel={bogen.person.name}
+        titel={anzeigeName(bogen.person.name, bogen.uebersicht.alias)}
         unterzeile="Charakterbogen"
         kennung={`kampfkarte-bogen:${personId}`}
         onSchliessen={() => {

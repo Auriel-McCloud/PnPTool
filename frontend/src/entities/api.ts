@@ -8,6 +8,17 @@ export interface VisibilityFields {
   sichtbarFuer: string[];
 }
 
+/** "Alias aka Name" fürs SL-Auge — zeigt beides zugleich, statt den Alias
+ * nur versteckt im Steckbrief zu halten (Mark, 06.10.2026: "schaut im
+ * Moment nicht so aus"). Nur für Oberflächen, die sowieso den echten Namen
+ * zeigen dürfen (GM-Ansichten, die eigene Figur) — niemals für das, was
+ * ein Spieler über einen fremden NPC sieht; dafür gilt weiterhin
+ * app/kontakte/logic.py::effektiver_alias auf dem Server. */
+export function anzeigeName(name: string, alias?: string | null): string {
+  const a = (alias ?? "").trim();
+  return a ? `${a} aka ${name}` : name;
+}
+
 export interface Person extends VisibilityFields {
   id: string;
   name: string;
@@ -176,6 +187,7 @@ function query(filter?: ListenFilter): string {
 export interface CritterEintrag {
   id: string;
   name: string;
+  alias: string | null;
   bildUrl: string;
   besitzerId: string | null;
   besitzerName: string | null;
