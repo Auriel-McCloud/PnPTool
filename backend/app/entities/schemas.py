@@ -110,6 +110,11 @@ class PersonCreate(BaseModel):
     # KENNT-System, der Standort über dieselbe BEFINDET_SICH_AN-Kante wie bei
     # Party (app/haendler/repository.py).
     istHaendler: bool = False
+    # Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches
+    # Flavor-Flag wie magieFlavor — swapt nur ein paar Beschriftungen auf
+    # dem Charakterblatt eines Critters (z.B. "Alter" -> "Wachstumsstadium",
+    # Kapital/Schulden ausgeblendet), keine Mechanik, kein neues Datenmodell.
+    istPflanzenCritter: bool = False
     # Nur relevant bei istHaendler=true: auf welche Gegenstandstypen sich der
     # AUTOMATISCHE Shop-Bestand (Vorlagen mit automatischImShop=true) dieses
     # Händlers beschränkt. Leer = Gemischtwarenladen, zeigt alle passenden
@@ -184,6 +189,7 @@ class PersonUpdate(BaseModel):
     istCritter: bool | None = None
     istKI: bool | None = None
     istHaendler: bool | None = None
+    istPflanzenCritter: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     shopHintergrundUrl: str | None = None
@@ -233,6 +239,7 @@ class PersonResponse(BaseModel):
     istCritter: bool = False
     istKI: bool = False
     istHaendler: bool = False
+    istPflanzenCritter: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"
     shopHintergrundUrl: str = ""
@@ -506,3 +513,96 @@ class FilterOptionen(BaseModel):
 
     typen: list[str] = []
     ziele: list[FilterZiel] = []
+
+
+# --- Gewächs (Flora & Fauna) ---------------------------------------------
+# Gewöhnliche, nicht kampffähige Flora — bewusst OHNE Charakterbogen/Rasse/
+# Attribute (anders als Critter, die echte Personen mit vollem Blatt sind).
+# Folgt exakt demselben generischen Entitäts-Muster wie Ort/Event/Fraktion.
+
+class GewaechsCreate(BaseModel):
+    name: str
+    description: str = ""
+    notes: str = ""
+    bildUrl: str = ""  # Legacy
+    bilder: list[BildEintrag] = []  # Bildergalerie
+    istEntwurf: bool = False  # Ideenschmiede
+    giftig: bool = False
+    essbar: bool = False
+    # Freier Klassifikationstext (dieselbe Hausregel wie `spezialisierung`/
+    # `vertriebsart` an Ort/Person: kein festes Enum, weil die Bandbreite an
+    # Gefährlichkeitsstufen von Kampagne zu Kampagne variiert).
+    gefaehrlichkeit: str = ""
+    # Freitext für Besonderheiten, z.B. "leuchtet im Dunkeln",
+    # "kybernetisch modifiziert" — passend zum Neotopia-Biopunk-Flavor.
+    eigenschaften: str = ""
+    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarFuer: list[str] = []
+    notizenSichtbarkeit: SichtbarkeitModus = "GM"
+    notizenSichtbarFuer: list[str] = []
+
+
+class GewaechsUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    notes: str | None = None
+    bildUrl: str | None = None
+    bilder: list[BildEintrag] | None = None
+    istEntwurf: bool | None = None
+    giftig: bool | None = None
+    essbar: bool | None = None
+    gefaehrlichkeit: str | None = None
+    eigenschaften: str | None = None
+    sichtbarkeit: SichtbarkeitModus | None = None
+    sichtbarFuer: list[str] | None = None
+    notizenSichtbarkeit: SichtbarkeitModus | None = None
+    notizenSichtbarFuer: list[str] | None = None
+
+
+class GewaechsResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    notes: str
+    bildUrl: str = ""
+    bilder: list[BildEintrag] = []
+    istEntwurf: bool = False
+    giftig: bool = False
+    essbar: bool = False
+    gefaehrlichkeit: str = ""
+    eigenschaften: str = ""
+    sichtbarkeit: str
+    sichtbarFuer: list[str]
+    notizenSichtbarkeit: str
+    notizenSichtbarFuer: list[str]
+
+
+# --- Flora & Fauna (LEBT_IN) ----------------------------------------------
+
+class LebtInHinzufuegen(BaseModel):
+    """Body für POST .../orte/{id}/flora-fauna — verknüpft einen Critter
+    oder ein Gewächs (per ID) mit diesem Ort."""
+
+    artId: str
+
+
+class LebtInEintrag(BaseModel):
+    """Ein mit einem Ort verknüpfter Critter oder ein verknüpftes Gewächs.
+
+    `kind` ist das rohe Neo4j-Label ("Person" für Critter, "Gewaechs") —
+    dasselbe Muster wie `VerbindungResponse.vonKind`/`zuKind`.
+    """
+
+    id: str
+    kind: str
+    name: str
+    bildUrl: str = ""
+    sichtbarkeit: str = "GM"
+    sichtbarFuer: list[str] = []
+
+
+class LebtInOrtEintrag(BaseModel):
+    """Reverse-Lookup-Eintrag: ein Ort, an dem eine Art vorkommt."""
+
+    id: str
+    name: str

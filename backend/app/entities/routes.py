@@ -9,7 +9,7 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.entities import repository
 from app.entities import filterung
 from app.ereignisprotokoll import hooks
-from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS
+from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
@@ -26,6 +26,12 @@ from app.entities.schemas import (
     FraktionCreate,
     FraktionResponse,
     FraktionUpdate,
+    GewaechsCreate,
+    GewaechsResponse,
+    GewaechsUpdate,
+    LebtInEintrag,
+    LebtInHinzufuegen,
+    LebtInOrtEintrag,
     OrtCreate,
     OrtResponse,
     OrtUpdate,
@@ -472,6 +478,99 @@ async def delete_fraktion(campaign_id: str, node_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Fraktion nicht gefunden")
 
 
+# --- Gewächs (Flora & Fauna) ----------------------------------------------
+# Exakt dasselbe generische Muster wie Ort/Event/Fraktion oben — bewusst kein
+# eigener Mechanismus, siehe entities/repository.py::GEWAECHS_FIELDS.
+
+@router.post("/gewaechse", response_model=GewaechsResponse, dependencies=[Depends(require_campaign_gm)])
+async def create_gewaechs(campaign_id: str, body: GewaechsCreate):
+    return await repository.create_node("Gewaechs", GEWAECHS_FIELDS, campaign_id, body.model_dump())
+
+
+@router.get("/gewaechse", response_model=list[GewaechsResponse])
+async def list_gewaechse(
+    campaign_id: str,
+    suche: str | None = Query(default=None, description="Sucht in Name, Beschreibung und Notizen."),
+    sortierung: filterung.Sortierung | None = Query(default=None),
+    viewer: Viewer = Depends(get_viewer),
+):
+    nodes = await repository.list_nodes("Gewaechs", GEWAECHS_FIELDS, campaign_id)
+    return await _aufbereiten(
+        nodes,
+        campaign_id,
+        viewer,
+        namensfeld="name",
+        suche=suche,
+        sortierung=sortierung,
+    )
+
+
+@router.get("/gewaechse/{node_id}", response_model=GewaechsResponse)
+async def get_gewaechs(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
+    node = await repository.get_node("Gewaechs", GEWAECHS_FIELDS, campaign_id, node_id)
+    return _visible_or_404(node, viewer, "Gewächs")
+
+
+@router.patch("/gewaechse/{node_id}", response_model=GewaechsResponse, dependencies=[Depends(require_campaign_gm)])
+async def update_gewaechs(campaign_id: str, node_id: str, body: GewaechsUpdate):
+    node = await repository.update_node("Gewaechs", GEWAECHS_FIELDS, campaign_id, node_id, body.model_dump())
+    if node is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gewächs nicht gefunden")
+    return node
+
+
+@router.delete("/gewaechse/{node_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
+async def delete_gewaechs(campaign_id: str, node_id: str):
+    if not await repository.delete_node("Gewaechs", campaign_id, node_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gewächs nicht gefunden")
+
+
+# --- Flora & Fauna (LEBT_IN) ----------------------------------------------
+# Dasselbe Rückgabe-Muster wie person_einfluss_setzen/-entfernen oben: jede
+# Mutation liefert die frische, komplette Liste zurück statt nur eines
+# Erfolgs-Flags — der Aufrufer (Ort-Detail-Tab) braucht sie direkt danach
+# sowieso wieder.
+
+@router.get("/orte/{ort_id}/flora-fauna", response_model=list[LebtInEintrag])
+async def flora_fauna_liste(campaign_id: str, ort_id: str, viewer: Viewer = Depends(get_viewer)):
+    roh = await repository.lebt_in_liste_fuer_ort(campaign_id, ort_id)
+    return [
+        e for e in roh
+        if is_visible_to(e.get("sichtbarkeit") or "GM", e.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
+    ]
+
+
+@router.post(
+    "/orte/{ort_id}/flora-fauna", response_model=list[LebtInEintrag], dependencies=[Depends(require_campaign_gm)]
+)
+async def flora_fauna_hinzufuegen(campaign_id: str, ort_id: str, body: LebtInHinzufuegen):
+    ok = await repository.lebt_in_hinzufuegen(campaign_id, ort_id, body.artId)
+    if not ok:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ort oder Critter/Gewächs nicht gefunden")
+    return await repository.lebt_in_liste_fuer_ort(campaign_id, ort_id)
+
+
+@router.delete(
+    "/orte/{ort_id}/flora-fauna/{art_id}",
+    response_model=list[LebtInEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def flora_fauna_entfernen(campaign_id: str, ort_id: str, art_id: str):
+    await repository.lebt_in_entfernen(campaign_id, ort_id, art_id)
+    return await repository.lebt_in_liste_fuer_ort(campaign_id, ort_id)
+
+
+@router.get("/flora-fauna/{art_id}/orte", response_model=list[LebtInOrtEintrag])
+async def flora_fauna_orte(campaign_id: str, art_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Reverse-Lookup: an welchen Orten dieser Critter/dieses Gewächs vorkommt.
+
+    Bewusst ungefiltert nach Sichtbarkeit des Ortes — dieselbe Abwägung wie
+    bei `list_critter`: wer den Critter/das Gewächs selbst schon sehen darf,
+    darf auch wissen, wo er/es vorkommt.
+    """
+    return await repository.lebt_in_liste_fuer_art(campaign_id, art_id)
+
+
 @router.post("/verbindungen", response_model=VerbindungResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_verbindung(campaign_id: str, body: VerbindungCreate):
     edge = await repository.create_verbindung(campaign_id, body.model_dump())
@@ -577,6 +676,7 @@ _ENTITAETEN = {
     "orte": ("Ort", ORT_FIELDS, "Ort"),
     "events": ("Event", EVENT_FIELDS, "Event"),
     "fraktionen": ("Fraktion", FRAKTION_FIELDS, "Fraktion"),
+    "gewaechse": ("Gewaechs", GEWAECHS_FIELDS, "Gewächs"),
 }
 
 
@@ -598,6 +698,11 @@ async def upload_event_bild(campaign_id: str, node_id: str, file: UploadFile = F
 @router.post("/fraktionen/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
 async def upload_fraktion_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
     return await _entitaets_bild_hochladen(campaign_id, "fraktionen", node_id, file)
+
+
+@router.post("/gewaechse/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
+async def upload_gewaechs_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+    return await _entitaets_bild_hochladen(campaign_id, "gewaechse", node_id, file)
 
 
 async def _entitaets_bild_hochladen(campaign_id: str, art: str, node_id: str, file: UploadFile) -> dict:

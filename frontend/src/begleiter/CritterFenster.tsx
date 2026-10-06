@@ -118,7 +118,16 @@ export function CritterFenster({
                 notizen={person.notes}
                 onGeaendert={onGeaendert}
               />
-              <Charakterblatt campaignId={campaignId} personId={critterId} bearbeitbar />
+              <Charakterblatt
+                // Remount bei Flag-Wechsel: Charakterblatt lädt seinen Bogen
+                // (inkl. istPflanzenCritter) selbst über personId und bekommt
+                // sonst nichts von der Verwaltung hier unten mit — derselbe
+                // Stolperstein wie bei jedem Kind, das eigenständig fetcht.
+                key={`${critterId}-${person.istPflanzenCritter}`}
+                campaignId={campaignId}
+                personId={critterId}
+                bearbeitbar
+              />
             </>
           )}
 
@@ -186,6 +195,22 @@ export function CritterFenster({
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="bg-zeile" style={{ marginTop: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                <input
+                  type="checkbox"
+                  checked={!!person.istPflanzenCritter}
+                  onChange={async (e) => {
+                    const neu = await entitiesApi.updatePerson(campaignId, critterId, {
+                      istPflanzenCritter: e.target.checked,
+                    });
+                    setPerson(neu);
+                  }}
+                />
+                Pflanzen-Critter (Flora-Vokabular auf dem Blatt)
+              </label>
             </div>
 
             <div className="bg-zeile" style={{ marginTop: 10 }}>

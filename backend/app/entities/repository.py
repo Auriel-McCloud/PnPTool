@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -74,6 +74,16 @@ EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder
 # notes, weil beides regelmäßig getrennt abgefragt wird ("was plant die
 # Zaibatsu?" vs. "was können sie aufbieten?").
 FRAKTION_FIELDS = ["name", "description", "ziele", "ressourcen", "notes", "bildUrl", "bilder", "istEntwurf", *_VISIBILITY_FIELDS]
+# Gewächs (Flora & Fauna, 06.10.2026): gewöhnliche, nicht kampffähige Flora —
+# bewusst OHNE Charakterbogen/Rasse/Attribute (anders als Critter, die echte
+# Personen sind). Folgt demselben generischen Entitäts-Muster wie Ort/Event/
+# Fraktion. giftig/essbar/gefaehrlichkeit/eigenschaften sind reiner
+# Klassifikations-Freitext bzw. Bool, kein Regelmechanismus.
+GEWAECHS_FIELDS = [
+    "name", "description", "notes", "bildUrl", "bilder", "istEntwurf",
+    "giftig", "essbar", "gefaehrlichkeit", "eigenschaften",
+    *_VISIBILITY_FIELDS,
+]
 
 
 def _return_clause(alias: str, fields: list[str]) -> str:
@@ -95,6 +105,17 @@ _BOGEN_DEFAULTS: dict = {
     # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
     # (derselbe Stolperstein wie bei istHaendler/istCritter/istKI oben).
     "istShop": False,
+    # Pflanzen-Vokabular (06.10.2026, Flora & Fauna): rein kosmetisches Flag
+    # am Charakterbogen, analog zu magieFlavor — swaps nur ein paar
+    # Feldbeschriftungen auf dem Blatt, keine Mechanik. Bestandscharaktere
+    # kennen das Feld noch nicht (Stolperstein 9).
+    "istPflanzenCritter": False,
+    # Gewächs: Bestandsdaten (es gibt noch keine) kennen diese Felder nicht;
+    # Defaults hier als Netz, falls je ein Hand-Cypher-Pfad sie vergisst.
+    "giftig": False,
+    "essbar": False,
+    "gefaehrlichkeit": "",
+    "eigenschaften": "",
     # Derselbe Stolperstein traf notes/notizenSichtbarkeit/notizenSichtbarFuer
     # konkret: haendler/repository.py::shops_auf_orte_heben() legt für einen
     # Händler ohne Standort einen neuen Ort per Hand-Cypher an und vergaß
@@ -599,3 +620,89 @@ async def delete_verbindung(campaign_id: str, edge_id: str) -> bool:
         result = await session.run(query, campaign_id=campaign_id, edge_id=edge_id)
         record = await result.single()
         return dict(record)["deleted"] > 0
+
+
+# --- Flora & Fauna (LEBT_IN) --------------------------------------------
+# Many-to-many — anders als `(:Party)-[:BEFINDET_SICH_AN]->(:Ort|:Event)`
+# (exklusiv: alte Kante wird vor der neuen gelöscht), weil dieselbe Spezies
+# (Critter-Rasse oder Gewächs) sehr wohl an mehreren Orten gleichzeitig
+# vorkommen kann ("Dornranke wächst sowohl im Slum-Park als auch am
+# Hafenufer") und ein Ort mehrere Arten beherbergt. MERGE statt CREATE macht
+# das Hinzufügen idempotent (ein zweiter Klick auf "verknüpfen" legt keine
+# Doppel-Kante an); bestehende Kanten werden beim Hinzufügen nie gelöscht.
+#
+# Richtung `(Spezies)-[:LEBT_IN]->(:Ort)`: passt zur Semantik "lebt in",
+# parallel zu BEFINDET_SICH_AN. Die Spezies ist entweder ein Critter
+# (`Person` mit `istCritter: true`) oder ein `Gewaechs` — beides erlaubt,
+# ein gewöhnlicher NPC/PC nicht (sonst könnte man aus Versehen einen
+# Menschen als "wohnt im Zoo" verknüpfen).
+
+async def lebt_in_hinzufuegen(campaign_id: str, ort_id: str, art_id: str) -> bool:
+    """Verknüpft einen Critter oder ein Gewächs mit einem Ort.
+
+    Gibt False zurück, wenn Ort oder Art (bzw. ein Art-Knoten, der weder
+    Critter noch Gewächs ist) nicht gefunden wurde — die Route meldet das
+    als 404, nicht als Serverfehler.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (o:Ort {id: $ort_id, campaignId: $campaign_id})
+        MATCH (art {id: $art_id, campaignId: $campaign_id})
+        WHERE (art:Person AND art.istCritter = true) OR art:Gewaechs
+        MERGE (art)-[:LEBT_IN]->(o)
+        RETURN count(art) AS verknuepft
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ort_id=ort_id, art_id=art_id)
+        record = await result.single()
+        return bool(record and record["verknuepft"] > 0)
+
+
+async def lebt_in_entfernen(campaign_id: str, ort_id: str, art_id: str) -> bool:
+    """Löst die Verknüpfung — die Art selbst (Critter/Gewächs) bleibt bestehen."""
+    driver = get_driver()
+    query = """
+        MATCH (art {id: $art_id, campaignId: $campaign_id})-[r:LEBT_IN]->(o:Ort {id: $ort_id, campaignId: $campaign_id})
+        DELETE r
+        RETURN count(r) AS geloescht
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ort_id=ort_id, art_id=art_id)
+        record = await result.single()
+        return bool(record and record["geloescht"] > 0)
+
+
+async def lebt_in_liste_fuer_ort(campaign_id: str, ort_id: str) -> list[dict]:
+    """Alle Critter und Gewächse, die aktuell mit diesem Ort verknüpft sind.
+
+    Eine einzige Abfrage über beide Knotenarten statt zweier getrennter
+    OPTIONAL-MATCH-Zweige — `labels(art)[0]` unterscheidet danach, dasselbe
+    Muster wie `list_verbindungen`.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (art)-[:LEBT_IN]->(o:Ort {id: $ort_id, campaignId: $campaign_id})
+        WHERE art.campaignId = $campaign_id
+        RETURN art.id AS id, labels(art)[0] AS kind, art.name AS name,
+               coalesce(art.bildUrl, '') AS bildUrl,
+               coalesce(art.sichtbarkeit, 'GM') AS sichtbarkeit,
+               coalesce(art.sichtbarFuer, []) AS sichtbarFuer
+        ORDER BY art.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ort_id=ort_id)
+        return [dict(r) async for r in result]
+
+
+async def lebt_in_liste_fuer_art(campaign_id: str, art_id: str) -> list[dict]:
+    """Reverse-Lookup: an welchen Orten dieser Critter/dieses Gewächs vorkommt."""
+    driver = get_driver()
+    query = """
+        MATCH (art {id: $art_id, campaignId: $campaign_id})-[:LEBT_IN]->(o:Ort)
+        WHERE o.campaignId = $campaign_id
+        RETURN o.id AS id, o.name AS name
+        ORDER BY o.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, art_id=art_id)
+        return [dict(r) async for r in result]

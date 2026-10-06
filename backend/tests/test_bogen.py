@@ -156,3 +156,15 @@ class TestSchadensarten:
     def test_negative_werte_werden_ignoriert(self):
         u = bogen_uebersicht({"schadenSchlag": -3}, {})
         assert u["schadenSchlag"] == 0
+
+
+class TestPflanzenVokabular:
+    """Flora & Fauna (06.10.2026): rein kosmetisches Flag, siehe schemas.py."""
+
+    def test_default_ist_false_fuer_bestandscharaktere(self):
+        u = bogen_uebersicht({}, {})
+        assert u["istPflanzenCritter"] is False
+
+    def test_wird_aus_der_person_uebernommen(self):
+        u = bogen_uebersicht({"istPflanzenCritter": True}, {})
+        assert u["istPflanzenCritter"] is True

@@ -23,8 +23,8 @@ export function EntitaetsBild({
   onGeaendert,
 }: {
   campaignId: string;
-  /** Pfadsegment der API: personen | orte | events */
-  art: "personen" | "orte" | "events";
+  /** Pfadsegment der API: personen | orte | events | gewaechse */
+  art: "personen" | "orte" | "events" | "gewaechse";
   id: string;
   name: string;
   bildUrl: string;
@@ -42,7 +42,7 @@ export function EntitaetsBild({
 
   // Für den KI-Bild-Prompt: welcher Objekttyp das für die KI ist (Deutsch,
   // geht 1:1 in den Prompt-Vorschlag-Aufruf).
-  const objektTyp = art === "personen" ? "Person" : art === "orte" ? "Ort" : "Event";
+  const objektTyp = art === "personen" ? "Person" : art === "orte" ? "Ort" : art === "events" ? "Event" : "Gewächs";
 
   async function hochladenAnFormData(datei: File | Blob, dateiname: string) {
     setLaedt(true);

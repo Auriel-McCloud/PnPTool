@@ -42,6 +42,9 @@ export interface BogenUebersicht {
   schulden: number;
   /** Solange falsch, zeigt das Blatt die Erstellung statt der Spielansicht. */
   erstellungAbgeschlossen: boolean;
+  /** Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches Flag,
+   * swapt nur ein paar Beschriftungen (siehe Charakterblatt.tsx). */
+  istPflanzenCritter: boolean;
 }
 
 export interface Bogen {

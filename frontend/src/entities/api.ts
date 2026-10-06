@@ -59,6 +59,11 @@ export interface Person extends VisibilityFields {
   vertriebsart?: "PHYSISCH" | "DIGITAL";
   /** Eigenes Hintergrundbild der Shop-Seite (getrennt vom Portrait bildUrl). */
   shopHintergrundUrl?: string;
+  /** Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches Flag
+   * für einen Critter — swapt nur ein paar Beschriftungen auf dem
+   * Charakterblatt (z.B. "Alter" -> "Wachstumsstadium", Kapital/Schulden
+   * ausgeblendet), keine Mechanik. Siehe traits/Charakterblatt.tsx. */
+  istPflanzenCritter?: boolean;
 }
 
 export interface Ort extends VisibilityFields {
@@ -120,6 +125,26 @@ export interface Fraktion extends VisibilityFields {
   notes: string;
   notizenSichtbarkeit: SichtbarkeitModus;
   notizenSichtbarFuer: string[];
+}
+
+/** Gewöhnliche, nicht kampffähige Flora (Flora & Fauna, 06.10.2026) — bewusst
+ * OHNE Charakterbogen/Rasse/Attribute, anders als ein Critter. */
+export interface Gewaechs extends VisibilityFields {
+  id: string;
+  name: string;
+  description: string;
+  notes: string;
+  notizenSichtbarkeit: SichtbarkeitModus;
+  notizenSichtbarFuer: string[];
+  bildUrl?: string;
+  bilder?: { url: string; istPrimaer: boolean }[];
+  istEntwurf?: boolean;
+  giftig?: boolean;
+  essbar?: boolean;
+  /** Freier Klassifikationstext, dieselbe Hausregel wie `spezialisierung`. */
+  gefaehrlichkeit?: string;
+  /** Freitext, z.B. "leuchtet im Dunkeln", "kybernetisch modifiziert". */
+  eigenschaften?: string;
 }
 
 export interface Verbindung extends VisibilityFields {
@@ -210,6 +235,18 @@ export interface EinflussEintrag {
   stufe: number;
 }
 
+/** Ein mit einem Ort verknüpfter Critter oder ein verknüpftes Gewächs
+ * (Flora & Fauna, 06.10.2026). `kind` ist das rohe Backend-Label
+ * ("Person" für Critter, "Gewaechs"). */
+export interface LebtInEintrag {
+  id: string;
+  kind: "Person" | "Gewaechs";
+  name: string;
+  bildUrl: string;
+  sichtbarkeit: SichtbarkeitModus;
+  sichtbarFuer: string[];
+}
+
 export const entitiesApi = {
   listPersonen: (cid: string, filter?: ListenFilter) =>
     api.get<Person[]>(`${base(cid)}/personen${query(filter)}`),
@@ -282,4 +319,25 @@ export const entitiesApi = {
   updateVerbindung: (cid: string, id: string, body: Partial<Verbindung>) =>
     api.patch<Verbindung>(`${base(cid)}/verbindungen/${id}`, body),
   deleteVerbindung: (cid: string, id: string) => api.delete<void>(`${base(cid)}/verbindungen/${id}`),
+
+  /** Gewächs — gewöhnliche Flora, generisches CRUD wie Ort/Event/Fraktion. */
+  listGewaechse: (cid: string, filter?: ListenFilter) =>
+    api.get<Gewaechs[]>(`${base(cid)}/gewaechse${query(filter)}`),
+  createGewaechs: (cid: string, body: Omit<Gewaechs, "id">) => api.post<Gewaechs>(`${base(cid)}/gewaechse`, body),
+  getGewaechs: (cid: string, id: string) => api.get<Gewaechs>(`${base(cid)}/gewaechse/${id}`),
+  updateGewaechs: (cid: string, id: string, body: Partial<Gewaechs>) =>
+    api.patch<Gewaechs>(`${base(cid)}/gewaechse/${id}`, body),
+  deleteGewaechs: (cid: string, id: string) => api.delete<void>(`${base(cid)}/gewaechse/${id}`),
+
+  /** Flora & Fauna (LEBT_IN) — many-to-many zwischen einem Ort und
+   * Critter/Gewächs. Jede Mutation liefert die frische Liste zurück. */
+  floraFaunaListe: (cid: string, ortId: string) =>
+    api.get<LebtInEintrag[]>(`${base(cid)}/orte/${ortId}/flora-fauna`),
+  floraFaunaHinzufuegen: (cid: string, ortId: string, artId: string) =>
+    api.post<LebtInEintrag[]>(`${base(cid)}/orte/${ortId}/flora-fauna`, { artId }),
+  floraFaunaEntfernen: (cid: string, ortId: string, artId: string) =>
+    api.delete<LebtInEintrag[]>(`${base(cid)}/orte/${ortId}/flora-fauna/${artId}`),
+  /** Reverse-Lookup: an welchen Orten ein Critter/Gewächs vorkommt. */
+  floraFaunaOrte: (cid: string, artId: string) =>
+    api.get<{ id: string; name: string }[]>(`${base(cid)}/flora-fauna/${artId}/orte`),
 };

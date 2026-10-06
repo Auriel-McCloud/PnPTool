@@ -271,6 +271,7 @@ export function Charakterblatt({
         campaignId={campaignId}
         personId={personId}
         name={bogen.person.name}
+        istPflanzenCritter={u.istPflanzenCritter}
         onFertig={neuLaden}
       />
     );
@@ -590,7 +591,11 @@ export function Charakterblatt({
           {u.ambition && <Steckbrief titel="Ambition" text={u.ambition} />}
           {u.verlangen && <Steckbrief titel="Verlangen" text={u.verlangen} />}
           {u.ziel && <Steckbrief titel="Ziel" text={u.ziel} />}
-          {(u.kapital > 0 || u.schulden > 0) && (
+          {/* Kapital/Schulden ergeben für ein Gewächs/Pflanzen-Critter keinen
+              narrativen Sinn (Mark, Flora & Fauna 06.10.2026) — rein
+              display-seitig ausgeblendet, die Werte selbst bleiben erhalten
+              und zählen im Hintergrund unverändert weiter. */}
+          {!u.istPflanzenCritter && (u.kapital > 0 || u.schulden > 0) && (
             <Steckbrief
               titel="Kapital"
               text={

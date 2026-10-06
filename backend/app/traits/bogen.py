@@ -130,6 +130,9 @@ def bogen_uebersicht(
         # Häretiker-Flavor (24.09.2026): rein kosmetisch, siehe schemas.py.
         # Für Bestandscharaktere ohne das Feld gilt "MAGIER" (Normalfall).
         "magieFlavor": person.get("magieFlavor") or "MAGIER",
+        # Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisch,
+        # siehe schemas.py. Bestandscharaktere kennen das Feld noch nicht.
+        "istPflanzenCritter": bool(person.get("istPflanzenCritter")),
         "rasse": person.get("rasse") or "",
         "gesundheitMax": g_max,
         "schadenAggraviert": aggraviert,
