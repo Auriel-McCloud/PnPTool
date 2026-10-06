@@ -8,6 +8,7 @@ import { Fenster } from "./shell/Fenster";
 import { EntityManager, type WeltAnsicht } from "./entities/EntityManager";
 import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
+import { FloraFaunaUebersicht } from "./entities/FloraFaunaUebersicht";
 import { ShopUebersicht } from "./haendler/ShopUebersicht";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { ZusatzfertigkeitenVerwaltung } from "./zusatzfertigkeiten/ZusatzfertigkeitenVerwaltung";
@@ -70,6 +71,12 @@ const BEREICHE: Bereich[] = [
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
   // Blatt haben und keine Gegenstände sind.
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
+  // Flora & Fauna (06.10.2026, Mark: eigener Burgermenü-Punkt mit
+  // Suchleiste+Neu-Button statt nur versteckt im Ort-Tab). Fauna (Critter)
+  // bewusst zusätzlich hier gelistet, obwohl schon unter Begleiter
+  // vorhanden — Mark hat das explizit so gewollt, keine zweite Datenquelle,
+  // nur dieselbe API/Komponenten nochmal eingebunden.
+  { id: "flora-fauna", name: "Flora & Fauna", symbol: "🌿", farbe: "var(--bereich-flora-fauna)" },
   // Wer gerade zusammen unterwegs ist — eigener Bereich, weil es eine
   // eigene Beziehungslogik ist (Mitgliedschaft + Aufenthaltsort + Aktiv-
   // Exklusivität), keine Fraktion mit Zielen/Ressourcen.
@@ -297,6 +304,7 @@ function Dashboard() {
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "shop" && <ShopUebersicht key={ansichtKennung} campaignId={kampagne.id} eigenePersonId={null} istGm />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "flora-fauna" && <FloraFaunaUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "party" && <PartyVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zusatzfertigkeiten" && (

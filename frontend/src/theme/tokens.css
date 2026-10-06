@@ -115,6 +115,9 @@
      statt Organisation. */
   --bereich-shop: var(--p-messing);
   --bereich-begleiter: var(--p-violett-hell);
+  /* Flora & Fauna (06.10.2026): eigener grüner Ton, bewusst nicht --gut
+     (das ist "Bestätigung"-Grün) — pflanzenhaft statt Status-Signal. */
+  --bereich-flora-fauna: var(--p-gruen-tief);
   --bereich-graph: var(--kind-person);
   --bereich-zugang: var(--gut);
   --bereich-kampf: var(--p-rot);
