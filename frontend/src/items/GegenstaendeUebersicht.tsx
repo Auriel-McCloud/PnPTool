@@ -60,7 +60,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [seite, setSeite] = useState(0);
   const [neuName, setNeuName] = useState("");
-  const [neuBesitzer, setNeuBesitzer] = useState("");
+  // Vorlage ist der mit Abstand häufigste Fall beim Anlegen (Mark, 06.10.2026:
+  // "automatisch Vorlage ausgewählt statt 'etwas auswählen'") — die
+  // Spielleitung legt meist erst eine Vorlage an und verteilt sie später,
+  // statt sofort einen Besitzer zuzuweisen.
+  const [neuBesitzer, setNeuBesitzer] = useState(VORLAGE_SENTINEL);
   const [neuTyp, setNeuTyp] = useState<string | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [muelleimerOffen, setMuelleimerOffen] = useState(false);
@@ -170,7 +174,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       await itemsApi.create(campaignId, neuBesitzer, { name: neuName, typ: neuTyp });
     }
     setNeuName("");
-    setNeuBesitzer("");
+    setNeuBesitzer(VORLAGE_SENTINEL);
     setNeuTyp(null);
     setAnlegenOffen(false);
     await refresh();
@@ -228,7 +232,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         onSchliessen={() => {
           setAnlegenOffen(false);
           setNeuName("");
-          setNeuBesitzer("");
+          setNeuBesitzer(VORLAGE_SENTINEL);
           setNeuTyp(null);
         }}
       >
