@@ -9,8 +9,10 @@ import {
 } from "./api";
 import type { Person } from "../entities/api";
 import { entitiesApi } from "../entities/api";
+import { ApiError } from "../api/client";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { useHintergrundSchliessen } from "../shell/hintergrundSchliessen";
+import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
 import "./kontakte-gm.css";
 
 interface Props {
@@ -29,6 +31,15 @@ export function KontakteGm({ campaignId }: Props) {
   const [pcs, setPcs] = useState<Person[]>([]);
   const [npcs, setNpcs] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  // Der Messenger ist ein eigener Kampagnen-Schalter (Einstellungen) — ist
+  // er aus, antwortet /kontakte komplett mit 403 (siehe backend
+  // kontakte/routes.py). Vorher fiel das still unter den Tisch: die
+  // Personenliste für die Auswahl-Picker hängt NICHT am Messenger (eigener,
+  // unabhängiger Request), bekam aber trotzdem nie eine Chance zu laden,
+  // weil beide Requests in einem Promise.all steckten. Jetzt getrennt, mit
+  // sichtbarem Hinweis statt stillem console.error (Mark, 07.10.2026: "wie
+  // funktioniert dieses Menü?" — weil es aussah, als wäre gar nichts da).
+  const [messengerDeaktiviert, setMessengerDeaktiviert] = useState(false);
 
   // Formular für neuen Kontakt
   const [neuPcId, setNeuPcId] = useState("");
@@ -44,19 +55,29 @@ export function KontakteGm({ campaignId }: Props) {
 
   const laden = useCallback(async () => {
     setLoading(true);
+    setMessengerDeaktiviert(false);
+    // Zwei unabhängige Requests, bewusst NICHT in einem Promise.all: die
+    // Personenliste für die Picker braucht den Messenger nicht und soll
+    // auch laden, wenn er aus ist — vorher riss ein 403 auf /kontakte
+    // beide mit.
     try {
-      const [k, personen] = await Promise.all([
-        kontakteApi.uebersicht(campaignId),
-        entitiesApi.listPersonenAlsGm(campaignId),
-      ]);
-      setKontakte(k);
+      const personen = await entitiesApi.listPersonenAlsGm(campaignId);
       setPcs(personen.filter((p) => p.personType === "PC"));
       setNpcs(personen.filter((p) => p.personType === "NPC"));
     } catch (err) {
-      console.error("Kontakte laden fehlgeschlagen:", err);
-    } finally {
-      setLoading(false);
+      console.error("Personenliste laden fehlgeschlagen:", err);
     }
+    try {
+      const k = await kontakteApi.uebersicht(campaignId);
+      setKontakte(k);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setMessengerDeaktiviert(true);
+      } else {
+        console.error("Kontakte laden fehlgeschlagen:", err);
+      }
+    }
+    setLoading(false);
   }, [campaignId]);
 
   useEffect(() => {
@@ -109,27 +130,31 @@ export function KontakteGm({ campaignId }: Props) {
 
   return (
     <div className="kontakte-gm">
+      {messengerDeaktiviert && (
+        <p className="kontakte-gm-messenger-hinweis">
+          ⚠ Der Messenger ist in dieser Kampagne deaktiviert — deshalb bleiben
+          Kontaktliste und Auswahl-Felder leer. Aktivieren in ⚙ Einstellungen
+          → „Messenger".
+        </p>
+      )}
+
       {/* Neuen Kontakt anlegen */}
       <fieldset className="kontakte-gm-neu">
         <legend>Neuen Kontakt anlegen</legend>
         <div className="kontakte-gm-neu-form">
-          <select value={neuPcId} onChange={(e) => setNeuPcId(e.target.value)}>
-            <option value="">PC wählen...</option>
-            {pcs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <PersonSuchAuswahl
+            personen={pcs}
+            wert={neuPcId}
+            onWaehlen={setNeuPcId}
+            platzhalter="PC suchen..."
+          />
           <span className="kontakte-gm-pfeil">→</span>
-          <select value={neuNpcId} onChange={(e) => setNeuNpcId(e.target.value)}>
-            <option value="">NPC wählen...</option>
-            {npcs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <PersonSuchAuswahl
+            personen={npcs}
+            wert={neuNpcId}
+            onWaehlen={setNeuNpcId}
+            platzhalter="NPC suchen..."
+          />
           <select value={neuStufe} onChange={(e) => setNeuStufe(e.target.value as Kontaktstufe)}>
             {STUFEN.map((s) => (
               <option key={s.wert} value={s.wert}>

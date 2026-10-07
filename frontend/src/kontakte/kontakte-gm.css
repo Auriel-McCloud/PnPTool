@@ -45,6 +45,92 @@
   min-width: 140px;
 }
 
+/* Messenger-Hinweis (07.10.2026) — vorher stilles console.error, jetzt
+   sichtbar, damit "warum ist hier alles leer?" sich selbst beantwortet. */
+.kontakte-gm-messenger-hinweis {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--akzent);
+  border-radius: 6px;
+  background: var(--hintergrund-karte);
+  color: var(--text);
+}
+
+/* Durchsuchbare Personen-Auswahl (ersetzt das einfache <select>) */
+.kontakte-gm-suchauswahl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 160px;
+}
+
+.kontakte-gm-suchauswahl-feld {
+  width: 100%;
+  padding: 8px 28px 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hintergrund);
+  color: var(--text);
+}
+
+.kontakte-gm-suchauswahl-loeschen {
+  position: absolute;
+  right: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-leise);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.85em;
+}
+
+.kontakte-gm-suchauswahl-loeschen:hover {
+  color: var(--text);
+}
+
+.kontakte-gm-suchauswahl-liste {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--hintergrund-karte);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.kontakte-gm-suchauswahl-liste li {
+  margin: 0;
+}
+
+.kontakte-gm-suchauswahl-liste button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kontakte-gm-suchauswahl-liste button:hover {
+  background: var(--akzent);
+  color: var(--hintergrund);
+}
+
+.kontakte-gm-suchauswahl-leer {
+  padding: 6px 10px;
+  color: var(--text-leise);
+}
+
 .kontakte-gm-pfeil {
   color: var(--akzent);
   font-size: 1.5em;
