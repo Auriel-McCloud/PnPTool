@@ -189,6 +189,17 @@
   text-transform: uppercase;
 }
 
+/* Welcher KI-Anbieter tatsächlich geantwortet hat (07.10.2026, Fallback
+   Gemini<->Mistral bei Überlastung) — kleines Label über der Chat-Blase. */
+.ki-b-anbieter {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--text-leise);
+  margin-bottom: 3px;
+  opacity: 0.75;
+}
+
 /* ✨ Knopf in der RichTextEditor-Werkzeugleiste — eigener Ton (Violett),
    passend zum Ideenschmiede-KI-Knopf (.is-ki-btn). */
 .rt-ki-btn {
