@@ -1046,13 +1046,15 @@ async def beratung_nachricht(
     an_modell = beratung_repo.fuer_modell(stand["nachrichten"])
     an_modell.append({"rolle": "user", "text": text})
     try:
-        antwort = await generiere_text(an_modell, _beratung_system(kontext), provider=body.provider, campaign_id=campaign_id)
+        antwort, antwort_provider = await generiere_text(
+            an_modell, _beratung_system(kontext), provider=body.provider, campaign_id=campaign_id
+        )
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
 
     await beratung_repo.nachricht_anhaengen(campaign_id, beratung_id, "user", text)
     gespeichert = await beratung_repo.nachricht_anhaengen(
-        campaign_id, beratung_id, "assistant", antwort
+        campaign_id, beratung_id, "assistant", antwort, provider=antwort_provider
     )
     await hooks.ki(
         campaign_id,

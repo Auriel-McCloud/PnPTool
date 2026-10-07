@@ -89,7 +89,8 @@ async def laden(campaign_id: str, beratung_id: str) -> dict | None:
             """
             MATCH (b:KiBeratung {id: $id, campaignId: $campaign_id})-[:ENTHAELT]->(m:KiBeratungNachricht)
             RETURN m.id AS id, m.rolle AS rolle, m.text AS text,
-                   m.zeitpunkt AS zeitpunkt, m.reihenfolge AS reihenfolge
+                   m.zeitpunkt AS zeitpunkt, m.reihenfolge AS reihenfolge,
+                   m.provider AS provider
             ORDER BY m.reihenfolge
             """,
             campaign_id=campaign_id,
@@ -104,8 +105,16 @@ async def nachricht_anhaengen(
     beratung_id: str,
     rolle: str,
     text: str,
+    *,
+    provider: str | None = None,
 ) -> dict | None:
-    """Hängt eine Nachricht an. Setzt den Titel beim ersten User-Turn."""
+    """Hängt eine Nachricht an. Setzt den Titel beim ersten User-Turn.
+
+    `provider` ist nur für `rolle="assistant"` gesetzt (welcher KI-Anbieter
+    tatsächlich geantwortet hat, siehe app/ki/client.py — wichtig seit dem
+    automatischen Gemini<->Mistral-Fallback bei Überlastung, damit die SL im
+    Chat sieht, wer gerade geantwortet hat statt nur zu raten).
+    """
     driver = get_driver()
     jetzt = _jetzt()
     nachricht_id = str(uuid.uuid4())
@@ -130,7 +139,7 @@ async def nachricht_anhaengen(
             """
             MATCH (b:KiBeratung {id: $id, campaignId: $campaign_id})
             CREATE (m:KiBeratungNachricht {
-                id: $mid, rolle: $rolle, text: $text,
+                id: $mid, rolle: $rolle, text: $text, provider: $provider,
                 zeitpunkt: $jetzt, reihenfolge: $reihenfolge
             })
             CREATE (b)-[:ENTHAELT]->(m)
@@ -141,6 +150,7 @@ async def nachricht_anhaengen(
             mid=nachricht_id,
             rolle=rolle,
             text=text,
+            provider=provider,
             jetzt=jetzt,
             reihenfolge=reihenfolge,
             titel=titel,
@@ -149,6 +159,7 @@ async def nachricht_anhaengen(
             "id": nachricht_id,
             "rolle": rolle,
             "text": text,
+            "provider": provider,
             "zeitpunkt": jetzt,
             "reihenfolge": reihenfolge,
         }

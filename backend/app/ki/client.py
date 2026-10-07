@@ -21,6 +21,14 @@ from app.ki import gemini, mistral
 
 _GUELTIGE_PROVIDER = {"gemini", "mistral"}
 
+# Für generiere_text (nur die Beratung): wenn der aufgelöste Provider
+# fehlschlägt (z.B. Gemini dauerhaft überlastet, siehe gemini.py), automatisch
+# den jeweils anderen probieren, bevor der Nutzer eine Fehlermeldung sieht.
+# Mark (07.10.2026): "schreib bitte oben... ob die Nachricht von Gemini oder
+# Mistral kommt" — darum gibt generiere_text zurück, WELCHER Anbieter die
+# Antwort tatsächlich geliefert hat, nicht nur den Text.
+_FALLBACK_PROVIDER = {"gemini": "mistral", "mistral": "gemini"}
+
 
 class KiFehler(Exception):
     """Lesbare Fehlermeldung, unabhängig vom Anbieter dahinter."""
@@ -69,16 +77,32 @@ async def generiere_text(
     *,
     provider: str | None = None,
     campaign_id: str | None = None,
-) -> str:
+) -> tuple[str, str]:
     """Freier Chat-Text (Beratung). Dieselbe Provider-Wahl wie generiere_json,
     zusätzlich mit `provider` überschreibbar — der Beratungs-Dropdown nutzt
-    das für einen Aufruf, ohne die Kampagnen-Einstellung zu ändern."""
+    das für einen Aufruf, ohne die Kampagnen-Einstellung zu ändern.
+
+    Gibt `(antwort_text, tatsaechlicher_provider)` zurück: schlägt der
+    aufgelöste Provider fehl, wird automatisch einmal der andere versucht
+    (z.B. Gemini dauerhaft überlastet -> Mistral übernimmt für diese eine
+    Nachricht) — `tatsaechlicher_provider` sagt dem Frontend ehrlich, wer
+    tatsächlich geantwortet hat, nicht nur wer angefragt wurde.
+    """
     aktiv = _aufloesen(provider, await _kampagnen_provider(campaign_id))
-    try:
-        if aktiv == "mistral":
-            return await mistral.generiere_text(nachrichten, system)
-        if aktiv == "gemini":
-            return await gemini.generiere_text(nachrichten, system)
+    if aktiv not in _GUELTIGE_PROVIDER:
         raise KiFehler(f"Unbekannter KI_PROVIDER '{aktiv}' (erwartet: gemini, mistral)")
-    except (gemini.GeminiFehler, mistral.MistralFehler) as e:
-        raise KiFehler(str(e)) from e
+
+    reihenfolge = [aktiv, _FALLBACK_PROVIDER[aktiv]]
+    fehler_pro_provider: dict[str, str] = {}
+    for kandidat in reihenfolge:
+        try:
+            if kandidat == "mistral":
+                text = await mistral.generiere_text(nachrichten, system)
+            else:
+                text = await gemini.generiere_text(nachrichten, system)
+            return text, kandidat
+        except (gemini.GeminiFehler, mistral.MistralFehler) as e:
+            fehler_pro_provider[kandidat] = str(e)
+
+    teile = " / ".join(f"{k}: {v}" for k, v in fehler_pro_provider.items())
+    raise KiFehler(f"Alle KI-Anbieter nicht erreichbar — {teile}")

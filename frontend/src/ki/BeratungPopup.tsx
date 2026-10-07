@@ -349,6 +349,11 @@ export function BeratungPopup({
                 key={n.id}
                 className={n.rolle === "user" ? "ki-b-blase ki-b-user" : "ki-b-blase ki-b-bot"}
               >
+                {n.rolle === "assistant" && n.provider && (
+                  <div className="ki-b-anbieter">
+                    {n.provider === "gemini" ? "✨ Gemini" : "🌬️ Mistral"}
+                  </div>
+                )}
                 {n.text}
               </div>
             ))}

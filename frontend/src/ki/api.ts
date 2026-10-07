@@ -213,6 +213,10 @@ export interface BeratungNachricht {
   id: string;
   rolle: "user" | "assistant";
   text: string;
+  // Nur bei rolle="assistant" gesetzt: welcher Anbieter tatsächlich
+  // geantwortet hat (07.10.2026, automatischer Gemini<->Mistral-Fallback
+  // bei Überlastung — Mark will im Chat sehen, wer gerade geantwortet hat).
+  provider?: "gemini" | "mistral" | null;
   zeitpunkt: string;
   reihenfolge: number;
 }

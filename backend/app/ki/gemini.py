@@ -8,6 +8,7 @@ liche Meldung zeigen („Kein Key konfiguriert", „Gemini antwortete mit Quatsc
 keine rohe HTTP-Exception.
 """
 
+import asyncio
 import json
 import re
 
@@ -17,6 +18,17 @@ from app.config import settings
 
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
+# Gemini antwortet bei Lastspitzen mit HTTP 503 ("This model is currently
+# experiencing high demand... Please try again later") — laut Google meist
+# ein Spike von wenigen Sekunden, keine echte Dauerstörung. Statt das beim
+# ersten Treffer sofort als Fehler an den Nutzer durchzureichen, versuchen
+# wir hier kurz erneut, bevor wir aufgeben. Timeouts/Verbindungsabbrüche
+# (httpx.TransportError) behandeln wir gleich mit — derselbe Grundgedanke
+# ("kurzer Hänger, kein Dauerfehler"), nur eine andere Fehlerquelle.
+_WIEDERHOLBARE_STATUS = {503}
+_MAX_VERSUCHE = 3  # 1 Erstversuch + 2 Wiederholungen
+_WARTEZEITEN_SEKUNDEN = (2, 4)  # vor Wiederholung 1, vor Wiederholung 2
+
 
 class GeminiFehler(Exception):
     """Lesbare Fehlermeldung für die KI-Anbindung."""
@@ -24,6 +36,34 @@ class GeminiFehler(Exception):
 
 def _url() -> str:
     return f"{_API_BASE}/{settings.gemini_model}:generateContent"
+
+
+async def _post_mit_retry(client: httpx.AsyncClient, body: dict) -> httpx.Response:
+    """POST an Gemini mit kurzen Wiederholungen bei vorübergehender Überlastung.
+
+    Gibt bei einem wiederholbaren Status (503) oder einem Transport-Fehler
+    nach `_MAX_VERSUCHE` Versuchen die letzte Antwort zurück (bzw. wirft den
+    letzten Transport-Fehler als `GeminiFehler` weiter) — der aufrufende Code
+    prüft `resp.status_code` danach unverändert wie zuvor.
+    """
+    letzte_antwort: httpx.Response | None = None
+    for versuch in range(_MAX_VERSUCHE):
+        try:
+            resp = await client.post(
+                _url(), params={"key": settings.gemini_api_key}, json=body
+            )
+        except httpx.TransportError as e:
+            if versuch < _MAX_VERSUCHE - 1:
+                await asyncio.sleep(_WARTEZEITEN_SEKUNDEN[versuch])
+                continue
+            raise GeminiFehler(f"Gemini war nicht erreichbar: {e}") from e
+
+        if resp.status_code not in _WIEDERHOLBARE_STATUS:
+            return resp
+        letzte_antwort = resp
+        if versuch < _MAX_VERSUCHE - 1:
+            await asyncio.sleep(_WARTEZEITEN_SEKUNDEN[versuch])
+    return letzte_antwort
 
 
 async def generiere_json(
@@ -49,11 +89,7 @@ async def generiere_json(
         body["generationConfig"]["responseSchema"] = schema
 
     async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            _url(),
-            params={"key": settings.gemini_api_key},
-            json=body,
-        )
+        resp = await _post_mit_retry(client, body)
 
     if resp.status_code != 200:
         # Gemini liefert Fehler als JSON mit .error.message — die mitgeben,
@@ -108,11 +144,7 @@ async def generiere_text(nachrichten: list[dict], system: str = "") -> str:
         body["systemInstruction"] = {"parts": [{"text": system}]}
 
     async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            _url(),
-            params={"key": settings.gemini_api_key},
-            json=body,
-        )
+        resp = await _post_mit_retry(client, body)
 
     if resp.status_code != 200:
         detail = ""
