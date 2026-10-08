@@ -23,7 +23,9 @@ import { EventDetail } from "../entities/EventDetail";
 import { NPCDetail } from "../entities/NPCDetail";
 import { FraktionDetail } from "../entities/FraktionDetail";
 import { WikiEditor } from "../wiki/WikiEditor";
+import { seiteSpeichern } from "../wiki/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { useAutosave } from "../shell/autosave";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { BeratungPopup } from "../ki/BeratungPopup";
@@ -608,27 +610,14 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         />
       )}
       {wikiDetailFuer && (
-        <Fenster
-          offen={true}
-          titel={`📄 ${wikiDetailFuer.titel}`}
-          kennung="ideenschmiede-wiki"
+        <WikiEntwurfPopup
+          campaignId={campaignId}
+          seite={wikiDetailFuer}
           onSchliessen={() => {
             setWikiDetailFuer(null);
             laden();
           }}
-        >
-          <div className="is-wiki-editor">
-            <WikiEditor
-              campaignId={campaignId}
-              seitenId={wikiDetailFuer.id}
-              inhalt={wikiDetailFuer.inhalt}
-              nurLesen={false}
-              onChange={() => {
-                // Auto-Save wird vom WikiEditor selbst gehandhabt
-              }}
-            />
-          </div>
-        </Fenster>
+        />
       )}
 
       {/* Bestätigungsdialog für Löschen */}
@@ -643,5 +632,48 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Eigene Komponente statt Inline-JSX im Eltern-Popup: `useAutosave` flusht
+ * ausstehende Änderungen beim UNMOUNT (siehe shell/autosave.ts) — stünde der
+ * Hook stattdessen in `IdeenschmiedeAnsicht` selbst, würde Schließen dieses
+ * einen Popups (`wikiDetailFuer` -> null) die Elternkomponente NICHT
+ * unmounten, der Flush bliebe aus, und ein Schließen innerhalb der 1200ms-
+ * Debounce-Pause würde den letzten Tippstoß verwerfen. Gleiches Muster wie
+ * NPCDetail/OrtDetail/etc.: der Hook lebt in der Komponente, die beim
+ * Schließen tatsächlich verschwindet.
+ */
+function WikiEntwurfPopup({
+  campaignId,
+  seite,
+  onSchliessen,
+}: {
+  campaignId: string;
+  seite: { id: string; titel: string; inhalt: string };
+  onSchliessen: () => void;
+}) {
+  const planeSpeichern = useAutosave<string>(async (inhalt) => {
+    await seiteSpeichern(campaignId, seite.id, { inhalt });
+  });
+
+  return (
+    <Fenster
+      offen={true}
+      titel={`📄 ${seite.titel}`}
+      kennung="ideenschmiede-wiki"
+      onSchliessen={onSchliessen}
+    >
+      <div className="is-wiki-editor">
+        <WikiEditor
+          campaignId={campaignId}
+          seitenId={seite.id}
+          inhalt={seite.inhalt}
+          nurLesen={false}
+          onChange={planeSpeichern}
+        />
+      </div>
+    </Fenster>
   );
 }
