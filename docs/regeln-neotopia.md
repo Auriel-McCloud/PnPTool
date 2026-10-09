@@ -24,7 +24,11 @@ Aus `docs/reference/Neotopia.xlsx` herausgezogen (Blätter *Charakterblatt* und 
 
 - **Gesundheit = 6 + Widerstandsfähigkeit** (Mark, 10.09.2026: von 5 auf 6
   erhöht — Widerstandsfähigkeit geht bis 6, das ergibt 12 statt 11 Kästchen
-  als natürliches Maximum, mit Chrom 18 statt 17)
+  als natürliches Maximum, mit Chrom 18 statt 17). Der Grundwert 6 ist pro
+  Person überschreibbar (10.10.2026, `Person.gesundheitGrundwert`) — gedacht
+  für kleine/schwache Critter (z.B. eine Ratte mit Grundwert 1 → 2
+  Lebenspunkte insgesamt statt 7), editierbar im Critter-Fenster, leer
+  lassen = Standard gilt weiter.
 - **Willenskraft = Entschlossenheit + Fassung**
 - **Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator**
 

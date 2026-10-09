@@ -35,7 +35,9 @@ Tooltip-System: Kurztext + "Detail"-Knopf mit Langfassung).
 ## Abgeleitete Werte
 
 - **Gesundheit = 6 + Widerstandsfähigkeit** (siehe „Entwicklung" unten — Excel
-  sagt noch 5)
+  sagt noch 5). Grundwert pro Person überschreibbar (10.10.2026,
+  `Person.gesundheitGrundwert`, siehe Critter-Fenster) — für kleine/schwache
+  Critter wie eine Ratte.
 - **Willenskraft = Entschlossenheit + Fassung** — siehe [[willenskraft]]
 - **Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator** —
   nur während eines laufenden Kampfs auf dem Blatt sichtbar (siehe

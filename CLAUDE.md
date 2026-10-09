@@ -194,6 +194,17 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
 **`docs/wiki/index.md` zuerst lesen**, bevor Regeln oder Architektur-Entscheidungen neu ausgedacht werden — v.a. bei Regelfragen, weil sich NeotopiA laufend weiterentwickelt und das Excel oft nicht mehr der aktuelle Stand ist (siehe `docs/wiki/comparisons/regelwerk-excel-vs-aktuell.md`). Das Wiki hält bereits entschiedene Fragen, offene Baustellen und die Versionsgeschichte fest — Ziel ist, dieselbe Entscheidung nicht zweimal zu treffen (oder zu widersprechen). **Nach jeder inhaltlichen Änderung die passende Wiki-Seite nachziehen**, nicht nur CLAUDE.md.
 
+## Offen: Was Mark selbst testen muss (Stand 10.10.2026)
+
+- **Lebenspunkte-Grundwert pro Critter neu** (siehe „Zuletzt gebaut“
+  10.10.2026): `pytest tests/test_bogen.py` (5 neue Fälle) grün, volle
+  Backend-Suite nur die 8 vorbestehenden (unabhängigen) Fehlschläge,
+  `tsc -b` sauber. **Nie im Browser angeklickt.** Bitte im Critter-Fenster
+  einer Ratte den neuen Zahleneingabe „Lebenspunkte-Grundwert“ auf 1 setzen
+  und im Charakterblatt prüfen, ob die Gesundheit auf 2 sinkt (1 Grundwert +
+  1 Widerstandsfähigkeit), danach das Feld wieder leeren und prüfen, ob sie
+  zum Standard (6 + Widerstandsfähigkeit) zurückspringt.
+
 ## Offen: Was Mark selbst testen muss (Stand 09.10.2026)
 
 - **Vorgefertigte Charaktere + PC↔NPC-Umwandlung neu** (siehe „Zuletzt
@@ -306,6 +317,33 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (10.10.2026 — Lebenspunkte-Grundwert pro Critter):**
+- **Was:** Mark fiel auf, dass Critter (wie PCs/NPCs) standardmäßig 6
+  Lebenspunkte haben — für eine Ratte oder einen Rattenschwarm viel zu
+  viel, die sollen z.B. nur 2 haben (1 Grundwert + 1 durch
+  Widerstandsfähigkeit). Nachträglich in den Optionen änderbar war der
+  Wunsch, kein genereller Baukasten für alle Critter-Typen.
+- **Neues Feld `Person.gesundheitGrundwert`** (analog `willenskraftBonus`):
+  ersetzt für genau DIESE Person den bisher global fixen
+  `GESUNDHEIT_GRUNDWERT = 6` (`traits/bogen.py`). Widerstandsfähigkeit zählt
+  weiterhin unverändert obendrauf — nur der Sockel ist jetzt personenweise
+  überschreibbar. Sentinel `-1` statt `None` als "kein Override": `update_
+  node` filtert `None` beim PATCH generell als "Feld nicht anfassen" heraus
+  (siehe Stolperstein beim Alias-Feld), ein Zurücksetzen auf den Standard
+  wäre mit `None` als Default also unmöglich gewesen.
+- **Frontend:** Zahleneingabe „Lebenspunkte-Grundwert“ im Critter-Fenster
+  (`CritterFenster.tsx`, Abschnitt Verwaltung) — leer lassen = Standard (6),
+  jede Zahl ≥0 überschreibt ihn. Kein eigener Katalog/Dropdown für
+  Critter-Typen, bewusst ein einfaches Zahlenfeld.
+- **Verifiziert:** `pytest tests/test_bogen.py` (5 neue Fälle: globaler
+  Standard ohne Override, Sentinel -1 wie None behandelt, Rattenschwarm-
+  Beispiel ergibt exakt 2, Grundwert 0 bleibt 0 und wird nicht ersetzt),
+  volle Backend-Suite 539 passed (nur die 8 vorbestehenden, unabhängigen
+  Fehlschläge — per `git stash`-Vergleich bestätigt identisch mit und ohne
+  diese Änderung), `tsc -b` sauber. **Nie im Browser angeklickt** — siehe
+  „Offen“ oben.
+- Commit: `914b998`.
 
 **Zuletzt gebaut (09.10.2026 — Vorgefertigte Charaktere als echtes Feld + PC↔NPC-Umwandlung):**
 - **Was:** Mark wollte wissen, wie er einen Charakter als "vorgefertigt"
