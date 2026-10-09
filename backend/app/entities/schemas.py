@@ -115,6 +115,17 @@ class PersonCreate(BaseModel):
     # dem Charakterblatt eines Critters (z.B. "Alter" -> "Wachstumsstadium",
     # Kapital/Schulden ausgeblendet), keine Mechanik, kein neues Datenmodell.
     istPflanzenCritter: bool = False
+    # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
+    # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
+    # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
+    # — ungewollt, weil z.B. ein für später geparkter Story-PC genauso
+    # auftauchte. Jetzt explizites Opt-in: nur PCs mit istVorgefertigt=true
+    # erscheinen in `GET /api/spieler/vorgefertigte`. Nur bei personType=PC
+    # sinnvoll; beim Umwandeln zu NPC (person_zu_npc) wird es automatisch
+    # zurückgesetzt. Teaser-Text für die Auswahlkarte ist bewusst KEIN neues
+    # Feld — Mark: das bestehende `konzept` dient als Teaser, der Spieler passt
+    # es nach der Wahl selbst an.
+    istVorgefertigt: bool = False
     # Nur relevant bei istHaendler=true: auf welche Gegenstandstypen sich der
     # AUTOMATISCHE Shop-Bestand (Vorlagen mit automatischImShop=true) dieses
     # Händlers beschränkt. Leer = Gemischtwarenladen, zeigt alle passenden
@@ -190,6 +201,7 @@ class PersonUpdate(BaseModel):
     istKI: bool | None = None
     istHaendler: bool | None = None
     istPflanzenCritter: bool | None = None
+    istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     shopHintergrundUrl: str | None = None
@@ -240,6 +252,7 @@ class PersonResponse(BaseModel):
     istKI: bool = False
     istHaendler: bool = False
     istPflanzenCritter: bool = False
+    istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"
     shopHintergrundUrl: str = ""

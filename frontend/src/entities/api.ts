@@ -64,6 +64,10 @@ export interface Person extends VisibilityFields {
    * Charakterblatt (z.B. "Alter" -> "Wachstumsstadium", Kapital/Schulden
    * ausgeblendet), keine Mechanik. Siehe traits/Charakterblatt.tsx. */
   istPflanzenCritter?: boolean;
+  /** Vorgefertigte Charaktere (08.10.2026): erscheint im Ersteinstiegs-
+   * Fenster der Spieler als wählbarer PC, solange noch niemand ihn spielt.
+   * Explizites Opt-in der SL (vorher implizit "jeder unclaimed PC"). */
+  istVorgefertigt?: boolean;
 }
 
 export interface Ort extends VisibilityFields {
@@ -260,6 +264,11 @@ export const entitiesApi = {
   /** Erhöht die Extra-EP eines PCs (nur positiv, irreversibel). */
   extraEpErhoehen: (cid: string, personId: string, betrag: number) =>
     api.post<Person>(`${base(cid)}/personen/${personId}/extra-ep`, { betrag }),
+  /** Wandelt einen PC/NPC in-place in den jeweils anderen Typ um — der
+   * ganze Baustand (Inventar, Bogen, Beziehungen) bleibt erhalten, siehe
+   * app/entities/repository.py::person_zu_npc/person_zu_pc. */
+  personZuNpc: (cid: string, personId: string) => api.post<Person>(`${base(cid)}/personen/${personId}/zu-npc`, {}),
+  personZuPc: (cid: string, personId: string) => api.post<Person>(`${base(cid)}/personen/${personId}/zu-pc`, {}),
 
   /** Critter — Tiere/Haustiere als echte NPCs (`istCritter: true`), eigene
    * schlanke Liste für die Begleiter-Übersicht statt des vollen Bogens. */

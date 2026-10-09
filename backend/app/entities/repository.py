@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -110,6 +110,10 @@ _BOGEN_DEFAULTS: dict = {
     # Feldbeschriftungen auf dem Blatt, keine Mechanik. Bestandscharaktere
     # kennen das Feld noch nicht (Stolperstein 9).
     "istPflanzenCritter": False,
+    # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
+    # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
+    # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
+    "istVorgefertigt": False,
     # Gewächs: Bestandsdaten (es gibt noch keine) kennen diese Felder nicht;
     # Defaults hier als Netz, falls je ein Hand-Cypher-Pfad sie vergisst.
     "giftig": False,
@@ -305,6 +309,57 @@ async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
         record = await result.single()
         return dict(record)["deleted"] > 0
+
+
+async def person_zu_npc(campaign_id: str, person_id: str) -> dict | None:
+    """Wandelt einen PC in-place in einen NPC um (08.10.2026, Marks Wunsch).
+
+    PC und NPC sind derselbe `Person`-Knoten, `personType` nur ein Filterfeld
+    — der ganze Baustand (Inventar, Charakterbogen, Beziehungen, Bilder)
+    bleibt unverändert erhalten, es kippt nur das Label. `istVorgefertigt`
+    wird zurückgesetzt (ein NPC taucht nicht mehr in der Ersteinstiegs-
+    Auswahl auf). Eine bestehende SPIELT-Kante eines Spielers wird gelöst —
+    ein Spieler-Account verliert dadurch seine Zuordnung und sieht beim
+    nächsten Laden wieder SpielerEinstieg.tsx (dasselbe Bild wie ein frischer
+    Account ohne Charakter).
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (n:Person {{id: $person_id, campaignId: $campaign_id, personType: 'PC'}})
+        OPTIONAL MATCH (:Spieler)-[r:SPIELT]->(n)
+        DELETE r
+        WITH n
+        SET n.personType = 'NPC', n.istVorgefertigt = false
+        RETURN {_return_clause('n', PERSON_FIELDS)}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return _mit_defaults(record) if record else None
+
+
+async def person_zu_pc(campaign_id: str, person_id: str) -> dict | None:
+    """Wandelt einen NPC in-place in einen PC um — Gegenrichtung zu
+    `person_zu_npc`. Verliert dabei NPC-spezifische Rollen, die auf einem PC
+    keinen Sinn ergeben bzw. das Charakterblatt verfälschen würden: Händler-
+    Status (Mark: "ein NPC der mal Händler war seinen Händler Status
+    verliert"), Critter/KI (ersetzen sonst die Körperlich-Spalte durch
+    AttributMatrix, siehe traits/bogen.py::sichtbare_kategorien). Sortiment/
+    Bestellungen eines ehemaligen Händlers bleiben wie beim normalen
+    "Kein Händler mehr"-Knopf erhalten (nur das Flag kippt, siehe
+    HaendlerEinstellungenFenster.tsx), falls er später wieder NPC wird.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (n:Person {{id: $person_id, campaignId: $campaign_id, personType: 'NPC'}})
+        SET n.personType = 'PC', n.istHaendler = false, n.istCritter = false,
+            n.istKI = false, n.istPflanzenCritter = false
+        RETURN {_return_clause('n', PERSON_FIELDS)}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return _mit_defaults(record) if record else None
 
 
 async def list_critter(campaign_id: str) -> list[dict]:

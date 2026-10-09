@@ -182,6 +182,30 @@ async def delete_person(campaign_id: str, node_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
 
+@router.post("/personen/{node_id}/zu-npc", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
+async def person_zu_npc(campaign_id: str, node_id: str):
+    """Wandelt einen PC in-place in einen NPC um (siehe repository.person_zu_npc).
+
+    Typischer Anlass: ein vorgefertigter Charakter wurde von keinem Spieler
+    gewählt, ist aber story-relevant genug, um als NPC weiterzuleben.
+    """
+    node = await repository.person_zu_npc(campaign_id, node_id)
+    if node is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "PC nicht gefunden")
+    await hooks.charakterentwicklung(campaign_id, person_id=node_id, art="ZU_NPC_GEMACHT", alt="PC", neu="NPC")
+    return node
+
+
+@router.post("/personen/{node_id}/zu-pc", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
+async def person_zu_pc(campaign_id: str, node_id: str):
+    """Wandelt einen NPC in-place in einen PC um (siehe repository.person_zu_pc)."""
+    node = await repository.person_zu_pc(campaign_id, node_id)
+    if node is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "NPC nicht gefunden")
+    await hooks.charakterentwicklung(campaign_id, person_id=node_id, art="ZU_PC_GEMACHT", alt="NPC", neu="PC")
+    return node
+
+
 @router.post("/personen/{node_id}/extra-ep", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
 async def extra_ep_erhoehen(campaign_id: str, node_id: str, body: dict):
     """Erhöht die Extra-EP eines PCs um einen Betrag (nur positiv, irreversibel).

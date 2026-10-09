@@ -3,6 +3,7 @@ import type { EntityKind, Person, Verbindung } from "./api";
 import { anzeigeName } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { PCInventar } from "./PCInventar";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
@@ -66,6 +67,8 @@ export function NPCDetail({
   }, [person]);
   const [haendlerEinstellungenOffen, setHaendlerEinstellungenOffen] = useState(false);
   const [sortimentOffen, setSortimentOffen] = useState(false);
+  const [zuPcOffen, setZuPcOffen] = useState(false);
+  const [zuPcLaeuft, setZuPcLaeuft] = useState(false);
   // Shop hängt seit 04.10. am ORT, nicht an der Person (siehe
   // haendler/repository.py) — "haendlerId" für HaendlerBearbeiten/-api ist
   // also die Ort-id des Ladens, den diese Person betreibt, NICHT die
@@ -83,6 +86,18 @@ export function NPCDetail({
     setSortimentOffen(true);
   }
 
+  async function zuPcMachen() {
+    setZuPcLaeuft(true);
+    try {
+      await entitiesApi.personZuPc(campaignId, person.id);
+      setZuPcOffen(false);
+      onGeaendert();
+      onSchliessen();
+    } finally {
+      setZuPcLaeuft(false);
+    }
+  }
+
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
   // Autosave still — kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
@@ -94,6 +109,7 @@ export function NPCDetail({
   });
 
   return (
+    <>
     <Fenster
       offen
       breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
@@ -201,6 +217,9 @@ export function NPCDetail({
                       🛒 Zum Händler machen
                     </button>
                   )}
+                  <button type="button" onClick={() => setZuPcOffen(true)}>
+                    ⇄ Zu PC machen
+                  </button>
                 </div>
               </div>
             </div>
@@ -293,5 +312,16 @@ export function NPCDetail({
         />
       )}
     </Fenster>
+
+      {zuPcOffen && (
+        <Bestaetigung
+          titel={`${person.name} zum PC machen?`}
+          text="Wird in-place zum PC — Inventar, Charakterbogen und Beziehungen bleiben vollständig erhalten. Händler-Status, Critter- und KI-Markierung gehen dabei verloren (ergeben an einem PC keinen Sinn). Kann jederzeit im PC-Detail wieder zu einem NPC gemacht werden."
+          jaText={zuPcLaeuft ? "..." : "Zu PC machen"}
+          onJa={zuPcMachen}
+          onNein={() => setZuPcOffen(false)}
+        />
+      )}
+    </>
   );
 }

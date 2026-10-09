@@ -196,7 +196,12 @@ class VerhandlungsAusgangResponse(VerhandlungsAusgangCreate):
 
 # --- CharakterEntwicklung ------------------------------------------------------
 
-CharakterEntwicklungArt = Literal["STEIGERUNG", "WILLENSKRAFT", "ERFAHRUNG_VERGEBEN", "RASSE_GEAENDERT"]
+CharakterEntwicklungArt = Literal[
+    "STEIGERUNG", "WILLENSKRAFT", "ERFAHRUNG_VERGEBEN", "RASSE_GEAENDERT",
+    # Vorgefertigte Charaktere (08.10.2026): Umwandlung PC<->NPC, siehe
+    # app/entities/repository.py::person_zu_npc/person_zu_pc.
+    "ZU_NPC_GEMACHT", "ZU_PC_GEMACHT",
+]
 
 
 class CharakterEntwicklungCreate(BasisFelder):

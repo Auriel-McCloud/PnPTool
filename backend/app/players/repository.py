@@ -165,15 +165,20 @@ async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
     """Vorgebaute PCs dieser Kampagne, die noch niemandem zugeordnet sind.
 
     Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx): "vorgefertigter
-    Charakter" ist bewusst kein eigenes Feld, sondern schlicht ein PC ohne
-    SPIELT-Kante — Mark: "das macht am meisten Sinn". Nur abgeschlossene,
-    nicht-Entwurfs-Charaktere: was hier erscheint, muss sofort spielbar sein.
+    Charakter" ist seit 08.10.2026 ein echtes Feld (`istVorgefertigt`,
+    bewusstes Opt-in der SL über einen Knopf im Charakterblatt) — vorher
+    galt jeder abgeschlossene PC ohne Spieler automatisch als vorgefertigt,
+    was auch für Story-geparkte PCs zuschlug, die gar nicht zur Wahl stehen
+    sollten. `konzept` dient als Teaser-Text in der Auswahlkarte (Mark:
+    kein zusätzliches Feld nötig, der Spieler passt es nach der Wahl selbst
+    an). Nur abgeschlossene, nicht-Entwurfs-Charaktere: was hier erscheint,
+    muss sofort spielbar sein.
     """
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
-            MATCH (p:Person {campaignId: $campaign_id, personType: 'PC'})
+            MATCH (p:Person {campaignId: $campaign_id, personType: 'PC', istVorgefertigt: true})
             WHERE p.erstellungAbgeschlossen = true
               AND coalesce(p.istEntwurf, false) = false
               AND NOT EXISTS { MATCH (:Spieler)-[:SPIELT]->(p) }

@@ -194,6 +194,19 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
 **`docs/wiki/index.md` zuerst lesen**, bevor Regeln oder Architektur-Entscheidungen neu ausgedacht werden — v.a. bei Regelfragen, weil sich NeotopiA laufend weiterentwickelt und das Excel oft nicht mehr der aktuelle Stand ist (siehe `docs/wiki/comparisons/regelwerk-excel-vs-aktuell.md`). Das Wiki hält bereits entschiedene Fragen, offene Baustellen und die Versionsgeschichte fest — Ziel ist, dieselbe Entscheidung nicht zweimal zu treffen (oder zu widersprechen). **Nach jeder inhaltlichen Änderung die passende Wiki-Seite nachziehen**, nicht nur CLAUDE.md.
 
+## Offen: Was Mark selbst testen muss (Stand 09.10.2026)
+
+- **Vorgefertigte Charaktere + PC↔NPC-Umwandlung neu** (siehe „Zuletzt
+  gebaut" 09.10.2026): `pytest` (511/511 der von dieser Änderung berührten
+  Tests grün, echter E2E-Test gegen laufende Neo4j für Filter + beide
+  Umwandlungsrichtungen + Migration), `tsc -b` sauber. **Nie im Browser
+  angeklickt.** Bitte am Spieltisch: im PC-Detail-Popup eines vorgebauten
+  Charakters die neue Checkbox „Vorgefertigter Charakter" setzen, prüfen ob
+  er danach (und nur dann) im Ersteinstiegs-Fenster eines neuen
+  Spieler-Accounts auftaucht; „⇄ Zu NPC machen" an einem PC und „⇄ Zu PC
+  machen" an einem NPC ausprobieren, dabei gegenprüfen ob Inventar/
+  Charakterbogen/Beziehungen wirklich erhalten bleiben.
+
 ## Was ist PnPTool
 
 WebApp für Mark's Pen-and-Paper-Rollenspielrunden, Homebrew-System **"NeotopiA"** (WoD-artige Attribute, Shadowrun-Cyberware/Rigging, Mage-Sphären, Cyberpunk-Setting). Referenz: `docs/reference/Neotopia.xlsx`.
@@ -293,6 +306,51 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (09.10.2026 — Vorgefertigte Charaktere als echtes Feld + PC↔NPC-Umwandlung):**
+- **Was:** Mark wollte wissen, wie er einen Charakter als "vorgefertigt"
+  markiert (bisher implizit: jeder abgeschlossene PC ohne Spieler), und kam
+  dabei auf den Wunsch, nicht gewählte Vorgefertigte bei Bedarf zu einem
+  NPC machen zu können (und umgekehrt) — ohne den Baustand zu verlieren.
+  Teaser-Text für die Spieler-Auswahlkarte ist bewusst **kein** neues Feld:
+  das bestehende `konzept` übernimmt diese Rolle, der Spieler passt es nach
+  der Wahl selbst an (volle `description` geht ohnehin nie an die
+  Auswahl-Route — Geheimnisse waren schon vorher sicher).
+- **Neues Feld `Person.istVorgefertigt`** (analog `istHaendler`/`istKI`):
+  SL setzt es per Checkbox im PC-Detail-Schnellzugriff. `GET
+  /api/spieler/vorgefertigte` filtert jetzt zusätzlich darauf statt wie
+  bisher automatisch jeden unclaimed PC zu zeigen. Migration
+  `011_istvorgefertigt.cypher` markiert beim ersten Deploy alle
+  Bestands-PCs, die die alte Regel erfüllt hätten, damit niemand aus der
+  Auswahl verschwindet.
+- **PC↔NPC-Umwandlung in-place** (`entities/repository.py::person_zu_npc`/
+  `person_zu_pc`, neue Routen `POST .../personen/{id}/zu-npc`/`zu-pc`):
+  PC und NPC sind derselbe `Person`-Knoten, `personType` kippt nur ein
+  Filterfeld — Inventar, Charakterbogen, Beziehungen, Bilder bleiben
+  unangetastet. PC→NPC setzt `istVorgefertigt=false` zurück und löst eine
+  bestehende `SPIELT`-Kante (Spieler landet wieder im Ersteinstieg).
+  NPC→PC verliert `istHaendler`/`istCritter`/`istKI`/`istPflanzenCritter`
+  (ergeben an einem PC keinen Sinn; Mark: "ein NPC der mal Händler war
+  seinen Händler Status verliert" — Sortiment bleibt dabei in der DB,
+  nur das Flag kippt). Beide loggen `CharakterEntwicklung`
+  (`ZU_NPC_GEMACHT`/`ZU_PC_GEMACHT`).
+- **Frontend:** Checkbox + "⇄ Zu NPC machen" im PC-Detail-Schnellzugriff,
+  "⇄ Zu PC machen" im NPC-Detail — je mit Commlink-`Bestaetigung`-Dialog
+  (Marks Standardregel für destruktive/folgenreiche Aktionen).
+- **Verifiziert:** echter E2E-Test gegen laufende Neo4j — Filter zeigt nur
+  `istVorgefertigt=true`, PC→NPC setzt Flag zurück + Baustand bleibt
+  (`konzept` als Stichprobe), NPC→PC in Gegenrichtung, ehemaliger Händler
+  verliert `istHaendler`, falscher Ausgangstyp liefert `None` statt Crash;
+  Migration separat getestet (Bestandsdaten werden markiert, idempotent,
+  überschreibt keinen manuell gesetzten Wert erneut). Backend-Suite: die
+  von dieser Änderung berührten 511 Tests grün (`tsc -b` sauber).
+  **Hinweis:** beim Testlauf liefen parallel 6 unabhängige Fehlschläge aus
+  einer zeitgleich laufenden zweiten Session (Umbau `zeigeInGraph` →
+  `storyRelevant`, Migrationen 009/010 — nicht von dieser Änderung
+  verursacht, per `git diff` auf die dortigen Dateien bestätigt). Eigene
+  Migration von `009` auf `011_istvorgefertigt.cypher` umbenannt, weil
+  `009`/`010` von der Parallel-Session zwischenzeitlich belegt wurden.
+  **Nie im Browser angeklickt** — siehe „Offen“ oben.
 
 **Zuletzt gebaut (04.–08.10.2026 — Urlaubs-Woche mit Chibi Neko auf bebop):**
 - **Was:** 45 Commits auf `main`, HEAD `be2a6ff`. Gebaut und live geschaltet von Chibi Neko

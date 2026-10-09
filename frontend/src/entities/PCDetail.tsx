@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EntityKind, Person, Verbindung } from "./api";
 import { anzeigeName } from "./api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { PCInventar } from "./PCInventar";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
@@ -54,6 +55,34 @@ export function PCDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
 
+  // Vorgefertigt-Checkbox + Zu-NPC-Knopf sofort nach dem Umschalten zeigen,
+  // ohne auf den nächsten Reload der Liste zu warten (dasselbe Muster wie
+  // NPCDetail::aktuellePerson).
+  const [aktuellePerson, setAktuellePerson] = useState(person);
+  useEffect(() => {
+    setAktuellePerson(person);
+  }, [person]);
+  const [zuNpcOffen, setZuNpcOffen] = useState(false);
+  const [zuNpcLaeuft, setZuNpcLaeuft] = useState(false);
+
+  async function vorgefertigtUmschalten(wert: boolean) {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { istVorgefertigt: wert });
+    setAktuellePerson(neu);
+    onGeaendert();
+  }
+
+  async function zuNpcMachen() {
+    setZuNpcLaeuft(true);
+    try {
+      await entitiesApi.personZuNpc(campaignId, person.id);
+      setZuNpcOffen(false);
+      onGeaendert();
+      onSchliessen();
+    } finally {
+      setZuNpcLaeuft(false);
+    }
+  }
+
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
   // Autosave still — kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
@@ -65,6 +94,7 @@ export function PCDetail({
   });
 
   return (
+    <>
     <Fenster
       offen
       breit={unteransicht === "blatt" || unteransicht === "gegenstaende" || unteransicht === "augments" || unteransicht === "beziehungen"}
@@ -158,6 +188,17 @@ export function PCDetail({
                   <button type="button" onClick={() => setUnteransicht("notizen")}>
                     🗒️ Notizen bearbeiten
                   </button>
+                  <label className="pcd-vorgefertigt-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={aktuellePerson.istVorgefertigt ?? false}
+                      onChange={(e) => vorgefertigtUmschalten(e.target.checked)}
+                    />
+                    Vorgefertigter Charakter (im Ersteinstieg für Spieler wählbar)
+                  </label>
+                  <button type="button" onClick={() => setZuNpcOffen(true)}>
+                    ⇄ Zu NPC machen
+                  </button>
                 </div>
               </div>
             </div>
@@ -227,5 +268,20 @@ export function PCDetail({
         </div>
       </div>
     </Fenster>
+
+      {zuNpcOffen && (
+        <Bestaetigung
+          titel={`${person.name} zum NPC machen?`}
+          text={
+            spielerName
+              ? `${spielerName} spielt diesen Charakter gerade — die Zuordnung wird gelöst, ${spielerName} sieht danach wieder den Ersteinstieg. Inventar, Charakterbogen und Beziehungen bleiben vollständig erhalten.`
+              : `Wird in-place zum NPC — Inventar, Charakterbogen und Beziehungen bleiben vollständig erhalten. Kann jederzeit im NPC-Detail wieder zu einem PC gemacht werden.`
+          }
+          jaText={zuNpcLaeuft ? "..." : "Zu NPC machen"}
+          onJa={zuNpcMachen}
+          onNein={() => setZuNpcOffen(false)}
+        />
+      )}
+    </>
   );
 }

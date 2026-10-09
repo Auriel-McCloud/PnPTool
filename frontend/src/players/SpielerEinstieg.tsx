@@ -18,9 +18,9 @@ const WEG_TITEL: Record<string, string> = {
  * ans Charakterblatt, sobald `erstellungAbgeschlossen=false` ist, siehe
  * `Charakterblatt.tsx`) — oder einen vorgefertigten PC fix übernehmen.
  *
- * "Vorgefertigt" ist bewusst kein eigenes Datenfeld: ein PC ohne
- * zugeordneten Spieler *ist* schon ein vorgefertigter Charakter — das war
- * Marks eigener Gedanke ("das macht am meisten Sinn?") und stimmt. Die
+ * "Vorgefertigt" ist seit 08.10.2026 ein echtes Feld (`istVorgefertigt`,
+ * von der SL bewusst im PC-Detail-Popup gesetzt) — vorher galt jeder
+ * abgeschlossene PC ohne Spieler automatisch als vorgefertigt. Die
  * Zuweisung läuft serverseitig atomar (`repository.charakter_waehlen`),
  * damit zwei Spieler nicht denselben Charakter ergattern können.
  */
