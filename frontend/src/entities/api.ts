@@ -64,6 +64,11 @@ export interface Person extends VisibilityFields {
    * Charakterblatt (z.B. "Alter" -> "Wachstumsstadium", Kapital/Schulden
    * ausgeblendet), keine Mechanik. Siehe traits/Charakterblatt.tsx. */
   istPflanzenCritter?: boolean;
+  /** Lebenspunkte-Grundwert (10.10.2026): ersetzt für diese Person den
+   * globalen Gesundheits-Grundwert (sonst 6) — z.B. eine Ratte mit
+   * Grundwert 1 statt 6. -1 (oder fehlend) = globaler Standardwert gilt.
+   * Siehe traits/bogen.py::gesundheit_max, editierbar in CritterFenster.tsx. */
+  gesundheitGrundwert?: number;
   /** Vorgefertigte Charaktere (08.10.2026): erscheint im Ersteinstiegs-
    * Fenster der Spieler als wählbarer PC, solange noch niemand ihn spielt.
    * Explizites Opt-in der SL (vorher implizit "jeder unclaimed PC"). */

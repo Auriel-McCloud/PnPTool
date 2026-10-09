@@ -119,10 +119,13 @@ class PersonCreate(BaseModel):
     # soll nicht die vollen 6 Standard-Lebenspunkte haben — eher 2 insgesamt,
     # 1 Grundwert + 1 durch Widerstandsfähigkeit). Ersetzt für DIESE Person
     # den globalen `GESUNDHEIT_GRUNDWERT` (traits/bogen.py), Widerstands-
-    # fähigkeit zählt unverändert obendrauf. None = globaler Standardwert
-    # gilt (Normalfall für praktisch jeden PC/NPC); nur explizit gesetzt bei
-    # kleinen/schwachen Critters. Editierbar im Critter-Fenster.
-    gesundheitGrundwert: int | None = None
+    # fähigkeit zählt unverändert obendrauf. -1 = kein Override, globaler
+    # Standardwert gilt (Normalfall für praktisch jeden PC/NPC) — bewusst
+    # kein `None`-Default: `update_node` filtert `None` beim PATCH als
+    # "Feld nicht anfassen" heraus (siehe PersonUpdate unten), ein
+    # Zurücksetzen auf den Standard müsste dann unmöglich sein. Editierbar
+    # im Critter-Fenster.
+    gesundheitGrundwert: int = -1
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -209,6 +212,8 @@ class PersonUpdate(BaseModel):
     istKI: bool | None = None
     istHaendler: bool | None = None
     istPflanzenCritter: bool | None = None
+    # -1 setzt explizit zurück auf den globalen Standardwert; None (fehlt im
+    # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
     gesundheitGrundwert: int | None = None
     istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
@@ -261,7 +266,8 @@ class PersonResponse(BaseModel):
     istKI: bool = False
     istHaendler: bool = False
     istPflanzenCritter: bool = False
-    gesundheitGrundwert: int | None = None
+    # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
+    gesundheitGrundwert: int = -1
     istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"

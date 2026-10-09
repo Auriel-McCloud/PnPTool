@@ -33,6 +33,11 @@ class TestAbgeleiteteWerte:
         runde 12, wegen der der Grundwert von 5 auf 6 gehoben wurde."""
         assert gesundheit_max({"Widerstandsfähigkeit": 6}) == 12
 
+    def test_personenspezifischer_grundwert_ueberschreibt_global(self):
+        """Mark, 10.10.2026: eine Ratte/ein Rattenschwarm soll nicht die
+        vollen 6 Standard-LP haben, sondern 2 (1 Grundwert + 1 Widerstand)."""
+        assert gesundheit_max({"Widerstandsfähigkeit": 1}, grundwert=1) == 2
+
     def test_willenskraft_ist_entschlossenheit_plus_fassung(self):
         assert willenskraft_max({"Entschlossenheit": 3, "Fassung": 2}) == 5
 
@@ -168,3 +173,32 @@ class TestPflanzenVokabular:
     def test_wird_aus_der_person_uebernommen(self):
         u = bogen_uebersicht({"istPflanzenCritter": True}, {})
         assert u["istPflanzenCritter"] is True
+
+
+class TestLebenspunkteGrundwert:
+    """Personenspezifischer Grundwert (10.10.2026) — siehe Marks Ratten-Beispiel."""
+
+    def test_ohne_override_gilt_der_globale_standard(self):
+        u = bogen_uebersicht({}, {"Widerstandsfähigkeit": 2})
+        assert u["gesundheitGrundwert"] == 6
+        assert u["gesundheitMax"] == 8
+
+    def test_sentinel_minus_eins_gilt_als_kein_override(self):
+        """-1 kommt aus entities/repository.py::_BOGEN_DEFAULTS für
+        Bestandsdaten ohne das Feld — muss wie None behandelt werden."""
+        u = bogen_uebersicht({"gesundheitGrundwert": -1}, {"Widerstandsfähigkeit": 2})
+        assert u["gesundheitGrundwert"] == 6
+        assert u["gesundheitMax"] == 8
+
+    def test_rattenschwarm_hat_nur_zwei_lebenspunkte(self):
+        u = bogen_uebersicht(
+            {"gesundheitGrundwert": 1},
+            {"Widerstandsfähigkeit": 1},
+        )
+        assert u["gesundheitGrundwert"] == 1
+        assert u["gesundheitMax"] == 2
+
+    def test_grundwert_null_ist_gueltig_und_wird_nicht_ersetzt(self):
+        u = bogen_uebersicht({"gesundheitGrundwert": 0}, {"Widerstandsfähigkeit": 1})
+        assert u["gesundheitGrundwert"] == 0
+        assert u["gesundheitMax"] == 1

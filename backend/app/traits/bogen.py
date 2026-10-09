@@ -27,9 +27,18 @@ def _wert(werte: dict[str, int], name: str) -> int:
     return werte.get(name, 0)
 
 
-def gesundheit_max(werte: dict[str, int]) -> int:
-    """Gesundheit = 6 + Widerstandsfähigkeit."""
-    return GESUNDHEIT_GRUNDWERT + _wert(werte, "Widerstandsfähigkeit")
+def gesundheit_max(werte: dict[str, int], grundwert: int = GESUNDHEIT_GRUNDWERT) -> int:
+    """Gesundheit = Grundwert + Widerstandsfähigkeit.
+
+    **Personenspezifischer Grundwert** (10.10.2026, Mark: eine Ratte oder ein
+    Rattenschwarm dürfen nicht die vollen 6 Standard-Lebenspunkte haben, eher
+    2 insgesamt — 1 Grundwert + 1 durch Widerstandsfähigkeit). Der globale
+    `GESUNDHEIT_GRUNDWERT` bleibt der Normalfall für PCs/NPCs; einzelne
+    Personen (v.a. kleine Critter) können ihn über `Person.gesundheitGrundwert`
+    überschreiben (siehe `entities/schemas.py`, editierbar in
+    `CritterFenster.tsx`). Widerstandsfähigkeit zählt in jedem Fall obendrauf.
+    """
+    return grundwert + _wert(werte, "Widerstandsfähigkeit")
 
 
 def willenskraft_max(werte: dict[str, int], bonus: int = 0, chrom_verlust: int = 0) -> int:
@@ -106,7 +115,14 @@ def bogen_uebersicht(
 ) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
-    g_max = gesundheit_max(werte)
+    # -1 (Sentinel aus entities/repository.py::_BOGEN_DEFAULTS, "kein
+    # Override") UND None (Bestandsdaten, die auch durch _mit_defaults noch
+    # nicht liefen, z.B. in Tests mit rohen dicts) heissen "Normalfall" — 0
+    # ist dagegen ein gültiger, bewusst gewählter Grundwert und darf nicht
+    # durch den Fallback ersetzt werden.
+    roh_grundwert = person.get("gesundheitGrundwert")
+    g_grundwert = GESUNDHEIT_GRUNDWERT if roh_grundwert is None or roh_grundwert == -1 else int(roh_grundwert)
+    g_max = gesundheit_max(werte, g_grundwert)
     w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0), chrom_verlust)
     i_max = ice_max(weg, werte, commlink_cyberwall)
     # Gesamt-EP = individuelle Erfahrung + Kampagnen-EP + Extra-EP
@@ -134,6 +150,9 @@ def bogen_uebersicht(
         # siehe schemas.py. Bestandscharaktere kennen das Feld noch nicht.
         "istPflanzenCritter": bool(person.get("istPflanzenCritter")),
         "rasse": person.get("rasse") or "",
+        # Lebenspunkte-Grundwert (10.10.2026): ausgewiesen, damit das Blatt
+        # bei Bedarf anzeigen kann, dass hier NICHT der Standardwert gilt.
+        "gesundheitGrundwert": g_grundwert,
         "gesundheitMax": g_max,
         "schadenAggraviert": aggraviert,
         "schadenSchwer": schwer,

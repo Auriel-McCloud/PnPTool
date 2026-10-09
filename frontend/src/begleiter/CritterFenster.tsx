@@ -213,6 +213,29 @@ export function CritterFenster({
               </label>
             </div>
 
+            <div className="bg-zeile" style={{ marginTop: 10, flexDirection: "column", alignItems: "stretch", gap: 4 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                Lebenspunkte-Grundwert
+                <input
+                  type="number"
+                  min={0}
+                  style={{ width: 60 }}
+                  placeholder="6"
+                  value={person.gesundheitGrundwert == null || person.gesundheitGrundwert < 0 ? "" : person.gesundheitGrundwert}
+                  onChange={async (e) => {
+                    const roh = e.target.value.trim();
+                    const neu = await entitiesApi.updatePerson(campaignId, critterId, {
+                      gesundheitGrundwert: roh === "" ? -1 : Math.max(0, Number(roh)),
+                    });
+                    setPerson(neu);
+                  }}
+                />
+                <span style={{ fontSize: 11, color: "var(--text-leise)" }}>
+                  leer = Standard (6) · dazu kommt Widerstandsfähigkeit, z.B. Ratte: 1 + 1 = 2
+                </span>
+              </label>
+            </div>
+
             <div className="bg-zeile" style={{ marginTop: 10 }}>
               <button
                 type="button"

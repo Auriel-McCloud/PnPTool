@@ -9,6 +9,10 @@ export interface BogenUebersicht {
    * Steuert nur, welche Begriffe das Blatt zeigt (siehe magieBegriffe.ts). */
   magieFlavor: "MAGIER" | "HAERETIKER";
   rasse: string;
+  /** Lebenspunkte-Grundwert, der tatsächlich gilt (Standard oder
+   * personenspezifisch überschrieben) — siehe entities/api.ts::Person.
+   * gesundheitGrundwert. */
+  gesundheitGrundwert: number;
   gesundheitMax: number;
   /** Summe aller Arten — für die Kurzanzeige. */
   gesundheitSchaden: number;

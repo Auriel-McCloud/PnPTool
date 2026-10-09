@@ -111,9 +111,10 @@ _BOGEN_DEFAULTS: dict = {
     # kennen das Feld noch nicht (Stolperstein 9).
     "istPflanzenCritter": False,
     # Lebenspunkte-Grundwert (10.10.2026): Bestandscharaktere kennen das Feld
-    # noch nicht — None heisst "globaler Standardwert gilt" (siehe
-    # traits/bogen.py::bogen_uebersicht), ist also selbst schon der richtige
-    # Fallback und steht deshalb NICHT in dieser Liste.
+    # noch nicht (liefert None aus Neo4j) — -1 ist der Sentinel für "kein
+    # Override, globaler Standardwert gilt" (siehe traits/bogen.py::
+    # bogen_uebersicht und schemas.py::PersonCreate.gesundheitGrundwert).
+    "gesundheitGrundwert": -1,
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
