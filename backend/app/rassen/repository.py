@@ -28,7 +28,11 @@ RULESET = "neotopia"
 
 FELDER = """
     r.id AS id, r.name AS name, r.beschreibung AS beschreibung, r.bildUrl AS bildUrl,
-    r.modifikatoren AS modifikatoren, r.freiePunkte AS freiePunkte, r.sortOrder AS sortOrder
+    r.modifikatoren AS modifikatoren, r.freiePunkte AS freiePunkte, r.sortOrder AS sortOrder,
+    coalesce(r.bonusFreebees, 0) AS bonusFreebees,
+    coalesce(r.gratisGegenstandId, '') AS gratisGegenstandId,
+    coalesce(r.gratisErsterKaufTyp, '') AS gratisErsterKaufTyp,
+    coalesce(r.featureHinweis, '') AS featureHinweis
 """
 
 
@@ -46,6 +50,10 @@ def _decode(record: dict) -> dict:
     # Neo4j kann Zahlenlisten direkt, anders als Maps — deshalb hier kein JSON.
     daten["freiePunkte"] = [int(p) for p in (daten.get("freiePunkte") or [])]
     daten["sortOrder"] = int(daten.get("sortOrder") or 0)
+    daten["bonusFreebees"] = int(daten.get("bonusFreebees") or 0)
+    daten["gratisGegenstandId"] = daten.get("gratisGegenstandId") or ""
+    daten["gratisErsterKaufTyp"] = daten.get("gratisErsterKaufTyp") or ""
+    daten["featureHinweis"] = daten.get("featureHinweis") or ""
     return daten
 
 
@@ -105,7 +113,9 @@ async def anlegen(daten: dict) -> dict:
             CREATE (r:Rasse {{
                 id: $id, ruleset: $ruleset, name: $name, beschreibung: $beschreibung,
                 bildUrl: '', modifikatoren: $modifikatoren, freiePunkte: $freiePunkte,
-                sortOrder: $sortOrder
+                sortOrder: $sortOrder, bonusFreebees: $bonusFreebees,
+                gratisGegenstandId: $gratisGegenstandId, gratisErsterKaufTyp: $gratisErsterKaufTyp,
+                featureHinweis: $featureHinweis
             }})
             RETURN {FELDER}
             """,
@@ -116,6 +126,10 @@ async def anlegen(daten: dict) -> dict:
             modifikatoren=json.dumps(daten.get("modifikatoren") or {}),
             freiePunkte=[int(p) for p in (daten.get("freiePunkte") or [])],
             sortOrder=int(daten.get("sortOrder") or 0),
+            bonusFreebees=int(daten.get("bonusFreebees") or 0),
+            gratisGegenstandId=daten.get("gratisGegenstandId") or "",
+            gratisErsterKaufTyp=daten.get("gratisErsterKaufTyp") or "",
+            featureHinweis=daten.get("featureHinweis") or "",
         )
         return _decode(dict(await result.single()))
 

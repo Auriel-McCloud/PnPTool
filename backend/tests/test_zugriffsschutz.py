@@ -66,6 +66,11 @@ OHNE_GM_ERLAUBT = {
     # nur einmal aufrufen (danach 409) und laeuft vollstaendig durch
     # traits/erstellung.pruefe — regelwidrige Verteilungen werden abgelehnt.
     "/api/campaigns/{campaign_id}/personen/{person_id}/erstellung",
+    # Tutorial-Shop (10.10.2026): Kredit-/Eigenkapital-Regler während der
+    # eigenen laufenden Erstellung neu berechnen. Prueft die Person selbst
+    # (gleiches Muster wie steckbrief/zustand) UND dass die Erstellung noch
+    # nicht abgeschlossen ist (409 danach).
+    "/api/campaigns/{campaign_id}/personen/{person_id}/erstellung/tutorial-kapital",
     # Eigene Erfahrung ausgeben. Prueft die Person selbst; der Preis wird
     # serverseitig berechnet, nicht uebernommen, und gegen den vorhandenen
     # Punktestand geprueft. Erfahrung *vergeben* bleibt der Spielleitung
@@ -129,6 +134,10 @@ OHNE_GM_ERLAUBT = {
     # eigene Charakter (SL kann für jeden PC kaufen, Spieler nur für sich).
     # Siehe app/haendler/routes.py::kaufen.
     "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen",
+    # Tutorial-Shop (10.10.2026): KI-Kommentar des "Verkäufers" zu einem
+    # gerade getätigten Kauf — rein kosmetisch, kein Geld-/Ware-Einfluss,
+    # dieselbe Begründung wie beim Kauf selbst (Spieler handelt für sich).
+    "/api/campaigns/{campaign_id}/haendler/{haendler_id}/tutorial-kommentar",
     # --- Verhandlung: der Spieler antwortet auf ein Angebot -----------------
     # Annehmen/Ablehnen ist die Handlung des Spielers, nicht der SL. Prüft
     # selbst: nur der eigene Charakter (empfaengerPersonId), nur solange die

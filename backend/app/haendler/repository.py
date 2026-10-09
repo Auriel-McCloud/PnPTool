@@ -25,7 +25,8 @@ _SHOP_FELDER = """
     o.id AS id, o.name AS name, o.description AS beschreibung,
     o.spezialisierung AS spezialisierung, o.vertriebsart AS vertriebsart,
     coalesce(o.shopHintergrundUrl, o.bildUrl, '') AS shopHintergrundUrl,
-    o.sichtbarkeit AS sichtbarkeit, o.sichtbarFuer AS sichtbarFuer
+    o.sichtbarkeit AS sichtbarkeit, o.sichtbarFuer AS sichtbarFuer,
+    coalesce(o.istTutorialShop, false) AS istTutorialShop
 """
 
 
@@ -37,6 +38,7 @@ def _decode_shop(record: dict) -> dict:
     daten["shopHintergrundUrl"] = daten.get("shopHintergrundUrl") or ""
     daten["sichtbarkeit"] = daten.get("sichtbarkeit") or "GM"
     daten["sichtbarFuer"] = daten.get("sichtbarFuer") or []
+    daten["istTutorialShop"] = bool(daten.get("istTutorialShop"))
     gesichter = []
     for roh in daten.get("haendler") or []:
         if not roh or not roh.get("id"):
@@ -115,7 +117,8 @@ async def shops_auf_orte_heben(campaign_id: str) -> None:
                 o.shopHintergrundUrl = CASE
                     WHEN o.shopHintergrundUrl IS NOT NULL AND o.shopHintergrundUrl <> ''
                     THEN o.shopHintergrundUrl
-                    ELSE coalesce(h.shopHintergrundUrl, o.bildUrl, '') END
+                    ELSE coalesce(h.shopHintergrundUrl, o.bildUrl, '') END,
+                o.istTutorialShop = coalesce(o.istTutorialShop, h.istTutorialHaendler, false)
             MERGE (h)-[:BETREIBT]->(o)
             """,
             cid=campaign_id,
@@ -135,11 +138,18 @@ async def shops_auf_orte_heben(campaign_id: str) -> None:
 
 
 async def liste(campaign_id: str) -> list[dict]:
-    """Alle Shops (Orte) dieser Kampagne, mit Händler-Gesichtern."""
+    """Alle Shops (Orte) dieser Kampagne, mit Händler-Gesichtern.
+
+    Tutorial-Shops (10.10.2026, Marks Konzept) sind hier bewusst
+    ausgeschlossen — sie tauchen NUR im Freebees-Schritt der
+    Charaktererstellung auf (eigener Aufruf über `hole()`), nicht in der
+    normalen Shop-Übersicht.
+    """
     await shops_auf_orte_heben(campaign_id)
     driver = get_driver()
     query = f"""
         MATCH (o:Ort {{campaignId: $campaign_id, istShop: true}})
+        WHERE coalesce(o.istTutorialShop, false) = false
         OPTIONAL MATCH (h:Person {{istHaendler: true}})-[:BETREIBT]->(o)
         WITH o, collect({{id: h.id, name: h.name, bildUrl: h.bildUrl}}) AS haendler
         RETURN {_SHOP_FELDER}, haendler
@@ -148,6 +158,27 @@ async def liste(campaign_id: str) -> list[dict]:
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
         return [_decode_shop(dict(r)) async for r in result]
+
+
+async def tutorial_shop(campaign_id: str) -> dict | None:
+    """Der EINE Tutorial-Shop dieser Kampagne, falls eingerichtet — für den
+    Freebees-Schritt der Charaktererstellung. Mehrere Tutorial-Shops sind
+    technisch möglich, aber unnötig (Mark wollte EINEN, der außerhalb der
+    Erstellung nicht sichtbar ist); diese Funktion nimmt bewusst den ersten.
+    """
+    await shops_auf_orte_heben(campaign_id)
+    driver = get_driver()
+    query = f"""
+        MATCH (o:Ort {{campaignId: $campaign_id, istShop: true, istTutorialShop: true}})
+        OPTIONAL MATCH (h:Person {{istHaendler: true}})-[:BETREIBT]->(o)
+        WITH o, collect({{id: h.id, name: h.name, bildUrl: h.bildUrl}}) AS haendler
+        RETURN {_SHOP_FELDER}, haendler
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        record = await result.single()
+        return _decode_shop(dict(record)) if record else None
 
 
 async def hole(campaign_id: str, shop_id: str) -> dict | None:

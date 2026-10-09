@@ -119,6 +119,11 @@
   color: var(--warn);
 }
 
+.ra-kachel-feature {
+  font-size: 11px;
+  color: var(--neon);
+}
+
 .ra-kachel-freigabe {
   display: flex;
   align-items: center;

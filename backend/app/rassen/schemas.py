@@ -8,6 +8,13 @@ class RasseCreate(BaseModel):
     Vorgabe): Modifikatoren und freie Punkte. Fertigkeiten, Sonderfähigkeiten
     oder Regelvorteile gibt es nicht — sonst wäre die Balance nicht mehr
     nachrechenbar (siehe `balance.py`).
+
+    **Ausnahme seit 10.10.2026 — Rassen-Features:** ein optionales,
+    budget-neutrales Extra je Rasse (Marks Entscheidung: zählt NICHT in die
+    24er-Bilanz, bleibt eigenes Feld statt Teil der Attribut-Formel). Nur
+    drei feste Spielarten, kein Freitext-Baukasten — jedes Feature ist ein
+    eigenes kleines Mechanik-Stück, siehe traits/erstellung.py::
+    wende_rassenfeature_an.
     """
 
     name: str
@@ -19,6 +26,22 @@ class RasseCreate(BaseModel):
     # Die drei Kontingente, frei auf die Attributspalten verteilbar.
     freiePunkte: list[int] = []
     sortOrder: int = 0
+    # --- Rassen-Features (10.10.2026, budget-neutral) --------------------
+    # Zusätzliche Freebees nur für diese Rasse (Mensch: 2 — "langweiliges
+    # Geld"). 0 = kein Bonus.
+    bonusFreebees: int = 0
+    # Gegenstandsvorlage, die bei der Erstellung automatisch zugewiesen wird
+    # (Dug'Rah: natürliche Rüstung) — Gegenstands-ID, leer = kein Feature.
+    gratisGegenstandId: str = ""
+    # Erster Kauf eines bestimmten Gegenstandstyps ist kostenlos (Quill:
+    # erstes Hextech-Item im Shop) — Typ aus TYP_KATALOG, leer = kein Feature.
+    gratisErsterKaufTyp: str = ""
+    # Freier Hinweistext fürs Charakterblatt/die Rassen-Infobox (Vaet:
+    # "Transformations-Skill freigeschaltet", Zok/Zorak: TBD). Rein
+    # beschreibend, keine eigene Mechanik — die echte Mechanik (z.B. eine
+    # rassengebundene Zusatzfertigkeit, siehe Zusatzfertigkeit.nurFuerRasse)
+    # hängt an einem ANDEREN Katalog, nicht hier.
+    featureHinweis: str = ""
 
 
 class RasseUpdate(BaseModel):
@@ -27,6 +50,10 @@ class RasseUpdate(BaseModel):
     modifikatoren: dict[str, int] | None = None
     freiePunkte: list[int] | None = None
     sortOrder: int | None = None
+    bonusFreebees: int | None = None
+    gratisGegenstandId: str | None = None
+    gratisErsterKaufTyp: str | None = None
+    featureHinweis: str | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
 
@@ -53,6 +80,10 @@ class RasseResponse(BaseModel):
     modifikatoren: dict[str, int]
     freiePunkte: list[int]
     sortOrder: int
+    bonusFreebees: int = 0
+    gratisGegenstandId: str = ""
+    gratisErsterKaufTyp: str = ""
+    featureHinweis: str = ""
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

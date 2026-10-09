@@ -133,6 +133,22 @@
   color: var(--text-leise);
 }
 
+/* Tutorial-Shop im Freebees-Schritt (10.10.2026) — prägnante Geldanzeige
+   direkt neben dem Öffnen-Knopf. */
+.er-tutorial-shop-zeile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.er-tutorial-shop-kapital {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--neon);
+}
+
 /* --- Auswahlkarten (Weg, Rasse, Paket) -------------------------------- */
 
 .er-karten {

@@ -3,6 +3,8 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Erstellungsregeln } from "../traits/bogenApi";
 import { rassenApi, type Rasse } from "./api";
+import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
+import { TYP_OPTIONEN } from "../items/typKatalog";
 import "./rassen.css";
 
 /**
@@ -130,6 +132,9 @@ export function RassenUebersicht({ campaignId }: { campaignId: string }) {
                 )}
               </span>
               {!rasse.bilanz.stimmt && <span className="ra-kachel-warnung">⚠ weicht vom Budget ab</span>}
+              {(rasse.bonusFreebees > 0 || rasse.gratisGegenstandId || rasse.gratisErsterKaufTyp) && (
+                <span className="ra-kachel-feature">✦ Rassen-Feature</span>
+              )}
             </button>
             {/* Das Häkchen sitzt bewusst AUF der Kachel und nicht nur im
                 Editor: welche Völker in dieser Runde spielbar sind, will man
@@ -212,6 +217,13 @@ function RasseEditor({
   const [laeuft, setLaeuft] = useState(false);
   const [laedtBild, setLaedtBild] = useState(false);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  // Rassen-Features (10.10.2026, budget-neutral): drei feste Spielarten,
+  // kein Freitext-Baukasten — siehe backend/app/rassen/schemas.py.
+  const [bonusFreebees, setBonusFreebees] = useState(rasse.bonusFreebees);
+  const [gratisGegenstandId, setGratisGegenstandId] = useState(rasse.gratisGegenstandId);
+  const [gratisErsterKaufTyp, setGratisErsterKaufTyp] = useState(rasse.gratisErsterKaufTyp);
+  const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
+  const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
 
   // Wechselt die Auswahl auf eine andere Rasse, muss das Formular mitziehen.
   useEffect(() => {
@@ -219,7 +231,18 @@ function RasseEditor({
     setBeschreibung(rasse.beschreibung);
     setPunkte(rasse.freiePunkte);
     setMods(rasse.modifikatoren);
+    setBonusFreebees(rasse.bonusFreebees);
+    setGratisGegenstandId(rasse.gratisGegenstandId);
+    setGratisErsterKaufTyp(rasse.gratisErsterKaufTyp);
+    setFeatureHinweis(rasse.featureHinweis);
   }, [rasse.id]);
+
+  // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
+  // Vorlagen (istVorlage), eine Kante zum Gegenstand selbst ergäbe sonst
+  // keinen wiederholbaren Effekt für jeden Charakter dieser Rasse.
+  useEffect(() => {
+    itemsApi.listAlle(campaignId).then((alle) => setVorlagen(alle.filter((g) => g.istVorlage)));
+  }, [campaignId]);
 
   // Nimmt ein Delta statt eines fertigen Zielwerts und rechnet innerhalb des
   // setMods-Updaters vom AKTUELLEN Stand weiter (06.10.2026, Bugfix: die
@@ -251,6 +274,10 @@ function RasseEditor({
         beschreibung,
         freiePunkte: punkte,
         modifikatoren: mods,
+        bonusFreebees,
+        gratisGegenstandId,
+        gratisErsterKaufTyp,
+        featureHinweis,
       });
       await onGeaendert();
     } finally {
@@ -388,6 +415,74 @@ function RasseEditor({
               <input type="file" accept="image/*" onChange={bildWaehlen} disabled={laedtBild} />
               {laedtBild && <span className="ra-hinweis">lädt hoch…</span>}
             </div>
+          </div>
+
+          <div className="ra-feld">
+            <span>Rassen-Feature (10.10.2026, budget-neutral)</span>
+            <p className="ra-hinweis">
+              Ein optionales Extra je Rasse — zählt NICHT in die Bilanz oben, bleibt also unabhängig vom
+              24er-Budget. Höchstens eines pro Spielart nötig, mehrere lassen sich kombinieren.
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Bonus-Freebees bei der Erstellung
+              <input
+                type="number"
+                min={0}
+                value={bonusFreebees}
+                onChange={(e) => setBonusFreebees(Math.max(0, Number(e.target.value)))}
+                style={{ maxWidth: 100 }}
+              />
+            </label>
+            <p className="ra-hinweis">Zum Beispiel beim Menschen: „langweiliges Geld“ — 2 Freebees mehr.</p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Gratis-Gegenstand bei der Erstellung
+              <select
+                value={gratisGegenstandId}
+                onChange={(e) => setGratisGegenstandId(e.target.value)}
+              >
+                <option value="">— kein Gratis-Gegenstand —</option>
+                {vorlagen.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name} ({g.typ})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="ra-hinweis">
+              Wird beim Charakter-Submit automatisch zugewiesen (z.B. Dug'Rah: natürliche Rüstung).
+              Nur Vorlagen stehen zur Auswahl — jeder Charakter dieser Rasse bekommt eine eigene Kopie.
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Erster Kauf dieses Typs im Shop ist gratis
+              <select
+                value={gratisErsterKaufTyp}
+                onChange={(e) => setGratisErsterKaufTyp(e.target.value)}
+              >
+                <option value="">— kein Gratis-Kauf —</option>
+                {TYP_OPTIONEN.map((typ) => (
+                  <option key={typ} value={typ}>
+                    {typ}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="ra-hinweis">
+              Zum Beispiel beim Quill: das erste Hextech-Gerät im Shop (inkl. Tutorial-Shop) ist
+              kostenlos — danach gilt wieder der normale Preis.
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Hinweistext (Charakterblatt/Infobox)
+              <textarea
+                value={featureHinweis}
+                rows={2}
+                placeholder="z.B. „Transformations-Skill freigeschaltet“ — rein beschreibend, keine eigene Mechanik."
+                onChange={(e) => setFeatureHinweis(e.target.value)}
+              />
+            </label>
           </div>
 
           <div className="ra-aktionen">

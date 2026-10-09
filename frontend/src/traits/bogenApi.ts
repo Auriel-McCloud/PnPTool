@@ -160,6 +160,11 @@ export interface Rasse {
    * backend/app/traits/erstellung.py::lebensmaxima).
    */
   startmaxima: Record<string, number>;
+  /** Rassen-Features (10.10.2026, budget-neutral, siehe erstellung.py). */
+  bonusFreebees: number;
+  gratisGegenstandId: string;
+  gratisErsterKaufTyp: string;
+  featureHinweis: string;
 }
 
 export interface FertigkeitsPaket {
@@ -253,6 +258,17 @@ export const bogenApi = {
    */
   steckbrief: (cid: string, personId: string, aenderung: SteckbriefUpdate) =>
     api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/steckbrief`, aenderung),
+  /**
+   * Tutorial-Shop (10.10.2026): rechnet kapitalBasis/kapital neu, wenn der
+   * Kredit-/Eigenkapital-Regler im Freebees-Schritt bewegt wird, NACHDEM
+   * im Tutorial-Shop schon etwas gekauft wurde — ohne das würde ein
+   * bereits ausgegebener Betrag beim Reglerverstellen wieder auftauchen.
+   */
+  tutorialKapital: (cid: string, personId: string, freebeeKredit: number, freebeeEigenkapital: number) =>
+    api.put<{ kapital: number }>(`/api/campaigns/${cid}/personen/${personId}/erstellung/tutorial-kapital`, {
+      freebeeKredit,
+      freebeeEigenkapital,
+    }),
   /**
    * Einen erlittenen Treffer eintragen ("3× Tödlich"). Die getragene Rüstung
    * wirkt als ein Pool: der Server rechnet den Kästchenschaden, verbraucht

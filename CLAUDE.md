@@ -2012,6 +2012,11 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
    Hash-Volumes als Verräter; ein Re-Start eines alten Containers
    (`docker start pnptool-neo4j-1`) endet mit Exit 3 (Server startet+stoppt
    sofort) — stattdessen `docker rm` + `docker compose up -d neo4j`.
+8. **`tests/test_shop_am_ort.py` instabil im Verbund, isoliert stabil**
+   (gefunden 10.10.2026, vorbestehend, siehe `docs/ENTWICKLUNGSHISTORIE.md`
+   Stolperstein 13 für die volle Herleitung) — `asyncio.run()` pro Test +
+   Modul-Singleton-Treiber. Ein Fehlschlag im vollen Lauf dieser Datei ist
+   kein neuer Bug, Test isoliert laufen lassen.
 
 ## Git-Workflow
 

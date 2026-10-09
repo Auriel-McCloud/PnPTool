@@ -53,6 +53,10 @@ export interface Person extends VisibilityFields {
   istKI?: boolean;
   /** Shop-System (24.09.2026): Person ist ein Händler, siehe app/haendler/. */
   istHaendler?: boolean;
+  /** Tutorial-Shop (10.10.2026): Händler, der NUR im Freebees-Schritt der
+   * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
+   * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */
+  istTutorialHaendler?: boolean;
   spezialisierung?: string[];
   /** PHYSISCH = Fancy-Laden mit Verhandeln, DIGITAL = schlichter Online-Shop
    * ohne Verhandeln, mit SL-freizugebender Lieferverzögerung. */

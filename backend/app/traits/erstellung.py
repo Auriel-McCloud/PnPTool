@@ -69,6 +69,10 @@ RASSEN: dict[str, dict[str, Any]] = {
         "modifikatoren": {},
         "freiePunkte": [7, 5, 3],
         "beschreibung": "Wandlungsfähig ohne Sonderrechte — dafür die meisten freien Punkte.",
+        # Rassen-Feature (10.10.2026, Mark: "2 Freebees mehr wäre garkeine
+        # schlechte Idee" — "langweiliges Geld"). Budget-neutral, siehe
+        # app/rassen/schemas.py.
+        "bonusFreebees": 2,
     },
     "Elf": {
         "modifikatoren": {"Charisma": 1, "Geschicklichkeit": 1, "Widerstandsfähigkeit": -1},
@@ -341,6 +345,13 @@ def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]
                 "startwerte": startwerte(name, rassen),
                 "startmaxima": startmaxima(name, rassen),
                 "bildUrl": daten.get("bildUrl", ""),
+                # Rassen-Features (10.10.2026, budget-neutral): reine
+                # Durchreiche an die Oberfläche, Rechenlogik siehe
+                # freebee_kosten()/endwerte() unten.
+                "bonusFreebees": daten.get("bonusFreebees", 0),
+                "gratisGegenstandId": daten.get("gratisGegenstandId", ""),
+                "gratisErsterKaufTyp": daten.get("gratisErsterKaufTyp", ""),
+                "featureHinweis": daten.get("featureHinweis", ""),
             }
             for name, daten in (rassen or RASSEN).items()
         ],
@@ -547,8 +558,12 @@ def pruefe(
             )
 
     kosten = freebee_kosten(auswahl, kategorie_von)
-    if kosten > FREEBEES_GESAMT:
-        fehler.append(f"{kosten} Freebees ausgegeben, zur Verfügung stehen {FREEBEES_GESAMT}.")
+    # Rassen-Feature bonusFreebees (10.10.2026): budget-neutraler Bonus nur
+    # für diese Rasse ("langweiliges Geld" beim Menschen) — erweitert das
+    # Freebee-Limit, zählt aber NICHT in die 24er-Attribut-Bilanz mit rein.
+    freebees_gesamt = FREEBEES_GESAMT + int(verfuegbar.get(rasse, {}).get("bonusFreebees", 0))
+    if kosten > freebees_gesamt:
+        fehler.append(f"{kosten} Freebees ausgegeben, zur Verfügung stehen {freebees_gesamt}.")
 
     # --- Endwerte gegen die Obergrenze des Wertes selbst -----------------
     # Zeile 24 hebt nur den **StartMax** für Freebees auf, nicht das Maximum

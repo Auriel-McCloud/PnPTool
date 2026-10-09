@@ -110,6 +110,11 @@ class PersonCreate(BaseModel):
     # KENNT-System, der Standort über dieselbe BEFINDET_SICH_AN-Kante wie bei
     # Party (app/haendler/repository.py).
     istHaendler: bool = False
+    # Tutorial-Shop (10.10.2026, Marks Konzept): ein Händler, der NUR im
+    # Freebees-Schritt der Charaktererstellung als Popup auftaucht, aus der
+    # normalen Shop-Übersicht aber ausgeblendet bleibt — kein Verhandeln,
+    # keine Achievement-Trigger (siehe docs/wiki/entities/achievements.md).
+    istTutorialHaendler: bool = False
     # Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches
     # Flavor-Flag wie magieFlavor — swapt nur ein paar Beschriftungen auf
     # dem Charakterblatt eines Critters (z.B. "Alter" -> "Wachstumsstadium",
@@ -188,6 +193,26 @@ class PersonCreate(BaseModel):
     alias: str = ""
     kapital: int = 0
     schulden: int = 0
+    # Tutorial-Shop (10.10.2026): laufendes Guthaben WÄHREND der laufenden
+    # Charaktererstellung, bevor Kredit/Eigenkapital final feststehen. Siehe
+    # PersonUpdate.kapitalBasis für die Herleitung — getrennt von `kapital`,
+    # damit der finale Submit (traits/routes.py::erstelle_charakter) den im
+    # Tutorial-Shop bereits verbrauchten Betrag nicht überschreibt.
+    kapitalBasis: int = 0
+    # Wie viel von kapitalBasis bereits im Tutorial-Shop ausgegeben wurde
+    # (10.10.2026) — Grundlage, um kapitalBasis neu zu berechnen, wenn der
+    # Spieler den Kredit-/Eigenkapital-Regler im selben Freebees-Schritt noch
+    # verstellt: kapitalBasis = Startkapital + Kredit + Eigenkapital −
+    # tutorialAusgegeben. Ohne diesen Zähler würde ein bereits getätigter
+    # Tutorial-Kauf beim Reglerverstellen einfach wieder auftauchen.
+    tutorialAusgegeben: int = 0
+    # Rassen-Feature "gratisGegenstandId" (10.10.2026, Dug'Rah-Rüstung):
+    # verhindert eine doppelte Vergabe, falls die Erstellung erneut
+    # eingereicht wird (SL-Korrektur).
+    gratisGegenstandErhalten: bool = False
+    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech): der
+    # erste Kauf dieses Typs im (Tutorial-)Shop war kostenlos — danach aus.
+    rassenFeatureGenutzt: bool = False
     erstellungAbgeschlossen: bool = False
 
     sichtbarkeit: SichtbarkeitModus = "GM"
@@ -211,6 +236,7 @@ class PersonUpdate(BaseModel):
     istCritter: bool | None = None
     istKI: bool | None = None
     istHaendler: bool | None = None
+    istTutorialHaendler: bool | None = None
     istPflanzenCritter: bool | None = None
     # -1 setzt explizit zurück auf den globalen Standardwert; None (fehlt im
     # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
@@ -237,6 +263,10 @@ class PersonUpdate(BaseModel):
     alias: str | None = None
     kapital: int | None = None
     schulden: int | None = None
+    kapitalBasis: int | None = None
+    tutorialAusgegeben: int | None = None
+    gratisGegenstandErhalten: bool | None = None
+    rassenFeatureGenutzt: bool | None = None
     erstellungAbgeschlossen: bool | None = None
     personType: Literal["PC", "NPC"] | None = None
     description: str | None = None
@@ -265,6 +295,7 @@ class PersonResponse(BaseModel):
     istCritter: bool = False
     istKI: bool = False
     istHaendler: bool = False
+    istTutorialHaendler: bool = False
     istPflanzenCritter: bool = False
     # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
     gesundheitGrundwert: int = -1
@@ -290,6 +321,10 @@ class PersonResponse(BaseModel):
     alias: str = ""
     kapital: int = 0
     schulden: int = 0
+    kapitalBasis: int = 0
+    tutorialAusgegeben: int = 0
+    gratisGegenstandErhalten: bool = False
+    rassenFeatureGenutzt: bool = False
     erstellungAbgeschlossen: bool = False
     sichtbarkeit: str
     sichtbarFuer: list[str]
@@ -338,6 +373,10 @@ class OrtUpdate(BaseModel):
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     shopHintergrundUrl: str | None = None
+    # Tutorial-Shop (10.10.2026): wird vom Händler-Flag auf den Ort
+    # nachgezogen (siehe HaendlerEinstellungenFenster.tsx), weil der Shop
+    # seit 04.10.2026 am Ort hängt, nicht mehr an der Person.
+    istTutorialShop: bool | None = None
 
 
 class OrtResponse(BaseModel):
@@ -359,6 +398,7 @@ class OrtResponse(BaseModel):
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"
     shopHintergrundUrl: str = ""
+    istTutorialShop: bool = False
 
 
 class EventCreate(BaseModel):

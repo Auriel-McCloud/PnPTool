@@ -9,6 +9,12 @@
   min-height: 0;
 }
 
+.zf-hinweis {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
 .zf-kopf {
   display: flex;
   align-items: center;

@@ -37,6 +37,7 @@ export function HaendlerEinstellungenFenster({
   const warSchonHaendler = person.istHaendler ?? false;
   const [spezialisierung, setSpezialisierung] = useState<string[]>(person.spezialisierung ?? []);
   const [vertriebsart, setVertriebsart] = useState<"PHYSISCH" | "DIGITAL">(person.vertriebsart ?? "PHYSISCH");
+  const [istTutorial, setIstTutorial] = useState(person.istTutorialHaendler ?? false);
   const [sendet, setSendet] = useState(false);
   const [entfernenOffen, setEntfernenOffen] = useState(false);
 
@@ -46,6 +47,7 @@ export function HaendlerEinstellungenFenster({
     if (offen) {
       setSpezialisierung(person.spezialisierung ?? []);
       setVertriebsart(person.vertriebsart ?? "PHYSISCH");
+      setIstTutorial(person.istTutorialHaendler ?? false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offen, person.id]);
@@ -59,6 +61,7 @@ export function HaendlerEinstellungenFenster({
     try {
       const neu = await entitiesApi.updatePerson(campaignId, person.id, {
         istHaendler: true,
+        istTutorialHaendler: istTutorial,
         spezialisierung,
         vertriebsart,
       });
@@ -146,6 +149,17 @@ export function HaendlerEinstellungenFenster({
               {vertriebsart === "DIGITAL"
                 ? "Kein Verhandeln, ein Kauf legt eine Bestellung an — die Lieferung gibt die SL später manuell frei."
                 : "Laden mit eigenem Hintergrundbild, Verhandeln möglich, Ware wird bei Kauf sofort übergeben."}
+            </p>
+          </div>
+
+          <div>
+            <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+              <input type="checkbox" checked={istTutorial} onChange={(e) => setIstTutorial(e.target.checked)} />
+              Tutorial-Shop
+            </label>
+            <p className="pcd-hinweis" style={{ marginTop: 6 }}>
+              Erscheint NUR im Freebees-Schritt der Charaktererstellung, nicht in der normalen Shop-Übersicht —
+              kein Verhandeln, keine Achievement-Auslöser.
             </p>
           </div>
 

@@ -11,12 +11,16 @@ export interface Zusatzfertigkeit {
   name: string;
   kurzbeschreibung: string;
   detailbeschreibung: string;
+  /** Rassengebunden (10.10.2026, Vaet-Transformation): leer = für alle
+   * wählbar, gesetzt = nur diese Rasse sieht/wählt sie. */
+  nurFuerRasse: string;
 }
 
 export interface ZusatzfertigkeitEingabe {
   name?: string;
   kurzbeschreibung?: string;
   detailbeschreibung?: string;
+  nurFuerRasse?: string;
 }
 
 /** Eine von einer Person gewählte Zusatzfertigkeit samt Stufe. */

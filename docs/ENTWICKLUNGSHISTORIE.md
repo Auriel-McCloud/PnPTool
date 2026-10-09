@@ -69,6 +69,25 @@ Vergessene Schicht → Feld fehlt still. Prüfen:
 Was dort fehlt, geht beim Anlegen still verloren.
 **Lösung:** `test_gegenstand_felder.py` vergleicht Schema mit Übergabe.
 
+### 13. `asyncio.run()` pro Test + Modul-Singleton-Treiber (Windows)
+`tests/test_shop_am_ort.py::test_haendler_ohne_ort_erzeugt_vollstaendigen_ort`
+schlägt zuverlässig mit `AttributeError: 'NoneType' object has no attribute
+'send'` fehl, sobald vorher ein anderer Test derselben Datei lief — isoliert
+aufgerufen läuft er zuverlässig grün (gefunden+gegengeprüft 10.10.2026,
+5/5 Läufe je Richtung, auch auf unverändertem `main` reproduziert, also
+vorbestehend und nicht durch eine konkrete Änderung verursacht). Ursache
+vermutet: `get_driver()` (`app/db/neo4j_driver.py`) hält den Treiber als
+Modul-Singleton mit gepooltem Connection-State über Test-Grenzen hinweg,
+aber jeder Test startet per `asyncio.run(lauf())` eine FRISCHE Event-Loop —
+eine im Pool „geparkte" Connection aus der vorherigen, jetzt toten Loop
+crasht beim Wiederverwenden (Windows-ProactorEventLoop-Eigenheit). Kein
+Logikfehler in der getesteten Funktion selbst.
+**Lösung (noch nicht umgesetzt):** eigene Loop-Fixture pro Test statt
+`asyncio.run()`, oder Treiber pro Test neu erzeugen/schließen — eigene
+Testinfrastruktur-Baustelle, nicht nebenbei gemacht. Bis dahin: diesen Test
+bei Bedarf isoliert laufen lassen, ein Fehlschlag im vollen Lauf dieser
+Datei ist kein neuer Bug.
+
 ## Geprüfte Features (historisch)
 
 ### SL-Popups (03.09.2026)

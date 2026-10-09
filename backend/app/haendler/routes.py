@@ -11,6 +11,7 @@ Nuyen sein.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities import repository as entities_repository
@@ -20,6 +21,7 @@ from app.entities.visibility import is_visible_to
 from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
+from app.rassen import repository as rassen_repository
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort
 from app.haendler.schemas import (
     AlltagswunschAntwortRequest,
@@ -35,6 +37,7 @@ from app.haendler.schemas import (
     StandortRequest,
 )
 from app.items import repository as items_repository
+from app.ki.client import KiFehler, generiere_json
 from app.mitteilungen.verteiler import verteiler
 
 router = APIRouter(
@@ -52,6 +55,16 @@ async def alle(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
         h for h in roh
         if is_visible_to(h.get("sichtbarkeit") or "GM", h.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
     ]
+
+
+@router.get("/tutorial", response_model=HaendlerEintrag | None)
+async def tutorial(campaign_id: str):
+    """Der Tutorial-Shop dieser Kampagne (10.10.2026) — NUR für den
+    Freebees-Schritt der Charaktererstellung, bewusst NICHT in `GET ``
+    (normale Shop-Übersicht) enthalten. Für alle mit Zugang lesbar, wie die
+    normale Shop-Liste auch — jeder in Erstellung befindliche Charakter
+    braucht ihn sehen zu können."""
+    return await repository.tutorial_shop(campaign_id)
 
 
 async def _haendler_oder_404(campaign_id: str, haendler_id: str, viewer: Viewer) -> dict:
@@ -173,6 +186,22 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     if kaeufer is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Käufer nicht gefunden")
 
+    gegenstand = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
+    if gegenstand is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech): der
+    # erste Kauf eines passenden Gegenstandstyps ist für diese Rasse
+    # kostenlos — nur einmal pro Person, danach normaler Preis. Gilt auch
+    # im Tutorial-Shop (dort ist es meistens der erste Kontakt überhaupt).
+    rassen_feature_genutzt = bool(kaeufer.get("rassenFeatureGenutzt"))
+    if not rassen_feature_genutzt and kaeufer.get("rasse"):
+        rassen_katalog = {r["name"]: r for r in await rassen_repository.liste_fuer_kampagne(campaign_id)}
+        feature = rassen_katalog.get(kaeufer["rasse"])
+        if feature and feature.get("gratisErsterKaufTyp") and gegenstand.get("typ") == feature["gratisErsterKaufTyp"]:
+            preis = 0
+            rassen_feature_genutzt = True
+
     kapital = kaeufer.get("kapital", 0)
     if kapital < preis:
         raise HTTPException(
@@ -180,11 +209,17 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
             f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
         )
 
-    gegenstand = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
-    if gegenstand is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
-
     kapital_neu = kapital - preis
+    # Tutorial-Shop (10.10.2026): solange die Erstellung läuft (erstellt noch
+    # nicht abgeschlossen), muss der im Freebees-Schritt verbrauchte Betrag
+    # separat mitgezählt werden — der finale Submit berechnet kapitalBasis
+    # sonst ohne den Tutorial-Kauf neu und würde ihn rückgängig machen.
+    person_update: dict = {"kapital": kapital_neu}
+    if not kaeufer.get("erstellungAbgeschlossen"):
+        person_update["kapitalBasis"] = kapital_neu
+        person_update["tutorialAusgegeben"] = int(kaeufer.get("tutorialAusgegeben") or 0) + preis
+    if rassen_feature_genutzt and rassen_feature_genutzt != bool(kaeufer.get("rassenFeatureGenutzt")):
+        person_update["rassenFeatureGenutzt"] = True
 
     if haendler.get("vertriebsart") == "DIGITAL":
         # Kapital sofort abziehen, Ware NICHT übergeben — nur eine
@@ -194,7 +229,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         if not gegenstand["istVorlage"]:
             await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
         await entities_repository.update_node(
-            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
+            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
         )
         bestellung = await repository.bestellung_anlegen(
             campaign_id, haendler_id, haendler["name"], kaeufer_id, body.gegenstandId, gegenstand["name"], preis
@@ -220,7 +255,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
 
     await entities_repository.update_node(
-        "Person", PERSON_FIELDS, campaign_id, kaeufer_id, {"kapital": kapital_neu}
+        "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
     )
 
     await hooks.handel(
@@ -402,3 +437,56 @@ async def alltagswunsch_beantworten(campaign_id: str, wunsch_id: str, body: Allt
         raise HTTPException(status.HTTP_409_CONFLICT, "Dieser Wunsch wurde bereits beantwortet oder existiert nicht")
     await _alltagswunsch_an_spieler(campaign_id, aktualisiert, aktualisiert["spielerPersonId"])
     return aktualisiert
+
+
+# --- Tutorial-Shop: KI-Verkäufer-Kommentar (10.10.2026) --------------------
+#
+# Mark: das KI-Symbol, das wir für die Fertigkeiten-Vergabe gebaut haben,
+# soll im Tutorial-Shop der "Verkäufer" sein und Käufe kommentieren. Nutzt
+# dieselbe generiere_json-Infrastruktur wie der Fertigkeiten-Kommentar
+# (traits/routes.py::erstellung_kommentar) — EIN Aufruf pro Kauf, nie
+# automatisch im Hintergrund (Mark ist kostenbewusst beim LLM-Verbrauch).
+
+_TUTORIAL_VERKAEUFER_SYSTEM = (
+    "Du bist eine schrullige, warmherzig-schräge KI, die als Verkäufer in einem "
+    "Tutorial-Shop für ein Cyberpunk-Pen-and-Paper-Rollenspiel (NeotopiA) "
+    "auftritt — Ton wie ein overenthusiastischer Gameshow-Moderator, der jeden "
+    "Kauf mit großer Geste kommentiert. Humor durch Übertreibung und absurde "
+    "Vergleiche, NIE durch Herabsetzung oder Beleidigung. Schreib NIE wie ein "
+    "frecher Jugendlicher. 1-2 kurze, prägnante Sätze, direkt auf den gekauften "
+    "Gegenstand bezogen (Name/Typ) — kein Regel-Erklärbär, keine Kraftausdrücke."
+)
+
+_TUTORIAL_VERKAEUFER_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {"kommentar": {"type": "STRING"}},
+    "required": ["kommentar"],
+}
+
+
+class TutorialKommentarInput(BaseModel):
+    gegenstandName: str
+    gegenstandTyp: str
+
+
+@router.post("/{haendler_id}/tutorial-kommentar")
+async def tutorial_kommentar(campaign_id: str, haendler_id: str, body: TutorialKommentarInput):
+    """KI-Kommentar des Tutorial-Verkäufers zu einem gerade getätigten Kauf.
+
+    Rein kosmetisch, kein Einfluss auf den Kauf-Flow selbst (der ist mit
+    `POST .../kaufen` schon abgeschlossen, bevor das Frontend diese Route
+    aufruft). Kein eigener Zugriffsschutz nötig über `require_campaign_zugang`
+    hinaus (Router-weite Dependency) — jeder mit Zugang darf im eigenen
+    Tutorial-Shop kaufen und den Kommentar dazu abrufen.
+    """
+    prompt = f"Gerade gekauft: {body.gegenstandName} (Typ: {body.gegenstandTyp})."
+    try:
+        ergebnis = await generiere_json(
+            prompt, _TUTORIAL_VERKAEUFER_SYSTEM, _TUTORIAL_VERKAEUFER_SCHEMA, campaign_id=campaign_id
+        )
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    kommentar = (ergebnis.get("kommentar") or "").strip()
+    if not kommentar:
+        raise HTTPException(status_code=502, detail="Die KI hat keinen Kommentar geliefert.")
+    return {"kommentar": kommentar}

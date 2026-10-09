@@ -224,6 +224,44 @@
   padding: 4px 2px;
 }
 
+/* Kategorie-Kacheln (10.10.2026, Marks Vorgabe: erst Kategorie, dann
+   Sortiment) — spannen die volle Breite des Warenrasters, eigene Reihe. */
+.shop-kategorien-raster {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.shop-kategorie-kachel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.shop-kategorie-kachel:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
+}
+
+.shop-kategorie-kachel[data-aktiv="true"] {
+  border-color: var(--bereich-farbe, var(--neon));
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 12%, var(--flaeche));
+  color: var(--text);
+}
+
+.shop-kategorie-symbol {
+  font-size: 15px;
+}
+
 .shop-ware {
   position: relative;
   display: flex;
@@ -543,6 +581,45 @@
 .shop-editor-zeile-preis s {
   color: var(--text-aus);
   margin-right: 4px;
+}
+
+/* --- Tutorial-Shop: KI-Verkäufer (10.10.2026) -------------------------- */
+
+.ts-verkaeufer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.ts-verkaeufer-symbol {
+  font-size: 28px;
+  color: var(--bereich-farbe, var(--neon));
+  flex-shrink: 0;
+}
+
+.ts-verkaeufer-text {
+  min-width: 0;
+}
+
+.ts-kommentar,
+.ts-kommentar-ladend,
+.ts-kommentar-platzhalter {
+  margin: 0;
+  font-size: 13px;
+}
+
+.ts-kommentar {
+  color: var(--text);
+}
+
+.ts-kommentar-ladend,
+.ts-kommentar-platzhalter {
+  color: var(--text-leise);
+  font-style: italic;
 }
 
 .shop-editor-zeile-knoepfe {

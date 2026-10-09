@@ -21,7 +21,8 @@ from app.db.neo4j_driver import get_driver
 
 FELDER = """
     z.id AS id, z.campaignId AS campaignId, z.name AS name,
-    z.kurzbeschreibung AS kurzbeschreibung, z.detailbeschreibung AS detailbeschreibung
+    z.kurzbeschreibung AS kurzbeschreibung, z.detailbeschreibung AS detailbeschreibung,
+    coalesce(z.nurFuerRasse, '') AS nurFuerRasse
 """
 
 
@@ -30,6 +31,7 @@ def _decode(record: dict) -> dict:
     daten["name"] = daten.get("name") or ""
     daten["kurzbeschreibung"] = daten.get("kurzbeschreibung") or ""
     daten["detailbeschreibung"] = daten.get("detailbeschreibung") or ""
+    daten["nurFuerRasse"] = daten.get("nurFuerRasse") or ""
     return daten
 
 
@@ -70,7 +72,8 @@ async def anlegen(campaign_id: str, daten: dict) -> dict:
             MATCH (c:Campaign {{id: $campaign_id}})
             CREATE (z:Zusatzfertigkeit {{
                 id: $id, campaignId: $campaign_id, name: $name,
-                kurzbeschreibung: $kurzbeschreibung, detailbeschreibung: $detailbeschreibung
+                kurzbeschreibung: $kurzbeschreibung, detailbeschreibung: $detailbeschreibung,
+                nurFuerRasse: $nurFuerRasse
             }})
             CREATE (c)-[:HAT_ENTITAET]->(z)
             RETURN {FELDER}
@@ -80,6 +83,7 @@ async def anlegen(campaign_id: str, daten: dict) -> dict:
             name=daten["name"],
             kurzbeschreibung=daten.get("kurzbeschreibung") or "",
             detailbeschreibung=daten.get("detailbeschreibung") or "",
+            nurFuerRasse=daten.get("nurFuerRasse") or "",
         )
         record = await result.single()
         return _decode(dict(record))

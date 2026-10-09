@@ -19,6 +19,7 @@ from app.items.repository import (
     update_gegenstand,
     willenskraft_verlust,
 )
+from app.items import repository as items_repository
 from app.kampf.ruestung import (
     berechne_treffer,
     pool,
@@ -239,6 +240,49 @@ async def set_steckbrief(
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+
+
+class TutorialKapitalInput(BaseModel):
+    """Freebee-Kredit/Eigenkapital-Regler im laufenden Freebees-Schritt
+    (10.10.2026, Tutorial-Shop): neu berechnetes Guthaben, bevor die
+    Erstellung final eingereicht wird."""
+
+    freebeeKredit: int = Field(default=0, ge=0)
+    freebeeEigenkapital: int = Field(default=0, ge=0)
+
+
+@router.put("/personen/{person_id}/erstellung/tutorial-kapital")
+async def tutorial_kapital_setzen(
+    campaign_id: str,
+    person_id: str,
+    body: TutorialKapitalInput,
+    viewer: Viewer = Depends(get_viewer),
+) -> dict:
+    """Rechnet `kapitalBasis`/`kapital` neu, wenn der Kredit-/Eigenkapital-
+    Regler im Freebees-Schritt bewegt wird, NACHDEM im Tutorial-Shop schon
+    etwas gekauft wurde (siehe `Person.tutorialAusgegeben`). Ohne diese
+    Route würde ein bereits ausgegebener Betrag beim Reglerverstellen
+    kommentarlos wieder auftauchen, weil `erstelle_charakter` die Formel
+    sonst erst beim finalen Submit anwendet."""
+    if viewer.role != "GM" and person_id != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    if person.get("erstellungAbgeschlossen"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieser Charakter ist bereits erstellt.")
+
+    vermoegen, _schulden = erstellung.kapital(
+        {"freebeeKredit": body.freebeeKredit, "freebeeEigenkapital": body.freebeeEigenkapital}
+    )
+    tutorial_ausgegeben = int(person.get("tutorialAusgegeben") or 0)
+    kapital_neu = max(0, vermoegen - tutorial_ausgegeben)
+    await update_node(
+        "Person", PERSON_FIELDS, campaign_id, person_id,
+        {"kapital": kapital_neu, "kapitalBasis": kapital_neu},
+    )
+    return {"kapital": kapital_neu}
 
 
 # =====================================================================
@@ -631,6 +675,10 @@ async def erstelle_charakter(
     # Existenzprüfung der eingereichten IDs.
     zusatzfertigkeiten_katalog = await zusatzfertigkeiten_repository.liste(campaign_id)
     zusatzfertigkeit_ids = {z["id"] for z in zusatzfertigkeiten_katalog}
+    # Rassenbindung (10.10.2026, Vaet-Transformation): ein nurFuerRasse-
+    # Eintrag lässt sich nur von Charakteren DIESER Rasse wählen — gleiches
+    # Häkchen-Prinzip wie Rassen-Freigabe, nur umgekehrt zugeordnet.
+    nur_fuer_rasse = {z["id"]: z["nurFuerRasse"] for z in zusatzfertigkeiten_katalog if z.get("nurFuerRasse")}
 
     auswahl = body.model_dump()
     # Häretiker ist kein eigener Weg für die Mechanik (siehe WEGE in
@@ -643,6 +691,8 @@ async def erstelle_charakter(
     for zid in set(body.zusatzfertigkeitPunkte) | set(body.zusatzfertigkeitFreebees):
         if zid not in zusatzfertigkeit_ids:
             fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")
+        elif zid in nur_fuer_rasse and nur_fuer_rasse[zid] != body.rasse:
+            fehler.append(f"Diese Zusatzfertigkeit steht nur der Rasse {nur_fuer_rasse[zid]} offen.")
     if not body.name.strip():
         fehler.append("Der Charakter braucht einen Namen.")
     if fehler:
@@ -681,7 +731,23 @@ async def erstelle_charakter(
         campaign_id, person_id, erstellung.lebensmaxima(body.rasse, katalog, verfuegbare_rassen)
     )
 
+    # Rassen-Feature "gratisGegenstandId" (10.10.2026, Dug'Rah-Rüstung): bei
+    # der Erstellung automatisch zugewiesen, nur einmal (SL-Korrektur legt
+    # keine zweite Kopie nach). Rein additiv — kein eigener Fehlerpfad, ein
+    # fehlender/gelöschter Gegenstand lässt die Erstellung trotzdem durch.
+    gratis_gegenstand_id = (verfuegbare_rassen.get(body.rasse, {}) or {}).get("gratisGegenstandId") or ""
+    gratis_erhalten = bool(person.get("gratisGegenstandErhalten"))
+    if gratis_gegenstand_id and not gratis_erhalten:
+        vorlage = await items_repository.get_gegenstand(campaign_id, gratis_gegenstand_id)
+        if vorlage is not None:
+            await items_repository.assign_copy(campaign_id, vorlage, person_id, "SPEZIFISCH", [person_id])
+            gratis_erhalten = True
+
     vermoegen, schulden = erstellung.kapital(auswahl)
+    # Tutorial-Shop (10.10.2026): bereits im Freebees-Schritt ausgegebenes
+    # Geld wird hier final abgezogen, NICHT überschrieben — sonst würde ein
+    # Shop-Einkauf beim finalen Submit kommentarlos rückgängig gemacht.
+    tutorial_ausgegeben = int(person.get("tutorialAusgegeben") or 0)
     aktualisiert = await update_node(
         "Person",
         PERSON_FIELDS,
@@ -698,8 +764,10 @@ async def erstelle_charakter(
             "ambition": body.ambition,
             "verlangen": body.verlangen,
             "ziel": body.ziel,
-            "kapital": vermoegen,
+            "kapital": max(0, vermoegen - tutorial_ausgegeben),
+            "kapitalBasis": max(0, vermoegen - tutorial_ausgegeben),
             "schulden": schulden,
+            "gratisGegenstandErhalten": gratis_erhalten,
             "erstellungAbgeschlossen": True,
         },
     )

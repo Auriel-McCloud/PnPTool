@@ -20,6 +20,7 @@ import { ErstellungsAssistent } from "./ErstellungsAssistent";
 import { ErstellungsKommentar } from "./ErstellungsKommentar";
 import { ZusatzfertigkeitAuswahl } from "../zusatzfertigkeiten/ZusatzfertigkeitAuswahl";
 import { type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
+import { TutorialShopPopup } from "../haendler/TutorialShopPopup";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -115,6 +116,12 @@ export function Charaktererstellung({
   const [freebeeWillenskraft, setFreebeeWillenskraft] = useState(0);
   const [freebeeKredit, setFreebeeKredit] = useState(0);
   const [freebeeEigenkapital, setFreebeeEigenkapital] = useState(0);
+  // Tutorial-Shop (10.10.2026): laufendes Guthaben, prägnant neben dem
+  // Freebees-Schritt angezeigt. Startet mit dem Startkapital aus den Regeln,
+  // wird vom Server synchronisiert (siehe tutorialKapitalSynchronisieren
+  // unten + TutorialShopPopup nach jedem Kauf).
+  const [kapital, setKapital] = useState(0);
+  const [tutorialShopOffen, setTutorialShopOffen] = useState(false);
   const [konzept, setKonzept] = useState("");
   const [alter, setAlter] = useState("");
   const [ambition, setAmbition] = useState("");
@@ -200,11 +207,28 @@ export function Charaktererstellung({
         setAmbition(bogen.uebersicht.ambition);
         setVerlangen(bogen.uebersicht.verlangen);
         setZiel(bogen.uebersicht.ziel);
+        setKapital(bogen.uebersicht.kapital);
       })
       .catch(() => {
         /* Platzhaltername bleibt. */
       });
   }, [campaignId, personId]);
+
+  // Tutorial-Shop (10.10.2026): rechnet das Guthaben neu, sobald der
+  // Kredit-/Eigenkapital-Regler bewegt wird — berücksichtigt serverseitig,
+  // was im Tutorial-Shop schon ausgegeben wurde (Person.tutorialAusgegeben).
+  // Läuft auch einmal initial mit 0/0, damit das Startkapital sichtbar ist,
+  // bevor überhaupt ein Regler angefasst wurde.
+  useEffect(() => {
+    if (!regeln) return;
+    bogenApi
+      .tutorialKapital(campaignId, personId, freebeeKredit, freebeeEigenkapital)
+      .then(({ kapital }) => setKapital(kapital))
+      .catch(() => {
+        /* Erstellung evtl. schon abgeschlossen — Anzeige bleibt beim letzten Stand. */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, personId, freebeeKredit, freebeeEigenkapital, Boolean(regeln)]);
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
@@ -228,12 +252,14 @@ export function Charaktererstellung({
    * kann — nicht nur, was schon einen Wert trägt. Vorher standen nur die
    * bereits gewählten Fertigkeiten zur Verfügung, damit war eine neue
    * Fertigkeit per Freebee gar nicht erreichbar.
+   *
+   * Hintergrund-Nachkauf (10.10.2026, Mark): bewusst NICHT mehr Teil davon —
+   * der Freebee-Nachkauf für Hintergründe ist raus, an der Stelle sitzt
+   * jetzt der Tutorial-Shop (siehe SchrittFreebees). Die 5 kostenlosen
+   * Punkte im separaten Hintergrund-Schritt davor bleiben unangetastet.
    */
   const freebeeKandidaten = useMemo(
-    () =>
-      katalog.filter(
-        (t) => t.category.startsWith("Attribut") || wegKategorien.has(t.category) || t.category === "Hintergrund",
-      ),
+    () => katalog.filter((t) => t.category.startsWith("Attribut") || wegKategorien.has(t.category)),
     [katalog, wegKategorien],
   );
 
@@ -311,7 +337,7 @@ export function Charaktererstellung({
     return s;
   }, [regeln, freebeePunkte, kategorieVon, freebeeWillenskraft, freebeeKredit, freebeeEigenkapital, zusatzfertigkeitFreebees]);
 
-  const freebeesFrei = (regeln?.freebees.gesamt ?? 0) - freebeesVerbraucht;
+  const freebeesFrei = (regeln?.freebees.gesamt ?? 0) + (gewaehlteRasse?.bonusFreebees ?? 0) - freebeesVerbraucht;
 
   /** Grundwert eines Wertes vor Freebees — für die Anzeige im Freebee-Schritt.
    * Hexkraft/NeuroWeaving (seit 27.09.2026): der feste Sockel zählt mit —
@@ -480,6 +506,7 @@ export function Charaktererstellung({
           <SchrittFertigkeiten
             campaignId={campaignId}
             regeln={regeln}
+            rasse={rasse}
             fertigkeiten={waehlbareFertigkeiten}
             paket={paket}
             onPaket={(p) => {
@@ -531,8 +558,18 @@ export function Charaktererstellung({
             zusatzfertigkeitPaketPunkte={zusatzfertigkeitPaketPunkte}
             zusatzfertigkeitPunkte={zusatzfertigkeitFreebees}
             onZusatzfertigkeitPunkte={setZusatzfertigkeitFreebees}
+            kapital={kapital}
+            onShopOeffnen={() => setTutorialShopOffen(true)}
           />
         )}
+
+        <TutorialShopPopup
+          campaignId={campaignId}
+          offen={tutorialShopOffen}
+          kapital={kapital}
+          onKapitalGeaendert={setKapital}
+          onSchliessen={() => setTutorialShopOffen(false)}
+        />
 
         {aktuell.id === "person" && (
           <SchrittPerson
@@ -898,6 +935,7 @@ function SchrittAttribute({
 function SchrittFertigkeiten({
   campaignId,
   regeln,
+  rasse,
   fertigkeiten,
   paket,
   onPaket,
@@ -916,6 +954,9 @@ function SchrittFertigkeiten({
 }: {
   campaignId: string;
   regeln: Erstellungsregeln;
+  /** Name der gewählten Rasse (10.10.2026, Vaet-Transformation): filtert
+   * rassengebundene Zusatzfertigkeiten im Katalog-Popup. */
+  rasse: string;
   fertigkeiten: TraitDef[];
   paket: string;
   onPaket: (id: string) => void;
@@ -1186,6 +1227,7 @@ function SchrittFertigkeiten({
             >
               <ZusatzfertigkeitAuswahl
                 campaignId={campaignId}
+                rasse={rasse}
                 gewaehlteIds={zusatzfertigkeiten.map((z) => z.id)}
                 onWaehlen={onZusatzfertigkeitWaehlen}
                 onAbwaehlen={onZusatzfertigkeitAbwaehlen}
@@ -1260,6 +1302,8 @@ function SchrittFreebees({
   zusatzfertigkeitPaketPunkte,
   zusatzfertigkeitPunkte,
   onZusatzfertigkeitPunkte,
+  kapital,
+  onShopOeffnen,
 }: {
   campaignId: string;
   regeln: Erstellungsregeln;
@@ -1294,6 +1338,9 @@ function SchrittFreebees({
   zusatzfertigkeitPaketPunkte: Record<string, number>;
   zusatzfertigkeitPunkte: Record<string, number>;
   onZusatzfertigkeitPunkte: (werte: Record<string, number>) => void;
+  /** Tutorial-Shop (10.10.2026): laufendes Guthaben, prägnant angezeigt. */
+  kapital: number;
+  onShopOeffnen: () => void;
 }) {
   const preise = regeln.freebees.kostenJeKategorie;
 
@@ -1313,7 +1360,6 @@ function SchrittFreebees({
     "Sphäre",
     "NeuroWeavingWert",
     "NeuroWeaving",
-    "Hintergrund",
   ].filter((k) => gruppen[k]?.length);
 
   return (
@@ -1322,9 +1368,22 @@ function SchrittFreebees({
         {regeln.freebees.gesamt} Freebees zum Nachbessern — auf <strong>alles</strong>, nicht nur auf
         das, was schon steht. Die gefüllten Punkte sind der aktuelle Wert, die Reihe endet am Maximum
         des Wertes: darüber geht es auch mit Freebees nicht. Über das Startmaximum deiner Rasse
-        allerdings schon. Ein Attributpunkt kostet 5, eine Fertigkeit 2 (und nur einen Punkt),
-        ein Hintergrund 1. Geld gibt es als Kredit (billiger, muss aber zurück) oder als Eigenkapital.
+        allerdings schon. Ein Attributpunkt kostet 5, eine Fertigkeit 2 (und nur einen Punkt).
+        Geld gibt es als Kredit (billiger, muss aber zurück) oder als Eigenkapital.
       </p>
+
+      {/* Tutorial-Shop (10.10.2026, Marks Vorgabe): prägnante Geldanzeige
+          direkt neben dem Knopf, der das Popup öffnet — hier kann man
+          Freebees (als Kredit/Eigenkapital) tatsächlich gegen Ausrüstung
+          eintauschen. */}
+      <div className="er-tutorial-shop-zeile">
+        <span className="er-tutorial-shop-kapital">
+          <span aria-hidden="true">¥</span> {kapital.toLocaleString("de-AT")}
+        </span>
+        <button type="button" onClick={onShopOeffnen}>
+          🛒 Tutorial-Shop öffnen
+        </button>
+      </div>
 
       {folge.map((kategorie) => (
         <section key={kategorie} style={{ "--cb-ton": TON[kategorie] } as React.CSSProperties}>

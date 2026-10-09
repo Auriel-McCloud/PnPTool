@@ -36,6 +36,9 @@ export interface HaendlerEintrag {
   sichtbarkeit: string;
   sichtbarFuer: string[];
   haendler: HaendlerGesicht[];
+  /** Tutorial-Shop (10.10.2026): nur im Freebees-Schritt sichtbar, nicht in
+   * der normalen Shop-Übersicht. */
+  istTutorialShop?: boolean;
 }
 
 export interface KaufResponse {
@@ -84,6 +87,9 @@ function base(cid: string, haendlerId: string) {
 
 export const haendlerApi = {
   alle: (cid: string) => api.get<HaendlerEintrag[]>(`/api/campaigns/${cid}/haendler`),
+  /** Tutorial-Shop (10.10.2026): nur für den Freebees-Schritt der
+   * Charaktererstellung — null, falls die SL noch keinen eingerichtet hat. */
+  tutorial: (cid: string) => api.get<HaendlerEintrag | null>(`/api/campaigns/${cid}/haendler/tutorial`),
   einzeln: (cid: string, haendlerId: string) => api.get<HaendlerEintrag>(base(cid, haendlerId)),
   sortiment: (cid: string, haendlerId: string) =>
     api.get<SortimentEintrag[]>(`${base(cid, haendlerId)}/sortiment`),
@@ -140,5 +146,13 @@ export const haendlerApi = {
       beschreibung: ueberschreibung?.beschreibung,
       preis: ueberschreibung?.preis,
       ablehnungsGrund,
+    }),
+
+  /** Tutorial-Shop (10.10.2026): KI-Kommentar des "Verkäufers" zu einem
+   * gerade getätigten Kauf — rein kosmetisch, nach dem Kauf aufgerufen. */
+  tutorialKommentar: (cid: string, haendlerId: string, gegenstandName: string, gegenstandTyp: string) =>
+    api.post<{ kommentar: string }>(`${base(cid, haendlerId)}/tutorial-kommentar`, {
+      gegenstandName,
+      gegenstandTyp,
     }),
 };

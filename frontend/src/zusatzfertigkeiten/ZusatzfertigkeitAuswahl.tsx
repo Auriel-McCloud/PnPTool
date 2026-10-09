@@ -17,11 +17,15 @@ import "./zusatzfertigkeiten.css";
  */
 export function ZusatzfertigkeitAuswahl({
   campaignId,
+  rasse,
   gewaehlteIds,
   onWaehlen,
   onAbwaehlen,
 }: {
   campaignId: string;
+  /** Aktuell gewählte Rasse (10.10.2026, Vaet-Transformation): filtert
+   * rassengebundene Einträge — nur die eigene Rasse sieht/wählt sie. */
+  rasse: string;
   /** IDs der bereits in diesem Erstellungs-Durchlauf gewählten Einträge. */
   gewaehlteIds: string[];
   onWaehlen: (z: Zusatzfertigkeit) => void;
@@ -42,17 +46,23 @@ export function ZusatzfertigkeitAuswahl({
 
   const gewaehlteSet = useMemo(() => new Set(gewaehlteIds), [gewaehlteIds]);
 
+  // Rassengebundene Einträge (nurFuerRasse) nur für die eigene Rasse sichtbar.
+  const sichtbar = useMemo(
+    () => katalog.filter((z) => !z.nurFuerRasse || z.nurFuerRasse === rasse),
+    [katalog, rasse],
+  );
+
   const gefiltert = useMemo(() => {
     const suchtext = suche.trim().toLowerCase();
-    if (!suchtext) return katalog;
-    return katalog.filter(
+    if (!suchtext) return sichtbar;
+    return sichtbar.filter(
       (z) => z.name.toLowerCase().includes(suchtext) || z.kurzbeschreibung.toLowerCase().includes(suchtext),
     );
-  }, [katalog, suche]);
+  }, [sichtbar, suche]);
 
   if (laedt) return <p style={{ color: "var(--text-leise)" }}>Lade Zusatzfertigkeiten…</p>;
 
-  if (katalog.length === 0) {
+  if (sichtbar.length === 0) {
     return (
       <p className="zf-leer">
         In dieser Kampagne sind noch keine Zusatzfertigkeiten eingetragen — die Spielleitung pflegt sie

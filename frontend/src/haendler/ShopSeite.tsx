@@ -3,6 +3,7 @@ import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api"
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
+import { ShopKategorien } from "./ShopKategorien";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
 import { extrahiereReinenText } from "../richtext/content";
 import "./shop.css";
@@ -38,6 +39,9 @@ export function ShopSeite({
   const [fehler, setFehler] = useState<string | null>(null);
   const [erfolg, setErfolg] = useState<string | null>(null);
   const [bearbeitenOffen, setBearbeitenOffen] = useState(false);
+  // Kategorie-Filter (10.10.2026, Marks Vorgabe): erst Kategorie wählen,
+  // dann das Sortiment dieser Kategorie. null = "Alle".
+  const [kategorie, setKategorie] = useState<string | null>(null);
   // KI-Alltagswunsch (24.09.2026, nur Spieler) — Hooks MÜSSEN vor dem frühen
   // "noch nicht geladen"-Return weiter unten stehen (React verlangt in
   // jedem Render exakt dieselbe Hook-Reihenfolge; standen sie danach, rief
@@ -173,7 +177,10 @@ export function ShopSeite({
       {erfolg && <p className="shop-ware-erfolg">{erfolg}</p>}
 
       <div className="shop-waren-raster">
-        {sortiment.map((ware) => (
+        <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
+        {sortiment
+          .filter((ware) => kategorie === null || ware.typ === kategorie)
+          .map((ware) => (
           <ShopWare
             key={ware.gegenstandId}
             ware={ware}

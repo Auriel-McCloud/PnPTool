@@ -33,6 +33,12 @@ export interface Rasse {
   bilanz: Bilanz;
   /** Nur im Katalog gefüllt: in dieser Kampagne wählbar? */
   freigegeben: boolean;
+  /** Rassen-Features (10.10.2026, budget-neutral — siehe
+   * backend/app/rassen/schemas.py). */
+  bonusFreebees: number;
+  gratisGegenstandId: string;
+  gratisErsterKaufTyp: string;
+  featureHinweis: string;
 }
 
 export interface RasseEingabe {
@@ -41,6 +47,10 @@ export interface RasseEingabe {
   modifikatoren?: Record<string, number>;
   freiePunkte?: number[];
   sortOrder?: number;
+  bonusFreebees?: number;
+  gratisGegenstandId?: string;
+  gratisErsterKaufTyp?: string;
+  featureHinweis?: string;
 }
 
 function basis(cid: string) {

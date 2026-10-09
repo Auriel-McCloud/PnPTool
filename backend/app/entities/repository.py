@@ -64,10 +64,10 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
-ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
+ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
 EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder", "istEntwurf", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
 # Fraktion: Organisationen, Konzerne, Gangs — was sie wollen (ziele) und
 # womit sie es durchsetzen (ressourcen) sind eigene Felder statt Freitext in
@@ -101,6 +101,10 @@ _BOGEN_DEFAULTS: dict = {
     "istCritter": False,
     "istKI": False,
     "istHaendler": False,
+    # Tutorial-Shop (10.10.2026): Bestandsdaten (Personen/Orte vor dieser
+    # Funktion) kennen die Felder noch nicht (Stolperstein 9).
+    "istTutorialHaendler": False,
+    "istTutorialShop": False,
     # Shop-Feature (Ort-Seite): Bestandsorte kennen das Feld noch nicht —
     # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
     # (derselbe Stolperstein wie bei istHaendler/istCritter/istKI oben).

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
+import { rassenApi, type Rasse } from "../rassen/api";
 import {
   zusatzfertigkeitenApi,
   type Zusatzfertigkeit,
@@ -22,6 +23,7 @@ import "./zusatzfertigkeiten.css";
  */
 export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: string }) {
   const [liste, setListe] = useState<Zusatzfertigkeit[]>([]);
+  const [rassen, setRassen] = useState<Rasse[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [offen, setOffen] = useState<Zusatzfertigkeit | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
@@ -36,7 +38,10 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
 
   useEffect(() => {
     setLaedt(true);
-    neuLaden().finally(() => setLaedt(false));
+    Promise.all([neuLaden(), rassenApi.verfuegbar(campaignId).then(setRassen).catch(() => setRassen([]))]).finally(
+      () => setLaedt(false),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
   async function anlegen(e: FormEvent) {
@@ -76,6 +81,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
             <tr>
               <th>Name</th>
               <th>Kurzbeschreibung</th>
+              <th>Rasse</th>
             </tr>
           </thead>
           <tbody>
@@ -83,6 +89,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
               <tr key={z.id} onClick={() => setOffen(z)} className="zf-zeile">
                 <td className="zf-zeile-name">{z.name}</td>
                 <td className="zf-zeile-kurz">{z.kurzbeschreibung || <em>—</em>}</td>
+                <td className="zf-zeile-kurz">{z.nurFuerRasse || <em>alle</em>}</td>
               </tr>
             ))}
           </tbody>
@@ -116,6 +123,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
         <ZusatzfertigkeitEditor
           campaignId={campaignId}
           eintrag={offen}
+          rassen={rassen}
           onSchliessen={() => setOffen(null)}
           onGeaendert={neuLaden}
         />
@@ -140,11 +148,13 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
 function ZusatzfertigkeitEditor({
   campaignId,
   eintrag,
+  rassen,
   onSchliessen,
   onGeaendert,
 }: {
   campaignId: string;
   eintrag: Zusatzfertigkeit;
+  rassen: Rasse[];
   onSchliessen: () => void;
   onGeaendert: () => Promise<void>;
 }) {
@@ -181,6 +191,12 @@ function ZusatzfertigkeitEditor({
   async function detailSpeichern() {
     if (detail === eintrag.detailbeschreibung) return;
     await zusatzfertigkeitenApi.aendern(campaignId, eintrag.id, { detailbeschreibung: detail });
+    await onGeaendert();
+  }
+
+  async function rasseSpeichern(wert: string) {
+    if (wert === eintrag.nurFuerRasse) return;
+    await zusatzfertigkeitenApi.aendern(campaignId, eintrag.id, { nurFuerRasse: wert });
     await onGeaendert();
   }
 
@@ -227,6 +243,22 @@ function ZusatzfertigkeitEditor({
               onBlur={detailSpeichern}
             />
           </label>
+
+          <label className="zf-feld">
+            Nur für Rasse (10.10.2026, Vaet-Transformation)
+            <select value={eintrag.nurFuerRasse} onChange={(e) => void rasseSpeichern(e.target.value)}>
+              <option value="">alle Rassen</option>
+              {rassen.map((r) => (
+                <option key={r.id} value={r.name}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="zf-hinweis">
+            Leer = jeder kann sie wählen. Gesetzt = nur Charaktere dieser Rasse sehen/wählen sie in der
+            Erstellung und im LevelUp.
+          </p>
 
           <div className="zf-aktionen">
             <button type="button" onClick={() => setLoeschenOffen(true)} className="zf-loeschen">
