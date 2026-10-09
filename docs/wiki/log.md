@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-09] update | Chibi-Woche 04.–08.10. nachgezogen
+
+HEAD/Live `be2a6ff`. Windows-Klon war auf `19c78e9`, Fast-Forward am 09.10.
+45 Commits von Chibi Neko (bebop/Telegram), alles auf `main` und live.
+Siehe CLAUDE.md „Zuletzt gebaut 04.–08.10.2026“. Kurz: Laden-am-Ort-Fixes,
+Massen-KI als Job, Æ-Begleiter, Alias aka Name, Flora/Fauna (Gewächs +
+`LEBT_IN`), Gegenstand-Vorlage/Typ-ändern, Gemini-Retry + Mistral-Fallback,
+Kontakte-Suche, Ideenschmiede-Autosave.
+
 ## [2026-10-04] update | Shop hängt am Ort
 
 Ort = Laden (Beschreibung, Kulisse, Sortiment). Person bleibt Händler

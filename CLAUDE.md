@@ -294,6 +294,28 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (04.–08.10.2026 — Urlaubs-Woche mit Chibi Neko auf bebop):**
+- **Was:** 45 Commits auf `main`, HEAD `be2a6ff`. Gebaut und live geschaltet von Chibi Neko
+  über Telegram, während Andromeda aus war. Windows-Klon hing bis 09.10. auf
+  `19c78e9` und ist per Fast-Forward nachgezogen. Live-Frontend-Image vom
+  08.10. 13:54 (letzter Commit), Backend-Image vom 07.10. 20:28 (letzter
+  Backend-Commit war 18:00 — Kontakte/Ideenschmiede danach nur Frontend).
+- **Inhalt (alles live, chronologisch):** Ort zum Laden + Shop-Regressionen;
+  Zusatzfertigkeiten zwischen Fertigkeiten und Hexkraft/Sphäre/NeuroWeaving;
+  Massen-KI als Hintergrund-Job, Anzahl-Feld-Clamp, Beratung-Prompt thematisch
+  fokussiert; Begleiter-Label „KI“→„Æ“; Rucksack 🎒 im Burgermenü; Alias-Feld
+  plus Anzeige „Alias aka echter Name“; Charaktererstellung überlagert
+  Einfluss/Verwaltung nicht mehr; Flora & Fauna (Entität Gewächs, Kante
+  `LEBT_IN`, eigener Burgermenü-Punkt mit Suche/Anlegen); Rassen-Baukasten
+  Stale-Closure bei Modifikator-Klicks; Gegenstand-Anlegen mit Vorlage statt
+  Platzhalter; Gegenstandstyp nachträglich nur SL; Popup schließt nicht mehr
+  bei Textauswahl über den Rand; Gemini HTTP-503-Retry; Beratung
+  Mistral-Fallback + Anbieter-Label; Kontakte: Messenger-Hinweis statt stillem
+  Fehler + Suchfeld PC/NPC; Ideenschmiede-Geschichte-Entwurf speichert wirklich
+  (Autosave). Rassen-Fairness (immer 24) steht extra im nächsten Block.
+- **Doku:** Bis 09.10. war hier nur die Rassen-Fairness nachgetragen. Dieser
+  Block schließt die Lücke. Keine offenen Feature-Branches, Working Tree sauber.
+
 **Zuletzt gebaut (04.10.2026 — Rassen-Fairness: Nachteile geben jetzt einen Punkt zurück):**
 - **Was:** Mark meldete einen vermuteten Logikfehler bei den Rassen ("ich
   glaube es wird nur der erste - Wert gerechnet, aber alle + Werte... Und
