@@ -514,6 +514,13 @@
 /* ============================================================ RESPONSIVE */
 
 @media (max-width: 600px) {
+  .msg-huelle,
+  .msg-chat {
+    height: var(--vv-h, 100dvh);
+    max-height: var(--vv-h, 100dvh);
+    min-height: 0;
+  }
+
   .msg-nachricht {
     max-width: 95%;
   }

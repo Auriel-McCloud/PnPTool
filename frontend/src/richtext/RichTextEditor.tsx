@@ -41,6 +41,7 @@ function ToolbarButton({
       title={title}
       disabled={disabled}
       onMouseDown={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.preventDefault()}
       onClick={onClick}
       style={{
         fontWeight: active ? "bold" : "normal",

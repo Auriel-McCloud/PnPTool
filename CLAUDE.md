@@ -318,6 +318,25 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (09.10.2026 — Android-Tastatur bleibt über dem Text):**
+- **Was:** Mark: Tastatur klappt zu beim Markieren/Caret-Setzen/Autokorrektur,
+  Text verschwindet unregelmäßig darunter. Der parallele Chat (Rahmen um
+  langen Editor-Text, `097541f`) war ein anderes Thema und ist fertig.
+- **Ursache:** PWA fullscreen ändert oft nur den Visual Viewport. Fenster
+  blieben `94svh` hoch (unter der Tastatur), `body { overflow: hidden }`
+  verhinderte das Nachschieben, und `.ProseMirror { overflow-y: auto }` plus
+  `.fn-inhalt` war ein doppelter Scroll-Container — Android nimmt Caret-Tipp
+  als Scroll und blendet die IME aus. Messenger hat bei jedem
+  `visualViewport.scroll` `scrollIntoView` gemacht, das stiehlt den Fokus.
+- **Fix:** `tastatur.ts` setzt `--vv-h`/`--vv-oben`/`--tastatur` und holt
+  die Caret-Stelle nur ins Bild, wenn sie wirklich verdeckt ist (nicht bei
+  laufender Markierung). Fenster folgt dem Visual Viewport. Viewport-Meta
+  `interactive-widget=resizes-content`. Mobil kein intern scrollendes
+  contenteditable (Desktop-Rahmen bleibt). Toolbar/Zoom `pointerdown`
+  preventDefault. Messenger nutzt dieselben CSS-Vars.
+- **Verifiziert:** `tsc --noEmit` sauber. **Am Handy gegenprüfen** — siehe
+  „Offen“ oben.
+
 **Zuletzt gebaut (10.10.2026 — Lebenspunkte-Grundwert pro Critter):**
 - **Was:** Mark fiel auf, dass Critter (wie PCs/NPCs) standardmäßig 6
   Lebenspunkte haben — für eine Ratte oder einen Rattenschwarm viel zu

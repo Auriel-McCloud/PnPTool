@@ -101,8 +101,6 @@ function MessengerChat({
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const endeRef = useRef<HTMLDivElement>(null);
-  const chatRef = useRef<HTMLDivElement>(null);
-  const eingabeRef = useRef<HTMLDivElement>(null);
 
   async function laden() {
     try {
@@ -136,36 +134,6 @@ function MessengerChat({
     }
   }, [chat?.nachrichten.length]);
 
-  // Composer bei geöffneter mobiler Tastatur sichtbar halten: die virtuelle
-  // Tastatur verkleinert den Visual Viewport, ohne dass sich Layout-Viewport
-  // oder document.scrollingElement ändern — das CSS allein kriegt das nicht
-  // mit. Wir schieben die Chat-Hülle per Inline-Style auf die tatsächlich
-  // sichtbare Höhe und scrollen den Composer danach ins Bild.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    function anpassen() {
-      const mobil = window.matchMedia("(max-width: 600px)").matches;
-      if (!mobil || !chatRef.current) return;
-      // Höhe des sichtbaren Bereichs (schrumpft, wenn die Tastatur aufgeht).
-      chatRef.current.style.height = `${vv!.height}px`;
-      // Kurz warten, bis der Browser das neue Layout übernommen hat, dann
-      // Composer + Verlaufsende wieder ins Bild holen.
-      requestAnimationFrame(() => {
-        eingabeRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-      });
-    }
-
-    anpassen();
-    vv.addEventListener("resize", anpassen);
-    vv.addEventListener("scroll", anpassen);
-    return () => {
-      vv.removeEventListener("resize", anpassen);
-      vv.removeEventListener("scroll", anpassen);
-    };
-  }, []);
-
   async function senden() {
     const sauber = text.trim();
     if (!sauber || nurLesen) return;
@@ -185,7 +153,7 @@ function MessengerChat({
 
   return (
     <div className="msg-huelle">
-      <div className="msg-chat" ref={chatRef}>
+      <div className="msg-chat">
         {/* Header */}
         <header className="msg-header">
           <button type="button" className="msg-zurueck" onClick={onZurueck}>
@@ -224,7 +192,7 @@ function MessengerChat({
             ⚠ Du kannst hier nicht antworten
           </div>
         ) : (
-          <div className="msg-eingabe" ref={eingabeRef}>
+          <div className="msg-eingabe">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}

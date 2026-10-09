@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 // Stellt das Vollbild nach dem Entsperren wieder her (siehe dort).
 import "./shell/vollbild";
+import "./shell/tastatur";
 import { themeLesen, themeSetzen } from './theme/theme'
 import { zoomAnwenden } from './richtext/textzoom'
 

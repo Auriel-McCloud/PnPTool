@@ -26,6 +26,10 @@
   -webkit-font-smoothing: antialiased;
   /* Verhindert, dass iOS/Android beim Antippen grau aufblitzen */
   -webkit-tap-highlight-color: transparent;
+  /* Visual Viewport — tastatur.ts, Fallback ohne JS / ohne API */
+  --vv-h: 100dvh;
+  --vv-oben: 0px;
+  --tastatur: 0px;
 }
 
 body {
@@ -128,6 +132,13 @@ button {
   min-height: var(--tipp);
   max-width: 100%;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+/* pan-y am Fenster-Inhalt soll Caret-Setzen und Textauswahl nicht schlucken */
+input,
+select,
+textarea {
+  touch-action: auto;
 }
 
 textarea {

@@ -174,17 +174,32 @@
 /* --- Handy: bildschirmfuellend ---------------------------------------- */
 
 @media (max-width: 599px) {
+  /* Folgt dem Visual Viewport, nicht dem Layout-Viewport: sonst bleibt das
+     Blatt 94svh hoch, während die Tastatur den unteren Teil verdeckt. */
+  .fn-hintergrund {
+    top: var(--vv-oben, 0px);
+    height: var(--vv-h, 100dvh);
+    bottom: auto;
+    left: 0;
+    right: 0;
+  }
+
   .fn-fenster {
     left: 0;
     top: auto;
     bottom: 0;
     transform: none;
-    width: 100vw;
-    height: 94svh;
+    width: 100%;
+    height: min(94svh, 100%);
     max-height: none;
     border-width: 1px 0 0;
     border-radius: 12px 12px 0 0;
     animation: none;
+  }
+
+  html.tastatur-offen .fn-fenster {
+    height: 100%;
+    border-radius: 0;
   }
 
   /* Fenster ist hier ohnehin bildschirmfuellend: weder Ziehen noch

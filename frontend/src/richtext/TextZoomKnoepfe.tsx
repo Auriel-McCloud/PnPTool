@@ -17,6 +17,7 @@ export function TextZoomKnoepfe() {
         type="button"
         className="rt-zoom-knopf"
         onMouseDown={(e) => e.preventDefault()}
+        onPointerDown={(e) => e.preventDefault()}
         onClick={verkleinern}
         disabled={istMin}
         title="Schrift verkleinern"
@@ -29,6 +30,7 @@ export function TextZoomKnoepfe() {
         type="button"
         className="rt-zoom-knopf"
         onMouseDown={(e) => e.preventDefault()}
+        onPointerDown={(e) => e.preventDefault()}
         onClick={vergroessern}
         disabled={istMax}
         title="Schrift vergrößern"

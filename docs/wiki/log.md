@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-09] update | Android-Tastatur über dem Text
+
+Fenster folgen dem Visual Viewport, Editor scrollt am Handy nicht in sich
+selbst. Siehe CLAUDE.md 09.10.2026.
+
 ## [2026-10-09] create | Spieler-Lexikon (Welt/Fauna/Flora/Objekte) entworfen
 
 Neue Seite [[entities/spieler-lexikon]], Status entschieden-nicht-umgesetzt.
