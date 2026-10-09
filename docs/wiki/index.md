@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-02 | Seiten: 34
+> Zuletzt aktualisiert: 2026-10-09 | Seiten: 35
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -58,6 +58,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09., Auto-Hooks + SL-Zeitleiste 29.09. Achievements nur Konzept |
 | [[entities/achievements]] | Achievement-Konzept (27.09.): `einzigartig`-Häkchen (wie bei Gegenständen) trennt campaign-weit einmalige Titel ("First Kill") von pro-Person wiederholbaren ("Mörder"); Auto-Erkennung live aus dem Ereignisprotokoll berechnet (kein Vorschlags-Knoten nötig) + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Ort+Sitzung; UI: 🏆-Symbol in der Werkzeugleiste (Spieler: Scroll-Popup neueste zuerst, SL: volles Verwaltungs-Fenster), Auto-Popup außer während laufendem Kampf (dann Nachlieferung bei Kampfende) |
 | [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten. SL-Tabelle + KI. In der Erstellung: Button im Fertigkeiten-Popup öffnet Auswahl, danach normale Punktzeilen im Raster (Paket) und Freebees; LevelUp eigener Popup mit EP |
+| [[entities/spieler-lexikon]] | Burgermenü „Lexikon" (Welt/Fauna/Flora/Objekte), entschieden-nicht-umgesetzt (09.10.): automatische `ENTDECKT`-Kante per Erreichbarkeits-Hook (max. 7 Hops, bricht an SL-geheimen Kanten ab) schaltet nur Existenz frei, `sichtbarkeit` weiter die Beschreibung; `zeigeInGraph`→`storyRelevant` für MacGuffin-Objekte; Favoriten, Notizen pro Objekt |
 
 ## Vergleiche
 

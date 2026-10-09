@@ -3,6 +3,24 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-09] create | Spieler-Lexikon (Welt/Fauna/Flora/Objekte) entworfen
+
+Neue Seite [[entities/spieler-lexikon]], Status entschieden-nicht-umgesetzt.
+Mark will Wissenswurf-Ergebnisse (Ort/Critter/Gewächs/MacGuffin-Objekt) als
+Burgermenü-Lexikon zeigen statt per Mitteilung. Zentrale Design-Entscheidung:
+zwei Sichtbarkeits-Schichten — neue automatische `ENTDECKT`-Kante (per
+Erreichbarkeits-Hook, max. 7 Hops ab PC über Party/Event/Ort/NPC, bricht hart
+an SL-geheimen Verbindungen/unsichtbaren Knoten ab, pro PC statt
+campagnenweit, dauerhaft gespeichert wie beim Ereignisprotokoll) schaltet nur
+Existenz frei; bestehendes `sichtbarkeit`-Feld bleibt wie bisher für die
+Beschreibung zuständig. `Gegenstand.zeigeInGraph` wird zu `storyRelevant`
+umbenannt für MacGuffin-Objekte, gleiche Entdeckungs-Kette wie Orte/Critter.
+Dazu Favoriten-Kante `FAVORISIERT`, Spieler-Notizen bekommen optionalen
+Objektbezug (`bezugTyp`/`bezugId`), SL-Geheim-Knopf bei Spielern als
+kosmetischer Nebenbefund notiert. `ENTDECKT`/`FAVORISIERT` in
+[[entities/neo4j-datenmodell]] nachgetragen, Tag `spieler-lexikon` in
+SCHEMA.md ergänzt. Code noch nicht gebaut — folgt direkt im Anschluss.
+
 ## [2026-10-09] update | Chibi-Woche 04.–08.10. nachgezogen
 
 HEAD/Live `be2a6ff`. Windows-Klon war auf `19c78e9`, Fast-Forward am 09.10.

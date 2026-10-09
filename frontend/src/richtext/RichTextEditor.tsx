@@ -66,6 +66,7 @@ export function RichTextEditor({
   onChange,
   minHeight = 120,
   kiKontext,
+  versteckenErlaubt = true,
 }: {
   content: JSONContent;
   onChange: (doc: JSONContent) => void;
@@ -83,6 +84,14 @@ export function RichTextEditor({
     objektName: string;
     feldLabel: string;
   };
+  /**
+   * Blendet den 🔒-„SL-geheim"-Knopf aus (09.10.2026, Mark: der Knopf taucht
+   * auch bei Spielern auf, z.B. in den eigenen Spieler-Notizen — dort bringt
+   * er nichts, die Spielleitung sieht diese Einträge nie, er versteckt also
+   * nur vor dem Spieler selbst beim nächsten Lesen). Default `true` (SL-Sicht
+   * an Entitäten unverändert), `SpielerNotizen.tsx` setzt `false`.
+   */
+  versteckenErlaubt?: boolean;
 }) {
   const [kiOffen, setKiOffen] = useState(false);
   const [pruefLaeuft, setPruefLaeuft] = useState(false);
@@ -190,13 +199,15 @@ export function RichTextEditor({
           ▦ Tabelle
         </ToolbarButton>
         <span style={{ borderLeft: "1px solid var(--linie)", margin: "0 4px" }} />
-        <ToolbarButton
-          title="Markierten Text vor Spielern verstecken (nur du siehst die Markierung)"
-          active={editor.isActive("gmSecret")}
-          onClick={() => editor.chain().focus().toggleGmSecret().run()}
-        >
-          🔒 SL-geheim
-        </ToolbarButton>
+        {versteckenErlaubt && (
+          <ToolbarButton
+            title="Markierten Text vor Spielern verstecken (nur du siehst die Markierung)"
+            active={editor.isActive("gmSecret")}
+            onClick={() => editor.chain().focus().toggleGmSecret().run()}
+          >
+            🔒 SL-geheim
+          </ToolbarButton>
+        )}
         {kiKontext && (
           <ToolbarButton title="Mit KI einen Textvorschlag für dieses Feld generieren" onClick={() => setKiOffen(true)}>
             <span className="rt-ki-btn">✨ KI</span>

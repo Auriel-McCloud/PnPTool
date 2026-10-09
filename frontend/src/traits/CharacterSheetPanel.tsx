@@ -183,7 +183,7 @@ export function GegenstandRow({
   const [kraft, setKraft] = useState(item.kraft);
   const [seltenheit, setSeltenheit] = useState(item.seltenheit);
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
-  const [zeigeInGraph, setZeigeInGraph] = useState(item.zeigeInGraph);
+  const [storyRelevant, setStoryRelevant] = useState(item.storyRelevant);
   const [einzigartig, setEinzigartig] = useState(item.einzigartig);
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
@@ -284,7 +284,7 @@ export function GegenstandRow({
     setKraft(item.kraft);
     setSeltenheit(item.seltenheit);
     setEigenschaften(recordToPairs(item.eigenschaften));
-    setZeigeInGraph(item.zeigeInGraph);
+    setStoryRelevant(item.storyRelevant);
     setEinzigartig(item.einzigartig);
     setHatMenge(item.hatMenge);
     setMenge(item.menge);
@@ -376,7 +376,7 @@ export function GegenstandRow({
       kraft,
       seltenheit,
       eigenschaften: pairsToRecord(eigenschaften),
-      zeigeInGraph,
+      storyRelevant,
       einzigartig,
       hatMenge,
       menge: hatMenge ? menge : 1,
@@ -1091,8 +1091,8 @@ export function GegenstandRow({
                 {showOptions && (
                   <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
                     <label style={{ fontSize: "0.9em" }}>
-                      <input type="checkbox" checked={zeigeInGraph} onChange={(e) => setZeigeInGraph(e.target.checked)} />{" "}
-                      Im Beziehungsgraph anzeigen
+                      <input type="checkbox" checked={storyRelevant} onChange={(e) => setStoryRelevant(e.target.checked)} />{" "}
+                      Story relevant (im Beziehungsgraph + Spieler-Lexikon sobald entdeckt)
                     </label>
                     <label style={{ fontSize: "0.9em" }}>
                       <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
@@ -1195,7 +1195,7 @@ export function GegenstandRow({
 
               {item.istVorlage &&
                 (() => {
-                  const keineKopie = item.einzigartig || item.zeigeInGraph;
+                  const keineKopie = item.einzigartig || item.storyRelevant;
                   return (
                     <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
                       <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
@@ -1301,7 +1301,7 @@ export function GegenstandRow({
           </span>
           <span className="gg-kachel-marken">
             {item.sichtbarkeit === "GM" && <span className="gg-marke" data-ton="signal">SL</span>}
-            {item.zeigeInGraph && <span className="gg-marke" data-ton="neon">Graph</span>}
+            {item.storyRelevant && <span className="gg-marke" data-ton="neon">Story</span>}
             {item.istVorlage && <span className="gg-marke">Vorlage</span>}
           </span>
         </button>
@@ -1321,7 +1321,7 @@ export function GegenstandRow({
           {item.hatMenge && <strong>×{item.menge}</strong>}
           <span style={{ fontSize: "0.75em", color: "var(--text-leise)" }}>
             [{item.typ}
-            {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.zeigeInGraph && " · im Graph"}
+            {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.storyRelevant && " · Story relevant"}
             {item.istVorlage && " · Vorlage"}
           </span>
         </span>

@@ -36,6 +36,7 @@ import uuid
 
 from app.db.neo4j_driver import get_driver
 from app.ereignisprotokoll import hooks
+from app.lexikon import hooks as lexikon_hooks
 
 RETURN_FIELDS = """
     party.id AS id, party.name AS name, party.beschreibung AS beschreibung,
@@ -162,7 +163,10 @@ async def mitglied_hinzufuegen(campaign_id: str, party_id: str, person_id: str) 
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, party_id=party_id, person_id=person_id)
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        decoded = _decode(dict(record)) if record else None
+        if decoded is not None:
+            await lexikon_hooks.party_veraendert(campaign_id, party_id)
+        return decoded
 
 
 async def mitglied_entfernen(campaign_id: str, party_id: str, person_id: str) -> dict | None:
@@ -215,6 +219,7 @@ async def aufenthaltsort_setzen(campaign_id: str, party_id: str, ziel_id: str | 
             await hooks.aufenthalt(
                 campaign_id, ort_id=ziel_id, ort_kind=ziel_kind, party_id=party_id,
             )
+            await lexikon_hooks.party_veraendert(campaign_id, party_id)
         return decoded
 
 

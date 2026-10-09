@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -110,6 +110,10 @@ _BOGEN_DEFAULTS: dict = {
     # Feldbeschriftungen auf dem Blatt, keine Mechanik. Bestandscharaktere
     # kennen das Feld noch nicht (Stolperstein 9).
     "istPflanzenCritter": False,
+    # Lebenspunkte-Grundwert (10.10.2026): Bestandscharaktere kennen das Feld
+    # noch nicht — None heisst "globaler Standardwert gilt" (siehe
+    # traits/bogen.py::bogen_uebersicht), ist also selbst schon der richtige
+    # Fallback und steht deshalb NICHT in dieser Liste.
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.

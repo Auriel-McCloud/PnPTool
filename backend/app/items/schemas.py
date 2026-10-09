@@ -45,9 +45,11 @@ class GegenstandCreate(BaseModel):
     # Schadensart, ...) — bewusst nicht als starres Schema pro Typ, damit neue
     # Gegenstandsarten keine Backend-Änderung brauchen.
     eigenschaften: dict[str, str] = {}
-    # MacGuffins/plot-relevante Gegenstände können als eigener Knoten im
-    # Beziehungsgraph erscheinen (normale Gegenstände wie ein Hemdknopf nicht).
-    zeigeInGraph: bool = False
+    # MacGuffins/plot-relevante Gegenstände: erscheinen als eigener Knoten im
+    # Beziehungsgraph (normale Gegenstände wie ein Hemdknopf nicht) UND sind
+    # Grundlage der Lexikon-Entdeckungskette fürs Spieler-Lexikon (09.10.2026,
+    # siehe docs/wiki/entities/spieler-lexikon.md). Hieß bis dahin zeigeInGraph.
+    storyRelevant: bool = False
     # Einzigartig = genau ein Exemplar in der Welt (z.B. "Das Amulett von
     # Neotopia"), rein thematisch/für die Lore. Unabhängig davon: hatMenge
     # steuert, ob überhaupt eine Stückzahl geführt wird — z.B. ist ein Seil
@@ -212,7 +214,7 @@ class GegenstandUpdate(BaseModel):
     kraft: int | None = None
     cyberwall: int | None = None
     eigenschaften: dict[str, str] | None = None
-    zeigeInGraph: bool | None = None
+    storyRelevant: bool | None = None
     einzigartig: bool | None = None
     hatMenge: bool | None = None
     menge: int | None = None
@@ -278,7 +280,7 @@ class GegenstandResponse(BaseModel):
     kraft: int
     cyberwall: int
     eigenschaften: dict[str, str]
-    zeigeInGraph: bool
+    storyRelevant: bool
     einzigartig: bool
     hatMenge: bool
     menge: int

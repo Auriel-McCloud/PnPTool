@@ -851,7 +851,7 @@ async def _gegenstand_verknuepfen(campaign_id: str, gegenstand_id: str, preis: i
         if ziel_node.get("istHaendler"):
             return await haendler_repository.verkauft_hinzufuegen(campaign_id, ziel_id, gegenstand_id, preis)
         sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel_node.get("personType") or "NPC", ziel_id)
-        gegenstand = {"id": gegenstand_id, "einzigartig": False, "zeigeInGraph": False, "bildUrl": None}
+        gegenstand = {"id": gegenstand_id, "einzigartig": False, "storyRelevant": False, "bildUrl": None}
         ergebnis = await assign_copy(campaign_id, gegenstand, ziel_id, sichtbarkeit, sichtbar_fuer)
         return ergebnis is not None
     return False

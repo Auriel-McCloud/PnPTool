@@ -65,6 +65,7 @@ function NotizEditor({
       <label className="sn-label">Text</label>
       <RichTextEditor
         content={doc}
+        versteckenErlaubt={false}
         onChange={(naechstes) => {
           setDoc(naechstes);
           merken(naechstes);

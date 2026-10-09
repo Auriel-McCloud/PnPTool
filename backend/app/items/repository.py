@@ -6,7 +6,7 @@ from app.db.neo4j_driver import get_driver
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
     g.typ AS typ, g.preis AS preis, g.kraft AS kraft, g.cyberwall AS cyberwall,
-    g.eigenschaften AS eigenschaften, g.zeigeInGraph AS zeigeInGraph,
+    g.eigenschaften AS eigenschaften, g.storyRelevant AS storyRelevant,
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
@@ -83,7 +83,7 @@ def _decode(record: dict) -> dict:
         record["eigenschaften"] = json.loads(record["eigenschaften"]) if record["eigenschaften"] else {}
     except (json.JSONDecodeError, TypeError):
         record["eigenschaften"] = {}
-    record["zeigeInGraph"] = bool(record.get("zeigeInGraph"))
+    record["storyRelevant"] = bool(record.get("storyRelevant"))
     record["bildUrl"] = record.get("bildUrl") or ""
     record["typ"] = record.get("typ") or "Sonstiges"
     record["preis"] = record.get("preis") or 0
@@ -194,7 +194,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
         CREATE (g:Gegenstand {
             id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, cyberwall: $cyberwall, eigenschaften: $eigenschaften,
-            zeigeInGraph: $zeigeInGraph, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
+            storyRelevant: $storyRelevant, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
             gewicht: $gewicht, kapazitaet: $kapazitaet, istBehaelter: $istBehaelter,
@@ -243,7 +243,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             kraft=data["kraft"],
             cyberwall=data.get("cyberwall") or 0,
             eigenschaften=json.dumps(data["eigenschaften"]),
-            zeigeInGraph=data["zeigeInGraph"],
+            storyRelevant=data["storyRelevant"],
             einzigartig=data["einzigartig"],
             hatMenge=data["hatMenge"],
             menge=data["menge"],

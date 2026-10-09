@@ -3,11 +3,19 @@
 Kein Kampagnen-Wissen, keine Freigabe, keine Verknüpfungen. Nur der
 Spieler-Zugang sieht seine eigenen Einträge — die Spielleitung hat an
 jeder Entität bereits Notizfelder.
+
+Seit 09.10.2026: optionaler Bezug auf einen Lexikon-Eintrag (Ort/Event/
+Fraktion/Person/Gewaechs/Gegenstand) — siehe
+docs/wiki/entities/spieler-lexikon.md.
 """
+
+from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
 LEERES_DOKUMENT = '{"type":"doc","content":[]}'
+
+LexikonBezugTyp = Literal["Ort", "Event", "Fraktion", "Person", "Gewaechs", "Gegenstand"]
 
 
 class SpielerNotizCreate(BaseModel):
@@ -42,5 +50,8 @@ class SpielerNotizResponse(BaseModel):
     id: str
     titel: str
     inhalt: str
+    bezugTyp: LexikonBezugTyp | None = None
+    bezugId: str | None = None
     erstelltAm: str
     geaendertAm: str
+

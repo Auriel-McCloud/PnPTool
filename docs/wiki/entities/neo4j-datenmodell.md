@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-10-02
+updated: 2026-10-09
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -61,6 +61,8 @@ siehe [[ki-integration]].
 | `HAT_SITZUNG` | Campaign → Sitzung | Spielabend-Anker fürs [[ereignisprotokoll]] |
 | `HAT_BERATUNG` | Campaign → KiBeratung | SL-Beratungschat, siehe [[ki-integration]] |
 | `ENTHAELT` | KiBeratung → KiBeratungNachricht | Chatzeilen; nie in `sammle_kontext` |
+| `ENTDECKT` | Person (PC) → Ort/Event/Fraktion/Person/Gewaechs/Gegenstand | automatische Existenz-Freigabe per Erreichbarkeits-Hook, max. 7 Hops, bricht an SL-geheimen Kanten ab — siehe [[spieler-lexikon]] |
+| `FAVORISIERT` | Person (PC) → Ort/Event/Fraktion/Person/Gewaechs/Gegenstand | rein spielerseitig, siehe [[spieler-lexikon]] |
 
 **Fast alles trägt zusätzlich `campaignId` als Property** statt (oder zusätzlich
 zu) expliziten Kanten zur Kampagne — schneller für Queries, laut

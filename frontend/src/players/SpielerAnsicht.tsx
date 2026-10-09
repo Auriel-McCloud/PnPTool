@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
+import { entitiesApi, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { WikiAnsicht } from "../wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "../mitteilungen/MitteilungenKontext";
@@ -28,8 +28,6 @@ import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
-import { parseRichText } from "../richtext/content";
-import { RichTextView } from "../richtext/RichTextView";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
 import { VollbildKnopf } from "../shell/VollbildKnopf";
@@ -41,6 +39,7 @@ import { CharakterportraitAnsicht } from "./CharakterportraitAnsicht";
 import { SpielerEinstieg } from "./SpielerEinstieg";
 import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
+import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -74,7 +73,7 @@ const BEREICHE_STATISCH: Bereich[] = [
   // ist, ohne zu fragen.
   { id: "kampf", name: "Kampf", symbol: "⚔", farbe: "var(--bereich-kampf)" },
   { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "var(--bereich-kontakte)" },
-  { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
+  { id: "lexikon", name: "Lexikon", symbol: "📖", farbe: "var(--bereich-orte)" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
@@ -88,22 +87,6 @@ const AUGMENTS_BEREICH: Bereich = {
   symbol: "⚕",
   farbe: "var(--bereich-regeln)",
 };
-
-function Karte({ titel, unter, text }: { titel: string; unter?: string; text?: string }) {
-  return (
-    <article style={{ borderBottom: "1px solid var(--linie)", padding: "10px 0" }}>
-      <h3 style={{ margin: 0, color: "var(--text)", textTransform: "none", letterSpacing: 0 }}>
-        {titel}
-        {unter && <span style={{ color: "var(--text-leise)", fontWeight: "normal" }}> · {unter}</span>}
-      </h3>
-      {text && (
-        <div style={{ marginTop: 4, color: "var(--text-leise)" }}>
-          <RichTextView content={parseRichText(text)} />
-        </div>
-      )}
-    </article>
-  );
-}
 
 export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [ich, setIch] = useState<SpielerMe | null>(null);
@@ -146,8 +129,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // jetzt den Messenger nutzt. Später könnte eine Übersicht "Bekannte NPCs" sinnvoll sein.
   const [personen, setPersonen] = useState<Person[]>([]);
   void personen; // TypeScript: wird für den Graphen bereitgehalten
-  const [orte, setOrte] = useState<Ort[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
   const [kontakte, setKontakte] = useState<Kontakt[]>([]);
@@ -164,8 +145,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     if (!ich) return;
     const cid = ich.campaignId;
     entitiesApi.listPersonen(cid).then(setPersonen).catch(() => setPersonen([]));
-    entitiesApi.listOrte(cid).then(setOrte).catch(() => setOrte([]));
-    entitiesApi.listEvents(cid).then(setEvents).catch(() => setEvents([]));
     itemsApi.listAlle(cid).then(setSachen).catch(() => setSachen([]));
     einstellungenApi.lesen(cid).then(setEinstellungen).catch(() => setEinstellungen(null));
     itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
@@ -369,6 +348,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         bereich === "fahrzeuge" ||
         bereich === "begleiter" ||
         bereich === "kampf" ||
+        bereich === "lexikon" ||
         bereich === "wiki"
       }
       werkzeuge={
@@ -608,22 +588,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         </div>
       )}
 
-      {bereich === "orte" && (
-        <>
-          {orte.length === 0 && <p style={{ color: "var(--text-leise)" }}>Noch keine Orte bekannt.</p>}
-          {orte.map((o) => (
-            <Karte key={o.id} titel={o.name} text={o.description} />
-          ))}
-          {events.length > 0 && (
-            <>
-              <h3 style={{ marginTop: 20 }}>Was geschehen ist</h3>
-              {events.map((e) => (
-                <Karte key={e.id} titel={e.title} unter={e.timestamp || undefined} text={e.description} />
-              ))}
-            </>
-          )}
-        </>
-      )}
+      {bereich === "lexikon" && <LexikonAnsicht />}
 
       {bereich === "graph" && <CampaignGraphView campaignId={ich.campaignId} />}
 

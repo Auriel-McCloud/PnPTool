@@ -9,6 +9,7 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.entities import repository
 from app.entities import filterung
 from app.ereignisprotokoll import hooks
+from app.lexikon import hooks as lexikon_hooks
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.entities.visibility import (
     filter_entities_for_viewer,
@@ -173,6 +174,8 @@ async def update_person(campaign_id: str, node_id: str, body: PersonUpdate):
             campaign_id, person_id=node_id, art="RASSE_GEAENDERT",
             alt=vorherige_rasse or "", neu=daten["rasse"],
         )
+    if daten.get("sichtbarkeit") is not None or daten.get("istCritter") is not None:
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return node
 
 
@@ -399,6 +402,8 @@ async def update_ort(campaign_id: str, node_id: str, body: OrtUpdate):
     node = await repository.update_node("Ort", ORT_FIELDS, campaign_id, node_id, body.model_dump())
     if node is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ort nicht gefunden")
+    if body.sichtbarkeit is not None:
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return node
 
 
@@ -446,6 +451,8 @@ async def update_event(campaign_id: str, node_id: str, body: EventUpdate):
     node = await repository.update_node("Event", EVENT_FIELDS, campaign_id, node_id, body.model_dump())
     if node is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event nicht gefunden")
+    if body.sichtbarkeit is not None:
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return node
 
 
@@ -493,6 +500,8 @@ async def update_fraktion(campaign_id: str, node_id: str, body: FraktionUpdate):
     node = await repository.update_node("Fraktion", FRAKTION_FIELDS, campaign_id, node_id, body.model_dump())
     if node is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Fraktion nicht gefunden")
+    if body.sichtbarkeit is not None:
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return node
 
 
@@ -540,6 +549,8 @@ async def update_gewaechs(campaign_id: str, node_id: str, body: GewaechsUpdate):
     node = await repository.update_node("Gewaechs", GEWAECHS_FIELDS, campaign_id, node_id, body.model_dump())
     if node is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gewächs nicht gefunden")
+    if body.sichtbarkeit is not None:
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return node
 
 
@@ -571,6 +582,7 @@ async def flora_fauna_hinzufuegen(campaign_id: str, ort_id: str, body: LebtInHin
     ok = await repository.lebt_in_hinzufuegen(campaign_id, ort_id, body.artId)
     if not ok:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ort oder Critter/Gewächs nicht gefunden")
+    await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return await repository.lebt_in_liste_fuer_ort(campaign_id, ort_id)
 
 
@@ -600,6 +612,10 @@ async def create_verbindung(campaign_id: str, body: VerbindungCreate):
     edge = await repository.create_verbindung(campaign_id, body.model_dump())
     if edge is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Start- oder Zielentität nicht gefunden")
+    # Neue Kante kann fuer beliebige PCs neue Entdeckungspfade oeffnen —
+    # campaignweiter Neulauf statt Versuch, die betroffenen PCs vorab
+    # einzugrenzen (siehe Begruendung in lexikon/hooks.py).
+    await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return edge
 
 
@@ -614,6 +630,10 @@ async def update_verbindung(campaign_id: str, edge_id: str, body: VerbindungUpda
     edge = await repository.update_verbindung(campaign_id, edge_id, body.model_dump())
     if edge is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Verbindung nicht gefunden")
+    # Sichtbarkeit der Kante kann sich geaendert haben (z.B. SL gibt sie
+    # frei) — betrifft potenziell jeden PC, daher derselbe Neulauf wie beim
+    # Anlegen.
+    await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return edge
 
 

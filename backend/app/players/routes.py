@@ -10,6 +10,7 @@ from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.entities.schemas import PersonCreate
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.routes import BildGenerierenInput, _bild_prompt_vorschlagen
+from app.lexikon import hooks as lexikon_hooks
 from app.players import repository
 from app.players.schemas import (
     CharakterWaehlenRequest,
@@ -113,6 +114,7 @@ async def charakter_waehlen(body: CharakterWaehlenRequest, spieler: dict = Depen
             status.HTTP_409_CONFLICT,
             "Dieser Charakter ist gerade nicht mehr frei — bitte die Liste neu laden.",
         )
+    await lexikon_hooks.person_neu_zugeordnet(spieler["campaignId"], body.personId)
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None
@@ -143,6 +145,7 @@ async def charakter_neu_bauen(spieler: dict = Depends(require_spieler)):
         # ungebundene PC bliebe sonst als Leiche stehen.
         await entities_repository.delete_node("Person", campaign_id, neue_person["id"])
         raise HTTPException(status.HTTP_409_CONFLICT, "Du hast bereits einen Charakter.")
+    await lexikon_hooks.person_neu_zugeordnet(campaign_id, neue_person["id"])
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None
@@ -314,6 +317,8 @@ async def spieler_anlegen(campaign_id: str, body: SpielerAnlegenRequest):
 async def charakter_zuordnen(campaign_id: str, spieler_id: str, body: CharakterZuordnenRequest):
     if not await repository.setze_charakter(campaign_id, spieler_id, body.personId):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Spieler nicht gefunden")
+    if body.personId:
+        await lexikon_hooks.person_neu_zugeordnet(campaign_id, body.personId)
     return await repository.list_spieler(campaign_id)
 
 

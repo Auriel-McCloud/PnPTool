@@ -115,6 +115,14 @@ class PersonCreate(BaseModel):
     # dem Charakterblatt eines Critters (z.B. "Alter" -> "Wachstumsstadium",
     # Kapital/Schulden ausgeblendet), keine Mechanik, kein neues Datenmodell.
     istPflanzenCritter: bool = False
+    # Lebenspunkte-Grundwert (10.10.2026, Mark: eine Ratte/ein Rattenschwarm
+    # soll nicht die vollen 6 Standard-Lebenspunkte haben — eher 2 insgesamt,
+    # 1 Grundwert + 1 durch Widerstandsfähigkeit). Ersetzt für DIESE Person
+    # den globalen `GESUNDHEIT_GRUNDWERT` (traits/bogen.py), Widerstands-
+    # fähigkeit zählt unverändert obendrauf. None = globaler Standardwert
+    # gilt (Normalfall für praktisch jeden PC/NPC); nur explizit gesetzt bei
+    # kleinen/schwachen Critters. Editierbar im Critter-Fenster.
+    gesundheitGrundwert: int | None = None
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -201,6 +209,7 @@ class PersonUpdate(BaseModel):
     istKI: bool | None = None
     istHaendler: bool | None = None
     istPflanzenCritter: bool | None = None
+    gesundheitGrundwert: int | None = None
     istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
@@ -252,6 +261,7 @@ class PersonResponse(BaseModel):
     istKI: bool = False
     istHaendler: bool = False
     istPflanzenCritter: bool = False
+    gesundheitGrundwert: int | None = None
     istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"

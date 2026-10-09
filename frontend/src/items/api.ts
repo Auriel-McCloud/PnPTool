@@ -10,7 +10,7 @@ export interface Gegenstand {
   preis: number;
   kraft: number;
   eigenschaften: Record<string, string>;
-  zeigeInGraph: boolean;
+  storyRelevant: boolean;
   einzigartig: boolean;
   hatMenge: boolean;
   menge: number;
@@ -209,7 +209,7 @@ export interface GegenstandUpdate {
   preis?: number;
   kraft?: number;
   eigenschaften?: Record<string, string>;
-  zeigeInGraph?: boolean;
+  storyRelevant?: boolean;
   einzigartig?: boolean;
   hatMenge?: boolean;
   menge?: number;
@@ -257,7 +257,7 @@ type NeuerGegenstand = {
   description?: string;
   notes?: string;
   eigenschaften?: Record<string, string>;
-  zeigeInGraph?: boolean;
+  storyRelevant?: boolean;
 };
 
 export interface Chromstufe {

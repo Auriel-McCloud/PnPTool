@@ -4,6 +4,11 @@
 
 Damit bleiben die Notizen, wenn der Charakter wechselt. campaignId liegt
 zusätzlich am Knoten, damit der Kampagnen-Export sie mitnimmt.
+
+Seit 09.10.2026 (Spieler-Lexikon): optionaler Objektbezug (bezugTyp/bezugId)
+— genau eine laufende Notiz pro Objekt und Spieler, siehe
+docs/wiki/entities/spieler-lexikon.md. Freie Notizen (ohne Bezug) bleiben
+unverändert.
 """
 
 import uuid
@@ -13,6 +18,7 @@ from app.db.neo4j_driver import get_driver
 
 FELDER = """
     n.id AS id, n.titel AS titel, n.inhalt AS inhalt,
+    n.bezugTyp AS bezugTyp, n.bezugId AS bezugId,
     n.erstelltAm AS erstelltAm, n.geaendertAm AS geaendertAm
 """
 
@@ -25,6 +31,8 @@ def _decode(record: dict) -> dict:
     daten = dict(record)
     daten["titel"] = daten.get("titel") or ""
     daten["inhalt"] = daten.get("inhalt") or ""
+    daten["bezugTyp"] = daten.get("bezugTyp")
+    daten["bezugId"] = daten.get("bezugId")
     daten["erstelltAm"] = str(daten.get("erstelltAm") or "")
     daten["geaendertAm"] = str(daten.get("geaendertAm") or "")
     return daten
@@ -55,6 +63,7 @@ async def anlegen(spieler_id: str, campaign_id: str, daten: dict) -> dict:
             MATCH (s:Spieler {{id: $spieler_id}})-[:GEHOERT_ZU]->(:Campaign {{id: $campaign_id}})
             CREATE (n:SpielerNotiz {{
                 id: $id, campaignId: $campaign_id, titel: $titel, inhalt: $inhalt,
+                bezugTyp: $bezugTyp, bezugId: $bezugId,
                 erstelltAm: $jetzt, geaendertAm: $jetzt
             }})
             CREATE (s)-[:HAT_NOTIZ]->(n)
@@ -65,12 +74,44 @@ async def anlegen(spieler_id: str, campaign_id: str, daten: dict) -> dict:
             campaign_id=campaign_id,
             titel=daten["titel"],
             inhalt=daten.get("inhalt") or "",
+            bezugTyp=daten.get("bezugTyp"),
+            bezugId=daten.get("bezugId"),
             jetzt=jetzt,
         )
         record = await result.single()
         if record is None:
             raise RuntimeError("Spielerzugang nicht gefunden")
         return _decode(dict(record))
+
+
+async def fuer_bezug_holen_oder_anlegen(
+    spieler_id: str, campaign_id: str, bezug_typ: str, bezug_id: str, standard_titel: str
+) -> dict:
+    """Genau eine laufende Notiz pro Objekt und Spieler (Mark, 09.10.2026):
+    existiert schon eine Notiz zu diesem Bezug, wird sie zurückgegeben statt
+    eine zweite anzulegen — der Lexikon-Editor tippt beim ersten Mal rein in
+    diese eine Notiz."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            f"""
+            MATCH (s:Spieler {{id: $spieler_id}})-[:HAT_NOTIZ]->
+                  (n:SpielerNotiz {{campaignId: $campaign_id, bezugTyp: $bezug_typ, bezugId: $bezug_id}})
+            RETURN {FELDER}
+            """,
+            spieler_id=spieler_id,
+            campaign_id=campaign_id,
+            bezug_typ=bezug_typ,
+            bezug_id=bezug_id,
+        )
+        record = await result.single()
+        if record is not None:
+            return _decode(dict(record))
+    return await anlegen(
+        spieler_id,
+        campaign_id,
+        {"titel": standard_titel, "bezugTyp": bezug_typ, "bezugId": bezug_id},
+    )
 
 
 async def aendern(spieler_id: str, campaign_id: str, notiz_id: str, daten: dict) -> dict | None:

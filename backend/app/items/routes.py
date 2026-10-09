@@ -84,7 +84,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "kraft": body.kraft,
         "cyberwall": body.cyberwall,
         "eigenschaften": body.eigenschaften,
-        "zeigeInGraph": body.zeigeInGraph,
+        "storyRelevant": body.storyRelevant,
         "einzigartig": body.einzigartig,
         "hatMenge": body.hatMenge,
         "menge": body.menge,
@@ -183,6 +183,10 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if body.storyRelevant is not None or body.sichtbarkeit is not None:
+        from app.lexikon import hooks as lexikon_hooks
+
+        await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return item
 
 
@@ -221,7 +225,7 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
 
     sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
 
-    if source["einzigartig"] or source["zeigeInGraph"]:
+    if source["einzigartig"] or source["storyRelevant"]:
         # Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt werden —
         # hier wird der Gegenstand selbst übergeben (verschoben), keine Kopie.
         result = await repository.assign_owner(campaign_id, item_id, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
