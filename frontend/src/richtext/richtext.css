@@ -79,6 +79,13 @@
 .rt-editor-flaeche .rt-editor-content .ProseMirror {
   flex: 1 1 auto;
   min-height: 0;
+  /* Mark, 09.10.2026: Rahmen hoerte mitten im Text auf, obwohl man durch
+     Scrollen im Popup noch alles sah. Grund: flex-shrink (via min-height:0)
+     darf die Box kleiner als ihren Inhalt machen, ohne overflow blutete der
+     Text dann einfach ueber den (zu klein berechneten) Rahmen hinaus.
+     Jetzt scrollt der Text bei Platzmangel INNERHALB der Box, der Rahmen
+     umschliesst also immer den sichtbaren Inhalt. */
+  overflow-y: auto;
 }
 
 /* --- Zoom-Knöpfe (A− / A+) --------------------------------------------- */
