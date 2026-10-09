@@ -38,6 +38,7 @@ export interface Rasse {
   bonusFreebees: number;
   gratisGegenstandId: string;
   gratisErsterKaufTyp: string;
+  gratisZusatzfertigkeitId: string;
   featureHinweis: string;
 }
 
@@ -50,6 +51,7 @@ export interface RasseEingabe {
   bonusFreebees?: number;
   gratisGegenstandId?: string;
   gratisErsterKaufTyp?: string;
+  gratisZusatzfertigkeitId?: string;
   featureHinweis?: string;
 }
 

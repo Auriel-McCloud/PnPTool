@@ -12,9 +12,8 @@ class RasseCreate(BaseModel):
     **Ausnahme seit 10.10.2026 — Rassen-Features:** ein optionales,
     budget-neutrales Extra je Rasse (Marks Entscheidung: zählt NICHT in die
     24er-Bilanz, bleibt eigenes Feld statt Teil der Attribut-Formel). Nur
-    drei feste Spielarten, kein Freitext-Baukasten — jedes Feature ist ein
-    eigenes kleines Mechanik-Stück, siehe traits/erstellung.py::
-    wende_rassenfeature_an.
+    vier feste Spielarten, kein Freitext-Baukasten — jedes Feature ist ein
+    eigenes kleines Mechanik-Stück, siehe traits/routes.py::erstelle_charakter.
     """
 
     name: str
@@ -36,11 +35,14 @@ class RasseCreate(BaseModel):
     # Erster Kauf eines bestimmten Gegenstandstyps ist kostenlos (Quill:
     # erstes Hextech-Item im Shop) — Typ aus TYP_KATALOG, leer = kein Feature.
     gratisErsterKaufTyp: str = ""
-    # Freier Hinweistext fürs Charakterblatt/die Rassen-Infobox (Vaet:
-    # "Transformations-Skill freigeschaltet", Zok/Zorak: TBD). Rein
-    # beschreibend, keine eigene Mechanik — die echte Mechanik (z.B. eine
-    # rassengebundene Zusatzfertigkeit, siehe Zusatzfertigkeit.nurFuerRasse)
-    # hängt an einem ANDEREN Katalog, nicht hier.
+    # Zusatzfertigkeit, die bei der Erstellung automatisch mit 1 Punkt
+    # vergeben wird (10.10.2026, Vaet-Transformation) — campaign-gebundene
+    # Zusatzfertigkeit-ID, leer = kein Feature. Unabhängig vom bestehenden
+    # Zusatzfertigkeit.nurFuerRasse (das steuert nur die Sichtbarkeit beim
+    # freien Wählen, nicht die automatische Vergabe).
+    gratisZusatzfertigkeitId: str = ""
+    # Freier Hinweistext fürs Charakterblatt/die Rassen-Infobox. Rein
+    # beschreibend, keine eigene Mechanik.
     featureHinweis: str = ""
 
 
@@ -53,6 +55,7 @@ class RasseUpdate(BaseModel):
     bonusFreebees: int | None = None
     gratisGegenstandId: str | None = None
     gratisErsterKaufTyp: str | None = None
+    gratisZusatzfertigkeitId: str | None = None
     featureHinweis: str | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
@@ -83,6 +86,7 @@ class RasseResponse(BaseModel):
     bonusFreebees: int = 0
     gratisGegenstandId: str = ""
     gratisErsterKaufTyp: str = ""
+    gratisZusatzfertigkeitId: str = ""
     featureHinweis: str = ""
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.

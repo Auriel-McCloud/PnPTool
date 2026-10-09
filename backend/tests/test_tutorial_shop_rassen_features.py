@@ -178,3 +178,41 @@ def test_normaler_shop_bleibt_in_der_liste():
             await _aufraeumen(cid)
 
     _run(lauf())
+
+
+def test_rassen_der_kampagne_reicht_feature_felder_durch():
+    """Regression: `_rassen_der_kampagne` (traits/routes.py) liess bis zum
+    Fund dieses Tests (10.10.2026) die Rassen-Feature-Felder komplett weg —
+    nur modifikatoren/freiePunkte/beschreibung/bildUrl kamen durch. Damit
+    waren bonusFreebees/gratis* im echten Erstellungs-Submit IMMER 0/leer,
+    obwohl der Baukasten sie längst speicherte (CLAUDE.md Stolperstein 5:
+    6-Schichten-Check — hier war die Zwischenschicht die Lücke). Dieser Test
+    prüft die Funktion direkt statt nur die Repository-Ebene darunter, die
+    schon vorher korrekt war und den Bug deshalb nicht gefangen hätte."""
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        rasse = await rassen_repository.anlegen({
+            "name": "Quill-Feature-Test",
+            "freiePunkte": [7, 5, 3],
+            "bonusFreebees": 3,
+            "gratisGegenstandId": "irgendeine-id",
+            "gratisErsterKaufTyp": "Hexware",
+            "gratisZusatzfertigkeitId": "irgendeine-zf-id",
+        })
+        try:
+            await rassen_repository.setze_freigabe(cid, [rasse["id"]])
+
+            from app.traits.routes import _rassen_der_kampagne
+
+            verfuegbar = await _rassen_der_kampagne(cid)
+            eintrag = verfuegbar.get("Quill-Feature-Test")
+            assert eintrag is not None
+            assert eintrag["bonusFreebees"] == 3
+            assert eintrag["gratisGegenstandId"] == "irgendeine-id"
+            assert eintrag["gratisErsterKaufTyp"] == "Hexware"
+            assert eintrag["gratisZusatzfertigkeitId"] == "irgendeine-zf-id"
+        finally:
+            await rassen_repository.loeschen(rasse["id"])
+            await _aufraeumen(cid)
+
+    _run(lauf())

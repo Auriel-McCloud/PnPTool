@@ -516,6 +516,15 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
             "freiePunkte": r["freiePunkte"],
             "beschreibung": r["beschreibung"],
             "bildUrl": r["bildUrl"],
+            # Rassen-Features (10.10.2026, budget-neutral): waren hier bis
+            # jetzt versehentlich NICHT dabei — bonusFreebees/gratis* kamen
+            # dadurch in pruefe()/endwerte() immer als 0/leer an, obwohl der
+            # Baukasten sie schon speicherte. Echter Bug, nicht nur fehlendes
+            # Feature (siehe CLAUDE.md Stolperstein 5: 6-Schichten-Check).
+            "bonusFreebees": r["bonusFreebees"],
+            "gratisGegenstandId": r["gratisGegenstandId"],
+            "gratisErsterKaufTyp": r["gratisErsterKaufTyp"],
+            "gratisZusatzfertigkeitId": r["gratisZusatzfertigkeitId"],
         }
         for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
     }
@@ -716,12 +725,25 @@ async def erstelle_charakter(
     # bzw. per Freebees/EP Punkte bekommen). Rating = Paket + Freebee.
     bereits_gewaehlt = await zusatzfertigkeiten_repository.gewaehlte_ids(campaign_id, person_id)
     neu_gewaehlt = set(body.zusatzfertigkeitPunkte or {})
-    for zid in bereits_gewaehlt - neu_gewaehlt:
+    # Rassen-Feature "gratisZusatzfertigkeitId" (10.10.2026, Vaet-
+    # Transformation): automatisch vergeben, zählt NICHT als normale Wahl —
+    # darf deshalb von der Entfernen-Schleife unten nicht als "abgewählt"
+    # missverstanden werden, nur weil sie nicht im body.zusatzfertigkeitPunkte
+    # steht (sie kommt ja nicht aus dem Fertigkeiten-Schritt-Flow).
+    gratis_zf_id = (verfuegbare_rassen.get(body.rasse, {}) or {}).get("gratisZusatzfertigkeitId") or ""
+    for zid in bereits_gewaehlt - neu_gewaehlt - {gratis_zf_id}:
         await zusatzfertigkeiten_repository.entferne_von_person(campaign_id, person_id, zid)
     freebees_zf = body.zusatzfertigkeitFreebees or {}
     for zid in neu_gewaehlt:
         rating = int(body.zusatzfertigkeitPunkte.get(zid, 0)) + int(freebees_zf.get(zid, 0))
         await zusatzfertigkeiten_repository.hinzufuegen(campaign_id, person_id, zid, rating)
+    # Automatische Vergabe mit 1 Punkt — nur falls noch nicht vorhanden, eine
+    # erneute Einreichung (SL-Korrektur) darf eine vom Spieler zwischenzeitlich
+    # gesteigerte Stufe nicht wieder auf 1 zurücksetzen.
+    if gratis_zf_id and gratis_zf_id not in bereits_gewaehlt:
+        gratis_zf_katalog = {z["id"] for z in zusatzfertigkeiten_katalog}
+        if gratis_zf_id in gratis_zf_katalog:
+            await zusatzfertigkeiten_repository.hinzufuegen(campaign_id, person_id, gratis_zf_id, 1)
     # Der Rassendeckel gilt ein Leben lang, nicht nur bei der Erstellung —
     # er muss deshalb als maxOverride ans Blatt (siehe
     # erstellung.py::lebensmaxima). Ohne diesen Schritt fiel jedes Attribut

@@ -5,6 +5,7 @@ import { bogenApi, type Erstellungsregeln } from "../traits/bogenApi";
 import { rassenApi, type Rasse } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { TYP_OPTIONEN } from "../items/typKatalog";
+import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./rassen.css";
 
 /**
@@ -132,9 +133,10 @@ export function RassenUebersicht({ campaignId }: { campaignId: string }) {
                 )}
               </span>
               {!rasse.bilanz.stimmt && <span className="ra-kachel-warnung">⚠ weicht vom Budget ab</span>}
-              {(rasse.bonusFreebees > 0 || rasse.gratisGegenstandId || rasse.gratisErsterKaufTyp) && (
-                <span className="ra-kachel-feature">✦ Rassen-Feature</span>
-              )}
+              {(rasse.bonusFreebees > 0 ||
+                rasse.gratisGegenstandId ||
+                rasse.gratisErsterKaufTyp ||
+                rasse.gratisZusatzfertigkeitId) && <span className="ra-kachel-feature">✦ Rassen-Feature</span>}
             </button>
             {/* Das Häkchen sitzt bewusst AUF der Kachel und nicht nur im
                 Editor: welche Völker in dieser Runde spielbar sind, will man
@@ -222,8 +224,10 @@ function RasseEditor({
   const [bonusFreebees, setBonusFreebees] = useState(rasse.bonusFreebees);
   const [gratisGegenstandId, setGratisGegenstandId] = useState(rasse.gratisGegenstandId);
   const [gratisErsterKaufTyp, setGratisErsterKaufTyp] = useState(rasse.gratisErsterKaufTyp);
+  const [gratisZusatzfertigkeitId, setGratisZusatzfertigkeitId] = useState(rasse.gratisZusatzfertigkeitId);
   const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
+  const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
 
   // Wechselt die Auswahl auf eine andere Rasse, muss das Formular mitziehen.
   useEffect(() => {
@@ -234,6 +238,7 @@ function RasseEditor({
     setBonusFreebees(rasse.bonusFreebees);
     setGratisGegenstandId(rasse.gratisGegenstandId);
     setGratisErsterKaufTyp(rasse.gratisErsterKaufTyp);
+    setGratisZusatzfertigkeitId(rasse.gratisZusatzfertigkeitId);
     setFeatureHinweis(rasse.featureHinweis);
   }, [rasse.id]);
 
@@ -242,6 +247,11 @@ function RasseEditor({
   // keinen wiederholbaren Effekt für jeden Charakter dieser Rasse.
   useEffect(() => {
     itemsApi.listAlle(campaignId).then((alle) => setVorlagen(alle.filter((g) => g.istVorlage)));
+  }, [campaignId]);
+
+  // Zusatzfertigkeiten-Katalog für die Vaet-Transformation-Auswahl.
+  useEffect(() => {
+    zusatzfertigkeitenApi.liste(campaignId).then(setZusatzfertigkeiten).catch(() => setZusatzfertigkeiten([]));
   }, [campaignId]);
 
   // Nimmt ein Delta statt eines fertigen Zielwerts und rechnet innerhalb des
@@ -277,6 +287,7 @@ function RasseEditor({
         bonusFreebees,
         gratisGegenstandId,
         gratisErsterKaufTyp,
+        gratisZusatzfertigkeitId,
         featureHinweis,
       });
       await onGeaendert();
@@ -472,6 +483,26 @@ function RasseEditor({
             <p className="ra-hinweis">
               Zum Beispiel beim Quill: das erste Hextech-Gerät im Shop (inkl. Tutorial-Shop) ist
               kostenlos — danach gilt wieder der normale Preis.
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Gratis-Zusatzfertigkeit bei der Erstellung
+              <select
+                value={gratisZusatzfertigkeitId}
+                onChange={(e) => setGratisZusatzfertigkeitId(e.target.value)}
+              >
+                <option value="">— keine Gratis-Zusatzfertigkeit —</option>
+                {zusatzfertigkeiten.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="ra-hinweis">
+              Wird beim Charakter-Submit automatisch mit 1 Punkt vergeben — zum Beispiel beim Vaet:
+              die Transformations-Fertigkeit. Unabhängig vom „Nur für Rasse“-Häkchen der
+              Zusatzfertigkeit selbst (das steuert nur, wer sie frei wählen kann).
             </p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>

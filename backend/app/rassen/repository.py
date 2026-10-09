@@ -32,6 +32,7 @@ FELDER = """
     coalesce(r.bonusFreebees, 0) AS bonusFreebees,
     coalesce(r.gratisGegenstandId, '') AS gratisGegenstandId,
     coalesce(r.gratisErsterKaufTyp, '') AS gratisErsterKaufTyp,
+    coalesce(r.gratisZusatzfertigkeitId, '') AS gratisZusatzfertigkeitId,
     coalesce(r.featureHinweis, '') AS featureHinweis
 """
 
@@ -53,6 +54,7 @@ def _decode(record: dict) -> dict:
     daten["bonusFreebees"] = int(daten.get("bonusFreebees") or 0)
     daten["gratisGegenstandId"] = daten.get("gratisGegenstandId") or ""
     daten["gratisErsterKaufTyp"] = daten.get("gratisErsterKaufTyp") or ""
+    daten["gratisZusatzfertigkeitId"] = daten.get("gratisZusatzfertigkeitId") or ""
     daten["featureHinweis"] = daten.get("featureHinweis") or ""
     return daten
 
@@ -115,6 +117,7 @@ async def anlegen(daten: dict) -> dict:
                 bildUrl: '', modifikatoren: $modifikatoren, freiePunkte: $freiePunkte,
                 sortOrder: $sortOrder, bonusFreebees: $bonusFreebees,
                 gratisGegenstandId: $gratisGegenstandId, gratisErsterKaufTyp: $gratisErsterKaufTyp,
+                gratisZusatzfertigkeitId: $gratisZusatzfertigkeitId,
                 featureHinweis: $featureHinweis
             }})
             RETURN {FELDER}
@@ -129,6 +132,7 @@ async def anlegen(daten: dict) -> dict:
             bonusFreebees=int(daten.get("bonusFreebees") or 0),
             gratisGegenstandId=daten.get("gratisGegenstandId") or "",
             gratisErsterKaufTyp=daten.get("gratisErsterKaufTyp") or "",
+            gratisZusatzfertigkeitId=daten.get("gratisZusatzfertigkeitId") or "",
             featureHinweis=daten.get("featureHinweis") or "",
         )
         return _decode(dict(await result.single()))
