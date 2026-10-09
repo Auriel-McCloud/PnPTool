@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-09] update | Charaktererstellung Person-Schritt als Entwurf
+
+Autosave auf den Entwurfsknoten (`PATCH .../steckbrief`, inkl. Name/Alter).
+Öffnen hydratisiert aus dem Bogen. Siehe CLAUDE.md 09.10.2026 und
+[[concepts/charaktererschaffung]].
+
 ## [2026-10-09] update | Android-Tastatur über dem Text
 
 Fenster folgen dem Visual Viewport, Editor scrollt am Handy nicht in sich

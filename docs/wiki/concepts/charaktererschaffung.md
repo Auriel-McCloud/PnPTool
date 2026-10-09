@@ -1,7 +1,7 @@
 ---
 title: Charaktererschaffung
 created: 2026-09-18
-updated: 2026-09-28
+updated: 2026-10-09
 type: konzept
 tags: [charaktererschaffung, attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../backend/app/traits/erstellung.py]
@@ -49,6 +49,16 @@ Siehe [[rassen]] für den größten Umbau (Baukasten statt Fixtabelle, 11.09.202
 Katalog, nicht im TraitDef-Set. In der Erstellung Button im Fertigkeiten-
 Popup → Auswahl → Punktzeilen im Paket-Raster + Freebees; siehe
 [[zusatzfertigkeiten]].
+
+**Person-Schritt als Entwurf (09.10.2026):** Name, Konzept, Alter, Ambition,
+Verlangen und Ziel liegen nicht mehr nur im Browser. Autosave schreibt sie
+per `PATCH .../steckbrief` auf den schon existierenden Personen-Knoten
+(1200ms nach der letzten Eingabe, Flush beim Verlassen). Ein zweites Gerät
+oder ein neu geladener Tab holt die Felder per `GET .../bogen`. Der Rest
+des Assistenten (Weg, Rasse, Punkteverteilung) bleibt lokal bis
+„Charakter anlegen“ — das war bewusst der kleinste Schnitt, nachdem Mark
+genau diesen Textverlust gemeldet hat.
+
 
 ## Offene Fragen
 

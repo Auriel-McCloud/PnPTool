@@ -89,6 +89,10 @@ export interface SteckbriefUpdate {
   verlangen?: string;
   ziel?: string;
   alias?: string;
+  /** Während der Erstellung als Entwurf; nachträglich ändert das Blatt den Namen nicht hier. */
+  name?: string;
+  /** Während der Erstellung als Entwurf; im fertigen Blatt bewusst read-only. */
+  alter?: string;
 }
 
 /**
@@ -242,7 +246,8 @@ export const bogenApi = {
   zustand: (cid: string, personId: string, aenderung: ZustandUpdate) =>
     api.patch<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/zustand`, aenderung),
   /**
-   * Steckbrief nachträglich ändern — Konzept, Ambition, Verlangen, Ziel.
+   * Steckbrief ändern — Konzept, Ambition, Verlangen, Ziel, Alias.
+   * Während der Erstellung auch Name und Alter (Entwurf, Autosave).
    * Spieler dürfen das nur am eigenen Charakter, die Spielleitung überall
    * (CLAUDE.md, Punkt 12).
    */

@@ -99,6 +99,14 @@ Person bearbeiten. **SL oder Eigentümer (nur bestimmte Felder).**
 
 ---
 
+### PATCH `/{person_id}/steckbrief`
+
+Konzept, Ambition, Verlangen, Ziel, Alias. Während der Erstellung auch
+Name und Alter (Autosave des Person-Schritts). **Spieler nur am eigenen
+Charakter, SL überall.** `None` lässt ein Feld unangetastet, `""` löscht.
+
+---
+
 ### DELETE `/{person_id}`
 
 Person löschen. **Nur SL. Bestätigungsdialog im Frontend.**

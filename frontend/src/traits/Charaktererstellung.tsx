@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAutosave } from "../shell/autosave";
 import { DotPool } from "./DotPool";
 import { api } from "../api/client";
 import { traitsApi, type TraitDef } from "./api";
@@ -12,6 +13,7 @@ import {
   type ErstellungEingabe,
   type FertigkeitsPaket,
   type Rasse,
+  type SteckbriefUpdate,
 } from "./bogenApi";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ErstellungsAssistent } from "./ErstellungsAssistent";
@@ -32,6 +34,12 @@ import "../regeln/infotipp.css";
  * Endgültig entscheidet immer der Server: `traits/erstellung.pruefe` sieht
  * dieselbe Einreichung noch einmal an und lehnt ab, was nicht passt. Die
  * Rechnerei hier ist Bequemlichkeit, keine Absicherung.
+ *
+ * Der Person-Schritt (Name, Konzept, Alter, Ambition, Verlangen, Ziel)
+ * speichert per `useAutosave` auf den schon existierenden Entwurfsknoten
+ * (`PATCH .../steckbrief`). Ohne das überlebt der Text keinen Gerätewechsel
+ * und kein Android-Kill — der Rest des Assistenten bleibt bewusst lokal
+ * bis "Charakter anlegen".
  */
 
 const SCHRITTE = [
@@ -43,6 +51,15 @@ const SCHRITTE = [
   { id: "freebees", titel: "Freebees" },
   { id: "person", titel: "Person" },
 ] as const;
+
+type PersonFelder = {
+  name: string;
+  konzept: string;
+  alter: string;
+  ambition: string;
+  verlangen: string;
+  ziel: string;
+};
 
 /** Farben wie auf dem fertigen Blatt, damit man sich sofort zurechtfindet. */
 const TON: Record<string, string> = {
@@ -103,8 +120,8 @@ export function Charaktererstellung({
   const [ambition, setAmbition] = useState("");
   const [verlangen, setVerlangen] = useState("");
   const [ziel, setZiel] = useState("");
-  // Der Name selbst ist jetzt Teil der Erstellung statt SL-Vorgabe — der
-  // Platzhalter (meist "Neuer PC") steht nur als Startwert im Feld.
+  // Der Name selbst ist jetzt Teil der Erstellung statt SL-Vorgabe —
+  // der Platzhalter (meist "Neuer PC") steht nur als Startwert im Feld.
   const [name, setName] = useState(anfangsName);
   // Zusatzfertigkeiten: Button im Fertigkeiten-Popup öffnet die Katalogwahl.
   // Gewählte Einträge erscheinen als normale Punktzeilen im selben Raster
@@ -112,6 +129,37 @@ export function Charaktererstellung({
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [zusatzfertigkeitPaketPunkte, setZusatzfertigkeitPaketPunkte] = useState<Record<string, number>>({});
   const [zusatzfertigkeitFreebees, setZusatzfertigkeitFreebees] = useState<Record<string, number>>({});
+
+  // Still: kein onFertig/refreshAll, sonst unmountet der Assistent
+  // (siehe shell/autosave.ts). Leerer Name wird nicht geschrieben —
+  // sonst wäre die Person in jeder Liste unauffindbar.
+  const planePerson = useAutosave<SteckbriefUpdate>(async (felder) => {
+    try {
+      await bogenApi.steckbrief(campaignId, personId, felder);
+    } catch (e) {
+      setFehler([(e as Error).message || "Speichern fehlgeschlagen"]);
+    }
+  });
+
+  function merkePerson(teil: Partial<PersonFelder>) {
+    const neu: PersonFelder = { name, konzept, alter, ambition, verlangen, ziel, ...teil };
+    if (teil.name !== undefined) setName(teil.name);
+    if (teil.konzept !== undefined) setKonzept(teil.konzept);
+    if (teil.alter !== undefined) setAlter(teil.alter);
+    if (teil.ambition !== undefined) setAmbition(teil.ambition);
+    if (teil.verlangen !== undefined) setVerlangen(teil.verlangen);
+    if (teil.ziel !== undefined) setZiel(teil.ziel);
+    const payload: SteckbriefUpdate = {
+      konzept: neu.konzept,
+      alter: neu.alter,
+      ambition: neu.ambition,
+      verlangen: neu.verlangen,
+      ziel: neu.ziel,
+    };
+    const saubererName = neu.name.trim();
+    if (saubererName) payload.name = saubererName;
+    planePerson(payload);
+  }
 
   function zusatzfertigkeitWaehlen(z: Zusatzfertigkeit) {
     setZusatzfertigkeiten((alt) => (alt.some((x) => x.id === z.id) ? alt : [...alt, z]));
@@ -140,7 +188,23 @@ export function Charaktererstellung({
         setKatalog(k);
       })
       .catch(() => setFehler(["Die Erstellungsregeln konnten nicht geladen werden."]));
-  }, [campaignId]);
+    // Person-Felder vom Knoten holen — sonst startet ein zweites Gerät
+    // (oder ein neu geladener Tab) mit leerem Konzept, obwohl Autosave
+    // schon geschrieben hat. Schlägt das fehl, bleibt der Platzhalter.
+    bogenApi
+      .laden(campaignId, personId)
+      .then((bogen) => {
+        setName(bogen.person.name);
+        setKonzept(bogen.uebersicht.konzept);
+        setAlter(bogen.uebersicht.alter);
+        setAmbition(bogen.uebersicht.ambition);
+        setVerlangen(bogen.uebersicht.verlangen);
+        setZiel(bogen.uebersicht.ziel);
+      })
+      .catch(() => {
+        /* Platzhaltername bleibt. */
+      });
+  }, [campaignId, personId]);
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
@@ -474,7 +538,14 @@ export function Charaktererstellung({
           <SchrittPerson
             campaignId={campaignId}
             felder={{ name, konzept, alter, ambition, verlangen, ziel }}
-            setzen={{ setName, setKonzept, setAlter, setAmbition, setVerlangen, setZiel }}
+            setzen={{
+              setName: (v) => merkePerson({ name: v }),
+              setKonzept: (v) => merkePerson({ konzept: v }),
+              setAlter: (v) => merkePerson({ alter: v }),
+              setAmbition: (v) => merkePerson({ ambition: v }),
+              setVerlangen: (v) => merkePerson({ verlangen: v }),
+              setZiel: (v) => merkePerson({ ziel: v }),
+            }}
             istPflanzenCritter={istPflanzenCritter}
           />
         )}

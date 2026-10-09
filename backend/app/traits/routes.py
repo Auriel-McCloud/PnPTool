@@ -186,13 +186,18 @@ class SteckbriefUpdate(BaseModel):
 
     Konzept steht bei der Erstellung fest genug, dass Mark es dort beliess —
     Ambition, Verlangen und Ziel entwickeln sich dagegen im Spiel weiter
-    (CLAUDE.md, Punkt 12). Alter bleibt bewusst aussen vor.
+    (CLAUDE.md, Punkt 12). Alter bleibt im fertigen Blatt bewusst aussen vor
+    (kein UI) — der Assistent schreibt es hier trotzdem als Entwurf, sonst
+    ist ein Gerätewechsel vor "Charakter anlegen" ein leeres Formular.
 
     Alias (06.10.2026, Mark: "könnte sich ja auch ändern") gehört aus
     demselben Grund hierher statt nur in die Erstellung: es ist der Name,
     den ein PC in den Kontakten für diese Person sieht, bis der echte Name
     freigegeben ist (app/kontakte/logic.py::effektiver_alias) — vorher gab
     es dafür keine editierbare Stelle.
+
+    Name (09.10.2026): derselbe Entwurfsweg. Die Erstellung hält den Namen
+    sonst nur im React-State; ohne PATCH landet "Quill" nie auf dem Knoten.
     """
 
     konzept: str | None = None
@@ -200,6 +205,8 @@ class SteckbriefUpdate(BaseModel):
     verlangen: str | None = None
     ziel: str | None = None
     alias: str | None = None
+    name: str | None = None
+    alter: str | None = None
 
 
 @router.patch("/personen/{person_id}/steckbrief")
@@ -209,12 +216,14 @@ async def set_steckbrief(
     body: SteckbriefUpdate,
     viewer: Viewer = Depends(get_viewer),
 ) -> dict:
-    """Konzept, Ambition, Verlangen und Ziel nachträglich ändern.
+    """Konzept, Ambition, Verlangen, Ziel, Alias — und als Entwurf Name/Alter.
 
     Dieselbe Erlaubnis wie bei `zustand`: Spieler nur am eigenen Charakter
     (404 bei fremden Personen), die Spielleitung überall. Anders als bei
     Zustand keine Einbahnstraße — ein leerer String löscht ein Feld bewusst,
     `update_node` filtert nur `None` heraus, nicht die leere Zeichenkette.
+    Die Charaktererstellung nutzt denselben PATCH als Autosave, damit der
+    Person-Schritt einen Gerätewechsel überlebt.
     """
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")

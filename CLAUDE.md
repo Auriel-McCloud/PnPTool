@@ -318,6 +318,25 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (09.10.2026 — Charaktererstellung speichert den Person-Schritt als Entwurf):**
+- **Was:** Mark hat auf Andromeda Quills Konzept („der Held“) getippt, später
+  am Handy denselben Assistenten weitergepflegt — der Text war weg. Ursache:
+  der Person-Schritt (Name/Konzept/Alter/Ambition/Verlangen/Ziel) lebte nur
+  im React-State. Autosave gab es für Wiki/Beschreibung, nicht für die
+  Erstellung. Nginx-/Neo4j-Logs haben keinen Body, der Text war nicht
+  rekonstruierbar.
+- **Fix:** `useAutosave` schreibt dieselben Felder per bestehendem
+  `PATCH .../personen/{id}/steckbrief` auf den Entwurfsknoten (1200ms +
+  Flush beim Verlassen). Beim Öffnen hydratisiert der Assistent aus
+  `GET .../bogen`. `SteckbriefUpdate` nimmt jetzt auch `name` und `alter`
+  (`None` = unangetastet). Leerer Name wird nicht geschrieben. Der Rest
+  des Assistenten (Weg/Rasse/Punkte) bleibt lokal bis „Charakter anlegen“.
+  Keine Statusanzeige (still, wie Wiki-Autosave).
+- **Verifiziert:** `pytest tests/test_steckbrief.py` 2/2, `tsc -b` sauber.
+  Zugriffsschutz-Suite: dieselben vorbestehenden Fehlschläge, Steckbrief-
+  Ausnahme unverändert. **Am Handy/PC gegenprüfen** — Person-Schritt
+  tippen, Tab schließen oder Gerät wechseln, Assistent neu öffnen.
+
 **Zuletzt gebaut (09.10.2026 — Android-Tastatur bleibt über dem Text):**
 - **Was:** Mark: Tastatur klappt zu beim Markieren/Caret-Setzen/Autokorrektur,
   Text verschwindet unregelmäßig darunter. Der parallele Chat (Rahmen um
