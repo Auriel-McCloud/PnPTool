@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Erstellungsregeln } from "../traits/bogenApi";
+import { traitsApi, type TraitDef } from "../traits/api";
 import { rassenApi, type Rasse } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { TYP_OPTIONEN } from "../items/typKatalog";
@@ -136,7 +137,8 @@ export function RassenUebersicht({ campaignId }: { campaignId: string }) {
               {(rasse.bonusFreebees > 0 ||
                 rasse.gratisGegenstandId ||
                 rasse.gratisErsterKaufTyp ||
-                rasse.gratisZusatzfertigkeitId) && <span className="ra-kachel-feature">✦ Rassen-Feature</span>}
+                rasse.gratisZusatzfertigkeitId ||
+                rasse.gratisFertigkeitName) && <span className="ra-kachel-feature">✦ Rassen-Feature</span>}
             </button>
             {/* Das Häkchen sitzt bewusst AUF der Kachel und nicht nur im
                 Editor: welche Völker in dieser Runde spielbar sind, will man
@@ -225,9 +227,12 @@ function RasseEditor({
   const [gratisGegenstandId, setGratisGegenstandId] = useState(rasse.gratisGegenstandId);
   const [gratisErsterKaufTyp, setGratisErsterKaufTyp] = useState(rasse.gratisErsterKaufTyp);
   const [gratisZusatzfertigkeitId, setGratisZusatzfertigkeitId] = useState(rasse.gratisZusatzfertigkeitId);
+  const [gratisFertigkeitName, setGratisFertigkeitName] = useState(rasse.gratisFertigkeitName);
+  const [gratisFertigkeitBonus, setGratisFertigkeitBonus] = useState(rasse.gratisFertigkeitBonus);
   const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
+  const [fertigkeitenKatalog, setFertigkeitenKatalog] = useState<TraitDef[]>([]);
 
   // Wechselt die Auswahl auf eine andere Rasse, muss das Formular mitziehen.
   useEffect(() => {
@@ -239,6 +244,8 @@ function RasseEditor({
     setGratisGegenstandId(rasse.gratisGegenstandId);
     setGratisErsterKaufTyp(rasse.gratisErsterKaufTyp);
     setGratisZusatzfertigkeitId(rasse.gratisZusatzfertigkeitId);
+    setGratisFertigkeitName(rasse.gratisFertigkeitName);
+    setGratisFertigkeitBonus(rasse.gratisFertigkeitBonus);
     setFeatureHinweis(rasse.featureHinweis);
   }, [rasse.id]);
 
@@ -252,6 +259,16 @@ function RasseEditor({
   // Zusatzfertigkeiten-Katalog für die Vaet-Transformation-Auswahl.
   useEffect(() => {
     zusatzfertigkeitenApi.liste(campaignId).then(setZusatzfertigkeiten).catch(() => setZusatzfertigkeiten([]));
+  }, [campaignId]);
+
+  // Normaler Fertigkeiten-Katalog (nicht die campaign-gebundenen Zusatz-
+  // fertigkeiten) für den Zorak-Bonus — nur die Kategorie "Fertigkeit",
+  // Attribute/Sphären/NeuroWeaving ergeben hier keinen Sinn.
+  useEffect(() => {
+    traitsApi
+      .getKatalog(campaignId)
+      .then((k) => setFertigkeitenKatalog(k.filter((t) => t.category === "Fertigkeit")))
+      .catch(() => setFertigkeitenKatalog([]));
   }, [campaignId]);
 
   // Nimmt ein Delta statt eines fertigen Zielwerts und rechnet innerhalb des
@@ -288,6 +305,8 @@ function RasseEditor({
         gratisGegenstandId,
         gratisErsterKaufTyp,
         gratisZusatzfertigkeitId,
+        gratisFertigkeitName,
+        gratisFertigkeitBonus,
         featureHinweis,
       });
       await onGeaendert();
@@ -503,6 +522,36 @@ function RasseEditor({
               Wird beim Charakter-Submit automatisch mit 1 Punkt vergeben — zum Beispiel beim Vaet:
               die Transformations-Fertigkeit. Unabhängig vom „Nur für Rasse“-Häkchen der
               Zusatzfertigkeit selbst (das steuert nur, wer sie frei wählen kann).
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              Bonus auf eine normale Fertigkeit
+              <select value={gratisFertigkeitName} onChange={(e) => setGratisFertigkeitName(e.target.value)}>
+                <option value="">— kein Fertigkeitsbonus —</option>
+                {fertigkeitenKatalog.map((t) => (
+                  <option key={t.id} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {gratisFertigkeitName && (
+              <label className="ra-feld" style={{ marginTop: 6 }}>
+                Bonuspunkte
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={gratisFertigkeitBonus || 1}
+                  onChange={(e) => setGratisFertigkeitBonus(Math.max(1, Number(e.target.value)))}
+                  style={{ maxWidth: 100 }}
+                />
+              </label>
+            )}
+            <p className="ra-hinweis">
+              Additiv auf die bestehende, ganz normale Fertigkeit — jeder Charakter dieser Rasse
+              bekommt den Bonus obendrauf, egal was er selbst dort verteilt. Zum Beispiel beim Zorak:
+              +1 auf Anführen. Gedeckelt auf das Fertigkeitsmaximum.
             </p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>

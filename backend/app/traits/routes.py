@@ -525,6 +525,8 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
             "gratisGegenstandId": r["gratisGegenstandId"],
             "gratisErsterKaufTyp": r["gratisErsterKaufTyp"],
             "gratisZusatzfertigkeitId": r["gratisZusatzfertigkeitId"],
+            "gratisFertigkeitName": r["gratisFertigkeitName"],
+            "gratisFertigkeitBonus": r["gratisFertigkeitBonus"],
         }
         for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
     }
@@ -719,6 +721,11 @@ async def erstelle_charakter(
     for eintrag in katalog:
         if eintrag["name"] not in werte and eintrag["category"] in erlaubte_kategorien:
             werte[eintrag["name"]] = 0
+    # Rassen-Feature "gratisFertigkeitName" (10.10.2026, Zorak-Beispiel: +1
+    # Anführen) — additiv auf eine NORMALE Fertigkeit aus dem Katalog, egal
+    # was der Spieler dort selbst verteilt hat.
+    rassen_feature = verfuegbare_rassen.get(body.rasse, {}) or {}
+    werte = erstellung.wende_gratis_fertigkeit_an(werte, rassen_feature, katalog)
     await repository.set_ratings_bulk(campaign_id, person_id, werte)
     # Zusatzfertigkeiten: jede im Fertigkeiten-Schritt gewählte ID bekommt
     # eine Kante (auch mit rating 0 — sie wandert ins Blatt und kann dort

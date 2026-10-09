@@ -12,7 +12,7 @@ class RasseCreate(BaseModel):
     **Ausnahme seit 10.10.2026 — Rassen-Features:** ein optionales,
     budget-neutrales Extra je Rasse (Marks Entscheidung: zählt NICHT in die
     24er-Bilanz, bleibt eigenes Feld statt Teil der Attribut-Formel). Nur
-    vier feste Spielarten, kein Freitext-Baukasten — jedes Feature ist ein
+    fünf feste Spielarten, kein Freitext-Baukasten — jedes Feature ist ein
     eigenes kleines Mechanik-Stück, siehe traits/routes.py::erstelle_charakter.
     """
 
@@ -41,6 +41,15 @@ class RasseCreate(BaseModel):
     # Zusatzfertigkeit.nurFuerRasse (das steuert nur die Sichtbarkeit beim
     # freien Wählen, nicht die automatische Vergabe).
     gratisZusatzfertigkeitId: str = ""
+    # Bonus auf eine NORMALE Fertigkeit aus dem ruleset-weiten Katalog
+    # (10.10.2026, Zorak-Beispiel: +1 Anführen) — Name der Fertigkeit +
+    # Bonuspunkte. Anders als gratisZusatzfertigkeitId (campaign-gebundener
+    # Katalog, komplett neuer Eintrag) zielt das hier auf eine bestehende
+    # TraitDef-Fertigkeit, die jeder Charakter ohnehin schon im Raster hat —
+    # wirkt additiv obendrauf, unabhängig davon was der Spieler selbst dort
+    # verteilt. Name leer = kein Feature.
+    gratisFertigkeitName: str = ""
+    gratisFertigkeitBonus: int = 0
     # Freier Hinweistext fürs Charakterblatt/die Rassen-Infobox. Rein
     # beschreibend, keine eigene Mechanik.
     featureHinweis: str = ""
@@ -56,6 +65,8 @@ class RasseUpdate(BaseModel):
     gratisGegenstandId: str | None = None
     gratisErsterKaufTyp: str | None = None
     gratisZusatzfertigkeitId: str | None = None
+    gratisFertigkeitName: str | None = None
+    gratisFertigkeitBonus: int | None = None
     featureHinweis: str | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
@@ -87,6 +98,8 @@ class RasseResponse(BaseModel):
     gratisGegenstandId: str = ""
     gratisErsterKaufTyp: str = ""
     gratisZusatzfertigkeitId: str = ""
+    gratisFertigkeitName: str = ""
+    gratisFertigkeitBonus: int = 0
     featureHinweis: str = ""
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.

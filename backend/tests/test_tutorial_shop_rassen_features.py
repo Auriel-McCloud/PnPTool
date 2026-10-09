@@ -198,6 +198,8 @@ def test_rassen_der_kampagne_reicht_feature_felder_durch():
             "gratisGegenstandId": "irgendeine-id",
             "gratisErsterKaufTyp": "Hexware",
             "gratisZusatzfertigkeitId": "irgendeine-zf-id",
+            "gratisFertigkeitName": "Anführen",
+            "gratisFertigkeitBonus": 1,
         })
         try:
             await rassen_repository.setze_freigabe(cid, [rasse["id"]])
@@ -211,6 +213,8 @@ def test_rassen_der_kampagne_reicht_feature_felder_durch():
             assert eintrag["gratisGegenstandId"] == "irgendeine-id"
             assert eintrag["gratisErsterKaufTyp"] == "Hexware"
             assert eintrag["gratisZusatzfertigkeitId"] == "irgendeine-zf-id"
+            assert eintrag["gratisFertigkeitName"] == "Anführen"
+            assert eintrag["gratisFertigkeitBonus"] == 1
         finally:
             await rassen_repository.loeschen(rasse["id"])
             await _aufraeumen(cid)

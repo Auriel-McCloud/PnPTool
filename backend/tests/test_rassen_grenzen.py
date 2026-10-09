@@ -14,7 +14,7 @@ keine Attribute ausserhalb von 1..6 gab.
 """
 
 from app.traits.erfahrung import kosten, preisliste
-from app.traits.erstellung import lebensmaxima, pruefe
+from app.traits.erstellung import lebensmaxima, pruefe, wende_gratis_fertigkeit_an
 
 KATALOG = [
     {"id": "k", "name": "Körperkraft", "category": "AttributKörperlich", "defaultMax": 6},
@@ -98,3 +98,44 @@ class TestRassendeckelBeimErstellen:
         # Start 2 (1 + 1 Rassenbonus), keine verteilten Punkte, +5 Freebees = 7
         fehler = self._zwerg({"Widerstandsfähigkeit": 5})
         assert not any("Widerstandsfähigkeit" in f for f in fehler), fehler
+
+
+class TestGratisFertigkeit:
+    """Rassen-Feature "gratisFertigkeitName" (10.10.2026, Zorak-Beispiel: +1
+    Anführen) — additiv auf eine normale Fertigkeit, siehe erstellung.py::
+    wende_gratis_fertigkeit_an."""
+
+    FERTIGKEITEN_KATALOG = [
+        {"id": "a", "name": "Anführen", "category": "Fertigkeit", "defaultMax": 6},
+    ]
+
+    def test_addiert_den_bonus_auf_die_bestehende_fertigkeit(self):
+        werte = {"Anführen": 2}
+        rasse = {"gratisFertigkeitName": "Anführen", "gratisFertigkeitBonus": 1}
+        neu = wende_gratis_fertigkeit_an(werte, rasse, self.FERTIGKEITEN_KATALOG)
+        assert neu["Anführen"] == 3
+        # Original bleibt unangetastet (reine Funktion, kein In-Place-Mutate).
+        assert werte["Anführen"] == 2
+
+    def test_funktioniert_auch_wenn_die_fertigkeit_noch_bei_null_steht(self):
+        werte: dict[str, int] = {}
+        rasse = {"gratisFertigkeitName": "Anführen", "gratisFertigkeitBonus": 2}
+        neu = wende_gratis_fertigkeit_an(werte, rasse, self.FERTIGKEITEN_KATALOG)
+        assert neu["Anführen"] == 2
+
+    def test_gedeckelt_auf_das_katalogmaximum(self):
+        werte = {"Anführen": 5}
+        rasse = {"gratisFertigkeitName": "Anführen", "gratisFertigkeitBonus": 3}
+        neu = wende_gratis_fertigkeit_an(werte, rasse, self.FERTIGKEITEN_KATALOG)
+        assert neu["Anführen"] == 6  # Katalogmaximum, nicht 8
+
+    def test_ohne_feature_bleibt_unveraendert(self):
+        werte = {"Anführen": 2}
+        neu = wende_gratis_fertigkeit_an(werte, {}, self.FERTIGKEITEN_KATALOG)
+        assert neu == werte
+
+    def test_bonus_null_bleibt_unveraendert(self):
+        werte = {"Anführen": 2}
+        rasse = {"gratisFertigkeitName": "Anführen", "gratisFertigkeitBonus": 0}
+        neu = wende_gratis_fertigkeit_an(werte, rasse, self.FERTIGKEITEN_KATALOG)
+        assert neu == werte

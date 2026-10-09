@@ -615,6 +615,28 @@ def endwerte(auswahl: dict[str, Any], rassen: dict[str, dict[str, Any]] | None =
     return werte
 
 
+def wende_gratis_fertigkeit_an(
+    werte: dict[str, int], rasse_daten: dict[str, Any], katalog: list[dict]
+) -> dict[str, int]:
+    """Rassen-Feature "gratisFertigkeitName" (10.10.2026, Zorak-Beispiel: +1
+    Anführen) — additiv auf eine NORMALE Fertigkeit aus dem Katalog, egal was
+    der Spieler dort selbst verteilt hat. Gedeckelt auf das Katalogmaximum
+    (Fertigkeiten haben anders als Attribute keinen Rassenmodifikator).
+
+    Eigene, reine Funktion statt Inline-Code in der Route — testbar ohne
+    HTTP-Request/Datenbank, derselbe Grund wie bei `endwerte()`/`pruefe()`.
+    """
+    name = rasse_daten.get("gratisFertigkeitName") or ""
+    bonus = int(rasse_daten.get("gratisFertigkeitBonus") or 0)
+    if not name or not bonus:
+        return werte
+    maximum = next((t["defaultMax"] for t in katalog if t["name"] == name), None)
+    neu = dict(werte)
+    neuer_wert = neu.get(name, 0) + bonus
+    neu[name] = min(neuer_wert, maximum) if maximum is not None else neuer_wert
+    return neu
+
+
 def kapital(auswahl: dict[str, Any]) -> tuple[int, int]:
     """Vermögen und Schulden nach der Erstellung.
 

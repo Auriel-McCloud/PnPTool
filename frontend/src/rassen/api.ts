@@ -39,6 +39,8 @@ export interface Rasse {
   gratisGegenstandId: string;
   gratisErsterKaufTyp: string;
   gratisZusatzfertigkeitId: string;
+  gratisFertigkeitName: string;
+  gratisFertigkeitBonus: number;
   featureHinweis: string;
 }
 
@@ -52,6 +54,8 @@ export interface RasseEingabe {
   gratisGegenstandId?: string;
   gratisErsterKaufTyp?: string;
   gratisZusatzfertigkeitId?: string;
+  gratisFertigkeitName?: string;
+  gratisFertigkeitBonus?: number;
   featureHinweis?: string;
 }
 
