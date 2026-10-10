@@ -1,5 +1,12 @@
+from typing import Literal
+
 from app.entities.schemas import SichtbarkeitModus
 from pydantic import BaseModel
+
+# Dieselben drei Arten wie im Treffer-Dialog und auf dem Blatt
+# (kampf/ruestung.py::SCHADENSARTEN). Am Tisch: Schlag / Tödlich / Unheilbar.
+# Leer = noch nicht gesetzt — Bestandsdaten raten wir nicht.
+SchadenArt = Literal["", "schlag", "schwer", "aggraviert"]
 
 # Gemeinsamer Typ-Katalog — muss inhaltlich mit frontend/src/items/typKatalog.ts
 # übereinstimmen (dort die Kachel-Auswahl beim Anlegen, hier u.a. die Enum für
@@ -30,7 +37,7 @@ class GegenstandCreate(BaseModel):
     notes: str = ""
     typ: str = "Sonstiges"
     preis: int = 0
-    # Punkte-Bonus (0-7, wie Waffenschaden/Rüstungsbonus im Regeln-Sheet),
+    # Punkte-Bonus (Waffe: Schaden 1–12, Rüstung: alter flacher Soak 0–7),
     # nur relevant wenn typ Waffe/Rüstung ist, aber generisch gespeichert.
     # Für Rüstung: alter, flacher Soak-Wert (Regelblatt Zeile 66-67/76). Bleibt
     # aus Kompatibilitätsgründen bestehen; Rüstung mit ruestungKaestchenMax > 0
@@ -42,8 +49,9 @@ class GegenstandCreate(BaseModel):
     # darüber 500¥ (siehe docs/regeln-neotopia.md).
     cyberwall: int = 0
     # Freie Zusatzeigenschaften für alles, was kein eigenes Feld hat (Munition,
-    # Schadensart, ...) — bewusst nicht als starres Schema pro Typ, damit neue
-    # Gegenstandsarten keine Backend-Änderung brauchen.
+    # Magazingröße, ...) — bewusst nicht als starres Schema pro Typ, damit neue
+    # Gegenstandsarten keine Backend-Änderung brauchen. Die Schadensart einer
+    # Waffe ist KEIN Freitext mehr: siehe schadenArt.
     eigenschaften: dict[str, str] = {}
     # MacGuffins/plot-relevante Gegenstände: erscheinen als eigener Knoten im
     # Beziehungsgraph (normale Gegenstände wie ein Hemdknopf nicht) UND sind
@@ -125,10 +133,13 @@ class GegenstandCreate(BaseModel):
     # Klinge und damit eine Waffe sein. Bestimmt nur, ob Kraft/Schaden als
     # Waffe zählt — keine eigene Mechanik, nur eine Kennzeichnung.
     istWaffe: bool = False
-    # Waffenschaden (0-7), separat vom Chrom-Bonus. Ein Cyberarm mit +2 auf
+    # Waffenschaden (1–12), separat vom Chrom-Bonus. Ein Cyberarm mit +2 auf
     # Stärke und eingebauter Klinge (Schaden 3) zählt als Level 5 fürs Chrom,
     # macht aber nur 3 Schaden. Nur relevant wenn istWaffe=True.
     schaden: int = 0
+    # Welche der drei Schadensarten die Waffe verursacht. Nur relevant wenn
+    # typ "Waffe" oder istWaffe. Leer lassen, statt tödlich zu raten.
+    schadenArt: SchadenArt = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
     # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
@@ -247,6 +258,7 @@ class GegenstandUpdate(BaseModel):
     slot: int | None = None
     istWaffe: bool | None = None
     schaden: int | None = None
+    schadenArt: SchadenArt | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
     verbaut: bool | None = None
@@ -323,6 +335,7 @@ class GegenstandResponse(BaseModel):
     slot: int | None = None
     istWaffe: bool = False
     schaden: int = 0
+    schadenArt: SchadenArt = ""
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
     verbaut: bool = False

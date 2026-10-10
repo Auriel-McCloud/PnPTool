@@ -285,6 +285,7 @@ def test_waffe_aus_der_ki_bekommt_schadensbonus():
                     "preis": 800,
                     "seltenheit": 3,
                     "schadensbonus": 2,
+                    "schadenArt": "schwer",
                 }),
             ),
             patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
@@ -297,6 +298,7 @@ def test_waffe_aus_der_ki_bekommt_schadensbonus():
             assert daten["kraft"] == 2
             assert daten["schaden"] == 2
             assert daten["istWaffe"] is True
+            assert daten["schadenArt"] == "schwer"
 
     _run(run())
 

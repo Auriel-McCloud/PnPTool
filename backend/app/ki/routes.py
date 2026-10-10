@@ -176,6 +176,7 @@ _GEGENSTAND_SCHEMA = {
         # Schadensbonus 1-7, nur bei typ Waffe. Kachel und Kampf lesen kraft;
         # ohne dieses Feld blieb jede KI-Waffe auf 0.
         "schadensbonus": {"type": "INTEGER"},
+        "schadenArt": {"type": "STRING", "enum": ["", "schlag", "schwer", "aggraviert"]},
     },
     "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit", "schadensbonus"],
 }
@@ -322,7 +323,9 @@ _GEGENSTAND_SYSTEM = (
     "3 Schwert oder leichte Pistole, 4 schwere Pistole, Monofilament-Peitsche "
     "oder Gewehr, 5 Scharfschützengewehr, 6 MiniGun, 7 Raketenwerfer. Ein "
     "Aufpreis für Tarnung, Smartlink oder Prototyp hebt die Stufe nicht. "
-    "Bei jedem anderen Typ 0."
+    "Bei jedem anderen Typ 0. schadenArt bei typ Waffe genau schlag, schwer "
+    "oder aggraviert (Schlag / Tödlich / Unheilbar): Faust und Knüppel schlag, "
+    "Klinge und Schusswaffe schwer, Explosion oder Brand aggraviert. Sonst leer."
     + _NOTIZEN_HINWEIS
 )
 
@@ -581,7 +584,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 preis=max(0, _als_int(ergebnis.get("preis"))),
                 seltenheit=seltenheit,
                 istEntwurf=True,
-                **waffenfelder(gegenstand_typ, ergebnis.get("schadensbonus")),
+                **waffenfelder(gegenstand_typ, ergebnis.get("schadensbonus"), ergebnis.get("schadenArt")),
             )
             # _create_data ist derselbe Helfer wie in items/routes.py::create_vorlage
             # (SL-Vorlage anlegen) — garantiert dieselbe Feldbefüllung, keine

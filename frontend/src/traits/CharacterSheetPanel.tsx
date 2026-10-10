@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
+import { ABLAGEN, itemsApi, RUESTUNGSBONUS_MAX, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -87,10 +87,32 @@ const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
 const SLOTS_PRO_ZONE = [1, 2, 3];
 // Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
-const KRAFT_MAX = 7; // wie Waffenschaden-/Rüstungsbonus-Skala im Regeln-Sheet
-
 function kraftLabel(typ: string): string {
-  return typ === "Rüstung" ? "Rüstungsbonus" : "Schadensbonus";
+  return typ === "Rüstung" ? "Rüstungsbonus" : "Schaden";
+}
+
+function SchadensartFeld({
+  wert,
+  onChange,
+}: {
+  wert: SchadenArt;
+  onChange: (wert: SchadenArt) => void;
+}) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", marginTop: 6 }}>
+      Schadensart
+      <select
+        value={wert}
+        title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Unheilbar geht voll durch."
+        onChange={(e) => onChange(e.target.value as SchadenArt)}
+      >
+        <option value="">— offen —</option>
+        <option value="schlag">{SCHADEN_ART_LABEL.schlag}</option>
+        <option value="schwer">{SCHADEN_ART_LABEL.schwer}</option>
+        <option value="aggraviert">{SCHADEN_ART_LABEL.aggraviert}</option>
+      </select>
+    </label>
+  );
 }
 
 type Eigenschaft = { key: string; value: string };
@@ -208,6 +230,7 @@ export function GegenstandRow({
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
   const [schaden, setSchaden] = useState(item.schaden);
+  const [schadenArt, setSchadenArt] = useState<SchadenArt>(item.schadenArt ?? "");
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
@@ -318,6 +341,7 @@ export function GegenstandRow({
     setSlot(item.slot);
     setIstWaffe(item.istWaffe);
     setSchaden(item.schaden);
+    setSchadenArt(item.schadenArt ?? "");
     setInitiativeBonus(item.initiativeBonus);
     setZusatzaktionen(item.zusatzaktionen);
     setTraitBoni(
@@ -418,6 +442,7 @@ export function GegenstandRow({
       slot,
       istWaffe,
       schaden,
+      schadenArt,
       initiativeBonus,
       zusatzaktionen,
       traitBoni: Object.fromEntries(
@@ -685,12 +710,17 @@ export function GegenstandRow({
                 <div className="pcd-feld">
                   <label>Steckbrief</label>
                   <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text)" }}>
-                    {KRAFT_TYPEN.has(typ) && (
+                    {typ === "Rüstung" && (
                       <li>
                         {kraftLabel(typ)}: {kraft}
                       </li>
                     )}
-                    {(typ === "Waffe" || istWaffe) && <li>Schaden: {schaden}</li>}
+                    {(typ === "Waffe" || istWaffe) && (
+                      <li>Schaden: {typ === "Waffe" ? schaden || kraft : schaden}</li>
+                    )}
+                    {(typ === "Waffe" || istWaffe) && (
+                      <li>Schadensart: {schadenArtLabel(schadenArt) || "offen"}</li>
+                    )}
                     {typ === "Rüstung" && (
                       <li>
                         Rüstung: {item.ruestungKaestchenAktuell}/{ruestungKaestchenMax} Kästchen, Reduktion{" "}
@@ -845,10 +875,15 @@ export function GegenstandRow({
                       zählt zusätzlich als Waffe
                     </label>
                     {istWaffe && (
-                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                        Schaden
-                        <DotPool value={schaden} max={7} onChange={setSchaden} />
-                      </label>
+                      <>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                          Schaden
+                          <DotPool value={schaden} max={SCHADEN_MAX} onChange={setSchaden} />
+                        </label>
+                        {typ !== "Waffe" && (
+                          <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
+                        )}
+                      </>
                     )}
                     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
                       Initiative-Bonus
@@ -1135,12 +1170,28 @@ export function GegenstandRow({
                 </div>
               )}
 
-              {KRAFT_TYPEN.has(typ) && (
+              {typ === "Rüstung" && (
                 <div>
                   <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
                   <div>
-                    <DotPool value={kraft} max={KRAFT_MAX} onChange={setKraft} />
+                    <DotPool value={kraft} max={RUESTUNGSBONUS_MAX} onChange={setKraft} />
                   </div>
+                </div>
+              )}
+              {typ === "Waffe" && (
+                <div>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Schaden</label>
+                  <div>
+                    <DotPool
+                      value={schaden || kraft}
+                      max={SCHADEN_MAX}
+                      onChange={(n) => {
+                        setSchaden(n);
+                        setKraft(n);
+                      }}
+                    />
+                  </div>
+                  <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                 </div>
               )}
 

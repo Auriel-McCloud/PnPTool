@@ -1,16 +1,18 @@
-"""Schadensbonus einer Waffe auf die Felder, die Kachel und Kampf lesen.
+"""Waffenschaden auf die Felder, die Kachel und Kampf lesen.
 
 Die Ideenschmiede hat Gegenstände lange nur mit Name, Typ und Preis angelegt.
-`kraft` (Label „Schadensbonus“, Kampfkarte und Kachel) und `schaden` (Zeile
-„Schaden“ im Detail, sobald typ Waffe oder istWaffe) blieben dadurch 0.
-Die Skala ist das Regelwerk, 1–7 — kein Würfelausdruck aus dem Chat.
+`kraft` (Kachel) und `schaden` (Steckbrief) blieben dadurch 0. Beide Felder
+tragen bei Typ Waffe denselben Wert — das Label heißt überall „Schaden“,
+nicht Schadensbonus.
+
+Skala 1–12: 1–7 Handwaffen laut Regelwerk, 8–12 Schiffswaffen (Raumschiff).
 """
 
-SCHADENSBONUS_MAX = 7
+SCHADEN_MAX = 12
 
 
-def schadensbonus_klemmen(roh, *, typ: str) -> int:
-    """1–7 für eine Waffe, 0–7 sonst. Fehlend oder 0 bei einer Waffe wird 1.
+def schaden_klemmen(roh, *, typ: str) -> int:
+    """1–12 für eine Waffe, 0–12 sonst. Fehlend oder 0 bei einer Waffe wird 1.
 
     Lieber Schlagring-Stufe als eine Waffe ohne Wert: die Kachel blendet
     kraft 0 aus, und der Kampf rechnet dann mit 0.
@@ -21,12 +23,39 @@ def schadensbonus_klemmen(roh, *, typ: str) -> int:
         wert = 0
     if typ == "Waffe" and wert <= 0:
         return 1
-    return max(0, min(wert, SCHADENSBONUS_MAX))
+    return max(0, min(wert, SCHADEN_MAX))
 
 
-def waffenfelder(typ: str, roh) -> dict:
-    """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe)."""
+def waffenfelder(typ: str, roh, art=None) -> dict:
+    """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe).
+
+    schadenArt nur, wenn eine der drei Arten lesbar ist. Fehlende oder
+    wirre Angabe bleibt leer — nicht tödlich raten.
+    """
     if typ != "Waffe":
         return {}
-    bonus = schadensbonus_klemmen(roh, typ=typ)
-    return {"kraft": bonus, "schaden": bonus, "istWaffe": True}
+    wert = schaden_klemmen(roh, typ=typ)
+    felder = {"kraft": wert, "schaden": wert, "istWaffe": True}
+    gelesen = schaden_art_lesen(art)
+    if gelesen:
+        felder["schadenArt"] = gelesen
+    return felder
+
+
+_ART_ALIAS = {
+    "schlag": "schlag",
+    "schlagschaden": "schlag",
+    "schwer": "schwer",
+    "toedlich": "schwer",
+    "tödlich": "schwer",
+    "letal": "schwer",
+    "aggraviert": "aggraviert",
+    "unheilbar": "aggraviert",
+    "schwerheilbar": "aggraviert",
+}
+
+
+def schaden_art_lesen(roh) -> str:
+    """Tischsprache und die drei Codes auf schlag/schwer/aggraviert. Sonst leer."""
+    text = str(roh or "").strip().lower()
+    return _ART_ALIAS.get(text, "")

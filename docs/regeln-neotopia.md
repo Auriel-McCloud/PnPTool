@@ -104,6 +104,7 @@ Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 - **Parieren:** Geschicklichkeit + Waffenfertigkeit. Gegen Fernkampf nur mit Cyberware oder Magie. Jede weitere Nutzung in derselben Runde gibt kumulativ −1.
 - **Schaden Fernkampf:** Waffenschaden + Nettoerfolge gegen Rüstungsbonus.
 - **Schaden Nahkampf:** Waffenschaden + Stärke + Nettoerfolge gegen Rüstungsbonus.
+- **Schadensart der Waffe:** Schlag, Tödlich oder Unheilbar — dieselbe Dreiteilung wie auf dem Blatt. Steht an der Waffe (`schadenArt`), nicht erst beim Eintragen des Treffers. Leer heißt: noch nicht festgelegt, nicht „tödlich geraten“.
 - Rüstungsboni werden addiert. Ab Rüstungswert 3 gibt es −1 auf Geschicklichkeit, ab 4 entsprechend −2.
 
 ## Charaktererstellung

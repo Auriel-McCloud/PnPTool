@@ -67,8 +67,13 @@ export interface Gegenstand {
   slot: number | null;
   /** Zusätzlich zum Typ: kann gleichzeitig als Waffe zählen (z.B. Cyber-Klinge). */
   istWaffe: boolean;
-  /** Waffenschaden (0-7), separat vom Chrom-Bonus. */
+  /** Waffenschaden (1–12: Handwaffe bis 7, Schiffswaffe bis 12), separat vom Chrom-Bonus. */
   schaden: number;
+  /**
+   * Schlag / Tödlich / Unheilbar — dieselben drei wie im Treffer-Dialog.
+   * Leer, solange niemand es gesetzt hat. Bestandsdaten bleiben leer.
+   */
+  schadenArt: SchadenArt;
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
@@ -130,6 +135,11 @@ export interface ReparaturPreisAntwort {
   deckel: number;
 }
 
+/** Handwaffen 1–7 laut Regelblatt, Schiffswaffen (Raumschiff) bis 12. */
+export const SCHADEN_MAX = 12;
+/** Alter flacher Soak — nicht die Kästchenrüstung. */
+export const RUESTUNGSBONUS_MAX = 7;
+
 export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
 
 /** Reihenfolge und Beschriftung der Ablagen — von "am Körper" nach "weit weg".
@@ -188,6 +198,21 @@ export interface AblageZiel {
  * der Person — siehe backend/app/kampf/ruestung.py. Der Treffer selbst hängt
  * an der Person, nicht am Gegenstand: siehe bogenApi.ruestungTreffer. */
 export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
+
+/** Leer = noch nicht gesetzt. Werte decken sich mit RuestungsArt. */
+export type SchadenArt = "" | RuestungsArt;
+
+/** Tischsprache, dieselbe wie im Treffer-Dialog — nicht die Kästchen-Namen. */
+export const SCHADEN_ART_LABEL: Record<RuestungsArt, string> = {
+  schlag: "Schlag",
+  schwer: "Tödlich",
+  aggraviert: "Unheilbar",
+};
+
+export function schadenArtLabel(art: string | undefined): string {
+  if (art === "schlag" || art === "schwer" || art === "aggraviert") return SCHADEN_ART_LABEL[art];
+  return "";
+}
 
 export interface GegenstandMitBesitzer extends Gegenstand {
   // Vorlagen haben keinen Besitzer (siehe VORLAGE_SENTINEL) — daher nullable.
@@ -260,6 +285,7 @@ export interface GegenstandUpdate {
   slot?: number | null;
   istWaffe?: boolean;
   schaden?: number;
+  schadenArt?: SchadenArt;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   ruestungKaestchenMax?: number;

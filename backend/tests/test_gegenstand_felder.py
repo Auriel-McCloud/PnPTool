@@ -56,3 +56,19 @@ def test_chromwerte_kommen_an():
     assert daten["wVerlust"] == 0.67
     assert daten["koerperzone"] == "Kopf"
     assert daten["slot"] == 2
+
+
+def test_schaden_art_kommt_an_und_bleibt_leer():
+    leer = GegenstandCreate(name="Dolch", typ="Waffe", istWaffe=True, schaden=2)
+    assert _create_data(leer, False, "GM", [])["schadenArt"] == ""
+
+    gesetzt = GegenstandCreate(name="Dolch", typ="Waffe", schadenArt="schwer")
+    assert _create_data(gesetzt, False, "GM", [])["schadenArt"] == "schwer"
+
+
+def test_unbekannte_schaden_art_wird_abgelehnt():
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        GegenstandCreate.model_validate({"name": "Dolch", "schadenArt": "giftig"})

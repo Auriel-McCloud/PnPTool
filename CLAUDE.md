@@ -654,6 +654,10 @@ zuerst `docs/wiki/index.md` prüfen, siehe oben).
 - **Initiative vom Spieler eingeben** — physische Würfel
 - **Reflex-Booster** — Zusatzaktion, Ampel, Paralyse
 - **NPC-Namen verborgen** — Spieler sehen "Unbekannter Ork"
+- **Waffen tragen eine Schadensart** — `schadenArt`: `schlag` / `schwer` /
+  `aggraviert`, am Tisch Schlag / Tödlich / Unheilbar (Schwerheilbar =
+  Unheilbar). Leer = noch nicht gesetzt, nichts wird geraten. Im Umbau
+  wählbar, auf der Kachel sobald gesetzt.
 
 ### Rüstung (`docs/api/ruestung.md`)
 - **Kästchen + Schadensreduktion statt flachem Bonus** — Rüstung nutzt sich ab

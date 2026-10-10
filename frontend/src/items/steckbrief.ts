@@ -1,4 +1,5 @@
 import type { Gegenstand } from "./api";
+import { schadenArtLabel } from "./api";
 
 /**
  * Kurzer "Steckbrief"-Text für die Kachel — die wichtigsten Kampfwerte auf
@@ -23,11 +24,18 @@ export function steckbriefKurz(item: Gegenstand): string[] {
   if (item.typ === "Rüstung" && item.ruestungKaestchenMax > 0) {
     teile.push(`${item.ruestungKaestchenAktuell}/${item.ruestungKaestchenMax} Käst. · Red. ${item.ruestungReduktionBasis}`);
   } else if (KRAFT_TYPEN.has(item.typ) && item.kraft > 0) {
-    teile.push(`${kraftLabel(item.typ)} ${item.kraft}`);
+    const basis = `${kraftLabel(item.typ)} ${item.kraft}`;
+    const art = item.typ === "Waffe" ? schadenArtLabel(item.schadenArt) : "";
+    teile.push(art ? `${basis} · ${art}` : basis);
+  } else if (item.typ === "Waffe" && schadenArtLabel(item.schadenArt)) {
+    teile.push(schadenArtLabel(item.schadenArt));
   }
 
   if (item.typ !== "Waffe" && item.istWaffe && item.schaden > 0) {
-    teile.push(`Schaden ${item.schaden}`);
+    const art = schadenArtLabel(item.schadenArt);
+    teile.push(art ? `Schaden ${item.schaden} · ${art}` : `Schaden ${item.schaden}`);
+  } else if (item.typ !== "Waffe" && item.istWaffe && schadenArtLabel(item.schadenArt)) {
+    teile.push(schadenArtLabel(item.schadenArt));
   }
 
   if (CHROM_TYPEN.has(item.typ) && item.wVerlust > 0) {

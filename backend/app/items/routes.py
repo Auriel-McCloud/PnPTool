@@ -119,6 +119,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "slot": body.slot,
         "istWaffe": body.istWaffe,
         "schaden": body.schaden,
+        "schadenArt": body.schadenArt,
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "riggerBonus": body.riggerBonus,
