@@ -35,6 +35,15 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **KI-Shop-Anlegen: Fallback + Preis-Richtwerte neu** (10.10.2026):
+  `pytest`/Backend-Import grün, live auf bebop gegen die echte Mistral-API
+  verifiziert (Gemini war zum Testzeitpunkt 503 überlastet, Mistral übernahm
+  automatisch, Preis traf den Richtwert). **Nie über den echten Browser-Klick
+  getestet**, nur direkt per Python gegen die Repository-Funktion. Bitte im
+  Tutorial-Shop (oder einem anderen Laden) „Mit KI anlegen“ klicken und
+  prüfen, dass tatsächlich etwas passiert (auch wenn Gemini gerade überlastet
+  sein sollte) und der Preis zur Kategorie passt.
+
 - **Achievements neu gebaut** (siehe „Zuletzt gebaut" 10.10.2026): Backend
   + Frontend komplett, eigene Tests grün, `tsc -b` sauber, Backend startet
   fehlerfrei gegen Neo4j. **Nie im Browser angeklickt.** Mark testet bewusst
