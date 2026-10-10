@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { EntityKind, Person, Verbindung } from "./api";
 import { anzeigeName } from "./api";
-import { EntitaetsBild } from "./EntitaetsBild";
+import { BildGalerie } from "./BildGalerie";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -184,14 +184,15 @@ export function NPCDetail({
           {unteransicht === "uebersicht" && (
             <div className="pcd-uebersicht">
               <div className="pcd-bild-bereich">
-                <EntitaetsBild
+                <BildGalerie
                   campaignId={campaignId}
                   art="personen"
                   id={person.id}
                   name={person.name}
-                  bildUrl={person.bildUrl ?? ""}
                   beschreibung={person.description}
                   notizen={person.notes}
+                  bilder={person.bilder || []}
+                  bildUrl={person.bildUrl}
                   onGeaendert={onGeaendert}
                 />
               </div>

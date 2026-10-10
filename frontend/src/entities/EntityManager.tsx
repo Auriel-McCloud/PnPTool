@@ -323,6 +323,12 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
   // obwohl gerade eine gelöst wurde). Fehlt sie kurz in der Liste (Filter,
   // Reload), bleibt der Snapshot — sonst unmountet das Fenster und der Tab
   // springt auf die Übersicht.
+  const offenerPC = pcDetailFuer
+    ? (personen.find((p) => p.id === pcDetailFuer.id) ?? pcDetailFuer)
+    : null;
+  const offenerNPC = npcDetailFuer
+    ? (personen.find((p) => p.id === npcDetailFuer.id) ?? npcDetailFuer)
+    : null;
   const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? ortDetailFuer) : null;
   const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? eventDetailFuer) : null;
   const offeneFraktion = fraktionDetailFuer
@@ -1118,11 +1124,11 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       </Fenster>
 
       {/* PC-Detail-Popup */}
-      {pcDetailFuer && (
+      {offenerPC && (
         <PCDetail
           campaignId={campaignId}
-          person={pcDetailFuer}
-          spielerName={spielerMap.get(pcDetailFuer.id)}
+          person={offenerPC}
+          spielerName={spielerMap.get(offenerPC.id)}
           verbindungen={verbindungen}
           namen={namensTabelle}
           pcOptions={pcOptions}
@@ -1132,10 +1138,10 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
       )}
 
       {/* NPC-Detail-Popup */}
-      {npcDetailFuer && (
+      {offenerNPC && (
         <NPCDetail
           campaignId={campaignId}
-          person={npcDetailFuer}
+          person={offenerNPC}
           verbindungen={verbindungen}
           namen={namensTabelle}
           pcOptions={pcOptions}

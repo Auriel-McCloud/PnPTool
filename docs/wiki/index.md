@@ -49,7 +49,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
 | [[entities/ui-konzept-commlink]] | Nie-scrollen-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09.), Neonflackern (19.09.), Autosave Beschreibung/Notizen (27.09.), Burgermenü blättert per Pfeil statt Scrollbar (29.09.), ☰-Customizen in der Rail sichtbar (02.10.) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |
-| [[entities/ki-integration]] | Gemini in der Ideenschmiede; ✨ KI + Beratung legen seit 01.10. Charakter/Story/Gegenstand/Ort/Event/Fraktion/Verbindung an. Prüfung, Auto-Verknüpfung, Bild, Wiki-Import, Beratungschat (30.09.), Jev geparkt |
+| [[entities/ki-integration]] | Gemini in der Ideenschmiede; ✨ KI + Beratung legen seit 01.10. Charakter/Story/Gegenstand/Ort/Event/Fraktion/Verbindung an. Prüfung, Auto-Verknüpfung, Bild, Wiki-Import, Beratungschat (30.09.), Jev geparkt. Charakter-Galerie wie bei Orten (10.10.) |
 | [[entities/tech-stack]] | FastAPI/Neo4j/React, lokaler Start, Windows-Stolpersteine, `.env`-Secrets |
 | [[entities/party-feature]] | Gruppen, aktive Party, wiederentdeckte Vision vom 28.08., Grundlage für Spotify; Party-interne Gegenstands-Weitergabe (26.09.) |
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |

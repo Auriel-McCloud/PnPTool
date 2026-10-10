@@ -199,6 +199,41 @@ _BOGEN_DEFAULTS: dict = {
 }
 
 
+def galerie_primaer_ersetzen(bilder: list | None, alte_url: str, neue_url: str) -> list[dict]:
+    """Spieler-Portrait ersetzt das Anzeigebild. Extra-Bilder bleiben."""
+    quelle = bilder if isinstance(bilder, list) else []
+    neu: list[dict] = []
+    ersetzt = False
+    for eintrag in quelle:
+        if not isinstance(eintrag, dict):
+            continue
+        url = eintrag.get("url") or ""
+        if not url or url == neue_url:
+            continue
+        if not ersetzt and (eintrag.get("istPrimaer") or url == alte_url):
+            neu.append({"url": neue_url, "istPrimaer": True})
+            ersetzt = True
+        else:
+            neu.append({"url": url, "istPrimaer": False})
+    if not ersetzt:
+        neu.insert(0, {"url": neue_url, "istPrimaer": True})
+    return neu
+
+
+def galerie_url_entfernen(bilder: list | None, url: str) -> tuple[list[dict], str]:
+    """Nimmt eine URL aus der Galerie. Nächstes Bild wird Anzeigebild, sonst leer."""
+    quelle = bilder if isinstance(bilder, list) else []
+    rest = [
+        {"url": eintrag["url"], "istPrimaer": bool(eintrag.get("istPrimaer"))}
+        for eintrag in quelle
+        if isinstance(eintrag, dict) and eintrag.get("url") and eintrag["url"] != url
+    ]
+    if rest and not any(eintrag["istPrimaer"] for eintrag in rest):
+        rest[0] = {**rest[0], "istPrimaer": True}
+    primaer = next((eintrag["url"] for eintrag in rest if eintrag["istPrimaer"]), "")
+    return rest, primaer
+
+
 def _mit_defaults(record: dict) -> dict:
     """Ergänzt fehlende Bogenfelder. Nur Personen haben sie überhaupt."""
     daten = dict(record)

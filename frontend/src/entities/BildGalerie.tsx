@@ -79,20 +79,21 @@ export function BildGalerie({
       const uploadDaten = await uploadAntwort.json();
       const neueUrl = uploadDaten.bildUrl;
 
-      // Bilder-Array aktualisieren (mit effektiveBilder für Migration)
-      const neueBilder = [...effektiveBilder, { url: neueUrl, istPrimaer: effektiveBilder.length === 0 }];
+      // Bilder-Array aktualisieren (mit effektiveBilder für Migration).
+      // Die Upload-Route setzt bildUrl immer auf das neue Bild. Ohne
+      // explizites Zurückschreiben würde jedes weitere Bild das Anzeigebild
+      // (Kachel, Spielerportrait) klauen, obwohl es nicht primär ist.
+      const istErstes = effektiveBilder.length === 0;
+      const neueBilder = [...effektiveBilder, { url: neueUrl, istPrimaer: istErstes }];
+      const anzeigeUrl = istErstes ? neueUrl : primaerBild || neueUrl;
 
-      // Wenn es das erste Bild ist, auch als bildUrl setzen
-      const neuesBildUrl = effektiveBilder.length === 0 ? neueUrl : undefined;
-
-      // PATCH mit neuem bilder-Array
       await fetch(`/api/campaigns/${campaignId}/${art}/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bilder: neueBilder,
-          ...(neuesBildUrl && { bildUrl: neuesBildUrl }),
+          bildUrl: anzeigeUrl,
         }),
       });
 

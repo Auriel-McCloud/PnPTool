@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-10] update | Charakter-Bildergalerie
+
+PC- und NPC-Detail nutzen `BildGalerie` (dasselbe Muster wie Ort/Fraktion).
+Primärbild bleibt `bildUrl` (Kachel und Spielerportrait). Spieler-Upload
+ersetzt nur das Primärbild. Gegenstände weiter ein Bild. Nicht im Browser
+geklickt. Siehe CLAUDE.md 10.10.2026 und [[entities/ki-integration]].
+
 ## [2026-10-10] update | entities/achievements gebaut (Backend + Frontend)
 
 Konzept vollständig umgesetzt: `backend/app/achievements/` (schemas,

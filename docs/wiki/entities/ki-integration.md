@@ -215,8 +215,9 @@ zweiter Ablage-Mechanismus (ein erster Versuch mit eigenen
 Byte-Speicher-Helfern in `entities/routes.py`/`items/routes.py` wurde noch
 am selben Tag wieder verworfen zugunsten dieses einfacheren Wegs).
 
-Eingebunden an Person/Event (`EntitaetsBild.tsx`), Ort/Fraktion
-(`BildGalerie.tsx`), Gegenstand (`CharacterSheetPanel.tsx`) für die SL sowie
+Eingebunden an Event (`EntitaetsBild.tsx`), Person/Ort/Fraktion
+(`BildGalerie.tsx` — Charaktere seit 10.10.2026, Primärbild bleibt das
+Anzeigebild), Gegenstand (`CharacterSheetPanel.tsx`) für die SL sowie
 am eigenen Charakterportrait für den Spieler
 (`players/CharakterportraitAnsicht.tsx`, eigene Routen
 `/api/spieler/mein-bild-ki-prompt` + `/mein-bild-ki`, siehe

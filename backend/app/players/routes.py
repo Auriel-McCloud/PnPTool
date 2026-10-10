@@ -4,7 +4,14 @@ from pydantic import BaseModel
 from app.auth.dependencies import get_current_claims, require_campaign_gm
 from app.auth.security import create_access_token
 from app.entities.filterung import klartext
-from app.entities.repository import PERSON_FIELDS, create_node, get_node, update_node
+from app.entities.repository import (
+    PERSON_FIELDS,
+    create_node,
+    galerie_primaer_ersetzen,
+    galerie_url_entfernen,
+    get_node,
+    update_node,
+)
 from app.entities import repository as entities_repository
 from app.items.routes import ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from app.entities.schemas import PersonCreate
@@ -187,7 +194,8 @@ async def eigenes_charakterportrait_hochladen(
 
     campaign_id = spieler["campaignId"]
     person_id = spieler["personId"]
-    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
 
     import mimetypes
@@ -199,7 +207,20 @@ async def eigenes_charakterportrait_hochladen(
     name = f"portrait-{uuid.uuid4()}{endung}"
     (ordner / name).write_bytes(inhalt)
 
-    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"})
+    url = f"/uploads/{campaign_id}/{name}"
+    # Dieselbe Galerie wie im SL-Detail: Tauschen ersetzt nur das Anzeigebild,
+    # Extra-Bilder bleiben. Sonst zeigt die Galerie nach dem Spieler-Upload
+    # weiter das alte Primärbild.
+    await update_node(
+        "Person",
+        PERSON_FIELDS,
+        campaign_id,
+        person_id,
+        {
+            "bildUrl": url,
+            "bilder": galerie_primaer_ersetzen(person.get("bilder"), person.get("bildUrl") or "", url),
+        },
+    )
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None
@@ -210,20 +231,27 @@ async def eigenes_charakterportrait_hochladen(
 async def eigenes_charakterportrait_entfernen(spieler: dict = Depends(require_spieler)):
     """Entfernt das Charakterportrait wieder — Gegenstück zum Upload oben.
 
-    Setzt `bildUrl` nur zurück (gleiches Muster wie `EntitaetsBild.tsx::
-    entfernen`, PATCH mit leerem String), löscht die Datei aber nicht vom
-    Datenträger — genau wie beim SL-Upload bleibt sie verwaist liegen statt
-    Nebenwirkungen auf andere Referenzen zu riskieren.
+    Nimmt die aktuelle bildUrl aus der Galerie. Liegt noch ein Extra-Bild
+    drin, wird das zum Anzeigebild — sonst ist das Portrait leer. Die Datei
+    bleibt auf dem Datenträger, genau wie beim SL-Upload.
     """
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
 
     campaign_id = spieler["campaignId"]
     person_id = spieler["personId"]
-    if await get_node("Person", PERSON_FIELDS, campaign_id, person_id) is None:
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
 
-    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"bildUrl": ""})
+    rest, primaer = galerie_url_entfernen(person.get("bilder"), person.get("bildUrl") or "")
+    await update_node(
+        "Person",
+        PERSON_FIELDS,
+        campaign_id,
+        person_id,
+        {"bildUrl": primaer, "bilder": rest},
+    )
 
     frisch = await repository.get_spieler(spieler["id"])
     assert frisch is not None

@@ -332,6 +332,18 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — Charakter-Bildergalerie):**
+- **Was:** PC- und NPC-Detail zeigen dieselbe Galerie wie Orte und Fraktionen
+  (mehrere Bilder, Primärbild = Anzeigebild auf der Kachel und im
+  Spielerportrait). Ein weiteres Bild klaut das Anzeigebild nicht mehr.
+  Spieler-Upload ersetzt nur das Primärbild, Extra-Bilder bleiben.
+- **Dateien:** `frontend/src/entities/PCDetail.tsx`, `NPCDetail.tsx`,
+  `BildGalerie.tsx`, `EntityManager.tsx`, `backend/app/entities/repository.py`,
+  `backend/app/players/routes.py`, `backend/tests/test_charakter_galerie.py`
+- **Verifiziert:** `tsc -b` und der Galerie-Test. Nicht im Browser geklickt.
+- **Nicht dabei:** Gegenstände haben weiter nur ein Bild. Das eigene
+  Portrait-Menü des Spielers zeigt weiter nur das Primärbild.
+
 **Zuletzt gebaut (10.10.2026 — KI-Charakter folgt der Spieler-Erstellung):**
 - **Was:** ✨-Charakter in der Ideenschmiede schreibt keine Roh-Ratings mehr.
   Dieselbe Prüfung wie ein Spieler: Rasse, Weg, Attribut-Zusatzpunkte nach
@@ -1512,9 +1524,9 @@ npm run dev
     bringt nur `objektTyp`/`objektName`/`bisherigeBeschreibung` und die drei
     Callback-Funktionen mit (`onPromptVorschlagen`/`onGenerieren`/
     `onUebernehmen`) — eine Komponente statt fünf Kopien. Eingebunden an:
-    `EntitaetsBild.tsx` (Person/Event, genutzt von NPCDetail/PCDetail/
-    EventDetail), `BildGalerie.tsx` (Ort/Fraktion, eigenes Kachel-Kästchen
-    im Galerie-Raster), `CharacterSheetPanel.tsx`
+    `EntitaetsBild.tsx` (Event, und die schlanken Critter-/KI-Fenster),
+    `BildGalerie.tsx` (Person/Ort/Fraktion — PC- und NPC-Detail seit
+    10.10.2026, eigenes Kachel-Kästchen im Galerie-Raster), `CharacterSheetPanel.tsx`
     (`GegenstandRow`-Bearbeiten-Formular), `players/
     CharakterportraitAnsicht.tsx` (Spieler-eigenes Portrait, neben
     Datei-Upload und Kamera-Aufnahme). API-Helfer in `frontend/src/ki/api.ts`
