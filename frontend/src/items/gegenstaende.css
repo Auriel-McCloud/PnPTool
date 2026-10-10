@@ -526,3 +526,42 @@
   font-size: 11px;
   padding: 2px 8px;
 }
+
+/* --- Kategorie-Filter vor der Liste (10.10.2026) -----------------------
+   Gleiches Muster wie im Shop (shop-kategorien-raster) und bei der
+   Erstellung: erst Typ waehlen, dann die (gefilterte) Liste sehen. */
+
+.gg-kategorien-raster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.gg-kategorie-kachel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.gg-kategorie-kachel:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
+}
+
+.gg-kategorie-kachel[data-aktiv="true"] {
+  border-color: var(--bereich-farbe, var(--neon));
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 12%, var(--flaeche));
+  color: var(--text);
+}
+
+.gg-kategorie-symbol {
+  font-size: 15px;
+}

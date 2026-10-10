@@ -7,6 +7,7 @@ import { Fenster } from "../shell/Fenster";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
+import { KategorienAuswahl, vorhandeneTypenSortiert } from "./KategorienAuswahl";
 import { Muelleimer } from "./Muelleimer";
 import { TypKachelAuswahl } from "./TypKachelAuswahl";
 import { symbolFuerTyp } from "./typKatalog";
@@ -56,6 +57,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   // etwas anderes. Leere Auswahl = alles.
   const [bereichAuswahl, setBereichAuswahl] = useState<Set<string>>(new Set());
   const [auswahlGesetzt, setAuswahlGesetzt] = useState(false);
+  // Kategorie-Filter (10.10.2026, Marks Vorgabe): wie im Shop und bei der
+  // Erstellung erst den Typ wählen, statt alles auf einmal zu zeigen —
+  // bei vielen Gegenständen sonst unübersichtlich. null = "Alle".
+  const [kategorie, setKategorie] = useState<string | null>(null);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   const [seite, setSeite] = useState(0);
@@ -107,6 +112,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     return items.filter((i) => {
       if (besitzerFilter === VORLAGE_SENTINEL && i.ownerId !== null) return false;
       if (besitzerFilter && besitzerFilter !== VORLAGE_SENTINEL && i.ownerId !== besitzerFilter) return false;
+      if (kategorie !== null && i.typ !== kategorie) return false;
       if (!s) return true;
       // Auch Typ und Besitzer durchsuchen — "alle Waffen von Kira" ist die
       // häufigere Frage als der exakte Gegenstandsname.
@@ -116,7 +122,19 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         (i.ownerName ?? "").toLowerCase().includes(s)
       );
     });
-  }, [items, suche, besitzerFilter]);
+  }, [items, suche, besitzerFilter, kategorie]);
+
+  // Welche Kategorien überhaupt vorkommen — gemessen am Besitzerfilter,
+  // nicht an der schon kategorie-gefilterten Liste, sonst verschwänden die
+  // übrigen Kacheln, sobald man eine anklickt.
+  const vorhandeneTypen = useMemo(() => {
+    const basis = items.filter((i) => {
+      if (besitzerFilter === VORLAGE_SENTINEL) return i.ownerId === null;
+      if (besitzerFilter) return i.ownerId === besitzerFilter;
+      return true;
+    });
+    return vorhandeneTypenSortiert(basis.map((i) => i.typ));
+  }, [items, besitzerFilter]);
 
   // Der Behältername passt nur, wenn genau eine Person gefiltert ist —
   // sonst stünde der Rucksack eines Spielers über den Sachen aller.
@@ -154,7 +172,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   useEffect(() => {
     setSeite(0);
-  }, [suche, besitzerFilter, bereichAuswahl]);
+  }, [suche, besitzerFilter, bereichAuswahl, kategorie]);
 
   // Wer über seiner Grenze liegt — die Spielleitung soll es auf einen Blick
   // sehen und selbst entscheiden, was daraus folgt.
@@ -298,6 +316,8 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           ))}
         </div>
       )}
+
+      <KategorienAuswahl vorhandeneTypen={vorhandeneTypen} gewaehlt={kategorie} onWaehlen={setKategorie} />
 
       <div className="gg-reiter">
         {bereiche.map((b) => (
