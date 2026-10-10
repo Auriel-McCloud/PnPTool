@@ -967,3 +967,9 @@ Campaign-Knoten `Hintergrund` wie Zusatzfertigkeiten (kein Freigabe-
 Schalter). Seed der alten Liste minus Mentor/Kontakte, wenn der Katalog
 leer ist. SL-Tabelle im Burgermenü. Erstellung und Mentor-Pipeline
 nutzen den Katalog noch nicht.
+
+## [2026-10-10] update | Mentor-Text ist VERBINDUNG.beschreibung
+
+Mark: das Beschreibungsfeld Mentor ist kein extra Hintergrund-Text,
+sondern die `beschreibung` der Neo4j-`VERBINDUNG` (typ „Mentor“, analog
+Kontakt). KI liest denselben Kantentext. Kein zweites Property.

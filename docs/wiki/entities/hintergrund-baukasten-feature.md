@@ -59,9 +59,16 @@ wird als **editierbarer Seed** in jede Kampagne kopiert. SL löscht oder
 
 ```
 (:Person)-[:HAT_MENTOR {rating}]->(:Person {personType: NPC})
+(:Person)-[:VERBINDUNG {typ: "Mentor", beschreibung}]->(:Person)
 (:Person)-[:HAT_KONTAKT]->(:Person {personType: NPC})
+(:Person)-[:VERBINDUNG {typ: "Kontakt", beschreibung}]->(:Person)
 (:Person)-[:KENNT {stufe, chatOffen}]->(:Person)   # Messenger, s. [[kontakte-messenger]]
 ```
+
+Der Fließtext, den der Spieler zu Mentor/Kontakt schreibt, ist **nur**
+`VERBINDUNG.beschreibung` — dasselbe Feld wie im Verbindungen-Bereich,
+kein zweites Beschreibungs-Property am Hintergrund oder an `HAT_MENTOR`.
+Die KI liest genau diesen Kantentext als Kontext. Leer → kein KI-Call.
 
 Gegenstände am Mentor: bewusst nicht in v1.
 
@@ -81,11 +88,12 @@ nicht aus der hart verdrahteten Fünferliste im alten Prompt.
 
 ## Mentor-Pipeline
 
-Spieler schreibt eine Beschreibung (Erstellungs-Schritt, sobald Punkte
-drauf liegen; Nachreichen im Hintergründe-Popup erlaubt). Leer → kein
+Spieler schreibt den Text der **Verbindung** (Erstellungs-Schritt, sobald
+Punkte drauf liegen; Nachreichen im Hintergründe-Popup erlaubt). Der Text
+landet auf `VERBINDUNG.beschreibung` mit `typ: "Mentor"`. Leer → kein
 KI-Call, Slot bleibt.
 
-1. KI bekommt Beschreibung + PC-Kontext (Rasse, Weg, Flavor) +
+1. KI bekommt die Verbindungsbeschreibung + PC-Kontext (Rasse, Weg, Flavor) +
    freigegebene Rassen + Trait-Katalog.
 2. **Rasse:** aus der Beschreibung, nur wenn in der Kampagne
    freigegeben („Mentor war eine Ratte“ + Ratte existiert → Ratte).
@@ -103,15 +111,16 @@ KI-Call, Slot bleibt.
 7. Bild automatisch erzeugen und am Entwurf speichern (kein Extra-Popup;
    die Prüfung ist die Schmiede). Bildfehler lässt den Entwurf ohne
    Portrait stehen.
-8. `HAT_MENTOR` + `KENNT` (`chatOffen=true`) sofort. Spieler sieht
-   Name/Bild/Messenger **erst nach „✓ Übernehmen“**.
+8. `HAT_MENTOR` + `VERBINDUNG` (typ Mentor, Spielertext) + `KENNT`
+   (`chatOffen=true`) sofort. Spieler sieht Name/Bild/Messenger **erst nach
+   „✓ Übernehmen“**.
 
 EP-Soll ist immer `20×N` (1→20 … 5→100). Achievement oder späteres +1
 → +20 EP, Plan weiter abarbeiten. Kein Umwürfeln; SL-Edits bleiben.
 
 ## Kontakte-Pipeline
 
-Eine Beschreibung pro Punkt. Voller KI-Charakter über denselben
+Eine Verbindungsbeschreibung pro Punkt (`VERBINDUNG.typ: "Kontakt"`). Voller KI-Charakter über denselben
 legalen Erstellungspfad. KI wählt Rasse aus dem Freigabe-Katalog und
 das Fertigkeitspaket (kein Profi-Zwang). **Kein** `20×N`-EP.
 
@@ -170,7 +179,7 @@ kein Inline-Akkordeon.
 ## Kosten
 
 1 Mentor + N Kontakte = `(1+N)` Text-KI + `(1+N)` Bild-KI. Bild-Provider
-wie bisher (Cloud/lokal). Leerlassen der Beschreibung = kein Call.
+wie bisher (Cloud/lokal). Leerlassen der Verbindungsbeschreibung = kein Call.
 
 ## Migration
 
@@ -181,6 +190,7 @@ Bezug von Name auf Katalog-ID bzw. Systemschlüssel `MENTOR`/`KONTAKTE`.
 
 ## Siehe auch
 
+- [[neo4j-datenmodell]] — `VERBINDUNG.typ` / `beschreibung`
 - [[zusatzfertigkeiten]] — Vorbild campaign-Katalog ohne Freigabe-Schalter
 - [[achievements]] — Hintergrund-Belohnung, ID-Umstellung
 - [[ki-integration]] — Charaktergenerator, Bild, Auto-Verknüpfung, Ideenschmiede
