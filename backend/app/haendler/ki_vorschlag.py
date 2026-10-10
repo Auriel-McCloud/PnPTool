@@ -27,6 +27,82 @@ from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
 from app.ki.client import generiere_json
 
+# Richtwerte aus Marks Excel-Regelwerk (docs/reference/Neotopia_Gegenstaende.md,
+# selbst .gitignore't — siehe pnptool-development-Skill/ki-gemini-integration.md
+# "Trait-Beschreibungen"-Muster). Gekürzt auf das Preis-/Stärke-relevante je
+# Typ, damit der Prompt kurz bleibt — kein Abtippen der ganzen Tabelle.
+# Mark (10.10.2026): Richtwert-Kontext, KEINE harte Grenze — die KI darf
+# begründet abweichen (Einzelstück, Rabatt, Spezialanfertigung), soll sich
+# aber an der Größenordnung orientieren statt frei zu raten. Von BEIDEN
+# KI-Einstiegspunkten genutzt (vorschlaege() UND ware_anlegen()), eine Quelle.
+_RICHTWERTE: dict[str, str] = {
+    "Waffe": (
+        "Schadensbonus->Preis: 1=Schlagring/Knüppel ~50¥, 2=Dolch/Baseballschläger "
+        "50-200¥, 3=Schwert/Leichte Pistole 400-1.000¥, 4=Schwere Pistole/Gewehr "
+        "1.000-11.000¥, 5=Scharfschützengewehr 9.000-15.000¥, 6=MiniGun ~50.000¥, "
+        "7=Raketenwerfer/Granate 1.800-10.000¥. SmartLink/erweitertes Magazin/"
+        "Sonderanfertigung je +50% Waffenwert."
+    ),
+    "Rüstung": (
+        "Rüstungsbonus->Preis (Beispiele je Slot): Bonus 1 ~100¥, Bonus 2 "
+        "500-1.000¥, Bonus 3 (+Malus 1) ~1.500¥, Bonus 4 (+Malus 2) ~3.000¥. "
+        "Bonus 3 gibt -1 auf Geschick, Bonus 4 gibt -2 auf Geschick."
+    ),
+    "Cyberware": (
+        "Kosten pro Bonuspunkt (höherer Willenskraftverlust = günstiger): "
+        "500¥/Punkt -> WVerlust Bonus×2, 2.000¥/Punkt -> WVerlust Bonus, "
+        "5.000¥/Punkt -> WVerlust Bonus/2, 10.000¥/Punkt -> WVerlust Bonus/3, "
+        "20.000¥/Punkt -> WVerlust Bonus/4. Prothese 10.000¥ (WVerlust 2), "
+        "Prothesen-Gadget 5.000¥."
+    ),
+    "Bioware": (
+        "Gleiche Kosten-/WVerlust-Staffel wie Cyberware: 500¥/Punkt (WVerlust "
+        "Bonus×2) bis 20.000¥/Punkt (WVerlust Bonus/4)."
+    ),
+    "Droge": (
+        "Richtwert nach Stärke des Effekts: leichte Boni (einzelner Wert +2-3 "
+        "für eine Szene) 100-300¥, starke Kampfdrogen (Extra-Aktionen, mehrere "
+        "Attribute) 500-1.000¥, militärisch/illegal mit großer Wirkung und "
+        "harter Nebenwirkung 1.000-2.500¥. Jede Droge braucht eine spürbare "
+        "Nebenwirkung passend zur Stärke."
+    ),
+    "Commlink": (
+        "Cyberwall (I.C.E.) bestimmt den Preis: 200¥/Punkt bis Cyberwall 5, "
+        "danach 500¥/Punkt (Beispiele: Cyberwall 1 = 100¥, 3 = 1.000¥, "
+        "5 = 5.000¥, 6 = 8.000¥)."
+    ),
+    "Riggerkonsole": (
+        "Rigger-Bonus (kann negativ sein) und maximale Drohnenzahl treiben den "
+        "Preis: improvisiert (-2 Bonus, 1 Drohne) ~1.400¥, solide Einsteiger-"
+        "konsole (0-1 Bonus, 1-2 Drohnen) 8.000-16.000¥, gehobene Konsole "
+        "(2-3 Bonus, 2-4 Drohnen) 32.000-66.000¥, High-End (4-6 Bonus, "
+        "5-16 Drohnen) 75.000-140.000¥."
+    ),
+    "Cyberdeck": (
+        "Vier Matrix-Werte (Brute Force/Schleichen/Daten/Kompilieren) treiben "
+        "den Preis: niedrig (alle ~1) ~25.000¥, mittel (Summe ~8-10) "
+        "95.000-150.000¥, hochwertig (Summe ~12+) 400.000¥+. Zusätzliche "
+        "Cyberwall-Boni auf dem Deck selbst nur bei absoluten Spitzenmodellen."
+    ),
+    "Fahrzeug": (
+        "Preisformel nach Stufe: Stufe × 5.000¥ bis Stufe 5, ab Stufe 5 × "
+        "20.000¥, ab Stufe 10 × 40.000¥ (Beispiele: Stufe 5 = 25.000¥, "
+        "Stufe 10 = 200.000¥, Stufe 15 = 600.000¥)."
+    ),
+    "Drohne": (
+        "Preisformel nach Stufe: Stufe × 500¥ bis Stufe 5, ab Stufe 5 × "
+        "1.000¥, ab Stufe 10 × 5.000¥ (Beispiele: Stufe 5 = 2.500¥, "
+        "Stufe 10 = 10.000¥, Stufe 15 = 25.000¥)."
+    ),
+}
+
+_RICHTWERT_FALLBACK = (
+    "Kein fester Richtwert für diesen Typ hinterlegt — realistischen Preis "
+    "wie bei einem vergleichbaren echten Gegenstand ansetzen (€ = ¥ in dieser Welt)."
+)
+
+_RICHTWERTE_TEXT = "\n".join(f"- {typ}: {text}" for typ, text in _RICHTWERTE.items())
+
 _SYSTEM = (
     "Du schlägst Waren für das Sortiment eines Händlers in der Welt von "
     "NeotopiA vor (deutsches Cyberpunk-Pen-and-Paper-Rollenspiel). Du "
@@ -39,10 +115,13 @@ _SYSTEM = (
     "existiert, erfinde eine neue Ware: dann 'gegenstandId' weglassen, "
     "'typ' MUSS exakt einer der folgenden Werte sein: "
     + ", ".join(GEGENSTAND_TYPEN)
-    + ". Vermeide Duplikate zu bereits genannten Vorschlägen. preis in "
-    "Nuyen, realistisch für den Typ. seltenheit 1 (überall erhältlich) bis "
-    "5 (nur Speziallabor/Schwarzmarkt) — nur relevant für neu erfundene "
-    "Ware, bei bestehenden Vorlagen wird sie ignoriert."
+    + ". Vermeide Duplikate zu bereits genannten Vorschlägen. preis in Nuyen, "
+    "orientiert an diesen Richtwerten aus dem Regelwerk (Orientierung, keine "
+    "starre Vorgabe — bei einem begründeten Sonderfall darfst du abweichen):\n"
+    + _RICHTWERTE_TEXT
+    + "\nseltenheit 1 (überall erhältlich) bis 5 (nur Speziallabor/Schwarzmarkt) "
+    "— nur relevant für neu erfundene Ware, bei bestehenden Vorlagen wird sie "
+    "ignoriert."
 )
 
 _SCHEMA = {
@@ -238,7 +317,11 @@ async def ware_anlegen(
     system = (
         "Du erfindest EINEN Gegenstand für einen Laden in der Welt von NeotopiA "
         "(deutsches Cyberpunk-Pen-and-Paper). Der Typ ist fest vorgegeben und "
-        "darf nicht geändert werden. preis in Nuyen, realistisch für den Typ. "
+        "darf nicht geändert werden. preis in Nuyen. "
+        f"Richtwert für Typ '{typ}': {_RICHTWERTE.get(typ, _RICHTWERT_FALLBACK)} "
+        "Das ist eine Orientierung aus dem Regelwerk, keine starre Vorgabe — "
+        "bei einem begründeten Sonderfall (Einzelstück, Billigware, "
+        "Spezialanfertigung) darfst du sinnvoll abweichen. "
         "seltenheit 1 (überall erhältlich) bis 5 (Speziallabor/Schwarzmarkt)."
     )
     ergebnis = await generiere_json(

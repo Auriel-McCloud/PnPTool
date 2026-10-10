@@ -60,15 +60,29 @@ async def generiere_json(
     *,
     campaign_id: str | None = None,
 ) -> dict:
-    provider = _aufloesen(None, await _kampagnen_provider(campaign_id))
-    try:
-        if provider == "mistral":
-            return await mistral.generiere_json(prompt, system, schema)
-        if provider == "gemini":
+    """Wie generiere_text: schlägt der aufgelöste Provider fehl (z.B. Gemini
+    503 "high demand"), wird automatisch einmal der jeweils andere Anbieter
+    versucht, bevor der Aufrufer eine Fehlermeldung sieht (10.10.2026, Mark:
+    Shop-"Mit KI anlegen" blieb bei überlastetem Gemini wirkungslos stehen,
+    obwohl Mistral für dieselbe Kampagne funktioniert hätte). Anders als
+    generiere_text muss der Aufrufer hier nicht wissen, WELCHER Anbieter
+    geantwortet hat — reiner Resilienz-Fallback, kein sichtbarer A/B-Vergleich."""
+    aktiv = _aufloesen(None, await _kampagnen_provider(campaign_id))
+    if aktiv not in _GUELTIGE_PROVIDER:
+        raise KiFehler(f"Unbekannter KI_PROVIDER '{aktiv}' (erwartet: gemini, mistral)")
+
+    reihenfolge = [aktiv, _FALLBACK_PROVIDER[aktiv]]
+    fehler_pro_provider: dict[str, str] = {}
+    for kandidat in reihenfolge:
+        try:
+            if kandidat == "mistral":
+                return await mistral.generiere_json(prompt, system, schema)
             return await gemini.generiere_json(prompt, system, schema)
-        raise KiFehler(f"Unbekannter KI_PROVIDER '{provider}' (erwartet: gemini, mistral)")
-    except (gemini.GeminiFehler, mistral.MistralFehler) as e:
-        raise KiFehler(str(e)) from e
+        except (gemini.GeminiFehler, mistral.MistralFehler) as e:
+            fehler_pro_provider[kandidat] = str(e)
+
+    teile = " / ".join(f"{k}: {v}" for k, v in fehler_pro_provider.items())
+    raise KiFehler(f"Alle KI-Anbieter nicht erreichbar — {teile}")
 
 
 async def generiere_text(
