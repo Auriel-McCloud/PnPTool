@@ -1,7 +1,7 @@
 ---
 title: KI-Integration
 created: 2026-09-18
-updated: 2026-10-01
+updated: 2026-10-10
 type: entität
 tags: [ki-integration, backend, geplant]
 sources: [../../../CLAUDE.md, ../../api/ki.md, ../../../backend/app/ki/routes.py]
@@ -361,8 +361,16 @@ weiche Achievements > Charakter-Weg-Gate. AUTO-Achievements und `pruefe()`
 bleiben Code. Flavor bleibt Gemini/Mistral. Der Beratungschat oben ist
 Text-KI, nicht Jev.
 
+## KI-Charaktere und Erstellungregeln (10.10.2026, entschieden)
+
+`_setze_traits` schreibt Roh-Ratings, nur geklemmt auf `defaultMax` —
+Attribute landen oft zu hoch. **Entschieden:** KI-Charaktere (✨ und
+Hintergrund-NPCs) müssen dieselbe `erstellung.pruefe()` überstehen wie ein
+Spieler. Details: [[hintergrund-baukasten-feature]].
+
 ## Siehe auch
 
+- [[hintergrund-baukasten-feature]] — Mentor/Kontakte über denselben Generator, Plan-Autosteigerung
 - [[architektur-drei-ebenen]] — wo generierte Inhalte landen (Ideenschmiede)
 - [[tech-stack]] — `.env`-Konfiguration, Secrets-Handling
 - [[../../../CLAUDE.md]] — vollständige Feature-Liste unter „Geplante Features"

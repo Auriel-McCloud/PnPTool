@@ -66,7 +66,7 @@ die Regel überholt?* Werte:
 
 ## Tag-Taxonomie
 
-**Regeln:** wuerfelsystem, attribute, fertigkeiten, charaktererschaffung, magie,
+**Regeln:** wuerfelsystem, attribute, fertigkeiten, charaktererschaffung, hintergrund, magie,
 neuroweaving, kampf, ruestung, cyberware, drohnen, erfahrung, wirtschaft, rassen
 
 **Architektur:** datenmodell, backend, frontend, websocket, auth, api

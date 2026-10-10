@@ -937,3 +937,17 @@ wie bei Zusatzfertigkeiten, oder Editor direkt auf dem bestehenden
 ruleset-weiten Katalog. Gegenseite in `achievements.md` (neuer Punkt unter
 "Offene Fragen") verlinkt. `index.md` um Zeile ergänzt (Seiten 35→36).
 Reine Konzept-Session, kein Code.
+
+## [2026-10-10] update | hintergrund-baukasten-feature entschieden
+
+Mark: Baukasten ja. Zwei Schichten — narrativer campaign-Katalog (wie
+Zusatzfertigkeiten, alter Zehner-Katalog minus Mentor/Kontakte als Seed)
+und Mechanik fest im Code (Mentor, Kontakte). Kein generisches
+Mechanik-Feld. KI-Charaktere müssen `erstellung.pruefe()` überstehen
+(Roh-Ratings waren zu hoch). Mentor: Beschreibung darf Weg verbiegen,
+Rasse aus Kontext wenn freigegeben sonst PC, Paket Profi, 20×N EP,
+Plan-Autosteigerung (sparen statt Resteverwertung), Auto-Verbindungen,
+Auto-Bild, Ideenschmiede bis Übernehmen. Kontakte: voller KI-Charakter
+ohne EP-Leiter. Spieler-UI: Button am Blatt. Gegenstände am Mentor nicht
+v1. `achievements.md`, `charaktererschaffung.md`, `erfahrung-und-steigern.md`,
+`ki-integration.md`, `SCHEMA.md`, `index.md` nachgezogen. Code folgt.

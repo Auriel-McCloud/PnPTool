@@ -309,16 +309,13 @@ mittendrin würde vom eigentlichen Kampfgeschehen ablenken.
 - **Bekannte Schwachstelle (10.10.2026):** `Achievement.belohnungsHintergrund`
   speichert den Hintergrund-NAMEN als Text, keine ID — ein Umbenennen oder
   Löschen eines Hintergrunds bricht die Verknüpfung still (Belohnung verpufft
-  beim Vergeben, ohne Fehlermeldung). Grund: es gibt noch keinen
-  Hintergrund-Baukasten, `HINTERGRUENDE` ist fest im Code
-  (`backend/app/traits/erstellung.py`) — ein Name-basierter Bezug war
-  deshalb die einzige Option. Sobald ein Baukasten existiert (siehe
-  [[hintergrund-baukasten-feature]]), sollte dieser Bezug auf eine echte ID
-  umgestellt werden.
+  beim Vergeben, ohne Fehlermeldung). Der Baukasten ist entschieden
+  ([[hintergrund-baukasten-feature]]) — der Bezug wird mit dem Bau auf
+  Katalog-ID bzw. Systemschlüssel `MENTOR`/`KONTAKTE` umgestellt.
 
 ## Siehe auch
 
-- [[hintergrund-baukasten-feature]] — geplanter Baukasten für Hintergründe, inkl. ID-Umstellung hier
+- [[hintergrund-baukasten-feature]] — Baukasten entschieden; ID-Umstellung Teil des Baus
 
 - [[ereignisprotokoll]] — Basis-Log-Kategorien, die die AUTO-Trigger auswerten
 - [[../concepts/waehrung-und-preise]] — `Gegenstand.einzigartig`, Vorbild fürs Achievement-Häkchen

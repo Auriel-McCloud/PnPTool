@@ -46,8 +46,16 @@ Gegensatz zu den meisten anderen Konzeptseiten hier gibt es also keine
 teilweise-umgesetzt / vorläufig** — die Faktoren sind laut `regeln-neotopia.md`
 ausdrücklich ein Vorschlag, kein von Mark endgültig abgesegnetes Zahlenwerk.
 
+## Autosteigerung von NPCs (10.10.2026, entschieden)
+
+Nicht Resteverwertung („EP ausgeben weil sie da sind“), sondern ein
+geordneter Plan einzelner +1-Schritte plus Sparen, wenn der nächste
+Schritt zu teuer ist. Attribute sind erlaubte, teure Ziele. Details und
+Abgrenzung zur geplanten KI-Event-Steigerung: [[../entities/hintergrund-baukasten-feature]].
+
 ## Siehe auch
 
+- [[../entities/hintergrund-baukasten-feature]] — Plan-Autosteigerung, Mentor-EP
 - [[charaktererschaffung]] — die Erstellung, von der sich die Faktoren ableiten
 - [[attribute-und-fertigkeiten]] — was gesteigert wird
 - [[../comparisons/regelwerk-excel-vs-aktuell]] — Einordnung als "nicht aus dem Excel"

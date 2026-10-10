@@ -32,10 +32,10 @@ doppelt zu führen.
 
 ## Was NICHT aus dem Excel kommt (im Tool erfunden)
 
-- **Hintergründe** (Kontakte, Ressourcen, Straßenruf, Verbündete, Mentor,
-  Unterschlupf, Schwarzmarkt, Konzernzugang, Ausrüstung, Geheimwissen) — Marks
-  Wunsch, „bis zu 5 Punkte als Freebees", Liste selbst ein Vorschlag
-  (`HINTERGRUENDE` in `erstellung.py`), **zum Umbau frei**.
+- **Hintergründe** — ursprünglich zehn fixe Namen in `HINTERGRUENDE`
+  (`erstellung.py`), zum Umbau frei. **Baukasten entschieden 10.10.2026:**
+  narrativer Kampagnen-Katalog + Mentor/Kontakte als eigene Mechanik; siehe
+  [[../entities/hintergrund-baukasten-feature]].
 - **Erfahrung/Steigern nach der Erstellung** — siehe [[erfahrung-und-steigern]],
   eigene Konzeptseite, weil eigenständig genug.
 
@@ -68,6 +68,7 @@ genau diesen Textverlust gemeldet hat.
 
 ## Siehe auch
 
+- [[../entities/hintergrund-baukasten-feature]] — Baukasten (Mentor/Kontakte + narrativer Katalog)
 - [[attribute-und-fertigkeiten]] — was verteilt wird
 - [[rassen]] — Modifikatoren und der Baukasten
 - [[zusatzfertigkeiten]] — optionale Kampagnen-Skills in der Erstellung

@@ -24,7 +24,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 |---|---|
 | [[concepts/wuerfelsystem]] | W10-Pool, 6-10 Erfolg, unverändert seit Excel |
 | [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten |
-| [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.) |
+| [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.); Hintergrund-Baukasten entschieden 10.10. |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie, Häretiker-Flavor (24.09.) |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Erweiterung auf 6 Skills (22.09.), Overclock statt Wilde Magie, Pool-Deckel 10→12 |
@@ -33,7 +33,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster |
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
 | [[concepts/drohnen-fahrzeuge]] | Riggen-Regel, Preisformel von Mark selbst als fraglich markiert (offen) |
-| [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel |
+| [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel; Plan-Autosteigerung für NPCs entschieden 10.10. (nicht Resteverwertung) |
 | [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.), Shop-Frontend Phase 1+2: physisch/digital, Rarity-Rahmen, Bestellungen, KI-Alltagsgegenstand-Erzeugung mit Waffen-Ausschluss (24.09.), Geld-Weitergabe/Credstick geplant (26.09.) |
 
 ## Entitäten — Architektur & Features
@@ -58,7 +58,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09., Auto-Hooks + SL-Zeitleiste 29.09. Achievements nur Konzept |
 | [[entities/achievements]] | **Gebaut (10.10.2026):** Backend-Modul + Frontend (SL-Verwaltung + Spieler-Popup, 🏆-Symbol). `einzigartig`-Häkchen trennt campaign-weit einmalige Titel von pro-Person wiederholbaren; mechanische Belohnung (EP oder Hintergrund, fest hinterlegt) — einziger Weg, Hintergründe nach der Erstellung zu steigern; 14 AUTO-Trigger inkl. parametrisierbarem Ziel-Gegenstand (Isotop/Kristalle), Endboss, Critter/Drohne, erste Sitzung überlebt; Auto-Erkennung live aus dem Ereignisprotokoll + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Kontext. Browser-Klicktest offen |
 | [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten. SL-Tabelle + KI. In der Erstellung: Button im Fertigkeiten-Popup öffnet Auswahl, danach normale Punktzeilen im Raster (Paket) und Freebees; LevelUp eigener Popup mit EP |
-| [[entities/hintergrund-baukasten-feature]] | **Geplant (10.10.2026):** Hintergründe aktuell fest im Code, keine UI; Achievement-Hintergrundbelohnung referenziert per Namen statt ID (bricht still bei Umbenennen); offene Designfrage campaign-gebunden vs. ruleset-weiter Editor |
+| [[entities/hintergrund-baukasten-feature]] | **Entschieden (10.10.2026), nicht gebaut:** narrativer campaign-Katalog + Mentor/Kontakte als Mechanik (KI-Erstellung über `pruefe()`, Mentor Profi+20×N EP mit Plan-Autosteigerung, Ideenschmiede bis Freigabe) |
 | [[entities/spieler-lexikon]] | Burgermenü „Lexikon" (Welt/Fauna/Flora/Objekte), entschieden-nicht-umgesetzt (09.10.): automatische `ENTDECKT`-Kante per Erreichbarkeits-Hook (max. 7 Hops, bricht an SL-geheimen Kanten ab) schaltet nur Existenz frei, `sichtbarkeit` weiter die Beschreibung; `zeigeInGraph`→`storyRelevant` für MacGuffin-Objekte; Favoriten, Notizen pro Objekt |
 
 ## Vergleiche
