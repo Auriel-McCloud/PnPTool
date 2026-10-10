@@ -268,3 +268,87 @@ def test_idee_charakter_bessert_regelwidrige_antwort_nach():
             assert person["schulden"] == 20_000
 
     _run(run())
+
+
+def test_waffe_aus_der_ki_bekommt_schadensbonus():
+    """Kachel und Kampf lesen kraft. Ohne das Feld blieb jede KI-Waffe auf 0."""
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "Nadel",
+                    "beschreibung": "leise",
+                    "notizen": "",
+                    "typ": "Waffe",
+                    "preis": 800,
+                    "seltenheit": 3,
+                    "schadensbonus": 2,
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "eine Nadelpistole")
+            daten = create.await_args.args[2]
+            assert daten["typ"] == "Waffe"
+            assert daten["kraft"] == 2
+            assert daten["schaden"] == 2
+            assert daten["istWaffe"] is True
+
+    _run(run())
+
+
+def test_waffe_ohne_angabe_bekommt_mindestens_stufe_1():
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "Knüppel",
+                    "beschreibung": "Holz",
+                    "typ": "Waffe",
+                    "preis": 40,
+                    "seltenheit": 1,
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "ein Knüppel")
+            daten = create.await_args.args[2]
+            assert daten["kraft"] == 1
+            assert daten["schaden"] == 1
+
+    _run(run())
+
+
+def test_kein_schadensbonus_bei_einem_nicht_waffe():
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "Jacke",
+                    "beschreibung": "Leder",
+                    "typ": "Sonstiges",
+                    "preis": 80,
+                    "seltenheit": 1,
+                    "schadensbonus": 4,
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "eine Jacke")
+            daten = create.await_args.args[2]
+            assert daten["kraft"] == 0
+            assert daten["istWaffe"] is False
+
+    _run(run())

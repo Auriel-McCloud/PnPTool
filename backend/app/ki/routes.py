@@ -29,6 +29,7 @@ from app.haendler import repository as haendler_repository
 from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
+from app.items.waffenbonus import waffenfelder
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
@@ -172,8 +173,11 @@ _GEGENSTAND_SCHEMA = {
         # Seltenheit 1 (überall verfügbar) bis 5 (Speziallabor/Schwarzmarkt) —
         # Grundlage für die automatische Shop-Bestückung (docs/api/haendler.md).
         "seltenheit": {"type": "INTEGER"},
+        # Schadensbonus 1-7, nur bei typ Waffe. Kachel und Kampf lesen kraft;
+        # ohne dieses Feld blieb jede KI-Waffe auf 0.
+        "schadensbonus": {"type": "INTEGER"},
     },
-    "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit"],
+    "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit", "schadensbonus"],
 }
 
 _WELT_SCHEMA = {
@@ -312,7 +316,13 @@ _GEGENSTAND_SYSTEM = (
     + ", ".join(GEGENSTAND_TYPEN)
     + ". preis in Nuyen, realistisch für den Typ (eine Lederjacke kostet "
     "anders als ein Cyberdeck). seltenheit 1 (überall erhältlich) bis 5 "
-    "(nur Speziallabor/Schwarzmarkt)."
+    "(nur Speziallabor/Schwarzmarkt). schadensbonus: ganze Zahl. Bei typ "
+    "Waffe Pflicht, 1 bis 7, nie 0 und nie ein Würfelausdruck (kein W6, kein "
+    "Stärke-plus-X — nur die Stufe aus dem Regelwerk): 1 Schlagring, 2 Dolch, "
+    "3 Schwert oder leichte Pistole, 4 schwere Pistole, Monofilament-Peitsche "
+    "oder Gewehr, 5 Scharfschützengewehr, 6 MiniGun, 7 Raketenwerfer. Ein "
+    "Aufpreis für Tarnung, Smartlink oder Prototyp hebt die Stufe nicht. "
+    "Bei jedem anderen Typ 0."
     + _NOTIZEN_HINWEIS
 )
 
@@ -571,6 +581,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 preis=max(0, _als_int(ergebnis.get("preis"))),
                 seltenheit=seltenheit,
                 istEntwurf=True,
+                **waffenfelder(gegenstand_typ, ergebnis.get("schadensbonus")),
             )
             # _create_data ist derselbe Helfer wie in items/routes.py::create_vorlage
             # (SL-Vorlage anlegen) — garantiert dieselbe Feldbefüllung, keine

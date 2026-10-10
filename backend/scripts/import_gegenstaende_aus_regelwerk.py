@@ -105,15 +105,16 @@ DROGEN = [
 
 # --- Waffen-Richtwerte (Zeilen 58-64) — als repräsentative Beispiele, kein
 # konkretes Markenmodell im Excel genannt, deshalb bewusst generische Namen.
+# schadenArt: schlag / schwer (Tödlich) / aggraviert (Unheilbar).
 WAFFEN = [
-    # (name, schaden, preis, beschreibung)
-    ("Schlagring", 1, 50, "Einfache Nahkampfwaffe für die Faust."),
-    ("Dolch", 2, 100, "Leichte, verdeckt tragbare Klingenwaffe."),
-    ("Leichte Pistole", 3, 700, "Standard-Handfeuerwaffe, leicht zu beschaffen."),
-    ("Schwere Pistole", 4, 3000, "Kräftigere Faustfeuerwaffe mit mehr Durchschlag."),
-    ("Scharfschützengewehr", 5, 12000, "Präzisionswaffe für Entfernung."),
-    ("MiniGun", 6, 50000, "Schwere automatische Waffe, selten in Zivilhand."),
-    ("Raketenwerfer", 7, 6000, "Militärische Großwaffe, extrem destruktiv."),
+    # (name, schaden, schaden_art, preis, beschreibung)
+    ("Schlagring", 1, "schlag", 50, "Einfache Nahkampfwaffe für die Faust."),
+    ("Dolch", 2, "schwer", 100, "Leichte, verdeckt tragbare Klingenwaffe."),
+    ("Leichte Pistole", 3, "schwer", 700, "Standard-Handfeuerwaffe, leicht zu beschaffen."),
+    ("Schwere Pistole", 4, "schwer", 3000, "Kräftigere Faustfeuerwaffe mit mehr Durchschlag."),
+    ("Scharfschützengewehr", 5, "schwer", 12000, "Präzisionswaffe für Entfernung."),
+    ("MiniGun", 6, "schwer", 50000, "Schwere automatische Waffe, selten in Zivilhand."),
+    ("Raketenwerfer", 7, "aggraviert", 6000, "Militärische Großwaffe, extrem destruktiv."),
 ]
 
 # --- Reflex-Booster (Cyberware-Idee, Zeilen 421-444) — eigens ausformulierte
@@ -195,9 +196,12 @@ def _sammlung() -> list[GegenstandCreate]:
             _vorlage(name, "Droge", f"Wirkung: {wirkung} Nebenwirkung: {nebenwirkung}", preis)
         )
 
-    for name, schaden, preis, beschreibung in WAFFEN:
+    for name, schaden, schaden_art, preis, beschreibung in WAFFEN:
         vorlagen.append(
-            _vorlage(name, "Waffe", beschreibung, preis, istWaffe=True, schaden=schaden)
+            _vorlage(
+                name, "Waffe", beschreibung, preis,
+                istWaffe=True, schaden=schaden, kraft=schaden, schadenArt=schaden_art,
+            )
         )
 
     for name, init_bonus, zusatzaktionen, w_verlust, preis, beschreibung in REFLEX_BOOSTER:

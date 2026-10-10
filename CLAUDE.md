@@ -35,6 +35,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Waffenschaden aus der Beratung** (10.10.2026): Sechs Entwürfe auf bebop
+  haben jetzt einen Schadensbonus (Kachel und Kampf lesen `kraft`, nicht die
+  WoD-Würfel in den Notizen). Nächste KI-Waffe setzt das Feld selbst.
+  Bitte die Stufen in der Schmiede gegenlesen — Monofilament und Vibroklinge 4,
+  Nadelpistole und Schockstab 2, Plasma-Katana 5, Plasma-Brecher 7.
+
 - **Commlink-/Cyberdeck-Anzeige + Reflex-Booster neu** (10.10.2026):
   `tsc -b` sauber (lokal + im Docker-Build auf bebop verifiziert), Backend-
   Import geprüft. **Nie im Browser angeklickt.** Commlink zeigt jetzt I.C.E.
@@ -355,6 +361,16 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (10.10.2026 — KI-Waffen bekommen einen Schadensbonus):**
+- **Was:** Beratung/✨ und Shop-KI haben Waffen ohne `kraft`/`schaden` angelegt.
+  Kachel und Kampfkarte zeigten dadurch 0. Schema verlangt jetzt `schadensbonus`
+  (1–7, Regelwerk, kein Würfelausdruck); beim Anlegen landen Wert, `schaden`
+  und `istWaffe` auf der Waffe. Fehlende Angabe wird 1, nicht 0.
+- **Dateien:** `items/waffenbonus.py`, `ki/routes.py`, `haendler/ki_vorschlag.py`,
+  Import-Skript setzt `kraft=schaden`.
+- **Verifiziert:** drei Tests in `test_ki_idee_typen.py`. Die sechs Live-Entwürfe
+  sind direkt in Neo4j nachgezogen. **Im Browser die Kacheln gegenlesen.**
 
 **Zuletzt gebaut (10.10.2026 — Schulden/Kredithai nach Kredit-Freebees):**
 - **Was:** Kredit in der Erstellung erzeugt den Systemhintergrund Schulden.
