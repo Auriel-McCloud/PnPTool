@@ -248,6 +248,18 @@ export function GegenstandKachel({
           </div>
         )}
 
+        {item.typ === "Commlink" && (
+          <p style={{ color: "var(--text-leise)", fontSize: 13, margin: 0 }}>I.C.E. {item.cyberwall}</p>
+        )}
+
+        {item.typ === "Cyberdeck" && (
+          <p style={{ color: "var(--text-leise)", fontSize: 13, margin: 0 }}>
+            B {item.deckBruteForce} · S {item.deckSchleichen} · D {item.deckDaten} · K {item.deckKompilieren} · EW{" "}
+            {item.deckElectronicWarfare} · N {item.deckMatrixNavigation}
+            {item.cyberwall > 0 && ` · Cyberwall +${item.cyberwall}`}
+          </p>
+        )}
+
         {eigenschaften.length > 0 && (
           <dl className="gg-eigenschaften">
             {eigenschaften.map(([schluessel, wert]) => (

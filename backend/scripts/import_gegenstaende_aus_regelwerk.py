@@ -116,6 +116,31 @@ WAFFEN = [
     ("Raketenwerfer", 7, 6000, "Militärische Großwaffe, extrem destruktiv."),
 ]
 
+# --- Reflex-Booster (Cyberware-Idee, Zeilen 421-444) — eigens ausformulierte
+# Mechanik, nachträglich ergänzt (10.10.2026, beim ersten Lauf übersehen:
+# stand im Excel unter einem eigenen "Cyberware-Idee"-Abschnitt, nicht in der
+# allgemeinen Cyberware-Kostentabelle). initiativeBonus und zusatzaktionen
+# sind bereits voll im Kampfmodus verdrahtet (kampf/booster.py) — hier nur
+# Preis/WVerlust/Beschreibung je Stufe setzen, keine neue Mechanik nötig.
+# zusatzaktionen: 1 (Stufe 1), 2 (Stufe 2), -1 = jede Runde (Stufe 3).
+REFLEX_BOOSTER = [
+    # (name, initiative_bonus, zusatzaktionen, w_verlust, preis, beschreibung)
+    (
+        "Reflex-Booster (Günstig)", 1, 1, 1.0, 5000,
+        "Initiative +1; einmal pro Kampf eine zusätzliche Aktion (nur Bewegung oder Angriff).",
+    ),
+    (
+        "Reflex-Booster (Militärisch)", 3, 2, 2.0, 20000,
+        "Initiative +3; zweimal pro Kampf eine zusätzliche Aktion; Gegner -1 Würfel beim Zielen auf dich.",
+    ),
+    (
+        "Reflex-Booster (Illegales Prototypen-Modell)", 6, -1, 4.0, 50000,
+        "Initiative +6; jede Runde eine zusätzliche Aktion; Gegner -2 Würfel beim Zielen. "
+        "Nachteil: Überhitzung — nach 3 Runden in Folge Geistesschärfe+Willenskraft-Probe gegen 3, "
+        "sonst 1 Runde paralysiert.",
+    ),
+]
+
 
 def _vorlage(name: str, typ: str, beschreibung: str, preis: int, **extra) -> GegenstandCreate:
     return GegenstandCreate(
@@ -173,6 +198,15 @@ def _sammlung() -> list[GegenstandCreate]:
     for name, schaden, preis, beschreibung in WAFFEN:
         vorlagen.append(
             _vorlage(name, "Waffe", beschreibung, preis, istWaffe=True, schaden=schaden)
+        )
+
+    for name, init_bonus, zusatzaktionen, w_verlust, preis, beschreibung in REFLEX_BOOSTER:
+        vorlagen.append(
+            _vorlage(
+                name, "Cyberware", beschreibung, preis,
+                initiativeBonus=init_bonus, zusatzaktionen=zusatzaktionen, wVerlust=w_verlust,
+                koerperzone="Kopf",
+            )
         )
 
     return vorlagen

@@ -37,6 +37,20 @@ export interface Gegenstand {
   immerSichtbar: boolean;
   /** Riggerkonsole: Bonus aufs Steuern (kann negativ sein) und Drohnenzahl. */
   riggerBonus: number;
+  /** Commlink: I.C.E./Matrix-Verteidigung (200¥/Punkt bis 5, danach 500¥/Punkt).
+   * Cyberdecks addieren ihren eigenen Bonus hier NICHT dazu — das passiert
+   * serverseitig in items/repository.py::commlink_cyberwall. */
+  cyberwall: number;
+  /** Cyberdeck: Bonuswürfel je NeuroWeaving-Fertigkeit (Brute Force/Schleichen/
+   * Daten Verarbeiten/Kompilieren/Electronic Warfare/Matrix-Navigation) —
+   * siehe items/repository.py::DECK_WERTE. Mehrere Decks summieren sich NICHT,
+   * es zählt je Aktion das höchste ausgerüstete Deck (deck_boni()). */
+  deckBruteForce: number;
+  deckSchleichen: number;
+  deckDaten: number;
+  deckKompilieren: number;
+  deckElectronicWarfare: number;
+  deckMatrixNavigation: number;
   /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
   initiativeBonus: number;
   /** Chrom sitzt im Körper — nur per Operation wieder heraus. */
@@ -230,6 +244,13 @@ export interface GegenstandUpdate {
   fahrzeugFertigkeiten?: Record<string, number>;
   immerSichtbar?: boolean;
   riggerBonus?: number;
+  cyberwall?: number;
+  deckBruteForce?: number;
+  deckSchleichen?: number;
+  deckDaten?: number;
+  deckKompilieren?: number;
+  deckElectronicWarfare?: number;
+  deckMatrixNavigation?: number;
   initiativeBonus?: number;
   verbaut?: boolean;
   zusatzaktionen?: number;

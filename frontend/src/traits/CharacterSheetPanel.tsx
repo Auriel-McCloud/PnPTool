@@ -195,6 +195,13 @@ export function GegenstandRow({
   const [immerSichtbar, setImmerSichtbar] = useState(item.immerSichtbar);
   const [riggerBonus, setRiggerBonus] = useState(item.riggerBonus);
   const [maxDrohnen, setMaxDrohnen] = useState(item.maxDrohnen);
+  const [cyberwall, setCyberwall] = useState(item.cyberwall);
+  const [deckBruteForce, setDeckBruteForce] = useState(item.deckBruteForce);
+  const [deckSchleichen, setDeckSchleichen] = useState(item.deckSchleichen);
+  const [deckDaten, setDeckDaten] = useState(item.deckDaten);
+  const [deckKompilieren, setDeckKompilieren] = useState(item.deckKompilieren);
+  const [deckElectronicWarfare, setDeckElectronicWarfare] = useState(item.deckElectronicWarfare);
+  const [deckMatrixNavigation, setDeckMatrixNavigation] = useState(item.deckMatrixNavigation);
   const [wVerlust, setWVerlust] = useState(item.wVerlust);
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
   const [slot, setSlot] = useState<number | null>(item.slot);
@@ -296,6 +303,13 @@ export function GegenstandRow({
     setImmerSichtbar(item.immerSichtbar);
     setRiggerBonus(item.riggerBonus);
     setMaxDrohnen(item.maxDrohnen);
+    setCyberwall(item.cyberwall);
+    setDeckBruteForce(item.deckBruteForce);
+    setDeckSchleichen(item.deckSchleichen);
+    setDeckDaten(item.deckDaten);
+    setDeckKompilieren(item.deckKompilieren);
+    setDeckElectronicWarfare(item.deckElectronicWarfare);
+    setDeckMatrixNavigation(item.deckMatrixNavigation);
     setWVerlust(item.wVerlust);
     setKoerperzone(item.koerperzone);
     setSlot(item.slot);
@@ -387,6 +401,13 @@ export function GegenstandRow({
       immerSichtbar,
       riggerBonus,
       maxDrohnen,
+      cyberwall,
+      deckBruteForce,
+      deckSchleichen,
+      deckDaten,
+      deckKompilieren,
+      deckElectronicWarfare,
+      deckMatrixNavigation,
       wVerlust,
       koerperzone,
       slot,
@@ -696,6 +717,14 @@ export function GegenstandRow({
                         {riggerBonus} · max. {maxDrohnen} Drohnen
                       </li>
                     )}
+                    {typ === "Commlink" && <li>I.C.E. {cyberwall}</li>}
+                    {typ === "Cyberdeck" && (
+                      <li>
+                        B {deckBruteForce} · S {deckSchleichen} · D {deckDaten} · K {deckKompilieren} · EW{" "}
+                        {deckElectronicWarfare} · N {deckMatrixNavigation}
+                        {cyberwall > 0 && ` · Cyberwall +${cyberwall}`}
+                      </li>
+                    )}
                     {istBehaelter && kapazitaet > 0 && <li>Fasst {kapazitaet} kg</li>}
                     {hatMenge && <li>Menge: {menge}</li>}
                   </ul>
@@ -868,6 +897,100 @@ export function GegenstandRow({
                         value={maxDrohnen}
                         onChange={(e) => setMaxDrohnen(Number(e.target.value))}
                         style={{ width: 70 }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {typ === "Commlink" && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Commlink — I.C.E. / Matrix-Verteidigung
+                  </label>
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Cyberwall
+                      <input
+                        type="number"
+                        min={0}
+                        value={cyberwall}
+                        onChange={(e) => setCyberwall(Number(e.target.value))}
+                        style={{ width: 70 }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {typ === "Cyberdeck" && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Cyberdeck — Bonuswürfel je NeuroWeaving-Fertigkeit
+                  </label>
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Brute Force
+                      <input
+                        type="number"
+                        value={deckBruteForce}
+                        onChange={(e) => setDeckBruteForce(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Schleichen
+                      <input
+                        type="number"
+                        value={deckSchleichen}
+                        onChange={(e) => setDeckSchleichen(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Daten Verarbeiten
+                      <input
+                        type="number"
+                        value={deckDaten}
+                        onChange={(e) => setDeckDaten(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Kompilieren
+                      <input
+                        type="number"
+                        value={deckKompilieren}
+                        onChange={(e) => setDeckKompilieren(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Electronic Warfare
+                      <input
+                        type="number"
+                        value={deckElectronicWarfare}
+                        onChange={(e) => setDeckElectronicWarfare(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Matrix-Navigation
+                      <input
+                        type="number"
+                        value={deckMatrixNavigation}
+                        onChange={(e) => setDeckMatrixNavigation(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Cyberwall-Bonus
+                      <input
+                        type="number"
+                        min={0}
+                        value={cyberwall}
+                        onChange={(e) => setCyberwall(Number(e.target.value))}
+                        style={{ width: 60 }}
                       />
                     </label>
                   </div>
