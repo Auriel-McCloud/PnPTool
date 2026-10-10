@@ -64,7 +64,9 @@ from app.ki.wiki_import import (
     ImportAntwort,
     importiere as wiki_importiere,
 )
-from app.traits.repository import list_catalog, set_rating
+from app.rassen import repository as rassen_repository
+from app.traits import erstellung
+from app.traits.repository import list_catalog, set_rating, set_ratings_bulk, setze_maxima_bulk
 from app.wiki.repository import create_seite
 
 router = APIRouter(
@@ -106,6 +108,15 @@ _STORY_SCHEMA = {
     "required": ["titel", "inhalt"],
 }
 
+_PUNKT_EINTRAG = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "punkte": {"type": "INTEGER"},
+    },
+    "required": ["name", "punkte"],
+}
+
 _CHARAKTER_SCHEMA = {
     "type": "OBJECT",
     "properties": {
@@ -121,23 +132,26 @@ _CHARAKTER_SCHEMA = {
         "verlangen": {"type": "STRING"},
         "ziel": {"type": "STRING"},
         "rasse": {"type": "STRING"},
-        "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER"]},
-        "kapital": {"type": "INTEGER"},
-        "schulden": {"type": "INTEGER"},
-        # Werte auf dem Charakterbogen — nur Traits aus dem vorgegebenen Katalog.
-        "traits": {
-            "type": "ARRAY",
-            "items": {
-                "type": "OBJECT",
-                "properties": {
-                    "name": {"type": "STRING"},
-                    "rating": {"type": "INTEGER"},
-                },
-                "required": ["name", "rating"],
+        "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER", "HAERETIKER"]},
+        "fertigkeitsPaket": {"type": "STRING", "enum": ["PROFI", "AUSGEGLICHEN", "VIELSEITIG"]},
+        "schwerpunkte": {
+            "type": "OBJECT",
+            "properties": {
+                "AttributKörperlich": {"type": "INTEGER"},
+                "AttributGesellschaftlich": {"type": "INTEGER"},
+                "AttributGeistig": {"type": "INTEGER"},
             },
+            "required": ["AttributKörperlich", "AttributGesellschaftlich", "AttributGeistig"],
         },
+        "attributPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
+        "fertigkeitPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
+        "freebeePunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
+        "plan": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
-    "required": ["name", "beschreibung", "notizen", "konzept", "rasse", "weg", "traits"],
+    "required": [
+        "name", "beschreibung", "notizen", "konzept", "rasse", "weg",
+        "fertigkeitsPaket", "schwerpunkte", "attributPunkte", "fertigkeitPunkte",
+    ],
 }
 
 _GEGENSTAND_SCHEMA = {
@@ -303,10 +317,9 @@ _CHARAKTER_SYSTEM = (
     + " Erschaffe stimmige NPCs. Die Kopfzeile: konzept (kurze Rollenbeschreibung), "
     "alter, ambition (was der Charakter langfristig erreichen will), verlangen "
     "(sein innerer Antrieb/Sucht), ziel (das konkrete nächste Vorhaben). "
-    "rasse ist eine NeotopiA-Rasse (Mensch, Ork, Elf, Zwerg, Troll). "
-    "weg: KEINER, MAGIER oder NEUROWEAVER — nur MAGIER, wenn der Charakter Magie "
-    "wirkt, nur NEUROWEAVER, wenn er NeuroWeaving nutzt, sonst KEINER. "
-    "kapital und schulden sind Zahlen (Nuyen)."
+    "weg: KEINER, MAGIER, NEUROWEAVER oder HAERETIKER — nur MAGIER/HAERETIKER, wenn der "
+    "Charakter Magie wirkt, nur NEUROWEAVER, wenn er NeuroWeaving nutzt, sonst KEINER. "
+    "Der Bogen folgt denselben Erstellungsregeln wie ein Spieler (siehe Auftrag)."
     + _NOTIZEN_HINWEIS
 )
 
@@ -419,6 +432,22 @@ def _als_int(wert, standard: int = 0) -> int:
 # regeltechnisch nicht vorgesehen, jeder Charakter hat mindestens 1 in jedem.
 # Fertigkeiten/Hintergründe dürfen dagegen 0 sein ("kann's einfach nicht").
 _ATTRIBUT_MINDESTWERT = 1
+
+
+def _rassen_fuer_ki(liste: list[dict]) -> dict[str, dict]:
+    """Freigegebene Kampagnen-Rassen im Format von erstellung.pruefe()."""
+    if not liste:
+        return erstellung.RASSEN
+    return {
+        r["name"]: {
+            "modifikatoren": r.get("modifikatoren") or {},
+            "freiePunkte": r.get("freiePunkte") or [],
+            "bonusFreebees": r.get("bonusFreebees") or 0,
+            "gratisFertigkeitName": r.get("gratisFertigkeitName") or "",
+            "gratisFertigkeitBonus": r.get("gratisFertigkeitBonus") or 0,
+        }
+        for r in liste
+    }
 
 
 async def _katalog_zu_text(ruleset: str) -> str:
@@ -658,27 +687,38 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         if typ != "charakter":
             raise HTTPException(status_code=422, detail="Unbekannter Ideen-Typ.")
 
-        # charakter
+        # charakter — Bogen über pruefe()/endwerte, nicht Roh-Ratings.
         kontext = await sammle_kontext(campaign_id)
         campaign = await get_campaign(campaign_id)
         ruleset = campaign["ruleset"] if campaign else "neotopia"
+        katalog = await list_catalog(ruleset)
+        rassen = _rassen_fuer_ki(await rassen_repository.liste_fuer_kampagne(campaign_id))
         katalog_text = await _katalog_zu_text(ruleset)
 
         prompt_komplett = _mit_kontext(prompt, kontext)
+        prompt_komplett += "\n\n" + erstellung.ki_erstellungsregeln_text(rassen)
         prompt_komplett += (
-            "\n\nTrait-Katalog für den Charakterbogen (Name — Kategorie, Max-Wert):\n"
+            "\n\nTrait-Katalog (nur Namen verwenden, keine End-Ratings setzen):\n"
             f"{katalog_text}\n"
-            "Setze die 9 Attribute sinnvoll und nur die Fertigkeiten/Hintergründe, "
-            "die zum Charakter passen (rating > 0). Hexkraft und Sphären nur bei "
-            "Weg MAGIER, NeuroWeaving nur bei NEUROWEAVER."
         )
 
         ergebnis = await generiere_json(prompt_komplett, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA, campaign_id=campaign_id)
+        werte, fehler = erstellung.aus_ki_antwort(ergebnis, katalog, rassen)
+        if fehler:
+            raise HTTPException(
+                status_code=422,
+                detail="Die KI hat keine regelkonforme Erstellung geliefert: " + "; ".join(fehler[:8]),
+            )
         name = (ergebnis.get("name") or "").strip() or "Unbenannter Charakter"
         beschreibung = (ergebnis.get("beschreibung") or "").strip()
-        weg = ergebnis.get("weg") or "KEINER"
+        rasse_name = (ergebnis.get("rasse") or "").strip()
+        weg, magie_flavor = erstellung.normalisiere_weg(ergebnis.get("weg") or "KEINER")
         if weg not in ("KEINER", "MAGIER", "NEUROWEAVER"):
             weg = "KEINER"
+            magie_flavor = "MAGIER"
+        auswahl = erstellung.auswahl_aus_ki(ergebnis)
+        vermoegen, schulden = erstellung.kapital(auswahl)
+        werte = erstellung.wende_gratis_fertigkeit_an(werte, rassen.get(rasse_name, {}) or {}, katalog)
         person = await create_node(
             "Person",
             PERSON_FIELDS,
@@ -693,20 +733,26 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 ambition=(ergebnis.get("ambition") or "").strip(),
                 verlangen=(ergebnis.get("verlangen") or "").strip(),
                 ziel=(ergebnis.get("ziel") or "").strip(),
-                rasse=(ergebnis.get("rasse") or "").strip(),
+                rasse=rasse_name,
                 weg=weg,
-                kapital=_als_int(ergebnis.get("kapital")),
-                schulden=_als_int(ergebnis.get("schulden")),
+                magieFlavor=magie_flavor if magie_flavor in ("MAGIER", "HAERETIKER") else "MAGIER",
+                kapital=vermoegen,
+                schulden=schulden,
+                willenskraftBonus=int(ergebnis.get("freebeeWillenskraft") or 0),
+                erstellungAbgeschlossen=True,
                 istEntwurf=True,
                 sichtbarkeit="GM",
             ).model_dump(),
         )
-        anzahl_traits = await _setze_traits(campaign_id, person["id"], ruleset, ergebnis.get("traits") or [])
+        await set_ratings_bulk(campaign_id, person["id"], werte)
+        await setze_maxima_bulk(
+            campaign_id, person["id"], erstellung.lebensmaxima(rasse_name, katalog, rassen)
+        )
         await hooks.ki(
             campaign_id, anlass="idee-charakter", prompt=prompt,
             antwort_text=name, uebernommen=True, betrifft_id=person["id"],
         )
-        return {"typ": "charakter", "id": person["id"], "name": name, "traits": anzahl_traits}
+        return {"typ": "charakter", "id": person["id"], "name": name, "traits": len(werte)}
 
     except KiFehler as e:
         # 502 statt 500: der Fehler liegt an der externen KI, nicht an uns.

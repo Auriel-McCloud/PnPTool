@@ -951,3 +951,12 @@ Auto-Bild, Ideenschmiede bis Übernehmen. Kontakte: voller KI-Charakter
 ohne EP-Leiter. Spieler-UI: Button am Blatt. Gegenstände am Mentor nicht
 v1. `achievements.md`, `charaktererschaffung.md`, `erfahrung-und-steigern.md`,
 `ki-integration.md`, `SCHEMA.md`, `index.md` nachgezogen. Code folgt.
+
+## [2026-10-10] update | KI-Charaktere durch Spieler-Erstellung
+
+✨-NPC-Generator schreibt keine Roh-Ratings mehr (`_setze_traits`).
+`erstellung.aus_ki_antwort` mappt das KI-JSON auf das Erstellungsformular
+und lässt `pruefe()`/`endwerte()` entscheiden. Regelwidrig → 422, kein
+Knoten. Tests: `test_ki_charakter_erstellung.py`, zwei Fälle in
+`test_ki_idee_typen.py`. Mentor/Kontakte können denselben Pfad später
+nutzen.

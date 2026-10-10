@@ -361,12 +361,13 @@ weiche Achievements > Charakter-Weg-Gate. AUTO-Achievements und `pruefe()`
 bleiben Code. Flavor bleibt Gemini/Mistral. Der Beratungschat oben ist
 Text-KI, nicht Jev.
 
-## KI-Charaktere und Erstellungregeln (10.10.2026, entschieden)
+## KI-Charaktere und Erstellungregeln (10.10.2026)
 
-`_setze_traits` schreibt Roh-Ratings, nur geklemmt auf `defaultMax` —
-Attribute landen oft zu hoch. **Entschieden:** KI-Charaktere (✨ und
-Hintergrund-NPCs) müssen dieselbe `erstellung.pruefe()` überstehen wie ein
-Spieler. Details: [[hintergrund-baukasten-feature]].
+`_setze_traits` schrieb Roh-Ratings, nur geklemmt auf `defaultMax` —
+Attribute landeten oft zu hoch. **Gebaut:** ✨-Charaktere füllen dasselbe
+Formular wie ein Spieler; `erstellung.aus_ki_antwort` prüft mit `pruefe()`.
+Regelwidrig → 422, kein Entwurf. Mentor/Kontakte nutzen denselben Pfad
+(siehe [[hintergrund-baukasten-feature]]).
 
 ## Siehe auch
 

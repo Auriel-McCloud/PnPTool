@@ -157,3 +157,68 @@ def test_verbindung_nutzt_beziehung_anwenden():
             assert anwenden.await_count == 1
 
     _run(run())
+
+
+def test_idee_charakter_lehnt_regelwidrige_bogenwerte_ab():
+    from fastapi import HTTPException
+
+    from tests.test_erstellung import KATALOG, grundgeruest
+
+    async def run():
+        daten = {
+            **grundgeruest(attributPunkte={
+                **grundgeruest()["attributPunkte"],
+                "Körperkraft": 10,
+            }),
+            "name": "Kira",
+            "beschreibung": "x",
+            "notizen": "",
+            "konzept": "Fixer",
+        }
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.generiere_json", AsyncMock(return_value=daten)),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.create_node", AsyncMock()) as create,
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await _idee_anlegen("c1", "charakter", "eine Kira")
+            assert exc.value.status_code == 422
+            assert create.await_count == 0
+
+    _run(run())
+
+
+def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
+    from tests.test_erstellung import KATALOG, grundgeruest
+
+    async def run():
+        daten = {
+            **grundgeruest(),
+            "name": "Kira",
+            "beschreibung": "x",
+            "notizen": "",
+            "konzept": "Fixer",
+        }
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.generiere_json", AsyncMock(return_value=daten)),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
+            patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
+            patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            ergebnis = await _idee_anlegen("c1", "charakter", "eine Kira")
+            assert ergebnis["typ"] == "charakter"
+            werte = bulk.await_args.args[2]
+            assert werte["Körperkraft"] == 4
+            person = create.await_args.args[3]
+            assert person["erstellungAbgeschlossen"] is True
+
+    _run(run())

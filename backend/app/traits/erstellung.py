@@ -647,3 +647,102 @@ def kapital(auswahl: dict[str, Any]) -> tuple[int, int]:
     kredit = max(0, int(auswahl.get("freebeeKredit") or 0)) * KAPITAL_JE_FREEBEE
     eigen = max(0, int(auswahl.get("freebeeEigenkapital") or 0)) * KAPITAL_JE_FREEBEE
     return STARTKAPITAL + kredit + eigen, kredit
+
+
+def _int_dict(roh: Any) -> dict[str, int]:
+    if not isinstance(roh, dict):
+        return {}
+    out: dict[str, int] = {}
+    for schluessel, wert in roh.items():
+        try:
+            out[str(schluessel)] = int(wert)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _punkte_map(roh: Any) -> dict[str, int]:
+    """Dict {name: n} oder KI-Liste [{name, punkte|rating}]."""
+    if isinstance(roh, dict):
+        return _int_dict(roh)
+    if not isinstance(roh, list):
+        return {}
+    out: dict[str, int] = {}
+    for eintrag in roh:
+        if not isinstance(eintrag, dict):
+            continue
+        name = (eintrag.get("name") or "").strip()
+        if not name:
+            continue
+        roh_wert = eintrag.get("punkte", eintrag.get("rating"))
+        if roh_wert is None:
+            continue
+        try:
+            out[name] = int(roh_wert)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def auswahl_aus_ki(daten: dict[str, Any]) -> dict[str, Any]:
+    """KI-JSON → Erstellungsformular. Das alte `traits: [{name, rating}]` fällt weg."""
+    weg, _flavor = normalisiere_weg((daten.get("weg") or "KEINER"))
+    return {
+        "weg": weg,
+        "rasse": (daten.get("rasse") or "").strip(),
+        "schwerpunkte": _int_dict(daten.get("schwerpunkte")),
+        "attributPunkte": _punkte_map(daten.get("attributPunkte")),
+        "fertigkeitsPaket": daten.get("fertigkeitsPaket") or "",
+        "fertigkeitPunkte": _punkte_map(daten.get("fertigkeitPunkte")),
+        "hintergrundPunkte": _punkte_map(daten.get("hintergrundPunkte")),
+        "freebeePunkte": _punkte_map(daten.get("freebeePunkte")),
+        "zusatzfertigkeitPunkte": _int_dict(daten.get("zusatzfertigkeitPunkte")),
+        "zusatzfertigkeitFreebees": _int_dict(daten.get("zusatzfertigkeitFreebees")),
+        "freebeeWillenskraft": int(daten.get("freebeeWillenskraft") or 0),
+        "freebeeKredit": int(daten.get("freebeeKredit") or 0),
+        "freebeeEigenkapital": int(daten.get("freebeeEigenkapital") or 0),
+    }
+
+
+def aus_ki_antwort(
+    daten: dict[str, Any],
+    katalog: list[dict],
+    rassen: dict[str, dict[str, Any]] | None = None,
+) -> tuple[dict[str, int], list[str]]:
+    """KI-JSON als Erstellung prüfen. Bei Verstoß: keine Werte, nur Fehler.
+
+    Roh-Trait-Ratings (der alte ✨-Pfad) werden bewusst ignoriert — die KI
+    muss dasselbe Formular füllen wie ein Spieler.
+    """
+    auswahl = auswahl_aus_ki(daten)
+    fehler = pruefe(auswahl, katalog, rassen)
+    if fehler:
+        return {}, fehler
+    return endwerte(auswahl, rassen), []
+
+
+def ki_erstellungsregeln_text(rassen: dict[str, dict[str, Any]] | None = None) -> str:
+    """Kompakter Auftrag, damit die KI das Spieler-Formular füllt, keine End-6er."""
+    verfuegbar = rassen or RASSEN
+    rassen_zeilen = []
+    for name, daten in verfuegbar.items():
+        frei = "/".join(str(n) for n in daten.get("freiePunkte", []))
+        rassen_zeilen.append(f"{name} (Kontingente {frei})")
+    pakete = []
+    for kennung, paket in FERTIGKEITS_PAKETE.items():
+        verteilt = ", ".join(
+            f"{anzahl}× auf {wert}" for wert, anzahl in sorted(paket["verteilung"].items(), reverse=True)
+        )
+        pakete.append(f"{kennung}: {verteilt}")
+    return (
+        "Bogen WIE EIN SPIELER, keine fertigen Endwerte über dem Startmaximum. "
+        f"rasse genau eine von: {', '.join(rassen_zeilen)}. "
+        f"fertigkeitsPaket eines von: {'; '.join(pakete)}. "
+        "schwerpunkte: die drei Kontingente der Rasse auf AttributKörperlich, "
+        "AttributGesellschaftlich, AttributGeistig verteilen (dieselben drei Zahlen). "
+        "attributPunkte: nur die ZUSÄTZLICH verteilten Punkte je Attribut, nicht 1+Mod, "
+        "nicht den Endwert. StartMax = 4 + Rassenmodifikator. "
+        "fertigkeitPunkte: Liste {name, punkte} exakt passend zum Paket. "
+        "Keine trait-Endratings. Hexkraft/Sphären nur bei weg MAGIER, NeuroWeaving nur bei NEUROWEAVER. "
+        "hintergrundPunkte leer lassen. Freebees optional, Limit 15 plus bonusFreebees der Rasse."
+    )

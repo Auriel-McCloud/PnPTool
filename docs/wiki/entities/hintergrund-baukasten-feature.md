@@ -5,7 +5,7 @@ updated: 2026-10-10
 type: entität
 tags: [charaktererschaffung, hintergrund, erfahrung, achievements, ki-integration, kontakte, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/traits/erstellung.py, ../../../backend/app/ki/routes.py, zusatzfertigkeiten.md, achievements.md, ki-integration.md, kontakte-messenger.md]
-status: entschieden-nicht-umgesetzt
+status: teilweise-umgesetzt
 ---
 
 # Hintergrund-Baukasten
@@ -25,10 +25,11 @@ Mechanik ist eigener Code.
   (siehe [[achievements]]).
 - `Achievement.belohnungsHintergrund` speichert den **Namen**, keine ID —
   Umbenennen/Löschen bricht still. Mit dem Baukasten auf ID umstellen.
-- Der ✨-Charaktergenerator (`ki/routes.py::_setze_traits`) schreibt
-  Roh-Ratings, geklemmt nur auf `defaultMax`. **Keine** `pruefe()` —
-  deshalb wirken KI-Attribute oft zu hoch. Das ist der Bug, den
-  Hintergrund-NPCs nicht erben dürfen.
+- Der ✨-Charaktergenerator schreibt **seit 10.10.2026** keine Roh-Ratings
+  mehr. KI-JSON geht durch `erstellung.aus_ki_antwort` → `pruefe()` /
+  `endwerte()`. Regelwidrige Antworten (Attribute über StartMax) werden mit
+  422 abgelehnt, der NPC wird nicht angelegt. Rest des Baukastens
+  (Katalog, Mentor/Kontakte-Pipeline, Blatt-Button) noch nicht gebaut.
 
 ## Zwei Schichten
 
