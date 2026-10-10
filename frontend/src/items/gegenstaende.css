@@ -119,6 +119,19 @@
   text-overflow: ellipsis;
 }
 
+/* Steckbrief-Kurzwerte (10.10.2026) — der eigentliche Unterschied zwischen
+   zwei Gegenständen desselben Typs, direkt auf der Kachel statt erst nach
+   dem Reinklicken sichtbar. Eigene Akzentfarbe statt der gedämpften
+   Zeile darüber, damit es als "das sind die Werte" heraussticht. */
+.gg-kachel-steckbrief {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--bereich-farbe, var(--neon));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .gg-kachel-marken {
   display: flex;
   flex-wrap: wrap;

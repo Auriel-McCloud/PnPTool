@@ -6,6 +6,7 @@ import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
+import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
 import "./wegwerfen.css";
@@ -153,6 +154,9 @@ export function GegenstandKachel({
           {item.typ}
           {item.gewicht > 0 && ` · ${item.gewicht} kg`}
         </span>
+        {steckbriefKurz(item).length > 0 && (
+          <span className="gg-kachel-steckbrief">{steckbriefKurz(item).join(" · ")}</span>
+        )}
         <span className="gg-kachel-marken">
           {/* Kein "getragen"-Zeichen: im Abschnitt "Am Körper" wäre es an
               jeder Kachel dasselbe, und in einem Fach kann nichts getragen
@@ -258,6 +262,29 @@ export function GegenstandKachel({
             {item.deckElectronicWarfare} · N {item.deckMatrixNavigation}
             {item.cyberwall > 0 && ` · Cyberwall +${item.cyberwall}`}
           </p>
+        )}
+
+        {istChrom && (item.koerperzone || item.wVerlust > 0 || item.initiativeBonus !== 0 || item.zusatzaktionen !== 0) && (
+          <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-leise)", fontSize: 13 }}>
+            {item.koerperzone && (
+              <li>
+                {item.koerperzone}
+                {item.slot ? `, Platz ${item.slot}` : ""}
+              </li>
+            )}
+            {item.wVerlust > 0 && <li>−{item.wVerlust.toLocaleString("de-AT")} Willenskraft</li>}
+            {item.initiativeBonus !== 0 && (
+              <li>
+                Initiative {item.initiativeBonus > 0 ? "+" : ""}
+                {item.initiativeBonus}
+              </li>
+            )}
+            {item.zusatzaktionen !== 0 && (
+              <li>
+                Zusatzaktion: {item.zusatzaktionen === -1 ? "jede Runde" : `${item.zusatzaktionen}× pro Kampf`}
+              </li>
+            )}
+          </ul>
         )}
 
         {eigenschaften.length > 0 && (

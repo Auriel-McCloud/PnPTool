@@ -10,6 +10,7 @@ import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
 import { ABLAGEN, itemsApi, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand } from "../items/api";
+import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
 import { traitsApi, type TraitDef, type TraitRating } from "./api";
@@ -207,6 +208,8 @@ export function GegenstandRow({
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
   const [schaden, setSchaden] = useState(item.schaden);
+  const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
+  const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
   const [ausruestungsfertigkeiten, setAusruestungsfertigkeiten] = useState<Eigenschaft[]>([]);
   const [traitKatalog, setTraitKatalog] = useState<TraitDef[]>([]);
@@ -694,6 +697,17 @@ export function GegenstandRow({
                       <li>
                         {koerperzone ? `${koerperzone}${slot ? ` Platz ${slot}` : ""}` : "keine Zone"}
                         {wVerlust > 0 && ` · −${wVerlust.toLocaleString("de-AT")} Willenskraft`}
+                      </li>
+                    )}
+                    {item.initiativeBonus !== 0 && (
+                      <li>
+                        Initiative {item.initiativeBonus > 0 ? "+" : ""}
+                        {item.initiativeBonus}
+                      </li>
+                    )}
+                    {item.zusatzaktionen !== 0 && (
+                      <li>
+                        Zusatzaktion: {item.zusatzaktionen === -1 ? "jede Runde" : `${item.zusatzaktionen}× pro Kampf`}
                       </li>
                     )}
                     {traitBoni.filter((p) => p.key.trim()).map((p) => (
@@ -1422,6 +1436,9 @@ export function GegenstandRow({
             {item.preis > 0 && ` · ${item.preis}¥`}
             {item.gewicht > 0 && ` · ${item.gewicht} kg`}
           </span>
+          {steckbriefKurz(item).length > 0 && (
+            <span className="gg-kachel-steckbrief">{steckbriefKurz(item).join(" · ")}</span>
+          )}
           <span className="gg-kachel-marken">
             {item.sichtbarkeit === "GM" && <span className="gg-marke" data-ton="signal">SL</span>}
             {item.storyRelevant && <span className="gg-marke" data-ton="neon">Story</span>}
