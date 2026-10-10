@@ -960,3 +960,10 @@ und lässt `pruefe()`/`endwerte()` entscheiden. Regelwidrig → 422, kein
 Knoten. Tests: `test_ki_charakter_erstellung.py`, zwei Fälle in
 `test_ki_idee_typen.py`. Mentor/Kontakte können denselben Pfad später
 nutzen.
+
+## [2026-10-10] update | narrativer Hintergrund-Katalog
+
+Campaign-Knoten `Hintergrund` wie Zusatzfertigkeiten (kein Freigabe-
+Schalter). Seed der alten Liste minus Mentor/Kontakte, wenn der Katalog
+leer ist. SL-Tabelle im Burgermenü. Erstellung und Mentor-Pipeline
+nutzen den Katalog noch nicht.

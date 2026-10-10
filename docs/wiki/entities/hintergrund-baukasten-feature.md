@@ -28,8 +28,9 @@ Mechanik ist eigener Code.
 - Der ✨-Charaktergenerator schreibt **seit 10.10.2026** keine Roh-Ratings
   mehr. KI-JSON geht durch `erstellung.aus_ki_antwort` → `pruefe()` /
   `endwerte()`. Regelwidrige Antworten (Attribute über StartMax) werden mit
-  422 abgelehnt, der NPC wird nicht angelegt. Rest des Baukastens
-  (Katalog, Mentor/Kontakte-Pipeline, Blatt-Button) noch nicht gebaut.
+  422 abgelehnt, der NPC wird nicht angelegt. Narrativer SL-Katalog
+  (Seed ohne Mentor/Kontakte, Burger-Punkt „Hintergründe“) ist gebaut.
+  Mentor/Kontakte-Pipeline und Blatt-Button noch nicht.
 
 ## Zwei Schichten
 

@@ -12,6 +12,7 @@ import { FloraFaunaUebersicht } from "./entities/FloraFaunaUebersicht";
 import { ShopUebersicht } from "./haendler/ShopUebersicht";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { ZusatzfertigkeitenVerwaltung } from "./zusatzfertigkeiten/ZusatzfertigkeitenVerwaltung";
+import { HintergruendeVerwaltung } from "./hintergruende/HintergruendeVerwaltung";
 import { BegleiterVerwaltung } from "./begleiter/BegleiterVerwaltung";
 import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
@@ -100,6 +101,7 @@ const BEREICHE: Bereich[] = [
   // Fertigkeiten (Sprengstoffe, Esoterik, ...) — SL pflegt Name+Beschreibung,
   // Spieler wählen über einen eigenen Popup an Erstellung/LevelUp.
   { id: "zusatzfertigkeiten", name: "Zusatzfertigkeiten", symbol: "◬", farbe: "var(--bereich-regeln)" },
+  { id: "hintergruende", name: "Hintergründe", symbol: "◈", farbe: "var(--bereich-regeln)" },
   // Ideenschmiede: Entwürfe und KI-generierte Ideen sammeln, prüfen, verschieben
   { id: "ideenschmiede", name: "Schmiede", symbol: "🔧", farbe: "var(--bereich-schmiede)" },
 ];
@@ -121,6 +123,7 @@ const TITEL: Record<string, string> = {
   party: "Party: wer gerade zusammen unterwegs ist",
   rassen: "Rassen: Baukasten und Freigabe",
   zusatzfertigkeiten: "Zusatzfertigkeiten: Katalog optionaler Fertigkeiten",
+  hintergruende: "Hintergründe: narrativer Katalog",
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
 };
 
@@ -330,6 +333,9 @@ function Dashboard() {
           {bereich === "rassen" && <RassenUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "zusatzfertigkeiten" && (
             <ZusatzfertigkeitenVerwaltung key={ansichtKennung} campaignId={kampagne.id} />
+          )}
+          {bereich === "hintergruende" && (
+            <HintergruendeVerwaltung key={ansichtKennung} campaignId={kampagne.id} />
           )}
           {bereich === "kampf" && <Kampfmodus key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "graph" && <CampaignGraphView key={ansichtKennung} campaignId={kampagne.id} />}

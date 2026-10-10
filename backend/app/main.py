@@ -41,6 +41,7 @@ from app.haendler.routes import router as haendler_router
 from app.verhandlung.routes import router as verhandlung_router
 from app.ereignisprotokoll.routes import router as ereignisprotokoll_router
 from app.zusatzfertigkeiten.routes import router as zusatzfertigkeiten_router
+from app.hintergruende.routes import router as hintergruende_router
 from app.zusatzfertigkeiten.routes import personen_router as zusatzfertigkeiten_personen_router
 from app.spielernotizen.routes import router as spielernotizen_router
 from app.lexikon.routes import router as lexikon_router
@@ -110,6 +111,7 @@ app.include_router(haendler_router)
 app.include_router(verhandlung_router)
 app.include_router(ereignisprotokoll_router)
 app.include_router(zusatzfertigkeiten_router)
+app.include_router(hintergruende_router)
 app.include_router(zusatzfertigkeiten_personen_router)
 app.include_router(spielernotizen_router)
 app.include_router(lexikon_router)
