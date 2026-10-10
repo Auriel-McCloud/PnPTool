@@ -3,6 +3,18 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-10] update | entities/achievements gebaut (Backend + Frontend)
+
+Konzept vollständig umgesetzt: `backend/app/achievements/` (schemas,
+repository, trigger-Katalog mit allen 14 auslöseArt-Werten, belohnung.py
+für EP/Hintergrund-Einlösung, routes.py). Frontend
+`frontend/src/achievements/` — SL-Verwaltungsfenster (Katalog, Baukasten,
+Auto-Vorschläge, manuelle Vergabe, ✨-KI-Text) und Spieler-Popup, beide über
+🏆-Symbol in der Werkzeugleiste. Migration `012_achievements.cypher`
+(`Person.istEndboss`-Backfill). Eigene Tests
+(`backend/tests/test_achievements.py`), `tsc -b` sauber, Backend startet
+fehlerfrei gegen Neo4j. Browser-Klicktest am Spieltisch offen.
+
 ## [2026-10-10] update | entities/achievements (Mechanik + neue Trigger)
 
 Konzept-Runde erweitert, immer noch nicht gebaut: Achievements können jetzt

@@ -3,17 +3,20 @@ title: Achievements
 created: 2026-09-27
 updated: 2026-10-10
 type: entität
-tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, erfahrung, geplant]
+tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, erfahrung, backend, frontend]
 sources: [../../../CLAUDE.md, ereignisprotokoll.md, concepts/erfahrung-und-steigern.md]
-status: entschieden-nicht-umgesetzt
+status: gebaut
 ---
 
 # Achievements
 
-**Status: Konzept komplett entschieden, noch nicht gebaut.** Die Migration
-`006_ereignisprotokoll.cypher` legt nur die ID-Constraints an, es gibt kein
-App-Modul und keine UI. Das Ereignisprotokoll-Backend (Voraussetzung für
-Auto-Erkennung) steht seit 27.09.2026, siehe [[ereignisprotokoll]].
+**Status: Backend + Frontend gebaut (10.10.2026), `tsc -b` sauber, eigene
+Backend-Tests grün. Browser-Klicktest am Spieltisch noch offen.** Modul
+`backend/app/achievements/` (`schemas.py`, `repository.py`, `trigger.py`,
+`belohnung.py`, `routes.py`), Router in `app/main.py`. Frontend:
+`frontend/src/achievements/` (`AchievementVerwaltung.tsx` für die SL,
+`MeineAchievements.tsx` für Spieler, beide über das 🏆-Symbol in der
+Werkzeugleiste erreichbar).
 Auslöser: beim Durchsprechen des Ereignisprotokolls kam Mark
 selbst auf Achievements zurück, mit einer Liste von Beispielen und dem
 ausdrücklichen Wunsch nach **beidem**: automatischer Erkennung aus dem Log

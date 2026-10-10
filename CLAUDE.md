@@ -196,6 +196,20 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
 
 ## Offen: Was Mark selbst testen muss (Stand 10.10.2026)
 
+- **Achievements neu gebaut** (siehe „Zuletzt gebaut" 10.10.2026): Backend
+  + Frontend komplett, eigene Tests grün, `tsc -b` sauber, Backend startet
+  fehlerfrei gegen Neo4j. **Nie im Browser angeklickt.** Mark testet bewusst
+  zuerst auf Andromeda (Test-Kampagne), nicht auf bebop — Achievements sind
+  komplett pro `campaignId` gescoped, ein "First Kill" auf Andromeda hat
+  keinerlei Berührung mit der echten Kampagne. Falls doch mal versehentlich
+  auf bebop ausgelöst: Verleihungen folgen dem Papierkorb-Prinzip (kein
+  Hard-Delete) — Löschen über die SL-Verwaltung macht das Achievement sofort
+  wieder frei vergebbar, kein Backend-Eingriff nötig. Bitte am Spieltisch:
+  🏆-Symbol in der Werkzeugleiste (SL + Spieler), ein manuelles Achievement
+  anlegen und vergeben, ein AUTO-Achievement (z. B. CHARAKTER_ERSTELLT)
+  anlegen und prüfen ob der Vorschlag erscheint, EP-/Hintergrund-Belohnung
+  gegenprüfen.
+
 - **Lebenspunkte-Grundwert pro Critter neu** (siehe „Zuletzt gebaut“
   10.10.2026): `pytest tests/test_bogen.py` (5 neue Fälle) grün, volle
   Backend-Suite nur die 8 vorbestehenden (unabhängigen) Fehlschläge,
@@ -317,6 +331,36 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (10.10.2026 — Achievements: Backend + Frontend):**
+- **Was:** Komplettes Feature aus dem Konzept (`docs/wiki/entities/
+  achievements.md`) gebaut. 14 AUTO-Trigger (u. a. ERSTER_KILL, MOERDER,
+  MEISTE_SCHADEN_GENOMMEN/VERTEILT, CHARAKTER_ERSTELLT, GEHEIMNISTRAEGER,
+  parametrisierbares ERSTER_BESITZ_ZIEL/ERSTE_BESCHREIBUNG_ZIEL,
+  ERSTER_CRITTER, ERSTE_DROHNE, ENDBOSS_BESIEGT, ERSTE_SITZUNG_UEBERLEBT),
+  live aus dem Ereignisprotokoll berechnet, kein persistenter
+  Vorschlags-Knoten. Mechanische Belohnung (EP oder Hintergrund, fest am
+  Achievement hinterlegt) — einziger Weg, wie ein Hintergrund nach der
+  Charaktererstellung noch steigt. `einzigartig`-Häkchen trennt
+  campaign-weit einmalige Titel von pro-Person wiederholbaren, bei
+  Rekord-Triggern wandert der Titel automatisch (alte Verleihung wird
+  abgelöst, bleibt aber als Historie stehen). Spontane manuelle Vergabe
+  mit optionalem ✨-KI-Text.
+- **Dateien:** `backend/app/achievements/` (`schemas.py`, `repository.py`,
+  `trigger.py`, `belohnung.py`, `routes.py`), Migration
+  `012_achievements.cypher` (`Person.istEndboss`-Backfill),
+  `entities/schemas.py`/`repository.py` (neues `istEndboss`-Feld).
+  Frontend: `frontend/src/achievements/` — `AchievementVerwaltung.tsx`
+  (SL: Katalog, Baukasten, Auto-Vorschläge, manuelle Vergabe),
+  `MeineAchievements.tsx` (Spieler: Scroll-Popup, neuestes zuerst), beide
+  über 🏆-Symbol in der Werkzeugleiste (`App.tsx`/`SpielerAnsicht.tsx`).
+- **Verifiziert:** `backend/tests/test_achievements.py` (8 Tests, einzeln
+  alle grün — derselbe vorbestehende Windows-Proactor-Loop-Flake wie bei
+  `test_flora_fauna.py` trifft auch hier jeden zweiten Test im Verbund,
+  Stolperstein 8/13), volle Backend-Suite sonst nur die vorbestehenden
+  13 Fehlschläge, `tsc -b --force` sauber, Backend startet fehlerfrei gegen
+  Neo4j (alle Routen im OpenAPI). **Nie im Browser angeklickt** — siehe
+  „Offen" oben, Mark testet bewusst zuerst auf Andromeda.
 
 **Zuletzt gebaut (10.10.2026 — Ideenschmiede: Entwürfe laden wieder):**
 - **Was:** Live „Fehler beim Laden der Entwürfe“. Die Meldung kommt aus dem
