@@ -527,6 +527,7 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
             "gratisZusatzfertigkeitId": r["gratisZusatzfertigkeitId"],
             "gratisFertigkeitName": r["gratisFertigkeitName"],
             "gratisFertigkeitBonus": r["gratisFertigkeitBonus"],
+            "kannKredithai": r.get("kannKredithai") or False,
         }
         for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
     }

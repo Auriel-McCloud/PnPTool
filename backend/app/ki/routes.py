@@ -454,6 +454,7 @@ def _rassen_fuer_ki(liste: list[dict]) -> dict[str, dict]:
             "bonusFreebees": r.get("bonusFreebees") or 0,
             "gratisFertigkeitName": r.get("gratisFertigkeitName") or "",
             "gratisFertigkeitBonus": r.get("gratisFertigkeitBonus") or 0,
+            "kannKredithai": r.get("kannKredithai") or False,
         }
         for r in liste
     }

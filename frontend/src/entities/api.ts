@@ -53,6 +53,8 @@ export interface Person extends VisibilityFields {
   istKI?: boolean;
   /** Shop-System (24.09.2026): Person ist ein Händler, siehe app/haendler/. */
   istHaendler?: boolean;
+  /** Kredithai (10.10.2026): bestehender Hai wird bei Schulden wiederverwendet. */
+  istKredithai?: boolean;
   /** Tutorial-Shop (10.10.2026): Händler, der NUR im Freebees-Schritt der
    * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
    * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */

@@ -1,10 +1,10 @@
 """Fest verdrahtete System-Hintergründe vs. narrativer Seed.
 
-Mentor und Kontakte sind Mechanik (eigener Code), nicht Katalogzeilen.
-Der Seed ist der alte Zehner-Katalog minus diese zwei — editierbar.
+Mentor, Kontakte und Schulden sind Mechanik (eigener Code), nicht Katalogzeilen.
+Der Seed ist der alte Zehner-Katalog minus Mentor/Kontakte — editierbar.
 """
 
-SYSTEM_SCHLUESSEL = ("MENTOR", "KONTAKTE")
+SYSTEM_SCHLUESSEL = ("MENTOR", "KONTAKTE", "SCHULDEN")
 
 # Texte aus traits/erstellung.py::HINTERGRUENDE, Stand vor dem Baukasten.
 NARRATIVE_SEED: list[dict[str, str]] = [

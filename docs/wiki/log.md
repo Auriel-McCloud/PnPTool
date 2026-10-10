@@ -974,6 +974,13 @@ Mark: das Beschreibungsfeld Mentor ist kein extra Hintergrund-Text,
 sondern die `beschreibung` der Neo4j-`VERBINDUNG` (typ „Mentor“, analog
 Kontakt). KI liest denselben Kantentext. Kein zweites Property.
 
+## [2026-10-10] update | Schulden / Kredithai entschieden
+
+Hintergrund heißt **Schulden**. Kredit-Freebees 1:1 Punkte, nicht aus dem
+5er-Budget. Rassen-Häkchen `kannKredithai`, NPC-Flag `istKredithai`
+(bestehenden Hai wiederverwenden). Auto-Spawn bei der Erstellung noch
+nicht verdrahtet.
+
 ## [2026-10-10] update | KI-Charakter an Spieler-Erstellung gebunden
 
 ✨-Charakter muss Rasse, Weg, Attributkontingente, ein Fertigkeitspaket

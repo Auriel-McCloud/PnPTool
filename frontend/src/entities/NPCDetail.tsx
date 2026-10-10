@@ -78,6 +78,13 @@ export function NPCDetail({
   // nur tsc -b geprüft, daher unbemerkt).
   const [ladenOrtId, setLadenOrtId] = useState<string | null>(null);
   const istHaendler = aktuellePerson.istHaendler ?? false;
+  const istKredithai = aktuellePerson.istKredithai ?? false;
+
+  async function kredithaiUmschalten() {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { istKredithai: !istKredithai });
+    setAktuellePerson(neu);
+    onGeaendert();
+  }
 
   async function sortimentOeffnen() {
     const shops = await haendlerApi.alle(campaignId);
@@ -217,6 +224,9 @@ export function NPCDetail({
                       🛒 Zum Händler machen
                     </button>
                   )}
+                  <button type="button" onClick={() => void kredithaiUmschalten()}>
+                    {istKredithai ? "🦈 Kredithai — Flag weg" : "🦈 Als Kredithai markieren"}
+                  </button>
                   <button type="button" onClick={() => setZuPcOffen(true)}>
                     ⇄ Zu PC machen
                   </button>

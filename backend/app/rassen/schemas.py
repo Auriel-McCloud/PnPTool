@@ -53,6 +53,9 @@ class RasseCreate(BaseModel):
     # Freier Hinweistext fürs Charakterblatt/die Rassen-Infobox. Rein
     # beschreibend, keine eigene Mechanik.
     featureHinweis: str = ""
+    # Kredithai (10.10.2026): Häkchen, keine Namensprüfung. Nur freigegebene
+    # Rassen mit diesem Flag sind Hai-Kandidaten (Schulden-Hintergrund).
+    kannKredithai: bool = False
 
 
 class RasseUpdate(BaseModel):
@@ -68,6 +71,7 @@ class RasseUpdate(BaseModel):
     gratisFertigkeitName: str | None = None
     gratisFertigkeitBonus: int | None = None
     featureHinweis: str | None = None
+    kannKredithai: bool | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
 
@@ -101,6 +105,7 @@ class RasseResponse(BaseModel):
     gratisFertigkeitName: str = ""
     gratisFertigkeitBonus: int = 0
     featureHinweis: str = ""
+    kannKredithai: bool = False
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -123,6 +123,7 @@ _BOGEN_DEFAULTS: dict = {
     # nicht — ohne Ersatz scheitert GET /personen mit bool_type-Fehler
     # (Stolperstein 9).
     "istEndboss": False,
+    "istKredithai": False,
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
@@ -374,7 +375,7 @@ async def person_zu_pc(campaign_id: str, person_id: str) -> dict | None:
     query = f"""
         MATCH (n:Person {{id: $person_id, campaignId: $campaign_id, personType: 'NPC'}})
         SET n.personType = 'PC', n.istHaendler = false, n.istCritter = false,
-            n.istKI = false, n.istPflanzenCritter = false
+            n.istKI = false, n.istPflanzenCritter = false, n.istKredithai = false
         RETURN {_return_clause('n', PERSON_FIELDS)}
     """
     async with driver.session() as session:

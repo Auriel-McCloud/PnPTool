@@ -137,6 +137,9 @@ class PersonCreate(BaseModel):
     # einem Tod dagegen (siehe app/achievements/repository.py::
     # endboss_besiegt_kandidaten).
     istEndboss: bool = False
+    # Kredithai (10.10.2026): Flag wie istHaendler. Bestehende Haie werden
+    # bei Schulden aus Kredit-Freebees wiederverwendet statt neu angelegt.
+    istKredithai: bool = False
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -248,6 +251,7 @@ class PersonUpdate(BaseModel):
     # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
     gesundheitGrundwert: int | None = None
     istEndboss: bool | None = None
+    istKredithai: bool | None = None
     istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
@@ -307,6 +311,7 @@ class PersonResponse(BaseModel):
     # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
     gesundheitGrundwert: int = -1
     istEndboss: bool = False
+    istKredithai: bool = False
     istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"

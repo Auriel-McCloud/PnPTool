@@ -230,6 +230,7 @@ function RasseEditor({
   const [gratisFertigkeitName, setGratisFertigkeitName] = useState(rasse.gratisFertigkeitName);
   const [gratisFertigkeitBonus, setGratisFertigkeitBonus] = useState(rasse.gratisFertigkeitBonus);
   const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
+  const [kannKredithai, setKannKredithai] = useState(rasse.kannKredithai ?? false);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [fertigkeitenKatalog, setFertigkeitenKatalog] = useState<TraitDef[]>([]);
@@ -247,6 +248,7 @@ function RasseEditor({
     setGratisFertigkeitName(rasse.gratisFertigkeitName);
     setGratisFertigkeitBonus(rasse.gratisFertigkeitBonus);
     setFeatureHinweis(rasse.featureHinweis);
+    setKannKredithai(rasse.kannKredithai ?? false);
   }, [rasse.id]);
 
   // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
@@ -308,6 +310,7 @@ function RasseEditor({
         gratisFertigkeitName,
         gratisFertigkeitBonus,
         featureHinweis,
+        kannKredithai,
       });
       await onGeaendert();
     } finally {
@@ -552,6 +555,20 @@ function RasseEditor({
               Additiv auf die bestehende, ganz normale Fertigkeit — jeder Charakter dieser Rasse
               bekommt den Bonus obendrauf, egal was er selbst dort verteilt. Zum Beispiel beim Zorak:
               +1 auf Anführen. Gedeckelt auf das Fertigkeitsmaximum.
+            </p>
+
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              <input
+                type="checkbox"
+                checked={kannKredithai}
+                onChange={(e) => setKannKredithai(e.target.checked)}
+              />{" "}
+              Kann Kredithai sein
+            </label>
+            <p className="ra-hinweis">
+              Freigegebene Rassen mit diesem Häkchen sind Kandidaten, wenn die Erstellung wegen
+              Kredit-Freebees einen Hai anlegt. Ohne Häkchen an jeder Rasse gelten alle
+              freigegebenen.
             </p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>

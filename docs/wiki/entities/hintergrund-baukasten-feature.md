@@ -56,12 +56,15 @@ wird als **editierbarer Seed** in jede Kampagne kopiert. SL löscht oder
 |---|---|
 | **Mentor** | genau ein NPC, Paket Profi, `20×N` EP, Plan-Autosteigerung, Bild, Welt-Verbindungen |
 | **Kontakte** | `N` NPCs bei Rating N, voller KI-Charakter **ohne** Profi-Zwang und **ohne** EP-Leiter |
+| **Schulden** | Folge von Kredit-Freebees, kein Einkauf. 1 Freebee = 1 Punkt, zählt nicht ins 5er-Kontingent. NPC = Kredithai |
 
 ```
 (:Person)-[:HAT_MENTOR {rating}]->(:Person {personType: NPC})
 (:Person)-[:VERBINDUNG {typ: "Mentor", beschreibung}]->(:Person)
 (:Person)-[:HAT_KONTAKT]->(:Person {personType: NPC})
 (:Person)-[:VERBINDUNG {typ: "Kontakt", beschreibung}]->(:Person)
+(:Person)-[:HAT_KREDITHAI {rating}]->(:Person {istKredithai: true})
+(:Person)-[:VERBINDUNG {typ: "Schuldet", beschreibung}]->(:Person)
 (:Person)-[:KENNT {stufe, chatOffen}]->(:Person)   # Messenger, s. [[kontakte-messenger]]
 ```
 
@@ -71,6 +74,27 @@ kein zweites Beschreibungs-Property am Hintergrund oder an `HAT_MENTOR`.
 Die KI liest genau diesen Kantentext als Kontext. Leer → kein KI-Call.
 
 Gegenstände am Mentor: bewusst nicht in v1.
+
+## Schulden / Kredithai (10.10.2026)
+
+Kredit-Freebees (1 = 10.000¥) hatten bisher keine Konsequenz außer
+`Person.schulden`. Ab jetzt: **sobald `freebeeKredit > 0`**, bekommt der
+PC den Systemhintergrund **Schulden** (Blattname kurz), Rating =
+Anzahl Kredit-Freebees, **nicht** aus dem 5er-Hintergrundbudget.
+
+NPC: **Kredithai**. Kein Spielertext.
+
+1. Gibt es in der Kampagne schon einen NPC mit `istKredithai`? Den nehmen
+   (bei mehreren: den ältesten). Kein neuer Entwurf.
+2. Sonst KI-Charakter (wie Kontakt, kein Profi-Zwang, kein 20×N-EP),
+   Rasse aus den **freigegebenen** mit Häkchen `kannKredithai` am
+   Rassen-Baukasten. Keine markiert → alle freigegebenen sind Kandidaten
+   (kein hart verdrahteter Rassenname). Landet in der Schmiede.
+3. `HAT_KREDITHAI {rating}` + `VERBINDUNG` typ `"Schuldet"`,
+   `beschreibung` z.B. `"30.000¥ aus der Erstellung"`.
+
+Kein Kredit → kein Hai, kein Hintergrund. Messenger bleibt zu, bis die
+SL den Entwurf übernimmt bzw. den bestehenden Hai freigibt.
 
 ## KI-Charaktere = Spieler-Erstellung
 
