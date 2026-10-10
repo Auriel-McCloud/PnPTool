@@ -95,7 +95,7 @@ export function OrtLadenFenster({
   }
 
   function einstellungen() {
-    return { spezialisierung, vertriebsart, istTutorialShop: istTutorial };
+    return { spezialisierung, vertriebsart };
   }
 
   async function aktivieren() {
@@ -184,18 +184,8 @@ export function OrtLadenFenster({
                 ? "Kein Verhandeln, ein Kauf legt eine Bestellung an — die Lieferung gibt die SL später frei."
                 : "Verhandeln möglich, Ware wird bei Kauf sofort übergeben."}
             </p>
-            <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
-              <input
-                type="checkbox"
-                checked={istTutorial}
-                onChange={(e) => setIstTutorial(e.target.checked)}
-                disabled={läuft}
-              />
-              Tutorial-Shop
-            </label>
             <p className="shop-ware-hinweis" style={{ marginTop: 6 }}>
-              Erscheint nur im Freebees-Schritt der Charaktererstellung, nicht in der normalen Shop-Übersicht. Pro
-              Kampagne zählt der erste. Kein Verhandeln, keine Achievement-Auslöser.
+              Welcher Laden der Tutorial-Shop ist, stellst du im Menüpunkt Tutorial-Shop ein.
             </p>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               {istAktiv ? (

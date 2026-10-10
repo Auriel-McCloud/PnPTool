@@ -58,7 +58,6 @@ export function HaendlerBearbeiten({
   }, [offen, campaignId, haendlerId]);
 
   const spezialisierung = haendler?.spezialisierung ?? [];
-  const istTutorial = haendler?.istTutorialShop ?? false;
 
   const sichtbaresSortiment = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
   const wählbareVorlagen = useMemo(() => {
@@ -85,11 +84,6 @@ export function HaendlerBearbeiten({
   async function artenSetzen(neu: string[]) {
     setHinweis(null);
     await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { spezialisierung: neu }));
-  }
-
-  async function tutorialSetzen(an: boolean) {
-    setHinweis(null);
-    await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { istTutorialShop: an }));
   }
 
   async function wareHinzufuegen() {
@@ -158,7 +152,7 @@ export function HaendlerBearbeiten({
     <Fenster
       offen={offen}
       titel={`${haendler.name} bearbeiten`}
-      unterzeile="Arten, Tutorial-Flag und Ware — alles am Ort"
+      unterzeile="Arten und Ware — alles am Ort"
       kennung={`haendler-bearb:${haendlerId}`}
       breit
       onSchliessen={onSchliessen}
@@ -166,21 +160,6 @@ export function HaendlerBearbeiten({
       <div className="shop-editor">
         {fehler && <p className="shop-ware-fehler">{fehler}</p>}
         {hinweis && <p className="shop-ware-erfolg">{hinweis}</p>}
-
-        <section>
-          <label style={{ fontSize: "0.95em", display: "flex", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={istTutorial}
-              disabled={läuft}
-              onChange={(e) => tutorialSetzen(e.target.checked)}
-            />
-            Tutorial-Shop
-          </label>
-          <p className="shop-ware-hinweis">
-            Nur im Freebees-Schritt sichtbar, nicht in der normalen Shop-Übersicht. Der Name des Ortes ist egal.
-          </p>
-        </section>
 
         <section>
           <h3 className="gg-abschnitt">
