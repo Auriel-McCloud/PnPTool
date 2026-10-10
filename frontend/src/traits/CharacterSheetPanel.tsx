@@ -703,15 +703,15 @@ export function GegenstandRow({
                         {wVerlust > 0 && ` · −${wVerlust.toLocaleString("de-AT")} Willenskraft`}
                       </li>
                     )}
-                    {item.initiativeBonus !== 0 && (
+                    {initiativeBonus !== 0 && (
                       <li>
-                        Initiative {item.initiativeBonus > 0 ? "+" : ""}
-                        {item.initiativeBonus}
+                        Initiative {initiativeBonus > 0 ? "+" : ""}
+                        {initiativeBonus}
                       </li>
                     )}
-                    {item.zusatzaktionen !== 0 && (
+                    {zusatzaktionen !== 0 && (
                       <li>
-                        Zusatzaktion: {item.zusatzaktionen === -1 ? "jede Runde" : `${item.zusatzaktionen}× pro Kampf`}
+                        Zusatzaktion: {zusatzaktionen === -1 ? "jede Runde" : `${zusatzaktionen}× pro Kampf`}
                       </li>
                     )}
                     {traitBoni.filter((p) => p.key.trim()).map((p) => (
