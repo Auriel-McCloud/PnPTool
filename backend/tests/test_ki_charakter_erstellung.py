@@ -54,3 +54,54 @@ def test_erstellungsregeln_text_nennt_pakete_und_rassen():
     assert "PROFI" in text
     assert "Mensch" in text
     assert "StartMax" in text
+    assert "höchstens 3" in text
+    assert "Kredit" in text
+    assert "Körperkraft +1" in text
+    assert "Freebee-Budget 17" in text  # Mensch +2
+    assert "hintergrundPunkte leer" not in text
+
+
+def test_endwerte_in_attributpunkten_werden_umgerechnet():
+    from app.traits import erstellung
+
+    daten = grundgeruest()
+    start = erstellung.startwerte("Mensch")
+    daten["attributPunkte"] = {
+        name: start[name] + punkte for name, punkte in daten["attributPunkte"].items()
+    }
+    werte, fehler = aus_ki_antwort(daten, KATALOG)
+    assert fehler == []
+    assert werte["Körperkraft"] == 4
+
+
+def test_endwert_ueber_startmax_bleibt_abgelehnt():
+    daten = grundgeruest(attributPunkte={
+        **grundgeruest()["attributPunkte"],
+        "Körperkraft": 6,
+    })
+    werte, fehler = aus_ki_antwort(daten, KATALOG)
+    assert werte == {}
+    assert fehler
+
+
+def test_freebee_geld_ueber_budget_wird_abgelehnt():
+    daten = grundgeruest(freebeeKredit=20)
+    werte, fehler = aus_ki_antwort(daten, KATALOG)
+    assert werte == {}
+    assert any("Freebee" in f for f in fehler)
+
+
+def test_legale_freebees_auf_geld_und_fertigkeit():
+    daten = grundgeruest(
+        freebeePunkte={"Schusswaffen": 1},
+        freebeeKredit=2,
+        freebeeEigenkapital=1,
+        freebeeWillenskraft=1,
+    )
+    werte, fehler = aus_ki_antwort(daten, KATALOG)
+    assert fehler == []
+    assert werte["Schusswaffen"] == 5
+    from app.traits.erstellung import kapital
+    vermoegen, schulden = kapital(daten)
+    assert schulden == 20_000
+    assert vermoegen == 10_000 + 20_000 + 10_000

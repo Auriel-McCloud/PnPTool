@@ -332,6 +332,19 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — KI-Charakter folgt der Spieler-Erstellung):**
+- **Was:** ✨-Charakter in der Ideenschmiede schreibt keine Roh-Ratings mehr.
+  Dieselbe Prüfung wie ein Spieler: Rasse, Weg, Attribut-Zusatzpunkte nach
+  Kontingent (höchstens 3, StartMax 4+Mod), genau ein Fertigkeitspaket,
+  Hintergründe bis 5, Freebees inkl. Kredit/Eigenkapital innerhalb des
+  Budgets — Geld und ein paar Details, nicht jedes Attribut auf 6.
+  Regelwidrig einmal nachgebessert, sonst 422, kein Entwurf.
+- **Dateien:** `backend/app/traits/erstellung.py`, `backend/app/ki/routes.py`,
+  `backend/tests/test_ki_charakter_erstellung.py`, `backend/tests/test_ki_idee_typen.py`
+- **Verifiziert:** die beiden Testdateien grün. Lokales uvicorn auf 8001
+  lief noch ohne den Check (Start vor dem Commit, kein `--reload`) und
+  wurde neu gestartet. Nicht im Browser geklickt.
+
 **Zuletzt gebaut (10.10.2026 — Achievements: Backend + Frontend):**
 - **Was:** Komplettes Feature aus dem Konzept (`docs/wiki/entities/
   achievements.md`) gebaut. 14 AUTO-Trigger (u. a. ERSTER_KILL, MOERDER,

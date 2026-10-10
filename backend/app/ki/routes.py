@@ -146,11 +146,17 @@ _CHARAKTER_SCHEMA = {
         "attributPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
         "fertigkeitPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
         "freebeePunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
+        "hintergrundPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
+        "freebeeWillenskraft": {"type": "INTEGER"},
+        "freebeeKredit": {"type": "INTEGER"},
+        "freebeeEigenkapital": {"type": "INTEGER"},
         "plan": {"type": "ARRAY", "items": {"type": "STRING"}},
     },
     "required": [
         "name", "beschreibung", "notizen", "konzept", "rasse", "weg",
         "fertigkeitsPaket", "schwerpunkte", "attributPunkte", "fertigkeitPunkte",
+        "hintergrundPunkte", "freebeePunkte", "freebeeWillenskraft",
+        "freebeeKredit", "freebeeEigenkapital",
     ],
 }
 
@@ -319,7 +325,10 @@ _CHARAKTER_SYSTEM = (
     "(sein innerer Antrieb/Sucht), ziel (das konkrete nächste Vorhaben). "
     "weg: KEINER, MAGIER, NEUROWEAVER oder HAERETIKER — nur MAGIER/HAERETIKER, wenn der "
     "Charakter Magie wirkt, nur NEUROWEAVER, wenn er NeuroWeaving nutzt, sonst KEINER. "
-    "Der Bogen folgt denselben Erstellungsregeln wie ein Spieler (siehe Auftrag)."
+    "Der Bogen ist eine Charaktererstellung, keine Wunschliste: Rasse, Weg, "
+    "Attribut-Zusatzpunkte nach Rassenkontingent (höchstens 3 je Attribut, nie Endwerte), "
+    "genau ein Fertigkeitspaket, dann Freebees in Geld und Details — alles innerhalb "
+    "der Regeln im Auftrag. Katalog-Maxima sind nicht die Erstellung."
     + _NOTIZEN_HINWEIS
 )
 
@@ -698,13 +707,42 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         prompt_komplett = _mit_kontext(prompt, kontext)
         prompt_komplett += "\n\n" + erstellung.ki_erstellungsregeln_text(rassen)
         prompt_komplett += (
-            "\n\nTrait-Katalog (nur Namen verwenden, keine End-Ratings setzen):\n"
+            "\n\nTrait-Katalog (nur Namen; max ist das Lebensmaximum, nicht der Erstellungswert):\n"
             f"{katalog_text}\n"
         )
 
-        ergebnis = await generiere_json(prompt_komplett, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA, campaign_id=campaign_id)
-        werte, fehler = erstellung.aus_ki_antwort(ergebnis, katalog, rassen)
-        if fehler:
+        # Ein Nachbesser-Versuch, falls die Punktrechnung danebenliegt.
+        # Zweiter Fehlschlag bleibt 422 — kein Rückfall auf Roh-Ratings.
+        ergebnis: dict = {}
+        werte: dict[str, int] = {}
+        fehler: list[str] = []
+        for _versuch in range(2):
+            auftrag = prompt_komplett
+            if fehler:
+                auftrag += (
+                    "\n\nVorige Antwort verworfen, sie verletzt die Erstellung:\n- "
+                    + "\n- ".join(fehler[:8])
+                    + "\nattributPunkte sind Zusatzpunkte auf 1+Mod, höchstens 3 je Attribut, "
+                    "nicht Endwerte und nicht die Katalog-Maxima. "
+                    "Freebees nur innerhalb des Budgets; Kredit/Eigenkapital sind Kauf-Anzahlen, nicht Yen."
+                )
+            ergebnis = await generiere_json(
+                auftrag, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA, campaign_id=campaign_id
+            )
+            werte, fehler = erstellung.aus_ki_antwort(ergebnis, katalog, rassen)
+            if not fehler:
+                auswahl = erstellung.auswahl_aus_ki(ergebnis)
+                kategorie_von = {t["name"]: t["category"] for t in katalog}
+                geld = int(auswahl.get("freebeeKredit") or 0) + int(auswahl.get("freebeeEigenkapital") or 0)
+                if erstellung.freebee_kosten(auswahl, kategorie_von) == 0 or geld == 0:
+                    fehler = [
+                        "Freebees müssen ausgegeben werden: mindestens ein Kauf Kredit oder "
+                        "Eigenkapital, dazu wenige Details (Fertigkeit +1 oder Willenskraft), "
+                        "innerhalb des Rassen-Budgets. Nicht jedes Attribut anheben."
+                    ]
+            if not fehler:
+                break
+        else:
             raise HTTPException(
                 status_code=422,
                 detail="Die KI hat keine regelkonforme Erstellung geliefert: " + "; ".join(fehler[:8]),

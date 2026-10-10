@@ -196,7 +196,7 @@ def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
 
     async def run():
         daten = {
-            **grundgeruest(),
+            **grundgeruest(freebeeKredit=1, freebeePunkte={"Etiketten": 1}),
             "name": "Kira",
             "beschreibung": "x",
             "notizen": "",
@@ -220,5 +220,51 @@ def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
             assert werte["Körperkraft"] == 4
             person = create.await_args.args[3]
             assert person["erstellungAbgeschlossen"] is True
+
+    _run(run())
+
+
+def test_idee_charakter_bessert_regelwidrige_antwort_nach():
+    from tests.test_erstellung import KATALOG, grundgeruest
+
+    async def run():
+        illegal = {
+            **grundgeruest(attributPunkte={
+                **grundgeruest()["attributPunkte"],
+                "Körperkraft": 10,
+            }),
+            "name": "Kira",
+            "beschreibung": "x",
+            "notizen": "",
+            "konzept": "Fixer",
+        }
+        legal = {
+            **grundgeruest(freebeeKredit=2, freebeeEigenkapital=1),
+            "name": "Kira",
+            "beschreibung": "x",
+            "notizen": "",
+            "konzept": "Fixer",
+        }
+        ki = AsyncMock(side_effect=[illegal, legal])
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.generiere_json", ki),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
+            patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
+            patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            ergebnis = await _idee_anlegen("c1", "charakter", "eine Kira")
+            assert ergebnis["typ"] == "charakter"
+            assert ki.await_count == 2
+            assert "Körperkraft" in ki.await_args.args[0]
+            assert bulk.await_args.args[2]["Körperkraft"] == 4
+            person = create.await_args.args[3]
+            assert person["kapital"] == 40_000
+            assert person["schulden"] == 20_000
 
     _run(run())

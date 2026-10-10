@@ -973,3 +973,9 @@ nutzen den Katalog noch nicht.
 Mark: das Beschreibungsfeld Mentor ist kein extra Hintergrund-Text,
 sondern die `beschreibung` der Neo4j-`VERBINDUNG` (typ „Mentor“, analog
 Kontakt). KI liest denselben Kantentext. Kein zweites Property.
+
+## [2026-10-10] update | KI-Charakter an Spieler-Erstellung gebunden
+
+✨-Charakter muss Rasse, Weg, Attributkontingente, ein Fertigkeitspaket
+und Freebees (Geld + Details, Budget) durch `pruefe()` bringen. Schema
+kennt Kredit/Eigenkapital. Ein Nachbesser-Versuch, kein Roh-Rating-Fallback.

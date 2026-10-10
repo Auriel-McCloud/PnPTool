@@ -365,9 +365,10 @@ Text-KI, nicht Jev.
 
 `_setze_traits` schrieb Roh-Ratings, nur geklemmt auf `defaultMax` —
 Attribute landeten oft zu hoch. **Gebaut:** ✨-Charaktere füllen dasselbe
-Formular wie ein Spieler; `erstellung.aus_ki_antwort` prüft mit `pruefe()`.
-Regelwidrig → 422, kein Entwurf. Mentor/Kontakte nutzen denselben Pfad
-(siehe [[hintergrund-baukasten-feature]]).
+Formular wie ein Spieler (`aus_ki_antwort` / `pruefe()`): Rasse, Weg,
+Attributkontingente, ein Fertigkeitspaket, Hintergründe, Freebees inkl.
+Kredit/Eigenkapital. Regelwidrig einmal nachgebessert, sonst 422, kein
+Entwurf. Kein Rückfall auf Roh-Ratings.
 
 ## Siehe auch
 

@@ -704,6 +704,35 @@ def auswahl_aus_ki(daten: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _attribute_als_endwerte(
+    auswahl: dict[str, Any], rassen: dict[str, dict[str, Any]] | None
+) -> dict[str, Any] | None:
+    """Häufiger KI-Fehler: attributPunkte sind Endwerte, nicht Zusatzpunkte.
+
+    Nur als zweiter Versuch. Wird verworfen, wenn die Umrechnung die
+    Prüfung nicht besteht — eine legale Zusatzpunkt-Einreichung darf hier
+    nicht still umgeschrieben werden.
+    """
+    start = startwerte(auswahl.get("rasse") or "", rassen)
+    punkte = dict(auswahl.get("attributPunkte") or {})
+    if not punkte or not start:
+        return None
+    umgerechnet: dict[str, int] = {}
+    geaendert = False
+    for name, wert in punkte.items():
+        basis = start.get(name)
+        if basis is None or wert < basis:
+            umgerechnet[name] = wert
+            continue
+        zusatz = wert - basis
+        umgerechnet[name] = zusatz
+        if zusatz != wert:
+            geaendert = True
+    if not geaendert:
+        return None
+    return {**auswahl, "attributPunkte": umgerechnet}
+
+
 def aus_ki_antwort(
     daten: dict[str, Any],
     katalog: list[dict],
@@ -712,37 +741,68 @@ def aus_ki_antwort(
     """KI-JSON als Erstellung prüfen. Bei Verstoß: keine Werte, nur Fehler.
 
     Roh-Trait-Ratings (der alte ✨-Pfad) werden bewusst ignoriert — die KI
-    muss dasselbe Formular füllen wie ein Spieler.
+    muss dasselbe Formular füllen wie ein Spieler. Schickt sie trotzdem
+    Endwerte in attributPunkte, wird einmal umgerechnet und erneut geprüft.
     """
     auswahl = auswahl_aus_ki(daten)
     fehler = pruefe(auswahl, katalog, rassen)
-    if fehler:
-        return {}, fehler
-    return endwerte(auswahl, rassen), []
+    if not fehler:
+        return endwerte(auswahl, rassen), []
+    umgerechnet = _attribute_als_endwerte(auswahl, rassen)
+    if umgerechnet is not None and not pruefe(umgerechnet, katalog, rassen):
+        return endwerte(umgerechnet, rassen), []
+    return {}, fehler
 
 
 def ki_erstellungsregeln_text(rassen: dict[str, dict[str, Any]] | None = None) -> str:
-    """Kompakter Auftrag, damit die KI das Spieler-Formular füllt, keine End-6er."""
+    """Auftrag: dasselbe Formular wie ein Spieler, keine Katalog-6er."""
     verfuegbar = rassen or RASSEN
     rassen_zeilen = []
     for name, daten in verfuegbar.items():
-        frei = "/".join(str(n) for n in daten.get("freiePunkte", []))
-        rassen_zeilen.append(f"{name} (Kontingente {frei})")
+        mods = daten.get("modifikatoren") or {}
+        mod_text = ", ".join(f"{attr} {wert:+d}" for attr, wert in mods.items()) or "keine"
+        frei = "/".join(str(n) for n in daten.get("freiePunkte") or [])
+        budget = FREEBEES_GESAMT + int(daten.get("bonusFreebees") or 0)
+        rassen_zeilen.append(
+            f"{name}: Kontingente {frei}, Mods {mod_text}, Freebee-Budget {budget}"
+        )
     pakete = []
     for kennung, paket in FERTIGKEITS_PAKETE.items():
         verteilt = ", ".join(
             f"{anzahl}× auf {wert}" for wert, anzahl in sorted(paket["verteilung"].items(), reverse=True)
         )
         pakete.append(f"{kennung}: {verteilt}")
+    hintergruende = ", ".join(h["name"] for h in HINTERGRUENDE)
     return (
-        "Bogen WIE EIN SPIELER, keine fertigen Endwerte über dem Startmaximum. "
-        f"rasse genau eine von: {', '.join(rassen_zeilen)}. "
-        f"fertigkeitsPaket eines von: {'; '.join(pakete)}. "
-        "schwerpunkte: die drei Kontingente der Rasse auf AttributKörperlich, "
-        "AttributGesellschaftlich, AttributGeistig verteilen (dieselben drei Zahlen). "
-        "attributPunkte: nur die ZUSÄTZLICH verteilten Punkte je Attribut, nicht 1+Mod, "
-        "nicht den Endwert. StartMax = 4 + Rassenmodifikator. "
-        "fertigkeitPunkte: Liste {name, punkte} exakt passend zum Paket. "
-        "Keine trait-Endratings. Hexkraft/Sphären nur bei weg MAGIER, NeuroWeaving nur bei NEUROWEAVER. "
-        "hintergrundPunkte leer lassen. Freebees optional, Limit 15 plus bonusFreebees der Rasse."
+        "Du füllst dasselbe Erstellungsformular wie ein Spieler, in dieser Reihenfolge: "
+        "rasse, weg, Attribute nach Rassenkontingent, genau ein Fertigkeitspaket, "
+        "Hintergründe, dann Freebees in Geld und Details. "
+        "Keine traits-Liste, keine End-Ratings, die max-Zahlen im Katalog sind Lebensmaxima "
+        "und nicht die Erstellung. "
+        f"rasse genau eine von: {'; '.join(rassen_zeilen)}. "
+        "schwerpunkte: die drei Kontingente dieser Rasse auf AttributKörperlich, "
+        "AttributGesellschaftlich und AttributGeistig — dieselben drei Zahlen, jede einmal. "
+        "attributPunkte: NUR Zusatzpunkte auf den Startwert (1 + Mod), höchstens 3 je Attribut, "
+        "Summe je Spalte = das Kontingent dieser Spalte. StartMax = 4 + Mod. "
+        "Nicht den Endwert schicken: Mensch Körperkraft 3 Zusatzpunkte ergibt Endwert 4. "
+        f"fertigkeitsPaket genau eines von: {'; '.join(pakete)}. "
+        "fertigkeitPunkte: Liste {name, punkte} mit Katalog-Namen, exakt diese Verteilung, "
+        "keine zusätzlichen Fertigkeiten. "
+        "Hexkraft und Sphären nur bei weg MAGIER oder HAERETIKER, NeuroWeaving nur bei NEUROWEAVER. "
+        f"Hexkraft und NeuroWeaving stehen fix auf {MAGIE_FIXWERT}; nur PROFI darf "
+        f"{MAGIE_FIXWERT_PROFI_BONUS} Punkt darauf legen. "
+        f"hintergrundPunkte: eigener Pool, höchstens {HINTERGRUND_PUNKTE_GESAMT} insgesamt, "
+        f"höchstens {HINTERGRUND_MAX} auf einen, Namen nur aus: {hintergruende}. "
+        "Freebees sind an das Budget der Rasse gebunden und werden ausgegeben, nicht liegengelassen. "
+        f"Kosten: Attribut/Hexkraft/NeuroWeaving {FREEBEE_KOSTEN_JE_KATEGORIE['Hexkraft']} je Punkt "
+        "(darf StartMax übersteigen, nicht das Lebensmaximum), "
+        f"Fertigkeit/Sphäre {FREEBEE_KOSTEN_JE_KATEGORIE['Fertigkeit']} und höchstens "
+        f"+{FREEBEE_MAX_JE_FERTIGKEIT}, Willenskraft {FREEBEE_KOSTEN_WILLENSKRAFT}, "
+        f"Kredit {FREEBEE_KOSTEN_KREDIT} je {KAPITAL_JE_FREEBEE}¥, "
+        f"Eigenkapital {FREEBEE_KOSTEN_EIGENKAPITAL} je {KAPITAL_JE_FREEBEE}¥. "
+        "freebeePunkte sind Zusatzpunkte, nicht Endwerte. "
+        "freebeeKredit und freebeeEigenkapital sind die Anzahl der Käufe, nicht Yen. "
+        "Einen Teil der Freebees als Geld (Kredit oder Eigenkapital), den Rest als wenige "
+        "passende Details (eine Fertigkeit +1, Willenskraft, höchstens ein Attribut). "
+        "Nicht jedes Attribut anheben."
     )
