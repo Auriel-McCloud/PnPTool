@@ -36,7 +36,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
 - **Waffenschaden aus der Beratung** (10.10.2026): Sechs Entwürfe auf bebop
-  haben jetzt einen Schadensbonus (Kachel und Kampf lesen `kraft`, nicht die
+  haben jetzt einen Schaden (Kachel und Kampf lesen `kraft`, nicht die
   WoD-Würfel in den Notizen). Nächste KI-Waffe setzt das Feld selbst.
   Bitte die Stufen in der Schmiede gegenlesen — Monofilament und Vibroklinge 4,
   Nadelpistole und Schockstab 2, Plasma-Katana 5, Plasma-Brecher 7.
@@ -362,10 +362,20 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
-**Zuletzt gebaut (10.10.2026 — KI-Waffen bekommen einen Schadensbonus):**
+**Zuletzt gebaut (10.10.2026 — Waffenschaden einheitlich, Skala bis 12):**
+- **Was:** Label „Schadensbonus“ ist überall „Schaden“. Steckbrief zeigt den
+  Wert nur noch einmal. Maximum 12 (1–7 Handwaffe, 8–12 Schiffswaffe).
+  KI-Schema-Feld heißt `schaden` (alter Schlüssel `schadensbonus` wird noch
+  gelesen). Rüstungsbonus bleibt bei 7.
+- **Dateien:** `items/waffenbonus.py`, CharacterSheetPanel, Begleiter,
+  KI-Prompts, `docs/reference/Neotopia_Gegenstaende.md`.
+- **Verifiziert:** `test_waffenbonus.py` + KI-Waffen-Tests. **Im Browser eine
+  Waffe auf 12 stellen und den Steckbrief gegenlesen.**
+
+**Zuletzt gebaut (10.10.2026 — KI-Waffen bekommen einen Schaden):**
 - **Was:** Beratung/✨ und Shop-KI haben Waffen ohne `kraft`/`schaden` angelegt.
-  Kachel und Kampfkarte zeigten dadurch 0. Schema verlangt jetzt `schadensbonus`
-  (1–7, Regelwerk, kein Würfelausdruck); beim Anlegen landen Wert, `schaden`
+  Kachel und Kampfkarte zeigten dadurch 0. Schema verlangt jetzt `schaden`
+  (1–12, Regelwerk, kein Würfelausdruck); beim Anlegen landen Wert, `schaden`
   und `istWaffe` auf der Waffe. Fehlende Angabe wird 1, nicht 0.
 - **Dateien:** `items/waffenbonus.py`, `ki/routes.py`, `haendler/ki_vorschlag.py`,
   Import-Skript setzt `kraft=schaden`.

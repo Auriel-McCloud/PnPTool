@@ -270,7 +270,7 @@ def test_idee_charakter_bessert_regelwidrige_antwort_nach():
     _run(run())
 
 
-def test_waffe_aus_der_ki_bekommt_schadensbonus():
+def test_waffe_aus_der_ki_bekommt_schaden():
     """Kachel und Kampf lesen kraft. Ohne das Feld blieb jede KI-Waffe auf 0."""
     async def run():
         with (
@@ -284,7 +284,7 @@ def test_waffe_aus_der_ki_bekommt_schadensbonus():
                     "typ": "Waffe",
                     "preis": 800,
                     "seltenheit": 3,
-                    "schadensbonus": 2,
+                    "schaden": 2,
                     "schadenArt": "schwer",
                 }),
             ),
@@ -329,7 +329,7 @@ def test_waffe_ohne_angabe_bekommt_mindestens_stufe_1():
     _run(run())
 
 
-def test_kein_schadensbonus_bei_einem_nicht_waffe():
+def test_kein_waffenschaden_bei_einem_nicht_waffe():
     async def run():
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
@@ -341,7 +341,7 @@ def test_kein_schadensbonus_bei_einem_nicht_waffe():
                     "typ": "Sonstiges",
                     "preis": 80,
                     "seltenheit": 1,
-                    "schadensbonus": 4,
+                    "schaden": 4,
                 }),
             ),
             patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,

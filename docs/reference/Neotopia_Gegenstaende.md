@@ -53,7 +53,7 @@ Regeln: Der Rüstungsbonus wird addiert. Ein Rüstungswert von 3 gibt −1 auf G
 
 ## Waffen — Schadensrichtwerte (ungefähr, diskutierbar)
 
-| Schadensbonus | Beispiele | Preis |
+| Schaden | Beispiele | Preis |
 |---|---|---|
 | 1 | Schlagring, Knüppel | ~50¥ |
 | 2 | Dolch, Baseballschläger | 50–200¥ |
@@ -62,6 +62,9 @@ Regeln: Der Rüstungsbonus wird addiert. Ein Rüstungswert von 3 gibt −1 auf G
 | 5 | Scharfschützengewehr | 9.000–15.000¥* |
 | 6 | MiniGun | ~50.000¥* |
 | 7 | Raketenwerfer, Granate | 1.800–10.000¥* |
+| 8–12 | Schiffswaffen (Raumschiff, Bordgeschütz) | — |
+
+1–7 sind Handwaffen, 8–12 nur Schiffswaffen.
 
 *SmartLink-Erweiterung (Zielhilfe) +50% Waffenwert, erweitertes Magazin +50% Waffenwert, Sonderanfertigung +50% Waffenwert. Preise gelten für „normale" Munition — Spezialmunition kostet zusätzlich 10% des Waffenwerts.
 

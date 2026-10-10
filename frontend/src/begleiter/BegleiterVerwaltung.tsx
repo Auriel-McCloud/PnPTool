@@ -10,6 +10,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
+import { SCHADEN_MAX } from "../items/api";
 import { ART_NAMEN, ART_SYMBOLE, begleiterApi, type Begleiter, type BegleiterArt } from "./api";
 import { BegleiterBild } from "./BegleiterBild";
 import { CritterFenster } from "./CritterFenster";
@@ -701,8 +702,8 @@ function BegleiterFenster({
             />
           </div>
           <div className="bg-wert" style={{ marginTop: 4 }}>
-            <span>Schadensbonus</span>
-            <DotPool value={waffenSchaden} max={7} onChange={setWaffenSchaden} />
+            <span>Schaden</span>
+            <DotPool value={waffenSchaden} max={SCHADEN_MAX} onChange={setWaffenSchaden} />
           </div>
         </section>
 

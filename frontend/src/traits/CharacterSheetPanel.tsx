@@ -78,7 +78,6 @@ function visibilityLabel(item: Gegenstand): string {
 // erscheinen dadurch als Ablageziel (siehe items/repository.py). Der
 // Typ-Katalog selbst (für die Anlegen-Kacheln) liegt zentral in
 // items/typKatalog.ts.
-const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
 // Steckt im Körper und kostet dauerhaft Willenskraft (Zeilen 112-117).
 // Hexware läuft über dieselbe Formel — reine Flavor-Kategorie neben
 // Cyberware/Bioware, keine eigene Kostenmechanik (Mark, 02.09.2026).
@@ -229,7 +228,7 @@ export function GegenstandRow({
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
-  const [schaden, setSchaden] = useState(item.schaden);
+  const [schaden, setSchaden] = useState(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
   const [schadenArt, setSchadenArt] = useState<SchadenArt>(item.schadenArt ?? "");
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
@@ -314,7 +313,7 @@ export function GegenstandRow({
     setName(item.name);
     setTyp(item.typ);
     setPreis(item.preis);
-    setKraft(item.kraft);
+    setKraft(item.typ === "Waffe" ? item.schaden || item.kraft : item.kraft);
     setSeltenheit(item.seltenheit);
     setEigenschaften(recordToPairs(item.eigenschaften));
     setStoryRelevant(item.storyRelevant);
@@ -340,7 +339,7 @@ export function GegenstandRow({
     setKoerperzone(item.koerperzone);
     setSlot(item.slot);
     setIstWaffe(item.istWaffe);
-    setSchaden(item.schaden);
+    setSchaden(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
     setSchadenArt(item.schadenArt ?? "");
     setInitiativeBonus(item.initiativeBonus);
     setZusatzaktionen(item.zusatzaktionen);
@@ -416,7 +415,7 @@ export function GegenstandRow({
     await itemsApi.update(campaignId, item.id, {
       name,
       preis,
-      kraft,
+      kraft: typ === "Waffe" ? schaden || kraft : kraft,
       seltenheit,
       eigenschaften: pairsToRecord(eigenschaften),
       storyRelevant,
@@ -441,7 +440,7 @@ export function GegenstandRow({
       koerperzone,
       slot,
       istWaffe,
-      schaden,
+      schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt,
       initiativeBonus,
       zusatzaktionen,

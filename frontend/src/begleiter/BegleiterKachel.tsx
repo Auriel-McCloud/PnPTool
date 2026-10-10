@@ -5,6 +5,7 @@ import { Fenster } from "../shell/Fenster";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
+import { SCHADEN_MAX } from "../items/api";
 import { anzeigeName } from "../entities/api";
 import "./begleiter.css";
 
@@ -13,7 +14,7 @@ import "./begleiter.css";
  *
  * Das Grundblatt ist dasselbe wie bei Drohne und Fahrzeug (`Neotopia.xlsx`,
  * Blatt "Drohne / Fahrzeug / Sprite / Geist"): Stufe, Widerstand, Angriff,
- * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schadensbonus.
+ * Agilität, vier freie Fertigkeiten und ein Gegenstand mit Schaden.
  *
  * KI und CRITTER sind seit 20.09.2026 keine Begleiter-Art mehr, sondern
  * echte NPCs mit vollem Charakterblatt — siehe `KiFenster.tsx`/
@@ -58,8 +59,8 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
         <section className="bg-waffe">
           <h3>{begleiter.waffe}</h3>
           <div className="bg-wert">
-            <span>Schadensbonus{begleiter.schadensart && ` · ${begleiter.schadensart}`}</span>
-            <DotPool value={begleiter.waffenSchaden} max={7} />
+            <span>Schaden{begleiter.schadensart && ` · ${begleiter.schadensart}`}</span>
+            <DotPool value={begleiter.waffenSchaden} max={SCHADEN_MAX} />
           </div>
         </section>
       )}

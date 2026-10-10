@@ -25,7 +25,7 @@ from app.haendler import repository
 from app.items.repository import create_gegenstand, list_alle_gegenstaende
 from app.items.routes import _create_data
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
-from app.items.waffenbonus import waffenfelder
+from app.items.waffenbonus import ki_schaden_roh, waffenfelder
 from app.ki.client import generiere_json
 
 # Richtwerte aus Marks Excel-Regelwerk (docs/reference/Neotopia_Gegenstaende.md,
@@ -38,11 +38,12 @@ from app.ki.client import generiere_json
 # KI-Einstiegspunkten genutzt (vorschlaege() UND ware_anlegen()), eine Quelle.
 _RICHTWERTE: dict[str, str] = {
     "Waffe": (
-        "Schadensbonus->Preis: 1=Schlagring/Knüppel ~50¥, 2=Dolch/Baseballschläger "
+        "Schaden->Preis: 1=Schlagring/Knüppel ~50¥, 2=Dolch/Baseballschläger "
         "50-200¥, 3=Schwert/Leichte Pistole 400-1.000¥, 4=Schwere Pistole/Gewehr "
         "1.000-11.000¥, 5=Scharfschützengewehr 9.000-15.000¥, 6=MiniGun ~50.000¥, "
-        "7=Raketenwerfer/Granate 1.800-10.000¥. SmartLink/erweitertes Magazin/"
-        "Sonderanfertigung je +50% Waffenwert."
+        "7=Raketenwerfer/Granate 1.800-10.000¥. 8–12 nur Schiffswaffen "
+        "(Raumschiff/Bordgeschütz), kein Handwaffenschaden. "
+        "SmartLink/erweitertes Magazin/Sonderanfertigung je +50% Waffenwert."
     ),
     "Rüstung": (
         "Rüstungsbonus->Preis (Beispiele je Slot): Bonus 1 ~100¥, Bonus 2 "
@@ -122,7 +123,7 @@ _SYSTEM = (
     + _RICHTWERTE_TEXT
     + "\nseltenheit 1 (überall erhältlich) bis 5 (nur Speziallabor/Schwarzmarkt) "
     "— nur relevant für neu erfundene Ware, bei bestehenden Vorlagen wird sie "
-    "ignoriert. Bei einer neu erfundenen Waffe schadensbonus 1-7 laut der "
+    "ignoriert. Bei einer neu erfundenen Waffe schaden 1-12 laut der "
     "Stufe im Waffen-Richtwert, nie 0 und kein Würfelausdruck. schadenArt dann "
     "schlag, schwer oder aggraviert (Schlag / Tödlich / Unheilbar). Sonst 0 und leer."
 )
@@ -141,7 +142,7 @@ _SCHEMA = {
                     "beschreibung": {"type": "STRING"},
                     "preis": {"type": "INTEGER"},
                     "seltenheit": {"type": "INTEGER"},
-                    "schadensbonus": {"type": "INTEGER"},
+                    "schaden": {"type": "INTEGER"},
                     "schadenArt": {"type": "STRING", "enum": ["", "schlag", "schwer", "aggraviert"]},
                 },
                 "required": ["name", "typ", "preis"],
@@ -161,7 +162,7 @@ class SortimentVorschlag(BaseModel):
     beschreibung: str = ""
     preis: int = 0
     seltenheit: int = 1
-    schadensbonus: int = 0
+    schaden: int = 0
     schadenArt: str = ""
 
 
@@ -245,7 +246,7 @@ async def vorschlaege(campaign_id: str, haendler_id: str, anzahl: int = 5) -> Vo
                 beschreibung=(eintrag.get("beschreibung") or "").strip(),
                 preis=max(0, int(eintrag.get("preis") or 0)),
                 seltenheit=seltenheit,
-                schadensbonus=max(0, int(eintrag.get("schadensbonus") or 0)),
+                schaden=max(0, int(ki_schaden_roh(eintrag) or 0)),
                 schadenArt=str(eintrag.get("schadenArt") or ""),
             )
         )
@@ -277,7 +278,7 @@ async def anwenden(campaign_id: str, haendler_id: str, vorschlag: SortimentVorsc
             preis=vorschlag.preis,
             seltenheit=vorschlag.seltenheit,
             istEntwurf=True,
-            **waffenfelder(vorschlag.typ, vorschlag.schadensbonus, vorschlag.schadenArt),
+            **waffenfelder(vorschlag.typ, vorschlag.schaden, vorschlag.schadenArt),
         )
         gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, True, "GM", []))
         if gegenstand is None:
@@ -304,7 +305,7 @@ _WARE_SCHEMA = {
         "notizen": {"type": "STRING"},
         "preis": {"type": "INTEGER"},
         "seltenheit": {"type": "INTEGER"},
-        "schadensbonus": {"type": "INTEGER"},
+        "schaden": {"type": "INTEGER"},
         "schadenArt": {"type": "STRING", "enum": ["", "schlag", "schwer", "aggraviert"]},
     },
     "required": ["name", "beschreibung", "preis"],
@@ -335,8 +336,8 @@ async def ware_anlegen(
         "bei einem begründeten Sonderfall (Einzelstück, Billigware, "
         "Spezialanfertigung) darfst du sinnvoll abweichen. "
         "seltenheit 1 (überall erhältlich) bis 5 (Speziallabor/Schwarzmarkt). "
-        "Ist der Typ Waffe: schadensbonus 1-7 laut Richtwert, nie 0, kein Würfelausdruck. "
-        "schadenArt dann schlag, schwer oder aggraviert. Sonst schadensbonus 0 und schadenArt leer."
+        "Ist der Typ Waffe: schaden 1-12 laut Richtwert, nie 0, kein Würfelausdruck. "
+        "schadenArt dann schlag, schwer oder aggraviert. Sonst schaden 0 und schadenArt leer."
     )
     ergebnis = await generiere_json(
         f"Laden: {haendler['name']}\nKategorie: {typ}\nWunsch: {prompt.strip()}",
@@ -356,7 +357,7 @@ async def ware_anlegen(
         preis=preis,
         seltenheit=seltenheit,
         istEntwurf=False,
-        **waffenfelder(typ, ergebnis.get("schadensbonus"), ergebnis.get("schadenArt")),
+        **waffenfelder(typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt")),
     )
     gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, True, "GM", []))
     if gegenstand is None:

@@ -26,6 +26,13 @@ def schaden_klemmen(roh, *, typ: str) -> int:
     return max(0, min(wert, SCHADEN_MAX))
 
 
+def ki_schaden_roh(daten: dict):
+    """KI-Schema heißt schaden; älterer Schlüssel schadensbonus gilt noch."""
+    if daten.get("schaden") not in (None, ""):
+        return daten.get("schaden")
+    return daten.get("schadensbonus")
+
+
 def waffenfelder(typ: str, roh, art=None) -> dict:
     """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe).
 
