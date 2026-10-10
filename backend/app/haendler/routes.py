@@ -22,7 +22,7 @@ from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
 from app.rassen import repository as rassen_repository
-from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort
+from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort, WareAnlegenErgebnis
 from app.haendler.schemas import (
     AlltagswunschAntwortRequest,
     AlltagswunschRequest,
@@ -357,6 +357,33 @@ async def ki_vorschlag_anwenden(campaign_id: str, haendler_id: str, body: Sortim
     ergebnis = await ki_vorschlag.anwenden(campaign_id, haendler_id, body)
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler oder Gegenstand nicht gefunden")
+    return ergebnis
+
+
+class WareAnlegenRequest(BaseModel):
+    prompt: str
+    typ: str
+    bild: bool = False
+
+
+@router.post(
+    "/{haendler_id}/ware-anlegen",
+    response_model=WareAnlegenErgebnis,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def ware_anlegen(campaign_id: str, haendler_id: str, body: WareAnlegenRequest):
+    """Legt per KI eine Ware in der gewählten Kategorie an und hängt sie an den Laden."""
+    wunsch = body.prompt.strip()
+    if not wunsch:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Wunsch darf nicht leer sein")
+    try:
+        ergebnis = await ki_vorschlag.ware_anlegen(campaign_id, haendler_id, wunsch, body.typ, body.bild)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
+    except KiFehler as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e)) from e
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Laden nicht gefunden")
     return ergebnis
 
 

@@ -155,4 +155,12 @@ export const haendlerApi = {
       gegenstandName,
       gegenstandTyp,
     }),
+
+  /** Legt per KI eine Ware in der gewählten Kategorie an und hängt sie an den Laden. */
+  wareAnlegen: (cid: string, haendlerId: string, prompt: string, typ: string, bild: boolean) =>
+    api.post<{ name: string; preis: number; bildHinweis: string }>(`${base(cid, haendlerId)}/ware-anlegen`, {
+      prompt,
+      typ,
+      bild,
+    }),
 };

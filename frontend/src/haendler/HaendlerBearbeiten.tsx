@@ -2,17 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
-import { symbolFuerTyp } from "../items/typKatalog";
+import { entitiesApi } from "../entities/api";
+import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
 
 /**
- * SL-Sortiment-Editor (24.09.2026) — Ware eintragen/entfernen/Rabatt setzen
- * und Standort zuweisen, alles Backend-seitig bereits seit 22.09./24.09.
- * fertig (siehe docs/api/haendler.md), hier zum ersten Mal bedienbar.
- *
- * Als eigenes Fenster über der Shop-Seite (Marks Vorgabe: Commlink-Popup
- * statt Inline-Formular), aufrufbar über den "Bearbeiten"-Knopf, den nur
- * die SL sieht.
+ * SL-Sortiment-Editor. Der Laden ist der Ort: Arten, Tutorial-Flag und
+ * neue Ware werden hier gepflegt, nicht am NPC.
  */
 export function HaendlerBearbeiten({
   campaignId,
@@ -25,8 +21,6 @@ export function HaendlerBearbeiten({
   haendlerId: string;
   offen: boolean;
   onSchliessen: () => void;
-  /** Ruft die SL-Vorschau auf der Shop-Seite auf, nachdem sich am
-   * Sortiment/Standort etwas geändert hat. */
   onGeaendert: () => void;
 }) {
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
@@ -34,12 +28,13 @@ export function HaendlerBearbeiten({
   const [gegenstaende, setGegenstaende] = useState<GegenstandMitBesitzer[]>([]);
   const [läuft, setLäuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [hinweis, setHinweis] = useState<string | null>(null);
+  const [kategorie, setKategorie] = useState<string | null>(null);
+  const [wunsch, setWunsch] = useState("");
+  const [mitBild, setMitBild] = useState(false);
 
-  // Ware hinzufügen — eigenes kleines Unterformular
   const [neueWareId, setNeueWareId] = useState("");
   const [neuerPreis, setNeuerPreis] = useState("");
-
-  // Rabatt-Bearbeitung: welche Zeile gerade offen ist (nur eine gleichzeitig)
   const [rabattBearbeitet, setRabattBearbeitet] = useState<string | null>(null);
   const [rabattProzent, setRabattProzent] = useState("");
   const [rabattHinweis, setRabattHinweis] = useState("");
@@ -61,14 +56,16 @@ export function HaendlerBearbeiten({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offen, campaignId, haendlerId]);
 
-  // Nur globale Vorlagen zur Auswahl — Marks Modell: Vorlagen sind
-  // unendlich verfügbar, ein Unikat gehört i.d.R. schon jemandem und wird
-  // nicht "ins Sortiment gestellt" wie ein Katalogartikel. Bereits
-  // eingetragene Ware fällt raus, sonst könnte man sie doppelt hinzufügen.
+  const spezialisierung = haendler?.spezialisierung ?? [];
+  const istTutorial = haendler?.istTutorialShop ?? false;
+
+  const sichtbaresSortiment = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
   const wählbareVorlagen = useMemo(() => {
     const bereitsDrin = new Set(sortiment.map((s) => s.gegenstandId));
-    return gegenstaende.filter((g) => g.istVorlage && !bereitsDrin.has(g.id));
-  }, [gegenstaende, sortiment]);
+    return gegenstaende.filter(
+      (g) => g.istVorlage && !bereitsDrin.has(g.id) && (kategorie === null || g.typ === kategorie),
+    );
+  }, [gegenstaende, sortiment, kategorie]);
 
   async function ausfuehren(aktion: () => Promise<unknown>) {
     setLäuft(true);
@@ -82,6 +79,16 @@ export function HaendlerBearbeiten({
     } finally {
       setLäuft(false);
     }
+  }
+
+  async function artenSetzen(neu: string[]) {
+    setHinweis(null);
+    await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { spezialisierung: neu }));
+  }
+
+  async function tutorialSetzen(an: boolean) {
+    setHinweis(null);
+    await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { istTutorialShop: an }));
   }
 
   async function wareHinzufuegen() {
@@ -114,40 +121,155 @@ export function HaendlerBearbeiten({
     setRabattBearbeitet(null);
   }
 
+  async function mitKiAnlegen() {
+    if (!kategorie || !wunsch.trim()) return;
+    setHinweis(null);
+    setLäuft(true);
+    setFehler(null);
+    try {
+      const antwort = await haendlerApi.wareAnlegen(campaignId, haendlerId, wunsch.trim(), kategorie, mitBild);
+      setWunsch("");
+      setHinweis(
+        antwort.bildHinweis
+          ? `„${antwort.name}“ liegt für ${antwort.preis.toLocaleString("de-AT")}¥ im Regal. Bild: ${antwort.bildHinweis}`
+          : `„${antwort.name}“ liegt für ${antwort.preis.toLocaleString("de-AT")}¥ im Regal.`,
+      );
+      await laden();
+      onGeaendert();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Anlegen fehlgeschlagen");
+    } finally {
+      setLäuft(false);
+    }
+  }
+
   if (!haendler) {
     return (
-      <Fenster offen={offen} titel="Händler bearbeiten" kennung={`haendler-bearb:${haendlerId}`} onSchliessen={onSchliessen}>
+      <Fenster offen={offen} titel="Laden bearbeiten" kennung={`haendler-bearb:${haendlerId}`} onSchliessen={onSchliessen}>
         <p className="shop-ware-hinweis">Lädt…</p>
       </Fenster>
     );
   }
 
-  // Explizit eingetragene Ware kann entfernt/rabattiert werden, automatisch
-  // gelistete Katalog-Vorlagen (automatischImShop) nicht — die hängen an der
-  // globalen Vorlage bzw. der Spezialisierung, nicht an einer eigenen Kante
-  // (siehe docs/api/haendler.md).
   const istExplizit = (gegenstandId: string) => !sortiment.find((s) => s.gegenstandId === gegenstandId)?.automatisch;
 
   return (
     <Fenster
       offen={offen}
       titel={`${haendler.name} bearbeiten`}
-      unterzeile="Sortiment und Sonderangebote — der Laden ist der Ort"
+      unterzeile="Arten, Tutorial-Flag und Ware — alles am Ort"
       kennung={`haendler-bearb:${haendlerId}`}
       breit
       onSchliessen={onSchliessen}
     >
       <div className="shop-editor">
         {fehler && <p className="shop-ware-fehler">{fehler}</p>}
+        {hinweis && <p className="shop-ware-erfolg">{hinweis}</p>}
+
+        <section>
+          <label style={{ fontSize: "0.95em", display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={istTutorial}
+              disabled={läuft}
+              onChange={(e) => tutorialSetzen(e.target.checked)}
+            />
+            Tutorial-Shop
+          </label>
+          <p className="shop-ware-hinweis">
+            Nur im Freebees-Schritt sichtbar, nicht in der normalen Shop-Übersicht. Der Name des Ortes ist egal.
+          </p>
+        </section>
+
+        <section>
+          <h3 className="gg-abschnitt">
+            <span>Führt diese Arten</span>
+          </h3>
+          <p className="shop-ware-hinweis">
+            Leer = Gemischtwarenladen, der automatische Katalog zeigt alles. Gesetzte Arten beschränken nur den
+            Katalog — explizit angelegte Ware bleibt trotzdem drin.
+          </p>
+          <div className="shop-kategorien-raster">
+            {TYP_KATALOG.map((eintrag) => {
+              const an = spezialisierung.includes(eintrag.typ);
+              return (
+                <button
+                  key={eintrag.typ}
+                  type="button"
+                  className="shop-kategorie-kachel"
+                  data-aktiv={an}
+                  disabled={läuft}
+                  onClick={() =>
+                    artenSetzen(an ? spezialisierung.filter((t) => t !== eintrag.typ) : [...spezialisierung, eintrag.typ])
+                  }
+                >
+                  <span className="shop-kategorie-symbol" aria-hidden="true">
+                    {eintrag.symbol}
+                  </span>
+                  <span>{eintrag.typ}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         <section>
           <h3 className="gg-abschnitt">
             <span>Sortiment</span>
-            <span className="gg-abschnitt-zahl">{sortiment.length}</span>
+            <span className="gg-abschnitt-zahl">{sichtbaresSortiment.length}</span>
           </h3>
+          <div className="shop-kategorien-raster">
+            <button
+              type="button"
+              className="shop-kategorie-kachel"
+              data-aktiv={kategorie === null}
+              onClick={() => setKategorie(null)}
+            >
+              <span className="shop-kategorie-symbol" aria-hidden="true">
+                ✦
+              </span>
+              <span>Alle</span>
+            </button>
+            {TYP_KATALOG.map((eintrag) => (
+              <button
+                key={eintrag.typ}
+                type="button"
+                className="shop-kategorie-kachel"
+                data-aktiv={kategorie === eintrag.typ}
+                onClick={() => setKategorie(eintrag.typ)}
+              >
+                <span className="shop-kategorie-symbol" aria-hidden="true">
+                  {eintrag.symbol}
+                </span>
+                <span>{eintrag.typ}</span>
+              </button>
+            ))}
+          </div>
+
+          {kategorie && (
+            <div className="shop-editor-hinzufuegen" style={{ marginTop: 12, flexWrap: "wrap" }}>
+              <input
+                value={wunsch}
+                onChange={(e) => setWunsch(e.target.value)}
+                placeholder={`Neu in ${kategorie} — z.B. „billige Taschenlampe“`}
+                disabled={läuft}
+                onKeyDown={(e) => e.key === "Enter" && mitKiAnlegen()}
+              />
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                <input type="checkbox" checked={mitBild} onChange={(e) => setMitBild(e.target.checked)} disabled={läuft} />
+                Bild dazu
+              </label>
+              <button type="button" onClick={mitKiAnlegen} disabled={läuft || !wunsch.trim()}>
+                {läuft ? "Legt an…" : "Mit KI anlegen"}
+              </button>
+            </div>
+          )}
+          {!kategorie && (
+            <p className="shop-ware-hinweis">Kategorie wählen, dann die Ware dort direkt anlegen — Preis setzt die KI.</p>
+          )}
 
           <div className="shop-editor-liste">
-            {sortiment.map((ware) => (
+            {sichtbaresSortiment.map((ware) => (
               <div key={ware.gegenstandId} className="shop-editor-zeile">
                 <span className="shop-editor-zeile-name">
                   {symbolFuerTyp(ware.typ)} {ware.name}
@@ -167,7 +289,6 @@ export function HaendlerBearbeiten({
                     </button>
                   </span>
                 )}
-
                 {rabattBearbeitet === ware.gegenstandId && (
                   <div className="shop-editor-rabatt-form">
                     <input
@@ -181,7 +302,7 @@ export function HaendlerBearbeiten({
                     <input
                       value={rabattHinweis}
                       onChange={(e) => setRabattHinweis(e.target.value)}
-                      placeholder="Hinweis (optional, z.B. „Wochenendaktion“)"
+                      placeholder="Hinweis (optional)"
                     />
                     <div className="shop-ware-knoepfe">
                       <button type="button" onClick={() => setRabattBearbeitet(null)} disabled={läuft}>
@@ -195,12 +316,12 @@ export function HaendlerBearbeiten({
                 )}
               </div>
             ))}
-            {sortiment.length === 0 && <p className="shop-leer">Noch keine Ware im Sortiment.</p>}
+            {sichtbaresSortiment.length === 0 && <p className="shop-leer">In dieser Ansicht liegt noch nichts.</p>}
           </div>
 
           <div className="shop-editor-hinzufuegen">
             <select value={neueWareId} onChange={(e) => setNeueWareId(e.target.value)} disabled={läuft}>
-              <option value="">— Vorlage wählen —</option>
+              <option value="">— bestehende Vorlage —</option>
               {wählbareVorlagen.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name} ({g.preis.toLocaleString("de-AT")}¥)
@@ -218,12 +339,6 @@ export function HaendlerBearbeiten({
               Hinzufügen
             </button>
           </div>
-          {wählbareVorlagen.length === 0 && (
-            <p className="shop-ware-hinweis">
-              Keine weiteren Vorlagen verfügbar — entweder ist schon alles eingetragen, oder es gibt noch keine
-              Gegenstands-Vorlagen in dieser Kampagne.
-            </p>
-          )}
         </section>
       </div>
     </Fenster>

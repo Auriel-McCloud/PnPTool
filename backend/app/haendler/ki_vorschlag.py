@@ -199,3 +199,87 @@ async def anwenden(campaign_id: str, haendler_id: str, vorschlag: SortimentVorsc
     if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand_id, vorschlag.preis):
         return None
     return AnwendenErgebnis(gegenstandId=gegenstand_id, neuAngelegt=neu_angelegt)
+
+
+class WareAnlegenErgebnis(BaseModel):
+    name: str
+    preis: int
+    bildHinweis: str = ""
+
+
+_WARE_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "beschreibung": {"type": "STRING"},
+        "notizen": {"type": "STRING"},
+        "preis": {"type": "INTEGER"},
+        "seltenheit": {"type": "INTEGER"},
+    },
+    "required": ["name", "beschreibung", "preis"],
+}
+
+
+async def ware_anlegen(
+    campaign_id: str, haendler_id: str, prompt: str, typ: str, bild: bool
+) -> WareAnlegenErgebnis | None:
+    """Legt eine Vorlage in der gewählten Kategorie an und hängt sie an den Laden.
+
+    Der Typ kommt von der Kategorie, in der die SL gerade steht — die KI
+    darf ihn nicht umbiegen. Bild ist optional und darf den Gegenstand
+    nicht mitreißen, wenn die Generierung scheitert.
+    """
+    if typ not in GEGENSTAND_TYPEN:
+        raise ValueError(f"Unbekannter Gegenstandstyp: {typ}")
+    haendler = await repository.hole(campaign_id, haendler_id)
+    if haendler is None:
+        return None
+
+    system = (
+        "Du erfindest EINEN Gegenstand für einen Laden in der Welt von NeotopiA "
+        "(deutsches Cyberpunk-Pen-and-Paper). Der Typ ist fest vorgegeben und "
+        "darf nicht geändert werden. preis in Nuyen, realistisch für den Typ. "
+        "seltenheit 1 (überall erhältlich) bis 5 (Speziallabor/Schwarzmarkt)."
+    )
+    ergebnis = await generiere_json(
+        f"Laden: {haendler['name']}\nKategorie: {typ}\nWunsch: {prompt.strip()}",
+        system,
+        _WARE_SCHEMA,
+        campaign_id=campaign_id,
+    )
+    name = (ergebnis.get("name") or "").strip() or "Unbenannte Ware"
+    beschreibung = (ergebnis.get("beschreibung") or "").strip()
+    preis = max(0, int(ergebnis.get("preis") or 0))
+    seltenheit = max(1, min(int(ergebnis.get("seltenheit") or 1), 5))
+    body = GegenstandCreate(
+        name=name,
+        description=beschreibung,
+        notes=(ergebnis.get("notizen") or "").strip(),
+        typ=typ,
+        preis=preis,
+        seltenheit=seltenheit,
+        istEntwurf=False,
+    )
+    gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, True, "GM", []))
+    if gegenstand is None:
+        return None
+    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand["id"], preis):
+        return None
+
+    bild_hinweis = ""
+    if bild:
+        try:
+            from app.items.routes import speichere_bild_bytes
+            from app.ki.bildgenerierung import generiere_bild
+
+            inhalt, content_type = await generiere_bild(
+                "cloud",
+                f"Produktsfoto, cyberpunk, {typ}: {name}. {beschreibung}",
+            )
+            url = speichere_bild_bytes(campaign_id, inhalt, content_type)
+            from app.items.repository import set_bild_url
+
+            await set_bild_url(campaign_id, gegenstand["id"], url)
+        except Exception as e:
+            bild_hinweis = str(e) or "Bildgenerierung fehlgeschlagen"
+    return WareAnlegenErgebnis(name=name, preis=preis, bildHinweis=bild_hinweis)

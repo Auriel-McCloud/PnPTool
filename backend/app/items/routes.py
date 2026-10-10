@@ -49,6 +49,22 @@ ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
+def speichere_bild_bytes(campaign_id: str, inhalt: bytes, content_type: str) -> str:
+    """Legt Bild-Bytes wie ein Upload ab und gibt die öffentliche URL zurück."""
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        content_type = "image/png"
+    if len(inhalt) > MAX_UPLOAD_BYTES:
+        raise ValueError("Bild zu groß (max. 8 MB)")
+    campaign_dir = UPLOAD_DIR / campaign_id
+    campaign_dir.mkdir(parents=True, exist_ok=True)
+    ext = mimetypes.guess_extension(content_type) or ".png"
+    if ext == ".jpe":
+        ext = ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    (campaign_dir / filename).write_bytes(inhalt)
+    return f"/uploads/{campaign_id}/{filename}"
+
+
 @campaign_router.get("", response_model=list[GegenstandMitBesitzer])
 async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_alle_gegenstaende(campaign_id)
@@ -199,13 +215,8 @@ async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(..
     if len(contents) > MAX_UPLOAD_BYTES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 8 MB)")
 
-    campaign_dir = UPLOAD_DIR / campaign_id
-    campaign_dir.mkdir(parents=True, exist_ok=True)
-    ext = mimetypes.guess_extension(file.content_type) or ""
-    filename = f"{uuid.uuid4()}{ext}"
-    (campaign_dir / filename).write_bytes(contents)
-
-    item = await repository.set_bild_url(campaign_id, item_id, f"/uploads/{campaign_id}/{filename}")
+    url = speichere_bild_bytes(campaign_id, contents, file.content_type or "image/png")
+    item = await repository.set_bild_url(campaign_id, item_id, url)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item
