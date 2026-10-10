@@ -191,6 +191,12 @@ NUR_SPIELLEITUNG_LESBAR = {
     # SL-Beratungschat: Gespräche sind Spielleitungs-Werkzeug, kein Spielerwissen.
     "/api/campaigns/{campaign_id}/ki/beratung",
     "/api/campaigns/{campaign_id}/ki/beratung/{beratung_id}",
+    # Achievement-AUTO-Vorschläge und alle Verleihungen campaign-weit: eine
+    # Entscheidungsgrundlage der Spielleitung (noch nicht bestätigt bzw.
+    # Übersicht über alle Personen), kein Spielerwissen. Eigene Achievements
+    # sieht ein Spieler unter .../achievements/meine.
+    "/api/campaigns/{campaign_id}/achievements/vorschlaege",
+    "/api/campaigns/{campaign_id}/achievements/verleihungen",
 }
 
 

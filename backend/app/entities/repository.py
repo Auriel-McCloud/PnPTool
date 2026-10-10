@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -119,6 +119,10 @@ _BOGEN_DEFAULTS: dict = {
     # Override, globaler Standardwert gilt" (siehe traits/bogen.py::
     # bogen_uebersicht und schemas.py::PersonCreate.gesundheitGrundwert).
     "gesundheitGrundwert": -1,
+    # Endgegner-Markierung (10.10.2026): Bestandsdaten kennen das Feld noch
+    # nicht — ohne Ersatz scheitert GET /personen mit bool_type-Fehler
+    # (Stolperstein 9).
+    "istEndboss": False,
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.

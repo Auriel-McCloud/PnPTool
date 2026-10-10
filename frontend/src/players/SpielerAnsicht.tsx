@@ -40,6 +40,7 @@ import { SpielerEinstieg } from "./SpielerEinstieg";
 import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
+import { MeineAchievements } from "../achievements/MeineAchievements";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -73,7 +74,10 @@ const BEREICHE_STATISCH: Bereich[] = [
   // ist, ohne zu fragen.
   { id: "kampf", name: "Kampf", symbol: "⚔", farbe: "var(--bereich-kampf)" },
   { id: "kontakte", name: "Kontakte", symbol: "◍", farbe: "var(--bereich-kontakte)" },
-  { id: "lexikon", name: "Lexikon", symbol: "📖", farbe: "var(--bereich-orte)" },
+  // 🧬 wie beim SL-Rassen-Baukasten (App.tsx) — Spieler haben kein
+  // Rassen-Menü, SL kein Lexikon, daher kein Symbol-Konflikt (Mark,
+  // 10.10.2026).
+  { id: "lexikon", name: "Lexikon", symbol: "🧬", farbe: "var(--bereich-orte)" },
   { id: "graph", name: "Beziehungen", symbol: "⬡", farbe: "var(--bereich-graph)" },
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
@@ -136,6 +140,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
   // Fehlermeldung anzeigen (z.B. "Magier können keine Bioware...")
   const [fehlerMeldung, setFehlerMeldung] = useState<string | null>(null);
+  const [achievementsOffen, setAchievementsOffen] = useState(false);
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -355,6 +360,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         <>
           {/* Blitz rechts in der oberen Leiste — docs/ui-konzept.md */}
           <MitteilungenBlitz personId={ich.personId} />
+          {/* Pokal-Symbol (27.09.2026, Marks Vorgabe): eigene Achievements,
+              scrollbares Popup, neuestes zuerst — kein eigener Bereich. */}
+          <button type="button" className="cl-werkzeug" onClick={() => setAchievementsOffen(true)} title="Achievements">
+            🏆
+          </button>
           <VollbildKnopf />
           <button type="button" className="cl-werkzeug" onClick={abmelden} title="Abmelden">
             ⏻
@@ -605,6 +615,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         />
       )}
     </CommlinkShell>
+
+    <MeineAchievements campaignId={ich.campaignId} offen={achievementsOffen} onSchliessen={() => setAchievementsOffen(false)} />
 
     {/* Bestätigungsdialog für Augment-Einsetzen */}
     {augmentFrage && (

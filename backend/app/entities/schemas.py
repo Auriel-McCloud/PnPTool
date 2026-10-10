@@ -131,6 +131,12 @@ class PersonCreate(BaseModel):
     # Zurücksetzen auf den Standard müsste dann unmöglich sein. Editierbar
     # im Critter-Fenster.
     gesundheitGrundwert: int = -1
+    # Endgegner-Markierung (10.10.2026, Achievement-Trigger ENDBOSS_BESIEGT):
+    # reines Flag wie istCritter/istKI, keine eigene Mechanik — die SL
+    # markiert einen NPC als Endgegner, der Achievement-Trigger prüft bei
+    # einem Tod dagegen (siehe app/achievements/repository.py::
+    # endboss_besiegt_kandidaten).
+    istEndboss: bool = False
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -241,6 +247,7 @@ class PersonUpdate(BaseModel):
     # -1 setzt explizit zurück auf den globalen Standardwert; None (fehlt im
     # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
     gesundheitGrundwert: int | None = None
+    istEndboss: bool | None = None
     istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
@@ -299,6 +306,7 @@ class PersonResponse(BaseModel):
     istPflanzenCritter: bool = False
     # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
     gesundheitGrundwert: int = -1
+    istEndboss: bool = False
     istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"

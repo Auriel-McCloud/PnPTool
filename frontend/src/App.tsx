@@ -39,6 +39,7 @@ import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { KontakteGm } from "./kontakte/KontakteGm";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
+import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -183,6 +184,7 @@ function Dashboard() {
 
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
   const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
+  const [achievementsOffen, setAchievementsOffen] = useState(false);
 
   useEffect(() => {
     menueApi.laden().then(setMenueLayouts).catch(() => undefined);
@@ -221,6 +223,14 @@ function Dashboard() {
       {kampagne && <MitteilungSenden campaignId={kampagne.id} />}
       {/* Blitz-Symbol für die SL, um Nachrichten zu sehen (Chat-Benachrichtigungen). */}
       {kampagne && <MitteilungenBlitz personId={null} />}
+      {/* Pokal-Symbol (27.09.2026, Marks Vorgabe): Achievement-Verwaltung,
+          kein eigener Burgermenü-Eintrag. SL bekommt das volle
+          Verwaltungsfenster (Katalog/Baukasten/Vorschläge/Vergabe). */}
+      {kampagne && (
+        <button type="button" className="cl-werkzeug" onClick={() => setAchievementsOffen(true)} title="Achievements">
+          🏆
+        </button>
+      )}
       {kampagne && (
         <button
           type="button"
@@ -293,6 +303,17 @@ function Dashboard() {
             onSchliessen={() => setEinstellungenOffen(false)}
             onImportiert={(neu) => nachImportUebernehmen(neu.id)}
           />
+
+          <Fenster
+            offen={achievementsOffen}
+            breit
+            titel="🏆 Achievements"
+            unterzeile="Katalog, Baukasten, Auto-Vorschläge, manuelle Vergabe"
+            kennung="achievement-verwaltung"
+            onSchliessen={() => setAchievementsOffen(false)}
+          >
+            <AchievementVerwaltung campaignId={kampagne.id} />
+          </Fenster>
 
           {ENTITY_ANSICHT[bereich] && (
             <EntityManager
