@@ -162,6 +162,14 @@ _BOGEN_DEFAULTS: dict = {
     "alias": "",
     "kapital": 0,
     "schulden": 0,
+    # Tutorial-Shop / Rassen-Features (10.10.2026): Bestands-Personen kennen
+    # die Felder nicht — Neo4j liefert None, PersonResponse verlangt int/bool.
+    # Ohne Ersatz reisst GET /personen (und damit die Ideenschmiede, die
+    # Personen mitlädt) mit int_type/bool_type ab (Stolperstein 9).
+    "kapitalBasis": 0,
+    "tutorialAusgegeben": 0,
+    "gratisGegenstandErhalten": False,
+    "rassenFeatureGenutzt": False,
     "erstellungAbgeschlossen": False,
     # Bestandsdaten kennen das Feld nicht; ohne Ersatz scheitert die
     # Pydantic-Pruefung (Stolperstein 9).

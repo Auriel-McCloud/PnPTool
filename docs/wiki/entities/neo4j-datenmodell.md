@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-10-09
+updated: 2026-10-10
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -98,7 +98,11 @@ Baukasten nichts zerreißt.
   nach `CREATE`/`SET`/`DELETE` vor erneutem `MATCH`.
 - Pydantic-Response-Felder ohne Fallback → `null` → Validierung schlägt fehl
   auf der **ganzen Liste**, nicht nur beim betroffenen Datensatz. Lösung:
-  `coalesce`-Fallback in `_decode()` bei jeder neuen Property.
+  Eintrag in `_BOGEN_DEFAULTS` (nicht nur Schema-Default — der greift nicht
+  bei explizitem `None` aus Neo4j). Live 10.10.2026: Ideenschmiede
+  „Fehler beim Laden der Entwürfe“, weil `GET /personen` an
+  `kapitalBasis`/`tutorialAusgegeben`/`gratisGegenstandErhalten`/
+  `rassenFeatureGenutzt` ohne Default scheiterte.
 
 ## VERBINDUNG nachträglich ändern (01.10.2026)
 

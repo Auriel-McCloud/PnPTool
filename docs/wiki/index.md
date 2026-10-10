@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-09 | Seiten: 35
+> Zuletzt aktualisiert: 2026-10-10 | Seiten: 35
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -40,7 +40,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 
 | Seite | Zusammenfassung |
 |---|---|
-| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick; VERBINDUNG seit 01.10. per PATCH (Typ/Sichtbarkeit); SpielerNotiz privat seit 02.10. |
+| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick; VERBINDUNG seit 01.10. per PATCH (Typ/Sichtbarkeit); SpielerNotiz privat seit 02.10.; `_BOGEN_DEFAULTS` für Tutorial-Shop-Felder (10.10., Ideenschmiede) |
 | [[entities/architektur-drei-ebenen]] | Regelsystem→Kampagne→Ideenschmiede, fertig 12.09. |
 | [[entities/mitteilungen-system]] | SL-Popups, kein Absender, WebSocket+Reconnect, Warnfarbe offen |
 | [[entities/kontakte-messenger]] | Persona-5-Messenger, Stufe vs. chatOffen, Nachrichten als eigene Nodes |

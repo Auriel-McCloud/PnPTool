@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-10] update | Ideenschmiede Entwürfe laden wieder
+
+`GET /personen` riss Altbestand wegen fehlender `_BOGEN_DEFAULTS` für
+Tutorial-Shop/Rassen-Feature-Felder. Die Schmiede zeigte das als
+„Fehler beim Laden der Entwürfe“. Siehe CLAUDE.md 10.10.2026 und
+[[entities/neo4j-datenmodell]].
+
 ## [2026-10-09] update | Charaktererstellung Person-Schritt als Entwurf
 
 Autosave auf den Entwurfsknoten (`PATCH .../steckbrief`, inkl. Name/Alter).

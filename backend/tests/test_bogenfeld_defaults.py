@@ -32,3 +32,53 @@ def test_jedes_boolsche_feld_in_ort_und_person_hat_einen_bogen_default():
         if feld.startswith("ist") and feld not in _BOGEN_DEFAULTS:
             fehlend.append(feld)
     assert not fehlend, f"Boolsche Felder ohne _BOGEN_DEFAULTS-Eintrag: {fehlend}"
+
+
+def test_mit_defaults_ersetzt_none_tutorial_shop_felder():
+    """Bestands-Personen ohne Tutorial-/Rassenfeature-Properties (None aus
+    Neo4j) dürfen GET /personen nicht mit int_type/bool_type reissen.
+
+    Live 10.10.2026: die Ideenschmiede zeigte „Fehler beim Laden der Entwürfe“,
+    weil sie Personen mitlädt und PersonResponse kapitalBasis,
+    tutorialAusgegeben, gratisGegenstandErhalten, rassenFeatureGenutzt als
+    int/bool verlangt — Pydantic-Default greift nicht bei explizitem None.
+    """
+    from app.entities.schemas import PersonResponse
+
+    roh = {
+        "id": "p1",
+        "name": "Altbestand",
+        "personType": "NPC",
+        "description": "",
+        "notes": "",
+        "sichtbarkeit": "GM",
+        "sichtbarFuer": [],
+        "notizenSichtbarkeit": "GM",
+        "notizenSichtbarFuer": [],
+        "kapitalBasis": None,
+        "tutorialAusgegeben": None,
+        "gratisGegenstandErhalten": None,
+        "rassenFeatureGenutzt": None,
+    }
+    daten = _mit_defaults(roh)
+    assert daten["kapitalBasis"] == 0
+    assert daten["tutorialAusgegeben"] == 0
+    assert daten["gratisGegenstandErhalten"] is False
+    assert daten["rassenFeatureGenutzt"] is False
+    PersonResponse.model_validate(daten)
+
+
+def test_person_response_int_und_bool_felder_haben_bogen_defaults():
+    """Namenskonvention 'ist*' deckt kapitalBasis/tutorialAusgegeben/
+    gratisGegenstandErhalten/rassenFeatureGenutzt nicht ab — jedes int/bool
+    in PersonResponse, das aus PERSON_FIELDS kommt, braucht denselben Netz."""
+    from app.entities.schemas import PersonResponse
+
+    fehlend = []
+    person_felder = set(PERSON_FIELDS)
+    for name, info in PersonResponse.model_fields.items():
+        if name not in person_felder:
+            continue
+        if info.annotation in (int, bool) and name not in _BOGEN_DEFAULTS:
+            fehlend.append(name)
+    assert not fehlend, f"PersonResponse int/bool ohne _BOGEN_DEFAULTS: {fehlend}"

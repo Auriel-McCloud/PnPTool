@@ -318,6 +318,27 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — Ideenschmiede: Entwürfe laden wieder):**
+- **Was:** Live „Fehler beim Laden der Entwürfe“. Die Meldung kommt aus dem
+  Catch-all in `IdeenschmiedeAnsicht`, nicht von `/entwuerfe` (die Route
+  schluckt Fehler und liefert `[]`). Die Schmiede lädt parallel
+  `GET /personen` — der knallte mit `ResponseValidationError` (28×
+  `int_type`/`bool_type`, `input: None`) für `kapitalBasis`,
+  `tutorialAusgegeben`, `gratisGegenstandErhalten`, `rassenFeatureGenutzt`.
+- **Ursache:** Tutorial-Shop/Rassen-Features (10.10.) stehen in
+  `PERSON_FIELDS` und `PersonResponse` als Pflicht-int/bool, fehlten aber in
+  `_BOGEN_DEFAULTS`. Neo4j liefert für Altbestand `null`; Pydantic-Default
+  greift nur, wenn der Key fehlt, nicht bei explizitem `None` (Stolperstein 9
+  / 6-Schichten-Check, Schicht DEFAULTS).
+- **Fix:** die vier Felder in `_BOGEN_DEFAULTS` (0 / False). Regression in
+  `test_bogenfeld_defaults.py`, plus Netz dass jedes `int`/`bool` in
+  `PersonResponse` aus `PERSON_FIELDS` einen Default hat (`ist*`-Konvention
+  deckt `kapitalBasis`/`gratisGegenstandErhalten` nicht ab).
+- **Verifiziert:** die fünf Defaults-Tests grün. Volle Suite: dieselben
+  vorbestehenden Fehlschläge (asyncio/Neo4j-Stolperstein, Zugriffsschutz).
+  **In der Schmiede gegenprüfen** — hart neu laden, Entwürfe müssen wieder
+  erscheinen; NPCs/PCs ohne die neuen Properties ebenfalls.
+
 **Zuletzt gebaut (09.10.2026 — Charaktererstellung speichert den Person-Schritt als Entwurf):**
 - **Was:** Mark hat auf Andromeda Quills Konzept („der Held“) getippt, später
   am Handy denselben Assistenten weitergepflegt — der Text war weg. Ursache:
