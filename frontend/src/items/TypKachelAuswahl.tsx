@@ -10,11 +10,27 @@ import "./gegenstaende.css";
  * große, bewusste Auswahl hier passt dazu besser als ein kleines Dropdown,
  * das man später eh nicht mehr korrigieren kann.
  */
-export function TypKachelAuswahl({ onWaehlen }: { onWaehlen: (typ: string) => void }) {
+export function TypKachelAuswahl({
+  onWaehlen,
+  gewaehlt = [],
+  disabled = false,
+}: {
+  onWaehlen: (typ: string) => void;
+  /** Gesetzte Typen leuchten — für Mehrfachauswahl (Shop-Arten). Leer = nur Klick. */
+  gewaehlt?: string[];
+  disabled?: boolean;
+}) {
   return (
     <div className="gg-typraster">
       {TYP_KATALOG.map((t) => (
-        <button key={t.typ} type="button" className="gg-typ-kachel" onClick={() => onWaehlen(t.typ)}>
+        <button
+          key={t.typ}
+          type="button"
+          className="gg-typ-kachel"
+          data-aktiv={gewaehlt.includes(t.typ)}
+          disabled={disabled}
+          onClick={() => onWaehlen(t.typ)}
+        >
           <span className="gg-typ-symbol" aria-hidden="true">
             {t.symbol}
           </span>

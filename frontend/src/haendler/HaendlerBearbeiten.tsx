@@ -3,6 +3,7 @@ import { Fenster } from "../shell/Fenster";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { entitiesApi } from "../entities/api";
+import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
 
@@ -186,31 +187,18 @@ export function HaendlerBearbeiten({
             <span>Führt diese Arten</span>
           </h3>
           <p className="shop-ware-hinweis">
-            Leer = Gemischtwarenladen, der automatische Katalog zeigt alles. Gesetzte Arten beschränken nur den
-            Katalog — explizit angelegte Ware bleibt trotzdem drin.
+            Keine Kachel = Gemischtwarenladen. Leuchtende Arten beschränken nur den automatischen Katalog — explizit
+            angelegte Ware bleibt trotzdem drin.
           </p>
-          <div className="shop-kategorien-raster">
-            {TYP_KATALOG.map((eintrag) => {
-              const an = spezialisierung.includes(eintrag.typ);
-              return (
-                <button
-                  key={eintrag.typ}
-                  type="button"
-                  className="shop-kategorie-kachel"
-                  data-aktiv={an}
-                  disabled={läuft}
-                  onClick={() =>
-                    artenSetzen(an ? spezialisierung.filter((t) => t !== eintrag.typ) : [...spezialisierung, eintrag.typ])
-                  }
-                >
-                  <span className="shop-kategorie-symbol" aria-hidden="true">
-                    {eintrag.symbol}
-                  </span>
-                  <span>{eintrag.typ}</span>
-                </button>
-              );
-            })}
-          </div>
+          <TypKachelAuswahl
+            gewaehlt={spezialisierung}
+            disabled={läuft}
+            onWaehlen={(typ) =>
+              artenSetzen(
+                spezialisierung.includes(typ) ? spezialisierung.filter((t) => t !== typ) : [...spezialisierung, typ],
+              )
+            }
+          />
         </section>
 
         <section>

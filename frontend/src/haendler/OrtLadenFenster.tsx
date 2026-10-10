@@ -4,7 +4,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { haendlerApi, type HaendlerGesicht } from "./api";
 import { entitiesApi, type Person } from "../entities/api";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
-import { TYP_OPTIONEN } from "../items/typKatalog";
+import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import "./shop.css";
 
 /**
@@ -155,22 +155,10 @@ export function OrtLadenFenster({
               <span>Laden</span>
             </h3>
             <p className="shop-ware-hinweis">
-              Spezialisierung leer = Gemischtwarenladen, zeigt den gesamten passenden Katalog. Die Ware hängt an
-              diesem Ort, nicht an einem NPC.
+              Keine Kachel = Gemischtwarenladen, zeigt den gesamten passenden Katalog. Leuchtende Kacheln sind die
+              Arten, die dieser Laden führt.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-              {TYP_OPTIONEN.map((typ) => (
-                <label key={typ} style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
-                  <input
-                    type="checkbox"
-                    checked={spezialisierung.includes(typ)}
-                    onChange={() => typUmschalten(typ)}
-                    disabled={läuft}
-                  />
-                  {typ}
-                </label>
-              ))}
-            </div>
+            <TypKachelAuswahl gewaehlt={spezialisierung} disabled={läuft} onWaehlen={typUmschalten} />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button
                 type="button"
