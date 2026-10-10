@@ -35,19 +35,24 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
-- **Commlink-/Cyberdeck-Anzeige + Reflex-Booster-Import neu** (10.10.2026):
+- **Commlink-/Cyberdeck-Anzeige + Reflex-Booster neu** (10.10.2026):
   `tsc -b` sauber (lokal + im Docker-Build auf bebop verifiziert), Backend-
   Import geprüft. **Nie im Browser angeklickt.** Commlink zeigt jetzt I.C.E.
   (Cyberwall), Cyberdeck alle 6 NeuroWeaving-Bonuswerte (B/S/D/K/Electronic
-  Warfare/Matrix-Navigation) — beides im Übersichts- UND im Bearbeiten-
-  Bereich des Gegenstand-Formulars (SL-Edit UND Spieler-Kachel). Bitte ein
-  Commlink/Cyberdeck aus der Ideenschmiede öffnen und prüfen, dass die Werte
-  sichtbar UND (für die SL) editierbar sind. Zusätzlich 3 Reflex-Booster-
-  Stufen (Günstig/Militärisch/Illegaler Prototyp) als Entwürfe nachimportiert
-  — beim ersten Tabellen-Import übersehen, standen im Excel unter einem
-  eigenen Abschnitt. Bitte einen davon freigeben, am Charakter als Cyberware
-  einsetzen und im Kampfmodus die Zusatzaktion/Initiative-Verschiebung
-  gegenprüfen (Mechanik selbst ist alt, nur die Items fehlten).
+  Warfare/Matrix-Navigation) — in Übersicht UND Bearbeiten-Bereich des
+  Gegenstand-Formulars (SL-Edit UND Spieler-Kachel) sowie im kompakten
+  Kachel-Steckbrief (`items/steckbrief.ts`, parallel von Chibi gebaut).
+  3 Reflex-Booster-Stufen (Günstig/Militärisch/Illegaler Prototyp) als
+  Entwürfe importiert — beim ersten Tabellen-Import übersehen, standen im
+  Excel unter einem eigenen Abschnitt. Initiative-Bonus und Zusatzaktionen
+  waren danach zwar am Gegenstand gesetzt, aber im Formular weder sichtbar
+  noch editierbar (Mark: "wir haben so viel Aufwand betrieben sie mechanisch
+  einzubauen, wir sollten auch anzeigen was sie können") — jetzt eigenes
+  Eingabefeld im Chrom-Bereich plus Steckbrief-Zeile in beiden Ansichten.
+  Bitte einen Reflex-Booster aus der Ideenschmiede freigeben, am Charakter
+  als Cyberware einsetzen, im Formular Initiative/Zusatzaktionen gegenprüfen
+  und im Kampfmodus die tatsächliche Verschiebung testen (Mechanik selbst
+  ist alt, nur Items + Anzeige fehlten).
 
 - **KI-Shop-Anlegen: Fallback + Preis-Richtwerte neu** (10.10.2026):
   `pytest`/Backend-Import grün, live auf bebop gegen die echte Mistral-API
