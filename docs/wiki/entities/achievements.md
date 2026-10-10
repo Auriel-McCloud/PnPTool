@@ -306,8 +306,19 @@ mittendrin würde vom eigentlichen Kampfgeschehen ablenken.
   (Gegenstands-`sichtbarkeit` direkt, oder zusätzlich über die geplante
   [[spieler-lexikon]]-Entdeckungskette) — zum Zeitpunkt dieser Runde ist das
   Lexikon-Feature selbst noch nicht gebaut.
+- **Bekannte Schwachstelle (10.10.2026):** `Achievement.belohnungsHintergrund`
+  speichert den Hintergrund-NAMEN als Text, keine ID — ein Umbenennen oder
+  Löschen eines Hintergrunds bricht die Verknüpfung still (Belohnung verpufft
+  beim Vergeben, ohne Fehlermeldung). Grund: es gibt noch keinen
+  Hintergrund-Baukasten, `HINTERGRUENDE` ist fest im Code
+  (`backend/app/traits/erstellung.py`) — ein Name-basierter Bezug war
+  deshalb die einzige Option. Sobald ein Baukasten existiert (siehe
+  [[hintergrund-baukasten-feature]]), sollte dieser Bezug auf eine echte ID
+  umgestellt werden.
 
 ## Siehe auch
+
+- [[hintergrund-baukasten-feature]] — geplanter Baukasten für Hintergründe, inkl. ID-Umstellung hier
 
 - [[ereignisprotokoll]] — Basis-Log-Kategorien, die die AUTO-Trigger auswerten
 - [[../concepts/waehrung-und-preise]] — `Gegenstand.einzigartig`, Vorbild fürs Achievement-Häkchen

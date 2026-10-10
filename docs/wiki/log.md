@@ -921,3 +921,19 @@ Standby+Reload den Text jetzt hält.
 Dokumentiert: `CLAUDE.md` ("Zuletzt gebaut" + neuer "Offen"-Punkt),
 `docs/wiki/entities/ui-konzept-commlink.md` (neuer Abschnitt),
 `docs/wiki/index.md` (Zusammenfassungszeile).
+
+## [2026-10-10] create | entities/hintergrund-baukasten-feature (geplant)
+
+Mark fragte beim Andromeda-Test der neuen Achievements, ob eine
+Hintergrund-Bearbeitung automatisch mit den Achievement-Belohnungen
+synchronisiert. Antwort: teilweise, mit bekannter Schwachstelle —
+`Achievement.belohnungsHintergrund` referenziert den Hintergrund-Namen als
+Text, kein ID-Fremdschlüssel; Umbenennen/Löschen bricht die Verknüpfung
+still. Neue Seite dokumentiert Ist-Zustand (Hintergründe fest im Code,
+`traits/erstellung.py::HINTERGRUENDE`, ruleset-weiter TraitDef-Katalog,
+keine UI zum Bearbeiten), die Schwachstelle im Detail und die zentrale
+offene Designfrage für die nächste Session: campaign-gebundener Baukasten
+wie bei Zusatzfertigkeiten, oder Editor direkt auf dem bestehenden
+ruleset-weiten Katalog. Gegenseite in `achievements.md` (neuer Punkt unter
+"Offene Fragen") verlinkt. `index.md` um Zeile ergänzt (Seiten 35→36).
+Reine Konzept-Session, kein Code.
