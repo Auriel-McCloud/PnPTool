@@ -144,13 +144,12 @@ def test_export_weissliste_kennt_betreibt():
     assert "BETREIBT" in KNOWN_REL_TYPES
 
 
-def test_haendler_ohne_ort_erzeugt_vollstaendigen_ort():
-    """Regression (05.10.2026): ein Händler OHNE Standort ließ
-    shops_auf_orte_heben() einen Ort ohne notes/notizenSichtbarkeit/
-    notizenSichtbarFuer anlegen — GET /orte riss danach für die GANZE
-    Kampagne mit einem string_type/list_type-Fehler ab, sobald auch nur
-    EIN Händler ohne Standort existierte. Gefunden beim Bau des
-    "Ort zu einem Laden machen"-Knopfs, bevor er live ging."""
+def test_haendler_ohne_ort_legt_keinen_laden_an():
+    """Ein bloßes istHaendler ohne Ort ist ein Gesicht, kein Shop.
+
+    Früher legte shops_auf_orte_heben dafür einen Laden aus dem NPC-Namen
+    an. Mark (10.10.2026): Shops entstehen über Orte, nicht über NPCs.
+    """
     from app.entities import repository as entities_repository
     from app.entities.repository import ORT_FIELDS
 
@@ -174,18 +173,10 @@ def test_haendler_ohne_ort_erzeugt_vollstaendigen_ort():
                     hid=hid,
                 )
 
-            # Löst dieselbe lazy Migration aus wie GET /haendler.
             await repository.shops_auf_orte_heben(cid)
-
-            # Das war der Absturz: GET /orte über die generische
-            # entities/repository.py-Liste, NICHT über haendler/repository.py.
             orte = await entities_repository.list_nodes("Ort", ORT_FIELDS, cid)
-            assert len(orte) == 1
-            assert orte[0]["name"] == "Chibi Testhändler"
-            assert orte[0]["notes"] == ""
-            assert orte[0]["notizenSichtbarkeit"] == "GM"
-            assert orte[0]["notizenSichtbarFuer"] == []
-            assert orte[0]["istShop"] is True
+            assert orte == []
+            assert await repository.liste(cid) == []
         finally:
             await _aufraeumen(cid)
 

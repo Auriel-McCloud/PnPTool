@@ -577,6 +577,18 @@ npm run dev
   alle fünf Rassen als "✓ ausgewogen" mit der neuen Bilanz; eine testweise
   angelegte Troll-Erstellung kommt in Summe auf 24 Attributpunkte.
 
+**Zuletzt gebaut (10.10.2026 — Shops nur noch über den Ort):**
+- **Was:** Mark: Shops nicht über NPCs anlegen. Laden, Ware, Spezialisierung,
+  Vertriebsart und Tutorial-Flag hängen am Ort (`OrtLadenFenster`: Zum Laden
+  machen, Haken Tutorial-Shop, Sortiment). Verkäufer-NPC ist optional und nur
+  für Verhandeln/Kontakte. Kein Auto-Ort mehr aus `istHaendler`. NPC-Detail
+  hat keinen „Zum Händler machen“-Knopf mehr.
+- **Dateien:** `haendler/repository.py`, `haendler/OrtLadenFenster.tsx`,
+  `NPCDetail.tsx`, `HaendlerBearbeiten.tsx` (Standort-Dropdown weg),
+  `HaendlerEinstellungenFenster.tsx` gelöscht, `ki/routes.py`
+  (`shop_id_von_gesicht`).
+- **Verifiziert:** pytest shop/tutorial/massenidee + `tsc -b`.
+
 **Zuletzt gebaut (04.10.2026 — Shop hängt am Ort, nicht an der Person):**
 - **Was:** Mark wollte den Laden als Ort (Beschreibung, Kulisse, Sortiment,
   Spezialisierung, Vertriebsart), die Person bleibt Händler für Kontakt/

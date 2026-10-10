@@ -57,58 +57,31 @@ def _decode_shop(record: dict) -> dict:
 
 
 async def shops_auf_orte_heben(campaign_id: str) -> None:
-    """Hebt Shop-Felder und VERKAUFT-Kanten von der Person auf den Ort.
+    """Hebt alte Person-Shops auf den Ort, an dem der Händler schon steht.
 
-    Idempotent. Händler ohne Ort bekommen einen Laden-Ort aus ihrem Namen,
-    damit kein Sortiment verloren geht.
+    Legt keinen Laden an. Ein Shop entsteht nur, wenn die SL einen Ort dazu
+    macht (`istShop` / `istTutorialShop`). Ein bloßes `istHaendler` ohne Ort
+    bleibt ein Gesicht — kein Auto-Ort aus dem NPC-Namen (10.10.2026, Mark:
+    Shops werden über Orte angelegt, nicht über NPCs).
+
+    Nur Altbestand mit echter Shop-Ladung (Ware, Spezialisierung oder
+    Kulisse) an einem Ort, der noch nie als Laden markiert wurde
+    (`istShop IS NULL`), wird gehoben. Ein explizites `istShop=false` bleibt
+    false — sonst würde die nächste Shop-Liste einen abgeschalteten Laden
+    wieder anschalten. Das Tutorial-Flag wird hier nicht von der Person
+    kopiert; Quelle ist `Ort.istTutorialShop`.
     """
     driver = get_driver()
     async with driver.session() as session:
-        ohne_ort = [
-            dict(r)
-            async for r in await session.run(
-                """
-                MATCH (h:Person {campaignId: $cid, istHaendler: true})
-                WHERE NOT (h)-[:BEFINDET_SICH_AN]->(:Ort)
-                  AND NOT (h)-[:BETREIBT]->(:Ort)
-                RETURN h.id AS id, h.name AS name,
-                       coalesce(h.description, '') AS description,
-                       coalesce(h.shopHintergrundUrl, '') AS kulisse,
-                       coalesce(h.sichtbarkeit, 'GM') AS sichtbarkeit,
-                       coalesce(h.sichtbarFuer, []) AS sichtbarFuer
-                """,
-                cid=campaign_id,
-            )
-        ]
-        for h in ohne_ort:
-            ort_id = str(uuid.uuid4())
-            await session.run(
-                """
-                MATCH (c:Campaign {id: $cid})
-                MATCH (h:Person {id: $hid, campaignId: $cid})
-                CREATE (o:Ort {
-                    id: $oid, campaignId: $cid, name: $name,
-                    description: $description, bildUrl: $kulisse,
-                    shopHintergrundUrl: $kulisse,
-                    sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer,
-                    notes: '', notizenSichtbarkeit: 'GM', notizenSichtbarFuer: []
-                })
-                MERGE (c)-[:HAT_ENTITAET]->(o)
-                CREATE (h)-[:BEFINDET_SICH_AN]->(o)
-                """,
-                cid=campaign_id,
-                hid=h["id"],
-                oid=ort_id,
-                name=h["name"] or "Laden",
-                description=h["description"],
-                kulisse=h["kulisse"],
-                sichtbarkeit=h["sichtbarkeit"],
-                sichtbarFuer=h["sichtbarFuer"],
-            )
-
         await session.run(
             """
             MATCH (h:Person {campaignId: $cid, istHaendler: true})-[:BEFINDET_SICH_AN]->(o:Ort)
+            WHERE o.istShop IS NULL
+              AND (
+                (h)-[:VERKAUFT]->(:Gegenstand)
+                OR (h.spezialisierung IS NOT NULL AND size(h.spezialisierung) > 0)
+                OR (h.shopHintergrundUrl IS NOT NULL AND h.shopHintergrundUrl <> '')
+              )
             SET o.istShop = true,
                 o.spezialisierung = CASE
                     WHEN o.spezialisierung IS NOT NULL AND size(o.spezialisierung) > 0
@@ -117,8 +90,7 @@ async def shops_auf_orte_heben(campaign_id: str) -> None:
                 o.shopHintergrundUrl = CASE
                     WHEN o.shopHintergrundUrl IS NOT NULL AND o.shopHintergrundUrl <> ''
                     THEN o.shopHintergrundUrl
-                    ELSE coalesce(h.shopHintergrundUrl, o.bildUrl, '') END,
-                o.istTutorialShop = coalesce(o.istTutorialShop, h.istTutorialHaendler, false)
+                    ELSE coalesce(h.shopHintergrundUrl, o.bildUrl, '') END
             MERGE (h)-[:BETREIBT]->(o)
             """,
             cid=campaign_id,
@@ -239,6 +211,27 @@ async def standort_setzen(campaign_id: str, haendler_id: str, ort_id: str | None
     if ort_id:
         return await hole(campaign_id, ort_id)
     return None
+
+
+async def shop_id_von_gesicht(campaign_id: str, person_id: str) -> str | None:
+    """Der Laden, den diese Person betreibt — oder None.
+
+    Ware hängt am Ort, nicht an der Person. KI-Zuordnung auf einen
+    Verkäufer muss deshalb den Ort treffen, nicht die Personen-ID.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (h:Person {id: $pid, campaignId: $cid})-[:BETREIBT]->(o:Ort {istShop: true})
+            RETURN o.id AS id
+            LIMIT 1
+            """,
+            cid=campaign_id,
+            pid=person_id,
+        )
+        record = await result.single()
+        return record["id"] if record else None
 
 
 # --- Sortiment --------------------------------------------------------------

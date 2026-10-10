@@ -1,29 +1,19 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { haendlerApi, type HaendlerGesicht } from "./api";
 import { entitiesApi, type Person } from "../entities/api";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
+import { TYP_OPTIONEN } from "../items/typKatalog";
 import "./shop.css";
 
 /**
- * Ort-seitiger Einstieg ins Shop-System (05.10.2026, Marks Vorgabe: "ich
- * will, dass man einen Ort zu einem Laden machen kann" — die Daten hängen
- * strukturell schon seit 04.10. am Ort und ein Ort kann mehrere Händler
- * haben (siehe haendler/repository.py Docstring), aber es gab dafür nur
- * den Umweg über NPCDetail -> "Zum Händler machen" -> Standort-Dropdown in
- * HaendlerBearbeiten. Dieses Fenster ist der direkte Weg von der Ort-Seite.
+ * Ort-seitiger Einstieg ins Shop-System. Der Laden IST der Ort: Ware,
+ * Spezialisierung, Vertriebsart und Tutorial-Flag hängen hier, nicht an
+ * einer Person (10.10.2026, Mark: Shops nicht mehr über NPCs anlegen).
  *
- * Verwaltet NUR, welche Personen hier verkaufen (BETREIBT) — Ware/Rabatt
- * bleibt bewusst in der bestehenden HaendlerBearbeiten (verlinkt unten),
- * Spezialisierung/Vertriebsart bleiben bewusst in den bestehenden
- * Händler-Einstellungen (NPCDetail) — keine Parallel-Mechanik, nur der
- * fehlende direkte Einstieg.
- *
- * Der erste hinzugefügte Verkäufer aktiviert den Laden automatisch
- * (istShop=true ist ein Seiteneffekt von haendlerApi.standortSetzen in
- * repository.py). Ein NPC ohne istHaendler=true wird dabei automatisch
- * dazu gemacht — derselbe Schritt, den man sonst einzeln in NPCDetail
- * klicken müsste.
+ * Ein Verkäufer (BETREIBT) ist optional und nur für Verhandeln und Kontakte.
+ * Ohne Gesicht ist der Laden trotzdem ein Shop.
  */
 export function OrtLadenFenster({
   campaignId,
@@ -49,18 +39,31 @@ export function OrtLadenFenster({
   const [sortimentOffen, setSortimentOffen] = useState(false);
   const [istAktiv, setIstAktiv] = useState(false);
   const [geladen, setGeladen] = useState(false);
+  const [spezialisierung, setSpezialisierung] = useState<string[]>([]);
+  const [vertriebsart, setVertriebsart] = useState<"PHYSISCH" | "DIGITAL">("PHYSISCH");
+  const [istTutorial, setIstTutorial] = useState(false);
+  const [abschaltenOffen, setAbschaltenOffen] = useState(false);
 
   async function laden() {
-    const alleNpcs = await entitiesApi.listPersonen(campaignId, { personType: "NPC" });
+    const [ort, alleNpcs] = await Promise.all([
+      entitiesApi.getOrt(campaignId, ortId),
+      entitiesApi.listPersonen(campaignId, { personType: "NPC" }),
+    ]);
     setNpcs(alleNpcs);
-    try {
-      const shop = await haendlerApi.einzeln(campaignId, ortId);
-      setVerkaeufer(shop.haendler);
-      setIstAktiv(true);
-    } catch {
-      // Noch kein Laden — Ort hat istShop=false, es gibt (noch) nichts zu holen.
+    setSpezialisierung(ort.spezialisierung ?? []);
+    setVertriebsart(ort.vertriebsart ?? "PHYSISCH");
+    setIstTutorial(ort.istTutorialShop ?? false);
+    const aktiv = ort.istShop ?? false;
+    setIstAktiv(aktiv);
+    if (aktiv) {
+      try {
+        const shop = await haendlerApi.einzeln(campaignId, ortId);
+        setVerkaeufer(shop.haendler ?? []);
+      } catch {
+        setVerkaeufer([]);
+      }
+    } else {
       setVerkaeufer([]);
-      setIstAktiv(false);
     }
     setGeladen(true);
   }
@@ -72,6 +75,10 @@ export function OrtLadenFenster({
   }, [offen, campaignId, ortId]);
 
   const wählbareNpcs = npcs.filter((p) => !verkaeufer.some((v) => v.id === p.id));
+
+  function typUmschalten(typ: string) {
+    setSpezialisierung((alt) => (alt.includes(typ) ? alt.filter((t) => t !== typ) : [...alt, typ]));
+  }
 
   async function ausfuehren(aktion: () => Promise<unknown>) {
     setLäuft(true);
@@ -87,8 +94,25 @@ export function OrtLadenFenster({
     }
   }
 
+  function einstellungen() {
+    return { spezialisierung, vertriebsart, istTutorialShop: istTutorial };
+  }
+
+  async function aktivieren() {
+    await ausfuehren(() => entitiesApi.updateOrt(campaignId, ortId, { istShop: true, ...einstellungen() }));
+  }
+
+  async function speichern() {
+    await ausfuehren(() => entitiesApi.updateOrt(campaignId, ortId, einstellungen()));
+  }
+
+  async function abschalten() {
+    setAbschaltenOffen(false);
+    await ausfuehren(() => entitiesApi.updateOrt(campaignId, ortId, { istShop: false }));
+  }
+
   async function verkaeuferHinzufuegen() {
-    if (!neuerVerkaeuferId) return;
+    if (!neuerVerkaeuferId || !istAktiv) return;
     const npc = npcs.find((p) => p.id === neuerVerkaeuferId);
     await ausfuehren(async () => {
       if (!npc?.istHaendler) {
@@ -100,86 +124,187 @@ export function OrtLadenFenster({
   }
 
   async function verkaeuferEntfernen(personId: string) {
-    await ausfuehren(() => haendlerApi.standortSetzen(campaignId, personId, null));
+    await ausfuehren(async () => {
+      await haendlerApi.standortSetzen(campaignId, personId, null);
+      await entitiesApi.updatePerson(campaignId, personId, { istHaendler: false });
+    });
   }
 
   return (
-    <Fenster
-      offen={offen}
-      titel={`${ortName} — Laden`}
-      unterzeile={
-        !geladen ? "Lädt…" : istAktiv ? "Verkäufer & Sortiment" : "Noch kein Laden — ersten Verkäufer hinzufügen"
-      }
-      kennung={`ort-laden:${ortId}`}
-      onSchliessen={onSchliessen}
-    >
-      <div className="shop-editor">
-        {fehler && <p className="shop-ware-fehler">{fehler}</p>}
+    <>
+      <Fenster
+        offen={offen}
+        titel={`${ortName} — Laden`}
+        unterzeile={
+          !geladen
+            ? "Lädt…"
+            : istAktiv
+              ? istTutorial
+                ? "Tutorial-Shop — nur im Freebees-Schritt, nicht in der Shop-Übersicht"
+                : "Ware am Ort. Verkäufer nur für Verhandeln und Kontakte."
+              : "Noch kein Laden — den Ort selbst zum Shop machen"
+        }
+        kennung={`ort-laden:${ortId}`}
+        onSchliessen={onSchliessen}
+      >
+        <div className="shop-editor">
+          {fehler && <p className="shop-ware-fehler">{fehler}</p>}
 
-        <section>
-          <h3 className="gg-abschnitt">
-            <span>Verkäufer</span>
-            <span className="gg-abschnitt-zahl">{verkaeufer.length}</span>
-          </h3>
-
-          <div className="shop-editor-liste">
-            {verkaeufer.map((v) => (
-              <div key={v.id} className="shop-editor-zeile">
-                <span className="shop-editor-zeile-name">{v.name}</span>
-                <span className="shop-editor-zeile-knoepfe">
-                  <button type="button" onClick={() => verkaeuferEntfernen(v.id)} disabled={läuft}>
-                    Entfernen
-                  </button>
-                </span>
-              </div>
-            ))}
-            {verkaeufer.length === 0 && (
-              <p className="shop-leer">
-                Noch kein Verkäufer — füge einen NPC hinzu, um diesen Ort zu einem Laden zu machen.
-              </p>
-            )}
-          </div>
-
-          <div className="shop-editor-hinzufuegen">
-            <select value={neuerVerkaeuferId} onChange={(e) => setNeuerVerkaeuferId(e.target.value)} disabled={läuft}>
-              <option value="">— NPC wählen —</option>
-              {wählbareNpcs.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.istHaendler ? "" : " (wird zum Händler)"}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={verkaeuferHinzufuegen} disabled={läuft || !neuerVerkaeuferId}>
-              Hinzufügen
-            </button>
-          </div>
-          {geladen && npcs.length === 0 && (
-            <p className="shop-ware-hinweis">Noch keine NPCs in dieser Kampagne angelegt.</p>
-          )}
-          {geladen && npcs.length > 0 && wählbareNpcs.length === 0 && (
-            <p className="shop-ware-hinweis">Alle NPCs dieser Kampagne verkaufen hier bereits.</p>
-          )}
-        </section>
-
-        {istAktiv && (
           <section>
-            <button type="button" onClick={() => setSortimentOffen(true)} disabled={läuft}>
-              🛒 Sortiment bearbeiten
-            </button>
+            <h3 className="gg-abschnitt">
+              <span>Laden</span>
+            </h3>
+            <p className="shop-ware-hinweis">
+              Spezialisierung leer = Gemischtwarenladen, zeigt den gesamten passenden Katalog. Die Ware hängt an
+              diesem Ort, nicht an einem NPC.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+              {TYP_OPTIONEN.map((typ) => (
+                <label key={typ} style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                  <input
+                    type="checkbox"
+                    checked={spezialisierung.includes(typ)}
+                    onChange={() => typUmschalten(typ)}
+                    disabled={läuft}
+                  />
+                  {typ}
+                </label>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={() => setVertriebsart("PHYSISCH")}
+                disabled={läuft}
+                style={
+                  vertriebsart === "PHYSISCH" ? { borderColor: "var(--neon)", color: "var(--neon)" } : undefined
+                }
+              >
+                Vor Ort
+              </button>
+              <button
+                type="button"
+                onClick={() => setVertriebsart("DIGITAL")}
+                disabled={läuft}
+                style={vertriebsart === "DIGITAL" ? { borderColor: "var(--neon)", color: "var(--neon)" } : undefined}
+              >
+                Online
+              </button>
+            </div>
+            <p className="shop-ware-hinweis" style={{ marginTop: 6 }}>
+              {vertriebsart === "DIGITAL"
+                ? "Kein Verhandeln, ein Kauf legt eine Bestellung an — die Lieferung gibt die SL später frei."
+                : "Verhandeln möglich, Ware wird bei Kauf sofort übergeben."}
+            </p>
+            <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
+              <input
+                type="checkbox"
+                checked={istTutorial}
+                onChange={(e) => setIstTutorial(e.target.checked)}
+                disabled={läuft}
+              />
+              Tutorial-Shop
+            </label>
+            <p className="shop-ware-hinweis" style={{ marginTop: 6 }}>
+              Erscheint nur im Freebees-Schritt der Charaktererstellung, nicht in der normalen Shop-Übersicht. Pro
+              Kampagne zählt der erste. Kein Verhandeln, keine Achievement-Auslöser.
+            </p>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              {istAktiv ? (
+                <button type="button" onClick={speichern} disabled={läuft}>
+                  Einstellungen speichern
+                </button>
+              ) : (
+                <button type="button" onClick={aktivieren} disabled={läuft}>
+                  Zum Laden machen
+                </button>
+              )}
+            </div>
           </section>
-        )}
-      </div>
 
-      {sortimentOffen && (
-        <HaendlerBearbeiten
-          campaignId={campaignId}
-          haendlerId={ortId}
-          offen={sortimentOffen}
-          onSchliessen={() => setSortimentOffen(false)}
-          onGeaendert={onGeaendert}
+          <section>
+            <h3 className="gg-abschnitt">
+              <span>Verkäufer</span>
+              <span className="gg-abschnitt-zahl">{verkaeufer.length}</span>
+            </h3>
+            <p className="shop-ware-hinweis">
+              Optional. Nur für Verhandeln und Kontakte — das Sortiment bleibt am Ort, auch ohne Gesicht.
+            </p>
+            <div className="shop-editor-liste">
+              {verkaeufer.map((v) => (
+                <div key={v.id} className="shop-editor-zeile">
+                  <span className="shop-editor-zeile-name">{v.name}</span>
+                  <span className="shop-editor-zeile-knoepfe">
+                    <button type="button" onClick={() => verkaeuferEntfernen(v.id)} disabled={läuft}>
+                      Entfernen
+                    </button>
+                  </span>
+                </div>
+              ))}
+              {verkaeufer.length === 0 && <p className="shop-leer">Kein Verkäufer an diesem Laden.</p>}
+            </div>
+            <div className="shop-editor-hinzufuegen">
+              <select
+                value={neuerVerkaeuferId}
+                onChange={(e) => setNeuerVerkaeuferId(e.target.value)}
+                disabled={läuft || !istAktiv}
+              >
+                <option value="">— NPC wählen —</option>
+                {wählbareNpcs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={verkaeuferHinzufuegen} disabled={läuft || !istAktiv || !neuerVerkaeuferId}>
+                Hinzufügen
+              </button>
+            </div>
+            {!istAktiv && <p className="shop-ware-hinweis">Erst zum Laden machen, dann ein Gesicht dranhängen.</p>}
+          </section>
+
+          {istAktiv && (
+            <section>
+              <button type="button" onClick={() => setSortimentOffen(true)} disabled={läuft}>
+                🛒 Sortiment bearbeiten
+              </button>
+            </section>
+          )}
+
+          {istAktiv && (
+            <section>
+              <button
+                type="button"
+                style={{ borderColor: "var(--signal)", color: "var(--signal)" }}
+                onClick={() => setAbschaltenOffen(true)}
+                disabled={läuft}
+              >
+                Kein Laden mehr
+              </button>
+            </section>
+          )}
+        </div>
+
+        {sortimentOffen && (
+          <HaendlerBearbeiten
+            campaignId={campaignId}
+            haendlerId={ortId}
+            offen={sortimentOffen}
+            onSchliessen={() => setSortimentOffen(false)}
+            onGeaendert={onGeaendert}
+          />
+        )}
+      </Fenster>
+
+      {abschaltenOffen && (
+        <Bestaetigung
+          titel={`${ortName} ist kein Laden mehr?`}
+          text="Verschwindet aus der Shop-Übersicht und aus dem Tutorial-Schritt. Sortiment, Tutorial-Flag und Verkäufer bleiben erhalten und sind wieder da, sobald du den Ort erneut zum Laden machst."
+          jaText="Kein Laden mehr"
+          onJa={abschalten}
+          onNein={() => setAbschaltenOffen(false)}
         />
       )}
-    </Fenster>
+    </>
   );
 }

@@ -95,8 +95,10 @@ export interface Ort extends VisibilityFields {
   spotifyPlaylistUri?: string;
   spotifyPlaylistName?: string;
   spotifyPlaylistBild?: string;
-  /** Shop (04.10.2026): Ort ist der Laden. */
+  /** Shop (04.10.2026): Ort ist der Laden. Ware, Spezialisierung,
+   * Vertriebsart und Tutorial-Flag hängen hier, nicht an der Person. */
   istShop?: boolean;
+  istTutorialShop?: boolean;
   spezialisierung?: string[];
   vertriebsart?: "PHYSISCH" | "DIGITAL";
   shopHintergrundUrl?: string;

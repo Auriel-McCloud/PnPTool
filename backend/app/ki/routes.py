@@ -924,17 +924,21 @@ def _massen_zusatz(
 async def _gegenstand_verknuepfen(campaign_id: str, gegenstand_id: str, preis: int, ziel_typ: str, ziel_node: dict, ziel_id: str) -> bool:
     """Ordnet einen frisch erzeugten Gegenstand-Entwurf dem Ziel zu.
 
-    Ziel ist ein Händler (istHaendler=true): Ware kommt ins Sortiment
-    (VERKAUFT-Kante, wie ki_vorschlag.anwenden) — der Gegenstand bleibt eine
-    besitzerlose Vorlage, Invariante istVorlage<=>kein Besitzer bleibt intakt.
-    Ziel ist eine normale Person: genau der bestehende "Zuweisen"-Knopf
-    (items/routes.py::zuweisen) — Kopie für normale Ware, Besitzerwechsel für
-    Einzigartiges/Graph-Gegenstände. Ziel Ort/Event/Fraktion: (noch) kein
-    Platzierungs-Mechanismus für Gegenstände vorhanden, bleibt unverknüpft.
+    Ziel ist ein Laden-Ort (istShop=true): Ware kommt ins Sortiment des
+    Ortes (VERKAUFT-Kante). Ziel ist ein Verkäufer (istHaendler=true): dieselbe
+    Kante, aber am Ort, den er betreibt — nicht an der Person. Ohne Laden
+    bleibt die Ware unverknüpft (kein Inventar am Gesicht). Ziel ist eine
+    normale Person: der bestehende "Zuweisen"-Knopf. Event/Fraktion: kein
+    Platzierungs-Mechanismus, bleibt unverknüpft.
     """
+    if ziel_typ == "Ort" and ziel_node.get("istShop"):
+        return await haendler_repository.verkauft_hinzufuegen(campaign_id, ziel_id, gegenstand_id, preis)
     if ziel_typ == "Person":
         if ziel_node.get("istHaendler"):
-            return await haendler_repository.verkauft_hinzufuegen(campaign_id, ziel_id, gegenstand_id, preis)
+            shop_id = await haendler_repository.shop_id_von_gesicht(campaign_id, ziel_id)
+            if not shop_id:
+                return False
+            return await haendler_repository.verkauft_hinzufuegen(campaign_id, shop_id, gegenstand_id, preis)
         sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel_node.get("personType") or "NPC", ziel_id)
         gegenstand = {"id": gegenstand_id, "einzigartig": False, "storyRelevant": False, "bildUrl": None}
         ergebnis = await assign_copy(campaign_id, gegenstand, ziel_id, sichtbarkeit, sichtbar_fuer)

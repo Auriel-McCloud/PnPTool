@@ -366,6 +366,8 @@ class OrtCreate(BaseModel):
     spezialisierung: list[str] = []
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] = "PHYSISCH"
     shopHintergrundUrl: str = ""
+    # Tutorial-Shop hängt am Ort, nicht an der Person (10.10.2026).
+    istTutorialShop: bool = False
 
 
 class OrtUpdate(BaseModel):
@@ -386,9 +388,8 @@ class OrtUpdate(BaseModel):
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     shopHintergrundUrl: str | None = None
-    # Tutorial-Shop (10.10.2026): wird vom Händler-Flag auf den Ort
-    # nachgezogen (siehe HaendlerEinstellungenFenster.tsx), weil der Shop
-    # seit 04.10.2026 am Ort hängt, nicht mehr an der Person.
+    # Tutorial-Shop (10.10.2026): Flag am Ort. Die SL setzt es im
+    # Laden-Fenster des Ortes, nicht über einen NPC.
     istTutorialShop: bool | None = None
 
 

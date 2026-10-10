@@ -119,11 +119,12 @@ def test_gegenstaende_landen_im_sortiment_eines_haendlers():
                 "app.ki.routes.get_node",
                 AsyncMock(return_value={"id": "h1", "name": "Chrom-Charlie", "istHaendler": True, "personType": "NPC"}),
             ),
+            patch("app.ki.routes.haendler_repository.shop_id_von_gesicht", AsyncMock(return_value="ort-1")),
             patch("app.ki.routes.haendler_repository.verkauft_hinzufuegen", AsyncMock(return_value=True)) as verkauft,
         ):
             ergebnis = await _massen_anlegen("c1", "gegenstand", "Waren für Chrom-Charlie", 2, "Person", "h1", None)
             assert verkauft.await_count == 2
-            verkauft.assert_any_await("c1", "h1", "g1", 500)
+            verkauft.assert_any_await("c1", "ort-1", "g1", 500)
             assert all(e.verknuepft for e in ergebnis.eintraege)
 
     _run(run())

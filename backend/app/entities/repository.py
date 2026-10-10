@@ -401,10 +401,9 @@ async def person_zu_pc(campaign_id: str, person_id: str) -> dict | None:
     keinen Sinn ergeben bzw. das Charakterblatt verfälschen würden: Händler-
     Status (Mark: "ein NPC der mal Händler war seinen Händler Status
     verliert"), Critter/KI (ersetzen sonst die Körperlich-Spalte durch
-    AttributMatrix, siehe traits/bogen.py::sichtbare_kategorien). Sortiment/
-    Bestellungen eines ehemaligen Händlers bleiben wie beim normalen
-    "Kein Händler mehr"-Knopf erhalten (nur das Flag kippt, siehe
-    HaendlerEinstellungenFenster.tsx), falls er später wieder NPC wird.
+    AttributMatrix, siehe traits/bogen.py::sichtbare_kategorien). Sortiment
+    hängt am Ort, nicht an der Person — das Flag kippt nur die Rolle als
+    Gesicht.
     """
     driver = get_driver()
     query = f"""

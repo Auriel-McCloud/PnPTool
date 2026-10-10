@@ -84,7 +84,7 @@ export function ShopUebersicht({
             )}
           </button>
         ))}
-        {haendler.length === 0 && <p className="shop-leer">Noch keine Händler bekannt.</p>}
+        {haendler.length === 0 && <p className="shop-leer">Noch keine Läden. Einen Ort zum Laden machen — nicht einen NPC.</p>}
       </div>
 
       {/* Bestellungen: SL sieht alle offenen, Spieler nur die eigenen. */}

@@ -15,9 +15,6 @@ import { BeziehungsTab, PERSON_TYP_VORSCHLAEGE } from "./BeziehungsTab";
 import { beziehungsZeilen } from "./BeziehungsListe";
 import type { PersonOption } from "./VisibilitySelector";
 import type { JSONContent } from "@tiptap/react";
-import { HaendlerEinstellungenFenster } from "../haendler/HaendlerEinstellungenFenster";
-import { HaendlerBearbeiten } from "../haendler/HaendlerBearbeiten";
-import { haendlerApi } from "../haendler/api";
 import "./pc-detail.css"; // Selbes Styling wie PCs
 
 /**
@@ -57,26 +54,14 @@ export function NPCDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
 
-  // Händler-Flag (istHaendler) sofort nach dem Umschalten im Popup zeigen,
-  // ohne auf den nächsten Reload der Liste zu warten — dasselbe Muster wie
-  // BegleiterFenster::onSofortGeaendert, nötig weil EntityManager den
-  // npcDetailFuer-Prop nach refreshAll() nicht automatisch erneuert.
+  // Händler-Flag (istHaendler): die Person ist nur das Gesicht eines Ladens.
+  // Ware und Shop-Einstellungen hängen am Ort (OrtLadenFenster).
   const [aktuellePerson, setAktuellePerson] = useState(person);
   useEffect(() => {
     setAktuellePerson(person);
   }, [person]);
-  const [haendlerEinstellungenOffen, setHaendlerEinstellungenOffen] = useState(false);
-  const [sortimentOffen, setSortimentOffen] = useState(false);
   const [zuPcOffen, setZuPcOffen] = useState(false);
   const [zuPcLaeuft, setZuPcLaeuft] = useState(false);
-  // Shop hängt seit 04.10. am ORT, nicht an der Person (siehe
-  // haendler/repository.py) — "haendlerId" für HaendlerBearbeiten/-api ist
-  // also die Ort-id des Ladens, den diese Person betreibt, NICHT die
-  // Person-id selbst. Ohne Auflösung hier würde HaendlerBearbeiten mit
-  // person.id als Shop-id anfragen und 404en (gefunden 05.10.2026 beim Bau
-  // des "Ort zu einem Laden machen"-Knopfs — nie im Browser angeklickt,
-  // nur tsc -b geprüft, daher unbemerkt).
-  const [ladenOrtId, setLadenOrtId] = useState<string | null>(null);
   const istHaendler = aktuellePerson.istHaendler ?? false;
   const istKredithai = aktuellePerson.istKredithai ?? false;
 
@@ -84,13 +69,6 @@ export function NPCDetail({
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istKredithai: !istKredithai });
     setAktuellePerson(neu);
     onGeaendert();
-  }
-
-  async function sortimentOeffnen() {
-    const shops = await haendlerApi.alle(campaignId);
-    const shop = shops.find((s) => s.haendler.some((h: { id: string }) => h.id === person.id));
-    setLadenOrtId(shop?.id ?? null);
-    setSortimentOffen(true);
   }
 
   async function zuPcMachen() {
@@ -211,19 +189,11 @@ export function NPCDetail({
                   <button type="button" onClick={() => setUnteransicht("notizen")}>
                     🗒️ Notizen bearbeiten
                   </button>
-                  {istHaendler ? (
-                    <>
-                      <button type="button" onClick={sortimentOeffnen}>
-                        🛒 Sortiment &amp; Shop bearbeiten
-                      </button>
-                      <button type="button" onClick={() => setHaendlerEinstellungenOffen(true)}>
-                        ⚙ Händler-Einstellungen
-                      </button>
-                    </>
-                  ) : (
-                    <button type="button" onClick={() => setHaendlerEinstellungenOffen(true)}>
-                      🛒 Zum Händler machen
-                    </button>
+                  {istHaendler && (
+                    <p className="pcd-hinweis" style={{ margin: "8px 0 0" }}>
+                      Verkäufer an einem Laden. Ware, Spezialisierung und Tutorial-Flag pflegst du am Ort — hier nur
+                      Kontakt und Verhandeln.
+                    </p>
                   )}
                   <button type="button" onClick={() => void kredithaiUmschalten()}>
                     {istKredithai ? "🦈 Kredithai — Flag weg" : "🦈 Als Kredithai markieren"}
@@ -299,29 +269,6 @@ export function NPCDetail({
           )}
         </div>
       </div>
-
-      {haendlerEinstellungenOffen && (
-        <HaendlerEinstellungenFenster
-          campaignId={campaignId}
-          person={aktuellePerson}
-          offen={haendlerEinstellungenOffen}
-          onSchliessen={() => setHaendlerEinstellungenOffen(false)}
-          onGeaendert={(neu) => {
-            setAktuellePerson(neu);
-            onGeaendert();
-          }}
-        />
-      )}
-
-      {sortimentOffen && ladenOrtId && (
-        <HaendlerBearbeiten
-          campaignId={campaignId}
-          haendlerId={ladenOrtId}
-          offen={sortimentOffen}
-          onSchliessen={() => setSortimentOffen(false)}
-          onGeaendert={onGeaendert}
-        />
-      )}
     </Fenster>
 
       {zuPcOffen && (

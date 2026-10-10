@@ -112,32 +112,31 @@ def test_tutorial_shop_ausgeschlossen_aus_normaler_liste():
     async def lauf():
         cid = await _kampagne_anlegen()
         try:
-            hid = str(uuid.uuid4())
+            oid = str(uuid.uuid4())
             driver = get_driver()
             async with driver.session() as session:
                 await session.run(
                     """
                     MATCH (c:Campaign {id: $cid})
-                    CREATE (h:Person {
-                        id: $hid, campaignId: $cid, name: 'Tutorial-Verkäufer',
-                        personType: 'NPC', istHaendler: true, istTutorialHaendler: true,
+                    CREATE (o:Ort {
+                        id: $oid, campaignId: $cid, name: 'Tutorial-Laden',
+                        istShop: true, istTutorialShop: true,
                         sichtbarkeit: 'ALLE', sichtbarFuer: []
                     })
-                    CREATE (c)-[:HAT_ENTITAET]->(h)
+                    CREATE (c)-[:HAT_ENTITAET]->(o)
                     """,
                     cid=cid,
-                    hid=hid,
+                    oid=oid,
                 )
 
-            # liste() (normale Shop-Übersicht) darf den Tutorial-Shop NICHT zeigen.
             alle = await haendler_repository.liste(cid)
             assert len(alle) == 0
 
-            # tutorial_shop() findet ihn trotzdem.
             tut = await haendler_repository.tutorial_shop(cid)
             assert tut is not None
             assert tut["istTutorialShop"] is True
-            assert tut["name"] == "Tutorial-Verkäufer"
+            assert tut["name"] == "Tutorial-Laden"
+            assert tut["haendler"] == []
         finally:
             await _aufraeumen(cid)
 
@@ -145,31 +144,39 @@ def test_tutorial_shop_ausgeschlossen_aus_normaler_liste():
 
 
 def test_normaler_shop_bleibt_in_der_liste():
-    """Gegenprobe: ein Händler OHNE das Tutorial-Flag taucht weiterhin ganz
-    normal in der Übersicht auf — der Ausschluss darf nicht zu breit greifen."""
+    """Gegenprobe: ein Laden OHNE Tutorial-Flag taucht in der Übersicht auf.
+    Ein NPC mit istHaendler allein erzeugt keinen Shop."""
     async def lauf():
         cid = await _kampagne_anlegen()
         try:
+            oid = str(uuid.uuid4())
             hid = str(uuid.uuid4())
             driver = get_driver()
             async with driver.session() as session:
                 await session.run(
                     """
                     MATCH (c:Campaign {id: $cid})
-                    CREATE (h:Person {
-                        id: $hid, campaignId: $cid, name: 'Echter Händler',
-                        personType: 'NPC', istHaendler: true,
+                    CREATE (o:Ort {
+                        id: $oid, campaignId: $cid, name: 'Nachtmarkt',
+                        istShop: true, istTutorialShop: false,
                         sichtbarkeit: 'ALLE', sichtbarFuer: []
                     })
+                    CREATE (h:Person {
+                        id: $hid, campaignId: $cid, name: 'Echter Händler',
+                        personType: 'NPC', istHaendler: true, istTutorialHaendler: true,
+                        sichtbarkeit: 'ALLE', sichtbarFuer: []
+                    })
+                    CREATE (c)-[:HAT_ENTITAET]->(o)
                     CREATE (c)-[:HAT_ENTITAET]->(h)
                     """,
                     cid=cid,
+                    oid=oid,
                     hid=hid,
                 )
 
             alle = await haendler_repository.liste(cid)
             assert len(alle) == 1
-            assert alle[0]["name"] == "Echter Händler"
+            assert alle[0]["name"] == "Nachtmarkt"
             assert alle[0]["istTutorialShop"] is False
 
             tut = await haendler_repository.tutorial_shop(cid)

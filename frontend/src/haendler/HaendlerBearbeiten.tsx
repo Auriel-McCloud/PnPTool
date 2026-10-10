@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
-import { entitiesApi, type Ort } from "../entities/api";
 import { symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
 
@@ -33,7 +32,6 @@ export function HaendlerBearbeiten({
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
   const [sortiment, setSortiment] = useState<SortimentEintrag[]>([]);
   const [gegenstaende, setGegenstaende] = useState<GegenstandMitBesitzer[]>([]);
-  const [orte, setOrte] = useState<Ort[]>([]);
   const [läuft, setLäuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -47,16 +45,14 @@ export function HaendlerBearbeiten({
   const [rabattHinweis, setRabattHinweis] = useState("");
 
   async function laden() {
-    const [h, s, g, o] = await Promise.all([
+    const [h, s, g] = await Promise.all([
       haendlerApi.einzeln(campaignId, haendlerId),
       haendlerApi.sortiment(campaignId, haendlerId),
       itemsApi.listAlle(campaignId),
-      entitiesApi.listOrte(campaignId),
     ]);
     setHaendler(h);
     setSortiment(s);
     setGegenstaende(g);
-    setOrte(o);
   }
 
   useEffect(() => {
@@ -118,10 +114,6 @@ export function HaendlerBearbeiten({
     setRabattBearbeitet(null);
   }
 
-  async function standortSetzen(ortId: string) {
-    await ausfuehren(() => haendlerApi.standortSetzen(campaignId, haendlerId, ortId || null));
-  }
-
   if (!haendler) {
     return (
       <Fenster offen={offen} titel="Händler bearbeiten" kennung={`haendler-bearb:${haendlerId}`} onSchliessen={onSchliessen}>
@@ -140,31 +132,13 @@ export function HaendlerBearbeiten({
     <Fenster
       offen={offen}
       titel={`${haendler.name} bearbeiten`}
-      unterzeile="Sortiment, Sonderangebote, Standort"
+      unterzeile="Sortiment und Sonderangebote — der Laden ist der Ort"
       kennung={`haendler-bearb:${haendlerId}`}
       breit
       onSchliessen={onSchliessen}
     >
       <div className="shop-editor">
         {fehler && <p className="shop-ware-fehler">{fehler}</p>}
-
-        <section>
-          <h3 className="gg-abschnitt">
-            <span>Standort</span>
-          </h3>
-          <select
-            value={haendler.ortId ?? ""}
-            onChange={(e) => standortSetzen(e.target.value)}
-            disabled={läuft}
-          >
-            <option value="">— kein fester Standort (nur per Messenger) —</option>
-            {orte.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-        </section>
 
         <section>
           <h3 className="gg-abschnitt">

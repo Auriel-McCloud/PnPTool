@@ -1,22 +1,25 @@
-# Shop-System: Händler, Sortiment, Kauf
+# Shop-System: Laden am Ort, Gesicht an der Person
 
-Kern-Baustein (22.09.2026) von "Shop-System + Händler-Spam"
-(`CLAUDE.md`, Punkt 1). Spam/Werbung/Scammer/I.C.E.-Skalierung sind bewusst
-zurückgestellt — dieser Teil deckt nur Händler-NPC, Sortiment und Kaufen.
-Code: `backend/app/haendler/`.
+Kern-Baustein (22.09.2026), seit 04.10.2026 hängt der Shop am `Ort`, seit
+10.10.2026 wird er auch nur noch dort angelegt. Code: `backend/app/haendler/`.
 
 ## Konzept
 
-**Ein Händler ist keine eigene Entität.** Er ist ein `Person`-Knoten mit
-`istHaendler=true` — dasselbe Muster wie `istKI`/`istCritter`
-(`app/entities/schemas.py`). Anlegen und Bearbeiten (Name, Bild,
-Beschreibung, Spezialisierung) läuft über die bestehenden `/personen`-Routen,
-nicht über dieses Modul.
+**Der Laden ist ein Ort** mit `istShop=true`. Name, Beschreibung, Kulisse,
+Spezialisierung, Vertriebsart, Tutorial-Flag und Sortiment (`VERKAUFT`) hängen
+am Ort. Anlegen: Ort öffnen → „Zu einem Laden machen“ / Laden verwalten.
+Nicht über einen NPC.
 
-**Bewusst schlank: kein Charakterblatt.** Marks Entscheidung im Erstgespräch
-— anders als KI/Critter braucht ein Händler keine Attribute/Fertigkeiten,
-nur Name/Bild/Beschreibung + Sortiment. Lässt sich später nachziehen, falls
-z.B. Verhandeln-Proben gegen den Händler gewürfelt werden sollen.
+**Die Person ist nur das Gesicht.** `istHaendler=true` plus `BETREIBT` zum
+Ort — für Kontakt, Messenger und Verhandeln. Mehrere Gesichter pro Laden sind
+normal. Ein Laden ohne Gesicht ist gültig. Kein Charakterblatt nötig.
+
+**Tutorial-Shop:** `Ort.istTutorialShop=true`. Erscheint nur im Freebees-Schritt,
+nicht in `GET /haendler`. Der Haken sitzt im Laden-Fenster des Ortes.
+
+Ältere Abschnitte unten, die `VERKAUFT` noch an der Person beschreiben, sind
+der Stand vor dem Umzug. Die laufende API nimmt als `{haendler_id}` die
+**Ort-ID**.
 
 **Zwei bestehende Systeme werden mitgenutzt, kein neuer Code nötig:**
 - **Standort** (der Laden) — dieselbe `BEFINDET_SICH_AN`-Kante wie bei Party
