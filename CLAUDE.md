@@ -332,6 +332,19 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — Schulden/Kredithai nach Kredit-Freebees):**
+- **Was:** Kredit in der Erstellung erzeugt den Systemhintergrund Schulden.
+  Bestehenden NPC mit `istKredithai` wiederverwenden, sonst Stub
+  „Kredithai“ in der Ideenschmiede. Kanten `HAT_KREDITHAI`,
+  `VERBINDUNG` typ Schuldet, `KENNT` mit zu. Rassen-Häkchen
+  `kannKredithai`, NPC-Flag im Detail. KI-Füllung kommt mit der
+  Kontakt-Pipeline — Erstellung wartet nicht auf LLM.
+- **Dateien:** `backend/app/hintergruende/{kredithai,spawn,repository}.py`,
+  `backend/app/traits/routes.py`, `frontend/src/rassen/RassenUebersicht.tsx`,
+  `frontend/src/entities/NPCDetail.tsx`
+- **Verifiziert:** `tests/test_kredithai.py`. Nicht im Browser geklickt.
+- **Nicht dabei:** Mentor/Kontakte-Pipeline, Blatt-Button, Achievement-IDs.
+
 **Zuletzt gebaut (10.10.2026 — Charakter-Bildergalerie):**
 - **Was:** PC- und NPC-Detail zeigen dieselbe Galerie wie Orte und Fraktionen
   (mehrere Bilder, Primärbild = Anzeigebild auf der Kachel und im

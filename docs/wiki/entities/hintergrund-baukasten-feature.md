@@ -86,12 +86,17 @@ NPC: **Kredithai**. Kein Spielertext.
 
 1. Gibt es in der Kampagne schon einen NPC mit `istKredithai`? Den nehmen
    (bei mehreren: den ältesten). Kein neuer Entwurf.
-2. Sonst KI-Charakter (wie Kontakt, kein Profi-Zwang, kein 20×N-EP),
-   Rasse aus den **freigegebenen** mit Häkchen `kannKredithai` am
-   Rassen-Baukasten. Keine markiert → alle freigegebenen sind Kandidaten
-   (kein hart verdrahteter Rassenname). Landet in der Schmiede.
+2. Sonst Stub-NPC namens `Kredithai` in der Schmiede (`istEntwurf`,
+   `istKredithai`, Sichtbarkeit GM). Rasse = erste der **freigegebenen**
+   mit Häkchen `kannKredithai`. Keine markiert → alle freigegebenen
+   (kein hart verdrahteter Rassenname). KI-Füllung wie Kontakt folgt —
+   die Erstellung wartet nicht auf LLM und kostet keinen Extra-Call.
 3. `HAT_KREDITHAI {rating}` + `VERBINDUNG` typ `"Schuldet"`,
-   `beschreibung` z.B. `"30.000¥ aus der Erstellung"`.
+   `beschreibung` z.B. `"30.000¥ aus der Erstellung"` + `KENNT`
+   (`chatOffen=false`).
+
+SL-Korrektur (erneuter Submit) aktualisiert Rating und Beschreibung,
+legt keinen zweiten Hai an.
 
 Kein Kredit → kein Hai, kein Hintergrund. Messenger bleibt zu, bis die
 SL den Entwurf übernimmt bzw. den bestehenden Hai freigibt.

@@ -166,3 +166,62 @@ async def setze_rating(campaign_id: str, person_id: str, hintergrund_id: str, ra
         daten = _decode(dict(record))
         daten["rating"] = int(record["rating"])
         return daten
+
+
+async def hole_kredithai(campaign_id: str, person_id: str) -> dict | None:
+    """HAT_KREDITHAI des PCs, sonst None."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[r:HAT_KREDITHAI]->(h:Person)
+        RETURN h.id AS haiId, r.rating AS rating, h.name AS name, h.istEntwurf AS istEntwurf
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def setze_kredithai(campaign_id: str, person_id: str, hai_id: str, rating: int) -> None:
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (h:Person {id: $hai_id, campaignId: $campaign_id})
+        MERGE (p)-[r:HAT_KREDITHAI]->(h)
+        SET r.rating = $rating
+    """
+    async with driver.session() as session:
+        await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            hai_id=hai_id,
+            rating=int(rating),
+        )
+
+
+async def setze_schuldet_verbindung(
+    campaign_id: str, person_id: str, hai_id: str, beschreibung: str
+) -> None:
+    """Eine Schuldet-Kante, Beschreibung bei Korrektur überschreiben."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (h:Person {id: $hai_id, campaignId: $campaign_id})
+        MERGE (p)-[r:VERBINDUNG {typ: "Schuldet"}]->(h)
+        ON CREATE SET
+            r.id = $edge_id,
+            r.seit = "",
+            r.bis = "",
+            r.sichtbarkeit = "GM",
+            r.sichtbarFuer = []
+        SET r.beschreibung = $beschreibung
+    """
+    async with driver.session() as session:
+        await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            hai_id=hai_id,
+            beschreibung=beschreibung,
+            edge_id=str(uuid.uuid4()),
+        )

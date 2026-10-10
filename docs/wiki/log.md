@@ -985,8 +985,13 @@ Kontakt). KI liest denselben Kantentext. Kein zweites Property.
 
 Hintergrund heißt **Schulden**. Kredit-Freebees 1:1 Punkte, nicht aus dem
 5er-Budget. Rassen-Häkchen `kannKredithai`, NPC-Flag `istKredithai`
-(bestehenden Hai wiederverwenden). Auto-Spawn bei der Erstellung noch
-nicht verdrahtet.
+(bestehenden Hai wiederverwenden).
+
+## [2026-10-10] update | Schulden-Spawn an der Erstellung
+
+Kredit-Freebees > 0: bestehenden `istKredithai` wiederverwenden, sonst
+Stub in der Schmiede. Kanten `HAT_KREDITHAI`, `VERBINDUNG` Schuldet,
+`KENNT` (Chat zu). KI-Füllung bewusst später.
 
 ## [2026-10-10] update | KI-Charakter an Spieler-Erstellung gebunden
 

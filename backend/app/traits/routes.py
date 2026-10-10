@@ -1,4 +1,5 @@
 from typing import Literal
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -27,6 +28,7 @@ from app.kampf.ruestung import (
     verteile_kaestchenschaden,
 )
 from app.ki.client import KiFehler, generiere_json
+from app.hintergruende.spawn import nach_erstellung as kredithai_nach_erstellung
 from app.rassen import repository as rassen_repository
 from app.traits import berater, erfahrung, erstellung, repository
 from app.traits.bogen import (
@@ -801,6 +803,16 @@ async def erstelle_charakter(
             "erstellungAbgeschlossen": True,
         },
     )
+
+    # Schulden aus Kredit-Freebees: Hai wiederverwenden oder Stub in der
+    # Schmiede. Scheitert das, ist der PC trotzdem fertig — der Hai ist Folge.
+    if body.freebeeKredit > 0:
+        try:
+            await kredithai_nach_erstellung(campaign_id, person_id, body.freebeeKredit)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Kredithai nach Erstellung fehlgeschlagen (person=%s)", person_id
+            )
 
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     einstellungen = await get_einstellungen(campaign_id)
