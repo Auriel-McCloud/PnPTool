@@ -318,6 +318,8 @@ export function GegenstandRow({
     setSlot(item.slot);
     setIstWaffe(item.istWaffe);
     setSchaden(item.schaden);
+    setInitiativeBonus(item.initiativeBonus);
+    setZusatzaktionen(item.zusatzaktionen);
     setTraitBoni(
       Object.entries(item.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
     );
@@ -416,6 +418,8 @@ export function GegenstandRow({
       slot,
       istWaffe,
       schaden,
+      initiativeBonus,
+      zusatzaktionen,
       traitBoni: Object.fromEntries(
         traitBoni.filter((p) => p.key.trim() && Number(p.value)).map((p) => [p.key.trim(), Number(p.value)]),
       ),
@@ -846,6 +850,24 @@ export function GegenstandRow({
                         <DotPool value={schaden} max={7} onChange={setSchaden} />
                       </label>
                     )}
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Initiative-Bonus
+                      <input
+                        type="number"
+                        value={initiativeBonus}
+                        onChange={(e) => setInitiativeBonus(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Zusatzaktionen
+                      <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
+                        <option value={0}>keine</option>
+                        <option value={1}>1× pro Kampf</option>
+                        <option value={2}>2× pro Kampf</option>
+                        <option value={-1}>jede Runde</option>
+                      </select>
+                    </label>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
                     {chromstufen.map((st) => {

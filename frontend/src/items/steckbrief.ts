@@ -34,6 +34,14 @@ export function steckbriefKurz(item: Gegenstand): string[] {
     teile.push(`−${item.wVerlust.toLocaleString("de-AT")} WK`);
   }
 
+  if (item.initiativeBonus !== 0) {
+    teile.push(`Init. ${item.initiativeBonus > 0 ? "+" : ""}${item.initiativeBonus}`);
+  }
+
+  if (item.zusatzaktionen !== 0) {
+    teile.push(item.zusatzaktionen === -1 ? "Zusatzaktion jede Runde" : `Zusatzaktion ${item.zusatzaktionen}×/Kampf`);
+  }
+
   // Bonuswürfel gelten unabhängig vom Typ (jeder ausgerüstete Gegenstand
   // kann sie tragen) — siehe items/api.ts::Gegenstand.traitBoni.
   for (const [name, wert] of Object.entries(item.traitBoni ?? {})) {
