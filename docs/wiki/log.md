@@ -3,6 +3,21 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-10] update | entities/achievements (Mechanik + neue Trigger)
+
+Konzept-Runde erweitert, immer noch nicht gebaut: Achievements können jetzt
+EP oder Hintergrundpunkte verleihen (`belohnungsArt`/`belohnungsMenge`/
+`belohnungsHintergrund`, fest am Achievement hinterlegt) — der einzige Weg,
+wie ein Hintergrund nach der Erstellung noch steigt (`LevelUp.tsx` schließt
+sie sonst aus, siehe [[concepts/erfahrung-und-steigern]]). Fünf neue
+`auslöseArt`-Werte: `GEHEIMNISTRAEGER` (Geheimwissen an eine Person),
+`ERSTER_BESITZ_ZIEL`/`ERSTE_BESCHREIBUNG_ZIEL` (parametrisierbar über
+`zielGegenstandId`, z. B. β⁺-Isotop/Ki-Kristalle), `ERSTER_CRITTER`/
+`ERSTE_DROHNE` (Begleiter-Erwerb), `ENDBOSS_BESIEGT` (neues
+`Person.istEndboss`-Flag), `ERSTE_SITZUNG_UEBERLEBT` (rückwirkend beim
+Anlegen der zweiten Sitzung geprüft, kein neuer Sitzungs-Abschluss-Knopf).
+„Alle erfahren etwas“ bleibt bewusst `MANUELL`, kein Auto-Trigger.
+
 ## [2026-10-10] update | Ideenschmiede Entwürfe laden wieder
 
 `GET /personen` riss Altbestand wegen fehlender `_BOGEN_DEFAULTS` für

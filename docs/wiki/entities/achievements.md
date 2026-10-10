@@ -1,10 +1,10 @@
 ---
 title: Achievements
 created: 2026-09-27
-updated: 2026-09-29
+updated: 2026-10-10
 type: entität
-tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, geplant]
-sources: [../../../CLAUDE.md, ereignisprotokoll.md]
+tags: [ereignisprotokoll, ki-integration, datenmodell, ui, kampf, erfahrung, geplant]
+sources: [../../../CLAUDE.md, ereignisprotokoll.md, concepts/erfahrung-und-steigern.md]
 status: entschieden-nicht-umgesetzt
 ---
 
@@ -74,7 +74,29 @@ hier für Achievements wiederverwendet.
   icon: string,             # optional, Symbol/Emoji
   art: "AUTO" | "MANUELL",  # automatisch erkannt oder nur von Hand vergebbar
   auslöseArt: string | null, # nur bei AUTO, siehe Trigger-Katalog unten
-  einzigartig: bool          # s.o. — analog Gegenstand.einzigartig
+  einzigartig: bool,         # s.o. — analog Gegenstand.einzigartig
+
+  # Mechanische Wirkung (10.10.2026, Mark: "Achievements sollen was bringen,
+  # nicht nur kosmetisch sein") — fest am Achievement hinterlegt, nicht frei
+  # wählbar bei der einzelnen Vergabe. Wiederverwendet den bestehenden
+  # Hintergrund-Katalog statt etwas Neues zu erfinden: Hintergrund lässt sich
+  # nach der Erstellung bisher GAR NICHT mehr steigern (LevelUp.tsx lässt die
+  # Kategorie bewusst aus — "das kann nur noch die SL vergeben"). Ein
+  # Achievement mit belohnungsArt=HINTERGRUND ist damit der erste und einzige
+  # Weg, wie ein Spieler nach der Erstellung noch Hintergrundpunkte bekommt.
+  belohnungsArt: "KEINE" | "EP" | "HINTERGRUND",
+  belohnungsMenge: int,              # nur relevant wenn belohnungsArt != KEINE
+  belohnungsHintergrund: string | null, # nur bei HINTERGRUND: welcher Name
+                                         # aus HINTERGRUENDE (erstellung.py),
+                                         # z.B. "Mörder" -> immer "Ruf"
+
+  # Ziel-Parametrisierung (10.10.2026) — macht EINEN Trigger-Typ für beliebig
+  # viele konkrete Gegenstände wiederverwendbar, statt für jeden Gegenstand
+  # (Beta-Isotop, farbiger Ki-Kristall, ...) einen eigenen auslöseArt-Wert
+  # hart in den Code zu schreiben. Die SL wählt den Zielgegenstand beim
+  # Anlegen des Achievements aus dem bestehenden Gegenstands-Katalog.
+  zielGegenstandId: string | null   # nur bei ERSTER_BESITZ_ZIEL /
+                                     # ERSTE_BESCHREIBUNG_ZIEL
 })
 
 (:AchievementVerleihung {
@@ -107,6 +129,13 @@ Erste Belegung, direkt an Marks Beispielen:
 | `ERSTER_KAUF` | pro Person: erste `GegenstandsBewegung` mit `art: "GEKAUFT"` und dieser Person als `NEUER_BESITZER` | `false` | "erster gekaufter Gegenstand außerhalb der Erstellung" |
 | `ERSTE_VERHANDLUNG` | pro Person: erster `VerhandlungsAusgang` mit dieser Person beteiligt | `false` | "erste Verhandlung" |
 | `CHARAKTER_ERSTELLT` | `Person.erstellungAbgeschlossen` wechselt von `false` auf `true` | `false` | "Hello World" |
+| `GEHEIMNISTRAEGER` | `sichtbarkeit` einer Beschreibung/Notiz wechselt auf `SPEZIFISCH` mit genau EINER Person in `sichtbarFuer` | `false` | "Du weißt etwas, das sonst keiner weiß" |
+| `ERSTER_BESITZ_ZIEL` | pro Person: erste `GegenstandsBewegung` mit dieser Person als `NEUER_BESITZER`, Gegenstand = `Achievement.zielGegenstandId` | `false` (meist pro Fund wiederholbar) | "Du hältst ein β⁺-Isotop in den Händen" |
+| `ERSTE_BESCHREIBUNG_ZIEL` | Beschreibung des Gegenstands `Achievement.zielGegenstandId` wechselt für diese Person von gesperrt auf sichtbar (`sichtbarkeit`/`entities/visibility.py::is_visible_to` erstmals `true`) | `false` | "Du hast herausgefunden, was der grüne Ki-Kristall ist" |
+| `ERSTER_CRITTER` | pro Person: erste `BEGLEITET`-Kante von einem `Person{istCritter:true}` auf diese Person | `false` | "Du besitzt jetzt ein Haustier" |
+| `ERSTE_DROHNE` | pro Person: erster `Begleiter{art:"BEGLEITER"}` mit `besitzerId` = diese Person | `false` | "Du bist jetzt eine Drohne" |
+| `ENDBOSS_BESIEGT` | `KampfLogEintrag` mit `art:"TOD"`, Ziel = `Person{istEndboss:true}`, Angreifer wird Träger | `true` | "You Killed the Big Bad Guy" |
+| `ERSTE_SITZUNG_UEBERLEBT` | beim Anlegen der ZWEITEN `Sitzung` einer Kampagne: alle PCs ohne `KampfLogEintrag{art:"TOD"}` als Ziel während der ersten Sitzung | `false` | "Du hast dein erstes Abenteuer überstanden" |
 
 **Warum `CHARAKTER_ERSTELLT` funktioniert, obwohl die Charaktererstellung
 selbst NICHT geloggt wird** (siehe [[ereignisprotokoll]], Marks
@@ -115,8 +144,47 @@ am bestehenden `Person.erstellungAbgeschlossen`-Feld — kein neuer Code-Pfad
 nötig, nur eine Prüfung an der Stelle, wo dieses Feld schon auf `true`
 gesetzt wird (`traits/erstellung.py`).
 
+**Neues Personen-Flag für `ENDBOSS_BESIEGT`:** `Person.istEndboss: bool`
+(Default `false`), analog zu `istCritter`/`istKI` — ein NPC, den die SL als
+Endgegner markiert. Reines Markierungsfeld, kein eigener Knotentyp nötig.
+
+**`ERSTE_SITZUNG_UEBERLEBT` braucht keinen "Sitzung beenden"-Knopf:** da es
+im Tool kein explizites Sitzungsende gibt (nur "zuletzt angelegte Sitzung =
+aktiv", siehe [[ereignisprotokoll]]), prüft der Trigger rückwirkend beim
+**Anlegen der zweiten Sitzung** einer Kampagne, welche PCs während der
+ersten Sitzung keinen Tod erlitten haben. Mark bestätigt diesen
+Kompromiss statt eines größeren Umbaus.
+
 Weitere `auslöseArt`-Werte lassen sich später ergänzen, ohne das Schema
 anzufassen (genau wie neue `VerhandlungsArt`-Einträge in `verhandlung/logic.py`).
+
+## Mechanische Belohnung: EP oder Hintergrund (10.10.2026)
+
+Mark: *"ein Achievement der Spieler einen XP bringt... Backgrounds lassen
+sich nicht durch XP steigern, also könnte man Backgrounds, und
+Background-Punkte durch Achievements erhalten"* — Achievements sind damit
+**nicht rein kosmetisch**, sondern können echte Spielmechanik auslösen.
+
+- **`belohnungsArt: "EP"`** — bei Vergabe wird `Person.erfahrung` um
+  `belohnungsMenge` erhöht, exakt wie eine manuelle EP-Vergabe durch die SL
+  (`traits/erfahrung.py`-Infrastruktur, kein neuer Zahlenweg).
+- **`belohnungsArt: "HINTERGRUND"`** — bei Vergabe wird der in
+  `belohnungsHintergrund` festgelegte Hintergrund (z. B. "Ruf") um
+  `belohnungsMenge` erhöht, gedeckelt auf `HINTERGRUND_MAX` (5). **Das ist
+  der einzige Weg, wie ein Hintergrund nach der Charaktererstellung noch
+  steigt** — `LevelUp.tsx` schließt `Hintergrund` bewusst aus der
+  Spieler-Steigerung aus (siehe [[../concepts/erfahrung-und-steigern]]).
+- **`belohnungsArt: "KEINE"`** — rein kosmetisch, z. B. für Flavor-Trophäen
+  wie "Hello World".
+- **Welcher Hintergrund, ist fest am Achievement hinterlegt**, nicht frei
+  wählbar bei der einzelnen Vergabe (Mark: "Mörder" gibt immer "Ruf") — so
+  bleibt die KI-Textgenerierung thematisch konsistent mit der Belohnung.
+
+**Bewusst nicht automatisch für "alle erfahren etwas" gebaut:** eine
+campaign-weite Enthüllung (z. B. eine Wiki-Seite wird für alle freigegeben)
+bekommt **keinen eigenen AUTO-Trigger** — es gibt keine einzelne Person, die
+das "tut". Bleibt `MANUELL`: die SL vergibt es spontan an eine, mehrere
+oder alle Personen, wenn sie eine Beschreibung campaign-weit freigibt.
 
 ## Erkennungs-Pipeline (kein zusätzlicher Warteschlangen-Knoten nötig)
 
@@ -167,7 +235,12 @@ Zweiter, unabhängiger Weg — jederzeit, ohne Bezug zu einem Auto-Trigger:
 
 - **Neues Achievement anlegen**: eigenes Baukasten-Popup (Commlink-Stil,
   analog zum Rassen-Baukasten — siehe [[rassen-baukasten-feature]]), Felder
-  Name/Beschreibung/Icon/`einzigartig`-Häkchen, `art: "MANUELL"`.
+  Name/Beschreibung/Icon/`einzigartig`-Häkchen, `art: "MANUELL"`, plus die
+  Belohnungsfelder (`belohnungsArt`, `belohnungsMenge`,
+  `belohnungsHintergrund` per Dropdown aus dem Hintergrund-Katalog).
+  Bei `art: "AUTO"` zusätzlich `auslöseArt`-Dropdown aus dem Code-Katalog
+  oben, bei `ERSTER_BESITZ_ZIEL`/`ERSTE_BESCHREIBUNG_ZIEL` ein weiteres
+  Dropdown zur Auswahl des Zielgegenstands aus dem bestehenden Katalog.
 - **Direkt einer Person zuweisen**: Auswahl-Popup (Person + Achievement aus
   dem Katalog), optionaler ✨-KI-Knopf für den Text (derselbe Mechanismus
   wie oben, nur ohne automatischen Auslöser-Kontext — nur allgemeiner
@@ -222,18 +295,20 @@ mittendrin würde vom eigentlichen Kampfgeschehen ablenken.
 
 ## Offene Fragen (bewusst nicht Teil dieser Runde)
 
-- Wirkt ein Achievement **mechanisch** (Bonus, Titel-Anzeige mit
-  Spielauswirkung) oder ist es **rein kosmetisch**? Mark wollte "beides"
-  ausdrücklich auf die Bauart (Auto+Manuell) bezogen — die
-  Wirkungsfrage selbst bleibt für eine spätere Runde offen.
-- Weitere `auslöseArt`-Werte über die sieben oben hinaus (Mark hatte auch
+- Weitere `auslöseArt`-Werte über die zwölf oben hinaus (Mark hatte auch
   Kampagnen-Enden im Blick, o. Ä.) — Katalog ist bewusst offen erweiterbar,
   keine abschließende Liste.
+- `ERSTE_BESCHREIBUNG_ZIEL` braucht beim Bauen eine Entscheidung, welche
+  konkrete Sichtbarkeits-Prüfung genau als "wechselt auf sichtbar" zählt
+  (Gegenstands-`sichtbarkeit` direkt, oder zusätzlich über die geplante
+  [[spieler-lexikon]]-Entdeckungskette) — zum Zeitpunkt dieser Runde ist das
+  Lexikon-Feature selbst noch nicht gebaut.
 
 ## Siehe auch
 
 - [[ereignisprotokoll]] — Basis-Log-Kategorien, die die AUTO-Trigger auswerten
 - [[../concepts/waehrung-und-preise]] — `Gegenstand.einzigartig`, Vorbild fürs Achievement-Häkchen
+- [[../concepts/erfahrung-und-steigern]] — EP-Vergabe, Hintergrund-Steigerungssperre nach der Erstellung
 - [[rassen-baukasten-feature]] — Vorbild für den Achievement-Baukasten (Katalog + Freigabe-Popup-Stil)
 - [[ki-integration]] — KI-Text-Infrastruktur (`sammle_kontext`, ✨-Knopf-Muster)
 - [[mitteilungen-system]] — Live-Push-Mechanismus, den das Achievement-Popup wiederverwendet

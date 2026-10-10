@@ -2672,11 +2672,21 @@ Handy gegenprüfen — siehe „Offen: Was Mark selbst testen muss" oben.
       `Aufenthalt` (Party-/Personenbewegung mit Zeitstempel — löst nebenbei
       den in Punkt 8 genannten Blocker fürs geplante Party-Besuchs-Log),
       `Achievement`+`AchievementVerleihung` (**vollständig ausspezifiziert
-      27.09.2026, eigene Seite** `docs/wiki/entities/achievements.md` —
+      27.09.2026, erweitert 10.10.2026, eigene Seite**
+      `docs/wiki/entities/achievements.md` —
       `einzigartig`-Häkchen wie bei Gegenständen trennt campaign-weit
       einmalige Titel wie "First Kill" von pro-Person wiederholbaren wie
-      "Mörder"; Trigger-Katalog mit 7 `auslöseArt`-Werten gegen die anderen
-      Log-Kategorien geprüft, kein persistenter Vorschlags-Knoten nötig
+      "Mörder"; **mechanische Belohnung** (`belohnungsArt`: EP oder
+      Hintergrund+Menge, fest am Achievement hinterlegt) — einziger Weg,
+      wie ein Hintergrund nach der Charaktererstellung noch steigt
+      (`LevelUp.tsx` schließt Hintergründe sonst aus der
+      Spieler-Steigerung aus); Trigger-Katalog mit 12 `auslöseArt`-Werten
+      gegen die anderen Log-Kategorien geprüft (u.a. parametrisierbares
+      Ziel-Gegenstand-Paar `ERSTER_BESITZ_ZIEL`/`ERSTE_BESCHREIBUNG_ZIEL`
+      für Beta-Isotop/Ki-Kristalle, `ENDBOSS_BESIEGT` mit neuem
+      `Person.istEndboss`-Flag, `ERSTER_CRITTER`/`ERSTE_DROHNE`,
+      `ERSTE_SITZUNG_UEBERLEBT` rückwirkend beim Anlegen der 2. Sitzung),
+      kein persistenter Vorschlags-Knoten nötig
       — live aus dem Log berechnet wie der bestehende KI-Sortiment-
       Vorschlag; KI-Text bezieht auslösenden Log-Eintrag+Ort+Sitzung ein;
       zusätzlich spontane manuelle Vergabe über eigenen Baukasten;
