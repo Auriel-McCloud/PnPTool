@@ -185,7 +185,7 @@ export function OrtLadenFenster({
                 : "Verhandeln möglich, Ware wird bei Kauf sofort übergeben."}
             </p>
             <p className="shop-ware-hinweis" style={{ marginTop: 6 }}>
-              Welcher Laden der Tutorial-Shop ist, stellst du im Menüpunkt Tutorial-Shop ein.
+              Welcher Laden der Tutorial-Shop ist, stellst du in den Kampagnen-Einstellungen (⚙) ein.
             </p>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               {istAktiv ? (

@@ -10,7 +10,6 @@ import { CampaignGraphView } from "./graph/CampaignGraphView";
 import { GegenstaendeUebersicht } from "./items/GegenstaendeUebersicht";
 import { FloraFaunaUebersicht } from "./entities/FloraFaunaUebersicht";
 import { ShopUebersicht } from "./haendler/ShopUebersicht";
-import { TutorialShopVerwaltung } from "./haendler/TutorialShopVerwaltung";
 import { RassenUebersicht } from "./rassen/RassenUebersicht";
 import { ZusatzfertigkeitenVerwaltung } from "./zusatzfertigkeiten/ZusatzfertigkeitenVerwaltung";
 import { HintergruendeVerwaltung } from "./hintergruende/HintergruendeVerwaltung";
@@ -71,7 +70,10 @@ const BEREICHE: Bereich[] = [
   // verwaltet. Gedecktes Gold statt der Gegenstandsfarbe: der Shop selbst
   // ist ein Ort des Handelns, kein reiner Datensatz.
   { id: "shop", name: "Shop", symbol: "¥", farbe: "var(--bereich-shop)" },
-  { id: "tutorial-shop", name: "Tutorial-Shop", symbol: "🛒", farbe: "var(--bereich-shop)" },
+  // Tutorial-Shop (11.10.2026, Mark): KEIN eigener Burgermenü-Punkt mehr —
+  // das war ein Missverständnis ("Kampagnenmenü" statt "Kampagnenoptionen").
+  // Die Auswahl sitzt jetzt in EinstellungenFenster.tsx, Sektion KAMPAGNE,
+  // wie ursprünglich ausgemacht.
   // Sprites, Geister und Verbündete — eigener Bereich, weil sie ein eigenes
   // Blatt haben und keine Gegenstände sind.
   { id: "begleiter", name: "Begleiter", symbol: "❊", farbe: "var(--bereich-begleiter)" },
@@ -117,7 +119,6 @@ const TITEL: Record<string, string> = {
   verbindungen: "Beziehungen zwischen Entitäten",
   gegenstaende: "Gegenstände",
   shop: "Shop",
-  "tutorial-shop": "Tutorial-Shop: welcher Laden im Freebees-Schritt",
   graph: "Beziehungsgeflecht",
   zugang: "Spielerzugänge",
   wiki: "Kampagnen-Wiki",
@@ -330,7 +331,6 @@ function Dashboard() {
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "shop" && <ShopUebersicht key={ansichtKennung} campaignId={kampagne.id} eigenePersonId={null} istGm />}
-          {bereich === "tutorial-shop" && <TutorialShopVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "begleiter" && <BegleiterVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "flora-fauna" && <FloraFaunaUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
           {bereich === "party" && <PartyVerwaltung key={ansichtKennung} campaignId={kampagne.id} />}

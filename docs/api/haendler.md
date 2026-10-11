@@ -15,7 +15,9 @@ Ort — für Kontakt, Messenger und Verhandeln. Mehrere Gesichter pro Laden sind
 normal. Ein Laden ohne Gesicht ist gültig. Kein Charakterblatt nötig.
 
 **Tutorial-Shop:** `Ort.istTutorialShop=true`. Erscheint nur im Freebees-Schritt,
-nicht in `GET /haendler`. Der Haken sitzt im Laden-Fenster des Ortes.
+nicht in `GET /haendler`. Welcher Laden es ist, wählt die SL in den
+Kampagnen-Einstellungen (⚙, Sektion „Tutorial-Shop“) — kein Haken mehr im
+Laden-Fenster, kein eigener Burgermenü-Punkt (11.10.2026).
 
 Ältere Abschnitte unten, die `VERKAUFT` noch an der Person beschreiben, sind
 der Stand vor dem Umzug. Die laufende API nimmt als `{haendler_id}` die

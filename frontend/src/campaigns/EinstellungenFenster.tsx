@@ -5,6 +5,7 @@ import { spotifyApi, type SpotifyStatus } from "../spotify/api";
 import { wikiSweep, wikiVerknuepfungSweep, type SweepErgebnis, type SweepVerknuepfungErgebnis } from "../ideenschmiede/api";
 import { PruefungPopup } from "../wiki/PruefungPopup";
 import { SweepVerknuepfungPopup } from "../ideenschmiede/SweepVerknuepfungPopup";
+import { TutorialShopVerwaltung } from "../haendler/TutorialShopVerwaltung";
 import "../spotify/spotify.css";
 
 /**
@@ -229,6 +230,11 @@ export function EinstellungenFenster({
             titel="Messenger"
             erklaerung="In-World-Chat zwischen Charakteren. Noch im Bau."
           />
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            TUTORIAL-SHOP
+          </h4>
+          <TutorialShopVerwaltung campaignId={campaignId} />
 
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             KI

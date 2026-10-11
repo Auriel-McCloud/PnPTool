@@ -5,9 +5,11 @@ import "../zusatzfertigkeiten/zusatzfertigkeiten.css";
 import "./shop.css";
 
 /**
- * Kampagnenmenü: welcher Laden der Tutorial-Shop ist.
+ * Kampagnen-Einstellungen (⚙): welcher Laden der Tutorial-Shop ist.
  * Ein Laden pro Kampagne, Flag bleibt am Ort. Nicht im Sortiment-Editor,
- * dort zerreißt das Label-Layout den Haken.
+ * dort zerreißt das Label-Layout den Haken. Eingebettet in
+ * campaigns/EinstellungenFenster.tsx, Sektion TUTORIAL-SHOP — kein eigener
+ * Burgermenü-Punkt (11.10.2026, Mark: das war ein Missverständnis).
  */
 export function TutorialShopVerwaltung({ campaignId }: { campaignId: string }) {
   const [laeden, setLaeden] = useState<HaendlerEintrag[]>([]);

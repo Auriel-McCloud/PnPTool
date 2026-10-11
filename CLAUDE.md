@@ -362,6 +362,29 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Auswahl zurück in die Kampagnen-Einstellungen):**
+- **Was:** Mark meldete: Tutorial-Shop-Auswahl steckte als eigener
+  Burgermenü-Punkt statt in den Kampagnenoptionen ("wie ausgemacht"), dort
+  schien nichts auswählbar. Ursache 1 (echter Bug): Commit 5614883
+  (10.10.2026) hat "Kampagnenmenü" als Burgermenü-Punkt missverstanden statt
+  als Kampagnen-Einstellungen (⚙-Popup). Jetzt behoben: `TutorialShopVerwaltung`
+  sitzt in `EinstellungenFenster.tsx`, Sektion „Tutorial-Shop“, kein eigener
+  Bereich mehr. Ursache 2 (kein Bug): die Auswahlliste war leer, weil in
+  Marks laufender Kampagne (`3f2b8734-...`) aktuell **kein einziger Ort**
+  `istShop=true` hat — die Leer-Meldung "Noch kein Laden..." ist korrektes
+  Verhalten, nicht die gemeldete Fehlfunktion. Erst einen Ort unter „Orte“
+  zum Laden machen, dann erscheint er hier wählbar.
+- **Dateien:** `App.tsx` (Bereich+Render+Import entfernt),
+  `campaigns/EinstellungenFenster.tsx` (Sektion ergänzt),
+  `haendler/OrtLadenFenster.tsx` + `TutorialShopVerwaltung.tsx` + `docs/api/haendler.md` (Hinweistexte korrigiert).
+- **Verifiziert:** echter Browser-Klicktest gegen lokalen Dev-Server
+  (Backend befristet gestartet, danach wieder beendet) + echte Neo4j-Daten —
+  Burgermenü zeigt den Punkt nicht mehr, Einstellungen-Popup zeigt die neue
+  Sektion korrekt inkl. Leer-Zustand. `tsc -b` sauber. Auswahl-Klick selbst
+  (Zeile anklicken → Haken setzt sich) nicht gegen einen echten Laden
+  getestet, um nicht in Marks laufender Kampagne einen Test-Ort anzulegen —
+  Code ist unverändert zum bereits bestehenden `waehlen()`-Handler.
+
 **Zuletzt gebaut (10.10.2026 — Rüstungs-Steckbrief: Reduktion + Kästchen):**
 - **Was:** „Rüstungsbonus“ ist aus Steckbrief und Umbauen raus. Stattdessen
   zwei Zeilen: Reduktion und Kästchen.
