@@ -435,6 +435,25 @@ npm run dev
   getestet, um nicht in Marks laufender Kampagne einen Test-Ort anzulegen —
   Code ist unverändert zum bereits bestehenden `waehlen()`-Handler.
 
+**Zuletzt gebaut (11.10.2026 — Shop-Sortiment: Ware-Auswahl mit Bild/Seltenheit/Steckbrief):**
+- **Was:** Mark: das Vorlagen-Dropdown im Sortiment-Editor zeigte außer dem
+  Namen nichts — keine Seltenheit, kein Steckbrief, Auswahl "fürs Sortiment"
+  praktisch blind. Neues `VorlagenAuswahlPopup.tsx`: durchsuchbares Kachel-
+  raster, wiederverwendet `.shop-ware`/`data-seltenheit` (derselbe
+  Seltenheitsrahmen wie im Spieler-Shop) plus Typ-Symbol und
+  `steckbriefKurz()` (dieselbe Kurzfassung wie auf der normalen
+  Gegenstands-Kachel) direkt auf der Kachel. Ersetzt das `<select>` in
+  `HaendlerBearbeiten.tsx` durch einen Knopf, der das Popup öffnet.
+- **Dateien:** `haendler/VorlagenAuswahlPopup.tsx` (neu),
+  `haendler/HaendlerBearbeiten.tsx`, `haendler/shop.css` (`.shop-ware-typ`/
+  `.shop-ware-steckbrief`).
+- **Verifiziert:** echter Browser-Klicktest live auf bebop (Tutorial-Shop,
+  68 echte Vorlagen) — Suche filtert, alle Kacheln zeigen Typ+Steckbrief+
+  Seltenheit korrekt (per DOM-Abfrage gegengeprüft, nicht nur Screenshot),
+  Klick wählt aus und schließt das Popup, Preis-Feld + Hinzufügen-Knopf
+  bleiben unverändert. Testauswahl am Ende bewusst NICHT abgeschickt, um
+  Marks echtes Sortiment nicht zu verändern. `tsc -b` sauber.
+
 **Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Sektion überlagerte sich im Einstellungen-Popup):**
 - **Was:** Mark meldete nach dem obigen Fix: Tutorial-Shop-Sektion ist jetzt
   in den Einstellungen, aber überlagert sich mit der folgenden KI-Sektion
