@@ -10,23 +10,18 @@ import { schadenArtFuerWaffe, schadenArtLabel } from "./api";
  * Übersicht-Tab) — nur als eine knappe Zeile statt einer Aufzählung, damit
  * die Kachel ihre feste Höhe behält (Leitprinzip "nie scrollen").
  */
-const KRAFT_TYPEN = new Set(["Waffe", "Rüstung"]);
 const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
-
-function kraftLabel(typ: string): string {
-  return typ === "Rüstung" ? "Rüstung" : "Schaden";
-}
 
 export function steckbriefKurz(item: Gegenstand): string[] {
   const teile: string[] = [];
 
-  if (item.typ === "Rüstung" && item.ruestungKaestchenMax > 0) {
-    teile.push(`${item.ruestungKaestchenAktuell}/${item.ruestungKaestchenMax} Käst. · Red. ${item.ruestungReduktionBasis}`);
-  } else if (KRAFT_TYPEN.has(item.typ) && item.kraft > 0) {
-    const basis = `${kraftLabel(item.typ)} ${item.kraft}`;
-    const art = item.typ === "Waffe" ? schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)) : "";
-    teile.push(art ? `${basis} · ${art}` : basis);
+  if (item.typ === "Rüstung") {
+    teile.push(`Reduktion ${item.ruestungReduktionBasis}`);
+    teile.push(`${item.ruestungKaestchenAktuell}/${item.ruestungKaestchenMax} Kästchen`);
+  } else if (item.typ === "Waffe" && item.kraft > 0) {
+    const basis = `Schaden ${item.kraft}`;
+    teile.push(`${basis} · ${schadenArtLabel(schadenArtFuerWaffe(item.schadenArt))}`);
   } else if (item.typ === "Waffe") {
     teile.push(schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)));
   }

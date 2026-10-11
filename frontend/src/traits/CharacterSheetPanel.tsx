@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, RUESTUNGSBONUS_MAX, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
+import { ABLAGEN, itemsApi, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -86,10 +86,6 @@ const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
 const SLOTS_PRO_ZONE = [1, 2, 3];
 // Bekommen ein eigenes Blatt (Stufe, Widerstand, Angriff, Agilität)
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
-function kraftLabel(typ: string): string {
-  return typ === "Rüstung" ? "Rüstungsbonus" : "Schaden";
-}
-
 function SchadensartFeld({
   wert,
   onChange,
@@ -711,21 +707,18 @@ export function GegenstandRow({
                   <label>Steckbrief</label>
                   <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text)" }}>
                     {typ === "Rüstung" && (
-                      <li>
-                        {kraftLabel(typ)}: {kraft}
-                      </li>
+                      <>
+                        <li>Reduktion: {ruestungReduktionBasis}</li>
+                        <li>
+                          Kästchen: {item.ruestungKaestchenAktuell}/{ruestungKaestchenMax}
+                        </li>
+                      </>
                     )}
                     {(typ === "Waffe" || istWaffe) && (
                       <li>Schaden: {typ === "Waffe" ? schaden || kraft : schaden}</li>
                     )}
                     {(typ === "Waffe" || istWaffe) && (
                       <li>Schadensart: {schadenArtLabel(schadenArtFuerWaffe(schadenArt))}</li>
-                    )}
-                    {typ === "Rüstung" && (
-                      <li>
-                        Rüstung: {item.ruestungKaestchenAktuell}/{ruestungKaestchenMax} Kästchen, Reduktion{" "}
-                        {ruestungReduktionBasis}
-                      </li>
                     )}
                     {CHROM_TYPEN.has(typ) && (
                       <li>
@@ -1177,14 +1170,6 @@ export function GegenstandRow({
                 </div>
               )}
 
-              {typ === "Rüstung" && (
-                <div>
-                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>{kraftLabel(typ)}</label>
-                  <div>
-                    <DotPool value={kraft} max={RUESTUNGSBONUS_MAX} onChange={setKraft} />
-                  </div>
-                </div>
-              )}
               {typ === "Waffe" && (
                 <div>
                   <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Schaden</label>

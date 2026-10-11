@@ -362,6 +362,12 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — Rüstungs-Steckbrief: Reduktion + Kästchen):**
+- **Was:** „Rüstungsbonus“ ist aus Steckbrief und Umbauen raus. Stattdessen
+  zwei Zeilen: Reduktion und Kästchen.
+- **Dateien:** CharacterSheetPanel, steckbrief.ts, GegenstandKachel.
+- **Verifiziert:** `tsc -b`. **Im Browser eine Rüstung öffnen.**
+
 **Zuletzt gebaut (10.10.2026 — Waffen-Schadensart default Tödlich):**
 - **Was:** Waffen ohne gesetzte Art gelten als Tödlich. Schlag und Unheilbar
   setzt man extra. Dropdown ohne „offen“.

@@ -6,7 +6,7 @@ import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
-import { RUESTUNGSBONUS_MAX, SCHADEN_MAX } from "./api";
+import { SCHADEN_MAX } from "./api";
 import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
@@ -244,12 +244,10 @@ export function GegenstandKachel({
           </>
         )}
 
-        {item.kraft > 0 && (
+        {item.kraft > 0 && item.typ !== "Rüstung" && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ color: "var(--text-leise)", fontSize: 13 }}>
-              {item.typ === "Rüstung" ? "Rüstungsbonus" : "Schaden"}
-            </span>
-            <DotPool value={item.kraft} max={item.typ === "Rüstung" ? RUESTUNGSBONUS_MAX : SCHADEN_MAX} />
+            <span style={{ color: "var(--text-leise)", fontSize: 13 }}>Schaden</span>
+            <DotPool value={item.kraft} max={SCHADEN_MAX} />
           </div>
         )}
 
