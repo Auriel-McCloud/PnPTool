@@ -299,6 +299,21 @@
   line-height: 1.25;
 }
 
+/* Typ + Steckbrief-Kurzzeile auf der Auswahl-Kachel (VorlagenAuswahlPopup,
+   11.10.2026) — dieselbe Kurzfassung wie gg-kachel-steckbrief, nur in der
+   shop-ware-Kachel statt der gg-kachel. */
+.shop-ware-typ {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.shop-ware-steckbrief {
+  font-size: 11px;
+  color: var(--text-leise);
+}
+
 .shop-ware-preis {
   display: flex;
   align-items: baseline;

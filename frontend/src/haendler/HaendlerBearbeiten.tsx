@@ -5,6 +5,7 @@ import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { entitiesApi } from "../entities/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
+import { VorlagenAuswahlPopup } from "./VorlagenAuswahlPopup";
 import "./shop.css";
 
 /**
@@ -35,6 +36,8 @@ export function HaendlerBearbeiten({
   const [mitBild, setMitBild] = useState(false);
 
   const [neueWareId, setNeueWareId] = useState("");
+  const [neueWareName, setNeueWareName] = useState("");
+  const [auswahlOffen, setAuswahlOffen] = useState(false);
   const [neuerPreis, setNeuerPreis] = useState("");
   const [rabattBearbeitet, setRabattBearbeitet] = useState<string | null>(null);
   const [rabattProzent, setRabattProzent] = useState("");
@@ -97,6 +100,7 @@ export function HaendlerBearbeiten({
       ),
     );
     setNeueWareId("");
+    setNeueWareName("");
     setNeuerPreis("");
   }
 
@@ -287,14 +291,14 @@ export function HaendlerBearbeiten({
           </div>
 
           <div className="shop-editor-hinzufuegen">
-            <select value={neueWareId} onChange={(e) => setNeueWareId(e.target.value)} disabled={läuft}>
-              <option value="">— bestehende Vorlage —</option>
-              {wählbareVorlagen.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name} ({g.preis.toLocaleString("de-AT")}¥)
-                </option>
-              ))}
-            </select>
+            <button
+              type="button"
+              onClick={() => setAuswahlOffen(true)}
+              disabled={läuft}
+              style={{ flex: 2, minWidth: 160, textAlign: "left" }}
+            >
+              {neueWareId ? `✓ ${neueWareName}` : "📋 Vorlage wählen —  Bild, Seltenheit, Steckbrief"}
+            </button>
             <input
               type="number"
               min={0}
@@ -306,6 +310,17 @@ export function HaendlerBearbeiten({
               Hinzufügen
             </button>
           </div>
+
+          <VorlagenAuswahlPopup
+            offen={auswahlOffen}
+            vorlagen={wählbareVorlagen}
+            onWaehlen={(g) => {
+              setNeueWareId(g.id);
+              setNeueWareName(g.name);
+              setAuswahlOffen(false);
+            }}
+            onSchliessen={() => setAuswahlOffen(false)}
+          />
         </section>
       </div>
     </Fenster>
