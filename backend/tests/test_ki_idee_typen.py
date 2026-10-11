@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from app.ki.auto_verknuepfung import BeziehungAnwendenErgebnis
 from app.ki.routes import BeratungEntwurfInput, KiIdeeInput, _idee_anlegen
+from tests.test_erstellung import KATALOG
 
 WELTTYPEN = ("story", "charakter", "gegenstand", "ort", "event", "fraktion", "verbindung")
 
@@ -275,6 +276,8 @@ def test_waffe_aus_der_ki_bekommt_schaden():
     async def run():
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
             patch(
                 "app.ki.routes.generiere_json",
                 AsyncMock(return_value={
@@ -307,6 +310,8 @@ def test_waffe_ohne_angabe_bekommt_mindestens_stufe_1():
     async def run():
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
             patch(
                 "app.ki.routes.generiere_json",
                 AsyncMock(return_value={
@@ -334,6 +339,8 @@ def test_kein_waffenschaden_bei_einem_nicht_waffe():
     async def run():
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
             patch(
                 "app.ki.routes.generiere_json",
                 AsyncMock(return_value={
@@ -353,5 +360,99 @@ def test_kein_waffenschaden_bei_einem_nicht_waffe():
             daten = create.await_args.args[2]
             assert daten["kraft"] == 0
             assert daten["istWaffe"] is False
+
+    _run(run())
+
+
+def test_cyberware_traitbonus_aus_der_ki_landet_in_traitboni():
+    """Mark-Bug 11.10.2026: ein Implantat mit "+1 auf Schusswaffen" landete
+    nur im Beschreibungstext, weil die KI dafür kein Ausgabefeld hatte."""
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "Zielerfassungs-Implantat",
+                    "beschreibung": "Ein Neuralchip fürs Auge.",
+                    "notizen": "",
+                    "typ": "Cyberware",
+                    "preis": 5000,
+                    "seltenheit": 3,
+                    "schaden": 0,
+                    "traitBoni": [{"name": "Schusswaffen", "wert": 1}],
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "ein Implantat mit +1 auf Schusswaffen")
+            daten = create.await_args.args[2]
+            assert daten["traitBoni"] == {"Schusswaffen": 1}
+
+    _run(run())
+
+
+def test_erfundener_traitbonus_name_wird_verworfen():
+    """Namen, die es im Katalog nicht gibt, dürfen keinen wirkungslosen
+    traitBoni-Eintrag erzeugen (die KI hält sich nicht immer ans Prompt)."""
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "Komisches Implantat",
+                    "beschreibung": "x",
+                    "notizen": "",
+                    "typ": "Cyberware",
+                    "preis": 1000,
+                    "seltenheit": 1,
+                    "schaden": 0,
+                    "traitBoni": [{"name": "Feuerwaffen", "wert": 1}],
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "ein Implantat")
+            daten = create.await_args.args[2]
+            assert daten["traitBoni"] == {}
+
+    _run(run())
+
+
+def test_neue_fertigkeit_aus_der_ki_landet_in_ausruestungsfertigkeiten():
+    async def run():
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch(
+                "app.ki.routes.generiere_json",
+                AsyncMock(return_value={
+                    "name": "NeuroWeaving-Deck",
+                    "beschreibung": "x",
+                    "notizen": "",
+                    "typ": "Cyberdeck",
+                    "preis": 12000,
+                    "seltenheit": 4,
+                    "schaden": 0,
+                    "neueFertigkeiten": [{"name": "NeuroWeaving", "wert": 2}],
+                }),
+            ),
+            patch("app.ki.routes.create_gegenstand", AsyncMock(return_value={"id": "g1"})) as create,
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "gegenstand", "ein NeuroWeaving-Deck")
+            daten = create.await_args.args[2]
+            assert daten["ausruestungsfertigkeiten"] == {"NeuroWeaving": 2}
 
     _run(run())

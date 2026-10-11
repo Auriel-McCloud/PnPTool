@@ -15,6 +15,7 @@ und das Frontend reicht nur den freien Wunsch des Spielleiters durch.
 """
 
 import json
+import logging
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -25,6 +26,7 @@ from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node, get_node
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
+from app.haendler import ki_einkauf
 from app.haendler import repository as haendler_repository
 from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
@@ -118,6 +120,21 @@ _PUNKT_EINTRAG = {
     "required": ["name", "punkte"],
 }
 
+# Für traitBoni (Bonus auf einen BESTEHENDEN Katalog-Trait) und
+# neueFertigkeiten (komplett neue Fertigkeit) an KI-Gegenständen — eigenes
+# Schema statt _PUNKT_EINTRAG, weil "wert" hier Bonuswürfel/Fertigkeitshöhe
+# meint, nicht Erstellungspunkte (Mark-Bug 11.10.2026: ein Cyberware-Implantat
+# mit "+1 auf Schusswaffen" landete nur im Beschreibungstext, weil es dafür
+# überhaupt kein strukturiertes Ausgabefeld gab).
+_TRAIT_BONUS_EINTRAG = {
+    "type": "OBJECT",
+    "properties": {
+        "name": {"type": "STRING"},
+        "wert": {"type": "INTEGER"},
+    },
+    "required": ["name", "wert"],
+}
+
 _CHARAKTER_SCHEMA = {
     "type": "OBJECT",
     "properties": {
@@ -177,6 +194,15 @@ _GEGENSTAND_SCHEMA = {
         # ohne dieses Feld blieb jede KI-Waffe auf 0.
         "schaden": {"type": "INTEGER"},
         "schadenArt": {"type": "STRING", "enum": ["", "schlag", "schwer", "aggraviert"]},
+        # Bonus auf einen BESTEHENDEN Katalog-Trait, solange ausgerüstet/
+        # verbaut (Cyberware/Bioware/Hexware/magische Gegenstände — z.B.
+        # "+1 auf Schusswaffen"). Ohne dieses Feld landete so ein Effekt nur
+        # im Beschreibungstext, nie als echte Mechanik (Mark-Bug 11.10.2026).
+        "traitBoni": {"type": "ARRAY", "items": _TRAIT_BONUS_EINTRAG},
+        # Komplett NEUE Fertigkeit, die es ohne den Gegenstand nicht gibt
+        # (z.B. ein NeuroWeaving-Skill an einem Cyberdeck) — anderer
+        # Mechanismus als traitBoni, siehe items/schemas.py::ausruestungsfertigkeiten.
+        "neueFertigkeiten": {"type": "ARRAY", "items": _TRAIT_BONUS_EINTRAG},
     },
     "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit", "schaden"],
 }
@@ -326,7 +352,19 @@ _GEGENSTAND_SYSTEM = (
     "Aufpreis für Tarnung, Smartlink oder Prototyp hebt die Stufe nicht. "
     "Bei jedem anderen Typ 0. schadenArt bei typ Waffe: schlag, schwer oder aggraviert "
     "(Schlag / Tödlich / Unheilbar). Fehlt sie, gilt Tödlich. Faust und Knüppel schlag, "
-    "Klinge und Schusswaffe schwer, Explosion oder Brand aggraviert. Sonst leer."
+    "Klinge und Schusswaffe schwer, Explosion oder Brand aggraviert. Sonst leer. "
+    "Gibt der Gegenstand im ausgerüsteten/verbauten Zustand einen Bonus auf eine "
+    "BESTEHENDE Fertigkeit, ein Attribut oder eine Sphäre (typisch bei Cyberware/"
+    "Bioware/Hexware und magischen Gegenständen, z.B. ein Reflex-Implantat mit "
+    "+1 auf Schusswaffen, ein Kraftarm mit +2 auf Körperkraft) — das IMMER in "
+    "traitBoni eintragen, nie nur in beschreibung/notizen erwähnen: name MUSS "
+    "exakt einer der Namen aus dem unten mitgelieferten Fertigkeiten/Attribute/"
+    "Sphären-Katalog sein (nicht übersetzen, nicht abkürzen, nicht erfinden), "
+    "wert die Zahl der Bonuswürfel. Erschafft der Gegenstand stattdessen eine "
+    "komplett NEUE Fertigkeit, die es ohne ihn gar nicht gibt (z.B. ein "
+    "NeuroWeaving-Skill an einem Cyberdeck), trage das in neueFertigkeiten ein "
+    "(name frei wählbar, wert die Fertigkeitshöhe). Ohne mechanischen Effekt "
+    "bleiben traitBoni und neueFertigkeiten leere Listen."
     + _NOTIZEN_HINWEIS
 )
 
@@ -451,6 +489,38 @@ def _als_int(wert, standard: int = 0) -> int:
         return standard
 
 
+def _name_wert_dict(roh) -> dict[str, int]:
+    """KI-Listen aus {name, wert}-Einträgen (traitBoni/neueFertigkeiten) zu
+    einem flachen dict, wie GegenstandCreate es erwartet."""
+    if not isinstance(roh, list):
+        return {}
+    out: dict[str, int] = {}
+    for eintrag in roh:
+        if not isinstance(eintrag, dict):
+            continue
+        name = (eintrag.get("name") or "").strip()
+        if not name:
+            continue
+        out[name] = _als_int(eintrag.get("wert"))
+    return out
+
+
+def _trait_boni_aus_ki(roh, katalog: list[dict]) -> dict[str, int]:
+    """Nur Bonuswürfel auf tatsächlich existierende Katalog-Traits übernehmen.
+
+    Die KI soll laut Prompt nur Katalog-Namen verwenden, hält sich aber nicht
+    immer daran (vgl. _setze_traits bei der Charaktererstellung) — ein
+    erfundener oder falsch geschriebener Name würfe sonst einen
+    stillschweigend wirkungslosen traitBoni-Eintrag in die DB.
+    """
+    gueltige_namen = {t["name"] for t in katalog}
+    return {
+        name: wert
+        for name, wert in _name_wert_dict(roh).items()
+        if name in gueltige_namen and wert != 0
+    }
+
+
 # Attribute (Körperkraft, Entschlossenheit, ...) sind fundamental — 0 ist
 # regeltechnisch nicht vorgesehen, jeder Charakter hat mindestens 1 in jedem.
 # Fertigkeiten/Hintergründe dürfen dagegen 0 sein ("kann's einfach nicht").
@@ -567,7 +637,19 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             # bevorzugt Bestehendes wiederverwenden, nur bei Lücken etwas
             # Neues vorschlagen".
             kontext = await sammle_kontext(campaign_id)
+            # Trait-Katalog wie bei der Charaktererstellung (_katalog_zu_text)
+            # — ohne die exakten Namen würde die KI für traitBoni Fertigkeiten
+            # erfinden/übersetzen statt bestehende zu treffen (z.B. "Feuerwaffen"
+            # statt "Schusswaffen"), und der Bonus bliebe wirkungslos.
+            campaign = await get_campaign(campaign_id)
+            ruleset = campaign["ruleset"] if campaign else "neotopia"
+            katalog = await list_catalog(ruleset)
             prompt_komplett = _mit_kontext(prompt, kontext)
+            prompt_komplett += (
+                "\n\nFertigkeiten/Attribute/Sphären-Katalog dieser Kampagne "
+                "(NUR für traitBoni — exakte Namen übernehmen, nichts erfinden):\n"
+                + await _katalog_zu_text(ruleset) + "\n"
+            )
             ergebnis = await generiere_json(prompt_komplett, _GEGENSTAND_SYSTEM, _GEGENSTAND_SCHEMA, campaign_id=campaign_id)
             name = (ergebnis.get("name") or "").strip() or "Unbenannter Gegenstand"
             gegenstand_typ = ergebnis.get("typ") or "Sonstiges"
@@ -585,6 +667,12 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 preis=max(0, _als_int(ergebnis.get("preis"))),
                 seltenheit=seltenheit,
                 istEntwurf=True,
+                # Bonuswürfel auf bestehende Traits (z.B. Cyberware +1
+                # Schusswaffen) — ohne das landete der Effekt nur im
+                # Beschreibungstext, nie als echte Spielmechanik
+                # (Mark-Bug 11.10.2026, siehe items/schemas.py::traitBoni).
+                traitBoni=_trait_boni_aus_ki(ergebnis.get("traitBoni"), katalog),
+                ausruestungsfertigkeiten=_name_wert_dict(ergebnis.get("neueFertigkeiten")),
                 **waffenfelder(gegenstand_typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt")),
             )
             # _create_data ist derselbe Helfer wie in items/routes.py::create_vorlage
@@ -802,6 +890,27 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         await setze_maxima_bulk(
             campaign_id, person["id"], erstellung.lebensmaxima(rasse_name, katalog, rassen)
         )
+
+        # Tutorial-Shop-Einkauf (11.10.2026, Marks Wunsch): der frisch
+        # generierte Charakter lässt sein Freebee-Kapital nicht länger
+        # ungenutzt liegen, sondern kauft sinnvoll aus dem bestehenden
+        # Tutorial-Shop-Sortiment ein (kein Shop in der Kampagne = No-Op,
+        # siehe ki_einkauf.py). Ein Fehler hier darf den Charakter nicht
+        # kaputt machen — er bleibt dann halt unausgerüstet.
+        try:
+            staerkste_werte = sorted(werte.items(), key=lambda kv: -kv[1])[:8]
+            kontext_text = (
+                f"{name} — Rasse: {rasse_name or 'unbekannt'}, Weg: {weg}. "
+                f"Konzept: {(ergebnis.get('konzept') or '').strip() or '(keins)'}. "
+                "Stärkste Werte: "
+                + (", ".join(f"{n} {w}" for n, w in staerkste_werte if w > 0) or "(keine)")
+            )
+            await ki_einkauf.einkaufen(campaign_id, person["id"], vermoegen, kontext_text)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "KI-Einkauf nach Charaktererstellung fehlgeschlagen (person=%s)", person["id"]
+            )
+
         await hooks.ki(
             campaign_id, anlass="idee-charakter", prompt=prompt,
             antwort_text=name, uebernommen=True, betrifft_id=person["id"],
