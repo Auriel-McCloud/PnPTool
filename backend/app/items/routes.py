@@ -68,7 +68,12 @@ def speichere_bild_bytes(campaign_id: str, inhalt: bytes, content_type: str) -> 
 @campaign_router.get("", response_model=list[GegenstandMitBesitzer])
 async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_alle_gegenstaende(campaign_id)
-    return filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    # Ideenschmiede-Entwürfe gehören nicht in die normale Übersicht, genau wie
+    # bei Person/Ort/Event/Fraktion/WikiSeite (siehe entities/routes.py::
+    # _aufbereiten, wiki/routes.py::seitenbaum). Einzelabruf (get_item) filtert
+    # das bewusst NICHT — die Ideenschmiede lädt Entwürfe darüber fürs Detail-Popup.
+    return [i for i in sichtbar if not i.get("istEntwurf", False)]
 
 
 def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[str]]:
@@ -180,7 +185,9 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
 @router.get("", response_model=list[GegenstandResponse])
 async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_gegenstaende(campaign_id, person_id)
-    return filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    # Siehe list_all_items: Entwürfe gehören in die Ideenschmiede, nicht hierhin.
+    return [i for i in sichtbar if not i.get("istEntwurf", False)]
 
 
 @campaign_router.post("", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
