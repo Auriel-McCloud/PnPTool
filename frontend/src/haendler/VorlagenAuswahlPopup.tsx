@@ -10,6 +10,12 @@ import "./shop.css";
  * Namens-Dropdown zeigte "außer dem Namen keine Infos ... ich weiß nicht
  * welche Seltenheit sie haben und den Steckbrief sehe ich auch nicht").
  *
+ * Mehrfachauswahl (11.10.2026, Mark direkt im Anschluss: Popup schloss nach
+ * jedem Klick — "ich klicke auf eine Sache und das Fenster geht wieder zu").
+ * Klick toggelt die Auswahl (Haken-Marke + Neon-Outline), ein gemeinsamer
+ * Preis gilt optional für den ganzen Schwung, "N Waren hinzufügen" erst am
+ * Ende schickt alles auf einmal ab und schließt.
+ *
  * Wiederverwendet die Shop-Kachel (`shop-ware`, `data-seltenheit`) samt
  * Seltenheitsrahmen aus shop.css — dieselbe Optik, die Spieler beim
  * Einkaufen schon sehen, jetzt auch beim Auswählen fürs Sortiment. Zusätzlich
@@ -19,15 +25,21 @@ import "./shop.css";
 export function VorlagenAuswahlPopup({
   offen,
   vorlagen,
-  onWaehlen,
+  onHinzufuegen,
   onSchliessen,
 }: {
   offen: boolean;
   vorlagen: GegenstandMitBesitzer[];
-  onWaehlen: (gegenstand: GegenstandMitBesitzer) => void;
+  /** preis fehlt (undefined) = Grundpreis je Gegenstand; gesetzt = derselbe
+   * Preis für alle gerade ausgewählten Stücke. */
+  onHinzufuegen: (gegenstandIds: string[], preis?: number) => Promise<void>;
   onSchliessen: () => void;
 }) {
   const [suche, setSuche] = useState("");
+  const [ausgewaehlt, setAusgewaehlt] = useState<Set<string>>(new Set());
+  const [preis, setPreis] = useState("");
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
 
   const gefiltert = useMemo(() => {
     const q = suche.trim().toLowerCase();
@@ -35,14 +47,45 @@ export function VorlagenAuswahlPopup({
     return [...liste].sort((a, b) => a.name.localeCompare(b.name, "de"));
   }, [vorlagen, suche]);
 
+  function toggeln(id: string) {
+    setAusgewaehlt((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(id)) neu.delete(id);
+      else neu.add(id);
+      return neu;
+    });
+  }
+
+  function zuruecksetzenUndSchliessen() {
+    setSuche("");
+    setAusgewaehlt(new Set());
+    setPreis("");
+    setFehler(null);
+    onSchliessen();
+  }
+
+  async function hinzufuegen() {
+    if (ausgewaehlt.size === 0) return;
+    setLaeuft(true);
+    setFehler(null);
+    try {
+      await onHinzufuegen([...ausgewaehlt], preis.trim() ? Number(preis) : undefined);
+      zuruecksetzenUndSchliessen();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Hinzufügen fehlgeschlagen");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
   return (
     <Fenster
       offen={offen}
       titel="Ware wählen"
-      unterzeile={`${vorlagen.length} Vorlage${vorlagen.length === 1 ? "" : "n"} verfügbar`}
+      unterzeile={`${vorlagen.length} Vorlage${vorlagen.length === 1 ? "" : "n"} verfügbar — mehrere anklickbar`}
       kennung="vorlagen-auswahl"
       breit
-      onSchliessen={onSchliessen}
+      onSchliessen={zuruecksetzenUndSchliessen}
     >
       <input
         value={suche}
@@ -52,32 +95,60 @@ export function VorlagenAuswahlPopup({
         style={{ width: "100%", marginBottom: 12 }}
       />
       {gefiltert.length === 0 && <p className="shop-leer">Keine passende Vorlage.</p>}
-      <div className="shop-waren-raster">
-        {gefiltert.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            className="shop-ware"
-            data-seltenheit={g.seltenheit}
-            onClick={() => onWaehlen(g)}
-            title={g.name}
-          >
-            <span className="shop-ware-bild">
-              {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(g.typ)}</span>}
-            </span>
-            <span className="shop-ware-name">{g.name}</span>
-            <span className="shop-ware-typ">
-              {symbolFuerTyp(g.typ)} {g.typ}
-            </span>
-            {steckbriefKurz(g).length > 0 && (
-              <span className="shop-ware-steckbrief">{steckbriefKurz(g).join(" · ")}</span>
-            )}
-            <span className="shop-ware-preis">
-              <span>{g.preis.toLocaleString("de-AT")}¥</span>
-            </span>
-          </button>
-        ))}
+      <div className="shop-waren-raster" style={{ maxHeight: "48vh", overflowY: "auto" }}>
+        {gefiltert.map((g) => {
+          const gewaehlt = ausgewaehlt.has(g.id);
+          return (
+            <button
+              key={g.id}
+              type="button"
+              className="shop-ware"
+              data-seltenheit={g.seltenheit}
+              data-gewaehlt={gewaehlt}
+              onClick={() => toggeln(g.id)}
+              title={g.name}
+            >
+              {gewaehlt && (
+                <span className="shop-ware-gewaehlt-marke" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+              <span className="shop-ware-bild">
+                {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(g.typ)}</span>}
+              </span>
+              <span className="shop-ware-name">{g.name}</span>
+              <span className="shop-ware-typ">
+                {symbolFuerTyp(g.typ)} {g.typ}
+              </span>
+              {steckbriefKurz(g).length > 0 && (
+                <span className="shop-ware-steckbrief">{steckbriefKurz(g).join(" · ")}</span>
+              )}
+              <span className="shop-ware-preis">
+                <span>{g.preis.toLocaleString("de-AT")}¥</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
+
+      <div className="shop-editor-hinzufuegen" style={{ marginTop: 12 }}>
+        <input
+          type="number"
+          min={0}
+          value={preis}
+          onChange={(e) => setPreis(e.target.value)}
+          placeholder="Preis für alle (leer = Grundpreis je Stück)"
+          disabled={laeuft}
+        />
+        <button type="button" onClick={hinzufuegen} disabled={laeuft || ausgewaehlt.size === 0}>
+          {laeuft
+            ? "Fügt hinzu…"
+            : ausgewaehlt.size === 0
+              ? "Hinzufügen"
+              : `${ausgewaehlt.size} ${ausgewaehlt.size === 1 ? "Ware" : "Waren"} hinzufügen`}
+        </button>
+      </div>
+      {fehler && <p className="shop-ware-fehler">{fehler}</p>}
     </Fenster>
   );
 }

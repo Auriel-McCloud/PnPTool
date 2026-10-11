@@ -35,10 +35,7 @@ export function HaendlerBearbeiten({
   const [wunsch, setWunsch] = useState("");
   const [mitBild, setMitBild] = useState(false);
 
-  const [neueWareId, setNeueWareId] = useState("");
-  const [neueWareName, setNeueWareName] = useState("");
   const [auswahlOffen, setAuswahlOffen] = useState(false);
-  const [neuerPreis, setNeuerPreis] = useState("");
   const [rabattBearbeitet, setRabattBearbeitet] = useState<string | null>(null);
   const [rabattProzent, setRabattProzent] = useState("");
   const [rabattHinweis, setRabattHinweis] = useState("");
@@ -89,19 +86,12 @@ export function HaendlerBearbeiten({
     await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { spezialisierung: neu }));
   }
 
-  async function wareHinzufuegen() {
-    if (!neueWareId) return;
-    await ausfuehren(() =>
-      haendlerApi.sortimentHinzufuegen(
-        campaignId,
-        haendlerId,
-        neueWareId,
-        neuerPreis.trim() ? Number(neuerPreis) : undefined,
-      ),
-    );
-    setNeueWareId("");
-    setNeueWareName("");
-    setNeuerPreis("");
+  async function vorlagenHinzufuegen(gegenstandIds: string[], preis?: number) {
+    for (const id of gegenstandIds) {
+      await haendlerApi.sortimentHinzufuegen(campaignId, haendlerId, id, preis);
+    }
+    await laden();
+    onGeaendert();
   }
 
   async function wareEntfernen(gegenstandId: string) {
@@ -295,30 +285,16 @@ export function HaendlerBearbeiten({
               type="button"
               onClick={() => setAuswahlOffen(true)}
               disabled={läuft}
-              style={{ flex: 2, minWidth: 160, textAlign: "left" }}
+              style={{ flex: 1 }}
             >
-              {neueWareId ? `✓ ${neueWareName}` : "📋 Vorlage wählen —  Bild, Seltenheit, Steckbrief"}
-            </button>
-            <input
-              type="number"
-              min={0}
-              value={neuerPreis}
-              onChange={(e) => setNeuerPreis(e.target.value)}
-              placeholder="Preis (leer = Grundpreis)"
-            />
-            <button type="button" onClick={wareHinzufuegen} disabled={läuft || !neueWareId}>
-              Hinzufügen
+              📋 Vorlage(n) wählen — Bild, Seltenheit, Steckbrief
             </button>
           </div>
 
           <VorlagenAuswahlPopup
             offen={auswahlOffen}
             vorlagen={wählbareVorlagen}
-            onWaehlen={(g) => {
-              setNeueWareId(g.id);
-              setNeueWareName(g.name);
-              setAuswahlOffen(false);
-            }}
+            onHinzufuegen={vorlagenHinzufuegen}
             onSchliessen={() => setAuswahlOffen(false)}
           />
         </section>

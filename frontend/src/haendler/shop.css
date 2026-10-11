@@ -314,6 +314,31 @@
   color: var(--text-leise);
 }
 
+/* Mehrfachauswahl im VorlagenAuswahlPopup (11.10.2026) — eigener Neon-
+   Outline statt Border/Box-Shadow, damit es sich NICHT mit dem
+   Seltenheitsrahmen (data-seltenheit) beißt, der ja sichtbar bleiben soll. */
+.shop-ware[data-gewaehlt="true"] {
+  outline: 2px solid var(--neon);
+  outline-offset: 2px;
+}
+
+.shop-ware-gewaehlt-marke {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--neon);
+  color: var(--flaeche-tief);
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 2;
+}
+
 .shop-ware-preis {
   display: flex;
   align-items: baseline;
