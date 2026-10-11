@@ -362,6 +362,14 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (10.10.2026 — Waffen-Schadensart default Tödlich):**
+- **Was:** Waffen ohne gesetzte Art gelten als Tödlich. Schlag und Unheilbar
+  setzt man extra. Dropdown ohne „offen“.
+- **Dateien:** `waffenbonus.py`, `_create_data`, Repository-Lesen,
+  CharacterSheetPanel, Steckbrief.
+- **Verifiziert:** `test_waffenbonus.py`, `test_gegenstand_felder.py`. **Im
+  Browser eine Pistole öffnen — Schadensart Tödlich.**
+
 **Zuletzt gebaut (10.10.2026 — Waffenschaden einheitlich, Skala bis 12):**
 - **Was:** Label „Schadensbonus“ ist überall „Schaden“. Steckbrief zeigt den
   Wert nur noch einmal. Maximum 12 (1–7 Handwaffe, 8–12 Schiffswaffe).

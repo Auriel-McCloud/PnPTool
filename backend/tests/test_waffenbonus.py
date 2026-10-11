@@ -2,7 +2,12 @@ from app.items.waffenbonus import SCHADEN_MAX, ki_schaden_roh, schaden_klemmen, 
 
 
 def test_handwaffe_nimmt_den_wert():
-    assert waffenfelder("Waffe", 4) == {"kraft": 4, "schaden": 4, "istWaffe": True}
+    assert waffenfelder("Waffe", 4) == {
+        "kraft": 4,
+        "schaden": 4,
+        "istWaffe": True,
+        "schadenArt": "schwer",
+    }
 
 
 def test_fehlende_angabe_wird_stufe_1():
@@ -24,6 +29,12 @@ def test_ueber_12_wird_geklemmt():
 def test_kein_waffenschaden_bei_anderem_typ():
     assert waffenfelder("Sonstiges", 4) == {}
     assert schaden_klemmen(4, typ="Rüstung") == 4
+
+
+def test_fehlende_schadensart_ist_toedlich():
+    assert waffenfelder("Waffe", 3)["schadenArt"] == "schwer"
+    assert waffenfelder("Waffe", 3, "schlag")["schadenArt"] == "schlag"
+    assert waffenfelder("Waffe", 3, "unheilbar")["schadenArt"] == "aggraviert"
 
 
 def test_alter_schluessel_schadensbonus_gilt_noch():

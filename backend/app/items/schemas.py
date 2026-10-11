@@ -138,7 +138,8 @@ class GegenstandCreate(BaseModel):
     # macht aber nur 3 Schaden. Nur relevant wenn istWaffe=True.
     schaden: int = 0
     # Welche der drei Schadensarten die Waffe verursacht. Nur relevant wenn
-    # typ "Waffe" oder istWaffe. Leer lassen, statt tödlich zu raten.
+    # typ "Waffe" oder istWaffe. Standard Tödlich — Schlag und Unheilbar
+    # setzt man extra (Mark, 10.10.2026).
     schadenArt: SchadenArt = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),

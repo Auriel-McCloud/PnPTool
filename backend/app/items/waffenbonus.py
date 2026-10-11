@@ -33,20 +33,27 @@ def ki_schaden_roh(daten: dict):
     return daten.get("schadensbonus")
 
 
-def waffenfelder(typ: str, roh, art=None) -> dict:
-    """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe).
+# Die meisten Waffen machen tödlichen Schaden. Schlag und Unheilbar sind
+# die Ausnahmen, die man extra setzt (Mark, 10.10.2026).
+SCHADEN_ART_DEFAULT = "schwer"
 
-    schadenArt nur, wenn eine der drei Arten lesbar ist. Fehlende oder
-    wirre Angabe bleibt leer — nicht tödlich raten.
-    """
+
+def schaden_art_fuer_waffe(art=None) -> str:
+    """Lesbare Art, sonst Tödlich. Wirre Angabe nicht durchlassen."""
+    return schaden_art_lesen(art) or SCHADEN_ART_DEFAULT
+
+
+def waffenfelder(typ: str, roh, art=None) -> dict:
+    """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe)."""
     if typ != "Waffe":
         return {}
     wert = schaden_klemmen(roh, typ=typ)
-    felder = {"kraft": wert, "schaden": wert, "istWaffe": True}
-    gelesen = schaden_art_lesen(art)
-    if gelesen:
-        felder["schadenArt"] = gelesen
-    return felder
+    return {
+        "kraft": wert,
+        "schaden": wert,
+        "istWaffe": True,
+        "schadenArt": schaden_art_fuer_waffe(art),
+    }
 
 
 _ART_ALIAS = {

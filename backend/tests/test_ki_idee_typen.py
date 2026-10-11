@@ -325,6 +325,7 @@ def test_waffe_ohne_angabe_bekommt_mindestens_stufe_1():
             daten = create.await_args.args[2]
             assert daten["kraft"] == 1
             assert daten["schaden"] == 1
+            assert daten["schadenArt"] == "schwer"
 
     _run(run())
 

@@ -1,5 +1,5 @@
 import type { Gegenstand } from "./api";
-import { schadenArtLabel } from "./api";
+import { schadenArtFuerWaffe, schadenArtLabel } from "./api";
 
 /**
  * Kurzer "Steckbrief"-Text für die Kachel — die wichtigsten Kampfwerte auf
@@ -25,17 +25,17 @@ export function steckbriefKurz(item: Gegenstand): string[] {
     teile.push(`${item.ruestungKaestchenAktuell}/${item.ruestungKaestchenMax} Käst. · Red. ${item.ruestungReduktionBasis}`);
   } else if (KRAFT_TYPEN.has(item.typ) && item.kraft > 0) {
     const basis = `${kraftLabel(item.typ)} ${item.kraft}`;
-    const art = item.typ === "Waffe" ? schadenArtLabel(item.schadenArt) : "";
+    const art = item.typ === "Waffe" ? schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)) : "";
     teile.push(art ? `${basis} · ${art}` : basis);
-  } else if (item.typ === "Waffe" && schadenArtLabel(item.schadenArt)) {
-    teile.push(schadenArtLabel(item.schadenArt));
+  } else if (item.typ === "Waffe") {
+    teile.push(schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)));
   }
 
   if (item.typ !== "Waffe" && item.istWaffe && item.schaden > 0) {
-    const art = schadenArtLabel(item.schadenArt);
-    teile.push(art ? `Schaden ${item.schaden} · ${art}` : `Schaden ${item.schaden}`);
-  } else if (item.typ !== "Waffe" && item.istWaffe && schadenArtLabel(item.schadenArt)) {
-    teile.push(schadenArtLabel(item.schadenArt));
+    const art = schadenArtLabel(schadenArtFuerWaffe(item.schadenArt));
+    teile.push(`Schaden ${item.schaden} · ${art}`);
+  } else if (item.typ !== "Waffe" && item.istWaffe) {
+    teile.push(schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)));
   }
 
   if (CHROM_TYPEN.has(item.typ) && item.wVerlust > 0) {

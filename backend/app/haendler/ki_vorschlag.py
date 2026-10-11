@@ -125,7 +125,7 @@ _SYSTEM = (
     "— nur relevant für neu erfundene Ware, bei bestehenden Vorlagen wird sie "
     "ignoriert. Bei einer neu erfundenen Waffe schaden 1-12 laut der "
     "Stufe im Waffen-Richtwert, nie 0 und kein Würfelausdruck. schadenArt dann "
-    "schlag, schwer oder aggraviert (Schlag / Tödlich / Unheilbar). Sonst 0 und leer."
+    "schlag, schwer oder aggraviert (Schlag / Tödlich / Unheilbar). Fehlt sie, gilt Tödlich. Sonst 0 und leer."
 )
 
 _SCHEMA = {
@@ -337,7 +337,7 @@ async def ware_anlegen(
         "Spezialanfertigung) darfst du sinnvoll abweichen. "
         "seltenheit 1 (überall erhältlich) bis 5 (Speziallabor/Schwarzmarkt). "
         "Ist der Typ Waffe: schaden 1-12 laut Richtwert, nie 0, kein Würfelausdruck. "
-        "schadenArt dann schlag, schwer oder aggraviert. Sonst schaden 0 und schadenArt leer."
+        "schadenArt dann schlag, schwer oder aggraviert. Fehlt sie, gilt Tödlich. Sonst schaden 0 und schadenArt leer."
     )
     ergebnis = await generiere_json(
         f"Laden: {haendler['name']}\nKategorie: {typ}\nWunsch: {prompt.strip()}",

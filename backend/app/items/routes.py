@@ -12,6 +12,7 @@ from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
+from app.items.waffenbonus import schaden_art_fuer_waffe
 from app.items.schemas import (
     AblageRequest,
     AblageZiel,
@@ -124,7 +125,11 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "slot": body.slot,
         "istWaffe": body.istWaffe,
         "schaden": body.schaden,
-        "schadenArt": body.schadenArt,
+        "schadenArt": (
+            schaden_art_fuer_waffe(body.schadenArt)
+            if body.typ == "Waffe" or body.istWaffe
+            else (body.schadenArt or "")
+        ),
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "riggerBonus": body.riggerBonus,

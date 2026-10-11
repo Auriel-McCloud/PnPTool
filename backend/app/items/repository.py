@@ -2,6 +2,7 @@ import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
+from app.items.waffenbonus import schaden_art_fuer_waffe
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
@@ -142,7 +143,10 @@ def _decode(record: dict) -> dict:
     # Bestandsdaten haben das Feld nicht. Unbekannter Müll wird leer, sonst
     # reisst ein alter Freitext die ganze Liste mit 500 herunter (Stolperstein 9).
     art = record.get("schadenArt") or ""
-    record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
+    if record.get("typ") == "Waffe" or record.get("istWaffe"):
+        record["schadenArt"] = schaden_art_fuer_waffe(art)
+    else:
+        record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
     for feld in ("traitBoni", "ausruestungsfertigkeiten"):
         try:
             roh = record.get(feld)

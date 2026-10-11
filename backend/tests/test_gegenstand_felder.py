@@ -58,12 +58,15 @@ def test_chromwerte_kommen_an():
     assert daten["slot"] == 2
 
 
-def test_schaden_art_kommt_an_und_bleibt_leer():
+def test_schaden_art_waffe_ist_toedlich_wenn_leer():
     leer = GegenstandCreate(name="Dolch", typ="Waffe", istWaffe=True, schaden=2)
-    assert _create_data(leer, False, "GM", [])["schadenArt"] == ""
+    assert _create_data(leer, False, "GM", [])["schadenArt"] == "schwer"
 
-    gesetzt = GegenstandCreate(name="Dolch", typ="Waffe", schadenArt="schwer")
-    assert _create_data(gesetzt, False, "GM", [])["schadenArt"] == "schwer"
+    gesetzt = GegenstandCreate(name="Dolch", typ="Waffe", schadenArt="schlag")
+    assert _create_data(gesetzt, False, "GM", [])["schadenArt"] == "schlag"
+
+    jacke = GegenstandCreate(name="Jacke", typ="Sonstiges")
+    assert _create_data(jacke, False, "GM", [])["schadenArt"] == ""
 
 
 def test_unbekannte_schaden_art_wird_abgelehnt():

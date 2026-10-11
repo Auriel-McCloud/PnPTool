@@ -71,7 +71,7 @@ export interface Gegenstand {
   schaden: number;
   /**
    * Schlag / Tödlich / Unheilbar — dieselben drei wie im Treffer-Dialog.
-   * Leer, solange niemand es gesetzt hat. Bestandsdaten bleiben leer.
+   * Waffen ohne gesetzte Art gelten als Tödlich.
    */
   schadenArt: SchadenArt;
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
@@ -199,8 +199,11 @@ export interface AblageZiel {
  * an der Person, nicht am Gegenstand: siehe bogenApi.ruestungTreffer. */
 export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
 
-/** Leer = noch nicht gesetzt. Werte decken sich mit RuestungsArt. */
+/** Leer = noch nicht gesetzt. Waffen ohne Wert gelten als Tödlich. */
 export type SchadenArt = "" | RuestungsArt;
+
+/** Die meisten Waffen. Schlag und Unheilbar setzt man extra. */
+export const SCHADEN_ART_DEFAULT: RuestungsArt = "schwer";
 
 /** Tischsprache, dieselbe wie im Treffer-Dialog — nicht die Kästchen-Namen. */
 export const SCHADEN_ART_LABEL: Record<RuestungsArt, string> = {
@@ -208,6 +211,11 @@ export const SCHADEN_ART_LABEL: Record<RuestungsArt, string> = {
   schwer: "Tödlich",
   aggraviert: "Unheilbar",
 };
+
+export function schadenArtFuerWaffe(art: string | undefined): RuestungsArt {
+  if (art === "schlag" || art === "schwer" || art === "aggraviert") return art;
+  return SCHADEN_ART_DEFAULT;
+}
 
 export function schadenArtLabel(art: string | undefined): string {
   if (art === "schlag" || art === "schwer" || art === "aggraviert") return SCHADEN_ART_LABEL[art];

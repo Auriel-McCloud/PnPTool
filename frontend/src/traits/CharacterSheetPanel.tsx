@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, RUESTUNGSBONUS_MAX, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
+import { ABLAGEN, itemsApi, RUESTUNGSBONUS_MAX, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -101,11 +101,10 @@ function SchadensartFeld({
     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", marginTop: 6 }}>
       Schadensart
       <select
-        value={wert}
+        value={wert === "schlag" || wert === "schwer" || wert === "aggraviert" ? wert : "schwer"}
         title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Unheilbar geht voll durch."
         onChange={(e) => onChange(e.target.value as SchadenArt)}
       >
-        <option value="">— offen —</option>
         <option value="schlag">{SCHADEN_ART_LABEL.schlag}</option>
         <option value="schwer">{SCHADEN_ART_LABEL.schwer}</option>
         <option value="aggraviert">{SCHADEN_ART_LABEL.aggraviert}</option>
@@ -229,7 +228,9 @@ export function GegenstandRow({
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
   const [schaden, setSchaden] = useState(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
-  const [schadenArt, setSchadenArt] = useState<SchadenArt>(item.schadenArt ?? "");
+  const [schadenArt, setSchadenArt] = useState<SchadenArt>(
+    item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
+  );
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
@@ -340,7 +341,7 @@ export function GegenstandRow({
     setSlot(item.slot);
     setIstWaffe(item.istWaffe);
     setSchaden(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
-    setSchadenArt(item.schadenArt ?? "");
+    setSchadenArt(item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""));
     setInitiativeBonus(item.initiativeBonus);
     setZusatzaktionen(item.zusatzaktionen);
     setTraitBoni(
@@ -441,7 +442,7 @@ export function GegenstandRow({
       slot,
       istWaffe,
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
-      schadenArt,
+      schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
       initiativeBonus,
       zusatzaktionen,
       traitBoni: Object.fromEntries(
@@ -718,7 +719,7 @@ export function GegenstandRow({
                       <li>Schaden: {typ === "Waffe" ? schaden || kraft : schaden}</li>
                     )}
                     {(typ === "Waffe" || istWaffe) && (
-                      <li>Schadensart: {schadenArtLabel(schadenArt) || "offen"}</li>
+                      <li>Schadensart: {schadenArtLabel(schadenArtFuerWaffe(schadenArt))}</li>
                     )}
                     {typ === "Rüstung" && (
                       <li>
@@ -870,7 +871,14 @@ export function GegenstandRow({
                       </label>
                     )}
                     <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
-                      <input type="checkbox" checked={istWaffe} onChange={(e) => setIstWaffe(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        checked={istWaffe}
+                        onChange={(e) => {
+                          setIstWaffe(e.target.checked);
+                          if (e.target.checked) setSchadenArt(schadenArtFuerWaffe(schadenArt));
+                        }}
+                      />
                       zählt zusätzlich als Waffe
                     </label>
                     {istWaffe && (
