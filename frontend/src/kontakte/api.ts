@@ -35,6 +35,8 @@ export interface Kontakt {
   persoenlicheNotizen: string;
   chatOffen: boolean;
   ungelesen: number;
+  /** Noch kein Inhalt — der Spieler befüllt ihn per eigenem Wunsch (generieren). */
+  istBlankoKontakt: boolean;
 }
 
 export interface KontaktGm extends Kontakt {
@@ -91,6 +93,9 @@ export const kontakteApi = {
   /** Kontaktanfrage stellen — erst ab „gesprochen“, und nur einmal. */
   anfragen_stellen: (cid: string, kontaktId: string) =>
     api.post<Kontakt>(`${basis(cid)}/${kontaktId}/anfrage`),
+  /** Blanko-Kontakt per eigenem Wunsch von der KI befüllen lassen. */
+  generieren: (cid: string, kontaktId: string, prompt: string) =>
+    api.post<Kontakt>(`${basis(cid)}/${kontaktId}/generieren`, { prompt }),
   /** Nur SL: als der NPC annehmen oder ablehnen. */
   entscheiden: (cid: string, kontaktId: string, annehmen: boolean) =>
     api.post<KontaktGm>(`${basis(cid)}/${kontaktId}/anfrage/entscheiden`, { annehmen }),

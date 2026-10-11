@@ -35,6 +35,18 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **KI-Charakter geht im Tutorial-Shop einkaufen, Mentor/Kontakte-Pipeline**
+  (11.10.2026, siehe „Zuletzt gebaut" unten): kompletter neuer Flow, nie im
+  Browser angeklickt und nie gegen einen echten KI-Call getestet. Bitte: (1)
+  in einem Tutorial-Shop ein paar Waren eintragen, dann in der Ideenschmiede
+  „✨ Charakter" auslösen und prüfen, dass der neue NPC tatsächlich Sachen im
+  Inventar hat und sein Kapital gesunken ist; (2) einen PC mit Mentor-
+  Hintergrundpunkten erstellen und prüfen, dass ein voll ausgearbeiteter
+  Mentor-NPC mit Kontakt-Eintrag entsteht; (3) einen PC mit Kontakte-
+  Hintergrundpunkten erstellen, prüfen dass leere „Unbekannter Kontakt"-
+  Plätze auftauchen, einen antippen, einen Wunsch eingeben und prüfen dass
+  daraus ein echter Kontakt mit offenem Chat wird.
+
 - **Waffenschaden aus der Beratung** (10.10.2026): Sechs Entwürfe auf bebop
   haben jetzt einen Schaden (Kachel und Kampf lesen `kraft`, nicht die
   WoD-Würfel in den Notizen). Nächste KI-Waffe setzt das Feld selbst.
@@ -362,6 +374,44 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (11.10.2026 — KI-Charakter geht im Tutorial-Shop einkaufen, Mentor/Kontakte-Pipeline):**
+- **Was:** Marks Wunsch: die KI-Charaktererstellung (Ideenschmiede ✨-Charakter
+  + Massenidee, beide über `ki/routes.py::_idee_anlegen`) lässt das Freebee-
+  Kapital nicht mehr ungenutzt liegen, sondern kauft sinnvoll aus dem
+  bestehenden Tutorial-Shop-Sortiment (nie Neues erfinden, KI entscheidet
+  selbst wieviel vom Budget sinnvoll ist — kein Zwang, alles auszugeben).
+  Dazu die bisher fehlende Mentor/Kontakte-Pipeline (analog Kredithai):
+  Mentor-Hintergrundpunkte erzeugen sofort einen vollen, KI-ausgearbeiteten
+  NPC inkl. Einkauf (bestehenden `istMentor`-NPC wiederverwenden, sonst neu).
+  Kontakte-Hintergrundpunkte legen dagegen nur N leere Platzhalter
+  (`istBlankoKontakt`) in der Kontaktliste an — der Spieler tippt sie später
+  im Spiel selbst an und beschreibt per Freitext, wen er braucht, statt alle
+  Kontakte schon bei der Erstellung festzulegen (Marks Entscheidung). Beide
+  Pipelines sind idempotent bei erneuter SL-Korrektur-Einreichung (legen nur
+  Fehlendes nach, löschen nie).
+- **Dateien:** `backend/app/haendler/ki_einkauf.py` (neu), `backend/app/
+  hintergruende/{mentor.py (neu), spawn.py, repository.py}`, `backend/app/
+  ki/routes.py` (Einkauf-Hook im charakter-Zweig), `backend/app/traits/
+  routes.py` (Hook für Mentor/Kontakte-Rating nach Erstellung), `backend/app/
+  kontakte/{routes.py, schemas.py, repository.py, security.py}` (neue Route
+  `POST .../generieren`), `backend/app/entities/{schemas.py, repository.py}`
+  (Felder `istMentor`, `istBlankoKontakt`), `frontend/src/kontakte/
+  {KontakteAnsicht.tsx, api.ts, kontakte.css}` (Blanko-Kontakt-Kachel +
+  Prompt-Popup).
+- **Verifiziert:** neuer Test `test_ki_einkauf_mentor_kontakte.py` (Auswahl-
+  Logik, No-Op-Pfade, Idempotenz — einzeln grün, in Kombination mit der
+  Gesamtsuite gelegentlich die vorbestehende Neo4j/asyncio-Flakiness dieses
+  Projekts unter Windows, siehe andere `test_*`-Dateien mit demselben
+  `AttributeError`). Komplette Backend-Suite sonst unverändert grün,
+  `test_zugriffsschutz.py` unverändert bei denselben 2 vorbestehenden
+  Lücken (nicht von mir verursacht, vor dem Change per `git stash`
+  gegengeprüft). `tsc -b` sauber. **Nie im Browser angeklickt, kein echter
+  KI-Call getestet** — Mistral/Gemini brauchen eine laufende Kampagne mit
+  API-Key.
+- **Nicht dabei:** Rassen-Gratis-Erstkauf-Feature (`gratisErsterKaufTyp`)
+  gilt beim KI-Einkauf nicht, nur beim echten Spieler-Kauf. Kein Digital-
+  Bestellung-Pfad beim KI-Einkauf (Ware landet immer sofort im Inventar).
+
 **Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Auswahl zurück in die Kampagnen-Einstellungen):**
 - **Was:** Mark meldete: Tutorial-Shop-Auswahl steckte als eigener
   Burgermenü-Punkt statt in den Kampagnenoptionen ("wie ausgemacht"), dort
@@ -384,6 +434,42 @@ npm run dev
   (Zeile anklicken → Haken setzt sich) nicht gegen einen echten Laden
   getestet, um nicht in Marks laufender Kampagne einen Test-Ort anzulegen —
   Code ist unverändert zum bereits bestehenden `waehlen()`-Handler.
+
+**Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Sektion überlagerte sich im Einstellungen-Popup):**
+- **Was:** Mark meldete nach dem obigen Fix: Tutorial-Shop-Sektion ist jetzt
+  in den Einstellungen, aber überlagert sich mit der folgenden KI-Sektion
+  (Screenshot zeigte Tabellenzeilen und KI-Dropdown übereinander). "Fix
+  einprogrammiert" (keine echte Auswahl möglich) war dabei KEIN Bug — in der
+  DB stand korrekt nur ein Ort als Laden, der bereits `istTutorialShop=true`
+  hatte (Marks eigener Klick hatte funktioniert, nur gab's nichts zum
+  Vergleichen).
+- **Root Cause (echter Bug, per CDP live auf bebop verifiziert):** `.zf-seite`
+  (gemeinsame Klasse mit `ZusatzfertigkeitenVerwaltung`/
+  `HintergruendeVerwaltung`) setzt `min-height: 0` — nötig, wenn sie als
+  GANZE Bereichsseite den vollen verfügbaren Platz ausfüllt und selbst
+  schrumpfen/scrollen muss. Eingebettet zwischen vielen Settings-Abschnitten
+  im `.fn-inhalt`-Flex-Stack sorgt genau dieses `min-height:0` dafür, dass
+  der Flexbox-Shrink-Algorithmus die GANZE Sektion auf `offsetHeight: 0`
+  zusammendrückt, sobald der Dialog nicht genug Platz hat — andere
+  Geschwister (h4, Schalter) haben kein `min-height:0`, können also nicht
+  schrumpfen, der ganze Druck landet auf `.zf-seite`. `overflow: visible`
+  lässt den Inhalt (`scrollHeight` korrekt 171px) trotzdem sichtbar
+  rendern — nur eben außerhalb seiner eigenen (kollabierten) Box, über dem
+  nächsten Abschnitt liegend.
+- **Fix:** `<TutorialShopVerwaltung>` in `EinstellungenFenster.tsx` in einen
+  `<div style={{ flexShrink: 0 }}>`-Wrapper gepackt. Macht `.zf-seite` selbst
+  zum Kind eines nicht-flexenden Divs, komplett raus aus der Shrink-Rechnung
+  — ohne die geteilte `.zf-seite`-Klasse anzufassen (bleibt für ihren
+  Vollbild-Einsatz unverändert).
+- **Verifiziert:** Fix per `el.style.flexShrink='0'` LIVE im DOM auf
+  `pnptool.aurielmc.cloud` getestet, bevor der Code geändert wurde
+  (`offsetHeight` 0→171px). Danach Code gebaut, deployed, nochmal live
+  gegen den echten Build bestätigt (`offsetHeight === scrollHeight === 171`,
+  Screenshot sauber). Generelle Lektion: `min-height: 0` auf einer geteilten
+  Komponenten-Klasse ist nicht automatisch sicher in jedem Einsatzkontext —
+  bei neuer Einbettung in einen bestehenden Flex-Stack mit vielen
+  Geschwistern immer `offsetHeight` der Sektion gegenprüfen, nicht nur
+  `tsc -b`.
 
 **Zuletzt gebaut (10.10.2026 — Rüstungs-Steckbrief: Reduktion + Kästchen):**
 - **Was:** „Rüstungsbonus“ ist aus Steckbrief und Umbauen raus. Stattdessen

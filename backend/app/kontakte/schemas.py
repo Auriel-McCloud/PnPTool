@@ -44,6 +44,10 @@ class KontaktResponse(BaseModel):
     # Nur-Lesen: Spieler kann empfangen aber nicht antworten (Händler-Werbung, Spam)
     nurLesen: bool = False
     ungelesen: int = 0
+    # Blanko-Kontakt (11.10.2026): noch kein Inhalt — der Spieler befüllt ihn
+    # per eigenem Wunsch (siehe POST .../generieren), statt dass die KI alle
+    # Kontakte schon bei der Erstellung festlegt.
+    istBlankoKontakt: bool = False
 
 
 class KontaktGmResponse(KontaktResponse):
@@ -88,6 +92,13 @@ class KontaktCreate(BaseModel):
     stufe: Kontaktstufe = "GESEHEN"
     chatOffen: bool = False
     nurLesen: bool = False
+
+
+class KontaktGenerierenInput(BaseModel):
+    """Spieler-Wunsch zum Befüllen eines Blanko-Kontakt-Platzes per KI
+    (11.10.2026, siehe entities/schemas.py::PersonCreate.istBlankoKontakt)."""
+
+    prompt: str = Field(min_length=1, max_length=2000)
 
 
 class AnfrageEntscheidung(BaseModel):

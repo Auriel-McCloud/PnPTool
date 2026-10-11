@@ -140,6 +140,17 @@ class PersonCreate(BaseModel):
     # Kredithai (10.10.2026): Flag wie istHaendler. Bestehende Haie werden
     # bei Schulden aus Kredit-Freebees wiederverwendet statt neu angelegt.
     istKredithai: bool = False
+    # Mentor (11.10.2026, analog Kredithai): Flag für einen bestehenden
+    # Mentor-NPC, der bei weiteren PCs mit Mentor-Hintergrund wiederverwendet
+    # werden kann statt jedes Mal neu generiert zu werden.
+    istMentor: bool = False
+    # Blanko-Kontakt (11.10.2026, Marks Konzept): Platzhalter-NPC aus dem
+    # Kontakte-Hintergrund — taucht in der Kontaktliste des PCs auf, aber
+    # noch ohne Inhalt. Der Spieler befüllt ihn per eigenem Wunsch/Prompt,
+    # sobald er ihn im Spiel braucht (siehe kontakte/routes.py::
+    # kontakt_generieren), statt alle Kontakte schon bei der Erstellung
+    # festlegen zu müssen.
+    istBlankoKontakt: bool = False
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -252,6 +263,8 @@ class PersonUpdate(BaseModel):
     gesundheitGrundwert: int | None = None
     istEndboss: bool | None = None
     istKredithai: bool | None = None
+    istMentor: bool | None = None
+    istBlankoKontakt: bool | None = None
     istVorgefertigt: bool | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
@@ -312,6 +325,8 @@ class PersonResponse(BaseModel):
     gesundheitGrundwert: int = -1
     istEndboss: bool = False
     istKredithai: bool = False
+    istMentor: bool = False
+    istBlankoKontakt: bool = False
     istVorgefertigt: bool = False
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"

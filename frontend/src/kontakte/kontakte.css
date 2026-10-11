@@ -109,6 +109,33 @@
   color: var(--neon);
 }
 
+/* --------------------------------------------------------- Blanko-Kontakt */
+
+.ko-eintrag-blanko {
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+.ko-eintrag-blanko .ko-alias {
+  color: var(--text-leise);
+  font-style: italic;
+}
+
+.ko-generieren-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1);
+}
+
+.ko-generieren-form textarea {
+  resize: vertical;
+  font: inherit;
+}
+
+.ko-generieren-form button {
+  align-self: flex-start;
+}
+
 /* --------------------------------------------------------------- Steckbrief */
 
 .ko-grossbild {

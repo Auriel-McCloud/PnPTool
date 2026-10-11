@@ -55,6 +55,7 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
         chatOffen=bool(chat_offen),
         nurLesen=bool(roh.get("nurLesen")),
         ungelesen=int(roh.get("ungelesen") or 0),
+        istBlankoKontakt=bool(roh.get("npcIstBlankoKontakt")),
     )
 
 
@@ -83,6 +84,7 @@ def kontakt_fuer_gm(roh: dict) -> KontaktGmResponse:
         chatOffen=bool(chat_offen),
         nurLesen=bool(roh.get("nurLesen")),
         ungelesen=int(roh.get("ungelesen") or 0),
+        istBlankoKontakt=bool(roh.get("npcIstBlankoKontakt")),
     )
 
 

@@ -17,6 +17,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
+from app.entities import repository as entities_repository
+from app.entities.repository import PERSON_FIELDS
+from app.hintergruende import repository as hintergruende_repository
+from app.ki.routes import _idee_anlegen as ki_charakter_generieren
 from app.kontakte import repository
 from app.mitteilungen import repository as mitteilungen_repo
 from app.mitteilungen.verteiler import verteiler
@@ -32,6 +36,7 @@ from app.kontakte.schemas import (
     AnfrageEntscheidung,
     ChatResponse,
     KontaktCreate,
+    KontaktGenerierenInput,
     KontaktGmResponse,
     KontaktGmUpdate,
     KontaktResponse,
@@ -156,6 +161,49 @@ async def notizen_setzen(
     await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
     roh = await repository.aendern(campaign_id, kontakt_id, {"persoenlicheNotizen": body.inhalt})
     return kontakt_fuer_viewer(roh, viewer)
+
+
+@router.post("/{kontakt_id}/generieren", response_model=KontaktResponse)
+async def kontakt_generieren(
+    campaign_id: str, kontakt_id: str, body: KontaktGenerierenInput, viewer: Viewer = Depends(get_viewer)
+):
+    """Befüllt einen Blanko-Kontakt-Platz per KI, ausgelöst vom Spieler-Wunsch.
+
+    Blanko-Kontakte entstehen aus dem Kontakte-Hintergrund bei der
+    Charaktererstellung (siehe hintergruende/spawn.py::
+    kontakte_nach_erstellung) — noch ohne Inhalt. Statt alle Kontakte schon
+    bei der Erstellung festzulegen, tippt der Spieler erst im Spiel auf
+    einen leeren Platz und beschreibt, wen/was er braucht (Marks Vorgabe
+    11.10.2026). Der Platzhalter-NPC wird ersetzt: ein neuer, von der KI
+    voll ausgearbeiteter NPC (inkl. Tutorial-Shop-Einkauf, derselbe Flow wie
+    die Ideenschmiede-Charaktererstellung) bekommt die KENNT-Kante, der alte
+    Platzhalter verschwindet.
+    """
+    roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
+    npc = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, roh["npcId"])
+    if npc is None or not npc.get("istBlankoKontakt"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieser Kontakt ist schon ausgearbeitet.")
+
+    wunsch = body.prompt.strip()
+    if not wunsch:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Wunsch darf nicht leer sein.")
+
+    prompt = (
+        f"Erzeuge einen Kontakt-NPC für {roh.get('pcName') or 'den Charakter'} — "
+        f"Wunsch des Spielers, wer/was dieser Kontakt sein soll: {wunsch}"
+    )
+    erzeugt = await ki_charakter_generieren(campaign_id, "charakter", prompt)
+
+    neuer_kontakt = await repository.anlegen(
+        campaign_id, roh["pcId"], erzeugt["id"], stufe="GESPROCHEN", chat_offen=True
+    )
+    await hintergruende_repository.fuege_kontaktslot_hinzu(campaign_id, roh["pcId"], erzeugt["id"])
+    await repository.loeschen(campaign_id, kontakt_id)
+    await entities_repository.delete_node("Person", campaign_id, roh["npcId"])
+
+    if neuer_kontakt is None:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Kontakt konnte nicht angelegt werden")
+    return kontakt_fuer_viewer(neuer_kontakt, viewer)
 
 
 @router.post("/{kontakt_id}/anfrage", response_model=KontaktResponse)

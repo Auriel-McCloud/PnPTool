@@ -28,7 +28,11 @@ from app.kampf.ruestung import (
     verteile_kaestchenschaden,
 )
 from app.ki.client import KiFehler, generiere_json
-from app.hintergruende.spawn import nach_erstellung as kredithai_nach_erstellung
+from app.hintergruende.spawn import (
+    kontakte_nach_erstellung,
+    mentor_nach_erstellung,
+    nach_erstellung as kredithai_nach_erstellung,
+)
 from app.rassen import repository as rassen_repository
 from app.traits import berater, erfahrung, erstellung, repository
 from app.traits.bogen import (
@@ -812,6 +816,26 @@ async def erstelle_charakter(
         except Exception:
             logging.getLogger(__name__).exception(
                 "Kredithai nach Erstellung fehlgeschlagen (person=%s)", person_id
+            )
+
+    # Mentor/Kontakte aus Hintergrundpunkten (11.10.2026): derselbe
+    # Grundsatz wie Kredithai — der PC ist auch fertig, wenn das hier
+    # scheitert, siehe hintergruende/spawn.py.
+    mentor_rating = int(werte.get("Mentor") or 0)
+    if mentor_rating > 0:
+        try:
+            await mentor_nach_erstellung(campaign_id, person_id, body.name.strip(), mentor_rating)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Mentor-Pipeline nach Erstellung fehlgeschlagen (person=%s)", person_id
+            )
+    kontakte_rating = int(werte.get("Kontakte") or 0)
+    if kontakte_rating > 0:
+        try:
+            await kontakte_nach_erstellung(campaign_id, person_id, kontakte_rating)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Kontakte-Pipeline nach Erstellung fehlgeschlagen (person=%s)", person_id
             )
 
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)

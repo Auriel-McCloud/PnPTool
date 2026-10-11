@@ -199,6 +199,67 @@ async def setze_kredithai(campaign_id: str, person_id: str, hai_id: str, rating:
         )
 
 
+async def hole_mentor(campaign_id: str, person_id: str) -> dict | None:
+    """HAT_MENTOR des PCs, sonst None."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[r:HAT_MENTOR]->(m:Person)
+        RETURN m.id AS mentorId, r.rating AS rating, m.name AS name, m.istEntwurf AS istEntwurf
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def setze_mentor(campaign_id: str, person_id: str, mentor_id: str, rating: int) -> None:
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (m:Person {id: $mentor_id, campaignId: $campaign_id})
+        MERGE (p)-[r:HAT_MENTOR]->(m)
+        SET r.rating = $rating
+    """
+    async with driver.session() as session:
+        await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            mentor_id=mentor_id,
+            rating=int(rating),
+        )
+
+
+async def kontaktslots_der_person(campaign_id: str, person_id: str) -> list[dict]:
+    """Alle Kontakt-NPCs, die aus dem Kontakte-Hintergrund dieser Person
+    entstanden sind — egal ob noch Blanko-Platzhalter oder längst befüllt.
+
+    Grundlage für eine idempotente erneute Einreichung der Erstellung: ein
+    höheres Rating legt nur die FEHLENDEN Plätze nach, nie Duplikate; ein
+    gesunkenes Rating löscht nichts (Marks Vorgabe: reversibel, kein
+    Datenverlust).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:HAT_KONTAKTSLOT]->(n:Person)
+        RETURN n.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [dict(r) async for r in result]
+
+
+async def fuege_kontaktslot_hinzu(campaign_id: str, person_id: str, npc_id: str) -> None:
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (n:Person {id: $npc_id, campaignId: $campaign_id})
+        MERGE (p)-[:HAT_KONTAKTSLOT]->(n)
+    """
+    async with driver.session() as session:
+        await session.run(query, campaign_id=campaign_id, person_id=person_id, npc_id=npc_id)
+
+
 async def setze_schuldet_verbindung(
     campaign_id: str, person_id: str, hai_id: str, beschreibung: str
 ) -> None:

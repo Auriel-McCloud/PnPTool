@@ -113,6 +113,10 @@ OHNE_GM_ERLAUBT = {
     # Eigener Alias ("der Schläger vom Hafen"). Der NPC-Standardalias bleibt
     # der Spielleitung vorbehalten, weil er alle Kontakte betrifft.
     "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/alias",
+    # Blanko-Kontakt per eigenem Wunsch befüllen (11.10.2026). Prüft den
+    # Besitz des Kontakts (_kontakt_oder_404) wie chat/notizen/alias oben,
+    # UND dass der NPC dahinter noch istBlankoKontakt ist (409 danach).
+    "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/generieren",
     # Spieler darf Augments selbst einsetzen (nicht entfernen — das prüft
     # die Route selbst: Entfernen gibt 403 für Spieler).
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/chirurgie",

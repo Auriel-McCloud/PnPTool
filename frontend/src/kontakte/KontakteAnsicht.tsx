@@ -15,6 +15,10 @@ import "./kontakte.css";
 export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
   const [kontakte, setKontakte] = useState<Kontakt[]>([]);
   const [offen, setOffen] = useState<Kontakt | null>(null);
+  const [generierenZiel, setGenerierenZiel] = useState<Kontakt | null>(null);
+  const [wunsch, setWunsch] = useState("");
+  const [generiertLaedt, setGeneriertLaedt] = useState(false);
+  const [generierenFehler, setGenerierenFehler] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
   const [aliasEntwurf, setAliasEntwurf] = useState("");
@@ -53,6 +57,22 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
     await laden();
   }
 
+  async function wunschAbsenden() {
+    if (!generierenZiel || !wunsch.trim()) return;
+    setGeneriertLaedt(true);
+    setGenerierenFehler(null);
+    try {
+      await kontakteApi.generieren(campaignId, generierenZiel.id, wunsch.trim());
+      setGenerierenZiel(null);
+      setWunsch("");
+      await laden();
+    } catch (e) {
+      setGenerierenFehler(e instanceof Error ? e.message : "Konnte nicht angelegt werden");
+    } finally {
+      setGeneriertLaedt(false);
+    }
+  }
+
   if (laedt) return <p className="ko-leise">Lädt…</p>;
   if (fehler) return <p className="ko-fehler">{fehler}</p>;
 
@@ -69,6 +89,23 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
       <ul className="ko-liste">
         {kontakte.map((k) => {
           const stufe = STUFEN.find((s) => s.wert === k.stufe);
+          if (k.istBlankoKontakt) {
+            return (
+              <li
+                key={k.id}
+                className="ko-eintrag ko-eintrag-blanko"
+                onClick={() => setGenerierenZiel(k)}
+              >
+                <span className="ko-bild ko-bild-leer" aria-hidden="true">
+                  ？
+                </span>
+                <span className="ko-namen">
+                  <span className="ko-alias">Unbekannter Kontakt</span>
+                </span>
+                <span className="ko-stufe">Tippen zum Anlegen</span>
+              </li>
+            );
+          }
           return (
             <li key={k.id} className="ko-eintrag" onClick={() => setOffen(k)}>
               {k.bildUrl ? (
@@ -137,6 +174,43 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
           )}
 
           <ChatFenster campaignId={campaignId} kontakt={offen} onGeaendert={laden} />
+        </Fenster>
+      )}
+
+      {generierenZiel && (
+        <Fenster
+          titel="Unbekannter Kontakt"
+          unterzeile="Wer oder was soll das sein?"
+          kennung={`kontakt-generieren:${generierenZiel.id}`}
+          offen={true}
+          onSchliessen={() => {
+            setGenerierenZiel(null);
+            setWunsch("");
+            setGenerierenFehler(null);
+          }}
+        >
+          <p className="ko-leise">
+            Beschreib kurz, wen du hier brauchst — die KI arbeitet daraus
+            einen vollständigen Kontakt aus (inkl. Ausrüstung, falls
+            sinnvoll). Das lässt sich danach nicht mehr rückgängig machen.
+          </p>
+          <div className="ko-generieren-form">
+            <textarea
+              value={wunsch}
+              onChange={(e) => setWunsch(e.target.value)}
+              placeholder="z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              rows={3}
+              disabled={generiertLaedt}
+            />
+            {generierenFehler && <p className="ko-fehler">{generierenFehler}</p>}
+            <button
+              type="button"
+              disabled={generiertLaedt || !wunsch.trim()}
+              onClick={() => void wunschAbsenden()}
+            >
+              {generiertLaedt ? "Wird angelegt…" : "Anlegen"}
+            </button>
+          </div>
         </Fenster>
       )}
     </div>

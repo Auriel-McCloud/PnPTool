@@ -25,7 +25,8 @@ KONTAKT_FELDER = """
     r.alias AS persoenlicherAlias, r.persoenlicheNotizen AS persoenlicheNotizen,
     pc.id AS pcId, pc.name AS pcName,
     npc.id AS npcId, npc.name AS npcName, npc.alias AS npcAlias,
-    npc.rasse AS npcRasse, npc.bildUrl AS npcBildUrl, npc.description AS npcDescription
+    npc.rasse AS npcRasse, npc.bildUrl AS npcBildUrl, npc.description AS npcDescription,
+    coalesce(npc.istBlankoKontakt, false) AS npcIstBlankoKontakt
 """
 
 

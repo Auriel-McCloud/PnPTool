@@ -64,7 +64,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istHaendler", "istTutorialHaendler", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -124,6 +124,10 @@ _BOGEN_DEFAULTS: dict = {
     # (Stolperstein 9).
     "istEndboss": False,
     "istKredithai": False,
+    # Mentor/Blanko-Kontakt (11.10.2026): Bestandsdaten kennen die Felder
+    # noch nicht — ohne Ersatz scheitert GET /personen (Stolperstein 9).
+    "istMentor": False,
+    "istBlankoKontakt": False,
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
