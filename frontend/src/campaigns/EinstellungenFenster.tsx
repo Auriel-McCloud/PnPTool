@@ -234,7 +234,17 @@ export function EinstellungenFenster({
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             TUTORIAL-SHOP
           </h4>
-          <TutorialShopVerwaltung campaignId={campaignId} />
+          {/* flexShrink:0 (11.10.2026): .zf-seite setzt min-height:0 für ihren
+              anderen Einsatz als volle Bereichsseite (dort muss sie schrumpfen
+              dürfen, damit intern gescrollt wird). Hier im Einstellungen-Popup
+              mit vielen Geschwister-Abschnitten drückt dasselbe min-height:0
+              die ganze Sektion auf 0px zusammen, sobald der Dialog nicht genug
+              Platz hat — Inhalt rendert dann unsichtbar-hoch und überlagert
+              den nächsten Abschnitt. Der Wrapper hält sie auf ihrer echten
+              Höhe, ohne die geteilte .zf-seite-Klasse anzufassen. */}
+          <div style={{ flexShrink: 0 }}>
+            <TutorialShopVerwaltung campaignId={campaignId} />
+          </div>
 
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             KI
