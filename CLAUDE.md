@@ -454,6 +454,28 @@ npm run dev
   bleiben unverändert. Testauswahl am Ende bewusst NICHT abgeschickt, um
   Marks echtes Sortiment nicht zu verändern. `tsc -b` sauber.
 
+**Zuletzt gebaut (11.10.2026 — Shop-Sortiment: Mehrfachauswahl statt Ein-Klick-Schließen):**
+- **Was:** Mark direkt im Anschluss an die Ware-Auswahl: "ich klicke auf eine
+  Sache und das Fenster geht wieder zu" — jeder Klick wählte genau EIN
+  Gegenstand und schloss sofort, beim Sortiment-Aufbau mit vielen Gegenständen
+  mühsam. `VorlagenAuswahlPopup` toggelt jetzt die Auswahl pro Klick (Neon-
+  Outline + Haken-Marke, Popup bleibt offen, Auswahl übersteht auch
+  Such-Wechsel dazwischen), ein optionaler gemeinsamer Preis gilt für den
+  ganzen Schwung, "N Waren hinzufügen" schickt am Ende alles auf einmal ab.
+- **Dateien:** `haendler/VorlagenAuswahlPopup.tsx` (Prop `onWaehlen` →
+  `onHinzufuegen(ids[], preis?)`), `haendler/HaendlerBearbeiten.tsx`
+  (`neueWareId`/`neuerPreis`-States raus, ein `vorlagenHinzufuegen`-Loop
+  rein), `haendler/shop.css` (`[data-gewaehlt]`-Outline + Haken-Marke, bewusst
+  `outline` statt `border`/`box-shadow`, damit es den Seltenheitsrahmen nicht
+  überschreibt).
+- **Verifiziert:** echter Browser-Klicktest live auf bebop gegen den
+  Tutorial-Shop — zwei Gegenstände über zwei verschiedene Suchen hinweg
+  ausgewählt (Auswahl blieb beim Suche-Wechsel erhalten), Knopf zählte
+  korrekt auf "2 Waren hinzufügen" hoch, ein Abschicken hat beide wirklich
+  ins Sortiment gelegt (API-Aufrufe real durchgelaufen) — danach bewusst
+  wieder entfernt, um Marks echtes Sortiment nicht zu verändern. `tsc -b`
+  sauber.
+
 **Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Sektion überlagerte sich im Einstellungen-Popup):**
 - **Was:** Mark meldete nach dem obigen Fix: Tutorial-Shop-Sektion ist jetzt
   in den Einstellungen, aber überlagert sich mit der folgenden KI-Sektion
