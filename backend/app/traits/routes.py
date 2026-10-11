@@ -22,6 +22,7 @@ from app.items.repository import (
 )
 from app.items import repository as items_repository
 from app.kampf.ruestung import (
+    anwende_natuerliche_ruestung,
     berechne_treffer,
     pool,
     uebersicht as ruestungs_uebersicht,
@@ -34,7 +35,7 @@ from app.hintergruende.spawn import (
     nach_erstellung as kredithai_nach_erstellung,
 )
 from app.rassen import repository as rassen_repository
-from app.traits import berater, erfahrung, erstellung, repository
+from app.traits import berater, erfahrung, erstellung, rast, repository
 from app.traits.bogen import (
     bogen_uebersicht,
     sichtbare_kategorien,
@@ -97,6 +98,12 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog}, bool(person.get("istKI")))
+    # Natürliche Rüstung (11.10.2026): Kästchen-Max kommt live aus der
+    # Widerstandsfähigkeit-Rating, nicht aus dem gespeicherten Item-Wert
+    # (siehe kampf/ruestung.py::anwende_natuerliche_ruestung).
+    ruestungsteile_live = anwende_natuerliche_ruestung(
+        await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+    )
 
     return {
         "person": {"id": person["id"], "name": person["name"], "personType": person["personType"], "istKI": bool(person.get("istKI"))},
@@ -115,7 +122,7 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         # Rüstung als dritte Kästchenreihe neben Gesundheit und Willenskraft
         # (siehe docs/api/ruestung.md). Kommt fertig gerechnet vom Server,
         # damit die Pool-Regel nicht im Blatt nachgebaut wird.
-        "ruestung": ruestungs_uebersicht(await ruestungsteile(campaign_id, person_id)),
+        "ruestung": ruestungs_uebersicht(ruestungsteile_live),
         "katalog": [t for t in katalog if t["category"] in erlaubt],
         "werte": werte,
     }
@@ -382,7 +389,17 @@ async def ruestungstreffer(
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
-    gesamt = pool(await ruestungsteile(campaign_id, person_id))
+    # Werte früh holen (statt erst am Ende wie sonst üblich): natürliche
+    # Rüstung (11.10.2026) braucht die Widerstandsfähigkeit-Rating schon für
+    # den Pool, nicht erst für die abschliessende Bogen-Übersicht. Eine
+    # zweite Abfrage am Ende entfällt dadurch — die Werte der Person ändern
+    # sich innerhalb dieser Route nicht.
+    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    nach_name = {w["name"]: w["rating"] for w in werte}
+    ruestungsteile_live = anwende_natuerliche_ruestung(
+        await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+    )
+    gesamt = pool(ruestungsteile_live)
     if gesamt is None:
         # Keine wirksame Rüstung: voller Schaden, unveränderte Art.
         ergebnis = {"hpArt": body.art, "hpMenge": body.staerke, "kaestchenSchaden": 0}
@@ -442,7 +459,6 @@ async def ruestungstreffer(
     )
 
     einstellungen = await get_einstellungen(campaign_id)
-    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
@@ -453,13 +469,111 @@ async def ruestungstreffer(
         betroffen=[RuestungsteilFolge(**f) for f in folgen],
         uebersicht=bogen_uebersicht(
             person,
-            {w["name"]: w["rating"] for w in werte},
+            nach_name,
             cyberwall,
             chrom,
             init_mod,
             einstellungen.get("kampagnenEP", 0),
         ),
     )
+
+
+# =====================================================================
+# Rast-Mechanik (Formel: app/traits/rast.py, Begründung: docs/api/rast.md)
+# =====================================================================
+
+
+class RastInput(BaseModel):
+    """Eine oder mehrere Personen, auf die die Aktion angewendet wird."""
+
+    personIds: list[str] = Field(default_factory=list)
+
+
+async def _bogen_fuer_person(campaign_id: str, person: dict, kampagnen_ep: int) -> dict:
+    """Dieselbe Bogen-Übersicht-Zusammenstellung wie bei `zustand`/`steckbrief`
+    — hier als kleiner Helfer, weil Rasten/Vollheilung sie pro ausgewählter
+    Person wiederholt brauchen (anders als die übrigen Routen, die nur EINE
+    Person je Aufruf behandeln)."""
+    person_id = person["id"]
+    werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    chrom = await willenskraft_verlust(campaign_id, person_id)
+    init_mod = await initiative_modifikator(campaign_id, person_id)
+    return bogen_uebersicht(
+        person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep
+    )
+
+
+@router.post("/personen/rasten", dependencies=[Depends(require_campaign_gm)])
+async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
+    """SL-Aktion "Rasten": EIN Klick = EINE Rast pro ausgewählter Person.
+
+    Formel (Mark, 11.10.2026, siehe docs/api/rast.md und app/traits/rast.py):
+    Schlagschaden heilt immer vollständig, schwerer Schaden sinkt um 1 (mit
+    einem Zähler fürs Unheilbar-Wraparound bei 7), und ist die Person danach
+    komplett gesund, heilt jedes getragene `istNatuerlich`-Rüstungsteil mit
+    Defizit +1 Kästchen — auch schon in dieser Rast. Unberührte Personen-IDs
+    (falsch/gelöscht) werden übersprungen, nicht als Fehler gemeldet, damit
+    eine Mehrfachauswahl nicht an einem einzelnen ungültigen Eintrag scheitert.
+    """
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    ergebnisse: dict[str, dict] = {}
+    for person_id in body.personIds:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        if person is None:
+            continue
+        aenderung = rast.person_aenderung(person)
+        person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, aenderung)
+        if person is None:
+            continue
+
+        if rast.ist_vollstaendig_gesund(aenderung):
+            werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+            nach_name = {w["name"]: w["rating"] for w in werte}
+            teile = anwende_natuerliche_ruestung(
+                await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+            )
+            for folge in rast.ruestung_heilung(teile):
+                await update_gegenstand(
+                    campaign_id, folge["id"], {"ruestungKaestchenAktuell": folge["ruestungKaestchenAktuell"]}
+                )
+
+        ergebnisse[person_id] = await _bogen_fuer_person(campaign_id, person, kampagnen_ep)
+    return ergebnisse
+
+
+@router.post("/personen/vollstaendige-heilung", dependencies=[Depends(require_campaign_gm)])
+async def personen_vollstaendige_heilung(campaign_id: str, body: RastInput) -> dict:
+    """Fallback-Knopf "für den Fall der Fälle": keine Bedingungen, kein
+    Würfeln. Setzt Schaden + Heil-Zähler auf 0 und heilt JEDES getragene
+    Rüstungsteil (auch nicht-natürliches) sofort auf den vollen Max.
+    """
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    ergebnisse: dict[str, dict] = {}
+    for person_id in body.personIds:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        if person is None:
+            continue
+        person = await update_node(
+            "Person", PERSON_FIELDS, campaign_id, person_id, rast.vollheilung_person()
+        )
+        if person is None:
+            continue
+
+        werte = await repository.get_ratings_for_entity(campaign_id, person_id)
+        nach_name = {w["name"]: w["rating"] for w in werte}
+        teile = anwende_natuerliche_ruestung(
+            await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+        )
+        for folge in rast.vollheilung_ruestung(teile):
+            await update_gegenstand(
+                campaign_id, folge["id"], {"ruestungKaestchenAktuell": folge["ruestungKaestchenAktuell"]}
+            )
+
+        ergebnisse[person_id] = await _bogen_fuer_person(campaign_id, person, kampagnen_ep)
+    return ergebnisse
 
 
 # =====================================================================

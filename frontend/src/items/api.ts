@@ -108,6 +108,16 @@ export interface Gegenstand {
    * abdeckt — siehe kampf/ruestung.py::selbstreparatur_ergebnis. */
   istReparaturmaterial: boolean;
   reparaturKapazitaet: number;
+  /**
+   * Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
+   * z.B. Dug'Rahs Chitinpanzer): analog zu `verbaut` bei Cyberware — nicht
+   * ablegbar für den Spieler (GM kann es im Ausnahmefall), nicht reparierbar
+   * (409 auf allen drei Reparatur-Routen), und `ruestungKaestchenMax` wird
+   * serverseitig LIVE aus der Widerstandsfähigkeit der tragenden Person
+   * berechnet statt aus diesem gespeicherten Wert (siehe docs/api/ruestung.md,
+   * Abschnitt „Natürliche Rüstung"). Heilt nur über die Rast-Mechanik.
+   */
+  istNatuerlich: boolean;
 }
 
 /** Fürs Selbst-Reparieren-Popup — Wurfergebnis + Auswertung, siehe
@@ -301,6 +311,7 @@ export interface GegenstandUpdate {
   ruestungReduktionBasis?: number;
   istReparaturmaterial?: boolean;
   reparaturKapazitaet?: number;
+  istNatuerlich?: boolean;
 }
 
 type NeuerGegenstand = {

@@ -162,10 +162,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
 
   // Verbaute Augments erscheinen in der Körperkarte, nicht im Inventar.
+  // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature wie
+  // Dug'Rah) spiegelt dasselbe Prinzip: sie ist Teil des Körpers, kein
+  // normaler Inventar-Eintrag — die GM-Ansicht (PCInventar.tsx) filtert NICHT,
+  // weil dort die Ausnahme-Ablege-Möglichkeit erhalten bleiben muss.
   const CHROM_TYPEN = ["Cyberware", "Bioware", "Hexware"];
-  const istVerbautesChrom = (g: GegenstandMitBesitzer) =>
-    CHROM_TYPEN.includes(g.typ) && g.verbaut;
-  const meineRoh = meineRohAlle.filter((g) => !istVerbautesChrom(g));
+  const istVersteckteAusruestung = (g: GegenstandMitBesitzer) =>
+    (CHROM_TYPEN.includes(g.typ) && g.verbaut) || Boolean(g.istNatuerlich);
+  const meineRoh = meineRohAlle.filter((g) => !istVersteckteAusruestung(g));
 
   // Augments-Bereich erscheint nur, wenn verbaute Augments vorhanden sind.
   const hatAugments = meineRohAlle.some((g) => g.verbaut);
@@ -193,7 +197,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     ...ermittleBereiche(meineRoh).map((b) => ({
       ...b,
       passt: (g: Gegenstand) =>
-        gehoertMir(g) && b.passt(g) && !istVerbautesChrom(g as GegenstandMitBesitzer),
+        gehoertMir(g) && b.passt(g) && !istVersteckteAusruestung(g as GegenstandMitBesitzer),
     })),
     ...(fremdeRoh.length > 0
       ? [

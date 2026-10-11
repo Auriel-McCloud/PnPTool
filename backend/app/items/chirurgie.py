@@ -44,13 +44,26 @@ def ist_wirksam(gegenstand: dict) -> bool:
     return gegenstand.get("ablage") == "AUSGERUESTET"
 
 
-def kann_ablegen(gegenstand: dict) -> bool:
+def kann_ablegen(gegenstand: dict, ist_gm: bool = False) -> bool:
     """Darf die Ablage dieses Gegenstands geändert werden?
 
-    Verbautes Chrom nicht: man legt kein Implantat in den Rucksack. Genau
-    hier verschwinden die Ablage-Knöpfe in der Oberfläche.
+    Verbautes Chrom nicht — für NIEMANDEN, auch nicht die SL: man legt kein
+    Implantat in den Rucksack, der Weg heraus führt ausschliesslich über
+    `.../chirurgie`. Genau hier verschwinden die Ablage-Knöpfe in der
+    Oberfläche.
+
+    Natürliche Rüstung (`istNatuerlich`, Rassen-/Kreatur-Feature wie Dug'Rahs
+    Chitinpanzer, 11.10.2026 Verfeinerung) spiegelt dasselbe Muster, aber mit
+    einer Ausnahme: für den Spieler ebenfalls gesperrt (sie ist Teil des
+    Körpers, kein Kleidungsstück), die Spielleitung darf sie im Einzelfall
+    trotzdem ablegen (Mark: Sonderfälle am Tisch — Verwandlung, Ritual,
+    Korrektur). Deshalb braucht nur dieser Zweig die Rolle des Aufrufers.
     """
-    return not (ist_chrom(gegenstand) and gegenstand.get("verbaut"))
+    if ist_chrom(gegenstand) and gegenstand.get("verbaut"):
+        return False
+    if gegenstand.get("istNatuerlich") and not ist_gm:
+        return False
+    return True
 
 
 def kann_einsetzen(gegenstand: dict) -> bool:

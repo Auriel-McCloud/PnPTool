@@ -19,6 +19,12 @@ _BOGEN_FELDER = [
     "schadenSchlag",
     "schadenSchwer",
     "schadenAggraviert",
+    # Rast-Mechanik (11.10.2026, docs/api/rast.md): persistenter Zähler, wie
+    # oft schwerer Schaden schon durch eine Rast geheilt wurde — erst bei 7
+    # wird daraus ein geheilter Unheilbar-Punkt (Wraparound). Gehört direkt
+    # neben die drei Schadensfelder, weil die Rast-Formel sie gemeinsam
+    # anfasst (app/traits/rast.py::person_aenderung).
+    "schwerHeilZaehler",
     "willenskraftVerbraucht",
     "iceSchaden",
     "erfahrung",
@@ -157,6 +163,11 @@ _BOGEN_DEFAULTS: dict = {
     "schadenSchlag": 0,
     "schadenSchwer": 0,
     "schadenAggraviert": 0,
+    # Rast-Mechanik (11.10.2026): Bestandscharaktere kennen das Feld noch
+    # nicht (Neo4j liefert None) — ohne diesen Default crasht GET /personen
+    # für die ganze Kampagne (Stolperstein #9, exakt wie bei den anderen
+    # int/bool-Feldern hier).
+    "schwerHeilZaehler": 0,
     "willenskraftVerbraucht": 0,
     "iceSchaden": 0,
     "erfahrung": 0,

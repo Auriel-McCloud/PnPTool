@@ -474,3 +474,67 @@ viel ab):
 | Schlag 6 (bei 4/9 Kästchen, unter 50%) | 3 Schlag (Reduktion jetzt nur noch 3) | je nach Trigger |
 
 Beide Tabellen als ausführbare Tests in `backend/tests/test_ruestung.py`.
+
+## Natürliche Rüstung (11.10.2026 Verfeinerung)
+
+Ist-Zustand vorher: Dug'Rah bekam über `gratisGegenstandId` bei der
+Erstellung automatisch ein ganz normales Rüstungs-Gegenstand-Item — technisch
+nicht von gekaufter Rüstung unterscheidbar (kein Flag, keine Sonderregeln).
+Mark wollte das verfeinern, generisch für künftige Rassen/Kreaturen
+(z.B. Drachen) wiederverwendbar — nicht hartcodiert auf Dug'Rah.
+
+**Das Flag:** `istNatuerlich: bool` (Default `false`) an `(:Gegenstand)`,
+analog zu `verbaut` bei Cyberware (siehe `items/chirurgie.py`). Drei Effekte:
+
+1. **Kästchen-Max kommt live aus der Widerstandsfähigkeit der tragenden
+   Person**, nicht aus dem gespeicherten Item-Wert. Überall, wo der
+   Rüstungspool berechnet wird — `get_bogen`, `ruestungstreffer` (vor dem
+   Pool-Aufbau, weil der Treffer selbst von diesem Max abhängt) und die neue
+   Rast-Route — wird zuerst `kampf/ruestung.py::anwende_natuerliche_ruestung(
+   teile, widerstandsfaehigkeit)` aufgerufen, das pro `istNatuerlich`-Teil das
+   `ruestungKaestchenMax` ersetzt und `ruestungKaestchenAktuell` auf
+   `[0, neues Max]` klemmt. Wächst/schrumpft Widerstandsfähigkeit später
+   (Erfahrung, Verletzung, Implantat), zieht die Rüstung automatisch mit,
+   ohne dass jemand den Gegenstand von Hand nachpflegt. Der gespeicherte
+   `ruestungKaestchenMax`-Wert ist dadurch nur noch ein Vorlagen-Hinweis,
+   keine Wahrheit mehr — `ruestungKaestchenAktuell` bleibt dagegen die echte,
+   persistierte Quelle für den Beschädigungszustand.
+   `ruestungReduktionBasis` bleibt ein normaler, pro Item-Template frei
+   konfigurierbarer Wert (Dug'Rah: 2) — künftige Kreaturen brauchen dafür nur
+   ein weiteres Template mit anderem Wert, keinen Code.
+
+   **Stolperstein, den wir hier selbst gefunden und gefixt haben:**
+   `items/repository.py::ruestungsteile()` filterte ursprünglich
+   `coalesce(ruestungKaestchenMax, 0) > 0` — ein natürliches Teil mit
+   gespeichertem Platzhalter-Max `0` wäre dadurch von der Abfrage
+   verschluckt worden, bevor `anwende_natuerliche_ruestung` überhaupt zum
+   Zug kommt (das Teil taucht dann nirgends im Pool/Bogen auf). Die
+   WHERE-Klausel lässt `istNatuerlich`-Teile deshalb jetzt unabhängig vom
+   gespeicherten Max durch: `coalesce(ruestungKaestchenMax, 0) > 0 OR
+   coalesce(istNatuerlich, false)`.
+
+2. **Nicht ablegbar für den Spieler, SL-Ausnahme möglich.**
+   `items/chirurgie.py::kann_ablegen(gegenstand, ist_gm=False)` gibt für
+   `istNatuerlich`-Teile nur dann `True` zurück, wenn `ist_gm=True` ist —
+   anders als verbautes Chrom, das für **niemanden** ablegbar ist (dafür gibt
+   es die Chirurgie-Route). Die Ablage-Route (`POST
+   .../gegenstaende/{item_id}/ablage`) reicht `viewer.role == "GM"` durch.
+   Fehlertext für Spieler: *"Natürliche Rüstung lässt sich nicht ablegen —
+   sie ist Teil des Körpers (nur die Spielleitung kann das im
+   Ausnahmefall)."*
+
+3. **Keine reguläre Reparatur.** Alle drei Reparatur-Routen
+   (`.../ruestung/reparieren-selbst`, `.../ruestung/reparatur-preis`,
+   `.../ruestung/reparieren`) lehnen `istNatuerlich`-Items mit 409 ab:
+   *"Natürliche Rüstung wird nicht repariert — sie heilt von selbst, sobald
+   die Trägerin vollständig gesund ist."* Heilung läuft stattdessen
+   ausschließlich über die Rast-Mechanik, siehe `docs/api/rast.md`.
+
+**Frontend:** `CharacterSheetPanel.tsx` hat eine Checkbox "Natürliche
+Rüstung" im Bearbeiten-Formular eines Rüstungsteils (versteckt den
+Reparatur-Button für solche Items) und das Inventar-Grid filtert
+`istNatuerlich`-Items genauso heraus wie verbautes Chrom
+(`SpielerAnsicht.tsx::istVersteckteAusruestung`) — die GM-Ansicht
+(`PCInventar.tsx`) filtert bewusst nicht, weil dort die Ausnahme-Ablage
+erreichbar bleiben muss.
+

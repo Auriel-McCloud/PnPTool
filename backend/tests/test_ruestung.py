@@ -9,6 +9,7 @@ ein klassischer Soak-Wert) — die Tests hier prüfen die neue Fassung.
 """
 
 from app.kampf.ruestung import (
+    anwende_natuerliche_ruestung,
     berechne_treffer,
     haendler_reparatur_preis,
     hardware_probe_pool,
@@ -293,6 +294,61 @@ class TestSummeQuadrate:
         assert summe_quadrate(2) == 5  # 1+4
         assert summe_quadrate(3) == 14  # 1+4+9
         assert summe_quadrate(0) == 0
+
+
+class TestNatuerlicheRuestung:
+    """Kästchen-Max kommt live aus der Widerstandsfähigkeit der tragenden
+    Person, nicht aus dem gespeicherten Item-Wert (Mark, 11.10.2026,
+    Verfeinerung des Rassen-Features Dug'Rah). Siehe docs/api/ruestung.md,
+    Abschnitt "Natürliche Rüstung"."""
+
+    def test_natuerliches_teil_bekommt_das_live_max(self):
+        natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=6)
+        assert live[0]["ruestungKaestchenMax"] == 6
+        # Aktuell bleibt der persistierte Wert, solange er unter dem neuen Max liegt.
+        assert live[0]["ruestungKaestchenAktuell"] == 2
+
+    def test_normales_teil_bleibt_unangetastet(self):
+        normal = teil("b", "Lederjacke", 5, 5, 1)
+        live = anwende_natuerliche_ruestung([normal], widerstandsfaehigkeit=6)
+        assert live[0]["ruestungKaestchenMax"] == 5
+        assert live[0]["ruestungKaestchenAktuell"] == 5
+
+    def test_aktuell_wird_bei_sinkender_widerstandsfaehigkeit_geklemmt(self):
+        """Ein Attributverlust darf nicht dazu führen, dass Aktuell über
+        dem neuen Max steht."""
+        natuerlich = teil("a", "Chitinpanzer", 6, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=3)
+        assert live[0]["ruestungKaestchenMax"] == 3
+        assert live[0]["ruestungKaestchenAktuell"] == 3
+
+    def test_negative_widerstandsfaehigkeit_wird_wie_null_behandelt(self):
+        natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=-1)
+        assert live[0]["ruestungKaestchenMax"] == 0
+        assert live[0]["ruestungKaestchenAktuell"] == 0
+
+    def test_mutiert_nicht_das_original_dict(self):
+        natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=6)
+        assert natuerlich["ruestungKaestchenMax"] == 5
+
+    def test_gemischter_pool_reduktion_kommt_weiterhin_vom_besten_teil(self):
+        """Zusammenspiel mit pool(): das Live-Max fliesst in die Kästchen-
+        Summe ein, bevor der Pool gebildet wird."""
+        natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        jacke = teil("b", "Lederjacke", 5, 5, 1)
+        live = anwende_natuerliche_ruestung([natuerlich, jacke], widerstandsfaehigkeit=6)
+        p = pool(live)
+        assert p["kaestchenMax"] == 6 + 5
+        assert p["kaestchenAktuell"] == 2 + 5
+        assert p["reduktionBasis"] == 2
 
 
 class TestHaendlerReparaturPreis:

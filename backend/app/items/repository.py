@@ -30,6 +30,7 @@ RETURN_FIELDS = """
     g.ablage AS ablage,
     g.ruestungKaestchenMax AS ruestungKaestchenMax, g.ruestungKaestchenAktuell AS ruestungKaestchenAktuell,
     g.ruestungReduktionBasis AS ruestungReduktionBasis,
+    g.istNatuerlich AS istNatuerlich,
     g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
@@ -189,6 +190,10 @@ def _decode(record: dict) -> dict:
     # Gegenstand ist keines, das ist die weit überwiegende Mehrheit).
     record["istReparaturmaterial"] = _or_default(record.get("istReparaturmaterial"), False)
     record["reparaturKapazitaet"] = _or_default(record.get("reparaturKapazitaet"), 0)
+    # Natürliche Rüstung (11.10.2026 Verfeinerung): Bestandsdaten (jeder
+    # Gegenstand vor diesem Feature) kennen die Property nicht -> False,
+    # genau wie bei `verbaut` oben (Stolperstein #9, sonst 500 auf der Liste).
+    record["istNatuerlich"] = _or_default(record.get("istNatuerlich"), False)
     return record
 
 
@@ -220,6 +225,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
             ruestungReduktionBasis: $ruestungReduktionBasis,
+            istNatuerlich: $istNatuerlich,
             istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
             istEntwurf: $istEntwurf
         })
@@ -293,6 +299,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ruestungReduktionBasis=int(data.get("ruestungReduktionBasis") or 0),
             istReparaturmaterial=bool(data.get("istReparaturmaterial")),
             reparaturKapazitaet=int(data.get("reparaturKapazitaet") or 0),
+            istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
@@ -1082,7 +1089,10 @@ async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
         WHERE g.typ = 'Rüstung' AND g.ablage = 'AUSGERUESTET'
           AND NOT coalesce(g.weggeworfen, false)
-          AND coalesce(g.ruestungKaestchenMax, 0) > 0
+          AND (
+              coalesce(g.ruestungKaestchenMax, 0) > 0
+              OR coalesce(g.istNatuerlich, false)
+          )
         {LIEGT_IN}
         RETURN {RETURN_FIELDS}
         ORDER BY g.name

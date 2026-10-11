@@ -41,6 +41,7 @@ import { KontakteGm } from "./kontakte/KontakteGm";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
 import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
+import { RastenVerwaltung } from "./traits/RastenVerwaltung";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -192,6 +193,7 @@ function Dashboard() {
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
   const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
   const [achievementsOffen, setAchievementsOffen] = useState(false);
+  const [rastenOffen, setRastenOffen] = useState(false);
 
   useEffect(() => {
     menueApi.laden().then(setMenueLayouts).catch(() => undefined);
@@ -236,6 +238,13 @@ function Dashboard() {
       {kampagne && (
         <button type="button" className="cl-werkzeug" onClick={() => setAchievementsOffen(true)} title="Achievements">
           🏆
+        </button>
+      )}
+      {/* Rast-Mechanik (11.10.2026, Marks Vorgabe): SL-only Heilung über Zeit,
+          kein eigener Burgermenü-Eintrag — analog zum Achievement-Symbol. */}
+      {kampagne && (
+        <button type="button" className="cl-werkzeug" onClick={() => setRastenOffen(true)} title="Rasten">
+          🏕️
         </button>
       )}
       {kampagne && (
@@ -320,6 +329,16 @@ function Dashboard() {
             onSchliessen={() => setAchievementsOffen(false)}
           >
             <AchievementVerwaltung campaignId={kampagne.id} />
+          </Fenster>
+
+          <Fenster
+            offen={rastenOffen}
+            titel="🏕️ Rasten"
+            unterzeile="Heilung über Zeit, kein Würfeln"
+            kennung="rasten-verwaltung"
+            onSchliessen={() => setRastenOffen(false)}
+          >
+            <RastenVerwaltung campaignId={kampagne.id} />
           </Fenster>
 
           {ENTITY_ANSICHT[bereich] && (

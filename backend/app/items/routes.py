@@ -160,6 +160,11 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ruestungReduktionBasis": body.ruestungReduktionBasis,
         "istReparaturmaterial": body.istReparaturmaterial,
         "reparaturKapazitaet": body.reparaturKapazitaet,
+        # Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreaturfeature
+        # wie Dug'Rah): siehe docs/api/ruestung.md, Abschnitt "Natürliche
+        # Rüstung" — nicht ablegbar für Spieler, nicht reparierbar, Kästchen-
+        # Max wird live aus der Widerstandsfähigkeit der Trägerin berechnet.
+        "istNatuerlich": body.istNatuerlich,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
     }
@@ -418,7 +423,12 @@ async def ablage_aendern(
     # eigebaut wurden wieder ablegen kann". Der Weg heraus führt über
     # .../chirurgie, nicht über die Ablage.
     aktuelles = await repository.get_gegenstand(campaign_id, item_id)
-    if aktuelles and not chirurgie.kann_ablegen(aktuelles):
+    if aktuelles and not chirurgie.kann_ablegen(aktuelles, viewer.role == "GM"):
+        if aktuelles.get("istNatuerlich"):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Natürliche Rüstung lässt sich nicht ablegen — sie ist Teil des Körpers (nur die Spielleitung kann das im Ausnahmefall).",
+            )
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
@@ -739,6 +749,11 @@ async def ruestung_reparieren_selbst(campaign_id: str, item_id: str, body: Ruest
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
         raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+    if item.get("istNatuerlich"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Natürliche Rüstung wird nicht repariert — sie heilt von selbst, sobald die Trägerin vollständig gesund ist.",
+        )
 
     besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
     if besitzer_id is None:
@@ -797,6 +812,11 @@ async def ruestung_reparatur_preis(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
         raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+    if item.get("istNatuerlich"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Natürliche Rüstung wird nicht repariert — sie heilt von selbst, sobald die Trägerin vollständig gesund ist.",
+        )
 
     max_fehlend = item["ruestungKaestchenMax"] - item["ruestungKaestchenAktuell"]
     n = max_fehlend if fehlendeKaestchen is None else max(0, min(fehlendeKaestchen, max_fehlend))
@@ -837,6 +857,11 @@ async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungRepa
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
         raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+    if item.get("istNatuerlich"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Natürliche Rüstung wird nicht repariert — sie heilt von selbst, sobald die Trägerin vollständig gesund ist.",
+        )
 
     ergebnis = repariere(
         item["ruestungKaestchenAktuell"],

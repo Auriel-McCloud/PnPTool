@@ -189,6 +189,11 @@ class PersonCreate(BaseModel):
     schadenSchlag: int = 0
     schadenSchwer: int = 0
     schadenAggraviert: int = 0
+    # Rast-Mechanik (11.10.2026, docs/api/rast.md): persistenter Zähler, wie
+    # oft schwerer Schaden schon durch eine Rast geheilt wurde. Erst ab 7
+    # wird daraus ein geheilter Unheilbar-Punkt (Wraparound) — siehe
+    # app/traits/rast.py::person_aenderung für die vollständige Formel.
+    schwerHeilZaehler: int = 0
     willenskraftVerbraucht: int = 0
     iceSchaden: int = 0
     # Erfahrung: gesamt vergeben und davon ausgegeben.
@@ -273,6 +278,7 @@ class PersonUpdate(BaseModel):
     schadenSchlag: int | None = None
     schadenSchwer: int | None = None
     schadenAggraviert: int | None = None
+    schwerHeilZaehler: int | None = None
     willenskraftVerbraucht: int | None = None
     iceSchaden: int | None = None
     erfahrung: int | None = None
@@ -335,6 +341,7 @@ class PersonResponse(BaseModel):
     schadenSchlag: int = 0
     schadenSchwer: int = 0
     schadenAggraviert: int = 0
+    schwerHeilZaehler: int = 0
     willenskraftVerbraucht: int = 0
     iceSchaden: int = 0
     erfahrung: int = 0

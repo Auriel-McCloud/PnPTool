@@ -19,6 +19,10 @@ export interface BogenUebersicht {
   schadenSchlag: number;
   schadenSchwer: number;
   schadenAggraviert: number;
+  /** Rast-Mechanik (11.10.2026, docs/api/rast.md): wie weit der nächste
+   * geheilte Unheilbar-Punkt noch entfernt ist (0-6, wraps bei 7 Rasten mit
+   * schwerem Schaden). Rein informativ. */
+  schwerHeilZaehler: number;
   willenskraftMax: number;
   /** Wieviel davon das eingebaute Chrom dauerhaft frisst — 0 wenn keines. */
   willenskraftVerlust: number;
@@ -299,6 +303,25 @@ export const bogenApi = {
     api.post<Steigerungen>(`/api/campaigns/${cid}/personen/${personId}/steigern`, was),
   erfahrungVergeben: (cid: string, personId: string, punkte: number) =>
     api.post<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/erfahrung`, { punkte }),
+  /**
+   * SL-Aktion "Rasten" (11.10.2026, docs/api/rast.md): EIN Klick = EINE Rast
+   * pro ausgewählter Person. Schlagschaden heilt immer vollständig, schwerer
+   * Schaden sinkt um 1 (mit Zähler fürs Unheilbar-Wraparound bei 7), und ist
+   * die Person danach komplett gesund, heilt natürliche Rüstung mit Defizit
+   * +1 Kästchen — auch schon in dieser Rast. Antwort: Bogen-Übersicht je
+   * personId, für Personen ohne Treffer leer/unverändert gelassen.
+   */
+  rasten: (cid: string, personIds: string[]) =>
+    api.post<Record<string, BogenUebersicht>>(`/api/campaigns/${cid}/personen/rasten`, { personIds }),
+  /**
+   * Fallback-Knopf "Vollständige Heilung" — keine Bedingungen, kein
+   * Würfeln: setzt Schaden + Heil-Zähler auf 0 und heilt JEDES getragene
+   * Rüstungsteil (auch nicht-natürliches) sofort auf den vollen Max.
+   */
+  vollstaendigeHeilung: (cid: string, personIds: string[]) =>
+    api.post<Record<string, BogenUebersicht>>(`/api/campaigns/${cid}/personen/vollstaendige-heilung`, {
+      personIds,
+    }),
 };
 
 /** Reihenfolge und Beschriftung der Wertegruppen auf dem Blatt. */

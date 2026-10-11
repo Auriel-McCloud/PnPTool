@@ -253,6 +253,12 @@ export function GegenstandRow({
   // jedem beliebigen Gegenstand (Klebeband, Nanopaste, Ersatzteile).
   const [istReparaturmaterial, setIstReparaturmaterial] = useState(item.istReparaturmaterial);
   const [reparaturKapazitaet, setReparaturKapazitaet] = useState(item.reparaturKapazitaet);
+  // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature):
+  // spiegelt `verbaut` bei Cyberware — nicht ablegbar für den Spieler (GM
+  // kann es im Ausnahmefall), nicht reparierbar, Kästchen-Max kommt serverseitig
+  // live aus der Widerstandsfähigkeit der tragenden Person (der Wert oben im
+  // Formular bleibt dann nur noch ein Vorlagen-Hinweis, keine Wahrheit mehr).
+  const [istNatuerlich, setIstNatuerlich] = useState(item.istNatuerlich);
   const [ablageZiel, setAblageZiel] = useState<string>(item.ablageZielId ?? "");
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [descriptionDoc, setDescriptionDoc] = useState<JSONContent>(EMPTY_DOC);
@@ -354,6 +360,7 @@ export function GegenstandRow({
     setRuestungReduktionBasis(item.ruestungReduktionBasis);
     setIstReparaturmaterial(item.istReparaturmaterial);
     setReparaturKapazitaet(item.reparaturKapazitaet);
+    setIstNatuerlich(item.istNatuerlich);
     setAblageZiel(item.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
@@ -457,6 +464,7 @@ export function GegenstandRow({
       ruestungReduktionBasis,
       istReparaturmaterial,
       reparaturKapazitaet,
+      istNatuerlich,
       description: serializeRichText(descriptionDoc),
       notes: serializeRichText(notesDoc),
       sichtbarkeit,
@@ -1223,9 +1231,26 @@ export function GegenstandRow({
                       Kästchen.
                     </p>
                   )}
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", marginTop: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={istNatuerlich}
+                      onChange={(e) => setIstNatuerlich(e.target.checked)}
+                    />
+                    Natürliche Rüstung (Rassen-/Kreatur-Feature, z.B. Dug'Rah)
+                  </label>
+                  {istNatuerlich && (
+                    <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 4 }}>
+                      Kästchen-Max oben wirkt dann nur noch als Vorlagen-Hinweis — tatsächlich
+                      gezählt wird live die Widerstandsfähigkeit der tragenden Person. Nicht
+                      ablegbar für den Spieler (nur die SL im Ausnahmefall), nicht reparierbar —
+                      heilt stattdessen über die Rast-Mechanik.
+                    </p>
+                  )}
                   {personId &&
                     item.ruestungKaestchenMax > 0 &&
-                    item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && (
+                    item.ruestungKaestchenAktuell < item.ruestungKaestchenMax &&
+                    !item.istNatuerlich && (
                       <RuestungReparatur campaignId={campaignId} personId={personId} item={item} onChanged={onChanged} />
                     )}
                 </div>

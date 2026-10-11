@@ -319,6 +319,42 @@ def verteile_kaestchenschaden(geordnet: list[dict], kaestchen_schaden: int) -> l
     return folgen
 
 
+def anwende_natuerliche_ruestung(teile: list[dict], widerstandsfaehigkeit: int) -> list[dict]:
+    """Ersetzt bei `istNatuerlich`-Teilen das gespeicherte Kästchen-Max.
+
+    Natürliche Rüstung (11.10.2026, Verfeinerung der Rassen-/Kreatur-Feature-
+    Mechanik — Dug'Rah war der erste Fall, Drachen & Co. folgen über weitere
+    Item-Templates mit demselben Flag): Mark wollte das Kästchen-Max NICHT
+    mehr als fixen Item-Wert, sondern live aus der Widerstandsfähigkeit der
+    tragenden Person — wächst/schrumpft das Attribut später, soll die
+    Rüstung automatisch mitziehen, ohne dass jemand den Gegenstand von Hand
+    nachpflegt.
+
+    Der gespeicherte `ruestungKaestchenAktuell`-Zähler bleibt die Quelle der
+    Wahrheit für den Beschädigungszustand (Treffer/Rast schreiben ihn), wird
+    hier aber auf `[0, neues Max]` geklemmt — sonst könnte ein Stück nach
+    einem Verlust an Widerstandsfähigkeit mehr Kästchen zeigen, als das neue
+    Maximum überhaupt hergibt.
+
+    Reine Funktion (keine Datenbankzugriffe): der Aufrufer (traits/routes.py)
+    beschafft die Widerstandsfähigkeit-Rating aus `get_ratings_for_entity`
+    (dieselbe Quelle wie `traits/bogen.py`s Gesundheitsformel). Gibt pro Teil
+    eine neue dict-Kopie zurück, mutiert nie das Original aus der DB-Abfrage.
+    Nicht-natürliche Teile laufen unverändert durch.
+    """
+    widerstandsfaehigkeit = max(0, int(widerstandsfaehigkeit or 0))
+    ergebnis: list[dict] = []
+    for teil in teile:
+        teil = dict(teil)
+        if teil.get("istNatuerlich"):
+            teil["ruestungKaestchenMax"] = widerstandsfaehigkeit
+            teil["ruestungKaestchenAktuell"] = max(
+                0, min(int(teil.get("ruestungKaestchenAktuell") or 0), widerstandsfaehigkeit)
+            )
+        ergebnis.append(teil)
+    return ergebnis
+
+
 def repariere(kaestchen_aktuell: int, kaestchen_max: int, betrag: int) -> dict:
     """Kästchen auffüllen.
 

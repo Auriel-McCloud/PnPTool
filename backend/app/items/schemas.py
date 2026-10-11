@@ -202,6 +202,20 @@ class GegenstandCreate(BaseModel):
     # Versuch (auch bei 0 reparierten Kästchen — realistisches Risiko).
     istReparaturmaterial: bool = False
     reparaturKapazitaet: int = 0
+    # Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
+    # z.B. Dug'Rahs Chitinpanzer, später Drachenschuppen): generisches Flag,
+    # analog zu `verbaut` bei Cyberware (siehe items/chirurgie.py). Wirkung:
+    # (1) für den Spieler nicht ablegbar, nur die SL kann es im Ausnahmefall
+    # (siehe chirurgie.py::kann_ablegen); (2) Reparatur-Routen lehnen mit 409
+    # ab — heilt stattdessen nur über die Rast-Mechanik (app/traits/rast.py);
+    # (3) `ruestungKaestchenMax` dieses Stücks wird überall, wo der
+    # Rüstungspool berechnet wird, durch die LIVE Widerstandsfähigkeit-Rating
+    # der tragenden Person ersetzt (siehe kampf/ruestung.py::
+    # anwende_natuerliche_ruestung) — der hier gespeicherte Wert ist dann nur
+    # noch ein Vorlagen-Hinweis, keine Wahrheit mehr. `ruestungReduktionBasis`
+    # bleibt dagegen ein normaler, pro Item-Template frei konfigurierbarer
+    # Wert (Dug'Rah: 2 — für künftige Kreaturen einfach ein zweites Template).
+    istNatuerlich: bool = False
 
 
 class GegenstandUpdate(BaseModel):
@@ -273,6 +287,7 @@ class GegenstandUpdate(BaseModel):
     ruestungReduktionBasis: int | None = None
     istReparaturmaterial: bool | None = None
     reparaturKapazitaet: int | None = None
+    istNatuerlich: bool | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -361,6 +376,7 @@ class GegenstandResponse(BaseModel):
     ruestungReduktionBasis: int = 0
     istReparaturmaterial: bool = False
     reparaturKapazitaet: int = 0
+    istNatuerlich: bool = False
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

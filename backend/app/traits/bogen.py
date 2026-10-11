@@ -158,6 +158,11 @@ def bogen_uebersicht(
         "schadenSchwer": schwer,
         "schadenSchlag": schlag,
         "gesundheitSchaden": aggraviert + schwer + schlag,
+        # Rast-Mechanik (11.10.2026, docs/api/rast.md): wie weit der nächste
+        # Unheilbar-Punkt noch entfernt ist (0-6, wraps bei 7 Rasten mit
+        # schwerem Schaden). Rein informativ fürs Rasten-Popup der SL — kein
+        # Einfluss auf gesundheitMax/-Schaden.
+        "schwerHeilZaehler": max(0, int(person.get("schwerHeilZaehler") or 0)),
         "willenskraftMax": w_max,
         # Getrennt ausgewiesen, damit das Blatt "5 (−2 durch Chrom)" zeigen
         # kann statt einer stillen 3 — sonst sucht man den fehlenden Punkt.

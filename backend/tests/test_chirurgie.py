@@ -76,6 +76,24 @@ class TestAblegenVerboten:
     def test_normale_ausruestung_bleibt_ablegbar(self):
         assert kann_ablegen(g(typ="Waffe", ablage="AUSGERUESTET")) is True
 
+    def test_verbautes_chrom_bleibt_auch_fuer_die_sl_gesperrt(self):
+        """Anders als bei natürlicher Rüstung gibt es hier KEINE
+        SL-Ausnahme — der Weg heraus führt ausschliesslich über die
+        Chirurgie-Route, nicht über die Ablage."""
+        assert kann_ablegen(g(typ="Cyberware", verbaut=True), ist_gm=True) is False
+
+    def test_natuerliche_ruestung_ist_fuer_spieler_gesperrt(self):
+        assert kann_ablegen(g(typ="Rüstung", istNatuerlich=True)) is False
+
+    def test_natuerliche_ruestung_ist_fuer_spieler_gesperrt_auch_explizit(self):
+        assert kann_ablegen(g(typ="Rüstung", istNatuerlich=True), ist_gm=False) is False
+
+    def test_sl_darf_natuerliche_ruestung_im_ausnahmefall_ablegen(self):
+        assert kann_ablegen(g(typ="Rüstung", istNatuerlich=True), ist_gm=True) is True
+
+    def test_normale_ruestung_bleibt_fuer_alle_ablegbar(self):
+        assert kann_ablegen(g(typ="Rüstung", istNatuerlich=False), ist_gm=False) is True
+
 
 class TestEinsetzen:
     def test_chrom_kann_eingesetzt_werden(self):
