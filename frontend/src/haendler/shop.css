@@ -425,10 +425,30 @@
   );
 }
 
-/* 5 — mystisch: violett gluehend, wabernder Rand-Effekt */
+/* 5 — mystisch: violett gluehend, wabernder Rand-Effekt
+   (11.10.2026, Mark: "beim Pulsieren verschiebt sich die Item-Groesse und
+   der ganze Grid hüpft rauf und runter" — Ursache war die box-shadow-
+   Animation selbst: box-shadow erzwingt bei jedem Frame ein echtes Repaint
+   statt einer reinen GPU-Compositor-Animation, auf schwaecherer Hardware
+   sichtbar als Ruckler. Fix: der Gluehhalo liegt jetzt auf einem eigenen
+   ::before mit FESTEM box-shadow, animiert wird nur noch dessen opacity
+   (reine Compositor-Eigenschaft, kein Repaint, kein Layout-Einfluss). Das
+   Pulsieren selbst bleibt (Mark: "das mag ich, das soll bleiben"), nur der
+   Mechanismus dahinter ist jetzt guenstig. */
 .shop-ware[data-seltenheit="5"] {
   border-color: var(--p-violett-hell);
   box-shadow: 0 0 16px -2px var(--p-violett-hell), inset 0 0 10px -6px var(--p-violett-hell);
+}
+
+.shop-ware[data-seltenheit="5"]::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: 0 0 22px 4px var(--p-violett-hell);
+  opacity: 0.4;
+  will-change: opacity;
   animation: shop-mystisch-glut 2.2s ease-in-out infinite;
 }
 
@@ -440,12 +460,13 @@
   border-radius: calc(var(--radius) + 4px);
   border: 2px solid var(--p-violett-hell);
   filter: blur(2px);
+  will-change: transform, opacity;
   animation: shop-wabern 3.2s ease-in-out infinite;
 }
 
 @keyframes shop-mystisch-glut {
-  0%, 100% { box-shadow: 0 0 16px -2px var(--p-violett-hell), inset 0 0 10px -6px var(--p-violett-hell); }
-  50% { box-shadow: 0 0 26px 2px var(--p-violett-hell), inset 0 0 14px -4px var(--p-violett-hell); }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
 }
 
 @keyframes shop-wabern {
@@ -459,6 +480,7 @@
 @media (prefers-reduced-motion: reduce) {
   .shop-ware[data-seltenheit="3"],
   .shop-ware[data-seltenheit="5"],
+  .shop-ware[data-seltenheit="5"]::before,
   .shop-ware[data-seltenheit="5"]::after {
     animation: none;
   }
