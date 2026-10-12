@@ -35,6 +35,25 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Ideenschmiede ✨-Gegenstand: Qualitätsstufe/Preis/WK-Verlust bei Cyberware/
+  Bioware/Hexware automatisch** (12.10.2026, siehe `ki/routes.py::
+  _chrom_felder_aus_ki`, `items/chrom.py::stufe_fuer_name`/`CHROM_TYPEN`):
+  Mark-Wunsch — bisher musste man nach dem KI-Anlegen eines Chrom-Gegenstands
+  immer noch manuell die Qualitätsstufe (Hinterhof..Maßanfertigung) anklicken,
+  bevor Preis/WK-Verlust/Kraft stimmten. Jetzt wählt die KI `qualitaetsstufe`
+  passend zur Beschreibung selbst (Prompt-Beispiele je Stufe), optional
+  `koerperzone` und `istWaffe`+`schaden`/`schadenArt` (eingebaute Waffe wie
+  Cyberklinge/Kraftarm) — Preis/WK-Verlust/Kraft errechnen sich serverseitig
+  aus Gesamtbonus (traitBoni + neueFertigkeiten + Waffenschaden) und
+  Qualitätsstufe, exakt dieselbe Formel wie beim manuellen Anlegen. Das
+  Bearbeiten-Fenster markiert die so gewählte Stufe jetzt auch beim Öffnen
+  (vorher immer unmarkiert, selbst wenn längst ein Preis dranhing). Nur
+  `pytest`/Import geprüft, **nie gegen einen echten KI-Call getestet**: bitte
+  in der Ideenschmiede „✨ Gegenstand“ einen Cyberware-Wunsch mit erkennbarer
+  Qualität eingeben (z.B. "billiges Hinterhof-Chrom" vs. "teuerste
+  Konzern-Maßanfertigung") und prüfen, dass Stufe/Preis/WK-Verlust stimmen
+  und im Bearbeiten-Fenster markiert sind.
+
 - **Bugfix: Zerstörte natürliche Rüstung heilte nach Rast nicht mehr**
   (12.10.2026, siehe `items/repository.py::natuerliche_ruestungsteile`,
   `traits/routes.py::personen_rasten`/`personen_vollstaendige_heilung`):

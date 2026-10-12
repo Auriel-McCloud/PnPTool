@@ -48,6 +48,26 @@ PROTHESEN_GADGET_PREIS = 5_000
 # Körperzonen vom Charakterblatt.
 KOERPERZONEN = ["Kopf", "Arme", "Torso", "Beine"]
 
+# Welche Gegenstandstypen über diese Formel laufen (muss inhaltlich mit
+# CHROM_TYPEN in frontend/src/traits/CharacterSheetPanel.tsx übereinstimmen).
+# Hexware ist reine Flavor-Kategorie neben Cyberware/Bioware, keine eigene
+# Kostenmechanik (Mark, 02.09.2026).
+CHROM_TYPEN = {"Cyberware", "Bioware", "Hexware"}
+
+
+def stufe_fuer_name(name: str | None, standard: str = "Straße") -> Chromstufe:
+    """Chromstufe anhand ihres Namens (z.B. KI-Wahl aus der Ideenschmiede).
+
+    Unbekannt, leer oder von der KI trotz Enum-Vorgabe danebengegriffen ->
+    `standard` (die mittlere, unauffälligste Stufe) statt eines Fehlers —
+    dieselbe Fallback-Haltung wie bei einem falschen Gegenstandstyp.
+    """
+    gesucht = (name or "").strip()
+    for s in STUFEN:
+        if s.name == gesucht:
+            return s
+    return next((s for s in STUFEN if s.name == standard), STUFEN[0])
+
 
 def verlust_genau(bonus: int, preis_je_bonus: int) -> float:
     """Der **ungerundete** Verlust eines einzelnen Stücks.

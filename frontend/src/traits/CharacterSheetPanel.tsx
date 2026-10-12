@@ -374,6 +374,14 @@ export function GegenstandRow({
           setZonen(d.koerperzonen);
         })
         .catch(() => setChromstufen([]));
+      // Zeigt die bereits gewählte Qualitätsstufe als markiert an (z.B. von
+      // der KI automatisch nach Beschreibung gewählt) — Preis ist immer ein
+      // ganzzahliges Vielfaches von kraft, sonst kam preisJeBonus nirgendwo her.
+      setGewaehlteChromstufe(
+        item.kraft > 0 && item.preis % item.kraft === 0 ? item.preis / item.kraft : null,
+      );
+    } else {
+      setGewaehlteChromstufe(null);
     }
     setDescriptionDoc(parseRichText(item.description));
     setNotesDoc(parseRichText(item.notes));

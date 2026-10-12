@@ -28,10 +28,11 @@ from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, P
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
 from app.haendler import ki_einkauf
 from app.haendler import repository as haendler_repository
+from app.items.chrom import CHROM_TYPEN, KOERPERZONEN, STUFEN as CHROM_STUFEN, preis_fuer as chrom_preis_fuer, stufe_fuer_name, verlust_fuer as chrom_verlust_fuer
 from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
-from app.items.waffenbonus import ki_schaden_roh, waffenfelder
+from app.items.waffenbonus import ki_schaden_roh, schaden_art_fuer_waffe, schaden_klemmen, waffenfelder
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
@@ -203,6 +204,19 @@ _GEGENSTAND_SCHEMA = {
         # (z.B. ein NeuroWeaving-Skill an einem Cyberdeck) — anderer
         # Mechanismus als traitBoni, siehe items/schemas.py::ausruestungsfertigkeiten.
         "neueFertigkeiten": {"type": "ARRAY", "items": _TRAIT_BONUS_EINTRAG},
+        # NUR bei typ Cyberware/Bioware/Hexware: welche Qualität der Einbau hat.
+        # Bestimmt serverseitig automatisch preis und wVerlust nach der Formel
+        # in items/chrom.py — das hier eingetragene preis-Feld wird für diese
+        # drei Typen ignoriert. Leer bei jedem anderen Typ.
+        "qualitaetsstufe": {"type": "STRING", "enum": [""] + [s.name for s in CHROM_STUFEN]},
+        # Welche Körperzone das Implantat belegt (nur Cyberware/Bioware/
+        # Hexware). Leer = noch offen, SL entscheidet später.
+        "koerperzone": {"type": "STRING", "enum": [""] + KOERPERZONEN},
+        # Ist der Gegenstand ZUSÄTZLICH eine Waffe, obwohl typ nicht Waffe ist
+        # (ausfahrbare Cyberklinge, Kraftarm-Faustschlag, Gift-Zahnimplantat, ...)?
+        # Dann zählt schaden zusätzlich zum Bonus für die Qualitätsstufen-Formel.
+        # Bei typ Waffe wird dieses Feld ignoriert (dort gilt es immer).
+        "istWaffe": {"type": "BOOLEAN"},
     },
     "required": ["name", "beschreibung", "notizen", "typ", "preis", "seltenheit", "schaden"],
 }
@@ -364,7 +378,22 @@ _GEGENSTAND_SYSTEM = (
     "komplett NEUE Fertigkeit, die es ohne ihn gar nicht gibt (z.B. ein "
     "NeuroWeaving-Skill an einem Cyberdeck), trage das in neueFertigkeiten ein "
     "(name frei wählbar, wert die Fertigkeitshöhe). Ohne mechanischen Effekt "
-    "bleiben traitBoni und neueFertigkeiten leere Listen."
+    "bleiben traitBoni und neueFertigkeiten leere Listen. "
+    "NUR bei typ Cyberware, Bioware oder Hexware zusätzlich: qualitaetsstufe "
+    "nach der Qualität, die der Wunsch/die Beschreibung nahelegt — Hinterhof "
+    "(billig und improvisiert zusammengeschustert, Baustellen-Doc), Straße "
+    "(solide Ware ohne Anspruch), Klinik (ordentlich verbaut, halbwegs "
+    "verträglich), Konzern (teure, saubere Arbeit) oder Maßanfertigung (das "
+    "Beste, was Geld kaufen kann). Deutet nichts im Wunsch auf eine bestimmte "
+    "Qualität hin, setze Straße. Das preis-Feld wird für diese drei Typen "
+    "serverseitig aus Bonus und Qualitätsstufe berechnet und ignoriert — "
+    "trotzdem eine plausible Zahl eintragen. koerperzone nur hier setzen, "
+    "wenn der Wunsch eine bestimmte Körperzone nahelegt (Kopf, Arme, Torso, "
+    "Beine), sonst leer lassen. Hat das Implantat selbst eine Waffenfunktion "
+    "(ausfahrbare Klinge, Kraftarm-Faustschlag, Gift-Zahnimplantat, ...), "
+    "setze istWaffe auf true und schaden/schadenArt wie bei typ Waffe — sonst "
+    "bleibt istWaffe false. Bei jedem anderen Typ bleiben qualitaetsstufe und "
+    "koerperzone leer und istWaffe false."
     + _NOTIZEN_HINWEIS
 )
 
@@ -521,6 +550,40 @@ def _trait_boni_aus_ki(roh, katalog: list[dict]) -> dict[str, int]:
     }
 
 
+def _chrom_felder_aus_ki(
+    gegenstand_typ: str, ergebnis: dict, trait_boni: dict[str, int], ausr_fert: dict[str, int],
+) -> dict:
+    """preis/kraft/wVerlust/koerperzone/istWaffe/schaden für ein KI-Chrom-Item.
+
+    Nur für Cyberware/Bioware/Hexware (siehe items/chrom.py::CHROM_TYPEN) —
+    die KI wählt per Prompt nur noch die Qualitätsstufe passend zur
+    Beschreibung (Hinterhof..Maßanfertigung), Preis und Willenskraft-Verlust
+    errechnen sich daraus und aus dem Gesamtbonus — dieselbe Formel, die auch
+    das manuelle Anlegen im Charakterbogen nutzt (Mark-Wunsch 12.10.2026: der
+    Gegenstand soll vollständig erstellt werden, nicht erst manuell durch die
+    SL vervollständigt).
+    """
+    if gegenstand_typ not in CHROM_TYPEN:
+        return {}
+    ist_waffe = bool(ergebnis.get("istWaffe"))
+    schaden = schaden_klemmen(ergebnis.get("schaden"), typ="Waffe") if ist_waffe else 0
+    schaden_art = schaden_art_fuer_waffe(ergebnis.get("schadenArt")) if ist_waffe else ""
+    bonus = max(1, sum(trait_boni.values()) + sum(ausr_fert.values()) + schaden)
+    stufe = stufe_fuer_name(ergebnis.get("qualitaetsstufe"))
+    koerperzone = (ergebnis.get("koerperzone") or "").strip()
+    if koerperzone not in KOERPERZONEN:
+        koerperzone = ""
+    return {
+        "preis": chrom_preis_fuer(bonus, stufe.preis_je_bonus),
+        "kraft": bonus,
+        "wVerlust": chrom_verlust_fuer(bonus, stufe.preis_je_bonus),
+        "koerperzone": koerperzone,
+        "istWaffe": ist_waffe,
+        "schaden": schaden,
+        "schadenArt": schaden_art,
+    }
+
+
 # Attribute (Körperkraft, Entschlossenheit, ...) sind fundamental — 0 ist
 # regeltechnisch nicht vorgesehen, jeder Charakter hat mindestens 1 in jedem.
 # Fertigkeiten/Hintergründe dürfen dagegen 0 sein ("kann's einfach nicht").
@@ -659,21 +722,34 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 # harter Fallback statt eines ungültigen/erfundenen Werts.
                 gegenstand_typ = "Sonstiges"
             seltenheit = max(1, min(_als_int(ergebnis.get("seltenheit"), 1), 5))
+            trait_boni = _trait_boni_aus_ki(ergebnis.get("traitBoni"), katalog)
+            ausr_fert = _name_wert_dict(ergebnis.get("neueFertigkeiten"))
+            # Cyberware/Bioware/Hexware: Preis/Kraft/WK-Verlust/Waffenfunktion
+            # kommen aus der Qualitätsstufen-Formel statt direkt von der KI
+            # (siehe _chrom_felder_aus_ki); jeder andere Typ nutzt wie bisher
+            # waffenfelder() (nur bei typ Waffe, sonst leer).
+            sonderfelder = _chrom_felder_aus_ki(gegenstand_typ, ergebnis, trait_boni, ausr_fert) or (
+                waffenfelder(gegenstand_typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt"))
+            )
+            # preis kommt bei Chrom-Typen aus sonderfelder (Qualitätsstufen-
+            # Formel) statt direkt von der KI — sonst gäbe es das Keyword
+            # doppelt an GegenstandCreate.
+            preis = sonderfelder.pop("preis", max(0, _als_int(ergebnis.get("preis"))))
             gegenstand_body = GegenstandCreate(
                 name=name,
                 description=(ergebnis.get("beschreibung") or "").strip(),
                 notes=(ergebnis.get("notizen") or "").strip(),
                 typ=gegenstand_typ,
-                preis=max(0, _als_int(ergebnis.get("preis"))),
+                preis=preis,
                 seltenheit=seltenheit,
                 istEntwurf=True,
                 # Bonuswürfel auf bestehende Traits (z.B. Cyberware +1
                 # Schusswaffen) — ohne das landete der Effekt nur im
                 # Beschreibungstext, nie als echte Spielmechanik
                 # (Mark-Bug 11.10.2026, siehe items/schemas.py::traitBoni).
-                traitBoni=_trait_boni_aus_ki(ergebnis.get("traitBoni"), katalog),
-                ausruestungsfertigkeiten=_name_wert_dict(ergebnis.get("neueFertigkeiten")),
-                **waffenfelder(gegenstand_typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt")),
+                traitBoni=trait_boni,
+                ausruestungsfertigkeiten=ausr_fert,
+                **sonderfelder,
             )
             # _create_data ist derselbe Helfer wie in items/routes.py::create_vorlage
             # (SL-Vorlage anlegen) — garantiert dieselbe Feldbefüllung, keine
