@@ -70,7 +70,7 @@ export interface Gegenstand {
   /** Waffenschaden (1–12: Handwaffe bis 7, Schiffswaffe bis 12), separat vom Chrom-Bonus. */
   schaden: number;
   /**
-   * Schlag / Tödlich / Unheilbar — dieselben drei wie im Treffer-Dialog.
+   * Schlag / Tödlich / Schwerheilbar — dieselben drei wie im Treffer-Dialog.
    * Waffen ohne gesetzte Art gelten als Tödlich.
    */
   schadenArt: SchadenArt;
@@ -212,14 +212,14 @@ export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
 /** Leer = noch nicht gesetzt. Waffen ohne Wert gelten als Tödlich. */
 export type SchadenArt = "" | RuestungsArt;
 
-/** Die meisten Waffen. Schlag und Unheilbar setzt man extra. */
+/** Die meisten Waffen. Schlag und Schwerheilbar setzt man extra. */
 export const SCHADEN_ART_DEFAULT: RuestungsArt = "schwer";
 
 /** Tischsprache, dieselbe wie im Treffer-Dialog — nicht die Kästchen-Namen. */
 export const SCHADEN_ART_LABEL: Record<RuestungsArt, string> = {
   schlag: "Schlag",
   schwer: "Tödlich",
-  aggraviert: "Unheilbar",
+  aggraviert: "Schwerheilbar",
 };
 
 export function schadenArtFuerWaffe(art: string | undefined): RuestungsArt {

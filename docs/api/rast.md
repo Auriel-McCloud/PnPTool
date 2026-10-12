@@ -15,17 +15,17 @@ Ergebnis der Schritte 1-3:
 2. Ist `schadenSchwer > 0` ("Tödlich" in der Anzeige): `schadenSchwer -= 1`,
    **sofort, jede Rast** — kein Zähler, kein Warten.
 3. Erst wenn `schadenSchwer` NACH Schritt 2 bei `0` steht **und** noch
-   `schadenAggraviert > 0` ("Unheilbar") da ist, läuft der persistente
+   `schadenAggraviert > 0` ("Schwerheilbar") da ist, läuft der persistente
    Zähler `schwerHeilZaehler` mit: `+= 1` pro Rast.
    - Steht der Zähler danach bei `>= 7`: Wraparound — `schwerHeilZaehler -= 7`
      **und** `schadenAggraviert -= 1`. Sieben Rasten OHNE offenen
-     Tödlich-Schaden heilen also einen Unheilbar-Punkt.
+     Tödlich-Schaden heilen also einen Schwerheilbar-Punkt.
    - Solange noch Tödlich-Schaden offen ist, bleibt der Zähler stehen —
-     Unheilbar heilt erst, wenn der PC vom tödlichen Schaden runter ist.
+     Schwerheilbar heilt erst, wenn der PC vom tödlichen Schaden runter ist.
      **Korrektur 12.10.2026** (Mark, nach Praxistest am Spieltisch): die
      ursprüngliche Formel hatte das verkehrt herum — der Zähler lief nur
      MIT offenem Tödlich-Schaden und fror ein, sobald der bei 0 stand,
-     sodass reiner Unheilbar-Schaden (ohne gleichzeitigen Tödlich-Schaden)
+     sodass reiner Schwerheilbar-Schaden (ohne gleichzeitigen Tödlich-Schaden)
      nie heilte, egal wie oft geklickt wurde.
 4. Ist die Person **nach** Schritt 1-3 vollständig gesund (`schadenSchlag ==
    0 AND schadenSchwer == 0 AND schadenAggraviert == 0`): jedes getragene
@@ -108,7 +108,7 @@ schon einen echten Bug (fehlender Default an einem neuen Person-Feld →
 
 `schwerHeilZaehler` erscheint zusätzlich informativ im Bogen-Output
 (`traits/bogen.py`), damit die SL sieht, wie weit der nächste geheilte
-Unheilbar-Punkt noch entfernt ist (0–6, wrapt bei 7).
+Schwerheilbar-Punkt noch entfernt ist (0–6, wrapt bei 7).
 
 ## Frontend
 
@@ -118,7 +118,7 @@ Achievements). Inhalt: Liste aller PCs der Kampagne mit Checkboxen + "Alle
 auswählen", zwei Buttons "🏕️ Rasten" und "✚ Vollständige Heilung" — beide
 hinter der bestehenden `Bestaetigung`-Komponente (`shell/Bestaetigung.tsx`),
 weil beide Aktionen folgenreich und nicht rückgängig zu machen sind. Zeigt
-nach einem Aufruf pro Person kompakt Schlag/Schwer/Unheilbar/Heil-Zähler an.
+nach einem Aufruf pro Person kompakt Schlag/Schwer/Schwerheilbar/Heil-Zähler an.
 
 ## Verifiziert
 

@@ -1919,9 +1919,9 @@ Doku-Verweise stehen in CLAUDE.md unter "Geplante Features — Status & Doku-Ver
      (wie viel Schaden sie pro Treffer abfängt — höher ist besser; hieß
      vorher "Durchlass" mit umgekehrter Bedeutung, von Mark nach dem
      Praxistest verworfen: *"Durchlass ist ein dummer Wert"*)
-   - **Abgestuft statt geblockt:** Unheilbar→Tödlich→Schlag, Schlag wird
+   - **Abgestuft statt geblockt:** Schwerheilbar→Tödlich→Schlag, Schlag wird
      zusätzlich halbiert (unterste Stufe, kein weiteres Abstufen möglich)
-   - **Kästchenschaden:** Unheilbar/Tödlich anteilig aus Absorbiert+Durchkommend,
+   - **Kästchenschaden:** Schwerheilbar/Tödlich anteilig aus Absorbiert+Durchkommend,
      Schlag nur ab der Hälfte der aktuellen Kästchen (Trigger)
    - **Je kaputter, desto schlechter:** die effektive Reduktion sinkt gestuft
      mit dem Kästchen-Anteil (>50% voll, >25% halb, sonst ein Viertel) — kein

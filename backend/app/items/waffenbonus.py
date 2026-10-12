@@ -33,7 +33,7 @@ def ki_schaden_roh(daten: dict):
     return daten.get("schadensbonus")
 
 
-# Die meisten Waffen machen tödlichen Schaden. Schlag und Unheilbar sind
+# Die meisten Waffen machen tödlichen Schaden. Schlag und Schwerheilbar sind
 # die Ausnahmen, die man extra setzt (Mark, 10.10.2026).
 SCHADEN_ART_DEFAULT = "schwer"
 

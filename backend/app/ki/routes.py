@@ -351,7 +351,7 @@ _GEGENSTAND_SYSTEM = (
     "8–12 nur Schiffswaffen (Raumschiff/Bordgeschütz). Ein "
     "Aufpreis für Tarnung, Smartlink oder Prototyp hebt die Stufe nicht. "
     "Bei jedem anderen Typ 0. schadenArt bei typ Waffe: schlag, schwer oder aggraviert "
-    "(Schlag / Tödlich / Unheilbar). Fehlt sie, gilt Tödlich. Faust und Knüppel schlag, "
+    "(Schlag / Tödlich / Schwerheilbar). Fehlt sie, gilt Tödlich. Faust und Knüppel schlag, "
     "Klinge und Schusswaffe schwer, Explosion oder Brand aggraviert. Sonst leer. "
     "Gibt der Gegenstand im ausgerüsteten/verbauten Zustand einen Bonus auf eine "
     "BESTEHENDE Fertigkeit, ein Attribut oder eine Sphäre (typisch bei Cyberware/"

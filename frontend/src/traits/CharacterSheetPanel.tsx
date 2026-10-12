@@ -98,7 +98,7 @@ function SchadensartFeld({
       Schadensart
       <select
         value={wert === "schlag" || wert === "schwer" || wert === "aggraviert" ? wert : "schwer"}
-        title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Unheilbar geht voll durch."
+        title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Schwerheilbar geht voll durch."
         onChange={(e) => onChange(e.target.value as SchadenArt)}
       >
         <option value="schlag">{SCHADEN_ART_LABEL.schlag}</option>

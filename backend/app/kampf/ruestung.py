@@ -48,11 +48,11 @@ bis sie irgendwann nichts mehr bringt.
 2. `absorbiert = min(Stärke, reduktion)` — was die Rüstung abfängt.
 3. `durchkommend = max(0, Stärke - reduktion)` — der Rest.
 4. **Schaden an die Trägerin**, abgestuft statt einfach geblockt — Rüstung
-   "hält nicht auf", sie "dämpft": Unheilbar wird zu Tödlich, Tödlich wird zu
+   "hält nicht auf", sie "dämpft": Schwerheilbar wird zu Tödlich, Tödlich wird zu
    Schlag (Menge bleibt gleich), Schlag ist schon die unterste Stufe und wird
    stattdessen **halbiert** (abgerundet). Menge ist immer `durchkommend`.
 5. **Schaden an die Rüstung (Kästchen):**
-   - **Unheilbar:** Mark: *"das wäre ja was wie eine Explosion, da kann man
+   - **Schwerheilbar:** Mark: *"das wäre ja was wie eine Explosion, da kann man
      froh sein das überstanden zu haben"* — immer die volle Stärke, 1:1,
      unabhängig von der Reduktion.
    - **Tödlich:** eine Mischung, weil die Rüstung hier tatsächlich etwas
@@ -82,7 +82,7 @@ testbar ist und an einer einzigen Stelle steht — dieselbe Motivation wie bei
 
 # Die drei Schadensarten aus dem WoD-Dreiklang, wie er im ganzen Projekt schon
 # verwendet wird (Kaestchen.tsx::SCHADENSARTEN, Person.schaden{Schlag,Schwer,
-# Aggraviert}). Mark benutzt am Tisch eher "Schlag/Tödlich/Unheilbar" — das
+# Aggraviert}). Mark benutzt am Tisch eher "Schlag/Tödlich/Schwerheilbar" — das
 # entspricht 1:1 schlag/schwer/aggraviert, siehe Mapping unten.
 SCHADENSARTEN = ("schlag", "schwer", "aggraviert")
 
@@ -128,7 +128,7 @@ def berechne_treffer(
 ) -> dict:
     """Ein einzelner Treffer gegen EIN Rüstungsteil.
 
-    `art` ist "schlag", "schwer" (= Tödlich) oder "aggraviert" (= Unheilbar).
+    `art` ist "schlag", "schwer" (= Tödlich) oder "aggraviert" (= Schwerheilbar).
     `staerke` ist die Anzahl Schadenspunkte des Treffers (was der Spieler als
     "3× Tödlich" einträgt).
 

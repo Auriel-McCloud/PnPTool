@@ -75,8 +75,8 @@ export function RastenVerwaltung({
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <p style={{ color: "var(--text-leise)", fontSize: "0.9em", margin: 0 }}>
         Ein Klick = eine Rast pro ausgewählter Person: Schlagschaden heilt vollständig, Tödlich
-        sinkt sofort um 1. Erst wenn Tödlich bei 0 steht, zählt ein Zähler Richtung Unheilbar-
-        Heilung hoch (7 Rasten ohne Tödlich-Schaden = ein Unheilbar-Punkt), natürliche Rüstung
+        sinkt sofort um 1. Erst wenn Tödlich bei 0 steht, zählt ein Zähler Richtung Schwerheilbar-
+        Heilung hoch (7 Rasten ohne Tödlich-Schaden = ein Schwerheilbar-Punkt), natürliche Rüstung
         heilt ggf. mit, sobald die Person danach vollständig gesund ist.
       </p>
 
@@ -94,7 +94,7 @@ export function RastenVerwaltung({
               <span>{p.name}</span>
               {u && (
                 <span style={{ color: "var(--text-leise)", fontSize: "0.85em" }}>
-                  — Schlag {u.schadenSchlag} · Schwer {u.schadenSchwer} · Unheilbar {u.schadenAggraviert} · Heil-Zähler{" "}
+                  — Schlag {u.schadenSchlag} · Schwer {u.schadenSchwer} · Schwerheilbar {u.schadenAggraviert} · Heil-Zähler{" "}
                   {u.schwerHeilZaehler}/7
                 </span>
               )}

@@ -105,7 +105,7 @@ DROGEN = [
 
 # --- Waffen-Richtwerte (Zeilen 58-64) — als repräsentative Beispiele, kein
 # konkretes Markenmodell im Excel genannt, deshalb bewusst generische Namen.
-# schadenArt: schlag / schwer (Tödlich) / aggraviert (Unheilbar).
+# schadenArt: schlag / schwer (Tödlich) / aggraviert (Schwerheilbar).
 WAFFEN = [
     # (name, schaden, schaden_art, preis, beschreibung)
     ("Schlagring", 1, "schlag", 50, "Einfache Nahkampfwaffe für die Faust."),

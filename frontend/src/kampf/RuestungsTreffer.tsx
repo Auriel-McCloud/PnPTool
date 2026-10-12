@@ -19,7 +19,7 @@ import { bogenApi, type RuestungTrefferErgebnis } from "../traits/bogenApi";
  */
 
 const ARTEN: { wert: RuestungsArt; label: string; hinweis: string }[] = [
-  { wert: "aggraviert", label: "Unheilbar", hinweis: "z.B. eine Explosion — trifft immer voll auf die Rüstung durch." },
+  { wert: "aggraviert", label: "Schwerheilbar", hinweis: "z.B. eine Explosion — trifft immer voll auf die Rüstung durch." },
   { wert: "schwer", label: "Tödlich", hinweis: "z.B. Schusswaffen — Rüstung wandelt es in Schlagschaden um." },
   { wert: "schlag", label: "Schlag", hinweis: "z.B. Faustschlag — Rüstung halbiert, was durchkommt." },
 ];

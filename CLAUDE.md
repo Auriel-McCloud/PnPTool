@@ -554,7 +554,7 @@ npm run dev
 - **Verifiziert:** `tsc -b`. **Im Browser eine Rüstung öffnen.**
 
 **Zuletzt gebaut (10.10.2026 — Waffen-Schadensart default Tödlich):**
-- **Was:** Waffen ohne gesetzte Art gelten als Tödlich. Schlag und Unheilbar
+- **Was:** Waffen ohne gesetzte Art gelten als Tödlich. Schlag und Schwerheilbar
   setzt man extra. Dropdown ohne „offen“.
 - **Dateien:** `waffenbonus.py`, `_create_data`, Repository-Lesen,
   CharacterSheetPanel, Steckbrief.
@@ -864,9 +864,9 @@ zuerst `docs/wiki/index.md` prüfen, siehe oben).
 - **Reflex-Booster** — Zusatzaktion, Ampel, Paralyse
 - **NPC-Namen verborgen** — Spieler sehen "Unbekannter Ork"
 - **Waffen tragen eine Schadensart** — `schadenArt`: `schlag` / `schwer` /
-  `aggraviert`, am Tisch Schlag / Tödlich / Unheilbar (Schwerheilbar =
-  Unheilbar). Leer = noch nicht gesetzt, nichts wird geraten. Im Umbau
-  wählbar, auf der Kachel sobald gesetzt.
+  `aggraviert`, am Tisch Schlag / Tödlich / Schwerheilbar. Leer = noch nicht
+  gesetzt, nichts wird geraten. Im Umbau wählbar, auf der Kachel sobald
+  gesetzt.
 
 ### Rüstung (`docs/api/ruestung.md`)
 - **Kästchen + Schadensreduktion statt flachem Bonus** — Rüstung nutzt sich ab
@@ -875,7 +875,7 @@ zuerst `docs/wiki/index.md` prüfen, siehe oben).
   *"Durchlass ist ein dummer Wert"*). Wie viel Schaden pro Treffer abgefangen
   wird; sinkt gestuft mit dem Kästchen-Anteil (>50% voll, >25% halb, sonst
   ein Viertel) statt einen eigenen "Aktuell"-Wert zu brauchen
-- **Abstufen statt Blocken** — Unheilbar→Tödlich→Schlag, nur Schlag wird
+- **Abstufen statt Blocken** — Schwerheilbar→Tödlich→Schlag, nur Schlag wird
   halbiert (unterste Stufe)
 - **Kein separater Aktuell-Wert für die Reduktion mehr** — die effektive
   Reduktion wird aus dem Kästchen-Verhältnis berechnet. Das war zugleich der

@@ -196,7 +196,7 @@ function Dashboard() {
   const [rastenOffen, setRastenOffen] = useState(false);
   // Zählt bei jeder erfolgreichen Rasten-/Vollheilung-Aktion hoch (siehe
   // RastenVerwaltung::onGeaendert) — PCKacheln.tsx hängt ihre bogenApi-Abfrage
-  // daran, damit LP/Tödlich/Unheilbar sich ohne F5 aktualisieren.
+  // daran, damit LP/Tödlich/Schwerheilbar sich ohne F5 aktualisieren.
   const [rastenVersion, setRastenVersion] = useState(0);
 
   useEffect(() => {

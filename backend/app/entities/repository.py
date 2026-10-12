@@ -21,7 +21,7 @@ _BOGEN_FELDER = [
     "schadenAggraviert",
     # Rast-Mechanik (11.10.2026, docs/api/rast.md): persistenter Zähler, wie
     # oft schwerer Schaden schon durch eine Rast geheilt wurde — erst bei 7
-    # wird daraus ein geheilter Unheilbar-Punkt (Wraparound). Gehört direkt
+    # wird daraus ein geheilter Schwerheilbar-Punkt (Wraparound). Gehört direkt
     # neben die drei Schadensfelder, weil die Rast-Formel sie gemeinsam
     # anfasst (app/traits/rast.py::person_aenderung).
     "schwerHeilZaehler",

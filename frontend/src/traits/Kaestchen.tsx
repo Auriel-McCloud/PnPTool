@@ -96,7 +96,7 @@ export function Kaestchen({
   // Genau dort genau, wo es zählt: bei 16 von 18 interessiert "fast voll",
   // bei 2 von 18 zählt man. Deshalb ist der vordere Teil eine Zellenleiste
   // (Schadensart über die Füllhöhe: ein Drittel Schlag, zwei Drittel
-  // tödlich, ganz unheilbar) und das Ende bleibt bei den gewohnten Zeichen
+  // tödlich, ganz schwerheilbar) und das Ende bleibt bei den gewohnten Zeichen
   // vom Papierblatt. Läuft der Puffer leer, kippt die Anzeige sichtbar in
   // den Ernstfall — und das ist genau der Moment, in dem es das soll.
   if (max > OVERFLOW_AB && !einzeln) {

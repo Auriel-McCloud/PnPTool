@@ -85,14 +85,14 @@ unter 50 % ihrer Kästchen fällt (6 → 3 → 1).
 ## Die Rechenformel
 
 Eingabe: Schadensart (`schlag` | `schwer` | `aggraviert` — am Tisch eher
-"Schlag/Tödlich/Unheilbar" genannt, siehe Mapping unten) und Stärke (Anzahl
+"Schlag/Tödlich/Schwerheilbar" genannt, siehe Mapping unten) und Stärke (Anzahl
 Schadenspunkte, das, was am Tisch als "3× Tödlich" angesagt wird).
 
 | Tischsprache | Feldname im Code |
 |---|---|
 | Schlag | `schlag` |
 | Tödlich | `schwer` |
-| Unheilbar | `aggraviert` |
+| Schwerheilbar | `aggraviert` |
 
 (Dieselben drei Begriffe wie überall sonst im Tool — `schadenSchlag`/
 `schadenSchwer`/`schadenAggraviert` an der Person, `Kaestchen.tsx`s
@@ -118,7 +118,7 @@ Halbierung, weil "eine Stufe leichter als Schlag" nichts mehr wäre:
 
 | Eingehend | Kommt an als |
 |---|---|
-| Unheilbar | Tödlich, **gleiche Menge** |
+| Schwerheilbar | Tödlich, **gleiche Menge** |
 | Tödlich | Schlag, **gleiche Menge** |
 | Schlag | Schlag, **halbiert** (abgerundet) |
 
@@ -129,7 +129,7 @@ selbst aus, siehe Schritt 4).
 **Schritt 4 — Schaden an die Rüstung (Kästchen).** Hier unterscheiden sich
 die drei Schadensarten am stärksten:
 
-- **Unheilbar:** immer die volle Stärke, 1:1 — unabhängig von der Reduktion.
+- **Schwerheilbar:** immer die volle Stärke, 1:1 — unabhängig von der Reduktion.
   Mark: *"das wäre ja was wie eine Explosion, da kann man froh sein das
   überstanden zu haben"*. Es gibt keine Verhandlung mit einer Bombe.
 - **Tödlich:** eine Mischung, weil die Rüstung hier tatsächlich etwas

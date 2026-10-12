@@ -125,7 +125,7 @@ _SYSTEM = (
     "— nur relevant für neu erfundene Ware, bei bestehenden Vorlagen wird sie "
     "ignoriert. Bei einer neu erfundenen Waffe schaden 1-12 laut der "
     "Stufe im Waffen-Richtwert, nie 0 und kein Würfelausdruck. schadenArt dann "
-    "schlag, schwer oder aggraviert (Schlag / Tödlich / Unheilbar). Fehlt sie, gilt Tödlich. Sonst 0 und leer."
+    "schlag, schwer oder aggraviert (Schlag / Tödlich / Schwerheilbar). Fehlt sie, gilt Tödlich. Sonst 0 und leer."
 )
 
 _SCHEMA = {

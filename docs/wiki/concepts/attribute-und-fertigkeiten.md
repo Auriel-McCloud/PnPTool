@@ -55,7 +55,7 @@ Drei Arten, WoD-Stil, in derselben Kästchenreihe:
 |---|---|---|
 | `/` | Schlagschaden | schnell (Widerstandsfähigkeit über Nacht) |
 | `X` | Tödlicher Schaden | langsam (½ Widerstandsfähigkeit, nur behandelt) |
-| durchgestrichenes `X` | Unheilbarer Schaden | sehr langsam ((7−Widerstandsfähigkeit) Wochen, nur behandelt) |
+| durchgestrichenes `X` | Schwerheilbarer Schaden | sehr langsam ((7−Widerstandsfähigkeit) Wochen, nur behandelt) |
 
 Schwererer Schaden steht links; im Tool schaltet ein Klick durch
 unbeschädigt → `/` → `X` → durchgestrichen → frei.
@@ -80,7 +80,7 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
   [[ruestung-kaestchen-durchlass]].
 - **Kästchen-Overflow gelöst** (`frontend/src/traits/Kaestchen.tsx`): ab 10
   Kästchen kippt die Leiste in eine Puffer+Enden-Form — schmale Zellen mit
-  Füllhöhe (⅓/⅔/voll für Schlag/Tödlich/Unheilbar) für den vorderen Teil,
+  Füllhöhe (⅓/⅔/voll für Schlag/Tödlich/Schwerheilbar) für den vorderen Teil,
   die letzten 5 Kästchen bleiben groß mit den gewohnten Zeichen. **18.09.2026
   drei Fehler behoben** (Mark hat die Implementierung selbst am Spieltisch
   geprüft und für nicht ganz stimmig befunden):

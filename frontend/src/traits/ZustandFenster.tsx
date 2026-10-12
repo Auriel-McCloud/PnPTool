@@ -23,13 +23,13 @@ import "./zustandfenster.css";
 const ARTEN: { wert: Schadensart; label: string }[] = [
   { wert: "schlag", label: "Schlag" },
   { wert: "schwer", label: "Tödlich" },
-  { wert: "aggraviert", label: "Unheilbar" },
+  { wert: "aggraviert", label: "Schwerheilbar" },
 ];
 
 /** Wie Schaden verschwindet — die Auskunft, die man beim Heilen braucht. */
 const HEILHINWEIS =
   "Geheilt wird immer der leichteste Schaden zuerst: Schlagschaden geht nach einer Ruhepause " +
-  "von selbst weg, tödlicher braucht Pflege oder eine Klinik, unheilbarer nur Magie oder Bioware.";
+  "von selbst weg, tödlicher braucht Pflege oder eine Klinik, schwerheilbarer nur Magie oder Bioware.";
 
 export interface ZustandWerte {
   /** Nach Art getrennt (Gesundheit) — hat Vorrang vor `verbraucht`. */

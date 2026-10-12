@@ -4,7 +4,7 @@ from app.entities.schemas import SichtbarkeitModus
 from pydantic import BaseModel
 
 # Dieselben drei Arten wie im Treffer-Dialog und auf dem Blatt
-# (kampf/ruestung.py::SCHADENSARTEN). Am Tisch: Schlag / Tödlich / Unheilbar.
+# (kampf/ruestung.py::SCHADENSARTEN). Am Tisch: Schlag / Tödlich / Schwerheilbar.
 # Leer = noch nicht gesetzt — Bestandsdaten raten wir nicht.
 SchadenArt = Literal["", "schlag", "schwer", "aggraviert"]
 
@@ -138,7 +138,7 @@ class GegenstandCreate(BaseModel):
     # macht aber nur 3 Schaden. Nur relevant wenn istWaffe=True.
     schaden: int = 0
     # Welche der drei Schadensarten die Waffe verursacht. Nur relevant wenn
-    # typ "Waffe" oder istWaffe. Standard Tödlich — Schlag und Unheilbar
+    # typ "Waffe" oder istWaffe. Standard Tödlich — Schlag und Schwerheilbar
     # setzt man extra (Mark, 10.10.2026).
     schadenArt: SchadenArt = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange

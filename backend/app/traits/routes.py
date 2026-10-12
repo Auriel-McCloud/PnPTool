@@ -305,7 +305,7 @@ async def tutorial_kapital_setzen(
 
 # Dieselben drei Begriffe wie überall sonst im Tool (schadenSchlag/Schwer/
 # Aggraviert, Kaestchen.tsx::Schadensart) — am Tisch heissen sie
-# Schlag/Tödlich/Unheilbar, die Übersetzung passiert nur in der Oberfläche.
+# Schlag/Tödlich/Schwerheilbar, die Übersetzung passiert nur in der Oberfläche.
 RuestungsArt = Literal["schlag", "schwer", "aggraviert"]
 
 _SCHADEN_FELD = {"schlag": "schadenSchlag", "schwer": "schadenSchwer", "aggraviert": "schadenAggraviert"}
@@ -511,7 +511,7 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
 
     Formel (Mark, 11.10.2026, siehe docs/api/rast.md und app/traits/rast.py):
     Schlagschaden heilt immer vollständig, schwerer Schaden sinkt um 1 (mit
-    einem Zähler fürs Unheilbar-Wraparound bei 7), und ist die Person danach
+    einem Zähler fürs Schwerheilbar-Wraparound bei 7), und ist die Person danach
     komplett gesund, heilt jedes getragene `istNatuerlich`-Rüstungsteil mit
     Defizit +1 Kästchen — auch schon in dieser Rast. Unberührte Personen-IDs
     (falsch/gelöscht) werden übersprungen, nicht als Fehler gemeldet, damit

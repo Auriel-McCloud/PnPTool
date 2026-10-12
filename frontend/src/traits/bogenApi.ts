@@ -20,7 +20,7 @@ export interface BogenUebersicht {
   schadenSchwer: number;
   schadenAggraviert: number;
   /** Rast-Mechanik (11.10.2026, docs/api/rast.md): wie weit der nächste
-   * geheilte Unheilbar-Punkt noch entfernt ist (0-6, wraps bei 7 Rasten mit
+   * geheilte Schwerheilbar-Punkt noch entfernt ist (0-6, wraps bei 7 Rasten mit
    * schwerem Schaden). Rein informativ. */
   schwerHeilZaehler: number;
   willenskraftMax: number;
@@ -306,7 +306,7 @@ export const bogenApi = {
   /**
    * SL-Aktion "Rasten" (11.10.2026, docs/api/rast.md): EIN Klick = EINE Rast
    * pro ausgewählter Person. Schlagschaden heilt immer vollständig, schwerer
-   * Schaden sinkt um 1 (mit Zähler fürs Unheilbar-Wraparound bei 7), und ist
+   * Schaden sinkt um 1 (mit Zähler fürs Schwerheilbar-Wraparound bei 7), und ist
    * die Person danach komplett gesund, heilt natürliche Rüstung mit Defizit
    * +1 Kästchen — auch schon in dieser Rast. Antwort: Bogen-Übersicht je
    * personId, für Personen ohne Treffer leer/unverändert gelassen.

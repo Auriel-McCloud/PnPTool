@@ -8,10 +8,10 @@ Pro ausgewählter Person ist EIN Klick = EINE Rast:
 2. `schadenSchwer > 0` ("Tödlich" in der Anzeige): -1, sofort, jede Rast —
    kein Zähler, kein Warten.
 3. Erst wenn `schadenSchwer` NACH Schritt 2 bei 0 steht UND noch
-   `schadenAggraviert > 0` ("Unheilbar") da ist, läuft der persistente
+   `schadenAggraviert > 0` ("Schwerheilbar") da ist, läuft der persistente
    Zähler `schwerHeilZaehler` mit: += 1 pro Rast. Erreicht er dabei >= 7,
    läuft er über: -7, UND `schadenAggraviert` -1. Solange noch Tödlich-
-   Schaden offen ist, bleibt der Zähler stehen — Unheilbar heilt erst,
+   Schaden offen ist, bleibt der Zähler stehen — Schwerheilbar heilt erst,
    wenn der PC vom tödlichen Schaden runter ist (Mark: ursprünglich hatte
    die Formel das verkehrt herum, der Zähler lief nur MIT offenem Tödlich-
    Schaden und fror ein, sobald der bei 0 stand).
@@ -30,7 +30,7 @@ Rechnet rein (keine Datenbankzugriffe), dieselbe Motivation wie
 und ist ohne DB testbar.
 """
 
-# Wraparound-Schwelle für den Unheilbar-Heil-Zähler -> ein Punkt Unheilbar
+# Wraparound-Schwelle für den Schwerheilbar-Heil-Zähler -> ein Punkt Schwerheilbar
 # heilt erst, wenn SIEBEN Rasten OHNE offenen Tödlich-Schaden vergangen sind
 # (Marks Vorgabe).
 SCHWER_HEIL_SCHWELLE = 7

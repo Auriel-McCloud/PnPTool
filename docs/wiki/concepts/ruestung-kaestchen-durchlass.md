@@ -46,9 +46,9 @@ Bombenschutzanzug der stark beschädigt wird wird schwächer"*:
 | 0 | keine |
 
 Pro Treffer: `absorbiert = min(Stärke, Reduktion)`, `durchkommend = Stärke −
-absorbiert`. Abstufung wie gehabt (Unheilbar→Tödlich→Schlag, Schlag halbiert),
+absorbiert`. Abstufung wie gehabt (Schwerheilbar→Tödlich→Schlag, Schlag halbiert),
 angewandt auf `durchkommend`. Kästchenschaden unterscheidet sich weiter nach
-Schadensart (Unheilbar immer volle Stärke, Tödlich = `absorbiert÷2 +
+Schadensart (Schwerheilbar immer volle Stärke, Tödlich = `absorbiert÷2 +
 durchkommend`, Schlag nur bei Trigger `2×Stärke ≥ Kästchen-Aktuell`).
 
 **Mehrere Teile = ein Pool** (unverändert, nur Sortierung gedreht): Kästchen

@@ -4,7 +4,7 @@ für die vollständige Herleitung).
 Pro ausgewählter Person ist EIN Klick = EINE Rast: Schlagschaden heilt immer
 vollständig, Tödlich-Schaden (schadenSchwer) sinkt sofort um 1 — kein
 Zähler. Erst wenn Tödlich bei 0 steht, läuft ein Zähler für die (viel
-langsamere) Unheilbar-Heilung mit, Wraparound bei genau 7 Rasten OHNE
+langsamere) Schwerheilbar-Heilung mit, Wraparound bei genau 7 Rasten OHNE
 offenen Tödlich-Schaden. Ist die Person danach komplett gesund, heilt
 natürliche Rüstung mit Defizit mit — auch schon in derselben Rast. Daneben
 der Fallback "Vollständige Heilung": keine Bedingungen, kein Würfeln.
@@ -53,8 +53,8 @@ class TestSchwererSchadenHeiltSofort:
         aenderung = person_aenderung({"schadenSchwer": 3})
         assert aenderung["schadenSchwer"] == 2
 
-    def test_heilt_jede_rast_ohne_zaehler_solange_kein_unheilbar_offen(self):
-        """Ohne Unheilbar-Schaden bleibt der Zähler grundsätzlich bei 0 —
+    def test_heilt_jede_rast_ohne_zaehler_solange_kein_schwerheilbar_offen(self):
+        """Ohne Schwerheilbar-Schaden bleibt der Zähler grundsätzlich bei 0 —
         es gibt nichts, worauf er hinarbeiten könnte."""
         person = {"schadenSchwer": 6, "schwerHeilZaehler": 0}
         for erwarteter_schwer in range(5, -1, -1):
@@ -67,11 +67,11 @@ class TestSchwererSchadenHeiltSofort:
         assert aenderung["schadenSchwer"] == 0
 
 
-class TestUnheilbarZaehlerLaeuftErstOhneToedlichenSchaden:
-    """Der Zähler für die (langsame) Unheilbar-Heilung läuft nur, solange
+class TestSchwerheilbarZaehlerLaeuftErstOhneToedlichenSchaden:
+    """Der Zähler für die (langsame) Schwerheilbar-Heilung läuft nur, solange
     KEIN Tödlich-Schaden mehr offen ist — Mark, 12.10.2026: ursprünglich war
     das verkehrt herum (Zähler lief nur MIT offenem Tödlich-Schaden und fror
-    ein, sobald der bei 0 stand, sodass reiner Unheilbar-Schaden nie
+    ein, sobald der bei 0 stand, sodass reiner Schwerheilbar-Schaden nie
     heilte)."""
 
     def test_mit_offenem_toedlichem_schaden_bleibt_der_zaehler_stehen(self):
@@ -97,7 +97,7 @@ class TestUnheilbarZaehlerLaeuftErstOhneToedlichenSchaden:
         assert aenderung["schadenSchwer"] == 0
         assert aenderung["schwerHeilZaehler"] == 1
 
-    def test_ohne_unheilbaren_schaden_bleibt_der_zaehler_bei_null(self):
+    def test_ohne_schwerheilbaren_schaden_bleibt_der_zaehler_bei_null(self):
         aenderung = person_aenderung(
             {"schadenSchwer": 0, "schadenAggraviert": 0, "schwerHeilZaehler": 0}
         )
@@ -112,11 +112,11 @@ class TestUnheilbarZaehlerLaeuftErstOhneToedlichenSchaden:
 
 
 class TestWraparoundBeiGenauSieben:
-    def test_wraparound_heilt_einen_unheilbar_punkt(self):
+    def test_wraparound_heilt_einen_schwerheilbar_punkt(self):
         aenderung = person_aenderung(
             {"schadenSchwer": 0, "schadenAggraviert": 2, "schwerHeilZaehler": 6}
         )
-        # 6 + 1 = 7 >= Schwelle -> wrap: -7 = 0, Unheilbar -1
+        # 6 + 1 = 7 >= Schwelle -> wrap: -7 = 0, Schwerheilbar -1
         assert aenderung["schwerHeilZaehler"] == 0
         assert aenderung["schadenAggraviert"] == 1
 
@@ -151,7 +151,7 @@ class TestIstVollstaendigGesund:
             {"schadenSchlag": 0, "schadenSchwer": 1, "schadenAggraviert": 0}
         )
 
-    def test_noch_unheilbarer_schaden_ist_nicht_gesund(self):
+    def test_noch_schwerheilbarer_schaden_ist_nicht_gesund(self):
         assert not ist_vollstaendig_gesund(
             {"schadenSchlag": 0, "schadenSchwer": 0, "schadenAggraviert": 1}
         )
