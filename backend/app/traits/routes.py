@@ -890,7 +890,31 @@ async def erstelle_charakter(
     if gratis_gegenstand_id and not gratis_erhalten:
         vorlage = await items_repository.get_gegenstand(campaign_id, gratis_gegenstand_id)
         if vorlage is not None:
-            await items_repository.assign_copy(campaign_id, vorlage, person_id, "SPEZIFISCH", [person_id])
+            kopie = await items_repository.assign_copy(campaign_id, vorlage, person_id, "SPEZIFISCH", [person_id])
+            # Bugfix (12.10.2026, Dug'Rah-Fall live auf bebop nachgestellt):
+            # zwei Probleme, beide bei derselben Zuweisung.
+            # (1) assign_copy übernimmt `ablage` unverändert von der Vorlage
+            # — Vorlagen liegen auf dem Schema-Default "RUCKSACK". Für
+            # istNatuerlich-Rüstung gibt es aber gar keinen Weg, sie
+            # "anzulegen": sie ist dem Spieler im Inventar absichtlich
+            # verborgen (siehe SpielerAnsicht.tsx::istVersteckteAusruestung).
+            # (2) `ruestungKaestchenAktuell` kommt ebenfalls als Vorlagen-
+            # Platzhalter (0) mit — `anwende_natuerliche_ruestung` klemmt das
+            # Kästchen-Max zwar live auf die Widerstandsfähigkeit, hebt aber
+            # nie ein zu niedriges Aktuell an (das wäre sonst ununterscheidbar
+            # von einer echten Beschädigung). Ohne Initialisierung hier blieb
+            # die frische Rüstung für immer bei 0/0 "zerstört" hängen, und
+            # `kampf/ruestung.py::reihenfolge` filtert 0-Kästchen-Teile aus dem
+            # Pool — das Blatt zeigte die ganze Rüstungszeile gar nicht erst
+            # an (`bogen.ruestung.kaestchenMax > 0`-Check in Charakterblatt.tsx).
+            # Beides zusammen macht sie erst zu dem, was sie sein soll: von
+            # Anfang an vollständig intakt und angelegt, ohne Spieler-Zutun.
+            if kopie is not None and kopie.get("istNatuerlich"):
+                await items_repository.set_ablage(campaign_id, kopie["id"], "AUSGERUESTET", None)
+                widerstandsfaehigkeit = max(0, int(werte.get("Widerstandsfähigkeit", 0)))
+                await items_repository.update_gegenstand(
+                    campaign_id, kopie["id"], {"ruestungKaestchenAktuell": widerstandsfaehigkeit}
+                )
             gratis_erhalten = True
 
     vermoegen, schulden = erstellung.kapital(auswahl)
