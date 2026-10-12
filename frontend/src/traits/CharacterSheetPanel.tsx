@@ -273,11 +273,14 @@ export function GegenstandRow({
   const [kiBildOffen, setKiBildOffen] = useState(false);
 
   // Summe aller Boni für Chrom-Preisberechnung:
-  // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden
+  // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden + initiativeBonus
   const traitBoniSumme = traitBoni.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
   const ausrFertSumme = ausruestungsfertigkeiten.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
   const waffenSchaden = istWaffe ? schaden : 0;
-  const gesamtBonus = traitBoniSumme + ausrFertSumme + waffenSchaden;
+  // Initiative-Bonus zählt 1:1 mit (Mark, 12.10.2026) — sonst kostet ein reiner
+  // Reflex-Booster-artiger Gegenstand (nur Initiative, kein Trait/Ausrüstungs-
+  // Bonus, keine Waffe) praktisch nichts, egal welche Qualitätsstufe man wählt.
+  const gesamtBonus = traitBoniSumme + ausrFertSumme + waffenSchaden + (Number(initiativeBonus) || 0);
 
   // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
   // nicht mehr. Nur nachladen, solange das Formular offen ist.
