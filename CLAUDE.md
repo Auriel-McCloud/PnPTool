@@ -82,6 +82,16 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   Plätze auftauchen, einen antippen, einen Wunsch eingeben und prüfen dass
   daraus ein echter Kontakt mit offenem Chat wird.
 
+- **Mechanik-Hintergründe im SL-Baukasten sichtbar + abschaltbar** (12.10.2026,
+  siehe „Zuletzt gebaut" unten): Backend-Tests grün (neue Fälle für die
+  Einstellungen-Gates), `tsc -b` sauber. **Nie im Browser angeklickt.** Bitte
+  in der Hintergründe-Verwaltung prüfen: oben erscheint ein Block „Mechanik-
+  Hintergründe" mit Mentor/Kontakte/Schulden und je einer Checkbox; eine
+  ausschalten, dann in der Charaktererstellung eines Spielers prüfen, dass
+  der Eintrag aus dem Hintergrund-Pool verschwindet (Schulden: der
+  Kredit-Freebee-Regler verschwindet komplett) und wieder auftaucht, sobald
+  man es zurückschaltet.
+
 - **Waffenschaden aus der Beratung** (10.10.2026): Sechs Entwürfe auf bebop
   haben jetzt einen Schaden (Kachel und Kampf lesen `kraft`, nicht die
   WoD-Würfel in den Notizen). Nächste KI-Waffe setzt das Feld selbst.
@@ -446,6 +456,35 @@ npm run dev
 - **Nicht dabei:** Rassen-Gratis-Erstkauf-Feature (`gratisErsterKaufTyp`)
   gilt beim KI-Einkauf nicht, nur beim echten Spieler-Kauf. Kein Digital-
   Bestellung-Pfad beim KI-Einkauf (Ware landet immer sofort im Inventar).
+
+**Zuletzt gebaut (12.10.2026 — Mechanik-Hintergründe im SL-Baukasten sichtbar + abschaltbar):**
+- **Was:** Mark schaute sich die Hintergründe-Verwaltung an und merkte an,
+  dass Mentor/Kontakte/Schulden dort unsichtbar sind, weil sie Mechanik statt
+  Katalogzeile sind — Wunsch: oben im Menü anzeigen, damit man weiß dass es
+  sie gibt, mit Checkbox zum An-/Abschalten je Kampagne. Neue campaign-weite
+  Einstellungen `mentorAktiv`/`kontakteAktiv`/`schuldenAktiv` (Default an,
+  gleiches Muster wie `messengerAktiv` & Co.). `erstellung.py::regelwerk()`
+  filtert deaktivierte Namen aus dem Hintergrund-Pool der Charaktererstellung
+  und reicht `freebees.kreditErlaubt` durch (Schulden hängt am Kredit-Freebee,
+  nicht am Pool); `erstellung.py::pruefe()` lehnt eine Einreichung serverseitig
+  ab, die trotzdem Punkte auf einen deaktivierten Mechanik-Hintergrund legt
+  oder den Kredit-Freebee bei abgeschalteten Schulden nutzt — Schutz gegen
+  eine veraltete/manipulierte Anfrage, nicht nur Oberflächen-Kosmetik.
+- **Dateien:** `backend/app/campaigns/repository.py` (3 neue
+  `EINSTELLUNGEN_DEFAULTS`), `backend/app/hintergruende/seed.py` (neu:
+  `SYSTEM_HINTERGRUENDE`-Metadaten), `backend/app/hintergruende/routes.py`
+  (neu: `GET/PATCH .../hintergruende/system`), `backend/app/traits/
+  {erstellung.py, routes.py}` (Einstellungen-Gates in `regelwerk()`/`pruefe()`),
+  `frontend/src/hintergruende/{api.ts, HintergruendeVerwaltung.tsx,
+  hintergruende.css (neu)}` (Checkbox-Block „Mechanik-Hintergründe“),
+  `frontend/src/traits/{bogenApi.ts, Charaktererstellung.tsx}`
+  (Kredit-Regler blendet sich aus, wenn `kreditErlaubt` falsch ist).
+- **Verifiziert:** 7 neue Backend-Tests grün (Gates in `pruefe()`/`regelwerk()`,
+  SYSTEM_HINTERGRUENDE-Konsistenz), komplette Suite sonst unverändert bei
+  denselben 21 vorbestehenden Fehlschlägen (Achievements/Flora&Fauna/Shop/
+  Zugriffsschutz, fehlende lokale Neo4j-Verbindung — nicht von mir
+  verursacht). `tsc -b` sauber. **Nie im Browser angeklickt** — siehe „Offen“
+  oben für die konkreten Klickschritte.
 
 **Zuletzt gebaut (11.10.2026 — Tutorial-Shop-Auswahl zurück in die Kampagnen-Einstellungen):**
 - **Was:** Mark meldete: Tutorial-Shop-Auswahl steckte als eigener
