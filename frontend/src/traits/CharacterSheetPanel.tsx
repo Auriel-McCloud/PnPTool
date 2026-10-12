@@ -293,6 +293,15 @@ export function GegenstandRow({
   const gesamtBonus =
     traitBoniSumme + ausrFertSumme + waffenSchaden + (Number(initiativeBonus) || 0) + zusatzaktionenBonus;
 
+  // Mirror von chrom.py::STUFEN (Teiler je preisJeBonus) — rein lokal
+  // berechnet, damit der gespeicherte Willenskraft-Verlust NICHT von der
+  // asynchron nachgeladenen Chromstufen-Liste abhängt. Bug bis 12.10.2026:
+  // bei schnellen Bonus-Änderungen (z.B. Zahl bei den Zusatzeigenschaften
+  // tippen) konnten Server-Antworten in falscher Reihenfolge ankommen und
+  // den WK-Verlust auf einem veralteten Stand einfrieren — der Wert schien
+  // dann "wirkungslos", obwohl die Formel selbst stimmt.
+  const TEILER_JE_PREIS: Record<number, number> = { 500: 0.5, 2000: 1, 5000: 2, 10000: 3, 20000: 4 };
+
   // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
   // nicht mehr. Nur nachladen, solange das Formular offen ist.
   useEffect(() => {
@@ -307,23 +316,18 @@ export function GegenstandRow({
       .catch(() => setChromstufen([]));
   }, [expanded, typ, gesamtBonus, kraft, campaignId]);
 
-  // Wenn sich Boni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen
+  // Wenn sich Boni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen.
+  // Bewusst OHNE Abhängigkeit von der (async geladenen) `chromstufen`-Liste —
+  // direkt aus dem Bonus berechnet, siehe TEILER_JE_PREIS oben.
   useEffect(() => {
     if (!expanded || !CHROM_TYPEN.has(typ) || gewaehlteChromstufe === null) return;
-    const stufe = chromstufen.find((s) => s.preisJeBonus === gewaehlteChromstufe);
-    if (stufe) {
-      const bonus = Math.max(1, gesamtBonus);
-      setPreis(bonus * gewaehlteChromstufe);
-      // stufe.wVerlustGenau kommt vom Server bereits bonus-skaliert
-      // (verlust_genau(bonus, preisJeBonus) in chrom.py) — hier NICHT nochmal
-      // mit bonus multiplizieren. Bug bis 12.10.2026: dieser Effekt ueberschrieb
-      // den korrekten Wert aus dem Stufen-Klick (Zeile ~933) mit stufe.wVerlustGenau * bonus,
-      // sobald sich Boni/Schaden danach noch aenderten — der WK-Verlust wuchs dadurch
-      // quadratisch mit dem Bonus statt linear (Bonus 4 bei Straße: 4 statt 16).
-      setWVerlust(stufe.wVerlustGenau);
-      setKraft(bonus);
-    }
-  }, [traitBoni, ausruestungsfertigkeiten, schaden, istWaffe, gewaehlteChromstufe, gesamtBonus, chromstufen, expanded, typ]);
+    const teiler = TEILER_JE_PREIS[gewaehlteChromstufe];
+    if (!teiler) return;
+    const bonus = Math.max(1, gesamtBonus);
+    setPreis(bonus * gewaehlteChromstufe);
+    setWVerlust(Math.max(1, Math.floor(bonus / teiler)));
+    setKraft(bonus);
+  }, [traitBoni, ausruestungsfertigkeiten, schaden, istWaffe, gewaehlteChromstufe, gesamtBonus, expanded, typ]);
 
   // Katalog fürs Trait-Boni-Dropdown — nur laden, wenn das Formular offen
   // ist und Boni überhaupt angezeigt werden können.
@@ -921,24 +925,6 @@ export function GegenstandRow({
                         )}
                       </>
                     )}
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                      Initiative-Bonus
-                      <input
-                        type="number"
-                        value={initiativeBonus}
-                        onChange={(e) => setInitiativeBonus(Number(e.target.value))}
-                        style={{ width: 60 }}
-                      />
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                      Zusatzaktionen
-                      <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
-                        <option value={0}>keine</option>
-                        <option value={1}>1× pro Kampf</option>
-                        <option value={2}>2× pro Kampf</option>
-                        <option value={-1}>jede Runde</option>
-                      </select>
-                    </label>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
                     {chromstufen.map((st) => {
@@ -1145,6 +1131,27 @@ export function GegenstandRow({
                 >
                   + Bonus
                 </button>
+
+                <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                    Initiative-Bonus
+                    <input
+                      type="number"
+                      value={initiativeBonus}
+                      onChange={(e) => setInitiativeBonus(Number(e.target.value))}
+                      style={{ width: 60 }}
+                    />
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                    Zusatzaktionen
+                    <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
+                      <option value={0}>keine</option>
+                      <option value={1}>1× pro Kampf</option>
+                      <option value={2}>2× pro Kampf</option>
+                      <option value={-1}>jede Runde</option>
+                    </select>
+                  </label>
+                </div>
 
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
                   Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand)
