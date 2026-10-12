@@ -1,15 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
-import { hintergruendeApi, type Hintergrund } from "./api";
+import { hintergruendeApi, type Hintergrund, type SystemHintergrund } from "./api";
 import "../zusatzfertigkeiten/zusatzfertigkeiten.css";
+import "./hintergruende.css";
 
 /**
  * SL-Baukasten für narrative Hintergründe (Name, Kurz, Detail).
- * Mentor/Kontakte sind Mechanik und stehen nicht in dieser Tabelle.
+ * Mentor/Kontakte/Schulden sind Mechanik und stehen nicht in dieser Tabelle,
+ * erscheinen aber oben als eigener, nicht editierbarer Block — sichtbar und
+ * je Kampagne per Checkbox an-/abschaltbar.
  */
 export function HintergruendeVerwaltung({ campaignId }: { campaignId: string }) {
   const [liste, setListe] = useState<Hintergrund[]>([]);
+  const [systemListe, setSystemListe] = useState<SystemHintergrund[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [offen, setOffen] = useState<Hintergrund | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
@@ -21,11 +25,25 @@ export function HintergruendeVerwaltung({ campaignId }: { campaignId: string }) 
     setOffen((alt) => (alt ? daten.find((h) => h.id === alt.id) ?? null : null));
   }
 
+  async function systemNeuLaden() {
+    setSystemListe(await hintergruendeApi.systemListe(campaignId));
+  }
+
   useEffect(() => {
     setLaedt(true);
-    neuLaden().finally(() => setLaedt(false));
+    Promise.all([neuLaden(), systemNeuLaden()]).finally(() => setLaedt(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
+
+  async function systemUmschalten(schluessel: string, aktiv: boolean) {
+    // Optimistisch umschalten — bei Fehler lädt neuLaden den echten Stand.
+    setSystemListe((alt) => alt.map((s) => (s.schluessel === schluessel ? { ...s, aktiv } : s)));
+    try {
+      await hintergruendeApi.systemUmschalten(campaignId, schluessel, aktiv);
+    } finally {
+      await systemNeuLaden();
+    }
+  }
 
   async function anlegen(e: FormEvent) {
     e.preventDefault();
@@ -41,6 +59,29 @@ export function HintergruendeVerwaltung({ campaignId }: { campaignId: string }) 
 
   return (
     <div className="zf-seite">
+      {systemListe.length > 0 && (
+        <div className="hg-system">
+          <h3 className="hg-system-titel">Mechanik-Hintergründe</h3>
+          <p className="hg-system-hinweis">
+            Eigener Code statt Katalogzeile — Punkte darauf lösen bei der Erstellung etwas aus.
+            Abschalten entfernt sie aus der Erstellung, bestehende Charaktere bleiben unberührt.
+          </p>
+          {systemListe.map((s) => (
+            <label key={s.schluessel} className="hg-system-zeile">
+              <input
+                type="checkbox"
+                checked={s.aktiv}
+                onChange={(e) => systemUmschalten(s.schluessel, e.target.checked)}
+              />
+              <span className="hg-system-inhalt">
+                <span className="hg-system-name">{s.name}</span>
+                <span className="hg-system-beschreibung">{s.beschreibung}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+
       <div className="zf-kopf">
         <button type="button" onClick={() => setAnlegenOffen(true)}>
           + Neu
@@ -50,8 +91,8 @@ export function HintergruendeVerwaltung({ campaignId }: { campaignId: string }) 
 
       {liste.length === 0 && (
         <p className="zf-leer">
-          Noch keine narrativen Hintergründe. Mentor und Kontakte sind Mechanik und stehen
-          nicht in dieser Liste.
+          Noch keine narrativen Hintergründe. Mentor, Kontakte und Schulden sind Mechanik und
+          stehen oben, nicht in dieser Liste.
         </p>
       )}
 

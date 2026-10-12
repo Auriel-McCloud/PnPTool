@@ -1495,14 +1495,16 @@ function SchrittFreebees({
             frei={frei}
             onWert={onWillenskraft}
           />
-          <ZaehlerZeile
-            name="Kredit"
-            zusatz={`${regeln.freebees.kostenKredit} je ${regeln.freebees.kapitalJeFreebee.toLocaleString("de-AT")}¥`}
-            wert={kredit}
-            preis={regeln.freebees.kostenKredit}
-            frei={frei}
-            onWert={onKredit}
-          />
+          {regeln.freebees.kreditErlaubt && (
+            <ZaehlerZeile
+              name="Kredit"
+              zusatz={`${regeln.freebees.kostenKredit} je ${regeln.freebees.kapitalJeFreebee.toLocaleString("de-AT")}¥`}
+              wert={kredit}
+              preis={regeln.freebees.kostenKredit}
+              frei={frei}
+              onWert={onKredit}
+            />
+          )}
           <ZaehlerZeile
             name="Eigenkapital"
             zusatz={`${regeln.freebees.kostenEigenkapital} je ${regeln.freebees.kapitalJeFreebee.toLocaleString("de-AT")}¥`}

@@ -394,6 +394,41 @@ def test_unbekannter_hintergrund_faellt_auf():
     assert any("Adelstitel" in f for f in fehler)
 
 
+def test_deaktivierter_mentor_wird_abgelehnt():
+    auswahl = grundgeruest(hintergrundPunkte={"Mentor": 2})
+    assert erstellung.pruefe(auswahl, KATALOG) == []
+    fehler = erstellung.pruefe(auswahl, KATALOG, einstellungen={"mentorAktiv": False})
+    assert any("Mentor" in f and "deaktiviert" in f for f in fehler)
+
+
+def test_deaktivierte_kontakte_werden_abgelehnt():
+    auswahl = grundgeruest(hintergrundPunkte={"Kontakte": 2})
+    fehler = erstellung.pruefe(auswahl, KATALOG, einstellungen={"kontakteAktiv": False})
+    assert any("Kontakte" in f and "deaktiviert" in f for f in fehler)
+
+
+def test_deaktivierte_schulden_lehnen_kredit_freebee_ab():
+    auswahl = grundgeruest(freebeeKredit=1)
+    assert erstellung.pruefe(auswahl, KATALOG) == []
+    fehler = erstellung.pruefe(auswahl, KATALOG, einstellungen={"schuldenAktiv": False})
+    assert any("Schulden" in f for f in fehler)
+
+
+def test_regelwerk_filtert_deaktivierte_mechanik_hintergruende():
+    namen_voll = {h["name"] for h in erstellung.regelwerk()["hintergruende"]}
+    assert {"Mentor", "Kontakte"} <= namen_voll
+
+    gefiltert = erstellung.regelwerk(einstellungen={"mentorAktiv": False})["hintergruende"]
+    namen = {h["name"] for h in gefiltert}
+    assert "Mentor" not in namen
+    assert "Kontakte" in namen  # unberührt
+
+
+def test_regelwerk_kreditErlaubt_folgt_der_einstellung():
+    assert erstellung.regelwerk()["freebees"]["kreditErlaubt"] is True
+    assert erstellung.regelwerk(einstellungen={"schuldenAktiv": False})["freebees"]["kreditErlaubt"] is False
+
+
 # --- Endwerte -----------------------------------------------------------
 
 

@@ -14,6 +14,13 @@ export interface HintergrundEingabe {
   detailbeschreibung?: string;
 }
 
+export interface SystemHintergrund {
+  schluessel: string;
+  name: string;
+  beschreibung: string;
+  aktiv: boolean;
+}
+
 function basis(cid: string) {
   return `/api/campaigns/${cid}/hintergruende`;
 }
@@ -25,4 +32,7 @@ export const hintergruendeApi = {
   aendern: (cid: string, id: string, body: HintergrundEingabe) =>
     api.patch<Hintergrund>(`${basis(cid)}/${id}`, body),
   loeschen: (cid: string, id: string) => api.delete<void>(`${basis(cid)}/${id}`),
+  systemListe: (cid: string) => api.get<SystemHintergrund[]>(`${basis(cid)}/system`),
+  systemUmschalten: (cid: string, schluessel: string, aktiv: boolean) =>
+    api.patch<SystemHintergrund>(`${basis(cid)}/system/${schluessel}`, { aktiv }),
 };

@@ -98,6 +98,14 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # Kampagne auf Mistral stellen, ohne den Server für alle umzustellen.
     # Siehe app/ki/client.py::_provider_fuer.
     "kiProvider": "",
+    # Mentor/Kontakte/Schulden (siehe hintergruende/seed.py::SYSTEM_HINTERGRUENDE):
+    # die drei Mechanik-Hintergründe, standardmäßig an. Je Kampagne abschaltbar,
+    # z.B. wenn die Gruppe keine Mentor-NPCs will oder Schulden nicht passen —
+    # wirkt auf den Hintergrund-Pool der Erstellung (erstellung.py::regelwerk)
+    # und wird serverseitig durchgesetzt (erstellung.py::pruefe).
+    "mentorAktiv": True,
+    "kontakteAktiv": True,
+    "schuldenAktiv": True,
 }
 
 

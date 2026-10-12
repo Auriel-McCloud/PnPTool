@@ -332,8 +332,24 @@ def lebensmaxima(
     }
 
 
-def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Alles, was die Oberfläche zum Führen durch die Erstellung braucht."""
+def regelwerk(
+    rassen: dict[str, dict[str, Any]] | None = None,
+    einstellungen: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Alles, was die Oberfläche zum Führen durch die Erstellung braucht.
+
+    `einstellungen` steuert die Mechanik-Hintergründe (siehe
+    hintergruende/seed.py::SYSTEM_HINTERGRUENDE): deaktivierte tauchen im
+    Pool gar nicht erst auf, der Kredit-Freebee wird separat über
+    `freebees.kreditErlaubt` durchgereicht (Schulden ist kein Pool-Eintrag).
+    """
+    einstellungen = einstellungen or {}
+    deaktivierte_mechanik_namen = {
+        name
+        for name, schluessel in (("Mentor", "mentorAktiv"), ("Kontakte", "kontakteAktiv"))
+        if not einstellungen.get(schluessel, True)
+    }
+    hintergruende_pool = [h for h in HINTERGRUENDE if h["name"] not in deaktivierte_mechanik_namen]
     return {
         "wege": WEGE,
         "rassen": [
@@ -373,7 +389,7 @@ def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]
             }
             for kennung, paket in FERTIGKEITS_PAKETE.items()
         ],
-        "hintergruende": HINTERGRUENDE,
+        "hintergruende": hintergruende_pool,
         "hintergrundMax": HINTERGRUND_MAX,
         "hintergrundPunkteGesamt": HINTERGRUND_PUNKTE_GESAMT,
         "freebees": {
@@ -384,6 +400,9 @@ def regelwerk(rassen: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]
             "kostenEigenkapital": FREEBEE_KOSTEN_EIGENKAPITAL,
             "kapitalJeFreebee": KAPITAL_JE_FREEBEE,
             "maxJeFertigkeit": FREEBEE_MAX_JE_FERTIGKEIT,
+            # Schulden-Mechanik (siehe oben) deaktiviert: Oberfläche blendet
+            # den Kredit-Regler aus, statt nur den Pool zu filtern.
+            "kreditErlaubt": bool(einstellungen.get("schuldenAktiv", True)),
         },
         "startkapital": STARTKAPITAL,
         # Magiewert-Sockel (siehe MAGIE_FIXWERT oben): Hexkraft/NeuroWeaving
@@ -431,7 +450,10 @@ def freebee_kosten(auswahl: dict[str, Any], kategorie_von: dict[str, str]) -> in
 
 
 def pruefe(
-    auswahl: dict[str, Any], katalog: list[dict], rassen: dict[str, dict[str, Any]] | None = None
+    auswahl: dict[str, Any],
+    katalog: list[dict],
+    rassen: dict[str, dict[str, Any]] | None = None,
+    einstellungen: dict[str, Any] | None = None,
 ) -> list[str]:
     """Prüft eine eingereichte Erstellung. Leere Liste = in Ordnung.
 
@@ -440,6 +462,7 @@ def pruefe(
     Einzelfehler vorgesetzt bekommen.
     """
     fehler: list[str] = []
+    einstellungen = einstellungen or {}
     kategorie_von = {t["name"]: t["category"] for t in katalog}
 
     weg = auswahl.get("weg") or "KEINER"
@@ -536,6 +559,13 @@ def pruefe(
             f"{sum(hintergruende.values())} Hintergrundpunkte verteilt, "
             f"erlaubt sind {HINTERGRUND_PUNKTE_GESAMT}."
         )
+    # Mechanik-Hintergründe lassen sich je Kampagne abschalten (siehe
+    # hintergruende/seed.py::SYSTEM_HINTERGRUENDE) — eine deaktivierte Zeile
+    # darf nicht über eine alte/manipulierte Anfrage trotzdem Punkte bekommen.
+    if hintergruende.get("Mentor", 0) > 0 and not einstellungen.get("mentorAktiv", True):
+        fehler.append("Mentor ist in dieser Kampagne deaktiviert.")
+    if hintergruende.get("Kontakte", 0) > 0 and not einstellungen.get("kontakteAktiv", True):
+        fehler.append("Kontakte ist in dieser Kampagne deaktiviert.")
 
     # --- Freebees --------------------------------------------------------
     for name, zusatz in (auswahl.get("freebeePunkte") or {}).items():
@@ -558,6 +588,10 @@ def pruefe(
             )
 
     kosten = freebee_kosten(auswahl, kategorie_von)
+    # Schulden-Mechanik abgeschaltet (siehe oben): Kredit-Freebee ist dann
+    # tabu, unabhängig davon, ob er sich noch ausgeht.
+    if int(auswahl.get("freebeeKredit") or 0) > 0 and not einstellungen.get("schuldenAktiv", True):
+        fehler.append("Schulden (Kredit-Freebee) sind in dieser Kampagne deaktiviert.")
     # Rassen-Feature bonusFreebees (10.10.2026): budget-neutraler Bonus nur
     # für diese Rasse ("langweiliges Geld" beim Menschen) — erweitert das
     # Freebee-Limit, zählt aber NICHT in die 24er-Attribut-Bilanz mit rein.

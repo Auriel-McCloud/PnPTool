@@ -690,7 +690,7 @@ async def get_erstellungsregeln(campaign_id: str) -> dict:
     Regeln sind nichts Geheimes. Die Rassen kommen aus der Freigabe dieser
     Kampagne, nicht mehr aus der fest verdrahteten Tabelle.
     """
-    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id))
+    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id), await get_einstellungen(campaign_id))
 
 
 class ErstellungKommentarInput(BaseModel):
@@ -848,7 +848,8 @@ async def erstelle_charakter(
     weg_intern, magie_flavor = erstellung.normalisiere_weg(body.weg)
     auswahl["weg"] = weg_intern
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
-    fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen)
+    einstellungen = await get_einstellungen(campaign_id)
+    fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen, einstellungen)
     for zid in set(body.zusatzfertigkeitPunkte) | set(body.zusatzfertigkeitFreebees):
         if zid not in zusatzfertigkeit_ids:
             fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")

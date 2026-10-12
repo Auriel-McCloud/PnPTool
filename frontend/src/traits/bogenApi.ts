@@ -196,6 +196,7 @@ export interface Erstellungsregeln {
     kostenEigenkapital: number;
     kapitalJeFreebee: number;
     maxJeFertigkeit: number;
+    kreditErlaubt: boolean;
   };
   startkapital: number;
   /** Magiewert-Sockel (27.09.2026): Hexkraft/NeuroWeaving stehen fix auf

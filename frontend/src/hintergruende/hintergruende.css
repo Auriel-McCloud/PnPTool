@@ -1,0 +1,54 @@
+/* Mechanik-Hintergründe (Mentor/Kontakte/Schulden): eigener Block über dem
+   narrativen Katalog — nicht editierbar, nur je Kampagne an-/abschaltbar.
+   Farben ausschliesslich als Tokens, siehe docs/theming.md. */
+
+.hg-system {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+}
+
+.hg-system-titel {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.hg-system-hinweis {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.hg-system-zeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.hg-system-zeile input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.hg-system-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hg-system-name {
+  font-weight: 600;
+}
+
+.hg-system-beschreibung {
+  font-size: 12px;
+  color: var(--text-leise);
+}
