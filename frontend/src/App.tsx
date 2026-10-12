@@ -194,6 +194,10 @@ function Dashboard() {
   const [neueKampagneOffen, setNeueKampagneOffen] = useState(false);
   const [achievementsOffen, setAchievementsOffen] = useState(false);
   const [rastenOffen, setRastenOffen] = useState(false);
+  // Zählt bei jeder erfolgreichen Rasten-/Vollheilung-Aktion hoch (siehe
+  // RastenVerwaltung::onGeaendert) — PCKacheln.tsx hängt ihre bogenApi-Abfrage
+  // daran, damit LP/Tödlich/Unheilbar sich ohne F5 aktualisieren.
+  const [rastenVersion, setRastenVersion] = useState(0);
 
   useEffect(() => {
     menueApi.laden().then(setMenueLayouts).catch(() => undefined);
@@ -331,7 +335,7 @@ function Dashboard() {
             kennung="rasten-verwaltung"
             onSchliessen={() => setRastenOffen(false)}
           >
-            <RastenVerwaltung campaignId={kampagne.id} />
+            <RastenVerwaltung campaignId={kampagne.id} onGeaendert={() => setRastenVersion((v) => v + 1)} />
           </Fenster>
 
           {ENTITY_ANSICHT[bereich] && (
@@ -340,6 +344,7 @@ function Dashboard() {
               campaignId={kampagne.id}
               ansicht={ENTITY_ANSICHT[bereich]!}
               onRastenOeffnen={() => setRastenOffen(true)}
+              rastenVersion={rastenVersion}
             />
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}

@@ -166,12 +166,16 @@ export function EntityManager({
   campaignId,
   ansicht = "welt",
   onRastenOeffnen,
+  rastenVersion,
 }: {
   campaignId: string;
   ansicht?: WeltAnsicht;
   /** Öffnet das Rasten-Popup (App.tsx) — Knopf sitzt in der PCs-Kopfzeile,
    * dort sieht die SL auch gleich die LP und den schweren Schaden. */
   onRastenOeffnen?: () => void;
+  /** Zählt bei jeder erfolgreichen Rasten-Aktion hoch — an PCKacheln
+   * durchgereicht, damit die Kacheln sich ohne F5 aktualisieren. */
+  rastenVersion?: number;
 }) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
@@ -853,6 +857,7 @@ export function EntityManager({
               console.log("Blitz:", p.name);
             }}
             onExtraEP={(p) => setEpExtraBestaetigung(p)}
+            rastenVersion={rastenVersion}
           />
         </section>
       )}

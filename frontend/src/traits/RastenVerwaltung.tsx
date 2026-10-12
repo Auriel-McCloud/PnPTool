@@ -12,7 +12,16 @@ import { bogenApi, type BogenUebersicht } from "./bogenApi";
  * SL-only (die Route selbst ist per require_campaign_gm abgesichert, das
  * Popup hängt am 🏕️-Werkzeug in App.tsx, das nur die SL-Ansicht zeigt).
  */
-export function RastenVerwaltung({ campaignId }: { campaignId: string }) {
+export function RastenVerwaltung({
+  campaignId,
+  onGeaendert,
+}: {
+  campaignId: string;
+  /** Wird nach jeder erfolgreichen Rasten-/Vollheilung-Aktion aufgerufen —
+   * App.tsx zählt damit rastenVersion hoch, PCKacheln.tsx lädt daraufhin
+   * neu, ohne dass die SL F5 drücken muss (Mark, 12.10.2026). */
+  onGeaendert?: () => void;
+}) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [ausgewaehlt, setAusgewaehlt] = useState<Set<string>>(new Set());
   const [laeuft, setLaeuft] = useState(false);
@@ -51,6 +60,7 @@ export function RastenVerwaltung({ campaignId }: { campaignId: string }) {
           ? await bogenApi.rasten(campaignId, ids)
           : await bogenApi.vollstaendigeHeilung(campaignId, ids);
       setErgebnis((alt) => ({ ...alt, ...antwort }));
+      onGeaendert?.();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Fehlgeschlagen");
     } finally {

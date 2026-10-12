@@ -18,9 +18,13 @@ interface PCKachelProps {
   onKlick: () => void;
   onBlitz: () => void;
   onExtraEP?: () => void;
+  /** Zählt bei jeder erfolgreichen Rasten-Aktion hoch (App.tsx) — erzwingt
+   * ein Neuladen der Bogen-Übersicht, sonst zeigt die Kachel bis zum F5
+   * weiter die alten Werte (Mark, 12.10.2026). */
+  rastenVersion?: number;
 }
 
-function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP }: PCKachelProps) {
+function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP, rastenVersion }: PCKachelProps) {
   const [uebersicht, setUebersicht] = useState<BogenUebersicht | null>(null);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
       .laden(campaignId, person.id)
       .then((bogen) => setUebersicht(bogen.uebersicht))
       .catch(() => setUebersicht(null));
-  }, [campaignId, person.id]);
+  }, [campaignId, person.id, rastenVersion]);
 
   const lpAktuell = uebersicht ? uebersicht.gesundheitMax - uebersicht.gesundheitSchaden : null;
   const lpMax = uebersicht?.gesundheitMax ?? null;
@@ -144,9 +148,10 @@ interface PCKachelnProps {
   onPCKlick: (person: Person) => void;
   onBlitz: (person: Person) => void;
   onExtraEP?: (person: Person) => void;
+  rastenVersion?: number;
 }
 
-export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz, onExtraEP }: PCKachelnProps) {
+export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz, onExtraEP, rastenVersion }: PCKachelnProps) {
   if (pcs.length === 0) {
     return <p className="pc-kacheln-leer">Noch keine Spielercharaktere angelegt.</p>;
   }
@@ -162,6 +167,7 @@ export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz, onE
           onKlick={() => onPCKlick(p)}
           onBlitz={() => onBlitz(p)}
           onExtraEP={onExtraEP ? () => onExtraEP(p) : undefined}
+          rastenVersion={rastenVersion}
         />
       ))}
     </div>
