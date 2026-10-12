@@ -300,7 +300,13 @@ export function GegenstandRow({
     if (stufe) {
       const bonus = Math.max(1, gesamtBonus);
       setPreis(bonus * gewaehlteChromstufe);
-      setWVerlust(stufe.wVerlustGenau * bonus);
+      // stufe.wVerlustGenau kommt vom Server bereits bonus-skaliert
+      // (verlust_genau(bonus, preisJeBonus) in chrom.py) — hier NICHT nochmal
+      // mit bonus multiplizieren. Bug bis 12.10.2026: dieser Effekt ueberschrieb
+      // den korrekten Wert aus dem Stufen-Klick (Zeile ~933) mit stufe.wVerlustGenau * bonus,
+      // sobald sich Boni/Schaden danach noch aenderten — der WK-Verlust wuchs dadurch
+      // quadratisch mit dem Bonus statt linear (Bonus 4 bei Straße: 4 statt 16).
+      setWVerlust(stufe.wVerlustGenau);
       setKraft(bonus);
     }
   }, [traitBoni, ausruestungsfertigkeiten, schaden, istWaffe, gewaehlteChromstufe, gesamtBonus, chromstufen, expanded, typ]);
