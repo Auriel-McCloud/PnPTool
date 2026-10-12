@@ -273,14 +273,25 @@ export function GegenstandRow({
   const [kiBildOffen, setKiBildOffen] = useState(false);
 
   // Summe aller Boni für Chrom-Preisberechnung:
-  // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden + initiativeBonus
+  // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden + initiativeBonus + zusatzaktionen
   const traitBoniSumme = traitBoni.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
   const ausrFertSumme = ausruestungsfertigkeiten.reduce((sum, b) => sum + (Number(b.value) || 0), 0);
   const waffenSchaden = istWaffe ? schaden : 0;
+  // "Jede Runde" (zusatzaktionen === -1) ist kein echter Zählwert, sondern ein
+  // Sentinel aus kampf/booster.py — roh addiert würde er den Bonus SENKEN statt
+  // erhöhen. Stattdessen zählt hier dieselbe Zahl, die die Ampel in der
+  // Kampfsektion schon kennt: wie viele Runden Nutzung, bevor der
+  // Überhitzungs-Willenskraftwurf fällig wird (kampf/booster.py::AMPEL_MAX,
+  // aktuell 3 — Mark, 12.10.2026: "wie viele Runden man hat, bevor man diesen
+  // Willenskraftwurf machen kann"). Ändert sich AMPEL_MAX dort, bitte hier
+  // mitziehen.
+  const AMPEL_MAX_FUER_KOSTEN = 3;
+  const zusatzaktionenBonus = zusatzaktionen === -1 ? AMPEL_MAX_FUER_KOSTEN : Math.max(0, zusatzaktionen);
   // Initiative-Bonus zählt 1:1 mit (Mark, 12.10.2026) — sonst kostet ein reiner
   // Reflex-Booster-artiger Gegenstand (nur Initiative, kein Trait/Ausrüstungs-
   // Bonus, keine Waffe) praktisch nichts, egal welche Qualitätsstufe man wählt.
-  const gesamtBonus = traitBoniSumme + ausrFertSumme + waffenSchaden + (Number(initiativeBonus) || 0);
+  const gesamtBonus =
+    traitBoniSumme + ausrFertSumme + waffenSchaden + (Number(initiativeBonus) || 0) + zusatzaktionenBonus;
 
   // Der Preis hängt am Bonus: ändert er sich, stimmen die angebotenen Stufen
   // nicht mehr. Nur nachladen, solange das Formular offen ist.
