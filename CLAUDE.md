@@ -35,6 +35,31 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Willenskraft-Kostenformel (Chrom) erweitert + Doppel-Bug behoben**
+  (12.10.2026, siehe `traits/CharacterSheetPanel.tsx` Zeilen ~275-295, Commits
+  `c68df9c`/`2f631d5`/`6aa388e`, alle drei live auf bebop): Ausgangspunkt war
+  Marks Quill-Talon-Klingen „Kri'tah" — Steckbrief zeigte 16/32 WK statt der
+  erwarteten 4/8. **Root Cause:** ein `useEffect` multiplizierte den vom
+  Server bereits bonus-skalierten `wVerlustGenau` ein zweites Mal mit dem
+  Bonus (quadratisch statt linear). Nur ein echter Live-Fall gefunden +
+  korrigiert (`Unterarm Knochengyroskop`, Vorlage, wVerlust 4→2 per
+  Cypher auf bebop); die Klingen selbst waren in der DB bereits korrekt,
+  nur die offene Bearbeiten-Vorschau zeigte den Bug unsaved an.
+  **Danach erweitert:** `Gesamt-Bonus` zählt jetzt zusätzlich
+  `Initiative-Bonus` (1:1) und `Zusatzaktionen` (Bonus-Aktionen pro Kampf) mit.
+  Bei Zusatzaktionen `-1` ("jede Runde") wird NICHT der rohe Sentinel addiert
+  (würde den Bonus senken), sondern `AMPEL_MAX_FUER_KOSTEN = 3` — dieselbe
+  Zahl wie `kampf/booster.py::AMPEL_MAX` (Runden bis zum Überhitzungs-
+  Willenskraftwurf). Die Konstante ist in beiden Dateien dupliziert, kein
+  gemeinsamer Import — ändert sich `AMPEL_MAX` in `booster.py`, bitte in
+  `CharacterSheetPanel.tsx` nachziehen. **Betrifft nur neu/aktiv
+  bearbeitete Chrom-Items** (Effekt feuert erst, wenn im Umbauen-Tab eine
+  Stufe angeklickt wird) — die 3 bestehenden Reflex-Booster-Vorlagen mit
+  fest aus dem Regelwerk importierten Werten sind unangetastet. **Noch nicht
+  am Spieltisch getestet:** bitte ein Cyberware-Item mit Initiative-Bonus
+  und/oder Zusatzaktionen anlegen/bearbeiten und die resultierende
+  Willenskraft-Stufenliste gegenprüfen.
+
 - **Ideenschmiede ✨-Gegenstand: Qualitätsstufe/Preis/WK-Verlust bei Cyberware/
   Bioware/Hexware automatisch** (12.10.2026, siehe `ki/routes.py::
   _chrom_felder_aus_ki`, `items/chrom.py::stufe_fuer_name`/`CHROM_TYPEN`):
