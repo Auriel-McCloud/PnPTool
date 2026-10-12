@@ -2,11 +2,12 @@
 für die vollständige Herleitung).
 
 Pro ausgewählter Person ist EIN Klick = EINE Rast: Schlagschaden heilt immer
-vollständig, schwerer Schaden sinkt um 1 (mit einem Zähler fürs
-Unheilbar-Wraparound bei genau 7), und ist die Person danach komplett
-gesund, heilt natürliche Rüstung mit Defizit mit — auch schon in derselben
-Rast. Daneben der Fallback "Vollständige Heilung": keine Bedingungen, kein
-Würfeln.
+vollständig, Tödlich-Schaden (schadenSchwer) sinkt sofort um 1 — kein
+Zähler. Erst wenn Tödlich bei 0 steht, läuft ein Zähler für die (viel
+langsamere) Unheilbar-Heilung mit, Wraparound bei genau 7 Rasten OHNE
+offenen Tödlich-Schaden. Ist die Person danach komplett gesund, heilt
+natürliche Rüstung mit Defizit mit — auch schon in derselben Rast. Daneben
+der Fallback "Vollständige Heilung": keine Bedingungen, kein Würfeln.
 """
 
 from app.kampf.ruestung import anwende_natuerliche_ruestung
@@ -45,53 +46,90 @@ class TestSchlagschadenHeiltImmer:
         }
 
 
-class TestSchwerHeilZaehlerInkrementiert:
-    """0->6 inkrementieren, kein Wraparound unter der Schwelle."""
+class TestSchwererSchadenHeiltSofort:
+    """Tödlich-Schaden (schadenSchwer) heilt pro Rast -1, ohne Zähler."""
 
     def test_schwerer_schaden_sinkt_um_eins(self):
         aenderung = person_aenderung({"schadenSchwer": 3})
         assert aenderung["schadenSchwer"] == 2
 
-    def test_zaehler_steigt_um_eins_pro_rast(self):
-        """Solange genug schwerer Schaden da ist, steigt der Zähler in
-        Lockstep mit jeder Rast — 0 bis 6, noch unter der Wraparound-Schwelle."""
-        person = {"schadenSchwer": 10, "schwerHeilZaehler": 0}
+    def test_heilt_jede_rast_ohne_zaehler_solange_kein_unheilbar_offen(self):
+        """Ohne Unheilbar-Schaden bleibt der Zähler grundsätzlich bei 0 —
+        es gibt nichts, worauf er hinarbeiten könnte."""
+        person = {"schadenSchwer": 6, "schwerHeilZaehler": 0}
+        for erwarteter_schwer in range(5, -1, -1):
+            person = person_aenderung(person)
+            assert person["schadenSchwer"] == erwarteter_schwer
+            assert person["schwerHeilZaehler"] == 0
+
+    def test_ohne_schweren_schaden_bleibt_er_bei_null(self):
+        aenderung = person_aenderung({"schadenSchwer": 0})
+        assert aenderung["schadenSchwer"] == 0
+
+
+class TestUnheilbarZaehlerLaeuftErstOhneToedlichenSchaden:
+    """Der Zähler für die (langsame) Unheilbar-Heilung läuft nur, solange
+    KEIN Tödlich-Schaden mehr offen ist — Mark, 12.10.2026: ursprünglich war
+    das verkehrt herum (Zähler lief nur MIT offenem Tödlich-Schaden und fror
+    ein, sobald der bei 0 stand, sodass reiner Unheilbar-Schaden nie
+    heilte)."""
+
+    def test_mit_offenem_toedlichem_schaden_bleibt_der_zaehler_stehen(self):
+        aenderung = person_aenderung(
+            {"schadenSchwer": 3, "schadenAggraviert": 1, "schwerHeilZaehler": 4}
+        )
+        assert aenderung["schadenSchwer"] == 2
+        assert aenderung["schwerHeilZaehler"] == 4
+
+    def test_sobald_toedlich_bei_null_steht_laeuft_der_zaehler_an(self):
+        aenderung = person_aenderung(
+            {"schadenSchwer": 0, "schadenAggraviert": 1, "schwerHeilZaehler": 0}
+        )
+        assert aenderung["schwerHeilZaehler"] == 1
+
+    def test_laeuft_schon_in_der_rast_an_in_der_toedlich_null_wird(self):
+        """Wird eine Person durch GENAU diese Rast von Tödlich-Schaden
+        frei, zählt der Zähler schon in dieser Rast mit — nicht erst ab der
+        nächsten (analog zur Rüstungsheilung)."""
+        aenderung = person_aenderung(
+            {"schadenSchwer": 1, "schadenAggraviert": 1, "schwerHeilZaehler": 0}
+        )
+        assert aenderung["schadenSchwer"] == 0
+        assert aenderung["schwerHeilZaehler"] == 1
+
+    def test_ohne_unheilbaren_schaden_bleibt_der_zaehler_bei_null(self):
+        aenderung = person_aenderung(
+            {"schadenSchwer": 0, "schadenAggraviert": 0, "schwerHeilZaehler": 0}
+        )
+        assert aenderung["schwerHeilZaehler"] == 0
+
+    def test_zaehler_steigt_in_lockstep_bis_sechs(self):
+        person = {"schadenSchwer": 0, "schadenAggraviert": 1, "schwerHeilZaehler": 0}
         for erwarteter_zaehler in range(1, 7):
             person = person_aenderung(person)
             assert person["schwerHeilZaehler"] == erwarteter_zaehler
-            assert person["schadenSchwer"] == 10 - erwarteter_zaehler
-
-    def test_ohne_schweren_schaden_bleibt_der_zaehler_stehen(self):
-        aenderung = person_aenderung({"schadenSchwer": 0, "schwerHeilZaehler": 4})
-        assert aenderung["schwerHeilZaehler"] == 4
-        assert aenderung["schadenSchwer"] == 0
+            assert person["schadenAggraviert"] == 1
 
 
 class TestWraparoundBeiGenauSieben:
     def test_wraparound_heilt_einen_unheilbar_punkt(self):
         aenderung = person_aenderung(
-            {"schadenSchwer": 5, "schadenAggraviert": 2, "schwerHeilZaehler": 6}
+            {"schadenSchwer": 0, "schadenAggraviert": 2, "schwerHeilZaehler": 6}
         )
         # 6 + 1 = 7 >= Schwelle -> wrap: -7 = 0, Unheilbar -1
         assert aenderung["schwerHeilZaehler"] == 0
         assert aenderung["schadenAggraviert"] == 1
-        assert aenderung["schadenSchwer"] == 4
-
-    def test_wraparound_ohne_unheilbar_schaden_laesst_ihn_bei_null(self):
-        aenderung = person_aenderung(
-            {"schadenSchwer": 5, "schadenAggraviert": 0, "schwerHeilZaehler": 6}
-        )
-        assert aenderung["schwerHeilZaehler"] == 0
-        assert aenderung["schadenAggraviert"] == 0
 
     def test_kurz_vor_der_schwelle_wrapt_noch_nicht(self):
-        aenderung = person_aenderung({"schadenSchwer": 5, "schwerHeilZaehler": 5})
+        aenderung = person_aenderung(
+            {"schadenSchwer": 0, "schadenAggraviert": 1, "schwerHeilZaehler": 5}
+        )
         assert aenderung["schwerHeilZaehler"] == 6
 
     def test_sieben_volle_rasten_wraparound_end_to_end(self):
-        """Sieben Rasten in Folge mit durchgehend schwerem Schaden: am
+        """Sieben Rasten in Folge, Tödlich-Schaden bereits bei 0: am
         siebten Klick läuft der Zähler über."""
-        person = {"schadenSchwer": 99, "schadenAggraviert": 3, "schwerHeilZaehler": 0}
+        person = {"schadenSchwer": 0, "schadenAggraviert": 3, "schwerHeilZaehler": 0}
         for i in range(1, 8):
             person = person_aenderung(person)
             if i < 7:

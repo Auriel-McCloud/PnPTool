@@ -8,18 +8,26 @@ läuft komplett separat über zwei neue SL-only-Endpunkte.
 ## Die Formel ("Rasten")
 
 Pro ausgewählter Person ist **ein Klick = eine Rast**. Reihenfolge ist
-bindend, weil Schritt 3 vom Ergebnis der Schritte 1+2 abhängt:
+bindend, weil Schritt 3 vom Ergebnis von Schritt 2 abhängt und Schritt 4 vom
+Ergebnis der Schritte 1-3:
 
 1. `schadenSchlag` → `0` (vollständig geheilt, immer, unabhängig vom Rest).
-2. Ist `schadenSchwer > 0`: `schadenSchwer -= 1` **und** der neue persistente
-   Zähler `schwerHeilZaehler += 1`.
+2. Ist `schadenSchwer > 0` ("Tödlich" in der Anzeige): `schadenSchwer -= 1`,
+   **sofort, jede Rast** — kein Zähler, kein Warten.
+3. Erst wenn `schadenSchwer` NACH Schritt 2 bei `0` steht **und** noch
+   `schadenAggraviert > 0` ("Unheilbar") da ist, läuft der persistente
+   Zähler `schwerHeilZaehler` mit: `+= 1` pro Rast.
    - Steht der Zähler danach bei `>= 7`: Wraparound — `schwerHeilZaehler -= 7`
-     **und**, falls `schadenAggraviert > 0`, `schadenAggraviert -= 1`. Sieben
-     Rasten mit schwerem Schaden heilen also einen Unheilbar-Punkt.
-   - Ohne schweren Schaden bleibt der Zähler unverändert stehen (er zählt
-     nur tatsächlich geheilte Schwer-Schaden-Rasten, nicht jede Rast
-     generell).
-3. Ist die Person **nach** Schritt 1+2 vollständig gesund (`schadenSchlag ==
+     **und** `schadenAggraviert -= 1`. Sieben Rasten OHNE offenen
+     Tödlich-Schaden heilen also einen Unheilbar-Punkt.
+   - Solange noch Tödlich-Schaden offen ist, bleibt der Zähler stehen —
+     Unheilbar heilt erst, wenn der PC vom tödlichen Schaden runter ist.
+     **Korrektur 12.10.2026** (Mark, nach Praxistest am Spieltisch): die
+     ursprüngliche Formel hatte das verkehrt herum — der Zähler lief nur
+     MIT offenem Tödlich-Schaden und fror ein, sobald der bei 0 stand,
+     sodass reiner Unheilbar-Schaden (ohne gleichzeitigen Tödlich-Schaden)
+     nie heilte, egal wie oft geklickt wurde.
+4. Ist die Person **nach** Schritt 1-3 vollständig gesund (`schadenSchlag ==
    0 AND schadenSchwer == 0 AND schadenAggraviert == 0`): jedes getragene
    Rüstungsteil mit `istNatuerlich=true` **und** Kästchen-Defizit
    (`ruestungKaestchenAktuell < ruestungKaestchenMax`, Max dabei live aus der
@@ -30,10 +38,10 @@ bindend, weil Schritt 3 vom Ergebnis der Schritte 1+2 abhängt:
 
 Reine Funktionen in `app/traits/rast.py`:
 
-- `person_aenderung(person) -> dict` — Schritte 1+2, liefert die vier zu
+- `person_aenderung(person) -> dict` — Schritte 1-3, liefert die vier zu
   schreibenden Felder (`schadenSchlag`, `schadenSchwer`, `schadenAggraviert`,
   `schwerHeilZaehler`).
-- `ist_vollstaendig_gesund(aenderung) -> bool` — Schritt-3-Bedingung.
+- `ist_vollstaendig_gesund(aenderung) -> bool` — Schritt-4-Bedingung.
 - `ruestung_heilung(teile) -> list[dict]` — welche Rüstungsteile (mit
   Live-Max bereits angewendet, siehe unten) +1 heilen; liefert nur die
   tatsächlich betroffenen (`id`, neues `ruestungKaestchenAktuell`).

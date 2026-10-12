@@ -1,14 +1,21 @@
 """Rast-Mechanik: Heilung über die Zeit, kein Würfeln.
 
-Mark, 11.10.2026: eine SL-Aktion "Rasten" heilt einen oder mehrere PCs nach
-einer festen Formel (siehe docs/api/rast.md für die vollständige
-Herleitung). Pro ausgewählter Person ist EIN Klick = EINE Rast:
+Mark, 11.10.2026 (Korrektur 12.10.2026, siehe docs/api/rast.md): eine
+SL-Aktion "Rasten" heilt einen oder mehrere PCs nach einer festen Formel.
+Pro ausgewählter Person ist EIN Klick = EINE Rast:
 
 1. `schadenSchlag` -> 0 (vollständig geheilt).
-2. `schadenSchwer > 0`: -1, UND ein persistenter Zähler `schwerHeilZaehler`
-   += 1. Erreicht der Zähler dabei >= 7, läuft er über: -7, UND
-   `schadenAggraviert` (falls > 0) -1.
-3. Ist die Person NACH 1+2 vollständig gesund, heilt JEDES getragene
+2. `schadenSchwer > 0` ("Tödlich" in der Anzeige): -1, sofort, jede Rast —
+   kein Zähler, kein Warten.
+3. Erst wenn `schadenSchwer` NACH Schritt 2 bei 0 steht UND noch
+   `schadenAggraviert > 0` ("Unheilbar") da ist, läuft der persistente
+   Zähler `schwerHeilZaehler` mit: += 1 pro Rast. Erreicht er dabei >= 7,
+   läuft er über: -7, UND `schadenAggraviert` -1. Solange noch Tödlich-
+   Schaden offen ist, bleibt der Zähler stehen — Unheilbar heilt erst,
+   wenn der PC vom tödlichen Schaden runter ist (Mark: ursprünglich hatte
+   die Formel das verkehrt herum, der Zähler lief nur MIT offenem Tödlich-
+   Schaden und fror ein, sobald der bei 0 stand).
+4. Ist die Person NACH 1-3 vollständig gesund, heilt JEDES getragene
    Rüstungsteil mit `istNatuerlich=true` und Kästchen-Defizit +1 (gecappt
    auf das live aus der Widerstandsfähigkeit berechnete Max, siehe
    `kampf/ruestung.py::anwende_natuerliche_ruestung`) — gilt auch schon in
@@ -23,13 +30,14 @@ Rechnet rein (keine Datenbankzugriffe), dieselbe Motivation wie
 und ist ohne DB testbar.
 """
 
-# Wraparound-Schwelle für schweren Schaden -> ein Punkt Unheilbar heilt erst,
-# wenn SIEBEN einzelne Rasten schweren Schaden geheilt haben (Marks Vorgabe).
+# Wraparound-Schwelle für den Unheilbar-Heil-Zähler -> ein Punkt Unheilbar
+# heilt erst, wenn SIEBEN Rasten OHNE offenen Tödlich-Schaden vergangen sind
+# (Marks Vorgabe).
 SCHWER_HEIL_SCHWELLE = 7
 
 
 def person_aenderung(person: dict) -> dict:
-    """Eine Rast für eine Person: Schritt 1+2 der Formel.
+    """Eine Rast für eine Person: Schritte 1-3 der Formel.
 
     Gibt NUR die geänderten Personenfelder zurück — der Aufrufer schreibt
     sie (siehe traits/routes.py::personen_rasten).
@@ -40,11 +48,12 @@ def person_aenderung(person: dict) -> dict:
 
     if schwer > 0:
         schwer -= 1
+
+    if schwer == 0 and aggraviert > 0:
         zaehler += 1
         if zaehler >= SCHWER_HEIL_SCHWELLE:
             zaehler -= SCHWER_HEIL_SCHWELLE
-            if aggraviert > 0:
-                aggraviert -= 1
+            aggraviert -= 1
 
     return {
         "schadenSchlag": 0,
@@ -55,7 +64,7 @@ def person_aenderung(person: dict) -> dict:
 
 
 def ist_vollstaendig_gesund(aenderung: dict) -> bool:
-    """Schritt 3 der Formel: NUR dann heilt natürliche Rüstung mit."""
+    """Schritt 4 der Formel: NUR dann heilt natürliche Rüstung mit."""
     return (
         aenderung.get("schadenSchlag", 0) == 0
         and aenderung.get("schadenSchwer", 0) == 0

@@ -64,10 +64,10 @@ export function RastenVerwaltung({ campaignId }: { campaignId: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <p style={{ color: "var(--text-leise)", fontSize: "0.9em", margin: 0 }}>
-        Ein Klick = eine Rast pro ausgewählter Person: Schlagschaden heilt vollständig, schwerer
-        Schaden sinkt um 1 (ein Zähler sammelt bis zum nächsten geheilten Unheilbar-Punkt bei 7),
-        natürliche Rüstung heilt bei vollständig gesunder Person +1 Kästchen. „Vollständige
-        Heilung" ist der Fallback ohne Bedingungen — auch für die Rüstung.
+        Ein Klick = eine Rast pro ausgewählter Person: Schlagschaden heilt vollständig, Tödlich
+        sinkt sofort um 1. Erst wenn Tödlich bei 0 steht, zählt ein Zähler Richtung Unheilbar-
+        Heilung hoch (7 Rasten ohne Tödlich-Schaden = ein Unheilbar-Punkt), natürliche Rüstung
+        heilt ggf. mit, sobald die Person danach vollständig gesund ist.
       </p>
 
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
@@ -108,7 +108,7 @@ export function RastenVerwaltung({ campaignId }: { campaignId: string }) {
       {bestaetigung === "rasten" && (
         <Bestaetigung
           titel="Rasten?"
-          text={`${ausgewaehlt.size} Person(en) rasten einmal: Schlagschaden heilt, schwerer Schaden sinkt um 1, natürliche Rüstung heilt ggf. mit.`}
+          text={`${ausgewaehlt.size} Person(en) rasten einmal: Schlagschaden heilt, Tödlich sinkt um 1, natürliche Rüstung heilt ggf. mit.`}
           jaText="Rasten"
           onJa={() => void ausfuehren("rasten")}
           onNein={() => setBestaetigung(null)}

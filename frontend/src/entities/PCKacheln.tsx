@@ -120,7 +120,7 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
           </div>
           <div
             className="pc-kachel-wert pc-kachel-schwer"
-            title="Schwerer Schaden · Heil-Zähler (zählt bis 7, dann heilt ein Unheilbar-Punkt mit)"
+            title="Tödlich · Unheilbar-Heil-Zähler (läuft erst bei Tödlich 0, zählt bis 7)"
           >
             <span className="pc-kachel-wert-icon">☠</span>
             {schadenSchwer !== null && heilZaehler !== null ? (
