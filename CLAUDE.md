@@ -35,6 +35,24 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Bugfix: Natürliche Rüstung (Dug'Rah) fehlte im Charakterblatt** (12.10.2026,
+  siehe `kampf/ruestung.py::anwende_natuerliche_ruestung`/`traits/routes.py`):
+  bestätigter Live-Root-Cause auf bebop (per cypher-shell geprüft):
+  `ruestungKaestchenAktuell` kam bei der automatischen `gratisGegenstandId`-
+  Zuweisung als Vorlagen-Platzhalter `0` mit und wurde nie auf die
+  Widerstandsfähigkeit hochgezogen — `anwende_natuerliche_ruestung` klemmt
+  das Kästchen-Max zwar live auf den aktuellen Attributwert, hebt aber nie
+  ein zu niedriges Aktuell an. `reihenfolge()` filtert 0-Kästchen-Teile aus
+  dem Pool, das Blatt zeigte die ganze Zeile deshalb gar nicht
+  (`bogen.ruestung.kaestchenMax > 0`-Check). Zusätzlich defensiv gefixt:
+  `ablage` wird bei der Zuweisung jetzt immer explizit auf `AUSGERUESTET`
+  gesetzt (war bei Dug'Rah zufällig schon korrekt, muss es aber nicht sein —
+  `assign_copy` übernimmt sonst den Vorlagen-Wert unverändert, Schema-Default
+  ist `RUCKSACK`). Betroffenes Bestandsitem (Dug'Rah Arena Kämpfer) direkt in
+  der Live-DB auf `ruestungKaestchenAktuell=5` korrigiert, Fix committed +
+  auf bebop deployed (`10dea3c`). Mark muss nur noch kurz im Browser
+  gegenprüfen, dass die Rüstungszeile jetzt am Charakterblatt erscheint.
+
 - **KI-Charakter geht im Tutorial-Shop einkaufen, Mentor/Kontakte-Pipeline**
   (11.10.2026, siehe „Zuletzt gebaut" unten): kompletter neuer Flow, nie im
   Browser angeklickt und nie gegen einen echten KI-Call getestet. Bitte: (1)
