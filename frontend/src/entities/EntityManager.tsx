@@ -162,7 +162,17 @@ function RichContentFields({
   );
 }
 
-export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: string; ansicht?: WeltAnsicht }) {
+export function EntityManager({
+  campaignId,
+  ansicht = "welt",
+  onRastenOeffnen,
+}: {
+  campaignId: string;
+  ansicht?: WeltAnsicht;
+  /** Öffnet das Rasten-Popup (App.tsx) — Knopf sitzt in der PCs-Kopfzeile,
+   * dort sieht die SL auch gleich die LP und den schweren Schaden. */
+  onRastenOeffnen?: () => void;
+}) {
   const [personen, setPersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -725,6 +735,34 @@ export function EntityManager({ campaignId, ansicht = "welt" }: { campaignId: st
             >
               + Neue Verbindung
             </button>
+          </div>
+        </div>
+      )}
+      {/* PCs-Ansicht: eigener Kopf mit Rasten-Knopf (11.10.2026 → 12.10.2026
+          hierher verschoben, Marks Vorgabe: gehört zur LP-Übersicht statt
+          in die allgemeine Werkzeugleiste). */}
+      {ansicht === "pcs" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            {onRastenOeffnen && (
+              <button
+                type="button"
+                onClick={onRastenOeffnen}
+                style={{
+                  padding: "8px 16px",
+                  background: "color-mix(in srgb, var(--bereich-pcs, var(--neon)) 20%, transparent)",
+                  border: "1px solid var(--bereich-pcs, var(--neon))",
+                  borderRadius: "var(--radius)",
+                  color: "var(--bereich-pcs, var(--neon))",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                🏕️ Rasten
+              </button>
+            )}
           </div>
         </div>
       )}

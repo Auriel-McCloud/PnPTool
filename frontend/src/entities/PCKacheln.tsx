@@ -36,6 +36,11 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
     ? uebersicht.willenskraftMax - uebersicht.willenskraftVerlust - uebersicht.willenskraftVerbraucht
     : null;
   const wkMax = uebersicht ? uebersicht.willenskraftMax - uebersicht.willenskraftVerlust : null;
+  // Rast-Mechanik (12.10.2026, Marks Vorgabe): schwerer Schaden + Heil-
+  // Zähler direkt auf der Kachel, damit die SL ohne Blatt-Öffnen sieht, ob
+  // sich ein Rasten-Klick für diese Nacht überhaupt lohnt.
+  const schadenSchwer = uebersicht?.schadenSchwer ?? null;
+  const heilZaehler = uebersicht?.schwerHeilZaehler ?? null;
 
   return (
     <div className="pc-kachel" onClick={onKlick}>
@@ -108,6 +113,19 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
             {wkAktuell !== null && wkMax !== null ? (
               <span className={wkAktuell === 0 ? "pc-kachel-kritisch" : ""}>
                 {wkAktuell}/{wkMax}
+              </span>
+            ) : (
+              <span className="pc-kachel-laden">…</span>
+            )}
+          </div>
+          <div
+            className="pc-kachel-wert pc-kachel-schwer"
+            title="Schwerer Schaden · Heil-Zähler (zählt bis 7, dann heilt ein Unheilbar-Punkt mit)"
+          >
+            <span className="pc-kachel-wert-icon">☠</span>
+            {schadenSchwer !== null && heilZaehler !== null ? (
+              <span className={schadenSchwer > 0 ? "pc-kachel-kritisch" : ""}>
+                {schadenSchwer} ({heilZaehler}/7)
               </span>
             ) : (
               <span className="pc-kachel-laden">…</span>

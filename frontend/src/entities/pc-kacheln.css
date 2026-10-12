@@ -186,6 +186,10 @@
   color: var(--wert-hexkraft, var(--neon));
 }
 
+.pc-kachel-schwer .pc-kachel-wert-icon {
+  color: var(--warn, var(--signal));
+}
+
 .pc-kachel-kritisch {
   color: var(--signal);
   font-weight: 600;

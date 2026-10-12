@@ -240,13 +240,6 @@ function Dashboard() {
           🏆
         </button>
       )}
-      {/* Rast-Mechanik (11.10.2026, Marks Vorgabe): SL-only Heilung über Zeit,
-          kein eigener Burgermenü-Eintrag — analog zum Achievement-Symbol. */}
-      {kampagne && (
-        <button type="button" className="cl-werkzeug" onClick={() => setRastenOffen(true)} title="Rasten">
-          🏕️
-        </button>
-      )}
       {kampagne && (
         <button
           type="button"
@@ -346,6 +339,7 @@ function Dashboard() {
               key={ansichtKennung}
               campaignId={kampagne.id}
               ansicht={ENTITY_ANSICHT[bereich]!}
+              onRastenOeffnen={() => setRastenOffen(true)}
             />
           )}
           {bereich === "gegenstaende" && <GegenstaendeUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
