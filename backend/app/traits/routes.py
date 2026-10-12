@@ -15,6 +15,7 @@ from app.items.repository import (
     commlink_cyberwall,
     deck_boni,
     initiative_modifikator,
+    natuerliche_ruestungsteile,
     ruestungsteile,
     set_ablage,
     update_gegenstand,
@@ -515,6 +516,15 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
     Defizit +1 Kästchen — auch schon in dieser Rast. Unberührte Personen-IDs
     (falsch/gelöscht) werden übersprungen, nicht als Fehler gemeldet, damit
     eine Mehrfachauswahl nicht an einem einzelnen ungültigen Eintrag scheitert.
+
+    Bug-Fix 12.10.2026 (Mark): natürliche Rüstung heilt auch dann über Rast,
+    wenn sie wegen vorheriger Zerstörung gerade im Mitgeführten liegt
+    (`natuerliche_ruestungsteile` holt sie unabhängig von der Ablage, siehe
+    dort) — und wird, sobald sie dadurch wieder über 0 Kästchen steht,
+    automatisch erneut ausgerüstet. Sie ist Körperteil, kein Kleidungsstück,
+    das man vergisst anzulegen. Gilt bewusst NUR für `istNatuerlich`; normale
+    Rüstung bleibt im Mitgeführten liegen und braucht weiter den regulären
+    Reparaturweg.
     """
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
@@ -532,12 +542,17 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
             werte = await repository.get_ratings_for_entity(campaign_id, person_id)
             nach_name = {w["name"]: w["rating"] for w in werte}
             teile = anwende_natuerliche_ruestung(
-                await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+                await natuerliche_ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
             )
             for folge in rast.ruestung_heilung(teile):
                 await update_gegenstand(
                     campaign_id, folge["id"], {"ruestungKaestchenAktuell": folge["ruestungKaestchenAktuell"]}
                 )
+                quelle = next(t for t in teile if t["id"] == folge["id"])
+                if quelle.get("ablage") != "AUSGERUESTET" and folge["ruestungKaestchenAktuell"] > 0:
+                    # War durch Zerstörung ins Mitgeführte gelegt und ist
+                    # jetzt wieder intakt: automatisch erneut ausrüsten.
+                    await set_ablage(campaign_id, folge["id"], "AUSGERUESTET", None)
 
         ergebnisse[person_id] = await _bogen_fuer_person(campaign_id, person, kampagnen_ep)
     return ergebnisse
@@ -548,6 +563,11 @@ async def personen_vollstaendige_heilung(campaign_id: str, body: RastInput) -> d
     """Fallback-Knopf "für den Fall der Fälle": keine Bedingungen, kein
     Würfeln. Setzt Schaden + Heil-Zähler auf 0 und heilt JEDES getragene
     Rüstungsteil (auch nicht-natürliches) sofort auf den vollen Max.
+
+    Natürliche Rüstung (12.10.2026, derselbe Fix wie bei `personen_rasten`)
+    auch dann, wenn sie wegen Zerstörung gerade im Mitgeführten liegt —
+    danach automatisch wieder ausgerüstet. Normale Rüstung bleibt dagegen
+    bewusst nur erfasst, solange sie ausgerüstet ist.
     """
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
@@ -564,13 +584,22 @@ async def personen_vollstaendige_heilung(campaign_id: str, body: RastInput) -> d
 
         werte = await repository.get_ratings_for_entity(campaign_id, person_id)
         nach_name = {w["name"]: w["rating"] for w in werte}
+        nicht_natuerlich = [t for t in await ruestungsteile(campaign_id, person_id) if not t.get("istNatuerlich")]
+        natuerlich = await natuerliche_ruestungsteile(campaign_id, person_id)
         teile = anwende_natuerliche_ruestung(
-            await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+            nicht_natuerlich + natuerlich, nach_name.get("Widerstandsfähigkeit", 0)
         )
         for folge in rast.vollheilung_ruestung(teile):
             await update_gegenstand(
                 campaign_id, folge["id"], {"ruestungKaestchenAktuell": folge["ruestungKaestchenAktuell"]}
             )
+            quelle = next(t for t in teile if t["id"] == folge["id"])
+            if (
+                quelle.get("istNatuerlich")
+                and quelle.get("ablage") != "AUSGERUESTET"
+                and folge["ruestungKaestchenAktuell"] > 0
+            ):
+                await set_ablage(campaign_id, folge["id"], "AUSGERUESTET", None)
 
         ergebnisse[person_id] = await _bogen_fuer_person(campaign_id, person, kampagnen_ep)
     return ergebnisse

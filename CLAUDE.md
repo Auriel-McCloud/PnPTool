@@ -35,6 +35,23 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Bugfix: Zerstörte natürliche Rüstung heilte nach Rast nicht mehr**
+  (12.10.2026, siehe `items/repository.py::natuerliche_ruestungsteile`,
+  `traits/routes.py::personen_rasten`/`personen_vollstaendige_heilung`):
+  Mark hatte recht — zerstörte Rüstung wird bei 0 Kästchen automatisch ins
+  Mitgeführte gelegt (`ablage = RUCKSACK`, siehe `ruestungstreffer`), aber
+  `ruestungsteile()` für die Rast-Heilung filtert nur `AUSGERUESTET`. Ein
+  zerstörtes Stück fiel damit aus jeder weiteren Abfrage heraus und konnte
+  nie mehr heilen, egal wie oft gerastet wurde. Fix: neue Abfrage
+  `natuerliche_ruestungsteile` holt `istNatuerlich`-Teile unabhängig von der
+  Ablage; nach einer heilenden Rast bzw. der Vollheilung wird ein Stück, das
+  dadurch wieder über 0 Kästchen steht, automatisch erneut ausgerüstet
+  (`set_ablage(..., "AUSGERUESTET", ...)`). **Bewusst nur für
+  `istNatuerlich`** — normale Rüstung bleibt im Mitgeführten liegen und
+  braucht weiter den regulären Reparaturweg (Hardware-Probe/Händler). Noch
+  nicht am Spieltisch gegengeprüft: eine natürliche Rüstung zerstören lassen,
+  rasten, prüfen dass sie wieder im Charakterblatt als ausgerüstet auftaucht.
+
 - **Bugfix: Natürliche Rüstung (Dug'Rah) fehlte im Charakterblatt** (12.10.2026,
   siehe `kampf/ruestung.py::anwende_natuerliche_ruestung`/`traits/routes.py`):
   bestätigter Live-Root-Cause auf bebop (per cypher-shell geprüft):

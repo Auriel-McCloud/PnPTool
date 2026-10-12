@@ -1102,6 +1102,36 @@ async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
         return [_decode(dict(record)) async for record in result]
 
 
+async def natuerliche_ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
+    """Alle `istNatuerlich`-Rüstungsteile dieser Person, UNABHÄNGIG von der Ablage.
+
+    Bug-Fix 12.10.2026 (Mark): Natürliche Rüstung wird bei Zerstörung (0
+    Kästchen) automatisch ins Mitgeführte gelegt (siehe
+    traits/routes.py::ruestungstreffer -> `set_ablage(..., "RUCKSACK", ...)`).
+    `ruestungsteile()` oben filtert aber auf `ablage = 'AUSGERUESTET'` — ein
+    zerstörtes Stück fiel dadurch aus jeder weiteren Abfrage heraus und
+    konnte über Rast nie wieder heilen, selbst wenn die Trägerin längst
+    vollständig gesund war. Für natürliche Rüstung ist das falsch: sie ist
+    Körperteil, kein Kleidungsstück, das man vergisst anzulegen. Diese
+    Abfrage lässt die Ablage bewusst weg, damit `traits/rast.py::
+    ruestung_heilung` auch zerstörte, mitgeführte Stücke sieht; die
+    Aufrufer in traits/routes.py rüsten ein geheiltes Stück danach wieder
+    automatisch aus, wenn es vorher nicht ausgerüstet war.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ = 'Rüstung' AND coalesce(g.istNatuerlich, false)
+          AND NOT coalesce(g.weggeworfen, false)
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [_decode(dict(record)) async for record in result]
+
+
 async def verbautes_chrom(campaign_id: str, person_id: str) -> list[dict]:
     """Was sitzt bei dieser Person im Körper — für die Übersicht im Regelmenü.
 
