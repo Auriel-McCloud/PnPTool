@@ -1132,26 +1132,28 @@ export function GegenstandRow({
                   + Bonus
                 </button>
 
-                <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                    Initiative-Bonus
-                    <input
-                      type="number"
-                      value={initiativeBonus}
-                      onChange={(e) => setInitiativeBonus(Number(e.target.value))}
-                      style={{ width: 60 }}
-                    />
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                    Zusatzaktionen
-                    <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
-                      <option value={0}>keine</option>
-                      <option value={1}>1× pro Kampf</option>
-                      <option value={2}>2× pro Kampf</option>
-                      <option value={-1}>jede Runde</option>
-                    </select>
-                  </label>
-                </div>
+                {(CHROM_TYPEN.has(typ) || typ === "Cyberdeck") && (
+                  <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Initiative-Bonus
+                      <input
+                        type="number"
+                        value={initiativeBonus}
+                        onChange={(e) => setInitiativeBonus(Number(e.target.value))}
+                        style={{ width: 60 }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                      Zusatzaktionen
+                      <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
+                        <option value={0}>keine</option>
+                        <option value={1}>1× pro Kampf</option>
+                        <option value={2}>2× pro Kampf</option>
+                        <option value={-1}>jede Runde</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
 
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
                   Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand)
