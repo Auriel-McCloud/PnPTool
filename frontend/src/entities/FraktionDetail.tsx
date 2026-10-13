@@ -44,6 +44,10 @@ interface FraktionDetailProps {
   pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Patcht ein Feld (z.B. description) direkt in der Elternliste, ohne
+   * neu zu laden — behebt, dass nach Autosave+Schließen+Wiederöffnen der
+   * alte Stand aus der ungeänderten Liste kam. Siehe shell/autosave.ts. */
+  onLokalAktualisiert?: (felder: Partial<Fraktion>) => void;
 }
 
 export function FraktionDetail({
@@ -54,6 +58,7 @@ export function FraktionDetail({
   pcOptions,
   onSchliessen,
   onGeaendert,
+  onLokalAktualisiert,
 }: FraktionDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [name, setName] = useState(fraktion.name);
@@ -81,9 +86,11 @@ export function FraktionDetail({
   }
 
   // Still: kein onGeaendert/refreshAll, sonst unmountet das Popup (siehe autosave.ts).
+  // onLokalAktualisiert hält die Elternliste synchron (Autosave-Felder).
   async function speichereStill(felder: Partial<Fraktion>) {
     try {
       await entitiesApi.updateFraktion(campaignId, fraktion.id, felder);
+      onLokalAktualisiert?.(felder);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
     }

@@ -36,6 +36,10 @@ interface OrtDetailProps {
   pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Patcht ein Feld (z.B. description) direkt in der Elternliste, ohne
+   * neu zu laden — behebt, dass nach Autosave+Schließen+Wiederöffnen der
+   * alte Stand aus der ungeänderten Liste kam. Siehe shell/autosave.ts. */
+  onLokalAktualisiert?: (felder: Partial<Ort>) => void;
 }
 
 export function OrtDetail({
@@ -46,6 +50,7 @@ export function OrtDetail({
   pcOptions,
   onSchliessen,
   onGeaendert,
+  onLokalAktualisiert,
 }: OrtDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [name, setName] = useState(ort.name);
@@ -72,9 +77,12 @@ export function OrtDetail({
   }
 
   // Still: kein onGeaendert/refreshAll, sonst unmountet das Popup (siehe autosave.ts).
+  // onLokalAktualisiert hält die Elternliste synchron (Autosave-Felder),
+  // damit Schließen+Wiederöffnen den frischen Text zeigt statt des Caches.
   async function speichereStill(felder: Partial<Ort>) {
     try {
       await entitiesApi.updateOrt(campaignId, ort.id, felder);
+      onLokalAktualisiert?.(felder);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
     }

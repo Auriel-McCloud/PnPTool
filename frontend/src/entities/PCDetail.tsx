@@ -39,6 +39,10 @@ interface PCDetailProps {
   pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Patcht ein Feld (z.B. description) direkt in der Elternliste, ohne
+   * neu zu laden — behebt, dass nach Autosave+Schließen+Wiederöffnen der
+   * alte Stand aus der ungeänderten Liste kam. Siehe shell/autosave.ts. */
+  onLokalAktualisiert?: (felder: Partial<Person>) => void;
 }
 
 export function PCDetail({
@@ -50,6 +54,7 @@ export function PCDetail({
   pcOptions,
   onSchliessen,
   onGeaendert,
+  onLokalAktualisiert,
 }: PCDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
@@ -86,11 +91,17 @@ export function PCDetail({
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
   // Autosave still — kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
+  // onLokalAktualisiert hält die Elternliste synchron, damit ein
+  // Schließen+Wiederöffnen den frischen Text zeigt statt des alten Caches.
   const autosaveBeschreibung = useAutosave(async (doc: JSONContent) => {
-    await entitiesApi.updatePerson(campaignId, person.id, { description: serializeRichText(doc) });
+    const description = serializeRichText(doc);
+    await entitiesApi.updatePerson(campaignId, person.id, { description });
+    onLokalAktualisiert?.({ description });
   });
   const autosaveNotizen = useAutosave(async (doc: JSONContent) => {
-    await entitiesApi.updatePerson(campaignId, person.id, { notes: serializeRichText(doc) });
+    const notes = serializeRichText(doc);
+    await entitiesApi.updatePerson(campaignId, person.id, { notes });
+    onLokalAktualisiert?.({ notes });
   });
 
   return (

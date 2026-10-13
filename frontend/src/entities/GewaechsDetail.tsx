@@ -30,9 +30,13 @@ interface GewaechsDetailProps {
   pcOptions: PersonOption[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Patcht ein Feld (z.B. description) direkt in der Elternliste, ohne
+   * neu zu laden — behebt, dass nach Autosave+Schließen+Wiederöffnen der
+   * alte Stand aus der ungeänderten Liste kam. Siehe shell/autosave.ts. */
+  onLokalAktualisiert?: (felder: Partial<Gewaechs>) => void;
 }
 
-export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, onGeaendert }: GewaechsDetailProps) {
+export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, onGeaendert, onLokalAktualisiert }: GewaechsDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
   const [name, setName] = useState(gewaechs.name);
   const [gefaehrlichkeit, setGefaehrlichkeit] = useState(gewaechs.gefaehrlichkeit ?? "");
@@ -57,9 +61,11 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
   }
 
   // Still: kein onGeaendert, sonst unmountet das Popup (siehe autosave.ts).
+  // onLokalAktualisiert hält die Elternliste synchron (Autosave-Felder).
   async function speichereStill(felder: Partial<Gewaechs>) {
     try {
       await entitiesApi.updateGewaechs(campaignId, gewaechs.id, felder);
+      onLokalAktualisiert?.(felder);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
     }

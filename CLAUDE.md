@@ -35,6 +35,24 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Autosave-Reopen-Bug behoben** (13.10.2026, Mark: „Test 123 geschrieben,
+  Popup zu, wieder auf, Text weg — nach Hard-Reload stand er aber da"):
+  Der 30.09.-Fix hatte das Tab-Reset-Problem gelöst, indem die stille
+  Autosave (Beschreibung/Notizen) bewusst `onGeaendert`/`refreshAll` NICHT
+  mehr aufruft (siehe `shell/autosave.ts`). Nebenwirkung: die Eltern-Liste in
+  `EntityManager` (NPC/PC/Ort/Event/Fraktion) bekam den neuen Text nie
+  mitgeteilt. Backend hatte korrekt gespeichert, aber Schließen+Wiederöffnen
+  zeigte wieder den alten Stand aus der ungeänderten Liste — nur ein harter
+  Reload (frischer Fetch) zeigte den echten Stand. **Fix:** neue optionale
+  Prop `onLokalAktualisiert` an `NPCDetail`/`PCDetail`/`OrtDetail`/
+  `EventDetail`/`FraktionDetail`/`GewaechsDetail` — die Autosave-Callbacks
+  patchen das gespeicherte Feld direkt in die gehaltene Liste (kein Reload,
+  kein Remount-Risiko, nur `setPersonen/setOrte/...((liste) => liste.map(...))`
+  in `EntityManager.tsx`/`FloraFaunaListe.tsx`/`FloraFaunaUebersicht.tsx`).
+  `tsc --noEmit` sauber, **nie im Browser angeklickt**. Bitte am Spieltisch:
+  in einem Beschreibungsfeld tippen, >2 Sek. warten, Popup schließen, wieder
+  öffnen — Text muss sofort da sein, ganz ohne Reload.
+
 - **Willenskraft-Kostenformel (Chrom) erweitert + Doppel-Bug behoben**
   (12.10.2026, siehe `traits/CharacterSheetPanel.tsx` Zeilen ~275-295, Commits
   `c68df9c`/`2f631d5`/`6aa388e`, alle drei live auf bebop): Ausgangspunkt war
@@ -260,10 +278,13 @@ Spieltisch/Dev-Server gegenprüfen, danach hier aus der Liste streichen:
   dem Hauptpool. Charakterblatt: Eintrag auch bei rating 0. LevelUp:
   bisheriger "+ Zusatzfertigkeit"-Popup mit EP, unverändert.
 
-- **Autosave für Beschreibung/Notizen** (27.09. + Fix 30.09., siehe „Zuletzt
-  gebaut“): Reload-Bug (Popup zu/auf, Tab weg) ist im Code raus. Bitte am
-  Spieltisch: in Beschreibung tippen, ~2 Sek. Pause — Fenster und Tab müssen
-  bleiben, Text nach Reload noch da. Ort-Popup und Gegenstand-Fenster.
+- **Autosave für Beschreibung/Notizen** (27.09. + Fix 30.09., Folge-Fix
+  13.10. siehe oben): Tab-Reset-Bug ist im Code raus, UND der dadurch
+  entstandene Reopen-Cache-Bug (alter Text nach Schließen+Öffnen) ist seit
+  13.10. ebenfalls behoben. Bitte am Spieltisch: in Beschreibung tippen,
+  ~2 Sek. Pause — Fenster und Tab müssen bleiben, Text nach Reload noch da,
+  UND Text muss auch nach Popup zu/auf (ohne Reload) sofort stimmen.
+  Ort-Popup und Gegenstand-Fenster.
 - **Gegenstands-Weitergabe innerhalb der Party** (`WeitergebenPopup.tsx`,
   `VerhandlungPopup.tsx` für `GEGENSTAND_WEITERGABE`, siehe „Zuletzt gebaut“
   unten und `docs/wiki/entities/gegenstand-transfer.md`): Backend-Import und

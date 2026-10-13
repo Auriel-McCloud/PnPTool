@@ -168,6 +168,7 @@ export function FloraFaunaListe({
             await neuLaden();
             setGewaechsOffen(await entitiesApi.getGewaechs(campaignId, gewaechsOffen.id));
           }}
+          onLokalAktualisiert={(felder) => setGewaechsOffen((prev) => (prev ? { ...prev, ...felder } : prev))}
         />
       )}
     </div>

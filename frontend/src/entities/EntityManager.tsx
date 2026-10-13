@@ -258,6 +258,21 @@ export function EntityManager({
     refreshAll();
   }, [refreshAll]);
 
+  // Patcht ein einzelnes Feld (z.B. description) direkt in der gehaltenen
+  // Liste, ohne neu zu laden. Autosave in den Detail-Popups ruft das statt
+  // refreshAll — ein voller Reload unmountet das Popup nicht mehr (dank des
+  // find-Fallbacks unten), ist aber unnötig teuer und lief bisher gar nicht,
+  // wodurch Schließen+Wiederöffnen den alten Text aus der ungeänderten Liste
+  // zeigte (Mark, 13.10.2026: Text nach Popup-Reopen weg, nach Hard-Reload
+  // wieder da — das Backend hatte längst gespeichert, nur die Liste hier nicht).
+  function lokalPatchen<T extends { id: string }>(
+    setter: React.Dispatch<React.SetStateAction<T[]>>,
+    id: string,
+    felder: Partial<T>,
+  ) {
+    setter((liste) => liste.map((item) => (item.id === id ? { ...item, ...felder } : item)));
+  }
+
   const personenById = new Map(personen.map((p) => [p.id, p.name]));
   const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
   const alleOptionen: PersonOption[] = personen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
@@ -1177,6 +1192,7 @@ export function EntityManager({
           pcOptions={pcOptions}
           onSchliessen={() => setPcDetailFuer(null)}
           onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setPersonen, offenerPC.id, felder)}
         />
       )}
 
@@ -1190,6 +1206,7 @@ export function EntityManager({
           pcOptions={pcOptions}
           onSchliessen={() => setNpcDetailFuer(null)}
           onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setPersonen, offenerNPC.id, felder)}
         />
       )}
 
@@ -1204,6 +1221,7 @@ export function EntityManager({
           pcOptions={pcOptions}
           onSchliessen={() => setOrtDetailFuer(null)}
           onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setOrte, offenerOrt.id, felder)}
         />
       )}
 
@@ -1217,6 +1235,7 @@ export function EntityManager({
           pcOptions={pcOptions}
           onSchliessen={() => setEventDetailFuer(null)}
           onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setEvents, offenesEvent.id, felder)}
         />
       )}
 
@@ -1230,6 +1249,7 @@ export function EntityManager({
           pcOptions={pcOptions}
           onSchliessen={() => setFraktionDetailFuer(null)}
           onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setFraktionen, offeneFraktion.id, felder)}
         />
       )}
 
