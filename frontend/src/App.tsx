@@ -56,7 +56,7 @@ const BEREICHE: Bereich[] = [
   // Themewechsel sie mitzieht. Hier steht nur noch, WELCHES Token gilt.
   { id: "pcs", name: "PCs", symbol: "◉", farbe: "var(--bereich-pcs)" },
   { id: "npcs", name: "NPCs", symbol: "◌", farbe: "var(--bereich-npcs)" },
-  { id: "orte", name: "Orte", symbol: "⌖", farbe: "var(--bereich-orte)" },
+  { id: "orte", name: "Orte", symbol: "🧭", farbe: "var(--bereich-orte)" },
   { id: "events", name: "Events", symbol: "◆", farbe: "var(--bereich-events)" },
   { id: "fraktionen", name: "Fraktionen", symbol: "⬡", farbe: "var(--bereich-fraktionen)" },
   { id: "verbindungen", name: "Verbindungen", symbol: "⬡", farbe: "var(--bereich-verbindungen)" },
