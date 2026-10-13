@@ -8,10 +8,22 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
-import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
+import { beziehungsZeilen } from "./BeziehungsListe";
+import { BeziehungsTab } from "./BeziehungsTab";
 import { PlaylistFeld } from "../spotify/PlaylistFeld";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs, NPCs und Orten
+
+/** Schnellvorschläge für Events — Rollen der Beteiligten. */
+const EVENT_TYP_VORSCHLAEGE = [
+  "Teilnehmer",
+  "Gegner",
+  "Geisel",
+  "Opfer",
+  "Zeuge",
+  "Auftraggeber",
+  "Schauplatz",
+];
 
 /**
  * Detail-Popup für ein Event.
@@ -259,13 +271,17 @@ export function EventDetail({
           )}
 
           {unteransicht === "beziehungen" && (
-            <BeziehungsListe
+            <BeziehungsTab
               campaignId={campaignId}
-              zeilen={zeilen}
+              eigenKind="Event"
+              eigenId={event.id}
+              eigenName={event.title}
+              verbindungen={verbindungen}
               namen={namen}
               pcOptions={pcOptions}
-              onGeaendert={onGeaendert}
+              typVorschlaege={EVENT_TYP_VORSCHLAEGE}
               farbe="var(--bereich-events, var(--neon))"
+              onGeaendert={onGeaendert}
             />
           )}
         </div>

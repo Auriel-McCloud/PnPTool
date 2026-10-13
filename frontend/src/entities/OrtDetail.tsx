@@ -8,12 +8,24 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
 import { VisibilitySelector, type PersonOption } from "./VisibilitySelector";
 import { parseRichText, serializeRichText } from "../richtext/content";
-import { BeziehungsListe, beziehungsZeilen } from "./BeziehungsListe";
+import { beziehungsZeilen } from "./BeziehungsListe";
+import { BeziehungsTab } from "./BeziehungsTab";
 import { PlaylistFeld } from "../spotify/PlaylistFeld";
 import { OrtLadenFenster } from "../haendler/OrtLadenFenster";
 import { FloraFaunaListe } from "./FloraFaunaListe";
 import type { JSONContent } from "@tiptap/react";
 import "./pc-detail.css"; // Selbes Popup-Gerüst wie bei PCs und NPCs
+
+/** Schnellvorschläge für Orte — wer dort wohnt/arbeitet oder Einfluss hat. */
+const ORT_TYP_VORSCHLAEGE = [
+  "Zuhause von",
+  "Arbeitsplatz von",
+  "Kontrolliert von",
+  "Treffpunkt für",
+  "Versteck für",
+  "Gefahr für",
+  "Handelsposten für",
+];
 
 /**
  * Detail-Popup für einen Ort.
@@ -259,13 +271,17 @@ export function OrtDetail({
           )}
 
           {unteransicht === "beziehungen" && (
-            <BeziehungsListe
+            <BeziehungsTab
               campaignId={campaignId}
-              zeilen={zeilen}
+              eigenKind="Ort"
+              eigenId={ort.id}
+              eigenName={ort.name}
+              verbindungen={verbindungen}
               namen={namen}
               pcOptions={pcOptions}
-              onGeaendert={onGeaendert}
+              typVorschlaege={ORT_TYP_VORSCHLAEGE}
               farbe="var(--bereich-orte, var(--neon))"
+              onGeaendert={onGeaendert}
             />
           )}
 
