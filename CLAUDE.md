@@ -503,6 +503,80 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (13.10.2026 — KI-Charaktererstellung zweistufig, KI kann Regeln nicht mehr verletzen):**
+- **Was:** Mark meldete: die KI-Charaktererstellung (Ideenschmiede ✨-Charakter
+  + Massenidee, beide über `ki/routes.py::_idee_anlegen`) endete öfter in
+  einem 422 „KI hat sich nicht an die Regeln gehalten" — Beispiel aus dem
+  Bugreport: `schwerpunkte` und die Summe der eigenen `attributPunkte`
+  widersprachen sich im selben JSON, dazu erfundene Namen wie
+  „Pilz-Manipulation“ (Fertigkeit) und „Ausstattung“ statt „Ausrüstung“
+  (Hintergrund). Ursache: die KI musste in einem Rutsch sämtliche Zahlen
+  selbst korrekt ausrechnen (Kontingente, Paketverteilung, Freebee-Budget)
+  — reine Arithmetik über ein ganzes JSON hinweg, die Sprachmodelle
+  zuverlässig falsch machen. Marks Wunsch: die KI soll „keine Wahl mehr
+  haben, sich nicht daran zu halten“, sondern den korrekten Prozess
+  durchspielen müssen. Umbau: die KI liefert jetzt nur noch Namen und
+  Prioritäten in zwei kleinen Schritten (Stufe 1: Konzept/Rasse/Weg/Paket +
+  Attribut-Prioritäten; Stufe 2: Fertigkeiten/Hintergründe/Freebee-Wünsche),
+  nie eine Summe oder Endzahl. Der Server baut daraus deterministisch die
+  tatsächliche Erstellung zusammen (`erstellung.py::schwerpunkte_aus_rangfolge`,
+  `attributpunkte_aus_rangfolge`, `fertigkeitpunkte_aus_rangfolge`,
+  `hintergrundpunkte_aus_rangfolge`, `freebees_aus_wunsch`) — das Ergebnis
+  besteht `pruefe()` dadurch IMMER, unabhängig davon, wie unvollständig,
+  widersprüchlich oder erfunden die KI-Eingabe ist (unbekannte Namen werden
+  stillschweigend übersprungen, Freebee-Wünsche über Budget automatisch
+  gekürzt, kein Nachbesser-Versuch/422 mehr nötig). `rasse` ist jetzt außerdem
+  ein echtes Enum aus den Kampagnen-Rassen (vorher freier Text). Nebenbei
+  behoben: die KI-Erstellung berücksichtigte die Kampagnen-Einstellungen
+  `mentorAktiv`/`kontakteAktiv`/`schuldenAktiv` bisher gar nicht (einziger
+  Erstellungsweg ohne dieses Gate) — jetzt wie beim Spieler-Formular.
+- **Gefunden, nicht behoben:** `erstellung.py::freebee_kosten()` berechnet für
+  einen Freebee-Punkt auf einen Hintergrund (über `freebeePunkte`, nicht den
+  normalen Hintergrund-Pool) Kosten 0 statt 1 (`kategorie_von.get(name)` ist
+  `None` für Hintergründe, der Fallback-Key `""` existiert nicht in
+  `FREEBEE_KOSTEN_JE_KATEGORIE`) — ein Schlupfloch für unbegrenzte gratis
+  Hintergrundpunkte, auch beim normalen Spieler-Formular. Die neue
+  `freebees_aus_wunsch()` rechnet das für den KI-Pfad richtig (Kosten 1), das
+  Schlupfloch selbst ist aber noch offen. Separates Ticket, nicht Teil dieses
+  Umbaus.
+- **Dateien:** `backend/app/traits/erstellung.py` (neue reine Funktionen
+  `schwerpunkte_aus_rangfolge`, `attributpunkte_aus_rangfolge`,
+  `fertigkeitpunkte_aus_rangfolge`, `hintergrundpunkte_aus_rangfolge`,
+  `freebees_aus_wunsch`, `ki_konzept_text`, Konstante `ATTRIBUT_NAMEN_ALLE`),
+  `backend/app/ki/routes.py` (charakter-Zweig von `_idee_anlegen` komplett
+  auf zwei Stufen umgebaut, neue Schemas `_charakter_konzept_schema`/
+  `_charakter_fertigkeiten_schema`, alte `_CHARAKTER_SCHEMA`/`_CHARAKTER_SYSTEM`
+  entfernt). `erstellung.py::aus_ki_antwort`/`auswahl_aus_ki`/
+  `ki_erstellungsregeln_text` (alter Einzelschritt-Pfad) bleiben unverändert
+  im Code (nicht mehr aufgerufen, aber weiter getestet) — falls der neue Weg
+  sich am Spieltisch nicht bewährt, ist der Rückweg kurz.
+- **Verifiziert:** 22 neue Tests (`test_ki_stufenweise_erstellung.py` — jede
+  neue Funktion einzeln plus ein Ende-zu-Ende-Test, der für alle 5 Rassen
+  und mit absichtlich halluzinierten Namen prüft, dass `pruefe()` IMMER
+  besteht), 3 Charakter-Tests in `test_ki_idee_typen.py` auf den neuen
+  zweistufigen Ablauf umgeschrieben (der alte „Nachbesser-Versuch“-Test
+  ist obsolet, da es den Pfad nicht mehr gibt). Zusätzlich ein echter
+  End-to-End-Smoke-Test gegen laufende Neo4j (KI gemockt, Rest echt): Troll-
+  Magierin mit absichtlich halluziniertem Freebee-Ziel angelegt, Hexkraft-
+  Sockel/Kapital/Schulden/Hintergründe korrekt, erfundener Name sauber
+  ignoriert, keine Exception. Komplette Backend-Suite sonst unverändert bei
+  denselben vorbestehenden Fehlschlägen (Achievements/Flora&Fauna/Lexikon/
+  Shop/Tutorial-Shop-Rassen/Zugriffsschutz — per `git stash` vor dem Umbau
+  gegengeprüft, dieselbe Windows/Python-3.14-Neo4j-Async-Flakiness wie in
+  anderen `test_*`-Dateien, nicht von diesem Change verursacht). **Nie im
+  Browser angeklickt** — die Ideenschmiede-UI (✨-Knopf, Popup) ändert sich
+  nicht, nur was im Hintergrund passiert. Bitte am Spieltisch einmal „✨
+  Charakter“ mit einem ausführlichen Wunsch (am besten einem Magier/
+  NeuroWeaver, damit auch der Sockel-Bonus getestet wird) anlegen und
+  prüfen, dass kein Fehler-Popup mehr erscheint und der Charakterbogen
+  plausibel aussieht (Rasse/Attribute/Fertigkeiten/Hintergründe/Ausrüstung).
+- **Nicht dabei:** kein echter Gemini/Mistral-Call getestet (nur gemockt) —
+  die KI bekommt jetzt deutlich engere, enum-beschränkte Schemas statt
+  Freitext-Zahlen, das Verhalten eines echten Providers dagegen kann
+  abweichen (z.B. wie gut die Prioritäts-Reihenfolgen thematisch zum Konzept
+  passen). Zwei KI-Aufrufe statt vorher ein bis zwei — etwas mehr Kosten pro
+  Charakter, dafür strukturell kein Fehlschlag mehr möglich.
+
 **Zuletzt gebaut (11.10.2026 — KI-Charakter geht im Tutorial-Shop einkaufen, Mentor/Kontakte-Pipeline):**
 - **Was:** Marks Wunsch: die KI-Charaktererstellung (Ideenschmiede ✨-Charakter
   + Massenidee, beide über `ki/routes.py::_idee_anlegen`) lässt das Freebee-

@@ -160,55 +160,84 @@ def test_verbindung_nutzt_beziehung_anwenden():
     _run(run())
 
 
-def test_idee_charakter_lehnt_regelwidrige_bogenwerte_ab():
-    from fastapi import HTTPException
+def _stufe1_antwort(**overrides) -> dict:
+    """Eine gültige Stufe-1-Antwort (Konzept/Rasse/Weg/Paket/Prioritäten) für
 
-    from tests.test_erstellung import KATALOG, grundgeruest
+    die stufenweise KI-Charaktererstellung (13.10.2026) — siehe
+    ki/routes.py::_charakter_konzept_schema."""
+    basis = {
+        "name": "Kira",
+        "beschreibung": "x",
+        "notizen": "",
+        "konzept": "Fixer",
+        "alter": "29",
+        "ambition": "",
+        "verlangen": "",
+        "ziel": "",
+        "rasse": "Mensch",
+        "weg": "KEINER",
+        "fertigkeitsPaket": "PROFI",
+        "kategorienReihenfolge": ["AttributKörperlich", "AttributGeistig", "AttributGesellschaftlich"],
+        "attributReihenfolgeKoerperlich": ["Körperkraft", "Geschicklichkeit", "Widerstandsfähigkeit"],
+        "attributReihenfolgeGesellschaftlich": ["Charisma", "Manipulation", "Fassung"],
+        "attributReihenfolgeGeistig": ["Intelligenz", "Geistesschärfe", "Entschlossenheit"],
+    }
+    basis.update(overrides)
+    return basis
+
+
+def _stufe2_antwort(**overrides) -> dict:
+    """Eine gültige Stufe-2-Antwort (Fertigkeiten/Hintergründe/Freebees) —
+
+    siehe ki/routes.py::_charakter_fertigkeiten_schema."""
+    basis = {
+        "fertigkeitenReihenfolge": ["Schusswaffen", "Heimlichkeit", "Nahkampf"],
+        "hintergruendeReihenfolge": [],
+        "freebeeKredit": 1,
+        "freebeeEigenkapital": 0,
+        "freebeeZielReihenfolge": [],
+    }
+    basis.update(overrides)
+    return basis
+
+
+# patch("app.ki.routes.get_einstellungen", ...) ist bei jedem charakter-Test
+# nötig: die stufenweise Erstellung (13.10.2026) respektiert die Mentor-/
+# Kontakte-/Schulden-Kampagnentoggles, die bisherigen Tests mocken aber
+# keine Kampagnen-Einstellungen und würden sonst einen echten, hier
+# ungemockten DB-Zugriff auslösen.
+
+
+def test_idee_charakter_kann_keine_regelwidrige_erstellung_mehr_liefern():
+    """Kernversprechen der stufenweisen Erstellung (13.10.2026, Marks
+
+    Bugreport): selbst eine KI-Antwort voller Unsinn — erfundene Fertigkeiten/
+    Hintergründe, widersprüchliche Prioritäten, Freebee-Wünsche weit über
+    Budget — darf nie mehr zu einem 422 "KI hat sich nicht an die Regeln
+    gehalten" führen. Der Server baut die Zahlen selbst, die KI liefert nur
+    noch (hier bewusst kaputte) Namen/Prioritäten."""
 
     async def run():
-        daten = {
-            **grundgeruest(attributPunkte={
-                **grundgeruest()["attributPunkte"],
-                "Körperkraft": 10,
-            }),
-            "name": "Kira",
-            "beschreibung": "x",
-            "notizen": "",
-            "konzept": "Fixer",
-        }
+        stufe1 = _stufe1_antwort(
+            rasse="Mensch",
+            kategorienReihenfolge=["Quatsch", "AttributGeistig", "AttributGeistig"],
+            attributReihenfolgeKoerperlich=["Nicht-Existent"],
+        )
+        stufe2 = _stufe2_antwort(
+            fertigkeitenReihenfolge=["Pilz-Manipulation", "Schusswaffen"],
+            hintergruendeReihenfolge=["Ausstattung", "Mentor"],
+            freebeeKredit=99,
+            freebeeEigenkapital=99,
+            freebeeZielReihenfolge=["Pilz-Manipulation", "Willenskraft"],
+        )
+        ki = AsyncMock(side_effect=[stufe1, stufe2])
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
-            patch("app.ki.routes.generiere_json", AsyncMock(return_value=daten)),
+            patch("app.ki.routes.generiere_json", ki),
             patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
             patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
             patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
-            patch("app.ki.routes.create_node", AsyncMock()) as create,
-        ):
-            with pytest.raises(HTTPException) as exc:
-                await _idee_anlegen("c1", "charakter", "eine Kira")
-            assert exc.value.status_code == 422
-            assert create.await_count == 0
-
-    _run(run())
-
-
-def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
-    from tests.test_erstellung import KATALOG, grundgeruest
-
-    async def run():
-        daten = {
-            **grundgeruest(freebeeKredit=1, freebeePunkte={"Etiketten": 1}),
-            "name": "Kira",
-            "beschreibung": "x",
-            "notizen": "",
-            "konzept": "Fixer",
-        }
-        with (
-            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
-            patch("app.ki.routes.generiere_json", AsyncMock(return_value=daten)),
-            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
-            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
-            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
             patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
             patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
             patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
@@ -217,6 +246,38 @@ def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
             hooks.ki = AsyncMock()
             ergebnis = await _idee_anlegen("c1", "charakter", "eine Kira")
             assert ergebnis["typ"] == "charakter"
+            assert create.await_count == 1
+            werte = bulk.await_args.args[2]
+            # Kein Fehler, aber auch keine stillschweigend akzeptierten
+            # Phantomwerte: die erfundenen Namen tauchen nirgends auf.
+            assert "Pilz-Manipulation" not in werte
+            assert "Ausstattung" not in werte
+            assert werte["Körperkraft"] <= 6
+
+    _run(run())
+
+
+def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
+    async def run():
+        stufe1 = _stufe1_antwort()
+        stufe2 = _stufe2_antwort(freebeeKredit=1, freebeeZielReihenfolge=["Etiketten"])
+        ki = AsyncMock(side_effect=[stufe1, stufe2])
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.generiere_json", ki),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
+            patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
+            patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            ergebnis = await _idee_anlegen("c1", "charakter", "eine Kira")
+            assert ergebnis["typ"] == "charakter"
+            assert ki.await_count == 2  # genau Stufe 1 + Stufe 2, keine Nachbesserung
             werte = bulk.await_args.args[2]
             assert werte["Körperkraft"] == 4
             person = create.await_args.args[3]
@@ -225,48 +286,37 @@ def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
     _run(run())
 
 
-def test_idee_charakter_bessert_regelwidrige_antwort_nach():
-    from tests.test_erstellung import KATALOG, grundgeruest
+def test_idee_charakter_mit_magier_weg_bekommt_hexkraft_sockel():
+    """Der feste Hexkraft-Sockel (MAGIE_FIXWERT) landet unabhängig davon in
+
+    den Endwerten, ob/was die KI in fertigkeitenReihenfolge dafür vorsieht —
+    dieselbe Garantie wie in der Kern-Regelprüfung (test_erstellung.py)."""
 
     async def run():
-        illegal = {
-            **grundgeruest(attributPunkte={
-                **grundgeruest()["attributPunkte"],
-                "Körperkraft": 10,
-            }),
-            "name": "Kira",
-            "beschreibung": "x",
-            "notizen": "",
-            "konzept": "Fixer",
-        }
-        legal = {
-            **grundgeruest(freebeeKredit=2, freebeeEigenkapital=1),
-            "name": "Kira",
-            "beschreibung": "x",
-            "notizen": "",
-            "konzept": "Fixer",
-        }
-        ki = AsyncMock(side_effect=[illegal, legal])
+        stufe1 = _stufe1_antwort(weg="MAGIER")
+        stufe2 = _stufe2_antwort(fertigkeitenReihenfolge=["Kräfte", "Leben", "Schusswaffen"])
+        ki = AsyncMock(side_effect=[stufe1, stufe2])
         with (
             patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
             patch("app.ki.routes.generiere_json", ki),
             patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
             patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
             patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
             patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
             patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
             patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
             patch("app.ki.routes.hooks") as hooks,
         ):
             hooks.ki = AsyncMock()
-            ergebnis = await _idee_anlegen("c1", "charakter", "eine Kira")
+            ergebnis = await _idee_anlegen("c1", "charakter", "eine Magierin")
             assert ergebnis["typ"] == "charakter"
-            assert ki.await_count == 2
-            assert "Körperkraft" in ki.await_args.args[0]
-            assert bulk.await_args.args[2]["Körperkraft"] == 4
+            werte = bulk.await_args.args[2]
+            from app.traits.erstellung import MAGIE_FIXWERT
+
+            assert werte["Hexkraft"] == MAGIE_FIXWERT
             person = create.await_args.args[3]
-            assert person["kapital"] == 40_000
-            assert person["schulden"] == 20_000
+            assert person["weg"] == "MAGIER"
 
     _run(run())
 

@@ -23,7 +23,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
-from app.campaigns.repository import get_campaign
+from app.campaigns.repository import get_campaign, get_einstellungen
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node, get_node
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
 from app.haendler import ki_einkauf
@@ -112,21 +112,14 @@ _STORY_SCHEMA = {
     "required": ["titel", "inhalt"],
 }
 
-_PUNKT_EINTRAG = {
-    "type": "OBJECT",
-    "properties": {
-        "name": {"type": "STRING"},
-        "punkte": {"type": "INTEGER"},
-    },
-    "required": ["name", "punkte"],
-}
-
 # Für traitBoni (Bonus auf einen BESTEHENDEN Katalog-Trait) und
-# neueFertigkeiten (komplett neue Fertigkeit) an KI-Gegenständen — eigenes
-# Schema statt _PUNKT_EINTRAG, weil "wert" hier Bonuswürfel/Fertigkeitshöhe
-# meint, nicht Erstellungspunkte (Mark-Bug 11.10.2026: ein Cyberware-Implantat
-# mit "+1 auf Schusswaffen" landete nur im Beschreibungstext, weil es dafür
-# überhaupt kein strukturiertes Ausgabefeld gab).
+# neueFertigkeiten (komplett neue Fertigkeit) an KI-Gegenständen — "wert"
+# meint hier Bonuswürfel/Fertigkeitshöhe (Mark-Bug 11.10.2026: ein
+# Cyberware-Implantat mit "+1 auf Schusswaffen" landete nur im
+# Beschreibungstext, weil es dafür überhaupt kein strukturiertes
+# Ausgabefeld gab). Die Charaktererstellung braucht dieses {name,wert}-
+# Muster seit der stufenweisen KI-Erstellung (13.10.2026) nicht mehr — dort
+# liefert die KI nur noch Namens-Reihenfolgen, keine Punktwerte mehr.
 _TRAIT_BONUS_EINTRAG = {
     "type": "OBJECT",
     "properties": {
@@ -136,48 +129,94 @@ _TRAIT_BONUS_EINTRAG = {
     "required": ["name", "wert"],
 }
 
-_CHARAKTER_SCHEMA = {
-    "type": "OBJECT",
-    "properties": {
-        "name": {"type": "STRING"},
-        "beschreibung": {"type": "STRING"},
-        # SL-internes Notizfeld — alle Details aus Wunsch/Gespräch, die nicht
-        # in die knappe beschreibung passen (siehe _NOTIZEN_HINWEIS).
-        "notizen": {"type": "STRING"},
-        # Kopfzeile des Papierblatts — reiner Text, keine Regelmechanik.
-        "konzept": {"type": "STRING"},
-        "alter": {"type": "STRING"},
-        "ambition": {"type": "STRING"},
-        "verlangen": {"type": "STRING"},
-        "ziel": {"type": "STRING"},
-        "rasse": {"type": "STRING"},
-        "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER", "HAERETIKER"]},
-        "fertigkeitsPaket": {"type": "STRING", "enum": ["PROFI", "AUSGEGLICHEN", "VIELSEITIG"]},
-        "schwerpunkte": {
-            "type": "OBJECT",
-            "properties": {
-                "AttributKörperlich": {"type": "INTEGER"},
-                "AttributGesellschaftlich": {"type": "INTEGER"},
-                "AttributGeistig": {"type": "INTEGER"},
+def _charakter_konzept_schema(rassen_namen: list[str]) -> dict:
+    """Schema für Stufe 1 (13.10.2026, siehe erstellung.py::ki_konzept_text):
+    Konzept-Text plus Rasse/Weg/Paket als echte Enums (kein Erfinden mehr
+    möglich) und reine Prioritäts-Reihenfolgen statt Rohzahlen — die KI kann
+    hier strukturell keine Arithmetik mehr falsch machen, weil es keine
+    einzige Zahl zu liefern gibt.
+    """
+    def _attribut_rangfolge(namen: list[str]) -> dict:
+        return {"type": "ARRAY", "items": {"type": "STRING", "enum": namen}}
+
+    return {
+        "type": "OBJECT",
+        "properties": {
+            "name": {"type": "STRING"},
+            "beschreibung": {"type": "STRING"},
+            # SL-internes Notizfeld — siehe _NOTIZEN_HINWEIS.
+            "notizen": {"type": "STRING"},
+            # Kopfzeile des Papierblatts — reiner Text, keine Regelmechanik.
+            "konzept": {"type": "STRING"},
+            "alter": {"type": "STRING"},
+            "ambition": {"type": "STRING"},
+            "verlangen": {"type": "STRING"},
+            "ziel": {"type": "STRING"},
+            "rasse": {"type": "STRING", "enum": rassen_namen},
+            "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER", "HAERETIKER"]},
+            "fertigkeitsPaket": {"type": "STRING", "enum": list(erstellung.FERTIGKEITS_PAKETE.keys())},
+            # Reihenfolge statt Zahlen — der Server verteilt das Kontingent
+            # der gewählten Rasse danach (erstellung.schwerpunkte_aus_rangfolge).
+            "kategorienReihenfolge": {
+                "type": "ARRAY",
+                "items": {"type": "STRING", "enum": erstellung.ATTRIBUT_KATEGORIEN},
             },
-            "required": ["AttributKörperlich", "AttributGesellschaftlich", "AttributGeistig"],
+            "attributReihenfolgeKoerperlich": _attribut_rangfolge(
+                erstellung.ATTRIBUTE_JE_KATEGORIE["AttributKörperlich"]
+            ),
+            "attributReihenfolgeGesellschaftlich": _attribut_rangfolge(
+                erstellung.ATTRIBUTE_JE_KATEGORIE["AttributGesellschaftlich"]
+            ),
+            "attributReihenfolgeGeistig": _attribut_rangfolge(
+                erstellung.ATTRIBUTE_JE_KATEGORIE["AttributGeistig"]
+            ),
         },
-        "attributPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
-        "fertigkeitPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
-        "freebeePunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
-        "hintergrundPunkte": {"type": "ARRAY", "items": _PUNKT_EINTRAG},
-        "freebeeWillenskraft": {"type": "INTEGER"},
-        "freebeeKredit": {"type": "INTEGER"},
-        "freebeeEigenkapital": {"type": "INTEGER"},
-        "plan": {"type": "ARRAY", "items": {"type": "STRING"}},
-    },
-    "required": [
-        "name", "beschreibung", "notizen", "konzept", "rasse", "weg",
-        "fertigkeitsPaket", "schwerpunkte", "attributPunkte", "fertigkeitPunkte",
-        "hintergrundPunkte", "freebeePunkte", "freebeeWillenskraft",
-        "freebeeKredit", "freebeeEigenkapital",
-    ],
-}
+        "required": [
+            "name", "beschreibung", "notizen", "konzept", "rasse", "weg",
+            "fertigkeitsPaket", "kategorienReihenfolge",
+            "attributReihenfolgeKoerperlich", "attributReihenfolgeGesellschaftlich",
+            "attributReihenfolgeGeistig",
+        ],
+    }
+
+
+def _charakter_fertigkeiten_schema(
+    erlaubte_fertigkeiten: list[str],
+    hintergrund_pool: list[str],
+    freebee_ziele: list[str],
+    braucht_magie_bonus_feld: bool,
+) -> dict:
+    """Schema für Stufe 2: Fertigkeiten/Hintergründe/Freebees — wieder nur
+    Namen/Reihenfolgen plus die zwei Geld-Freebee-Anzahlen (kleine, risikoarme
+    Ganzzahlen). Die exakte Fertigkeiten-Verteilung, die Hintergrund-Summe und
+    das Freebee-Budget rechnet ausschließlich der Server aus."""
+    schema = {
+        "type": "OBJECT",
+        "properties": {
+            "fertigkeitenReihenfolge": {
+                "type": "ARRAY",
+                "items": {"type": "STRING", "enum": erlaubte_fertigkeiten},
+            },
+            "hintergruendeReihenfolge": {
+                "type": "ARRAY",
+                "items": {"type": "STRING", "enum": hintergrund_pool},
+            },
+            "freebeeKredit": {"type": "INTEGER"},
+            "freebeeEigenkapital": {"type": "INTEGER"},
+            "freebeeZielReihenfolge": {
+                "type": "ARRAY",
+                "items": {"type": "STRING", "enum": freebee_ziele},
+            },
+        },
+        "required": [
+            "fertigkeitenReihenfolge", "hintergruendeReihenfolge",
+            "freebeeKredit", "freebeeEigenkapital", "freebeeZielReihenfolge",
+        ],
+    }
+    if braucht_magie_bonus_feld:
+        schema["properties"]["magieBonusNutzen"] = {"type": "BOOLEAN"}
+        schema["required"].append("magieBonusNutzen")
+    return schema
 
 _GEGENSTAND_SCHEMA = {
     "type": "OBJECT",
@@ -398,19 +437,25 @@ _GEGENSTAND_SYSTEM = (
 )
 
 # Erklärt die Kopfzeilen-Begriffe, damit Gemini nicht rät, was „Ambition"
-# von „Verlangen" unterscheidet.
-_CHARAKTER_SYSTEM = (
+# von „Verlangen" unterscheidet. Stufe 1 von 2 (siehe erstellung.py::
+# ki_konzept_text) — reiner Konzept-/Auswahl-Teil, keine Zahlen mehr hier.
+_CHARAKTER_KONZEPT_SYSTEM = (
     _SYSTEM
     + " Erschaffe stimmige NPCs. Die Kopfzeile: konzept (kurze Rollenbeschreibung), "
     "alter, ambition (was der Charakter langfristig erreichen will), verlangen "
-    "(sein innerer Antrieb/Sucht), ziel (das konkrete nächste Vorhaben). "
-    "weg: KEINER, MAGIER, NEUROWEAVER oder HAERETIKER — nur MAGIER/HAERETIKER, wenn der "
-    "Charakter Magie wirkt, nur NEUROWEAVER, wenn er NeuroWeaving nutzt, sonst KEINER. "
-    "Der Bogen ist eine Charaktererstellung, keine Wunschliste: Rasse, Weg, "
-    "Attribut-Zusatzpunkte nach Rassenkontingent (höchstens 3 je Attribut, nie Endwerte), "
-    "genau ein Fertigkeitspaket, dann Freebees in Geld und Details — alles innerhalb "
-    "der Regeln im Auftrag. Katalog-Maxima sind nicht die Erstellung."
+    "(sein innerer Antrieb/Sucht), ziel (das konkrete nächste Vorhaben)."
     + _NOTIZEN_HINWEIS
+)
+
+# Stufe 2 von 2: Fertigkeiten/Hintergründe/Freebees — reine Namens-
+# Priorisierung, die exakten Zahlen baut der Server (siehe _idee_anlegen).
+_CHARAKTER_FERTIGKEITEN_SYSTEM = (
+    _SYSTEM
+    + " Du vervollständigst einen bereits begonnenen Charakterbogen: welche "
+    "Fertigkeiten beherrscht die Figur am besten, welche Hintergründe passen "
+    "zu ihr, und wie setzt sie ihr restliches Startkapital (Freebees) ein. "
+    "Nenne ausschließlich Namen in Prioritätsreihenfolge (wichtigstes zuerst) "
+    "— keine Zahlen, keine Punktewerte, das übernimmt der Server."
 )
 
 
@@ -876,65 +921,165 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         if typ != "charakter":
             raise HTTPException(status_code=422, detail="Unbekannter Ideen-Typ.")
 
-        # charakter — Bogen über pruefe()/endwerte, nicht Roh-Ratings.
+        # charakter — zweistufiger, deterministischer Ablauf (13.10.2026,
+        # Mark: die KI soll die Regeln nicht mehr selbst durchrechnen müssen
+        # und dadurch keine Möglichkeit mehr haben, sie zu verletzen). Stufe 1
+        # liefert Konzept/Rasse/Weg/Paket plus reine Prioritäten, Stufe 2
+        # Fertigkeiten/Hintergründe/Freebee-Wünsche — in beiden Stufen nie
+        # eine Zahl, die die KI selbst ausrechnen müsste. Die eigentliche
+        # Arithmetik (Kontingente, Paketverteilung, Freebee-Budget) baut der
+        # Server deterministisch aus den Prioritäten zusammen, siehe
+        # erstellung.py::{schwerpunkte_aus_rangfolge, attributpunkte_aus_rangfolge,
+        # fertigkeitpunkte_aus_rangfolge, hintergrundpunkte_aus_rangfolge,
+        # freebees_aus_wunsch}. Ergebnis ist dadurch IMMER strukturell
+        # regelkonform — kein Nachbesser-Versuch, kein 422 mehr nötig.
         kontext = await sammle_kontext(campaign_id)
         campaign = await get_campaign(campaign_id)
         ruleset = campaign["ruleset"] if campaign else "neotopia"
         katalog = await list_catalog(ruleset)
         rassen = _rassen_fuer_ki(await rassen_repository.liste_fuer_kampagne(campaign_id))
-        katalog_text = await _katalog_zu_text(ruleset)
+        einstellungen = await get_einstellungen(campaign_id)
 
-        prompt_komplett = _mit_kontext(prompt, kontext)
-        prompt_komplett += "\n\n" + erstellung.ki_erstellungsregeln_text(rassen)
-        prompt_komplett += (
-            "\n\nTrait-Katalog (nur Namen; max ist das Lebensmaximum, nicht der Erstellungswert):\n"
-            f"{katalog_text}\n"
-        )
+        # --- Stufe 1: Konzept, Rasse, Weg, Paket, Attribut-Prioritäten -----
+        schema1 = _charakter_konzept_schema(sorted(rassen.keys()))
+        prompt1 = _mit_kontext(prompt, kontext) + "\n\n" + erstellung.ki_konzept_text(rassen)
+        konzept = await generiere_json(prompt1, _CHARAKTER_KONZEPT_SYSTEM, schema1, campaign_id=campaign_id)
 
-        # Ein Nachbesser-Versuch, falls die Punktrechnung danebenliegt.
-        # Zweiter Fehlschlag bleibt 422 — kein Rückfall auf Roh-Ratings.
-        ergebnis: dict = {}
-        werte: dict[str, int] = {}
-        fehler: list[str] = []
-        for _versuch in range(2):
-            auftrag = prompt_komplett
-            if fehler:
-                auftrag += (
-                    "\n\nVorige Antwort verworfen, sie verletzt die Erstellung:\n- "
-                    + "\n- ".join(fehler[:8])
-                    + "\nattributPunkte sind Zusatzpunkte auf 1+Mod, höchstens 3 je Attribut, "
-                    "nicht Endwerte und nicht die Katalog-Maxima. "
-                    "Freebees nur innerhalb des Budgets; Kredit/Eigenkapital sind Kauf-Anzahlen, nicht Yen."
-                )
-            ergebnis = await generiere_json(
-                auftrag, _CHARAKTER_SYSTEM, _CHARAKTER_SCHEMA, campaign_id=campaign_id
-            )
-            werte, fehler = erstellung.aus_ki_antwort(ergebnis, katalog, rassen)
-            if not fehler:
-                auswahl = erstellung.auswahl_aus_ki(ergebnis)
-                kategorie_von = {t["name"]: t["category"] for t in katalog}
-                geld = int(auswahl.get("freebeeKredit") or 0) + int(auswahl.get("freebeeEigenkapital") or 0)
-                if erstellung.freebee_kosten(auswahl, kategorie_von) == 0 or geld == 0:
-                    fehler = [
-                        "Freebees müssen ausgegeben werden: mindestens ein Kauf Kredit oder "
-                        "Eigenkapital, dazu wenige Details (Fertigkeit +1 oder Willenskraft), "
-                        "innerhalb des Rassen-Budgets. Nicht jedes Attribut anheben."
-                    ]
-            if not fehler:
-                break
-        else:
-            raise HTTPException(
-                status_code=422,
-                detail="Die KI hat keine regelkonforme Erstellung geliefert: " + "; ".join(fehler[:8]),
-            )
-        name = (ergebnis.get("name") or "").strip() or "Unbenannter Charakter"
-        beschreibung = (ergebnis.get("beschreibung") or "").strip()
-        rasse_name = (ergebnis.get("rasse") or "").strip()
-        weg, magie_flavor = erstellung.normalisiere_weg(ergebnis.get("weg") or "KEINER")
+        rasse_name = (konzept.get("rasse") or "").strip()
+        if rasse_name not in rassen:
+            rasse_name = next(iter(rassen), "Mensch")
+        weg, magie_flavor = erstellung.normalisiere_weg(konzept.get("weg") or "KEINER")
         if weg not in ("KEINER", "MAGIER", "NEUROWEAVER"):
             weg = "KEINER"
             magie_flavor = "MAGIER"
-        auswahl = erstellung.auswahl_aus_ki(ergebnis)
+        paket_id = konzept.get("fertigkeitsPaket") or "PROFI"
+        if paket_id not in erstellung.FERTIGKEITS_PAKETE:
+            paket_id = "PROFI"
+
+        schwerpunkte = erstellung.schwerpunkte_aus_rangfolge(
+            rasse_name, konzept.get("kategorienReihenfolge") or [], rassen
+        )
+        attribut_punkte: dict[str, int] = {}
+        for kategorie, feld in (
+            ("AttributKörperlich", "attributReihenfolgeKoerperlich"),
+            ("AttributGesellschaftlich", "attributReihenfolgeGesellschaftlich"),
+            ("AttributGeistig", "attributReihenfolgeGeistig"),
+        ):
+            attribut_punkte.update(
+                erstellung.attributpunkte_aus_rangfolge(
+                    kategorie, konzept.get(feld) or [], schwerpunkte.get(kategorie, 0)
+                )
+            )
+
+        # --- Stufe 2: Fertigkeiten, Hintergründe, Freebees -----------------
+        magie_trait = erstellung.MAGIE_TRAIT_JE_WEG.get(weg)
+        erlaubte_kategorien = ({"Fertigkeit"} | erstellung.KATEGORIEN_JE_WEG.get(weg, set())) - {
+            "Hexkraft", "NeuroWeavingWert",
+        }
+        erlaubte_fertigkeiten = [t["name"] for t in katalog if t["category"] in erlaubte_kategorien]
+        hintergrund_pool = [
+            h["name"] for h in erstellung.HINTERGRUENDE
+            if (h["name"] != "Mentor" or einstellungen.get("mentorAktiv", True))
+            and (h["name"] != "Kontakte" or einstellungen.get("kontakteAktiv", True))
+        ]
+        freebee_ziele = sorted(
+            set(erlaubte_fertigkeiten)
+            | set(erstellung.ATTRIBUT_NAMEN_ALLE)
+            | set(hintergrund_pool)
+            | ({magie_trait} if magie_trait else set())
+            | {"Willenskraft"}
+        )
+        braucht_magie_bonus_feld = bool(magie_trait) and paket_id == "PROFI"
+
+        schema2 = _charakter_fertigkeiten_schema(
+            erlaubte_fertigkeiten, hintergrund_pool, freebee_ziele, braucht_magie_bonus_feld
+        )
+        budget = erstellung.FREEBEES_GESAMT + int((rassen.get(rasse_name) or {}).get("bonusFreebees") or 0)
+        katalog_beschreibung = {t["name"]: t.get("description") or "" for t in katalog}
+        fertigkeiten_zeilen = "\n".join(
+            f"- {name}" + (f": {katalog_beschreibung[name]}" if katalog_beschreibung.get(name) else "")
+            for name in erlaubte_fertigkeiten
+        )
+        paket = erstellung.FERTIGKEITS_PAKETE[paket_id]
+        slot_anzahl = sum(paket["verteilung"].values())
+        prompt2 = (
+            f"Figur: {(konzept.get('name') or '').strip() or '(unbenannt)'} — "
+            f"Rasse {rasse_name}, Weg {weg}. Konzept: {(konzept.get('konzept') or '').strip() or '(keins)'}.\n\n"
+            f"fertigkeitenReihenfolge: Paket {paket_id} verlangt genau {slot_anzahl} Fertigkeiten, "
+            "wichtigste zuerst — nur Namen aus dieser Liste (nichts erfinden):\n"
+            f"{fertigkeiten_zeilen}\n\n"
+            f"hintergruendeReihenfolge: bis zu 4 Hintergründe aus {', '.join(hintergrund_pool)}, "
+            "wichtigster zuerst (leer lassen ist auch ok).\n\n"
+            f"Freebee-Budget dieser Figur: {budget}. freebeeKredit/freebeeEigenkapital: Anzahl der "
+            f"Käufe (nicht Yen, je {erstellung.KAPITAL_JE_FREEBEE}¥, Kredit ist Schulden, "
+            "Eigenkapital nicht) — mindestens ein Kauf Geld ist üblich. "
+            "freebeeZielReihenfolge: restliche Freebee-Wünsche als Namen in Prioritätsreihenfolge "
+            "(Attribute, Fertigkeiten, Hintergründe oder \"Willenskraft\") — reicht das Budget nicht "
+            "für alle, werden die hinteren automatisch gestrichen."
+        )
+        if braucht_magie_bonus_feld:
+            prompt2 += (
+                f"\n\nmagieBonusNutzen: true, wenn der einzige 1er-Slot des Profi-Pakets statt einer "
+                f"Fertigkeit auf {magie_trait} gehen soll (hebt ihn von "
+                f"{erstellung.MAGIE_FIXWERT} auf {erstellung.MAGIE_FIXWERT + erstellung.MAGIE_FIXWERT_PROFI_BONUS})."
+            )
+        stufe2 = await generiere_json(prompt2, _CHARAKTER_FERTIGKEITEN_SYSTEM, schema2, campaign_id=campaign_id)
+
+        magie_bonus = bool(stufe2.get("magieBonusNutzen")) if braucht_magie_bonus_feld else False
+        fertigkeit_punkte = erstellung.fertigkeitpunkte_aus_rangfolge(
+            paket_id, stufe2.get("fertigkeitenReihenfolge") or [], erlaubte_fertigkeiten,
+            magie_bonus=magie_bonus, magie_trait=magie_trait,
+        )
+        hintergrund_punkte = erstellung.hintergrundpunkte_aus_rangfolge(
+            stufe2.get("hintergruendeReihenfolge") or [], hintergrund_pool
+        )
+
+        auswahl_ohne_freebees = {
+            "weg": weg,
+            "rasse": rasse_name,
+            "schwerpunkte": schwerpunkte,
+            "attributPunkte": attribut_punkte,
+            "fertigkeitsPaket": paket_id,
+            "fertigkeitPunkte": fertigkeit_punkte,
+            "hintergrundPunkte": hintergrund_punkte,
+        }
+        aktuelle_werte = erstellung.endwerte(auswahl_ohne_freebees, rassen)
+        kategorie_von = {t["name"]: t["category"] for t in katalog}
+        maximum_von = {t["name"]: t["defaultMax"] for t in katalog}
+        maximum_von.update(erstellung.lebensmaxima(rasse_name, katalog, rassen))
+
+        freebee_ergebnis = erstellung.freebees_aus_wunsch(
+            budget,
+            _als_int(stufe2.get("freebeeKredit")),
+            _als_int(stufe2.get("freebeeEigenkapital")),
+            stufe2.get("freebeeZielReihenfolge") or [],
+            kategorie_von,
+            set(hintergrund_pool),
+            aktuelle_werte,
+            maximum_von,
+        )
+        auswahl = {**auswahl_ohne_freebees, **freebee_ergebnis}
+
+        # Sicherheitsnetz: der Server hat jede Zahl selbst konstruiert, das
+        # hier sollte nie mehr anschlagen. Tut es das doch, ist es ein Bug in
+        # der Berechnung oben, keine Regelverletzung der KI — darum ein 500
+        # mit anderem Text als der alte "KI hat sich nicht an die Regeln
+        # gehalten"-422, damit das im Fehlerfall nicht in die falsche
+        # Richtung ermittelt wird.
+        fehler = erstellung.pruefe(auswahl, katalog, rassen, einstellungen)
+        if fehler:
+            logging.getLogger(__name__).error(
+                "Deterministisch gebaute KI-Charaktererstellung verletzt trotzdem die Regeln: %s",
+                fehler,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Interner Fehler beim Zusammenbauen der Charaktererstellung (kein KI-Regelverstoß).",
+            )
+
+        werte = erstellung.endwerte(auswahl, rassen)
+        name = (konzept.get("name") or "").strip() or "Unbenannter Charakter"
+        beschreibung = (konzept.get("beschreibung") or "").strip()
         vermoegen, schulden = erstellung.kapital(auswahl)
         werte = erstellung.wende_gratis_fertigkeit_an(werte, rassen.get(rasse_name, {}) or {}, katalog)
         person = await create_node(
@@ -945,18 +1090,18 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 name=name,
                 personType="NPC",
                 description=beschreibung,
-                notes=(ergebnis.get("notizen") or "").strip(),
-                konzept=(ergebnis.get("konzept") or "").strip(),
-                alter=(ergebnis.get("alter") or "").strip(),
-                ambition=(ergebnis.get("ambition") or "").strip(),
-                verlangen=(ergebnis.get("verlangen") or "").strip(),
-                ziel=(ergebnis.get("ziel") or "").strip(),
+                notes=(konzept.get("notizen") or "").strip(),
+                konzept=(konzept.get("konzept") or "").strip(),
+                alter=(konzept.get("alter") or "").strip(),
+                ambition=(konzept.get("ambition") or "").strip(),
+                verlangen=(konzept.get("verlangen") or "").strip(),
+                ziel=(konzept.get("ziel") or "").strip(),
                 rasse=rasse_name,
                 weg=weg,
                 magieFlavor=magie_flavor if magie_flavor in ("MAGIER", "HAERETIKER") else "MAGIER",
                 kapital=vermoegen,
                 schulden=schulden,
-                willenskraftBonus=int(ergebnis.get("freebeeWillenskraft") or 0),
+                willenskraftBonus=int(auswahl.get("freebeeWillenskraft") or 0),
                 erstellungAbgeschlossen=True,
                 istEntwurf=True,
                 sichtbarkeit="GM",
@@ -977,7 +1122,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             staerkste_werte = sorted(werte.items(), key=lambda kv: -kv[1])[:8]
             kontext_text = (
                 f"{name} — Rasse: {rasse_name or 'unbekannt'}, Weg: {weg}. "
-                f"Konzept: {(ergebnis.get('konzept') or '').strip() or '(keins)'}. "
+                f"Konzept: {(konzept.get('konzept') or '').strip() or '(keins)'}. "
                 "Stärkste Werte: "
                 + (", ".join(f"{n} {w}" for n, w in staerkste_werte if w > 0) or "(keine)")
             )

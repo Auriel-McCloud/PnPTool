@@ -51,6 +51,11 @@ ATTRIBUTE_JE_KATEGORIE = {
     "AttributGeistig": ["Intelligenz", "Geistesschärfe", "Entschlossenheit"],
 }
 
+# Flache Liste aller neun Attribute — u.a. für die KI-Freebee-Zielliste
+# (ki_routes baut daraus zusammen mit Fertigkeiten/Hintergründen das Enum,
+# aus dem die KI ihre Freebee-Wünsche wählt).
+ATTRIBUT_NAMEN_ALLE = [n for namen in ATTRIBUTE_JE_KATEGORIE.values() for n in namen]
+
 # Jeder beginnt hier, bevor die Rasse etwas verändert (Zeile 2).
 ATTRIBUT_GRUNDWERT = 1
 
@@ -839,4 +844,253 @@ def ki_erstellungsregeln_text(rassen: dict[str, dict[str, Any]] | None = None) -
         "Einen Teil der Freebees als Geld (Kredit oder Eigenkapital), den Rest als wenige "
         "passende Details (eine Fertigkeit +1, Willenskraft, höchstens ein Attribut). "
         "Nicht jedes Attribut anheben."
+    )
+
+
+# --- Stufenweise KI-Erstellung (13.10.2026, Marks Wunsch) ----------------
+#
+# Der Ablauf oben (`ki_erstellungsregeln_text` + `aus_ki_antwort`) verlangt
+# von der KI, in einem einzigen JSON ALLE Zahlen selbst korrekt auszurechnen
+# (Kontingente, Paketverteilung, Freebee-Budget) — reine Arithmetik, die
+# Sprachmodelle zuverlässig falsch machen (Mark-Beispiel 13.10.2026: eigene
+# schwerpunkte und die Summe der eigenen attributPunkte widersprachen sich
+# im selben Response). Bleibt das nach einem Nachbesser-Versuch falsch, sah
+# die SL nur einen 422 "KI hat sich nicht an die Regeln gehalten".
+#
+# Die Funktionen hier kehren das um: die KI liefert nur noch Namen und
+# Prioritäten (welche Rasse, welches Attribut ist wichtiger, welche
+# Fertigkeit zuerst, welche Freebee-Wünsche in welcher Reihenfolge) — nie
+# eine Summe, nie eine exakte Verteilung. Die tatsächlichen Zahlen baut der
+# Server aus den festen Spielregeln zusammen. Das Ergebnis ist dadurch
+# IMMER strukturell regelkonform, unabhängig davon, ob/wie gut die KI
+# rechnen kann — sie hat schlicht keine Stelle mehr, an der sie eine Zahl
+# falsch hinschreiben könnte. Siehe app/ki/routes.py für den Aufruf-Ablauf
+# (zwei kleine KI-Anfragen statt einer großen).
+
+# Jedes Attribut lässt sich bei der Erstellung um höchstens diesen Betrag
+# anheben — rassenunabhängig, weil StartMax und Startwert beide um denselben
+# Rassenmodifikator verschoben werden und sich die Differenz daher aufhebt
+# (siehe ATTRIBUT_STARTMAX-Kommentar oben).
+ATTRIBUT_PUNKTE_MAX_JE_WERT = ATTRIBUT_STARTMAX - ATTRIBUT_GRUNDWERT
+
+# Feste Verteilkurven für das Hintergrund-Budget (Standard 5 Punkte) nach
+# Anzahl der von der KI gewählten Hintergründe — absteigend, erster Pick
+# bekommt am meisten. Ab 5 gewählten Namen reicht es nur noch für 1 Punkt
+# je Name (siehe Fallback in hintergrundpunkte_aus_rangfolge).
+_HINTERGRUND_VERTEILUNG: dict[int, list[int]] = {1: [5], 2: [3, 2], 3: [2, 2, 1], 4: [2, 1, 1, 1]}
+
+
+def schwerpunkte_aus_rangfolge(
+    rasse: str, rangfolge: list[str], rassen: dict[str, dict[str, Any]] | None = None
+) -> dict[str, int]:
+    """Weist die festen Attribut-Kontingente einer Rasse (z.B. Mensch 7/5/3)
+    den drei Kategorien zu — nach der Prioritätsreihenfolge der KI, nicht
+    nach von ihr selbst erfundenen Zahlen. Liefert IMMER eine vollständige,
+    gültige Zuordnung: eine unvollständige oder fehlerhafte Reihenfolge wird
+    aufgefüllt, nie verworfen.
+    """
+    verfuegbar = rassen or RASSEN
+    kontingente = sorted(verfuegbar.get(rasse, {}).get("freiePunkte") or [0, 0, 0], reverse=True)
+    bereinigt = [k for k in dict.fromkeys(rangfolge or []) if k in ATTRIBUT_KATEGORIEN]
+    for k in ATTRIBUT_KATEGORIEN:
+        if k not in bereinigt:
+            bereinigt.append(k)
+    return {kategorie: punkte for kategorie, punkte in zip(bereinigt, kontingente)}
+
+
+def attributpunkte_aus_rangfolge(kategorie: str, rangfolge: list[str], kontingent: int) -> dict[str, int]:
+    """Verteilt das Kontingent einer Attributkategorie nach Prioritätsreihenfolge.
+
+    Die KI sagt nur, welches Attribut ihr für die Figur wichtiger ist — der
+    Server füllt von oben nach unten auf, gedeckelt bei
+    ATTRIBUT_PUNKTE_MAX_JE_WERT. Das Ergebnis trifft das Kontingent dadurch
+    immer exakt, ganz ohne dass die KI selbst addieren müsste.
+    """
+    namen = ATTRIBUTE_JE_KATEGORIE[kategorie]
+    bereinigt = [n for n in dict.fromkeys(rangfolge or []) if n in namen]
+    for n in namen:
+        if n not in bereinigt:
+            bereinigt.append(n)
+    rest = max(0, int(kontingent))
+    ergebnis = {n: 0 for n in namen}
+    for name in bereinigt:
+        vergeben = min(rest, ATTRIBUT_PUNKTE_MAX_JE_WERT)
+        ergebnis[name] = vergeben
+        rest -= vergeben
+    return ergebnis
+
+
+def fertigkeitpunkte_aus_rangfolge(
+    paket_id: str,
+    rangfolge: list[str],
+    erlaubte_namen: list[str],
+    magie_bonus: bool = False,
+    magie_trait: str | None = None,
+) -> dict[str, int]:
+    """Verteilt die festen Paketwerte (Profi z.B. 4/3/3/3/2/2/2/1) nach der
+    von der KI gewünschten Namensreihenfolge — die exakte Verteilung stimmt
+    dadurch IMMER, die KI entscheidet nur noch, wer welchen Platz bekommt.
+
+    `magie_bonus` verbraucht (nur bei PROFI, mit gesetztem `magie_trait`)
+    einen der 1er-Plätze für den Magie-Sockel-Bonus statt für eine normale
+    Fertigkeit — dasselbe Konzept wie der bisherige manuelle Profi-Bonus.
+    """
+    paket = FERTIGKEITS_PAKETE.get(paket_id)
+    if paket is None:
+        return {}
+    werte: list[int] = []
+    for wert, anzahl in sorted(paket["verteilung"].items(), reverse=True):
+        werte.extend([wert] * anzahl)
+
+    ergebnis: dict[str, int] = {}
+    if magie_bonus and paket_id == "PROFI" and magie_trait and MAGIE_FIXWERT_PROFI_BONUS in werte:
+        werte.remove(MAGIE_FIXWERT_PROFI_BONUS)
+        ergebnis[magie_trait] = MAGIE_FIXWERT_PROFI_BONUS
+
+    bereinigt = [n for n in dict.fromkeys(rangfolge or []) if n in erlaubte_namen]
+    for n in erlaubte_namen:
+        if len(bereinigt) >= len(werte):
+            break
+        if n not in bereinigt:
+            bereinigt.append(n)
+
+    for name, wert in zip(bereinigt, werte):
+        ergebnis[name] = wert
+    return ergebnis
+
+
+def hintergrundpunkte_aus_rangfolge(
+    rangfolge: list[str],
+    pool_namen: set[str] | list[str],
+    gesamt: int = HINTERGRUND_PUNKTE_GESAMT,
+    max_je: int = HINTERGRUND_MAX,
+) -> dict[str, int]:
+    """Verteilt das feste Hintergrund-Budget auf die priorisierten Namen der
+    KI — keine Summen-Arithmetik mehr nötig, nur Auswahl und Reihenfolge.
+    Unbekannte Namen werden stillschweigend übersprungen statt abgelehnt.
+    """
+    pool = set(pool_namen)
+    bereinigt = [n for n in dict.fromkeys(rangfolge or []) if n in pool]
+    if not bereinigt:
+        return {}
+    verteilung = _HINTERGRUND_VERTEILUNG.get(len(bereinigt), [1] * len(bereinigt))
+    ergebnis: dict[str, int] = {}
+    rest = gesamt
+    for name, wert in zip(bereinigt, verteilung):
+        wert = min(wert, max_je, rest)
+        if wert <= 0:
+            break
+        ergebnis[name] = wert
+        rest -= wert
+    return ergebnis
+
+
+def freebees_aus_wunsch(
+    budget: int,
+    kredit_wunsch: int,
+    eigenkapital_wunsch: int,
+    ziel_rangfolge: list[str],
+    kategorie_von: dict[str, str],
+    hintergrund_namen: set[str],
+    aktuelle_werte: dict[str, int],
+    maximum_von: dict[str, int],
+    mindest_geld: bool = True,
+) -> dict[str, Any]:
+    """Finanziert die Freebee-Wünsche der KI strikt innerhalb des Budgets —
+    Geld zuerst, dann die Zielliste in der gewünschten Reihenfolge, bis das
+    Budget verbraucht ist. Reicht es nicht für alles, werden die hinteren
+    Wünsche gestrichen statt die ganze Erstellung abzulehnen: die KI kann
+    ihr Budget dadurch gar nicht mehr überziehen. Jedes Ziel wird außerdem
+    auf `maximum_von` gedeckelt — das Ergebnis übersteigt nie das
+    Lebensmaximum eines Wertes, selbst wenn die KI das Budget dafür hätte.
+
+    `mindest_geld`: mindestens 1 Kredit-Kauf, falls die KI gar kein Geld
+    wünscht und noch Budget übrig ist (bisher ein eigener Fehler/
+    Nachbesser-Versuch, jetzt ein stiller Server-Default).
+    """
+    rest = max(0, int(budget))
+    kredit = max(0, int(kredit_wunsch))
+    eigen = max(0, int(eigenkapital_wunsch))
+
+    while kredit and kredit * FREEBEE_KOSTEN_KREDIT > rest:
+        kredit -= 1
+    rest -= kredit * FREEBEE_KOSTEN_KREDIT
+    while eigen and eigen * FREEBEE_KOSTEN_EIGENKAPITAL > rest:
+        eigen -= 1
+    rest -= eigen * FREEBEE_KOSTEN_EIGENKAPITAL
+
+    if mindest_geld and kredit == 0 and eigen == 0 and rest >= FREEBEE_KOSTEN_KREDIT:
+        kredit = 1
+        rest -= FREEBEE_KOSTEN_KREDIT
+
+    willenskraft = 0
+    freebee_punkte: dict[str, int] = {}
+    for ziel in dict.fromkeys(ziel_rangfolge or []):
+        if ziel == "Willenskraft":
+            if rest >= FREEBEE_KOSTEN_WILLENSKRAFT:
+                willenskraft += 1
+                rest -= FREEBEE_KOSTEN_WILLENSKRAFT
+            continue
+        if ziel in freebee_punkte:
+            continue
+        kategorie = kategorie_von.get(ziel)
+        if kategorie is None and ziel not in hintergrund_namen:
+            continue  # unbekannter Name: überspringen statt ablehnen
+        kosten_je_punkt = FREEBEE_KOSTEN_JE_KATEGORIE.get(kategorie or HINTERGRUND_KATEGORIE, 0)
+        if kosten_je_punkt <= 0:
+            continue
+        obergrenze = FREEBEE_MAX_JE_FERTIGKEIT if kategorie in {"Fertigkeit", "Sphäre"} else 99
+        frei_bis_maximum = maximum_von.get(ziel)
+        if frei_bis_maximum is not None:
+            obergrenze = min(obergrenze, max(0, frei_bis_maximum - aktuelle_werte.get(ziel, 0)))
+        punkte = 0
+        while punkte < obergrenze and rest >= kosten_je_punkt:
+            punkte += 1
+            rest -= kosten_je_punkt
+        if punkte:
+            freebee_punkte[ziel] = punkte
+
+    return {
+        "freebeePunkte": freebee_punkte,
+        "freebeeWillenskraft": willenskraft,
+        "freebeeKredit": kredit,
+        "freebeeEigenkapital": eigen,
+    }
+
+
+def ki_konzept_text(rassen: dict[str, dict[str, Any]] | None = None) -> str:
+    """Anleitung für Stufe 1 der KI-Charaktererstellung: Konzept, Rasse, Weg,
+    Fertigkeitspaket und Attribut-Prioritäten — bewusst OHNE eine einzige
+    Zahl, die die KI selbst berechnen müsste. Die tatsächlichen Kontingente
+    baut der Server aus den hier gelieferten Prioritäten zusammen, siehe
+    schwerpunkte_aus_rangfolge/attributpunkte_aus_rangfolge oben.
+    """
+    verfuegbar = rassen or RASSEN
+    rassen_zeilen = []
+    for name, daten in verfuegbar.items():
+        mods = daten.get("modifikatoren") or {}
+        mod_text = ", ".join(f"{attr} {wert:+d}" for attr, wert in mods.items()) or "keine Besonderheiten"
+        rassen_zeilen.append(f"{name} ({mod_text})")
+    wege_zeilen = [f"{w['id']} ({w['name']})" for w in WEGE]
+    pakete_zeilen = [
+        f"{kennung} ({paket['name']}, {sum(paket['verteilung'].values())} Fertigkeiten)"
+        for kennung, paket in FERTIGKEITS_PAKETE.items()
+    ]
+    return (
+        "Das ist Stufe 1 von 2 der Charaktererstellung. Schreib den Konzept-Text, "
+        "wähle Rasse, Weg und Fertigkeitspaket, und sag danach nur noch, WELCHE "
+        "Attributkategorie und welches einzelne Attribut der Figur am wichtigsten "
+        "ist — keine Zahlen, keine Summen, die Verteilung übernimmt der Server "
+        "automatisch nach den festen Regeln. "
+        f"rasse: genau eine von {', '.join(rassen_zeilen)}. "
+        f"weg: genau eine von {', '.join(wege_zeilen)} — MAGIER für klassische Zauberer, "
+        "HAERETIKER für dieselbe Magie mit Glaubens-Flavor (Priester/Inquisitor), "
+        "NEUROWEAVER nur, wenn die Figur NeuroWeaving nutzt, sonst KEINER. "
+        f"fertigkeitsPaket: genau eine von {', '.join(pakete_zeilen)}. "
+        "kategorienReihenfolge: die drei Kategorien AttributKörperlich, "
+        "AttributGesellschaftlich, AttributGeistig — wichtigste zuerst. Diese "
+        "Kategorie bekommt automatisch das größte Attribut-Kontingent der Rasse. "
+        "attributReihenfolgeKoerperlich/Gesellschaftlich/Geistig: innerhalb jeder "
+        "Kategorie die drei zugehörigen Attribute nach Wichtigkeit für die Figur "
+        "sortiert, wichtigstes zuerst — der Server verteilt die Punkte danach."
     )
