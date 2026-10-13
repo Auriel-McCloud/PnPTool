@@ -35,6 +35,25 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Beziehungen bei Ort und Event jetzt direkt anlegbar** (13.10.2026, Mark:
+  „ich kann nur sehen welche Verknüpfungen existieren, aber keine erstellen
+  … warum gibt es kein Beziehungsmenü in den Events?"): `OrtDetail`/
+  `EventDetail` nutzten bislang nur die reine `BeziehungsListe` (ansehen/
+  bearbeiten/lösen), während PCs/NPCs/Fraktionen über `BeziehungsTab`
+  zusätzlich „+ Neue Verbindung" direkt im Popup hatten — Mark musste für
+  Orte/Events immer in den separaten Verbindungen-Bereich wechseln. Beide
+  nutzen jetzt `BeziehungsTab` wie die anderen Entitäten, inklusive
+  Richtungswahl (gab es in `VerbindungAnlegen.tsx` schon, war über den Ort-/
+  Event-Tab nur nicht erreichbar) und eigenen Typ-Schnellvorschlägen
+  (`ORT_TYP_VORSCHLAEGE`, `EVENT_TYP_VORSCHLAEGE`). Gewächs bleibt bewusst
+  ohne Beziehungs-Tab — nimmt laut bestehendem Code-Kommentar nicht an
+  `VERBINDUNG` teil.
+  **Dateien:** `frontend/src/entities/{OrtDetail.tsx, EventDetail.tsx}`.
+  **Verifiziert:** nur `tsc -b` sauber, **nie im Browser angeklickt**. Bitte
+  am Spieltisch: bei einem Ort und bei einem Event den Beziehungen-/
+  Beteiligte-Tab öffnen, „+ Neue Verbindung" nutzen und beide
+  Richtungs-Buttons (`X → Ziel` / `Ziel → X`) ausprobieren.
+
 - **Autosave-Reopen-Bug behoben** (13.10.2026, Mark: „Test 123 geschrieben,
   Popup zu, wieder auf, Text weg — nach Hard-Reload stand er aber da"):
   Der 30.09.-Fix hatte das Tab-Reset-Problem gelöst, indem die stille
