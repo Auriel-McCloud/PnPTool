@@ -30,6 +30,7 @@ from app.kampf.ruestung import (
     verteile_kaestchenschaden,
 )
 from app.ki.client import KiFehler, generiere_json
+from app.hintergruende import repository as hintergruende_repository
 from app.hintergruende.spawn import (
     kontakte_nach_erstellung,
     mentor_nach_erstellung,
@@ -690,7 +691,9 @@ async def get_erstellungsregeln(campaign_id: str) -> dict:
     Regeln sind nichts Geheimes. Die Rassen kommen aus der Freigabe dieser
     Kampagne, nicht mehr aus der fest verdrahteten Tabelle.
     """
-    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id), await get_einstellungen(campaign_id))
+    einstellungen = await get_einstellungen(campaign_id)
+    hintergrund_pool = await hintergruende_repository.pool_fuer_erstellung(campaign_id, einstellungen)
+    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id), einstellungen, hintergrund_pool)
 
 
 class ErstellungKommentarInput(BaseModel):
@@ -849,7 +852,8 @@ async def erstelle_charakter(
     auswahl["weg"] = weg_intern
     verfuegbare_rassen = await _rassen_der_kampagne(campaign_id)
     einstellungen = await get_einstellungen(campaign_id)
-    fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen, einstellungen)
+    hintergrund_pool = await hintergruende_repository.pool_fuer_erstellung(campaign_id, einstellungen)
+    fehler = erstellung.pruefe(auswahl, katalog, verfuegbare_rassen, einstellungen, hintergrund_pool)
     for zid in set(body.zusatzfertigkeitPunkte) | set(body.zusatzfertigkeitFreebees):
         if zid not in zusatzfertigkeit_ids:
             fehler.append(f"Unbekannte Zusatzfertigkeit: {zid}")

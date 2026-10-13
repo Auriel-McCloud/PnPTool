@@ -340,6 +340,7 @@ def lebensmaxima(
 def regelwerk(
     rassen: dict[str, dict[str, Any]] | None = None,
     einstellungen: dict[str, Any] | None = None,
+    hintergrund_pool: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Alles, was die Oberfläche zum Führen durch die Erstellung braucht.
 
@@ -347,14 +348,26 @@ def regelwerk(
     hintergruende/seed.py::SYSTEM_HINTERGRUENDE): deaktivierte tauchen im
     Pool gar nicht erst auf, der Kredit-Freebee wird separat über
     `freebees.kreditErlaubt` durchgereicht (Schulden ist kein Pool-Eintrag).
+
+    `hintergrund_pool` ist der tatsächliche Katalog DIESER Kampagne (siehe
+    hintergruende/repository.py::pool_fuer_erstellung — narrativer
+    Baukasten-Katalog plus aktive Mechanik-Hintergründe). Ohne Angabe fällt
+    das hier auf die alte fest verdrahtete `HINTERGRUENDE`-Liste zurück
+    (z.B. im KI-Kommentar-Pfad, der nur `attributKategorien` braucht) —
+    **diesen Fallback nicht für die echte Erstellung/Prüfung verwenden**,
+    sonst laufen Baukasten und Erstellung wieder auseinander (Mark,
+    13.10.2026: genau das war der gemeldete Bug).
     """
     einstellungen = einstellungen or {}
-    deaktivierte_mechanik_namen = {
-        name
-        for name, schluessel in (("Mentor", "mentorAktiv"), ("Kontakte", "kontakteAktiv"))
-        if not einstellungen.get(schluessel, True)
-    }
-    hintergruende_pool = [h for h in HINTERGRUENDE if h["name"] not in deaktivierte_mechanik_namen]
+    if hintergrund_pool is not None:
+        hintergruende_pool = hintergrund_pool
+    else:
+        deaktivierte_mechanik_namen = {
+            name
+            for name, schluessel in (("Mentor", "mentorAktiv"), ("Kontakte", "kontakteAktiv"))
+            if not einstellungen.get(schluessel, True)
+        }
+        hintergruende_pool = [h for h in HINTERGRUENDE if h["name"] not in deaktivierte_mechanik_namen]
     return {
         "wege": WEGE,
         "rassen": [
@@ -459,12 +472,17 @@ def pruefe(
     katalog: list[dict],
     rassen: dict[str, dict[str, Any]] | None = None,
     einstellungen: dict[str, Any] | None = None,
+    hintergrund_pool: list[dict[str, str]] | None = None,
 ) -> list[str]:
     """Prüft eine eingereichte Erstellung. Leere Liste = in Ordnung.
 
     Gibt alle Verstöße auf einmal zurück statt beim ersten abzubrechen —
     wer sich verzählt hat, will nicht nach jeder Korrektur den nächsten
     Einzelfehler vorgesetzt bekommen.
+
+    `hintergrund_pool`: wie bei `regelwerk()` — der tatsächliche Katalog
+    dieser Kampagne. Ohne Angabe fällt die Bekanntheitsprüfung auf die alte
+    fest verdrahtete Liste zurück.
     """
     fehler: list[str] = []
     einstellungen = einstellungen or {}
@@ -553,7 +571,7 @@ def pruefe(
 
     # --- Hintergründe ----------------------------------------------------
     hintergruende = {n: int(w) for n, w in (auswahl.get("hintergrundPunkte") or {}).items() if int(w) > 0}
-    bekannte = {h["name"] for h in HINTERGRUENDE}
+    bekannte = {h["name"] for h in (hintergrund_pool if hintergrund_pool is not None else HINTERGRUENDE)}
     for name, wert in hintergruende.items():
         if name not in bekannte:
             fehler.append(f"Unbekannter Hintergrund: {name}")

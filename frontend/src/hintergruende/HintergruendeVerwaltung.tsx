@@ -244,7 +244,7 @@ function HintergrundEditor({
       {loeschenOffen && (
         <Bestaetigung
           titel="Hintergrund löschen?"
-          text="Einträge auf Charakteren, die darauf zeigen, gehen mit weg."
+          text="Verschwindet aus der Erstellung und dem Baukasten. Bereits vergebene Punkte auf Charakteren bleiben erhalten — nichts wird rückwirkend gelöscht."
           jaText="Löschen"
           onNein={() => setLoeschenOffen(false)}
           onJa={loeschen}

@@ -7,7 +7,8 @@ Mentor/Kontakte liegen NICHT hier — eigene Kanten, siehe seed.SYSTEM_SCHLUESSE
 import uuid
 
 from app.db.neo4j_driver import get_driver
-from app.hintergruende.seed import NARRATIVE_SEED
+from app.hintergruende.seed import NARRATIVE_SEED, SYSTEM_HINTERGRUENDE
+from app.traits.erstellung import HINTERGRUND_KATEGORIE, HINTERGRUND_MAX
 
 FELDER = """
     h.id AS id, h.campaignId AS campaignId, h.name AS name,
@@ -21,6 +22,61 @@ def _decode(record: dict) -> dict:
     daten["kurzbeschreibung"] = daten.get("kurzbeschreibung") or ""
     daten["detailbeschreibung"] = daten.get("detailbeschreibung") or ""
     return daten
+
+
+async def _stelle_trait_def_sicher(name: str, beschreibung: str) -> None:
+    """Legt den ruleset-weiten TraitDef für diesen Hintergrund an/aktuell,
+    falls er fehlt.
+
+    Punkte aus der Erstellung landen über `traits/repository.py::
+    set_ratings_bulk` auf einem `HAS_TRAIT`, das per Name gegen einen
+    `TraitDef` matcht — ohne diesen Eintrag verschwindet ein frisch im
+    Baukasten angelegter oder umbenannter Hintergrund beim Einreichen
+    stillschweigend (die UNWIND-Zeile ohne Match liefert einfach nichts).
+    Bestehende Werte auf anderen Kampagnen bleiben unberührt, nur
+    Beschreibung/Deckel werden nachgezogen (siehe NEOTOPIA_TRAITS-Seed für
+    dasselbe Muster).
+    """
+    ruleset = "neotopia"
+    trait_id = f"{ruleset}:{HINTERGRUND_KATEGORIE}:{name}"
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MERGE (t:TraitDef {id: $id})
+            SET t.ruleset = $ruleset, t.name = $name, t.category = $category,
+                t.defaultMax = $defaultMax, t.sortOrder = coalesce(t.sortOrder, 999),
+                t.description = $beschreibung
+            """,
+            id=trait_id,
+            ruleset=ruleset,
+            name=name,
+            category=HINTERGRUND_KATEGORIE,
+            defaultMax=HINTERGRUND_MAX,
+            beschreibung=beschreibung or "",
+        )
+
+
+async def pool_fuer_erstellung(campaign_id: str, einstellungen: dict | None = None) -> list[dict]:
+    """Der tatsächliche Hintergrund-Pool dieser Kampagne für Erstellung UND
+    Prüfung: narrativer Baukasten-Katalog plus aktive Mechanik-Hintergründe
+    (Mentor/Kontakte — Schulden zählt nicht mit, siehe seed.py).
+
+    Ersetzt die früher hier fest verdrahtete Liste aus traits/erstellung.py
+    — vorher liefen Baukasten (diese Datei) und Erstellung (erstellung.py::
+    HINTERGRUENDE) komplett auseinander: ein im Menü gelöschter oder neu
+    angelegter Hintergrund tauchte in der Erstellung nie auf bzw.
+    verschwand nie (Mark, 13.10.2026).
+    """
+    einstellungen = einstellungen or {}
+    narrativ = await liste(campaign_id)
+    pool = [{"name": h["name"], "beschreibung": h["kurzbeschreibung"]} for h in narrativ]
+    for eintrag in SYSTEM_HINTERGRUENDE:
+        if eintrag["schluessel"] == "SCHULDEN":
+            continue
+        if einstellungen.get(eintrag["einstellung"], True):
+            pool.append({"name": eintrag["name"], "beschreibung": eintrag["beschreibung"]})
+    return pool
 
 
 async def liste(campaign_id: str) -> list[dict]:
@@ -100,7 +156,13 @@ async def anlegen(campaign_id: str, daten: dict) -> dict:
             detailbeschreibung=daten.get("detailbeschreibung") or "",
         )
         record = await result.single()
-        return _decode(dict(record))
+        eintrag = _decode(dict(record))
+    # TraitDef sofort mitlegen, nicht erst wenn jemand Punkte vergibt — sonst
+    # verschwindet eine druckfrisch angelegte Zeile beim ersten Einreichen
+    # stillschweigend (siehe _stelle_trait_def_sicher). Eigene Session, nach
+    # dem Schließen der obigen — kein verschachtelter Zugriff nötig.
+    await _stelle_trait_def_sicher(eintrag["name"], eintrag["kurzbeschreibung"])
+    return eintrag
 
 
 async def aendern(campaign_id: str, hintergrund_id: str, daten: dict) -> dict | None:
@@ -117,7 +179,13 @@ async def aendern(campaign_id: str, hintergrund_id: str, daten: dict) -> dict | 
             **aenderung,
         )
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        if record is None:
+            return None
+        eintrag = _decode(dict(record))
+    # Umbenennen/Beschreibung ändern zieht den TraitDef nach (neuer Name
+    # braucht sonst seinen eigenen Eintrag, siehe anlegen()).
+    await _stelle_trait_def_sicher(eintrag["name"], eintrag["kurzbeschreibung"])
+    return eintrag
 
 
 async def loeschen(campaign_id: str, hintergrund_id: str) -> bool:

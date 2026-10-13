@@ -28,6 +28,7 @@ from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, P
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
 from app.haendler import ki_einkauf
 from app.haendler import repository as haendler_repository
+from app.hintergruende import repository as hintergruende_repository
 from app.items.chrom import CHROM_TYPEN, KOERPERZONEN, STUFEN as CHROM_STUFEN, preis_fuer as chrom_preis_fuer, stufe_fuer_name, verlust_fuer as chrom_verlust_fuer
 from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
@@ -977,11 +978,13 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             "Hexkraft", "NeuroWeavingWert",
         }
         erlaubte_fertigkeiten = [t["name"] for t in katalog if t["category"] in erlaubte_kategorien]
-        hintergrund_pool = [
-            h["name"] for h in erstellung.HINTERGRUENDE
-            if (h["name"] != "Mentor" or einstellungen.get("mentorAktiv", True))
-            and (h["name"] != "Kontakte" or einstellungen.get("kontakteAktiv", True))
-        ]
+        # Derselbe Katalog wie im Baukasten/der echten Erstellung (13.10.2026,
+        # Mark: vorher nutzte die KI die alte fest verdrahtete Liste aus
+        # erstellung.py und lief damit am Baukasten-Katalog dieser Kampagne
+        # vorbei — neu angelegte Hintergründe fehlten der KI, gelöschte bot
+        # sie trotzdem an).
+        hintergrund_katalog = await hintergruende_repository.pool_fuer_erstellung(campaign_id, einstellungen)
+        hintergrund_pool = [h["name"] for h in hintergrund_katalog]
         freebee_ziele = sorted(
             set(erlaubte_fertigkeiten)
             | set(erstellung.ATTRIBUT_NAMEN_ALLE)
@@ -1066,7 +1069,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         # mit anderem Text als der alte "KI hat sich nicht an die Regeln
         # gehalten"-422, damit das im Fehlerfall nicht in die falsche
         # Richtung ermittelt wird.
-        fehler = erstellung.pruefe(auswahl, katalog, rassen, einstellungen)
+        fehler = erstellung.pruefe(auswahl, katalog, rassen, einstellungen, hintergrund_katalog)
         if fehler:
             logging.getLogger(__name__).error(
                 "Deterministisch gebaute KI-Charaktererstellung verletzt trotzdem die Regeln: %s",

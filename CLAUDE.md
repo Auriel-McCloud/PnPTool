@@ -35,6 +35,46 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Hintergründe-Baukasten jetzt mit der Erstellung synchron** (13.10.2026,
+  Marks Bugreport: „die Hintergründe, die ich im Menü Hintergründe pflege
+  oder entferne, sind nicht synchron mit den Hintergründen in der
+  Charaktererstellung"): die beiden liefen komplett getrennt. Die
+  Erstellung (`traits/erstellung.py::regelwerk/pruefe`, auch die KI-
+  Charaktererstellung in `ki/routes.py`) nutzte eine fest verdrahtete
+  Zehner-Liste (`HINTERGRUENDE`) — ein im Baukasten (`HintergruendeVerwaltung.
+  tsx`) neu angelegter Hintergrund tauchte in der Erstellung nie auf, ein
+  gelöschter verschwand nie. **Fix:** neue `hintergruende/repository.py::
+  pool_fuer_erstellung(campaign_id, einstellungen)` baut den echten Pool
+  dieser Kampagne (narrativer Katalog + aktive Mentor-/Kontakte-Mechanik,
+  Schulden zählt nicht mit) — `regelwerk()`/`pruefe()` bekommen ihn jetzt von
+  `GET .../erstellung/regeln`, dem Einreichen-Endpoint UND der KI-
+  Charaktererstellung durchgereicht (optionaler Parameter, ohne Angabe
+  fällt alles auf die alte Liste zurück — nur der KI-Kommentar-Pfad nutzt
+  das noch, braucht die Hintergründe aber gar nicht). Zweites, subtileres
+  Problem dabei gefunden und mitgefixt: Punkte aus der Erstellung landen
+  über `set_ratings_bulk` auf einem `HAS_TRAIT`, das **per Name gegen einen
+  ruleset-weiten `TraitDef` matcht** — ein frisch im Baukasten angelegter
+  oder umbenannter Hintergrund ohne passenden TraitDef hätte seine Punkte
+  beim Einreichen stillschweigend verloren. `hintergruende/repository.py::
+  anlegen/aendern` legen den TraitDef jetzt automatisch mit an (MERGE,
+  `_stelle_trait_def_sicher`). Löschen im Baukasten entfernt nur den
+  Katalogeintrag, nie den TraitDef — bereits vergebene Punkte auf
+  Charakteren bleiben erhalten (Bestaetigung-Text in
+  `HintergruendeVerwaltung.tsx` entsprechend korrigiert, vorher stand dort
+  fälschlich „Einträge auf Charakteren... gehen mit weg").
+  **Dateien:** `backend/app/hintergruende/repository.py`,
+  `backend/app/traits/erstellung.py`, `backend/app/traits/routes.py`,
+  `backend/app/ki/routes.py`, `frontend/src/hintergruende/
+  HintergruendeVerwaltung.tsx`.
+  **Verifiziert:** neue Backend-Tests (`test_hintergruende.py`, inkl. TraitDef-
+  Autoprovisionierung) + `test_erstellung.py`/`test_ki_idee_typen.py` grün,
+  volle Suite auf Regressionen gegengeprüft (git stash A/B) — keine neuen
+  Fehlschläge. **Nie im Browser angeklickt.** Bitte am Spieltisch: in der
+  Hintergründe-Verwaltung einen neuen Eintrag anlegen, einen anderen
+  löschen, dann einen Charakter neu/weiter erstellen — der Hintergrund-
+  Schritt muss den neuen Eintrag zeigen und den gelöschten nicht mehr, und
+  vergebene Punkte müssen nach dem Einreichen im Charakterblatt auftauchen.
+
 - **Beziehungen bei Ort und Event jetzt direkt anlegbar** (13.10.2026, Mark:
   „ich kann nur sehen welche Verknüpfungen existieren, aber keine erstellen
   … warum gibt es kein Beziehungsmenü in den Events?"): `OrtDetail`/

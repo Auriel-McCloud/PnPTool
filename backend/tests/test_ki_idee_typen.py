@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from app.ki.auto_verknuepfung import BeziehungAnwendenErgebnis
 from app.ki.routes import BeratungEntwurfInput, KiIdeeInput, _idee_anlegen
+from app.traits.erstellung import HINTERGRUENDE
 from tests.test_erstellung import KATALOG
 
 WELTTYPEN = ("story", "charakter", "gegenstand", "ort", "event", "fraktion", "verbindung")
@@ -201,11 +202,13 @@ def _stufe2_antwort(**overrides) -> dict:
     return basis
 
 
-# patch("app.ki.routes.get_einstellungen", ...) ist bei jedem charakter-Test
-# nötig: die stufenweise Erstellung (13.10.2026) respektiert die Mentor-/
-# Kontakte-/Schulden-Kampagnentoggles, die bisherigen Tests mocken aber
-# keine Kampagnen-Einstellungen und würden sonst einen echten, hier
-# ungemockten DB-Zugriff auslösen.
+# patch("app.ki.routes.get_einstellungen", ...) UND
+# patch("app.ki.routes.hintergruende_repository.pool_fuer_erstellung", ...)
+# sind bei jedem charakter-Test nötig: die stufenweise Erstellung
+# (13.10.2026) respektiert die Mentor-/Kontakte-/Schulden-Kampagnentoggles
+# und holt seit dem Baukasten-Sync-Fix (13.10.2026, Mark) den echten
+# Hintergrund-Katalog der Kampagne — beides ungemockt würde einen echten,
+# hier nicht verfügbaren DB-Zugriff auslösen.
 
 
 def test_idee_charakter_kann_keine_regelwidrige_erstellung_mehr_liefern():
@@ -238,6 +241,10 @@ def test_idee_charakter_kann_keine_regelwidrige_erstellung_mehr_liefern():
             patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
             patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
             patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
+            patch(
+                "app.ki.routes.hintergruende_repository.pool_fuer_erstellung",
+                AsyncMock(return_value=HINTERGRUENDE),
+            ),
             patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
             patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
             patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
@@ -269,6 +276,10 @@ def test_idee_charakter_schreibt_endwerte_aus_der_erstellung():
             patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
             patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
             patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
+            patch(
+                "app.ki.routes.hintergruende_repository.pool_fuer_erstellung",
+                AsyncMock(return_value=HINTERGRUENDE),
+            ),
             patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
             patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
             patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
@@ -303,6 +314,10 @@ def test_idee_charakter_mit_magier_weg_bekommt_hexkraft_sockel():
             patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
             patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
             patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
+            patch(
+                "app.ki.routes.hintergruende_repository.pool_fuer_erstellung",
+                AsyncMock(return_value=HINTERGRUENDE),
+            ),
             patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
             patch("app.ki.routes.set_ratings_bulk", AsyncMock()) as bulk,
             patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
