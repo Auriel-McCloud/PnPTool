@@ -31,7 +31,9 @@ const AUTOSAVE_MS = 1200;
  * `onChange` des Editors), nicht in einem `useEffect` auf den State selbst,
  * damit ein reines Neuladen/Öffnen keinen Speichervorgang auslöst.
  */
-export function useAutosave<T>(speichern: (wert: T) => void | Promise<void>): (wert: T) => void {
+export type AutosaveFn<T> = ((wert: T) => void) & { jetzt: () => void };
+
+export function useAutosave<T>(speichern: (wert: T) => void | Promise<void>): AutosaveFn<T> {
   const timer = useRef<number | undefined>(undefined);
   // Letzter noch nicht geschriebener Stand. Als Ref statt State, damit der
   // Unmount-Cleanup unten den aktuellen Wert sieht, ohne dass jede Änderung
@@ -45,7 +47,7 @@ export function useAutosave<T>(speichern: (wert: T) => void | Promise<void>): (w
     const auftrag = ausstehend.current;
     if (!auftrag) return;
     ausstehend.current = null;
-    speichernRef.current(auftrag.wert);
+    return speichernRef.current(auftrag.wert);
   }, []);
 
   const planen = useCallback(
@@ -55,7 +57,12 @@ export function useAutosave<T>(speichern: (wert: T) => void | Promise<void>): (w
       timer.current = window.setTimeout(jetzt, AUTOSAVE_MS);
     },
     [jetzt],
-  );
+  ) as AutosaveFn<T>;
+  // Gleicher Knopf wie `planen(wert)`, plus sofortiges Wegschreiben beim
+  // Schließen oder Blur — sonst bleibt der letzte Tippstoß bis zum Unmount
+  // liegen, und ein Fenster, das nur zuklappt ohne die Zeile abzubauen,
+  // verliert ihn ganz.
+  planen.jetzt = jetzt;
 
   // Ausstehendes wegschreiben, bevor die Komponente verschwindet — sonst
   // geht genau der letzte Tippstoß verloren, den Autosave eigentlich retten soll.

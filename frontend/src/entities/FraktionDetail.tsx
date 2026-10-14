@@ -101,6 +101,11 @@ export function FraktionDetail({
     speichereStill({ description: serializeRichText(doc) }),
   );
   const autosaveNotizen = useAutosave((doc: JSONContent) => speichereStill({ notes: serializeRichText(doc) }));
+  const autosaveName = useAutosave(async (roh: string) => {
+    const sauber = roh.trim();
+    if (!sauber || sauber === fraktion.name) return;
+    await speichereStill({ name: sauber });
+  });
 
   async function loeschen() {
     setSpeichert(true);
@@ -174,16 +179,16 @@ export function FraktionDetail({
                   <input
                     id={`fraktion-name-${fraktion.id}`}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      autosaveName(e.target.value);
+                    }}
                     onBlur={() => {
-                      const sauber = name.trim();
-                      // Leerer Name würde die Fraktion in jeder Liste unauffindbar
-                      // machen — dann lieber den alten behalten.
-                      if (!sauber) {
+                      if (!name.trim()) {
                         setName(fraktion.name);
                         return;
                       }
-                      if (sauber !== fraktion.name) speichere({ name: sauber });
+                      void autosaveName.jetzt();
                     }}
                   />
                 </div>
