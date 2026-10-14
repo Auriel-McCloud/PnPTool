@@ -24,6 +24,7 @@ import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { useNachladen } from "../shell/nachladen";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
@@ -150,12 +151,31 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     if (!ich) return;
     const cid = ich.campaignId;
     entitiesApi.listPersonen(cid).then(setPersonen).catch(() => setPersonen([]));
-    itemsApi.listAlle(cid).then(setSachen).catch(() => setSachen([]));
     einstellungenApi.lesen(cid).then(setEinstellungen).catch(() => setEinstellungen(null));
-    itemsApi.traglast(cid).then(setTraglast).catch(() => setTraglast([]));
-    begleiterApi.liste(cid).then(setBegleiter).catch(() => setBegleiter([]));
     kontakteApi.meine(cid).then(setKontakte).catch(() => setKontakte([]));
   }, [ich]);
+
+  // Inventar, Traglast und Begleiter still nachladen — auch wenn gerade ein
+  // Rucksack offen ist. Der Fach-Stapel hängt nicht an diesen Daten, neue
+  // Sachen tauchen im offenen Fenster auf, statt es zuzuschlagen.
+  const { ungueltig: inventarUngueltig } = useNachladen(
+    async () => {
+      const cid = ich?.campaignId;
+      if (!cid) throw new Error("keine Kampagne");
+      const [sachen, last, begleiter] = await Promise.all([
+        itemsApi.listAlle(cid),
+        itemsApi.traglast(cid),
+        begleiterApi.liste(cid),
+      ]);
+      return { sachen, last, begleiter };
+    },
+    (frisch) => {
+      setSachen(frisch.sachen);
+      setTraglast(frisch.last);
+      setBegleiter(frisch.begleiter);
+    },
+    { aktiv: Boolean(ich), quelle: ich?.campaignId ?? "" },
+  );
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
   const meineRohAlle = sachen.filter((g) => g.ownerId === ich?.personId);
@@ -276,6 +296,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   async function augmentEinsetzen(itemId: string) {
     if (!ich) return;
+    inventarUngueltig();
     try {
       await itemsApi.chirurgie(ich.campaignId, itemId, true);
     } catch (e: unknown) {
@@ -286,6 +307,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       }
     }
     const frisch = await itemsApi.listAlle(ich.campaignId);
+    inventarUngueltig();
     setSachen(frisch);
     setAugmentFrage(null);
   }
@@ -296,6 +318,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   async function umlegen(itemId: string, ziel: Ablage) {
     if (!ich) return;
+    inventarUngueltig();
     // Ohne festes Ziel: der Spieler legt nur die Art fest, das genaue Wohin
     // (welches Fahrzeug, welcher Ort) bleibt Sache der Spielleitung.
     await itemsApi.setAblage(ich.campaignId, itemId, ziel, null);
@@ -303,6 +326,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       itemsApi.listAlle(ich.campaignId),
       itemsApi.traglast(ich.campaignId),
     ]);
+    // Nach dem Holen verwerfen, nicht davor: ein Poll, der während des
+    // Umlegens gestartet ist, darf den frischen Stand nicht überschreiben.
+    inventarUngueltig();
     setSachen(frisch);
     setTraglast(last);
   }

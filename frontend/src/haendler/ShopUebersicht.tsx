@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type BestellungResponse } from "./api";
+import { useNachladen } from "../shell/nachladen";
 import { ShopSeite } from "./ShopSeite";
 import "./shop.css";
 
@@ -25,19 +26,31 @@ export function ShopUebersicht({
   const [bestellungen, setBestellungen] = useState<BestellungResponse[]>([]);
   const [offenerHaendler, setOffenerHaendler] = useState<string | null>(null);
 
-  async function laden() {
+  async function holen() {
     const [h, b] = await Promise.all([
       haendlerApi.alle(campaignId),
       istGm ? haendlerApi.bestellungenOffen(campaignId) : haendlerApi.bestellungenEigene(campaignId),
     ]);
-    setHaendler(h);
-    setBestellungen(b);
+    return { h, b };
   }
 
-  useEffect(() => {
-    laden();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaignId, istGm]);
+  function anwenden(d: { h: HaendlerEintrag[]; b: BestellungResponse[] }) {
+    setHaendler(d.h);
+    setBestellungen(d.b);
+  }
+
+  // Auch während ein Laden offen ist: die Übersicht bleibt gemountet,
+  // offenerHaendler wird nicht angetastet, das Shop-Fenster bleibt zu.
+  const { ungueltig } = useNachladen(holen, anwenden, {
+    quelle: `${campaignId}:${istGm}`,
+  });
+
+  async function laden() {
+    ungueltig();
+    const d = await holen();
+    ungueltig();
+    anwenden(d);
+  }
 
   async function liefern(bestellungId: string) {
     await haendlerApi.bestellungLiefern(campaignId, bestellungId);

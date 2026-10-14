@@ -4,6 +4,7 @@ import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaig
 import { entitiesApi, type Person } from "../entities/api";
 import type { PersonOption } from "../entities/VisibilitySelector";
 import { Fenster } from "../shell/Fenster";
+import { useNachladen } from "../shell/nachladen";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
@@ -73,6 +74,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [neuTyp, setNeuTyp] = useState<string | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [muelleimerOffen, setMuelleimerOffen] = useState(false);
+  // Wie viele Gegenstand-Bearbeiten-Fenster gerade offen sind. Solange
+  // eines offen ist, nicht nachladen — sonst kann die Kachel von der
+  // Seite rutschen und das Fenster mit sich nehmen.
+  const [offeneBearbeitung, setOffeneBearbeitung] = useState(0);
   // Nur die Spielleitung sieht überhaupt, dass es einen Mülleimer gibt —
   // dieselbe Auskunftsregel wie beim Backend (siehe routes.py::liste_weggeworfen).
   const istGm = useAuthFallsVorhanden()?.me?.role === "GM";
@@ -80,23 +85,45 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
 
-  async function refresh() {
+  function anwenden(d: {
+    p: Person[];
+    i: GegenstandMitBesitzer[];
+    e: Einstellungen;
+    t: TraglastZeile[];
+  }) {
+    setPersonen(d.p);
+    setItems(d.i);
+    setEinstellungen(d.e);
+    setTraglast(d.t);
+    setLoading(false);
+  }
+
+  async function ladeDaten() {
     const [p, i, e, t] = await Promise.all([
       entitiesApi.listPersonen(campaignId),
       itemsApi.listAlle(campaignId),
       einstellungenApi.lesen(campaignId),
       itemsApi.traglast(campaignId),
     ]);
-    setPersonen(p);
-    setItems(i);
-    setEinstellungen(e);
-    setTraglast(t);
+    return { p, i, e, t };
   }
 
-  useEffect(() => {
-    setLoading(true);
-    refresh().finally(() => setLoading(false));
-  }, [campaignId]);
+  const { ungueltig } = useNachladen(ladeDaten, anwenden, {
+    // Anlegen und Mülleimer sind auch Fenster mit eigenem Stand.
+    pausiert: offeneBearbeitung > 0 || anlegenOffen || muelleimerOffen,
+    quelle: campaignId,
+  });
+
+  async function refresh() {
+    ungueltig();
+    const d = await ladeDaten();
+    ungueltig();
+    anwenden(d);
+  }
+
+  function meldeBearbeiten(offen: boolean) {
+    setOffeneBearbeitung((n) => Math.max(0, n + (offen ? 1 : -1)));
+  }
 
   const pcOptions: PersonOption[] = useMemo(
     () => personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name })),
@@ -350,6 +377,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
             alleOptionen={alleOptionen}
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
+            onBearbeiten={meldeBearbeiten}
           />
         ))}
       </div>
