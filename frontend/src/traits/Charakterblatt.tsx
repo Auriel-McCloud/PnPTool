@@ -11,6 +11,7 @@ import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen, type Schadensart } from "./Kaestchen";
 import { ZustandFenster } from "./ZustandFenster";
 import { Fenster } from "../shell/Fenster";
+import { useNachladen } from "../shell/nachladen";
 import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
@@ -94,8 +95,36 @@ export function Charakterblatt({
   // feste reihe(...)-Raster gemischt — die Liste ist pro Person variabel.
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<PersonZusatzfertigkeit[]>([]);
 
+  // Still nachladen, solange niemand gerade tippt oder Punkte setzt.
+  // Erstellung und Level-Up haben eigenen lokalen Stand — den nicht
+  // unter dem Spieler wegziehen. Proben- und Zustandsfenster bleiben
+  // offen, die setzen nur Zahlen, keinen Editor.
+  const erstellungLaeuft = bogen !== null && !bogen.uebersicht.erstellungAbgeschlossen;
+  const { ungueltig: blattUngueltig } = useNachladen(
+    async () => {
+      const [geladen, kampf, zusatz] = await Promise.all([
+        bogenApi.laden(campaignId, personId),
+        kampfApi.laden(campaignId).catch(() => null),
+        zusatzfertigkeitenApi.vonPerson(campaignId, personId).catch(() => null),
+      ]);
+      return { geladen, kampf, zusatz };
+    },
+    (frisch) => {
+      setBogen(frisch.geladen);
+      setImKampf(frisch.kampf !== null);
+      if (frisch.zusatz) setZusatzfertigkeiten(frisch.zusatz.gewaehlt);
+    },
+    {
+      pausiert: bearbeiten || steckbriefOffen || ansicht === "levelup" || erstellungLaeuft,
+      quelle: `${campaignId}:${personId}`,
+    },
+  );
+
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
+    // Eigene Schadens-Klicks dürfen nicht von einem Poll überschrieben werden,
+    // der noch den Stand von vor dem Klick holt.
+    blattUngueltig();
     setBogen((alt) => (alt ? { ...alt, uebersicht: u } : alt));
   }
 
@@ -210,6 +239,7 @@ export function Charakterblatt({
   }
 
   function neuLaden() {
+    blattUngueltig();
     return Promise.all([
       bogenApi.laden(campaignId, personId),
       // Die Initiative steht nur im Kampf auf dem Blatt (siehe unten) —
@@ -219,15 +249,12 @@ export function Charakterblatt({
       kampfApi.laden(campaignId).catch(() => null),
     ])
       .then(([geladen, kampf]) => {
+        blattUngueltig();
         setBogen(geladen);
         setImKampf(kampf !== null);
       })
       .catch(() => setFehler("Das Charakterblatt konnte nicht geladen werden."));
   }
-
-  useEffect(() => {
-    neuLaden();
-  }, [campaignId, personId]);
 
   useEffect(() => {
     zusatzfertigkeitenApi

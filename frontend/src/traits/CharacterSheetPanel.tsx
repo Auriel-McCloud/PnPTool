@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
 import { useAuthFallsVorhanden } from "../auth/AuthContext";
@@ -159,6 +159,7 @@ export function GegenstandRow({
   alleOptionen,
   onChanged,
   onRemoved,
+  onBearbeiten,
   kachel = false,
   nurFenster = false,
   onFensterSchliessen,
@@ -171,6 +172,12 @@ export function GegenstandRow({
   alleOptionen: PersonOption[];
   onChanged: () => void;
   onRemoved: () => void;
+  /**
+   * Meldet, ob das Bearbeiten-Fenster offen ist. Die Gegenstände-Übersicht
+   * lädt dann nicht nach — ein Reload könnte die Kachel von der Seite
+   * schieben und das Fenster zumachen.
+   */
+  onBearbeiten?: (offen: boolean) => void;
   /**
    * Kachel statt Listenzeile. Die kampagnenweite Übersicht stellt Gegenstände
    * als Raster dar, damit sie ohne Scrollen auf eine Seite passen; im
@@ -186,6 +193,15 @@ export function GegenstandRow({
   onFensterSchliessen?: () => void;
 }) {
   const [expanded, setExpanded] = useState(nurFenster);
+  const onBearbeitenRef = useRef(onBearbeiten);
+  onBearbeitenRef.current = onBearbeiten;
+  // Nur beim Öffnen/Schließen melden, nicht bei jedem Render — sonst
+  // zählt der Zähler in der Übersicht hoch und runter.
+  useEffect(() => {
+    if (!expanded) return;
+    onBearbeitenRef.current?.(true);
+    return () => onBearbeitenRef.current?.(false);
+  }, [expanded]);
   const [ansicht, setAnsicht] = useState<GgAnsicht>("uebersicht");
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);

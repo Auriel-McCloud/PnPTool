@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
+import { useNachladen } from "../shell/nachladen";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
 import { ShopKategorien } from "./ShopKategorien";
@@ -52,21 +53,34 @@ export function ShopSeite({
   const [wunschLäuft, setWunschLäuft] = useState(false);
   const [wunschRückmeldung, setWunschRückmeldung] = useState<string | null>(null);
 
-  async function laden() {
+  async function holen() {
     const [h, s, g] = await Promise.all([
       haendlerApi.einzeln(campaignId, haendlerId),
       haendlerApi.sortiment(campaignId, haendlerId),
       itemsApi.listAlle(campaignId),
     ]);
-    setHaendler(h);
-    setSortiment(s);
-    setGegenstaende(g);
+    return { h, s, g };
   }
 
-  useEffect(() => {
-    laden();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaignId, haendlerId]);
+  function anwenden(d: { h: HaendlerEintrag; s: SortimentEintrag[]; g: GegenstandMitBesitzer[] }) {
+    setHaendler(d.h);
+    setSortiment(d.s);
+    setGegenstaende(d.g);
+  }
+
+  // Pause, solange die SL das Sortiment bearbeitet — das Fenster hat
+  // eigenen Stand und darf nicht unter ihr neu aufgehen.
+  const { ungueltig } = useNachladen(holen, anwenden, {
+    pausiert: bearbeitenOffen,
+    quelle: `${campaignId}:${haendlerId}`,
+  });
+
+  async function laden() {
+    ungueltig();
+    const d = await holen();
+    ungueltig();
+    anwenden(d);
+  }
 
   if (!haendler) return null;
 
@@ -78,6 +92,7 @@ export function ShopSeite({
   async function kaufen(gegenstandId: string) {
     setFehler(null);
     setErfolg(null);
+    ungueltig();
     try {
       const antwort = await haendlerApi.kaufen(campaignId, haendlerId, gegenstandId, eigenePersonId ?? undefined);
       if (antwort.bestellung) {
