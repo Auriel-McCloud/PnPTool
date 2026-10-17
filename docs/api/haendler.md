@@ -19,6 +19,12 @@ nicht in `GET /haendler`. Welcher Laden es ist, wählt die SL in den
 Kampagnen-Einstellungen (⚙, Sektion „Tutorial-Shop“) — kein Haken mehr im
 Laden-Fenster, kein eigener Burgermenü-Punkt (11.10.2026).
 
+`GET .../sortiment` liefert neben Name und Preis die Steckbrief-Werte
+(Seltenheit, Schaden, Rüstung, Chrom, Deck, …), damit der Tutorial-Shop sie
+anzeigen kann, ohne den Gegenstand extra zu laden. Die Spielleitung kauft
+dort für den Charakter in Erstellung — `kaeuferPersonId` ist dann Pflicht,
+auch wenn der Charakter ein NPC ist.
+
 Ältere Abschnitte unten, die `VERKAUFT` noch an der Person beschreiben, sind
 der Stand vor dem Umzug. Die laufende API nimmt als `{haendler_id}` die
 **Ort-ID**.

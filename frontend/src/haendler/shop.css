@@ -310,8 +310,10 @@
 }
 
 .shop-ware-steckbrief {
-  font-size: 11px;
-  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
 }
 
 /* Mehrfachauswahl im VorlagenAuswahlPopup (11.10.2026) — eigener Neon-
@@ -714,4 +716,281 @@
 .shop-editor-hinzufuegen input {
   flex: 1;
   min-width: 100px;
+}
+
+/* --- Tutorial-Shop: lesbare Werte, kein zusammengefallenes Raster ------ */
+/* .shop-seite / .shop-waren-raster setzen flex:1 und min-height:0. Im
+   Fenster ohne feste Höhe fällt der Inhalt dadurch auf 0 zusammen — man
+   sieht kaum noch Text. Hier fließt der Shop mit dem Fenster mit. */
+
+.ts-shop.shop-seite {
+  flex: none;
+  min-height: auto;
+  height: auto;
+}
+
+.ts-kopf {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.ts-kopf .ts-verkaeufer {
+  flex: 1;
+  min-width: 0;
+}
+
+.ts-guthaben {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 14px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+.ts-guthaben strong {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ts-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ts-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ts-zeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--flaeche);
+  border: 2px solid var(--linie-hell);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ts-zeile:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+}
+
+.ts-zeile[data-seltenheit="2"] {
+  border-color: var(--p-blau);
+}
+
+.ts-zeile[data-seltenheit="3"] {
+  border-color: var(--text);
+}
+
+.ts-zeile[data-seltenheit="4"] {
+  border-color: var(--p-orange);
+}
+
+.ts-zeile[data-seltenheit="5"] {
+  border-color: var(--p-violett-hell);
+}
+
+.ts-zeile[data-aktiv="true"],
+.ts-zeile[data-aktiv="true"]:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 10%, var(--flaeche));
+}
+
+.ts-zeile-bild {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  background: var(--grund);
+  border-radius: 3px;
+  overflow: hidden;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.ts-zeile-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ts-zeile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ts-zeile-name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.ts-zeile-typ {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ts-zeile-werte {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.ts-zeile-preis {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ts-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+
+.ts-detail-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ts-detail-bild {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  background: var(--grund);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.ts-detail-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ts-detail-name {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.ts-detail-meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ts-werte {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--linie);
+}
+
+.ts-wert-zeile {
+  display: grid;
+  grid-template-columns: minmax(7.5em, 11em) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.ts-wert-zeile dt {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-leise);
+}
+
+.ts-wert-zeile dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.ts-keine-werte {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.ts-preiszeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-leise);
+}
+
+.ts-preiszeile strong {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ts-preis-alt {
+  margin-right: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-leise);
+}
+
+@media (max-width: 720px) {
+  .ts-kopf {
+    flex-direction: column;
+  }
+
+  .ts-layout {
+    grid-template-columns: 1fr;
+  }
 }

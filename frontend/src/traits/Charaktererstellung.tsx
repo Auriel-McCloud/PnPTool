@@ -565,6 +565,7 @@ export function Charaktererstellung({
 
         <TutorialShopPopup
           campaignId={campaignId}
+          personId={personId}
           offen={tutorialShopOffen}
           kapital={kapital}
           onKapitalGeaendert={setKapital}

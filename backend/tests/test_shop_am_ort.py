@@ -214,3 +214,60 @@ def test_standort_entfernen_meldet_keinen_404():
             await _aufraeumen(cid)
 
     _run(lauf())
+
+
+def test_sortiment_liefert_steckbrief_und_faengt_fehlende_felder():
+    """Bestands-Ware ohne die neuen Properties darf die Liste nicht sprengen,
+    gesetzte Werte müssen ankommen (Tutorial-Shop liest sie direkt)."""
+    from app.haendler.schemas import SortimentEintrag
+
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        try:
+            ort_id = str(uuid.uuid4())
+            mit_werten = str(uuid.uuid4())
+            ohne = str(uuid.uuid4())
+            driver = get_driver()
+            async with driver.session() as session:
+                await session.run(
+                    """
+                    CREATE (o:Ort {
+                        id: $ort_id, campaignId: $cid, name: 'Kiosk',
+                        istShop: true, sichtbarkeit: 'ALLE', sichtbarFuer: []
+                    })
+                    CREATE (g:Gegenstand {
+                        id: $mit, campaignId: $cid, name: 'Klinge',
+                        typ: 'Waffe', preis: 80, istVorlage: true, bildUrl: '',
+                        kraft: 5, schadenArt: 'schwer', seltenheit: 3,
+                        traitBoni: '{"Geschicklichkeit": 1}',
+                        initiativeBonus: -1
+                    })
+                    CREATE (k:Gegenstand {
+                        id: $ohne, campaignId: $cid, name: 'Dose',
+                        typ: 'Sonstiges', preis: 2, istVorlage: true
+                    })
+                    CREATE (o)-[:VERKAUFT {preis: 70}]->(g)
+                    CREATE (o)-[:VERKAUFT {preis: 2}]->(k)
+                    """,
+                    cid=cid,
+                    ort_id=ort_id,
+                    mit=mit_werten,
+                    ohne=ohne,
+                )
+            eintraege = {e["gegenstandId"]: e for e in await repository.sortiment(cid, ort_id)}
+            klinge = SortimentEintrag(**eintraege[mit_werten])
+            assert klinge.kraft == 5
+            assert klinge.seltenheit == 3
+            assert klinge.schadenArt == "schwer"
+            assert klinge.traitBoni == {"Geschicklichkeit": 1}
+            assert klinge.initiativeBonus == -1
+            assert klinge.preis == 70
+            dose = SortimentEintrag(**eintraege[ohne])
+            assert dose.seltenheit == 1
+            assert dose.kraft == 0
+            assert dose.traitBoni == {}
+            assert dose.istWaffe is False
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())

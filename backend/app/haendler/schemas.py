@@ -38,6 +38,34 @@ class SortimentEintrag(BaseModel):
     # bleibt der Grundpreis für die Anzeige ("durchgestrichen").
     rabattProzent: int = 0
     rabattHinweis: str = ""
+    # Steckbrief-Werte (Tutorial-Shop muss sie lesen können, ohne den vollen
+    # Gegenstand nachzuladen — und ohne die Sichtbarkeitsfilter von listAlle,
+    # die eine verkaufte Vorlage vor dem Käufer verstecken könnten).
+    seltenheit: int = 1
+    kraft: int = 0
+    schaden: int = 0
+    schadenArt: str = ""
+    istWaffe: bool = False
+    ruestungReduktionBasis: int = 0
+    ruestungKaestchenAktuell: int = 0
+    ruestungKaestchenMax: int = 0
+    wVerlust: int = 0
+    initiativeBonus: int = 0
+    zusatzaktionen: int = 0
+    traitBoni: dict[str, int] = Field(default_factory=dict)
+    ausruestungsfertigkeiten: dict[str, int] = Field(default_factory=dict)
+    stufe: int = 0
+    riggerBonus: int = 0
+    maxDrohnen: int = 0
+    cyberwall: int = 0
+    deckBruteForce: int = 0
+    deckSchleichen: int = 0
+    deckDaten: int = 0
+    deckKompilieren: int = 0
+    deckElectronicWarfare: int = 0
+    deckMatrixNavigation: int = 0
+    istBehaelter: bool = False
+    kapazitaet: float = 0
 
 
 class SortimentHinzufuegenRequest(BaseModel):

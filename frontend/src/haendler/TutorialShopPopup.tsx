@@ -2,32 +2,32 @@ import { useEffect, useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { ShopKategorien } from "./ShopKategorien";
 import { Fenster } from "../shell/Fenster";
+import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
+import { symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
 
+const SELTENHEIT = ["", "Gewöhnlich", "Ungewöhnlich", "Selten", "Legendär", "Mystisch"];
+
+function effektiverPreis(ware: SortimentEintrag): number {
+  return ware.rabattProzent > 0 ? Math.round(ware.preis * (1 - ware.rabattProzent / 100)) : ware.preis;
+}
+
 /**
- * Tutorial-Shop (10.10.2026, Marks Konzept) — eigenes, reduziertes Popup im
- * Freebees-Schritt der Charaktererstellung. Anders als `ShopSeite.tsx`:
- * - Kein Verhandeln (Mark: "im Tutorial Shop gibt es kein verhandeln")
- * - Kein eigener Bestellungen-Flow (Tutorial-Shops sind immer PHYSISCH im
- *   Sinne von "sofort übergeben" — digitale Lieferverzögerung ergibt beim
- *   allerersten Einkauf keinen Sinn)
- * - Der "Händler" ist das KI-Symbol (⌬, dasselbe wie bei der Fertigkeiten-
- *   Vergabe) statt eines Portraits — kommentiert jeden Kauf per KI-Aufruf
- *   (`haendlerApi.tutorialKommentar`), rein kosmetisch, kein Einfluss auf
- *   den Kauf selbst.
- *
- * Guthaben kommt vom Aufrufer (`kapital`) und wird nach jedem Kauf über
- * `onKapitalGeaendert` zurückgemeldet — der Freebees-Schritt zeigt daneben
- * prägnant, wieviel noch da ist (Marks Vorgabe).
+ * Tutorial-Shop im Freebees-Schritt. Klick kauft nicht sofort — erst die
+ * Werte lesen, dann Kaufen. Die Spielleitung kauft für den Charakter, dessen
+ * Erstellung offen ist (NPC eingeschlossen); ohne personId lehnt der Server
+ * den Kauf ab.
  */
 export function TutorialShopPopup({
   campaignId,
+  personId,
   offen,
   kapital,
   onKapitalGeaendert,
   onSchliessen,
 }: {
   campaignId: string;
+  personId: string;
   offen: boolean;
   kapital: number;
   onKapitalGeaendert: (neu: number) => void;
@@ -36,7 +36,8 @@ export function TutorialShopPopup({
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
   const [sortiment, setSortiment] = useState<SortimentEintrag[]>([]);
   const [kategorie, setKategorie] = useState<string | null>(null);
-  const [kaeuft, setKaeuft] = useState<string | null>(null);
+  const [gewaehltId, setGewaehltId] = useState<string | null>(null);
+  const [kaeuft, setKaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
   const [kommentarLaedt, setKommentarLaedt] = useState(false);
@@ -49,24 +50,30 @@ export function TutorialShopPopup({
     });
   }, [offen, campaignId]);
 
+  const sichtbar = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
+  const gewaehlt = sichtbar.find((w) => w.gegenstandId === gewaehltId) ?? sichtbar[0] ?? null;
+
   async function kaufen(ware: SortimentEintrag) {
     if (!haendler) return;
     setFehler(null);
     setKommentar(null);
-    setKaeuft(ware.gegenstandId);
+    setKaeuft(true);
     try {
-      const antwort = await haendlerApi.kaufen(campaignId, haendler.id, ware.gegenstandId);
+      const antwort = await haendlerApi.kaufen(campaignId, haendler.id, ware.gegenstandId, personId);
       onKapitalGeaendert(antwort.kapitalNeu);
-      // Vorlagen bleiben im Sortiment (unendlich verfügbar), Unikate
-      // verschwinden — gleiches Prinzip wie im echten Shop, hier lokal
-      // nachgezogen statt eines Reloads.
       if (!ware.istVorlage) {
         setSortiment((alt) => alt.filter((w) => w.gegenstandId !== ware.gegenstandId));
+        setGewaehltId(null);
       }
       setKommentarLaedt(true);
       try {
-        const { kommentar } = await haendlerApi.tutorialKommentar(campaignId, haendler.id, ware.name, ware.typ);
-        setKommentar(kommentar);
+        const { kommentar: spruch } = await haendlerApi.tutorialKommentar(
+          campaignId,
+          haendler.id,
+          ware.name,
+          ware.typ,
+        );
+        setKommentar(spruch);
       } catch {
         // Kommentar ist rein kosmetisch — ein KI-Fehlschlag darf den Kauf
         // selbst nicht als gescheitert erscheinen lassen.
@@ -76,16 +83,21 @@ export function TutorialShopPopup({
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Kauf fehlgeschlagen");
     } finally {
-      setKaeuft(null);
+      setKaeuft(false);
     }
   }
+
+  const preis = gewaehlt ? effektiverPreis(gewaehlt) : 0;
+  const zuTeuer = gewaehlt !== null && preis > kapital;
+  const zeilen = gewaehlt ? steckbriefZeilen(gewaehlt) : [];
 
   return (
     <Fenster
       offen={offen}
       titel="🛒 Tutorial-Shop"
-      unterzeile="Erste Ausrüstung einkaufen — kein Verhandeln, dafür ein Kommentar zu jedem Kauf."
+      unterzeile="Ware antippen, Werte lesen, dann kaufen. Kein Verhandeln."
       kennung="tutorial-shop"
+      breit
       onSchliessen={onSchliessen}
     >
       {!haendler ? (
@@ -93,40 +105,131 @@ export function TutorialShopPopup({
           Die Spielleitung hat noch keinen Tutorial-Shop eingerichtet — diesen Schritt einfach überspringen.
         </p>
       ) : (
-        <div className="shop-seite">
-          <div className="ts-verkaeufer">
-            <span className="ts-verkaeufer-symbol" aria-hidden="true">⌬</span>
-            <div className="ts-verkaeufer-text">
-              {kommentarLaedt && <p className="ts-kommentar-ladend">… überlegt sich einen Spruch …</p>}
-              {kommentar && <p className="ts-kommentar">{kommentar}</p>}
-              {!kommentar && !kommentarLaedt && <p className="ts-kommentar-platzhalter">Was darf's sein?</p>}
+        <div className="shop-seite ts-shop">
+          <div className="ts-kopf">
+            <div className="ts-verkaeufer">
+              <span className="ts-verkaeufer-symbol" aria-hidden="true">
+                ⌬
+              </span>
+              <div className="ts-verkaeufer-text">
+                {kommentarLaedt && <p className="ts-kommentar-ladend">… überlegt sich einen Spruch …</p>}
+                {kommentar && <p className="ts-kommentar">{kommentar}</p>}
+                {!kommentar && !kommentarLaedt && <p className="ts-kommentar-platzhalter">Was darf's sein?</p>}
+              </div>
             </div>
+            <p className="ts-guthaben">
+              Noch <strong>{kapital.toLocaleString("de-AT")}¥</strong>
+            </p>
           </div>
 
           {fehler && <p className="shop-ware-fehler">{fehler}</p>}
 
-          <div className="shop-waren-raster">
-            <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
-            {sortiment
-              .filter((w) => kategorie === null || w.typ === kategorie)
-              .map((ware) => (
-                <button
-                  key={ware.gegenstandId}
-                  type="button"
-                  className="shop-ware"
-                  onClick={() => kaufen(ware)}
-                  disabled={kaeuft !== null || ware.preis > kapital}
-                  title={ware.name}
-                >
-                  <span className="shop-ware-bild">
-                    {ware.bildUrl ? <img src={ware.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
-                  </span>
-                  <span className="shop-ware-name">{ware.name}</span>
-                  <span className="shop-ware-preis">{ware.preis.toLocaleString("de-AT")}¥</span>
-                </button>
-              ))}
-            {sortiment.length === 0 && <p className="shop-leer">Der Tutorial-Shop führt gerade nichts.</p>}
-          </div>
+          <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
+
+          {sichtbar.length === 0 ? (
+            <p className="shop-leer">Der Tutorial-Shop führt gerade nichts.</p>
+          ) : (
+            <div className="ts-layout">
+              <div className="ts-liste" role="listbox" aria-label="Sortiment">
+                {sichtbar.map((ware) => {
+                  const aktiv = gewaehlt?.gegenstandId === ware.gegenstandId;
+                  const kurz = steckbriefKurz(ware);
+                  return (
+                    <button
+                      key={ware.gegenstandId}
+                      type="button"
+                      role="option"
+                      aria-selected={aktiv}
+                      className="ts-zeile"
+                      data-aktiv={aktiv}
+                      data-seltenheit={ware.seltenheit || 1}
+                      onClick={() => {
+                        setGewaehltId(ware.gegenstandId);
+                        setFehler(null);
+                      }}
+                    >
+                      <span className="ts-zeile-bild">
+                        {ware.bildUrl ? <img src={ware.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(ware.typ)}</span>}
+                      </span>
+                      <span className="ts-zeile-text">
+                        <span className="ts-zeile-name">{ware.name}</span>
+                        <span className="ts-zeile-typ">
+                          {symbolFuerTyp(ware.typ)} {ware.typ}
+                          {ware.seltenheit > 1 ? ` · ${SELTENHEIT[ware.seltenheit] ?? ""}` : ""}
+                        </span>
+                        {kurz.length > 0 && <span className="ts-zeile-werte">{kurz.join(" · ")}</span>}
+                      </span>
+                      <span className="ts-zeile-preis">{effektiverPreis(ware).toLocaleString("de-AT")}¥</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {gewaehlt && (
+                <div className="ts-detail">
+                  <div className="ts-detail-kopf">
+                    <span className="ts-detail-bild">
+                      {gewaehlt.bildUrl ? (
+                        <img src={gewaehlt.bildUrl} alt="" />
+                      ) : (
+                        <span aria-hidden="true">{symbolFuerTyp(gewaehlt.typ)}</span>
+                      )}
+                    </span>
+                    <div>
+                      <h3 className="ts-detail-name">{gewaehlt.name}</h3>
+                      <p className="ts-detail-meta">
+                        {symbolFuerTyp(gewaehlt.typ)} {gewaehlt.typ}
+                        {" · "}
+                        {SELTENHEIT[gewaehlt.seltenheit] || "Gewöhnlich"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {zeilen.length > 0 ? (
+                    <dl className="ts-werte">
+                      {zeilen.map((z) => (
+                        <div key={`${z.label}-${z.wert}`} className="ts-wert-zeile">
+                          <dt>{z.label}</dt>
+                          <dd>{z.wert}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : (
+                    <p className="ts-keine-werte">Keine besonderen Kampfwerte — Alltagsstück.</p>
+                  )}
+
+                  {gewaehlt.rabattProzent > 0 && gewaehlt.rabattHinweis && (
+                    <p className="shop-ware-hinweis">{gewaehlt.rabattHinweis}</p>
+                  )}
+
+                  <p className="ts-preiszeile">
+                    <span>Preis</span>
+                    <strong>
+                      {gewaehlt.rabattProzent > 0 && (
+                        <s className="ts-preis-alt">{gewaehlt.preis.toLocaleString("de-AT")}¥</s>
+                      )}
+                      {preis.toLocaleString("de-AT")}¥
+                    </strong>
+                  </p>
+                  <p className="ts-preiszeile">
+                    <span>Danach noch</span>
+                    <strong>{Math.max(0, kapital - preis).toLocaleString("de-AT")}¥</strong>
+                  </p>
+                  {zuTeuer && (
+                    <p className="shop-ware-fehler">Dafür fehlen {(preis - kapital).toLocaleString("de-AT")}¥.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="shop-ware-kaufen-btn"
+                    onClick={() => kaufen(gewaehlt)}
+                    disabled={kaeuft || zuTeuer}
+                  >
+                    {kaeuft ? "Kauft…" : "Kaufen"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </Fenster>
