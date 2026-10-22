@@ -14,6 +14,16 @@ class TraitDefResponse(BaseModel):
     vorschlaege: list[str] = []
 
 
+class TraitVorschlaegeUpdate(BaseModel):
+    """GM-Oberfläche zum Bearbeiten der Spezialisierungs-Vorschlagstexte
+    (Folge-Feature zur Fertigkeiten-Spezialisierung, 22.10.2026) — ersetzt
+    die komplette Liste je PUT-Aufruf, kein Patch einzelner Einträge. Bisher
+    kam `vorschlaege` ausschliesslich aus TRAIT_VORSCHLAEGE in traits/seed.py,
+    siehe traits/routes.py::set_trait_vorschlaege."""
+
+    vorschlaege: list[str] = []
+
+
 class TraitRatingUpdate(BaseModel):
     rating: int
     maxOverride: int | None = None

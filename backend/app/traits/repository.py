@@ -17,6 +17,33 @@ async def list_catalog(ruleset: str) -> list[dict]:
         return [dict(record) async for record in result]
 
 
+async def set_vorschlaege(trait_def_id: str, ruleset: str, vorschlaege: list[str]) -> dict | None:
+    """Setzt die komplette Liste der Spezialisierungs-Vorschlagstexte einer
+    TraitDef (GM-Oberfläche, Folge-Feature 22.10.2026, siehe
+    traits/routes.py::set_trait_vorschlaege) — ersetzt, patcht nicht.
+
+    Scoped auf `ruleset` wie `list_catalog`, NICHT auf eine Kampagne:
+    TraitDef ist ruleset-weit (siehe traits/seed.py-Moduldocstring), nicht
+    campaign-gebunden wie Zusatzfertigkeiten. Akzeptierter v1-Fehlbetrag:
+    jede Kampagnen-SL dieses Regelwerks bearbeitet denselben gemeinsamen
+    Katalogeintrag — es gibt (Stand 22.10.2026) ohnehin nur ein Regelwerk
+    ('neotopia') in der Praxis, siehe Feature-Bericht.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (t:TraitDef {id: $trait_def_id, ruleset: $ruleset})
+        SET t.vorschlaege = $vorschlaege
+        RETURN t.id AS id, t.name AS name, t.category AS category,
+               t.defaultMax AS defaultMax, t.sortOrder AS sortOrder,
+               coalesce(t.description, '') AS description,
+               coalesce(t.vorschlaege, []) AS vorschlaege
+    """
+    async with driver.session() as session:
+        result = await session.run(query, trait_def_id=trait_def_id, ruleset=ruleset, vorschlaege=vorschlaege)
+        record = await result.single()
+        return dict(record) if record else None
+
+
 async def get_ratings_for_entity(campaign_id: str, entity_id: str) -> list[dict]:
     driver = get_driver()
     query = """

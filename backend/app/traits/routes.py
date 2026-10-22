@@ -37,6 +37,7 @@ from app.hintergruende.spawn import (
     nach_erstellung as kredithai_nach_erstellung,
 )
 from app.rassen import repository as rassen_repository
+from app.spezialisierungen import repository as spezialisierungen_repository
 from app.traits import berater, erfahrung, erstellung, rast, repository
 from app.traits.bogen import (
     bogen_uebersicht,
@@ -44,7 +45,12 @@ from app.traits.bogen import (
     willenskraft_max,
     zustand_verboten,
 )
-from app.traits.schemas import TraitDefResponse, TraitRatingResponse, TraitRatingUpdate
+from app.traits.schemas import (
+    TraitDefResponse,
+    TraitRatingResponse,
+    TraitRatingUpdate,
+    TraitVorschlaegeUpdate,
+)
 from app.zusatzfertigkeiten import repository as zusatzfertigkeiten_repository
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["traits"], dependencies=[Depends(require_campaign_zugang)])
@@ -56,6 +62,55 @@ async def get_catalog(campaign_id: str):
     if campaign is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kampagne nicht gefunden")
     return await repository.list_catalog(campaign["ruleset"])
+
+
+@router.put(
+    "/traits/{trait_def_id}/vorschlaege",
+    response_model=TraitDefResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def set_trait_vorschlaege(campaign_id: str, trait_def_id: str, body: TraitVorschlaegeUpdate):
+    """Spezialisierungs-Vorschlagstexte einer Fertigkeit setzen (GM-Oberfläche,
+    Folge-Feature 22.10.2026 zur Fertigkeiten-Spezialisierung).
+
+    Bisher kam `vorschlaege` ausschliesslich aus TRAIT_VORSCHLAEGE in
+    traits/seed.py — es gab keine Route, die es live ändert. Siehe
+    ZusatzfertigkeitenVerwaltung.tsx, Tab "Spezialisierungs-Vorschläge"
+    (bewusst in diesem Tab untergebracht, nicht in einem neuen Menüpunkt —
+    Mark meinte damit das bestehende "Zusatzfertigkeiten"-Menü).
+
+    Nur Fertigkeiten/NeuroWeaving (dieselbe Kategorie-Ausschlussliste wie
+    bei der automatischen Spezialisierungs-Vergabe, siehe
+    spezialisierungen/repository.py::FERTIGKEIT_KATEGORIEN) — Attribute und
+    Sphären kennen keine Spezialisierungs-Slots und damit auch keine
+    Vorschlagstexte dafür.
+
+    **v1-Vereinfachung, bewusst (siehe Feature-Bericht):** TraitDef ist
+    ruleset-weit, nicht campaign-gebunden wie Zusatzfertigkeiten — diese
+    Route ändert den gemeinsamen Katalogeintrag für ALLE Kampagnen dieses
+    Regelwerks, nicht nur die aufrufende. In der Praxis gibt es aktuell nur
+    ein Regelwerk ('neotopia'); eine per-Kampagne-Override-Variante ist kein
+    v1-Umfang.
+    """
+    campaign = await get_campaign(campaign_id)
+    if campaign is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kampagne nicht gefunden")
+    ruleset = campaign["ruleset"]
+    katalog = await repository.list_catalog(ruleset)
+    eintrag = next((t for t in katalog if t["id"] == trait_def_id), None)
+    if eintrag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fertigkeit nicht gefunden")
+    if eintrag["category"] not in spezialisierungen_repository.FERTIGKEIT_KATEGORIEN:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Spezialisierungs-Vorschläge gibt es nur für Fertigkeiten/NeuroWeaving, "
+            "nicht für Attribute oder Sphären.",
+        )
+    saubere_liste = [v.strip() for v in body.vorschlaege if v.strip()]
+    aktualisiert = await repository.set_vorschlaege(trait_def_id, ruleset, saubere_liste)
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fertigkeit nicht gefunden")
+    return aktualisiert
 
 
 @router.get("/personen/{person_id}/werte", response_model=list[TraitRatingResponse])

@@ -33,4 +33,9 @@ export const traitsApi = {
       rating,
       maxOverride,
     }),
+  /** GM-Oberfläche (22.10.2026, Folge-Feature): Spezialisierungs-
+   * Vorschlagstexte einer Fertigkeit ersetzen — siehe
+   * ZusatzfertigkeitenVerwaltung.tsx, Tab "Spezialisierungs-Vorschläge". */
+  setVorschlaege: (cid: string, traitDefId: string, vorschlaege: string[]) =>
+    api.put<TraitDef>(`${base(cid)}/traits/${encodeURIComponent(traitDefId)}/vorschlaege`, { vorschlaege }),
 };

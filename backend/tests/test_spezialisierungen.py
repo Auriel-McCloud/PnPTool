@@ -356,3 +356,179 @@ def test_vorschlaege_landen_im_traitkatalog():
         unbekannt = next(t for t in katalog if t["name"] == "Diebeshandwerk")
         assert unbekannt["vorschlaege"] == []
     _run(lauf())
+
+
+# ===========================================================================
+# GM-Oberfläche (22.10.2026, Folge-Feature): Vorschlagstexte live bearbeiten
+# ===========================================================================
+
+
+def test_set_vorschlaege_ersetzt_die_liste():
+    """repository.set_vorschlaege ersetzt die komplette Liste (kein Patch
+    einzelner Einträge) und gibt die aktualisierte TraitDef zurück."""
+
+    async def lauf():
+        trait_id = await _trait_def_id("Diebeshandwerk")
+        try:
+            vorher = await traits_repository.set_vorschlaege(trait_id, "neotopia", ["Schlösser"])
+            assert vorher is not None
+            assert vorher["vorschlaege"] == ["Schlösser"]
+
+            nachher = await traits_repository.set_vorschlaege(
+                trait_id, "neotopia", ["Tresore", "Sicherheitssysteme"]
+            )
+            assert nachher["vorschlaege"] == ["Tresore", "Sicherheitssysteme"]
+
+            katalog = await traits_repository.list_catalog("neotopia")
+            eintrag = next(t for t in katalog if t["id"] == trait_id)
+            assert eintrag["vorschlaege"] == ["Tresore", "Sicherheitssysteme"]
+        finally:
+            # Seed-Standard wiederherstellen, damit andere Tests (und der
+            # nächste Serverstart) nicht auf dieser Teständerung sitzen
+            # bleiben — Diebeshandwerk hat laut TRAIT_VORSCHLAEGE keine.
+            await traits_repository.set_vorschlaege(trait_id, "neotopia", [])
+
+    _run(lauf())
+
+
+def test_set_vorschlaege_unbekannte_trait_def_gibt_none():
+    async def lauf():
+        ergebnis = await traits_repository.set_vorschlaege("neotopia:Fertigkeit:Nicht-Vorhanden", "neotopia", ["x"])
+        assert ergebnis is None
+
+    _run(lauf())
+
+
+def test_set_trait_vorschlaege_route_gm_erfolg():
+    """Route-Ebene: GM setzt Vorschläge über die echte Route-Funktion
+    (direkter Aufruf, kein TestClient — siehe Moduldocstring dieser Datei
+    und test_verbindung_bearbeiten.py für dasselbe Muster im Projekt)."""
+
+    async def lauf():
+        from app.traits import routes as traits_routes
+        from app.traits.schemas import TraitVorschlaegeUpdate
+
+        cid = await _kampagne_anlegen()
+        trait_id = await _trait_def_id("Fahren")
+        try:
+            antwort = await traits_routes.set_trait_vorschlaege(
+                cid, trait_id, TraitVorschlaegeUpdate(vorschlaege=["Motorräder", "  ", "Offroad"])
+            )
+            # Direkter Funktionsaufruf statt HTTP (siehe Docstring oben):
+            # response_model greift nur auf dem echten HTTP-Pfad, hier kommt
+            # das rohe Repository-Dict zurück, kein TraitDefResponse-Objekt.
+            # Leere/reine Whitespace-Einträge werden herausgefiltert.
+            assert antwort["vorschlaege"] == ["Motorräder", "Offroad"]
+
+            katalog = await traits_repository.list_catalog("neotopia")
+            eintrag = next(t for t in katalog if t["id"] == trait_id)
+            assert eintrag["vorschlaege"] == ["Motorräder", "Offroad"]
+        finally:
+            await traits_repository.set_vorschlaege(trait_id, "neotopia", [])
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_set_trait_vorschlaege_route_lehnt_attribut_ab():
+    """Attribute kennen keine Spezialisierungs-Slots — die Route muss das
+    VOR dem Schreiben prüfen (400), nicht erst beim Lesen scheitern."""
+
+    async def lauf():
+        from fastapi import HTTPException
+        import pytest
+
+        from app.traits import routes as traits_routes
+        from app.traits.schemas import TraitVorschlaegeUpdate
+
+        cid = await _kampagne_anlegen()
+        trait_id = await _trait_def_id("Körperkraft", "AttributKörperlich")
+        try:
+            with pytest.raises(HTTPException) as fehler:
+                await traits_routes.set_trait_vorschlaege(
+                    cid, trait_id, TraitVorschlaegeUpdate(vorschlaege=["Sollte nie ankommen"])
+                )
+            assert fehler.value.status_code == 400
+
+            # Darf auch nicht als Nebenwirkung doch geschrieben worden sein.
+            katalog = await traits_repository.list_catalog("neotopia")
+            eintrag = next(t for t in katalog if t["id"] == trait_id)
+            assert eintrag["vorschlaege"] == []
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_set_trait_vorschlaege_route_lehnt_sphaere_ab():
+    async def lauf():
+        from fastapi import HTTPException
+        import pytest
+
+        from app.traits import routes as traits_routes
+        from app.traits.schemas import TraitVorschlaegeUpdate
+
+        cid = await _kampagne_anlegen()
+        trait_id = await _trait_def_id("Kräfte", "Sphäre")
+        try:
+            with pytest.raises(HTTPException) as fehler:
+                await traits_routes.set_trait_vorschlaege(
+                    cid, trait_id, TraitVorschlaegeUpdate(vorschlaege=["Sollte nie ankommen"])
+                )
+            assert fehler.value.status_code == 400
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_set_trait_vorschlaege_route_unbekannte_kampagne_ist_404():
+    async def lauf():
+        from fastapi import HTTPException
+        import pytest
+
+        from app.traits import routes as traits_routes
+        from app.traits.schemas import TraitVorschlaegeUpdate
+
+        trait_id = await _trait_def_id("Fahren")
+        with pytest.raises(HTTPException) as fehler:
+            await traits_routes.set_trait_vorschlaege(
+                "kampagne-existiert-nicht", trait_id, TraitVorschlaegeUpdate(vorschlaege=["x"])
+            )
+        assert fehler.value.status_code == 404
+
+    _run(lauf())
+
+
+def test_route_require_campaign_gm_ist_als_abhaengigkeit_eingehaengt():
+    """Strukturelle Gegenprobe zu test_zugriffsschutz.py: diese Route muss
+    GM-only sein — nicht erneut per HTTP-403-Test geprüft (dieses Projekt
+    nutzt keinen TestClient), sondern wie dort über den Abhängigkeitsbaum."""
+
+    async def check():
+        from app.auth.dependencies import require_campaign_gm
+        from app.main import app
+
+        gefunden = False
+        offen = list(app.routes)
+        while offen:
+            eintrag = offen.pop()
+            unter = getattr(eintrag, "original_router", None)
+            if unter is not None:
+                offen.extend(unter.routes)
+                continue
+            if getattr(eintrag, "path", None) == "/api/campaigns/{campaign_id}/traits/{trait_def_id}/vorschlaege":
+                gefunden = True
+
+                def wachen(dependant):
+                    gefunden_set = set()
+                    if dependant.call is not None:
+                        gefunden_set.add(dependant.call)
+                    for u in dependant.dependencies:
+                        gefunden_set |= wachen(u)
+                    return gefunden_set
+
+                assert require_campaign_gm in wachen(eintrag.dependant)
+        assert gefunden, "Route wurde nicht gefunden — Pfad geändert?"
+
+    _run(check())
