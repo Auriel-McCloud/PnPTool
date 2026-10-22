@@ -46,6 +46,7 @@ from app.zusatzfertigkeiten.routes import personen_router as zusatzfertigkeiten_
 from app.spielernotizen.routes import router as spielernotizen_router
 from app.lexikon.routes import router as lexikon_router
 from app.achievements.routes import router as achievements_router
+from app.spezialisierungen.routes import router as spezialisierungen_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -116,6 +117,7 @@ app.include_router(zusatzfertigkeiten_personen_router)
 app.include_router(spielernotizen_router)
 app.include_router(lexikon_router)
 app.include_router(achievements_router)
+app.include_router(spezialisierungen_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

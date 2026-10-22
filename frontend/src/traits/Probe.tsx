@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
+import type { Spezialisierung } from "../spezialisierungen/api";
 import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./probe.css";
@@ -57,6 +58,7 @@ export function Probe({
   willenskraft,
   deckBoni,
   magieFlavor,
+  spezialisierungen,
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
@@ -74,6 +76,11 @@ export function Probe({
   deckBoni?: Record<string, number>;
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
+  /** Fertigkeiten-Spezialisierung (22.10.2026): ALLE Slots dieser Person
+   * (benannt wie unbenannt) — nur die BENANNTEN werden als Chip angeboten,
+   * und nur für die plain Fertigkeit+Attribut-Kombination unten, nie für
+   * Attribute/Sphären/Hexkraft/NeuroWeaving (siehe istSphaere/nurWillenskraft). */
+  spezialisierungen?: Spezialisierung[];
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
@@ -81,6 +88,9 @@ export function Probe({
   const [wild, setWild] = useState(0);
   // Genau eine Deck-Aktion — man tut ja eines nach dem anderen.
   const [deck, setDeck] = useState<{ name: string; wert: number } | null>(null);
+  // Gewählte Spezialisierung — EINE, kein Stapeln mehrerer Boni auf eine
+  // Probe (Mark hat das nie besprochen, siehe Berichtstext/Assumption).
+  const [spezialisierung, setSpezialisierung] = useState<Spezialisierung | null>(null);
 
   // Beim NeuroWeaving gibt es genau EINEN Grundwert (Kategorie
   // "NeuroWeavingWert") — klickt man auf eine der sechs Fertigkeiten, bleibt
@@ -104,7 +114,23 @@ export function Probe({
   const istSphaere = wahl.kategorie === "Sphäre";
   const nurWillenskraft = NUR_WILLENSKRAFT.has(wahl.kategorie);
   const partnerKategorie = NEURO_PARTNER[wahl.kategorie];
-  const roh = wahl.wert + (attribut?.wert ?? 0) + (nurWillenskraft ? wild : 0) + (deck?.wert ?? 0);
+  // Nur für die plaine Fertigkeit+Attribut-Kombination unten relevant —
+  // istSphaere/nurWillenskraft geben vorher eigene Fenster zurück und
+  // erreichen diesen Zweig nie. `katalog` enthält je Ruleset+Kategorie
+  // eindeutige Namen (dieselbe Annahme wie bei SPALTEN/NEURO_PARTNER oben).
+  const fertigkeitTrait =
+    wahl.kategorie === "Fertigkeit" || wahl.kategorie === "NeuroWeaving"
+      ? katalog.find((t) => t.name === wahl.name && t.category === wahl.kategorie)
+      : undefined;
+  const spezialisierungenFuerTrait = fertigkeitTrait
+    ? (spezialisierungen ?? []).filter((s) => s.traitDefId === fertigkeitTrait.id && s.text)
+    : [];
+  const roh =
+    wahl.wert +
+    (attribut?.wert ?? 0) +
+    (nurWillenskraft ? wild : 0) +
+    (deck?.wert ?? 0) +
+    (spezialisierung ? 1 : 0);
   // Der Deckel gilt nur fürs NeuroWeaving; Hexkraft allein geht bis 10 und
   // sammelt darüber hinaus nur wilde Würfel.
   const gedeckelt = Boolean(partnerKategorie) && roh > NEUROWEAVING_POOL_MAX;
@@ -120,6 +146,7 @@ export function Probe({
     setAttribut(null);
     setWild(0);
     setDeck(null);
+    setSpezialisierung(null);
     onSchliessen();
   }
 
@@ -292,6 +319,7 @@ export function Probe({
           {wahlName} {wahl.wert}
           {attribut && attribut.wert > 0 && ` + ${attribut.name} ${attribut.wert}`}
           {deck && ` + ${deck.name} ${deck.wert}`}
+          {spezialisierung && ` + 1 (Spezialisierung: ${spezialisierung.text})`}
         </p>
 
         {/* Das Deck gibt Bonuswürfel je Aktion (Zeile 157). Nur anbieten,
@@ -308,6 +336,27 @@ export function Probe({
                   onClick={() => setDeck(deck?.name === name ? null : { name, wert })}
                 >
                   {name} <strong>+{wert}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Spezialisierung: +1, EIN Chip wählbar (Klick auf den bereits
+            gewählten deselektiert — kein Stapeln, siehe Props-Doku oben).
+            Selbe Bauweise wie Cyberdeck direkt darüber — keine neue CSS. */}
+        {spezialisierungenFuerTrait.length > 0 && (
+          <section className="pr-deck">
+            <h3>Spezialisierung</h3>
+            <div className="pr-deck-reihe">
+              {spezialisierungenFuerTrait.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  data-gewaehlt={spezialisierung?.id === s.id}
+                  onClick={() => setSpezialisierung(spezialisierung?.id === s.id ? null : s)}
+                >
+                  {s.text}
                 </button>
               ))}
             </div>
