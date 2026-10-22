@@ -7,6 +7,10 @@ export interface TraitDef {
   defaultMax: number;
   sortOrder: number;
   description: string;
+  /** Fertigkeiten-Spezialisierung (22.10.2026): GM-vordefinierte
+   * Vorschlagstexte für diese Fertigkeit — leer, wenn keine hinterlegt
+   * sind (der Spieler tippt dann frei). Siehe backend traits/seed.py. */
+  vorschlaege: string[];
 }
 
 export interface TraitRating {

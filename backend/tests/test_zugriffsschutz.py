@@ -155,6 +155,14 @@ OHNE_GM_ERLAUBT = {
     "/api/campaigns/{campaign_id}/personen/{person_id}/zusatzfertigkeiten",
     # Ebenso: eine bereits gewählte Zusatzfertigkeit um einen Punkt steigern.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zusatzfertigkeiten/{zusatzfertigkeit_id}/steigern",
+    # --- Fertigkeiten-Spezialisierung: der Spieler benennt/kauft am eigenen Charakter -
+    # Einen Slot (be)nennen. Prüft die Person selbst (_pruefe_zugriff) UND die
+    # Benennen-Sperre separat (ein bereits benannter Slot gibt dem Spieler
+    # 403, nicht 404) — siehe app/spezialisierungen/routes.py::benennen.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/spezialisierungen/{spezialisierung_id}/benennen",
+    # Einen zusätzlichen Slot für 4 EP kaufen — analog zu `steigern` oben,
+    # prüft die Person selbst sowie Fertigkeitsrating (>=4) und EP-Bilanz.
+    "/api/campaigns/{campaign_id}/personen/{person_id}/spezialisierungen/kaufen",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.
