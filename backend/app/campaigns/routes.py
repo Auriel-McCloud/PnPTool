@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
 from app.auth.dependencies import require_gm
+from app.campaigns.buendel_export import export_buendel_zip
 from app.campaigns.export_import import export_campaign_zip, import_campaign_zip
 from app.campaigns.repository import (
     EINSTELLUNGEN_DEFAULTS,
@@ -75,6 +76,44 @@ async def export_campaign(campaign_id: str):
     Kampagne (require_campaign_gm prüft Besitz)."""
     try:
         inhalt, dateiname = await export_campaign_zip(campaign_id)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
+    return Response(
+        content=inhalt,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}"'},
+    )
+
+
+# --- Kampagnen-Bündel (Phase 1: nur Export) ------------------------------
+# Teilmenge wiederverwendbarer Welt-Inhalte (Ort/Gegenstand/Fraktion/Person
+# [NPC+Critter]/Gewaechs/Event/WikiSeite/Rasse/Achievement-Definitionen) zum
+# Teilen mit anderen Runden — siehe app/campaigns/buendel_export.py für die
+# Sammlung/Weisslisten-Begründung. Phase 2 (Import/Upload) folgt separat.
+
+
+class BuendelExportRequest(BaseModel):
+    name: str
+    beschreibung: str = ""
+    tags: list[str] = []
+    # Standard ist "alles ausser den hier genannten Ausnahmen" (Marks
+    # bewusste Entscheidung für den invertierten Picker im Frontend) —
+    # deshalb eine Ausschluss- statt einer Einschlussliste.
+    ausgeschlosseneIds: list[str] = []
+
+
+@router.post("/{campaign_id}/buendel/export", dependencies=[Depends(require_campaign_gm)])
+async def buendel_export(campaign_id: str, body: BuendelExportRequest):
+    """Exportiert eine Teilmenge wiederverwendbarer Welt-Inhalte als ZIP zum
+    Download. Nur die Spielleitung dieser Kampagne."""
+    try:
+        inhalt, dateiname = await export_buendel_zip(
+            campaign_id,
+            name=body.name,
+            beschreibung=body.beschreibung,
+            tags=body.tags,
+            exclude_ids=body.ausgeschlosseneIds,
+        )
     except ValueError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
     return Response(

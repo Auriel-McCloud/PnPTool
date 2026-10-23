@@ -136,6 +136,10 @@
   --bereich-schmiede: var(--warn);
   /* Protokoll: Cyan wie Commlink-Telemetrie, eigener Bereichston */
   --bereich-protokoll: var(--neon);
+  /* Bündel (23.10.2026, Kampagnen-Bündel-Export): eigener Türkis-Ton, bisher
+     ungenutzt als Bereichsfarbe — ein Bündel ist "weggepackte Fracht", kein
+     Status-Signal und keine der bestehenden Rollenfarben. */
+  --bereich-buendel: var(--p-tuerkis);
 
   /* == 4. Wertegruppen (Charakterblatt) ============================== */
   /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,

@@ -317,7 +317,7 @@ export function NPCDetail({
       {loeschenOffen && (
         <Bestaetigung
           titel={`${person.name} löschen?`}
-          text={`„${person.name}“ wird endgültig gelöscht, samt Inventar und ${beziehungsZahl} Verbindungen. Das lässt sich nicht rückgängig machen.`}
+          text={`„${person.name}“ wandert in den Papierkorb, samt Inventar (landet im Mülleimer) und ${beziehungsZahl} Verbindungen.`}
           jaText={loeschenLaeuft ? "..." : "Ja, löschen"}
           neinText="Abbrechen"
           onJa={loeschen}
