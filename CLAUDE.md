@@ -81,6 +81,11 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Tutorial-Shop: nur die Warenliste scrollt** (23.10.2026): Reiter und
+  der Werteblock rechts bleiben stehen, nur die linke Liste läuft. Hart neu
+  laden, eine lange Liste durchscrollen — der Block rechts und die
+  Kategorie-Reiter dürfen nicht mitwandern.
+
 - **Tutorial-Shop zeigt Ware auch als Spieler** (23.10.2026): „SL-geheim“ an
   Beschreibung oder Notizen versteckt im Code den ganzen Ort — der
   Freebees-Shop lief deshalb auf 404 und zeigte „nichts“, obwohl Ware drin

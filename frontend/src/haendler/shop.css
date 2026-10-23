@@ -718,15 +718,33 @@
   min-width: 100px;
 }
 
-/* --- Tutorial-Shop: lesbare Werte, kein zusammengefallenes Raster ------ */
-/* .shop-seite / .shop-waren-raster setzen flex:1 und min-height:0. Im
-   Fenster ohne feste Höhe fällt der Inhalt dadurch auf 0 zusammen — man
-   sieht kaum noch Text. Hier fließt der Shop mit dem Fenster mit. */
+/* --- Tutorial-Shop: nur die Warenliste scrollt --------------------------- */
+/* Das Fenster hat sonst nur max-height, der Inhalt wächst und .fn-inhalt
+   scrollt alles mit — Reiter und Werteblock wandern weg. Feste Höhe, damit
+   der Shop die Fläche füllt und nur .ts-liste läuft. min-height:0 ist hier
+   sicher, weil das Fenster eine echte Höhe hat (nicht der alte Kollaps). */
+
+@media (min-width: 600px) {
+  .fn-fenster:has(.ts-shop):not(.fn-fenster-maximiert) {
+    height: min(78svh, 860px);
+  }
+}
+
+.fn-inhalt:has(.ts-shop) {
+  overflow: hidden;
+}
 
 .ts-shop.shop-seite {
-  flex: none;
-  min-height: auto;
-  height: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ts-shop > .ts-kopf,
+.ts-shop > .shop-kategorien-raster,
+.ts-shop > .shop-ware-fehler,
+.ts-shop > .shop-leer {
+  flex-shrink: 0;
 }
 
 .ts-kopf {
@@ -765,7 +783,10 @@
   display: grid;
   grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .ts-liste {
@@ -773,6 +794,9 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .ts-zeile {
@@ -880,6 +904,9 @@
   border: 1px solid var(--linie);
   border-radius: var(--radius);
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .ts-detail-kopf {
@@ -992,5 +1019,6 @@
 
   .ts-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(120px, 1fr) minmax(0, 42%);
   }
 }
