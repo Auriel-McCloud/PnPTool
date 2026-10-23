@@ -98,11 +98,14 @@
   /* Entitaetsfarben — Graph, Badges und Bereiche halten sich daran */
   --kind-person: var(--p-blau-tief);
   --kind-ort: var(--p-gruen-tief);
-  /* Event war erst Orange (zu nah an Fraktion/Messing), dann Türkis (zu nah
-     an Ort/Grün) — jetzt Rot, der einzige noch ungenutzte kräftige
-     Kontrastton zu Blau/Grün/Violett/Messing/Magenta (Mark, 23.10.2026). */
-  --kind-event: var(--p-rot);
-  --kind-gegenstand: var(--p-violett);
+  /* Event: Orange (zu nah an Fraktion), Türkis (zu nah an Ort), Rot (zu nah
+     an Magenta/Party) waren alle zu dicht dran — jetzt Violett. Gegenstand
+     zieht dafür auf Rot um (Mark, 23.10.2026: "davon gibt es nicht so
+     viele" im Graphen — Gegenstände erscheinen dort ohnehin nur, wenn sie
+     explizit story-relevant markiert sind, also selten genug für Rot trotz
+     Nähe zu --nein/--bereich-kampf). */
+  --kind-event: var(--p-violett);
+  --kind-gegenstand: var(--p-rot);
   --kind-fraktion: var(--p-messing);
   /* Party teilt die Farbe NICHT mit --bereich-party (Indigo) — im Graphen
      soll die Party auffallen, nicht mit Person/Verbindungen verschmelzen.
