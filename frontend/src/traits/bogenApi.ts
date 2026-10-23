@@ -168,6 +168,12 @@ export interface Rasse {
   bonusFreebees: number;
   gratisGegenstandId: string;
   gratisErsterKaufTyp: string;
+  /** Zusatzfertigkeit, die bei der Erstellung automatisch mit 1 Punkt
+   * vergeben wird (23.10.2026 nachgetragen — fehlte hier, obwohl der Server
+   * sie seit der Vaet-Transformation schon vergibt; ohne das Feld konnte die
+   * Erstellungsoberfläche sie nicht automatisch anzeigen/vorbelegen). Leer =
+   * kein Feature. */
+  gratisZusatzfertigkeitId: string;
   featureHinweis: string;
 }
 

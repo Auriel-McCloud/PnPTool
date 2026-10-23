@@ -385,6 +385,14 @@ def regelwerk(
                 "bonusFreebees": daten.get("bonusFreebees", 0),
                 "gratisGegenstandId": daten.get("gratisGegenstandId", ""),
                 "gratisErsterKaufTyp": daten.get("gratisErsterKaufTyp", ""),
+                # Fehlte hier bisher (23.10.2026, Mark: Vael/Mimikry-Fund) —
+                # ohne dieses Feld wusste die Charaktererstellung gar nicht,
+                # dass eine Rasse automatisch eine Zusatzfertigkeit bekommt,
+                # und konnte sie weder vorauswählen noch den Punkt automatisch
+                # setzen. Die Vergabe selbst passiert serverseitig unverändert
+                # in routes.py::erstelle_charakter, komplett unabhängig davon,
+                # was hier an die Oberfläche durchgereicht wird.
+                "gratisZusatzfertigkeitId": daten.get("gratisZusatzfertigkeitId", ""),
                 "featureHinweis": daten.get("featureHinweis", ""),
             }
             for name, daten in (rassen or RASSEN).items()

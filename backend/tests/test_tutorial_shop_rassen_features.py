@@ -227,3 +227,44 @@ def test_rassen_der_kampagne_reicht_feature_felder_durch():
             await _aufraeumen(cid)
 
     _run(lauf())
+
+
+def test_regelwerk_reicht_gratis_zusatzfertigkeit_an_die_oberflaeche_durch():
+    """Regression (23.10.2026, Mark: Vael/Mimikry — "ich kann die Fähigkeit
+    zwar auswählen, aber ich muss händisch einen Punkt reintun").
+
+    `_rassen_der_kampagne` (s.o.) reichte `gratisZusatzfertigkeitId` schon
+    korrekt durch, aber `erstellung.regelwerk()` — die Funktion hinter dem
+    öffentlichen `/erstellung/regeln`-Endpunkt, den die Charaktererstellung
+    im Frontend lädt — liess das Feld beim Zusammenbauen der `rassen`-Liste
+    unter den Tisch fallen. Die Oberfläche wusste dadurch nie, dass eine
+    Rasse automatisch eine Zusatzfertigkeit bekommt, und konnte sie weder
+    vorauswählen noch den einen Punkt automatisch setzen — exakt derselbe
+    Bug-Typ wie Stolperstein 5 (6-Schichten-Check), nur eine Schicht weiter.
+    Prüft bewusst `regelwerk()` selbst statt nur `_rassen_der_kampagne()`
+    darunter, das schon vorher korrekt war und den Bug deshalb nicht
+    gefangen hätte.
+    """
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        rasse = await rassen_repository.anlegen({
+            "name": "Vael-Regelwerk-Test",
+            "freiePunkte": [7, 5, 3],
+            "gratisZusatzfertigkeitId": "irgendeine-zf-id",
+        })
+        try:
+            await rassen_repository.setze_freigabe(cid, [rasse["id"]])
+
+            from app.traits import erstellung
+            from app.traits.routes import _rassen_der_kampagne
+
+            verfuegbar = await _rassen_der_kampagne(cid)
+            regelwerk = erstellung.regelwerk(verfuegbar)
+            eintrag = next((r for r in regelwerk["rassen"] if r["name"] == "Vael-Regelwerk-Test"), None)
+            assert eintrag is not None
+            assert eintrag["gratisZusatzfertigkeitId"] == "irgendeine-zf-id"
+        finally:
+            await rassen_repository.loeschen(rasse["id"])
+            await _aufraeumen(cid)
+
+    _run(lauf())

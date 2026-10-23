@@ -19,7 +19,8 @@ import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ErstellungsAssistent } from "./ErstellungsAssistent";
 import { ErstellungsKommentar } from "./ErstellungsKommentar";
 import { ZusatzfertigkeitAuswahl } from "../zusatzfertigkeiten/ZusatzfertigkeitAuswahl";
-import { type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
+import { ZusatzfertigkeitInfoTipp } from "../zusatzfertigkeiten/ZusatzfertigkeitInfoTipp";
+import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { TutorialShopPopup } from "../haendler/TutorialShopPopup";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
@@ -136,6 +137,11 @@ export function Charaktererstellung({
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [zusatzfertigkeitPaketPunkte, setZusatzfertigkeitPaketPunkte] = useState<Record<string, number>>({});
   const [zusatzfertigkeitFreebees, setZusatzfertigkeitFreebees] = useState<Record<string, number>>({});
+  // Ganzer Katalog dieser Kampagne (nicht nur die vom Spieler vorgemerkten) —
+  // nötig, um zu einer Rasse mit `gratisZusatzfertigkeitId` (23.10.2026,
+  // generisch für jede Rasse mit Rassen-Feature, nicht nur Vael) Name und
+  // Beschreibung aufzulösen, siehe `gratisZf` unten.
+  const [zusatzfertigkeitenKatalog, setZusatzfertigkeitenKatalog] = useState<Zusatzfertigkeit[]>([]);
 
   // Still: kein onFertig/refreshAll, sonst unmountet der Assistent
   // (siehe shell/autosave.ts). Leerer Name wird nicht geschrieben —
@@ -189,10 +195,15 @@ export function Charaktererstellung({
   }
 
   useEffect(() => {
-    Promise.all([bogenApi.regeln(campaignId), traitsApi.getKatalog(campaignId)])
-      .then(([r, k]) => {
+    Promise.all([
+      bogenApi.regeln(campaignId),
+      traitsApi.getKatalog(campaignId),
+      zusatzfertigkeitenApi.liste(campaignId),
+    ])
+      .then(([r, k, zf]) => {
         setRegeln(r);
         setKatalog(k);
+        setZusatzfertigkeitenKatalog(zf);
       })
       .catch(() => setFehler(["Die Erstellungsregeln konnten nicht geladen werden."]));
     // Person-Felder vom Knoten holen — sonst startet ein zweites Gerät
@@ -232,6 +243,19 @@ export function Charaktererstellung({
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
+
+  // Rassen-Feature "gratisZusatzfertigkeitId" (10.10.2026, Vaet-Transformation,
+  // generisch für jede Rasse mit diesem Feature, nicht hart auf eine Rasse
+  // verdrahtet): die Zusatzfertigkeit samt Name/Beschreibung aus dem
+  // Kampagnen-Katalog auflösen. Bleibt bewusst GETRENNT von `zusatzfertigkeiten`/
+  // `zusatzfertigkeitPaketPunkte` — die Budget-Prüfung (erstellung.py::pruefe)
+  // und das Entfernen beim erneuten Einreichen (routes.py::erstelle_charakter)
+  // gehen ausdrücklich davon aus, dass sie NICHT aus dem Fertigkeiten-Schritt
+  // kommt. Der Server vergibt ihren einen Punkt unabhängig und automatisch.
+  const gratisZf = useMemo(
+    () => zusatzfertigkeitenKatalog.find((z) => z.id === gewaehlteRasse?.gratisZusatzfertigkeitId),
+    [zusatzfertigkeitenKatalog, gewaehlteRasse],
+  );
 
   /** Welche Kategorien dieser Weg mitbringt — bestimmt die Fertigkeitsauswahl.
    * Häretiker ist mechanisch Magier (siehe erstellung.py::normalisiere_weg)
@@ -522,6 +546,7 @@ export function Charaktererstellung({
             assistentWerte={assistentWerte}
             attributKategorien={regeln.attributKategorien}
             zusatzfertigkeiten={zusatzfertigkeiten}
+            gratisZf={gratisZf}
             zusatzfertigkeitPaketPunkte={zusatzfertigkeitPaketPunkte}
             onZusatzfertigkeitPaket={setZusatzfertigkeitPaketPunkte}
             onZusatzfertigkeitWaehlen={zusatzfertigkeitWaehlen}
@@ -948,6 +973,7 @@ function SchrittFertigkeiten({
   assistentWerte,
   attributKategorien,
   zusatzfertigkeiten,
+  gratisZf,
   zusatzfertigkeitPaketPunkte,
   onZusatzfertigkeitPaket,
   onZusatzfertigkeitWaehlen,
@@ -971,6 +997,11 @@ function SchrittFertigkeiten({
   assistentWerte: Record<string, number>;
   attributKategorien: { id: string; attribute: string[] }[];
   zusatzfertigkeiten: Zusatzfertigkeit[];
+  /** Rassen-Feature "gratisZusatzfertigkeitId" (23.10.2026, generisch für
+   * jede Rasse mit diesem Feature): wird fest mit 1 Punkt angezeigt, zählt
+   * nicht ins Fertigkeiten-Budget und steht nicht in `zusatzfertigkeiten` —
+   * siehe Kommentar an `gratisZf` im Elternkomponenten-State. */
+  gratisZf?: Zusatzfertigkeit;
   zusatzfertigkeitPaketPunkte: Record<string, number>;
   onZusatzfertigkeitPaket: (werte: Record<string, number>) => void;
   onZusatzfertigkeitWaehlen: (z: Zusatzfertigkeit) => void;
@@ -1057,6 +1088,7 @@ function SchrittFertigkeiten({
             {(gruppen.Sphäre || gruppen.NeuroWeaving) && ` ${magieBegriff(magieFlavor, "Sphären")} und NeuroWeaving zählen dabei mit.`}
             {zusatzfertigkeiten.length > 0 &&
               ` ${zusatzfertigkeiten.length} Zusatzfertigkeit${zusatzfertigkeiten.length === 1 ? "" : "en"} vorgemerkt.`}
+            {gratisZf && ` Außerdem automatisch von deiner Rasse: ${gratisZf.name} (1 Punkt, kostet nichts).`}
           </p>
 
           <button type="button" className="er-weiter" onClick={() => setAuswahlOffen(true)}>
@@ -1099,13 +1131,12 @@ function SchrittFertigkeiten({
               nimmt ihn zurück.
             </p>
 
-            <button type="button" className="er-weiter" onClick={() => setKatalogOffen(true)}>
-              Zusatzfertigkeiten
-            </button>
-
-            {/* Zusatzfertigkeiten stehen jetzt im Raster unten, direkt nach
-                der Fertigkeit-Gruppe (05.10.2026, Mark: zwischen Fertigkeiten
-                und Hexkraft/Glauben/NeuroWeaving, nicht ganz oben). */}
+            {/* Zusatzfertigkeiten-Button steht jetzt ganz unten, nach dem
+                Fertigkeiten-Raster (23.10.2026, Mark: "nur optional, nicht
+                als wären die das Wichtigste" — oben direkt nach diesem
+                Hinweis wirkte er wie der wichtigste Schritt). Das Raster
+                selbst bleibt an seinem Platz zwischen Fertigkeiten und
+                Hexkraft/Glauben/NeuroWeaving (05.10.2026, Mark). */}
 
             {/* Hexkraft/NeuroWeavingWert (Sockel) müssen direkt über ihrer
                 zugehörigen Gruppe stehen (Glauben/Hexkraft über Sphären,
@@ -1187,19 +1218,56 @@ function SchrittFertigkeiten({
               // und Hexkraft/Glauben/NeuroWeaving — direkt nach der
               // Fertigkeit-Gruppe, noch vor dem Magie-Sockel/Sphären/
               // NeuroWeaving-Block der nächsten Iteration.
-              if (kategorie === "Fertigkeit" && zusatzfertigkeiten.length > 0) {
+              if (kategorie === "Fertigkeit" && (zusatzfertigkeiten.length > 0 || gratisZf)) {
+                const anzahlGesamt = zusatzfertigkeiten.length + (gratisZf ? 1 : 0);
                 knoten.push(
                   <section key="zusatzfertigkeiten" style={{ "--cb-ton": TON.Fertigkeit } as React.CSSProperties}>
                     <h3 className="er-spalte-titel">Zusatzfertigkeiten</h3>
                     <div
                       className="er-spaltenraster"
-                      style={{ "--er-zeilen": Math.ceil(zusatzfertigkeiten.length / 3) } as React.CSSProperties}
+                      style={{ "--er-zeilen": Math.ceil(anzahlGesamt / 3) } as React.CSSProperties}
                     >
+                      {/* Rassen-Zusatzfertigkeit (23.10.2026, generisch für jede
+                          Rasse mit gratisZusatzfertigkeitId, nicht nur Vael):
+                          kommt automatisch mit 1 festen Punkt — wie der
+                          Rassen-Sockel bei Attributen oben (DotPool `fest`),
+                          nicht wegklickbar. Bewusst NICHT Teil von
+                          `zusatzfertigkeiten`/`zusatzfertigkeitPaketPunkte`:
+                          die Budget-Prüfung und das Entfernen beim erneuten
+                          Einreichen (siehe Kommentar an `gratisZf` oben)
+                          erwarten sie dort ausdrücklich nicht — der Server
+                          vergibt ihren Punkt unabhängig vom Fertigkeiten-Budget. */}
+                      {gratisZf && (
+                        <div key={gratisZf.id} className="er-wert">
+                          <span className="er-wert-name">
+                            {gratisZf.name}
+                            <ZusatzfertigkeitInfoTipp
+                              titel={gratisZf.name}
+                              kurzbeschreibung={gratisZf.kurzbeschreibung}
+                              detailbeschreibung={gratisZf.detailbeschreibung}
+                            />
+                            <span
+                              style={{ marginLeft: 6, fontSize: "0.75em", color: "var(--text-leise)" }}
+                              title="Kommt automatisch von deiner Rasse, kein Fertigkeiten-Punkt nötig"
+                            >
+                              ✦ Rasse
+                            </span>
+                          </span>
+                          <DotPool value={1} max={Math.max(1, hoechster)} fest={1} />
+                        </div>
+                      )}
                       {zusatzfertigkeiten.map((z) => {
                         const wert = zusatzfertigkeitPaketPunkte[z.id] || 0;
                         return (
                           <div key={z.id} className="er-wert">
-                            <span className="er-wert-name">{z.name}</span>
+                            <span className="er-wert-name">
+                              {z.name}
+                              <ZusatzfertigkeitInfoTipp
+                                titel={z.name}
+                                kurzbeschreibung={z.kurzbeschreibung}
+                                detailbeschreibung={z.detailbeschreibung}
+                              />
+                            </span>
                             <DotPool
                               value={wert}
                               max={hoechster}
@@ -1218,6 +1286,13 @@ function SchrittFertigkeiten({
               }
               return knoten;
             })}
+
+            {/* Zusatzfertigkeiten-Button (23.10.2026, Mark: ganz nach unten,
+                nicht mehr direkt unter dem Hinweistext oben — sie sind
+                optional, sollen nicht wie der wichtigste Schritt wirken). */}
+            <button type="button" className="er-weiter" onClick={() => setKatalogOffen(true)}>
+              Zusatzfertigkeiten
+            </button>
 
             <Fenster
               offen={katalogOffen}

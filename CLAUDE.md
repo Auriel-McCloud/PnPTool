@@ -1297,7 +1297,28 @@ zuerst `docs/wiki/index.md` prüfen, siehe oben).
    (gefunden 10.10.2026, vorbestehend, siehe `docs/ENTWICKLUNGSHISTORIE.md`
    Stolperstein 13 für die volle Herleitung) — `asyncio.run()` pro Test +
    Modul-Singleton-Treiber. Ein Fehlschlag im vollen Lauf dieser Datei ist
-   kein neuer Bug, Test isoliert laufen lassen.
+   kein neuer Bug, Test isoliert laufen lassen. Dasselbe Muster auch in
+   `tests/test_tutorial_shop_rassen_features.py` (23.10.2026 bestätigt).
+9. **Rassen-Feature-Felder haben ZWEI Durchreich-Stellen, nicht nur eine**
+   (23.10.2026, Mark: Vael/Mimikry — Fähigkeit liess sich zwar auswählen,
+   aber nie automatisch mit 1 Punkt). `_rassen_der_kampagne` (routes.py)
+   reichte `gratisZusatzfertigkeitId` schon korrekt durch (Stolperstein 5
+   war dafür schon mal gefixt), aber `erstellung.regelwerk()` — die Funktion
+   hinter dem öffentlichen `/erstellung/regeln`, das die Charaktererstellung
+   im Frontend lädt — baute die `rassen`-Liste selbst nochmal zusammen und
+   liess das Feld dabei unter den Tisch fallen. Jedes neue `gratis*`/Rassen-
+   Feature-Feld muss an BEIDEN Stellen eingetragen werden:
+   `routes.py::_rassen_der_kampagne` UND `erstellung.py::regelwerk()`
+   (rassen-Liste) — plus dem Frontend-`Rasse`-Interface in `bogenApi.ts`
+   (ein zweites, zum GM-Baukasten paralleles Interface in `rassen/api.ts`
+   existiert, aber nur `bogenApi.ts` zählt für die Erstellung). Die
+   automatische 1-Punkt-Vergabe selbst sitzt unverändert serverseitig in
+   `routes.py::erstelle_charakter` — bewusst GETRENNT von
+   `zusatzfertigkeitPunkte`/dem Fertigkeiten-Budget, siehe Kommentare dort
+   und an `gratisZf` in `Charaktererstellung.tsx`. Frontend zeigt das
+   Rassen-Geschenk jetzt als eigene, nicht wegklickbare Zeile mit
+   `DotPool fest={1}` im Zusatzfertigkeiten-Raster, komplett unabhängig vom
+   normalen Auswahl-Popup/Budget.
 
 ## Git-Workflow
 
