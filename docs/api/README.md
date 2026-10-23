@@ -34,6 +34,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Party](./party.md) | Gruppen, Mitgliedschaft, Aufenthaltsort, aktive Party | |
 | [Wiki](./wiki.md) | Weltenbau, Freigabesystem | |
 | [Entitäten](./entitaeten.md) | Orte, Gegenstände, Fraktionen | |
+| [Kampagnen-Bündel](./buendel.md) | Export/Import wiederverwendbarer Welt-Inhalte zwischen Kampagnen, stammtVonId-Abgleich | |
 | [Shop](./haendler.md) | Händler-NPCs, Sortiment (explizit + automatisch), Kauf mit Guthabenprüfung | |
 | [Verhandlungen](./verhandlung.md) | Angebot → Annehmen/Ablehnen (Reparatur, Shop-Kauf, Gegenstands-Weitergabe) | ⭐ |
 | [KI](./ki.md) | Ideenschmiede-Generierung, Wiki-Rechtschreib-/Grammatik-/Logikprüfung | |
