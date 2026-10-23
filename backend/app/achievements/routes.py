@@ -74,11 +74,12 @@ async def aendern(campaign_id: str, achievement_id: str, body: AchievementUpdate
 
 @router.delete("/{achievement_id}", dependencies=[Depends(require_campaign_gm)])
 async def loeschen(campaign_id: str, achievement_id: str):
+    """Papierkorb-Prinzip (23.10.2026, siehe repository.loeschen) — die
+    Definition bleibt erhalten (bestehende Verleihungen finden sie weiter),
+    verschwindet nur aus dem SL-Katalog. Anders als vorher gibt es dafür
+    keinen Sonderfall mehr für bereits verliehene Achievements."""
     if not await repository.loeschen(campaign_id, achievement_id):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Nicht gefunden oder bereits verliehen — bereits vergebene Achievements bleiben erhalten.",
-        )
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Achievement nicht gefunden")
     return {"ok": True}
 
 

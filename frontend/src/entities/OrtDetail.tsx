@@ -338,7 +338,7 @@ export function OrtDetail({
       {loeschenOffen && (
         <Bestaetigung
           titel="Ort löschen?"
-          text={`„${ort.name}“ wird endgültig entfernt, samt aller ${zeilen.length} Verbindungen. Das lässt sich nicht rückgängig machen.`}
+          text={`„${ort.name}“ wandert in den Papierkorb, samt aller ${zeilen.length} Verbindungen.`}
           jaText="Ja, löschen"
           neinText="Abbrechen"
           onJa={loeschen}

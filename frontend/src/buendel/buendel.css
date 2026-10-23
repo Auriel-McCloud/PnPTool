@@ -1,0 +1,219 @@
+/* Bündel-Export (Phase 1). Bewusst schlicht gehalten — gleiche Bausteine
+   (Klassen-Präfix, Spacing) wie ideenschmiede.css, keine neue Formsprache. */
+
+.buendel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.bu-header h2 {
+  margin: 0 0 4px;
+}
+
+.bu-beschreibung {
+  margin: 0;
+  color: var(--text-leise);
+}
+
+.bu-zaehler {
+  margin: 8px 0 0;
+  font-weight: 600;
+  color: var(--bereich-buendel);
+}
+
+.bu-gruppen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bu-gruppe {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  background: var(--flaeche);
+}
+
+.bu-gruppe > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  font-weight: 600;
+}
+
+.bu-gruppe > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bu-gruppe-symbol {
+  color: var(--bereich-buendel);
+}
+
+.bu-gruppe-anzahl {
+  color: var(--text-leise);
+  font-weight: 400;
+}
+
+.bu-gruppe-leer {
+  color: var(--text-leise);
+  margin: 8px 0 0;
+}
+
+.bu-gruppe-aktionen {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.bu-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.bu-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.bu-eintrag label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.bu-auto-badge {
+  font-size: 11px;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 1px 6px;
+}
+
+.bu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--linie);
+  padding-top: 16px;
+}
+
+.bu-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bu-export-btn {
+  align-self: flex-start;
+}
+
+.bu-leer {
+  padding: 24px;
+  color: var(--text-leise);
+  text-align: center;
+}
+
+.bu-fehler {
+  color: var(--signal);
+}
+
+.bu-erfolg {
+  color: var(--gut);
+}
+
+.bu-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.bu-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--text-leise);
+  font-weight: 600;
+}
+
+.bu-tab-aktiv {
+  color: var(--bereich-buendel);
+  border-bottom-color: var(--bereich-buendel);
+}
+
+.bu-fieldset {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bu-fieldset legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.bu-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.bu-hinweis {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.bu-ergebnis {
+  border-top: 1px solid var(--linie);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bu-ergebnis-zaehler {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bu-ergebnis-zaehler strong {
+  color: var(--bereich-buendel);
+  font-size: 18px;
+}
+
+.bu-ergebnis-tabelle {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.bu-ergebnis-tabelle th,
+.bu-ergebnis-tabelle td {
+  border: 1px solid var(--linie);
+  padding: 4px 8px;
+  text-align: left;
+}

@@ -307,9 +307,13 @@ async def create_node(label: str, fields: list[str], campaign_id: str, data: dic
     driver = get_driver()
     node_id = str(uuid.uuid4())
     props = ", ".join(f"{f}: ${f}" for f in fields)
+    # stammtVonId (Kampagnen-Bündel, 23.10.2026): stabile Herkunfts-Kennung,
+    # getrennt von `id` (die bei einem künftigen Bündel-Import neu vergeben
+    # wird, siehe app/campaigns/buendel_export.py) — einfach die eigene id
+    # beim Anlegen mitkopieren, keine bedingte "nur wenn exportiert"-Logik.
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})
-        CREATE (n:{label} {{id: $node_id, campaignId: $campaign_id, {props}}})
+        CREATE (n:{label} {{id: $node_id, campaignId: $campaign_id, stammtVonId: $node_id, {props}}})
         CREATE (c)-[:HAT_ENTITAET]->(n)
         RETURN {_return_clause('n', fields)}
     """
@@ -321,7 +325,14 @@ async def create_node(label: str, fields: list[str], campaign_id: str, data: dic
 
 async def list_nodes(label: str, fields: list[str], campaign_id: str, order_field: str = "name") -> list[dict]:
     driver = get_driver()
-    query = f"MATCH (n:{label} {{campaignId: $campaign_id}}) RETURN {_return_clause('n', fields)} ORDER BY n.{order_field}"
+    # Papierkorb (23.10.2026, Kampagnen-Bündel-Retrofit): geloescht=true
+    # verhält sich wie "nicht gefunden" — dieselbe `coalesce(..., false)`-
+    # Konvention wie bei Gegenstand.weggeworfen/AchievementVerleihung.geloescht.
+    query = f"""
+        MATCH (n:{label} {{campaignId: $campaign_id}})
+        WHERE NOT coalesce(n.geloescht, false)
+        RETURN {_return_clause('n', fields)} ORDER BY n.{order_field}
+    """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
         return [_mit_defaults(record) async for record in result]
@@ -329,7 +340,11 @@ async def list_nodes(label: str, fields: list[str], campaign_id: str, order_fiel
 
 async def get_node(label: str, fields: list[str], campaign_id: str, node_id: str) -> dict | None:
     driver = get_driver()
-    query = f"MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}}) RETURN {_return_clause('n', fields)}"
+    query = f"""
+        MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}})
+        WHERE NOT coalesce(n.geloescht, false)
+        RETURN {_return_clause('n', fields)}
+    """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
         record = await result.single()
@@ -367,14 +382,58 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
 
 
 async def delete_node(label: str, campaign_id: str, node_id: str) -> bool:
+    """Papierkorb-Prinzip (Retrofit 23.10.2026, Kampagnen-Bündel-Feature):
+    setzt `geloescht` statt den Knoten zu entfernen — vorher hartes
+    DETACH DELETE. Besessene Gegenstände (nur bei Person relevant; die
+    OPTIONAL-MATCH-BESITZT-Kante ist für Ort/Event/Fraktion/Gewaechs ein
+    No-op, siehe Kommentar unten) wandern in denselben Mülleimer wie ein
+    manuell weggeworfenes Stück (`items/repository.py::wegwerfen`), statt
+    verwaist am gelöschten Knoten zu hängen oder unwiderruflich zu
+    verschwinden — beides bleibt über die bestehenden Wege rückholbar.
+
+    PC-Ausnahme (per Browser-Verifikation am 23.10.2026 gefunden): `Person`
+    deckt sowohl NPCs (eines der 9 Bündel-Ziele) als auch PCs ab — PCs sind
+    laut Aufgabenstellung bewusst NICHT im Bündel-Scope. Spieler-PCs
+    behalten deshalb hier das alte harte `DETACH DELETE`: ein hartes Löschen
+    hat bisher implizit auch die `(:Spieler)-[:SPIELT]->(:Person)`-Bindung
+    mitgerissen, wonach `players/repository.py`s
+    `OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)` ins Leere griff und der
+    Spieler wieder im Ersteinstieg landete. Ein Umstieg auf reines
+    `geloescht`-Setzen hätte diese Kante stehen gelassen und den Spieler
+    scheinbar weiter an seinen (jetzt im Papierkorb liegenden) alten
+    Charakter gebunden — ein Verhaltensbruch außerhalb des Bündel-Scopes.
+    Statt das separat zu patchen, bleibt die PC-Löschung unverändert beim
+    bewährten harten Pfad; nur NPCs (und die anderen 8 Bündel-Typen)
+    bekommen das neue Papierkorb-Verhalten.
+    """
     driver = get_driver()
-    # OPTIONAL MATCH auf BESITZT ist ein No-op für Ort/Event (haben nie ausgehende
-    # BESITZT-Kanten), räumt aber bei Person auch die Gegenstände mit weg statt
-    # sie als verwaiste Knoten zurückzulassen.
+    if label == "Person":
+        async with driver.session() as session:
+            result = await session.run(
+                f"MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}}) RETURN n.personType AS personType",
+                campaign_id=campaign_id, node_id=node_id,
+            )
+            record = await result.single()
+            person_type = record["personType"] if record else None
+        if person_type == "PC":
+            query = f"""
+                MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}})
+                WITH n, count(n) AS deleted
+                DETACH DELETE n
+                RETURN deleted
+            """
+            async with driver.session() as session:
+                result = await session.run(query, campaign_id=campaign_id, node_id=node_id)
+                record = await result.single()
+                return dict(record)["deleted"] > 0
+
     query = f"""
         MATCH (n:{label} {{id: $node_id, campaignId: $campaign_id}})
-        OPTIONAL MATCH (n)-[:BESITZT]->(owned)
-        DETACH DELETE n, owned
+        WHERE NOT coalesce(n.geloescht, false)
+        OPTIONAL MATCH (n)-[:BESITZT]->(owned:Gegenstand)
+        WITH n, [o IN collect(owned) WHERE o IS NOT NULL AND NOT coalesce(o.weggeworfen, false)] AS betroffen
+        SET n.geloescht = true
+        FOREACH (o IN betroffen | SET o.weggeworfen = true, o.weggeworfenVon = coalesce(n.name, ''))
         RETURN count(n) AS deleted
     """
     async with driver.session() as session:

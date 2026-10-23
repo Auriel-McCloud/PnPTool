@@ -42,6 +42,7 @@ import { VollbildKnopf } from "./shell/VollbildKnopf";
 import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
 import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
 import { RastenVerwaltung } from "./traits/RastenVerwaltung";
+import { BuendelAnsicht } from "./buendel/BuendelAnsicht";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -109,6 +110,9 @@ const BEREICHE: Bereich[] = [
   { id: "hintergruende", name: "Hintergründe", symbol: "◈", farbe: "var(--bereich-regeln)" },
   // Ideenschmiede: Entwürfe und KI-generierte Ideen sammeln, prüfen, verschieben
   { id: "ideenschmiede", name: "Schmiede", symbol: "🔧", farbe: "var(--bereich-schmiede)" },
+  // Bündel-Export (23.10.2026, Phase 1): wiederverwendbare Welt-Inhalte als
+  // ZIP für andere Runden teilen (siehe backend/app/campaigns/buendel_export.py).
+  { id: "buendel", name: "Bündel", symbol: "🎁", farbe: "var(--bereich-buendel)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -130,6 +134,7 @@ const TITEL: Record<string, string> = {
   zusatzfertigkeiten: "Zusatzfertigkeiten: Katalog optionaler Fertigkeiten",
   hintergruende: "Hintergründe: narrativer Katalog",
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
+  buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -380,6 +385,9 @@ function Dashboard() {
 
           {/* Ideenschmiede: Entwürfe und KI-Ideen sammeln, prüfen, verschieben. */}
           {bereich === "ideenschmiede" && <IdeenschmiedeAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
+
+          {/* Bündel-Export (Phase 1): wiederverwendbare Welt-Inhalte als ZIP teilen. */}
+          {bereich === "buendel" && <BuendelAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

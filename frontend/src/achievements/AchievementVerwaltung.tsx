@@ -269,7 +269,7 @@ function AchievementEditor({
       await onGeaendert();
     } catch (e) {
       setLoeschenOffen(false);
-      setFehler((e as Error).message || "Löschen nicht möglich — vermutlich schon verliehen.");
+      setFehler((e as Error).message || "Löschen hat nicht geklappt.");
     }
   }
 
@@ -405,7 +405,7 @@ function AchievementEditor({
       {loeschenOffen && (
         <Bestaetigung
           titel={`${achievement.name} löschen?`}
-          text="Bereits vergebene Achievements lassen sich nicht löschen — nur Definitionen ohne Verleihung."
+          text="Wandert in den Papierkorb und verschwindet aus dem Katalog. Bereits vergebene Auszeichnungen bei Charakteren bleiben erhalten."
           jaText="Löschen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}

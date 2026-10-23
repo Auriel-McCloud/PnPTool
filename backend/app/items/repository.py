@@ -205,7 +205,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
     item_id = str(uuid.uuid4())
     create_clause = """
         CREATE (g:Gegenstand {
-            id: $item_id, campaignId: $campaign_id, name: $name, description: $description, notes: $notes,
+            id: $item_id, campaignId: $campaign_id, stammtVonId: $item_id, name: $name, description: $description, notes: $notes,
             typ: $typ, preis: $preis, kraft: $kraft, cyberwall: $cyberwall, eigenschaften: $eigenschaften,
             storyRelevant: $storyRelevant, einzigartig: $einzigartig, hatMenge: $hatMenge, menge: $menge,
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
