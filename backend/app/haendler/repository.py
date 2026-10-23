@@ -16,6 +16,8 @@ verfügbar. Zeigt sie auf ein **einzigartiges Stück**, ist sie nach dem ersten
 Kauf weg.
 """
 
+import json
+
 from app.db.neo4j_driver import get_driver
 
 import uuid
@@ -236,16 +238,103 @@ async def shop_id_von_gesicht(campaign_id: str, person_id: str) -> str | None:
 
 # --- Sortiment --------------------------------------------------------------
 
-_EXPLIZIT_FELDER = """
-    g.id AS gegenstandId, g.name AS name, g.bildUrl AS bildUrl, g.typ AS typ,
-    r.preis AS preis, g.istVorlage AS istVorlage,
-    coalesce(r.rabattProzent, 0) AS rabattProzent, coalesce(r.rabattHinweis, '') AS rabattHinweis
+# Steckbrief für die Ladenansicht. coalesce, weil Bestands-Gegenstände die
+# Properties nicht haben — ein nacktes null lässt die Pydantic-Antwort mit
+# 500 platzen (Stolperstein 9). Maps bleiben roh und werden in Python dekodiert.
+_STECKBRIEF_FELDER = """
+    coalesce(g.seltenheit, 1) AS seltenheit,
+    coalesce(g.kraft, 0) AS kraft,
+    coalesce(g.schaden, 0) AS schaden,
+    coalesce(g.schadenArt, '') AS schadenArt,
+    coalesce(g.istWaffe, false) AS istWaffe,
+    coalesce(g.ruestungReduktionBasis, 0) AS ruestungReduktionBasis,
+    coalesce(g.ruestungKaestchenAktuell, 0) AS ruestungKaestchenAktuell,
+    coalesce(g.ruestungKaestchenMax, 0) AS ruestungKaestchenMax,
+    coalesce(g.wVerlust, 0) AS wVerlust,
+    coalesce(g.initiativeBonus, 0) AS initiativeBonus,
+    coalesce(g.zusatzaktionen, 0) AS zusatzaktionen,
+    g.traitBoni AS traitBoni,
+    g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
+    coalesce(g.stufe, 0) AS stufe,
+    coalesce(g.riggerBonus, 0) AS riggerBonus,
+    coalesce(g.maxDrohnen, 0) AS maxDrohnen,
+    coalesce(g.cyberwall, 0) AS cyberwall,
+    coalesce(g.deckBruteForce, 0) AS deckBruteForce,
+    coalesce(g.deckSchleichen, 0) AS deckSchleichen,
+    coalesce(g.deckDaten, 0) AS deckDaten,
+    coalesce(g.deckKompilieren, 0) AS deckKompilieren,
+    coalesce(g.deckElectronicWarfare, 0) AS deckElectronicWarfare,
+    coalesce(g.deckMatrixNavigation, 0) AS deckMatrixNavigation,
+    coalesce(g.istBehaelter, false) AS istBehaelter,
+    coalesce(g.kapazitaet, 0) AS kapazitaet
 """
 
-_AUTOMATISCH_FELDER = """
+_EXPLIZIT_FELDER = f"""
     g.id AS gegenstandId, g.name AS name, g.bildUrl AS bildUrl, g.typ AS typ,
-    g.preis AS preis, g.istVorlage AS istVorlage
+    r.preis AS preis, g.istVorlage AS istVorlage,
+    coalesce(r.rabattProzent, 0) AS rabattProzent, coalesce(r.rabattHinweis, '') AS rabattHinweis,
+    {_STECKBRIEF_FELDER}
 """
+
+_AUTOMATISCH_FELDER = f"""
+    g.id AS gegenstandId, g.name AS name, g.bildUrl AS bildUrl, g.typ AS typ,
+    g.preis AS preis, g.istVorlage AS istVorlage,
+    {_STECKBRIEF_FELDER}
+"""
+
+
+def _json_map(roh) -> dict:
+    """traitBoni/ausruestungsfertigkeiten liegen als JSON-String am Knoten."""
+    if isinstance(roh, dict):
+        quelle = roh
+    elif not roh:
+        return {}
+    else:
+        try:
+            quelle = json.loads(roh)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    if not isinstance(quelle, dict):
+        return {}
+    ergebnis = {}
+    for name, wert in quelle.items():
+        if isinstance(wert, bool) or not isinstance(wert, (int, float)):
+            continue
+        ergebnis[str(name)] = int(wert)
+    return ergebnis
+
+
+def _steckbrief_normalisieren(eintrag: dict) -> None:
+    """Null und JSON-Strings in die Form bringen, die SortimentEintrag erwartet."""
+    eintrag["traitBoni"] = _json_map(eintrag.get("traitBoni"))
+    eintrag["ausruestungsfertigkeiten"] = _json_map(eintrag.get("ausruestungsfertigkeiten"))
+    eintrag["schadenArt"] = eintrag.get("schadenArt") or ""
+    eintrag["istWaffe"] = bool(eintrag.get("istWaffe"))
+    eintrag["istBehaelter"] = bool(eintrag.get("istBehaelter"))
+    eintrag["kapazitaet"] = float(eintrag.get("kapazitaet") or 0)
+    eintrag["seltenheit"] = int(eintrag.get("seltenheit") or 1)
+    for feld in (
+        "kraft",
+        "schaden",
+        "ruestungReduktionBasis",
+        "ruestungKaestchenAktuell",
+        "ruestungKaestchenMax",
+        "wVerlust",
+        "initiativeBonus",
+        "zusatzaktionen",
+        "stufe",
+        "riggerBonus",
+        "maxDrohnen",
+        "cyberwall",
+        "deckBruteForce",
+        "deckSchleichen",
+        "deckDaten",
+        "deckKompilieren",
+        "deckElectronicWarfare",
+        "deckMatrixNavigation",
+    ):
+        wert = eintrag.get(feld)
+        eintrag[feld] = int(wert) if wert is not None else 0
 
 
 async def sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
@@ -293,6 +382,7 @@ async def sortiment(campaign_id: str, haendler_id: str) -> list[dict]:
     for e in ergebnis:
         e["bildUrl"] = e.get("bildUrl") or ""
         e["preis"] = e.get("preis") or 0
+        _steckbrief_normalisieren(e)
     return ergebnis
 
 

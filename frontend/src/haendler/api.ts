@@ -15,6 +15,33 @@ export interface SortimentEintrag {
    * durchgestrichen + Rabattzeile). */
   rabattProzent: number;
   rabattHinweis: string;
+  /** Steckbrief, damit der Tutorial-Shop die Werte zeigen kann, ohne den
+   * Gegenstand extra zu laden. */
+  seltenheit: number;
+  kraft: number;
+  schaden: number;
+  schadenArt: string;
+  istWaffe: boolean;
+  ruestungReduktionBasis: number;
+  ruestungKaestchenAktuell: number;
+  ruestungKaestchenMax: number;
+  wVerlust: number;
+  initiativeBonus: number;
+  zusatzaktionen: number;
+  traitBoni: Record<string, number>;
+  ausruestungsfertigkeiten: Record<string, number>;
+  stufe: number;
+  riggerBonus: number;
+  maxDrohnen: number;
+  cyberwall: number;
+  deckBruteForce: number;
+  deckSchleichen: number;
+  deckDaten: number;
+  deckKompilieren: number;
+  deckElectronicWarfare: number;
+  deckMatrixNavigation: number;
+  istBehaelter: boolean;
+  kapazitaet: number;
 }
 
 export interface HaendlerGesicht {

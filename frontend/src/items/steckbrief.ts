@@ -1,4 +1,3 @@
-import type { Gegenstand } from "./api";
 import { schadenArtFuerWaffe, schadenArtLabel } from "./api";
 
 /**
@@ -13,7 +12,132 @@ import { schadenArtFuerWaffe, schadenArtLabel } from "./api";
 const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
 const FAHRZEUG_TYPEN = new Set(["Fahrzeug", "Drohne"]);
 
-export function steckbriefKurz(item: Gegenstand): string[] {
+/** Nur die Felder, die der Steckbrief wirklich liest — das Sortiment trägt
+ * genau die, nicht den ganzen Gegenstand. */
+export type SteckbriefQuelle = {
+  typ: string;
+  kraft: number;
+  schaden: number;
+  schadenArt: string;
+  istWaffe: boolean;
+  ruestungReduktionBasis: number;
+  ruestungKaestchenAktuell: number;
+  ruestungKaestchenMax: number;
+  wVerlust: number;
+  initiativeBonus: number;
+  zusatzaktionen: number;
+  traitBoni?: Record<string, number>;
+  ausruestungsfertigkeiten?: Record<string, number>;
+  stufe: number;
+  riggerBonus: number;
+  maxDrohnen: number;
+  cyberwall: number;
+  deckBruteForce: number;
+  deckSchleichen: number;
+  deckDaten: number;
+  deckKompilieren: number;
+  deckElectronicWarfare: number;
+  deckMatrixNavigation: number;
+  istBehaelter: boolean;
+  kapazitaet: number;
+};
+
+export type SteckbriefZeile = { label: string; wert: string };
+
+/**
+ * Lesbare Wertezeilen — Label links, Zahl rechts. Dieselbe Auswahl wie
+ * `steckbriefKurz`, nur getrennt, damit die Zahl nicht in einer 11px-Zeile
+ * untergeht.
+ */
+export function steckbriefZeilen(item: SteckbriefQuelle): SteckbriefZeile[] {
+  const zeilen: SteckbriefZeile[] = [];
+
+  if (item.typ === "Rüstung") {
+    zeilen.push({ label: "Reduktion", wert: String(item.ruestungReduktionBasis) });
+    zeilen.push({
+      label: "Kästchen",
+      wert: `${item.ruestungKaestchenAktuell}/${item.ruestungKaestchenMax}`,
+    });
+  } else if (item.typ === "Waffe") {
+    if (item.kraft > 0) zeilen.push({ label: "Schaden", wert: String(item.kraft) });
+    zeilen.push({
+      label: "Schadensart",
+      wert: schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)) || "Tödlich",
+    });
+  }
+
+  if (item.typ !== "Waffe" && item.istWaffe) {
+    if (item.schaden > 0) zeilen.push({ label: "Schaden", wert: String(item.schaden) });
+    zeilen.push({
+      label: "Schadensart",
+      wert: schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)) || "Tödlich",
+    });
+  }
+
+  if (CHROM_TYPEN.has(item.typ) && item.wVerlust > 0) {
+    zeilen.push({ label: "Willenskraft", wert: `−${item.wVerlust.toLocaleString("de-AT")}` });
+  }
+
+  if (item.initiativeBonus !== 0) {
+    zeilen.push({
+      label: "Initiative",
+      wert: `${item.initiativeBonus > 0 ? "+" : ""}${item.initiativeBonus}`,
+    });
+  }
+
+  if (item.zusatzaktionen !== 0) {
+    zeilen.push({
+      label: "Zusatzaktion",
+      wert: item.zusatzaktionen === -1 ? "jede Runde" : `${item.zusatzaktionen}×/Kampf`,
+    });
+  }
+
+  for (const [name, wert] of Object.entries(item.traitBoni ?? {})) {
+    zeilen.push({ label: name, wert: `+${wert}` });
+  }
+  for (const [name, wert] of Object.entries(item.ausruestungsfertigkeiten ?? {})) {
+    zeilen.push({ label: name, wert: String(wert) });
+  }
+
+  if (FAHRZEUG_TYPEN.has(item.typ) && item.stufe > 0) {
+    zeilen.push({ label: "Stufe", wert: String(item.stufe) });
+  }
+
+  if (item.typ === "Riggerkonsole") {
+    zeilen.push({
+      label: "Rigger",
+      wert: `${item.riggerBonus >= 0 ? "+" : ""}${item.riggerBonus}`,
+    });
+    zeilen.push({ label: "Drohnen", wert: String(item.maxDrohnen) });
+  }
+
+  if (item.typ === "Commlink" && item.cyberwall > 0) {
+    zeilen.push({ label: "I.C.E.", wert: String(item.cyberwall) });
+  }
+
+  if (item.typ === "Cyberdeck") {
+    const werte: [string, number][] = (
+      [
+        ["Brute Force", item.deckBruteForce],
+        ["Schleichen", item.deckSchleichen],
+        ["Daten", item.deckDaten],
+        ["Kompilieren", item.deckKompilieren],
+        ["Electronic Warfare", item.deckElectronicWarfare],
+        ["Matrix-Navigation", item.deckMatrixNavigation],
+      ] as [string, number][]
+    ).filter(([, w]) => w > 0);
+    for (const [name, wert] of werte) zeilen.push({ label: name, wert: String(wert) });
+    if (item.cyberwall > 0) zeilen.push({ label: "Cyberwall", wert: `+${item.cyberwall}` });
+  }
+
+  if (item.istBehaelter && item.kapazitaet > 0) {
+    zeilen.push({ label: "Fasst", wert: `${item.kapazitaet} kg` });
+  }
+
+  return zeilen;
+}
+
+export function steckbriefKurz(item: SteckbriefQuelle): string[] {
   const teile: string[] = [];
 
   if (item.typ === "Rüstung") {
