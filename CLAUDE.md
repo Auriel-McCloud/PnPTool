@@ -37,19 +37,34 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   `test_spezialisierungen.py` — isoliert alle grün, keine Regression).
   Geister wurde inhaltlich auf **Schattenwelten** umgestellt (Totenreich,
   Götterreich — „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr).
-  **Noch offen:**
-  - **Sphären-Spezialisierung selbst ist NICHT gebaut** — nur die 6-Punkte-
-    Skala steht. `spezialisierungen/repository.py`s `FERTIGKEIT_KATEGORIEN`
-    schließt „Sphäre" weiterhin aus. Geplant: Spezialisierungs-Slot bei
-    Stufe 6 = die Stufe-6-Fähigkeit selbst, als Freitext (kein Würfelbonus,
-    Sphären werden nie gewürfelt). Datenmodell dafür noch nicht im Detail
-    besprochen.
-  - Mark wollte sein **Schattenwelten-Konzept** (Totenreich/Götterreich/
-    Regeln dafür) separat niederschreiben — Stufe 5/6 bei Geister sind bis
-    dahin ein erster Entwurf, keine Endfassung.
-  - Browser-/Spieltisch-verifiziert: **nein**, nur Backend-seitig geprüft.
-  **Nicht von selbst an der Spezialisierung weiterbauen, erst wenn das
-  Datenmodell mit Mark besprochen ist.**
+
+- **Sphären-Spezialisierung gebaut** (23.10.2026, direkt im Anschluss an die
+  6-Punkte-Erweiterung, Mark: „bau das, automatisch auf 2/4/6, für 4 EP
+  kaufbar"): eigene Schwellen statt der Fertigkeiten-Schwellen 4/6 — DREI
+  Auto-Grant-Slots bei 2/4/6. `spezialisierungen/repository.py` bekam
+  `SPHAERE_KATEGORIEN`/`SPHAERE_SCHWELLEN`/`ALLE_SPEZIALISIERUNGS_
+  KATEGORIEN`/`schwellen_fuer()`; `automatische_slot_anzahl()` nimmt jetzt
+  ein Schwellen-Tupel als Parameter statt es fest zu verdrahten. Der
+  Auto-Grant-Hook in `traits/repository.py`, die Kauf-Route (4 EP, gleicher
+  Preis wie bei Fertigkeiten) und die Vorschläge-Route in `traits/routes.py`
+  kennen jetzt alle `Sphäre` als gültige Kategorie — min. Kauf-Rating ist
+  die jeweils erste Schwelle (2 bei Sphären, 4 sonst). Kein Würfelpool-Chip
+  (Sphären werden nie gewürfelt) — der Slot ist reiner Freitext, bewusst wie
+  bei Fertigkeiten. `TRAIT_VORSCHLAEGE` um Chip-Vorschläge für alle 9
+  Sphären ergänzt (aus den „Empfohlene Spezialitäten" der Master-Docs).
+  Frontend: `Charakterblatt.tsx` zeigt den Spezialisierungs-Badge jetzt auch
+  bei Sphären (Schwelle 2 statt 4), `SpezialisierungPopup.tsx` rechnet die
+  Mindest-Rating-Schwelle kategorieabhängig und zeigt bei Häretiker-
+  Charakteren den Götternamen im Titel (`magieBegriff`) statt des internen
+  Magier-Namens, `ZusatzfertigkeitenVerwaltung.tsx`-Tab „Spezialisierungs-
+  Vorschläge" verwaltet jetzt auch Sphären. Zwei Tests, die die alte
+  Ausschluss-Regel geprüft hatten, umgedreht (`test_sphaere_bekommt_
+  slots_bei_zwei_vier_sechs`, `test_set_trait_vorschlaege_route_erlaubt_
+  sphaere`), plus neue Tests für `schwellen_fuer`/die Sphären-Schwellen.
+  **Verifiziert:** `tsc -b` sauber, Backend-Tests isoliert grün (derselbe
+  bekannte Windows-Multi-Test-Flake wie überall sonst). **Nie am Spieltisch/
+  Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
+  diesem Eintrag.
 
 - **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
   Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
