@@ -1,6 +1,8 @@
 import cytoscape from "cytoscape";
 import { useEffect, useRef, useState } from "react";
+import type { EntityKind } from "../entities/api";
 import { getGraph } from "./api";
+import { GraphOeffnen, type GraphZiel } from "./GraphOeffnen";
 import { tokens } from "../theme/theme";
 
 const KIND_SHAPE: Record<string, string> = {
@@ -97,6 +99,18 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
   const [depth, setDepth] = useState(2);
   const [isEmpty, setIsEmpty] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ziel, setZiel] = useState<GraphZiel | null>(null);
+  const [oeffnet, setOeffnet] = useState(false);
+  // Hochzählen schließt das Fenster und zeichnet den Graphen neu — Labels
+  // und Kantenfarben sollen den Stand zeigen, den man gerade bearbeitet hat.
+  // Nicht bei jedem Feld-Speichern: ein Layout-Sprung hinter dem offenen
+  // Fenster wäre nur Ruckeln.
+  const [graphStand, setGraphStand] = useState(0);
+  const oeffneRef = useRef<(ziel: GraphZiel) => void>(() => {});
+  oeffneRef.current = (naechstes) => {
+    setError(null);
+    setZiel(naechstes);
+  };
 
   // Create the Cytoscape instance exactly once and tear it down on unmount.
   // Driving cytoscape imperatively (instead of the react-cytoscapejs wrapper)
@@ -116,6 +130,24 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
     cy.on("tap", "node", (evt) => {
       setFocus(evt.target.data("id"));
       setFocusLabel(evt.target.data("label"));
+    });
+
+    // Rechtsklick öffnet, Linksklick zoomt. Das Browser-Menü bleibt aus —
+    // sonst liegt es über dem Fenster, das gerade aufgehen soll.
+    const oeffne = (evt: cytoscape.EventObject, naechstes: GraphZiel) => {
+      const original = evt.originalEvent;
+      if (original && "preventDefault" in original) original.preventDefault();
+      oeffneRef.current(naechstes);
+    };
+    cy.on("cxttap", "node", (evt) => {
+      oeffne(evt, {
+        art: "knoten",
+        id: evt.target.data("id"),
+        kind: evt.target.data("kind") as EntityKind,
+      });
+    });
+    cy.on("cxttap", "edge", (evt) => {
+      oeffne(evt, { art: "kante", id: evt.target.data("id") });
     });
 
     cyRef.current = cy;
@@ -169,7 +201,7 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [campaignId, focus, depth]);
+  }, [campaignId, focus, depth, graphStand]);
 
   // Themewechsel: Cytoscape zeichnet auf Canvas, ein Wechsel der CSS-Tokens
   // erreicht es also nicht von selbst. Der MutationObserver horcht auf
@@ -204,10 +236,14 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
             <button type="button" onClick={() => setFocus(null)}>
               Zurück zur Gesamtübersicht
             </button>
+            <span style={{ color: "var(--text-leise)" }}>Rechtsklick öffnet Objekt oder Kante</span>
           </>
         ) : (
-          <span>Gesamtübersicht — klick auf eine Person/Ort/Event für die Nachbarschaftsansicht</span>
+          <span>
+            Gesamtübersicht — Linksklick zoomt in die Nachbarschaft, Rechtsklick öffnet das Objekt oder die Kante
+          </span>
         )}
+        {oeffnet && <span style={{ color: "var(--text-leise)" }}>Öffne…</span>}
       </div>
 
       {error && (
@@ -218,6 +254,7 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
       {isEmpty && !error && <p>Noch keine Personen/Orte/Events angelegt.</p>}
       <div
         ref={containerRef}
+        onContextMenu={(e) => e.preventDefault()}
         style={{
           width: "100%",
           flex: 1,
@@ -246,6 +283,24 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
           textAlign: "left",
         }}
       />
+      {ziel && (
+        <GraphOeffnen
+          key={`${ziel.art}:${ziel.id}`}
+          campaignId={campaignId}
+          ziel={ziel}
+          onLadend={setOeffnet}
+          onFehler={(meldung) => {
+            setError(meldung);
+            setOeffnet(false);
+            setZiel(null);
+          }}
+          onSchliessen={() => {
+            setOeffnet(false);
+            setZiel(null);
+            setGraphStand((n) => n + 1);
+          }}
+        />
+      )}
     </div>
   );
 }

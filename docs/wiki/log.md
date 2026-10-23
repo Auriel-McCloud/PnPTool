@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-23] update | Rechtsklick im Beziehungsgraphen
+
+SL-Bereich Beziehungen: Rechtsklick auf einen Knoten öffnet das bestehende
+Detailfenster, Rechtsklick auf eine Kante `VerbindungBearbeiten`. Linksklick
+bleibt die Nachbarschaft. `tsc -b` sauber, nicht im Browser geklickt.
+Siehe CLAUDE.md 23.10.2026 und [[entities/neo4j-datenmodell]].
+
 ## [2026-10-10] update | Charakter-Bildergalerie
 
 PC- und NPC-Detail nutzen `BildGalerie` (dasselbe Muster wie Ort/Fraktion).

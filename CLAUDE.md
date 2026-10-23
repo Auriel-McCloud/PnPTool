@@ -624,6 +624,15 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.10.2026 — Rechtsklick im Beziehungsgraphen öffnet Objekt oder Kante):**
+- **Was:** Im SL-Bereich Beziehungen öffnet Rechtsklick auf einen Knoten dasselbe
+  Detailfenster wie die Liste (PC, NPC, Ort, Event, Fraktion, story-relevanter
+  Gegenstand). Rechtsklick auf eine Kante öffnet `VerbindungBearbeiten`.
+  Linksklick bleibt die Nachbarschaftsansicht. Das Browser-Menü kommt nicht.
+- **Nicht beim Tippen:** der Graph legt sich erst neu, wenn das Fenster zu ist.
+  Sonst springt das Layout hinter dem offenen Popup.
+- **Verifiziert:** `npx tsc -b` im Frontend. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (23.10.2026 — KI-Charakter wählt Ambition und Verlangen nur aus Vorlagen):**
 - **Was:** ✨-Charakter (und jeder Pfad über `_idee_anlegen`, also auch Mentor)
   durfte Ambition und Verlangen frei erfinden. Jetzt sind beide Felder ein

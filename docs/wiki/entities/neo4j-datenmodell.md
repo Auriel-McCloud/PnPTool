@@ -1,7 +1,7 @@
 ---
 title: Neo4j-Datenmodell
 created: 2026-09-18
-updated: 2026-10-10
+updated: 2026-10-23
 type: entität
 tags: [datenmodell, backend, versionsgeschichte]
 sources: [../../../backend/app/db/migrations/, ../../../CLAUDE.md, ../../api/README.md]
@@ -113,6 +113,18 @@ waren nicht korrigierbar. Seit 01.10.2026 `PATCH
 Endpunkte (von/zu) bleiben unveränderlich; wer die Beteiligten tauschen
 will, löst die Kante und legt neu an. UI: `VerbindungBearbeiten` aus
 der Beziehungsliste und dem Bereich Verbindungen.
+
+## Öffnen aus dem Beziehungsgraphen (23.10.2026)
+
+Linksklick auf einen Knoten bleibt die Nachbarschaftsansicht
+(`CampaignGraphView`, Cytoscape `tap`). Rechtsklick (`cxttap`) öffnet
+dasselbe Fenster wie die Liste: Person je nach `personType` als PC- oder
+NPC-Detail, sonst Ort/Event/Fraktion, story-relevante Gegenstände über
+`GegenstandRow`. Eine Kante öffnet `VerbindungBearbeiten` — die
+Canvas-Daten haben nur id/typ/Endpunkte, Beschreibung und Sichtbarkeit
+kommen aus der Liste `GET /verbindungen`, nicht aus dem Canvas. Der Graph zeichnet sich neu, wenn das
+Fenster zu ist, nicht bei jedem Feld-Speichern. **Nie im Browser
+angeklickt.**
 
 ## Siehe auch
 
