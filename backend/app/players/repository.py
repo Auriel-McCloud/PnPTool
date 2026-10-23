@@ -6,10 +6,12 @@ zweiten Gerät anmeldete, fand seinen Charakter belegt — von sich selbst.
 Jetzt gehört ein Charakter dauerhaft zu einem Benutzernamen.
 """
 
+import json
 import uuid
 
 import bcrypt
 
+from app.auth.menue import normalisiere_layouts
 from app.db.neo4j_driver import get_driver
 from app.players.auswahl_steckbrief import spalten_summen
 
@@ -279,3 +281,32 @@ async def delete_spieler(campaign_id: str, spieler_id: str) -> bool:
         )
         record = await result.single()
         return bool(record and record["weg"])
+
+
+async def get_menue_layouts(spieler_id: str) -> dict:
+    """PC- und Tablet-Layout des Burgermenüs. Hängt am Zugang, nicht am Charakter."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (s:Spieler {id: $spieler_id}) RETURN s.menueLayouts AS roh",
+            spieler_id=spieler_id,
+        )
+        record = await result.single()
+        return normalisiere_layouts(record["roh"] if record else None)
+
+
+async def set_menue_layouts(spieler_id: str, layouts: dict) -> dict:
+    sauber = normalisiere_layouts(json.dumps(layouts))
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (s:Spieler {id: $spieler_id})
+            SET s.menueLayouts = $roh
+            RETURN s.menueLayouts AS roh
+            """,
+            spieler_id=spieler_id,
+            roh=json.dumps(sauber, ensure_ascii=False),
+        )
+        record = await result.single()
+        return normalisiere_layouts(record["roh"] if record else None)

@@ -1,8 +1,8 @@
-"""Menü-Layouts der Spielleitung — PC und Tablet getrennt, Handy scrollt.
+"""Menü-Layouts — PC und Tablet getrennt, Handy scrollt.
 
-Gespeichert als JSON-String an GMUser.menueLayouts. Leere Ordnung heißt:
-Default-Reihenfolge aus dem Frontend. Unbekannte IDs ignoriert das Frontend,
-neue Bereiche hängen sich hinten an.
+Gespeichert als JSON-String an GMUser.menueLayouts bzw. Spieler.menueLayouts.
+Leere Ordnung heißt: Default-Reihenfolge aus dem Frontend. Unbekannte IDs
+ignoriert das Frontend, neue Bereiche hängen sich hinten an.
 """
 
 from __future__ import annotations

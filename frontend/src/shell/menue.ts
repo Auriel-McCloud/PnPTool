@@ -15,6 +15,12 @@ export const menueApi = {
   speichern: (layouts: MenueLayouts) => api.patch<MenueLayouts>("/api/auth/gm/menue", layouts),
 };
 
+/** Dieselbe Form wie beim SL, gespeichert am Spieler-Zugang. */
+export const spielerMenueApi = {
+  laden: () => api.get<MenueLayouts>("/api/spieler/menue"),
+  speichern: (layouts: MenueLayouts) => api.patch<MenueLayouts>("/api/spieler/menue", layouts),
+};
+
 export function erkenneGeraet(): Geraet {
   if (window.matchMedia("(max-width: 599px)").matches) return "handy";
   if (window.matchMedia("(pointer: coarse)").matches) return "tablet";

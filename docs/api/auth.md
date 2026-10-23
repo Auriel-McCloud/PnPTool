@@ -95,6 +95,15 @@ Layouts und scrollt die volle Liste.
 
 Gleiches JSON, speichert an `GMUser.menueLayouts`. PC und Tablet getrennt.
 
+### GET `/api/spieler/menue`
+
+Dieselbe Form für den eigenen Spieler-Zugang. **403** wenn nicht Spieler.
+Gespeichert an `Spieler.menueLayouts` — am Zugang, nicht am Charakter.
+
+### PATCH `/api/spieler/menue`
+
+Gleiches JSON. Schreibt nur das Layout des angemeldeten Zugangs.
+
 ---
 
 ### POST `/api/auth/logout`

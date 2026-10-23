@@ -756,6 +756,13 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.10.2026 — Spieler können das Burgermenü anpassen):**
+- **Was:** Unten im Spieler-Burger derselbe ☰ wie bei der SL. Ausblenden und
+  Reihenfolge, PC und Tablet getrennt. Handy scrollt die volle Liste.
+  Liegt am Zugang (`Spieler.menueLayouts`), nicht am Charakter.
+- **Verifiziert:** `pytest tests/test_spieler_menue.py` 3/3, `npx tsc -b`.
+  **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (23.10.2026 — Rechtsklick im Beziehungsgraphen öffnet Objekt oder Kante):**
 - **Was:** Im SL-Bereich Beziehungen öffnet Rechtsklick auf einen Knoten dasselbe
   Detailfenster wie die Liste (PC, NPC, Ort, Event, Fraktion, story-relevanter

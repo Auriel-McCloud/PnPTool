@@ -38,6 +38,9 @@ OHNE_GM_ERLAUBT = {
     # IDs sind 404, die Spielleitung sieht sie nicht.
     "/api/spieler/notizen",
     "/api/spieler/notizen/{notiz_id}",
+    # Eigenes Burgermenü: ausblenden und Reihenfolge, PC und Tablet getrennt.
+    # require_spieler bindet den Schreibzugriff an genau diesen Zugang.
+    "/api/spieler/menue",
     "/api/auth/gm/login",
     "/api/auth/gm/logout",
     # Kampagne anlegen hängt an require_gm, nicht an einer Kampagne

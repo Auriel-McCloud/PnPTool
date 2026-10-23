@@ -31,6 +31,15 @@ import { Fachfenster } from "../items/Fachfenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
+import { MenueAnpassen } from "../shell/MenueAnpassen";
+import {
+  erkenneGeraet,
+  LEER_LAYOUTS,
+  sichtbareBereiche,
+  spielerMenueApi,
+  type Geraet,
+  type MenueLayouts,
+} from "../shell/menue";
 import { VollbildKnopf } from "../shell/VollbildKnopf";
 import { Messenger } from "../kontakte/Messenger";
 import { kontakteApi, type Kontakt } from "../kontakte/api";
@@ -106,6 +115,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     setBereichRoh(b);
     localStorage.setItem(BEREICH_SCHLUESSEL, b);
   };
+  const [menueLayouts, setMenueLayouts] = useState<MenueLayouts>(LEER_LAYOUTS);
+  const [geraet, setGeraet] = useState<Geraet>(() => (typeof window === "undefined" ? "pc" : erkenneGeraet()));
+  const [menueOffen, setMenueOffen] = useState(false);
   // Welches Fach gerade offensteht (null = nur die Ausrüstung). Abgelöst hat
   // das die frühere Mehrfachauswahl über Reiter: was man am Körper trägt,
   // liegt offen, alles andere macht man auf — und sieht schon daran, dass
@@ -145,6 +157,16 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
+  }, []);
+
+  useEffect(() => {
+    spielerMenueApi.laden().then(setMenueLayouts).catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    const tick = () => setGeraet(erkenneGeraet());
+    window.addEventListener("resize", tick);
+    return () => window.removeEventListener("resize", tick);
   }, []);
 
   useEffect(() => {
@@ -201,6 +223,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     mitAugments.splice(wikiIdx + 1, 0, AUGMENTS_BEREICH);
     return mitAugments;
   }, [hatAugments]);
+
+  const menueBereiche = useMemo(() => {
+    const slot = geraet === "tablet" ? menueLayouts.tablet : menueLayouts.pc;
+    return sichtbareBereiche(BEREICHE, slot, geraet, bereich);
+  }, [BEREICHE, menueLayouts, geraet, bereich]);
 
   // Was anderen gehört, ist ein Reiter wie jeder andere statt eines
   // angehängten zweiten Blocks: dann gibt es genau ein Raster, das sich
@@ -371,7 +398,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       onHin={() => setBereich("kampf")}
     />
     <CommlinkShell
-      bereiche={BEREICHE}
+      bereiche={menueBereiche}
       aktiv={bereich}
       onBereichWechsel={setBereich}
       titel={`${ich.campaignName} — ${BEREICHE.find((b) => b.id === bereich)?.name ?? ""}`}
@@ -402,10 +429,15 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         </>
       }
       fuss={
-        <div className="cl-menue-fuss-text">
-          <div style={{ color: "var(--text-leise)" }}>{ich.benutzername}</div>
-          <div>{ich.personName ?? "kein Charakter"}</div>
-        </div>
+        <>
+          <button type="button" onClick={() => setMenueOffen(true)} title="Burgermenü anpassen">
+            ☰
+          </button>
+          <div className="cl-menue-fuss-text">
+            <div style={{ color: "var(--text-leise)" }}>{ich.benutzername}</div>
+            <div>{ich.personName ?? "kein Charakter"}</div>
+          </div>
+        </>
       }
     >
       {bereich === "blatt" &&
@@ -645,6 +677,18 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         />
       )}
     </CommlinkShell>
+
+    <MenueAnpassen
+      offen={menueOffen}
+      onSchliessen={() => setMenueOffen(false)}
+      bereiche={BEREICHE}
+      layouts={menueLayouts}
+      geraet={geraet}
+      onSpeichern={async (layouts) => {
+        const gespeichert = await spielerMenueApi.speichern(layouts);
+        setMenueLayouts(gespeichert);
+      }}
+    />
 
     <MeineAchievements campaignId={ich.campaignId} offen={achievementsOffen} onSchliessen={() => setAchievementsOffen(false)} />
 

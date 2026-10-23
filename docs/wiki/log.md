@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-23] update | Spieler-Burgermenü anpassen
+
+Spieler haben unten im Burger denselben ☰ wie die SL: ausblenden und
+Reihenfolge, PC und Tablet getrennt, Handy scrollt die volle Liste.
+Gespeichert an `Spieler.menueLayouts` (Zugang, nicht Charakter).
+`pytest tests/test_spieler_menue.py` 3/3, `tsc -b` sauber. Nicht im
+Browser geklickt. Siehe [[entities/ui-konzept-commlink]].
+
 ## [2026-10-23] update | Rechtsklick im Beziehungsgraphen
 
 SL-Bereich Beziehungen: Rechtsklick auf einen Knoten öffnet das bestehende

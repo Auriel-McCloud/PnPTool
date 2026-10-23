@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFil
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_claims, require_campaign_gm
+from app.auth.routes import MenueLayouts
 from app.auth.security import create_access_token
 from app.entities.filterung import klartext
 from app.entities.repository import (
@@ -88,6 +89,17 @@ async def login(body: LoginRequest, response: Response):
 @login_router.get("/me", response_model=SpielerMeResponse)
 async def spieler_me(spieler: dict = Depends(require_spieler)):
     return _antwort(spieler)
+
+
+@login_router.get("/menue", response_model=MenueLayouts)
+async def menue_lesen(spieler: dict = Depends(require_spieler)):
+    """PC- und Tablet-Layout des eigenen Burgermenüs. Handy scrollt und ignoriert das."""
+    return MenueLayouts(**await repository.get_menue_layouts(spieler["id"]))
+
+
+@login_router.patch("/menue", response_model=MenueLayouts)
+async def menue_schreiben(body: MenueLayouts, spieler: dict = Depends(require_spieler)):
+    return MenueLayouts(**await repository.set_menue_layouts(spieler["id"], body.model_dump()))
 
 
 @login_router.get("/vorgefertigte", response_model=list[VorgefertigterCharakter])

@@ -36,8 +36,7 @@ heraus (nicht das ganze Menü), zweites Antippen wechselt den Bereich. Unter
 600px: Schublade hinter ☰. Bereichswechsel ist **inszeniert**: Name löst sich
 aus dem Menü, fliegt nach oben, Leuchtbalken fährt herab.
 
-**Overflow der Symbolspalte (29.09.2026, Abend).** Customizen (PC≠Tablet am
-GM-Account) bleibt die Lösung gegen „länger als der Monitor“. Netz, falls
+**Overflow der Symbolspalte (29.09.2026, Abend; Spieler 23.10.2026).** Customizen (PC≠Tablet, am GM-Account bzw. am Spieler-Zugang — nicht am Charakter) bleibt die Lösung gegen „länger als der Monitor“. Netz, falls
 es trotzdem nicht passt: flache Pfeile oben/unten blättern eine Seite —
 **keine Scrollbar**. `overflow-y: auto` clippt den vorgefahrenen Namen und
 hat Mark ausdrücklich verworfen. Handy-Schublade zeigt die volle Liste
