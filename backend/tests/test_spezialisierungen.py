@@ -93,6 +93,42 @@ class TestAutomatischeSlotAnzahl:
         assert spezialisierungen_repository.automatische_slot_anzahl(0, 10) == 2
 
 
+class TestSchwellenFuer:
+    def test_fertigkeit_bekommt_vier_sechs(self):
+        assert spezialisierungen_repository.schwellen_fuer("Fertigkeit") == (4, 6)
+
+    def test_neuroweaving_bekommt_vier_sechs(self):
+        assert spezialisierungen_repository.schwellen_fuer("NeuroWeaving") == (4, 6)
+
+    def test_sphaere_bekommt_zwei_vier_sechs(self):
+        assert spezialisierungen_repository.schwellen_fuer("Sphäre") == (2, 4, 6)
+
+
+class TestAutomatischeSlotAnzahlSphaere:
+    """Dieselbe Logik wie TestAutomatischeSlotAnzahl, aber mit den
+    Sphären-eigenen Schwellen (2/4/6) durchgereicht."""
+
+    SCHWELLEN = spezialisierungen_repository.SPHAERE_SCHWELLEN
+
+    def test_kein_slot_unter_zwei(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(0, 1, self.SCHWELLEN) == 0
+
+    def test_erster_slot_bei_zwei(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(1, 2, self.SCHWELLEN) == 1
+
+    def test_kein_slot_von_zwei_auf_drei(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(2, 3, self.SCHWELLEN) == 0
+
+    def test_zweiter_slot_bei_vier(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(3, 4, self.SCHWELLEN) == 1
+
+    def test_dritter_slot_bei_sechs(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(5, 6, self.SCHWELLEN) == 1
+
+    def test_alle_drei_slots_bei_sprung_von_null_auf_sechs(self):
+        assert spezialisierungen_repository.automatische_slot_anzahl(0, 6, self.SCHWELLEN) == 3
+
+
 # ===========================================================================
 # Auto-Grant-Hook: set_rating / steigere / set_ratings_bulk
 # ===========================================================================
@@ -230,17 +266,33 @@ def test_attribut_bekommt_niemals_eine_spezialisierung():
     _run(lauf())
 
 
-def test_sphaere_bekommt_niemals_eine_spezialisierung_in_diesem_branch():
-    """Sphären-Spezialisierung ist ein separates, späteres Feature (eigene
-    Schwellen 2/4/5) — in diesem Branch bewusst nicht gebaut."""
+def test_sphaere_bekommt_slots_bei_zwei_vier_sechs():
+    """Sphären-Spezialisierung (23.10.2026): eigene Schwellen 2/4/6 statt
+    4/6, macht also DREI Slots statt zwei möglich."""
 
     async def lauf():
         cid = await _kampagne_anlegen()
         try:
             pid = await _person_anlegen(cid, "Magierin")
             trait_id = await _trait_def_id("Kräfte", "Sphäre")
-            await traits_repository.set_rating(cid, pid, trait_id, 5, None)
+
+            await traits_repository.set_rating(cid, pid, trait_id, 1, None)
             assert await spezialisierungen_repository.fuer_person(cid, pid) == []
+
+            await traits_repository.set_rating(cid, pid, trait_id, 2, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 1
+
+            await traits_repository.set_rating(cid, pid, trait_id, 3, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 1
+
+            await traits_repository.set_rating(cid, pid, trait_id, 4, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 2
+
+            await traits_repository.set_rating(cid, pid, trait_id, 5, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 2
+
+            await traits_repository.set_rating(cid, pid, trait_id, 6, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 3
         finally:
             await _aufraeumen(cid)
 
@@ -460,23 +512,24 @@ def test_set_trait_vorschlaege_route_lehnt_attribut_ab():
     _run(lauf())
 
 
-def test_set_trait_vorschlaege_route_lehnt_sphaere_ab():
-    async def lauf():
-        from fastapi import HTTPException
-        import pytest
+def test_set_trait_vorschlaege_route_erlaubt_sphaere():
+    """Sphären kamen am 23.10.2026 dazu — die Route darf sie nicht mehr
+    ablehnen, Vorschlagstexte für Sphären-Spezialisierungen sind jetzt
+    genauso pflegbar wie für Fertigkeiten."""
 
+    async def lauf():
         from app.traits import routes as traits_routes
         from app.traits.schemas import TraitVorschlaegeUpdate
 
         cid = await _kampagne_anlegen()
         trait_id = await _trait_def_id("Kräfte", "Sphäre")
         try:
-            with pytest.raises(HTTPException) as fehler:
-                await traits_routes.set_trait_vorschlaege(
-                    cid, trait_id, TraitVorschlaegeUpdate(vorschlaege=["Sollte nie ankommen"])
-                )
-            assert fehler.value.status_code == 400
+            antwort = await traits_routes.set_trait_vorschlaege(
+                cid, trait_id, TraitVorschlaegeUpdate(vorschlaege=["Blitzmagie"])
+            )
+            assert antwort["vorschlaege"] == ["Blitzmagie"]
         finally:
+            await traits_repository.set_vorschlaege(trait_id, "neotopia", [])
             await _aufraeumen(cid)
 
     _run(lauf())

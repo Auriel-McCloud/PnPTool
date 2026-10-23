@@ -244,9 +244,10 @@ async def _vergib_automatische_spezialisierungen(
     sorgen zu müssen. Siehe app/spezialisierungen/repository.py für die
     Schwellen-Logik und den Knoten, der dabei entsteht.
     """
-    if category not in spezialisierungen_repository.FERTIGKEIT_KATEGORIEN:
+    if category not in spezialisierungen_repository.ALLE_SPEZIALISIERUNGS_KATEGORIEN:
         return
-    anzahl = spezialisierungen_repository.automatische_slot_anzahl(alt, neu)
+    schwellen = spezialisierungen_repository.schwellen_fuer(category)
+    anzahl = spezialisierungen_repository.automatische_slot_anzahl(alt, neu, schwellen)
     if anzahl <= 0:
         return
     await spezialisierungen_repository.automatisch_anlegen(campaign_id, entity_id, trait_def_id, anzahl)

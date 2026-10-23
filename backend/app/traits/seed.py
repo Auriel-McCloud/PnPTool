@@ -101,6 +101,18 @@ TRAIT_VORSCHLAEGE: dict[str, list[str]] = {
     "Fahren": ["Motorräder", "Verfolgungsjagden", "Schwerlasttransporte"],
     "Handwerk": ["Elektronik", "Fahrzeugreparatur", "Cyberware-Reparatur"],
     "Matrix": ["Host-Architektur", "Icon-Analyse", "Spurenverfolgung"],
+    # Sphären-Spezialisierung (23.10.2026) — übernommen aus "Empfohlene
+    # Spezialitäten" in docs/reference/Master/*.md, damit die Chips im
+    # SpezialisierungPopup nicht leer bleiben.
+    "Korrespondenz": ["Teleportation", "Fernwahrnehmung", "Raumlöcher", "Bannzeichen", "Multi-Lokation"],
+    "Entropie": ["Schicksal", "Glück", "Verfall", "Chaos", "Wahrscheinlichkeitsmanipulation"],
+    "Kräfte": ["Feuer", "Elektrizität", "Schall", "Licht", "Wettermanipulation"],
+    "Leben": ["Heilung", "Mutation", "Gestaltwandel", "Biologische Waffen", "Selbstverwandlung"],
+    "Materie": ["Metallurgie", "Chemische Verwandlung", "Nanotechnologie", "Strukturelle Manipulation"],
+    "Gedanken": ["Gedankenlesen", "Illusionen", "Erinnerungsmanipulation", "Massensuggestion"],
+    "Ursprung": ["Urkraft-Manipulation", "Machtort-Erschaffung", "Machtort-Stabilisierung"],
+    "Geister": ["Geisterbeschwörung", "Fetischbindung", "Schattenwelten-Reisen", "Exorzismus"],
+    "Zeit": ["Zeitwahrnehmung", "Zeitverzerrung", "Zeitreise", "Vorausschau"],
 }
 
 

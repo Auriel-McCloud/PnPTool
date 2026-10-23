@@ -87,10 +87,13 @@ async def kaufen(
     campaign_id: str, person_id: str, body: SpezialisierungKaufenInput, viewer: Viewer = Depends(get_viewer)
 ):
     """Einen ZUSÄTZLICHEN Slot für 4 EP kaufen — unbegrenzt oft wiederholbar
-    (Mark: "das darf gerne unbegrenzt wachsen"), solange die Fertigkeit
-    mindestens auf 4 steht. Dieselbe EP-Bilanz wie beim normalen Steigern
-    (`erfahrung - erfahrungAusgegeben`), aber ohne die Formel aus
-    `erfahrung.kosten()` — fester Preis statt wert-abhängiger Staffelung.
+    (Mark: "das darf gerne unbegrenzt wachsen"), solange die Fertigkeit/
+    Sphäre mindestens auf ihrer ersten Auto-Grant-Schwelle steht (4 bei
+    Fertigkeiten/NeuroWeaving, 2 bei Sphären — siehe
+    spezialisierungen_repository.schwellen_fuer). Dieselbe EP-Bilanz wie
+    beim normalen Steigern (`erfahrung - erfahrungAusgegeben`), aber ohne
+    die Formel aus `erfahrung.kosten()` — fester Preis statt wert-
+    abhängiger Staffelung.
     """
     _pruefe_zugriff(viewer, person_id)
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
@@ -99,14 +102,15 @@ async def kaufen(
 
     werte = await traits_repository.get_ratings_for_entity(campaign_id, person_id)
     eintrag = next((w for w in werte if w["traitDefId"] == body.traitDefId), None)
-    if eintrag is None or eintrag["category"] not in repository.FERTIGKEIT_KATEGORIEN:
+    if eintrag is None or eintrag["category"] not in repository.ALLE_SPEZIALISIERUNGS_KATEGORIEN:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, "Keine Fertigkeit, die Spezialisierungen kennt."
+            status.HTTP_400_BAD_REQUEST, "Keine Fertigkeit oder Sphäre, die Spezialisierungen kennt."
         )
-    if eintrag["rating"] < 4:
+    mindest_rating = repository.schwellen_fuer(eintrag["category"])[0]
+    if eintrag["rating"] < mindest_rating:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"{eintrag['name']} muss mindestens auf 4 stehen, bevor zusätzliche Spezialisierungen möglich sind.",
+            f"{eintrag['name']} muss mindestens auf {mindest_rating} stehen, bevor zusätzliche Spezialisierungen möglich sind.",
         )
 
     verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))

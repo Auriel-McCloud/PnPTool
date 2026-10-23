@@ -3,11 +3,14 @@ import { Fenster } from "../shell/Fenster";
 import { ApiError } from "../api/client";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
 import type { TraitDef } from "./api";
+import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./spezialisierung.css";
 
 /**
- * Spezialisierungs-Slots EINER Fertigkeit — Popup vom Badge neben der
- * Fertigkeitszeile (ab Rating 4, siehe Charakterblatt.tsx::reihe).
+ * Spezialisierungs-Slots EINER Fertigkeit ODER Sphäre — Popup vom Badge
+ * neben der Zeile (ab Rating 4 bei Fertigkeiten/NeuroWeaving, ab Rating 2
+ * bei Sphären — siehe Charakterblatt.tsx::reihe und MINDEST_RATING unten;
+ * Sphären kamen am 23.10.2026 mit eigenen Schwellen 2/4/6 dazu).
  *
  * Zweiphasiges Namensrecht (Mark, wörtlich: "nachträglich sollte nur der SL
  * sie ändern können" — Annahme: 'nachträglich' = NACH der ersten Benennung,
@@ -25,6 +28,7 @@ export function SpezialisierungPopup({
   erfahrungVerfuegbar,
   slots,
   istGM,
+  magieFlavor,
   onSchliessen,
   onAenderung,
 }: {
@@ -37,6 +41,11 @@ export function SpezialisierungPopup({
   slots: Spezialisierung[];
   /** Entspricht `bearbeitbar` am Charakterblatt — nur dort ist es die SL. */
   istGM: boolean;
+  /** Häretiker-Flavor fürs Popup-Label (Sphären zeigen sonst den
+   * Magier-internen Namen statt des Gottes, z.B. "Korrespondenz" statt
+   * "Shu") — bei Fertigkeiten ohne Effekt, magieBegriff gibt den Namen
+   * dann unverändert zurück. */
+  magieFlavor?: MagieFlavor;
   onSchliessen: () => void;
   onAenderung: () => void | Promise<void>;
 }) {
@@ -85,12 +94,16 @@ export function SpezialisierungPopup({
     }
   }
 
-  const kannKaufen = rating >= 4;
+  // Sphären haben ihre erste Schwelle bei 2, Fertigkeiten/NeuroWeaving bei 4
+  // (siehe backend/app/spezialisierungen/repository.py::SPHAERE_SCHWELLEN).
+  const mindestRating = trait.category === "Sphäre" ? 2 : 4;
+  const kannKaufen = rating >= mindestRating;
+  const anzeigeName = magieBegriff(magieFlavor, trait.name);
 
   return (
     <Fenster
       offen={offen}
-      titel={`${trait.name} — Spezialisierungen`}
+      titel={`${anzeigeName} — Spezialisierungen`}
       unterzeile={`${slots.length} Slot${slots.length === 1 ? "" : "s"}`}
       kennung={`spezialisierung:${trait.id}`}
       onSchliessen={onSchliessen}
@@ -98,7 +111,7 @@ export function SpezialisierungPopup({
       <div className="sz-liste">
         {slots.length === 0 && (
           <p className="cb-hinweis">
-            Ab Fertigkeitsrating 4 gibt es automatisch einen Slot — oder gleich einen kaufen.
+            Ab Rating {mindestRating} gibt es automatisch einen Slot — oder gleich einen kaufen.
           </p>
         )}
         {slots.map((slot) => {
@@ -159,7 +172,7 @@ export function SpezialisierungPopup({
         <button type="button" className="sz-knopf" disabled={!kannKaufen || kauft} onClick={kaufen}>
           {kauft ? "Kauft…" : "+ Weiteren Slot für 4 EP kaufen"}
         </button>
-        {!kannKaufen && <p className="cb-hinweis">Erst ab Fertigkeitsrating 4 möglich.</p>}
+        {!kannKaufen && <p className="cb-hinweis">Erst ab Rating {mindestRating} möglich.</p>}
         {kaufFehler && <p className="pr-warnung">{kaufFehler}</p>}
         <p className="cb-hinweis">{erfahrungVerfuegbar} EP verfügbar</p>
       </div>

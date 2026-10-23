@@ -79,11 +79,11 @@ async def set_trait_vorschlaege(campaign_id: str, trait_def_id: str, body: Trait
     (bewusst in diesem Tab untergebracht, nicht in einem neuen Menüpunkt —
     Mark meinte damit das bestehende "Zusatzfertigkeiten"-Menü).
 
-    Nur Fertigkeiten/NeuroWeaving (dieselbe Kategorie-Ausschlussliste wie
-    bei der automatischen Spezialisierungs-Vergabe, siehe
-    spezialisierungen/repository.py::FERTIGKEIT_KATEGORIEN) — Attribute und
-    Sphären kennen keine Spezialisierungs-Slots und damit auch keine
-    Vorschlagstexte dafür.
+    Nur Fertigkeiten/NeuroWeaving/Sphären (dieselbe Kategorie-Liste wie bei
+    der automatischen Spezialisierungs-Vergabe, siehe
+    spezialisierungen/repository.py::ALLE_SPEZIALISIERUNGS_KATEGORIEN) —
+    Attribute kennen keine Spezialisierungs-Slots und damit auch keine
+    Vorschlagstexte dafür. Sphären kamen am 23.10.2026 dazu.
 
     **v1-Vereinfachung, bewusst (siehe Feature-Bericht):** TraitDef ist
     ruleset-weit, nicht campaign-gebunden wie Zusatzfertigkeiten — diese
@@ -100,11 +100,11 @@ async def set_trait_vorschlaege(campaign_id: str, trait_def_id: str, body: Trait
     eintrag = next((t for t in katalog if t["id"] == trait_def_id), None)
     if eintrag is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Fertigkeit nicht gefunden")
-    if eintrag["category"] not in spezialisierungen_repository.FERTIGKEIT_KATEGORIEN:
+    if eintrag["category"] not in spezialisierungen_repository.ALLE_SPEZIALISIERUNGS_KATEGORIEN:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "Spezialisierungs-Vorschläge gibt es nur für Fertigkeiten/NeuroWeaving, "
-            "nicht für Attribute oder Sphären.",
+            "Spezialisierungs-Vorschläge gibt es nur für Fertigkeiten/NeuroWeaving/Sphären, "
+            "nicht für Attribute.",
         )
     saubere_liste = [v.strip() for v in body.vorschlaege if v.strip()]
     aktualisiert = await repository.set_vorschlaege(trait_def_id, ruleset, saubere_liste)

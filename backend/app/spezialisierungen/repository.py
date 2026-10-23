@@ -39,33 +39,56 @@ from app.db.neo4j_driver import get_driver
 #
 # NICHT "NeuroWeavingWert" (der Grundwert selbst, mechanisch wie Hexkraft
 # behandelt — siehe Probe.tsx NUR_WILLENSKRAFT) und NICHT Attribute.
-# NICHT "Sphäre": Sphären-Spezialisierung ist ein separates, späteres
-# Feature mit eigenen Schwellen (2/4/5) und OHNE Würfelpool-Bonus (Sphären
-# werden in Probe.tsx gar nicht gewürfelt, siehe istSphaere-Zweig) — hier
-# bewusst nicht mitgebaut.
 FERTIGKEIT_KATEGORIEN = frozenset({"Fertigkeit", "NeuroWeaving"})
+
+# Sphären-Spezialisierung (23.10.2026, Folge-Feature zur Fertigkeiten-
+# Spezialisierung, mit Mark im Chat durchgesprochen): eigene Schwellen
+# (2/4/6 statt 4/6, siehe SPHAERE_SCHWELLEN unten) und bewusst OHNE
+# Würfelpool-Bonus (Sphären werden in Probe.tsx gar nicht gewürfelt, siehe
+# istSphaere-Zweig) — der Slot selbst ist bei Sphären reiner Freitext/
+# Flavor (die ausformulierte Stufe-6-Fähigkeit), kein Mechanik-Bonus.
+SPHAERE_KATEGORIEN = frozenset({"Sphäre"})
+
+# Vereinigung beider Gruppen — für jeden Code-Pfad, der NUR wissen muss
+# "kennt diese Kategorie überhaupt Spezialisierungs-Slots" (Auto-Grant-Hook,
+# Kauf-Route, Vorschläge-Route), ohne nach der konkreten Schwelle zu fragen.
+ALLE_SPEZIALISIERUNGS_KATEGORIEN = FERTIGKEIT_KATEGORIEN | SPHAERE_KATEGORIEN
 
 # Automatische Vergabe-Schwellen: bei 4 der erste Slot, bei 6 der zweite.
 # NICHT kumulativ dazwischen — 4→5 vergibt nichts (Marks Vorgabe: nur beim
 # ÜBERSCHREITEN einer Schwelle, nicht bei jedem Punkt).
 AUTOMATISCHE_SCHWELLEN = (4, 6)
 
+# Sphären bekommen DREI Slots statt zwei — Mark wollte sie früher und
+# dichter gestaffelt, weil Sphären-Werte ohnehin seltener steigen als
+# normale Fertigkeiten (23.10.2026).
+SPHAERE_SCHWELLEN = (2, 4, 6)
 
-def automatische_slot_anzahl(alt: int, neu: int) -> int:
+
+def schwellen_fuer(category: str) -> tuple[int, ...]:
+    """Welche Schwellen-Tupel für diese Kategorie gelten — Sphären eigene
+    (2/4/6), alles andere in ALLE_SPEZIALISIERUNGS_KATEGORIEN die normalen
+    (4/6). Eine Kategorie, die gar keine Spezialisierung kennt, landet hier
+    nie (die Aufrufer prüfen das vorher selbst gegen
+    ALLE_SPEZIALISIERUNGS_KATEGORIEN)."""
+    return SPHAERE_SCHWELLEN if category in SPHAERE_KATEGORIEN else AUTOMATISCHE_SCHWELLEN
+
+
+def automatische_slot_anzahl(alt: int, neu: int, schwellen: tuple[int, ...] = AUTOMATISCHE_SCHWELLEN) -> int:
     """Wie viele neue automatische Slots der Sprung von `alt` auf `neu` auslöst.
 
     `alt < schwelle <= neu` zählt jede überschrittene Schwelle einzeln — ein
     Sprung von z.B. 3 direkt auf 6 (Spielleitung setzt den Wert von Hand,
     oder ein frisch erstellter Charakter startet schon auf 6) überspringt
-    dabei KEINE Schwelle: beide Slots (4 und 6) liegen im Intervall
-    `(alt, neu]` und werden beide vergeben.
+    dabei KEINE Schwelle: alle Schwellen im Intervall `(alt, neu]` werden
+    vergeben (bei Sphären also bis zu drei auf einen Schlag).
 
     Ein Sinken des Werts (`neu < alt`) vergibt dadurch von selbst nie etwas
     — kein Sonderfall nötig. Und weil diese Funktion nur ADDIERT, nie
     löscht, verschwindet ein bereits vergebener Slot beim späteren Sinken
     des Ratings nicht wieder (Marks ausdrückliche Vorgabe).
     """
-    return sum(1 for schwelle in AUTOMATISCHE_SCHWELLEN if alt < schwelle <= neu)
+    return sum(1 for schwelle in schwellen if alt < schwelle <= neu)
 
 
 def _jetzt() -> str:

@@ -426,10 +426,11 @@ function KiVorschlaegePopup({
 
 /**
  * Spezialisierungs-Vorschläge (22.10.2026, Folge-Feature zur
- * Fertigkeiten-Spezialisierung): je Fertigkeit/NeuroWeaving-TraitDef eine
- * Liste von Vorschlagstexten pflegen, die ein Spieler beim Benennen eines
- * Spezialisierungs-Slots als anklickbare Chips angeboten bekommt (siehe
- * SpezialisierungPopup.tsx — liest exakt dasselbe `trait.vorschlaege`-Feld).
+ * Fertigkeiten-Spezialisierung; 23.10.2026 um Sphären erweitert): je
+ * Fertigkeit/NeuroWeaving/Sphären-TraitDef eine Liste von Vorschlagstexten
+ * pflegen, die ein Spieler beim Benennen eines Spezialisierungs-Slots als
+ * anklickbare Chips angeboten bekommt (siehe SpezialisierungPopup.tsx —
+ * liest exakt dasselbe `trait.vorschlaege`-Feld).
  *
  * Bisher kam diese Liste ausschließlich aus TRAIT_VORSCHLAEGE im Backend-
  * Seed (traits/seed.py) — hier die erste GM-Oberfläche dafür. Speichert bei
@@ -453,7 +454,13 @@ function SpezialisierungsVorschlaegeVerwaltung({ campaignId }: { campaignId: str
     setLadeFehler(null);
     traitsApi
       .getKatalog(campaignId)
-      .then((katalog) => setTraits(katalog.filter((t) => t.category === "Fertigkeit" || t.category === "NeuroWeaving")))
+      .then((katalog) =>
+        setTraits(
+          katalog.filter(
+            (t) => t.category === "Fertigkeit" || t.category === "NeuroWeaving" || t.category === "Sphäre"
+          )
+        )
+      )
       .catch(() => setLadeFehler("Fertigkeiten konnten nicht geladen werden."));
   }, [campaignId]);
 

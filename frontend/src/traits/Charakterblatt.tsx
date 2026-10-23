@@ -453,10 +453,15 @@ export function Charakterblatt({
                   </span>
                 )}
                 <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(anzeigeName)} titel={anzeigeName} />
-                {(kategorie === "Fertigkeit" || kategorie === "NeuroWeaving") &&
+                {(kategorie === "Fertigkeit" || kategorie === "NeuroWeaving" || kategorie === "Sphäre") &&
                   (() => {
                     const slots = spezialisierungenNachTrait.get(t.id) ?? [];
-                    if (wert < 4 && slots.length === 0) return null;
+                    // Sphären haben ihre erste Auto-Grant-Schwelle bei 2
+                    // statt 4 (23.10.2026, eigene Schwellen 2/4/6 — siehe
+                    // backend/app/spezialisierungen/repository.py::
+                    // SPHAERE_SCHWELLEN).
+                    const mindestFuerBadge = kategorie === "Sphäre" ? 2 : 4;
+                    if (wert < mindestFuerBadge && slots.length === 0) return null;
                     const benannt = slots.filter((s) => s.text).length;
                     return (
                       <button
@@ -665,6 +670,7 @@ export function Charakterblatt({
         erfahrungVerfuegbar={u.erfahrungVerfuegbar}
         slots={spezialisierungOffen ? spezialisierungenNachTrait.get(spezialisierungOffen.id) ?? [] : []}
         istGM={bearbeitbar}
+        magieFlavor={u.magieFlavor}
         onSchliessen={() => setSpezialisierungOffen(null)}
         onAenderung={async () => {
           await spezialisierungenNeuLaden();
