@@ -23,12 +23,21 @@ class CharakterZuordnenRequest(BaseModel):
     personId: str | None = None
 
 
+class SpaltenSumme(BaseModel):
+    """Punktesumme einer Blattspalte — Körperlich, Gesellschaftlich, Geistig."""
+
+    koerperlich: int = 0
+    gesellschaftlich: int = 0
+    geistig: int = 0
+
+
 class VorgefertigterCharakter(BaseModel):
     """Ein vorgebauter PC zur Auswahl beim ersten Einstieg (Ersteinstiegs-
 
-    Fenster, players/SpielerEinstieg.tsx) — bewusst schlank, kein voller
-    Bogen. Ergibt sich aus PCs ohne zugeordneten Spieler, kein eigenes
-    Markierungsfeld nötig.
+    Fenster, players/SpielerEinstieg.tsx). Schlank, kein voller Bogen:
+    Bild, Konzept und die drei Spaltensummen reichen für den Steckbrief
+    vor der dauerhaften Übernahme. `description` bleibt draussen —
+    Geheimnisse gehören nicht in die Auswahl.
     """
 
     id: str
@@ -37,6 +46,13 @@ class VorgefertigterCharakter(BaseModel):
     konzept: str = ""
     rasse: str = ""
     weg: str = "KEINER"
+    ambition: str = ""
+    verlangen: str = ""
+    ziel: str = ""
+    attribute: SpaltenSumme = SpaltenSumme()
+    fertigkeiten: SpaltenSumme = SpaltenSumme()
+    sphaeren: int = 0
+    neuroweaving: int = 0
 
 
 class CharakterWaehlenRequest(BaseModel):

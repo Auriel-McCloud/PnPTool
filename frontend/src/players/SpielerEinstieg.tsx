@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../api/client";
 import { Bestaetigung } from "../shell/Bestaetigung";
-import { playersApi, type SpielerMe, type VorgefertigterCharakter } from "./api";
+import { Fenster } from "../shell/Fenster";
+import { playersApi, type SpielerMe, type SpaltenSumme, type VorgefertigterCharakter } from "./api";
 import "./einstieg.css";
 
 const WEG_TITEL: Record<string, string> = {
@@ -10,13 +11,23 @@ const WEG_TITEL: Record<string, string> = {
   NEUROWEAVER: "Neuroweaver",
 };
 
+const LEERE_SPALTEN: SpaltenSumme = { koerperlich: 0, gesellschaftlich: 0, geistig: 0 };
+
+const SPALTEN: { key: keyof SpaltenSumme; titel: string; ton: string }[] = [
+  { key: "koerperlich", titel: "Körperlich", ton: "var(--wert-koerperlich)" },
+  { key: "gesellschaftlich", titel: "Gesellschaftlich", ton: "var(--wert-gesellschaftlich)" },
+  { key: "geistig", titel: "Geistig", ton: "var(--wert-geistig)" },
+];
+
 /**
  * Ersteinstieg für Spieler ohne zugeordneten Charakter.
  *
  * Zwei Wege (Mark, 22.09.2026): selbst bauen — führt in die bestehende
  * Charaktererstellung (`Charaktererstellung.tsx`, hängt bereits automatisch
  * ans Charakterblatt, sobald `erstellungAbgeschlossen=false` ist, siehe
- * `Charakterblatt.tsx`) — oder einen vorgefertigten PC fix übernehmen.
+ * `Charakterblatt.tsx`) — oder einen vorgefertigten PC dauerhaft übernehmen.
+ * Vor der Übernahme zeigt ein Steckbrief Bild, Spaltenbalance und die
+ * kurzen Texte — nicht den vollen Bogen.
  *
  * "Vorgefertigt" ist seit 08.10.2026 ein echtes Feld (`istVorgefertigt`,
  * von der SL bewusst im PC-Detail-Popup gesetzt) — vorher galt jeder
@@ -37,7 +48,8 @@ export function SpielerEinstieg({
 }) {
   const [ansicht, setAnsicht] = useState<"wahl" | "vorgefertigt">("wahl");
   const [vorgefertigte, setVorgefertigte] = useState<VorgefertigterCharakter[] | null>(null);
-  const [gewaehlt, setGewaehlt] = useState<VorgefertigterCharakter | null>(null);
+  const [steckbrief, setSteckbrief] = useState<VorgefertigterCharakter | null>(null);
+  const [uebernehmenOffen, setUebernehmenOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
 
@@ -61,11 +73,11 @@ export function SpielerEinstieg({
   }
 
   async function bestaetigeWahl() {
-    if (!gewaehlt) return;
+    if (!steckbrief) return;
     setFehler(null);
     setLaeuft(true);
     try {
-      onZugewiesen(await playersApi.charakterWaehlen(gewaehlt.id));
+      onZugewiesen(await playersApi.charakterWaehlen(steckbrief.id));
     } catch (err) {
       setFehler(err instanceof ApiError ? err.message : "Wählen fehlgeschlagen");
       // War der Charakter inzwischen doch vergeben, ist die Liste veraltet —
@@ -73,7 +85,8 @@ export function SpielerEinstieg({
       setVorgefertigte(null);
       setLaeuft(false);
     } finally {
-      setGewaehlt(null);
+      setSteckbrief(null);
+      setUebernehmenOffen(false);
     }
   }
 
@@ -110,7 +123,7 @@ export function SpielerEinstieg({
                 </span>
                 <span className="ei-karte-titel">Vorgefertigten Charakter wählen</span>
                 <span className="ei-karte-text">
-                  Ein fertiger PC deiner Spielleitung — sofort spielbereit, gehört danach fix dir.
+                  Ein fertiger PC deiner Spielleitung — sofort spielbereit, gehört danach dauerhaft dir.
                 </span>
               </button>
             </div>
@@ -138,7 +151,10 @@ export function SpielerEinstieg({
                     type="button"
                     key={p.id}
                     className="ei-pc-karte"
-                    onClick={() => setGewaehlt(p)}
+                    onClick={() => {
+                      setSteckbrief(p);
+                      setUebernehmenOffen(false);
+                    }}
                     disabled={laeuft}
                   >
                     <div className="ei-pc-bild-bereich">
@@ -173,15 +189,107 @@ export function SpielerEinstieg({
         </button>
       </div>
 
-      {gewaehlt && (
+      {steckbrief && (
+        <AuswahlSteckbrief
+          person={steckbrief}
+          laeuft={laeuft}
+          onSchliessen={() => {
+            if (uebernehmenOffen) {
+              setUebernehmenOffen(false);
+              return;
+            }
+            setSteckbrief(null);
+          }}
+          onWaehlen={() => setUebernehmenOffen(true)}
+        />
+      )}
+
+      {uebernehmenOffen && steckbrief && (
         <Bestaetigung
-          titel="Charakter fix wählen"
-          text={`„${gewaehlt.name}" gehört danach dauerhaft dir — kein anderer Spieler kann ihn mehr wählen.`}
-          jaText="Diesen Charakter wählen"
+          titel="Charakter dauerhaft übernehmen"
+          text={`„${steckbrief.name}“ gehört danach dir — kein anderer Spieler kann ihn mehr wählen.`}
+          jaText="Übernehmen"
           onJa={bestaetigeWahl}
-          onNein={() => setGewaehlt(null)}
+          onNein={() => setUebernehmenOffen(false)}
         />
       )}
     </div>
+  );
+}
+
+function AuswahlSteckbrief({
+  person,
+  laeuft,
+  onSchliessen,
+  onWaehlen,
+}: {
+  person: VorgefertigterCharakter;
+  laeuft: boolean;
+  onSchliessen: () => void;
+  onWaehlen: () => void;
+}) {
+  const unterzeile = [person.rasse, WEG_TITEL[person.weg ?? "KEINER"]].filter(Boolean).join(" · ");
+  const texte = [
+    { titel: "Konzept", text: person.konzept },
+    { titel: "Ambition", text: person.ambition },
+    { titel: "Verlangen", text: person.verlangen },
+    { titel: "Ziel", text: person.ziel },
+  ].filter((eintrag) => eintrag.text?.trim());
+
+  return (
+    <Fenster
+      offen
+      titel={person.name}
+      unterzeile={unterzeile || undefined}
+      kennung={`auswahl:${person.id}`}
+      onSchliessen={onSchliessen}
+    >
+      <div className="ei-steck-bild-rahmen">
+        {person.bildUrl ? (
+          <img src={person.bildUrl} alt={person.name} />
+        ) : (
+          <span className="ei-pc-bild-leer" aria-hidden="true">
+            ◉
+          </span>
+        )}
+      </div>
+
+      <Spalten titel="Attribute" summen={person.attribute ?? LEERE_SPALTEN} />
+      <Spalten titel="Fähigkeiten" summen={person.fertigkeiten ?? LEERE_SPALTEN} />
+      {(person.sphaeren ?? 0) > 0 && <p className="ei-steck-extra">Sphären · {person.sphaeren}</p>}
+      {(person.neuroweaving ?? 0) > 0 && <p className="ei-steck-extra">NeuroWeaving · {person.neuroweaving}</p>}
+
+      {texte.map((eintrag) => (
+        <section className="ei-steck-block" key={eintrag.titel}>
+          <h3 className="ei-steck-rubrik">{eintrag.titel}</h3>
+          <p className="ei-steck-text">{eintrag.text}</p>
+        </section>
+      ))}
+
+      <button type="button" className="ei-steck-waehlen" onClick={onWaehlen} disabled={laeuft}>
+        Charakter wählen
+      </button>
+    </Fenster>
+  );
+}
+
+function Spalten({ titel, summen }: { titel: string; summen: SpaltenSumme }) {
+  const max = Math.max(summen.koerperlich, summen.gesellschaftlich, summen.geistig, 1);
+  return (
+    <section className="ei-steck-block">
+      <h3 className="ei-steck-rubrik">{titel}</h3>
+      {SPALTEN.map((spalte) => (
+        <div className="ei-balken" key={spalte.key}>
+          <span className="ei-balken-titel">{spalte.titel}</span>
+          <span className="ei-balken-spur" aria-hidden="true">
+            <span
+              className="ei-balken-fuellung"
+              style={{ width: `${(summen[spalte.key] / max) * 100}%`, background: spalte.ton }}
+            />
+          </span>
+          <span className="ei-balken-zahl">{summen[spalte.key]}</span>
+        </div>
+      ))}
+    </section>
   );
 }

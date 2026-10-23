@@ -11,6 +11,7 @@ import uuid
 import bcrypt
 
 from app.db.neo4j_driver import get_driver
+from app.players.auswahl_steckbrief import spalten_summen
 
 
 def _hash(passwort: str) -> str:
@@ -169,10 +170,11 @@ async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
     bewusstes Opt-in der SL über einen Knopf im Charakterblatt) — vorher
     galt jeder abgeschlossene PC ohne Spieler automatisch als vorgefertigt,
     was auch für Story-geparkte PCs zuschlug, die gar nicht zur Wahl stehen
-    sollten. `konzept` dient als Teaser-Text in der Auswahlkarte (Mark:
-    kein zusätzliches Feld nötig, der Spieler passt es nach der Wahl selbst
-    an). Nur abgeschlossene, nicht-Entwurfs-Charaktere: was hier erscheint,
-    muss sofort spielbar sein.
+    sollten. `konzept` ist der Teaser auf der Karte; Ambition, Verlangen und
+    Ziel plus die Spaltensummen (siehe auswahl_steckbrief.py) füllen den
+    Steckbrief im Popup. Die lange `description` geht hier nicht mit —
+    Geheimnisse bleiben draussen. Nur abgeschlossene, nicht-Entwurfs-Charaktere:
+    was hier erscheint, muss sofort spielbar sein.
     """
     driver = get_driver()
     async with driver.session() as session:
@@ -182,14 +184,27 @@ async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
             WHERE p.erstellungAbgeschlossen = true
               AND coalesce(p.istEntwurf, false) = false
               AND NOT EXISTS { MATCH (:Spieler)-[:SPIELT]->(p) }
+            OPTIONAL MATCH (p)-[r:HAS_TRAIT]->(t:TraitDef)
+            WITH p, [w IN collect(
+                CASE WHEN t IS NULL THEN null
+                ELSE {name: t.name, category: t.category, rating: coalesce(r.rating, 0)}
+                END
+            ) WHERE w IS NOT NULL] AS werte
             RETURN p.id AS id, p.name AS name, coalesce(p.bildUrl, '') AS bildUrl,
                    coalesce(p.konzept, '') AS konzept, coalesce(p.rasse, '') AS rasse,
-                   coalesce(p.weg, 'KEINER') AS weg
+                   coalesce(p.weg, 'KEINER') AS weg,
+                   coalesce(p.ambition, '') AS ambition,
+                   coalesce(p.verlangen, '') AS verlangen,
+                   coalesce(p.ziel, '') AS ziel,
+                   werte
             ORDER BY toLower(p.name)
             """,
             campaign_id=campaign_id,
         )
-        return [dict(record) async for record in result]
+        zeilen = [dict(record) async for record in result]
+    for zeile in zeilen:
+        zeile.update(spalten_summen(zeile.pop("werte")))
+    return zeilen
 
 
 async def charakter_waehlen(spieler_id: str, campaign_id: str, person_id: str) -> bool:

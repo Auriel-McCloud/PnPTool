@@ -203,8 +203,121 @@
   background: transparent;
 }
 
+/* --- Steckbrief vor der Übernahme --------------------------------------- */
+
+.ei-steck-bild-rahmen {
+  width: min(240px, 70%);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+}
+
+.ei-steck-bild-rahmen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ei-steck-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ei-steck-rubrik {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ei-steck-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.ei-steck-extra {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.ei-balken {
+  display: grid;
+  grid-template-columns: 9.2rem 1fr 2rem;
+  align-items: center;
+  gap: 8px;
+}
+
+.ei-balken-titel {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ei-balken-spur {
+  height: 8px;
+  background: var(--grund);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ei-balken-fuellung {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+
+.ei-balken-zahl {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+  color: var(--text-leise);
+}
+
+.ei-steck-waehlen {
+  align-self: flex-end;
+  margin-top: 4px;
+  background: var(--neon);
+  border-color: var(--neon);
+  color: var(--grund);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ei-steck-waehlen:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--neon) 85%, white);
+  color: var(--grund);
+}
+
 @media (max-width: 599px) {
   .ei-kasten {
     padding: 20px 18px;
+  }
+
+  .ei-steck-waehlen {
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .ei-balken {
+    grid-template-columns: 1fr 2rem;
+  }
+
+  .ei-balken-titel {
+    grid-column: 1 / -1;
   }
 }

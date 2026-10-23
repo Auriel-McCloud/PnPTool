@@ -35,6 +35,14 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Steckbrief vor der Übernahme eines vorgefertigten Charakters** (23.10.2026):
+  Klick auf die Karte öffnet ein Fenster (Bild, drei Spalten Attribute und
+  Fähigkeiten wie auf dem Blatt, volles Konzept plus Ambition/Verlangen/Ziel
+  wenn gefüllt) — erst „Charakter wählen“ öffnet die Bestätigung „Charakter
+  dauerhaft übernehmen“. Die lange `description` bleibt draussen. **Nie im
+  Browser angeklickt.** Bitte hart neu laden und einen vorgefertigten PC
+  antippen, nicht übernehmen, wenn du ihn behalten willst.
+
 - **Nachgezogen von Chibi Neko (bebop): Fertigkeiten-Spezialisierung +
   Tutorial-Shop lesbar** (23.10.2026, Docs-Lag beim Catch-up geschlossen —
   beide Features liefen auf `origin/main`/einem Feature-Branch ohne eigenen
@@ -615,6 +623,17 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+
+**Zuletzt gebaut (23.10.2026 — Steckbrief vor der Übernahme eines vorgefertigten Charakters):**
+- **Was:** Die Auswahlkarte sprang direkt in „Charakter fix wählen“ und zeigte
+  danach nur den Namen. Jetzt erst ein schlanker Steckbrief (Bild, Spaltenbalance
+  Attribute/Fähigkeiten, Konzept, Ambition, Verlangen, Ziel), dann die Bestätigung
+  „Charakter dauerhaft übernehmen“.
+- **Backend:** `GET /api/spieler/vorgefertigte` liefert zusätzlich Ambition,
+  Verlangen, Ziel und die drei Spaltensummen (`players/auswahl_steckbrief.py`).
+  `description` bleibt draussen.
+- **Verifiziert:** `pytest tests/test_auswahl_steckbrief.py` 6/6, Cypher-`EXPLAIN`
+  gegen lokales Neo4j ok, `npm run build` sauber. **Nie im Browser angeklickt.**
 
 **Zuletzt gebaut (13.10.2026 — KI-Charaktererstellung zweistufig, KI kann Regeln nicht mehr verletzen):**
 - **Was:** Mark meldete: die KI-Charaktererstellung (Ideenschmiede ✨-Charakter

@@ -23,7 +23,13 @@ export interface SpielerZugang {
 }
 
 /** Ein vorgebauter PC zur Auswahl im Ersteinstiegs-Fenster — schlanke Form,
- * kein voller Bogen. Ergibt sich aus PCs ohne zugeordneten Spieler. */
+ * kein voller Bogen. Spaltensummen für den Steckbrief vor der Übernahme. */
+export interface SpaltenSumme {
+  koerperlich: number;
+  gesellschaftlich: number;
+  geistig: number;
+}
+
 export interface VorgefertigterCharakter {
   id: string;
   name: string;
@@ -31,6 +37,13 @@ export interface VorgefertigterCharakter {
   konzept?: string;
   rasse?: string;
   weg?: string;
+  ambition?: string;
+  verlangen?: string;
+  ziel?: string;
+  attribute?: SpaltenSumme;
+  fertigkeiten?: SpaltenSumme;
+  sphaeren?: number;
+  neuroweaving?: number;
 }
 
 export const playersApi = {
@@ -40,7 +53,7 @@ export const playersApi = {
   abmelden: () => api.post("/api/spieler/abmelden"),
   /** Vorgebaute PCs, die noch niemandem zugeordnet sind (Ersteinstieg). */
   vorgefertigteListe: () => api.get<VorgefertigterCharakter[]>("/api/spieler/vorgefertigte"),
-  /** Wählt einen vorgebauten, noch freien PC fix — atomar serverseitig geprüft. */
+  /** Wählt einen vorgebauten, noch freien PC dauerhaft — atomar serverseitig geprüft. */
   charakterWaehlen: (personId: string) =>
     api.post<SpielerMe>("/api/spieler/charakter-waehlen", { personId }),
   /** Legt einen frischen PC an und startet damit die eigene Charaktererstellung. */
