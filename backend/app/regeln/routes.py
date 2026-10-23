@@ -1,12 +1,10 @@
-import json
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign
 from app.regeln import repository
+from app.regeln.vorlagen import ambition_eintraege
 
 router = APIRouter(
     prefix="/api/campaigns/{campaign_id}/erklaerungen",
@@ -74,12 +72,8 @@ async def erklaerung_setzen(campaign_id: str, schluessel: str, body: ErklaerungI
 
 
 # --- Vorlagen für Ambition und Verlangen --------------------------------
-
-# Liegt bewusst **neben** dem Code und nicht darin: die Texte stammen aus dem
-# Magus-Regelwerk und sollen das Gerät nicht verlassen, bevor sie auf NeotopiA
-# umgeschrieben sind (die Datei ist in .gitignore). Fehlt sie, liefert die
-# Route eine leere Liste — die Oberfläche blendet den Knopf dann aus.
-_VORLAGEN_DATEI = Path(__file__).resolve().parents[2] / "data" / "vorlagen.local.json"
+# Datei und Lader: app/regeln/vorlagen.py. Fehlt sie, ist die Liste leer
+# und die Oberfläche blendet den Knopf aus.
 
 
 class Vorlage(BaseModel):
@@ -98,10 +92,7 @@ vorlagen_router = APIRouter(
 async def ambition_vorlagen(campaign_id: str):
     """Archetypen als Anregung für Ambition und Verlangen.
 
-    Reine Anregung — wer mag, schreibt etwas Eigenes ins Feld.
+    Reine Anregung für Spieler — wer mag, schreibt etwas Eigenes ins Feld.
+    Die KI-Charaktererstellung darf das nicht: die wählt nur den Namen.
     """
-    try:
-        inhalt = json.loads(_VORLAGEN_DATEI.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return []
-    return inhalt.get("ambition", [])
+    return ambition_eintraege()

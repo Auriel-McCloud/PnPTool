@@ -998,3 +998,10 @@ Stub in der Schmiede. Kanten `HAT_KREDITHAI`, `VERBINDUNG` Schuldet,
 ✨-Charakter muss Rasse, Weg, Attributkontingente, ein Fertigkeitspaket
 und Freebees (Geld + Details, Budget) durch `pruefe()` bringen. Schema
 kennt Kredit/Eigenkapital. Ein Nachbesser-Versuch, kein Roh-Rating-Fallback.
+
+## [2026-10-23] update | KI-Ambition nur aus Vorlagen
+
+✨-Charakter darf Ambition und Verlangen nicht mehr frei schreiben. Beides
+ist ein Enum der Archetyp-Namen aus `vorlagen.local.json`. Unbekannter Text
+landet leer. Erklärungstexte gehen nicht in den Prompt. Spieler-Erstellung
+bleibt Freitext. Siehe [[entities/ki-integration]].

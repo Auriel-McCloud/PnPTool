@@ -70,6 +70,7 @@ from app.ki.wiki_import import (
     importiere as wiki_importiere,
 )
 from app.rassen import repository as rassen_repository
+from app.regeln.vorlagen import archetyp_namen, nur_archetyp
 from app.traits import erstellung
 from app.traits.repository import list_catalog, set_rating, set_ratings_bulk, setze_maxima_bulk
 from app.wiki.repository import create_seite
@@ -130,17 +131,21 @@ _TRAIT_BONUS_EINTRAG = {
     "required": ["name", "wert"],
 }
 
-def _charakter_konzept_schema(rassen_namen: list[str]) -> dict:
+def _charakter_konzept_schema(rassen_namen: list[str], archetypen: list[str] | None = None) -> dict:
     """Schema für Stufe 1 (13.10.2026, siehe erstellung.py::ki_konzept_text):
     Konzept-Text plus Rasse/Weg/Paket als echte Enums (kein Erfinden mehr
     möglich) und reine Prioritäts-Reihenfolgen statt Rohzahlen — die KI kann
     hier strukturell keine Arithmetik mehr falsch machen, weil es keine
     einzige Zahl zu liefern gibt.
+
+    ambition und verlangen sind dasselbe Muster: nur ein Name aus den
+    lokalen Archetyp-Vorlagen, nie freier Text. Fehlt die Vorlagendatei,
+    gibt es die Felder gar nicht — der Server speichert dann leer.
     """
     def _attribut_rangfolge(namen: list[str]) -> dict:
         return {"type": "ARRAY", "items": {"type": "STRING", "enum": namen}}
 
-    return {
+    schema = {
         "type": "OBJECT",
         "properties": {
             "name": {"type": "STRING"},
@@ -150,8 +155,6 @@ def _charakter_konzept_schema(rassen_namen: list[str]) -> dict:
             # Kopfzeile des Papierblatts — reiner Text, keine Regelmechanik.
             "konzept": {"type": "STRING"},
             "alter": {"type": "STRING"},
-            "ambition": {"type": "STRING"},
-            "verlangen": {"type": "STRING"},
             "ziel": {"type": "STRING"},
             "rasse": {"type": "STRING", "enum": rassen_namen},
             "weg": {"type": "STRING", "enum": ["KEINER", "MAGIER", "NEUROWEAVER", "HAERETIKER"]},
@@ -179,6 +182,11 @@ def _charakter_konzept_schema(rassen_namen: list[str]) -> dict:
             "attributReihenfolgeGeistig",
         ],
     }
+    if archetypen:
+        schema["properties"]["ambition"] = {"type": "STRING", "enum": list(archetypen)}
+        schema["properties"]["verlangen"] = {"type": "STRING", "enum": list(archetypen)}
+        schema["required"].extend(["ambition", "verlangen"])
+    return schema
 
 
 def _charakter_fertigkeiten_schema(
@@ -443,8 +451,10 @@ _GEGENSTAND_SYSTEM = (
 _CHARAKTER_KONZEPT_SYSTEM = (
     _SYSTEM
     + " Erschaffe stimmige NPCs. Die Kopfzeile: konzept (kurze Rollenbeschreibung), "
-    "alter, ambition (was der Charakter langfristig erreichen will), verlangen "
-    "(sein innerer Antrieb/Sucht), ziel (das konkrete nächste Vorhaben)."
+    "alter, ziel (das konkrete nächste Vorhaben). "
+    "ambition (langfristiges Wollen) und verlangen (innerer Antrieb) sind keine "
+    "freien Texte: je genau ein Archetyp-Name aus dem Schema, exakt so, zwei "
+    "verschiedene, nie eine eigene Formulierung und nie einen Erklärungstext."
     + _NOTIZEN_HINWEIS
 )
 
@@ -942,8 +952,9 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         einstellungen = await get_einstellungen(campaign_id)
 
         # --- Stufe 1: Konzept, Rasse, Weg, Paket, Attribut-Prioritäten -----
-        schema1 = _charakter_konzept_schema(sorted(rassen.keys()))
-        prompt1 = _mit_kontext(prompt, kontext) + "\n\n" + erstellung.ki_konzept_text(rassen)
+        archetypen = archetyp_namen()
+        schema1 = _charakter_konzept_schema(sorted(rassen.keys()), archetypen)
+        prompt1 = _mit_kontext(prompt, kontext) + "\n\n" + erstellung.ki_konzept_text(rassen, archetypen)
         konzept = await generiere_json(prompt1, _CHARAKTER_KONZEPT_SYSTEM, schema1, campaign_id=campaign_id)
 
         rasse_name = (konzept.get("rasse") or "").strip()
@@ -1096,8 +1107,8 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
                 notes=(konzept.get("notizen") or "").strip(),
                 konzept=(konzept.get("konzept") or "").strip(),
                 alter=(konzept.get("alter") or "").strip(),
-                ambition=(konzept.get("ambition") or "").strip(),
-                verlangen=(konzept.get("verlangen") or "").strip(),
+                ambition=nur_archetyp(konzept.get("ambition"), archetypen),
+                verlangen=nur_archetyp(konzept.get("verlangen"), archetypen),
                 ziel=(konzept.get("ziel") or "").strip(),
                 rasse=rasse_name,
                 weg=weg,

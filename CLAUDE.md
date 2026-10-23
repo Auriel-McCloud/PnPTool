@@ -624,6 +624,16 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.10.2026 — KI-Charakter wählt Ambition und Verlangen nur aus Vorlagen):**
+- **Was:** ✨-Charakter (und jeder Pfad über `_idee_anlegen`, also auch Mentor)
+  durfte Ambition und Verlangen frei erfinden. Jetzt sind beide Felder ein
+  Enum der Archetyp-Namen aus `backend/data/vorlagen.local.json`. Was kein
+  exakter Name ist, landet leer — nicht umformuliert. Ziel bleibt Freitext.
+  Spieler-Erstellung bleibt Freitext plus Vorschläge.
+- **Nicht in den Prompt:** die Erklärungstexte der Vorlagen. Nur die Namen.
+- **Verifiziert:** `pytest tests/test_archetyp_vorlagen.py tests/test_ki_idee_typen.py`
+  21/21. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (23.10.2026 — Steckbrief vor der Übernahme eines vorgefertigten Charakters):**
 - **Was:** Die Auswahlkarte sprang direkt in „Charakter fix wählen“ und zeigte
   danach nur den Namen. Jetzt erst ein schlanker Steckbrief (Bild, Spaltenbalance

@@ -1076,7 +1076,10 @@ def freebees_aus_wunsch(
     }
 
 
-def ki_konzept_text(rassen: dict[str, dict[str, Any]] | None = None) -> str:
+def ki_konzept_text(
+    rassen: dict[str, dict[str, Any]] | None = None,
+    archetypen: list[str] | None = None,
+) -> str:
     """Anleitung für Stufe 1 der KI-Charaktererstellung: Konzept, Rasse, Weg,
     Fertigkeitspaket und Attribut-Prioritäten — bewusst OHNE eine einzige
     Zahl, die die KI selbst berechnen müsste. Die tatsächlichen Kontingente
@@ -1094,21 +1097,35 @@ def ki_konzept_text(rassen: dict[str, dict[str, Any]] | None = None) -> str:
         f"{kennung} ({paket['name']}, {sum(paket['verteilung'].values())} Fertigkeiten)"
         for kennung, paket in FERTIGKEITS_PAKETE.items()
     ]
+    if archetypen:
+        archetyp_satz = (
+            "ambition und verlangen: je genau einer dieser Archetyp-Namen, exakt "
+            "so geschrieben, zwei verschiedene, nie eigener Text: "
+            + ", ".join(archetypen)
+            + ". "
+        )
+    else:
+        archetyp_satz = (
+            "ambition und verlangen leer lassen — ohne Vorlagen ist eigener Text verboten. "
+        )
     return (
         "Das ist Stufe 1 von 2 der Charaktererstellung. Schreib den Konzept-Text, "
         "wähle Rasse, Weg und Fertigkeitspaket, und sag danach nur noch, WELCHE "
         "Attributkategorie und welches einzelne Attribut der Figur am wichtigsten "
         "ist — keine Zahlen, keine Summen, die Verteilung übernimmt der Server "
         "automatisch nach den festen Regeln. "
-        f"rasse: genau eine von {', '.join(rassen_zeilen)}. "
-        f"weg: genau eine von {', '.join(wege_zeilen)} — MAGIER für klassische Zauberer, "
-        "HAERETIKER für dieselbe Magie mit Glaubens-Flavor (Priester/Inquisitor), "
-        "NEUROWEAVER nur, wenn die Figur NeuroWeaving nutzt, sonst KEINER. "
-        f"fertigkeitsPaket: genau eine von {', '.join(pakete_zeilen)}. "
-        "kategorienReihenfolge: die drei Kategorien AttributKörperlich, "
-        "AttributGesellschaftlich, AttributGeistig — wichtigste zuerst. Diese "
-        "Kategorie bekommt automatisch das größte Attribut-Kontingent der Rasse. "
-        "attributReihenfolgeKoerperlich/Gesellschaftlich/Geistig: innerhalb jeder "
-        "Kategorie die drei zugehörigen Attribute nach Wichtigkeit für die Figur "
-        "sortiert, wichtigstes zuerst — der Server verteilt die Punkte danach."
+        + archetyp_satz
+        + (
+            f"rasse: genau eine von {', '.join(rassen_zeilen)}. "
+            f"weg: genau eine von {', '.join(wege_zeilen)} — MAGIER für klassische Zauberer, "
+            "HAERETIKER für dieselbe Magie mit Glaubens-Flavor (Priester/Inquisitor), "
+            "NEUROWEAVER nur, wenn die Figur NeuroWeaving nutzt, sonst KEINER. "
+            f"fertigkeitsPaket: genau eine von {', '.join(pakete_zeilen)}. "
+            "kategorienReihenfolge: die drei Kategorien AttributKörperlich, "
+            "AttributGesellschaftlich, AttributGeistig — wichtigste zuerst. Diese "
+            "Kategorie bekommt automatisch das größte Attribut-Kontingent der Rasse. "
+            "attributReihenfolgeKoerperlich/Gesellschaftlich/Geistig: innerhalb jeder "
+            "Kategorie die drei zugehörigen Attribute nach Wichtigkeit für die Figur "
+            "sortiert, wichtigstes zuerst — der Server verteilt die Punkte danach."
+        )
     )

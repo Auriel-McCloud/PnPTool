@@ -371,6 +371,14 @@ Attributkontingente, ein Fertigkeitspaket, Hintergründe, Freebees inkl.
 Kredit/Eigenkapital. Regelwidrig einmal nachgebessert, sonst 422, kein
 Entwurf. Kein Rückfall auf Roh-Ratings.
 
+## Ambition und Verlangen (23.10.2026)
+
+✨-Charakter, Mentor-Spawn und Beratung-Entwurf laufen über `_idee_anlegen`.
+Ambition und Verlangen sind dort ein Enum der Archetyp-Namen aus
+`vorlagen.local.json` (`app/regeln/vorlagen.py`). Eigener Text wird verworfen,
+nicht umgeschrieben. Die Erklärungstexte gehen nicht an die Cloud-KI.
+Spieler dürfen weiter selbst schreiben; der Vorschläge-Knopf bleibt Anregung.
+
 ## Siehe auch
 
 - [[hintergrund-baukasten-feature]] — Mentor/Kontakte über denselben Generator, Plan-Autosteigerung

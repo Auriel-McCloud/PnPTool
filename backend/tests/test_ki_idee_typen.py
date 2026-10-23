@@ -336,6 +336,51 @@ def test_idee_charakter_mit_magier_weg_bekommt_hexkraft_sockel():
     _run(run())
 
 
+def test_idee_charakter_nimmt_ambition_nur_aus_vorlagen():
+    """Erfundener Ambition-Text darf nicht auf dem Bogen landen. Nur ein
+    exakter Archetyp-Name, Großschreibung aus der Vorlage."""
+
+    async def run():
+        stufe1 = _stufe1_antwort(
+            ambition="Die Welt retten, koste es was es wolle",
+            verlangen="hacker",
+        )
+        stufe2 = _stufe2_antwort()
+        ki = AsyncMock(side_effect=[stufe1, stufe2])
+        with (
+            patch("app.ki.routes.sammle_kontext", AsyncMock(return_value="")),
+            patch("app.ki.routes.generiere_json", ki),
+            patch("app.ki.routes.archetyp_namen", return_value=["Hacker", "Einzelgänger"]),
+            patch("app.ki.routes.list_catalog", AsyncMock(return_value=KATALOG)),
+            patch("app.ki.routes.rassen_repository.liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch("app.ki.routes.get_campaign", AsyncMock(return_value={"ruleset": "neotopia"})),
+            patch("app.ki.routes.get_einstellungen", AsyncMock(return_value={})),
+            patch(
+                "app.ki.routes.hintergruende_repository.pool_fuer_erstellung",
+                AsyncMock(return_value=HINTERGRUENDE),
+            ),
+            patch("app.ki.routes.create_node", AsyncMock(return_value={"id": "p1"})) as create,
+            patch("app.ki.routes.set_ratings_bulk", AsyncMock()),
+            patch("app.ki.routes.setze_maxima_bulk", AsyncMock()),
+            patch("app.ki.routes.hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            await _idee_anlegen("c1", "charakter", "eine Kira")
+            schema = ki.await_args_list[0].args[2]
+            assert schema["properties"]["ambition"]["enum"] == ["Hacker", "Einzelgänger"]
+            assert schema["properties"]["verlangen"]["enum"] == ["Hacker", "Einzelgänger"]
+            prompt = ki.await_args_list[0].args[0]
+            assert "Hacker" in prompt
+            assert "Einzelgänger" in prompt
+            assert "Die Welt ist kaputt" not in prompt
+            person = create.await_args.args[3]
+            assert person["ambition"] == ""
+            assert person["verlangen"] == "Hacker"
+            assert person["ziel"] == ""
+
+    _run(run())
+
+
 def test_waffe_aus_der_ki_bekommt_schaden():
     """Kachel und Kampf lesen kraft. Ohne das Feld blieb jede KI-Waffe auf 0."""
     async def run():
