@@ -675,11 +675,18 @@ async def list_verbindungstypen(campaign_id: str) -> list[str]:
 
 
 async def list_verbindungen(campaign_id: str) -> list[dict]:
+    """Echte VERBINDUNG-Kanten plus zwei abgeleitete, schreibgeschützte Arten
+    aus dem Party-System (Mark, 23.10.2026: "wo sind meine Spieler gerade" im
+    Beziehungen-Menü sehen, ohne das doppelt von Hand zu verknüpfen) —
+    Mitgliedschaft (Person->Party) und Aufenthaltsort (Party->Ort/Event) sind
+    dort schon echte Kanten (MITGLIED_VON/BEFINDET_SICH_AN), nur eben nicht
+    vom Typ VERBINDUNG. Bearbeiten/Lösen bleibt der Party-Verwaltung
+    vorbehalten (siehe VerbindungResponse.abgeleitet)."""
     driver = get_driver()
     query = """
         MATCH (a)-[r:VERBINDUNG]->(b)
         WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
-        RETURN r.id AS id, labels(a)[0] AS vonKind, a.id AS vonId,
+        RETURN r.id AS id, false AS abgeleitet, labels(a)[0] AS vonKind, a.id AS vonId,
                labels(b)[0] AS zuKind, b.id AS zuId,
                r.typ AS typ, r.beschreibung AS beschreibung,
                r.seit AS seit, r.bis AS bis, r.sichtbarkeit AS sichtbarkeit, r.sichtbarFuer AS sichtbarFuer,
@@ -688,6 +695,28 @@ async def list_verbindungen(campaign_id: str) -> list[dict]:
                // an einer verborgenen Entität hängt — sonst verrät sie deren
                // Existenz. Wird in visibility.py ausgewertet und ist in
                // VerbindungResponse nicht enthalten, geht also nicht raus.
+               a.sichtbarkeit AS vonSichtbarkeit, a.sichtbarFuer AS vonSichtbarFuer,
+               b.sichtbarkeit AS zuSichtbarkeit, b.sichtbarFuer AS zuSichtbarFuer
+
+        UNION ALL
+
+        MATCH (a:Person)-[:MITGLIED_VON]->(b:Party)
+        WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+        RETURN 'mitglied:' + a.id AS id, true AS abgeleitet, 'Person' AS vonKind, a.id AS vonId,
+               'Party' AS zuKind, b.id AS zuId,
+               'Mitglied von' AS typ, '' AS beschreibung,
+               '' AS seit, '' AS bis, 'ALLE' AS sichtbarkeit, [] AS sichtbarFuer,
+               a.sichtbarkeit AS vonSichtbarkeit, a.sichtbarFuer AS vonSichtbarFuer,
+               b.sichtbarkeit AS zuSichtbarkeit, b.sichtbarFuer AS zuSichtbarFuer
+
+        UNION ALL
+
+        MATCH (a:Party)-[:BEFINDET_SICH_AN]->(b)
+        WHERE a.campaignId = $campaign_id AND b.campaignId = $campaign_id
+        RETURN 'aufenthalt:' + a.id AS id, true AS abgeleitet, 'Party' AS vonKind, a.id AS vonId,
+               labels(b)[0] AS zuKind, b.id AS zuId,
+               'Befindet sich an' AS typ, '' AS beschreibung,
+               '' AS seit, '' AS bis, 'ALLE' AS sichtbarkeit, [] AS sichtbarFuer,
                a.sichtbarkeit AS vonSichtbarkeit, a.sichtbarFuer AS vonSichtbarFuer,
                b.sichtbarkeit AS zuSichtbarkeit, b.sichtbarFuer AS zuSichtbarFuer
     """

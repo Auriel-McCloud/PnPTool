@@ -7,6 +7,7 @@ const KIND_LABEL: Record<EntityKind, string> = {
   Event: "Event",
   Fraktion: "Fraktion",
   Gegenstand: "Gegenstand",
+  Party: "Party",
 };
 
 const KIND_ORDNUNG: Record<EntityKind, number> = {
@@ -15,6 +16,7 @@ const KIND_ORDNUNG: Record<EntityKind, number> = {
   Event: 2,
   Fraktion: 3,
   Gegenstand: 4,
+  Party: 5,
 };
 
 interface EntitaetsOption {

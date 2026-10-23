@@ -24,6 +24,7 @@ const KIND_LABEL: Record<EntityKind, string> = {
   Event: "Event",
   Fraktion: "Fraktion",
   Gegenstand: "Gegenstand",
+  Party: "Party",
 };
 
 interface VerbindungAnlegenProps {
@@ -77,6 +78,7 @@ export function VerbindungAnlegen({
         Event: 2,
         Fraktion: 3,
         Gegenstand: 4,
+        Party: 5,
       };
       if (ordnung[a.kind] !== ordnung[b.kind]) return ordnung[a.kind] - ordnung[b.kind];
       return a.name.localeCompare(b.name, "de");

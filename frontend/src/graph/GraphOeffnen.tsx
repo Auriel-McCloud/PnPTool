@@ -81,6 +81,11 @@ async function ladeKnoten(campaignId: string, id: string, kind: EntityKind): Pro
       return { art: "fraktion", fraktion: await entitiesApi.getFraktion(campaignId, id) };
     case "Gegenstand":
       return { art: "gegenstand", item: await itemsApi.get(campaignId, id) };
+    case "Party":
+      // Party-Knoten tauchen im Beziehungsgraphen (backend/app/graph) nicht
+      // auf — nur Mitgliedschaft/Aufenthaltsort werden dort über die
+      // Beziehungen-Listen angezeigt, nicht als eigener Graph-Knoten.
+      throw new Error("Party-Knoten werden im Graphen nicht geöffnet — siehe Party-Verwaltung.");
   }
 }
 

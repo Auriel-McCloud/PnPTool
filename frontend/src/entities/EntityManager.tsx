@@ -39,6 +39,7 @@ import { VerbindungAnlegenGlobal } from "./VerbindungAnlegenGlobal";
 import { BeziehungenAusBeschreibungenPopup } from "./BeziehungenAusBeschreibungenPopup";
 import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
+import { partyApi, type Party } from "../party/api";
 
 const sectionStyle: React.CSSProperties = { marginBottom: "2.5rem" };
 const listItemStyle: React.CSSProperties = { padding: "0.75rem 0", borderBottom: "1px solid var(--linie)" };
@@ -183,6 +184,10 @@ export function EntityManager({
   const [fraktionen, setFraktionen] = useState<Fraktion[]>([]);
   const [verbindungen, setVerbindungen] = useState<Verbindung[]>([]);
   const [graphGegenstaende, setGraphGegenstaende] = useState<{ id: string; label: string }[]>([]);
+  // Nur für die Namenstabelle der Beziehungslisten (Mitgliedschaft/
+  // Aufenthaltsort aus dem Party-System sichtbar machen, 23.10.2026) — die
+  // Party-Verwaltung selbst lädt ihre eigene Liste unabhängig.
+  const [partys, setPartys] = useState<Party[]>([]);
   const [spieler, setSpieler] = useState<SpielerZugang[]>([]);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [ladefehler, setLadefehler] = useState<string | null>(null);
@@ -220,7 +225,7 @@ export function EntityManager({
     try {
       const filter: ListenFilter = JSON.parse(filterSchluessel);
       const personenFilter = ansicht === "pcs" || ansicht === "npcs" ? filter : {};
-      const [p, o, e, f, v, graph, sp, einst] = await Promise.all([
+      const [p, o, e, f, v, graph, sp, einst, party] = await Promise.all([
         entitiesApi.listPersonen(campaignId, personenFilter),
         entitiesApi.listOrte(campaignId, ansicht === "orte" ? filter : {}),
         entitiesApi.listEvents(campaignId, ansicht === "events" ? filter : {}),
@@ -229,6 +234,7 @@ export function EntityManager({
         getGraph(campaignId),
         playersApi.liste(campaignId).catch(() => [] as SpielerZugang[]),
         einstellungenApi.lesen(campaignId).catch(() => null),
+        partyApi.liste(campaignId).catch(() => [] as Party[]),
       ]);
       setPersonen(p);
       setOrte(o);
@@ -237,6 +243,7 @@ export function EntityManager({
       setVerbindungen(v);
       setSpieler(sp);
       setEinstellungen(einst);
+      setPartys(party);
       setLadefehler(null);
       // Gegenstände sind nur dann verbindbar, wenn sie explizit "im Graph anzeigen"
       // markiert wurden (z.B. MacGuffins) — normale Inventar-Items tauchen hier
@@ -304,8 +311,9 @@ export function EntityManager({
     for (const ev of events) tabelle.set(ev.id, { name: ev.title, kind: "Event" });
     for (const fr of fraktionen) tabelle.set(fr.id, { name: fr.name, kind: "Fraktion" });
     for (const g of graphGegenstaende) tabelle.set(g.id, { name: g.label, kind: "Gegenstand" });
+    for (const party of partys) tabelle.set(party.id, { name: party.name, kind: "Party" });
     return tabelle;
-  }, [personen, orte, events, fraktionen, graphGegenstaende]);
+  }, [personen, orte, events, fraktionen, graphGegenstaende, partys]);
 
   // --- Person ---
   const [personName, setPersonName] = useState("");

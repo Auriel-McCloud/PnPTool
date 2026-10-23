@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
-import { entitiesApi, type EntityKind } from "../entities/api";
+import { entitiesApi } from "../entities/api";
 import type { VerweisAttribute } from "../richtext/EntitaetsVerweis";
 
 interface Treffer {
   id: string;
   label: string;
-  typ: EntityKind;
+  // Verweisziele sind bewusst auf dieselben vier Arten beschränkt wie
+  // VerweisAttribute.zielTyp — Gegenstand/Party gibt's hier nicht (Party
+  // ist ohnehin kein Wiki-Verweisziel, siehe EntitaetsVerweis.ts).
+  typ: VerweisAttribute["zielTyp"];
 }
 
-const TYP_TOKEN: Record<EntityKind, string> = {
+const TYP_TOKEN: Record<Treffer["typ"], string> = {
   Person: "--kind-person",
   Ort: "--kind-ort",
   Event: "--kind-event",

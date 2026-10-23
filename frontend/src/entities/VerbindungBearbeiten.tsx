@@ -18,6 +18,7 @@ const KIND_LABEL: Record<EntityKind, string> = {
   Event: "Event",
   Fraktion: "Fraktion",
   Gegenstand: "Gegenstand",
+  Party: "Party",
 };
 
 interface VerbindungBearbeitenProps {

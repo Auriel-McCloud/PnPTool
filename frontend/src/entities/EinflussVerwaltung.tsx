@@ -12,6 +12,7 @@ const ZIEL_SYMBOLE: Record<EinflussZielKind, string> = {
   Fraktion: "⬡",
   Event: "◆",
   Gegenstand: "◈",
+  Party: "👥",
 };
 
 const ZIEL_NAMEN: Record<EinflussZielKind, string> = {
@@ -19,6 +20,7 @@ const ZIEL_NAMEN: Record<EinflussZielKind, string> = {
   Fraktion: "Fraktion",
   Event: "Event",
   Gegenstand: "Gegenstand",
+  Party: "Party",
 };
 
 interface WaehlbaresZiel {

@@ -489,7 +489,7 @@ class EventResponse(BaseModel):
     notizenSichtbarFuer: list[str]
 
 
-EntityKind = Literal["Person", "Ort", "Event", "Gegenstand", "Fraktion"]
+EntityKind = Literal["Person", "Ort", "Event", "Gegenstand", "Fraktion", "Party"]
 
 
 class FraktionCreate(BaseModel):
@@ -596,6 +596,11 @@ class VerbindungResponse(BaseModel):
     bis: str
     sichtbarkeit: str
     sichtbarFuer: list[str]
+    # Mitgliedschaft (Person->Party) und Aufenthaltsort (Party->Ort/Event)
+    # kommen nicht aus echten VERBINDUNG-Kanten, sondern werden aus dem
+    # Party-System mitgeliefert (siehe repository.py::list_verbindungen) —
+    # rein lesend, Bearbeiten/Lösen läuft weiter über die Party-Verwaltung.
+    abgeleitet: bool = False
 
 
 class FilterZiel(BaseModel):

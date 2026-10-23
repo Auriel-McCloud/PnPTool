@@ -22,6 +22,7 @@ const ART_SYMBOL: Record<string, string> = {
   Event: "◆",
   Gegenstand: "◈",
   Fraktion: "⬡",
+  Party: "👥",
 };
 
 interface VerbindungsZeile {
@@ -157,22 +158,33 @@ export function VerbindungenListe({
                   SL
                 </span>
               )}
-              <button
-                type="button"
-                onClick={() => setBearbeiten(z.verbindung)}
-                title="Verbindung bearbeiten"
-                style={{ marginLeft: "auto", minHeight: 0, padding: "4px 10px", fontSize: 12 }}
-              >
-                Bearbeiten
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoeschKandidat(z)}
-                title="Verbindung lösen"
-                style={{ minHeight: 0, padding: "4px 10px", fontSize: 12, color: "var(--signal)" }}
-              >
-                Lösen
-              </button>
+              {z.verbindung.abgeleitet ? (
+                <span
+                  title="Kommt aus der Party-Verwaltung — dort ändern"
+                  style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--text-leise)", fontStyle: "italic" }}
+                >
+                  via Party-Verwaltung
+                </span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setBearbeiten(z.verbindung)}
+                    title="Verbindung bearbeiten"
+                    style={{ marginLeft: "auto", minHeight: 0, padding: "4px 10px", fontSize: 12 }}
+                  >
+                    Bearbeiten
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoeschKandidat(z)}
+                    title="Verbindung lösen"
+                    style={{ minHeight: 0, padding: "4px 10px", fontSize: 12, color: "var(--signal)" }}
+                  >
+                    Lösen
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>

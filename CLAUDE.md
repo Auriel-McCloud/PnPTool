@@ -35,6 +35,33 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Partys im Beziehungen-Menü sichtbar** (23.10.2026, Marks Frage: "ich
+  möchte im Beziehungen-System sehen können, wo meine Spieler gerade sind"):
+  Mitgliedschaft (`Person-[:MITGLIED_VON]->Party`) und Aufenthaltsort
+  (`Party-[:BEFINDET_SICH_AN]->Ort/Event`) waren bisher reine Party-System-
+  Kanten, unsichtbar für das generische Beziehungen-Menü. `list_verbindungen`
+  liefert sie jetzt per `UNION ALL` zusätzlich mit, als schreibgeschützte
+  Zeilen (`abgeleitet: true`) — "Mitglied von"/"Befindet sich an" tauchen
+  jetzt automatisch in der globalen Verbindungen-Liste und im PC/Party-
+  Detail-Beziehungstab auf, Bearbeiten/Lösen ist dort ausgeblendet (zeigt
+  "via Party-Verwaltung" statt Knöpfen — ändern bleibt der Party-Verwaltung
+  vorbehalten). `Party` ist dafür neu ein `EntityKind` (Icon 👥), Namenstabelle
+  in `EntityManager.tsx` lädt jetzt zusätzlich `partyApi.liste()`.
+  **Dateien:** `backend/app/entities/{repository.py, schemas.py}`,
+  `frontend/src/entities/{api.ts, EntityManager.tsx, BeziehungsListe.tsx,
+  VerbindungenListe.tsx, EinflussVerwaltung.tsx, EntitaetsAuswahl.tsx,
+  VerbindungAnlegen.tsx, VerbindungBearbeiten.tsx}`,
+  `frontend/src/wiki/VerweisWaehler.tsx` (nur Typ-Entflechtung, Party bleibt
+  kein Wiki-Verweisziel), `frontend/src/graph/GraphOeffnen.tsx` (Party-Case
+  wirft bewusst, da Party-Knoten im Graph-Canvas nicht existieren).
+  **Verifiziert:** `tsc -b` sauber, Backend-Tests grün (die zwei Fehlschläge
+  in `test_shop_am_ort.py` sind der bekannte Windows-Multi-Test-Flake,
+  reproduziert auch unverändert auf `main`). **Nie im Browser angeklickt.**
+  Bitte am Spieltisch: PC in eine Party stecken, Party an einen Ort/Event
+  stellen, dann im Beziehungen-Menü (global und im PC-Detail) nachschauen,
+  ob "Mitglied von"/"Befindet sich an" auftaucht und die Sichtbarkeit für
+  Spieler stimmt (Party selbst muss für sie sichtbar sein).
+
 - **Steckbrief vor der Übernahme eines vorgefertigten Charakters** (23.10.2026):
   Klick auf die Karte öffnet ein Fenster (Bild, drei Spalten Attribute und
   Fähigkeiten wie auf dem Blatt, volles Konzept plus Ambition/Verlangen/Ziel

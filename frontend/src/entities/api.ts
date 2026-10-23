@@ -1,7 +1,7 @@
 import { api } from "../api/client";
 
 export type SichtbarkeitModus = "GM" | "ALLE" | "SPEZIFISCH";
-export type EntityKind = "Person" | "Ort" | "Event" | "Gegenstand" | "Fraktion";
+export type EntityKind = "Person" | "Ort" | "Event" | "Gegenstand" | "Fraktion" | "Party";
 
 export interface VisibilityFields {
   sichtbarkeit: SichtbarkeitModus;
@@ -174,6 +174,10 @@ export interface Verbindung extends VisibilityFields {
   beschreibung: string;
   seit: string;
   bis: string;
+  /** Kommt aus dem Party-System (Mitgliedschaft/Aufenthaltsort), nicht aus
+   * einer echten VERBINDUNG-Kante — rein lesend, kein Bearbeiten/Lösen hier,
+   * das läuft über die Party-Verwaltung. */
+  abgeleitet?: boolean;
 }
 
 function base(campaignId: string) {
