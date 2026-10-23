@@ -20,6 +20,27 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   alle ~15 Popups im Tool. **Nicht von selbst anfangen, erst wenn Mark
   sagt, welche Popups es betreffen soll.**
 
+- **Sphären-Spezialisierung + Sphären-Skala auf 6 Punkte** (23.10.2026, mit
+  Mark in Chat durchgesprochen, noch nicht gebaut): Fertigkeiten-Spezialisierung
+  gibt es schon (siehe oben), Sphären/Götter-Spezialisierung bewusst nicht
+  mitgebaut (eigener Kommentar in `spezialisierungen/repository.py`). Idee:
+  Sphären-Stufen 1–5 auf 1–6 strecken, neue Stufe 3 einfädeln (alt-3/4 rutschen
+  auf 4/5, „vollständig beherrschen" wird Stufe 6) — der Spezialisierungs-Slot
+  bei Stufe 6 wäre dann gleich die Stufe-6-Fähigkeit selbst (Freitext statt
+  Würfelbonus, Sphären werden ja nie gewürfelt). Pro Sphäre Stand:
+  Korrespondenz/Kräfte/Leben/Materie/Ursprung/Zeit grob einig (Details im
+  Chatverlauf vom 23.10.), **Entropie noch offen** (Mark: gefällt ihm nicht,
+  kann es aber noch nicht greifen), **Geister hängt an Marks
+  Paralleldimensionen-Konzept** (ersetzt Astralebene/Todesgürtel — den
+  Todesgürtel gibt es in NeotopiA nicht, `docs/reference/Master/Geist.md` ist
+  hier veraltet trotz Abgleich-Vermerk vom 23.10. in
+  `docs/wiki/concepts/magie-hexkraft.md`). **Erinnerung für Mark:** er wollte
+  sein Paralleldimensionen-Konzept separat niederschreiben, bevor Geister
+  final wird. Ursprung: Reference-Doku sagt noch „Quintessenz", Code
+  (`seed.py`) heißt schon „Urkraft" — bei der Überarbeitung „Urkraft"
+  durchziehen. **Nicht von selbst weiterbauen, erst wenn die offenen Punkte
+  mit Mark geklärt sind.**
+
 - **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
   Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
   kann das schon (`GMUser -[:OWNS]-> Campaign`). Offen, nicht bauen:
