@@ -752,25 +752,31 @@ button.cl-bereiche-pfeil:disabled {
 }
 
 .cl-stoerung[data-aktiv="true"] {
-  animation: cl-flackern 1.6s steps(1, end) both;
+  animation: cl-flackern 3.2s steps(1, end) both;
 }
 
 .cl-stoerung[data-aktiv="true"]::before {
   content: "";
   position: absolute;
   inset: -15%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncG type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncB type='linear' slope='4' intercept='-1.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* --cl-noise-url wird pro Auftreten in CommlinkShell.tsx neu gewürfelt
+     (zufälliger Seed fürs feTurbulence-Perlin-Rauschen); Fallback unten
+     greift nur, falls die Variable aus irgendeinem Grund fehlt. */
+  background-image: var(
+    --cl-noise-url,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncG type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncB type='linear' slope='4' intercept='-1.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")
+  );
   background-size: 260px 260px;
   mix-blend-mode: overlay;
   opacity: 0;
-  animation: cl-rauschen 1.6s steps(1, end) both;
+  animation: cl-rauschen 3.2s steps(1, end) both;
 }
 
 .cl-stoerung[data-aktiv="true"]::after {
   content: "";
   position: absolute;
   inset: 0;
-  animation: cl-verzerrung 1.6s steps(1, end) both;
+  animation: cl-verzerrung 3.2s steps(1, end) both;
 }
 
 @keyframes cl-flackern {
@@ -785,31 +791,31 @@ button.cl-bereiche-pfeil:disabled {
     opacity: 0;
   }
   4% {
-    opacity: 0.5;
+    opacity: calc(0.5 * var(--stoerung-intensitaet, 1));
     background: color-mix(in srgb, var(--flacker-a) 5%, transparent);
     box-shadow: inset 0 0 120px color-mix(in srgb, var(--flacker-a) 18%, transparent);
   }
   11% {
-    opacity: 0.34;
+    opacity: calc(0.34 * var(--stoerung-intensitaet, 1));
     background: color-mix(in srgb, var(--flacker-a) 4%, transparent);
   }
   34% {
-    opacity: 0.42;
+    opacity: calc(0.42 * var(--stoerung-intensitaet, 1));
     background: color-mix(in srgb, var(--flacker-b) 5%, transparent);
     box-shadow: inset 0 0 90px color-mix(in srgb, var(--flacker-b) 16%, transparent);
   }
   42% {
-    opacity: 0.2;
+    opacity: calc(0.2 * var(--stoerung-intensitaet, 1));
   }
   67% {
-    opacity: 0.34;
+    opacity: calc(0.34 * var(--stoerung-intensitaet, 1));
     background: color-mix(in srgb, var(--flacker-c) 4.5%, transparent);
   }
   74% {
-    opacity: 0.15;
+    opacity: calc(0.15 * var(--stoerung-intensitaet, 1));
   }
   93% {
-    opacity: 0.22;
+    opacity: calc(0.22 * var(--stoerung-intensitaet, 1));
     background: color-mix(in srgb, var(--flacker-a) 4%, transparent);
   }
 }

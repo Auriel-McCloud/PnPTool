@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import "./commlink.css";
 import { ErklaerungSchalter } from "../regeln/ErklaerungSchalter";
 import { ThemeSchalter } from "../theme/ThemeSchalter";
@@ -343,7 +350,31 @@ export function CommlinkShell({
 }
 
 /** Dauer der Störung; muss zur Animation in commlink.css passen. */
-const STOERUNG_MS = 1600;
+const STOERUNG_MS = 3200;
+
+/**
+ * Baut einen SVG-Noise-Data-URI mit zufälligem Perlin-Seed.
+ *
+ * feTurbulence (type="fractalNoise") IST Perlin-Rauschen — ohne gesetzten
+ * seed liefert der Browser aber immer dasselbe Muster. Darum hier pro
+ * Aufruf einen neuen seed (und eine leicht schwankende baseFrequency fürs
+ * Korn) würfeln, damit jede Störung ihr eigenes "Ameisenkrieg"-Muster zeigt
+ * statt immer exakt dasselbe.
+ */
+function zufallsRauschen(): string {
+  const seed = Math.floor(Math.random() * 10_000);
+  const koernung = (0.75 + Math.random() * 0.3).toFixed(2); // 0.75–1.05
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>` +
+    `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${koernung}' ` +
+    `numOctaves='3' seed='${seed}' stitchTiles='stitch'/>` +
+    `<feColorMatrix type='saturate' values='0'/>` +
+    `<feComponentTransfer><feFuncR type='linear' slope='4' intercept='-1.5'/>` +
+    `<feFuncG type='linear' slope='4' intercept='-1.5'/>` +
+    `<feFuncB type='linear' slope='4' intercept='-1.5'/></feComponentTransfer>` +
+    `</filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
 
 /**
  * Seltenes Neonflackern (alle 5–10 Minuten, zufällig).
@@ -353,12 +384,18 @@ const STOERUNG_MS = 1600;
  * Schirm, während das Bild darunter verzerrt durchscheint (CSS-Modul
  * commlink.css, Keyframes cl-flackern/cl-rauschen).
  *
+ * Pro Auftreten zufällig:
+ * - das Rauschmuster selbst (neuer Perlin-Seed, siehe zufallsRauschen)
+ * - die Intensität der Schübe (--stoerung-intensitaet, 0,5–0,95 — mal ein
+ *   leichtes Rauschen, mal ein richtig schlimmes)
+ *
  * Absichtlich selten: als Dauereffekt wäre es Belästigung statt Atmosphäre.
  * Wer Bewegung im System abgestellt hat, bekommt es gar nicht — Geflacker
  * ist für lichtempfindliche Menschen keine Stimmung, sondern ein Problem.
  */
 function Stoerung() {
   const [aktiv, setAktiv] = useState(false);
+  const [stil, setStil] = useState<CSSProperties>({});
   const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -367,6 +404,11 @@ function Stoerung() {
     const planen = () => {
       const minuten = 5 + Math.random() * 5;
       timer.current = window.setTimeout(() => {
+        const intensitaet = 0.5 + Math.random() * 0.45; // 0,5–0,95
+        setStil({
+          "--cl-noise-url": zufallsRauschen(),
+          "--stoerung-intensitaet": intensitaet,
+        } as CSSProperties);
         setAktiv(true);
         window.setTimeout(() => setAktiv(false), STOERUNG_MS);
         planen();
@@ -377,5 +419,12 @@ function Stoerung() {
     return () => window.clearTimeout(timer.current);
   }, []);
 
-  return <div className="cl-stoerung" data-aktiv={aktiv} aria-hidden="true" />;
+  return (
+    <div
+      className="cl-stoerung"
+      data-aktiv={aktiv}
+      style={stil}
+      aria-hidden="true"
+    />
+  );
 }
