@@ -98,10 +98,10 @@
   /* Entitaetsfarben — Graph, Badges und Bereiche halten sich daran */
   --kind-person: var(--p-blau-tief);
   --kind-ort: var(--p-gruen-tief);
-  /* Event war vorher dasselbe Orange-Braun wie Fraktion (--p-messing) —
-     im Graphen kaum zu unterscheiden (Mark, 23.10.2026). Türkis ist sonst
-     nur bei Bündel/Eisschaden-Track in Gebrauch, kein Konflikt. */
-  --kind-event: var(--p-tuerkis);
+  /* Event war erst Orange (zu nah an Fraktion/Messing), dann Türkis (zu nah
+     an Ort/Grün) — jetzt Rot, der einzige noch ungenutzte kräftige
+     Kontrastton zu Blau/Grün/Violett/Messing/Magenta (Mark, 23.10.2026). */
+  --kind-event: var(--p-rot);
   --kind-gegenstand: var(--p-violett);
   --kind-fraktion: var(--p-messing);
   /* Party teilt die Farbe NICHT mit --bereich-party (Indigo) — im Graphen
