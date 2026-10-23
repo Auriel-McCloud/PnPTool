@@ -138,6 +138,10 @@ OHNE_GM_ERLAUBT = {
     # eigene Charakter (SL kann für jeden PC kaufen, Spieler nur für sich).
     # Siehe app/haendler/routes.py::kaufen.
     "/api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen",
+    # Tutorial-Rückgabe während der Erstellung: Spieler gibt ein gekauftes
+    # Stück zurück, Geld kommt wieder. Prüft selbst Besitzer und dass die
+    # Erstellung noch läuft.
+    "/api/campaigns/{campaign_id}/haendler/{haendler_id}/tutorial-zurueck",
     # Tutorial-Shop (10.10.2026): KI-Kommentar des "Verkäufers" zu einem
     # gerade getätigten Kauf — rein kosmetisch, kein Geld-/Ware-Einfluss,
     # dieselbe Begründung wie beim Kauf selbst (Spieler handelt für sich).

@@ -136,6 +136,8 @@ export const haendlerApi = {
     api.put<HaendlerEintrag | null>(`${base(cid, haendlerId)}/standort`, { ortId }),
   kaufen: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string) =>
     api.post<KaufResponse>(`${base(cid, haendlerId)}/kaufen`, { gegenstandId, kaeuferPersonId }),
+  tutorialZurueck: (cid: string, haendlerId: string, gegenstandId: string, kaeuferPersonId?: string) =>
+    api.post<KaufResponse>(`${base(cid, haendlerId)}/tutorial-zurueck`, { gegenstandId, kaeuferPersonId }),
 
   /** SL-Liste: alle offenen Online-Bestellungen über alle Händler hinweg. */
   bestellungenOffen: (cid: string) =>

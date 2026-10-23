@@ -3,6 +3,7 @@ import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api"
 import { itemsApi, type Gegenstand } from "../items/api";
 import { ShopKategorien } from "./ShopKategorien";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
@@ -45,6 +46,7 @@ export function TutorialShopPopup({
   const [kommentar, setKommentar] = useState<string | null>(null);
   const [kommentarLaedt, setKommentarLaedt] = useState(false);
   const [gekauft, setGekauft] = useState<Gegenstand[]>([]);
+  const [rueckgabe, setRueckgabe] = useState<Gegenstand | null>(null);
 
   useEffect(() => {
     if (!offen) return;
@@ -118,6 +120,7 @@ export function TutorialShopPopup({
   const zeilen = gewaehlt ? steckbriefZeilen(gewaehlt) : [];
 
   return (
+    <>
     <Fenster
       offen={offen}
       titel="🛒 Tutorial-Shop"
@@ -264,7 +267,12 @@ export function TutorialShopPopup({
                         {gekauft.map((stück) => (
                           <li key={stück.id}>
                             <span>{stück.name}</span>
-                            <span>{(stück.preis ?? 0).toLocaleString("de-AT")}¥</span>
+                            <span className="ts-gekauft-rechts">
+                              <span>{(stück.preis ?? 0).toLocaleString("de-AT")}¥</span>
+                              <button type="button" onClick={() => setRueckgabe(stück)}>
+                                Zurück
+                              </button>
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -277,5 +285,28 @@ export function TutorialShopPopup({
         </div>
       )}
     </Fenster>
+    {rueckgabe && haendler && (
+      <Bestaetigung
+        titel="Zurückgeben?"
+        text={`„${rueckgabe.name}“ zurück ins Regal, ${(rueckgabe.preis ?? 0).toLocaleString("de-AT")}¥ wieder aufs Guthaben?`}
+        jaText="Zurückgeben"
+        onNein={() => setRueckgabe(null)}
+        onJa={() => {
+          const stueck = rueckgabe;
+          setRueckgabe(null);
+          setKaeuft(true);
+          setFehler(null);
+          haendlerApi
+            .tutorialZurueck(campaignId, haendler.id, stueck.id, personId)
+            .then((antwort) => {
+              onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
+              return itemsApi.list(campaignId, personId).then(setGekauft);
+            })
+            .catch((e) => setFehler(e instanceof Error ? e.message : "Zurückgeben fehlgeschlagen"))
+            .finally(() => setKaeuft(false));
+        }}
+      />
+    )}
+    </>
   );
 }

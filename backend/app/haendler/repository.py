@@ -778,15 +778,58 @@ async def tutorial_ausgabe_buchen(campaign_id: str, person_id: str, preis: int) 
 
 async def tutorial_ausgabe_erstatten(campaign_id: str, person_id: str, preis: int) -> None:
     """Macht eine Buchung rückgängig, wenn die Ware danach nicht ankam."""
+    await tutorial_rueckerstatten(campaign_id, person_id, preis)
+
+
+async def tutorial_rueckerstatten(campaign_id: str, person_id: str, preis: int) -> dict | None:
+    """Legt höchstens so viel zurück, wie als Ausgabe gezählt wurde."""
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
-        SET p.kapital = coalesce(p.kapital, 0) + $preis,
-            p.kapitalBasis = coalesce(p.kapital, 0) + $preis,
-            p.tutorialAusgegeben = CASE
-                WHEN coalesce(p.tutorialAusgegeben, 0) < $preis THEN 0
-                ELSE coalesce(p.tutorialAusgegeben, 0) - $preis
-            END
+        WITH p, coalesce(p.tutorialAusgegeben, 0) AS alt
+        WITH p, alt, CASE WHEN alt < $preis THEN alt ELSE $preis END AS rueck
+        SET p.kapital = coalesce(p.kapital, 0) + rueck,
+            p.kapitalBasis = coalesce(p.kapital, 0) + rueck,
+            p.tutorialAusgegeben = alt - rueck
+        RETURN rueck, p.kapital AS kapital, p.tutorialAusgegeben AS ausgegeben
     """
     async with driver.session() as session:
-        await session.run(query, campaign_id=campaign_id, person_id=person_id, preis=preis)
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, preis=preis
+        )
+        record = await result.single()
+    if record is None:
+        return None
+    return {
+        "rueck": int(record["rueck"]),
+        "kapital": int(record["kapital"]),
+        "ausgegeben": int(record["ausgegeben"]),
+    }
+
+
+async def besitzer_loesen(campaign_id: str, item_id: str) -> bool:
+    """Nimmt nur die Besitzer-Kante weg, ohne das Stück zur Vorlage zu machen."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person)-[r:BESITZT]->(g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+        DELETE r
+        RETURN g.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+        return await result.single() is not None
+
+
+async def shop_hat_vorlage_namens(campaign_id: str, shop_id: str, name: str) -> bool:
+    """True, wenn der Laden eine Vorlage dieses Namens führt — dann ist das
+    zurückgegebene Stück eine Kopie und darf weg."""
+    driver = get_driver()
+    query = """
+        MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
+              -[:VERKAUFT]->(g:Gegenstand {istVorlage: true, name: $name})
+        RETURN g.id AS id
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, shop_id=shop_id, name=name)
+        return await result.single() is not None

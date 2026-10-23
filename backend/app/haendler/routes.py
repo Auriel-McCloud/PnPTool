@@ -272,6 +272,64 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)
 
 
+class TutorialZurueckInput(BaseModel):
+    gegenstandId: str
+    kaeuferPersonId: str | None = None
+
+
+@router.post("/{haendler_id}/tutorial-zurueck", response_model=KaufResponse)
+async def tutorial_zurueck(
+    campaign_id: str, haendler_id: str, body: TutorialZurueckInput, viewer: Viewer = Depends(get_viewer)
+):
+    """Gibt ein im Tutorial-Shop gekauftes Stück zurück, solange die Erstellung läuft.
+
+    Kopien (Vorlage hängt noch am Laden) werden gelöscht. Ein Unikat kommt
+    ins Regal zurück. Das Geld wird höchstens in Höhe der gezählten Ausgabe
+    gutgeschrieben.
+    """
+    haendler = await _haendler_oder_404(campaign_id, haendler_id, viewer)
+    if not haendler.get("istTutorialShop"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Das ist kein Tutorial-Shop")
+
+    if viewer.role == "GM":
+        if not body.kaeuferPersonId:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "kaeuferPersonId erforderlich")
+        kaeufer_id = body.kaeuferPersonId
+    else:
+        if not viewer.person_id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
+        kaeufer_id = viewer.person_id
+
+    kaeufer = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, kaeufer_id)
+    if kaeufer is None or kaeufer.get("erstellungAbgeschlossen"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Zurückgeben geht nur während der Erstellung")
+
+    besitzer = await items_repository.get_owner_person_id(campaign_id, body.gegenstandId)
+    if besitzer != kaeufer_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Das Stück gehört diesem Charakter nicht")
+    stueck = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
+    if stueck is None or stueck.get("istNatuerlich"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Das Stück kann nicht zurückgegeben werden")
+
+    preis = int(stueck.get("preis") or 0)
+    if await repository.shop_hat_vorlage_namens(campaign_id, haendler_id, stueck.get("name") or ""):
+        geloescht = await items_repository.delete_gegenstand(campaign_id, body.gegenstandId)
+        if not geloescht:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Zurückgeben fehlgeschlagen")
+    else:
+        await repository.besitzer_loesen(campaign_id, body.gegenstandId)
+        await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, preis)
+
+    erstattet = await repository.tutorial_rueckerstatten(campaign_id, kaeufer_id, preis)
+    if erstattet is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    return KaufResponse(
+        gegenstand=None,
+        kapitalNeu=erstattet["kapital"],
+        tutorialAusgegeben=erstattet["ausgegeben"],
+    )
+
+
 @router.get("/bestellungen/offen", response_model=list[BestellungResponse], dependencies=[Depends(require_campaign_gm)])
 async def bestellungen_offen(campaign_id: str):
     """Alle offenen Online-Bestellungen dieser Kampagne — SL-Liste mit dem

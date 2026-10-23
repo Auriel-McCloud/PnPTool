@@ -81,6 +81,10 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Tutorial-Shop: Liste höher, Rückgabe** (23.10.2026): Warenfelder links
+  werden nicht mehr gestaucht, Text darf umbrechen. Neben jedem Kauf ein
+  Zurück — fragt nach, Geld kommt wieder. Hart neu laden.
+
 - **Tutorial-Shop: Käufe sichtbar, Ausgabe sperrt die Regler** (23.10.2026):
   unter dem Steckbrief stehen die gekauften Stücke und die Summe.
   Eigenkapital/Kredit können das schon Ausgegebene nicht unterschreiten.
