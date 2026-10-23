@@ -464,9 +464,16 @@ export function Charaktererstellung({
       fertigkeitPunkte,
       hintergrundPunkte,
       freebeePunkte,
-      zusatzfertigkeitPunkte: Object.fromEntries(
-        zusatzfertigkeiten.map((z) => [z.id, zusatzfertigkeitPaketPunkte[z.id] || 0]),
-      ),
+      zusatzfertigkeitPunkte: Object.fromEntries([
+        ...zusatzfertigkeiten.map((z) => [z.id, zusatzfertigkeitPaketPunkte[z.id] || 0]),
+        // Rassen-Zusatzfertigkeit (23.10.2026): hier NUR die zusätzliche
+        // Investition über den festen 1-Punkt-Sockel hinaus — genau wie beim
+        // Hexkraft-/NeuroWeaving-Sockel unten (`magieFixwert` + `bonus`), der
+        // feste Punkt selbst kommt serverseitig oben drauf
+        // (routes.py::erstelle_charakter). Ohne Rassen-Feature keine ID zum
+        // Verdoppeln vorhanden, also nur bei vorhandenem `gratisZf` eintragen.
+        ...(gratisZf ? [[gratisZf.id, zusatzfertigkeitPaketPunkte[gratisZf.id] || 0]] : []),
+      ] as [string, number][]),
       zusatzfertigkeitFreebees,
       freebeeWillenskraft,
       freebeeKredit,
@@ -1281,12 +1288,28 @@ function SchrittFertigkeiten({
                             />
                             <span
                               style={{ marginLeft: 6, fontSize: "0.75em", color: "var(--text-leise)" }}
-                              title="Kommt automatisch von deiner Rasse, kein Fertigkeiten-Punkt nötig"
+                              title="Der erste Punkt kommt automatisch von deiner Rasse, kein Fertigkeiten-Punkt nötig"
                             >
                               ✦ Rasse
                             </span>
                           </span>
-                          <DotPool value={1} max={Math.max(1, hoechster)} fest={1} />
+                          <DotPool
+                            value={1 + (zusatzfertigkeitPaketPunkte[gratisZf.id] || 0)}
+                            max={1 + hoechster}
+                            fest={1}
+                            onChange={(neu) => {
+                              // Der feste Rassen-Punkt (fest=1, siehe DotPool)
+                              // ist nicht wegklickbar. Alles darüber ist eine
+                              // normale Paket-Investition wie beim Hexkraft-/
+                              // NeuroWeaving-Sockel oben: `bonus` ist die
+                              // GRÖSSE des zusätzlichen Slots, nicht der
+                              // Gesamtwert — wird unten genauso als eigener
+                              // Slot gegen `offen` geprüft/verbucht.
+                              const bonus = Math.max(0, neu - 1);
+                              if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
+                              onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [gratisZf.id]: bonus });
+                            }}
+                          />
                         </div>
                       )}
                       {zusatzfertigkeiten.map((z) => {

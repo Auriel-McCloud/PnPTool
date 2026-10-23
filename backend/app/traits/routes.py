@@ -962,11 +962,21 @@ async def erstelle_charakter(
     freebees_zf = body.zusatzfertigkeitFreebees or {}
     for zid in neu_gewaehlt:
         rating = int(body.zusatzfertigkeitPunkte.get(zid, 0)) + int(freebees_zf.get(zid, 0))
+        if zid == gratis_zf_id:
+            # Analog zum Hexkraft-/NeuroWeaving-Sockel (erstellung.py::
+            # MAGIE_FIXWERT): das Frontend schickt hier NUR die zusätzliche
+            # Investition über den festen 1-Punkt-Sockel hinaus (23.10.2026,
+            # Mark: "es lässt mich keinen weiteren Punkt dazu vergeben" —
+            # der Sockel-Punkt selbst fehlte in der Summe). Der feste Punkt
+            # kommt hier oben drauf, unabhängig vom Paket-Budget.
+            rating += 1
         await zusatzfertigkeiten_repository.hinzufuegen(campaign_id, person_id, zid, rating)
-    # Automatische Vergabe mit 1 Punkt — nur falls noch nicht vorhanden, eine
+    # Automatische Vergabe mit 1 Punkt — nur falls der Spieler in diesem
+    # Schritt GAR NICHTS dazu eingereicht hat (zid nicht in body.
+    # zusatzfertigkeitPunkte) UND es noch nicht vorher vergeben war. Eine
     # erneute Einreichung (SL-Korrektur) darf eine vom Spieler zwischenzeitlich
     # gesteigerte Stufe nicht wieder auf 1 zurücksetzen.
-    if gratis_zf_id and gratis_zf_id not in bereits_gewaehlt:
+    if gratis_zf_id and gratis_zf_id not in bereits_gewaehlt and gratis_zf_id not in neu_gewaehlt:
         gratis_zf_katalog = {z["id"] for z in zusatzfertigkeiten_katalog}
         if gratis_zf_id in gratis_zf_katalog:
             await zusatzfertigkeiten_repository.hinzufuegen(campaign_id, person_id, gratis_zf_id, 1)
