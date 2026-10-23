@@ -138,6 +138,18 @@ class TestFilterEntity:
     def test_hidden_entity_becomes_none(self):
         assert filter_entity_for_viewer(entity(sichtbarkeit="GM"), "PLAYER", KIRA) is None
 
+    def test_eigener_charakter_bleibt_sichtbar_auch_wenn_nur_sl(self):
+        """PCs stehen standardmäßig auf GM. Das meint andere Spieler, nicht sich selbst.
+
+        Sonst liefert GET /personen/{id} 404 und die Körperkarte zeigt
+        „Person nicht gefunden“, obwohl Bogen und verbaute Ware gehen.
+        """
+        eigener = filter_entity_for_viewer(entity(id=KIRA, sichtbarkeit="GM", silhouette="weiblich"), "PLAYER", KIRA)
+        assert eigener is not None
+        assert eigener["silhouette"] == "weiblich"
+        fremder = filter_entity_for_viewer(entity(id=BOSS, sichtbarkeit="GM"), "PLAYER", KIRA)
+        assert fremder is None
+
     def test_gm_sees_hidden_entity(self):
         assert filter_entity_for_viewer(entity(sichtbarkeit="GM"), "GM", None) is not None
 

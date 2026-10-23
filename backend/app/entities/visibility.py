@@ -92,7 +92,12 @@ _KOPF_LEER: dict[str, object] = {"kapital": 0, "schulden": 0}
 
 
 def filter_entity_for_viewer(entity: dict, viewer_role: str, viewer_person_id: str | None) -> dict | None:
-    if not is_visible_to(
+    # Der eigene Charakter bleibt sichtbar, auch wenn die Entität auf GM steht.
+    # PCs werden so angelegt — das verbirgt sie vor anderen Spielern, nicht vor
+    # dem, der sie spielt. Sonst 404t GET /personen/{id} und die Körperkarte
+    # meldet „Person nicht gefunden“, obwohl der Bogen lädt.
+    eigener = viewer_person_id is not None and entity.get("id") == viewer_person_id
+    if not eigener and not is_visible_to(
         entity.get("sichtbarkeit") or "GM", entity.get("sichtbarFuer") or [], viewer_role, viewer_person_id
     ):
         return None
