@@ -98,7 +98,10 @@
   /* Entitaetsfarben — Graph, Badges und Bereiche halten sich daran */
   --kind-person: var(--p-blau-tief);
   --kind-ort: var(--p-gruen-tief);
-  --kind-event: var(--p-orange);
+  /* Event war vorher dasselbe Orange-Braun wie Fraktion (--p-messing) —
+     im Graphen kaum zu unterscheiden (Mark, 23.10.2026). Türkis ist sonst
+     nur bei Bündel/Eisschaden-Track in Gebrauch, kein Konflikt. */
+  --kind-event: var(--p-tuerkis);
   --kind-gegenstand: var(--p-violett);
   --kind-fraktion: var(--p-messing);
   /* Party teilt die Farbe NICHT mit --bereich-party (Indigo) — im Graphen
