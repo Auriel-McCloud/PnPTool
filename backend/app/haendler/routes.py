@@ -17,7 +17,7 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
 from app.ereignisprotokoll import hooks
-from app.entities.visibility import is_visible_to
+from app.entities.visibility import is_visible_to, shop_fuer_viewer_sichtbar
 from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
@@ -69,9 +69,7 @@ async def tutorial(campaign_id: str):
 
 async def _haendler_oder_404(campaign_id: str, haendler_id: str, viewer: Viewer) -> dict:
     haendler = await repository.hole(campaign_id, haendler_id)
-    if haendler is None or not is_visible_to(
-        haendler.get("sichtbarkeit") or "GM", haendler.get("sichtbarFuer") or [], viewer.role, viewer.person_id
-    ):
+    if haendler is None or not shop_fuer_viewer_sichtbar(haendler, viewer.role, viewer.person_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler nicht gefunden")
     return haendler
 

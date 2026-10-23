@@ -81,6 +81,14 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Tutorial-Shop zeigt Ware auch als Spieler** (23.10.2026): „SL-geheim“ an
+  Beschreibung oder Notizen versteckt im Code den ganzen Ort — der
+  Freebees-Shop lief deshalb auf 404 und zeigte „nichts“, obwohl Ware drin
+  ist. Der Tutorial-Shop ignoriert das jetzt (Waren + Kauf). Die globale
+  Regel (Beschreibung-Schalter = Ort existiert für Spieler nicht) ist nicht
+  umgebaut. Einstellungen: ein Dropdown, ein Laden. Bitte als Spieler den
+  Shop im Freebees-Schritt öffnen und eine Ware kaufen. Hart neu laden.
+
 - **Partys im Beziehungen-Menü sichtbar** (23.10.2026, Marks Frage: "ich
   möchte im Beziehungen-System sehen können, wo meine Spieler gerade sind"):
   Mitgliedschaft (`Person-[:MITGLIED_VON]->Party`) und Aufenthaltsort

@@ -44,10 +44,26 @@ export function TutorialShopPopup({
 
   useEffect(() => {
     if (!offen) return;
-    haendlerApi.tutorial(campaignId).then((h) => {
-      setHaendler(h);
-      if (h) haendlerApi.sortiment(campaignId, h.id).then(setSortiment);
-    });
+    let aktiv = true;
+    setFehler(null);
+    setSortiment([]);
+    haendlerApi
+      .tutorial(campaignId)
+      .then((h) => {
+        if (!aktiv) return;
+        setHaendler(h);
+        if (!h) return;
+        return haendlerApi.sortiment(campaignId, h.id).then((waren) => {
+          if (aktiv) setSortiment(waren);
+        });
+      })
+      .catch((e) => {
+        if (!aktiv) return;
+        setFehler(e instanceof Error ? e.message : "Sortiment nicht ladbar");
+      });
+    return () => {
+      aktiv = false;
+    };
   }, [offen, campaignId]);
 
   const sichtbar = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
@@ -127,7 +143,7 @@ export function TutorialShopPopup({
           <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
 
           {sichtbar.length === 0 ? (
-            <p className="shop-leer">Der Tutorial-Shop führt gerade nichts.</p>
+            fehler ? null : <p className="shop-leer">Der Tutorial-Shop führt gerade nichts.</p>
           ) : (
             <div className="ts-layout">
               <div className="ts-liste" role="listbox" aria-label="Sortiment">

@@ -60,6 +60,25 @@ def is_visible_to(modus: str, sichtbar_fuer: list[str], viewer_role: str, viewer
     return False  # modus == "GM" -> nur der Spielleiter sieht es
 
 
+def shop_fuer_viewer_sichtbar(shop: dict, viewer_role: str, viewer_person_id: str | None) -> bool:
+    """Ob dieser Laden für den Betrachter lesbar ist.
+
+    Ein Tutorial-Shop muss im Freebees-Schritt Waren und Kauf hergeben, auch
+    wenn die Beschreibung oder die Notizen auf SL-geheim stehen. Der Schalter
+    heißt so, versteckt im übrigen Code aber die ganze Entität — sonst findet
+    `GET /haendler/tutorial` den Laden, `GET .../sortiment` antwortet 404, und
+    das Popup behauptet, es gäbe nichts.
+    """
+    if shop.get("istTutorialShop"):
+        return True
+    return is_visible_to(
+        shop.get("sichtbarkeit") or "GM",
+        shop.get("sichtbarFuer") or [],
+        viewer_role,
+        viewer_person_id,
+    )
+
+
 # Kopfzeile des Charakterbogens. Bei einem NPC ist genau das der Stoff, aus
 # dem die Kampagne besteht — was er will, was er fürchtet, wieviel Geld er hat.
 # Es gibt dafür keine eigene Sichtbarkeitsstufe, deshalb bekommt sie ausser dem
