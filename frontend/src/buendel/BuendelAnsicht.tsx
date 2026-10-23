@@ -18,7 +18,7 @@ import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { getBaum, type BaumKnoten } from "../wiki/api";
 import { rassenApi, type Rasse } from "../rassen/api";
 import { achievementsApi, type Achievement } from "../achievements/api";
-import { buendelApi } from "./api";
+import { buendelApi, type BuendelImportModus, type BuendelImportResponse } from "./api";
 import "./buendel.css";
 
 /** `Person.rasse` ist am Server gesetzt (siehe PersonResponse), aber in der
@@ -67,7 +67,10 @@ interface Props {
   campaignId: string;
 }
 
+type BuendelTab = "exportieren" | "importieren";
+
 export function BuendelAnsicht({ campaignId }: Props) {
+  const [tab, setTab] = useState<BuendelTab>("exportieren");
   const [ladend, setLadend] = useState(true);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -210,11 +213,32 @@ export function BuendelAnsicht({ campaignId }: Props) {
     }
   }
 
-  if (ladend) return <div className="bu-leer">Lade Bündel-Kandidaten…</div>;
-  if (fehler) return <div className="bu-leer bu-fehler">{fehler}</div>;
+  if (ladend && tab === "exportieren") return <div className="bu-leer">Lade Bündel-Kandidaten…</div>;
+  if (fehler && tab === "exportieren") return <div className="bu-leer bu-fehler">{fehler}</div>;
 
   return (
     <div className="buendel">
+      <div className="bu-tabs">
+        <button
+          type="button"
+          className={tab === "exportieren" ? "bu-tab bu-tab-aktiv" : "bu-tab"}
+          onClick={() => setTab("exportieren")}
+        >
+          ⬇ Exportieren
+        </button>
+        <button
+          type="button"
+          className={tab === "importieren" ? "bu-tab bu-tab-aktiv" : "bu-tab"}
+          onClick={() => setTab("importieren")}
+        >
+          ⬆ Importieren
+        </button>
+      </div>
+
+      {tab === "importieren" ? (
+        <BuendelImport campaignId={campaignId} />
+      ) : (
+        <>
       <header className="bu-header">
         <h2>📦 Bündel exportieren</h2>
         <p className="bu-beschreibung">
@@ -320,6 +344,167 @@ export function BuendelAnsicht({ campaignId }: Props) {
           {exportLaeuft ? "Exportiert…" : "⬇ Exportieren"}
         </button>
       </form>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Import-Tab (Phase 2): Datei wählen, Modus + Ideenschmiede-Regler setzen,
+ * absenden, Ergebnis-Zähler anzeigen. Geht IMMER in `campaignId` — kein
+ * Kampagnen-Picker (Marks Entscheidung, siehe Modul-Docstring im Backend). */
+function BuendelImport({ campaignId }: { campaignId: string }) {
+  const [datei, setDatei] = useState<File | null>(null);
+  const [modus, setModus] = useState<BuendelImportModus>("ueberspringen");
+  const [ideenschmiede, setIdeenschmiede] = useState(false);
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [ergebnis, setErgebnis] = useState<BuendelImportResponse | null>(null);
+
+  async function importieren() {
+    if (!datei || laeuft) return;
+    setLaeuft(true);
+    setFehler(null);
+    setErgebnis(null);
+    try {
+      const antwort = await buendelApi.importieren(campaignId, datei, modus, ideenschmiede);
+      setErgebnis(antwort);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Import fehlgeschlagen");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  const typNamen: Record<string, string> = {
+    Ort: "Orte", Gegenstand: "Gegenstände", Fraktion: "Fraktionen", Person: "Personen/Critter",
+    Gewaechs: "Flora/Fauna", Event: "Events", WikiSeite: "Wiki-Seiten", Rasse: "Rassen",
+    Achievement: "Achievements",
+  };
+
+  return (
+    <div className="buendel">
+      <header className="bu-header">
+        <h2>📥 Bündel importieren</h2>
+        <p className="bu-beschreibung">
+          Importiert ein Bündel-ZIP in DIESE Kampagne. Bereits vorhandene Einträge
+          (gleiche Herkunft, z.B. aus einem früheren Import) werden anhand ihrer
+          Herkunfts-Kennung erkannt — was damit passiert, bestimmt der Modus unten.
+        </p>
+      </header>
+
+      <form
+        className="bu-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void importieren();
+        }}
+      >
+        <label className="bu-label">
+          Bündel-Datei (.zip)
+          <input
+            type="file"
+            accept=".zip"
+            onChange={(e) => {
+              setDatei(e.target.files?.[0] ?? null);
+              setErgebnis(null);
+              setFehler(null);
+            }}
+            required
+          />
+        </label>
+
+        <fieldset className="bu-fieldset">
+          <legend>Bei bereits vorhandenen Einträgen</legend>
+          <label className="bu-radio">
+            <input
+              type="radio"
+              name="buendel-modus"
+              checked={modus === "ueberspringen"}
+              onChange={() => setModus("ueberspringen")}
+            />
+            Überspringen — nichts anfassen
+          </label>
+          <label className="bu-radio">
+            <input
+              type="radio"
+              name="buendel-modus"
+              checked={modus === "aktualisieren"}
+              onChange={() => setModus("aktualisieren")}
+            />
+            Aktualisieren — mit Bündel-Stand überschreiben (alter Stand wandert in den Papierkorb)
+          </label>
+        </fieldset>
+
+        <fieldset className="bu-fieldset">
+          <legend>Neu angelegte Einträge</legend>
+          <label className="bu-radio">
+            <input
+              type="radio"
+              name="buendel-ziel"
+              checked={!ideenschmiede}
+              onChange={() => setIdeenschmiede(false)}
+            />
+            Direkt live
+          </label>
+          <label className="bu-radio">
+            <input
+              type="radio"
+              name="buendel-ziel"
+              checked={ideenschmiede}
+              onChange={() => setIdeenschmiede(true)}
+            />
+            Erst in die Ideenschmiede (Entwurf)
+          </label>
+          <p className="bu-hinweis">
+            Gilt nur für Typen mit Ideenschmiede (Orte, Gegenstände, Fraktionen,
+            Personen/Critter, Flora/Fauna, Events, Wiki-Seiten). Rassen und
+            Achievements kennen keinen Entwurfsstatus und gehen immer direkt live.
+          </p>
+        </fieldset>
+
+        {fehler && <p className="bu-fehler">{fehler}</p>}
+
+        <button type="submit" className="bu-export-btn" disabled={laeuft || !datei}>
+          {laeuft ? "Importiert…" : "⬆ Importieren"}
+        </button>
+      </form>
+
+      {ergebnis && (
+        <div className="bu-ergebnis">
+          <h3>Ergebnis: {ergebnis.bundleName || "Bündel"}</h3>
+          {ergebnis.herkunftCampaignName && (
+            <p className="bu-beschreibung">Herkunft: {ergebnis.herkunftCampaignName}</p>
+          )}
+          <ul className="bu-ergebnis-zaehler">
+            <li><strong>{ergebnis.neu}</strong> neu angelegt</li>
+            <li><strong>{ergebnis.aktualisiert}</strong> aktualisiert (alter Stand im Papierkorb)</li>
+            <li><strong>{ergebnis.uebersprungen}</strong> übersprungen (unverändert)</li>
+          </ul>
+          {Object.keys(ergebnis.proTyp).length > 0 && (
+            <table className="bu-ergebnis-tabelle">
+              <thead>
+                <tr>
+                  <th>Typ</th>
+                  <th>neu</th>
+                  <th>aktualisiert</th>
+                  <th>übersprungen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(ergebnis.proTyp).map(([typ, z]) => (
+                  <tr key={typ}>
+                    <td>{typNamen[typ] ?? typ}</td>
+                    <td>{z.neu}</td>
+                    <td>{z.aktualisiert}</td>
+                    <td>{z.uebersprungen}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }

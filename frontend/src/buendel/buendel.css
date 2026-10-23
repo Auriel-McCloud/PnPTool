@@ -135,3 +135,85 @@
 .bu-erfolg {
   color: var(--gut);
 }
+
+.bu-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.bu-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--text-leise);
+  font-weight: 600;
+}
+
+.bu-tab-aktiv {
+  color: var(--bereich-buendel);
+  border-bottom-color: var(--bereich-buendel);
+}
+
+.bu-fieldset {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bu-fieldset legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.bu-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.bu-hinweis {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.bu-ergebnis {
+  border-top: 1px solid var(--linie);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bu-ergebnis-zaehler {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bu-ergebnis-zaehler strong {
+  color: var(--bereich-buendel);
+  font-size: 18px;
+}
+
+.bu-ergebnis-tabelle {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.bu-ergebnis-tabelle th,
+.bu-ergebnis-tabelle td {
+  border: 1px solid var(--linie);
+  padding: 4px 8px;
+  text-align: left;
+}
