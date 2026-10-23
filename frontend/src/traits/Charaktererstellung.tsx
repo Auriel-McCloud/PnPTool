@@ -1719,7 +1719,7 @@ export function VorschlagKnopf({
   return (
     <>
       <button type="button" onClick={() => setOffen(true)} title={`Anregungen für ${titel}`}>
-        Vorschläge
+        Auswählen
       </button>
       <Fenster
         offen={offen}

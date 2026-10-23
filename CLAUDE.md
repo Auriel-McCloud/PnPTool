@@ -81,6 +81,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Ambition/Verlangen: Auswählen ist wieder da** (23.10.2026): der Knopf
+  war weg, weil `vorlagen.local.json` nicht im Backend-Image liegt (gitignored).
+  Auf bebop gemountet unter `/opt/pnptool/data/vorlagen.local.json` →
+  `/app/data/vorlagen.local.json`. Knopf heißt wieder „Auswählen“. Hart neu
+  laden, Schritt 7.
+
 - **Tutorial-Shop: Liste höher, Rückgabe** (23.10.2026): Warenfelder links
   werden nicht mehr gestaucht, Text darf umbrechen. Neben jedem Kauf ein
   Zurück — fragt nach, Geld kommt wieder. Hart neu laden.
