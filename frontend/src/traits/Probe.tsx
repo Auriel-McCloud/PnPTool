@@ -3,6 +3,7 @@ import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
 import type { Spezialisierung } from "../spezialisierungen/api";
+import { SpezialisierungVerwaltung } from "./SpezialisierungPopup";
 import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./probe.css";
@@ -59,6 +60,11 @@ export function Probe({
   deckBoni,
   magieFlavor,
   spezialisierungen,
+  campaignId,
+  personId,
+  erfahrungVerfuegbar = 0,
+  istGM = false,
+  onSpezialisierungAenderung,
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
@@ -79,8 +85,17 @@ export function Probe({
   /** Fertigkeiten-Spezialisierung (22.10.2026): ALLE Slots dieser Person
    * (benannt wie unbenannt) — nur die BENANNTEN werden als Chip angeboten,
    * und nur für die plain Fertigkeit+Attribut-Kombination unten, nie für
-   * Attribute/Sphären/Hexkraft/NeuroWeaving (siehe istSphaere/nurWillenskraft). */
+   * Attribute/Sphären/Hexkraft/NeuroWeaving (siehe istSphaere/nurWillenskraft).
+   * Benennen und Kaufen sitzt nicht hier, sondern im ersten Fenster
+   * (SpezialisierungVerwaltung) — dieser Chip ist nur der +1 für die Probe. */
   spezialisierungen?: Spezialisierung[];
+  /** Fürs Einbetten der Slot-Verwaltung. Fehlt das, bleibt das Fenster
+   * eine reine Rechenhilfe (Kampfkarte). */
+  campaignId?: string;
+  personId?: string;
+  erfahrungVerfuegbar?: number;
+  istGM?: boolean;
+  onSpezialisierungAenderung?: () => void | Promise<void>;
   onSchliessen: () => void;
 }) {
   const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
@@ -150,6 +165,39 @@ export function Probe({
     onSchliessen();
   }
 
+  // Slots benennen und kaufen — im selben Fenster wie die Attributwahl,
+  // nicht als Badge neben den Punkten. Nur wenn die Fertigkeit eine
+  // Spezialisierung haben kann (oder schon Slots hat).
+  function spezialisierungsBlock(aktuell: ProbeWahl) {
+    if (!campaignId || !personId || !onSpezialisierungAenderung) return null;
+    if (aktuell.kategorie !== "Fertigkeit" && aktuell.kategorie !== "NeuroWeaving" && aktuell.kategorie !== "Sphäre") {
+      return null;
+    }
+    const trait = katalog.find((t) => t.name === aktuell.name && t.category === aktuell.kategorie);
+    if (!trait) return null;
+    const rating = werte.get(trait.id) ?? 0;
+    const slots = (spezialisierungen ?? []).filter((s) => s.traitDefId === trait.id);
+    const mindest = aktuell.kategorie === "Sphäre" ? 2 : 4;
+    if (rating < mindest && slots.length === 0) return null;
+    return (
+      <section className="pr-spezialisierung">
+        <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--neon)" } as React.CSSProperties}>
+          Spezialisierungen
+        </h3>
+        <SpezialisierungVerwaltung
+          campaignId={campaignId}
+          personId={personId}
+          trait={trait}
+          rating={rating}
+          erfahrungVerfuegbar={erfahrungVerfuegbar}
+          slots={slots}
+          istGM={istGM}
+          onAenderung={onSpezialisierungAenderung}
+        />
+      </section>
+    );
+  }
+
   // --- Sphären: hier wird nicht gewürfelt (Zeile 87) --------------------
   if (istSphaere) {
     return (
@@ -174,6 +222,7 @@ export function Probe({
           })}
         </ol>
         {wahl.wert === 0 && <p className="pr-regel">Diese Sphäre steht dir noch nicht offen.</p>}
+        {spezialisierungsBlock(wahl)}
       </Fenster>
     );
   }
@@ -265,6 +314,7 @@ export function Probe({
               {wahl.kategorie === "Hexkraft" ? `Ohne Willenskraft keine ${wildeMagieName}.` : "Ohne Willenskraft kein Overclock."}
             </p>
           )}
+          {spezialisierungsBlock(wahl)}
         </Fenster>
       </>
     );
@@ -302,6 +352,7 @@ export function Probe({
             </section>
           ))}
         </div>
+        {spezialisierungsBlock(wahl)}
       </Fenster>
 
       {/* Zweites Fenster über dem ersten — die Zahl ist die ganze Auskunft. */}

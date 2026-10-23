@@ -332,6 +332,39 @@
   white-space: nowrap;
 }
 
+/* Ab Spezialisierungs-Schwelle: der Name trägt das Neon, das vorher der
+   Badge neben den Punkten hatte. Dieselbe Farbe wie der Fertigkeit-Ton.
+   Der feine Rahmen bleibt, damit es auch neben schon neonfarbenen
+   Punkten auffällt. */
+.cb-kann-spezialisierung .cb-wert-name {
+  color: var(--neon);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--neon) 70%, transparent);
+}
+
+.cb-wert.cb-kann-spezialisierung,
+.cb-wert-bearbeiten.cb-kann-spezialisierung {
+  border-color: color-mix(in srgb, var(--neon) 55%, transparent);
+  box-shadow: inset 0 0 10px var(--neon-schwach);
+}
+
+/* Im Bearbeiten ist der Name selbst der Knopf (die Punkte bleiben frei).
+   Globale Button-Maße würden die Zeile aufsprengen. */
+.cb-wert-name-oeffnen,
+.cb-wert-name-oeffnen:hover:not(:disabled),
+.cb-wert-name-oeffnen:active:not(:disabled) {
+  flex: 1 1 auto;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+  letter-spacing: 0;
+  box-shadow: none;
+  transform: none;
+  text-align: left;
+}
+
 
 /* Hinweis auf die Klickfolge der Schadensarten */
 .cb-tipp {

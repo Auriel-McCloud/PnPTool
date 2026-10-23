@@ -1,6 +1,6 @@
 /* ===================================================================
-   Fertigkeiten-Spezialisierung — Slot-Liste im Popup neben der
-   Fertigkeitszeile (ab Rating 4, siehe Charakterblatt.tsx::reihe).
+   Fertigkeiten-Spezialisierung — Slot-Liste im Klick-Fenster der
+   Fertigkeit (Probe), nicht mehr als Badge neben den Punkten.
    =================================================================== */
 
 .sz-liste {
@@ -83,23 +83,4 @@
   flex-direction: column;
   gap: 4px;
   align-items: flex-start;
-}
-
-/* Badge neben der Fertigkeitszeile — gleiche Bauweise wie
-   .cb-ausruestungsbonus (charakterblatt.css), eigene Farbe (neon statt
-   gut): es ist ein Werkzeug zum Öffnen des Popups, kein Bonuswert. */
-.cb-spezialisierung-badge {
-  margin-left: 6px;
-  padding: 0 5px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--neon);
-  border: 1px solid color-mix(in srgb, var(--neon) 50%, transparent);
-  border-radius: 2px;
-  white-space: nowrap;
-  background: none;
-}
-
-.cb-spezialisierung-badge:hover {
-  background: var(--neon-schwach);
 }

@@ -262,3 +262,11 @@
   border-color: var(--cb-ton, var(--neon));
   background: color-mix(in srgb, var(--cb-ton, var(--neon)) 14%, transparent);
 }
+
+/* Spezialisierungen unter der Attributwahl — nicht mehr als Badge
+   neben den Punkten auf dem Blatt. */
+.pr-spezialisierung {
+  margin-top: 14px;
+  padding-top: 4px;
+  border-top: 1px solid var(--linie);
+}

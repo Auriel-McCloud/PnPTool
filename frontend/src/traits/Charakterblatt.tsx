@@ -19,7 +19,6 @@ import { traitsApi, type TraitDef } from "./api";
 import { magieBegriff } from "./magieBegriffe";
 import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
-import { SpezialisierungPopup } from "./SpezialisierungPopup";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -100,8 +99,6 @@ export function Charakterblatt({
   // (benannt wie unbenannt), über alle Fertigkeiten hinweg — reihe(...)
   // gruppiert clientseitig nach traitDefId (siehe spezialisierungenNachTrait).
   const [spezialisierungen, setSpezialisierungen] = useState<Spezialisierung[]>([]);
-  // Welche Fertigkeit gerade ihr Spezialisierungs-Popup offen hat.
-  const [spezialisierungOffen, setSpezialisierungOffen] = useState<TraitDef | null>(null);
 
   // Still nachladen, solange niemand gerade tippt oder Punkte setzt.
   // Erstellung und Level-Up haben eigenen lokalen Stand — den nicht
@@ -384,23 +381,41 @@ export function Charakterblatt({
             // Häretiker-Flavor: nur Hexkraft/Sphären-Namen sind in der
             // Mapping-Tabelle, alles andere kommt unverändert zurück.
             const anzeigeName = magieBegriff(u.magieFlavor, t.name);
+            const spezSlots = spezialisierungenNachTrait.get(t.id) ?? [];
+            // Ab der ersten Schwelle (Sphäre 2, sonst 4) oder bei schon
+            // vorhandenen Slots leuchtet der Name neon — der alte Badge
+            // rechts neben den Punkten ist weg, die Slots sitzen im
+            // Klick-Fenster (Probe).
+            const kannSpez =
+              (kategorie === "Fertigkeit" || kategorie === "NeuroWeaving" || kategorie === "Sphäre") &&
+              (wert >= (kategorie === "Sphäre" ? 2 : 4) || spezSlots.length > 0);
+            const fensterOeffnen = () =>
+              onWertGewaehlt
+                ? onWertGewaehlt(t.name, wert + ausruestungsBonus, kategorie)
+                : setProbe({ name: t.name, wert: wert + ausruestungsBonus, kategorie });
             return (
               // Umhüllung, weil das Erklärungszeichen selbst ein Knopf ist
               // und nicht in der Wertezeile stecken darf — ein Knopf im Knopf
               // ist ungültig und macht beide unbedienbar.
               <div key={t.id} className="cb-wert-zeile">
                 {bearbeiten ? (
-                  // Im Bearbeiten-Modus keine Schaltfläche: die Punkte selbst
-                  // sind anklickbar, ein Knopf darum herum finge den Klick ab.
-                  <div className="cb-wert cb-wert-bearbeiten">
-                    <span className="cb-wert-name">
+                  // Kein Knopf um die ganze Zeile: die Punkte selbst sind
+                  // anklickbar. Der Name öffnet dasselbe Fenster wie im
+                  // Spiel — sonst käme man im Bearbeiten nicht an die Slots.
+                  <div className={`cb-wert cb-wert-bearbeiten${kannSpez ? " cb-kann-spezialisierung" : ""}`}>
+                    <button
+                      type="button"
+                      className="cb-wert-name cb-wert-name-oeffnen"
+                      onClick={fensterOeffnen}
+                      title={`${anzeigeName} — Fenster öffnen`}
+                    >
                       {anzeigeName}
                       {ausruestungsBonus !== 0 && (
                         <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
                           {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
                         </span>
                       )}
-                    </span>
+                    </button>
                     <DotPool
                       value={wert}
                       max={grenzeVon(t)}
@@ -410,12 +425,8 @@ export function Charakterblatt({
                 ) : (
                   <button
                     type="button"
-                    className="cb-wert"
-                    onClick={() =>
-                      onWertGewaehlt
-                        ? onWertGewaehlt(t.name, wert + ausruestungsBonus, kategorie)
-                        : setProbe({ name: t.name, wert: wert + ausruestungsBonus, kategorie })
-                    }
+                    className={`cb-wert${kannSpez ? " cb-kann-spezialisierung" : ""}`}
+                    onClick={fensterOeffnen}
                     title={`${anzeigeName} — wie viele Würfel?`}
                   >
                     <span className="cb-wert-name">
@@ -453,27 +464,6 @@ export function Charakterblatt({
                   </span>
                 )}
                 <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(anzeigeName)} titel={anzeigeName} />
-                {(kategorie === "Fertigkeit" || kategorie === "NeuroWeaving" || kategorie === "Sphäre") &&
-                  (() => {
-                    const slots = spezialisierungenNachTrait.get(t.id) ?? [];
-                    // Sphären haben ihre erste Auto-Grant-Schwelle bei 2
-                    // statt 4 (23.10.2026, eigene Schwellen 2/4/6 — siehe
-                    // backend/app/spezialisierungen/repository.py::
-                    // SPHAERE_SCHWELLEN).
-                    const mindestFuerBadge = kategorie === "Sphäre" ? 2 : 4;
-                    if (wert < mindestFuerBadge && slots.length === 0) return null;
-                    const benannt = slots.filter((s) => s.text).length;
-                    return (
-                      <button
-                        type="button"
-                        className="cb-spezialisierung-badge"
-                        title="Spezialisierungen ansehen/verwalten"
-                        onClick={() => setSpezialisierungOffen(t)}
-                      >
-                        {slots.length > 0 ? `${benannt}/${slots.length} Spez.` : "+ Spez."}
-                      </button>
-                    );
-                  })()}
               </div>
             );
           })}
@@ -658,24 +648,15 @@ export function Charakterblatt({
         deckBoni={bogen.deckBoni}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}
-        onSchliessen={() => setProbe(null)}
-      />
-
-      <SpezialisierungPopup
-        offen={spezialisierungOffen !== null}
         campaignId={campaignId}
         personId={personId}
-        trait={spezialisierungOffen ?? ({} as TraitDef)}
-        rating={spezialisierungOffen ? werte.get(spezialisierungOffen.id) ?? 0 : 0}
         erfahrungVerfuegbar={u.erfahrungVerfuegbar}
-        slots={spezialisierungOffen ? spezialisierungenNachTrait.get(spezialisierungOffen.id) ?? [] : []}
-        istGM={bearbeitbar}
-        magieFlavor={u.magieFlavor}
-        onSchliessen={() => setSpezialisierungOffen(null)}
-        onAenderung={async () => {
+        istGM={Boolean(bearbeitbar)}
+        onSpezialisierungAenderung={async () => {
           await spezialisierungenNeuLaden();
           await neuLaden();
         }}
+        onSchliessen={() => setProbe(null)}
       />
 
       {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —

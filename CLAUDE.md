@@ -52,18 +52,18 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   (Sphären werden nie gewürfelt) — der Slot ist reiner Freitext, bewusst wie
   bei Fertigkeiten. `TRAIT_VORSCHLAEGE` um Chip-Vorschläge für alle 9
   Sphären ergänzt (aus den „Empfohlene Spezialitäten" der Master-Docs).
-  Frontend: `Charakterblatt.tsx` zeigt den Spezialisierungs-Badge jetzt auch
-  bei Sphären (Schwelle 2 statt 4), `SpezialisierungPopup.tsx` rechnet die
-  Mindest-Rating-Schwelle kategorieabhängig und zeigt bei Häretiker-
-  Charakteren den Götternamen im Titel (`magieBegriff`) statt des internen
-  Magier-Namens, `ZusatzfertigkeitenVerwaltung.tsx`-Tab „Spezialisierungs-
+  Frontend: Schwelle 2 bei Sphären (der Badge neben den Punkten ist danach
+  ins Klick-Fenster gewandert, siehe nächsten Punkt). Die Slot-Liste rechnet die
+  Mindest-Rating-Schwelle kategorieabhängig; der Fenster-Titel zeigt bei Häretiker-
+  Charakteren den Götternamen (`magieBegriff`) statt des internen
+  Magier-Namens. `ZusatzfertigkeitenVerwaltung.tsx`-Tab „Spezialisierungs-
   Vorschläge" verwaltet jetzt auch Sphären. Zwei Tests, die die alte
   Ausschluss-Regel geprüft hatten, umgedreht (`test_sphaere_bekommt_
   slots_bei_zwei_vier_sechs`, `test_set_trait_vorschlaege_route_erlaubt_
   sphaere`), plus neue Tests für `schwellen_fuer`/die Sphären-Schwellen.
   **Verifiziert:** `tsc -b` sauber, Backend-Tests isoliert grün (derselbe
   bekannte Windows-Multi-Test-Flake wie überall sonst). **Nie am Spieltisch/
-  **Nie am Spieltisch/Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
+  Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
   diesem Eintrag.
 
 - **Spezialisierung ins Klick-Fenster** (23.10.2026, Mark: der Badge rechts

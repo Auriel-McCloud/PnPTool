@@ -429,8 +429,9 @@ function KiVorschlaegePopup({
  * Fertigkeiten-Spezialisierung; 23.10.2026 um Sphären erweitert): je
  * Fertigkeit/NeuroWeaving/Sphären-TraitDef eine Liste von Vorschlagstexten
  * pflegen, die ein Spieler beim Benennen eines Spezialisierungs-Slots als
- * anklickbare Chips angeboten bekommt (siehe SpezialisierungPopup.tsx —
- * liest exakt dasselbe `trait.vorschlaege`-Feld).
+ * anklickbare Chips angeboten bekommt (siehe SpezialisierungVerwaltung in
+ * SpezialisierungPopup.tsx — liest exakt dasselbe `trait.vorschlaege`-Feld,
+ * eingehängt im Klick-Fenster der Fertigkeit).
  *
  * Bisher kam diese Liste ausschließlich aus TRAIT_VORSCHLAEGE im Backend-
  * Seed (traits/seed.py) — hier die erste GM-Oberfläche dafür. Speichert bei

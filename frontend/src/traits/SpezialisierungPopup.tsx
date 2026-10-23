@@ -1,26 +1,27 @@
 import { useEffect, useState } from "react";
-import { Fenster } from "../shell/Fenster";
 import { ApiError } from "../api/client";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
 import type { TraitDef } from "./api";
-import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import "./spezialisierung.css";
 
 /**
- * Spezialisierungs-Slots EINER Fertigkeit ODER Sphäre — Popup vom Badge
- * neben der Zeile (ab Rating 4 bei Fertigkeiten/NeuroWeaving, ab Rating 2
- * bei Sphären — siehe Charakterblatt.tsx::reihe und MINDEST_RATING unten;
- * Sphären kamen am 23.10.2026 mit eigenen Schwellen 2/4/6 dazu).
+ * Spezialisierungs-Slots EINER Fertigkeit oder Sphäre — eingebettet ins
+ * Klick-Fenster (Probe: Attributwahl, NeuroWeaving, Sphäreninfo). Kein
+ * eigenes Popup und kein Badge neben den Punkten mehr (Mark, 23.10.2026:
+ * der Badge rechts von den Punkten war hässlich).
+ *
+ * Sichtbar ab der ersten Schwelle (Fertigkeit/NeuroWeaving 4, Sphäre 2)
+ * oder sobald schon Slots existieren — der Aufrufer entscheidet das.
+ * Der Fenster-Titel (inkl. Häretiker-Name) kommt vom Aufrufer.
  *
  * Zweiphasiges Namensrecht (Mark, wörtlich: "nachträglich sollte nur der SL
- * sie ändern können" — Annahme: 'nachträglich' = NACH der ersten Benennung,
- * siehe Berichtstext für die Feature-Umsetzung): ein leerer Slot darf
- * einmalig vom Spieler ODER der SL benannt werden (Vorschlag-Chip oder
- * Freitext). Danach ist er gesperrt — nur die SL darf ihn noch ändern. Die
- * Sperre selbst prüft der Server (403); hier wird nur passend angezeigt.
+ * sie ändern können" — Annahme: 'nachträglich' = NACH der ersten Benennung):
+ * ein leerer Slot darf einmalig vom Spieler ODER der SL benannt werden
+ * (Vorschlag-Chip oder Freitext). Danach ist er gesperrt — nur die SL darf
+ * ihn noch ändern. Die Sperre prüft der Server (403); hier wird nur passend
+ * angezeigt.
  */
-export function SpezialisierungPopup({
-  offen,
+export function SpezialisierungVerwaltung({
   campaignId,
   personId,
   trait,
@@ -28,11 +29,8 @@ export function SpezialisierungPopup({
   erfahrungVerfuegbar,
   slots,
   istGM,
-  magieFlavor,
-  onSchliessen,
   onAenderung,
 }: {
-  offen: boolean;
   campaignId: string;
   personId: string;
   trait: TraitDef;
@@ -41,12 +39,6 @@ export function SpezialisierungPopup({
   slots: Spezialisierung[];
   /** Entspricht `bearbeitbar` am Charakterblatt — nur dort ist es die SL. */
   istGM: boolean;
-  /** Häretiker-Flavor fürs Popup-Label (Sphären zeigen sonst den
-   * Magier-internen Namen statt des Gottes, z.B. "Korrespondenz" statt
-   * "Shu") — bei Fertigkeiten ohne Effekt, magieBegriff gibt den Namen
-   * dann unverändert zurück. */
-  magieFlavor?: MagieFlavor;
-  onSchliessen: () => void;
   onAenderung: () => void | Promise<void>;
 }) {
   const [entwuerfe, setEntwuerfe] = useState<Record<string, string>>({});
@@ -54,15 +46,12 @@ export function SpezialisierungPopup({
   const [kauft, setKauft] = useState(false);
   const [kaufFehler, setKaufFehler] = useState("");
 
-  // Frischer Entwurf bei jedem Öffnen / Wechsel der Fertigkeit.
+  // Frischer Entwurf beim Wechsel der Fertigkeit — das Fenster bleibt offen,
+  // während man von einer Fertigkeit zur nächsten springt.
   useEffect(() => {
-    if (offen) {
-      setEntwuerfe({});
-      setKaufFehler("");
-    }
-  }, [offen, trait.id]);
-
-  if (!offen) return null;
+    setEntwuerfe({});
+    setKaufFehler("");
+  }, [trait.id]);
 
   async function benennen(slot: Spezialisierung, text: string) {
     if (!text.trim()) return;
@@ -98,16 +87,9 @@ export function SpezialisierungPopup({
   // (siehe backend/app/spezialisierungen/repository.py::SPHAERE_SCHWELLEN).
   const mindestRating = trait.category === "Sphäre" ? 2 : 4;
   const kannKaufen = rating >= mindestRating;
-  const anzeigeName = magieBegriff(magieFlavor, trait.name);
 
   return (
-    <Fenster
-      offen={offen}
-      titel={`${anzeigeName} — Spezialisierungen`}
-      unterzeile={`${slots.length} Slot${slots.length === 1 ? "" : "s"}`}
-      kennung={`spezialisierung:${trait.id}`}
-      onSchliessen={onSchliessen}
-    >
+    <div className="sz-verwaltung">
       <div className="sz-liste">
         {slots.length === 0 && (
           <p className="cb-hinweis">
@@ -176,6 +158,6 @@ export function SpezialisierungPopup({
         {kaufFehler && <p className="pr-warnung">{kaufFehler}</p>}
         <p className="cb-hinweis">{erfahrungVerfuegbar} EP verfügbar</p>
       </div>
-    </Fenster>
+    </div>
   );
 }
