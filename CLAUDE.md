@@ -63,8 +63,20 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   sphaere`), plus neue Tests für `schwellen_fuer`/die Sphären-Schwellen.
   **Verifiziert:** `tsc -b` sauber, Backend-Tests isoliert grün (derselbe
   bekannte Windows-Multi-Test-Flake wie überall sonst). **Nie am Spieltisch/
-  Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
+  **Nie am Spieltisch/Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
   diesem Eintrag.
+
+- **Spezialisierung ins Klick-Fenster** (23.10.2026, Mark: der Badge rechts
+  neben den Punkten ist hässlich): kein `.cb-spezialisierung-badge` mehr.
+  Ab der Schwelle (Fertigkeit/NeuroWeaving 4, Sphäre 2, oder schon
+  vorhandene Slots) leuchtet der Fertigkeitsname neon
+  (`cb-kann-spezialisierung`, dieselbe Farbe wie der alte Badge /
+  Fertigkeit-Ton). Slots benennen und für 4 EP kaufen sitzt in dem Fenster,
+  das beim Antippen aufgeht (Attributwahl, NeuroWeaving, Sphäreninfo) —
+  `SpezialisierungVerwaltung` in `SpezialisierungPopup.tsx`, eingehängt aus
+  `Probe.tsx`. Der Würfelpool-Chip (+1) bleibt im zweiten Probenfenster.
+  Im Bearbeiten-Modus öffnet der Name dasselbe Fenster, die Punkte bleiben
+  anklickbar. **Nie am Spieltisch getestet.**
 
 - **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
   Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
@@ -80,6 +92,11 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 ## Offen: Was Mark selbst testen muss
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
+
+- **Chrom einsetzen** (23.10.2026): Einbau knallte mit `get_node() missing campaign_id`.
+  Jetzt wieder möglich. Im Gegenstandfenster heißt der Bonus **Stufe**, nicht
+  Schaden — echter Klingenschaden bleibt Schaden, nur wenn das Stück auch
+  Waffe ist. Gilt für Cyber-, Bio- und Hexware. Hart neu laden, einsetzen.
 
 - **Ambition/Verlangen: Auswählen ist wieder da** (23.10.2026): der Knopf
   war weg, weil `vorlagen.local.json` nicht im Backend-Image liegt (gitignored).

@@ -571,7 +571,7 @@ async def chirurgie_durchfuehren(
     if body.einsetzen:
         besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
         if besitzer_id:
-            person = await get_node(campaign_id, besitzer_id)
+            person = await get_node("Person", PERSON_FIELDS, campaign_id, besitzer_id)
             weg = person.get("weg", "KEINER") if person else "KEINER"
             typ = item.get("typ", "")
             if weg == "MAGIER" and typ == "Bioware":

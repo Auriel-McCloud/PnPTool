@@ -244,7 +244,21 @@ export function GegenstandKachel({
           </>
         )}
 
-        {item.kraft > 0 && item.typ !== "Rüstung" && (
+        {/* Chrom: kraft ist die Stufe (Preis-/WK-Bonus), nicht der Waffenschaden.
+            Echte Klingen sitzen in schaden, und nur wenn das Stück auch Waffe ist. */}
+        {istChrom && item.kraft > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ color: "var(--text-leise)", fontSize: 13 }}>Stufe</span>
+            <DotPool value={item.kraft} max={SCHADEN_MAX} />
+          </div>
+        )}
+        {istChrom && item.istWaffe && item.schaden > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ color: "var(--text-leise)", fontSize: 13 }}>Schaden</span>
+            <DotPool value={item.schaden} max={SCHADEN_MAX} />
+          </div>
+        )}
+        {!istChrom && item.kraft > 0 && item.typ !== "Rüstung" && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ color: "var(--text-leise)", fontSize: 13 }}>Schaden</span>
             <DotPool value={item.kraft} max={SCHADEN_MAX} />

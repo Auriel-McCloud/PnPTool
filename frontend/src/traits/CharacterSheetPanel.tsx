@@ -840,6 +840,7 @@ export function GegenstandRow({
                     )}
                     {CHROM_TYPEN.has(typ) && (
                       <li>
+                        {kraft > 0 && `Stufe ${kraft} · `}
                         {koerperzone ? `${koerperzone}${slot ? ` Platz ${slot}` : ""}` : "keine Zone"}
                         {wVerlust > 0 && ` · −${wVerlust.toLocaleString("de-AT")} Willenskraft`}
                       </li>

@@ -74,6 +74,10 @@ export function steckbriefZeilen(item: SteckbriefQuelle): SteckbriefZeile[] {
     });
   }
 
+  if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
+    zeilen.push({ label: "Stufe", wert: String(item.kraft) });
+  }
+
   if (CHROM_TYPEN.has(item.typ) && item.wVerlust > 0) {
     zeilen.push({ label: "Willenskraft", wert: `−${item.wVerlust.toLocaleString("de-AT")}` });
   }
@@ -155,6 +159,10 @@ export function steckbriefKurz(item: SteckbriefQuelle): string[] {
     teile.push(`Schaden ${item.schaden} · ${art}`);
   } else if (item.typ !== "Waffe" && item.istWaffe) {
     teile.push(schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)));
+  }
+
+  if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
+    teile.push(`Stufe ${item.kraft}`);
   }
 
   if (CHROM_TYPEN.has(item.typ) && item.wVerlust > 0) {
