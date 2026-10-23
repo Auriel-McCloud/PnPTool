@@ -21,3 +21,11 @@ def test_normaler_gm_shop_bleibt_fuer_spieler_unsichtbar():
 def test_gm_sieht_jeden_shop():
     shop = {"istTutorialShop": False, "sichtbarkeit": "GM", "sichtbarFuer": []}
     assert shop_fuer_viewer_sichtbar(shop, "GM", None) is True
+
+
+def test_tutorial_rest_unterschritten_ist_keins():
+    from app.traits.erstellung import tutorial_rest
+
+    assert tutorial_rest(80_000, 68_000) == 12_000
+    assert tutorial_rest(10_000, 68_000) is None
+    assert tutorial_rest(68_000, 68_000) == 0

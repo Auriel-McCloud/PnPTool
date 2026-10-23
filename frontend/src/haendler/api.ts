@@ -71,6 +71,7 @@ export interface HaendlerEintrag {
 export interface KaufResponse {
   gegenstand: Record<string, unknown> | null;
   kapitalNeu: number;
+  tutorialAusgegeben?: number | null;
   bestellung: BestellungResponse | null;
 }
 

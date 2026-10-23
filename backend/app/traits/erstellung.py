@@ -717,6 +717,18 @@ def kapital(auswahl: dict[str, Any]) -> tuple[int, int]:
     return STARTKAPITAL + kredit + eigen, kredit
 
 
+def tutorial_rest(vermoegen: int, ausgegeben: int) -> int | None:
+    """Restguthaben nach Tutorial-Shop-Käufen.
+
+    None, wenn die Kredit-/Eigenkapital-Regler das schon ausgegebene Geld
+    unterschreiten würden. Sonst kämen die Freebees zurück, die Ware bliebe,
+    und ein zweites Hochdrehen der Regler legt das Geld noch einmal drauf.
+    """
+    if vermoegen < ausgegeben:
+        return None
+    return vermoegen - ausgegeben
+
+
 def _int_dict(roh: Any) -> dict[str, int]:
     if not isinstance(roh, dict):
         return {}

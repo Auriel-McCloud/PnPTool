@@ -81,6 +81,12 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Tutorial-Shop: Käufe sichtbar, Ausgabe sperrt die Regler** (23.10.2026):
+  unter dem Steckbrief stehen die gekauften Stücke und die Summe.
+  Eigenkapital/Kredit können das schon Ausgegebene nicht unterschreiten.
+  Hart neu laden, im Shop die Liste prüfen, den Eigenkapital-Regler
+  runterdrehen — er muss stehen bleiben, sobald das Geld schon weg ist.
+
 - **Tutorial-Shop: nur die Warenliste scrollt** (23.10.2026): Reiter und
   der Werteblock rechts bleiben stehen, nur die linke Liste läuft. Hart neu
   laden, eine lange Liste durchscrollen — der Block rechts und die

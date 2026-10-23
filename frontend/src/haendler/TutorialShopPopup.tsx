@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
+import { itemsApi, type Gegenstand } from "../items/api";
 import { ShopKategorien } from "./ShopKategorien";
 import { Fenster } from "../shell/Fenster";
 import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
@@ -23,14 +24,16 @@ export function TutorialShopPopup({
   personId,
   offen,
   kapital,
-  onKapitalGeaendert,
+  ausgegeben,
+  onGekauft,
   onSchliessen,
 }: {
   campaignId: string;
   personId: string;
   offen: boolean;
   kapital: number;
-  onKapitalGeaendert: (neu: number) => void;
+  ausgegeben: number;
+  onGekauft: (kapitalNeu: number, ausgegeben: number) => void;
   onSchliessen: () => void;
 }) {
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
@@ -41,6 +44,7 @@ export function TutorialShopPopup({
   const [fehler, setFehler] = useState<string | null>(null);
   const [kommentar, setKommentar] = useState<string | null>(null);
   const [kommentarLaedt, setKommentarLaedt] = useState(false);
+  const [gekauft, setGekauft] = useState<Gegenstand[]>([]);
 
   useEffect(() => {
     if (!offen) return;
@@ -66,6 +70,11 @@ export function TutorialShopPopup({
     };
   }, [offen, campaignId]);
 
+  useEffect(() => {
+    if (!offen) return;
+    itemsApi.list(campaignId, personId).then(setGekauft).catch(() => setGekauft([]));
+  }, [offen, campaignId, personId]);
+
   const sichtbar = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
   const gewaehlt = sichtbar.find((w) => w.gegenstandId === gewaehltId) ?? sichtbar[0] ?? null;
 
@@ -76,7 +85,8 @@ export function TutorialShopPopup({
     setKaeuft(true);
     try {
       const antwort = await haendlerApi.kaufen(campaignId, haendler.id, ware.gegenstandId, personId);
-      onKapitalGeaendert(antwort.kapitalNeu);
+      onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
+      itemsApi.list(campaignId, personId).then(setGekauft).catch(() => {});
       if (!ware.istVorlage) {
         setSortiment((alt) => alt.filter((w) => w.gegenstandId !== ware.gegenstandId));
         setGewaehltId(null);
@@ -242,6 +252,24 @@ export function TutorialShopPopup({
                   >
                     {kaeuft ? "Kauft…" : "Kaufen"}
                   </button>
+                  <div className="ts-gekauft">
+                    <p className="ts-preiszeile">
+                      <span>Schon ausgegeben</span>
+                      <strong>{ausgegeben.toLocaleString("de-AT")}¥</strong>
+                    </p>
+                    {gekauft.length === 0 ? (
+                      <p className="ts-keine-werte">Noch nichts gekauft.</p>
+                    ) : (
+                      <ul className="ts-gekauft-liste">
+                        {gekauft.map((stück) => (
+                          <li key={stück.id}>
+                            <span>{stück.name}</span>
+                            <span>{(stück.preis ?? 0).toLocaleString("de-AT")}¥</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

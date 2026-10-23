@@ -89,6 +89,9 @@ class KaufResponse(BaseModel):
     # bestellung.
     gegenstand: dict | None = None
     kapitalNeu: int
+    # Während der Charaktererstellung: wieviel im Tutorial-Shop schon weg ist.
+    # Der Regler darf das nicht unterschreiten.
+    tutorialAusgegeben: int | None = None
     # Nur bei digitalem Kauf gesetzt (Vertriebsart DIGITAL): die angelegte
     # Bestellung, die SL löst die tatsächliche Lieferung später manuell aus
     # (siehe BestellungResponse, POST .../bestellungen/{id}/liefern).

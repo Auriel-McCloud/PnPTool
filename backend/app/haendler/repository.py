@@ -718,3 +718,75 @@ async def alltagswunsch_antwort(
         )
         record = await result.single()
         return _decode_alltagswunsch(dict(record)) if record else None
+
+
+async def tutorial_kapital_schreiben(campaign_id: str, person_id: str, vermoegen: int) -> dict | None:
+    """Setzt kapital auf Vermögen minus bereits ausgegeben, in EINER Anweisung.
+
+    Liest `tutorialAusgegeben` nicht vorher in Python — sonst gewinnt ein
+    langsamer Regler-Request, der vor dem Kauf loslief, und legt das Geld
+    wieder drauf. None, wenn die Person fehlt. `gedeckt` ist falsch, wenn
+    die Regler das schon Ausgegebene unterschreiten; dann bleibt kapital
+    unangetastet.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        WITH p, coalesce(p.tutorialAusgegeben, 0) AS ausgegeben, $vermoegen AS vermoegen
+        WITH p, ausgegeben, vermoegen, vermoegen >= ausgegeben AS gedeckt
+        SET p.kapital = CASE WHEN gedeckt THEN vermoegen - ausgegeben ELSE p.kapital END,
+            p.kapitalBasis = CASE WHEN gedeckt THEN vermoegen - ausgegeben ELSE p.kapitalBasis END
+        RETURN gedeckt, ausgegeben, p.kapital AS kapital
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, vermoegen=vermoegen
+        )
+        record = await result.single()
+    if record is None:
+        return None
+    return {
+        "gedeckt": bool(record["gedeckt"]),
+        "ausgegeben": int(record["ausgegeben"]),
+        "kapital": int(record["kapital"] or 0),
+    }
+
+
+async def tutorial_ausgabe_buchen(campaign_id: str, person_id: str, preis: int) -> dict | None:
+    """Zieht den Kaufpreis ab und zählt ihn in derselben Anweisung dazu.
+
+    None, wenn das Guthaben nicht reicht oder die Person fehlt.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        WHERE coalesce(p.kapital, 0) >= $preis
+        SET p.kapital = coalesce(p.kapital, 0) - $preis,
+            p.kapitalBasis = coalesce(p.kapital, 0) - $preis,
+            p.tutorialAusgegeben = coalesce(p.tutorialAusgegeben, 0) + $preis
+        RETURN p.kapital AS kapital, p.tutorialAusgegeben AS ausgegeben
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, preis=preis
+        )
+        record = await result.single()
+    if record is None:
+        return None
+    return {"kapital": int(record["kapital"]), "ausgegeben": int(record["ausgegeben"])}
+
+
+async def tutorial_ausgabe_erstatten(campaign_id: str, person_id: str, preis: int) -> None:
+    """Macht eine Buchung rückgängig, wenn die Ware danach nicht ankam."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        SET p.kapital = coalesce(p.kapital, 0) + $preis,
+            p.kapitalBasis = coalesce(p.kapital, 0) + $preis,
+            p.tutorialAusgegeben = CASE
+                WHEN coalesce(p.tutorialAusgegeben, 0) < $preis THEN 0
+                ELSE coalesce(p.tutorialAusgegeben, 0) - $preis
+            END
+    """
+    async with driver.session() as session:
+        await session.run(query, campaign_id=campaign_id, person_id=person_id, preis=preis)

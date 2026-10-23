@@ -207,54 +207,58 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
             f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
         )
 
-    kapital_neu = kapital - preis
-    # Tutorial-Shop (10.10.2026): solange die Erstellung läuft (erstellt noch
-    # nicht abgeschlossen), muss der im Freebees-Schritt verbrauchte Betrag
-    # separat mitgezählt werden — der finale Submit berechnet kapitalBasis
-    # sonst ohne den Tutorial-Kauf neu und würde ihn rückgängig machen.
-    person_update: dict = {"kapital": kapital_neu}
-    if not kaeufer.get("erstellungAbgeschlossen"):
-        person_update["kapitalBasis"] = kapital_neu
-        person_update["tutorialAusgegeben"] = int(kaeufer.get("tutorialAusgegeben") or 0) + preis
+    erstellt = not kaeufer.get("erstellungAbgeschlossen")
+    tutorial_ausgegeben = int(kaeufer.get("tutorialAusgegeben") or 0)
+    if erstellt:
+        gebucht = await repository.tutorial_ausgabe_buchen(campaign_id, kaeufer_id, preis)
+        if gebucht is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig",
+            )
+        kapital_neu = gebucht["kapital"]
+        tutorial_ausgegeben = gebucht["ausgegeben"]
+        person_update: dict = {}
+    else:
+        kapital_neu = kapital - preis
+        person_update = {"kapital": kapital_neu}
     if rassen_feature_genutzt and rassen_feature_genutzt != bool(kaeufer.get("rassenFeatureGenutzt")):
         person_update["rassenFeatureGenutzt"] = True
 
     if haendler.get("vertriebsart") == "DIGITAL":
-        # Kapital sofort abziehen, Ware NICHT übergeben — nur eine
-        # Bestellung anlegen. Bei einem Unikat trotzdem sofort aus dem
-        # Sortiment nehmen (ist verkauft), die physische Übergabe kommt erst
-        # bei der Lieferung.
         if not gegenstand["istVorlage"]:
             await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
-        await entities_repository.update_node(
-            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
-        )
+        if person_update:
+            await entities_repository.update_node(
+                "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
+            )
         bestellung = await repository.bestellung_anlegen(
             campaign_id, haendler_id, haendler["name"], kaeufer_id, body.gegenstandId, gegenstand["name"], preis
         )
         await hooks.geld(
             campaign_id, betrag=preis, art="AUSGABE", von_person_id=kaeufer_id,
         )
-        return KaufResponse(gegenstand=None, kapitalNeu=kapital_neu, bestellung=bestellung)
+        return KaufResponse(
+            gegenstand=None, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben, bestellung=bestellung
+        )
 
-    if gegenstand["istVorlage"]:
-        # Unendlich verfügbar: eine unabhängige Kopie für den Käufer, die
-        # Vorlage selbst bleibt im Sortiment stehen (dasselbe Muster wie
-        # items/routes.py::zuweisen für Vorlagen).
-        gekauft = await items_repository.assign_copy(campaign_id, gegenstand, kaeufer_id, "SPEZIFISCH", [kaeufer_id])
-    else:
-        # Einzigartiges Stück: Besitzerwechsel vom Händler zum Käufer, danach
-        # verschwindet es aus dem Sortiment (VERKAUFT-Kante war an den
-        # Gegenstand geknüpft und wird beim Besitzerwechsel nicht neu
-        # gesetzt — ein Blick ins Sortiment findet es also nicht mehr).
-        gekauft = await items_repository.transfer_owner(campaign_id, body.gegenstandId, kaeufer_id)
-        await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
-    if gekauft is None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
+    try:
+        if gegenstand["istVorlage"]:
+            gekauft = await items_repository.assign_copy(campaign_id, gegenstand, kaeufer_id, "SPEZIFISCH", [kaeufer_id])
+        else:
+            gekauft = await items_repository.transfer_owner(campaign_id, body.gegenstandId, kaeufer_id)
+            await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
+        if gekauft is None:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
+    except HTTPException:
+        if erstellt:
+            await repository.tutorial_ausgabe_erstatten(campaign_id, kaeufer_id, preis)
+        raise
 
-    await entities_repository.update_node(
-        "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
-    )
+    if person_update:
+        await entities_repository.update_node(
+            "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
+        )
 
     await hooks.handel(
         campaign_id,
@@ -265,7 +269,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         alter_besitzer_id=None if gegenstand["istVorlage"] else haendler_id,
     )
 
-    return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu)
+    return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)
 
 
 @router.get("/bestellungen/offen", response_model=list[BestellungResponse], dependencies=[Depends(require_campaign_gm)])

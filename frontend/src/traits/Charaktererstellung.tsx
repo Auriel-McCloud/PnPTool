@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAutosave } from "../shell/autosave";
 import { DotPool } from "./DotPool";
 import { api } from "../api/client";
@@ -122,6 +122,9 @@ export function Charaktererstellung({
   // wird vom Server synchronisiert (siehe tutorialKapitalSynchronisieren
   // unten + TutorialShopPopup nach jedem Kauf).
   const [kapital, setKapital] = useState(0);
+  const [ausgegeben, setAusgegeben] = useState(0);
+  const [geldHinweis, setGeldHinweis] = useState<string | null>(null);
+  const geldGedeckt = useRef<{ kredit: number; eigen: number } | null>(null);
   const [tutorialShopOffen, setTutorialShopOffen] = useState(false);
   const [konzept, setKonzept] = useState("");
   const [alter, setAlter] = useState("");
@@ -232,12 +235,36 @@ export function Charaktererstellung({
   // bevor überhaupt ein Regler angefasst wurde.
   useEffect(() => {
     if (!regeln) return;
+    let aktiv = true;
     bogenApi
       .tutorialKapital(campaignId, personId, freebeeKredit, freebeeEigenkapital)
-      .then(({ kapital }) => setKapital(kapital))
+      .then(({ kapital: neu, ausgegeben: weg, gedeckt }) => {
+        if (!aktiv) return;
+        setAusgegeben(weg);
+        if (gedeckt) {
+          setKapital(neu);
+          setGeldHinweis(null);
+          geldGedeckt.current = { kredit: freebeeKredit, eigen: freebeeEigenkapital };
+          return;
+        }
+        setGeldHinweis(
+          `Schon ${weg.toLocaleString("de-AT")}¥ ausgegeben — Kredit und Eigenkapital müssen das decken.`,
+        );
+        const zuletzt = geldGedeckt.current;
+        if (
+          zuletzt &&
+          (zuletzt.kredit !== freebeeKredit || zuletzt.eigen !== freebeeEigenkapital)
+        ) {
+          setFreebeeKredit(zuletzt.kredit);
+          setFreebeeEigenkapital(zuletzt.eigen);
+        }
+      })
       .catch(() => {
         /* Erstellung evtl. schon abgeschlossen — Anzeige bleibt beim letzten Stand. */
       });
+    return () => {
+      aktiv = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, personId, freebeeKredit, freebeeEigenkapital, Boolean(regeln)]);
 
@@ -584,6 +611,8 @@ export function Charaktererstellung({
             zusatzfertigkeitPunkte={zusatzfertigkeitFreebees}
             onZusatzfertigkeitPunkte={setZusatzfertigkeitFreebees}
             kapital={kapital}
+            ausgegeben={ausgegeben}
+            geldHinweis={geldHinweis}
             onShopOeffnen={() => setTutorialShopOffen(true)}
           />
         )}
@@ -593,7 +622,11 @@ export function Charaktererstellung({
           personId={personId}
           offen={tutorialShopOffen}
           kapital={kapital}
-          onKapitalGeaendert={setKapital}
+          ausgegeben={ausgegeben}
+          onGekauft={(neu, weg) => {
+            setKapital(neu);
+            setAusgegeben(weg);
+          }}
           onSchliessen={() => setTutorialShopOffen(false)}
         />
 
@@ -1379,6 +1412,8 @@ function SchrittFreebees({
   zusatzfertigkeitPunkte,
   onZusatzfertigkeitPunkte,
   kapital,
+  ausgegeben,
+  geldHinweis,
   onShopOeffnen,
 }: {
   campaignId: string;
@@ -1416,6 +1451,8 @@ function SchrittFreebees({
   onZusatzfertigkeitPunkte: (werte: Record<string, number>) => void;
   /** Tutorial-Shop (10.10.2026): laufendes Guthaben, prägnant angezeigt. */
   kapital: number;
+  ausgegeben: number;
+  geldHinweis: string | null;
   onShopOeffnen: () => void;
 }) {
   const preise = regeln.freebees.kostenJeKategorie;
@@ -1423,6 +1460,12 @@ function SchrittFreebees({
   /** Fertigkeiten und Sphären dürfen nur um einen Punkt steigen (Zeile 40). */
   function obergrenzeZusatz(kategorie: string) {
     return kategorie === "Fertigkeit" || kategorie === "Sphäre" ? regeln.freebees.maxJeFertigkeit : 99;
+  }
+
+  const je = regeln.freebees.kapitalJeFreebee;
+  const start = regeln.startkapital ?? 0;
+  function geldGedeckt(naechsterKredit: number, naechstesEigen: number) {
+    return start + (naechsterKredit + naechstesEigen) * je >= ausgegeben;
   }
 
   const gruppen = waehlbar.reduce<Record<string, TraitDef[]>>((acc, t) => {
@@ -1578,6 +1621,7 @@ function SchrittFreebees({
               wert={kredit}
               preis={regeln.freebees.kostenKredit}
               frei={frei}
+              senkenErlaubt={geldGedeckt(kredit - 1, eigenkapital)}
               onWert={onKredit}
             />
           )}
@@ -1587,9 +1631,11 @@ function SchrittFreebees({
             wert={eigenkapital}
             preis={regeln.freebees.kostenEigenkapital}
             frei={frei}
+            senkenErlaubt={geldGedeckt(kredit, eigenkapital - 1)}
             onWert={onEigenkapital}
           />
         </div>
+        {geldHinweis && <p className="shop-ware-fehler">{geldHinweis}</p>}
       </section>
     </div>
   );
@@ -1601,6 +1647,7 @@ function ZaehlerZeile({
   wert,
   preis,
   frei,
+  senkenErlaubt = true,
   onWert,
 }: {
   name: string;
@@ -1608,6 +1655,7 @@ function ZaehlerZeile({
   wert: number;
   preis: number;
   frei: number;
+  senkenErlaubt?: boolean;
   onWert: (n: number) => void;
 }) {
   return (
@@ -1618,7 +1666,11 @@ function ZaehlerZeile({
       </span>
       <span className="er-freebee-wert">{wert}</span>
       <span className="er-freebee-knoepfe">
-        <button type="button" onClick={() => onWert(Math.max(0, wert - 1))} disabled={wert === 0}>
+        <button
+          type="button"
+          onClick={() => onWert(Math.max(0, wert - 1))}
+          disabled={wert === 0 || !senkenErlaubt}
+        >
           −
         </button>
         <button type="button" onClick={() => onWert(wert + 1)} disabled={preis > frei}>

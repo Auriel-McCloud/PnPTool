@@ -30,6 +30,7 @@ from app.kampf.ruestung import (
     verteile_kaestchenschaden,
 )
 from app.ki.client import KiFehler, generiere_json
+from app.haendler import repository as haendler_repository
 from app.hintergruende import repository as hintergruende_repository
 from app.hintergruende.spawn import (
     kontakte_nach_erstellung,
@@ -346,13 +347,14 @@ async def tutorial_kapital_setzen(
     vermoegen, _schulden = erstellung.kapital(
         {"freebeeKredit": body.freebeeKredit, "freebeeEigenkapital": body.freebeeEigenkapital}
     )
-    tutorial_ausgegeben = int(person.get("tutorialAusgegeben") or 0)
-    kapital_neu = max(0, vermoegen - tutorial_ausgegeben)
-    await update_node(
-        "Person", PERSON_FIELDS, campaign_id, person_id,
-        {"kapital": kapital_neu, "kapitalBasis": kapital_neu},
-    )
-    return {"kapital": kapital_neu}
+    geschrieben = await haendler_repository.tutorial_kapital_schreiben(campaign_id, person_id, vermoegen)
+    if geschrieben is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    return {
+        "kapital": geschrieben["kapital"],
+        "ausgegeben": geschrieben["ausgegeben"],
+        "gedeckt": geschrieben["gedeckt"],
+    }
 
 
 # =====================================================================
@@ -916,6 +918,13 @@ async def erstelle_charakter(
             fehler.append(f"Diese Zusatzfertigkeit steht nur der Rasse {nur_fuer_rasse[zid]} offen.")
     if not body.name.strip():
         fehler.append("Der Charakter braucht einen Namen.")
+    vermoegen, _schulden = erstellung.kapital(auswahl)
+    tutorial_ausgegeben = int(person.get("tutorialAusgegeben") or 0)
+    if erstellung.tutorial_rest(vermoegen, tutorial_ausgegeben) is None:
+        fehler.append(
+            f"Im Tutorial-Shop sind schon {tutorial_ausgegeben}¥ ausgegeben — "
+            "Kredit und Eigenkapital müssen das decken."
+        )
     if fehler:
         # 422 statt 400: die Anfrage ist wohlgeformt, nur regelwidrig.
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"fehler": fehler})

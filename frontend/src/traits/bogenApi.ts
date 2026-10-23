@@ -276,10 +276,10 @@ export const bogenApi = {
    * bereits ausgegebener Betrag beim Reglerverstellen wieder auftauchen.
    */
   tutorialKapital: (cid: string, personId: string, freebeeKredit: number, freebeeEigenkapital: number) =>
-    api.put<{ kapital: number }>(`/api/campaigns/${cid}/personen/${personId}/erstellung/tutorial-kapital`, {
-      freebeeKredit,
-      freebeeEigenkapital,
-    }),
+    api.put<{ kapital: number; ausgegeben: number; gedeckt: boolean }>(
+      `/api/campaigns/${cid}/personen/${personId}/erstellung/tutorial-kapital`,
+      { freebeeKredit, freebeeEigenkapital },
+    ),
   /**
    * Einen erlittenen Treffer eintragen ("3× Tödlich"). Die getragene Rüstung
    * wirkt als ein Pool: der Server rechnet den Kästchenschaden, verbraucht
