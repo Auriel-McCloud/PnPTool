@@ -26,13 +26,29 @@ weil Hexkraft allein gewürfelt wird und nicht mit einem zweiten Wert
 kombiniert.
 
 **Sphären beschreiben, was möglich ist — sie geben keine Bonuswürfel** (anders
-als NeuroWeaving-Fertigkeiten, siehe [[neuroweaving-decking]]). Stufen:
-1 wahrnehmbar · 2 bis ~50cm³ · 3 bis ~4m³ · 4 bis Hausgröße · 5 alles.
+als NeuroWeaving-Fertigkeiten, siehe [[neuroweaving-decking]]). Stufen (seit
+23.10.2026 sechs statt fünf, siehe unten): 1 wahrnehmbar · 2 kleines Objekt ·
+3 neue Zwischenstufe je Sphäre · 4 Zimmergröße/komplexere Wirkung ·
+5 Hausgröße/starke Wirkung · 6 alles / vollständig beherrschen.
 
 Neun Sphären: Korrespondenz, Entropie, Kräfte (*Schaden automatisch +1*), Leben,
 Materie, Gedanken, Ursprung, Geister, Zeit. Volltexte in
-`docs/reference/Sphären/` (M20-Rohtext) und `docs/reference/Master/`
-(fertige NeotopiA-Tooltips).
+`docs/reference/Sphären/` (M20-Rohtext, nicht mehr aktuell) und
+`docs/reference/Master/` (fertige NeotopiA-Tooltips, Stand 23.10.2026; dort
+heißen die Dateien zu zwei Sphären anders als im Code: `Verstand.md` =
+Gedanken, `Geist.md` = Geister).
+
+**23.10.2026 — Sphären auf 6 Punkte erweitert (Mark, im Chat durchgesprochen):**
+jede Sphäre bekam eine neue Zwischenstufe, „vollständig beherrschen" rutschte
+von Stufe 5 auf Stufe 6 (ersetzt die ältere Entscheidung, Sphären blieben
+bewusst bei 5 — siehe CLAUDE.md für den vollen Verlauf). `docs/reference/
+Master/*.md`, `backend/app/traits/seed.py` (`TRAIT_LANGBESCHREIBUNGEN`,
+`HAERETIKER_LANGBESCHREIBUNGEN`, `NEOTOPIA_TRAITS`) und `erstellung.py`
+wurden entsprechend aktualisiert. Geister/Izanami zusätzlich inhaltlich
+überarbeitet: „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr,
+ersetzt durch **Schattenwelten** (Totenreich, Götterreich u.a.). Charakterblatt-
+Anzeige, Charaktererstellungs-UI und eine Sphären-Spezialisierung (analog zur
+Fertigkeiten-Spezialisierung) sind zum Zeitpunkt dieses Eintrags noch offen.
 
 ## Der exklusive Weg
 

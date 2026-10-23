@@ -32,7 +32,7 @@ KATALOG = [
             ],
             6,
         ),
-        ("Sphäre", ["Kräfte", "Leben"], 5),
+        ("Sphäre", ["Kräfte", "Leben"], 6),
         ("Hexkraft", ["Hexkraft"], 10),
         ("NeuroWeavingWert", ["NeuroWeaving"], 6),
         ("NeuroWeaving", ["Brute Force"], 6),

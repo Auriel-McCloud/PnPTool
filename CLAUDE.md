@@ -20,26 +20,36 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   alle ~15 Popups im Tool. **Nicht von selbst anfangen, erst wenn Mark
   sagt, welche Popups es betreffen soll.**
 
-- **Sphären-Spezialisierung + Sphären-Skala auf 6 Punkte** (23.10.2026, mit
-  Mark in Chat durchgesprochen, noch nicht gebaut): Fertigkeiten-Spezialisierung
-  gibt es schon (siehe oben), Sphären/Götter-Spezialisierung bewusst nicht
-  mitgebaut (eigener Kommentar in `spezialisierungen/repository.py`). Idee:
-  Sphären-Stufen 1–5 auf 1–6 strecken, neue Stufe 3 einfädeln (alt-3/4 rutschen
-  auf 4/5, „vollständig beherrschen" wird Stufe 6) — der Spezialisierungs-Slot
-  bei Stufe 6 wäre dann gleich die Stufe-6-Fähigkeit selbst (Freitext statt
-  Würfelbonus, Sphären werden ja nie gewürfelt). Pro Sphäre Stand:
-  Korrespondenz/Kräfte/Leben/Materie/Ursprung/Zeit grob einig (Details im
-  Chatverlauf vom 23.10.), **Entropie noch offen** (Mark: gefällt ihm nicht,
-  kann es aber noch nicht greifen), **Geister hängt an Marks
-  Paralleldimensionen-Konzept** (ersetzt Astralebene/Todesgürtel — den
-  Todesgürtel gibt es in NeotopiA nicht, `docs/reference/Master/Geist.md` ist
-  hier veraltet trotz Abgleich-Vermerk vom 23.10. in
-  `docs/wiki/concepts/magie-hexkraft.md`). **Erinnerung für Mark:** er wollte
-  sein Paralleldimensionen-Konzept separat niederschreiben, bevor Geister
-  final wird. Ursprung: Reference-Doku sagt noch „Quintessenz", Code
-  (`seed.py`) heißt schon „Urkraft" — bei der Überarbeitung „Urkraft"
-  durchziehen. **Nicht von selbst weiterbauen, erst wenn die offenen Punkte
-  mit Mark geklärt sind.**
+- **Sphären auf 6 Punkte erweitert** (23.10.2026, mit Mark in Chat
+  durchgesprochen + umgesetzt): acht der neun Sphären fertig — Korrespondenz,
+  Kräfte, Leben, Materie, Ursprung, Zeit, Gedanken, Entropie. Jede bekam eine
+  neue Zwischenstufe (nicht immer an derselben Position, siehe `backend/app/
+  traits/seed.py` `TRAIT_LANGBESCHREIBUNGEN`/`HAERETIKER_LANGBESCHREIBUNGEN`
+  für den genauen Wortlaut), „vollständig beherrschen" ist jetzt Stufe 6 statt
+  5. `NEOTOPIA_TRAITS` (`defaultMax` 5→6 für alle 9 Sphären),
+  `docs/reference/Master/*.md` (9 Dateien), `docs/wiki/concepts/
+  magie-hexkraft.md` und die Kommentare in `erstellung.py` sind aktualisiert.
+  Charakterblatt/Charaktererstellung brauchten dafür KEINE Code-Änderung —
+  beide lesen `defaultMax` dynamisch aus dem Katalog (`Charakterblatt.tsx::
+  grenzeVon`, `Charaktererstellung.tsx` Zeile ~1502). `test_erstellung.py`
+  angepasst (erwartete 5 → 6), volle Suite grün bis auf die bekannte
+  Windows-Neo4j-Flakiness (siehe Stolperstein 8, betrifft u.a. wieder
+  `test_spezialisierungen.py` — isoliert alle grün, keine Regression).
+  Geister wurde inhaltlich auf **Schattenwelten** umgestellt (Totenreich,
+  Götterreich — „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr).
+  **Noch offen:**
+  - **Sphären-Spezialisierung selbst ist NICHT gebaut** — nur die 6-Punkte-
+    Skala steht. `spezialisierungen/repository.py`s `FERTIGKEIT_KATEGORIEN`
+    schließt „Sphäre" weiterhin aus. Geplant: Spezialisierungs-Slot bei
+    Stufe 6 = die Stufe-6-Fähigkeit selbst, als Freitext (kein Würfelbonus,
+    Sphären werden nie gewürfelt). Datenmodell dafür noch nicht im Detail
+    besprochen.
+  - Mark wollte sein **Schattenwelten-Konzept** (Totenreich/Götterreich/
+    Regeln dafür) separat niederschreiben — Stufe 5/6 bei Geister sind bis
+    dahin ein erster Entwurf, keine Endfassung.
+  - Browser-/Spieltisch-verifiziert: **nein**, nur Backend-seitig geprüft.
+  **Nicht von selbst an der Spezialisierung weiterbauen, erst wenn das
+  Datenmodell mit Mark besprochen ist.**
 
 - **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
   Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
