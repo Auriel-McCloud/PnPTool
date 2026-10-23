@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
 from app.auth.dependencies import require_gm
+from app.campaigns.buendel_export import export_buendel_zip
+from app.campaigns.buendel_import import import_buendel_zip, preview_buendel_zip
 from app.campaigns.export_import import export_campaign_zip, import_campaign_zip
 from app.campaigns.repository import (
     EINSTELLUNGEN_DEFAULTS,
@@ -82,6 +84,114 @@ async def export_campaign(campaign_id: str):
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{dateiname}"'},
     )
+
+
+# --- Kampagnen-Bündel (Phase 1: nur Export) ------------------------------
+# Teilmenge wiederverwendbarer Welt-Inhalte (Ort/Gegenstand/Fraktion/Person
+# [NPC+Critter]/Gewaechs/Event/WikiSeite/Rasse/Achievement-Definitionen) zum
+# Teilen mit anderen Runden — siehe app/campaigns/buendel_export.py für die
+# Sammlung/Weisslisten-Begründung. Phase 2 (Import/Upload) folgt separat.
+
+
+class BuendelExportRequest(BaseModel):
+    name: str
+    beschreibung: str = ""
+    tags: list[str] = []
+    # Standard ist "alles ausser den hier genannten Ausnahmen" (Marks
+    # bewusste Entscheidung für den invertierten Picker im Frontend) —
+    # deshalb eine Ausschluss- statt einer Einschlussliste.
+    ausgeschlosseneIds: list[str] = []
+
+
+@router.post("/{campaign_id}/buendel/export", dependencies=[Depends(require_campaign_gm)])
+async def buendel_export(campaign_id: str, body: BuendelExportRequest):
+    """Exportiert eine Teilmenge wiederverwendbarer Welt-Inhalte als ZIP zum
+    Download. Nur die Spielleitung dieser Kampagne."""
+    try:
+        inhalt, dateiname = await export_buendel_zip(
+            campaign_id,
+            name=body.name,
+            beschreibung=body.beschreibung,
+            tags=body.tags,
+            exclude_ids=body.ausgeschlosseneIds,
+        )
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
+    return Response(
+        content=inhalt,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}"'},
+    )
+
+
+# --- Kampagnen-Bündel (Phase 2: Import in eine bestehende Kampagne) ------
+# Siehe app/campaigns/buendel_import.py für Abgleich-/Papierkorb-/
+# Freigabe-Logik. Geht immer in die Kampagne, deren Bündel-Bildschirm der GM
+# gerade offen hat — kein Kampagnen-Picker (Marks Entscheidung).
+
+
+class BuendelImportResponse(BaseModel):
+    neu: int
+    aktualisiert: int
+    uebersprungen: int
+    proTyp: dict[str, dict[str, int]] = {}
+    bundleName: str = ""
+    herkunftCampaignName: str = ""
+
+
+class BuendelVorschauResponse(BaseModel):
+    bundleName: str = ""
+    beschreibung: str = ""
+    tags: list[str] = []
+    herkunftCampaignName: str = ""
+    anzahlKnoten: int = 0
+    proTyp: dict[str, dict[str, int]] = {}
+
+
+@router.post(
+    "/{campaign_id}/buendel/import/vorschau",
+    response_model=BuendelVorschauResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def buendel_import_vorschau(campaign_id: str, datei: UploadFile = File(...)):
+    """Liest ein Bündel-ZIP und meldet Inhalt + Abgleich-Status, OHNE etwas
+    zu schreiben — damit die Oberfläche vor dem eigentlichen Import zeigen
+    kann, was drin ist. Optionaler Zwischenschritt, kein Pflichtaufruf."""
+    inhalt = await datei.read()
+    if len(inhalt) > MAX_IMPORT_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 200 MB)")
+    try:
+        return await preview_buendel_zip(campaign_id, inhalt)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
+
+
+@router.post(
+    "/{campaign_id}/buendel/import",
+    response_model=BuendelImportResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def buendel_import(
+    campaign_id: str,
+    datei: UploadFile = File(...),
+    modus: str = Form("ueberspringen"),
+    ideenschmiede: bool = Form(False),
+):
+    """Importiert ein Bündel-ZIP in DIESE (bestehende) Kampagne.
+
+    `modus`: "ueberspringen" (bereits vorhandene Entitäten unangetastet
+    lassen) oder "aktualisieren" (bestehende überschreiben, alter Stand geht
+    vorher in den Papierkorb). `ideenschmiede`: ob brandneu angelegte
+    Entitäten als Entwurf starten (nur für Typen, die das kennen, siehe
+    buendel_import.ISTENTWURF_FAEHIGE_LABELS) oder direkt live gehen.
+    """
+    inhalt = await datei.read()
+    if len(inhalt) > MAX_IMPORT_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Datei zu groß (max. 200 MB)")
+    try:
+        return await import_buendel_zip(campaign_id, inhalt, modus=modus, ideenschmiede=ideenschmiede)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))
 
 
 # Kampagnenweite Spieleinstellungen. Lesen darf jeder mit Zugang — die

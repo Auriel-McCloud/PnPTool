@@ -70,7 +70,11 @@ async def liste() -> list[dict]:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            f"MATCH (r:Rasse {{ruleset: $ruleset}}) RETURN {FELDER} ORDER BY r.sortOrder, r.name",
+            f"""
+            MATCH (r:Rasse {{ruleset: $ruleset}})
+            WHERE NOT coalesce(r.geloescht, false)
+            RETURN {FELDER} ORDER BY r.sortOrder, r.name
+            """,
             ruleset=RULESET,
         )
         return [_decode(dict(rec)) async for rec in result]
@@ -83,6 +87,7 @@ async def liste_fuer_kampagne(campaign_id: str) -> list[dict]:
         result = await session.run(
             f"""
             MATCH (c:Campaign {{id: $campaign_id}})-[:ERLAUBT_RASSE]->(r:Rasse)
+            WHERE NOT coalesce(r.geloescht, false)
             RETURN {FELDER} ORDER BY r.sortOrder, r.name
             """,
             campaign_id=campaign_id,
@@ -94,7 +99,11 @@ async def freigegebene_ids(campaign_id: str) -> list[str]:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            "MATCH (c:Campaign {id: $campaign_id})-[:ERLAUBT_RASSE]->(r:Rasse) RETURN r.id AS id",
+            """
+            MATCH (c:Campaign {id: $campaign_id})-[:ERLAUBT_RASSE]->(r:Rasse)
+            WHERE NOT coalesce(r.geloescht, false)
+            RETURN r.id AS id
+            """,
             campaign_id=campaign_id,
         )
         return [rec["id"] async for rec in result]
@@ -104,7 +113,12 @@ async def hole(rasse_id: str) -> dict | None:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            f"MATCH (r:Rasse {{id: $id}}) RETURN {FELDER}", id=rasse_id
+            f"""
+            MATCH (r:Rasse {{id: $id}})
+            WHERE NOT coalesce(r.geloescht, false)
+            RETURN {FELDER}
+            """,
+            id=rasse_id,
         )
         record = await result.single()
         return _decode(dict(record)) if record else None
@@ -119,7 +133,7 @@ async def anlegen(daten: dict) -> dict:
         result = await session.run(
             f"""
             CREATE (r:Rasse {{
-                id: $id, ruleset: $ruleset, name: $name, beschreibung: $beschreibung,
+                id: $id, ruleset: $ruleset, stammtVonId: $id, name: $name, beschreibung: $beschreibung,
                 bildUrl: '', modifikatoren: $modifikatoren, freiePunkte: $freiePunkte,
                 sortOrder: $sortOrder, bonusFreebees: $bonusFreebees,
                 gratisGegenstandId: $gratisGegenstandId, gratisErsterKaufTyp: $gratisErsterKaufTyp,
@@ -191,7 +205,12 @@ async def aendern(rasse_id: str, daten: dict) -> dict | None:
 
 
 async def loeschen(rasse_id: str) -> bool:
-    """Löscht eine Rasse aus dem Katalog — samt aller Freigaben.
+    """Papierkorb-Retrofit (23.10.2026, Kampagnen-Bündel-Feature): setzt
+    `geloescht` statt die Rasse aus dem Katalog zu entfernen — vorher hartes
+    DETACH DELETE samt aller Freigaben. Die ERLAUBT_RASSE-Kanten bleiben
+    bewusst bestehen (sie sind harmlos: `liste`/`liste_fuer_kampagne`/`hole`
+    blenden eine gelöschte Rasse ohnehin aus) — eine Wiederherstellung zieht
+    die bisherigen Freigaben dadurch automatisch wieder nach.
 
     Bestehende Charaktere behalten ihren Rassennamen als Text; ihr Bogen
     bleibt also lesbar, sie lässt sich nur nicht mehr neu wählen. Das ist
@@ -201,7 +220,13 @@ async def loeschen(rasse_id: str) -> bool:
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            "MATCH (r:Rasse {id: $id}) DETACH DELETE r RETURN count(r) AS weg", id=rasse_id
+            """
+            MATCH (r:Rasse {id: $id})
+            WHERE NOT coalesce(r.geloescht, false)
+            SET r.geloescht = true
+            RETURN count(r) AS weg
+            """,
+            id=rasse_id,
         )
         record = await result.single()
         return bool(record and record["weg"])
@@ -266,7 +291,7 @@ async def seed_rassen() -> None:
                 WITH count(r) AS vorhanden
                 WHERE vorhanden = 0
                 CREATE (:Rasse {
-                    id: $id, ruleset: $ruleset, name: $name, beschreibung: $beschreibung,
+                    id: $id, ruleset: $ruleset, stammtVonId: $id, name: $name, beschreibung: $beschreibung,
                     bildUrl: '', modifikatoren: $modifikatoren, freiePunkte: $freiePunkte,
                     sortOrder: $sortOrder
                 })

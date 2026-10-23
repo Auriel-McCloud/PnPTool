@@ -50,6 +50,7 @@ async def liste(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (a:Achievement {{campaignId: $campaign_id}})
+        WHERE NOT coalesce(a.geloescht, false)
         OPTIONAL MATCH (g:Gegenstand {{id: a.zielGegenstandId}})
         RETURN {_ACHIEVEMENT_RETURN}, g.name AS zielGegenstandName
         ORDER BY a.name
@@ -63,6 +64,7 @@ async def hole(campaign_id: str, achievement_id: str) -> dict | None:
     driver = get_driver()
     query = f"""
         MATCH (a:Achievement {{id: $aid, campaignId: $campaign_id}})
+        WHERE NOT coalesce(a.geloescht, false)
         OPTIONAL MATCH (g:Gegenstand {{id: a.zielGegenstandId}})
         RETURN {_ACHIEVEMENT_RETURN}, g.name AS zielGegenstandName
     """
@@ -79,7 +81,7 @@ async def anlegen(campaign_id: str, daten: dict) -> dict:
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})
         CREATE (a:Achievement {{
-            id: $aid, campaignId: $campaign_id,
+            id: $aid, campaignId: $campaign_id, stammtVonId: $aid,
             name: $name, beschreibung: $beschreibung, icon: $icon, art: $art,
             ausloeseArt: $ausloeseArt, einzigartig: $einzigartig,
             belohnungsArt: $belohnungsArt, belohnungsMenge: $belohnungsMenge,
@@ -112,17 +114,23 @@ async def aendern(campaign_id: str, achievement_id: str, daten: dict) -> dict | 
 
 
 async def loeschen(campaign_id: str, achievement_id: str) -> bool:
-    """Harter Löschvorgang für die Definition selbst — bewusst anders als bei
-    Verleihungen: ein fehlerhaft angelegter Katalogeintrag (Tippfehler im
-    Namen, falscher Trigger) soll sich ohne Leichen im Papierkorb entfernen
-    lassen, solange noch keine Verleihung daran hängt."""
+    """Papierkorb-Retrofit (23.10.2026, Kampagnen-Bündel-Feature): setzt
+    `geloescht` statt die Definition hart zu entfernen — vorher ein
+    DETACH DELETE, das sich bewusst weigerte, wenn bereits eine Verleihung
+    daran hing (sonst hätte die Verleihung auf einen verschwundenen Knoten
+    gezeigt). Mit dem Papierkorb-Flag entfällt dieses Risiko von selbst: der
+    Knoten bleibt bestehen, eine Verleihung findet ihn über `ACHIEVEMENT`
+    weiterhin, die Definition verschwindet nur aus dem SL-Katalog
+    (`liste`/`hole` filtern `geloescht`). Löschen gelingt deshalb jetzt immer,
+    unabhängig von bestehenden Verleihungen.
+    """
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
             """
             MATCH (a:Achievement {id: $aid, campaignId: $campaign_id})
-            WHERE NOT EXISTS { MATCH (:AchievementVerleihung)-[:ACHIEVEMENT]->(a) }
-            DETACH DELETE a
+            WHERE NOT coalesce(a.geloescht, false)
+            SET a.geloescht = true
             RETURN count(a) AS geloescht
             """,
             campaign_id=campaign_id, aid=achievement_id,

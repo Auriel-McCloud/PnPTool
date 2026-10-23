@@ -71,6 +71,7 @@ async def list_seiten(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (s:WikiSeite {{campaignId: $campaign_id}})
+        WHERE NOT coalesce(s.geloescht, false)
         OPTIONAL MATCH (s)-[:UNTERSEITE_VON]->(eltern:WikiSeite)
         RETURN {_FELDER}, eltern.id AS parentId
         ORDER BY s.sortierung, s.titel
@@ -84,6 +85,7 @@ async def get_seite(campaign_id: str, seiten_id: str) -> dict | None:
     driver = get_driver()
     query = f"""
         MATCH (s:WikiSeite {{id: $seiten_id, campaignId: $campaign_id}})
+        WHERE NOT coalesce(s.geloescht, false)
         OPTIONAL MATCH (s)-[:UNTERSEITE_VON]->(eltern:WikiSeite)
         RETURN {_FELDER}, eltern.id AS parentId
     """
@@ -194,7 +196,7 @@ async def create_seite(
             f"""
             MATCH (c:Campaign {{id: $campaign_id}})
             CREATE (s:WikiSeite {{
-                id: $seiten_id, campaignId: $campaign_id,
+                id: $seiten_id, campaignId: $campaign_id, stammtVonId: $seiten_id,
                 titel: $titel, inhalt: $inhalt,
                 sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbar_fuer,
                 sortierung: $sortierung, symbol: $symbol,
@@ -266,7 +268,10 @@ async def update_seite(campaign_id: str, seiten_id: str, felder: dict) -> dict |
 
 
 async def delete_seite(campaign_id: str, seiten_id: str) -> bool:
-    """Löscht eine Seite; Unterseiten rücken eine Ebene nach oben.
+    """Markiert eine Seite als gelöscht (Papierkorb-Retrofit 23.10.2026,
+    Kampagnen-Bündel-Feature — vorher hartes DETACH DELETE); Unterseiten
+    rücken weiterhin eine Ebene nach oben, damit sie nicht unter einer nun
+    ausgeblendeten Seite verwaist in der Baumansicht verschwinden.
 
     Bewusst kein kaskadierendes Löschen: Beim Aufräumen eines Kapitels sollen
     nicht unbemerkt alle Szenen darunter verschwinden.
@@ -289,7 +294,8 @@ async def delete_seite(campaign_id: str, seiten_id: str) -> bool:
         result = await session.run(
             """
             MATCH (s:WikiSeite {id: $seiten_id, campaignId: $campaign_id})
-            DETACH DELETE s
+            WHERE NOT coalesce(s.geloescht, false)
+            SET s.geloescht = true
             RETURN count(s) AS weg
             """,
             campaign_id=campaign_id,
@@ -405,6 +411,7 @@ async def rueckverweise(campaign_id: str, ziel_id: str) -> list[dict]:
         result = await session.run(
             """
             MATCH (s:WikiSeite {campaignId: $campaign_id})-[:VERWEIST_AUF]->(ziel {id: $ziel_id})
+            WHERE NOT coalesce(s.geloescht, false)
             RETURN s.id AS id, s.titel AS titel,
                    s.sichtbarkeit AS sichtbarkeit, s.sichtbarFuer AS sichtbarFuer
             ORDER BY s.sortierung, s.titel

@@ -79,9 +79,11 @@ def test_achievement_crud():
     _run(lauf())
 
 
-def test_achievement_mit_verleihung_laesst_sich_nicht_loeschen():
-    """Ein bereits vergebenes Achievement bleibt erhalten (Papierkorb-Analogie
-    — Verleihungen dürfen keine Leichen zurücklassen)."""
+def test_achievement_mit_verleihung_wird_trotzdem_papierkorb_markiert():
+    """Papierkorb-Retrofit (23.10.2026): eine Definition mit bestehender
+    Verleihung lässt sich jetzt ebenfalls löschen (vorher verweigert) — der
+    Knoten bleibt erhalten, die Verleihung findet ihn über ACHIEVEMENT
+    weiterhin, nur der SL-Katalog blendet ihn aus."""
     async def lauf():
         cid = await _kampagne_anlegen()
         try:
@@ -92,8 +94,13 @@ def test_achievement_mit_verleihung_laesst_sich_nicht_loeschen():
             })
             await repository.verleihe(cid, achievement_id=achievement["id"], person_id=pid)
 
-            assert await repository.loeschen(cid, achievement["id"]) is False
-            assert await repository.hole(cid, achievement["id"]) is not None
+            assert await repository.loeschen(cid, achievement["id"]) is True
+            # Aus dem Katalog verschwunden...
+            assert await repository.hole(cid, achievement["id"]) is None
+            # ...aber die Verleihung bleibt lesbar (Knoten existiert weiter).
+            verleihungen = await repository.verleihungen_fuer_person(cid, pid)
+            assert len(verleihungen) == 1
+            assert verleihungen[0]["achievementName"] == "Mörder"
         finally:
             await _aufraeumen(cid)
 

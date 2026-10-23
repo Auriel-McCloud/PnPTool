@@ -199,7 +199,9 @@ export function WikiAnsicht({
 
   async function seiteEntfernen() {
     if (!seite) return;
-    // Löschen ist unumkehrbar — deshalb Rückfrage, wie überall im Werkzeug.
+    // Landet im Papierkorb (geloescht-Flag) statt hart gelöscht zu werden —
+    // Retrofit 23.10.2026, Kampagnen-Bündel-Feature. Rückfrage bleibt trotzdem,
+    // weil die Seite sofort aus allen Listen/der Navigation verschwindet.
     if (!window.confirm(`„${seite.titel}" wirklich löschen?\n\nUnterseiten bleiben erhalten und rücken eine Ebene nach oben.`)) {
       return;
     }

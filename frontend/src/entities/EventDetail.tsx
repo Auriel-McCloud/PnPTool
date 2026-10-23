@@ -339,7 +339,7 @@ export function EventDetail({
       {loeschenOffen && (
         <Bestaetigung
           titel="Event löschen?"
-          text={`„${event.title}“ wird endgültig entfernt, samt aller ${zeilen.length} Verbindungen. Das lässt sich nicht rückgängig machen.`}
+          text={`„${event.title}“ wandert in den Papierkorb, samt aller ${zeilen.length} Verbindungen.`}
           jaText="Ja, löschen"
           neinText="Abbrechen"
           onJa={loeschen}

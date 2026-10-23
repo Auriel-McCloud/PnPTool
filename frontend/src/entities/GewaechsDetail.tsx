@@ -281,7 +281,7 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
       {loeschenOffen && (
         <Bestaetigung
           titel="Gewächs löschen?"
-          text={`„${gewaechs.name}“ wird endgültig entfernt, samt aller Flora-&-Fauna-Verknüpfungen. Das lässt sich nicht rückgängig machen.`}
+          text={`„${gewaechs.name}“ wandert in den Papierkorb, samt aller Flora-&-Fauna-Verknüpfungen.`}
           jaText="Ja, löschen"
           neinText="Abbrechen"
           onJa={loeschen}
