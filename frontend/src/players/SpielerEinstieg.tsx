@@ -81,8 +81,9 @@ export function SpielerEinstieg({
     <div className="ei-buehne">
       <div className="ei-kasten cl-roehre">
         <header className="ei-kopf">
-          <h1>Willkommen, {benutzername}</h1>
-          <p className="ei-unter">{campaignName}</p>
+          <h1>
+            Willkommen in der Kampagne {campaignName}, {benutzername}
+          </h1>
         </header>
 
         {ansicht === "wahl" && (
