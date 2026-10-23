@@ -35,6 +35,38 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Nachgezogen von Chibi Neko (bebop): Fertigkeiten-Spezialisierung +
+  Tutorial-Shop lesbar** (23.10.2026, Docs-Lag beim Catch-up geschlossen —
+  beide Features liefen auf `origin/main`/einem Feature-Branch ohne eigenen
+  CLAUDE.md-Eintrag): auf bebop live seit heute (`d808658`).
+  - **Fertigkeiten-Spezialisierung** (Auto-Grant bei Fertigkeitsrating 4/6,
+    käuflicher Extra-Slot für 4 EP, Zweiphasen-Namensrecht Spieler/SL,
+    Würfelpool-Chip in `Probe.tsx`, plus Folge-Feature: GM-Oberfläche im
+    Zusatzfertigkeiten-Menü, Tab „Spezialisierungs-Vorschläge" zum Pflegen
+    der Vorschlagstexte statt nur per Seed-Datei). Neu:
+    `backend/app/spezialisierungen/`, `frontend/src/traits/
+    SpezialisierungPopup.tsx`, `frontend/src/spezialisierungen/api.ts`.
+    **Verifiziert laut Chibi:** eigene Tests grün, `tsc -b`/`vite build`
+    sauber, Browser-verifiziert (disposable GM-Account). **Hier erneut
+    gegengeprüft:** volle Backend-Suite auf Windows zeigt 10 Fehlschläge in
+    `test_spezialisierungen.py`, aber JEDER einzeln isoliert ausgeführt grün
+    — Windows-`ProactorEventLoop` + Neo4j-Async-Treiber werfen bei vielen
+    Tests im selben Lauf `AttributeError: 'NoneType' object has no
+    attribute 'send'` (reine Windows-Testlauf-Umgebung, keine Code-
+    Regression, siehe Stolperstein 8 in `docs/ENTWICKLUNGSHISTORIE.md` für
+    dasselbe Muster bei `test_shop_am_ort.py`). **Nie am Spieltisch
+    getestet.**
+  - **Tutorial-Shop: Steckbrief lesbar, NPC-Kauf ohne Fehler** (lag auf
+    unverschmolzenem Branch `feature/tutorial-shop-lesbar`, jetzt gemerged):
+    Shop zeigt Liste plus Werteblock statt nur Name/Preis in einem
+    zusammenfallenden Raster, Kaufen erst nach dem Lesen. SL-Kauf ohne
+    `kaeuferPersonId` (vorher vom Server abgelehnt) funktioniert jetzt auch
+    für NPCs. **Nie am Spieltisch getestet.**
+  Mark bitte bei Gelegenheit: einer Fertigkeit auf Rating 4/6 einen
+  Spezialisierungs-Slot geben und benennen, im Zusatzfertigkeiten-Menü einen
+  Spezialisierungs-Vorschlag pflegen; im Tutorial-Shop lesen+kaufen,
+  insbesondere einen Kauf für einen NPC auslösen.
+
 - **Aktive Party jetzt auch von Ort/Event aus verknüpfbar** (23.10.2026,
   Marks Wunsch: „ich muss immer in die Aktive Party gehen und diese dort
   mit einem Ort oder Event verknüpfen, das ist umständlich"): bisher ging
