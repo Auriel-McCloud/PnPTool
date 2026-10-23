@@ -101,9 +101,10 @@
   --kind-event: var(--p-orange);
   --kind-gegenstand: var(--p-violett);
   --kind-fraktion: var(--p-messing);
-  /* Party teilt die Farbe mit --bereich-party/--bereich-verbindungen
-     (Indigo) — passt zu "wer mit wem", nicht zu einer Organisation. */
-  --kind-party: var(--p-indigo);
+  /* Party teilt die Farbe NICHT mit --bereich-party (Indigo) — im Graphen
+     soll die Party auffallen, nicht mit Person/Verbindungen verschmelzen.
+     Magenta ist sonst ungenutzt (Mark, 23.10.2026). */
+  --kind-party: var(--p-magenta);
 
   /* == 3. Bereiche =================================================== */
   /* Leitfarbe je Menuepunkt. Faerbt Symbol, fliegenden Namen, Ladebalken
