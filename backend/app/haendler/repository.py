@@ -246,6 +246,7 @@ _STECKBRIEF_FELDER = """
     coalesce(g.kraft, 0) AS kraft,
     coalesce(g.schaden, 0) AS schaden,
     coalesce(g.schadenArt, '') AS schadenArt,
+    coalesce(g.kampfFertigkeit, '') AS kampfFertigkeit,
     coalesce(g.istWaffe, false) AS istWaffe,
     coalesce(g.ruestungReduktionBasis, 0) AS ruestungReduktionBasis,
     coalesce(g.ruestungKaestchenAktuell, 0) AS ruestungKaestchenAktuell,
@@ -309,6 +310,7 @@ def _steckbrief_normalisieren(eintrag: dict) -> None:
     eintrag["traitBoni"] = _json_map(eintrag.get("traitBoni"))
     eintrag["ausruestungsfertigkeiten"] = _json_map(eintrag.get("ausruestungsfertigkeiten"))
     eintrag["schadenArt"] = eintrag.get("schadenArt") or ""
+    eintrag["kampfFertigkeit"] = eintrag.get("kampfFertigkeit") or ""
     eintrag["istWaffe"] = bool(eintrag.get("istWaffe"))
     eintrag["istBehaelter"] = bool(eintrag.get("istBehaelter"))
     eintrag["kapazitaet"] = float(eintrag.get("kapazitaet") or 0)

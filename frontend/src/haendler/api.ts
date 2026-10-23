@@ -21,6 +21,7 @@ export interface SortimentEintrag {
   kraft: number;
   schaden: number;
   schadenArt: string;
+  kampfFertigkeit: string;
   istWaffe: boolean;
   ruestungReduktionBasis: number;
   ruestungKaestchenAktuell: number;

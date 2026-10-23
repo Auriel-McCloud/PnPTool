@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
-import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
+import { itemsApi, KAMPF_FERTIGKEIT_LABEL, kampfFertigkeitLesen, type GegenstandMitBesitzer } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { RuestungsTreffer } from "./RuestungsTreffer";
 import { Kaestchen } from "../traits/Kaestchen";
@@ -35,6 +35,16 @@ function wert(bogen: Bogen, name: string) {
   const t = bogen.katalog.find((x) => x.name === name);
   if (!t) return 0;
   return bogen.werte.find((w) => w.traitDefId === t.id)?.rating ?? 0;
+}
+
+function ausruestungsBonus(bogen: Bogen, name: string) {
+  return bogen.ausruestungsBoni?.[name] ?? 0;
+}
+
+/** Waffenschaden. Bei Chrom ist `kraft` der Implantat-Bonus, nicht die Klinge. */
+function waffenSchaden(w: GegenstandMitBesitzer) {
+  if (w.typ === "Waffe") return w.schaden || w.kraft;
+  return w.schaden;
 }
 
 /**
@@ -88,7 +98,7 @@ export function Kampfkarte({
   }, [campaignId, personId]);
 
   const ausgeruestet = useMemo(() => sachen.filter((g) => g.ablage === "AUSGERUESTET"), [sachen]);
-  const waffen = ausgeruestet.filter((g) => g.typ === "Waffe");
+  const waffen = ausgeruestet.filter((g) => g.typ === "Waffe" || g.istWaffe);
   const ruestungsteile = ausgeruestet.filter((g) => g.typ === "Rüstung");
   const ruestung = ruestungsteile.reduce((summe, g) => summe + g.kraft, 0);
   // Nur Teile, die das Kästchen-/Reduktions-System tatsächlich nutzen (siehe
@@ -116,10 +126,10 @@ export function Kampfkarte({
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
 
   const u = bogen.uebersicht;
-  const geschick = wert(bogen, "Geschicklichkeit");
-  const kraft = wert(bogen, "Körperkraft");
+  const geschick = wert(bogen, "Geschicklichkeit") + ausruestungsBonus(bogen, "Geschicklichkeit");
   const abzug = geschickAbzug(ruestung);
   const geschickEffektiv = Math.max(0, geschick - abzug);
+  const treffenPool = (skill: string) => geschickEffektiv + wert(bogen, skill) + ausruestungsBonus(bogen, skill);
   // Was noch da ist — verbrauchte Willenskraft steht für Zauber nicht mehr
   // zur Verfügung.
   const uebrigeWillenskraft = Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht);
@@ -187,20 +197,20 @@ export function Kampfkarte({
         <h3>Würfeln</h3>
         <div className="kk-werte">
           {KAMPFFERTIGKEITEN.map((name) => {
-            const f = wert(bogen, name);
+            const f = wert(bogen, name) + ausruestungsBonus(bogen, name);
             if (f === 0 && name !== "Nahkampf") return null;
             return <Zahl key={name} titel={`Treffen · ${name}`} wert={geschickEffektiv + f} wuerfel />;
           })}
           <Zahl
             titel="Ausweichen"
-            wert={geschickEffektiv + wert(bogen, "Sportlichkeit")}
-            hinweis="Geschicklichkeit + Sportlichkeit. Jeder weitere Einsatz in derselben Runde: −1."
+            wert={geschickEffektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit")}
+            hinweis="Geschicklichkeit + Sportlichkeit, plus Ausrüstung. Jeder weitere Einsatz in derselben Runde: −1."
             wuerfel
           />
           <Zahl
             titel="Parieren"
-            wert={geschickEffektiv + wert(bogen, "Nahkampf")}
-            hinweis="Geschicklichkeit + Waffenfertigkeit. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
+            wert={treffenPool("Nahkampf")}
+            hinweis="Geschicklichkeit + Nahkampf, plus Ausrüstung. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
             wuerfel
           />
         </div>
@@ -242,19 +252,28 @@ export function Kampfkarte({
           <p className="kk-leer">Nichts ausgerüstet.</p>
         ) : (
           <ul className="kk-waffen">
-            {waffen.map((w) => (
-              <li key={w.id}>
-                <span className="kk-waffe-name">{w.name}</span>
-                <span className="kk-waffe-schaden">
-                  {w.kraft}
-                  <em>+ Nettoerfolge</em>
-                </span>
-                <span className="kk-waffe-nah">
-                  im Nahkampf {w.kraft + kraft}
-                  <em>+ Körperkraft</em>
-                </span>
-              </li>
-            ))}
+            {waffen.map((w) => {
+              const skill = kampfFertigkeitLesen(w.kampfFertigkeit);
+              const schaden = waffenSchaden(w);
+              return (
+                <li key={w.id}>
+                  <span className="kk-waffe-name">{w.name}</span>
+                  {skill && (
+                    <span
+                      className="kk-waffe-pool"
+                      title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
+                    >
+                      {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
+                      <WuerfelZehn groesse={14} />
+                    </span>
+                  )}
+                  <span className="kk-waffe-schaden">
+                    Schaden {schaden}
+                    <em>+ Nettoerfolge</em>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

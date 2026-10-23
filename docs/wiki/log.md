@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-23] update | Kampfkarte Ausrüstung und Waffen-Skill
+
+Kampfkarte zählt Ausrüstungsboni in Treffen/Ausweichen/Parieren.
+Waffen und Chrom-als-Waffe haben `kampfFertigkeit` (Schusswaffen,
+Nahkampf, Handgemenge). Schadenszeile nur noch Schaden + Nettoerfolge.
+`pytest tests/test_waffenbonus.py` 8/8, `tsc -b` sauber. Nicht im
+Browser geklickt. Siehe [[concepts/kampf-und-initiative]].
+
 ## [2026-10-23] update | Spieler-Burgermenü anpassen
 
 Spieler haben unten im Burger denselben ☰ wie die SL: ausblenden und

@@ -1,4 +1,4 @@
-import { schadenArtFuerWaffe, schadenArtLabel } from "./api";
+import { kampfFertigkeitLesen, KAMPF_FERTIGKEIT_LABEL, schadenArtFuerWaffe, schadenArtLabel } from "./api";
 
 /**
  * Kurzer "Steckbrief"-Text für die Kachel — die wichtigsten Kampfwerte auf
@@ -19,6 +19,8 @@ export type SteckbriefQuelle = {
   kraft: number;
   schaden: number;
   schadenArt: string;
+  /** Optional, damit ältere Aufrufer ohne das Feld nicht brechen. */
+  kampfFertigkeit?: string;
   istWaffe: boolean;
   ruestungReduktionBasis: number;
   ruestungKaestchenAktuell: number;
@@ -41,6 +43,11 @@ export type SteckbriefQuelle = {
   istBehaelter: boolean;
   kapazitaet: number;
 };
+
+function kampfFertigkeitZeile(item: SteckbriefQuelle): string {
+  const skill = kampfFertigkeitLesen(item.kampfFertigkeit);
+  return skill ? KAMPF_FERTIGKEIT_LABEL[skill] : "";
+}
 
 export type SteckbriefZeile = { label: string; wert: string };
 
@@ -73,6 +80,9 @@ export function steckbriefZeilen(item: SteckbriefQuelle): SteckbriefZeile[] {
       wert: schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)) || "Tödlich",
     });
   }
+
+  const wuerfeltMitZeile = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
+  if (wuerfeltMitZeile) zeilen.push({ label: "Würfelt mit", wert: wuerfeltMitZeile });
 
   if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
     zeilen.push({ label: "Stufe", wert: String(item.kraft) });
@@ -160,6 +170,9 @@ export function steckbriefKurz(item: SteckbriefQuelle): string[] {
   } else if (item.typ !== "Waffe" && item.istWaffe) {
     teile.push(schadenArtLabel(schadenArtFuerWaffe(item.schadenArt)));
   }
+
+  const wuerfeltMit = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
+  if (wuerfeltMit) teile.push(wuerfeltMit);
 
   if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
     teile.push(`Stufe ${item.kraft}`);

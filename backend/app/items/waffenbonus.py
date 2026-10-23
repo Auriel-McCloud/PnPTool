@@ -73,3 +73,14 @@ def schaden_art_lesen(roh) -> str:
     """Tischsprache und die drei Codes auf schlag/schwer/aggraviert. Sonst leer."""
     text = str(roh or "").strip().lower()
     return _ART_ALIAS.get(text, "")
+
+
+# Womit die Waffe trifft. Leer = noch nicht markiert, die Kampfkarte rät nicht.
+# Schusswaffen ist der Fernkampf-Skill auf dem Blatt — „Fernkampf“ ist nur das Label.
+KAMPF_FERTIGKEITEN = ("Schusswaffen", "Nahkampf", "Handgemenge")
+
+
+def kampf_fertigkeit_lesen(roh) -> str:
+    """Nur die drei Kampfskills. Alles andere, auch „Fernkampf“, wird leer."""
+    text = str(roh or "").strip()
+    return text if text in KAMPF_FERTIGKEITEN else ""

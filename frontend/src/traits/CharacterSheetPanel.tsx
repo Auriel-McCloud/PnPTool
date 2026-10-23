@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type SchadenArt } from "../items/api";
+import { ABLAGEN, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -106,6 +106,40 @@ function SchadensartFeld({
         <option value="aggraviert">{SCHADEN_ART_LABEL.aggraviert}</option>
       </select>
     </label>
+  );
+}
+
+function KampfFertigkeitFeld({
+  wert,
+  onChange,
+}: {
+  wert: KampfFertigkeit;
+  onChange: (wert: KampfFertigkeit) => void;
+}) {
+  return (
+    <div style={{ marginTop: 6 }}>
+      <span style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Würfelt mit</span>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+        {KAMPF_FERTIGKEITEN.map((name) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onChange(wert === name ? "" : name)}
+            style={{
+              borderColor: wert === name ? "var(--neon)" : undefined,
+              color: wert === name ? "var(--neon)" : undefined,
+            }}
+            title={
+              name === "Schusswaffen"
+                ? "Fernkampf: Geschicklichkeit + Schusswaffen"
+                : `Geschicklichkeit + ${name}`
+            }
+          >
+            {KAMPF_FERTIGKEIT_LABEL[name]}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -250,6 +284,7 @@ export function GegenstandRow({
   const [schadenArt, setSchadenArt] = useState<SchadenArt>(
     item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
   );
+  const [kampfFertigkeit, setKampfFertigkeit] = useState<KampfFertigkeit>(kampfFertigkeitLesen(item.kampfFertigkeit));
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
@@ -393,6 +428,7 @@ export function GegenstandRow({
     setIstWaffe(src.istWaffe);
     setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
     setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
+    setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
     setInitiativeBonus(src.initiativeBonus);
     setZusatzaktionen(src.zusatzaktionen);
     setTraitBoni(
@@ -478,6 +514,7 @@ export function GegenstandRow({
       istWaffe,
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
+      kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
       initiativeBonus,
       zusatzaktionen,
       traitBoni: Object.fromEntries(
@@ -512,7 +549,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, schadenArt, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      istWaffe, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
@@ -838,6 +875,9 @@ export function GegenstandRow({
                     {(typ === "Waffe" || istWaffe) && (
                       <li>Schadensart: {schadenArtLabel(schadenArtFuerWaffe(schadenArt))}</li>
                     )}
+                    {(typ === "Waffe" || istWaffe) && kampfFertigkeit && (
+                      <li>Würfelt mit: {KAMPF_FERTIGKEIT_LABEL[kampfFertigkeit]}</li>
+                    )}
                     {CHROM_TYPEN.has(typ) && (
                       <li>
                         {kraft > 0 && `Stufe ${kraft} · `}
@@ -1002,6 +1042,7 @@ export function GegenstandRow({
                         {typ !== "Waffe" && (
                           <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                         )}
+                        <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
                       </>
                     )}
                   </div>
@@ -1308,6 +1349,7 @@ export function GegenstandRow({
                     />
                   </div>
                   <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
+                  <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
                 </div>
               )}
 

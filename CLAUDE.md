@@ -756,6 +756,18 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (23.10.2026 — Kampfkarte: Ausrüstung im Pool, Waffen-Skill):**
+- **Was:** Würfelpools in der Kampfkarte zählen Ausrüstungsboni (z.B. +2
+  Schusswaffen vom Augment) mit, wie das Blatt es schon tat. An der Waffe
+  steht nur noch „Schaden N + Nettoerfolge“, nicht mehr Körperkraft.
+  Neues Feld `kampfFertigkeit` (Schusswaffen/Nahkampf/Handgemenge, leer =
+  nicht geraten) an Waffen und an Chrom mit „zählt als Waffe“. Ist es
+  gesetzt, steht der passende Pool an der Waffe. Fernkampf ist das Label
+  für Schusswaffen.
+- **Verifiziert:** `pytest tests/test_waffenbonus.py`, `npx tsc -b`.
+  **Nie im Browser angeklickt.** Bestehende Waffen haben das Feld leer,
+  bis man im Umbauen auf Fernkampf/Nahkampf/Handgemenge tippt.
+
 **Zuletzt gebaut (23.10.2026 — Spieler können das Burgermenü anpassen):**
 - **Was:** Unten im Spieler-Burger derselbe ☰ wie bei der SL. Ausblenden und
   Reihenfolge, PC und Tablet getrennt. Handy scrollt die volle Liste.

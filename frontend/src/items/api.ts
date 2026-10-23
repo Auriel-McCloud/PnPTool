@@ -74,6 +74,11 @@ export interface Gegenstand {
    * Waffen ohne gesetzte Art gelten als Tödlich.
    */
   schadenArt: SchadenArt;
+  /**
+   * Welcher Kampfskill die Waffe würfelt. Leer = noch nicht markiert.
+   * Auch an Chrom, das zusätzlich als Waffe zählt.
+   */
+  kampfFertigkeit: KampfFertigkeit;
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
@@ -209,6 +214,22 @@ export interface AblageZiel {
  * an der Person, nicht am Gegenstand: siehe bogenApi.ruestungTreffer. */
 export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
 
+/** Leer = noch nicht markiert. Schusswaffen ist der Fernkampf-Skill. */
+export type KampfFertigkeit = "" | "Schusswaffen" | "Nahkampf" | "Handgemenge";
+
+export const KAMPF_FERTIGKEITEN = ["Schusswaffen", "Nahkampf", "Handgemenge"] as const;
+
+export const KAMPF_FERTIGKEIT_LABEL: Record<Exclude<KampfFertigkeit, "">, string> = {
+  Schusswaffen: "Fernkampf",
+  Nahkampf: "Nahkampf",
+  Handgemenge: "Handgemenge",
+};
+
+export function kampfFertigkeitLesen(roh: string | undefined | null): KampfFertigkeit {
+  if (roh === "Schusswaffen" || roh === "Nahkampf" || roh === "Handgemenge") return roh;
+  return "";
+}
+
 /** Leer = noch nicht gesetzt. Waffen ohne Wert gelten als Tödlich. */
 export type SchadenArt = "" | RuestungsArt;
 
@@ -304,6 +325,7 @@ export interface GegenstandUpdate {
   istWaffe?: boolean;
   schaden?: number;
   schadenArt?: SchadenArt;
+  kampfFertigkeit?: KampfFertigkeit;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   ruestungKaestchenMax?: number;

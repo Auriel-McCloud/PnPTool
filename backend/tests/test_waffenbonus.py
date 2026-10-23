@@ -1,4 +1,10 @@
-from app.items.waffenbonus import SCHADEN_MAX, ki_schaden_roh, schaden_klemmen, waffenfelder
+from app.items.waffenbonus import (
+    SCHADEN_MAX,
+    kampf_fertigkeit_lesen,
+    ki_schaden_roh,
+    schaden_klemmen,
+    waffenfelder,
+)
 
 
 def test_handwaffe_nimmt_den_wert():
@@ -41,3 +47,12 @@ def test_alter_schluessel_schadensbonus_gilt_noch():
     assert ki_schaden_roh({"schaden": 5}) == 5
     assert ki_schaden_roh({"schadensbonus": 3}) == 3
     assert ki_schaden_roh({"schaden": 8, "schadensbonus": 2}) == 8
+
+
+def test_kampf_fertigkeit_nur_die_drei_skills():
+    assert kampf_fertigkeit_lesen("Schusswaffen") == "Schusswaffen"
+    assert kampf_fertigkeit_lesen("Nahkampf") == "Nahkampf"
+    assert kampf_fertigkeit_lesen("Handgemenge") == "Handgemenge"
+    assert kampf_fertigkeit_lesen("Fernkampf") == ""
+    assert kampf_fertigkeit_lesen(None) == ""
+    assert kampf_fertigkeit_lesen("") == ""

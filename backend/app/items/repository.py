@@ -2,7 +2,7 @@ import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
-from app.items.waffenbonus import schaden_art_fuer_waffe
+from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
@@ -22,6 +22,7 @@ RETURN_FIELDS = """
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe, g.schaden AS schaden, g.schadenArt AS schadenArt,
+    g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
@@ -148,6 +149,7 @@ def _decode(record: dict) -> dict:
         record["schadenArt"] = schaden_art_fuer_waffe(art)
     else:
         record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
+    record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
     for feld in ("traitBoni", "ausruestungsfertigkeiten"):
         try:
             roh = record.get(feld)
@@ -219,7 +221,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
-            schaden: $schaden, schadenArt: $schadenArt,
+            schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
@@ -285,6 +287,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istWaffe=bool(data.get("istWaffe")),
             schaden=int(data.get("schaden") or 0),
             schadenArt=data.get("schadenArt") or "",
+            kampfFertigkeit=kampf_fertigkeit_lesen(data.get("kampfFertigkeit")),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
             verbaut=bool(data.get("verbaut")),

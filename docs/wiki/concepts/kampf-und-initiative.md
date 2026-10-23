@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-10-23
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -21,9 +21,12 @@ und Regelwerk bleiben am Tisch — das Tool verwaltet nur *wer wann dran ist* un
   Reihenfolge: Matrixnutzer vor Nahkämpfern vor Fernkämpfern. In umgekehrter
   Reihenfolge sagen alle an, was sie vorhaben — die schnellste Person kann so
   reagieren; gewürfelt wird dann in der richtigen Reihenfolge.
-- **Treffen:** Geschick+Kampfskill+Mod vs. Ausweichen (Geschick+Sportlichkeit)
-  oder Parieren (Geschick+Waffenfertigkeit, gegen Fernkampf nur mit
-  Cyberware/Magie) — beide kumulativ −1 pro Einsatz/Runde.
+- **Treffen:** Geschick+Kampfskill+Ausrüstungsbonus vs. Ausweichen (Geschick+Sportlichkeit)
+  oder Parieren (Geschick+Nahkampf, gegen Fernkampf nur mit
+  Cyberware/Magie) — beide kumulativ −1 pro Einsatz/Runde. Welche Waffe
+  welchen Skill würfelt, steht am Gegenstand (`kampfFertigkeit`:
+  Schusswaffen, Nahkampf oder Handgemenge). Leer heißt: noch nicht
+  markiert, das Tool rät nicht.
 - **Schaden:** Fernkampf = Waffenschaden+Nettoerfolge vs. Rüstung; Nahkampf =
   Waffenschaden+Stärke+Nettoerfolge vs. Rüstung.
 
@@ -47,6 +50,9 @@ automatische „0 HP = tot"-Logik.
   Initiative-Boni bis +6 sowie Zusatzaktionen — geprüft am 04.09.2026
   (Initiative 7 unverbaut vs. 13 mit Stufe-2-Booster, Zweitwurf-Pool ohne Bonus,
   Paralyse-Fall).
+- **23.10.2026:** Kampfkarte zählt Ausrüstungsboni in den Würfelpool.
+  Waffen (und Chrom mit `istWaffe`) können `kampfFertigkeit` tragen.
+  Schadenszeile ist nur noch Waffenschaden + Nettoerfolge.
 
 ## Was noch fehlt
 

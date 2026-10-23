@@ -97,7 +97,7 @@
 }
 
 .kk-waffe-schaden,
-.kk-waffe-nah {
+.kk-waffe-pool {
   display: flex;
   align-items: baseline;
   gap: 6px;
@@ -106,13 +106,12 @@
   color: var(--neon);
 }
 
-.kk-waffe-nah {
-  font-size: 14px;
-  color: var(--text-leise);
+.kk-waffe-pool {
+  font-size: 15px;
+  color: var(--text);
 }
 
-.kk-waffe-schaden em,
-.kk-waffe-nah em {
+.kk-waffe-schaden em {
   font-family: var(--sans);
   font-style: normal;
   font-size: 11px;

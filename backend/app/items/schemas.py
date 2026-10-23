@@ -8,6 +8,9 @@ from pydantic import BaseModel
 # Leer = noch nicht gesetzt — Bestandsdaten raten wir nicht.
 SchadenArt = Literal["", "schlag", "schwer", "aggraviert"]
 
+# Leer = noch nicht markiert. Schusswaffen ist Fernkampf (Geschick + Skill).
+KampfFertigkeit = Literal["", "Schusswaffen", "Nahkampf", "Handgemenge"]
+
 # Gemeinsamer Typ-Katalog — muss inhaltlich mit frontend/src/items/typKatalog.ts
 # übereinstimmen (dort die Kachel-Auswahl beim Anlegen, hier u.a. die Enum für
 # die KI-Gegenstandsgenerierung, app/ki/routes.py). Der Typ ist seit
@@ -141,6 +144,9 @@ class GegenstandCreate(BaseModel):
     # typ "Waffe" oder istWaffe. Standard Tödlich — Schlag und Schwerheilbar
     # setzt man extra (Mark, 10.10.2026).
     schadenArt: SchadenArt = ""
+    # Welcher Kampfskill die Waffe würfelt. Leer = noch nicht markiert, die
+    # Kampfkarte rät nicht. Auch an Chrom, das zusätzlich als Waffe zählt.
+    kampfFertigkeit: KampfFertigkeit = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
     # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
@@ -274,6 +280,7 @@ class GegenstandUpdate(BaseModel):
     istWaffe: bool | None = None
     schaden: int | None = None
     schadenArt: SchadenArt | None = None
+    kampfFertigkeit: KampfFertigkeit | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
     verbaut: bool | None = None
@@ -352,6 +359,7 @@ class GegenstandResponse(BaseModel):
     istWaffe: bool = False
     schaden: int = 0
     schadenArt: SchadenArt = ""
+    kampfFertigkeit: KampfFertigkeit = ""
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
     verbaut: bool = False
