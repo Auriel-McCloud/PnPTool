@@ -69,6 +69,8 @@ export function PCDetail({
   }, [person]);
   const [zuNpcOffen, setZuNpcOffen] = useState(false);
   const [zuNpcLaeuft, setZuNpcLaeuft] = useState(false);
+  const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [loeschenLaeuft, setLoeschenLaeuft] = useState(false);
 
   async function vorgefertigtUmschalten(wert: boolean) {
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istVorgefertigt: wert });
@@ -85,6 +87,18 @@ export function PCDetail({
       onSchliessen();
     } finally {
       setZuNpcLaeuft(false);
+    }
+  }
+
+  async function loeschen() {
+    setLoeschenLaeuft(true);
+    try {
+      await entitiesApi.deletePerson(campaignId, person.id);
+      setLoeschenOffen(false);
+      onGeaendert();
+      onSchliessen();
+    } finally {
+      setLoeschenLaeuft(false);
     }
   }
 
@@ -211,6 +225,13 @@ export function PCDetail({
                   <button type="button" onClick={() => setZuNpcOffen(true)}>
                     ⇄ Zu NPC machen
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoeschenOffen(true)}
+                    style={{ color: "var(--signal)", borderColor: "var(--signal)" }}
+                  >
+                    🗑 PC löschen
+                  </button>
                 </div>
               </div>
             </div>
@@ -292,6 +313,20 @@ export function PCDetail({
           jaText={zuNpcLaeuft ? "..." : "Zu NPC machen"}
           onJa={zuNpcMachen}
           onNein={() => setZuNpcOffen(false)}
+        />
+      )}
+      {loeschenOffen && (
+        <Bestaetigung
+          titel={`${person.name} löschen?`}
+          text={
+            spielerName
+              ? `${spielerName} spielt diesen Charakter. Die Figur wird endgültig gelöscht, samt Inventar und Verbindungen. ${spielerName} sieht danach wieder den Ersteinstieg. Das lässt sich nicht rückgängig machen.`
+              : `„${person.name}“ wird endgültig gelöscht, samt Inventar und ${beziehungsZahl} Verbindungen. Das lässt sich nicht rückgängig machen.`
+          }
+          jaText={loeschenLaeuft ? "..." : "Ja, löschen"}
+          neinText="Abbrechen"
+          onJa={loeschen}
+          onNein={() => setLoeschenOffen(false)}
         />
       )}
     </>

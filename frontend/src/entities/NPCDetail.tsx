@@ -69,6 +69,8 @@ export function NPCDetail({
   }, [person]);
   const [zuPcOffen, setZuPcOffen] = useState(false);
   const [zuPcLaeuft, setZuPcLaeuft] = useState(false);
+  const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [loeschenLaeuft, setLoeschenLaeuft] = useState(false);
   const istHaendler = aktuellePerson.istHaendler ?? false;
   const istKredithai = aktuellePerson.istKredithai ?? false;
 
@@ -87,6 +89,18 @@ export function NPCDetail({
       onSchliessen();
     } finally {
       setZuPcLaeuft(false);
+    }
+  }
+
+  async function loeschen() {
+    setLoeschenLaeuft(true);
+    try {
+      await entitiesApi.deletePerson(campaignId, person.id);
+      setLoeschenOffen(false);
+      onGeaendert();
+      onSchliessen();
+    } finally {
+      setLoeschenLaeuft(false);
     }
   }
 
@@ -214,6 +228,13 @@ export function NPCDetail({
                   <button type="button" onClick={() => setZuPcOffen(true)}>
                     ⇄ Zu PC machen
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoeschenOffen(true)}
+                    style={{ color: "var(--signal)", borderColor: "var(--signal)" }}
+                  >
+                    🗑 NPC löschen
+                  </button>
                 </div>
               </div>
             </div>
@@ -291,6 +312,16 @@ export function NPCDetail({
           jaText={zuPcLaeuft ? "..." : "Zu PC machen"}
           onJa={zuPcMachen}
           onNein={() => setZuPcOffen(false)}
+        />
+      )}
+      {loeschenOffen && (
+        <Bestaetigung
+          titel={`${person.name} löschen?`}
+          text={`„${person.name}“ wird endgültig gelöscht, samt Inventar und ${beziehungsZahl} Verbindungen. Das lässt sich nicht rückgängig machen.`}
+          jaText={loeschenLaeuft ? "..." : "Ja, löschen"}
+          neinText="Abbrechen"
+          onJa={loeschen}
+          onNein={() => setLoeschenOffen(false)}
         />
       )}
     </>

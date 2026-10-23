@@ -1,0 +1,105 @@
+/* ===================================================================
+   Fertigkeiten-Spezialisierung — Slot-Liste im Popup neben der
+   Fertigkeitszeile (ab Rating 4, siehe Charakterblatt.tsx::reihe).
+   =================================================================== */
+
+.sz-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sz-slot {
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+
+.sz-slot-kopf {
+  margin-bottom: 4px;
+}
+
+.sz-slot-quelle {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.sz-slot-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.sz-slot-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sz-vorschlaege {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sz-chip {
+  padding: 3px 9px;
+  font-size: 12px;
+  border: 1px solid var(--linie-hell);
+  border-radius: 999px;
+  background: var(--flaeche);
+  color: var(--text-leise);
+}
+
+.sz-chip:hover:not(:disabled) {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.sz-freitext {
+  display: flex;
+  gap: 6px;
+}
+
+.sz-freitext input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sz-knopf {
+  align-self: flex-start;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.sz-kaufen {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+/* Badge neben der Fertigkeitszeile — gleiche Bauweise wie
+   .cb-ausruestungsbonus (charakterblatt.css), eigene Farbe (neon statt
+   gut): es ist ein Werkzeug zum Öffnen des Popups, kein Bonuswert. */
+.cb-spezialisierung-badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--neon);
+  border: 1px solid color-mix(in srgb, var(--neon) 50%, transparent);
+  border-radius: 2px;
+  white-space: nowrap;
+  background: none;
+}
+
+.cb-spezialisierung-badge:hover {
+  background: var(--neon-schwach);
+}

@@ -7,6 +7,10 @@ export interface TraitDef {
   defaultMax: number;
   sortOrder: number;
   description: string;
+  /** Fertigkeiten-Spezialisierung (22.10.2026): GM-vordefinierte
+   * Vorschlagstexte für diese Fertigkeit — leer, wenn keine hinterlegt
+   * sind (der Spieler tippt dann frei). Siehe backend traits/seed.py. */
+  vorschlaege: string[];
 }
 
 export interface TraitRating {
@@ -29,4 +33,9 @@ export const traitsApi = {
       rating,
       maxOverride,
     }),
+  /** GM-Oberfläche (22.10.2026, Folge-Feature): Spezialisierungs-
+   * Vorschlagstexte einer Fertigkeit ersetzen — siehe
+   * ZusatzfertigkeitenVerwaltung.tsx, Tab "Spezialisierungs-Vorschläge". */
+  setVorschlaege: (cid: string, traitDefId: string, vorschlaege: string[]) =>
+    api.put<TraitDef>(`${base(cid)}/traits/${encodeURIComponent(traitDefId)}/vorschlaege`, { vorschlaege }),
 };

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { rassenApi, type Rasse } from "../rassen/api";
+import { traitsApi, type TraitDef } from "../traits/api";
 import {
   zusatzfertigkeitenApi,
   type Zusatzfertigkeit,
@@ -29,6 +30,12 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [neuName, setNeuName] = useState("");
   const [kiOffen, setKiOffen] = useState(false);
+  // Ansicht-Umschalter (22.10.2026, Folge-Feature): zweite Ansicht auf
+  // DERSELBEN Seite statt eines neuen Menüpunkts — Mark meinte mit "dem
+  // Fertigkeiten-Menü" dieses bestehende "Zusatzfertigkeiten"-Menü (siehe
+  // Feature-Bericht). Die bestehende Tabelle/Editor-Logik bleibt unberührt,
+  // nur hinter diesem Schalter versteckt, wenn die zweite Ansicht aktiv ist.
+  const [ansicht, setAnsicht] = useState<"zusatzfertigkeiten" | "vorschlaege">("zusatzfertigkeiten");
 
   async function neuLaden() {
     const daten = await zusatzfertigkeitenApi.liste(campaignId);
@@ -58,83 +65,106 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
 
   return (
     <div className="zf-seite">
-      <div className="zf-kopf">
-        <button type="button" onClick={() => setAnlegenOffen(true)}>
-          + Neu
+      <div className="zf-ansicht-umschalter">
+        <button
+          type="button"
+          className={ansicht === "zusatzfertigkeiten" ? "zf-ansicht-knopf zf-ansicht-knopf-aktiv" : "zf-ansicht-knopf"}
+          onClick={() => setAnsicht("zusatzfertigkeiten")}
+        >
+          Zusatzfertigkeiten
         </button>
-        <button type="button" className="zf-ki-btn" onClick={() => setKiOffen(true)}>
-          ✨ KI-Vorschläge
+        <button
+          type="button"
+          className={ansicht === "vorschlaege" ? "zf-ansicht-knopf zf-ansicht-knopf-aktiv" : "zf-ansicht-knopf"}
+          onClick={() => setAnsicht("vorschlaege")}
+        >
+          Spezialisierungs-Vorschläge
         </button>
-        <span className="zf-anzahl">{liste.length} in dieser Kampagne</span>
       </div>
 
-      {liste.length === 0 && (
-        <p className="zf-leer">
-          Noch keine Zusatzfertigkeiten in dieser Kampagne. Sie stehen sofort allen Spielern zur Wahl,
-          sobald sie hier eingetragen sind.
-        </p>
-      )}
+      {ansicht === "vorschlaege" && <SpezialisierungsVorschlaegeVerwaltung campaignId={campaignId} />}
 
-      {liste.length > 0 && (
-        <table className="zf-tabelle">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Kurzbeschreibung</th>
-              <th>Rasse</th>
-            </tr>
-          </thead>
-          <tbody>
-            {liste.map((z) => (
-              <tr key={z.id} onClick={() => setOffen(z)} className="zf-zeile">
-                <td className="zf-zeile-name">{z.name}</td>
-                <td className="zf-zeile-kurz">{z.kurzbeschreibung || <em>—</em>}</td>
-                <td className="zf-zeile-kurz">{z.nurFuerRasse || <em>alle</em>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {ansicht === "zusatzfertigkeiten" && (
+        <>
+          <div className="zf-kopf">
+            <button type="button" onClick={() => setAnlegenOffen(true)}>
+              + Neu
+            </button>
+            <button type="button" className="zf-ki-btn" onClick={() => setKiOffen(true)}>
+              ✨ KI-Vorschläge
+            </button>
+            <span className="zf-anzahl">{liste.length} in dieser Kampagne</span>
+          </div>
 
-      <Fenster
-        offen={anlegenOffen}
-        titel="Neue Zusatzfertigkeit"
-        unterzeile="Erst anlegen, dann Beschreibung ausarbeiten"
-        kennung="zusatzfertigkeit-neu"
-        onSchliessen={() => {
-          setAnlegenOffen(false);
-          setNeuName("");
-        }}
-      >
-        <form onSubmit={anlegen} className="zf-neu-form">
-          <input
-            type="text"
-            placeholder="Name der Zusatzfertigkeit"
-            value={neuName}
-            onChange={(e) => setNeuName(e.target.value)}
-            required
-            autoFocus
+          {liste.length === 0 && (
+            <p className="zf-leer">
+              Noch keine Zusatzfertigkeiten in dieser Kampagne. Sie stehen sofort allen Spielern zur Wahl,
+              sobald sie hier eingetragen sind.
+            </p>
+          )}
+
+          {liste.length > 0 && (
+            <table className="zf-tabelle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Kurzbeschreibung</th>
+                  <th>Rasse</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liste.map((z) => (
+                  <tr key={z.id} onClick={() => setOffen(z)} className="zf-zeile">
+                    <td className="zf-zeile-name">{z.name}</td>
+                    <td className="zf-zeile-kurz">{z.kurzbeschreibung || <em>—</em>}</td>
+                    <td className="zf-zeile-kurz">{z.nurFuerRasse || <em>alle</em>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <Fenster
+            offen={anlegenOffen}
+            titel="Neue Zusatzfertigkeit"
+            unterzeile="Erst anlegen, dann Beschreibung ausarbeiten"
+            kennung="zusatzfertigkeit-neu"
+            onSchliessen={() => {
+              setAnlegenOffen(false);
+              setNeuName("");
+            }}
+          >
+            <form onSubmit={anlegen} className="zf-neu-form">
+              <input
+                type="text"
+                placeholder="Name der Zusatzfertigkeit"
+                value={neuName}
+                onChange={(e) => setNeuName(e.target.value)}
+                required
+                autoFocus
+              />
+              <button type="submit">Anlegen und bearbeiten</button>
+            </form>
+          </Fenster>
+
+          {offen && (
+            <ZusatzfertigkeitEditor
+              campaignId={campaignId}
+              eintrag={offen}
+              rassen={rassen}
+              onSchliessen={() => setOffen(null)}
+              onGeaendert={neuLaden}
+            />
+          )}
+
+          <KiVorschlaegePopup
+            campaignId={campaignId}
+            offen={kiOffen}
+            onSchliessen={() => setKiOffen(false)}
+            onUebernommen={neuLaden}
           />
-          <button type="submit">Anlegen und bearbeiten</button>
-        </form>
-      </Fenster>
-
-      {offen && (
-        <ZusatzfertigkeitEditor
-          campaignId={campaignId}
-          eintrag={offen}
-          rassen={rassen}
-          onSchliessen={() => setOffen(null)}
-          onGeaendert={neuLaden}
-        />
+        </>
       )}
-
-      <KiVorschlaegePopup
-        campaignId={campaignId}
-        offen={kiOffen}
-        onSchliessen={() => setKiOffen(false)}
-        onUebernommen={neuLaden}
-      />
     </div>
   );
 }
@@ -391,5 +421,115 @@ function KiVorschlaegePopup({
         ))}
       </div>
     </Fenster>
+  );
+}
+
+/**
+ * Spezialisierungs-Vorschläge (22.10.2026, Folge-Feature zur
+ * Fertigkeiten-Spezialisierung): je Fertigkeit/NeuroWeaving-TraitDef eine
+ * Liste von Vorschlagstexten pflegen, die ein Spieler beim Benennen eines
+ * Spezialisierungs-Slots als anklickbare Chips angeboten bekommt (siehe
+ * SpezialisierungPopup.tsx — liest exakt dasselbe `trait.vorschlaege`-Feld).
+ *
+ * Bisher kam diese Liste ausschließlich aus TRAIT_VORSCHLAEGE im Backend-
+ * Seed (traits/seed.py) — hier die erste GM-Oberfläche dafür. Speichert bei
+ * jedem Hinzufügen/Entfernen sofort (dieselbe Konvention wie die
+ * onBlur-Speicherung der Zusatzfertigkeit-Textfelder oben in dieser Datei),
+ * kein separater Speichern-Knopf.
+ *
+ * TraitDef ist ruleset-weit, nicht campaign-gebunden — die Liste zeigt
+ * deshalb den ganzen Fertigkeiten-Katalog des Regelwerks dieser Kampagne,
+ * und eine Änderung gilt für jede Kampagne desselben Regelwerks (siehe
+ * Backend-Routen-Docstring traits/routes.py::set_trait_vorschlaege).
+ */
+function SpezialisierungsVorschlaegeVerwaltung({ campaignId }: { campaignId: string }) {
+  const [traits, setTraits] = useState<TraitDef[] | null>(null);
+  const [ladeFehler, setLadeFehler] = useState<string | null>(null);
+  const [eingabe, setEingabe] = useState<Record<string, string>>({});
+  const [speichert, setSpeichert] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTraits(null);
+    setLadeFehler(null);
+    traitsApi
+      .getKatalog(campaignId)
+      .then((katalog) => setTraits(katalog.filter((t) => t.category === "Fertigkeit" || t.category === "NeuroWeaving")))
+      .catch(() => setLadeFehler("Fertigkeiten konnten nicht geladen werden."));
+  }, [campaignId]);
+
+  async function speichern(trait: TraitDef, neueListe: string[]) {
+    setSpeichert(trait.id);
+    try {
+      const aktualisiert = await traitsApi.setVorschlaege(campaignId, trait.id, neueListe);
+      setTraits((alt) => (alt ? alt.map((t) => (t.id === trait.id ? aktualisiert : t)) : alt));
+    } catch {
+      setLadeFehler("Änderung konnte nicht gespeichert werden.");
+    } finally {
+      setSpeichert(null);
+    }
+  }
+
+  function hinzufuegen(trait: TraitDef) {
+    const wert = (eingabe[trait.id] ?? "").trim();
+    if (!wert || trait.vorschlaege.includes(wert)) return;
+    setEingabe((alt) => ({ ...alt, [trait.id]: "" }));
+    void speichern(trait, [...trait.vorschlaege, wert]);
+  }
+
+  function entfernen(trait: TraitDef, wert: string) {
+    void speichern(trait, trait.vorschlaege.filter((v) => v !== wert));
+  }
+
+  if (ladeFehler && traits === null) return <p className="zf-ki-fehler">{ladeFehler}</p>;
+  if (traits === null) return <p style={{ color: "var(--text-leise)" }}>Lade Fertigkeiten…</p>;
+
+  return (
+    <div className="zf-vorschlaege-liste">
+      <p className="zf-hinweis">
+        Vorschlagstexte, die ein Spieler beim Benennen eines Spezialisierungs-Slots (ab Fertigkeitsrating 4)
+        als anklickbare Chips angeboten bekommt — zusätzlich zum freien Textfeld. Gilt für alle Kampagnen
+        dieses Regelwerks, nicht nur diese.
+      </p>
+      {ladeFehler && <p className="zf-ki-fehler">{ladeFehler}</p>}
+
+      {traits.map((trait) => (
+        <div key={trait.id} className="zf-vorschlaege-eintrag">
+          <span className="zf-vorschlaege-name">{trait.name}</span>
+          <div className="zf-vorschlaege-chips">
+            {trait.vorschlaege.length === 0 && <em className="zf-vorschlaege-leer">keine Vorschläge</em>}
+            {trait.vorschlaege.map((v) => (
+              <button
+                key={v}
+                type="button"
+                className="zf-vorschlag-chip"
+                disabled={speichert === trait.id}
+                title="Klicken zum Entfernen"
+                onClick={() => entfernen(trait, v)}
+              >
+                {v} <span aria-hidden="true">✕</span>
+              </button>
+            ))}
+          </div>
+          <div className="zf-vorschlag-add">
+            <input
+              type="text"
+              placeholder="Neuer Vorschlag…"
+              value={eingabe[trait.id] ?? ""}
+              disabled={speichert === trait.id}
+              onChange={(e) => setEingabe((alt) => ({ ...alt, [trait.id]: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  hinzufuegen(trait);
+                }
+              }}
+            />
+            <button type="button" disabled={speichert === trait.id} onClick={() => hinzufuegen(trait)}>
+              +
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

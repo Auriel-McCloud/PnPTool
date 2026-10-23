@@ -84,6 +84,26 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
 }
 
 
+# --- Spezialisierungs-Vorschläge (22.10.2026) -----------------------------
+# Vom Spielleiter vordefinierte Vorschlagstexte je Fertigkeit — nur ein paar
+# illustrative Beispiele, kein Anspruch auf Vollständigkeit über alle 30
+# Fertigkeiten + NeuroWeaving (v1-Umfang laut Feature-Bericht). Eine leere
+# Liste (Default über .get(name, [])) heisst: noch keine Vorschläge
+# hinterlegt, der Spieler tippt dann einfach frei.
+#
+# Bewusst direkt auf dem TraitDef-Knoten (siehe NEOTOPIA_TRAITS unten) statt
+# in einer eigenen Erklaerung-ähnlichen Struktur — es gibt (Stand 22.10.2026)
+# noch keine GM-Oberfläche zum Bearbeiten, nur dieser Katalog hier. Eine
+# Oberfläche nachzuziehen ist ein bekannter v1-Fehlbetrag, kein Blocker.
+TRAIT_VORSCHLAEGE: dict[str, list[str]] = {
+    "Schusswaffen": ["Pistolen", "Gewehre", "Schrotflinten"],
+    "Nahkampf": ["Klingenwaffen", "Stangenwaffen", "Improvisierte Waffen"],
+    "Fahren": ["Motorräder", "Verfolgungsjagden", "Schwerlasttransporte"],
+    "Handwerk": ["Elektronik", "Fahrzeugreparatur", "Cyberware-Reparatur"],
+    "Matrix": ["Host-Architektur", "Icon-Analyse", "Spurenverfolgung"],
+}
+
+
 TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
     # Ausführliche Tooltip-Texte fuer den "Detail"-Knopf im InfoTipp-Popup
     # (siehe frontend/src/regeln/InfoTipp.tsx). Quelle: docs/reference/Master/
@@ -348,7 +368,7 @@ async def seed_traits() -> None:
                 MERGE (t:TraitDef {id: $id})
                 SET t.ruleset = $ruleset, t.name = $name, t.category = $category,
                     t.defaultMax = $defaultMax, t.sortOrder = $sortOrder,
-                    t.description = $description
+                    t.description = $description, t.vorschlaege = $vorschlaege
                 """,
                 id=trait_id,
                 ruleset=ruleset,
@@ -357,6 +377,7 @@ async def seed_traits() -> None:
                 defaultMax=default_max,
                 sortOrder=sort_order,
                 description=TRAIT_BESCHREIBUNGEN.get(name, ""),
+                vorschlaege=TRAIT_VORSCHLAEGE.get(name, []),
             )
 
         await _migriere_arete_zu_hexkraft(session)

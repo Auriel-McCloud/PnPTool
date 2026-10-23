@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
 import { useAuthFallsVorhanden } from "../auth/AuthContext";
@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type SchadenArt } from "../items/api";
+import { ABLAGEN, itemsApi, SCHADEN_ART_LABEL, SCHADEN_MAX, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -159,6 +159,7 @@ export function GegenstandRow({
   alleOptionen,
   onChanged,
   onRemoved,
+  onBearbeiten,
   kachel = false,
   nurFenster = false,
   onFensterSchliessen,
@@ -171,6 +172,12 @@ export function GegenstandRow({
   alleOptionen: PersonOption[];
   onChanged: () => void;
   onRemoved: () => void;
+  /**
+   * Meldet, ob das Bearbeiten-Fenster offen ist. Die Gegenstände-Übersicht
+   * lädt dann nicht nach — ein Reload könnte die Kachel von der Seite
+   * schieben und das Fenster zumachen.
+   */
+  onBearbeiten?: (offen: boolean) => void;
   /**
    * Kachel statt Listenzeile. Die kampagnenweite Übersicht stellt Gegenstände
    * als Raster dar, damit sie ohne Scrollen auf eine Seite passen; im
@@ -186,6 +193,22 @@ export function GegenstandRow({
   onFensterSchliessen?: () => void;
 }) {
   const [expanded, setExpanded] = useState(nurFenster);
+  const onBearbeitenRef = useRef(onBearbeiten);
+  onBearbeitenRef.current = onBearbeiten;
+  // Nur beim Öffnen/Schließen melden, nicht bei jedem Render — sonst
+  // zählt der Zähler in der Übersicht hoch und runter.
+  useEffect(() => {
+    if (!expanded) return;
+    onBearbeitenRef.current?.(true);
+    return () => onBearbeitenRef.current?.(false);
+  }, [expanded]);
+  // Was wir schon geschrieben haben, auch wenn die Elternliste noch den
+  // alten Gegenstand hält. Sonst setzt das nächste Öffnen die Felder aus
+  // dem veralteten `item` zurück und der nächste Autosave überschreibt
+  // den Server wieder mit dem alten Stand.
+  const lokal = useRef<Partial<Gegenstand>>({});
+  const geradeGeoeffnet = useRef(false);
+  const gespeichertJson = useRef("");
   const [ansicht, setAnsicht] = useState<GgAnsicht>("uebersicht");
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -337,62 +360,64 @@ export function GegenstandRow({
   }, [expanded, campaignId]);
 
   function openEdit() {
-    setName(item.name);
-    setTyp(item.typ);
-    setPreis(item.preis);
-    setKraft(item.typ === "Waffe" ? item.schaden || item.kraft : item.kraft);
-    setSeltenheit(item.seltenheit);
-    setEigenschaften(recordToPairs(item.eigenschaften));
-    setStoryRelevant(item.storyRelevant);
-    setEinzigartig(item.einzigartig);
-    setHatMenge(item.hatMenge);
-    setMenge(item.menge);
-    setAutomatischImShop(item.automatischImShop);
-    setAblage(item.ablage);
-    setGewicht(item.gewicht);
-    setKapazitaet(item.kapazitaet);
-    setIstBehaelter(item.istBehaelter);
-    setImmerSichtbar(item.immerSichtbar);
-    setRiggerBonus(item.riggerBonus);
-    setMaxDrohnen(item.maxDrohnen);
-    setCyberwall(item.cyberwall);
-    setDeckBruteForce(item.deckBruteForce);
-    setDeckSchleichen(item.deckSchleichen);
-    setDeckDaten(item.deckDaten);
-    setDeckKompilieren(item.deckKompilieren);
-    setDeckElectronicWarfare(item.deckElectronicWarfare);
-    setDeckMatrixNavigation(item.deckMatrixNavigation);
-    setWVerlust(item.wVerlust);
-    setKoerperzone(item.koerperzone);
-    setSlot(item.slot);
-    setIstWaffe(item.istWaffe);
-    setSchaden(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
-    setSchadenArt(item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""));
-    setInitiativeBonus(item.initiativeBonus);
-    setZusatzaktionen(item.zusatzaktionen);
+    geradeGeoeffnet.current = true;
+    const src = { ...item, ...lokal.current };
+    setName(src.name);
+    setTyp(src.typ);
+    setPreis(src.preis);
+    setKraft(src.typ === "Waffe" ? src.schaden || src.kraft : src.kraft);
+    setSeltenheit(src.seltenheit);
+    setEigenschaften(recordToPairs(src.eigenschaften));
+    setStoryRelevant(src.storyRelevant);
+    setEinzigartig(src.einzigartig);
+    setHatMenge(src.hatMenge);
+    setMenge(src.menge);
+    setAutomatischImShop(src.automatischImShop);
+    setAblage(src.ablage);
+    setGewicht(src.gewicht);
+    setKapazitaet(src.kapazitaet);
+    setIstBehaelter(src.istBehaelter);
+    setImmerSichtbar(src.immerSichtbar);
+    setRiggerBonus(src.riggerBonus);
+    setMaxDrohnen(src.maxDrohnen);
+    setCyberwall(src.cyberwall);
+    setDeckBruteForce(src.deckBruteForce);
+    setDeckSchleichen(src.deckSchleichen);
+    setDeckDaten(src.deckDaten);
+    setDeckKompilieren(src.deckKompilieren);
+    setDeckElectronicWarfare(src.deckElectronicWarfare);
+    setDeckMatrixNavigation(src.deckMatrixNavigation);
+    setWVerlust(src.wVerlust);
+    setKoerperzone(src.koerperzone);
+    setSlot(src.slot);
+    setIstWaffe(src.istWaffe);
+    setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
+    setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
+    setInitiativeBonus(src.initiativeBonus);
+    setZusatzaktionen(src.zusatzaktionen);
     setTraitBoni(
-      Object.entries(item.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
+      Object.entries(src.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
     );
     setAusruestungsfertigkeiten(
-      Object.entries(item.ausruestungsfertigkeiten).map(([key, value]) => ({ key, value: String(value) })),
+      Object.entries(src.ausruestungsfertigkeiten).map(([key, value]) => ({ key, value: String(value) })),
     );
-    setStufe(item.stufe);
-    setWiderstand(item.widerstand);
-    setAngriff(item.angriff);
-    setAgilitaet(item.agilitaet);
-    setRuestungKaestchenMax(item.ruestungKaestchenMax);
-    setRuestungReduktionBasis(item.ruestungReduktionBasis);
-    setIstReparaturmaterial(item.istReparaturmaterial);
-    setReparaturKapazitaet(item.reparaturKapazitaet);
-    setIstNatuerlich(item.istNatuerlich);
-    setAblageZiel(item.ablageZielId ?? "");
+    setStufe(src.stufe);
+    setWiderstand(src.widerstand);
+    setAngriff(src.angriff);
+    setAgilitaet(src.agilitaet);
+    setRuestungKaestchenMax(src.ruestungKaestchenMax);
+    setRuestungReduktionBasis(src.ruestungReduktionBasis);
+    setIstReparaturmaterial(src.istReparaturmaterial);
+    setReparaturKapazitaet(src.reparaturKapazitaet);
+    setIstNatuerlich(src.istNatuerlich);
+    setAblageZiel(src.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
     // Abfrage pro Gegenstand, nur damit ein Auswahlfeld gefüllt ist.
     itemsApi.ablageziele(campaignId, item.id).then(setZiele).catch(() => setZiele([]));
     // Preisstufen fürs Chrom — erst beim Öffnen, und nur wenn es eines ist.
-    if (CHROM_TYPEN.has(item.typ)) {
+    if (CHROM_TYPEN.has(src.typ)) {
       itemsApi
-        .chromstufen(campaignId, Math.max(1, item.kraft))
+        .chromstufen(campaignId, Math.max(1, src.kraft))
         .then((d) => {
           setChromstufen(d.stufen);
           setZonen(d.koerperzonen);
@@ -402,15 +427,15 @@ export function GegenstandRow({
       // der KI automatisch nach Beschreibung gewählt) — Preis ist immer ein
       // ganzzahliges Vielfaches von kraft, sonst kam preisJeBonus nirgendwo her.
       setGewaehlteChromstufe(
-        item.kraft > 0 && item.preis % item.kraft === 0 ? item.preis / item.kraft : null,
+        src.kraft > 0 && src.preis % src.kraft === 0 ? src.preis / src.kraft : null,
       );
     } else {
       setGewaehlteChromstufe(null);
     }
-    setDescriptionDoc(parseRichText(item.description));
-    setNotesDoc(parseRichText(item.notes));
-    setSichtbarkeit(item.sichtbarkeit);
-    setSichtbarFuer(item.sichtbarFuer);
+    setDescriptionDoc(parseRichText(src.description));
+    setNotesDoc(parseRichText(src.notes));
+    setSichtbarkeit(src.sichtbarkeit);
+    setSichtbarFuer(src.sichtbarFuer);
     setAnsicht("uebersicht");
     setExpanded(true);
   }
@@ -421,35 +446,10 @@ export function GegenstandRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function fensterZu() {
-    setExpanded(false);
-    onFensterSchliessen?.();
-  }
-
-  async function nameSpeichern() {
+  function formular(): GegenstandUpdate {
     const sauber = name.trim();
-    if (!sauber) {
-      setName(item.name);
-      return;
-    }
-    if (sauber !== item.name) await itemsApi.update(campaignId, item.id, { name: sauber });
-  }
-
-  async function ablageSetzen(wert: Ablage, zielId?: string | null) {
-    setAblage(wert);
-    if (wert !== "GELAGERT") setAblageZiel("");
-    const ziel = wert === "GELAGERT" ? (zielId !== undefined ? zielId : ablageZiel || null) : null;
-    try {
-      await itemsApi.setAblage(campaignId, item.id, wert, ziel);
-    } catch {
-      setAblage(item.ablage);
-      setAblageZiel(item.ablageZielId ?? "");
-    }
-  }
-
-  async function save() {
-    await itemsApi.update(campaignId, item.id, {
-      name,
+    return {
+      ...(sauber ? { name: sauber } : {}),
       preis,
       kraft: typ === "Waffe" ? schaden || kraft : kraft,
       seltenheit,
@@ -497,12 +497,91 @@ export function GegenstandRow({
       istReparaturmaterial,
       reparaturKapazitaet,
       istNatuerlich,
-      description: serializeRichText(descriptionDoc),
-      notes: serializeRichText(notesDoc),
       sichtbarkeit,
       sichtbarFuer,
+    };
+  }
+
+  const snapshot = useMemo(
+    () => formular(),
+    // formular liest genau diese Felder. Beschreibung/Notizen haben ihren
+    // eigenen Autosave und dürfen hier nicht mitgeschrieben werden.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      name, preis, kraft, typ, schaden, seltenheit, eigenschaften, storyRelevant, einzigartig,
+      hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
+      riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
+      deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
+      istWaffe, schadenArt, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
+      istReparaturmaterial, reparaturKapazitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
+    ],
+  );
+
+  const formularSpeichern = useAutosave(async (payload: GegenstandUpdate) => {
+    await itemsApi.update(campaignId, item.id, payload);
+    lokal.current = { ...lokal.current, ...payload };
+    gespeichertJson.current = JSON.stringify(payload);
+  });
+
+  useEffect(() => {
+    if (!expanded) return;
+    const json = JSON.stringify(snapshot);
+    // Beim Öffnen nur merken, nicht schreiben — sonst überschreibt ein
+    // veraltetes `item` den Stand, den wir gerade selbst gespeichert haben.
+    if (geradeGeoeffnet.current || gespeichertJson.current === "") {
+      geradeGeoeffnet.current = false;
+      gespeichertJson.current = json;
+      return;
+    }
+    if (json === gespeichertJson.current) return;
+    formularSpeichern(snapshot);
+  }, [snapshot, expanded, formularSpeichern]);
+
+  function fensterZu() {
+    // Letzten Tippstoß noch schreiben, bevor die Liste nachzieht. onChanged
+    // erst danach, sonst lädt die Übersicht den alten Stand und das nächste
+    // Öffnen wirft die eben gespeicherte Ablage wieder weg.
+    void Promise.resolve(formularSpeichern.jetzt()).finally(() => {
+      setExpanded(false);
+      onFensterSchliessen?.();
+      onChanged();
     });
-    onChanged();
+  }
+
+  async function nameSpeichern() {
+    const sauber = name.trim();
+    if (!sauber) {
+      setName(lokal.current.name || item.name);
+      return;
+    }
+    if (sauber !== (lokal.current.name ?? item.name)) {
+      await itemsApi.update(campaignId, item.id, { name: sauber });
+      lokal.current = { ...lokal.current, name: sauber };
+    }
+  }
+
+  async function ablageSetzen(wert: Ablage, zielId?: string | null) {
+    setAblage(wert);
+    if (wert !== "GELAGERT") setAblageZiel("");
+    const ziel = wert === "GELAGERT" ? (zielId !== undefined ? zielId : ablageZiel || null) : null;
+    try {
+      await itemsApi.setAblage(campaignId, item.id, wert, ziel);
+      lokal.current = { ...lokal.current, ablage: wert, ablageZielId: ziel };
+    } catch {
+      setAblage(item.ablage);
+      setAblageZiel(item.ablageZielId ?? "");
+    }
+  }
+
+  async function save() {
+    await formularSpeichern.jetzt();
+    const payload = formular();
+    if (JSON.stringify(payload) !== gespeichertJson.current) {
+      await itemsApi.update(campaignId, item.id, payload);
+      lokal.current = { ...lokal.current, ...payload };
+      gespeichertJson.current = JSON.stringify(payload);
+    }
   }
 
   // Nur SL (Button ist ohnehin istGm-gated, aber der Endpunkt selbst ist
@@ -570,11 +649,10 @@ export function GegenstandRow({
     onChanged();
   }
 
-  // Autosave nur für Beschreibung/Notizen (Mark, 27.09.2026: der Rest des
-  // Formulars bleibt hinter dem bestehenden "Speichern"-Knopf) — eigenes
-  // PATCH statt des großen save(), damit ein Autosave-Tick nicht versehentlich
-  // noch unfertige Werte in anderen Feldern mit wegschreibt.
-  // Still: kein onChanged/refresh, sonst unmountet das Fenster (siehe autosave.ts).
+  // Autosave für die Felder der Übersicht, des Umbaus und des Besitzes.
+  // Beschreibung/Notizen bleiben bei ihrem eigenen Autosave — ein großer
+  // save() würde einen halbfertigen Text mit wegschreiben.
+  // Still: kein onChanged, solange das Fenster offen ist.
   const autosaveDescription = useAutosave(async (doc: JSONContent) => {
     await itemsApi.update(campaignId, item.id, { description: serializeRichText(doc) });
   });
@@ -845,7 +923,7 @@ export function GegenstandRow({
           {ansicht === "umbauen" && (
             <div className="pcd-editor-bereich">
               <p style={{ color: "var(--text-leise)", fontSize: "0.85em", margin: 0 }}>
-                Hier ändert sich, was das Ding tut. Speichern, wenn der Umbau sitzt.
+                Hier ändert sich, was das Ding tut. Das wird von selbst gespeichert, sobald du kurz innehältst.
               </p>
 
               {istGm && (
@@ -1296,7 +1374,7 @@ export function GegenstandRow({
               <EigenschaftenEditor pairs={eigenschaften} onChange={setEigenschaften} />
 
               <button type="button" onClick={save}>
-                Umbau speichern
+                Jetzt speichern
               </button>
             </div>
           )}
@@ -1486,7 +1564,7 @@ export function GegenstandRow({
 
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <button type="button" onClick={save}>
-                  Besitz speichern
+                  Jetzt speichern
                 </button>
                 <button
                   type="button"

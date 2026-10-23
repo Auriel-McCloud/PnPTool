@@ -11,12 +11,15 @@ import { WuerfelZehn } from "./WuerfelZehn";
 import { Kaestchen, type Schadensart } from "./Kaestchen";
 import { ZustandFenster } from "./ZustandFenster";
 import { Fenster } from "../shell/Fenster";
+import { useNachladen } from "../shell/nachladen";
 import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
 import { magieBegriff } from "./magieBegriffe";
 import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
+import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
+import { SpezialisierungPopup } from "./SpezialisierungPopup";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -93,9 +96,43 @@ export function Charakterblatt({
   // Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht ins
   // feste reihe(...)-Raster gemischt — die Liste ist pro Person variabel.
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<PersonZusatzfertigkeit[]>([]);
+  // Fertigkeiten-Spezialisierung (22.10.2026): alle Slots dieser Person
+  // (benannt wie unbenannt), über alle Fertigkeiten hinweg — reihe(...)
+  // gruppiert clientseitig nach traitDefId (siehe spezialisierungenNachTrait).
+  const [spezialisierungen, setSpezialisierungen] = useState<Spezialisierung[]>([]);
+  // Welche Fertigkeit gerade ihr Spezialisierungs-Popup offen hat.
+  const [spezialisierungOffen, setSpezialisierungOffen] = useState<TraitDef | null>(null);
+
+  // Still nachladen, solange niemand gerade tippt oder Punkte setzt.
+  // Erstellung und Level-Up haben eigenen lokalen Stand — den nicht
+  // unter dem Spieler wegziehen. Proben- und Zustandsfenster bleiben
+  // offen, die setzen nur Zahlen, keinen Editor.
+  const erstellungLaeuft = bogen !== null && !bogen.uebersicht.erstellungAbgeschlossen;
+  const { ungueltig: blattUngueltig } = useNachladen(
+    async () => {
+      const [geladen, kampf, zusatz] = await Promise.all([
+        bogenApi.laden(campaignId, personId),
+        kampfApi.laden(campaignId).catch(() => null),
+        zusatzfertigkeitenApi.vonPerson(campaignId, personId).catch(() => null),
+      ]);
+      return { geladen, kampf, zusatz };
+    },
+    (frisch) => {
+      setBogen(frisch.geladen);
+      setImKampf(frisch.kampf !== null);
+      if (frisch.zusatz) setZusatzfertigkeiten(frisch.zusatz.gewaehlt);
+    },
+    {
+      pausiert: bearbeiten || steckbriefOffen || ansicht === "levelup" || erstellungLaeuft,
+      quelle: `${campaignId}:${personId}`,
+    },
+  );
 
   /** Übernimmt die vom Server gerechnete Übersicht (Deckelung inbegriffen). */
   function uebernehmen(u: BogenUebersicht) {
+    // Eigene Schadens-Klicks dürfen nicht von einem Poll überschrieben werden,
+    // der noch den Stand von vor dem Klick holt.
+    blattUngueltig();
     setBogen((alt) => (alt ? { ...alt, uebersicht: u } : alt));
   }
 
@@ -210,6 +247,7 @@ export function Charakterblatt({
   }
 
   function neuLaden() {
+    blattUngueltig();
     return Promise.all([
       bogenApi.laden(campaignId, personId),
       // Die Initiative steht nur im Kampf auf dem Blatt (siehe unten) —
@@ -219,6 +257,7 @@ export function Charakterblatt({
       kampfApi.laden(campaignId).catch(() => null),
     ])
       .then(([geladen, kampf]) => {
+        blattUngueltig();
         setBogen(geladen);
         setImKampf(kampf !== null);
       })
@@ -226,14 +265,26 @@ export function Charakterblatt({
   }
 
   useEffect(() => {
-    neuLaden();
-  }, [campaignId, personId]);
-
-  useEffect(() => {
     zusatzfertigkeitenApi
       .vonPerson(campaignId, personId)
       .then((antwort) => setZusatzfertigkeiten(antwort.gewaehlt))
       .catch(() => {});
+  }, [campaignId, personId, ansicht]);
+
+  // Dieselbe Lade-Konvention wie die Zusatzfertigkeiten direkt darüber —
+  // eigener Effekt statt im grossen useNachladen-Promise.all, damit ein
+  // Kauf/eine Benennung (spezialisierungenNeuLaden unten) sofort nachlädt,
+  // ohne die Pausier-Logik des Blatt-Pollings anzufassen.
+  function spezialisierungenNeuLaden() {
+    return spezialisierungenApi
+      .vonPerson(campaignId, personId)
+      .then(setSpezialisierungen)
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    spezialisierungenNeuLaden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, personId, ansicht]);
 
   // Gesetzte Werte nachschlagbar machen; der Katalog gibt die Reihenfolge vor,
@@ -257,6 +308,17 @@ export function Charakterblatt({
     });
     return g;
   }, [bogen]);
+
+  // Spezialisierungen nach traitDefId gruppiert — für den Badge/Popup an
+  // der jeweiligen Fertigkeitszeile in reihe(...) unten.
+  const spezialisierungenNachTrait = useMemo(() => {
+    const m = new Map<string, Spezialisierung[]>();
+    spezialisierungen.forEach((s) => {
+      if (!m.has(s.traitDefId)) m.set(s.traitDefId, []);
+      m.get(s.traitDefId)!.push(s);
+    });
+    return m;
+  }, [spezialisierungen]);
 
   if (fehler) return <p style={{ color: "var(--signal)" }}>{fehler}</p>;
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Charakterblatt…</p>;
@@ -391,6 +453,22 @@ export function Charakterblatt({
                   </span>
                 )}
                 <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(anzeigeName)} titel={anzeigeName} />
+                {(kategorie === "Fertigkeit" || kategorie === "NeuroWeaving") &&
+                  (() => {
+                    const slots = spezialisierungenNachTrait.get(t.id) ?? [];
+                    if (wert < 4 && slots.length === 0) return null;
+                    const benannt = slots.filter((s) => s.text).length;
+                    return (
+                      <button
+                        type="button"
+                        className="cb-spezialisierung-badge"
+                        title="Spezialisierungen ansehen/verwalten"
+                        onClick={() => setSpezialisierungOffen(t)}
+                      >
+                        {slots.length > 0 ? `${benannt}/${slots.length} Spez.` : "+ Spez."}
+                      </button>
+                    );
+                  })()}
               </div>
             );
           })}
@@ -574,7 +652,24 @@ export function Charakterblatt({
         willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
         magieFlavor={u.magieFlavor}
+        spezialisierungen={spezialisierungen}
         onSchliessen={() => setProbe(null)}
+      />
+
+      <SpezialisierungPopup
+        offen={spezialisierungOffen !== null}
+        campaignId={campaignId}
+        personId={personId}
+        trait={spezialisierungOffen ?? ({} as TraitDef)}
+        rating={spezialisierungOffen ? werte.get(spezialisierungOffen.id) ?? 0 : 0}
+        erfahrungVerfuegbar={u.erfahrungVerfuegbar}
+        slots={spezialisierungOffen ? spezialisierungenNachTrait.get(spezialisierungOffen.id) ?? [] : []}
+        istGM={bearbeitbar}
+        onSchliessen={() => setSpezialisierungOffen(null)}
+        onAenderung={async () => {
+          await spezialisierungenNeuLaden();
+          await neuLaden();
+        }}
       />
 
       {/* Kopfzeile des Papierblatts. Erscheint nur, was ausgefüllt ist —

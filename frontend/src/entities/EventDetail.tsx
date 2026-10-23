@@ -112,6 +112,15 @@ export function EventDetail({
     speichereStill({ description: serializeRichText(doc) }),
   );
   const autosaveNotizen = useAutosave((doc: JSONContent) => speichereStill({ notes: serializeRichText(doc) }));
+  const autosaveTitel = useAutosave(async (roh: string) => {
+    const sauber = roh.trim();
+    if (!sauber || sauber === event.title) return;
+    await speichereStill({ title: sauber });
+  });
+  const autosaveZeitpunkt = useAutosave(async (roh: string) => {
+    if (roh === event.timestamp) return;
+    await speichereStill({ timestamp: roh });
+  });
 
   async function loeschen() {
     setSpeichert(true);
@@ -195,14 +204,16 @@ export function EventDetail({
                   <input
                     id={`event-titel-${event.id}`}
                     value={titel}
-                    onChange={(e) => setTitel(e.target.value)}
+                    onChange={(e) => {
+                      setTitel(e.target.value);
+                      autosaveTitel(e.target.value);
+                    }}
                     onBlur={() => {
-                      const sauber = titel.trim();
-                      if (!sauber) {
+                      if (!titel.trim()) {
                         setTitel(event.title);
                         return;
                       }
-                      if (sauber !== event.title) speichere({ title: sauber });
+                      void autosaveTitel.jetzt();
                     }}
                   />
                 </div>
@@ -213,12 +224,11 @@ export function EventDetail({
                     id={`event-zeit-${event.id}`}
                     value={zeitpunkt}
                     placeholder="z.B. Session 3"
-                    onChange={(e) => setZeitpunkt(e.target.value)}
-                    onBlur={() => {
-                      // Leerer Zeitpunkt ist erlaubt — nicht jedes Event ist
-                      // schon eingeordnet. In der Sortierung landet es hinten.
-                      if (zeitpunkt !== event.timestamp) speichere({ timestamp: zeitpunkt });
+                    onChange={(e) => {
+                      setZeitpunkt(e.target.value);
+                      autosaveZeitpunkt(e.target.value);
                     }}
+                    onBlur={() => void autosaveZeitpunkt.jetzt()}
                   />
                 </div>
 

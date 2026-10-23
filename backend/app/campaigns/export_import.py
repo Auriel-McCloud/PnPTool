@@ -78,6 +78,9 @@ KNOWN_LABELS = {
     "SpielerNotiz",
     # Flora & Fauna (06.10.2026): neue Gewächs-Entität.
     "Gewaechs",
+    # Fertigkeiten-Spezialisierung (22.10.2026): ein Knoten pro Slot
+    # (benannt oder noch leer), siehe app/spezialisierungen/repository.py.
+    "Spezialisierung",
 }
 
 KNOWN_REL_TYPES = {
@@ -94,6 +97,8 @@ KNOWN_REL_TYPES = {
     "HAT_NOTIZ",
     # Flora & Fauna (06.10.2026): Critter/Gewächs <-> Ort, many-to-many.
     "LEBT_IN",
+    # Fertigkeiten-Spezialisierung (22.10.2026): Person <-> Spezialisierung-Slot.
+    "HAT_SPEZIALISIERUNG",
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{20,40}$")

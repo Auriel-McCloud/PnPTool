@@ -75,6 +75,19 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
     speichereStill({ description: serializeRichText(doc) }),
   );
   const autosaveNotizen = useAutosave((doc: JSONContent) => speichereStill({ notes: serializeRichText(doc) }));
+  const autosaveName = useAutosave(async (roh: string) => {
+    const sauber = roh.trim();
+    if (!sauber || sauber === gewaechs.name) return;
+    await speichereStill({ name: sauber });
+  });
+  const autosaveGefahr = useAutosave(async (roh: string) => {
+    if (roh === (gewaechs.gefaehrlichkeit ?? "")) return;
+    await speichereStill({ gefaehrlichkeit: roh });
+  });
+  const autosaveEigenschaften = useAutosave(async (roh: string) => {
+    if (roh === (gewaechs.eigenschaften ?? "")) return;
+    await speichereStill({ eigenschaften: roh });
+  });
 
   async function loeschen() {
     setSpeichert(true);
@@ -143,14 +156,16 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
                   <input
                     id={`gewaechs-name-${gewaechs.id}`}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      autosaveName(e.target.value);
+                    }}
                     onBlur={() => {
-                      const sauber = name.trim();
-                      if (!sauber) {
+                      if (!name.trim()) {
                         setName(gewaechs.name);
                         return;
                       }
-                      if (sauber !== gewaechs.name) speichere({ name: sauber });
+                      void autosaveName.jetzt();
                     }}
                   />
                 </div>
@@ -180,10 +195,11 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
                     id={`gewaechs-gefahr-${gewaechs.id}`}
                     value={gefaehrlichkeit}
                     placeholder="z.B. harmlos, reizend, tödlich"
-                    onChange={(e) => setGefaehrlichkeit(e.target.value)}
-                    onBlur={() => {
-                      if (gefaehrlichkeit !== (gewaechs.gefaehrlichkeit ?? "")) speichere({ gefaehrlichkeit });
+                    onChange={(e) => {
+                      setGefaehrlichkeit(e.target.value);
+                      autosaveGefahr(e.target.value);
                     }}
+                    onBlur={() => void autosaveGefahr.jetzt()}
                   />
                 </div>
 
@@ -193,10 +209,11 @@ export function GewaechsDetail({ campaignId, gewaechs, pcOptions, onSchliessen, 
                     id={`gewaechs-eigenschaften-${gewaechs.id}`}
                     value={eigenschaften}
                     placeholder="z.B. leuchtet im Dunkeln, kybernetisch modifiziert"
-                    onChange={(e) => setEigenschaften(e.target.value)}
-                    onBlur={() => {
-                      if (eigenschaften !== (gewaechs.eigenschaften ?? "")) speichere({ eigenschaften });
+                    onChange={(e) => {
+                      setEigenschaften(e.target.value);
+                      autosaveEigenschaften(e.target.value);
                     }}
+                    onBlur={() => void autosaveEigenschaften.jetzt()}
                   />
                 </div>
 
