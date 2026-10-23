@@ -62,9 +62,9 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   slots_bei_zwei_vier_sechs`, `test_set_trait_vorschlaege_route_erlaubt_
   sphaere`), plus neue Tests für `schwellen_fuer`/die Sphären-Schwellen.
   **Verifiziert:** `tsc -b` sauber, Backend-Tests isoliert grün (derselbe
-  bekannte Windows-Multi-Test-Flake wie überall sonst). **Nie am Spieltisch/
-  Browser getestet**, Deploy auf bebop steht noch aus bzw. läuft parallel zu
-  diesem Eintrag.
+  bekannte Windows-Multi-Test-Flake wie überall sonst), auf bebop deployed.
+  Mark hat direkt im Anschluss selbst die UI überarbeitet (siehe nächsten
+  Punkt) — Spieltisch-Test steht noch aus.
 
 - **Spezialisierung ins Klick-Fenster** (23.10.2026, Mark: der Badge rechts
   neben den Punkten ist hässlich): kein `.cb-spezialisierung-badge` mehr.
