@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EntityKind, Ort, Verbindung } from "./api";
 import { entitiesApi } from "./api";
+import { partyApi, type Party } from "../party/api";
 import { BildGalerie } from "./BildGalerie";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
@@ -72,8 +73,20 @@ export function OrtDetail({
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [ladenOffen, setLadenOffen] = useState(false);
+  const [aktiveParty, setAktiveParty] = useState<Party | null>(null);
+  const [parteiVerknuepfenOffen, setParteiVerknuepfenOffen] = useState(false);
+  const [musikHinweis, setMusikHinweis] = useState<string | null>(null);
 
   const zeilen = beziehungsZeilen(ort.id, verbindungen, namen);
+
+  // Für den Schnellverknüpfen-Button: welche Party ist gerade aktiv?
+  // (Marks Wunsch 23.10.2026: "aktive Party" direkt vom Ort aus verknüpfen
+  // statt jedes Mal über die Party-Verwaltung zu gehen.)
+  useEffect(() => {
+    partyApi.liste(campaignId).then((liste) => {
+      setAktiveParty(liste.find((p) => p.aktiv) ?? null);
+    });
+  }, [campaignId, ort.id]);
 
   async function speichere(felder: Partial<Ort>) {
     setSpeichert(true);
@@ -120,6 +133,19 @@ export function OrtDetail({
       setLoeschenOffen(false);
     } finally {
       setSpeichert(false);
+    }
+  }
+
+  async function aktivePartyHierherHolen() {
+    if (!aktiveParty) return;
+    setParteiVerknuepfenOffen(false);
+    setMusikHinweis(null);
+    try {
+      const ergebnis = await partyApi.aufenthaltsortSetzen(campaignId, aktiveParty.id, ort.id, "Ort");
+      setAktiveParty(ergebnis);
+      if (ergebnis.musikHinweis) setMusikHinweis(ergebnis.musikHinweis);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Verknüpfen fehlgeschlagen");
     }
   }
 
@@ -230,6 +256,18 @@ export function OrtDetail({
                   <button type="button" onClick={() => setLadenOffen(true)}>
                     🛒 {ort.istShop ? "Laden verwalten" : "Zu einem Laden machen"}
                   </button>
+                  {aktiveParty && (
+                    <button
+                      type="button"
+                      onClick={() => setParteiVerknuepfenOffen(true)}
+                      disabled={aktiveParty.aufenthaltsortId === ort.id}
+                      title="Verknüpft die gerade aktive Party mit diesem Ort als Aufenthaltsort"
+                    >
+                      {aktiveParty.aufenthaltsortId === ort.id
+                        ? `✓ Aktive Party „${aktiveParty.name}“ ist hier`
+                        : `👥 Aktive Party „${aktiveParty.name}“ hierher holen`}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setLoeschenOffen(true)}
@@ -238,6 +276,7 @@ export function OrtDetail({
                     🗑 Ort löschen
                   </button>
                 </div>
+                {musikHinweis && <p style={{ color: "var(--text-leise)" }}>{musikHinweis}</p>}
               </div>
             </div>
           )}
@@ -299,6 +338,17 @@ export function OrtDetail({
           neinText="Abbrechen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+
+      {parteiVerknuepfenOffen && aktiveParty && (
+        <Bestaetigung
+          titel="Aktive Party hierher verknüpfen?"
+          text={`„${aktiveParty.name}“ wird als an „${ort.name}“ befindlich markiert — ein bisheriger Aufenthaltsort der Party wird dabei ersetzt.`}
+          jaText="Verknüpfen"
+          neinText="Abbrechen"
+          onJa={aktivePartyHierherHolen}
+          onNein={() => setParteiVerknuepfenOffen(false)}
         />
       )}
 

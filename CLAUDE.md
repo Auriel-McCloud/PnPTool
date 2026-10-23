@@ -35,6 +35,24 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Aktive Party jetzt auch von Ort/Event aus verknüpfbar** (23.10.2026,
+  Marks Wunsch: „ich muss immer in die Aktive Party gehen und diese dort
+  mit einem Ort oder Event verknüpfen, das ist umständlich"): bisher ging
+  das Setzen des Aufenthaltsorts nur andersrum, über
+  `PartyVerwaltung.tsx::ZielAuswahl`. `OrtDetail`/`EventDetail` laden jetzt
+  beim Öffnen per `partyApi.liste()` die aktive Party und zeigen in der
+  Übersicht einen Button „👥 Aktive Party „Name" hierher holen" (ausgeblendet,
+  wenn keine Party aktiv ist; deaktiviert mit „✓ ... ist hier", wenn die
+  aktive Party schon hier ist). Klick öffnet ein `Bestaetigung`-Popup, Ja
+  ruft denselben `partyApi.aufenthaltsortSetzen()`-Endpoint wie die
+  Party-Verwaltung auf (inkl. Spotify-Musikhinweis, falls die Party aktiv
+  eine Playlist auslöst). Kein neuer Backend-Endpoint nötig.
+  **Dateien:** `frontend/src/entities/{OrtDetail.tsx, EventDetail.tsx}`.
+  **Verifiziert:** nur `tsc -b` sauber, **nie im Browser angeklickt**. Bitte
+  am Spieltisch: bei einem Ort und einem Event den Button mit und ohne
+  aktive Party, mit bereits verknüpfter Party und beim Playlist-Wechsel
+  prüfen.
+
 - **Event-ohne-eigene-Playlist übernimmt Playlist des verbundenen Orts**
   (23.10.2026, Marks Frage: „wenn das Event keine Playlist hat, der Ort aber
   schon... wird dann die Playlist abgespielt?"): vorher nein — die aktive

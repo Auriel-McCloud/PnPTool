@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EntityKind, Event, Verbindung } from "./api";
 import { entitiesApi } from "./api";
+import { partyApi, type Party } from "../party/api";
 import { EntitaetsBild } from "./EntitaetsBild";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
@@ -67,8 +68,20 @@ export function EventDetail({
   const [, setSpeichert] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [aktiveParty, setAktiveParty] = useState<Party | null>(null);
+  const [parteiVerknuepfenOffen, setParteiVerknuepfenOffen] = useState(false);
+  const [musikHinweis, setMusikHinweis] = useState<string | null>(null);
 
   const zeilen = beziehungsZeilen(event.id, verbindungen, namen);
+
+  // Für den Schnellverknüpfen-Button: welche Party ist gerade aktiv?
+  // (Marks Wunsch 23.10.2026: "aktive Party" direkt vom Event aus verknüpfen
+  // statt jedes Mal über die Party-Verwaltung zu gehen.)
+  useEffect(() => {
+    partyApi.liste(campaignId).then((liste) => {
+      setAktiveParty(liste.find((p) => p.aktiv) ?? null);
+    });
+  }, [campaignId, event.id]);
 
   async function speichere(felder: Partial<Event>) {
     setSpeichert(true);
@@ -112,6 +125,19 @@ export function EventDetail({
       setLoeschenOffen(false);
     } finally {
       setSpeichert(false);
+    }
+  }
+
+  async function aktivePartyHierherHolen() {
+    if (!aktiveParty) return;
+    setParteiVerknuepfenOffen(false);
+    setMusikHinweis(null);
+    try {
+      const ergebnis = await partyApi.aufenthaltsortSetzen(campaignId, aktiveParty.id, event.id, "Event");
+      setAktiveParty(ergebnis);
+      if (ergebnis.musikHinweis) setMusikHinweis(ergebnis.musikHinweis);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Verknüpfen fehlgeschlagen");
     }
   }
 
@@ -230,6 +256,18 @@ export function EventDetail({
                   <button type="button" onClick={() => setUnteransicht("beziehungen")}>
                     ⬡ Beteiligte ansehen ({zeilen.length})
                   </button>
+                  {aktiveParty && (
+                    <button
+                      type="button"
+                      onClick={() => setParteiVerknuepfenOffen(true)}
+                      disabled={aktiveParty.aufenthaltsortId === event.id}
+                      title="Verknüpft die gerade aktive Party mit diesem Event als Aufenthaltsort"
+                    >
+                      {aktiveParty.aufenthaltsortId === event.id
+                        ? `✓ Aktive Party „${aktiveParty.name}“ ist hier`
+                        : `👥 Aktive Party „${aktiveParty.name}“ hierher holen`}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setLoeschenOffen(true)}
@@ -238,6 +276,7 @@ export function EventDetail({
                     🗑 Event löschen
                   </button>
                 </div>
+                {musikHinweis && <p style={{ color: "var(--text-leise)" }}>{musikHinweis}</p>}
               </div>
             </div>
           )}
@@ -295,6 +334,17 @@ export function EventDetail({
           neinText="Abbrechen"
           onJa={loeschen}
           onNein={() => setLoeschenOffen(false)}
+        />
+      )}
+
+      {parteiVerknuepfenOffen && aktiveParty && (
+        <Bestaetigung
+          titel="Aktive Party hierher verknüpfen?"
+          text={`„${aktiveParty.name}“ wird als an „${event.title}“ befindlich markiert — ein bisheriger Aufenthaltsort der Party wird dabei ersetzt.`}
+          jaText="Verknüpfen"
+          neinText="Abbrechen"
+          onJa={aktivePartyHierherHolen}
+          onNein={() => setParteiVerknuepfenOffen(false)}
         />
       )}
     </Fenster>
