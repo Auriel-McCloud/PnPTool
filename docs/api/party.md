@@ -33,7 +33,9 @@ Deshalb ein eigener Bereich statt eine Erweiterung von Fraktionen.
    Aktivieren einer Party deaktiviert automatisch alle anderen. Die aktive
    Party löst — sobald sie einen Aufenthaltsort mit hinterlegter Playlist
    hat — automatisch die Spotify-Wiedergabe aus (siehe
-   `docs/api/spotify.md`).
+   `docs/api/spotify.md`). Ist der Aufenthaltsort ein Event ohne eigene
+   Playlist, springt die Playlist eines per Beziehung verknüpften Orts ein,
+   falls vorhanden (Fallback, siehe `docs/api/spotify.md`).
 
 ---
 

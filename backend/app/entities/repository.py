@@ -820,6 +820,30 @@ async def lebt_in_liste_fuer_ort(campaign_id: str, ort_id: str) -> list[dict]:
         return [dict(r) async for r in result]
 
 
+async def get_verbundener_ort_mit_playlist(campaign_id: str, event_id: str) -> dict | None:
+    """Playlist-Fallback (Mark, 23.10.2026): ein Event ohne eigene Playlist
+
+    übernimmt die seines per VERBINDUNG-Kante verknüpften Orts — ein Event
+    ist so gut wie immer an einen Ort gebunden, der die eigentliche
+    Stimmungsmusik trägt. Kantenrichtung ist egal (`-[:VERBINDUNG]-`
+    ungerichtet), da Beziehungen von beiden Seiten angelegt werden können.
+    Gibt den ERSTEN verbundenen Ort mit gesetzter Playlist zurück (bei
+    mehreren verknüpften Orten keine weitere Priorisierung — Randfall).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (e:Event {id: $event_id, campaignId: $campaign_id})-[:VERBINDUNG]-(o:Ort {campaignId: $campaign_id})
+        WHERE o.spotifyPlaylistUri IS NOT NULL AND o.spotifyPlaylistUri <> ''
+        RETURN o.id AS id, o.name AS name, o.spotifyPlaylistUri AS spotifyPlaylistUri,
+               o.spotifyPlaylistName AS spotifyPlaylistName, o.spotifyPlaylistBild AS spotifyPlaylistBild
+        LIMIT 1
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, event_id=event_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
 async def lebt_in_liste_fuer_art(campaign_id: str, art_id: str) -> list[dict]:
     """Reverse-Lookup: an welchen Orten dieser Critter/dieses Gewächs vorkommt."""
     driver = get_driver()

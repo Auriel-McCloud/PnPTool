@@ -29,6 +29,18 @@ automatisch, wenn
 Daneben gibt es einen expliziten „▶ Jetzt abspielen"-Knopf an
 Ort/Event (z.B. zum Testen ohne Party-Umweg).
 
+**Event-ohne-eigene-Playlist-Fallback** (Mark, 23.10.2026): ein Event hat so
+gut wie immer einen Ort, mit dem es per Beziehung (`VERBINDUNG`-Kante)
+verknüpft ist. Hat das Event selbst keine Playlist hinterlegt, aber ein
+verknüpfter Ort schon, wird dessen Playlist gestartet statt gar keine. Die
+Kantenrichtung ist egal (von Event→Ort oder Ort→Event angelegt, je nachdem
+wer das Beziehungsmenü zuerst benutzt hat). Der Hinweistext macht die
+Umleitung sichtbar: `🎵 Wiedergabe gestartet: <Playlist> (Playlist von Ort
+„<Ortsname>")`. Gibt es mehrere verknüpfte Orte mit Playlist, gewinnt
+irgendeiner davon (keine weitere Priorisierung — Randfall). Hat weder das
+Event noch ein verknüpfter Ort eine Playlist, passiert wie bisher nichts.
+Siehe `app/entities/repository.py::get_verbundener_ort_mit_playlist`.
+
 **Spotify-Fehler blockieren nie die Party-Aktion.** Kein aktives Gerät,
 Konto nicht verbunden, Premium fehlt — die Party wechselt trotzdem den
 Aufenthaltsort/wird trotzdem aktiv, nur der Musik-Hinweis erklärt, was

@@ -35,6 +35,29 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Event-ohne-eigene-Playlist übernimmt Playlist des verbundenen Orts**
+  (23.10.2026, Marks Frage: „wenn das Event keine Playlist hat, der Ort aber
+  schon... wird dann die Playlist abgespielt?"): vorher nein — die aktive
+  Party an einem Event ohne eigene Playlist spielte gar nichts ab, selbst
+  wenn ein per Beziehung verknüpfter Ort eine Playlist hatte.
+  `app/spotify/dienst.py::playlist_fuer_ziel_abspielen` prüft jetzt bei
+  einem Event ohne `spotifyPlaylistUri` zusätzlich die per `VERBINDUNG`-
+  Kante (richtungsegal) verknüpften Orte (neue
+  `app/entities/repository.py::get_verbundener_ort_mit_playlist`) und nimmt
+  die erste gefundene Playlist. Hinweistext macht die Umleitung kenntlich
+  (`... (Playlist von Ort „Name")`). Bei mehreren verknüpften Orten mit
+  Playlist keine Priorisierung — Randfall, wird nicht vorab geklärt.
+  **Dateien:** `backend/app/entities/repository.py`,
+  `backend/app/spotify/dienst.py`, `docs/api/spotify.md`,
+  `docs/api/party.md`. **Verifiziert:** neue Tests
+  (`test_spotify_playlist_fallback.py`, 5 Fälle) grün, volle Suite auf
+  Regressionen gegengeprüft (22 vorbestehende, unabhängige Fehlschläge
+  bestätigt per git-stash-Vergleich — keine davon durch diese Änderung).
+  **Nie am Spieltisch getestet:** Event ohne Playlist anlegen, mit einem
+  Ort verknüpfen, der eine Playlist hat, Party dorthin setzen/aktivieren —
+  die Playlist des Orts muss anspringen und der Hinweistext soll den Ort
+  nennen.
+
 - **Hintergründe-Baukasten jetzt mit der Erstellung synchron** (13.10.2026,
   Marks Bugreport: „die Hintergründe, die ich im Menü Hintergründe pflege
   oder entferne, sind nicht synchron mit den Hintergründen in der
