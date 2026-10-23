@@ -68,20 +68,33 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   "via Party-Verwaltung" statt Knöpfen — ändern bleibt der Party-Verwaltung
   vorbehalten). `Party` ist dafür neu ein `EntityKind` (Icon 👥), Namenstabelle
   in `EntityManager.tsx` lädt jetzt zusätzlich `partyApi.liste()`.
+  **Nachgezogen (Mark hat live getestet, Partys fehlten noch):** der
+  eigentliche Blick war der **Beziehungsgraph** (Canvas), nicht die Text-
+  liste — Backend-Logs auf bebop zeigten nur `/graph`-Aufrufe, nie
+  `/verbindungen`. `graph/repository.py::get_all_nodes` schloss `Party`
+  bisher aus, `get_all_edges` kannte nur echte `VERBINDUNG`-Kanten. Jetzt
+  erscheint Party als eigener Knoten (Form `tag`, Farbe `--kind-party` =
+  Indigo wie `--bereich-party`/`--bereich-verbindungen`) mit den
+  Mitgliedschafts-/Aufenthaltsort-Kanten (gleiches `UNION ALL`-Muster).
+  Rechtsklick auf einen Party-Knoten öffnet bewusst noch kein Detail-Fenster
+  (`GraphOeffnen.tsx` wirft eine freundliche Fehlermeldung Richtung
+  Party-Verwaltung) — Sehen war der Wunsch, Bearbeiten-aus-dem-Graph wäre
+  ein eigenes Vorhaben.
   **Dateien:** `backend/app/entities/{repository.py, schemas.py}`,
+  `backend/app/graph/repository.py`,
   `frontend/src/entities/{api.ts, EntityManager.tsx, BeziehungsListe.tsx,
   VerbindungenListe.tsx, EinflussVerwaltung.tsx, EntitaetsAuswahl.tsx,
   VerbindungAnlegen.tsx, VerbindungBearbeiten.tsx}`,
   `frontend/src/wiki/VerweisWaehler.tsx` (nur Typ-Entflechtung, Party bleibt
   kein Wiki-Verweisziel), `frontend/src/graph/GraphOeffnen.tsx` (Party-Case
-  wirft bewusst, da Party-Knoten im Graph-Canvas nicht existieren).
-  **Verifiziert:** `tsc -b` sauber, Backend-Tests grün (die zwei Fehlschläge
-  in `test_shop_am_ort.py` sind der bekannte Windows-Multi-Test-Flake,
-  reproduziert auch unverändert auf `main`). **Nie im Browser angeklickt.**
-  Bitte am Spieltisch: PC in eine Party stecken, Party an einen Ort/Event
-  stellen, dann im Beziehungen-Menü (global und im PC-Detail) nachschauen,
-  ob "Mitglied von"/"Befindet sich an" auftaucht und die Sichtbarkeit für
-  Spieler stimmt (Party selbst muss für sie sichtbar sein).
+  wirft bewusst, Öffnen aus dem Graph nicht gebaut),
+  `frontend/src/graph/CampaignGraphView.tsx`, `frontend/src/theme/tokens.css`
+  (`--kind-party`).
+  **Verifiziert:** `tsc -b` sauber, Backend-Tests grün (bekannter Windows-
+  Multi-Test-Flake bei einzelnen Dateien, reproduziert auch unverändert auf
+  `main`), Cypher-Query direkt auf bebop gegen echte Daten geprüft (Party
+  "Alpha Squad" mit 2 Mitgliedern + Aufenthaltsort erscheint in der
+  Knoten-/Kantenzählung). **Live auf bebop, Mark testet gerade erneut.**
 
 - **Steckbrief vor der Übernahme eines vorgefertigten Charakters** (23.10.2026):
   Klick auf die Karte öffnet ein Fenster (Bild, drei Spalten Attribute und
