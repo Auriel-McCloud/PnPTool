@@ -93,6 +93,35 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Kampagnen-EP einbuchen & NPC-Catch-up** (24.10.2026, Marks Wunsch: der
+  globale `kampagnenEP`-Zähler wirkt automatisch auf JEDE Person inkl. NPCs
+  (`bogen.py::bogen_uebersicht`), wuchs aber unbegrenzt). Zwei neue,
+  unabhängige SL-Aktionen:
+  1. **EP einbuchen & zurücksetzen** (Button neben der Kampagnen-EP-Anzeige
+     im PC-Menü, `POST .../einstellungen/ep-einbuchen-reset`): bucht die
+     aktuellen Kampagnen-EP dauerhaft auf jeden PC (`Person.erfahrung`) und
+     setzt den Zähler auf 0 — "friert" einen Spielabschnitt ein. Nur PCs,
+     NPCs bleiben aussen vor (siehe Punkt 2). Bestätigungsdialog, irreversibel.
+  2. **NPC-Catch-up** (⚡-Button im NPC-Menü, `POST .../personen/{npcId}/
+     catchup`, `app/traits/catchup.py`): SL wählt einen Referenz-PC + einen
+     Prozentsatz (100 % = gleichauf, >100 % = Boss, <100 % = bewusst
+     schwächer). Server berechnet EP-Budget (`erfahrungGesamt` des PCs ×
+     Prozent, abzüglich `kampagnenEP`, um Doppelzählung zu vermeiden — der
+     NPC kriegt es ja ohnehin automatisch) und Geld-Budget (Kapital + Wert
+     aller Gegenstände des PCs × Prozent). Beides wird **ohne Rückfrage**
+     verbraucht (Mark: "direkt ohne Rückfrage"): die KI verteilt die EP auf
+     Werte (`app/traits/ki_catchup.py`, Gegenstück zu `ki_einkauf.py`) und
+     kauft im Tutorial-Shop ein (`ki_einkauf.einkaufen`, dafür um
+     `gekauftIds` erweitert) — jedes gekaufte Stück wird automatisch
+     ausgerüstet bzw. bei Cyber-/Bio-/Hexware eingebaut (`setze_verbaut`),
+     nicht nur mitgeführt. **Verifiziert:** Backend-Unit-Tests für die reine
+     Budget-/Zielwert-Rechnung (`test_catchup.py`, 12 Fälle), volle Test-Suite
+     kollidiert nicht (dieselben zwei vorbestehenden `test_zugriffsschutz`-
+     Fehlschläge wie immer, unabhängig), `tsc -b` sauber. Spieltisch-Test
+     steht aus: Catch-up an einer echten Kampagne mit Tutorial-Shop
+     durchklicken, prüfen ob die KI-Werteverteilung/der Einkauf sinnvoll
+     wirkt und ob die automatische Ausrüstung/Verbauung so passt.
+
 - **Graph-Filter + Kantentypen-Normalisierung** (24.10.2026, Marks Wunsch:
   "irgendwann kennen meine Spieler alle NPCs untereinander — ich würde gerne
   die Kante 'kennt' ausblenden können"): neuer ⚙-Filter-Knopf oben rechts in
