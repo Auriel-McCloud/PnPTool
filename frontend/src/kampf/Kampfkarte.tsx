@@ -454,6 +454,7 @@ export function Kampfkarte({
         werte={new Map(bogen.werte.map((w) => [w.traitDefId, w.rating]))}
         willenskraft={uebrigeWillenskraft}
         deckBoni={bogen.deckBoni}
+        ausruestungsBoni={bogen.ausruestungsBoni}
         magieFlavor={u.magieFlavor}
         onSchliessen={() => setProbe(null)}
       />

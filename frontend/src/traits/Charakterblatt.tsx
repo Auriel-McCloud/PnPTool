@@ -78,8 +78,8 @@ export function Charakterblatt({
   // Erhöhtes Maximum für einzelne Werte (eine Elder-NPC bei Schusswaffen 8).
   // Nur im Bearbeiten-Modus sichtbar — Spieler sollen davon nichts sehen.
   const [maximaZeigen, setMaximaZeigen] = useState(false);
-  // Angetippter Wert: dafür geht die Rechenhilfe auf (Fertigkeit → Attribut
-  // → Würfelzahl). Gewürfelt wird am Tisch, nicht hier.
+  // Angetippter Wert: dafür geht die Rechenhilfe auf. Fähigkeit fragt nach
+  // dem Attribut, Attribut nach der Fähigkeit. Gewürfelt wird am Tisch, nicht hier.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   // Läuft gerade ein Kampf? Nur dann steht die Initiative auf dem Blatt —
@@ -646,6 +646,9 @@ export function Charakterblatt({
         // zu erzwingen, kann sie nicht nochmal in einen Zauber stecken.
         willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
+        ausruestungsBoni={bogen.ausruestungsBoni}
+        zusatzfertigkeiten={zusatzfertigkeiten.map((z) => ({ name: z.name, wert: z.rating }))}
+        ausruestungsfertigkeiten={(bogen.ausruestungsfertigkeiten ?? []).map((f) => ({ name: f.name, wert: f.bonus }))}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}
         campaignId={campaignId}

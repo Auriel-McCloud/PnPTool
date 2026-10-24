@@ -17,8 +17,10 @@ import "./probe.css";
  * notiert — er zöge nach sich, dass Spielleitung und Mitspieler die Ergebnisse
  * sehen müssten, und das ist eine eigene Runde wert.)
  *
- * Zwei Fenster übereinander, wie im UI-Konzept: Fertigkeit antippen → womit?
- * → so viele Würfel.
+ * Zwei Fenster übereinander, wie im UI-Konzept: antippen → womit kombinieren?
+ * → so viele Würfel. Von welcher Seite man kommt, entscheidet nur die Liste:
+ * Fähigkeit antippen fragt nach dem Attribut, Attribut antippen nach der
+ * Fähigkeit. Beides ist derselbe Pool.
  */
 
 /** Reihenfolge und Beschriftung wie auf dem Blatt. */
@@ -26,6 +28,25 @@ const SPALTEN: { titel: string; kategorie: string; ton: string }[] = [
   { titel: "Körperlich", kategorie: "AttributKörperlich", ton: "var(--wert-koerperlich)" },
   { titel: "Gesellschaftlich", kategorie: "AttributGesellschaftlich", ton: "var(--wert-gesellschaftlich)" },
   { titel: "Geistig", kategorie: "AttributGeistig", ton: "var(--wert-geistig)" },
+];
+
+/** Klick auf so eine Zeile fragt nach der Fähigkeit, nicht nach einem zweiten Attribut. */
+const ATTRIBUT_KATEGORIEN = new Set([
+  "AttributKörperlich",
+  "AttributGesellschaftlich",
+  "AttributGeistig",
+  "AttributMatrix",
+]);
+
+/**
+ * Fähigkeiten stehen auf dem Blatt in drei Zehnerblöcken, passend zu den
+ * Attributspalten (sortOrder 1–10 / 11–20 / 21–30). Dieselbe Schnitte hier,
+ * sonst sucht man die Fertigkeit an einer anderen Stelle als auf dem Blatt.
+ */
+const FERTIGKEIT_SPALTEN: { titel: string; von: number; bis: number; ton: string }[] = [
+  { titel: "Körperlich", von: 1, bis: 10, ton: "var(--wert-koerperlich)" },
+  { titel: "Gesellschaftlich", von: 11, bis: 20, ton: "var(--wert-gesellschaftlich)" },
+  { titel: "Geistig", von: 21, bis: 30, ton: "var(--wert-geistig)" },
 ];
 
 /**
@@ -58,6 +79,9 @@ export function Probe({
   werte,
   willenskraft,
   deckBoni,
+  ausruestungsBoni,
+  zusatzfertigkeiten,
+  ausruestungsfertigkeiten,
   magieFlavor,
   spezialisierungen,
   campaignId,
@@ -68,7 +92,7 @@ export function Probe({
   onSchliessen,
 }: {
   wahl: ProbeWahl | null;
-  /** Nur für die Attributnamen und ihre Reihenfolge. */
+  /** Attribut- und Fertigkeitsnamen, Reihenfolge und sortOrder. */
   katalog: TraitDef[];
   /**
    * Aktuelle Werte, verschlüsselt nach **TraitDef-Kennung** — so liefert sie
@@ -80,6 +104,20 @@ export function Probe({
   willenskraft: number;
   /** Bonuswürfel aus dem ausgerüsteten Cyberdeck, je Matrix-Aktion. */
   deckBoni?: Record<string, number>;
+  /**
+   * Bonuswürfel aus Ausrüstung, Schlüssel ist der Trait-Name. Der angeklickte
+   * Wert bringt seinen Bonus schon mit (`wahl.wert`); der Partner wird hier
+   * nachgeschlagen und muss denselben Bonus dazubekommen, sonst weicht der Pool
+   * davon ab, was auf dem Blatt steht.
+   */
+  ausruestungsBoni?: Record<string, number>;
+  /**
+   * Zusatz- und Ausrüstungsfertigkeiten gehören nicht zum Trait-Katalog,
+   * kombinieren sich aber genauso mit einem Attribut. Nur die Attribut-Seite
+   * zeigt sie — von der Fertigkeit aus fragt das Fenster weiter nach dem Attribut.
+   */
+  zusatzfertigkeiten?: { name: string; wert: number }[];
+  ausruestungsfertigkeiten?: { name: string; wert: number }[];
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
   /** Fertigkeiten-Spezialisierung (22.10.2026): ALLE Slots dieser Person
@@ -98,7 +136,7 @@ export function Probe({
   onSpezialisierungAenderung?: () => void | Promise<void>;
   onSchliessen: () => void;
 }) {
-  const [attribut, setAttribut] = useState<{ name: string; wert: number } | null>(null);
+  const [attribut, setAttribut] = useState<{ name: string; wert: number; traitDefId?: string } | null>(null);
   // Bonuswürfel aus Willenskraft — nur bei Hexkraft und NeuroWeaving.
   const [wild, setWild] = useState(0);
   // Genau eine Deck-Aktion — man tut ja eines nach dem anderen.
@@ -120,9 +158,12 @@ export function Probe({
     const kandidaten = katalog.filter((t) => t.category === partner);
     if (kandidaten.length === 1) {
       const [t] = kandidaten;
-      setAttribut({ name: t.name, wert: werte.get(t.id) ?? 0 });
+      setAttribut({
+        name: t.name,
+        wert: (werte.get(t.id) ?? 0) + (ausruestungsBoni?.[t.name] ?? 0),
+      });
     }
-  }, [wahl, katalog, werte]);
+  }, [wahl, katalog, werte, ausruestungsBoni]);
 
   if (!wahl) return null;
 
@@ -137,8 +178,12 @@ export function Probe({
     wahl.kategorie === "Fertigkeit" || wahl.kategorie === "NeuroWeaving"
       ? katalog.find((t) => t.name === wahl.name && t.category === wahl.kategorie)
       : undefined;
-  const spezialisierungenFuerTrait = fertigkeitTrait
-    ? (spezialisierungen ?? []).filter((s) => s.traitDefId === fertigkeitTrait.id && s.text)
+  // Attribut antippen: die Spezialisierung hängt an der gewählten Fähigkeit,
+  // nicht am Attribut. Sonst gäbe es den +1 nur, wenn man von der Fähigkeit kommt.
+  const istAttributWahl = ATTRIBUT_KATEGORIEN.has(wahl.kategorie);
+  const spezialisierungsTraitId = istAttributWahl ? attribut?.traitDefId : fertigkeitTrait?.id;
+  const spezialisierungenFuerTrait = spezialisierungsTraitId
+    ? (spezialisierungen ?? []).filter((s) => s.traitDefId === spezialisierungsTraitId && s.text)
     : [];
   const roh =
     wahl.wert +
@@ -250,7 +295,7 @@ export function Probe({
               {katalog
                 .filter((t) => t.category === partnerKategorie)
                 .map((t) => {
-                  const wert = werte.get(t.id) ?? 0;
+                  const wert = (werte.get(t.id) ?? 0) + (ausruestungsBoni?.[t.name] ?? 0);
                   const gewaehlt = attribut?.name === t.name;
                   return (
                     <button
@@ -324,34 +369,52 @@ export function Probe({
     <>
       <Fenster
         offen
+        breit={istAttributWahl}
         titel={`${wahlName} ${wahl.wert}`}
-        unterzeile="Womit kombinierst du?"
+        unterzeile={istAttributWahl ? "Mit welcher Fähigkeit?" : "Womit kombinierst du?"}
         kennung={`probe:${wahl.name}`}
         onSchliessen={schliesseAlles}
       >
-        <div className="pr-spalten">
-          {SPALTEN.map((spalte) => (
-            <section key={spalte.kategorie} style={{ "--cb-ton": spalte.ton } as React.CSSProperties}>
-              <h3 className="pr-spalte-titel">{spalte.titel}</h3>
-              {katalog
-                .filter((t) => t.category === spalte.kategorie)
-                .map((t) => {
-                  const wert = werte.get(t.id) ?? 0;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className="pr-attribut"
-                      onClick={() => setAttribut({ name: t.name, wert })}
-                    >
-                      <span className="pr-attribut-name">{t.name}</span>
-                      <span className="pr-attribut-summe">{wahl.wert + wert}</span>
-                    </button>
-                  );
-                })}
-            </section>
-          ))}
-        </div>
+        {istAttributWahl ? (
+          <FertigkeitsWahl
+            katalog={katalog}
+            werte={werte}
+            ausruestungsBoni={ausruestungsBoni}
+            zusatzfertigkeiten={zusatzfertigkeiten}
+            ausruestungsfertigkeiten={ausruestungsfertigkeiten}
+            basis={wahl.wert}
+            onWaehlen={(partner) => {
+              setAttribut(partner);
+              setSpezialisierung((aktuell) =>
+                aktuell && partner.traitDefId && aktuell.traitDefId === partner.traitDefId ? aktuell : null,
+              );
+            }}
+          />
+        ) : (
+          <div className="pr-spalten">
+            {attributSpalten(katalog).map((spalte) => (
+              <section key={spalte.kategorie} style={{ "--cb-ton": spalte.ton } as React.CSSProperties}>
+                <h3 className="pr-spalte-titel">{spalte.titel}</h3>
+                {katalog
+                  .filter((t) => t.category === spalte.kategorie)
+                  .map((t) => {
+                    const wert = (werte.get(t.id) ?? 0) + (ausruestungsBoni?.[t.name] ?? 0);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="pr-attribut"
+                        onClick={() => setAttribut({ name: t.name, wert })}
+                      >
+                        <span className="pr-attribut-name">{t.name}</span>
+                        <span className="pr-attribut-summe">{wahl.wert + wert}</span>
+                      </button>
+                    );
+                  })}
+              </section>
+            ))}
+          </div>
+        )}
         {spezialisierungsBlock(wahl)}
       </Fenster>
 
@@ -417,6 +480,94 @@ export function Probe({
           <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
         </p>
       </Fenster>
+    </>
+  );
+}
+
+/** KI hat Matrix statt Körperlich — dieselbe Ersetzung wie auf dem Blatt. */
+function attributSpalten(katalog: TraitDef[]) {
+  const hatMatrix = katalog.some((t) => t.category === "AttributMatrix");
+  const hatKoerper = katalog.some((t) => t.category === "AttributKörperlich");
+  const erste =
+    hatMatrix && !hatKoerper
+      ? { titel: "Matrix", kategorie: "AttributMatrix", ton: "var(--bereich-begleiter)" }
+      : SPALTEN[0];
+  return [erste, SPALTEN[1], SPALTEN[2]].filter((spalte) =>
+    katalog.some((t) => t.category === spalte.kategorie),
+  );
+}
+
+function FertigkeitsWahl({
+  katalog,
+  werte,
+  ausruestungsBoni,
+  zusatzfertigkeiten,
+  ausruestungsfertigkeiten,
+  basis,
+  onWaehlen,
+}: {
+  katalog: TraitDef[];
+  werte: Map<string, number>;
+  ausruestungsBoni?: Record<string, number>;
+  zusatzfertigkeiten?: { name: string; wert: number }[];
+  ausruestungsfertigkeiten?: { name: string; wert: number }[];
+  basis: number;
+  onWaehlen: (partner: { name: string; wert: number; traitDefId?: string }) => void;
+}) {
+  const fertigkeiten = katalog.filter((t) => t.category === "Fertigkeit");
+  const spalten = FERTIGKEIT_SPALTEN.map((spalte) => ({
+    ...spalte,
+    eintraege: fertigkeiten.filter((t) => t.sortOrder >= spalte.von && t.sortOrder <= spalte.bis),
+  })).filter((spalte) => spalte.eintraege.length > 0);
+  const ohneSpalte = fertigkeiten.filter((t) => t.sortOrder < 1 || t.sortOrder > 30);
+
+  function knopf(key: string, name: string, wert: number, traitDefId?: string) {
+    return (
+      <button key={key} type="button" className="pr-attribut" onClick={() => onWaehlen({ name, wert, traitDefId })}>
+        <span className="pr-attribut-name">{name}</span>
+        <span className="pr-attribut-summe">{basis + wert}</span>
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <div className="pr-spalten">
+        {spalten.map((spalte) => (
+          <section key={spalte.titel} style={{ "--cb-ton": spalte.ton } as React.CSSProperties}>
+            <h3 className="pr-spalte-titel">{spalte.titel}</h3>
+            {spalte.eintraege.map((t) =>
+              knopf(t.id, t.name, (werte.get(t.id) ?? 0) + (ausruestungsBoni?.[t.name] ?? 0), t.id),
+            )}
+          </section>
+        ))}
+      </div>
+      {ohneSpalte.length > 0 && (
+        <section>
+          <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--wert-fertigkeit)" } as React.CSSProperties}>
+            Weitere
+          </h3>
+          {ohneSpalte.map((t) =>
+            knopf(t.id, t.name, (werte.get(t.id) ?? 0) + (ausruestungsBoni?.[t.name] ?? 0), t.id),
+          )}
+        </section>
+      )}
+      {(zusatzfertigkeiten?.length ?? 0) > 0 && (
+        <section>
+          <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
+            Zusatzfertigkeiten
+          </h3>
+          {zusatzfertigkeiten!.map((z) => knopf(`zusatz:${z.name}`, z.name, z.wert))}
+        </section>
+      )}
+      {(ausruestungsfertigkeiten?.length ?? 0) > 0 && (
+        <section>
+          <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--wert-hexkraft)" } as React.CSSProperties}>
+            Ausrüstung
+          </h3>
+          {ausruestungsfertigkeiten!.map((f) => knopf(`ausruestung:${f.name}`, f.name, f.wert))}
+        </section>
+      )}
     </>
   );
 }
