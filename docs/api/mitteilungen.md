@@ -50,12 +50,16 @@ Alle Mitteilungen für diesen Betrachter, neueste zuerst.
 ```
 
 **Filterung:** Spieler sehen nur:
-- Rundrufe (`anAlle: true`)
+- Rundrufe (`anAlle: true`), deren `empfaengerIds` ihre `personId` enthält
+  (Snapshot zum Sendezeitpunkt — ein später angelegter Charakter sieht die
+  alte Ansage nicht). Fehlt die Liste (Altbestand), gilt der Rundruf für alle.
 - Gerichtete Mitteilungen wo ihre `personId` in `empfaengerIds` ist
 - NACHRICHT-Mitteilungen wo ihre `personId` in `empfaengerIds` ist
 
-Die SL sieht alle ihre eigenen Broadcasts, aber bei NACHRICHT nur die an sie
-gerichteten (wo `empfaengerIds` leer ist).
+Die SL sieht alle ihre eigenen Broadcasts. Blendet sie eine Ansage aus,
+wird sie zurückgezogen (weg für alle) — nicht nur in der SL-Liste versteckt.
+Bei NACHRICHT sieht die SL nur die an sie gerichteten (wo `empfaengerIds`
+leer ist); die blendet sie nur für sich aus.
 
 ---
 

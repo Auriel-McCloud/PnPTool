@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
@@ -18,8 +19,18 @@ function zeit(iso: string): string {
  * kann, was während einer Pause kam.
  */
 export function MitteilungenBlitz({ personId }: { personId: string | null }) {
-  const { mitteilungen, ungelesen, verbunden, allesGelesen, ausblenden, allesAusblenden } = useMitteilungen();
+  const { mitteilungen, ungelesen, verbunden, allesGelesen, ausblenden, zurueckziehen, allesAusblenden } = useMitteilungen();
   const [offen, setOffen] = useState(false);
+  const [alleWeg, setAlleWeg] = useState(false);
+  const istSl = personId === null;
+
+  function weg(id: string, art: string) {
+    // SL-✕ auf einer eigenen Ansage zieht sie für alle zurück. Eine
+    // Chat-Benachrichtigung (NACHRICHT) räumt sie nur bei sich auf —
+    // die Nachricht selbst liegt im Messenger, nicht in dieser Liste.
+    if (istSl && art !== "NACHRICHT") zurueckziehen(id);
+    else ausblenden(id);
+  }
 
   return (
     <>
@@ -68,8 +79,8 @@ export function MitteilungenBlitz({ personId }: { personId: string | null }) {
                   <button
                     type="button"
                     className="mt-ausblenden"
-                    onClick={() => ausblenden(m.id)}
-                    title="Ausblenden"
+                    onClick={() => weg(m.id, m.art)}
+                    title={istSl && m.art !== "NACHRICHT" ? "Zurückziehen — verschwindet bei allen" : "Ausblenden"}
                   >
                     ✕
                   </button>
@@ -90,11 +101,23 @@ export function MitteilungenBlitz({ personId }: { personId: string | null }) {
         )}
 
         {mitteilungen.length > 0 && (
-          <button type="button" onClick={allesAusblenden} className="mt-alle-ausblenden">
-            Alle ausblenden
+          <button type="button" onClick={() => (istSl ? setAlleWeg(true) : allesAusblenden())} className="mt-alle-ausblenden">
+            {istSl ? "Alle zurückziehen" : "Alle ausblenden"}
           </button>
         )}
       </Fenster>
+      {alleWeg && (
+        <Bestaetigung
+          titel="Alle Ansagen zurückziehen?"
+          text="Die Ansagen verschwinden bei allen Spielern, nicht nur in deiner Liste."
+          jaText="Zurückziehen"
+          onJa={() => {
+            setAlleWeg(false);
+            allesAusblenden();
+          }}
+          onNein={() => setAlleWeg(false)}
+        />
+      )}
     </>
   );
 }

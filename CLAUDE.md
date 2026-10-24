@@ -1423,7 +1423,7 @@ zuerst `docs/wiki/index.md` prüfen, siehe oben).
 ### Mitteilungen (`docs/api/mitteilungen.md`)
 - **Kein Absender** — Ansagen kommen "aus der Spielwelt"
 - **4 Arten:** TEXT, BILD, WARNUNG (Bildschirm pulsiert), NACHRICHT (Chat)
-- **Ausblenden statt Löschen** — jeder räumt seine eigene Liste auf
+- **Ausblenden statt Löschen** — Spieler räumen nur die eigene Liste auf (pro Charakter). Die SL zieht mit dem ✕ zurück: die Ansage ist weg für alle, nicht nur in der SL-Liste versteckt. `anAlle` gilt für die Empfänger zum Sendezeitpunkt, nicht für später angelegte Charaktere.
 - **WebSocket** mit Reconnect (Android schläfert Tabs ein)
 
 ### Kontakte/Messenger (`docs/api/kontakte.md`)

@@ -96,20 +96,43 @@ async def alles_gelesen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     await repository.alles_gelesen(campaign_id, viewer.person_id)
 
 
+async def _sl_zieht_zurueck(campaign_id: str, mitteilung_id: str) -> None:
+    """SL räumt eine eigene Ansage weg: das ist Zurückziehen, nicht nur die eigene Liste.
+
+    Ausblenden als SL hat die Ansage nur für `gm:GM` versteckt. Danach war sie
+    auch aus „Zuletzt gesendet“ verschwunden — der einzige Knopf, der sie
+    wirklich gelöscht hätte — und jeder später angelegte Charakter hat sie
+    beim Login wieder gesehen.
+    """
+    if await repository.delete_mitteilung(campaign_id, mitteilung_id):
+        await verteiler.zurueckziehen(campaign_id, mitteilung_id)
+
+
 @router.post("/{mitteilung_id}/ausblenden", status_code=status.HTTP_204_NO_CONTENT)
 async def ausblenden(campaign_id: str, mitteilung_id: str, viewer: Viewer = Depends(get_viewer)):
     """Blendet eine Mitteilung für diesen Betrachter aus.
-    
-    Jeder kann seine eigenen Mitteilungen ausblenden — sie verschwinden
-    aus seiner Liste, bleiben aber für andere sichtbar.
+
+    Spieler: nur die eigene Liste. Die SL: Zurückziehen, die Ansage ist weg
+    für alle — sonst bleibt ein Rundruf liegen, den sie selbst nicht mehr sieht.
     """
+    if viewer.role == "GM" and viewer.person_id is None:
+        await _sl_zieht_zurueck(campaign_id, mitteilung_id)
+        return
     viewer_id = viewer.person_id or f"gm:{viewer.role}"
     await repository.ausblenden(campaign_id, mitteilung_id, viewer_id)
 
 
 @router.post("/ausblenden", status_code=status.HTTP_204_NO_CONTENT)
 async def alles_ausblenden(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
-    """Alle Mitteilungen für diesen Betrachter ausblenden."""
+    """Alle Mitteilungen für diesen Betrachter ausblenden.
+
+    Für die SL heißt das Zurückziehen jeder Ansage, die sie noch sieht.
+    """
+    if viewer.role == "GM" and viewer.person_id is None:
+        alle = await repository.list_mitteilungen(campaign_id)
+        for m in fuer_viewer(alle, viewer.role, viewer.person_id):
+            await _sl_zieht_zurueck(campaign_id, m["id"])
+        return
     viewer_id = viewer.person_id or f"gm:{viewer.role}"
     await repository.alles_ausblenden(campaign_id, viewer_id)
 

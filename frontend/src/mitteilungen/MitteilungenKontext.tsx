@@ -6,6 +6,7 @@ import {
   markiereAllesGelesen,
   markiereGelesen,
   verbindeLive,
+  ziehZurueck,
   type Mitteilung,
 } from "./api";
 import { verhandlungApi, type Verhandlung } from "../verhandlung/api";
@@ -38,6 +39,8 @@ interface MitteilungenWert {
   bestaetigen: () => void;
   allesGelesen: () => void;
   ausblenden: (id: string) => void;
+  /** SL: Ansage für alle einsammeln, nicht nur die eigene Liste leeren. */
+  zurueckziehen: (id: string) => void;
   allesAusblenden: () => void;
   neuLaden: () => void;
   /** Eingehendes Verhandlungsangebot (Rüstungsreparatur beim Händler u.ä.) —
@@ -82,6 +85,7 @@ export function useMitteilungen(): MitteilungenWert {
       bestaetigen: () => {},
       allesGelesen: () => {},
       ausblenden: () => {},
+      zurueckziehen: () => {},
       allesAusblenden: () => {},
       neuLaden: () => {},
       verhandlungAktuell: null,
@@ -285,6 +289,13 @@ export function MitteilungenAnbieter({
     setSchlange((alt) => alt.filter((m) => m.id !== id));
   }, [campaignId]);
 
+  const zurueckziehen = useCallback((id: string) => {
+    ziehZurueck(campaignId, id)
+      .then(() => setMitteilungen((alt) => alt.filter((m) => m.id !== id)))
+      .catch(() => { /* still */ });
+    setSchlange((alt) => alt.filter((m) => m.id !== id));
+  }, [campaignId]);
+
   const allesAusblenden = useCallback(() => {
     blendeAllesAus(campaignId)
       .then(() => setMitteilungen([]))
@@ -338,6 +349,7 @@ export function MitteilungenAnbieter({
       bestaetigen,
       allesGelesen,
       ausblenden,
+      zurueckziehen,
       allesAusblenden,
       neuLaden,
       verhandlungAktuell,
@@ -358,6 +370,7 @@ export function MitteilungenAnbieter({
       bestaetigen,
       allesGelesen,
       ausblenden,
+      zurueckziehen,
       allesAusblenden,
       neuLaden,
       verhandlungAktuell,

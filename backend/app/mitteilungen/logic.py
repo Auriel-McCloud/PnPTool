@@ -51,8 +51,10 @@ def darf_empfangen(mitteilung: dict, viewer_role: str, viewer_person_id: str | N
     Bei NACHRICHT-Mitteilungen (Chat-Benachrichtigungen) sieht die SL nur die,
     die an sie gerichtet sind (empfaengerIds leer = geht an SL).
     
-    Ein Spieler sieht Rundrufe und was ausdrücklich an seinen Charakter ging.
-    Ein Spieler ohne beanspruchten Charakter bekommt nur Rundrufe.
+    Ein Spieler sieht Rundrufe, die zum Sendezeitpunkt an ihn gingen, und was
+    ausdrücklich an seinen Charakter ging. anAlle ohne Empfängerliste (alter
+    Bestand) bleibt ein echter Rundruf. Ein Spieler ohne beanspruchten
+    Charakter bekommt nur Rundrufe.
     """
     art = mitteilung.get("art", "TEXT")
     
@@ -69,11 +71,21 @@ def darf_empfangen(mitteilung: dict, viewer_role: str, viewer_person_id: str | N
     # Normale SL-Mitteilungen (TEXT, BILD, WARNUNG)
     if viewer_role == "GM":
         return True
-    if mitteilung.get("anAlle"):
-        return True
     if viewer_person_id is None:
-        return False
-    return viewer_person_id in (mitteilung.get("empfaengerIds") or [])
+        # Ohne Charakter nur Rundrufe — das Ersteinstiegs-Fenster hat noch
+        # niemanden, an den eine gerichtete Ansage ginge.
+        return bool(mitteilung.get("anAlle"))
+    empfaenger = mitteilung.get("empfaengerIds") or []
+    if viewer_person_id in empfaenger:
+        return True
+    # anAlle ohne Snapshot (Altbestand vor der Empfängerliste): weiter an alle.
+    # Mit Snapshot gilt die Liste vom Sendezeitpunkt. Sonst sieht jeder später
+    # angelegte Testcharakter die alte „Würfelt für Initiative!“-Ansage wieder,
+    # obwohl er damals nicht am Tisch saß — und Ausblenden am vorigen Charakter
+    # gilt nicht für den neuen.
+    if mitteilung.get("anAlle") and not empfaenger:
+        return True
+    return False
 
 
 def ist_ungelesen(mitteilung: dict, viewer_person_id: str | None) -> bool:

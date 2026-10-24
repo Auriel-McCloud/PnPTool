@@ -59,8 +59,16 @@ class TestDarfEmpfangen:
     def test_sl_sieht_alles(self):
         assert darf_empfangen(m(anAlle=False, empfaengerIds=["pc-9"]), "GM", None) is True
 
-    def test_an_alle_erreicht_jeden_spieler(self):
-        assert darf_empfangen(m(anAlle=True), "PLAYER", "pc-1") is True
+    def test_an_alle_ohne_snapshot_erreicht_jeden_spieler(self):
+        # Altbestand: anAlle ohne Empfängerliste bleibt ein echter Rundruf.
+        assert darf_empfangen(m(anAlle=True, empfaengerIds=[]), "PLAYER", "pc-1") is True
+
+    def test_an_alle_gilt_nur_fuer_damalige_empfaenger(self):
+        # Snapshot zum Sendezeitpunkt. Ein später angelegter Charakter war
+        # nicht am Tisch und soll die alte Ansage nicht beim Login wieder sehen.
+        rundruf = m(anAlle=True, empfaengerIds=["pc-1", "pc-2"])
+        assert darf_empfangen(rundruf, "PLAYER", "pc-1") is True
+        assert darf_empfangen(rundruf, "PLAYER", "pc-neu") is False
 
     def test_gerichtete_mitteilung_nur_beim_empfaenger(self):
         nachricht = m(anAlle=False, empfaengerIds=["pc-1"])
