@@ -9,7 +9,8 @@ async def get_all_nodes(campaign_id: str) -> list[dict]:
           AND (n:Person OR n:Ort OR n:Event OR n:Fraktion OR n:Party OR (n:Gegenstand AND n.storyRelevant = true))
         RETURN n.id AS id, labels(n)[0] AS kind,
                coalesce(n.name, n.title) AS label,
-               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer,
+               n.personType AS personType
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)

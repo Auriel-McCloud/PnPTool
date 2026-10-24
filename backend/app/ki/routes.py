@@ -62,6 +62,13 @@ from app.ki.auto_verknuepfung import (
     vorschlaege as verknuepfung_vorschlaege,
     vorschlaege_fuer_text as verknuepfung_vorschlaege_fuer_text,
 )
+from app.ki.verbindungs_normalisierung import (
+    NormalisierungAnwendenErgebnis,
+    NormalisierungAnwendenInput,
+    NormalisierungsVorschlaegeAntwort,
+    anwenden as verbindungstypen_anwenden,
+    vorschlaege as verbindungstypen_vorschlaege,
+)
 from app.ki.wiki_import import (
     DokumentFormatFehler,
     DokumentZuGrossFehler,
@@ -1752,6 +1759,28 @@ async def beziehungen_aus_beschreibungen(campaign_id: str):
         return await beziehungsvorschlaege_aus_beschreibungen(campaign_id)
     except KiFehler as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/verbindungstypen/normalisierung/vorschlaege", response_model=NormalisierungsVorschlaegeAntwort)
+async def verbindungstypen_normalisierung_vorschlaege(campaign_id: str):
+    """Vergleicht alle in der Kampagne verwendeten Beziehungstyp-Strings und
+    schlägt vor, welche sinngemäß dasselbe bedeuten — Grundlage für den
+    "✨ Kantentypen normalisieren"-Knopf im Graph-Filter (24.10.2026, Marks
+    Wunsch: Kantentypen ausblenden können lohnt sich erst, wenn nicht fünf
+    Varianten von "kennt" nebeneinander existieren).
+    """
+    try:
+        return await verbindungstypen_vorschlaege(campaign_id)
+    except KiFehler as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/verbindungstypen/normalisierung/anwenden", response_model=NormalisierungAnwendenErgebnis)
+async def verbindungstypen_normalisierung_anwenden(campaign_id: str, body: NormalisierungAnwendenInput):
+    """Wendet EINEN bestätigten Normalisierungsvorschlag an: benennt alle
+    betroffenen VERBINDUNG-Kanten auf den kanonischen Typ um. Kein KI-Aufruf
+    mehr nötig, deshalb kein KiFehler-Handling hier."""
+    return await verbindungstypen_anwenden(campaign_id, body.kanonisch, body.varianten)
 
 
 @router.post(

@@ -93,6 +93,29 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Graph-Filter + Kantentypen-Normalisierung** (24.10.2026, Marks Wunsch:
+  "irgendwann kennen meine Spieler alle NPCs untereinander — ich würde gerne
+  die Kante 'kennt' ausblenden können"): neuer ⚙-Filter-Knopf oben rechts in
+  der Beziehungsgraphen-Ansicht. Zwei Checkbox-Gruppen — Objekttypen (PCs/
+  NSCs getrennt, Orte, Events, Fraktionen, Gegenstände, Partys) und
+  Kantentypen (aus den tatsächlich geladenen Daten, mit Trefferzahl) —, ein
+  "Alle anzeigen"-Reset. Rein clientseitig (Cytoscape-`display`-Style, keine
+  Serverfahrt), Auswahl pro Kampagne in `localStorage` gemerkt
+  (`GraphFilterPanel.tsx`/`CampaignGraphView.tsx::wendeFilterAn`). Zusätzlich
+  **"✨ Kantentypen normalisieren"**: lässt die KI alle verwendeten
+  Beziehungstyp-Strings vergleichen und vorschlagen, welche sinngemäß
+  dasselbe meinen (z.B. "kennt"/"kennt sich") — jede Gruppe wird einzeln im
+  Popup bestätigt (`KantentypenNormalisierenPopup.tsx`), erst dann benennt
+  eine Cypher-Query (`app/ki/verbindungs_normalisierung.py`) alle
+  betroffenen Kanten um. Neue Routen unter `/api/campaigns/{id}/ki/
+  verbindungstypen/normalisierung/{vorschlaege,anwenden}`. Backend-Graph-
+  query liefert jetzt zusätzlich `personType` je Person-Knoten. **Verifiziert:**
+  `tsc --noEmit` sauber, Backend-Python-Syntax/Imports ok, volle Test-Suite
+  (788 Tests) kollidiert nicht, die zwei vorbestehenden `test_zugriffsschutz`-
+  Fehlschläge sind unabhängig von dieser Änderung (bereits vorher rot).
+  Spieltisch-Test steht noch aus: Filter durchklicken, Normalisierung an
+  einer Kampagne mit mehreren "kennt"-Varianten ausprobieren.
+
 - **Chrom einsetzen** (23.10.2026): Einbau knallte mit `get_node() missing campaign_id`.
   Jetzt wieder möglich. Im Gegenstandfenster heißt der Bonus **Stufe**, nicht
   Schaden — echter Klingenschaden bleibt Schaden, nur wenn das Stück auch

@@ -1,8 +1,10 @@
 import cytoscape from "cytoscape";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EntityKind } from "../entities/api";
-import { getGraph } from "./api";
+import { getGraph, type GraphEdge, type GraphNode } from "./api";
 import { GraphOeffnen, type GraphZiel } from "./GraphOeffnen";
+import { GraphFilterPanel, type KantenFilterOption, type KnotenFilterOption } from "./GraphFilterPanel";
+import { KantentypenNormalisierenPopup } from "./KantentypenNormalisierenPopup";
 import { tokens } from "../theme/theme";
 
 const KIND_SHAPE: Record<string, string> = {
@@ -13,6 +15,48 @@ const KIND_SHAPE: Record<string, string> = {
   Fraktion: "hexagon",
   Party: "tag",
 };
+
+// Objekttyp-Filter: Personen werden in PC/NPC aufgesplittet, alles andere
+// bleibt bei seiner Art — Mark will NSCs/Gegenstände/etc. unabhängig
+// voneinander ausblenden können (24.10.2026).
+function knotenKategorie(n: { kind: string; personType?: string | null }): string {
+  if (n.kind === "Person") return n.personType === "PC" ? "Person:PC" : "Person:NPC";
+  return n.kind;
+}
+
+const KATEGORIE_LABEL: Record<string, string> = {
+  "Person:PC": "◌ Spielercharaktere",
+  "Person:NPC": "◌ NSCs",
+  Ort: "⌖ Orte",
+  Event: "◆ Events",
+  Fraktion: "⬡ Fraktionen",
+  Gegenstand: "◈ Gegenstände",
+  Party: "👥 Partys",
+};
+
+// Lokale Merkung je Kampagne — reiner Anzeige-Filter, keine Serverdaten
+// betroffen. Eigener Präfix, damit eine spätere Suche nach dem Schlüssel
+// nicht mit anderen localStorage-Einträgen kollidiert.
+const LS_PRAEFIX = "pnptool:graph-filter:";
+
+function filterAusStorage(schluessel: string): Set<string> {
+  try {
+    const roh = window.localStorage.getItem(LS_PRAEFIX + schluessel);
+    if (!roh) return new Set();
+    const arr = JSON.parse(roh);
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function filterInStorage(schluessel: string, werte: Set<string>): void {
+  try {
+    window.localStorage.setItem(LS_PRAEFIX + schluessel, JSON.stringify([...werte]));
+  } catch {
+    // Privater Modus o.ä. — der Filter funktioniert dann nur für die Sitzung.
+  }
+}
 
 // Cytoscape zeichnet auf Canvas und kennt keine CSS-Variablen. Frueher standen
 // die Farben deshalb ein zweites Mal als Hexwerte hier — mit dem Hinweis "beim
@@ -115,6 +159,93 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
     setZiel(naechstes);
   };
 
+  // --- Objekt-/Kantentyp-Filter (24.10.2026, Marks Wunsch) -----------------
+  // Rein clientseitig: welche Objekt- und Kantentypen im Canvas ausgeblendet
+  // sind. Gemerkt in localStorage je Kampagne, damit die Auswahl einen
+  // Neuladen übersteht. Die rohen Knoten/Kanten der letzten Antwort stehen
+  // in Refs, damit das Umschalten eines Filters ohne Serverfahrt neu
+  // anwendbar ist (siehe wendeFilterAn unten).
+  const [versteckteKnoten, setVersteckteKnoten] = useState<Set<string>>(() =>
+    filterAusStorage(`${campaignId}:knoten`),
+  );
+  const [versteckteKanten, setVersteckteKanten] = useState<Set<string>>(() =>
+    filterAusStorage(`${campaignId}:kanten`),
+  );
+  const [knotenOptionen, setKnotenOptionen] = useState<KnotenFilterOption[]>([]);
+  const [kantenOptionen, setKantenOptionen] = useState<KantenFilterOption[]>([]);
+  const [normalisierenOffen, setNormalisierenOffen] = useState(false);
+  const letzteKnotenRef = useRef<GraphNode[]>([]);
+  const letzteKantenRef = useRef<GraphEdge[]>([]);
+
+  // Kampagnenwechsel (derselbe View bleibt eingehängt): Filter der neuen
+  // Kampagne laden statt die der alten weiterzuverwenden.
+  useEffect(() => {
+    setVersteckteKnoten(filterAusStorage(`${campaignId}:knoten`));
+    setVersteckteKanten(filterAusStorage(`${campaignId}:kanten`));
+  }, [campaignId]);
+
+  useEffect(() => {
+    filterInStorage(`${campaignId}:knoten`, versteckteKnoten);
+  }, [campaignId, versteckteKnoten]);
+
+  useEffect(() => {
+    filterInStorage(`${campaignId}:kanten`, versteckteKanten);
+  }, [campaignId, versteckteKanten]);
+
+  function knotenUmschalten(schluessel: string) {
+    setVersteckteKnoten((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(schluessel)) neu.delete(schluessel);
+      else neu.add(schluessel);
+      return neu;
+    });
+  }
+
+  function kanteUmschalten(typ: string) {
+    setVersteckteKanten((alt) => {
+      const neu = new Set(alt);
+      if (neu.has(typ)) neu.delete(typ);
+      else neu.add(typ);
+      return neu;
+    });
+  }
+
+  function alleAnzeigen() {
+    setVersteckteKnoten(new Set());
+    setVersteckteKanten(new Set());
+  }
+
+  // Wendet die aktuelle Filterauswahl auf die bereits gezeichneten Elemente
+  // an — ohne Serverfahrt und ohne das cose-Layout neu laufen zu lassen
+  // (sonst würde jedes Umschalten einer Checkbox den ganzen Graphen
+  // umsortieren). Ein ausgeblendeter Knoten blendet automatisch auch seine
+  // Kanten aus, nicht nur umgekehrt — Cytoscape macht das nicht von sich aus.
+  const wendeFilterAn = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const versteckteKnotenIds = new Set(
+      letzteKnotenRef.current.filter((n) => versteckteKnoten.has(knotenKategorie(n.data))).map((n) => n.data.id),
+    );
+    cy.batch(() => {
+      cy.nodes().forEach((ele) => {
+        ele.style("display", versteckteKnotenIds.has(ele.data("id")) ? "none" : "element");
+      });
+      cy.edges().forEach((ele) => {
+        const ausgeblendet =
+          versteckteKanten.has(ele.data("typ")) ||
+          versteckteKnotenIds.has(ele.data("source")) ||
+          versteckteKnotenIds.has(ele.data("target"));
+        ele.style("display", ausgeblendet ? "none" : "element");
+      });
+    });
+  }, [versteckteKnoten, versteckteKanten]);
+
+  // Neu anwenden, sobald sich die Auswahl ändert (z.B. Checkbox geklickt) —
+  // unabhängig vom Dateneffekt unten, der nur bei echtem Neuladen läuft.
+  useEffect(() => {
+    wendeFilterAn();
+  }, [wendeFilterAn]);
+
   // Create the Cytoscape instance exactly once and tear it down on unmount.
   // Driving cytoscape imperatively (instead of the react-cytoscapejs wrapper)
   // avoids the wrapper re-running the layout / losing event handlers on
@@ -190,11 +321,43 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
         setIsEmpty(graph.nodes.length === 0);
         setError(null);
 
+        letzteKnotenRef.current = graph.nodes;
+        letzteKantenRef.current = graph.edges;
+
+        // Verfügbare Filteroptionen aus den tatsächlich geladenen Daten —
+        // ein Filter für einen Typ, den es gar nicht gibt, wäre Rauschen
+        // (dasselbe Prinzip wie Filterleiste.tsx bei den Entitätslisten).
+        const knotenZaehlung = new Map<string, number>();
+        for (const n of graph.nodes) {
+          const schluessel = knotenKategorie(n.data);
+          knotenZaehlung.set(schluessel, (knotenZaehlung.get(schluessel) ?? 0) + 1);
+        }
+        setKnotenOptionen(
+          [...knotenZaehlung.entries()]
+            .map(([schluessel, anzahl]) => ({
+              schluessel,
+              label: KATEGORIE_LABEL[schluessel] ?? schluessel,
+              anzahl,
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label, "de")),
+        );
+
+        const kantenZaehlung = new Map<string, number>();
+        for (const e of graph.edges) {
+          kantenZaehlung.set(e.data.typ, (kantenZaehlung.get(e.data.typ) ?? 0) + 1);
+        }
+        setKantenOptionen(
+          [...kantenZaehlung.entries()]
+            .map(([typ, anzahl]) => ({ typ, anzahl }))
+            .sort((a, b) => a.typ.localeCompare(b.typ, "de")),
+        );
+
         cy.resize();
         cy.elements().remove();
         cy.add([...graph.nodes, ...graph.edges]);
         cy.layout({ name: "cose", animate: false, padding: 30 }).run();
         cy.fit(undefined, 30);
+        wendeFilterAn();
       })
       .catch((err) => {
         if (cancelled) return;
@@ -204,6 +367,10 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
     return () => {
       cancelled = true;
     };
+    // wendeFilterAn bewusst nicht in der Liste: dieser Effekt soll nur bei
+    // echtem Neuladen laufen, nicht bei jedem Checkbox-Klick (dafür gibt es
+    // den eigenen Effekt oben, der dieselbe Funktion aufruft).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, focus, depth, graphStand]);
 
   // Themewechsel: Cytoscape zeichnet auf Canvas, ein Wechsel der CSS-Tokens
@@ -247,6 +414,18 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
           </span>
         )}
         {oeffnet && <span style={{ color: "var(--text-leise)" }}>Öffne…</span>}
+        <div style={{ marginLeft: "auto" }}>
+          <GraphFilterPanel
+            knotenOptionen={knotenOptionen}
+            kantenOptionen={kantenOptionen}
+            versteckteKnoten={versteckteKnoten}
+            versteckteKanten={versteckteKanten}
+            onKnotenUmschalten={knotenUmschalten}
+            onKanteUmschalten={kanteUmschalten}
+            onAlleAnzeigen={alleAnzeigen}
+            onNormalisieren={() => setNormalisierenOffen(true)}
+          />
+        </div>
       </div>
 
       {error && (
@@ -304,6 +483,12 @@ export function CampaignGraphView({ campaignId }: { campaignId: string }) {
           }}
         />
       )}
+      <KantentypenNormalisierenPopup
+        offen={normalisierenOffen}
+        campaignId={campaignId}
+        onSchliessen={() => setNormalisierenOffen(false)}
+        onUebernommen={() => setGraphStand((n) => n + 1)}
+      />
     </div>
   );
 }

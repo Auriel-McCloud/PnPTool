@@ -348,3 +348,34 @@ export async function beratungMassenentwurf(
 export async function massenjobStatus(campaignId: string, jobId: string): Promise<MassenJobStatus> {
   return api.get(`/api/campaigns/${campaignId}/ki/massenjob/${jobId}`);
 }
+
+/**
+ * Kantentypen-Normalisierung (24.10.2026, Marks Wunsch): vergleicht alle in
+ * der Kampagne verwendeten Beziehungstyp-Strings und schlägt vor, welche
+ * sinngemäß dasselbe bedeuten (z.B. "kennt" / "kennt sich") — Grundlage für
+ * den "✨ Kantentypen normalisieren"-Knopf im Graph-Filter. Jede Gruppe muss
+ * einzeln bestätigt werden, erst dann werden die betroffenen Kanten
+ * tatsächlich umbenannt (kein Autocommit).
+ */
+export interface VerbindungstypNormalisierungsGruppe {
+  kanonisch: string;
+  varianten: string[];
+  anzahl: number;
+}
+
+export interface VerbindungstypNormalisierungsVorschlaegeAntwort {
+  gruppen: VerbindungstypNormalisierungsGruppe[];
+}
+
+export async function verbindungstypenNormalisierungsVorschlaege(
+  campaignId: string,
+): Promise<VerbindungstypNormalisierungsVorschlaegeAntwort> {
+  return api.post(`/api/campaigns/${campaignId}/ki/verbindungstypen/normalisierung/vorschlaege`);
+}
+
+export async function verbindungstypenNormalisierungAnwenden(
+  campaignId: string,
+  gruppe: { kanonisch: string; varianten: string[] },
+): Promise<{ geaendert: number }> {
+  return api.post(`/api/campaigns/${campaignId}/ki/verbindungstypen/normalisierung/anwenden`, gruppe);
+}

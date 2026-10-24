@@ -1,0 +1,122 @@
+/* =======================================================================
+   Graph-Filter — Dropdown über der Beziehungsgraphen-Ansicht, mit dem sich
+   Objekt- und Kantentypen ein-/ausblenden lassen (rein clientseitig).
+   ======================================================================= */
+
+.gf-box {
+  position: relative;
+}
+
+.gf-knopf {
+  min-height: 0;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.gf-knopf:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+}
+
+.gf-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 260px;
+  max-width: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--bereich-farbe, var(--neon));
+  border-radius: var(--radius);
+  box-shadow: 0 0 16px -6px var(--bereich-farbe, var(--neon));
+}
+
+.gf-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gf-alle {
+  min-height: 0;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.gf-alle:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gf-alle:not(:disabled):hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
+}
+
+.gf-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--linie);
+  padding-top: 8px;
+}
+
+.gf-gruppentitel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+  margin-bottom: 2px;
+}
+
+.gf-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.gf-zeile span:first-of-type {
+  flex: 1;
+  overflow-wrap: break-word;
+}
+
+.gf-anzahl {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+}
+
+.gf-normalisieren {
+  margin-top: 4px;
+  min-height: 0;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.gf-normalisieren:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+}

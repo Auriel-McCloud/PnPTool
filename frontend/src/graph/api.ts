@@ -7,6 +7,8 @@ export interface GraphNode {
     kind: EntityKind;
     label: string;
     sichtbarkeit: SichtbarkeitModus;
+    /** Nur bei kind "Person" gesetzt — Grundlage für den PC/NPC-Filter. */
+    personType?: "PC" | "NPC" | null;
   };
 }
 
