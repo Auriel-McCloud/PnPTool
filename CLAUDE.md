@@ -815,6 +815,31 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Spieler-Portrait-Galerie: mehrere Bilder, Anzeigebild wählbar):**
+- **Was:** Mark: „weitere Bilder anlegen, und sich eines als Anzeigebild
+  aussuchen“. Vorher ersetzte jeder Upload/Foto/KI-Bild/Skizze sofort das
+  Portrait — jetzt hängt `POST /api/spieler/mein-bild` nur noch an die
+  Galerie an (`galerie_hinzufuegen`), ohne das Anzeigebild zu klauen; nur
+  das allererste Bild wird automatisch zum Portrait. Im Spieler-Menü zeigt
+  ein Thumbnail-Raster (`port-galerie`, analog `entities/BildGalerie.tsx`)
+  alle Bilder; Klick auf ein Nicht-Primärbild ruft den neuen Endpunkt
+  `POST /api/spieler/mein-bild-anzeige` (`BildAnzeigeRequest`, prüft über
+  `galerie_primaer_waehlen`, dass die URL zur eigenen Galerie gehört).
+  `DELETE /api/spieler/mein-bild` nimmt jetzt einen optionalen `url`-Query-
+  Parameter, damit auch ein einzelnes Extra-Bild (nicht nur das aktuelle
+  Anzeigebild) gezielt entfernbar ist — mit Bestätigungsdialog pro
+  Thumbnail. Backend-Galerie-Helfer (`galerie_lesen/_hinzufuegen/
+  _primaer_waehlen`) und die Schema-/Query-Erweiterung (`personBilder`)
+  kamen aus einem abgebrochenen Vorlauf derselben Session-Reihe (Profil
+  neko-chan) vom selben Nachmittag, der nie beim User ankam — hier fertig
+  verdrahtet (Routen, Security-Whitelist-Eintrag, Frontend).
+- **Dateien:** `backend/app/players/routes.py`,
+  `backend/tests/test_zugriffsschutz.py`,
+  `frontend/src/players/{CharakterportraitAnsicht.tsx,api.ts,portrait.css}`.
+- **Verifiziert:** `pytest tests/test_charakter_galerie.py
+  tests/test_zugriffsschutz.py::test_ausnahmeliste_enthaelt_nur_existierende_routen`
+  grün, `npx tsc --noEmit` sauber. **Nicht im Browser angeklickt.**
+
 **Zuletzt gebaut (24.10.2026 — Tutorial-Shop lädt Sortiment/Käufe alle 5s automatisch nach):**
 - **Was:** Marks Wunsch — ein Spieler soll ohne Reload sehen, wenn die SL
   spontan etwas Neues ins Tutorial-Shop-Sortiment legt. Statt eines
@@ -1613,7 +1638,7 @@ dort weitergepflegt, hier nicht mehr).
 | 8 | KI+Critter als echte NPCs, Einfluss-System, Matrix-Attribut | ✅ Backend+Frontend fertig; KI-Auto-Steigerung **offen** (braucht Party-Besuchs-Log) | nur Archiv (noch keine eigene Wiki-Seite) |
 | 9 | Decker/Neuroweaver 6-Skill-System | ✅ fertig | [[neuroweaving-decking]] |
 | 10 | KI-Chatbots für Gegenstände (Decker-Deck, TTS) | reine Idee, **nicht begonnen** | nur Archiv |
-| 11 | Charakterportrait im Spieler-Menü | ✅ Upload/Kamera/KI + Skizze + Klecks-Zeichentisch | [[ki-integration]] (Bildgenerierung); Klecks-Embed `frontend/public/klecks/` |
+| 11 | Charakterportrait im Spieler-Menü | ✅ Upload/Kamera/KI + Skizze + Klecks-Zeichentisch + Galerie mit wählbarem Anzeigebild | [[ki-integration]] (Bildgenerierung); Klecks-Embed `frontend/public/klecks/` |
 | 12 | Steckbrief nachträglich bearbeiten | ✅ erledigt | — |
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |
