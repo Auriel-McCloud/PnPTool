@@ -815,6 +815,10 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Portrait zeichnen: Skizze und Klecks):**
+- **Was:** Im Spieler-Portrait zwei Wege. „Zeichnen“ ist ein Skizzenblock im Commlink-Fenster (`react-sketch-canvas`, `ZeichenblockPopup.tsx`). „Zeichentisch“ öffnet Klecks (Ebenen, Pinsel, Druck) in einem eigenen Fenster (`frontend/public/klecks/`, Embed von bitbof/klecks, MIT). Beide speichern über `POST /api/spieler/mein-bild`. Im Zeichentisch heißt der Knopf „Portrait“ (deutsche Klecks-Übersetzung dafür angepasst). Bestehendes Portrait liegt als Ebene darunter. Ebenen überleben das Speichern nicht — es wird ein flaches PNG. Zweites Antippen fokussiert das offene Fenster, lädt es nicht neu.
+- **Verifiziert:** `npx tsc -b` und `vite build` sauber. Klecks-Embed im Preview geladen (deutsch, Knopf „Portrait“, leere Leinwand). Skizzenblock und der Upload aus dem eingeloggten Spieler-Menü **nicht** angeklickt. Klecks-Neuaufbau: Klone `bitbof/klecks`, `de.json5` Submit-Texte auf Portrait, `npm run lang:build && npm run build:embed`, `dist/` ohne `*.map` nach `frontend/public/klecks/`.
+
 **Zuletzt gebaut (24.10.2026 — Vorlage kopieren statt weggeben):**
 - **Was:** Im Besitz-Reiter einer Vorlage steht neben „Übergeben“ jetzt „Kopie erstellen“. Übergeben nimmt die Vorlage (weiterhin, besonders weil neue Vorlagen standardmäßig einzigartig sind). Kopie legt dem gewählten Charakter ein eigenes Stück an, die Vorlage bleibt. `POST .../gegenstaende/{id}/zuweisen` nimmt dafür `kopie: true`.
 - **Verifiziert:** `pytest tests/test_vorlage_kopie.py` 4/4, `npx tsc -b` sauber. **Nie im Browser angeklickt.**
@@ -1585,7 +1589,7 @@ dort weitergepflegt, hier nicht mehr).
 | 8 | KI+Critter als echte NPCs, Einfluss-System, Matrix-Attribut | ✅ Backend+Frontend fertig; KI-Auto-Steigerung **offen** (braucht Party-Besuchs-Log) | nur Archiv (noch keine eigene Wiki-Seite) |
 | 9 | Decker/Neuroweaver 6-Skill-System | ✅ fertig | [[neuroweaving-decking]] |
 | 10 | KI-Chatbots für Gegenstände (Decker-Deck, TTS) | reine Idee, **nicht begonnen** | nur Archiv |
-| 11 | Charakterportrait im Spieler-Menü | ✅ MVP (Upload/Kamera/KI); Zeichentool **offen** | [[ki-integration]] (Bildgenerierung) |
+| 11 | Charakterportrait im Spieler-Menü | ✅ Upload/Kamera/KI + Skizze + Klecks-Zeichentisch | [[ki-integration]] (Bildgenerierung); Klecks-Embed `frontend/public/klecks/` |
 | 12 | Steckbrief nachträglich bearbeiten | ✅ erledigt | — |
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |

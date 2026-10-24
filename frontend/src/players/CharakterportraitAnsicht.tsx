@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { playersApi, type SpielerMe } from "./api";
+import { ZeichenblockPopup } from "./ZeichenblockPopup";
 import "./portrait.css";
 
 /**
@@ -11,9 +12,8 @@ import "./portrait.css";
  * dort hätte nur Platz weggenommen). Ursprünglich als Popup über dem Blatt
  * geplant, auf Marks Wunsch zu einem eigenen Burger-Menü-Punkt gemacht.
  *
- * MVP-Scope (mit Mark geklärt): Hochladen, Foto per Kamera, KI-generiertes
- * Bild. Ein Zeichentool ist in CLAUDE.md unter Punkt 11 als offen vermerkt,
- * bewusst nicht Teil dieser Fassung.
+ * MVP plus Zeichnen: Hochladen, Foto per Kamera, KI-generiertes Bild,
+ * Skizzenblock im Commlink-Fenster, Klecks-Zeichentisch in eigenem Fenster.
  */
 export function CharakterportraitAnsicht({
   ich,
@@ -27,8 +27,33 @@ export function CharakterportraitAnsicht({
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenFrage, setLoeschenFrage] = useState(false);
   const [kiOffen, setKiOffen] = useState(false);
+  const [zeichnenOffen, setZeichnenOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
+
+  function zeichentischOeffnen() {
+    const url = new URL("/klecks/index.html", window.location.origin);
+    if (ich.personBildUrl?.startsWith("/uploads/")) {
+      url.searchParams.set("bild", ich.personBildUrl);
+    }
+    const name = "pnptool-zeichentisch";
+    // Zweites Antippen fokussiert das offene Fenster, statt die Zeichnung neu zu laden.
+    const bestehend = window.open("", name);
+    if (!bestehend) {
+      setFehler("Fenster blockiert — Popups für diese Seite erlauben.");
+      return;
+    }
+    try {
+      if (bestehend.location.href.includes("/klecks/index.html")) {
+        bestehend.focus();
+        return;
+      }
+    } catch {
+      // anderes Origin, dann neu laden
+    }
+    bestehend.location.href = url.toString();
+    bestehend.focus();
+  }
 
   async function hochladen(datei: File | undefined) {
     if (!datei) return;
@@ -104,6 +129,12 @@ export function CharakterportraitAnsicht({
           <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => setKiOffen(true)}>
             ✨ KI-Bild generieren
           </button>
+          <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => setZeichnenOffen(true)}>
+            ✎ Zeichnen
+          </button>
+          <button type="button" className="port-btn-sekundaer" disabled={laedt} onClick={zeichentischOeffnen}>
+            ◈ Zeichentisch
+          </button>
           {ich.personBildUrl && (
             <button
               type="button"
@@ -116,7 +147,10 @@ export function CharakterportraitAnsicht({
           )}
         </div>
 
-        <p className="port-hinweis">Ein Zeichentool ist noch nicht verfügbar.</p>
+        <p className="port-hinweis">
+          Zeichnen ist die Skizze hier. Der Zeichentisch öffnet Klecks mit Ebenen in einem eigenen Fenster —
+          dort setzt „Portrait“ das Bild. Ebenen bleiben nur in dem Fenster, danach liegt ein flaches Portrait.
+        </p>
       </div>
 
       {loeschenFrage && (
@@ -129,6 +163,17 @@ export function CharakterportraitAnsicht({
           onNein={() => setLoeschenFrage(false)}
         />
       )}
+
+      <ZeichenblockPopup
+        offen={zeichnenOffen}
+        bildUrl={ich.personBildUrl}
+        onSchliessen={() => setZeichnenOffen(false)}
+        onUebernehmen={async (blob) => {
+          const datei = new File([blob], "portrait-skizze.png", { type: blob.type || "image/png" });
+          const frisch = await playersApi.meinBildHochladen(datei);
+          onGeaendert(frisch);
+        }}
+      />
 
       <KiBildPopup
         offen={kiOffen}

@@ -2032,6 +2032,11 @@ Doku-Verweise stehen in CLAUDE.md unter "Geplante Features — Status & Doku-Ver
       (`POST /api/spieler/mein-bild-ki-prompt` + `/mein-bild-ki`, siehe
       "Zuletzt gebaut" oben). Damit sind jetzt **alle** MVP-Wege
       vollständig; nur das Zeichentool bleibt offen.
+    - **Zeichnen (24.10.2026):** Skizzenblock im Commlink-Fenster
+      (`ZeichenblockPopup.tsx`, `react-sketch-canvas`) und Klecks-Zeichentisch
+      in eigenem Fenster (`frontend/public/klecks/`). Beide laden das PNG über
+      `POST /api/spieler/mein-bild`. Ebenen gibt es nur im Zeichentisch und
+      nur bis zum Speichern.
 
 12. **Steckbrief nachträglich bearbeiten** — ✅ erledigt (22.09.2026).
     Konzept, Ambition, Verlangen und Ziel lassen sich jetzt über einen

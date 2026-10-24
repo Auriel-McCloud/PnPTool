@@ -108,4 +108,108 @@
   font-size: 11px;
   font-family: var(--mono);
   letter-spacing: 0.04em;
+  max-width: 42em;
+}
+
+.port-btn-sekundaer {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 20px;
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--neon);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.port-btn-sekundaer:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--neon);
+}
+
+.port-btn-sekundaer:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Skizzenblock im Fenster — Leinwand darf nicht mitscrollen, sonst
+   zieht der Finger am Tablet die Seite statt den Strich. */
+.port-werkzeug {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.port-farben,
+.port-werkzeug-zeile,
+.port-stifte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.port-farbe {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--linie);
+  cursor: pointer;
+}
+
+.port-farbe[aria-pressed="true"] {
+  border-color: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+}
+
+.port-stift,
+.port-mini {
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.port-stift {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.port-stift span {
+  display: block;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.port-mini {
+  padding: 8px 10px;
+}
+
+.port-stift[aria-pressed="true"],
+.port-mini[aria-pressed="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.port-leinwand {
+  width: 100%;
+  height: min(58svh, 640px);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #f7f4ef;
+  touch-action: none;
 }

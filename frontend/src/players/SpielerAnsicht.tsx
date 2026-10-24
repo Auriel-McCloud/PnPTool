@@ -159,6 +159,28 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     playersApi.me().then(setIch).catch(() => setIch(null));
   }, []);
 
+  // Zeichentisch speichert in einem eigenen Fenster. Der Kanal trifft auch,
+  // wenn der Portrait-Bereich gerade nicht offen ist.
+  useEffect(() => {
+    const neuLaden = () => {
+      playersApi.me().then(setIch).catch(() => undefined);
+    };
+    const aufNachricht = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.typ === "portrait-gespeichert") neuLaden();
+    };
+    window.addEventListener("message", aufNachricht);
+    let kanal: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      kanal = new BroadcastChannel("pnptool-portrait");
+      kanal.onmessage = neuLaden;
+    }
+    return () => {
+      window.removeEventListener("message", aufNachricht);
+      kanal?.close();
+    };
+  }, []);
+
   useEffect(() => {
     spielerMenueApi.laden().then(setMenueLayouts).catch(() => undefined);
   }, []);

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Zeichentisch</title>
+  <!-- Klecks-Embed (bitbof/klecks, MIT). Eigenes Fenster, weil die Mal-App
+       den ganzen Bildschirm will. „Portrait“ speichert über /api/spieler/mein-bild. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <style>
+    html, body { margin: 0; height: 100%; background: #212121; }
+  </style>
+</head>
+<body>
+<script src="./embed.js"></script>
+<script>
+  // Deutsch erzwingen — die App drumherum ist deutsch, der Browser nicht immer.
+  try { localStorage.setItem("klecks-language", "de"); } catch (e) {}
+
+  const BREITE = 1024;
+  const HOEHE = 1280;
+  const MAX_KANTE = 1600;
+  const MAX_BYTES = 7_500_000;
+
+  function erlaubtesBild(roh) {
+    if (!roh || !roh.startsWith("/uploads/")) return null;
+    if (roh.includes("..") || roh.includes("\\") || roh.includes("://")) return null;
+    return roh;
+  }
+
+  async function bestehendesBild(url) {
+    const antwort = await fetch(url, { credentials: "include" });
+    if (!antwort.ok) throw new Error("Bild nicht geladen");
+    const bmp = await createImageBitmap(await antwort.blob());
+    const faktor = Math.min(1, MAX_KANTE / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bmp.width * faktor));
+    canvas.height = Math.max(1, Math.round(bmp.height * faktor));
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  async function unterLimit(blob) {
+    if (blob.size <= MAX_BYTES) return blob;
+    const bmp = await createImageBitmap(blob);
+    let massstab = 0.75;
+    let aktuell = blob;
+    for (let i = 0; aktuell.size > MAX_BYTES && i < 4; i++) {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bmp.width * massstab));
+      canvas.height = Math.max(1, Math.round(bmp.height * massstab));
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      const neu = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      if (!neu) break;
+      aktuell = neu;
+      massstab *= 0.75;
+    }
+    return aktuell;
+  }
+
+  function leeresProjekt() {
+    return {
+      width: BREITE,
+      height: HOEHE,
+      layers: [{
+        name: "Hintergrund",
+        isVisible: true,
+        opacity: 1,
+        mixModeStr: "source-over",
+        image: { fill: "#ffffff" },
+      }],
+    };
+  }
+
+  const klecks = new Klecks({
+    embedUrl: new URL("./", location.href).href,
+    onSubmit: async (onSuccess, onError) => {
+      try {
+        const png = await klecks.getPNG();
+        const blob = await unterLimit(png);
+        const endung = blob.type === "image/jpeg" ? "jpg" : "png";
+        const daten = new FormData();
+        daten.append("file", new File([blob], "portrait-klecks." + endung, { type: blob.type || "image/png" }));
+        const antwort = await fetch("/api/spieler/mein-bild", {
+          method: "POST",
+          credentials: "include",
+          body: daten,
+        });
+        if (!antwort.ok) {
+          onError();
+          return;
+        }
+        try {
+          const kanal = new BroadcastChannel("pnptool-portrait");
+          kanal.postMessage({ typ: "gespeichert" });
+          kanal.close();
+        } catch (e) {}
+        if (window.opener) {
+          window.opener.postMessage({ typ: "portrait-gespeichert" }, location.origin);
+        }
+        onSuccess();
+        setTimeout(() => window.close(), 400);
+      } catch (e) {
+        onError();
+      }
+    },
+  });
+
+  const bild = erlaubtesBild(new URLSearchParams(location.search).get("bild"));
+  const laden = bild
+    ? bestehendesBild(bild).then((canvas) => ({
+        width: canvas.width,
+        height: canvas.height,
+        layers: [
+          {
+            name: "Hintergrund",
+            isVisible: true,
+            opacity: 1,
+            mixModeStr: "source-over",
+            image: { fill: "#ffffff" },
+          },
+          {
+            name: "Portrait",
+            isVisible: true,
+            opacity: 1,
+            mixModeStr: "source-over",
+            image: canvas,
+          },
+        ],
+      }))
+    : Promise.resolve(leeresProjekt());
+
+  laden
+    .then((projekt) => klecks.openProject(projekt))
+    .catch(() => klecks.openProject(leeresProjekt()));
+</script>
+</body>
+</html>

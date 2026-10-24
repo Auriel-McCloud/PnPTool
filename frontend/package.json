@@ -20,7 +20,8 @@
     "@tiptap/starter-kit": "^3.30.5",
     "cytoscape": "^3.34.2",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-sketch-canvas": "^8.0.0"
   },
   "devDependencies": {
     "@types/cytoscape": "^3.21.9",

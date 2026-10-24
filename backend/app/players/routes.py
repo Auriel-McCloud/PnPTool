@@ -190,9 +190,10 @@ async def eigenes_charakterportrait_hochladen(
     `require_campaign_gm` — Mark, 22.09.2026: Spieler haben aktuell keine
     Möglichkeit, selbst ein Bild für ihren Charakter zu setzen. Schreibt
     direkt auf den zugeordneten `Person`-Knoten (dasselbe `bildUrl`-Feld wie
-    beim SL-Upload in entities/routes.py), nur MVP-Wege (Datei/Kamera) — ein
-    Zeichentool ist separat in CLAUDE.md offen notiert; KI-Bildgenerierung
-    gibt es jetzt über `/mein-bild-ki-prompt` + `/mein-bild-ki` unten.
+    beim SL-Upload in entities/routes.py). Datei, Kamera, Skizze und
+    Zeichentisch schreiben hierher; KI-Bildgenerierung läuft über
+    `/mein-bild-ki-prompt` + `/mein-bild-ki` und übernimmt danach ebenfalls
+    diese Route.
     """
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
