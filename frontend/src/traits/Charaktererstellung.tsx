@@ -22,6 +22,7 @@ import { ZusatzfertigkeitAuswahl } from "../zusatzfertigkeiten/ZusatzfertigkeitA
 import { ZusatzfertigkeitInfoTipp } from "../zusatzfertigkeiten/ZusatzfertigkeitInfoTipp";
 import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { TutorialShopPopup } from "../haendler/TutorialShopPopup";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { gratisKaufKurz, gratisKaufLang } from "../rassen/gratisKauf";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
@@ -127,6 +128,13 @@ export function Charaktererstellung({
   const [geldHinweis, setGeldHinweis] = useState<string | null>(null);
   const geldGedeckt = useRef<{ kredit: number; eigen: number } | null>(null);
   const [tutorialShopOffen, setTutorialShopOffen] = useState(false);
+  // Shop-Tipp (24.10.2026, Marks Wunsch): popt EINMAL von selbst auf, sobald
+  // der Freebees-Schritt zum ersten Mal erreicht wird — erklärt, dass
+  // Freebees unten gegen Geld (Kredit/Eigenkapital) tauschbar sind, und
+  // schlägt vor, jetzt im Tutorial-Shop einzukaufen. Kein KI-Aufruf nötig
+  // (Mark ist kostenbewusst), statischer Text reicht für einen Tutorial-Hinweis.
+  const [tutorialHinweisOffen, setTutorialHinweisOffen] = useState(false);
+  const tutorialHinweisGezeigt = useRef(false);
   const [rassenFeatureGenutzt, setRassenFeatureGenutzt] = useState(false);
   const [konzept, setKonzept] = useState("");
   const [alter, setAlter] = useState("");
@@ -271,6 +279,31 @@ export function Charaktererstellung({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, personId, freebeeKredit, freebeeEigenkapital, Boolean(regeln)]);
+
+  // Shop-Tipp: feuert einmalig beim Wechsel auf den Freebees-Schritt, nicht
+  // bei jedem Re-Render — `tutorialHinweisGezeigt` verhindert ein erneutes
+  // Aufpoppen, wenn man später per Schritt-Leiste wieder hierher zurückklickt.
+  useEffect(() => {
+    if (SCHRITTE[schritt].id === "freebees" && !tutorialHinweisGezeigt.current) {
+      tutorialHinweisGezeigt.current = true;
+      setTutorialHinweisOffen(true);
+    }
+  }, [schritt]);
+
+  /** Speichert ggf. die Rasse (der Gratis-Erstkauf im Shop braucht sie) und öffnet den Tutorial-Shop. */
+  function shopOeffnen() {
+    void (async () => {
+      if (rasse) {
+        try {
+          await bogenApi.steckbrief(campaignId, personId, { rasse });
+        } catch {
+          setFehler(["Die Rasse konnte nicht gespeichert werden — der Gratis-Kauf im Shop kennt sie sonst nicht."]);
+          return;
+        }
+      }
+      setTutorialShopOffen(true);
+    })();
+  }
 
   const gewaehlteRasse: Rasse | undefined = regeln?.rassen.find((r) => r.name === rasse);
   const gewaehltesPaket: FertigkeitsPaket | undefined = regeln?.fertigkeitsPakete.find((p) => p.id === paket);
@@ -629,19 +662,21 @@ export function Charaktererstellung({
             kapital={kapital}
             ausgegeben={ausgegeben}
             geldHinweis={geldHinweis}
-            onShopOeffnen={() => {
-              void (async () => {
-                if (rasse) {
-                  try {
-                    await bogenApi.steckbrief(campaignId, personId, { rasse });
-                  } catch {
-                    setFehler(["Die Rasse konnte nicht gespeichert werden — der Gratis-Kauf im Shop kennt sie sonst nicht."]);
-                    return;
-                  }
-                }
-                setTutorialShopOffen(true);
-              })();
+            onShopOeffnen={shopOeffnen}
+          />
+        )}
+
+        {tutorialHinweisOffen && (
+          <Bestaetigung
+            titel="⌬ Shop-Tipp"
+            text="Deine Freebees lassen sich ganz unten gegen Geld eintauschen — als Kredit oder Eigenkapital, sprich: ¥. Jetzt ist ein guter Moment, im Tutorial-Shop vorbeizuschauen und loszulegen."
+            jaText="Ab in den Shop"
+            neinText="Später"
+            onJa={() => {
+              setTutorialHinweisOffen(false);
+              shopOeffnen();
             }}
+            onNein={() => setTutorialHinweisOffen(false)}
           />
         )}
 

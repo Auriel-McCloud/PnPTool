@@ -854,6 +854,20 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Shop-Tipp poppt automatisch im Freebees-Schritt auf):**
+- **Was:** Mark: beim Erreichen des Freebees-Schritts soll von selbst ein
+  Hinweis aufpoppen, der erklärt, dass Freebees unten gegen Geld (Kredit/
+  Eigenkapital) tauschbar sind, und zum Tutorial-Shop einlädt. Kein neuer
+  KI-Aufruf — statischer Text im bestehenden `Bestaetigung`-Commlink-Popup
+  (Mark ist kostenbewusst beim LLM-Verbrauch, der In-Shop-Kauf-Kommentar vom
+  Verkäufer-KI bleibt unverändert). Feuert genau einmal pro Erstellungs-
+  Session (`tutorialHinweisGezeigt`-Ref), nicht bei jedem Zurück-/Vor-
+  Klicken in der Schritt-Leiste. „Ab in den Shop“ öffnet direkt den
+  Tutorial-Shop (ruft dieselbe `shopOeffnen`-Funktion wie der Shop-Knopf im
+  Freebees-Schritt, inkl. Rassen-Speicherung davor), „Später“ schließt nur.
+- **Dateien:** `frontend/src/traits/Charaktererstellung.tsx`.
+- **Verifiziert:** `npx tsc -b` sauber. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (24.10.2026 — Spieler-Portrait-Galerie: mehrere Bilder, Anzeigebild wählbar):**
 - **Was:** Mark: „weitere Bilder anlegen, und sich eines als Anzeigebild
   aussuchen“. Vorher ersetzte jeder Upload/Foto/KI-Bild/Skizze sofort das
