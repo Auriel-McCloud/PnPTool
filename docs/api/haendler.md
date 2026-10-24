@@ -88,10 +88,12 @@ es nur ein Mal."* Genau diese Unterscheidung trägt den Bestand:
 | Ware ist... | Verhalten beim Kauf |
 |---|---|
 | eine **Vorlage** (`istVorlage=true`) | unendlich verfügbar — jeder Kauf erzeugt eine unabhängige Kopie (`items/repository.py::assign_copy`, dasselbe wie beim bestehenden `POST .../gegenstaende/{id}/zuweisen`). Bleibt danach weiter im Sortiment. |
-| ein **einzigartiges Stück**, das dem Händler gehört | genau einmal kaufbar — Besitzerwechsel vom Händler zum Käufer (`items/repository.py::transfer_owner`), die `VERKAUFT`-Kante wird gelöscht. Verschwindet danach aus dem Sortiment; ein zweiter Kaufversuch liefert `404`. |
+| ein **einzigartiges Stück** (kein Besitzer, oder einem NPC) | genau einmal kaufbar. Besitzerloses Regal-Stück bekommt den Käufer als ersten Besitzer (`assign_owner`); ein NPC-Stück wechselt den Besitzer (`transfer_owner`). Alle `VERKAUFT`-Kanten weg, zweiter Kauf `404`. Spielerbesitz lässt sich nicht ins Regal hängen. |
 
-Kein `bestand`-Feld, keine Stückzahl-Logik — die Invariante steckt bereits
-in `einzigartig`/`istVorlage`.
+Kein `bestand`-Feld. Ob das Regal kopiert oder das Stück selbst hergibt,
+entscheidet `istVorlage`. Das Lore-Häkchen `einzigartig` ist das nicht —
+bei neuen Vorlagen steht es standardmäßig an und würde sonst jeden Laden
+nach dem ersten Kauf leeren.
 
 ## Kauf-Flow
 

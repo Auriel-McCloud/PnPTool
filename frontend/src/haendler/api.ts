@@ -188,10 +188,16 @@ export const haendlerApi = {
     }),
 
   /** Legt per KI eine Ware in der gewählten Kategorie an und hängt sie an den Laden. */
-  wareAnlegen: (cid: string, haendlerId: string, prompt: string, typ: string, bild: boolean) =>
+  wareAnlegen: (cid: string, haendlerId: string, prompt: string, typ: string, bild: boolean, einmalig = false) =>
     api.post<{ name: string; preis: number; bildHinweis: string }>(`${base(cid, haendlerId)}/ware-anlegen`, {
       prompt,
       typ,
       bild,
+      einmalig,
     }),
+  /** Einzelstück: gibt es nur einmal, der Kauf übergibt genau diesen Knoten. */
+  unikatAnlegen: (cid: string, haendlerId: string, name: string, typ: string, preis: number, description: string) =>
+    api.post<SortimentEintrag[]>(`${base(cid, haendlerId)}/unikat`, { name, typ, preis, description }),
+  unikatEinhaengen: (cid: string, haendlerId: string, gegenstandId: string, preis?: number) =>
+    api.post<SortimentEintrag[]>(`${base(cid, haendlerId)}/unikat-einhaengen`, { gegenstandId, preis }),
 };

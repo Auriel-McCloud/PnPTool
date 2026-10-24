@@ -184,6 +184,7 @@ export function TutorialShopPopup({
                         <span className="ts-zeile-name">{ware.name}</span>
                         <span className="ts-zeile-typ">
                           {symbolFuerTyp(ware.typ)} {ware.typ}
+                          {!ware.istVorlage ? " · Einzelstück" : ""}
                           {ware.seltenheit > 1 ? ` · ${SELTENHEIT[ware.seltenheit] ?? ""}` : ""}
                         </span>
                         {kurz.length > 0 && <span className="ts-zeile-werte">{kurz.join(" · ")}</span>}

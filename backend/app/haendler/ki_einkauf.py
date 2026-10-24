@@ -30,7 +30,7 @@ from pydantic import BaseModel
 
 from app.entities.repository import PERSON_FIELDS, update_node
 from app.haendler import repository as haendler_repository
-from app.items import repository as items_repository
+from app.haendler.uebergabe import stueck_uebergeben
 from app.ki.client import generiere_json
 
 _SYSTEM = (
@@ -128,17 +128,7 @@ async def einkaufen(
         preis = _preis(sortiment_eintrag)
         if preis > rest:
             continue
-        gegenstand = await items_repository.get_gegenstand(campaign_id, gegenstand_id)
-        if gegenstand is None:
-            continue
-        if gegenstand["istVorlage"]:
-            gekauft = await items_repository.assign_copy(
-                campaign_id, gegenstand, person_id, "SPEZIFISCH", [person_id]
-            )
-        else:
-            gekauft = await items_repository.transfer_owner(campaign_id, gegenstand_id, person_id)
-            if gekauft:
-                await haendler_repository.verkauft_entfernen(campaign_id, shop["id"], gegenstand_id)
+        gekauft = await stueck_uebergeben(campaign_id, shop["id"], gegenstand_id, person_id)
         if not gekauft:
             continue
         gesehen.add(gegenstand_id)

@@ -27,6 +27,9 @@ export function VorlagenAuswahlPopup({
   vorlagen,
   onHinzufuegen,
   onSchliessen,
+  titel = "Ware wählen",
+  leertext = "Keine passende Vorlage.",
+  kennung = "vorlagen-auswahl",
 }: {
   offen: boolean;
   vorlagen: GegenstandMitBesitzer[];
@@ -34,6 +37,9 @@ export function VorlagenAuswahlPopup({
    * Preis für alle gerade ausgewählten Stücke. */
   onHinzufuegen: (gegenstandIds: string[], preis?: number) => Promise<void>;
   onSchliessen: () => void;
+  titel?: string;
+  leertext?: string;
+  kennung?: string;
 }) {
   const [suche, setSuche] = useState("");
   const [ausgewaehlt, setAusgewaehlt] = useState<Set<string>>(new Set());
@@ -81,9 +87,9 @@ export function VorlagenAuswahlPopup({
   return (
     <Fenster
       offen={offen}
-      titel="Ware wählen"
-      unterzeile={`${vorlagen.length} Vorlage${vorlagen.length === 1 ? "" : "n"} verfügbar — mehrere anklickbar`}
-      kennung="vorlagen-auswahl"
+      titel={titel}
+      unterzeile={`${vorlagen.length} Stück verfügbar — mehrere anklickbar`}
+      kennung={kennung}
       breit
       onSchliessen={zuruecksetzenUndSchliessen}
     >
@@ -94,7 +100,7 @@ export function VorlagenAuswahlPopup({
         autoFocus
         style={{ width: "100%", marginBottom: 12 }}
       />
-      {gefiltert.length === 0 && <p className="shop-leer">Keine passende Vorlage.</p>}
+      {gefiltert.length === 0 && <p className="shop-leer">{leertext}</p>}
       <div className="shop-waren-raster" style={{ maxHeight: "48vh", overflowY: "auto" }}>
         {gefiltert.map((g) => {
           const gewaehlt = ausgewaehlt.has(g.id);

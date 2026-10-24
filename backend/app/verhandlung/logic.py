@@ -15,7 +15,7 @@ Antwort passiert sein).
 from app.entities import repository as entities_repository
 from app.entities.repository import PERSON_FIELDS
 from app.ereignisprotokoll import hooks
-from app.haendler import repository as haendler_repository
+from app.haendler.uebergabe import stueck_uebergeben
 from app.items import repository as items_repository
 from app.kampf.ruestung import repariere
 
@@ -95,11 +95,7 @@ async def _ausfuehren_shop_kauf(campaign_id: str, verhandlung: dict) -> dict:
         raise VerhandlungsFehler("Die Ware ist nicht mehr auffindbar")
 
     alter_besitzer = await items_repository.get_owner_id(campaign_id, gegenstand_id)
-    if gegenstand["istVorlage"]:
-        gekauft = await items_repository.assign_copy(campaign_id, gegenstand, person_id, "SPEZIFISCH", [person_id])
-    else:
-        gekauft = await items_repository.transfer_owner(campaign_id, gegenstand_id, person_id)
-        await haendler_repository.verkauft_entfernen(campaign_id, haendler_id, gegenstand_id)
+    gekauft = await stueck_uebergeben(campaign_id, haendler_id, gegenstand_id, person_id)
     if gekauft is None:
         raise VerhandlungsFehler("Kauf fehlgeschlagen")
 

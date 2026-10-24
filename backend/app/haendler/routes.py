@@ -21,6 +21,7 @@ from app.entities.visibility import is_visible_to, shop_fuer_viewer_sichtbar
 from app.haendler import repository
 from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
+from app.haendler.uebergabe import UnikatEinhangFehler, regale_raeumen, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
 from app.rassen import repository as rassen_repository
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort, WareAnlegenErgebnis
 from app.haendler.schemas import (
@@ -110,6 +111,55 @@ async def sortiment_hinzufuegen(campaign_id: str, haendler_id: str, body: Sortim
     preis = body.preis if body.preis is not None else gegenstand["preis"]
     if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, preis):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler nicht gefunden")
+    return await repository.sortiment(campaign_id, haendler_id)
+
+
+class UnikatAnlegenRequest(BaseModel):
+    name: str
+    typ: str
+    preis: int = 0
+    description: str = ""
+
+
+class UnikatEinhaengenRequest(BaseModel):
+    gegenstandId: str
+    preis: int | None = None
+
+
+@router.post(
+    "/{haendler_id}/unikat",
+    response_model=list[SortimentEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def unikat_neu(campaign_id: str, haendler_id: str, body: UnikatAnlegenRequest):
+    """Legt ein Einzelstück an, das nur dieser Laden einmal verkaufen kann."""
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Name darf nicht leer sein")
+    angelegt = await unikat_anlegen(campaign_id, haendler_id, name, body.typ, body.preis, body.description)
+    if angelegt is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Laden nicht gefunden oder Gegenstandstyp unbekannt")
+    return await repository.sortiment(campaign_id, haendler_id)
+
+
+@router.post(
+    "/{haendler_id}/unikat-einhaengen",
+    response_model=list[SortimentEintrag],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def unikat_aus_welt(campaign_id: str, haendler_id: str, body: UnikatEinhaengenRequest):
+    """Hängt ein bestehendes Einzelstück ins Regal. Kopierbare Vorlagen und Spielerbesitz bleiben draußen."""
+    try:
+        await unikat_einhaengen(campaign_id, haendler_id, body.gegenstandId, body.preis)
+    except UnikatEinhangFehler as fehler:
+        if fehler.grund == "spieler":
+            raise HTTPException(status.HTTP_409_CONFLICT, "Das Stück gehört einem Spielercharakter") from fehler
+        if fehler.grund == "vorlage":
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Das ist eine kopierbare Vorlage — die kommt über den Vorlage-Picker ins Sortiment",
+            ) from fehler
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Laden oder Gegenstand nicht gefunden") from fehler
     return await repository.sortiment(campaign_id, haendler_id)
 
 
@@ -227,7 +277,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
 
     if haendler.get("vertriebsart") == "DIGITAL":
         if not gegenstand["istVorlage"]:
-            await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
+            await regale_raeumen(campaign_id, haendler_id, body.gegenstandId)
         if person_update:
             await entities_repository.update_node(
                 "Person", PERSON_FIELDS, campaign_id, kaeufer_id, person_update
@@ -242,12 +292,9 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
             gegenstand=None, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben, bestellung=bestellung
         )
 
+    alter_besitzer = None if gegenstand["istVorlage"] else await items_repository.get_owner_id(campaign_id, body.gegenstandId)
     try:
-        if gegenstand["istVorlage"]:
-            gekauft = await items_repository.assign_copy(campaign_id, gegenstand, kaeufer_id, "SPEZIFISCH", [kaeufer_id])
-        else:
-            gekauft = await items_repository.transfer_owner(campaign_id, body.gegenstandId, kaeufer_id)
-            await repository.verkauft_entfernen(campaign_id, haendler_id, body.gegenstandId)
+        gekauft = await stueck_uebergeben(campaign_id, haendler_id, body.gegenstandId, kaeufer_id)
         if gekauft is None:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kauf fehlgeschlagen")
     except HTTPException:
@@ -266,7 +313,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         neuer_besitzer_id=kaeufer_id,
         betrag=preis,
         von_person_id=haendler_id,
-        alter_besitzer_id=None if gegenstand["istVorlage"] else haendler_id,
+        alter_besitzer_id=alter_besitzer,
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)
@@ -365,12 +412,9 @@ async def bestellung_liefern(campaign_id: str, bestellung_id: str):
     if gegenstand is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht mehr auffindbar")
 
-    if gegenstand["istVorlage"]:
-        geliefert = await items_repository.assign_copy(
-            campaign_id, gegenstand, bestellung["kaeuferPersonId"], "SPEZIFISCH", [bestellung["kaeuferPersonId"]]
-        )
-    else:
-        geliefert = await items_repository.transfer_owner(campaign_id, bestellung["gegenstandId"], bestellung["kaeuferPersonId"])
+    geliefert = await stueck_uebergeben(
+        campaign_id, bestellung["haendlerId"], bestellung["gegenstandId"], bestellung["kaeuferPersonId"]
+    )
 
     aktualisiert = await repository.bestellung_liefern(campaign_id, bestellung_id)
     if aktualisiert is None:
@@ -424,6 +468,7 @@ class WareAnlegenRequest(BaseModel):
     prompt: str
     typ: str
     bild: bool = False
+    einmalig: bool = False
 
 
 @router.post(
@@ -437,7 +482,9 @@ async def ware_anlegen(campaign_id: str, haendler_id: str, body: WareAnlegenRequ
     if not wunsch:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Wunsch darf nicht leer sein")
     try:
-        ergebnis = await ki_vorschlag.ware_anlegen(campaign_id, haendler_id, wunsch, body.typ, body.bild)
+        ergebnis = await ki_vorschlag.ware_anlegen(
+            campaign_id, haendler_id, wunsch, body.typ, body.bild, body.einmalig
+        )
     except ValueError as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
     except KiFehler as e:

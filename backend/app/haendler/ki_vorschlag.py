@@ -313,13 +313,14 @@ _WARE_SCHEMA = {
 
 
 async def ware_anlegen(
-    campaign_id: str, haendler_id: str, prompt: str, typ: str, bild: bool
+    campaign_id: str, haendler_id: str, prompt: str, typ: str, bild: bool, einmalig: bool = False
 ) -> WareAnlegenErgebnis | None:
-    """Legt eine Vorlage in der gewählten Kategorie an und hängt sie an den Laden.
+    """Legt Ware in der gewählten Kategorie an und hängt sie an den Laden.
 
-    Der Typ kommt von der Kategorie, in der die SL gerade steht — die KI
-    darf ihn nicht umbiegen. Bild ist optional und darf den Gegenstand
-    nicht mitreißen, wenn die Generierung scheitert.
+    einmalig: das Stück selbst, keine kopierbare Vorlage. Der Typ kommt von
+    der Kategorie, in der die SL gerade steht — die KI darf ihn nicht umbiegen.
+    Bild ist optional und darf den Gegenstand nicht mitreißen, wenn die
+    Generierung scheitert.
     """
     if typ not in GEGENSTAND_TYPEN:
         raise ValueError(f"Unbekannter Gegenstandstyp: {typ}")
@@ -358,8 +359,10 @@ async def ware_anlegen(
         seltenheit=seltenheit,
         istEntwurf=False,
         **waffenfelder(typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt")),
+        einzigartig=True,
+        automatischImShop=False,
     )
-    gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, True, "GM", []))
+    gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, not einmalig, "GM", []))
     if gegenstand is None:
         return None
     if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand["id"], preis):

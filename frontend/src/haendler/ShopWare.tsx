@@ -90,6 +90,7 @@ export function ShopWare({
         <span className="shop-ware-bild">
           {ware.bildUrl ? <img src={ware.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
         </span>
+        {!ware.istVorlage && <span className="shop-ware-typ">Einzelstück — danach weg</span>}
         <span className="shop-ware-name">{ware.name}</span>
         <span className="shop-ware-preis">
           {hatRabatt && <span className="shop-ware-preis-alt">{ware.preis.toLocaleString("de-AT")}¥</span>}
@@ -135,6 +136,7 @@ export function ShopWare({
             <p className="shop-ware-hinweis">
               Preis: <strong>{effektiverPreis.toLocaleString("de-AT")}¥</strong>
               {hatRabatt && <> (statt {ware.preis.toLocaleString("de-AT")}¥)</>}
+              {!ware.istVorlage && " · gibt es nur einmal"}
             </p>
             {fehler && <p className="shop-ware-fehler">{fehler}</p>}
             <div className="shop-ware-knoepfe">
