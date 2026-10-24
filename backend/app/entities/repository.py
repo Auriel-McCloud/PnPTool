@@ -249,6 +249,54 @@ def galerie_url_entfernen(bilder: list | None, url: str) -> tuple[list[dict], st
     return rest, primaer
 
 
+def galerie_lesen(bilder: list | str | None, bild_url: str = "") -> list[dict]:
+    """Galerie als Liste. Leeres `bilder` mit gesetztem `bildUrl` ist das eine Portrait."""
+    import json
+
+    roh = bilder
+    if isinstance(roh, str):
+        try:
+            roh = json.loads(roh)
+        except (json.JSONDecodeError, TypeError):
+            roh = []
+    if not isinstance(roh, list):
+        roh = []
+    sauber = [
+        {"url": eintrag["url"], "istPrimaer": bool(eintrag.get("istPrimaer"))}
+        for eintrag in roh
+        if isinstance(eintrag, dict) and eintrag.get("url")
+    ]
+    if not sauber and bild_url:
+        return [{"url": bild_url, "istPrimaer": True}]
+    return sauber
+
+
+def galerie_hinzufuegen(
+    bilder: list | str | None, neue_url: str, bild_url: str = ""
+) -> tuple[list[dict], str]:
+    """Hängt ein Bild an. Das Anzeigebild bleibt, außer es gab noch keins."""
+    liste = galerie_lesen(bilder, bild_url)
+    if any(eintrag["url"] == neue_url for eintrag in liste):
+        primaer = next((eintrag["url"] for eintrag in liste if eintrag["istPrimaer"]), neue_url)
+        return liste, primaer
+    if not liste:
+        return [{"url": neue_url, "istPrimaer": True}], neue_url
+    liste.append({"url": neue_url, "istPrimaer": False})
+    primaer = next((eintrag["url"] for eintrag in liste if eintrag["istPrimaer"]), liste[0]["url"])
+    return liste, primaer
+
+
+def galerie_primaer_waehlen(
+    bilder: list | str | None, url: str, bild_url: str = ""
+) -> tuple[list[dict], str]:
+    """Macht ein schon vorhandenes Bild zum Anzeigebild. Fremde URL ist kein Treffer."""
+    liste = galerie_lesen(bilder, bild_url)
+    if not any(eintrag["url"] == url for eintrag in liste):
+        raise ValueError("nicht in der galerie")
+    neu = [{"url": eintrag["url"], "istPrimaer": eintrag["url"] == url} for eintrag in liste]
+    return neu, url
+
+
 def _mit_defaults(record: dict) -> dict:
     """Ergänzt fehlende Bogenfelder. Nur Personen haben sie überhaupt."""
     daten = dict(record)

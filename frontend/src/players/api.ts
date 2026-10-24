@@ -11,6 +11,14 @@ export interface SpielerMe {
   hatPasswort: boolean;
   /** Portrait des eigenen Charakters — siehe playersApi.meinBildHochladen. */
   personBildUrl?: string | null;
+  /** Galerie: alle hochgeladenen Bilder, eines davon ist das Anzeigebild. */
+  personBilder?: PortraitBild[];
+}
+
+/** Ein Bild in der Charakterportrait-Galerie. */
+export interface PortraitBild {
+  url: string;
+  istPrimaer: boolean;
 }
 
 /** Sicht der Spielleitung auf einen Zugang. */
@@ -77,8 +85,11 @@ export const playersApi = {
     }
     return antwort.json();
   },
-  /** Entfernt das Charakterportrait wieder. */
-  meinBildEntfernen: () => api.delete<SpielerMe>("/api/spieler/mein-bild"),
+  /** Entfernt ein Bild aus der eigenen Galerie — ohne URL das aktuelle Anzeigebild. */
+  meinBildEntfernen: (url?: string) =>
+    api.delete<SpielerMe>(`/api/spieler/mein-bild${url ? `?url=${encodeURIComponent(url)}` : ""}`),
+  /** Wählt ein schon hochgeladenes Galerie-Bild als Anzeigebild. */
+  meinBildAnzeigeWaehlen: (url: string) => api.post<SpielerMe>("/api/spieler/mein-bild-anzeige", { url }),
   /** Schritt 1 des KI-Bild-Popups: Prompt-Vorschlag fürs eigene Portrait. */
   meinBildKiPrompt: async (): Promise<string> => {
     const antwort = await api.post<{ prompt: string }>("/api/spieler/mein-bild-ki-prompt");

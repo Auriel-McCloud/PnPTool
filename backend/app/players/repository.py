@@ -89,7 +89,8 @@ async def finde_spieler(benutzername: str) -> dict | None:
             OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
             RETURN s.id AS id, s.benutzername AS benutzername, s.passwortHash AS passwortHash,
                    c.id AS campaignId, c.name AS campaignName,
-                   p.id AS personId, p.name AS personName, p.bildUrl AS personBildUrl
+                   p.id AS personId, p.name AS personName, p.bildUrl AS personBildUrl,
+                   p.bilder AS personBilder
             """,
             name=benutzername.strip(),
         )
@@ -106,7 +107,8 @@ async def get_spieler(spieler_id: str) -> dict | None:
             OPTIONAL MATCH (s)-[:SPIELT]->(p:Person)
             RETURN s.id AS id, s.benutzername AS benutzername, s.passwortHash AS passwortHash,
                    c.id AS campaignId, c.name AS campaignName,
-                   p.id AS personId, p.name AS personName, p.bildUrl AS personBildUrl
+                   p.id AS personId, p.name AS personName, p.bildUrl AS personBildUrl,
+                   p.bilder AS personBilder
             """,
             spieler_id=spieler_id,
         )

@@ -31,6 +31,11 @@ OHNE_GM_ERLAUBT = {
     # (Datei-Upload-Route bestand schon), hier mit den zwei neuen
     # KI-Bildrouten zusammen nachgetragen.
     "/api/spieler/mein-bild",
+    # Aus der eigenen Galerie ein Bild zum Anzeigebild machen (24.10.2026,
+    # "weitere Bilder anlegen, und sich eines als Anzeigebild aussuchen") —
+    # dieselbe Ausnahme, prüft nur, dass die URL schon der eigenen Galerie
+    # gehört (galerie_primaer_waehlen), ändert sonst nichts.
+    "/api/spieler/mein-bild-anzeige",
     "/api/spieler/mein-bild-ki-prompt",
     "/api/spieler/mein-bild-ki",
     # Eigene private Notizen. require_spieler prüft die Sitzung, die

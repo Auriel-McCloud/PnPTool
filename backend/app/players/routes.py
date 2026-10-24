@@ -8,7 +8,9 @@ from app.entities.filterung import klartext
 from app.entities.repository import (
     PERSON_FIELDS,
     create_node,
-    galerie_primaer_ersetzen,
+    galerie_hinzufuegen,
+    galerie_lesen,
+    galerie_primaer_waehlen,
     galerie_url_entfernen,
     get_node,
     update_node,
@@ -21,10 +23,12 @@ from app.ki.routes import BildGenerierenInput, _bild_prompt_vorschlagen
 from app.lexikon import hooks as lexikon_hooks
 from app.players import repository
 from app.players.schemas import (
+    BildAnzeigeRequest,
     CharakterWaehlenRequest,
     CharakterZuordnenRequest,
     LoginRequest,
     PasswortRequest,
+    PortraitBild,
     SpielerAnlegenRequest,
     SpielerMeResponse,
     SpielerResponse,
@@ -53,6 +57,12 @@ def _antwort(spieler: dict) -> SpielerMeResponse:
         personName=spieler["personName"],
         hatPasswort=bool(spieler.get("passwortHash")),
         personBildUrl=spieler.get("personBildUrl"),
+        personBilder=[
+            PortraitBild(url=eintrag["url"], istPrimaer=eintrag["istPrimaer"])
+            for eintrag in galerie_lesen(
+                spieler.get("personBilder"), spieler.get("personBildUrl") or ""
+            )
+        ],
     )
 
 
@@ -221,18 +231,22 @@ async def eigenes_charakterportrait_hochladen(
     (ordner / name).write_bytes(inhalt)
 
     url = f"/uploads/{campaign_id}/{name}"
-    # Dieselbe Galerie wie im SL-Detail: Tauschen ersetzt nur das Anzeigebild,
-    # Extra-Bilder bleiben. Sonst zeigt die Galerie nach dem Spieler-Upload
-    # weiter das alte Primärbild.
+    # Hängt nur an — ersetzt NICHT mehr automatisch das Anzeigebild (Mark,
+    # 24.10.2026: "weitere Bilder anlegen, und sich eines als Anzeigebild
+    # aussuchen"). Gibt es noch gar kein Bild, wird das erste trotzdem sofort
+    # zum Anzeigebild (galerie_hinzufuegen), sonst müsste der Spieler nach
+    # dem allerersten Upload erst noch manuell eines auswählen, obwohl die
+    # Auswahl dann trivial ist. Welches Bild angezeigt wird, wählt er danach
+    # explizit über /mein-bild-anzeige.
+    neue_bilder, neuer_primaer = galerie_hinzufuegen(
+        person.get("bilder"), url, person.get("bildUrl") or ""
+    )
     await update_node(
         "Person",
         PERSON_FIELDS,
         campaign_id,
         person_id,
-        {
-            "bildUrl": url,
-            "bilder": galerie_primaer_ersetzen(person.get("bilder"), person.get("bildUrl") or "", url),
-        },
+        {"bildUrl": neuer_primaer, "bilder": neue_bilder},
     )
 
     frisch = await repository.get_spieler(spieler["id"])
@@ -240,13 +254,16 @@ async def eigenes_charakterportrait_hochladen(
     return _antwort(frisch)
 
 
-@login_router.delete("/mein-bild", response_model=SpielerMeResponse)
-async def eigenes_charakterportrait_entfernen(spieler: dict = Depends(require_spieler)):
-    """Entfernt das Charakterportrait wieder — Gegenstück zum Upload oben.
+@login_router.post("/mein-bild-anzeige", response_model=SpielerMeResponse)
+async def eigenes_charakterportrait_anzeige_waehlen(
+    body: BildAnzeigeRequest, spieler: dict = Depends(require_spieler)
+):
+    """Macht ein schon hochgeladenes Galerie-Bild zum Anzeigebild.
 
-    Nimmt die aktuelle bildUrl aus der Galerie. Liegt noch ein Extra-Bild
-    drin, wird das zum Anzeigebild — sonst ist das Portrait leer. Die Datei
-    bleibt auf dem Datenträger, genau wie beim SL-Upload.
+    Gegenstück zum Upload oben: der dort nur angehängt wird, ohne die
+    Anzeige zu wechseln. Die URL muss in der eigenen Galerie liegen —
+    fremde URLs (oder getippter Unsinn) geben 400, kein "neues" Bild
+    entsteht dabei.
     """
     if not spieler.get("personId"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
@@ -257,7 +274,50 @@ async def eigenes_charakterportrait_entfernen(spieler: dict = Depends(require_sp
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
 
-    rest, primaer = galerie_url_entfernen(person.get("bilder"), person.get("bildUrl") or "")
+    try:
+        neue_bilder, primaer = galerie_primaer_waehlen(
+            person.get("bilder"), body.url, person.get("bildUrl") or ""
+        )
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dieses Bild gehört nicht zu deiner Galerie.")
+
+    await update_node(
+        "Person",
+        PERSON_FIELDS,
+        campaign_id,
+        person_id,
+        {"bildUrl": primaer, "bilder": neue_bilder},
+    )
+
+    frisch = await repository.get_spieler(spieler["id"])
+    assert frisch is not None
+    return _antwort(frisch)
+
+
+@login_router.delete("/mein-bild", response_model=SpielerMeResponse)
+async def eigenes_charakterportrait_entfernen(url: str | None = None, spieler: dict = Depends(require_spieler)):
+    """Entfernt ein Bild aus der eigenen Galerie — Gegenstück zum Upload oben.
+
+    `url` wählt gezielt ein Bild (z.B. ein Extra-Bild, das nie Anzeigebild
+    war); ohne Angabe fällt es auf das aktuelle Anzeigebild zurück (alter
+    Knopf "Portrait entfernen"). War das entfernte Bild das Anzeigebild,
+    wird automatisch das nächste dazu — sonst bleibt das Portrait leer. Die
+    Datei bleibt auf dem Datenträger, genau wie beim SL-Upload.
+    """
+    if not spieler.get("personId"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dir ist noch kein Charakter zugeordnet")
+
+    campaign_id = spieler["campaignId"]
+    person_id = spieler["personId"]
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    ziel_url = url or person.get("bildUrl") or ""
+    if not ziel_url:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein Bild zum Entfernen vorhanden")
+
+    rest, primaer = galerie_url_entfernen(person.get("bilder"), ziel_url)
     await update_node(
         "Person",
         PERSON_FIELDS,

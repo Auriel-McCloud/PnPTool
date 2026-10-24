@@ -59,6 +59,17 @@ class CharakterWaehlenRequest(BaseModel):
     personId: str
 
 
+class PortraitBild(BaseModel):
+    url: str
+    istPrimaer: bool = False
+
+
+class BildAnzeigeRequest(BaseModel):
+    """URL muss schon in der eigenen Galerie liegen."""
+
+    url: str = Field(min_length=1)
+
+
 class SpielerMeResponse(BaseModel):
     spielerId: str
     benutzername: str
@@ -72,6 +83,9 @@ class SpielerMeResponse(BaseModel):
     # Begleitern/Entitäten, die die SL schon längst per Bild-Upload pflegen
     # kann). Selbstbedienung über /api/spieler/mein-bild.
     personBildUrl: str | None = None
+    # Dieselbe Galerie wie im SL-Detail (`bilder`). Das Anzeigebild bleibt
+    # `personBildUrl` — Extras stehen nur in der Übersicht.
+    personBilder: list[PortraitBild] = []
 
 
 class SpielerResponse(BaseModel):

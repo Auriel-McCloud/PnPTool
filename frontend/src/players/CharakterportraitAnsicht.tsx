@@ -12,8 +12,13 @@ import "./portrait.css";
  * dort hätte nur Platz weggenommen). Ursprünglich als Popup über dem Blatt
  * geplant, auf Marks Wunsch zu einem eigenen Burger-Menü-Punkt gemacht.
  *
- * MVP plus Zeichnen: Hochladen, Foto per Kamera, KI-generiertes Bild,
- * Skizzenblock im Commlink-Fenster, Klecks-Zeichentisch in eigenem Fenster.
+ * Galerie (24.10.2026, Mark: "weitere Bilder anlegen, und sich eines als
+ * Anzeigebild aussuchen"): Hochladen/Foto/KI/Zeichnen hängen nur noch an
+ * die eigene Galerie an, ohne das Anzeigebild zu klauen — welches Bild
+ * oben als Portrait zählt, wählt der Spieler per Klick auf ein Thumbnail.
+ * Gleiches Muster wie entities/BildGalerie.tsx auf SL-Seite, hier aber
+ * über die dedizierten /mein-bild*-Routen statt freiem PATCH (ein Spieler
+ * darf nur dieses eine Feld am eigenen Charakter anfassen).
  */
 export function CharakterportraitAnsicht({
   ich,
@@ -25,11 +30,20 @@ export function CharakterportraitAnsicht({
 }) {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [loeschenFrage, setLoeschenFrage] = useState(false);
+  const [loeschenUrl, setLoeschenUrl] = useState<string | null>(null);
   const [kiOffen, setKiOffen] = useState(false);
   const [zeichnenOffen, setZeichnenOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
+
+  // Fallback für Bestandsdaten ohne personBilder — dasselbe Muster wie
+  // BildGalerie.tsx::effektiveBilder auf SL-Seite.
+  const bilder =
+    ich.personBilder && ich.personBilder.length > 0
+      ? ich.personBilder
+      : ich.personBildUrl
+        ? [{ url: ich.personBildUrl, istPrimaer: true }]
+        : [];
 
   function zeichentischOeffnen() {
     const url = new URL("/klecks/index.html", window.location.origin);
@@ -71,12 +85,27 @@ export function CharakterportraitAnsicht({
     }
   }
 
-  async function loeschen() {
-    setLoeschenFrage(false);
+  async function alsAnzeigebildWaehlen(url: string) {
     setLaedt(true);
     setFehler(null);
     try {
-      const frisch = await playersApi.meinBildEntfernen();
+      const frisch = await playersApi.meinBildAnzeigeWaehlen(url);
+      onGeaendert(frisch);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Auswahl fehlgeschlagen");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function loeschen() {
+    if (!loeschenUrl) return;
+    const url = loeschenUrl;
+    setLoeschenUrl(null);
+    setLaedt(true);
+    setFehler(null);
+    try {
+      const frisch = await playersApi.meinBildEntfernen(url);
       onGeaendert(frisch);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Löschen fehlgeschlagen");
@@ -97,6 +126,39 @@ export function CharakterportraitAnsicht({
         )}
 
         {!ich.personBildUrl && <p className="port-leer">Noch kein Bild gesetzt.</p>}
+
+        {/* Galerie: Klick wählt das Anzeigebild, ✕ entfernt das Bild. */}
+        <div className="port-galerie">
+          {bilder.map((bild) => (
+            <div
+              key={bild.url}
+              className={`port-galerie-thumb ${bild.istPrimaer ? "primaer" : ""}`}
+              onClick={() => !bild.istPrimaer && !laedt && alsAnzeigebildWaehlen(bild.url)}
+              title={bild.istPrimaer ? "Aktuelles Anzeigebild" : "Als Anzeigebild wählen"}
+            >
+              <img src={bild.url} alt="" />
+              <button
+                type="button"
+                className="port-galerie-loeschen"
+                disabled={laedt}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLoeschenUrl(bild.url);
+                }}
+                title="Bild entfernen"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div
+            className="port-galerie-thumb port-galerie-neu"
+            onClick={() => !laedt && dateiRef.current?.click()}
+            title="Weiteres Bild hochladen"
+          >
+            <span aria-hidden="true">+</span>
+          </div>
+        </div>
 
         <input
           ref={dateiRef}
@@ -135,32 +197,24 @@ export function CharakterportraitAnsicht({
           <button type="button" className="port-btn-sekundaer" disabled={laedt} onClick={zeichentischOeffnen}>
             ◈ Zeichentisch
           </button>
-          {ich.personBildUrl && (
-            <button
-              type="button"
-              className="port-btn-loeschen"
-              disabled={laedt}
-              onClick={() => setLoeschenFrage(true)}
-            >
-              ✕ Entfernen
-            </button>
-          )}
         </div>
 
         <p className="port-hinweis">
-          Zeichnen ist die Skizze hier. Der Zeichentisch öffnet Klecks mit Ebenen in einem eigenen Fenster —
-          dort setzt „Portrait“ das Bild. Ebenen bleiben nur in dem Fenster, danach liegt ein flaches Portrait.
+          Jedes neue Bild landet erst in der Galerie unten — per Klick auf ein Thumbnail wird es zum
+          Anzeigebild. Zeichnen ist die Skizze hier. Der Zeichentisch öffnet Klecks mit Ebenen in einem
+          eigenen Fenster — dort setzt „Portrait" das Bild. Ebenen bleiben nur in dem Fenster, danach
+          liegt ein flaches Portrait.
         </p>
       </div>
 
-      {loeschenFrage && (
+      {loeschenUrl && (
         <Bestaetigung
-          titel="Portrait entfernen"
-          text="Bist du sicher? Dein Charakterportrait wird entfernt."
+          titel="Bild entfernen"
+          text="Bist du sicher? Das Bild wird aus deiner Galerie entfernt."
           jaText="Entfernen"
           neinText="Abbrechen"
           onJa={loeschen}
-          onNein={() => setLoeschenFrage(false)}
+          onNein={() => setLoeschenUrl(null)}
         />
       )}
 
