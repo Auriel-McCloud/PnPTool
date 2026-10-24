@@ -53,6 +53,8 @@ export interface BogenUebersicht {
   /** Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches Flag,
    * swapt nur ein paar Beschriftungen (siehe Charakterblatt.tsx). */
   istPflanzenCritter: boolean;
+  /** Rassen-Feature „erster Kauf gratis“ schon verbraucht. */
+  rassenFeatureGenutzt: boolean;
 }
 
 export interface Bogen {
@@ -97,6 +99,9 @@ export interface SteckbriefUpdate {
   name?: string;
   /** Während der Erstellung als Entwurf; im fertigen Blatt bewusst read-only. */
   alter?: string;
+  /** Während der Erstellung, damit der Tutorial-Shop die Rasse kennt.
+   * Nach dem Anlegen ignoriert der Server das Feld. */
+  rasse?: string;
 }
 
 /**

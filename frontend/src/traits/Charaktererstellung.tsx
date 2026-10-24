@@ -127,6 +127,7 @@ export function Charaktererstellung({
   const [geldHinweis, setGeldHinweis] = useState<string | null>(null);
   const geldGedeckt = useRef<{ kredit: number; eigen: number } | null>(null);
   const [tutorialShopOffen, setTutorialShopOffen] = useState(false);
+  const [rassenFeatureGenutzt, setRassenFeatureGenutzt] = useState(false);
   const [konzept, setKonzept] = useState("");
   const [alter, setAlter] = useState("");
   const [ambition, setAmbition] = useState("");
@@ -223,6 +224,8 @@ export function Charaktererstellung({
         setVerlangen(bogen.uebersicht.verlangen);
         setZiel(bogen.uebersicht.ziel);
         setKapital(bogen.uebersicht.kapital);
+        if (bogen.uebersicht.rasse) setRasse(bogen.uebersicht.rasse);
+        setRassenFeatureGenutzt(Boolean(bogen.uebersicht.rassenFeatureGenutzt));
       })
       .catch(() => {
         /* Platzhaltername bleibt. */
@@ -318,6 +321,11 @@ export function Charaktererstellung({
   /** Wechselt die Rasse und wirft die daran hängende Verteilung weg. */
   function rasseWaehlen(neu: string) {
     setRasse(neu);
+    if (neu) {
+      void bogenApi.steckbrief(campaignId, personId, { rasse: neu }).catch(() => {
+        setFehler(["Die Rasse konnte nicht gespeichert werden — der Gratis-Kauf im Shop kennt sie sonst nicht."]);
+      });
+    }
     const r = regeln?.rassen.find((x) => x.name === neu);
     if (!r) return;
     // Kontingente in der Reihenfolge der Spalten vorbelegen — umstellen kann
@@ -621,7 +629,19 @@ export function Charaktererstellung({
             kapital={kapital}
             ausgegeben={ausgegeben}
             geldHinweis={geldHinweis}
-            onShopOeffnen={() => setTutorialShopOffen(true)}
+            onShopOeffnen={() => {
+              void (async () => {
+                if (rasse) {
+                  try {
+                    await bogenApi.steckbrief(campaignId, personId, { rasse });
+                  } catch {
+                    setFehler(["Die Rasse konnte nicht gespeichert werden — der Gratis-Kauf im Shop kennt sie sonst nicht."]);
+                    return;
+                  }
+                }
+                setTutorialShopOffen(true);
+              })();
+            }}
           />
         )}
 
@@ -631,6 +651,9 @@ export function Charaktererstellung({
           offen={tutorialShopOffen}
           kapital={kapital}
           ausgegeben={ausgegeben}
+          gratisErsterKaufTyp={gewaehlteRasse?.gratisErsterKaufTyp ?? ""}
+          featureGenutzt={rassenFeatureGenutzt}
+          onFeatureVerbraucht={() => setRassenFeatureGenutzt(true)}
           onGekauft={(neu, weg) => {
             setKapital(neu);
             setAusgegeben(weg);

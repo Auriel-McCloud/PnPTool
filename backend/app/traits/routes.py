@@ -279,6 +279,10 @@ class SteckbriefUpdate(BaseModel):
     alias: str | None = None
     name: str | None = None
     alter: str | None = None
+    # Während der Erstellung, sonst kennt der Tutorial-Shop die Rasse nicht
+    # (die steht bis zum finalen Submit nur im Browser). Nach dem Anlegen
+    # ignoriert die Route das Feld — Rasse ändert man nicht über den Steckbrief.
+    rasse: str | None = None
 
 
 @router.patch("/personen/{person_id}/steckbrief")
@@ -300,7 +304,15 @@ async def set_steckbrief(
     if viewer.role != "GM" and person_id != viewer.person_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
-    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, body.model_dump())
+    daten = body.model_dump()
+    if daten.get("rasse") is not None:
+        bestehend = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        if bestehend is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+        if bestehend.get("erstellungAbgeschlossen"):
+            daten["rasse"] = None
+
+    person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, daten)
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 

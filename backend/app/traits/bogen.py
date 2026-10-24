@@ -199,6 +199,7 @@ def bogen_uebersicht(
         # Oeffnen die Erstellung vorgesetzt und wuerde dabei ueberschrieben.
         "erstellungAbgeschlossen": bool(person.get("erstellungAbgeschlossen"))
         or any(w > 0 for w in werte.values()),
+        "rassenFeatureGenutzt": bool(person.get("rassenFeatureGenutzt")),
     }
 
 

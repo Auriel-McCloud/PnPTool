@@ -809,8 +809,8 @@ npm run dev
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
 **Zuletzt gebaut (24.10.2026 — Rassen-Gratis-Kauf: alle Typen):**
-- **Was:** Im Rassen-Menü hat „Erster Kauf dieses Typs im Shop ist gratis“ die Option „alle Typen“. Der Sentinel trifft jeden Gegenstand, verbraucht `rassenFeatureGenutzt` aber nach dem ersten Stück — nicht einen Gratis-Kauf je Typ. Anzeige in der Erstellung sagt dann „1. Kauf gratis“, nicht „1. alle Typen gratis“.
-- **Verifiziert:** `pytest tests/test_gratis_erster_kauf.py` 5/5. `tsc -b` sauber. **Nie im Browser angeklickt.**
+- **Was:** Im Rassen-Menü hat „Erster Kauf dieses Typs im Shop ist gratis“ die Option „alle Typen“. Der Sentinel trifft jeden Gegenstand, verbraucht `rassenFeatureGenutzt` aber nach dem ersten Stück — nicht einen Gratis-Kauf je Typ. Anzeige in der Erstellung sagt dann „1. Kauf gratis“, nicht „1. alle Typen gratis“. Der Tutorial-Shop zeigt den ersten passenden Kauf als gratis und sperrt den Knopf nicht mehr am Listenpreis. Die gewählte Rasse wird dafür schon beim Wählen auf den Entwurf geschrieben — sonst kennt der Kauf sie erst nach „Charakter anlegen“.
+- **Verifiziert:** `pytest tests/test_gratis_erster_kauf.py` 5/5, `pytest tests/test_bogen.py` mit dabei grün. `tsc -b` und `npm run build` sauber. **Nie im Browser angeklickt.**
 
 **Zuletzt gebaut (24.10.2026 — Attribut-Klick fragt nach der Fähigkeit):**
 - **Was:** Antippen eines Attributs auf dem Blatt fragte nach einem zweiten

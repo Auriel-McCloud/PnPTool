@@ -6,6 +6,12 @@ export function gratisKaufKurz(typ: string): string {
   return `1. ${typ} gratis`;
 }
 
+export function ersterKaufTrifft(featureTyp: string, gegenstandTyp: string): boolean {
+  if (!featureTyp) return false;
+  if (featureTyp === GRATIS_KAUF_ALLE_TYPEN) return true;
+  return gegenstandTyp === featureTyp;
+}
+
 export function gratisKaufLang(typ: string): string {
   if (typ === GRATIS_KAUF_ALLE_TYPEN) {
     return "Der erste Kauf im Shop ist kostenlos — egal welcher Typ";

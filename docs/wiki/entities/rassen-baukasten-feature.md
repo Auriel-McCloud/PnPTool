@@ -32,6 +32,12 @@ ist dann kostenlos, egal welcher Typ. `rassenFeatureGenutzt` geht danach auf
 wahr — der zweite Kauf kostet wieder den normalen Preis, nicht einer je Typ.
 Dieselbe Kauf-Route wie beim typgebundenen Quill-Hextech.
 
+Der Tutorial-Shop hat den Listenpreis vorher selbst gegen das Guthaben geprüft
+und den Knopf gesperrt, bevor der Server den Preis auf 0 setzen konnte.
+Außerdem stand die Rasse bis zum finalen Submit nur im Browser, der Kauf
+las sie aber vom Person-Knoten. Beides ist behoben: die Rasse wird beim
+Wählen gespeichert, der Shop zeigt den ersten passenden Kauf als gratis.
+
 ## Endpunkte
 
 Basis `/api/campaigns/{campaign_id}/rassen`:

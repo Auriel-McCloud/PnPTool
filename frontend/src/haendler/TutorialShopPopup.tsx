@@ -6,12 +6,18 @@ import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
+import { ersterKaufTrifft } from "../rassen/gratisKauf";
 import "./shop.css";
 
 const SELTENHEIT = ["", "Gewöhnlich", "Ungewöhnlich", "Selten", "Legendär", "Mystisch"];
 
 function effektiverPreis(ware: SortimentEintrag): number {
   return ware.rabattProzent > 0 ? Math.round(ware.preis * (1 - ware.rabattProzent / 100)) : ware.preis;
+}
+
+function kaufPreis(ware: SortimentEintrag, gratisTyp: string, verbraucht: boolean): number {
+  if (!verbraucht && ersterKaufTrifft(gratisTyp, ware.typ)) return 0;
+  return effektiverPreis(ware);
 }
 
 /**
@@ -26,6 +32,9 @@ export function TutorialShopPopup({
   offen,
   kapital,
   ausgegeben,
+  gratisErsterKaufTyp,
+  featureGenutzt,
+  onFeatureVerbraucht,
   onGekauft,
   onSchliessen,
 }: {
@@ -34,6 +43,10 @@ export function TutorialShopPopup({
   offen: boolean;
   kapital: number;
   ausgegeben: number;
+  /** Leer = kein Gratis-Erstkauf. „alle Typen“ trifft jeden Gegenstand, einmal. */
+  gratisErsterKaufTyp: string;
+  featureGenutzt: boolean;
+  onFeatureVerbraucht: () => void;
   onGekauft: (kapitalNeu: number, ausgegeben: number) => void;
   onSchliessen: () => void;
 }) {
@@ -88,6 +101,7 @@ export function TutorialShopPopup({
     try {
       const antwort = await haendlerApi.kaufen(campaignId, haendler.id, ware.gegenstandId, personId);
       onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
+      if (!featureGenutzt && ersterKaufTrifft(gratisErsterKaufTyp, ware.typ)) onFeatureVerbraucht();
       itemsApi.list(campaignId, personId).then(setGekauft).catch(() => {});
       if (!ware.istVorlage) {
         setSortiment((alt) => alt.filter((w) => w.gegenstandId !== ware.gegenstandId));
@@ -115,7 +129,7 @@ export function TutorialShopPopup({
     }
   }
 
-  const preis = gewaehlt ? effektiverPreis(gewaehlt) : 0;
+  const preis = gewaehlt ? kaufPreis(gewaehlt, gratisErsterKaufTyp, featureGenutzt) : 0;
   const zuTeuer = gewaehlt !== null && preis > kapital;
   const zeilen = gewaehlt ? steckbriefZeilen(gewaehlt) : [];
 
@@ -189,7 +203,13 @@ export function TutorialShopPopup({
                         </span>
                         {kurz.length > 0 && <span className="ts-zeile-werte">{kurz.join(" · ")}</span>}
                       </span>
-                      <span className="ts-zeile-preis">{effektiverPreis(ware).toLocaleString("de-AT")}¥</span>
+                      <span className="ts-zeile-preis">
+                        {kaufPreis(ware, gratisErsterKaufTyp, featureGenutzt) === 0 &&
+                        ersterKaufTrifft(gratisErsterKaufTyp, ware.typ) &&
+                        !featureGenutzt
+                          ? "gratis"
+                          : `${effektiverPreis(ware).toLocaleString("de-AT")}¥`}
+                      </span>
                     </button>
                   );
                 })}
@@ -235,10 +255,18 @@ export function TutorialShopPopup({
                   <p className="ts-preiszeile">
                     <span>Preis</span>
                     <strong>
-                      {gewaehlt.rabattProzent > 0 && (
-                        <s className="ts-preis-alt">{gewaehlt.preis.toLocaleString("de-AT")}¥</s>
+                      {preis === 0 && ersterKaufTrifft(gratisErsterKaufTyp, gewaehlt.typ) && !featureGenutzt ? (
+                        <>
+                          <s className="ts-preis-alt">{effektiverPreis(gewaehlt).toLocaleString("de-AT")}¥</s> gratis
+                        </>
+                      ) : (
+                        <>
+                          {gewaehlt.rabattProzent > 0 && (
+                            <s className="ts-preis-alt">{gewaehlt.preis.toLocaleString("de-AT")}¥</s>
+                          )}
+                          {preis.toLocaleString("de-AT")}¥
+                        </>
                       )}
-                      {preis.toLocaleString("de-AT")}¥
                     </strong>
                   </p>
                   <p className="ts-preiszeile">

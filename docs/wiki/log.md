@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-24] update | Tutorial-Shop sperrt Gratis-Erstkauf nicht mehr
+
+Der erste passende Kauf (konkreter Typ oder „alle Typen“) wird im
+Tutorial-Shop als gratis angezeigt. Die Rasse steht dafür schon am Entwurf,
+nicht erst nach dem Anlegen. Siehe [[entities/rassen-baukasten-feature]].
+
 ## [2026-10-24] update | Rassen-Gratis-Kauf alle Typen
 
 Im Rassen-Menü gibt es bei „Erster Kauf dieses Typs“ die Option „alle Typen“.
