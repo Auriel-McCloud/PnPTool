@@ -262,6 +262,48 @@
   font-size: 15px;
 }
 
+/* Sortierleiste (24.10.2026, Marks Wunsch: nach Steckbrief-Werten der
+   Kategorie sortieren können) — eigene Pillen-Reihe unter den
+   Kategorie-Kacheln, gleiche Optik wie diese. */
+.shop-sortier-leiste {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.shop-sortier-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+  margin-right: 2px;
+}
+
+.shop-sortier-pille {
+  padding: 4px 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 999px;
+  color: var(--text-leise);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.shop-sortier-pille:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
+}
+
+.shop-sortier-pille[data-aktiv="true"] {
+  border-color: var(--bereich-farbe, var(--neon));
+  background: color-mix(in srgb, var(--bereich-farbe, var(--neon)) 12%, var(--flaeche));
+  color: var(--text);
+  font-family: var(--mono);
+}
+
 .shop-ware {
   position: relative;
   display: flex;

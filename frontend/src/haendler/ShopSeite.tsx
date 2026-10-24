@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { useNachladen } from "../shell/nachladen";
 import { verhandlungApi } from "../verhandlung/api";
 import { ShopWare } from "./ShopWare";
 import { ShopKategorien } from "./ShopKategorien";
+import { ShopSortierleiste, gueltigesFeld, sortimentSortieren, type SortierRichtung } from "./ShopSortierung";
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
 import { extrahiereReinenText } from "../richtext/content";
 import "./shop.css";
@@ -43,6 +44,16 @@ export function ShopSeite({
   // Kategorie-Filter (10.10.2026, Marks Vorgabe): erst Kategorie wählen,
   // dann das Sortiment dieser Kategorie. null = "Alle".
   const [kategorie, setKategorie] = useState<string | null>(null);
+  // Sortierung (24.10.2026, Marks Wunsch): Basis-Felder + je Kategorie
+  // zusätzlich die passenden Steckbrief-Werte, siehe ShopSortierung.tsx.
+  const [sortierFeld, setSortierFeld] = useState("preis");
+  const [sortierRichtung, setSortierRichtung] = useState<SortierRichtung>("auf");
+
+  // Fällt auf "Preis" zurück, wenn ein Kategoriewechsel das bisher gewählte
+  // Feld ungültig macht (z.B. "Schaden" beim Wechsel von Waffe auf Rüstung).
+  useEffect(() => {
+    setSortierFeld((f) => gueltigesFeld(f, kategorie, sortiment));
+  }, [kategorie, sortiment]);
   // KI-Alltagswunsch (24.09.2026, nur Spieler) — Hooks MÜSSEN vor dem frühen
   // "noch nicht geladen"-Return weiter unten stehen (React verlangt in
   // jedem Render exakt dieselbe Hook-Reihenfolge; standen sie danach, rief
@@ -193,9 +204,21 @@ export function ShopSeite({
 
       <div className="shop-waren-raster">
         <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
-        {sortiment
-          .filter((ware) => kategorie === null || ware.typ === kategorie)
-          .map((ware) => (
+        <ShopSortierleiste
+          sortiment={sortiment}
+          kategorie={kategorie}
+          feld={sortierFeld}
+          richtung={sortierRichtung}
+          onAendern={(f, r) => {
+            setSortierFeld(f);
+            setSortierRichtung(r);
+          }}
+        />
+        {sortimentSortieren(
+          sortiment.filter((ware) => kategorie === null || ware.typ === kategorie),
+          sortierFeld,
+          sortierRichtung,
+        ).map((ware) => (
           <ShopWare
             key={ware.gegenstandId}
             ware={ware}

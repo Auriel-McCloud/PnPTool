@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { ShopKategorien } from "./ShopKategorien";
+import { ShopSortierleiste, gueltigesFeld, sortimentSortieren, type SortierRichtung } from "./ShopSortierung";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { useNachladen } from "../shell/nachladen";
@@ -54,6 +55,10 @@ export function TutorialShopPopup({
   const [haendler, setHaendler] = useState<HaendlerEintrag | null>(null);
   const [sortiment, setSortiment] = useState<SortimentEintrag[]>([]);
   const [kategorie, setKategorie] = useState<string | null>(null);
+  // Sortierung (24.10.2026): gleiche Logik wie der normale Shop, siehe
+  // ShopSortierung.tsx + ShopSeite.tsx.
+  const [sortierFeld, setSortierFeld] = useState("preis");
+  const [sortierRichtung, setSortierRichtung] = useState<SortierRichtung>("auf");
   const [gewaehltId, setGewaehltId] = useState<string | null>(null);
   const [kaeuft, setKaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -93,8 +98,13 @@ export function TutorialShopPopup({
     anwenden(d);
   }
 
-  const sichtbar = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
+  const gefiltert = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
+  const sichtbar = sortimentSortieren(gefiltert, sortierFeld, sortierRichtung);
   const gewaehlt = sichtbar.find((w) => w.gegenstandId === gewaehltId) ?? sichtbar[0] ?? null;
+
+  useEffect(() => {
+    setSortierFeld((f) => gueltigesFeld(f, kategorie, sortiment));
+  }, [kategorie, sortiment]);
 
   async function kaufen(ware: SortimentEintrag) {
     if (!haendler) return;
@@ -169,6 +179,16 @@ export function TutorialShopPopup({
           {fehler && <p className="shop-ware-fehler">{fehler}</p>}
 
           <ShopKategorien sortiment={sortiment} gewaehlt={kategorie} onWaehlen={setKategorie} />
+          <ShopSortierleiste
+            sortiment={sortiment}
+            kategorie={kategorie}
+            feld={sortierFeld}
+            richtung={sortierRichtung}
+            onAendern={(f, r) => {
+              setSortierFeld(f);
+              setSortierRichtung(r);
+            }}
+          />
 
           {sichtbar.length === 0 ? (
             fehler ? null : <p className="shop-leer">Der Tutorial-Shop führt gerade nichts.</p>
