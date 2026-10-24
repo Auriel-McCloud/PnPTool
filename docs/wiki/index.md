@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-23 | Seiten: 36
+> Zuletzt aktualisiert: 2026-10-24 | Seiten: 36
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -25,7 +25,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/wuerfelsystem]] | W10-Pool, 6-10 Erfolg, unverändert seit Excel |
 | [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten |
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.); Hintergrund-Baukasten entschieden 10.10. |
-| [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.) |
+| [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.); erster Gratis-Kauf auch „alle Typen“, nur einmal (24.10.) |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären, Wilde Magie, Häretiker-Flavor (24.09.) |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Erweiterung auf 6 Skills (22.09.), Overclock statt Wilde Magie, Pool-Deckel 10→12 |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen mit Ausrüstungsbonus, Waffen-Skill, Schaden |
@@ -45,7 +45,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/mitteilungen-system]] | SL-Popups, kein Absender, WebSocket+Reconnect, Warnfarbe offen |
 | [[entities/kontakte-messenger]] | Persona-5-Messenger, Stufe vs. chatOffen, Nachrichten als eigene Nodes |
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung, Editor-Schriftgröße am Handy (20.09.) |
-| [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens; Erstellung zeigt Bild auf der Karte und Extras im Steckbrief (24.10.) |
+| [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens; Erstellung zeigt Bild auf der Karte und Extras im Steckbrief (24.10.); Gratis-Erstkauf-Option „alle Typen“ verbraucht das Feature nach einem Kauf (24.10.) |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |
 | [[entities/ui-konzept-commlink]] | Nie-scrollen-Prinzip, Fenstersystem, Navigation, Verwundungsanzeige (19.09.), Neonflackern (19.09.), Autosave Beschreibung/Notizen (27.09.), Burgermenü blättert per Pfeil statt Scrollbar (29.09.), ☰-Customizen in der Rail sichtbar (02.10.), Spieler-☰ unten im Burger (23.10.) |
 | [[entities/auth-und-rollen]] | GM/PLAYER, JWT-Cookie, Einladungscodes, Ersteinstieg für neue Spieler ohne Charakter (23.09.) |

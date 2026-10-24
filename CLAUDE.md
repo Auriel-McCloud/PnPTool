@@ -808,6 +808,10 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Rassen-Gratis-Kauf: alle Typen):**
+- **Was:** Im Rassen-Menü hat „Erster Kauf dieses Typs im Shop ist gratis“ die Option „alle Typen“. Der Sentinel trifft jeden Gegenstand, verbraucht `rassenFeatureGenutzt` aber nach dem ersten Stück — nicht einen Gratis-Kauf je Typ. Anzeige in der Erstellung sagt dann „1. Kauf gratis“, nicht „1. alle Typen gratis“.
+- **Verifiziert:** `pytest tests/test_gratis_erster_kauf.py` 5/5. `tsc -b` sauber. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (24.10.2026 — Attribut-Klick fragt nach der Fähigkeit):**
 - **Was:** Antippen eines Attributs auf dem Blatt fragte nach einem zweiten
   Attribut. Jetzt fragt es „Mit welcher Fähigkeit?“ — dieselben drei

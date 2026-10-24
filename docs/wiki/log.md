@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-24] update | Rassen-Gratis-Kauf alle Typen
+
+Im Rassen-Menü gibt es bei „Erster Kauf dieses Typs“ die Option „alle Typen“.
+Der erste Shop-Kauf ist dann kostenlos, der zweite wieder zum normalen Preis
+(`rassenFeatureGenutzt`). Siehe [[entities/rassen-baukasten-feature]].
+
 ## [2026-10-24] update | Rassenauswahl mit Bild und Steckbrief
 
 Charaktererstellung: Bild auf der Rassenkarte, Steckbrief mit großem Bild,

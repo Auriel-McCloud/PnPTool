@@ -23,6 +23,7 @@ from app.haendler import alltagswunsch
 from app.haendler import ki_vorschlag
 from app.haendler.uebergabe import UnikatEinhangFehler, regale_raeumen, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
 from app.rassen import repository as rassen_repository
+from app.rassen.gratis_kauf import trifft as erster_kauf_gratis
 from app.haendler.ki_vorschlag import AnwendenErgebnis, SortimentVorschlag, VorschlaegeAntwort, WareAnlegenErgebnis
 from app.haendler.schemas import (
     AlltagswunschAntwortRequest,
@@ -238,15 +239,17 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
     if gegenstand is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
-    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech): der
-    # erste Kauf eines passenden Gegenstandstyps ist für diese Rasse
-    # kostenlos — nur einmal pro Person, danach normaler Preis. Gilt auch
-    # im Tutorial-Shop (dort ist es meistens der erste Kontakt überhaupt).
+    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech;
+    # 24.10.2026 Sentinel "alle Typen"): der erste passende Kauf ist
+    # kostenlos — nur einmal pro Person (`rassenFeatureGenutzt`), danach
+    # normaler Preis. "alle Typen" trifft jeden Gegenstand, verbraucht
+    # das Feature aber genauso nach dem ersten Stück. Gilt auch im
+    # Tutorial-Shop (dort ist es meistens der erste Kontakt überhaupt).
     rassen_feature_genutzt = bool(kaeufer.get("rassenFeatureGenutzt"))
     if not rassen_feature_genutzt and kaeufer.get("rasse"):
         rassen_katalog = {r["name"]: r for r in await rassen_repository.liste_fuer_kampagne(campaign_id)}
         feature = rassen_katalog.get(kaeufer["rasse"])
-        if feature and feature.get("gratisErsterKaufTyp") and gegenstand.get("typ") == feature["gratisErsterKaufTyp"]:
+        if feature and erster_kauf_gratis(feature.get("gratisErsterKaufTyp"), gegenstand.get("typ")):
             preis = 0
             rassen_feature_genutzt = True
 

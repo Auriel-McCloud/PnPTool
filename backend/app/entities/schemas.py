@@ -235,8 +235,10 @@ class PersonCreate(BaseModel):
     # verhindert eine doppelte Vergabe, falls die Erstellung erneut
     # eingereicht wird (SL-Korrektur).
     gratisGegenstandErhalten: bool = False
-    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech): der
-    # erste Kauf dieses Typs im (Tutorial-)Shop war kostenlos — danach aus.
+    # Rassen-Feature "gratisErsterKaufTyp" (10.10.2026, Quill-Hextech;
+    # 24.10.2026 auch Sentinel "alle Typen"): der erste passende Kauf im
+    # (Tutorial-)Shop war kostenlos — danach aus. "alle Typen" meint einen
+    # Kauf, nicht einen je Typ.
     rassenFeatureGenutzt: bool = False
     erstellungAbgeschlossen: bool = False
 

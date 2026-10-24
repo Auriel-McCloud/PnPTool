@@ -24,6 +24,14 @@ darunter, Abschnitt „Dabei“ mit den Extras. `/erstellung/regeln` reicht
 `gratisFertigkeitName`/`gratisFertigkeitBonus` durch und löst
 `gratisGegenstandName` sowie `gratisZusatzfertigkeitName` auf.
 
+## Gratis-Erstkauf: alle Typen (24.10.2026)
+
+Im Editor steht unter den Typen die Option „alle Typen“ (`gratisErsterKaufTyp`
+= Sentinel, kein echter Gegenstandstyp). Der erste Shop-Kauf dieser Person
+ist dann kostenlos, egal welcher Typ. `rassenFeatureGenutzt` geht danach auf
+wahr — der zweite Kauf kostet wieder den normalen Preis, nicht einer je Typ.
+Dieselbe Kauf-Route wie beim typgebundenen Quill-Hextech.
+
 ## Endpunkte
 
 Basis `/api/campaigns/{campaign_id}/rassen`:

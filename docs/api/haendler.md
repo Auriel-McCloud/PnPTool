@@ -114,6 +114,11 @@ POST /api/campaigns/{campaign_id}/haendler/{haendler_id}/kaufen
   etwas verkauft/schenkt.
 - Guthaben (`Person.kapital`) reicht nicht → `409 Conflict`:
   `"Guthaben reicht nicht — {kapital}¥ verfügbar, {preis}¥ nötig"`
+- Rassen-Feature `gratisErsterKaufTyp`: der erste passende Kauf dieser Person
+  kostet 0¥ (`rassenFeatureGenutzt` wird gesetzt, der nächste Kauf wieder
+  zum normalen Preis). Ein konkreter Typ (z.B. Hexware) trifft nur diesen
+  Typ. Der Sentinel `alle Typen` trifft jeden Gegenstand, verbraucht das
+  Feature aber genauso nach dem ersten Stück — nicht einen Gratis-Kauf je Typ.
 - Erfolgreich → `200` mit dem übergebenen Gegenstand und dem neuen Kapital.
 
 **Schreibroute, die auch Spieler nutzen dürfen** — steht in der Allowlist

@@ -6,6 +6,7 @@ import { traitsApi, type TraitDef } from "../traits/api";
 import { rassenApi, type Rasse } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { TYP_OPTIONEN } from "../items/typKatalog";
+import { GRATIS_KAUF_ALLE_TYPEN } from "./gratisKauf";
 import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./rassen.css";
 
@@ -495,6 +496,7 @@ function RasseEditor({
                 onChange={(e) => setGratisErsterKaufTyp(e.target.value)}
               >
                 <option value="">— kein Gratis-Kauf —</option>
+                <option value={GRATIS_KAUF_ALLE_TYPEN}>alle Typen</option>
                 {TYP_OPTIONEN.map((typ) => (
                   <option key={typ} value={typ}>
                     {typ}
@@ -504,7 +506,8 @@ function RasseEditor({
             </label>
             <p className="ra-hinweis">
               Zum Beispiel beim Quill: das erste Hextech-Gerät im Shop (inkl. Tutorial-Shop) ist
-              kostenlos — danach gilt wieder der normale Preis.
+              kostenlos — danach gilt wieder der normale Preis. „alle Typen“ macht nur den
+              allerersten Kauf kostenlos, nicht einen je Typ.
             </p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>

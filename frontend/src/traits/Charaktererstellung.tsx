@@ -22,6 +22,7 @@ import { ZusatzfertigkeitAuswahl } from "../zusatzfertigkeiten/ZusatzfertigkeitA
 import { ZusatzfertigkeitInfoTipp } from "../zusatzfertigkeiten/ZusatzfertigkeitInfoTipp";
 import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { TutorialShopPopup } from "../haendler/TutorialShopPopup";
+import { gratisKaufKurz, gratisKaufLang } from "../rassen/gratisKauf";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
 
@@ -831,7 +832,7 @@ function rassenExtrasKurz(rasse: Rasse): string[] {
   const zeilen: string[] = [];
   if (rasse.bonusFreebees > 0) zeilen.push(`+${rasse.bonusFreebees} Freebees`);
   if (rasse.gratisGegenstandId) zeilen.push(rasse.gratisGegenstandName ? `Gratis: ${rasse.gratisGegenstandName}` : "Gratis-Gegenstand");
-  if (rasse.gratisErsterKaufTyp) zeilen.push(`1. ${rasse.gratisErsterKaufTyp} gratis`);
+  if (rasse.gratisErsterKaufTyp) zeilen.push(gratisKaufKurz(rasse.gratisErsterKaufTyp));
   if (rasse.gratisZusatzfertigkeitId) {
     zeilen.push(rasse.gratisZusatzfertigkeitName || "Zusatzfertigkeit");
   }
@@ -855,7 +856,7 @@ function rassenExtras(rasse: Rasse): string[] {
     );
   }
   if (rasse.gratisErsterKaufTyp) {
-    zeilen.push(`Der erste ${rasse.gratisErsterKaufTyp}-Kauf im Shop ist kostenlos`);
+    zeilen.push(gratisKaufLang(rasse.gratisErsterKaufTyp));
   }
   if (rasse.gratisZusatzfertigkeitId) {
     const name = rasse.gratisZusatzfertigkeitName || "eine Zusatzfertigkeit";

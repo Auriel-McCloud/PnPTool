@@ -80,6 +80,8 @@ liessen sich mit der 15er-Formel nicht nachrechnen. **Seit 10.10.2026** gibt es
 budget-neutrale Rassen-Extras als eigene Felder (nicht in der 15er-Bilanz):
 Extra-Freebees, Gratis-Gegenstand, erster Gratis-Kauf, Zusatzfertigkeit,
 Fertigkeitsbonus, Hinweistext. Die 15er-Formel selbst ist unverändert.
+Seit 24.10.2026 kann der erste Gratis-Kauf auch „alle Typen“ sein: ein
+Kauf, egal welcher Typ, danach normaler Preis.
 
 ## Siehe auch
 
