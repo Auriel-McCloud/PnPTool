@@ -86,7 +86,8 @@ def automatische_slot_anzahl(alt: int, neu: int, schwellen: tuple[int, ...] = AU
     Ein Sinken des Werts (`neu < alt`) vergibt dadurch von selbst nie etwas
     — kein Sonderfall nötig. Und weil diese Funktion nur ADDIERT, nie
     löscht, verschwindet ein bereits vergebener Slot beim späteren Sinken
-    des Ratings nicht wieder (Marks ausdrückliche Vorgabe).
+    des Ratings nicht wieder (Marks ausdrückliche Vorgabe). Wegnehmen kann
+    die SL den Slot nur ausdrücklich (`loeschen`), nicht durch Punkte-Abzug.
     """
     return sum(1 for schwelle in schwellen if alt < schwelle <= neu)
 
@@ -197,3 +198,59 @@ async def benennen(
         )
         record = await result.single()
         return _decode(dict(record)) if record else None
+
+
+def unter_schwelle(category: str, rating: int) -> bool:
+    """True, wenn das aktuelle Rating die erste Auto-Grant-Schwelle nicht
+    mehr erreicht — der Slot ist dann ein Überbleibsel (Punkte vergeben und
+    wieder abgezogen), kein frisch verdienter Anspruch."""
+    schwellen = schwellen_fuer(category) if category in ALLE_SPEZIALISIERUNGS_KATEGORIEN else AUTOMATISCHE_SCHWELLEN
+    return int(rating) < schwellen[0]
+
+
+async def fuer_kampagne(campaign_id: str) -> list[dict]:
+    """Alle Slots der Kampagne, mit Personenname, Fertigkeitsname und
+    aktuellem Rating — die SL-Liste zum Aufräumen, nicht das Charakterblatt."""
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{campaignId: $campaign_id}})-[:HAT_SPEZIALISIERUNG]->(s:Spezialisierung)
+        OPTIONAL MATCH (t:TraitDef {{id: s.traitDefId}})
+        OPTIONAL MATCH (p)-[r:HAS_TRAIT]->(t)
+        RETURN {FELDER},
+               coalesce(p.name, '') AS personName,
+               coalesce(t.name, s.traitDefId) AS traitName,
+               coalesce(t.category, '') AS category,
+               coalesce(r.rating, 0) AS rating
+        ORDER BY toLower(p.name), traitName, s.erstelltAm
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        eintraege = []
+        async for rec in result:
+            daten = _decode(dict(rec))
+            daten["personName"] = daten.get("personName") or ""
+            daten["traitName"] = daten.get("traitName") or daten.get("traitDefId") or ""
+            daten["category"] = daten.get("category") or ""
+            daten["rating"] = int(daten.get("rating") or 0)
+            daten["unterSchwelle"] = unter_schwelle(daten["category"], daten["rating"])
+            eintraege.append(daten)
+        return eintraege
+
+
+async def loeschen(campaign_id: str, person_id: str, spezialisierung_id: str) -> dict | None:
+    """Entfernt einen Slot. Gibt die gelöschten Felder zurück, damit die
+    Route EP erstatten und protokollieren kann — oder None, wenn es ihn
+    nicht (mehr) gibt."""
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $person_id, campaignId: $campaign_id})-[:HAT_SPEZIALISIERUNG]->(s:Spezialisierung {id: $id})
+        WITH s, s {.*} AS daten
+        DETACH DELETE s
+        RETURN daten
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, id=spezialisierung_id,
+        )
+        record = await result.single()
+        return _decode(dict(record["daten"])) if record else None

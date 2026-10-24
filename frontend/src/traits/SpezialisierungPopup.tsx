@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../api/client";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import type { TraitDef } from "./api";
 import "./spezialisierung.css";
 
@@ -45,6 +46,7 @@ export function SpezialisierungVerwaltung({
   const [speichert, setSpeichert] = useState<string | null>(null);
   const [kauft, setKauft] = useState(false);
   const [kaufFehler, setKaufFehler] = useState("");
+  const [weg, setWeg] = useState<Spezialisierung | null>(null);
 
   // Frischer Entwurf beim Wechsel der Fertigkeit — das Fenster bleibt offen,
   // während man von einer Fertigkeit zur nächsten springt.
@@ -65,6 +67,19 @@ export function SpezialisierungVerwaltung({
       // kein zusätzlicher Toast (Mark hat das nirgends sonst in diesem
       // Blatt verlangt).
       console.error(e);
+    } finally {
+      setSpeichert(null);
+    }
+  }
+
+  async function entfernen(slot: Spezialisierung) {
+    setWeg(null);
+    setSpeichert(slot.id);
+    try {
+      await spezialisierungenApi.entfernen(campaignId, personId, slot.id);
+      await onAenderung();
+    } catch (e) {
+      setKaufFehler(e instanceof ApiError ? e.message : "Entfernen fehlgeschlagen.");
     } finally {
       setSpeichert(null);
     }
@@ -102,6 +117,16 @@ export function SpezialisierungVerwaltung({
             <div key={slot.id} className="sz-slot">
               <div className="sz-slot-kopf">
                 <span className="sz-slot-quelle">{slot.quelle === "gekauft" ? "Gekauft" : "Automatisch"}</span>
+                {istGM && (
+                  <button
+                    type="button"
+                    className="sz-entfernen"
+                    disabled={speichert === slot.id}
+                    onClick={() => setWeg(slot)}
+                  >
+                    Entfernen
+                  </button>
+                )}
               </div>
               {gesperrtFuerSpieler ? (
                 <p className="sz-slot-text">{slot.text}</p>
@@ -158,6 +183,20 @@ export function SpezialisierungVerwaltung({
         {kaufFehler && <p className="pr-warnung">{kaufFehler}</p>}
         <p className="cb-hinweis">{erfahrungVerfuegbar} EP verfügbar</p>
       </div>
+      {weg && (
+        <Bestaetigung
+          titel="Spezialisierung entfernen?"
+          text={
+            (weg.text ? `„${weg.text}“` : "Der leere Slot") +
+            ` an ${trait.name} verschwindet.` +
+            (weg.quelle === "gekauft" ? " Die 4 EP kommen zurück." : "") +
+            " Ein neuer automatischer Slot kommt erst wieder, wenn die Fertigkeit die Schwelle erneut überschreitet."
+          }
+          jaText="Entfernen"
+          onJa={() => entfernen(weg)}
+          onNein={() => setWeg(null)}
+        />
+      )}
     </div>
   );
 }

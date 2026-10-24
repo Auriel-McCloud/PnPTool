@@ -24,6 +24,16 @@ export interface Spezialisierung {
   erstelltAm: string;
 }
 
+/** Kampagnenliste für die SL — Slot plus wer ihn hat und ob die Punkte
+ * ihn noch hergeben. */
+export interface SpezialisierungKampagne extends Spezialisierung {
+  personName: string;
+  traitName: string;
+  category: string;
+  rating: number;
+  unterSchwelle: boolean;
+}
+
 function basis(cid: string, personId: string) {
   return `/api/campaigns/${cid}/personen/${personId}/spezialisierungen`;
 }
@@ -43,4 +53,13 @@ export const spezialisierungenApi = {
   /** Einen zusätzlichen Slot für 4 EP kaufen (ab Fertigkeitsrating 4). */
   kaufen: (cid: string, personId: string, traitDefId: string) =>
     api.post<Spezialisierung>(`${basis(cid, personId)}/kaufen`, { traitDefId }),
+  /** Slot löschen — nur die SL. Ein gekaufter Slot erstattet die 4 EP. */
+  entfernen: (cid: string, personId: string, spezialisierungId: string) =>
+    api.delete<void>(`${basis(cid, personId)}/${spezialisierungId}`),
+  /** Alle Slots der Kampagne, zum Aufräumen im SL-Menü. */
+  vonKampagne: (cid: string) =>
+    api.get<SpezialisierungKampagne[]>(`/api/campaigns/${cid}/spezialisierungen`),
+  /** Leere automatische Slots unter der Schwelle auf einen Schlag weg. */
+  leereUnterSchwelleEntfernen: (cid: string) =>
+    api.post<{ entfernt: number }>(`/api/campaigns/${cid}/spezialisierungen/leere-unter-schwelle`),
 };

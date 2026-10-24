@@ -18,6 +18,19 @@
 
 .sz-slot-kopf {
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sz-entfernen {
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+  border-color: var(--signal);
 }
 
 .sz-slot-quelle {

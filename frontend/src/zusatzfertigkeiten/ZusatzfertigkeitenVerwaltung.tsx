@@ -3,6 +3,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { rassenApi, type Rasse } from "../rassen/api";
 import { traitsApi, type TraitDef } from "../traits/api";
+import { spezialisierungenApi, type SpezialisierungKampagne } from "../spezialisierungen/api";
 import {
   zusatzfertigkeitenApi,
   type Zusatzfertigkeit,
@@ -35,7 +36,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
   // Fertigkeiten-Menü" dieses bestehende "Zusatzfertigkeiten"-Menü (siehe
   // Feature-Bericht). Die bestehende Tabelle/Editor-Logik bleibt unberührt,
   // nur hinter diesem Schalter versteckt, wenn die zweite Ansicht aktiv ist.
-  const [ansicht, setAnsicht] = useState<"zusatzfertigkeiten" | "vorschlaege">("zusatzfertigkeiten");
+  const [ansicht, setAnsicht] = useState<"zusatzfertigkeiten" | "vorschlaege" | "slots">("zusatzfertigkeiten");
 
   async function neuLaden() {
     const daten = await zusatzfertigkeitenApi.liste(campaignId);
@@ -80,9 +81,17 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
         >
           Spezialisierungs-Vorschläge
         </button>
+        <button
+          type="button"
+          className={ansicht === "slots" ? "zf-ansicht-knopf zf-ansicht-knopf-aktiv" : "zf-ansicht-knopf"}
+          onClick={() => setAnsicht("slots")}
+        >
+          Vergebene Slots
+        </button>
       </div>
 
       {ansicht === "vorschlaege" && <SpezialisierungsVorschlaegeVerwaltung campaignId={campaignId} />}
+      {ansicht === "slots" && <SpezialisierungsSlotsVerwaltung campaignId={campaignId} />}
 
       {ansicht === "zusatzfertigkeiten" && (
         <>
@@ -538,6 +547,147 @@ function SpezialisierungsVorschlaegeVerwaltung({ campaignId }: { campaignId: str
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Vergebene Spezialisierungs-Slots der Kampagne (24.10.2026): die SL kann
+ * einen Slot löschen, den ein Punkte-Abzug nicht wieder wegnimmt. Senken
+ * des Ratings löscht nie von selbst — dieser Tab ist der ausdrückliche Weg.
+ * Leere automatische Slots unter der Schwelle (der typische Vertipper)
+ * gehen auch gesammelt. Benannte und gekaufte nur einzeln; gekaufte
+ * erstatten die 4 EP.
+ */
+function SpezialisierungsSlotsVerwaltung({ campaignId }: { campaignId: string }) {
+  const [liste, setListe] = useState<SpezialisierungKampagne[] | null>(null);
+  const [fehler, setFehler] = useState("");
+  const [nurHaengend, setNurHaengend] = useState(false);
+  const [laeuft, setLaeuft] = useState(false);
+  const [weg, setWeg] = useState<SpezialisierungKampagne | null>(null);
+  const [sammelOffen, setSammelOffen] = useState(false);
+
+  async function laden() {
+    const daten = await spezialisierungenApi.vonKampagne(campaignId);
+    setListe(daten);
+  }
+
+  useEffect(() => {
+    setListe(null);
+    setFehler("");
+    laden().catch(() => setFehler("Spezialisierungen konnten nicht geladen werden."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId]);
+
+  const sichtbar = (liste ?? []).filter((s) => !nurHaengend || s.unterSchwelle);
+  const haengendeLeere = (liste ?? []).filter((s) => s.unterSchwelle && !s.text && s.quelle === "automatisch");
+
+  async function entfernen(slot: SpezialisierungKampagne) {
+    setWeg(null);
+    setLaeuft(true);
+    setFehler("");
+    try {
+      await spezialisierungenApi.entfernen(campaignId, slot.personId, slot.id);
+      await laden();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Entfernen fehlgeschlagen.");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  async function sammeln() {
+    setSammelOffen(false);
+    setLaeuft(true);
+    setFehler("");
+    try {
+      await spezialisierungenApi.leereUnterSchwelleEntfernen(campaignId);
+      await laden();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Aufräumen fehlgeschlagen.");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  if (fehler && liste === null) return <p className="zf-ki-fehler">{fehler}</p>;
+  if (liste === null) return <p style={{ color: "var(--text-leise)" }}>Lade Spezialisierungen…</p>;
+
+  return (
+    <div className="zf-vorschlaege-liste">
+      <p className="zf-hinweis">
+        Punkte abziehen nimmt einen schon vergebenen Slot nicht wieder weg. Hier kannst du ihn löschen — einzeln,
+        oder alle leeren automatischen Slots unter der Schwelle auf einmal. Ein gekaufter Slot gibt die 4 EP zurück.
+      </p>
+      {fehler && <p className="zf-ki-fehler">{fehler}</p>}
+      <div className="zf-kopf">
+        <button type="button" disabled={laeuft || haengendeLeere.length === 0} onClick={() => setSammelOffen(true)}>
+          {haengendeLeere.length} leere unter Schwelle entfernen
+        </button>
+        <label className="zf-filter">
+          <input type="checkbox" checked={nurHaengend} onChange={(e) => setNurHaengend(e.target.checked)} />
+          nur unter Schwelle
+        </label>
+        <span className="zf-anzahl">{sichtbar.length} Slots</span>
+      </div>
+      {sichtbar.length === 0 && <p className="zf-leer">Nichts zu entfernen.</p>}
+      {sichtbar.length > 0 && (
+        <table className="zf-tabelle">
+          <thead>
+            <tr>
+              <th>Charakter</th>
+              <th>Fertigkeit</th>
+              <th>Rating</th>
+              <th>Slot</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sichtbar.map((slot) => (
+              <tr key={slot.id} className="zf-slot-zeile">
+                <td className="zf-zeile-name">{slot.personName}</td>
+                <td>{slot.traitName}</td>
+                <td className={slot.unterSchwelle ? "zf-slot-haengt" : undefined}>
+                  {slot.rating}
+                  {slot.unterSchwelle ? " · unter Schwelle" : ""}
+                </td>
+                <td className="zf-zeile-kurz">
+                  {slot.text || <em>noch unbenannt</em>}
+                  {slot.quelle === "gekauft" ? " · gekauft" : ""}
+                </td>
+                <td>
+                  <button type="button" className="sz-entfernen" disabled={laeuft} onClick={() => setWeg(slot)}>
+                    Entfernen
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {weg && (
+        <Bestaetigung
+          titel="Spezialisierung entfernen?"
+          text={
+            (weg.text ? `„${weg.text}“` : "Der leere Slot") +
+            ` von ${weg.personName} an ${weg.traitName} verschwindet.` +
+            (weg.quelle === "gekauft" ? " Die 4 EP kommen zurück." : "") +
+            " Ein neuer automatischer Slot kommt erst wieder, wenn die Fertigkeit die Schwelle erneut überschreitet."
+          }
+          jaText="Entfernen"
+          onJa={() => entfernen(weg)}
+          onNein={() => setWeg(null)}
+        />
+      )}
+      {sammelOffen && (
+        <Bestaetigung
+          titel="Leere Slots unter der Schwelle entfernen?"
+          text={`${haengendeLeere.length} unbenannte automatische Slots verschwinden. Benannte und gekaufte bleiben.`}
+          jaText="Entfernen"
+          onJa={sammeln}
+          onNein={() => setSammelOffen(false)}
+        />
+      )}
     </div>
   );
 }

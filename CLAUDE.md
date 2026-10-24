@@ -78,6 +78,13 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   Im Bearbeiten-Modus öffnet der Name dasselbe Fenster, die Punkte bleiben
   anklickbar. **Nie am Spieltisch getestet.**
 
+- **SL kann Spezialisierungs-Slots entfernen** (24.10.2026): Senken des
+  Ratings löscht Slots weiter nicht. Im Menü Zusatzfertigkeiten, Tab
+  „Vergebene Slots“, und im Klick-Fenster der Fertigkeit (nur SL, Knopf
+  Entfernen, mit Rückfrage). Leere automatische Slots unter der Schwelle
+  auch gesammelt. Gekaufte Slots erstatten 4 EP. Ein neuer automatischer
+  Slot kommt erst, wenn die Schwelle erneut überschritten wird.
+
 - **Zweiter SL-Tisch / Kampagnen teilen** (02.10.2026, nur notiert):
   Richtung 1 — eigener SL, eigene Welt, nicht Marks NeotopiA. Datenmodell
   kann das schon (`GMUser -[:OWNS]-> Campaign`). Offen, nicht bauen:

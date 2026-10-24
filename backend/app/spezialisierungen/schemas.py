@@ -19,3 +19,17 @@ class SpezialisierungBenennenInput(BaseModel):
 
 class SpezialisierungKaufenInput(BaseModel):
     traitDefId: str
+
+
+class SpezialisierungKampagneResponse(SpezialisierungResponse):
+    """Kampagnenliste für die SL: Slot plus wer, welche Fertigkeit, welches Rating."""
+
+    personName: str
+    traitName: str
+    category: str
+    rating: int
+    unterSchwelle: bool
+
+
+class SpezialisierungAufraeumenResponse(BaseModel):
+    entfernt: int

@@ -246,6 +246,33 @@
   border-color: var(--neon);
 }
 
+.zf-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-leise);
+}
+
+.zf-slot-zeile td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.zf-slot-haengt {
+  color: var(--signal);
+}
+
+.sz-entfernen {
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
 /* --- Spezialisierungs-Vorschläge: Fertigkeit -> Liste von Vorschlagstexten,
    entfernbare Chips + Add-Eingabe, Speichern sofort (keine Speichern-Knopf-
    Konvention, siehe Moduldocstring in ZusatzfertigkeitenVerwaltung.tsx). --- */

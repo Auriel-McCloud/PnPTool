@@ -585,3 +585,106 @@ def test_route_require_campaign_gm_ist_als_abhaengigkeit_eingehaengt():
         assert gefunden, "Route wurde nicht gefunden — Pfad geändert?"
 
     _run(check())
+
+
+def test_loeschen_nimmt_haengenden_slot_weg():
+    """Punkte abziehen lässt den Slot liegen (test_sinken_entfernt_vergebenen_slot_nicht).
+    Ausdrückliches Löschen nimmt ihn weg — und ein erneutes Überschreiten der
+    Schwelle vergibt ihn wieder."""
+
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        try:
+            pid = await _person_anlegen(cid, "Ryu")
+            trait_id = await _trait_def_id("Schusswaffen")
+            await traits_repository.set_rating(cid, pid, trait_id, 4, None)
+            await traits_repository.set_rating(cid, pid, trait_id, 1, None)
+            [slot] = await spezialisierungen_repository.fuer_person(cid, pid)
+
+            weg = await spezialisierungen_repository.loeschen(cid, pid, slot["id"])
+            assert weg is not None
+            assert weg["traitDefId"] == trait_id
+            assert await spezialisierungen_repository.fuer_person(cid, pid) == []
+
+            await traits_repository.set_rating(cid, pid, trait_id, 4, None)
+            assert len(await spezialisierungen_repository.fuer_person(cid, pid)) == 1
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_fuer_kampagne_markiert_slot_unter_schwelle():
+    async def lauf():
+        cid = await _kampagne_anlegen()
+        try:
+            pid = await _person_anlegen(cid, "Ryu")
+            trait_id = await _trait_def_id("Schusswaffen")
+            await traits_repository.set_rating(cid, pid, trait_id, 4, None)
+            await traits_repository.set_rating(cid, pid, trait_id, 2, None)
+
+            [eintrag] = await spezialisierungen_repository.fuer_kampagne(cid)
+            assert eintrag["personName"] == "Ryu"
+            assert eintrag["traitName"] == "Schusswaffen"
+            assert eintrag["rating"] == 2
+            assert eintrag["unterSchwelle"] is True
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_route_entfernen_erstattet_ep_bei_gekauftem_slot():
+    async def lauf():
+        from app.entities.repository import PERSON_FIELDS, get_node
+        from app.spezialisierungen import routes as spezialisierungen_routes
+
+        cid = await _kampagne_anlegen()
+        try:
+            pid = await _person_anlegen(cid, "Ryu", erfahrungAusgegeben=4)
+            trait_id = await _trait_def_id("Schusswaffen")
+            await traits_repository.set_rating(cid, pid, trait_id, 4, None)
+            gekauft = await spezialisierungen_repository.gekauft_anlegen(cid, pid, trait_id)
+
+            await spezialisierungen_routes.entfernen(cid, pid, gekauft["id"])
+
+            assert await spezialisierungen_repository.hole(cid, pid, gekauft["id"]) is None
+            person = await get_node("Person", PERSON_FIELDS, cid, pid)
+            assert person is not None
+            assert int(person.get("erfahrungAusgegeben") or 0) == 0
+            # Der automatische Slot von der 4 bleibt.
+            rest = await spezialisierungen_repository.fuer_person(cid, pid)
+            assert len(rest) == 1
+            assert rest[0]["quelle"] == "automatisch"
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())
+
+
+def test_route_leere_unter_schwelle_laesst_benannte_stehen():
+    async def lauf():
+        from app.spezialisierungen import routes as spezialisierungen_routes
+
+        cid = await _kampagne_anlegen()
+        try:
+            leer = await _person_anlegen(cid, "Leer")
+            benannt = await _person_anlegen(cid, "Benannt")
+            trait_id = await _trait_def_id("Schusswaffen")
+            await traits_repository.set_rating(cid, leer, trait_id, 4, None)
+            await traits_repository.set_rating(cid, leer, trait_id, 0, None)
+            await traits_repository.set_rating(cid, benannt, trait_id, 4, None)
+            await traits_repository.set_rating(cid, benannt, trait_id, 0, None)
+            [slot] = await spezialisierungen_repository.fuer_person(cid, benannt)
+            await spezialisierungen_repository.benennen(cid, benannt, slot["id"], "Pistolen", als_spieler=False)
+
+            antwort = await spezialisierungen_routes.leere_unter_schwelle_entfernen(cid)
+            assert antwort["entfernt"] == 1
+            assert await spezialisierungen_repository.fuer_person(cid, leer) == []
+            rest = await spezialisierungen_repository.fuer_person(cid, benannt)
+            assert len(rest) == 1
+            assert rest[0]["text"] == "Pistolen"
+        finally:
+            await _aufraeumen(cid)
+
+    _run(lauf())

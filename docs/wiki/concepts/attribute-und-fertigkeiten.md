@@ -1,7 +1,7 @@
 ---
 title: Attribute und Fertigkeiten
 created: 2026-09-18
-updated: 2026-09-19
+updated: 2026-10-24
 type: konzept
 tags: [attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charakterblatt.md, ../../regeln-neotopia.md, ../../../backend/app/traits/]
@@ -130,3 +130,13 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
 - [[charaktererschaffung]] — wie Attribute/Fertigkeiten bei der Erstellung verteilt werden
 - [[rassen]] — Rassenmodifikatoren auf Attribute
 - [[erfahrung-und-steigern]] — spätere Steigerung
+
+## Spezialisierungs-Slots entfernen (24.10.2026)
+
+Ein Slot entsteht automatisch bei Fertigkeit/NeuroWeaving 4 und 6, bei
+Sphären 2/4/6, oder für 4 EP. Punkte wieder abziehen nimmt ihn nicht weg —
+der Charakter darf sonst weiter eine Spezialisierung wählen. Die SL löscht
+ihn im Menü Zusatzfertigkeiten, Tab „Vergebene Slots“, oder im Klick-Fenster
+der Fertigkeit. Leere automatische Slots unter der Schwelle gehen auch
+gesammelt. Gekaufte erstatten die 4 EP. Ein neuer automatischer Slot kommt
+erst, wenn die Schwelle erneut überschritten wird.

@@ -216,6 +216,10 @@ NUR_SPIELLEITUNG_LESBAR = {
     # sieht ein Spieler unter .../achievements/meine.
     "/api/campaigns/{campaign_id}/achievements/vorschlaege",
     "/api/campaigns/{campaign_id}/achievements/verleihungen",
+    # Vergebene Spezialisierungs-Slots der ganzen Kampagne. Wer noch einen
+    # Anspruch hat, den die Punkte nicht mehr hergeben, ist eine
+    # Korrektur-Liste der Spielleitung — kein Spielerwissen.
+    "/api/campaigns/{campaign_id}/spezialisierungen",
 }
 
 

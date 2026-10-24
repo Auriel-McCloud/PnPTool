@@ -8,12 +8,14 @@ und einen zusätzlichen Slot für 4 EP kaufen.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.auth.dependencies import Viewer, get_viewer, require_campaign_zugang
+from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.ereignisprotokoll import hooks
 from app.spezialisierungen import repository
 from app.spezialisierungen.schemas import (
+    SpezialisierungAufraeumenResponse,
     SpezialisierungBenennenInput,
+    SpezialisierungKampagneResponse,
     SpezialisierungKaufenInput,
     SpezialisierungResponse,
 )
@@ -133,3 +135,87 @@ async def kaufen(
         sl_notiz="Zusätzlicher Spezialisierungs-Slot gekauft",
     )
     return neu
+
+
+@router.delete(
+    "/{spezialisierung_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def entfernen(campaign_id: str, person_id: str, spezialisierung_id: str):
+    """Slot löschen — nur die SL. Senken des Ratings löscht nie von selbst
+    (repository.automatische_slot_anzahl); das hier ist der ausdrückliche
+    Weg, einen versehentlich vergebenen Slot wieder wegzunehmen.
+
+    Ein gekaufter Slot erstattet die 4 EP (Gegenbuchung auf
+    erfahrungAusgegeben). Ein automatischer erstattet nichts — der Anspruch
+    kam von der Schwelle, nicht von EP.
+    """
+    eintrag = await repository.hole(campaign_id, person_id, spezialisierung_id)
+    if eintrag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Spezialisierung nicht gefunden")
+
+    weg = await repository.loeschen(campaign_id, person_id, spezialisierung_id)
+    if weg is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Spezialisierung nicht gefunden")
+
+    erstattet = 0
+    if weg["quelle"] == "gekauft":
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        if person is not None:
+            ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
+            erstattet = min(KAUF_PREIS, ausgegeben)
+            await update_node(
+                "Person", PERSON_FIELDS, campaign_id, person_id,
+                {"erfahrungAusgegeben": ausgegeben - erstattet},
+            )
+
+    werte = await traits_repository.get_ratings_for_entity(campaign_id, person_id)
+    trait = next((w for w in werte if w["traitDefId"] == weg["traitDefId"]), None)
+    await hooks.charakterentwicklung(
+        campaign_id, person_id=person_id, art="SPEZIALISIERUNG_ENTFERNT",
+        trait_def_id=weg["traitDefId"], trait_name=trait["name"] if trait else None,
+        alt=weg["text"] or "(unbenannt)", neu="",
+        kosten_oder_menge=-erstattet,
+        sl_notiz="Gekaufter Spezialisierungs-Slot entfernt, 4 EP erstattet"
+        if erstattet
+        else "Spezialisierungs-Slot entfernt",
+    )
+
+
+kampagne_router = APIRouter(
+    prefix="/api/campaigns/{campaign_id}/spezialisierungen",
+    tags=["spezialisierungen"],
+    dependencies=[Depends(require_campaign_gm)],
+)
+
+
+@kampagne_router.get("", response_model=list[SpezialisierungKampagneResponse])
+async def kampagne_liste(campaign_id: str):
+    """Alle Slots der Kampagne — zum Aufräumen, nicht für Spieler."""
+    return await repository.fuer_kampagne(campaign_id)
+
+
+@kampagne_router.post("/leere-unter-schwelle", response_model=SpezialisierungAufraeumenResponse)
+async def leere_unter_schwelle_entfernen(campaign_id: str):
+    """Räumt nur leere automatische Slots auf, deren Fertigkeit die erste
+    Schwelle nicht mehr erreicht. Benannte und gekaufte bleiben — die
+    nimmt die SL einzeln weg, falls sie das will."""
+    alle = await repository.fuer_kampagne(campaign_id)
+    ziel = [
+        e for e in alle
+        if e["unterSchwelle"] and not e["text"] and e["quelle"] == "automatisch"
+    ]
+    entfernt = 0
+    for eintrag in ziel:
+        weg = await repository.loeschen(campaign_id, eintrag["personId"], eintrag["id"])
+        if weg is None:
+            continue
+        entfernt += 1
+        await hooks.charakterentwicklung(
+            campaign_id, person_id=eintrag["personId"], art="SPEZIALISIERUNG_ENTFERNT",
+            trait_def_id=weg["traitDefId"], trait_name=eintrag["traitName"],
+            alt="(unbenannt)", neu="", kosten_oder_menge=0,
+            sl_notiz="Leerer Spezialisierungs-Slot unter der Schwelle entfernt",
+        )
+    return {"entfernt": entfernt}

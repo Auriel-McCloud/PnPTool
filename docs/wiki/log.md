@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-24] update | SL kann Spezialisierungs-Slots entfernen
+
+Punkte abziehen lässt einen schon vergebenen Slot liegen. Die SL löscht ihn
+im Zusatzfertigkeiten-Menü (Tab Vergebene Slots) oder im Klick-Fenster der
+Fertigkeit. Siehe [[concepts/attribute-und-fertigkeiten]].
+
 ## [2026-10-24] update | Tutorial-Shop sperrt Gratis-Erstkauf nicht mehr
 
 Der erste passende Kauf (konkreter Typ oder „alle Typen“) wird im
