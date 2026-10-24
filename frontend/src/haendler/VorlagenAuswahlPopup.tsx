@@ -123,6 +123,7 @@ export function VorlagenAuswahlPopup({
                 {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(g.typ)}</span>}
               </span>
               <span className="shop-ware-name">{g.name}</span>
+              {!g.istVorlage && <span className="shop-ware-typ">Einzelstück</span>}
               <span className="shop-ware-typ">
                 {symbolFuerTyp(g.typ)} {g.typ}
               </span>

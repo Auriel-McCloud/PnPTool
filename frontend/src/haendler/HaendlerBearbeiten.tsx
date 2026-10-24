@@ -6,7 +6,6 @@ import { entitiesApi } from "../entities/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
 import { VorlagenAuswahlPopup } from "./VorlagenAuswahlPopup";
-import { UnikatAnlegenPopup } from "./UnikatAnlegenPopup";
 import "./shop.css";
 
 /**
@@ -35,11 +34,8 @@ export function HaendlerBearbeiten({
   const [kategorie, setKategorie] = useState<string | null>(null);
   const [wunsch, setWunsch] = useState("");
   const [mitBild, setMitBild] = useState(false);
-  const [nurEinmal, setNurEinmal] = useState(false);
 
   const [auswahlOffen, setAuswahlOffen] = useState(false);
-  const [unikatOffen, setUnikatOffen] = useState(false);
-  const [weltOffen, setWeltOffen] = useState(false);
   const [rabattBearbeitet, setRabattBearbeitet] = useState<string | null>(null);
   const [rabattProzent, setRabattProzent] = useState("");
   const [rabattHinweis, setRabattHinweis] = useState("");
@@ -68,20 +64,9 @@ export function HaendlerBearbeiten({
     const bereitsDrin = new Set(sortiment.map((s) => s.gegenstandId));
     return gegenstaende.filter(
       (g) =>
-        g.istVorlage &&
-        !g.einzigartig &&
-        !g.storyRelevant &&
-        !bereitsDrin.has(g.id) &&
-        (kategorie === null || g.typ === kategorie),
-    );
-  }, [gegenstaende, sortiment, kategorie]);
-  const wählbareUnikate = useMemo(() => {
-    const bereitsDrin = new Set(sortiment.map((s) => s.gegenstandId));
-    return gegenstaende.filter(
-      (g) =>
         !bereitsDrin.has(g.id) &&
         g.ownerPersonType !== "PC" &&
-        (!g.istVorlage || g.einzigartig || g.storyRelevant) &&
+        (g.istVorlage || !g.ownerId) &&
         (kategorie === null || g.typ === kategorie),
     );
   }, [gegenstaende, sortiment, kategorie]);
@@ -103,21 +88,6 @@ export function HaendlerBearbeiten({
   async function artenSetzen(neu: string[]) {
     setHinweis(null);
     await ausfuehren(() => entitiesApi.updateOrt(campaignId, haendlerId, { spezialisierung: neu }));
-  }
-
-  async function unikateHinzufuegen(gegenstandIds: string[], preis?: number) {
-    for (const id of gegenstandIds) {
-      await haendlerApi.unikatEinhaengen(campaignId, haendlerId, id, preis);
-    }
-    await laden();
-    onGeaendert();
-  }
-
-  async function unikatVonHand(name: string, preis: number, description: string) {
-    if (!kategorie) return;
-    await haendlerApi.unikatAnlegen(campaignId, haendlerId, name, kategorie, preis, description);
-    await laden();
-    onGeaendert();
   }
 
   async function vorlagenHinzufuegen(gegenstandIds: string[], preis?: number) {
@@ -150,14 +120,7 @@ export function HaendlerBearbeiten({
     setLäuft(true);
     setFehler(null);
     try {
-      const antwort = await haendlerApi.wareAnlegen(
-        campaignId,
-        haendlerId,
-        wunsch.trim(),
-        kategorie,
-        mitBild,
-        nurEinmal,
-      );
+      const antwort = await haendlerApi.wareAnlegen(campaignId, haendlerId, wunsch.trim(), kategorie, mitBild);
       setWunsch("");
       setHinweis(
         antwort.bildHinweis
@@ -261,14 +224,8 @@ export function HaendlerBearbeiten({
                 <input type="checkbox" checked={mitBild} onChange={(e) => setMitBild(e.target.checked)} disabled={läuft} />
                 Bild dazu
               </label>
-              <button type="button" data-aktiv={nurEinmal} onClick={() => setNurEinmal((v) => !v)} disabled={läuft}>
-                {nurEinmal ? "Nur einmal" : "Vorlage (unendlich)"}
-              </button>
               <button type="button" onClick={mitKiAnlegen} disabled={läuft || !wunsch.trim()}>
                 {läuft ? "Legt an…" : "Mit KI anlegen"}
-              </button>
-              <button type="button" onClick={() => setUnikatOffen(true)} disabled={läuft}>
-                Von Hand, nur einmal
               </button>
             </div>
           )}
@@ -330,10 +287,7 @@ export function HaendlerBearbeiten({
 
           <div className="shop-editor-hinzufuegen">
             <button type="button" onClick={() => setAuswahlOffen(true)} disabled={läuft} style={{ flex: 1 }}>
-              Vorlage(n) wählen — unendlich
-            </button>
-            <button type="button" onClick={() => setWeltOffen(true)} disabled={läuft} style={{ flex: 1 }}>
-              Einzelstück aus der Welt
+              Ware wählen
             </button>
           </div>
 
@@ -343,23 +297,6 @@ export function HaendlerBearbeiten({
             onHinzufuegen={vorlagenHinzufuegen}
             onSchliessen={() => setAuswahlOffen(false)}
           />
-          <VorlagenAuswahlPopup
-            offen={weltOffen}
-            vorlagen={wählbareUnikate}
-            titel="Einzelstück wählen"
-            leertext="Kein passendes Einzelstück. Spielerbesitz und kopierbare Vorlagen bleiben draußen."
-            kennung="unikat-auswahl"
-            onHinzufuegen={unikateHinzufuegen}
-            onSchliessen={() => setWeltOffen(false)}
-          />
-          {kategorie && (
-            <UnikatAnlegenPopup
-              offen={unikatOffen}
-              typ={kategorie}
-              onAnlegen={unikatVonHand}
-              onSchliessen={() => setUnikatOffen(false)}
-            />
-          )}
         </section>
       </div>
     </Fenster>

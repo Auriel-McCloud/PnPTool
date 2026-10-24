@@ -5,7 +5,7 @@ import uuid
 
 from app.db.neo4j_driver import close_driver, get_driver
 from app.haendler.uebergabe import UnikatEinhangFehler, stueck_uebergeben, unikat_anlegen, unikat_einhaengen
-from app.items.repository import get_gegenstand, get_owner_id
+from app.items.repository import get_gegenstand, get_owner_id, setze_vorlagen_art
 
 
 def _run(coro):
@@ -229,6 +229,39 @@ def test_kopierbare_vorlage_bleibt_vorlage_und_wird_nicht_als_unikat_eingehaengt
                 assert fehler.grund == "vorlage"
             danach = await get_gegenstand(cid, stueck)
             assert danach is not None and danach["istVorlage"] is True
+        finally:
+            await _weg(cid)
+
+    _run(szenario())
+
+
+def test_keine_vorlage_am_stueck_verkauft_den_knoten_selbst():
+    async def szenario():
+        cid = await _kampagne()
+        shop = str(uuid.uuid4())
+        kaeufer = str(uuid.uuid4())
+        stueck = str(uuid.uuid4())
+        driver = get_driver()
+        try:
+            async with driver.session() as session:
+                await session.run(
+                    """
+                    CREATE (o:Ort {id: $shop, campaignId: $cid, name: 'Tresen', istShop: true, sichtbarkeit: 'ALLE'})
+                    CREATE (:Person {id: $kaeufer, campaignId: $cid, name: 'Käufer', personType: 'PC', kapital: 500, sichtbarkeit: 'ALLE'})
+                    CREATE (g:Gegenstand {
+                        id: $stueck, campaignId: $cid, name: 'Reliquie',
+                        typ: 'Sonstiges', preis: 40, istVorlage: true, einzigartig: false
+                    })
+                    CREATE (o)-[:VERKAUFT {preis: 40}]->(g)
+                    """,
+                    cid=cid, shop=shop, kaeufer=kaeufer, stueck=stueck,
+                )
+            umgestellt = await setze_vorlagen_art(cid, stueck, True)
+            assert umgestellt is not None
+            assert umgestellt["istVorlage"] is False
+            gekauft = await stueck_uebergeben(cid, shop, stueck, kaeufer)
+            assert gekauft is not None and gekauft["id"] == stueck
+            assert await get_owner_id(cid, stueck) == kaeufer
         finally:
             await _weg(cid)
 

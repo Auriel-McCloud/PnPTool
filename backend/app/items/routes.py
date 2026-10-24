@@ -245,6 +245,29 @@ async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(..
     return item
 
 
+class VorlagenArtRequest(BaseModel):
+    keineVorlage: bool
+
+
+@campaign_router.post("/{item_id}/vorlagen-art", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
+async def vorlagen_art(campaign_id: str, item_id: str, body: VorlagenArtRequest):
+    """Einzigartige Kopie (Vorlage) oder das Stück selbst, keine Vorlage.
+
+    Hat das Stück einen Besitzer, kann es nicht wieder zur kopierbaren
+    Vorlage werden — dafür ist „Zur Vorlage machen“.
+    """
+    try:
+        item = await repository.setze_vorlagen_art(campaign_id, item_id, body.keineVorlage)
+    except repository.VorlageHatBesitzer as fehler:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Hat einen Besitzer — erst zur Vorlage machen, dann kopierbar",
+        ) from fehler
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
+
+
 @campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     source = await repository.get_gegenstand(campaign_id, item_id)

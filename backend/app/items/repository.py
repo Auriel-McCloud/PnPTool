@@ -561,6 +561,27 @@ async def remove_owner(campaign_id: str, item_id: str) -> dict | None:
         return _decode(dict(record)) if record else None
 
 
+class VorlageHatBesitzer(Exception):
+    """Kopie-Modus geht nicht, solange jemand das Stück besitzt."""
+
+
+async def setze_vorlagen_art(campaign_id: str, item_id: str, keine_vorlage: bool) -> dict | None:
+    """Schaltet, ob der Laden eine Kopie erzeugt oder das Stück selbst hergibt.
+
+    keine_vorlage: istVorlage=false, das Stück ist einzigartig. Ein Besitzer
+    bleibt, wo er ist. Sonst wieder Vorlage — aber nur ohne Besitzer, sonst
+    VorlageHatBesitzer.
+    """
+    if not keine_vorlage and await get_owner_id(campaign_id, item_id):
+        raise VorlageHatBesitzer()
+    felder = (
+        {"istVorlage": False, "einzigartig": True, "automatischImShop": False}
+        if keine_vorlage
+        else {"istVorlage": True}
+    )
+    return await update_gegenstand(campaign_id, item_id, felder)
+
+
 async def wegwerfen(campaign_id: str, item_id: str, von: str) -> dict | None:
     """Legt einen Gegenstand in den Mülleimer der Spielleitung.
 

@@ -259,6 +259,8 @@ export function GegenstandRow({
   const [eigenschaften, setEigenschaften] = useState<Eigenschaft[]>([]);
   const [storyRelevant, setStoryRelevant] = useState(item.storyRelevant);
   const [einzigartig, setEinzigartig] = useState(item.einzigartig);
+  const [istVorlageLokal, setIstVorlageLokal] = useState(item.istVorlage);
+  const [artFehler, setArtFehler] = useState<string | null>(null);
   const [hatMenge, setHatMenge] = useState(item.hatMenge);
   const [menge, setMenge] = useState(item.menge);
   const [automatischImShop, setAutomatischImShop] = useState(item.automatischImShop);
@@ -406,6 +408,8 @@ export function GegenstandRow({
     setEigenschaften(recordToPairs(src.eigenschaften));
     setStoryRelevant(src.storyRelevant);
     setEinzigartig(src.einzigartig);
+    setIstVorlageLokal(src.istVorlage);
+    setArtFehler(null);
     setHatMenge(src.hatMenge);
     setMenge(src.menge);
     setAutomatischImShop(src.automatischImShop);
@@ -629,6 +633,20 @@ export function GegenstandRow({
     await itemsApi.update(campaignId, item.id, { typ: neuerTyp });
     setTyp(neuerTyp);
     onChanged();
+  }
+
+  async function vorlagenArtSetzen(keineVorlage: boolean) {
+    if (keineVorlage === !istVorlageLokal) return;
+    setArtFehler(null);
+    try {
+      const aktualisiert = await itemsApi.vorlagenArt(campaignId, item.id, keineVorlage);
+      setIstVorlageLokal(aktualisiert.istVorlage);
+      setEinzigartig(aktualisiert.einzigartig);
+      setAutomatischImShop(aktualisiert.automatischImShop);
+      onChanged();
+    } catch (e) {
+      setArtFehler(e instanceof Error ? e.message : "Umschalten fehlgeschlagen");
+    }
   }
 
   async function zuweisen(alsKopie: boolean) {
@@ -1483,9 +1501,30 @@ export function GegenstandRow({
                       Story relevant (im Beziehungsgraph + Spieler-Lexikon sobald entdeckt)
                     </label>
                     <label style={{ fontSize: "0.9em" }}>
-                      <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
-                      Einzigartig
+                      <input
+                        type="checkbox"
+                        checked={istVorlageLokal}
+                        disabled={!!personId}
+                        onChange={() => void vorlagenArtSetzen(false)}
+                      />{" "}
+                      Einzigartige Kopie wird erstellt
                     </label>
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input
+                        type="checkbox"
+                        checked={!istVorlageLokal}
+                        onChange={() => void vorlagenArtSetzen(true)}
+                      />{" "}
+                      Einzigartig - keine Vorlage
+                    </label>
+                    {personId && (
+                      <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: 0 }}>
+                        Hat einen Besitzer — Kopie erst, wenn es wieder eine Vorlage ohne Besitzer ist.
+                      </p>
+                    )}
+                    {artFehler && (
+                      <p style={{ fontSize: "0.8em", color: "var(--neon-rot, #e55)", margin: 0 }}>{artFehler}</p>
+                    )}
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>
                         <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge
