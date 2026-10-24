@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type Gegenstand } from "../items/api";
 import { ShopKategorien } from "./ShopKategorien";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { useNachladen } from "../shell/nachladen";
 import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
 import { ersterKaufTrifft } from "../rassen/gratisKauf";
@@ -61,34 +62,36 @@ export function TutorialShopPopup({
   const [gekauft, setGekauft] = useState<Gegenstand[]>([]);
   const [rueckgabe, setRueckgabe] = useState<Gegenstand | null>(null);
 
-  useEffect(() => {
-    if (!offen) return;
-    let aktiv = true;
-    setFehler(null);
-    setSortiment([]);
-    haendlerApi
-      .tutorial(campaignId)
-      .then((h) => {
-        if (!aktiv) return;
-        setHaendler(h);
-        if (!h) return;
-        return haendlerApi.sortiment(campaignId, h.id).then((waren) => {
-          if (aktiv) setSortiment(waren);
-        });
-      })
-      .catch((e) => {
-        if (!aktiv) return;
-        setFehler(e instanceof Error ? e.message : "Sortiment nicht ladbar");
-      });
-    return () => {
-      aktiv = false;
-    };
-  }, [offen, campaignId]);
+  // Still nachladen wie der normale Shop (ShopSeite.tsx) — alle 5s, solange
+  // offen (24.10.2026, Marks Wunsch: die SL legt waehrend des Freebees-
+  // Schritts spontan etwas Neues an, kein eigener Knopf noetig).
+  async function holen() {
+    const h = await haendlerApi.tutorial(campaignId);
+    if (!h) return { h: null as HaendlerEintrag | null, s: [] as SortimentEintrag[], g: [] as Gegenstand[] };
+    const [s, g] = await Promise.all([
+      haendlerApi.sortiment(campaignId, h.id),
+      itemsApi.list(campaignId, personId),
+    ]);
+    return { h, s, g };
+  }
 
-  useEffect(() => {
-    if (!offen) return;
-    itemsApi.list(campaignId, personId).then(setGekauft).catch(() => setGekauft([]));
-  }, [offen, campaignId, personId]);
+  function anwenden(d: { h: HaendlerEintrag | null; s: SortimentEintrag[]; g: Gegenstand[] }) {
+    setHaendler(d.h);
+    setSortiment(d.s);
+    setGekauft(d.g);
+  }
+
+  const { ungueltig } = useNachladen(holen, anwenden, {
+    aktiv: offen,
+    quelle: `${campaignId}:${personId}`,
+  });
+
+  async function laden() {
+    ungueltig();
+    const d = await holen();
+    ungueltig();
+    anwenden(d);
+  }
 
   const sichtbar = sortiment.filter((w) => kategorie === null || w.typ === kategorie);
   const gewaehlt = sichtbar.find((w) => w.gegenstandId === gewaehltId) ?? sichtbar[0] ?? null;
@@ -98,15 +101,13 @@ export function TutorialShopPopup({
     setFehler(null);
     setKommentar(null);
     setKaeuft(true);
+    ungueltig();
     try {
       const antwort = await haendlerApi.kaufen(campaignId, haendler.id, ware.gegenstandId, personId);
       onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
       if (!featureGenutzt && ersterKaufTrifft(gratisErsterKaufTyp, ware.typ)) onFeatureVerbraucht();
-      itemsApi.list(campaignId, personId).then(setGekauft).catch(() => {});
-      if (!ware.istVorlage) {
-        setSortiment((alt) => alt.filter((w) => w.gegenstandId !== ware.gegenstandId));
-        setGewaehltId(null);
-      }
+      if (!ware.istVorlage) setGewaehltId(null);
+      await laden();
       setKommentarLaedt(true);
       try {
         const { kommentar: spruch } = await haendlerApi.tutorialKommentar(
@@ -320,19 +321,21 @@ export function TutorialShopPopup({
         text={`„${rueckgabe.name}“ zurück ins Regal, ${(rueckgabe.preis ?? 0).toLocaleString("de-AT")}¥ wieder aufs Guthaben?`}
         jaText="Zurückgeben"
         onNein={() => setRueckgabe(null)}
-        onJa={() => {
+        onJa={async () => {
           const stueck = rueckgabe;
           setRueckgabe(null);
           setKaeuft(true);
           setFehler(null);
-          haendlerApi
-            .tutorialZurueck(campaignId, haendler.id, stueck.id, personId)
-            .then((antwort) => {
-              onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
-              return itemsApi.list(campaignId, personId).then(setGekauft);
-            })
-            .catch((e) => setFehler(e instanceof Error ? e.message : "Zurückgeben fehlgeschlagen"))
-            .finally(() => setKaeuft(false));
+          ungueltig();
+          try {
+            const antwort = await haendlerApi.tutorialZurueck(campaignId, haendler.id, stueck.id, personId);
+            onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
+            await laden();
+          } catch (e) {
+            setFehler(e instanceof Error ? e.message : "Zurückgeben fehlgeschlagen");
+          } finally {
+            setKaeuft(false);
+          }
         }}
       />
     )}
