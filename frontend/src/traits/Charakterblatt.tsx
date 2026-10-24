@@ -19,6 +19,9 @@ import { traitsApi, type TraitDef } from "./api";
 import { magieBegriff } from "./magieBegriffe";
 import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
+import type { JSONContent } from "@tiptap/react";
+import { RichTextEditor } from "../richtext/RichTextEditor";
+import { parseRichText, serializeRichText } from "../richtext/content";
 import "./charakterblatt.css";
 
 /** Farbe je Wertegruppe — dieselbe Sprache wie die Bereichsfarben der Hülle. */
@@ -696,7 +699,7 @@ export function Charakterblatt({
         offen={steckbriefOffen}
         campaignId={campaignId}
         personId={personId}
-        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel, alias: u.alias }}
+        werte={{ konzept: u.konzept, ambition: u.ambition, verlangen: u.verlangen, ziel: u.ziel, alias: u.alias, description: u.description }}
         onSchliessen={() => setSteckbriefOffen(false)}
         onGespeichert={(neu) => {
           uebernehmen(neu);
@@ -936,7 +939,7 @@ function SteckbriefFenster({
   offen: boolean;
   campaignId: string;
   personId: string;
-  werte: { konzept: string; ambition: string; verlangen: string; ziel: string; alias: string };
+  werte: { konzept: string; ambition: string; verlangen: string; ziel: string; alias: string; description: string };
   onSchliessen: () => void;
   onGespeichert: (neu: BogenUebersicht) => void;
 }) {
@@ -945,6 +948,7 @@ function SteckbriefFenster({
   const [verlangen, setVerlangen] = useState(werte.verlangen);
   const [ziel, setZiel] = useState(werte.ziel);
   const [alias, setAlias] = useState(werte.alias);
+  const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(() => parseRichText(werte.description));
   const [sendet, setSendet] = useState(false);
 
   // Frisch aus dem aktuellen Blatt befüllen bei jedem Öffnen — sonst stünde
@@ -956,6 +960,7 @@ function SteckbriefFenster({
       setVerlangen(werte.verlangen);
       setZiel(werte.ziel);
       setAlias(werte.alias);
+      setBeschreibungDoc(parseRichText(werte.description));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offen]);
@@ -963,7 +968,16 @@ function SteckbriefFenster({
   async function speichern() {
     setSendet(true);
     try {
-      onGespeichert(await bogenApi.steckbrief(campaignId, personId, { konzept, ambition, verlangen, ziel, alias }));
+      onGespeichert(
+        await bogenApi.steckbrief(campaignId, personId, {
+          konzept,
+          ambition,
+          verlangen,
+          ziel,
+          alias,
+          description: serializeRichText(beschreibungDoc),
+        }),
+      );
     } finally {
       setSendet(false);
     }
@@ -1007,6 +1021,10 @@ function SteckbriefFenster({
         <label className="er-feld">
           <span>Ziel</span>
           <input value={ziel} onChange={(e) => setZiel(e.target.value)} />
+        </label>
+        <label className="er-feld">
+          <span>Beschreibung</span>
+          <RichTextEditor content={beschreibungDoc} onChange={setBeschreibungDoc} versteckenErlaubt={false} />
         </label>
         <button type="button" className="er-weiter" onClick={speichern} disabled={sendet}>
           {sendet ? "Wird gespeichert…" : "Speichern"}

@@ -39,6 +39,11 @@ export interface BogenUebersicht {
   erfahrungVerfuegbar: number;
   /** Kopfzeile des Papierblatts. Fremde Charaktere liefern hier leer. */
   konzept: string;
+  /** Freitext-Beschreibung (entities/api.ts::Person.description) — hier
+   * identisch ausgeliefert, damit das Blatt sie im Steckbrief-Popup zeigen
+   * und der Spieler sie dort bearbeiten kann. Bewusst ohne SL-geheim-Marken,
+   * die bleiben Sache der Notizen. */
+  description: string;
   alter: string;
   ambition: string;
   verlangen: string;
@@ -102,6 +107,9 @@ export interface SteckbriefUpdate {
   /** Während der Erstellung, damit der Tutorial-Shop die Rasse kennt.
    * Nach dem Anlegen ignoriert der Server das Feld. */
   rasse?: string;
+  /** Charakterbeschreibung — Spieler darf das nur am eigenen Charakter,
+   * siehe backend/app/traits/routes.py::SteckbriefUpdate. */
+  description?: string;
 }
 
 /**

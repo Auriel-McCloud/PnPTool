@@ -184,6 +184,12 @@ def bogen_uebersicht(
         # Kopfzeile des Papierblatts (Zeilen 3-7). Reiner Text, den das
         # Blatt anzeigt und die Erstellung füllt.
         "konzept": person.get("konzept") or "",
+        # Charakterbeschreibung (24.10.2026): dasselbe Feld, das die SL in der
+        # Welt-Übersicht pflegt (entities/Person.description) — ab jetzt auch
+        # über den Steckbrief des Spielers lesbar und editierbar. Bewusst OHNE
+        # SL-geheim-Markierungen (Mark: "alles was geheim wäre, wandert in die
+        # Notizen") — die bleiben unverändert GM-only und laufen hier nie durch.
+        "description": person.get("description") or "",
         "alter": person.get("alter") or "",
         "ambition": person.get("ambition") or "",
         "verlangen": person.get("verlangen") or "",

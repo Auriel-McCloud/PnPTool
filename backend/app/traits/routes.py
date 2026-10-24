@@ -283,6 +283,12 @@ class SteckbriefUpdate(BaseModel):
     # (die steht bis zum finalen Submit nur im Browser). Nach dem Anlegen
     # ignoriert die Route das Feld — Rasse ändert man nicht über den Steckbrief.
     rasse: str | None = None
+    # Charakterbeschreibung (24.10.2026, Mark: Spieler soll lesen+editieren
+    # können, was die SL reingeschrieben hat). Dasselbe Feld wie
+    # entities/Person.description — hier kriegt auch der Spieler für den
+    # eigenen Charakter Schreibzugriff darauf (derselbe Owner-oder-GM-Check
+    # wie beim Rest dieser Route, kein eigener Endpunkt nötig).
+    description: str | None = None
 
 
 @router.patch("/personen/{person_id}/steckbrief")
@@ -292,7 +298,7 @@ async def set_steckbrief(
     body: SteckbriefUpdate,
     viewer: Viewer = Depends(get_viewer),
 ) -> dict:
-    """Konzept, Ambition, Verlangen, Ziel, Alias — und als Entwurf Name/Alter.
+    """Konzept, Ambition, Verlangen, Ziel, Alias, Beschreibung — und als Entwurf Name/Alter.
 
     Dieselbe Erlaubnis wie bei `zustand`: Spieler nur am eigenen Charakter
     (404 bei fremden Personen), die Spielleitung überall. Anders als bei

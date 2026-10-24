@@ -100,6 +100,27 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Charakterbeschreibung im Steckbrief sichtbar + editierbar** (24.10.2026,
+  Marks Wunsch: er pflegt die Beschreibung der PCs schon länger als SL, der
+  Spieler sollte sie aber lesen und selbst weiterschreiben können). Kein
+  neuer Menüpunkt/Button — das bestehende „✎ Steckbrief"-Popup im
+  Charakterblatt (Konzept/Ambition/Verlangen/Ziel/Alias) hat jetzt zusätzlich
+  die Beschreibung als Rich-Text-Feld, vorbefüllt mit dem, was die SL dort
+  schon geschrieben hat. Backend: `description` ist jetzt Teil von
+  `traits/routes.py::SteckbriefUpdate` und `bogen.py::bogen_uebersicht` —
+  derselbe Owner-oder-GM-Check wie beim Rest des Steckbriefs (404 bei fremden
+  Personen), kein eigener Endpunkt. Dasselbe Feld, das die SL in der
+  Welt-Übersicht (`entities/Person.description`) pflegt — eine Quelle, zwei
+  Editierstellen. Der 🔒-„SL-geheim"-Knopf ist in diesem einen Editor bewusst
+  komplett ausgeblendet (`versteckenErlaubt={false}`), nicht nur für Spieler:
+  Mark hat entschieden, dass alles, was vor dem Spieler geheim bleiben soll,
+  stattdessen in die **Notizen** gehört (unverändert GM-only, komplett
+  separates Feld) — die Beschreibung ist ab jetzt grundsätzlich voll sichtbar.
+  **Verifiziert:** `tsc --noEmit` sauber, Backend-Modul importiert fehlerfrei.
+  Spieltisch-Test steht aus: als Spieler „✎ Steckbrief" öffnen, den
+  bestehenden SL-Text sehen, ändern, speichern, und gegenprüfen, dass die SL
+  dieselbe Änderung in der Welt-Übersicht sieht.
+
 - **Kampagnen-EP einbuchen & NPC-Catch-up** (24.10.2026, Marks Wunsch: der
   globale `kampagnenEP`-Zähler wirkt automatisch auf JEDE Person inkl. NPCs
   (`bogen.py::bogen_uebersicht`), wuchs aber unbegrenzt). Zwei neue,
