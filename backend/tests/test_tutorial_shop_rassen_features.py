@@ -268,3 +268,44 @@ def test_regelwerk_reicht_gratis_zusatzfertigkeit_an_die_oberflaeche_durch():
             await _aufraeumen(cid)
 
     _run(lauf())
+
+
+def test_regelwerk_reicht_fertigkeitsbonus_und_anzeigenamen():
+    """Der Steckbrief braucht den Fertigkeitsbonus und aufgelöste Namen.
+
+    `gratisFertigkeitName` lag schon in `_rassen_der_kampagne`, fiel in
+    `regelwerk()` aber unter den Tisch. Die Namen kommen nicht aus dem Graph,
+    sondern aus einer reinen Zuordnung — die Route füllt die Dicts.
+    """
+    from app.traits import erstellung
+
+    regeln = erstellung.regelwerk({
+        "Zorak": {
+            "modifikatoren": {},
+            "freiePunkte": [7, 5, 3],
+            "beschreibung": "Hörner",
+            "gratisFertigkeitName": "Anführen",
+            "gratisFertigkeitBonus": 1,
+            "gratisGegenstandId": "g-1",
+            "gratisZusatzfertigkeitId": "z-1",
+            "bonusFreebees": 2,
+        }
+    })
+    eintrag = next(r for r in regeln["rassen"] if r["name"] == "Zorak")
+    assert eintrag["gratisFertigkeitName"] == "Anführen"
+    assert eintrag["gratisFertigkeitBonus"] == 1
+    assert eintrag["gratisGegenstandName"] == ""
+    assert eintrag["gratisZusatzfertigkeitName"] == ""
+
+    erstellung.rassen_extras_benennen(
+        regeln["rassen"],
+        {"g-1": "Dug'Rah-Haut"},
+        {"z-1": "Mimikry"},
+    )
+    assert eintrag["gratisGegenstandName"] == "Dug'Rah-Haut"
+    assert eintrag["gratisZusatzfertigkeitName"] == "Mimikry"
+
+    leer = {"gratisGegenstandId": "", "gratisZusatzfertigkeitId": ""}
+    erstellung.rassen_extras_benennen([leer], {"g-1": "Dug'Rah-Haut"}, {"z-1": "Mimikry"})
+    assert leer["gratisGegenstandName"] == ""
+    assert leer["gratisZusatzfertigkeitName"] == ""

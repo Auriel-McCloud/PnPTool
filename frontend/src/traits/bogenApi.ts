@@ -174,6 +174,13 @@ export interface Rasse {
    * Erstellungsoberfläche sie nicht automatisch anzeigen/vorbelegen). Leer =
    * kein Feature. */
   gratisZusatzfertigkeitId: string;
+  /** Anzeigename zur ID, vom Server aufgelöst. Leer, wenn keine oder die Vorlage weg ist. */
+  gratisZusatzfertigkeitName: string;
+  /** Bonus auf eine normale Fertigkeit (Name aus dem Trait-Katalog). Leer = keins. */
+  gratisFertigkeitName: string;
+  gratisFertigkeitBonus: number;
+  /** Anzeigename zur gratisGegenstandId. */
+  gratisGegenstandName: string;
   featureHinweis: string;
 }
 
@@ -256,6 +263,16 @@ export interface Steigerungen {
   willenskraft: { aktuell: number; kosten: number };
 }
 
+/** Ergebnis von bogenApi.catchup (24.10.2026) — siehe backend/app/traits/catchup.py::CatchupErgebnis. */
+export interface CatchupErgebnis {
+  referenzName: string;
+  budgetEp: number;
+  budgetGeld: number;
+  erfahrungGesamt: number;
+  gekauft: string[];
+  steigerungen: string[];
+}
+
 export const bogenApi = {
   laden: (cid: string, personId: string) => api.get<Bogen>(`/api/campaigns/${cid}/personen/${personId}/bogen`),
   /** Zustand ändern — Schaden und Verbrauch, keine Werte. */
@@ -310,6 +327,11 @@ export const bogenApi = {
     api.post<Steigerungen>(`/api/campaigns/${cid}/personen/${personId}/steigern`, was),
   erfahrungVergeben: (cid: string, personId: string, punkte: number) =>
     api.post<BogenUebersicht>(`/api/campaigns/${cid}/personen/${personId}/erfahrung`, { punkte }),
+  /** NPC-Catch-up (24.10.2026): NPC auf ein Vielfaches des EP-/Vermögens-
+   * Niveaus eines Referenz-PCs heben, inkl. automatischer Werteverteilung
+   * und Einkauf+Ausrüstung. Siehe backend/app/traits/catchup.py. */
+  catchup: (cid: string, npcId: string, referenzPersonId: string, prozent: number) =>
+    api.post<CatchupErgebnis>(`/api/campaigns/${cid}/personen/${npcId}/catchup`, { referenzPersonId, prozent }),
   /**
    * SL-Aktion "Rasten" (11.10.2026, docs/api/rast.md): EIN Klick = EINE Rast
    * pro ausgewählter Person. Schlagschaden heilt immer vollständig, schwerer

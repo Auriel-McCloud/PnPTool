@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-24] update | Rassenauswahl mit Bild und Steckbrief
+
+Charaktererstellung: Bild auf der Rassenkarte, Steckbrief mit großem Bild,
+Text darunter und den Rassen-Extras. Namen über `/erstellung/regeln`.
+Pytest 1/1 für die Namensauflösung. Nicht im Browser geklickt.
+Siehe [[concepts/rassen]] und [[entities/rassen-baukasten-feature]].
+
 ## [2026-10-23] update | Kampfkarte Ausrüstung und Waffen-Skill
 
 Kampfkarte zählt Ausrüstungsboni in Treffen/Ausweichen/Parieren.

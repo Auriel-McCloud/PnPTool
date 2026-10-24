@@ -740,6 +740,26 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
     }
 
 
+async def _rassen_extras_benennen(campaign_id: str, rassen: list[dict]) -> None:
+    """Löst Gratis-Gegenstand und Gratis-Zusatzfertigkeit zu Namen auf.
+
+    Wenige Rassen, einzelne Lookups reichen. Eine gelöschte Vorlage bleibt
+    leer — der Steckbrief zeigt dann nur, dass es ein Extra gibt.
+    """
+    gegenstand_namen: dict[str, str] = {}
+    zusatz_namen: dict[str, str] = {}
+    for eintrag in rassen:
+        gid = eintrag.get("gratisGegenstandId") or ""
+        if gid and gid not in gegenstand_namen:
+            gegenstand = await items_repository.get_gegenstand(campaign_id, gid)
+            gegenstand_namen[gid] = (gegenstand or {}).get("name") or ""
+        zid = eintrag.get("gratisZusatzfertigkeitId") or ""
+        if zid and zid not in zusatz_namen:
+            zusatz = await zusatzfertigkeiten_repository.hole(campaign_id, zid)
+            zusatz_namen[zid] = (zusatz or {}).get("name") or ""
+    erstellung.rassen_extras_benennen(rassen, gegenstand_namen, zusatz_namen)
+
+
 @router.get("/erstellung/regeln")
 async def get_erstellungsregeln(campaign_id: str) -> dict:
     """Rassen, Pakete, Hintergründe, Freebee-Preise.
@@ -750,7 +770,9 @@ async def get_erstellungsregeln(campaign_id: str) -> dict:
     """
     einstellungen = await get_einstellungen(campaign_id)
     hintergrund_pool = await hintergruende_repository.pool_fuer_erstellung(campaign_id, einstellungen)
-    return erstellung.regelwerk(await _rassen_der_kampagne(campaign_id), einstellungen, hintergrund_pool)
+    regeln = erstellung.regelwerk(await _rassen_der_kampagne(campaign_id), einstellungen, hintergrund_pool)
+    await _rassen_extras_benennen(campaign_id, regeln["rassen"])
+    return regeln
 
 
 class ErstellungKommentarInput(BaseModel):

@@ -1,7 +1,7 @@
 ---
 title: Rassen — Baukasten und Balance
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-10-24
 type: konzept
 tags: [rassen, attribute, versionsgeschichte, widerspruch]
 sources: [../../api/rassen.md, ../../reference/Neotopia_Charaktererschaffung.md, ../../../CLAUDE.md]
@@ -68,13 +68,18 @@ automatisch alle zur Verfügung stehen, sondern nur ausgewählte"):
   nach. Beim Löschen behalten bestehende Charaktere ihren Rassennamen als
   reinen Text.
 
+## Anzeige in der Charaktererstellung (24.10.2026)
+
+Mark hat die frühere Vorgabe umgekehrt: das Bild gehört auf die Auswahlkarte, nicht erst hinter das Fragezeichen. Der Steckbrief (`?`) zeigt das Bild groß, den Text darunter, und die budget-neutralen Extras (Extra-Freebees, Gratis-Gegenstand, Zusatzfertigkeit, Fertigkeitsbonus, erster Gratis-Kauf, Hinweistext). Die Namen löst `/erstellung/regeln` auf.
+
 ## Was der Baukasten nicht kann
 
-**Nur Attribute** (Marks Vorgabe: „dabei geht es vor allem nur um die
-Attribute"). Fertigkeitsboni oder Sonderfähigkeiten gibt es nicht — sie liessen
-sich mit der 15er-Formel auch nicht mehr nachrechnen. **Status: entschieden,
-nicht umgesetzt** falls gewünscht — bräuchte zuerst eine erweiterte
-Balance-Formel.
+**Nur Attribute** (Marks Vorgabe vom 11.09.: „dabei geht es vor allem nur um die
+Attribute"). Fertigkeitsboni oder Sonderfähigkeiten gab es damals nicht — sie
+liessen sich mit der 15er-Formel nicht nachrechnen. **Seit 10.10.2026** gibt es
+budget-neutrale Rassen-Extras als eigene Felder (nicht in der 15er-Bilanz):
+Extra-Freebees, Gratis-Gegenstand, erster Gratis-Kauf, Zusatzfertigkeit,
+Fertigkeitsbonus, Hinweistext. Die 15er-Formel selbst ist unverändert.
 
 ## Siehe auch
 

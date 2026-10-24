@@ -739,9 +739,9 @@ function SchrittRasse({
   rasse: string;
   onWaehlen: (name: string) => void;
 }) {
-  // Beschreibung und Bild einer Rasse erscheinen erst auf Abruf in einem
-  // eigenen Fenster — nicht mehr als Infobox unter den Karten, die je nach
-  // Textmenge unterschiedlich hoch aufklappt und das Layout zerreisst.
+  // Bild sitzt auf der Karte, damit man die Völker vergleichen kann, ohne
+  // jedes einzeln aufzuklappen. Der lange Text und die Extras bleiben im
+  // Steckbrief — das Fragezeichen wählt die Karte nicht mit.
   const [infoRasse, setInfoRasse] = useState<Rasse | null>(null);
 
   return (
@@ -755,6 +755,7 @@ function SchrittRasse({
       <div className="er-karten er-karten-schmal">
         {regeln.rassen.map((r) => {
           const mods = Object.entries(r.modifikatoren);
+          const extras = rassenExtrasKurz(r);
           return (
             <button
               key={r.name}
@@ -762,16 +763,16 @@ function SchrittRasse({
               className={`er-karte${rasse === r.name ? " er-karte-aktiv" : ""}`}
               onClick={() => onWaehlen(r.name)}
             >
+              <span className="er-karte-bild">
+                {r.bildUrl ? <img src={r.bildUrl} alt="" /> : <span aria-hidden="true">◍</span>}
+              </span>
               <span className="er-karte-titel">
                 {r.name}
-                {/* Das Fragezeichen öffnet das Beschreibungsfenster, ohne die
-                    Rasse zu wählen — deshalb eigener Klick, der nicht auf die
-                    Karte durchschlägt. */}
                 <span
                   className="er-karte-info"
                   role="button"
                   tabIndex={0}
-                  title="Beschreibung und Bild ansehen"
+                  title="Steckbrief ansehen"
                   onClick={(e) => {
                     e.stopPropagation();
                     setInfoRasse(r);
@@ -798,6 +799,11 @@ function SchrittRasse({
                     </span>
                   ))
                 )}
+                {extras.map((zeile) => (
+                  <span key={zeile} className="er-marke er-marke-extra">
+                    {zeile}
+                  </span>
+                ))}
               </span>
             </button>
           );
@@ -808,8 +814,9 @@ function SchrittRasse({
         <Fenster
           offen
           titel={infoRasse.name}
-          unterzeile="Rasse"
+          unterzeile="Steckbrief"
           kennung={`rasse-info:${infoRasse.name}`}
+          breit
           onSchliessen={() => setInfoRasse(null)}
         >
           <RassenInfobox rasse={infoRasse} />
@@ -819,19 +826,60 @@ function SchrittRasse({
   );
 }
 
+/** Kurze Marken für die Auswahlkarte — der volle Wortlaut steht im Steckbrief. */
+function rassenExtrasKurz(rasse: Rasse): string[] {
+  const zeilen: string[] = [];
+  if (rasse.bonusFreebees > 0) zeilen.push(`+${rasse.bonusFreebees} Freebees`);
+  if (rasse.gratisGegenstandId) zeilen.push(rasse.gratisGegenstandName ? `Gratis: ${rasse.gratisGegenstandName}` : "Gratis-Gegenstand");
+  if (rasse.gratisErsterKaufTyp) zeilen.push(`1. ${rasse.gratisErsterKaufTyp} gratis`);
+  if (rasse.gratisZusatzfertigkeitId) {
+    zeilen.push(rasse.gratisZusatzfertigkeitName || "Zusatzfertigkeit");
+  }
+  if (rasse.gratisFertigkeitName && rasse.gratisFertigkeitBonus > 0) {
+    zeilen.push(`+${rasse.gratisFertigkeitBonus} ${rasse.gratisFertigkeitName}`);
+  }
+  return zeilen;
+}
+
+/** Volle Zeilen für den Steckbrief, inklusive Hinweistext. */
+function rassenExtras(rasse: Rasse): string[] {
+  const zeilen: string[] = [];
+  if (rasse.bonusFreebees > 0) {
+    zeilen.push(`${rasse.bonusFreebees} Freebees extra bei der Erstellung`);
+  }
+  if (rasse.gratisGegenstandId) {
+    zeilen.push(
+      rasse.gratisGegenstandName
+        ? `Gratis dabei: ${rasse.gratisGegenstandName}`
+        : "Ein Gegenstand ist gratis dabei",
+    );
+  }
+  if (rasse.gratisErsterKaufTyp) {
+    zeilen.push(`Der erste ${rasse.gratisErsterKaufTyp}-Kauf im Shop ist kostenlos`);
+  }
+  if (rasse.gratisZusatzfertigkeitId) {
+    const name = rasse.gratisZusatzfertigkeitName || "eine Zusatzfertigkeit";
+    zeilen.push(`${name} — 1 Punkt, automatisch`);
+  }
+  if (rasse.gratisFertigkeitName && rasse.gratisFertigkeitBonus > 0) {
+    zeilen.push(`+${rasse.gratisFertigkeitBonus} auf ${rasse.gratisFertigkeitName}`);
+  }
+  if (rasse.featureHinweis) zeilen.push(rasse.featureHinweis);
+  return zeilen;
+}
+
 /**
- * Was die gewählte Rasse für diesen Charakter bedeutet.
+ * Steckbrief der Rasse.
  *
- * Steht jetzt in einem eigenen Fenster (über das Fragezeichen an der Karte
- * geöffnet) statt als Infobox unter den Karten. Wiederholt nicht die Marken
- * der Karte, sondern übersetzt sie in Folgen. Vor allem die Obergrenze — dass
- * ein Troll bei Körperkraft dauerhaft auf 8 statt 6 kommt, steht sonst
- * nirgends, obwohl es die Entscheidung fürs ganze Charakterleben prägt.
+ * Bild groß oben, Text darunter. Wiederholt nicht nur die Marken der Karte,
+ * sondern übersetzt sie in Folgen — vor allem die Obergrenze, die sonst
+ * nirgends steht, obwohl sie das ganze Charakterleben prägt.
  */
 function RassenInfobox({ rasse }: { rasse: Rasse }) {
   const mods = Object.entries(rasse.modifikatoren);
   const vorteile = mods.filter(([, w]) => w > 0);
   const nachteile = mods.filter(([, w]) => w < 0);
+  const extras = rassenExtras(rasse);
   return (
     <div className="er-infobox">
       {rasse.bildUrl && <img className="er-infobox-bild" src={rasse.bildUrl} alt={rasse.name} />}
@@ -858,6 +906,14 @@ function RassenInfobox({ rasse }: { rasse: Rasse }) {
             Diese Anlagen gelten ein Leben lang: sie verschieben nicht nur den Start, sondern auch die
             Obergrenze, bis zu der du das Attribut je steigern kannst.
           </p>
+        )}
+        {extras.length > 0 && (
+          <div className="er-infobox-extras">
+            <span className="er-infobox-extras-titel">Dabei</span>
+            {extras.map((zeile) => (
+              <p key={zeile}>{zeile}</p>
+            ))}
+          </div>
         )}
       </div>
     </div>

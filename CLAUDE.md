@@ -779,6 +779,10 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Rassenauswahl: Bild auf der Karte, Steckbrief mit Extras):**
+- **Was:** In der Charaktererstellung zeigt die Rassenkarte das Bild. Das `?` öffnet den Steckbrief: Bild groß, Text darunter, plus die Extras (Freebees, Gratis-Gegenstand, Zusatzfertigkeit, Fertigkeitsbonus, erster Gratis-Kauf, Hinweis). Namen kommen aus `/erstellung/regeln`, nicht als UUID.
+- **Verifiziert:** `pytest tests/test_tutorial_shop_rassen_features.py::test_regelwerk_reicht_fertigkeitsbonus_und_anzeigenamen` 1/1. `tsc -b` meldet nur ungenutzte Symbole in `Probe.tsx` (parallele, uncommittete Änderung, nicht dieser Umbau). **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (23.10.2026 — Kampfkarte: Ausrüstung im Pool, Waffen-Skill):**
 - **Was:** Würfelpools in der Kampfkarte zählen Ausrüstungsboni (z.B. +2
   Schusswaffen vom Augment) mit, wie das Blatt es schon tat. An der Waffe

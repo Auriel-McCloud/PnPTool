@@ -194,6 +194,26 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  width: 100%;
+}
+
+.er-karte-bild {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 148px;
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text-aus);
+  font-size: 32px;
+  overflow: hidden;
+}
+
+.er-karte-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Fragezeichen neben dem Rassennamen: öffnet das Beschreibungsfenster,
@@ -243,6 +263,11 @@
   border: 1px solid var(--linie-hell);
   border-radius: 2px;
   color: var(--text-leise);
+}
+
+.er-marke-extra {
+  color: var(--neon);
+  border-color: var(--neon);
 }
 
 .er-marke-plus {
@@ -604,26 +629,22 @@
   background: var(--neon-schwach);
 }
 
-/* --- Rassen: Fragezeichen öffnet das Beschreibungsfenster --------------- */
+/* --- Rassen-Steckbrief -------------------------------------------------- */
 
-/* Das Rassenbild erscheint erst im Fenster (über das ?), nicht auf der Karte —
-   so bleibt die Übersicht schlank, auch wenn es viele Rassen gibt. */
-
-/* Die Infobox erklärt die gewählte Rasse — jetzt in einem eigenen Fenster,
-   also ohne eigenen Rahmen/Hintergrund: den hat das Fenster schon. */
+/* Bild auf der Karte (Auswahl), großes Bild im Fenster, Text darunter. */
 .er-infobox {
   display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-items: flex-start;
-  padding: 8px;
+  padding: 4px 8px 8px;
 }
 
 .er-infobox-bild {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
+  width: 100%;
+  max-height: min(62vh, 520px);
+  object-fit: contain;
+  background: var(--flaeche-tief);
   border-radius: var(--radius);
-  flex-shrink: 0;
 }
 
 .er-infobox-text {
@@ -655,6 +676,26 @@
 .er-infobox-leise {
   color: var(--text-aus) !important;
   font-style: italic;
+}
+
+.er-infobox-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--linie);
+}
+
+.er-infobox-extras-titel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.er-infobox-extras p {
+  color: var(--text);
 }
 
 .er-leer {

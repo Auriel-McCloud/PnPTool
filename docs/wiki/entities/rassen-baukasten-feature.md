@@ -1,7 +1,7 @@
 ---
 title: Rassen-Baukasten (Feature)
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-10-24
 type: entität
 tags: [rassen-baukasten, frontend, backend]
 sources: [../../api/rassen.md, ../../../CLAUDE.md]
@@ -15,6 +15,14 @@ Regelkonzepts. Eigener SL-Bereich (Kacheln + Editor-Fenster), gebaut
 11.09.2026: Völker bauen, Live-Bilanz gegen die 15er-Regel, Bild-Upload,
 Freigabe je Kampagne. Infobox mit Beschreibung + Bild in der
 Charaktererstellung.
+
+## Anzeige in der Erstellung (24.10.2026)
+
+Die Auswahlkarte zeigt das Bild (Platzhalter ◍, wenn keins hochgeladen ist).
+Das `?` wählt die Rasse nicht, es öffnet den Steckbrief: Bild groß, Text
+darunter, Abschnitt „Dabei“ mit den Extras. `/erstellung/regeln` reicht
+`gratisFertigkeitName`/`gratisFertigkeitBonus` durch und löst
+`gratisGegenstandName` sowie `gratisZusatzfertigkeitName` auf.
 
 ## Endpunkte
 

@@ -339,6 +339,24 @@ def lebensmaxima(
     }
 
 
+def rassen_extras_benennen(
+    rassen: list[dict[str, Any]],
+    gegenstand_namen: dict[str, str],
+    zusatzfertigkeit_namen: dict[str, str],
+) -> None:
+    """Setzt die Anzeigenamen der Rassen-Extras auf die Regelwerk-Liste.
+
+    `regelwerk()` kennt nur IDs. Der Steckbrief in der Charaktererstellung
+    soll „Dug'Rah-Haut“ zeigen, nicht eine UUID. Fehlt die Vorlage, bleibt
+    der Name leer — die Oberfläche fällt dann auf eine allgemeine Zeile zurück.
+    """
+    for eintrag in rassen:
+        gid = eintrag.get("gratisGegenstandId") or ""
+        zid = eintrag.get("gratisZusatzfertigkeitId") or ""
+        eintrag["gratisGegenstandName"] = gegenstand_namen.get(gid, "") if gid else ""
+        eintrag["gratisZusatzfertigkeitName"] = zusatzfertigkeit_namen.get(zid, "") if zid else ""
+
+
 def regelwerk(
     rassen: dict[str, dict[str, Any]] | None = None,
     einstellungen: dict[str, Any] | None = None,
@@ -395,7 +413,14 @@ def regelwerk(
                 # in routes.py::erstelle_charakter, komplett unabhängig davon,
                 # was hier an die Oberfläche durchgereicht wird.
                 "gratisZusatzfertigkeitId": daten.get("gratisZusatzfertigkeitId", ""),
+                "gratisFertigkeitName": daten.get("gratisFertigkeitName", ""),
+                "gratisFertigkeitBonus": int(daten.get("gratisFertigkeitBonus") or 0),
                 "featureHinweis": daten.get("featureHinweis", ""),
+                # Anzeigenamen für den Steckbrief. Leer, bis die Route sie
+                # aus Gegenstand/Zusatzfertigkeit auflöst — die IDs allein
+                # sind für Spieler unlesbar.
+                "gratisGegenstandName": "",
+                "gratisZusatzfertigkeitName": "",
             }
             for name, daten in (rassen or RASSEN).items()
         ],
