@@ -144,6 +144,33 @@ export function Kampfkarte({
             }
           />
         </div>
+        {/* Dieselbe Rüstungsübersicht wie im Charakterblatt (Kästchen +
+            Reduktion, server-gerechnet über bogen.ruestung) — zwischen
+            Gesundheit und Willenskraft, weil Rüstung genau das ist, was
+            zwischen einem Treffer und der Gesundheit liegt (siehe
+            Charakterblatt.tsx). Nicht mehr lokal aus den Gegenständen
+            nachgerechnet, sonst laufen beide Anzeigen auseinander. */}
+        {bogen.ruestung.kaestchenMax > 0 && (
+          <div className="kk-spur">
+            <span className="kk-titel">
+              Rüstung
+              {bogen.ruestung.teile.length > 1 && (
+                <span className="kk-hinweis"> · {bogen.ruestung.teile.length} Teile, zuerst {bogen.ruestung.teile[0].name}</span>
+              )}
+            </span>
+            <Kaestchen
+              max={bogen.ruestung.kaestchenMax}
+              verbraucht={bogen.ruestung.kaestchenMax - bogen.ruestung.kaestchenAktuell}
+              ton="var(--track-ruestung)"
+            />
+            <span className="kk-hinweis">
+              Reduktion {bogen.ruestung.reduktionEffektiv}
+              {bogen.ruestung.reduktionEffektiv < bogen.ruestung.reduktionBasis &&
+                ` / ${bogen.ruestung.reduktionBasis}`}{" "}
+              — wie viel Schaden pro Treffer abgefangen wird
+            </span>
+          </div>
+        )}
         <div className="kk-spur">
           <span className="kk-titel">Willenskraft</span>
           <Kaestchen
@@ -209,31 +236,8 @@ export function Kampfkarte({
             />
           )}
         </div>
-        {/* Dieselbe Rüstungsübersicht wie im Charakterblatt (Kästchen +
-            Reduktion, server-gerechnet über bogen.ruestung) — nicht mehr
-            lokal aus den Gegenständen nachgerechnet, sonst laufen beide
-            Anzeigen irgendwann auseinander. */}
-        {bogen.ruestung.kaestchenMax > 0 && (
-          <div className="kk-spur">
-            <span className="kk-titel">
-              Rüstung
-              {bogen.ruestung.teile.length > 1 && (
-                <span className="kk-hinweis"> · {bogen.ruestung.teile.length} Teile, zuerst {bogen.ruestung.teile[0].name}</span>
-              )}
-            </span>
-            <Kaestchen
-              max={bogen.ruestung.kaestchenMax}
-              verbraucht={bogen.ruestung.kaestchenMax - bogen.ruestung.kaestchenAktuell}
-              ton="var(--track-ruestung)"
-            />
-            <span className="kk-hinweis">
-              Reduktion {bogen.ruestung.reduktionEffektiv}
-              {bogen.ruestung.reduktionEffektiv < bogen.ruestung.reduktionBasis &&
-                ` / ${bogen.ruestung.reduktionBasis}`}{" "}
-              — wie viel Schaden pro Treffer abgefangen wird
-            </span>
-          </div>
-        )}
+        {/* Dieselbe Rüstungsübersicht wie im Charakterblatt steht jetzt oben
+            zwischen Gesundheit und Willenskraft, nicht mehr hier. */}
         {/* Auch ohne Rüstung sinnvoll: dann kommt der Treffer eben ungebremst
             an, und die Rechnung "was geht an die Gesundheit" spart man sich
             trotzdem. */}
