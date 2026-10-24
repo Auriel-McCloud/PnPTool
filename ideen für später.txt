@@ -32,3 +32,5 @@ Gleiche für Skills, + eine Maximale Anzahl an Skills
 "Profil anlegen für Spiel Varianten"
 
 eine Spotify Anbindung damit bei scenen wechsel auch musik bzw. Playlists hinterlegt werden die zur Stimmung passen
+
+24.10.2026, Mark: der Inventar-Tab "Anderswo gesehen" (zeigte pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH) wurde ausgeblendet, weil er einen frisch erstellten Charakter nur verwirrt hat. Idee für später: stattdessen gezielt einsetzen, z.B. man betritt einen Raum und kann mit einem Augment die Gegenstände anwesender NPCs scannen — Ergebnis wäre genau so eine Liste wie "Anderswo gesehen", aber als Ergebnis einer Spieler-Aktion statt als Dauer-Tab.

@@ -237,6 +237,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Stelle, an der das nachgeschlagen wird.
   const gehoertMir = (g: Gegenstand) => (g as GegenstandMitBesitzer).ownerId === ich?.personId;
   const fahrzeuge = meineRoh.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
+  // Ausgeblendet (24.10.2026, Mark): zeigte bisher *jeden* fremden Gegenstand
+  // mit sichtbarkeit ALLE/SPEZIFISCH, unabhängig davon, ob der PC je etwas
+  // damit zu tun hatte — bei einem frisch erstellten Charakter verwirrend,
+  // weil dort plötzlich fremde Sachen auftauchen, die er "nie gesehen" hat.
+  // Konzept für später statt Löschen (siehe „ideen für später.txt" und
+  // CLAUDE.md „Geplante Features"): gezielter NPC-Gegenstands-Scan per
+  // Augment beim Betreten eines Raums statt pauschalem Dauer-Tab.
+  const ANDERSWO_GESEHEN_AKTIV = false;
   const bereiche: Ablagebereich[] = [
     // Die eigenen Bereiche dürfen nur eigene Sachen einsammeln — sonst
     // fischte "Mitgeführt" auch den Rucksackinhalt anderer heraus.
@@ -246,7 +254,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       passt: (g: Gegenstand) =>
         gehoertMir(g) && b.passt(g) && !istVersteckteAusruestung(g as GegenstandMitBesitzer),
     })),
-    ...(fremdeRoh.length > 0
+    ...(ANDERSWO_GESEHEN_AKTIV && fremdeRoh.length > 0
       ? [
           {
             id: "FREMD",
