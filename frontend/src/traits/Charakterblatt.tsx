@@ -360,6 +360,16 @@ export function Charakterblatt({
     const eintraege = gruppen.get(kategorie);
     if (!eintraege?.length) return null;
     const ton = TON[kategorie] ?? "var(--neon)";
+    // Nur Attributspalten sollen auf einen gemeinsamen Nenner gebracht
+    // werden (Mark, 24.10.2026): ein Quill mit Körperkraft 5, Widerstands-
+    // fähigkeit 5 aber durch Erfahrung schon Geschicklichkeit 7 sah vorher
+    // unregelmäßig aus — zwei kurze Reihen neben einer langen. Fertigkeiten
+    // &Co. sind keine zusammengehörige Gruppe in diesem Sinn und bleiben
+    // unangetastet. Dynamisch: folgt immer automatisch dem höchsten `max`
+    // in der Gruppe, auch nach künftigen Steigerungen.
+    const gruppenMax = kategorie.startsWith("Attribut")
+      ? Math.max(...eintraege.map((t) => grenzeVon(t)))
+      : undefined;
     return (
       <section className="cb-gruppe" key={kategorie} style={{ "--cb-ton": ton } as React.CSSProperties}>
         <h3 className="cb-gruppe-titel">
@@ -422,6 +432,7 @@ export function Charakterblatt({
                     <DotPool
                       value={wert}
                       max={grenzeVon(t)}
+                      gruppenMax={gruppenMax}
                       onChange={(neu) => wertSetzen(t.id, Math.max(0, neu), null)}
                     />
                   </div>
@@ -443,8 +454,10 @@ export function Charakterblatt({
                     {/* `grenzeVon` statt `defaultMax`: sonst zeichnet die
                         Reihe stur sechs Punkte, und ein Troll mit
                         Körperkraft 8 sähe aus wie einer mit 6 — die zwei
-                        Punkte, die ihn ausmachen, wären unsichtbar. */}
-                    <DotPool value={wert} max={grenzeVon(t)} onChange={undefined} />
+                        Punkte, die ihn ausmachen, wären unsichtbar.
+                        `gruppenMax` gleicht zusätzlich die Reihen INNERHALB
+                        der Attributgruppe an (nur dort gesetzt). */}
+                    <DotPool value={wert} max={grenzeVon(t)} gruppenMax={gruppenMax} onChange={undefined} />
                   </button>
                 )}
                 {bearbeiten && maximaZeigen && (

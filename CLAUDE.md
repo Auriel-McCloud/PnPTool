@@ -100,6 +100,24 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Attribut-Gruppen auf gleichen Nenner gebracht** (24.10.2026, Marks Idee:
+  ein Quill mit Körperkraft 5, Widerstandsfähigkeit 5 aber durch Erfahrung
+  schon Geschicklichkeit 7 sah unregelmäßig aus — zwei kurze Punktereihen
+  neben einer langen). Jede Attributspalte (Körperlich/Gesellschaftlich/
+  Geistig, bei KI Matrix) zeigt jetzt für alle Werte gleich viele Kreise:
+  das Gruppenmaximum ist dynamisch der höchste `grenzeVon`-Wert der Gruppe
+  (`Charakterblatt.tsx::reihe`, neue Variable `gruppenMax`, nur wenn
+  `kategorie.startsWith("Attribut")` — Fertigkeiten &Co. unangetastet).
+  Werte unter dem Gruppenmax bekommen rechts zusätzliche Kreise als
+  durchgestrichenes „×“ statt echter Punkte — gehören dem Wert selbst
+  NICHT, nie anklickbar, nur zur Ausrichtung (`DotPool.tsx`: neuer Zustand
+  `istPotential` = `n > max`, optisch blasser/gestrichelter als das
+  bestehende „gesperrt“, Tooltip erklärt „mit Augments eventuell nutzbar“ —
+  ein Cyberware-Implantat könnte das eigene `max` später ja doch anheben).
+  Gilt im Anzeige- UND Bearbeiten-Modus. **Verifiziert:** `tsc -b` sauber.
+  Spieltisch-Test steht aus: Optik der ×-Kreise (Größe/Farbe/Tooltip) im
+  echten Blatt anschauen, vor allem mit größeren Lücken (z.B. Troll-Rasse).
+
 - **Charakterbeschreibung im Steckbrief sichtbar + editierbar** (24.10.2026,
   Marks Wunsch: er pflegt die Beschreibung der PCs schon länger als SL, der
   Spieler sollte sie aber lesen und selbst weiterschreiben können). Kein
