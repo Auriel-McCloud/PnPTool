@@ -101,26 +101,6 @@ export function Kampfkarte({
   const waffen = ausgeruestet.filter((g) => g.typ === "Waffe" || g.istWaffe);
   const ruestungsteile = ausgeruestet.filter((g) => g.typ === "Rüstung");
   const ruestung = ruestungsteile.reduce((summe, g) => summe + g.kraft, 0);
-  // Nur Teile, die das Kästchen-/Reduktions-System tatsächlich nutzen (siehe
-  // docs/api/ruestung.md) — der alte flache Bonus bleibt daneben bestehen,
-  // falls noch jemand nur den trägt. Zerstörte Teile stehen hier nicht mehr:
-  // sie werden beim Treffer selbst aus der Ausrüstung genommen.
-  const kaestchenTeile = ruestungsteile.filter((g) => g.ruestungKaestchenMax > 0);
-  // Der Pool, wie ihn der Server rechnet: Kästchen summiert, Reduktion vom
-  // Teil mit der besten Basis, gestuft nach Kästchen-Anteil. Reine Anzeige —
-  // gerechnet wird serverseitig, damit die Formel nur an einer Stelle steht.
-  const kaestchenAktuell = kaestchenTeile.reduce((s, g) => s + g.ruestungKaestchenAktuell, 0);
-  const kaestchenMax = kaestchenTeile.reduce((s, g) => s + g.ruestungKaestchenMax, 0);
-  const reduktionBasis = kaestchenTeile.length ? Math.max(...kaestchenTeile.map((g) => g.ruestungReduktionBasis)) : 0;
-  const reduktionAnteil = kaestchenMax > 0 ? kaestchenAktuell / kaestchenMax : 0;
-  const poolReduktion =
-    kaestchenAktuell <= 0
-      ? 0
-      : reduktionAnteil > 0.5
-        ? reduktionBasis
-        : reduktionAnteil > 0.25
-          ? Math.floor(reduktionBasis / 2)
-          : Math.floor(reduktionBasis / 4);
   const fahrzeuge = sachen.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
 
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
@@ -229,14 +209,28 @@ export function Kampfkarte({
             />
           )}
         </div>
-        {kaestchenTeile.length > 0 && (
+        {/* Dieselbe Rüstungsübersicht wie im Charakterblatt (Kästchen +
+            Reduktion, server-gerechnet über bogen.ruestung) — nicht mehr
+            lokal aus den Gegenständen nachgerechnet, sonst laufen beide
+            Anzeigen irgendwann auseinander. */}
+        {bogen.ruestung.kaestchenMax > 0 && (
           <div className="kk-spur">
-            <span className="kk-titel">Rüstung</span>
-            <Kaestchen max={kaestchenMax} verbraucht={kaestchenMax - kaestchenAktuell} ton="var(--wert-koerperlich)" />
+            <span className="kk-titel">
+              Rüstung
+              {bogen.ruestung.teile.length > 1 && (
+                <span className="kk-hinweis"> · {bogen.ruestung.teile.length} Teile, zuerst {bogen.ruestung.teile[0].name}</span>
+              )}
+            </span>
+            <Kaestchen
+              max={bogen.ruestung.kaestchenMax}
+              verbraucht={bogen.ruestung.kaestchenMax - bogen.ruestung.kaestchenAktuell}
+              ton="var(--track-ruestung)"
+            />
             <span className="kk-hinweis">
-              Reduktion {poolReduktion}
-              {poolReduktion < reduktionBasis && ` / ${reduktionBasis}`} — wie viel Schaden pro Treffer abgefangen wird
-              {kaestchenTeile.length > 1 && ` · ${kaestchenTeile.length} Teile, aufgebraucht wird die beste Reduktion zuerst`}
+              Reduktion {bogen.ruestung.reduktionEffektiv}
+              {bogen.ruestung.reduktionEffektiv < bogen.ruestung.reduktionBasis &&
+                ` / ${bogen.ruestung.reduktionBasis}`}{" "}
+              — wie viel Schaden pro Treffer abgefangen wird
             </span>
           </div>
         )}
