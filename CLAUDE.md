@@ -779,6 +779,15 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Attribut-Klick fragt nach der Fähigkeit):**
+- **Was:** Antippen eines Attributs auf dem Blatt fragte nach einem zweiten
+  Attribut. Jetzt fragt es „Mit welcher Fähigkeit?“ — dieselben drei
+  Zehnerblöcke wie auf dem Blatt, plus Zusatz- und Ausrüstungsfertigkeiten.
+  Fähigkeit antippen fragt weiter nach dem Attribut. Eine KI sieht dabei
+  Matrix statt Körperlich. Ausrüstungsbonus zählt auf der Partnerseite mit.
+- **Verifiziert:** `npx tsc -b` ohne Fehler in `Probe.tsx` /
+  `Charakterblatt.tsx` / `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (24.10.2026 — Rassenauswahl: Bild auf der Karte, Steckbrief mit Extras):**
 - **Was:** In der Charaktererstellung zeigt die Rassenkarte das Bild. Das `?` öffnet den Steckbrief: Bild groß, Text darunter, plus die Extras (Freebees, Gratis-Gegenstand, Zusatzfertigkeit, Fertigkeitsbonus, erster Gratis-Kauf, Hinweis). Namen kommen aus `/erstellung/regeln`, nicht als UUID.
 - **Verifiziert:** `pytest tests/test_tutorial_shop_rassen_features.py::test_regelwerk_reicht_fertigkeitsbonus_und_anzeigenamen` 1/1. `tsc -b` meldet nur ungenutzte Symbole in `Probe.tsx` (parallele, uncommittete Änderung, nicht dieser Umbau). **Nie im Browser angeklickt.**
