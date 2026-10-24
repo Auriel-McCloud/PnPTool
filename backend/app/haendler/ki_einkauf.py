@@ -67,6 +67,12 @@ _SCHEMA = {
 
 class EinkaufErgebnis(BaseModel):
     gekauft: list[str] = []
+    # Gegenstands-IDs parallel zu `gekauft` (24.10.2026, NPC-Catch-up,
+    # siehe app/traits/catchup.py) — der Aufrufer braucht die IDs, um das
+    # Gekaufte danach automatisch auszurüsten/einzubauen. `gekauft` (Namen)
+    # bleibt unverändert, damit bestehende Aufrufer (ki/routes.py) nichts
+    # davon merken.
+    gekauftIds: list[str] = []
     ausgegeben: int = 0
     kapitalRest: int = 0
 
@@ -112,6 +118,7 @@ async def einkaufen(
 
     rest = budget
     gekauft_namen: list[str] = []
+    gekauft_ids: list[str] = []
     gesehen: set[str] = set()
     for eintrag in ergebnis.get("kaeufe") or []:
         gegenstand_id = (eintrag.get("gegenstandId") or "").strip()
@@ -137,9 +144,12 @@ async def einkaufen(
         gesehen.add(gegenstand_id)
         rest -= preis
         gekauft_namen.append(sortiment_eintrag["name"])
+        gekauft_ids.append(gekauft["id"])
 
     if not gekauft_namen:
         return None
 
     await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"kapital": rest})
-    return EinkaufErgebnis(gekauft=gekauft_namen, ausgegeben=budget - rest, kapitalRest=rest)
+    return EinkaufErgebnis(
+        gekauft=gekauft_namen, gekauftIds=gekauft_ids, ausgegeben=budget - rest, kapitalRest=rest
+    )

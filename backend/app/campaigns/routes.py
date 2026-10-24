@@ -235,3 +235,40 @@ async def kampagnen_ep_erhoehen(campaign_id: str, body: dict) -> dict:
     aktuell = await get_einstellungen(campaign_id)
     neu = aktuell.get("kampagnenEP", 0) + betrag
     return await set_einstellungen(campaign_id, {"kampagnenEP": neu})
+
+
+@einstellungen_router.post("/ep-einbuchen-reset", dependencies=[Depends(require_campaign_gm)])
+async def kampagnen_ep_einbuchen_reset(campaign_id: str) -> dict:
+    """Bucht die aktuellen Kampagnen-EP dauerhaft auf jeden PC ein und setzt
+    den globalen Zähler danach auf 0 zurück (Mark, 24.10.2026).
+
+    Der kampagnenweite Zähler wächst sonst unbegrenzt — diese Aktion "friert"
+    einen Spielabschnitt ein: was bisher gemeinsam erspielt wurde, gehört ab
+    jetzt unwiderruflich jedem einzelnen PC (`Person.erfahrung`), der globale
+    Zähler startet bei 0 für den nächsten Abschnitt neu. Nur PCs bekommen die
+    EP eingebucht — NPCs profitieren sonst automatisch vom laufenden
+    `kampagnenEP` (siehe app/traits/bogen.py::bogen_uebersicht) und werden
+    bewusst gezielt über den Catch-up skaliert (app/traits/catchup.py), nicht
+    über diesen pauschalen Reset.
+    """
+    from app.entities.repository import PERSON_FIELDS, list_nodes, update_node
+    from app.ereignisprotokoll import hooks
+
+    aktuell = await get_einstellungen(campaign_id)
+    kampagnen_ep = int(aktuell.get("kampagnenEP", 0) or 0)
+    if kampagnen_ep <= 0:
+        raise HTTPException(400, "Keine Kampagnen-EP zum Einbuchen vorhanden")
+
+    personen = await list_nodes("Person", PERSON_FIELDS, campaign_id)
+    for person in personen:
+        if person.get("personType") != "PC":
+            continue
+        alt = int(person.get("erfahrung") or 0)
+        neu = alt + kampagnen_ep
+        await update_node("Person", PERSON_FIELDS, campaign_id, person["id"], {"erfahrung": neu})
+        await hooks.charakterentwicklung(
+            campaign_id, person_id=person["id"], art="ERFAHRUNG_VERGEBEN",
+            alt=str(alt), neu=str(neu), kosten_oder_menge=kampagnen_ep,
+            sl_notiz="Kampagnen-EP eingebucht (Reset)",
+        )
+    return await set_einstellungen(campaign_id, {"kampagnenEP": 0})

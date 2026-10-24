@@ -37,6 +37,7 @@ import { Filterleiste } from "./Filterleiste";
 import { VerbindungenListe } from "./VerbindungenListe";
 import { VerbindungAnlegenGlobal } from "./VerbindungAnlegenGlobal";
 import { BeziehungenAusBeschreibungenPopup } from "./BeziehungenAusBeschreibungenPopup";
+import { NpcCatchupPopup } from "./NpcCatchupPopup";
 import type { Fraktion } from "./api";
 import { playersApi, type SpielerZugang } from "../players/api";
 import { partyApi, type Party } from "../party/api";
@@ -354,6 +355,10 @@ export function EntityManager({
   // EP-Vergabe: Bestätigungsdialoge
   const [epKampagneBestaetigung, setEpKampagneBestaetigung] = useState(false);
   const [epExtraBestaetigung, setEpExtraBestaetigung] = useState<Person | null>(null);
+  // Kampagnen-EP dauerhaft einbuchen & zurücksetzen (24.10.2026)
+  const [epEinbuchenBestaetigung, setEpEinbuchenBestaetigung] = useState(false);
+  // NPC-Catch-up (24.10.2026)
+  const [catchupOffen, setCatchupOffen] = useState(false);
 
   // Die geöffnete Entität muss dem frisch geladenen Stand folgen, sonst zeigt
   // das Popup nach dem Speichern noch die alten Werte (und "Beziehungen (3)",
@@ -512,6 +517,16 @@ export function EntityManager({
     }
   }
 
+  async function bucheKampagnenEpEin() {
+    try {
+      await einstellungenApi.epEinbuchenReset(campaignId);
+      setEpEinbuchenBestaetigung(false);
+      await refreshAll();
+    } catch (e) {
+      console.error("EP-Einbuchen Fehler:", e);
+    }
+  }
+
   // --- Ort ---
   const [ortName, setOrtName] = useState("");
   const ortContent = useContentAndVisibility();
@@ -608,6 +623,25 @@ export function EntityManager({
                   +{betrag} EP
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setEpEinbuchenBestaetigung(true)}
+                disabled={!(einstellungen?.kampagnenEP ?? 0)}
+                style={{
+                  padding: "4px 10px",
+                  background: "transparent",
+                  border: "1px solid var(--text-leise)",
+                  borderRadius: "var(--radius)",
+                  color: "var(--text-leise)",
+                  cursor: einstellungen?.kampagnenEP ? "pointer" : "default",
+                  fontWeight: 600,
+                  fontSize: "0.85em",
+                  opacity: einstellungen?.kampagnenEP ? 1 : 0.5,
+                }}
+                title="Bucht die aktuellen Kampagnen-EP dauerhaft auf jeden PC ein und setzt den Zähler auf 0 zurück"
+              >
+                ⤓ EP einbuchen &amp; zurücksetzen
+              </button>
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -636,6 +670,22 @@ export function EntityManager({
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setCatchupOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "transparent",
+                border: "1px solid var(--bereich-npcs, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-npcs, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+              title="Einen NPC auf das EP-/Vermögensniveau eines PCs heben"
+            >
+              ⚡ Catch-up
+            </button>
             <button
               type="button"
               onClick={() => setNeuerNPCOffen(true)}
@@ -1503,6 +1553,26 @@ export function EntityManager({
           onNein={() => setEpExtraBestaetigung(null)}
         />
       )}
+      {epEinbuchenBestaetigung && (
+        <Bestaetigung
+          titel="Kampagnen-EP einbuchen & zurücksetzen"
+          text={`Jeder PC bekommt die aktuellen ${einstellungen?.kampagnenEP ?? 0} Kampagnen-EP dauerhaft auf sein eigenes Konto gebucht, danach startet der gemeinsame Zähler wieder bei 0. NPCs sind davon nicht betroffen. Diese Aktion kann nicht rückgängig gemacht werden.`}
+          jaText="Einbuchen & zurücksetzen"
+          neinText="Abbrechen"
+          onJa={bucheKampagnenEpEin}
+          onNein={() => setEpEinbuchenBestaetigung(false)}
+        />
+      )}
+      <NpcCatchupPopup
+        offen={catchupOffen}
+        npcs={personen.filter((p) => p.personType === "NPC")}
+        pcs={personen.filter((p) => p.personType === "PC")}
+        campaignId={campaignId}
+        onSchliessen={() => {
+          setCatchupOffen(false);
+          refreshAll();
+        }}
+      />
     </div>
   );
 }

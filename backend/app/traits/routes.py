@@ -39,7 +39,7 @@ from app.hintergruende.spawn import (
 )
 from app.rassen import repository as rassen_repository
 from app.spezialisierungen import repository as spezialisierungen_repository
-from app.traits import berater, erfahrung, erstellung, rast, repository
+from app.traits import berater, catchup, erfahrung, erstellung, rast, repository
 from app.traits.bogen import (
     bogen_uebersicht,
     sichtbare_kategorien,
@@ -1304,3 +1304,33 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+
+
+# =====================================================================
+# NPC-Catch-up
+# =====================================================================
+
+
+class CatchupInput(BaseModel):
+    """Referenz-PC + Skalierung. 100% = gleichauf mit dem Referenz-PC,
+    >100% = bewusst stärker (Bosse), <100% = bewusst schwächer."""
+
+    referenzPersonId: str
+    prozent: int = Field(gt=0, le=1000)
+
+
+@router.post("/personen/{person_id}/catchup", dependencies=[Depends(require_campaign_gm)])
+async def npc_catchup(campaign_id: str, person_id: str, body: CatchupInput) -> dict:
+    """Hebt einen NPC auf (einen Anteil von) das EP- und Vermögensniveau
+    eines Referenz-PCs — inklusive automatischer Werteverteilung und
+    Einkauf/Ausrüstung. Siehe app/traits/catchup.py für die Herleitung.
+    """
+    campaign = await get_campaign(campaign_id)
+    einstellungen = await get_einstellungen(campaign_id)
+    ergebnis = await catchup.fuehre_catchup_durch(
+        campaign_id, person_id, body.referenzPersonId, body.prozent,
+        einstellungen, campaign["ruleset"] if campaign else "neotopia",
+    )
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "NPC oder Referenz-Charakter nicht gefunden")
+    return ergebnis.model_dump()

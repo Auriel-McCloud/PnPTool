@@ -35,6 +35,11 @@ export const einstellungenApi = {
   /** Erhöht die kampagnenweiten EP um einen Betrag (nur positiv, irreversibel). */
   epErhoehen: (cid: string, betrag: number) =>
     api.post<Einstellungen>(`/api/campaigns/${cid}/einstellungen/ep-erhoehen`, { betrag }),
+  /** Bucht die aktuellen Kampagnen-EP dauerhaft auf jeden PC ein und setzt
+   * den Zähler danach auf 0 zurück (24.10.2026) — "friert" einen
+   * Spielabschnitt ein, siehe backend/app/campaigns/routes.py. */
+  epEinbuchenReset: (cid: string) =>
+    api.post<Einstellungen>(`/api/campaigns/${cid}/einstellungen/ep-einbuchen-reset`, {}),
 };
 
 /** Export/Import einer kompletten Kampagne als ZIP-Datei (siehe
