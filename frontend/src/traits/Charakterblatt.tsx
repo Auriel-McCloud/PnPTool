@@ -324,8 +324,12 @@ export function Charakterblatt({
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Charakterblatt…</p>;
 
   const u = bogen.uebersicht;
+  // Cyberdeck-Einträge (siehe Sektion unten) — als Variable, weil Länge
+  // sowohl für die Zeilenzahl des Grids als auch den Einzeln-Fall gebraucht
+  // wird (gleiches Muster wie `reihe()` unten).
+  const deckEintraege = Object.entries(bogen.deckBoni);
 
-  // Vor der Erstellung gibt es kein Blatt zu zeigen — dann führt der Ablauf
+  // Vor der Erstellung gibt es kein Blatt zu zeigen
   // durch die Erstellung, und danach steht das fertige Blatt da.
   if (!u.erstellungAbgeschlossen) {
     return (
@@ -888,11 +892,14 @@ export function Charakterblatt({
           "Matrix" (siehe Probe.tsx::CYBERDECK_PARTNER_FERTIGKEIT), nicht mit
           einem eigenen Grundwert. Verschwindet von selbst, sobald kein
           Cyberdeck mehr ausgerüstet ist (bogen.deckBoni dann leer). */}
-      {Object.keys(bogen.deckBoni).length > 0 && (
+      {deckEintraege.length > 0 && (
         <section className="cb-gruppe" style={{ "--cb-ton": "var(--wert-neuroweaving)" } as React.CSSProperties}>
           <h3 className="cb-gruppe-titel">Cyberdeck</h3>
-          <div className="cb-werte">
-            {Object.entries(bogen.deckBoni).map(([name, wert]) => (
+          <div
+            className={deckEintraege.length === 1 ? "cb-werte cb-werte-einzeln" : "cb-werte"}
+            style={{ "--cb-zeilen": Math.ceil(deckEintraege.length / 3) } as React.CSSProperties}
+          >
+            {deckEintraege.map(([name, wert]) => (
               <div key={name} className="cb-wert-zeile">
                 <button
                   type="button"
@@ -907,6 +914,10 @@ export function Charakterblatt({
                   <span className="cb-wert-name">{name}</span>
                   <DotPool value={wert} max={Math.max(wert, 6)} onChange={undefined} />
                 </button>
+                {/* Dieselbe Erklärung wie bei der NeuroWeaving-Fertigkeit
+                    gleichen Namens — `trait:${name}` ist derselbe Schlüssel,
+                    kein doppelter Text zu pflegen. */}
+                <InfoTipp campaignId={campaignId} schluessel={schluessel.trait(name)} titel={name} />
               </div>
             ))}
           </div>
