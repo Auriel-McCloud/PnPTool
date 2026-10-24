@@ -67,6 +67,16 @@ const NEURO_PARTNER: Record<string, string> = {
   NeuroWeaving: "NeuroWeavingWert",
 };
 
+/**
+ * Pool-Partner der Cyberdeck-Werte (24.10.2026, Mark): die normale
+ * Fertigkeit "Matrix" — AUSDRÜCKLICH NICHT der NeuroWeaving-Grundwert.
+ * Ein Decker ohne NeuroWeaving-Weg bekommt die sechs Aktionen rein vom
+ * ausgerüsteten Gerät (siehe Charakterblatt.tsx, Sektion "Cyberdeck") und
+ * würfelt sie mit seiner eigenen Matrix-Fertigkeit zusammen — kein Lernen
+ * nötig, kein NeuroWeaving-Bezug.
+ */
+const CYBERDECK_PARTNER_FERTIGKEIT = "Matrix";
+
 export interface ProbeWahl {
   name: string;
   wert: number;
@@ -153,6 +163,22 @@ export function Probe({
   // Grundwert selbst, sechs mögliche Fertigkeiten — bleibt bewusst offen.
   useEffect(() => {
     if (!wahl) return;
+    // Cyberdeck-Aktion: immer fix mit "Matrix" kombiniert, keine Auswahl
+    // nötig (anders als NeuroWeaving gibt es hier nur einen einzigen
+    // möglichen Partner, und der ist keine Kategorie, sondern ein Name).
+    if (wahl.kategorie === "Cyberdeck") {
+      const matrix = katalog.find(
+        (t) => t.name === CYBERDECK_PARTNER_FERTIGKEIT && t.category === "Fertigkeit",
+      );
+      if (matrix) {
+        setAttribut({
+          name: matrix.name,
+          wert: (werte.get(matrix.id) ?? 0) + (ausruestungsBoni?.[matrix.name] ?? 0),
+          traitDefId: matrix.id,
+        });
+      }
+      return;
+    }
     const partner = NEURO_PARTNER[wahl.kategorie];
     if (!partner) return;
     const kandidaten = katalog.filter((t) => t.category === partner);
@@ -362,6 +388,36 @@ export function Probe({
           {spezialisierungsBlock(wahl)}
         </Fenster>
       </>
+    );
+  }
+
+  // --- Cyberdeck: fix mit Matrix kombiniert, keine Auswahl nötig ---------
+  // Eigener, schlanker Zweig statt des generischen Fertigkeit+Attribut-Flows
+  // unten: dort würde "Womit kombinierst du?" gefragt, obwohl es (wie bei
+  // NeuroWeaving) nur einen echten Partner gibt. Kein Willenskraft-/
+  // Overclock-Abschnitt — das ist NeuroWeaving-exklusiv, ein Decker ohne
+  // diesen Weg hat keine Willenskraft-Mechanik an seinem Deck.
+  if (wahl.kategorie === "Cyberdeck") {
+    return (
+      <Fenster
+        offen
+        titel={`${wahlName} ${wahl.wert}`}
+        unterzeile="Cyberdeck-Aktion — kombiniert sich mit Matrix"
+        kennung={`probe:${wahl.name}`}
+        onSchliessen={schliesseAlles}
+      >
+        <div className="pr-pool">
+          <span className="pr-zahl">{pool}</span>
+          <WuerfelZehn groesse={54} />
+        </div>
+        <p className="pr-rechnung">
+          {wahlName} {wahl.wert}
+          {attribut && attribut.wert > 0 && ` + ${attribut.name} ${attribut.wert}`}
+        </p>
+        <p className="pr-regel">
+          <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
+        </p>
+      </Fenster>
     );
   }
 

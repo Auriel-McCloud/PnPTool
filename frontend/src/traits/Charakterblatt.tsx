@@ -882,6 +882,37 @@ export function Charakterblatt({
       {reihe("NeuroWeavingWert")}
       {reihe("NeuroWeaving")}
 
+      {/* Cyberdeck-Fertigkeiten (24.10.2026, Mark): rein vom ausgerüsteten
+          Cyberdeck bestimmt, kein eigener Lernfortschritt — anders als
+          NeuroWeaving kombiniert sich der Pool mit der normalen Fertigkeit
+          "Matrix" (siehe Probe.tsx::CYBERDECK_PARTNER_FERTIGKEIT), nicht mit
+          einem eigenen Grundwert. Verschwindet von selbst, sobald kein
+          Cyberdeck mehr ausgerüstet ist (bogen.deckBoni dann leer). */}
+      {Object.keys(bogen.deckBoni).length > 0 && (
+        <section className="cb-gruppe" style={{ "--cb-ton": "var(--wert-neuroweaving)" } as React.CSSProperties}>
+          <h3 className="cb-gruppe-titel">Cyberdeck</h3>
+          <div className="cb-werte">
+            {Object.entries(bogen.deckBoni).map(([name, wert]) => (
+              <div key={name} className="cb-wert-zeile">
+                <button
+                  type="button"
+                  className="cb-wert"
+                  onClick={() =>
+                    onWertGewaehlt
+                      ? onWertGewaehlt(name, wert, "Cyberdeck")
+                      : setProbe({ name, wert, kategorie: "Cyberdeck" })
+                  }
+                  title={`${name} — kombiniert sich mit Matrix`}
+                >
+                  <span className="cb-wert-name">{name}</span>
+                  <DotPool value={wert} max={Math.max(wert, 6)} onChange={undefined} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Fertigkeiten, die es ohne Ausrüstung nicht gibt — eigener
           Abschnitt, weil sie nicht zum Katalog gehören und verschwinden,
           sobald der Gegenstand abgelegt wird. */}

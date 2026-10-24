@@ -100,6 +100,28 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Cyberdeck-Fertigkeiten als eigene Blattsektion** (24.10.2026, Mark am
+  Spieltisch: Deck ausgerüstet, aber keine Skills im Charakterblatt
+  aufgetaucht). Ursache: die sechs Decking-Skills (Brute Force, Schleichen,
+  Daten Verarbeiten, Kompilieren, Electronic Warfare, Matrix-Navigation)
+  waren fest an die NeuroWeaving-Kategorie gekoppelt und wurden nur Leuten
+  mit Weg `NEUROWEAVER` ausgeliefert (`bogen.py::BEREICHE_JE_WEG`) — ein
+  normaler Decker sah sie nie, der Cyberdeck-Bonus (`deckBoni`) hing
+  unsichtbar in der Luft und tauchte nur als Zusatzknopf im Würfel-Popup
+  auf, wenn man zufällig ein Attribut anklickte. Neu: eigene Sektion
+  „Cyberdeck" im Charakterblatt (`Charakterblatt.tsx`, direkt unter
+  NeuroWeaving), zeigt jede Aktion mit `bogen.deckBoni`-Wert, erscheint nur
+  wenn ein Cyberdeck ausgerüstet ist. **Ausdrücklich NICHT mit dem
+  NeuroWeaving-Grundwert kombiniert** (Marks Korrektur) — Klick auf eine
+  Aktion koppelt den Pool stattdessen fix mit der normalen Fertigkeit
+  „Matrix" (`Probe.tsx::CYBERDECK_PARTNER_FERTIGKEIT`, eigener schlanker
+  Render-Zweig ohne Willenskraft/Overclock-Abschnitt, der ist
+  NeuroWeaving-exklusiv). Kein eigener Lernfortschritt: der Wert kommt rein
+  vom Gerät, verschwindet von selbst beim Ablegen. **Verifiziert:** `tsc -b`
+  sauber, keine Backend-Änderung nötig (`deckBoni` kam schon vorher vom
+  Server). Spieltisch-Test steht aus: Sektion mit echtem Cyberdeck
+  ausrüsten, Pool-Rechnung (Deck-Wert + Matrix) gegentesten.
+
 - **Attribut-Gruppen auf gleichen Nenner gebracht** (24.10.2026, Marks Idee:
   ein Quill mit Körperkraft 5, Widerstandsfähigkeit 5 aber durch Erfahrung
   schon Geschicklichkeit 7 sah unregelmäßig aus — zwei kurze Punktereihen
