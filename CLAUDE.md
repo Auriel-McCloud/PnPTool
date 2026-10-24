@@ -808,6 +808,10 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Vorlage kopieren statt weggeben):**
+- **Was:** Im Besitz-Reiter einer Vorlage steht neben „Übergeben“ jetzt „Kopie erstellen“. Übergeben nimmt die Vorlage (weiterhin, besonders weil neue Vorlagen standardmäßig einzigartig sind). Kopie legt dem gewählten Charakter ein eigenes Stück an, die Vorlage bleibt. `POST .../gegenstaende/{id}/zuweisen` nimmt dafür `kopie: true`.
+- **Verifiziert:** `pytest tests/test_vorlage_kopie.py` 4/4, `npx tsc -b` sauber. **Nie im Browser angeklickt.**
+
 **Zuletzt gebaut (24.10.2026 — Rassen-Gratis-Kauf: alle Typen):**
 - **Was:** Im Rassen-Menü hat „Erster Kauf dieses Typs im Shop ist gratis“ die Option „alle Typen“. Der Sentinel trifft jeden Gegenstand, verbraucht `rassenFeatureGenutzt` aber nach dem ersten Stück — nicht einen Gratis-Kauf je Typ. Anzeige in der Erstellung sagt dann „1. Kauf gratis“, nicht „1. alle Typen gratis“. Der Tutorial-Shop zeigt den ersten passenden Kauf als gratis und sperrt den Knopf nicht mehr am Listenpreis. Die gewählte Rasse wird dafür schon beim Wählen auf den Entwurf geschrieben — sonst kennt der Kauf sie erst nach „Charakter anlegen“.
 - **Verifiziert:** `pytest tests/test_gratis_erster_kauf.py` 5/5, `pytest tests/test_bogen.py` mit dabei grün. `tsc -b` und `npm run build` sauber. **Nie im Browser angeklickt.**

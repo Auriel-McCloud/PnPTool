@@ -326,6 +326,7 @@ export function GegenstandRow({
   const [uploading, setUploading] = useState(false);
   const [zuweisenZiel, setZuweisenZiel] = useState("");
   const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
+  const [zuweisenHinweis, setZuweisenHinweis] = useState("");
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
   const [kiBildOffen, setKiBildOffen] = useState(false);
@@ -630,12 +631,14 @@ export function GegenstandRow({
     onChanged();
   }
 
-  async function zuweisen() {
+  async function zuweisen(alsKopie: boolean) {
     if (!zuweisenZiel) return;
     setZuweisenLaeuft(true);
+    setZuweisenHinweis("");
     try {
-      await itemsApi.assign(campaignId, item.id, zuweisenZiel);
+      await itemsApi.assign(campaignId, item.id, zuweisenZiel, alsKopie);
       setZuweisenZiel("");
+      if (alsKopie) setZuweisenHinweis("Kopie angelegt — die Vorlage bleibt.");
       onChanged();
     } finally {
       setZuweisenLaeuft(false);
@@ -1585,7 +1588,7 @@ export function GegenstandRow({
                     <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
                       <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
                         {keineKopie
-                          ? "Diesem Gegenstand zuweisen (übergibt den Gegenstand selbst)"
+                          ? "Diesem Gegenstand zuweisen"
                           : "Diesem Gegenstand zuweisen (erstellt eine Kopie)"}
                       </label>
                       <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
@@ -1597,10 +1600,23 @@ export function GegenstandRow({
                             </option>
                           ))}
                         </select>
-                        <button type="button" onClick={zuweisen} disabled={!zuweisenZiel || zuweisenLaeuft}>
-                          {zuweisenLaeuft ? "..." : keineKopie ? "Übergeben" : "Kopie erstellen"}
+                        {keineKopie && (
+                          <button type="button" onClick={() => void zuweisen(false)} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                            {zuweisenLaeuft ? "..." : "Übergeben"}
+                          </button>
+                        )}
+                        <button type="button" onClick={() => void zuweisen(true)} disabled={!zuweisenZiel || zuweisenLaeuft}>
+                          {zuweisenLaeuft ? "..." : "Kopie erstellen"}
                         </button>
                       </div>
+                      {keineKopie && (
+                        <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: "6px 0 0" }}>
+                          Übergeben nimmt die Vorlage. Kopie lässt sie stehen.
+                        </p>
+                      )}
+                      {zuweisenHinweis && (
+                        <p style={{ fontSize: "0.8em", color: "var(--neon)", margin: "6px 0 0" }}>{zuweisenHinweis}</p>
+                      )}
                     </div>
                   );
                 })()}

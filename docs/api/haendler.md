@@ -87,7 +87,7 @@ es nur ein Mal."* Genau diese Unterscheidung trägt den Bestand:
 
 | Ware ist... | Verhalten beim Kauf |
 |---|---|
-| eine **Vorlage** (`istVorlage=true`) | unendlich verfügbar — jeder Kauf erzeugt eine unabhängige Kopie (`items/repository.py::assign_copy`, dasselbe wie beim bestehenden `POST .../gegenstaende/{id}/zuweisen`). Bleibt danach weiter im Sortiment. |
+| eine **Vorlage** (`istVorlage=true`) | unendlich verfügbar — jeder Kauf erzeugt eine unabhängige Kopie (`items/repository.py::assign_copy`). Bleibt danach weiter im Sortiment. Der Besitz-Reiter kopiert nur auf ausdrückliches `kopie: true`, sonst übergibt er einzigartige Vorlagen selbst. |
 | ein **einzigartiges Stück** (kein Besitzer, oder einem NPC) | genau einmal kaufbar. Besitzerloses Regal-Stück bekommt den Käufer als ersten Besitzer (`assign_owner`); ein NPC-Stück wechselt den Besitzer (`transfer_owner`). Alle `VERKAUFT`-Kanten weg, zweiter Kauf `404`. Spielerbesitz lässt sich nicht ins Regal hängen. |
 
 Kein `bestand`-Feld. Ob das Regal kopiert oder das Stück selbst hergibt,

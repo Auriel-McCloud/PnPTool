@@ -259,12 +259,13 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
 
     sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
 
-    if source["einzigartig"] or source["storyRelevant"]:
-        # Einzigartige/MacGuffin-Vorlagen dürfen nicht vervielfältigt werden —
-        # hier wird der Gegenstand selbst übergeben (verschoben), keine Kopie.
-        result = await repository.assign_owner(campaign_id, item_id, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
-    else:
+    # Default: einzigartige/MacGuffin-Vorlagen werden selbst übergeben, sonst
+    # kopiert. `kopie=true` ist die ausdrückliche SL-Wahl im Besitz-Reiter —
+    # dann bleibt die Vorlage stehen, auch wenn sie einzigartig ist.
+    if body.kopie or not (source["einzigartig"] or source["storyRelevant"]):
         result = await repository.assign_copy(campaign_id, source, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
+    else:
+        result = await repository.assign_owner(campaign_id, item_id, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
     if result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zuweisen fehlgeschlagen")
     return result

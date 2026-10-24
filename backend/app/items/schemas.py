@@ -303,6 +303,10 @@ class GegenstandUpdate(BaseModel):
 
 class ZuweisenRequest(BaseModel):
     zielPersonId: str
+    # True: immer eine Kopie anlegen, auch wenn die Vorlage einzigartig oder
+    # story-relevant ist. Die Vorlage selbst bleibt besitzerlos. False (Default)
+    # behält das alte Verhalten: einzigartig/storyRelevant übergibt das Stück.
+    kopie: bool = False
 
 
 class GegenstandResponse(BaseModel):

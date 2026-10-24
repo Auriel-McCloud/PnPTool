@@ -422,8 +422,8 @@ export const itemsApi = {
   update: (cid: string, itemId: string, body: GegenstandUpdate) =>
     api.patch<Gegenstand>(itemBase(cid, itemId), body),
   remove: (cid: string, itemId: string) => api.delete<void>(itemBase(cid, itemId)),
-  assign: (cid: string, itemId: string, zielPersonId: string) =>
-    api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId }),
+  assign: (cid: string, itemId: string, zielPersonId: string, kopie = false) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId, kopie }),
   changeOwner: (cid: string, itemId: string, zielPersonId: string) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/besitzer`, { zielPersonId }),
   removeOwner: (cid: string, itemId: string) => api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlage`, {}),
