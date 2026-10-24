@@ -332,7 +332,17 @@ export function Kampfkarte({
           <h3>Cyberdeck</h3>
           <div className="kk-werte">
             {Object.entries(bogen.deckBoni).map(([name, w]) => (
-              <Zahl key={name} titel={name} wert={w} hinweis="Bonuswürfel für diese Aktion." />
+              <Zahl
+                key={name}
+                titel={name}
+                // Pool wie überall sonst: Deck-Wert + Matrix-Fertigkeit —
+                // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
+                // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
+                wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
+                hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
+                wuerfel
+                onKlick={() => setProbe({ name, wert: w, kategorie: "Cyberdeck" })}
+              />
             ))}
           </div>
         </section>
