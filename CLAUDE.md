@@ -815,9 +815,33 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 
+**Zuletzt gebaut (24.10.2026 — Tutorial-Shop lädt Sortiment/Käufe alle 5s automatisch nach):**
+- **Was:** Marks Wunsch — ein Spieler soll ohne Reload sehen, wenn die SL
+  spontan etwas Neues ins Tutorial-Shop-Sortiment legt. Statt eines
+  Aktualisieren-Knopfs (verworfen, Mark: „alle 5 Sekunden würde reichen“)
+  nutzt `TutorialShopPopup.tsx` jetzt denselben stillen `useNachladen`-
+  Mechanismus wie `ShopSeite.tsx`/`ShopUebersicht.tsx` (Poll alle 5s,
+  solange Tab sichtbar, pausiert wenn `offen=false`). Kauf/Rückgabe laden
+  danach vollständig per `laden()` statt der alten Mischung aus
+  optimistischem lokalem Filtern + separatem `itemsApi.list`-Call — Bonus-
+  Fix dabei: Rückgeben aktualisiert jetzt auch das Sortiment selbst (vorher
+  nie, ein zurückgegebenes Einzelstück tauchte im Tutorial-Shop nicht wieder
+  im Regal auf).
+- **Dateien:** `frontend/src/haendler/TutorialShopPopup.tsx`.
+- **Verifiziert:** `npm run build` (tsc -b + vite build) sauber. **Live auf
+  bebop deployed** (`864277a`, Frontend+Backend neu gebaut — ein beim Pull
+  mitgezogener, vorher nicht deployter Commit „Portrait zeichnen“ s.u. ging
+  dabei zwangsläufig mit live, Backend-Logs danach fehlerfrei). **Nie im
+  Browser angeklickt** — bitte am Spieltisch: Tutorial-Shop als Spieler
+  offen lassen, als SL in einem anderen Tab eine neue Ware ins Sortiment
+  legen, prüfen dass sie binnen ~5s beim Spieler auftaucht ohne Reload;
+  dazu einen gekauften Gegenstand zurückgeben und prüfen, dass er bei einem
+  Einzelstück auch im Sortiment wieder sichtbar wird.
+
 **Zuletzt gebaut (24.10.2026 — Portrait zeichnen: Skizze und Klecks):**
 - **Was:** Im Spieler-Portrait zwei Wege. „Zeichnen“ ist ein Skizzenblock im Commlink-Fenster (`react-sketch-canvas`, `ZeichenblockPopup.tsx`). „Zeichentisch“ öffnet Klecks (Ebenen, Pinsel, Druck) in einem eigenen Fenster (`frontend/public/klecks/`, Embed von bitbof/klecks, MIT). Beide speichern über `POST /api/spieler/mein-bild`. Im Zeichentisch heißt der Knopf „Portrait“ (deutsche Klecks-Übersetzung dafür angepasst). Bestehendes Portrait liegt als Ebene darunter. Ebenen überleben das Speichern nicht — es wird ein flaches PNG. Zweites Antippen fokussiert das offene Fenster, lädt es nicht neu.
 - **Verifiziert:** `npx tsc -b` und `vite build` sauber. Klecks-Embed im Preview geladen (deutsch, Knopf „Portrait“, leere Leinwand). Skizzenblock und der Upload aus dem eingeloggten Spieler-Menü **nicht** angeklickt. Klecks-Neuaufbau: Klone `bitbof/klecks`, `de.json5` Submit-Texte auf Portrait, `npm run lang:build && npm run build:embed`, `dist/` ohne `*.map` nach `frontend/public/klecks/`.
+- **Nachtrag (24.10.2026):** per Fast-Forward beim Tutorial-Shop-Deploy (s.o.) ungeplant mit auf bebop gelandet (Backend+Frontend neu gebaut), Backend-Logs danach fehlerfrei. Browser-Klicktest steht weiterhin aus.
 
 **Zuletzt gebaut (24.10.2026 — Vorlage kopieren statt weggeben):**
 - **Was:** Im Besitz-Reiter einer Vorlage steht neben „Übergeben“ jetzt „Kopie erstellen“. Übergeben nimmt die Vorlage (weiterhin, besonders weil neue Vorlagen standardmäßig einzigartig sind). Kopie legt dem gewählten Charakter ein eigenes Stück an, die Vorlage bleibt. `POST .../gegenstaende/{id}/zuweisen` nimmt dafür `kopie: true`.
