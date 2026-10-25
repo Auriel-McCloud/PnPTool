@@ -103,6 +103,24 @@ class PersonCreate(BaseModel):
     # Events/Gegenstände läuft über echte Graphkanten von der Person aus
     # (siehe entities/repository.py::person_einfluss_setzen).
     istKI: bool = False
+    # Drohne/Fahrzeug (25.10.2026, Mark: Rigger-Konzept überarbeitet, siehe
+    # docs/wiki/concepts/drohnen-fahrzeuge.md): wie Critter/KI ein echter
+    # Person-Knoten mit eigenem, abgespecktem Blatt statt eines Items —
+    # dadurch gratis Wiederverwendung von Besitz/Ausrüstung (BESITZT/
+    # AUSGERÜSTET) und der Initiative-Mechanik. `sichtbare_kategorien()`
+    # tauscht bei istDrohne die Blattstruktur auf die 8 Drohnen-Attribute
+    # (Kategorien AttributDrohne/AttributDrohneAussenhuelle) um, keine
+    # soziale/geistige Spalte, keine Sphären/NeuroWeaving. `istFahrzeug` ist
+    # rein kosmetisch (Wording "Fahrzeug" statt "Drohne" im Blatt/Menü,
+    # analog `istPflanzenCritter`) — mechanisch identisch, beide nutzen
+    # dasselbe Attribut-Set.
+    istDrohne: bool = False
+    istFahrzeug: bool = False
+    # Riggerkonsole & aktive Slots (siehe Wiki-Seite oben): ob diese Drohne/
+    # dieses Fahrzeug aktuell mit der Riggerkonsole ihres Besitzers verbunden
+    # ist. Serverseitig gegen `maxDrohnen` der ausgerüsteten Konsole gedeckelt
+    # (noch nicht umgesetzt). Inaktive Drohnen erscheinen nicht im Kampf.
+    riggerAktiv: bool = False
     # Shop-System (22.09.2026, Kern-Baustein): ein Händler ist wie KI/Critter
     # eine echte Person, aber bewusst SCHLANK — kein Charakterblatt (Marks
     # Entscheidung), nur Name/Bild/Beschreibung + Sortiment (siehe
@@ -262,6 +280,9 @@ class PersonUpdate(BaseModel):
     rasse: str | None = None
     istCritter: bool | None = None
     istKI: bool | None = None
+    istDrohne: bool | None = None
+    istFahrzeug: bool | None = None
+    riggerAktiv: bool | None = None
     istHaendler: bool | None = None
     istTutorialHaendler: bool | None = None
     istPflanzenCritter: bool | None = None

@@ -58,6 +58,17 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     "Technologie": "Alltagselektronik bedienen und reparieren — Geräte, einfache Systeme.",
     "Wahrnehmung": "Aufmerksamkeit für Details — etwas bemerken, bevor es zu spät ist.",
     "Matrix": "Sich in der Matrix bewegen — Hacken, Icons lesen, digitale Spuren verfolgen.",
+    # --- Drohne/Fahrzeug (25.10.2026, siehe docs/wiki/concepts/drohnen-fahrzeuge.md) ---
+    # Zwei Spalten statt drei: Körperlich (Stärke/Geschick/Geschwindigkeit/
+    # Widerstandsfähigkeit) und Technisch (CPU/Arbeitsspeicher/Außenhülle/
+    # I.C.E.) — keine soziale Spalte, Drohnen haben keine Sozialwerte.
+    "Stärke": "Rohe Antriebskraft — tragen, ziehen, rammen, Hindernisse durchbrechen.",
+    "Geschick": "Feinsteuerung — präzise Manöver, Zielen, Balance.",
+    "Geschwindigkeit": "Wie schnell sie reagiert und sich bewegt — zählt in die Initiative.",
+    "CPU": "Rechenleistung — wie schnell sie denkt, zählt in die Initiative.",
+    "Arbeitsspeicher": "Wie viel gleichzeitig laufen kann — begrenzt aktive Erweiterungen/Waffenplätze.",
+    "Außenhülle": "Panzerung — Schadensreduktion, teuer in der Anschaffung.",
+    "I.C.E.": "Eigene Matrix-Verteidigung — wie schwer sie zu hacken ist.",
     # --- Attribut Matrix (nur KI, 20.09.2026) ---
     "Matrix-Präsenz": "Wie dominant und sichtbar eine KI in der Matrix ist — ihre digitale Ausstrahlung.",
     # --- Hexkraft (Magiewert) ---
@@ -281,6 +292,22 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     # sichtbare_kategorien). Nur ein Wert, weil eine körperlose KI keine
     # drei separaten "Matrix-Attribute" braucht.
     ("Matrix-Präsenz", "AttributMatrix", 6, 1),
+    # Attribute Drohne/Fahrzeug (25.10.2026, nur istDrohne/istFahrzeug —
+    # ersetzt ALLE drei menschlichen Attributspalten, siehe
+    # docs/wiki/concepts/drohnen-fahrzeuge.md). defaultMax 10 ist der
+    # Punkte-Anzeige-Deckel (Vorschlag, noch nicht final) — darüber zeigt die
+    # Oberfläche nur noch die nackte Zahl statt weiterer Kreise.
+    ("Stärke", "AttributDrohne", 10, 1),
+    ("Geschick", "AttributDrohne", 10, 2),
+    ("Geschwindigkeit", "AttributDrohne", 10, 3),
+    ("Widerstandsfähigkeit", "AttributDrohne", 10, 4),
+    ("CPU", "AttributDrohne", 10, 5),
+    ("Arbeitsspeicher", "AttributDrohne", 10, 6),
+    ("I.C.E.", "AttributDrohne", 10, 7),
+    # Außenhülle eigene Kategorie (25.10.2026, Mark: "ab dem zweiten wird's
+    # rapide teurer") — doppelter Steigerungs-Faktor in erfahrung.py, siehe
+    # dort. Gleicher defaultMax wie die übrigen Drohnen-Attribute.
+    ("Außenhülle", "AttributDrohneAussenhuelle", 10, 1),
     # Fertigkeiten (6 Punkte — 20.09.2026 von 5 auf 6 angehoben, damit sie
     # mit dem Attributmaximum gleichzieht, siehe CLAUDE.md)
     ("Diebeshandwerk", "Fertigkeit", 6, 1),

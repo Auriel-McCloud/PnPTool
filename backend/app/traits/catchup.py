@@ -86,7 +86,12 @@ async def _verteile_ep_automatisch(
     werte = await traits_repository.get_ratings_for_entity(campaign_id, person_id)
     nach_name = {w["name"]: w["rating"] for w in werte}
     grenzen = {w["traitDefId"]: w["max"] for w in werte}
-    erlaubt = sichtbare_kategorien(person.get("weg") or "KEINER", {t["category"] for t in katalog}, bool(person.get("istKI")))
+    erlaubt = sichtbare_kategorien(
+        person.get("weg") or "KEINER",
+        {t["category"] for t in katalog},
+        bool(person.get("istKI")),
+        bool(person.get("istDrohne")) or bool(person.get("istFahrzeug")),
+    )
 
     preise = erfahrung.preisliste([t for t in katalog if t["category"] in erlaubt], nach_name)
     for eintrag in preise:

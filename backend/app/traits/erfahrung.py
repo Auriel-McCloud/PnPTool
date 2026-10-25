@@ -37,7 +37,20 @@ FAKTOR: dict[str, int] = {
     "NeuroWeavingWert": 4,
     "NeuroWeaving": 2,
     "Hintergrund": 3,
+    # Drohne/Fahrzeug (25.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md):
+    # Stärke/Geschick/Geschwindigkeit/Widerstandsfähigkeit/CPU/Arbeitsspeicher/
+    # I.C.E. kosten wie ein normales Attribut. Außenhülle (Rüstung) hat
+    # doppelten Faktor — Mark: "der erste ist noch günstig, aber ab dem
+    # zweiten wird's rapide teurer". Bezahlt wird in Nuyen statt EP (siehe
+    # `nuyenProXp`-Kampagneneinstellung, noch zu bauen) — dieselbe Formel,
+    # nur der Umrechnungsfaktor kommt erst beim Abbuchen dazu.
+    "AttributDrohne": 4,
+    "AttributDrohneAussenhuelle": 8,
 }
+
+# Fertigkeiten laufen für Drohnen/Fahrzeuge über dieselbe Kategorie
+# "Fertigkeit" wie bei Menschen (Marks Entscheidung: volle Liste, kein
+# eigener Katalog nötig) — kein zusätzlicher Eintrag hier erforderlich.
 
 # Was der Sprung von 0 auf 1 kostet — die Formel gäbe hier 0 her, und
 # geschenkt soll nichts sein.
@@ -65,6 +78,10 @@ NEU_KOSTEN: dict[str, int] = {
     "NeuroWeavingWert": 5,
     "NeuroWeaving": 3,
     "Hintergrund": 3,
+    # Einstiegspreis wie ein normales Attribut — nur der Steigerungs-Faktor
+    # (oben) unterscheidet Außenhülle von den übrigen Drohnen-Attributen.
+    "AttributDrohne": 5,
+    "AttributDrohneAussenhuelle": 5,
 }
 
 # Willenskraft ist kein Katalogwert, sondern abgeleitet. Ein Punkt darauf

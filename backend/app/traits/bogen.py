@@ -60,8 +60,14 @@ def willenskraft_max(werte: dict[str, int], bonus: int = 0, chrom_verlust: int =
     )
 
 
-def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int:
+def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0, ist_drohne: bool = False) -> int:
     """Matrix-Verteidigung (I.C.E. / Cyber Wall).
+
+    **Drohne/Fahrzeug (25.10.2026):** eigenes, direkt gekauftes Attribut
+    (`I.C.E.`, Kategorie `AttributDrohne`) statt abgeleitet — Mark wollte das
+    ausdrücklich steigerbar, nicht wie bei Menschen eine Formel aus zwei
+    anderen Werten. Geprüft VOR dem Neuroweaver-Zweig, falls jemals beides
+    zugleich gesetzt wäre (kommt nicht vor, aber robust).
 
     **Neuroweaver:** Fassung + Geistesschärfe. Er trägt seine Abwehr in sich
     und braucht kein Gerät. *Weicht bewusst von Zeile 99 des Regelblatts ab,
@@ -74,17 +80,26 @@ def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0) -> int
     Der Unterschied zwischen "ungeschützt" und "nicht erreichbar" liegt also
     nicht im Wert, sondern darin, ob überhaupt ein Gerät da ist.
     """
+    if ist_drohne:
+        return _wert(werte, "I.C.E.")
     if weg == "NEUROWEAVER":
         return _wert(werte, "Fassung") + _wert(werte, "Geistesschärfe")
     return commlink_cyberwall
 
 
-def initiative(werte: dict[str, int], cyberware_mod: int = 0) -> int:
-    """Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator."""
+def initiative(werte: dict[str, int], cyberware_mod: int = 0, ist_drohne: bool = False) -> int:
+    """Initiative = Geistesschärfe + Geschicklichkeit + Cyberware-Modifikator.
+
+    **Drohne/Fahrzeug (25.10.2026):** Geschwindigkeit + CPU statt
+    Geistesschärfe + Geschicklichkeit — Mark: "wenn wir den Geschwindigkeits
+    Wert haben, wäre Initiative logischer bei Geschwindigkeit + CPU".
+    """
+    if ist_drohne:
+        return _wert(werte, "Geschwindigkeit") + _wert(werte, "CPU") + cyberware_mod
     return _wert(werte, "Geistesschärfe") + _wert(werte, "Geschicklichkeit") + cyberware_mod
 
 
-def sichtbare_kategorien(weg: str, alle: set[str], ist_ki: bool = False) -> set[str]:
+def sichtbare_kategorien(weg: str, alle: set[str], ist_ki: bool = False, ist_drohne: bool = False) -> set[str]:
     """Welche Trait-Kategorien für diesen Charakter überhaupt gelten.
 
     Attribute und Fertigkeiten hat jeder. Hexkraft und Sphären sieht nur ein
@@ -95,13 +110,22 @@ def sichtbare_kategorien(weg: str, alle: set[str], ist_ki: bool = False) -> set[
     — `AttributKörperlich` fällt weg, `AttributMatrix` (Matrix-Präsenz)
     kommt stattdessen dazu. Für alle anderen ist es genau umgekehrt:
     `AttributMatrix` ist ein reines KI-Attribut und bleibt sonst verborgen.
+
+    **Drohne/Fahrzeug (25.10.2026):** komplett eigenes Blatt — nur
+    `AttributDrohne`/`AttributDrohneAussenhuelle` plus `Fertigkeit` (volle
+    Liste, Marks Entscheidung: kein Filter, ein Roboter kann Benimm-/
+    Gesichtserkennungs-Programme haben). Keine Sozial-/Geistig-Spalte, keine
+    Sphären/NeuroWeaving/Matrix-Präsenz — eine Drohne hat keinen `weg`.
     """
+    if ist_drohne:
+        return {k for k in alle if k in {"AttributDrohne", "AttributDrohneAussenhuelle", "Fertigkeit"}}
     besonders = {"Hexkraft", "Sphäre", "NeuroWeavingWert", "NeuroWeaving"}
     grundlage = {k for k in alle if k not in besonders}
     if ist_ki:
         grundlage = (grundlage - {"AttributKörperlich"}) | ({"AttributMatrix"} & alle)
     else:
         grundlage = grundlage - {"AttributMatrix"}
+    grundlage = grundlage - {"AttributDrohne", "AttributDrohneAussenhuelle"}
     return grundlage | BEREICHE_JE_WEG.get(weg, set())
 
 
@@ -115,6 +139,10 @@ def bogen_uebersicht(
 ) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
+    # Drohne/Fahrzeug (25.10.2026): eigenes Blatt, siehe ice_max()/initiative()
+    # oben — beide bekommen hier den Flag statt ihn selbst aus `person` zu lesen,
+    # damit die reinen Formelfunktionen unabhängig von der Person-Form bleiben.
+    ist_drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
     # -1 (Sentinel aus entities/repository.py::_BOGEN_DEFAULTS, "kein
     # Override") UND None (Bestandsdaten, die auch durch _mit_defaults noch
     # nicht liefen, z.B. in Tests mit rohen dicts) heissen "Normalfall" — 0
@@ -124,7 +152,7 @@ def bogen_uebersicht(
     g_grundwert = GESUNDHEIT_GRUNDWERT if roh_grundwert is None or roh_grundwert == -1 else int(roh_grundwert)
     g_max = gesundheit_max(werte, g_grundwert)
     w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0), chrom_verlust)
-    i_max = ice_max(weg, werte, commlink_cyberwall)
+    i_max = ice_max(weg, werte, commlink_cyberwall, ist_drohne)
     # Gesamt-EP = individuelle Erfahrung + Kampagnen-EP + Extra-EP
     erfahrung_person = int(person.get("erfahrung") or 0)
     extra_ep = int(person.get("extraEP") or 0)
@@ -175,7 +203,7 @@ def bogen_uebersicht(
         "offline": weg != "NEUROWEAVER" and commlink_cyberwall <= 0,
         # Regelblatt Zeile 57: + CyberwareMod. Der Reflex-Booster gibt je
         # nach Stufe +1/+3/+6 (Zeilen 421-444).
-        "initiative": initiative(werte, initiative_mod),
+        "initiative": initiative(werte, initiative_mod, ist_drohne),
         # Getrennt ausgewiesen, damit das Blatt "9 (+3 Chrom)" zeigen kann.
         "initiativeMod": initiative_mod,
         "erfahrungGesamt": erfahrung,
@@ -206,6 +234,9 @@ def bogen_uebersicht(
         "erstellungAbgeschlossen": bool(person.get("erstellungAbgeschlossen"))
         or any(w > 0 for w in werte.values()),
         "rassenFeatureGenutzt": bool(person.get("rassenFeatureGenutzt")),
+        "istDrohne": bool(person.get("istDrohne")),
+        "istFahrzeug": bool(person.get("istFahrzeug")),
+        "riggerAktiv": bool(person.get("riggerAktiv")),
     }
 
 

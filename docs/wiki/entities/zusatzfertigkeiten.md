@@ -232,7 +232,10 @@ Browser-Klicktest** — siehe CLAUDE.md "Offen: Was Mark selbst testen muss".
   Ausschluss), aber die Erstellungs-/LevelUp-Flows hängen nur an
   Spieler-Charakteren. Die SL könnte theoretisch über die Backend-Route
   auch NPCs Zusatzfertigkeiten geben, hat dafür aber keinen eigenen UI-Weg
-  (nur über die Person-Route direkt).
+  (nur über die Person-Route direkt). **Teilweise beantwortet (25.10.2026):**
+  der geplante Drohnen/Fahrzeug-Knotentyp (`istDrohne`/`istFahrzeug`, siehe
+  [[drohnen-fahrzeuge]]) ist ebenfalls ein `Person`-Knoten — Zusatzfertigkeiten
+  wie die geplante „Fliegen“ funktionieren dort ohne jede Code-Änderung.
 
 ## Siehe auch
 

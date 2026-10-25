@@ -3,6 +3,32 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-25] gebaut | Drohnen/Fahrzeuge Phase 1: Datenmodell-Fundament
+
+`istDrohne`/`istFahrzeug`/`riggerAktiv` an `Person`, acht neue
+TraitDef-Attribute (`AttributDrohne`×7, `AttributDrohneAussenhuelle`×1),
+`sichtbare_kategorien()`/`initiative()`/`ice_max()` mit `ist_drohne`-Zweig
+(Initiative Geschwindigkeit+CPU, I.C.E. eigenes Attribut), neue
+Kosten-Kategorien in `erfahrung.py` (Außenhülle doppelter Faktor).
+`gesundheit_max()` unverändert wiederverwendet. 41 neue/bestehende Tests
+grün, volle Suite ohne Regression. Phase 2 (Nuyen-Kauf, Riggerkonsole-Slots,
+Frontend, Reparatur-Menü) offen. Siehe [[concepts/drohnen-fahrzeuge]].
+
+## [2026-10-25] entschieden | Drohnen/Fahrzeuge komplett neu konzipiert
+
+Im Chat mit Mark: Drohne/Fahrzeug wird eigener Person-Knoten
+(`istDrohne`/`istFahrzeug`, wie `istCritter`/`istKI`) statt Item-Feld, damit
+Waffen/Rüstung über das bestehende Besitz-System laufen. 8 Attribute in zwei
+Spalten (Körperlich/Technisch, keine soziale Spalte), Initiative
+Geschwindigkeit+CPU, I.C.E. eigenes steigerbares Attribut, Außenhülle mit
+doppeltem Steigerungs-Faktor. Erschaffung/Steigerung in Nuyen statt XP
+(gleiche Faktor-Formel, neue Kampagnen-Einstellung `nuyenProXp`, Start 200¥).
+Riggerkonsole bekommt aktive Slots (`maxDrohnen`, bisher ungenutztes Feld),
+inaktive Drohnen erscheinen nicht im Kampf. Neues eigenständiges
+Reparatur-Burgermenü, reine Formel-Wiederverwendung aus der
+Rüstungsreparatur. **Noch nicht implementiert**, siehe
+[[concepts/drohnen-fahrzeuge]] für das volle Datenmodell und offene Fragen.
+
 ## [2026-10-25] neu | Whiteboard: mehrere live mitzeichenbare Boards
 
 Neuer Burgermenü-Punkt bei SL und Spielern. Knotentyp `Zeichnung`

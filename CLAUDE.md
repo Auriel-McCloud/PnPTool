@@ -2,6 +2,40 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Als nächstes geplant (Phase 2 — Nuyen-Kauf, Riggerkonsole, Frontend)
+
+- **Drohnen/Fahrzeuge Phase 1 — Datenmodell-Fundament gebaut** (25.10.2026,
+  siehe `docs/wiki/concepts/drohnen-fahrzeuge.md`): `istDrohne`/`istFahrzeug`/
+  `riggerAktiv` an `Person` (`entities/schemas.py`, `PERSON_FIELDS`). Acht
+  neue TraitDef-Attribute (`traits/seed.py`, Kategorien `AttributDrohne` ×7
+  und `AttributDrohneAussenhuelle` ×1, defaultMax 10 — Punkte-Anzeige-Deckel
+  vorläufig). `bogen.py`: `sichtbare_kategorien()`/`initiative()`/`ice_max()`
+  haben jetzt einen `ist_drohne`-Zweig (Initiative = Geschwindigkeit+CPU,
+  I.C.E. ein eigenes Attribut statt abgeleitet, Blatt zeigt nur die
+  Drohnen-Attribute + volle Fertigkeitenliste, keine Sozial-/Geistig-Spalte).
+  `gesundheit_max()` brauchte **keine** Änderung — der personenspezifische
+  Grundwert vom Critter-Feature trägt auch ein Raumschiff. `erfahrung.py`:
+  neue Kostenkategorien `AttributDrohne` (Faktor 4, wie ein normales
+  Attribut) und `AttributDrohneAussenhuelle` (Faktor 8, doppelt so teuer ab
+  dem zweiten Punkt). Alle vier `sichtbare_kategorien()`-Aufrufstellen
+  (`traits/routes.py` ×3, `traits/catchup.py`) geben den Flag jetzt mit.
+  **Verifiziert:** `pytest tests/test_bogen.py tests/test_drohnen_kosten.py`
+  (41 neue+bestehende Fälle) grün, Backend-Import sauber, volle Suite ohne
+  Regression (Vergleich per `git stash`: dieselben vorbestehenden
+  Windows-Flakes, siehe Stolperstein 8). **Kein Browser-/Frontend-Test nötig
+  — noch keine UI, das Blatt rendert diese Kategorien aber bereits über die
+  bestehende `grenzeVon`-Logik, sobald ein Katalogeintrag auftaucht.**
+- **Noch offen (Phase 2, nicht gebaut):** Nuyen-Kauf-Endpoint (eigene Route
+  statt des EP-Verbrauchs in `steigere_wert`, Kampagnen-Einstellung
+  `nuyenProXp`, Start 200¥), Riggerkonsole-Aktiv-Slot-Durchsetzung
+  (`maxDrohnen`-Deckel beim Aktivieren, bisher nur das Datenfeld
+  `riggerAktiv`), Kampf-Teilnehmerliste filtert noch nicht auf
+  `riggerAktiv=true`, Frontend-Burgermenü „Fahrzeuge & Drohnen“,
+  Reparatur-Burgermenü + `bietetReparatur`-Händlerflag + Verbrauchsgegenstand
+  „Maschinenteil“, Zusatzfertigkeit „Fliegen“ (Mark trägt sie selbst in die
+  SL-Tabelle ein, kein Code nötig). Alles nicht einfach lostbauen, bitte erst
+  mit Mark Reihenfolge klären.
+
 ## Backlog: Mark denkt noch nach (nicht einfach lostbauen)
 
 - **Offene Popups sollen den Mobil-Reload überstehen** (01.10.2026): Nach

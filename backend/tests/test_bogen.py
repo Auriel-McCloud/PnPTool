@@ -202,3 +202,54 @@ class TestLebenspunkteGrundwert:
         u = bogen_uebersicht({"gesundheitGrundwert": 0}, {"Widerstandsfähigkeit": 1})
         assert u["gesundheitGrundwert"] == 0
         assert u["gesundheitMax"] == 1
+
+
+class TestDrohneFahrzeug:
+    """Eigenes Blatt (25.10.2026) — siehe docs/wiki/concepts/drohnen-fahrzeuge.md."""
+
+    ALLE_MIT_DROHNE = ALLE_KATEGORIEN | {"AttributDrohne", "AttributDrohneAussenhuelle"}
+
+    def test_sichtbare_kategorien_nur_drohne_und_fertigkeit(self):
+        sichtbar = sichtbare_kategorien("KEINER", self.ALLE_MIT_DROHNE, ist_drohne=True)
+        assert sichtbar == {"AttributDrohne", "AttributDrohneAussenhuelle", "Fertigkeit"}
+
+    def test_mensch_sieht_keine_drohnen_attribute(self):
+        sichtbar = sichtbare_kategorien("KEINER", self.ALLE_MIT_DROHNE)
+        assert "AttributDrohne" not in sichtbar
+        assert "AttributDrohneAussenhuelle" not in sichtbar
+        assert "AttributKörperlich" in sichtbar
+
+    def test_initiative_ist_geschwindigkeit_plus_cpu(self):
+        werte = {"Geschwindigkeit": 3, "CPU": 2, "Geistesschärfe": 99, "Geschicklichkeit": 99}
+        assert initiative(werte, ist_drohne=True) == 5
+        assert initiative(werte, cyberware_mod=1, ist_drohne=True) == 6
+
+    def test_ice_ist_eigenes_attribut_nicht_abgeleitet(self):
+        werte = {"I.C.E.": 4, "Fassung": 99, "Geistesschärfe": 99}
+        assert ice_max("KEINER", werte, commlink_cyberwall=0, ist_drohne=True) == 4
+        # Commlink/Neuroweaver-Formel darf nicht mitspielen, selbst wenn
+        # beide Felder zufällig gesetzt wären.
+        assert ice_max("NEUROWEAVER", werte, commlink_cyberwall=9, ist_drohne=True) == 4
+
+    def test_bogen_uebersicht_erkennt_istdrohne_und_istfahrzeug(self):
+        u_drohne = bogen_uebersicht(
+            {"istDrohne": True}, {"Geschwindigkeit": 2, "CPU": 3, "I.C.E.": 1}
+        )
+        assert u_drohne["initiative"] == 5
+        assert u_drohne["iceMax"] == 1
+        assert u_drohne["istDrohne"] is True
+
+        u_fahrzeug = bogen_uebersicht(
+            {"istFahrzeug": True}, {"Geschwindigkeit": 4, "CPU": 1, "I.C.E.": 2}
+        )
+        assert u_fahrzeug["initiative"] == 5
+        assert u_fahrzeug["istFahrzeug"] is True
+
+    def test_gesundheit_nutzt_denselben_grundwert_mechanismus(self):
+        """Kein neues System nötig — ein Raumschiff bekommt einfach einen
+        hohen Grundwert, siehe Wiki-Seite."""
+        u = bogen_uebersicht(
+            {"istFahrzeug": True, "gesundheitGrundwert": 40},
+            {"Widerstandsfähigkeit": 5},
+        )
+        assert u["gesundheitMax"] == 45
