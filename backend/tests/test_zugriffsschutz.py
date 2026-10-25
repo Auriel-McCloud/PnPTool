@@ -187,6 +187,12 @@ OHNE_GM_ERLAUBT = {
     # auf den eigenen Charakter), zusätzlich gegen maxDrohnen der
     # ausgerüsteten Riggerkonsole gedeckelt. Ändert nur `riggerAktiv`.
     "/api/campaigns/{campaign_id}/drohnen/{node_id}/aktiv",
+    # Ebenso: einen Nuyen-Punkt an der eigenen Drohne/dem eigenen Fahrzeug
+    # kaufen (entities/routes.py::drohne_steigern). Bezahlt wird aus dem
+    # Kapital des RIGGERS (kann_bezahlen), die Drohne hat kein eigenes
+    # Kapital-Feld. Prüft selbst (_drohne_und_rigger_oder_404): GM immer,
+    # Spieler nur für die eigene Drohne/das eigene Fahrzeug.
+    "/api/campaigns/{campaign_id}/drohnen/{node_id}/steigern",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

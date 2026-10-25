@@ -183,10 +183,20 @@ ausgeweitet:
   grün, echter E2E-Test gegen laufende Neo4j (Wegwerf-Kampagne, Slot-Deckel
   korrekt durchgesetzt, danach aufgeräumt), volle Suite ohne Regression (800
   statt 783 bestanden gegenüber unverändertem Stand, dieselben
-  vorbestehenden Windows-Flakes). **Offene Entscheidung vor dem echten
-  Nuyen-Kauf-Endpoint:** zahlt der Rigger aus eigenem Kapital, oder bekommt
-  die Drohne ein eigenes `kapital`-Feld? **Phase 3 (Frontend: Burgermenü,
-  Reparatur-Menü, Maschinenteil) noch nicht gebaut.**
+  vorbestehenden Windows-Flakes).
+- **25.10.2026 (Phase 2.5 — Nuyen-Kauf-Endpoint, direkt im Anschluss):**
+  Mark beantwortete die offene Frage: „Der Rigger zahlt es aus seinem
+  Kapitel, die Drohne hat keins!" Neue Routen `GET`/`POST
+  .../drohnen/{id}/steigern`, Zahlung ausschließlich aus `kapitalBasis` des
+  Riggers (`traits/drohnen.py::kann_bezahlen`). **Fund:** die
+  Phase-1-TraitDefs waren im lokalen Dev-Neo4j noch nicht gemerged —
+  `seed_traits()` läuft nur beim App-Start, ein laufender `--reload`-Prozess
+  zieht neue Katalogeinträge nicht automatisch nach. Durch expliziten
+  `seed_traits()`-Aufruf dauerhaft behoben. **Verifiziert:** 15/15 neue
+  Tests grün, Zugriffsschutz ohne Regression, echter E2E-Kauf gegen Neo4j.
+  **Phase 3 (Frontend: Burgermenü, Reparatur-Menü, Maschinenteil) noch nicht
+  gebaut.**
+
 ## Alte Version (bis 25.10.2026, status: veraltet — abgelöst durch obige Neuentscheidung)
 
 Beim Kauf wurde die **Stufe** festgelegt und frei auf Werte/Fertigkeiten

@@ -4,15 +4,20 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from pydantic import BaseModel
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.campaigns.repository import get_campaign, get_einstellungen
 from app.entities import repository
 from app.entities import filterung
 from app.ereignisprotokoll import hooks
 from app.lexikon import hooks as lexikon_hooks
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.items import repository as items_repository
-from app.traits.drohnen import kann_aktivieren
+from app.traits import repository as traits_repository
+from app.traits import erfahrung
+from app.traits.bogen import sichtbare_kategorien
+from app.traits.drohnen import kann_aktivieren, kann_bezahlen
 from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
@@ -305,6 +310,150 @@ async def drohne_aktiv_setzen(campaign_id: str, node_id: str, body: dict, viewer
             )
 
     return await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"riggerAktiv": aktiv})
+
+
+class DrohneSteigernInput(BaseModel):
+    traitDefId: str
+
+
+async def _drohne_und_rigger_oder_404(
+    campaign_id: str, node_id: str, viewer: Viewer
+) -> tuple[dict, str | None]:
+    """Lädt die Drohne/das Fahrzeug und prüft den Zugriff — gleiches Muster
+    wie in `drohne_aktiv_setzen`: 404 statt 403, ein Spieler soll nicht
+    erfahren, ob eine fremde Drohne überhaupt existiert."""
+    drohne = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if drohne is None or not (drohne.get("istDrohne") or drohne.get("istFahrzeug")):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    rigger_id = await repository.drohne_rigger(campaign_id, node_id)
+    if viewer.role != "GM" and (rigger_id is None or rigger_id != viewer.person_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    return drohne, rigger_id
+
+
+@router.get("/drohnen/{node_id}/steigern")
+async def drohne_steigerungspreise(
+    campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)
+) -> dict:
+    """Was der nächste Punkt auf jedem Drohnen-/Fahrzeug-Wert in Nuyen kostet.
+
+    Bezahlt wird aus dem Kapital des RIGGERS, nicht der Drohne — die hat
+    kein eigenes Kapital (Mark, 25.10.2026: "Der Rigger zahlt es aus seinem
+    Kapitel, die Drohne hat keins!"). `verfuegbar` zeigt deshalb
+    `kapitalBasis` des Riggers; ohne gebundenen Rigger ist nichts kaufbar.
+    """
+    drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+
+    einstellungen = await get_einstellungen(campaign_id)
+    nuyen_pro_xp = int(einstellungen.get("nuyenProXp") or 0)
+
+    campaign = await get_campaign(campaign_id)
+    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
+
+    werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
+    nach_name = {w["name"]: w["rating"] for w in werte}
+    grenzen = {w["traitDefId"]: w["max"] for w in werte}
+
+    preise = []
+    for eintrag in katalog:
+        if eintrag["category"] not in erlaubt:
+            continue
+        aktuell = nach_name.get(eintrag["name"], 0)
+        preis = erfahrung.nuyen_kosten(eintrag["category"], aktuell, nuyen_pro_xp)
+        if preis is None:
+            continue
+        preise.append(
+            {
+                "traitDefId": eintrag["id"],
+                "name": eintrag["name"],
+                "category": eintrag["category"],
+                "aktuell": aktuell,
+                "max": grenzen.get(eintrag["id"], eintrag["defaultMax"]),
+                "kosten": preis,
+            }
+        )
+
+    rigger_kapital = 0
+    if rigger_id:
+        rigger = await repository.get_node("Person", PERSON_FIELDS, campaign_id, rigger_id)
+        rigger_kapital = int(rigger.get("kapitalBasis") or 0) if rigger else 0
+
+    return {"riggerId": rigger_id, "verfuegbar": rigger_kapital, "werte": preise}
+
+
+@router.post("/drohnen/{node_id}/steigern")
+async def drohne_steigern(
+    campaign_id: str,
+    node_id: str,
+    body: DrohneSteigernInput,
+    viewer: Viewer = Depends(get_viewer),
+) -> dict:
+    """Einen Punkt an einer Drohne/einem Fahrzeug kaufen.
+
+    Bezahlt der RIGGER aus eigenem Kapital (`kapitalBasis`), nicht die
+    Drohne — siehe `kann_bezahlen` für die Begründung. Der Preis wird hier
+    neu berechnet und nicht vom Client übernommen, gleiche Logik wie beim
+    EP-Pendant `steigere_wert` in `traits/routes.py`.
+    """
+    drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    if rigger_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Drohne/dieses Fahrzeug hat keinen Rigger.")
+
+    rigger = await repository.get_node("Person", PERSON_FIELDS, campaign_id, rigger_id)
+    if rigger is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Rigger nicht gefunden")
+
+    campaign = await get_campaign(campaign_id)
+    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    eintrag = next((t for t in katalog if t["id"] == body.traitDefId), None)
+    if eintrag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
+
+    erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
+    if eintrag["category"] not in erlaubt:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dieser Drohne/diesem Fahrzeug nicht offen.")
+
+    werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
+    nach_name = {w["name"]: w["rating"] for w in werte}
+    aktuell = nach_name.get(eintrag["name"], 0)
+    grenze = next((w["max"] for w in werte if w["traitDefId"] == body.traitDefId), eintrag["defaultMax"])
+    if aktuell >= grenze:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"{eintrag['name']} steht bereits auf {grenze}.")
+
+    einstellungen = await get_einstellungen(campaign_id)
+    nuyen_pro_xp = int(einstellungen.get("nuyenProXp") or 0)
+    preis = erfahrung.nuyen_kosten(eintrag["category"], aktuell, nuyen_pro_xp)
+    if preis is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dieser Wert lässt sich nicht steigern.")
+
+    kapital = int(rigger.get("kapitalBasis") or 0)
+    if not kann_bezahlen(preis, kapital):
+        raise HTTPException(status.HTTP_409_CONFLICT, f"{preis}¥ nötig, {kapital}¥ beim Rigger vorhanden.")
+
+    await traits_repository.steigere(campaign_id, node_id, body.traitDefId, aktuell + 1)
+    await repository.update_node(
+        "Person", PERSON_FIELDS, campaign_id, rigger_id, {"kapitalBasis": kapital - preis}
+    )
+
+    # Ereignisprotokoll: dieselbe CharakterEntwicklung-Art wie beim EP-Kauf,
+    # SL-Notiz macht die abweichende Bezahlquelle (Rigger statt eigene XP)
+    # auf einen Blick erkennbar.
+    await hooks.charakterentwicklung(
+        campaign_id,
+        person_id=node_id,
+        art="STEIGERUNG",
+        trait_def_id=body.traitDefId,
+        trait_name=eintrag["name"],
+        alt=str(aktuell),
+        neu=str(aktuell + 1),
+        kosten_oder_menge=preis,
+        sl_notiz=f"Bezahlt vom Rigger {rigger.get('name', '')} ({preis}¥ aus dessen Kapital)",
+    )
+
+    drohne_frisch = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    return {"drohne": drohne_frisch, "riggerKapitalBasis": kapital - preis}
 
 
 @router.get("/ki", response_model=list[dict])

@@ -2,7 +2,36 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Als nächstes geplant (Phase 3 — Frontend, Nuyen-Spend-Entscheidung offen)
+## Als nächstes geplant (Phase 3 — Frontend)
+
+- **Drohnen/Fahrzeuge Phase 2.5 — Nuyen-Kauf-Endpoint** (25.10.2026, direkt im
+  Anschluss, `docs/wiki/concepts/drohnen-fahrzeuge.md`):
+  - Mark entschied die offene Frage aus Phase 2: "Der Rigger zahlt es aus
+    seinem Kapitel, die Drohne hat keins!" — kein eigenes `kapital`-Feld am
+    Drohnen-Knoten.
+  - Neue Routen `GET`/`POST .../drohnen/{id}/steigern` (`entities/routes.py`):
+    Preisliste in Nuyen bzw. Punktkauf, zieht ausschließlich von
+    `kapitalBasis` des gebundenen Rigger-Person-Knotens ab (`traits/drohnen.py::
+    kann_bezahlen`, reine, benannte Regel analog zu `kann_aktivieren`).
+    Spieler dürfen nur die eigene Drohne/das eigene Fahrzeug anfassen
+    (`_drohne_und_rigger_oder_404`, 404 statt 403), in
+    `test_zugriffsschutz.py::OHNE_GM_ERLAUBT` eingetragen.
+  - **Fund beim E2E-Test:** Die acht Drohnen-TraitDefs aus Phase 1
+    (`traits/seed.py`) waren im lokalen Dev-Neo4j NICHT im Katalog, obwohl
+    der Code seit Phase 1 committed war — `seed_traits()` läuft nur beim
+    FastAPI-Lifespan-Start (`app/main.py`), ein nicht neu gestarteter
+    `uvicorn --reload`-Prozess zieht neue Seed-Einträge nicht automatisch
+    nach. Durch einen expliziten `seed_traits()`-Aufruf im E2E-Test gefixt
+    (MERGE ist idempotent, dauerhaft in der DB). **Lehre: nach dem
+    Hinzufügen neuer TraitDefs den Backend-Prozess einmal neu starten** (lokal
+    reicht ein manueller Neustart, auf bebop erledigt das jeder
+    `docker compose up -d --build backend` ohnehin).
+  - **Verifiziert:** `pytest tests/test_drohnen_regeln.py tests/test_drohnen_kosten.py`
+    grün (15/15), `test_zugriffsschutz.py` keine neuen Fehlschläge, echter
+    E2E-Test gegen Neo4j (Wegwerf-Kampagne: Rigger mit 1000¥ kauft einen
+    Drohnen-Attributpunkt für 1000¥ → Rigger-Kapital 0, Drohnen-Wert +1,
+    Drohne selbst weiterhin ohne eigenes Kapital — danach aufgeräumt).
+    **Nicht deployed, nicht im Browser angeklickt** (kein Frontend dafür).
 
 - **Drohnen/Fahrzeuge Phase 2 — Riggerkonsole-Slots, Nuyen-Formel, Kampf-Filter**
   (25.10.2026, direkt im Anschluss an Phase 1, siehe
