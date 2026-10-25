@@ -11,6 +11,8 @@ from app.entities import filterung
 from app.ereignisprotokoll import hooks
 from app.lexikon import hooks as lexikon_hooks
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIELDS, ORT_FIELDS, PERSON_FIELDS
+from app.items import repository as items_repository
+from app.traits.drohnen import kann_aktivieren
 from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
@@ -249,6 +251,60 @@ async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
     return ergebnis
+
+
+@router.get("/drohnen", response_model=list[dict])
+async def list_drohnen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Drohnen/Fahrzeuge fürs geplante Burgermenü — dasselbe schlanke Muster
+    wie `list_critter`/`list_ki`, siehe docs/wiki/concepts/drohnen-fahrzeuge.md."""
+    roh = await repository.list_drohnen(campaign_id)
+    sichtbar = [
+        d for d in roh
+        if is_visible_to(d.get("sichtbarkeit") or "GM", d.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
+    ]
+    return sichtbar
+
+
+@router.post("/drohnen/{node_id}/rigger", response_model=dict, dependencies=[Depends(require_campaign_gm)])
+async def drohne_rigger_setzen(campaign_id: str, node_id: str, body: dict):
+    """Bindet eine Drohne/ein Fahrzeug an ihren Rigger — oder löst die Bindung."""
+    person_id = body.get("personId")
+    ergebnis = await repository.drohne_rigger_setzen(campaign_id, node_id, person_id)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    return ergebnis
+
+
+@router.post("/drohnen/{node_id}/aktiv", response_model=dict)
+async def drohne_aktiv_setzen(campaign_id: str, node_id: str, body: dict, viewer: Viewer = Depends(get_viewer)):
+    """Aktiviert/deaktiviert die Verbindung zur Riggerkonsole.
+
+    25.10.2026 (docs/wiki/concepts/drohnen-fahrzeuge.md): nur der eigene
+    Rigger oder die Spielleitung dürfen das. Aktivieren wird gegen
+    `maxDrohnen` der ausgerüsteten Riggerkonsole gedeckelt — Deaktivieren ist
+    immer erlaubt (ein zu niedriger neuer Deckel zwingt niemanden offline).
+    """
+    aktiv = bool(body.get("aktiv"))
+    drohne = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if drohne is None or not (drohne.get("istDrohne") or drohne.get("istFahrzeug")):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    rigger_id = await repository.drohne_rigger(campaign_id, node_id)
+    if viewer.role != "GM" and (rigger_id is None or rigger_id != viewer.person_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    if aktiv and not drohne.get("riggerAktiv"):
+        if rigger_id is None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Diese Drohne/dieses Fahrzeug hat keinen Rigger.")
+        max_drohnen = await items_repository.riggerkonsole_max_drohnen(campaign_id, rigger_id)
+        aktuell = await repository.aktive_drohnen_zahl(campaign_id, rigger_id)
+        if not kann_aktivieren(aktuell, max_drohnen):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"Riggerkonsole erlaubt nur {max_drohnen} aktive Drohne(n)/Fahrzeug(e) gleichzeitig.",
+            )
+
+    return await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"riggerAktiv": aktiv})
 
 
 @router.get("/ki", response_model=list[dict])

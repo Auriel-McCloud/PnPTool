@@ -107,6 +107,22 @@ def kosten_willenskraft(von: int) -> int:
     return max(1, von) * FAKTOR_WILLENSKRAFT
 
 
+def nuyen_kosten(kategorie: str, von: int, nuyen_pro_xp: int) -> int | None:
+    """Was der nächste Punkt eines Drohnen-/Fahrzeug-Werts in Nuyen kostet.
+
+    Dieselbe Faktor-Formel wie bei EP (`kosten()`), nur mit einem
+    Umrechnungsfaktor multipliziert statt direkt von `Person.erfahrung`
+    abgezogen (25.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md — Mark:
+    "wir werden das System der Kostensteigerung von den XP übernehmen, also
+    in Wahrheit einfach XP × Nuyen rechnen"). `nuyen_pro_xp` kommt aus der
+    Kampagnen-Einstellung `nuyenProXp` (Start 200¥, SL justiert selbst).
+
+    `None` wie bei `kosten()`: diese Kategorie ist nicht käuflich.
+    """
+    xp = kosten(kategorie, von)
+    return None if xp is None else xp * max(0, nuyen_pro_xp)
+
+
 def preisliste(katalog: list[dict], werte: dict[str, int]) -> list[dict]:
     """Für jeden Katalogwert der Preis des nächsten Punktes.
 

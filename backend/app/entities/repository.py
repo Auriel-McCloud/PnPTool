@@ -592,6 +592,88 @@ async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: 
         return dict(record) if record else None
 
 
+async def list_drohnen(campaign_id: str) -> list[dict]:
+    """Alle Drohnen/Fahrzeuge (Person mit istDrohne ODER istFahrzeug) samt Rigger.
+
+    Gleiches schlankes Muster wie `list_critter`/`list_ki` — fürs geplante
+    Burgermenü "Fahrzeuge & Drohnen" (noch nicht gebaut), siehe
+    docs/wiki/concepts/drohnen-fahrzeuge.md.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {campaignId: $campaign_id})
+        WHERE n.istDrohne = true OR n.istFahrzeug = true
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
+        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+               n.istDrohne AS istDrohne, n.istFahrzeug AS istFahrzeug,
+               n.riggerAktiv AS riggerAktiv,
+               p.id AS riggerId, p.name AS riggerName,
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
+        ORDER BY n.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(r) async for r in result]
+
+
+async def drohne_rigger_setzen(campaign_id: str, drohne_id: str, rigger_person_id: str | None) -> dict | None:
+    """Bindet eine Drohne/ein Fahrzeug an ihren Rigger — oder löst die Bindung.
+
+    Gleiches Muster wie `critter_besitzer_setzen`, nur für `istDrohne`/
+    `istFahrzeug` statt `istCritter`.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {id: $drohne_id, campaignId: $campaign_id})
+        WHERE n.istDrohne = true OR n.istFahrzeug = true
+        OPTIONAL MATCH (n)-[alt:BEGLEITET]->(:Person)
+        DELETE alt
+        WITH n
+        OPTIONAL MATCH (neu:Person {id: $person_id, campaignId: $campaign_id})
+        FOREACH (_ IN CASE WHEN neu IS NULL THEN [] ELSE [1] END |
+            CREATE (n)-[:BEGLEITET]->(neu)
+        )
+        WITH n
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
+        RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
+               p.id AS riggerId, p.name AS riggerName
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, drohne_id=drohne_id, person_id=rigger_person_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def drohne_rigger(campaign_id: str, drohne_id: str) -> str | None:
+    """Wer diese Drohne/dieses Fahrzeug fährt — für den Besitzer-Check beim
+    Aktivieren/Deaktivieren und beim Nuyen-Kauf (Spieler dürfen nur ihre
+    eigene Drohne anfassen, die Spielleitung immer)."""
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {id: $drohne_id, campaignId: $campaign_id})-[:BEGLEITET]->(p:Person)
+        RETURN p.id AS riggerId
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, drohne_id=drohne_id)
+        record = await result.single()
+        return record["riggerId"] if record else None
+
+
+async def aktive_drohnen_zahl(campaign_id: str, rigger_person_id: str) -> int:
+    """Wie viele Drohnen/Fahrzeuge dieser Rigger gerade aktiv verbunden hat
+    (`riggerAktiv=true`) — zum Gegenprüfen gegen `maxDrohnen` der Konsole."""
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p:Person {id: $rigger_id, campaignId: $campaign_id})
+        WHERE (n.istDrohne = true OR n.istFahrzeug = true) AND n.riggerAktiv = true
+        RETURN count(n) AS anzahl
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, rigger_id=rigger_person_id)
+        record = await result.single()
+        return int(record["anzahl"]) if record else 0
+
+
 async def list_ki(campaign_id: str) -> list[dict]:
     """Alle KI-Personen (Person mit istKI=true) für die Begleiter-Übersicht.
 

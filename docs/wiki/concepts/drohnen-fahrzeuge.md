@@ -173,7 +173,6 @@ ausgeweitet:
   ohne Regression. Details siehe `CLAUDE.md`. **Phase 2 (Nuyen-Kauf-Endpoint,
   Riggerkonsole-Aktiv-Slot-Durchsetzung, Kampf-Filter, Frontend-Burgermenü,
   Reparatur-Menü, Maschinenteil) noch nicht gebaut.**
-
 ## Alte Version (bis 25.10.2026, status: veraltet — abgelöst durch obige Neuentscheidung)
 
 Beim Kauf wurde die **Stufe** festgelegt und frei auf Werte/Fertigkeiten

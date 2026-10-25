@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
+from app.entities.repository import PERSON_FIELDS, get_node
 from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
@@ -154,6 +155,13 @@ async def beende(campaign_id: str):
 
 @router.post("/teilnehmer", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
 async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
+    if body.personId:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, body.personId)
+        if person and (person.get("istDrohne") or person.get("istFahrzeug")) and not person.get("riggerAktiv"):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Inaktive Drohne/inaktives Fahrzeug kann nicht in den Kampf aufgenommen werden — erst mit der Riggerkonsole verbinden.",
+            )
     kampf = await repository.teilnehmer_hinzu(campaign_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")

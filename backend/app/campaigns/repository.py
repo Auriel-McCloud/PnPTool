@@ -106,6 +106,12 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     "mentorAktiv": True,
     "kontakteAktiv": True,
     "schuldenAktiv": True,
+    # Drohnen/Fahrzeuge (25.10.2026, Phase 2, docs/wiki/concepts/
+    # drohnen-fahrzeuge.md): Nuyen-pro-XP-Punkt-Umrechnung für Attribut-/
+    # Fertigkeitskäufe an Drohnen/Fahrzeugen — Mark: "beginnen wir einfach
+    # mal bei 200 Nuyen", bewusster Startwert zum Playtesten, jederzeit
+    # änderbar. Siehe `traits/erfahrung.py::nuyen_kosten`.
+    "nuyenProXp": 200,
 }
 
 

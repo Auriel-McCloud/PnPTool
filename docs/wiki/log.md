@@ -3,6 +3,17 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-25] gebaut | Drohnen/Fahrzeuge Phase 2: Riggerkonsole-Slots + Nuyen-Formel
+
+`nuyenProXp`-Kampagneneinstellung (Start 200¥), `erfahrung.nuyen_kosten()`.
+Riggerkonsole-`maxDrohnen` jetzt durchgesetzt (neue Repository-Funktionen in
+`items`/`entities`, reine Deckel-Regel in `traits/drohnen.py`), neue Routen
+für Liste/Rigger-Bindung/Aktivieren (Spieler-Selbstbedienung für die eigene
+Drohne). Kampf lehnt inaktive Drohnen als Teilnehmer ab. 52 Tests grün,
+echter E2E-Test gegen laufende Neo4j, volle Suite ohne Regression. Offene
+Entscheidung vor dem echten Kauf-Endpoint: Rigger-Kapital oder eigenes
+Drohnen-Kapital? Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-25] gebaut | Drohnen/Fahrzeuge Phase 1: Datenmodell-Fundament
 
 `istDrohne`/`istFahrzeug`/`riggerAktiv` an `Person`, acht neue

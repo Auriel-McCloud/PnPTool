@@ -5,7 +5,7 @@ gebaut) — die Formel selbst ist aber dieselbe Faktor-Formel wie bei
 menschlichen Attributen, siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
 """
 
-from app.traits.erfahrung import kosten
+from app.traits.erfahrung import kosten, nuyen_kosten
 
 
 class TestAttributDrohne:
@@ -33,3 +33,18 @@ class TestAttributDrohneAussenhuelle:
 
     def test_eskaliert_schneller_je_hoeher_der_wert(self):
         assert kosten("AttributDrohneAussenhuelle", 5) == kosten("AttributDrohne", 5) * 2
+
+
+class TestNuyenKosten:
+    """XP-Preis × Kampagnen-Umrechnung — Mark: 'in Wahrheit einfach XP × Nuyen
+    rechnen', Start 200¥/XP-Punkt."""
+
+    def test_rechnet_xp_mal_umrechnungsfaktor(self):
+        xp = kosten("AttributDrohne", 2)
+        assert nuyen_kosten("AttributDrohne", 2, nuyen_pro_xp=200) == xp * 200
+
+    def test_unbekannte_kategorie_bleibt_nicht_kaeuflich(self):
+        assert nuyen_kosten("DasGibtEsNicht", 0, nuyen_pro_xp=200) is None
+
+    def test_negativer_umrechnungsfaktor_wird_wie_null_behandelt(self):
+        assert nuyen_kosten("AttributDrohne", 0, nuyen_pro_xp=-50) == 0

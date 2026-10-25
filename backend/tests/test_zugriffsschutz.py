@@ -181,6 +181,12 @@ OHNE_GM_ERLAUBT = {
     # überhaupt sehen darf. Board anlegen/umbenennen/freigeben/löschen bleibt
     # SL-Sache (require_campaign_gm an den jeweiligen Routen).
     "/api/campaigns/{campaign_id}/zeichnungen/{zeichnung_id}/pfade",
+    # --- Drohnen/Fahrzeuge: Rigger darf die eigene Verbindung schalten ------
+    # Prüft selbst (entities/routes.py::drohne_aktiv_setzen): GM immer,
+    # Spieler nur für die eigene Drohne/das eigene Fahrzeug (BEGLEITET-Kante
+    # auf den eigenen Charakter), zusätzlich gegen maxDrohnen der
+    # ausgerüsteten Riggerkonsole gedeckelt. Ändert nur `riggerAktiv`.
+    "/api/campaigns/{campaign_id}/drohnen/{node_id}/aktiv",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

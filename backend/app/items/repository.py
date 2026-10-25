@@ -958,6 +958,26 @@ async def initiative_modifikator(campaign_id: str, person_id: str) -> int:
         return int(record["summe"]) if record else 0
 
 
+async def riggerkonsole_max_drohnen(campaign_id: str, person_id: str) -> int:
+    """Wie viele Drohnen/Fahrzeuge dieser Rigger gleichzeitig aktiv haben darf.
+
+    25.10.2026 (docs/wiki/concepts/drohnen-fahrzeuge.md): `maxDrohnen`
+    existierte schon länger am Riggerkonsole-Gegenstand, war aber bisher
+    reine Datenablage ohne Auswertung. Nur **ausgerüstete** Konsolen zählen;
+    bei mehreren (sollte am Tisch nicht vorkommen) gilt die großzügigste.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ = 'Riggerkonsole' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        RETURN coalesce(max(g.maxDrohnen), 0) AS maxDrohnen
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return int(record["maxDrohnen"]) if record else 0
+
+
 async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot: int, eigene_item_id: str) -> str | None:
     """Prüft, ob ein anderes ausgerüstetes Stück derselben Person schon
     denselben Platz belegt (Regelblatt: je Zone drei Plätze).
