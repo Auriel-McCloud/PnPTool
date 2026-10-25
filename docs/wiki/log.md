@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-25] neu | Whiteboard: mehrere live mitzeichenbare Boards
+
+Neuer Burgermenü-Punkt bei SL und Spielern. Knotentyp `Zeichnung`
+(campaign-scoped), SL schaltet Zeichenfreigabe pro Board frei
+(`spielerDuerfenZeichnen`), Standard-Sichtbarkeitsschema, Papierkorb statt
+Hard-Delete. Live-Sync über eigenen WebSocket nach dem Muster der
+SL-Mitteilungen (kompletter Gesamtstand pro Nachricht, kein inkrementelles
+Protokoll). Details siehe `CLAUDE.md` (Zuletzt gebaut 25.10.2026).
+
 ## [2026-10-24] update | SL kann Spezialisierungs-Slots entfernen
 
 Punkte abziehen lässt einen schon vergebenen Slot liegen. Die SL löscht ihn

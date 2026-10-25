@@ -175,6 +175,12 @@ OHNE_GM_ERLAUBT = {
     # Einen zusätzlichen Slot für 4 EP kaufen — analog zu `steigern` oben,
     # prüft die Person selbst sowie Fertigkeitsrating (>=4) und EP-Bilanz.
     "/api/campaigns/{campaign_id}/personen/{person_id}/spezialisierungen/kaufen",
+    # --- Whiteboard: wer zeichnen darf, darf auch den Stand speichern -----
+    # Prüft selbst (logic.darf_zeichnen): GM immer, Spieler nur wenn die SL
+    # dieses eine Board per spielerDuerfenZeichnen freigegeben hat UND er es
+    # überhaupt sehen darf. Board anlegen/umbenennen/freigeben/löschen bleibt
+    # SL-Sache (require_campaign_gm an den jeweiligen Routen).
+    "/api/campaigns/{campaign_id}/zeichnungen/{zeichnung_id}/pfade",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.
@@ -225,6 +231,10 @@ NUR_SPIELLEITUNG_LESBAR = {
     # Anspruch hat, den die Punkte nicht mehr hergeben, ist eine
     # Korrektur-Liste der Spielleitung — kein Spielerwissen.
     "/api/campaigns/{campaign_id}/spezialisierungen",
+    # Whiteboard-Papierkorb: dass ein gelöschtes Board noch existiert und
+    # zurückgeholt werden könnte, ist Wissen der Spielleitung — analog zum
+    # Gegenstands-Mülleimer oben.
+    "/api/campaigns/{campaign_id}/zeichnungen/papierkorb",
 }
 
 

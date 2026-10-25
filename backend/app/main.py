@@ -48,6 +48,8 @@ from app.lexikon.routes import router as lexikon_router
 from app.achievements.routes import router as achievements_router
 from app.spezialisierungen.routes import kampagne_router as spezialisierungen_kampagne_router
 from app.spezialisierungen.routes import router as spezialisierungen_router
+from app.zeichnungen.routes import router as zeichnungen_router
+from app.zeichnungen.routes import ws_router as zeichnungen_ws_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -120,6 +122,8 @@ app.include_router(lexikon_router)
 app.include_router(achievements_router)
 app.include_router(spezialisierungen_router)
 app.include_router(spezialisierungen_kampagne_router)
+app.include_router(zeichnungen_router)
+app.include_router(zeichnungen_ws_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

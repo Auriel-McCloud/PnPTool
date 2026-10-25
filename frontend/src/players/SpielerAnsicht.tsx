@@ -50,6 +50,7 @@ import { SpielerEinstieg } from "./SpielerEinstieg";
 import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
+import { ZeichnungenAnsicht } from "../zeichnungen/ZeichnungenAnsicht";
 import { MeineAchievements } from "../achievements/MeineAchievements";
 
 /**
@@ -92,6 +93,9 @@ const BEREICHE_STATISCH: Bereich[] = [
   // Das Kampagnen-Wiki: hier nur lesend, und nur was die SL freigegeben hat.
   { id: "wiki", name: "Wiki", symbol: "❋", farbe: "var(--bereich-wiki)" },
   { id: "notizen", name: "Notizen", symbol: "✎", farbe: "var(--bereich-notizen)" },
+  // Whiteboard (25.10.2026): nur sichtbar, was die SL freigegeben hat —
+  // Zeichnen nur, wenn das jeweilige Board es erlaubt (siehe backend/app/zeichnungen).
+  { id: "whiteboard", name: "Whiteboard", symbol: "🖊", farbe: "var(--bereich-whiteboard)" },
 ];
 
 // Augments-Bereich: erscheint nur, wenn verbaute Augments vorhanden sind.
@@ -699,6 +703,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       {bereich === "wiki" && <WikiAnsicht campaignId={ich.campaignId} nurLesen />}
 
       {bereich === "notizen" && <SpielerNotizen />}
+
+      {bereich === "whiteboard" && (
+        <ZeichnungenAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} istGm={false} />
+      )}
 
       {bereich === "augments" && (
         <AugmentsAnsicht

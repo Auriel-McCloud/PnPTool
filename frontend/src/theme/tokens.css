@@ -150,6 +150,9 @@
      ungenutzt als Bereichsfarbe — ein Bündel ist "weggepackte Fracht", kein
      Status-Signal und keine der bestehenden Rollenfarben. */
   --bereich-buendel: var(--p-tuerkis);
+  /* Whiteboard (25.10.2026): eigenes Blau wie ein Trockenlöschmarker,
+     bisher ungenutzt als Bereichsfarbe. */
+  --bereich-whiteboard: var(--p-blau);
 
   /* == 4. Wertegruppen (Charakterblatt) ============================== */
   /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,

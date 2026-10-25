@@ -875,6 +875,7 @@ npm run dev
 | Rüstung | ✅ | Kästchen + Schadensreduktion + Reparatur (Selbst/Händler), siehe `docs/api/ruestung.md` |
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
+| Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 
 **Zuletzt gebaut (24.10.2026 — Shop-Tipp poppt automatisch im Freebees-Schritt auf):**
 - **Was:** Mark: beim Erreichen des Freebees-Schritts soll von selbst ein
@@ -942,6 +943,66 @@ npm run dev
 - **Was:** Im Spieler-Portrait zwei Wege. „Zeichnen“ ist ein Skizzenblock im Commlink-Fenster (`react-sketch-canvas`, `ZeichenblockPopup.tsx`). „Zeichentisch“ öffnet Klecks (Ebenen, Pinsel, Druck) in einem eigenen Fenster (`frontend/public/klecks/`, Embed von bitbof/klecks, MIT). Beide speichern über `POST /api/spieler/mein-bild`. Im Zeichentisch heißt der Knopf „Portrait“ (deutsche Klecks-Übersetzung dafür angepasst). Bestehendes Portrait liegt als Ebene darunter. Ebenen überleben das Speichern nicht — es wird ein flaches PNG. Zweites Antippen fokussiert das offene Fenster, lädt es nicht neu.
 - **Verifiziert:** `npx tsc -b` und `vite build` sauber. Klecks-Embed im Preview geladen (deutsch, Knopf „Portrait“, leere Leinwand). Skizzenblock und der Upload aus dem eingeloggten Spieler-Menü **nicht** angeklickt. Klecks-Neuaufbau: Klone `bitbof/klecks`, `de.json5` Submit-Texte auf Portrait, `npm run lang:build && npm run build:embed`, `dist/` ohne `*.map` nach `frontend/public/klecks/`.
 - **Nachtrag (24.10.2026):** per Fast-Forward beim Tutorial-Shop-Deploy (s.o.) ungeplant mit auf bebop gelandet (Backend+Frontend neu gebaut), Backend-Logs danach fehlerfrei. Browser-Klicktest steht weiterhin aus.
+
+**Zuletzt gebaut (25.10.2026 — Whiteboard: mehrere live mitzeichenbare Boards):**
+- **Was:** Mark wollte ein gemeinsames Whiteboard, explizit die aufwendigere
+  Variante mit echtem Live-Mitzeichnen (nicht nur geteilte Leinwand mit
+  Sync-Punkt). Neuer Knotentyp `Zeichnung` (campaign-scoped, kein
+  EntityKind — eigenes schlankes Repository statt der generischen
+  Entities-Maschinerie): `name`, `pfade` (JSON, react-sketch-canvas-Format,
+  ungeprüft durchgereicht), `bildUrl` (optionales Hintergrundbild, z.B. eine
+  Karte), `spielerDuerfenZeichnen` (SL-Schalter **pro Board**), Standard-
+  Sichtbarkeitsschema (`sichtbarkeit`/`sichtbarFuer`), `geloescht`
+  (Papierkorb statt Hard-Delete, eigene `/papierkorb`-Route). Live-Sync über
+  eigenen WebSocket `/campaigns/{id}/zeichnungen/{id}/live` (eigener
+  `Verteiler`, eine Leitungsgruppe pro Board, nach dem Muster von
+  `mitteilungen/verteiler.py`): jede Änderung geht als KOMPLETTER
+  Gesamtstand raus, kein inkrementelles Protokoll — der Server speichert bei
+  jeder eingehenden Nachricht sofort mit. `darf_zeichnen()` prüft bei jeder
+  Nachricht frisch aus der DB (nicht den Verbindungsstand von
+  `/live`-Aufbau), damit eine SL die Freigabe mitten in der Sitzung
+  umschalten kann. Neuer Burgermenü-Punkt „Whiteboard“ bei SL und Spielern
+  (`zeichnungen/ZeichnungenAnsicht.tsx`, geteilte Komponente mit `istGm`-
+  Schalter wie `ShopUebersicht`): Kachelliste, „+ Neue Zeichnung“,
+  Papierkorb mit Wiederherstellen (nur SL). Die Leinwand
+  (`WhiteboardPopup.tsx`) teilt sich `react-sketch-canvas` und die
+  `.port-*`-Werkzeugleisten-Klassen mit dem Portrait-Skizzenblock
+  (`ZeichenblockPopup.tsx`); Einstellungen (Umbenennen, Zeichenfreigabe,
+  Sichtbarkeit, Hintergrundbild, Löschen) sitzen in einem eigenen
+  Commlink-Popup (`ZeichnungEinstellungenPopup.tsx`), nicht inline. Rein
+  lokale Programmübernahmen eines fremden Standes (`resetCanvas`+
+  `loadPaths`) lösen denselben `onChange` aus wie ein echter Strich — eine
+  150ms-Sperrfrist nach jeder Fernübernahme unterscheidet beide Fälle (siehe
+  Kommentar in `WhiteboardPopup.tsx`).
+- **Offener Punkt notiert, NICHT umgesetzt:** automatische/eingeschränkte
+  Weg-Auswahl bei bestimmten Rassen — Mark will das separat besprechen
+  (siehe Tabellenzeile unten im Ideenschmiede-Abschnitt).
+- **Dateien:** `backend/app/zeichnungen/{__init__,schemas,repository,logic,
+  verteiler,routes}.py`, `backend/tests/{test_zeichnungen_logic,
+  test_zeichnungen_repository}.py`, `backend/app/main.py`,
+  `backend/tests/test_zugriffsschutz.py`,
+  `frontend/src/zeichnungen/{api.ts,ZeichnungenAnsicht.tsx,
+  WhiteboardPopup.tsx,ZeichnungEinstellungenPopup.tsx,whiteboard.css}`,
+  `frontend/src/App.tsx`, `frontend/src/players/SpielerAnsicht.tsx`,
+  `frontend/src/theme/tokens.css` (`--bereich-whiteboard`).
+- **Verifiziert:** `pytest tests/test_zeichnungen_logic.py` grün (6/6).
+  `pytest tests/test_zeichnungen_repository.py` einzeln je Test grün (8/8;
+  im Verbund mit allen 8 gemeinsam vereinzelt Stolperstein-8-Flakiness,
+  siehe unten — kein Logikfehler). `pytest tests/test_zugriffsschutz.py`
+  keine neuen Fehlschläge gegenüber vorher. `npx tsc -b` und `npm run build`
+  (vite build) sauber. **Nicht live deployed, nicht im Browser
+  angeklickt** — bitte am Spieltisch: Whiteboard anlegen, Zeichenfreigabe
+  für Spieler umschalten, mit zwei Tabs (SL + Spieler) gleichzeitig
+  zeichnen und prüfen, dass Striche in Echtzeit beim jeweils anderen
+  ankommen.
+- **Bekannter Stolperstein (Windows + Neo4j-Treiber, nicht neu):** mehrere
+  `asyncio.run()`-Testfälle mit echtem Neo4j-Zugriff **im selben Lauf**
+  können auf Windows mit `AttributeError: 'NoneType' object has no
+  attribute 'send'` im ProactorEventLoop fehlschlagen (Treiber schließt
+  einen Socket, den der Event-Loop schon abgebaut hat). Isoliert laufen sie
+  immer grün. Betraf vorher schon `test_flora_fauna.py` & Co., jetzt auch
+  `test_zeichnungen_repository.py`. Kein Bug im eigenen Code, siehe ggf.
+  `pnptool-development`-Skill für Details.
 
 **Zuletzt gebaut (24.10.2026 — Vorlage kopieren statt weggeben):**
 - **Was:** Im Besitz-Reiter einer Vorlage steht neben „Übergeben“ jetzt „Kopie erstellen“. Übergeben nimmt die Vorlage (weiterhin, besonders weil neue Vorlagen standardmäßig einzigartig sind). Kopie legt dem gewählten Charakter ein eigenes Stück an, die Vorlage bleibt. `POST .../gegenstaende/{id}/zuweisen` nimmt dafür `kopie: true`.
@@ -1721,4 +1782,5 @@ dort weitergepflegt, hier nicht mehr).
 | 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Rest (gleicher Ort, Geld, Credstick, Heiltrank, Granate) **offen**, Datenmodell nicht entschieden | [[gegenstand-transfer]] |
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
+| 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
 

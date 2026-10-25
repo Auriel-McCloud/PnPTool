@@ -1,0 +1,280 @@
+/* ===================================================================
+   Whiteboard: mehrere speicherbare, live mitzeichenbare Boards.
+
+   Hält sich an die Commlink-Sprache (Neonröhren, Tokens aus
+   theme/tokens.css), eigener Namensraum "zb-" (Zeichenbrett). Die
+   eigentliche Leinwand teilt sich die Werkzeugleisten-Klassen (.port-*)
+   mit dem Portrait-Skizzenblock (players/ZeichenblockPopup.tsx).
+   =================================================================== */
+
+.zb-ansicht {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+}
+
+.zb-header {
+  flex-shrink: 0;
+}
+
+.zb-header-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zb-header h2 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bereich-whiteboard, var(--neon));
+  text-shadow: 0 0 12px var(--neon-schwach);
+}
+
+.zb-beschreibung {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}
+
+.zb-neu-btn,
+.zb-mini-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--bereich-whiteboard, var(--neon));
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bereich-whiteboard, var(--neon));
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.zb-neu-btn:hover,
+.zb-mini-btn:hover {
+  background: var(--bereich-whiteboard, var(--neon));
+  color: var(--flaeche-tief);
+}
+
+.zb-neu-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zb-leer {
+  color: var(--text-leise);
+  font-size: 13px;
+}
+
+.zb-fehler {
+  color: var(--gefahr);
+  font-size: 12px;
+  margin: 0;
+}
+
+/* --- Liste ---------------------------------------------------------- */
+
+.zb-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.zb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: var(--roehre-breite) solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.zb-item:hover {
+  border-color: var(--bereich-whiteboard, var(--neon));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 0 var(--glut-aussen) -2px var(--bereich-whiteboard, var(--neon)),
+    inset 0 0 var(--glut-innen) -8px var(--bereich-whiteboard, var(--neon));
+}
+
+.zb-item-klickbar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.zb-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  filter: drop-shadow(0 0 4px var(--bereich-whiteboard, var(--neon)));
+}
+
+.zb-inhalt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zb-inhalt strong {
+  display: block;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zb-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.zb-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--flaeche-tief);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-aus);
+}
+
+.zb-badge-gut {
+  color: var(--gut);
+}
+
+.zb-zahnrad {
+  flex-shrink: 0;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.zb-zahnrad:hover {
+  border-color: var(--bereich-whiteboard, var(--neon));
+  color: var(--bereich-whiteboard, var(--neon));
+}
+
+/* --- Formulare / Einstellungen-Popup -------------------------------- */
+
+.zb-anlegen-form,
+.zb-einstellungen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.zb-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85em;
+  color: var(--text-leise);
+}
+
+.zb-feld-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.zb-input {
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-tief);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.zb-input:focus {
+  outline: none;
+  border-color: var(--bereich-whiteboard, var(--neon));
+}
+
+.zb-schalter-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.zb-bild-vorschau {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+}
+
+.zb-loeschen-btn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border: 1px solid var(--gefahr);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--gefahr);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.zb-loeschen-btn:hover {
+  background: var(--gefahr);
+  color: var(--flaeche-tief);
+  box-shadow: 0 0 8px var(--gefahr);
+}
+
+/* --- Leinwand im Whiteboard-Fenster ---------------------------------- */
+
+.zb-leinwand {
+  min-height: 55vh;
+}

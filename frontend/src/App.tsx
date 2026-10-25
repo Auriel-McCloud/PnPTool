@@ -43,6 +43,7 @@ import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
 import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
 import { RastenVerwaltung } from "./traits/RastenVerwaltung";
 import { BuendelAnsicht } from "./buendel/BuendelAnsicht";
+import { ZeichnungenAnsicht } from "./zeichnungen/ZeichnungenAnsicht";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -113,6 +114,9 @@ const BEREICHE: Bereich[] = [
   // Bündel-Export (23.10.2026, Phase 1): wiederverwendbare Welt-Inhalte als
   // ZIP für andere Runden teilen (siehe backend/app/campaigns/buendel_export.py).
   { id: "buendel", name: "Bündel", symbol: "🎁", farbe: "var(--bereich-buendel)" },
+  // Whiteboard (25.10.2026): mehrere live mitzeichenbare Boards, Freigabe
+  // fürs Mitzeichnen und Sichtbarkeit pro Board (siehe backend/app/zeichnungen).
+  { id: "whiteboard", name: "Whiteboard", symbol: "🖊", farbe: "var(--bereich-whiteboard)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -135,6 +139,7 @@ const TITEL: Record<string, string> = {
   hintergruende: "Hintergründe: narrativer Katalog",
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
+  whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -388,6 +393,11 @@ function Dashboard() {
 
           {/* Bündel-Export (Phase 1): wiederverwendbare Welt-Inhalte als ZIP teilen. */}
           {bereich === "buendel" && <BuendelAnsicht key={ansichtKennung} campaignId={kampagne.id} />}
+
+          {/* Whiteboard: mehrere live mitzeichenbare Boards. */}
+          {bereich === "whiteboard" && (
+            <ZeichnungenAnsicht key={ansichtKennung} campaignId={kampagne.id} istGm />
+          )}
         </>
       )}
     </CommlinkShell>
