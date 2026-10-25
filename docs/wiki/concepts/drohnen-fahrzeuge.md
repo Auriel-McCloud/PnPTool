@@ -170,8 +170,22 @@ ausgeweitet:
   `initiative()`/`ice_max()` mit `ist_drohne`-Zweig, neue Kosten-Kategorien in
   `erfahrung.py`. `gesundheit_max()` brauchte keine Änderung. **Verifiziert:**
   `pytest tests/test_bogen.py tests/test_drohnen_kosten.py` grün, volle Suite
-  ohne Regression. Details siehe `CLAUDE.md`. **Phase 2 (Nuyen-Kauf-Endpoint,
-  Riggerkonsole-Aktiv-Slot-Durchsetzung, Kampf-Filter, Frontend-Burgermenü,
+  ohne Regression. Details siehe `CLAUDE.md`.
+- **25.10.2026 (Phase 2 — Riggerkonsole-Slots, Nuyen-Formel, Kampf-Filter,
+  direkt im Anschluss):** `nuyenProXp`-Kampagneneinstellung (Start 200¥),
+  `erfahrung.nuyen_kosten()`. Riggerkonsole-`maxDrohnen` jetzt durchgesetzt
+  (`items/repository.py::riggerkonsole_max_drohnen`, `entities/repository.py::
+  aktive_drohnen_zahl`, reine Regel in `traits/drohnen.py::kann_aktivieren`),
+  neue Routen `.../drohnen`, `.../drohnen/{id}/rigger`, `.../drohnen/{id}/aktiv`
+  (Spieler-Selbstbedienung für die eigene Drohne, in
+  `test_zugriffsschutz.py::OHNE_GM_ERLAUBT` eingetragen). Kampf lehnt inaktive
+  Drohnen/Fahrzeuge als Teilnehmer jetzt mit 400 ab. **Verifiziert:** 52 Tests
+  grün, echter E2E-Test gegen laufende Neo4j (Wegwerf-Kampagne, Slot-Deckel
+  korrekt durchgesetzt, danach aufgeräumt), volle Suite ohne Regression (800
+  statt 783 bestanden gegenüber unverändertem Stand, dieselben
+  vorbestehenden Windows-Flakes). **Offene Entscheidung vor dem echten
+  Nuyen-Kauf-Endpoint:** zahlt der Rigger aus eigenem Kapital, oder bekommt
+  die Drohne ein eigenes `kapital`-Feld? **Phase 3 (Frontend: Burgermenü,
   Reparatur-Menü, Maschinenteil) noch nicht gebaut.**
 ## Alte Version (bis 25.10.2026, status: veraltet — abgelöst durch obige Neuentscheidung)
 
