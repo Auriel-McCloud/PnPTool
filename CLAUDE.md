@@ -990,8 +990,9 @@ npm run dev
   im Verbund mit allen 8 gemeinsam vereinzelt Stolperstein-8-Flakiness,
   siehe unten — kein Logikfehler). `pytest tests/test_zugriffsschutz.py`
   keine neuen Fehlschläge gegenüber vorher. `npx tsc -b` und `npm run build`
-  (vite build) sauber. **Nicht live deployed, nicht im Browser
-  angeklickt** — bitte am Spieltisch: Whiteboard anlegen, Zeichenfreigabe
+  (vite build) sauber. **Live auf bebop deployed** (`7aa47f1`, 25.10.2026,
+  Backend+Frontend neu gebaut, Health-Check grün, Code im Image verifiziert
+  via `grep`). **Nicht im Browser angeklickt** — bitte am Spieltisch: Whiteboard anlegen, Zeichenfreigabe
   für Spieler umschalten, mit zwei Tabs (SL + Spieler) gleichzeitig
   zeichnen und prüfen, dass Striche in Echtzeit beim jeweils anderen
   ankommen.
