@@ -14,6 +14,7 @@ from app.ereignisprotokoll import hooks
 from app.lexikon import hooks as lexikon_hooks
 from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIELDS, ORT_FIELDS, PERSON_FIELDS
 from app.items import repository as items_repository
+from app.items.schemas import GegenstandCreate
 from app.traits import repository as traits_repository
 from app.traits import erfahrung
 from app.traits import erstellung
@@ -127,7 +128,63 @@ async def _aufbereiten(
 
 @router.post("/personen", response_model=PersonResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_person(campaign_id: str, body: PersonCreate):
-    return await repository.create_node("Person", PERSON_FIELDS, campaign_id, body.model_dump())
+    person = await repository.create_node("Person", PERSON_FIELDS, campaign_id, body.model_dump())
+    if person and (person.get("istDrohne") or person.get("istFahrzeug")):
+        person = await _drohnen_startausstattung(campaign_id, person)
+    return person
+
+
+async def _drohnen_startausstattung(campaign_id: str, person: dict) -> dict:
+    """Neu angelegte Drohnen/Fahrzeuge bekommen ihre Grundausstattung
+    automatisch (26.10.2026, Mark, nach dem ersten echten Spieltisch-Test).
+
+    **3 Lebenspunkte-Basiswert statt des globalen `GESUNDHEIT_GRUNDWERT`
+    (6):** der globale Wert ist für Menschen/Critter gedacht (siehe
+    `traits/bogen.py::GESUNDHEIT_GRUNDWERT`); nur wenn `gesundheitGrundwert`
+    noch auf dem Sentinel `-1` steht (kein expliziter Override mitgegeben,
+    `entities/schemas.py::PersonCreate`), wird er auf 3 gesetzt — ein
+    Aufrufer, der ausdrücklich einen anderen Wert übergeben hat, wird nicht
+    überschrieben.
+
+    **Außenhülle-Rüstung nach dem Natürliche-Rüstung-Prinzip** (Mark: "wir
+    verwenden das gleiche System wie bei Natürlicher Rüstung, die
+    Widerstandspunkte sind die Rüstungskästchen, und die Außenhülle ist die
+    Reduktion"): automatisch erzeugtes, `istNatuerlich=true`-Item, genau wie
+    Dug'Rahs Chitinpanzer — läuft dadurch ohne jede Parallelimplementierung
+    im bestehenden Rüstungspool/der bestehenden Reparatur mit (siehe
+    `kampf/ruestung.py::anwende_natuerliche_ruestung`, das für Drohnen jetzt
+    zusätzlich die Reduktion live aus der Außenhülle-Rating setzt). Beide
+    Live-Werte starten bei 0 (frische Drohne hat noch keine Punkte verteilt)
+    und wachsen automatisch mit, sobald im Umbauen-Reiter gesteigert wird —
+    keine zweite Pflegestelle nötig.
+
+    Bewusst NICHT Teil davon: ein eigenes Reparatur-statt-Rasten-Heilsystem
+    für die Lebenspunkte selbst (Mark: "das bauen wir danach", eigenständiges
+    Folge-Feature mit Minderwertig-Material-Verbrauch).
+    """
+    aktualisiert = person
+    if person.get("gesundheitGrundwert") in (None, -1):
+        neu = await repository.update_node(
+            "Person", PERSON_FIELDS, campaign_id, person["id"], {"gesundheitGrundwert": 3}
+        )
+        if neu is not None:
+            aktualisiert = neu
+    await items_repository.create_gegenstand(
+        campaign_id,
+        person["id"],
+        GegenstandCreate(
+            name="Außenhülle",
+            description="Eingebaute Panzerung — Kästchen/Reduktion wachsen automatisch mit "
+            "Widerstandsfähigkeit/Außenhülle mit, kein eigenes Item zum An-/Ablegen.",
+            typ="Rüstung",
+            istNatuerlich=True,
+            einzigartig=False,
+            ablage="AUSGERUESTET",
+            sichtbarkeit="GM",
+            sichtbarFuer=[],
+        ).model_dump(),
+    )
+    return aktualisiert
 
 
 @router.get("/personen", response_model=list[PersonResponse])

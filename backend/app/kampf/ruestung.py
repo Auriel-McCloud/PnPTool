@@ -319,7 +319,9 @@ def verteile_kaestchenschaden(geordnet: list[dict], kaestchen_schaden: int) -> l
     return folgen
 
 
-def anwende_natuerliche_ruestung(teile: list[dict], widerstandsfaehigkeit: int) -> list[dict]:
+def anwende_natuerliche_ruestung(
+    teile: list[dict], widerstandsfaehigkeit: int, aussenhuelle: int | None = None
+) -> list[dict]:
     """Ersetzt bei `istNatuerlich`-Teilen das gespeicherte Kästchen-Max.
 
     Natürliche Rüstung (11.10.2026, Verfeinerung der Rassen-/Kreatur-Feature-
@@ -336,6 +338,15 @@ def anwende_natuerliche_ruestung(teile: list[dict], widerstandsfaehigkeit: int) 
     einem Verlust an Widerstandsfähigkeit mehr Kästchen zeigen, als das neue
     Maximum überhaupt hergibt.
 
+    `aussenhuelle` (26.10.2026, Drohnen/Fahrzeuge, Mark: "wir verwenden das
+    gleiche System wie bei Natürlicher Rüstung, die Widerstandspunkte sind
+    die Rüstungskästchen, und die Außenhülle ist die Reduktion"): optionaler
+    zweiter Live-Override, zusätzlich zum Kästchen-Max. Bei Dug'Rah & Co.
+    bleibt `ruestungReduktionBasis` dagegen ein fester, pro Item-Template
+    konfigurierter Wert (deshalb Default `None` = unverändert) — nur die
+    Drohnen-/Fahrzeug-Außenhülle hat ein EIGENES, steigerbares Attribut, das
+    genau diese Rolle spielt (`AttributDrohneAussenhuelle`).
+
     Reine Funktion (keine Datenbankzugriffe): der Aufrufer (traits/routes.py)
     beschafft die Widerstandsfähigkeit-Rating aus `get_ratings_for_entity`
     (dieselbe Quelle wie `traits/bogen.py`s Gesundheitsformel). Gibt pro Teil
@@ -351,6 +362,8 @@ def anwende_natuerliche_ruestung(teile: list[dict], widerstandsfaehigkeit: int) 
             teil["ruestungKaestchenAktuell"] = max(
                 0, min(int(teil.get("ruestungKaestchenAktuell") or 0), widerstandsfaehigkeit)
             )
+            if aussenhuelle is not None:
+                teil["ruestungReduktionBasis"] = max(0, int(aussenhuelle))
         ergebnis.append(teil)
     return ergebnis
 

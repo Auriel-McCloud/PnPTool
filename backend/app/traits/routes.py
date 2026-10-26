@@ -177,17 +177,22 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
+    ist_drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
     erlaubt = sichtbare_kategorien(
         person.get("weg") or "KEINER",
         {t["category"] for t in katalog},
         bool(person.get("istKI")),
-        bool(person.get("istDrohne")) or bool(person.get("istFahrzeug")),
+        ist_drohne,
     )
     # Natürliche Rüstung (11.10.2026): Kästchen-Max kommt live aus der
     # Widerstandsfähigkeit-Rating, nicht aus dem gespeicherten Item-Wert
-    # (siehe kampf/ruestung.py::anwende_natuerliche_ruestung).
+    # (siehe kampf/ruestung.py::anwende_natuerliche_ruestung). Drohnen/
+    # Fahrzeuge (26.10.2026, Mark): zusätzlich die Reduktion live aus der
+    # Außenhülle-Rating — siehe `anwende_natuerliche_ruestung`-Docstring.
     ruestungsteile_live = anwende_natuerliche_ruestung(
-        await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+        await ruestungsteile(campaign_id, person_id),
+        nach_name.get("Widerstandsfähigkeit", 0),
+        aussenhuelle=nach_name.get("Außenhülle", 0) if ist_drohne else None,
     )
 
     return {
@@ -497,8 +502,11 @@ async def ruestungstreffer(
     # sich innerhalb dieser Route nicht.
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     nach_name = {w["name"]: w["rating"] for w in werte}
+    ist_drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
     ruestungsteile_live = anwende_natuerliche_ruestung(
-        await ruestungsteile(campaign_id, person_id), nach_name.get("Widerstandsfähigkeit", 0)
+        await ruestungsteile(campaign_id, person_id),
+        nach_name.get("Widerstandsfähigkeit", 0),
+        aussenhuelle=nach_name.get("Außenhülle", 0) if ist_drohne else None,
     )
     gesamt = pool(ruestungsteile_live)
     if gesamt is None:

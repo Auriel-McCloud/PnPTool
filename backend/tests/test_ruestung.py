@@ -350,6 +350,35 @@ class TestNatuerlicheRuestung:
         assert p["kaestchenAktuell"] == 2 + 5
         assert p["reduktionBasis"] == 2
 
+    def test_aussenhuelle_none_laesst_reduktion_unangetastet(self):
+        """Dug'Rah & Co.: ohne `aussenhuelle` bleibt die Reduktion der feste,
+        im Item-Template konfigurierte Wert — nicht jede natürliche Rüstung
+        hat ein eigenes Reduktions-Attribut."""
+        natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
+        natuerlich["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=6)
+        assert live[0]["ruestungReduktionBasis"] == 2
+
+    def test_aussenhuelle_ueberschreibt_die_reduktion_live(self):
+        """Drohnen/Fahrzeuge (26.10.2026): Außenhülle-Rating ersetzt live die
+        Reduktion, genau wie Widerstandsfähigkeit das Kästchen-Max ersetzt."""
+        aussenhuelle_item = teil("a", "Außenhülle", 0, 0, 0)
+        aussenhuelle_item["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([aussenhuelle_item], widerstandsfaehigkeit=4, aussenhuelle=3)
+        assert live[0]["ruestungKaestchenMax"] == 4
+        assert live[0]["ruestungReduktionBasis"] == 3
+
+    def test_aussenhuelle_negativ_wird_wie_null_behandelt(self):
+        aussenhuelle_item = teil("a", "Außenhülle", 0, 0, 0)
+        aussenhuelle_item["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([aussenhuelle_item], widerstandsfaehigkeit=4, aussenhuelle=-2)
+        assert live[0]["ruestungReduktionBasis"] == 0
+
+    def test_aussenhuelle_betrifft_nur_natuerliche_teile(self):
+        normal = teil("b", "Lederjacke", 5, 5, 1)
+        live = anwende_natuerliche_ruestung([normal], widerstandsfaehigkeit=6, aussenhuelle=3)
+        assert live[0]["ruestungReduktionBasis"] == 1
+
 
 class TestHaendlerReparaturPreis:
     """Marks Vorgabe: quadratisch/progressiv, Deckel 75% vom Neuwert bei

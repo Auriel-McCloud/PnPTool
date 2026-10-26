@@ -28,21 +28,37 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   — vermutlich fehlende lokale Neo4j-Verbindung in dieser Session, nicht
   Gegenstand dieses Fixes).
 
-- **Offen, mit Mark abzustimmen (26.10.2026, aus demselben Gespräch):**
-  Drohnen/Fahrzeuge sollen einen Lebenspunkte-Basiswert **3** statt des
-  globalen `GESUNDHEIT_GRUNDWERT` (6) bekommen (`gesundheit_max() = 3 +
-  Widerstandsfähigkeit`, Mechanismus existiert schon über
-  `Person.gesundheitGrundwert`, siehe `traits/bogen.py`). Zusätzlich soll die
-  Drohnen-Rüstung dasselbe Prinzip wie Natürliche Rüstung nutzen:
-  Widerstandsfähigkeit-Rating = Rüstungskästchen-Max, Außenhülle-Rating
-  (`AttributDrohneAussenhuelle`) = Reduktion — bisher ist Außenhülle nur eine
-  Attribut-Kategorie im Umbauen-Katalog ohne jede mechanische Wirkung. Noch
-  zu klären, bevor gebaut wird (Mark fragt vorab immer das Datenmodell ab):
-  ob das über ein automatisch erzeugtes `istNatuerlich`-Gegenstand-Item läuft
-  (reicht in den bestehenden Rüstungspool/Reparatur-Mechanismus hinein, wie
-  bei Dug'Rah) oder über eigene Person-Felder, ob der 3er-Grundwert nur für
-  neu angelegte oder auch rückwirkend für Marks bereits gebaute Testdrohne
-  gilt, und ob Fahrzeuge denselben Grundwert bekommen oder einen eigenen.
+- **Drohnen/Fahrzeuge: 3 Lebenspunkte-Basiswert + Außenhülle-Rüstung nach
+  dem Natürliche-Rüstung-Prinzip** (26.10.2026, direkt im Anschluss an den
+  obigen Bugfix, Mark per `clarify` abgestimmt): neu angelegte Drohnen/
+  Fahrzeuge (`entities/routes.py::create_person` →
+  `_drohnen_startausstattung`) bekommen jetzt automatisch (1)
+  `gesundheitGrundwert = 3` statt des globalen `GESUNDHEIT_GRUNDWERT` (6,
+  für Menschen/Critter gedacht) — nur wenn kein expliziter Override
+  mitgegeben wurde — und (2) ein automatisch erzeugtes, `istNatuerlich=true`-
+  Item "Außenhülle", genau wie Dug'Rahs Chitinpanzer (ablage AUSGERUESTET,
+  keine Parallelimplementierung, läuft im bestehenden Rüstungspool/der
+  bestehenden Reparatur mit). `kampf/ruestung.py::anwende_natuerliche_ruestung`
+  bekam dafür einen neuen optionalen Parameter `aussenhuelle`: überschreibt
+  zusätzlich zum Kästchen-Max (= Widerstandsfähigkeit-Rating, wie bisher)
+  auch `ruestungReduktionBasis` live aus der Außenhülle-Rating — nur wenn
+  gesetzt, Dug'Rah & Co. bleiben mit festem Item-Reduktionswert unberührt.
+  Gewinkt in `traits/routes.py` an beiden Aufrufstellen (`get_bogen`,
+  `ruestungstreffer`) nur für `istDrohne`/`istFahrzeug`-Personen durch.
+  **Migration für Bestandsdrohnen:** `scripts/migrate_drohnen_startausstattung.py`
+  (idempotent, überspringt wer schon ein `istNatuerlich`-Item hat), lokal UND
+  auf bebop gegen die Live-DB gelaufen — Marks Testdrohne "Spinne-3" NACH
+  Rücksprache rückwirkend nachgerüstet (Mark: "rückwirkend auch für
+  bestehende Drohnen/Fahrzeuge").
+  **Bewusst NICHT Teil davon** (Mark: "das bauen wir danach"): ein eigenes
+  Reparatur-statt-Rasten-Heilsystem für die Lebenspunkte selbst (Drohnen
+  rasten nicht, sie werden repariert — mit Minderwertig-Material-Verbrauch,
+  eigenständiges Folge-Feature, noch nicht gebaut).
+  **Verifiziert:** 7 neue Tests (`test_drohnen_startausstattung.py`,
+  `test_ruestung.py::TestNatuerlicheRuestung` erweitert), volle Suite ohne
+  Regression (54 vorbestehende, unrelated Fehlschläge unverändert), echter
+  Migrationslauf gegen lokale UND bebop-Live-DB verifiziert
+  (idempotent-Check: zweiter Lauf überspringt alles korrekt).
 
 - **Drohnen/Fahrzeuge Phase 3.5 — zweiter Klicktest-Rutsch Marks** (26.10.2026,
   direkt im Anschluss an die drei Bugfixes unten, ebenfalls direkt in Hermes):
