@@ -66,6 +66,7 @@ export function Kampfkarte({
   personId,
   aenderbar = false,
   kompaktStart = false,
+  onInitiativeKlick,
 }: {
   campaignId: string;
   personId: string;
@@ -75,6 +76,10 @@ export function Kampfkarte({
    *  A/P/I in Kurzform, antippen zeigt den Rest ausgeschrieben (Mark,
    *  26.10.2026 — für die Drohnen-Steckbriefe im Kampfmenü). */
   kompaktStart?: boolean;
+  /** Macht die Initiative-Zahl antippbar (Mark, 26.10.2026: kein eigener
+   *  Knopf — genau wie in der Initiativliste reicht ein Klick auf den
+   *  Wert). Nur für Drohnen-Steckbriefe gesetzt. */
+  onInitiativeKlick?: () => void;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
@@ -242,7 +247,7 @@ export function Kampfkarte({
             {uebrigeWillenskraft} übrig — für erzwungene Erfolge oder wilde Magie
           </span>
         </div>
-        <Zahl titel="Initiative" wert={u.initiative} wuerfel />
+        <Zahl titel="Initiative" wert={u.initiative} wuerfel onKlick={onInitiativeKlick} />
       </section>
 
       {/* --- Was man würfelt -------------------------------------------- */}

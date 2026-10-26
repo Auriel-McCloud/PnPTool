@@ -137,19 +137,12 @@ export function DeineDrohnenImKampf({
           {(() => {
             const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
             return (
-              <>
-                {teilnahme && (
-                  <button
-                    type="button"
-                    className="kk-ganzer"
-                    style={{ marginBottom: 10 }}
-                    onClick={() => setInitiativeZiel(teilnahme)}
-                  >
-                    Initiative setzen ({teilnahme.initiative})
-                  </button>
-                )}
-                <Kampfkarte campaignId={campaignId} personId={offenId} kompaktStart />
-              </>
+              <Kampfkarte
+                campaignId={campaignId}
+                personId={offenId}
+                kompaktStart
+                onInitiativeKlick={teilnahme ? () => setInitiativeZiel(teilnahme) : undefined}
+              />
             );
           })()}
         </Fenster>
