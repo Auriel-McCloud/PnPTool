@@ -87,7 +87,13 @@ export function ZusammenlegenPopup({
       </p>
 
       {ladend && <p style={{ color: "var(--text-leise)" }}>Lade mögliche Stücke…</p>}
-      {!ladend && kandidaten.length === 0 && (
+      {!ladend && item.einzigartig && (
+        <p className="mu-leer">
+          Dieses Stück ist als <strong>einzigartig</strong> markiert — einzigartige Stücke lassen sich nicht
+          stapeln. Erst im Umbauen-Formular „Einzigartig" ausschalten, falls es davon mehrere geben soll.
+        </p>
+      )}
+      {!ladend && !item.einzigartig && kandidaten.length === 0 && (
         <p className="mu-leer">Kein anderes Stück passt — gleicher Besitzer und mechanisch identisch nötig.</p>
       )}
 

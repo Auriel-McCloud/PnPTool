@@ -1554,8 +1554,12 @@ export function GegenstandRow({
                           Mark: 3 Maschinenteile sollen ein Objekt mit Anzahl 3
                           werden) zu einem Stapel zusammenlegen. Nur mit
                           Besitzer — Vorlagen haben niemandem gehörende
-                          Duplikate nicht in diesem Sinn. */}
-                      {personId && !einzigartig && (
+                          Duplikate nicht in diesem Sinn. Absichtlich OHNE
+                          einzigartig-Filter: das ist der Schema-Default für
+                          praktisch jeden neuen Gegenstand, ein Filter davor
+                          würde den Knopf fast überall verstecken — das Popup
+                          erklärt es selbst, wenn es wirklich zutrifft. */}
+                      {personId && (
                         <button type="button" onClick={() => setZusammenlegenOffen(true)} style={{ fontSize: "0.85em" }}>
                           <span aria-hidden="true">⧉</span> Zusammenlegen…
                         </button>

@@ -383,8 +383,12 @@ export function GegenstandKachel({
             {/* Zusammenlegen braucht nicht zwingend onWegwerfen/onWeitergeben,
                 aber beide Marker heißen "das ist mein eigener Gegenstand" —
                 onUmlegen ist das zuverlässigste Signal dafür (auch an
-                Stellen, die (noch) kein Wegwerfen anbieten). */}
-            {onZusammengelegt && onUmlegen && campaignId && !item.einzigartig && (
+                Stellen, die (noch) kein Wegwerfen anbieten). Absichtlich OHNE
+                einzigartig-Filter hier: einzigartig ist der Schema-Default
+                (true) für praktisch jeden neu angelegten Gegenstand, ein
+                Filter davor würde den Knopf fast überall unsichtbar machen.
+                Das Popup selbst erklärt es, wenn es wirklich zutrifft. */}
+            {onZusammengelegt && onUmlegen && campaignId && (
               <button type="button" onClick={() => setZusammenlegenOffen(true)} disabled={laeuft}>
                 <span aria-hidden="true">⧉</span> Zusammenlegen
               </button>
@@ -399,7 +403,7 @@ export function GegenstandKachel({
         {/* Zusammenlegen ohne Wegwerfen/Weitergeben an derselben Stelle (z.B.
             Fahrzeuge/Ausrüstung-Reiter, die bisher keinen Fußzeilen-Bereich
             hatten) bekommt die Fußzeile trotzdem, sonst gibt es den Knopf hier nie. */}
-        {!(onWegwerfen || onWeitergeben) && onZusammengelegt && onUmlegen && campaignId && !item.einzigartig && (
+        {!(onWegwerfen || onWeitergeben) && onZusammengelegt && onUmlegen && campaignId && (
           <div className="gg-wegwerfen">
             <button type="button" onClick={() => setZusammenlegenOffen(true)} disabled={laeuft}>
               <span aria-hidden="true">⧉</span> Zusammenlegen
