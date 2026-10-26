@@ -1536,6 +1536,23 @@ export function GegenstandRow({
                     {artFehler && (
                       <p style={{ fontSize: "0.8em", color: "var(--neon-rot, #e55)", margin: 0 }}>{artFehler}</p>
                     )}
+                    {/* Eigenständiger Schalter fürs Lore-Feld `einzigartig`
+                        (26.10.2026, Mark: die beiden Checkboxen oben heißen
+                        zwar auch "Einzigartig...", sind aber beide an
+                        istVorlage gekoppelt und setzen `einzigartig` nie auf
+                        false — es gab schlicht keinen Weg, das Häkchen
+                        rauszunehmen). Läuft über den normalen Autosave
+                        (`formular()` führt `einzigartig` schon), kein
+                        eigener Request nötig. */}
+                    <label style={{ fontSize: "0.9em" }}>
+                      <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
+                      Einzigartig
+                    </label>
+                    <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: 0 }}>
+                      Unabhängig von den beiden Kopier-Optionen oben — rein das Lore-Häkchen "gibt es nur
+                      einmal in der Welt". Muss aus sein, damit Menge/Zusammenlegen unten überhaupt Sinn
+                      ergeben.
+                    </p>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>
                         <input type="checkbox" checked={hatMenge} onChange={(e) => setHatMenge(e.target.checked)} /> Menge

@@ -119,6 +119,25 @@ Spieler es öffnen; die Berechtigung entscheidet ausschließlich das Backend.
   Umbauen-Formular sitzen sollte) erst nach dem ersten echten Einsatz am
   Spieltisch, nicht vorab.
 
+## Nachträge
+
+**26.10.2026, Button unsichtbar:** erste Fassung gated den Zusammenlegen-
+Knopf auf `!item.einzigartig` — da `einzigartig` der Pydantic-Default für
+JEDEN neu angelegten Gegenstand ist (`GegenstandCreate.einzigartig: bool =
+True`), verschwand der Knopf dadurch praktisch überall, auch an Mark bisher
+komplett unberührten Items. Fix: Sichtbarkeit nicht mehr aufs Feld gaten,
+das Popup erklärt den Einzigartig-Fall stattdessen klar, wenn er wirklich
+zutrifft (`stapelkandidaten` liefert für einzigartige Ziele ohnehin `[]`).
+
+**26.10.2026, kein Weg das Häkchen rauszunehmen:** Mark fand zwar zwei
+Checkboxen mit "Einzigartig" im Label im Umbauen-Formular, aber beide sind
+an `istVorlage` gekoppelt (`vorlagenArtSetzen`) und können `einzigartig`
+nie auf `false` setzen — einer der beiden Pfade erzwingt es sogar explizit
+auf `true`. Es gab schlicht keine UI, die das eigentliche Lore-Feld direkt
+umschaltet, obwohl Schema/Autosave es längst unterstützen. Neuer,
+eigenständiger Checkbox direkt vor "Menge verfolgen" im selben Formular,
+unabhängig von den beiden Vorlagen-Art-Optionen.
+
 ## Siehe auch
 
 - [[gegenstand-transfer]] — anderer Gegenstands-Mutations-Pfad (Weitergabe
