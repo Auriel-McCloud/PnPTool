@@ -611,3 +611,27 @@
 .gg-kategorie-symbol {
   font-size: 15px;
 }
+
+/* Drohnen-Ausrüstung: Rigger nimmt ein Item wieder an sich (26.10.2026,
+   Gegenstück zum "Übergeben"-Knopf) — sitzt oben rechts auf der Kachel,
+   ohne deren feste Rastergröße zu sprengen. */
+.gg-zurueckgeben {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  padding: 2px 6px;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.gg-zurueckgeben:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
+}

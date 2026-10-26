@@ -27,7 +27,9 @@ import "../entities/pc-detail.css";
  * siehe `items/routes.py::ablage_aendern`; SICHTBAR sind dabei weiterhin nur
  * Gegenstände, deren Sichtbarkeit die SL freigegeben hat — reine Besitz-
  * Erlaubnis ersetzt nicht die normale Sichtbarkeitsprüfung), blendet
- * Rigger-Zuweisung und Löschen aus — das bleibt SL-Sache.
+ * Rigger-Zuweisung und Löschen aus — das bleibt SL-Sache. Der Rigger kann
+ * außerdem eigene Gegenstände an die Drohne übergeben und zurücknehmen
+ * (`eigenePersonId=riggerId`, siehe `DrohnenAusruestung.tsx`).
  */
 type Unteransicht = "blatt" | "kaufen" | "ausruestung";
 
@@ -165,7 +167,11 @@ export function DrohnenFenster({
           )}
 
           {unteransicht === "ausruestung" && (
-            <DrohnenAusruestung campaignId={campaignId} drohneId={drohneId} />
+            <DrohnenAusruestung
+              campaignId={campaignId}
+              drohneId={drohneId}
+              eigenePersonId={istGm ? null : riggerId}
+            />
           )}
 
           {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}

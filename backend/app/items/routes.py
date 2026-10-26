@@ -85,6 +85,21 @@ def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[s
     if person_type == "PC":
         return "SPEZIFISCH", [person_id]
     return "GM", []
+async def _eigener_kreis(campaign_id: str, viewer_person_id: str, person_id: str | None) -> bool:
+    """Ist `person_id` der Spieler selbst ODER seine eigene gebundene
+    Drohne/sein eigenes Fahrzeug? (26.10.2026, gemeinsamer Besitz-Check für
+    `ablage_aendern` und `besitzer_wechseln` — der Rigger ist nicht
+    identisch mit seiner Drohne, aber darf trotzdem an ihrer Ausrüstung
+    schrauben. Gegenprobe gegen fremde Personen/Drohnen: True nur, wenn der
+    gebundene Rigger der Drohne exakt `viewer_person_id` ist.)"""
+    if person_id is None:
+        return False
+    if person_id == viewer_person_id:
+        return True
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person and (person.get("istDrohne") or person.get("istFahrzeug")):
+        return await drohne_rigger(campaign_id, person_id) == viewer_person_id
+    return False
 
 
 # Was man nicht am Körper trägt: ein Fahrzeug liegt nicht im Rucksack.
@@ -299,17 +314,50 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     return result
 
 
-@campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
-async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenRequest):
+@campaign_router.post("/{item_id}/besitzer", response_model=GegenstandResponse)
+async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenRequest, viewer: Viewer = Depends(get_viewer)):
+    """Gegenstand an eine andere Person übergeben (kein Kopieren — für
+    Vorlagen siehe `zuweisen`).
+
+    **Drohne/Fahrzeug (26.10.2026, Mark: "es müsste die Möglichkeit geben,
+    etwas aus dem Inventar des Riggers auszurüsten bzw. zu übergeben"):**
+    zusätzlich zur Spielleitung auch für den Rigger selbst erlaubt, aber
+    streng auf seinen EIGENEN Kreis begrenzt — Quelle UND Ziel müssen jeweils
+    er selbst oder seine eigene gebundene Drohne/sein eigenes Fahrzeug sein
+    (`_eigener_kreis`). Damit kann der Rigger eigene Ausrüstung an seine
+    Drohne geben (und zurücknehmen), aber keine fremden Gegenstände oder
+    Personen anfassen. Bewusst als SOFORTIGE Übertragung (kein Annehmen/
+    Ablehnen-Angebot wie bei `verhandlung/routes.py`s Party-Weitergabe) —
+    die Drohne trifft keine eigene Entscheidung, das Angebots-Muster ist nur
+    für echte Spieler-zu-Spieler-Transaktionen gedacht.
+    """
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if item.get("istNatuerlich"):
+        # Teil des Körpers, siehe chirurgie.kann_ablegen — ownership-Wechsel
+        # wäre hier noch einschneidender als bloßes Ablegen (26.10.2026:
+        # jetzt auch für den Rigger erreichbar, also lieber einmal zu viel
+        # abgesichert als die automatische Drohnen-Rüstung kaputtzuschieben).
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Natürliche Rüstung ist Teil des Körpers und kann nicht übertragen werden.",
+        )
 
     ziel = await get_node("Person", PERSON_FIELDS, campaign_id, body.zielPersonId)
     if ziel is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zielperson nicht gefunden")
 
     alter_besitzer = await repository.get_owner_id(campaign_id, item_id)
+
+    if viewer.role != "GM":
+        quelle_ok = await _eigener_kreis(campaign_id, viewer.person_id, alter_besitzer)
+        ziel_ok = await _eigener_kreis(campaign_id, viewer.person_id, body.zielPersonId)
+        if not (quelle_ok and ziel_ok):
+            # 404 statt 403: ein Spieler soll nicht erfahren, ob Gegenstand/
+            # Zielperson überhaupt existieren.
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
     updates: dict = {}
     if item["sichtbarkeit"] == "SPEZIFISCH" and item["sichtbarFuer"] == [alter_besitzer]:
         # Sichtbarkeit war exklusiv auf den alten Besitzer zugeschnitten (Standardfall
@@ -529,15 +577,7 @@ async def ablage_aendern(
     """
     if viewer.role != "GM":
         besitzer = await repository.get_owner_person_id(campaign_id, item_id)
-        darf = besitzer is not None and besitzer == viewer.person_id
-        if not darf and besitzer is not None:
-            besitzer_person = await get_node("Person", PERSON_FIELDS, campaign_id, besitzer)
-            ist_drohne = bool(besitzer_person) and (
-                besitzer_person.get("istDrohne") or besitzer_person.get("istFahrzeug")
-            )
-            if ist_drohne:
-                darf = await drohne_rigger(campaign_id, besitzer) == viewer.person_id
-        if not darf:
+        if not await _eigener_kreis(campaign_id, viewer.person_id, besitzer):
             # 404 statt 403: ein Spieler soll nicht erfahren, ob es den
             # Gegenstand überhaupt gibt.
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")

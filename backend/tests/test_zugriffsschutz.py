@@ -54,6 +54,12 @@ OHNE_GM_ERLAUBT = {
     # umlegen. Sie prüft die Besitzverhältnisse selbst (siehe items/routes.py)
     # und darf ausschließlich das Ablage-Feld ändern.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ablage",
+    # Besitzer wechseln (26.10.2026, Mark: "es müsste die Möglichkeit geben,
+    # etwas aus dem Inventar des Riggers auszurüsten bzw. zu übergeben"):
+    # auch für Spieler, aber streng auf den eigenen Kreis begrenzt — Quelle
+    # UND Ziel müssen der Spieler selbst oder seine eigene gebundene Drohne/
+    # sein eigenes Fahrzeug sein (siehe items/routes.py::_eigener_kreis).
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/besitzer",
     # Ebenso: den eigenen Kram wegwerfen. Prüft die Besitzverhältnisse selbst
     # und **löscht nichts** — der Gegenstand wandert in den Mülleimer der
     # Spielleitung, die ihn zurückholen oder endgültig entfernen kann.
