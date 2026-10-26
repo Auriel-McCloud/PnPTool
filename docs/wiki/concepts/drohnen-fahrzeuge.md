@@ -176,6 +176,42 @@ Shop-/Händler-Integration oder das größere Reparatur-Feature unten.
   Maschinenteilen, das Burgermenü „Reparatur" und die Hardware-Probe aus
   dem Abschnitt „Reparatur" unten — eigenständiges, größeres Folge-Feature.
 
+### Maker-Probe beim Material-Umbau (26.10.2026, Folge-Feature)
+
+Mark, nachdem er die ersten drei Maschinenteile im echten Einsatz probiert
+hat: "es sollte nicht einfach nur möglich sein ein Maschinenteil zu
+verwenden, sondern der Spieler muss dann eine Probe auf Maker machen." Der
+Material-Pfad aus dem Abschnitt oben kaufte den Punkt bisher instant —
+jetzt hängt er an einer selbstberichteten Maker-Probe, genau wie
+Paralysewurf/Booster-Aktivierung: der Spieler würfelt physisch am Tisch,
+das Tool rechnet nur den Pool vor und nimmt das Ergebnis entgegen.
+
+- `traits/drohnen.py::benoetigte_erfolge_maker_probe(aktuell)` = `aktuell + 1`
+  — je höher der Zielwert schon steht, desto mehr Erfolge nötig.
+- `GET .../drohnen/{id}/maker-probe-pool?traitDefId=…`: liefert Maker
+  (Hardware)-Wert DES RIGGERS, alle seine Attribute zur freien Partnerwahl
+  (Mark: "den er dann mit einem Attribut kombinieren darf" — kein fester
+  Pflicht-Partner wie bei der normalen Hardware-Reparatur-Probe) und die
+  benötigten Erfolge. Reine Leseabfrage, würfelt nichts selbst.
+- `POST .../drohnen/{id}/steigern` verlangt beim Material-Pfad jetzt
+  zusätzlich `probenErgebnis: "ja" | "nein" | "patzer"` (400 ohne). "ja"
+  erhöht den Wert UND verbraucht das Material, "patzer" verbraucht NUR das
+  Material (kein Fortschritt), "nein" lässt beides unangetastet — der
+  Rigger darf später erneut versuchen.
+- Frontend (`DrohnenSteigern.tsx`/`MakerProbePopup.tsx`): Materialzahlungen
+  laufen deshalb NICHT mehr über den Sammel-Warenkorb (`kaeufe`) wie die
+  ¥-Käufe — ein Würfelwurf ist ein Einzelereignis am Tisch. Klick auf die
+  Hauptkarte bei gewählter Material-Zahlart öffnet das Popup sofort statt
+  den Kauf vorzumerken; "Speichern"/"Zurücksetzen" bleiben reine ¥-Sache.
+- Gleichzeitig: die Zahlart-Knöpfe zeigen pro Qualitätsstufe jetzt EINEN
+  Knopf mit Gesamtmenge (`materialGruppenFuer`) statt einen pro einzelnem,
+  noch nicht zusammengelegtem Gegenstand (Mark: "nur ein Stück mit der
+  Menge dort stehen, und nicht alle einzelt aufgeführt werden").
+- **Weiterhin draußen gelassen:** das eigenständige Burgermenü „Reparatur"
+  unten bleibt ein eigenes, noch nicht gebautes Feature — diese Maker-Probe
+  gilt nur für den Umbau-Kauf (Attribut/Fertigkeit per Material steigern),
+  nicht für Schadensreparatur.
+
 ### Reparatur (neues eigenständiges Feature, gilt für Rüstung UND Drohne/Fahrzeug)
 
 `kampf/ruestung.py` hat die komplette Formel schon fertig, bisher nur an

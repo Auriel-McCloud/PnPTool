@@ -3,7 +3,7 @@
 Siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
 """
 
-from app.traits.drohnen import kann_aktivieren, kann_bezahlen
+from app.traits.drohnen import benoetigte_erfolge_maker_probe, kann_aktivieren, kann_bezahlen
 
 
 class TestKannAktivieren:
@@ -33,3 +33,17 @@ class TestKannBezahlen:
     def test_negatives_kapital_wird_wie_null_behandelt(self):
         assert kann_bezahlen(preis=0, rigger_kapital=-100) is True
         assert kann_bezahlen(preis=1, rigger_kapital=-100) is False
+
+
+class TestBenoetigteErfolgeMakerProbe:
+    """Mark, 26.10.2026: 'die Anzahl der Erfolge die er benötigt ist die
+    Anzahl der vorhandenen Punkte in dem Skill/Attribut +1'."""
+
+    def test_frischer_wert_braucht_einen_erfolg(self):
+        assert benoetigte_erfolge_maker_probe(0) == 1
+
+    def test_hoher_wert_braucht_entsprechend_mehr(self):
+        assert benoetigte_erfolge_maker_probe(4) == 5
+
+    def test_negativer_wert_wie_null_behandelt(self):
+        assert benoetigte_erfolge_maker_probe(-3) == 1

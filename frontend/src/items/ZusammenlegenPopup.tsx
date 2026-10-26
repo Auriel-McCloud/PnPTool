@@ -44,7 +44,13 @@ export function ZusammenlegenPopup({
     setAusgewaehlt(new Set());
     itemsApi
       .stapelkandidaten(campaignId, item.id)
-      .then(setKandidaten)
+      .then((liste) => {
+        setKandidaten(liste);
+        // Mark, 26.10.2026: "müsste standardmäßig alles ausgewählt sein" —
+        // wer das Popup öffnet, will fast immer alles zusammenlegen; einzeln
+        // abwählen ist seltener als einzeln anwählen.
+        setAusgewaehlt(new Set(liste.map((k) => k.id)));
+      })
       .catch(() => setFehler("Kandidaten konnten nicht geladen werden"))
       .finally(() => setLadend(false));
   }, [offen, campaignId, item.id]);

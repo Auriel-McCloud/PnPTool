@@ -68,3 +68,15 @@ def maschinenteil_reicht(qualitaet: str, category: str) -> bool:
     """Deckt diese Maschinenteil-Qualität einen Steigerungskauf dieser
     Kategorie ab? Höhere Stufe deckt alles, was eine niedrigere auch deckt."""
     return category in _MASCHINENTEIL_KATEGORIEN.get(qualitaet, set())
+
+
+def benoetigte_erfolge_maker_probe(aktueller_wert: int) -> int:
+    """Wie viele Erfolge die Maker-Probe für einen Material-Umbau braucht.
+
+    Mark, 26.10.2026: "die Anzahl der Erfolge die er benötigt ist die
+    Anzahl der vorhandenen Punkte in dem Skill/Attribut +1" — ein frischer
+    Punkt (aktuell 0) braucht nur 1 Erfolg, ein schon hoher Wert entsprechend
+    mehr. Gilt nur für den Material-Pfad (Maker baut/modifiziert); der
+    ¥-Pfad (Auftrag an einen Profi) würfelt nicht.
+    """
+    return max(0, aktueller_wert) + 1

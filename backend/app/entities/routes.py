@@ -17,7 +17,13 @@ from app.items import repository as items_repository
 from app.traits import repository as traits_repository
 from app.traits import erfahrung
 from app.traits.bogen import sichtbare_kategorien
-from app.traits.drohnen import DROHNE_GESPERRTE_FERTIGKEITEN, kann_aktivieren, kann_bezahlen, maschinenteil_reicht
+from app.traits.drohnen import (
+    DROHNE_GESPERRTE_FERTIGKEITEN,
+    benoetigte_erfolge_maker_probe,
+    kann_aktivieren,
+    kann_bezahlen,
+    maschinenteil_reicht,
+)
 from app.zusatzfertigkeiten import repository as zf_repository
 from app.entities.visibility import (
     filter_entities_for_viewer,
@@ -336,6 +342,13 @@ class DrohneSteigernInput(BaseModel):
     # Maschinenteil-Gegenstand des Riggers statt Nuyen-Abzug — siehe
     # traits/drohnen.py::maschinenteil_reicht.
     materialGegenstandId: str | None = None
+    # Maker-Probe (26.10.2026, Mark: "es sollte nicht einfach nur möglich
+    # sein ein Maschinenteil zu verwenden, sondern der Spieler muss dann
+    # eine Probe auf Maker machen"): nur beim Material-Pfad Pflicht, der
+    # ¥-Pfad (Auftrag an einen Profi) würfelt nicht. "ja" erhöht den Wert
+    # UND verbraucht das Material, "patzer" verbraucht NUR das Material,
+    # "nein" lässt alles unverändert (siehe drohne_steigern).
+    probenErgebnis: Literal["ja", "nein", "patzer"] | None = None
 
 
 async def _drohne_und_rigger_oder_404(
@@ -352,6 +365,48 @@ async def _drohne_und_rigger_oder_404(
     if viewer.role != "GM" and (rigger_id is None or rigger_id != viewer.person_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
     return drohne, rigger_id
+
+
+async def _drohnen_steigerungs_ziel(
+    campaign_id: str, node_id: str, drohne: dict, trait_def_id: str
+) -> tuple[str, str, int, int, str | None, dict | None]:
+    """Löst eine traitDefId (TraitDef-Id ODER "zf:<id>") zu Name/Kategorie/
+    aktuellem Wert/Obergrenze auf — gemeinsame Logik für Preisabfrage, Kauf
+    UND Maker-Probe-Pool, damit sie nicht an drei Stellen auseinanderläuft.
+
+    Rückgabe: (name, category, aktuell, grenze, zf_id, gewaehlte_zf) — die
+    letzten beiden nur bei einer Zusatzfertigkeit gesetzt (fürs spätere
+    hinzufuegen/steigere in drohne_steigern).
+    """
+    if trait_def_id.startswith("zf:"):
+        zf_id = trait_def_id[len("zf:") :]
+        zusatzfertigkeit = await zf_repository.hole(campaign_id, zf_id)
+        if zusatzfertigkeit is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Zusatzfertigkeit nicht gefunden")
+        gewaehlte_zf = next(
+            (z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id) if z["id"] == zf_id),
+            None,
+        )
+        aktuell = gewaehlte_zf["rating"] if gewaehlte_zf else 0
+        return zusatzfertigkeit["name"], "Zusatzfertigkeit", aktuell, 6, zf_id, gewaehlte_zf
+
+    campaign = await get_campaign(campaign_id)
+    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    eintrag = next((t for t in katalog if t["id"] == trait_def_id), None)
+    if eintrag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
+    # Eine Drohne riggt sich nicht selbst — dieselbe Sperre wie in der
+    # Preisliste, hier zusätzlich serverseitig gegen direkte POSTs.
+    if eintrag["name"] in DROHNE_GESPERRTE_FERTIGKEITEN:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"{eintrag['name']} steht einer Drohne/einem Fahrzeug nicht offen.")
+    erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
+    if eintrag["category"] not in erlaubt:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dieser Drohne/diesem Fahrzeug nicht offen.")
+    werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
+    nach_name = {w["name"]: w["rating"] for w in werte}
+    aktuell = nach_name.get(eintrag["name"], 0)
+    grenze = next((w["max"] for w in werte if w["traitDefId"] == trait_def_id), eintrag["defaultMax"])
+    return eintrag["name"], eintrag["category"], aktuell, grenze, None, None
 
 
 @router.get("/drohnen/{node_id}/steigern")
@@ -433,6 +488,58 @@ async def drohne_steigerungspreise(
     return {"riggerId": rigger_id, "verfuegbar": rigger_kapital, "nuyenProXp": nuyen_pro_xp, "werte": preise}
 
 
+class AttributWert(BaseModel):
+    name: str
+    wert: int
+
+
+class MakerProbePool(BaseModel):
+    """Pool-Infos fürs Maker-Probe-Popup vorm Material-Umbau (siehe
+    `drohne_steigern`, Material-Pfad)."""
+
+    name: str
+    benoetigteErfolge: int
+    maker: int
+    attribute: list[AttributWert]
+
+
+@router.get("/drohnen/{node_id}/maker-probe-pool", response_model=MakerProbePool)
+async def drohne_maker_probe_pool(
+    campaign_id: str, node_id: str, traitDefId: str = Query(...), viewer: Viewer = Depends(get_viewer)
+):
+    """Pool-Infos für die Maker-Probe: Maker (Hardware)-Wert UND alle
+    Attribute DES RIGGERS zur freien Partnerwahl (Mark, 26.10.2026: "den er
+    dann mit einem Attribut kombinieren darf"), plus wie viele Erfolge der
+    aktuelle Zielwert verlangt (`traits/drohnen.py::benoetigte_erfolge_maker_probe`).
+    Reine Leseabfrage, kein Seiteneffekt — gewürfelt wird am Tisch.
+    """
+    drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    if rigger_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Drohne/dieses Fahrzeug hat keinen Rigger.")
+    name, _category, aktuell, _grenze, _zf_id, _gewaehlte_zf = await _drohnen_steigerungs_ziel(
+        campaign_id, node_id, drohne, traitDefId
+    )
+
+    campaign = await get_campaign(campaign_id)
+    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    rigger_werte = await traits_repository.get_ratings_for_entity(campaign_id, rigger_id)
+    nach_name = {w["name"]: w["rating"] for w in rigger_werte}
+    # Alle Attribut-Kategorien generisch (Körperlich/Gesellschaftlich/Geistig,
+    # bei KI-Riggern zusätzlich Matrix) — kein fester Dreier-Katalog, siehe
+    # references/probenrechner.md.
+    attribute = [
+        AttributWert(name=t["name"], wert=nach_name.get(t["name"], 0))
+        for t in katalog
+        if t["category"].startswith("Attribut")
+    ]
+    return MakerProbePool(
+        name=name,
+        benoetigteErfolge=benoetigte_erfolge_maker_probe(aktuell),
+        maker=nach_name.get("Maker (Hardware)", 0),
+        attribute=attribute,
+    )
+
+
 @router.post("/drohnen/{node_id}/steigern")
 async def drohne_steigern(
     campaign_id: str,
@@ -448,6 +555,12 @@ async def drohne_steigern(
     `materialGegenstandId`, siehe `maschinenteil_reicht`) — nie beides. Der
     Preis wird hier neu berechnet und nicht vom Client übernommen, gleiche
     Logik wie beim EP-Pendant `steigere_wert` in `traits/routes.py`.
+
+    **Material-Pfad verlangt zusätzlich `probenErgebnis`** (Mark, 26.10.2026):
+    der Spieler würfelt die Maker-Probe physisch am Tisch (Pool/benötigte
+    Erfolge aus `drohne_maker_probe_pool`) und meldet das Ergebnis.
+    "ja" erhöht den Wert UND verbraucht das Material, "patzer" verbraucht
+    NUR das Material (kein Fortschritt), "nein" lässt beides unverändert.
     """
     drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
     if rigger_id is None:
@@ -457,40 +570,10 @@ async def drohne_steigern(
     if rigger is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Rigger nicht gefunden")
 
+    name, category, aktuell, grenze, zf_id, gewaehlte_zf = await _drohnen_steigerungs_ziel(
+        campaign_id, node_id, drohne, body.traitDefId
+    )
     ist_zusatzfertigkeit = body.traitDefId.startswith("zf:")
-    gewaehlte_zf = None
-    if ist_zusatzfertigkeit:
-        zf_id = body.traitDefId[len("zf:") :]
-        zusatzfertigkeit = await zf_repository.hole(campaign_id, zf_id)
-        if zusatzfertigkeit is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Zusatzfertigkeit nicht gefunden")
-        name = zusatzfertigkeit["name"]
-        category = "Zusatzfertigkeit"
-        gewaehlte_zf = next(
-            (z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id) if z["id"] == zf_id),
-            None,
-        )
-        aktuell = gewaehlte_zf["rating"] if gewaehlte_zf else 0
-        grenze = 6
-    else:
-        campaign = await get_campaign(campaign_id)
-        katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
-        eintrag = next((t for t in katalog if t["id"] == body.traitDefId), None)
-        if eintrag is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
-        # Eine Drohne riggt sich nicht selbst — dieselbe Sperre wie in der
-        # Preisliste, hier zusätzlich serverseitig gegen direkte POSTs.
-        if eintrag["name"] in DROHNE_GESPERRTE_FERTIGKEITEN:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, f"{eintrag['name']} steht einer Drohne/einem Fahrzeug nicht offen.")
-        erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
-        if eintrag["category"] not in erlaubt:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dieser Drohne/diesem Fahrzeug nicht offen.")
-        name = eintrag["name"]
-        category = eintrag["category"]
-        werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
-        nach_name = {w["name"]: w["rating"] for w in werte}
-        aktuell = nach_name.get(name, 0)
-        grenze = next((w["max"] for w in werte if w["traitDefId"] == body.traitDefId), eintrag["defaultMax"])
 
     if aktuell >= grenze:
         raise HTTPException(status.HTTP_409_CONFLICT, f"{name} steht bereits auf {grenze}.")
@@ -505,6 +588,8 @@ async def drohne_steigern(
     # aus dessen Besitz (26.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md).
     material = None
     if body.materialGegenstandId:
+        if body.probenErgebnis is None:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Für die Materialbezahlung fehlt das Probe-Ergebnis.")
         material = await items_repository.get_gegenstand(campaign_id, body.materialGegenstandId)
         if material is None or not material.get("istMaschinenteil"):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil.")
@@ -525,41 +610,60 @@ async def drohne_steigern(
     if material is None and not kann_bezahlen(preis, kapital):
         raise HTTPException(status.HTTP_409_CONFLICT, f"{preis}¥ nötig, {kapital}¥ beim Rigger vorhanden.")
 
-    if ist_zusatzfertigkeit:
-        if gewaehlte_zf is None:
-            await zf_repository.hinzufuegen(campaign_id, node_id, zf_id, 1)
+    # Der Wert steigt beim ¥-Pfad immer, beim Material-Pfad nur bei "ja" —
+    # ein Patzer oder ein normaler Fehlwurf bringt den Umbau nicht voran.
+    stat_erhoeht = material is None or body.probenErgebnis == "ja"
+    if stat_erhoeht:
+        if ist_zusatzfertigkeit:
+            if gewaehlte_zf is None:
+                await zf_repository.hinzufuegen(campaign_id, node_id, zf_id, 1)
+            else:
+                await zf_repository.steigere(campaign_id, node_id, zf_id, aktuell + 1)
         else:
-            await zf_repository.steigere(campaign_id, node_id, zf_id, aktuell + 1)
-    else:
-        await traits_repository.steigere(campaign_id, node_id, body.traitDefId, aktuell + 1)
+            await traits_repository.steigere(campaign_id, node_id, body.traitDefId, aktuell + 1)
 
-    if material is not None:
+    # Material wird bei "ja" UND "patzer" verbraucht (Mark: "beim patzer wird
+    # das material verbraucht und es passiert nichts") — nur "nein" lässt
+    # das Stück unangetastet, der Rigger darf es später erneut versuchen.
+    material_verbraucht = material is not None and body.probenErgebnis in ("ja", "patzer")
+    if material_verbraucht:
         neue_menge = max(0, material["menge"] - 1)
         await items_repository.update_gegenstand(campaign_id, body.materialGegenstandId, {"menge": neue_menge})
         kapital_neu = kapital
         sl_notiz = f"Bezahlt mit Maschinenteil {material['name']} (verbraucht, Rigger {rigger.get('name', '')})"
-    else:
+    elif material is None:
         kapital_neu = kapital - preis
         await repository.update_node("Person", PERSON_FIELDS, campaign_id, rigger_id, {"kapitalBasis": kapital_neu})
         sl_notiz = f"Bezahlt vom Rigger {rigger.get('name', '')} ({preis}¥ aus dessen Kapital)"
+    else:
+        # Material-Pfad, probenErgebnis == "nein": nichts passiert.
+        kapital_neu = kapital
+        sl_notiz = None
 
     # Ereignisprotokoll: dieselbe CharakterEntwicklung-Art wie beim EP-Kauf,
     # SL-Notiz macht die abweichende Bezahlquelle (Rigger statt eigene XP)
-    # auf einen Blick erkennbar.
-    await hooks.charakterentwicklung(
-        campaign_id,
-        person_id=node_id,
-        art="STEIGERUNG",
-        trait_def_id=body.traitDefId,
-        trait_name=name,
-        alt=str(aktuell),
-        neu=str(aktuell + 1),
-        kosten_oder_menge=preis,
-        sl_notiz=sl_notiz,
-    )
+    # auf einen Blick erkennbar. Nur protokollieren, wenn sich wirklich etwas
+    # geändert hat — ein wirkungsloses "nein" ist kein Entwicklungsereignis.
+    if stat_erhoeht or material_verbraucht:
+        await hooks.charakterentwicklung(
+            campaign_id,
+            person_id=node_id,
+            art="STEIGERUNG",
+            trait_def_id=body.traitDefId,
+            trait_name=name,
+            alt=str(aktuell),
+            neu=str(aktuell + 1) if stat_erhoeht else str(aktuell),
+            kosten_oder_menge=preis,
+            sl_notiz=sl_notiz or f"Maker-Probe misslungen (Patzer) — Maschinenteil {material['name']} verbraucht, kein Fortschritt",
+        )
 
     drohne_frisch = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
-    return {"drohne": drohne_frisch, "riggerKapitalBasis": kapital_neu}
+    return {
+        "drohne": drohne_frisch,
+        "riggerKapitalBasis": kapital_neu,
+        "erfolgreich": stat_erhoeht,
+        "materialVerbraucht": material_verbraucht,
+    }
 
 
 @router.get("/drohnen/{node_id}/maschinenteile")

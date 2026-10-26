@@ -4,6 +4,7 @@ import { KATEGORIE_TITEL } from "../traits/bogenApi";
 import "../traits/levelup.css";
 import { drohnenApi, type DrohnenPreisEintrag, type DrohnenSteigerungspreise } from "./api";
 import { DrohnenWeitereFertigkeitenPopup } from "./DrohnenWeitereFertigkeitenPopup";
+import { MakerProbePopup } from "./MakerProbePopup";
 import type { Gegenstand } from "../items/api";
 
 /**
@@ -76,6 +77,13 @@ export function DrohnenSteigern({
   // Welche "weiteren" Fertigkeiten per Popup zu den normalen hochgezogen
   // wurden (26.10.2026, Mark) — rein lokale Anzeige-Auswahl, kein Server-Write.
   const [hervorgehobenIds, setHervorgehobenIds] = useState<Set<string>>(new Set());
+  // Maker-Probe-Popup (26.10.2026): Materialzahlungen laufen NICHT über den
+  // Sammel-Warenkorb (kaeufe) — ein Würfelwurf ist ein Einzelereignis am
+  // Tisch, kein batchbarer Kauf. Klick auf die Hauptkarte bei gewählter
+  // Material-Zahlart öffnet das Popup direkt statt `kaufen()`.
+  const [probeOffen, setProbeOffen] = useState<{ traitDefId: string; materialId: string; materialName: string } | null>(
+    null,
+  );
 
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -192,10 +200,32 @@ export function DrohnenSteigern({
     });
   }
 
+  /** Mark, 26.10.2026: "nur ein Stück mit der Menge dort stehen, und nicht
+   *  alle einzelt aufgeführt werden" — mehrere noch nicht zusammengelegte
+   *  Maschinenteile gleicher Qualität zeigen hier EINEN Knopf mit
+   *  Gesamtmenge statt einem Knopf pro Gegenstand. Bezahlt wird technisch
+   *  weiterhin mit einem konkreten Gegenstand (dem ersten der Gruppe); ist
+   *  der aufgebraucht, rutscht beim nächsten Laden automatisch der nächste
+   *  nach — "Zusammenlegen" am Gegenstand selbst räumt das endgültig auf. */
+  function materialGruppenFuer(eintrag: DrohnenPreisEintrag): { qualitaet: string; menge: number; repraesentant: Gegenstand }[] {
+    const nachQualitaet = new Map<string, Gegenstand[]>();
+    for (const m of materialOptionenFuer(eintrag)) {
+      const liste = nachQualitaet.get(m.maschinenteilQualitaet ?? "") ?? [];
+      liste.push(m);
+      nachQualitaet.set(m.maschinenteilQualitaet ?? "", liste);
+    }
+    return [...nachQualitaet.entries()].map(([qualitaet, stuecke]) => ({
+      qualitaet,
+      menge: stuecke.reduce((s, m) => s + (m.hatMenge ? m.menge : 1), 0),
+      repraesentant: stuecke[0],
+    }));
+  }
+
   function wertKarte(e: DrohnenPreisEintrag) {
     const voll = e.aktuell >= e.max;
-    const materialOptionen = materialOptionenFuer(e);
-    const bezahltMitMaterial = Boolean(materialWahl[e.traitDefId]);
+    const materialGruppen = materialGruppenFuer(e);
+    const bezahltMitMaterialId = materialWahl[e.traitDefId];
+    const bezahltMitMaterial = Boolean(bezahltMitMaterialId);
     const leistbar = !voll && (bezahltMitMaterial || e.kosten <= verfuegbar);
     const geaendert = (kaeufe[e.traitDefId] ?? 0) > 0;
     return (
@@ -203,7 +233,15 @@ export function DrohnenSteigern({
         <button
           type="button"
           className={`lu-wert${leistbar ? " lu-leistbar" : ""}${voll ? " lu-voll" : ""}${geaendert ? " lu-geaendert" : ""}`}
-          onClick={() => leistbar && !laeuft && kaufen(e.traitDefId)}
+          onClick={() => {
+            if (!leistbar || laeuft) return;
+            if (bezahltMitMaterialId) {
+              const gegenstand = maschinenteile.find((m) => m.id === bezahltMitMaterialId);
+              setProbeOffen({ traitDefId: e.traitDefId, materialId: bezahltMitMaterialId, materialName: gegenstand?.name ?? "Maschinenteil" });
+            } else {
+              kaufen(e.traitDefId);
+            }
+          }}
           disabled={!leistbar || laeuft}
           title={voll ? `${anzeigeName(e.name)} steht auf dem Maximum ${e.max}` : `${e.kosten}¥ für den nächsten Punkt`}
         >
@@ -211,7 +249,7 @@ export function DrohnenSteigern({
           <DotPool value={e.aktuell} max={e.max} />
           <span className="lu-preis">{voll ? "max" : bezahltMitMaterial ? "Material" : `${e.kosten}¥`}</span>
         </button>
-        {!voll && materialOptionen.length > 0 && (
+        {!voll && materialGruppen.length > 0 && (
           <div className="lu-zahlart" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             <button
               type="button"
@@ -227,16 +265,28 @@ export function DrohnenSteigern({
             >
               ¥
             </button>
-            {materialOptionen.map((m) => (
+            {materialGruppen.map((g) => (
               <button
-                key={m.id}
+                key={g.qualitaet}
                 type="button"
                 className="lu-zahlart-knopf"
-                data-aktiv={materialWahl[e.traitDefId] === m.id}
-                title={`${m.maschinenteilQualitaet}, ×${m.menge} vorhanden — verbraucht 1`}
-                onClick={() => setMaterialWahl((prev) => ({ ...prev, [e.traitDefId]: m.id }))}
+                data-aktiv={bezahltMitMaterialId === g.repraesentant.id}
+                title={`${g.qualitaet}, ×${g.menge} vorhanden — Klick öffnet die Maker-Probe, verbraucht 1`}
+                onClick={() => {
+                  // Materialzahlungen laufen sofort über die Maker-Probe,
+                  // nicht über den ¥-Warenkorb — eine schon vorgemerkte
+                  // ¥-Einheit für denselben Wert würde sonst beim Speichern
+                  // ohne Probe-Ergebnis beim Server abprallen.
+                  setMaterialWahl((prev) => ({ ...prev, [e.traitDefId]: g.repraesentant.id }));
+                  setKaeufe((prev) => {
+                    if (!prev[e.traitDefId]) return prev;
+                    const next = { ...prev };
+                    delete next[e.traitDefId];
+                    return next;
+                  });
+                }}
               >
-                {m.name}
+                {g.repraesentant.name} ×{g.menge}
               </button>
             ))}
           </div>
@@ -313,6 +363,20 @@ export function DrohnenSteigern({
         hervorgehoben={hervorgehobenIds}
         onUebernehmen={setHervorgehobenIds}
         onSchliessen={() => setWeitereOffen(false)}
+      />
+
+      <MakerProbePopup
+        offen={probeOffen != null}
+        campaignId={campaignId}
+        drohneId={drohneId}
+        traitDefId={probeOffen?.traitDefId ?? null}
+        materialId={probeOffen?.materialId ?? null}
+        materialName={probeOffen?.materialName ?? "Maschinenteil"}
+        onAbgeschlossen={() => {
+          onGeaendert?.();
+          laden();
+        }}
+        onSchliessen={() => setProbeOffen(null)}
       />
     </div>
   );

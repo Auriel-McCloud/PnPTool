@@ -52,6 +52,20 @@ export interface DrohnenSteigerungspreise {
   werte: DrohnenPreisEintrag[];
 }
 
+/** "ja"/"nein"/"patzer" — Ergebnis der am Tisch gewürfelten Maker-Probe
+ *  (26.10.2026, siehe MakerProbePopup.tsx). */
+export type MakerProbenErgebnis = "ja" | "nein" | "patzer";
+
+export interface MakerProbePool {
+  name: string;
+  /** = aktueller Wert des Ziels + 1 (traits/drohnen.py::benoetigte_erfolge_maker_probe). */
+  benoetigteErfolge: number;
+  /** Maker (Hardware)-Wert DES RIGGERS. */
+  maker: number;
+  /** Alle Attribute des Riggers zur freien Partnerwahl. */
+  attribute: { name: string; wert: number }[];
+}
+
 const basis = (campaignId: string) => `/api/campaigns/${campaignId}`;
 
 export const drohnenApi = {
@@ -70,14 +84,27 @@ export const drohnenApi = {
     api.get<DrohnenSteigerungspreise>(`${basis(campaignId)}/drohnen/${drohneId}/steigern`),
 
   /** `materialGegenstandId` gesetzt: bezahlt ein Maschinenteil des Riggers
-   *  statt Nuyen-Abzug (26.10.2026) — siehe `maschinenteile`. */
-  steigern: (campaignId: string, drohneId: string, traitDefId: string, materialGegenstandId?: string | null) =>
-    api.post<{ drohne: unknown; riggerKapitalBasis: number }>(
+   *  statt Nuyen-Abzug (26.10.2026) — siehe `maschinenteile`. Dann ist
+   *  `probenErgebnis` Pflicht (Maker-Probe am Tisch, siehe `makerProbePool`). */
+  steigern: (
+    campaignId: string,
+    drohneId: string,
+    traitDefId: string,
+    materialGegenstandId?: string | null,
+    probenErgebnis?: MakerProbenErgebnis | null,
+  ) =>
+    api.post<{ drohne: unknown; riggerKapitalBasis: number; erfolgreich: boolean; materialVerbraucht: boolean }>(
       `${basis(campaignId)}/drohnen/${drohneId}/steigern`,
-      { traitDefId, materialGegenstandId: materialGegenstandId ?? null },
+      { traitDefId, materialGegenstandId: materialGegenstandId ?? null, probenErgebnis: probenErgebnis ?? null },
     ),
 
   /** Maschinenteile im Besitz DES RIGGERS — für die Zahlungsauswahl beim Umbau. */
   maschinenteile: (campaignId: string, drohneId: string) =>
     api.get<Gegenstand[]>(`${basis(campaignId)}/drohnen/${drohneId}/maschinenteile`),
+
+  /** Pool-Infos fürs Maker-Probe-Popup vorm Material-Umbau. */
+  makerProbePool: (campaignId: string, drohneId: string, traitDefId: string) =>
+    api.get<MakerProbePool>(
+      `${basis(campaignId)}/drohnen/${drohneId}/maker-probe-pool?traitDefId=${encodeURIComponent(traitDefId)}`,
+    ),
 };

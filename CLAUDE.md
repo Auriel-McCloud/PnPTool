@@ -382,12 +382,13 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   Maschinenteile sollen ein Objekt mit Anzahl 3 werden statt drei
   Einzelstücken). Neuer GM-Knopf „⧉ Zusammenlegen…“ direkt neben „Menge
   verfolgen“ im Umbauen-Formular (`CharacterSheetPanel.tsx::GegenstandRow`,
-  nur sichtbar mit Besitzer und wenn nicht `einzigartig`). Öffnet
+  nur sichtbar mit Besitzer). Öffnet
   `ZusammenlegenPopup.tsx`: lädt über `GET .../stapelkandidaten` andere
   Stücke derselben Person, die mechanisch exakt gleich sind
   (`items/repository.py::stapel_gleich` — alles außer einer Ausnahmeliste
   aus Instanz-Feldern wie Beschreibung/Notizen/Ablage/Bild muss
-  übereinstimmen), Mehrfachauswahl nach dem `VorlagenAuswahlPopup`-Muster.
+  übereinstimmen), Mehrfachauswahl nach dem `VorlagenAuswahlPopup`-Muster,
+  **standardmäßig alle Kandidaten ausgewählt** (Nachtrag 26.10.2026, Mark).
   `POST .../zusammenlegen` (`repository.zusammenlegen`) summiert die Mengen
   ins Ziel (hatMenge=true) und wirft die Quellen weg (Mülleimer, nicht
   gelöscht — reversibel). Lehnt einzigartige Stücke und unterschiedliche
@@ -406,6 +407,43 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   Browser-Klicktest** — Mark wollte erst nur das generelle Feature, die 3
   konkreten Maschinenteile seiner laufenden Kampagne bewusst nicht live
   angefasst; das steht am Spieltisch noch aus.
+  **Nachtrag (26.10.2026, erster Klicktest):**
+  - *Knopf war unsichtbar:* `einzigartig` ist Pydantic-Default `true` für
+    JEDEN neuen Gegenstand, die ursprüngliche `!einzigartig`-Sichtbarkeits-
+    Gate verschwand dadurch praktisch überall. Sichtbarkeit nicht mehr ans
+    Feld gekoppelt, das Popup erklärt den Einzigartig-Fall stattdessen klar.
+  - *Kein Weg, das Häkchen rauszunehmen:* die beiden vorhandenen
+    Vorlagen-Art-Checkboxen ("Einzigartige Kopie wird erstellt" /
+    "Einzigartig - keine Vorlage") sind an `istVorlage` gekoppelt und
+    konnten `einzigartig` nie auf `false` setzen (eine davon erzwingt es
+    sogar explizit auf `true`). Neuer, eigenständiger Checkbox direkt vor
+    „Menge verfolgen“, unabhängig von den beiden Vorlagen-Optionen.
+
+- **Drohnen/Fahrzeuge — Maker-Probe beim Material-Umbau + gruppierte
+  Materialauswahl** (26.10.2026, Mark nach dem ersten Material-Klicktest):
+  der Material-Pfad aus Phase 3.5 kaufte Punkte bisher instant, jetzt
+  verlangt er eine selbstberichtete Maker-Probe (Paralysewurf-Muster: der
+  Spieler würfelt physisch, das Tool nimmt nur Pool und Ergebnis entgegen).
+  Benötigte Erfolge = aktueller Zielwert + 1
+  (`traits/drohnen.py::benoetigte_erfolge_maker_probe`). Neuer
+  `GET .../drohnen/{id}/maker-probe-pool` liefert Maker (Hardware)-Wert DES
+  RIGGERS + alle seine Attribute zur freien Partnerwahl (kein fester
+  Pflicht-Partner). `POST .../drohnen/{id}/steigern` verlangt beim
+  Material-Pfad jetzt `probenErgebnis: "ja"|"nein"|"patzer"` (400 ohne):
+  "ja" verbraucht Material UND erhöht den Wert, "patzer" verbraucht NUR
+  Material, "nein" lässt beides unangetastet. Neues
+  `frontend/src/drohnen/MakerProbePopup.tsx`; Materialzahlungen laufen
+  deshalb nicht mehr über den ¥-Sammel-Warenkorb, sondern lösen bei Klick
+  sofort die Probe aus. Zusätzlich zeigt die Zahlart-Auswahl pro
+  Qualitätsstufe jetzt einen Knopf mit Gesamtmenge statt einen pro
+  Einzelgegenstand (`materialGruppenFuer`). **Design-Doku:**
+  `docs/wiki/concepts/drohnen-fahrzeuge.md`
+  (Abschnitt "Maker-Probe beim Material-Umbau"). **Verifiziert:**
+  `tsc -b`+`npm run build` sauber, neue Pure-Function-Tests grün
+  (`test_drohnen_regeln.py::TestBenoetigteErfolgeMakerProbe`), voller
+  Backend-Testlauf ohne neue Regression (54 vorbestehende Fails identisch
+  vor/nach dem Patch, Test-Isolations-Altlast, nichts mit Drohnen). **Kein
+  Browser-Klicktest.**
 
 - **Cyberdeck-Fertigkeiten als eigene Blattsektion** (24.10.2026, Mark am
   Spieltisch: Deck ausgerüstet, aber keine Skills im Charakterblatt
