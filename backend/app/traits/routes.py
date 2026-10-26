@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
-from app.entities.repository import PERSON_FIELDS, get_node, update_node
+from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node, update_node
 from app.ereignisprotokoll import hooks
 from app.kampf import repository as kampf_repository
 from app.items.repository import (
@@ -55,6 +55,29 @@ from app.traits.schemas import (
 from app.zusatzfertigkeiten import repository as zusatzfertigkeiten_repository
 
 router = APIRouter(prefix="/api/campaigns/{campaign_id}", tags=["traits"], dependencies=[Depends(require_campaign_zugang)])
+
+
+async def _darf_person_sehen(campaign_id: str, person_id: str, person: dict, viewer: Viewer) -> bool:
+    """Darf dieser Blickwinkel den Bogen/Zustand DIESER Person lesen/ändern?
+
+    Bugfix 26.10.2026 (Mark): Spieler durften bisher ausschliesslich ihren
+    EIGENEN Charakter sehen (`person_id == viewer.person_id`) — eine Drohne
+    oder ein Fahrzeug ist aber ein EIGENER Person-Knoten, nie identisch mit
+    dem des Riggers. Der Rigger bekam beim Öffnen des Drohnen-Charakterblatts
+    serverseitig immer 404, was das Frontend (`shell/nachladen.ts::useNachladen`,
+    schluckt Fehler lautlos fürs nächste Poll-Intervall) als endlos
+    drehendes "Lade Charakterblatt…" zeigte, ohne je eine Fehlermeldung.
+    Jetzt zusätzlich erlaubt: der an diese Drohne/dieses Fahrzeug gebundene
+    Rigger (`entities/repository.py::drohne_rigger`, BEGLEITET-Kante) —
+    bewusst NICHT generisch für jede BEGLEITET-Kante (Critter/Sprite/KI
+    nutzen dieselbe Kante mit anderer Besitz-Semantik und blieben unberührt),
+    sondern nur wenn die Zielperson tatsächlich `istDrohne`/`istFahrzeug` ist.
+    """
+    if viewer.role == "GM" or person_id == viewer.person_id:
+        return True
+    if person.get("istDrohne") or person.get("istFahrzeug"):
+        return await drohne_rigger(campaign_id, person_id) == viewer.person_id
+    return False
 
 
 @router.get("/traitkatalog", response_model=list[TraitDefResponse])
@@ -138,11 +161,10 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     Der Katalog ist bereits nach dem eingeschlagenen Weg gefiltert: wer kein
     Magier ist, bekommt Sphaeren und Hexkraft gar nicht erst zu sehen.
     """
-    if viewer.role != "GM" and person_id != viewer.person_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
-
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    if not await _darf_person_sehen(campaign_id, person_id, person, viewer):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
     campaign = await get_campaign(campaign_id)
@@ -231,15 +253,14 @@ async def set_zustand(
     **Willenskraft ist eine Einbahnstraße für Spieler**: ausgeben ja,
     zurückholen nein. Sie kehrt zurück, wenn die Spielleitung es sagt.
     """
-    if viewer.role != "GM" and person_id != viewer.person_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
-
     aenderung = body.model_dump()
 
     # Die Regel selbst steht in bogen.py und ist dort geprüft.
     if viewer.role != "GM":
         vorher = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
         if vorher is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+        if not await _darf_person_sehen(campaign_id, person_id, vorher, viewer):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
         grund = zustand_verboten(viewer.role, vorher, aenderung)
         if grund:
@@ -312,16 +333,15 @@ async def set_steckbrief(
     Die Charaktererstellung nutzt denselben PATCH als Autosave, damit der
     Person-Schritt einen Gerätewechsel überlebt.
     """
-    if viewer.role != "GM" and person_id != viewer.person_id:
+    person_vorher = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person_vorher is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    if not await _darf_person_sehen(campaign_id, person_id, person_vorher, viewer):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
     daten = body.model_dump()
-    if daten.get("rasse") is not None:
-        bestehend = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
-        if bestehend is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
-        if bestehend.get("erstellungAbgeschlossen"):
-            daten["rasse"] = None
+    if daten.get("rasse") is not None and person_vorher.get("erstellungAbgeschlossen"):
+        daten["rasse"] = None
 
     person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, daten)
     if person is None:
@@ -464,11 +484,10 @@ async def ruestungstreffer(
     wird), und nur Schaden nach oben: die Menge wird **addiert**, nichts
     überschrieben.
     """
-    if viewer.role != "GM" and person_id != viewer.person_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
-
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    if not await _darf_person_sehen(campaign_id, person_id, person, viewer):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
 
     # Werte früh holen (statt erst am Ende wie sonst üblich): natürliche

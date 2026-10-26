@@ -4,6 +4,46 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Bugfix: Charakterblatt-Reiter einer Drohne/eines Fahrzeugs blieb für den
+  Rigger ewig bei "Lade Charakterblatt…" stehen** (26.10.2026, Mark-Bugreport,
+  direkt in Hermes behoben): `traits/routes.py` prüfte auf allen vier vom
+  Charakterblatt genutzten Routen (`GET .../bogen`, `PATCH .../zustand`,
+  `PATCH .../steckbrief`, `POST .../ruestung/treffer`) nur
+  `person_id == viewer.person_id` — eine Drohne/ein Fahrzeug ist aber ein
+  EIGENER `Person`-Knoten, nie identisch mit dem des Riggers, also lieferte
+  der Server dem Spieler dort immer 404. `shell/nachladen.ts::useNachladen`
+  schluckt Fetch-Fehler lautlos fürs nächste 5s-Poll-Intervall (kein
+  `fehler`-State), weshalb `Charakterblatt.tsx` endlos bei "Lade
+  Charakterblatt…" hängenblieb statt eine Fehlermeldung zu zeigen. Fix: neue
+  `traits/routes.py::_darf_person_sehen(campaign_id, person_id, person, viewer)`
+  — GM immer, eigener Charakter immer, sonst nur wenn die Zielperson
+  `istDrohne`/`istFahrzeug` ist UND `entities/repository.py::drohne_rigger`
+  den Viewer als gebundenen Rigger bestätigt (BEGLEITET-Kante). Bewusst NICHT
+  generisch für jede BEGLEITET-Kante geöffnet — Critter/Sprite/KI nutzen
+  dieselbe Kante mit anderer Besitz-Semantik und blieben unverändert GM-only.
+  **Verifiziert:** neuer `tests/test_zugriffsschutz_drohnen_bogen.py` (7
+  Fälle, GM/eigener Charakter/gebundener Rigger/fremder Spieler/unverbundene
+  Drohne), volle Backend-Suite ohne Regression (54 vorbestehende, unrelated
+  Fehlschläge identisch mit/ohne diese Änderung, per `git stash` gegengeprüft
+  — vermutlich fehlende lokale Neo4j-Verbindung in dieser Session, nicht
+  Gegenstand dieses Fixes).
+
+- **Offen, mit Mark abzustimmen (26.10.2026, aus demselben Gespräch):**
+  Drohnen/Fahrzeuge sollen einen Lebenspunkte-Basiswert **3** statt des
+  globalen `GESUNDHEIT_GRUNDWERT` (6) bekommen (`gesundheit_max() = 3 +
+  Widerstandsfähigkeit`, Mechanismus existiert schon über
+  `Person.gesundheitGrundwert`, siehe `traits/bogen.py`). Zusätzlich soll die
+  Drohnen-Rüstung dasselbe Prinzip wie Natürliche Rüstung nutzen:
+  Widerstandsfähigkeit-Rating = Rüstungskästchen-Max, Außenhülle-Rating
+  (`AttributDrohneAussenhuelle`) = Reduktion — bisher ist Außenhülle nur eine
+  Attribut-Kategorie im Umbauen-Katalog ohne jede mechanische Wirkung. Noch
+  zu klären, bevor gebaut wird (Mark fragt vorab immer das Datenmodell ab):
+  ob das über ein automatisch erzeugtes `istNatuerlich`-Gegenstand-Item läuft
+  (reicht in den bestehenden Rüstungspool/Reparatur-Mechanismus hinein, wie
+  bei Dug'Rah) oder über eigene Person-Felder, ob der 3er-Grundwert nur für
+  neu angelegte oder auch rückwirkend für Marks bereits gebaute Testdrohne
+  gilt, und ob Fahrzeuge denselben Grundwert bekommen oder einen eigenen.
+
 - **Drohnen/Fahrzeuge Phase 3.5 — zweiter Klicktest-Rutsch Marks** (26.10.2026,
   direkt im Anschluss an die drei Bugfixes unten, ebenfalls direkt in Hermes):
   - **Tab umbenannt:** "Nuyen ausgeben" → "Drohne Umbauen" (`DrohnenFenster.tsx`).
