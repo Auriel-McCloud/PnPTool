@@ -119,6 +119,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
                   <th>Name</th>
                   <th>Kurzbeschreibung</th>
                   <th>Rasse</th>
+                  <th>Drohnen/Fahrzeuge</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,6 +128,7 @@ export function ZusatzfertigkeitenVerwaltung({ campaignId }: { campaignId: strin
                     <td className="zf-zeile-name">{z.name}</td>
                     <td className="zf-zeile-kurz">{z.kurzbeschreibung || <em>—</em>}</td>
                     <td className="zf-zeile-kurz">{z.nurFuerRasse || <em>alle</em>}</td>
+                    <td className="zf-zeile-kurz">{z.fuerDrohnenFreigegeben ? "✓" : <em>—</em>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -239,6 +241,12 @@ function ZusatzfertigkeitEditor({
     await onGeaendert();
   }
 
+  async function drohnenFreigabeSpeichern(wert: boolean) {
+    if (wert === eintrag.fuerDrohnenFreigegeben) return;
+    await zusatzfertigkeitenApi.aendern(campaignId, eintrag.id, { fuerDrohnenFreigegeben: wert });
+    await onGeaendert();
+  }
+
   async function loeschen() {
     await zusatzfertigkeitenApi.loeschen(campaignId, eintrag.id);
     setLoeschenOffen(false);
@@ -297,6 +305,21 @@ function ZusatzfertigkeitEditor({
           <p className="zf-hinweis">
             Leer = jeder kann sie wählen. Gesetzt = nur Charaktere dieser Rasse sehen/wählen sie in der
             Erstellung und im LevelUp.
+          </p>
+
+          <label className="zf-feld" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={eintrag.fuerDrohnenFreigegeben}
+              onChange={(e) => void drohnenFreigabeSpeichern(e.target.checked)}
+            />
+            Für Drohnen/Fahrzeuge freigeben
+          </label>
+          <p className="zf-hinweis">
+            Aus (Standard) = taucht beim Drohnen-/Fahrzeug-Umbau nicht auf — unabhängig von „Nur für Rasse“
+            oben, eine Drohne hat keine Rasse. Mark, 26.10.2026: rassengebundene Zusatzfertigkeiten wie
+            „Mimikry“ (nur Vael) ergeben für eine Maschine keinen Sinn, deshalb muss jede dafür passende
+            Zusatzfertigkeit (z.B. „Fliegen“) hier einzeln freigeschaltet werden.
           </p>
 
           <div className="zf-aktionen">

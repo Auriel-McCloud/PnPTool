@@ -18,6 +18,14 @@ class ZusatzfertigkeitCreate(BaseModel):
     # Charaktere dieser Rasse sehen/wählen sie in der Erstellung/im LevelUp.
     # Analog zum bereits bestehenden Freigabe-Häkchen bei Rassen.
     nurFuerRasse: str = ""
+    # Drohnen/Fahrzeug-Freigabe (26.10.2026, Mark: "ich seh das Mimikry und
+    # das dürfen nur Vael haben" — der Drohnen-Umbau zeigte bisher JEDE
+    # Zusatzfertigkeit ungefiltert an, auch rassengebundene, die für eine
+    # Maschine keinen Sinn ergeben). Default false = bleibt wie bisher nur
+    # für Personen sichtbar; die SL muss jede für Drohnen/Fahrzeuge
+    # sinnvolle Zusatzfertigkeit (z.B. "Fliegen") explizit freigeben.
+    # Unabhängig von nurFuerRasse — eine Drohne hat keine Rasse.
+    fuerDrohnenFreigegeben: bool = False
 
 
 class ZusatzfertigkeitUpdate(BaseModel):
@@ -25,6 +33,7 @@ class ZusatzfertigkeitUpdate(BaseModel):
     kurzbeschreibung: str | None = None
     detailbeschreibung: str | None = None
     nurFuerRasse: str | None = None
+    fuerDrohnenFreigegeben: bool | None = None
 
 
 class ZusatzfertigkeitResponse(BaseModel):
@@ -34,6 +43,7 @@ class ZusatzfertigkeitResponse(BaseModel):
     kurzbeschreibung: str
     detailbeschreibung: str
     nurFuerRasse: str = ""
+    fuerDrohnenFreigegeben: bool = False
 
 
 class PersonZusatzfertigkeit(BaseModel):

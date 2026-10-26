@@ -14,6 +14,10 @@ export interface Zusatzfertigkeit {
   /** Rassengebunden (10.10.2026, Vaet-Transformation): leer = für alle
    * wählbar, gesetzt = nur diese Rasse sieht/wählt sie. */
   nurFuerRasse: string;
+  /** Drohnen/Fahrzeug-Freigabe (26.10.2026): nur explizit freigegebene
+   * Einträge stehen beim Drohnen-Umbau zur Wahl (unabhängig von
+   * nurFuerRasse — eine Drohne hat keine Rasse). */
+  fuerDrohnenFreigegeben: boolean;
 }
 
 export interface ZusatzfertigkeitEingabe {
@@ -21,6 +25,7 @@ export interface ZusatzfertigkeitEingabe {
   kurzbeschreibung?: string;
   detailbeschreibung?: string;
   nurFuerRasse?: string;
+  fuerDrohnenFreigegeben?: boolean;
 }
 
 /** Eine von einer Person gewählte Zusatzfertigkeit samt Stufe. */

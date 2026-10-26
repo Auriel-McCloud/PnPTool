@@ -444,6 +444,17 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   Backend-Testlauf ohne neue Regression (54 vorbestehende Fails identisch
   vor/nach dem Patch, Test-Isolations-Altlast, nichts mit Drohnen). **Kein
   Browser-Klicktest.**
+  **Nachtrag (26.10.2026, Mark nach dem Klicktest):**
+  - *Zusatzfertigkeiten ungefiltert:* Mark sah Mimikry (nur Vael) als Option
+    an der Drohne. Neues Feld `fuerDrohnenFreigegeben` (Default false) —
+    nur explizit freigegebene Einträge erscheinen jetzt im Umbau, GM-Haken
+    im Zusatzfertigkeiten-Editor. **Achtung:** "Fliegen" und jede andere
+    schon genutzte Drohnen-Zusatzfertigkeit verschwindet dadurch aus der
+    Liste, bis Mark sie dort einmal manuell anhakt.
+  - *Attribut-Partner im Maker-Probe-Popup waren die der DROHNE, nicht des
+    Riggers:* `category.startswith("Attribut")` erwischte auch die
+    Drohnen-eigenen Attributkategorien. Fix: feste Liste
+    `erstellung.ATTRIBUT_KATEGORIEN` + `AttributMatrix`.
 
 - **Cyberdeck-Fertigkeiten als eigene Blattsektion** (24.10.2026, Mark am
   Spieltisch: Deck ausgerüstet, aber keine Skills im Charakterblatt

@@ -16,6 +16,7 @@ from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, GEWAECHS_FIEL
 from app.items import repository as items_repository
 from app.traits import repository as traits_repository
 from app.traits import erfahrung
+from app.traits import erstellung
 from app.traits.bogen import sichtbare_kategorien
 from app.traits.drohnen import (
     DROHNE_GESPERRTE_FERTIGKEITEN,
@@ -383,6 +384,12 @@ async def _drohnen_steigerungs_ziel(
         zusatzfertigkeit = await zf_repository.hole(campaign_id, zf_id)
         if zusatzfertigkeit is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Zusatzfertigkeit nicht gefunden")
+        # Dieselbe Freigabe-Prüfung wie in der Preisliste (26.10.2026),
+        # hier zusätzlich serverseitig gegen direkte POSTs ohne Freigabe.
+        if not zusatzfertigkeit.get("fuerDrohnenFreigegeben"):
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN, f"{zusatzfertigkeit['name']} steht einer Drohne/einem Fahrzeug nicht offen."
+            )
         gewaehlte_zf = next(
             (z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id) if z["id"] == zf_id),
             None,
@@ -461,7 +468,11 @@ async def drohne_steigerungspreise(
     # unterscheidet sie beim Kauf (siehe drohne_steigern unten). Dieselbe
     # Nuyen-Formel wie normale Fertigkeiten (erfahrung.kosten("Fertigkeit", ...)
     # im EP-Pendant, siehe zusatzfertigkeiten/routes.py).
-    zf_katalog = await zf_repository.liste(campaign_id)
+    # Nur explizit freigegebene (26.10.2026, Mark: "ich seh das Mimikry und
+    # das dürfen nur Vael haben") — der volle Katalog ist für Personen
+    # gedacht, eine Drohne/ein Fahrzeug braucht eine eigene SL-Freigabe
+    # pro Eintrag (`fuerDrohnenFreigegeben`), unabhängig von `nurFuerRasse`.
+    zf_katalog = [z for z in await zf_repository.liste(campaign_id) if z.get("fuerDrohnenFreigegeben")]
     zf_gewaehlt = {z["id"]: z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id)}
     for zf in zf_katalog:
         gewaehlt = zf_gewaehlt.get(zf["id"])
@@ -524,13 +535,18 @@ async def drohne_maker_probe_pool(
     katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
     rigger_werte = await traits_repository.get_ratings_for_entity(campaign_id, rigger_id)
     nach_name = {w["name"]: w["rating"] for w in rigger_werte}
-    # Alle Attribut-Kategorien generisch (Körperlich/Gesellschaftlich/Geistig,
-    # bei KI-Riggern zusätzlich Matrix) — kein fester Dreier-Katalog, siehe
-    # references/probenrechner.md.
+    # NUR echte Personen-Attribute (26.10.2026, Mark: "aber die Attribute
+    # von der Drohne, das macht keinen Sinn, da müssen natürlich auch die
+    # Attribute des Riggers stehen") — `category.startswith("Attribut")`
+    # hätte auch "AttributDrohne"/"AttributDrohneAussenhuelle" erwischt
+    # (eigene Katalogeinträge für Drohnen-Werte wie Sensoren/Panzerung, mit
+    # Namen, die ein Mensch gar nicht hat). Explizit nur die drei
+    # menschlichen Kategorien plus AttributMatrix (KI-Rigger).
+    person_attribut_kategorien = {*erstellung.ATTRIBUT_KATEGORIEN, "AttributMatrix"}
     attribute = [
         AttributWert(name=t["name"], wert=nach_name.get(t["name"], 0))
         for t in katalog
-        if t["category"].startswith("Attribut")
+        if t["category"] in person_attribut_kategorien
     ]
     return MakerProbePool(
         name=name,

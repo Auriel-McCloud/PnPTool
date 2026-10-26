@@ -212,6 +212,31 @@ das Tool rechnet nur den Pool vor und nimmt das Ergebnis entgegen.
   gilt nur für den Umbau-Kauf (Attribut/Fertigkeit per Material steigern),
   nicht für Schadensreparatur.
 
+### Zwei Bugfixes nach dem ersten echten Klicktest (26.10.2026)
+
+- **Zusatzfertigkeiten ungefiltert im Drohnen-Umbau:** Mark: "ich seh das
+  Mimikry und das dürfen nur Vael haben" — der Umbau zeigte bisher den
+  KOMPLETTEN campaign-weiten Zusatzfertigkeiten-Katalog, auch
+  rassengebundene (`nurFuerRasse`), die für eine Maschine keinen Sinn
+  ergeben. Neues Feld `ZusatzfertigkeitCreate.fuerDrohnenFreigegeben`
+  (Default `false`, unabhängig von `nurFuerRasse` — eine Drohne hat keine
+  Rasse): `drohne_steigerungspreise`/`drohne_steigern` zeigen/erlauben nur
+  noch explizit freigegebene Einträge. GM-Checkbox „Für Drohnen/Fahrzeuge
+  freigeben" im Zusatzfertigkeiten-Editor (`ZusatzfertigkeitenVerwaltung.tsx`).
+  **Achtung Migrationslücke:** bereits existierende Einträge wie „Fliegen"
+  (siehe `WICHTIGE_FERTIGKEITEN` in `DrohnenSteigern.tsx`) verschwinden aus
+  dem Umbau, bis die SL sie einmal manuell freischaltet — reiner Default,
+  keine automatische Rückwärtskompatibilität.
+- **Maker-Probe-Pool zeigte Drohnen-Attribute statt Rigger-Attribute:**
+  Mark: "da müssen natürlich auch die Attribute des Riggers stehen." Der
+  Filter `category.startswith("Attribut")` erwischte auch
+  `AttributDrohne`/`AttributDrohneAussenhuelle` (Drohnen-eigene Werte wie
+  Sensoren/Panzerung, andere Namen als menschliche Attribute) — die
+  WERTE kamen zwar schon korrekt vom Rigger, aber als Optionsliste standen
+  Drohnen-Attributnamen drin. Fix: explizite Filterliste
+  `erstellung.ATTRIBUT_KATEGORIEN` (Körperlich/Gesellschaftlich/Geistig)
+  plus `AttributMatrix` (KI-Rigger).
+
 ### Reparatur (neues eigenständiges Feature, gilt für Rüstung UND Drohne/Fahrzeug)
 
 `kampf/ruestung.py` hat die komplette Formel schon fertig, bisher nur an
