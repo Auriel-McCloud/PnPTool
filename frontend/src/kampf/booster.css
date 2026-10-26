@@ -154,6 +154,23 @@
    Marks Wunsch: "ich hätte gerne das er wackelt und instabil flackert".
    Bewusst zurueckhaltend gehalten — es steht neben ruhigen Zeilen. */
 
+/* Initiative per Klick aenderbar (26.10.2026): wie die Zahl aussieht,
+   bleibt gleich — nur ein dezenter Rahmen verraet, dass man draufklicken
+   kann, ohne die Zeile unruhig zu machen. */
+.ka-init-knopf {
+  all: unset;
+  cursor: pointer;
+  border: 1px dashed var(--linie);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.ka-init-knopf:hover,
+.ka-init-knopf:focus-visible {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
 .ka-zeile[data-zusatz="true"] {
   animation: bo-wackeln 2.4s ease-in-out infinite;
   border-left: 2px solid var(--signal);

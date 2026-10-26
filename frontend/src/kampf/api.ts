@@ -82,9 +82,17 @@ export const kampfApi = {
   laden: (cid: string) => api.get<Kampf | null>(basis(cid)),
   /** Der eigene Initiative-Pool (Geistesschärfe + Geschicklichkeit + Chrom). */
   initiativePool: (cid: string) => api.get<InitiativePool>(`${basis(cid)}/initiative/pool`),
-  /** Selbst gewürfelten Wert melden — landet sofort in der Liste der SL. */
+  /** Selbst gewürfelten Wert melden — landet sofort in der Liste der SL.
+   *  Funktioniert auch für die eigene aktive Drohne/das eigene Fahrzeug
+   *  (26.10.2026, serverseitig über BEGLEITET-Kante geprüft). */
   meldeInitiative: (cid: string, teilnehmerId: string, erfolge: number) =>
     api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/initiative`, { erfolge }),
+  /** Self-Service (26.10.2026): der Rigger nimmt seine eigene aktive Drohne/
+   *  sein eigenes Fahrzeug selbst in den laufenden Kampf auf, Initiative
+   *  startet bei 0 und wird direkt danach per Klick gesetzt. Nummeriert
+   *  automatisch durch, wenn der Name schon vergeben ist ("Spinne 1/2"). */
+  drohneBeitreten: (cid: string, drohneId: string) =>
+    api.post<Kampf>(`${basis(cid)}/drohnen/${drohneId}/beitreten`),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */

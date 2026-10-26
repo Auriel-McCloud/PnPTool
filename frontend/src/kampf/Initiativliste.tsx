@@ -70,6 +70,8 @@ export function Initiativliste({
   onBogen,
   onEntfernen,
   onErledigt,
+  initiativeBearbeitbar,
+  onInitiativeBearbeiten,
 }: {
   kampf: Kampf;
   /** Der eigene Charakter wird hervorgehoben — sonst sucht man ihn. */
@@ -80,6 +82,11 @@ export function Initiativliste({
   onBogen?: (t: Teilnehmer) => void;
   onEntfernen?: (id: string) => void;
   onErledigt?: (t: Teilnehmer) => void;
+  /** Welche Zeilen die Initiative per Klick ändern dürfen — die SL für
+   *  alle, ein Spieler nur für sich selbst und seine eigenen aktiven
+   *  Drohnen/Fahrzeuge (26.10.2026). */
+  initiativeBearbeitbar?: (t: Teilnehmer) => boolean;
+  onInitiativeBearbeiten?: (t: Teilnehmer) => void;
 }) {
   return (
     <ol className="ka-liste">
@@ -98,9 +105,20 @@ export function Initiativliste({
             data-aussetzen={Boolean(t.setztAus)}
           >
             <span className="ka-platz">{i + 1}</span>
-            <span className="ka-init" title="Initiative">
-              {t.initiative}
-            </span>
+            {onInitiativeBearbeiten && initiativeBearbeitbar?.(t) ? (
+              <button
+                type="button"
+                className="ka-init ka-init-knopf"
+                title="Initiative ändern"
+                onClick={() => onInitiativeBearbeiten(t)}
+              >
+                {t.initiative}
+              </button>
+            ) : (
+              <span className="ka-init" title="Initiative">
+                {t.initiative}
+              </span>
+            )}
             <span className="ka-art" title={art?.erklaerung}>
               {art?.symbol}
             </span>

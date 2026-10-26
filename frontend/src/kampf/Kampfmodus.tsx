@@ -7,6 +7,7 @@ import { bogenApi } from "../traits/bogenApi";
 import { Kampfkarte } from "./Kampfkarte";
 import { KAMPFARTEN, kampfApi, type Kampfart, type Teilnehmer } from "./api";
 import { Initiativliste, useKampf } from "./Initiativliste";
+import { InitiativeSetzen } from "./InitiativeSetzen";
 import "./kampf.css";
 
 /**
@@ -30,6 +31,7 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
   const [kampfart, setKampfart] = useState<Kampfart>("NAHKAMPF");
   const [bogenFuer, setBogenFuer] = useState<Teilnehmer | null>(null);
   const [laeuft, setLaeuft] = useState(false);
+  const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
 
   useEffect(() => {
     entitiesApi.listPersonen(campaignId).then(setPersonen).catch(() => setPersonen([]));
@@ -142,6 +144,8 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         onBogen={setBogenFuer}
         onEntfernen={(id) => mit(kampfApi.entfernen(campaignId, id))}
         onErledigt={(t) => mit(kampfApi.aendern(campaignId, t.id, { erledigt: !t.erledigt }))}
+        initiativeBearbeitbar={() => true}
+        onInitiativeBearbeiten={setInitiativeZiel}
       />
 
       {/* Zeile 59: angesagt wird von hinten nach vorn, damit die schnellste
@@ -201,6 +205,16 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
           <BegleiterImKampf begleiter={begleiter.find((b) => b.id === bogenFuer?.begleiterId)} />
         )}
       </Fenster>
+
+      {initiativeZiel && (
+        <InitiativeSetzen
+          teilnehmer={initiativeZiel}
+          onSchliessen={() => setInitiativeZiel(null)}
+          onSpeichern={async (wert) => {
+            neuLaden(await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, wert));
+          }}
+        />
+      )}
     </div>
   );
 }

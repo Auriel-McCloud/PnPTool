@@ -95,6 +95,11 @@ OHNE_GM_ERLAUBT = {
     # app/kampf/initiative.py: nur der eigene Charakter, die SL für alle.
     # Der Wert wird zusätzlich auf Plausibilität geprüft (melde_wert).
     "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/initiative",
+    # Self-Service (26.10.2026, Mark): der Rigger nimmt seine eigene aktive
+    # Drohne/sein eigenes Fahrzeug selbst in den laufenden Kampf auf, statt
+    # die SL zu bitten. Besitz-Check über die BEGLEITET-Kante (`drohne_rigger`),
+    # dieselbe 404-statt-403-Logik wie bei entities/routes.py::_drohne_und_rigger_oder_404.
+    "/api/campaigns/{campaign_id}/kampf/drohnen/{node_id}/beitreten",
     # Ein Spieler bittet darum, ein Implantat entfernen zu lassen. Setzt NUR
     # ein Kennzeichen — operiert wird über .../chirurgie, und das verlangt
     # die Spielleitung. Mark: "SL, aber ein Spieler kann 'Entfernung

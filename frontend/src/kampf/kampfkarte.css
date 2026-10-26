@@ -9,6 +9,40 @@
   gap: 14px;
 }
 
+/* Kompakt-Kopfzeile (26.10.2026): Gesundheit + TN/TS/A/P/I in Kurzform,
+   immer sichtbar und antippbar — siehe Kampfkarte.tsx::kompaktWerte. */
+.kk-kompakt {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px;
+  font-family: var(--mono);
+}
+
+.kk-kompakt-wert {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.kk-kompakt-wert em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-leise);
+}
+
+.kk-kompakt-pfeil {
+  margin-left: auto;
+  color: var(--text-leise);
+  font-size: 10px;
+}
+
 .kk-zustand {
   display: flex;
   flex-wrap: wrap;

@@ -44,6 +44,7 @@ import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
 import { RastenVerwaltung } from "./traits/RastenVerwaltung";
 import { BuendelAnsicht } from "./buendel/BuendelAnsicht";
 import { ZeichnungenAnsicht } from "./zeichnungen/ZeichnungenAnsicht";
+import { DrohnenUebersicht } from "./drohnen/DrohnenUebersicht";
 
 /**
  * Bereiche der SL-Ansicht.
@@ -117,6 +118,9 @@ const BEREICHE: Bereich[] = [
   // Whiteboard (25.10.2026): mehrere live mitzeichenbare Boards, Freigabe
   // fürs Mitzeichnen und Sichtbarkeit pro Board (siehe backend/app/zeichnungen).
   { id: "whiteboard", name: "Whiteboard", symbol: "🖊", farbe: "var(--bereich-whiteboard)" },
+  // Drohnen & Fahrzeuge (25.10.2026, Phase 3): eigenes Blatt, Riggerkonsole-
+  // Slots, Nuyen-Kauf — siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
+  { id: "drohnen", name: "Fahrzeuge & Drohnen", symbol: "⛭", farbe: "var(--bereich-drohnen)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -140,6 +144,7 @@ const TITEL: Record<string, string> = {
   ideenschmiede: "Ideenschmiede: Entwürfe und Ideen",
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
+  drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -398,6 +403,9 @@ function Dashboard() {
           {bereich === "whiteboard" && (
             <ZeichnungenAnsicht key={ansichtKennung} campaignId={kampagne.id} istGm />
           )}
+
+          {/* Drohnen & Fahrzeuge (Phase 3): Burgermenü, Riggerkonsole-Slots, Nuyen-Kauf. */}
+          {bereich === "drohnen" && <DrohnenUebersicht key={ansichtKennung} campaignId={kampagne.id} istGm />}
         </>
       )}
     </CommlinkShell>

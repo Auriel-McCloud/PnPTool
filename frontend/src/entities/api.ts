@@ -51,6 +51,23 @@ export interface Person extends VisibilityFields {
    * körperlichen Attribute durch Matrix-Präsenz (`AttributMatrix`, siehe
    * `traits/bogenApi.ts::ATTRIBUT_KATEGORIEN_KI`). */
   istKI?: boolean;
+  /** Drohne/Fahrzeug (25.10.2026): eigenes Blatt (2 Attribut-Spalten statt
+   * 3, I.C.E. als eigenes Attribut) — siehe
+   * docs/wiki/concepts/drohnen-fahrzeuge.md. Verbindung zu ihrem Rigger
+   * läuft über dieselbe BEGLEITET-Kante wie bei Critter/KI
+   * (`entitiesApi`-Pendant liegt in `drohnen/api.ts`, eigenes Modul). */
+  istDrohne?: boolean;
+  istFahrzeug?: boolean;
+  /** Ob die Drohne/das Fahrzeug gerade an eine Riggerkonsole angeschlossen
+   * ist — nur dann nimmt sie am Kampf teil (serverseitig gegen `maxDrohnen`
+   * der Konsole gedeckelt, siehe `traits/drohnen.py::kann_aktivieren`). */
+  riggerAktiv?: boolean;
+  /** Steuert, ob Charakterblatt.tsx die PC-Ersterstellung zeigt oder das
+   * fertige Blatt. Server-Default `false` (für frisch angelegte PCs).
+   * Programmatisch erzeugte NPC-Stubs (Kredithai, Blanko-Kontakt, Drohnen/
+   * Fahrzeuge) setzen explizit `true` — sie durchlaufen nie den
+   * Chargen-Wizard. Siehe `backend/app/hintergruende/spawn.py` als Vorbild. */
+  erstellungAbgeschlossen?: boolean;
   /** Shop-System (24.09.2026): Person ist ein Händler, siehe app/haendler/. */
   istHaendler?: boolean;
   /** Kredithai (10.10.2026): bestehender Hai wird bei Schulden wiederverwendet. */

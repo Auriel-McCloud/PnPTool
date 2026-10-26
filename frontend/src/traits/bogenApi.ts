@@ -63,7 +63,7 @@ export interface BogenUebersicht {
 }
 
 export interface Bogen {
-  person: { id: string; name: string; personType: string; istKI?: boolean };
+  person: { id: string; name: string; personType: string; istKI?: boolean; istDrohne?: boolean; istFahrzeug?: boolean };
   uebersicht: BogenUebersicht;
   /**
    * Bonuswürfel aus ausgerüsteten Cyberdecks, je Matrix-Aktion. Gehört nicht
@@ -372,6 +372,13 @@ export const KATEGORIE_TITEL: Record<string, string> = {
   AttributGesellschaftlich: "Gesellschaftlich",
   AttributGeistig: "Geistig",
   AttributMatrix: "Matrix",
+  // Drohne/Fahrzeug (25.10.2026): komplett eigenes Blatt, siehe
+  // docs/wiki/concepts/drohnen-fahrzeuge.md. "Attribute" statt einer
+  // Körperlich/Technisch-Aufteilung, weil beide Spalten in EINER
+  // TraitDef-Kategorie stecken — Außenhülle bekommt trotzdem eine eigene
+  // Sektion, weil sie preislich aus der Reihe tanzt (doppelter Faktor).
+  AttributDrohne: "Attribute",
+  AttributDrohneAussenhuelle: "Außenhülle",
   Fertigkeit: "Fähigkeiten",
   Hexkraft: "Hexkraft",
   Sphäre: "Sphären",
@@ -392,4 +399,11 @@ export const ATTRIBUT_KATEGORIEN_KI = [
   "AttributMatrix",
   "AttributGesellschaftlich",
   "AttributGeistig",
+] as const;
+
+/** Drohne/Fahrzeug (25.10.2026): komplett eigenes Blatt, keine Sozial-/
+ * Geistig-Spalte — siehe docs/wiki/concepts/drohnen-fahrzeuge.md. */
+export const ATTRIBUT_KATEGORIEN_DROHNE = [
+  "AttributDrohne",
+  "AttributDrohneAussenhuelle",
 ] as const;

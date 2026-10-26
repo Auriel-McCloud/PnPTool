@@ -1,9 +1,11 @@
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
-from app.entities.repository import PERSON_FIELDS, get_node
+from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
@@ -275,7 +277,7 @@ async def melde_initiative(
     if eintrag is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht im Kampf")
 
-    if not darf_melden(viewer.role, viewer.person_id, eintrag.get("personId")):
+    if not await _darf_initiative_melden(campaign_id, viewer, eintrag.get("personId")):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur für den eigenen Charakter")
 
     try:
@@ -284,6 +286,90 @@ async def melde_initiative(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(fehler)) from fehler
 
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, {"initiative": wert})
+    return _ohne_hilfsfelder(kampf)
+
+
+async def _darf_initiative_melden(campaign_id: str, viewer: Viewer, ziel_person_id: str | None) -> bool:
+    """Wie `darf_melden`, nur zusätzlich: der Rigger darf auch für seine
+    eigene(n) aktive(n) Drohne(n)/Fahrzeug(e) melden (26.10.2026, Mark:
+    \"er geht ins Popup rein, klickt da drauf und seine Drohnen fügen sich
+    automatisch in die Initiativreihenfolge ein\"). Ein Teilnehmer ohne
+    `personId` (\"Wachmann 1\") bleibt für Spieler tabu, wie bisher.
+    """
+    if darf_melden(viewer.role, viewer.person_id, ziel_person_id):
+        return True
+    if viewer.role == "GM" or not ziel_person_id or not viewer.person_id:
+        return False
+    rigger_id = await drohne_rigger(campaign_id, ziel_person_id)
+    return rigger_id is not None and rigger_id == viewer.person_id
+
+
+NUMMER_MUSTER = re.compile(r"^(.*) (\d+)$")
+
+
+async def _mit_nummer_falls_doppelt(campaign_id: str, teilnehmer: list[dict], basis_name: str) -> str:
+    """Hängt eine Nummer an, wenn der Name schon im Kampf steht — Mark,
+    26.10.2026: zwei gleichnamige Drohnen desselben Riggers sollen als
+    \"Spinne 1\"/\"Spinne 2\" unterscheidbar sein, automatisch durchnummeriert.
+
+    Der erste, bisher unnummerierte Eintrag wird beim Dazukommen des zweiten
+    nachträglich zu \"Name 1\" umbenannt — vorher gab es ja keine Verwechslung.
+    """
+    treffer = [
+        t for t in teilnehmer
+        if t["name"] == basis_name or (NUMMER_MUSTER.match(t["name"]) and NUMMER_MUSTER.match(t["name"]).group(1) == basis_name)
+    ]
+    if not treffer:
+        return basis_name
+
+    nummern: list[int] = []
+    unnummeriert = None
+    for t in treffer:
+        m = NUMMER_MUSTER.match(t["name"])
+        if m:
+            nummern.append(int(m.group(2)))
+        else:
+            unnummeriert = t
+
+    if unnummeriert is not None:
+        await repository.teilnehmer_aendern(campaign_id, unnummeriert["id"], {"name": f"{basis_name} 1"})
+        nummern.append(1)
+
+    return f"{basis_name} {max(nummern, default=0) + 1}"
+
+
+@router.post("/drohnen/{node_id}/beitreten", response_model=KampfResponse)
+async def drohne_dem_kampf_beitreten(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Self-Service: der Rigger nimmt seine eigene aktive Drohne/sein eigenes
+    Fahrzeug selbst in den laufenden Kampf auf, statt die Spielleitung zu
+    bitten (Mark, 26.10.2026). Dieselbe 404-statt-403-Logik wie bei
+    `entities/routes.py::_drohne_und_rigger_oder_404` — eine fremde Drohne
+    soll nicht einmal als existierend erkennbar sein.
+    """
+    drohne = await get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if drohne is None or not (drohne.get("istDrohne") or drohne.get("istFahrzeug")):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    rigger_id = await drohne_rigger(campaign_id, node_id)
+    if viewer.role != "GM" and (rigger_id is None or rigger_id != viewer.person_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    if not drohne.get("riggerAktiv"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Erst mit der Riggerkonsole verbinden, bevor sie am Kampf teilnimmt.")
+
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+
+    bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == node_id), None)
+    if bereits_dabei:
+        return _ohne_hilfsfelder(kampf)
+
+    name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], drohne["name"])
+    kampf = await repository.teilnehmer_hinzu(
+        campaign_id,
+        {"name": name, "initiative": 0, "kampfart": "FERNKAMPF", "notiz": "", "personId": node_id, "begleiterId": None},
+    )
     return _ohne_hilfsfelder(kampf)
 
 

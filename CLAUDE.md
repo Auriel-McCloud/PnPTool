@@ -69,11 +69,49 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   technisch möglich, aber unterschiedlich viel Umbau — bitte kurz
   entscheiden, dann wird der Kauf-Endpoint (inkl. `VerhandlungPopup`-
   Integration) angeschlossen.
-- **Noch offen (Phase 3, Frontend):** Burgermenü „Fahrzeuge & Drohnen“
-  (Liste + aktive Slots + Steckbrief-Popup), Reparatur-Burgermenü +
-  `bietetReparatur`-Händlerflag + Verbrauchsgegenstand „Maschinenteil“,
-  Zusatzfertigkeit „Fliegen“ (Mark trägt sie selbst in die SL-Tabelle ein).
-  Alles nicht einfach lostbauen, bitte erst mit Mark Reihenfolge klären.
+- **Erledigt (Phase 3, Frontend) — Burgermenü „Fahrzeuge & Drohnen“** (25.–26.10.2026):
+  `frontend/src/drohnen/` (DrohnenUebersicht, DrohnenFenster, DrohnenSteigern,
+  api.ts) — Kachelliste mit „Aktiv verbunden“ oben abgesetzt, Anlegen-Popup,
+  Rigger-Zuweisung/Aktivieren/Steigern je im Detail-Fenster. In `App.tsx`
+  (SL) und `players/SpielerAnsicht.tsx` (Spieler) als eigener Bereich
+  verdrahtet, `tsc --noEmit` grün. **Noch nicht im Browser angeklickt.**
+
+- **Erledigt (26.10.2026) — Drohnen/Initiative im Kampfmenü** (Mark):
+  - **Self-Service-Beitritt:** `POST .../kampf/drohnen/{id}/beitreten`
+    (`kampf/routes.py`) — der Rigger nimmt seine eigene aktive Drohne/sein
+    Fahrzeug selbst in den laufenden Kampf auf (Besitz-Check über
+    `drohne_rigger`, 404 statt 403, wie bei `_drohne_und_rigger_oder_404`),
+    statt die SL zu bitten. Startet mit Initiative 0, `kampfart="FERNKAMPF"`.
+    In `test_zugriffsschutz.py::OHNE_GM_ERLAUBT` eingetragen.
+  - **Automatische Nummerierung bei Namensgleichheit:** zwei gleichnamige
+    Drohnen desselben Riggers werden beim zweiten Beitritt zu
+    „Name 1“/„Name 2“ (`_mit_nummer_falls_doppelt`) — der erste,
+    bisher unnummerierte Eintrag wird dabei nachträglich umbenannt.
+  - **Initiative per Klick in der Liste ändern** (`Initiativliste.tsx` →
+    `InitiativeSetzen.tsx`, leeres Eingabefeld statt vorbelegter "0", wie
+    beim Booster-Zweitwurf/`InitiativeMelden.tsx`): ergänzt die bestehende
+    Vollbild-Warnung, ersetzt sie nicht. Spieler dürfen nur die eigene
+    Zeile und eigene aktive Drohnen/Fahrzeuge ändern
+    (`_darf_initiative_melden` in `kampf/routes.py`, über `drohne_rigger`
+    geprüft), die SL jede Zeile. Gleicher Endpunkt (`.../initiative`) für
+    beide, kein neuer.
+  - **Drohnen-Steckbrief im Kampfmenü** (`kampf/DeineDrohnenImKampf.tsx`):
+    Karten mit Name + Gesundheit für die eigenen aktiven Drohnen/Fahrzeuge,
+    antippen öffnet `Kampfkarte` mit neuer Kompakt-Kopfzeile
+    (`kompaktStart`-Prop: Gesundheit/TN/TS/A/P/I in Kurzform, antippen
+    klappt die bestehende ausgeschriebene Ansicht auf/zu).
+  - **Verifiziert:** `pytest` (807 passed, 53 vorbestehende Flakes
+    identisch mit dem unveränderten Stand — per `git stash` gegengeprüft),
+    `tsc --noEmit` grün, echter E2E-Test gegen laufende Neo4j (Wegwerf-
+    Kampagne: fremder Spieler abgelehnt, Beitritt, Nummerierung „Spinne
+    1“/„Spinne 2“, Idempotenz bei erneutem Beitritt, Initiative für eigene
+    Drohne gesetzt, Initiative-Melden für Fremde abgelehnt — danach
+    aufgeräumt, Skript nicht committed). **Noch nicht im Browser
+    angeklickt/am Spieltisch getestet.**
+  - **Noch offen:** Reparatur-Burgermenü + `bietetReparatur`-Händlerflag +
+    Verbrauchsgegenstand „Maschinenteil“, Zusatzfertigkeit „Fliegen“ (Mark
+    trägt sie selbst in die SL-Tabelle ein). Nicht einfach lostbauen, bitte
+    erst mit Mark Reihenfolge klären.
 
 ## Backlog: Mark denkt noch nach (nicht einfach lostbauen)
 

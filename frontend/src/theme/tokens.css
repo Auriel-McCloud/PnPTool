@@ -153,6 +153,9 @@
   /* Whiteboard (25.10.2026): eigenes Blau wie ein Trockenlöschmarker,
      bisher ungenutzt als Bereichsfarbe. */
   --bereich-whiteboard: var(--p-blau);
+  /* Drohnen & Fahrzeuge (25.10.2026): eigener Bernstein-Ton wie ein
+     Status-LED am Chassis, bisher ungenutzt als Bereichsfarbe. */
+  --bereich-drohnen: var(--p-bernstein);
 
   /* == 4. Wertegruppen (Charakterblatt) ============================== */
   /* Lag vorher dreifach dupliziert in Charakterblatt.tsx,

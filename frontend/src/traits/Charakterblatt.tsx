@@ -12,7 +12,7 @@ import { Kaestchen, type Schadensart } from "./Kaestchen";
 import { ZustandFenster } from "./ZustandFenster";
 import { Fenster } from "../shell/Fenster";
 import { useNachladen } from "../shell/nachladen";
-import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
+import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_DROHNE, ATTRIBUT_KATEGORIEN_KI, bogenApi, KATEGORIE_TITEL, type Bogen, type BogenUebersicht } from "./bogenApi";
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
@@ -846,8 +846,17 @@ export function Charakterblatt({
       </section>
 
       {/* Gemeinsamer Teil zuerst — so sieht das Blatt für alle gleich aus.
-          Was nur Magier oder Neuroweaver haben, kommt darunter. */}
-      <div className="cb-attribute">{(bogen.person.istKI ? ATTRIBUT_KATEGORIEN_KI : ATTRIBUT_KATEGORIEN).map(reihe)}</div>
+          Was nur Magier oder Neuroweaver haben, kommt darunter. Drohne/
+          Fahrzeug (25.10.2026): komplett eigenes Attribut-Set, siehe
+          docs/wiki/concepts/drohnen-fahrzeuge.md. */}
+      <div className="cb-attribute">
+        {(bogen.person.istDrohne || bogen.person.istFahrzeug
+          ? ATTRIBUT_KATEGORIEN_DROHNE
+          : bogen.person.istKI
+            ? ATTRIBUT_KATEGORIEN_KI
+            : ATTRIBUT_KATEGORIEN
+        ).map(reihe)}
+      </div>
       {reihe("Fertigkeit")}
 
       {/* Zusatzfertigkeiten (28.09.2026): eigener kleiner Abschnitt, nicht

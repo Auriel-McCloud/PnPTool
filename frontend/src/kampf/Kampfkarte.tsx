@@ -65,11 +65,16 @@ export function Kampfkarte({
   campaignId,
   personId,
   aenderbar = false,
+  kompaktStart = false,
 }: {
   campaignId: string;
   personId: string;
   /** Schaden und Willenskraft eintragen — der eigene Charakter, oder die SL. */
   aenderbar?: boolean;
+  /** Startet eingeklappt: nur eine kleine Kopfzeile mit Gesundheit/TN/TS/
+   *  A/P/I in Kurzform, antippen zeigt den Rest ausgeschrieben (Mark,
+   *  26.10.2026 — für die Drohnen-Steckbriefe im Kampfmenü). */
+  kompaktStart?: boolean;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
@@ -81,6 +86,9 @@ export function Kampfkarte({
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   const [erklaertRuestung, setErklaertRuestung] = useState(false);
   const [trefferOffen, setTrefferOffen] = useState(false);
+  // Kompakt-Kopfzeile (Drohnen-Steckbrief): eingeklappt zeigt nur TN/TS/A/P/I
+  // in Kurzform, Antippen klappt den Rest auf wie gehabt.
+  const [aufgeklappt, setAufgeklappt] = useState(!kompaktStart);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -114,8 +122,41 @@ export function Kampfkarte({
   // zur Verfügung.
   const uebrigeWillenskraft = Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht);
 
+  // --- Kompakt-Kopfzeile: Gesundheit + TN/TS/A/P/I in Kurzform ---------
+  // Mark, 26.10.2026: "möglichst alles in klein ... dann sieht er alles in
+  // klein, kann aber drauf klicken und sieht es dann ausgeschrieben und
+  // schöner" — dieselben Zahlen wie unten, nur knapp beschriftet.
+  const gesundheitUebrig = u.gesundheitMax - u.schadenSchlag - u.schadenSchwer - u.schadenAggraviert;
+  const kompaktWerte = [
+    { kuerzel: "GS", titel: "Gesundheit", wert: `${gesundheitUebrig}/${u.gesundheitMax}` },
+    { kuerzel: "TN", titel: "Treffen Nahkampf", wert: treffenPool("Nahkampf") },
+    { kuerzel: "TS", titel: "Treffen Schusswaffen", wert: treffenPool("Schusswaffen") },
+    {
+      kuerzel: "A",
+      titel: "Ausweichen",
+      wert: geschickEffektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit"),
+    },
+    { kuerzel: "P", titel: "Parieren", wert: treffenPool("Nahkampf") },
+    { kuerzel: "I", titel: "Initiative", wert: u.initiative },
+  ];
+
   return (
     <div className="kk-karte">
+      {/* Kompakt-Kopfzeile: immer sichtbar, klappt den Rest auf/zu. */}
+      <button type="button" className="kk-kompakt" onClick={() => setAufgeklappt((a) => !a)}>
+        {kompaktWerte.map((k) => (
+          <span key={k.kuerzel} className="kk-kompakt-wert" title={k.titel}>
+            <em>{k.kuerzel}</em>
+            {k.wert}
+          </span>
+        ))}
+        <span className="kk-kompakt-pfeil" aria-hidden="true">
+          {aufgeklappt ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {aufgeklappt && (
+        <>
       {/* --- Zustand ---------------------------------------------------- */}
       <section className="kk-zustand">
         <div className="kk-spur">
@@ -375,6 +416,8 @@ export function Kampfkarte({
       <button type="button" className="kk-ganzer" onClick={() => setVollerBogen(true)}>
         Ganzer Bogen
       </button>
+        </>
+      )}
 
       <Fenster
         offen={vollerBogen}

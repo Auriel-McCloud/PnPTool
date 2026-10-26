@@ -216,6 +216,54 @@
   border-top: 1px solid var(--linie);
 }
 
+/* Eigene aktive Drohnen/Fahrzeuge im Kampf (26.10.2026) — Name + Gesundheit,
+   Self-Service-Beitritt für die noch nicht teilnehmenden. */
+.ka-drohnen {
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--linie);
+}
+
+.ka-drohnen-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.ka-drohnen-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+
+.ka-drohnen-karte[data-dabei="true"] {
+  border-color: var(--bereich-drohnen, var(--neon));
+}
+
+.ka-drohnen-karte button {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ka-drohnen-name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ka-drohnen-gs {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
 /* Die Liste teilt sich die Fläche dann mit der Karte statt sie zu füllen */
 .ka-seite:has(.ka-eigene) .ka-liste {
   flex: 0 0 auto;
