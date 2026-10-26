@@ -245,6 +245,21 @@ class TestDrohneFahrzeug:
         assert u_fahrzeug["initiative"] == 5
         assert u_fahrzeug["istFahrzeug"] is True
 
+    def test_drohne_ist_nie_offline_auch_ohne_commlink(self):
+        """Bugfix (26.10.2026): Mark meldete, I.C.E. werde trotz gesetzter
+        Punkte nicht angezeigt. Ursache: `offline` prüfte unabhängig von
+        `ist_drohne` nur `commlink_cyberwall` — eine Drohne hat aber nie ein
+        Commlink (ihr I.C.E. ist ein direkt gekauftes Attribut, siehe
+        `ice_max`), zeigte also IMMER "offline" statt der Kästchenreihe."""
+        u = bogen_uebersicht({"istDrohne": True}, {"I.C.E.": 3}, commlink_cyberwall=0)
+        assert u["iceMax"] == 3
+        assert u["offline"] is False
+
+    def test_mensch_ohne_commlink_bleibt_offline(self):
+        """Gegenprobe: die Drohnen-Ausnahme darf Menschen nicht mitreissen."""
+        u = bogen_uebersicht({}, {}, commlink_cyberwall=0)
+        assert u["offline"] is True
+
     def test_gesundheit_nutzt_denselben_grundwert_mechanismus(self):
         """Kein neues System nötig — ein Raumschiff bekommt einfach einen
         hohen Grundwert, siehe Wiki-Seite."""

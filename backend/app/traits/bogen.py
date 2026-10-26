@@ -199,8 +199,13 @@ def bogen_uebersicht(
         "iceMax": i_max,
         "iceSchaden": min(int(person.get("iceSchaden") or 0), i_max),
         # Ohne Gerät ist man nicht angreifbar — für die Anzeige ein
-        # Unterschied ums Ganze gegenüber "Wert 0, aber online".
-        "offline": weg != "NEUROWEAVER" and commlink_cyberwall <= 0,
+        # Unterschied ums Ganze gegenüber "Wert 0, aber online". Drohne/
+        # Fahrzeug (26.10.2026, Bugfix): braucht KEIN Commlink für I.C.E. —
+        # das ist ihr eigenes, direkt gekauftes Attribut (siehe ice_max()
+        # oben), kein abgeleiteter Cyberwall-Wert. Ohne diese Ausnahme zeigte
+        # das Blatt für jede Drohne "offline" statt der gekauften Kästchen,
+        # weil Drohnen naturgemäß kein Commlink ausgerüstet haben.
+        "offline": not ist_drohne and weg != "NEUROWEAVER" and commlink_cyberwall <= 0,
         # Regelblatt Zeile 57: + CyberwareMod. Der Reflex-Booster gibt je
         # nach Stufe +1/+3/+6 (Zeilen 421-444).
         "initiative": initiative(werte, initiative_mod, ist_drohne),

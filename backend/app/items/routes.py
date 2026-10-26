@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
-from app.entities.repository import PERSON_FIELDS, get_node
+from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
@@ -517,10 +517,27 @@ async def ablage_aendern(
     Deshalb hängt sie an get_viewer statt an require_campaign_gm und prüft
     die Besitzverhältnisse selbst — sie steht dafür namentlich in der
     Ausnahmeliste von tests/test_zugriffsschutz.py.
+
+    **Drohne/Fahrzeug (26.10.2026, Mark: "ich habe auch nicht die
+    Möglichkeit Waffen auszurüsten"):** zusätzlich erlaubt für den
+    gebundenen Rigger an Gegenständen, die seiner eigenen aktiven Drohne/
+    seinem eigenen Fahrzeug gehören — dasselbe Besitz-Prinzip wie bei
+    `traits/routes.py::_darf_person_sehen`, hier für Ausrüstung statt für
+    den Charakterbogen. Der Rigger IST nicht der Besitzer dieser
+    Gegenstände (das ist die Drohne selbst), deshalb reicht der einfache
+    Vergleich oben nicht.
     """
     if viewer.role != "GM":
         besitzer = await repository.get_owner_person_id(campaign_id, item_id)
-        if besitzer is None or besitzer != viewer.person_id:
+        darf = besitzer is not None and besitzer == viewer.person_id
+        if not darf and besitzer is not None:
+            besitzer_person = await get_node("Person", PERSON_FIELDS, campaign_id, besitzer)
+            ist_drohne = bool(besitzer_person) and (
+                besitzer_person.get("istDrohne") or besitzer_person.get("istFahrzeug")
+            )
+            if ist_drohne:
+                darf = await drohne_rigger(campaign_id, besitzer) == viewer.person_id
+        if not darf:
             # 404 statt 403: ein Spieler soll nicht erfahren, ob es den
             # Gegenstand überhaupt gibt.
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")

@@ -10,13 +10,13 @@ import "../items/gegenstaende.css";
  * Technisch ist eine Drohne ein ganz normaler `Person`-Knoten (siehe
  * docs/wiki/concepts/drohnen-fahrzeuge.md, "Ausrüstung") — Waffen/Rüstung
  * laufen 1:1 über das bestehende `BESITZT`/`AUSGERÜSTET`-System, dieselbe
- * `GegenstandKachel` wie im Spieler-Inventar. **Nur GM:** die
- * Besitz-/Ablage-Route (`items/routes.py::ablage_aendern`) prüft bei
- * Nicht-GM strikt `viewer.person_id == Besitzer` — der Rigger selbst ist
- * NICHT der Besitzer der Drohnen-Gegenstände (die Drohne besitzt sie
- * selbst), ein Spieler-Self-Service dafür bräuchte erst eine eigene
- * Freigabe über `_drohne_und_rigger_oder_404` wie bei `aktivSetzen`/
- * `riggerSetzen` — noch nicht gebaut, siehe CLAUDE.md.
+ * `GegenstandKachel` wie im Spieler-Inventar. **GM und der gebundene Rigger**
+ * (26.10.2026, Besitz-Ausnahme in `items/routes.py::ablage_aendern`, analog
+ * zu `traits/routes.py::_darf_person_sehen`): beide dürfen ausrüsten/ablegen.
+ * Der Rigger sieht dabei trotzdem nur Gegenstände, deren Sichtbarkeit die SL
+ * freigegeben hat (normale Sichtbarkeitsprüfung bleibt unverändert, Besitz-
+ * Erlaubnis ist eine separate Sache) — neu angelegte Gegenstände sind für
+ * einen NPC-Besitzer wie eine Drohne standardmäßig SL-geheim.
  *
  * Neue Gegenstände für die Drohne legt die SL weiterhin über die normale
  * Gegenstände-Verwaltung an (Besitzer auf die Drohne setzen) — kein

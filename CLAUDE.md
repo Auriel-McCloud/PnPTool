@@ -4,6 +4,60 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Vier weitere Bugfixes nach Marks zweitem Spieltisch-Test** (26.10.2026,
+  direkt im Anschluss an die obigen beiden Einträge):
+  - **Rüstungszeile blieb leer trotz gekaufter Widerstandsfähigkeit/
+    Außenhülle:** `anwende_natuerliche_ruestung` hat `ruestungKaestchenAktuell`
+    bisher nur GEDECKELT (`min(...)`), nie angehoben — ein frisches
+    Außenhülle-Item startet bei 0/0 und wäre dort für immer hängengeblieben,
+    weil Drohnen nicht rasten können (ihr einziger bisheriger Reparaturweg).
+    Fix: nur wenn `aussenhuelle` gesetzt ist (= Drohnen-/Fahrzeug-Pfad) zählt
+    jetzt das **Defizit** (altes Max minus Aktuell) statt des absoluten
+    Werts — ein unbeschädigtes Item ist nach jeder Steigerung sofort wieder
+    voll auf dem neuen Max, echter Kampfschaden bleibt dagegen anteilig
+    erhalten. Dug'Rah & Co. (kein `aussenhuelle`) bleiben beim alten,
+    getesteten Deckel-Verhalten unangetastet.
+  - **I.C.E. wurde trotz gekaufter Punkte als "offline" angezeigt:**
+    `bogen_uebersicht`s `offline`-Flag prüfte unabhängig von `ist_drohne` nur
+    `commlink_cyberwall <= 0` — eine Drohne hat aber nie ein Commlink (ihr
+    I.C.E. ist ein eigenes, direkt gekauftes Attribut, kein abgeleiteter
+    Cyberwall-Wert). Fix: `offline` ist für Drohnen/Fahrzeuge jetzt immer
+    `False`.
+  - **Willenskraft wurde angezeigt, obwohl Drohnen keine haben:**
+    `Charakterblatt.tsx` zeigte die Willenskraft-Leiste bisher unbedingt
+    (anders als die Rüstungszeile, die schon eine Sichtbarkeits-Bedingung
+    hatte). Fix: neue `istDrohneOderFahrzeug`-Prüfung blendet den ganzen
+    Abschnitt für Drohnen/Fahrzeuge aus.
+  - **Nebenfund beim Debuggen — `bogen.person` kannte `istDrohne`/
+    `istFahrzeug` gar nicht:** `get_bogen` baute das `person`-Teilobjekt der
+    Antwort bisher nur mit `id`/`name`/`personType`/`istKI`, obwohl
+    `Charakterblatt.tsx` genau auf `bogen.person.istDrohne`/`istFahrzeug`
+    prüft, um die richtige Attributspalten-Kategorie zu wählen
+    (`ATTRIBUT_KATEGORIEN_DROHNE`). Ohne die beiden Felder wäre JEDE Drohne
+    auf die menschliche Kategorie-Auswahl zurückgefallen, deren Kategorien im
+    (serverseitig schon gefilterten) Drohnen-Katalog gar nicht vorkommen —
+    die ganze Attributsektion wäre leer geblieben. Jetzt ergänzt.
+  - **Waffen/Gegenstände ausrüsten fehlte für den Rigger** (Mark: "ich habe
+    auch nicht die Möglichkeit Waffen auszurüsten"): `items/routes.py::
+    ablage_aendern` prüfte bei Nicht-GM bisher nur `viewer.person_id ==
+    Besitzer` — der Rigger IST aber nicht Besitzer der Drohnen-Gegenstände
+    (das ist die Drohne selbst). Jetzt zusätzlich erlaubt: der gebundene
+    Rigger für Gegenstände seiner eigenen Drohne/seines eigenen Fahrzeugs
+    (dieselbe `drohne_rigger`-Prüfung wie bei `_darf_person_sehen`).
+    `DrohnenFenster.tsx`: Reiter "Ausrüstung" ist jetzt auch für Spieler
+    sichtbar, nicht mehr `istGm`-exklusiv. **Wichtig für Mark:** die normale
+    Sichtbarkeitsprüfung bleibt unverändert — neu angelegte Gegenstände sind
+    für einen NPC-Besitzer wie eine Drohne standardmäßig SL-geheim
+    (`sichtbarkeit: GM`), der Rigger sieht sie erst, wenn die SL das Item
+    explizit freigibt (genau wie bei jedem anderen Gegenstand).
+  **Verifiziert:** 13 neue Tests (`test_ruestung.py`, `test_bogen.py`,
+  `test_zugriffsschutz_drohnen_ausruestung.py` neu), `npx tsc -b` sauber,
+  volle Backend-Suite ohne Regression (54 vorbestehende, unrelated
+  Fehlschläge unverändert). **Noch offen:** Marks Bestandsdrohne "Absar 1.7"
+  auf bebop braucht keinen manuellen DB-Fix (Kästchen/Reduktion sind live
+  berechnet, nicht gespeichert) — nur Backend-Redeploy, dann sollte die
+  Rüstungszeile beim nächsten Laden erscheinen.
+
 - **Bugfix: Charakterblatt-Reiter einer Drohne/eines Fahrzeugs blieb für den
   Rigger ewig bei "Lade Charakterblatt…" stehen** (26.10.2026, Mark-Bugreport,
   direkt in Hermes behoben): `traits/routes.py` prüfte auf allen vier vom

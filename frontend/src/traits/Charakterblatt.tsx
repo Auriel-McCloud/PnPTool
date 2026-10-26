@@ -324,6 +324,12 @@ export function Charakterblatt({
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Charakterblatt…</p>;
 
   const u = bogen.uebersicht;
+  // Drohne/Fahrzeug (26.10.2026, Bugfix): hat kein Entschlossenheit/Fassung
+  // und damit konzeptionell keine Willenskraft — die Leiste blieb trotzdem
+  // immer sichtbar (nur mit 0/0), weil sie anders als Rüstung keine
+  // Sichtbarkeits-Bedingung hatte. Dieselbe Flagge wie unten bei den
+  // Attributspalten (`bogen.person.istDrohne`/`istFahrzeug`).
+  const istDrohneOderFahrzeug = bogen.person.istDrohne || bogen.person.istFahrzeug;
   // Cyberdeck-Einträge (siehe Sektion unten) — als Variable, weil Länge
   // sowohl für die Zeilenzahl des Grids als auch den Einzeln-Fall gebraucht
   // wird (gleiches Muster wie `reihe()` unten).
@@ -743,26 +749,28 @@ export function Charakterblatt({
             onOeffnen={aenderbar ? () => setZustandOffen("gesundheit") : undefined}
           />
         </div>
-        <div className="cb-spur">
-          <span className="cb-spur-titel">
-            Willenskraft
-            <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("willenskraft")} titel="Willenskraft" />
-            {/* Sonst sucht man den fehlenden Punkt: das Maximum ist kleiner
-                als Entschlossenheit + Fassung, und man sieht nicht warum. */}
-            {u.willenskraftVerlust > 0 && (
-              <span className="cb-chrom" title="Dauerhaft verloren durch eingebautes Chrom">
-                −{u.willenskraftVerlust} Chrom
-              </span>
-            )}
-          </span>
-          <Kaestchen
-            max={u.willenskraftMax}
-            verbraucht={u.willenskraftVerbraucht}
-            ton="var(--wert-gesellschaftlich)"
-            onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
-            onOeffnen={aenderbar ? () => setZustandOffen("willenskraft") : undefined}
-          />
-        </div>
+        {!istDrohneOderFahrzeug && (
+          <div className="cb-spur">
+            <span className="cb-spur-titel">
+              Willenskraft
+              <InfoTipp campaignId={campaignId} schluessel={schluessel.bogen("willenskraft")} titel="Willenskraft" />
+              {/* Sonst sucht man den fehlenden Punkt: das Maximum ist kleiner
+                  als Entschlossenheit + Fassung, und man sieht nicht warum. */}
+              {u.willenskraftVerlust > 0 && (
+                <span className="cb-chrom" title="Dauerhaft verloren durch eingebautes Chrom">
+                  −{u.willenskraftVerlust} Chrom
+                </span>
+              )}
+            </span>
+            <Kaestchen
+              max={u.willenskraftMax}
+              verbraucht={u.willenskraftVerbraucht}
+              ton="var(--wert-gesellschaftlich)"
+              onKlick={aenderbar ? willenskraftWeiterschalten : undefined}
+              onOeffnen={aenderbar ? () => setZustandOffen("willenskraft") : undefined}
+            />
+          </div>
+        )}
         {/* Rüstung steht VOR der Gesundheit in der Wirkung, deshalb direkt
             unter ihr und über I.C.E. — sie ist das, was zwischen einem
             Treffer und den Kästchen darüber liegt (docs/api/ruestung.md).

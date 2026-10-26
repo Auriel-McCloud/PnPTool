@@ -21,7 +21,12 @@ import "../entities/pc-detail.css";
  *
  * `istGm=false` (Spieler, nur die eigene gebundene Drohne/das eigene
  * Fahrzeug erreicht dieses Fenster überhaupt, serverseitig durchgesetzt):
- * zeigt Charakterblatt + Nuyen-Kauf + Aktiv-Schalter, blendet
+ * zeigt Charakterblatt + Nuyen-Kauf + Aktiv-Schalter + Ausrüstung (26.10.2026,
+ * Mark: "ich habe auch nicht die Möglichkeit Waffen auszurüsten" — Ausrüsten/
+ * Ablegen ist serverseitig jetzt auch für den gebundenen Rigger erlaubt,
+ * siehe `items/routes.py::ablage_aendern`; SICHTBAR sind dabei weiterhin nur
+ * Gegenstände, deren Sichtbarkeit die SL freigegeben hat — reine Besitz-
+ * Erlaubnis ersetzt nicht die normale Sichtbarkeitsprüfung), blendet
  * Rigger-Zuweisung und Löschen aus — das bleibt SL-Sache.
  */
 type Unteransicht = "blatt" | "kaufen" | "ausruestung";
@@ -125,15 +130,13 @@ export function DrohnenFenster({
           >
             Drohne Umbauen
           </button>
-          {istGm && (
-            <button
-              type="button"
-              className={unteransicht === "ausruestung" ? "pcd-nav-aktiv" : ""}
-              onClick={() => setUnteransicht("ausruestung")}
-            >
-              Ausrüstung
-            </button>
-          )}
+          <button
+            type="button"
+            className={unteransicht === "ausruestung" ? "pcd-nav-aktiv" : ""}
+            onClick={() => setUnteransicht("ausruestung")}
+          >
+            Ausrüstung
+          </button>
         </nav>
 
         <div className="pcd-bereich">
@@ -161,7 +164,7 @@ export function DrohnenFenster({
             />
           )}
 
-          {unteransicht === "ausruestung" && istGm && (
+          {unteransicht === "ausruestung" && (
             <DrohnenAusruestung campaignId={campaignId} drohneId={drohneId} />
           )}
 

@@ -379,6 +379,36 @@ class TestNatuerlicheRuestung:
         live = anwende_natuerliche_ruestung([normal], widerstandsfaehigkeit=6, aussenhuelle=3)
         assert live[0]["ruestungReduktionBasis"] == 1
 
+    def test_drohne_frisches_item_waechst_sofort_auf_volles_max(self):
+        """Bugfix (26.10.2026): Mark hatte Widerstandsfähigkeit/Außenhülle
+        gekauft, die Rüstungszeile blieb trotzdem leer. Ursache: ein frisch
+        erzeugtes Außenhülle-Item startet bei 0/0 — das alte `min(...)`
+        hätte es für immer dort festgeklemmt (Drohnen können nicht rasten).
+        Mit `aussenhuelle` gesetzt zählt stattdessen das Defizit (hier 0)."""
+        frisch = teil("a", "Außenhülle", 0, 0, 0)
+        frisch["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([frisch], widerstandsfaehigkeit=4, aussenhuelle=2)
+        assert live[0]["ruestungKaestchenMax"] == 4
+        assert live[0]["ruestungKaestchenAktuell"] == 4
+
+    def test_drohne_beschaedigtes_item_behaelt_defizit_beim_weitersteigern(self):
+        """3 von 4 Kästchen beschädigt (Defizit 1) — nach einer weiteren
+        Widerstandsfähigkeit-Steigerung auf 6 bleibt genau dieses Defizit
+        erhalten (5 von 6), es wird nicht automatisch mitgeheilt."""
+        beschaedigt = teil("a", "Außenhülle", 3, 4, 2)
+        beschaedigt["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([beschaedigt], widerstandsfaehigkeit=6, aussenhuelle=2)
+        assert live[0]["ruestungKaestchenMax"] == 6
+        assert live[0]["ruestungKaestchenAktuell"] == 5
+
+    def test_drohne_ohne_aussenhuelle_bleibt_beim_alten_deckel_verhalten(self):
+        """Ohne `aussenhuelle` (Dug'Rah-Pfad) gilt weiterhin die alte,
+        getestete Deckel-Logik — kein automatisches Hochziehen."""
+        frisch = teil("a", "Chitinpanzer", 0, 0, 2)
+        frisch["istNatuerlich"] = True
+        live = anwende_natuerliche_ruestung([frisch], widerstandsfaehigkeit=4)
+        assert live[0]["ruestungKaestchenAktuell"] == 0
+
 
 class TestHaendlerReparaturPreis:
     """Marks Vorgabe: quadratisch/progressiv, Deckel 75% vom Neuwert bei

@@ -347,6 +347,25 @@ def anwende_natuerliche_ruestung(
     Drohnen-/Fahrzeug-Außenhülle hat ein EIGENES, steigerbares Attribut, das
     genau diese Rolle spielt (`AttributDrohneAussenhuelle`).
 
+    **Kästchen wachsen bei Drohnen mit, statt nur gedeckelt zu werden**
+    (26.10.2026, Bugfix nach dem ersten echten Steigern am Spieltisch: Mark
+    hatte Widerstandsfähigkeit/Außenhülle gekauft, trotzdem blieb die
+    Rüstungszeile leer). Nur `min(...)` anzuwenden reicht für Drohnen nicht
+    — sie können nicht rasten (ihr einziger bisheriger "Heilweg" für
+    Menschen/Dug'Rah), also hätte ein frisch erzeugtes Item mit
+    `ruestungKaestchenAktuell=0` für immer bei 0 Kästchen festgeklemmt
+    bleiben müssen, selbst nachdem Widerstandsfähigkeit längst über 0 lag —
+    `reihenfolge()` filtert 0-Kästchen-Teile aus dem Pool, das Blatt zeigt
+    die Zeile dann gar nicht erst (`bogen.ruestung.kaestchenMax > 0`-Check).
+    Nur wenn `aussenhuelle` gesetzt ist (= Drohnen-/Fahrzeug-Pfad) wird
+    deshalb das bestehende **Defizit** (altes Max minus Aktuell — wie viel
+    Schaden bereits eingetragen ist) statt des absoluten Aktuell-Werts
+    fortgeschrieben: ein frisches Item (0/0) hat kein Defizit und ist damit
+    sofort voll intakt auf dem neuen Max, ein im Kampf beschädigtes Item
+    bleibt verhältnismäßig beschädigt, auch wenn Widerstandsfähigkeit danach
+    weiter steigt. Dug'Rah & Co. (kein `aussenhuelle`) bleiben beim alten,
+    getesteten Deckel-Verhalten (`min(...)`) unangetastet.
+
     Reine Funktion (keine Datenbankzugriffe): der Aufrufer (traits/routes.py)
     beschafft die Widerstandsfähigkeit-Rating aus `get_ratings_for_entity`
     (dieselbe Quelle wie `traits/bogen.py`s Gesundheitsformel). Gibt pro Teil
@@ -358,10 +377,14 @@ def anwende_natuerliche_ruestung(
     for teil in teile:
         teil = dict(teil)
         if teil.get("istNatuerlich"):
+            alter_max = int(teil.get("ruestungKaestchenMax") or 0)
+            alt_aktuell = int(teil.get("ruestungKaestchenAktuell") or 0)
+            if aussenhuelle is not None:
+                defizit = max(0, alter_max - alt_aktuell)
+                teil["ruestungKaestchenAktuell"] = max(0, widerstandsfaehigkeit - defizit)
+            else:
+                teil["ruestungKaestchenAktuell"] = max(0, min(alt_aktuell, widerstandsfaehigkeit))
             teil["ruestungKaestchenMax"] = widerstandsfaehigkeit
-            teil["ruestungKaestchenAktuell"] = max(
-                0, min(int(teil.get("ruestungKaestchenAktuell") or 0), widerstandsfaehigkeit)
-            )
             if aussenhuelle is not None:
                 teil["ruestungReduktionBasis"] = max(0, int(aussenhuelle))
         ergebnis.append(teil)

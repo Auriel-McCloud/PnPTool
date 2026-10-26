@@ -196,7 +196,21 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     )
 
     return {
-        "person": {"id": person["id"], "name": person["name"], "personType": person["personType"], "istKI": bool(person.get("istKI"))},
+        "person": {
+            "id": person["id"],
+            "name": person["name"],
+            "personType": person["personType"],
+            "istKI": bool(person.get("istKI")),
+            # Bugfix (26.10.2026): fehlten hier bisher komplett, obwohl das
+            # Frontend (Charakterblatt.tsx, ATTRIBUT_KATEGORIEN_DROHNE-Wahl)
+            # genau darauf prüft — ohne die beiden Flags fiel JEDE Drohne/
+            # jedes Fahrzeug auf die menschliche Attributspalten-Auswahl
+            # zurück, deren Kategorien im (serverseitig schon gefilterten)
+            # Katalog einer Drohne gar nicht vorkommen, und die Attribute
+            # blieben unsichtbar.
+            "istDrohne": bool(person.get("istDrohne")),
+            "istFahrzeug": bool(person.get("istFahrzeug")),
+        },
         "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
         # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
         # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
