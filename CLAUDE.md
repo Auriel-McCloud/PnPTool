@@ -4,6 +4,50 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Drohnen/Fahrzeuge Phase 3 — drei Bugs aus Marks erstem echten Klicktest
+  behoben** (26.10.2026, direkt in Hermes, nicht an Claude Code CLI delegiert):
+  - **Riggerkonsole-Slots waren nirgends sichtbar:** `riggerkonsole_max_drohnen()`
+    und `aktive_drohnen_zahl()` gab es seit Phase 2 nur backendseitig als
+    Deckel-Prüfung fürs Aktivieren, nie als Anzeige. `GET .../drohnen`
+    (`entities/routes.py::list_drohnen`) berechnet die Slots jetzt einmal pro
+    Rigger und hängt `riggerSlotsBelegt`/`riggerSlotsMax` an jeden Eintrag —
+    sichtbar als Badge auf den Kacheln (`DrohnenUebersicht.tsx`) und als Zeile
+    im Detail-Fenster (`DrohnenFenster.tsx`, auch eine Warnung, wenn der
+    Rigger gar keine Konsole ausgerüstet hat).
+  - **Echter Root-Cause für „ich seh die Drohne nicht, auch nicht nach F5\":**
+    `DrohnenAnlegenFenster` legt jede Drohne/jedes Fahrzeug mit
+    `sichtbarkeit: "GM"` an (wie bei Critter/KI, siehe
+    `BegleiterVerwaltung.tsx` — derselbe Default dort). Die Rigger-Zuweisung
+    ändert das nie automatisch, und `DrohnenFenster.tsx` hatte schlicht
+    **keinen** Sichtbarkeits-Regler — anders als NPCs/Events/Orte, die alle
+    `entities/VisibilitySelector.tsx` nutzen. Ein gebundener Rigger blieb
+    dadurch für immer unsichtbar, kein Nachlade-/Cache-Problem. Jetzt hat
+    `DrohnenFenster.tsx` (SL-Ansicht) einen eigenen Abschnitt „Sichtbarkeit"
+    mit genau diesem Regler plus Hinweistext. **Nicht automatisch
+    mitgesetzt** beim Binden eines Riggers — bewusst, wie überall sonst im
+    Tool entscheidet die SL das explizit.
+    **Noch offen (nicht angefasst, gleicher Bug vermutet):** Critter- und
+    KI-Fenster (`begleiter/CritterFenster.tsx`, `KiFenster.tsx`) haben
+    denselben fehlenden Regler — nur auf Nachfrage fixen, nicht von selbst,
+    Mark hat nur die Drohnen gemeldet.
+  - **SL-Preis fürs Drohnen-Steigern war nicht einstellbar:** `nuyenProXp`
+    existierte seit Phase 2 nur als Kampagnen-Setting im Backend
+    (`campaigns/repository.py::EINSTELLUNGEN_DEFAULTS`, Default 200¥), aber
+    nirgends im `EinstellungenFenster.tsx` als Feld. Neue Rubrik „Drohnen &
+    Fahrzeuge" dort mit einem Zahlenfeld, typisiert in
+    `campaigns/einstellungen.ts`.
+  - **Verifiziert:** `npx tsc --noEmit` sauber, `pytest
+    tests/test_drohnen.py tests/test_drohnen_regeln.py
+    tests/test_drohnen_kosten.py tests/test_zugriffsschutz.py` (21 passed,
+    die 2 übrigen Fehlschläge vorbestehend und unrelated, per `git stash`
+    gegengeprüft), echter E2E-Test gegen laufende Neo4j in der Testkampagne
+    (Wegwerf-Rigger+Drohne+Riggerkonsole: Slots 0/2 vor und 1/2 nach
+    Aktivieren korrekt, Rigger sieht seine eigene aktive Drohne bei
+    `sichtbarkeit=GM` NICHT — bestätigt den gemeldeten Bug — und sieht sie
+    inklusive korrekter Slots, sobald auf `SPEZIFISCH`+eigene ID gesetzt wird
+    — Skript nicht committed, danach aufgeräumt). **Noch nicht am Spieltisch
+    getestet.**
+
 - **Drohnen/Fahrzeuge Phase 2.5 — Nuyen-Kauf-Endpoint** (25.10.2026, direkt im
   Anschluss, `docs/wiki/concepts/drohnen-fahrzeuge.md`):
   - Mark entschied die offene Frage aus Phase 2: "Der Rigger zahlt es aus
