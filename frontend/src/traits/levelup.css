@@ -62,6 +62,23 @@
   color: var(--signal);
 }
 
+/* Zahlart-Chips (26.10.2026, Material statt Nuyen am Drohnen-Umbau) — kein
+   natives <select>, Projektkonvention. */
+.lu-zahlart-knopf {
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.lu-zahlart-knopf[data-aktiv="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
 .lu-btn-zurueck:hover:not(:disabled) {
   background: color-mix(in srgb, var(--signal) 30%, transparent);
 }

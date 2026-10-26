@@ -509,8 +509,10 @@ async def drohne_steigern(
         if material is None or not material.get("istMaschinenteil"):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil.")
         besitzer_id = await items_repository.get_owner_person_id(campaign_id, body.materialGegenstandId)
-        if besitzer_id != rigger_id:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Maschinenteil gehört nicht dem Rigger.")
+        if besitzer_id not in (rigger_id, node_id):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Dieses Maschinenteil gehört weder dem Rigger noch der Drohne/dem Fahrzeug."
+            )
         if material.get("menge", 1) <= 0:
             raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Maschinenteil ist aufgebraucht.")
         if not maschinenteil_reicht(material.get("maschinenteilQualitaet") or "", "Fertigkeit" if ist_zusatzfertigkeit else category):
@@ -562,13 +564,21 @@ async def drohne_steigern(
 
 @router.get("/drohnen/{node_id}/maschinenteile")
 async def drohne_maschinenteile(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)) -> list[dict]:
-    """Maschinenteile im Besitz DES RIGGERS (nicht der Drohne — die hat
-    keinen eigenen Besitz, siehe drohne_steigerungspreise) — für die
+    """Maschinenteile im Besitz DES RIGGERS **oder** der Drohne/des Fahrzeugs
+    selbst (26.10.2026: beides erlaubt — der Rigger zahlt zwar das Nuyen aus
+    eigenem Kapital, ein Ersatzteil kann aber genauso gut schon in der
+    Drohne verbaut/mitgeführt sein, siehe Ausrüstung-Reiter) — für die
     Zahlungsauswahl beim Umbau."""
     _, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
-    if rigger_id is None:
-        return []
-    return await items_repository.list_maschinenteile_von(campaign_id, rigger_id)
+    quellen = [node_id] + ([rigger_id] if rigger_id else [])
+    gesehen: set[str] = set()
+    ergebnis: list[dict] = []
+    for person_id in quellen:
+        for teil in await items_repository.list_maschinenteile_von(campaign_id, person_id):
+            if teil["id"] not in gesehen:
+                gesehen.add(teil["id"])
+                ergebnis.append(teil)
+    return ergebnis
 
 
 @router.get("/ki", response_model=list[dict])

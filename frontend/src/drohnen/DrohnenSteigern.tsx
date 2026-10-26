@@ -3,6 +3,7 @@ import { DotPool } from "../traits/DotPool";
 import { KATEGORIE_TITEL } from "../traits/bogenApi";
 import "../traits/levelup.css";
 import { drohnenApi, type DrohnenPreisEintrag, type DrohnenSteigerungspreise } from "./api";
+import { DrohnenWeitereFertigkeitenPopup } from "./DrohnenWeitereFertigkeitenPopup";
 import type { Gegenstand } from "../items/api";
 
 /**
@@ -72,6 +73,9 @@ export function DrohnenSteigern({
   // traitDefId -> gewähltes Zahlungs-Maschinenteil (fehlt = mit ¥ bezahlen).
   const [materialWahl, setMaterialWahl] = useState<Record<string, string>>({});
   const [weitereOffen, setWeitereOffen] = useState(false);
+  // Welche "weiteren" Fertigkeiten per Popup zu den normalen hochgezogen
+  // wurden (26.10.2026, Mark) — rein lokale Anzeige-Auswahl, kein Server-Write.
+  const [hervorgehobenIds, setHervorgehobenIds] = useState<Set<string>>(new Set());
 
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -167,8 +171,12 @@ export function DrohnenSteigern({
   }, {});
 
   const fertigkeitenUndZusatz = [...(gruppen["Fertigkeit"] ?? []), ...(gruppen["Zusatzfertigkeit"] ?? [])];
-  const wichtig = fertigkeitenUndZusatz.filter((e) => WICHTIGE_FERTIGKEITEN.includes(e.name));
-  const weitere = fertigkeitenUndZusatz.filter((e) => !WICHTIGE_FERTIGKEITEN.includes(e.name));
+  const wichtig = fertigkeitenUndZusatz.filter(
+    (e) => WICHTIGE_FERTIGKEITEN.includes(e.name) || hervorgehobenIds.has(e.traitDefId),
+  );
+  const weitere = fertigkeitenUndZusatz.filter(
+    (e) => !WICHTIGE_FERTIGKEITEN.includes(e.name) && !hervorgehobenIds.has(e.traitDefId),
+  );
   // Separat gefangen (statt stand.verfuegbar in wertKarte zu lesen): TS
   // narrowt den Null-Check oben nicht in verschachtelte Funktionsdeklarationen.
   const verfuegbar = stand.verfuegbar;
@@ -204,25 +212,34 @@ export function DrohnenSteigern({
           <span className="lu-preis">{voll ? "max" : bezahltMitMaterial ? "Material" : `${e.kosten}¥`}</span>
         </button>
         {!voll && materialOptionen.length > 0 && (
-          <select
-            value={materialWahl[e.traitDefId] ?? ""}
-            onChange={(ev) =>
-              setMaterialWahl((prev) => {
-                const next = { ...prev };
-                if (ev.target.value) next[e.traitDefId] = ev.target.value;
-                else delete next[e.traitDefId];
-                return next;
-              })
-            }
-            style={{ fontSize: 11 }}
-          >
-            <option value="">Bezahlt mit ¥</option>
+          <div className="lu-zahlart" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="lu-zahlart-knopf"
+              data-aktiv={!bezahltMitMaterial}
+              onClick={() =>
+                setMaterialWahl((prev) => {
+                  const next = { ...prev };
+                  delete next[e.traitDefId];
+                  return next;
+                })
+              }
+            >
+              ¥
+            </button>
             {materialOptionen.map((m) => (
-              <option key={m.id} value={m.id}>
-                Mit Maschinenteil: {m.name} ({m.maschinenteilQualitaet}, ×{m.menge})
-              </option>
+              <button
+                key={m.id}
+                type="button"
+                className="lu-zahlart-knopf"
+                data-aktiv={materialWahl[e.traitDefId] === m.id}
+                title={`${m.maschinenteilQualitaet}, ×${m.menge} vorhanden — verbraucht 1`}
+                onClick={() => setMaterialWahl((prev) => ({ ...prev, [e.traitDefId]: m.id }))}
+              >
+                {m.name}
+              </button>
             ))}
-          </select>
+          </div>
         )}
       </div>
     );
@@ -254,8 +271,15 @@ export function DrohnenSteigern({
 
       <p className="lu-hinweis">
         Erst auswählen, dann "Speichern" macht den Umbau endgültig — wie bei EP. Statt ¥ kann, wenn vorhanden,
-        auch ein Maschinenteil bezahlen.
+        auch ein Maschinenteil bezahlen (Gegenstand mit Flag "Maschinenteil" im Besitz des Riggers oder der
+        Drohne/des Fahrzeugs selbst).
       </p>
+      {maschinenteile.length === 0 && (
+        <p className="lu-hinweis" style={{ color: "var(--text-leise)" }}>
+          Noch kein Maschinenteil im Besitz: im Gegenstand-Bearbeiten-Popup (Rigger oder diese Drohne/dieses
+          Fahrzeug als Besitzer) das Häkchen "Maschinenteil" setzen, dann erscheint hier eine Zahlart-Auswahl.
+        </p>
+      )}
 
       {fehler && <p className="lu-fehler">{fehler}</p>}
 
@@ -276,18 +300,20 @@ export function DrohnenSteigern({
 
         {weitere.length > 0 && (
           <section>
-            <button
-              type="button"
-              className="lu-btn"
-              onClick={() => setWeitereOffen((v) => !v)}
-              style={{ marginBottom: 6 }}
-            >
-              {weitereOffen ? "▾" : "▸"} Weitere Fertigkeiten ({weitere.length})
+            <button type="button" className="lu-btn" onClick={() => setWeitereOffen(true)}>
+              + Weitere Fertigkeiten ({weitere.length})
             </button>
-            {weitereOffen && <div className="lu-raster">{weitere.map(wertKarte)}</div>}
           </section>
         )}
       </div>
+
+      <DrohnenWeitereFertigkeitenPopup
+        offen={weitereOffen}
+        eintraege={[...weitere, ...fertigkeitenUndZusatz.filter((e) => hervorgehobenIds.has(e.traitDefId))]}
+        hervorgehoben={hervorgehobenIds}
+        onUebernehmen={setHervorgehobenIds}
+        onSchliessen={() => setWeitereOffen(false)}
+      />
     </div>
   );
 }

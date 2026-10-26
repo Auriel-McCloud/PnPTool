@@ -64,6 +64,34 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
     genau wofür der Test da ist. **Noch nicht am Spieltisch getestet**,
     kein Browser-Klicktest (nur `tsc`/`pytest`, wie bei Phase 3).
 
+- **Drohnen/Fahrzeuge Phase 3.6 — Marks zweites Feedback** (26.10.2026,
+  direkt im Anschluss an 3.5, ebenfalls direkt in Hermes):
+  - **"weitere Fertigkeiten" ist jetzt ein echtes Popup** (`DrohnenWeitereFertigkeitenPopup.tsx`,
+    Fenster-Komponente), kein Inline-Accordion mehr — Mark: "so wie wir es
+    immer machen". Mehrfachauswahl-Kacheln wie `VorlagenAuswahlPopup.tsx`
+    (Klick togglet, Popup bleibt offen, "N übernehmen" schließt). Die
+    übernommenen Einträge wandern danach rein lokal (kein Server-Write) in
+    die normale Fertigkeiten-Anzeige und sind dort ganz normal kaufbar; im
+    Popup erneut abwählbar.
+  - **Material-Zahlart ist jetzt eine Button-Reihe statt `<select>`**
+    (`.lu-zahlart-knopf` in `levelup.css`) — Projektkonvention "nie ein
+    nacktes select".
+  - **Bug gefunden+behoben:** `drohne_maschinenteile`/`drohne_steigern`
+    akzeptierten nur Maschinenteile im Besitz des RIGGERS. Ein GM, der ein
+    Maschinenteil über den neuen "Ausrüstung"-Reiter intuitiv der DROHNE
+    selbst zuweist (naheliegend, da der Reiter genau dafür da ist), bekam
+    dadurch nie eine Zahlart-Option zu sehen — mit curl-E2E-Test gegen
+    bebop reproduziert, bevor der Fix geschrieben wurde. Jetzt werden
+    Maschinenteile von BEIDEN Besitzern (Rigger UND Drohne/Fahrzeug)
+    zusammengeführt. Neuer Hinweistext in `DrohnenSteigern.tsx`, wenn noch
+    keins existiert, erklärt direkt, wo das Flag gesetzt wird.
+  - **Verifiziert:** `npm run build` sauber, Backend-Tests grün. Zusätzlich
+    echter E2E-Test gegen die laufende bebop-Instanz (Wegwerf-Kampagne,
+    `docker exec -i pnptool-backend python3 -` mit `app.entities.routes`
+    direkt aufgerufen statt über HTTP): Rigger-Besitz funktionierte schon
+    vorher, Drohnen-Besitz schlug mit dem alten Code nachweislich fehl
+    (409 "gehört nicht dem Rigger") — nach dem Fix beide Pfade grün.
+
 - **Drohnen/Fahrzeuge Phase 3 — drei Bugs aus Marks erstem echten Klicktest
   behoben** (26.10.2026, direkt in Hermes, nicht an Claude Code CLI delegiert):
   - **Riggerkonsole-Slots waren nirgends sichtbar:** `riggerkonsole_max_drohnen()`
