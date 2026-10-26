@@ -20,6 +20,7 @@ from app.items.schemas import (
     GegenstandMitBesitzer,
     GegenstandResponse,
     GegenstandUpdate,
+    ZusammenlegenRequest,
     ZuweisenRequest,
 )
 from app.kampf.ruestung import (
@@ -340,6 +341,49 @@ async def vorlage_machen(campaign_id: str, item_id: str):
     if moved is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden oder hat schon keinen Besitzer")
     return moved
+
+
+@campaign_router.get(
+    "/{item_id}/stapelkandidaten",
+    response_model=list[GegenstandResponse],
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def stapelkandidaten(campaign_id: str, item_id: str):
+    """Andere Gegenstände derselben Besitzerin, die sich mit diesem hier zu
+    einem Stapel zusammenlegen ließen — füllt die Auswahl im
+    Zusammenlegen-Popup (siehe repository.stapel_gleich für die Gleichheitsprüfung).
+    """
+    return await repository.stapelkandidaten(campaign_id, item_id)
+
+
+@campaign_router.post(
+    "/{item_id}/zusammenlegen",
+    response_model=GegenstandResponse,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def zusammenlegen(campaign_id: str, item_id: str, body: ZusammenlegenRequest):
+    """Legt mehrere gleichwertige Gegenstände zu einem Stapel zusammen.
+
+    `item_id` ist das Ziel: bekommt die Summe der Mengen und hatMenge=true.
+    Die Quellen landen — wie bei jedem anderen Entsorgen — im Mülleimer der
+    Spielleitung, nicht gelöscht (siehe repository.wegwerfen), damit eine
+    falsche Auswahl reversibel bleibt.
+    """
+    try:
+        ergebnis = await repository.zusammenlegen(campaign_id, item_id, body.quellItemIds, "Spielleitung")
+    except repository.NichtStapelbar as fehler:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Einzigartige Stücke oder Gegenstände unterschiedlicher Besitzer lassen sich nicht zusammenlegen",
+        ) from fehler
+    except repository.UnterschiedlicherGegenstand as fehler:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Die ausgewählten Gegenstände sind mechanisch nicht gleich und lassen sich nicht zusammenlegen",
+        ) from fehler
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return ergebnis
 
 
 @campaign_router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])

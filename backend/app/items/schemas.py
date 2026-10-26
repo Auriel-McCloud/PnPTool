@@ -319,6 +319,18 @@ class ZuweisenRequest(BaseModel):
     kopie: bool = False
 
 
+class ZusammenlegenRequest(BaseModel):
+    """Mehrere gleichwertige Gegenstände zu einem Stapel zusammenlegen.
+
+    `item_id` aus der URL ist das Ziel (bekommt die Summe der Mengen,
+    hatMenge=true); die hier genannten Quellen werden wie beim normalen
+    Wegwerfen in den Mülleimer der Spielleitung gelegt, nicht gelöscht —
+    siehe `items/repository.py::zusammenlegen` für die Gleichheitsprüfung.
+    """
+
+    quellItemIds: list[str]
+
+
 class GegenstandResponse(BaseModel):
     id: str
     name: str

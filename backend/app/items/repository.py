@@ -676,6 +676,117 @@ async def set_bild_url(campaign_id: str, item_id: str, bild_url: str) -> dict | 
         return _decode(dict(record)) if record else None
 
 
+# Felder, die eine Instanz individuell machen — beim Zusammenlegen NICHT
+# verglichen (Pendant zu _NICHT_KOPIEREN oben, aber für den Gleichheits-Check
+# statt fürs Kopieren von Vorlagen). Alles andere muss übereinstimmen, damit
+# zwei Gegenstände als "derselbe Stapel-Art" gelten.
+_NICHT_STAPEL_RELEVANT = {
+    "id",
+    "description",
+    "notes",
+    "menge",
+    "hatMenge",
+    "bildUrl",
+    "sichtbarkeit",
+    "sichtbarFuer",
+    "ablage",
+    "ablageZielId",
+    "ablageZielName",
+    "ablageZielKind",
+    "weggeworfen",
+    "weggeworfenVon",
+    "entfernungBeantragt",
+    "istEntwurf",
+    "istVorlage",
+    "automatischImShop",
+}
+
+
+def stapel_gleich(a: dict, b: dict) -> bool:
+    """Gelten zwei Gegenstände als dieselbe Stapel-Art?
+
+    Verglichen wird alles außer der Instanz-eigenen Ausnahmeliste oben —
+    zwei Gegenstände mit unterschiedlichem Schaden, Preis oder
+    Maschinenteil-Qualität sind NICHT derselbe Stapel, auch wenn Name und Typ
+    übereinstimmen. Ruft nicht selbst `einzigartig` ab — einzigartige Stücke
+    müssen die Aufrufer VORHER ausschließen (siehe `zusammenlegen`).
+    """
+    schluessel = (set(a) | set(b)) - _NICHT_STAPEL_RELEVANT
+    return all(a.get(k) == b.get(k) for k in schluessel)
+
+
+class NichtStapelbar(Exception):
+    """Einzigartige Stücke oder Gegenstände unterschiedlicher Besitzer lassen
+    sich nicht zusammenlegen."""
+
+
+class UnterschiedlicherGegenstand(Exception):
+    """Die Quelle ist mechanisch kein Stapel desselben Dings wie das Ziel
+    (siehe `stapel_gleich`)."""
+
+
+async def stapelkandidaten(campaign_id: str, item_id: str) -> list[dict]:
+    """Andere Gegenstände derselben Besitzerin, die sich mit `item_id` zu
+    einem Stapel zusammenlegen ließen — Grundlage für die Auswahl im
+    Zusammenlegen-Popup, damit das Frontend die Gleichheitsprüfung nicht
+    selbst nachbauen muss.
+    """
+    ziel = await get_gegenstand(campaign_id, item_id)
+    if ziel is None or ziel.get("einzigartig"):
+        return []
+    besitzer_id = await get_owner_person_id(campaign_id, item_id)
+    if besitzer_id is None:
+        return []
+    alle = await list_gegenstaende(campaign_id, besitzer_id)
+    return [g for g in alle if g["id"] != item_id and not g.get("einzigartig") and stapel_gleich(ziel, g)]
+
+
+async def zusammenlegen(campaign_id: str, ziel_item_id: str, quell_item_ids: list[str], von: str) -> dict | None:
+    """Legt mehrere gleichwertige Gegenstände zu einem Stapel zusammen.
+
+    Das Ziel bekommt die Summe der Mengen (nicht-Mengen-Stücke zählen dabei
+    als 1) und hatMenge=true. Die Quellen werden — wie bei jedem anderen
+    Entsorgen — in den Mülleimer der Spielleitung gelegt, nicht gelöscht
+    (siehe `wegwerfen`): reversibel, falls sich die Auswahl als falsch
+    herausstellt.
+
+    Wirft `NichtStapelbar`, wenn Ziel oder eine Quelle einzigartig ist oder
+    eine Quelle einer anderen Person gehört, und `UnterschiedlicherGegenstand`,
+    wenn eine Quelle mechanisch kein Stapel desselben Dings ist (siehe
+    `stapel_gleich`) — in beiden Fällen bleibt alles unverändert, der
+    Aufrufer entscheidet über die HTTP-Antwort.
+    """
+    ziel = await get_gegenstand(campaign_id, ziel_item_id)
+    if ziel is None:
+        return None
+    if ziel.get("einzigartig"):
+        raise NichtStapelbar()
+    ziel_besitzer = await get_owner_person_id(campaign_id, ziel_item_id)
+
+    gesamt_menge = ziel["menge"] if ziel["hatMenge"] else 1
+    quellen = []
+    for quelle_id in dict.fromkeys(quell_item_ids):
+        if quelle_id == ziel_item_id:
+            continue
+        quelle = await get_gegenstand(campaign_id, quelle_id)
+        if quelle is None or quelle.get("weggeworfen"):
+            continue
+        if quelle.get("einzigartig"):
+            raise NichtStapelbar()
+        quelle_besitzer = await get_owner_person_id(campaign_id, quelle_id)
+        if quelle_besitzer != ziel_besitzer:
+            raise NichtStapelbar()
+        if not stapel_gleich(ziel, quelle):
+            raise UnterschiedlicherGegenstand()
+        gesamt_menge += quelle["menge"] if quelle["hatMenge"] else 1
+        quellen.append(quelle_id)
+
+    aktualisiert = await update_gegenstand(campaign_id, ziel_item_id, {"hatMenge": True, "menge": gesamt_menge})
+    for quelle_id in quellen:
+        await wegwerfen(campaign_id, quelle_id, von)
+    return aktualisiert
+
+
 async def delete_gegenstand(campaign_id: str, item_id: str) -> bool:
     driver = get_driver()
     query = """

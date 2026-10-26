@@ -435,6 +435,20 @@ export const itemsApi = {
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId, kopie }),
   vorlagenArt: (cid: string, itemId: string, keineVorlage: boolean) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlagen-art`, { keineVorlage }),
+  /**
+   * Andere Gegenstände derselben Besitzerin, die sich mit diesem hier zu
+   * einem Stapel zusammenlegen ließen (gleicher Name/Typ/alle mechanischen
+   * Felder, siehe backend items/repository.py::stapel_gleich). Nur SL.
+   */
+  stapelkandidaten: (cid: string, itemId: string) =>
+    api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/stapelkandidaten`),
+  /**
+   * Legt die genannten Quell-Gegenstände in diesen hier zusammen: Summe der
+   * Mengen, hatMenge=true. Die Quellen landen im Mülleimer (reversibel),
+   * nicht gelöscht. Nur SL.
+   */
+  zusammenlegen: (cid: string, itemId: string, quellItemIds: string[]) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/zusammenlegen`, { quellItemIds }),
   changeOwner: (cid: string, itemId: string, zielPersonId: string) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/besitzer`, { zielPersonId }),
   removeOwner: (cid: string, itemId: string) => api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlage`, {}),

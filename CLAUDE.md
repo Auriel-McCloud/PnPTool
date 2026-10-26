@@ -378,6 +378,30 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Gegenstände zusammenlegen** (26.10.2026, Mark: 3 einzelne
+  Maschinenteile sollen ein Objekt mit Anzahl 3 werden statt drei
+  Einzelstücken). Neuer GM-Knopf „⧉ Zusammenlegen…“ direkt neben „Menge
+  verfolgen“ im Umbauen-Formular (`CharacterSheetPanel.tsx::GegenstandRow`,
+  nur sichtbar mit Besitzer und wenn nicht `einzigartig`). Öffnet
+  `ZusammenlegenPopup.tsx`: lädt über `GET .../stapelkandidaten` andere
+  Stücke derselben Person, die mechanisch exakt gleich sind
+  (`items/repository.py::stapel_gleich` — alles außer einer Ausnahmeliste
+  aus Instanz-Feldern wie Beschreibung/Notizen/Ablage/Bild muss
+  übereinstimmen), Mehrfachauswahl nach dem `VorlagenAuswahlPopup`-Muster.
+  `POST .../zusammenlegen` (`repository.zusammenlegen`) summiert die Mengen
+  ins Ziel (hatMenge=true) und wirft die Quellen weg (Mülleimer, nicht
+  gelöscht — reversibel). Lehnt einzigartige Stücke und unterschiedliche
+  Besitzer mit 409 ab. **Design-Doku:**
+  `docs/wiki/entities/gegenstand-stapel.md`. **Nur GM** (MVP-Default,
+  analog zu den meisten anderen Gegenstands-Mutationen) — ob Spieler das
+  für eigenen Besitz auch selbst dürfen sollen (wie bei Wegwerfen/Ablage),
+  ist noch nicht entschieden. **Verifiziert:** 9 neue Backend-Tests grün
+  (`test_items_zusammenlegen.py`, inkl. Gleichheits-Check pur und
+  Integrationstests gegen die Dev-Neo4j), `tsc -b` sauber. **Kein
+  Browser-Klicktest** — Mark wollte erst nur das generelle Feature, die 3
+  konkreten Maschinenteile seiner laufenden Kampagne bewusst nicht live
+  angefasst; das steht am Spieltisch noch aus.
+
 - **Cyberdeck-Fertigkeiten als eigene Blattsektion** (24.10.2026, Mark am
   Spieltisch: Deck ausgerüstet, aber keine Skills im Charakterblatt
   aufgetaucht). Ursache: die sechs Decking-Skills (Brute Force, Schleichen,

@@ -22,6 +22,7 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { RuestungReparatur } from "../kampf/RuestungReparatur";
+import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
 import "../entities/pc-detail.css";
 
 type GgAnsicht = "uebersicht" | "beschreibung" | "umbauen" | "notizen" | "besitz";
@@ -337,6 +338,7 @@ export function GegenstandRow({
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
   const [kiBildOffen, setKiBildOffen] = useState(false);
+  const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
 
   // Summe aller Boni für Chrom-Preisberechnung:
   // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden + initiativeBonus + zusatzaktionen
@@ -1548,6 +1550,16 @@ export function GegenstandRow({
                           style={{ width: 70 }}
                         />
                       )}
+                      {/* Mehrere einzelne Stücke desselben Dings (26.10.2026,
+                          Mark: 3 Maschinenteile sollen ein Objekt mit Anzahl 3
+                          werden) zu einem Stapel zusammenlegen. Nur mit
+                          Besitzer — Vorlagen haben niemandem gehörende
+                          Duplikate nicht in diesem Sinn. */}
+                      {personId && !einzigartig && (
+                        <button type="button" onClick={() => setZusammenlegenOffen(true)} style={{ fontSize: "0.85em" }}>
+                          <span aria-hidden="true">⧉</span> Zusammenlegen…
+                        </button>
+                      )}
                     </div>
                     <label style={{ fontSize: "0.9em" }}>
                       <input
@@ -1752,6 +1764,19 @@ export function GegenstandRow({
             <TypKachelAuswahl onWaehlen={typAendern} />
           </div>
         </Fenster>
+      )}
+
+      {personId && (
+        <ZusammenlegenPopup
+          item={item}
+          offen={zusammenlegenOffen}
+          campaignId={campaignId}
+          onZusammengelegt={() => {
+            setZusammenlegenOffen(false);
+            onChanged();
+          }}
+          onAbbrechen={() => setZusammenlegenOffen(false)}
+        />
       )}
     </>
   );
