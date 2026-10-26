@@ -109,6 +109,27 @@
   flex-direction: column;
 }
 
+/* DrohnenSteigern (drohnen/DrohnenSteigern.tsx) bringt ihr eigenes
+   `.lu-blatt` aus levelup.css mit, das dort `height: 100%` setzt — dort
+   passend, weil LevelUp.tsx dort der EINZIGE Inhalt der Ansicht ist.
+   In DrohnenFenster.tsx steht `.lu-blatt` aber als Geschwister VOR weiteren
+   Abschnitten (Riggerkonsole, Sichtbarkeit, Verwaltung) innerhalb desselben
+   `.pcd-bereich`. Eine Prozent-Höhe braucht eine definite Elternhöhe — die
+   hat `.pcd-bereich` hier nicht, also löst sie effektiv zu 0 auf, während
+   `.lu-blatt`s eigene Kinder (lu-kopf, lu-hinweis) trotzdem ihre natürliche
+   Höhe behalten und aus der kollabierten Box herauslaufen — optisch
+   überlappen sie dann die folgenden Abschnitte (26.10.2026, Marks
+   Screenshot: „KAPITAL DES RIGGERS" lag über „RIGGERKONSOLE"). Fix: in
+   diesem Kontext auf natürliche Höhe zurückfallen statt 100% zu erzwingen. */
+.pcd-bereich .lu-blatt {
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.pcd-bereich .lu-buehne {
+  overflow-y: visible;
+}
+
 /* --- Übersicht ---------------------------------------------------------- */
 
 .pcd-uebersicht {
