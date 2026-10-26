@@ -313,6 +313,11 @@ export function GegenstandRow({
   // jedem beliebigen Gegenstand (Klebeband, Nanopaste, Ersatzteile).
   const [istReparaturmaterial, setIstReparaturmaterial] = useState(item.istReparaturmaterial);
   const [reparaturKapazitaet, setReparaturKapazitaet] = useState(item.reparaturKapazitaet);
+  // Maschinenteil (26.10.2026, Material statt Nuyen beim Drohnen-/Fahrzeug-
+  // Umbau): dasselbe Flag-Muster wie Reparaturmaterial, gestuft statt mit
+  // Kapazitätszahl — siehe traits/drohnen.py::maschinenteil_reicht.
+  const [istMaschinenteil, setIstMaschinenteil] = useState(item.istMaschinenteil);
+  const [maschinenteilQualitaet, setMaschinenteilQualitaet] = useState(item.maschinenteilQualitaet);
   // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature):
   // spiegelt `verbaut` bei Cyberware — nicht ablegbar für den Spieler (GM
   // kann es im Ausnahmefall), nicht reparierbar, Kästchen-Max kommt serverseitig
@@ -450,6 +455,8 @@ export function GegenstandRow({
     setRuestungReduktionBasis(src.ruestungReduktionBasis);
     setIstReparaturmaterial(src.istReparaturmaterial);
     setReparaturKapazitaet(src.reparaturKapazitaet);
+    setIstMaschinenteil(src.istMaschinenteil);
+    setMaschinenteilQualitaet(src.maschinenteilQualitaet);
     setIstNatuerlich(src.istNatuerlich);
     setAblageZiel(src.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
@@ -538,6 +545,8 @@ export function GegenstandRow({
       ruestungReduktionBasis,
       istReparaturmaterial,
       reparaturKapazitaet,
+      istMaschinenteil,
+      maschinenteilQualitaet,
       istNatuerlich,
       sichtbarkeit,
       sichtbarFuer,
@@ -556,7 +565,7 @@ export function GegenstandRow({
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
       istWaffe, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
-      istReparaturmaterial, reparaturKapazitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
+      istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
   );
 
@@ -1575,6 +1584,32 @@ export function GegenstandRow({
                             onChange={(e) => setReparaturKapazitaet(Math.max(0, Number(e.target.value)))}
                             style={{ width: 60 }}
                           />
+                        </label>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                      <label style={{ fontSize: "0.9em" }}>
+                        <input
+                          type="checkbox"
+                          checked={istMaschinenteil}
+                          onChange={(e) => {
+                            setIstMaschinenteil(e.target.checked);
+                            if (e.target.checked && !maschinenteilQualitaet) setMaschinenteilQualitaet("normal");
+                          }}
+                        />{" "}
+                        Maschinenteil
+                      </label>
+                      {istMaschinenteil && (
+                        <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                          Qualität
+                          <select
+                            value={maschinenteilQualitaet}
+                            onChange={(e) => setMaschinenteilQualitaet(e.target.value)}
+                          >
+                            <option value="minderwertig">minderwertig (nur Reparatur)</option>
+                            <option value="normal">normal (Fertigkeiten)</option>
+                            <option value="hochwertig">hochwertig (Attribute + Fertigkeiten)</option>
+                          </select>
                         </label>
                       )}
                     </div>

@@ -4,6 +4,66 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Drohnen/Fahrzeuge Phase 3.5 — zweiter Klicktest-Rutsch Marks** (26.10.2026,
+  direkt im Anschluss an die drei Bugfixes unten, ebenfalls direkt in Hermes):
+  - **Tab umbenannt:** "Nuyen ausgeben" → "Drohne Umbauen" (`DrohnenFenster.tsx`).
+  - **Kauf-Flow auf Sammeln+Bestätigen umgestellt** (`DrohnenSteigern.tsx`,
+    jetzt wie `LevelUp.tsx`): erst mehrere Werte vormerken, "Speichern"
+    schickt sie sequentiell, "Zurücksetzen" verwirft. Der alte
+    Sofort-Kauf-Kommentar (Race-Condition-Sorge bei geteiltem
+    Rigger-Kapital) bleibt ein Rand-Risiko bei zwei gleichzeitig offenen
+    Umbau-Fenstern — Server validiert Preis/Kapital bei jedem einzelnen
+    POST ohnehin neu.
+  - **Fertigkeiten-Liste kuratiert:** Schusswaffen/Nahkampf/Wahrnehmung/
+    Sportlichkeit (Anzeige NUR an der Drohne als "Ausweichen", Katalogname
+    bleibt Sportlichkeit) plus "Fliegen" (Zusatzfertigkeit) stehen oben,
+    der Rest hinter einem "weitere Fertigkeiten"-Umschalter. **Riggen
+    komplett aus der Drohnen-Liste entfernt** (serverseitig UND clientseitig
+    — `traits/drohnen.py::DROHNE_GESPERRTE_FERTIGKEITEN`): eine Drohne riggt
+    sich nicht selbst. Das ist ein bewusster Einzelfall-Ausschluss, die
+    frühere "volle Liste, kein Filter"-Entscheidung vom 25.10. gilt für
+    alle anderen Fertigkeiten unverändert weiter.
+  - **Zusatzfertigkeiten jetzt an der Drohne kaufbar** (`drohne_steigerungspreise`/
+    `drohne_steigern`, Id-Präfix `zf:`): gleiche Nuyen-Formel wie
+    Fertigkeiten. "Fliegen" trägt Mark wie geplant selbst in die
+    SL-Tabelle "Zusatzfertigkeiten" ein, dann erscheint es automatisch.
+  - **Neuer Reiter "Ausrüstung"** (`DrohnenAusruestung.tsx`, **nur SL**):
+    Waffen/Rüstung ausrüsten/ablegen — Drohne ist ja ein ganz normaler
+    `Person`-Knoten, läuft 1:1 über `GegenstandKachel`/`setAblage`. Neue
+    Gegenstände legt die SL weiterhin über die normale
+    Gegenstände-Verwaltung an (Besitzer auf die Drohne setzen). **Bewusst
+    nicht für Spieler freigegeben:** `items/routes.py::ablage_aendern`
+    prüft bei Nicht-GM `viewer.person_id == Besitzer`, und das ist die
+    Drohne, nicht der Rigger — ein Spieler-Self-Service bräuchte erst eine
+    eigene Freigabe über `_drohne_und_rigger_oder_404` (Muster wie
+    `aktivSetzen`/`riggerSetzen`), noch nicht gebaut.
+  - **Material statt Nuyen — MINIMAL-SCOPE (Mark, 26.10.2026, explizit
+    auf Zahlung begrenzt, keine Shop-Integration):** neuer Gegenstands-Flag
+    `istMaschinenteil`/`maschinenteilQualitaet` (minderwertig/normal/
+    hochwertig, Pattern wie `istReparaturmaterial`). `traits/drohnen.py::
+    maschinenteil_reicht` — hochwertig deckt Attribute+Fertigkeiten,
+    normal nur Fertigkeiten/Zusatzfertigkeiten, minderwertig bleibt für
+    die (noch ungebaute) Reparatur reserviert. Neue Route `GET
+    .../drohnen/{id}/maschinenteile` listet Maschinenteile DES RIGGERS;
+    `POST .../drohnen/{id}/steigern` nimmt optional `materialGegenstandId`
+    und verbraucht 1 Stück statt ¥ abzuziehen. **Shop/Händler-Verkauf von
+    Maschinenteilen, das größere Reparatur-Feature aus
+    `docs/wiki/concepts/drohnen-fahrzeuge.md` (Burgermenü "Reparatur",
+    Hardware-Probe) bleiben bewusst draußen** — Mark wollte das explizit
+    zurückgestellt. Checkbox+Qualitätsstufe fürs Flag sitzen im normalen
+    Gegenstands-Bearbeiten-Popup (`CharacterSheetPanel.tsx`, neben
+    Reparaturmaterial) — die SL legt Maschinenteile vorerst so manuell an,
+    kein Shop-Sortiment/Händlerverkauf.
+  - **Verifiziert:** `npx tsc -b` sauber. `pytest tests/test_drohnen_kosten.py
+    tests/test_gegenstand_felder.py tests/test_ruestung.py
+    tests/test_zugriffsschutz.py` (70 passed, dieselben 2 vorbestehenden
+    unrelated Fehlschläge wie in Phase 3 oben, per `git stash` gegengeprüft).
+    `test_gegenstand_felder.py::test_create_data_reicht_jedes_schemafeld_durch`
+    fing die neuen Maschinenteil-Felder korrekt als fehlend in
+    `items/routes.py::_create_data` ab, bevor sie nachgetragen wurden —
+    genau wofür der Test da ist. **Noch nicht am Spieltisch getestet**,
+    kein Browser-Klicktest (nur `tsc`/`pytest`, wie bei Phase 3).
+
 - **Drohnen/Fahrzeuge Phase 3 — drei Bugs aus Marks erstem echten Klicktest
   behoben** (26.10.2026, direkt in Hermes, nicht an Claude Code CLI delegiert):
   - **Riggerkonsole-Slots waren nirgends sichtbar:** `riggerkonsole_max_drohnen()`

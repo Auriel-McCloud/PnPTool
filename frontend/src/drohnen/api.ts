@@ -7,6 +7,7 @@
  */
 import { api } from "../api/client";
 import type { SichtbarkeitModus } from "../entities/api";
+import type { Gegenstand } from "../items/api";
 
 export interface DrohnenEintrag {
   id: string;
@@ -29,6 +30,9 @@ export interface DrohnenEintrag {
 export interface DrohnenPreisEintrag {
   traitDefId: string;
   name: string;
+  /** "AttributDrohne" | "AttributDrohneAussenhuelle" | "Fertigkeit" |
+   *  "Zusatzfertigkeit" (26.10.2026, campaign-gebundener Katalog, Id-Präfix
+   *  "zf:" in traitDefId). */
   category: string;
   aktuell: number;
   max: number;
@@ -41,6 +45,10 @@ export interface DrohnenSteigerungspreise {
   /** Kapital DES RIGGERS, nicht der Drohne — die hat keins (Mark,
    *  25.10.2026, siehe docs/wiki/concepts/drohnen-fahrzeuge.md). */
   verfuegbar: number;
+  /** Umrechnungsfaktor XP→¥ (Kampagneneinstellung nuyenProXp) — fürs lokale
+   *  Nachrechnen eines zweiten/dritten Kaufs derselben Kategorie im
+   *  Warenkorb, bevor "Speichern" den Server erneut fragt. */
+  nuyenProXp: number;
   werte: DrohnenPreisEintrag[];
 }
 
@@ -61,9 +69,15 @@ export const drohnenApi = {
   steigerungspreise: (campaignId: string, drohneId: string) =>
     api.get<DrohnenSteigerungspreise>(`${basis(campaignId)}/drohnen/${drohneId}/steigern`),
 
-  steigern: (campaignId: string, drohneId: string, traitDefId: string) =>
+  /** `materialGegenstandId` gesetzt: bezahlt ein Maschinenteil des Riggers
+   *  statt Nuyen-Abzug (26.10.2026) — siehe `maschinenteile`. */
+  steigern: (campaignId: string, drohneId: string, traitDefId: string, materialGegenstandId?: string | null) =>
     api.post<{ drohne: unknown; riggerKapitalBasis: number }>(
       `${basis(campaignId)}/drohnen/${drohneId}/steigern`,
-      { traitDefId },
+      { traitDefId, materialGegenstandId: materialGegenstandId ?? null },
     ),
+
+  /** Maschinenteile im Besitz DES RIGGERS — für die Zahlungsauswahl beim Umbau. */
+  maschinenteile: (campaignId: string, drohneId: string) =>
+    api.get<Gegenstand[]>(`${basis(campaignId)}/drohnen/${drohneId}/maschinenteile`),
 };

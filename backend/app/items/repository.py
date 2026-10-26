@@ -33,6 +33,7 @@ RETURN_FIELDS = """
     g.ruestungReduktionBasis AS ruestungReduktionBasis,
     g.istNatuerlich AS istNatuerlich,
     g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
+    g.istMaschinenteil AS istMaschinenteil, g.maschinenteilQualitaet AS maschinenteilQualitaet,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
 """
@@ -196,6 +197,11 @@ def _decode(record: dict) -> dict:
     # Gegenstand vor diesem Feature) kennen die Property nicht -> False,
     # genau wie bei `verbaut` oben (Stolperstein #9, sonst 500 auf der Liste).
     record["istNatuerlich"] = _or_default(record.get("istNatuerlich"), False)
+    # Maschinenteil (26.10.2026): gestuft wie Reparaturmaterial, siehe
+    # schemas.py::GegenstandCreate. Leer/False = die weit überwiegende
+    # Mehrheit der Gegenstände.
+    record["istMaschinenteil"] = _or_default(record.get("istMaschinenteil"), False)
+    record["maschinenteilQualitaet"] = record.get("maschinenteilQualitaet") or ""
     return record
 
 
@@ -229,6 +235,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ruestungReduktionBasis: $ruestungReduktionBasis,
             istNatuerlich: $istNatuerlich,
             istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
+            istMaschinenteil: $istMaschinenteil, maschinenteilQualitaet: $maschinenteilQualitaet,
             istEntwurf: $istEntwurf
         })
     """
@@ -302,6 +309,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ruestungReduktionBasis=int(data.get("ruestungReduktionBasis") or 0),
             istReparaturmaterial=bool(data.get("istReparaturmaterial")),
             reparaturKapazitaet=int(data.get("reparaturKapazitaet") or 0),
+            istMaschinenteil=bool(data.get("istMaschinenteil")),
+            maschinenteilQualitaet=data.get("maschinenteilQualitaet") or "",
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
@@ -342,6 +351,26 @@ async def list_reparaturmaterial_von(campaign_id: str, owner_person_id: str) -> 
         {LIEGT_IN}
         RETURN {RETURN_FIELDS}
         ORDER BY g.reparaturKapazitaet
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, owner_id=owner_person_id)
+        return [_decode(dict(record)) async for record in result]
+
+
+async def list_maschinenteile_von(campaign_id: str, owner_person_id: str) -> list[dict]:
+    """Maschinenteile im Besitz dieser Person, die noch etwas taugen
+    (Menge > 0) — für die Zahlungsauswahl beim Drohnen-/Fahrzeug-Umbau
+    (entities/routes.py::drohne_steigern) UND künftig fürs Selbst-Reparieren
+    von Drohne/Fahrzeug, siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $owner_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false) AND coalesce(g.istMaschinenteil, false)
+          AND coalesce(g.menge, 1) > 0
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.maschinenteilQualitaet, g.name
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, owner_id=owner_person_id)

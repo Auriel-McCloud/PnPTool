@@ -123,6 +123,13 @@ export interface Gegenstand {
    * Abschnitt „Natürliche Rüstung"). Heilt nur über die Rast-Mechanik.
    */
   istNatuerlich: boolean;
+  /**
+   * Maschinenteil (26.10.2026, Material statt Nuyen beim Drohnen-/
+   * Fahrzeug-Umbau): gestuft wie Reparaturmaterial — "" | "minderwertig" |
+   * "normal" | "hochwertig", siehe backend traits/drohnen.py::maschinenteil_reicht.
+   */
+  istMaschinenteil: boolean;
+  maschinenteilQualitaet: string;
 }
 
 /** Fürs Selbst-Reparieren-Popup — Wurfergebnis + Auswertung, siehe
@@ -334,6 +341,8 @@ export interface GegenstandUpdate {
   istReparaturmaterial?: boolean;
   reparaturKapazitaet?: number;
   istNatuerlich?: boolean;
+  istMaschinenteil?: boolean;
+  maschinenteilQualitaet?: string;
 }
 
 type NeuerGegenstand = {

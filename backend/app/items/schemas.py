@@ -222,6 +222,14 @@ class GegenstandCreate(BaseModel):
     # bleibt dagegen ein normaler, pro Item-Template frei konfigurierbarer
     # Wert (Dug'Rah: 2 — für künftige Kreaturen einfach ein zweites Template).
     istNatuerlich: bool = False
+    # Maschinenteil (26.10.2026, Drohnen-/Fahrzeug-Umbau mit Material statt
+    # Nuyen, docs/wiki/concepts/drohnen-fahrzeuge.md): gestuft wie
+    # Reparaturmaterial/Chrom-Qualitätsstufen. Minderwertig taugt nur für die
+    # Rüstungs-/Drohnen-Reparatur (kampf/ruestung.py), normal deckt
+    # Fertigkeiten/Zusatzfertigkeiten, hochwertig zusätzlich Attribute — siehe
+    # traits/drohnen.py::maschinenteil_reicht. Leer = kein Maschinenteil.
+    istMaschinenteil: bool = False
+    maschinenteilQualitaet: Literal["", "minderwertig", "normal", "hochwertig"] = ""
 
 
 class GegenstandUpdate(BaseModel):
@@ -295,6 +303,8 @@ class GegenstandUpdate(BaseModel):
     istReparaturmaterial: bool | None = None
     reparaturKapazitaet: int | None = None
     istNatuerlich: bool | None = None
+    istMaschinenteil: bool | None = None
+    maschinenteilQualitaet: Literal["", "minderwertig", "normal", "hochwertig"] | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -389,6 +399,8 @@ class GegenstandResponse(BaseModel):
     istReparaturmaterial: bool = False
     reparaturKapazitaet: int = 0
     istNatuerlich: bool = False
+    istMaschinenteil: bool = False
+    maschinenteilQualitaet: str = ""
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

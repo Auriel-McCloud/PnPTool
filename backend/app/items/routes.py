@@ -170,6 +170,10 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         # Rüstung" — nicht ablegbar für Spieler, nicht reparierbar, Kästchen-
         # Max wird live aus der Widerstandsfähigkeit der Trägerin berechnet.
         "istNatuerlich": body.istNatuerlich,
+        # Maschinenteil (26.10.2026): Material statt Nuyen beim Drohnen-/
+        # Fahrzeug-Umbau, siehe traits/drohnen.py::maschinenteil_reicht.
+        "istMaschinenteil": body.istMaschinenteil,
+        "maschinenteilQualitaet": body.maschinenteilQualitaet,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
     }

@@ -31,3 +31,40 @@ def kann_bezahlen(preis: int, rigger_kapital: int) -> bool:
     diese Entscheidung im Code sichtbar und einzeln testbar bleibt.
     """
     return max(0, preis) <= max(0, rigger_kapital)
+
+
+# Eine Drohne riggt sich nicht selbst — die Fertigkeit "Riggen" beschreibt,
+# wie ein MENSCH eine Drohne fernsteuert, nicht wie eine Drohne sich selbst
+# steuert. Mark, 26.10.2026: komplett aus der Drohnen-Umbauen-Liste streichen
+# (anders als die übrige volle Fertigkeitenliste, siehe
+# docs/wiki/concepts/drohnen-fahrzeuge.md "Fertigkeiten" — das bleibt ein
+# bewusster EINZELFALL-Ausschluss, kein genereller Kategorie-Filter).
+DROHNE_GESPERRTE_FERTIGKEITEN = {"Riggen"}
+
+# Fertigkeiten, die beim Drohnen-Umbau standardmässig OBEN/hervorgehoben
+# stehen (Mark, 26.10.2026) — alle übrigen (inkl. campaign-eigener
+# Zusatzfertigkeiten) landen hinter einem "weitere Fertigkeiten"-Umschalter,
+# für den seltenen Sonderbau. "Sportlichkeit" heisst an der Drohne nur ANDERS
+# BESCHRIFTET "Ausweichen" (Mark: nur bei Drohnen, bei Menschen bleibt der
+# Name) — das ist reine Anzeige im Frontend, die gespeicherte Fertigkeit
+# bleibt "Sportlichkeit".
+DROHNE_WICHTIGE_FERTIGKEITEN = ["Schusswaffen", "Nahkampf", "Wahrnehmung", "Sportlichkeit"]
+
+# Reine Anzeige-Umbenennung nur am Drohnen-/Fahrzeug-Blatt, siehe oben.
+DROHNE_FERTIGKEIT_LABEL = {"Sportlichkeit": "Ausweichen"}
+
+# Maschinenteil-Qualitätsstufen (26.10.2026, Material statt Nuyen beim
+# Drohnen-Umbau): minderwertig taugt nur für Reparatur (nicht hier),
+# normal deckt Fertigkeiten/Zusatzfertigkeiten, hochwertig zusätzlich
+# Attribute — docs/wiki/concepts/drohnen-fahrzeuge.md, Abschnitt "Reparatur".
+_MASCHINENTEIL_KATEGORIEN = {
+    "hochwertig": {"AttributDrohne", "AttributDrohneAussenhuelle", "Fertigkeit", "Zusatzfertigkeit"},
+    "normal": {"Fertigkeit", "Zusatzfertigkeit"},
+    "minderwertig": set(),
+}
+
+
+def maschinenteil_reicht(qualitaet: str, category: str) -> bool:
+    """Deckt diese Maschinenteil-Qualität einen Steigerungskauf dieser
+    Kategorie ab? Höhere Stufe deckt alles, was eine niedrigere auch deckt."""
+    return category in _MASCHINENTEIL_KATEGORIEN.get(qualitaet, set())

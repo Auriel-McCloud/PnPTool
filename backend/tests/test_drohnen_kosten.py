@@ -48,3 +48,41 @@ class TestNuyenKosten:
 
     def test_negativer_umrechnungsfaktor_wird_wie_null_behandelt(self):
         assert nuyen_kosten("AttributDrohne", 0, nuyen_pro_xp=-50) == 0
+
+
+class TestMaschinenteilReicht:
+    """Material statt Nuyen (26.10.2026): Qualitätsstufen gestuft wie bei
+    Reparaturmaterial — höhere Stufe deckt alles, was eine niedrigere auch
+    deckt, siehe docs/wiki/concepts/drohnen-fahrzeuge.md Abschnitt
+    "Reparatur"."""
+
+    def test_hochwertig_deckt_attribute(self):
+        from app.traits.drohnen import maschinenteil_reicht
+
+        assert maschinenteil_reicht("hochwertig", "AttributDrohne") is True
+        assert maschinenteil_reicht("hochwertig", "AttributDrohneAussenhuelle") is True
+
+    def test_hochwertig_deckt_auch_fertigkeiten(self):
+        from app.traits.drohnen import maschinenteil_reicht
+
+        assert maschinenteil_reicht("hochwertig", "Fertigkeit") is True
+        assert maschinenteil_reicht("hochwertig", "Zusatzfertigkeit") is True
+
+    def test_normal_deckt_fertigkeiten_aber_keine_attribute(self):
+        from app.traits.drohnen import maschinenteil_reicht
+
+        assert maschinenteil_reicht("normal", "Fertigkeit") is True
+        assert maschinenteil_reicht("normal", "Zusatzfertigkeit") is True
+        assert maschinenteil_reicht("normal", "AttributDrohne") is False
+
+    def test_minderwertig_deckt_keinen_umbau(self):
+        from app.traits.drohnen import maschinenteil_reicht
+
+        assert maschinenteil_reicht("minderwertig", "Fertigkeit") is False
+        assert maschinenteil_reicht("minderwertig", "AttributDrohne") is False
+
+    def test_leere_oder_unbekannte_qualitaet_deckt_nichts(self):
+        from app.traits.drohnen import maschinenteil_reicht
+
+        assert maschinenteil_reicht("", "Fertigkeit") is False
+        assert maschinenteil_reicht("was-auch-immer", "Fertigkeit") is False

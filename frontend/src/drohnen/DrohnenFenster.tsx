@@ -7,6 +7,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { drohnenApi } from "./api";
+import { DrohnenAusruestung } from "./DrohnenAusruestung";
 import { DrohnenSteigern } from "./DrohnenSteigern";
 import "../entities/pc-detail.css";
 
@@ -23,7 +24,7 @@ import "../entities/pc-detail.css";
  * zeigt Charakterblatt + Nuyen-Kauf + Aktiv-Schalter, blendet
  * Rigger-Zuweisung und Löschen aus — das bleibt SL-Sache.
  */
-type Unteransicht = "blatt" | "kaufen";
+type Unteransicht = "blatt" | "kaufen" | "ausruestung";
 
 export function DrohnenFenster({
   campaignId,
@@ -122,8 +123,17 @@ export function DrohnenFenster({
             className={unteransicht === "kaufen" ? "pcd-nav-aktiv" : ""}
             onClick={() => setUnteransicht("kaufen")}
           >
-            Nuyen ausgeben
+            Drohne Umbauen
           </button>
+          {istGm && (
+            <button
+              type="button"
+              className={unteransicht === "ausruestung" ? "pcd-nav-aktiv" : ""}
+              onClick={() => setUnteransicht("ausruestung")}
+            >
+              Ausrüstung
+            </button>
+          )}
         </nav>
 
         <div className="pcd-bereich">
@@ -149,6 +159,10 @@ export function DrohnenFenster({
               drohneId={drohneId}
               onGeaendert={() => setBlattVersion((v) => v + 1)}
             />
+          )}
+
+          {unteransicht === "ausruestung" && istGm && (
+            <DrohnenAusruestung campaignId={campaignId} drohneId={drohneId} />
           )}
 
           {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}

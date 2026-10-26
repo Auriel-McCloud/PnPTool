@@ -61,10 +61,21 @@ Sonderzweig hat.
 
 **Entschieden (25.10.2026): die volle Fertigkeitenliste, kein Filter.** Mark:
 auch soziale Fertigkeiten wie Etiketten/Menschenkenntnis/Darbietung können bei
-einem Roboter Sinn ergeben (Benimm-Programme, Gesichtserkennung) — keine
+einem Roboter Sinn ergeben (Benimm-/Gesichtserkennungs-Programme), keine
 Kategorie wird grundsätzlich ausgeschlossen. Drohnen/Fahrzeuge nutzen damit
 dieselbe `Fertigkeit`-Kategorie wie Menschen, keine eigene
 `FertigkeitDrohne`-Kategorie nötig.
+
+**Kuratiert (26.10.2026, Mark nach dem ersten Klicktest — Einzelfall-
+Ausnahmen von der Liste oben, keine Rücknahme der Grundsatzentscheidung):**
+Schusswaffen/Nahkampf/Wahrnehmung/Sportlichkeit (nur an der Drohne als
+"Ausweichen" ANGEZEIGT, der Katalogname bleibt Sportlichkeit — Menschen sehen
+weiterhin "Sportlichkeit") plus "Fliegen" stehen im Umbauen-Reiter oben,
+alles andere hinter einem "weitere Fertigkeiten"-Umschalter.
+**"Riggen" ist komplett aus der Drohnen-Liste entfernt** (serverseitig
+UND clientseitig, `traits/drohnen.py::DROHNE_GESPERRTE_FERTIGKEITEN`) — eine
+Drohne riggt sich nicht selbst, das beschreibt nur, wie ein MENSCH sie
+fernsteuert.
 
 **Neue Fertigkeit „Fliegen" läuft über die bestehenden Zusatzfertigkeiten**
 (`app/zusatzfertigkeiten/`, campaign-gebundener SL-Katalog), nicht über den
@@ -73,6 +84,11 @@ kein Code. `HAT_ZUSATZFERTIGKEIT` hängt generisch an `Person`, ohne
 Typ-Ausschluss — sobald Drohne/Fahrzeug ein Person-Knoten ist (siehe oben),
 ist „Fliegen" dort automatisch genauso wählbar wie bei einem menschlichen
 Piloten. Mark trägt es einfach in die SL-Tabelle „Zusatzfertigkeiten" ein.
+**26.10.2026, gebaut:** Zusatzfertigkeiten sind jetzt auch mit Nuyen an der
+Drohne kaufbar (`GET`/`POST .../drohnen/{id}/steigern`, Id-Präfix `zf:`,
+gleiche Nuyen-Formel wie normale Fertigkeiten) — vorher war nur die Anzeige
+im Charakterblatt vorbereitet, keine Möglichkeit, eine Zusatzfertigkeit an
+der Drohne überhaupt zu erwerben.
 
 ### Lebenspunkte / Struktur
 
@@ -126,6 +142,39 @@ Faktor, Einstieg per `NEU_KOSTEN`), aber in Nuyen statt Erfahrungspunkten:
 
 Da `Person`-Knoten: Waffen und Rüstung laufen 1:1 über das bestehende
 `BESITZT`/`AUSGERÜSTET`-System, keine Parallelimplementierung.
+**26.10.2026, gebaut:** eigener Reiter „Ausrüstung" im `DrohnenFenster.tsx`
+(**nur SL**) zeigt die Gegenstände der Drohne als `GegenstandKachel` und
+erlaubt Ausrüsten/Ablegen. Neue Gegenstände legt die SL weiterhin über die
+normale Gegenstände-Verwaltung an (Besitzer auf die Drohne setzen) — kein
+zweiter Anlegen-Dialog. **Nicht für Spieler freigegeben:**
+`items/routes.py::ablage_aendern` prüft bei Nicht-GM
+`viewer.person_id == Besitzer`, und Besitzer der Ausrüstung ist die Drohne,
+nicht der gebundene Rigger — ein Spieler-Self-Service bräuchte erst eine
+eigene, über `_drohne_und_rigger_oder_404` geprüfte Route (Muster wie
+`aktivSetzen`/`riggerSetzen`), noch nicht gebaut.
+
+### Material statt Nuyen (26.10.2026, Minimal-Scope)
+
+Mark wollte beim Umbau wählen können, ob ein Punkt mit ¥ oder mit einem
+Material-Gegenstand bezahlt wird — bewusst NUR die Zahlung selbst, ohne
+Shop-/Händler-Integration oder das größere Reparatur-Feature unten.
+
+- Neuer Gegenstands-Flag `istMaschinenteil`/`maschinenteilQualitaet`
+  (`"" | "minderwertig" | "normal" | "hochwertig"`), dasselbe Muster wie
+  `istReparaturmaterial`/`reparaturKapazitaet` — Checkbox+Dropdown im
+  normalen Gegenstands-Bearbeiten-Popup (`CharacterSheetPanel.tsx`).
+- `traits/drohnen.py::maschinenteil_reicht(qualitaet, category)`: hochwertig
+  deckt Attribute UND Fertigkeiten/Zusatzfertigkeiten, normal nur
+  Fertigkeiten/Zusatzfertigkeiten, minderwertig deckt beim Umbau NICHTS
+  (für die Reparatur unten reserviert).
+- `GET .../drohnen/{id}/maschinenteile` listet Maschinenteile DES RIGGERS
+  (nicht der Drohne — die besitzt nichts eigenes Kapital-/Material-mäßig,
+  siehe oben). `POST .../drohnen/{id}/steigern` nimmt optional
+  `materialGegenstandId`: verbraucht 1 Stück (Menge −1) statt ¥ vom
+  Rigger-Kapital abzuziehen.
+- **Bewusst draußen gelassen:** Shop-Sortiment/Händlerverkauf von
+  Maschinenteilen, das Burgermenü „Reparatur" und die Hardware-Probe aus
+  dem Abschnitt „Reparatur" unten — eigenständiges, größeres Folge-Feature.
 
 ### Reparatur (neues eigenständiges Feature, gilt für Rüstung UND Drohne/Fahrzeug)
 

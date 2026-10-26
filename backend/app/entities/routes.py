@@ -17,7 +17,8 @@ from app.items import repository as items_repository
 from app.traits import repository as traits_repository
 from app.traits import erfahrung
 from app.traits.bogen import sichtbare_kategorien
-from app.traits.drohnen import kann_aktivieren, kann_bezahlen
+from app.traits.drohnen import DROHNE_GESPERRTE_FERTIGKEITEN, kann_aktivieren, kann_bezahlen, maschinenteil_reicht
+from app.zusatzfertigkeiten import repository as zf_repository
 from app.entities.visibility import (
     filter_entities_for_viewer,
     filter_entity_for_viewer,
@@ -331,6 +332,10 @@ async def drohne_aktiv_setzen(campaign_id: str, node_id: str, body: dict, viewer
 
 class DrohneSteigernInput(BaseModel):
     traitDefId: str
+    # Material statt Nuyen (26.10.2026): wenn gesetzt, bezahlt ein
+    # Maschinenteil-Gegenstand des Riggers statt Nuyen-Abzug — siehe
+    # traits/drohnen.py::maschinenteil_reicht.
+    materialGegenstandId: str | None = None
 
 
 async def _drohne_und_rigger_oder_404(
@@ -377,6 +382,10 @@ async def drohne_steigerungspreise(
     for eintrag in katalog:
         if eintrag["category"] not in erlaubt:
             continue
+        # Eine Drohne riggt sich nicht selbst — siehe
+        # traits/drohnen.py::DROHNE_GESPERRTE_FERTIGKEITEN.
+        if eintrag["name"] in DROHNE_GESPERRTE_FERTIGKEITEN:
+            continue
         aktuell = nach_name.get(eintrag["name"], 0)
         preis = erfahrung.nuyen_kosten(eintrag["category"], aktuell, nuyen_pro_xp)
         if preis is None:
@@ -392,12 +401,36 @@ async def drohne_steigerungspreise(
             }
         )
 
+    # Zusatzfertigkeiten (26.10.2026): campaign-gebundener Katalog, läuft
+    # nicht über TraitDef/list_catalog — separat angehängt, Id-Präfix "zf:"
+    # unterscheidet sie beim Kauf (siehe drohne_steigern unten). Dieselbe
+    # Nuyen-Formel wie normale Fertigkeiten (erfahrung.kosten("Fertigkeit", ...)
+    # im EP-Pendant, siehe zusatzfertigkeiten/routes.py).
+    zf_katalog = await zf_repository.liste(campaign_id)
+    zf_gewaehlt = {z["id"]: z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id)}
+    for zf in zf_katalog:
+        gewaehlt = zf_gewaehlt.get(zf["id"])
+        aktuell = gewaehlt["rating"] if gewaehlt else 0
+        preis = erfahrung.nuyen_kosten("Fertigkeit", aktuell, nuyen_pro_xp)
+        if preis is None:
+            continue
+        preise.append(
+            {
+                "traitDefId": f"zf:{zf['id']}",
+                "name": zf["name"],
+                "category": "Zusatzfertigkeit",
+                "aktuell": aktuell,
+                "max": 6,
+                "kosten": preis,
+            }
+        )
+
     rigger_kapital = 0
     if rigger_id:
         rigger = await repository.get_node("Person", PERSON_FIELDS, campaign_id, rigger_id)
         rigger_kapital = int(rigger.get("kapitalBasis") or 0) if rigger else 0
 
-    return {"riggerId": rigger_id, "verfuegbar": rigger_kapital, "werte": preise}
+    return {"riggerId": rigger_id, "verfuegbar": rigger_kapital, "nuyenProXp": nuyen_pro_xp, "werte": preise}
 
 
 @router.post("/drohnen/{node_id}/steigern")
@@ -407,12 +440,14 @@ async def drohne_steigern(
     body: DrohneSteigernInput,
     viewer: Viewer = Depends(get_viewer),
 ) -> dict:
-    """Einen Punkt an einer Drohne/einem Fahrzeug kaufen.
+    """Einen Punkt an einer Drohne/einem Fahrzeug kaufen — TraitDef ODER
+    Zusatzfertigkeit (Id-Präfix "zf:", siehe drohne_steigerungspreise).
 
-    Bezahlt der RIGGER aus eigenem Kapital (`kapitalBasis`), nicht die
-    Drohne — siehe `kann_bezahlen` für die Begründung. Der Preis wird hier
-    neu berechnet und nicht vom Client übernommen, gleiche Logik wie beim
-    EP-Pendant `steigere_wert` in `traits/routes.py`.
+    Bezahlt der RIGGER, entweder aus eigenem Kapital (`kapitalBasis`) ODER
+    mit einem eigenen Maschinenteil statt Nuyen (26.10.2026,
+    `materialGegenstandId`, siehe `maschinenteil_reicht`) — nie beides. Der
+    Preis wird hier neu berechnet und nicht vom Client übernommen, gleiche
+    Logik wie beim EP-Pendant `steigere_wert` in `traits/routes.py`.
     """
     drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
     if rigger_id is None:
@@ -422,37 +457,89 @@ async def drohne_steigern(
     if rigger is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Rigger nicht gefunden")
 
-    campaign = await get_campaign(campaign_id)
-    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
-    eintrag = next((t for t in katalog if t["id"] == body.traitDefId), None)
-    if eintrag is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
+    ist_zusatzfertigkeit = body.traitDefId.startswith("zf:")
+    gewaehlte_zf = None
+    if ist_zusatzfertigkeit:
+        zf_id = body.traitDefId[len("zf:") :]
+        zusatzfertigkeit = await zf_repository.hole(campaign_id, zf_id)
+        if zusatzfertigkeit is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Zusatzfertigkeit nicht gefunden")
+        name = zusatzfertigkeit["name"]
+        category = "Zusatzfertigkeit"
+        gewaehlte_zf = next(
+            (z for z in await zf_repository.zusatzfertigkeiten_der_person(campaign_id, node_id) if z["id"] == zf_id),
+            None,
+        )
+        aktuell = gewaehlte_zf["rating"] if gewaehlte_zf else 0
+        grenze = 6
+    else:
+        campaign = await get_campaign(campaign_id)
+        katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+        eintrag = next((t for t in katalog if t["id"] == body.traitDefId), None)
+        if eintrag is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Wert nicht gefunden")
+        # Eine Drohne riggt sich nicht selbst — dieselbe Sperre wie in der
+        # Preisliste, hier zusätzlich serverseitig gegen direkte POSTs.
+        if eintrag["name"] in DROHNE_GESPERRTE_FERTIGKEITEN:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"{eintrag['name']} steht einer Drohne/einem Fahrzeug nicht offen.")
+        erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
+        if eintrag["category"] not in erlaubt:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dieser Drohne/diesem Fahrzeug nicht offen.")
+        name = eintrag["name"]
+        category = eintrag["category"]
+        werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
+        nach_name = {w["name"]: w["rating"] for w in werte}
+        aktuell = nach_name.get(name, 0)
+        grenze = next((w["max"] for w in werte if w["traitDefId"] == body.traitDefId), eintrag["defaultMax"])
 
-    erlaubt = sichtbare_kategorien(drohne.get("weg") or "KEINER", {t["category"] for t in katalog}, False, True)
-    if eintrag["category"] not in erlaubt:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Dieser Wert steht dieser Drohne/diesem Fahrzeug nicht offen.")
-
-    werte = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
-    nach_name = {w["name"]: w["rating"] for w in werte}
-    aktuell = nach_name.get(eintrag["name"], 0)
-    grenze = next((w["max"] for w in werte if w["traitDefId"] == body.traitDefId), eintrag["defaultMax"])
     if aktuell >= grenze:
-        raise HTTPException(status.HTTP_409_CONFLICT, f"{eintrag['name']} steht bereits auf {grenze}.")
+        raise HTTPException(status.HTTP_409_CONFLICT, f"{name} steht bereits auf {grenze}.")
 
     einstellungen = await get_einstellungen(campaign_id)
     nuyen_pro_xp = int(einstellungen.get("nuyenProXp") or 0)
-    preis = erfahrung.nuyen_kosten(eintrag["category"], aktuell, nuyen_pro_xp)
+    preis = erfahrung.nuyen_kosten("Fertigkeit" if ist_zusatzfertigkeit else category, aktuell, nuyen_pro_xp)
     if preis is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Dieser Wert lässt sich nicht steigern.")
 
+    # Zahlung: entweder Nuyen aus dem Rigger-Kapital ODER ein Maschinenteil
+    # aus dessen Besitz (26.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md).
+    material = None
+    if body.materialGegenstandId:
+        material = await items_repository.get_gegenstand(campaign_id, body.materialGegenstandId)
+        if material is None or not material.get("istMaschinenteil"):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil.")
+        besitzer_id = await items_repository.get_owner_person_id(campaign_id, body.materialGegenstandId)
+        if besitzer_id != rigger_id:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Maschinenteil gehört nicht dem Rigger.")
+        if material.get("menge", 1) <= 0:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Maschinenteil ist aufgebraucht.")
+        if not maschinenteil_reicht(material.get("maschinenteilQualitaet") or "", "Fertigkeit" if ist_zusatzfertigkeit else category):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"Ein {material.get('maschinenteilQualitaet') or 'unbrauchbares'} Maschinenteil reicht dafür nicht.",
+            )
+
     kapital = int(rigger.get("kapitalBasis") or 0)
-    if not kann_bezahlen(preis, kapital):
+    if material is None and not kann_bezahlen(preis, kapital):
         raise HTTPException(status.HTTP_409_CONFLICT, f"{preis}¥ nötig, {kapital}¥ beim Rigger vorhanden.")
 
-    await traits_repository.steigere(campaign_id, node_id, body.traitDefId, aktuell + 1)
-    await repository.update_node(
-        "Person", PERSON_FIELDS, campaign_id, rigger_id, {"kapitalBasis": kapital - preis}
-    )
+    if ist_zusatzfertigkeit:
+        if gewaehlte_zf is None:
+            await zf_repository.hinzufuegen(campaign_id, node_id, zf_id, 1)
+        else:
+            await zf_repository.steigere(campaign_id, node_id, zf_id, aktuell + 1)
+    else:
+        await traits_repository.steigere(campaign_id, node_id, body.traitDefId, aktuell + 1)
+
+    if material is not None:
+        neue_menge = max(0, material["menge"] - 1)
+        await items_repository.update_gegenstand(campaign_id, body.materialGegenstandId, {"menge": neue_menge})
+        kapital_neu = kapital
+        sl_notiz = f"Bezahlt mit Maschinenteil {material['name']} (verbraucht, Rigger {rigger.get('name', '')})"
+    else:
+        kapital_neu = kapital - preis
+        await repository.update_node("Person", PERSON_FIELDS, campaign_id, rigger_id, {"kapitalBasis": kapital_neu})
+        sl_notiz = f"Bezahlt vom Rigger {rigger.get('name', '')} ({preis}¥ aus dessen Kapital)"
 
     # Ereignisprotokoll: dieselbe CharakterEntwicklung-Art wie beim EP-Kauf,
     # SL-Notiz macht die abweichende Bezahlquelle (Rigger statt eigene XP)
@@ -462,15 +549,26 @@ async def drohne_steigern(
         person_id=node_id,
         art="STEIGERUNG",
         trait_def_id=body.traitDefId,
-        trait_name=eintrag["name"],
+        trait_name=name,
         alt=str(aktuell),
         neu=str(aktuell + 1),
         kosten_oder_menge=preis,
-        sl_notiz=f"Bezahlt vom Rigger {rigger.get('name', '')} ({preis}¥ aus dessen Kapital)",
+        sl_notiz=sl_notiz,
     )
 
     drohne_frisch = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
-    return {"drohne": drohne_frisch, "riggerKapitalBasis": kapital - preis}
+    return {"drohne": drohne_frisch, "riggerKapitalBasis": kapital_neu}
+
+
+@router.get("/drohnen/{node_id}/maschinenteile")
+async def drohne_maschinenteile(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)) -> list[dict]:
+    """Maschinenteile im Besitz DES RIGGERS (nicht der Drohne — die hat
+    keinen eigenen Besitz, siehe drohne_steigerungspreise) — für die
+    Zahlungsauswahl beim Umbau."""
+    _, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    if rigger_id is None:
+        return []
+    return await items_repository.list_maschinenteile_von(campaign_id, rigger_id)
 
 
 @router.get("/ki", response_model=list[dict])
