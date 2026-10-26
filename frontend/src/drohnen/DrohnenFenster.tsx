@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { entitiesApi, type Person } from "../entities/api";
+import { entitiesApi, type Person, type SichtbarkeitModus } from "../entities/api";
 import { anzeigeName } from "../entities/api";
 import { EntitaetsBild } from "../entities/EntitaetsBild";
+import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
@@ -29,7 +30,12 @@ export function DrohnenFenster({
   drohneId,
   riggerId,
   riggerAktiv,
+  riggerSlotsBelegt,
+  riggerSlotsMax,
   personen,
+  pcOptions,
+  sichtbarkeit,
+  sichtbarFuer,
   istGm,
   onSchliessen,
   onGeaendert,
@@ -38,8 +44,16 @@ export function DrohnenFenster({
   drohneId: string;
   riggerId: string | null;
   riggerAktiv: boolean;
+  /** Aktive Slots des Riggers gerade jetzt / Obergrenze seiner Riggerkonsole —
+   *  null ohne Rigger bzw. ohne ausgerüstete Konsole. */
+  riggerSlotsBelegt: number | null;
+  riggerSlotsMax: number | null;
   /** Für die Rigger-Auswahl (nur SL) — alle Menschen der Kampagne. */
   personen: { id: string; label: string }[];
+  /** Für die Sichtbarkeits-Auswahl (nur SL, SPEZIFISCH-Modus) — nur PCs. */
+  pcOptions: PersonOption[];
+  sichtbarkeit: SichtbarkeitModus;
+  sichtbarFuer: string[];
   istGm: boolean;
   onSchliessen: () => void;
   onGeaendert: () => void;
@@ -153,7 +167,40 @@ export function DrohnenFenster({
               </label>
             </div>
             {!riggerId && <p style={{ fontSize: 12, color: "var(--text-leise)", margin: "4px 0 0" }}>Ohne Rigger nicht aktivierbar.</p>}
+            {riggerId && riggerSlotsMax != null && (
+              <p style={{ fontSize: 12, color: "var(--text-leise)", margin: "4px 0 0" }}>
+                Aktive Slots der Riggerkonsole: {riggerSlotsBelegt}/{riggerSlotsMax}
+                {riggerSlotsBelegt != null && riggerSlotsMax != null && riggerSlotsBelegt >= riggerSlotsMax && !riggerAktiv && (
+                  <> — voll, erst eine andere deaktivieren</>
+                )}
+              </p>
+            )}
+            {riggerId && riggerSlotsMax == null && (
+              <p style={{ fontSize: 12, color: "var(--signal)", margin: "4px 0 0" }}>
+                Der Rigger hat keine Riggerkonsole ausgerüstet — ohne Konsole nicht aktivierbar.
+              </p>
+            )}
           </section>
+
+          {istGm ? (
+            <section style={{ borderTop: "1px solid var(--linie)", paddingTop: 10, marginTop: 10 }}>
+              <h3 style={{ margin: "0 0 6px" }}>Sichtbarkeit</h3>
+              <p style={{ fontSize: 12, color: "var(--text-leise)", margin: "0 0 6px" }}>
+                Neu angelegt ist jede Drohne/jedes Fahrzeug SL-geheim — auch der gebundene Rigger sieht sie
+                erst, wenn hier freigegeben wird.
+              </p>
+              <VisibilitySelector
+                label="Sichtbarkeit"
+                modus={sichtbarkeit}
+                sichtbarFuer={sichtbarFuer}
+                pcOptions={pcOptions}
+                onChange={async (modus, fuer) => {
+                  await entitiesApi.updatePerson(campaignId, drohneId, { sichtbarkeit: modus, sichtbarFuer: fuer });
+                  onGeaendert();
+                }}
+              />
+            </section>
+          ) : null}
 
           {istGm ? (
             <section style={{ borderTop: "1px solid var(--linie)", paddingTop: 10, marginTop: 10 }}>

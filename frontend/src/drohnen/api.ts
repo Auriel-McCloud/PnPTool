@@ -17,6 +17,11 @@ export interface DrohnenEintrag {
   riggerAktiv: boolean;
   riggerId: string | null;
   riggerName: string | null;
+  /** Aktive Drohnen/Fahrzeuge des gebundenen Riggers gerade jetzt, bzw. die
+   *  Obergrenze aus dessen ausgerüsteter Riggerkonsole — null ohne Rigger
+   *  bzw. ohne Konsole (26.10.2026, Mark: "ich seh die freien Slots nirgends"). */
+  riggerSlotsBelegt: number | null;
+  riggerSlotsMax: number | null;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
 }

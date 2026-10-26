@@ -51,6 +51,14 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
     [personen],
   );
 
+  // Für den Sichtbarkeits-Auswahlknopf im Detail-Fenster (SPEZIFISCH-Modus):
+  // nur PCs sind sinnvolle Ziele, ein NPC-Rigger kann das Fenster eh nicht
+  // selbst öffnen.
+  const pcOptions = useMemo(
+    () => personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name })),
+    [personen],
+  );
+
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLowerCase();
     if (!s) return liste;
@@ -121,6 +129,11 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
                 <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
                 <span className="gg-kachel-marken">
                   <span className="gg-marke">{d.riggerName ?? "ungebunden"}</span>
+                  {d.riggerSlotsMax != null && (
+                    <span className="gg-marke" title="Aktive Slots der Riggerkonsole">
+                      {d.riggerSlotsBelegt}/{d.riggerSlotsMax} Slots
+                    </span>
+                  )}
                 </span>
               </button>
             ))}
@@ -142,6 +155,11 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
               <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
               <span className="gg-kachel-marken">
                 <span className="gg-marke">{d.riggerName ?? "ungebunden"}</span>
+                {d.riggerSlotsMax != null && (
+                  <span className="gg-marke" title="Aktive Slots der Riggerkonsole">
+                    {d.riggerSlotsBelegt}/{d.riggerSlotsMax} Slots
+                  </span>
+                )}
               </span>
             </button>
             {d.riggerId && (
@@ -193,7 +211,12 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
           drohneId={offenFuer.id}
           riggerId={offenFuer.riggerId}
           riggerAktiv={offenFuer.riggerAktiv}
+          riggerSlotsBelegt={offenFuer.riggerSlotsBelegt}
+          riggerSlotsMax={offenFuer.riggerSlotsMax}
           personen={personenNamen}
+          pcOptions={pcOptions}
+          sichtbarkeit={offenFuer.sichtbarkeit}
+          sichtbarFuer={offenFuer.sichtbarFuer}
           istGm={istGm}
           onSchliessen={() => setOffenFuer(null)}
           onGeaendert={async () => {

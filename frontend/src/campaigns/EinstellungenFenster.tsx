@@ -334,6 +334,25 @@ export function EinstellungenFenster({
           </p>
 
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
+            DROHNEN &amp; FAHRZEUGE
+          </h4>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
+            <strong style={{ fontSize: 14 }}>Nuyen pro Punkt</strong>
+            <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+              Umrechnungsfaktor für Attribut-/Fertigkeitskäufe an Drohnen und Fahrzeugen — der Rigger zahlt
+              aus eigenem Kapital, die Drohne hat keins. Startwert 200¥, jederzeit änderbar.
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={werte.nuyenProXp ?? 200}
+              onChange={(e) => aendern("nuyenProXp", Math.max(0, Number(e.target.value) || 0))}
+              style={{ marginTop: 4, maxWidth: 140 }}
+            />
+          </label>
+
+          <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             KAMPAGNE
           </h4>
 

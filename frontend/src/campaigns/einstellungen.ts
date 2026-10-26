@@ -25,6 +25,10 @@ export interface Einstellungen {
   /** Welcher KI-Anbieter für Text-Generierung dieser Kampagne gilt:
    * "" = Server-Standard, sonst "gemini" oder "mistral". */
   kiProvider: "" | "gemini" | "mistral";
+  /** Nuyen pro Erfahrungspunkt-Äquivalent für Drohnen-/Fahrzeug-Attribut- und
+   * Fertigkeitskäufe (siehe backend/app/traits/erfahrung.py::nuyen_kosten).
+   * Default 200¥, Mark: "beginnen wir einfach mal bei 200 Nuyen". */
+  nuyenProXp: number;
   [weitere: string]: unknown;
 }
 

@@ -267,6 +267,23 @@ async def list_drohnen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
         d for d in roh
         if is_visible_to(d.get("sichtbarkeit") or "GM", d.get("sichtbarFuer") or [], viewer.role, viewer.person_id)
     ]
+
+    # Riggerkonsole-Slots je Rigger einmal berechnen, nicht pro Drohne neu —
+    # die Deckel-Regel (`kann_aktivieren`) gab es seit Phase 2 nur backendseitig
+    # fürs Aktivieren selbst, nie als Anzeige (Mark, 26.10.2026: "ich seh die
+    # freien Slots nirgends"). None/None = kein Rigger gebunden.
+    rigger_ids = {d["riggerId"] for d in sichtbar if d.get("riggerId")}
+    slots: dict[str, tuple[int, int]] = {}
+    for rid in rigger_ids:
+        max_drohnen = await items_repository.riggerkonsole_max_drohnen(campaign_id, rid)
+        aktuell = await repository.aktive_drohnen_zahl(campaign_id, rid)
+        slots[rid] = (aktuell, max_drohnen)
+    for d in sichtbar:
+        rid = d.get("riggerId")
+        belegt_max = slots.get(rid) if rid else None
+        d["riggerSlotsBelegt"] = belegt_max[0] if belegt_max else None
+        d["riggerSlotsMax"] = belegt_max[1] if belegt_max else None
+
     return sichtbar
 
 
