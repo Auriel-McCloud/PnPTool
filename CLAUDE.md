@@ -4,6 +4,25 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Rigger kann eigene Gegenstände an die Drohne übergeben/zurücknehmen**
+  (26.10.2026, direkt im Anschluss, Mark: "es müsste die Möglichkeit geben,
+  etwas aus dem Inventar des Riggers auszurüsten bzw. zu übergeben" — der
+  Ausrüstungs-Reiter zeigte vorher nur, was die Drohne schon besitzt, es gab
+  aber keinen Weg, ihr überhaupt etwas zu geben). `items/routes.py::
+  besitzer_wechseln` erlaubt jetzt auch Nicht-GM, streng auf den eigenen
+  Kreis begrenzt (neue `_eigener_kreis`-Prüfung, gemeinsam mit
+  `ablage_aendern` genutzt): Quelle UND Ziel müssen der Spieler selbst oder
+  seine eigene gebundene Drohne/sein eigenes Fahrzeug sein. Natürliche
+  Rüstung bleibt explizit ausgenommen (409, Teil des Körpers). Frontend:
+  neues `UebergebenPopup.tsx`, `DrohnenAusruestung.tsx` lädt zusätzlich das
+  eigene Inventar des Riggers und zeigt "Aus eigenem Besitz übergeben" +
+  einen "← zu dir"-Knopf je Drohnen-Item. **Verifiziert:** 5 neue Tests in
+  `test_zugriffsschutz_drohnen_ausruestung.py` (grün in Isolation — der
+  Datei-weite Vollauf zeigt gelegentlich vorbestehende, nicht
+  zusammenhängende Windows-Neo4j-Proactor-Flakiness bei sehr vielen
+  sequentiellen Async-DB-Tests im selben Prozess, unabhängig von dieser
+  Änderung), `npx tsc -b` sauber.
+
 - **Vier weitere Bugfixes nach Marks zweitem Spieltisch-Test** (26.10.2026,
   direkt im Anschluss an die obigen beiden Einträge):
   - **Rüstungszeile blieb leer trotz gekaufter Widerstandsfähigkeit/
