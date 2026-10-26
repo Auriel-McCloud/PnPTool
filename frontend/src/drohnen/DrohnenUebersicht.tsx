@@ -68,6 +68,27 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
   const aktive = gefiltert.filter((d) => d.riggerAktiv);
   const uebrige = gefiltert.filter((d) => !d.riggerAktiv);
 
+  // Riggerkonsole-Slots als echte Kästchen statt nur als Text-Badge
+  // (26.10.2026, Mark: "leere Kästchen, simultan zur Menge an zu
+  // kontrollierenden Drohnen durch die Riggerkonsole" — eine Reihe pro
+  // Rigger, so viele Boxen wie `riggerSlotsMax`, aktive Drohnen wandern
+  // optisch rein (blau), der Rest bleibt eine leere Box. Nur die BESTE
+  // ausgerüstete Konsole zählt serverseitig (`riggerkonsole_max_drohnen`
+  // nimmt `max()`, keine Summe) — "man kann nicht 10 billige kaufen" gilt
+  // also schon. Die ganz linke Box glüht später magenta, sobald der
+  // Rigger in eine Drohne "schlüpft" (eigenes Feature, noch nicht gebaut).
+  const riggerSlotGruppen = useMemo(() => {
+    const map = new Map<string, { name: string; slotsMax: number; aktiv: DrohnenEintrag[] }>();
+    for (const d of gefiltert) {
+      if (!d.riggerId) continue;
+      if (!map.has(d.riggerId)) {
+        map.set(d.riggerId, { name: d.riggerName ?? "Rigger", slotsMax: d.riggerSlotsMax ?? 0, aktiv: [] });
+      }
+      if (d.riggerAktiv) map.get(d.riggerId)!.aktiv.push(d);
+    }
+    return [...map.entries()].filter(([, g]) => g.slotsMax > 0 || g.aktiv.length > 0);
+  }, [gefiltert]);
+
   useEffect(() => setSeite(0), [suche]);
   const seiten = Math.max(1, Math.ceil(uebrige.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
@@ -107,39 +128,41 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
 
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
 
-      {aktive.length > 0 && (
-        <>
-          <h3 style={{ margin: "4px 0", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--gut)" }}>
-            Aktiv verbunden
+      {riggerSlotGruppen.map(([riggerId, gruppe]) => (
+        <div className="gg-slotreihe" key={riggerId}>
+          <h3 style={{ margin: "4px 0", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ja)" }}>
+            {gruppe.name} — Riggerkonsole ({gruppe.aktiv.length}/{gruppe.slotsMax || gruppe.aktiv.length})
           </h3>
-          <div className="gg-raster">
-            {aktive.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                className="gg-kachel"
-                style={{ borderColor: "var(--gut)", boxShadow: "0 0 8px var(--gut)" }}
-                onClick={() => setOffenFuer(d)}
-                title={d.name}
-              >
-                <span className="gg-kachel-bild">
-                  {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
-                </span>
-                <span className="gg-kachel-name">{d.name}</span>
-                <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
-                <span className="gg-kachel-marken">
-                  <span className="gg-marke">{d.riggerName ?? "ungebunden"}</span>
-                  {d.riggerSlotsMax != null && (
-                    <span className="gg-marke" title="Aktive Slots der Riggerkonsole">
-                      {d.riggerSlotsBelegt}/{d.riggerSlotsMax} Slots
-                    </span>
-                  )}
-                </span>
-              </button>
-            ))}
+          <div className="gg-slotboxen">
+            {Array.from({ length: Math.max(gruppe.slotsMax, gruppe.aktiv.length) }).map((_, i) => {
+              const d = gruppe.aktiv[i];
+              if (!d) {
+                return (
+                  <div className="gg-slotbox-leer" key={i}>
+                    frei
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  className="gg-kachel"
+                  style={{ borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
+                  onClick={() => setOffenFuer(d)}
+                  title={d.name}
+                >
+                  <span className="gg-kachel-bild">
+                    {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
+                  </span>
+                  <span className="gg-kachel-name">{d.name}</span>
+                  <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
+                </button>
+              );
+            })}
           </div>
-        </>
-      )}
+        </div>
+      ))}
 
       <h3 style={{ margin: "10px 0 4px", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-leise)" }}>
         {aktive.length > 0 ? "Alle übrigen" : "Fahrzeuge & Drohnen"}

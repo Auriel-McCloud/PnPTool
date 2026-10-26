@@ -64,6 +64,25 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
     genau wofür der Test da ist. **Noch nicht am Spieltisch getestet**,
     kein Browser-Klicktest (nur `tsc`/`pytest`, wie bei Phase 3).
 
+- **Drohnen/Fahrzeuge Phase 3.7 — Riggerkonsole-Slots als echte Kästchen**
+  (26.10.2026, direkt in Hermes): Mark wollte keine Text-Badge ("1/2
+  Slots") mehr, sondern eine Reihe echter leerer Kästchen oben im Menü, so
+  viele wie die Riggerkonsole erlaubt — aktive Drohnen "wandern" optisch
+  von der Liste darunter in diese Boxen und glühen blau (`var(--ja)`).
+  `DrohnenUebersicht.tsx`: Drohnen werden jetzt nach `riggerId` gruppiert,
+  eine `.gg-slotreihe` pro Rigger mit genau `riggerSlotsMax` Boxen
+  (`.gg-slotboxen`/`.gg-slotbox-leer` in `gegenstaende.css`) — belegte
+  Boxen sind normale `.gg-kachel`-Kacheln mit blauem Glühen, freie Boxen
+  gestrichelt mit "frei". **Bereits korrekt (verifiziert, nicht neu
+  gebaut):** nur die BESTE ausgerüstete Riggerkonsole zählt
+  (`items/repository.py::riggerkonsole_max_drohnen` nimmt `max()`, keine
+  Summe) — "10 billige Konsolen stapeln" geht nicht. **Bewusst nicht
+  gebaut:** die ganz linke Box soll später magenta glühen, sobald der
+  Rigger in eine Drohne "schlüpft" (sie aktiv steuert/übernimmt, inkl.
+  Rigger-Skill+Wert-Probe) — eigenes Feature, von Mark selbst als "bauen
+  wir gleich" vertagt, keine Vorarbeit dafür im Code. Verifiziert: `npm
+  run build` sauber.
+
 - **Drohnen/Fahrzeuge Phase 3.6 — Marks zweites Feedback** (26.10.2026,
   direkt im Anschluss an 3.5, ebenfalls direkt in Hermes):
   - **"weitere Fertigkeiten" ist jetzt ein echtes Popup** (`DrohnenWeitereFertigkeitenPopup.tsx`,

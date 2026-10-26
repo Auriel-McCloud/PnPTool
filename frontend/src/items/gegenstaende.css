@@ -61,6 +61,39 @@
   overflow: hidden;
 }
 
+/* Riggerkonsole-Slots (26.10.2026): eigene Reihe pro Rigger, feste Anzahl
+   Kästchen statt freiem Raster — leere Boxen zeigen ungenutzte Kapazität,
+   aktive Drohnen erscheinen als echte Kachel (blau glühend, `var(--ja)`)
+   an ihrer Stelle. Siehe DrohnenUebersicht.tsx. */
+.gg-slotreihe {
+  margin-bottom: 12px;
+}
+
+.gg-slotboxen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gg-abstand);
+}
+
+.gg-slotboxen .gg-kachel {
+  width: var(--gg-kachel-breite);
+  height: var(--gg-kachel-hoehe);
+}
+
+.gg-slotbox-leer {
+  width: var(--gg-kachel-breite);
+  height: var(--gg-kachel-hoehe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-aus);
+  font-size: 11px;
+  letter-spacing: var(--versalien);
+  text-transform: uppercase;
+}
+
 .gg-kachel:hover {
   border-color: var(--bereich-farbe, var(--neon));
   background: var(--flaeche-hoch);
