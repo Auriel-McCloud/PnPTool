@@ -142,20 +142,25 @@ export function Kampfkarte({
 
   return (
     <div className="kk-karte">
-      {/* Kompakt-Kopfzeile: immer sichtbar, klappt den Rest auf/zu. */}
-      <button type="button" className="kk-kompakt" onClick={() => setAufgeklappt((a) => !a)}>
-        {kompaktWerte.map((k) => (
-          <span key={k.kuerzel} className="kk-kompakt-wert" title={k.titel}>
-            <em>{k.kuerzel}</em>
-            {k.wert}
+      {/* Kompakt-Kopfzeile NUR für Drohnen-Steckbriefe (kompaktStart) — der
+          eigene Charakter zeigt seine Werte immer groß und ausgeschrieben,
+          kein Einklapp-Knopf über den eigenen Werten (Mark, 26.10.2026: das
+          ist Webseiten-Optik, nicht Programm-Gefühl). */}
+      {kompaktStart && (
+        <button type="button" className="kk-kompakt" onClick={() => setAufgeklappt((a) => !a)}>
+          {kompaktWerte.map((k) => (
+            <span key={k.kuerzel} className="kk-kompakt-wert" title={k.titel}>
+              <em>{k.kuerzel}</em>
+              {k.wert}
+            </span>
+          ))}
+          <span className="kk-kompakt-pfeil" aria-hidden="true">
+            {aufgeklappt ? "▲" : "▼"}
           </span>
-        ))}
-        <span className="kk-kompakt-pfeil" aria-hidden="true">
-          {aufgeklappt ? "▲" : "▼"}
-        </span>
-      </button>
+        </button>
+      )}
 
-      {aufgeklappt && (
+      {(aufgeklappt || !kompaktStart) && (
         <>
       {/* --- Zustand ---------------------------------------------------- */}
       <section className="kk-zustand">

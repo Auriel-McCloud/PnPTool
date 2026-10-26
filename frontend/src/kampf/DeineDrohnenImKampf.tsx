@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
-import { kampfApi, type Kampf } from "./api";
+import { kampfApi, type Kampf, type Teilnehmer } from "./api";
+import { InitiativeSetzen } from "./InitiativeSetzen";
 import { Kampfkarte } from "./Kampfkarte";
 import "./kampf.css";
 
@@ -36,6 +37,9 @@ export function DeineDrohnenImKampf({
   const [offenId, setOffenId] = useState<string | null>(null);
   const [beitretend, setBeitretend] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Initiative direkt aus dem Drohnen-Steckbrief setzbar (Mark, 26.10.2026) —
+  // nicht nur über die Zeile in der Initiativliste außerhalb des Popups.
+  const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
 
   useEffect(() => {
     let weg = false;
@@ -130,8 +134,36 @@ export function DeineDrohnenImKampf({
           kennung={`kampf-drohne:${offenId}`}
           onSchliessen={() => setOffenId(null)}
         >
-          <Kampfkarte campaignId={campaignId} personId={offenId} kompaktStart />
+          {(() => {
+            const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
+            return (
+              <>
+                {teilnahme && (
+                  <button
+                    type="button"
+                    className="kk-ganzer"
+                    style={{ marginBottom: 10 }}
+                    onClick={() => setInitiativeZiel(teilnahme)}
+                  >
+                    Initiative setzen ({teilnahme.initiative})
+                  </button>
+                )}
+                <Kampfkarte campaignId={campaignId} personId={offenId} kompaktStart />
+              </>
+            );
+          })()}
         </Fenster>
+      )}
+
+      {initiativeZiel && (
+        <InitiativeSetzen
+          teilnehmer={initiativeZiel}
+          onSchliessen={() => setInitiativeZiel(null)}
+          onSpeichern={async (wert) => {
+            await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, wert);
+            onGeaendert();
+          }}
+        />
       )}
     </div>
   );

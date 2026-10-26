@@ -245,6 +245,22 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
     trägt sie selbst in die SL-Tabelle ein). Nicht einfach lostbauen, bitte
     erst mit Mark Reihenfolge klären.
 
+- **Bugfix (26.10.2026) — Drohnen-Steckbrief hatte den Einklapp-Knopf auch
+  beim eigenen Charakter** (Mark, erster echter Klicktest am Spieltisch):
+  die Kompakt-Kopfzeile aus Phase 3 (`Kampfkarte.tsx`, `kompaktStart`-Prop)
+  war unbedingt gerendert, nicht nur wenn `kompaktStart` gesetzt ist — damit
+  hatten auch Spieler über ihrer eigenen großen Kampfkarte eine kleine
+  Kurzform-Zeile mit Einklapp-Pfeil. **Klares NOGO:** Spieler sehen ihre
+  eigenen Werte immer groß/ausgeschrieben, kein Einklappen, keine
+  Webseiten-Optik (Commlink-Grundsatz). Fix: Knopf + Kompakt-Zustand nur
+  noch gerendert wenn `kompaktStart` (also nur in den Drohnen-Popups).
+  Zusätzlich ergänzt: Im Drohnen-Steckbrief-Popup selbst (`DeineDrohnenImKampf.tsx`)
+  gab es noch keinen Weg, die Initiative der Drohne zu setzen — nur über die
+  Zeile in der Initiativliste außerhalb des Popups. Jetzt öffnet ein Knopf
+  „Initiative setzen (aktueller Wert)“ im Popup direkt `InitiativeSetzen.tsx`
+  (gleicher `kampfApi.meldeInitiative`-Endpunkt wie die Liste). `tsc --noEmit`
+  grün, noch nicht im Browser angeklickt.
+
 ## Backlog: Mark denkt noch nach (nicht einfach lostbauen)
 
 - **Offene Popups sollen den Mobil-Reload überstehen** (01.10.2026): Nach
