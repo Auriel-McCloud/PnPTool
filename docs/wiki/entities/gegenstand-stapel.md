@@ -67,23 +67,37 @@ nicht selbst nachbauen.
 
 ## UI
 
-**Nur GM**, MVP-Default (wie die meisten anderen Gegenstands-Mutationen) —
-ob Spieler das für den eigenen Besitz auch selbst dürfen sollen (analog zu
-Wegwerfen/Ablage, die Spieler-Self-Service sind), ist **offen**, siehe
-CLAUDE.md "Offen: Was Mark selbst testen muss".
+**SL und Spieler** — Mark, direkt im Anschluss an die erste Fassung: "das
+müssen unbedingt auch die Spieler können". Beide Richtungen prüfen den
+Besitz serverseitig selbst (kein `require_campaign_gm` auf den beiden neuen
+Routen, dafür eine manuelle 404-Prüfung wie bei Wegwerfen/Ablage): ein
+Spieler darf nur am eigenen Besitz zusammenlegen, die Quellen müssen
+zusätzlich demselben Besitzer gehören wie das Ziel (prüft
+`repository.zusammenlegen` selbst). Beide neuen Routen stehen namentlich in
+`tests/test_zugriffsschutz.py::OHNE_GM_ERLAUBT`.
 
-Knopf „⧉ Zusammenlegen…" sitzt im Umbauen-Formular (`GegenstandRow`,
-`CharacterSheetPanel.tsx`) direkt neben „Menge verfolgen" — konzeptionelle
-Nähe statt Implementierungsreihenfolge (Mark-Konvention, siehe
-`feature-design-workflow.md` Punkt 23 der pnptool-development-Skill-Refs).
+**GM-Seite:** Knopf „⧉ Zusammenlegen…" im Umbauen-Formular
+(`GegenstandRow`, `CharacterSheetPanel.tsx`) direkt neben „Menge verfolgen"
+— konzeptionelle Nähe statt Implementierungsreihenfolge (Mark-Konvention).
 Nur sichtbar, wenn der Gegenstand einen Besitzer hat und nicht einzigartig
 ist.
 
-`ZusammenlegenPopup.tsx` (`frontend/src/items/`): lädt Kandidaten beim
-Öffnen, Mehrfachauswahl per Checkbox (gleiches Grundmuster wie
-`VorlagenAuswahlPopup.tsx`: Klick toggelt, ein Knopf schickt die ganze
-Auswahl auf einmal ab), zeigt die neue Gesamtmenge vorab an. Text sagt
-ausdrücklich "gelöscht wird nichts" (wiederverwendet `wegwerfen.css`).
+**Spieler-Seite:** Knopf „⧉ Zusammenlegen" in der Fußzeile der normalen
+`GegenstandKachel.tsx` (wo auch Weitergeben/Wegwerfen sitzen) — erscheint
+nur, wenn `onUmlegen` gesetzt ist (das zuverlässigste "das ist mein
+eigener Gegenstand"-Signal, da Wegwerfen in der Spieleransicht aktuell gar
+nicht verdrahtet ist) UND `campaignId` übergeben wurde UND das Stück nicht
+einzigartig ist. Gewired an drei Stellen in `SpielerAnsicht.tsx`: die
+beiden direkten Kachel-Raster ("Am Körper", "Fahrzeuge und Drohnen") sowie
+`Fachfenster.tsx` (Mitgeführt/Gelagert-Popups, dort nicht im `FREMD`-Fach).
+
+Beide Seiten nutzen dasselbe `ZusammenlegenPopup.tsx` (`frontend/src/items/`):
+lädt Kandidaten beim Öffnen, Mehrfachauswahl per Checkbox (gleiches
+Grundmuster wie `VorlagenAuswahlPopup.tsx`: Klick toggelt, ein Knopf schickt
+die ganze Auswahl auf einmal ab), zeigt die neue Gesamtmenge vorab an. Text
+sagt ausdrücklich "gelöscht wird nichts" (wiederverwendet `wegwerfen.css`).
+Das Popup selbst kennt keine Rolle — es ruft dieselbe API, egal ob SL oder
+Spieler es öffnen; die Berechtigung entscheidet ausschließlich das Backend.
 
 ## Verifiziert
 
@@ -100,7 +114,6 @@ ausdrücklich "gelöscht wird nichts" (wiederverwendet `wegwerfen.css`).
 
 ## Offene Fragen
 
-- **Spieler-Self-Service?** Noch nicht entschieden — siehe oben.
 - **UI-Platzierung/Optik nach Praxistest:** wie bei jedem neuen Feature
   entscheidet Mark Details (z.B. ob der Knopf eher im Besitz-Reiter als im
   Umbauen-Formular sitzen sollte) erst nach dem ersten echten Einsatz am

@@ -26,6 +26,7 @@ export function Fachfenster({
   behaelterName,
   behaelterId,
   inhaltVon,
+  onZusammengelegt,
 }: {
   fach: Bereich | null;
   /** Bereits auf dieses Fach gefiltert. */
@@ -45,6 +46,12 @@ export function Fachfenster({
    * hineinsieht — damit sich aus einem Fach das nächste öffnen lässt.
    */
   inhaltVon?: (item: Gegenstand) => { anzahl: number; oeffnen: () => void } | undefined;
+  /**
+   * Mehrere gleiche Stücke zu einem Stapel zusammenlegen — fehlt sie, erscheint
+   * der Knopf gar nicht (so bei fremdem Besitz). Ruft nur nach, das Popup
+   * selbst spricht direkt mit der API (siehe GegenstandKachel.tsx).
+   */
+  onZusammengelegt?: () => void;
 }) {
   if (!fach) return null;
 
@@ -78,6 +85,7 @@ export function Fachfenster({
               onWeitergeben={onWeitergeben ? (empfaengerId) => onWeitergeben(g, empfaengerId) : undefined}
               campaignId={campaignId}
               eigenePersonId={eigenePersonId}
+              onZusammengelegt={onZusammengelegt}
             />
           ))}
         </div>

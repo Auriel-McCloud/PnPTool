@@ -413,6 +413,21 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     await verhandlungApi.gegenstandWeitergeben(ich.campaignId, itemId, empfaengerPersonId);
   }
 
+  // Zusammenlegen (26.10.2026): das Popup ruft die API selbst auf (siehe
+  // ZusammenlegenPopup.tsx), hier wird nur nachgeladen — dieselbe
+  // Refresh-Logik wie nach `umlegen`.
+  async function nachZusammenlegen() {
+    if (!ich) return;
+    inventarUngueltig();
+    const [frisch, last] = await Promise.all([
+      itemsApi.listAlle(ich.campaignId),
+      itemsApi.traglast(ich.campaignId),
+    ]);
+    inventarUngueltig();
+    setSachen(frisch);
+    setTraglast(last);
+  }
+
   return (
     <MitteilungenAnbieter campaignId={ich.campaignId} personId={ich.personId}>
     {/* Liegt ueber allem, auch ueber offenen Fenstern: eine Ansage der
@@ -537,6 +552,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
+                campaignId={ich.campaignId}
+                onZusammengelegt={nachZusammenlegen}
               />
             ))}
           </div>
@@ -652,6 +669,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 inhalt={inhaltVon(g)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
+                campaignId={ich.campaignId}
+                onZusammengelegt={nachZusammenlegen}
               />
             ))}
           </div>
@@ -726,6 +745,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 onWeitergeben={fach.id === "FREMD" ? undefined : (item, empfaengerId) => weitergeben(item.id, empfaengerId)}
                 campaignId={ich.campaignId}
                 eigenePersonId={ich.personId ?? undefined}
+                onZusammengelegt={fach.id === "FREMD" ? undefined : nachZusammenlegen}
               />
             );
           })}

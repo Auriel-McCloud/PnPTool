@@ -346,31 +346,61 @@ async def vorlage_machen(campaign_id: str, item_id: str):
 @campaign_router.get(
     "/{item_id}/stapelkandidaten",
     response_model=list[GegenstandResponse],
-    dependencies=[Depends(require_campaign_gm)],
 )
-async def stapelkandidaten(campaign_id: str, item_id: str):
+async def stapelkandidaten(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
     """Andere Gegenstände derselben Besitzerin, die sich mit diesem hier zu
     einem Stapel zusammenlegen ließen — füllt die Auswahl im
     Zusammenlegen-Popup (siehe repository.stapel_gleich für die Gleichheitsprüfung).
+
+    Auch Spieler dürfen das, aber nur am eigenen Besitz (wie Wegwerfen/Ablage) —
+    deshalb ohne require_campaign_gm, mit eigener Besitzprüfung; steht namentlich
+    in der Ausnahmeliste von tests/test_zugriffsschutz.py.
     """
+    if viewer.role != "GM":
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer is None or besitzer != viewer.person_id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return await repository.stapelkandidaten(campaign_id, item_id)
 
 
 @campaign_router.post(
     "/{item_id}/zusammenlegen",
     response_model=GegenstandResponse,
-    dependencies=[Depends(require_campaign_gm)],
 )
-async def zusammenlegen(campaign_id: str, item_id: str, body: ZusammenlegenRequest):
+async def zusammenlegen(
+    campaign_id: str,
+    item_id: str,
+    body: ZusammenlegenRequest,
+    viewer: Viewer = Depends(get_viewer),
+):
     """Legt mehrere gleichwertige Gegenstände zu einem Stapel zusammen.
 
     `item_id` ist das Ziel: bekommt die Summe der Mengen und hatMenge=true.
     Die Quellen landen — wie bei jedem anderen Entsorgen — im Mülleimer der
     Spielleitung, nicht gelöscht (siehe repository.wegwerfen), damit eine
     falsche Auswahl reversibel bleibt.
+
+    **Auch Spieler dürfen das, nur am eigenen Besitz** (Mark, 26.10.2026:
+    "das müssen unbedingt auch die Spieler können"), wie Wegwerfen/Ablage —
+    deshalb ohne require_campaign_gm, mit eigener Besitzprüfung hier UND in
+    `repository.zusammenlegen` selbst (jede Quelle muss demselben Besitzer
+    gehören wie das Ziel). Steht namentlich in der Ausnahmeliste von
+    tests/test_zugriffsschutz.py.
     """
+    if viewer.role != "GM":
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        if besitzer is None or besitzer != viewer.person_id:
+            # 404 statt 403, wie beim Umlegen/Wegwerfen: ein Spieler soll
+            # nicht erfahren, ob es den Gegenstand überhaupt gibt.
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    von = "Spielleitung"
+    if viewer.role != "GM" and viewer.person_id:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, viewer.person_id)
+        von = person["name"] if person else ""
+
     try:
-        ergebnis = await repository.zusammenlegen(campaign_id, item_id, body.quellItemIds, "Spielleitung")
+        ergebnis = await repository.zusammenlegen(campaign_id, item_id, body.quellItemIds, von)
     except repository.NichtStapelbar as fehler:
         raise HTTPException(
             status.HTTP_409_CONFLICT,

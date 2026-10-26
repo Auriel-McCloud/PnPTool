@@ -10,6 +10,7 @@ import { SCHADEN_MAX } from "./api";
 import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
+import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
 import "./wegwerfen.css";
 
 /**
@@ -54,6 +55,7 @@ export function GegenstandKachel({
   behaelterName,
   behaelterId,
   inhalt,
+  onZusammengelegt,
 }: {
   item: Gegenstand;
   /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
@@ -90,6 +92,14 @@ export function GegenstandKachel({
   onWeitergeben?: (empfaengerPersonId: string) => Promise<void> | void;
   campaignId?: string;
   eigenePersonId?: string;
+  /**
+   * Mehrere gleiche Stücke zu einem Stapel zusammenlegen (26.10.2026, Mark:
+   * "das müssen unbedingt auch die Spieler können"). Fehlt sie, erscheint
+   * der Knopf gar nicht — genau wie bei Wegwerfen/Weitergeben nur am eigenen
+   * Besitz sinnvoll. Das Popup spricht selbst mit der API (Backend prüft den
+   * Besitz ohnehin nochmal serverseitig); diese Funktion ruft nur nach.
+   */
+  onZusammengelegt?: () => void;
 }) {
   // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
   const CHROM = ["Cyberware", "Bioware", "Hexware"];
@@ -99,6 +109,7 @@ export function GegenstandKachel({
   const [laeuft, setLaeuft] = useState(false);
   const [frageOffen, setFrageOffen] = useState(false);
   const [weitergebenOffen, setWeitergebenOffen] = useState(false);
+  const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -140,6 +151,7 @@ export function GegenstandKachel({
       setLaeuft(false);
     }
   }
+
 
   return (
     <>
@@ -368,11 +380,30 @@ export function GegenstandKachel({
                 <span aria-hidden="true">🤝</span> Weitergeben
               </button>
             )}
+            {/* Zusammenlegen braucht nicht zwingend onWegwerfen/onWeitergeben,
+                aber beide Marker heißen "das ist mein eigener Gegenstand" —
+                onUmlegen ist das zuverlässigste Signal dafür (auch an
+                Stellen, die (noch) kein Wegwerfen anbieten). */}
+            {onZusammengelegt && onUmlegen && campaignId && !item.einzigartig && (
+              <button type="button" onClick={() => setZusammenlegenOffen(true)} disabled={laeuft}>
+                <span aria-hidden="true">⧉</span> Zusammenlegen
+              </button>
+            )}
             {onWegwerfen && (
               <button type="button" onClick={() => setFrageOffen(true)} disabled={laeuft}>
                 <span aria-hidden="true">🗑</span> Wegwerfen
               </button>
             )}
+          </div>
+        )}
+        {/* Zusammenlegen ohne Wegwerfen/Weitergeben an derselben Stelle (z.B.
+            Fahrzeuge/Ausrüstung-Reiter, die bisher keinen Fußzeilen-Bereich
+            hatten) bekommt die Fußzeile trotzdem, sonst gibt es den Knopf hier nie. */}
+        {!(onWegwerfen || onWeitergeben) && onZusammengelegt && onUmlegen && campaignId && !item.einzigartig && (
+          <div className="gg-wegwerfen">
+            <button type="button" onClick={() => setZusammenlegenOffen(true)} disabled={laeuft}>
+              <span aria-hidden="true">⧉</span> Zusammenlegen
+            </button>
           </div>
         )}
       </Fenster>
@@ -395,6 +426,19 @@ export function GegenstandKachel({
           eigenePersonId={eigenePersonId}
           onWeitergeben={weitergeben}
           onAbbrechen={() => setWeitergebenOffen(false)}
+        />
+      )}
+
+      {onZusammengelegt && campaignId && (
+        <ZusammenlegenPopup
+          item={item}
+          offen={zusammenlegenOffen}
+          campaignId={campaignId}
+          onZusammengelegt={() => {
+            setZusammenlegenOffen(false);
+            onZusammengelegt();
+          }}
+          onAbbrechen={() => setZusammenlegenOffen(false)}
         />
       )}
     </>

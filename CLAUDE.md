@@ -392,12 +392,17 @@ Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen
   ins Ziel (hatMenge=true) und wirft die Quellen weg (Mülleimer, nicht
   gelöscht — reversibel). Lehnt einzigartige Stücke und unterschiedliche
   Besitzer mit 409 ab. **Design-Doku:**
-  `docs/wiki/entities/gegenstand-stapel.md`. **Nur GM** (MVP-Default,
-  analog zu den meisten anderen Gegenstands-Mutationen) — ob Spieler das
-  für eigenen Besitz auch selbst dürfen sollen (wie bei Wegwerfen/Ablage),
-  ist noch nicht entschieden. **Verifiziert:** 9 neue Backend-Tests grün
+  `docs/wiki/entities/gegenstand-stapel.md`. **SL UND Spieler** (Mark,
+  gleich im Anschluss: "das müssen unbedingt auch die Spieler können") —
+  Spieler dürfen nur am eigenen Besitz zusammenlegen, Server prüft das
+  selbst (kein `require_campaign_gm`, manuelle 404-Prüfung wie bei
+  Wegwerfen/Ablage, beide Routen in `OHNE_GM_ERLAUBT`). Spieler-Knopf sitzt
+  in der Fußzeile von `GegenstandKachel.tsx` (wo auch Weitergeben/Wegwerfen
+  stehen), gewired in `SpielerAnsicht.tsx` an drei Stellen (Am Körper,
+  Fahrzeuge, Fachfenster). **Verifiziert:** 9 neue Backend-Tests grün
   (`test_items_zusammenlegen.py`, inkl. Gleichheits-Check pur und
-  Integrationstests gegen die Dev-Neo4j), `tsc -b` sauber. **Kein
+  Integrationstests gegen die Dev-Neo4j, Ownership-Check namentlich in
+  `test_zugriffsschutz.py`), `tsc -b` sauber. **Kein
   Browser-Klicktest** — Mark wollte erst nur das generelle Feature, die 3
   konkreten Maschinenteile seiner laufenden Kampagne bewusst nicht live
   angefasst; das steht am Spieltisch noch aus.
