@@ -295,6 +295,25 @@ export function Charakterblatt({
     return m;
   }, [bogen]);
 
+  const zusatzAnzeige = useMemo(() => {
+    const hot = bogen?.hotZusatz ?? [];
+    const gehoben = zusatzfertigkeiten.map((z) => {
+      const besser = hot.find((h) => h.name === z.name);
+      return besser && besser.rating > z.rating ? { ...z, rating: besser.rating, hot: true } : { ...z, hot: false };
+    });
+    const fehlend = hot
+      .filter((h) => !zusatzfertigkeiten.some((z) => z.name === h.name))
+      .map((h) => ({
+        id: `hot-${h.name}`,
+        name: h.name,
+        kurzbeschreibung: "vom Rigger, nur solange Hot",
+        detailbeschreibung: "",
+        rating: h.rating,
+        hot: true,
+      }));
+    return [...gehoben, ...fehlend];
+  }, [bogen, zusatzfertigkeiten]);
+
   /** Wirksames Maximum: was der Spielleiter gesetzt hat, sonst der Katalogwert. */
   function grenzeVon(t: TraitDef) {
     return bogen?.werte.find((w) => w.traitDefId === t.id)?.max ?? t.defaultMax;
@@ -400,6 +419,7 @@ export function Charakterblatt({
         >
           {eintraege.map((t) => {
             const wert = werte.get(t.id) ?? 0;
+            const hotNurAnzeige = Boolean(bogen?.werte.find((w) => w.traitDefId === t.id)?.hotNurAnzeige);
             const ausruestungsBonus = bogen?.ausruestungsBoni[t.name] ?? 0;
             // Häretiker-Flavor: nur Hexkraft/Sphären-Namen sind in der
             // Mapping-Tabelle, alles andere kommt unverändert zurück.
@@ -433,6 +453,7 @@ export function Charakterblatt({
                       title={`${anzeigeName} — Fenster öffnen`}
                     >
                       {anzeigeName}
+                      {hotNurAnzeige && <em className="cb-ausruestungsbonus"> Hot</em>}
                       {ausruestungsBonus !== 0 && (
                         <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
                           {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
@@ -443,7 +464,7 @@ export function Charakterblatt({
                       value={wert}
                       max={grenzeVon(t)}
                       gruppenMax={gruppenMax}
-                      onChange={(neu) => wertSetzen(t.id, Math.max(0, neu), null)}
+                      onChange={hotNurAnzeige ? undefined : (neu) => wertSetzen(t.id, Math.max(0, neu), null)}
                     />
                   </div>
                 ) : (
@@ -455,6 +476,7 @@ export function Charakterblatt({
                   >
                     <span className="cb-wert-name">
                       {anzeigeName}
+                      {hotNurAnzeige && <em className="cb-ausruestungsbonus"> Hot</em>}
                       {ausruestungsBonus !== 0 && (
                         <span className="cb-ausruestungsbonus" title="Bonus durch ausgerüstete Gegenstände">
                           {ausruestungsBonus > 0 ? `+${ausruestungsBonus}` : ausruestungsBonus}
@@ -673,7 +695,7 @@ export function Charakterblatt({
         willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
         ausruestungsBoni={bogen.ausruestungsBoni}
-        zusatzfertigkeiten={zusatzfertigkeiten.map((z) => ({ name: z.name, wert: z.rating }))}
+        zusatzfertigkeiten={zusatzAnzeige.map((z) => ({ name: z.name, wert: z.rating }))}
         ausruestungsfertigkeiten={(bogen.ausruestungsfertigkeiten ?? []).map((f) => ({ name: f.name, wert: f.bonus }))}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}
@@ -859,7 +881,10 @@ export function Charakterblatt({
           docs/wiki/concepts/drohnen-fahrzeuge.md. */}
       <div className="cb-attribute">
         {(bogen.person.istDrohne || bogen.person.istFahrzeug
-          ? ATTRIBUT_KATEGORIEN_DROHNE
+          ? [
+              ...ATTRIBUT_KATEGORIEN_DROHNE,
+              ...(bogen.katalog.some((t) => t.category === "AttributGeistig") ? ["AttributGeistig"] : []),
+            ]
           : bogen.person.istKI
             ? ATTRIBUT_KATEGORIEN_KI
             : ATTRIBUT_KATEGORIEN
@@ -873,11 +898,11 @@ export function Charakterblatt({
           passiert im LevelUp, hier nur Anzeige + Probenauslöser.
           Platzierung (05.10.2026, Mark): zwischen Fertigkeiten und
           Hexkraft/Glauben/NeuroWeaving, nicht ganz unten. */}
-      {zusatzfertigkeiten.length > 0 && (
+      {zusatzAnzeige.length > 0 && (
         <section className="cb-gruppe" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
           <h3 className="cb-gruppe-titel">Zusatzfertigkeiten</h3>
           <div className="cb-werte">
-            {zusatzfertigkeiten.map((z) => (
+            {zusatzAnzeige.map((z) => (
               <div key={z.id} className="cb-wert-zeile">
                 <button
                   type="button"
@@ -889,7 +914,10 @@ export function Charakterblatt({
                   }
                   title={z.kurzbeschreibung || `${z.name} — wie viele Würfel?`}
                 >
-                  <span className="cb-wert-name">{z.name}</span>
+                  <span className="cb-wert-name">
+                    {z.name}
+                    {z.hot && <em className="cb-ausruestungsbonus"> Hot</em>}
+                  </span>
                   <DotPool value={z.rating} max={6} onChange={undefined} />
                 </button>
               </div>

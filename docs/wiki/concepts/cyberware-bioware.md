@@ -66,12 +66,11 @@ Initiative 7, mit Stufe 2 Initiative 13, Paralyse-Fall korrekt (Ampel 0,
 
 ## Entwicklung
 
-- **28.10.2026 (geplant, noch nicht gebaut):** neues Chrom **„Neurolink“**
-  (Ja/Nein-Flag „Einklinken“) als Pflichtvoraussetzung fürs „Hot“-Gehen von
-  Riggerkonsole/Cyberdeck, plus ein neues `istDrohnenAugment`-Flag mit
-  eigenem Körperzonen-Schema für drohnenspezifisches Chrom. Volle
-  Spezifikation in [[drohnen-fahrzeuge]] („Hot-Gehen / Neurolink“,
-  „Drohnen-Augments“).
+- **28.10.2026:** Neurolink ist keine eigene Ware, sondern ein Häkchen
+  `istNeurolink` im Umbauen von Cyberware. Verbaut schaltet es Hot frei.
+  Kosten bleiben die normale Chrom-Tabelle. Pflichtvoraussetzung fürs
+  „Hot“-Gehen. `istDrohnenAugment` weiter geplant. Spec in
+  [[drohnen-fahrzeuge]].
 - Grundformel (Preis→Verlust-Tabelle) **unverändert aus dem Excel**.
 - **31.08.2026:** Rundungsregel hinzugefügt (Excel spezifiziert das nicht) und
   zum allgemeinen Rechenprinzip erklärt.

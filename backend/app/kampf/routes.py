@@ -9,7 +9,7 @@ from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
-from app.items.repository import initiative_modifikator, verbautes_chrom
+from app.items.repository import ausgeruestete_decks, initiative_modifikator, verbautes_chrom
 from app.kampf.booster import (
     AMPEL_MAX,
     ampel_nach_nutzung,
@@ -18,6 +18,15 @@ from app.kampf.booster import (
     paralyse_pool,
     paralyse_schwelle,
     zweitwurf_pool,
+)
+from app.kampf.hot import (
+    beantworte_bleiben,
+    bleiben_faellig,
+    booster_kandidaten,
+    darf_drohne_waehlen,
+    hat_neurolink,
+    staerkstes,
+    waehle_drohne,
 )
 from app.traits.repository import get_ratings_for_entity
 from app.wuerfel.logic import wuerfle
@@ -437,17 +446,139 @@ class BoosterStatus(BaseModel):
 
 
 async def _booster_von(campaign_id: str, person_id: str) -> dict | None:
-    """Das stärkste verbaute Stück mit Zusatzaktionen.
+    """Stärkstes Stück mit Zusatzaktionen.
 
-    Mehrere Booster gleichzeitig sind regeltechnisch nicht vorgesehen;
-    falls doch, gewinnt das mit den meisten Zusatzaktionen (-1 = unbegrenzt
-    schlägt alles).
+    Verbautes Chrom zählt immer. Das ausgerüstete Deck nur, solange der
+    Decker Hot ist — sonst wäre die Freischaltung nur ein Schalter ohne Tür.
     """
     stuecke = await verbautes_chrom(campaign_id, person_id)
-    mit_aktionen = [g for g in stuecke if (g.get("zusatzaktionen") or 0) != 0]
-    if not mit_aktionen:
-        return None
-    return max(mit_aktionen, key=lambda g: 999 if g["zusatzaktionen"] < 0 else g["zusatzaktionen"])
+    zustand = await repository.hot_lesen(campaign_id, person_id)
+    decks = await ausgeruestete_decks(campaign_id, person_id) if zustand["matrixHot"] else []
+    deck = staerkstes(decks)
+    return staerkstes(booster_kandidaten(stuecke, deck, zustand["matrixHot"]))
+
+
+class HotStatus(BaseModel):
+    hatNeurolink: bool = False
+    hatDeck: bool = False
+    matrixHot: bool = False
+    hotDrohneId: str | None = None
+    hotDrohneName: str | None = None
+    bleibenFaellig: bool = False
+    darfWaehlen: bool = False
+
+
+class HotInput(BaseModel):
+    drohneId: str | None = None
+    bleiben: bool | None = None
+    matrix: bool | None = None
+
+
+async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
+    chrom = await verbautes_chrom(campaign_id, person_id)
+    decks = await ausgeruestete_decks(campaign_id, person_id)
+    zustand = await repository.hot_lesen(campaign_id, person_id)
+    kampf = await repository.hole(campaign_id)
+    runde = kampf["runde"] if kampf else None
+    eigener = None
+    if kampf:
+        eigener = next(
+            (t for t in kampf["teilnehmer"] if t.get("personId") == person_id and not t.get("zusatzzug")),
+            None,
+        )
+    ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
+    return HotStatus(
+        hatNeurolink=hat_neurolink(chrom),
+        hatDeck=bool(decks),
+        matrixHot=zustand["matrixHot"],
+        hotDrohneId=zustand["hotDrohneId"],
+        hotDrohneName=zustand["hotDrohneName"],
+        bleibenFaellig=bleiben_faellig(
+            zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde, ist_dran
+        ),
+        darfWaehlen=darf_drohne_waehlen(zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde),
+    )
+
+
+@router.get("/hot", response_model=HotStatus)
+async def hot_status(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    if not viewer.person_id:
+        return HotStatus()
+    return await _hot_status(campaign_id, viewer.person_id)
+
+
+@router.post("/hot", response_model=HotStatus)
+async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(get_viewer)):
+    """Hot gehen: Matrix-Knopf, Drohne an der Slot-Box, oder Bleiben-Antwort."""
+    if not viewer.person_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
+    person_id = viewer.person_id
+    kampf = await repository.hole(campaign_id)
+    runde = kampf["runde"] if kampf else None
+    zustand = await repository.hot_lesen(campaign_id, person_id)
+    chrom = await verbautes_chrom(campaign_id, person_id)
+
+    if body.drohneId and viewer.role == "GM":
+        rigger_id = await drohne_rigger(campaign_id, body.drohneId)
+        if rigger_id:
+            person_id = rigger_id
+            zustand = await repository.hot_lesen(campaign_id, person_id)
+            chrom = await verbautes_chrom(campaign_id, person_id)
+
+    if not hat_neurolink(chrom):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ohne verbauten Neurolink kein Hot.")
+
+    if body.bleiben is not None:
+        eigener = None
+        if kampf:
+            eigener = next(
+                (t for t in kampf["teilnehmer"] if t.get("personId") == person_id and not t.get("zusatzzug")),
+                None,
+            )
+        ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
+        if not bleiben_faellig(zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde, ist_dran):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Gerade steht die Frage nicht an.")
+        antwort = beantworte_bleiben(body.bleiben, zustand["hotDrohneId"], runde)
+        await repository.hot_schreiben(
+            campaign_id, person_id, hot_drohne_id=antwort.hot_drohne_id, hot_runde=antwort.hot_runde
+        )
+        return await _hot_status(campaign_id, person_id)
+
+    if body.matrix is not None:
+        await repository.hot_schreiben(
+            campaign_id,
+            person_id,
+            hot_drohne_id=zustand["hotDrohneId"],
+            hot_runde=zustand["hotDrohneRunde"],
+            matrix_hot=body.matrix,
+        )
+        return await _hot_status(campaign_id, person_id)
+
+    if not body.drohneId:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Keine Drohne gewählt.")
+
+    drohne = await get_node("Person", PERSON_FIELDS, campaign_id, body.drohneId)
+    if drohne is None or not (drohne.get("istDrohne") or drohne.get("istFahrzeug")):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    if not drohne.get("riggerAktiv"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nur eine aktive Drohne kann Hot gehen.")
+    rigger_id = await drohne_rigger(campaign_id, body.drohneId)
+    if rigger_id != person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+
+    wahl = waehle_drohne(
+        hat_neurolink=True,
+        hot_drohne_id=zustand["hotDrohneId"],
+        hot_runde=zustand["hotDrohneRunde"],
+        kampf_runde=runde,
+        drohne_id=body.drohneId,
+    )
+    if not wahl.ok:
+        raise HTTPException(status.HTTP_409_CONFLICT, wahl.fehler or "Hot gerade nicht möglich.")
+    await repository.hot_schreiben(
+        campaign_id, person_id, hot_drohne_id=wahl.hot_drohne_id, hot_runde=wahl.hot_runde
+    )
+    return await _hot_status(campaign_id, person_id)
 
 
 @router.get("/booster/status", response_model=BoosterStatus)

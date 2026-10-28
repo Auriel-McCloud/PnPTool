@@ -3,6 +3,38 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-28] gebaut | Hot-Proben und Dumpshock
+
+Solange Hot: Geschick plus gedeckeltes Riggen, Fahren/Fliegen der bessere Wert,
+Intelligenz und Geistesschärfe vom Rigger. Anzeige, nicht gespeichert.
+Dumpshock: Hot-Drohne auf 0 Gesundheit löst die Verbindung, Rigger setzt den
+Rest der Runde aus. Kein extra Würfelwurf.
+
+## [2026-10-28] update | Hot-Slots im Kampf, Name neben dem Rigger
+
+Hot-Drohne teilt den Initiative-Slot des Riggers (Name daneben, kein Magenta
+dort). Magenta nur an der Slot-Box. Kampf bekommt dieselbe Slot-Reihe wie
+Drohnen & Fahrzeuge, Hot-Knopf unter der Box, eine Drohne pro Runde. Andere
+Drohnen bleiben selbstständig, der Spieler würfelt sie mit ihren eigenen
+Werten.
+
+## [2026-10-28] update | Hot-Knopf, Ampel, magenta pulsierende Drohne
+
+Mark schließt die offene Risiko-Frage: Decker-Hot zieht Ampel und zweiten
+Initiative-Wurf mit, aber erst nach einem eigenen Hot-Knopf im Kampf
+(Decker und Rigger). Rigger haben den Knopf zusätzlich unter Drohnen &
+Fahrzeuge. Die Hot-Drohne ist magenta pulsierend umrandet, in beiden
+Menüs. Siehe `concepts/drohnen-fahrzeuge.md`.
+
+## [2026-10-28] update | Hot-Gehen: Neurolink ist Stufe-1-Chrom, Deck bekommt Zusatzaktionen
+
+Mark präzisiert die offene Neurolink-Spec: keine Sonderkosten, normale
+Cyberware Bonus 1, bestehende Chrom-Tabelle. Decker-Hot schaltet die
+Zusatzaktionen des ausgerüsteten Decks frei (Feld existiert im Umbau, Kampf
+liest es bisher nur von Chrom). Rigger-Hot bleibt Drohnen-Übernahme. Offen:
+Booster-Risiko (Ampel/Paralyse) oder schlichte Extra-Aktion. Siehe
+`concepts/drohnen-fahrzeuge.md`.
+
 ## [2026-10-28] gebaut | Sichtbarkeits-Standard umgedreht: ALLE statt SL-geheim
 
 Mark: "ich hätte gerne das alles was so erstellt wird ... standardmäßig auf

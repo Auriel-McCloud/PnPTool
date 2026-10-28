@@ -23,6 +23,8 @@ export interface DrohnenEintrag {
    *  bzw. ohne Konsole (26.10.2026, Mark: "ich seh die freien Slots nirgends"). */
   riggerSlotsBelegt: number | null;
   riggerSlotsMax: number | null;
+  /** Diese Drohne ist die eine Hot-Verbindung des Riggers. */
+  istHot: boolean;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
 }

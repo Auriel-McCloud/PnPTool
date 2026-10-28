@@ -608,6 +608,7 @@ async def list_drohnen(campaign_id: str) -> list[dict]:
                n.istDrohne AS istDrohne, n.istFahrzeug AS istFahrzeug,
                n.riggerAktiv AS riggerAktiv,
                p.id AS riggerId, p.name AS riggerName,
+               (coalesce(p.hotDrohneId, '') = n.id) AS istHot,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
         ORDER BY n.name
     """

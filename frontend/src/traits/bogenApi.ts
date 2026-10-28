@@ -83,6 +83,8 @@ export interface Bogen {
   /** Bereits nach dem Weg gefiltert: kein Magier, keine Sphären. */
   katalog: TraitDef[];
   werte: TraitRating[];
+  /** Bessere Zusatzfertigkeit des Riggers, nur solange die Drohne Hot ist. Nicht speichern. */
+  hotZusatz?: { name: string; rating: number }[];
 }
 
 export interface ZustandUpdate {
@@ -155,6 +157,10 @@ export interface RuestungTrefferErgebnis {
    */
   betroffen: RuestungsteilFolge[];
   uebersicht: BogenUebersicht;
+  /** Halber angekommener Schaden als Schlag beim Hot-Rigger. Leer, wenn niemand Hot drin ist. */
+  hotRueckschlag?: { riggerId: string; riggerName: string; schlag: number }[];
+  /** Verbindung tot: Rigger setzt den Rest der Runde aus. Kein extra Würfelwurf. */
+  dumpshock?: { riggerId: string; riggerName: string }[];
 }
 
 // --- Charaktererstellung ------------------------------------------------

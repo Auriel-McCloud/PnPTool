@@ -283,6 +283,7 @@ export function GegenstandRow({
   const [koerperzone, setKoerperzone] = useState(item.koerperzone);
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
+  const [istNeurolink, setIstNeurolink] = useState(Boolean(item.istNeurolink));
   const [schaden, setSchaden] = useState(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
   const [schadenArt, setSchadenArt] = useState<SchadenArt>(
     item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
@@ -438,6 +439,7 @@ export function GegenstandRow({
     setKoerperzone(src.koerperzone);
     setSlot(src.slot);
     setIstWaffe(src.istWaffe);
+    setIstNeurolink(Boolean(src.istNeurolink));
     setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
     setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
     setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
@@ -526,6 +528,7 @@ export function GegenstandRow({
       koerperzone,
       slot,
       istWaffe,
+      istNeurolink: typ === "Cyberware" && istNeurolink,
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
       kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
@@ -565,7 +568,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
@@ -915,6 +918,7 @@ export function GegenstandRow({
                         {kraft > 0 && `Stufe ${kraft} · `}
                         {koerperzone ? `${koerperzone}${slot ? ` Platz ${slot}` : ""}` : "keine Zone"}
                         {wVerlust > 0 && ` · −${wVerlust.toLocaleString("de-AT")} Willenskraft`}
+                        {typ === "Cyberware" && istNeurolink && " · Neurolink"}
                       </li>
                     )}
                     {initiativeBonus !== 0 && (
@@ -1065,6 +1069,16 @@ export function GegenstandRow({
                       />
                       zählt zusätzlich als Waffe
                     </label>
+                    {typ === "Cyberware" && (
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                        <input
+                          type="checkbox"
+                          checked={istNeurolink}
+                          onChange={(e) => setIstNeurolink(e.target.checked)}
+                        />
+                        ist ein Neurolink
+                      </label>
+                    )}
                     {istWaffe && (
                       <>
                         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>

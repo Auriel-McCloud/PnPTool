@@ -67,6 +67,8 @@ export interface Gegenstand {
   slot: number | null;
   /** Zusätzlich zum Typ: kann gleichzeitig als Waffe zählen (z.B. Cyber-Klinge). */
   istWaffe: boolean;
+  /** Cyberware-Häkchen: verbaut schaltet Hot frei. */
+  istNeurolink: boolean;
   /** Waffenschaden (1–12: Handwaffe bis 7, Schiffswaffe bis 12), separat vom Chrom-Bonus. */
   schaden: number;
   /**
@@ -330,6 +332,7 @@ export interface GegenstandUpdate {
   koerperzone?: string;
   slot?: number | null;
   istWaffe?: boolean;
+  istNeurolink?: boolean;
   schaden?: number;
   schadenArt?: SchadenArt;
   kampfFertigkeit?: KampfFertigkeit;

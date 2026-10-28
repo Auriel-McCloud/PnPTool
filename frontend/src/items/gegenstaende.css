@@ -94,6 +94,41 @@
   text-transform: uppercase;
 }
 
+.gg-slot-spalte {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: var(--gg-kachel-breite);
+}
+
+.gg-hot-knopf {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gg-hot-knopf[data-aktiv="true"] {
+  border-color: var(--p-magenta);
+  color: var(--p-magenta);
+}
+
+.gg-slot-hot {
+  border-color: var(--p-magenta) !important;
+  animation: gg-hot-puls 1.2s ease-in-out infinite;
+}
+
+@keyframes gg-hot-puls {
+  0%, 100% { box-shadow: 0 0 4px var(--p-magenta); }
+  50% { box-shadow: 0 0 18px var(--p-magenta); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-slot-hot {
+    animation: none;
+    box-shadow: 0 0 10px var(--p-magenta);
+  }
+}
+
 .gg-kachel:hover {
   border-color: var(--bereich-farbe, var(--neon));
   background: var(--flaeche-hoch);

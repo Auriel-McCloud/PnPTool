@@ -17,6 +17,7 @@ eine Person oder einen Begleiter.
 import uuid
 
 from app.db.neo4j_driver import get_driver
+from app.kampf.hot import am_zug_nach_faltung, falte_hot, hot_rueckschlag
 
 # Reihenfolge bei Gleichstand (Zeile 58). Kleinere Zahl handelt zuerst.
 KAMPFART_RANG = {"MATRIX": 0, "NAHKAMPF": 1, "FERNKAMPF": 2}
@@ -121,6 +122,22 @@ async def hole(campaign_id: str) -> dict | None:
         )
         begleiter_besitzer = {r["begleiterId"]: r["besitzerId"] async for r in result}
 
+        result = await session.run(
+            """
+            MATCH (r:Person {campaignId: $campaign_id})
+            WHERE coalesce(r.hotDrohneId, '') <> ''
+            MATCH (d:Person {id: r.hotDrohneId, campaignId: $campaign_id})
+            RETURN r.id AS riggerId, d.id AS drohneId, d.name AS drohneName
+            """,
+            campaign_id=campaign_id,
+        )
+        links = {r["riggerId"]: (r["drohneId"], r["drohneName"] or "") async for r in result}
+
+    vorher = teilnehmer
+    teilnehmer = falte_hot(vorher, links)
+    teilnehmer = sortiere(teilnehmer)
+    am_zug = am_zug_nach_faltung(kampf["amZug"], vorher, teilnehmer, links)
+
     return {
         "id": kampf["id"],
         "runde": kampf["runde"] or 1,
@@ -131,9 +148,126 @@ async def hole(campaign_id: str) -> dict | None:
         # Kennung des Teilnehmers, der gerade handelt. Kennung statt Position,
         # weil sich die Reihenfolge ändern kann (jemand kommt dazu) — eine
         # Position zeigte danach auf jemand anderen.
-        "amZug": kampf["amZug"],
+        "amZug": am_zug,
         "teilnehmer": teilnehmer,
     }
+
+
+async def hot_lesen(campaign_id: str, person_id: str) -> dict:
+    """Hot-Zustand einer Person. Fehlende Felder sind „nicht Hot“."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+            OPTIONAL MATCH (d:Person {id: p.hotDrohneId, campaignId: $campaign_id})
+            RETURN coalesce(p.hotDrohneId, '') AS hotDrohneId,
+                   coalesce(p.hotDrohneRunde, 0) AS hotDrohneRunde,
+                   coalesce(p.matrixHot, false) AS matrixHot,
+                   d.name AS hotDrohneName
+            """,
+            campaign_id=campaign_id,
+            person_id=person_id,
+        )
+        record = await result.single()
+    if record is None:
+        return {"hotDrohneId": None, "hotDrohneRunde": 0, "matrixHot": False, "hotDrohneName": None}
+    drohne_id = record["hotDrohneId"] or None
+    return {
+        "hotDrohneId": drohne_id,
+        "hotDrohneRunde": int(record["hotDrohneRunde"] or 0),
+        "matrixHot": bool(record["matrixHot"]),
+        "hotDrohneName": record["hotDrohneName"] if drohne_id else None,
+    }
+
+
+async def hot_schreiben(
+    campaign_id: str,
+    person_id: str,
+    *,
+    hot_drohne_id: str | None,
+    hot_runde: int,
+    matrix_hot: bool | None = None,
+) -> None:
+    """Schreibt die Drohnen-Wahl. matrix_hot nur, wenn ausdrücklich gesetzt."""
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+            SET p.hotDrohneId = CASE WHEN $hot_id = '' THEN null ELSE $hot_id END,
+                p.hotDrohneRunde = $runde,
+                p.matrixHot = CASE WHEN $matrix_gesetzt THEN $matrix_hot ELSE coalesce(p.matrixHot, false) END
+            """,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            hot_id=hot_drohne_id or "",
+            runde=int(hot_runde),
+            matrix_gesetzt=matrix_hot is not None,
+            matrix_hot=bool(matrix_hot),
+        )
+
+
+async def hot_rueckschlag_buchen(campaign_id: str, drohne_id: str, hp_menge: int) -> list[dict]:
+    """Bucht den halben Schlagschaden auf jeden Rigger, der diese Drohne Hot steuert.
+
+    Leer, wenn niemand Hot drin ist oder nichts angekommen ist. Der Rigger
+    selbst wird nicht getroffen, falls die Kennung aus Versehen auf ihn zeigt.
+    """
+    schlag = hot_rueckschlag(hp_menge)
+    if schlag <= 0:
+        return []
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (r:Person {campaignId: $campaign_id})
+            WHERE r.hotDrohneId = $drohne_id AND r.id <> $drohne_id
+            SET r.schadenSchlag = coalesce(r.schadenSchlag, 0) + $schlag
+            RETURN r.id AS riggerId, r.name AS riggerName, $schlag AS schlag
+            """,
+            campaign_id=campaign_id,
+            drohne_id=drohne_id,
+            schlag=schlag,
+        )
+        return [
+            {"riggerId": r["riggerId"], "riggerName": r["riggerName"] or "", "schlag": int(r["schlag"])}
+            async for r in result
+        ]
+
+
+async def hot_rigger_id(campaign_id: str, drohne_id: str) -> str | None:
+    """Wer diese Drohne gerade Hot steuert, oder None."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (r:Person {campaignId: $campaign_id})
+            WHERE r.hotDrohneId = $drohne_id AND r.id <> $drohne_id
+            RETURN r.id AS id
+            LIMIT 1
+            """,
+            campaign_id=campaign_id,
+            drohne_id=drohne_id,
+        )
+        record = await result.single()
+        return record["id"] if record else None
+
+
+async def dumpshock(campaign_id: str, rigger_id: str) -> None:
+    """Verbindung tot: Hot lösen und den Rigger für den Rest der Runde aussetzen."""
+    await hot_schreiben(campaign_id, rigger_id, hot_drohne_id=None, hot_runde=0)
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer)-[:IST]->(p:Person {id: $rigger_id})
+            WHERE NOT coalesce(t.zusatzzug, false)
+            SET t.setztAus = true
+            """,
+            campaign_id=campaign_id,
+            rigger_id=rigger_id,
+        )
 
 
 async def angreifer_person_id(campaign_id: str) -> str | None:

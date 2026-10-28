@@ -143,6 +143,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "koerperzone": body.koerperzone,
         "slot": body.slot,
         "istWaffe": body.istWaffe,
+        "istNeurolink": body.istNeurolink if body.typ == "Cyberware" else False,
         "schaden": body.schaden,
         "schadenArt": (
             schaden_art_fuer_waffe(body.schadenArt)

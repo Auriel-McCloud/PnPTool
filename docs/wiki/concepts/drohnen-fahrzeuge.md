@@ -138,35 +138,71 @@ Faktor, Einstieg per `NEU_KOSTEN`), aber in Nuyen statt Erfahrungspunkten:
 - **Inaktive Drohnen erscheinen NICHT im Kampf** — die
   Teilnehmer-Hinzufügen-Liste filtert auf `riggerAktiv=true`.
 
-### Hot-Gehen / Neurolink (28.10.2026, entschieden, noch nicht gebaut)
+### Hot-Gehen / Neurolink (28.10.2026, Proben und Dumpshock gebaut)
 
-Mark hat die bisher brachliegende Bedeutung von `riggerBonus` festgelegt: er
-ist die Voraussetzung, mit der Riggerkonsole (später auch dem Cyberdeck) in
-den Modus **„Hot“** zu gehen — direktes Einklinken in eine Drohne bzw. (beim
-Deck) direkt in die Matrix, statt nur normaler Fernsteuerung.
+Mark hat `riggerBonus` eine Zahl gegeben: er deckelt, wie viel vom
+Riggen-Wert beim Hot-Gehen aufs Geschick der Drohne draufkommt. Hot selbst
+schaltet der verbaute Neurolink frei, nicht die Höhe des Bonus.
 
-- **Neues Chrom „Neurolink“** (typ Cyberware, normales
-  `koerperzone`/`slot`-Chirurgie-Schema wie jedes andere Implantat):
-  **Pflichtvoraussetzung** fürs Hot-Gehen. Ohne Neurolink bleibt nur normales
-  Fernsteuern ohne den Hot-Bonus — Konsole/Deck allein reichen nicht.
-- Neuer Wert **„Einklinken“** am Neurolink: reines **Ja/Nein-Flag**
-  (schaltet die Fähigkeit frei), kein eigener Zahlenwert.
-- **Proben:** solange Hot verbunden, läuft **jede Probe der Drohne** als
-  Skill(Drohne) + **Riggen(Rigger)** — pauschal, nicht nur die zum jeweiligen
-  Attribut passende Probe. Der Rigger-Fertigkeitswert ersetzt das
-  Drohnen-Attribut komplett für die Dauer der Hot-Verbindung.
-- **Initiative:** die Drohne übernimmt den Initiative-Slot des Riggers
-  (**das jeweils schnellere/bessere** der beiden Werte), der Rigger steuert
-  nicht mehr sich selbst. Die Drohne läuft NICHT zusätzlich in ihrem
-  eigenen, ursprünglichen Slot.
-- **Verbindungsabbruch im Kampf** (z. B. Drohne zerstört): der Rigger
-  erleidet Dumpshock und fällt für den Rest der laufenden Runde aus. Sobald
-  sein ursprünglicher Initiative-Slot wieder dran ist, fragt das Tool ihn,
-  ob er die Drohne weiterhin Hot steuert — **Ja:** er bleibt ausgefallen,
-  die Drohne handelt stattdessen in genau diesem Slot (ihr eigener Slot
-  bleibt ungenutzt). Das ist die generelle Mechanik für jede Runde, nicht
-  nur beim Verbindungsabbruch.
-- **Noch offen:** exakte Nuyen-/Chirurgie-Kosten des Neurolink-Chroms.
+- **Neurolink ist normale Cyberware, Bonus 1** — kein Sonderpreis, kein
+  eigenes Kostenfeld. Dieselbe Chrom-Tabelle wie jedes andere Implantat
+  (`chrom.py`): Hinterhof 500¥/Verlust 2, Straße 2.000¥/1, Klinik 5.000¥,
+  Konzern 10.000¥, Maßanfertigung 20.000¥. Bei Bonus 1 kostet alles außer
+  Hinterhof allein 1 Willenskraft (die Brüche der teuren Stufen lohnen erst
+  im Stapel). **Teurer heißt weniger Willenskraft, nicht mehr.**
+  Körperzone/Slot wie jedes Chrom. Ohne verbaute, angekreuzte Neurolink-Cyberware
+  kein Hot — Konsole/Deck allein reichen nicht.
+- Das Häkchen `istNeurolink` im Umbauen macht ein Stück zur Neurolink-Cyberware.
+  Der Name ist egal. Bonus 1 und die Preistabelle bleiben die normalen Chrom-Kosten.
+- **Proben, nur solange Hot** (28.10., gebaut). Addieren, nicht
+  ersetzen — ein Hot-Rigger fährt damit immer besser als jemand, der dasselbe
+  Fahrzeug nur normal steuert. Die Zahlen kommen mit dem Bogen, das Blatt
+  speichert sie nicht zurück. Ein „Hot“ an der Zeile heißt: geliehen.
+  - **Geschick** = Geschick der Drohne + min(Riggen des Riggers, `riggerBonus`
+    der ausgerüsteten Konsole). Bonus 0 gibt +0. Bonus +6 und Riggen 6 gibt
+    +6. Bonus +2 und Riggen 6 gibt +2. Ein negativer Bonus (Schrott-Konsole
+    −2) zählt als 0, sonst wäre Hot schlechter als normal steuern.
+  - **Fahren** und **Fliegen:** der bessere der beiden Werte, Rigger oder
+    Drohne. Andere Fertigkeiten bleiben die der Drohne.
+  - **Intelligenz** und **Geistesschärfe** kommen vom Rigger. Die Drohne hat
+    sie nicht. CPU und Geschwindigkeit bleiben die der Drohne.
+  - Stärke, Widerstandsfähigkeit, CPU, Arbeitsspeicher, Außenhülle, I.C.E.
+    bleiben unverändert.
+  Die anderen Drohnen würfelt er mit deren eigenen Werten, ohne diesen Tausch.
+- **Rückschlag** (28.10., gebaut): kommt bei der Hot-Drohne Gesundheitsschaden
+  an, nimmt der Rigger die Hälfte als Schlagschaden, aufgerundet. 1 wird 1,
+  3 wird 2. Nur was nach der Rüstung an der Drohne hängen bleibt, nicht der
+  Rohwurf. Steht im Treffer-Popup als „Hot-Rückschlag“.
+- **Initiative:** die Hot-Drohne übernimmt den Slot des Riggers (**das
+  jeweils schnellere** der beiden Werte). In der Initiativliste steht ihr
+  Name neben seinem, kein eigener Eintrag und kein Magenta-Rahmen dort.
+  Der Rigger handelt in dem Slot nicht mehr sich selbst. Die anderen
+  Drohnen behalten ihre eigenen Slots.
+- **Andere Drohnen:** spieltechnisch selbstständig, mit ihren eigenen
+  Werten. Der Spieler würfelt sie trotzdem, nur nicht mit Riggen.
+- **Verbindungsabbruch im Kampf** (28.10., gebaut): fällt die Hot-Drohne
+  auf 0 Gesundheit, löst die Verbindung. Der Rigger setzt den Rest der
+  Runde aus (Dumpshock, kein extra Würfelwurf — die Schadenszahl hat Mark
+  nicht festgelegt). Steht im Treffer-Popup. Die Bleiben-Frage kommt nicht,
+  eine zerstörte Drohne ist kein Hot-Ziel mehr.
+- **Decker, Hot:** erst der Knopf, dann das Risiko. Er bekommt dieselbe
+  Mechanik wie der Reflex-Booster: Ampel und zweiter Initiative-Wurf
+  (`BoosterPopup`, `kampf/routes.py::_booster_von`). Das Feld
+  `zusatzaktionen` am Deck (Umbauen, dieselbe Auswahl: keine / 1× pro
+  Kampf / 2× pro Kampf / jede Runde) zählt erst, wenn er Hot ist. Nur
+  ausgerüstet reicht nicht, und ohne verbauten Neurolink gibt es den Knopf
+  nicht. Der Kampf liest Zusatzaktionen bisher nur von verbautem Chrom.
+- **Rigger, Hot:** eine Drohne pro Runde, gewählt über den Knopf an ihrem
+  Slot. Beim nächsten eigenen Slot die Frage, ob er in derselben Drohne
+  bleibt. Nein heißt ausklinken; eine andere wählt er erst in der nächsten
+  Runde über den Slot-Knopf, nicht mitten in der Runde.
+- **Slots im Kampf:** `DeineDrohnenImKampf` ist heute ein Kartenraster nur
+  der aktiven Drohnen. Es wird dieselbe Slot-Reihe wie unter Drohnen &
+  Fahrzeuge (`.gg-slotreihe`, so viele Boxen wie `riggerSlotsMax`, leer
+  gestrichelt, belegt blau). Der Hot-Knopf sitzt unter der belegten Box
+  und wählt damit diese Drohne. Dieselbe Anordnung im Drohnen-Menü.
+- **Anzeige:** Magenta pulsierend (`--p-magenta`) nur an der Hot-Slot-Box,
+  im Kampf und unter Drohnen & Fahrzeuge. Nicht in der Initiativliste.
 
 ### Drohnen-Augments (28.10.2026, entschieden, noch nicht gebaut)
 
@@ -323,8 +359,12 @@ ausgeweitet:
 
 - **28.10.2026 (Hot-Gehen/Neurolink + Drohnen-Augments + Inventar-Filter,
   Besprechung mit Mark, noch nicht gebaut):** Bedeutung von `riggerBonus`
-  festgelegt (Hot-Gehen-Voraussetzung), neues Chrom „Neurolink“ geplant,
-  Initiative-Übernahme-Regel inkl. Dumpshock-Verhalten entschieden.
+  festgelegt (Deckel für den Riggen-Aufschlag aufs Geschick, nicht die
+  Hot-Voraussetzung — die ist der Neurolink). Neurolink bleibt normale
+  Cyberware Bonus 1 (bestehende Preistabelle, kein Sonderpreis). Decker-Hot zieht
+  die Booster-Mechanik mit (Ampel, zweiter Initiative-Wurf), aber erst nach
+  einem eigenen Hot-Knopf im Kampf. Rigger haben den Knopf auch im
+  Drohnen-Menü; die Hot-Drohne ist magenta pulsierend umrandet.
   Drohnen-Augments als `istDrohnenAugment`-Flag mit eigenem
   Körperzonen-Schema geplant. Fehlender Inventar-Filter identifiziert. Siehe
   „Hot-Gehen / Neurolink“, „Drohnen-Augments“ und „Ausrüstung“ oben.

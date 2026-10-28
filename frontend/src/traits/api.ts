@@ -19,6 +19,8 @@ export interface TraitRating {
   category: string;
   rating: number;
   max: number;
+  /** Hot-Überlagerung: anzeigen, nicht speichern. */
+  hotNurAnzeige?: boolean;
 }
 
 function base(campaignId: string) {

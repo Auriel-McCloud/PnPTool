@@ -21,7 +21,7 @@ RETURN_FIELDS = """
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
-    g.slot AS slot, g.istWaffe AS istWaffe, g.schaden AS schaden, g.schadenArt AS schadenArt,
+    g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
     g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
@@ -142,6 +142,7 @@ def _decode(record: dict) -> dict:
     # gültiger Zustand (kein fester Platz) — deshalb kein _or_default mit 0.
     record["slot"] = record.get("slot")
     record["istWaffe"] = _or_default(record.get("istWaffe"), False)
+    record["istNeurolink"] = _or_default(record.get("istNeurolink"), False)
     record["schaden"] = _or_default(record.get("schaden"), 0)
     # Bestandsdaten haben das Feld nicht. Unbekannter Müll wird leer, sonst
     # reisst ein alter Freitext die ganze Liste mit 500 herunter (Stolperstein 9).
@@ -227,6 +228,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
+            istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
@@ -292,6 +294,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             koerperzone=data.get("koerperzone") or "",
             slot=data.get("slot"),
             istWaffe=bool(data.get("istWaffe")),
+            istNeurolink=bool(data.get("istNeurolink")),
             schaden=int(data.get("schaden") or 0),
             schadenArt=data.get("schadenArt") or "",
             kampfFertigkeit=kampf_fertigkeit_lesen(data.get("kampfFertigkeit")),
@@ -1024,6 +1027,24 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
         return {k: v for k, v in werte.items() if v > 0}
 
 
+async def ausgeruestete_decks(campaign_id: str, person_id: str) -> list[dict]:
+    """Ausgerüstete Cyberdecks, nur Name und Zusatzaktionen.
+
+    Fürs Hot-Gehen: die Ampel liest das Deck erst, wenn der Decker Hot ist.
+    Mehrere Decks: der Aufrufer nimmt das stärkste (`kampf/hot.py::staerkstes`),
+    nicht die Summe — dieselbe Regel wie bei den Bonuswürfeln.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        RETURN g.name AS name, coalesce(g.zusatzaktionen, 0) AS zusatzaktionen
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [{"name": r["name"] or "Cyberdeck", "zusatzaktionen": int(r["zusatzaktionen"] or 0)} async for r in result]
+
+
 # Typen, die im Körper stecken und dauerhaft Willenskraft kosten.
 # Hexware läuft über dieselbe Formel wie Cyber-/Bioware (Mark, 02.09.2026):
 # der Willenskraftverlust regelt die Kosten bereits ausreichend, es braucht
@@ -1116,6 +1137,20 @@ async def riggerkonsole_max_drohnen(campaign_id: str, person_id: str) -> int:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
         record = await result.single()
         return int(record["maxDrohnen"]) if record else 0
+
+
+async def riggerkonsole_bonus(campaign_id: str, person_id: str) -> int:
+    """Höchster `riggerBonus` der ausgerüsteten Konsolen. Deckel fürs Hot-Geschick."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ = 'Riggerkonsole' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+        RETURN coalesce(max(g.riggerBonus), 0) AS bonus
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        record = await result.single()
+        return int(record["bonus"]) if record else 0
 
 
 async def slot_konflikt(campaign_id: str, person_id: str, koerperzone: str, slot: int, eigene_item_id: str) -> str | None:

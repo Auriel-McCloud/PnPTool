@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
-import { kampfApi, type Kampf, type Teilnehmer } from "./api";
+import { kampfApi, type HotStatus, type Kampf, type Teilnehmer } from "./api";
 import { InitiativeSetzen } from "./InitiativeSetzen";
 import { Kampfkarte } from "./Kampfkarte";
+import "../items/gegenstaende.css";
 import "./kampf.css";
 
 /**
@@ -33,6 +34,7 @@ export function DeineDrohnenImKampf({
   onListeGeladen?: (ids: string[]) => void;
 }) {
   const [drohnen, setDrohnen] = useState<DrohnenEintrag[]>([]);
+  const [slotsMax, setSlotsMax] = useState(0);
   const [gesundheit, setGesundheit] = useState<Record<string, string>>({});
   const [offenId, setOffenId] = useState<string | null>(null);
   const [beitretend, setBeitretend] = useState<string | null>(null);
@@ -40,6 +42,8 @@ export function DeineDrohnenImKampf({
   // Initiative direkt aus dem Drohnen-Steckbrief setzbar (Mark, 26.10.2026) —
   // nicht nur über die Zeile in der Initiativliste außerhalb des Popups.
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  const [hot, setHot] = useState<HotStatus | null>(null);
+  const [hotSendet, setHotSendet] = useState<string | null>(null);
 
   useEffect(() => {
     let weg = false;
@@ -47,9 +51,12 @@ export function DeineDrohnenImKampf({
       .liste(campaignId)
       .then((liste) => {
         if (weg) return;
-        const eigene = liste.filter((d) => d.riggerId === eigenePersonId && d.riggerAktiv);
-        setDrohnen(eigene);
-        onListeGeladen?.(eigene.map((d) => d.id));
+        const eigene = liste.filter((d) => d.riggerId === eigenePersonId);
+        const aktiv = eigene.filter((d) => d.riggerAktiv);
+        setDrohnen(aktiv);
+        onListeGeladen?.(aktiv.map((d) => d.id));
+        const slots = eigene.find((d) => d.riggerSlotsMax != null)?.riggerSlotsMax ?? 0;
+        setSlotsMax(slots);
       })
       .catch(() => {
         if (!weg) setDrohnen([]);
@@ -57,9 +64,24 @@ export function DeineDrohnenImKampf({
     return () => {
       weg = true;
     };
-    // kampf?.teilnehmer.length als Signal zum Nachladen (beigetreten/entfernt).
+    // kampf?.amZug damit der Magenta-Rahmen nach dem Hot-Knopf nachzieht.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaignId, eigenePersonId, kampf?.teilnehmer.length]);
+  }, [campaignId, eigenePersonId, kampf?.teilnehmer.length, kampf?.amZug, kampf?.runde]);
+
+  useEffect(() => {
+    let weg = false;
+    kampfApi
+      .hotStatus(campaignId)
+      .then((s) => {
+        if (!weg) setHot(s);
+      })
+      .catch(() => {
+        if (!weg) setHot(null);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, kampf?.runde, kampf?.amZug, drohnen]);
 
   useEffect(() => {
     let weg = false;
@@ -82,7 +104,23 @@ export function DeineDrohnenImKampf({
     };
   }, [campaignId, drohnen]);
 
-  if (drohnen.length === 0) return null;
+  if (drohnen.length === 0 && slotsMax === 0) return null;
+
+  async function hotGehen(drohneId: string) {
+    setHotSendet(drohneId);
+    setFehler(null);
+    try {
+      setHot(await kampfApi.hotDrohne(campaignId, drohneId));
+      setDrohnen((bisher) => bisher.map((d) => ({ ...d, istHot: d.id === drohneId })));
+      onGeaendert();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Hot gerade nicht möglich.");
+    } finally {
+      setHotSendet(null);
+    }
+  }
+
+  const kaesten = Math.max(slotsMax, drohnen.length);
 
   async function beitreten(drohneId: string) {
     setBeitretend(drohneId);
@@ -103,23 +141,42 @@ export function DeineDrohnenImKampf({
         <span>⛭ Deine Drohnen</span>
       </h3>
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
-      <div className="ka-drohnen-raster">
-        {drohnen.map((d) => {
+      <div className="gg-slotboxen">
+        {Array.from({ length: kaesten }).map((_, i) => {
+          const d = drohnen[i];
+          if (!d) {
+            return (
+              <div className="gg-slotbox-leer" key={i}>
+                frei
+              </div>
+            );
+          }
           const teilnahme = kampf?.teilnehmer.find((t) => t.personId === d.id);
           return (
-            <div key={d.id} className="ka-drohnen-karte" data-dabei={Boolean(teilnahme)}>
-              {teilnahme ? (
-                <button type="button" onClick={() => setOffenId(d.id)}>
-                  <span className="ka-drohnen-name">{teilnahme.name}</span>
-                  <span className="ka-drohnen-gs">{gesundheit[d.id] ?? "…"}</span>
+            <div className="gg-slot-spalte" key={d.id}>
+              <button
+                type="button"
+                className={`gg-kachel${d.istHot ? " gg-slot-hot" : ""}`}
+                style={d.istHot ? undefined : { borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
+                onClick={() => teilnahme && setOffenId(d.id)}
+              >
+                <span className="gg-kachel-name">{d.name}</span>
+                <span className="gg-kachel-zeile">{gesundheit[d.id] ?? "…"}</span>
+              </button>
+              {hot?.hatNeurolink && (
+                <button
+                  type="button"
+                  className="gg-hot-knopf"
+                  disabled={d.istHot || hot.darfWaehlen === false || hotSendet === d.id}
+                  onClick={() => hotGehen(d.id)}
+                >
+                  Hot
                 </button>
-              ) : (
-                <>
-                  <span className="ka-drohnen-name">{d.name}</span>
-                  <button type="button" onClick={() => beitreten(d.id)} disabled={beitretend === d.id || !kampf}>
-                    {beitretend === d.id ? "…" : "Dem Kampf beitreten"}
-                  </button>
-                </>
+              )}
+              {!teilnahme && (
+                <button type="button" onClick={() => beitreten(d.id)} disabled={beitretend === d.id || !kampf}>
+                  {beitretend === d.id ? "…" : "Dem Kampf beitreten"}
+                </button>
               )}
             </div>
           );

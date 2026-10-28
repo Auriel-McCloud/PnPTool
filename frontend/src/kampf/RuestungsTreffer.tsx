@@ -154,6 +154,16 @@ export function RuestungsTreffer({
                 {ergebnis.betroffen.map((b) => `${b.name} −${b.verlust}`).join(", ")})
               </p>
             )}
+            {(ergebnis.hotRueckschlag ?? []).map((r) => (
+              <p key={r.riggerId} style={{ margin: 0, color: "var(--p-magenta)" }}>
+                Hot-Rückschlag: <strong>{r.riggerName}</strong> nimmt {r.schlag} Schlagschaden
+              </p>
+            ))}
+            {(ergebnis.dumpshock ?? []).map((r) => (
+              <p key={`dump-${r.riggerId}`} style={{ margin: 0, color: "var(--p-magenta)" }}>
+                Dumpshock: <strong>{r.riggerName}</strong> setzt den Rest der Runde aus. Die Verbindung ist tot.
+              </p>
+            ))}
             {zerstoert.length > 0 && (
               <p style={{ margin: 0, color: "var(--nein)" }}>
                 Zerstört: <strong>{zerstoert.map((b) => b.name).join(", ")}</strong> — liegt jetzt im Mitgeführten

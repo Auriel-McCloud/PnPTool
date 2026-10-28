@@ -206,11 +206,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   gebaut):** nur die BESTE ausgerüstete Riggerkonsole zählt
   (`items/repository.py::riggerkonsole_max_drohnen` nimmt `max()`, keine
   Summe) — "10 billige Konsolen stapeln" geht nicht. **Bewusst nicht
-  gebaut:** die ganz linke Box soll später magenta glühen, sobald der
-  Rigger in eine Drohne "schlüpft" (sie aktiv steuert/übernimmt, inkl.
-  Rigger-Skill+Wert-Probe) — eigenes Feature, von Mark selbst als "bauen
-  wir gleich" vertagt, keine Vorarbeit dafür im Code. Verifiziert: `npm
-  run build` sauber.
+  gebaut, Optik am 28.10. präzisiert:** die Hot-Drohne selbst ist magenta pulsierend umrandet (`--p-magenta`), im Kampf und unter Drohnen & Fahrzeuge — nicht nur die linke Slot-Box. Hot ist ein eigener Knopf (Kampf für Decker und Rigger, zusätzlich im Drohnen-Menü nur für den Rigger). Decker zieht Ampel und zweiten Initiative-Wurf mit, aber erst nach dem Knopf. Spec: `docs/wiki/concepts/drohnen-fahrzeuge.md`.
 
 - **Drohnen/Fahrzeuge Phase 3.6 — Marks zweites Feedback** (26.10.2026,
   direkt im Anschluss an 3.5, ebenfalls direkt in Hermes):

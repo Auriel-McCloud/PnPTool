@@ -4,6 +4,7 @@ import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { Fenster } from "../shell/Fenster";
 import { drohnenApi, type DrohnenEintrag } from "./api";
 import { DrohnenFenster } from "./DrohnenFenster";
+import { kampfApi, type HotStatus } from "../kampf/api";
 import "../items/gegenstaende.css";
 
 /**
@@ -17,7 +18,15 @@ import "../items/gegenstaende.css";
  * hier nur, was sichtbar freigegeben ist (Server filtert, siehe
  * `entities/routes.py::list_drohnen`).
  */
-export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; istGm: boolean }) {
+export function DrohnenUebersicht({
+  campaignId,
+  istGm,
+  eigenePersonId = null,
+}: {
+  campaignId: string;
+  istGm: boolean;
+  eigenePersonId?: string | null;
+}) {
   const [liste, setListe] = useState<DrohnenEintrag[]>([]);
   const [personen, setPersonen] = useState<Person[]>([]);
   const [laden, setLaden] = useState(true);
@@ -28,14 +37,27 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
   const [seite, setSeite] = useState(0);
+  const [hot, setHot] = useState<HotStatus | null>(null);
 
   async function neuLaden() {
-    const [d, p] = await Promise.all([
+    const [d, p, h] = await Promise.all([
       drohnenApi.liste(campaignId),
       istGm ? entitiesApi.listPersonen(campaignId) : Promise.resolve([]),
+      eigenePersonId ? kampfApi.hotStatus(campaignId).catch(() => null) : Promise.resolve(null),
     ]);
     setListe(d);
     setPersonen(p);
+    setHot(h);
+  }
+
+  async function hotGehen(drohneId: string) {
+    setFehler(null);
+    try {
+      setHot(await kampfApi.hotDrohne(campaignId, drohneId));
+      await neuLaden();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Hot gerade nicht möglich.");
+    }
   }
 
   useEffect(() => {
@@ -75,8 +97,9 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
   // optisch rein (blau), der Rest bleibt eine leere Box. Nur die BESTE
   // ausgerüstete Konsole zählt serverseitig (`riggerkonsole_max_drohnen`
   // nimmt `max()`, keine Summe) — "man kann nicht 10 billige kaufen" gilt
-  // also schon. Die ganz linke Box glüht später magenta, sobald der
-  // Rigger in eine Drohne "schlüpft" (eigenes Feature, noch nicht gebaut).
+  // also schon. Die Hot-Drohne (28.10., noch nicht gebaut) ist magenta
+  // pulsierend umrandet (`--p-magenta`), hier und im Kampf — nicht nur die
+  // linke Slot-Box. Aktive-aber-nicht-Hot bleibt blau.
   const riggerSlotGruppen = useMemo(() => {
     const map = new Map<string, { name: string; slotsMax: number; aktiv: DrohnenEintrag[] }>();
     for (const d of gefiltert) {
@@ -144,20 +167,31 @@ export function DrohnenUebersicht({ campaignId, istGm }: { campaignId: string; i
                 );
               }
               return (
-                <button
-                  key={d.id}
-                  type="button"
-                  className="gg-kachel"
-                  style={{ borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
-                  onClick={() => setOffenFuer(d)}
-                  title={d.name}
-                >
-                  <span className="gg-kachel-bild">
-                    {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
-                  </span>
-                  <span className="gg-kachel-name">{d.name}</span>
-                  <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
-                </button>
+                <div className="gg-slot-spalte" key={d.id}>
+                  <button
+                    type="button"
+                    className={`gg-kachel${d.istHot ? " gg-slot-hot" : ""}`}
+                    style={d.istHot ? undefined : { borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
+                    onClick={() => setOffenFuer(d)}
+                    title={d.name}
+                  >
+                    <span className="gg-kachel-bild">
+                      {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
+                    </span>
+                    <span className="gg-kachel-name">{d.name}</span>
+                    <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
+                  </button>
+                  {eigenePersonId && d.riggerId === eigenePersonId && hot?.hatNeurolink && (
+                    <button
+                      type="button"
+                      className="gg-hot-knopf"
+                      disabled={d.istHot || hot.darfWaehlen === false}
+                      onClick={() => hotGehen(d.id)}
+                    >
+                      Hot
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>

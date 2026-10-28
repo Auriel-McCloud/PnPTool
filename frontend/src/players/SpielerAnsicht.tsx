@@ -22,6 +22,7 @@ import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
+import { HotBleibenPopup, MatrixHotKnopf } from "../kampf/HotBleibenPopup";
 import { DeineDrohnenImKampf } from "../kampf/DeineDrohnenImKampf";
 import { InitiativeSetzen } from "../kampf/InitiativeSetzen";
 import { kampfApi, type Teilnehmer } from "../kampf/api";
@@ -450,6 +451,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       eigenePersonId={ich.personId}
       onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
     />
+    <HotBleibenPopup
+      campaignId={ich.campaignId}
+      kampf={kampf}
+      onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+    />
     {/* Initiative per Klick ändern — für den eigenen Charakter und eigene
         aktive Drohnen/Fahrzeuge, siehe Initiativliste weiter unten. */}
     {initiativeZiel && (
@@ -573,6 +579,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 <span className="ka-runde">
                   Runde <strong>{kampf.runde}</strong>
                 </span>
+                <MatrixHotKnopf campaignId={ich.campaignId} />
               </header>
               <Initiativliste
                 kampf={kampf}
@@ -766,7 +773,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         <ZeichnungenAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} istGm={false} />
       )}
 
-      {bereich === "drohnen" && <DrohnenUebersicht campaignId={ich.campaignId} istGm={false} />}
+      {bereich === "drohnen" && (
+        <DrohnenUebersicht campaignId={ich.campaignId} istGm={false} eigenePersonId={ich.personId} />
+      )}
 
       {bereich === "augments" && (
         <AugmentsAnsicht

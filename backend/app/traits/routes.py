@@ -9,6 +9,7 @@ from app.campaigns.repository import get_campaign, get_einstellungen
 from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node, update_node
 from app.ereignisprotokoll import hooks
 from app.kampf import repository as kampf_repository
+from app.kampf.hot import hot_anpassung, verbindung_bricht, werte_mit_hot
 from app.items.repository import (
     ausruestungs_trait_boni,
     ausruestungsfertigkeiten_liste,
@@ -16,6 +17,7 @@ from app.items.repository import (
     deck_boni,
     initiative_modifikator,
     natuerliche_ruestungsteile,
+    riggerkonsole_bonus,
     ruestungsteile,
     set_ablage,
     update_gegenstand,
@@ -195,40 +197,48 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         aussenhuelle=nach_name.get("Außenhülle", 0) if ist_drohne else None,
     )
 
+    katalog_sichtbar = [t for t in katalog if t["category"] in erlaubt]
+    rigger_id = await kampf_repository.hot_rigger_id(campaign_id, person_id) if ist_drohne else None
+    if rigger_id:
+        rigger_ratings = await repository.get_ratings_for_entity(campaign_id, rigger_id)
+        rigger_nach = {w["name"]: int(w["rating"] or 0) for w in rigger_ratings}
+        drohne_zf = await zusatzfertigkeiten_repository.zusatzfertigkeiten_der_person(campaign_id, person_id)
+        rigger_zf = await zusatzfertigkeiten_repository.zusatzfertigkeiten_der_person(campaign_id, rigger_id)
+        anpassung = hot_anpassung(
+            nach_name,
+            rigger_nach,
+            await riggerkonsole_bonus(campaign_id, rigger_id),
+            {z["name"]: int(z.get("rating") or 0) for z in drohne_zf},
+            {z["name"]: int(z.get("rating") or 0) for z in rigger_zf},
+        )
+        werte, extra = werte_mit_hot(werte, katalog, anpassung)
+        schon = {t["id"] for t in katalog_sichtbar}
+        katalog_sichtbar += [t for t in extra if t["id"] not in schon]
+        hot_zusatz = (
+            [{"name": "Fliegen", "rating": anpassung["Fliegen"]}]
+            if "Fliegen" in anpassung
+            else []
+        )
+    else:
+        hot_zusatz = []
+
     return {
         "person": {
             "id": person["id"],
             "name": person["name"],
             "personType": person["personType"],
             "istKI": bool(person.get("istKI")),
-            # Bugfix (26.10.2026): fehlten hier bisher komplett, obwohl das
-            # Frontend (Charakterblatt.tsx, ATTRIBUT_KATEGORIEN_DROHNE-Wahl)
-            # genau darauf prüft — ohne die beiden Flags fiel JEDE Drohne/
-            # jedes Fahrzeug auf die menschliche Attributspalten-Auswahl
-            # zurück, deren Kategorien im (serverseitig schon gefilterten)
-            # Katalog einer Drohne gar nicht vorkommen, und die Attribute
-            # blieben unsichtbar.
             "istDrohne": bool(person.get("istDrohne")),
             "istFahrzeug": bool(person.get("istFahrzeug")),
         },
         "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
-        # Bonuswürfel aus ausgerüsteten Cyberdecks — gehören nicht zu den
-        # Werten der Person, sondern zu ihrer Ausrüstung, deshalb daneben.
         "deckBoni": await deck_boni(campaign_id, person_id),
-        # Bonuswürfel auf BESTEHENDE Werte aus ausgerüsteten Gegenständen
-        # (z.B. Cyberaugen +1 auf Wahrnehmung) — Schlüssel ist der TraitDef-
-        # Name, das Frontend addiert das direkt zur Anzeige des Werts dazu.
         "ausruestungsBoni": await ausruestungs_trait_boni(campaign_id, person_id),
-        # NEUE Fertigkeiten, die es ohne die Ausrüstung nicht gibt (z.B. ein
-        # Zauberstab mit "Springen 3") — eigener Blattabschnitt, siehe
-        # CharacterSheetPanel.tsx.
         "ausruestungsfertigkeiten": await ausruestungsfertigkeiten_liste(campaign_id, person_id),
-        # Rüstung als dritte Kästchenreihe neben Gesundheit und Willenskraft
-        # (siehe docs/api/ruestung.md). Kommt fertig gerechnet vom Server,
-        # damit die Pool-Regel nicht im Blatt nachgebaut wird.
         "ruestung": ruestungs_uebersicht(ruestungsteile_live),
-        "katalog": [t for t in katalog if t["category"] in erlaubt],
+        "katalog": katalog_sichtbar,
         "werte": werte,
+        "hotZusatz": hot_zusatz,
     }
 
 
@@ -474,6 +484,9 @@ class RuestungTrefferErgebnis(BaseModel):
     kaestchenSchaden: int = 0
     betroffen: list[RuestungsteilFolge] = []
     uebersicht: dict
+    # Hot-Rückschlag: halber angekommener Schaden als Schlag beim Rigger.
+    hotRueckschlag: list[dict] = []
+    dumpshock: list[dict] = []
 
 
 @router.post("/personen/{person_id}/ruestung/treffer", response_model=RuestungTrefferErgebnis)
@@ -562,6 +575,12 @@ async def ruestungstreffer(
             {feld: int(person.get(feld) or 0) + ergebnis["hpMenge"]},
         )
 
+    rueckschlag: list[dict] = []
+    if ist_drohne and ergebnis["hpMenge"] > 0:
+        rueckschlag = await kampf_repository.hot_rueckschlag_buchen(
+            campaign_id, person_id, ergebnis["hpMenge"]
+        )
+
     # Ereignisprotokoll: KampfLogEintrag mit automatischer Angreifer-
     # Zuordnung aus Kampf.amZug (Marks Vorgabe, docs/wiki/entities/
     # ereignisprotokoll.md) — Override per Body hat Vorrang, sonst wird
@@ -580,24 +599,51 @@ async def ruestungstreffer(
         hp_menge=ergebnis["hpMenge"],
         kaestchen_schaden=ergebnis["kaestchenSchaden"],
     )
+    for r in rueckschlag:
+        await hooks.kampf_treffer(
+            campaign_id,
+            art="TREFFER",
+            ziel_person_id=r["riggerId"],
+            angreifer_person_id=angreifer_id,
+            kampf_id=(laufender_kampf or {}).get("id", ""),
+            runde=(laufender_kampf or {}).get("runde", 0),
+            hp_art="schlag",
+            hp_menge=r["schlag"],
+            kaestchen_schaden=0,
+        )
 
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
     einstellungen = await get_einstellungen(campaign_id)
     cyberwall = await commlink_cyberwall(campaign_id, person_id)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
+    uebersicht = bogen_uebersicht(
+        person,
+        nach_name,
+        cyberwall,
+        chrom,
+        init_mod,
+        einstellungen.get("kampagnenEP", 0),
+    )
+    dumpshock: list[dict] = []
+    if (
+        ist_drohne
+        and rueckschlag
+        and person is not None
+        and verbindung_bricht(uebersicht["gesundheitMax"] - uebersicht["gesundheitSchaden"])
+    ):
+        for r in rueckschlag:
+            await kampf_repository.dumpshock(campaign_id, r["riggerId"])
+            dumpshock.append({"riggerId": r["riggerId"], "riggerName": r["riggerName"]})
     return RuestungTrefferErgebnis(
         hpArt=ergebnis["hpArt"],
         hpMenge=ergebnis["hpMenge"],
         kaestchenSchaden=ergebnis["kaestchenSchaden"],
         betroffen=[RuestungsteilFolge(**f) for f in folgen],
-        uebersicht=bogen_uebersicht(
-            person,
-            nach_name,
-            cyberwall,
-            chrom,
-            init_mod,
-            einstellungen.get("kampagnenEP", 0),
-        ),
+        hotRueckschlag=rueckschlag,
+        dumpshock=dumpshock,
+        uebersicht=uebersicht,
     )
 
 

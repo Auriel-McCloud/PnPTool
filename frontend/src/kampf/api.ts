@@ -66,6 +66,17 @@ export interface BoosterStatus {
   setztAus: boolean;
 }
 
+/** Hot-Zustand des eigenen Charakters. */
+export interface HotStatus {
+  hatNeurolink: boolean;
+  hatDeck: boolean;
+  matrixHot: boolean;
+  hotDrohneId: string | null;
+  hotDrohneName: string | null;
+  bleibenFaellig: boolean;
+  darfWaehlen: boolean;
+}
+
 export interface Kampf {
   id: string;
   runde: number;
@@ -97,6 +108,11 @@ export const kampfApi = {
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */
   boosterStatus: (cid: string) => api.get<BoosterStatus>(`${basis(cid)}/booster/status`),
+  /** Hot: Neurolink-Pflicht, eine Drohne pro Runde, Matrix-Knopf fürs Deck. */
+  hotStatus: (cid: string) => api.get<HotStatus>(`${basis(cid)}/hot`),
+  hotDrohne: (cid: string, drohneId: string) => api.post<HotStatus>(`${basis(cid)}/hot`, { drohneId }),
+  hotBleiben: (cid: string, bleiben: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { bleiben }),
+  hotMatrix: (cid: string, matrix: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { matrix }),
   /** Booster zünden: zweiter Eintrag mit dem gemeldeten Zweitwurf. */
   boosterAktivieren: (cid: string, erfolge: number) =>
     api.post<Kampf>(`${basis(cid)}/booster/aktivieren`, { erfolge }),

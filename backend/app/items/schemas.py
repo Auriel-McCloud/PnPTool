@@ -136,6 +136,9 @@ class GegenstandCreate(BaseModel):
     # Klinge und damit eine Waffe sein. Bestimmt nur, ob Kraft/Schaden als
     # Waffe zählt — keine eigene Mechanik, nur eine Kennzeichnung.
     istWaffe: bool = False
+    # Häkchen im Umbauen: diese Cyberware ist ein Neurolink. Schaltet Hot frei,
+    # sobald sie verbaut ist. Der Name ist egal (Mark, 28.10.2026).
+    istNeurolink: bool = False
     # Waffenschaden (1–12), separat vom Chrom-Bonus. Ein Cyberarm mit +2 auf
     # Stärke und eingebauter Klinge (Schaden 3) zählt als Level 5 fürs Chrom,
     # macht aber nur 3 Schaden. Nur relevant wenn istWaffe=True.
@@ -286,6 +289,7 @@ class GegenstandUpdate(BaseModel):
     koerperzone: str | None = None
     slot: int | None = None
     istWaffe: bool | None = None
+    istNeurolink: bool | None = None
     schaden: int | None = None
     schadenArt: SchadenArt | None = None
     kampfFertigkeit: KampfFertigkeit | None = None
@@ -383,6 +387,7 @@ class GegenstandResponse(BaseModel):
     koerperzone: str = ""
     slot: int | None = None
     istWaffe: bool = False
+    istNeurolink: bool = False
     schaden: int = 0
     schadenArt: SchadenArt = ""
     kampfFertigkeit: KampfFertigkeit = ""
