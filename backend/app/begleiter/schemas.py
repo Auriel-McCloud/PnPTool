@@ -58,7 +58,7 @@ class BegleiterBasis(BaseModel):
 class BegleiterCreate(BegleiterBasis):
     # Wem er zur Seite steht. Ohne Angabe ungebunden.
     besitzerId: str | None = None
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
 
 

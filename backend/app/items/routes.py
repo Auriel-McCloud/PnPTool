@@ -79,26 +79,15 @@ async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer))
 
 
 async def _default_sichtbarkeit(campaign_id: str, ziel: dict, ziel_id: str) -> tuple[str, list[str]]:
-    """Standard: Gegenstände von Spielercharakteren sind automatisch nur für
-    diesen Spieler sichtbar, bei NPCs bleiben sie SL-geheim. Der SL kann das
-    beim Anlegen/Zuweisen jederzeit explizit übersteuern.
-
-    **28.10.2026, Fix (Mark: Pistole an die eigene Drohne übergeben, danach
-    für ihn spurlos verschwunden):** eine Drohne/ein Fahrzeug hat
-    `personType` NPC, ist aber per `BEGLEITET` an ihren Rigger (einen PC)
-    gebunden — ohne diese Ausnahme wurde jeder Gegenstand, den ein Rigger
-    seiner eigenen Drohne gibt (Übergeben ODER die SL legt ihn direkt mit
-    Besitzer Drohne an), automatisch SL-geheim und der Rigger verlor sofort
-    jeden Überblick über die eigene Ausrüstung — obwohl er sie laut
-    `DrohnenAusruestung.tsx` verwalten darf. Gebundene Drohne/Fahrzeug fällt
-    deshalb auf die Sichtbarkeit des Riggers zurück, nicht auf GM."""
-    if ziel["personType"] == "PC":
-        return "SPEZIFISCH", [ziel_id]
-    if ziel.get("istDrohne") or ziel.get("istFahrzeug"):
-        rigger_id = await drohne_rigger(campaign_id, ziel_id)
-        if rigger_id:
-            return "SPEZIFISCH", [rigger_id]
-    return "GM", []
+    """Standard beim Anlegen/Übergeben: für alle sichtbar (28.10.2026, Mark:
+    "ich muss nur Dinge umstellen, die geheim sind — sonst ist immer alles
+    geheim und niemand sieht es"). Bis dahin: PC-Besitzer -> nur für ihn
+    sichtbar, alles andere -> SL-geheim (siehe Git-Historie für die alte
+    Fassung samt Drohnen/Rigger-Sonderfall vom selben Tag, jetzt hinfällig,
+    weil nichts mehr automatisch geheim startet). Der SL kann das beim
+    Anlegen/Zuweisen jederzeit explizit auf GM oder SPEZIFISCH übersteuern.
+    """
+    return "ALLE", []
 async def _eigener_kreis(campaign_id: str, viewer_person_id: str, person_id: str | None) -> bool:
     """Ist `person_id` der Spieler selbst ODER seine eigene gebundene
     Drohne/sein eigenes Fahrzeug? (26.10.2026, gemeinsamer Besitz-Check für

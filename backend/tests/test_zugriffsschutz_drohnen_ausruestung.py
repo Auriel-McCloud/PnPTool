@@ -179,7 +179,14 @@ def test_item_bleibt_fuer_rigger_sichtbar_nach_uebergabe_an_drohne():
     `personType` bei einer Drohne NPC ist — unabhängig vom gebundenen
     Rigger. Die bisherigen Tests oben trafen diesen Pfad nie, weil `_WAFFE`
     mit sichtbarkeit=GM startet (die Neuberechnung greift nur bei
-    SPEZIFISCH+[alter_besitzer], dem Normalfall für ein PC-Item)."""
+    SPEZIFISCH+[alter_besitzer], dem Normalfall für ein PC-Item).
+
+    **Noch am selben Tag überholt:** Mark wollte direkt im Anschluss, dass
+    ALLES standardmäßig für alle sichtbar startet (`_default_sichtbarkeit`
+    gibt jetzt immer ALLE zurück, kein Drohnen-Sonderfall mehr nötig) — der
+    Test bleibt trotzdem bestehen, weil er denselben Pfad (Neuberechnung
+    beim Übergeben an eine Drohne) weiterhin gegen ein stillschweigendes
+    Zurückfallen auf GM absichert."""
     waffe_spezifisch = {**_WAFFE, "sichtbarkeit": "SPEZIFISCH", "sichtbarFuer": ["rigger-1"]}
     with (
         patch("app.items.routes.repository.get_gegenstand", AsyncMock(return_value=waffe_spezifisch)),
@@ -201,10 +208,11 @@ def test_item_bleibt_fuer_rigger_sichtbar_nach_uebergabe_an_drohne():
         )
     update_gegenstand.assert_called_once()
     _, _, updates = update_gegenstand.call_args.args
-    # Nicht GM/[] — bleibt für den Rigger sichtbar, der die Drohne steuert.
-    assert updates == {"sichtbarkeit": "SPEZIFISCH", "sichtbarFuer": ["rigger-1"]}
-    assert ergebnis["sichtbarkeit"] == "SPEZIFISCH"
-    assert ergebnis["sichtbarFuer"] == ["rigger-1"]
+    # Nicht GM/[] — jetzt der neue generelle Standard ALLE statt eines
+    # Drohnen-Sonderfalls.
+    assert updates == {"sichtbarkeit": "ALLE", "sichtbarFuer": []}
+    assert ergebnis["sichtbarkeit"] == "ALLE"
+    assert ergebnis["sichtbarFuer"] == []
 
 
 def test_gm_darf_weiterhin_beliebig_uebergeben():

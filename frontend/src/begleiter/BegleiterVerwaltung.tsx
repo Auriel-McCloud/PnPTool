@@ -449,7 +449,7 @@ function BegleiterAnlegenFenster({
           notes: "",
           istCritter: art === "CRITTER",
           istKI: art === "KI_PERSON",
-          sichtbarkeit: "GM",
+          sichtbarkeit: "ALLE",
           sichtbarFuer: [],
           notizenSichtbarkeit: "GM",
           notizenSichtbarFuer: [],

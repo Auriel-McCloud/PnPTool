@@ -15,7 +15,7 @@ class ZeichnungCreate(BaseModel):
     name: str
     bildUrl: str = ""
     spielerDuerfenZeichnen: bool = False
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
 
 
@@ -37,7 +37,7 @@ class ZeichnungResponse(BaseModel):
     pfade: list[dict] = []
     bildUrl: str = ""
     spielerDuerfenZeichnen: bool = False
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     geloescht: bool = False
     erstelltAm: str = ""

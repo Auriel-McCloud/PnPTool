@@ -16,7 +16,7 @@ class PartyCreate(BaseModel):
     name: str
     beschreibung: str = ""
     notizen: str = ""
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
 
 

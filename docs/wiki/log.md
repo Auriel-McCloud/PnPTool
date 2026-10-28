@@ -3,6 +3,27 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-28] gebaut | Sichtbarkeits-Standard umgedreht: ALLE statt SL-geheim
+
+Mark: "ich hätte gerne das alles was so erstellt wird ... standardmäßig auf
+Für alle sichtbar ist, und nicht auf SL-Geheim, somit muss ich nur Dinge
+umstellen, die geheim sind." Betrifft Gegenstand/Person/Ort/Event/Fraktion/
+Begleiter/Party/Zeichnung — Standard-`sichtbarkeit` beim Anlegen jetzt
+`ALLE` statt `GM` (13 Pydantic-Feld-Defaults in 5 Backend-`schemas.py`,
+16 hartkodierte Anlege-Payloads in 6 Frontend-Dateien, plus
+`items/routes.py::_default_sichtbarkeit` radikal vereinfacht — kein
+PC/NPC-Unterschied mehr, immer ALLE). **Bewusst ausgenommen:**
+`notizenSichtbarkeit` (SL-Innenperspektive/Planungsnotizen, eigene
+Privatsphäre-Ebene, unverändert GM) und die Ingame-Wiki-Seiten
+(`wiki/schemas.py::SeiteCreate` — Kommentar im Code warnt ausdrücklich: "eine
+Planungsseite, die versehentlich offen steht, verrät den Plot", deshalb
+unangetastet gelassen und Mark zur Bestätigung vorgelegt statt
+stillschweigend mitgeflippt). `FreigabeRequest` im selben File war
+schon vorher ALLE (Freigeben-Aktion zeigt Inhalt absichtlich). **Verifiziert:**
+volle Backend-Suite dieselben 55 vorbestehenden Fehlschläge, `npx tsc -b`
+sauber. **Nicht rückwirkend** — nur neu angelegte Einträge, Bestandsdaten
+bleiben wie gespeichert.
+
 ## [2026-10-28] gebaut | Bugfix: Gegenstände an die eigene Drohne verschwanden
 
 Mark live auf bebop: Pistole dem Rigger "Rigger" übergeben und an die

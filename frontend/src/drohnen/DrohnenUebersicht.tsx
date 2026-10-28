@@ -287,7 +287,7 @@ function DrohnenAnlegenFenster({
         // (hintergruende/spawn.py). Ohne das bleibt Charakterblatt.tsx im
         // PC-Ersterstellungsmodus hängen (Stolperstein, 25.10.2026).
         erstellungAbgeschlossen: true,
-        sichtbarkeit: "GM",
+        sichtbarkeit: "ALLE",
         sichtbarFuer: [],
         notizenSichtbarkeit: "GM",
         notizenSichtbarFuer: [],

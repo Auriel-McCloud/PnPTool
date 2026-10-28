@@ -260,7 +260,7 @@ class PersonCreate(BaseModel):
     rassenFeatureGenutzt: bool = False
     erstellungAbgeschlossen: bool = False
 
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
@@ -403,7 +403,7 @@ class OrtCreate(BaseModel):
     spotifyPlaylistUri: str = ""
     spotifyPlaylistName: str = ""
     spotifyPlaylistBild: str = ""
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
@@ -471,7 +471,7 @@ class EventCreate(BaseModel):
     spotifyPlaylistUri: str = ""
     spotifyPlaylistName: str = ""
     spotifyPlaylistBild: str = ""
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
@@ -529,7 +529,7 @@ class FraktionCreate(BaseModel):
     bildUrl: str = ""  # Legacy
     bilder: list[BildEintrag] = []  # Bildergalerie
     istEntwurf: bool = False  # Ideenschmiede
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     # Gilt gemeinsam für notes, ziele und ressourcen — SL-Innenperspektive,
     # dieselbe Aufteilung wie bei Person/Ort/Event (zwei Sichtbarkeitsebenen,
@@ -578,7 +578,7 @@ class VerbindungCreate(BaseModel):
     beschreibung: str = ""
     seit: str = ""
     bis: str = ""
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
 
 
@@ -669,7 +669,7 @@ class GewaechsCreate(BaseModel):
     # Freitext für Besonderheiten, z.B. "leuchtet im Dunkeln",
     # "kybernetisch modifiziert" — passend zum Neotopia-Biopunk-Flavor.
     eigenschaften: str = ""
-    sichtbarkeit: SichtbarkeitModus = "GM"
+    sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
     notizenSichtbarkeit: SichtbarkeitModus = "GM"
     notizenSichtbarFuer: list[str] = []
