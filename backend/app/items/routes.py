@@ -78,12 +78,26 @@ async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer))
     return [i for i in sichtbar if not i.get("istEntwurf", False)]
 
 
-def _default_sichtbarkeit(person_type: str, person_id: str) -> tuple[str, list[str]]:
-    # Standard: Gegenstände von Spielercharakteren sind automatisch nur für
-    # diesen Spieler sichtbar, bei NPCs bleiben sie SL-geheim. Der SL kann das
-    # beim Anlegen/Zuweisen jederzeit explizit übersteuern.
-    if person_type == "PC":
-        return "SPEZIFISCH", [person_id]
+async def _default_sichtbarkeit(campaign_id: str, ziel: dict, ziel_id: str) -> tuple[str, list[str]]:
+    """Standard: Gegenstände von Spielercharakteren sind automatisch nur für
+    diesen Spieler sichtbar, bei NPCs bleiben sie SL-geheim. Der SL kann das
+    beim Anlegen/Zuweisen jederzeit explizit übersteuern.
+
+    **28.10.2026, Fix (Mark: Pistole an die eigene Drohne übergeben, danach
+    für ihn spurlos verschwunden):** eine Drohne/ein Fahrzeug hat
+    `personType` NPC, ist aber per `BEGLEITET` an ihren Rigger (einen PC)
+    gebunden — ohne diese Ausnahme wurde jeder Gegenstand, den ein Rigger
+    seiner eigenen Drohne gibt (Übergeben ODER die SL legt ihn direkt mit
+    Besitzer Drohne an), automatisch SL-geheim und der Rigger verlor sofort
+    jeden Überblick über die eigene Ausrüstung — obwohl er sie laut
+    `DrohnenAusruestung.tsx` verwalten darf. Gebundene Drohne/Fahrzeug fällt
+    deshalb auf die Sichtbarkeit des Riggers zurück, nicht auf GM."""
+    if ziel["personType"] == "PC":
+        return "SPEZIFISCH", [ziel_id]
+    if ziel.get("istDrohne") or ziel.get("istFahrzeug"):
+        rigger_id = await drohne_rigger(campaign_id, ziel_id)
+        if rigger_id:
+            return "SPEZIFISCH", [rigger_id]
     return "GM", []
 async def _eigener_kreis(campaign_id: str, viewer_person_id: str, person_id: str | None) -> bool:
     """Ist `person_id` der Spieler selbst ODER seine eigene gebundene
@@ -204,7 +218,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
     sichtbarkeit = body.sichtbarkeit
     sichtbar_fuer = body.sichtbarFuer
     if sichtbarkeit is None:
-        sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(owner["personType"], person_id)
+        sichtbarkeit, sichtbar_fuer = await _default_sichtbarkeit(campaign_id, owner, person_id)
 
     # istVorlage wird hier immer False erzwungen (nicht body.istVorlage) — ein
     # Gegenstand mit Besitzer ist per Invariante nie eine Vorlage, siehe
@@ -300,7 +314,7 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
     if ziel is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zielperson nicht gefunden")
 
-    sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
+    sichtbarkeit, sichtbar_fuer = await _default_sichtbarkeit(campaign_id, ziel, body.zielPersonId)
 
     # Default: einzigartige/MacGuffin-Vorlagen werden selbst übergeben, sonst
     # kopiert. `kopie=true` ist die ausdrückliche SL-Wahl im Besitz-Reiter —
@@ -363,7 +377,7 @@ async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenReques
         # Sichtbarkeit war exklusiv auf den alten Besitzer zugeschnitten (Standardfall
         # beim Anlegen) — für den neuen Besitzer frisch berechnen. War die Sichtbarkeit
         # bewusst breiter gewählt (ALLE, GM oder mehrere Spieler), bleibt sie unangetastet.
-        sichtbarkeit, sichtbar_fuer = _default_sichtbarkeit(ziel["personType"], body.zielPersonId)
+        sichtbarkeit, sichtbar_fuer = await _default_sichtbarkeit(campaign_id, ziel, body.zielPersonId)
         updates = {"sichtbarkeit": sichtbarkeit, "sichtbarFuer": sichtbar_fuer}
 
     moved = await repository.transfer_owner(campaign_id, item_id, body.zielPersonId)

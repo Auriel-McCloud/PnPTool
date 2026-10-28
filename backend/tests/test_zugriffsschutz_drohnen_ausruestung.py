@@ -171,6 +171,42 @@ def test_rigger_darf_nicht_an_fremde_drohne_uebergeben():
     assert exc.value.status_code == 404
 
 
+def test_item_bleibt_fuer_rigger_sichtbar_nach_uebergabe_an_drohne():
+    """Bugfix 28.10.2026 (Mark, live auf bebop: Pistole an die eigene Drohne
+    übergeben, danach für ihn spurlos verschwunden — nicht im Drohnen-
+    Inventar, nicht zurückholbar). Ursache: `_default_sichtbarkeit` fiel für
+    JEDES Drohnen-/Fahrzeug-Ziel pauschal auf GM-geheim zurück, weil
+    `personType` bei einer Drohne NPC ist — unabhängig vom gebundenen
+    Rigger. Die bisherigen Tests oben trafen diesen Pfad nie, weil `_WAFFE`
+    mit sichtbarkeit=GM startet (die Neuberechnung greift nur bei
+    SPEZIFISCH+[alter_besitzer], dem Normalfall für ein PC-Item)."""
+    waffe_spezifisch = {**_WAFFE, "sichtbarkeit": "SPEZIFISCH", "sichtbarFuer": ["rigger-1"]}
+    with (
+        patch("app.items.routes.repository.get_gegenstand", AsyncMock(return_value=waffe_spezifisch)),
+        patch("app.items.routes.get_node", AsyncMock(return_value=_DROHNE_PERSON)),
+        patch("app.items.routes.repository.get_owner_id", AsyncMock(return_value="rigger-1")),
+        patch("app.items.routes.drohne_rigger", AsyncMock(return_value="rigger-1")),
+        patch(
+            "app.items.routes.repository.transfer_owner",
+            AsyncMock(return_value={**waffe_spezifisch, "besitzerId": "drohne-1"}),
+        ),
+        patch(
+            "app.items.routes.repository.update_gegenstand",
+            AsyncMock(side_effect=lambda camp, item_id, updates: {**waffe_spezifisch, **updates}),
+        ) as update_gegenstand,
+        patch("app.items.routes.hooks.gegenstand", AsyncMock()),
+    ):
+        ergebnis = _run(
+            besitzer_wechseln("camp", "item-1", ZuweisenRequest(zielPersonId="drohne-1"), RIGGER)
+        )
+    update_gegenstand.assert_called_once()
+    _, _, updates = update_gegenstand.call_args.args
+    # Nicht GM/[] — bleibt für den Rigger sichtbar, der die Drohne steuert.
+    assert updates == {"sichtbarkeit": "SPEZIFISCH", "sichtbarFuer": ["rigger-1"]}
+    assert ergebnis["sichtbarkeit"] == "SPEZIFISCH"
+    assert ergebnis["sichtbarFuer"] == ["rigger-1"]
+
+
 def test_gm_darf_weiterhin_beliebig_uebergeben():
     """Gegenprobe: die SL bleibt von der neuen Einschränkung unberührt."""
     GM = Viewer(role="GM", person_id=None)
