@@ -3,6 +3,26 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-28] gebaut | Bugfix: Gegenstände an die eigene Drohne verschwanden
+
+Mark live auf bebop: Pistole dem Rigger "Rigger" übergeben und an die
+Drohne "Absar 1.7" ausgerüstet — danach weder im Drohnen-Inventar noch im
+eigenen Rucksack sichtbar, nicht zurückholbar. Ursache in Neo4j bestätigt:
+Besitz/Ablage stimmten (`BESITZT`→Drohne, `ablage=AUSGERUESTET`), aber
+`sichtbarkeit` sprang beim Besitzerwechsel auf `GM`/`[]`. Grund:
+`_default_sichtbarkeit` (`items/routes.py`) kannte nur PC→sichtbar für sich
+selbst, alles andere→SL-geheim — eine Drohne hat `personType` NPC, auch
+wenn sie an einen PC-Rigger gebunden ist. Traf `besitzer_wechseln`,
+`create_item` UND die KI-Gegenstandsverknüpfung (`ki/routes.py`) gleichermaßen.
+Fix: gebundene Drohne/Fahrzeug fällt jetzt auf die Sichtbarkeit ihres
+Riggers zurück (`drohne_rigger()`-Lookup) statt auf GM. Betroffene
+Live-Pistole direkt in der DB nachkorrigiert. **Verifiziert:** neuer
+Regressionstest in `test_zugriffsschutz_drohnen_ausruestung.py` (traf exakt
+den Pfad, den die alten Tests nie ausgelöst hatten, weil deren Fixture
+schon mit `sichtbarkeit=GM` startete), volle Suite dieselben 55
+vorbestehenden Fehlschläge mit und ohne Fix (`git stash` gegengeprüft).
+Deployed auf bebop (`9bc765a`). Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-28] gebaut | Drohnen-Inventar: Typ-/Textfilter
 
 Mark: "ich muss filtern können und ich brauche den Steckbrief des
