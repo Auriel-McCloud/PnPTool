@@ -3,6 +3,19 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-28] gebaut | Drohnen-Inventar: Typ-/Textfilter
+
+Mark: "ich muss filtern können und ich brauche den Steckbrief des
+Gegenstands, damit ich weiß welche Waffe ich der Drohne zuweise." Übergeben/
+Steckbrief liefen schon (26.10.), der Filter fehlte. `DrohnenAusruestung.tsx`
+(Ausgerüstet/Übrige Ausrüstung) und `UebergebenPopup.tsx` (Auswahl aus dem
+eigenen Rigger-Inventar) bekommen jetzt beide dieselbe `KategorienAuswahl`
++ Textsuche wie `GegenstaendeUebersicht.tsx`. `UebergebenPopup` zeigte bisher
+nur nackte Namensknöpfe ohne Typ/Steckbrief — jetzt `mu-liste`/`mu-zeile`
+(Mülleimer-Muster) mit Steckbrief-Kurzzeile je Eintrag. Reiner Frontend-Job,
+kein Backend/Schema geändert. **Verifiziert:** `npx tsc -b` sauber. Siehe
+[[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-25] gebaut | Drohnen/Fahrzeuge Phase 2: Riggerkonsole-Slots + Nuyen-Formel
 
 `nuyenProXp`-Kampagneneinstellung (Start 200¥), `erfahrung.nuyen_kosten()`.

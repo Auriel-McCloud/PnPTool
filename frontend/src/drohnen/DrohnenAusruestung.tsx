@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { itemsApi, type Gegenstand, type Ablage } from "../items/api";
 import { GegenstandKachel } from "../items/GegenstandKachel";
+import { KategorienAuswahl, vorhandeneTypenSortiert } from "../items/KategorienAuswahl";
 import { UebergebenPopup } from "./UebergebenPopup";
 import "../items/gegenstaende.css";
 
@@ -50,6 +51,10 @@ export function DrohnenAusruestung({
   const [fehler, setFehler] = useState<string | null>(null);
   const [uebergebenOffen, setUebergebenOffen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  // Filter (28.10.2026, Mark: "ich muss filtern können" im Drohnen-
+  // Inventar) — gleiches Muster wie GegenstaendeUebersicht.tsx.
+  const [suche, setSuche] = useState("");
+  const [kategorie, setKategorie] = useState<string | null>(null);
 
   function neuLaden() {
     const anfragen: Promise<unknown>[] = [itemsApi.list(campaignId, drohneId).then(setItems)];
@@ -88,8 +93,19 @@ export function DrohnenAusruestung({
   if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Ausrüstung…</p>;
   if (fehler) return <p style={{ color: "var(--signal)" }}>{fehler}</p>;
 
-  const ausgeruestet = items.filter((i) => i.ablage === "AUSGERUESTET");
-  const uebrig = items.filter((i) => i.ablage !== "AUSGERUESTET");
+  // vorhandeneTypen bewusst aus den UNGEFILTERTEN items, sonst verschwänden
+  // die übrigen Kategorie-Kacheln, sobald man eine anklickt (siehe
+  // GegenstaendeUebersicht.tsx).
+  const vorhandeneTypen = vorhandeneTypenSortiert(items.map((i) => i.typ));
+  const gefiltert = items.filter((i) => {
+    if (kategorie !== null && i.typ !== kategorie) return false;
+    const s = suche.trim().toLowerCase();
+    if (!s) return true;
+    return i.name.toLowerCase().includes(s) || i.typ.toLowerCase().includes(s);
+  });
+
+  const ausgeruestet = gefiltert.filter((i) => i.ablage === "AUSGERUESTET");
+  const uebrig = gefiltert.filter((i) => i.ablage !== "AUSGERUESTET");
   // Nichts Körperliches und nichts fest Verbautes lässt sich umverteilen —
   // dieselbe Grenze wie bei `besitzer_wechseln` serverseitig (409 sonst).
   const uebergebbar = eigene.filter((i) => !i.istNatuerlich && !i.verbaut);
@@ -133,20 +149,39 @@ export function DrohnenAusruestung({
         <p style={{ color: "var(--text-leise)" }}>Noch keine Gegenstände im Besitz dieser Drohne.</p>
       ) : (
         <>
-          <h3 style={{ margin: "0 0 6px" }}>Ausgerüstet</h3>
-          {ausgeruestet.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--text-leise)", margin: "0 0 10px" }}>Nichts ausgerüstet.</p>
-          ) : (
-            <div className="gg-raster" style={{ marginBottom: 14 }}>
-              {ausgeruestet.map(zeile)}
+          {items.length > 3 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+              <input
+                className="gg-suche"
+                type="search"
+                placeholder="Suchen — Name oder Typ"
+                value={suche}
+                onChange={(e) => setSuche(e.target.value)}
+              />
+              <KategorienAuswahl vorhandeneTypen={vorhandeneTypen} gewaehlt={kategorie} onWaehlen={setKategorie} />
             </div>
           )}
 
-          <h3 style={{ margin: "0 0 6px" }}>Übrige Ausrüstung</h3>
-          {uebrig.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--text-leise)" }}>Alles ist ausgerüstet.</p>
+          {gefiltert.length === 0 ? (
+            <p style={{ color: "var(--text-leise)" }}>Nichts gefunden.</p>
           ) : (
-            <div className="gg-raster">{uebrig.map(zeile)}</div>
+            <>
+              <h3 style={{ margin: "0 0 6px" }}>Ausgerüstet</h3>
+              {ausgeruestet.length === 0 ? (
+                <p style={{ fontSize: 12, color: "var(--text-leise)", margin: "0 0 10px" }}>Nichts ausgerüstet.</p>
+              ) : (
+                <div className="gg-raster" style={{ marginBottom: 14 }}>
+                  {ausgeruestet.map(zeile)}
+                </div>
+              )}
+
+              <h3 style={{ margin: "0 0 6px" }}>Übrige Ausrüstung</h3>
+              {uebrig.length === 0 ? (
+                <p style={{ fontSize: 12, color: "var(--text-leise)" }}>Alles ist ausgerüstet.</p>
+              ) : (
+                <div className="gg-raster">{uebrig.map(zeile)}</div>
+              )}
+            </>
           )}
         </>
       )}

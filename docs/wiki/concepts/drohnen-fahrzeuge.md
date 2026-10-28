@@ -138,6 +138,52 @@ Faktor, Einstieg per `NEU_KOSTEN`), aber in Nuyen statt Erfahrungspunkten:
 - **Inaktive Drohnen erscheinen NICHT im Kampf** — die
   Teilnehmer-Hinzufügen-Liste filtert auf `riggerAktiv=true`.
 
+### Hot-Gehen / Neurolink (28.10.2026, entschieden, noch nicht gebaut)
+
+Mark hat die bisher brachliegende Bedeutung von `riggerBonus` festgelegt: er
+ist die Voraussetzung, mit der Riggerkonsole (später auch dem Cyberdeck) in
+den Modus **„Hot“** zu gehen — direktes Einklinken in eine Drohne bzw. (beim
+Deck) direkt in die Matrix, statt nur normaler Fernsteuerung.
+
+- **Neues Chrom „Neurolink“** (typ Cyberware, normales
+  `koerperzone`/`slot`-Chirurgie-Schema wie jedes andere Implantat):
+  **Pflichtvoraussetzung** fürs Hot-Gehen. Ohne Neurolink bleibt nur normales
+  Fernsteuern ohne den Hot-Bonus — Konsole/Deck allein reichen nicht.
+- Neuer Wert **„Einklinken“** am Neurolink: reines **Ja/Nein-Flag**
+  (schaltet die Fähigkeit frei), kein eigener Zahlenwert.
+- **Proben:** solange Hot verbunden, läuft **jede Probe der Drohne** als
+  Skill(Drohne) + **Riggen(Rigger)** — pauschal, nicht nur die zum jeweiligen
+  Attribut passende Probe. Der Rigger-Fertigkeitswert ersetzt das
+  Drohnen-Attribut komplett für die Dauer der Hot-Verbindung.
+- **Initiative:** die Drohne übernimmt den Initiative-Slot des Riggers
+  (**das jeweils schnellere/bessere** der beiden Werte), der Rigger steuert
+  nicht mehr sich selbst. Die Drohne läuft NICHT zusätzlich in ihrem
+  eigenen, ursprünglichen Slot.
+- **Verbindungsabbruch im Kampf** (z. B. Drohne zerstört): der Rigger
+  erleidet Dumpshock und fällt für den Rest der laufenden Runde aus. Sobald
+  sein ursprünglicher Initiative-Slot wieder dran ist, fragt das Tool ihn,
+  ob er die Drohne weiterhin Hot steuert — **Ja:** er bleibt ausgefallen,
+  die Drohne handelt stattdessen in genau diesem Slot (ihr eigener Slot
+  bleibt ungenutzt). Das ist die generelle Mechanik für jede Runde, nicht
+  nur beim Verbindungsabbruch.
+- **Noch offen:** exakte Nuyen-/Chirurgie-Kosten des Neurolink-Chroms.
+
+### Drohnen-Augments (28.10.2026, entschieden, noch nicht gebaut)
+
+Gleiches System wie bei menschlichem Chrom (Cyberware/Bioware/Hexware, siehe
+[[cyberware-bioware]]), aber als eigene, 4.-Kategorie-artige Variante rein
+über ein Flag statt eines neuen `typ`:
+
+- Neues Feld **`istDrohnenAugment`** am Gegenstand (wie `istWaffe`/
+  `istMaschinenteil`) — kein neuer Eintrag in `GEGENSTAND_TYPEN` nötig.
+  Filterbar im Shop (eigene Warenkategorie bei Händlern) und im
+  Umbauen-Dialog der Drohne.
+- **Eigenes Körperzonen-Schema für Drohnen statt der menschlichen
+  Kopf/Arme/Beine/Torso-Zonen** — Mark: z. B. Chassis/Sensorik/Antrieb.
+  Genaue Zonen/Slot-Zahl je Zone noch offen, aber das 3-Slot-Prinzip
+  (`items/repository.py::slot_konflikt`) wird wiederverwendet, nur mit
+  drohnenspezifischen Zonennamen.
+
 ### Ausrüstung
 
 Da `Person`-Knoten: Waffen und Rüstung laufen 1:1 über das bestehende
@@ -148,10 +194,18 @@ erlaubt Ausrüsten/Ablegen. Neue Gegenstände legt die SL weiterhin über die
 normale Gegenstände-Verwaltung an (Besitzer auf die Drohne setzen) — kein
 zweiter Anlegen-Dialog. **Nicht für Spieler freigegeben:**
 `items/routes.py::ablage_aendern` prüft bei Nicht-GM
-`viewer.person_id == Besitzer`, und Besitzer der Ausrüstung ist die Drohne,
-nicht der gebundene Rigger — ein Spieler-Self-Service bräuchte erst eine
-eigene, über `_drohne_und_rigger_oder_404` geprüfte Route (Muster wie
-`aktivSetzen`/`riggerSetzen`), noch nicht gebaut.
+  `viewer.person_id == Besitzer`, und Besitzer der Ausrüstung ist die Drohne,
+  nicht der gebundene Rigger — ein Spieler-Self-Service bräuchte erst eine
+  eigene, über `_drohne_und_rigger_oder_404` geprüfte Route (Muster wie
+  `aktivSetzen`/`riggerSetzen`), noch nicht gebaut.
+
+**28.10.2026, gebaut:** Übergeben/Zurücknehmen zwischen Rigger- und
+Drohnen-Inventar lief schon (26.10.2026). Neu: Typ-/Textfilter
+(`KategorienAuswahl`, gleiche Komponente wie in `GegenstaendeUebersicht.tsx`)
+in `DrohnenAusruestung.tsx` UND im `UebergebenPopup.tsx` — letzteres zeigte
+bisher nur nackte Namensknöpfe ohne Steckbrief, jetzt mit Typ +
+Steckbrief-Kurzzeile je Eintrag (Mark: "damit ich weiß, welche Waffe ich der
+Drohne zuweise"). Reiner Frontend-Job, kein Backend/Schema geändert.
 
 ### Material statt Nuyen (26.10.2026, Minimal-Scope)
 
@@ -267,6 +321,13 @@ ausgeweitet:
 
 ## Entwicklung
 
+- **28.10.2026 (Hot-Gehen/Neurolink + Drohnen-Augments + Inventar-Filter,
+  Besprechung mit Mark, noch nicht gebaut):** Bedeutung von `riggerBonus`
+  festgelegt (Hot-Gehen-Voraussetzung), neues Chrom „Neurolink“ geplant,
+  Initiative-Übernahme-Regel inkl. Dumpshock-Verhalten entschieden.
+  Drohnen-Augments als `istDrohnenAugment`-Flag mit eigenem
+  Körperzonen-Schema geplant. Fehlender Inventar-Filter identifiziert. Siehe
+  „Hot-Gehen / Neurolink“, „Drohnen-Augments“ und „Ausrüstung“ oben.
 - **18.09.2026 (Version 1):** Begleiter-Sheet-basiertes Konzept, siehe „Alte
   Version“ unten.
 - **25.10.2026 (komplette Neuentscheidung):** im Chat mit Mark Punkt für
