@@ -41,6 +41,13 @@ const istBehaelter = (g: Gegenstand) => g.istBehaelter;
  * die Person gerade wirklich Zugriff hat.
  */
 export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Bereich[] {
+  // Montierte Augments (Zielfernrohr & Co., 29.10.2026) sind kein eigener
+  // Ablageplatz mehr — sie stecken an ihrem Trägergegenstand (MONTIERT_AN)
+  // und werden dort schon als "montierte Upgrades" angezeigt. Ihr altes
+  // `ablage`-Feld bleibt beim Montieren unverändert stehen, ohne diesen
+  // Filter tauchten sie deshalb weiterhin einzeln im Rucksack/Ausgerüstet
+  // auf, obwohl sie physisch Teil der Waffe/Rüstung sind (Mark-Bugreport).
+  items = items.filter((g) => !g.montiertAnId);
   const bereiche: Bereich[] = [
     {
       id: "AUSGERUESTET",
@@ -138,7 +145,10 @@ export function filtereNachBereichen<T extends Gegenstand>(
   bereiche: Bereich[],
   auswahl: Set<string>,
 ): T[] {
-  if (auswahl.size === 0) return items;
+  // Siehe ermittleBereiche oben: montierte Augments gehören keinem Ablage-
+  // Bereich mehr, egal was ihr `ablage`-Feld historisch noch sagt.
+  const sichtbar = items.filter((g) => !g.montiertAnId);
+  if (auswahl.size === 0) return sichtbar;
   const aktive = bereiche.filter((b) => auswahl.has(b.id));
-  return items.filter((g) => aktive.some((b) => b.passt(g)));
+  return sichtbar.filter((g) => aktive.some((b) => b.passt(g)));
 }

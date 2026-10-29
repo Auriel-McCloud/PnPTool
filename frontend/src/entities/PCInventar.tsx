@@ -63,9 +63,15 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     refresh();
   }
 
-  // Trenne verbaute Augments von normalen Gegenständen
+  // Trenne verbaute Augments von normalen Gegenständen. Montierte
+  // Werkbank-Augments (Zielfernrohr & Co.) gehören ebenfalls nicht in die
+  // normale Ablage-Gruppierung — sie stecken an ihrem Trägergegenstand
+  // (MONTIERT_AN) und tauchen dort schon als "montierte Upgrades" auf,
+  // siehe items/aufbewahrung.ts für dieselbe Filterung in den anderen
+  // Inventar-Ansichten (Mark-Bugreport: Zielfernrohr blieb trotz Montage
+  // weiter im Rucksack sichtbar).
   const verbaute = items.filter((i) => i.verbaut);
-  const nichtVerbaut = items.filter((i) => !i.verbaut);
+  const nichtVerbaut = items.filter((i) => !i.verbaut && !i.montiertAnId);
 
   // Gruppiere nicht-verbaute nach Ablage
   const nachAblage = nichtVerbaut.reduce<Record<string, Gegenstand[]>>((acc, item) => {
