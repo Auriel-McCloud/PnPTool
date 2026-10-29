@@ -469,6 +469,21 @@ Vorläufige Einordnung für den Einstieg in die Diskussion:
   automatisch mitgewählt werden, sobald sein Beschwörer rastet, oder einen
   eigenen Rast-Pfad bekommen.
 
+**Beschwörungs-Probe — ENTSCHIEDEN (30.10.2026):** Mark: "das ist ja wie
+Magie... also muss er Intelligenz + den Wert der Beschwörung würfeln."
+Benötigte Erfolge = **Beschwörungswert ÷ 2, aufgerundet** (Stufe 1→1, 2→1,
+3→2, 4→2, 5→3, 6→3) — Variante "Wert − 2, Minimum 1" (dieselbe Formel-Form
+wie `kampf/ruestung.py::reparatur_benoetigte_erfolge`) wurde bewusst
+verworfen: die Erfolgsschwelle muss mit dem Pool mitwachsen, sonst sind
+Stufe 1-3 alle gleich trivial, obwohl der Critter bei Stufe 3 schon dreimal
+so lange mitkämpft.
+**Plus Schwierigkeitsgrad:** die SL legt beim **Anlegen** der Beschwörungs-
+Materia (nicht pro Wurf) einen festen Aufschlag von **+0/+1/+2** auf die
+benötigten Erfolge fest, damit besonders starke Beschwörungen nicht
+automatisch so leicht sind wie schwache. Noch offen: ob der Aufschlag ein
+neues Zahlenfeld am Gegenstand wird (z.B. `beschwoerungsSchwierigkeit: int`)
+oder anders modelliert wird — Datenmodell dafür noch nicht gebaut.
+
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
 Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich
