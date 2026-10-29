@@ -591,10 +591,31 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     # das nur noch die Kästchen — die Reduktion selbst hat keinen eigenen
     # "Aktuell"-Wert mehr, sie wird aus dem Kästchen-Verhältnis abgeleitet
     # (kampf/ruestung.py::reduktion_effektiv).
+    bisheriges = None
     if "ruestungKaestchenMax" in changed and "ruestungKaestchenAktuell" not in changed:
         bisheriges = await get_gegenstand(campaign_id, item_id)
         if bisheriges and bisheriges.get("ruestungKaestchenMax", 0) == 0:
             changed["ruestungKaestchenAktuell"] = changed["ruestungKaestchenMax"]
+
+    # Ein Materialstapel, der auf 0 sinkt, ist faktisch nicht mehr da — "die
+    # meisten sollten dann verschwinden weil sie weg sind" (Mark, 29.10.2026,
+    # Auslöser: Maschinenteile/Reparaturmaterial blieben nach Verbrauch als
+    # leerer Eintrag mit "leer"-Marke liegen). Automatisch wegwerfen statt
+    # dort liegen zu lassen — reversibel wie jedes Wegwerfen (landet im
+    # SL-Mülleimer), gilt für JEDEN Weg, der menge auf 0 oder darunter setzt:
+    # automatischen Verbrauch (Maker-/Reparatur-Proben) genauso wie manuelles
+    # Bearbeiten im Umbauen-Formular (Marks ausdrückliche Vorgabe, keine
+    # Sonderbehandlung je nach Auslöser). Betrifft nur Stücke, die wirklich
+    # eine Stückzahl führen (hatMenge) — menge an Nicht-Mengen-Feldern (z.B.
+    # ruestungKaestchenAktuell) ist davon unberührt.
+    auto_wegwerfen = False
+    neue_menge = changed.get("menge")
+    if neue_menge is not None and neue_menge <= 0:
+        if bisheriges is None:
+            bisheriges = await get_gegenstand(campaign_id, item_id)
+        hat_menge = changed.get("hatMenge", bisheriges.get("hatMenge") if bisheriges else False)
+        if bisheriges and hat_menge and not bisheriges.get("weggeworfen"):
+            auto_wegwerfen = True
 
     if not changed:
         query = f"MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}}) {LIEGT_IN} RETURN {RETURN_FIELDS}"
@@ -613,7 +634,11 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id, **changed)
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        aktualisiert = _decode(dict(record)) if record else None
+
+    if aktualisiert is not None and auto_wegwerfen:
+        return await wegwerfen(campaign_id, item_id, "System (aufgebraucht)")
+    return aktualisiert
 
 
 async def get_gegenstand(campaign_id: str, item_id: str) -> dict | None:
