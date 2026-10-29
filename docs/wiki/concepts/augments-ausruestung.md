@@ -383,6 +383,48 @@ aufgefallen:
 `tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend
 betroffen.
 
+## Materia-Fertigkeiten: Upgrade-Material-Skills steigerbar (29.10.2026)
+
+Marks Idee, wörtlich: "wir könnten bei gewissen Skills die Möglichkeit
+ergänzen sie zu leveln, so daß wir ein Material z.B. die Fähigkeit bzw. den
+Zauber 'Blitz' geben, der dann das Lvl Skill Level 1 hat, ich würde dem
+Spieler gerne die Möglichkeit geben XP in diesen Skill zu stecken und ihn
+hoch zu leveln, ebenfalls bis auf Stufe 6, das Besondere wäre das die XP
+dann auf den Gegenstand übertragen werden... auch für z.B. Endbosse die man
+dann looten kann, und man dann sein Upgrade-Material auf dem Level bekommt
+das er hatte" — offen aus FF7 geklaut, wie er selbst sagt.
+
+Eine `ausruestungsfertigkeiten`-Fertigkeit (NEUE Fertigkeit NUR durch einen
+Gegenstand) lässt sich jetzt per Häkchen als **Materia** markieren
+(`materiaFertigkeiten: dict[str, bool]`). Markierte Fertigkeiten erscheinen
+im normalen EP-Sheet neben den Skills (Mark: "am besten einfach im
+XP-Steigerungssheet mit angezeigt… ich habe vor dass das grundsätzlich nur
+Skills sind") und kosten exakt wie eine normale Fertigkeit. Die Stufe steht
+NICHT auf der Person, sondern bleibt im `ausruestungsfertigkeiten`-Dict des
+Gegenstands — wandert der Gegenstand per Besitzerwechsel weiter (Loot vom
+Endboss), kommt die hochgelevelte Stufe automatisch mit, ganz ohne
+Sondercode. Technischer Clou: ein synthetischer `traitDefId`
+(`"materia::<gegenstandId>::<name>"`, `traits/erfahrung.py::
+materia_schluessel`/`materia_entschluesseln`), den das bestehende generische
+Steigern-Popup (`frontend/src/traits/LevelUp.tsx`) für einen ganz normalen
+Skill hält — dadurch **keine einzige Codeänderung** an diesem Popup nötig.
+Details: `items/repository.py::materia_fertigkeiten_liste`/
+`steigere_materia_fertigkeit`, `traits/routes.py::_materia_preise` + Zweig
+in `steigere_wert`. Verifiziert über 7 reine Funktionstests
+(`test_materia.py`), volle Backend-Suite ohne Regression, `tsc -b` sauber,
+Live-Deploy auf bebop. Kein Klicktest am Spieltisch.
+
+### Ideen für später: Materia kombinieren (Crisis Core)
+
+Mark, direkt im Anschluss, noch unentschieden: "ich überlege ob ich die
+Funktion von Crisis Core noch irgendwie implementieren kann, dass man die
+aufgelevelten Materialien noch kombinieren kann." Gemeint ist das
+Crisis-Core-Feature, zwei gleich hochgelevelte Materia zu einer stärkeren
+zu verschmelzen. **Bewusst noch nicht spezifiziert** — weder Datenmodell
+noch Regel stehen fest (was genau kombiniert werden darf, was dabei
+entsteht, ob es ein Materia-Level-6-Cap sprengt). Erst mit Mark das
+Datenmodell besprechen, bevor hier irgendetwas gebaut wird.
+
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
 Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich
