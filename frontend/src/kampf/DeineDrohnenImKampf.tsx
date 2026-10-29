@@ -178,8 +178,13 @@ export function DeineDrohnenImKampf({
                   Hot
                 </button>
               )}
-              {!teilnahme && (
-                <button type="button" onClick={() => beitreten(d.id)} disabled={beitretend === d.id || !kampf}>
+              {!teilnahme && !d.istHot && hot?.hotDrohneId !== d.id && (
+                <button
+                  type="button"
+                  title="Nimmt diese Drohne in die Initiative auf, wenn sie selbstständig kämpft — nicht nötig, solange du Hot in ihr bist."
+                  onClick={() => beitreten(d.id)}
+                  disabled={beitretend === d.id || !kampf}
+                >
                   {beitretend === d.id ? "…" : "Dem Kampf beitreten"}
                 </button>
               )}

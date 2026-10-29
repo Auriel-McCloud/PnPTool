@@ -230,9 +230,18 @@
   width: 148px;
 }
 
+.ka-drohnen .gg-slotboxen {
+  align-items: flex-start;
+}
+
 .ka-drohnen .gg-slotboxen .gg-kachel {
   height: auto;
-  min-height: 148px;
+  min-height: 0;
+}
+
+.ka-drohnen .gg-slotbox-leer {
+  height: auto;
+  min-height: 88px;
 }
 
 .kk-slot-kurz {
