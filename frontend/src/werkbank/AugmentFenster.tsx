@@ -9,7 +9,7 @@ const SKILLS = ["Maker (Hardware)", "Handwerk"] as const;
 
 /** Ein montierbares Ziel — Gegenstand (Waffe/Rüstung/Cyberdeck/
  * Riggerkonsole) ODER Person (Drohne/Fahrzeug). */
-type ZielAuswahl = { id: string; name: string; kind: "Gegenstand" | "Person" };
+export type ZielAuswahl = { id: string; name: string; kind: "Gegenstand" | "Person" };
 
 /**
  * Montieren/Demontieren/Reparieren-Popup für EIN Augment (29.10.2026, siehe
@@ -30,11 +30,16 @@ export function AugmentFenster({
   augment,
   onSchliessen,
   onGeaendert,
+  vorausgewaehltesZiel,
 }: {
   campaignId: string;
   augment: GegenstandMitBesitzer;
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Wird dieses Fenster von der Trägeransicht geöffnet (29.10.2026, Mark:
+   *  "ich will ja einen Gegenstand upgraden"), steht das Ziel schon fest —
+   *  kein Ziel-Chooser nötig, direkt zu Skill/Probe. */
+  vorausgewaehltesZiel?: ZielAuswahl;
 }) {
   const [skill, setSkill] = useState<string>(SKILLS[0]);
   const [gewaehltesAttribut, setGewaehltesAttribut] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export function AugmentFenster({
   // --- Montieren: Ziel-Auswahl -----------------------------------------
   const [gegenstandZiele, setGegenstandZiele] = useState<AugmentZiel[]>([]);
   const [drohnenZiele, setDrohnenZiele] = useState<DrohnenEintrag[]>([]);
-  const [gewaehltesZiel, setGewaehltesZiel] = useState<ZielAuswahl | null>(null);
+  const [gewaehltesZiel, setGewaehltesZiel] = useState<ZielAuswahl | null>(vorausgewaehltesZiel ?? null);
   const [montagePool, setMontagePool] = useState<AugmentMontagePool | null>(null);
   const [poolLaedt, setPoolLaedt] = useState(false);
 
@@ -75,9 +80,10 @@ export function AugmentFenster({
   }, [material]);
   const gewaehlteGruppe = gruppen.find((g) => g.qualitaet === qualitaet) ?? null;
 
-  // Ziele laden (Montieren)
+  // Ziele laden (Montieren) — nur wenn das Ziel nicht schon feststeht
+  // (Trägeransicht übergibt es direkt, siehe `vorausgewaehltesZiel`).
   useEffect(() => {
-    if (!istFrei) return;
+    if (!istFrei || vorausgewaehltesZiel) return;
     itemsApi.augmentZiele(campaignId, augment.id).then(setGegenstandZiele).catch(() => setGegenstandZiele([]));
     // Nur Drohnen/Fahrzeuge DESSELBEN Besitzers als Ziel anbieten (29.10.2026,
     // Self-Service für Spieler) — sonst könnte man fremde Ausrüstung in der
@@ -87,7 +93,7 @@ export function AugmentFenster({
       .then((liste) => setDrohnenZiele(liste.filter((d) => d.upgradeSlots > 0 && (!augment.ownerId || d.riggerId === augment.ownerId))))
       .catch(() => setDrohnenZiele([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [istFrei, campaignId, augment.id, augment.ownerId]);
+  }, [istFrei, vorausgewaehltesZiel, campaignId, augment.id, augment.ownerId]);
 
   // Material laden (Reparieren)
   useEffect(() => {
@@ -223,37 +229,45 @@ export function AugmentFenster({
 
           {istFrei && (
             <>
-              <p className="lu-hinweis">Ziel wählen:</p>
-              {gegenstandZiele.length === 0 && drohnenZiele.length === 0 && (
-                <p style={{ color: "var(--text-leise)" }}>
-                  Kein passendes Ziel gefunden — braucht freie Upgrade-Slots und (falls eingeschränkt) den richtigen
-                  Waffentyp.
+              {vorausgewaehltesZiel ? (
+                <p className="lu-hinweis">
+                  Wird eingebaut in <strong>{vorausgewaehltesZiel.name}</strong>.
                 </p>
+              ) : (
+                <>
+                  <p className="lu-hinweis">Ziel wählen:</p>
+                  {gegenstandZiele.length === 0 && drohnenZiele.length === 0 && (
+                    <p style={{ color: "var(--text-leise)" }}>
+                      Kein passendes Ziel gefunden — braucht freie Upgrade-Slots und (falls eingeschränkt) den
+                      richtigen Waffentyp.
+                    </p>
+                  )}
+                  <div className="lu-zahlart" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+                    {gegenstandZiele.map((z) => (
+                      <button
+                        key={z.id}
+                        type="button"
+                        className="lu-zahlart-knopf"
+                        data-aktiv={gewaehltesZiel?.id === z.id}
+                        onClick={() => setGewaehltesZiel({ id: z.id, name: z.name, kind: "Gegenstand" })}
+                      >
+                        {z.name} ({z.belegteSlots}/{z.upgradeSlots})
+                      </button>
+                    ))}
+                    {drohnenZiele.map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        className="lu-zahlart-knopf"
+                        data-aktiv={gewaehltesZiel?.id === d.id}
+                        onClick={() => setGewaehltesZiel({ id: d.id, name: d.name, kind: "Person" })}
+                      >
+                        {d.name} ({d.istFahrzeug ? "Fahrzeug" : "Drohne"}, {d.upgradeSlots} Slots)
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
-              <div className="lu-zahlart" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-                {gegenstandZiele.map((z) => (
-                  <button
-                    key={z.id}
-                    type="button"
-                    className="lu-zahlart-knopf"
-                    data-aktiv={gewaehltesZiel?.id === z.id}
-                    onClick={() => setGewaehltesZiel({ id: z.id, name: z.name, kind: "Gegenstand" })}
-                  >
-                    {z.name} ({z.belegteSlots}/{z.upgradeSlots})
-                  </button>
-                ))}
-                {drohnenZiele.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    className="lu-zahlart-knopf"
-                    data-aktiv={gewaehltesZiel?.id === d.id}
-                    onClick={() => setGewaehltesZiel({ id: d.id, name: d.name, kind: "Person" })}
-                  >
-                    {d.name} ({d.istFahrzeug ? "Fahrzeug" : "Drohne"}, {d.upgradeSlots} Slots)
-                  </button>
-                ))}
-              </div>
             </>
           )}
 

@@ -308,6 +308,15 @@ export const KAMPF_FERTIGKEITEN = ["Schusswaffen", "Nahkampf", "Handgemenge"] as
  * Pendant zu `items/augments.py::AUGMENT_TRAEGER_TYPEN` im Backend. */
 export const AUGMENT_TRAEGER_TYPEN = new Set(["Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"]);
 
+/** Ob ein Upgrade mit diesem `augmentWaffentyp` an einem Ziel mit diesem
+ * `kampfFertigkeit`-Wert montierbar ist — TS-Pendant zu
+ * `items/augments.py::waffentyp_passt` (29.10.2026, carrier-zentrierte
+ * Werkbank-Ansicht, Mark: "ich will ja einen Gegenstand upgraden, also
+ * sollte ich die leichte Pistole sehen"). Leer passt auf alles. */
+export function waffentypPasst(augmentWaffentyp: string, zielKampfFertigkeit: string): boolean {
+  return !augmentWaffentyp || augmentWaffentyp === zielKampfFertigkeit;
+}
+
 export const KAMPF_FERTIGKEIT_LABEL: Record<Exclude<KampfFertigkeit, "">, string> = {
   Schusswaffen: "Fernkampf",
   Nahkampf: "Nahkampf",

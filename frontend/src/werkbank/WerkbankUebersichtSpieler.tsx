@@ -37,7 +37,6 @@ export function WerkbankUebersichtSpieler({
 
   const eigenerKreis = new Set([personId, ...meineDrohnen.map((d) => d.id)]);
   const meine = sachen.filter((g) => !g.weggeworfen && eigenerKreis.has(g.ownerId ?? ""));
-  const meineAugmente = meine.filter((g) => g.istAugment);
   const meineRuestung = meine.filter(
     (g) => g.typ === "Rüstung" && g.ruestungKaestchenMax > 0 && !g.istNatuerlich && g.ruestungKaestchenAktuell < g.ruestungKaestchenMax,
   );
@@ -62,7 +61,7 @@ export function WerkbankUebersichtSpieler({
         />
       )}
       {tab === "augments" && (
-        <AugmentUebersichtSpieler campaignId={campaignId} items={meineAugmente} onGeaendert={onGeaendert} />
+        <AugmentUebersichtSpieler campaignId={campaignId} meine={meine} meineDrohnen={meineDrohnen} onGeaendert={onGeaendert} />
       )}
     </div>
   );
