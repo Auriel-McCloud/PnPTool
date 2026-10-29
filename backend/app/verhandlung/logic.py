@@ -131,9 +131,24 @@ async def _ausfuehren_gegenstand_weitergabe(campaign_id: str, verhandlung: dict)
     if aktueller_besitzer != kontext.get("absenderPersonId"):
         raise VerhandlungsFehler("Der Gegenstand gehört nicht mehr dem Absender")
 
+    # Sichtbarkeit lebt auf einer vom Besitz komplett getrennten Achse
+    # (items/routes.py::_default_sichtbarkeit, items/routes.py::besitzer_wechseln
+    # macht denselben Reset bei der SL-Instant-Übertragung) — war sie exklusiv auf
+    # den Absender zugeschnitten (Standardfall), muss sie beim Weitergeben
+    # mitwandern. Sonst bleibt der Gegenstand für den neuen Besitzer unsichtbar
+    # (sichtbarFuer zeigt noch auf den alten) UND taucht beim alten Besitzer nicht
+    # mehr auf (er besitzt ihn ja nicht mehr) — wirkt wie spurlos verschwunden,
+    # obwohl BESITZT korrekt umgehängt wurde (29.10.2026 Bugreport: Comlink
+    # zwischen zwei Spielern weder beim Absender noch beim Empfänger sichtbar).
+    updates: dict = {}
+    if gegenstand.get("sichtbarkeit") == "SPEZIFISCH" and gegenstand.get("sichtbarFuer") == [aktueller_besitzer]:
+        updates = {"sichtbarkeit": "ALLE", "sichtbarFuer": []}
+
     uebergeben = await items_repository.transfer_owner(campaign_id, gegenstand_id, empfaenger_id)
     if uebergeben is None:
         raise VerhandlungsFehler("Übergabe fehlgeschlagen")
+    if updates:
+        uebergeben = await items_repository.update_gegenstand(campaign_id, gegenstand_id, updates)
     await hooks.gegenstand(
         campaign_id,
         art="WEITERGEGEBEN",
