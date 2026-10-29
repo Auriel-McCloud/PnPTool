@@ -382,3 +382,69 @@ aufgefallen:
 
 `tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend
 betroffen.
+
+## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
+
+Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich
+kann jetzt garnichts mehr lesen"** — der `KACHEL_STIL`-Fix hat die Karten
+nicht repariert, sondern komplett leergeräumt (nur noch das Icon sichtbar,
+Name/Zeile/Steckbrief vollständig weg, nicht mal mehr abgeschnitten).
+
+**Die Diagnose aus Korrektur 6 ("`.gg-raster` braucht `KACHEL_STIL` am
+`.gg-seite`-Vorfahren, sonst bleibt die Zeilenhöhe ungültig") war falsch.**
+Das `.gg-raster`/`KACHEL_STIL`-System ist für das globale "nie
+scrollen"-Leitprinzip gebaut: eine Seite misst ihre volle, garantiert
+definite Höhe aus einer lückenlosen Kette aus `flex:1; min-height:0` vom
+App-Grundgerüst bis zur Kachel herab, und `grid-auto-rows: 168px` verlangt
+genau diese definite Höhe, um sich korrekt zu strecken. Die
+Werkbank-Upgraden-Ansicht ist aber *keine* solche Seite — sie splittet
+sich in zwei unabhängig scrollende Spalten (`.wb-split` → zwei
+`.wb-spalte` mit `overflow-y: auto`, zusätzlich verschachtelt mit einem
+weiteren `.gg-seite` für `AugmentTraegerPanel`). Diese Mischung aus
+Scroll-Container und gemessenem Grid bricht die Höhen-Kette irgendwo in
+der Mitte (welche Zwischenebene genau, bleibt unklar — mehrere
+verschachtelte `flex:1`-Ebenen ohne definite Außenhöhe). Ohne
+`KACHEL_STIL` fiel `grid-auto-rows` auf `auto` zurück und die Karte nahm
+ihre natürliche (kleine) Content-Höhe an — dadurch nur leicht
+abgeschnitten durch `.gg-raster`s eigenes `overflow: hidden`. Mit
+`KACHEL_STIL` forderte jede Karte plötzlich 168px an, aber der tatsächlich
+zugeteilte Platz blieb genauso klein wie vorher — das Overflow-Fenster
+zeigte dann nur noch zufällig den Bereich, in dem das (jetzt mittig in
+einer großen, unsichtbaren Box zentrierte) Icon lag, der Text lag
+komplett außerhalb.
+
+**Richtiger Fix:** kein `.gg-raster`/`KACHEL_STIL` mehr in der Werkbank-
+Upgraden-Ansicht. Neue, einfache Klasse `.wb-kachelraster`
+(`werkbank.css`) — `display: flex; flex-wrap: wrap;` ohne jede
+Höhenmessung, Kacheln bekommen darin eine FESTE `width`/`height` (148×168px)
+direkt per CSS statt per Grid-Variable. Ein Flex-Wrap-Raster kann nie
+kleiner werden als seine Kacheln und hat kein `overflow: hidden`, das
+etwas abschneiden könnte — `.wb-spalte`s eigenes `overflow-y: auto`
+übernimmt das Scrollen, falls der Inhalt den sichtbaren Bereich sprengt.
+Betroffen: `AugmentUebersicht(Spieler).tsx`, `AugmentTraegerPanel.tsx`
+(alle `gg-raster` → `wb-kachelraster`), `KACHEL_STIL`-Imports entfernt.
+
+**Merke für zukünftige Instanzen:** das `.gg-raster`/`KACHEL_STIL`-System
+NUR in Ansichten verwenden, die als alleiniger Seiteninhalt direkt unter
+dem App-Grundgerüst hängen (ein `.gg-seite` pro Burgermenü-Eintrag, siehe
+`DrohnenUebersicht.tsx` als Vorbild). Sobald eine Ansicht selbst scrollen
+soll (`overflow-y: auto` irgendwo in der Kette) oder mehrere `.gg-seite`
+ineinander verschachtelt sind, lieber ein eigenes, einfaches
+Flex-Wrap-Raster mit fester Kachelgröße bauen statt das Grid-Messsystem zu
+erzwingen — die Fehlerbilder dabei (abgeschnittener Text, leere Karten)
+sehen täuschend nach "fehlende CSS-Variable" aus, sind aber tatsächlich
+ein strukturelles Scroll-vs-Messung-Problem.
+
+**Außerdem (Mark, gleiche Nachricht): "frage ich mich ob ich von außen
+sehen werde welche Upgrades in der Waffe verbaut sind"** — vorher nein,
+montierte Upgrades waren nur in der Werkbank sichtbar. Jetzt zeigt
+`GegenstandKachel.tsx` optional `montierteUpgrades?: string[]` als
+zusätzliche `gg-marke`-Badges ("🔩 Zielfernrohr"); `PCInventar.tsx`
+übergibt das, aus der eigenen Gegenstandsliste berechnet
+(`items.filter(i => i.montiertAnId === g.id)`). Andere Aufrufer von
+`GegenstandKachel` (SL-Ansicht, NPC-Inventar) bekommen die Badges noch
+nicht — Prop ist optional, kein Zwang, das überall nachzuziehen, aber bei
+Bedarf einfach dieselbe Berechnung übernehmen.
+
+`tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend
+betroffen.
