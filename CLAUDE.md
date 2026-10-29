@@ -539,6 +539,22 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Bugfix: Spieler-Weitergabe (Verhandlung) ließ Gegenstand für beide
+  Seiten verschwinden** (29.10.2026, Mark hat am Spieltisch ein Comlink von
+  Rigger an IT-Sicherheitsmann übergeben, angenommen — danach bei keinem der
+  beiden sichtbar). Ursache: `verhandlung/logic.py::_ausfuehren_gegenstand_
+  weitergabe` hat `transfer_owner` aufgerufen, aber anders als
+  `items/routes.py::besitzer_wechseln` (SL-Instant-Transfer) NIE die
+  `sichtbarkeit`/`sichtbarFuer`-Achse mitgezogen. War sie exklusiv auf den
+  Absender zugeschnitten (`SPEZIFISCH`, `sichtbarFuer=[alterBesitzer]`,
+  Standardfall), blieb sie das nach der Übergabe — der neue Besitzer sah es
+  nicht (nicht in `sichtbarFuer`), der alte auch nicht mehr (besitzt es ja
+  nicht mehr). Fix: derselbe Reset wie bei `besitzer_wechseln`, jetzt auch
+  im Verhandlungs-Pfad. Betroffenes Live-Stück (Hermes Ikon,
+  IT-Sicherheitsmann) direkt per Cypher auf `sichtbarkeit=ALLE` korrigiert,
+  Fix deployed (bebop `pnptool-backend` neu gebaut). **Kein Browser-
+  Klicktest**, nur Unit-Tests (`test_ereignisprotokoll_hooks.py`) grün.
+
 - **Materialstapel bei Menge 0 automatisch wegwerfen** (29.10.2026, Mark:
   aufgebrauchte Maschinenteile/Reparaturmaterial blieben als leerer Eintrag
   mit "leer"-Marke liegen — "die meisten sollten dann verschwinden weil sie
