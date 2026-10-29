@@ -55,11 +55,16 @@ export function ReparaturFenster({
   ziel,
   onSchliessen,
   onGeaendert,
+  erlaubeHaendler = true,
 }: {
   campaignId: string;
   ziel: ReparaturZiel;
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Der Händler-Weg (Nuyen + Verhandlung) läuft über eine SL-initiierte
+   * Verhandlung (`verhandlungApi.anbieten` ist `require_campaign_gm`) —
+   * in der Spieler-Werkbank deshalb ausgeblendet (29.10.2026). */
+  erlaubeHaendler?: boolean;
 }) {
   const istRuestung = ziel.typ === "ruestung";
   const [weg, setWeg] = useState<"selbst" | "haendler">("selbst");
@@ -210,7 +215,7 @@ export function ReparaturFenster({
         <button type="button" aria-pressed={weg === "selbst"} onClick={() => setWeg("selbst")}>
           Selbst reparieren
         </button>
-        {istRuestung && (
+        {istRuestung && erlaubeHaendler && (
           <button type="button" aria-pressed={weg === "haendler"} onClick={() => setWeg("haendler")}>
             Beim Händler
           </button>

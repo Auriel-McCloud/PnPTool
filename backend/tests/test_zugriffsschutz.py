@@ -230,6 +230,12 @@ OHNE_GM_ERLAUBT = {
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/montieren",
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/demontieren",
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/reparieren-material",
+    # Rüstungs-Reparatur (29.10.2026, Korrektur — Mark: "das war alles für
+    # die Spieler gedacht!"): war require_campaign_gm, jetzt Self-Service
+    # wie das Drohnen-/Fahrzeug-Pendant und die Werkbank-Augments. Prüft
+    # Besitz selbst (_eigener_kreis): GM immer, Spieler nur an eigener
+    # Rüstung.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ruestung/reparieren-material",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

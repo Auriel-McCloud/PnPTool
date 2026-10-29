@@ -996,17 +996,20 @@ async def ruestung_maschinenteile(campaign_id: str, item_id: str, viewer: Viewer
     return await repository.list_maschinenteile_von(campaign_id, besitzer_id)
 
 
-@campaign_router.post(
-    "/{item_id}/ruestung/reparieren-material",
-    response_model=ReparaturMaterialErgebnis,
-    dependencies=[Depends(require_campaign_gm)],
-)
-async def ruestung_reparieren_material(campaign_id: str, item_id: str, body: ReparaturMaterialRequest):
+@campaign_router.post("/{item_id}/ruestung/reparieren-material", response_model=ReparaturMaterialErgebnis)
+async def ruestung_reparieren_material(
+    campaign_id: str, item_id: str, body: ReparaturMaterialRequest, viewer: Viewer = Depends(get_viewer)
+):
     """Selbst-Reparieren: Maschinenteil + selbstberichtete Probe, kein Geld.
-    **Nur SL ausgelöst** — wie der bisherige Weg (ein Spieler würfelt
-    physisch, die SL trägt das Ergebnis ein, dieselbe klare
-    Materialbuchhaltung wie bei jeder anderen Ressourcenvergabe im Tool)."""
+    **Self-Service** (29.10.2026, Korrektur — Mark: "das war alles für die
+    Spieler gedacht!"): Spieler würfelt am Tisch, trägt das Ergebnis selbst
+    ein, eigenes Material wird verbraucht — genau wie beim Drohnen-/
+    Fahrzeug-Pendant (`entities/routes.py::drohne_reparieren_material`) und
+    den Werkbank-Augments. GM darf uneingeschränkt, Spieler nur an der
+    eigenen Rüstung (siehe `_eigener_kreis`)."""
     item, besitzer_id = await _ruestung_fuer_reparatur(campaign_id, item_id)
+    if viewer.role != "GM" and (not viewer.person_id or not await _eigener_kreis(campaign_id, viewer.person_id, besitzer_id)):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
 
     material = await repository.get_gegenstand(campaign_id, body.materialGegenstandId)
     if material is None or not material.get("istMaschinenteil"):

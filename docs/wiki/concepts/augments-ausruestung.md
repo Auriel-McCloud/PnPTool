@@ -207,3 +207,39 @@ wurden dort ausnahmslos ALLE Drohnen der Kampagne angeboten.
 
 `pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`
 sauber, kein Klicktest.
+
+## Korrektur 2: Rüstungs-Reparatur ebenfalls Self-Service, Spieler-Werkbank bekommt Reparatur-Reiter (29.10.2026)
+
+Mark bestätigte explizit: "ja bitte unbedingt! das war alles für die
+Spieler gedacht!" — die Korrektur oben deckte nur Augments ab, aber
+`ruestung/reparieren-material` (Selbst-Reparieren mit Maschinenteil +
+Probe) war ebenfalls `require_campaign_gm`, obwohl das Drohnen-/
+Fahrzeug-Pendant (`entities/routes.py::drohne_reparieren_material`) schon
+immer Self-Service war — eine Inkonsistenz aus der ursprünglichen
+Reparatur-Implementierung, nicht aus den Augments.
+
+**Backend:** `ruestung_reparieren_material` verliert `require_campaign_gm`,
+bekommt dieselbe `_eigener_kreis`-Prüfung wie die Augment-Routen. Der
+Händler-Weg (`ruestung/reparatur-preis` + `POST /verhandlungen`) bleibt
+bewusst SL-only — das ist kein Versehen, sondern das grundsätzliche
+Verhandlungs-Modell dieses Tools ("SL macht ein Angebot, Spieler
+antwortet", `verhandlung/routes.py::anbieten` ist überall
+`require_campaign_gm`, nicht nur hier). Die manuelle Kästchen-Eintragung
+ohne Probe (`ruestung/reparieren`) bleibt ebenfalls SL-only — das ist der
+Sonderfall-Weg für Questbelohnungen/Improvisation, kein Self-Service-Pfad.
+`tests/test_zugriffsschutz.py::OHNE_GM_ERLAUBT` entsprechend ergänzt.
+
+**Frontend:** `reparatur/ReparaturFenster.tsx` bekommt ein optionales
+`erlaubeHaendler`-Prop (Default `true`, blendet bei `false` den
+Händler-Reiter komplett aus — SL-Ansicht bleibt unverändert). Neue
+`werkbank/ReparaturUebersichtSpieler.tsx` (eigene Rüstung + eigene
+Drohnen/Fahrzeuge, kein Händler-Weg) und `werkbank/
+WerkbankUebersichtSpieler.tsx` (Wrapper mit zwei Reitern Reparatur/
+Augments, ersetzt die direkte `AugmentUebersichtSpieler`-Einbindung von
+Korrektur 1). Eigener, unabhängiger Drohnen-Fetch in
+`WerkbankUebersichtSpieler` statt der fragilen `eigeneDrohnenIds` aus
+`SpielerAnsicht.tsx` (die nur gefüllt ist, wenn der Kampf-Reiter schon
+mal offen war).
+
+`pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`
+sauber, kein Klicktest.

@@ -3,6 +3,18 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] gebaut | Werkbank: Rüstungs-Reparatur ebenfalls Self-Service, Spieler-Werkbank bekommt Reparatur-Reiter
+
+Mark: "ja bitte unbedingt! das war alles für die Spieler gedacht!" —
+`ruestung/reparieren-material` war `require_campaign_gm`, jetzt
+`_eigener_kreis`-geprüftes Self-Service wie das Drohnen-Pendant (das schon
+immer so war). Händler-Weg und manuelle Kästchen-Eintragung bleiben
+bewusst SL-only (Verhandlungs-Modell bzw. Sonderfall-Weg, kein Versehen).
+`ReparaturFenster.tsx` bekommt `erlaubeHaendler`-Prop, neue
+`werkbank/ReparaturUebersichtSpieler.tsx` + `WerkbankUebersichtSpieler.tsx`
+(zwei Reiter Reparatur/Augments für Spieler, eigener Drohnen-Fetch).
+`pytest`/`tsc -b` grün. Siehe [[concepts/augments-ausruestung]].
+
 ## [2026-10-29] gebaut | Werkbank-Augments: Self-Service für Spieler statt GM-only
 
 Korrektur nach Marks Hinweis ("natürlich war das für die Spieler
