@@ -82,22 +82,35 @@ export function DeineDrohnenImKampf({
     };
   }, [campaignId, kampf?.runde, kampf?.amZug, drohnen]);
 
+  // Gesundheit wird separat vom Bogen geladen, nicht aus `kampf` — der
+  // Kampf-Takt (useKampf, alle 3s) weiß nichts von Schaden. Ohne eigenen
+  // Takt blieb die Anzeige hier stehen, bis sich die Drohnenliste selbst
+  // änderte (neue Runde/neuer Zug), und Mark musste manuell neu laden,
+  // nachdem er einer Drohne Schaden gegeben hatte (29.10.2026).
   useEffect(() => {
+    if (drohnen.length === 0) return;
     let weg = false;
-    Promise.all(
-      drohnen.map(async (d) => {
-        try {
-          const b = await bogenApi.laden(campaignId, d.id);
-          return [d.id, kampfKurz(b)] as const;
-        } catch {
-          return [d.id, []] as const;
-        }
-      }),
-    ).then((paare) => {
+    async function ladenGesundheit() {
+      if (document.hidden) return;
+      const paare = await Promise.all(
+        drohnen.map(async (d) => {
+          try {
+            const b = await bogenApi.laden(campaignId, d.id);
+            return [d.id, kampfKurz(b)] as const;
+          } catch {
+            return [d.id, []] as const;
+          }
+        }),
+      );
       if (!weg) setGesundheit(Object.fromEntries(paare));
-    });
+    }
+    void ladenGesundheit();
+    const uhr = setInterval(ladenGesundheit, 3000);
+    document.addEventListener("visibilitychange", ladenGesundheit);
     return () => {
       weg = true;
+      clearInterval(uhr);
+      document.removeEventListener("visibilitychange", ladenGesundheit);
     };
   }, [campaignId, drohnen]);
 
