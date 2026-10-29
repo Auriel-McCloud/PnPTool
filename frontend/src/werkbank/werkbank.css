@@ -2,26 +2,53 @@
    es vielleicht in der Mitte aufteilen, so dass man auf einer Seite die
    Items und auf der anderen die Upgrade-Materialien sieht?") — links die
    Träger (Gegenstände/Drohnen mit Upgrade-Slots), rechts das gewählte
-   Fach (montiert + passende freie Upgrades). Gleiches Grid-Muster wie
-   `haendler/shop.css::.ts-layout` (Liste/Warenkorb). */
+   Fach (montiert + passende freie Upgrades).
+
+   BEWUSST kein `.gg-raster`/`KACHEL_STIL` hier (29.10.2026, Nachbesserung:
+   "ich kann jetzt garnichts mehr lesen") — jenes System ist auf das
+   "nie scrollen"-Leitprinzip zugeschnitten (Seite misst ihre Fläche aus,
+   Kacheln blättern) und braucht dafür überall oberhalb eine lückenlose
+   Kette aus `flex:1; min-height:0`. Diese Ansicht will dagegen bewusst
+   SCROLLEN (zwei unabhängige Spalten übereinander gestapelter Abschnitte),
+   und genau diese Mischung aus gemessenem Grid + Scroll-Container hat die
+   Karten auf nahezu 0px zusammengequetscht, sobald die Höhen-Kette
+   irgendwo oben in der Baumstruktur nicht exakt durchgehend war (schwer
+   vorherzusehen, welche Zwischenebene genau bricht). Eigenes, einfaches
+   Flex-Wrap-Raster mit FESTER Kachelgröße statt Grid-Messung umgeht das
+   Problem komplett: eine Kachel kann hier nie kleiner werden als ihre
+   eigene feste Größe, egal was die Vorfahren tun. */
 .wb-split {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  display: flex;
   gap: 14px;
   align-items: stretch;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 
 .wb-spalte {
+  flex: 1;
+  min-width: 280px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Eigenes Kachelraster statt `.gg-raster` — fließt natürlich nach unten
+   (kein `overflow: hidden`, keine Grid-Höhenmessung), `.wb-spalte` scrollt
+   bei Bedarf. */
+.wb-kachelraster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wb-kachelraster .gg-kachel {
+  width: 148px;
+  height: 168px;
+  flex: 0 0 auto;
 }
 
 /* Gewählter Träger links bleibt erkennbar markiert, solange rechts sein

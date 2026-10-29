@@ -56,6 +56,7 @@ export function GegenstandKachel({
   behaelterId,
   inhalt,
   onZusammengelegt,
+  montierteUpgrades,
 }: {
   item: Gegenstand;
   /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
@@ -100,6 +101,15 @@ export function GegenstandKachel({
    * Besitz ohnehin nochmal serverseitig); diese Funktion ruft nur nach.
    */
   onZusammengelegt?: () => void;
+  /**
+   * Namen der Upgrades, die aktuell in diesem Gegenstand verbaut sind
+   * (29.10.2026, Mark: "frage ich mich ob ich von außen sehen werde welche
+   * Upgrades in der Waffe verbaut sind" — vorher nur in der Werkbank sichtbar).
+   * Der Aufrufer ermittelt das aus der eigenen Gegenstandsliste
+   * (`andere.filter(g => g.montiertAnId === item.id)`), diese Kachel kennt
+   * die Liste der Geschwister-Gegenstände selbst nicht.
+   */
+  montierteUpgrades?: string[];
 }) {
   // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
   const CHROM = ["Cyberware", "Bioware", "Hexware"];
@@ -185,6 +195,11 @@ export function GegenstandKachel({
           {item.hatMenge && item.menge === 0 && (
             <span className="gg-marke" data-ton="signal">leer</span>
           )}
+          {montierteUpgrades?.map((name) => (
+            <span className="gg-marke" key={name} title="Verbautes Upgrade">
+              🔩 {name}
+            </span>
+          ))}
         </span>
       </button>
 

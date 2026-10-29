@@ -117,6 +117,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
               <GegenstandKachel
                 key={g.id}
                 item={g}
+                montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 // Verbaute Augments können nicht umgelagert werden
               />
             ))}
@@ -142,6 +143,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                   behaelterId={behaelter?.id}
                   onUmlegen={(neueAblage) => umlagern(g.id, neueAblage)}
                   onWegwerfen={() => wegwerfen(g.id)}
+                  montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 />
               ))}
             </div>

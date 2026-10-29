@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { itemsApi, AUGMENT_TRAEGER_TYPEN, type GegenstandMitBesitzer } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
-import { KACHEL_STIL } from "../items/kachelraster";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { AugmentFenster } from "./AugmentFenster";
 import { AugmentTraegerPanel, type AugmentTraeger } from "./AugmentTraegerPanel";
@@ -66,7 +65,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
   }
 
   return (
-    <div className="gg-seite" style={KACHEL_STIL}>
+    <div className="gg-seite">
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
       {gegenstandTraeger.length === 0 && drohnenTraeger.length === 0 && (
         <p className="gg-leer">
@@ -80,7 +79,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
           {defekteOhneTraeger.length > 0 && (
             <>
               <p className="lu-hinweis" style={{ color: "var(--nein)" }}>Defekt, ohne Träger ({defekteOhneTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {defekteOhneTraeger.map((g) => (
                   <button key={g.id} type="button" className="gg-kachel" onClick={() => setOffenesAugment(g)}>
                     <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
@@ -98,7 +97,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
           {gegenstandTraeger.length > 0 && (
             <>
               <p className="lu-hinweis">Gegenstände ({gegenstandTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {gegenstandTraeger.map((g) =>
                   traegerKachel(
                     {
@@ -120,7 +119,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
           {drohnenTraeger.length > 0 && (
             <>
               <p className="lu-hinweis">Drohnen &amp; Fahrzeuge ({drohnenTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {drohnenTraeger.map((d) =>
                   traegerKachel(
                     { id: d.id, name: d.name, kind: "Person", upgradeSlots: d.upgradeSlots, kampfFertigkeit: "" },

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AUGMENT_TRAEGER_TYPEN, type GegenstandMitBesitzer } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
-import { KACHEL_STIL } from "../items/kachelraster";
 import { type DrohnenEintrag } from "../drohnen/api";
 import { AugmentFenster } from "./AugmentFenster";
 import { AugmentTraegerPanel, type AugmentTraeger } from "./AugmentTraegerPanel";
@@ -63,7 +62,7 @@ export function AugmentUebersichtSpieler({
   }
 
   return (
-    <div className="gg-seite" style={KACHEL_STIL}>
+    <div className="gg-seite">
       {gegenstandTraeger.length === 0 && drohnenTraeger.length === 0 && (
         <p className="gg-leer">
           Noch kein eigener Gegenstand/keine eigene Drohne mit Upgrade-Slots — dein SL trägt das Feld am
@@ -76,7 +75,7 @@ export function AugmentUebersichtSpieler({
           {defekteOhneTraeger.length > 0 && (
             <>
               <p className="lu-hinweis" style={{ color: "var(--nein)" }}>Defekt, ohne Träger ({defekteOhneTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {defekteOhneTraeger.map((g) => (
                   <button key={g.id} type="button" className="gg-kachel" onClick={() => setOffenesAugment(g)}>
                     <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
@@ -94,7 +93,7 @@ export function AugmentUebersichtSpieler({
           {gegenstandTraeger.length > 0 && (
             <>
               <p className="lu-hinweis">Gegenstände ({gegenstandTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {gegenstandTraeger.map((g) =>
                   traegerKachel(
                     {
@@ -116,7 +115,7 @@ export function AugmentUebersichtSpieler({
           {drohnenTraeger.length > 0 && (
             <>
               <p className="lu-hinweis">Drohnen &amp; Fahrzeuge ({drohnenTraeger.length})</p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {drohnenTraeger.map((d) =>
                   traegerKachel(
                     { id: d.id, name: d.name, kind: "Person", upgradeSlots: d.upgradeSlots, kampfFertigkeit: "" },

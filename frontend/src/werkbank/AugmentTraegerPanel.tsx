@@ -73,7 +73,7 @@ export function AugmentTraegerPanel({
       {montiert.length > 0 && (
         <>
           <p className="lu-hinweis">Montiert</p>
-          <div className="gg-raster">{montiert.map((g) => kachel(g, false))}</div>
+          <div className="wb-kachelraster">{montiert.map((g) => kachel(g, false))}</div>
         </>
       )}
 
@@ -88,7 +88,7 @@ export function AugmentTraegerPanel({
               lässt sich jeder Gegenstand über dessen eigenes Bearbeiten-Formular.
             </p>
           )}
-          <div className="gg-raster">{frei.map((g) => kachel(g, true))}</div>
+          <div className="wb-kachelraster">{frei.map((g) => kachel(g, true))}</div>
         </>
       ) : (
         <p className="gg-leer" style={{ marginTop: 10 }}>
