@@ -58,6 +58,12 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* Überschreibt den sonst automatischen overflow-x:auto (CSS-Regel: ein
+     Overflow-Wert != visible erzwingt denselben Mechanismus auf der
+     anderen Achse) — sonst reißt der Zusatzzug-Zeile das Wackeln
+     (translateX/skewX, siehe booster.css) einen sichtbaren horizontalen
+     Scrollbalken auf, weil das Transform zur Scroll-Overflow-Fläche zählt. */
+  overflow-x: hidden;
   touch-action: pan-y;
   margin: 0;
   padding: 0;
