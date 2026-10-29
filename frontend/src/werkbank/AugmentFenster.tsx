@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
-import { itemsApi, type Gegenstand, type AugmentZiel, type AugmentMontagePool, type AugmentReparaturPool } from "../items/api";
+import { itemsApi, type Gegenstand, type GegenstandMitBesitzer, type AugmentZiel, type AugmentMontagePool, type AugmentReparaturPool } from "../items/api";
 import { drohnenApi, type DrohnenEintrag, type MakerProbenErgebnis } from "../drohnen/api";
 import "../traits/levelup.css";
 import "../items/wegwerfen.css";
@@ -32,7 +32,7 @@ export function AugmentFenster({
   onGeaendert,
 }: {
   campaignId: string;
-  augment: Gegenstand;
+  augment: GegenstandMitBesitzer;
   onSchliessen: () => void;
   onGeaendert: () => void;
 }) {
@@ -79,12 +79,15 @@ export function AugmentFenster({
   useEffect(() => {
     if (!istFrei) return;
     itemsApi.augmentZiele(campaignId, augment.id).then(setGegenstandZiele).catch(() => setGegenstandZiele([]));
+    // Nur Drohnen/Fahrzeuge DESSELBEN Besitzers als Ziel anbieten (29.10.2026,
+    // Self-Service für Spieler) — sonst könnte man fremde Ausrüstung in der
+    // Liste sehen, auch wenn der Server das Montieren ohnehin ablehnen würde.
     drohnenApi
       .liste(campaignId)
-      .then((liste) => setDrohnenZiele(liste.filter((d) => d.upgradeSlots > 0)))
+      .then((liste) => setDrohnenZiele(liste.filter((d) => d.upgradeSlots > 0 && (!augment.ownerId || d.riggerId === augment.ownerId))))
       .catch(() => setDrohnenZiele([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [istFrei, campaignId, augment.id]);
+  }, [istFrei, campaignId, augment.id, augment.ownerId]);
 
   // Material laden (Reparieren)
   useEffect(() => {

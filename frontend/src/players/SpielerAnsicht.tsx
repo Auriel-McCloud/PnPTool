@@ -56,6 +56,7 @@ import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
 import { ZeichnungenAnsicht } from "../zeichnungen/ZeichnungenAnsicht";
 import { DrohnenUebersicht } from "../drohnen/DrohnenUebersicht";
+import { AugmentUebersichtSpieler } from "../werkbank/AugmentUebersichtSpieler";
 import { MeineAchievements } from "../achievements/MeineAchievements";
 
 /**
@@ -104,6 +105,16 @@ const BEREICHE_STATISCH: Bereich[] = [
   // Drohnen & Fahrzeuge (25.10.2026, Phase 3): nur sichtbar, was die SL
   // freigegeben hat; Rigger-Bindung bleibt SL-Sache.
   { id: "drohnen", name: "Fahrzeuge & Drohnen", symbol: "⛭", farbe: "var(--bereich-drohnen)" },
+  // Werkbank-Augments (29.10.2026, Mark: "natürlich war das für die
+  // Spieler gedacht... damit das für sie dann auch angezeigt wird, und
+  // ihre Materialien verwendet werden") — Montieren/Demontieren/
+  // Reparieren der eigenen Augments, Self-Service (Probe am Tisch,
+  // Ergebnis selbst eintragen, eigenes Material wird verbraucht). Zeigt
+  // nur "Augments" — die SL-Werkbank hat zusätzlich einen "Reparatur"-
+  // Reiter (Rüstung/Drohne/Fahrzeug), der hier bewusst fehlt: dafür gibt es
+  // noch KEINE Spieler-UI (weder vor noch nach diesem Augment-Feature),
+  // nur der Augment-Teil wurde jetzt für Spieler freigeschaltet.
+  { id: "werkbank", name: "Werkbank", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
 ];
 
 // Augments-Bereich: erscheint nur, wenn verbaute Augments vorhanden sind.
@@ -250,6 +261,20 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const istVersteckteAusruestung = (g: GegenstandMitBesitzer) =>
     (CHROM_TYPEN.includes(g.typ) && g.verbaut) || Boolean(g.istNatuerlich);
   const meineRoh = meineRohAlle.filter((g) => !istVersteckteAusruestung(g));
+
+  // Werkbank-Augments (29.10.2026): eigene Person ODER eigene gebundene
+  // Drohne/eigenes Fahrzeug (`eigeneDrohnenIds`, weiter unten befüllt) —
+  // dieselbe Besitzlogik wie serverseitig in `_eigener_kreis`.
+  const meineAugmente = sachen.filter(
+    (g) => g.istAugment && !g.weggeworfen && (g.ownerId === ich?.personId || eigeneDrohnenIds.includes(g.ownerId ?? "")),
+  );
+  async function nachAugmentAenderung() {
+    if (!ich) return;
+    inventarUngueltig();
+    const frisch = await itemsApi.listAlle(ich.campaignId);
+    inventarUngueltig();
+    setSachen(frisch);
+  }
 
   // Augments-Bereich erscheint nur, wenn verbaute Augments vorhanden sind.
   const hatAugments = meineRohAlle.some((g) => g.verbaut);
@@ -781,6 +806,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         <AugmentsAnsicht
           campaignId={ich.campaignId}
           eigenePersonId={ich.personId}
+        />
+      )}
+
+      {bereich === "werkbank" && (
+        <AugmentUebersichtSpieler
+          campaignId={ich.campaignId}
+          items={meineAugmente}
+          onGeaendert={nachAugmentAenderung}
         />
       )}
     </CommlinkShell>

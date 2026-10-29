@@ -3,6 +3,19 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] gebaut | Werkbank-Augments: Self-Service für Spieler statt GM-only
+
+Korrektur nach Marks Hinweis ("natürlich war das für die Spieler
+gedacht... damit das für sie dann auch angezeigt wird, und ihre
+Materialien verwendet werden"): Montieren/Demontieren/Reparieren waren
+`require_campaign_gm`, jetzt Besitz-geprüftes Self-Service
+(`_eigener_kreis`, wie Ablage/Besitzer-Wechsel) — Ziel UND Material müssen
+im selben Besitzkreis liegen wie das Augment. Neuer Spieler-Bereich
+"Werkbank" (nur Augments, kein Reparatur-Reiter — dafür existiert bis
+heute keine Spieler-UI). Drohnen-Ziel-Liste beim Montieren filtert jetzt
+auf denselben Rigger statt alle Kampagnen-Drohnen anzubieten. `pytest`/
+`tsc -b` grün. Siehe [[concepts/augments-ausruestung]].
+
 ## [2026-10-29] gebaut | Werkbank-Augments Nachbesserung: eigener Typ "Upgrade-Material", Slot-Feld sichtbar gemacht
 
 Marks erster Klicktest: eigener Gegenstandstyp "Upgrade-Material"

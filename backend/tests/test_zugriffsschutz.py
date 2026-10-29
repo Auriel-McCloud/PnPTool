@@ -221,6 +221,15 @@ OHNE_GM_ERLAUBT = {
     # ihr einziger Heilweg (sie können nicht rasten). Prüft selbst
     # (_drohne_und_rigger_oder_404): GM immer, Spieler nur fürs eigene Tier.
     "/api/campaigns/{campaign_id}/drohnen/{node_id}/reparieren-material",
+    # Werkbank-Augments (29.10.2026, Mark: "natürlich war das für die
+    # Spieler gedacht... damit das für sie dann auch angezeigt wird, und
+    # ihre Materialien verwendet werden") — Montieren/Demontieren/
+    # Reparieren prüfen Besitz selbst (_augment_oder_404/_eigener_kreis):
+    # GM immer, Spieler nur am eigenen Besitz (Augment UND Ziel UND
+    # Material müssen im eigenen Besitzkreis sein).
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/montieren",
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/demontieren",
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/augment/reparieren-material",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

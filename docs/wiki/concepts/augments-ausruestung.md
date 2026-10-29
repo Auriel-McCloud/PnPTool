@@ -171,3 +171,39 @@ Menü-Layout (`MenueAnpassen`) nicht verwaist.
   keine Optionen-Klapp-Notwendigkeit mehr). Die "Ist selbst ein
   Augment"-Checkbox + Waffentyp-Dropdown bleiben in den Optionen (weniger
   zeitkritisch).
+
+## Korrektur: Self-Service statt GM-only (29.10.2026, Marks zweiter Klicktest)
+
+Mark meldete, dass Spieler die Werkbank gar nicht sehen — **by design**
+(alle Augment-Routen waren `require_campaign_gm`), aber **falsch gedacht**:
+Mark: "natürlich war das für die Spieler gedacht, deswegen haben wir ja
+bestimmt was sie würfeln müssen, damit das für sie dann auch angezeigt
+wird, und ihre Materialien verwendet werden." Die Self-Report-Probe-Mechanik
+(Spieler würfelt am Tisch, Tool nimmt Ergebnis entgegen) ergibt nur Sinn,
+wenn Spieler die Aktion auch selbst auslösen — sonst bräuchte es keinen
+Probe-Pool, der GM könnte das Ergebnis genauso gut direkt eintragen.
+
+**Backend:** `montieren`/`demontieren`/`reparieren-material` verlieren
+`require_campaign_gm`, bekommen stattdessen dieselbe Besitzprüfung wie
+`ablage_aendern`/`besitzer_wechseln` (`_augment_oder_404` prüft jetzt via
+`_eigener_kreis`: eigene Person ODER eigene gebundene Drohne/eigenes
+Fahrzeug, GM immer). Zusätzlich geprüft: das **Ziel** beim Montieren
+(Gegenstand-Besitzer ODER Drohne/Fahrzeug muss im selben Besitzkreis
+sein) und das **Material** bei der Reparatur — sonst könnte ein Spieler
+sein Augment an fremde Ausrüstung montieren oder mit fremdem Material
+reparieren. `tests/test_zugriffsschutz.py::OHNE_GM_ERLAUBT` um die drei
+Routen ergänzt.
+
+**Frontend:** Neue Spieler-Bereich "Werkbank" (`players/SpielerAnsicht.tsx`)
+— nur der Augments-Teil, kein Reparatur-Reiter (für Rüstung/Drohne/
+Fahrzeug-Reparatur gibt es bis heute KEINE Spieler-UI, unabhängig von
+diesem Feature). Neue `werkbank/AugmentUebersichtSpieler.tsx` zeigt nur
+eigene Augments (eigene Person + eigene gebundene Drohnen/Fahrzeuge),
+reutiliert das bestehende `AugmentFenster.tsx` unverändert. `AugmentFenster`
+bekam dafür `augment: GegenstandMitBesitzer` (statt `Gegenstand`) und
+filtert die Drohnen-Ziel-Liste jetzt auf denselben Rigger wie der
+Augment-Besitzer — sowohl in der SL- als auch der Spieler-Ansicht, bisher
+wurden dort ausnahmslos ALLE Drohnen der Kampagne angeboten.
+
+`pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`
+sauber, kein Klicktest.
