@@ -289,3 +289,43 @@ Drei Befunde vom ersten echten Durchklicken am Spieltisch:
 
 `pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert — identisch
 zur Baseline), `tsc -b`/`vite build` sauber, Live-Deploy auf bebop.
+
+## Korrektur 4: Werkbank-Upgraden träger-zentriert statt Upgrade-zentriert (29.10.2026, Marks vierter Klicktest)
+
+Mark: "ich will ja einen Gegenstand upgraden, also sollte ich die leichte
+Pistole sehen, und dort die Slots was bereits in sie verbaut ist, und wenn
+ich die Pistole anklicke sollte ich sehen was ich in sie verbauen kann." —
+der bisherige Einstieg lief umgekehrt (erst das Upgrade-Material wählen,
+dann ein Ziel dafür suchen), das fühlte sich falsch herum an.
+
+**Frontend, keine Backend-Änderung nötig** (alle `/augment/...`-Routen
+waren schon immer Upgrade-zentriert per `item_id`, das reicht für beide
+Browse-Richtungen):
+
+- `AugmentUebersicht(Spieler).tsx` listen jetzt **Träger** (Gegenstände mit
+  `AUGMENT_TRAEGER_TYPEN` + `upgradeSlots > 0`, sowie Drohnen/Fahrzeuge mit
+  `upgradeSlots > 0`) statt Upgrade-Gegenstände. Kachel zeigt
+  `belegteSlots/upgradeSlots`. Eine kleine separate Liste "Defekt, ohne
+  Träger" bleibt oben stehen — ein beim Montieren/Demontieren
+  kaputtgegangenes, gerade unmontiertes Upgrade hat keinen Träger mehr, dem
+  es zugeordnet werden könnte.
+- Neu: `AugmentTraegerFenster.tsx` — Popup für EINEN Träger, zeigt die
+  montierten Upgrades (Klick → bestehendes `AugmentFenster`,
+  Demontieren/Reparieren unverändert) und die **passenden freien** eigenen
+  Upgrades zum Einbauen (gefiltert über das neue
+  `items/api.ts::waffentypPasst`, TS-Pendant zu
+  `items/augments.py::waffentyp_passt`).
+- `AugmentFenster.tsx` bekommt ein optionales `vorausgewaehltesZiel`-Prop:
+  wird es von der Trägeransicht mit bereits feststehendem Ziel geöffnet,
+  entfällt der alte "Ziel wählen"-Schritt komplett, es geht direkt zu
+  Skill/Probe. Vom alten Einstieg (SL-Übersicht "Defekt, ohne Träger")
+  weiterhin ohne Preset nutzbar, Ziel-Chooser erscheint dann wie bisher.
+- `AugmentUebersichtSpieler.tsx` bekommt dafür ein geändertes Props-Schema:
+  statt der vorgefilterten `items` (nur eigene Upgrades) jetzt `meine`
+  (ALLE eigenen Gegenstände — Träger UND Upgrades gemeinsam, damit sich
+  montierte/freie Upgrades pro Träger clientseitig ohne Zusatzabfrage
+  ermitteln lassen) plus `meineDrohnen`. `WerkbankUebersichtSpieler.tsx`
+  reicht beides durch.
+
+`tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend-Test
+betroffen (reiner Frontend-Umbau).
