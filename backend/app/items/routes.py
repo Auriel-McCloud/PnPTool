@@ -183,6 +183,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         ),
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
+        "materiaFertigkeiten": body.materiaFertigkeiten,
         "riggerBonus": body.riggerBonus,
         "maxDrohnen": body.maxDrohnen,
         "immerSichtbar": body.immerSichtbar,

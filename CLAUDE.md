@@ -4,6 +4,56 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Materia-Fertigkeiten: Upgrade-Material-Skills mit eigener EP steigerbar,
+  Stufe wandert bei Besitzerwechsel mit** (29.10.2026, Marks FF7/Crisis-Core-
+  Idee: "wir könnten bei gewissen Skills die Möglichkeit ergänzen sie zu
+  leveln... das Besondere wäre, dass die XP dann auf den Gegenstand
+  übertragen werden"). Eine `ausruestungsfertigkeiten`-Fertigkeit (NEUE
+  Fertigkeit NUR durch einen Gegenstand, z.B. "Blitz" an einem Zauberstab)
+  kann die SL jetzt zusätzlich als **Materia** markieren (neues Feld
+  `Gegenstand.materiaFertigkeiten: dict[str, bool]`, Checkbox pro Zeile im
+  Umbauen-Formular) — Mark bewusst gegen "automatisch alle steigerbar":
+  "eigenes Häkchen pro Fertigkeit", nicht jeder flache Item-Bonus soll EP
+  anziehen. Markierte Fertigkeiten erscheinen dann **im normalen EP-Sheet
+  neben den Skills** (Mark: "am besten einfach im XP-Steigerungssheet mit
+  angezeigt… ich habe vor dass das grundsätzlich nur Skills sind") und
+  kosten exakt wie eine normale Fertigkeit (Kategorie "Fertigkeit", Deckel
+  6) — dieselbe Kostenkurve wie Sphären, siehe traits/erfahrung.py.
+  **Kernidee:** die Stufe steht NICHT auf der Person, sondern bleibt im
+  `ausruestungsfertigkeiten`-Dict des GEGENSTANDS selbst — ein Item-Knoten,
+  der ohnehin schon beim Besitzerwechsel (Loot vom Endboss, Weitergeben)
+  unverändert mitwandert. Kein Sondercode für "Loot behält Stufe" nötig, das
+  passiert von selbst.
+  Technisch ein synthetischer `traitDefId` (`"materia::<gegenstandId>::<name>"`,
+  `traits/erfahrung.py::materia_schluessel`/`materia_entschluesseln`), den
+  `POST .../personen/{id}/steigern` erkennt und auf
+  `items/repository.py::steigere_materia_fertigkeit` statt auf die normale
+  Katalog-Steigerung umleitet — das bestehende generische Steigern-Popup
+  (`frontend/src/traits/LevelUp.tsx`) brauchte dadurch **keine einzige
+  Code-Änderung**, Materia taucht einfach als weiterer Fertigkeiten-Eintrag
+  auf. Nur steigerbar, solange der Gegenstand **ausgerüstet/verbaut** ist
+  (`items/repository.py::WIRKT`, dieselbe Regel wie überall sonst) UND die
+  aktuelle Person ihn besitzt (`:BESITZT`-Match) — self-service wie jede
+  andere Fertigkeit, kein SL-Klick nötig. Backend: `items/schemas.py`
+  (`materiaFertigkeiten`-Feld durch alle drei Gegenstand-Schemas und
+  `repository.py` RETURN_FIELDS/_decode/create/update gezogen),
+  `items/repository.py::materia_fertigkeiten_liste`/
+  `steigere_materia_fertigkeit` (neu), `traits/routes.py::_materia_preise`
+  (neu, hängt sich in `get_steigerungspreise` ein) + Materia-Zweig in
+  `steigere_wert`. Frontend: Checkbox "Materia" pro Ausrüstungsfertigkeit-
+  Zeile in `CharacterSheetPanel.tsx`, `items/api.ts` um `materiaFertigkeiten`
+  ergänzt. **Bewusst NICHT gebaut:** das Crisis-Core-Konzept "Materia
+  kombinieren" (Mark hat das selbst als mögliche Folge-Idee genannt, aber
+  noch nicht entschieden). **Verifiziert:** 7 neue Tests
+  (`test_materia.py`, reine Funktionen: Schlüssel-Rundreise, Name mit "::",
+  Kostenkurve), volle Backend-Suite ohne Regression (55 vorbestehende,
+  unrelated Windows-Proactor-Fehlschläge unverändert), `npx tsc -b` sauber.
+  **Kein Klicktest** — bitte am Spieltisch: ein Upgrade-Material mit
+  Ausrüstungsfertigkeit "Blitz" + Häkchen "Materia" anlegen, ausrüsten, im
+  EP-Sheet prüfen dass "Blitz (<Itemname>)" bei den Fertigkeiten auftaucht
+  und wie ein Skill kostet, hochleveln, dann den Gegenstand an eine andere
+  Person übergeben und prüfen dass die Stufe dort erhalten bleibt.
+
 - **Upgrade-Material erweitert: Waffenschaden/-art, Rüstungs-Absorption/
   Kästchen, Initiative/Zusatzaktionen als Augment-Effekt** (29.10.2026,
   zweite Nachbesserung direkt nach der Werkbank-Augments-Einführung oben,

@@ -143,7 +143,7 @@ function KampfFertigkeitFeld({
   );
 }
 
-type Eigenschaft = { key: string; value: string };
+type Eigenschaft = { key: string; value: string; materia?: boolean };
 
 function recordToPairs(r: Record<string, string>): Eigenschaft[] {
   return Object.entries(r).map(([key, value]) => ({ key, value }));
@@ -456,7 +456,11 @@ export function GegenstandRow({
       Object.entries(src.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
     );
     setAusruestungsfertigkeiten(
-      Object.entries(src.ausruestungsfertigkeiten).map(([key, value]) => ({ key, value: String(value) })),
+      Object.entries(src.ausruestungsfertigkeiten).map(([key, value]) => ({
+        key,
+        value: String(value),
+        materia: Boolean(src.materiaFertigkeiten?.[key]),
+      })),
     );
     setStufe(src.stufe);
     setWiderstand(src.widerstand);
@@ -552,6 +556,13 @@ export function GegenstandRow({
         ausruestungsfertigkeiten
           .filter((p) => p.key.trim() && Number(p.value))
           .map((p) => [p.key.trim(), Number(p.value)]),
+      ),
+      // Materia (29.10.2026): nur Einträge, die auch wirklich gespeichert
+      // werden (Name + Wert gesetzt) UND deren Häkchen an ist.
+      materiaFertigkeiten: Object.fromEntries(
+        ausruestungsfertigkeiten
+          .filter((p) => p.key.trim() && Number(p.value) && p.materia)
+          .map((p) => [p.key.trim(), true]),
       ),
       stufe,
       widerstand,
@@ -1338,7 +1349,8 @@ export function GegenstandRow({
                 )}
 
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
-                  Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand)
+                  Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand — Häkchen "Materia":
+                  Spieler darf mit eigener EP hochleveln, Stufe bleibt am Gegenstand)
                 </label>
                 {ausruestungsfertigkeiten.map((p, i) => (
                   <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
@@ -1363,6 +1375,21 @@ export function GegenstandRow({
                       }
                       style={{ width: 70 }}
                     />
+                    <label
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.8em", whiteSpace: "nowrap" }}
+                      title="Materia: der Spieler darf mit eigener EP hochleveln (bis Stufe 6) — die Stufe bleibt am Gegenstand und wandert bei Besitzerwechsel mit."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(p.materia)}
+                        onChange={(e) =>
+                          setAusruestungsfertigkeiten(
+                            ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, materia: e.target.checked } : x)),
+                          )
+                        }
+                      />
+                      Materia
+                    </label>
                     <button
                       type="button"
                       onClick={() => setAusruestungsfertigkeiten(ausruestungsfertigkeiten.filter((_, idx) => idx !== i))}

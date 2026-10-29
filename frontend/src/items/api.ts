@@ -85,6 +85,10 @@ export interface Gegenstand {
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
   ausruestungsfertigkeiten: Record<string, number>;
+  /** Materia (29.10.2026): welche der obigen Fertigkeiten der Spieler mit
+   * eigener EP hochleveln darf — Stufe bleibt am Gegenstand, siehe
+   * backend/app/items/schemas.py::materiaFertigkeiten. */
+  materiaFertigkeiten: Record<string, boolean>;
   /** Liegt im Mülleimer der Spielleitung — überall sonst ausgeblendet. */
   weggeworfen: boolean;
   /** Wer es weggeworfen hat; leer, wenn es nie weggeworfen wurde. */
@@ -440,6 +444,7 @@ export interface GegenstandUpdate {
   kampfFertigkeit?: KampfFertigkeit;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
+  materiaFertigkeiten?: Record<string, boolean>;
   ruestungKaestchenMax?: number;
   ruestungKaestchenAktuell?: number;
   ruestungReduktionBasis?: number;

@@ -147,3 +147,43 @@ def preisliste(katalog: list[dict], werte: dict[str, int]) -> list[dict]:
             }
         )
     return liste
+
+
+# Materia (29.10.2026, Marks FF7-Idee): eine ausruestungsfertigkeit, die die
+# SL als steigerbar markiert hat (items/schemas.py::materiaFertigkeiten),
+# erscheint im selben EP-Blatt wie ein ganz normaler Skill — Mark: "am
+# besten einfach mit im XP-Sheet anzeigen". Statt einer eigenen Route/eines
+# eigenen Response-Schemas bekommt sie hier nur einen SYNTHETISCHEN
+# traitDefId, den `traits/routes.py::steigere_wert` wieder entschlüsselt und
+# dann auf den GEGENSTAND statt die Person schreibt (items/repository.py::
+# steigere_materia_fertigkeit) — das bestehende generische Steigern-Popup
+# (frontend/src/traits/LevelUp.tsx) kennt Materia dadurch, ohne je davon zu
+# wissen: Kategorie ist immer "Fertigkeit" (gleiche Kostenkurve, Mark: "ich
+# habe vor dass das grundsätzlich nur skills sind"), Deckel immer 6.
+MATERIA_PRAEFIX = "materia::"
+
+
+def materia_schluessel(gegenstand_id: str, name: str) -> str:
+    """Baut den synthetischen traitDefId für eine Materia-Fertigkeit."""
+    return f"{MATERIA_PRAEFIX}{gegenstand_id}::{name}"
+
+
+def materia_entschluesseln(schluessel: str) -> tuple[str, str] | None:
+    """Zerlegt einen synthetischen traitDefId zurück in (gegenstandId, name).
+
+    `None`, wenn `schluessel` gar kein Materia-Schlüssel ist (normaler
+    Katalog-traitDefId) oder beschädigt ankommt. Nur EIN Split an der ERSTEN
+    `::` nach dem Präfix: die Gegenstand-ID (UUID) enthält nie `::`, ein
+    freier Fertigkeitsname theoretisch schon — der bleibt dann vollständig
+    im `name`-Teil erhalten statt an einer zufälligen zweiten Stelle
+    abgeschnitten zu werden.
+    """
+    if not schluessel.startswith(MATERIA_PRAEFIX):
+        return None
+    rest = schluessel[len(MATERIA_PRAEFIX):]
+    if "::" not in rest:
+        return None
+    gegenstand_id, name = rest.split("::", 1)
+    if not gegenstand_id or not name:
+        return None
+    return gegenstand_id, name

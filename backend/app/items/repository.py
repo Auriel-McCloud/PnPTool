@@ -24,6 +24,7 @@ RETURN_FIELDS = """
     g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
     g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
+    g.materiaFertigkeiten AS materiaFertigkeiten,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
     g.zusatzaktionen AS zusatzaktionen,
@@ -168,7 +169,7 @@ def _decode(record: dict) -> dict:
     else:
         record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
-    for feld in ("traitBoni", "ausruestungsfertigkeiten"):
+    for feld in ("traitBoni", "ausruestungsfertigkeiten", "materiaFertigkeiten"):
         try:
             roh = record.get(feld)
             record[feld] = json.loads(roh) if roh else {}
@@ -254,6 +255,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
+            materiaFertigkeiten: $materiaFertigkeiten,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
@@ -346,6 +348,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             augmentZielTyp=data.get("augmentZielTyp") or "",
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
+            materiaFertigkeiten=json.dumps(data.get("materiaFertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -663,6 +666,8 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["traitBoni"] = json.dumps(changed["traitBoni"])
     if "ausruestungsfertigkeiten" in changed:
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
+    if "materiaFertigkeiten" in changed:
+        changed["materiaFertigkeiten"] = json.dumps(changed["materiaFertigkeiten"])
 
     driver = get_driver()
 
@@ -1517,6 +1522,96 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
                 if bisher is None or wert > bisher["bonus"]:
                     eintraege[name] = {"name": name, "bonus": wert, "quelle": record["itemName"]}
         return list(eintraege.values())
+
+
+async def materia_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
+    """Materia-Fertigkeiten (29.10.2026, Marks FF7-Idee): ausruestungsfertigkeiten,
+    die die SL per `materiaFertigkeiten` als steigerbar markiert hat, von
+    AUSGERÜSTETEN/verbauten Gegenständen dieser Person.
+
+    Anders als `ausruestungsfertigkeiten_liste` oben wird hier NICHT über den
+    Namen dedupliziert (dort zählt der höchste Wert über alle Quellen, für
+    die reine Anzeige auf dem Blatt) — Steigern muss ein KONKRETES Item
+    treffen, zwei Gegenstände mit zufällig gleichnamiger Fertigkeit bleiben
+    also zwei getrennte Einträge.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE {WIRKT}
+          AND g.materiaFertigkeiten IS NOT NULL AND g.materiaFertigkeiten <> ''
+          AND g.materiaFertigkeiten <> '{{}}'
+        RETURN g.id AS gegenstandId, g.name AS gegenstandName,
+               g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.materiaFertigkeiten AS materiaRoh
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
+        )
+        eintraege: list[dict] = []
+        async for record in result:
+            try:
+                fertigkeiten = json.loads(record["fertigkeitenRoh"]) if record["fertigkeitenRoh"] else {}
+                materia = json.loads(record["materiaRoh"]) if record["materiaRoh"] else {}
+            except (json.JSONDecodeError, TypeError):
+                continue
+            for name, ist_materia in materia.items():
+                if not ist_materia or name not in fertigkeiten:
+                    continue
+                eintraege.append(
+                    {
+                        "gegenstandId": record["gegenstandId"],
+                        "gegenstandName": record["gegenstandName"],
+                        "name": name,
+                        "aktuell": int(fertigkeiten[name]),
+                    }
+                )
+        return eintraege
+
+
+async def steigere_materia_fertigkeit(
+    campaign_id: str, item_id: str, person_id: str, name: str
+) -> dict | None:
+    """Hebt die Stufe einer als Materia markierten ausruestungsfertigkeit an
+    — schreibt direkt auf den GEGENSTAND, nicht auf die Person. Mark:
+    \"die XP werden dann auf den Gegenstand übertragen\" — wandert der
+    Gegenstand per Besitzerwechsel weiter (z.B. Loot vom Endboss), kommt die
+    hochgelevelte Stufe automatisch mit, weil sie ja ohnehin am
+    Gegenstand-Knoten hängt, nicht an der Person.
+
+    Nur der AKTUELLE Besitzer darf steigern (erzwungen über den :BESITZT-
+    Match) und nur solange der Gegenstand wirkt (WIRKT — dieselbe
+    Ausgerüstet-/verbaut-Regel wie überall sonst). `None` heisst: Gegenstand
+    gehört dieser Person nicht (mehr), wirkt gerade nicht, oder die
+    Fertigkeit ist nicht (mehr) als Materia markiert — der Aufrufer (siehe
+    traits/routes.py::steigere_wert) meldet das als 404/409.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand {{id: $item_id}})
+        WHERE {WIRKT}
+        RETURN g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.materiaFertigkeiten AS materiaRoh
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            item_id=item_id,
+            chrom_typen=list(CHROM_TYPEN),
+        )
+        record = await result.single()
+        if record is None:
+            return None
+        try:
+            fertigkeiten = json.loads(record["fertigkeitenRoh"]) if record["fertigkeitenRoh"] else {}
+            materia = json.loads(record["materiaRoh"]) if record["materiaRoh"] else {}
+        except (json.JSONDecodeError, TypeError):
+            return None
+        if not materia.get(name) or name not in fertigkeiten:
+            return None
+        fertigkeiten[name] = int(fertigkeiten[name]) + 1
+    return await update_gegenstand(campaign_id, item_id, {"ausruestungsfertigkeiten": fertigkeiten})
 
 
 async def setze_verbaut(campaign_id: str, item_id: str, verbaut: bool) -> dict | None:
