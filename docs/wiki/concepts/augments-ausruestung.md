@@ -351,3 +351,34 @@ gleichzeitig sichtbar, ohne Klick-Umweg.
   fest das `AugmentTraegerPanel` für den gewählten Träger.
 - Kein Backend betroffen, `tsc -b`/`vite build` sauber, Live-Deploy auf
   bebop.
+
+## Korrektur 6: Kachelhöhe fehlte (Text abgeschnitten) + Steckbrief auf der Upgrade-Kachel (29.10.2026)
+
+Zwei Folgefehler direkt nach Korrektur 5, beide Mark beim Testen
+aufgefallen:
+
+1. **"Man kann leider den Namen des Upgrade-Materials nicht richtig
+   lesen"**: Das `.gg-kachel`-Raster braucht die CSS-Variablen
+   `--gg-kachel-breite`/`-hoehe`/`--gg-abstand` (`items/kachelraster.ts::
+   KACHEL_STIL`) — ohne sie wird `grid-auto-rows`/`grid-template-columns`
+   ungültig, die Kachel bekommt keine feste Höhe und der Text läuft über
+   den sichtbaren Rand hinaus (`overflow: hidden` schneidet ab, statt zu
+   wachsen). Andere Kachelraster im Tool (`DrohnenUebersicht.tsx`,
+   `BegleiterVerwaltung.tsx` etc.) setzen `style={KACHEL_STIL}` IMMER auf
+   das äußere `.gg-seite` — beim ursprünglichen Augments-Build am
+   29.10.2026 wurde das übersehen. Jetzt an beiden Werkbank-Upgraden-
+   Wurzeln (`AugmentUebersicht(Spieler).tsx`) ergänzt; die CSS-Variable
+   vererbt sich an alle Kinder, auch ins rechts eingebettete
+   `AugmentTraegerPanel`, ohne dass dieses selbst etwas setzen muss.
+   **Merke:** jedes neue `.gg-raster` braucht `style={KACHEL_STIL}` am
+   nächsten `.gg-seite`-Vorfahren, sonst droht genau dieser Bug.
+2. **"Es wäre gut wenn das Material einen Steckbrief hätte, also man
+   sieht was es tut"**: `items/steckbrief.ts::steckbriefKurz` las
+   `traitBoni` schon immer generisch (unabhängig vom Typ) — fehlte nur die
+   Anzeige. Jetzt zeigt jede Upgrade-Kachel (`AugmentTraegerPanel.tsx`,
+   plus die "Defekt, ohne Träger"-Liste in beiden Übersichten) zusätzlich
+   `<span className="gg-kachel-steckbrief">`, dieselbe Zeile wie bei jeder
+   anderen Gegenstands-Kachel im Tool (`GegenstandKachel.tsx`-Vorbild).
+
+`tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend
+betroffen.
