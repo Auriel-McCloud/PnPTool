@@ -197,9 +197,14 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         # Fahrzeug-Umbau, siehe traits/drohnen.py::maschinenteil_reicht.
         "istMaschinenteil": body.istMaschinenteil,
         "maschinenteilQualitaet": body.maschinenteilQualitaet,
-        # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026).
+        # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026). Typ "Upgrade-Material"
+        # (29.10.2026 Nachbesserung) impliziert istAugment=true — sonst legt
+        # die SL ein Stück mit sprechendem Typ an, vergisst aber die separate
+        # Checkbox in den Optionen, und es taucht in der Werkbank nie auf
+        # (Mark, 29.10.2026, dritter Klicktest: "er hat ein UpgradeMaterial...
+        # aber dort wird nichts angezeigt").
         "upgradeSlots": body.upgradeSlots,
-        "istAugment": body.istAugment,
+        "istAugment": True if body.typ == "Upgrade-Material" else body.istAugment,
         "augmentWaffentyp": body.augmentWaffentyp,
         "defekt": body.defekt,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
@@ -254,7 +259,13 @@ async def create_vorlage(campaign_id: str, body: GegenstandCreate):
 
 @campaign_router.patch("/{item_id}", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
-    item = await repository.update_gegenstand(campaign_id, item_id, body.model_dump())
+    daten = body.model_dump()
+    # Dieselbe Regel wie beim Anlegen (siehe _create_data): Typ "Upgrade-
+    # Material" erzwingt istAugment=true, auch wenn nur der Typ per
+    # "Typ ändern"-Popup nachträglich umgestellt wird.
+    if body.typ == "Upgrade-Material":
+        daten["istAugment"] = True
+    item = await repository.update_gegenstand(campaign_id, item_id, daten)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     if body.storyRelevant is not None or body.sichtbarkeit is not None:
