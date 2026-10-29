@@ -233,6 +233,28 @@ class GegenstandCreate(BaseModel):
     # traits/drohnen.py::maschinenteil_reicht. Leer = kein Maschinenteil.
     istMaschinenteil: bool = False
     maschinenteilQualitaet: Literal["", "minderwertig", "normal", "hochwertig"] = ""
+    # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026, siehe
+    # docs/wiki/concepts/augments-ausruestung.md): wie viele Augments in
+    # dieses Stück montierbar sind. Nur bei Typ Waffe/Rüstung gesetzt
+    # (Drohnen/Fahrzeuge tragen dasselbe Feld an `Person`, siehe
+    # entities/schemas.py) — Mark: "ich würde das gerne variabel halten",
+    # kein fixer Wert für alle Waffen.
+    upgradeSlots: int = 0
+    # Dieser Gegenstand IST ein Augment (montierbar an Waffe/Rüstung/Drohne).
+    # Sein `traitBoni`-Feld (oben über GegenstandCreate wiederverwendet)
+    # trägt den Bonus, den es beim Montieren gibt — Mark: "genau wie
+    # traitBoni heute", kein eigenes zweites Bonus-Feld nötig.
+    istAugment: bool = False
+    # Leer = passt auf jedes Ziel (Waffe jeden Typs, Rüstung, Drohne/
+    # Fahrzeug). Gesetzt = nur an Waffen MIT genau diesem kampfFertigkeit-Typ
+    # montierbar (items/augments.py::waffentyp_passt).
+    augmentWaffentyp: KampfFertigkeit = ""
+    # Ein Patzer beim Montieren/Demontieren beschädigt das Augment, statt die
+    # Aktion nur scheitern zu lassen (Mark, 29.10.2026) — reparierbar über
+    # dieselbe Werkbank-Material-Mechanik wie Rüstung/Drohne, nur mit dem
+    # Augment-Level (items/augments.py::augment_level) als Zielgröße statt
+    # "fehlenden Kästchen". Solange defekt, zählt der Bonus nicht.
+    defekt: bool = False
 
 
 class GegenstandUpdate(BaseModel):
@@ -309,6 +331,10 @@ class GegenstandUpdate(BaseModel):
     istNatuerlich: bool | None = None
     istMaschinenteil: bool | None = None
     maschinenteilQualitaet: Literal["", "minderwertig", "normal", "hochwertig"] | None = None
+    upgradeSlots: int | None = None
+    istAugment: bool | None = None
+    augmentWaffentyp: Literal["", "Schusswaffen", "Nahkampf", "Handgemenge"] | None = None
+    defekt: bool | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
     # die zusätzlich die Ablage aufräumen. Ein PATCH könnte das Flag setzen,
@@ -418,6 +444,16 @@ class GegenstandResponse(BaseModel):
     istNatuerlich: bool = False
     istMaschinenteil: bool = False
     maschinenteilQualitaet: str = ""
+    upgradeSlots: int = 0
+    istAugment: bool = False
+    augmentWaffentyp: str = ""
+    defekt: bool = False
+    # Montage-Ziel (nur bei istAugment relevant) — Pendant zu ablageZiel*,
+    # kann ein Gegenstand (Waffe/Rüstung/Cyberdeck/Riggerkonsole) ODER eine
+    # Person (Drohne/Fahrzeug) sein, siehe items/repository.py::MONTIERT_AN.
+    montiertAnId: str | None = None
+    montiertAnName: str | None = None
+    montiertAnKind: str | None = None
 
 
 class GegenstandMitBesitzer(GegenstandResponse):

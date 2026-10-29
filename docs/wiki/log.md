@@ -3,6 +3,26 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] gebaut | Werkbank-Augments: Montieren/Demontieren/Reparieren für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug
+
+Zweiter Baustein der Werkbank nach der Reparatur (siehe Eintrag direkt
+darunter). Neues `upgradeSlots`-Feld (0–6) an Gegenstand
+(`AUGMENT_TRAEGER_TYPEN`: Waffe/Rüstung/Cyberdeck/Riggerkonsole) und an
+Person (Drohne/Fahrzeug). Augment-Gegenstände (`istAugment=true`)
+montieren sich über eine neue `:MONTIERT_AN`-Kante (Ziel: Gegenstand ODER
+Person) an ein Ziel mit freiem Slot; Bonus steckt im wiederverwendeten
+`traitBoni`-Feld. Montieren/Demontieren: Maker- oder Handwerk-Probe (frei
+wählbar), benötigte Erfolge = Level+1. Patzer beschädigt das Augment
+(`defekt=true`); Reparatur wiederverwendet exakt die Reparatur-Formeln aus
+`kampf/ruestung.py`, nur mit Level statt Materialmenge/fehlenden Kästchen.
+Backend: `items/augments.py` (neu), `items/repository.py`/`routes.py`
+erweitert, `entities/schemas.py`/`repository.py` um `upgradeSlots`
+ergänzt. Frontend: Burgermenü "Reparatur" zu "Werkbank" umbenannt
+(`werkbank/WerkbankUebersicht.tsx`, zwei Reiter), neue
+`werkbank/AugmentUebersicht.tsx`/`AugmentFenster.tsx`.
+`pytest`/`tsc -b` grün, kein Klicktest. Siehe
+[[concepts/augments-ausruestung]].
+
 ## [2026-10-29] gebaut | Reparatur-Burgermenü: Material-Stufen, Erfolgsformel
 
 Backend: `kampf/ruestung.py` neue Formeln (Materialmenge−1/Min.1,

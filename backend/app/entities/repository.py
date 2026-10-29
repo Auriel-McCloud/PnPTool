@@ -70,7 +70,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
@@ -111,6 +111,9 @@ _BOGEN_DEFAULTS: dict = {
     # Funktion) kennen die Felder noch nicht (Stolperstein 9).
     "istTutorialHaendler": False,
     "bietetReparatur": False,
+    # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026): Bestandsdaten (jede
+    # Drohne/jedes Fahrzeug vor diesem Feature) kennen das Feld noch nicht.
+    "upgradeSlots": 0,
     "istTutorialShop": False,
     # Shop-Feature (Ort-Seite): Bestandsorte kennen das Feld noch nicht —
     # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
@@ -607,7 +610,7 @@ async def list_drohnen(campaign_id: str) -> list[dict]:
         OPTIONAL MATCH (n)-[:BEGLEITET]->(p:Person)
         RETURN n.id AS id, n.name AS name, n.bildUrl AS bildUrl,
                n.istDrohne AS istDrohne, n.istFahrzeug AS istFahrzeug,
-               n.riggerAktiv AS riggerAktiv,
+               n.riggerAktiv AS riggerAktiv, coalesce(n.upgradeSlots, 0) AS upgradeSlots,
                p.id AS riggerId, p.name AS riggerName,
                (coalesce(p.hotDrohneId, '') = n.id) AS istHot,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer

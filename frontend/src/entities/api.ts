@@ -62,6 +62,10 @@ export interface Person extends VisibilityFields {
    * ist — nur dann nimmt sie am Kampf teil (serverseitig gegen `maxDrohnen`
    * der Konsole gedeckelt, siehe `traits/drohnen.py::kann_aktivieren`). */
   riggerAktiv?: boolean;
+  /** Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026): wie viele Augments in
+   * diese Drohne/dieses Fahrzeug montierbar sind. Nur bei istDrohne/
+   * istFahrzeug relevant, siehe docs/wiki/concepts/augments-ausruestung.md. */
+  upgradeSlots?: number;
   /** Steuert, ob Charakterblatt.tsx die PC-Ersterstellung zeigt oder das
    * fertige Blatt. Server-Default `false` (für frisch angelegte PCs).
    * Programmatisch erzeugte NPC-Stubs (Kredithai, Blanko-Kontakt, Drohnen/

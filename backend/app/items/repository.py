@@ -34,13 +34,21 @@ RETURN_FIELDS = """
     g.istNatuerlich AS istNatuerlich,
     g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
     g.istMaschinenteil AS istMaschinenteil, g.maschinenteilQualitaet AS maschinenteilQualitaet,
+    g.upgradeSlots AS upgradeSlots, g.istAugment AS istAugment, g.augmentWaffentyp AS augmentWaffentyp,
+    g.defekt AS defekt,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
-    CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind
+    CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind,
+    montiert.id AS montiertAnId, coalesce(montiert.name, montiert.title) AS montiertAnName,
+    CASE WHEN montiert IS NULL THEN NULL ELSE labels(montiert)[0] END AS montiertAnKind
 """
 
 # Muss vor jedem RETURN_FIELDS stehen: OPTIONAL, weil die meisten Gegenstaende
-# am Koerper sind und gar kein Ziel haben.
-LIEGT_IN = "OPTIONAL MATCH (g)-[:LIEGT_IN]->(ziel)"
+# am Koerper sind und gar kein Ziel haben. Enthält seit den Augments
+# (29.10.2026) immer BEIDE optionalen Ziele — wo etwas liegt (:LIEGT_IN,
+# z.B. in einem Behälter) UND woran ein Augment montiert ist (:MONTIERT_AN,
+# Gegenstand ODER Person/Drohne) — RETURN_FIELDS braucht beide Variablen,
+# an jeder der ~20 Fundstellen einzeln ergänzen wäre fehleranfällig.
+LIEGT_IN = "OPTIONAL MATCH (g)-[:LIEGT_IN]->(ziel) OPTIONAL MATCH (g)-[:MONTIERT_AN]->(montiert)"
 # Nach einem CREATE *oder* SET verlangt Cypher ein WITH, bevor erneut
 # gematcht werden darf ("WITH is required between SET and MATCH"). Nur dort
 # verwenden, wo ausser g keine weitere Variable ins RETURN muss — WITH wirft
@@ -60,6 +68,9 @@ _NICHT_KOPIEREN = {
     "ablageZielId",
     "ablageZielName",
     "ablageZielKind",
+    "montiertAnId",
+    "montiertAnName",
+    "montiertAnKind",
     "ownerId",
     "ownerName",
     "ownerPersonType",
@@ -67,6 +78,10 @@ _NICHT_KOPIEREN = {
     # der Vorlage — eine Kopie startet nie weggeworfen.
     "weggeworfen",
     "weggeworfenVon",
+    # Eine Kopie startet unmontiert und unbeschädigt (29.10.2026, Augments) —
+    # dieselbe Logik wie "weggeworfen" oben: Zustand des einen Stücks, keine
+    # Eigenschaft der Vorlage.
+    "defekt",
 }
 
 
@@ -203,6 +218,12 @@ def _decode(record: dict) -> dict:
     # Mehrheit der Gegenstände.
     record["istMaschinenteil"] = _or_default(record.get("istMaschinenteil"), False)
     record["maschinenteilQualitaet"] = record.get("maschinenteilQualitaet") or ""
+    # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026): Bestandsdaten (jeder
+    # Gegenstand vor diesem Feature) kennen die Properties noch nicht.
+    record["upgradeSlots"] = _or_default(record.get("upgradeSlots"), 0)
+    record["istAugment"] = _or_default(record.get("istAugment"), False)
+    record["augmentWaffentyp"] = record.get("augmentWaffentyp") or ""
+    record["defekt"] = _or_default(record.get("defekt"), False)
     return record
 
 
@@ -238,6 +259,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istNatuerlich: $istNatuerlich,
             istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
             istMaschinenteil: $istMaschinenteil, maschinenteilQualitaet: $maschinenteilQualitaet,
+            upgradeSlots: $upgradeSlots, istAugment: $istAugment, augmentWaffentyp: $augmentWaffentyp,
+            defekt: false,
             istEntwurf: $istEntwurf
         })
     """
@@ -314,6 +337,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             reparaturKapazitaet=int(data.get("reparaturKapazitaet") or 0),
             istMaschinenteil=bool(data.get("istMaschinenteil")),
             maschinenteilQualitaet=data.get("maschinenteilQualitaet") or "",
+            upgradeSlots=int(data.get("upgradeSlots") or 0),
+            istAugment=bool(data.get("istAugment")),
+            augmentWaffentyp=data.get("augmentWaffentyp") or "",
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
@@ -377,6 +403,126 @@ async def list_maschinenteile_von(campaign_id: str, owner_person_id: str) -> lis
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, owner_id=owner_person_id)
+        return [_decode(dict(record)) async for record in result]
+
+
+# =====================================================================
+# Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026) — siehe items/augments.py
+# für die Formeln und docs/wiki/concepts/augments-ausruestung.md für die
+# volle Herleitung. Montage-Ziel ist ein Knoten BELIEBIGEN Typs (Gegenstand
+# ODER Person/Drohne), deshalb kein Label in den Cypher-Patterns unten.
+# =====================================================================
+
+
+async def ziel_fuer_augment(campaign_id: str, ziel_id: str) -> dict | None:
+    """Generischer Ladevorgang für ein Montage-Ziel — Gegenstand (Waffe/
+    Rüstung/Cyberdeck/Riggerkonsole) ODER Person (Drohne/Fahrzeug). Liefert
+    nur die für Slot-/Kompatibilitätsprüfung nötigen Felder, kein ganzes
+    GegenstandResponse/Person (das Ziel könnte von jedem der beiden Typen
+    sein, ein gemeinsames Response-Schema gibt es nicht).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (z {id: $ziel_id, campaignId: $campaign_id})
+        RETURN z.id AS id, coalesce(z.name, '') AS name, labels(z)[0] AS kind,
+               coalesce(z.upgradeSlots, 0) AS upgradeSlots,
+               coalesce(z.kampfFertigkeit, '') AS kampfFertigkeit,
+               coalesce(z.istDrohne, false) OR coalesce(z.istFahrzeug, false) AS istDrohneOderFahrzeug
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ziel_id=ziel_id)
+        record = await result.single()
+        return dict(record) if record else None
+
+
+async def belegte_slots(campaign_id: str, ziel_id: str) -> int:
+    """Wie viele Augments gerade an diesem Ziel montiert sind."""
+    driver = get_driver()
+    query = """
+        MATCH (z {id: $ziel_id, campaignId: $campaign_id})<-[:MONTIERT_AN]-(:Gegenstand)
+        RETURN count(*) AS n
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ziel_id=ziel_id)
+        record = await result.single()
+        return int(record["n"]) if record else 0
+
+
+async def montiere_augment(campaign_id: str, augment_id: str, ziel_id: str) -> dict | None:
+    """Montiert ein Augment an ein Ziel — löst zur Sicherheit zuerst eine
+    eventuell bestehende alte Montage (sollte nie vorkommen, Routen prüfen
+    das vorher, aber dieselbe defensive Reihenfolge wie beim Umlegen in
+    einen Behälter, siehe `set_ablage` unten)."""
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $augment_id, campaignId: $campaign_id}})
+        MATCH (z {{id: $ziel_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (g)-[alt:MONTIERT_AN]->()
+        DELETE alt
+        CREATE (g)-[:MONTIERT_AN]->(z)
+        WITH g
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, augment_id=augment_id, ziel_id=ziel_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def demontiere_augment(campaign_id: str, augment_id: str) -> dict | None:
+    """Löst die Montage-Kante, egal wohin sie zeigt."""
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $augment_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (g)-[alt:MONTIERT_AN]->()
+        DELETE alt
+        WITH g
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, augment_id=augment_id)
+        record = await result.single()
+        return _decode(dict(record)) if record else None
+
+
+async def list_montierbare_ziele(campaign_id: str, besitzer_id: str) -> list[dict]:
+    """Gegenstände im Besitz dieser Person mit mindestens einem freien
+    Augment-Slot — für die Ziel-Auswahl im Montieren-Popup. Drohnen/
+    Fahrzeuge (Person-Ziele) laufen separat über `entities/routes.py`, weil
+    deren Besitz nicht über BESITZT, sondern über die Rigger-Bindung läuft.
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $besitzer_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false) AND coalesce(g.upgradeSlots, 0) > 0
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, besitzer_id=besitzer_id)
+        kandidaten = [_decode(dict(record)) async for record in result]
+    belegungen = {k["id"]: await belegte_slots(campaign_id, k["id"]) for k in kandidaten}
+    for k in kandidaten:
+        k["belegteSlots"] = belegungen[k["id"]]
+    return kandidaten
+
+
+async def list_augmente_von(campaign_id: str, besitzer_id: str) -> list[dict]:
+    """Augments im Besitz dieser Person — unmontierte zur Auswahl fürs
+    Montieren, montierte/defekte fürs Demontieren/Reparieren."""
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $besitzer_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false) AND coalesce(g.istAugment, false)
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, besitzer_id=besitzer_id)
         return [_decode(dict(record)) async for record in result]
 
 

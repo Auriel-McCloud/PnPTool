@@ -12,6 +12,7 @@ from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
+from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
 from app.items.schemas import (
@@ -196,6 +197,11 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         # Fahrzeug-Umbau, siehe traits/drohnen.py::maschinenteil_reicht.
         "istMaschinenteil": body.istMaschinenteil,
         "maschinenteilQualitaet": body.maschinenteilQualitaet,
+        # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026).
+        "upgradeSlots": body.upgradeSlots,
+        "istAugment": body.istAugment,
+        "augmentWaffentyp": body.augmentWaffentyp,
+        "defekt": body.defekt,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
     }
@@ -1115,3 +1121,277 @@ async def ruestung_reparieren(campaign_id: str, item_id: str, body: RuestungRepa
     if aktualisiert is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reparatur fehlgeschlagen")
     return aktualisiert
+
+
+# =====================================================================
+# Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026, siehe items/augments.py
+# für die Formeln und docs/wiki/concepts/augments-ausruestung.md für die
+# volle Herleitung). Ein Augment ist ein Gegenstand (`istAugment=true`),
+# der an einem ANDEREN Gegenstand (Waffe/Rüstung/Cyberdeck/Riggerkonsole)
+# ODER einer Drohne/einem Fahrzeug (Person-Knoten) montiert wird.
+# =====================================================================
+
+AUGMENT_SKILLS = ("Maker (Hardware)", "Handwerk")
+
+
+async def _augment_oder_404(campaign_id: str, item_id: str) -> dict:
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None or not item.get("istAugment"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Augment")
+    return item
+
+
+async def _augment_pool(campaign_id: str, augment: dict, skill: str) -> tuple[int, list[AttributWert]]:
+    if skill not in AUGMENT_SKILLS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Maker (Hardware) oder Handwerk möglich")
+    besitzer_id = await repository.get_owner_person_id(campaign_id, augment["id"])
+    if besitzer_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Augment ohne Besitzer")
+    campaign = await get_campaign(campaign_id)
+    katalog = await list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, besitzer_id)}
+    attribute = [
+        AttributWert(name=t["name"], wert=werte.get(t["name"], 0)) for t in katalog if t["category"].startswith("Attribut")
+    ]
+    return werte.get(skill, 0), attribute
+
+
+class AugmentMontagePool(BaseModel):
+    """Pool-Infos fürs Montieren/Demontieren-Popup: frei wählbarer Skill
+    (Maker (Hardware) ODER Handwerk, Mark 29.10.2026) + freie Attributwahl,
+    benötigte Erfolge = Level + 1 (items/augments.py::benoetigte_erfolge_montage)."""
+
+    skill: str
+    skillWert: int
+    attribute: list[AttributWert]
+    level: int
+    benoetigteErfolge: int
+
+
+@campaign_router.get("/{item_id}/augment/montage-pool", response_model=AugmentMontagePool)
+async def augment_montage_pool(campaign_id: str, item_id: str, skill: str, viewer: Viewer = Depends(get_viewer)):
+    """Reine Leseabfrage für Montieren UND Demontieren — dieselbe Schwelle
+    gilt für beide Richtungen (Mark: "genau wie zum Anbringen, da ist dieser
+    Wurf auch nötig")."""
+    augment = await _augment_oder_404(campaign_id, item_id)
+    skill_wert, attribute = await _augment_pool(campaign_id, augment, skill)
+    level = augment_level(augment.get("traitBoni") or {})
+    return AugmentMontagePool(
+        skill=skill, skillWert=skill_wert, attribute=attribute, level=level, benoetigteErfolge=benoetigte_erfolge_montage(level)
+    )
+
+
+class AugmentZiel(BaseModel):
+    id: str
+    name: str
+    typ: str
+    upgradeSlots: int
+    belegteSlots: int
+
+
+@campaign_router.get("/{item_id}/augment/ziele", response_model=list[AugmentZiel])
+async def augment_ziele(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Gegenstände im Besitz DESSELBEN Besitzers mit freiem Slot UND
+    passendem Waffentyp — Drohnen/Fahrzeuge als Ziel laufen über
+    `drohnenApi`/`entities/routes.py` auf der Frontend-Seite (andere
+    Besitzrelation, siehe `items/repository.py::list_montierbare_ziele`)."""
+    augment = await _augment_oder_404(campaign_id, item_id)
+    besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer_id is None:
+        return []
+    kandidaten = await repository.list_montierbare_ziele(campaign_id, besitzer_id)
+    waffentyp = augment.get("augmentWaffentyp") or ""
+    return [
+        AugmentZiel(id=k["id"], name=k["name"], typ=k["typ"], upgradeSlots=k["upgradeSlots"], belegteSlots=k["belegteSlots"])
+        for k in kandidaten
+        if k["id"] != item_id
+        and k["belegteSlots"] < k["upgradeSlots"]
+        and waffentyp_passt(waffentyp, k.get("kampfFertigkeit") or "")
+    ]
+
+
+class AugmentMontierenRequest(BaseModel):
+    zielId: str
+    skill: str
+    probenErgebnis: Literal["ja", "nein", "patzer"]
+
+
+class AugmentAktionsErgebnis(BaseModel):
+    """Auswertung für Montieren/Demontieren, fürs Popup."""
+
+    erfolgreich: bool
+    defekt: bool
+    gegenstand: GegenstandResponse
+
+
+@campaign_router.post(
+    "/{item_id}/augment/montieren", response_model=AugmentAktionsErgebnis, dependencies=[Depends(require_campaign_gm)]
+)
+async def augment_montieren(campaign_id: str, item_id: str, body: AugmentMontierenRequest):
+    """Montiert ein Augment an ein Ziel — selbstberichtete Probe, kein
+    serverseitiger Würfel. Ein Patzer beschädigt das Augment (`defekt=true`)
+    statt die Montage nur scheitern zu lassen (Mark, 29.10.2026). **Nur
+    SL** — wie jede andere Werkbank-Aktion, die am Gegenstand ansetzt.
+    """
+    augment = await _augment_oder_404(campaign_id, item_id)
+    if augment.get("defekt"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist defekt — erst reparieren.")
+    if augment.get("montiertAnId"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist bereits montiert.")
+
+    ziel = await repository.ziel_fuer_augment(campaign_id, body.zielId)
+    if ziel is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ziel nicht gefunden")
+    if ziel["upgradeSlots"] <= 0:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Ziel hat keine Augment-Slots.")
+    belegte = await repository.belegte_slots(campaign_id, body.zielId)
+    if belegte >= ziel["upgradeSlots"]:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"Alle {ziel['upgradeSlots']} Slots sind belegt.")
+    if not waffentyp_passt(augment.get("augmentWaffentyp") or "", ziel["kampfFertigkeit"]):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment passt nicht an dieses Ziel.")
+
+    defekt_neu = body.probenErgebnis == "patzer"
+    erfolgreich = body.probenErgebnis == "ja"
+    if erfolgreich:
+        aktualisiert = await repository.montiere_augment(campaign_id, item_id, body.zielId)
+    elif defekt_neu:
+        aktualisiert = await repository.update_gegenstand(campaign_id, item_id, {"defekt": True})
+    else:
+        aktualisiert = augment
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Montage fehlgeschlagen")
+    return AugmentAktionsErgebnis(erfolgreich=erfolgreich, defekt=bool(aktualisiert.get("defekt")), gegenstand=aktualisiert)
+
+
+class AugmentDemontierenRequest(BaseModel):
+    skill: str
+    probenErgebnis: Literal["ja", "nein", "patzer"]
+
+
+@campaign_router.post(
+    "/{item_id}/augment/demontieren", response_model=AugmentAktionsErgebnis, dependencies=[Depends(require_campaign_gm)]
+)
+async def augment_demontieren(campaign_id: str, item_id: str, body: AugmentDemontierenRequest):
+    """Demontiert ein Augment — jederzeit möglich (kein Körper-Risiko wie
+    bei Cyberware), aber dieselbe Probe wie beim Montieren. Ein Patzer
+    beschädigt das Augment, lässt es aber montiert (Mark, 29.10.2026:
+    dieselbe Nebenwirkung wie beim Anbringen)."""
+    augment = await _augment_oder_404(campaign_id, item_id)
+    if not augment.get("montiertAnId"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist nicht montiert.")
+
+    erfolgreich = body.probenErgebnis == "ja"
+    if erfolgreich:
+        aktualisiert = await repository.demontiere_augment(campaign_id, item_id)
+    elif body.probenErgebnis == "patzer":
+        aktualisiert = await repository.update_gegenstand(campaign_id, item_id, {"defekt": True})
+    else:
+        aktualisiert = augment
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Demontage fehlgeschlagen")
+    return AugmentAktionsErgebnis(erfolgreich=erfolgreich, defekt=bool(aktualisiert.get("defekt")), gegenstand=aktualisiert)
+
+
+class AugmentReparaturPool(BaseModel):
+    skill: str
+    skillWert: int
+    attribute: list[AttributWert]
+    level: int
+    benoetigteErfolge: int
+    heilungBeiErfolg: int
+    vollstaendigRepariert: bool
+
+
+@campaign_router.get("/{item_id}/augment/reparatur-pool", response_model=AugmentReparaturPool)
+async def augment_reparatur_pool(
+    campaign_id: str, item_id: str, skill: str, materialGegenstandId: str, menge: int = 1, viewer: Viewer = Depends(get_viewer)
+):
+    """Reparatur eines defekten Augments — dieselbe Material-/Erfolgsformel
+    wie die normale Werkbank-Reparatur (`kampf/ruestung.py::
+    reparatur_benoetigte_erfolge`/`reparatur_heilung_material`), nur mit dem
+    Augment-Level statt "fehlenden Kästchen" als Zielgröße. Mark, 29.10.2026:
+    "die Probe ist Level des Gegenstandes -1 zum reparieren"."""
+    augment = await _augment_oder_404(campaign_id, item_id)
+    if not augment.get("defekt"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist nicht defekt.")
+    material = await repository.get_gegenstand(campaign_id, materialGegenstandId)
+    if material is None or not material.get("istMaschinenteil"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil")
+
+    skill_wert, attribute = await _augment_pool(campaign_id, augment, skill)
+    level = augment_level(augment.get("traitBoni") or {})
+    heilung = reparatur_heilung_material(material.get("maschinenteilQualitaet") or "", menge, level)
+    return AugmentReparaturPool(
+        skill=skill,
+        skillWert=skill_wert,
+        attribute=attribute,
+        level=level,
+        benoetigteErfolge=reparatur_benoetigte_erfolge(level),
+        heilungBeiErfolg=heilung,
+        vollstaendigRepariert=heilung >= level,
+    )
+
+
+class AugmentReparierenRequest(BaseModel):
+    materialGegenstandId: str
+    menge: int = Field(ge=1)
+    probenErgebnis: Literal["ja", "nein", "patzer"]
+
+
+class AugmentReparaturErgebnis(BaseModel):
+    repariert: bool
+    materialName: str
+    materialVerbraucht: int
+    materialRestmenge: int
+    gegenstand: GegenstandResponse
+
+
+@campaign_router.post(
+    "/{item_id}/augment/reparieren-material",
+    response_model=AugmentReparaturErgebnis,
+    dependencies=[Depends(require_campaign_gm)],
+)
+async def augment_reparieren_material(campaign_id: str, item_id: str, body: AugmentReparierenRequest):
+    augment = await _augment_oder_404(campaign_id, item_id)
+    if not augment.get("defekt"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist nicht defekt.")
+    material = await repository.get_gegenstand(campaign_id, body.materialGegenstandId)
+    if material is None or not material.get("istMaschinenteil"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil")
+    if material.get("menge", 1) < body.menge:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nicht genug von diesem Maschinenteil vorhanden.")
+
+    level = augment_level(augment.get("traitBoni") or {})
+    qualitaet = material.get("maschinenteilQualitaet") or ""
+    repariert = False
+    if body.probenErgebnis == "ja":
+        heilung = reparatur_heilung_material(qualitaet, body.menge, level)
+        repariert = heilung >= level
+    material_verbraucht = body.probenErgebnis in ("ja", "patzer")
+    material_neue_menge = material["menge"] - body.menge if material_verbraucht else material["menge"]
+    if material_verbraucht:
+        await repository.update_gegenstand(campaign_id, body.materialGegenstandId, {"menge": material_neue_menge})
+
+    aktualisiert = augment
+    if repariert:
+        aktualisiert = await repository.update_gegenstand(campaign_id, item_id, {"defekt": False})
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Reparatur fehlgeschlagen")
+
+    return AugmentReparaturErgebnis(
+        repariert=repariert,
+        materialName=material["name"],
+        materialVerbraucht=body.menge if material_verbraucht else 0,
+        materialRestmenge=material_neue_menge,
+        gegenstand=aktualisiert,
+    )
+
+
+@campaign_router.get("/{item_id}/augment/material", response_model=list[GegenstandResponse])
+async def augment_material(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Maschinenteile im Besitz der Person, die dieses defekte Augment
+    besitzt — für die Reparatur-Material-Auswahl."""
+    besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer_id is None:
+        return []
+    return await repository.list_maschinenteile_von(campaign_id, besitzer_id)

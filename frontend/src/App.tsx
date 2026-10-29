@@ -18,7 +18,7 @@ import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
-import { ReparaturUebersicht } from "./reparatur/ReparaturUebersicht";
+import { WerkbankUebersicht } from "./werkbank/WerkbankUebersicht";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { MenueAnpassen } from "./shell/MenueAnpassen";
 import {
@@ -122,11 +122,11 @@ const BEREICHE: Bereich[] = [
   // Drohnen & Fahrzeuge (25.10.2026, Phase 3): eigenes Blatt, Riggerkonsole-
   // Slots, Nuyen-Kauf — siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
   { id: "drohnen", name: "Fahrzeuge & Drohnen", symbol: "⛭", farbe: "var(--bereich-drohnen)" },
-  // Reparatur (29.10.2026): eigenständiges Burgermenü statt im Gegenstands-
-  // Bearbeiten-Popup versteckt — Ziel wählen (Rüstung/Drohne/Fahrzeug),
-  // dann Selbst (Material+Probe) oder Händler (Nuyen). Siehe
-  // docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur".
-  { id: "reparatur", name: "Reparatur", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
+  // Werkbank (29.10.2026, vorher "Reparatur" — Mark: "nennen wir das Menü
+  // einfach Werkbank, Reparieren ist nur eine Option"): zwei Reiter,
+  // Reparatur UND Augments (Zielfernrohr & Co. montieren), siehe
+  // docs/wiki/concepts/augments-ausruestung.md.
+  { id: "reparatur", name: "Werkbank", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -151,7 +151,7 @@ const TITEL: Record<string, string> = {
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
   drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
-  reparatur: "Reparatur: Material + Probe (Selbst) oder Nuyen (Händler)",
+  reparatur: "Werkbank: Reparatur (Material + Probe) und Augments (montieren/demontieren)",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -414,8 +414,8 @@ function Dashboard() {
           {/* Drohnen & Fahrzeuge (Phase 3): Burgermenü, Riggerkonsole-Slots, Nuyen-Kauf. */}
           {bereich === "drohnen" && <DrohnenUebersicht key={ansichtKennung} campaignId={kampagne.id} istGm />}
 
-          {/* Reparatur (29.10.2026): eigenständiges Burgermenü statt im Gegenstand-Popup versteckt. */}
-          {bereich === "reparatur" && <ReparaturUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {/* Werkbank (29.10.2026, vorher "Reparatur"): Reparatur + Augments in einem Burgermenü. */}
+          {bereich === "reparatur" && <WerkbankUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

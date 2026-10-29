@@ -9,7 +9,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
+import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -319,6 +319,13 @@ export function GegenstandRow({
   // Kapazitätszahl — siehe traits/drohnen.py::maschinenteil_reicht.
   const [istMaschinenteil, setIstMaschinenteil] = useState(item.istMaschinenteil);
   const [maschinenteilQualitaet, setMaschinenteilQualitaet] = useState(item.maschinenteilQualitaet);
+  // Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026, siehe
+  // docs/wiki/concepts/augments-ausruestung.md): upgradeSlots nur bei
+  // Waffe/Rüstung/Cyberdeck/Riggerkonsole relevant, istAugment/
+  // augmentWaffentyp nur wenn DIESER Gegenstand selbst ein Augment ist.
+  const [upgradeSlots, setUpgradeSlots] = useState(item.upgradeSlots);
+  const [istAugment, setIstAugment] = useState(item.istAugment);
+  const [augmentWaffentyp, setAugmentWaffentyp] = useState(item.augmentWaffentyp);
   // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature):
   // spiegelt `verbaut` bei Cyberware — nicht ablegbar für den Spieler (GM
   // kann es im Ausnahmefall), nicht reparierbar, Kästchen-Max kommt serverseitig
@@ -460,6 +467,9 @@ export function GegenstandRow({
     setReparaturKapazitaet(src.reparaturKapazitaet);
     setIstMaschinenteil(src.istMaschinenteil);
     setMaschinenteilQualitaet(src.maschinenteilQualitaet);
+    setUpgradeSlots(src.upgradeSlots);
+    setIstAugment(src.istAugment);
+    setAugmentWaffentyp(src.augmentWaffentyp);
     setIstNatuerlich(src.istNatuerlich);
     setAblageZiel(src.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
@@ -551,6 +561,9 @@ export function GegenstandRow({
       reparaturKapazitaet,
       istMaschinenteil,
       maschinenteilQualitaet,
+      upgradeSlots,
+      istAugment,
+      augmentWaffentyp,
       istNatuerlich,
       sichtbarkeit,
       sichtbarFuer,
@@ -569,7 +582,8 @@ export function GegenstandRow({
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
       istWaffe, istNeurolink, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
-      istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet, istNatuerlich, sichtbarkeit, sichtbarFuer,
+      istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
+      upgradeSlots, istAugment, augmentWaffentyp, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
   );
 
@@ -1655,6 +1669,36 @@ export function GegenstandRow({
                             <option value="minderwertig">minderwertig (nur Reparatur)</option>
                             <option value="normal">normal (Fertigkeiten)</option>
                             <option value="hochwertig">hochwertig (Attribute + Fertigkeiten)</option>
+                          </select>
+                        </label>
+                      )}
+                    </div>
+                    {AUGMENT_TRAEGER_TYPEN.has(typ) && (
+                      <div className="pcd-feld">
+                        <label>Upgrade-Slots (Augments)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={6}
+                          value={upgradeSlots}
+                          onChange={(e) => setUpgradeSlots(Math.max(0, Math.min(6, Number(e.target.value))))}
+                          style={{ width: 60 }}
+                        />
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                      <label style={{ fontSize: "0.9em" }}>
+                        <input type="checkbox" checked={istAugment} onChange={(e) => setIstAugment(e.target.checked)} />{" "}
+                        Ist selbst ein Augment
+                      </label>
+                      {istAugment && (
+                        <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                          Passt an
+                          <select value={augmentWaffentyp} onChange={(e) => setAugmentWaffentyp(e.target.value as KampfFertigkeit)}>
+                            <option value="">alles (Waffe/Rüstung/Cyberdeck/Riggerkonsole)</option>
+                            <option value="Schusswaffen">nur Schusswaffen</option>
+                            <option value="Nahkampf">nur Nahkampf</option>
+                            <option value="Handgemenge">nur Handgemenge</option>
                           </select>
                         </label>
                       )}

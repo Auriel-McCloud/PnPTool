@@ -25,6 +25,9 @@ export interface DrohnenEintrag {
   riggerSlotsMax: number | null;
   /** Diese Drohne ist die eine Hot-Verbindung des Riggers. */
   istHot: boolean;
+  /** Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026): wie viele Augments
+   * montierbar sind, siehe docs/wiki/concepts/augments-ausruestung.md. */
+  upgradeSlots: number;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
 }

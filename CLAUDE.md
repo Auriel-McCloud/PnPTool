@@ -4,6 +4,33 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Werkbank-Augments: Montieren/Demontieren/Reparieren für Waffe/Rüstung/
+  Cyberdeck/Riggerkonsole/Drohne/Fahrzeug** (29.10.2026, zweiter Baustein
+  nach der Reparatur, siehe [[concepts/augments-ausruestung]] im Wiki für
+  die volle Herleitung). Neues `upgradeSlots`-Feld (0–6) an Gegenstand
+  (`AUGMENT_TRAEGER_TYPEN`) und Person (Drohne/Fahrzeug). Augment-
+  Gegenstände (`istAugment=true`) montieren über eine neue
+  `:MONTIERT_AN`-Kante (Ziel: Gegenstand ODER Person) an ein Ziel mit
+  freiem Slot; Bonus im wiederverwendeten `traitBoni`-Feld — **kein**
+  neues Bonus-Feld. Montieren/Demontieren: Maker- oder Handwerk-Probe
+  (frei wählbar), benötigte Erfolge = Level+1 (Level = Summe der
+  `traitBoni`). Patzer beschädigt das Augment (`defekt=true`); Reparatur
+  wiederverwendet 1:1 die Reparatur-Formeln aus `kampf/ruestung.py`, nur
+  mit Level statt Materialmenge/fehlenden Kästchen als Eingabe. Backend:
+  `items/augments.py` (neu, reine Formeln), `items/repository.py`/
+  `routes.py` um sechs neue `/augment/...`-Routen erweitert,
+  `entities/schemas.py`/`repository.py` um `upgradeSlots` ergänzt.
+  Frontend: Burgermenü "Reparatur" zu **"Werkbank"** umbenannt (Bereich-Id
+  `"reparatur"` bewusst unverändert, damit kein gespeichertes Menü-Layout
+  verwaist), `werkbank/WerkbankUebersicht.tsx` (neu, zwei Reiter) ersetzt
+  `reparatur/ReparaturUebersicht.tsx` als Einstieg, neue
+  `werkbank/AugmentUebersicht.tsx`/`AugmentFenster.tsx`. **Verifiziert:**
+  10 neue Tests (`test_augments.py`), volle Suite unverändert bei 55
+  vorbestehenden Fehlschlägen (887 passed), `npx tsc -b` sauber, **kein
+  Klicktest**. Bewusst noch nicht gebaut: UI zum Setzen von
+  `upgradeSlots` an einer Drohne selbst (nur per API), `traitBoni`-Wirkung
+  auf echte Würfelpools fehlt systemweit (nicht nur bei Augments).
+
 - **Rigger kann eigene Gegenstände an die Drohne übergeben/zurücknehmen**
   (26.10.2026, direkt im Anschluss, Mark: "es müsste die Möglichkeit geben,
   etwas aus dem Inventar des Riggers auszurüsten bzw. zu übergeben" — der

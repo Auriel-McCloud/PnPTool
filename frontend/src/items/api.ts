@@ -132,6 +132,27 @@ export interface Gegenstand {
    */
   istMaschinenteil: boolean;
   maschinenteilQualitaet: string;
+  /**
+   * Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026, siehe
+   * docs/wiki/concepts/augments-ausruestung.md): wie viele Augments in
+   * dieses Stück montierbar sind. Nur bei Waffe/Rüstung/Cyberdeck/
+   * Riggerkonsole relevant (`AUGMENT_TRAEGER_TYPEN` im Backend).
+   */
+  upgradeSlots: number;
+  /** Dieser Gegenstand IST ein Augment — sein `traitBoni`-Feld trägt den
+   * Bonus, den es beim Montieren gibt. */
+  istAugment: boolean;
+  /** Leer = passt auf jedes Ziel; gesetzt = nur an Waffen mit diesem
+   * kampfFertigkeit-Typ montierbar. */
+  augmentWaffentyp: KampfFertigkeit;
+  /** Ein Patzer beim Montieren/Demontieren hat dieses Augment beschädigt —
+   * der Bonus zählt nicht, bis es repariert ist. */
+  defekt: boolean;
+  /** Montage-Ziel (nur bei istAugment relevant) — Gegenstand ODER Person
+   * (Drohne/Fahrzeug). */
+  montiertAnId: string | null;
+  montiertAnName: string | null;
+  montiertAnKind: string | null;
 }
 
 /** Pool-Infos fürs Reparatur-Popup — Handwerk-Wert der Trägerin plus freie
@@ -166,6 +187,52 @@ export interface ReparaturPreisAntwort {
   preis: number;
   deckel: number;
 }
+
+// =====================================================================
+// Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026) — siehe
+// docs/wiki/concepts/augments-ausruestung.md und backend items/augments.py.
+// =====================================================================
+
+export interface AugmentMontagePool {
+  skill: string;
+  skillWert: number;
+  attribute: { name: string; wert: number }[];
+  level: number;
+  benoetigteErfolge: number;
+}
+
+export interface AugmentZiel {
+  id: string;
+  name: string;
+  typ: string;
+  upgradeSlots: number;
+  belegteSlots: number;
+}
+
+export interface AugmentAktionsErgebnis {
+  erfolgreich: boolean;
+  defekt: boolean;
+  gegenstand: Gegenstand;
+}
+
+export interface AugmentReparaturPool {
+  skill: string;
+  skillWert: number;
+  attribute: { name: string; wert: number }[];
+  level: number;
+  benoetigteErfolge: number;
+  heilungBeiErfolg: number;
+  vollstaendigRepariert: boolean;
+}
+
+export interface AugmentReparaturErgebnis {
+  repariert: boolean;
+  materialName: string;
+  materialVerbraucht: number;
+  materialRestmenge: number;
+  gegenstand: Gegenstand;
+}
+
 
 /** Handwaffen 1–7 laut Regelblatt, Schiffswaffen (Raumschiff) bis 12. */
 export const SCHADEN_MAX = 12;
@@ -235,6 +302,11 @@ export type RuestungsArt = "schlag" | "schwer" | "aggraviert";
 export type KampfFertigkeit = "" | "Schusswaffen" | "Nahkampf" | "Handgemenge";
 
 export const KAMPF_FERTIGKEITEN = ["Schusswaffen", "Nahkampf", "Handgemenge"] as const;
+
+/** Welche Gegenstands-Typen Augments tragen können (ausserdem Drohnen/
+ * Fahrzeuge, die aber über `entities/api.ts::Person.upgradeSlots` laufen) —
+ * Pendant zu `items/augments.py::AUGMENT_TRAEGER_TYPEN` im Backend. */
+export const AUGMENT_TRAEGER_TYPEN = new Set(["Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"]);
 
 export const KAMPF_FERTIGKEIT_LABEL: Record<Exclude<KampfFertigkeit, "">, string> = {
   Schusswaffen: "Fernkampf",
@@ -354,6 +426,10 @@ export interface GegenstandUpdate {
   istNatuerlich?: boolean;
   istMaschinenteil?: boolean;
   maschinenteilQualitaet?: string;
+  upgradeSlots?: number;
+  istAugment?: boolean;
+  augmentWaffentyp?: KampfFertigkeit;
+  defekt?: boolean;
 }
 
 type NeuerGegenstand = {
@@ -514,4 +590,37 @@ export const itemsApi = {
     }
     return (await response.json()) as Gegenstand;
   },
+
+  // --- Augments (29.10.2026) ------------------------------------------
+  /** Pool fürs Montieren UND Demontieren — dieselbe Schwelle gilt für beide. */
+  augmentMontagePool: (cid: string, itemId: string, skill: string) =>
+    api.get<AugmentMontagePool>(`${itemBase(cid, itemId)}/augment/montage-pool?skill=${encodeURIComponent(skill)}`),
+  /** Gegenstände desselben Besitzers mit freiem, passendem Slot. */
+  augmentZiele: (cid: string, itemId: string) =>
+    api.get<AugmentZiel[]>(`${itemBase(cid, itemId)}/augment/ziele`),
+  augmentMontieren: (cid: string, itemId: string, zielId: string, skill: string, probenErgebnis: "ja" | "nein" | "patzer") =>
+    api.post<AugmentAktionsErgebnis>(`${itemBase(cid, itemId)}/augment/montieren`, { zielId, skill, probenErgebnis }),
+  augmentDemontieren: (cid: string, itemId: string, skill: string, probenErgebnis: "ja" | "nein" | "patzer") =>
+    api.post<AugmentAktionsErgebnis>(`${itemBase(cid, itemId)}/augment/demontieren`, { skill, probenErgebnis }),
+  augmentReparaturPool: (cid: string, itemId: string, skill: string, materialGegenstandId: string, menge: number) =>
+    api.get<AugmentReparaturPool>(
+      `${itemBase(cid, itemId)}/augment/reparatur-pool?skill=${encodeURIComponent(skill)}&materialGegenstandId=${encodeURIComponent(
+        materialGegenstandId,
+      )}&menge=${menge}`,
+    ),
+  augmentReparierenMaterial: (
+    cid: string,
+    itemId: string,
+    materialGegenstandId: string,
+    menge: number,
+    probenErgebnis: "ja" | "nein" | "patzer",
+  ) =>
+    api.post<AugmentReparaturErgebnis>(`${itemBase(cid, itemId)}/augment/reparieren-material`, {
+      materialGegenstandId,
+      menge,
+      probenErgebnis,
+    }),
+  /** Maschinenteile im Besitz der Besitzerin dieses defekten Augments. */
+  augmentMaterial: (cid: string, itemId: string) =>
+    api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/augment/material`),
 };

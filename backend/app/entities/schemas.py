@@ -121,6 +121,12 @@ class PersonCreate(BaseModel):
     # ist. Serverseitig gegen `maxDrohnen` der ausgerüsteten Konsole gedeckelt
     # (noch nicht umgesetzt). Inaktive Drohnen erscheinen nicht im Kampf.
     riggerAktiv: bool = False
+    # Waffen-/Rüstungs-/Drohnen-Augments (29.10.2026, siehe
+    # docs/wiki/concepts/augments-ausruestung.md): wie viele Augments in
+    # dieses Fahrzeug/diese Drohne montierbar sind — ersetzt den alten, nie
+    # gebauten Körperzonen-Plan. Nur bei istDrohne/istFahrzeug relevant,
+    # sonst 0.
+    upgradeSlots: int = 0
     # Shop-System (22.09.2026, Kern-Baustein): ein Händler ist wie KI/Critter
     # eine echte Person, aber bewusst SCHLANK — kein Charakterblatt (Marks
     # Entscheidung), nur Name/Bild/Beschreibung + Sortiment (siehe
@@ -284,6 +290,7 @@ class PersonUpdate(BaseModel):
     istDrohne: bool | None = None
     istFahrzeug: bool | None = None
     riggerAktiv: bool | None = None
+    upgradeSlots: int | None = None
     istHaendler: bool | None = None
     istTutorialHaendler: bool | None = None
     bietetReparatur: bool | None = None
