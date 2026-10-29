@@ -18,6 +18,7 @@ import { PartyVerwaltung } from "./party/PartyVerwaltung";
 import { Kampfmodus } from "./kampf/Kampfmodus";
 import { SpielerAnsicht } from "./players/SpielerAnsicht";
 import { SpielerVerwaltung } from "./players/SpielerVerwaltung";
+import { ReparaturUebersicht } from "./reparatur/ReparaturUebersicht";
 import { CommlinkShell, type Bereich } from "./shell/CommlinkShell";
 import { MenueAnpassen } from "./shell/MenueAnpassen";
 import {
@@ -121,6 +122,11 @@ const BEREICHE: Bereich[] = [
   // Drohnen & Fahrzeuge (25.10.2026, Phase 3): eigenes Blatt, Riggerkonsole-
   // Slots, Nuyen-Kauf — siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
   { id: "drohnen", name: "Fahrzeuge & Drohnen", symbol: "⛭", farbe: "var(--bereich-drohnen)" },
+  // Reparatur (29.10.2026): eigenständiges Burgermenü statt im Gegenstands-
+  // Bearbeiten-Popup versteckt — Ziel wählen (Rüstung/Drohne/Fahrzeug),
+  // dann Selbst (Material+Probe) oder Händler (Nuyen). Siehe
+  // docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur".
+  { id: "reparatur", name: "Reparatur", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -145,6 +151,7 @@ const TITEL: Record<string, string> = {
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
   drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
+  reparatur: "Reparatur: Material + Probe (Selbst) oder Nuyen (Händler)",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -406,6 +413,9 @@ function Dashboard() {
 
           {/* Drohnen & Fahrzeuge (Phase 3): Burgermenü, Riggerkonsole-Slots, Nuyen-Kauf. */}
           {bereich === "drohnen" && <DrohnenUebersicht key={ansichtKennung} campaignId={kampagne.id} istGm />}
+
+          {/* Reparatur (29.10.2026): eigenständiges Burgermenü statt im Gegenstand-Popup versteckt. */}
+          {bereich === "reparatur" && <ReparaturUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
         </>
       )}
     </CommlinkShell>

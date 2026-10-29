@@ -329,9 +329,9 @@ das Tool rechnet nur den Pool vor und nimmt das Ergebnis entgegen.
 
 ### Reparatur (neues eigenständiges Feature, gilt für Rüstung UND Drohne/Fahrzeug)
 
-**Finalisiert 29.10.2026 im Chat mit Mark — ersetzt die ursprüngliche
-Erfolgs-Überschuss-Idee unten komplett für den neuen generischen Pfad.
-Noch nicht gebaut.**
+**Finalisiert 29.10.2026 im Chat mit Mark, direkt im Anschluss gebaut
+(Backend + Frontend) — ersetzt die ursprüngliche Erfolgs-Überschuss-Idee
+komplett.**
 
 - Neues eigenständiges Burgermenü **„Reparatur“**: ein Slot für das Ziel
   (Rüstung/Drohne/Fahrzeug), ein Slot für das Verbrauchsmaterial — statt wie
@@ -371,9 +371,11 @@ Noch nicht gebaut.**
   | Fahrzeug | **Handwerk ODER Maker (Hardware)**, Spieler wählt |
 
   Löst damit `hardware_probe_pool()` (einheitlich Maker (Hardware) +
-  Intelligenz, bisher nur für Rüstung) ab. **Noch offen:** Attribut-Partner
-  je Skill — freie Wahl wie bei der Maker-Probe im Umbau, oder fix wie
-  bisher Intelligenz? Vor dem Bauen mit Mark klären.
+  Intelligenz, bisher nur für Rüstung) ab. **Attribut-Partner frei wählbar**
+  (Mark, 29.10.2026: „eventuell gibt es mal einen besonderen Moment wo es
+  mehr darum geht geschickt zu sein, oder Geistesschärfe zu zeigen beim
+  Reparieren" — Entscheidung entsteht spontan am Tisch) — genau wie bei der
+  Maker-Probe im Umbau, kein fester Pflicht-Partner wie früher Intelligenz.
 - **Händler-Weg bleibt Nuyen + Verhandlung**, unverändert gegenüber dem
   bestehenden `docs/api/ruestung.md`-Mechanismus: `haendler_reparatur_preis()`
   liefert nur den Vorschlagspreis, die SL kann ihn im Verhandlungs-Popup vor
@@ -385,9 +387,40 @@ Noch nicht gebaut.**
   Qualitätsstufen (hochwertig deckt Attribute, normal Fertigkeiten) bleibt
   unverändert bestehen, siehe „Material statt Nuyen" oben; nur im
   Reparatur-Kontext gilt die neue Kästchen-Tabelle oben.
-- **`docs/api/ruestung.md`-Abschnitt „Reparatur" braucht beim Bauen ein
-  Update** — beschreibt noch den alten Erfolgs-Überschuss-Pfad, der nur für
-  Rüstung galt und jetzt durch das generische System ersetzt wird.
+- **`docs/api/ruestung.md`-Abschnitt „Reparatur" ist jetzt veraltet** —
+  beschreibt noch den alten Erfolgs-Überschuss-Pfad, der nur für Rüstung
+  galt und durch das generische System hier abgelöst wurde. Noch nicht
+  nachgezogen (eigener kleiner Folge-Task).
+- **Gebaut (29.10.2026, direkt im Anschluss):**
+  `kampf/ruestung.py::reparatur_benoetigte_erfolge/reparatur_heilung_material/
+  heile_gesundheitsschaden/REPARATUR_SKILLS` (reine Formeln, `hardware_probe_pool`/
+  `reparatur_schwelle`/`selbstreparatur_ergebnis` entfernt). Neue Routen
+  `.../gegenstaende/{id}/ruestung/reparatur-pool`+`reparieren-material`+
+  `maschinenteile` (items/routes.py, **GM-only** wie bisher) sowie
+  `.../drohnen/{id}/reparatur-pool`+`reparieren-material`
+  (entities/routes.py, **Self-Service wie `steigern`/`aktiv`** — Spieler
+  dürfen die eigene Drohne/das eigene Fahrzeug reparieren, geprüft über
+  `_drohne_und_rigger_oder_404`; in `test_zugriffsschutz.py::OHNE_GM_ERLAUBT`
+  eingetragen). Neues Händlerflag `bietetReparatur` an `Person`
+  (`entities/schemas.py`/`repository.py`, Umschalt-Knopf im NPC-Detail-Popup
+  neben „Als Kredithai markieren"). Drohnen/Fahrzeuge heilen über
+  `schadenSchlag`/`schadenSchwer`/`schadenAggraviert` wie jede Person —
+  **Annahme, am Spieltisch zu bestätigen:** Heilung geht schwerster Schaden
+  zuerst (Aggraviert → Schwer → Schlag), das wurde nicht explizit
+  festgelegt.
+  Frontend: neues eigenständiges Burgermenü **„Reparatur“**
+  (`frontend/src/reparatur/ReparaturUebersicht.tsx` + `ReparaturFenster.tsx`),
+  Ziel-Tabs Rüstung/Drohnen & Fahrzeuge, dieselbe Maker-Probe-Optik
+  (Qualitäts-Knöpfe, Mengenfeld, Skill/Attribut-Wahl, Erfolg/Misserfolg/
+  Patzer) wie beim Drohnen-Umbau. Alte `RuestungReparatur.tsx` (im
+  Gegenstands-Bearbeiten-Popup versteckt) entfernt, nur noch ein Hinweistext
+  dort. **Händler-Weg nur für Rüstung gebaut** — Drohne/Fahrzeug
+  Nuyen-Reparatur ist noch offen (keine Preis-Route, kein `preis`-Feld an
+  Drohnen/Fahrzeugen). **Verifiziert:** `pytest` (877 passed, dieselben 55
+  vorbestehenden Fehlschläge wie im unveränderten Stand — per `git stash`
+  gegengeprüft, brauchen eine laufende Neo4j, die hier nicht lief),
+  `tsc -b` sauber. **Noch nicht am Spieltisch getestet**, kein
+  Browser-Klicktest.
 
 ## Entwicklung
 

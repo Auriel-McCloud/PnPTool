@@ -3,6 +3,17 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] gebaut | Reparatur-Burgermenü: Material-Stufen, Erfolgsformel
+
+Backend: `kampf/ruestung.py` neue Formeln (Materialmenge−1/Min.1,
+feste Kästchen-Wirkung je Qualität, Gesundheitsheilung Drohne/Fahrzeug),
+alte Erfolgs-Überschuss-Formel entfernt. Neue Routen für Rüstung (GM-only)
+und Drohne/Fahrzeug (Self-Service wie Umbau). Neues Händlerflag
+`bietetReparatur`. Frontend: eigenständiges Burgermenü „Reparatur" ersetzt
+die alte im Gegenstands-Popup versteckte UI. Händler-Nuyen-Weg nur für
+Rüstung gebaut. `pytest`/`tsc -b` grün, kein Klicktest. Siehe
+[[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-29] entschieden | Reparatur-System: Material-Stufen, Erfolgsformel, Burgermenü
 
 Im Chat mit Mark das generische Reparatur-Feature (Rüstung/Drohne/Fahrzeug)

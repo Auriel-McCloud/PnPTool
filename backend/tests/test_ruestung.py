@@ -12,13 +12,13 @@ from app.kampf.ruestung import (
     anwende_natuerliche_ruestung,
     berechne_treffer,
     haendler_reparatur_preis,
-    hardware_probe_pool,
+    heile_gesundheitsschaden,
     pool,
     reduktion_effektiv,
     reihenfolge,
-    reparatur_schwelle,
+    reparatur_benoetigte_erfolge,
+    reparatur_heilung_material,
     repariere,
-    selbstreparatur_ergebnis,
     summe_quadrate,
     uebersicht,
     verteile_kaestchenschaden,
@@ -238,54 +238,56 @@ class TestReparatur:
         assert r["kaestchenNeu"] == 9
 
 
-class TestReparaturSchwelle:
-    """Marks Vorgabe: die Hälfte des Kästchen-Max, abgerundet."""
+class TestReparaturBenoetigteErfolge:
+    """Mark, 29.10.2026: Materialmenge minus 1, Minimum 1 — bewusst leichter
+    als der Umbau (dort Wert+1)."""
 
-    def test_gerades_max_halbiert_glatt(self):
-        assert reparatur_schwelle(10) == 5
+    def test_marks_beispiel_fuenf_stueck(self):
+        assert reparatur_benoetigte_erfolge(5) == 4
 
-    def test_ungerades_max_rundet_ab(self):
-        assert reparatur_schwelle(9) == 4
+    def test_ein_stueck_braucht_minimum_einen_erfolg(self):
+        assert reparatur_benoetigte_erfolge(1) == 1
 
-    def test_kleine_ruestung(self):
-        assert reparatur_schwelle(1) == 0
-        assert reparatur_schwelle(0) == 0
-
-
-class TestHardwareProbePool:
-    def test_maker_und_intelligenz_addieren_sich(self):
-        assert hardware_probe_pool({"Maker (Hardware)": 3, "Intelligenz": 4}) == 7
-
-    def test_fehlende_werte_zaehlen_als_null(self):
-        assert hardware_probe_pool({}) == 0
+    def test_null_oder_negativ_bleibt_beim_minimum(self):
+        assert reparatur_benoetigte_erfolge(0) == 1
+        assert reparatur_benoetigte_erfolge(-3) == 1
 
 
-class TestSelbstreparaturErgebnis:
-    """Marks Beispiel: Max 10 -> Schwelle 5. 8 Erfolge -> 3 Kästchen (der
-    Überschuss über die Schwelle), nicht die vollen 8."""
+class TestReparaturHeilungMaterial:
+    def test_hochwertig_heilt_immer_vollstaendig(self):
+        assert reparatur_heilung_material("hochwertig", menge=1, fehlende_kaestchen=12) == 12
+        # Mehr als 1 Stück hochwertig bringt keinen zusätzlichen Nutzen.
+        assert reparatur_heilung_material("hochwertig", menge=3, fehlende_kaestchen=12) == 12
 
-    def test_marks_beispiel_8_erfolge_bei_max_10(self):
-        r = selbstreparatur_ergebnis(erfolge=8, kaestchen_max=10, material_kapazitaet=99)
-        assert r == {"schwelle": 5, "ueberschuss": 3, "repariert": 3}
+    def test_normal_fuenf_pro_stueck(self):
+        assert reparatur_heilung_material("normal", menge=1, fehlende_kaestchen=12) == 5
+        assert reparatur_heilung_material("normal", menge=2, fehlende_kaestchen=12) == 10
 
-    def test_erfolge_genau_auf_der_schwelle_repariert_nichts(self):
-        r = selbstreparatur_ergebnis(erfolge=5, kaestchen_max=10, material_kapazitaet=99)
-        assert r["repariert"] == 0
+    def test_minderwertig_ein_kaestchen_pro_stueck(self):
+        """Marks Beispiel: 5 minderwertige Stücke heilen 5 Kästchen."""
+        assert reparatur_heilung_material("minderwertig", menge=5, fehlende_kaestchen=12) == 5
 
-    def test_erfolge_unter_der_schwelle_repariert_nichts(self):
-        r = selbstreparatur_ergebnis(erfolge=0, kaestchen_max=10, material_kapazitaet=99)
-        assert r["repariert"] == 0
+    def test_gedeckelt_an_fehlenden_kaestchen(self):
+        assert reparatur_heilung_material("normal", menge=10, fehlende_kaestchen=3) == 3
 
-    def test_material_kapazitaet_ist_der_harte_deckel(self):
-        """Ein kritischer Wurf (viel Überschuss) hilft nichts, wenn das
-        eingesetzte Material nur wenig Kästchen abdeckt."""
-        r = selbstreparatur_ergebnis(erfolge=20, kaestchen_max=10, material_kapazitaet=2)
-        assert r["ueberschuss"] == 15
-        assert r["repariert"] == 2
+    def test_keine_materialmenge_heilt_nichts(self):
+        assert reparatur_heilung_material("normal", menge=0, fehlende_kaestchen=12) == 0
 
-    def test_material_kapazitaet_null_repariert_trotz_erfolg_nichts(self):
-        r = selbstreparatur_ergebnis(erfolge=10, kaestchen_max=10, material_kapazitaet=0)
-        assert r["repariert"] == 0
+
+class TestHeileGesundheitsschaden:
+    """Schwerster Schaden zuerst: Aggraviert -> Schwer -> Schlag."""
+
+    def test_heilt_aggraviert_zuerst(self):
+        r = heile_gesundheitsschaden(schlag=2, schwer=2, aggraviert=2, betrag=1)
+        assert r == {"schadenSchlag": 2, "schadenSchwer": 2, "schadenAggraviert": 1}
+
+    def test_ueberlauf_in_die_naechste_stufe(self):
+        r = heile_gesundheitsschaden(schlag=2, schwer=2, aggraviert=1, betrag=3)
+        assert r == {"schadenSchlag": 2, "schadenSchwer": 0, "schadenAggraviert": 0}
+
+    def test_kann_nicht_unter_null_heilen(self):
+        r = heile_gesundheitsschaden(schlag=1, schwer=0, aggraviert=0, betrag=99)
+        assert r == {"schadenSchlag": 0, "schadenSchwer": 0, "schadenAggraviert": 0}
 
 
 class TestSummeQuadrate:

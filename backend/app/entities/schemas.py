@@ -133,6 +133,7 @@ class PersonCreate(BaseModel):
     # normalen Shop-Übersicht aber ausgeblendet bleibt — kein Verhandeln,
     # keine Achievement-Trigger (siehe docs/wiki/entities/achievements.md).
     istTutorialHaendler: bool = False
+    bietetReparatur: bool = False
     # Pflanzen-Vokabular (Flora & Fauna, 06.10.2026): rein kosmetisches
     # Flavor-Flag wie magieFlavor — swapt nur ein paar Beschriftungen auf
     # dem Charakterblatt eines Critters (z.B. "Alter" -> "Wachstumsstadium",
@@ -285,6 +286,7 @@ class PersonUpdate(BaseModel):
     riggerAktiv: bool | None = None
     istHaendler: bool | None = None
     istTutorialHaendler: bool | None = None
+    bietetReparatur: bool | None = None
     istPflanzenCritter: bool | None = None
     # -1 setzt explizit zurück auf den globalen Standardwert; None (fehlt im
     # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
@@ -364,6 +366,7 @@ class PersonResponse(BaseModel):
     istKI: bool = False
     istHaendler: bool = False
     istTutorialHaendler: bool = False
+    bietetReparatur: bool = False
     istPflanzenCritter: bool = False
     # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
     gesundheitGrundwert: int = -1

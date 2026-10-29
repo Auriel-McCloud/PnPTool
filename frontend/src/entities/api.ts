@@ -76,6 +76,9 @@ export interface Person extends VisibilityFields {
    * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
    * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */
   istTutorialHaendler?: boolean;
+  /** Reparatur-Burgermenü (29.10.2026): nur Händler mit diesem Flag
+   * schalten den Nuyen-Reparaturweg im Menü frei. */
+  bietetReparatur?: boolean;
   spezialisierung?: string[];
   /** PHYSISCH = Fancy-Laden mit Verhandeln, DIGITAL = schlichter Online-Shop
    * ohne Verhandeln, mit SL-freizugebender Lieferverzögerung. */

@@ -409,56 +409,104 @@ def repariere(kaestchen_aktuell: int, kaestchen_max: int, betrag: int) -> dict:
 
 
 # =====================================================================
-# Reparatur (23.09.2026, Marks Entscheidungen per clarify — siehe
-# docs/api/ruestung.md "Reparatur" für die volle Herleitung)
+# Reparatur (23.09.2026 erste Fassung nur für Rüstung, 29.10.2026 generisch
+# neu gefasst für Rüstung UND Drohne/Fahrzeug — siehe
+# docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur" für die volle
+# Herleitung dieser Fassung).
 #
 # Zwei Wege, dieselbe Zielgröße (Kästchen auffüllen):
 #
-# (A) SELBST REPARIEREN — Hardware-Skill-Probe + Material, kein Geld.
+# (A) SELBST REPARIEREN — Maschinenteil + Probe, kein Geld. Reiner
+#     Selbstbericht wie bei der Maker-Probe im Drohnen-Umbau
+#     (traits/drohnen.py::benoetigte_erfolge_maker_probe): der Spieler
+#     würfelt physisch am Tisch, der Server würfelt NICHT mehr selbst wie
+#     die alte, nur für Rüstung gültige Fassung das noch tat.
 # (B) HÄNDLER — reine Geldsache, kein Wurf, dafür eine Verhandlung
 #     (SL macht einen Preisvorschlag, der Spieler nimmt an oder lehnt ab —
 #     siehe app/mitteilungen/ für den Verhandlungs-Popup-Mechanismus).
 # =====================================================================
 
+# Wie viele Kästchen EIN Stück Maschinenteil dieser Qualität heilt.
+# "hochwertig" fehlt bewusst — ein einziges Stück heilt dann IMMER
+# vollständig, unabhängig vom Kästchen-Max (siehe reparatur_heilung_material).
+MATERIAL_KAESTCHEN_PRO_STUECK = {"minderwertig": 1, "normal": 5}
 
-def reparatur_schwelle(kaestchen_max: int) -> int:
-    """Ab wie vielen Erfolgen die Hardware-Probe überhaupt etwas repariert.
+# Welcher Skill (oder welche Auswahl an Skills) je Zieltyp für die
+# Reparatur-Probe infrage kommt (Mark, 29.10.2026, explizit pro Zieltyp
+# unterschiedlich festgelegt). Der Attribut-Partner ist überall frei wählbar
+# (Mark: "eventuell gibt es mal einen besonderen Moment wo es mehr darum
+# geht geschickt zu sein, oder Geistesschärfe zu zeigen beim Reparieren").
+REPARATUR_SKILLS = {
+    "ruestung": ("Handwerk",),
+    "drohne": ("Maker (Hardware)",),
+    "fahrzeug": ("Handwerk", "Maker (Hardware)"),
+}
 
-    **Die Hälfte des Kästchen-Max, abgerundet** (Marks Vorgabe) — je robuster
-    die Rüstung gebaut ist, desto mehr Können braucht ihre Reparatur. Nur der
-    ÜBERSCHUSS über diese Schwelle wird zu reparierten Kästchen, siehe
-    `selbstreparatur_ergebnis`.
+
+def reparatur_benoetigte_erfolge(materialmenge: int) -> int:
+    """Wie viele Erfolge die Probe braucht, wenn `materialmenge` Stück
+    derselben Qualität auf einmal eingesetzt werden.
+
+    Mark, 29.10.2026: "ich will reparieren nicht so schwer machen wie
+    umbauen" — Materialmenge minus 1, Minimum 1 (Beispiel: 5 Stück auf
+    einmal → Probe gegen 4). Bewusst umgekehrt zu
+    `traits/drohnen.py::benoetigte_erfolge_maker_probe` (dort +1 statt -1).
     """
-    return max(0, kaestchen_max) // 2
+    return max(1, max(0, materialmenge) - 1)
 
 
-def hardware_probe_pool(werte: dict[str, int]) -> int:
-    """Der Würfelpool für die Reparatur-Probe: Maker (Hardware) + Intelligenz.
+def reparatur_heilung_material(qualitaet: str, menge: int, fehlende_kaestchen: int) -> int:
+    """Wie viele Kästchen eine ERFOLGREICHE Probe tatsächlich repariert.
 
-    Intelligenz statt Geistesschärfe, weil Reparieren planvolles Vorgehen ist
-    ("Probleme lösen, Zusammenhänge erkennen", TRAIT_BESCHREIBUNGEN in
-    traits/seed.py) und kein Reflex — anders als z.B. die Initiative-Formel.
+    - **hochwertig:** ein einziges Stück repariert immer vollständig,
+      unabhängig vom eingesetzten `menge` — mehr als 1 Stück hochwertig
+      verschwendet nur zusätzliche Erfolge-Anforderung ohne zusätzlichen
+      Nutzen.
+    - **normal/minderwertig:** `menge * MATERIAL_KAESTCHEN_PRO_STUECK[...]`,
+      gedeckelt an den tatsächlich fehlenden Kästchen — Überschuss verfällt
+      (kein Vorrat für später).
     """
-    return max(0, int(werte.get("Maker (Hardware)", 0)) + int(werte.get("Intelligenz", 0)))
+    menge = max(0, menge)
+    fehlende_kaestchen = max(0, fehlende_kaestchen)
+    if menge <= 0 or fehlende_kaestchen <= 0:
+        return 0
+    if qualitaet == "hochwertig":
+        return fehlende_kaestchen
+    pro_stueck = MATERIAL_KAESTCHEN_PRO_STUECK.get(qualitaet, 0)
+    return min(fehlende_kaestchen, pro_stueck * menge)
 
 
-def selbstreparatur_ergebnis(erfolge: int, kaestchen_max: int, material_kapazitaet: int) -> dict:
-    """Was die Hardware-Probe tatsächlich repariert.
+def heile_gesundheitsschaden(schlag: int, schwer: int, aggraviert: int, betrag: int) -> dict:
+    """Reparatur an einer Drohne/einem Fahrzeug: `betrag` Kästchen Heilung,
+    verteilt auf die drei WoD-Schadensstufen — **schwerster Schaden zuerst**
+    (Aggraviert -> Schwer -> Schlag), die größte Bedrohung für die Struktur
+    wird zuerst behoben. **Annahme, am Spieltisch mit Mark zu bestätigen**
+    (die Reihenfolge wurde nicht explizit festgelegt).
 
-    Marks Vorgabe, an einem Beispiel: Max 10 → Schwelle 5. Bei 8 Erfolgen
-    werden **3** Kästchen repariert (der Überschuss über die Schwelle), bei
-    5 oder weniger Erfolgen **0** — die Probe hat nicht gereicht, um
-    überhaupt etwas zu bewirken, nicht nur "weniger".
-
-    `material_kapazitaet` ist der harte Deckel: selbst ein sehr guter Wurf
-    repariert nie mehr, als das eingesetzte Material an Kästchen abdeckt
-    (kleines Kit an einer schwer beschädigten Rüstung bleibt also begrenzt
-    wirksam, auch bei einem Kritischen Erfolg).
+    Rüstung nutzt für dieselbe Zielgröße weiterhin `repariere()` (ein
+    einzelner Kästchen-Zähler); Drohnen/Fahrzeuge heilen stattdessen über
+    ihre Gesundheit (`schadenSchlag`/`schadenSchwer`/`schadenAggraviert`,
+    wie jede andere Person — siehe traits/bogen.py::gesundheit_max). Sie
+    können bisher nicht rasten, dies ist ihr einziger Heilweg.
     """
-    schwelle = reparatur_schwelle(kaestchen_max)
-    ueberschuss = max(0, erfolge - schwelle)
-    repariert = min(ueberschuss, max(0, material_kapazitaet))
-    return {"schwelle": schwelle, "ueberschuss": ueberschuss, "repariert": repariert}
+    rest = max(0, betrag)
+    schlag = max(0, schlag)
+    schwer = max(0, schwer)
+    aggraviert = max(0, aggraviert)
+
+    abzug = min(rest, aggraviert)
+    aggraviert -= abzug
+    rest -= abzug
+
+    abzug = min(rest, schwer)
+    schwer -= abzug
+    rest -= abzug
+
+    abzug = min(rest, schlag)
+    schlag -= abzug
+    rest -= abzug
+
+    return {"schadenSchlag": schlag, "schadenSchwer": schwer, "schadenAggraviert": aggraviert}
 
 
 def summe_quadrate(n: int) -> int:

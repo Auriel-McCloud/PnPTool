@@ -134,18 +134,26 @@ export interface Gegenstand {
   maschinenteilQualitaet: string;
 }
 
-/** Fürs Selbst-Reparieren-Popup — Wurfergebnis + Auswertung, siehe
- * docs/api/ruestung.md, „Reparatur". */
-export interface ReparaturWurf {
-  augen: number[];
-  erfolge: number;
-  patzer: boolean;
-  pool: number;
-  schwelle: number;
-  ueberschuss: number;
+/** Pool-Infos fürs Reparatur-Popup — Handwerk-Wert der Trägerin plus freie
+ * Attributwahl, dazu benötigte Erfolge und Heilung bei Erfolg. Siehe
+ * docs/wiki/concepts/drohnen-fahrzeuge.md, „Reparatur". */
+export interface ReparaturProbePool {
+  skill: string;
+  skillWert: number;
+  attribute: { name: string; wert: number }[];
+  benoetigteErfolge: number;
+  heilungBeiErfolg: number;
+  fehlendeKaestchen: number;
+}
+
+/** Auswertung der Selbst-Reparatur (Maschinenteil + selbstberichtete Probe),
+ * fürs Popup. */
+export interface ReparaturMaterialErgebnis {
+  qualitaet: string;
+  menge: number;
   repariert: number;
-  materialKapazitaet: number;
   materialName: string;
+  materialVerbraucht: number;
   materialRestmenge: number;
   gegenstand: Gegenstand;
 }
@@ -409,13 +417,34 @@ export const itemsApi = {
   ruestungReparieren: (cid: string, itemId: string, kaestchen: number) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/ruestung/reparieren`, { kaestchen }),
   /**
-   * Selbst-Reparieren: würfelt serverseitig die Hardware-Probe (Maker +
-   * Intelligenz des Besitzers), verbraucht immer 1 Stück Material, repariert
-   * Kästchen bis zur Kapazität des Materials. Nur SL — siehe
-   * docs/api/ruestung.md, „Reparatur".
+   * Pool-Infos fürs Reparatur-Popup: Handwerk-Wert der Trägerin + alle
+   * Attribute zur freien Partnerwahl, benötigte Erfolge für `menge` Stück
+   * und voraussichtliche Heilung. Reine Leseabfrage.
    */
-  ruestungReparierenSelbst: (cid: string, itemId: string, materialGegenstandId: string) =>
-    api.post<ReparaturWurf>(`${itemBase(cid, itemId)}/ruestung/reparieren-selbst`, { materialGegenstandId }),
+  ruestungReparaturPool: (cid: string, itemId: string, materialGegenstandId: string, menge: number) =>
+    api.get<ReparaturProbePool>(
+      `${itemBase(cid, itemId)}/ruestung/reparatur-pool?materialGegenstandId=${encodeURIComponent(
+        materialGegenstandId,
+      )}&menge=${menge}`,
+    ),
+  /**
+   * Selbst-Reparieren: Maschinenteil + selbstberichtete Probe (der Spieler
+   * würfelt physisch am Tisch), kein Geld. "ja" heilt + verbraucht `menge`
+   * Material, "patzer" verbraucht nur das Material, "nein" lässt beides
+   * unangetastet. Nur SL — siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
+   */
+  ruestungReparierenMaterial: (
+    cid: string,
+    itemId: string,
+    materialGegenstandId: string,
+    menge: number,
+    probenErgebnis: "ja" | "nein" | "patzer",
+  ) =>
+    api.post<ReparaturMaterialErgebnis>(`${itemBase(cid, itemId)}/ruestung/reparieren-material`, {
+      materialGegenstandId,
+      menge,
+      probenErgebnis,
+    }),
   /** Reine Preisberechnung für den Händler-Vorschlag, kein Seiteneffekt. */
   ruestungReparaturPreis: (cid: string, itemId: string, fehlendeKaestchen?: number) =>
     api.get<ReparaturPreisAntwort>(
@@ -423,6 +452,9 @@ export const itemsApi = {
         fehlendeKaestchen != null ? `?fehlendeKaestchen=${fehlendeKaestchen}` : ""
       }`,
     ),
+  /** Maschinenteile im Besitz der Trägerin dieser Rüstung, für die Auswahl. */
+  ruestungMaschinenteile: (cid: string, itemId: string) =>
+    api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/ruestung/maschinenteile`),
   /** Reparaturmaterial im Besitz der Trägerin dieser Rüstung, für die Auswahl. */
   reparaturmaterialListe: (cid: string, itemId: string) =>
     api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/reparaturmaterial`),

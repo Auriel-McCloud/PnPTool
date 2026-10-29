@@ -21,7 +21,6 @@ import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
-import { RuestungReparatur } from "../kampf/RuestungReparatur";
 import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
 import "../entities/pc-detail.css";
 
@@ -1451,12 +1450,12 @@ export function GegenstandRow({
                       heilt stattdessen über die Rast-Mechanik.
                     </p>
                   )}
-                  {personId &&
-                    item.ruestungKaestchenMax > 0 &&
-                    item.ruestungKaestchenAktuell < item.ruestungKaestchenMax &&
-                    !item.istNatuerlich && (
-                      <RuestungReparatur campaignId={campaignId} personId={personId} item={item} onChanged={onChanged} />
-                    )}
+                  {item.ruestungKaestchenMax > 0 && item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && !item.istNatuerlich && (
+                    <p style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                      Beschädigt — Reparatur läuft jetzt über das eigenständige Burgermenü "Reparatur"
+                      (docs/wiki/concepts/drohnen-fahrzeuge.md).
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -68,6 +68,28 @@ export interface MakerProbePool {
   attribute: { name: string; wert: number }[];
 }
 
+/** Pool-Infos fürs Reparatur-Popup — Pendant zu `items/api.ts::ReparaturProbePool`
+ * für Rüstung, siehe docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur". */
+export interface ReparaturProbePool {
+  skill: string;
+  skillWert: number;
+  attribute: { name: string; wert: number }[];
+  benoetigteErfolge: number;
+  heilungBeiErfolg: number;
+  fehlendeKaestchen: number;
+}
+
+/** Auswertung der Selbst-Reparatur einer Drohne/eines Fahrzeugs. */
+export interface ReparaturMaterialErgebnisDrohne {
+  qualitaet: string;
+  menge: number;
+  repariert: number;
+  materialName: string;
+  materialVerbraucht: number;
+  materialRestmenge: number;
+  drohne: DrohnenEintrag;
+}
+
 const basis = (campaignId: string) => `/api/campaigns/${campaignId}`;
 
 export const drohnenApi = {
@@ -109,9 +131,41 @@ export const drohnenApi = {
   maschinenteile: (campaignId: string, drohneId: string) =>
     api.get<Gegenstand[]>(`${basis(campaignId)}/drohnen/${drohneId}/maschinenteile`),
 
-  /** Pool-Infos fürs Maker-Probe-Popup vorm Material-Umbau. */
+  /** Maker-Probe-Pool vorm Material-Umbau. */
   makerProbePool: (campaignId: string, drohneId: string, traitDefId: string) =>
     api.get<MakerProbePool>(
       `${basis(campaignId)}/drohnen/${drohneId}/maker-probe-pool?traitDefId=${encodeURIComponent(traitDefId)}`,
     ),
+
+  /**
+   * Pool-Infos fürs Reparatur-Popup: Skill-Wert DES RIGGERS (Handwerk ODER
+   * Maker (Hardware), je nach Zieltyp — siehe kampf/ruestung.py::
+   * REPARATUR_SKILLS) + alle Attribute zur freien Partnerwahl, benötigte
+   * Erfolge für `menge` Stück und voraussichtliche Heilung.
+   */
+  reparaturPool: (campaignId: string, drohneId: string, skill: string, materialGegenstandId: string, menge: number) =>
+    api.get<ReparaturProbePool>(
+      `${basis(campaignId)}/drohnen/${drohneId}/reparatur-pool?skill=${encodeURIComponent(
+        skill,
+      )}&materialGegenstandId=${encodeURIComponent(materialGegenstandId)}&menge=${menge}`,
+    ),
+
+  /**
+   * Selbst-Reparieren: Maschinenteil + selbstberichtete Probe, heilt
+   * Gesundheitsschaden der Drohne/des Fahrzeugs (ihr einziger Heilweg, sie
+   * können bisher nicht rasten). "ja" heilt + verbraucht `menge` Material,
+   * "patzer" verbraucht nur das Material, "nein" lässt beides unangetastet.
+   */
+  reparierenMaterial: (
+    campaignId: string,
+    drohneId: string,
+    materialGegenstandId: string,
+    menge: number,
+    probenErgebnis: MakerProbenErgebnis,
+  ) =>
+    api.post<ReparaturMaterialErgebnisDrohne>(`${basis(campaignId)}/drohnen/${drohneId}/reparieren-material`, {
+      materialGegenstandId,
+      menge,
+      probenErgebnis,
+    }),
 };

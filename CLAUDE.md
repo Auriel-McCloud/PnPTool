@@ -388,12 +388,15 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
     Verbrauchsgegenstand „Maschinenteil“, Zusatzfertigkeit „Fliegen“ (Mark
     trägt sie selbst in die SL-Tabelle ein). Nicht einfach lostbauen, bitte
     erst mit Mark Reihenfolge klären. **29.10.2026: Reparatur-Design mit
-    Mark fertig ausgearbeitet** (Material-Qualitätsstufen mit fester
-    Kästchen-Wirkung, Erfolgsformel Materialmenge−1/Minimum 1, Pool je
-    Zieltyp verschieden Rüstung=Handwerk/Drohne=Maker/Fahrzeug=beides,
-    Händler-Weg bleibt Nuyen-Verhandlung + neue `bietetReparatur`-Sperre) —
-    siehe `docs/wiki/concepts/drohnen-fahrzeuge.md` „Reparatur" für die
-    volle Spec, noch nicht gebaut.
+    Mark fertig ausgearbeitet und direkt im Anschluss gebaut** (Material-
+    Qualitätsstufen mit fester Kästchen-Wirkung, Erfolgsformel
+    Materialmenge−1/Minimum 1, Pool je Zieltyp verschieden
+    Rüstung=Handwerk/Drohne=Maker/Fahrzeug=beides, neues Burgermenü
+    „Reparatur", Händler-Weg bleibt Nuyen-Verhandlung + neue
+    `bietetReparatur`-Sperre, nur für Rüstung gebaut) — siehe
+    `docs/wiki/concepts/drohnen-fahrzeuge.md` „Reparatur" für Details und
+    offene Punkte (Drohnen/Fahrzeug-Händlerweg fehlt noch). `pytest`/
+    `tsc -b` grün, noch nicht am Spieltisch getestet.
 
 - **Bugfix (26.10.2026) — Drohnen-Steckbrief hatte den Einklapp-Knopf auch
   beim eigenen Charakter** (Mark, erster echter Klicktest am Spieltisch):

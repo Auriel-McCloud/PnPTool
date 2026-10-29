@@ -215,6 +215,12 @@ OHNE_GM_ERLAUBT = {
     # (_drohne_und_rigger_oder_404): GM immer, Spieler nur für die eigene
     # Drohne/das eigene Fahrzeug. Ändert nur `name`.
     "/api/campaigns/{campaign_id}/drohnen/{node_id}/name",
+    # Ebenso: Reparatur mit Maschinenteil + selbstberichteter Probe
+    # (29.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur") —
+    # heilt Gesundheitsschaden der eigenen Drohne/des eigenen Fahrzeugs,
+    # ihr einziger Heilweg (sie können nicht rasten). Prüft selbst
+    # (_drohne_und_rigger_oder_404): GM immer, Spieler nur fürs eigene Tier.
+    "/api/campaigns/{campaign_id}/drohnen/{node_id}/reparieren-material",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

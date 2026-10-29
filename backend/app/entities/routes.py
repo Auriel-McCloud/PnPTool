@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
@@ -18,13 +18,19 @@ from app.items.schemas import GegenstandCreate
 from app.traits import repository as traits_repository
 from app.traits import erfahrung
 from app.traits import erstellung
-from app.traits.bogen import sichtbare_kategorien
+from app.traits.bogen import GESUNDHEIT_GRUNDWERT, gesundheit_max, sichtbare_kategorien
 from app.traits.drohnen import (
     DROHNE_GESPERRTE_FERTIGKEITEN,
     benoetigte_erfolge_maker_probe,
     kann_aktivieren,
     kann_bezahlen,
     maschinenteil_reicht,
+)
+from app.kampf.ruestung import (
+    REPARATUR_SKILLS,
+    heile_gesundheitsschaden,
+    reparatur_benoetigte_erfolge,
+    reparatur_heilung_material,
 )
 from app.zusatzfertigkeiten import repository as zf_repository
 from app.entities.visibility import (
@@ -787,6 +793,161 @@ async def drohne_maschinenteile(campaign_id: str, node_id: str, viewer: Viewer =
                 gesehen.add(teil["id"])
                 ergebnis.append(teil)
     return ergebnis
+
+
+def _drohne_fehlende_kaestchen(drohne: dict, werte: dict[str, int]) -> int:
+    """Wie viele Gesundheits-Kästchen dieser Drohne/diesem Fahrzeug fehlen
+    (Summe der drei WoD-Schadensstufen, gedeckelt am Max) — für Rüstung gibt
+    es dafür `ruestungKaestchenMax - ruestungKaestchenAktuell` direkt am
+    Gegenstand; eine Drohne/ein Fahrzeug hat stattdessen Gesundheit wie jede
+    andere Person (siehe traits/bogen.py::gesundheit_max)."""
+    roh_grundwert = drohne.get("gesundheitGrundwert")
+    grundwert = GESUNDHEIT_GRUNDWERT if roh_grundwert is None or roh_grundwert == -1 else int(roh_grundwert)
+    g_max = gesundheit_max(werte, grundwert)
+    schaden = (
+        int(drohne.get("schadenSchlag") or 0)
+        + int(drohne.get("schadenSchwer") or 0)
+        + int(drohne.get("schadenAggraviert") or 0)
+    )
+    return max(0, min(schaden, g_max))
+
+
+class ReparaturProbePoolDrohne(BaseModel):
+    """Pool-Infos fürs Reparatur-Popup einer Drohne/eines Fahrzeugs —
+    Pendant zu `items/routes.py::ReparaturProbePool` für Rüstung."""
+
+    skill: str
+    skillWert: int
+    attribute: list[AttributWert]
+    benoetigteErfolge: int
+    heilungBeiErfolg: int
+    fehlendeKaestchen: int
+
+
+@router.get("/drohnen/{node_id}/reparatur-pool", response_model=ReparaturProbePoolDrohne)
+async def drohne_reparatur_pool(
+    campaign_id: str,
+    node_id: str,
+    skill: str = Query(...),
+    materialGegenstandId: str = Query(...),
+    menge: int = 1,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Pool-Infos für die Reparatur-Probe: der gewählte Skill muss zum
+    Zieltyp passen (Mark, 29.10.2026, siehe kampf/ruestung.py::
+    REPARATUR_SKILLS — Drohne nur Maker (Hardware), Fahrzeug Handwerk ODER
+    Maker). Repariert wird vom RIGGER (gleiche Quelle wie beim
+    Material-Umbau), der Attribut-Partner bleibt frei wählbar. Reine
+    Leseabfrage, kein Seiteneffekt — gewürfelt wird am Tisch.
+    """
+    drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    if rigger_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Drohne/dieses Fahrzeug hat keinen Rigger.")
+    zieltyp = "fahrzeug" if drohne.get("istFahrzeug") else "drohne"
+    if skill not in REPARATUR_SKILLS[zieltyp]:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Dieser Skill repariert kein {zieltyp.capitalize()}.")
+
+    material = await items_repository.get_gegenstand(campaign_id, materialGegenstandId)
+    if material is None or not material.get("istMaschinenteil"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil.")
+
+    rigger_werte = await traits_repository.get_ratings_for_entity(campaign_id, rigger_id)
+    nach_name = {w["name"]: w["rating"] for w in rigger_werte}
+    campaign = await get_campaign(campaign_id)
+    katalog = await traits_repository.list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    person_attribut_kategorien = {*erstellung.ATTRIBUT_KATEGORIEN, "AttributMatrix"}
+    attribute = [
+        AttributWert(name=t["name"], wert=nach_name.get(t["name"], 0))
+        for t in katalog
+        if t["category"] in person_attribut_kategorien
+    ]
+
+    drohnen_werte = {w["name"]: w["rating"] for w in await traits_repository.get_ratings_for_entity(campaign_id, node_id)}
+    fehlende_kaestchen = _drohne_fehlende_kaestchen(drohne, drohnen_werte)
+
+    return ReparaturProbePoolDrohne(
+        skill=skill,
+        skillWert=nach_name.get(skill, 0),
+        attribute=attribute,
+        benoetigteErfolge=reparatur_benoetigte_erfolge(menge),
+        heilungBeiErfolg=reparatur_heilung_material(material.get("maschinenteilQualitaet") or "", menge, fehlende_kaestchen),
+        fehlendeKaestchen=fehlende_kaestchen,
+    )
+
+
+class ReparaturMaterialRequestDrohne(BaseModel):
+    """Selbst-Reparieren: Maschinenteil + selbstberichtete Probe, kein Geld
+    — Pendant zu `items/routes.py::ReparaturMaterialRequest` für Rüstung."""
+
+    materialGegenstandId: str
+    menge: int = Field(ge=1)
+    probenErgebnis: Literal["ja", "nein", "patzer"]
+
+
+class ReparaturMaterialErgebnisDrohne(BaseModel):
+    qualitaet: str
+    menge: int
+    repariert: int
+    materialName: str
+    materialVerbraucht: int
+    materialRestmenge: int
+    drohne: dict
+
+
+@router.post("/drohnen/{node_id}/reparieren-material", response_model=ReparaturMaterialErgebnisDrohne)
+async def drohne_reparieren_material(
+    campaign_id: str, node_id: str, body: ReparaturMaterialRequestDrohne, viewer: Viewer = Depends(get_viewer)
+):
+    """Heilt Gesundheitsschaden der Drohne/des Fahrzeugs (sie können bisher
+    nicht rasten — dies ist ihr einziger Heilweg, siehe
+    docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur"). "ja" heilt UND
+    verbraucht das Material, "patzer" verbraucht NUR das Material, "nein"
+    lässt beides unangetastet — gleiches Muster wie die Maker-Probe."""
+    drohne, rigger_id = await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    if rigger_id is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Drohne/dieses Fahrzeug hat keinen Rigger.")
+
+    material = await items_repository.get_gegenstand(campaign_id, body.materialGegenstandId)
+    if material is None or not material.get("istMaschinenteil"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil.")
+    besitzer_id = await items_repository.get_owner_person_id(campaign_id, body.materialGegenstandId)
+    if besitzer_id not in (rigger_id, node_id):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Dieses Maschinenteil gehört weder dem Rigger noch der Drohne/dem Fahrzeug."
+        )
+    if material.get("menge", 1) < body.menge:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Nicht genug von diesem Maschinenteil vorhanden.")
+
+    drohnen_werte = {w["name"]: w["rating"] for w in await traits_repository.get_ratings_for_entity(campaign_id, node_id)}
+    schlag = int(drohne.get("schadenSchlag") or 0)
+    schwer = int(drohne.get("schadenSchwer") or 0)
+    aggraviert = int(drohne.get("schadenAggraviert") or 0)
+    fehlende_kaestchen = _drohne_fehlende_kaestchen(drohne, drohnen_werte)
+
+    qualitaet = material.get("maschinenteilQualitaet") or ""
+    repariert = 0
+    if body.probenErgebnis == "ja":
+        repariert = reparatur_heilung_material(qualitaet, body.menge, fehlende_kaestchen)
+        neuer_schaden = heile_gesundheitsschaden(schlag, schwer, aggraviert, repariert)
+        await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, neuer_schaden)
+
+    material_verbraucht = body.probenErgebnis in ("ja", "patzer")
+    material_neue_menge = material["menge"] - body.menge if material_verbraucht else material["menge"]
+    if material_verbraucht:
+        await items_repository.update_gegenstand(campaign_id, body.materialGegenstandId, {"menge": material_neue_menge})
+
+    drohne_frisch = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if drohne_frisch is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    return ReparaturMaterialErgebnisDrohne(
+        qualitaet=qualitaet,
+        menge=body.menge,
+        repariert=repariert,
+        materialName=material["name"],
+        materialVerbraucht=body.menge if material_verbraucht else 0,
+        materialRestmenge=material_neue_menge,
+        drohne=drohne_frisch,
+    )
 
 
 @router.get("/ki", response_model=list[dict])

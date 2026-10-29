@@ -74,9 +74,16 @@ export function NPCDetail({
   const [loeschenLaeuft, setLoeschenLaeuft] = useState(false);
   const istHaendler = aktuellePerson.istHaendler ?? false;
   const istKredithai = aktuellePerson.istKredithai ?? false;
+  const bietetReparatur = aktuellePerson.bietetReparatur ?? false;
 
   async function kredithaiUmschalten() {
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istKredithai: !istKredithai });
+    setAktuellePerson(neu);
+    onGeaendert();
+  }
+
+  async function reparaturUmschalten() {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { bietetReparatur: !bietetReparatur });
     setAktuellePerson(neu);
     onGeaendert();
   }
@@ -247,10 +254,15 @@ export function NPCDetail({
                     🗒️ Notizen bearbeiten
                   </button>
                   {istHaendler && (
-                    <p className="pcd-hinweis" style={{ margin: "8px 0 0" }}>
-                      Verkäufer an einem Laden. Ware, Spezialisierung und Tutorial-Flag pflegst du am Ort — hier nur
-                      Kontakt und Verhandeln.
-                    </p>
+                    <>
+                      <p className="pcd-hinweis" style={{ margin: "8px 0 0" }}>
+                        Verkäufer an einem Laden. Ware, Spezialisierung und Tutorial-Flag pflegst du am Ort — hier nur
+                        Kontakt und Verhandeln.
+                      </p>
+                      <button type="button" onClick={() => void reparaturUmschalten()}>
+                        {bietetReparatur ? "🔧 Bietet Reparatur — Flag weg" : "🔧 Als Reparatur-Händler markieren"}
+                      </button>
+                    </>
                   )}
                   <button type="button" onClick={() => void kredithaiUmschalten()}>
                     {istKredithai ? "🦈 Kredithai — Flag weg" : "🦈 Als Kredithai markieren"}
