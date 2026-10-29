@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] gebaut | Werkbank-Augments Nachbesserung: eigener Typ "Upgrade-Material", Slot-Feld sichtbar gemacht
+
+Marks erster Klicktest: eigener Gegenstandstyp "Upgrade-Material"
+(🔩) in der Kachel-Auswahl ergänzt (reiner Frontend-Katalogeintrag).
+Bugfix: Upgrade-Slots-Feld sass hinter dem eingeklappten
+"Optionen"-Schalter und war unauffindbar — jetzt direkt neben Seltenheit
+sichtbar für Waffe/Rüstung/Cyberdeck/Riggerkonsole. `tsc -b` grün. Siehe
+[[concepts/augments-ausruestung]].
+
 ## [2026-10-29] gebaut | Werkbank-Augments: Montieren/Demontieren/Reparieren für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug
 
 Zweiter Baustein der Werkbank nach der Reparatur (siehe Eintrag direkt

@@ -1491,6 +1491,19 @@ export function GegenstandRow({
                 <label>Seltenheit</label>
                 <DotPool value={seltenheit} max={5} onChange={(v) => setSeltenheit(Math.max(1, v))} size={12} />
               </div>
+              {AUGMENT_TRAEGER_TYPEN.has(typ) && (
+                <div className="pcd-feld">
+                  <label>Upgrade-Slots (Augments)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={6}
+                    value={upgradeSlots}
+                    onChange={(e) => setUpgradeSlots(Math.max(0, Math.min(6, Number(e.target.value))))}
+                    style={{ width: 60 }}
+                  />
+                </div>
+              )}
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   Gewicht (kg)
@@ -1674,17 +1687,9 @@ export function GegenstandRow({
                       )}
                     </div>
                     {AUGMENT_TRAEGER_TYPEN.has(typ) && (
-                      <div className="pcd-feld">
-                        <label>Upgrade-Slots (Augments)</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={6}
-                          value={upgradeSlots}
-                          onChange={(e) => setUpgradeSlots(Math.max(0, Math.min(6, Number(e.target.value))))}
-                          style={{ width: 60 }}
-                        />
-                      </div>
+                      <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: 0 }}>
+                        Upgrade-Slots lassen sich oben bei Seltenheit einstellen.
+                      </p>
                     )}
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>

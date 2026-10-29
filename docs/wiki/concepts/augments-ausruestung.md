@@ -153,3 +153,21 @@ Menü-Layout (`MenueAnpassen`) nicht verwaist.
   aber keine eigene Eingabe in der Drohnen-Detailansicht — bisher nur über
   die API direkt setzbar).
 - `traitBoni`-Wirkung auf echte Würfelpools fehlt systemweit, siehe oben.
+
+## Nachbesserung (29.10.2026, Marks erster Klicktest)
+
+- **Eigener Typ "Upgrade-Material"** (`items/typKatalog.ts`, Symbol 🔩) —
+  Mark: "ich wäre mehr für den Typ Upgrade Material das klingt
+  sprechende". Reiner Frontend-Katalogeintrag, `typ` ist im Backend ein
+  freies `str`-Feld, keine Migration nötig. Ersetzt NICHT das
+  `istAugment`-Flag (das bleibt Pflicht, damit es in der Werkbank als
+  Augment erscheint) — der Typ ist nur die sprechendere Kachel beim
+  Anlegen, analog zu "Werkzeug"/"Verbrauchsgegenstand" davor.
+- **Bugfix Sichtbarkeit:** Das Upgrade-Slots-Feld sass hinter dem
+  eingeklappten "Optionen anzeigen"-Schalter und war damit faktisch
+  unauffindbar — Mark: "ich finde weder in Waffen noch in Rüstungen die
+  Möglichkeit unter der Seltenheit einzustellen". Jetzt direkt neben dem
+  Seltenheit-Feld platziert (immer sichtbar für `AUGMENT_TRAEGER_TYPEN`,
+  keine Optionen-Klapp-Notwendigkeit mehr). Die "Ist selbst ein
+  Augment"-Checkbox + Waffentyp-Dropdown bleiben in den Optionen (weniger
+  zeitkritisch).
