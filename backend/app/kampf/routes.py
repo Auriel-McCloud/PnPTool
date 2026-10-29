@@ -48,7 +48,7 @@ def _ohne_hilfsfelder(kampf: dict | None) -> dict | None:
     """
     if kampf is None:
         return None
-    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer"):
+    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer"):
         kampf.pop(feld, None)
     return kampf
 
@@ -142,6 +142,7 @@ async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)
     rassen = kampf.pop("_rassen", {})
     npc_ids = kampf.pop("_npcIds", set())
     begleiter_besitzer = kampf.pop("_begleiterBesitzer", {})
+    drohnen_besitzer = kampf.pop("_drohnenBesitzer", {})
 
     if viewer.role != "GM":
         kampf["teilnehmer"] = fuer_spieler(
@@ -150,6 +151,7 @@ async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)
             eigene_person_id=viewer.person_id,
             begleiter_besitzer=begleiter_besitzer,
             npc_ids=npc_ids,
+            drohnen_besitzer=drohnen_besitzer,
         )
     return kampf
 

@@ -111,3 +111,24 @@ class TestEchteNamenBleibenGeheim:
             npc_ids=set(),
         )
         assert liste[0]["name"] == "Rex"
+
+    def test_eigene_drohne_bleibt_sichtbar(self):
+        # Mark, 29.10.2026: nach "Dem Kampf beitreten" stand die eigene
+        # Drohne als "Unbekannte Person" in der Initiative — personType NPC
+        # griff auch für die eigene Drohne.
+        liste = fuer_spieler(
+            [t(name="Absar 1.7", personId="d-1", personType="NPC")],
+            rassen={"d-1": ""},
+            drohnen_besitzer={"d-1": "p-2"},
+            npc_ids={"p-1"},
+        )
+        assert liste[0]["name"] == "Absar 1.7"
+
+    def test_drohne_eines_gegnerischen_npc_bleibt_verdeckt(self):
+        liste = fuer_spieler(
+            [t(name="Kampfdrohne Typ 3", personId="d-1", personType="NPC")],
+            rassen={"d-1": ""},
+            drohnen_besitzer={"d-1": "p-1"},
+            npc_ids={"p-1"},
+        )
+        assert liste[0]["name"] == "Unbekannte Person"

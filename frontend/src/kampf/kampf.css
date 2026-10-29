@@ -245,6 +245,13 @@
   min-height: 0;
 }
 
+/* Beide Drohnennamen gleich hoch reservieren (29.10.2026, Mark): sonst
+   sitzen die Statuszeilen einer kurz benannten Drohne höher als die ihrer
+   Nachbarn mit zweizeiligem Namen. */
+.ka-drohnen .gg-kachel-name {
+  min-height: 2.5em;
+}
+
 .ka-drohnen .gg-slotbox-leer {
   height: auto;
   min-height: 88px;

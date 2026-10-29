@@ -122,6 +122,19 @@ async def hole(campaign_id: str) -> dict | None:
         )
         begleiter_besitzer = {r["begleiterId"]: r["besitzerId"] async for r in result}
 
+        # Drohnen/Fahrzeuge sind technisch personType NPC, aber keine geheimen
+        # Gegner — die eigene Sichtbarkeitsregel hängt am Rigger (Mark,
+        # 29.10.2026): PC-Rigger -> Name sichtbar, NPC-Rigger -> verdeckt.
+        result = await session.run(
+            """
+            MATCH (d:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p:Person)
+            WHERE d.istDrohne = true OR d.istFahrzeug = true
+            RETURN d.id AS drohneId, p.id AS riggerId
+            """,
+            campaign_id=campaign_id,
+        )
+        drohnen_besitzer = {r["drohneId"]: r["riggerId"] async for r in result}
+
         result = await session.run(
             """
             MATCH (r:Person {campaignId: $campaign_id})
@@ -145,6 +158,7 @@ async def hole(campaign_id: str) -> dict | None:
         "_rassen": rassen,
         "_npcIds": npc_ids,
         "_begleiterBesitzer": begleiter_besitzer,
+        "_drohnenBesitzer": drohnen_besitzer,
         # Kennung des Teilnehmers, der gerade handelt. Kennung statt Position,
         # weil sich die Reihenfolge ändern kann (jemand kommt dazu) — eine
         # Position zeigte danach auf jemand anderen.

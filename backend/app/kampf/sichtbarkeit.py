@@ -19,6 +19,7 @@ def fuer_spieler(
     eigene_person_id: str | None = None,
     begleiter_besitzer: dict[str, str] | None = None,
     npc_ids: set[str] | None = None,
+    drohnen_besitzer: dict[str, str] | None = None,
 ) -> list[dict]:
     """Ersetzt echte NPC-Namen durch Aliase und entfernt SL-Notizen.
 
@@ -28,20 +29,28 @@ def fuer_spieler(
     Begleiter von NPCs — sonst verriete "Kampfdrohne von Viktor" den Namen
     durch die Hintertür.
 
+    ``drohnen_besitzer`` bildet eine Drohnen-/Fahrzeug-Personen-Kennung auf
+    ihren Rigger ab (Mark, 29.10.2026): Drohnen sind technisch ``personType
+    NPC``, aber eine eigene oder die eines Mitspielers ist kein Geheimnis —
+    nur die Drohne eines gegnerischen NPC bleibt hinter dem Alias.
+
     Arbeitet auf Kopien: die Liste wird pro Aufruf gefiltert, das Original
     bleibt für andere Empfänger unberührt.
     """
     aliase = aliase or {}
     begleiter_besitzer = begleiter_besitzer or {}
     npc_ids = npc_ids or set()
+    drohnen_besitzer = drohnen_besitzer or {}
 
     gefiltert = []
     for eintrag in teilnehmer:
         t = dict(eintrag)
         person_id = t.get("personId")
         eigener = bool(person_id) and person_id == eigene_person_id
+        rigger_id = drohnen_besitzer.get(person_id) if person_id else None
+        drohne_eines_spielers = bool(rigger_id) and rigger_id not in npc_ids
 
-        if t.get("personType") == "NPC" and person_id:
+        if t.get("personType") == "NPC" and person_id and not drohne_eines_spielers:
             # Der echte Name verschwindet vollständig — er darf nicht einmal
             # in einem anderen Feld weiterleben.
             t["name"] = effektiver_alias(
