@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { AUGMENT_TRAEGER_TYPEN, type GegenstandMitBesitzer } from "../items/api";
+import { steckbriefKurz } from "../items/steckbrief";
+import { KACHEL_STIL } from "../items/kachelraster";
 import { type DrohnenEintrag } from "../drohnen/api";
 import { AugmentFenster } from "./AugmentFenster";
 import { AugmentTraegerPanel, type AugmentTraeger } from "./AugmentTraegerPanel";
@@ -61,7 +63,7 @@ export function AugmentUebersichtSpieler({
   }
 
   return (
-    <div className="gg-seite">
+    <div className="gg-seite" style={KACHEL_STIL}>
       {gegenstandTraeger.length === 0 && drohnenTraeger.length === 0 && (
         <p className="gg-leer">
           Noch kein eigener Gegenstand/keine eigene Drohne mit Upgrade-Slots — dein SL trägt das Feld am
@@ -80,6 +82,9 @@ export function AugmentUebersichtSpieler({
                     <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
                     <span className="gg-kachel-name">{g.name}</span>
                     <span className="gg-kachel-zeile">defekt</span>
+                    {steckbriefKurz(g).length > 0 && (
+                      <span className="gg-kachel-steckbrief">{steckbriefKurz(g).join(" · ")}</span>
+                    )}
                   </button>
                 ))}
               </div>

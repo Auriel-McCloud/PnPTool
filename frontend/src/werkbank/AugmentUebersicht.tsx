@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { itemsApi, AUGMENT_TRAEGER_TYPEN, type GegenstandMitBesitzer } from "../items/api";
+import { steckbriefKurz } from "../items/steckbrief";
+import { KACHEL_STIL } from "../items/kachelraster";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { AugmentFenster } from "./AugmentFenster";
 import { AugmentTraegerPanel, type AugmentTraeger } from "./AugmentTraegerPanel";
@@ -64,7 +66,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
   }
 
   return (
-    <div className="gg-seite">
+    <div className="gg-seite" style={KACHEL_STIL}>
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
       {gegenstandTraeger.length === 0 && drohnenTraeger.length === 0 && (
         <p className="gg-leer">
@@ -84,6 +86,9 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
                     <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
                     <span className="gg-kachel-name">{g.name}</span>
                     <span className="gg-kachel-zeile">defekt — {g.ownerName ?? "ohne Besitzer"}</span>
+                    {steckbriefKurz(g).length > 0 && (
+                      <span className="gg-kachel-steckbrief">{steckbriefKurz(g).join(" · ")}</span>
+                    )}
                   </button>
                 ))}
               </div>

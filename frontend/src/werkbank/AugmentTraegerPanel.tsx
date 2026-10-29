@@ -1,4 +1,5 @@
 import { waffentypPasst, type GegenstandMitBesitzer } from "../items/api";
+import { steckbriefKurz } from "../items/steckbrief";
 
 /** Ein Trägergegenstand oder eine Drohne/ein Fahrzeug mit Upgrade-Slots. */
 export interface AugmentTraeger {
@@ -52,6 +53,13 @@ export function AugmentTraegerPanel({
         <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
         <span className="gg-kachel-name">{g.name}</span>
         <span className="gg-kachel-zeile">{g.defekt ? "defekt" : "frei, montierbar"}</span>
+        {/* Was das Upgrade bewirkt (29.10.2026, Mark: "es wäre gut wenn das
+            Material einen Steckbrief hätte, also man sieht was es tut") —
+            liest traitBoni generisch, dieselbe Funktion wie bei jeder
+            anderen Gegenstands-Kachel im Tool. */}
+        {steckbriefKurz(g).length > 0 && (
+          <span className="gg-kachel-steckbrief">{steckbriefKurz(g).join(" · ")}</span>
+        )}
       </button>
     );
   }
