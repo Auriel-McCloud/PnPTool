@@ -1493,7 +1493,7 @@ export function GegenstandRow({
               </div>
               {AUGMENT_TRAEGER_TYPEN.has(typ) && (
                 <div className="pcd-feld">
-                  <label>Upgrade-Slots (Augments)</label>
+                  <label>Upgrade-Slots</label>
                   <input
                     type="number"
                     min={0}
@@ -1694,7 +1694,7 @@ export function GegenstandRow({
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>
                         <input type="checkbox" checked={istAugment} onChange={(e) => setIstAugment(e.target.checked)} />{" "}
-                        Ist selbst ein Augment
+                        Ist selbst ein Upgrade
                       </label>
                       {istAugment && (
                         <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>

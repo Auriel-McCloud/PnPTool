@@ -147,7 +147,7 @@ export function AugmentFenster({
         ergebnis === "ja"
           ? `Montiert an ${gewaehltesZiel.name}.`
           : ergebnis === "patzer"
-            ? "Patzer — das Augment ist jetzt defekt."
+            ? "Patzer — das Upgrade ist jetzt defekt."
             : "Nicht geschafft — später erneut versuchen.",
       );
       void r;
@@ -168,7 +168,7 @@ export function AugmentFenster({
         ergebnis === "ja"
           ? "Demontiert."
           : ergebnis === "patzer"
-            ? "Patzer — das Augment ist jetzt defekt, bleibt aber montiert."
+            ? "Patzer — das Upgrade ist jetzt defekt, bleibt aber montiert."
             : "Nicht geschafft — später erneut versuchen.",
       );
       onGeaendert();
@@ -203,7 +203,7 @@ export function AugmentFenster({
   }
 
   return (
-    <Fenster offen titel={`Augment: ${augment.name}`} kennung={`augment:${augment.id}`} onSchliessen={onSchliessen}>
+    <Fenster offen titel={`Upgrade: ${augment.name}`} kennung={`augment:${augment.id}`} onSchliessen={onSchliessen}>
       {ergebnisText ? (
         <>
           <p className="ww-beruhigung">{ergebnisText}</p>

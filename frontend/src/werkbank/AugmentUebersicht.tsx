@@ -20,13 +20,13 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
     itemsApi
       .listAlle(campaignId)
       .then((items) => setGegenstaende(items.filter((g) => g.istAugment && !g.weggeworfen)))
-      .catch(() => setFehler("Augments konnten nicht geladen werden."))
+      .catch(() => setFehler("Upgrades konnten nicht geladen werden."))
       .finally(() => setLaden(false));
   }
 
   useEffect(neuLaden, [campaignId]);
 
-  if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Augments…</p>;
+  if (laden) return <p style={{ color: "var(--text-leise)" }}>Lade Upgrades…</p>;
 
   const defekte = gegenstaende.filter((g) => g.defekt);
   const montiert = gegenstaende.filter((g) => !g.defekt && g.montiertAnId);
@@ -49,7 +49,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
       {gegenstaende.length === 0 && (
         <p className="gg-leer">
-          Noch kein Augment angelegt — als "Ist selbst ein Augment" markieren lässt sich jeder Gegenstand über dessen
+          Noch kein Upgrade angelegt — als "Ist selbst ein Upgrade" markieren lässt sich jeder Gegenstand über dessen
           eigenes Bearbeiten-Formular (Optionen).
         </p>
       )}

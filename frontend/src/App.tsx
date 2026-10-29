@@ -151,7 +151,7 @@ const TITEL: Record<string, string> = {
   buendel: "Bündel: wiederverwendbare Welt-Inhalte als ZIP exportieren",
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
   drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
-  reparatur: "Werkbank: Reparatur (Material + Probe) und Augments (montieren/demontieren)",
+  reparatur: "Werkbank: Reparatur (Material + Probe) und Upgraden (montieren/demontieren)",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {

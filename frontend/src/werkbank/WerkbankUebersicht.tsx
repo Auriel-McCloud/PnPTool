@@ -26,7 +26,7 @@ export function WerkbankUebersicht({ campaignId }: { campaignId: string }) {
           🔧 Reparatur
         </button>
         <button type="button" aria-pressed={tab === "augments"} onClick={() => setTab("augments")}>
-          🔩 Augments
+          🔩 Upgraden
         </button>
       </div>
       {tab === "reparatur" && <ReparaturUebersicht campaignId={campaignId} />}

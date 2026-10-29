@@ -45,7 +45,7 @@ export function AugmentUebersichtSpieler({
     <div className="gg-seite">
       {items.length === 0 && (
         <p className="gg-leer">
-          Noch kein Augment im Besitz — dein SL markiert einen Gegenstand mit "Ist selbst ein Augment", damit er
+          Noch kein Upgrade im Besitz — dein SL markiert einen Gegenstand mit "Ist selbst ein Upgrade", damit er
           hier auftaucht.
         </p>
       )}
