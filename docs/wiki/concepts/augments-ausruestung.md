@@ -329,3 +329,25 @@ Browse-Richtungen):
 
 `tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend-Test
 betroffen (reiner Frontend-Umbau).
+
+## Korrektur 5: Zweigeteilte Ansicht statt Popup pro Träger (29.10.2026, Mark direkt im Anschluss)
+
+Mark: "können wir es vielleicht in der Mitte aufteilen, so dass man auf
+einer Seite die Items und auf der anderen die Upgrade-Materialien sieht?"
+— Korrektur 4 löste noch jeden Träger als eigenes Popup auf
+(`AugmentTraegerFenster.tsx`), Mark wollte stattdessen beide Seiten
+gleichzeitig sichtbar, ohne Klick-Umweg.
+
+- `AugmentTraegerFenster.tsx` → `AugmentTraegerPanel.tsx` umbenannt: kein
+  `Fenster`-Wrapper mehr, reine Inhaltskomponente (Prop `traeger: ... | null`
+  — `null` zeigt den Hinweis "Links … wählen"). Montiert/Freie-Listen
+  unverändert, Klick auf ein Upgrade öffnet weiterhin das modale
+  `AugmentFenster` (Skill/Probe bleibt ein eigener Schritt, macht als
+  Popup mehr Sinn als inline).
+- `AugmentUebersicht(Spieler).tsx`: neues `wb-split`-Grid
+  (`werkbank/werkbank.css`, gleiches Muster wie `haendler/shop.css::
+  .ts-layout`) — links die Träger-Kacheln (Klick setzt nur noch
+  `gewaehlterTraeger`-State, markiert sich selbst `data-aktiv`), rechts
+  fest das `AugmentTraegerPanel` für den gewählten Träger.
+- Kein Backend betroffen, `tsc -b`/`vite build` sauber, Live-Deploy auf
+  bebop.
