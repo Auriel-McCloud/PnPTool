@@ -329,31 +329,65 @@ das Tool rechnet nur den Pool vor und nimmt das Ergebnis entgegen.
 
 ### Reparatur (neues eigenständiges Feature, gilt für Rüstung UND Drohne/Fahrzeug)
 
-`kampf/ruestung.py` hat die komplette Formel schon fertig, bisher nur an
-Rüstung gebunden — wird generisch auf jedes „Kästchen“-tragende Ziel
-ausgeweitet:
+**Finalisiert 29.10.2026 im Chat mit Mark — ersetzt die ursprüngliche
+Erfolgs-Überschuss-Idee unten komplett für den neuen generischen Pfad.
+Noch nicht gebaut.**
 
-- `hardware_probe_pool()` = **Maker (Hardware) + Intelligenz** (Würfelpool
-  für die technische Reparatur-Probe).
-- `reparatur_schwelle()`/`selbstreparatur_ergebnis()` — Erfolgs-Überschuss
-  über die halbe Kästchen-Max wird zu reparierten Kästchen, gedeckelt vom
-  eingesetzten Material.
-- `haendler_reparatur_preis()` — fertige quadratisch-progressive Preisformel
-  mit 75 %-Totalschaden-Deckel, schon generisch (`fehlende_kaestchen`/
-  `kaestchen_max`/`neuwert`, kennt „Rüstung“ gar nicht explizit).
-- **Ein Skill reicht am Fahrzeug** (Mark: Handwerk *oder* Maker (Hardware)
-  können ein Fahrzeug reparieren, kein getrennter Struktur-/
-  Elektronik-Schadenspool).
 - Neues eigenständiges Burgermenü **„Reparatur“**: ein Slot für das Ziel
   (Rüstung/Drohne/Fahrzeug), ein Slot für das Verbrauchsmaterial — statt wie
   bisher im Bearbeiten-Popup des einzelnen Gegenstands versteckt
   (`RuestungReparatur.tsx`).
+- Zwei Wege, wie gehabt: **Selbst** (Material + Probe) oder **Händler**
+  (Nuyen). Der Händler-Weg ist im Menü erst wählbar, wenn man gerade bei
+  einem Händler mit neuem Flag **`bietetReparatur`** ist (analog
+  `istTutorialHaendler`) — nicht jeder Laden repariert gegen Geld.
+- **Material-Qualität** (`istMaschinenteil`/`maschinenteilQualitaet`,
+  dasselbe Feld wie beim Umbau, aber im Reparatur-Kontext andere Bedeutung):
+  - **hochwertig** — 1 Stück repariert vollständig (alle fehlenden Kästchen).
+  - **normal** — 1 Stück = 5 Kästchen.
+  - **minderwertig** — 1 Stück = 1 Kästchen.
+  - Mehrere Stück **derselben** Qualität pro Versuch einsetzbar
+    (Mengenwahl) — **kein Mischen** verschiedener Qualitäten in einem
+    Versuch (Mark: Konsistenz mit dem Umbau-Material-Knopf, „ein Knopf pro
+    Qualitätsstufe mit Gesamtmenge"). Heilung = Menge × Kästchenwert,
+    gedeckelt an tatsächlich fehlenden Kästchen.
+- **Probe, bewusst leichter als der Umbau** (Mark: „ich will reparieren
+  nicht so schwer machen wie umbauen"): benötigte Erfolge = eingesetzte
+  Materialmenge **− 1**, Minimum **1**. Beispiel: 5 minderwertige Stück auf
+  einmal → Probe gegen 4; bei Erfolg sind 5 Kästchen geheilt. Löst damit
+  `reparatur_schwelle()`/`selbstreparatur_ergebnis()` (Erfolgs-Überschuss
+  über halbe Kästchen-Max, fix 1 Stück Material) komplett ab.
+- **3 Buttons wie bei der Maker-Probe im Umbau**: Erfolg (heilt UND
+  verbraucht das Material), Misserfolg (nichts passiert, Material bleibt),
+  Patzer (Material verbraucht, keine Heilung) — kein serverseitiger Würfel,
+  der Spieler würfelt physisch und meldet das Ergebnis, wie überall sonst
+  beim selbstberichteten Probenmuster.
+- **Probe-Pool ist je Zieltyp unterschiedlich** (Mark, 29.10.2026 explizit
+  festgelegt):
+  | Ziel | Skill |
+  |---|---|
+  | Rüstung | nur **Handwerk** |
+  | Drohne | nur **Maker (Hardware)** |
+  | Fahrzeug | **Handwerk ODER Maker (Hardware)**, Spieler wählt |
+
+  Löst damit `hardware_probe_pool()` (einheitlich Maker (Hardware) +
+  Intelligenz, bisher nur für Rüstung) ab. **Noch offen:** Attribut-Partner
+  je Skill — freie Wahl wie bei der Maker-Probe im Umbau, oder fix wie
+  bisher Intelligenz? Vor dem Bauen mit Mark klären.
+- **Händler-Weg bleibt Nuyen + Verhandlung**, unverändert gegenüber dem
+  bestehenden `docs/api/ruestung.md`-Mechanismus: `haendler_reparatur_preis()`
+  liefert nur den Vorschlagspreis, die SL kann ihn im Verhandlungs-Popup vor
+  dem Verschicken ändern (wie bisher — „verhandelbar, nicht fix" war schon
+  immer so, keine Formeländerung nötig, nur die neue `bietetReparatur`-Sperre
+  ist neu).
 - Neuer Verbrauchsgegenstand **„Maschinenteil“**, analog zu
-  `istReparaturmaterial`/`reparaturKapazitaet`: Qualitätsstufen
-  minderwertig/normal/hochwertig — hochwertig für Attribute, normal für
-  Fertigkeiten, minderwertig nur für Reparatur.
-- Neues Händler-Flag **`bietetReparatur`** (analog `istTutorialHaendler`) —
-  nicht jeder Laden repariert gegen Geld.
+  `istReparaturmaterial`/`reparaturKapazitaet` — Umbau-Bedeutung der
+  Qualitätsstufen (hochwertig deckt Attribute, normal Fertigkeiten) bleibt
+  unverändert bestehen, siehe „Material statt Nuyen" oben; nur im
+  Reparatur-Kontext gilt die neue Kästchen-Tabelle oben.
+- **`docs/api/ruestung.md`-Abschnitt „Reparatur" braucht beim Bauen ein
+  Update** — beschreibt noch den alten Erfolgs-Überschuss-Pfad, der nur für
+  Rüstung galt und jetzt durch das generische System ersetzt wird.
 
 ## Entwicklung
 

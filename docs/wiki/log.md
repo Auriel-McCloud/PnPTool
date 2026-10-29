@@ -3,6 +3,24 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] entschieden | Reparatur-System: Material-Stufen, Erfolgsformel, Burgermenü
+
+Im Chat mit Mark das generische Reparatur-Feature (Rüstung/Drohne/Fahrzeug)
+fertig ausgearbeitet, noch nicht gebaut. Eigenständiges Burgermenü
+„Reparatur" (Ziel-Slot + Material-Slot) statt Verstecken im
+Gegenstands-Popup. Material-Qualität (`istMaschinenteil`/
+`maschinenteilQualitaet`) bekommt im Reparatur-Kontext eigene Bedeutung:
+hochwertig = 1 Stück repariert vollständig, normal = 5 Kästchen/Stück,
+minderwertig = 1 Kästchen/Stück — mehrere Stück EINER Qualität pro Versuch
+kombinierbar, kein Mischen verschiedener Qualitäten. Löst die alte
+Erfolgs-Überschuss-Formel ab: benötigte Erfolge = eingesetzte Materialmenge
+− 1 (Minimum 1), 3 Buttons wie beim Maker-Umbau (Erfolg/Misserfolg/Patzer).
+Probe-Pool ist je Ziel verschieden: Rüstung nur Handwerk, Drohne nur Maker
+(Hardware), Fahrzeug Handwerk ODER Maker (Hardware) nach Wahl. Händler-Weg
+bleibt Nuyen+Verhandlung (`haendler_reparatur_preis` als Vorschlag, SL kann
+ihn im Popup ändern), neu ist nur die Freischaltung über das Händlerflag
+`bietetReparatur`. Siehe [[concepts/drohnen-fahrzeuge]] „Reparatur".
+
 ## [2026-10-29] fix | Hot-Drohne im Kampf wieder antippbar
 
 Der Slot zeigte den Steckbrief nicht und der Klick tat nichts, sobald die

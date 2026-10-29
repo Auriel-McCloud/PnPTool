@@ -387,7 +387,13 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   - **Noch offen:** Reparatur-Burgermenü + `bietetReparatur`-Händlerflag +
     Verbrauchsgegenstand „Maschinenteil“, Zusatzfertigkeit „Fliegen“ (Mark
     trägt sie selbst in die SL-Tabelle ein). Nicht einfach lostbauen, bitte
-    erst mit Mark Reihenfolge klären.
+    erst mit Mark Reihenfolge klären. **29.10.2026: Reparatur-Design mit
+    Mark fertig ausgearbeitet** (Material-Qualitätsstufen mit fester
+    Kästchen-Wirkung, Erfolgsformel Materialmenge−1/Minimum 1, Pool je
+    Zieltyp verschieden Rüstung=Handwerk/Drohne=Maker/Fahrzeug=beides,
+    Händler-Weg bleibt Nuyen-Verhandlung + neue `bietetReparatur`-Sperre) —
+    siehe `docs/wiki/concepts/drohnen-fahrzeuge.md` „Reparatur" für die
+    volle Spec, noch nicht gebaut.
 
 - **Bugfix (26.10.2026) — Drohnen-Steckbrief hatte den Einklapp-Knopf auch
   beim eigenen Charakter** (Mark, erster echter Klicktest am Spieltisch):
