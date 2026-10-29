@@ -29,7 +29,7 @@ export function ReparaturUebersichtSpieler({
   return (
     <div className="gg-seite">
       {ruestungsziele.length === 0 && drohnen.length === 0 && (
-        <p className="gg-leer">Keine beschädigte, reparierbare Rüstung oder Drohne/Fahrzeug im eigenen Besitz.</p>
+        <p className="gg-leer">Keine eigene Rüstung oder Drohne/Fahrzeug im Besitz.</p>
       )}
 
       {ruestungsziele.length > 0 && (
@@ -57,7 +57,9 @@ export function ReparaturUebersichtSpieler({
                 </span>
                 <span className="gg-kachel-name">{g.name}</span>
                 <span className="gg-kachel-zeile">
-                  {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+                  <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+                    {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+                  </span>
                 </span>
               </button>
             ))}

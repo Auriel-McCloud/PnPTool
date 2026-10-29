@@ -42,8 +42,7 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
         (g) =>
           g.typ === "Rüstung" &&
           g.ruestungKaestchenMax > 0 &&
-          !g.istNatuerlich &&
-          g.ruestungKaestchenAktuell < g.ruestungKaestchenMax,
+          !g.istNatuerlich,
       ),
     [gegenstaende],
   );
@@ -66,7 +65,7 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
       {tab === "ruestung" && (
         <>
           {ruestungsziele.length === 0 && (
-            <p className="gg-leer">Keine beschädigte, reparierbare Rüstung im Umlauf.</p>
+            <p className="gg-leer">Keine reparierbare Rüstung im Umlauf.</p>
           )}
           <div className="gg-raster">
             {ruestungsziele.map((g) => (
@@ -88,7 +87,10 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
                 <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}</span>
                 <span className="gg-kachel-name">{g.name}</span>
                 <span className="gg-kachel-zeile">
-                  {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen — {g.ownerName ?? "ohne Besitzer"}
+                  <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+                    {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+                  </span>{" "}
+                  — {g.ownerName ?? "ohne Besitzer"}
                 </span>
               </button>
             ))}

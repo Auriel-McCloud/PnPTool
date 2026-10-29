@@ -15,6 +15,7 @@ from app.items import chirurgie, repository
 from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.traits import erstellung
 from app.items.schemas import (
     AblageRequest,
     AblageZiel,
@@ -982,8 +983,18 @@ async def ruestung_reparatur_pool(
     werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, besitzer_id)}
     campaign = await get_campaign(campaign_id)
     katalog = await list_catalog(campaign["ruleset"] if campaign else "neotopia")
+    # NUR echte Personen-Attribute (29.10.2026, derselbe Fehler wie beim
+    # Augment-Pool weiter unten — Mark: "ich irgendwie auch Drohnen-Werte bei
+    # meinem Rigger beim Upgraden habe"): `category.startswith("Attribut")`
+    # erwischt auch "AttributDrohne"/"AttributDrohneAussenhuelle", eigene
+    # Katalogeinträge für Drohnen-Werte, die ein Mensch gar nicht hat (siehe
+    # `entities/routes.py::_maker_probe_pool` für dieselbe, schon richtige
+    # Lösung).
+    person_attribut_kategorien = {*erstellung.ATTRIBUT_KATEGORIEN, "AttributMatrix"}
     attribute = [
-        AttributWert(name=t["name"], wert=werte.get(t["name"], 0)) for t in katalog if t["category"].startswith("Attribut")
+        AttributWert(name=t["name"], wert=werte.get(t["name"], 0))
+        for t in katalog
+        if t["category"] in person_attribut_kategorien
     ]
     fehlende_kaestchen = item["ruestungKaestchenMax"] - item["ruestungKaestchenAktuell"]
     skill = REPARATUR_SKILLS["ruestung"][0]
@@ -1176,8 +1187,15 @@ async def _augment_pool(campaign_id: str, augment: dict, skill: str) -> tuple[in
     campaign = await get_campaign(campaign_id)
     katalog = await list_catalog(campaign["ruleset"] if campaign else "neotopia")
     werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, besitzer_id)}
+    # NUR echte Personen-Attribute, nicht die Drohnen-Attribute aus demselben
+    # Katalog (29.10.2026, Mark: "ich irgendwie auch Drohnen-Werte bei meinem
+    # Rigger beim Upgraden habe") — siehe Kommentar bei
+    # `ruestung_reparatur_pool` weiter oben für die ausführliche Begründung.
+    person_attribut_kategorien = {*erstellung.ATTRIBUT_KATEGORIEN, "AttributMatrix"}
     attribute = [
-        AttributWert(name=t["name"], wert=werte.get(t["name"], 0)) for t in katalog if t["category"].startswith("Attribut")
+        AttributWert(name=t["name"], wert=werte.get(t["name"], 0))
+        for t in katalog
+        if t["category"] in person_attribut_kategorien
     ]
     return werte.get(skill, 0), attribute
 

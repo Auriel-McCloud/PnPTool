@@ -327,11 +327,6 @@ export function AugmentFenster({
                 <>
                   <p className="lu-hinweis">
                     {pool.skill}: <strong>{pool.skillWert}</strong> — wähle dazu ein Attribut, mit dem du würfelst.
-                    {" "}Level {pool.level}, benötigte Erfolge: <strong>{pool.benoetigteErfolge}</strong>.
-                    {istDefekt && reparaturPool && (
-                      <> Heilung bei Erfolg: <strong>{reparaturPool.heilungBeiErfolg}</strong>{" "}
-                        {reparaturPool.vollstaendigRepariert ? "(vollständig repariert)" : "(reicht noch nicht ganz)"}.</>
-                    )}
                   </p>
                   <div className="lu-zahlart" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
                     {pool.attribute.map((a) => (
@@ -348,8 +343,24 @@ export function AugmentFenster({
                   </div>
 
                   {poolGroesse != null && (
+                    // Würfelanzahl UND benötigte Erfolge direkt übereinander
+                    // (29.10.2026, Mark: "wäre es gut wenn wieviele Würfel
+                    // man hat und wie viele Erfolge man braucht direkt
+                    // übereinander stehen würde und nicht die Attribute
+                    // dazwischen wären") — vorher stand "benötigte Erfolge"
+                    // ganz oben vor der Attributwahl, "Pool: ... Würfel" erst
+                    // danach; jetzt beides in einem Block nach der Attributwahl.
                     <p className="lu-hinweis">
                       Pool: <strong>{pool.skillWert} + {attributWert}</strong> = <strong>{poolGroesse}</strong> Würfel.
+                      <br />
+                      Benötigte Erfolge: <strong>{pool.benoetigteErfolge}</strong> (Level {pool.level}).
+                      {istDefekt && reparaturPool && (
+                        <>
+                          <br />
+                          Heilung bei Erfolg: <strong>{reparaturPool.heilungBeiErfolg}</strong>{" "}
+                          {reparaturPool.vollstaendigRepariert ? "(vollständig repariert)" : "(reicht noch nicht ganz)"}.
+                        </>
+                      )}
                     </p>
                   )}
 

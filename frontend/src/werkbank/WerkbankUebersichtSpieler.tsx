@@ -38,7 +38,7 @@ export function WerkbankUebersichtSpieler({
   const eigenerKreis = new Set([personId, ...meineDrohnen.map((d) => d.id)]);
   const meine = sachen.filter((g) => !g.weggeworfen && eigenerKreis.has(g.ownerId ?? ""));
   const meineRuestung = meine.filter(
-    (g) => g.typ === "Rüstung" && g.ruestungKaestchenMax > 0 && !g.istNatuerlich && g.ruestungKaestchenAktuell < g.ruestungKaestchenMax,
+    (g) => g.typ === "Rüstung" && g.ruestungKaestchenMax > 0 && !g.istNatuerlich,
   );
   const meineDrohnenKaputt = meineDrohnen; // Gesundheitsschaden wird im Popup selbst geprüft/angezeigt
 
