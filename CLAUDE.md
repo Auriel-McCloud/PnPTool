@@ -539,6 +539,21 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Neueste zuerst. Einmal am Spieltisch/Dev-Server gegengeprüft → hier streichen.
 
+- **Materialstapel bei Menge 0 automatisch wegwerfen** (29.10.2026, Mark:
+  aufgebrauchte Maschinenteile/Reparaturmaterial blieben als leerer Eintrag
+  mit "leer"-Marke liegen — "die meisten sollten dann verschwinden weil sie
+  weg sind"). Zentral in `items/repository.py::update_gegenstand`: sinkt
+  `menge` eines Stücks mit `hatMenge=true` auf 0 oder darunter, wird es
+  automatisch weggeworfen (`repository.wegwerfen`, `weggeworfenVon =
+  "System (aufgebraucht)"`) statt nur die Menge zu setzen — reversibel wie
+  jedes Wegwerfen (landet im SL-Mülleimer). Greift überall, wo `menge`
+  geändert wird: automatischer Verbrauch bei Maker-/Reparatur-Proben
+  (`entities/routes.py`, `items/routes.py`) UND manuelles Bearbeiten im
+  Umbauen-Formular (Marks ausdrückliche Vorgabe — keine Sonderbehandlung je
+  nach Auslöser). Bewusst **kein neues Feld** für Ausnahmen — Mark hatte auf
+  Nachfrage kein Beispiel für ein Material, das bei 0 sichtbar bleiben soll.
+  **Kein Browser-Klicktest**, nur die Backend-Logik gebaut.
+
 - **Gegenstände zusammenlegen** (26.10.2026, Mark: 3 einzelne
   Maschinenteile sollen ein Objekt mit Anzahl 3 werden statt drei
   Einzelstücken). Neuer GM-Knopf „⧉ Zusammenlegen…“ direkt neben „Menge
