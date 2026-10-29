@@ -4,6 +4,25 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Bugfix: montiertes Augment (z.B. Zielfernrohr) blieb trotzdem im
+  Rucksack sichtbar** (29.10.2026, Marks Spieltisch-Bugreport direkt nach
+  der Werkbank-Augments-Einführung oben). Ursache: Montieren setzt nur die
+  `MONTIERT_AN`-Kante, das alte `ablage`-Feld des Augments (meist RUCKSACK)
+  bleibt dabei unverändert stehen — die Ablage-Gruppierung
+  (`items/aufbewahrung.ts::ermittleBereiche`/`filtereNachBereichen`, genutzt
+  von SL-Übersicht UND Spieler-Inventar, sowie separat
+  `entities/PCInventar.tsx`) kannte `montiertAnId` bisher gar nicht und
+  zeigte das Augment deshalb weiterhin einzeln im Rucksack an, zusätzlich zu
+  seiner Erwähnung als "montiertes Upgrade" auf der Trägerwaffe. Fix: alle
+  drei Stellen filtern Gegenstände mit gesetztem `montiertAnId` jetzt
+  konsequent aus der normalen Ablage-Anzeige heraus. **Noch unverändert
+  bestehend (kein Bug, sondern bewusst offener Punkt von oben):** der
+  Augment-Bonus selbst (`traitBoni`, z.B. +1 Schusswaffen) fließt nirgends
+  in echte Würfelpools ein — das war beim Bau der Werkbank-Augments explizit
+  als "noch nicht gebaut" vermerkt und betrifft nicht nur Augments, sondern
+  `traitBoni` systemweit. **Verifiziert:** `npx tsc -b` sauber. Kein
+  Backend betroffen, keine neuen Tests nötig (reine Frontend-Filterlogik).
+
 - **Werkbank-Augments: Montieren/Demontieren/Reparieren für Waffe/Rüstung/
   Cyberdeck/Riggerkonsole/Drohne/Fahrzeug** (29.10.2026, zweiter Baustein
   nach der Reparatur, siehe [[concepts/augments-ausruestung]] im Wiki für
