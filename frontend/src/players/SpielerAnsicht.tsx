@@ -698,7 +698,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
                 campaignId={ich.campaignId}
+                eigenePersonId={ich.personId ?? undefined}
                 onZusammengelegt={nachZusammenlegen}
+                onWeitergeben={(empfaengerId) => weitergeben(g.id, empfaengerId)}
               />
             ))}
           </div>

@@ -21,6 +21,8 @@ export function WeitergebenPopup({
   eigenePersonId,
   onWeitergeben,
   onAbbrechen,
+  laeuft = false,
+  fehler: aktionsFehler = null,
 }: {
   item: Gegenstand;
   offen: boolean;
@@ -29,6 +31,14 @@ export function WeitergebenPopup({
   eigenePersonId: string;
   onWeitergeben: (empfaengerPersonId: string) => void;
   onAbbrechen: () => void;
+  /** Läuft gerade eine Anfrage? Sperrt die Auswahl, bis sie durch ist. */
+  laeuft?: boolean;
+  /**
+   * Fehlermeldung vom Server zur letzten Anfrage (z.B. "Nur an Mitglieder
+   * der eigenen Party möglich") — getrennt vom Lade-Fehler der Party-Liste
+   * unten, der bleibt ein eigener State.
+   */
+  fehler?: string | null;
 }) {
   const [mitglieder, setMitglieder] = useState<PartyMitglied[]>([]);
   const [ladend, setLadend] = useState(true);
@@ -58,13 +68,14 @@ export function WeitergebenPopup({
       </p>
       {ladend && <p style={{ color: "var(--text-leise)" }}>Lade Party…</p>}
       {fehler && <p className="ww-hinweis" style={{ color: "var(--signal)" }}>{fehler}</p>}
+      {aktionsFehler && <p className="ww-hinweis" style={{ color: "var(--signal)" }}>{aktionsFehler}</p>}
       {!ladend && !fehler && mitglieder.length === 0 && (
         <p style={{ color: "var(--text-leise)" }}>Niemand sonst ist gerade in deiner Party.</p>
       )}
       {mitglieder.length > 0 && (
         <div className="ww-knoepfe" style={{ flexWrap: "wrap" }}>
           {mitglieder.map((m) => (
-            <button key={m.id} type="button" className="ww-behalten" onClick={() => onWeitergeben(m.id)}>
+            <button key={m.id} type="button" className="ww-behalten" disabled={laeuft} onClick={() => onWeitergeben(m.id)}>
               {m.name}
             </button>
           ))}

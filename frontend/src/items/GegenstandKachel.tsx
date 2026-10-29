@@ -119,6 +119,7 @@ export function GegenstandKachel({
   const [laeuft, setLaeuft] = useState(false);
   const [frageOffen, setFrageOffen] = useState(false);
   const [weitergebenOffen, setWeitergebenOffen] = useState(false);
+  const [weitergebenFehler, setWeitergebenFehler] = useState<string | null>(null);
   const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
@@ -151,12 +152,21 @@ export function GegenstandKachel({
   async function weitergeben(empfaengerPersonId: string) {
     if (!onWeitergeben) return;
     setLaeuft(true);
+    setWeitergebenFehler(null);
     try {
       await onWeitergeben(empfaengerPersonId);
       // Nicht die Kachel schließen: der Gegenstand gehört bis zur Annahme
       // noch dem Absender, er bleibt also in der Liste stehen — anders als
       // beim Wegwerfen, das sofort wirkt.
       setWeitergebenOffen(false);
+    } catch (e) {
+      // Vorher verschluckt: schlug die Anfrage fehl (z.B. Empfänger nicht in
+      // derselben Party, oder ein SL-Schreibversuch während der Spieler-
+      // Vorschau — siehe api/client.ts, Schreibzugriffe laufen dort immer
+      // als die eigene Rolle, nie als der vorgeschaute Spieler), passierte
+      // äusserlich gar nichts: das Fenster blieb offen, kein Hinweis. Jetzt
+      // zeigt das Popup die Fehlermeldung vom Server an.
+      setWeitergebenFehler(e instanceof Error ? e.message : "Weitergeben fehlgeschlagen");
     } finally {
       setLaeuft(false);
     }
@@ -391,7 +401,14 @@ export function GegenstandKachel({
         {(onWegwerfen || onWeitergeben) && (
           <div className="gg-wegwerfen">
             {onWeitergeben && (
-              <button type="button" onClick={() => setWeitergebenOffen(true)} disabled={laeuft}>
+              <button
+                type="button"
+                onClick={() => {
+                  setWeitergebenFehler(null);
+                  setWeitergebenOffen(true);
+                }}
+                disabled={laeuft}
+              >
                 <span aria-hidden="true">🤝</span> Weitergeben
               </button>
             )}
@@ -444,6 +461,8 @@ export function GegenstandKachel({
           campaignId={campaignId}
           eigenePersonId={eigenePersonId}
           onWeitergeben={weitergeben}
+          laeuft={laeuft}
+          fehler={weitergebenFehler}
           onAbbrechen={() => setWeitergebenOffen(false)}
         />
       )}
