@@ -1,0 +1,32 @@
+/* Werkbank-Upgraden: zweigeteilte Ansicht (29.10.2026, Mark: "können wir
+   es vielleicht in der Mitte aufteilen, so dass man auf einer Seite die
+   Items und auf der anderen die Upgrade-Materialien sieht?") — links die
+   Träger (Gegenstände/Drohnen mit Upgrade-Slots), rechts das gewählte
+   Fach (montiert + passende freie Upgrades). Gleiches Grid-Muster wie
+   `haendler/shop.css::.ts-layout` (Liste/Warenkorb). */
+.wb-split {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wb-spalte {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Gewählter Träger links bleibt erkennbar markiert, solange rechts sein
+   Panel offen ist — sonst verliert man beim Scrollen den Bezug. */
+.wb-spalte .gg-kachel[data-aktiv="true"] {
+  border-color: var(--bereich-farbe, var(--neon));
+  box-shadow: 0 0 12px -4px var(--bereich-farbe, var(--neon));
+}
