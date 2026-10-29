@@ -210,6 +210,11 @@ OHNE_GM_ERLAUBT = {
     # Kapital-Feld. Prüft selbst (_drohne_und_rigger_oder_404): GM immer,
     # Spieler nur für die eigene Drohne/das eigene Fahrzeug.
     "/api/campaigns/{campaign_id}/drohnen/{node_id}/steigern",
+    # Ebenso: umbenennen (29.10.2026, Mark: "er kann sie gerne jeder zeit
+    # umbenennen, es ist ja auch seine Drohne") — prüft selbst
+    # (_drohne_und_rigger_oder_404): GM immer, Spieler nur für die eigene
+    # Drohne/das eigene Fahrzeug. Ändert nur `name`.
+    "/api/campaigns/{campaign_id}/drohnen/{node_id}/name",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

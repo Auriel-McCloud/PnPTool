@@ -6,6 +6,7 @@ import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySel
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
+import { useAutosave } from "../shell/autosave";
 import { drohnenApi } from "./api";
 import { DrohnenAusruestung } from "./DrohnenAusruestung";
 import { DrohnenSteigern } from "./DrohnenSteigern";
@@ -67,6 +68,7 @@ export function DrohnenFenster({
   onGeaendert: () => void;
 }) {
   const [person, setPerson] = useState<Person | null>(null);
+  const [name, setName] = useState("");
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("blatt");
   const [riggerSuche, setRiggerSuche] = useState("");
   const [loeschenOffen, setLoeschenOffen] = useState(false);
@@ -77,8 +79,29 @@ export function DrohnenFenster({
   const [blattVersion, setBlattVersion] = useState(0);
 
   useEffect(() => {
-    entitiesApi.getPerson(campaignId, drohneId).then(setPerson);
+    entitiesApi.getPerson(campaignId, drohneId).then((p) => {
+      setPerson(p);
+      setName(p.name);
+    });
   }, [campaignId, drohneId]);
+
+  // Umbenennen (29.10.2026, Mark: "er kann sie gerne jeder zeit umbenennen,
+  // es ist ja auch seine Drohne") — der gebundene Rigger darf das genau wie
+  // die SL, eigener Endpunkt statt entitiesApi.updatePerson (das ist SL-
+  // exklusiv), siehe backend/app/entities/routes.py::drohne_name_setzen.
+  const autosaveName = useAutosave(async (roh: string) => {
+    const sauber = roh.trim();
+    if (!sauber || !person || sauber === person.name) return;
+    try {
+      const neu = await drohnenApi.nameSetzen(campaignId, drohneId, sauber);
+      setPerson(neu);
+      onGeaendert();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Konnte nicht umbenannt werden.");
+      setName(person.name);
+    }
+  });
+
 
   async function aktivUmschalten() {
     setAktivLaeuft(true);
@@ -144,6 +167,24 @@ export function DrohnenFenster({
         <div className="pcd-bereich">
           {unteransicht === "blatt" && (
             <>
+              <div className="pcd-feld">
+                <label htmlFor={`drohne-name-${drohneId}`}>Name</label>
+                <input
+                  id={`drohne-name-${drohneId}`}
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    autosaveName(e.target.value);
+                  }}
+                  onBlur={() => {
+                    if (!name.trim()) {
+                      setName(person.name);
+                      return;
+                    }
+                    void autosaveName.jetzt();
+                  }}
+                />
+              </div>
               <EntitaetsBild
                 campaignId={campaignId}
                 art="personen"

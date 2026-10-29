@@ -329,6 +329,21 @@ class PersonUpdate(BaseModel):
     notizenSichtbarkeit: SichtbarkeitModus | None = None
     notizenSichtbarFuer: list[str] | None = None
 
+    # Umbenennen (29.10.2026, Mark: "ich habe einen beim Erstellen einfach
+    # neuen Charakter genannt und bin mit dem Namen jetzt gefangen") — SL
+    # kann PCs/NPCs jederzeit umbenennen, siehe entities/PCDetail.tsx bzw.
+    # NPCDetail.tsx. Leere/nur-Whitespace-Namen werden abgelehnt statt den
+    # Charakter namenlos zurückzulassen.
+    @field_validator("name")
+    @classmethod
+    def name_nicht_leer(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        sauber = v.strip()
+        if not sauber:
+            raise ValueError("Name darf nicht leer sein")
+        return sauber
+
 
 class PersonResponse(BaseModel):
     id: str

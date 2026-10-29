@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
@@ -392,6 +392,37 @@ async def drohne_aktiv_setzen(campaign_id: str, node_id: str, body: dict, viewer
             )
 
     return await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"riggerAktiv": aktiv})
+
+
+class DrohneNameInput(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def name_nicht_leer(cls, v: str) -> str:
+        sauber = v.strip()
+        if not sauber:
+            raise ValueError("Name darf nicht leer sein")
+        return sauber
+
+
+@router.post("/drohnen/{node_id}/name", response_model=dict)
+async def drohne_name_setzen(
+    campaign_id: str, node_id: str, body: DrohneNameInput, viewer: Viewer = Depends(get_viewer)
+):
+    """Benennt eine Drohne/ein Fahrzeug um.
+
+    29.10.2026, Mark: "ich hätte gerne das der Spieler seiner Drohne selbst
+    einen Namen geben kann, er kann sie gerne jeder zeit umbenennen, es ist
+    ja auch seine Drohne" — anders als beim PC/NPC-Namen (SL-exklusiv über
+    PATCH /personen/{id}) darf hier zusätzlich der gebundene Rigger ran,
+    gleiches Zugriffsmuster wie `drohne_aktiv_setzen`.
+    """
+    await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+    node = await repository.update_node("Person", PERSON_FIELDS, campaign_id, node_id, {"name": body.name})
+    if node is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    return node
 
 
 class DrohneSteigernInput(BaseModel):

@@ -6,7 +6,7 @@
  * "/drohnen"). Siehe docs/wiki/concepts/drohnen-fahrzeuge.md.
  */
 import { api } from "../api/client";
-import type { SichtbarkeitModus } from "../entities/api";
+import type { Person, SichtbarkeitModus } from "../entities/api";
 import type { Gegenstand } from "../items/api";
 
 export interface DrohnenEintrag {
@@ -81,6 +81,11 @@ export const drohnenApi = {
 
   aktivSetzen: (campaignId: string, drohneId: string, aktiv: boolean) =>
     api.post<unknown>(`${basis(campaignId)}/drohnen/${drohneId}/aktiv`, { aktiv }),
+
+  /** Umbenennen — darf der gebundene Rigger selbst, nicht nur die SL
+   *  (29.10.2026, Mark: "es ist ja auch seine Drohne"). */
+  nameSetzen: (campaignId: string, drohneId: string, name: string) =>
+    api.post<Person>(`${basis(campaignId)}/drohnen/${drohneId}/name`, { name }),
 
   steigerungspreise: (campaignId: string, drohneId: string) =>
     api.get<DrohnenSteigerungspreise>(`${basis(campaignId)}/drohnen/${drohneId}/steigern`),

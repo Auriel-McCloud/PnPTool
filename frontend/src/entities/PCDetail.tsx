@@ -57,6 +57,7 @@ export function PCDetail({
   onLokalAktualisiert,
 }: PCDetailProps) {
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("uebersicht");
+  const [name, setName] = useState(person.name);
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
 
@@ -116,6 +117,17 @@ export function PCDetail({
     const notes = serializeRichText(doc);
     await entitiesApi.updatePerson(campaignId, person.id, { notes });
     onLokalAktualisiert?.({ notes });
+  });
+  // Umbenennen (29.10.2026, Mark: "ich habe einen beim Erstellen einfach
+  // neuen Charakter genannt und bin mit dem Namen jetzt gefangen") — SL-
+  // exklusiv wie jedes andere PATCH-Feld hier, siehe require_campaign_gm
+  // auf PATCH /personen/{id}.
+  const autosaveName = useAutosave(async (roh: string) => {
+    const sauber = roh.trim();
+    if (!sauber || sauber === person.name) return;
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { name: sauber });
+    setAktuellePerson(neu);
+    onLokalAktualisiert?.({ name: sauber });
   });
 
   return (
@@ -200,6 +212,24 @@ export function PCDetail({
                 />
               </div>
               <div className="pcd-schnellzugriff">
+                <div className="pcd-feld">
+                  <label htmlFor={`pc-name-${person.id}`}>Name</label>
+                  <input
+                    id={`pc-name-${person.id}`}
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      autosaveName(e.target.value);
+                    }}
+                    onBlur={() => {
+                      if (!name.trim()) {
+                        setName(person.name);
+                        return;
+                      }
+                      void autosaveName.jetzt();
+                    }}
+                  />
+                </div>
                 <h3>Schnellzugriff</h3>
                 <div className="pcd-buttons">
                   <button type="button" onClick={() => setUnteransicht("blatt")}>
