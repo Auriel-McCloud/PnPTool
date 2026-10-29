@@ -240,8 +240,11 @@ async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(
 @campaign_router.post("", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def create_vorlage(campaign_id: str, body: GegenstandCreate):
     """Legt einen besitzerlosen Gegenstand an — per Invariante immer eine
-    Vorlage (siehe schemas.py). Für Gegenstände mit Besitzer siehe create_item."""
-    sichtbarkeit = body.sichtbarkeit or "GM"
+    Vorlage (siehe schemas.py). Für Gegenstände mit Besitzer siehe create_item.
+    Sichtbarkeit folgt demselben Standard wie dort (28.10.2026, siehe
+    _default_sichtbarkeit): ohne explizite Angabe ALLE, nicht mehr GM — diese
+    Stelle war bei der Umstellung übersehen worden (29.10.2026 Bugfix)."""
+    sichtbarkeit = body.sichtbarkeit or "ALLE"
     sichtbar_fuer = body.sichtbarFuer or []
     item = await repository.create_gegenstand(campaign_id, None, _create_data(body, True, sichtbarkeit, sichtbar_fuer))
     if item is None:
