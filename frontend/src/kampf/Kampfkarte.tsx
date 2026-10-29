@@ -41,6 +41,29 @@ function ausruestungsBonus(bogen: Bogen, name: string) {
   return bogen.ausruestungsBoni?.[name] ?? 0;
 }
 
+/** Geschick der Drohne, Geschicklichkeit beim Menschen. Hot legt den Wert schon auf den Bogen. */
+function geschickName(bogen: Bogen) {
+  return bogen.person.istDrohne || bogen.person.istFahrzeug ? "Geschick" : "Geschicklichkeit";
+}
+
+export function kampfKurz(bogen: Bogen, ruestungKraft = 0) {
+  const name = geschickName(bogen);
+  const geschick = wert(bogen, name) + ausruestungsBonus(bogen, name);
+  const abzug = geschickAbzug(ruestungKraft);
+  const effektiv = Math.max(0, geschick - abzug);
+  const treffen = (skill: string) => effektiv + wert(bogen, skill) + ausruestungsBonus(bogen, skill);
+  const u = bogen.uebersicht;
+  const uebrig = u.gesundheitMax - u.schadenSchlag - u.schadenSchwer - u.schadenAggraviert;
+  return [
+    { kuerzel: "GS", titel: "Gesundheit", wert: `${uebrig}/${u.gesundheitMax}` },
+    { kuerzel: "TN", titel: "Treffen Nahkampf", wert: treffen("Nahkampf") },
+    { kuerzel: "TS", titel: "Treffen Schusswaffen", wert: treffen("Schusswaffen") },
+    { kuerzel: "A", titel: "Ausweichen", wert: effektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit") },
+    { kuerzel: "P", titel: "Parieren", wert: treffen("Nahkampf") },
+    { kuerzel: "I", titel: "Initiative", wert: u.initiative },
+  ];
+}
+
 /** Waffenschaden. Bei Chrom ist `kraft` der Implantat-Bonus, nicht die Klinge. */
 function waffenSchaden(w: GegenstandMitBesitzer) {
   if (w.typ === "Waffe") return w.schaden || w.kraft;
@@ -119,7 +142,7 @@ export function Kampfkarte({
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
 
   const u = bogen.uebersicht;
-  const geschick = wert(bogen, "Geschicklichkeit") + ausruestungsBonus(bogen, "Geschicklichkeit");
+  const geschick = wert(bogen, geschickName(bogen)) + ausruestungsBonus(bogen, geschickName(bogen));
   const abzug = geschickAbzug(ruestung);
   const geschickEffektiv = Math.max(0, geschick - abzug);
   const treffenPool = (skill: string) => geschickEffektiv + wert(bogen, skill) + ausruestungsBonus(bogen, skill);
@@ -131,19 +154,7 @@ export function Kampfkarte({
   // Mark, 26.10.2026: "möglichst alles in klein ... dann sieht er alles in
   // klein, kann aber drauf klicken und sieht es dann ausgeschrieben und
   // schöner" — dieselben Zahlen wie unten, nur knapp beschriftet.
-  const gesundheitUebrig = u.gesundheitMax - u.schadenSchlag - u.schadenSchwer - u.schadenAggraviert;
-  const kompaktWerte = [
-    { kuerzel: "GS", titel: "Gesundheit", wert: `${gesundheitUebrig}/${u.gesundheitMax}` },
-    { kuerzel: "TN", titel: "Treffen Nahkampf", wert: treffenPool("Nahkampf") },
-    { kuerzel: "TS", titel: "Treffen Schusswaffen", wert: treffenPool("Schusswaffen") },
-    {
-      kuerzel: "A",
-      titel: "Ausweichen",
-      wert: geschickEffektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit"),
-    },
-    { kuerzel: "P", titel: "Parieren", wert: treffenPool("Nahkampf") },
-    { kuerzel: "I", titel: "Initiative", wert: u.initiative },
-  ];
+  const kompaktWerte = kampfKurz(bogen, ruestung);
 
   return (
     <div className="kk-karte">

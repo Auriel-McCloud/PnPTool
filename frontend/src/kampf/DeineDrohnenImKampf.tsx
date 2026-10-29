@@ -4,7 +4,7 @@ import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
 import { kampfApi, type HotStatus, type Kampf, type Teilnehmer } from "./api";
 import { InitiativeSetzen } from "./InitiativeSetzen";
-import { Kampfkarte } from "./Kampfkarte";
+import { Kampfkarte, kampfKurz } from "./Kampfkarte";
 import "../items/gegenstaende.css";
 import "./kampf.css";
 
@@ -14,9 +14,8 @@ import "./kampf.css";
  * des laufenden Kampfes, steht hier ein Self-Service-Knopf statt die SL zu
  * bitten — passt sich automatisch an, wie viele die Riggerkonsole gerade
  * aktiv verbunden hat (`drohnenApi.liste` liefert nur `riggerAktiv`).
- * Antippen einer schon teilnehmenden Drohne öffnet ihren Steckbrief
- * (Kampfkarte, kompaktStart — Gesundheit/TN/TS/A/P/I in Kurzform, Klick
- * klappt die ausgeschriebene Fassung auf).
+ * Antippen öffnet den großen Steckbrief, auch wenn die Drohne Hot ist und
+ * deshalb keine eigene Zeile in der Initiativliste mehr hat.
  */
 export function DeineDrohnenImKampf({
   campaignId,
@@ -35,7 +34,7 @@ export function DeineDrohnenImKampf({
 }) {
   const [drohnen, setDrohnen] = useState<DrohnenEintrag[]>([]);
   const [slotsMax, setSlotsMax] = useState(0);
-  const [gesundheit, setGesundheit] = useState<Record<string, string>>({});
+  const [gesundheit, setGesundheit] = useState<Record<string, ReturnType<typeof kampfKurz>>>({});
   const [offenId, setOffenId] = useState<string | null>(null);
   const [beitretend, setBeitretend] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -89,11 +88,9 @@ export function DeineDrohnenImKampf({
       drohnen.map(async (d) => {
         try {
           const b = await bogenApi.laden(campaignId, d.id);
-          const u = b.uebersicht;
-          const uebrig = u.gesundheitMax - u.schadenSchlag - u.schadenSchwer - u.schadenAggraviert;
-          return [d.id, `${uebrig}/${u.gesundheitMax}`] as const;
+          return [d.id, kampfKurz(b)] as const;
         } catch {
-          return [d.id, "?"] as const;
+          return [d.id, []] as const;
         }
       }),
     ).then((paare) => {
@@ -158,10 +155,18 @@ export function DeineDrohnenImKampf({
                 type="button"
                 className={`gg-kachel${d.istHot ? " gg-slot-hot" : ""}`}
                 style={d.istHot ? undefined : { borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
-                onClick={() => teilnahme && setOffenId(d.id)}
+                onClick={() => setOffenId(d.id)}
               >
                 <span className="gg-kachel-name">{d.name}</span>
-                <span className="gg-kachel-zeile">{gesundheit[d.id] ?? "…"}</span>
+                <span className="kk-slot-kurz">
+                  {(gesundheit[d.id] ?? []).map((k) => (
+                    <span key={k.kuerzel} title={k.titel}>
+                      <em>{k.kuerzel}</em>
+                      {k.wert}
+                    </span>
+                  ))}
+                  {!gesundheit[d.id] && <span>…</span>}
+                </span>
               </button>
               {hot?.hatNeurolink && (
                 <button
@@ -186,22 +191,20 @@ export function DeineDrohnenImKampf({
       {offenId && (
         <Fenster
           offen
-          titel={kampf?.teilnehmer.find((t) => t.personId === offenId)?.name ?? ""}
+          titel={drohnen.find((d) => d.id === offenId)?.name ?? "Drohne"}
           unterzeile="Kampfwerte"
           kennung={`kampf-drohne:${offenId}`}
           onSchliessen={() => setOffenId(null)}
         >
-          {(() => {
-            const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
-            return (
-              <Kampfkarte
-                campaignId={campaignId}
-                personId={offenId}
-                kompaktStart
-                onInitiativeKlick={teilnahme ? () => setInitiativeZiel(teilnahme) : undefined}
-              />
-            );
-          })()}
+          <Kampfkarte
+            campaignId={campaignId}
+            personId={offenId}
+            aenderbar
+            onInitiativeKlick={(() => {
+              const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
+              return teilnahme ? () => setInitiativeZiel(teilnahme) : undefined;
+            })()}
+          />
         </Fenster>
       )}
 

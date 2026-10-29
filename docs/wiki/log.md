@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-29] fix | Hot-Drohne im Kampf wieder antippbar
+
+Der Slot zeigte den Steckbrief nicht und der Klick tat nichts, sobald die
+Drohne Hot aus der Initiativliste gefaltet war. Kleines Feld zeigt GS/TN/TS/A/P/I,
+Klick öffnet den großen Steckbrief.
+
 ## [2026-10-28] gebaut | Hot-Proben und Dumpshock
 
 Solange Hot: Geschick plus gedeckeltes Riggen, Fahren/Fliegen der bessere Wert,
