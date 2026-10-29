@@ -425,6 +425,50 @@ noch Regel stehen fest (was genau kombiniert werden darf, was dabei
 entsteht, ob es ein Materia-Level-6-Cap sprengt). Erst mit Mark das
 Datenmodell besprechen, bevor hier irgendetwas gebaut wird.
 
+### Ideen für später: Beschwörungs-Materia (Critter beschwören)
+
+Mark, 29.10.2026, neue Idee direkt im Anschluss ans Materia-Feature:
+
+> "Wir könnten Beschwörungen-Materias machen, hinter denen gewisse Critter
+> stecken, die man im Kampf beschwören kann. Der Beschwörer bekommt den
+> Critter dann wie eine Drohne angezeigt und kann ihn steuern. Das Level der
+> Beschwörung (wieder 1-6) gibt an, wie viele Runden der Critter am Kampf
+> teilnimmt — wir nehmen die Logik von den Zusatzrunden, er muss dann gleich
+> die Initiative eingeben. Was neu wäre: der Critter heilt jedes Mal mit,
+> wenn die Gruppe rastet, also wie ein spezielles Pet."
+
+**Bewusst noch nicht spezifiziert, Datenmodell erst morgen besprechen.**
+Vorläufige Einordnung für den Einstieg in die Diskussion:
+
+- Eine neue Art Materia (eigenes `materiaFertigkeiten`-Flag? eigener Typ?),
+  die statt einer Fertigkeits-Stufe einen **Critter-Link** trägt — Critter
+  sind seit 20.09.2026 echte `Person`-Knoten (`istCritter=true`, siehe
+  `entities/schemas.py`), kein eigener Begleiter-Typ mehr. Offene Frage: ist
+  die Beschwörung ein TEMPLATE-Critter (eine Vorlage, die bei jeder
+  Beschwörung frisch instanziiert wird) oder immer derselbe, fest gebundene
+  Critter-Knoten?
+- "Wird wie eine Drohne angezeigt und steuerbar" — vermutlich dasselbe
+  Rigger/Drohne-Muster wie bei `drohne_rigger`/Hot (`kampf/hot.py`,
+  `entities/repository.py::drohne_rigger`): der Beschwörer bekommt dieselbe
+  Steuer-Sicht wie ein Rigger auf seine Drohne, nur für den beschworenen
+  Critter.
+- "Level 1-6 = wie viele Runden der Critter teilnimmt, Logik von den
+  Zusatzrunden" — unklar, ob Mark damit die Hot-Ampel-Rundenlogik
+  (`kampf/booster.py::AMPEL_MAX`/`ampel_nach_nutzung`) meint oder einfach
+  das Zählmuster von `zusatzaktionen` (Sentinel -1 = "jede Runde", siehe
+  `items/augments.py::kombiniere_zusatzaktionen`) — morgen konkret
+  nachfragen, welche der beiden Mark meint.
+- "Er muss dann gleich die Initiative eingeben" — analog zum
+  Reflex-Booster-Zusatzzug (`kampf/repository.py`: zweiter Initiative-
+  Eintrag derselben Person), nur für den neu erschienenen Critter statt für
+  eine Zusatzaktion derselben Person.
+- "Heilt mit, wenn die Gruppe rastet, wie ein spezielles Pet" — neu
+  gegenüber der normalen Rast-Mechanik (`traits/rast.py`): bisher rasten nur
+  tatsächlich anwesende `Person`-Knoten, die explizit ausgewählt werden
+  (`RastInput.personIds`). Ein beschworener Critter müsste entweder
+  automatisch mitgewählt werden, sobald sein Beschwörer rastet, oder einen
+  eigenen Rast-Pfad bekommen.
+
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
 Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich
