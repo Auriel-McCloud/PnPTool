@@ -243,3 +243,49 @@ mal offen war).
 
 `pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`
 sauber, kein Klicktest.
+
+## Korrektur 3: Gesundheit/Außenhülle sichtbar, "Augments" in der Werkbank-UI zu "Upgraden" umbenannt, Typ-Bugfix (29.10.2026, Marks dritter Klicktest)
+
+Drei Befunde vom ersten echten Durchklicken am Spieltisch:
+
+1. **"Ich sehe bei der Reparatur nicht den Gesundheitszustand der
+   Drohnen/Rüstungen"**: Die Reparatur-Kacheln für Drohnen/Fahrzeuge zeigten
+   nur Name + Typ, keinen Schadenszustand — und das Reparatur-Popup selbst
+   zeigte überhaupt keinen aktuellen Zustand (weder für Rüstung noch für
+   Drohne/Fahrzeug). `GET /drohnen` liefert jetzt zusätzlich
+   `gesundheitAktuell`/`gesundheitMax` (live wie am Charakterblatt) sowie
+   `aussenhuelleAktuell`/`aussenhuelleMax` — die Außenhülle ist das
+   `istNatuerlich`-Rüstungsteil der Drohne selbst (identischer Mechanismus
+   wie Dug'Rahs natürliche Rüstung, siehe `anwende_natuerliche_ruestung`).
+   `ReparaturZiel` trägt diese Werte jetzt mit, `ReparaturFenster` zeigt sie
+   als Kopfzeile.
+   - **Offen/ungelöst:** Eine Drohne kann bisher nicht rasten (ihr einziger
+     Heilweg ist die Werkbank-Material-Reparatur, die nur Gesundheit
+     heilt). Die Außenhülle wird dadurch sichtbar, aber NICHT repariert —
+     und die normale Rüstungs-Reparatur schließt `istNatuerlich`-Teile
+     bewusst aus (sie heilen bei Personen über Rast). Für Drohnen gibt es
+     also aktuell **keinen Weg**, eine beschädigte Außenhülle wieder
+     aufzufüllen. Entscheidung von Mark noch offen: Außenhülle in die
+     bestehende Gesundheits-Material-Reparatur mit aufnehmen, oder einen
+     eigenen Reparaturschritt dafür bauen?
+2. **Benennung**: Mark, 29.10.2026: "das verbessern von Waffen ... heißt
+   noch Augments, das muss bitte Upgraden heißen" — alle user-sichtbaren
+   Texte im Werkbank-Augments-Reiter umbenannt (Tab-Button, Fenstertitel,
+   Leer-/Fehlertexte, die Checkbox "Ist selbst ein Augment" am
+   Gegenstands-Formular). Interne Namen (`istAugment`, `AugmentFenster.tsx`,
+   `items/augments.py`, API-Routen) bleiben unverändert — reine
+   Display-Umbenennung. Die KÖRPERKARTE (Cyberware-Implantate,
+   `augments/AugmentsAnsicht.tsx`, Burgermenü "Augments" mit Symbol ⚕) ist
+   ein eigenes, unverwandtes Feature und bleibt unverändert.
+3. **Bugfix "Spieler sieht sein Upgrade-Material nicht"**: Mark hatte ein
+   Zielfernrohr mit Typ "Upgrade-Material" angelegt, aber die separate
+   Checkbox "Ist selbst ein Augment" nicht gesetzt — laut Datenmodell zwei
+   unabhängige Felder (Typ ist nur die Kachel-Optik), in der Praxis aber
+   genau die Verwechslung, die zum Typ "Upgrade-Material" erst geführt
+   hatte. Jetzt erzwingen `create_item`/`update_item` serverseitig
+   `istAugment=true`, sobald `typ == "Upgrade-Material"` ist — die Checkbox
+   bleibt im Formular sichtbar (und für andere Typen weiter frei wählbar),
+   wird für diesen einen Typ aber nicht mehr vergessen.
+
+`pytest` (887 passed, 55 vorbestehende Fehlschläge unverändert — identisch
+zur Baseline), `tsc -b`/`vite build` sauber, Live-Deploy auf bebop.
