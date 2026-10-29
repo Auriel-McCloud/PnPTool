@@ -12,7 +12,8 @@ from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
-from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt
+from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt, zieltyp_passt
+from app.items.augments import AUGMENT_TRAEGER_TYPEN, wende_augment_boni_an
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
 from app.traits import erstellung
@@ -74,12 +75,33 @@ def speichere_bild_bytes(campaign_id: str, inhalt: bytes, content_type: str) -> 
 @campaign_router.get("", response_model=list[GegenstandMitBesitzer])
 async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_alle_gegenstaende(campaign_id)
+    items = await _mit_augment_boni(campaign_id, items)
     sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
     # Ideenschmiede-Entwürfe gehören nicht in die normale Übersicht, genau wie
     # bei Person/Ort/Event/Fraktion/WikiSeite (siehe entities/routes.py::
     # _aufbereiten, wiki/routes.py::seitenbaum). Einzelabruf (get_item) filtert
     # das bewusst NICHT — die Ideenschmiede lädt Entwürfe darüber fürs Detail-Popup.
     return [i for i in sichtbar if not i.get("istEntwurf", False)]
+
+
+async def _mit_augment_boni(campaign_id: str, items: list[dict]) -> list[dict]:
+    """Legt die Effekte montierter, nicht defekter Augments (Waffenschaden/
+    -art, Rüstungs-Absorption/Kästchen, Initiative/Zusatzaktionen) auf die
+    betroffenen Items, BEVOR sie den Client erreichen (29.10.2026
+    Nachbesserung, siehe items/augments.py::wende_augment_boni_an).
+
+    Reine Anzeige-/Kampfwerte — nie zurückgeschrieben, deshalb hier und nicht
+    in `items/repository.py::_decode` (das würde ein Vorlagen-Kopieren sonst
+    unbeabsichtigt mit dem Bonus einfrieren). Nur Waffe/Rüstung/Cyberdeck/
+    Riggerkonsole können überhaupt Augment-Ziel sein (`AUGMENT_TRAEGER_TYPEN`).
+    """
+    ziel_ids = [i["id"] for i in items if (i.get("typ") or "") in AUGMENT_TRAEGER_TYPEN]
+    if not ziel_ids:
+        return items
+    boni = await repository.augment_boni_fuer_ziele(campaign_id, ziel_ids)
+    if not boni:
+        return items
+    return [wende_augment_boni_an(i, boni[i["id"]]) if i["id"] in boni else i for i in items]
 
 
 async def _default_sichtbarkeit(campaign_id: str, ziel: dict, ziel_id: str) -> tuple[str, list[str]]:
@@ -207,6 +229,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "upgradeSlots": body.upgradeSlots,
         "istAugment": True if body.typ == "Upgrade-Material" else body.istAugment,
         "augmentWaffentyp": body.augmentWaffentyp,
+        "augmentZielTyp": body.augmentZielTyp,
         "defekt": body.defekt,
         # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
         "istEntwurf": body.istEntwurf,
@@ -238,6 +261,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
 @router.get("", response_model=list[GegenstandResponse])
 async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_gegenstaende(campaign_id, person_id)
+    items = await _mit_augment_boni(campaign_id, items)
     sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
     # Siehe list_all_items: Entwürfe gehören in die Ideenschmiede, nicht hierhin.
     return [i for i in sichtbar if not i.get("istEntwurf", False)]
@@ -848,6 +872,7 @@ async def get_item(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    item = (await _mit_augment_boni(campaign_id, [item]))[0]
     sichtbar = filter_gegenstaende_for_viewer([item], viewer.role, viewer.person_id)
     if not sichtbar:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
@@ -1245,12 +1270,14 @@ async def augment_ziele(campaign_id: str, item_id: str, viewer: Viewer = Depends
         return []
     kandidaten = await repository.list_montierbare_ziele(campaign_id, besitzer_id)
     waffentyp = augment.get("augmentWaffentyp") or ""
+    zieltyp = augment.get("augmentZielTyp") or ""
     return [
         AugmentZiel(id=k["id"], name=k["name"], typ=k["typ"], upgradeSlots=k["upgradeSlots"], belegteSlots=k["belegteSlots"])
         for k in kandidaten
         if k["id"] != item_id
         and k["belegteSlots"] < k["upgradeSlots"]
         and waffentyp_passt(waffentyp, k.get("kampfFertigkeit") or "")
+        and zieltyp_passt(zieltyp, k.get("typ") or "")
     ]
 
 
@@ -1304,6 +1331,19 @@ async def augment_montieren(campaign_id: str, item_id: str, body: AugmentMontier
         raise HTTPException(status.HTTP_409_CONFLICT, f"Alle {ziel['upgradeSlots']} Slots sind belegt.")
     if not waffentyp_passt(augment.get("augmentWaffentyp") or "", ziel["kampfFertigkeit"]):
         raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment passt nicht an dieses Ziel.")
+    if not zieltyp_passt(augment.get("augmentZielTyp") or "", ziel.get("typ") or ""):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment passt nur an einen bestimmten Zieltyp.")
+    if augment.get("schadenArt"):
+        # Schadensart ist ein OVERRIDE, kein Bonus — zwei Schadensart-Augments
+        # am selben Ziel würden sich widersprechen (29.10.2026 Nachbesserung,
+        # Mark: "Montieren wird abgelehnt, wenn am Ziel schon ein
+        # Schadensart-Augment sitzt").
+        vorhandene_boni = await repository.augment_boni_fuer_ziel(campaign_id, body.zielId)
+        if vorhandene_boni.get("schadenArt"):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "An diesem Ziel sitzt bereits ein Augment, das die Schadensart ändert — erst das demontieren.",
+            )
 
     defekt_neu = body.probenErgebnis == "patzer"
     erfolgreich = body.probenErgebnis == "ja"

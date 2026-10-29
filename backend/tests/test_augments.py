@@ -5,7 +5,10 @@ from app.items.augments import (
     AUGMENT_TRAEGER_TYPEN,
     augment_level,
     benoetigte_erfolge_montage,
+    kombiniere_zusatzaktionen,
     waffentyp_passt,
+    wende_augment_boni_an,
+    zieltyp_passt,
 )
 from app.kampf.ruestung import reparatur_benoetigte_erfolge, reparatur_heilung_material
 
@@ -69,3 +72,78 @@ class TestAugmentReparaturWiederverwendetReparaturFormeln:
 class TestAugmentTraegerTypen:
     def test_enthaelt_waffe_ruestung_cyberdeck_riggerkonsole(self):
         assert AUGMENT_TRAEGER_TYPEN == {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"}
+
+
+class TestZieltypPasst:
+    """29.10.2026 Nachbesserung, Mark: 'ein zusätzliches Feld dafür, wenn es
+    leer ist gilt es für alle, bei Auswahl z.B. nur für Decks'."""
+
+    def test_leerer_zieltyp_passt_auf_alles(self):
+        assert zieltyp_passt("", "Cyberdeck") is True
+        assert zieltyp_passt("", "Waffe") is True
+        assert zieltyp_passt("", "") is True  # Drohne/Fahrzeug (Person-Ziel, kein typ)
+
+    def test_gesetzter_zieltyp_nur_bei_match(self):
+        assert zieltyp_passt("Cyberdeck", "Cyberdeck") is True
+        assert zieltyp_passt("Cyberdeck", "Riggerkonsole") is False
+        assert zieltyp_passt("Cyberdeck", "") is False  # fällt an Drohne/Fahrzeug heraus
+
+
+class TestKombiniereZusatzaktionen:
+    """-1 ('jede Runde', Reflex-Booster Stufe 3) schlägt jede endliche Zahl."""
+
+    def test_addiert_endliche_werte(self):
+        assert kombiniere_zusatzaktionen(1, 1) == 2
+        assert kombiniere_zusatzaktionen(0, 2) == 2
+
+    def test_minus_eins_gewinnt_immer(self):
+        assert kombiniere_zusatzaktionen(-1, 2) == -1
+        assert kombiniere_zusatzaktionen(2, -1) == -1
+        assert kombiniere_zusatzaktionen(-1, -1) == -1
+
+    def test_negative_eingaben_ausser_sentinel_zaehlen_als_null(self):
+        assert kombiniere_zusatzaktionen(0, 0) == 0
+
+
+class TestWendeAugmentBoniAn:
+    """items/repository.py::augment_boni_fuer_ziel liefert `boni` genau in
+    dieser Form — hier nur die reine Anwendung auf ein geladenes Ziel."""
+
+    def test_ohne_augment_bleibt_alles_gleich(self):
+        basis = {"schaden": 3, "schadenArt": "schwer", "zusatzaktionen": 0}
+        assert wende_augment_boni_an(basis, {}) == {
+            "schaden": 3,
+            "schadenArt": "schwer",
+            "zusatzaktionen": 0,
+            "ruestungReduktionBasis": 0,
+            "ruestungKaestchenMax": 0,
+            "initiativeBonus": 0,
+        }
+
+    def test_addiert_schaden_reduktion_kaestchen_initiative(self):
+        basis = {"schaden": 3, "ruestungReduktionBasis": 2, "ruestungKaestchenMax": 5, "initiativeBonus": 0}
+        boni = {"schaden": 2, "ruestungReduktionBasis": 1, "ruestungKaestchenMax": 3, "initiativeBonus": 3}
+        ergebnis = wende_augment_boni_an(basis, boni)
+        assert ergebnis["schaden"] == 5
+        assert ergebnis["ruestungReduktionBasis"] == 3
+        assert ergebnis["ruestungKaestchenMax"] == 8
+        assert ergebnis["initiativeBonus"] == 3
+
+    def test_schadenart_override_nur_wenn_gesetzt(self):
+        basis = {"schadenArt": "schwer"}
+        assert wende_augment_boni_an(basis, {"schadenArt": "aggraviert"})["schadenArt"] == "aggraviert"
+        assert wende_augment_boni_an(basis, {"schadenArt": ""})["schadenArt"] == "schwer"
+        assert wende_augment_boni_an(basis, {})["schadenArt"] == "schwer"
+
+    def test_mutiert_basis_nicht(self):
+        basis = {"schaden": 3}
+        wende_augment_boni_an(basis, {"schaden": 5})
+        assert basis["schaden"] == 3
+
+    def test_reflexbooster_auf_deck_kombiniert_zusatzaktionen_mit_sentinel(self):
+        # Deck hat selbst 1 Zusatzaktion, montiertes Reflexbooster-Stufe-3-
+        # Augment gibt "jede Runde" (-1) — das Sentinel gewinnt.
+        basis = {"zusatzaktionen": 1, "initiativeBonus": 0}
+        ergebnis = wende_augment_boni_an(basis, {"zusatzaktionen": -1, "initiativeBonus": 6})
+        assert ergebnis["zusatzaktionen"] == -1
+        assert ergebnis["initiativeBonus"] == 6

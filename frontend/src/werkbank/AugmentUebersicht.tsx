@@ -106,6 +106,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
                       kind: "Gegenstand",
                       upgradeSlots: g.upgradeSlots,
                       kampfFertigkeit: g.kampfFertigkeit,
+                      typ: g.typ,
                     },
                     g.bildUrl,
                     "🔧",
@@ -122,7 +123,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
               <div className="wb-kachelraster">
                 {drohnenTraeger.map((d) =>
                   traegerKachel(
-                    { id: d.id, name: d.name, kind: "Person", upgradeSlots: d.upgradeSlots, kampfFertigkeit: "" },
+                    { id: d.id, name: d.name, kind: "Person", upgradeSlots: d.upgradeSlots, kampfFertigkeit: "", typ: "" },
                     d.bildUrl,
                     "⛭",
                     `${belegteSlots(d.id)}/${d.upgradeSlots} Slots — ${d.riggerName ?? "ungebunden"}`,

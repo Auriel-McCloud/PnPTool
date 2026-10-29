@@ -326,6 +326,7 @@ export function GegenstandRow({
   const [upgradeSlots, setUpgradeSlots] = useState(item.upgradeSlots);
   const [istAugment, setIstAugment] = useState(item.istAugment);
   const [augmentWaffentyp, setAugmentWaffentyp] = useState(item.augmentWaffentyp);
+  const [augmentZielTyp, setAugmentZielTyp] = useState(item.augmentZielTyp);
   // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature):
   // spiegelt `verbaut` bei Cyberware — nicht ablegbar für den Spieler (GM
   // kann es im Ausnahmefall), nicht reparierbar, Kästchen-Max kommt serverseitig
@@ -470,6 +471,7 @@ export function GegenstandRow({
     setUpgradeSlots(src.upgradeSlots);
     setIstAugment(src.istAugment);
     setAugmentWaffentyp(src.augmentWaffentyp);
+    setAugmentZielTyp(src.augmentZielTyp);
     setIstNatuerlich(src.istNatuerlich);
     setAblageZiel(src.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
@@ -564,6 +566,7 @@ export function GegenstandRow({
       upgradeSlots,
       istAugment,
       augmentWaffentyp,
+      augmentZielTyp,
       istNatuerlich,
       sichtbarkeit,
       sichtbarFuer,
@@ -583,7 +586,7 @@ export function GegenstandRow({
       istWaffe, istNeurolink, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
-      upgradeSlots, istAugment, augmentWaffentyp, istNatuerlich, sichtbarkeit, sichtbarFuer,
+      upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
   );
 
@@ -1708,6 +1711,89 @@ export function GegenstandRow({
                         </label>
                       )}
                     </div>
+                    {istAugment && (
+                      <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                        Nur an diesem Zieltyp
+                        <select
+                          value={augmentZielTyp}
+                          onChange={(e) => setAugmentZielTyp(e.target.value as typeof augmentZielTyp)}
+                        >
+                          <option value="">alle (Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug)</option>
+                          <option value="Waffe">nur Waffe</option>
+                          <option value="Rüstung">nur Rüstung</option>
+                          <option value="Cyberdeck">nur Cyberdeck</option>
+                          <option value="Riggerkonsole">nur Riggerkonsole</option>
+                        </select>
+                      </label>
+                    )}
+                    {istAugment && (
+                      <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8, marginTop: 4 }}>
+                        <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block" }}>
+                          Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
+                          Schadensart, die ersetzt ihn).
+                        </label>
+                        <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                            Schaden
+                            <input
+                              type="number"
+                              value={schaden}
+                              onChange={(e) => setSchaden(Number(e.target.value))}
+                              style={{ width: 60 }}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                            Reduktion
+                            <input
+                              type="number"
+                              min={0}
+                              value={ruestungReduktionBasis}
+                              onChange={(e) => setRuestungReduktionBasis(Math.max(0, Number(e.target.value)))}
+                              style={{ width: 60 }}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                            Kästchen
+                            <input
+                              type="number"
+                              min={0}
+                              value={ruestungKaestchenMax}
+                              onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
+                              style={{ width: 60 }}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                            Initiative-Bonus
+                            <input
+                              type="number"
+                              value={initiativeBonus}
+                              onChange={(e) => setInitiativeBonus(Number(e.target.value))}
+                              style={{ width: 60 }}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                            Zusatzaktionen
+                            <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
+                              <option value={0}>keine</option>
+                              <option value={1}>1× pro Kampf</option>
+                              <option value={2}>2× pro Kampf</option>
+                              <option value={-1}>jede Runde</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 8 }}>
+                            Schadensart ändern
+                            <select value={schadenArt} onChange={(e) => setSchadenArt(e.target.value as typeof schadenArt)}>
+                              <option value="">unverändert lassen</option>
+                              <option value="schlag">Schlag</option>
+                              <option value="schwer">Tödlich</option>
+                              <option value="aggraviert">Schwerheilbar</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                    )}
                     <label style={{ fontSize: "0.9em" }}>
                       <input
                         type="checkbox"

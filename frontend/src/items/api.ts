@@ -145,6 +145,11 @@ export interface Gegenstand {
   /** Leer = passt auf jedes Ziel; gesetzt = nur an Waffen mit diesem
    * kampfFertigkeit-Typ montierbar. */
   augmentWaffentyp: KampfFertigkeit;
+  /** Leer = an jedem AUGMENT_TRAEGER_TYPEN montierbar; gesetzt = NUR an
+   * genau diesem Gegenstandstyp (z.B. ein Reflexbooster-Upgrade nur an
+   * Cyberdeck/Riggerkonsole) — Pendant zu `items/augments.py::
+   * zieltyp_passt`, unabhängig von `augmentWaffentyp` oben. */
+  augmentZielTyp: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
   /** Ein Patzer beim Montieren/Demontieren hat dieses Augment beschädigt —
    * der Bonus zählt nicht, bis es repariert ist. */
   defekt: boolean;
@@ -317,6 +322,14 @@ export function waffentypPasst(augmentWaffentyp: string, zielKampfFertigkeit: st
   return !augmentWaffentyp || augmentWaffentyp === zielKampfFertigkeit;
 }
 
+/** Ob ein Upgrade mit diesem `augmentZielTyp` an einem Ziel dieses
+ * Gegenstandstyps montierbar ist — TS-Pendant zu
+ * `items/augments.py::zieltyp_passt` (29.10.2026 Nachbesserung). Leer
+ * passt auf alles (inkl. Drohne/Fahrzeug, die keinen `typ` haben). */
+export function zieltypPasst(augmentZielTyp: string, zielTyp: string): boolean {
+  return !augmentZielTyp || augmentZielTyp === zielTyp;
+}
+
 export const KAMPF_FERTIGKEIT_LABEL: Record<Exclude<KampfFertigkeit, "">, string> = {
   Schusswaffen: "Fernkampf",
   Nahkampf: "Nahkampf",
@@ -438,6 +451,7 @@ export interface GegenstandUpdate {
   upgradeSlots?: number;
   istAugment?: boolean;
   augmentWaffentyp?: KampfFertigkeit;
+  augmentZielTyp?: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
   defekt?: boolean;
 }
 

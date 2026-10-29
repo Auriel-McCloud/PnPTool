@@ -1,4 +1,4 @@
-import { waffentypPasst, type GegenstandMitBesitzer } from "../items/api";
+import { waffentypPasst, zieltypPasst, type GegenstandMitBesitzer } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 
 /** Ein Trägergegenstand oder eine Drohne/ein Fahrzeug mit Upgrade-Slots. */
@@ -10,6 +10,9 @@ export interface AugmentTraeger {
   /** Nur Gegenstand-Träger — Drohnen/Fahrzeuge (Person) haben kein
    *  `kampfFertigkeit`-Feld, kommt hier leer an (siehe `waffentypPasst`). */
   kampfFertigkeit: string;
+  /** Nur Gegenstand-Träger — Drohnen/Fahrzeuge (Person) haben keinen
+   *  `typ`, kommt hier leer an (siehe `zieltypPasst`). */
+  typ: string;
 }
 
 /**
@@ -43,7 +46,12 @@ export function AugmentTraegerPanel({
 
   const montiert = alleGegenstaende.filter((g) => g.montiertAnId === traeger.id);
   const frei = alleGegenstaende.filter(
-    (g) => g.istAugment && !g.defekt && !g.montiertAnId && waffentypPasst(g.augmentWaffentyp, traeger.kampfFertigkeit),
+    (g) =>
+      g.istAugment &&
+      !g.defekt &&
+      !g.montiertAnId &&
+      waffentypPasst(g.augmentWaffentyp, traeger.kampfFertigkeit) &&
+      zieltypPasst(g.augmentZielTyp, traeger.typ),
   );
   const slotsFrei = traeger.upgradeSlots - montiert.length;
 

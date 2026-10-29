@@ -35,6 +35,7 @@ RETURN_FIELDS = """
     g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
     g.istMaschinenteil AS istMaschinenteil, g.maschinenteilQualitaet AS maschinenteilQualitaet,
     g.upgradeSlots AS upgradeSlots, g.istAugment AS istAugment, g.augmentWaffentyp AS augmentWaffentyp,
+    g.augmentZielTyp AS augmentZielTyp,
     g.defekt AS defekt,
     ziel.id AS ablageZielId, coalesce(ziel.name, ziel.title) AS ablageZielName,
     CASE WHEN ziel IS NULL THEN NULL ELSE labels(ziel)[0] END AS ablageZielKind,
@@ -223,6 +224,7 @@ def _decode(record: dict) -> dict:
     record["upgradeSlots"] = _or_default(record.get("upgradeSlots"), 0)
     record["istAugment"] = _or_default(record.get("istAugment"), False)
     record["augmentWaffentyp"] = record.get("augmentWaffentyp") or ""
+    record["augmentZielTyp"] = record.get("augmentZielTyp") or ""
     record["defekt"] = _or_default(record.get("defekt"), False)
     return record
 
@@ -260,6 +262,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
             istMaschinenteil: $istMaschinenteil, maschinenteilQualitaet: $maschinenteilQualitaet,
             upgradeSlots: $upgradeSlots, istAugment: $istAugment, augmentWaffentyp: $augmentWaffentyp,
+            augmentZielTyp: $augmentZielTyp,
             defekt: false,
             istEntwurf: $istEntwurf
         })
@@ -340,6 +343,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             upgradeSlots=int(data.get("upgradeSlots") or 0),
             istAugment=bool(data.get("istAugment")),
             augmentWaffentyp=data.get("augmentWaffentyp") or "",
+            augmentZielTyp=data.get("augmentZielTyp") or "",
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
@@ -425,6 +429,7 @@ async def ziel_fuer_augment(campaign_id: str, ziel_id: str) -> dict | None:
     query = """
         MATCH (z {id: $ziel_id, campaignId: $campaign_id})
         RETURN z.id AS id, coalesce(z.name, '') AS name, labels(z)[0] AS kind,
+               coalesce(z.typ, '') AS typ,
                coalesce(z.upgradeSlots, 0) AS upgradeSlots,
                coalesce(z.kampfFertigkeit, '') AS kampfFertigkeit,
                coalesce(z.istDrohne, false) OR coalesce(z.istFahrzeug, false) AS istDrohneOderFahrzeug
@@ -446,6 +451,90 @@ async def belegte_slots(campaign_id: str, ziel_id: str) -> int:
         result = await session.run(query, campaign_id=campaign_id, ziel_id=ziel_id)
         record = await result.single()
         return int(record["n"]) if record else 0
+
+
+_AUGMENT_BONI_LEER = {
+    "schaden": 0,
+    "ruestungReduktionBasis": 0,
+    "ruestungKaestchenMax": 0,
+    "initiativeBonus": 0,
+    "zusatzaktionen": 0,
+    "schadenArt": "",
+}
+
+# Dieselbe MONTIERT_AN-Bedingung an BEIDEN Aggregations-Queries unten: nur
+# nicht-weggeworfene, nicht-defekte Augments zaehlen (29.10.2026
+# Nachbesserung). Ein Patzer beim Montieren/Demontieren (defekt=true)
+# setzt den Bonus still, statt das Augment erst manuell zu demontieren.
+_AUGMENT_WIRKT = "coalesce(a.istAugment, false) AND NOT coalesce(a.defekt, false) AND NOT coalesce(a.weggeworfen, false)"
+
+
+async def augment_boni_fuer_ziel(campaign_id: str, ziel_id: str) -> dict:
+    """Summiert die Effekte aller montierten, nicht defekten Augments an
+    EINEM Ziel (Waffe/Rüstung/Cyberdeck/Riggerkonsole ODER Drohne/Fahrzeug).
+
+    Siehe `items/augments.py::wende_augment_boni_an` für die Anwendung auf
+    ein geladenes Ziel. `schadenArt` liefert höchstens EINEN nicht-leeren
+    Wert zurück (durch die 409-Prüfung beim Montieren abgesichert, siehe
+    `items/routes.py::augment_montieren` — zwei Schadensart-Augments am
+    selben Ziel kann es nicht geben).
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (z {{id: $ziel_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (z)<-[:MONTIERT_AN]-(a:Gegenstand)
+        WHERE {_AUGMENT_WIRKT}
+        RETURN
+            coalesce(sum(coalesce(a.schaden, 0)), 0) AS schaden,
+            coalesce(sum(coalesce(a.ruestungReduktionBasis, 0)), 0) AS ruestungReduktionBasis,
+            coalesce(sum(coalesce(a.ruestungKaestchenMax, 0)), 0) AS ruestungKaestchenMax,
+            coalesce(sum(coalesce(a.initiativeBonus, 0)), 0) AS initiativeBonus,
+            CASE WHEN any(x IN collect(a.zusatzaktionen) WHERE x = -1) THEN -1
+                 ELSE coalesce(sum(CASE WHEN coalesce(a.zusatzaktionen, 0) > 0 THEN a.zusatzaktionen ELSE 0 END), 0) END AS zusatzaktionen,
+            head([x IN collect(a.schadenArt) WHERE x IS NOT NULL AND x <> '']) AS schadenArt
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ziel_id=ziel_id)
+        record = await result.single()
+        if record is None:
+            return dict(_AUGMENT_BONI_LEER)
+        werte = dict(record)
+        werte["schadenArt"] = werte.get("schadenArt") or ""
+        return werte
+
+
+async def augment_boni_fuer_ziele(campaign_id: str, ziel_ids: list[str]) -> dict[str, dict]:
+    """Batched Variante von `augment_boni_fuer_ziel` für ganze Listen (z.B.
+    das Inventar einer Person) — ein DB-Roundtrip statt einem pro Item.
+    Ziele ohne montierte Augments fehlen im Ergebnis-dict schlicht (Aufrufer:
+    `.get(id, {})`, siehe `items/augments.py::wende_augment_boni_an`).
+    """
+    if not ziel_ids:
+        return {}
+    driver = get_driver()
+    query = f"""
+        UNWIND $ziel_ids AS zid
+        MATCH (z {{id: zid, campaignId: $campaign_id}})
+        OPTIONAL MATCH (z)<-[:MONTIERT_AN]-(a:Gegenstand)
+        WHERE {_AUGMENT_WIRKT}
+        WITH z,
+            coalesce(sum(coalesce(a.schaden, 0)), 0) AS schaden,
+            coalesce(sum(coalesce(a.ruestungReduktionBasis, 0)), 0) AS ruestungReduktionBasis,
+            coalesce(sum(coalesce(a.ruestungKaestchenMax, 0)), 0) AS ruestungKaestchenMax,
+            coalesce(sum(coalesce(a.initiativeBonus, 0)), 0) AS initiativeBonus,
+            CASE WHEN any(x IN collect(a.zusatzaktionen) WHERE x = -1) THEN -1
+                 ELSE coalesce(sum(CASE WHEN coalesce(a.zusatzaktionen, 0) > 0 THEN a.zusatzaktionen ELSE 0 END), 0) END AS zusatzaktionen,
+            head([x IN collect(a.schadenArt) WHERE x IS NOT NULL AND x <> '']) AS schadenArt
+        RETURN z.id AS id, schaden, ruestungReduktionBasis, ruestungKaestchenMax, initiativeBonus, zusatzaktionen, schadenArt
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ziel_ids=ziel_ids)
+        ergebnis = {}
+        async for record in result:
+            werte = dict(record)
+            werte["schadenArt"] = werte.get("schadenArt") or ""
+            ergebnis[werte.pop("id")] = werte
+        return ergebnis
 
 
 async def montiere_augment(campaign_id: str, augment_id: str, ziel_id: str) -> dict | None:
@@ -1206,10 +1295,17 @@ async def ausgeruestete_decks(campaign_id: str, person_id: str) -> list[dict]:
     nicht die Summe — dieselbe Regel wie bei den Bonuswürfeln.
     """
     driver = get_driver()
-    query = """
-        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
         WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
-        RETURN g.name AS name, coalesce(g.zusatzaktionen, 0) AS zusatzaktionen
+        OPTIONAL MATCH (g)<-[:MONTIERT_AN]-(a:Gegenstand)
+        WHERE {_AUGMENT_WIRKT}
+        WITH g,
+             CASE WHEN any(x IN collect(a.zusatzaktionen) WHERE x = -1) THEN -1
+                  ELSE coalesce(sum(CASE WHEN coalesce(a.zusatzaktionen, 0) > 0 THEN a.zusatzaktionen ELSE 0 END), 0) END AS augmentZusatzaktionen
+        RETURN g.name AS name,
+               CASE WHEN coalesce(g.zusatzaktionen, 0) = -1 OR augmentZusatzaktionen = -1 THEN -1
+                    ELSE coalesce(g.zusatzaktionen, 0) + augmentZusatzaktionen END AS zusatzaktionen
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
@@ -1280,7 +1376,10 @@ async def initiative_modifikator(campaign_id: str, person_id: str) -> int:
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
         WHERE {WIRKT}
-        RETURN coalesce(sum(coalesce(g.initiativeBonus, 0)), 0) AS summe
+        OPTIONAL MATCH (g)<-[:MONTIERT_AN]-(a:Gegenstand)
+        WHERE {_AUGMENT_WIRKT}
+        WITH g, coalesce(sum(coalesce(a.initiativeBonus, 0)), 0) AS augmentBonus
+        RETURN coalesce(sum(coalesce(g.initiativeBonus, 0) + augmentBonus), 0) AS summe
     """
     async with driver.session() as session:
         result = await session.run(
@@ -1489,7 +1588,15 @@ async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
-        return [_decode(dict(record)) async for record in result]
+        teile = [_decode(dict(record)) async for record in result]
+    # Augment-Boni (29.10.2026 Nachbesserung): montierte, nicht defekte
+    # Upgrade-Material-Stücke dürfen Absorption/Kästchen eines Rüstungsteils
+    # erhöhen — siehe items/augments.py::wende_augment_boni_an. Lazy-Import
+    # wie bei willenskraft_verlust oben (zirkuläre Imports vermeiden).
+    from app.items.augments import wende_augment_boni_an
+
+    boni = await augment_boni_fuer_ziele(campaign_id, [t["id"] for t in teile])
+    return [wende_augment_boni_an(t, boni.get(t["id"], {})) for t in teile]
 
 
 async def natuerliche_ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:

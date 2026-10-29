@@ -4,6 +4,62 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Upgrade-Material erweitert: Waffenschaden/-art, Rüstungs-Absorption/
+  Kästchen, Initiative/Zusatzaktionen als Augment-Effekt** (29.10.2026,
+  zweite Nachbesserung direkt nach der Werkbank-Augments-Einführung oben,
+  Mark: "ich würde gerne bei z.B. Decks oder Rigger Konsolen 'Hot'
+  Funktionen hinzufügen können... Reflexbooster-Fähigkeit"). Ein Augment
+  (`istAugment=true`) ist selbst ein `Gegenstand` mit vollem Schema — bisher
+  wurde beim Montieren aber nur sein `traitBoni`-Feld ausgewertet. Jetzt
+  zählen zusätzlich die schon vorhandenen Felder `schaden`,
+  `ruestungReduktionBasis`, `ruestungKaestchenMax`, `initiativeBonus` additiv
+  als Bonus aufs Ziel, `zusatzaktionen` kombiniert mit Sentinel-Vorrang
+  (-1 "jede Runde" schlägt jede Zahl, `augments.py::kombiniere_
+  zusatzaktionen`). `schadenArt` ist die Ausnahme — kein Bonus, sondern ein
+  OVERRIDE (`wende_augment_boni_an`), abgesichert durch eine neue 409-Prüfung
+  beim Montieren: ein zweites Schadensart-Augment am selben Ziel wird
+  abgelehnt (Mark hat das explizit so entschieden, keine
+  Letzter-gewinnt-Regel). Neues Feld `augmentZielTyp` (leer = alle
+  AUGMENT_TRAEGER_TYPEN wie bisher, gesetzt = nur genau dieser
+  Gegenstandstyp, z.B. ein Reflexbooster-Upgrade nur an Cyberdeck/
+  Riggerkonsole) — unabhängig von `augmentWaffentyp`, das nur innerhalb von
+  Waffen nach Kampffertigkeit filtert. Backend: `items/repository.py::
+  augment_boni_fuer_ziel(e)` (neue Aggregations-Query über `MONTIERT_AN`),
+  eingehängt in `initiative_modifikator` (zählt jetzt Augments auf JEDEM
+  ausgerüsteten/verbauten Träger mit, nicht Hot-gated), `ausgeruestete_decks`
+  (Zusatzaktionen inkl. Augment-Bonus — genau der Pfad, den
+  `kampf/hot.py::booster_kandidaten`/`staerkstes` für die Hot-Ampel beim
+  Decker nutzt) und `ruestungsteile` (Absorption/Kästchen-Bonus vor der
+  natürliche-Rüstung-Anwendung). Reine Anzeige-/Kampfwerte, NIE
+  zurückgeschrieben — deshalb nicht in `_decode` gebacken (hätte sonst
+  Vorlagen-Kopien mit dem Bonus eingefroren), sondern als neuer
+  `items/routes.py::_mit_augment_boni`-Schritt in den drei GET-Endpunkten
+  (`list_items`, `list_all_items`, `get_item`) auf Waffe/Rüstung/Cyberdeck/
+  Riggerkonsole-Items angewendet. Frontend: neues Zieltyp-Dropdown plus ein
+  eigener "Wirkung am Ziel"-Block (Schaden/Reduktion/Kästchen/Initiative-
+  Bonus/Zusatzaktionen/Schadensart) im "Ist selbst ein Upgrade"-Bereich des
+  Umbauen-Formulars (`CharacterSheetPanel.tsx`), `AugmentTraegerPanel.tsx`
+  filtert passende freie Upgrades jetzt zusätzlich nach Zieltyp.
+  **Bewusst NICHT gebaut:** ein Verbraucher für Riggerkonsole-
+  Zusatzaktionen — die Hot-Booster-Ampel (`kampf/hot.py`) kennt bisher nur
+  Cyberdeck + verbautes Chrom, Riggerkonsole hat keine analoge
+  Aktionsökonomie-Mechanik; ein Augment mit `augmentZielTyp=Riggerkonsole`
+  und `zusatzaktionen` speichert zwar einen Wert, der aber aktuell nirgends
+  gelesen wird — bitte mit Mark klären, ob/wie Rigger das nutzen sollen,
+  bevor das vorschnell nachgebaut wird. **Verifiziert:** 24 neue Tests
+  (`test_augments.py`, reine Funktionen), volle Backend-Suite ohne
+  Regression (55 vorbestehende, unrelated Windows-Proactor-Fehlschläge
+  unverändert, siehe Stolperstein 8), `npx tsc -b` sauber, **echter E2E-
+  Test gegen laufende Neo4j** (Wegwerf-Skript, nicht committed: Deck +
+  Reflexbooster-Augment angelegt, montiert, `augment_boni_fuer_ziel`/
+  `initiative_modifikator`/`ausgeruestete_decks` lieferten die erwarteten
+  Werte vor UND nach Montage, danach aufgeräumt). **Kein Browser-
+  Klicktest** — bitte am Spieltisch: ein Upgrade-Material mit
+  Initiative-Bonus 6 + Zusatzaktionen "jede Runde" anlegen, Zieltyp
+  "Cyberdeck" setzen, an ein Deck montieren und im Kampf gegenprüfen, dass
+  der Decker beim Hot-Gehen den Booster-Vorteil bekommt; dasselbe für eine
+  Waffe mit Schadensart-Override und eine Rüstung mit Kästchen-Bonus.
+
 - **Bugfix: montiertes Augment (z.B. Zielfernrohr) blieb trotzdem im
   Rucksack sichtbar** (29.10.2026, Marks Spieltisch-Bugreport direkt nach
   der Werkbank-Augments-Einführung oben). Ursache: Montieren setzt nur die

@@ -66,3 +66,69 @@ def waffentyp_passt(augment_waffentyp: str, ziel_kampf_fertigkeit: str) -> bool:
 # Welche Gegenstands-Typen Augments tragen können (ausserdem Drohnen/
 # Fahrzeuge, aber das sind Person-Knoten, siehe Moduldocstring oben).
 AUGMENT_TRAEGER_TYPEN = {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"}
+
+
+def zieltyp_passt(augment_zieltyp: str, ziel_typ: str) -> bool:
+    """Ob dieses Augment an einem Ziel DIESES Gegenstandstyps montierbar ist.
+
+    Zusatzfunktion zur Werkbank-Erweiterung (29.10.2026 Nachbesserung, Mark:
+    "ein zusätzliches Feld dafür, wenn es leer ist gilt es für alle, bei
+    Auswahl z.B. nur für Decks") — ein leerer `augmentZielTyp` passt auf
+    jeden Träger (Waffe/Rüstung/Cyberdeck/Riggerkonsole), ein gesetzter nur
+    auf genau diesen einen. Unabhängig von `waffentyp_passt` oben, das NUR
+    innerhalb von Waffen weiter nach Kampffertigkeit filtert — ein Reflex-
+    booster-Upgrade z.B. setzt `augmentZielTyp="Cyberdeck"` und lässt
+    `augmentWaffentyp` leer (gilt für Drohnen/Fahrzeuge ohnehin nicht, die
+    laufen nie über diese Prüfung, siehe `items/repository.py::
+    ziel_fuer_augment` — Person-Ziele haben keinen Gegenstandstyp).
+    """
+    return not augment_zieltyp or augment_zieltyp == ziel_typ
+
+
+# Felder, die ein montiertes, nicht defektes Augment additiv auf sein Ziel
+# aufschlägt (29.10.2026 Nachbesserung, Mark: Waffenschaden, Rüstungs-
+# Absorption/Kästchen, Initiative/Zusatzaktionen sollen sich per Upgrade-
+# Material ändern lassen) — reine Wiederverwendung der bestehenden
+# Gegenstandsfelder, kein eigenes zweites Bonus-Schema. `schadenArt` läuft
+# separat (siehe `wende_augment_boni_an` unten): das ist ein Override, kein
+# Bonus, deshalb nicht in dieser Liste.
+AUGMENT_BONUS_FELDER = ("schaden", "ruestungReduktionBasis", "ruestungKaestchenMax", "initiativeBonus")
+
+
+def kombiniere_zusatzaktionen(basis: int, bonus: int) -> int:
+    """-1 ("jede Runde", Reflex-Booster Stufe 3) schlägt jede endliche Zahl —
+    derselbe Sentinel-Vorrang wie in `kampf/hot.py::staerkstes`. Ein Ziel,
+    das selbst schon 1 oder 2 Zusatzaktionen hat (z.B. ein Deck mit eigenem
+    Wert) und zusätzlich ein Augment mit einer endlichen Zahl trägt,
+    bekommt die Summe — zwei "jede Runde"-Quellen bleiben "jede Runde",
+    nicht "jede Runde doppelt".
+    """
+    if basis == -1 or bonus == -1:
+        return -1
+    return max(0, basis) + max(0, bonus)
+
+
+def wende_augment_boni_an(basis: dict, boni: dict) -> dict:
+    """Reine Funktion: legt die aggregierten Boni montierter, nicht
+    defekter Augments (siehe `items/repository.py::augment_boni_fuer_ziel`)
+    auf ein bereits geladenes Ziel (Waffe/Rüstung/Cyberdeck/Riggerkonsole).
+
+    Mutiert `basis` nicht, gibt eine neue dict-Kopie zurück — Ziele ohne
+    montierte Augments bekommen `boni={}` und laufen unverändert durch
+    (alle `.get(..., 0)` greifen dann auf den Default 0 zurück).
+
+    `schadenArt` ist die einzige Ausnahme von "addieren": eine Schadensart
+    lässt sich nicht sinnvoll aufsummieren, deshalb OVERRIDE statt Bonus —
+    abgesichert dadurch, dass `items/routes.py::augment_montieren` ein
+    zweites Schadensart-Augment am selben Ziel von vornherein ablehnt (409).
+    """
+    ergebnis = dict(basis)
+    for feld in AUGMENT_BONUS_FELDER:
+        ergebnis[feld] = int(basis.get(feld) or 0) + int(boni.get(feld) or 0)
+    ergebnis["zusatzaktionen"] = kombiniere_zusatzaktionen(
+        int(basis.get("zusatzaktionen") or 0), int(boni.get("zusatzaktionen") or 0)
+    )
+    schaden_art_override = boni.get("schadenArt") or ""
+    if schaden_art_override:
+        ergebnis["schadenArt"] = schaden_art_override
+    return ergebnis

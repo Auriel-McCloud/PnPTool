@@ -255,6 +255,26 @@ class GegenstandCreate(BaseModel):
     # Augment-Level (items/augments.py::augment_level) als Zielgröße statt
     # "fehlenden Kästchen". Solange defekt, zählt der Bonus nicht.
     defekt: bool = False
+    # Zieltyp-Einschränkung (29.10.2026 Nachbesserung, Mark: "ein zusätzliches
+    # Feld dafür, wenn es leer ist gilt es für alle, bei Auswahl z.B. nur für
+    # Decks"): leer = an jedem AUGMENT_TRAEGER_TYPEN montierbar (Normalfall,
+    # wie bisher). Gesetzt = NUR an genau diesem Gegenstandstyp — z.B. ein
+    # Reflexbooster-Upgrade, das nur an Cyberdeck/Riggerkonsole sinnvoll ist.
+    # Unabhängig von `augmentWaffentyp` oben, das NUR innerhalb von Waffen
+    # weiter nach Kampffertigkeit filtert (items/augments.py::zieltyp_passt).
+    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"] = ""
+    # Boni, die dieses Augment beim Ziel bewirkt, sobald es montiert und
+    # nicht defekt ist (29.10.2026 Nachbesserung, Mark: Waffenschaden,
+    # Rüstungs-Absorption/Kästchen, Initiative/Zusatzaktionen änderbar
+    # machen). Additiv zum Basiswert des Ziels — reine Wiederverwendung
+    # bestehender Felder (`schaden`, `ruestungReduktionBasis`,
+    # `ruestungKaestchenMax`, `initiativeBonus`, `zusatzaktionen` oben),
+    # kein zweites Bonus-Schema. `schadenArt` ist hier die Ausnahme: kein
+    # Bonus, sondern ein Override (siehe `items/augments.py::
+    # wende_augment_boni_an`) — deshalb darf pro Ziel höchstens EIN
+    # montiertes Augment eine Schadensart setzen (409 beim Montieren, Mark:
+    # "Montieren wird abgelehnt, wenn am Ziel schon ein Schadensart-Augment
+    # sitzt").
 
 
 class GegenstandUpdate(BaseModel):
@@ -334,6 +354,7 @@ class GegenstandUpdate(BaseModel):
     upgradeSlots: int | None = None
     istAugment: bool | None = None
     augmentWaffentyp: Literal["", "Schusswaffen", "Nahkampf", "Handgemenge"] | None = None
+    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"] | None = None
     defekt: bool | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
@@ -447,6 +468,7 @@ class GegenstandResponse(BaseModel):
     upgradeSlots: int = 0
     istAugment: bool = False
     augmentWaffentyp: str = ""
+    augmentZielTyp: str = ""
     defekt: bool = False
     # Montage-Ziel (nur bei istAugment relevant) — Pendant zu ablageZiel*,
     # kann ein Gegenstand (Waffe/Rüstung/Cyberdeck/Riggerkonsole) ODER eine
