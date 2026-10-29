@@ -28,6 +28,7 @@ from app.traits.drohnen import (
 )
 from app.kampf.ruestung import (
     REPARATUR_SKILLS,
+    anwende_natuerliche_ruestung,
     heile_gesundheitsschaden,
     reparatur_benoetigte_erfolge,
     reparatur_heilung_material,
@@ -354,6 +355,31 @@ async def list_drohnen(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
         belegt_max = slots.get(rid) if rid else None
         d["riggerSlotsBelegt"] = belegt_max[0] if belegt_max else None
         d["riggerSlotsMax"] = belegt_max[1] if belegt_max else None
+
+    # Gesundheit + Außenhülle (29.10.2026, Mark: "ich sehe bei der Reparatur
+    # nicht den Gesundheitszustand der Drohnen/Rüstungen... bei Drohnen muss
+    # auch ihre Außenhülle mit angezeigt werden wenn die defekt ist"):
+    # dieselbe Live-Berechnung wie am Charakterblatt (`get_bogen`), hier nur
+    # auf die Werkbank-Kachel verdichtet. Außenhülle ist das `istNatuerlich`-
+    # Rüstungsteil der Drohne selbst (siehe `anwende_natuerliche_ruestung`-
+    # Docstring) — None/None, wenn (noch) kein solches Teil existiert.
+    for d in sichtbar:
+        drohnen_werte = {w["name"]: w["rating"] for w in await traits_repository.get_ratings_for_entity(campaign_id, d["id"])}
+        roh_grundwert = d.get("gesundheitGrundwert")
+        grundwert = GESUNDHEIT_GRUNDWERT if roh_grundwert is None or roh_grundwert == -1 else int(roh_grundwert)
+        g_max = gesundheit_max(drohnen_werte, grundwert)
+        schaden = int(d.get("schadenSchlag") or 0) + int(d.get("schadenSchwer") or 0) + int(d.get("schadenAggraviert") or 0)
+        d["gesundheitMax"] = g_max
+        d["gesundheitAktuell"] = max(0, g_max - schaden)
+
+        teile_live = anwende_natuerliche_ruestung(
+            await items_repository.ruestungsteile(campaign_id, d["id"]),
+            drohnen_werte.get("Widerstandsfähigkeit", 0),
+            aussenhuelle=drohnen_werte.get("Außenhülle", 0),
+        )
+        aussenhuelle_teil = next((t for t in teile_live if t.get("istNatuerlich")), None)
+        d["aussenhuelleAktuell"] = aussenhuelle_teil["ruestungKaestchenAktuell"] if aussenhuelle_teil else None
+        d["aussenhuelleMax"] = aussenhuelle_teil["ruestungKaestchenMax"] if aussenhuelle_teil else None
 
     return sichtbar
 

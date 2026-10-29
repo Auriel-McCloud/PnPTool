@@ -613,7 +613,11 @@ async def list_drohnen(campaign_id: str) -> list[dict]:
                n.riggerAktiv AS riggerAktiv, coalesce(n.upgradeSlots, 0) AS upgradeSlots,
                p.id AS riggerId, p.name AS riggerName,
                (coalesce(p.hotDrohneId, '') = n.id) AS istHot,
-               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer
+               n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer,
+               n.gesundheitGrundwert AS gesundheitGrundwert,
+               coalesce(n.schadenSchlag, 0) AS schadenSchlag,
+               coalesce(n.schadenSchwer, 0) AS schadenSchwer,
+               coalesce(n.schadenAggraviert, 0) AS schadenAggraviert
         ORDER BY n.name
     """
     async with driver.session() as session:

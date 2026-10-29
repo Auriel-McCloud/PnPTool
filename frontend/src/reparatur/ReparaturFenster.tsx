@@ -18,6 +18,15 @@ export interface ReparaturZiel {
   name: string;
   /** Nur Rüstung: Besitzer-Person für den Händler-Weg. */
   besitzerId?: string | null;
+  /** Aktueller Zustand fürs Popup-Kopfzeile (29.10.2026, Mark: "ich sehe bei
+   *  der Reparatur nicht den Gesundheitszustand") — von der aufrufenden
+   *  Übersicht mitgegeben, damit hier keine zweite Abfrage nötig ist. */
+  ruestungKaestchenAktuell?: number;
+  ruestungKaestchenMax?: number;
+  gesundheitAktuell?: number;
+  gesundheitMax?: number;
+  aussenhuelleAktuell?: number | null;
+  aussenhuelleMax?: number | null;
 }
 
 /** Qualitätsstufen-Gruppe mit Gesamtmenge, Repräsentant trägt die konkrete
@@ -211,6 +220,30 @@ export function ReparaturFenster({
 
   return (
     <Fenster offen titel={`Reparatur: ${ziel.name}`} kennung={`reparatur:${ziel.id}`} onSchliessen={onSchliessen}>
+      {istRuestung && ziel.ruestungKaestchenMax != null && (
+        <p className="lu-hinweis">
+          Zustand:{" "}
+          <strong style={ziel.ruestungKaestchenAktuell! < ziel.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+            {ziel.ruestungKaestchenAktuell}/{ziel.ruestungKaestchenMax} Kästchen
+          </strong>
+        </p>
+      )}
+      {!istRuestung && ziel.gesundheitMax != null && (
+        <p className="lu-hinweis">
+          Zustand: Gesundheit{" "}
+          <strong style={ziel.gesundheitAktuell! < ziel.gesundheitMax ? { color: "var(--nein)" } : undefined}>
+            {ziel.gesundheitAktuell}/{ziel.gesundheitMax}
+          </strong>
+          {ziel.aussenhuelleMax != null && ziel.aussenhuelleMax > 0 && (
+            <>
+              {" — "}Außenhülle{" "}
+              <strong style={ziel.aussenhuelleAktuell! < ziel.aussenhuelleMax ? { color: "var(--nein)" } : undefined}>
+                {ziel.aussenhuelleAktuell}/{ziel.aussenhuelleMax}
+              </strong>
+            </>
+          )}
+        </p>
+      )}
       <div className="rr-wahl">
         <button type="button" aria-pressed={weg === "selbst"} onClick={() => setWeg("selbst")}>
           Selbst reparieren

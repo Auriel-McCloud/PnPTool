@@ -74,7 +74,16 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
                 key={g.id}
                 type="button"
                 className="gg-kachel"
-                onClick={() => setOffenesZiel({ typ: "ruestung", id: g.id, name: g.name, besitzerId: g.ownerId })}
+                onClick={() =>
+                  setOffenesZiel({
+                    typ: "ruestung",
+                    id: g.id,
+                    name: g.name,
+                    besitzerId: g.ownerId,
+                    ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
+                    ruestungKaestchenMax: g.ruestungKaestchenMax,
+                  })
+                }
               >
                 <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}</span>
                 <span className="gg-kachel-name">{g.name}</span>
@@ -96,11 +105,32 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
                 key={d.id}
                 type="button"
                 className="gg-kachel"
-                onClick={() => setOffenesZiel({ typ: d.istFahrzeug ? "fahrzeug" : "drohne", id: d.id, name: d.name })}
+                onClick={() =>
+                  setOffenesZiel({
+                    typ: d.istFahrzeug ? "fahrzeug" : "drohne",
+                    id: d.id,
+                    name: d.name,
+                    gesundheitAktuell: d.gesundheitAktuell,
+                    gesundheitMax: d.gesundheitMax,
+                    aussenhuelleAktuell: d.aussenhuelleAktuell,
+                    aussenhuelleMax: d.aussenhuelleMax,
+                  })
+                }
               >
                 <span className="gg-kachel-bild">{d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}</span>
                 <span className="gg-kachel-name">{d.name}</span>
                 <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"} — {d.riggerName ?? "ungebunden"}</span>
+                <span className="gg-kachel-zeile">
+                  Gesundheit {d.gesundheitAktuell}/{d.gesundheitMax}
+                  {d.aussenhuelleMax != null && d.aussenhuelleMax > 0 && (
+                    <>
+                      {" — "}Außenhülle{" "}
+                      <span style={d.aussenhuelleAktuell! < d.aussenhuelleMax ? { color: "var(--nein)" } : undefined}>
+                        {d.aussenhuelleAktuell}/{d.aussenhuelleMax}
+                      </span>
+                    </>
+                  )}
+                </span>
               </button>
             ))}
           </div>

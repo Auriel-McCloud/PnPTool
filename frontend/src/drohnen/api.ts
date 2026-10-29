@@ -30,6 +30,16 @@ export interface DrohnenEintrag {
   upgradeSlots: number;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];
+  /** Gesundheit (29.10.2026, Mark: "ich sehe bei der Reparatur nicht den
+   *  Gesundheitszustand der Drohnen"): live berechnet wie am Charakterblatt,
+   *  Drohnen/Fahrzeuge heilen nur über die Werkbank-Material-Reparatur. */
+  gesundheitAktuell: number;
+  gesundheitMax: number;
+  /** Außenhülle = das `istNatuerlich`-Rüstungsteil der Drohne selbst (wie
+   *  natürliche Rassen-Rüstung, siehe kampf/ruestung.py::
+   *  anwende_natuerliche_ruestung) — null, falls (noch) keins existiert. */
+  aussenhuelleAktuell: number | null;
+  aussenhuelleMax: number | null;
 }
 
 export interface DrohnenPreisEintrag {
