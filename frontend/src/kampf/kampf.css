@@ -293,10 +293,16 @@
   color: var(--text-leise);
 }
 
-/* Die Liste teilt sich die Fläche dann mit der Karte statt sie zu füllen */
+/* Die Liste teilt sich die Fläche dann mit der Karte statt sie zu füllen —
+   feste Basis statt nur einer Obergrenze (Mark, 29.10.2026): mit "flex: 0 0
+   auto; max-height: 40%" nahm die Liste nur so viel Platz wie ihr Inhalt
+   brauchte und wuchs mit jeder neuen Zusatzzug-Zeile — das schob "Deine
+   Werte" darunter jedesmal ein Stück nach unten. Mit fester Flex-Basis bleibt
+   die Liste immer gleich hoch und scrollt überzählige Zeilen stattdessen
+   innerhalb ihrer selbst weg. */
 .ka-seite:has(.ka-eigene) .ka-liste {
-  flex: 0 0 auto;
-  max-height: 40%;
+  flex: 0 1 40%;
+  max-height: none;
 }
 
 /* --- "Du bist dran" ----------------------------------------------------
