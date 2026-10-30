@@ -353,6 +353,10 @@ export function GegenstandRow({
   const [zuweisenHinweis, setZuweisenHinweis] = useState("");
   const [besitzerZiel, setBesitzerZiel] = useState("");
   const [besitzerLaeuft, setBesitzerLaeuft] = useState(false);
+  // Fehleranzeige beim Übertragen/Zuweisen (30.10.2026, Mark: Klick auf
+  // "Übertragen" tat scheinbar nichts — tatsächlich warf die API einen
+  // Fehler, der bisher nirgends angezeigt wurde, siehe CLAUDE.md).
+  const [besitzerFehler, setBesitzerFehler] = useState("");
   const [kiBildOffen, setKiBildOffen] = useState(false);
   const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
 
@@ -711,11 +715,14 @@ export function GegenstandRow({
     if (!zuweisenZiel) return;
     setZuweisenLaeuft(true);
     setZuweisenHinweis("");
+    setBesitzerFehler("");
     try {
       await itemsApi.assign(campaignId, item.id, zuweisenZiel, alsKopie);
       setZuweisenZiel("");
       if (alsKopie) setZuweisenHinweis("Kopie angelegt — die Vorlage bleibt.");
       onChanged();
+    } catch (e) {
+      setBesitzerFehler(e instanceof Error ? e.message : "Zuweisen fehlgeschlagen.");
     } finally {
       setZuweisenLaeuft(false);
     }
@@ -724,6 +731,7 @@ export function GegenstandRow({
   async function besitzerWechseln() {
     if (!besitzerZiel) return;
     setBesitzerLaeuft(true);
+    setBesitzerFehler("");
     try {
       if (besitzerZiel === VORLAGE_SENTINEL) {
         await itemsApi.removeOwner(campaignId, item.id);
@@ -732,6 +740,8 @@ export function GegenstandRow({
       }
       setBesitzerZiel("");
       onChanged();
+    } catch (e) {
+      setBesitzerFehler(e instanceof Error ? e.message : "Übertragen fehlgeschlagen.");
     } finally {
       setBesitzerLaeuft(false);
     }
@@ -1880,8 +1890,11 @@ export function GegenstandRow({
                     )}
                   </div>
                   <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: "6px 0 0" }}>
-                    Der Beschwörungswert selbst ist kein eigenes Feld — er ist die höchste als Ki-Tama
-                    markierte Ausrüstungsfertigkeit oben (siehe Häkchen "Ki-Tama").
+                    Beschwörungswert kein eigenes Feld: oben unter "Ausrüstungsfertigkeiten" eine
+                    neue Fertigkeit anlegen (z.B. "Beschwörung: {critterOptionen.find((c) => c.id === beschworenerCritterId)?.name ?? "Name"}"),
+                    Startwert eintragen und Häkchen "Ki-Tama" setzen — erst dann kann der Besitzer
+                    mit eigener EP hochleveln. Der aktuelle Wert erscheint beim Spieler im
+                    EP-Steigern-Menü als "Fertigkeit (Gegenstandsname)".
                   </p>
                 </div>
               )}
@@ -1913,6 +1926,11 @@ export function GegenstandRow({
                       {besitzerLaeuft ? "..." : "Übertragen"}
                     </button>
                   </div>
+                  {besitzerFehler && (
+                    <p style={{ fontSize: "0.8em", color: "var(--fehler, #e05555)", margin: "6px 0 0" }}>
+                      {besitzerFehler}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1951,6 +1969,11 @@ export function GegenstandRow({
                       )}
                       {zuweisenHinweis && (
                         <p style={{ fontSize: "0.8em", color: "var(--neon)", margin: "6px 0 0" }}>{zuweisenHinweis}</p>
+                      )}
+                      {besitzerFehler && (
+                        <p style={{ fontSize: "0.8em", color: "var(--fehler, #e05555)", margin: "6px 0 0" }}>
+                          {besitzerFehler}
+                        </p>
                       )}
                     </div>
                   );
