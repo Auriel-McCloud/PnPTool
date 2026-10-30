@@ -74,12 +74,16 @@ export function LevelUp({
   campaignId,
   personId,
   magieFlavor,
+  rasse,
   onGeaendert,
 }: {
   campaignId: string;
   personId: string;
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
+  /** Rasse des Charakters — fürs Filtern rassengebundener Zusatzfertigkeiten
+   * im "+ Zusatzfertigkeit"-Popup (Bugfix 30.10.2026). */
+  rasse?: string;
   /** Damit das Blatt die neuen Werte übernimmt, wenn man zurückwechselt. */
   onGeaendert?: () => void;
 }) {
@@ -383,6 +387,7 @@ export function LevelUp({
       <ZusatzfertigkeitPopup
         campaignId={campaignId}
         personId={personId}
+        rasse={rasse ?? ""}
         offen={zusatzfertigkeitenOffen}
         onSchliessen={() => setZusatzfertigkeitenOffen(false)}
         onHinzugefuegt={(antwort) => setZusatzfertigkeiten(antwort.gewaehlt)}

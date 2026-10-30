@@ -16,12 +16,19 @@ import "./zusatzfertigkeiten.css";
 export function ZusatzfertigkeitPopup({
   campaignId,
   personId,
+  rasse,
   offen,
   onSchliessen,
   onHinzugefuegt,
 }: {
   campaignId: string;
   personId: string;
+  /** Rasse des Charakters (10.10.2026, Vaet-Transformation): filtert
+   * rassengebundene Einträge — nur die eigene Rasse sieht/wählt sie, genau
+   * wie in `ZusatzfertigkeitAuswahl.tsx` (Erstellung). Fehlte hier bisher
+   * komplett (Bugfix 30.10.2026, Mark): das LevelUp-Popup zeigte ausnahmslos
+   * den GESAMTEN Katalog, auch Einträge anderer Rassen. */
+  rasse: string;
   offen: boolean;
   onSchliessen: () => void;
   /** Damit die aufrufende Ansicht (Erstellung/Blatt) den neuen Stand übernimmt. */
@@ -61,8 +68,9 @@ export function ZusatzfertigkeitPopup({
     const suchtext = suche.trim().toLowerCase();
     return katalog
       .filter((z) => !gewaehlteIds.has(z.id))
+      .filter((z) => !z.nurFuerRasse || z.nurFuerRasse === rasse)
       .filter((z) => !suchtext || z.name.toLowerCase().includes(suchtext) || z.kurzbeschreibung.toLowerCase().includes(suchtext));
-  }, [katalog, gewaehlteIds, suche]);
+  }, [katalog, gewaehlteIds, rasse, suche]);
 
   async function waehlen(z: Zusatzfertigkeit) {
     setWaehltGerade(z.id);

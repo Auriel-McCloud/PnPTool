@@ -572,17 +572,25 @@ export function GegenstandRow({
       traitBoni: Object.fromEntries(
         traitBoni.filter((p) => p.key.trim() && Number(p.value)).map((p) => [p.key.trim(), Number(p.value)]),
       ),
+      // Bugfix 30.10.2026 (Mark): eine frische Ki-Tama-Fertigkeit startet
+      // bewusst bei Stufe 0 — der Spieler soll sie erst im LevelUp-Popup mit
+      // eigener EP hochleveln (siehe traits/erfahrung.py::KITAMA_PRAEFIX).
+      // Der alte Filter `Number(p.value)` verwarf jeden Nulleintrag VOR dem
+      // Speichern — eine neu angelegte Ki-Tama-Fertigkeit verschwand dadurch
+      // spurlos, auch aus `kiTamaFertigkeiten` unten, weil beide Felder auf
+      // demselben gefilterten Array aufbauen. Mit angehaktem Ki-Tama-Häkchen
+      // zählt jetzt auch der Wert 0 als gültiger Eintrag.
       ausruestungsfertigkeiten: Object.fromEntries(
         ausruestungsfertigkeiten
-          .filter((p) => p.key.trim() && Number(p.value))
-          .map((p) => [p.key.trim(), Number(p.value)]),
+          .filter((p) => p.key.trim() && (Number(p.value) || p.kiTama))
+          .map((p) => [p.key.trim(), Number(p.value) || 0]),
       ),
       // Ki-Tama (29.10.2026, 30.10.2026 umbenannt von "Materia"): nur
-      // Einträge, die auch wirklich gespeichert werden (Name + Wert
-      // gesetzt) UND deren Häkchen an ist.
+      // Einträge, die auch wirklich gespeichert werden (Name gesetzt,
+      // Wert ODER Ki-Tama-Häkchen) UND deren Häkchen an ist.
       kiTamaFertigkeiten: Object.fromEntries(
         ausruestungsfertigkeiten
-          .filter((p) => p.key.trim() && Number(p.value) && p.kiTama)
+          .filter((p) => p.key.trim() && (Number(p.value) || p.kiTama) && p.kiTama)
           .map((p) => [p.key.trim(), true]),
       ),
       // Attacken-Fertigkeiten (30.10.2026): dasselbe Muster wie Ki-Tama

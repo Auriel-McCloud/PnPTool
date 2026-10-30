@@ -380,7 +380,7 @@ export function Charakterblatt({
             Zurück zum Blatt
           </button>
         </header>
-        <LevelUp campaignId={campaignId} personId={personId} magieFlavor={u.magieFlavor} />
+        <LevelUp campaignId={campaignId} personId={personId} magieFlavor={u.magieFlavor} rasse={u.rasse} />
       </div>
     );
   }

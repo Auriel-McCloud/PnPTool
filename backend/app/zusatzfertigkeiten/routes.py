@@ -189,6 +189,18 @@ async def zusatzfertigkeit_hinzufuegen(
     if zusatzfertigkeit is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zusatzfertigkeit nicht gefunden")
 
+    # Rassenbindung (Bugfix 30.10.2026, analog zu traits/routes.py::
+    # erstelle_charakter): eine nurFuerRasse-Zusatzfertigkeit darf nur von
+    # Charakteren DIESER Rasse gewählt werden. Fehlte hier bisher — das
+    # Frontend-Popup zeigte (ebenfalls ein Bug, jetzt auch behoben) den
+    # gesamten Katalog an, ohne dass der Server die Wahl geprüft hätte.
+    nur_fuer_rasse = zusatzfertigkeit.get("nurFuerRasse") or ""
+    if nur_fuer_rasse and nur_fuer_rasse != (person.get("rasse") or ""):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"Diese Zusatzfertigkeit steht nur der Rasse {nur_fuer_rasse} offen.",
+        )
+
     bereits = await repository.gewaehlte_ids(campaign_id, person_id)
     if body.zusatzfertigkeitId in bereits:
         raise HTTPException(status.HTTP_409_CONFLICT, f"{zusatzfertigkeit['name']} ist bereits gewählt.")
