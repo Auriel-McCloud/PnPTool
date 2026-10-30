@@ -654,6 +654,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               {ich.personId && (
                 <DeineBeschwoerungen
                   campaignId={ich.campaignId}
+                  eigenePersonId={ich.personId}
                   kampf={kampf}
                   kiTamas={eigeneKiTamas}
                   onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}

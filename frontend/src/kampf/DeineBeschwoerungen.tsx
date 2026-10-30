@@ -1,24 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Gegenstand } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { kampfApi, type Kampf, type Teilnehmer } from "./api";
 import { InitiativeSetzen } from "./InitiativeSetzen";
-import { Kampfkarte } from "./Kampfkarte";
+import { Kampfkarte, wert } from "./Kampfkarte";
 import "../items/gegenstaende.css";
 import "./kampf.css";
+import "./booster.css";
+
+/**
+ * Der Beschwörungswert selbst — Spiegelbild von
+ * backend/app/items/beschwoerung.py::beschwoerungsstufe. Zusammen mit der
+ * Intelligenz des Beschwörers ergibt das den Würfelpool (siehe Popup unten).
+ */
+function beschwoerungswert(item: Gegenstand): number {
+  const markiert = Object.entries(item.ausruestungsfertigkeiten)
+    .filter(([name]) => item.kiTamaFertigkeiten[name])
+    .map(([, w]) => w);
+  return markiert.length ? Math.max(...markiert) : 0;
+}
 
 /**
  * Wie viele Erfolge eine Beschwörungs-Probe braucht — Spiegelbild von
- * backend/app/items/beschwoerung.py (beschwoerungsstufe/benoetigte_erfolge),
- * rein zur Anzeige VOR dem Würfeln. Serverseitig wird exakt dasselbe erneut
- * geprüft (`kampf/routes.py::item_beschwoeren`) — hier entscheidet also
- * nichts sicherheitsrelevantes, nur die angezeigte Zielzahl.
+ * backend/app/items/beschwoerung.py::benoetigte_erfolge, rein zur Anzeige
+ * VOR dem Würfeln. Serverseitig wird exakt dasselbe erneut geprüft
+ * (`kampf/routes.py::item_beschwoeren`) — hier entscheidet also nichts
+ * sicherheitsrelevantes, nur die angezeigte Zielzahl.
  */
 function benoetigteErfolge(item: Gegenstand): number {
-  const markiert = Object.entries(item.ausruestungsfertigkeiten)
-    .filter(([name]) => item.kiTamaFertigkeiten[name])
-    .map(([, wert]) => wert);
-  const stufe = markiert.length ? Math.max(...markiert) : 0;
+  const stufe = beschwoerungswert(item);
   return Math.max(1, Math.ceil(stufe / 2) + (item.beschwoerungsSchwierigkeit || 0));
 }
 
@@ -33,39 +44,61 @@ function benoetigteErfolge(item: Gegenstand): number {
  */
 export function DeineBeschwoerungen({
   campaignId,
+  eigenePersonId,
   kampf,
   kiTamas,
   onGeaendert,
 }: {
   campaignId: string;
+  /** Der Beschwörer selbst — für seine Intelligenz, die in den Würfelpool
+   *  der Probe eingeht (siehe Popup unten). */
+  eigenePersonId: string;
   kampf: Kampf | null;
   /** Eigene Ki-Tama-Gegenstände mit `beschworenerCritterId` gesetzt. */
   kiTamas: Gegenstand[];
   onGeaendert: () => void;
 }) {
   const [probeZiel, setProbeZiel] = useState<Gegenstand | null>(null);
-  const [erfolgeWert, setErfolgeWert] = useState("");
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  // Nur für die Intelligenz gebraucht — kein Fach für Waffen/Items, deshalb
+  // ein eigener, schlanker Ladevorgang statt den vollen Bogen hochzureichen.
+  const [eigenerBogen, setEigenerBogen] = useState<Bogen | null>(null);
+
+  useEffect(() => {
+    let weg = false;
+    bogenApi
+      .laden(campaignId, eigenePersonId)
+      .then((b) => {
+        if (!weg) setEigenerBogen(b);
+      })
+      .catch(() => {
+        if (!weg) setEigenerBogen(null);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, eigenePersonId]);
 
   if (kiTamas.length === 0) return null;
 
+  const intelligenz = eigenerBogen ? wert(eigenerBogen, "Intelligenz") : null;
+
+  /** Erfolgreiche Probe (Spieler hat selbst am Tisch genug gewürfelt) —
+   *  schickt serverseitig exakt die benötigte Zahl, die Probe selbst läuft
+   *  ja physisch am Tisch, keine Eingabe nötig (Mark, 30.10.2026: "eigentlich
+   *  gibts keinen Grund die Nummer hier einzugeben, hier muss man nur
+   *  Beschwören oder Fehlschlag anklicken können"). */
   async function beschwoeren() {
     if (!probeZiel) return;
-    const zahl = Number(erfolgeWert);
-    if (!Number.isInteger(zahl) || zahl < 0) {
-      setFehler("Bitte eine ganze Zahl eingeben");
-      return;
-    }
     setSendet(true);
     setFehler(null);
     try {
-      await kampfApi.beschwoeren(campaignId, probeZiel.id, zahl);
+      await kampfApi.beschwoeren(campaignId, probeZiel.id, benoetigteErfolge(probeZiel));
       const critterId = probeZiel.beschworenerCritterId;
       setProbeZiel(null);
-      setErfolgeWert("");
       onGeaendert();
       // Direkt weiter zur Initiative, genau wie Mark es wollte — kein
       // zweiter Klick nötig, das Fenster zeigt gleich die Kampfwerte.
@@ -75,6 +108,12 @@ export function DeineBeschwoerungen({
     } finally {
       setSendet(false);
     }
+  }
+
+  /** Probe misslungen — nichts zu melden, der Critter bleibt draußen. */
+  function fehlschlag() {
+    setProbeZiel(null);
+    setFehler(null);
   }
 
   return (
@@ -117,31 +156,26 @@ export function DeineBeschwoerungen({
         <Fenster
           offen
           titel={`Beschwörung: ${probeZiel.name}`}
-          unterzeile={`Benötigt ${benoetigteErfolge(probeZiel)} Erfolge — Intelligenz + Beschwörungswert würfeln`}
+          unterzeile="Probe vor der Beschwörung"
           kennung={`beschwoeren:${probeZiel.id}`}
           onSchliessen={() => setProbeZiel(null)}
         >
           {fehler && <p className="bo-warnung">{fehler}</p>}
-          <div className="bo-eingabe">
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              value={erfolgeWert}
-              onChange={(e) => setErfolgeWert(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void beschwoeren();
-              }}
-              placeholder="Erzielte Erfolge"
-              autoFocus
-            />
+          <div className="bo-pool">
+            <span className="bo-poolzahl">{benoetigteErfolge(probeZiel)}</span>
+            <span className="bo-poolinfo">
+              <span>Erfolge nötig</span>
+              <em>
+                Intelligenz {intelligenz ?? "…"} + Beschwörungswert {beschwoerungswert(probeZiel)} würfeln
+              </em>
+            </span>
           </div>
           <div className="bo-knoepfe">
-            <button type="button" onClick={beschwoeren} disabled={sendet || erfolgeWert === ""}>
+            <button type="button" onClick={beschwoeren} disabled={sendet}>
               {sendet ? "…" : "Beschwören"}
             </button>
-            <button type="button" className="bo-nein" onClick={() => setProbeZiel(null)}>
-              Abbrechen
+            <button type="button" className="bo-nein" onClick={fehlschlag} disabled={sendet}>
+              Fehlschlag
             </button>
           </div>
         </Fenster>
@@ -171,8 +205,8 @@ export function DeineBeschwoerungen({
         <InitiativeSetzen
           teilnehmer={initiativeZiel}
           onSchliessen={() => setInitiativeZiel(null)}
-          onSpeichern={async (wert) => {
-            await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, wert);
+          onSpeichern={async (initiativeWert) => {
+            await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, initiativeWert);
             onGeaendert();
           }}
         />

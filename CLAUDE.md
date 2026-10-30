@@ -4,6 +4,30 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Beschwörungs-Ki-Tama: Kampftest-Nachbesserungen — Bogen-Sichtbarkeit,
+  Probe ohne Zahleneingabe, Treffer-Knopf neben Initiative** (30.10.2026,
+  Marks erster echter Klicktest). Drei Funde:
+  1. **Bugfix:** `traits/routes.py::_darf_person_sehen` kannte das
+     `istCritter`-Band nicht (nur `istDrohne`/`istFahrzeug` via
+     `drohne_rigger`) — das "Beschworener Critter"-Fenster hing nach dem
+     Beschwören ewig bei "Lade Kampfwerte…", derselbe Bug wie der
+     Drohnen-Fix vom 26.10.2026, nur beim `critter_besitzer`-Band übersehen.
+     Jetzt zusätzlich erlaubt: der Beschwörer über `critter_besitzer`
+     (Tests in `test_zugriffsschutz_drohnen_bogen.py` erweitert).
+  2. **`DeineBeschwoerungen.tsx`:** Probe-Popup verlangte bisher eine manuell
+     eingetippte Erfolgszahl — Mark: "eigentlich gibts keinen Grund die
+     Nummer hier einzugeben, hier muss man nur Beschwören oder Fehlschlag
+     anklicken können". Jetzt zeigt das Popup die benötigten Erfolge groß
+     (`.bo-poolzahl`, wie beim Reflex-Booster-Zweitwurf) sowie Intelligenz
+     des Beschwörers (neuer eigener Bogen-Ladevorgang, `eigenePersonId`-Prop)
+     und Beschwörungswert des Ki-Tama als reine Zahlen zum Würfeln; zwei
+     Knöpfe "Beschwören"/"Fehlschlag" statt Zahlenfeld — "Beschwören" schickt
+     serverseitig weiterhin die (jetzt intern errechnete) Erfolgszahl, kein
+     API-Vertragsbruch.
+  3. **`Kampfkarte.tsx`:** "⚡ Treffer eintragen" stand bisher unten bei
+     Rüstung/Waffen, Mark wollte ihn direkt neben der Initiative-Zahl im
+     Kopfbereich — im Gefecht ist das der erste Blick.
+
 - **Ki-Tama-Attacken + neue Schadensart "Elementar"** (30.10.2026, Mark:
   "manche [Ki-Tama-Fertigkeiten] sind Attacken für den Kampf... für Attacken-
   Fertigkeiten hätte ich gerne dass sie wie Waffen im Kampfmodus angezeigt

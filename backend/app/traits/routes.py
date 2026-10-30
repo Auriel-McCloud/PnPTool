@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
-from app.entities.repository import PERSON_FIELDS, critter_von_besitzer, drohne_rigger, get_node, update_node
+from app.entities.repository import PERSON_FIELDS, critter_besitzer, critter_von_besitzer, drohne_rigger, get_node, update_node
 from app.ereignisprotokoll import hooks
 from app.kampf import repository as kampf_repository
 from app.kampf.hot import hot_anpassung, verbindung_bricht, werte_mit_hot
@@ -74,11 +74,21 @@ async def _darf_person_sehen(campaign_id: str, person_id: str, person: dict, vie
     bewusst NICHT generisch für jede BEGLEITET-Kante (Critter/Sprite/KI
     nutzen dieselbe Kante mit anderer Besitz-Semantik und blieben unberührt),
     sondern nur wenn die Zielperson tatsächlich `istDrohne`/`istFahrzeug` ist.
+
+    Bugfix 30.10.2026 (Mark): derselbe Fehler bei Beschwörungs-Crittern —
+    `item_beschwoeren` erlaubt dem Besitzer des Ki-Tama zwar das Beschwören
+    und das Melden der Initiative (`kampf/routes.py::_darf_initiative_melden`
+    nutzt `critter_besitzer` schon lange), aber `get_bogen` kannte das
+    `istCritter`-Band nicht — das "Beschworener Critter"-Fenster hing seitdem
+    für immer bei "Lade Kampfwerte…", exakt dasselbe Symptom wie oben bei den
+    Drohnen, nur diesmal beim Critter-Band.
     """
     if viewer.role == "GM" or person_id == viewer.person_id:
         return True
     if person.get("istDrohne") or person.get("istFahrzeug"):
         return await drohne_rigger(campaign_id, person_id) == viewer.person_id
+    if person.get("istCritter"):
+        return await critter_besitzer(campaign_id, person_id) == viewer.person_id
     return False
 
 

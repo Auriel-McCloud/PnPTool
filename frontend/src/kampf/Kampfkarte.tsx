@@ -31,7 +31,7 @@ import "./kampfkarte.css";
 /** Fertigkeiten, mit denen man zuschlägt oder schießt. */
 const KAMPFFERTIGKEITEN = ["Nahkampf", "Handgemenge", "Schusswaffen"];
 
-function wert(bogen: Bogen, name: string) {
+export function wert(bogen: Bogen, name: string) {
   const t = bogen.katalog.find((x) => x.name === name);
   if (!t) return 0;
   return bogen.werte.find((w) => w.traitDefId === t.id)?.rating ?? 0;
@@ -287,6 +287,19 @@ export function Kampfkarte({
           </span>
         </div>
         <Zahl titel="Initiative" wert={u.initiative} wuerfel onKlick={onInitiativeKlick} />
+        {/* Mark, 30.10.2026: direkt neben die Initiative statt weiter unten
+            bei Rüstung/Waffen vergraben — im Gefecht trifft man zuerst auf
+            die Initiative, der Treffer gehört in denselben Blick. */}
+        {aenderbar && (
+          <button
+            type="button"
+            className="kk-treffer-knopf"
+            style={{ alignSelf: "center" }}
+            onClick={() => setTrefferOffen(true)}
+          >
+            ⚡ Treffer eintragen
+          </button>
+        )}
       </section>
 
       {/* --- Was man würfelt -------------------------------------------- */}
@@ -372,14 +385,6 @@ export function Kampfkarte({
           </div>
           {/* Dieselbe Rüstungsübersicht wie im Charakterblatt steht jetzt oben
               zwischen Gesundheit und Willenskraft, nicht mehr hier. */}
-          {/* Auch ohne Rüstung sinnvoll: dann kommt der Treffer eben ungebremst
-              an, und die Rechnung "was geht an die Gesundheit" spart man sich
-              trotzdem. */}
-          {aenderbar && (
-            <button type="button" onClick={() => setTrefferOffen(true)} style={{ marginTop: 6 }}>
-              ⚡ Treffer eintragen
-            </button>
-          )}
           {waffen.length === 0 && attacken.length === 0 ? (
             <p className="kk-leer">Nichts ausgerüstet.</p>
           ) : (
