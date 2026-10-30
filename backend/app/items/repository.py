@@ -1555,8 +1555,23 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
 async def kitama_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
     """Ki-Tama-Fertigkeiten (29.10.2026, Marks FF7-Idee, 30.10.2026 umbenannt
     von "Materia"): ausruestungsfertigkeiten, die die SL per
-    `kiTamaFertigkeiten` als steigerbar markiert hat, von
-    AUSGERÜSTETEN/verbauten Gegenständen dieser Person.
+    `kiTamaFertigkeiten` als steigerbar markiert hat, von WIRKSAMEN
+    Ki-Tamas dieser Person.
+
+    Bugfix 30.10.2026 (Mark: "mein Spieler hat 2 Ki-Tamas ausgerüstet, aber
+    sieht keinen dieser Skills"): ein Ki-Tama ist IMMER ein Augment
+    (`istAugment=true`, siehe items/routes.py::_create_data) und wird nie
+    selbst "ausgerüstet" — es wird an einen Träger (Waffe/Rüstung/Cyberdeck/
+    Riggerkonsole) MONTIERT (`:MONTIERT_AN`, siehe items/augments.py). Die
+    generische `WIRKT`-Regel (prüft nur `g.ablage = 'AUSGERUESTET'` am
+    Gegenstand selbst) greift bei einem montierten Augment deshalb NIE — auf
+    bebop lag in der Praxis bei beiden Ki-Tamas `ablage='RUCKSACK'`, obwohl
+    ihre Trägerwaffe ausgerüstet war. Wirksam ist ein Ki-Tama stattdessen,
+    wenn es nicht defekt und an einen AUSGERÜSTETEN Träger montiert ist —
+    dieselbe Regel, die Mark für Ki-Tama-Attacken/Beschwörungen schon
+    vorgegeben hat ("Ki-Tamas dürfen nur wirken, wenn ihre Waffe ausgerüstet
+    ist", siehe kampf/routes.py). Normale (nicht-Augment) Gegenstände mit
+    Ki-Tama-Fertigkeiten bleiben unverändert über `WIRKT` geregelt.
 
     Anders als `ausruestungsfertigkeiten_liste` oben wird hier NICHT über den
     Namen dedupliziert (dort zählt der höchste Wert über alle Quellen, für
@@ -1567,9 +1582,16 @@ async def kitama_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[di
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
-        WHERE {WIRKT}
+        OPTIONAL MATCH (g)-[:MONTIERT_AN]->(traeger:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false)
           AND g.kiTamaFertigkeiten IS NOT NULL AND g.kiTamaFertigkeiten <> ''
           AND g.kiTamaFertigkeiten <> '{{}}'
+          AND (
+            (coalesce(g.istAugment, false) AND NOT coalesce(g.defekt, false)
+             AND traeger IS NOT NULL AND traeger.ablage = 'AUSGERUESTET')
+            OR
+            (NOT coalesce(g.istAugment, false) AND {WIRKT})
+          )
         RETURN g.id AS gegenstandId, g.name AS gegenstandName,
                g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.kiTamaFertigkeiten AS kiTamaRoh
     """
@@ -1609,16 +1631,25 @@ async def steigere_kitama_fertigkeit(
     Gegenstand-Knoten hängt, nicht an der Person.
 
     Nur der AKTUELLE Besitzer darf steigern (erzwungen über den :BESITZT-
-    Match) und nur solange der Gegenstand wirkt (WIRKT — dieselbe
-    Ausgerüstet-/verbaut-Regel wie überall sonst). `None` heisst: Gegenstand
-    gehört dieser Person nicht (mehr), wirkt gerade nicht, oder die
-    Fertigkeit ist nicht (mehr) als Ki-Tama markiert — der Aufrufer (siehe
-    traits/routes.py::steigere_wert) meldet das als 404/409.
+    Match) und nur solange das Ki-Tama wirkt — dieselbe montage-bewusste
+    Regel wie `kitama_fertigkeiten_liste` (Bugfix 30.10.2026): ein Augment
+    gilt als wirksam, wenn es an einen ausgerüsteten Träger montiert ist,
+    NICHT über seine eigene (nie gesetzte) `ablage`. `None` heisst:
+    Gegenstand gehört dieser Person nicht (mehr), wirkt gerade nicht, oder
+    die Fertigkeit ist nicht (mehr) als Ki-Tama markiert — der Aufrufer
+    (siehe traits/routes.py::steigere_wert) meldet das als 404/409.
     """
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand {{id: $item_id}})
-        WHERE {WIRKT}
+        OPTIONAL MATCH (g)-[:MONTIERT_AN]->(traeger:Gegenstand)
+        WHERE NOT coalesce(g.weggeworfen, false)
+          AND (
+            (coalesce(g.istAugment, false) AND NOT coalesce(g.defekt, false)
+             AND traeger IS NOT NULL AND traeger.ablage = 'AUSGERUESTET')
+            OR
+            (NOT coalesce(g.istAugment, false) AND {WIRKT})
+          )
         RETURN g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.kiTamaFertigkeiten AS kiTamaRoh
     """
     async with driver.session() as session:
