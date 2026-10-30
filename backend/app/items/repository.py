@@ -831,12 +831,18 @@ async def get_owner_id(campaign_id: str, item_id: str) -> str | None:
 
 
 async def transfer_owner(campaign_id: str, item_id: str, ziel_person_id: str) -> dict | None:
-    """Verschiebt einen bestehenden Gegenstand zu einer anderen Person (kein Kopieren — für
-    Vorlagen-Kopien siehe assign_copy)."""
+    """Verschiebt einen Gegenstand zu einer anderen Person (kein Kopieren — für
+    Vorlagen-Kopien siehe assign_copy). `alt` ist OPTIONAL: ein einzigartiger,
+    nicht-Vorlage-Gegenstand kann auch besitzerlos existieren (z.B. direkt ohne
+    Besitzer angelegt) — das ist dann die Erstzuweisung, kein echter Transfer
+    (30.10.2026: vorher schlug genau dieser Fall mit "Übertragung fehlgeschlagen"
+    fehl, weil die Pflicht-MATCH auf eine bestehende BESITZT-Kante keine Zeile
+    lieferte)."""
     driver = get_driver()
     query = f"""
-        MATCH (alt:Person)-[r:BESITZT]->(g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
         MATCH (neu:Person {{id: $ziel_person_id, campaignId: $campaign_id}})
+        OPTIONAL MATCH (alt:Person)-[r:BESITZT]->(g)
         DELETE r
         CREATE (neu)-[:BESITZT]->(g)
         {LIEGT_IN_NACH_CREATE}
