@@ -621,3 +621,44 @@ Bedarf einfach dieselbe Berechnung übernehmen.
 
 `tsc -b`/`vite build` sauber, Live-Deploy auf bebop. Kein Backend
 betroffen.
+
+## Korrektur 8: Ki-Tamas als Augment nie "wirksam" — Ki-Tama-Fertigkeiten fehlten im EP-Sheet (30.10.2026)
+
+Mark: "mein Spieler IT-Sicherheitsmann hat 2 Ki-Tamas ausgerüstet, aber er
+sieht keinen dieser Skills in seinem Level-Up-Sheet." Direkt auf bebop in
+der laufenden DB nachgeschaut statt geraten: beide Ki-Tamas (`Blitz`,
+`Beschwörung: Erddrache`) hatten `ablage='RUCKSACK'`, obwohl ihre
+Trägerwaffe (`X-Corp VoltShock-3 Schock-Stab`) ausgerüstet war.
+
+**Ursache:** ein Ki-Tama ist IMMER ein Augment (`istAugment=true`) und wird
+laut Datenmodell nie selbst "ausgerüstet" — es wird an einen Träger
+MONTIERT (`:MONTIERT_AN`). Die generische `WIRKT`-Regel
+(`items/repository.py`), die `kitama_fertigkeiten_liste` und
+`steigere_kitama_fertigkeit` seit dem ursprünglichen Ki-Tama-Build prüften,
+kennt aber nur `g.ablage = 'AUSGERUESTET'` am Gegenstand selbst — bei einem
+montierten Augment ist das nie wahr. Derselbe grundsätzliche Fehler wie bei
+Korrektur 6, nur eine Ebene tiefer: die Ki-Tama-Mechanik wurde auf die
+generische "ausgerüstet"-Infrastruktur aufgesetzt, ohne zu berücksichtigen,
+dass Augments ein komplett anderes Aktivierungsmodell haben.
+
+**Fix:** beide Funktionen prüfen jetzt zusätzlich den Montage-Pfad — ein
+Ki-Tama gilt als wirksam, wenn es nicht defekt UND an einen AUSGERÜSTETEN
+Träger montiert ist (`OPTIONAL MATCH (g)-[:MONTIERT_AN]->(traeger)`,
+`traeger.ablage = 'AUSGERUESTET'`). Dieselbe Regel, die für Ki-Tama-
+Attacken/Beschwörungen schon galt ("Ki-Tamas dürfen nur wirken, wenn ihre
+Waffe ausgerüstet ist", `kampf/routes.py`). Normale (Nicht-Augment)
+Ki-Tama-Fertigkeiten laufen unverändert über die alte `WIRKT`-Regel.
+
+**Noch offen, bewusst nicht mitgezogen:** derselbe Bug betrifft vermutlich
+auch `ausruestungsfertigkeiten_liste`/`ausruestungs_trait_boni` für
+NICHT-Ki-Tama-Fertigkeiten/traitBoni von montierten Augments (z.B. ein
+Upgrade-Material, das eine neue Fertigkeit statt nur Schaden/Rüstung
+verleiht) — bisher aber kein gemeldeter Fall, nicht angefasst, um das
+Risiko nicht unnötig zu vergrößern.
+
+**Verifiziert:** Cypher-Query testweise live gegen die bebop-Produktions-DB
+gefahren (`cypher-shell`) — liefert jetzt exakt IT-Sicherheitsmanns beide
+Ki-Tamas, vorher keins. `pytest tests/test_kitama.py` grün (5/5, reine
+Formel-Tests, keine DB-Abdeckung für die Cypher-Änderung selbst —
+Live-Verifikation s.o. ersetzt das hier). `tsc`/Gesamtsuite ohne neue
+Regression. Live-Deploy auf bebop (nur Backend).
