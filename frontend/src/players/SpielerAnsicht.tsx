@@ -10,7 +10,7 @@ import { VerhandlungPopup } from "../verhandlung/VerhandlungPopup";
 import { verhandlungApi } from "../verhandlung/api";
 import { AlltagswunschErgebnisPopup } from "../haendler/AlltagswunschErgebnisPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
-import { itemsApi, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
+import { itemsApi, istVerschlossen, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
   ermittleBereiche,
   // "Bereich" heisst in der Hülle bereits der Navigationsbereich links
@@ -267,6 +267,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     },
     { aktiv: Boolean(ich), quelle: ich?.campaignId ?? "" },
   );
+
+  async function inventarNeu() {
+    const cid = ich?.campaignId;
+    if (!cid) return;
+    const frisch = await itemsApi.listAlle(cid);
+    inventarUngueltig();
+    setSachen(frisch);
+  }
 
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
   const meineRohAlle = sachen.filter((g) => g.ownerId === ich?.personId);
@@ -755,6 +763,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 eigenePersonId={ich.personId ?? undefined}
                 onZusammengelegt={nachZusammenlegen}
                 onWeitergeben={(empfaengerId) => weitergeben(g.id, empfaengerId)}
+                onGeoeffnet={() => void inventarNeu()}
               />
             ))}
           </div>
@@ -786,6 +795,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
           {faecher.length > 0 && (
             <div className="gg-faecher">
               {faecher.map((f) => {
+                const kiste = sachen.find((g) => g.id === f.id);
+                const zu = kiste != null && istVerschlossen(kiste);
                 const anzahl = sachen.filter((g) => f.passt(g) && !g.montiertAnId).length;
                 return (
                   <button
@@ -801,7 +812,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                       {f.symbol}
                     </span>
                     <span className="gg-fach-name">{f.name}</span>
-                    <span className="gg-fach-zahl">{anzahl}</span>
+                    <span className="gg-fach-zahl">{zu ? "▣" : anzahl}</span>
                   </button>
                 );
               })}
@@ -830,6 +841,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 campaignId={ich.campaignId}
                 eigenePersonId={ich.personId ?? undefined}
                 onZusammengelegt={fach.id === "FREMD" ? undefined : nachZusammenlegen}
+                schloss={sachen.find((g) => g.id === fach.id)}
+                onGeoeffnet={() => void inventarNeu()}
               />
             );
           })}

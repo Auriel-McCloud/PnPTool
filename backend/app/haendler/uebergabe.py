@@ -47,6 +47,9 @@ async def stueck_uebergeben(
                 gegenstand_id,
                 {"sichtbarkeit": "SPEZIFISCH", "sichtbarFuer": [kaeufer_id]},
             )
+            from app.items.schloss import inhalt_mitnehmen
+
+            await inhalt_mitnehmen(campaign_id, gegenstand_id, kaeufer_id)
     if gekauft is None:
         return None
     await regale_raeumen(campaign_id, shop_id, gegenstand_id)

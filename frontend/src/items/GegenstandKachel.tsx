@@ -6,7 +6,8 @@ import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, Gegenstand } from "./api";
-import { SCHADEN_MAX } from "./api";
+import { SCHADEN_MAX, istVerschlossen } from "./api";
+import { SchlossOeffnen } from "./SchlossOeffnen";
 import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
@@ -57,6 +58,7 @@ export function GegenstandKachel({
   inhalt,
   onZusammengelegt,
   montierteUpgrades,
+  onGeoeffnet,
 }: {
   item: Gegenstand;
   /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
@@ -110,6 +112,8 @@ export function GegenstandKachel({
    * die Liste der Geschwister-Gegenstände selbst nicht.
    */
   montierteUpgrades?: string[];
+  /** Nach erfolgreichem Öffnen die Liste neu holen. */
+  onGeoeffnet?: () => void;
 }) {
   // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
   const CHROM = ["Cyberware", "Bioware", "Hexware"];
@@ -121,6 +125,7 @@ export function GegenstandKachel({
   const [weitergebenOffen, setWeitergebenOffen] = useState(false);
   const [weitergebenFehler, setWeitergebenFehler] = useState<string | null>(null);
   const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
+  const [schlossOffen, setSchlossOffen] = useState(false);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -195,7 +200,11 @@ export function GegenstandKachel({
               jeder Kachel dasselbe, und in einem Fach kann nichts getragen
               sein. Wo etwas liegt, sagt der Ort — das ist die Auskunft, die
               man beim Durchsehen eines Fachs braucht. */}
-          {item.ablageZielName && <span className="gg-marke">{item.ablageZielName}</span>}
+          {istVerschlossen(item) && (
+            <span className="gg-marke" data-ton="signal" title="Verschlossen">
+              verschlossen
+            </span>
+          )}
           {/* Nur am Körper von Belang: im Rucksack sieht es ohnehin niemand. */}
           {item.immerSichtbar && item.ablage === "AUSGERUESTET" && (
             <span className="gg-marke" data-ton="signal" title="Das sieht jeder">
@@ -367,6 +376,23 @@ export function GegenstandKachel({
         {/* Hierher gehört das Umlegen: man sieht sich das Ding an und
             entscheidet dabei, wo es hin soll. Bei verbautem Chrom entfällt
             es vollständig. */}
+        {istVerschlossen(item) && campaignId && onGeoeffnet && (
+          <section className="gg-ablage-wahl">
+            <h3>Verschlossen</h3>
+            <p className="gg-ablage-ort">
+              {item.schlossArt === "spiel"
+                ? "Fünf Tasten. Die Folge wird länger, bis es aufgeht."
+                : item.schlossArt === "schluessel"
+                  ? "Dafür brauchst du den passenden Schlüssel."
+                  : item.schlossRaetsel || "Dafür brauchst du die Lösung."}
+            </p>
+            <div className="gg-ablage-knoepfe">
+              <button type="button" onClick={() => setSchlossOffen(true)}>
+                Öffnen
+              </button>
+            </div>
+          </section>
+        )}
         {onUmlegen && !(istChrom && item.verbaut) && (
         <section className="gg-ablage-wahl">
           <h3>Wo ist es?</h3>
@@ -477,6 +503,19 @@ export function GegenstandKachel({
             onZusammengelegt();
           }}
           onAbbrechen={() => setZusammenlegenOffen(false)}
+        />
+      )}
+      {schlossOffen && campaignId && onGeoeffnet && (
+        <SchlossOeffnen
+          item={item}
+          campaignId={campaignId}
+          offen
+          onSchliessen={() => setSchlossOffen(false)}
+          onGeoeffnet={() => {
+            setSchlossOffen(false);
+            setOffen(false);
+            onGeoeffnet();
+          }}
         />
       )}
     </>

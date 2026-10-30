@@ -103,6 +103,15 @@ class GegenstandCreate(BaseModel):
     # Motorrad ist ein Fahrzeug ohne Stauraum, eine Kiste hat Stauraum ohne
     # Räder. Ohne Angabe entscheidet das Repository nach dem Typ.
     istBehaelter: bool | None = None
+    # Schloss (nur sinnvoll bei Behältern). Genau eine Art: Passwort (die
+    # Lösung, das Rätsel steht sichtbar drauf), ein bestimmter Schlüssel-
+    # Gegenstand, oder eine Tastenfolge. Leer = kein Schloss.
+    schlossArt: str = ""
+    schlossPasswort: str = ""
+    schlossRaetsel: str = ""
+    schluesselId: str = ""
+    aufgeschlossen: bool = False
+    spielLaenge: int = 0
     # Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx). Die Stufe wird
     # beim Kauf frei auf diese Werte und die Fertigkeiten verteilt.
     stufe: int = 0
@@ -355,6 +364,12 @@ class GegenstandUpdate(BaseModel):
     kapazitaet: float | None = None
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     istBehaelter: bool | None = None
+    schlossArt: str | None = None
+    schlossPasswort: str | None = None
+    schlossRaetsel: str | None = None
+    schluesselId: str | None = None
+    aufgeschlossen: bool | None = None
+    spielLaenge: int | None = None
     stufe: int | None = None
     widerstand: int | None = None
     angriff: int | None = None
@@ -454,6 +469,14 @@ class GegenstandResponse(BaseModel):
     kapazitaet: float
     istEntwurf: bool = False  # Ideenschmiede
     istBehaelter: bool = False
+    # Leer = kein Schloss. Lösung und Schlüssel-Kennung sehen Spieler nie
+    # (visibility.py streicht sie); das Rätsel schon.
+    schlossArt: str = ""
+    schlossPasswort: str = ""
+    schlossRaetsel: str = ""
+    schluesselId: str = ""
+    aufgeschlossen: bool = False
+    spielLaenge: int = 0
     stufe: int = 0
     widerstand: int = 0
     angriff: int = 0

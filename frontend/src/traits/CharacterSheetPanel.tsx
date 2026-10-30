@@ -23,6 +23,7 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
+import { SchlossForm } from "../items/SchlossForm";
 import "../entities/pc-detail.css";
 
 type GgAnsicht = "uebersicht" | "beschreibung" | "umbauen" | "notizen" | "besitz";
@@ -1757,6 +1758,9 @@ export function GegenstandRow({
                       />{" "}
                       Kann etwas aufnehmen
                     </label>
+                    {istGm && istBehaelter && (
+                      <SchlossForm campaignId={campaignId} item={item} onGeaendert={onChanged} />
+                    )}
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>
                         <input

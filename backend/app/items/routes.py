@@ -12,6 +12,19 @@ from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
 from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
+from app.items.schloss import (
+    anzeige_fuer,
+    besitzt_erreichbaren_schluessel,
+    ids_in_verschlossenem,
+    inhalt_mitnehmen,
+    ist_verschlossen,
+    neue_folge,
+    passwort_passt,
+    schloss_patch_anpassen,
+    spiel_lesen,
+    spiel_schreiben,
+    zug_passt,
+)
 from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt, zieltyp_passt
 from app.items.augments import AUGMENT_TRAEGER_TYPEN, wende_augment_boni_an
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
@@ -56,6 +69,15 @@ ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
+async def _sichtbar_fuer(campaign_id: str, items: list[dict], viewer: Viewer) -> list[dict]:
+    """Sichtbarkeit plus: Inhalt einer noch zuen Kiste sieht nur die SL."""
+    sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    if viewer.role == "GM":
+        return sichtbar
+    verborgen = await ids_in_verschlossenem(campaign_id)
+    return [i for i in sichtbar if i.get("id") not in verborgen]
+
+
 def speichere_bild_bytes(campaign_id: str, inhalt: bytes, content_type: str) -> str:
     """Legt Bild-Bytes wie ein Upload ab und gibt die öffentliche URL zurück."""
     if content_type not in ALLOWED_IMAGE_TYPES:
@@ -76,7 +98,7 @@ def speichere_bild_bytes(campaign_id: str, inhalt: bytes, content_type: str) -> 
 async def list_all_items(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_alle_gegenstaende(campaign_id)
     items = await _mit_augment_boni(campaign_id, items)
-    sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    sichtbar = await _sichtbar_fuer(campaign_id, items, viewer)
     # Ideenschmiede-Entwürfe gehören nicht in die normale Übersicht, genau wie
     # bei Person/Ort/Event/Fraktion/WikiSeite (siehe entities/routes.py::
     # _aufbereiten, wiki/routes.py::seitenbaum). Einzelabruf (get_item) filtert
@@ -161,6 +183,12 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ablage": ablage,
         "gewicht": body.gewicht,
         "kapazitaet": body.kapazitaet,
+        "schlossArt": body.schlossArt,
+        "schlossPasswort": body.schlossPasswort,
+        "schlossRaetsel": body.schlossRaetsel,
+        "schluesselId": body.schluesselId,
+        "aufgeschlossen": body.aufgeschlossen,
+        "spielLaenge": body.spielLaenge,
         # Cyber-/Bioware und Sonderwirkungen. Diese Liste war unvollständig:
         # Felder, die hier fehlen, gehen beim Anlegen still verloren — sie
         # lassen sich danach nur per PATCH nachtragen. Beim Ergänzen eines
@@ -271,7 +299,7 @@ async def create_item(campaign_id: str, person_id: str, body: GegenstandCreate):
 async def list_items(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
     items = await repository.list_gegenstaende(campaign_id, person_id)
     items = await _mit_augment_boni(campaign_id, items)
-    sichtbar = filter_gegenstaende_for_viewer(items, viewer.role, viewer.person_id)
+    sichtbar = await _sichtbar_fuer(campaign_id, items, viewer)
     # Siehe list_all_items: Entwürfe gehören in die Ideenschmiede, nicht hierhin.
     return [i for i in sichtbar if not i.get("istEntwurf", False)]
 
@@ -299,6 +327,25 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     # Typ per "Typ ändern"-Popup nachträglich umgestellt wird.
     if body.typ in ("Upgrade-Material", "Ki-Tama"):
         daten["istAugment"] = True
+    schloss_daten = {
+        k: daten[k]
+        for k in ("schlossArt", "schlossPasswort", "schlossRaetsel", "schluesselId", "aufgeschlossen", "spielLaenge")
+        if daten.get(k) is not None
+    }
+    if schloss_daten:
+        bisher = await repository.get_gegenstand(campaign_id, item_id)
+        if bisher is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+        fehler = schloss_patch_anpassen(bisher, schloss_daten)
+        if fehler:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, fehler)
+        daten.update(schloss_daten)
+        sid = schloss_daten.get("schluesselId", bisher.get("schluesselId") or "")
+        art = schloss_daten.get("schlossArt", bisher.get("schlossArt") or "")
+        if art == "schluessel" and sid:
+            schluessel = await repository.get_gegenstand(campaign_id, sid)
+            if schluessel is None:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Schlüssel nicht gefunden.")
     item = await repository.update_gegenstand(campaign_id, item_id, daten)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
@@ -431,6 +478,8 @@ async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenReques
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Übertragung fehlgeschlagen")
     if updates:
         moved = await repository.update_gegenstand(campaign_id, item_id, updates)
+    # Inhalt erst nach der Sichtbarkeit mitnehmen, sonst bleibt er am alten Besitzer hängen.
+    await inhalt_mitnehmen(campaign_id, item_id, body.zielPersonId)
     await hooks.gegenstand(
         campaign_id,
         art="WEITERGEGEBEN",
@@ -882,10 +931,99 @@ async def get_item(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     item = (await _mit_augment_boni(campaign_id, [item]))[0]
-    sichtbar = filter_gegenstaende_for_viewer([item], viewer.role, viewer.person_id)
+    sichtbar = await _sichtbar_fuer(campaign_id, [item], viewer)
     if not sichtbar:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return sichtbar[0]
+
+
+class OeffnenRequest(BaseModel):
+    passwort: str = ""
+
+
+class SpielZug(BaseModel):
+    folge: list[int] | None = None
+
+
+class SpielStand(BaseModel):
+    runde: int
+    anzeige: list[int]
+    falsch: bool = False
+    geschafft: bool = False
+    aufgeschlossen: bool = False
+
+
+async def _darf_kiste(campaign_id: str, item_id: str, viewer: Viewer) -> dict:
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if viewer.role == "GM":
+        return item
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer is None or besitzer != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if item["id"] in await ids_in_verschlossenem(campaign_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
+
+
+@campaign_router.post("/{item_id}/oeffnen", response_model=GegenstandResponse)
+async def kiste_oeffnen(campaign_id: str, item_id: str, body: OeffnenRequest, viewer: Viewer = Depends(get_viewer)):
+    """Passwort oder Schlüssel. Die Tastenfolge hat ihren eigenen Endpunkt."""
+    item = await _darf_kiste(campaign_id, item_id, viewer)
+    if not ist_verschlossen(item):
+        return (await _sichtbar_fuer(campaign_id, [item], viewer))[0]
+    art = item.get("schlossArt")
+    if art == "spiel":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Das geht nur über die Tasten.")
+    if viewer.role != "GM":
+        if art == "passwort" and not passwort_passt(body.passwort, item.get("schlossPasswort") or ""):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Falsch.")
+        if art == "schluessel" and not await besitzt_erreichbaren_schluessel(
+            campaign_id, viewer.person_id or "", item.get("schluesselId") or ""
+        ):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Dir fehlt der Schlüssel.")
+    geoeffnet = await repository.update_gegenstand(campaign_id, item_id, {"aufgeschlossen": True})
+    if geoeffnet is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return (await _sichtbar_fuer(campaign_id, [geoeffnet], viewer))[0]
+
+
+@campaign_router.post("/{item_id}/schloss/spiel", response_model=SpielStand)
+async def kiste_spiel(campaign_id: str, item_id: str, body: SpielZug, viewer: Viewer = Depends(get_viewer)):
+    """Zeigt die nächste Runde, oder prüft die nachgemachte Folge.
+
+    Ohne `folge` nur die Anzeige. Bei Fehler neue Zufallsfolge, von vorn.
+    Kein Versuchslimit. Die volle Folge geht nie an den Client.
+    """
+    item = await _darf_kiste(campaign_id, item_id, viewer)
+    if item.get("schlossArt") != "spiel" or item.get("aufgeschlossen"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Hier ist kein Tasten-Schloss zu.")
+    stand = await spiel_lesen(campaign_id, item_id)
+    if stand is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    laenge = max(1, int(stand.get("spielLaenge") or 4))
+    folge = stand["folge"]
+    runde = int(stand.get("spielRunde") or 0)
+    if len(folge) < laenge:
+        folge = neue_folge(laenge)
+        runde = 0
+        await spiel_schreiben(campaign_id, item_id, folge, runde, False)
+    if body.folge is None:
+        return SpielStand(runde=runde + 1, anzeige=anzeige_fuer(folge, runde))
+    if any(taste < 0 or taste >= 5 for taste in body.folge):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unbekannte Taste.")
+    if not zug_passt(body.folge, folge, runde):
+        folge = neue_folge(laenge)
+        await spiel_schreiben(campaign_id, item_id, folge, 0, False)
+        return SpielStand(runde=1, anzeige=anzeige_fuer(folge, 0), falsch=True)
+    geschafft = runde + 1 >= laenge
+    if geschafft:
+        await spiel_schreiben(campaign_id, item_id, folge, laenge, True)
+        return SpielStand(runde=laenge, anzeige=[], geschafft=True, aufgeschlossen=True)
+    runde += 1
+    await spiel_schreiben(campaign_id, item_id, folge, runde, False)
+    return SpielStand(runde=runde + 1, anzeige=anzeige_fuer(folge, runde))
 
 
 # =====================================================================

@@ -149,6 +149,9 @@ async def _ausfuehren_gegenstand_weitergabe(campaign_id: str, verhandlung: dict)
         raise VerhandlungsFehler("Übergabe fehlgeschlagen")
     if updates:
         uebergeben = await items_repository.update_gegenstand(campaign_id, gegenstand_id, updates)
+    from app.items.schloss import inhalt_mitnehmen
+
+    await inhalt_mitnehmen(campaign_id, gegenstand_id, empfaenger_id)
     await hooks.gegenstand(
         campaign_id,
         art="WEITERGEGEBEN",

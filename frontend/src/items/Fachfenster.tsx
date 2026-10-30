@@ -1,6 +1,8 @@
 import { Fenster } from "../shell/Fenster";
 import { GegenstandKachel } from "./GegenstandKachel";
+import { SchlossOeffnen } from "./SchlossOeffnen";
 import type { Ablage, Gegenstand } from "./api";
+import { istVerschlossen } from "./api";
 import type { Bereich } from "./aufbewahrung";
 
 /**
@@ -27,6 +29,8 @@ export function Fachfenster({
   behaelterId,
   inhaltVon,
   onZusammengelegt,
+  schloss,
+  onGeoeffnet,
 }: {
   fach: Bereich | null;
   /** Bereits auf dieses Fach gefiltert. */
@@ -52,6 +56,9 @@ export function Fachfenster({
    * selbst spricht direkt mit der API (siehe GegenstandKachel.tsx).
    */
   onZusammengelegt?: () => void;
+  /** Die Kiste selbst, wenn dieses Fach eine verschlossene Kiste ist. */
+  schloss?: Gegenstand;
+  onGeoeffnet?: () => void;
 }) {
   if (!fach) return null;
 
@@ -62,7 +69,9 @@ export function Fachfenster({
       offen={offen}
       titel={`${fach.symbol} ${fach.name}`}
       unterzeile={
-        items.length === 0
+        schloss && istVerschlossen(schloss)
+          ? "verschlossen"
+          : items.length === 0
           ? "nichts darin"
           : `${items.length} ${items.length === 1 ? "Gegenstand" : "Gegenstände"}` +
             (gewicht > 0 ? ` · ${gewicht.toFixed(1).replace(".", ",")} kg` : "")
@@ -70,7 +79,16 @@ export function Fachfenster({
       kennung={`fach:${fach.id}`}
       onSchliessen={onSchliessen}
     >
-      {items.length === 0 ? (
+      {schloss && istVerschlossen(schloss) && campaignId && onGeoeffnet ? (
+        <SchlossOeffnen
+          item={schloss}
+          campaignId={campaignId}
+          offen
+          ohneFenster
+          onSchliessen={onSchliessen}
+          onGeoeffnet={onGeoeffnet}
+        />
+      ) : items.length === 0 ? (
         <p style={{ color: "var(--text-leise)", margin: 0 }}>Hier liegt nichts.</p>
       ) : (
         <div className="gg-fachraster">
@@ -86,6 +104,7 @@ export function Fachfenster({
               campaignId={campaignId}
               eigenePersonId={eigenePersonId}
               onZusammengelegt={onZusammengelegt}
+              onGeoeffnet={onGeoeffnet}
             />
           ))}
         </div>

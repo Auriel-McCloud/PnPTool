@@ -13,6 +13,9 @@ RETURN_FIELDS = """
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
     g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istEntwurf AS istEntwurf,
     g.istBehaelter AS istBehaelter,
+    g.schlossArt AS schlossArt, g.schlossPasswort AS schlossPasswort,
+    g.schlossRaetsel AS schlossRaetsel, g.schluesselId AS schluesselId,
+    g.aufgeschlossen AS aufgeschlossen, g.spielLaenge AS spielLaenge,
     g.stufe AS stufe, g.widerstand AS widerstand, g.angriff AS angriff, g.agilitaet AS agilitaet,
     g.fahrzeugFertigkeiten AS fahrzeugFertigkeiten,
     g.deckBruteForce AS deckBruteForce, g.deckSchleichen AS deckSchleichen,
@@ -86,6 +89,10 @@ _NICHT_KOPIEREN = {
     # dieselbe Logik wie "weggeworfen" oben: Zustand des einen Stücks, keine
     # Eigenschaft der Vorlage.
     "defekt",
+    # Ob die Kiste schon auf ist, ist Zustand dieses Stücks. Die Schloss-Art
+    # selbst (Passwort, Schlüssel, Länge) gehört zur vorbereiteten Kiste und
+    # wird mitkopiert — eine Kopie startet aber wieder zu.
+    "aufgeschlossen",
 }
 
 
@@ -130,6 +137,15 @@ def _decode(record: dict) -> dict:
     # ist aber ein Fahrzeug ohne Stauraum, und eine Kiste ist einer ohne Raeder.
     # Bestandsdaten: Behaelter ja, alles andere nein.
     record["istBehaelter"] = _or_default(record.get("istBehaelter"), record.get("typ") == "Behälter")
+    # Schloss: Bestandsdaten kennen die Properties nicht. Lösung bleibt am
+    # Knoten (die SL muss sie nachlesen können) und wird erst in der Sicht
+    # für Spieler geleert — nie hier, sonst sieht auch die SL sie nicht mehr.
+    record["schlossArt"] = record.get("schlossArt") or ""
+    record["schlossPasswort"] = record.get("schlossPasswort") or ""
+    record["schlossRaetsel"] = record.get("schlossRaetsel") or ""
+    record["schluesselId"] = record.get("schluesselId") or ""
+    record["aufgeschlossen"] = _or_default(record.get("aufgeschlossen"), False)
+    record["spielLaenge"] = _or_default(record.get("spielLaenge"), 0)
     # Werte des Drohnen-/Fahrzeugblatts (Neotopia.xlsx, Blatt DrohneFahrzeug).
     # Gesundheit = Stufe, Widerstand = Schadensreduktion, Angriff = Treffen und
     # Schaden, Agilitaet = Geschwindigkeit.
@@ -256,6 +272,9 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istVorlage: $istVorlage, seltenheit: $seltenheit, automatischImShop: $automatischImShop, bildUrl: '',
             sichtbarkeit: $sichtbarkeit, sichtbarFuer: $sichtbarFuer, ablage: $ablage,
             gewicht: $gewicht, kapazitaet: $kapazitaet, istBehaelter: $istBehaelter,
+            schlossArt: $schlossArt, schlossPasswort: $schlossPasswort,
+            schlossRaetsel: $schlossRaetsel, schluesselId: $schluesselId,
+            aufgeschlossen: $aufgeschlossen, spielLaenge: $spielLaenge,
             stufe: $stufe, widerstand: $widerstand, angriff: $angriff, agilitaet: $agilitaet,
             fahrzeugFertigkeiten: $fahrzeugFertigkeiten,
             deckBruteForce: $deckBruteForce, deckSchleichen: $deckSchleichen,
@@ -318,6 +337,12 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             seltenheit=data["seltenheit"],
             automatischImShop=data["automatischImShop"],
             istBehaelter=_or_default(data.get("istBehaelter"), data["typ"] == "Behälter"),
+            schlossArt=data.get("schlossArt") or "",
+            schlossPasswort=data.get("schlossPasswort") or "",
+            schlossRaetsel=data.get("schlossRaetsel") or "",
+            schluesselId=data.get("schluesselId") or "",
+            aufgeschlossen=bool(data.get("aufgeschlossen")),
+            spielLaenge=int(data.get("spielLaenge") or 0),
             stufe=data.get("stufe") or 0,
             widerstand=data.get("widerstand") or 0,
             angriff=data.get("angriff") or 0,
@@ -829,7 +854,12 @@ async def assign_owner(
             sichtbar_fuer=sichtbar_fuer,
         )
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        decoded = _decode(dict(record)) if record else None
+    if decoded is not None:
+        from app.items.schloss import inhalt_mitnehmen
+
+        await inhalt_mitnehmen(campaign_id, item_id, ziel_person_id)
+    return decoded
 
 
 async def get_owner_id(campaign_id: str, item_id: str) -> str | None:
@@ -865,7 +895,12 @@ async def transfer_owner(campaign_id: str, item_id: str, ziel_person_id: str) ->
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id, ziel_person_id=ziel_person_id)
         record = await result.single()
-        return _decode(dict(record)) if record else None
+        decoded = _decode(dict(record)) if record else None
+    if decoded is not None:
+        from app.items.schloss import inhalt_mitnehmen
+
+        await inhalt_mitnehmen(campaign_id, item_id, ziel_person_id)
+    return decoded
 
 
 async def remove_owner(campaign_id: str, item_id: str) -> dict | None:

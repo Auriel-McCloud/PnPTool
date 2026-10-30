@@ -236,6 +236,12 @@ OHNE_GM_ERLAUBT = {
     # Besitz selbst (_eigener_kreis): GM immer, Spieler nur an eigener
     # Rüstung.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ruestung/reparieren-material",
+    # Verschlossene Kiste öffnen (Passwort, Schlüssel oder Tastenfolge).
+    # Prüft selbst (_darf_kiste): GM immer, Spieler nur am eigenen Behälter,
+    # und nur wenn die Kiste nicht selbst in einer noch zuen Kiste liegt.
+    # Setzt nur aufgeschlossen, nie die Lösung.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/oeffnen",
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schloss/spiel",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

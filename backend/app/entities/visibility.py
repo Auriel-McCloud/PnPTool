@@ -208,6 +208,10 @@ def filter_gegenstand_for_viewer(item: dict, viewer_role: str, viewer_person_id:
     # have instead of loosening this.
     if viewer_role != "GM":
         result["notes"] = ""
+        # Lösung und welcher Gegenstand der Schlüssel ist bleiben bei der SL.
+        # Das Rätsel (schlossRaetsel) ist absichtlich sichtbar.
+        result["schlossPasswort"] = ""
+        result["schluesselId"] = ""
     return result
 
 

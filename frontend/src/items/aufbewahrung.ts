@@ -1,4 +1,4 @@
-import type { Gegenstand } from "./api";
+import { istVerschlossen, type Gegenstand } from "./api";
 
 /**
  * Ein anwählbarer Aufbewahrungsbereich.
@@ -101,7 +101,7 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
   // fragen, ob das Auto verschwunden ist. Getragene Behälter sind schon
   // oben als "mitgeführt" abgehandelt.
   for (const g of items) {
-    if (istBehaelter(g) && g.ablage !== "AUSGERUESTET") {
+    if (istBehaelter(g) && (g.ablage !== "AUSGERUESTET" || istVerschlossen(g))) {
       faecher.set(g.id, { name: g.name, symbol: symbolFuer(g.typ) });
     }
   }

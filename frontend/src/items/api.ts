@@ -27,6 +27,13 @@ export interface Gegenstand {
   kapazitaet: number;
   /** Kann etwas aufnehmen. Steht am Gegenstand, wird nicht aus dem Typ geraten. */
   istBehaelter: boolean;
+  /** Leer = kein Schloss. Lösung und Schlüssel-Kennung kommen bei Spielern leer zurück. */
+  schlossArt?: "" | "passwort" | "schluessel" | "spiel";
+  schlossPasswort?: string;
+  schlossRaetsel?: string;
+  schluesselId?: string;
+  aufgeschlossen?: boolean;
+  spielLaenge?: number;
   /** Blatt für Drohne/Fahrzeug/Sprite/Geist — 0 heisst "kein Blatt geführt". */
   stufe: number;
   widerstand: number;
@@ -261,6 +268,10 @@ export const SCHADEN_MAX = 12;
 /** Alter flacher Soak — nicht die Kästchenrüstung. */
 export const RUESTUNGSBONUS_MAX = 7;
 
+export function istVerschlossen(g: { schlossArt?: string; aufgeschlossen?: boolean }): boolean {
+  return Boolean(g.schlossArt) && !g.aufgeschlossen;
+}
+
 export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
 
 /** Reihenfolge und Beschriftung der Ablagen — von "am Körper" nach "weit weg".
@@ -432,6 +443,12 @@ export interface GegenstandUpdate {
   sichtbarFuer?: string[];  gewicht?: number;
   kapazitaet?: number;
   istBehaelter?: boolean;
+  schlossArt?: "" | "passwort" | "schluessel" | "spiel";
+  schlossPasswort?: string;
+  schlossRaetsel?: string;
+  schluesselId?: string;
+  aufgeschlossen?: boolean;
+  spielLaenge?: number;
   stufe?: number;
   widerstand?: number;
   angriff?: number;
@@ -589,6 +606,13 @@ export const itemsApi = {
   createVorlage: (cid: string, body: NeuerGegenstand) => api.post<Gegenstand>(campaignBase(cid), body),
   update: (cid: string, itemId: string, body: GegenstandUpdate) =>
     api.patch<Gegenstand>(itemBase(cid, itemId), body),
+  oeffnen: (cid: string, itemId: string, passwort = "") =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/oeffnen`, { passwort }),
+  schlossSpiel: (cid: string, itemId: string, folge?: number[]) =>
+    api.post<{ runde: number; anzeige: number[]; falsch: boolean; geschafft: boolean; aufgeschlossen: boolean }>(
+      `${itemBase(cid, itemId)}/schloss/spiel`,
+      { folge: folge ?? null },
+    ),
   remove: (cid: string, itemId: string) => api.delete<void>(itemBase(cid, itemId)),
   assign: (cid: string, itemId: string, zielPersonId: string, kopie = false) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId, kopie }),

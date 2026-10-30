@@ -42,6 +42,8 @@ export type SteckbriefQuelle = {
   deckMatrixNavigation: number;
   istBehaelter: boolean;
   kapazitaet: number;
+  schlossArt?: string;
+  aufgeschlossen?: boolean;
 };
 
 function kampfFertigkeitZeile(item: SteckbriefQuelle): string {
@@ -228,6 +230,9 @@ export function steckbriefKurz(item: SteckbriefQuelle): string[] {
 
   if (item.istBehaelter && item.kapazitaet > 0) {
     teile.push(`Fasst ${item.kapazitaet} kg`);
+  }
+  if (item.schlossArt && !item.aufgeschlossen) {
+    teile.push("verschlossen");
   }
 
   return teile;

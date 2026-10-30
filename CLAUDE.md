@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Verschlossene Kisten (30.10.2026)
+
+Behälter kann ein Schloss haben, genau eine Art: `passwort` (Rätseltext sichtbar, Lösung ist das Passwort, Vergleich ohne Großschreibung), `schluessel` (ein bestimmter Gegenstand, den der Spieler besitzen und erreichen muss) oder `spiel` (5 Tasten, SL setzt die Länge, Zufallsfolge, Fehler von vorn, kein Limit). Auf bleibt auf, bis die SL wieder zusperrt. Nur die SL setzt das Schloss (am Behälter in den Optionen, vor dem Rausgeben). Inhalt mit `LIEGT_IN` in eine noch zue Kiste sieht der Spieler nicht — auch nicht per Einzelabruf. Lösung und Schlüssel-ID gehen nie an Spieler. Beim Weitergeben wandert der Inhalt mit. `POST .../oeffnen` und `POST .../schloss/spiel`.
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**
