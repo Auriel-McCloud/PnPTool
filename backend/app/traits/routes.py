@@ -1348,9 +1348,19 @@ async def get_steigerungspreise(
 
     chrom = await willenskraft_verlust(campaign_id, person_id)
     willenskraft = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0), chrom)
+    # Bugfix 30.10.2026 (Mark: "ich habe 2 XP gegeben, aber 0 Erfahrung
+    # frei"): dieselbe "Gesamt-EP"-Formel wie bogen.py::bogen_uebersicht
+    # ("individuelle Erfahrung + Kampagnen-EP + Extra-EP") — vorher zählte
+    # diese Route nur `person.erfahrung`, Kampagnen-EP UND Extra-EP (z.B. aus
+    # dem "+EP"-Knopf auf der PC-Kachel) flossen nie ins LevelUp-Guthaben
+    # ein, obwohl das Charakterblatt sie längst korrekt mitzählte — zwei
+    # auseinandergelaufene Formeln für denselben Wert.
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    gesamt_ep = int(person.get("erfahrung") or 0) + kampagnen_ep + int(person.get("extraEP") or 0)
     return {
-        "verfuegbar": max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0)),
-        "gesamt": int(person.get("erfahrung") or 0),
+        "verfuegbar": max(0, gesamt_ep - int(person.get("erfahrungAusgegeben") or 0)),
+        "gesamt": gesamt_ep,
         "werte": preise,
         "willenskraft": {
             "aktuell": willenskraft,
@@ -1381,7 +1391,14 @@ async def steigere_wert(
 
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     nach_name = {w["name"]: w["rating"] for w in werte}
-    verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
+    # Bugfix 30.10.2026, siehe get_steigerungspreise oben: dieselbe
+    # "Gesamt-EP"-Formel wie bogen.py::bogen_uebersicht, sonst zeigt die
+    # Liste zwar korrekt "leistbar" an, der tatsächliche Kauf scheitert aber
+    # weiterhin an der alten, zu niedrigen Prüfung.
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    gesamt_ep = int(person.get("erfahrung") or 0) + kampagnen_ep + int(person.get("extraEP") or 0)
+    verfuegbar = max(0, gesamt_ep - int(person.get("erfahrungAusgegeben") or 0))
     ausgegeben = int(person.get("erfahrungAusgegeben") or 0)
 
     if body.willenskraft:

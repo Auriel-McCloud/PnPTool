@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.ki.client import KiFehler
 from app.traits import erfahrung
@@ -116,9 +117,22 @@ class PersonZusatzfertigkeitenAntwort(BaseModel):
     erfahrungVerfuegbar: int
 
 
+async def _gesamt_ep(campaign_id: str, person: dict) -> int:
+    """Dieselbe "Gesamt-EP"-Formel wie bogen.py::bogen_uebersicht
+    ("individuelle Erfahrung + Kampagnen-EP + Extra-EP") — Bugfix
+    30.10.2026 (Mark: "ich habe 2 XP gegeben, aber 0 Erfahrung frei"):
+    vorher zählte diese Route nur `person.erfahrung`, Kampagnen-EP UND
+    Extra-EP (der "+EP"-Knopf auf der PC-Kachel) flossen nie ein, obwohl
+    das Charakterblatt sie längst korrekt mitzählte.
+    """
+    einstellungen = await get_einstellungen(campaign_id)
+    kampagnen_ep = einstellungen.get("kampagnenEP", 0)
+    return int(person.get("erfahrung") or 0) + kampagnen_ep + int(person.get("extraEP") or 0)
+
+
 async def _antwort(campaign_id: str, person: dict) -> PersonZusatzfertigkeitenAntwort:
     gewaehlt = await repository.zusatzfertigkeiten_der_person(campaign_id, person["id"])
-    verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
+    verfuegbar = max(0, await _gesamt_ep(campaign_id, person) - int(person.get("erfahrungAusgegeben") or 0))
     return PersonZusatzfertigkeitenAntwort(
         gewaehlt=gewaehlt,
         erstellungAbgeschlossen=bool(person.get("erstellungAbgeschlossen")),
@@ -207,7 +221,7 @@ async def zusatzfertigkeit_hinzufuegen(
 
     # Spielphase: wie eine ganz normale Fertigkeit von 0 auf 1 kaufen.
     preis = erfahrung.kosten("Fertigkeit", 0) or 0
-    verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
+    verfuegbar = max(0, await _gesamt_ep(campaign_id, person) - int(person.get("erfahrungAusgegeben") or 0))
     if preis > verfuegbar:
         raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
     await repository.hinzufuegen(campaign_id, person_id, body.zusatzfertigkeitId, 1)
@@ -245,7 +259,7 @@ async def zusatzfertigkeit_steigern(
         raise HTTPException(status.HTTP_409_CONFLICT, f"{eintrag['name']} steht bereits auf dem Maximum 6.")
 
     preis = erfahrung.kosten("Fertigkeit", eintrag["rating"]) or 0
-    verfuegbar = max(0, int(person.get("erfahrung") or 0) - int(person.get("erfahrungAusgegeben") or 0))
+    verfuegbar = max(0, await _gesamt_ep(campaign_id, person) - int(person.get("erfahrungAusgegeben") or 0))
     if preis > verfuegbar:
         raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
 
