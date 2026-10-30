@@ -227,6 +227,23 @@ async def list_personen(
 @router.get("/personen/{node_id}", response_model=PersonResponse)
 async def get_person(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
     node = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if node is not None and viewer.role != "GM":
+        # Dieselbe Besitzer-Ausnahme wie traits/routes.py::_darf_person_sehen
+        # (Rigger sieht seine Drohne, Beschwörer sieht seinen Critter, auch
+        # wenn die allgemeine Sichtbarkeit auf GM steht) — ohne das blieb das
+        # Critter-Bild in der Beschwörungs-Probe für den Spieler unsichtbar,
+        # weil dieser Endpunkt (anders als get_bogen) den Besitz nie prüfte
+        # (Mark, 30.10.2026).
+        eigene_drohne_oder_critter = False
+        if node.get("istDrohne") or node.get("istFahrzeug"):
+            eigene_drohne_oder_critter = await repository.drohne_rigger(campaign_id, node_id) == viewer.person_id
+        elif node.get("istCritter"):
+            eigene_drohne_oder_critter = await repository.critter_besitzer(campaign_id, node_id) == viewer.person_id
+        if eigene_drohne_oder_critter:
+            # node["id"] als eigener viewer_person_id vorgetäuscht, damit
+            # filter_entity_for_viewer dieselbe "eigener Charakter"-Behandlung
+            # anwendet (Redaktion bleibt dieselbe wie beim eigenen Bogen).
+            return filter_entity_for_viewer(node, viewer.role, node["id"])
     return _visible_or_404(node, viewer, "Person")
 
 

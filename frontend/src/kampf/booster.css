@@ -121,7 +121,21 @@
   padding: 8px;
 }
 
-/* --- Ampel ---------------------------------------------------------- */
+/* --- Beschwörungs-Probe: Critter-Bild ---------------------------------
+   Mark, 30.10.2026 nach dem Praxistest: das alte .bg-bild (object-fit:
+   cover, 220px) schnitt hochformatige Critter-Bilder oben/unten ab — hier
+   soll das GANZE Bild sichtbar bleiben, notfalls mit Rand statt Beschnitt. */
+.bo-critter-bild {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  background: var(--flaeche-hoch);
+  border-radius: var(--radius);
+  border: 1px solid var(--linie);
+  margin-bottom: 14px;
+}
+
 
 .bo-ampel {
   display: inline-flex;

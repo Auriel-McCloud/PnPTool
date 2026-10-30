@@ -196,7 +196,7 @@ export function DeineBeschwoerungen({
           onSchliessen={() => setProbeZiel(null)}
         >
           {fehler && <p className="bo-warnung">{fehler}</p>}
-          {critterBild && <img src={critterBild} alt={probeZiel.name} className="bg-bild" />}
+          {critterBild && <img src={critterBild} alt={probeZiel.name} className="bo-critter-bild" />}
           <div className="bo-pool">
             <span className="bo-poolzahl">{benoetigteErfolge(probeZiel)}</span>
             <span className="bo-poolinfo">
