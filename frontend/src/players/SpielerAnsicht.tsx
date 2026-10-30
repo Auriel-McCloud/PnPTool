@@ -377,7 +377,17 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   const amKoerper = bereiche.find((b) => b.greifbar);
   const faecher = bereiche.filter((b) => !b.greifbar);
-  const getragen = amKoerper ? sachen.filter(amKoerper.passt) : [];
+  // Montierte Augments (Ki-Tama, Zielfernrohr & Co., 29.10.2026) gehören
+  // keinem Ablage-Platz mehr — sie stecken an ihrem Trägergegenstand
+  // (MONTIERT_AN). `ermittleBereiche` filtert das nur INTERN für die Frage
+  // "welche Bereiche gibt es überhaupt" — die einzelnen `passt()`-Closures
+  // selbst prüfen weiterhin nur `ablage`, ohne `montiertAnId`. Diese Seite
+  // nutzt den gemeinsamen `filtereNachBereichen`-Helfer (der das korrekt
+  // ausschließt) NICHT, sondern filtert `sachen` hier direkt — deshalb
+  // dieselbe Montage-Ausnahme hier noch einmal explizit (Mark-Bugreport
+  // 30.10.2026: montierte Ki-Tamas blieben trotz Montage im Rucksack
+  // sichtbar, exakt das alte Zielfernrohr-Bugbild aus items/aufbewahrung.ts).
+  const getragen = amKoerper ? sachen.filter((g) => amKoerper.passt(g) && !g.montiertAnId) : [];
   const seiten = Math.max(1, Math.ceil(getragen.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
   const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
@@ -405,7 +415,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     const fach = faecher.find((f) => f.id === fachId);
     if (!fach) return undefined;
     return {
-      anzahl: sachen.filter(fach.passt).length,
+      // Montierte Augments zählen nicht mit — siehe `getragen` oben.
+      anzahl: sachen.filter((g) => fach.passt(g) && !g.montiertAnId).length,
       oeffnen: () => setFachStapel((alt) => [...alt, fachId]),
     };
   }
@@ -733,6 +744,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 behaelterName={getragenerBehaelter}
                 behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
+                // Montiertes Upgrade (z.B. ein Ki-Tama) sichtbar an der Waffe
+                // selbst — dieselbe Anzeige wie in der GM-Ansicht
+                // (PCInventar.tsx), Mark: "frage ich mich ob ich von außen
+                // sehen werde welche Upgrades in der Waffe verbaut sind".
+                montierteUpgrades={sachen.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 onUmlegen={(ziel) => umlegen(g.id, ziel)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
                 campaignId={ich.campaignId}
@@ -770,7 +786,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
           {faecher.length > 0 && (
             <div className="gg-faecher">
               {faecher.map((f) => {
-                const anzahl = sachen.filter(f.passt).length;
+                const anzahl = sachen.filter((g) => f.passt(g) && !g.montiertAnId).length;
                 return (
                   <button
                     key={f.id}
@@ -803,7 +819,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 key={`${fachId}:${stufe}`}
                 fach={fach}
                 offen
-                items={sachen.filter(fach.passt)}
+                items={sachen.filter((g) => fach.passt(g) && !g.montiertAnId)}
                 behaelterName={getragenerBehaelter}
                 behaelterId={getragenerBehaelterId}
                 inhaltVon={inhaltVon}
