@@ -687,14 +687,34 @@ async def drohne_rigger(campaign_id: str, drohne_id: str) -> str | None:
 
 
 async def critter_besitzer(campaign_id: str, critter_id: str) -> str | None:
-    """Wer diesen Critter beschworen hat — Pendant zu `drohne_rigger`, nur
-    über `istCritter` statt Drohne/Fahrzeug. Für den Besitzer-Check bei
-    `kampf/routes.py::_darf_initiative_melden` (Beschwörer darf für seinen
-    Critter die Initiative melden, genau wie ein Rigger für seine Drohne)."""
+    """Wer diesen Critter beschwören/dessen Werte lesen darf — Pendant zu
+    `drohne_rigger`, nur über `istCritter` statt Drohne/Fahrzeug. Für den
+    Besitzer-Check bei `kampf/routes.py::_darf_initiative_melden` (Beschwörer
+    darf für seinen Critter die Initiative melden) UND bei
+    `traits/routes.py::_darf_person_sehen` (Beschwörer darf den Kampfbogen
+    seines Critters lesen).
+
+    Bugfix 30.10.2026 (Mark, zweite Runde): die `BEGLEITET`-Kante wird NUR
+    über die separate Begleiter-Verwaltung gesetzt (`CritterFenster.tsx`,
+    `entitiesApi.critterBesitzer`) — beim normalen Weg, ein Ki-Tama im
+    Umbauen-Formular mit einem Critter zu verknüpfen
+    (`Gegenstand.beschworenerCritterId`), entsteht diese Kante NIE. Für
+    jeden Critter, der nur über ein Ki-Tama summonbar ist (der Normalfall),
+    lief dieser Check deshalb immer ins Leere — derselbe
+    "Lade Kampfwerte…"-Hänger wie beim ursprünglichen Bugfix, nur eine Ebene
+    tiefer. Jetzt zusätzlich: wer das Ki-Tama BESITZT, das auf diesen
+    Critter zeigt, gilt ebenfalls als Besitzer — das ist die tatsächlich
+    beim Beschwören garantiert existierende Beziehung, die BEGLEITET-Kante
+    bleibt als zusätzlicher/manueller Pfad bestehen.
+    """
     driver = get_driver()
     query = """
-        MATCH (n:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p:Person)
-        RETURN p.id AS besitzerId
+        MATCH (n:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p1:Person)
+        OPTIONAL MATCH (p2:Person {campaignId: $campaign_id})-[:BESITZT]->
+            (:Gegenstand {campaignId: $campaign_id, beschworenerCritterId: $critter_id})
+        RETURN coalesce(p1.id, p2.id) AS besitzerId
+        LIMIT 1
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id)

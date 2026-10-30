@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
+import { entitiesApi } from "../entities/api";
 import type { Gegenstand } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
+import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { kampfApi, type Kampf, type Teilnehmer } from "./api";
 import { InitiativeSetzen } from "./InitiativeSetzen";
 import { Kampfkarte, wert } from "./Kampfkarte";
+import "../begleiter/begleiter.css";
 import "../items/gegenstaende.css";
 import "./kampf.css";
 import "./booster.css";
+import "./kampfkarte.css";
 
 /**
  * Der Beschwörungswert selbst — Spiegelbild von
@@ -66,6 +70,11 @@ export function DeineBeschwoerungen({
   // Nur für die Intelligenz gebraucht — kein Fach für Waffen/Items, deshalb
   // ein eigener, schlanker Ladevorgang statt den vollen Bogen hochzureichen.
   const [eigenerBogen, setEigenerBogen] = useState<Bogen | null>(null);
+  // Critter-Bild für die Probe (30.10.2026, Mark: "wäre cool wenn du das
+  // bild der beschwörung in dem fenster anzeigen würdest") — Critter sind
+  // standardmäßig ALLE-sichtbar (siehe BegleiterVerwaltung.tsx), der
+  // normale Spieler-lesbare Personen-Endpunkt reicht deshalb.
+  const [critterBild, setCritterBild] = useState<string | null>(null);
 
   useEffect(() => {
     let weg = false;
@@ -82,9 +91,35 @@ export function DeineBeschwoerungen({
     };
   }, [campaignId, eigenePersonId]);
 
+  useEffect(() => {
+    const critterId = probeZiel?.beschworenerCritterId;
+    if (!critterId) {
+      setCritterBild(null);
+      return;
+    }
+    let weg = false;
+    entitiesApi
+      .getPerson(campaignId, critterId)
+      .then((p) => {
+        if (!weg) setCritterBild(p.bildUrl || null);
+      })
+      .catch(() => {
+        if (!weg) setCritterBild(null);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, probeZiel?.beschworenerCritterId]);
+
   if (kiTamas.length === 0) return null;
 
   const intelligenz = eigenerBogen ? wert(eigenerBogen, "Intelligenz") : null;
+  // Würfelpool der Probe — Intelligenz des Beschwörers + Beschwörungswert
+  // des Ki-Tama, exakt wie bei jedem anderen Pool im Tool (Mark, 30.10.2026:
+  // "die würfel anzahl anzeigen die der spieler hat", nicht nur die
+  // Einzelzahlen nebeneinander ohne Summe).
+  const wuerfelpool =
+    intelligenz !== null && probeZiel ? intelligenz + beschwoerungswert(probeZiel) : null;
 
   /** Erfolgreiche Probe (Spieler hat selbst am Tisch genug gewürfelt) —
    *  schickt serverseitig exakt die benötigte Zahl, die Probe selbst läuft
@@ -161,14 +196,21 @@ export function DeineBeschwoerungen({
           onSchliessen={() => setProbeZiel(null)}
         >
           {fehler && <p className="bo-warnung">{fehler}</p>}
+          {critterBild && <img src={critterBild} alt={probeZiel.name} className="bg-bild" />}
           <div className="bo-pool">
             <span className="bo-poolzahl">{benoetigteErfolge(probeZiel)}</span>
             <span className="bo-poolinfo">
               <span>Erfolge nötig</span>
               <em>
-                Intelligenz {intelligenz ?? "…"} + Beschwörungswert {beschwoerungswert(probeZiel)} würfeln
+                Intelligenz {intelligenz ?? "…"} + Beschwörungswert {beschwoerungswert(probeZiel)}
               </em>
             </span>
+            {wuerfelpool !== null && (
+              <span className="kk-ziffer" title="Intelligenz + Beschwörungswert — so viele W10 würfeln">
+                {wuerfelpool}
+                <WuerfelZehn groesse={20} />
+              </span>
+            )}
           </div>
           <div className="bo-knoepfe">
             <button type="button" onClick={beschwoeren} disabled={sendet}>
