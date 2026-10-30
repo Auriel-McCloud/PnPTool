@@ -4,6 +4,29 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Ki-Tama-Kachel: eigenes Bild statt Emoji, Verbrauchsgegenstand-Umbruch**
+  (30.10.2026, Mark testete erstmals und fand: Ki-Tama fehlte ihm in der
+  Typ-Auswahl beim Anlegen — Ursache war simpler als gedacht: **nichts war
+  auf bebop deployed**, siehe Eintrag unten). `typKatalog.ts::TypEintrag`
+  um optionale `symbolBild`/`label` erweitert: Ki-Tama zeigt jetzt Marks
+  eigenes lila Kristallkugel-Bild (`assets/ki-tama.png`) statt 🔮 in der
+  Kachel-Auswahl (`TypKachelAuswahl.tsx`), "Verbrauchsgegenstand" bricht
+  dank weichem Trennzeichen (`\u00AD`) zweizeilig um, OHNE dass der
+  gespeicherte `typ`-Wert selbst verändert wird (reine Anzeigesache).
+  `symbolFuerTyp()` bleibt für andere Stellen (Shop-Listen etc.) unverändert
+  beim Emoji-Fallback.
+
+- **Deployment-Lücke gefunden: PnPTool läuft auf bebop, nicht lokal getestet**
+  (30.10.2026). Alle Änderungen der letzten drei Sessions (Ki-Tama-Rename,
+  Beschwörungs-Feature komplett) waren nur lokal committed, nie auf bebop
+  deployed — deshalb sah Mark beim Testen weder die neue Kategorie noch
+  irgendwas sonst Neues. Ablauf (siehe Wiki `deployment-debian-upgrade.md`):
+  `git push`, dann `ssh root@bebop` (PuTTY-Key `C:\Users\Mark\Privat
+  KEYSCM.ppk`), `cd /opt/pnptool/app && git pull`, `cd /opt/pnptool &&
+  docker compose up -d --build backend frontend`. **Merke:** nach JEDER
+  PnPTool-Session mit Mark fragen/direkt deployen, nicht stillschweigend nur
+  lokal committen — sonst taucht am Spieltisch nichts Neues auf.
+
 - **Beschwörungs-Ki-Tama: Probe-Gate + Kampf-Beitritt + Initiative-Wiederverwendung**
   (30.10.2026, zweite Runde direkt im Anschluss, siehe docs/wiki/concepts/
   augments-ausruestung.md). Mark korrigierte zwei Details, bevor das

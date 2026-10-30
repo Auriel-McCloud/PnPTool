@@ -31,10 +31,14 @@ export function TypKachelAuswahl({
           disabled={disabled}
           onClick={() => onWaehlen(t.typ)}
         >
-          <span className="gg-typ-symbol" aria-hidden="true">
-            {t.symbol}
-          </span>
-          <span className="gg-typ-name">{t.typ}</span>
+          {t.symbolBild ? (
+            <img className="gg-typ-symbol-bild" src={t.symbolBild} alt="" aria-hidden="true" />
+          ) : (
+            <span className="gg-typ-symbol" aria-hidden="true">
+              {t.symbol}
+            </span>
+          )}
+          <span className="gg-typ-name">{t.label ?? t.typ}</span>
         </button>
       ))}
     </div>

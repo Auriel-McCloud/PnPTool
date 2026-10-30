@@ -7,9 +7,21 @@
  * Anlegen-Popup diese große Kachel-Auswahl statt eines kleinen Dropdowns,
  * das man später sowieso nicht mehr korrigieren kann.
  */
+import kiTamaBild from "../assets/ki-tama.png";
+
 export interface TypEintrag {
   typ: string;
   symbol: string;
+  /** Echtes Bild statt Emoji-Symbol (30.10.2026, Mark: eigenes Bild fürs
+   *  Ki-Tama) — nur in der Kachel-Auswahl verwendet, `symbol` bleibt der
+   *  Fallback für Stellen, die nur einen Text-/Emoji-String brauchen
+   *  (`symbolFuerTyp`, Shop-Listen etc.). */
+  symbolBild?: string;
+  /** Anzeigetext, falls er vom `typ` abweichen soll — z.B. mit weichem
+   *  Trennzeichen (\u00AD) an einer sinnvollen Stelle, damit lange
+   *  zusammengesetzte Wörter in der Kachel zweizeilig umbrechen, ohne dass
+   *  der gespeicherte `typ`-Wert selbst ein unsichtbares Zeichen bekommt. */
+  label?: string;
 }
 
 export const TYP_KATALOG: TypEintrag[] = [
@@ -19,7 +31,7 @@ export const TYP_KATALOG: TypEintrag[] = [
   { typ: "Bioware", symbol: "🧬" },
   { typ: "Hexware", symbol: "✦" },
   { typ: "Droge", symbol: "💊" },
-  { typ: "Verbrauchsgegenstand", symbol: "◐" },
+  { typ: "Verbrauchsgegenstand", symbol: "◐", label: "Verbrauchs\u00ADgegenstand" },
   { typ: "Werkzeug", symbol: "🔧" },
   { typ: "Fahrzeug", symbol: "⛭" },
   { typ: "Drohne", symbol: "◭" },
@@ -28,7 +40,7 @@ export const TYP_KATALOG: TypEintrag[] = [
   { typ: "Cyberdeck", symbol: "💻" },
   { typ: "Riggerkonsole", symbol: "🎮" },
   { typ: "Upgrade-Material", symbol: "🔩" },
-  { typ: "Ki-Tama", symbol: "🔮" },
+  { typ: "Ki-Tama", symbol: "🔮", symbolBild: kiTamaBild },
   { typ: "Sonstiges", symbol: "◈" },
 ];
 
