@@ -433,6 +433,20 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
     if not critter_id:
         raise HTTPException(status.HTTP_409_CONFLICT, "Kein Beschwörungs-Ki-Tama — kein Critter verknüpft.")
 
+    # Mark, 30.10.2026 (zweite Runde nach dem Klicktest): "Ki-Tamas dürfen nur
+    # dann funktionieren wenn sie mit einer Waffe verbunden sind, und wenn die
+    # Waffe ausgerüstet ist" — dieselbe Regel wie bei den Ki-Tama-Attacken in
+    # Kampfkarte.tsx, hier serverseitig durchgesetzt (das Frontend blendet den
+    # Beschwören-Knopf zwar schon vorher aus, aber dieser Endpunkt ist auch
+    # direkt erreichbar und muss selbst prüfen).
+    traeger_id = item.get("montiertAnId")
+    traeger = await get_gegenstand(campaign_id, traeger_id) if traeger_id else None
+    if traeger is None or not (traeger.get("typ") == "Waffe" or traeger.get("istWaffe")) or traeger.get("ablage") != "AUSGERUESTET":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Ki-Tama muss an einer ausgerüsteten Waffe montiert sein, um zu wirken.",
+        )
+
     stufe = beschwoerungsstufe(item.get("ausruestungsfertigkeiten") or {}, item.get("kiTamaFertigkeiten") or {})
     benoetigt = beschwoerung_benoetigte_erfolge(stufe, int(item.get("beschwoerungsSchwierigkeit") or 0))
     if body.erfolge < benoetigt:

@@ -143,22 +143,39 @@ export function Kampfkarte({
   const ruestungsteile = ausgeruestet.filter((g) => g.typ === "Rüstung");
   const ruestung = ruestungsteile.reduce((summe, g) => summe + g.kraft, 0);
   const fahrzeuge = sachen.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
-  // Ki-Tama-Attacken (30.10.2026, Marks Idee): ausruestungsfertigkeiten, die
-  // als "Attacke" markiert sind, erscheinen zusätzlich zu den Waffen oben —
-  // mit eigener Formel. KEIN Ausrüstungsbonus und KEINE Geschicklichkeit wie
-  // bei Waffen: Mark, 30.10.2026 — "genau Intelligenz + Fertigkeitswert,
-  // keine weiteren Boni". Schaden ist bewusst kein fixer Wert, sondern wie
-  // bei Waffen die Nettoerfolge — siehe items/schemas.py::attackenFertigkeiten.
-  const attacken = ausgeruestet.flatMap((g) =>
-    Object.entries(g.ausruestungsfertigkeiten || {})
-      .filter(([name]) => g.attackenFertigkeiten?.[name])
-      .map(([name, w]) => ({
-        key: `${g.id}:${name}`,
-        name: Object.keys(g.ausruestungsfertigkeiten).length > 1 ? `${name} (${g.name})` : name,
-        wert: Number(w) || 0,
-        schadenArt: schadenArtFuerWaffe(g.attackenSchadensart?.[name]),
-      })),
-  );
+  // Ki-Tama-Attacken (30.10.2026, Marks Idee, 30.10.2026 zweite Runde nach dem
+  // Klicktest korrigiert): ein Ki-Tama ist ein Waffen-Upgrade (istAugment wird
+  // beim Typ "Ki-Tama" erzwungen) und liegt deshalb physisch meist im Rucksack
+  // — sein eigenes `ablage`-Feld ändert sich beim Montieren NICHT (siehe
+  // items/aufbewahrung.ts). Die alte Fassung prüfte `ausgeruestet` (also das
+  // Ki-Tama selbst müsste "Am Körper" liegen) und zeigte dadurch NIE eine
+  // Attacke, solange das Ki-Tama normal als Augment an einer Waffe montiert
+  // ist. Mark, 30.10.2026 nach dem Fund: "Ki-Tamas dürfen nur dann
+  // funktionieren wenn sie mit einer Waffe verbunden sind, und wenn die
+  // Waffe ausgerüstet ist" — also stattdessen über die Montage-Kante gehen:
+  // nur Ki-Tamas, deren `montiertAnId` auf eine der oben berechneten
+  // AUSGERÜSTETEN Waffen zeigt. KEIN Ausrüstungsbonus und KEINE
+  // Geschicklichkeit wie bei Waffen: Mark, 30.10.2026 — "genau Intelligenz +
+  // Fertigkeitswert, keine weiteren Boni". Schaden ist bewusst kein fixer
+  // Wert, sondern wie bei Waffen die Nettoerfolge — siehe
+  // items/schemas.py::attackenFertigkeiten.
+  const waffenIds = new Set(waffen.map((w) => w.id));
+  const attacken = sachen
+    .filter((g) => g.typ === "Ki-Tama" && g.montiertAnId && waffenIds.has(g.montiertAnId))
+    .flatMap((g) => {
+      const traeger = sachen.find((w) => w.id === g.montiertAnId);
+      return Object.entries(g.ausruestungsfertigkeiten || {})
+        .filter(([name]) => g.attackenFertigkeiten?.[name])
+        .map(([name, w]) => ({
+          key: `${g.id}:${name}`,
+          name:
+            Object.keys(g.ausruestungsfertigkeiten).length > 1
+              ? `${name} (${traeger?.name ?? g.name})`
+              : name,
+          wert: Number(w) || 0,
+          schadenArt: schadenArtFuerWaffe(g.attackenSchadensart?.[name]),
+        }));
+    });
 
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
 

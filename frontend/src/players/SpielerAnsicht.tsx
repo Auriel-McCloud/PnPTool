@@ -188,9 +188,16 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Beschwörungs-Ki-Tama (30.10.2026): eigene Ki-Tama-Gegenstände mit
   // verknüpftem Critter — anders als bei Drohnen reicht das schon geladene
   // `sachen`, kein eigener Ladevorgang nötig.
-  const eigeneKiTamas = sachen.filter(
-    (g) => g.ownerId === ich?.personId && g.typ === "Ki-Tama" && g.beschworenerCritterId,
-  );
+  // Zweite Runde (30.10.2026, Mark nach dem Klicktest): "Ki-Tamas dürfen nur
+  // dann funktionieren wenn sie mit einer Waffe verbunden sind, und wenn die
+  // Waffe ausgerüstet ist" — zusätzlich zum Critter-Link prüfen, ob das
+  // Ki-Tama als Augment an einer AUSGERÜSTETEN Waffe montiert ist (dieselbe
+  // Regel wie bei den Ki-Tama-Attacken in Kampfkarte.tsx).
+  const eigeneKiTamas = sachen.filter((g) => {
+    if (g.ownerId !== ich?.personId || g.typ !== "Ki-Tama" || !g.beschworenerCritterId) return false;
+    const traeger = sachen.find((w) => w.id === g.montiertAnId);
+    return Boolean(traeger && (traeger.typ === "Waffe" || traeger.istWaffe) && traeger.ablage === "AUSGERUESTET");
+  });
   const eigeneCritterIds = eigeneKiTamas
     .map((g) => g.beschworenerCritterId)
     .filter((id): id is string => Boolean(id));
