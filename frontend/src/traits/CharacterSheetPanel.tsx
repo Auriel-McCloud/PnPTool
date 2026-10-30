@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { JSONContent } from "@tiptap/react";
 import type { Person } from "../entities/api";
+import { entitiesApi, type CritterEintrag } from "../entities/api";
 import { useAuthFallsVorhanden } from "../auth/AuthContext";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { RichTextEditor } from "../richtext/RichTextEditor";
@@ -327,6 +328,13 @@ export function GegenstandRow({
   const [istAugment, setIstAugment] = useState(item.istAugment);
   const [augmentWaffentyp, setAugmentWaffentyp] = useState(item.augmentWaffentyp);
   const [augmentZielTyp, setAugmentZielTyp] = useState(item.augmentZielTyp);
+  // Beschwörungs-Ki-Tama (30.10.2026): nur relevant bei typ === "Ki-Tama",
+  // siehe docs/wiki/concepts/augments-ausruestung.md. Critter-Liste erst
+  // beim Öffnen holen (dieselbe Zurückhaltung wie bei `ziele`/`chromstufen`
+  // unten), nicht für jede Kachel im Voraus.
+  const [beschworenerCritterId, setBeschworenerCritterId] = useState(item.beschworenerCritterId ?? "");
+  const [beschwoerungsSchwierigkeit, setBeschwoerungsSchwierigkeit] = useState(item.beschwoerungsSchwierigkeit ?? 0);
+  const [critterOptionen, setCritterOptionen] = useState<CritterEintrag[]>([]);
   // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature):
   // spiegelt `verbaut` bei Cyberware — nicht ablegbar für den Spieler (GM
   // kann es im Ausnahmefall), nicht reparierbar, Kästchen-Max kommt serverseitig
@@ -476,6 +484,11 @@ export function GegenstandRow({
     setIstAugment(src.istAugment);
     setAugmentWaffentyp(src.augmentWaffentyp);
     setAugmentZielTyp(src.augmentZielTyp);
+    setBeschworenerCritterId(src.beschworenerCritterId ?? "");
+    setBeschwoerungsSchwierigkeit(src.beschwoerungsSchwierigkeit ?? 0);
+    if (src.typ === "Ki-Tama") {
+      entitiesApi.listCritter(campaignId).then(setCritterOptionen).catch(() => setCritterOptionen([]));
+    }
     setIstNatuerlich(src.istNatuerlich);
     setAblageZiel(src.ablageZielId ?? "");
     // Ziele erst beim Öffnen holen — für jede Kachel im Voraus wäre es eine
@@ -579,6 +592,8 @@ export function GegenstandRow({
       istAugment,
       augmentWaffentyp,
       augmentZielTyp,
+      beschworenerCritterId,
+      beschwoerungsSchwierigkeit,
       istNatuerlich,
       sichtbarkeit,
       sichtbarFuer,
@@ -598,7 +613,8 @@ export function GegenstandRow({
       istWaffe, istNeurolink, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
-      upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, istNatuerlich, sichtbarkeit, sichtbarFuer,
+      upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
+      beschwoerungsSchwierigkeit, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
   );
 
@@ -1833,6 +1849,42 @@ export function GegenstandRow({
                   </div>
                 )}
               </div>
+
+              {typ === "Ki-Tama" && istGm && (
+                <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginBottom: 6 }}>
+                    Beschwörungs-Ki-Tama (optional): verknüpfter Critter, den der Besitzer im Kampf
+                    beschwören kann
+                  </label>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <select value={beschworenerCritterId} onChange={(e) => setBeschworenerCritterId(e.target.value)}>
+                      <option value="">kein Critter verknüpft</option>
+                      {critterOptionen.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    {beschworenerCritterId && (
+                      <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
+                        Schwierigkeitsgrad
+                        <select
+                          value={beschwoerungsSchwierigkeit}
+                          onChange={(e) => setBeschwoerungsSchwierigkeit(Number(e.target.value))}
+                        >
+                          <option value={0}>+0</option>
+                          <option value={1}>+1</option>
+                          <option value={2}>+2</option>
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: "6px 0 0" }}>
+                    Der Beschwörungswert selbst ist kein eigenes Feld — er ist die höchste als Ki-Tama
+                    markierte Ausrüstungsfertigkeit oben (siehe Häkchen "Ki-Tama").
+                  </p>
+                </div>
+              )}
 
               {!item.istVorlage && (
                 <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>

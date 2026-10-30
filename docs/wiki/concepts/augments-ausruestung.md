@@ -546,11 +546,15 @@ noch VOR dem Frontend-Bau:
 eingehängt — Probe-Popup zeigt die benötigten Erfolge vorab an, bei Erfolg
 öffnet sich **dieselbe** `Kampfkarte`+`InitiativeSetzen`-Kombination wie bei
 Drohnen. `Initiativliste.tsx` zeigt `rundenVerbleibend` als 🔮-Badge neben
-dem Namen. **Bewusst NICHT gebaut:** die SL-Seite im Umbauen-Formular, um
-einen Critter überhaupt erst als `beschworenerCritterId` zu verknüpfen —
-ohne das lässt sich die ganze Kette noch nicht von vorne bis hinten
-durchklicken. **Verifiziert:** volle Backend-Suite ohne Regression (55
-vorbestehende Fehlschläge unverändert), `npx tsc -b` sauber. Kein Klicktest.
+dem Namen. SL-seitiges Critter-Auswahlfeld + Schwierigkeitsgrad-Dropdown im
+Umbauen-Formular (`CharacterSheetPanel.tsx`, nur bei `typ === "Ki-Tama"` und
+nur für die SL sichtbar) — Critter-Liste kommt von `entitiesApi.listCritter`
+(derselbe Endpunkt wie die Begleiter-Übersicht), erst beim Öffnen des
+Formulars geholt. Damit lässt sich die komplette Kette jetzt durchklicken:
+Ki-Tama anlegen → Critter verknüpfen → Beschwörungsfertigkeit markieren →
+im Kampf beschwören → Initiative setzen → Runden ticken runter. **Verifiziert:**
+volle Backend-Suite ohne Regression (55 vorbestehende Fehlschläge
+unverändert), `npx tsc -b` sauber. Kein Klicktest — bitte am Spieltisch.
 
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 

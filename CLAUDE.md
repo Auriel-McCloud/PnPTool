@@ -27,6 +27,19 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
   Critter überhaupt als `beschworenerCritterId` zu verknüpfen — ohne das
   lässt sich die Kette noch nicht von vorne bis hinten durchklicken.
 
+- **Beschwörungs-Ki-Tama: Critter-Auswahlfeld im Umbauen-Formular — Kette
+  komplett** (30.10.2026, dritte Runde, Mark: "dann machen wir dieses
+  Critter auswahlfeld noch, dann kann ich das testen"). Neues SL-Feld im
+  Umbauen-Formular (`CharacterSheetPanel.tsx`), nur bei `typ === "Ki-Tama"`:
+  Dropdown mit allen Crittern der Kampagne (`entitiesApi.listCritter`,
+  derselbe Endpunkt wie die Begleiter-Übersicht, erst beim Öffnen geholt)
+  setzt `beschworenerCritterId`, plus Schwierigkeitsgrad-Dropdown (+0/+1/+2)
+  für `beschwoerungsSchwierigkeit`. Komplette Kette jetzt durchklickbar:
+  Ki-Tama anlegen → Critter verknüpfen → Beschwörungsfertigkeit markieren →
+  im Kampf beschwören → Initiative setzen → Runden ticken runter.
+  **Verifiziert:** volle Backend-Suite ohne Regression, `npx tsc -b`
+  sauber. **Bereit für den Klicktest am Spieltisch.**
+
 - **Beschwörungs-Ki-Tama: Backend-Fundament für beschwörbare Critter**
   (30.10.2026, Marks FF7-Idee vom Vortag, siehe docs/wiki/concepts/
   augments-ausruestung.md Abschnitt "Beschwörungs-Materia"). Fünf
