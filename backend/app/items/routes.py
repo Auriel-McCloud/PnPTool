@@ -14,8 +14,11 @@ from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
 from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt, zieltyp_passt
 from app.items.augments import AUGMENT_TRAEGER_TYPEN, wende_augment_boni_an
+from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
+from app.items.beschwoerung import beschwoerungsstufe
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
 from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.kampf import repository as kampf_repository
 from app.traits import erstellung
 from app.items.schemas import (
     AblageRequest,
@@ -184,6 +187,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "kiTamaFertigkeiten": body.kiTamaFertigkeiten,
+        "beschworenerCritterId": body.beschworenerCritterId,
+        "beschwoerungsSchwierigkeit": body.beschwoerungsSchwierigkeit,
         "riggerBonus": body.riggerBonus,
         "maxDrohnen": body.maxDrohnen,
         "immerSichtbar": body.immerSichtbar,
@@ -303,6 +308,74 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
 
         await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
     return item
+
+
+class BeschwoerenInput(BaseModel):
+    """Selbstberichtete Beschwörungs-Probe (Intelligenz + Beschwörungswert),
+    siehe docs/wiki/concepts/augments-ausruestung.md. Erfolge würfelt der
+    Spieler physisch am Tisch wie überall sonst im Tool."""
+
+    erfolge: int = Field(default=0, ge=0)
+    initiative: int = Field(default=0, ge=0)
+    kampfart: str = "NAHKAMPF"
+
+
+@router.post("/{item_id}/beschwoeren")
+async def beschwoeren(campaign_id: str, person_id: str, item_id: str, body: BeschwoerenInput):
+    """Beschwört den an ein Ki-Tama gebundenen Critter in den laufenden Kampf.
+
+    Spieler-Aktion (kein SL-Klick nötig, wie Ki-Tama-Steigern) — Probe MUSS
+    im Kampf-Menü VOR der Initiative-Eingabe erfolgen (Mark, 30.10.2026):
+    `erfolge` gegen die benötigten Erfolge (Beschwörungswert ÷ 2 aufgerundet
+    + SL-Schwierigkeitsgrad, siehe items/beschwoerung.py) — zu wenig Erfolge
+    heisst 409, der Critter betritt den Tracker nicht. Bei Erfolg wird der
+    Critter als EIGENE Zeile im Initiative-Tracker ergänzt
+    (`kampf_repository.teilnehmer_hinzu`) mit einem Runden-Zähler, der beim
+    Rundenwechsel runterzählt (`kampf/repository.py::tick_beschwoerungen`).
+    """
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer_id != person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    critter_id = item.get("beschworenerCritterId") or ""
+    if not critter_id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Kein Beschwörungs-Ki-Tama — kein Critter verknüpft.")
+
+    stufe = beschwoerungsstufe(item.get("ausruestungsfertigkeiten") or {}, item.get("kiTamaFertigkeiten") or {})
+    benoetigt = beschwoerung_benoetigte_erfolge(stufe, int(item.get("beschwoerungsSchwierigkeit") or 0))
+    if body.erfolge < benoetigt:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
+        )
+
+    critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
+    if critter is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Verknüpfter Critter nicht (mehr) gefunden")
+
+    kampf = await kampf_repository.teilnehmer_hinzu(
+        campaign_id,
+        {
+            "name": critter.get("name") or "Beschworener Critter",
+            "initiative": body.initiative,
+            "kampfart": body.kampfart,
+            "notiz": "",
+            "personId": critter_id,
+            "begleiterId": None,
+            "zusatzzug": False,
+            "stammtId": None,
+            "rundenVerbleibend": stufe,
+        },
+    )
+    if kampf is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "Kein laufender Kampf — die SL muss zuerst einen Kampf starten."
+        )
+    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer"):
+        kampf.pop(feld, None)
+    return kampf
 
 
 @campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])

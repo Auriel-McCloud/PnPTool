@@ -25,6 +25,7 @@ RETURN_FIELDS = """
     g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
+    g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
     g.zusatzaktionen AS zusatzaktionen,
@@ -227,6 +228,10 @@ def _decode(record: dict) -> dict:
     record["augmentWaffentyp"] = record.get("augmentWaffentyp") or ""
     record["augmentZielTyp"] = record.get("augmentZielTyp") or ""
     record["defekt"] = _or_default(record.get("defekt"), False)
+    # Beschwörungs-Ki-Tama (30.10.2026): Bestandsdaten kennen die Properties
+    # noch nicht -> leer/0, genau wie bei istAugment/augmentZielTyp oben.
+    record["beschworenerCritterId"] = record.get("beschworenerCritterId") or ""
+    record["beschwoerungsSchwierigkeit"] = _or_default(record.get("beschwoerungsSchwierigkeit"), 0)
     return record
 
 
@@ -265,6 +270,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istMaschinenteil: $istMaschinenteil, maschinenteilQualitaet: $maschinenteilQualitaet,
             upgradeSlots: $upgradeSlots, istAugment: $istAugment, augmentWaffentyp: $augmentWaffentyp,
             augmentZielTyp: $augmentZielTyp,
+            beschworenerCritterId: $beschworenerCritterId, beschwoerungsSchwierigkeit: $beschwoerungsSchwierigkeit,
             defekt: false,
             istEntwurf: $istEntwurf
         })
@@ -346,6 +352,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istAugment=bool(data.get("istAugment")),
             augmentWaffentyp=data.get("augmentWaffentyp") or "",
             augmentZielTyp=data.get("augmentZielTyp") or "",
+            beschworenerCritterId=data.get("beschworenerCritterId") or "",
+            beschwoerungsSchwierigkeit=int(data.get("beschwoerungsSchwierigkeit") or 0),
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             kiTamaFertigkeiten=json.dumps(data.get("kiTamaFertigkeiten") or {}),

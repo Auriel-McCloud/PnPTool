@@ -27,6 +27,7 @@ TEILNEHMER_FELDER = """
     t.notiz AS notiz, t.erledigt AS erledigt,
     t.zusatzzug AS zusatzzug, t.stammtId AS stammtId,
     t.ampel AS ampel, t.zusatzGenutzt AS zusatzGenutzt, t.setztAus AS setztAus,
+    t.rundenVerbleibend AS rundenVerbleibend,
     p.id AS personId, p.personType AS personType,
     b.id AS begleiterId
 """
@@ -48,6 +49,11 @@ def _decode(record: dict) -> dict:
     daten["zusatzGenutzt"] = int(daten.get("zusatzGenutzt") or 0)
     # Nach einem misslungenen Paralysewurf: naechste Runde aussetzen.
     daten["setztAus"] = bool(daten.get("setztAus"))
+    # Beschwörungs-Ki-Tama (30.10.2026): wie viele Runden dieser beschworene
+    # Critter noch mitkämpft, bevor er automatisch verschwindet. None = kein
+    # beschworener Teilnehmer, ganz normaler Teilnehmer ohne Zeitlimit.
+    roh_runden = daten.get("rundenVerbleibend")
+    daten["rundenVerbleibend"] = int(roh_runden) if roh_runden is not None else None
     return daten
 
 
@@ -354,7 +360,8 @@ async def teilnehmer_hinzu(campaign_id: str, daten: dict) -> dict | None:
                 id: $id, name: $name, initiative: $initiative,
                 kampfart: $kampfart, notiz: $notiz, erledigt: false,
                 zusatzzug: $zusatzzug, stammtId: $stammt_id,
-                ampel: 0, zusatzGenutzt: 0, setztAus: false
+                ampel: 0, zusatzGenutzt: 0, setztAus: false,
+                rundenVerbleibend: $runden_verbleibend
             })
             CREATE (k)-[:KAEMPFT]->(t)
             WITH t
@@ -374,6 +381,7 @@ async def teilnehmer_hinzu(campaign_id: str, daten: dict) -> dict | None:
             begleiter_id=daten.get("begleiterId"),
             zusatzzug=bool(daten.get("zusatzzug")),
             stammt_id=daten.get("stammtId"),
+            runden_verbleibend=daten.get("rundenVerbleibend"),
         )
     return await hole(campaign_id)
 
@@ -466,6 +474,10 @@ async def weiter(campaign_id: str) -> dict | None:
         # Wer in dieser Runde eine Zusatzaktion genutzt hat, kühlt nicht ab.
         genutzt = {t["stammtId"] for t in kampf["teilnehmer"] if t.get("zusatzzug") and t.get("stammtId")}
         await kuehle_alle_ab(campaign_id, genutzt)
+        # Beschwörungs-Ki-Tama (30.10.2026): Runden-Zähler aller beschworenen
+        # Critter tickt beim Rundenwechsel runter, wer bei 0 ankommt,
+        # verschwindet automatisch aus dem Tracker.
+        await tick_beschwoerungen(campaign_id)
         return await setze_am_zug(campaign_id, naechste_id, runde=kampf["runde"] + 1)
 
     return await setze_am_zug(campaign_id, naechste_id)
@@ -511,4 +523,31 @@ async def kuehle_alle_ab(campaign_id: str, ausser_ids: set[str]) -> None:
             """,
             campaign_id=campaign_id,
             ausser=list(ausser_ids),
+        )
+
+
+async def tick_beschwoerungen(campaign_id: str) -> None:
+    """Beschwörungs-Ki-Tama (30.10.2026): EIN Rundenwechsel = EIN Tick für
+    jeden beschworenen Critter im Kampf. Wer dabei bei 0 ankommt, verlässt
+    automatisch den Initiative-Tracker — Mark: "das Level der Beschwörung
+    gibt an, wie viele Runden der Critter am Kampf teilnimmt". Läuft wie
+    `kuehle_alle_ab` beim Rundenwechsel in `weiter()`, kein eigener Knopf.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer)
+            WHERE t.rundenVerbleibend IS NOT NULL AND t.rundenVerbleibend > 0
+            SET t.rundenVerbleibend = t.rundenVerbleibend - 1
+            """,
+            campaign_id=campaign_id,
+        )
+        await session.run(
+            """
+            MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer)
+            WHERE t.rundenVerbleibend = 0
+            DETACH DELETE t
+            """,
+            campaign_id=campaign_id,
         )

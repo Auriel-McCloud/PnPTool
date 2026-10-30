@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
-from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node, update_node
+from app.entities.repository import PERSON_FIELDS, critter_von_besitzer, drohne_rigger, get_node, update_node
 from app.ereignisprotokoll import hooks
 from app.kampf import repository as kampf_repository
 from app.kampf.hot import hot_anpassung, verbindung_bricht, werte_mit_hot
@@ -673,6 +673,25 @@ async def _bogen_fuer_person(campaign_id: str, person: dict, kampagnen_ep: int) 
     )
 
 
+async def _mit_gebundenen_crittern(campaign_id: str, person_ids: list[str]) -> list[str]:
+    """Erweitert eine Personen-Auswahl um alle an sie gebundenen Critter
+    (Beschwörungs-Ki-Tama-Pets, 30.10.2026) — Mark: "automatisch mit dem
+    Beschwörer mitrasten", kein eigener Rast-Pfad nötig. Dedupliziert, falls
+    ein Critter zufällig schon direkt mit ausgewählt wurde.
+    """
+    erweitert = list(person_ids)
+    for person_id in person_ids:
+        erweitert.extend(await critter_von_besitzer(campaign_id, person_id))
+    gesehen: set[str] = set()
+    eindeutig = []
+    for pid in erweitert:
+        if pid in gesehen:
+            continue
+        gesehen.add(pid)
+        eindeutig.append(pid)
+    return eindeutig
+
+
 @router.post("/personen/rasten", dependencies=[Depends(require_campaign_gm)])
 async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
     """SL-Aktion "Rasten": EIN Klick = EINE Rast pro ausgewählter Person.
@@ -693,11 +712,15 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
     das man vergisst anzulegen. Gilt bewusst NUR für `istNatuerlich`; normale
     Rüstung bleibt im Mitgeführten liegen und braucht weiter den regulären
     Reparaturweg.
+
+    Beschwörungs-Ki-Tama-Pets (30.10.2026) rasten automatisch mit, sobald ihr
+    Beschwörer ausgewählt ist (`_mit_gebundenen_crittern`) — kein eigener
+    Klick nötig.
     """
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     ergebnisse: dict[str, dict] = {}
-    for person_id in body.personIds:
+    for person_id in await _mit_gebundenen_crittern(campaign_id, body.personIds):
         person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
         if person is None:
             continue
@@ -736,11 +759,14 @@ async def personen_vollstaendige_heilung(campaign_id: str, body: RastInput) -> d
     auch dann, wenn sie wegen Zerstörung gerade im Mitgeführten liegt —
     danach automatisch wieder ausgerüstet. Normale Rüstung bleibt dagegen
     bewusst nur erfasst, solange sie ausgerüstet ist.
+
+    Beschwörungs-Ki-Tama-Pets (30.10.2026) heilen automatisch mit, sobald ihr
+    Beschwörer ausgewählt ist, siehe `_mit_gebundenen_crittern`.
     """
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     ergebnisse: dict[str, dict] = {}
-    for person_id in body.personIds:
+    for person_id in await _mit_gebundenen_crittern(campaign_id, body.personIds):
         person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
         if person is None:
             continue

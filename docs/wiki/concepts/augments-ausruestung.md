@@ -480,9 +480,53 @@ so lange mitkämpft.
 **Plus Schwierigkeitsgrad:** die SL legt beim **Anlegen** der Beschwörungs-
 Materia (nicht pro Wurf) einen festen Aufschlag von **+0/+1/+2** auf die
 benötigten Erfolge fest, damit besonders starke Beschwörungen nicht
-automatisch so leicht sind wie schwache. Noch offen: ob der Aufschlag ein
-neues Zahlenfeld am Gegenstand wird (z.B. `beschwoerungsSchwierigkeit: int`)
-oder anders modelliert wird — Datenmodell dafür noch nicht gebaut.
+automatisch so leicht sind wie schwache.
+
+**Datenmodell + Backend — GEBAUT (30.10.2026, Rename Materia→Ki-Tama siehe
+oben im Dokument, dieselbe Umbenennung gilt hier):** fünf weitere offene
+Fragen mit Mark geklärt, bevor etwas gebaut wurde:
+
+- **Critter-Bindung:** fest gebunden (EIN persistenter Critter-Person-Knoten
+  pro Ki-Tama, kein Template), wächst/heilt wie ein Pet — wiederverwendet
+  das schon bestehende `entities/repository.py::critter_besitzer_setzen`
+  (`BEGLEITET`-Kante) 1:1, keine neue Bindungsmechanik nötig.
+- **Beschwörungswert:** KEIN eigenes Zahlenfeld — einfach die höchste als
+  Ki-Tama markierte `ausruestungsfertigkeiten`-Stufe auf dem Gegenstand
+  (`items/beschwoerung.py::beschwoerungsstufe`), wandert beim EP-Hochleveln
+  (dem schon gebauten Ki-Tama-Mechanismus) automatisch mit.
+- **Schwierigkeitsgrad:** neues Feld `Gegenstand.beschwoerungsSchwierigkeit:
+  int` (0-2, kein hartes Cap).
+- **Critter-Link:** neues Feld `Gegenstand.beschworenerCritterId: str`.
+- **Runden-Zähler:** neuer einfacher Zähler `KampfTeilnehmer.rundenVerbleibend`
+  (NICHT die Hot-Ampel oder das Zusatzaktionen-Sentinel-Muster wiederverwendet
+  — beides passte nicht: hier zählt die Stufe schlicht Runden runter). Tickt
+  bei jedem `kampf/repository.py::weiter()`-Rundenwechsel runter
+  (`tick_beschwoerungen`), bei 0 verschwindet der Teilnehmer automatisch.
+- **Initiative:** eigene Zeile im Tracker (kein Hot-Drohne-Slot-Sharing),
+  Spieler trägt die Initiative selbst ein — UND Mark, 30.10.2026 wörtlich:
+  "wir müssen bevor man die initiative eingibt noch die probe im kampf menü
+  einbauen" — die Probe ist ein GATE, kein Teilnehmer ohne genug Erfolge.
+- **Rasten:** automatisch mit dem Beschwörer (kein extra Klick), siehe
+  `entities/repository.py::critter_von_besitzer` +
+  `traits/routes.py::_mit_gebundenen_crittern`.
+
+Neue player-triggerbare Route `POST .../gegenstaende/{item_id}/beschwoeren`
+(`items/routes.py::beschwoeren`, kein SL-Klick nötig wie beim Ki-Tama-
+Steigern): nimmt `erfolge`+`initiative`+`kampfart` entgegen, prüft die Probe
+serverseitig gegen `benoetigte_erfolge`, fügt bei Erfolg den gebundenen
+Critter über `kampf_repository.teilnehmer_hinzu` mit
+`rundenVerbleibend=Stufe` in den laufenden Kampf ein. 404, wenn kein Kampf
+läuft — die SL muss zuerst einen starten.
+
+**Verifiziert:** `test_beschwoerung.py` (8 Tests, reine Formel-Funktionen),
+volle Backend-Suite ohne Regression (55 vorbestehende Fehlschläge
+unverändert, gegen `git stash` auf `main` verglichen), `npx tsc -b` sauber.
+
+**Bewusst NICHT gebaut (nächster Schritt):** die komplette Frontend-Seite —
+kein Popup zum Beschwören im Kampf-Menü, keine Möglichkeit für die SL, im
+Umbauen-Formular einen Critter als `beschworenerCritterId` zu verknüpfen,
+keine Anzeige von `rundenVerbleibend` im Initiative-Tracker. Rein
+Backend-Fundament, noch kein Klicktest möglich.
 
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 

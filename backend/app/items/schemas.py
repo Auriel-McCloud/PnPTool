@@ -187,6 +187,13 @@ class GegenstandCreate(BaseModel):
     # vom Endboss) weiter, kommt die hochgelevelte Stufe automatisch mit,
     # ganz ohne eigene Logik dafür.
     kiTamaFertigkeiten: dict[str, bool] = {}
+    # Beschwörungs-Ki-Tama (30.10.2026): Link auf den fest gebundenen
+    # Critter-Person-Knoten (persistentes Pet) — siehe GegenstandResponse
+    # unten für die volle Begründung. Leer = kein Beschwörungs-Ki-Tama.
+    beschworenerCritterId: str = ""
+    # SL-Schwierigkeitsgrad (0-2), additiv auf die benötigten Erfolge der
+    # Beschwörungs-Probe.
+    beschwoerungsSchwierigkeit: int = 0
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -356,6 +363,8 @@ class GegenstandUpdate(BaseModel):
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
     kiTamaFertigkeiten: dict[str, bool] | None = None
+    beschworenerCritterId: str | None = None
+    beschwoerungsSchwierigkeit: int | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -461,7 +470,22 @@ class GegenstandResponse(BaseModel):
     zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
     kiTamaFertigkeiten: dict[str, bool] = {}
-    # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
+    # Beschwörungs-Ki-Tama (30.10.2026, Marks Idee direkt im Anschluss ans
+    # Ki-Tama-Feature, siehe docs/wiki/concepts/augments-ausruestung.md):
+    # Link auf den fest ans Ki-Tama gebundenen Critter-Person-Knoten
+    # (persistentes Pet, heilt beim Rasten mit). Leer = kein Beschwörungs-
+    # Ki-Tama, ganz normales Ki-Tama/Upgrade-Material. Der Beschwörungswert
+    # selbst ist KEIN eigenes Feld — er ist einfach die höchste als Ki-Tama
+    # markierte ausruestungsfertigkeiten-Stufe auf diesem Gegenstand
+    # (items/beschwoerung.py::beschwoerungsstufe), wandert also beim
+    # EP-Hochleveln automatisch mit.
+    beschworenerCritterId: str = ""
+    # SL-Schwierigkeitsgrad beim ANLEGEN (nicht pro Wurf), additiv auf die
+    # benötigten Erfolge der Beschwörungs-Probe (Beschwörungswert ÷ 2
+    # aufgerundet) — Mark: "damit besonders starke Beschwörungen nicht
+    # automatisch so leicht sind wie schwache". 0-2 vorgesehen, kein hartes
+    # Enum-Cap (wer mehr einträgt, hat's sich selbst zuzuschreiben).
+    beschwoerungsSchwierigkeit: int = 0
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in
     # der Mülleimer-Liste; zählt weder Gewicht noch Boni.
     weggeworfen: bool = False

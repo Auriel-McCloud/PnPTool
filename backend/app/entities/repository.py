@@ -596,6 +596,24 @@ async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: 
         return dict(record) if record else None
 
 
+async def critter_von_besitzer(campaign_id: str, person_id: str) -> list[str]:
+    """IDs aller Critter, die über eine `BEGLEITET`-Kante an diese Person
+    gebunden sind — fürs automatische Mitrasten eines Beschwörungs-Ki-Tama-
+    Pets (Mark, 30.10.2026: "automatisch mit dem Beschwörer mitrasten", kein
+    extra Klick nötig). Meist genau einer, aber nicht hart gedeckelt — wer
+    mehrere Beschwörungs-Ki-Tamas besitzt, darf auch mehrere gebundene
+    Critter haben.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p:Person {id: $person_id})
+        RETURN n.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [r["id"] async for r in result]
+
+
 async def list_drohnen(campaign_id: str) -> list[dict]:
     """Alle Drohnen/Fahrzeuge (Person mit istDrohne ODER istFahrzeug) samt Rigger.
 

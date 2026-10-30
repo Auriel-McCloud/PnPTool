@@ -4,6 +4,32 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Beschwörungs-Ki-Tama: Backend-Fundament für beschwörbare Critter**
+  (30.10.2026, Marks FF7-Idee vom Vortag, siehe docs/wiki/concepts/
+  augments-ausruestung.md Abschnitt "Beschwörungs-Materia"). Fünf
+  Datenmodell-Fragen vorab geklärt: Critter fest gebunden (persistentes
+  Pet, wiederverwendet `critter_besitzer_setzen`), Beschwörungswert = höchste
+  als Ki-Tama markierte Fertigkeitsstufe (kein eigenes Feld), neuer einfacher
+  Runden-Zähler (nicht Hot-Ampel/Zusatzaktionen-Muster), eigene
+  Initiative-Zeile statt Hot-Drohne-Slot-Sharing, automatisches Mitrasten.
+  Mark, wörtlich zur Reihenfolge: "wir müssen bevor man die initiative
+  eingibt noch die probe im kampf menü einbauen" — die Probe ist ein Gate.
+  **Neu:** `Gegenstand.beschworenerCritterId`/`beschwoerungsSchwierigkeit`
+  (schemas/repository/routes), `items/beschwoerung.py` (reine Formel:
+  `beschwoerungsstufe`, `benoetigte_erfolge`), `KampfTeilnehmer.
+  rundenVerbleibend` + `kampf/repository.py::tick_beschwoerungen` (tickt bei
+  jedem `weiter()`-Rundenwechsel runter, entfernt bei 0), neue Spieler-Route
+  `POST .../gegenstaende/{item_id}/beschwoeren` (Probe-Gate + fügt Critter
+  in den laufenden Kampf ein), `entities/repository.py::
+  critter_von_besitzer` + `traits/routes.py::_mit_gebundenen_crittern`
+  (automatisches Mitrasten in beiden Rast-Routen). **Verifiziert:**
+  `test_beschwoerung.py` (8 Tests), volle Backend-Suite ohne Regression (55
+  vorbestehende Fehlschläge unverändert), `npx tsc -b` sauber. **Bewusst
+  NICHT gebaut:** die komplette Frontend-Seite (kein Beschwören-Popup im
+  Kampf-Menü, keine Critter-Verknüpfung im Umbauen-Formular, keine
+  rundenVerbleibend-Anzeige im Tracker) — reines Backend-Fundament, als
+  nächstes dran.
+
 - **Materia umbenannt zu "Ki-Tama" + eigene Item-Kategorie** (30.10.2026,
   Mark: "wir nennen es Ki-Tama, tama aus dem Japanischen für Perle, und Ki
   wegen den KI-Kristallen"). Komplettes Rename des 29.10.2026-Features

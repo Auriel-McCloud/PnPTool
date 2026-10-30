@@ -64,6 +64,9 @@ class TeilnehmerResponse(BaseModel):
     ampel: int = 0
     zusatzGenutzt: int = 0
     setztAus: bool = False
+    # Beschwörungs-Ki-Tama (30.10.2026): Runden bis der beschworene Critter
+    # automatisch den Tracker verlässt. None = kein beschworener Teilnehmer.
+    rundenVerbleibend: int | None = None
     # Entscheidet die Reihenfolge bei Gleichstand (Zeile 58). Kein Enum, damit
     # sich weitere Arten ergänzen lassen, ohne das Schema anzufassen.
     kampfart: str
@@ -96,6 +99,9 @@ class TeilnehmerUpdate(BaseModel):
     kampfart: str | None = None
     notiz: str | None = None
     erledigt: bool | None = None
+    # Manuelle SL-Korrektur des Beschwörungs-Zählers (z.B. ein Zauber
+    # verlängert die Bindung).
+    rundenVerbleibend: int | None = None
 
 
 class AmZugInput(BaseModel):
