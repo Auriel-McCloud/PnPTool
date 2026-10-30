@@ -117,6 +117,11 @@ export function Kampfkarte({
   // Kompakt-Kopfzeile (Drohnen-Steckbrief): eingeklappt zeigt nur TN/TS/A/P/I
   // in Kurzform, Antippen klappt den Rest auf wie gehabt.
   const [aufgeklappt, setAufgeklappt] = useState(!kompaktStart);
+  // Kampf/Cyberkampf-Umschalter (Mark, 30.10.2026): bei einem Decker kommen
+  // sonst Nahkampf-Würfel UND Cyberdeck-Werte untereinander — genau das
+  // zwang zum Scrollen vorbei an Gesundheit/Rüstung/Willenskraft. Nur einer
+  // der beiden Blöcke ist gleichzeitig sichtbar, umschaltbar per Knopf.
+  const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -155,6 +160,10 @@ export function Kampfkarte({
   // klein, kann aber drauf klicken und sieht es dann ausgeschrieben und
   // schöner" — dieselben Zahlen wie unten, nur knapp beschriftet.
   const kompaktWerte = kampfKurz(bogen, ruestung);
+  // Der Umschalter erscheint nur, wenn überhaupt ein Cyberdeck ausgerüstet
+  // ist — sonst gibt es nichts zum Umschalten, und die Karte bleibt wie
+  // gehabt (ein Block, keine Knöpfe).
+  const hatDeck = Object.keys(bogen.deckBoni ?? {}).length > 0;
 
   return (
     <div className="kk-karte">
@@ -263,80 +272,125 @@ export function Kampfkarte({
 
       {/* --- Was man würfelt -------------------------------------------- */}
       <section className="kk-block">
-        <h3>Würfeln</h3>
-        <div className="kk-werte">
-          {KAMPFFERTIGKEITEN.map((name) => {
-            const f = wert(bogen, name) + ausruestungsBonus(bogen, name);
-            if (f === 0 && name !== "Nahkampf") return null;
-            return <Zahl key={name} titel={`Treffen · ${name}`} wert={geschickEffektiv + f} wuerfel />;
-          })}
-          <Zahl
-            titel="Ausweichen"
-            wert={geschickEffektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit")}
-            hinweis="Geschicklichkeit + Sportlichkeit, plus Ausrüstung. Jeder weitere Einsatz in derselben Runde: −1."
-            wuerfel
-          />
-          <Zahl
-            titel="Parieren"
-            wert={treffenPool("Nahkampf")}
-            hinweis="Geschicklichkeit + Nahkampf, plus Ausrüstung. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
-            wuerfel
-          />
+        <div className="kk-block-kopf">
+          <h3>{hatDeck && kampfModus === "cyberkampf" ? "Cyberdeck" : "Würfeln"}</h3>
+          {hatDeck && (
+            <div className="kk-modus-schalter">
+              <button
+                type="button"
+                className="kk-modus-knopf"
+                data-aktiv={kampfModus === "kampf"}
+                onClick={() => setKampfModus("kampf")}
+              >
+                Kampf
+              </button>
+              <button
+                type="button"
+                className="kk-modus-knopf"
+                data-aktiv={kampfModus === "cyberkampf"}
+                onClick={() => setKampfModus("cyberkampf")}
+              >
+                Cyberkampf
+              </button>
+            </div>
+          )}
         </div>
+        {kampfModus === "kampf" && (
+          <div className="kk-werte">
+            {KAMPFFERTIGKEITEN.map((name) => {
+              const f = wert(bogen, name) + ausruestungsBonus(bogen, name);
+              if (f === 0 && name !== "Nahkampf") return null;
+              return <Zahl key={name} titel={`Treffen · ${name}`} wert={geschickEffektiv + f} wuerfel />;
+            })}
+            <Zahl
+              titel="Ausweichen"
+              wert={geschickEffektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit")}
+              hinweis="Geschicklichkeit + Sportlichkeit, plus Ausrüstung. Jeder weitere Einsatz in derselben Runde: −1."
+              wuerfel
+            />
+            <Zahl
+              titel="Parieren"
+              wert={treffenPool("Nahkampf")}
+              hinweis="Geschicklichkeit + Nahkampf, plus Ausrüstung. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
+              wuerfel
+            />
+          </div>
+        )}
+        {hatDeck && kampfModus === "cyberkampf" && (
+          <div className="kk-werte">
+            {Object.entries(bogen.deckBoni).map(([name, w]) => (
+              <Zahl
+                key={name}
+                titel={name}
+                // Pool wie überall sonst: Deck-Wert + Matrix-Fertigkeit —
+                // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
+                // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
+                wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
+                hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
+                wuerfel
+                onKlick={() => setProbe({ name, wert: w, kategorie: "Cyberdeck" })}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* --- Rüstung und Waffen ----------------------------------------- */}
-      <section className="kk-block">
-        <h3>Schutz und Schaden</h3>
-        <div className="kk-werte">
-          {ruestung > 0 && (
-            <Zahl
-              titel="Rüstungsbonus"
-              wert={ruestung}
-              hinweis="Antippen: wie Schaden abgefangen wird (alter, flacher Bonus)"
-              onKlick={() => setErklaertRuestung(true)}
-            />
+      {/* Im Cyberkampf-Modus ausgeblendet (Mark, 30.10.2026): wer gerade im
+          Deck steckt, braucht die Waffenliste nicht — weniger zu scrollen. */}
+      {(!hatDeck || kampfModus === "kampf") && (
+        <section className="kk-block">
+          <h3>Schutz und Schaden</h3>
+          <div className="kk-werte">
+            {ruestung > 0 && (
+              <Zahl
+                titel="Rüstungsbonus"
+                wert={ruestung}
+                hinweis="Antippen: wie Schaden abgefangen wird (alter, flacher Bonus)"
+                onKlick={() => setErklaertRuestung(true)}
+              />
+            )}
+          </div>
+          {/* Dieselbe Rüstungsübersicht wie im Charakterblatt steht jetzt oben
+              zwischen Gesundheit und Willenskraft, nicht mehr hier. */}
+          {/* Auch ohne Rüstung sinnvoll: dann kommt der Treffer eben ungebremst
+              an, und die Rechnung "was geht an die Gesundheit" spart man sich
+              trotzdem. */}
+          {aenderbar && (
+            <button type="button" onClick={() => setTrefferOffen(true)} style={{ marginTop: 6 }}>
+              ⚡ Treffer eintragen
+            </button>
           )}
-        </div>
-        {/* Dieselbe Rüstungsübersicht wie im Charakterblatt steht jetzt oben
-            zwischen Gesundheit und Willenskraft, nicht mehr hier. */}
-        {/* Auch ohne Rüstung sinnvoll: dann kommt der Treffer eben ungebremst
-            an, und die Rechnung "was geht an die Gesundheit" spart man sich
-            trotzdem. */}
-        {aenderbar && (
-          <button type="button" onClick={() => setTrefferOffen(true)} style={{ marginTop: 6 }}>
-            ⚡ Treffer eintragen
-          </button>
-        )}
-        {waffen.length === 0 ? (
-          <p className="kk-leer">Nichts ausgerüstet.</p>
-        ) : (
-          <ul className="kk-waffen">
-            {waffen.map((w) => {
-              const skill = kampfFertigkeitLesen(w.kampfFertigkeit);
-              const schaden = waffenSchaden(w);
-              return (
-                <li key={w.id}>
-                  <span className="kk-waffe-name">{w.name}</span>
-                  {skill && (
-                    <span
-                      className="kk-waffe-pool"
-                      title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
-                    >
-                      {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
-                      <WuerfelZehn groesse={14} />
+          {waffen.length === 0 ? (
+            <p className="kk-leer">Nichts ausgerüstet.</p>
+          ) : (
+            <ul className="kk-waffen">
+              {waffen.map((w) => {
+                const skill = kampfFertigkeitLesen(w.kampfFertigkeit);
+                const schaden = waffenSchaden(w);
+                return (
+                  <li key={w.id}>
+                    <span className="kk-waffe-name">{w.name}</span>
+                    {skill && (
+                      <span
+                        className="kk-waffe-pool"
+                        title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
+                      >
+                        {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
+                        <WuerfelZehn groesse={14} />
+                      </span>
+                    )}
+                    <span className="kk-waffe-schaden">
+                      Schaden {schaden}
+                      <em>+ Nettoerfolge</em>
                     </span>
-                  )}
-                  <span className="kk-waffe-schaden">
-                    Schaden {schaden}
-                    <em>+ Nettoerfolge</em>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
       {/* --- Was diesen Charakter besonders macht ------------------------ */}
       {u.weg === "MAGIER" && (
@@ -385,27 +439,6 @@ export function Kampfkarte({
                   />
                 );
               })}
-          </div>
-        </section>
-      )}
-
-      {Object.keys(bogen.deckBoni ?? {}).length > 0 && (
-        <section className="kk-block">
-          <h3>Cyberdeck</h3>
-          <div className="kk-werte">
-            {Object.entries(bogen.deckBoni).map(([name, w]) => (
-              <Zahl
-                key={name}
-                titel={name}
-                // Pool wie überall sonst: Deck-Wert + Matrix-Fertigkeit —
-                // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
-                // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
-                wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
-                hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
-                wuerfel
-                onKlick={() => setProbe({ name, wert: w, kategorie: "Cyberdeck" })}
-              />
-            ))}
           </div>
         </section>
       )}

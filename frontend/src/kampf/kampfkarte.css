@@ -69,6 +69,45 @@
   margin: 0 0 8px;
 }
 
+/* Würfeln/Cyberdeck-Kopfzeile mit Umschalter (30.10.2026): Überschrift und
+   die beiden Modus-Knöpfe nebeneinander, bei schmalem Bildschirm
+   untereinander. */
+.kk-block-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kk-block-kopf h3 {
+  margin: 0;
+}
+
+.kk-modus-schalter {
+  display: flex;
+  gap: 4px;
+}
+
+.kk-modus-knopf {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  color: var(--text-leise);
+}
+
+.kk-modus-knopf[data-aktiv="true"] {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: var(--neon-schwach);
+}
+
 .kk-werte {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));

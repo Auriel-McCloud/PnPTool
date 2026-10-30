@@ -222,6 +222,22 @@
   border-top: 1px solid var(--linie);
 }
 
+/* Gesundheit, Rüstung und Willenskraft bleiben beim Scrollen stehen (Mark,
+   30.10.2026): gerade mit Cyberdeck wächst "Deine Werte" so, dass man sonst
+   an den wichtigsten Zahlen vorbeischieben muss, um an Würfeln/Cyberdeck zu
+   kommen. Nur hier gesetzt (eigener Charakter), nicht in Kampfkarte.tsx
+   selbst — die Drohnen-Steckbriefe öffnen in einem Fenster-Popup mit
+   anderem Hintergrund, dort würde die feste Fläche einen Farbbruch zeigen. */
+.ka-eigene .kk-zustand {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--grund);
+  padding-top: 2px;
+  margin-top: -2px;
+}
+
+
 /* Eigene aktive Drohnen/Fahrzeuge im Kampf (26.10.2026) — Name + Gesundheit,
    Self-Service-Beitritt für die noch nicht teilnehmenden. */
 .ka-drohnen {

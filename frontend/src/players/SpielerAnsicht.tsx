@@ -180,6 +180,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Initiativliste auf die eigene Zahl klicken — der Rigger auch für sie.
   const [eigeneDrohnenIds, setEigeneDrohnenIds] = useState<string[]>([]);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  // Die eigene Zeile in der laufenden Initiative — fürs Antippen der
+  // Initiative-Zahl direkt auf der eigenen Kampfkarte (Mark, 30.10.2026:
+  // "das hätte ich auch gerne für den spieler selbst", bisher nur für
+  // Drohnen gebaut). Dieselbe Teilnehmer-Zeile wie in der Initiativliste.
+  const eigeneTeilnahme = kampf?.teilnehmer.find((t) => t.personId === ich?.personId) ?? null;
   // Beschwörungs-Ki-Tama (30.10.2026): eigene Ki-Tama-Gegenstände mit
   // verknüpftem Critter — anders als bei Drohnen reicht das schon geladene
   // `sachen`, kein eigener Ladevorgang nötig.
@@ -629,7 +634,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                   <h3 className="gg-abschnitt">
                     <span>⚔ Deine Werte</span>
                   </h3>
-                  <Kampfkarte campaignId={ich.campaignId} personId={ich.personId} aenderbar />
+                  <Kampfkarte
+                    campaignId={ich.campaignId}
+                    personId={ich.personId}
+                    aenderbar
+                    onInitiativeKlick={eigeneTeilnahme ? () => setInitiativeZiel(eigeneTeilnahme) : undefined}
+                  />
                 </div>
               )}
               {ich.personId && (
