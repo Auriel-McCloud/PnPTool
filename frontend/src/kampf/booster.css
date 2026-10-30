@@ -123,17 +123,25 @@
 
 /* --- Beschwörungs-Probe: Critter-Bild ---------------------------------
    Mark, 30.10.2026 nach dem Praxistest: das alte .bg-bild (object-fit:
-   cover, 220px) schnitt hochformatige Critter-Bilder oben/unten ab — hier
-   soll das GANZE Bild sichtbar bleiben, notfalls mit Rand statt Beschnitt. */
+   cover, 220px) schnitt hochformatige Critter-Bilder oben/unten ab.
+   Zweite Runde (Mark, 30.10.2026): "immer noch zu groß für den Rahmen" —
+   `width: 100%` zwang die Breite fest, wodurch hochformatige Bilder trotz
+   `object-fit: contain` die max-height sprengen konnten (das Fenster wuchs
+   mit). Jetzt `max-width`/`max-height` statt fester Breite: der Browser
+   skaliert das Bild proportional, bis BEIDE Grenzen eingehalten sind —
+   es kann also gar nicht mehr größer als der Rahmen werden, auf keinem
+   Gerät (`vh`-Anteil statt fixem Pixelwert). */
 .bo-critter-bild {
   display: block;
-  width: 100%;
-  max-height: 320px;
+  max-width: 100%;
+  max-height: min(38vh, 280px);
+  width: auto;
+  height: auto;
+  margin: 0 auto 14px;
   object-fit: contain;
   background: var(--flaeche-hoch);
   border-radius: var(--radius);
   border: 1px solid var(--linie);
-  margin-bottom: 14px;
 }
 
 
