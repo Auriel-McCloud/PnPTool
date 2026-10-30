@@ -4,6 +4,27 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Kampfkarte: Initiative-Klick für den eigenen Charakter, Kampf/Cyberkampf-
+  Umschalter, fixierte Vitalwerte** (30.10.2026, Mark testet gerade den
+  Decker). Initiative-Zahl in `Kampfkarte.tsx` war bisher nur bei
+  Drohnen-Steckbriefen antippbar (`onInitiativeKlick`) — `SpielerAnsicht.tsx`
+  sucht jetzt die eigene Teilnehmer-Zeile (`kampf.teilnehmer.find(personId
+  === ich.personId)`) und reicht sie genauso durch, öffnet dasselbe
+  `InitiativeSetzen`-Popup, das für Drohnen/Beschwörungen schon lief.
+  Zweitens: ein Decker musste in "Deine Werte" an Gesundheit/Rüstung/
+  Willenskraft vorbeischieben, um an die Cyberdeck-Werte zu kommen — jetzt
+  zeigt die Überschrift "Würfeln" bei vorhandenem `deckBoni` zwei
+  Umschalt-Knöpfe ("Kampf"/"Cyberkampf", State `kampfModus`), die zwischen
+  Nahkampf-Würfeln+Waffenliste und den Cyberdeck-Pools hin- und herschalten
+  — nur einer der beiden Blöcke ist je sichtbar. Drittens: `.kk-zustand`
+  (Gesundheit/Rüstung/Willenskraft) ist in der eigenen Ansicht jetzt
+  `position: sticky` innerhalb von `.ka-eigene` (CSS-Regel gezielt auf
+  `.ka-eigene .kk-zustand`, NICHT global in `kampfkarte.css` — die
+  Drohnen-Steckbriefe öffnen in einem Fenster-Popup mit anderem Hintergrund,
+  dort hätte eine globale Regel einen Farbbruch gezeigt). **Verifiziert:**
+  `npx tsc --noEmit` sauber. **Noch nicht am Spieltisch getestet** — Mark
+  entscheidet nach dem Praxistest, ob Optik/Platzierung so passt.
+
 - **Ki-Tama-Kachel: eigenes Bild statt Emoji, Verbrauchsgegenstand-Umbruch**
   (30.10.2026, Mark testete erstmals und fand: Ki-Tama fehlte ihm in der
   Typ-Auswahl beim Anlegen — Ursache war simpler als gedacht: **nichts war
