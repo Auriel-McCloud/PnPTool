@@ -66,6 +66,10 @@ _ART_ALIAS = {
     "aggraviert": "aggraviert",
     "unheilbar": "aggraviert",
     "schwerheilbar": "aggraviert",
+    # Elementar (30.10.2026, Ki-Tama-Attacken): löst sich erst beim Treffer
+    # auf (Effektivitäts-Abfrage), siehe items/schemas.py::SchadenArt.
+    "elementar": "elementar",
+    "element": "elementar",
 }
 
 

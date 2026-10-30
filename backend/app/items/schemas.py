@@ -5,8 +5,14 @@ from pydantic import BaseModel
 
 # Dieselben drei Arten wie im Treffer-Dialog und auf dem Blatt
 # (kampf/ruestung.py::SCHADENSARTEN). Am Tisch: Schlag / Tödlich / Schwerheilbar.
-# Leer = noch nicht gesetzt — Bestandsdaten raten wir nicht.
-SchadenArt = Literal["", "schlag", "schwer", "aggraviert"]
+# Leer = noch nicht gesetzt — Bestandsdaten raten wir nicht. "elementar"
+# (30.10.2026, Marks Ki-Tama-Attacken-Idee): löst sich NICHT selbst auf — beim
+# Eintragen eines Treffers (RuestungsTreffer.tsx) fragt das Tool zusätzlich
+# die Effektivität ab (sehr/normal/nicht effektiv gegen das Ziel) und bildet
+# erst daraus eine der drei "echten" Schadensarten unten. kampf/ruestung.py
+# kennt "elementar" deshalb bewusst NICHT — es rechnet immer nur mit einer der
+# drei physischen Arten.
+SchadenArt = Literal["", "schlag", "schwer", "aggraviert", "elementar"]
 
 # Leer = noch nicht markiert. Schusswaffen ist Fernkampf (Geschick + Skill).
 KampfFertigkeit = Literal["", "Schusswaffen", "Nahkampf", "Handgemenge"]
@@ -187,6 +193,20 @@ class GegenstandCreate(BaseModel):
     # vom Endboss) weiter, kommt die hochgelevelte Stufe automatisch mit,
     # ganz ohne eigene Logik dafür.
     kiTamaFertigkeiten: dict[str, bool] = {}
+    # Attacken-Fertigkeiten (30.10.2026, Marks Idee direkt im Anschluss ans
+    # Ki-Tama-Feature): markiert, welche der obigen ausruestungsfertigkeiten
+    # ZUSÄTZLICH ein Kampfangriff sind — unabhängig von kiTamaFertigkeiten
+    # oben (eine Fertigkeit kann Attacke, Ki-Tama, beides oder keins von
+    # beidem sein). Erscheint dann in der Kampfkarte wie eine Waffe. Name ->
+    # true, genau dasselbe Schlüssel-Muster wie kiTamaFertigkeiten.
+    attackenFertigkeiten: dict[str, bool] = {}
+    # Schadensart je Attacken-Fertigkeit (nur relevant, wenn der Name auch in
+    # attackenFertigkeiten steht). KEIN eigener Schadenswert: Mark, 30.10.2026
+    # — "der Schaden sind die Erfolge die übrig bleiben", also exakt wie bei
+    # Waffen die Nettoerfolge des Wurfs, nie ein fixer Bonus. Default beim
+    # Setzen des Häkchens ist "schwer" (Tödlich), dieselbe Konvention wie
+    # SCHADEN_ART_DEFAULT bei Waffen.
+    attackenSchadensart: dict[str, SchadenArt] = {}
     # Beschwörungs-Ki-Tama (30.10.2026): Link auf den fest gebundenen
     # Critter-Person-Knoten (persistentes Pet) — siehe GegenstandResponse
     # unten für die volle Begründung. Leer = kein Beschwörungs-Ki-Tama.
@@ -363,6 +383,8 @@ class GegenstandUpdate(BaseModel):
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
     kiTamaFertigkeiten: dict[str, bool] | None = None
+    attackenFertigkeiten: dict[str, bool] | None = None
+    attackenSchadensart: dict[str, SchadenArt] | None = None
     beschworenerCritterId: str | None = None
     beschwoerungsSchwierigkeit: int | None = None
     bildUrl: str | None = None
@@ -470,6 +492,9 @@ class GegenstandResponse(BaseModel):
     zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
     kiTamaFertigkeiten: dict[str, bool] = {}
+    # Siehe GegenstandCreate für die volle Begründung.
+    attackenFertigkeiten: dict[str, bool] = {}
+    attackenSchadensart: dict[str, SchadenArt] = {}
     # Beschwörungs-Ki-Tama (30.10.2026, Marks Idee direkt im Anschluss ans
     # Ki-Tama-Feature, siehe docs/wiki/concepts/augments-ausruestung.md):
     # Link auf den fest ans Ki-Tama gebundenen Critter-Person-Knoten

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
-import { itemsApi, KAMPF_FERTIGKEIT_LABEL, kampfFertigkeitLesen, type GegenstandMitBesitzer } from "../items/api";
+import { itemsApi, KAMPF_FERTIGKEIT_LABEL, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, type GegenstandMitBesitzer } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { RuestungsTreffer } from "./RuestungsTreffer";
 import { Kaestchen } from "../traits/Kaestchen";
@@ -143,6 +143,22 @@ export function Kampfkarte({
   const ruestungsteile = ausgeruestet.filter((g) => g.typ === "Rüstung");
   const ruestung = ruestungsteile.reduce((summe, g) => summe + g.kraft, 0);
   const fahrzeuge = sachen.filter((g) => g.typ === "Fahrzeug" || g.typ === "Drohne");
+  // Ki-Tama-Attacken (30.10.2026, Marks Idee): ausruestungsfertigkeiten, die
+  // als "Attacke" markiert sind, erscheinen zusätzlich zu den Waffen oben —
+  // mit eigener Formel. KEIN Ausrüstungsbonus und KEINE Geschicklichkeit wie
+  // bei Waffen: Mark, 30.10.2026 — "genau Intelligenz + Fertigkeitswert,
+  // keine weiteren Boni". Schaden ist bewusst kein fixer Wert, sondern wie
+  // bei Waffen die Nettoerfolge — siehe items/schemas.py::attackenFertigkeiten.
+  const attacken = ausgeruestet.flatMap((g) =>
+    Object.entries(g.ausruestungsfertigkeiten || {})
+      .filter(([name]) => g.attackenFertigkeiten?.[name])
+      .map(([name, w]) => ({
+        key: `${g.id}:${name}`,
+        name: Object.keys(g.ausruestungsfertigkeiten).length > 1 ? `${name} (${g.name})` : name,
+        wert: Number(w) || 0,
+        schadenArt: schadenArtFuerWaffe(g.attackenSchadensart?.[name]),
+      })),
+  );
 
   if (!bogen) return <p style={{ color: "var(--text-leise)" }}>Lade Kampfwerte…</p>;
 
@@ -151,6 +167,9 @@ export function Kampfkarte({
   const abzug = geschickAbzug(ruestung);
   const geschickEffektiv = Math.max(0, geschick - abzug);
   const treffenPool = (skill: string) => geschickEffektiv + wert(bogen, skill) + ausruestungsBonus(bogen, skill);
+  // Intelligenz-Attribut ohne jeden weiteren Bonus — Ki-Tama-Attacken rechnen
+  // bewusst anders als Waffen (keine Ausrüstungsboni, kein Rüstungsabzug).
+  const intelligenz = wert(bogen, "Intelligenz");
   // Was noch da ist — verbrauchte Willenskraft steht für Zauber nicht mehr
   // zur Verfügung.
   const uebrigeWillenskraft = Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht);
@@ -361,7 +380,7 @@ export function Kampfkarte({
               ⚡ Treffer eintragen
             </button>
           )}
-          {waffen.length === 0 ? (
+          {waffen.length === 0 && attacken.length === 0 ? (
             <p className="kk-leer">Nichts ausgerüstet.</p>
           ) : (
             <ul className="kk-waffen">
@@ -387,6 +406,19 @@ export function Kampfkarte({
                   </li>
                 );
               })}
+              {attacken.map((a) => (
+                <li key={a.key}>
+                  <span className="kk-waffe-name">{a.name}</span>
+                  <span className="kk-waffe-pool" title="Intelligenz + Fertigkeitswert, keine weiteren Boni">
+                    INT {intelligenz + a.wert}
+                    <WuerfelZehn groesse={14} />
+                  </span>
+                  <span className="kk-waffe-schaden">
+                    {schadenArtLabel(a.schadenArt)}
+                    <em>Nettoerfolge</em>
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
         </section>

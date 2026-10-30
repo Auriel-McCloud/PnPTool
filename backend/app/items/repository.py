@@ -25,6 +25,7 @@ RETURN_FIELDS = """
     g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
+    g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
     g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
@@ -168,9 +169,15 @@ def _decode(record: dict) -> dict:
     if record.get("typ") == "Waffe" or record.get("istWaffe"):
         record["schadenArt"] = schaden_art_fuer_waffe(art)
     else:
-        record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
+        record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert", "elementar") else ""
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
-    for feld in ("traitBoni", "ausruestungsfertigkeiten", "kiTamaFertigkeiten"):
+    for feld in (
+        "traitBoni",
+        "ausruestungsfertigkeiten",
+        "kiTamaFertigkeiten",
+        "attackenFertigkeiten",
+        "attackenSchadensart",
+    ):
         try:
             roh = record.get(feld)
             record[feld] = json.loads(roh) if roh else {}
@@ -261,6 +268,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             kiTamaFertigkeiten: $kiTamaFertigkeiten,
+            attackenFertigkeiten: $attackenFertigkeiten, attackenSchadensart: $attackenSchadensart,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
@@ -357,6 +365,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
             kiTamaFertigkeiten=json.dumps(data.get("kiTamaFertigkeiten") or {}),
+            attackenFertigkeiten=json.dumps(data.get("attackenFertigkeiten") or {}),
+            attackenSchadensart=json.dumps(data.get("attackenSchadensart") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -676,6 +686,10 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
     if "kiTamaFertigkeiten" in changed:
         changed["kiTamaFertigkeiten"] = json.dumps(changed["kiTamaFertigkeiten"])
+    if "attackenFertigkeiten" in changed:
+        changed["attackenFertigkeiten"] = json.dumps(changed["attackenFertigkeiten"])
+    if "attackenSchadensart" in changed:
+        changed["attackenSchadensart"] = json.dumps(changed["attackenSchadensart"])
 
     driver = get_driver()
 

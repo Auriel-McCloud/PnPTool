@@ -89,6 +89,14 @@ export interface Gegenstand {
    * obigen Fertigkeiten der Spieler mit eigener EP hochleveln darf — Stufe
    * bleibt am Gegenstand, siehe backend/app/items/schemas.py::kiTamaFertigkeiten. */
   kiTamaFertigkeiten: Record<string, boolean>;
+  /** Attacken-Fertigkeiten (30.10.2026): welche der obigen
+   * ausruestungsfertigkeiten ZUSÄTZLICH Kampfangriffe sind — unabhängig von
+   * kiTamaFertigkeiten. Erscheinen dann in der Kampfkarte wie eine Waffe,
+   * Würfelpool = Intelligenz + Fertigkeitswert. */
+  attackenFertigkeiten: Record<string, boolean>;
+  /** Schadensart je Attacken-Fertigkeit — kein eigener Schadenswert, der
+   * Schaden sind die Nettoerfolge des Wurfs, genau wie bei Waffen. */
+  attackenSchadensart: Record<string, SchadenArt>;
   /** Beschwörungs-Ki-Tama (30.10.2026): Link auf den fest gebundenen
    * Critter-Person-Knoten. Leer = kein Beschwörungs-Ki-Tama. */
   beschworenerCritterId: string;
@@ -350,26 +358,29 @@ export function kampfFertigkeitLesen(roh: string | undefined | null): KampfFerti
   return "";
 }
 
-/** Leer = noch nicht gesetzt. Waffen ohne Wert gelten als Tödlich. */
-export type SchadenArt = "" | RuestungsArt;
+/** Leer = noch nicht gesetzt. Waffen ohne Wert gelten als Tödlich. "elementar"
+ * löst sich erst beim Treffer-Eintragen auf (Effektivitäts-Abfrage in
+ * RuestungsTreffer.tsx) — siehe backend/app/items/schemas.py::SchadenArt. */
+export type SchadenArt = "" | RuestungsArt | "elementar";
 
 /** Die meisten Waffen. Schlag und Schwerheilbar setzt man extra. */
 export const SCHADEN_ART_DEFAULT: RuestungsArt = "schwer";
 
 /** Tischsprache, dieselbe wie im Treffer-Dialog — nicht die Kästchen-Namen. */
-export const SCHADEN_ART_LABEL: Record<RuestungsArt, string> = {
+export const SCHADEN_ART_LABEL: Record<Exclude<SchadenArt, "">, string> = {
   schlag: "Schlag",
   schwer: "Tödlich",
   aggraviert: "Schwerheilbar",
+  elementar: "Elementar",
 };
 
-export function schadenArtFuerWaffe(art: string | undefined): RuestungsArt {
-  if (art === "schlag" || art === "schwer" || art === "aggraviert") return art;
+export function schadenArtFuerWaffe(art: string | undefined): Exclude<SchadenArt, ""> {
+  if (art === "schlag" || art === "schwer" || art === "aggraviert" || art === "elementar") return art;
   return SCHADEN_ART_DEFAULT;
 }
 
 export function schadenArtLabel(art: string | undefined): string {
-  if (art === "schlag" || art === "schwer" || art === "aggraviert") return SCHADEN_ART_LABEL[art];
+  if (art === "schlag" || art === "schwer" || art === "aggraviert" || art === "elementar") return SCHADEN_ART_LABEL[art];
   return "";
 }
 
@@ -450,6 +461,8 @@ export interface GegenstandUpdate {
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   kiTamaFertigkeiten?: Record<string, boolean>;
+  attackenFertigkeiten?: Record<string, boolean>;
+  attackenSchadensart?: Record<string, SchadenArt>;
   beschworenerCritterId?: string;
   beschwoerungsSchwierigkeit?: number;
   ruestungKaestchenMax?: number;

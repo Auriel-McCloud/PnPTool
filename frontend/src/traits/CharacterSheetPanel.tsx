@@ -98,13 +98,14 @@ function SchadensartFeld({
     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", marginTop: 6 }}>
       Schadensart
       <select
-        value={wert === "schlag" || wert === "schwer" || wert === "aggraviert" ? wert : "schwer"}
-        title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Schwerheilbar geht voll durch."
+        value={wert === "schlag" || wert === "schwer" || wert === "aggraviert" || wert === "elementar" ? wert : "schwer"}
+        title="Schlag halbiert die Rüstung, Tödlich wird zu Schlag, Schwerheilbar geht voll durch. Elementar löst sich erst beim Treffer über die Effektivität auf."
         onChange={(e) => onChange(e.target.value as SchadenArt)}
       >
         <option value="schlag">{SCHADEN_ART_LABEL.schlag}</option>
         <option value="schwer">{SCHADEN_ART_LABEL.schwer}</option>
         <option value="aggraviert">{SCHADEN_ART_LABEL.aggraviert}</option>
+        <option value="elementar">{SCHADEN_ART_LABEL.elementar}</option>
       </select>
     </label>
   );
@@ -144,7 +145,7 @@ function KampfFertigkeitFeld({
   );
 }
 
-type Eigenschaft = { key: string; value: string; kiTama?: boolean };
+type Eigenschaft = { key: string; value: string; kiTama?: boolean; attacke?: boolean; schadensart?: SchadenArt };
 
 function recordToPairs(r: Record<string, string>): Eigenschaft[] {
   return Object.entries(r).map(([key, value]) => ({ key, value }));
@@ -472,6 +473,8 @@ export function GegenstandRow({
         key,
         value: String(value),
         kiTama: Boolean(src.kiTamaFertigkeiten?.[key]),
+        attacke: Boolean(src.attackenFertigkeiten?.[key]),
+        schadensart: src.attackenSchadensart?.[key] || "schwer",
       })),
     );
     setStufe(src.stufe);
@@ -581,6 +584,20 @@ export function GegenstandRow({
         ausruestungsfertigkeiten
           .filter((p) => p.key.trim() && Number(p.value) && p.kiTama)
           .map((p) => [p.key.trim(), true]),
+      ),
+      // Attacken-Fertigkeiten (30.10.2026): dasselbe Muster wie Ki-Tama
+      // oben, unabhängiges Häkchen. Schadensart nur für die markierten
+      // Einträge mitgeschickt — kein eigener Schadenswert, siehe
+      // schemas.py::attackenSchadensart.
+      attackenFertigkeiten: Object.fromEntries(
+        ausruestungsfertigkeiten
+          .filter((p) => p.key.trim() && Number(p.value) && p.attacke)
+          .map((p) => [p.key.trim(), true]),
+      ),
+      attackenSchadensart: Object.fromEntries(
+        ausruestungsfertigkeiten
+          .filter((p) => p.key.trim() && Number(p.value) && p.attacke)
+          .map((p) => [p.key.trim(), p.schadensart || "schwer"]),
       ),
       stufe,
       widerstand,
@@ -994,6 +1011,8 @@ export function GegenstandRow({
                     {ausruestungsfertigkeiten.filter((p) => p.key.trim()).map((p) => (
                       <li key={`f-${p.key}`}>
                         {p.key} {p.value}
+                        {p.kiTama && " · Ki-Tama"}
+                        {p.attacke && " · Attacke"}
                       </li>
                     ))}
                     {FAHRZEUG_TYPEN.has(typ) && (
@@ -1377,7 +1396,8 @@ export function GegenstandRow({
 
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
                   Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand — Häkchen "Ki-Tama":
-                  Spieler darf mit eigener EP hochleveln, Stufe bleibt am Gegenstand)
+                  Spieler darf mit eigener EP hochleveln, Stufe bleibt am Gegenstand. Häkchen "Attacke":
+                  erscheint im Kampf wie eine Waffe, Würfelpool Intelligenz + Fertigkeitswert)
                 </label>
                 {ausruestungsfertigkeiten.map((p, i) => (
                   <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
@@ -1417,6 +1437,40 @@ export function GegenstandRow({
                       />
                       Ki-Tama
                     </label>
+                    <label
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.8em", whiteSpace: "nowrap" }}
+                      title="Attacke: erscheint in der Kampfkarte wie eine Waffe. Würfelpool = Intelligenz + Fertigkeitswert, Schaden = Nettoerfolge."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(p.attacke)}
+                        onChange={(e) =>
+                          setAusruestungsfertigkeiten(
+                            ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, attacke: e.target.checked } : x)),
+                          )
+                        }
+                      />
+                      Attacke
+                    </label>
+                    {p.attacke && (
+                      <select
+                        value={p.schadensart || "schwer"}
+                        title="Schadensart dieser Attacke"
+                        onChange={(e) =>
+                          setAusruestungsfertigkeiten(
+                            ausruestungsfertigkeiten.map((x, idx) =>
+                              idx === i ? { ...x, schadensart: e.target.value as SchadenArt } : x,
+                            ),
+                          )
+                        }
+                        style={{ fontSize: "0.8em" }}
+                      >
+                        <option value="schlag">{SCHADEN_ART_LABEL.schlag}</option>
+                        <option value="schwer">{SCHADEN_ART_LABEL.schwer}</option>
+                        <option value="aggraviert">{SCHADEN_ART_LABEL.aggraviert}</option>
+                        <option value="elementar">{SCHADEN_ART_LABEL.elementar}</option>
+                      </select>
+                    )}
                     <button
                       type="button"
                       onClick={() => setAusruestungsfertigkeiten(ausruestungsfertigkeiten.filter((_, idx) => idx !== i))}

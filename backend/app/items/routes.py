@@ -184,6 +184,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "kiTamaFertigkeiten": body.kiTamaFertigkeiten,
+        "attackenFertigkeiten": body.attackenFertigkeiten,
+        "attackenSchadensart": body.attackenSchadensart,
         "beschworenerCritterId": body.beschworenerCritterId,
         "beschwoerungsSchwierigkeit": body.beschwoerungsSchwierigkeit,
         "riggerBonus": body.riggerBonus,

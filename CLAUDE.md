@@ -4,6 +4,58 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Ki-Tama-Attacken + neue Schadensart "Elementar"** (30.10.2026, Mark:
+  "manche [Ki-Tama-Fertigkeiten] sind Attacken für den Kampf... für Attacken-
+  Fertigkeiten hätte ich gerne dass sie wie Waffen im Kampfmodus angezeigt
+  werden"). Zwei unabhängige Erweiterungen der bestehenden
+  `ausruestungsfertigkeiten` (siehe Ki-Tama-Eintrag oben):
+  1. **Neues Häkchen "Attacke"** pro Ausrüstungsfertigkeit-Zeile
+     (`Gegenstand.attackenFertigkeiten: dict[str, bool]`, unabhängig vom
+     Häkchen "Ki-Tama" — eine Fertigkeit kann beides, nur eins oder keins von
+     beidem sein), plus `attackenSchadensart: dict[str, SchadenArt]` je
+     markierter Zeile. **Bewusst KEIN eigener Schadenswert** — Mark: "der
+     Schaden sind die Erfolge die übrig bleiben", exakt wie bei Waffen die
+     Nettoerfolge des Wurfs, nie ein fixer Bonus. Als Attacke markierte
+     Fertigkeiten erscheinen in `Kampfkarte.tsx` in DERSELBEN Liste wie die
+     Waffen, mit eigener Formel: Würfelpool = **Intelligenz + Fertigkeitswert,
+     ausdrücklich ohne jeden weiteren Bonus** (Mark auf Nachfrage: "genau
+     Intelligenz + Fertigkeitswert, keine weiteren Boni" — kein
+     Ausrüstungsbonus, keine Geschicklichkeit/Rüstungsabzug wie bei Waffen).
+  2. **Neue Schadensart "Elementar"** (`items/schemas.py::SchadenArt` von drei
+     auf vier Werte erweitert, dieselbe Erweiterung in `items/api.ts`).
+     Löst sich NICHT selbst auf — `kampf/ruestung.py` kennt weiterhin nur die
+     drei physischen Arten (schlag/schwer/aggraviert). Stattdessen fragt
+     `RuestungsTreffer.tsx` beim Eintragen eines Treffers mit Art "Elementar"
+     zusätzlich nach der **Effektivität gegen das Ziel** (Mark: "meist
+     Tödlicher Schaden, außer er ist sehr effektiv, dann Schwerheilbar, oder
+     nicht effektiv dann Schlagschaden") — sehr effektiv → Schwerheilbar,
+     effektiv → Tödlich, nicht effektiv → Schlag; erst die aufgelöste Art geht
+     an den Server. Bewusst **keine automatische Typen-Tabelle**
+     (Feuer/Eis/...) — die Spielleitung entscheidet die Effektivität am
+     Tisch, kein Daten-Overhead für Elementar-Resistenzen pro Kreatur.
+     Schadensart-Dropdown (Waffen UND Ki-Tama-Attacken) hat jetzt die vierte
+     Option "Elementar". Backend: `schemas.py` (SchadenArt-Literal,
+     `attackenFertigkeiten`/`attackenSchadensart` durch alle drei
+     Gegenstand-Schemas), `waffenbonus.py` (`_ART_ALIAS` um "elementar"
+     ergänzt), `repository.py` (RETURN_FIELDS/_decode/create/update, gleiches
+     Muster wie `kiTamaFertigkeiten`), `routes.py::_create_data` (sonst gehen
+     die Felder beim Anlegen verloren, siehe `test_gegenstand_felder.py`).
+     Frontend: `items/api.ts` (Typen + `SCHADEN_ART_LABEL`/
+     `schadenArtFuerWaffe`/`schadenArtLabel` um "elementar" erweitert),
+     `CharacterSheetPanel.tsx` (Checkbox "Attacke" + Schadensart-Select pro
+     Ausrüstungsfertigkeit-Zeile, Elementar-Option im Waffen-Schadensartfeld),
+     `Kampfkarte.tsx` (Attacken-Liste, eigene Pool-Formel), `RuestungsTreffer.tsx`
+     (vierter Schadensart-Knopf + Effektivitäts-Unterauswahl). **Verifiziert:**
+     volle Backend-Suite ohne Regression (55 vorbestehende Windows-Proactor-
+     Fehlschläge unverändert, Diff gegen `git stash` auf `main` verglichen),
+     `npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch: eine
+     Ausrüstungsfertigkeit an einem Ki-Tama-Item als "Attacke" markieren,
+     Schadensart setzen, ausrüsten und prüfen dass sie in der Kampfkarte
+     neben den Waffen mit "INT <Pool>" auftaucht; bei "Treffer eintragen"
+     einmal "Elementar" + jede der drei Effektivitäts-Stufen durchklicken und
+     prüfen, dass Rüstung/Gesundheit wie bei der jeweils entsprechenden
+     "echten" Schadensart rechnen.
+
 - **Kampfkarte: Initiative-Klick für den eigenen Charakter, Kampf/Cyberkampf-
   Umschalter, fixierte Vitalwerte** (30.10.2026, Mark testet gerade den
   Decker). Initiative-Zahl in `Kampfkarte.tsx` war bisher nur bei
