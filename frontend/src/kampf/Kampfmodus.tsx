@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { entitiesApi, type Person } from "../entities/api";
+import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
 import { Kampfkarte } from "./Kampfkarte";
-import { KAMPFARTEN, kampfApi, type Kampfart, type Teilnehmer } from "./api";
+import { DeineDrohnenImKampf } from "./DeineDrohnenImKampf";
+import { DeineBeschwoerungen } from "./DeineBeschwoerungen";
+import { KAMPFARTEN, kampfApi, type Kampf, type Kampfart, type Teilnehmer } from "./api";
 import { Initiativliste, useKampf } from "./Initiativliste";
 import { InitiativeSetzen } from "./InitiativeSetzen";
 import "./kampf.css";
@@ -200,7 +203,10 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         onSchliessen={() => setBogenFuer(null)}
       >
         {bogenFuer?.personId ? (
-          <Kampfkarte campaignId={campaignId} personId={bogenFuer.personId} aenderbar />
+          <>
+            <Kampfkarte campaignId={campaignId} personId={bogenFuer.personId} aenderbar />
+            <BogenKampfzubehoer campaignId={campaignId} personId={bogenFuer.personId} kampf={kampf} />
+          </>
         ) : (
           <BegleiterImKampf begleiter={begleiter.find((b) => b.id === bogenFuer?.begleiterId)} />
         )}
@@ -223,4 +229,65 @@ function BegleiterImKampf({ begleiter }: { begleiter?: Begleiter }) {
   if (!begleiter) return <p style={{ color: "var(--text-leise)" }}>Kein Bogen hinterlegt.</p>;
   // Dasselbe Blatt wie in der Begleiterverwaltung — nicht nachgebaut.
   return <BegleiterBlatt begleiter={begleiter} />;
+}
+
+/**
+ * Dasselbe Drohnen-/Beschwörungs-Zubehör wie in der Spieler-Kampfansicht
+ * (SpielerAnsicht.tsx), jetzt auch im SL-"Bogen von"-Fenster (Mark,
+ * 30.10.2026: "wenn ich auf Bogen von klicke sehe ich viele Dinge nicht, wie
+ * z.B. Drohnen oder Beschwörungs-Buttons oder Ki-Tama-Attacken"). Die
+ * Ki-Tama-Attacken selbst zeigt schon die Kampfkarte — hier fehlten nur die
+ * beiden interaktiven Blöcke darunter, dieselbe Filterlogik wie
+ * SpielerAnsicht.tsx::eigeneKiTamas, nur für den betrachteten Charakter statt
+ * den eigenen.
+ */
+function BogenKampfzubehoer({
+  campaignId,
+  personId,
+  kampf,
+}: {
+  campaignId: string;
+  personId: string;
+  kampf: Kampf;
+}) {
+  const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
+
+  useEffect(() => {
+    let weg = false;
+    itemsApi
+      .listAlle(campaignId)
+      .then((liste) => {
+        if (!weg) setSachen(liste.filter((g) => g.ownerId === personId));
+      })
+      .catch(() => {
+        if (!weg) setSachen([]);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, personId]);
+
+  const kiTamas = sachen.filter((g) => {
+    if (g.typ !== "Ki-Tama" || !g.beschworenerCritterId) return false;
+    const traeger = sachen.find((w) => w.id === g.montiertAnId);
+    return Boolean(traeger && (traeger.typ === "Waffe" || traeger.istWaffe) && traeger.ablage === "AUSGERUESTET");
+  });
+
+  // Kein eigener Nachlade-Ruf nötig — der 3s-Takt von useKampf (im
+  // umgebenden Kampfmodus) holt die Liste automatisch nach, genau wie in
+  // SpielerAnsicht.tsx.
+  const nichtsZuTun = () => {};
+
+  return (
+    <>
+      <DeineDrohnenImKampf campaignId={campaignId} eigenePersonId={personId} kampf={kampf} onGeaendert={nichtsZuTun} />
+      <DeineBeschwoerungen
+        campaignId={campaignId}
+        eigenePersonId={personId}
+        kampf={kampf}
+        kiTamas={kiTamas}
+        onGeaendert={nichtsZuTun}
+      />
+    </>
+  );
 }
