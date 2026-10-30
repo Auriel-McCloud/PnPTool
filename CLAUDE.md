@@ -4,6 +4,31 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**
+  (30.10.2026, Mark nach dem ersten echten Klicktest am Spieltisch). Bug:
+  Ki-Tama ist ein Waffen-Upgrade (`typ "Ki-Tama"` erzwingt `istAugment=true`)
+  und wird normal als Augment an einer Waffe montiert — sein eigenes
+  `ablage`-Feld bleibt dabei unverändert (meist `RUCKSACK`, siehe
+  `items/aufbewahrung.ts`). Die erste Fassung der Attacken-Anzeige
+  (`Kampfkarte.tsx`) prüfte aber `ausgeruestet` (Ki-Tama selbst müsste "Am
+  Körper" liegen) — zeigte dadurch NIE eine Attacke für ein normal montiertes
+  Ki-Tama. Mark, wörtlich: "Ki-Tamas dürfen nur dann funktionieren wenn sie
+  mit einer Waffe verbunden sind, und wenn die Waffe ausgerüstet ist" — neue
+  Regel für BEIDE Ki-Tama-Mechaniken (Attacke UND Beschwörung). Fix:
+  `Kampfkarte.tsx::attacken` geht jetzt über `montiertAnId` auf eine der
+  bereits berechneten ausgerüsteten Waffen, nicht mehr über das eigene
+  `ablage`-Feld des Ki-Tama. `SpielerAnsicht.tsx::eigeneKiTamas` (Beschwören-
+  Knopf) prüft dieselbe Bedingung clientseitig, UND `kampf/routes.py::
+  item_beschwoeren` serverseitig (409 "Ki-Tama muss an einer ausgerüsteten
+  Waffe montiert sein, um zu wirken" — der Endpunkt ist direkt erreichbar,
+  Frontend-Ausblenden reicht nicht). **Verifiziert:** gegen echte bebop-Daten
+  reproduziert (Marks "Blitz"/"Beschwörung: Erddrache" am "X-Corp VoltShock-3
+  Schock-Stab" montiert, Schock-Stab ausgerüstet — `get_gegenstand` lieferte
+  vor dem Fix korrekt alle Felder, nur die Kampfkarte-Logik sah falsch hin),
+  volle Backend-Suite ohne Regression (55 vorbestehende Fehlschläge
+  unverändert), `npx tsc -b` sauber, auf bebop deployed. **Bereit für den
+  nächsten Klicktest.**
+
 - **Beschwörungs-Ki-Tama: Kampftest-Nachbesserungen — Bogen-Sichtbarkeit,
   Probe ohne Zahleneingabe, Treffer-Knopf neben Initiative** (30.10.2026,
   Marks erster echter Klicktest). Drei Funde:
