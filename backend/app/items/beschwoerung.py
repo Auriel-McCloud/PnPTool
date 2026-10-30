@@ -23,15 +23,19 @@ def beschwoerungsstufe(ausruestungsfertigkeiten: dict[str, int], ki_tama_fertigk
 
 
 def benoetigte_erfolge(stufe: int, schwierigkeit: int) -> int:
-    """Beschwörungswert ÷ 2, aufgerundet, plus SL-Schwierigkeitsgrad.
+    """Beschwörungswert ÷ 2, aufgerundet, plus SL-Schwierigkeitsgrad, aber
+    MINDESTENS 1 — Mark, 30.10.2026: "es ist stufe ÷ 2 Erfolge, aber
+    mindestens +1, mit der Option +1 und +2 beim Item hinzuzufügen"
+    (= `beschwoerungsSchwierigkeit`, von der SL beim Anlegen gewählt).
 
-    Mark, 30.10.2026, ENTSCHIEDEN: "das ist ja wie Magie... also muss er
+    ENTSCHIEDEN (30.10.2026): "das ist ja wie Magie... also muss er
     Intelligenz + den Wert der Beschwörung würfeln." Stufe 1→1, 2→1, 3→2,
     4→2, 5→3, 6→3 — bewusst NICHT "Wert − 2, Minimum 1" (verworfen: die
     Erfolgsschwelle muss mit dem Pool mitwachsen, sonst sind niedrige Stufen
     alle gleich trivial). Der Schwierigkeitsgrad kommt additiv oben drauf,
-    negative Werte zählen als 0.
+    negative Werte zählen als 0 — eine Beschwörung ist nie gratis (0
+    Erfolge), auch nicht bei Stufe 0.
     """
     stufe = max(0, stufe)
     schwierigkeit = max(0, schwierigkeit)
-    return -(-stufe // 2) + schwierigkeit
+    return max(1, -(-stufe // 2) + schwierigkeit)

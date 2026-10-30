@@ -24,6 +24,7 @@ import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
 import { HotBleibenPopup, MatrixHotKnopf } from "../kampf/HotBleibenPopup";
 import { DeineDrohnenImKampf } from "../kampf/DeineDrohnenImKampf";
+import { DeineBeschwoerungen } from "../kampf/DeineBeschwoerungen";
 import { InitiativeSetzen } from "../kampf/InitiativeSetzen";
 import { kampfApi, type Teilnehmer } from "../kampf/api";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
@@ -179,6 +180,15 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Initiativliste auf die eigene Zahl klicken — der Rigger auch für sie.
   const [eigeneDrohnenIds, setEigeneDrohnenIds] = useState<string[]>([]);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  // Beschwörungs-Ki-Tama (30.10.2026): eigene Ki-Tama-Gegenstände mit
+  // verknüpftem Critter — anders als bei Drohnen reicht das schon geladene
+  // `sachen`, kein eigener Ladevorgang nötig.
+  const eigeneKiTamas = sachen.filter(
+    (g) => g.ownerId === ich?.personId && g.typ === "Ki-Tama" && g.beschworenerCritterId,
+  );
+  const eigeneCritterIds = eigeneKiTamas
+    .map((g) => g.beschworenerCritterId)
+    .filter((id): id is string => Boolean(id));
 
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
@@ -606,7 +616,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 kampf={kampf}
                 eigenePersonId={ich.personId}
                 initiativeBearbeitbar={(t) =>
-                  t.personId === ich.personId || (t.personId != null && eigeneDrohnenIds.includes(t.personId))
+                  t.personId === ich.personId ||
+                  (t.personId != null && eigeneDrohnenIds.includes(t.personId)) ||
+                  (t.personId != null && eigeneCritterIds.includes(t.personId))
                 }
                 onInitiativeBearbeiten={setInitiativeZiel}
               />
@@ -627,6 +639,14 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                   kampf={kampf}
                   onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
                   onListeGeladen={setEigeneDrohnenIds}
+                />
+              )}
+              {ich.personId && (
+                <DeineBeschwoerungen
+                  campaignId={ich.campaignId}
+                  kampf={kampf}
+                  kiTamas={eigeneKiTamas}
+                  onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
                 />
               )}
               {kampf.teilnehmer.length > 1 && (

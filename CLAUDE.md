@@ -4,6 +4,29 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Beschwörungs-Ki-Tama: Probe-Gate + Kampf-Beitritt + Initiative-Wiederverwendung**
+  (30.10.2026, zweite Runde direkt im Anschluss, siehe docs/wiki/concepts/
+  augments-ausruestung.md). Mark korrigierte zwei Details, bevor das
+  Frontend entstand: Probe braucht **mindestens 1 Erfolg** (nie gratis), und
+  "das Fenster und die Funktion zum Eingeben haben wir ja schon bei den
+  Zusatzaktionen und den Drohnen" — Initiative wird NICHT in der Probe
+  mitgeschickt, sondern der Critter joint den Kampf mit `initiative=0`
+  (exakt wie eine Drohne, `kampf/routes.py::drohne_dem_kampf_beitreten`-
+  Muster inkl. Auto-Nummerierung) und die eigentliche Initiative läuft über
+  die SCHON BESTEHENDE `melde_initiative`-Route, erweitert um
+  `entities/repository.py::critter_besitzer` (Pendant zu `drohne_rigger`).
+  Route umgezogen: `POST .../kampf/gegenstaende/{item_id}/beschwoeren`
+  (vorher unter `items/`, jetzt bei `kampf/`, wo auch `drohne_beitreten`
+  lebt). **Frontend:** `kampf/DeineBeschwoerungen.tsx` (neu, Spiegelbild von
+  `DeineDrohnenImKampf.tsx`) in `SpielerAnsicht.tsx`, Probe-Popup zeigt
+  benötigte Erfolge vorab, öffnet bei Erfolg dieselbe Kampfkarte+
+  InitiativeSetzen-Kombi wie bei Drohnen. `Initiativliste.tsx` zeigt
+  `rundenVerbleibend` als 🔮-Badge. **Verifiziert:** volle Backend-Suite ohne
+  Regression (55 vorbestehende Fehlschläge unverändert), `npx tsc -b`
+  sauber. **Bewusst NICHT gebaut:** SL-Seite im Umbauen-Formular, um einen
+  Critter überhaupt als `beschworenerCritterId` zu verknüpfen — ohne das
+  lässt sich die Kette noch nicht von vorne bis hinten durchklicken.
+
 - **Beschwörungs-Ki-Tama: Backend-Fundament für beschwörbare Critter**
   (30.10.2026, Marks FF7-Idee vom Vortag, siehe docs/wiki/concepts/
   augments-ausruestung.md Abschnitt "Beschwörungs-Materia"). Fünf

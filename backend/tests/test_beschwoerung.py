@@ -35,8 +35,8 @@ class TestBenoetigteErfolge:
         assert benoetigte_erfolge(3, 2) == 4
         assert benoetigte_erfolge(6, 1) == 4
 
-    def test_null_stufe_ist_nicht_negativ(self):
-        assert benoetigte_erfolge(0, 0) == 0
+    def test_null_stufe_hat_trotzdem_mindestens_einen_erfolg(self):
+        assert benoetigte_erfolge(0, 0) == 1
 
-    def test_negative_eingaben_zaehlen_als_null(self):
-        assert benoetigte_erfolge(-3, -2) == 0
+    def test_negative_eingaben_zaehlen_als_null_mit_mindestens_einem_erfolg(self):
+        assert benoetigte_erfolge(-3, -2) == 1

@@ -89,6 +89,11 @@ export interface Gegenstand {
    * obigen Fertigkeiten der Spieler mit eigener EP hochleveln darf — Stufe
    * bleibt am Gegenstand, siehe backend/app/items/schemas.py::kiTamaFertigkeiten. */
   kiTamaFertigkeiten: Record<string, boolean>;
+  /** Beschwörungs-Ki-Tama (30.10.2026): Link auf den fest gebundenen
+   * Critter-Person-Knoten. Leer = kein Beschwörungs-Ki-Tama. */
+  beschworenerCritterId: string;
+  /** SL-Schwierigkeitsgrad (0-2), additiv auf die benötigten Erfolge. */
+  beschwoerungsSchwierigkeit: number;
   /** Liegt im Mülleimer der Spielleitung — überall sonst ausgeblendet. */
   weggeworfen: boolean;
   /** Wer es weggeworfen hat; leer, wenn es nie weggeworfen wurde. */
@@ -445,6 +450,8 @@ export interface GegenstandUpdate {
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   kiTamaFertigkeiten?: Record<string, boolean>;
+  beschworenerCritterId?: string;
+  beschwoerungsSchwierigkeit?: number;
   ruestungKaestchenMax?: number;
   ruestungKaestchenAktuell?: number;
   ruestungReduktionBasis?: number;

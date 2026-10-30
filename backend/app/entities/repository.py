@@ -686,6 +686,22 @@ async def drohne_rigger(campaign_id: str, drohne_id: str) -> str | None:
         return record["riggerId"] if record else None
 
 
+async def critter_besitzer(campaign_id: str, critter_id: str) -> str | None:
+    """Wer diesen Critter beschworen hat — Pendant zu `drohne_rigger`, nur
+    über `istCritter` statt Drohne/Fahrzeug. Für den Besitzer-Check bei
+    `kampf/routes.py::_darf_initiative_melden` (Beschwörer darf für seinen
+    Critter die Initiative melden, genau wie ein Rigger für seine Drohne)."""
+    driver = get_driver()
+    query = """
+        MATCH (n:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p:Person)
+        RETURN p.id AS besitzerId
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id)
+        record = await result.single()
+        return record["besitzerId"] if record else None
+
+
 async def aktive_drohnen_zahl(campaign_id: str, rigger_person_id: str) -> int:
     """Wie viele Drohnen/Fahrzeuge dieser Rigger gerade aktiv verbunden hat
     (`riggerAktiv=true`) — zum Gegenprüfen gegen `maxDrohnen` der Konsole."""

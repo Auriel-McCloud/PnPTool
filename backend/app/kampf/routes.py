@@ -5,11 +5,13 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
-from app.entities.repository import PERSON_FIELDS, drohne_rigger, get_node
+from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
 from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
-from app.items.repository import ausgeruestete_decks, initiative_modifikator, verbautes_chrom
+from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
+from app.items.beschwoerung import beschwoerungsstufe
+from app.items.repository import ausgeruestete_decks, get_gegenstand, get_owner_person_id, initiative_modifikator, verbautes_chrom
 from app.kampf.booster import (
     AMPEL_MAX,
     ampel_nach_nutzung,
@@ -311,14 +313,21 @@ async def _darf_initiative_melden(campaign_id: str, viewer: Viewer, ziel_person_
     eigene(n) aktive(n) Drohne(n)/Fahrzeug(e) melden (26.10.2026, Mark:
     \"er geht ins Popup rein, klickt da drauf und seine Drohnen fügen sich
     automatisch in die Initiativreihenfolge ein\"). Ein Teilnehmer ohne
-    `personId` (\"Wachmann 1\") bleibt für Spieler tabu, wie bisher.
+    `personId` ("Wachmann 1") bleibt für Spieler tabu, wie bisher.
+
+    Beschwörungs-Ki-Tama (30.10.2026): derselbe Vorbehalt gilt für den
+    Beschwörer eines Critters — dieselbe Beziehung wie Rigger/Drohne, nur
+    über `critter_besitzer` statt `drohne_rigger`.
     """
     if darf_melden(viewer.role, viewer.person_id, ziel_person_id):
         return True
     if viewer.role == "GM" or not ziel_person_id or not viewer.person_id:
         return False
     rigger_id = await drohne_rigger(campaign_id, ziel_person_id)
-    return rigger_id is not None and rigger_id == viewer.person_id
+    if rigger_id is not None and rigger_id == viewer.person_id:
+        return True
+    beschwoerer_id = await critter_besitzer(campaign_id, ziel_person_id)
+    return beschwoerer_id is not None and beschwoerer_id == viewer.person_id
 
 
 NUMMER_MUSTER = re.compile(r"^(.*) (\d+)$")
@@ -386,6 +395,76 @@ async def drohne_dem_kampf_beitreten(campaign_id: str, node_id: str, viewer: Vie
     kampf = await repository.teilnehmer_hinzu(
         campaign_id,
         {"name": name, "initiative": 0, "kampfart": "FERNKAMPF", "notiz": "", "personId": node_id, "begleiterId": None},
+    )
+    return _ohne_hilfsfelder(kampf)
+
+
+class BeschwoerenInput(BaseModel):
+    """Selbstberichtete Beschwörungs-Probe (Intelligenz + Beschwörungswert).
+    Erfolge würfelt der Spieler physisch am Tisch wie überall sonst im Tool
+    — die Zahl entscheidet nur, OB der Critter dem Kampf beitreten darf,
+    seine eigene Initiative wird separat über das schon bestehende
+    `POST .../teilnehmer/{id}/initiative` gemeldet (wie bei Drohnen)."""
+
+    erfolge: int = Field(default=0, ge=0)
+
+
+@router.post("/gegenstaende/{item_id}/beschwoeren", response_model=KampfResponse)
+async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInput, viewer: Viewer = Depends(get_viewer)):
+    """Self-Service (30.10.2026): der Besitzer eines Beschwörungs-Ki-Tama
+    beschwört seinen gebundenen Critter in den laufenden Kampf, sobald er
+    genug Erfolge gewürfelt hat — Mark: "wir müssen bevor man die initiative
+    eingibt noch die probe im kampf menü einbauen". Danach läuft alles
+    weiter wie bei einer Drohne: Initiative startet bei 0, wird direkt
+    danach über `melde_initiative` gesetzt (eigene Zeile im Tracker, kein
+    Hot-Drohne-Slot-Sharing). Gleiche 404-statt-403-Logik wie bei
+    `drohne_dem_kampf_beitreten` — ein fremdes Item soll nicht einmal als
+    existierend erkennbar sein.
+    """
+    item = await get_gegenstand(campaign_id, item_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    besitzer_id = await get_owner_person_id(campaign_id, item_id)
+    if viewer.role != "GM" and (besitzer_id is None or besitzer_id != viewer.person_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    critter_id = item.get("beschworenerCritterId") or ""
+    if not critter_id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Kein Beschwörungs-Ki-Tama — kein Critter verknüpft.")
+
+    stufe = beschwoerungsstufe(item.get("ausruestungsfertigkeiten") or {}, item.get("kiTamaFertigkeiten") or {})
+    benoetigt = beschwoerung_benoetigte_erfolge(stufe, int(item.get("beschwoerungsSchwierigkeit") or 0))
+    if body.erfolge < benoetigt:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
+        )
+
+    critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
+    if critter is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Verknüpfter Critter nicht (mehr) gefunden")
+
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+
+    bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == critter_id), None)
+    if bereits_dabei:
+        return _ohne_hilfsfelder(kampf)
+
+    name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], critter.get("name") or "Beschworener Critter")
+    kampf = await repository.teilnehmer_hinzu(
+        campaign_id,
+        {
+            "name": name,
+            "initiative": 0,
+            "kampfart": "NAHKAMPF",
+            "notiz": "",
+            "personId": critter_id,
+            "begleiterId": None,
+            "rundenVerbleibend": stufe,
+        },
     )
     return _ohne_hilfsfelder(kampf)
 

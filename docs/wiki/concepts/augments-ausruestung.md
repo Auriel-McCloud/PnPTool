@@ -522,11 +522,35 @@ läuft — die SL muss zuerst einen starten.
 volle Backend-Suite ohne Regression (55 vorbestehende Fehlschläge
 unverändert, gegen `git stash` auf `main` verglichen), `npx tsc -b` sauber.
 
-**Bewusst NICHT gebaut (nächster Schritt):** die komplette Frontend-Seite —
-kein Popup zum Beschwören im Kampf-Menü, keine Möglichkeit für die SL, im
-Umbauen-Formular einen Critter als `beschworenerCritterId` zu verknüpfen,
-keine Anzeige von `rundenVerbleibend` im Initiative-Tracker. Rein
-Backend-Fundament, noch kein Klicktest möglich.
+**Nachbesserung (30.10.2026, zweite Runde):** Mark korrigierte zwei Details
+noch VOR dem Frontend-Bau:
+
+- **Probe-Minimum:** "es ist stufe ÷ 2 erfolge aber mindestens +1" — die
+  Formel verlangt jetzt IMMER mindestens 1 Erfolg (`benoetigte_erfolge`
+  wrappt in `max(1, ...)`), eine Beschwörung ist nie gratis.
+- **Initiative-Eingabe wiederverwendet statt neu gebaut:** "das Fenster und
+  die Funktion zum Eingeben haben wir ja schon bei den Zusatzaktionen und
+  den Drohnen" — der `beschwoeren`-Endpunkt nimmt nur noch `erfolge`
+  entgegen (Probe-Gate), der Critter joint mit `initiative=0` genau wie eine
+  Drohne (`kampf/routes.py::drohne_dem_kampf_beitreten`-Muster, inkl.
+  `_mit_nummer_falls_doppelt` und derselben 404-statt-403-Logik). Die
+  tatsächliche Initiative kommt danach über die **schon bestehende**
+  `POST .../teilnehmer/{id}/initiative`-Route (`melde_initiative`) —
+  erweitert um `entities/repository.py::critter_besitzer` (Pendant zu
+  `drohne_rigger`), damit der Beschwörer wie ein Rigger für seine Drohne
+  melden darf. Route zog dafür von `items/routes.py` nach `kampf/routes.py`
+  um (`POST .../kampf/gegenstaende/{item_id}/beschwoeren`).
+
+**Frontend — GEBAUT:** `kampf/DeineBeschwoerungen.tsx` (neu, Spiegelbild von
+`DeineDrohnenImKampf.tsx`) in `SpielerAnsicht.tsx` neben den Drohnen
+eingehängt — Probe-Popup zeigt die benötigten Erfolge vorab an, bei Erfolg
+öffnet sich **dieselbe** `Kampfkarte`+`InitiativeSetzen`-Kombination wie bei
+Drohnen. `Initiativliste.tsx` zeigt `rundenVerbleibend` als 🔮-Badge neben
+dem Namen. **Bewusst NICHT gebaut:** die SL-Seite im Umbauen-Formular, um
+einen Critter überhaupt erst als `beschworenerCritterId` zu verknüpfen —
+ohne das lässt sich die ganze Kette noch nicht von vorne bis hinten
+durchklicken. **Verifiziert:** volle Backend-Suite ohne Regression (55
+vorbestehende Fehlschläge unverändert), `npx tsc -b` sauber. Kein Klicktest.
 
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 

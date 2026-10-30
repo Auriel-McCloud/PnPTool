@@ -29,6 +29,9 @@ export interface Teilnehmer {
   zusatzGenutzt?: number;
   /** Nach misslungenem Paralysewurf: setzt die nächste Runde aus. */
   setztAus?: boolean;
+  /** Beschwörungs-Ki-Tama (30.10.2026): Runden bis der beschworene Critter
+   * automatisch den Tracker verlässt. undefined/null = kein Zeitlimit. */
+  rundenVerbleibend?: number | null;
   notiz: string;
   erledigt: boolean;
   personId: string | null;
@@ -104,6 +107,13 @@ export const kampfApi = {
    *  automatisch durch, wenn der Name schon vergeben ist ("Spinne 1/2"). */
   drohneBeitreten: (cid: string, drohneId: string) =>
     api.post<Kampf>(`${basis(cid)}/drohnen/${drohneId}/beitreten`),
+  /** Self-Service (30.10.2026): beschwört den an ein Ki-Tama gebundenen
+   *  Critter in den laufenden Kampf — `erfolge` ist die selbstberichtete
+   *  Beschwörungs-Probe (Intelligenz + Beschwörungswert), MUSS vor der
+   *  Initiative-Eingabe bestanden sein. Initiative startet bei 0 und wird
+   *  danach wie bei Drohnen per `meldeInitiative` gesetzt. */
+  beschwoeren: (cid: string, itemId: string, erfolge: number) =>
+    api.post<Kampf>(`${basis(cid)}/gegenstaende/${itemId}/beschwoeren`, { erfolge }),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */

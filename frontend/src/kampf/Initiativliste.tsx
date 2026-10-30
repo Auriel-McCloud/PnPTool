@@ -130,6 +130,13 @@ export function Initiativliste({
               {t.setztAus && <em className="ka-notiz">setzt aus</em>}
               {meiner && <em className="ka-du">du</em>}
               {t.notiz && <em className="ka-notiz">{t.notiz}</em>}
+              {/* Beschwörungs-Ki-Tama (30.10.2026): Runden-Zähler, tickt bei
+                  jedem Rundenwechsel runter, siehe tick_beschwoerungen. */}
+              {t.rundenVerbleibend != null && (
+                <em className="ka-notiz" title="Verbleibende Runden der Beschwörung">
+                  🔮 {t.rundenVerbleibend}
+                </em>
+              )}
             </span>
 
             {/* Ueberhitzung nur am Stammeintrag und nur wenn sie laeuft. */}
