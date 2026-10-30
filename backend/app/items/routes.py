@@ -183,7 +183,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         ),
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
-        "materiaFertigkeiten": body.materiaFertigkeiten,
+        "kiTamaFertigkeiten": body.kiTamaFertigkeiten,
         "riggerBonus": body.riggerBonus,
         "maxDrohnen": body.maxDrohnen,
         "immerSichtbar": body.immerSichtbar,
@@ -226,9 +226,13 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         # die SL ein Stück mit sprechendem Typ an, vergisst aber die separate
         # Checkbox in den Optionen, und es taucht in der Werkbank nie auf
         # (Mark, 29.10.2026, dritter Klicktest: "er hat ein UpgradeMaterial...
-        # aber dort wird nichts angezeigt").
+        # aber dort wird nichts angezeigt"). "Ki-Tama" (30.10.2026, eigene
+        # Kategorie fürs FF7-Materia-Konzept, umbenannt da "Ki" = KI-Kristall
+        # + jap. "Tama" = Perle) folgt exakt derselben Regel — funktioniert
+        # dadurch 1:1 wie Upgrade-Material, montierbar auf Waffe/Rüstung/
+        # Cyberdeck/Riggerkonsole (items/augments.py::AUGMENT_TRAEGER_TYPEN).
         "upgradeSlots": body.upgradeSlots,
-        "istAugment": True if body.typ == "Upgrade-Material" else body.istAugment,
+        "istAugment": True if body.typ in ("Upgrade-Material", "Ki-Tama") else body.istAugment,
         "augmentWaffentyp": body.augmentWaffentyp,
         "augmentZielTyp": body.augmentZielTyp,
         "defekt": body.defekt,
@@ -287,9 +291,9 @@ async def create_vorlage(campaign_id: str, body: GegenstandCreate):
 async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     daten = body.model_dump()
     # Dieselbe Regel wie beim Anlegen (siehe _create_data): Typ "Upgrade-
-    # Material" erzwingt istAugment=true, auch wenn nur der Typ per
-    # "Typ ändern"-Popup nachträglich umgestellt wird.
-    if body.typ == "Upgrade-Material":
+    # Material" ODER "Ki-Tama" erzwingt istAugment=true, auch wenn nur der
+    # Typ per "Typ ändern"-Popup nachträglich umgestellt wird.
+    if body.typ in ("Upgrade-Material", "Ki-Tama"):
         daten["istAugment"] = True
     item = await repository.update_gegenstand(campaign_id, item_id, daten)
     if item is None:

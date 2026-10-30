@@ -1252,15 +1252,16 @@ class SteigernInput(BaseModel):
     willenskraft: bool = False
 
 
-async def _materia_preise(campaign_id: str, person_id: str) -> list[dict]:
-    """Materia-Fertigkeiten (29.10.2026) als Einträge im selben Format wie
-    `erfahrung.preisliste` — erscheinen dadurch unverändert im normalen
-    "Fähigkeiten"-Abschnitt des EP-Blatts (Kategorie immer "Fertigkeit"),
-    obwohl ihre Stufe am GEGENSTAND statt an der Person hängt. Siehe
-    `erfahrung.materia_schluessel`/`materia_entschluesseln` für den
-    synthetischen traitDefId, der beide Welten verbindet.
+async def _kitama_preise(campaign_id: str, person_id: str) -> list[dict]:
+    """Ki-Tama-Fertigkeiten (29.10.2026, 30.10.2026 umbenannt von "Materia")
+    als Einträge im selben Format wie `erfahrung.preisliste` — erscheinen
+    dadurch unverändert im normalen "Fähigkeiten"-Abschnitt des EP-Blatts
+    (Kategorie immer "Fertigkeit"), obwohl ihre Stufe am GEGENSTAND statt
+    an der Person hängt. Siehe `erfahrung.kitama_schluessel`/
+    `kitama_entschluesseln` für den synthetischen traitDefId, der beide
+    Welten verbindet.
     """
-    rohdaten = await items_repository.materia_fertigkeiten_liste(campaign_id, person_id)
+    rohdaten = await items_repository.kitama_fertigkeiten_liste(campaign_id, person_id)
     eintraege = []
     for r in rohdaten:
         preis = erfahrung.kosten("Fertigkeit", r["aktuell"])
@@ -1268,7 +1269,7 @@ async def _materia_preise(campaign_id: str, person_id: str) -> list[dict]:
             continue
         eintraege.append(
             {
-                "traitDefId": erfahrung.materia_schluessel(r["gegenstandId"], r["name"]),
+                "traitDefId": erfahrung.kitama_schluessel(r["gegenstandId"], r["name"]),
                 "name": f"{r['name']} ({r['gegenstandName']})",
                 "category": "Fertigkeit",
                 "aktuell": r["aktuell"],
@@ -1307,7 +1308,7 @@ async def get_steigerungspreise(
     preise = erfahrung.preisliste([t for t in katalog if t["category"] in erlaubt], nach_name)
     for eintrag in preise:
         eintrag["max"] = grenzen.get(eintrag["traitDefId"], eintrag["max"])
-    preise += await _materia_preise(campaign_id, person_id)
+    preise += await _kitama_preise(campaign_id, person_id)
 
     chrom = await willenskraft_verlust(campaign_id, person_id)
     willenskraft = willenskraft_max(nach_name, int(person.get("willenskraftBonus") or 0), chrom)
@@ -1374,29 +1375,29 @@ async def steigere_wert(
         if not body.traitDefId:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein Wert angegeben")
 
-        materia_info = erfahrung.materia_entschluesseln(body.traitDefId)
-        if materia_info is not None:
-            gegenstand_id, materia_name = materia_info
-            rohdaten = await items_repository.materia_fertigkeiten_liste(campaign_id, person_id)
+        kitama_info = erfahrung.kitama_entschluesseln(body.traitDefId)
+        if kitama_info is not None:
+            gegenstand_id, kitama_name = kitama_info
+            rohdaten = await items_repository.kitama_fertigkeiten_liste(campaign_id, person_id)
             eintrag = next(
-                (r for r in rohdaten if r["gegenstandId"] == gegenstand_id and r["name"] == materia_name),
+                (r for r in rohdaten if r["gegenstandId"] == gegenstand_id and r["name"] == kitama_name),
                 None,
             )
             if eintrag is None:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
-                    "Diese Materia-Fähigkeit ist nicht (mehr) verfügbar — Gegenstand nicht "
-                    "mehr im Besitz, nicht mehr ausgerüstet, oder nicht mehr als Materia markiert.",
+                    "Diese Ki-Tama-Fähigkeit ist nicht (mehr) verfügbar — Gegenstand nicht "
+                    "mehr im Besitz, nicht mehr ausgerüstet, oder nicht mehr als Ki-Tama markiert.",
                 )
             if eintrag["aktuell"] >= 6:
-                raise HTTPException(status.HTTP_409_CONFLICT, f"{materia_name} steht bereits auf dem Maximum 6.")
+                raise HTTPException(status.HTTP_409_CONFLICT, f"{kitama_name} steht bereits auf dem Maximum 6.")
 
             preis = erfahrung.kosten("Fertigkeit", eintrag["aktuell"]) or 0
             if preis > verfuegbar:
                 raise HTTPException(status.HTTP_409_CONFLICT, f"{preis} EP nötig, {verfuegbar} vorhanden.")
 
-            aktualisiertes_item = await items_repository.steigere_materia_fertigkeit(
-                campaign_id, gegenstand_id, person_id, materia_name
+            aktualisiertes_item = await items_repository.steigere_kitama_fertigkeit(
+                campaign_id, gegenstand_id, person_id, kitama_name
             )
             if aktualisiertes_item is None:
                 raise HTTPException(
@@ -1410,12 +1411,12 @@ async def steigere_wert(
                 person_id,
                 {"erfahrungAusgegeben": ausgegeben + preis},
             )
-            # Ereignisprotokoll: Materia-Steigerung zählt wie eine normale
+            # Ereignisprotokoll: Ki-Tama-Steigerung zählt wie eine normale
             # Punktsteigerung, nur mit dem Gegenstandsnamen in der Notiz —
             # kein eigener traitDefId (der gehört ja keinem TraitDef-Katalog).
             await hooks.charakterentwicklung(
                 campaign_id, person_id=person_id, art="STEIGERUNG",
-                trait_name=f"{materia_name} ({aktualisiertes_item['name']})",
+                trait_name=f"{kitama_name} ({aktualisiertes_item['name']})",
                 alt=str(eintrag["aktuell"]), neu=str(eintrag["aktuell"] + 1), kosten_oder_menge=preis,
             )
             return await get_steigerungspreise(campaign_id, person_id, viewer)

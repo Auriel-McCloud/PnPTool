@@ -24,7 +24,7 @@ RETURN_FIELDS = """
     g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
     g.kampfFertigkeit AS kampfFertigkeit,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
-    g.materiaFertigkeiten AS materiaFertigkeiten,
+    g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
     g.entfernungBeantragt AS entfernungBeantragt,
     g.zusatzaktionen AS zusatzaktionen,
@@ -169,7 +169,7 @@ def _decode(record: dict) -> dict:
     else:
         record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert") else ""
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
-    for feld in ("traitBoni", "ausruestungsfertigkeiten", "materiaFertigkeiten"):
+    for feld in ("traitBoni", "ausruestungsfertigkeiten", "kiTamaFertigkeiten"):
         try:
             roh = record.get(feld)
             record[feld] = json.loads(roh) if roh else {}
@@ -255,7 +255,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
-            materiaFertigkeiten: $materiaFertigkeiten,
+            kiTamaFertigkeiten: $kiTamaFertigkeiten,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
@@ -348,7 +348,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             augmentZielTyp=data.get("augmentZielTyp") or "",
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
-            materiaFertigkeiten=json.dumps(data.get("materiaFertigkeiten") or {}),
+            kiTamaFertigkeiten=json.dumps(data.get("kiTamaFertigkeiten") or {}),
             sichtbarkeit=data["sichtbarkeit"],
             sichtbarFuer=data["sichtbarFuer"],
             ablage=data.get("ablage") or "RUCKSACK",
@@ -666,8 +666,8 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["traitBoni"] = json.dumps(changed["traitBoni"])
     if "ausruestungsfertigkeiten" in changed:
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
-    if "materiaFertigkeiten" in changed:
-        changed["materiaFertigkeiten"] = json.dumps(changed["materiaFertigkeiten"])
+    if "kiTamaFertigkeiten" in changed:
+        changed["kiTamaFertigkeiten"] = json.dumps(changed["kiTamaFertigkeiten"])
 
     driver = get_driver()
 
@@ -1524,9 +1524,10 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
         return list(eintraege.values())
 
 
-async def materia_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
-    """Materia-Fertigkeiten (29.10.2026, Marks FF7-Idee): ausruestungsfertigkeiten,
-    die die SL per `materiaFertigkeiten` als steigerbar markiert hat, von
+async def kitama_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
+    """Ki-Tama-Fertigkeiten (29.10.2026, Marks FF7-Idee, 30.10.2026 umbenannt
+    von "Materia"): ausruestungsfertigkeiten, die die SL per
+    `kiTamaFertigkeiten` als steigerbar markiert hat, von
     AUSGERÜSTETEN/verbauten Gegenständen dieser Person.
 
     Anders als `ausruestungsfertigkeiten_liste` oben wird hier NICHT über den
@@ -1539,10 +1540,10 @@ async def materia_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[d
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
         WHERE {WIRKT}
-          AND g.materiaFertigkeiten IS NOT NULL AND g.materiaFertigkeiten <> ''
-          AND g.materiaFertigkeiten <> '{{}}'
+          AND g.kiTamaFertigkeiten IS NOT NULL AND g.kiTamaFertigkeiten <> ''
+          AND g.kiTamaFertigkeiten <> '{{}}'
         RETURN g.id AS gegenstandId, g.name AS gegenstandName,
-               g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.materiaFertigkeiten AS materiaRoh
+               g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.kiTamaFertigkeiten AS kiTamaRoh
     """
     async with driver.session() as session:
         result = await session.run(
@@ -1552,11 +1553,11 @@ async def materia_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[d
         async for record in result:
             try:
                 fertigkeiten = json.loads(record["fertigkeitenRoh"]) if record["fertigkeitenRoh"] else {}
-                materia = json.loads(record["materiaRoh"]) if record["materiaRoh"] else {}
+                ki_tama = json.loads(record["kiTamaRoh"]) if record["kiTamaRoh"] else {}
             except (json.JSONDecodeError, TypeError):
                 continue
-            for name, ist_materia in materia.items():
-                if not ist_materia or name not in fertigkeiten:
+            for name, ist_ki_tama in ki_tama.items():
+                if not ist_ki_tama or name not in fertigkeiten:
                     continue
                 eintraege.append(
                     {
@@ -1569,10 +1570,10 @@ async def materia_fertigkeiten_liste(campaign_id: str, person_id: str) -> list[d
         return eintraege
 
 
-async def steigere_materia_fertigkeit(
+async def steigere_kitama_fertigkeit(
     campaign_id: str, item_id: str, person_id: str, name: str
 ) -> dict | None:
-    """Hebt die Stufe einer als Materia markierten ausruestungsfertigkeit an
+    """Hebt die Stufe einer als Ki-Tama markierten ausruestungsfertigkeit an
     — schreibt direkt auf den GEGENSTAND, nicht auf die Person. Mark:
     \"die XP werden dann auf den Gegenstand übertragen\" — wandert der
     Gegenstand per Besitzerwechsel weiter (z.B. Loot vom Endboss), kommt die
@@ -1583,14 +1584,14 @@ async def steigere_materia_fertigkeit(
     Match) und nur solange der Gegenstand wirkt (WIRKT — dieselbe
     Ausgerüstet-/verbaut-Regel wie überall sonst). `None` heisst: Gegenstand
     gehört dieser Person nicht (mehr), wirkt gerade nicht, oder die
-    Fertigkeit ist nicht (mehr) als Materia markiert — der Aufrufer (siehe
+    Fertigkeit ist nicht (mehr) als Ki-Tama markiert — der Aufrufer (siehe
     traits/routes.py::steigere_wert) meldet das als 404/409.
     """
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand {{id: $item_id}})
         WHERE {WIRKT}
-        RETURN g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.materiaFertigkeiten AS materiaRoh
+        RETURN g.ausruestungsfertigkeiten AS fertigkeitenRoh, g.kiTamaFertigkeiten AS kiTamaRoh
     """
     async with driver.session() as session:
         result = await session.run(
@@ -1605,10 +1606,10 @@ async def steigere_materia_fertigkeit(
             return None
         try:
             fertigkeiten = json.loads(record["fertigkeitenRoh"]) if record["fertigkeitenRoh"] else {}
-            materia = json.loads(record["materiaRoh"]) if record["materiaRoh"] else {}
+            ki_tama = json.loads(record["kiTamaRoh"]) if record["kiTamaRoh"] else {}
         except (json.JSONDecodeError, TypeError):
             return None
-        if not materia.get(name) or name not in fertigkeiten:
+        if not ki_tama.get(name) or name not in fertigkeiten:
             return None
         fertigkeiten[name] = int(fertigkeiten[name]) + 1
     return await update_gegenstand(campaign_id, item_id, {"ausruestungsfertigkeiten": fertigkeiten})

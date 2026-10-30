@@ -28,6 +28,7 @@ export const TYP_KATALOG: TypEintrag[] = [
   { typ: "Cyberdeck", symbol: "💻" },
   { typ: "Riggerkonsole", symbol: "🎮" },
   { typ: "Upgrade-Material", symbol: "🔩" },
+  { typ: "Ki-Tama", symbol: "🔮" },
   { typ: "Sonstiges", symbol: "◈" },
 ];
 

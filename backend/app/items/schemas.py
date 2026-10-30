@@ -172,19 +172,21 @@ class GegenstandCreate(BaseModel):
     # magischen Stiefeln) — Name -> Bonuswürfel. Erscheinen nur, solange
     # ausgerüstet, als eigener Abschnitt auf dem Charakterbogen.
     ausruestungsfertigkeiten: dict[str, int] = {}
-    # Materia (29.10.2026, Marks FF7-Idee): welche der obigen
-    # ausruestungsfertigkeiten der Spieler mit eigener Erfahrung hochleveln
-    # darf (bis Stufe 6, dieselbe Kostenkurve wie eine normale Fertigkeit,
-    # siehe traits/erfahrung.py::materia_schluessel). Name -> true. Bewusst
-    # ein EIGENES Flag statt alle ausruestungsfertigkeiten automatisch
-    # steigerbar zu machen — Mark: "eigenes Häkchen pro Fertigkeit", nicht
-    # jeder flache Item-Bonus soll EP-Investitionen anziehen. Die Stufe
-    # selbst steht weiterhin nur in ausruestungsfertigkeiten; dieses Feld
-    # markiert nur, WELCHE Einträge dort steigerbar sind. Der Clou: die
-    # Stufe hängt am GEGENSTAND, nicht an der Person — wandert ein
-    # Gegenstand per Besitzerwechsel (z.B. Loot vom Endboss) weiter, kommt
-    # die hochgelevelte Stufe automatisch mit, ganz ohne eigene Logik dafür.
-    materiaFertigkeiten: dict[str, bool] = {}
+    # Ki-Tama (29.10.2026, Marks FF7-Idee, 30.10.2026 umbenannt von "Materia"
+    # zu "Ki-Tama" — jap. "Tama" = Perle/Kugel + "Ki" = KI-Kristall):
+    # welche der obigen ausruestungsfertigkeiten der Spieler mit eigener
+    # Erfahrung hochleveln darf (bis Stufe 6, dieselbe Kostenkurve wie eine
+    # normale Fertigkeit, siehe traits/erfahrung.py::kitama_schluessel).
+    # Name -> true. Bewusst ein EIGENES Flag statt alle
+    # ausruestungsfertigkeiten automatisch steigerbar zu machen — Mark:
+    # "eigenes Häkchen pro Fertigkeit", nicht jeder flache Item-Bonus soll
+    # EP-Investitionen anziehen. Die Stufe selbst steht weiterhin nur in
+    # ausruestungsfertigkeiten; dieses Feld markiert nur, WELCHE Einträge
+    # dort steigerbar sind. Der Clou: die Stufe hängt am GEGENSTAND, nicht
+    # an der Person — wandert ein Gegenstand per Besitzerwechsel (z.B. Loot
+    # vom Endboss) weiter, kommt die hochgelevelte Stufe automatisch mit,
+    # ganz ohne eigene Logik dafür.
+    kiTamaFertigkeiten: dict[str, bool] = {}
     # Eigengewicht in kg. 0 = vernachlässigbar (Ausweis, Datenchip).
     gewicht: float = 0.0
     # Wie viel dieser Gegenstand aufnehmen kann, in kg. 0 = kein Behälter.
@@ -353,7 +355,7 @@ class GegenstandUpdate(BaseModel):
     verbaut: bool | None = None
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
-    materiaFertigkeiten: dict[str, bool] | None = None
+    kiTamaFertigkeiten: dict[str, bool] | None = None
     bildUrl: str | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -458,7 +460,7 @@ class GegenstandResponse(BaseModel):
     entfernungBeantragt: bool = False
     zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
-    materiaFertigkeiten: dict[str, bool] = {}
+    kiTamaFertigkeiten: dict[str, bool] = {}
     # Weggeworfen: liegt im Mülleimer der Spielleitung. Bewusst kein Löschen —
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in
     # der Mülleimer-Liste; zählt weder Gewicht noch Boni.

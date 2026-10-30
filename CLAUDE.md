@@ -4,6 +4,39 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Als nächstes geplant (Phase 3 — Frontend)
 
+- **Materia umbenannt zu "Ki-Tama" + eigene Item-Kategorie** (30.10.2026,
+  Mark: "wir nennen es Ki-Tama, tama aus dem Japanischen für Perle, und Ki
+  wegen den KI-Kristallen"). Komplettes Rename des 29.10.2026-Features
+  unten: `materiaFertigkeiten`→`kiTamaFertigkeiten` (schemas.py,
+  repository.py, items/api.ts, CharacterSheetPanel.tsx — Checkbox-Label
+  jetzt "Ki-Tama"), `MATERIA_PRAEFIX`→`KITAMA_PRAEFIX` ("materia::"→
+  "kitama::"), `materia_schluessel`/`materia_entschluesseln`→
+  `kitama_schluessel`/`kitama_entschluesseln` (erfahrung.py),
+  `materia_fertigkeiten_liste`/`steigere_materia_fertigkeit`→
+  `kitama_fertigkeiten_liste`/`steigere_kitama_fertigkeit` (items/
+  repository.py), `_materia_preise`→`_kitama_preise` (traits/routes.py).
+  `tests/test_materia.py`→`tests/test_kitama.py`. **Zusätzlich neue eigene
+  Item-Kategorie "Ki-Tama"** (`items/typKatalog.ts`, Symbol 🔮) — Mark:
+  "dann erschaffen wir das als neue Item Kathegorie die gleich funktioniert
+  wie Upgrade-Material, dann macht es auch total sinn das man das auf
+  Waffe und Rüstung anbringen kann". Folgt exakt derselben Regel wie Typ
+  "Upgrade-Material": `items/routes.py::_create_data`/`update_item`
+  erzwingt `istAugment=true` für `typ in ("Upgrade-Material", "Ki-Tama")`
+  — dadurch automatisch montierbar auf Waffe/Rüstung/Cyberdeck/
+  Riggerkonsole (`items/augments.py::AUGMENT_TRAEGER_TYPEN`), keine
+  Sonderlogik nötig. Ein Ki-Tama-Item trägt wie gehabt
+  `ausruestungsfertigkeiten`+`kiTamaFertigkeiten` für die Leveling-Mechanik
+  UND kann zusätzlich als Augment montiert werden — beide Mechaniken sind
+  unabhängig voneinander nutzbar. **Verifiziert:** `test_kitama.py` (7
+  Tests, umbenannt von test_materia.py) + volle Backend-Suite ohne
+  Regression (55 vorbestehende Fehlschläge unverändert, Diff gegen
+  `git stash` auf `main` verglichen), `npx tsc -b` sauber. **Kein
+  Klicktest** — bitte am Spieltisch: ein Item mit Typ "Ki-Tama" anlegen,
+  prüfen dass es in der Werkbank als Upgrade erscheint und auf eine Waffe
+  oder Rüstung montierbar ist, UND dass das alte Materia-Leveling (Häkchen
+  "Ki-Tama" auf einer Ausrüstungsfertigkeit, im EP-Sheet hochleveln) nach
+  der Umbenennung weiterhin funktioniert.
+
 - **Materia-Fertigkeiten: Upgrade-Material-Skills mit eigener EP steigerbar,
   Stufe wandert bei Besitzerwechsel mit** (29.10.2026, Marks FF7/Crisis-Core-
   Idee: "wir könnten bei gewissen Skills die Möglichkeit ergänzen sie zu
