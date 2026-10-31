@@ -48,7 +48,12 @@ function grundAblagen(): { wert: Ablage; label: string; symbol: string; erklaeru
     {
       wert: "RUCKSACK",
       label: "Mitgeführt",
-      symbol: "✋",
+      // 31.10.2026, Mark: die Hand (✋) sah auf den meisten Systemen gelb
+      // eingefärbt, genau wie 🤝 beim Weitergeben-Knopf — kaum zu
+      // unterscheiden. Das Kastl-Symbol übernimmt jetzt hier die Rolle "kein
+      // bestimmter Behälter", während die echten Behälter unten (ziele) das
+      // Rucksack-Symbol zurückbekommen, das vorher hier stand.
+      symbol: "▣",
       erklaerung: "Dabei, aber in keinem bestimmten Behälter — am Gürtel oder in der Hand.",
     },
   ];
@@ -481,7 +486,7 @@ export function GegenstandKachel({
                   onClick={() => umlegen("GELAGERT", z.id)}
                   title={z.kind === "Ort" ? `Liegt am Ort „${z.name}".` : `Verstaut in „${z.name}".`}
                 >
-                  <span aria-hidden="true">{z.kind === "Ort" ? "⌂" : "▣"}</span> {z.name}
+                  <span aria-hidden="true">{z.kind === "Ort" ? "⌂" : "🎒"}</span> {z.name}
                 </button>
               ))}
             <button

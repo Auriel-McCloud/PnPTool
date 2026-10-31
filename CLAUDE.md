@@ -135,6 +135,34 @@ Spieltisch getestet.** Vorbestehend und NICHT dieses Feature betreffend:
 `test_bogenfeld_defaults.py` meldet fehlende `_BOGEN_DEFAULTS`-Einträge für
 `istDrohne`/`istFahrzeug` (PERSON_FIELDS, unabhängig von diesem Umbau).
 
+## Aktueller Aufenthaltsort zählt auch als Ablageziel (31.10.2026)
+
+Direkte Nachbesserung zum Versteck-Feature: Mark war mit seiner Party an
+einem Ort, sein Spieler stand dort, konnte aber nichts ablegen — der Ort
+war schlicht kein markiertes Versteck. Mark wollte explizit NICHT, dass
+das zur Versteck-Pflicht wird: körperliche Anwesenheit soll von sich aus
+reichen.
+
+`moegliche_ablageziele` bekommt eine dritte UNION-Zeile:
+`(:Person)-[:MITGLIED_VON]->(:Party)-[:BEFINDET_SICH_AN]->(o:Ort)` — der
+Ort, an dem die eigene Party gerade `BEFINDET_SICH_AN` ist, zählt
+zusätzlich zum Versteck. Nur Ort als Ziel-Typ, ein `Event` als
+Aufenthaltsort ergibt kein Lagerziel. `MITGLIED_VON` ist höchstens eine
+Kante pro Person (siehe party/repository.py), das UNION dedupliziert
+ohnehin, falls Versteck und Aufenthaltsort zufällig derselbe Ort sind.
+
+Dabei gleich zwei Symbol-Verwechslungen aus dem Mehr-Behälter-Feature
+behoben (Mark: "Mitgeführt" und "Weitergeben" beide gelb und ähnlich,
+außerdem "vorher das kleine Rucksack-Symbol, das hat mir besser gefallen
+als das Kastl im Kastl"): `GegenstandKachel.tsx` tauscht "Mitgeführt"
+(keine feste Zuordnung) von ✋ auf ▣, die echten Behälter in der
+Ziel-Liste von ▣ auf 🎒 zurück.
+
+**Verifiziert:** `npx tsc -b`/`npm run build` sauber, Live-Test gegen
+lokale Neo4j (Party mit Aufenthaltsort angelegt, nur dieser Ort kam bei
+`moegliche_ablageziele` zurück, fremder Ort weiterhin gefiltert). **Noch
+nicht am Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**

@@ -1238,16 +1238,24 @@ async def get_owner_person_id(campaign_id: str, item_id: str) -> str | None:
 
 
 async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
-    """Eigene Versteck-Orte und eigene Behälter-Gegenstände, in denen etwas
-    liegen kann.
+    """Eigene Versteck-Orte, der aktuelle Aufenthaltsort der eigenen Party
+    und eigene Behälter-Gegenstände, in denen etwas liegen kann.
 
-    Orte (31.10.2026, Mark nach dem ersten echten Mehr-Behälter-Test: "ich
-    sehe extrem viele Orte, nicht nur die Behälter die ich ausgerüstet
-    habe" — vorher kam JEDER Ort der Kampagne als Ziel, auch Weltorte ohne
-    jeden Bezug zur Person): nur Orte, die als Versteck dieser Person
-    markiert sind (`versteckVonPersonIds`, von der SL im Ort-Bearbeiten-
-    Fenster gesetzt). Eine Liste statt Einzel-Besitzer, weil ein Party-
-    Safehouse mehreren PCs gehören können soll.
+    Orte, Variante 1 — Versteck (31.10.2026, Mark nach dem ersten echten
+    Mehr-Behälter-Test: "ich sehe extrem viele Orte, nicht nur die Behälter
+    die ich ausgerüstet habe" — vorher kam JEDER Ort der Kampagne als Ziel,
+    auch Weltorte ohne jeden Bezug zur Person): nur Orte, die als Versteck
+    dieser Person markiert sind (`versteckVonPersonIds`, von der SL im
+    Ort-Bearbeiten-Fenster gesetzt). Eine Liste statt Einzel-Besitzer, weil
+    ein Party-Safehouse mehreren PCs gehören können soll.
+
+    Orte, Variante 2 — aktueller Aufenthaltsort (31.10.2026, Mark: Party ist
+    an einem Ort, der Spieler steht dort, kann aber nichts ablegen): wo
+    immer die eigene Party gerade `BEFINDET_SICH_AN` ist, zählt zusätzlich
+    als Ziel — unabhängig vom Versteck-Flag. Nur wenn das Ziel ein `Ort` ist
+    (ein `Event` als Aufenthaltsort ergibt kein Lagerziel). `MITGLIED_VON`
+    ist höchstens eine Kante pro Person (party/repository.py), das zweite
+    MATCH liefert also nie mehr als einen Treffer.
 
     Behälter ist, was ausdrücklich als solcher markiert ist (`istBehaelter`) —
     **nicht**, was einen bestimmten Typ trägt. Ein Motorrad ist ein Fahrzeug
@@ -1266,6 +1274,9 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
             """
             MATCH (o:Ort {campaignId: $campaign_id})
             WHERE $person_id IN coalesce(o.versteckVonPersonIds, [])
+            RETURN o.id AS id, o.name AS name, 'Ort' AS kind
+            UNION
+            MATCH (:Person {id: $person_id})-[:MITGLIED_VON]->(:Party)-[:BEFINDET_SICH_AN]->(o:Ort)
             RETURN o.id AS id, o.name AS name, 'Ort' AS kind
             UNION
             MATCH (p:Person {id: $person_id})-[:BESITZT]->(g:Gegenstand)
