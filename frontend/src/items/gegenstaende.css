@@ -482,8 +482,30 @@
 .gg-fachraster {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--gg-kachel-breite, 148px), 1fr));
-  grid-auto-rows: var(--gg-kachel-hoehe, 168px);
+  grid-auto-rows: minmax(var(--gg-kachel-hoehe, 168px), auto);
   gap: var(--gg-abstand, 10px);
+}
+
+/* Fremden Gegenstand am gemeinsamen Ort aufheben (31.10.2026) — sitzt UNTER
+   der schreibgeschützten Kachel, nicht als Overlay wie .gg-zurueckgeben
+   (Mark: "im Moment schwebt er rechts darüber und wirkt wenig darauf"). */
+.gg-aufheben {
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  color: var(--text-leise);
+  cursor: pointer;
+}
+
+.gg-aufheben:hover {
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--text);
 }
 
 /* In einen Behälter hineinsehen — öffnet ein weiteres Fenster über diesem. */

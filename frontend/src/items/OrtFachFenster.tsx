@@ -78,7 +78,7 @@ export function OrtFachFenster({
           {items.map((g) => {
             const eigenes = g.ownerId === eigenePersonId;
             return (
-              <div key={g.id} style={{ position: "relative" }}>
+              <div key={g.id} style={{ display: "flex", flexDirection: "column" }}>
                 <GegenstandKachel
                   item={g}
                   campaignId={campaignId}
@@ -91,7 +91,7 @@ export function OrtFachFenster({
                 {!eigenes && (
                   <button
                     type="button"
-                    className="gg-zurueckgeben"
+                    className="gg-aufheben"
                     title={g.ownerName ? `Gehört ${g.ownerName} — an dich nehmen` : "An dich nehmen"}
                     disabled={laeuft === g.id}
                     onClick={() => aufheben(g)}
