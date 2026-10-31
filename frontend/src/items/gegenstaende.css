@@ -694,22 +694,34 @@
   color: var(--text-leise);
 }
 
-.schloss-tasten {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+.schloss-kreis {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 4px auto 0;
+}
+
+.schloss-kreis-mitte {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.6;
+  color: var(--text-leise);
 }
 
 .schloss-taste {
+  position: absolute;
+  transform: translate(-50%, -50%);
   width: 52px;
   height: 52px;
-  border-radius: var(--radius);
+  border-radius: 50%;
   border: 1px solid var(--linie);
   background: var(--flaeche);
   color: var(--text);
-  font-family: var(--mono);
-  font-size: 18px;
+  font-family: "Segoe UI Historic", "Segoe UI Symbol", var(--mono);
+  font-size: 22px;
   cursor: pointer;
 }
 

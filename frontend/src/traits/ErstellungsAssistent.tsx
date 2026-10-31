@@ -80,8 +80,10 @@ export function ErstellungsAssistent({
 
 /** Cyberware-Drohnenauge — für Chrom/NeuroWeaver. Hypercube-Wireframe:
  * äußerer und innerer Rahmen rotieren gegenläufig, die Speichen dazwischen
- * schieben sich rhythmisch (Tesseract-Schatten-Optik). */
-function KonstruktIcon() {
+ * schieben sich rhythmisch (Tesseract-Schatten-Optik). Exportiert, weil das
+ * Tasten-Schloss (SchlossOeffnen.tsx) dasselbe Zeichen in der Mitte seines
+ * Runen-Kreises zeigt — Marks Wunsch: "unser mystisches KI-Zeichen". */
+export function KonstruktIcon() {
   return (
     <svg viewBox="0 0 48 48" width="36" height="36" className="as-svg">
       <g className="as-hyper-links">

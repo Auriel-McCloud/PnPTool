@@ -13,6 +13,7 @@ from app.ereignisprotokoll import hooks
 from app.entities.visibility import filter_gegenstaende_for_viewer
 from app.items import chirurgie, repository
 from app.items.schloss import (
+    TASTEN,
     anzeige_fuer,
     besitzt_erreichbaren_schluessel,
     ids_in_verschlossenem,
@@ -1054,7 +1055,7 @@ async def kiste_spiel(campaign_id: str, item_id: str, body: SpielZug, viewer: Vi
         await spiel_schreiben(campaign_id, item_id, folge, runde, False)
     if body.folge is None:
         return SpielStand(runde=runde + 1, anzeige=anzeige_fuer(folge, runde))
-    if any(taste < 0 or taste >= 5 for taste in body.folge):
+    if any(taste < 0 or taste >= TASTEN for taste in body.folge):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unbekannte Taste.")
     if not zug_passt(body.folge, folge, runde):
         folge = neue_folge(laenge)

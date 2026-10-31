@@ -11,7 +11,9 @@ import random
 from app.db.neo4j_driver import get_driver
 
 SCHLOSS_ARTEN = ("passwort", "schluessel", "spiel")
-TASTEN = 5
+# 10 Tasten im Kreis angeordnet (Mark, 31.10.2026: Runen-Kreis statt 5 in
+# einer Reihe) — hier die einzige Stelle, die die Anzahl kennen muss.
+TASTEN = 10
 
 
 def ist_verschlossen(item: dict) -> bool:

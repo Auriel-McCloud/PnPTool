@@ -55,6 +55,7 @@ export function Fenster({
   kennung,
   ton,
   breit = false,
+  blitzt = false,
   onSchliessen,
   children,
 }: {
@@ -71,6 +72,12 @@ export function Fenster({
    * die Punktreihen um.
    */
   breit?: boolean;
+  /**
+   * Kurzes rotes Aufleuchten des Rahmens — z.B. ein Fehlversuch beim
+   * Tasten-Schloss. Einmaliger Puls pro `true`→`false`→`true`-Wechsel,
+   * kein Dauerzustand (Mark, 31.10.2026).
+   */
+  blitzt?: boolean;
   onSchliessen: () => void;
   children: ReactNode;
 }) {
@@ -195,6 +202,7 @@ export function Fenster({
     breit ? "fn-fenster-breit" : "",
     maximiert ? "fn-fenster-maximiert" : "",
     zieht ? "fn-fenster-zieht" : "",
+    blitzt ? "fn-fenster-blitz" : "",
   ]
     .filter(Boolean)
     .join(" ");

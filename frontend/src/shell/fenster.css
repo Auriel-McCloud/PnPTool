@@ -97,6 +97,33 @@
   cursor: grabbing;
 }
 
+/* Fehler-Puls: Rahmen und Glut springen auf Rot und klingen zur gewohnten
+   Farbe aus — z.B. ein Fehlversuch beim Tasten-Schloss (SchlossOeffnen.tsx).
+   Reine CSS-Animation, kein Dauerzustand: Fenster.tsx haengt die Klasse nur
+   kurz an (siehe `blitzt`-Prop). */
+.fn-fenster-blitz {
+  animation: fn-blitz 0.5s ease-out;
+}
+
+@keyframes fn-blitz {
+  0% {
+    border-color: var(--nein);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.8),
+      0 24px 60px -12px rgb(0 0 0 / 0.85),
+      0 0 34px 6px var(--nein),
+      inset 0 0 32px -10px var(--nein);
+  }
+  100% {
+    border-color: var(--fn-ton, var(--bereich-farbe, var(--neon)));
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.8),
+      0 24px 60px -12px rgb(0 0 0 / 0.85),
+      0 0 22px -6px var(--fn-ton, var(--bereich-farbe, var(--neon))),
+      inset 0 0 26px -18px var(--fn-ton, var(--bereich-farbe, var(--neon)));
+  }
+}
+
 .fn-griff {
   width: 46px;
   height: 4px;
