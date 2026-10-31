@@ -39,14 +39,24 @@ const istBehaelter = (g: Gegenstand) => g.istBehaelter;
  * trägt, bekommt auch keinen Rucksack-Reiter, und ein Fahrzeug taucht erst
  * auf, wenn tatsächlich etwas darin liegt. So bildet die Auswahl ab, worauf
  * die Person gerade wirklich Zugriff hat.
+ *
+ * @param mitMontiert Fügt einen eigenen "Montiert"-Bereich für Augments/
+ *   Ki-Tamas hinzu, die an einem Trägergegenstand montiert sind, statt sie
+ *   wie bisher komplett zu verschlucken (Mark-Bugreport 31.10.2026: "als SL
+ *   kann ich sie nicht mehr sehen"). Bewusst standardmäßig AUS — die
+ *   Spieler-Ansicht ruft diese Funktion ohne das Flag auf und soll ihr
+ *   bisheriges Verhalten (montierte Stücke nur als Fähnchen am Träger,
+ *   keine eigene Auswahl) unverändert behalten; nur die SL-Übersicht
+ *   schaltet es gezielt ein.
  */
-export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Bereich[] {
+export function ermittleBereiche(items: Gegenstand[], einBesitzer = true, mitMontiert = false): Bereich[] {
   // Montierte Augments (Zielfernrohr & Co., 29.10.2026) sind kein eigener
   // Ablageplatz mehr — sie stecken an ihrem Trägergegenstand (MONTIERT_AN)
   // und werden dort schon als "montierte Upgrades" angezeigt. Ihr altes
   // `ablage`-Feld bleibt beim Montieren unverändert stehen, ohne diesen
   // Filter tauchten sie deshalb weiterhin einzeln im Rucksack/Ausgerüstet
   // auf, obwohl sie physisch Teil der Waffe/Rüstung sind (Mark-Bugreport).
+  const alleItems = items;
   items = items.filter((g) => !g.montiertAnId);
   const bereiche: Bereich[] = [
     {
@@ -160,6 +170,20 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
     });
   }
 
+  // Montierte Upgrades (Ki-Tama, Zielfernrohr & Co.) bekommen nur dann einen
+  // eigenen, wählbaren Bereich, wenn der Aufrufer das ausdrücklich will
+  // (siehe Doku oben) UND tatsächlich welche vorhanden sind — sonst ein
+  // leerer Reiter, der nie etwas zeigt.
+  if (mitMontiert && alleItems.some((g) => g.montiertAnId)) {
+    bereiche.push({
+      id: "MONTIERT",
+      name: "Montiert",
+      symbol: "🔩",
+      greifbar: false,
+      passt: (g) => Boolean(g.montiertAnId),
+    });
+  }
+
   return bereiche;
 }
 
@@ -174,10 +198,16 @@ export function filtereNachBereichen<T extends Gegenstand>(
   bereiche: Bereich[],
   auswahl: Set<string>,
 ): T[] {
-  // Siehe ermittleBereiche oben: montierte Augments gehören keinem Ablage-
-  // Bereich mehr, egal was ihr `ablage`-Feld historisch noch sagt.
-  const sichtbar = items.filter((g) => !g.montiertAnId);
-  if (auswahl.size === 0) return sichtbar;
+  // Siehe ermittleBereiche oben: montierte Augments gehören keinem normalen
+  // Ablage-Bereich mehr, egal was ihr `ablage`-Feld historisch noch sagt —
+  // AUSSER der Aufrufer hat per `mitMontiert` einen eigenen "Montiert"-
+  // Bereich angefordert und genau den gerade angewählt.
+  const ohneMontage = items.filter((g) => !g.montiertAnId);
+  if (auswahl.size === 0) return ohneMontage;
   const aktive = bereiche.filter((b) => auswahl.has(b.id));
-  return sichtbar.filter((g) => aktive.some((b) => b.passt(g)));
+  const ergebnis = ohneMontage.filter((g) => aktive.some((b) => b.passt(g)));
+  if (auswahl.has("MONTIERT")) {
+    ergebnis.push(...items.filter((g) => g.montiertAnId));
+  }
+  return ergebnis;
 }

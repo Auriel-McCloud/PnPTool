@@ -2183,6 +2183,15 @@ export function GegenstandRow({
                 {istVerschlossen(item) ? "🔒 verschlossen" : `📦 ${inhaltAnzahl ?? 0}`}
               </span>
             )}
+            {/* Montierte Augments/Ki-Tamas blieben für die SL bisher aus
+                jeder Übersicht komplett verschwunden (Mark-Bugreport
+                31.10.2026) — die Kachel zeigt jetzt, wo das Stück sitzt,
+                statt es nur unsichtbar zu machen. */}
+            {item.montiertAnId && (
+              <span className="gg-marke" title={`Montiert an ${item.montiertAnName ?? "?"}`}>
+                🔩 an {item.montiertAnName ?? "?"}
+              </span>
+            )}
           </span>
         </button>
         {fenster}

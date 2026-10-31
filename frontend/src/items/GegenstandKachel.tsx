@@ -265,6 +265,15 @@ export function GegenstandKachel({
               🔩 {name}
             </span>
           ))}
+          {/* Das Stück selbst ist montiert (31.10.2026, Mark: "als SL kann
+              ich Ki-Tamas/Waffen-Upgrades nicht mehr sehen, wenn sie
+              verbaut sind") — die Kachel bleibt wie gewohnt klickbar und
+              anzeigbar, bekommt aber zusätzlich ein Fähnchen, wo sie sitzt. */}
+          {item.montiertAnId && (
+            <span className="gg-marke" title={`Montiert an ${item.montiertAnName ?? "?"}`}>
+              🔩 an {item.montiertAnName ?? "?"}
+            </span>
+          )}
         </span>
       </button>
 

@@ -169,8 +169,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   // Der Behältername passt nur, wenn genau eine Person gefiltert ist —
   // sonst stünde der Rucksack eines Spielers über den Sachen aller.
+  // `mitMontiert=true`: die SL-Übersicht bekommt zusätzlich einen "Montiert"-
+  // Reiter für Ki-Tamas/Waffen-Upgrades, die sonst komplett unsichtbar
+  // blieben (Mark-Bugreport 31.10.2026).
   const bereiche = useMemo(
-    () => ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL),
+    () => ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL, true),
     [items, besitzerFilter],
   );
 

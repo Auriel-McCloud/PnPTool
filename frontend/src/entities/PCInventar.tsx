@@ -64,13 +64,16 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   }
 
   // Trenne verbaute Augments von normalen Gegenständen. Montierte
-  // Werkbank-Augments (Zielfernrohr & Co.) gehören ebenfalls nicht in die
-  // normale Ablage-Gruppierung — sie stecken an ihrem Trägergegenstand
-  // (MONTIERT_AN) und tauchen dort schon als "montierte Upgrades" auf,
-  // siehe items/aufbewahrung.ts für dieselbe Filterung in den anderen
-  // Inventar-Ansichten (Mark-Bugreport: Zielfernrohr blieb trotz Montage
-  // weiter im Rucksack sichtbar).
+  // Werkbank-Augments (Zielfernrohr, Ki-Tama & Co.) stecken an ihrem
+  // Trägergegenstand (MONTIERT_AN) und tauchen dort schon als "montierte
+  // Upgrades" auf, bekommen hier aber zusätzlich eine EIGENE Sektion —
+  // vorher fielen sie komplett aus der Ablage-Gruppierung heraus und waren
+  // für die SL nirgends mehr anklickbar (Mark-Bugreport 31.10.2026: "wenn
+  // Ki-Tamas oder Waffen-Upgrades verbaut sind, kann ich sie als SL auch
+  // nicht mehr sehen" — er will sie weiterhin öffnen können, nur mit einem
+  // Fähnchen, dass sie gerade verbaut sind).
   const verbaute = items.filter((i) => i.verbaut);
+  const montierte = items.filter((i) => i.montiertAnId && !i.verbaut);
   const nichtVerbaut = items.filter((i) => !i.verbaut && !i.montiertAnId);
 
   // Gruppiere nicht-verbaute nach Ablage
@@ -121,6 +124,23 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                 montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 // Verbaute Augments können nicht umgelagert werden
               />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Montierte Upgrades (Ki-Tama, Zielfernrohr & Co.): eigene, weiterhin
+          anklickbare Sektion statt komplett unsichtbar — die Kachel selbst
+          zeigt zusätzlich das Fähnchen "Montiert an …". */}
+      {montierte.length > 0 && (
+        <section className="pci-sektion pci-verbaut">
+          <h4 className="pci-ablage-titel">
+            <span>🔩 Montierte Upgrades</span>
+            <span className="pci-anzahl">{montierte.length}</span>
+          </h4>
+          <div className="pci-kachel-liste">
+            {montierte.map((g) => (
+              <GegenstandKachel key={g.id} item={g} />
             ))}
           </div>
         </section>

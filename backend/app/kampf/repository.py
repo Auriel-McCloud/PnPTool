@@ -128,14 +128,29 @@ async def hole(campaign_id: str) -> dict | None:
         )
         begleiter_besitzer = {r["begleiterId"]: r["besitzerId"] async for r in result}
 
-        # Drohnen/Fahrzeuge sind technisch personType NPC, aber keine geheimen
-        # Gegner — die eigene Sichtbarkeitsregel hängt am Rigger (Mark,
-        # 29.10.2026): PC-Rigger -> Name sichtbar, NPC-Rigger -> verdeckt.
+        # Drohnen/Fahrzeuge UND Critter sind technisch personType NPC, aber
+        # keine geheimen Gegner — die eigene Sichtbarkeitsregel hängt am
+        # Besitzer (Mark, 29.10.2026): PC-Besitzer -> Name sichtbar,
+        # NPC-Besitzer -> verdeckt. Ein Critter-Besitz kann wie bei
+        # `entities/repository.py::critter_besitzer` entweder über eine
+        # manuelle BEGLEITET-Kante ODER über das Ki-Tama-Item kommen, das
+        # `beschworenerCritterId` auf den Critter setzt — der Normalfall beim
+        # automatischen Beschwören. Diese Abfrage kannte bisher nur die
+        # BEGLEITET-Kante von Drohnen/Fahrzeugen und ignorierte Critter
+        # komplett: ein frisch beschworener Critter (nur über das Ki-Tama
+        # verknüpft, nie per BEGLEITET) zeigte Spielern/der Vorschau deshalb
+        # "Unbekannte Person" statt seines echten Namens, obwohl er dem
+        # eigenen Charakter gehört (Mark-Bugreport 31.10.2026).
         result = await session.run(
             """
-            MATCH (d:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p:Person)
-            WHERE d.istDrohne = true OR d.istFahrzeug = true
-            RETURN d.id AS drohneId, p.id AS riggerId
+            MATCH (d:Person {campaignId: $campaign_id})
+            WHERE d.istDrohne = true OR d.istFahrzeug = true OR d.istCritter = true
+            OPTIONAL MATCH (d)-[:BEGLEITET]->(p1:Person)
+            OPTIONAL MATCH (p2:Person {campaignId: $campaign_id})-[:BESITZT]->
+                (:Gegenstand {campaignId: $campaign_id, beschworenerCritterId: d.id})
+            WITH d, coalesce(p1.id, p2.id) AS besitzerId
+            WHERE besitzerId IS NOT NULL
+            RETURN d.id AS drohneId, besitzerId AS riggerId
             """,
             campaign_id=campaign_id,
         )
