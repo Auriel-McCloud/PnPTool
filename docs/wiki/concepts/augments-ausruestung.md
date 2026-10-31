@@ -556,6 +556,21 @@ im Kampf beschwören → Initiative setzen → Runden ticken runter. **Verifizie
 volle Backend-Suite ohne Regression (55 vorbestehende Fehlschläge
 unverändert), `npx tsc -b` sauber. Kein Klicktest — bitte am Spieltisch.
 
+**Einmal pro Kampf — GEBAUT (01.11.2026).** Mark: Ki-Tama-Beschwörungen
+dürfen pro Kampf jeweils nur einmal gerufen werden. Eine Stufe-1-Beschwörung
+hält nur eine Runde (`rundenVerbleibend=Stufe`) und ließe sich sonst jede
+Runde neu rufen. Jedes Ki-Tama einmal pro laufendem Kampf, die Stufe ändert
+das Limit nicht. Nächster Kampf zählt neu, weil der Kampf-Knoten dabei
+gelöscht wird.
+
+**Was den Ruf verbraucht:** ein Fehlwurf nicht, ein Patzer schon. Patzer ist
+die bestehende Regel aus [[wuerfelsystem]] (Hälfte der Würfel zeigt 1). Ein
+normaler Fehlschlag lässt einen neuen Versuch im selben Kampf zu. Keine
+weiteren Patzer-Folgen. „0 Erfolge“ allein ist kein Patzer — der Ausgang
+wird explizit gemeldet (`ausgang`: ja / nein / patzer). Die verbrauchten
+Item-IDs hängen am Kampf (`verbrauchteBeschwoerungen`), nicht am Critter,
+damit der Knopf auch nach Ablauf der Runden weg bleibt.
+
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
 Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich

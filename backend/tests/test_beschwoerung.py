@@ -1,7 +1,7 @@
 """Tests für Beschwörungs-Ki-Tama: Probe-Formel und Beschwörungswert, siehe
 app/items/beschwoerung.py und docs/wiki/concepts/augments-ausruestung.md."""
 
-from app.items.beschwoerung import benoetigte_erfolge, beschwoerungsstufe
+from app.items.beschwoerung import benoetigte_erfolge, beschwoerungsstufe, ruf_entscheidung
 
 
 class TestBeschwoerungsstufe:
@@ -40,3 +40,26 @@ class TestBenoetigteErfolge:
 
     def test_negative_eingaben_zaehlen_als_null_mit_mindestens_einem_erfolg(self):
         assert benoetigte_erfolge(-3, -2) == 1
+
+
+class TestRufEinmalProKampf:
+    def test_patzer_verbraucht_auch_wenn_die_erfolge_reichen_wuerden(self):
+        assert ruf_entscheidung("patzer", False, 6, 1) == "verbraucht"
+
+    def test_fehlwurf_verbraucht_nicht(self):
+        assert ruf_entscheidung("nein", False, 0, 1) == "offen"
+
+    def test_null_erfolge_ohne_patzer_flag_ist_kein_patzer(self):
+        assert ruf_entscheidung("ja", False, 0, 1) == "zu-wenig"
+
+    def test_gelungener_ruf_verbraucht_und_holt_den_critter(self):
+        assert ruf_entscheidung("ja", False, 1, 1) == "gerufen"
+
+    def test_schon_gerufen_blockiert_auch_einen_weiteren_patzer(self):
+        assert ruf_entscheidung("patzer", True, 0, 1) == "blockiert"
+        assert ruf_entscheidung("ja", True, 4, 1) == "blockiert"
+
+    def test_stufe_aendert_das_limit_nicht(self):
+        # Dieselbe Entscheidung bei Schwelle 1 (Stufe 1) und Schwelle 3.
+        assert ruf_entscheidung("ja", False, 1, 1) == "gerufen"
+        assert ruf_entscheidung("ja", True, 3, 3) == "blockiert"

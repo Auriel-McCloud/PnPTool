@@ -86,6 +86,8 @@ export interface Kampf {
   /** Kennung des Teilnehmers, der gerade handelt. */
   amZug: string | null;
   teilnehmer: Teilnehmer[];
+  /** Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist. */
+  verbrauchteBeschwoerungen?: string[];
 }
 
 function basis(cid: string) {
@@ -112,8 +114,8 @@ export const kampfApi = {
    *  Beschwörungs-Probe (Intelligenz + Beschwörungswert), MUSS vor der
    *  Initiative-Eingabe bestanden sein. Initiative startet bei 0 und wird
    *  danach wie bei Drohnen per `meldeInitiative` gesetzt. */
-  beschwoeren: (cid: string, itemId: string, erfolge: number) =>
-    api.post<Kampf>(`${basis(cid)}/gegenstaende/${itemId}/beschwoeren`, { erfolge }),
+  beschwoeren: (cid: string, itemId: string, erfolge: number, ausgang: "ja" | "nein" | "patzer" = "ja") =>
+    api.post<Kampf>(`${basis(cid)}/gegenstaende/${itemId}/beschwoeren`, { erfolge, ausgang }),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */

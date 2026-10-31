@@ -145,10 +145,27 @@ export function DeineBeschwoerungen({
     }
   }
 
-  /** Probe misslungen — nichts zu melden, der Critter bleibt draußen. */
+  /** Probe misslungen — nichts zu melden, der Critter bleibt draußen.
+   *  Ein Fehlwurf verbraucht den einen Ruf pro Kampf nicht. */
   function fehlschlag() {
     setProbeZiel(null);
     setFehler(null);
+  }
+
+  /** Patzer: der Ruf dieses Ki-Tama ist für diesen Kampf weg, kein Critter. */
+  async function patzer() {
+    if (!probeZiel) return;
+    setSendet(true);
+    setFehler(null);
+    try {
+      await kampfApi.beschwoeren(campaignId, probeZiel.id, 0, "patzer");
+      setProbeZiel(null);
+      onGeaendert();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Beschwörung fehlgeschlagen");
+    } finally {
+      setSendet(false);
+    }
   }
 
   return (
@@ -160,6 +177,7 @@ export function DeineBeschwoerungen({
         {kiTamas.map((item) => {
           const critterId = item.beschworenerCritterId;
           const teilnahme = kampf?.teilnehmer.find((t) => t.personId === critterId);
+          const verbraucht = kampf?.verbrauchteBeschwoerungen?.includes(item.id) ?? false;
           return (
             <div className="gg-slot-spalte" key={item.id}>
               <button
@@ -176,8 +194,11 @@ export function DeineBeschwoerungen({
                     {teilnahme.rundenVerbleibend ?? "–"}
                   </span>
                 )}
+                {!teilnahme && verbraucht && (
+                  <span className="kk-slot-kurz">Diesen Kampf schon gerufen</span>
+                )}
               </button>
-              {!teilnahme && (
+              {!teilnahme && !verbraucht && (
                 <button type="button" onClick={() => setProbeZiel(item)} disabled={!kampf}>
                   Beschwören
                 </button>
@@ -219,7 +240,11 @@ export function DeineBeschwoerungen({
             <button type="button" className="bo-nein" onClick={fehlschlag} disabled={sendet}>
               Fehlschlag
             </button>
+            <button type="button" className="bo-patzer" onClick={patzer} disabled={sendet}>
+              Patzer
+            </button>
           </div>
+          <p className="lu-hinweis">Fehlschlag lässt einen neuen Versuch zu. Patzer verbraucht den Ruf für diesen Kampf.</p>
         </Fenster>
       )}
 

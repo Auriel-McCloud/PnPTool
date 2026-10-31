@@ -72,6 +72,11 @@
   border-color: var(--linie);
 }
 
+.bo-patzer {
+  color: var(--nein);
+  border-color: var(--nein);
+}
+
 /* --- Zweitwurf ------------------------------------------------------ */
 
 .bo-pool {

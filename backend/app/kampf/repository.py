@@ -83,7 +83,8 @@ async def hole(campaign_id: str) -> dict | None:
         result = await session.run(
             """
             MATCH (k:Kampf {campaignId: $campaign_id})
-            RETURN k.id AS id, k.runde AS runde, k.amZug AS amZug, k.begonnen AS begonnen
+            RETURN k.id AS id, k.runde AS runde, k.amZug AS amZug, k.begonnen AS begonnen,
+                   coalesce(k.verbrauchteBeschwoerungen, []) AS verbrauchteBeschwoerungen
             """,
             campaign_id=campaign_id,
         )
@@ -185,6 +186,9 @@ async def hole(campaign_id: str) -> dict | None:
         # Position zeigte danach auf jemand anderen.
         "amZug": am_zug,
         "teilnehmer": teilnehmer,
+        # Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist
+        # (gelungene Beschwörung oder Patzer). Fehlt am Altknoten = leer.
+        "verbrauchteBeschwoerungen": list(kampf["verbrauchteBeschwoerungen"] or []),
     }
 
 
@@ -360,6 +364,30 @@ async def beende(campaign_id: str) -> bool:
         )
         record = await result.single()
         return bool(record and record["weg"])
+
+
+async def beschwoerung_verbrauchen(campaign_id: str, item_id: str) -> None:
+    """Merkt am laufenden Kampf, dass dieses Ki-Tama seinen einen Ruf verbraucht hat.
+
+    Die Liste hängt am Kampf-Knoten, nicht am Critter: wenn die Runden ablaufen,
+    verschwindet der Teilnehmer, der Ruf bleibt aber weg. Ein neuer Kampf
+    (beginne löscht den Knoten) setzt das Limit zurück.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (k:Kampf {campaignId: $campaign_id})
+            SET k.verbrauchteBeschwoerungen =
+                CASE
+                    WHEN $item_id IN coalesce(k.verbrauchteBeschwoerungen, [])
+                    THEN k.verbrauchteBeschwoerungen
+                    ELSE coalesce(k.verbrauchteBeschwoerungen, []) + [$item_id]
+                END
+            """,
+            campaign_id=campaign_id,
+            item_id=item_id,
+        )
 
 
 async def teilnehmer_hinzu(campaign_id: str, daten: dict) -> dict | None:

@@ -1,4 +1,5 @@
 import re
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -10,7 +11,7 @@ from app.kampf import repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
 from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
-from app.items.beschwoerung import beschwoerungsstufe
+from app.items.beschwoerung import beschwoerungsstufe, ruf_entscheidung
 from app.items.repository import ausgeruestete_decks, get_gegenstand, get_owner_person_id, initiative_modifikator, verbautes_chrom
 from app.kampf.booster import (
     AMPEL_MAX,
@@ -84,6 +85,8 @@ class KampfResponse(BaseModel):
     runde: int
     amZug: str | None = None
     teilnehmer: list[TeilnehmerResponse]
+    # Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist.
+    verbrauchteBeschwoerungen: list[str] = []
 
 
 class TeilnehmerInput(BaseModel):
@@ -404,9 +407,14 @@ class BeschwoerenInput(BaseModel):
     Erfolge würfelt der Spieler physisch am Tisch wie überall sonst im Tool
     — die Zahl entscheidet nur, OB der Critter dem Kampf beitreten darf,
     seine eigene Initiative wird separat über das schon bestehende
-    `POST .../teilnehmer/{id}/initiative` gemeldet (wie bei Drohnen)."""
+    `POST .../teilnehmer/{id}/initiative` gemeldet (wie bei Drohnen).
+
+    `ausgang` ist explizit, weil 0 Erfolge kein Patzer sind (01.11.2026):
+    ja = gelungen, nein = Fehlwurf (Ruf bleibt), patzer = Ruf weg, kein Critter.
+    """
 
     erfolge: int = Field(default=0, ge=0)
+    ausgang: Literal["ja", "nein", "patzer"] = "ja"
 
 
 @router.post("/gegenstaende/{item_id}/beschwoeren", response_model=KampfResponse)
@@ -449,26 +457,40 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
 
     stufe = beschwoerungsstufe(item.get("ausruestungsfertigkeiten") or {}, item.get("kiTamaFertigkeiten") or {})
     benoetigt = beschwoerung_benoetigte_erfolge(stufe, int(item.get("beschwoerungsSchwierigkeit") or 0))
-    if body.erfolge < benoetigt:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
-        )
-
-    critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
-    if critter is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Verknüpfter Critter nicht (mehr) gefunden")
 
     kampf = await repository.hole(campaign_id)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
 
-    bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == critter_id), None)
-    if bereits_dabei:
+    schon = item_id in (kampf.get("verbrauchteBeschwoerungen") or [])
+    entscheidung = ruf_entscheidung(body.ausgang, schon, body.erfolge, benoetigt)
+    if entscheidung == "blockiert":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Diese Beschwörung wurde in diesem Kampf schon gerufen.",
+        )
+    if entscheidung == "zu-wenig":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
+        )
+    if entscheidung == "offen":
         return _ohne_hilfsfelder(kampf)
+    if entscheidung == "verbraucht":
+        await repository.beschwoerung_verbrauchen(campaign_id, item_id)
+        return _ohne_hilfsfelder(await repository.hole(campaign_id))
+
+    critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
+    if critter is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Verknüpfter Critter nicht (mehr) gefunden")
+
+    bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == critter_id), None)
+    await repository.beschwoerung_verbrauchen(campaign_id, item_id)
+    if bereits_dabei:
+        return _ohne_hilfsfelder(await repository.hole(campaign_id))
 
     name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], critter.get("name") or "Beschworener Critter")
-    kampf = await repository.teilnehmer_hinzu(
+    await repository.teilnehmer_hinzu(
         campaign_id,
         {
             "name": name,
@@ -480,7 +502,7 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             "rundenVerbleibend": stufe,
         },
     )
-    return _ohne_hilfsfelder(kampf)
+    return _ohne_hilfsfelder(await repository.hole(campaign_id))
 
 
 @router.post("/initiative/npcs", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])

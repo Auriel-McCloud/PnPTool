@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Ki-Tama-Beschwörung einmal pro Kampf
+
+Gelungener Ruf und Patzer schreiben die Item-ID an den Kampf
+(`verbrauchteBeschwoerungen`). Fehlwurf nicht. Knopf bleibt auch nach Ablauf
+der Runden weg. Siehe [[concepts/augments-ausruestung]].
+
 ## [2026-10-31] gebaut | Parade-Bonus an der Waffe
 
 Extra-Würfel nur beim Parieren mit genau dieser Waffe, nicht auf den Angriff

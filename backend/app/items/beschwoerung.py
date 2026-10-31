@@ -39,3 +39,28 @@ def benoetigte_erfolge(stufe: int, schwierigkeit: int) -> int:
     stufe = max(0, stufe)
     schwierigkeit = max(0, schwierigkeit)
     return max(1, -(-stufe // 2) + schwierigkeit)
+
+
+def ruf_entscheidung(ausgang: str, schon_gerufen: bool, erfolge: int, benoetigt: int) -> str:
+    """Was ein gemeldeter Beschwörungs-Ausgang mit dem einen Ruf pro Kampf macht.
+
+    Mark, 01.11.2026: jedes Ki-Tama nur einmal pro Kampf, auch auf Stufe 1.
+    Ein Fehlwurf verbraucht den Ruf nicht, ein Patzer schon. „0 Erfolge“ ist
+    kein Patzer — der Ausgang muss explizit gemeldet werden.
+
+    Rückgabe:
+    - ``blockiert``: dieser Kampf hat den Ruf schon verbraucht
+    - ``offen``: Fehlwurf, Ruf bleibt, kein Critter
+    - ``verbraucht``: Patzer, Ruf weg, kein Critter
+    - ``zu-wenig``: als Erfolg gemeldet, Schwelle nicht erreicht — zählt als Fehlwurf
+    - ``gerufen``: genug Erfolge, Ruf weg, Critter kommt
+    """
+    if schon_gerufen:
+        return "blockiert"
+    if ausgang == "patzer":
+        return "verbraucht"
+    if ausgang == "nein":
+        return "offen"
+    if erfolge < benoetigt:
+        return "zu-wenig"
+    return "gerufen"
