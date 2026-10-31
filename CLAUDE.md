@@ -2,6 +2,51 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Montierte Upgrades/Ki-Tamas für die SL sichtbar, beschworener Critter zeigt echten Namen (31.10.2026)
+
+Zwei Mark-Bugreports direkt im Anschluss an Verschlossene-Kisten/Hineinlegen:
+
+**1) "Als SL kann ich Ki-Tamas/Waffen-Upgrades nicht mehr sehen, wenn sie
+verbaut sind."** Der 29./30.10.2026-Fix (montierte Augments verschwinden aus
+der normalen Ablage-Gruppierung, weil sie an ihrem Trägergegenstand hängen)
+hatte sie in `PCInventar.tsx` (GM-Personen-Popup) und
+`GegenstaendeUebersicht.tsx`/`aufbewahrung.ts` (campagnenweite Übersicht)
+komplett aus jeder Liste entfernt — nur noch als reiner Namens-Text auf der
+Trägerwaffe sichtbar, nie mehr selbst anklickbar. Jetzt: `PCInventar.tsx`
+bekommt eine eigene Sektion "🔩 Montierte Upgrades" (analog zur bestehenden
+"Verbaut"-Sektion für Chrom); `aufbewahrung.ts::ermittleBereiche` nimmt einen
+neuen optionalen dritten Parameter `mitMontiert` (Default `false`, damit die
+Spieler-Ansicht ihr bisheriges Verhalten unverändert behält) und baut damit
+einen eigenen "Montiert"-Reiter, den nur `GegenstaendeUebersicht.tsx` aktiv
+anfordert; `filtereNachBereichen` zeigt montierte Stücke nur, wenn dieser
+Reiter angewählt ist. Zusätzlich bekommt die Kachel selbst (`GegenstandKachel.tsx`
+UND `GegenstandRow` in `CharacterSheetPanel.tsx`) ein neues Fähnchen "🔩 an
+{Trägername}", wenn `item.montiertAnId` gesetzt ist — das Stück bleibt
+vollständig ansehbar, zeigt aber auf einen Blick, dass es gerade verbaut ist.
+
+**2) Frisch beschworener Ki-Tama-Critter zeigte "Unbekannte Person" statt
+seines Namens in der Initiativliste.** `kampf/repository.py::hole()` baut für
+die Spieler-Sichtbarkeits-Alias-Logik (`kampf/sichtbarkeit.py::fuer_spieler`,
+"Unbekannter Ork" für fremde NPCs) eine `drohnen_besitzer`-Map, die bisher nur
+Drohnen/Fahrzeuge über die `BEGLEITET`-Kante erfasste. Ein per Ki-Tama
+beschworener Critter ist zwar auch `personType: NPC`, hängt aber NIE über
+`BEGLEITET` an seinem Besitzer (nur über das Ki-Tama-Item mit
+`beschworenerCritterId`, siehe `entities/repository.py::critter_besitzer`,
+dort schon am 30.10.2026 für den Berechtigungs-Check gefixt) — für die
+Namens-Anzeige fehlte dieselbe Korrektur. Die Query erfasst jetzt zusätzlich
+`istCritter`-Personen UND den Ki-Tama-Besitz-Pfad (`OPTIONAL MATCH
+(p2)-[:BESITZT]->(:Gegenstand {beschworenerCritterId: d.id})`), genau wie
+schon bei `critter_besitzer()`. Betrifft nur die Spieler-/Vorschau-Sicht
+(`viewer.role != "GM"`) — die SL sah den echten Namen schon vorher direkt.
+
+**Verifiziert:** `npx tsc -b` sauber, Backend-Tests grün (44 gezielte +
+volle Suite 920 passed / 55 failed — identische Fehlerliste vor und nach der
+Änderung, alle vorbestehend und umgebungsbedingt, siehe
+`test_zugriffsschutz_drohnen_ausruestung.py`/`test_flora_fauna.py`, keine
+davon durch diese Änderung verursacht). **Kein Browser-Klicktest** — bitte am
+Spieltisch gegenprüfen, dass die "Montiert"-Sektion/der Reiter korrekt
+auftaucht und der Critter-Name jetzt stimmt.
+
 ## Bugfix: "Gegenstand erstellen" tat nichts (31.10.2026)
 
 Mark-Bugreport: Weapon direkt für einen NPC anlegen (campaignweite
