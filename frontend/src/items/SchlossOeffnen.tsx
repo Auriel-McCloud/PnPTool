@@ -47,9 +47,11 @@ const KREIS_RADIUS = 104;
  * oder die Tastenfolge. Die Folge prüft der Server — hier leuchten nur die
  * Tasten, die er für diese Runde rausgibt.
  *
- * Das Tasten-Spiel zeigt keinen Fehlertext: ein Fehlversuch lässt stattdessen
- * das ganze Fenster rot aufblitzen und beginnt stumm von vorn (Mark,
- * 31.10.2026 — "einfach von vorne", kein "Daneben"-Text).
+ * Das Tasten-Spiel verrät nichts über den Spielstand: kein "Schau zu."/
+ * "Nachmachen."-Text (sonst wissen Spieler, die das selbst herausfinden
+ * sollen, sofort woran sie sind), kein "Daneben"-Fehlertext. Ein
+ * Fehlversuch lässt stattdessen das Fenster UND das Zeichen in der Mitte
+ * rot aufblitzen und beginnt stumm von vorn (Mark, 31.10.2026).
  */
 export function SchlossOeffnen({
   item,
@@ -207,9 +209,8 @@ export function SchlossOeffnen({
       )}
       {item.schlossArt === "spiel" && (
         <div className="schloss-spiel">
-          {!darfTippen && <p className="schloss-spiel-hinweis">Schau zu.</p>}
           <div className="schloss-kreis">
-            <div className="schloss-kreis-mitte" aria-hidden="true">
+            <div className={`schloss-kreis-mitte${blitzt ? " schloss-kreis-mitte-blitz" : ""}`} aria-hidden="true">
               <KonstruktIcon />
             </div>
             {tasten.map((zeichen, index) => {

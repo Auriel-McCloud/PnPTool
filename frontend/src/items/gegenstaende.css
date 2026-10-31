@@ -685,15 +685,6 @@
   align-items: center;
 }
 
-.schloss-spiel-hinweis {
-  margin: 0;
-  font-family: var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-size: 12px;
-  color: var(--text-leise);
-}
-
 .schloss-kreis {
   position: relative;
   width: 260px;
@@ -709,6 +700,27 @@
   pointer-events: none;
   opacity: 0.6;
   color: var(--text-leise);
+}
+
+/* Fehlversuch: das Zeichen in der Mitte glueht rot auf und klingt zur
+   gewohnten Farbe aus — sichtbar auch dort, wo kein eigenes Fenster da ist,
+   das aufleuchten koennte (Fachfenster, ohneFenster=true). Mark, 31.10.2026:
+   "wenn ich mich verdruecke leuchtet leider nichts rot auf". */
+.schloss-kreis-mitte-blitz {
+  animation: schloss-mitte-blitz 0.6s ease-out;
+}
+
+@keyframes schloss-mitte-blitz {
+  0% {
+    color: var(--nein);
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--nein));
+  }
+  100% {
+    color: var(--text-leise);
+    opacity: 0.6;
+    filter: drop-shadow(0 0 0 transparent);
+  }
 }
 
 .schloss-taste {
