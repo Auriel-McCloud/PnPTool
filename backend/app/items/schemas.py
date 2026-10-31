@@ -432,6 +432,14 @@ class ZuweisenRequest(BaseModel):
     kopie: bool = False
 
 
+class HineinlegenRequest(BaseModel):
+    """Vom Behälter aus bedient (31.10.2026, Mark: Workflow umgekehrt —
+    nicht mehr am Gegenstand das Ziel suchen, sondern am Behälter den
+    Gegenstand). `gegenstandId` ist, was hineingelegt werden soll."""
+
+    gegenstandId: str
+
+
 class ZusammenlegenRequest(BaseModel):
     """Mehrere gleichwertige Gegenstände zu einem Stapel zusammenlegen.
 

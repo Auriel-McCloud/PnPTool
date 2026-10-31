@@ -824,6 +824,50 @@ async def assign_copy(
     return await set_bild_url(campaign_id, copy["id"], source["bildUrl"])
 
 
+async def lege_in_behaelter(campaign_id: str, behaelter: dict, source: dict) -> dict | None:
+    """Legt einen Gegenstand in einen Behälter — vom Behälter aus bedient.
+
+    Mark (31.10.2026): der Workflow soll umgekehrt laufen — nicht am
+    Gegenstand ein Ziel suchen (siehe `ablageziele` oben), sondern am
+    Behälter nach einem Gegenstand suchen und ihn hineinlegen. Dieselbe
+    Vorlage-vs-Einzelstück-Unterscheidung wie beim Zuweisen an eine Person
+    (`assign_copy`/`assign_owner`), nur dass hier ein Behälter statt eine
+    Person das Ziel ist:
+
+    - **Vorlage** → unabhängige Kopie, OHNE Besitzer (liegt lose in der
+      Kiste, bis jemand sie herausnimmt — dieselbe Konstruktion wie Beute,
+      die beim Öffnen eines Schlosses herausgegeben wird). Die Vorlage selbst
+      bleibt bestehen und wiederverwendbar, genau wie beim Zuweisen an eine
+      Person. Sichtbarkeit übernimmt die des Behälters, nicht die der
+      Vorlage — ein Gegenstand in einer SL-geheimen Kiste soll nicht durch
+      die eigene Sichtbarkeit plötzlich für alle sichtbar sein.
+    - **Echtes Einzelstück** (ob mit oder ohne aktuellem Besitzer) → wird
+      direkt umgelegt, kein Kopieren. Ruft denselben `set_ablage` wie
+      `POST .../ablage` auf — Chirurgie-Guards (verbautes Chrom, natürliche
+      Rüstung) prüft schon die Route, bevor sie hierher verzweigt.
+    """
+    if source["istVorlage"]:
+        daten = {k: v for k, v in source.items() if k not in _NICHT_KOPIEREN}
+        daten.update(
+            {
+                "istVorlage": False,
+                "einzigartig": True,
+                "automatischImShop": False,
+                "sichtbarkeit": behaelter["sichtbarkeit"],
+                "sichtbarFuer": behaelter["sichtbarFuer"],
+                "ablage": "GELAGERT",
+            }
+        )
+        kopie = await create_gegenstand(campaign_id, None, daten)
+        if kopie is None:
+            return None
+        if source["bildUrl"]:
+            await set_bild_url(campaign_id, kopie["id"], source["bildUrl"])
+        return await set_ablage(campaign_id, kopie["id"], "GELAGERT", behaelter["id"])
+
+    return await set_ablage(campaign_id, source["id"], "GELAGERT", behaelter["id"])
+
+
 async def assign_owner(
     campaign_id: str, item_id: str, ziel_person_id: str, sichtbarkeit: str, sichtbar_fuer: list[str]
 ) -> dict | None:

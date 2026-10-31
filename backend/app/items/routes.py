@@ -37,6 +37,7 @@ from app.items.schemas import (
     GegenstandMitBesitzer,
     GegenstandResponse,
     GegenstandUpdate,
+    HineinlegenRequest,
     ZusammenlegenRequest,
     ZuweisenRequest,
 )
@@ -393,6 +394,40 @@ async def vorlagen_art(campaign_id: str, item_id: str, body: VorlagenArtRequest)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item
+
+
+@campaign_router.post("/{item_id}/hineinlegen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
+async def hineinlegen(campaign_id: str, item_id: str, body: HineinlegenRequest):
+    """Legt einen Gegenstand in diesen Behälter (`item_id`) — der umgekehrte
+    Weg zu `.../ablage`: hier sucht die SL am Behälter nach einem
+    Gegenstand, nicht am Gegenstand nach einem Ziel (31.10.2026, Mark:
+    "ich gehe auf den Behälter, und dann kann ich nach einem Gegenstand
+    suchen den ich dann hineinlege"). Vorlage vs. Einzelstück wird
+    automatisch erkannt (siehe `repository.lege_in_behaelter`)."""
+    behaelter = await repository.get_gegenstand(campaign_id, item_id)
+    if behaelter is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Behälter nicht gefunden")
+    if not behaelter.get("istBehaelter"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Das ist kein Behälter")
+
+    gegenstand = await repository.get_gegenstand(campaign_id, body.gegenstandId)
+    if gegenstand is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if gegenstand["id"] == item_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ein Gegenstand kann nicht in sich selbst liegen")
+
+    # Dieselben Chirurgie-Guards wie bei .../ablage — gilt nur für echte
+    # Stücke, eine Vorlage ist nie verbaut/natürlich.
+    if not gegenstand["istVorlage"] and not chirurgie.kann_ablegen(gegenstand, True):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
+        )
+
+    result = await repository.lege_in_behaelter(campaign_id, behaelter, gegenstand)
+    if result is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Hineinlegen fehlgeschlagen")
+    return result
 
 
 @campaign_router.post("/{item_id}/zuweisen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])

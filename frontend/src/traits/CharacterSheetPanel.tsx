@@ -23,6 +23,7 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
+import { BehaelterHineinlegenPopup } from "../items/BehaelterHineinlegenPopup";
 import { SchlossForm } from "../items/SchlossForm";
 import "../entities/pc-detail.css";
 
@@ -369,6 +370,7 @@ export function GegenstandRow({
   const [besitzerFehler, setBesitzerFehler] = useState("");
   const [kiBildOffen, setKiBildOffen] = useState(false);
   const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
+  const [hineinlegenOffen, setHineinlegenOffen] = useState(false);
 
   // Summe aller Boni für Chrom-Preisberechnung:
   // traitBoni (Attribute/Fertigkeiten) + ausruestungsfertigkeiten + schaden + initiativeBonus + zusatzaktionen
@@ -1687,7 +1689,7 @@ export function GegenstandRow({
                         disabled={!!personId}
                         onChange={() => void vorlagenArtSetzen(false)}
                       />{" "}
-                      Einzigartige Kopie wird erstellt
+                      Vorlage - Kopie wird erstellt
                     </label>
                     <label style={{ fontSize: "0.9em" }}>
                       <input
@@ -1715,7 +1717,7 @@ export function GegenstandRow({
                         eigener Request nötig. */}
                     <label style={{ fontSize: "0.9em" }}>
                       <input type="checkbox" checked={einzigartig} onChange={(e) => setEinzigartig(e.target.checked)} />{" "}
-                      Einzigartig
+                      Nicht Stapelbar
                     </label>
                     <p style={{ fontSize: "0.8em", color: "var(--text-leise)", margin: 0 }}>
                       Unabhängig von den beiden Kopier-Optionen oben — rein das Lore-Häkchen "gibt es nur
@@ -1769,6 +1771,25 @@ export function GegenstandRow({
                     </label>
                     {istGm && istBehaelter && (
                       <SchlossForm campaignId={campaignId} item={item} onGeaendert={onChanged} />
+                    )}
+                    {istGm && istBehaelter && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setHineinlegenOffen(true)}
+                          style={{ alignSelf: "flex-start", fontSize: "0.9em" }}
+                        >
+                          📥 Gegenstand hineinlegen…
+                        </button>
+                        <BehaelterHineinlegenPopup
+                          behaelterId={item.id}
+                          behaelterName={name || item.name}
+                          campaignId={campaignId}
+                          offen={hineinlegenOffen}
+                          onSchliessen={() => setHineinlegenOffen(false)}
+                          onHineingelegt={onChanged}
+                        />
+                      </>
                     )}
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <label style={{ fontSize: "0.9em" }}>

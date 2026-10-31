@@ -6,6 +6,41 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Behälter kann ein Schloss haben, genau eine Art: `passwort` (Rätseltext sichtbar, Lösung ist das Passwort, Vergleich ohne Großschreibung), `schluessel` (ein bestimmter Gegenstand, den der Spieler besitzen und erreichen muss) oder `spiel` (5 Tasten, SL setzt die Länge, Zufallsfolge, Fehler von vorn, kein Limit). Auf bleibt auf, bis die SL wieder zusperrt. Nur die SL setzt das Schloss (am Behälter in den Optionen, vor dem Rausgeben). Inhalt mit `LIEGT_IN` in eine noch zue Kiste sieht der Spieler nicht — auch nicht per Einzelabruf. Lösung und Schlüssel-ID gehen nie an Spieler. Beim Weitergeben wandert der Inhalt mit. `POST .../oeffnen` und `POST .../schloss/spiel`.
 
+## Hineinlegen jetzt vom Behälter aus, Umbenennung der Einzigartig-Häkchen (31.10.2026)
+
+Zweiter Anlauf zum Behälter-Feature von weiter oben: Mark wollte den
+Workflow umgekehrt — nicht am Gegenstand ein Ziel suchen, sondern **am
+Behälter nach einem Gegenstand suchen** und ihn hineinlegen ("ich gehe auf
+den Behälter, und dann kann ich nach einem Gegenstand suchen den ich dann
+hineinlege"). Neuer Endpunkt `POST .../{behaelterId}/hineinlegen`
+(`HineinlegenRequest{gegenstandId}`, GM-only) + `repository.lege_in_behaelter`:
+erkennt automatisch Vorlage vs. Einzelstück, genau wie beim Zuweisen an eine
+Person (`assign_copy`/`assign_owner`), nur mit einem Behälter statt einer
+Person als Ziel:
+- **Vorlage** → unabhängige Kopie OHNE Besitzer (liegt lose in der Kiste,
+  bis jemand sie herausnimmt), Vorlage selbst bleibt stehen. Sichtbarkeit
+  übernimmt die des Behälters, nicht die der Vorlage.
+- **Echtes Einzelstück** → direkt umgelegt (`set_ablage`), kein Kopieren.
+  Dieselben Chirurgie-Guards wie bei `.../ablage` (verbautes Chrom/natürliche
+  Rüstung lassen sich nicht hineinlegen).
+
+Frontend: neues `BehaelterHineinlegenPopup.tsx` — lädt `itemsApi.listAlle`
+(dieselbe campaignweite Liste wie die Übersicht), Suchfeld filtert
+clientseitig nach Name/Typ/Besitzer, kein eigener Such-Endpunkt. Button
+"📥 Gegenstand hineinlegen…" sitzt im Bearbeiten-Fenster eines Behälters,
+direkt unter dem Schloss-Formular (`istGm && istBehaelter`).
+
+Zusätzlich auf Marks Wunsch die drei "Einzigartig"-Häkchen im
+Optionen-Bereich umbenannt (reine Label, keine Feld-Umbenennung):
+"Einzigartige Kopie wird erstellt" → "Vorlage - Kopie wird erstellt",
+"Einzigartig - keine Vorlage" unverändert, das eigenständige Lore-Häkchen
+`einzigartig` → "Nicht Stapelbar" (beschreibt treffender, was es bewirkt:
+blockiert Zusammenlegen/Mengenverfolgung).
+
+**Verifiziert:** `npx tsc -b` sauber, volle Backend-Suite ohne neue
+Regression (54 vorbestehende Windows-Proactor-Fehlschläge, identisch zur
+vorigen Messung). **Noch nicht am Spieltisch getestet.**
+
 ## SL kann jetzt campaignweit in Behälter legen (31.10.2026)
 
 Mark nach dem ersten Schloss-Test: "ich hab als SL keine Möglichkeit etwas in

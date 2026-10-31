@@ -620,6 +620,9 @@ export const itemsApi = {
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId, kopie }),
   vorlagenArt: (cid: string, itemId: string, keineVorlage: boolean) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/vorlagen-art`, { keineVorlage }),
+  /** Vom Behälter aus bedient: legt gegenstandId in den Behälter itemId. */
+  hineinlegen: (cid: string, behaelterId: string, gegenstandId: string) =>
+    api.post<Gegenstand>(`${itemBase(cid, behaelterId)}/hineinlegen`, { gegenstandId }),
   /**
    * Andere Gegenstände derselben Besitzerin, die sich mit diesem hier zu
    * einem Stapel zusammenlegen ließen (gleicher Name/Typ/alle mechanischen
