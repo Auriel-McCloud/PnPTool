@@ -651,7 +651,15 @@ async def item_zurueckholen(campaign_id: str, item_id: str):
 @campaign_router.get("/{item_id}/ablageziele", response_model=list[AblageZiel])
 async def ablageziele(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
     """Wohin dieser Gegenstand gelegt werden kann: Orte der Kampagne und
-    Behälter seines Besitzers (Fahrzeuge etc.)."""
+    Behälter seines Besitzers (Fahrzeuge etc.).
+
+    **Die SL sieht alle Behälter der ganzen Kampagne** (31.10.2026, Mark
+    konnte beim Schloss-Test nichts in eine besitzerlose Schatzkiste legen —
+    siehe repository.py::alle_ablageziele_fuer_gm), Spieler weiterhin nur
+    ihre eigenen — sonst könnte ein Spieler Dinge in fremde Rucksäcke legen.
+    """
+    if viewer.role == "GM":
+        return await repository.alle_ablageziele_fuer_gm(campaign_id, item_id)
     besitzer = await repository.get_owner_person_id(campaign_id, item_id)
     if besitzer is None:
         # Vorlagen haben keinen Besitzer und damit auch keine eigenen Behälter

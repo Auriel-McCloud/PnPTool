@@ -1225,6 +1225,40 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
         return [dict(record) async for record in result]
 
 
+async def alle_ablageziele_fuer_gm(campaign_id: str, item_id: str) -> list[dict]:
+    """Wie `moegliche_ablageziele`, aber campaignweit — nur für die Spielleitung.
+
+    Mark (31.10.2026, nach dem ersten Schloss-Test): als SL etwas in eine
+    Kiste legen wollen und feststellen, dass es keine Möglichkeit gibt.
+    Ursache war `moegliche_ablageziele`: die listet nur Behälter desselben
+    Besitzers wie der umzulegende Gegenstand — bei zwei Vorlagen ohne
+    Besitzer (Beute + frisch angelegte Schatzkiste) traf das nie zu, die
+    Kiste tauchte im Ziel-Auswahlfeld schlicht nie auf. Die Spielleitung
+    bewegt Dinge quer durch die ganze Kampagne (NSC zu NSC, Vorlage in NSC-
+    Kiste, ...), deshalb hier bewusst OHNE Besitz-Einschränkung — nur das
+    Ziel selbst (`<> $item_id`) bleibt ausgeschlossen, dasselbe Verschachtelungs-
+    Verhalten wie beim Spieler (siehe CLAUDE.md: ungeprüft erlaubt).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            MATCH (o:Ort {campaignId: $campaign_id})
+            RETURN o.id AS id, o.name AS name, 'Ort' AS kind, null AS besitzerName
+            UNION
+            MATCH (g:Gegenstand {campaignId: $campaign_id})
+            WHERE coalesce(g.istBehaelter, g.typ = 'Behälter')
+              AND NOT coalesce(g.weggeworfen, false)
+              AND g.id <> $item_id
+            OPTIONAL MATCH (p:Person)-[:BESITZT]->(g)
+            RETURN g.id AS id, g.name AS name, 'Gegenstand' AS kind, p.name AS besitzerName
+            """,
+            campaign_id=campaign_id,
+            item_id=item_id,
+        )
+        return [dict(record) async for record in result]
+
+
 # Gewicht eines Gegenstands inklusive Stückzahl: 20 Schuss Munition wiegen
 # zwanzigmal so viel wie einer.
 _GEWICHT = "coalesce(g.gewicht, 0.0) * (CASE WHEN g.hatMenge THEN coalesce(g.menge, 1) ELSE 1 END)"

@@ -183,6 +183,19 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   const sichtbareItems = filtereNachBereichen(gefiltert, bereiche, bereichAuswahl);
 
+  // Wie viele Gegenstände in jedem Behälter liegen — dieselbe Grundlage wie
+  // die Reiter-Zahl (gefiltert, nicht die ganze Kampagne), damit Kachel-Badge
+  // und Reiter nie widersprüchlich wirken (31.10.2026, Mark: "sehen was
+  // darin ist, eventuell direkt in der Übersicht").
+  const inhaltProBehaelter = useMemo(() => {
+    const zaehler = new Map<string, number>();
+    for (const g of gefiltert) {
+      if (!g.ablageZielId) continue;
+      zaehler.set(g.ablageZielId, (zaehler.get(g.ablageZielId) ?? 0) + 1);
+    }
+    return zaehler;
+  }, [gefiltert]);
+
   function schalteBereich(id: string) {
     setBereichAuswahl((alt) => {
       const neu = new Set(alt);
@@ -378,6 +391,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
             onChanged={refresh}
             onRemoved={() => removeItem(item.id)}
             onBearbeiten={meldeBearbeiten}
+            inhaltAnzahl={item.istBehaelter ? inhaltProBehaelter.get(item.id) ?? 0 : undefined}
           />
         ))}
       </div>

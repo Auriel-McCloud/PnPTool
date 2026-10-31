@@ -6,6 +6,37 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Behälter kann ein Schloss haben, genau eine Art: `passwort` (Rätseltext sichtbar, Lösung ist das Passwort, Vergleich ohne Großschreibung), `schluessel` (ein bestimmter Gegenstand, den der Spieler besitzen und erreichen muss) oder `spiel` (5 Tasten, SL setzt die Länge, Zufallsfolge, Fehler von vorn, kein Limit). Auf bleibt auf, bis die SL wieder zusperrt. Nur die SL setzt das Schloss (am Behälter in den Optionen, vor dem Rausgeben). Inhalt mit `LIEGT_IN` in eine noch zue Kiste sieht der Spieler nicht — auch nicht per Einzelabruf. Lösung und Schlüssel-ID gehen nie an Spieler. Beim Weitergeben wandert der Inhalt mit. `POST .../oeffnen` und `POST .../schloss/spiel`.
 
+## SL kann jetzt campaignweit in Behälter legen (31.10.2026)
+
+Mark nach dem ersten Schloss-Test: "ich hab als SL keine Möglichkeit etwas in
+einen Behälter zu legen". Ursache: `GET .../ablageziele` (Ziel-Auswahl im
+Bearbeiten-Fenster, "Wo es geführt wird" → "Gelagert") listete nur Behälter
+desselben Besitzers wie der umzulegende Gegenstand
+(`moegliche_ablageziele`) — bei zwei besitzerlosen Vorlagen (Beute + frisch
+angelegte Schatzkiste) traf das nie zu, die Kiste tauchte im Auswahlfeld nie
+auf. Der eigentliche Umlege-Endpunkt (`POST .../ablage`) hatte diese
+Einschränkung für die SL nie (kein Besitz-Check bei `viewer.role == "GM"`) —
+nur die Zielliste im Frontend war zu eng.
+
+Fix: neue `alle_ablageziele_fuer_gm` (`items/repository.py`) liefert für die
+SL **alle** Behälter der ganzen Kampagne (plus Besitzername zur
+Unterscheidung gleichnamiger Rucksäcke), nicht nur die des Gegenstand-
+Besitzers. `GET .../ablageziele` verzweigt darauf bei `viewer.role == "GM"`,
+Spieler bleiben auf die eigenen Ziele beschränkt. Kein neuer Button nötig —
+die bestehende "Gelagert"-Auswahl im Bearbeiten-Fenster reicht jetzt einfach
+weiter.
+
+Zusätzlich, zweiter Teil der Anfrage ("sehen was darin ist, direkt in der
+Übersicht"): jede Behälter-Kachel in `GegenstaendeUebersicht.tsx` zeigt jetzt
+eine Marke mit der Anzahl der enthaltenen Gegenstände (`📦 3`) bzw.
+`🔒 verschlossen` bei zuer Kiste — ohne erst den Bereichs-Reiter dafür
+anklicken zu müssen. Zählbasis ist dieselbe gefilterte Liste wie die
+Reiter-Zahl, damit beide nie widersprechen.
+
+**Verifiziert:** `npx tsc -b` sauber, volle Backend-Suite ohne neue
+Regression (54 vorbestehende Windows-Proactor-Fehlschläge unverändert, kein
+Treffer unter "ablage"). **Noch nicht am Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**

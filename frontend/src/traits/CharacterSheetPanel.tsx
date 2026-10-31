@@ -10,7 +10,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
+import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, istVerschlossen, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -200,6 +200,7 @@ export function GegenstandRow({
   kachel = false,
   nurFenster = false,
   onFensterSchliessen,
+  inhaltAnzahl,
 }: {
   campaignId: string;
   // Fehlt bei Vorlagen (die haben per Invariante keinen Besitzer).
@@ -228,6 +229,13 @@ export function GegenstandRow({
    */
   nurFenster?: boolean;
   onFensterSchliessen?: () => void;
+  /**
+   * Nur bei Behältern in der SL-Übersicht gesetzt: wie viele Gegenstände
+   * gerade darin liegen (31.10.2026, Mark: "dass ich sehen kann was darin
+   * ist, eventuell direkt in der Übersicht"). Zeigt die Zahl schon auf der
+   * Kachel, ohne erst den Reiter dafür anklicken zu müssen.
+   */
+  inhaltAnzahl?: number;
 }) {
   const [expanded, setExpanded] = useState(nurFenster);
   const onBearbeitenRef = useRef(onBearbeiten);
@@ -967,6 +975,7 @@ export function GegenstandRow({
                         <option key={z.id} value={z.id}>
                           {z.kind === "Ort" ? "Ort: " : "In: "}
                           {z.name}
+                          {z.besitzerName ? ` (${z.besitzerName})` : ""}
                         </option>
                       ))}
                     </select>
@@ -2144,6 +2153,15 @@ export function GegenstandRow({
             {item.sichtbarkeit === "GM" && <span className="gg-marke" data-ton="signal">SL</span>}
             {item.storyRelevant && <span className="gg-marke" data-ton="neon">Story</span>}
             {item.istVorlage && <span className="gg-marke">Vorlage</span>}
+            {item.istBehaelter && (
+              <span
+                className="gg-marke"
+                data-ton={istVerschlossen(item) ? "signal" : undefined}
+                title={istVerschlossen(item) ? "Verschlossen" : "Gegenstände darin"}
+              >
+                {istVerschlossen(item) ? "🔒 verschlossen" : `📦 ${inhaltAnzahl ?? 0}`}
+              </span>
+            )}
           </span>
         </button>
         {fenster}

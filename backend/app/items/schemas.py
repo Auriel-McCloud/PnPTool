@@ -591,3 +591,7 @@ class AblageZiel(BaseModel):
     name: str
     # "Ort" oder "Gegenstand" — bestimmt nur die Darstellung
     kind: str
+    # Nur gesetzt, wenn die SL campaignweit auswählt (siehe routes.py::ablageziele)
+    # und der Behälter jemand anderem gehört — zur Unterscheidung gleichnamiger
+    # Rucksäcke. Bei den eigenen Zielen eines Spielers immer leer.
+    besitzerName: str | None = None

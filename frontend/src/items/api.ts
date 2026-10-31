@@ -324,6 +324,8 @@ export interface AblageZiel {
   id: string;
   name: string;
   kind: string;
+  /** Nur gesetzt, wenn die SL campaignweit wählt und es jemand anderem gehört. */
+  besitzerName?: string | null;
 }
 
 /** Deckt sich mit Kaestchen.tsx::Schadensart und den drei schadenXY-Feldern
