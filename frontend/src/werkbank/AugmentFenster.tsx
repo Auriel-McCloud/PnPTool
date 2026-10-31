@@ -63,6 +63,9 @@ export function AugmentFenster({
   const istDefekt = augment.defekt;
   const istMontiert = !istDefekt && Boolean(augment.montiertAnId);
   const istFrei = !istDefekt && !istMontiert;
+  // Beim Ausbau nicht „Upgrade:“ — sonst liest sich Demontieren wie Einbau
+  // (Mark, 31.10.2026). Einbau und Reparatur behalten den alten Titel.
+  const fensterTitel = istMontiert ? `Demontieren: ${augment.name}` : `Upgrade: ${augment.name}`;
 
   const gruppen = useMemo(() => {
     const nachQualitaet = new Map<string, Gegenstand[]>();
@@ -209,7 +212,7 @@ export function AugmentFenster({
   }
 
   return (
-    <Fenster offen titel={`Upgrade: ${augment.name}`} kennung={`augment:${augment.id}`} onSchliessen={onSchliessen}>
+    <Fenster offen titel={fensterTitel} kennung={`augment:${augment.id}`} onSchliessen={onSchliessen}>
       {ergebnisText ? (
         <>
           <p className="ww-beruhigung">{ergebnisText}</p>
