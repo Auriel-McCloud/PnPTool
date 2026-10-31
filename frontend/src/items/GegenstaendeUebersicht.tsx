@@ -73,6 +73,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [neuBesitzer, setNeuBesitzer] = useState(VORLAGE_SENTINEL);
   const [neuTyp, setNeuTyp] = useState<string | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
+  // Ohne das hier brach "Gegenstand erstellen" bei fehlendem Namen/Besitzer
+  // stillschweigend ab — der Knopf tat buchstäblich nichts (Mark-Bugreport
+  // 31.10.2026). Jetzt bekommt der Fehlschlag einen sichtbaren Grund.
+  const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
   const [muelleimerOffen, setMuelleimerOffen] = useState(false);
   // Wie viele Gegenstand-Bearbeiten-Fenster gerade offen sind. Solange
   // eines offen ist, nicht nachladen — sonst kann die Kachel von der
@@ -225,7 +229,19 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   async function addItem(e: FormEvent) {
     e.preventDefault();
-    if (!neuName.trim() || !neuBesitzer || !neuTyp) return;
+    setAnlegenFehler(null);
+    if (!neuTyp) {
+      setAnlegenFehler("Bitte zuerst einen Typ wählen.");
+      return;
+    }
+    if (!neuBesitzer) {
+      setAnlegenFehler("Bitte einen Besitzer wählen (oder Vorlage).");
+      return;
+    }
+    if (!neuName.trim()) {
+      setAnlegenFehler("Bitte einen Namen eingeben.");
+      return;
+    }
     if (neuBesitzer === VORLAGE_SENTINEL) {
       await itemsApi.createVorlage(campaignId, { name: neuName, typ: neuTyp });
     } else {
@@ -292,6 +308,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           setNeuName("");
           setNeuBesitzer(VORLAGE_SENTINEL);
           setNeuTyp(null);
+          setAnlegenFehler(null);
         }}
       >
         {!neuTyp ? (
@@ -327,6 +344,9 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
               autoFocus
               style={{ fontSize: "1.1rem", padding: "12px 14px" }}
             />
+            {anlegenFehler && (
+              <p style={{ color: "var(--neon-rot, #e55)", margin: 0, fontSize: "0.9em" }}>{anlegenFehler}</p>
+            )}
             <button
               type="submit"
               style={{
