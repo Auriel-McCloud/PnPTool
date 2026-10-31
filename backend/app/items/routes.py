@@ -790,6 +790,34 @@ async def ablage_aendern(
     return item
 
 
+@campaign_router.post("/{item_id}/aufheben", response_model=GegenstandResponse)
+async def aufheben(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Einen frei an einem erreichbaren Ort liegenden Gegenstand aufnehmen —
+    Besitzwechsel zu einem selbst, Ablage zurück auf "mitgeführt".
+
+    **Zweite Route, die auch Spieler schreiben dürfen** (neben `.../ablage`),
+    diesmal an einem FREMDEN Gegenstand — deshalb hier KEINE Besitzprüfung
+    wie sonst üblich, sondern die Ortsprüfung sitzt in `repository.aufheben`
+    selbst (nur erreichbare Ziele zählen). Steht namentlich in der
+    Ausnahmeliste von tests/test_zugriffsschutz.py. Nur Spieler mit eigenem
+    Charakter (kein GM-Vorschau-Klick) — die SL hat für dieselbe Bewegung
+    schon `besitzer_wechseln`/`hineinlegen`.
+    """
+    if viewer.role == "GM" or not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur ein Spieler mit eigenem Charakter kann aufheben")
+    try:
+        item = await repository.aufheben(campaign_id, item_id, viewer.person_id)
+    except repository.NichtAmBodenLiegend as fehler:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Liegt nirgends — das lässt sich nicht aufheben") from fehler
+    except repository.OrtNichtErreichbar as fehler:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Liegt an einem Ort, den du gerade nicht erreichst"
+        ) from fehler
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
+
+
 @campaign_router.get("/traglast")
 async def traglast(campaign_id: str, viewer: Viewer = Depends(get_viewer)) -> list[dict]:
     """Wer wie viel schleppt — für die Anzeige und den Überblick der Spielleitung.

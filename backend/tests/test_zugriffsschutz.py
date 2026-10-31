@@ -54,6 +54,12 @@ OHNE_GM_ERLAUBT = {
     # umlegen. Sie prüft die Besitzverhältnisse selbst (siehe items/routes.py)
     # und darf ausschließlich das Ablage-Feld ändern.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/ablage",
+    # Aufheben (31.10.2026, Mark: "der [andere Spieler] müsste es jetzt
+    # natürlich aufheben können" — Party ist an einem Ort, jemand hat dort
+    # etwas abgelegt): FREMDER Besitz, deshalb keine eigener-Besitz-Prüfung
+    # hier — repository.aufheben prüft stattdessen, ob der Ort gerade
+    # erreichbar ist (eigenes Versteck oder aktueller Aufenthaltsort).
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/aufheben",
     # Besitzer wechseln (26.10.2026, Mark: "es müsste die Möglichkeit geben,
     # etwas aus dem Inventar des Riggers auszurüsten bzw. zu übergeben"):
     # auch für Spieler, aber streng auf den eigenen Kreis begrenzt — Quelle

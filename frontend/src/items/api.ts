@@ -554,6 +554,10 @@ export const itemsApi = {
     api.get<Gegenstand[]>(`/api/campaigns/${cid}/gegenstaende/verbaut/${personId}`),
   setAblage: (cid: string, itemId: string, ablage: Ablage, zielId?: string | null) =>
     api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/ablage`, { ablage, zielId: zielId ?? null }),
+  /** Frei liegenden Gegenstand an einem erreichbaren Ort aufnehmen (eigenes
+   * Versteck oder aktueller Aufenthaltsort der Party) — Besitzwechsel zu
+   * sich selbst, Ablage zurück auf "mitgeführt". */
+  aufheben: (cid: string, itemId: string) => api.post<Gegenstand>(`${campaignBase(cid)}/${itemId}/aufheben`),
   /** Kästchen auffüllen. Die Reduktion braucht keine eigene Reparatur mehr —
    * sie folgt automatisch aus dem wiederhergestellten Kästchen-Verhältnis.
    * Nur SL. */

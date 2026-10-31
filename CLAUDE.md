@@ -163,6 +163,43 @@ lokale Neo4j (Party mit Aufenthaltsort angelegt, nur dieser Ort kam bei
 `moegliche_ablageziele` zurück, fremder Ort weiterhin gefiltert). **Noch
 nicht am Spieltisch getestet.**
 
+## Fremde Sachen am gemeinsamen Ort aufheben (31.10.2026)
+
+Letzte Lücke in der Ablage-Ort-Kette: Rigger legt einen Gegenstand am
+aktuellen Aufenthaltsort ab, IT-Sicherheitsmann steht an derselben Stelle —
+sieht das Ding aber nicht, kann es nicht nehmen. Ursache: die normale
+Inventaransicht (`SpielerAnsicht.tsx::meineRohAlle`) zeigt bewusst nur den
+eigenen Besitz — "fremde Verstecke gehen einen nichts an" galt bisher
+zurecht für alles, aber ein gemeinsamer Ort ist kein fremdes Versteck.
+
+**Neues Fach außerhalb von `bereiche`/`ermittleBereiche`:** ein Knopf mit
+dem Namen des aktuellen Aufenthaltsorts (📍, eigener State `meinePartyOrt`,
+aus der ohnehin laufenden Party-Abfrage im `useNachladen`-Zyklus) zeigt ALLE
+dort liegenden Sachen aus der schon geladenen campaignweiten `sachen`-Liste
+(`itemsApi.listAlle`, serverseitig sichtbarkeitsgefiltert) — nicht nur
+eigene. Neue Komponente `OrtFachFenster.tsx`: eigene Sachen bekommen die
+volle `GegenstandKachel` (Umlegen/Weitergeben/Zusammenlegen), fremde nur
+eine schreibgeschützte Kachel plus "📥 Aufheben"-Knopf (gleiche Position wie
+`.gg-zurueckgeben` bei der Drohnen-Ausrüstung).
+
+**Neue Route `POST .../{item_id}/aufheben`** (zweite Spieler-Schreibroute
+neben `.../ablage`, diesmal an FREMDEM Besitz — deshalb keine
+Besitzprüfung, sondern `repository.aufheben` prüft die Ort-Erreichbarkeit
+über genau dasselbe `moegliche_ablageziele` wie beim Ablegen: wer es dort
+hinlegen dürfte, darf es auch aufheben). Macht `transfer_owner` +
+`set_ablage(..., "RUCKSACK", None)` — Besitzwechsel plus zurück auf
+"mitgeführt". Kein Verhandeln/Annehmen wie beim Weitergeben nötig, es liegt
+einfach da.
+
+**Verifiziert:** `npx tsc -b`/`npm run build` sauber, Live-Test gegen
+lokale Neo4j (Riggers Gegenstand am Ort abgelegt, IT-Sicherheitsmann hebt
+auf → Besitz wechselt, Ablage zurück auf RUCKSACK; nicht erreichbarer Ort
+korrekt mit `OrtNichtErreichbar` abgelehnt). `test_zugriffsschutz.py`:
+neue Route korrekt in `OHNE_GM_ERLAUBT`, keine neuen Fehlschläge (die
+übrigen sind dieselben vorbestehenden, nicht mit diesem Umbau
+zusammenhängenden — lexikon/charakter-neu/kampf-hot/beschwoeren/
+erstellung-kommentar). **Noch nicht am Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**

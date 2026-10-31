@@ -1290,6 +1290,46 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
         return [dict(record) async for record in result]
 
 
+class OrtNichtErreichbar(Exception):
+    """Der Gegenstand liegt nicht an einem Ort, den diese Person gerade
+    erreicht (eigenes Versteck oder aktueller Aufenthaltsort der Party)."""
+
+
+class NichtAmBodenLiegend(Exception):
+    """Nur GELAGERT-mit-Ziel ist aufhebbar — Ausgerüstetes/Mitgeführtes
+    gehört schon jemandem, das regelt das Weitergeben, nicht das Aufheben."""
+
+
+async def aufheben(campaign_id: str, item_id: str, person_id: str) -> dict | None:
+    """Einen frei an einem erreichbaren Ort liegenden Gegenstand aufnehmen.
+
+    31.10.2026, Mark: Rigger legt etwas am gemeinsamen Aufenthaltsort ab,
+    der IT-Sicherheitsmann steht auch dort — "der müsste es jetzt natürlich
+    aufheben können". Bis hierher war Ablage (wo liegt es) vollständig von
+    Besitz (wem gehört es) getrennt: das abgelegte Ding blieb Riggers
+    Eigentum, GELAGERT an diesem Ort. Aufheben ist der fehlende Schritt
+    zurück — Besitzwechsel plus Ablage zurück auf "mitgeführt", genau wie
+    nach `transfer_owner`/`assign_copy` bei jeder anderen Übergabe auch.
+
+    Erreichbarkeit nutzt denselben Maßstab wie die Zielauswahl beim Ablegen
+    (`moegliche_ablageziele`) — wer es dort hinlegen dürfte, darf es auch
+    wieder mitnehmen. Kein Verhandeln/Annehmen wie bei `WeitergebenPopup`
+    nötig: es liegt einfach da, niemand muss zustimmen.
+    """
+    item = await get_gegenstand(campaign_id, item_id)
+    if item is None or item.get("weggeworfen"):
+        return None
+    if item.get("ablage") != "GELAGERT" or not item.get("ablageZielId"):
+        raise NichtAmBodenLiegend()
+    ziele = await moegliche_ablageziele(campaign_id, person_id)
+    erreichbare_orte = {z["id"] for z in ziele if z["kind"] == "Ort"}
+    if item["ablageZielId"] not in erreichbare_orte:
+        raise OrtNichtErreichbar()
+    if await transfer_owner(campaign_id, item_id, person_id) is None:
+        return None
+    return await set_ablage(campaign_id, item_id, "RUCKSACK", None)
+
+
 async def alle_ablageziele_fuer_gm(campaign_id: str, item_id: str) -> list[dict]:
     """Wie `moegliche_ablageziele`, aber campaignweit — nur für die Spielleitung.
 

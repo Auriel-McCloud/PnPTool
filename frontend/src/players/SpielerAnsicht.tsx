@@ -10,6 +10,7 @@ import { VerhandlungPopup } from "../verhandlung/VerhandlungPopup";
 import { verhandlungApi } from "../verhandlung/api";
 import { AlltagswunschErgebnisPopup } from "../haendler/AlltagswunschErgebnisPopup";
 import { einstellungenApi, formatiereLast, type Einstellungen } from "../campaigns/einstellungen";
+import { partyApi } from "../party/api";
 import { itemsApi, istVerschlossen, type Ablage, type Gegenstand, type GegenstandMitBesitzer, type TraglastZeile } from "../items/api";
 import {
   ermittleBereiche,
@@ -33,6 +34,7 @@ import { useNachladen } from "../shell/nachladen";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
+import { OrtFachFenster } from "../items/OrtFachFenster";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
@@ -148,6 +150,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // heraus soll sich der Behälter darin öffnen lassen, und darin wieder einer.
   // Genau das meinte Mark mit "Pop-ups die zu Pop-ups führen".
   const [fachStapel, setFachStapel] = useState<string[]>([]);
+  // Aktueller Aufenthaltsort der eigenen Party (31.10.2026) — eigenes
+  // Fach außerhalb von `bereiche`/`ermittleBereiche`, weil dort bewusst nur
+  // eigene Sachen landen (siehe meineRohAlle unten); hier zählt gerade das
+  // Gegenteil: was DORT liegt, egal wem es gehört.
+  const [meinePartyOrt, setMeinePartyOrt] = useState<{ id: string; name: string } | null>(null);
+  const [ortFachOffen, setOrtFachOffen] = useState(false);
   // Kachelraster wie beim Spielleiter: gemessen statt gescrollt.
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
@@ -249,21 +257,30 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Inventar, Traglast und Begleiter still nachladen — auch wenn gerade ein
   // Rucksack offen ist. Der Fach-Stapel hängt nicht an diesen Daten, neue
   // Sachen tauchen im offenen Fenster auf, statt es zuzuschlagen.
+  // Party (31.10.2026, Aufenthaltsort-Ablage): dieselbe Stille-Nachladen-
+  // Taktung, damit das Ort-Fach reagiert, sobald die SL die Party bewegt.
   const { ungueltig: inventarUngueltig } = useNachladen(
     async () => {
       const cid = ich?.campaignId;
       if (!cid) throw new Error("keine Kampagne");
-      const [sachen, last, begleiter] = await Promise.all([
+      const [sachen, last, begleiter, parteien] = await Promise.all([
         itemsApi.listAlle(cid),
         itemsApi.traglast(cid),
         begleiterApi.liste(cid),
+        partyApi.liste(cid),
       ]);
-      return { sachen, last, begleiter };
+      return { sachen, last, begleiter, parteien };
     },
     (frisch) => {
       setSachen(frisch.sachen);
       setTraglast(frisch.last);
       setBegleiter(frisch.begleiter);
+      const eigenePartei = frisch.parteien.find((p) => p.mitglieder.some((m) => m.id === ich?.personId));
+      setMeinePartyOrt(
+        eigenePartei?.aufenthaltsortKind === "Ort" && eigenePartei.aufenthaltsortId && eigenePartei.aufenthaltsortName
+          ? { id: eigenePartei.aufenthaltsortId, name: eigenePartei.aufenthaltsortName }
+          : null,
+      );
     },
     { aktiv: Boolean(ich), quelle: ich?.campaignId ?? "" },
   );
@@ -279,6 +296,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Bereiche nur aus den eigenen Sachen — fremde Verstecke gehen einen nichts an
   const meineRohAlle = sachen.filter((g) => g.ownerId === ich?.personId);
   const fremdeRoh = sachen.filter((g) => g.ownerId !== ich?.personId);
+
+  // Was am aktuellen Aufenthaltsort liegt — campaignweit, nicht nur eigene
+  // Sachen (siehe meinePartyOrt oben). `listAlle` filtert serverseitig
+  // bereits nach Sichtbarkeit, hier nur noch auf den Ort selbst eingrenzen.
+  const ortSachen = meinePartyOrt
+    ? sachen.filter((g) => g.ablage === "GELAGERT" && g.ablageZielId === meinePartyOrt.id && !g.montiertAnId)
+    : [];
 
   // Verbaute Augments erscheinen in der Körperkarte, nicht im Inventar.
   // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature wie
@@ -482,6 +506,21 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // ZusammenlegenPopup.tsx), hier wird nur nachgeladen — dieselbe
   // Refresh-Logik wie nach `umlegen`.
   async function nachZusammenlegen() {
+    if (!ich) return;
+    inventarUngueltig();
+    const [frisch, last] = await Promise.all([
+      itemsApi.listAlle(ich.campaignId),
+      itemsApi.traglast(ich.campaignId),
+    ]);
+    inventarUngueltig();
+    setSachen(frisch);
+    setTraglast(last);
+  }
+
+  // Aufheben (31.10.2026): OrtFachFenster.tsx ruft die API selbst auf,
+  // hier nur nachladen — dieselbe Refresh-Logik wie nach Zusammenlegen,
+  // weil sich dabei sowohl der eigene Besitz als auch die Traglast ändert.
+  async function nachAufheben() {
     if (!ich) return;
     inventarUngueltig();
     const [frisch, last] = await Promise.all([
@@ -817,6 +856,28 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
             </div>
           )}
 
+          {/* Aktueller Aufenthaltsort (31.10.2026): eigener Knopf außerhalb
+              der Fächer-Leiste (gleiche Optik, `gg-fach`/`gg-faecher`), weil
+              hier campaignweiter Besitz reinspielt statt nur der eigenen
+              Sachen aus `bereiche`/`ermittleBereiche`. Erscheint nur, solange
+              die Party tatsächlich irgendwo ist. */}
+          {meinePartyOrt && (
+            <div className="gg-faecher">
+              <button
+                type="button"
+                className="gg-fach"
+                onClick={() => setOrtFachOffen(true)}
+                title={`${meinePartyOrt.name} ansehen`}
+              >
+                <span className="gg-fach-symbol" aria-hidden="true">
+                  📍
+                </span>
+                <span className="gg-fach-name">{meinePartyOrt.name}</span>
+                <span className="gg-fach-zahl">{ortSachen.length}</span>
+              </button>
+            </div>
+          )}
+
           {/* Ein Fenster je Stufe des Stapels. Schliessen räumt alles darüber
               mit ab — sonst bliebe ein Fenster stehen, dessen Fach gar nicht
               mehr offen ist. */}
@@ -842,6 +903,21 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               />
             );
           })}
+
+          {meinePartyOrt && ich.personId && (
+            <OrtFachFenster
+              ortName={meinePartyOrt.name}
+              items={ortSachen}
+              offen={ortFachOffen}
+              onSchliessen={() => setOrtFachOffen(false)}
+              campaignId={ich.campaignId}
+              eigenePersonId={ich.personId}
+              onUmlegen={(item, ziel, zielId) => umlegen(item.id, ziel, zielId)}
+              onWeitergeben={(item, empfaengerId) => weitergeben(item.id, empfaengerId)}
+              onZusammengelegt={nachZusammenlegen}
+              onAufgehoben={nachAufheben}
+            />
+          )}
         </div>
       )}
 
