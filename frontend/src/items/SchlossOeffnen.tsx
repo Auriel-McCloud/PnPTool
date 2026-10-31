@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { itemsApi, type Gegenstand } from "./api";
 import { ApiError } from "../api/client";
@@ -77,8 +77,18 @@ export function SchlossOeffnen({
   const [eingabe, setEingabe] = useState<number[]>([]);
   const [darfTippen, setDarfTippen] = useState(false);
   const [blitzt, setBlitzt] = useState(false);
+  // Hängt vom Klick-Feedback in taste() — muss vor dem ersten Blitz der
+  // nächsten Runde gelöscht werden, sonst löscht er ihn (siehe klickFeedbackLoeschen).
+  const klickFeedbackTimeout = useRef<number | null>(null);
 
   const tasten = useMemo(() => runenFuer(item.id), [item.id]);
+
+  function klickFeedbackLoeschen() {
+    if (klickFeedbackTimeout.current !== null) {
+      window.clearTimeout(klickFeedbackTimeout.current);
+      klickFeedbackTimeout.current = null;
+    }
+  }
 
   function blitzen() {
     setBlitzt(false);
@@ -132,6 +142,11 @@ export function SchlossOeffnen({
   }
 
   async function abspielen(folge: number[]) {
+    // Löscht das Klick-Feedback aus taste() — sonst feuert dessen 160ms-
+    // Timeout mitten in den ersten Blitz hinein und löscht ihn vorzeitig,
+    // wenn die Server-Antwort schnell genug zurückkommt (Mark, 31.10.2026:
+    // "das erste Blinken ist nur ganz kurz").
+    klickFeedbackLoeschen();
     for (const taste of folge) {
       setLeuchtet(taste);
       await warten(420);
@@ -159,7 +174,8 @@ export function SchlossOeffnen({
     const bisher = [...eingabe, index];
     setEingabe(bisher);
     setLeuchtet(index);
-    window.setTimeout(() => setLeuchtet(null), 160);
+    klickFeedbackLoeschen();
+    klickFeedbackTimeout.current = window.setTimeout(() => setLeuchtet(null), 160);
     if (bisher.length < anzeige.length) return;
     setDarfTippen(false);
     setLaeuft(true);
