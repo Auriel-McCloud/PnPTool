@@ -58,9 +58,19 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
     },
   ];
 
-  // Ein getragener Behälter gibt dem "mitgeführt"-Bereich seinen Namen —
-  // sonst heißt er neutral, denn ohne Rucksack trägt man Dinge trotzdem
-  // am Gürtel oder in der Hand.
+  // Bleibt neutral "Mitgeführt" / ▣ — genau wie die gleichnamige Option im
+  // Umlegen-Dialog der Kachel (GegenstandKachel::grundAblagen). Hieß der
+  // Bereich früher nach dem getragenen Behälter, kollidierte das mit dessen
+  // eigenem Fach weiter unten: zwei Reiter namens "Rucksack", einer mit dem
+  // Behälter-Symbol 🎒 für lose mitgeführte Sachen, der andere mit dem
+  // Mitgeführt-Symbol ▣ für das, was tatsächlich im Rucksack steckt — exakt
+  // vertauscht (Mark-Bugreport 31.10.2026). Trägt jemand zudem mehr als
+  // einen Behälter (seit GegenstandKachel dasselbe erlaubt), gäbe es ohnehin
+  // keinen einzelnen Namen mehr, der passt.
+  //
+  // Die Existenzprüfung bleibt an einen getragenen Behälter gekoppelt: wer
+  // einen Rucksack trägt, soll "Mitgeführt" auch schon sehen, bevor etwas
+  // lose (ohne bestimmtes Ziel) darin liegt.
   //
   // Nur sinnvoll, solange die Gegenstände einer einzigen Person gehören. In
   // der kampagnenweiten Übersicht der Spielleitung liegen sie quer über alle
@@ -73,8 +83,8 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
   if (mitgefuehrt || getragenerBehaelter) {
     bereiche.push({
       id: "MITGEFUEHRT",
-      name: getragenerBehaelter ? getragenerBehaelter.name : "Mitgeführt",
-      symbol: "🎒",
+      name: "Mitgeführt",
+      symbol: "▣",
       greifbar: false,
       passt: (g) => g.ablage === "RUCKSACK",
     });
@@ -82,6 +92,13 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
 
   // Je Lagerort ein eigenes Fach — genau das erlaubt "ich sitze im Auto"
   // gegen "ich bin im Versteck".
+  // ▣ für Behälter — deckungsgleich mit dem Typ-Katalog (TYP_KATALOG, Behälter
+  // = ▣) und dem "Hineinsehen"-Knopf der eigenen Kachel. Dasselbe Symbol wie
+  // beim neutralen "Mitgeführt" oben ist hier bewusst in Kauf genommen: die
+  // Reiter unterscheiden sich über den Namen ("Mitgeführt" vs. "Rucksack"),
+  // und beide meinen ohnehin verwandte Dinge (kein bestimmter Behälter / ein
+  // bestimmter Behälter) — anders als die alte Namens-Kollision war das nie
+  // das eigentliche Problem (Mark-Bugreport 31.10.2026).
   const symbolFuer = (typ?: string) =>
     typ === "Fahrzeug" ? "⛭" : typ === "Drohne" ? "◭" : typ === "Behälter" ? "▣" : "⌂";
   const typVonZiel = new Map(items.map((g) => [g.id, g.typ]));

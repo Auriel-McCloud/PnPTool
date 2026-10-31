@@ -278,11 +278,14 @@ export type Ablage = "AUSGERUESTET" | "RUCKSACK" | "GELAGERT";
  *
  * `RUCKSACK` heisst hier **"Mitgeführt"** und nicht "Rucksack": der Zustand
  * setzt keinen Rucksack voraus, man trägt Dinge auch am Gürtel oder in der
- * Hand. Trägt jemand tatsächlich einen Behälter, benennt die Spielersicht
- * den Bereich nach ihm (siehe items/aufbewahrung.ts::ermittleBereiche). */
+ * Hand. Symbol ▣ statt eines Behälter-Icons, genau wie beim Umlegen-Dialog
+ * der Spielerkachel (GegenstandKachel::grundAblagen) — 🎒 bleibt dort wie
+ * hier reserviert für tatsächlich benannte Behälter (siehe
+ * items/aufbewahrung.ts::ermittleBereiche), sonst zeigten zwei verschiedene
+ * Zustände dasselbe Symbol (Mark-Bugreport 31.10.2026). */
 export const ABLAGEN: { wert: Ablage; label: string; symbol: string }[] = [
   { wert: "AUSGERUESTET", label: "Ausgerüstet", symbol: "⚔" },
-  { wert: "RUCKSACK", label: "Mitgeführt", symbol: "🎒" },
+  { wert: "RUCKSACK", label: "Mitgeführt", symbol: "▣" },
   { wert: "GELAGERT", label: "Gelagert", symbol: "⌂" },
 ];
 

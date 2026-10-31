@@ -227,6 +227,34 @@ neue Route korrekt in `OHNE_GM_ERLAUBT`, keine neuen Fehlschläge (die
 zusammenhängenden — lexikon/charakter-neu/kampf-hot/beschwoeren/
 erstellung-kommentar). **Noch nicht am Spieltisch getestet.**
 
+## "Mitgeführt" vs. echter Rucksack: Reiter in der Übersicht vertauscht (31.10.2026)
+
+Vierte Nachbesserung zum Mehr-Behälter-Feature, Mark-Bugreport per Screenshot:
+in der SL-Übersicht (`GegenstaendeUebersicht.tsx`) UND im Spieler-Inventar
+(`SpielerAnsicht.tsx`) — beide nutzen `items/aufbewahrung.ts::ermittleBereiche`
+— standen zwei Reiter, die beide "Rucksack" hießen, mit vertauschten Symbolen:
+der neutrale "mitgeführt, in keinem bestimmten Behälter"-Bereich hieß nach dem
+getragenen Rucksack UND trug dessen 🎒, während das echte Fach des Rucksacks
+(Inhalt, der per `ablageZielId` tatsächlich darin liegt) das neutrale ▣ zeigte
+— genau umgekehrt zu der Symbolik, die `GegenstandKachel.tsx::grundAblagen`
+seit dem Eintrag "Aktueller Aufenthaltsort zählt auch als Ablageziel" oben
+bereits richtig macht (▣ = kein bestimmter Behälter, 🎒 = ein bestimmter).
+
+Ursache: `ermittleBereiche` stammt noch aus der Zeit vor dem
+Mehr-Behälter-Feature (einzelner hartcodierter Rucksack) und benannte den
+"MITGEFUEHRT"-Bereich nach dem ersten getragenen Behälter samt dessen
+Symbol — bei mehreren getragenen Behältern ohnehin unsinnig, und seit es pro
+Behälter ein eigenes Fach gibt (`ablageZielId`), eine Namenskollision mit
+genau diesem Fach. Fix: `MITGEFUEHRT` heißt jetzt immer neutral "Mitgeführt"
+mit ▣, deckungsgleich mit `grundAblagen`. `symbolFuer` (für die Lagerort-
+Fächer) bleibt bewusst bei ▣ für Behälter — das deckt sich mit dem
+Typ-Katalog (`typKatalog.ts`, Behälter = ▣) und dem "Hineinsehen"-Knopf der
+eigenen Kachel; das gleiche Symbol wie bei "Mitgeführt" ist unproblematisch,
+weil die Namen jetzt nicht mehr kollidieren.
+
+**Verifiziert:** `npx tsc --noEmit -p tsconfig.json` sauber. **Noch nicht am
+Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**
