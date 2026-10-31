@@ -2,6 +2,33 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: "Gegenstand erstellen" tat nichts (31.10.2026)
+
+Mark-Bugreport: Weapon direkt für einen NPC anlegen (campaignweite
+Gegenstände-Übersicht, `GegenstaendeUebersicht.tsx`) — Klick auf "Gegenstand
+erstellen" tat buchstäblich nichts, kein Fehler, kein Popup-Schließen.
+Ursache: `addItem` brach bei fehlendem Namen/Typ/Besitzer mit einem reinen
+`return;` ab, ganz ohne Rückmeldung — HTML5 `required` allein reicht hier
+nicht zuverlässig (Select/Input sitzen in einem portal-basierten `Fenster`,
+die native Validierungs-Sprechblase kann darin unsichtbar/verdeckt bleiben).
+Jetzt setzt jeder Abbruchpfad eine sichtbare rote Fehlermeldung im Formular
+(„Bitte zuerst einen Typ wählen." / „...Besitzer wählen..." / „...Namen
+eingeben."), die beim Schließen/Öffnen des Popups zurückgesetzt wird.
+
+Zur Einordnung (kein Code nötig, schon vorhandenes Verhalten): ein Gegenstand,
+der direkt mit Besitzer (z.B. einem NPC) angelegt wird, ist bereits per
+Schema-Default `einzigartig=true`, `istVorlage` wird serverseitig immer auf
+`false` erzwungen sobald ein Besitzer übergeben wird, und `hatMenge=false`
+heißt automatisch "nicht stapelbar" — die drei von Mark gewünschten
+Eigenschaften brauchen beim direkten Anlegen für einen NPC keine weitere
+Aktion.
+
+**Verifiziert:** `npx tsc -b` sauber. **Kein Browser-Klicktest** — das
+Browser-Tool kann `localhost` nicht erreichen (Netzwerksperre, siehe
+„Messenger-Mobil-Fixes" weiter unten), nur Code-Review. Bitte am Dev-Server
+gegenprüfen, ob die Fehlermeldung bei leerem Namen/fehlendem Besitzer jetzt
+erscheint.
+
 ## Verschlossene Kisten (30.10.2026)
 
 Behälter kann ein Schloss haben, genau eine Art: `passwort` (Rätseltext sichtbar, Lösung ist das Passwort, Vergleich ohne Großschreibung), `schluessel` (ein bestimmter Gegenstand, den der Spieler besitzen und erreichen muss) oder `spiel` (5 Tasten, SL setzt die Länge, Zufallsfolge, Fehler von vorn, kein Limit). Auf bleibt auf, bis die SL wieder zusperrt. Nur die SL setzt das Schloss (am Behälter in den Optionen, vor dem Rausgeben). Inhalt mit `LIEGT_IN` in eine noch zue Kiste sieht der Spieler nicht — auch nicht per Einzelabruf. Lösung und Schlüssel-ID gehen nie an Spieler. Beim Weitergeben wandert der Inhalt mit. `POST .../oeffnen` und `POST .../schloss/spiel`.
