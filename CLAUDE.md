@@ -1164,6 +1164,10 @@ Spieltisch getestet.**
   `test_spezialisierungen.py` — isoliert alle grün, keine Regression).
   Geister wurde inhaltlich auf **Schattenwelten** umgestellt (Totenreich,
   Götterreich — „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr).
+  31.10.2026 nachgezogen: `docs/regeln-neotopia.md` und die Wiki-Seiten
+  zu Attributen bzw. Excel-vs-aktuell sagten noch „Sphären bleiben bei 5“.
+  Die Stufentexte selbst (Magier und Götter) lagen seit 23.10. schon in
+  den Tooltips.
 
 - **Sphären-Spezialisierung gebaut** (23.10.2026, direkt im Anschluss an die
   6-Punkte-Erweiterung, Mark: „bau das, automatisch auf 2/4/6, für 4 EP

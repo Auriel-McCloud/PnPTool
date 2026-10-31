@@ -1,7 +1,7 @@
 ---
 title: Attribute und Fertigkeiten
 created: 2026-09-18
-updated: 2026-10-24
+updated: 2026-10-31
 type: konzept
 tags: [attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charakterblatt.md, ../../regeln-neotopia.md, ../../../backend/app/traits/]
@@ -23,7 +23,7 @@ status: aktuell
 **30 Fertigkeiten**, Maximum 6, in drei Zehnerspalten (siehe
 [[../../reference/Neotopia_Charakterblatt.md]] für die vollständige Liste). Dazu
 kommen bei entsprechendem Weg: **Sphären** (siehe [[magie-hexkraft]], Maximum
-weiterhin 5) oder **NeuroWeaving-Fertigkeiten** (siehe [[neuroweaving-decking]],
+6 seit 23.10.2026) oder **NeuroWeaving-Fertigkeiten** (siehe [[neuroweaving-decking]],
 Maximum 6) — beide zählen technisch als Fertigkeit, werden aber meist ohne
 Attribut gewürfelt.
 
@@ -65,8 +65,9 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
 - **20.09.2026 — Fertigkeitsmaximum 5→6:** Mark wollte Einheitlichkeit mit
   dem Attributmaximum (beide jetzt 6). Betrifft alle 30 Kern-Fertigkeiten
   sowie die 4 NeuroWeaving-Fertigkeiten (zählen regeltechnisch als
-  Fertigkeit). Sphären bleiben bei 5 — feste Stufenbedeutung (1 wahrnehmbar
-  … 5 „alles"), eine 6. Stufe wäre inhaltlich unbelegt. Umsetzung: nur
+  Fertigkeit). Sphären blieben damals bei 5 — feste Stufenbedeutung (1 wahrnehmbar
+  … 5 „alles"). Am 23.10.2026 aufgehoben: jede Sphäre bekam eine neue
+  Zwischenstufe, Maximum 6, siehe [[magie-hexkraft]]. Umsetzung damals: nur
   `defaultMax` im Katalog (`backend/app/traits/seed.py`) geändert,
   `seed_traits()` überschreibt bestehende `TraitDef`-Nodes beim nächsten
   Start automatisch (`MERGE ... SET`) — keine manuelle Migration nötig.

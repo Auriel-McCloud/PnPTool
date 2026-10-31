@@ -38,7 +38,7 @@ Auf dem Blatt sind Gesundheit, I.C.E., Hexkraft/NeuroWeaving und Willenskraft **
 
 ## Fähigkeiten (Maximum 6)
 
-Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Maker (Hardware) und Matrix gehören dazu. **20.09.2026, Marks Wunsch:** von 5 auf 6 angehoben, damit es mit dem Attributmaximum einheitlich ist (Excel-Stand war noch 5). Die vier NeuroWeaving-Fertigkeiten (Brute Force, Schleichen, Daten Verarbeiten, Kompilieren) zogen mit, weil sie regeltechnisch als Fertigkeit zählen. Sphären bleiben bei 5 — feste Stufenbedeutung (1 wahrnehmbar … 5 „alles"), eine 6. Stufe wäre inhaltlich unbelegt.
+Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Maker (Hardware) und Matrix gehören dazu. **20.09.2026, Marks Wunsch:** von 5 auf 6 angehoben, damit es mit dem Attributmaximum einheitlich ist (Excel-Stand war noch 5). Die vier NeuroWeaving-Fertigkeiten (Brute Force, Schleichen, Daten Verarbeiten, Kompilieren) zogen mit, weil sie regeltechnisch als Fertigkeit zählen. Sphären blieben damals bewusst bei 5; am 23.10.2026 sind sie ebenfalls auf 6 gegangen (siehe unten).
 
 ## Die zwei besonderen Wege
 
@@ -50,8 +50,21 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - **Wilde Magie:** Bonuswürfel bis zur Höhe der Willenskraft dazunehmen; dafür muss vorher ein **Zielwert** festgelegt werden. Wird er unterschritten, ist die Probe gescheitert.
 - Nach einem gelungenen wilden Zauber: **Willenskraftwurf gegen die Zahl der Erfolge**. Die Differenz geht als Schaden auf die Lebenspunkte. Entfällt, wenn die Erfolge genau dem Zielwert entsprechen.
 - Kritische Treffer zählen beim Zielwert **nicht** als zusätzliche Erfolge — dort zählen nur Nettoerfolge.
-- **Sphären beschreiben, was möglich ist, und geben keine Bonuswürfel.** Stufen: 1 wahrnehmbar · 2 bis ~50 cm³ · 3 bis ~4 m³ · 4 bis Hausgröße · 5 alles.
-- Sphären: Korrespondenz, Entropie, Kräfte, Leben, Materie, Gedanken, Ursprung, Geister, Zeit. *Schaden durch Kräfte ist automatisch +1.*
+- **Sphären beschreiben, was möglich ist, und geben keine Bonuswürfel.** Seit 23.10.2026 sechs Stufen statt fünf. Die alte einheitliche Größenleiter (50 cm³ / 4 m³ / Haus / alles) gilt nicht mehr — jede Sphäre hat ihre eigene Leiter, „vollständig beherrschen“ ist Stufe 6. Volltexte für Magier und für die Götter der Häretiker stehen in den Tooltips (`backend/app/traits/seed.py`, `docs/reference/Master/`).
+- Sphären: Korrespondenz, Entropie, Kräfte, Leben, Materie, Gedanken, Ursprung, Geister, Zeit. *Schaden durch Kräfte ist automatisch +1.* Entropie verursacht erst ab Rang 5 direkt schweren, schwer heilbaren Schaden — die Zahl blieb beim Einfädeln der Zwischenstufe bewusst auf 5.
+- Stufentitel (fett = die neue Zwischenstufe aus dem 23.10.-Gespräch). Häretiker sehen dieselben Stufen unter dem Gottnamen.
+
+| Sphäre (Gott) | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| Korrespondenz (Shu) | Unmittelbare Raumwahrnehmung | Raum spüren, berühren, verdichten, hindurchgreifen | **Kinder und kleine Tiere durch Raumlöcher ziehen** | Raum durchstoßen / Tore öffnen oder verschließen (ab hier Menschen) | Raum zerreißen / Bannzeichen / Selbst-Kolokation | Raumveränderung / Kolokation |
+| Entropie (Kali) | Gespür für Schwächen, Glück und Verhängnis | Wahrscheinlichkeit kontrollieren | Berechenbare Muster beeinflussen | **Glück und Schwächen bei einfachen Wesen und massiven Objekten** | Lebende Dinge beeinflussen | Gedanken beeinflussen / Meme formen / bindender Eid |
+| Kräfte (Donar) | Kräfte wahrnehmen | Schwache Energien umlenken | **Energien umlenken** (nie aus dem Nichts) | Geringe Kräfte umwandeln / Telekinese | Mächtige Kräfte kontrollieren / Wetterhexerei | Mächtige Kräfte verwandeln / Infernos beschwören |
+| Leben (Enki) | Leben spüren | Einfache Lebensformen ändern / Selbstheilung | **Schmerz lindern oder zufügen / kleine Selbstmutation / andere heilen** (halbe Erfolge, aufgerundet) | Einfache Lebensformen verwandeln / Selbstveränderung | Komplexe Lebensformen ändern / Selbstverwandlung | Komplexe Lebensformen verwandeln und erschaffen |
+| Materie (Ogun) | Materiewahrnehmung | Einfache Transmutation | **Materie leicht formen** | Materie formen / komplexe Transmutation | Materie erschaffen / permanente Veränderung | Materie vollständig beherrschen |
+| Gedanken (Tezcatlipoca) | Gedanken spüren | Gedanken lesen / einfache Illusionen (ein Sinn) | **Emotionen leicht lenken / Illusionen täuschen zwei Sinne** | Gedanken beeinflussen / starke Illusionen | Bewusstsein kontrollieren / Persönlichkeit verändern | Unterbewusstsein kontrollieren / Psyche formen |
+| Ursprung (Izanagi) | Urkraft spüren | Urkraft kanalisieren | **Urkraft in Objekten und Tränken speichern** | Urkraft formen / Machtorte erschaffen | Urkraft beherrschen / Machtorte stabilisieren | Urkraft vollständig beherrschen |
+| Geister (Izanami) | Schattenwelten spüren | Schattenwelten beeinflussen | **Etwas Kleines aus einer Schattenwelt ziehen** | Durchstoßen und seitwärts wechseln | Permanente Löcher in die Schattenreiche reißen oder versiegeln, Geister binden | Seelen und Geister schmieden, Schattenwelten erschaffen |
+| Zeit (Chronos) | Zeit wahrnehmen | Zeit leicht verlangsamen oder beschleunigen | **Deutlich stärker verlangsamen oder beschleunigen / Objekte durch die Zeit schicken** | Zeitliche Anker / kurze Sprünge | Zeitliche Isolation / längere Sprünge | Zeitreise / Zeitimmunität |
 
 ### NeuroWeaving (Neuroweaver)
 

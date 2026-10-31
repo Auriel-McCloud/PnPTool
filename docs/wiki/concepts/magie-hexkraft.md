@@ -1,7 +1,7 @@
 ---
 title: Magie — Hexkraft und Sphären
 created: 2026-09-18
-updated: 2026-09-24
+updated: 2026-10-31
 type: konzept
 tags: [magie, versionsgeschichte]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -47,8 +47,12 @@ Master/*.md`, `backend/app/traits/seed.py` (`TRAIT_LANGBESCHREIBUNGEN`,
 wurden entsprechend aktualisiert. Geister/Izanami zusätzlich inhaltlich
 überarbeitet: „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr,
 ersetzt durch **Schattenwelten** (Totenreich, Götterreich u.a.). Charakterblatt-
-Anzeige, Charaktererstellungs-UI und eine Sphären-Spezialisierung (analog zur
-Fertigkeiten-Spezialisierung) sind zum Zeitpunkt dieses Eintrags noch offen.
+Anzeige und Charaktererstellung lesen `defaultMax` aus dem Katalog und
+zeigen 6 Punkte ohne eigenen Code-Change. Die Sphären-Spezialisierung
+(Auto-Slots bei 2/4/6, Zusatzslot 4 EP, kein Würfelbonus) ist seit demselben
+Tag gebaut. Die Stufentitel stehen seit 31.10.2026 auch in
+`docs/regeln-neotopia.md` — vorher sagte die Regelfassung noch „Sphären
+bleiben bei 5“.
 
 ## Der exklusive Weg
 

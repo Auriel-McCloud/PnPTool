@@ -1274,3 +1274,11 @@ kennt Kredit/Eigenkapital. Ein Nachbesser-Versuch, kein Roh-Rating-Fallback.
 ist ein Enum der Archetyp-Namen aus `vorlagen.local.json`. Unbekannter Text
 landet leer. Erklärungstexte gehen nicht in den Prompt. Spieler-Erstellung
 bleibt Freitext. Siehe [[entities/ki-integration]].
+
+## [2026-10-31] update | Sphären-Stufen in der Regelfassung nachgezogen
+
+Die 6-Stufen-Texte (Magier und Götter) lagen seit 23.10. in den Tooltips.
+`docs/regeln-neotopia.md`, [[concepts/attribute-und-fertigkeiten]] und
+[[comparisons/regelwerk-excel-vs-aktuell]] sagten noch „Sphären bleiben bei 5“.
+Stufentitel aus dem 23.10.-Gespräch jetzt in der Regelfassung, neue
+Zwischenstufe je Sphäre fett. Siehe [[concepts/magie-hexkraft]].

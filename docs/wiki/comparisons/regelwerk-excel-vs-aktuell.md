@@ -1,7 +1,7 @@
 ---
 title: Regelwerk — Excel (Version 1) vs. aktueller Stand im Tool
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-10-31
 type: vergleich
 tags: [versionsgeschichte, wuerfelsystem, attribute, magie, neuroweaving, kampf, ruestung, cyberware]
 sources: [../../reference/Neotopia_Regeln.md, ../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../CLAUDE.md, ../../ENTWICKLUNGSHISTORIE.md]
@@ -32,7 +32,8 @@ Datenquelle, siehe [[../../reference/INDEX.md]]).
 | Erfahrung/Steigern nach Erstellung | Nicht im Excel enthalten | Erfunden, WoD-artige Faktor-Formel | siehe [[../concepts/erfahrung-und-steigern]] |
 | Hintergründe (Kontakte, Ressourcen, ...) | Nicht im Excel enthalten | Vorschlag, zum Umbau frei | siehe [[../concepts/charaktererschaffung]] |
 | Fahrzeug/Drohnen-Preisformel | Wie im Excel | Wie im Excel, aber **von Mark als fraglich markiert** (Motorrad zu teuer) | 30.08.2026 (Notiz, nicht behoben) |
-| Fertigkeitsmaximum | 5 | **6** (gleichgezogen mit Attributmaximum; Sphären bleiben bei 5) | 20.09.2026 |
+| Fertigkeitsmaximum | 5 | **6** (gleichgezogen mit Attributmaximum; Sphären damals noch bei 5) | 20.09.2026 |
+| Sphärenmaximum | 5 | **6**, neue Zwischenstufe je Sphäre, „vollständig beherrschen“ ist Stufe 6 | 23.10.2026 |
 
 Jede Zeile hat eine ausführlichere Behandlung auf der jeweiligen Konzeptseite
 unter „Entwicklung" — hier nur der schnelle Überblick.
@@ -59,8 +60,10 @@ unter „Entwicklung" — hier nur der schnelle Überblick.
 - **Rassen-Baukasten**: Mark wollte nicht mehr nur die 5 Excel-Rassen fix im
   Code, sondern selbst welche bauen können, mit Kampagnen-Freigabe.
 - **Fertigkeitsmaximum 5→6**: Mark fand die Asymmetrie zum Attributmaximum
-  (6) unbegründet und wollte Einheitlichkeit. Sphären blieben bewusst bei 5,
-  weil ihre Stufen fest definiert sind (5 = „alles").
+  (6) unbegründet und wollte Einheitlichkeit. Sphären blieben zunächst bewusst
+  bei 5, weil ihre Stufen fest definiert waren (5 = „alles"). Am 23.10.2026
+  hat Mark das aufgehoben: neue Zwischenstufe je Sphäre, Stufe 6 ist
+  „vollständig beherrschen“. Siehe [[../concepts/magie-hexkraft]].
 
 ## Was NICHT geändert wurde (Excel gilt weiterhin 1:1)
 
@@ -71,7 +74,6 @@ unter „Entwicklung" — hier nur der schnelle Überblick.
   [[../concepts/attribute-und-fertigkeiten]]
 - Freebee-Kosten, Fertigkeitspakete, Startkapital 10.000¥ — siehe
   [[../concepts/charaktererschaffung]]
-- Sphären-Definitionen und -Stufen — siehe [[../concepts/magie-hexkraft]]
 - Cyber/Bioware-Grundformel (Preis→Willenskraftverlust-Tabelle) — siehe
   [[../concepts/cyberware-bioware]]
 
