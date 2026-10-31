@@ -242,6 +242,10 @@ OHNE_GM_ERLAUBT = {
     # Setzt nur aufgeschlossen, nie die Lösung.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/oeffnen",
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schloss/spiel",
+    # Offene Kiste wieder zusperren — dieselbe Zugriffsregel (_darf_kiste)
+    # wie beim Öffnen, nur umgekehrt. Setzt nur aufgeschlossen/spielRunde/
+    # spielFolge zurück, nie die Lösung.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schloss/zusperren",
 }
 
 # Leserouten, die **absichtlich** der Spielleitung vorbehalten bleiben.

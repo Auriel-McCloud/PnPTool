@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { parseRichText } from "../richtext/content";
 import { RichTextView } from "../richtext/RichTextView";
 import { Fenster } from "../shell/Fenster";
 import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
-import type { Ablage, Gegenstand } from "./api";
-import { SCHADEN_MAX, istVerschlossen } from "./api";
+import type { Ablage, AblageZiel, Gegenstand } from "./api";
+import { SCHADEN_MAX, istVerschlossen, itemsApi } from "./api";
 import { SchlossOeffnen } from "./SchlossOeffnen";
 import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
 import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
+import { ApiError } from "../api/client";
 import "./wegwerfen.css";
 
 /**
@@ -30,18 +31,26 @@ import "./wegwerfen.css";
 /** Bekommen ein eigenes Blatt (Neotopia.xlsx, Blatt "Drohne/Fahrzeug"). */
 const FAHRZEUGTYPEN = new Set(["Fahrzeug", "Drohne"]);
 
-function ablagen(behaelterName?: string): { wert: Ablage; label: string; symbol: string; erklaerung: string }[] {
+/**
+ * Die beiden festen Ablagen ohne eigenes Ziel — "wo es steckt" jenseits
+ * eines konkreten Behälters. Welche(r) Behälter zusätzlich wählbar ist,
+ * kommt nicht mehr von hier, sondern live aus `itemsApi.ablageziele`
+ * (31.10.2026, Mark: "ich habe einen Charakter der mehr als einen Behälter
+ * hat [...] ich habe nicht die Möglichkeit einen anderen Behälter zu
+ * wählen" — vorher gab es hartcodiert genau EINEN RUCKSACK-Knopf, benannt
+ * nach dem ersten gefundenen getragenen Behälter. Jetzt listet die Kachel
+ * jeden eigenen Behälter einzeln, über GELAGERT+Ziel-ID — denselben
+ * Mechanismus, den auch `BehaelterHineinlegenPopup` nutzt).
+ */
+function grundAblagen(): { wert: Ablage; label: string; symbol: string; erklaerung: string }[] {
   return [
     { wert: "AUSGERUESTET", label: "Am Körper", symbol: "⚔", erklaerung: "Griffbereit, ohne etwas aufmachen zu müssen." },
     {
       wert: "RUCKSACK",
-      // Wer einen Rucksack trägt, legt Dinge *da hinein* — und nicht in ein
-      // abstraktes "mitgeführt".
-      label: behaelterName ?? "Mitgeführt",
-      symbol: "🎒",
-      erklaerung: behaelterName ? `Verstaut im ${behaelterName}.` : "Dabei, aber erst herauszuholen.",
+      label: "Mitgeführt",
+      symbol: "✋",
+      erklaerung: "Dabei, aber in keinem bestimmten Behälter — am Gürtel oder in der Hand.",
     },
-    { wert: "GELAGERT", label: "Weggelegt", symbol: "⌷", erklaerung: "Liegt anderswo — nicht am Körper." },
   ];
 }
 
@@ -53,29 +62,19 @@ export function GegenstandKachel({
   onWeitergeben,
   campaignId,
   eigenePersonId,
-  behaelterName,
-  behaelterId,
   inhalt,
   onZusammengelegt,
   montierteUpgrades,
   onGeoeffnet,
 }: {
   item: Gegenstand;
-  /** Name des getragenen Behälters, falls einer da ist — für die Beschriftung. */
-  behaelterName?: string;
-  /**
-   * Kennung des getragenen Behälters. Nötig, um den Rucksack nicht in sich
-   * selbst legen zu können — der Ablageplatz "im Rucksack" ist für den
-   * Rucksack selbst kein Ort.
-   */
-  behaelterId?: string;
   /** Nur bei Behältern und Fahrzeugen: hineinsehen, in einem weiteren Fenster. */
   inhalt?: { anzahl: number; oeffnen: () => void };
   /**
    * Die einzige Änderung, die ein Spieler an einem Gegenstand vornehmen darf.
    * Fehlt sie, ist der Gegenstand nur anzusehen — so bei fremdem Besitz.
    */
-  onUmlegen?: (ablage: Ablage) => Promise<void> | void;
+  onUmlegen?: (ablage: Ablage, zielId?: string | null) => Promise<void> | void;
   /** Nur SL: einsetzen (true) oder chirurgisch entfernen (false). */
   onChirurgie?: (einsetzen: boolean) => Promise<void> | void;
   /**
@@ -126,15 +125,40 @@ export function GegenstandKachel({
   const [weitergebenFehler, setWeitergebenFehler] = useState<string | null>(null);
   const [zusammenlegenOffen, setZusammenlegenOffen] = useState(false);
   const [schlossOffen, setSchlossOffen] = useState(false);
+  const [ziele, setZiele] = useState<AblageZiel[]>([]);
+  const [zusperrenFehler, setZusperrenFehler] = useState<string | null>(null);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
 
-  async function umlegen(ablage: Ablage) {
+  // Eigene Behälter (und Orte) live holen, sobald das Fenster offen ist —
+  // genau wie CharacterSheetPanel es für die Spielleitung schon tut. Nicht
+  // im Voraus für jede Kachel: das wäre eine Abfrage pro Gegenstand in der
+  // Liste, nur damit ein paar Knöpfe gefüllt sind.
+  useEffect(() => {
+    if (!offen || !onUmlegen || !campaignId) {
+      setZiele([]);
+      return;
+    }
+    let abgebrochen = false;
+    itemsApi
+      .ablageziele(campaignId, item.id)
+      .then((z) => {
+        if (!abgebrochen) setZiele(z);
+      })
+      .catch(() => {
+        if (!abgebrochen) setZiele([]);
+      });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [offen, onUmlegen, campaignId, item.id]);
+
+  async function umlegen(ablage: Ablage, zielId?: string | null) {
     if (!onUmlegen) return;
     setLaeuft(true);
     try {
-      await onUmlegen(ablage);
+      await onUmlegen(ablage, zielId);
     } finally {
       setLaeuft(false);
     }
@@ -149,6 +173,23 @@ export function GegenstandKachel({
       // offenes Fenster darüber stünde ohne Bezug da.
       setFrageOffen(false);
       setOffen(false);
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  /** Eine offene Kiste wieder zusperren — Spieler dürfen das selbst
+   * (Mark, 31.10.2026). Setzt beim Tasten-Schloss zugleich Runde/Folge
+   * zurück, siehe backend/app/items/routes.py::kiste_zusperren. */
+  async function zusperren() {
+    if (!campaignId) return;
+    setLaeuft(true);
+    setZusperrenFehler(null);
+    try {
+      await itemsApi.zusperren(campaignId, item.id);
+      onGeoeffnet?.();
+    } catch (e) {
+      setZusperrenFehler(e instanceof ApiError ? e.message : "Geht nicht zu.");
     } finally {
       setLaeuft(false);
     }
@@ -381,7 +422,7 @@ export function GegenstandKachel({
             <h3>Verschlossen</h3>
             <p className="gg-ablage-ort">
               {item.schlossArt === "spiel"
-                ? "Fünf Tasten. Die Folge wird länger, bis es aufgeht."
+                ? "Ein Runen-Schloss. Die Folge wird länger, bis es aufgeht."
                 : item.schlossArt === "schluessel"
                   ? "Dafür brauchst du den passenden Schlüssel."
                   : item.schlossRaetsel || "Dafür brauchst du die Lösung."}
@@ -393,31 +434,65 @@ export function GegenstandKachel({
             </div>
           </section>
         )}
+        {item.aufgeschlossen && item.schlossArt && campaignId && onGeoeffnet && (
+          <section className="gg-ablage-wahl">
+            <h3>Aufgeschlossen</h3>
+            <p className="gg-ablage-ort">Bleibt offen, bis es wieder zugesperrt wird.</p>
+            <div className="gg-ablage-knoepfe">
+              <button type="button" onClick={() => void zusperren()} disabled={laeuft}>
+                Verschließen
+              </button>
+            </div>
+            {zusperrenFehler && <p style={{ margin: 0, fontSize: "0.85em", color: "var(--nein)" }}>{zusperrenFehler}</p>}
+          </section>
+        )}
         {onUmlegen && !(istChrom && item.verbaut) && (
         <section className="gg-ablage-wahl">
           <h3>Wo ist es?</h3>
           {item.ablage === "GELAGERT" && item.ablageZielName && (
             <p className="gg-ablage-ort">
-              Liegt in <strong>{item.ablageZielName}</strong>. Den genauen Platz bestimmt die Spielleitung —
-              du kannst es hier nur an dich nehmen.
+              Liegt in <strong>{item.ablageZielName}</strong>.
             </p>
           )}
           <div className="gg-ablage-knoepfe">
-            {ablagen(behaelterName)
-              // Nichts kann in sich selbst liegen.
-              .filter((a) => !(a.wert === "RUCKSACK" && item.id === behaelterId))
-              .map((a) => (
+            {grundAblagen().map((a) => (
+              <button
+                key={a.wert}
+                type="button"
+                data-aktiv={item.ablage === a.wert}
+                disabled={laeuft || item.ablage === a.wert}
+                onClick={() => umlegen(a.wert, null)}
+                title={a.erklaerung}
+              >
+                <span aria-hidden="true">{a.symbol}</span> {a.label}
+              </button>
+            ))}
+            {/* Jeder eigene Behälter (und jeder Ort der Kampagne) einzeln —
+                live aus itemsApi.ablageziele, siehe grundAblagen() oben.
+                Nichts kann in sich selbst liegen. */}
+            {ziele
+              .filter((z) => z.id !== item.id)
+              .map((z) => (
                 <button
-                  key={a.wert}
+                  key={z.id}
                   type="button"
-                  data-aktiv={item.ablage === a.wert}
-                  disabled={laeuft || item.ablage === a.wert}
-                  onClick={() => umlegen(a.wert)}
-                  title={a.erklaerung}
+                  data-aktiv={item.ablage === "GELAGERT" && item.ablageZielId === z.id}
+                  disabled={laeuft || (item.ablage === "GELAGERT" && item.ablageZielId === z.id)}
+                  onClick={() => umlegen("GELAGERT", z.id)}
+                  title={z.kind === "Ort" ? `Liegt am Ort „${z.name}".` : `Verstaut in „${z.name}".`}
                 >
-                  <span aria-hidden="true">{a.symbol}</span> {a.label}
+                  <span aria-hidden="true">{z.kind === "Ort" ? "⌂" : "▣"}</span> {z.name}
                 </button>
               ))}
+            <button
+              type="button"
+              data-aktiv={item.ablage === "GELAGERT" && !item.ablageZielId}
+              disabled={laeuft || (item.ablage === "GELAGERT" && !item.ablageZielId)}
+              onClick={() => umlegen("GELAGERT", null)}
+              title="Liegt anderswo, ohne festen Platz — die Spielleitung legt die Details fest."
+            >
+              <span aria-hidden="true">⌷</span> Weggelegt
+            </button>
           </div>
         </section>
         )}

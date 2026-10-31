@@ -25,8 +25,6 @@ export function Fachfenster({
   onWeitergeben,
   campaignId,
   eigenePersonId,
-  behaelterName,
-  behaelterId,
   inhaltVon,
   onZusammengelegt,
   schloss,
@@ -38,13 +36,11 @@ export function Fachfenster({
   offen: boolean;
   onSchliessen: () => void;
   /** Fehlt sie, ist der Inhalt nur anzusehen — so bei fremdem Besitz. */
-  onUmlegen?: (item: Gegenstand, ablage: Ablage) => Promise<void> | void;
+  onUmlegen?: (item: Gegenstand, ablage: Ablage, zielId?: string | null) => Promise<void> | void;
   /** Weitergeben an ein Party-Mitglied — siehe GegenstandKachel.tsx. */
   onWeitergeben?: (item: Gegenstand, empfaengerPersonId: string) => Promise<void> | void;
   campaignId?: string;
   eigenePersonId?: string;
-  behaelterName?: string;
-  behaelterId?: string;
   /**
    * Liefert für einen Behälter, wie viele Sachen darin liegen und wie man
    * hineinsieht — damit sich aus einem Fach das nächste öffnen lässt.
@@ -96,10 +92,8 @@ export function Fachfenster({
             <GegenstandKachel
               key={g.id}
               item={g}
-              behaelterName={behaelterName}
-              behaelterId={behaelterId}
               inhalt={inhaltVon?.(g)}
-              onUmlegen={onUmlegen ? (ablage) => onUmlegen(g, ablage) : undefined}
+              onUmlegen={onUmlegen ? (ablage, zielId) => onUmlegen(g, ablage, zielId) : undefined}
               onWeitergeben={onWeitergeben ? (empfaengerId) => onWeitergeben(g, empfaengerId) : undefined}
               campaignId={campaignId}
               eigenePersonId={eigenePersonId}

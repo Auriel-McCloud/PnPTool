@@ -125,7 +125,7 @@ export function SchlossOeffnen({
     }
   }
 
-  async function rundeHolen(folge?: number[]) {
+  async function rundeHolen(folge?: number[], bereitsGeblitzt = false) {
     const stand = await itemsApi.schlossSpiel(campaignId, item.id, folge);
     if (stand.geschafft) {
       onGeoeffnet();
@@ -136,7 +136,12 @@ export function SchlossOeffnen({
     setEingabe([]);
     setDarfTippen(false);
     setHinweis(null);
-    if (stand.falsch) blitzen();
+    // Schon lokal geblitzt (siehe taste())? Dann hier nicht nochmal, sonst
+    // doppeltes Blitzen plus doppelte Pause.
+    if (stand.falsch && !bereitsGeblitzt) {
+      blitzen();
+      await warten(2000);
+    }
     await abspielen(stand.anzeige);
     setDarfTippen(true);
   }
@@ -176,6 +181,31 @@ export function SchlossOeffnen({
     setLeuchtet(index);
     klickFeedbackLoeschen();
     klickFeedbackTimeout.current = window.setTimeout(() => setLeuchtet(null), 160);
+
+    // Die Reihenfolge ist schon bekannt (anzeige ist genau das, was gerade
+    // vorgeblinkt wurde) — ein falscher Klick lässt sich also SOFORT
+    // erkennen, ohne erst auf die Server-Antwort zu warten. Vorher wurde
+    // nur bei der LETZTEN nötigen Taste überhaupt geprüft: ein Fehler am
+    // Anfang einer langen Folge blieb unsichtbar, bis man sie zu Ende
+    // getippt hatte (Mark, 31.10.2026: "manchmal leuchtet es nicht sofort").
+    const richtigBisher = anzeige[bisher.length - 1] === index;
+    if (!richtigBisher) {
+      setDarfTippen(false);
+      setLaeuft(true);
+      blitzen();
+      try {
+        // Etwas Abstand, bevor die neue Folge losblinkt (Mark: "etwas Abstand").
+        await warten(2000);
+        await rundeHolen(bisher, true);
+      } catch (e) {
+        setHinweis(e instanceof ApiError ? e.message : "Das Schloss antwortet nicht.");
+        setDarfTippen(true);
+      } finally {
+        setLaeuft(false);
+      }
+      return;
+    }
+
     if (bisher.length < anzeige.length) return;
     setDarfTippen(false);
     setLaeuft(true);

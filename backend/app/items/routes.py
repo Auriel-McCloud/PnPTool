@@ -1070,6 +1070,30 @@ async def kiste_spiel(campaign_id: str, item_id: str, body: SpielZug, viewer: Vi
     return SpielStand(runde=runde + 1, anzeige=anzeige_fuer(folge, runde))
 
 
+@campaign_router.post("/{item_id}/schloss/zusperren", response_model=GegenstandResponse)
+async def kiste_zusperren(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Eine offene Kiste wieder zusperren — Spieler dürfen das selbst, z.B.
+
+    um den Inhalt vor fremden Blicken zu verbergen (Mark, 31.10.2026: "wäre
+    es cool wenn der Spieler einen Verschließen-Button hätte"). Gleiche
+    Zugriffsregel wie beim Öffnen (_darf_kiste): GM immer, Spieler nur am
+    eigenen Behälter. Beim Tasten-Schloss beginnt die nächste Öffnung wieder
+    bei Runde 1 mit frischer Zufallsfolge — dieselbe Zurücksetzung, die auch
+    schloss_patch_anpassen bei der SL-Variante macht.
+    """
+    item = await _darf_kiste(campaign_id, item_id, viewer)
+    if not item.get("schlossArt"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Hier ist kein Schloss dran.")
+    updates: dict = {"aufgeschlossen": False}
+    if item.get("schlossArt") == "spiel":
+        updates["spielRunde"] = 0
+        updates["spielFolge"] = "[]"
+    geschlossen = await repository.update_gegenstand(campaign_id, item_id, updates)
+    if geschlossen is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return (await _sichtbar_fuer(campaign_id, [geschlossen], viewer))[0]
+
+
 # =====================================================================
 # Rüstung: Kästchen + Schadensreduktion (siehe kampf/ruestung.py für die
 # Formel, docs/api/ruestung.md für die ausführliche Begründung)

@@ -400,9 +400,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const aktuelleSeite = Math.min(seite, seiten - 1);
   const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
-  // Der getragene Behälter gibt dem mittleren Ablageplatz seinen Namen.
+  // Der getragene Behälter sammelt "mitgeführte" Sachen unter einem
+  // gemeinsamen Fach ein — welcher Behälter das konkret ist, wählt man an
+  // jedem Gegenstand selbst (siehe GegenstandKachel.tsx::ziele, 31.10.2026).
   const getragenesFach = faecher.find((f) => f.id === "MITGEFUEHRT");
-  const getragenerBehaelter = getragenesFach?.name;
   const getragenerBehaelterId = sachen.find(
     (g) => g.ablage === "AUSGERUESTET" && (g.typ === "Behälter" || g.typ === "Fahrzeug"),
   )?.id;
@@ -451,12 +452,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     setAugmentFrage(itemId);
   }
 
-  async function umlegen(itemId: string, ziel: Ablage) {
+  async function umlegen(itemId: string, ziel: Ablage, zielId?: string | null) {
     if (!ich) return;
     inventarUngueltig();
-    // Ohne festes Ziel: der Spieler legt nur die Art fest, das genaue Wohin
-    // (welches Fahrzeug, welcher Ort) bleibt Sache der Spielleitung.
-    await itemsApi.setAblage(ich.campaignId, itemId, ziel, null);
+    // zielId gesetzt: der Spieler hat einen konkreten eigenen Behälter (oder
+    // Ort) gewählt — siehe GegenstandKachel.tsx::ziele. Ohne zielId legt er
+    // nur die Art fest, das genaue Wohin bleibt dann Sache der Spielleitung.
+    await itemsApi.setAblage(ich.campaignId, itemId, ziel, zielId ?? null);
     const [frisch, last] = await Promise.all([
       itemsApi.listAlle(ich.campaignId),
       itemsApi.traglast(ich.campaignId),
@@ -615,10 +617,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               <GegenstandKachel
                 key={g.id}
                 item={g}
-                behaelterName={getragenerBehaelter}
-                behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
-                onUmlegen={(ziel) => umlegen(g.id, ziel)}
+                onUmlegen={(ziel, zielId) => umlegen(g.id, ziel, zielId)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
                 campaignId={ich.campaignId}
                 onZusammengelegt={nachZusammenlegen}
@@ -749,15 +749,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               <GegenstandKachel
                 key={g.id}
                 item={g}
-                behaelterName={getragenerBehaelter}
-                behaelterId={getragenerBehaelterId}
                 inhalt={inhaltVon(g)}
                 // Montiertes Upgrade (z.B. ein Ki-Tama) sichtbar an der Waffe
                 // selbst — dieselbe Anzeige wie in der GM-Ansicht
                 // (PCInventar.tsx), Mark: "frage ich mich ob ich von außen
                 // sehen werde welche Upgrades in der Waffe verbaut sind".
                 montierteUpgrades={sachen.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
-                onUmlegen={(ziel) => umlegen(g.id, ziel)}
+                onUmlegen={(ziel, zielId) => umlegen(g.id, ziel, zielId)}
                 onChirurgie={(einsetzen) => einsetzen ? augmentFrageStellen(g.id) : Promise.resolve()}
                 campaignId={ich.campaignId}
                 eigenePersonId={ich.personId ?? undefined}
@@ -831,12 +829,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 fach={fach}
                 offen
                 items={sachen.filter((g) => fach.passt(g) && !g.montiertAnId)}
-                behaelterName={getragenerBehaelter}
-                behaelterId={getragenerBehaelterId}
                 inhaltVon={inhaltVon}
                 onSchliessen={() => setFachStapel((alt) => alt.slice(0, stufe))}
                 // Fremdes lässt sich ansehen, aber nicht umlegen oder weitergeben
-                onUmlegen={fach.id === "FREMD" ? undefined : (item, ziel) => umlegen(item.id, ziel)}
+                onUmlegen={fach.id === "FREMD" ? undefined : (item, ziel, zielId) => umlegen(item.id, ziel, zielId)}
                 onWeitergeben={fach.id === "FREMD" ? undefined : (item, empfaengerId) => weitergeben(item.id, empfaengerId)}
                 campaignId={ich.campaignId}
                 eigenePersonId={ich.personId ?? undefined}

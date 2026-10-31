@@ -53,8 +53,8 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     refresh();
   }
 
-  async function umlagern(itemId: string, ablage: Ablage) {
-    await itemsApi.setAblage(campaignId, itemId, ablage);
+  async function umlagern(itemId: string, ablage: Ablage, zielId?: string | null) {
+    await itemsApi.setAblage(campaignId, itemId, ablage, zielId ?? null);
     refresh();
   }
 
@@ -88,11 +88,6 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   };
 
   const ablageReihenfolge: Ablage[] = ["AUSGERUESTET", "RUCKSACK", "GELAGERT"];
-
-  // Finde Behälter (Rucksack etc.) für Label
-  const behaelter = items.find(
-    (i) => i.typ === "Behälter" && i.ablage === "AUSGERUESTET"
-  );
 
   if (loading) {
     return <p style={{ color: "var(--text-leise)" }}>Lade Inventar…</p>;
@@ -145,9 +140,8 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                 <GegenstandKachel
                   key={g.id}
                   item={g}
-                  behaelterName={behaelter?.name}
-                  behaelterId={behaelter?.id}
-                  onUmlegen={(neueAblage) => umlagern(g.id, neueAblage)}
+                  campaignId={campaignId}
+                  onUmlegen={(neueAblage, zielId) => umlagern(g.id, neueAblage, zielId)}
                   onWegwerfen={() => wegwerfen(g.id)}
                   montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 />

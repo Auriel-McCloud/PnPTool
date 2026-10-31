@@ -68,8 +68,8 @@ export function DrohnenAusruestung({
 
   useEffect(neuLaden, [campaignId, drohneId, eigenePersonId]);
 
-  async function umlegen(itemId: string, ablage: Ablage) {
-    await itemsApi.setAblage(campaignId, itemId, ablage);
+  async function umlegen(itemId: string, ablage: Ablage, zielId?: string | null) {
+    await itemsApi.setAblage(campaignId, itemId, ablage, zielId ?? null);
     neuLaden();
   }
 
@@ -113,7 +113,11 @@ export function DrohnenAusruestung({
   function zeile(item: Gegenstand) {
     return (
       <div key={item.id} style={{ position: "relative" }}>
-        <GegenstandKachel item={item} onUmlegen={(ablage) => umlegen(item.id, ablage)} />
+        <GegenstandKachel
+          item={item}
+          campaignId={campaignId}
+          onUmlegen={(ablage, zielId) => umlegen(item.id, ablage, zielId)}
+        />
         {eigenePersonId && (
           <button
             type="button"

@@ -615,6 +615,8 @@ export const itemsApi = {
       `${itemBase(cid, itemId)}/schloss/spiel`,
       { folge: folge ?? null },
     ),
+  /** Spieler dürfen eine offene Kiste selbst wieder zusperren. */
+  zusperren: (cid: string, itemId: string) => api.post<Gegenstand>(`${itemBase(cid, itemId)}/schloss/zusperren`),
   remove: (cid: string, itemId: string) => api.delete<void>(itemBase(cid, itemId)),
   assign: (cid: string, itemId: string, zielPersonId: string, kopie = false) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/zuweisen`, { zielPersonId, kopie }),
