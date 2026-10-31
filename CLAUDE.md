@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Probenfenster zeigt Kurztext und Detail (31.10.2026)
+
+Klick auf Sphäre/Gott oder Fertigkeit öffnet weiter das Probenfenster
+(Größenleiter bzw. Würfel und Attribute). Darin steht jetzt der
+Tooltip-Kurztext, darunter ein Detail-Knopf für die Langfassung — das
+Fragezeichen bleibt, ist aber nicht mehr der einzige Weg.
+`frontend/src/traits/Probe.tsx`. Häretiker sehen den Gott-Text. Zusatzfertigkeiten
+nehmen Kurz- und Detailtext aus dem Katalog, nicht aus den Trait-Erklärungen.
+**Nie im Browser angeklickt.** `tsc -b` grün.
+
 ## Montierte Upgrades/Ki-Tamas für die SL sichtbar, beschworener Critter zeigt echten Namen (31.10.2026)
 
 Zwei Mark-Bugreports direkt im Anschluss an Verschlossene-Kisten/Hineinlegen:

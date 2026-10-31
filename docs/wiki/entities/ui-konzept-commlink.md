@@ -1,7 +1,7 @@
 ---
 title: UI-Konzept — Das Commlink
 created: 2026-09-18
-updated: 2026-10-02
+updated: 2026-10-31
 type: entität
 tags: [ui, frontend]
 sources: [../../ui-konzept.md, ../../../frontend/src/shell/CommlinkShell.tsx, ../../../frontend/src/shell/commlink.css]
@@ -152,6 +152,13 @@ kam an. Jetzt zwei Ebenen:
   bei den Ambition/Verlangen-Vorlagen in der Erstellung.
 - HAND/KI-Schutzregel gilt für `langtext` genauso wie für den Kurztext: ein
   von der SL bearbeiteter Eintrag wird beim nächsten Seed nicht überschrieben.
+
+**31.10.2026 — dieselben Texte auch im Klick-Fenster der Probe.** Das
+Fragezeichen bleibt, ist aber nicht mehr der einzige Weg: Sphären/Götter
+zeigen den Kurztext plus Detail-Knopf über der Größenleiter, Fertigkeiten
+(auch NeuroWeaving, Zusatzfertigkeiten, Hexkraft/Glauben) ganz unten im
+Probenfenster, unter Würfeln und Attributen. Häretiker lesen den Gott-Text
+(`trait:Shu`), nicht den Sphären-Text.
 
 **In der Charaktererstellung erzwungen sichtbar:** neuer `erzwingen`-Prop
 an `InfoTipp`, ignoriert den globalen „Erklärungen"-Schalter oben in der

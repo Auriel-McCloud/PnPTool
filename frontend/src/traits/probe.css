@@ -270,3 +270,29 @@
   padding-top: 4px;
   border-top: 1px solid var(--linie);
 }
+
+/* Kurztext unter Würfeln/Attributen — die ?-Tooltips bleiben, sind aber
+   nicht mehr der einzige Weg an die Beschreibung. */
+.pr-beschreibung {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linie);
+}
+
+.pr-beschreibung-text,
+.pr-detail-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.pr-detail-text {
+  line-height: 1.7;
+}

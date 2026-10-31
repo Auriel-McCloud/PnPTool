@@ -695,7 +695,12 @@ export function Charakterblatt({
         willenskraft={Math.max(0, u.willenskraftMax - u.willenskraftVerbraucht)}
         deckBoni={bogen.deckBoni}
         ausruestungsBoni={bogen.ausruestungsBoni}
-        zusatzfertigkeiten={zusatzAnzeige.map((z) => ({ name: z.name, wert: z.rating }))}
+        zusatzfertigkeiten={zusatzAnzeige.map((z) => ({
+          name: z.name,
+          wert: z.rating,
+          kurzbeschreibung: z.kurzbeschreibung,
+          detailbeschreibung: z.detailbeschreibung,
+        }))}
         ausruestungsfertigkeiten={(bogen.ausruestungsfertigkeiten ?? []).map((f) => ({ name: f.name, wert: f.bonus }))}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}

@@ -1282,3 +1282,9 @@ Die 6-Stufen-Texte (Magier und Götter) lagen seit 23.10. in den Tooltips.
 [[comparisons/regelwerk-excel-vs-aktuell]] sagten noch „Sphären bleiben bei 5“.
 Stufentitel aus dem 23.10.-Gespräch jetzt in der Regelfassung, neue
 Zwischenstufe je Sphäre fett. Siehe [[concepts/magie-hexkraft]].
+
+## [2026-10-31] gebaut | Probenfenster zeigt Fertigkeits- und Sphären-Kurztext
+
+Klick auf Sphäre/Gott oder Fertigkeit zeigt den Tooltip-Kurztext im
+Probenfenster, Detail-Knopf öffnet die Langfassung. Größenleiter und
+Würfel/Attribute bleiben. Siehe [[entities/ui-konzept-commlink]].

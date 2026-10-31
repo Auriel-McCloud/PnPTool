@@ -615,6 +615,7 @@ export function Kampfkarte({
         deckBoni={bogen.deckBoni}
         ausruestungsBoni={bogen.ausruestungsBoni}
         magieFlavor={u.magieFlavor}
+        campaignId={campaignId}
         onSchliessen={() => setProbe(null)}
       />
 

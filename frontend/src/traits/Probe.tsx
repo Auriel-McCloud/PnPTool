@@ -6,6 +6,7 @@ import type { Spezialisierung } from "../spezialisierungen/api";
 import { SpezialisierungVerwaltung } from "./SpezialisierungPopup";
 import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
+import { schluessel, useErklaerungen } from "../regeln/erklaerungen";
 import "./probe.css";
 
 /**
@@ -126,7 +127,7 @@ export function Probe({
    * kombinieren sich aber genauso mit einem Attribut. Nur die Attribut-Seite
    * zeigt sie — von der Fertigkeit aus fragt das Fenster weiter nach dem Attribut.
    */
-  zusatzfertigkeiten?: { name: string; wert: number }[];
+  zusatzfertigkeiten?: { name: string; wert: number; kurzbeschreibung?: string; detailbeschreibung?: string }[];
   ausruestungsfertigkeiten?: { name: string; wert: number }[];
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
@@ -154,6 +155,8 @@ export function Probe({
   // Gewählte Spezialisierung — EINE, kein Stapeln mehrerer Boni auf eine
   // Probe (Mark hat das nie besprochen, siehe Berichtstext/Assumption).
   const [spezialisierung, setSpezialisierung] = useState<Spezialisierung | null>(null);
+  // Kurztext aus dem Tooltip-Store — im Klick-Fenster sichtbar, nicht nur hinter dem ?.
+  const erklaerungen = useErklaerungen(campaignId ?? null);
 
   // Beim NeuroWeaving gibt es genau EINEN Grundwert (Kategorie
   // "NeuroWeavingWert") — klickt man auf eine der sechs Fertigkeiten, bleibt
@@ -269,6 +272,33 @@ export function Probe({
     );
   }
 
+  function texteFuer(name: string, kategorie?: string) {
+    const ausZusatz =
+      kategorie === "Zusatzfertigkeit" ||
+      (kategorie == null && Boolean(zusatzfertigkeiten?.some((z) => z.name === name)));
+    if (ausZusatz) {
+      const z = zusatzfertigkeiten?.find((x) => x.name === name);
+      return {
+        titel: name,
+        text: z?.kurzbeschreibung ?? "",
+        langtext: z?.detailbeschreibung ?? "",
+      };
+    }
+    const anzeige = magieBegriff(magieFlavor, name);
+    const e = erklaerungen.zu(schluessel.trait(anzeige));
+    return {
+      titel: e?.titel || anzeige,
+      text: e?.text ?? "",
+      langtext: e?.langtext ?? "",
+    };
+  }
+
+  function beschreibungsBlock(name: string, kategorie?: string) {
+    const texte = texteFuer(name, kategorie);
+    if (!texte.text && !texte.langtext) return null;
+    return <Beschreibung titel={texte.titel} text={texte.text} langtext={texte.langtext} />;
+  }
+
   // --- Sphären: hier wird nicht gewürfelt (Zeile 87) --------------------
   if (istSphaere) {
     return (
@@ -281,6 +311,7 @@ export function Probe({
       >
         <p className="pr-regel pr-hinweis">{MAGIE_HINWEISE.sphaereNichtWuerfeln}</p>
         {SPHAEREN[wahl.name] && <p className="pr-sphaerentext">{SPHAEREN[wahl.name]}</p>}
+        {beschreibungsBlock(wahl.name, "Sphäre")}
         <ol className="pr-stufen">
           {SPHAEREN_STUFEN.slice(1).map((text, i) => {
             const stufe = i + 1;
@@ -386,6 +417,7 @@ export function Probe({
             </p>
           )}
           {spezialisierungsBlock(wahl)}
+          {beschreibungsBlock(wahl.name, wahl.kategorie)}
         </Fenster>
       </>
     );
@@ -417,6 +449,7 @@ export function Probe({
         <p className="pr-regel">
           <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
         </p>
+        {beschreibungsBlock(wahl.name, "Cyberdeck")}
       </Fenster>
     );
   }
@@ -472,6 +505,7 @@ export function Probe({
           </div>
         )}
         {spezialisierungsBlock(wahl)}
+        {!istAttributWahl && beschreibungsBlock(wahl.name, wahl.kategorie)}
       </Fenster>
 
       {/* Zweites Fenster über dem ersten — die Zahl ist die ganze Auskunft. */}
@@ -535,6 +569,8 @@ export function Probe({
         <p className="pr-regel">
           <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
         </p>
+        {attribut &&
+          beschreibungsBlock(istAttributWahl ? attribut.name : wahl.name, istAttributWahl ? undefined : wahl.kategorie)}
       </Fenster>
     </>
   );
@@ -623,6 +659,35 @@ function FertigkeitsWahl({
           </h3>
           {ausruestungsfertigkeiten!.map((f) => knopf(`ausruestung:${f.name}`, f.name, f.wert))}
         </section>
+      )}
+    </>
+  );
+}
+
+/** Kurztext aus dem Tooltip, plus Detail-Fenster für die Langfassung.
+ *  Eigenes State, damit jedes Probenfenster seinen Knopf für sich hat. */
+function Beschreibung({ titel, text, langtext }: { titel: string; text: string; langtext: string }) {
+  const [offen, setOffen] = useState(false);
+  return (
+    <>
+      <section className="pr-beschreibung">
+        {text && <p className="pr-beschreibung-text">{text}</p>}
+        {langtext && (
+          <button type="button" onClick={() => setOffen(true)}>
+            Detail
+          </button>
+        )}
+      </section>
+      {langtext && (
+        <Fenster
+          offen={offen}
+          titel={titel}
+          unterzeile="Ausführliche Beschreibung"
+          kennung={`probe-detail:${titel}`}
+          onSchliessen={() => setOffen(false)}
+        >
+          <p className="pr-detail-text">{langtext}</p>
+        </Fenster>
       )}
     </>
   );
