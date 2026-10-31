@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
+import { ZeichenblockPopup } from "../players/ZeichenblockPopup";
+import { bildHoererSetzen, oeffneZeichentisch } from "../bilder/zeichentisch";
 
 /**
  * Bildergalerie für Entitäten: mehrere Bilder anzeigen, hochladen,
@@ -41,7 +43,10 @@ export function BildGalerie({
   const [fehler, setFehler] = useState<string | null>(null);
   const [loeschenOffen, setLoeschenOffen] = useState<string | null>(null); // URL des zu löschenden Bildes
   const [kiOffen, setKiOffen] = useState(false);
+  const [zeichnenOffen, setZeichnenOffen] = useState(false);
   const dateiRef = useRef<HTMLInputElement>(null);
+  const ruf = useRef(`galerie-${id}`).current;
+  const uploadPfad = `/api/campaigns/${campaignId}/${art}/${id}/bild`;
 
   // Für den KI-Bild-Prompt: welcher Objekttyp das für die KI ist.
   const objektTyp =
@@ -114,6 +119,33 @@ export function BildGalerie({
       if (dateiRef.current) dateiRef.current.value = "";
     }
   }
+
+  // Klecks hat schon hochgeladen und dabei das Anzeigebild gesetzt. Die
+  // Galerie muss das Bild noch als nicht-primär anhängen, sonst fehlt es
+  // in der Reihe und das nächste Speichern kennt es nicht.
+  const nachKlecks = useRef<(antwort: { bildUrl?: unknown }) => void>(() => undefined);
+  nachKlecks.current = async (antwort) => {
+    const neueUrl = typeof antwort.bildUrl === "string" ? antwort.bildUrl : "";
+    if (!neueUrl) {
+      onGeaendert();
+      return;
+    }
+    if (effektiveBilder.some((b) => b.url === neueUrl)) {
+      onGeaendert();
+      return;
+    }
+    const istErstes = effektiveBilder.length === 0;
+    const neueBilder = [...effektiveBilder, { url: neueUrl, istPrimaer: istErstes }];
+    const anzeigeUrl = istErstes ? neueUrl : primaerBild || neueUrl;
+    await fetch(`/api/campaigns/${campaignId}/${art}/${id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bilder: neueBilder, bildUrl: anzeigeUrl }),
+    });
+    onGeaendert();
+  };
+  useEffect(() => bildHoererSetzen(ruf, (antwort) => void nachKlecks.current(antwort)), [ruf]);
 
   async function primaerSetzen(url: string) {
     const neueBilder = effektiveBilder.map((b) => ({
@@ -240,6 +272,23 @@ export function BildGalerie({
         >
           <span aria-hidden="true">✨</span>
         </div>
+        <div
+          className="bild-galerie-thumb bild-galerie-neu"
+          onClick={() => !laedt && setZeichnenOffen(true)}
+          title="Einfach zeichnen"
+        >
+          <span aria-hidden="true">✎</span>
+        </div>
+        <div
+          className="bild-galerie-thumb bild-galerie-neu"
+          onClick={() => {
+            const hinweis = oeffneZeichentisch(uploadPfad, primaerBild, ruf);
+            if (hinweis) setFehler(hinweis);
+          }}
+          title="Zeichentisch"
+        >
+          <span aria-hidden="true">◈</span>
+        </div>
       </div>
 
       <input
@@ -280,6 +329,13 @@ export function BildGalerie({
         }
         onGenerieren={(provider, prompt) => kiBildGenerieren(campaignId, provider, prompt)}
         onUebernehmen={(blob) => hochladenBytes(blob, "ki-bild.png")}
+      />
+      <ZeichenblockPopup
+        offen={zeichnenOffen}
+        bildUrl={primaerBild}
+        unterzeile="Skizze — wird in die Galerie gelegt"
+        onSchliessen={() => setZeichnenOffen(false)}
+        onUebernehmen={(blob) => hochladenBytes(blob, "skizze.png")}
       />
     </div>
   );

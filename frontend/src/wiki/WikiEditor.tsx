@@ -10,6 +10,7 @@ import { GmSecret } from "../richtext/GmSecretMark";
 import { EntitaetsVerweis, type VerweisAttribute } from "../richtext/EntitaetsVerweis";
 import { VerweisWaehler } from "./VerweisWaehler";
 import { bildHochladen } from "./api";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { seitePruefen, type SweepSeite } from "../ideenschmiede/api";
 import { PruefungPopup } from "./PruefungPopup";
 import { AutoVerknuepfungPopup } from "../ki/AutoVerknuepfungPopup";
@@ -303,6 +304,23 @@ export function WikiEditor({
           pruefLaeuft={pruefLaeuft}
           onAutoVerknuepfen={() => setAutoVerknuepfenOffen(true)}
         />
+      )}
+      {!nurLesen && editor && (
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", margin: "0 0 8px" }}>
+          <BildZeichenKnopfe
+            uploadPfad={`/api/campaigns/${campaignId}/wiki/bilder`}
+            disabled={laedtBild}
+            onBlob={async (blob) => {
+              const datei = new File([blob], "skizze.png", { type: blob.type || "image/png" });
+              const { url } = await bildHochladen(campaignId, datei);
+              editor.chain().focus().setImage({ src: url }).run();
+            }}
+            onGespeichert={(antwort) => {
+              const url = typeof antwort.url === "string" ? antwort.url : "";
+              if (url) editor.chain().focus().setImage({ src: url }).run();
+            }}
+          />
+        </div>
       )}
 
       {pruefFehler && (

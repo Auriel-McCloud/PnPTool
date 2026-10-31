@@ -3,6 +3,7 @@ import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 
 /**
  * Bild einer Entität: anzeigen, hochladen, entfernen — und per Blitz allen
@@ -80,14 +81,27 @@ export function EntitaetsBild({
 
   async function entfernen() {
     setLaedt(true);
+    setFehler(null);
     try {
-      await fetch(`/api/campaigns/${campaignId}/${art}/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bildUrl: "" }),
-      });
+      const personen = art === "personen";
+      const antwort = await fetch(
+        personen
+          ? `/api/campaigns/${campaignId}/personen/${id}/bild`
+          : `/api/campaigns/${campaignId}/${art}/${id}`,
+        {
+          method: personen ? "DELETE" : "PATCH",
+          credentials: "include",
+          headers: personen ? undefined : { "Content-Type": "application/json" },
+          body: personen ? undefined : JSON.stringify({ bildUrl: "" }),
+        },
+      );
+      if (!antwort.ok) {
+        const f = await antwort.json().catch(() => ({ detail: antwort.statusText }));
+        throw new Error(f.detail ?? "Entfernen fehlgeschlagen");
+      }
       onGeaendert();
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Entfernen fehlgeschlagen");
     } finally {
       setLaedt(false);
     }
@@ -134,6 +148,14 @@ export function EntitaetsBild({
       >
         ✨ KI-Bild
       </button>
+
+      <BildZeichenKnopfe
+        uploadPfad={`/api/campaigns/${campaignId}/${art}/${id}/bild`}
+        bildUrl={bildUrl}
+        disabled={laedt}
+        onBlob={(blob) => hochladenAnFormData(blob, "skizze.png")}
+        onGespeichert={() => onGeaendert()}
+      />
 
       {bildUrl && (
         <>

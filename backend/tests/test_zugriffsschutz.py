@@ -221,6 +221,15 @@ OHNE_GM_ERLAUBT = {
     # (_drohne_und_rigger_oder_404): GM immer, Spieler nur für die eigene
     # Drohne/das eigene Fahrzeug. Ändert nur `name`.
     "/api/campaigns/{campaign_id}/drohnen/{node_id}/name",
+    # Bild an der eigenen Drohne/dem eigenen Fahrzeug (31.10.2026, Mark:
+    # Spieler sollen das selbst setzen können). Prüft selbst
+    # (_person_bild_oder_404): GM immer, Spieler nur als Rigger dieser
+    # Drohne/dieses Fahrzeugs. Ändert nur `bildUrl`. POST setzt, DELETE leert.
+    "/api/campaigns/{campaign_id}/personen/{node_id}/bild",
+    # Ebenso am eigenen Gegenstand (Besitzer im eigenen Kreis, siehe
+    # items/routes.py::_gegenstand_bild_oder_403). Vorlagen ohne Besitzer
+    # bleiben der Spielleitung. Ändert nur `bildUrl`.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/bild",
     # Ebenso: Reparatur mit Maschinenteil + selbstberichteter Probe
     # (29.10.2026, docs/wiki/concepts/drohnen-fahrzeuge.md "Reparatur") —
     # heilt Gesundheitsschaden der eigenen Drohne/des eigenen Fahrzeugs,

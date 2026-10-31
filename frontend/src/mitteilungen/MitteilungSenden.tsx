@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { entitiesApi, type Person } from "../entities/api";
 import { bildFuerAnsage, sendeMitteilung, ziehZurueck, type Warnfarbe } from "./api";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
@@ -148,6 +149,20 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
             <button type="button" onClick={() => dateiRef.current?.click()} disabled={laedtBild}>
               {laedtBild ? "lädt…" : "▣ Bild wählen"}
             </button>
+            <BildZeichenKnopfe
+              uploadPfad={`/api/campaigns/${campaignId}/wiki/bilder`}
+              bildUrl={bildUrl}
+              disabled={laedtBild}
+              onBlob={async (blob) => {
+                const datei = new File([blob], "skizze.png", { type: blob.type || "image/png" });
+                const { url } = await bildFuerAnsage(campaignId, datei);
+                setBildUrl(url);
+              }}
+              onGespeichert={(antwort) => {
+                const url = typeof antwort.url === "string" ? antwort.url : "";
+                if (url) setBildUrl(url);
+              }}
+            />
             {bildUrl && (
               <button type="button" onClick={() => setBildUrl("")} style={{ color: "var(--signal)" }}>
                 Bild entfernen

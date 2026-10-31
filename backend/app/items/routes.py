@@ -358,8 +358,25 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     return item
 
 
-@campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
-async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(...)):
+async def _gegenstand_bild_oder_403(campaign_id: str, item_id: str, viewer: Viewer) -> None:
+    """SL immer. Spieler nur, wenn der Besitzer im eigenen Kreis liegt
+    (selbst oder eigene gebundene Drohne/eigenes Fahrzeug)."""
+    if await repository.get_gegenstand(campaign_id, item_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if viewer.role == "GM":
+        return
+    if not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur die eigene Ausrüstung.")
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if not await _eigener_kreis(campaign_id, viewer.person_id, besitzer):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur die eigene Ausrüstung.")
+
+
+@campaign_router.post("/{item_id}/bild", response_model=GegenstandResponse)
+async def upload_bild(
+    campaign_id: str, item_id: str, file: UploadFile = File(...), viewer: Viewer = Depends(get_viewer)
+):
+    await _gegenstand_bild_oder_403(campaign_id, item_id, viewer)
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur Bilddateien (PNG/JPEG/WEBP/GIF) erlaubt")
 
@@ -369,6 +386,16 @@ async def upload_bild(campaign_id: str, item_id: str, file: UploadFile = File(..
 
     url = speichere_bild_bytes(campaign_id, contents, file.content_type or "image/png")
     item = await repository.set_bild_url(campaign_id, item_id, url)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
+
+
+@campaign_router.delete("/{item_id}/bild", response_model=GegenstandResponse)
+async def bild_entfernen(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Anzeigebild leeren. Löscht die Datei nicht — wie das alte Leeren per PATCH."""
+    await _gegenstand_bild_oder_403(campaign_id, item_id, viewer)
+    item = await repository.set_bild_url(campaign_id, item_id, "")
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
     return item

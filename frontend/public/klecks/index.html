@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Zeichentisch</title>
   <!-- Klecks-Embed (bitbof/klecks, MIT). Eigenes Fenster, weil die Mal-App
-       den ganzen Bildschirm will. „Portrait“ speichert über /api/spieler/mein-bild. -->
+       den ganzen Bildschirm will. „Übernehmen“ speichert auf das `ziel`
+       aus der URL (Standard: /api/spieler/mein-bild). -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="color-scheme" content="dark light">
   <style>
@@ -25,6 +26,30 @@
   function erlaubtesBild(roh) {
     if (!roh || !roh.startsWith("/uploads/")) return null;
     if (roh.includes("..") || roh.includes("\\") || roh.includes("://")) return null;
+    return roh;
+  }
+
+  function erlaubtesZiel(roh) {
+    if (!roh) return "/api/spieler/mein-bild";
+    if (
+      !roh.startsWith("/api/") ||
+      roh.includes("..") ||
+      roh.includes("\\") ||
+      roh.includes("://") ||
+      roh.includes("?") ||
+      roh.includes("#") ||
+      roh.includes(" ")
+    ) {
+      return null;
+    }
+    if (roh === "/api/spieler/mein-bild") return roh;
+    const teile = roh.split("/");
+    if (teile.length === 6 && teile[1] === "api" && teile[2] === "campaigns" && teile[4] === "wiki" && teile[5] === "bilder") {
+      return teile[3] ? roh : null;
+    }
+    const arten = ["personen", "orte", "events", "fraktionen", "gewaechse", "begleiter", "gegenstaende", "rassen", "zeichnungen"];
+    if (teile.length !== 7 || teile[1] !== "api" || teile[2] !== "campaigns" || teile[6] !== "bild") return null;
+    if (!arten.includes(teile[4]) || !teile[3] || !teile[5]) return null;
     return roh;
   }
 
@@ -87,7 +112,13 @@
         const endung = blob.type === "image/jpeg" ? "jpg" : "png";
         const daten = new FormData();
         daten.append("file", new File([blob], "portrait-klecks." + endung, { type: blob.type || "image/png" }));
-        const antwort = await fetch("/api/spieler/mein-bild", {
+        const params = new URLSearchParams(location.search);
+        const ziel = erlaubtesZiel(params.get("ziel"));
+        if (!ziel) {
+          onError();
+          return;
+        }
+        const antwort = await fetch(ziel, {
           method: "POST",
           credentials: "include",
           body: daten,
@@ -96,13 +127,25 @@
           onError();
           return;
         }
+        const koerper = await antwort.json().catch(() => ({}));
+        const meldung = { typ: "bild-gespeichert", ziel: ziel, ruf: params.get("ruf") || "", antwort: koerper };
         try {
-          const kanal = new BroadcastChannel("pnptool-portrait");
-          kanal.postMessage({ typ: "gespeichert" });
+          const kanal = new BroadcastChannel("pnptool-bild");
+          kanal.postMessage(meldung);
           kanal.close();
         } catch (e) {}
+        if (ziel === "/api/spieler/mein-bild") {
+          try {
+            const kanal = new BroadcastChannel("pnptool-portrait");
+            kanal.postMessage({ typ: "gespeichert" });
+            kanal.close();
+          } catch (e) {}
+          if (window.opener) {
+            window.opener.postMessage({ typ: "portrait-gespeichert" }, location.origin);
+          }
+        }
         if (window.opener) {
-          window.opener.postMessage({ typ: "portrait-gespeichert" }, location.origin);
+          window.opener.postMessage(meldung, location.origin);
         }
         onSuccess();
         setTimeout(() => window.close(), 400);

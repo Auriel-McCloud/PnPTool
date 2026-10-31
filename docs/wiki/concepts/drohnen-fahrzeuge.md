@@ -10,6 +10,14 @@ status: teilweise-umgesetzt
 
 # Drohnen und Fahrzeuge
 
+## Spieler-Bild (31.10.2026)
+
+Der Rigger setzt und leert das Bild der eigenen Drohne/des eigenen Fahrzeugs
+selbst (`POST`/`DELETE .../personen/{id}/bild`). Fremde Personen bleiben 404.
+Gegenstände im eigenen Kreis (selbst oder eigene Drohne/eigenes Fahrzeug)
+ebenso (`.../gegenstaende/{id}/bild`). Neben Hochladen und KI-Bild gibt es
+die Skizze und den Zeichentisch.
+
 ## Definition (Stand 25.10.2026 — komplett neu entschieden, siehe „Entwicklung“)
 
 Mark baute einen Rigger-Charakter und merkte: das bisherige Drohne-Gegenstandsfeld

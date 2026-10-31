@@ -3,6 +3,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { playersApi, type SpielerMe } from "./api";
 import { ZeichenblockPopup } from "./ZeichenblockPopup";
+import { oeffneZeichentisch } from "../bilder/zeichentisch";
 import "./portrait.css";
 
 /**
@@ -45,28 +46,11 @@ export function CharakterportraitAnsicht({
         ? [{ url: ich.personBildUrl, istPrimaer: true }]
         : [];
 
+  const ruf = useRef("portrait").current;
+
   function zeichentischOeffnen() {
-    const url = new URL("/klecks/index.html", window.location.origin);
-    if (ich.personBildUrl?.startsWith("/uploads/")) {
-      url.searchParams.set("bild", ich.personBildUrl);
-    }
-    const name = "pnptool-zeichentisch";
-    // Zweites Antippen fokussiert das offene Fenster, statt die Zeichnung neu zu laden.
-    const bestehend = window.open("", name);
-    if (!bestehend) {
-      setFehler("Fenster blockiert — Popups für diese Seite erlauben.");
-      return;
-    }
-    try {
-      if (bestehend.location.href.includes("/klecks/index.html")) {
-        bestehend.focus();
-        return;
-      }
-    } catch {
-      // anderes Origin, dann neu laden
-    }
-    bestehend.location.href = url.toString();
-    bestehend.focus();
+    const hinweis = oeffneZeichentisch("/api/spieler/mein-bild", ich.personBildUrl, ruf);
+    if (hinweis) setFehler(hinweis);
   }
 
   async function hochladen(datei: File | undefined) {

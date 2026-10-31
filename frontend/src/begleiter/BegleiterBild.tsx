@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 
 /**
  * Bild eines Begleiters: anzeigen, hochladen, entfernen, per Blitz zeigen —
@@ -99,6 +100,17 @@ export function BegleiterBild({
       >
         {laedt ? "lädt…" : bildUrl ? "Bild tauschen" : "▣ Bild"}
       </button>
+
+      <BildZeichenKnopfe
+        uploadPfad={`/api/campaigns/${campaignId}/begleiter/${begleiterId}/bild`}
+        bildUrl={bildUrl}
+        disabled={laedt}
+        onBlob={async (blob) => {
+          const datei = new File([blob], "skizze.png", { type: blob.type || "image/png" });
+          await hochladen(datei);
+        }}
+        onGespeichert={() => onGeaendert()}
+      />
 
       {bildUrl && (
         <>

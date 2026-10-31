@@ -3,6 +3,7 @@ import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { VisibilitySelector, type PersonOption } from "../entities/VisibilitySelector";
 import { zeichnungenApi, type Zeichnung } from "./api";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 
 /**
  * SL-Einstellungen für EIN Board: umbenennen, Zeichenfreigabe für Spieler,
@@ -157,6 +158,19 @@ export function ZeichnungEinstellungenPopup({
               <img src={zeichnung.bildUrl} alt="" className="zb-bild-vorschau" />
             )}
             <input type="file" accept="image/*" onChange={bildWaehlen} disabled={ladeBild} />
+            <BildZeichenKnopfe
+              uploadPfad={`/api/campaigns/${campaignId}/zeichnungen/${zeichnung.id}/bild`}
+              bildUrl={zeichnung.bildUrl}
+              disabled={ladeBild}
+              onBlob={async (blob) => {
+                const datei = new File([blob], "skizze.png", { type: blob.type || "image/png" });
+                const aktualisiert = await zeichnungenApi.bildHochladen(campaignId, zeichnung.id, datei);
+                onGeaendert(aktualisiert);
+              }}
+              onGespeichert={(antwort) => {
+                if (antwort && typeof antwort.id === "string") onGeaendert(antwort as unknown as Zeichnung);
+              }}
+            />
           </div>
         </label>
 

@@ -19,6 +19,7 @@ import { DotPool } from "./DotPool";
 import type { Chromstufe } from "../items/api";
 import { StufenBlatt } from "./StufenBlatt";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
@@ -359,6 +360,7 @@ export function GegenstandRow({
   const [sichtbarkeit, setSichtbarkeit] = useState(item.sichtbarkeit);
   const [sichtbarFuer, setSichtbarFuer] = useState(item.sichtbarFuer);
   const [uploading, setUploading] = useState(false);
+  const [bildFehler, setBildFehler] = useState<string | null>(null);
   const [zuweisenZiel, setZuweisenZiel] = useState("");
   const [zuweisenLaeuft, setZuweisenLaeuft] = useState(false);
   const [zuweisenHinweis, setZuweisenHinweis] = useState("");
@@ -787,9 +789,12 @@ export function GegenstandRow({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setBildFehler(null);
     try {
       await itemsApi.uploadBild(campaignId, item.id, file);
       onChanged();
+    } catch (e) {
+      setBildFehler(e instanceof Error ? e.message : "Upload fehlgeschlagen");
     } finally {
       setUploading(false);
     }
@@ -797,18 +802,25 @@ export function GegenstandRow({
 
   async function kiBildUebernehmen(blob: Blob) {
     setUploading(true);
+    setBildFehler(null);
     try {
       const datei = new File([blob], "ki-bild.png", { type: blob.type || "image/png" });
       await itemsApi.uploadBild(campaignId, item.id, datei);
       onChanged();
+    } catch (e) {
+      setBildFehler(e instanceof Error ? e.message : "Upload fehlgeschlagen");
     } finally {
       setUploading(false);
     }
   }
 
   async function removeBild() {
-    await itemsApi.update(campaignId, item.id, { bildUrl: "" });
-    onChanged();
+    try {
+      await itemsApi.bildEntfernen(campaignId, item.id);
+      onChanged();
+    } catch (e) {
+      setBildFehler(e instanceof Error ? e.message : "Entfernen fehlgeschlagen");
+    }
   }
 
   // Autosave für die Felder der Übersicht, des Umbaus und des Besitzes.
@@ -897,6 +909,14 @@ export function GegenstandRow({
                   <button type="button" onClick={() => setKiBildOffen(true)} disabled={uploading}>
                     ✨ KI-Bild
                   </button>
+                  <BildZeichenKnopfe
+                    uploadPfad={`/api/campaigns/${campaignId}/gegenstaende/${item.id}/bild`}
+                    bildUrl={item.bildUrl}
+                    disabled={uploading}
+                    dicht={false}
+                    onBlob={kiBildUebernehmen}
+                    onGespeichert={() => onChanged()}
+                  />
                   {item.bildUrl && (
                     <>
                       <BildBlitz campaignId={campaignId} bildUrl={item.bildUrl} name={item.name} />
@@ -907,6 +927,7 @@ export function GegenstandRow({
                   )}
                 </div>
                 {uploading && <p style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>lädt hoch…</p>}
+                {bildFehler && <p style={{ fontSize: "0.85em", color: "var(--signal)" }}>{bildFehler}</p>}
                 <KiBildPopup
                   offen={kiBildOffen}
                   objektTyp="Gegenstand"

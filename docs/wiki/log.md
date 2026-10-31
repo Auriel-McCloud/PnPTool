@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-31] gebaut | Spieler setzen Drohnen- und Gegenstandsbilder, Zeichnen neben Upload und KI
+
+Mark als Spieler: Bild an der Drohne scheiterte mit „GM role required“.
+Dieselbe Sperre lag auf Gegenstandsbildern. Rigger darf das Bild der eigenen
+Drohne/des eigenen Fahrzeugs setzen und leeren, Spieler das Bild der eigenen
+Ausrüstung (eigener Kreis). Überall wo hochgeladen oder per KI erzeugt wird,
+liegen jetzt Skizze und Zeichentisch daneben. Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-31] gebaut | Drohnen-Umbau: Attributnamen ausgeschrieben, Blatt nur Fertigkeiten mit Punkten
 
 Mark im Drohnen-Umbau: „Stär…“ und zwei „Ges…“ waren nicht zu lesen.

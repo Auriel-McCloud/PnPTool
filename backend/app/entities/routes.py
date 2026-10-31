@@ -1466,9 +1466,35 @@ _ENTITAETEN = {
 }
 
 
-@router.post("/personen/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])
-async def upload_person_bild(campaign_id: str, node_id: str, file: UploadFile = File(...)):
+async def _person_bild_oder_404(campaign_id: str, node_id: str, viewer: Viewer) -> None:
+    """SL immer. Spieler nur an der eigenen Drohne/dem eigenen Fahrzeug.
+
+    Dieselbe 404-statt-403-Prüfung wie beim Umbenennen
+    (`_drohne_und_rigger_oder_404`). Eine fremde Person bleibt unsichtbar.
+    """
+    if viewer.role == "GM":
+        return
+    await _drohne_und_rigger_oder_404(campaign_id, node_id, viewer)
+
+
+@router.post("/personen/{node_id}/bild")
+async def upload_person_bild(
+    campaign_id: str, node_id: str, file: UploadFile = File(...), viewer: Viewer = Depends(get_viewer)
+):
+    await _person_bild_oder_404(campaign_id, node_id, viewer)
     return await _entitaets_bild_hochladen(campaign_id, "personen", node_id, file)
+
+
+@router.delete("/personen/{node_id}/bild")
+async def person_bild_entfernen(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Nur das Anzeigebild leeren. Die Galerie bleibt — die pflegt die SL."""
+    await _person_bild_oder_404(campaign_id, node_id, viewer)
+    aktualisiert = await repository.update_node(
+        "Person", PERSON_FIELDS, campaign_id, node_id, {"bildUrl": ""}
+    )
+    if aktualisiert is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    return aktualisiert
 
 
 @router.post("/orte/{node_id}/bild", dependencies=[Depends(require_campaign_gm)])

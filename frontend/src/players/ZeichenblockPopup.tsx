@@ -33,12 +33,14 @@ export function ZeichenblockPopup({
   bildUrl,
   onSchliessen,
   onUebernehmen,
+  unterzeile = "Skizze — wird als Portrait gespeichert",
 }: {
   offen: boolean;
-  /** Liegt schon ein Portrait, liegt es unter der Skizze. */
+  /** Liegt schon ein Bild, liegt es unter der Skizze. */
   bildUrl?: string | null;
   onSchliessen: () => void;
   onUebernehmen: (blob: Blob) => Promise<void>;
+  unterzeile?: string;
 }) {
   const leinwand = useRef<ReactSketchCanvasRef>(null);
   const [farbe, setFarbe] = useState(FARBEN[0].wert);
@@ -74,7 +76,7 @@ export function ZeichenblockPopup({
       titel="Zeichnen"
       kennung="zeichenblock"
       breit
-      unterzeile="Skizze — wird als Portrait gespeichert"
+      unterzeile={unterzeile}
       onSchliessen={onSchliessen}
     >
       <div className="port-werkzeug">

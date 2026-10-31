@@ -676,6 +676,7 @@ export const itemsApi = {
     }
     return (await response.json()) as Gegenstand;
   },
+  bildEntfernen: (cid: string, itemId: string) => api.delete<Gegenstand>(`${itemBase(cid, itemId)}/bild`),
 
   // --- Augments (29.10.2026) ------------------------------------------
   /** Pool fürs Montieren UND Demontieren — dieselbe Schwelle gilt für beide. */

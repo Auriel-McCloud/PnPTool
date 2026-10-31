@@ -4,6 +4,7 @@ import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Erstellungsregeln } from "../traits/bogenApi";
 import { traitsApi, type TraitDef } from "../traits/api";
 import { rassenApi, type Rasse } from "./api";
+import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { TYP_OPTIONEN } from "../items/typKatalog";
 import { GRATIS_KAUF_ALLE_TYPEN } from "./gratisKauf";
@@ -447,6 +448,17 @@ function RasseEditor({
             <div className="ra-bild">
               {rasse.bildUrl && <img src={rasse.bildUrl} alt="" />}
               <input type="file" accept="image/*" onChange={bildWaehlen} disabled={laedtBild} />
+              <BildZeichenKnopfe
+                uploadPfad={`/api/campaigns/${campaignId}/rassen/${rasse.id}/bild`}
+                bildUrl={rasse.bildUrl}
+                disabled={laedtBild}
+                onBlob={async (blob) => {
+                  const datei = new File([blob], "skizze.png", { type: blob.type || "image/png" });
+                  await rassenApi.bildHochladen(campaignId, rasse.id, datei);
+                  await onGeaendert();
+                }}
+                onGespeichert={() => onGeaendert()}
+              />
               {laedtBild && <span className="ra-hinweis">lädt hoch…</span>}
             </div>
           </div>

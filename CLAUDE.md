@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Spieler setzen Drohnen- und Gegenstandsbilder, Zeichnen überall (31.10.2026)
+
+Spieler dürfen das Bild der eigenen Drohne/des eigenen Fahrzeugs setzen und
+leeren (`POST`/`DELETE .../personen/{id}/bild`, nur der Rigger) und dasselbe
+an der eigenen Ausrüstung inklusive Drohnen-Besitz (`.../gegenstaende/{id}/bild`).
+Fremde Personen bleiben 404. Neben Hochladen und KI-Bild gibt es überall
+✎ Zeichnen (Skizze) und ◈ Zeichentisch (Klecks). **Nie im Browser angeklickt.**
+
 ## Drohnen-Umbau: Namen ausgeschrieben, Blatt nur mit Punkten (31.10.2026)
 
 Im Umbau standen Attributnamen auf „Stär…“ / „Ges…“. Name jetzt in der eigenen
