@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-31] gebaut | Drohnen-Umbau: Attributnamen ausgeschrieben, Blatt nur Fertigkeiten mit Punkten
+
+Mark im Drohnen-Umbau: „Stär…“ und zwei „Ges…“ waren nicht zu lesen.
+`.lu-wert` stapelt den Namen über die Punkte (Umbau, Level-Up, Weitere
+Fertigkeiten). Charakterblatt einer Drohne/eines Fahrzeugs blendet
+Fertigkeiten und Zusatzfertigkeiten ohne Punkte aus; der Katalog bleibt im
+Umbau. Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-10-29] gebaut | Werkbank: Rüstungs-Reparatur ebenfalls Self-Service, Spieler-Werkbank bekommt Reparatur-Reiter
 
 Mark: "ja bitte unbedingt! das war alles für die Spieler gedacht!" —

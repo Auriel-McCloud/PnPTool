@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-24 | Seiten: 36
+> Zuletzt aktualisiert: 2026-10-31 | Seiten: 36
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -32,7 +32,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster |
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
-| [[concepts/drohnen-fahrzeuge]] | **Komplett neu entschieden (25.10.2026, noch nicht gebaut):** Drohne/Fahrzeug wird eigener Person-Knoten (`istDrohne`/`istFahrzeug`) statt Item-Feld — 8 Attribute in 2 Spalten, Initiative Geschwindigkeit+CPU, I.C.E. als eigenes Attribut, Kosten in Nuyen statt XP, Riggerkonsole-Slots, neues Reparatursystem |
+| [[concepts/drohnen-fahrzeuge]] | Drohne/Fahrzeug als Person-Knoten. Umbau schreibt Attributnamen aus, Punkte darunter (31.10.). Charakterblatt zeigt nur Fertigkeiten mit Punkten. |
 | [[concepts/augments-ausruestung]] | **Gebaut (29.10.2026):** Burgermenü "Werkbank" (Reparatur + Augments) — montierbare Boni (Zielfernrohr & Co.) für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug, `upgradeSlots` 0-6, Maker/Handwerk-Probe zum Montieren/Demontieren, Patzer macht defekt, Reparatur wie Rüstung/Drohne |
 | [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel; Plan-Autosteigerung für NPCs entschieden 10.10. (nicht Resteverwertung) |
 | [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.), Shop-Frontend Phase 1+2: physisch/digital, Rarity-Rahmen, Bestellungen, KI-Alltagsgegenstand-Erzeugung mit Waffen-Ausschluss (24.09.), Geld-Weitergabe/Credstick geplant (26.09.) |

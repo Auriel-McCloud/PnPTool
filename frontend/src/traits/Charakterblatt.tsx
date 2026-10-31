@@ -349,6 +349,11 @@ export function Charakterblatt({
   // Sichtbarkeits-Bedingung hatte. Dieselbe Flagge wie unten bei den
   // Attributspalten (`bogen.person.istDrohne`/`istFahrzeug`).
   const istDrohneOderFahrzeug = bogen.person.istDrohne || bogen.person.istFahrzeug;
+  // Dieselbe Regel wie bei den Kern-Fertigkeiten: eine Drohne zeigt keine
+  // leere Zusatzfertigkeit. Hot mit Punkten bleibt sichtbar.
+  const zusatzSichtbar = istDrohneOderFahrzeug
+    ? zusatzAnzeige.filter((z) => z.rating > 0)
+    : zusatzAnzeige;
   // Cyberdeck-Einträge (siehe Sektion unten) — als Variable, weil Länge
   // sowohl für die Zeilenzahl des Grids als auch den Einzeln-Fall gebraucht
   // wird (gleiches Muster wie `reihe()` unten).
@@ -386,8 +391,20 @@ export function Charakterblatt({
   }
 
   function reihe(kategorie: string) {
-    const eintraege = gruppen.get(kategorie);
+    let eintraege = gruppen.get(kategorie);
     if (!eintraege?.length) return null;
+    // Drohne/Fahrzeug (31.10.2026, Mark): unter Fertigkeiten nur Zeilen mit
+    // Punkten. Der volle Katalog bleibt im Umbau-Reiter. Hot-Überlagerung
+    // und Ausrüstungsbonus zählen mit — sonst verschwindet eine Zeile, über
+    // die man gerade würfeln könnte.
+    if (istDrohneOderFahrzeug && kategorie === "Fertigkeit") {
+      eintraege = eintraege.filter((t) => {
+        const wert = werte.get(t.id) ?? 0;
+        const bonus = bogen?.ausruestungsBoni[t.name] ?? 0;
+        return wert > 0 || bonus !== 0;
+      });
+      if (!eintraege.length) return null;
+    }
     const ton = TON[kategorie] ?? "var(--neon)";
     // Nur Attributspalten sollen auf einen gemeinsamen Nenner gebracht
     // werden (Mark, 24.10.2026): ein Quill mit Körperkraft 5, Widerstands-
@@ -903,11 +920,11 @@ export function Charakterblatt({
           passiert im LevelUp, hier nur Anzeige + Probenauslöser.
           Platzierung (05.10.2026, Mark): zwischen Fertigkeiten und
           Hexkraft/Glauben/NeuroWeaving, nicht ganz unten. */}
-      {zusatzAnzeige.length > 0 && (
+      {zusatzSichtbar.length > 0 && (
         <section className="cb-gruppe" style={{ "--cb-ton": "var(--p-violett, var(--neon))" } as React.CSSProperties}>
           <h3 className="cb-gruppe-titel">Zusatzfertigkeiten</h3>
           <div className="cb-werte">
-            {zusatzAnzeige.map((z) => (
+            {zusatzSichtbar.map((z) => (
               <div key={z.id} className="cb-wert-zeile">
                 <button
                   type="button"

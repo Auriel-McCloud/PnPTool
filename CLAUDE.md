@@ -2,6 +2,15 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Drohnen-Umbau: Namen ausgeschrieben, Blatt nur mit Punkten (31.10.2026)
+
+Im Umbau standen Attributnamen auf „Stär…“ / „Ges…“. Name jetzt in der eigenen
+Zeile, Punkte darunter (`levelup.css`, gilt auch für Level-Up und das
+Weitere-Fertigkeiten-Fenster). Katalogname bleibt Geschick, nicht
+Geschicklichkeit. Charakterblatt einer Drohne/eines Fahrzeugs zeigt unter
+Fertigkeiten nur Zeilen mit Punkten (Hot und Ausrüstungsbonus zählen mit).
+`Charakterblatt.tsx`. **Nie im Browser angeklickt.**
+
 ## Probenfenster zeigt Kurztext und Detail (31.10.2026)
 
 Klick auf Sphäre/Gott oder Fertigkeit öffnet weiter das Probenfenster

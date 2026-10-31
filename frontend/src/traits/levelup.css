@@ -180,10 +180,12 @@
 
 .lu-wert {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  min-height: 34px;
-  padding: 2px 8px;
+  column-gap: 8px;
+  row-gap: 3px;
+  min-height: 0;
+  padding: 6px 8px;
   text-align: left;
   background: transparent;
   border: 1px solid transparent;
@@ -208,13 +210,25 @@
   cursor: default;
 }
 
+/* Name in der eigenen Zeile, Punkte darunter. Sonst frisst das Dreispalten-
+   Raster lange Namen auf „Stär…“ / „Ges…“ — Geschick und Geschwindigkeit
+   waren nicht mehr zu unterscheiden (Mark, 31.10.2026). Gilt für Umbau,
+   Level-Up und das Weitere-Fertigkeiten-Fenster, damit es gleich aussieht. */
 .lu-name {
-  flex: 1;
+  flex: 1 0 100%;
   min-width: 0;
   font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* DotPool setzt flex-wrap inline auf nowrap. In der schmalen Spalte dürfen
+   die Kreise umbrechen, statt in die Nachbarspalte zu laufen. */
+.lu-wert > span:not(.lu-name):not(.lu-preis) {
+  flex-wrap: wrap !important;
+  max-width: 100%;
 }
 
 .lu-zusatz {
@@ -226,6 +240,7 @@
 
 .lu-preis {
   flex-shrink: 0;
+  margin-left: auto;
   min-width: 34px;
   text-align: right;
   font-family: var(--mono);
@@ -270,8 +285,7 @@
 
   .lu-wert {
     min-width: 0;
-    min-height: 30px;
-    gap: 6px;
+    column-gap: 6px;
     padding-left: 4px;
     padding-right: 4px;
   }

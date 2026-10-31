@@ -1,7 +1,7 @@
 ---
 title: Drohnen und Fahrzeuge
 created: 2026-09-18
-updated: 2026-10-25
+updated: 2026-10-31
 type: konzept
 tags: [drohnen, fahrzeuge, kampf, erfahrung, wirtschaft, inventar, versionsgeschichte, entschieden, offen]
 sources: [../../CLAUDE.md, ../../../backend/app/begleiter/, ../../../backend/app/entities/schemas.py, ../../../backend/app/traits/bogen.py, ../../../backend/app/traits/erfahrung.py, ../../../backend/app/kampf/ruestung.py, ../../../backend/app/kampf/initiative.py, ../../../backend/app/items/schemas.py, ../../../backend/app/items/chrom.py]
@@ -72,6 +72,10 @@ Schusswaffen/Nahkampf/Wahrnehmung/Sportlichkeit (nur an der Drohne als
 "Ausweichen" ANGEZEIGT, der Katalogname bleibt Sportlichkeit — Menschen sehen
 weiterhin "Sportlichkeit") plus "Fliegen" stehen im Umbauen-Reiter oben,
 alles andere hinter einem "weitere Fertigkeiten"-Umschalter.
+**Charakterblatt (31.10.2026, Mark):** unter Fertigkeiten nur Zeilen mit
+Punkten (Hot-Überlagerung und Ausrüstungsbonus zählen mit). Leere
+Zusatzfertigkeiten ebenso weg. Kaufen bleibt im Umbau-Reiter, dort steht
+der Katalog weiter vollständig.
 **"Riggen" ist komplett aus der Drohnen-Liste entfernt** (serverseitig
 UND clientseitig, `traits/drohnen.py::DROHNE_GESPERRTE_FERTIGKEITEN`) — eine
 Drohne riggt sich nicht selbst, das beschreibt nur, wie ein MENSCH sie
@@ -424,6 +428,13 @@ komplett.**
 
 ## Entwicklung
 
+- **31.10.2026 (Umbau-Namen + Blatt-Filter, Mark am Spieltisch):** Im
+  Umbau-Reiter standen Attributnamen auf „Stär…“ / „Ges…“, weil Name, Punkte
+  und Preis eine Zeile im Dreispalten-Raster teilten. Namen jetzt ausgeschrieben,
+  Punkte darunter — dieselbe Zeile in Level-Up und im Weitere-Fertigkeiten-
+  Fenster. Katalogname bleibt „Geschick“, nicht „Geschicklichkeit“. Auf dem
+  Charakterblatt zeigt eine Drohne/ein Fahrzeug unter Fertigkeiten nur Zeilen
+  mit Punkten.
 - **28.10.2026 (Hot-Gehen/Neurolink + Drohnen-Augments + Inventar-Filter,
   Besprechung mit Mark, noch nicht gebaut):** Bedeutung von `riggerBonus`
   festgelegt (Deckel für den Riggen-Aufschlag aufs Geschick, nicht die
