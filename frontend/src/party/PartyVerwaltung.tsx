@@ -228,7 +228,9 @@ function PersonenAuswahlListe({
           gefiltert.map((p) => (
             <label key={p.id} className="pt-auswahl-zeile">
               <input type="checkbox" checked={ausgewaehlt.has(p.id)} onChange={() => onUmschalten(p.id)} />
-              <span>{p.name}</span>
+              <span className="pt-name" title={p.name}>
+                {p.name}
+              </span>
               <em className="pt-typ">{p.personType}</em>
             </label>
           ))
@@ -379,7 +381,9 @@ function MitgliedHinzufuegenListe({
               className="pt-auswahl-zeile pt-auswahl-hinzufuegen"
               onClick={() => onHinzufuegen(p.id)}
             >
-              <span>{p.name}</span>
+              <span className="pt-name" title={p.name}>
+                {p.name}
+              </span>
               <em className="pt-typ">{p.personType}</em>
               <span className="pt-plus" aria-hidden="true">
                 +
@@ -578,9 +582,10 @@ function PartyFenster({
           {party.mitglieder.length === 0 && <p className="gg-leer">Noch niemand in dieser Party.</p>}
           {party.mitglieder.map((m) => (
             <div key={m.id} className="pt-zeile pt-mitglied">
-              <span>
-                {m.name} <em className="pt-typ">{m.personType}</em>
+              <span className="pt-name" title={m.name}>
+                {m.name}
               </span>
+              <em className="pt-typ">{m.personType}</em>
               <button
                 type="button"
                 onClick={() => mitgliedEntfernen(m.id)}

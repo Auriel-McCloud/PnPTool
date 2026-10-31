@@ -37,6 +37,18 @@
   color: var(--text-leise);
   font-style: normal;
   font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Name in den Mitglieder-/Auswahlzeilen: zu lange Namen werden abgeschnitten
+   statt umzubrechen, sonst reißt die Zeile die ganze Kachel auf
+   (Marks Meldung 31.10.2026). */
+.pt-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pt-hinweis {
