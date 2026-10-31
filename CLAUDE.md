@@ -72,6 +72,33 @@ Reiter-Zahl, damit beide nie widersprechen.
 Regression (54 vorbestehende Windows-Proactor-Fehlschläge unverändert, kein
 Treffer unter "ablage"). **Noch nicht am Spieltisch getestet.**
 
+## Spieler sieht jetzt alle eigenen Behälter beim Umlegen (31.10.2026)
+
+Dritter Anlauf zum Behälter-Thema: Mark hat einen Charakter mit **mehreren**
+getragenen Behältern, aber am Gegenstand selbst ("Wo ist es?") gab es nur
+einen einzigen, hartcodierten "Rucksack"-Knopf — benannt nach dem ERSTEN
+gefundenen getragenen Behälter (`items.find(i => i.typ === "Behälter" && ...)`
+in mehreren Komponenten). Der zweite Behälter war als Ziel schlicht nicht
+wählbar.
+
+Fix ausschließlich im Frontend — Backend konnte das schon immer:
+`GET .../ablageziele` liefert Spielern bereits alle eigenen Behälter+Orte
+(`moegliche_ablageziele`), und `POST .../ablage` erlaubt Spielern explizit
+das Setzen von `zielId` (dieselbe Route, die auch `BehaelterHineinlegenPopup`
+nutzt). Nur `GegenstandKachel.tsx` hat das nie genutzt. Jetzt holt sie
+`ablageziele` live beim Öffnen (wie `CharacterSheetPanel.tsx` es für die SL
+schon tut) und zeigt pro Behälter/Ort einen eigenen Knopf — Klick setzt
+`GELAGERT` + die passende `zielId`, exakt derselbe Mechanismus wie beim
+Hineinlegen vom Behälter aus. Die alten `behaelterName`/`behaelterId`-Props
+(ein einzelner geratener Behälter) sind komplett raus, inkl. aller
+Aufrufstellen (`Fachfenster.tsx`, `SpielerAnsicht.tsx`, `PCInventar.tsx`,
+`DrohnenAusruestung.tsx` — letztere bekommt dabei auch gleich `campaignId`
+mit, damit Rigger/GM an Drohnen-Ausrüstung dieselbe Auswahl haben).
+`onUmlegen` trägt jetzt überall `(ablage, zielId?)` statt nur `(ablage)`.
+
+**Verifiziert:** `npx tsc -b` und `npm run build` sauber. **Noch nicht am
+Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**
