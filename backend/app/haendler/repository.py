@@ -247,6 +247,7 @@ _STECKBRIEF_FELDER = """
     coalesce(g.schaden, 0) AS schaden,
     coalesce(g.schadenArt, '') AS schadenArt,
     coalesce(g.kampfFertigkeit, '') AS kampfFertigkeit,
+    coalesce(g.paradeBonus, 0) AS paradeBonus,
     coalesce(g.istWaffe, false) AS istWaffe,
     coalesce(g.ruestungReduktionBasis, 0) AS ruestungReduktionBasis,
     coalesce(g.ruestungKaestchenAktuell, 0) AS ruestungKaestchenAktuell,
@@ -318,6 +319,7 @@ def _steckbrief_normalisieren(eintrag: dict) -> None:
     for feld in (
         "kraft",
         "schaden",
+        "paradeBonus",
         "ruestungReduktionBasis",
         "ruestungKaestchenAktuell",
         "ruestungKaestchenMax",

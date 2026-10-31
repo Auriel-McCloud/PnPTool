@@ -148,6 +148,23 @@ function KampfFertigkeitFeld({
   );
 }
 
+function ParadeFeld({ wert, onChange }: { wert: number; onChange: (wert: number) => void }) {
+  return (
+    <label
+      style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em", marginTop: 6 }}
+      title="Extra-Würfel nur beim Parieren mit dieser Waffe. Der Angriff bleibt unverändert. 0 = kein Bonus. Schild: Schaden auf 0 und hier ein Plus."
+    >
+      Parade
+      <input
+        type="number"
+        value={wert}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{ width: 60 }}
+      />
+    </label>
+  );
+}
+
 type Eigenschaft = { key: string; value: string; kiTama?: boolean; attacke?: boolean; schadensart?: SchadenArt };
 
 function recordToPairs(r: Record<string, string>): Eigenschaft[] {
@@ -301,6 +318,7 @@ export function GegenstandRow({
     item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
   );
   const [kampfFertigkeit, setKampfFertigkeit] = useState<KampfFertigkeit>(kampfFertigkeitLesen(item.kampfFertigkeit));
+  const [paradeBonus, setParadeBonus] = useState(item.paradeBonus ?? 0);
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
@@ -476,6 +494,7 @@ export function GegenstandRow({
     setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
     setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
     setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
+    setParadeBonus(src.paradeBonus ?? 0);
     setInitiativeBonus(src.initiativeBonus);
     setZusatzaktionen(src.zusatzaktionen);
     setTraitBoni(
@@ -580,6 +599,7 @@ export function GegenstandRow({
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
       kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
+      paradeBonus: typ === "Waffe" || istWaffe ? Number(paradeBonus) || 0 : 0,
       initiativeBonus,
       zusatzaktionen,
       traitBoni: Object.fromEntries(
@@ -652,7 +672,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
       upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
@@ -1025,6 +1045,12 @@ export function GegenstandRow({
                     {(typ === "Waffe" || istWaffe) && kampfFertigkeit && (
                       <li>Würfelt mit: {KAMPF_FERTIGKEIT_LABEL[kampfFertigkeit]}</li>
                     )}
+                    {(typ === "Waffe" || istWaffe) && paradeBonus !== 0 && (
+                      <li>
+                        Parade {paradeBonus > 0 ? "+" : ""}
+                        {paradeBonus}
+                      </li>
+                    )}
                     {CHROM_TYPEN.has(typ) && (
                       <li>
                         {kraft > 0 && `Stufe ${kraft} · `}
@@ -1203,6 +1229,7 @@ export function GegenstandRow({
                           <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                         )}
                         <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                        <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                       </>
                     )}
                   </div>
@@ -1561,6 +1588,7 @@ export function GegenstandRow({
                   </div>
                   <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                   <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                  <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                 </div>
               )}
 

@@ -33,7 +33,7 @@ from app.items.chrom import CHROM_TYPEN, KOERPERZONEN, STUFEN as CHROM_STUFEN, p
 from app.items.repository import assign_copy, assign_owner, create_gegenstand
 from app.items.routes import _create_data, _default_sichtbarkeit
 from app.items.schemas import GEGENSTAND_TYPEN, GegenstandCreate
-from app.items.waffenbonus import ki_schaden_roh, schaden_art_fuer_waffe, schaden_klemmen, waffenfelder
+from app.items.waffenbonus import ki_schaden_roh, parade_lesen, schaden_art_fuer_waffe, schaden_klemmen, waffenfelder
 from app.ki.bildgenerierung import BildgenerierungFehler, generiere_bild
 from app.ki.client import KiFehler, generiere_json, generiere_text
 from app.ki import beratung as beratung_repo
@@ -250,6 +250,9 @@ _GEGENSTAND_SCHEMA = {
         # ohne dieses Feld blieb jede KI-Waffe auf 0.
         "schaden": {"type": "INTEGER"},
         "schadenArt": {"type": "STRING", "enum": ["", "schlag", "schwer", "aggraviert"]},
+        # Extra-Würfel nur beim Parieren mit dieser Waffe, nicht auf den Angriff.
+        # 0 = keins. Schild: schaden 0 und paradeBonus > 0.
+        "paradeBonus": {"type": "INTEGER"},
         # Bonus auf einen BESTEHENDEN Katalog-Trait, solange ausgerüstet/
         # verbaut (Cyberware/Bioware/Hexware/magische Gegenstände — z.B.
         # "+1 auf Schusswaffen"). Ohne dieses Feld landete so ein Effekt nur
@@ -419,7 +422,12 @@ _GEGENSTAND_SYSTEM = (
     "oder Gewehr, 5 Scharfschützengewehr, 6 MiniGun, 7 Raketenwerfer, "
     "8–12 nur Schiffswaffen (Raumschiff/Bordgeschütz). Ein "
     "Aufpreis für Tarnung, Smartlink oder Prototyp hebt die Stufe nicht. "
-    "Bei jedem anderen Typ 0. schadenArt bei typ Waffe: schlag, schwer oder aggraviert "
+    "Bei jedem anderen Typ 0. Einzige Ausnahme für Schaden 0 bei typ Waffe: "
+    "ein reines Parade-Stück (Schild) — dann schaden 0 und paradeBonus > 0. "
+    "paradeBonus: ganze Zahl, Extra-Würfel NUR beim Parieren mit dieser Waffe, "
+    "nicht auf den Angriff und nicht in traitBoni. 0 wenn keins. Ein breites "
+    "Schwert behält seinen normalen Schaden und bekommt paradeBonus obendrauf. "
+    "schadenArt bei typ Waffe: schlag, schwer oder aggraviert "
     "(Schlag / Tödlich / Schwerheilbar). Fehlt sie, gilt Tödlich. Faust und Knüppel schlag, "
     "Klinge und Schusswaffe schwer, Explosion oder Brand aggraviert. Sonst leer. "
     "Gibt der Gegenstand im ausgerüsteten/verbauten Zustand einen Bonus auf eine "
@@ -644,6 +652,7 @@ def _chrom_felder_aus_ki(
         "istWaffe": ist_waffe,
         "schaden": schaden,
         "schadenArt": schaden_art,
+        "paradeBonus": parade_lesen(ergebnis.get("paradeBonus")) if ist_waffe else 0,
     }
 
 
@@ -792,7 +801,12 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             # (siehe _chrom_felder_aus_ki); jeder andere Typ nutzt wie bisher
             # waffenfelder() (nur bei typ Waffe, sonst leer).
             sonderfelder = _chrom_felder_aus_ki(gegenstand_typ, ergebnis, trait_boni, ausr_fert) or (
-                waffenfelder(gegenstand_typ, ki_schaden_roh(ergebnis), ergebnis.get("schadenArt"))
+                waffenfelder(
+                    gegenstand_typ,
+                    ki_schaden_roh(ergebnis),
+                    ergebnis.get("schadenArt"),
+                    parade_lesen(ergebnis.get("paradeBonus")),
+                )
             )
             # preis kommt bei Chrom-Typen aus sonderfelder (Qualitätsstufen-
             # Formel) statt direkt von der KI — sonst gäbe es das Keyword

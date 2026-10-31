@@ -73,6 +73,9 @@ export function dynamischeSortierfelder(typ: string | null, sortiment: Sortiment
   if (relevante.some((w) => w.istBehaelter && w.kapazitaet > 0)) {
     felder.push({ key: "kapazitaet", label: "Kapazität" });
   }
+  if (relevante.some((w) => w.paradeBonus !== 0)) {
+    felder.push({ key: "paradeBonus", label: "Parade" });
+  }
   if (relevante.some((w) => w.initiativeBonus !== 0)) {
     felder.push({ key: "initiativeBonus", label: "Initiative" });
   }

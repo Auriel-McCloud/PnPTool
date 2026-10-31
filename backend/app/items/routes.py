@@ -211,6 +211,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
             if body.typ == "Waffe" or body.istWaffe
             else ""
         ),
+        "paradeBonus": body.paradeBonus if body.typ == "Waffe" or body.istWaffe else 0,
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "kiTamaFertigkeiten": body.kiTamaFertigkeiten,

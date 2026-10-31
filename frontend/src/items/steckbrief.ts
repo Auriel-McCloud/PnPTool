@@ -21,6 +21,7 @@ export type SteckbriefQuelle = {
   schadenArt: string;
   /** Optional, damit ältere Aufrufer ohne das Feld nicht brechen. */
   kampfFertigkeit?: string;
+  paradeBonus?: number;
   istWaffe: boolean;
   ruestungReduktionBasis: number;
   ruestungKaestchenAktuell: number;
@@ -85,6 +86,11 @@ export function steckbriefZeilen(item: SteckbriefQuelle): SteckbriefZeile[] {
 
   const wuerfeltMitZeile = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
   if (wuerfeltMitZeile) zeilen.push({ label: "Würfelt mit", wert: wuerfeltMitZeile });
+
+  if ((item.paradeBonus ?? 0) !== 0) {
+    const bonus = item.paradeBonus ?? 0;
+    zeilen.push({ label: "Parade", wert: `${bonus > 0 ? "+" : ""}${bonus}` });
+  }
 
   if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
     zeilen.push({ label: "Stufe", wert: String(item.kraft) });
@@ -175,6 +181,11 @@ export function steckbriefKurz(item: SteckbriefQuelle): string[] {
 
   const wuerfeltMit = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
   if (wuerfeltMit) teile.push(wuerfeltMit);
+
+  if ((item.paradeBonus ?? 0) !== 0) {
+    const bonus = item.paradeBonus ?? 0;
+    teile.push(`Parade ${bonus > 0 ? "+" : ""}${bonus}`);
+  }
 
   if (CHROM_TYPEN.has(item.typ) && item.kraft > 0) {
     teile.push(`Stufe ${item.kraft}`);

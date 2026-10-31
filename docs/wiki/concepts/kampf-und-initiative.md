@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-10-23
+updated: 2026-10-31
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -26,7 +26,10 @@ und Regelwerk bleiben am Tisch — das Tool verwaltet nur *wer wann dran ist* un
   Cyberware/Magie) — beide kumulativ −1 pro Einsatz/Runde. Welche Waffe
   welchen Skill würfelt, steht am Gegenstand (`kampfFertigkeit`:
   Schusswaffen, Nahkampf oder Handgemenge). Leer heißt: noch nicht
-  markiert, das Tool rät nicht.
+  markiert, das Tool rät nicht. **Parade-Bonus** (`paradeBonus`) addiert
+  Extra-Würfel nur beim Parieren mit genau dieser Waffe, nicht auf den
+  Angriff und nicht auf die globale P-Zahl. 0 = kein Bonus. Ein Schild ist
+  eine Waffe mit Schaden 0 und Parade-Bonus.
 - **Schaden:** Fernkampf = Waffenschaden+Nettoerfolge vs. Rüstung; Nahkampf =
   Waffenschaden+Stärke+Nettoerfolge vs. Rüstung.
 
@@ -53,6 +56,10 @@ automatische „0 HP = tot"-Logik.
 - **23.10.2026:** Kampfkarte zählt Ausrüstungsboni in den Würfelpool.
   Waffen (und Chrom mit `istWaffe`) können `kampfFertigkeit` tragen.
   Schadenszeile ist nur noch Waffenschaden + Nettoerfolge.
+- **31.10.2026:** `paradeBonus` an der Waffe. Gilt nur beim Parieren mit
+  dieser Waffe. Angriff und die globale P-Zahl bleiben ohne den Bonus.
+  Schild = Schaden 0 + Parade-Bonus. Mindeststärke wurde besprochen und
+  verworfen.
 
 ## Was noch fehlt
 

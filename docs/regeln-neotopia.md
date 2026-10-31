@@ -114,7 +114,7 @@ Diese Geräte liegen in der Testkampagne als Vorlagen bereit.
 ## Kampf
 
 - **Initiative:** Matrixnutzer vor Nahkämpfern vor Fernkämpfern. In umgekehrter Reihenfolge sagen alle an, was sie vorhaben — die schnellste Person kann dadurch reagieren; gewürfelt wird dann in der richtigen Reihenfolge.
-- **Parieren:** Geschicklichkeit + Waffenfertigkeit. Gegen Fernkampf nur mit Cyberware oder Magie. Jede weitere Nutzung in derselben Runde gibt kumulativ −1.
+- **Parieren:** Geschicklichkeit + Waffenfertigkeit. Gegen Fernkampf nur mit Cyberware oder Magie. Jede weitere Nutzung in derselben Runde gibt kumulativ −1. Ein Parade-Bonus an der Waffe zählt nur beim Parieren mit genau dieser Waffe, nicht auf den Angriff. 0 heißt kein Bonus. Ein Schild ist eine Waffe mit Schaden 0 und Parade-Bonus.
 - **Schaden Fernkampf:** Waffenschaden + Nettoerfolge gegen Rüstungsbonus.
 - **Schaden Nahkampf:** Waffenschaden + Stärke + Nettoerfolge gegen Rüstungsbonus.
 - **Schadensart der Waffe:** Schlag, Tödlich oder Schwerheilbar — dieselbe Dreiteilung wie auf dem Blatt. Steht an der Waffe (`schadenArt`), nicht erst beim Eintragen des Treffers. Leer heißt: noch nicht festgelegt, nicht „tödlich geraten“.

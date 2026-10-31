@@ -88,6 +88,8 @@ export interface Gegenstand {
    * Auch an Chrom, das zusätzlich als Waffe zählt.
    */
   kampfFertigkeit: KampfFertigkeit;
+  /** Extra-Würfel nur beim Parieren mit dieser Waffe, nicht auf den Angriff. 0 = keins. */
+  paradeBonus: number;
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
@@ -480,6 +482,7 @@ export interface GegenstandUpdate {
   schaden?: number;
   schadenArt?: SchadenArt;
   kampfFertigkeit?: KampfFertigkeit;
+  paradeBonus?: number;
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   kiTamaFertigkeiten?: Record<string, boolean>;

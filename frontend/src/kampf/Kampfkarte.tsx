@@ -59,6 +59,7 @@ export function kampfKurz(bogen: Bogen, ruestungKraft = 0) {
     { kuerzel: "TN", titel: "Treffen Nahkampf", wert: treffen("Nahkampf") },
     { kuerzel: "TS", titel: "Treffen Schusswaffen", wert: treffen("Schusswaffen") },
     { kuerzel: "A", titel: "Ausweichen", wert: effektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit") },
+    // Ohne Waffenbonus. Der Bonus steht an der Waffe, mit der pariert wird.
     { kuerzel: "P", titel: "Parieren", wert: treffen("Nahkampf") },
     { kuerzel: "I", titel: "Initiative", wert: u.initiative },
   ];
@@ -360,7 +361,7 @@ export function Kampfkarte({
             <Zahl
               titel="Parieren"
               wert={treffenPool("Nahkampf")}
-              hinweis="Geschicklichkeit + Nahkampf, plus Ausrüstung. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
+              hinweis="Ohne Waffe: Geschicklichkeit + Nahkampf. Mit einer Waffe zählt deren Parade-Bonus extra — steht an der Waffe, nicht hier. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
               wuerfel
             />
           </div>
@@ -418,6 +419,15 @@ export function Kampfkarte({
                         title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
                       >
                         {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
+                        <WuerfelZehn groesse={14} />
+                      </span>
+                    )}
+                    {(w.paradeBonus !== 0 || skill === "Nahkampf" || skill === "Handgemenge") && (
+                      <span
+                        className="kk-waffe-pool"
+                        title="Geschicklichkeit + Nahkampf, plus nur der Parade-Bonus dieser Waffe. Der Angriff bleibt unverändert."
+                      >
+                        Parade {treffenPool("Nahkampf") + (w.paradeBonus || 0)}
                         <WuerfelZehn groesse={14} />
                       </span>
                     )}

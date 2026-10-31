@@ -43,16 +43,40 @@ def schaden_art_fuer_waffe(art=None) -> str:
     return schaden_art_lesen(art) or SCHADEN_ART_DEFAULT
 
 
-def waffenfelder(typ: str, roh, art=None) -> dict:
+def parade_lesen(roh) -> int:
+    """Ganze Zahl, sonst 0. Negativ bleibt — ein unhandliches Teil pariert schlechter."""
+    try:
+        return int(roh or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def parade_mit_waffe(basis: int, bonus: int) -> int:
+    """Parieren mit dieser Waffe: Geschick+Nahkampf plus nur deren Bonus.
+
+    Der Angriffspool bleibt `basis` ohne den Bonus. Die Kampfkarte addiert
+    denselben Schritt pro Waffe, nicht auf die globale P-Zahl.
+    """
+    return int(basis) + parade_lesen(bonus)
+
+
+def waffenfelder(typ: str, roh, art=None, parade=0) -> dict:
     """Nur typ Waffe. Andere Typen bleiben unangetastet (Cyberklinge ist istWaffe)."""
     if typ != "Waffe":
         return {}
-    wert = schaden_klemmen(roh, typ=typ)
+    parade_wert = parade_lesen(parade)
+    # Schild: Schaden ausdrücklich 0, dafür ein Parade-Bonus. Fehlender Schaden
+    # ohne Parade bleibt Stufe 1 — sonst legt die KI stumme Waffen an.
+    if parade_wert != 0 and roh in (0, "0"):
+        wert = 0
+    else:
+        wert = schaden_klemmen(roh, typ=typ)
     return {
         "kraft": wert,
         "schaden": wert,
         "istWaffe": True,
         "schadenArt": schaden_art_fuer_waffe(art),
+        "paradeBonus": parade_wert,
     }
 
 

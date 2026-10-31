@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-10-31] gebaut | Parade-Bonus an der Waffe
+
+Extra-Würfel nur beim Parieren mit genau dieser Waffe, nicht auf den Angriff
+und nicht auf die globale P-Zahl. Schild = Schaden 0 + Parade-Bonus.
+Mindeststärke besprochen und verworfen. Siehe [[concepts/kampf-und-initiative]].
+
 ## [2026-10-31] gebaut | Spieler setzen Drohnen- und Gegenstandsbilder, Zeichnen neben Upload und KI
 
 Mark als Spieler: Bild an der Drohne scheiterte mit „GM role required“.

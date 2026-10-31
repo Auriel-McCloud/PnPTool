@@ -2,6 +2,12 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Parade-Bonus an Waffen (31.10.2026)
+
+`paradeBonus` auf Waffe und Chrom-als-Waffe. Extra-Würfel nur beim Parieren
+mit genau dieser Waffe. Angriff und die globale P-Zahl bleiben ohne den Bonus.
+Schild: Schaden 0, Parade-Bonus gesetzt. Mindeststärke nicht gebaut.
+
 ## Spieler setzen Drohnen- und Gegenstandsbilder, Zeichnen überall (31.10.2026)
 
 Spieler dürfen das Bild der eigenen Drohne/des eigenen Fahrzeugs setzen und

@@ -43,7 +43,14 @@ def test_create_data_reicht_jedes_schemafeld_durch():
     )
 
 
-def test_initiative_bonus_kommt_an():
+def test_parade_bonus_kommt_an_und_hebt_den_angriff_nicht():
+    schild = GegenstandCreate(name="Turmschild", typ="Waffe", schaden=0, paradeBonus=3)
+    daten = _create_data(schild, ist_vorlage=False, sichtbarkeit="GM", sichtbar_fuer=[])
+    assert daten["paradeBonus"] == 3
+    assert daten["schaden"] == 0
+
+    jacke = GegenstandCreate(name="Jacke", typ="Sonstiges", paradeBonus=4)
+    assert _create_data(jacke, False, "GM", [])["paradeBonus"] == 0
     # Der konkrete Fall, der den Fehler aufgedeckt hat.
     body = GegenstandCreate(name="Reflex Booster", initiativeBonus=3)
     daten = _create_data(body, ist_vorlage=False, sichtbarkeit="GM", sichtbar_fuer=[])

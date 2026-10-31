@@ -13,6 +13,7 @@ def test_handwaffe_nimmt_den_wert():
         "schaden": 4,
         "istWaffe": True,
         "schadenArt": "schwer",
+        "paradeBonus": 0,
     }
 
 
@@ -56,3 +57,24 @@ def test_kampf_fertigkeit_nur_die_drei_skills():
     assert kampf_fertigkeit_lesen("Fernkampf") == ""
     assert kampf_fertigkeit_lesen(None) == ""
     assert kampf_fertigkeit_lesen("") == ""
+
+
+def test_schild_behaelt_schaden_null_wenn_parade_gesetzt():
+    felder = waffenfelder("Waffe", 0, "schlag", 2)
+    assert felder["schaden"] == 0
+    assert felder["paradeBonus"] == 2
+    assert felder["schadenArt"] == "schlag"
+
+
+def test_fehlender_schaden_ohne_parade_bleibt_stufe_1():
+    assert waffenfelder("Waffe", 0)["schaden"] == 1
+    assert waffenfelder("Waffe", None)["paradeBonus"] == 0
+
+
+def test_parade_bonus_hebt_nur_das_parieren():
+    from app.items.waffenbonus import parade_mit_waffe
+
+    basis = 5
+    assert parade_mit_waffe(basis, 2) == 7
+    assert parade_mit_waffe(basis, 0) == basis
+    assert parade_mit_waffe(basis, -1) == 4

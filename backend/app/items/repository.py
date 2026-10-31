@@ -25,7 +25,7 @@ RETURN_FIELDS = """
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
     g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
-    g.kampfFertigkeit AS kampfFertigkeit,
+    g.kampfFertigkeit AS kampfFertigkeit, g.paradeBonus AS paradeBonus,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
     g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
@@ -187,6 +187,8 @@ def _decode(record: dict) -> dict:
     else:
         record["schadenArt"] = art if art in ("schlag", "schwer", "aggraviert", "elementar") else ""
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
+    # Parade-Bonus fehlt an Bestandsdaten. Ohne Ersatz reisst die Liste mit 500.
+    record["paradeBonus"] = _or_default(record.get("paradeBonus"), 0)
     for feld in (
         "traitBoni",
         "ausruestungsfertigkeiten",
@@ -285,6 +287,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
             istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
+            paradeBonus: $paradeBonus,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             kiTamaFertigkeiten: $kiTamaFertigkeiten,
             attackenFertigkeiten: $attackenFertigkeiten, attackenSchadensart: $attackenSchadensart,
@@ -365,6 +368,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             schaden=int(data.get("schaden") or 0),
             schadenArt=data.get("schadenArt") or "",
             kampfFertigkeit=kampf_fertigkeit_lesen(data.get("kampfFertigkeit")),
+            paradeBonus=int(data.get("paradeBonus") or 0),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
             verbaut=bool(data.get("verbaut")),
