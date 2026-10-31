@@ -436,8 +436,13 @@ class OrtCreate(BaseModel):
     spezialisierung: list[str] = []
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] = "PHYSISCH"
     shopHintergrundUrl: str = ""
-    # Tutorial-Shop hängt am Ort, nicht an der Person (10.10.2026).
-    istTutorialShop: bool = False
+    istTutorialShop: bool = False  # Tutorial-Shop hängt am Ort, nicht an der Person (10.10.2026).
+    # Versteck (31.10.2026, Mark: "wir bräuchten an einem Ort die Möglichkeit
+    # es zum Versteck einer bestimmten Person zu machen"): Personen-IDs, für
+    # die dieser Ort als eigenes Lagerziel zählt (siehe
+    # items/repository.py::moegliche_ablageziele). Liste statt Einzel-ID —
+    # ein gemeinsames Party-Safehouse soll mehreren PCs gehören können.
+    versteckVonPersonIds: list[str] = []
 
 
 class OrtUpdate(BaseModel):
@@ -461,6 +466,7 @@ class OrtUpdate(BaseModel):
     # Tutorial-Shop (10.10.2026): Flag am Ort. Die SL setzt es im
     # Laden-Fenster des Ortes, nicht über einen NPC.
     istTutorialShop: bool | None = None
+    versteckVonPersonIds: list[str] | None = None
 
 
 class OrtResponse(BaseModel):
@@ -483,6 +489,7 @@ class OrtResponse(BaseModel):
     vertriebsart: str = "PHYSISCH"
     shopHintergrundUrl: str = ""
     istTutorialShop: bool = False
+    versteckVonPersonIds: list[str] = []
 
 
 class EventCreate(BaseModel):

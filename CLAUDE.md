@@ -99,6 +99,42 @@ mit, damit Rigger/GM an Drohnen-Ausrüstung dieselbe Auswahl haben).
 **Verifiziert:** `npx tsc -b` und `npm run build` sauber. **Noch nicht am
 Spieltisch getestet.**
 
+## Versteck-Orte statt jedem Ort als Lagerziel (31.10.2026)
+
+Direkte Folge des Features von weiter oben: Mark sah als Spieler beim
+Umlegen plötzlich **jeden** Ort der Kampagne als Ziel, nicht nur sinnvolle
+eigene — Ursache war, dass `moegliche_ablageziele` schon immer JEDEN Ort
+zurückgab (nie campaignweit eingeschränkt gewesen, anders als die
+Behälter-Hälfte der Funktion). Mark: "wir bräuchten an einem Ort die
+Möglichkeit es zum Versteck einer bestimmten Person zu machen, und dann
+kann sie dort natürlich Dinge lagern, aber nur dort".
+
+Neues Feld `Ort.versteckVonPersonIds: list[str]` (generisches Entitäts-
+Feld-Muster, `ORT_FIELDS` + `_BOGEN_DEFAULTS["versteckVonPersonIds"] = []`
+fürs Bestandsdaten-Netz, Stolperstein 9). Liste statt Einzel-Besitzer —
+Mark wollte explizit, dass auch ein gemeinsames Party-Safehouse mehreren
+PCs gehören kann. GM setzt es im Ort-Bearbeiten-Fenster (`OrtDetail.tsx`,
+Mehrfachauswahl unterhalb der Sichtbarkeits-Felder, derselbe
+`pcOptions`-Multiselect wie bei `VisibilitySelector`).
+
+`moegliche_ablageziele` (Spieler-Pfad) filtert Orte jetzt auf
+`person_id IN coalesce(o.versteckVonPersonIds, [])` statt alle
+zurückzugeben. `alle_ablageziele_fuer_gm` bleibt bewusst unverändert — die
+SL soll weiterhin campaignweit jeden Ort als Ziel sehen (siehe Eintrag
+„SL kann jetzt campaignweit in Behälter legen" oben).
+
+Fahrzeug/Drohne als Ablageziel bewusst NICHT mitgebaut: Mark hat sich für
+den bestehenden Mechanismus entschieden (Übergeben/Besitzerwechsel in
+`DrohnenAusruestung.tsx`, bereits fertig) statt eines neuen
+"nur verstaut, bleibt eigener Besitz"-Wegs.
+
+**Verifiziert:** `npx tsc -b`/`npm run build` sauber, Live-Test gegen
+lokale Neo4j (Ort mit/ohne `versteckVonPersonIds` angelegt, nur der eigene
+Versteck-Ort kam bei `moegliche_ablageziele` zurück). **Noch nicht am
+Spieltisch getestet.** Vorbestehend und NICHT dieses Feature betreffend:
+`test_bogenfeld_defaults.py` meldet fehlende `_BOGEN_DEFAULTS`-Einträge für
+`istDrohne`/`istFahrzeug` (PERSON_FIELDS, unabhängig von diesem Umbau).
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**

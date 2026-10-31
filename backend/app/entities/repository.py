@@ -73,7 +73,7 @@ _BOGEN_FELDER = [
 PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
-ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
+ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", "versteckVonPersonIds", *_VISIBILITY_FIELDS]
 EVENT_FIELDS = ["title", "timestamp", "description", "notes", "bildUrl", "bilder", "istEntwurf", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", *_VISIBILITY_FIELDS]
 # Fraktion: Organisationen, Konzerne, Gangs — was sie wollen (ziele) und
 # womit sie es durchsetzen (ressourcen) sind eigene Felder statt Freitext in
@@ -119,6 +119,10 @@ _BOGEN_DEFAULTS: dict = {
     # ohne Ersatz scheitert GET /orte komplett mit einem bool_type-Fehler
     # (derselbe Stolperstein wie bei istHaendler/istCritter/istKI oben).
     "istShop": False,
+    # Versteck-Feature (31.10.2026): Bestandsorte kennen das Feld noch
+    # nicht — ohne Ersatz scheitert GET /orte mit list_type-Fehler
+    # (Stolperstein 9, exakt wie bei istShop oben).
+    "versteckVonPersonIds": [],
     # Pflanzen-Vokabular (06.10.2026, Flora & Fauna): rein kosmetisches Flag
     # am Charakterbogen, analog zu magieFlavor — swaps nur ein paar
     # Feldbeschriftungen auf dem Blatt, keine Mechanik. Bestandscharaktere

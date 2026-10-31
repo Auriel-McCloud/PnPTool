@@ -239,6 +239,31 @@ export function OrtDetail({
                   pcOptions={pcOptions}
                 />
 
+                {/* Versteck (31.10.2026, Mark: Spieler sahen beim Umlegen
+                    eines Gegenstands jeden Ort der Kampagne als Ziel, statt
+                    nur ihr eigenes Versteck). Leer = kein Versteck, der Ort
+                    taucht am Gegenstand dann für niemanden als Ziel auf. */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
+                    Versteck für (eigenes Lagerziel im Inventar)
+                  </label>
+                  <select
+                    multiple
+                    value={ort.versteckVonPersonIds ?? []}
+                    onChange={(e) =>
+                      speichere({ versteckVonPersonIds: Array.from(e.target.selectedOptions, (o) => o.value) })
+                    }
+                    style={{ minWidth: 180, minHeight: 60 }}
+                  >
+                    {pcOptions.length === 0 && <option disabled>Noch keine PCs angelegt</option>}
+                    {pcOptions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div style={{ marginTop: 12 }}>
                   <PlaylistFeld
                     campaignId={campaignId}

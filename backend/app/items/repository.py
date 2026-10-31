@@ -1238,7 +1238,16 @@ async def get_owner_person_id(campaign_id: str, item_id: str) -> str | None:
 
 
 async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
-    """Orte und eigene Behälter-Gegenstände, in denen etwas liegen kann.
+    """Eigene Versteck-Orte und eigene Behälter-Gegenstände, in denen etwas
+    liegen kann.
+
+    Orte (31.10.2026, Mark nach dem ersten echten Mehr-Behälter-Test: "ich
+    sehe extrem viele Orte, nicht nur die Behälter die ich ausgerüstet
+    habe" — vorher kam JEDER Ort der Kampagne als Ziel, auch Weltorte ohne
+    jeden Bezug zur Person): nur Orte, die als Versteck dieser Person
+    markiert sind (`versteckVonPersonIds`, von der SL im Ort-Bearbeiten-
+    Fenster gesetzt). Eine Liste statt Einzel-Besitzer, weil ein Party-
+    Safehouse mehreren PCs gehören können soll.
 
     Behälter ist, was ausdrücklich als solcher markiert ist (`istBehaelter`) —
     **nicht**, was einen bestimmten Typ trägt. Ein Motorrad ist ein Fahrzeug
@@ -1256,6 +1265,7 @@ async def moegliche_ablageziele(campaign_id: str, person_id: str) -> list[dict]:
         result = await session.run(
             """
             MATCH (o:Ort {campaignId: $campaign_id})
+            WHERE $person_id IN coalesce(o.versteckVonPersonIds, [])
             RETURN o.id AS id, o.name AS name, 'Ort' AS kind
             UNION
             MATCH (p:Person {id: $person_id})-[:BESITZT]->(g:Gegenstand)

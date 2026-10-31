@@ -126,6 +126,10 @@ export interface Ort extends VisibilityFields {
   spezialisierung?: string[];
   vertriebsart?: "PHYSISCH" | "DIGITAL";
   shopHintergrundUrl?: string;
+  /** Versteck (31.10.2026): Personen, für die dieser Ort als eigenes
+   * Lagerziel zählt (Fach "Wo ist es?" am Gegenstand) — siehe
+   * items/api.ts::ablageziele. Leer = kein Versteck, taucht dort nicht auf. */
+  versteckVonPersonIds?: string[];
 }
 
 export interface Event extends VisibilityFields {
