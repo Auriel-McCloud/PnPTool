@@ -424,33 +424,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const aktuelleSeite = Math.min(seite, seiten - 1);
   const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
-  // Der getragene Behälter sammelt "mitgeführte" Sachen unter einem
-  // gemeinsamen Fach ein — welcher Behälter das konkret ist, wählt man an
-  // jedem Gegenstand selbst (siehe GegenstandKachel.tsx::ziele, 31.10.2026).
-  const getragenesFach = faecher.find((f) => f.id === "MITGEFUEHRT");
-  const getragenerBehaelterId = sachen.find(
-    (g) => g.ablage === "AUSGERUESTET" && (g.typ === "Behälter" || g.typ === "Fahrzeug"),
-  )?.id;
-
-  /**
-   * Zu welchem Fach ein Behälter-Gegenstand gehört. Der getragene Rucksack
-   * sammelt unter "MITGEFUEHRT" ein, jeder andere Behälter unter seiner
-   * eigenen Kennung.
-   */
-  function fachIdFuer(item: Gegenstand) {
-    if (item.id === getragenerBehaelterId) return getragenesFach?.id;
-    return faecher.find((f) => f.id === item.id)?.id;
-  }
-
   function inhaltVon(item: Gegenstand) {
-    const fachId = fachIdFuer(item);
-    if (!fachId) return undefined;
-    const fach = faecher.find((f) => f.id === fachId);
+    const fach = faecher.find((f) => f.id === item.id);
     if (!fach) return undefined;
     return {
       // Montierte Augments zählen nicht mit — siehe `getragen` oben.
       anzahl: sachen.filter((g) => fach.passt(g) && !g.montiertAnId).length,
-      oeffnen: () => setFachStapel((alt) => [...alt, fachId]),
+      oeffnen: () => setFachStapel((alt) => [...alt, fach.id]),
     };
   }
 

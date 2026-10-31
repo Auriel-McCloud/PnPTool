@@ -255,6 +255,31 @@ weil die Namen jetzt nicht mehr kollidieren.
 **Verifiziert:** `npx tsc --noEmit -p tsconfig.json` sauber. **Noch nicht am
 Spieltisch getestet.**
 
+## Hineinsehen beim ersten getragenen Behälter zeigte falschen Inhalt (31.10.2026)
+
+Direkte Folge des Fixes oben, Mark gleich beim ersten Live-Test gefunden:
+"wenn ich auf den ersten ausgerüsteten Behälter klicke und auf Hineinsehen,
+bekomme ich den Inhalt von Mitgeführt, aber nur beim ersten, beim zweiten
+passt's". Ursache war eine zweite Baustelle derselben alten
+Ein-Behälter-Annahme, diesmal in `SpielerAnsicht.tsx::fachIdFuer`: die
+Funktion suchte sich per `sachen.find(...)` explizit den ERSTEN getragenen
+Behälter/Fahrzeug heraus und bog dessen "Hineinsehen" hart auf das
+MITGEFUEHRT-Fach um (Rest-Annahme aus der Zeit, als "Mitgeführt" noch nach
+dem Behälter benannt war). Jeder weitere Behälter lief korrekt über sein
+eigenes `ablageZielId`-Fach — daher traf es nur den ersten.
+
+`ermittleBereiche` erzeugte für getragene, unversperrte Behälter bisher aber
+auch gar kein eigenes Fach (Begründung war exakt dieselbe überholte
+Annahme) — ohne das hätte „Hineinsehen“ beim ersten Behälter nach Entfernen
+der Sonderregel einfach gar nichts mehr angezeigt. Fix in zwei Teilen:
+`aufbewahrung.ts` gibt jetzt JEDEM Behälter ein eigenes Fach, getragen oder
+nicht, leer oder voll (wie Fahrzeuge/Kisten es schon immer bekommen);
+`SpielerAnsicht.tsx::fachIdFuer` ist komplett raus, `inhaltVon` sucht nur
+noch direkt über `item.id` im Fach.
+
+**Verifiziert:** `npx tsc --noEmit -p tsconfig.json` sauber. **Noch nicht am
+Spieltisch getestet.**
+
 ## Als nächstes geplant (Phase 3 — Frontend)
 
 - **Ki-Tama-Attacken + Beschwörung: Gate auf "an ausgerüsteter Waffe montiert"**

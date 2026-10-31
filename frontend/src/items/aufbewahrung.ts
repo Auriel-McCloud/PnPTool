@@ -1,4 +1,4 @@
-import { istVerschlossen, type Gegenstand } from "./api";
+import type { Gegenstand } from "./api";
 
 /**
  * Ein anwählbarer Aufbewahrungsbereich.
@@ -113,12 +113,24 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true): Berei
     }
   }
 
-  // Ein eigenes Fahrzeug oder eine Kiste wird **auch dann** zum Fach, wenn
-  // gerade nichts darin liegt: man will hineinsehen können, statt sich zu
-  // fragen, ob das Auto verschwunden ist. Getragene Behälter sind schon
-  // oben als "mitgeführt" abgehandelt.
+  // Ein eigener Behälter wird **immer** zum eigenen Fach — getragen oder
+  // nicht, leer oder voll — genau wie ein Fahrzeug oder eine Kiste. Galt das
+  // vorher nur für NICHT getragene bzw. gesperrte Behälter (Begründung: der
+  // getragene wäre schon über "Mitgeführt" abgedeckt), stimmte das nur,
+  // solange "Mitgeführt" nach dem getragenen Behälter benannt war und dessen
+  // Inhalt zeigte. Seit das wieder neutral ist (siehe oben), fehlte dem
+  // getragenen Behälter ohne dieses Fach ein eigener Platz — sein
+  // "Hineinsehen"-Knopf landete über eine Sonderregel in
+  // SpielerAnsicht.tsx::fachIdFuer zwangsweise bei "Mitgeführt" statt bei
+  // seinem eigenen Inhalt, und das auch nur für GENAU EINEN getragenen
+  // Behälter (den ersten gefundenen) — jeder weitere zeigte zufällig schon
+  // richtig, weil er über `ablageZielId` ohnehin ein eigenes Fach bekam
+  // (Mark-Bugreport 31.10.2026: "beim ersten Behälter falscher Inhalt, beim
+  // zweiten passt's"). Mit dieser Zeile bekommt JEDER Behälter sein Fach
+  // direkt hier, die Sonderregel in SpielerAnsicht.tsx ist damit überflüssig
+  // und raus.
   for (const g of items) {
-    if (istBehaelter(g) && (g.ablage !== "AUSGERUESTET" || istVerschlossen(g))) {
+    if (istBehaelter(g)) {
       faecher.set(g.id, { name: g.name, symbol: symbolFuer(g.typ) });
     }
   }
