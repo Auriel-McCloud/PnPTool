@@ -730,3 +730,11 @@
   background: var(--neon);
   color: var(--bg, #000);
 }
+
+/* Der globale Press-Effekt (button:active { transform: translateY(1px) })
+   würde sonst das translate(-50%, -50%) überschreiben, mit dem die Taste
+   auf ihrem Kreispunkt zentriert ist — die Taste spränge beim Klicken aus
+   der Mitte, der Zeiger müsste ihr hinterher fahren (Mark, 31.10.2026). */
+.schloss-taste:active:not(:disabled) {
+  transform: translate(-50%, -50%) translateY(1px);
+}
