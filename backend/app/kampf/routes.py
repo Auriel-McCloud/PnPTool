@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
-from app.kampf import repository
+from app.kampf import matrix_store, repository
 from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
 from app.kampf.sichtbarkeit import fuer_spieler
 from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
@@ -598,6 +598,7 @@ class HotInput(BaseModel):
 
 
 async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
+    verlust = await matrix_store.hot_wegen_aus(campaign_id, person_id)
     chrom = await verbautes_chrom(campaign_id, person_id)
     decks = await ausgeruestete_decks(campaign_id, person_id)
     zustand = await repository.hot_lesen(campaign_id, person_id)
@@ -611,7 +612,7 @@ async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
         )
     ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
     return HotStatus(
-        hatNeurolink=hat_neurolink(chrom),
+        hatNeurolink=hat_neurolink(chrom) and verlust != "alles",
         hatDeck=bool(decks),
         matrixHot=zustand["matrixHot"],
         hotDrohneId=zustand["hotDrohneId"],
@@ -619,7 +620,7 @@ async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
         bleibenFaellig=bleiben_faellig(
             zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde, ist_dran
         ),
-        darfWaehlen=darf_drohne_waehlen(zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde),
+        darfWaehlen=verlust == "" and darf_drohne_waehlen(zustand["hotDrohneId"], zustand["hotDrohneRunde"], runde),
     )
 
 
@@ -647,6 +648,12 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
             person_id = rigger_id
             zustand = await repository.hot_lesen(campaign_id, person_id)
             chrom = await verbautes_chrom(campaign_id, person_id)
+
+    verlust = await matrix_store.hot_wegen_aus(campaign_id, person_id)
+    if verlust == "alles":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ohne Neurolink kein Hot.")
+    if verlust == "drohne" and body.drohneId:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Die Konsole ist aus.")
 
     if not hat_neurolink(chrom):
         raise HTTPException(status.HTTP_409_CONFLICT, "Ohne verbauten Neurolink kein Hot.")

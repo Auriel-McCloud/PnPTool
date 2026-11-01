@@ -46,24 +46,27 @@ export function DeineDrohnenImKampf({
 
   useEffect(() => {
     let weg = false;
-    drohnenApi
-      .liste(campaignId)
-      .then((liste) => {
+    async function hol() {
+      if (document.hidden) return;
+      try {
+        const liste = await drohnenApi.liste(campaignId);
         if (weg) return;
         const eigene = liste.filter((d) => d.riggerId === eigenePersonId);
         const aktiv = eigene.filter((d) => d.riggerAktiv);
         setDrohnen(aktiv);
         onListeGeladen?.(aktiv.map((d) => d.id));
-        const slots = eigene.find((d) => d.riggerSlotsMax != null)?.riggerSlotsMax ?? 0;
-        setSlotsMax(slots);
-      })
-      .catch(() => {
+        setSlotsMax(eigene.find((d) => d.riggerSlotsMax != null)?.riggerSlotsMax ?? 0);
+      } catch {
         if (!weg) setDrohnen([]);
-      });
+      }
+    }
+    void hol();
+    const uhr = window.setInterval(() => void hol(), 3000);
     return () => {
       weg = true;
+      window.clearInterval(uhr);
     };
-    // kampf?.amZug damit der Magenta-Rahmen nach dem Hot-Knopf nachzieht.
+    // kampf-Takt stößt sofort an, der Intervall fängt das Aus der Konsole.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, eigenePersonId, kampf?.teilnehmer.length, kampf?.amZug, kampf?.runde]);
 

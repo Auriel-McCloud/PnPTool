@@ -179,6 +179,28 @@ async def drohnen_fallen(campaign_id: str, rigger_id: str) -> list[str]:
     return ids
 
 
+async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
+    """Wirft aus Hot, solange Neurolink oder Konsole aus sind."""
+    from app.items.repository import verbautes_chrom
+    from app.kampf.hot import hot_verlust
+
+    kampf = await lade(campaign_id)
+    if kampf is None:
+        return ""
+    chrom = await verbautes_chrom(campaign_id, person_id)
+    verlust = hot_verlust(aus_fuer(kampf["stand"], person_id), chrom)
+    if not verlust:
+        return ""
+    zustand = await repository.hot_lesen(campaign_id, person_id)
+    if verlust == "alles" and (zustand["hotDrohneId"] or zustand["matrixHot"]):
+        await repository.hot_schreiben(
+            campaign_id, person_id, hot_drohne_id=None, hot_runde=0, matrix_hot=False
+        )
+    elif verlust == "drohne" and zustand["hotDrohneId"]:
+        await repository.hot_schreiben(campaign_id, person_id, hot_drohne_id=None, hot_runde=0)
+    return verlust
+
+
 def aktuelles_ice(stand: dict, person_id: str, maximum: int) -> int:
     roh = (stand.get("ice") or {}).get(person_id)
     if roh is None:

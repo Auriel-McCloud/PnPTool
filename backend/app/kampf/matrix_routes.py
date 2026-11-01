@@ -186,6 +186,7 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
     for ziel in gewaehlt:
         if ziel["art"] == "konsole":
             await matrix_store.drohnen_fallen(campaign_id, body.zielPersonId)
+    await matrix_store.hot_wegen_aus(campaign_id, body.zielPersonId)
     return {"aus": matrix_store.aus_fuer(stand, body.zielPersonId)}
 
 

@@ -21,6 +21,25 @@ def hat_neurolink(stuecke: list[dict]) -> bool:
     )
 
 
+def hot_verlust(aus: list[dict], chrom: list[dict]) -> str:
+    """Was an Hot sterben muss, solange das Stück aus ist.
+
+    'alles' = Drohne und Matrix, der Neurolink ist tot.
+    'drohne' = nur der Sprung, die Konsole ist tot. Matrix-Hot bleibt.
+    '' = Hot unberührt.
+    """
+    tot = {e.get("zielId") for e in aus}
+    if any(
+        ist_neurolink(s.get("typ") or "", bool(s.get("verbaut")), bool(s.get("istNeurolink")))
+        and s.get("id") in tot
+        for s in chrom
+    ):
+        return "alles"
+    if any(e.get("art") == "konsole" for e in aus):
+        return "drohne"
+    return ""
+
+
 @dataclass(frozen=True)
 class HotErgebnis:
     ok: bool

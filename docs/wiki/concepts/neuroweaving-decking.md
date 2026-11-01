@@ -190,7 +190,10 @@ nicht der aktuelle Stand.
 - **Kein ICE:** Schwelle 0, der Wurf findet statt, Erfolge zählen, das
   Budget bleibt höchstens 3. Die Zwischenfassung „kein Wurf“ ist vom Tisch.
 - **Deck oder Riggerkonsole:** Zugriff weg. Schon gesprungene Drohnen fallen
-  sofort raus ([[drohnen-fahrzeuge]]).
+  sofort raus ([[drohnen-fahrzeuge]]). Die Karten des Riggers ziehen das
+  alle drei Sekunden nach, kein Neuladen. Konsole aus wirft aus dem
+  Drohnen-Hot, Matrix-Hot bleibt. Neurolink aus wirft aus beidem, und Hot
+  geht nicht wieder rein, solange der Link tot ist.
 - **Ausgabe:** jeder Netto-Erfolg zählt entweder für ein Ziel mehr oder
   für eine Runde mehr, höchstens 3. 2 Erfolge: ein Ziel für 2 Runden, oder
   zwei Ziele für je 1 Runde. 3 Erfolge: zum Beispiel zwei Ziele, eines

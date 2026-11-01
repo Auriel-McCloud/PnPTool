@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] teilweise-umgesetzt | Hot endet mit Konsole oder Neurolink
+
+Konsole aus: Drohnen fallen und der Drohnen-Hot ist weg, Matrix-Hot bleibt.
+Neurolink aus: beides Hot ist weg und bleibt zu. Die Drohnenkarten holen
+den Stand alle drei Sekunden.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] teilweise-umgesetzt | Deaktivieren kommt beim Ziel an
 
 Umbau-Feld an der Waffe: komplett oder nur Upgrades, Standard nach Typ.

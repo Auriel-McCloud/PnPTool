@@ -61,10 +61,23 @@ export function DrohnenUebersicht({
   }
 
   useEffect(() => {
-    setLaden(true);
-    neuLaden()
-      .catch(() => setFehler("Drohnen/Fahrzeuge konnten nicht geladen werden."))
-      .finally(() => setLaden(false));
+    let weg = false;
+    async function hol() {
+      if (document.hidden) return;
+      try {
+        await neuLaden();
+      } catch {
+        if (!weg) setFehler("Drohnen/Fahrzeuge konnten nicht geladen werden.");
+      } finally {
+        if (!weg) setLaden(false);
+      }
+    }
+    void hol();
+    const uhr = window.setInterval(() => void hol(), 3000);
+    return () => {
+      weg = true;
+      window.clearInterval(uhr);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 

@@ -13,16 +13,20 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
 
   useEffect(() => {
     let weg = false;
-    kampfApi
-      .hotStatus(campaignId)
-      .then((s) => {
+    async function hol() {
+      if (document.hidden) return;
+      try {
+        const s = await kampfApi.hotStatus(campaignId);
         if (!weg) setStatus(s);
-      })
-      .catch(() => {
+      } catch {
         if (!weg) setStatus(null);
-      });
+      }
+    }
+    void hol();
+    const uhr = window.setInterval(() => void hol(), 3000);
     return () => {
       weg = true;
+      window.clearInterval(uhr);
     };
   }, [campaignId]);
 
