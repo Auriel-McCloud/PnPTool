@@ -50,6 +50,13 @@ def test_pro_runde_nur_eine_drohne():
     assert darf_drohne_waehlen("spinne", 1, kampf_runde=None) is True
 
 
+def test_auswurf_gibt_die_hot_wahl_frei():
+    from app.kampf.hot import kick_braucht_reset
+    assert kick_braucht_reset("drohne", None, 5, False)
+    assert not kick_braucht_reset("drohne", None, 0, False)
+    assert kick_braucht_reset("alles", None, 5, False)
+
+
 def test_hot_verlust_bei_konsole_und_neurolink():
     from app.kampf.hot import hot_verlust
     chrom = [{"id": "link", "typ": "Cyberware", "verbaut": True, "istNeurolink": True}]

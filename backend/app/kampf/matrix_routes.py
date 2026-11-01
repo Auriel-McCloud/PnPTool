@@ -211,4 +211,5 @@ async def reaktivieren(campaign_id: str, eintrag_id: str, viewer: Viewer = Depen
     await matrix_store.speichere(campaign_id, stand)
     if gefunden.get("art") == "konsole":
         await matrix_store.drohnen_zurueck(campaign_id, gefunden.get("gesprungeneIds") or [])
+        await matrix_store.hot_wahl_frei(campaign_id, gefunden.get("traegerId") or "")
     return {"ok": True}

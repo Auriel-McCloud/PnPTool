@@ -21,6 +21,15 @@ def hat_neurolink(stuecke: list[dict]) -> bool:
     )
 
 
+def kick_braucht_reset(verlust: str, hot_drohne_id: str | None, hot_runde: int, matrix_hot: bool) -> bool:
+    """Auswerfen soll die Wahl der Runde nicht als verbraucht stehen lassen."""
+    if verlust == "alles":
+        return bool(hot_drohne_id or matrix_hot or hot_runde)
+    if verlust == "drohne":
+        return bool(hot_drohne_id or hot_runde)
+    return False
+
+
 def hot_verlust(aus: list[dict], chrom: list[dict]) -> str:
     """Was an Hot sterben muss, solange das Stück aus ist.
 

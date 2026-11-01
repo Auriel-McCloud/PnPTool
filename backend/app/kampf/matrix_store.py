@@ -196,6 +196,14 @@ async def drohnen_zurueck(campaign_id: str, ids: list[str]) -> None:
         )
 
 
+async def hot_wahl_frei(campaign_id: str, person_id: str) -> None:
+    """Konsole wieder da: eine leere Wahl zählt nicht als verbraucht."""
+    zustand = await repository.hot_lesen(campaign_id, person_id)
+    if zustand["hotDrohneId"] or not zustand["hotDrohneRunde"]:
+        return
+    await repository.hot_schreiben(campaign_id, person_id, hot_drohne_id=None, hot_runde=0)
+
+
 def merke_sprung(stand: dict, traeger_id: str, ids: list[str]) -> None:
     for eintrag in stand.get("aus") or []:
         if eintrag.get("traegerId") == traeger_id and eintrag.get("art") == "konsole":
@@ -205,7 +213,7 @@ def merke_sprung(stand: dict, traeger_id: str, ids: list[str]) -> None:
 async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
     """Wirft aus Hot, solange Neurolink oder Konsole aus sind."""
     from app.items.repository import verbautes_chrom
-    from app.kampf.hot import hot_verlust
+    from app.kampf.hot import hot_verlust, kick_braucht_reset
 
     kampf = await lade(campaign_id)
     if kampf is None:
@@ -215,11 +223,11 @@ async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
     if not verlust:
         return ""
     zustand = await repository.hot_lesen(campaign_id, person_id)
-    if verlust == "alles" and (zustand["hotDrohneId"] or zustand["matrixHot"]):
+    if verlust == "alles" and kick_braucht_reset("alles", zustand["hotDrohneId"], zustand["hotDrohneRunde"], zustand["matrixHot"]):
         await repository.hot_schreiben(
             campaign_id, person_id, hot_drohne_id=None, hot_runde=0, matrix_hot=False
         )
-    elif verlust == "drohne" and zustand["hotDrohneId"]:
+    elif verlust == "drohne" and kick_braucht_reset("drohne", zustand["hotDrohneId"], zustand["hotDrohneRunde"], False):
         await repository.hot_schreiben(campaign_id, person_id, hot_drohne_id=None, hot_runde=0)
     return verlust
 
@@ -280,3 +288,5 @@ async def tick(campaign_id: str, neue_runde: int) -> None:
     await speichere(campaign_id, stand)
     for eintrag in matrix.abgefallene(alt, stand["aus"], "konsole"):
         await drohnen_zurueck(campaign_id, eintrag.get("gesprungeneIds") or [])
+        if eintrag.get("traegerId"):
+            await hot_wahl_frei(campaign_id, eintrag["traegerId"])
