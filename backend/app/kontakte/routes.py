@@ -18,8 +18,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.entities import repository as entities_repository
-from app.entities.repository import PERSON_FIELDS
+from app.entities.repository import PERSON_FIELDS, update_node
 from app.hintergruende import repository as hintergruende_repository
+from app.hintergruende.mentor_ep import ep_ausgeben as mentor_ep_ausgeben
+from app.traits.autosteigerung import mentor_ep
 from app.ki.routes import _idee_anlegen as ki_charakter_generieren
 from app.kontakte import repository
 from app.mitteilungen import repository as mitteilungen_repo
@@ -188,10 +190,23 @@ async def kontakt_generieren(
     if not wunsch:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Wunsch darf nicht leer sein.")
 
-    prompt = (
-        f"Erzeuge einen Kontakt-NPC für {roh.get('pcName') or 'den Charakter'} — "
-        f"Wunsch des Spielers, wer/was dieser Kontakt sein soll: {wunsch}"
-    )
+    ist_mentor = bool(npc.get("istMentor"))
+    mentor_rating = 0
+    if ist_mentor:
+        kante = await hintergruende_repository.hole_mentor(campaign_id, roh["pcId"])
+        mentor_rating = int((kante or {}).get("rating") or 0) if kante else 0
+        ep = mentor_ep(mentor_rating)
+        prompt = (
+            f"Erzeuge einen Mentor-NPC für {roh.get('pcName') or 'den Charakter'}. "
+            f"Fertigkeitspaket Profi. Wunsch des Spielers, wer das sein soll: {wunsch}. "
+            f"Der Mentor ist erfahrener als ein normaler Kontakt: {ep} EP extra "
+            f"({mentor_rating} Mentor-Punkte mal 20), die danach auf vorhandene Werte gehen."
+        )
+    else:
+        prompt = (
+            f"Erzeuge einen Kontakt-NPC für {roh.get('pcName') or 'den Charakter'} — "
+            f"Wunsch des Spielers, wer/was dieser Kontakt sein soll: {wunsch}"
+        )
     erzeugt = await ki_charakter_generieren(campaign_id, "charakter", prompt)
 
     neuer_kontakt = await repository.anlegen(
@@ -208,7 +223,13 @@ async def kontakt_generieren(
         )
         if benannt is not None:
             neuer_kontakt = benannt
-    await hintergruende_repository.fuege_kontaktslot_hinzu(campaign_id, roh["pcId"], erzeugt["id"])
+    if ist_mentor:
+        await update_node("Person", PERSON_FIELDS, campaign_id, erzeugt["id"], {"istMentor": True})
+        await hintergruende_repository.setze_mentor(campaign_id, roh["pcId"], erzeugt["id"], mentor_rating)
+        await hintergruende_repository.entferne_mentor_kante(campaign_id, roh["pcId"], roh["npcId"])
+        await mentor_ep_ausgeben(campaign_id, erzeugt["id"], mentor_rating, wunsch)
+    else:
+        await hintergruende_repository.fuege_kontaktslot_hinzu(campaign_id, roh["pcId"], erzeugt["id"])
     await repository.loeschen(campaign_id, kontakt_id)
     await entities_repository.delete_node("Person", campaign_id, roh["npcId"])
 

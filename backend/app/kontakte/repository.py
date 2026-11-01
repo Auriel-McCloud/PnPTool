@@ -26,7 +26,8 @@ KONTAKT_FELDER = """
     pc.id AS pcId, pc.name AS pcName,
     npc.id AS npcId, npc.name AS npcName, npc.alias AS npcAlias,
     npc.rasse AS npcRasse, npc.bildUrl AS npcBildUrl, npc.description AS npcDescription,
-    coalesce(npc.istBlankoKontakt, false) AS npcIstBlankoKontakt
+    coalesce(npc.istBlankoKontakt, false) AS npcIstBlankoKontakt,
+    coalesce(npc.istMentor, false) AS npcIstMentor
 """
 
 

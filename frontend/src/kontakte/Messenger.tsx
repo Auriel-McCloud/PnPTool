@@ -88,7 +88,7 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
                 <span className="msg-portrait-leer">?</span>
               </span>
               <span className="msg-info">
-                <span className="msg-name">Undefinierter Kontakt</span>
+                <span className="msg-name">{k.istMentor ? "Undefinierter Mentor" : "Undefinierter Kontakt"}</span>
                 <span className="msg-vorschau">Tippen und beschreiben</span>
               </span>
             </button>
@@ -101,8 +101,8 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
 
       {blanko && (
         <Fenster
-          titel="Undefinierter Kontakt"
-          unterzeile="Wen brauchst du?"
+          titel={blanko.istMentor ? "Undefinierter Mentor" : "Undefinierter Kontakt"}
+          unterzeile={blanko.istMentor ? "Wer hat dich gelehrt?" : "Wen brauchst du?"}
           kennung={`kontakt-generieren:${blanko.id}`}
           offen={true}
           onSchliessen={() => {
@@ -114,8 +114,9 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
         >
           <div className="msg-generieren">
             <p className="msg-generieren-hinweis">
-              Beschreib, wer das sein soll. Daraus wird ein Kontakt, und der Chat geht auf.
-              Zurücknehmen geht danach nicht.
+              {blanko.istMentor
+                ? "Beschreib, wer dich gelehrt hat. Daraus wird dein Mentor, stärker je nach deinen Mentor-Punkten. Zurücknehmen geht danach nicht."
+                : "Beschreib, wer das sein soll. Daraus wird ein Kontakt, und der Chat geht auf. Zurücknehmen geht danach nicht."}
             </p>
             <textarea
               value={wunsch}

@@ -37,6 +37,8 @@ export interface Kontakt {
   ungelesen: number;
   /** Noch kein Inhalt — der Spieler befüllt ihn per eigenem Wunsch (generieren). */
   istBlankoKontakt: boolean;
+  /** Mentor-Platz oder schon ausgearbeiteter Mentor. */
+  istMentor: boolean;
 }
 
 export interface KontaktGm extends Kontakt {

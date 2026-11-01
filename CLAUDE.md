@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Undefinierter Mentor in der Chatliste (01.11.2026)
+
+Mentor-Punkte legen einen Platz „Undefinierter Mentor“ in ◍ Kontakte. Erster Klick beschreibt, die KI legt den NPC an und gibt 20 EP je Punkt auf vorhandene Werte aus. Kein kampagnenweiter Wiederverwender mehr. `spawn.py`, `mentor_ep.py`, `Messenger.tsx`. **Nie im Browser angeklickt.**
+
 ## Undefinierter Kontakt in der Chatliste (01.11.2026)
 
 Spieler sehen leere Kontakte-Plätze unter ◍ Kontakte, gleiche Liste wie die Chats, Label „Undefinierter Kontakt“. Erster Klick öffnet die Beschreibung, `POST .../kontakte/{id}/generieren` legt den KI-Charakter an, der Chat geht auf, der Spieler sieht den Namen. `frontend/src/kontakte/Messenger.tsx`. **Nie im Browser angeklickt.**

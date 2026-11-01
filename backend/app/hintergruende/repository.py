@@ -280,6 +280,18 @@ async def hole_mentor(campaign_id: str, person_id: str) -> dict | None:
         return dict(record) if record else None
 
 
+async def entferne_mentor_kante(campaign_id: str, person_id: str, mentor_id: str) -> None:
+    """Löst HAT_MENTOR zu genau diesem NPC. Der Platzhalter bleibt sonst
+    hängen, weil delete_node NPCs nur als gelöscht markiert."""
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[r:HAT_MENTOR]->(m:Person {id: $mentor_id})
+        DELETE r
+    """
+    async with driver.session() as session:
+        await session.run(query, campaign_id=campaign_id, person_id=person_id, mentor_id=mentor_id)
+
+
 async def setze_mentor(campaign_id: str, person_id: str, mentor_id: str, rating: int) -> None:
     driver = get_driver()
     query = """

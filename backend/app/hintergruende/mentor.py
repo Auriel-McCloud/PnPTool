@@ -1,11 +1,9 @@
 """Mentor — Mechanik-Hintergrund wie Schulden/Kredithai, eigener NPC statt
 Katalogzeile (siehe seed.py::SYSTEM_SCHLUESSEL).
 
-Punkte auf "Mentor" (0-5, Teil des gemeinsamen Hintergrund-Pools, siehe
-traits/erstellung.py::HINTERGRUENDE) erzeugen bei Erstellungs-Abschluss EINEN
-NPC — bestehenden markierten wiederverwenden, sonst per KI frisch generiert
-(voller Charakter inkl. Tutorial-Shop-Einkauf, siehe spawn.py::
-mentor_nach_erstellung), genau wie Kredithai für Schulden.
+Punkte auf "Mentor" (0-5) legen einen leeren Platz in der Chatliste an.
+Der Spieler beschreibt ihn, dann erzeugt die KI den NPC und gibt 20 EP
+je Punkt auf vorhandene Werte aus.
 """
 
 

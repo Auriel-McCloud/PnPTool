@@ -31,6 +31,12 @@ Mark: Ki-Tamas und Rüstung von Ifrit und Shiva, dazu Blizzard, Inferno,
 Feuer, Eis. Zuordnung und Datenmodell offen. Siehe
 [[concepts/augments-ausruestung]].
 
+## [2026-11-01] gebaut | Undefinierter Mentor in der Chatliste
+
+Mentor-Punkte legen „Undefinierter Mentor“ unter ◍ Kontakte. Beschreibung
+erzeugt den NPC, 20 EP je Punkt gehen auf vorhandene Werte. Siehe
+[[entities/hintergrund-baukasten-feature]].
+
 ## [2026-11-01] gebaut | Undefinierter Kontakt in der Chatliste
 
 Leere Plätze aus dem Kontakte-Hintergrund stehen unter ◍ Kontakte, nicht

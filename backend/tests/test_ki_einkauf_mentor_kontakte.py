@@ -80,36 +80,32 @@ def test_mentor_nach_erstellung_ohne_rating_ist_noop():
     _run(lauf())
 
 
-def test_mentor_nach_erstellung_nutzt_bestehenden_markierten_mentor():
-    """Zwei PCs mit Mentor-Rating sollen denselben markierten NPC bekommen,
-    statt die KI zweimal einen neuen generieren zu lassen — kein KI-Call
-    nötig, weil schon ein istMentor=true-NPC existiert (wie Kredithai)."""
+def test_mentor_nach_erstellung_legt_blanko_an_statt_fremden_zu_nehmen():
+    """Jeder beschreibt seinen eigenen Mentor. Ein schon markierter NPC
+    der Kampagne wird nicht stillschweigend angehängt."""
 
     async def lauf():
         cid = await _kampagne_anlegen()
         try:
-            pc1 = await create_node(
-                "Person", PERSON_FIELDS, cid, PersonCreate(name="PC1", personType="PC").model_dump()
+            pc = await create_node(
+                "Person", PERSON_FIELDS, cid, PersonCreate(name="PC", personType="PC").model_dump()
             )
-            pc2 = await create_node(
-                "Person", PERSON_FIELDS, cid, PersonCreate(name="PC2", personType="PC").model_dump()
-            )
-            mentor_npc = await create_node(
+            await create_node(
                 "Person",
                 PERSON_FIELDS,
                 cid,
                 PersonCreate(name="Lehrmeister", personType="NPC", istMentor=True).model_dump(),
             )
-
-            ergebnis1 = await mentor_nach_erstellung(cid, pc1["id"], "PC1", 3)
-            assert ergebnis1 == {"mentorId": mentor_npc["id"], "rating": 3}
-            ergebnis2 = await mentor_nach_erstellung(cid, pc2["id"], "PC2", 2)
-            assert ergebnis2 == {"mentorId": mentor_npc["id"], "rating": 2}
-
-            kontakte_pc1 = await kontakte_repository.liste_fuer_pc(cid, pc1["id"])
-            assert len(kontakte_pc1) == 1
-            assert kontakte_pc1[0]["npcId"] == mentor_npc["id"]
-            assert kontakte_pc1[0]["chatOffen"] is False
+            ergebnis = await mentor_nach_erstellung(cid, pc["id"], "PC", 3)
+            assert ergebnis is not None
+            assert ergebnis["rating"] == 3
+            mentor = await get_node("Person", PERSON_FIELDS, cid, ergebnis["mentorId"])
+            assert mentor is not None
+            assert mentor["name"] == "Undefinierter Mentor"
+            assert mentor["istBlankoKontakt"] is True
+            assert mentor["istMentor"] is True
+            kante = await hintergruende_repository.hole_mentor(cid, pc["id"])
+            assert kante["rating"] == 3
         finally:
             await _aufraeumen(cid)
 
@@ -126,15 +122,10 @@ def test_mentor_nach_erstellung_erneute_einreichung_erzeugt_keinen_zweiten():
             pc = await create_node(
                 "Person", PERSON_FIELDS, cid, PersonCreate(name="PC", personType="PC").model_dump()
             )
-            mentor_npc = await create_node(
-                "Person",
-                PERSON_FIELDS,
-                cid,
-                PersonCreate(name="Lehrmeister", personType="NPC", istMentor=True).model_dump(),
-            )
-            await mentor_nach_erstellung(cid, pc["id"], "PC", 2)
+            erster = await mentor_nach_erstellung(cid, pc["id"], "PC", 2)
+            assert erster is not None
             ergebnis = await mentor_nach_erstellung(cid, pc["id"], "PC", 4)
-            assert ergebnis == {"mentorId": mentor_npc["id"], "rating": 4}
+            assert ergebnis == {"mentorId": erster["mentorId"], "rating": 4}
 
             bestehend = await hintergruende_repository.hole_mentor(cid, pc["id"])
             assert bestehend["rating"] == 4

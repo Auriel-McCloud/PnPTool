@@ -48,6 +48,8 @@ class KontaktResponse(BaseModel):
     # per eigenem Wunsch (siehe POST .../generieren), statt dass die KI alle
     # Kontakte schon bei der Erstellung festlegt.
     istBlankoKontakt: bool = False
+    # Blanko-Mentor: derselbe Beschreiben-Pfad, plus 20 EP je Punkt.
+    istMentor: bool = False
 
 
 class KontaktGmResponse(KontaktResponse):

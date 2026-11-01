@@ -144,6 +144,11 @@ KI-Call, Slot bleibt.
    (`chatOffen=true`) sofort. Spieler sieht Name/Bild/Messenger **erst nach
    „✓ Übernehmen“**.
 
+**01.11.2026:** Der Spieler beschreibt den Mentor in ◍ Kontakte
+(„Undefinierter Mentor“), nicht bei der Erstellung. 20 EP je Punkt
+gehen danach auf vorhandene Werte. Kein stilles Anhängen eines schon
+markierten Mentors.
+
 EP-Soll ist immer `20×N` (1→20 … 5→100). Achievement oder späteres +1
 → +20 EP, Plan weiter abarbeiten. Kein Umwürfeln; SL-Edits bleiben.
 

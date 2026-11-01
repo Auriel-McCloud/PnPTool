@@ -4,16 +4,12 @@ alle drei System-Hintergründe (siehe seed.py::SYSTEM_SCHLUESSEL).
 
 Schulden/Kredithai bleibt bewusst ein reiner Stub ohne sofortige KI-Füllung
 (Erstellung soll nicht auf einen LLM-Call warten und nicht extra kosten,
-wenn schon ein Hai da ist). Mentor UND Kontakte nutzen seit 11.10.2026
-(Marks Vorgabe) denselben vollen KI-Flow wie die Ideenschmiede-
-Charaktererstellung (`ki/routes.py::_idee_anlegen`, inkl. Tutorial-Shop-
-Einkauf) — Mentor sofort, Kontakte bewusst NICHT: die Hintergrund-Punkte
-legen nur leere Platzhalter an, der Spieler befüllt jeden erst per eigenem
-Wunsch, sobald er ihn im Spiel braucht (siehe kontakte/routes.py::
-kontakt_generieren).
+wenn schon ein Hai da ist). Kontakte und Mentor legen nur leere Platzhalter
+an — der Spieler beschreibt sie später in der Chatliste
+(kontakte/routes.py::kontakt_generieren). Mentor bekommt dabei 20 EP je Punkt.
 """
 
-from app.entities.repository import PERSON_FIELDS, create_node, list_nodes, update_node
+from app.entities.repository import PERSON_FIELDS, create_node, list_nodes
 from app.entities.schemas import PersonCreate
 from app.hintergruende import repository
 from app.hintergruende.kredithai import (
@@ -22,8 +18,6 @@ from app.hintergruende.kredithai import (
     schulden_beschreibung,
     schulden_punkte,
 )
-from app.hintergruende.mentor import bestehenden_mentor
-from app.ki.routes import _idee_anlegen as ki_charakter_generieren
 from app.kontakte import repository as kontakte_repository
 from app.rassen import repository as rassen_repository
 
@@ -86,26 +80,30 @@ async def mentor_nach_erstellung(
         return None
 
     bestehend = await repository.hole_mentor(campaign_id, person_id)
-    mentor_id = bestehend["mentorId"] if bestehend else None
-    if not mentor_id:
-        personen = await list_nodes("Person", PERSON_FIELDS, campaign_id)
-        npcs = [n for n in personen if n.get("personType") == "NPC"]
-        gefunden = bestehenden_mentor(npcs)
-        if gefunden:
-            mentor_id = gefunden["id"]
-        else:
-            prompt = (
-                f"Erzeuge einen Mentor-NPC für den Charakter {person_name}: "
-                "jemand, der mehr weiß und diesem Charakter bisweilen etwas "
-                "davon abgibt — passend zu dessen Konzept, Weg und Fertigkeiten."
-            )
-            erzeugt = await ki_charakter_generieren(campaign_id, "charakter", prompt)
-            mentor_id = erzeugt["id"]
-            await update_node("Person", PERSON_FIELDS, campaign_id, mentor_id, {"istMentor": True})
+    if bestehend:
+        await repository.setze_mentor(campaign_id, person_id, bestehend["mentorId"], rating)
+        return {"mentorId": bestehend["mentorId"], "rating": rating}
 
-    await repository.setze_mentor(campaign_id, person_id, mentor_id, rating)
-    await kontakte_repository.anlegen(campaign_id, person_id, mentor_id, stufe="GESEHEN", chat_offen=False)
-    return {"mentorId": mentor_id, "rating": rating}
+    # Kein sofortiger KI-Call (01.11.2026, wie Kontakte): der Spieler beschreibt
+    # den Mentor später in der Chatliste. Kein kampagnenweiter Wiederverwender —
+    # jeder beschreibt seinen eigenen.
+    stub = await create_node(
+        "Person",
+        PERSON_FIELDS,
+        campaign_id,
+        PersonCreate(
+            name="Undefinierter Mentor",
+            personType="NPC",
+            description="Noch nicht ausgearbeitet — wird befüllt, sobald der Spieler ihn beschreibt.",
+            istBlankoKontakt=True,
+            istMentor=True,
+            sichtbarkeit="GM",
+            erstellungAbgeschlossen=True,
+        ).model_dump(),
+    )
+    await repository.setze_mentor(campaign_id, person_id, stub["id"], rating)
+    await kontakte_repository.anlegen(campaign_id, person_id, stub["id"], stufe="GESEHEN", chat_offen=False)
+    return {"mentorId": stub["id"], "rating": rating}
 
 
 async def kontakte_nach_erstellung(campaign_id: str, person_id: str, kontakte_rating: int) -> list[str]:
