@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren, dritte Runde
+
+Mark: dieselben Erfolge für Zielzahl und Dauer, beides höchstens 3. Der
+Wahl-Satz ist ersetzt. Schusswaffe komplett, alles andere nur Upgrades.
+Nur im Kampf. Jeder Decker oder Neuroweaver der Party schaltet eigene
+Leute wieder an. Electronic Warfare kommt zur Tarnung dazu, Höhe offen.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren, zweite Runde
 
 Mark: Schalter an jeder Waffe, Default nach Typ, Typ-Map außer Schusswaffe
