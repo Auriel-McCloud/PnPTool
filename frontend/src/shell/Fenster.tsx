@@ -55,6 +55,7 @@ export function Fenster({
   kennung,
   ton,
   breit = false,
+  schmal = false,
   blitzt = false,
   onSchliessen,
   children,
@@ -72,6 +73,12 @@ export function Fenster({
    * die Punktreihen um.
    */
   breit?: boolean;
+  /**
+   * Schmaleres Fenster, wenn der Inhalt wenig Breite braucht — etwa
+   * Matrix-Navigation mit zwei Knöpfen. Die üblichen 680px lassen dort
+   * viel Leere. Listen (Brute Force) bleiben breit.
+   */
+  schmal?: boolean;
   /**
    * Kurzes rotes Aufleuchten des Rahmens — z.B. ein Fehlversuch beim
    * Tasten-Schloss. Einmaliger Puls pro `true`→`false`→`true`-Wechsel,
@@ -200,6 +207,7 @@ export function Fenster({
     "fn-fenster",
     gemessen ? "fn-fenster-auf" : "",
     breit ? "fn-fenster-breit" : "",
+    schmal && !breit ? "fn-fenster-schmal" : "",
     maximiert ? "fn-fenster-maximiert" : "",
     zieht ? "fn-fenster-zieht" : "",
     blitzt ? "fn-fenster-blitz" : "",

@@ -77,6 +77,12 @@
   width: min(1040px, calc(100vw - 32px));
 }
 
+/* Wenig Inhalt: nicht die vollen 680px. Steht vor der Handy-Regel, damit
+   das Blatt dort weiter bildschirmfüllend bleibt. */
+.fn-fenster-schmal {
+  width: min(440px, calc(100vw - 48px));
+}
+
 /* Maximiert: füllt praktisch den ganzen Bildschirm (mit Rand), unabhängig
    davon, wie das Fenster vorher gezogen wurde. !important noetig, weil die
    Lage sonst ueber die Inline-Variablen --fn-links/--fn-oben kommt. */

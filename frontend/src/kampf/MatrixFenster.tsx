@@ -99,7 +99,13 @@ export function MatrixFenster({
   }
 
   return (
-    <Fenster offen={offen} titel={fertigkeit} kennung={`matrix-${fertigkeit}`} onSchliessen={onSchliessen}>
+    <Fenster
+      offen={offen}
+      titel={fertigkeit}
+      kennung={`matrix-${fertigkeit}`}
+      schmal={fertigkeit === "Matrix-Navigation"}
+      onSchliessen={onSchliessen}
+    >
       <div className="mx">
         <div className="mx-pool-kachel">
           <span className="mx-pool-titel">Würfelpool</span>
@@ -143,8 +149,8 @@ export function MatrixFenster({
           <div className="mx-nav">
             <p>Schwierigkeitsgrad wird von der SL festgelegt.</p>
             <div className="mx-aktionen">
-              <button type="button" className="mx-ok" disabled={busy} onClick={() => senden(true)}>Erfolg</button>
-              <button type="button" disabled={busy} onClick={() => senden(false)}>Fehlschlag</button>
+              <button type="button" className="mx-nav-erfolg" disabled={busy} onClick={() => senden(true)}>Erfolg</button>
+              <button type="button" className="mx-nav-fehl" disabled={busy} onClick={() => senden(false)}>Fehlschlag</button>
             </div>
           </div>
         )}

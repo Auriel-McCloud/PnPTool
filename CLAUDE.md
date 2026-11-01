@@ -6,6 +6,10 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 Dieselben Knöpfe Kampf / Cyberkampf neben „Würfeln“, sobald `weg` Neuroweaver ist — auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools (Willenskraft-Klick und Matrix-Fenster wie vorher), Kampf die Nahkampf-Würfel und Waffen. Der alte Block unter den Waffen ist weg. Hat er zusätzlich ein Deck, stehen beide Gruppen untereinander. `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
 
+## Matrix-Navigation-Fenster schmaler (01.11.2026)
+
+Nur Matrix-Navigation: Fenster 440px statt 680px. Erfolg türkis, Fehlschlag magenta, beide groß. Andere Matrix-Aktionen bleiben breit. `Fenster` hat `schmal`. **Nie im Browser angeklickt.**
+
 ## Undefinierter Mentor in der Chatliste (01.11.2026)
 
 Mentor-Punkte legen einen Platz „Undefinierter Mentor“ in ◍ Kontakte. Erster Klick beschreibt, die KI legt den NPC an und gibt 20 EP je Punkt auf vorhandene Werte aus. Kein kampagnenweiter Wiederverwender mehr. `spawn.py`, `mentor_ep.py`, `Messenger.tsx`. **Nie im Browser angeklickt.**
