@@ -59,7 +59,7 @@ Gerät nötig, dieselbe Matrix-Präsenz wie beim NeuroWeaving.
 | Schleichen | Unbemerktes Eindringen, kaum Spuren, umgeht ICE |
 | Daten Verarbeiten | Große Datenmengen in Echtzeit durchsuchen/filtern/auswerten |
 | Kompilieren | Spontan eigene Programme/Effekte erschaffen |
-| **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. **Seit 01.11.2026 zusätzlich:** dieselbe Probe hebt das ICE der ganzen Party um die Erfolge, höchstens +3. Tarnung bleibt. Die 1–3 Runden vom Deaktivieren gelten hier nicht. |
+| **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. **Seit 01.11.2026 zusätzlich:** dieselbe Probe hebt das ICE der ganzen Party um +1 je 2 Erfolge, auch über das Maximum hinaus. Kein +3-Deckel mehr. Tarnung bleibt. Ob der Bonus im Kampf den Soforteffekt teilt oder bis zur ICE-Auffüllung hält, ist offen. |
 | **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. |
 
 ## Matrix-Verteidigung (I.C.E.)
@@ -72,6 +72,17 @@ kein Zugangsgerät; ein Deck allein nützt aber nichts ohne Commlink.
 
 **Neuroweaver: Fassung + Geistesschärfe** — siehe „Entwicklung", weicht bewusst
 vom Excel ab.
+
+**Im Kampf ist I.C.E. ein Pool, wie Gesundheit (01.11.2026).** Erfolge
+nehmen ihm 1:1 Schaden. Das Maximum bleibt. Jede Kampfrunde füllt er sich
+vollständig auf das Maximum auf, nicht am Zugwechsel. Zwei Angriffe in
+derselben Runde — zwei Decker, oder einer zweimal wegen Hot und
+Reflex-Booster — sehen den schon beschädigten Pool. Auf 0 geschlagen ist
+man in dieser Runde noch da und schaltbar (Schwelle 0). Das ist nicht die
+Zeile oben: ohne Commlink ist man offline und in der Matrix nicht
+angreifbar. Electronic Warfare kann das Maximum übersteigen, +1 je 2
+Erfolge. Der Bonus gilt für die ganze Party. Wie lange er im Kampf hält,
+ist offen, siehe Deaktivieren.
 
 ## Entwicklung
 
@@ -189,17 +200,23 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   SL sieht es.
 - **Der ICE-Wurf ist die ganze Probe**, auch gegen Party-Kollegen. Kein
   zusätzlicher Widerstandswurf.
+- **Verrechnung:** Netto-Erfolge, also Erfolge minus dem ICE vor diesem
+  Treffer. Das ist die Zahl für Ziele und Runden, höchstens 3. Unter 1
+  passiert nichts. Dieselben Erfolge nehmen dem Pool 1:1 Schaden, höchstens
+  bis 0. Überschuss schaltet auf demselben Treffer noch aus: ICE 4 und 6
+  Erfolge → Pool 0, bis zu 2 Ziele für 2 Runden. Der nächste Angriff in
+  derselben Runde sieht den Rest. Bei ICE 0 ist die Netto-Zahl die Erfolge
+  selbst.
 - **Electronic Warfare** kommt zur Tarnung dazu, ersetzt sie nicht. Dieselbe
-  Probe, ganze Party, Bonus = Erfolge, höchstens +3. Dauer und Radius
-  bleiben die der Tarn-Zeile, im Kampf also der Soforteffekt.
-
-- **Verrechnung:** Netto-Erfolge, also Erfolge minus ICE. Das ist die Zahl
-  für Ziele und Runden, höchstens 3. Unter 1 passiert nichts. Bei ICE 0
-  ist die Netto-Zahl die Erfolge selbst.
+  Probe, ganze Party, +1 je 2 Erfolge, auch über das Maximum hinaus. 1
+  Erfolg gibt +0. Der frühere Satz „Bonus = Erfolge, höchstens +3“ ist
+  ersetzt. Dauer und Radius der Tarnung bleiben. Ob der ICE-Bonus im Kampf
+  den Soforteffekt teilt oder bis zur Auffüllung hält, ist offen.
 
 ### Offene Achse
 
-Keine. Nicht gebaut.
+Wie lange hält der Electronic-Warfare-Bonus auf dem ICE-Pool im Kampf?
+Die Tarnung bleibt der Soforteffekt. Nicht raten, ob der Bonus mitgeht.
 
 ## Siehe auch
 

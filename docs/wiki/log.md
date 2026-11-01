@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | ICE-Pool und EW +1 je 2 Erfolge
+
+Mark: ICE nimmt im Kampf Schaden wie Gesundheit und füllt sich jede
+Kampfrunde vollständig auf. Zwei Angriffe in der Runde sehen den Rest.
+EW hebt das Party-ICE um +1 je 2 Erfolge, auch über dem Maximum. Der
++3-Deckel ist ersetzt. Offen nur, ob der Bonus im Kampf den Soforteffekt
+teilt. Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren: Netto-Erfolge
 
 Mark: die Zahl ist Erfolge minus ICE, höchstens 3, unter 1 passiert
