@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Neuroweaver-Hack: Willenskraft als ICE, Überschuss als Schlagschaden (01.11.2026)
+
+Im Kampf ist das ICE eines Neuroweavers seine restliche Willenskraft, nicht Fassung plus Geistesschärfe. Der Pool füllt sich nur bis zum unverbrauchten Stand, Electronic Warfare kommt obendrauf. Ihn schaltet man nicht: Erfolge über dem ICE werden Schlagschaden, ohne Deckel 3, ohne Rüstung. Ein Decker im Matrix-Hot wählt schalten (Deckel 3) oder denselben Überschuss als Schlagschaden. `matrix.py`, `MatrixFenster.tsx`, Kampfkarte zeigt den Pool. **Nie im Browser angeklickt.**
+
 ## Gehacktes Deck zieht von allein nach (01.11.2026)
 
 Kampfkarte und Charakterblatt fragen alle drei Sekunden, ob das Deck aus ist. Auf der Karte steht „aus“, auf dem Blatt verschwindet die Zeile. Beides kommt wieder, sobald die Sperre fällt — ohne Neuladen. `Kampfkarte.tsx`, `Charakterblatt.tsx`. **Nie im Browser angeklickt.**
@@ -3104,7 +3108,7 @@ dort weitergepflegt, hier nicht mehr).
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
-| 20 | Temporäres Deaktivieren (Decker/Neuroweaver): Fenster, ICE-Pool, Aufteilung, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Konsole wirft aus dem Drohnen-Hot, Neurolink aus beidem. Gehacktes Deck zieht auf Kampfkarte und Blatt von allein nach. Offen: Ki-Tama als eigene Hack-Zeile | **teilweise umgesetzt** (01.11.) | [[neuroweaving-decking]] |
+| 20 | Temporäres Deaktivieren (Decker/Neuroweaver): Fenster, ICE-Pool, Aufteilung, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Konsole wirft aus dem Drohnen-Hot, Neurolink aus beidem. Gehacktes Deck zieht auf Kampfkarte und Blatt von allein nach. Neuroweaver: restliche Willenskraft ist Kampf-ICE, Überschuss ungedeckelter Schlagschaden, nichts schalten. Hot-Decker: Wahl schalten oder Schlagschaden. Offen: Ki-Tama als eigene Hack-Zeile | **teilweise umgesetzt** (01.11.) | [[neuroweaving-decking]] |
 | 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon; verbrauchte Kachel verschwindet | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
 | 23 | Ki-Tamas und Rüstung von Ifrit und Shiva; Blizzard, Inferno, Feuer, Eis | **offen**, Notiz — Zuordnung nicht entschieden | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |

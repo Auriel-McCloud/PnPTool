@@ -293,6 +293,7 @@ export function Charakterblatt({
     let weg = false;
     let gesehen = false;
     let letzteDecks = "";
+    let letzterSchlag = -1;
     async function hol() {
       try {
         const stand = await kampfApi.matrixAus(campaignId, personId);
@@ -302,9 +303,11 @@ export function Charakterblatt({
           .map((e) => e.zielId)
           .sort()
           .join("|");
-        if (gesehen && decks !== letzteDecks) void neuLaden();
+        const schlag = stand.schlag ?? letzterSchlag;
+        if (gesehen && (decks !== letzteDecks || schlag !== letzterSchlag)) void neuLaden();
         gesehen = true;
         letzteDecks = decks;
+        letzterSchlag = schlag;
       } catch {
         // Kein Kampf, oder die Sperre ist nicht sichtbar — der Bogen gilt.
       }

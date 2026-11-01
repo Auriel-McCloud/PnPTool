@@ -3,10 +3,14 @@ from app.kampf.matrix import (
     aufteilung_gueltig,
     ew_bonus,
     ew_setzen,
+    ice_klemmen,
     ice_nach_treffer,
     navigation_trifft,
     netto,
     runde_auffuellen,
+    treffer_art,
+    ueberschuss,
+    willenskraft_rest,
     zahl_sichtbar,
 )
 
@@ -16,6 +20,29 @@ def test_netto_zieht_ice_ab_und_deckelt_bei_3():
     assert netto(9, 1) == 3
     assert netto(4, 4) == 0
     assert netto(2, 0) == 2
+
+
+def test_ueberschuss_ist_nicht_auf_3_gedeckelt():
+    assert ueberschuss(9, 1) == 8
+    assert ueberschuss(6, 4) == 2
+    assert ueberschuss(4, 4) == 0
+    assert willenskraft_rest(6, 2) == 4
+    assert willenskraft_rest(3, 5) == 0
+
+
+def test_ice_faellt_sofort_auf_das_maximum():
+    assert ice_klemmen(None, 4) == 4
+    assert ice_klemmen(6, 4) == 4
+    assert ice_klemmen(2, 4) == 2
+    assert ice_klemmen(0, 4) == 0
+
+
+def test_neuroweaver_nimmt_schaden_hot_decker_hat_die_wahl():
+    assert treffer_art("NEUROWEAVER", True) == "schaden"
+    assert treffer_art("NEUROWEAVER", False) == "schaden"
+    assert treffer_art("KEINER", True) == "wahl"
+    assert treffer_art("KEINER", False) == "schalten"
+    assert treffer_art("NEUROWEAVER", False, ist_drohne=True) == "schalten"
 
 
 def test_ice_nimmt_1_zu_1_schaden():

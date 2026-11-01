@@ -102,6 +102,10 @@
 }
 .mx-aktionen { display: flex; justify-content: space-between; gap: 0.5rem; }
 .mx-ok { border-color: var(--neon); color: var(--neon); }
+.mx-aktionen button.mx-schlag {
+  border-color: var(--signal);
+  color: var(--signal);
+}
 
 /* Navigation: zwei große Röhren, nicht zwei kleine Textknöpfe an den Enden. */
 .mx-nav p {

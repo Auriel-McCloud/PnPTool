@@ -1,7 +1,7 @@
 ---
 title: Willenskraft
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-11-01
 type: konzept
 tags: [willenskraft, magie, neuroweaving]
 sources: [../../regeln-neotopia.md, ../../../CLAUDE.md]
@@ -41,6 +41,9 @@ wird als Schaden abgezogen.
   Neuroweavers gegen Matrix-Angriffe — am 29.08.2026 (Tag 1) auf
   Fassung+Geistesschärfe umgestellt, weil sich Willenskraft ja gerade beim
   NeuroWeaving-Einsatz verbraucht (siehe [[neuroweaving-decking]] für Details).
+  **01.11.2026, nur im Kampf-Hack:** die restliche Willenskraft ist wieder das
+  ICE, der Pool füllt sich nur bis zum unverbrauchten Stand. Die Blatt-Zeile
+  bleibt Fassung + Geistesschärfe.
 - **09.2026 — Vom Wer zum Wodurch:** `CLAUDE.md`-Commit „Willenskraft: wodurch
   sie zurueckkommt statt wer sie zurueckgibt" — die Regelformulierung wurde
   präzisiert (nicht nur *wer* darf sie zurückgeben, sondern *wodurch* sie

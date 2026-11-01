@@ -6,11 +6,11 @@ import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
-from app.entities.repository import PERSON_FIELDS, get_node
-from app.items.repository import commlink_cyberwall
+from app.entities.repository import PERSON_FIELDS, get_node, update_node
+from app.items.repository import commlink_cyberwall, willenskraft_verlust
 from app.kampf import matrix, repository
 from app.kampf.matrix import leerer_stand
-from app.traits.bogen import ice_max
+from app.traits.bogen import ice_max, willenskraft_max
 from app.traits.repository import get_ratings_for_entity
 
 
@@ -70,18 +70,46 @@ async def party_ids(campaign_id: str, person_id: str) -> set[str]:
         return {r["id"] async for r in result}
 
 
-async def basis_ice(campaign_id: str, person_id: str) -> int:
+async def matrix_basis(campaign_id: str, person_id: str) -> dict:
+    """ICE-Grundwert ohne Electronic-Warfare. Neuroweaver: restliche Willenskraft."""
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
-        return 0
+        return {"wert": 0, "quelle": "geraet", "weg": "", "drohne": False}
+    drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    weg = person.get("weg") or "KEINER"
+    if weg == "NEUROWEAVER" and not drohne:
+        ratings = await get_ratings_for_entity(campaign_id, person_id)
+        chrom = await willenskraft_verlust(campaign_id, person_id)
+        maximum = willenskraft_max(
+            _werte(ratings), int(person.get("willenskraftBonus") or 0), chrom
+        )
+        rest = matrix.willenskraft_rest(maximum, int(person.get("willenskraftVerbraucht") or 0))
+        return {"wert": rest, "quelle": "willenskraft", "weg": weg, "drohne": False}
     ratings = await get_ratings_for_entity(campaign_id, person_id)
     wall = await commlink_cyberwall(campaign_id, person_id)
-    return ice_max(
-        person.get("weg") or "KEINER",
-        _werte(ratings),
-        wall,
-        bool(person.get("istDrohne")) or bool(person.get("istFahrzeug")),
-    )
+    return {
+        "wert": ice_max(weg, _werte(ratings), wall, drohne),
+        "quelle": "geraet",
+        "weg": weg,
+        "drohne": drohne,
+    }
+
+
+async def basis_ice(campaign_id: str, person_id: str) -> int:
+    return (await matrix_basis(campaign_id, person_id))["wert"]
+
+
+async def karten_stand(campaign_id: str, person_id: str, stand: dict, runde: int) -> dict:
+    """Was die Kampfkarte alle drei Sekunden holt: Pool und Schlagschaden."""
+    info = await matrix_basis(campaign_id, person_id)
+    bonus = matrix.aktiver_bonus(stand.get("ew") or {}, person_id, runde)
+    maximum = matrix.ice_maximum(info["wert"], bonus)
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    return {
+        "ice": aktuelles_ice(stand, person_id, maximum),
+        "iceMax": maximum,
+        "schlag": int((person or {}).get("schadenSchlag") or 0),
+    }
 
 
 async def ist_akteur(campaign_id: str, person_id: str) -> bool:
@@ -234,13 +262,27 @@ async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
 
 def aktuelles_ice(stand: dict, person_id: str, maximum: int) -> int:
     roh = (stand.get("ice") or {}).get(person_id)
-    if roh is None:
-        return maximum
-    return max(0, int(roh))
+    return matrix.ice_klemmen(None if roh is None else int(roh), maximum)
+
+
+def offen_loeschen(stand: dict, akteur_id: str) -> None:
+    (stand.get("offen") or {}).pop(akteur_id, None)
 
 
 def merke_ice(stand: dict, person_id: str, wert: int) -> None:
     stand.setdefault("ice", {})[person_id] = wert
+
+
+async def schlag_buchen(campaign_id: str, person_id: str, menge: int) -> int:
+    """Schlagschaden auf die Gesundheit, ohne Rüstung. Menge kommt vom Server, nicht vom Client."""
+    if menge <= 0:
+        return 0
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        return 0
+    neu = int(person.get("schadenSchlag") or 0) + menge
+    await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"schadenSchlag": neu})
+    return menge
 
 
 def gesehen(stand: dict, viewer_id: str) -> set[str]:

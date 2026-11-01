@@ -21,7 +21,36 @@ def leerer_stand() -> dict:
 
 def netto(erfolge: int, ice: int) -> int:
     """Erfolge minus ICE vor dem Treffer, höchstens 3. Unter 1 ist 0."""
-    return min(3, max(0, int(erfolge) - max(0, int(ice))))
+    return min(3, ueberschuss(erfolge, ice))
+
+
+def ueberschuss(erfolge: int, ice: int) -> int:
+    """Erfolge minus ICE vor dem Treffer. Kein Deckel. Unter 1 ist 0."""
+    return max(0, int(erfolge) - max(0, int(ice)))
+
+
+def willenskraft_rest(maximum: int, verbraucht: int) -> int:
+    """Was der Neuroweaver noch nicht selbst ausgegeben hat. Das ist sein ICE-Deckel."""
+    return max(0, int(maximum) - max(0, int(verbraucht)))
+
+
+def ice_klemmen(gespeichert: int | None, maximum: int) -> int:
+    """None heißt voll. Nie über dem aktuellen Maximum — ausgegebene Willenskraft fällt sofort weg."""
+    deckel = max(0, int(maximum))
+    if gespeichert is None:
+        return deckel
+    return min(deckel, max(0, int(gespeichert)))
+
+
+def treffer_art(weg: str, matrix_hot: bool, ist_drohne: bool = False) -> str:
+    """Neuroweaver: nur Schaden. Hot in der Matrix: Wahl. Sonst nur schalten."""
+    if ist_drohne:
+        return "schalten"
+    if weg == "NEUROWEAVER":
+        return "schaden"
+    if matrix_hot:
+        return "wahl"
+    return "schalten"
 
 
 def ice_nach_treffer(aktuell: int, erfolge: int) -> int:

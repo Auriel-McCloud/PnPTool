@@ -25,7 +25,7 @@ Datenquelle, siehe [[../../reference/INDEX.md]]).
 | Magiewert-Name | „Arete" | „Hexkraft" | 10.09.2026 |
 | Technomancer-Name | „Technomancer" | „Neuroweaver" | 10.09.2026 |
 | Gesundheit-Formel | 5 + Widerstandskraft | **6** + Widerstandsfähigkeit | 10.09.2026 |
-| Neuroweaver-Verteidigung | Willenskraft (Excel Zeile 99) | Fassung + Geistesschärfe | 29.08.2026 (Tag 1!) |
+| Neuroweaver-Verteidigung | Willenskraft (Excel Zeile 99) | Blatt: Fassung + Geistesschärfe. Im Kampf-Hack: restliche Willenskraft | 29.08.2026, Kampf 01.11.2026 |
 | Rüstung | Flacher Bonus, addiert | Kästchen + Durchlass, nutzt sich ab | 10.09.2026 |
 | Chrom-Willenskraftverlust-Rundung | Nicht spezifiziert | Rohwerte summieren, erst am Ende runden (Minimum 1) | 31.08.2026 |
 | Rassen | Fixe Tabelle im Excel | Baukasten (Katalog + Freigabe je Kampagne), Balance-Formel nachträglich gefunden | 11.09.2026 |
@@ -48,7 +48,9 @@ unter „Entwicklung" — hier nur der schnelle Überblick.
   [[../entities/neo4j-datenmodell#TraitDef-Umbenennen]].
 - **Neuroweaver-Verteidigung**: Willenskraft wird beim NeuroWeaving selbst
   verbraucht — hätte den Neuroweaver nach jeder eigenen Aktion verwundbarer
-  gemacht. Fassung+Geistesschärfe bleibt stabil. Mark hat das laut
+  gemacht. Fassung+Geistesschärfe bleibt die Blatt-Zeile. Im Kampf-Hack
+  (01.11.2026) ist die restliche Willenskraft wieder das ICE, siehe
+  [[../concepts/neuroweaving-decking]]. Mark hat das laut
   [[../../regeln-neotopia.md]] bereits am **29.08.2026**, also praktisch am
   ersten Projekttag, geändert — das Excel war zu diesem Zeitpunkt schon nicht
   mehr ganz aktuell.

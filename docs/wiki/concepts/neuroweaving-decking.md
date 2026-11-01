@@ -84,6 +84,16 @@ angreifbar. Electronic Warfare kann das Maximum übersteigen, +1 je 2
 Erfolge, ganze Party. Der Bonus hält 3 Kampfrunden. In diesen Runden füllt
 sich der Pool auf Maximum plus Bonus auf. Die Tarnung bleibt der Soforteffekt.
 
+**Neuroweaver im Kampf: die restliche Willenskraft ist das ICE (01.11.2026).**
+Nicht Fassung + Geistesschärfe — die bleibt die Zeile auf dem Blatt. Er kann
+Willenskraft ausgeben. Der Pool füllt sich nur bis zu dem Stand auf, den er
+noch nicht selbst verbraucht hat, Electronic Warfare kommt obendrauf. Gibt
+er mitten in der Runde aus, fällt das ICE sofort auf den neuen Deckel.
+Den Neuroweaver schaltet man nicht. Erfolge über dem ICE werden Schlagschaden,
+ohne Deckel 3 und ohne Rüstung. Ein Decker, der Hot in der Matrix ist, hat
+die Wahl: schalten (Deckel 3) oder denselben Überschuss ganz als Schlagschaden.
+Nicht beides.
+
 ## Entwicklung
 
 - **29.08.2026 (Tag 1 des Projekts!) — Neuroweaver-Verteidigung geändert.**
@@ -140,6 +150,13 @@ sich der Pool auf Maximum plus Bonus auf. Die Tarnung bleibt der Soforteffekt.
   Gleiche Mechanik, neuer Name: `magie.ts::MAGIE_HINWEISE.overclock` /
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
+- **01.11.2026 — Neuroweaver-Hack: Willenskraft ist das Kampf-ICE, Überschuss ist Schlagschaden.**
+  Mark: die Willenskraft verhält sich wie ICE, füllt sich aber nur bis zum
+  selbst verbrauchten Stand auf. Den Neuroweaver deaktiviert man nicht, die
+  Erfolge darüber werden direkt Schlagschaden, nicht auf 3 gedeckelt. Ein
+  Decker im Matrix-Hot hat die Wahl, schalten oder denselben Überschuss als
+  Schlagschaden. Blatt-ICE bleibt Fassung + Geistesschärfe.
+  `matrix.py`, `MatrixFenster.tsx`.
 - **01.11.2026 — Kampfkarte: Neuroweaver hat denselben Umschalter wie der Decker.**
   Neben „Würfeln“ die Knöpfe Kampf / Cyberkampf, sobald der Weg Neuroweaver
   ist, auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools
@@ -248,7 +265,7 @@ nicht der aktuelle Stand.
 
 ### Offene Achse
 
-Keine. Nicht gebaut.
+Ki-Tama als eigene Zeile in der Hack-Liste. Der Kampf-Ablauf selbst ist gebaut.
 
 ## Siehe auch
 

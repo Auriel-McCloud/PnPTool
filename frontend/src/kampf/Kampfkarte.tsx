@@ -11,6 +11,7 @@ import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { MatrixFenster } from "./MatrixFenster";
+import { OverclockFenster } from "./OverclockFenster";
 import { MatrixHotKnopf } from "./HotBleibenPopup";
 import { kampfApi } from "./api";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
@@ -120,7 +121,13 @@ export function Kampfkarte({
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
   // Angetippter Wert — für Hexkraft heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
-  const [matrix, setMatrix] = useState<{ name: string; pool: number } | null>(null);
+  const [matrix, setMatrix] = useState<{
+    name: string;
+    pool: number;
+    basis?: number;
+    willenskraft?: number;
+  } | null>(null);
+  const [overclockOffen, setOverclockOffen] = useState(false);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   const [erklaertRuestung, setErklaertRuestung] = useState(false);
   const [trefferOffen, setTrefferOffen] = useState(false);
@@ -133,6 +140,7 @@ export function Kampfkarte({
   // der beiden Blöcke ist gleichzeitig sichtbar, umschaltbar per Knopf.
   const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
   const [aus, setAus] = useState<{ zielId: string; art: string; runden: number }[]>([]);
+  const [pool, setPool] = useState<{ ice: number; iceMax: number } | null>(null);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -153,23 +161,30 @@ export function Kampfkarte({
     let weg = false;
     let gesehen = false;
     let letzteDecks = "";
+    let letzterSchlag = -1;
     async function hol() {
       try {
         const stand = await kampfApi.matrixAus(campaignId, personId);
         if (weg) return;
         setAus(stand.aus);
-        // Das Deck selbst steht in den Boni, nicht in der Waffenliste. Die
-        // Sperre ändert sich: Bogen neu holen, sonst bleibt er bis zum Reload.
+        if (typeof stand.ice === "number" && typeof stand.iceMax === "number") {
+          setPool({ ice: stand.ice, iceMax: stand.iceMax });
+        }
         const decks = stand.aus
           .filter((e) => e.art === "deck")
           .map((e) => e.zielId)
           .sort()
           .join("|");
-        if (gesehen && decks !== letzteDecks) void laden();
+        const schlag = stand.schlag ?? letzterSchlag;
+        if (gesehen && (decks !== letzteDecks || schlag !== letzterSchlag)) void laden();
         gesehen = true;
         letzteDecks = decks;
+        letzterSchlag = schlag;
       } catch {
-        if (!weg) setAus([]);
+        if (!weg) {
+          setAus([]);
+          setPool(null);
+        }
       }
     }
     void hol();
@@ -357,9 +372,19 @@ export function Kampfkarte({
             }
           />
           <span className="kk-hinweis">
-            {uebrigeWillenskraft} übrig — für erzwungene Erfolge oder wilde Magie
+            {uebrigeWillenskraft} übrig — für erzwungene Erfolge
+            {u.weg === "MAGIER" && ` oder ${magieBegriff(u.magieFlavor, "Wilde Magie")}`}
+            {u.weg === "NEUROWEAVER" && " oder Overclock"}
           </span>
         </div>
+        {pool && (
+          <div className="kk-spur">
+            <span className="kk-titel">
+              ICE {pool.ice}/{pool.iceMax}
+              {istNeuroweaver ? <span className="kk-hinweis"> · Willenskraft</span> : null}
+            </span>
+          </div>
+        )}
         <Zahl titel="Initiative" wert={u.initiative} wuerfel onKlick={onInitiativeKlick} />
         {/* Mark, 30.10.2026: direkt neben die Initiative statt weiter unten
             bei Rüstung/Waffen vergraben — im Gefecht trifft man zuerst auf
@@ -478,13 +503,22 @@ export function Kampfkarte({
                           hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
                           wuerfel
                           onKlick={() => {
-                            const pool = Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f);
-                            if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) setMatrix({ name: t.name, pool });
-                            else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
+                            const basis = wert(bogen, "NeuroWeaving") + f;
+                            const pool = Math.min(NEUROWEAVING_POOL_MAX, basis);
+                            if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) {
+                              setMatrix({ name: t.name, pool, basis, willenskraft: uebrigeWillenskraft });
+                            } else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
                           }}
                         />
                       );
                     })}
+                  <Zahl
+                    titel="Overclock"
+                    wert={uebrigeWillenskraft}
+                    hinweis={`Bonuswürfel bis zur Willenskraft — noch ${uebrigeWillenskraft}. Antippen, um sie auf eine Aktion zu legen.`}
+                    wuerfel
+                    onKlick={() => setOverclockOffen(true)}
+                  />
                 </div>
               </>
             )}
@@ -725,7 +759,26 @@ export function Kampfkarte({
         campaignId={campaignId}
         fertigkeit={matrix?.name ?? ""}
         pool={matrix?.pool ?? 0}
+        basis={matrix?.basis}
+        willenskraft={matrix?.willenskraft}
         onSchliessen={() => setMatrix(null)}
+      />
+
+      <OverclockFenster
+        offen={overclockOffen}
+        grundwert={wert(bogen, "NeuroWeaving")}
+        fertigkeiten={bogen.katalog
+          .filter((t) => t.category === "NeuroWeaving")
+          .map((t) => ({
+            name: t.name,
+            wert: bogen.werte.find((x) => x.traitDefId === t.id)?.rating ?? 0,
+          }))}
+        willenskraft={uebrigeWillenskraft}
+        onSchliessen={() => setOverclockOffen(false)}
+        onMatrix={(name, pool) => {
+          setOverclockOffen(false);
+          setMatrix({ name, pool });
+        }}
       />
 
       <Probe

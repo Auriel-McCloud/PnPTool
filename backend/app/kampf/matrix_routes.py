@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_zugang
+from app.ereignisprotokoll import hooks
 from app.kampf import matrix, matrix_store, repository
 from app.kampf.matrix import (
     DECK_EINSTIEG,
@@ -36,6 +37,7 @@ class Posten(BaseModel):
 class BestaetigenInput(BaseModel):
     zielPersonId: str
     posten: list[Posten] = []
+    schlag: bool = False
 
 
 async def _kampf_oder_404(campaign_id: str) -> dict:
@@ -59,7 +61,7 @@ async def aus_von(campaign_id: str, person_id: str, viewer: Viewer = Depends(get
         party = await matrix_store.party_ids(campaign_id, person_id)
         if viewer.person_id not in party:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht sichtbar")
-    return {"aus": matrix_store.aus_fuer(kampf["stand"], person_id)}
+    return {"aus": matrix_store.aus_fuer(kampf["stand"], person_id), **(await matrix_store.karten_stand(campaign_id, person_id, kampf["stand"], kampf["runde"]))}
 
 
 @router.get("")
@@ -79,9 +81,9 @@ async def uebersicht(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
         pid = t.get("personId")
         if not pid or t.get("zusatzzug"):
             continue
-        basis = await matrix_store.basis_ice(campaign_id, pid)
+        basis = (await matrix_store.matrix_basis(campaign_id, pid))
         bonus = matrix.aktiver_bonus(stand.get("ew") or {}, pid, runde)
-        maximum = matrix.ice_maximum(basis, bonus)
+        maximum = matrix.ice_maximum(basis["wert"], bonus)
         aktuell = matrix_store.aktuelles_ice(stand, pid, maximum)
         ist_party = pid in party
         zeige = matrix.zahl_sichtbar(ist_party, pid in sichtbar)
@@ -91,6 +93,7 @@ async def uebersicht(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
             "istParty": ist_party,
             "ice": aktuell if zeige else None,
             "iceMax": maximum if zeige else None,
+            "iceArt": basis["quelle"] if zeige else None,
             "klickbar": zeige and pid != ich,
             "aus": matrix_store.aus_fuer(stand, pid) if ist_party or viewer.role == "GM" else [],
         })
@@ -151,17 +154,35 @@ async def treffer(campaign_id: str, body: TrefferInput, viewer: Viewer = Depends
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nicht sich selbst")
     if body.zielPersonId not in party and body.zielPersonId not in matrix_store.gesehen(stand, ich):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "ICE noch nicht gesehen")
-    basis = await matrix_store.basis_ice(campaign_id, body.zielPersonId)
+    info = await matrix_store.matrix_basis(campaign_id, body.zielPersonId)
+    zustand = await repository.hot_lesen(campaign_id, body.zielPersonId)
+    art = matrix.treffer_art(info["weg"], zustand["matrixHot"], info["drohne"])
     bonus = matrix.aktiver_bonus(stand.get("ew") or {}, body.zielPersonId, kampf["runde"])
-    maximum = matrix.ice_maximum(basis, bonus)
+    maximum = matrix.ice_maximum(info["wert"], bonus)
     vorher = matrix_store.aktuelles_ice(stand, body.zielPersonId, maximum)
     nachher = matrix.ice_nach_treffer(vorher, body.erfolge)
-    punkte = matrix.netto(body.erfolge, vorher)
+    schlag = matrix.ueberschuss(body.erfolge, vorher)
+    punkte = 0 if art == "schaden" else matrix.netto(body.erfolge, vorher)
     matrix_store.merke_ice(stand, body.zielPersonId, nachher)
-    stand.setdefault("offen", {})[ich] = {"zielPersonId": body.zielPersonId, "punkte": punkte}
+    stand.setdefault("offen", {})[ich] = {
+        "zielPersonId": body.zielPersonId,
+        "punkte": punkte,
+        "schlag": schlag,
+        "art": art,
+    }
     await matrix_store.speichere(campaign_id, stand)
-    ziele = await matrix_store.schaltbare(campaign_id, body.zielPersonId) if punkte else []
-    return {"iceVorher": vorher, "iceNachher": nachher, "punkte": punkte, "ziele": ziele}
+    ziele = []
+    if art != "schaden" and punkte:
+        ziele = await matrix_store.schaltbare(campaign_id, body.zielPersonId)
+    return {
+        "iceVorher": vorher,
+        "iceNachher": nachher,
+        "punkte": punkte,
+        "schlag": schlag,
+        "art": art,
+        "quelle": info["quelle"],
+        "ziele": ziele,
+    }
 
 
 @router.post("/bestaetigen")
@@ -169,6 +190,35 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
     ich = await _akteur(campaign_id, viewer)
     kampf = await _kampf_oder_404(campaign_id)
     stand = kampf["stand"]
+    offen = (stand.get("offen") or {}).get(ich) or {}
+    if offen.get("zielPersonId") != body.zielPersonId:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Zuerst die Probe")
+    art = offen.get("art") or "schalten"
+    if body.schlag:
+        if art not in ("schaden", "wahl"):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Der ist nicht hot")
+        menge = int(offen.get("schlag") or 0)
+        if menge < 1:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein Überschuss")
+        gebucht = await matrix_store.schlag_buchen(campaign_id, body.zielPersonId, menge)
+        if gebucht < 1:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+        matrix_store.offen_loeschen(stand, ich)
+        await matrix_store.speichere(campaign_id, stand)
+        await hooks.kampf_treffer(
+            campaign_id,
+            art="TREFFER",
+            ziel_person_id=body.zielPersonId,
+            angreifer_person_id=ich,
+            kampf_id=kampf["id"],
+            runde=kampf["runde"],
+            hp_art="schlag",
+            hp_menge=gebucht,
+            kaestchen_schaden=0,
+        )
+        return {"schlag": gebucht}
+    if art == "schaden":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Den Neuroweaver schaltet man nicht")
     katalog = {z["id"]: z for z in await matrix_store.schaltbare(campaign_id, body.zielPersonId)}
     gewaehlt = []
     for posten in body.posten:
@@ -176,9 +226,6 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
         if ziel is None:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Das lässt sich dort nicht schalten")
         gewaehlt.append({**ziel, "runden": posten.runden})
-    offen = (stand.get("offen") or {}).get(ich) or {}
-    if offen.get("zielPersonId") != body.zielPersonId:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Zuerst die Probe")
     if not matrix.aufteilung_gueltig(int(offen.get("punkte") or 0), [p.runden for p in body.posten]):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Mehr Runden als Punkte")
     matrix_store.schalte(stand, body.zielPersonId, ich, gewaehlt)
@@ -186,6 +233,7 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
         if ziel["art"] == "konsole":
             ids = await matrix_store.drohnen_fallen(campaign_id, body.zielPersonId)
             matrix_store.merke_sprung(stand, body.zielPersonId, ids)
+    matrix_store.offen_loeschen(stand, ich)
     await matrix_store.speichere(campaign_id, stand)
     await matrix_store.hot_wegen_aus(campaign_id, body.zielPersonId)
     return {"aus": matrix_store.aus_fuer(stand, body.zielPersonId)}

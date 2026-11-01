@@ -96,6 +96,7 @@ export interface MatrixZeile {
   istParty: boolean;
   ice: number | null;
   iceMax: number | null;
+  iceArt?: "willenskraft" | "geraet" | null;
   klickbar: boolean;
   aus?: { id: string; name: string; runden: number }[];
 }
@@ -115,6 +116,9 @@ export interface MatrixTreffer {
   iceVorher: number;
   iceNachher: number;
   punkte: number;
+  schlag: number;
+  art: "schaden" | "wahl" | "schalten";
+  quelle: "willenskraft" | "geraet";
   ziele: MatrixZiel[];
 }
 
@@ -174,7 +178,7 @@ export const kampfApi = {
     api.post<Kampf>(`${basis(cid)}/amzug`, { teilnehmerId }),
   matrix: (cid: string) => api.get<MatrixUebersicht>(`${basis(cid)}/matrix`),
   matrixAus: (cid: string, personId: string) =>
-    api.get<{ aus: { zielId: string; name: string; art: string; runden: number }[] }>(
+    api.get<{ aus: { zielId: string; name: string; art: string; runden: number }[]; ice?: number; iceMax?: number; schlag?: number }>(
       `${basis(cid)}/matrix/aus/${personId}`,
     ),
   matrixNavigation: (cid: string, erfolge: number) =>
@@ -183,8 +187,12 @@ export const kampfApi = {
     api.post<{ bonus: number }>(`${basis(cid)}/matrix/electronic-warfare`, { erfolge }),
   matrixTreffer: (cid: string, zielPersonId: string, erfolge: number, fertigkeit: string) =>
     api.post<MatrixTreffer>(`${basis(cid)}/matrix/treffer`, { zielPersonId, erfolge, fertigkeit }),
-  matrixBestaetigen: (cid: string, zielPersonId: string, posten: { id: string; runden: number }[]) =>
-    api.post(`${basis(cid)}/matrix/bestaetigen`, { zielPersonId, posten }),
+  matrixBestaetigen: (
+    cid: string,
+    zielPersonId: string,
+    posten: { id: string; runden: number }[],
+    schlag = false,
+  ) => api.post(`${basis(cid)}/matrix/bestaetigen`, { zielPersonId, posten, schlag }),
   matrixAn: (cid: string, eintragId: string) =>
     api.post(`${basis(cid)}/matrix/reaktivieren/${eintragId}`),
 };
