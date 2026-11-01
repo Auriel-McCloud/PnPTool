@@ -1,9 +1,9 @@
 ---
 title: NeuroWeaving und Decking
 created: 2026-09-18
-updated: 2026-09-22
+updated: 2026-11-01
 type: konzept
-tags: [neuroweaving, versionsgeschichte, widerspruch]
+tags: [neuroweaving, versionsgeschichte, widerspruch, geplant]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
 status: aktuell
 ---
@@ -130,8 +130,78 @@ vom Excel ab.
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
 
+## Noch nicht gebaut: temporäres Deaktivieren (teilweise entschieden)
+
+Mark, 01.11.2026 nachts: Decker und Neuroweaver sollen Waffen oder
+Waffen-Upgrades temporär deaktivieren können — „damit wären sie wirklich
+nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
+`aktuell` für die bestehenden Regeln.
+
+### Skizze (seine Worte, noch keine Regel)
+
+- **Nahkampf:** die Waffe funktioniert weiter, nur die Zusatzfunktionen
+  fallen aus.
+- **Schusswaffen** und **Cyberware-Augments** können deaktiviert werden.
+- **Decks anderer Decker** oder **Riggerkonsolen:** der betroffene Spieler
+  verliert temporär den Zugriff.
+- **Oberfläche:** hat er den Wurf gegen das ICE geschafft, sieht er, was er
+  deaktivieren könnte, tippt es an, und es verschwindet temporär.
+- **Dauer:** 1–3 Runden, je nachdem wie gut gewürfelt wurde.
+- **Pro Waffe**, nicht pauschal an der Person. Ein deaktivierter Bogen
+  funktioniert weiter.
+- **Electronic Warfare** könnte das ICE der eigenen Party erhöhen. Vorschlag,
+  die Tarn-Zeile oben bleibt stehen.
+- **Eigene Party-Kollegen** darf man hacken ([[../entities/party-feature]]).
+  Was man abschaltet, muss man wieder aktivieren können.
+- **Kein ICE**, Nachtfassung: Objekte und Upgrades ohne Vor-Hack. Im Gespräch
+  danach korrigiert, siehe unten. Die Zeile „I.C.E. 0 = offline, Person nicht
+  angreifbar“ bleibt für den Matrix-Angriff auf die Person stehen.
+
+### Entschieden 01.11.2026 (Gespräch, nicht gebaut)
+
+- **Schalter an jeder Waffe:** komplett aus oder nur Upgrades. Default hängt
+  am Typ. Schusswaffe, fest: Default komplett aus — nicht mehr schießen,
+  keine Upgrades, keine Ki-Tama-Skills. Welche anderen Typen welchen Default
+  haben, hat „nach Typ“ nicht ausbuchstabiert. Die Nacht-Skizze (Nahkampf
+  und Bogen behalten die Grundfunktion) ist die naheliegende Map, nicht
+  bestätigt.
+- **Nur-Upgrades und Ki-Tama:** hängt an der Waffe, Default aus. Komplett-Aus
+  killt Ki-Tama-Skills immer.
+- **Cyberware-Augments** = montierte Werkbank-Upgrades
+  ([[augments-ausruestung]]) und Körper-Cyberware ([[cyberware-bioware]]).
+  Bioware nicht.
+- **Dieselbe Ansicht** für Decker und Neuroweaver. KI nicht.
+- **Kein ICE:** doch ein Wurf, für die Anzahl. Die Zwischenfassung „kein
+  Wurf, Zeug geht einfach aus“ ist damit vom Tisch.
+- **Deck oder Riggerkonsole:** Zugriff weg. Schon gesprungene Drohnen fallen
+  sofort raus ([[drohnen-fahrzeuge]]).
+- **Ausgabe der Erfolge, zwei Sätze, nicht zusammengezogen.** Auswahl: dieselben
+  Erfolge setzen Zielzahl und Dauer, Dauer deckelt bei 3, Ziele nicht.
+  Freitext, mit Nachdruck: er wählt zwischen Anzahl der ausfallenden Objekte
+  oder für wie viele Runden sie ausfallen. Welche der beiden die Regel ist,
+  ist offen. Nicht eine davon zur Regel erheben.
+
+### Offene Achsen — nicht raten
+
+1. Ausgabe: Wahl (Anzahl oder Runden) oder dieselben Erfolge für beides?
+   Dauer-Deckel 3 und ungedeckelte Zielzahl gelten nur, soweit er sie
+   behält.
+2. Default-Map der Waffentypen außer der Schusswaffe.
+3. Welche Probe, gegen wessen ICE, welche Fertigkeit? Party-ICE über
+   Electronic Warfare bleibt ein Vorschlag. Die Tarn-Zeile oben bleibt.
+4. Nur im Kampf ([[kampf-und-initiative]]), oder auch außerhalb?
+5. Wer schaltet bei eigenen Leuten wieder an? Weiß das Ziel Bescheid?
+   Hebt sich ein Feind-Effekt von selbst auf?
+6. Widerstand zusätzlich zum ICE-Wurf?
+
+Keine Datenmodell-Antwort, bis diese Achsen besprochen sind.
+
 ## Siehe auch
 
 - [[magie-hexkraft]] — der exklusive Gegenweg
 - [[willenskraft]] — gemeinsame Ressource beider Wege
 - [[../entities/neo4j-datenmodell]] — TraitDef-Umbenennungs-Fallstrick im Detail
+- [[augments-ausruestung]] — montierte Upgrades
+- [[cyberware-bioware]] — Körper-Cyberware, Bioware ausgenommen
+- [[drohnen-fahrzeuge]] — Riggerkonsole und schon gesprungene Drohnen
+- [[kampf-und-initiative]] — Runden, falls die Dauer nur im Kampf gilt

@@ -3084,6 +3084,9 @@ dort weitergepflegt, hier nicht mehr).
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
+| 20 | Temporäres Deaktivieren (Decker/Neuroweaver): Schalter an jeder Waffe, Schuss-Default komplett inkl. Ki-Tama; Upgrades und Körper-Cyberware, keine Bioware; gleiche Ansicht; kein ICE doch ein Wurf; Konsole weg, Drohnen fallen sofort. Offen: Ausgabe der Erfolge (Wahl oder beides), Typ-Defaults, Probe, EW, Reaktivieren | **teilweise entschieden, nicht gebaut** (01.11.) | [[neuroweaving-decking]] Abschnitt „Noch nicht gebaut“ |
 | 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon; verbrauchte Kachel verschwindet | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
+| 23 | Ki-Tamas und Rüstung von Ifrit und Shiva; Blizzard, Inferno, Feuer, Eis | **offen**, Notiz — Zuordnung nicht entschieden | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
+| 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
 

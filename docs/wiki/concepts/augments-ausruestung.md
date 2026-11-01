@@ -579,6 +579,13 @@ nicht. Sind alle eigenen Ki-Tamas in dem Zustand, verschwindet der ganze
 Abschnitt. Solange der Critter noch dabei ist, bleibt die Kachel (Runden,
 Kampfkarte). Fehlwurf ist nicht verbraucht, der Knopf bleibt.
 
+**Ifrit und Shiva — offen (01.11.2026, Notiz fürs nächste Gespräch).** Mark,
+wörtlich: „Blizzard inferno Feuer Eis, KI tamatas Rüstung von ifrit und
+Shiva“. Nichts davon ist entschieden oder gebaut. Ob Blizzard/Eis zu Shiva
+und Inferno/Feuer zu Ifrit gehören, ob das Ki-Tama-Namen, Schadensarten oder
+beides sind, und ob die Rüstung eigene Gegenstände sind oder an der
+Beschwörung hängen, bleibt offen. Kein Datenmodell, bis das klar ist.
+
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
 Mark direkt nach Korrektur 6: **"ist jetzt sogar noch schlimmer... ich

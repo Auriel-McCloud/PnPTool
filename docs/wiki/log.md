@@ -3,6 +3,26 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren, zweite Runde
+
+Mark: Schalter an jeder Waffe, Default nach Typ, Typ-Map außer Schusswaffe
+offen. Ki-Tama im Nur-Upgrades-Modus hängt an der Waffe, Default aus. Kein
+ICE ist doch ein Wurf. Konsole weg, gesprungene Drohnen fallen sofort.
+Ausgabe der Erfolge: zwei Sätze, nicht zusammengezogen (Wahl oder beides).
+Siehe [[concepts/neuroweaving-decking]].
+
+## [2026-11-01] notiz | Critter und NPCs kopieren, offen
+
+Mark will Critter und NPCs kopieren können, für 0815-Mobs. Was mitkopiert
+wird, ist offen. Personen haben keinen Kopier-Weg, Gegenstands-Vorlagen
+schon — nicht verwechseln. Siehe [[entities/neo4j-datenmodell]].
+
+## [2026-11-01] notiz | Ifrit/Shiva, Blizzard/Inferno/Feuer/Eis, offen
+
+Mark: Ki-Tamas und Rüstung von Ifrit und Shiva, dazu Blizzard, Inferno,
+Feuer, Eis. Zuordnung und Datenmodell offen. Siehe
+[[concepts/augments-ausruestung]].
+
 ## [2026-11-01] gebaut | Undefinierter Kontakt in der Chatliste
 
 Leere Plätze aus dem Kontakte-Hintergrund stehen unter ◍ Kontakte, nicht

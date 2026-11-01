@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-10-31 | Seiten: 36
+> Zuletzt aktualisiert: 2026-11-01 | Seiten: 36
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -27,13 +27,13 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.); Hintergrund-Baukasten entschieden 10.10. |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.); erster Gratis-Kauf auch „alle Typen“, nur einmal (24.10.) |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären 5→6 (23.10.), Wilde Magie, Häretiker-Flavor (24.09.) |
-| [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), Erweiterung auf 6 Skills (22.09.), Overclock statt Wilde Magie, Pool-Deckel 10→12 |
+| [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), 6 Skills (22.09.), Overclock, Pool-Deckel 12; Deaktivieren teilweise entschieden (01.11.): Schalter an jeder Waffe, Schuss-Default komplett inkl. Ki-Tama; Upgrades+Körper-Cyberware, keine Bioware; gleiche Ansicht Decker und Neuroweaver; kein ICE doch ein Wurf; Konsole weg, Drohnen fallen sofort. Offen: Ausgabe Erfolge (Wahl oder beides), Typ-Defaults, Probe, EW |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen mit Ausrüstungsbonus, Waffen-Skill, Schaden, Parade-Bonus nur an der Waffe (31.10.) |
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster |
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
 | [[concepts/drohnen-fahrzeuge]] | Drohne/Fahrzeug als Person-Knoten. Umbau schreibt Attributnamen aus, Punkte darunter (31.10.). Charakterblatt zeigt nur Fertigkeiten mit Punkten. Spieler setzt das Bild der eigenen Drohne (31.10.). |
-| [[concepts/augments-ausruestung]] | **Gebaut (29.10.2026):** Burgermenü "Werkbank" (Reparatur + Augments) — montierbare Boni (Zielfernrohr & Co.) für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug, `upgradeSlots` 0-6, Maker/Handwerk-Probe zum Montieren/Demontieren, Patzer macht defekt, Reparatur wie Rüstung/Drohne. Ki-Tama-Beschwörung einmal pro Kampf gebaut (01.11.): Fehlwurf frei, Patzer verbraucht den Ruf. Verbrauchte Kachel verschwindet statt Hinweistext |
+| [[concepts/augments-ausruestung]] | **Gebaut (29.10.2026):** Burgermenü "Werkbank" (Reparatur + Augments) — montierbare Boni (Zielfernrohr & Co.) für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug, `upgradeSlots` 0-6, Maker/Handwerk-Probe zum Montieren/Demontieren, Patzer macht defekt, Reparatur wie Rüstung/Drohne. Ki-Tama-Beschwörung einmal pro Kampf gebaut (01.11.): Fehlwurf frei, Patzer verbraucht den Ruf. Verbrauchte Kachel verschwindet statt Hinweistext. Offen: Ki-Tamas und Rüstung von Ifrit und Shiva, Blizzard/Inferno/Feuer/Eis |
 | [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel; Plan-Autosteigerung für NPCs entschieden 10.10. (nicht Resteverwertung) |
 | [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.), Shop-Frontend Phase 1+2: physisch/digital, Rarity-Rahmen, Bestellungen, KI-Alltagsgegenstand-Erzeugung mit Waffen-Ausschluss (24.09.), Geld-Weitergabe/Credstick geplant (26.09.) |
 
@@ -41,7 +41,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 
 | Seite | Zusammenfassung |
 |---|---|
-| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick; VERBINDUNG seit 01.10. per PATCH (Typ/Sichtbarkeit); Rechtsklick im Beziehungsgraphen öffnet Objekt oder Kante (23.10.); SpielerNotiz privat seit 02.10.; `_BOGEN_DEFAULTS` für Tutorial-Shop-Felder (10.10., Ideenschmiede) |
+| [[entities/neo4j-datenmodell]] | Node-/Beziehungstypen, TraitDef-Umbenennen-Fallstrick; VERBINDUNG seit 01.10. per PATCH (Typ/Sichtbarkeit); Rechtsklick im Beziehungsgraphen öffnet Objekt oder Kante (23.10.); SpielerNotiz privat seit 02.10.; `_BOGEN_DEFAULTS` für Tutorial-Shop-Felder (10.10., Ideenschmiede). Offen (01.11.): Critter und NPCs kopieren für 0815-Mobs |
 | [[entities/architektur-drei-ebenen]] | Regelsystem→Kampagne→Ideenschmiede, fertig 12.09. |
 | [[entities/mitteilungen-system]] | SL-Popups, kein Absender, WebSocket+Reconnect, Warnfarbe offen |
 | [[entities/kontakte-messenger]] | Persona-5-Messenger, Stufe vs. chatOffen; leere Plätze als „Undefinierter Kontakt“ in derselben Liste (01.11.) |

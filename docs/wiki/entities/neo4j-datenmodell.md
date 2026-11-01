@@ -126,6 +126,22 @@ kommen aus der Liste `GET /verbindungen`, nicht aus dem Canvas. Der Graph zeichn
 Fenster zu ist, nicht bei jedem Feld-Speichern. **Nie im Browser
 angeklickt.**
 
+## Noch nicht gebaut: Critter und NPCs kopieren (offen)
+
+Mark, 01.11.2026: Critter und NPCs kopieren können, für 0815-Mobs. Idee für
+das nächste Gespräch, nichts entschieden, nichts gebaut. Personen haben
+heute keinen Kopier-Weg. Gegenstands-Vorlagen kopieren schon
+(`assign_copy`) — das ist ein anderes Ding, nicht diese Notiz.
+
+Offen, nicht raten:
+
+- Nur die SL, und nur Critter plus NPCs — PCs hat er nicht genannt.
+- Was mitkommt: Bogen, Bild, Inventar, Beziehungen, Ki-Tama-Bindung, oder
+  nur der nackte Charakter? Eine Kopie muss ein eigener Knoten sein, sonst
+  stirbt das Original mit dem Mob.
+- Name: Durchzählen wie bei doppelten Kampfteilnehmern, oder die SL benennt
+  selbst?
+
 ## Siehe auch
 
 - [[architektur-drei-ebenen]] — wie Regelsystem/Campaign/Ideenschmiede sich im Graph verschachteln
