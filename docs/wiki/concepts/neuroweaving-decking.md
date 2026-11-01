@@ -60,7 +60,7 @@ Gerät nötig, dieselbe Matrix-Präsenz wie beim NeuroWeaving.
 | Daten Verarbeiten | Große Datenmengen in Echtzeit durchsuchen/filtern/auswerten |
 | Kompilieren | Spontan eigene Programme/Effekte erschaffen |
 | **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. **Seit 01.11.2026 zusätzlich:** dieselbe Probe hebt das ICE der ganzen Party um +1 je 2 Erfolge, auch über das Maximum hinaus. Kein +3-Deckel mehr. Tarnung bleibt der Soforteffekt. Der ICE-Bonus hält 3 Kampfrunden und füllt sich in diesen Runden mit auf, auch über dem Maximum. |
-| **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. |
+| **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. **Seit 01.11.2026 zusätzlich:** macht der Decker oder Neuroweaver das zuerst, sieht er danach das ICE der Gegner. Das ICE der eigenen Party sieht er immer. Ob der Klick reicht oder die Probe, und wie lange die Sicht hält, ist offen. |
 
 ## Matrix-Verteidigung (I.C.E.)
 
@@ -179,20 +179,30 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   ([[augments-ausruestung]]) und Körper-Cyberware ([[cyberware-bioware]]).
   Bioware nicht.
 - **Dieselbe Ansicht** für Decker und Neuroweaver. KI nicht.
-- **Kein ICE:** Schwelle 0, der Wurf findet statt, Erfolge zählen, Deckel
-  bleibt 3 und 3. Die Zwischenfassung „kein Wurf“ ist vom Tisch.
+- **Kein ICE:** Schwelle 0, der Wurf findet statt, Erfolge zählen, das
+  Budget bleibt höchstens 3. Die Zwischenfassung „kein Wurf“ ist vom Tisch.
 - **Deck oder Riggerkonsole:** Zugriff weg. Schon gesprungene Drohnen fallen
   sofort raus ([[drohnen-fahrzeuge]]).
-- **Ausgabe:** dieselben Erfolge für Zielzahl und Dauer, beides höchstens 3.
-  Der frühere Satz „Wahl zwischen Anzahl oder Runden“ ist ersetzt.
-  Deckel bestätigt: höchstens 3 Ziele und höchstens 3 Runden, also höchstens
-  9. „Höchstens“ heißt bis zu, nicht Pflicht, alle Slots zu verbrauchen.
+- **Ausgabe:** Netto ist ein Punktebudget, höchstens 3. Pro Ziel wählt er
+  1, 2 oder 3 Runden, das kostet so viele Punkte. Übrige Punkte verfallen.
+  Der Satz „dieselben Erfolge für Zielzahl und Dauer, höchstens 9“ ist
+  ersetzt. ICE 4 und 6 Erfolge → Pool 0, 2 Punkte frei, nicht automatisch
+  2 Ziele für 2 Runden.
 - **Nur im Kampf** ([[kampf-und-initiative]]). Eine Runde ist eine
   Kampfrunde. Außerhalb nicht.
-- **Einstieg:** Klick auf Brute Force oder Schleichen startet das
-  Deaktivieren, Wurf gegen das ICE des Ziels. Klick auf Electronic Warfare
-  ist die andere Aktion (Tarnung plus Party-ICE), nicht die Liste.
-  Daten Verarbeiten, Kompilieren und Matrix-Navigation starten das nicht.
+- **Einstieg:** Klick auf Brute Force oder Schleichen öffnet ein
+  Commlink-Fenster mit allen Kampfteilnehmern, Drohnen inklusive, und
+  ihrem ICE. Party-ICE steht immer. Gegner-ICE nur nach
+  Matrix-Navigation. Klick auf ein Ziel: das Fenster zeigt den Würfelpool
+  und nimmt die Erfolge entgegen, leeres Feld, nicht mit 0 vorbefüllt.
+  Electronic Warfare ist die andere Aktion, nicht diese Liste. Daten
+  Verarbeiten und Kompilieren starten das nicht.
+- **Zweites Fenster:** nur wenn Netto mindestens 1 ist, also das ICE auf 0
+  und Überschuss da. Darin die schaltbaren Dinge, je ein Schalter für 1,
+  2 und 3 Runden, und die freien Punkte. Bestätigen übernimmt die
+  Schalter. Zurücksetzen verwirft nur die Schalter. Der ICE-Schaden aus
+  der eingetragenen Probe bleibt. Exakt auf 0 ohne Überschuss: kein
+  zweites Fenster.
 - **Wieder anschalten, eigene Leute:** jeder Decker oder Neuroweaver der
   Party ([[../entities/party-feature]]). Nicht nur der Verursacher. Das
   Ziel selbst hat er nicht genannt.
@@ -216,7 +226,10 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
 
 ### Offene Achse
 
-Keine. Nicht gebaut.
+Matrix-Navigation und die Teilnehmerliste. Party-ICE ist immer sichtbar.
+Gegner-ICE nur nach Navigation. Offen, nicht raten: reicht der Klick oder
+die Probe, wie lange die Sicht hält, und steht ein ungesehener Gegner in
+der Liste ohne Zahl und ohne Klick.
 
 ## Siehe auch
 

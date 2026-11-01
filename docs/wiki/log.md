@@ -3,6 +3,16 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren-Fenster und Punktebudget
+
+Mark: Brute Force oder Schleichen öffnet die Teilnehmer mit ICE. Probe
+eintragen, bei Netto ab 1 das zweite Fenster mit Schaltern 1/2/3 und
+freien Punkten. Bestätigen übernimmt, Zurücksetzen verwirft nur die
+Schalter. „Dieselben Erfolge für Ziele und Runden, höchstens 9“ ist
+ersetzt. Party-ICE immer sichtbar, Gegner-ICE nach Matrix-Navigation.
+Offen: Wurf und Dauer der Sicht, ungesehene Gegner. Siehe
+[[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | EW-Bonus hält 3 Runden
 
 Mark: der Electronic-Warfare-Bonus auf dem ICE hält 3 Kampfrunden. In
