@@ -111,7 +111,19 @@ export function DeineBeschwoerungen({
     };
   }, [campaignId, probeZiel?.beschworenerCritterId]);
 
-  if (kiTamas.length === 0) return null;
+  // Verbraucht und der Critter ist nicht mehr dabei: die Kachel würde nur
+  // „Diesen Kampf schon gerufen“ zeigen. Mark (01.11.2026): die Beschwörung
+  // soll für den restlichen Kampf einfach verschwinden, sonst frisst die
+  // tote Kachel Platz — ein Rigger mit Drohnen und Ki-Tama hat beides
+  // untereinander. Solange der Critter noch in der Initiative steht, bleibt
+  // die Kachel: Runden und Kampfkarte. Fehlwurf ist nicht verbraucht, der
+  // Knopf bleibt.
+  const sichtbar = kiTamas.filter((item) => {
+    const dabei = kampf?.teilnehmer.some((t) => t.personId === item.beschworenerCritterId);
+    const verbraucht = kampf?.verbrauchteBeschwoerungen?.includes(item.id) ?? false;
+    return Boolean(dabei) || !verbraucht;
+  });
+  if (sichtbar.length === 0) return null;
 
   const intelligenz = eigenerBogen ? wert(eigenerBogen, "Intelligenz") : null;
   // Würfelpool der Probe — Intelligenz des Beschwörers + Beschwörungswert
@@ -174,10 +186,9 @@ export function DeineBeschwoerungen({
         <span>🔮 Deine Beschwörungen</span>
       </h3>
       <div className="gg-slotboxen">
-        {kiTamas.map((item) => {
+        {sichtbar.map((item) => {
           const critterId = item.beschworenerCritterId;
           const teilnahme = kampf?.teilnehmer.find((t) => t.personId === critterId);
-          const verbraucht = kampf?.verbrauchteBeschwoerungen?.includes(item.id) ?? false;
           return (
             <div className="gg-slot-spalte" key={item.id}>
               <button
@@ -194,11 +205,8 @@ export function DeineBeschwoerungen({
                     {teilnahme.rundenVerbleibend ?? "–"}
                   </span>
                 )}
-                {!teilnahme && verbraucht && (
-                  <span className="kk-slot-kurz">Diesen Kampf schon gerufen</span>
-                )}
               </button>
-              {!teilnahme && !verbraucht && (
+              {!teilnahme && (
                 <button type="button" onClick={() => setProbeZiel(item)} disabled={!kampf}>
                   Beschwören
                 </button>

@@ -12,8 +12,10 @@ angeklickt.**
 ## Ki-Tama-Beschwörung einmal pro Kampf (01.11.2026)
 
 Jedes Ki-Tama nur einmal pro Kampf, auch Stufe 1. Fehlwurf verbraucht den Ruf
-nicht, Patzer schon. Die Item-ID hängt am Kampf, nicht am Critter, damit der
-Knopf nach Ablauf der Runden weg bleibt. **Nie im Browser angeklickt.**
+nicht, Patzer schon. Die Item-ID hängt am Kampf, nicht am Critter. Ist der Ruf
+weg und der Critter nicht mehr in der Initiative, verschwindet die Kachel —
+kein „Diesen Kampf schon gerufen“. Solange er drin ist, bleiben Runden und
+Kampfkarte. **Nie im Browser angeklickt.**
 
 ## Parade-Bonus an Waffen (31.10.2026)
 
@@ -3070,6 +3072,6 @@ dort weitergepflegt, hier nicht mehr).
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
-| 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
+| 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon; verbrauchte Kachel verschwindet | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 

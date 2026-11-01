@@ -569,7 +569,15 @@ normaler Fehlschlag lässt einen neuen Versuch im selben Kampf zu. Keine
 weiteren Patzer-Folgen. „0 Erfolge“ allein ist kein Patzer — der Ausgang
 wird explizit gemeldet (`ausgang`: ja / nein / patzer). Die verbrauchten
 Item-IDs hängen am Kampf (`verbrauchteBeschwoerungen`), nicht am Critter,
-damit der Knopf auch nach Ablauf der Runden weg bleibt.
+damit der Ruf auch nach Ablauf der Runden weg bleibt.
+
+**Kachel weg statt Hinweistext (01.11.2026).** Mark: „Diesen Kampf schon
+gerufen“ ist richtig, frisst aber Platz — ein Rigger mit Drohnen und
+Ki-Tama hat beides untereinander. Ist der Ruf verbraucht und der Critter
+nicht mehr in der Initiative, rendert `DeineBeschwoerungen` die Kachel
+nicht. Sind alle eigenen Ki-Tamas in dem Zustand, verschwindet der ganze
+Abschnitt. Solange der Critter noch dabei ist, bleibt die Kachel (Runden,
+Kampfkarte). Fehlwurf ist nicht verbraucht, der Knopf bleibt.
 
 ## Korrektur 7: Diagnose aus Korrektur 6 war falsch — richtiger Fix mit Flex-Wrap statt Grid (29.10.2026)
 
