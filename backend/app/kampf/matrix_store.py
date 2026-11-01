@@ -179,6 +179,29 @@ async def drohnen_fallen(campaign_id: str, rigger_id: str) -> list[str]:
     return ids
 
 
+async def drohnen_zurueck(campaign_id: str, ids: list[str]) -> None:
+    """Der Sprung von vor dem Aus. Nicht wieder in die Initiative, nur verbunden."""
+    if not ids:
+        return
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (d:Person {campaignId: $campaign_id})
+            WHERE d.id IN $ids
+            SET d.riggerAktiv = true
+            """,
+            campaign_id=campaign_id,
+            ids=ids,
+        )
+
+
+def merke_sprung(stand: dict, traeger_id: str, ids: list[str]) -> None:
+    for eintrag in stand.get("aus") or []:
+        if eintrag.get("traegerId") == traeger_id and eintrag.get("art") == "konsole":
+            eintrag["gesprungeneIds"] = list(ids)
+
+
 async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
     """Wirft aus Hot, solange Neurolink oder Konsole aus sind."""
     from app.items.repository import verbautes_chrom
@@ -252,5 +275,8 @@ async def tick(campaign_id: str, neue_runde: int) -> None:
     if voll:
         personen |= {t["personId"] for t in voll["teilnehmer"] if t.get("personId")}
     maxima = {pid: await basis_ice(campaign_id, pid) for pid in personen}
+    alt = list(kampf["stand"].get("aus") or [])
     stand = matrix.runde_auffuellen(kampf["stand"], neue_runde, maxima)
     await speichere(campaign_id, stand)
+    for eintrag in matrix.abgefallene(alt, stand["aus"], "konsole"):
+        await drohnen_zurueck(campaign_id, eintrag.get("gesprungeneIds") or [])

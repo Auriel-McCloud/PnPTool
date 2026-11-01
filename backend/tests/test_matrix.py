@@ -67,6 +67,13 @@ def test_runde_8_laesst_den_bonus_fallen():
     assert stand["gesehen"]["ich"] == ["feind"]
 
 
+def test_konsole_gilt_als_abgefallen_wenn_der_eintrag_weg_ist():
+    from app.kampf.matrix import abgefallene
+    vorher = [{"id": "a", "art": "konsole", "gesprungeneIds": ["d1"]}, {"id": "b", "art": "waffe"}]
+    assert abgefallene(vorher, [], "konsole") == [vorher[0]]
+    assert abgefallene(vorher, vorher, "konsole") == []
+
+
 def test_deaktiv_modus_default_nach_typ():
     from app.kampf.matrix import deaktiv_modus
     assert deaktiv_modus("", "Schusswaffen") == "komplett"

@@ -6,6 +6,7 @@
 ## [2026-11-01] teilweise-umgesetzt | Hot endet mit Konsole oder Neurolink
 
 Konsole aus: Drohnen fallen und der Drohnen-Hot ist weg, Matrix-Hot bleibt.
+Kommt die Konsole wieder, ist der Sprung wieder da. Initiative nicht.
 Neurolink aus: beides Hot ist weg und bleibt zu. Die Drohnenkarten holen
 den Stand alle drei Sekunden.
 Siehe [[concepts/neuroweaving-decking]].

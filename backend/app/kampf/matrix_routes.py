@@ -182,10 +182,11 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
     if not matrix.aufteilung_gueltig(int(offen.get("punkte") or 0), [p.runden for p in body.posten]):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Mehr Runden als Punkte")
     matrix_store.schalte(stand, body.zielPersonId, ich, gewaehlt)
-    await matrix_store.speichere(campaign_id, stand)
     for ziel in gewaehlt:
         if ziel["art"] == "konsole":
-            await matrix_store.drohnen_fallen(campaign_id, body.zielPersonId)
+            ids = await matrix_store.drohnen_fallen(campaign_id, body.zielPersonId)
+            matrix_store.merke_sprung(stand, body.zielPersonId, ids)
+    await matrix_store.speichere(campaign_id, stand)
     await matrix_store.hot_wegen_aus(campaign_id, body.zielPersonId)
     return {"aus": matrix_store.aus_fuer(stand, body.zielPersonId)}
 
@@ -198,14 +199,16 @@ async def reaktivieren(campaign_id: str, eintrag_id: str, viewer: Viewer = Depen
     party = await matrix_store.party_ids(campaign_id, ich)
     party.add(ich)
     bleibt = []
-    gefunden = False
+    gefunden = None
     for eintrag in stand.get("aus") or []:
         if eintrag.get("id") == eintrag_id and eintrag.get("traegerId") in party:
-            gefunden = True
+            gefunden = eintrag
             continue
         bleibt.append(eintrag)
-    if not gefunden:
+    if gefunden is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Nichts zum Anschalten")
     stand["aus"] = bleibt
     await matrix_store.speichere(campaign_id, stand)
+    if gefunden.get("art") == "konsole":
+        await matrix_store.drohnen_zurueck(campaign_id, gefunden.get("gesprungeneIds") or [])
     return {"ok": True}

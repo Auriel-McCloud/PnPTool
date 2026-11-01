@@ -109,6 +109,12 @@ def navigation_trifft(erfolge: int) -> bool:
     return int(erfolge) >= NAVIGATION_MIN
 
 
+def abgefallene(vorher: list[dict], nachher: list[dict], art: str) -> list[dict]:
+    """Einträge dieser Art, die im neuen Stand nicht mehr stehen."""
+    bleibt = {e.get("id") for e in nachher}
+    return [e for e in vorher if e.get("art") == art and e.get("id") not in bleibt]
+
+
 def deaktiv_modus(gespeichert: str, kampf_fertigkeit: str) -> str:
     """Leer heißt Typ-Default: Schusswaffe komplett, alles andere nur Upgrades."""
     if gespeichert in ("komplett", "upgrades"):
