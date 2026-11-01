@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Decker-Hot neben Cyberdeck
+
+Der Knopf hing neben der Runde. Jetzt in der eigenen Kampfkarte neben der
+Überschrift Cyberdeck, sobald Cyberkampf an ist.
+Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-11-01] gebaut | Neuroweaver schaltet Kampf/Cyberkampf
 
 Dieselben Knöpfe wie beim Decker, auch ohne Deck. Cyberkampf zeigt die

@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Decker-Hot neben Cyberdeck (01.11.2026)
+
+Der Knopf hing neben der Runde. In der eigenen Kampfkarte sitzt er jetzt neben der Überschrift Cyberdeck, sobald Cyberkampf an ist. Drohnen- und SL-Karten nicht. `Kampfkarte.tsx`, `SpielerAnsicht.tsx`. **Nie im Browser angeklickt.**
+
 ## Kampfkarte: Neuroweaver schaltet wie der Decker (01.11.2026)
 
 Dieselben Knöpfe Kampf / Cyberkampf neben „Würfeln“, sobald `weg` Neuroweaver ist — auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools (Willenskraft-Klick und Matrix-Fenster wie vorher), Kampf die Nahkampf-Würfel und Waffen. Der alte Block unter den Waffen ist weg. Hat er zusätzlich ein Deck, stehen beide Gruppen untereinander. `Kampfkarte.tsx`. **Nie im Browser angeklickt.**

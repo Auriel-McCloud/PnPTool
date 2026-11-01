@@ -11,6 +11,7 @@ import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { MatrixFenster } from "./MatrixFenster";
+import { MatrixHotKnopf } from "./HotBleibenPopup";
 import { kampfApi } from "./api";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
 import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
@@ -94,6 +95,7 @@ export function Kampfkarte({
   aenderbar = false,
   kompaktStart = false,
   onInitiativeKlick,
+  zeigeMatrixHot = false,
 }: {
   campaignId: string;
   personId: string;
@@ -107,6 +109,9 @@ export function Kampfkarte({
    *  Knopf — genau wie in der Initiativliste reicht ein Klick auf den
    *  Wert). Nur für Drohnen-Steckbriefe gesetzt. */
   onInitiativeKlick?: () => void;
+  /** Decker-Hot neben der Überschrift Cyberdeck, nicht neben der Runde.
+   *  Nur die eigene Karte — der Knopf gilt für den eingeloggten Spieler. */
+  zeigeMatrixHot?: boolean;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
@@ -352,7 +357,12 @@ export function Kampfkarte({
       {/* --- Was man würfelt -------------------------------------------- */}
       <section className="kk-block">
         <div className="kk-block-kopf">
-          <h3>{hatCyber && kampfModus === "cyberkampf" ? cyberTitel : "Würfeln"}</h3>
+          <div className="kk-kopf-titel">
+            <h3>{hatCyber && kampfModus === "cyberkampf" ? cyberTitel : "Würfeln"}</h3>
+            {zeigeMatrixHot && hatDeck && kampfModus === "cyberkampf" && !istNeuroweaver && (
+              <MatrixHotKnopf campaignId={campaignId} />
+            )}
+          </div>
           {hatCyber && (
             <div className="kk-modus-schalter">
               <button
@@ -399,7 +409,12 @@ export function Kampfkarte({
           <>
             {hatDeck && (
               <>
-                {istNeuroweaver && <h3>Cyberdeck</h3>}
+                {istNeuroweaver && (
+                  <div className="kk-kopf-titel">
+                    <h3>Cyberdeck</h3>
+                    {zeigeMatrixHot && <MatrixHotKnopf campaignId={campaignId} />}
+                  </div>
+                )}
                 <div className="kk-werte">
                   {Object.entries(bogen.deckBoni).map(([name, w]) => (
                     <Zahl

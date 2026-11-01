@@ -23,7 +23,7 @@ import { Initiativliste, useKampf } from "../kampf/Initiativliste";
 import { Kampfkarte } from "../kampf/Kampfkarte";
 import { DranMeldung } from "../kampf/DranMeldung";
 import { BoosterPopup } from "../kampf/BoosterPopup";
-import { HotBleibenPopup, MatrixHotKnopf } from "../kampf/HotBleibenPopup";
+import { HotBleibenPopup } from "../kampf/HotBleibenPopup";
 import { DeineDrohnenImKampf } from "../kampf/DeineDrohnenImKampf";
 import { DeineBeschwoerungen } from "../kampf/DeineBeschwoerungen";
 import { InitiativeSetzen } from "../kampf/InitiativeSetzen";
@@ -660,7 +660,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 <span className="ka-runde">
                   Runde <strong>{kampf.runde}</strong>
                 </span>
-                <MatrixHotKnopf campaignId={ich.campaignId} />
               </header>
               <Initiativliste
                 kampf={kampf}
@@ -683,6 +682,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                     campaignId={ich.campaignId}
                     personId={ich.personId}
                     aenderbar
+                    zeigeMatrixHot
                     onInitiativeKlick={eigeneTeilnahme ? () => setInitiativeZiel(eigeneTeilnahme) : undefined}
                   />
                 </div>

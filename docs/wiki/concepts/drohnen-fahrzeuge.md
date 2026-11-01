@@ -1,7 +1,7 @@
 ---
 title: Drohnen und Fahrzeuge
 created: 2026-09-18
-updated: 2026-10-31
+updated: 2026-11-01
 type: konzept
 tags: [drohnen, fahrzeuge, kampf, erfahrung, wirtschaft, inventar, versionsgeschichte, entschieden, offen]
 sources: [../../CLAUDE.md, ../../../backend/app/begleiter/, ../../../backend/app/entities/schemas.py, ../../../backend/app/traits/bogen.py, ../../../backend/app/traits/erfahrung.py, ../../../backend/app/kampf/ruestung.py, ../../../backend/app/kampf/initiative.py, ../../../backend/app/items/schemas.py, ../../../backend/app/items/chrom.py]
@@ -203,7 +203,9 @@ schaltet der verbaute Neurolink frei, nicht die Höhe des Bonus.
   `zusatzaktionen` am Deck (Umbauen, dieselbe Auswahl: keine / 1× pro
   Kampf / 2× pro Kampf / jede Runde) zählt erst, wenn er Hot ist. Nur
   ausgerüstet reicht nicht, und ohne verbauten Neurolink gibt es den Knopf
-  nicht. Der Kampf liest Zusatzaktionen bisher nur von verbautem Chrom.
+  nicht. Der Knopf sitzt in der eigenen Kampfkarte neben der Überschrift
+  Cyberdeck (Cyberkampf-Ansicht), nicht neben der Runde. Der Kampf liest
+  Zusatzaktionen bisher nur von verbautem Chrom.
 - **Rigger, Hot:** eine Drohne pro Runde, gewählt über den Knopf an ihrem
   Slot. Beim nächsten eigenen Slot die Frage, ob er in derselben Drohne
   bleibt. Nein heißt ausklinken; eine andere wählt er erst in der nächsten
@@ -436,6 +438,10 @@ komplett.**
 
 ## Entwicklung
 
+- **01.11.2026 (Decker-Hot neben Cyberdeck):** Der Knopf hing neben der
+  Rundenanzeige. Jetzt in der eigenen Kampfkarte, direkt neben der
+  Überschrift Cyberdeck, sobald Cyberkampf an ist. Drohnen- und SL-Karten
+  bekommen ihn nicht.
 - **31.10.2026 (Umbau-Namen + Blatt-Filter, Mark am Spieltisch):** Im
   Umbau-Reiter standen Attributnamen auf „Stär…“ / „Ges…“, weil Name, Punkte
   und Preis eine Zeile im Dreispalten-Raster teilten. Namen jetzt ausgeschrieben,
