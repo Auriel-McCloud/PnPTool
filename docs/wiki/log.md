@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | EW-Bonus hält 3 Runden
+
+Mark: der Electronic-Warfare-Bonus auf dem ICE hält 3 Kampfrunden. In
+diesen Runden füllt sich der Pool auf Maximum plus Bonus auf. Die Tarnung
+bleibt der Soforteffekt. Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | ICE-Pool und EW +1 je 2 Erfolge
 
 Mark: ICE nimmt im Kampf Schaden wie Gesundheit und füllt sich jede
