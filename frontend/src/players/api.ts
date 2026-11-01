@@ -45,6 +45,8 @@ export interface VorgefertigterCharakter {
   konzept?: string;
   rasse?: string;
   weg?: string;
+  /** Nur Anzeige. Häretiker bleiben mechanisch Magier. */
+  magieFlavor?: "MAGIER" | "HAERETIKER";
   ambition?: string;
   verlangen?: string;
   ziel?: string;

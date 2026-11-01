@@ -197,6 +197,7 @@ async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
             RETURN p.id AS id, p.name AS name, coalesce(p.bildUrl, '') AS bildUrl,
                    coalesce(p.konzept, '') AS konzept, coalesce(p.rasse, '') AS rasse,
                    coalesce(p.weg, 'KEINER') AS weg,
+                   CASE WHEN p.magieFlavor = 'HAERETIKER' THEN 'HAERETIKER' ELSE 'MAGIER' END AS magieFlavor,
                    coalesce(p.ambition, '') AS ambition,
                    coalesce(p.verlangen, '') AS verlangen,
                    coalesce(p.ziel, '') AS ziel,

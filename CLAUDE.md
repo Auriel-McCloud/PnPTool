@@ -2,6 +2,13 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Vorgefertigte Auswahl zeigt Häretiker (01.11.2026)
+
+In der Spieler-Auswahl steht bei einem Häretiker „Häretiker“, nicht „Magier“.
+Karte und Steckbrief. `weg` bleibt `MAGIER`, die Liste liefert `magieFlavor`.
+`SpielerEinstieg.tsx`, `GET /api/spieler/vorgefertigte`. **Nie im Browser
+angeklickt.**
+
 ## Ki-Tama-Beschwörung einmal pro Kampf (01.11.2026)
 
 Jedes Ki-Tama nur einmal pro Kampf, auch Stufe 1. Fehlwurf verbraucht den Ruf
@@ -3064,4 +3071,5 @@ dort weitergepflegt, hier nicht mehr).
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
 | 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
+| 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 

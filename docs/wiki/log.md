@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Häretiker in der Vorgefertigten-Auswahl
+
+Die Auswahl zeigt „Häretiker“, wenn `magieFlavor` so steht. `weg` bleibt
+`MAGIER`. Liste, Karte und Steckbrief. Siehe [[entities/auth-und-rollen]].
+
 ## [2026-11-01] gebaut | Ki-Tama-Beschwörung einmal pro Kampf
 
 Gelungener Ruf und Patzer schreiben die Item-ID an den Kampf

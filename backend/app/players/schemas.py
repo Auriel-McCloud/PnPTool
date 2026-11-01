@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -46,6 +48,8 @@ class VorgefertigterCharakter(BaseModel):
     konzept: str = ""
     rasse: str = ""
     weg: str = "KEINER"
+    # Nur Anzeige. Häretiker bleiben mechanisch Magier (`weg` bleibt MAGIER).
+    magieFlavor: Literal["MAGIER", "HAERETIKER"] = "MAGIER"
     ambition: str = ""
     verlangen: str = ""
     ziel: str = ""

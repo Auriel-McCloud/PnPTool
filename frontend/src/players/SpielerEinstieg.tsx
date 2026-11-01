@@ -11,6 +11,12 @@ const WEG_TITEL: Record<string, string> = {
   NEUROWEAVER: "Neuroweaver",
 };
 
+/** `weg` bleibt MAGIER. Nur die Beschriftung in der Auswahl wechselt. */
+function wegAnzeige(person: { weg?: string; magieFlavor?: string }): string {
+  if (person.magieFlavor === "HAERETIKER") return "Häretiker";
+  return WEG_TITEL[person.weg ?? "KEINER"] ?? "";
+}
+
 const LEERE_SPALTEN: SpaltenSumme = { koerperlich: 0, gesellschaftlich: 0, geistig: 0 };
 
 const SPALTEN: { key: keyof SpaltenSumme; titel: string; ton: string }[] = [
@@ -171,7 +177,7 @@ export function SpielerEinstieg({
                       {p.konzept && <span className="ei-pc-konzept">{p.konzept}</span>}
                       {(p.rasse || (p.weg && p.weg !== "KEINER")) && (
                         <span className="ei-pc-tags">
-                          {[p.rasse, WEG_TITEL[p.weg ?? "KEINER"]].filter(Boolean).join(" · ")}
+                          {[p.rasse, wegAnzeige(p)].filter(Boolean).join(" · ")}
                         </span>
                       )}
                     </div>
@@ -228,7 +234,7 @@ function AuswahlSteckbrief({
   onSchliessen: () => void;
   onWaehlen: () => void;
 }) {
-  const unterzeile = [person.rasse, WEG_TITEL[person.weg ?? "KEINER"]].filter(Boolean).join(" · ");
+  const unterzeile = [person.rasse, wegAnzeige(person)].filter(Boolean).join(" · ");
   const texte = [
     { titel: "Konzept", text: person.konzept },
     { titel: "Ambition", text: person.ambition },

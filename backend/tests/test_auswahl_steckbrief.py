@@ -78,6 +78,14 @@ def test_ueberblick_passt_in_die_auswahl_antwort():
     assert modell.konzept == "Abgehalfterter Konzernanwalt mit Zugang"
     assert modell.ambition == "Den alten Ausweis zurück"
     assert modell.ziel == "Heute Nacht ins Archiv"
+    assert modell.magieFlavor == "MAGIER"
+    assert modell.weg == "KEINER"
+
+
+def test_haeretiker_bleibt_magier_und_liefert_den_flavor():
+    modell = VorgefertigterCharakter(id="p2", name="Ketzer", weg="MAGIER", magieFlavor="HAERETIKER")
+    assert modell.weg == "MAGIER"
+    assert modell.magieFlavor == "HAERETIKER"
 
 
 def test_jede_kernfertigkeit_hat_genau_eine_spalte():

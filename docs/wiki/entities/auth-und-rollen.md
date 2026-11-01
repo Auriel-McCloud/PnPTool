@@ -83,3 +83,18 @@ bleibt dabei in der DB erhalten, nur das Flag kippt, falls er später
 erneut NPC wird). Beide loggen `CharakterEntwicklung` (`ZU_NPC_GEMACHT`/
 `ZU_PC_GEMACHT`). UI: Knopf "⇄ Zu NPC machen" im PC-Detail, "⇄ Zu PC
 machen" im NPC-Detail, je mit Commlink-Bestätigungsdialog.
+
+## Häretiker in der Vorgefertigten-Auswahl — gebaut (01.11.2026)
+
+Mark: bei den vorgefertigten Charakteren stand bei Häretikern „Magier“. Das
+soll „Häretiker“ heißen. Mechanik bleibt Magier (`weg` bleibt `MAGIER`), nur
+die Anzeige in der Auswahl war falsch.
+
+Ursache: `SpielerEinstieg.tsx` schrieb den Weg über `WEG_TITEL[p.weg]` —
+Karte und Steckbrief, beide Stellen. `MAGIER` wurde dort immer „Magier“,
+`magieFlavor` kam in dem Fenster nicht an.
+`GET /api/spieler/vorgefertigte` lieferte `weg`, nicht `magieFlavor`.
+
+Gebaut: die Liste liefert `magieFlavor` (`HAERETIKER` nur wenn das Feld
+genau so steht, sonst `MAGIER`). Karte und Steckbrief zeigen dann
+„Häretiker“. Der Weg wird dadurch kein dritter Mechanik-Wert.
