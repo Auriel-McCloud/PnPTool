@@ -11,6 +11,9 @@ import "./booster.css";
  */
 export const MATRIX_HOT_AN = "pnptool-matrix-hot-an";
 
+/** Die Bleiben-Frage ist beantwortet. Das Booster-Fenster holt den Stand neu. */
+export const MATRIX_BLEIBEN_FERTIG = "pnptool-matrix-bleiben-fertig";
+
 /**
  * Fragt, wenn der Rigger wieder dran ist, ob er in der Hot-Drohne bleibt.
  * Dieselbe Lage wie das Booster-Popup: über allem, nicht nur im Kampf-Tab.
@@ -40,20 +43,26 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
 
   if (!status?.hatNeurolink || !status.hatDeck) return null;
 
-  async function umschalten() {
-    if (!status) return;
-    const an = !status.matrixHot;
+  async function einschalten() {
+    if (!status || status.matrixHot) return;
     setSendet(true);
     try {
-      setStatus(await kampfApi.hotMatrix(campaignId, an));
-      if (an) window.dispatchEvent(new CustomEvent(MATRIX_HOT_AN));
+      setStatus(await kampfApi.hotMatrix(campaignId, true));
+      window.dispatchEvent(new CustomEvent(MATRIX_HOT_AN));
     } finally {
       setSendet(false);
     }
   }
 
   return (
-    <button type="button" className="gg-hot-knopf" disabled={sendet} onClick={umschalten} data-aktiv={status.matrixHot}>
+    <button
+      type="button"
+      className="gg-hot-knopf"
+      disabled={sendet || status.matrixHot}
+      onClick={einschalten}
+      data-aktiv={status.matrixHot}
+      title={status.matrixHot ? "Bleibt an, bis du wieder dran bist." : undefined}
+    >
       {status.matrixHot ? "Hot — Matrix" : "Hot"}
     </button>
   );
@@ -86,9 +95,18 @@ export function HotBleibenPopup({
     };
   }, [campaignId, kampf?.runde, kampf?.amZug]);
 
-  if (!status?.bleibenFaellig) return null;
+  async function matrixAntwort(bleiben: boolean) {
+    setSendet(true);
+    try {
+      setStatus(await kampfApi.hotMatrixBleiben(campaignId, bleiben));
+      window.dispatchEvent(new CustomEvent(MATRIX_BLEIBEN_FERTIG));
+      onGeaendert();
+    } finally {
+      setSendet(false);
+    }
+  }
 
-  async function antwort(bleiben: boolean) {
+  async function drohnenAntwort(bleiben: boolean) {
     setSendet(true);
     try {
       setStatus(await kampfApi.hotBleiben(campaignId, bleiben));
@@ -98,16 +116,40 @@ export function HotBleibenPopup({
     }
   }
 
+  if (status?.matrixBleibenFaellig) {
+    return createPortal(
+      <div className="bo-huelle" role="alertdialog">
+        <div className="bo-fenster">
+          <h3 className="bo-titel">Hot bleiben?</h3>
+          <p className="bo-text">
+            Solange du Hot bist, kann die Matrix dich treffen. Nein klinkt aus — dann auch keine Zusatzaktion aus dem Deck.
+          </p>
+          <div className="bo-knoepfe">
+            <button type="button" disabled={sendet} onClick={() => matrixAntwort(true)}>
+              Ja, bleiben
+            </button>
+            <button type="button" className="bo-nein" disabled={sendet} onClick={() => matrixAntwort(false)}>
+              Nein, ausklinken
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  if (!status?.bleibenFaellig) return null;
+
   return createPortal(
     <div className="bo-huelle" role="alertdialog">
       <div className="bo-fenster">
         <h3 className="bo-titel">In {status.hotDrohneName ?? "der Drohne"} bleiben?</h3>
         <p className="bo-text">Eine Drohne pro Runde. Nein klinkt aus, eine andere erst in der nächsten Runde.</p>
         <div className="bo-knoepfe">
-          <button type="button" disabled={sendet} onClick={() => antwort(true)}>
+          <button type="button" disabled={sendet} onClick={() => drohnenAntwort(true)}>
             Ja, bleiben
           </button>
-          <button type="button" className="bo-nein" disabled={sendet} onClick={() => antwort(false)}>
+          <button type="button" className="bo-nein" disabled={sendet} onClick={() => drohnenAntwort(false)}>
             Nein, ausklinken
           </button>
         </div>

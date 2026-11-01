@@ -104,6 +104,29 @@ def bleiben_faellig(
     return hot_runde < kampf_runde
 
 
+def matrix_bleiben_faellig(
+    matrix_hot: bool,
+    matrix_runde: int,
+    kampf_runde: int | None,
+    ist_dran: bool,
+) -> bool:
+    """Beim nächsten eigenen Slot: in der Matrix bleiben?
+
+    Ein Klick in derselben Runde ist die Entscheidung, nicht die Frage.
+    Weicht die gemerkte Runde ab (neue Zählung oder Vorrunde), steht die
+    Frage an — sonst bliebe er Hot, ohne sie je zu hören.
+    """
+    if not matrix_hot or kampf_runde is None or not ist_dran:
+        return False
+    return matrix_runde != kampf_runde
+
+
+def beantworte_matrix(ja: bool, kampf_runde: int | None) -> tuple[bool, int]:
+    """Ja bleibt Hot. Nein klinkt aus. Beides merkt sich diese Runde."""
+    runde = kampf_runde if kampf_runde is not None else 0
+    return ja, runde
+
+
 def waehle_drohne(
     *,
     hat_neurolink: bool,

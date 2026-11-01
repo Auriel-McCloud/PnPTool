@@ -24,10 +24,12 @@ from app.kampf.booster import (
 )
 from app.kampf.hot import (
     beantworte_bleiben,
+    beantworte_matrix,
     bleiben_faellig,
     booster_kandidaten,
     darf_drohne_waehlen,
     hat_neurolink,
+    matrix_bleiben_faellig,
     staerkstes,
     waehle_drohne,
 )
@@ -566,6 +568,8 @@ class BoosterStatus(BaseModel):
     paralyseSchwelle: int = 0
     teilnehmerId: str | None = None
     setztAus: bool = False
+    # Decker war schon Hot, die Bleiben-Frage ist noch offen. Erst die, dann die Zusatzaktion.
+    matrixBleibenOffen: bool = False
 
 
 async def _booster_von(campaign_id: str, person_id: str) -> dict | None:
@@ -585,6 +589,7 @@ class HotStatus(BaseModel):
     hatNeurolink: bool = False
     hatDeck: bool = False
     matrixHot: bool = False
+    matrixBleibenFaellig: bool = False
     hotDrohneId: str | None = None
     hotDrohneName: str | None = None
     bleibenFaellig: bool = False
@@ -595,6 +600,7 @@ class HotInput(BaseModel):
     drohneId: str | None = None
     bleiben: bool | None = None
     matrix: bool | None = None
+    matrixBleiben: bool | None = None
 
 
 async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
@@ -615,6 +621,9 @@ async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
         hatNeurolink=hat_neurolink(chrom) and verlust != "alles",
         hatDeck=bool(decks),
         matrixHot=zustand["matrixHot"],
+        matrixBleibenFaellig=matrix_bleiben_faellig(
+            zustand["matrixHot"], zustand["matrixHotRunde"], runde, ist_dran
+        ),
         hotDrohneId=zustand["hotDrohneId"],
         hotDrohneName=zustand["hotDrohneName"],
         bleibenFaellig=bleiben_faellig(
@@ -674,13 +683,37 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
         )
         return await _hot_status(campaign_id, person_id)
 
-    if body.matrix is not None:
+    if body.matrixBleiben is not None:
+        eigener = None
+        if kampf:
+            eigener = next(
+                (t for t in kampf["teilnehmer"] if t.get("personId") == person_id and not t.get("zusatzzug")),
+                None,
+            )
+        ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
+        if not matrix_bleiben_faellig(zustand["matrixHot"], zustand["matrixHotRunde"], runde, ist_dran):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Gerade steht die Frage nicht an.")
+        bleibt, neue_runde = beantworte_matrix(body.matrixBleiben, runde)
         await repository.hot_schreiben(
             campaign_id,
             person_id,
             hot_drohne_id=zustand["hotDrohneId"],
             hot_runde=zustand["hotDrohneRunde"],
-            matrix_hot=body.matrix,
+            matrix_hot=bleibt,
+            matrix_hot_runde=neue_runde,
+        )
+        return await _hot_status(campaign_id, person_id)
+
+    if body.matrix is not None:
+        if not body.matrix:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Hot bleibt, bis du wieder dran bist.")
+        await repository.hot_schreiben(
+            campaign_id,
+            person_id,
+            hot_drohne_id=zustand["hotDrohneId"],
+            hot_runde=zustand["hotDrohneRunde"],
+            matrix_hot=True,
+            matrix_hot_runde=runde if runde is not None else 0,
         )
         return await _hot_status(campaign_id, person_id)
 
@@ -737,6 +770,9 @@ async def booster_status(campaign_id: str, viewer: Viewer = Depends(get_viewer))
     ampel = eigener["ampel"] if eigener else 0
     genutzt = eigener["zusatzGenutzt"] if eigener else 0
     maximal = int(booster.get("zusatzaktionen") or 0)
+    zustand = await repository.hot_lesen(campaign_id, viewer.person_id)
+    runde = kampf["runde"] if kampf else None
+    ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
 
     return BoosterStatus(
         hatBooster=True,
@@ -752,6 +788,9 @@ async def booster_status(campaign_id: str, viewer: Viewer = Depends(get_viewer))
         paralyseSchwelle=paralyse_schwelle(),
         teilnehmerId=eigener["id"] if eigener else None,
         setztAus=bool((eigener or {}).get("setztAus")),
+        matrixBleibenOffen=matrix_bleiben_faellig(
+            zustand["matrixHot"], zustand["matrixHotRunde"], runde, ist_dran
+        ),
     )
 
 

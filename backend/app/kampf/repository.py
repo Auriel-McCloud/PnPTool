@@ -203,6 +203,7 @@ async def hot_lesen(campaign_id: str, person_id: str) -> dict:
             RETURN coalesce(p.hotDrohneId, '') AS hotDrohneId,
                    coalesce(p.hotDrohneRunde, 0) AS hotDrohneRunde,
                    coalesce(p.matrixHot, false) AS matrixHot,
+                   coalesce(p.matrixHotRunde, 0) AS matrixHotRunde,
                    d.name AS hotDrohneName
             """,
             campaign_id=campaign_id,
@@ -210,12 +211,13 @@ async def hot_lesen(campaign_id: str, person_id: str) -> dict:
         )
         record = await result.single()
     if record is None:
-        return {"hotDrohneId": None, "hotDrohneRunde": 0, "matrixHot": False, "hotDrohneName": None}
+        return {"hotDrohneId": None, "hotDrohneRunde": 0, "matrixHot": False, "matrixHotRunde": 0, "hotDrohneName": None}
     drohne_id = record["hotDrohneId"] or None
     return {
         "hotDrohneId": drohne_id,
         "hotDrohneRunde": int(record["hotDrohneRunde"] or 0),
         "matrixHot": bool(record["matrixHot"]),
+        "matrixHotRunde": int(record["matrixHotRunde"] or 0),
         "hotDrohneName": record["hotDrohneName"] if drohne_id else None,
     }
 
@@ -227,8 +229,9 @@ async def hot_schreiben(
     hot_drohne_id: str | None,
     hot_runde: int,
     matrix_hot: bool | None = None,
+    matrix_hot_runde: int | None = None,
 ) -> None:
-    """Schreibt die Drohnen-Wahl. matrix_hot nur, wenn ausdrücklich gesetzt."""
+    """Schreibt die Drohnen-Wahl. Matrix-Felder nur, wenn ausdrücklich gesetzt."""
     driver = get_driver()
     async with driver.session() as session:
         await session.run(
@@ -236,7 +239,8 @@ async def hot_schreiben(
             MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
             SET p.hotDrohneId = CASE WHEN $hot_id = '' THEN null ELSE $hot_id END,
                 p.hotDrohneRunde = $runde,
-                p.matrixHot = CASE WHEN $matrix_gesetzt THEN $matrix_hot ELSE coalesce(p.matrixHot, false) END
+                p.matrixHot = CASE WHEN $matrix_gesetzt THEN $matrix_hot ELSE coalesce(p.matrixHot, false) END,
+                p.matrixHotRunde = CASE WHEN $matrix_runde_gesetzt THEN $matrix_hot_runde ELSE coalesce(p.matrixHotRunde, 0) END
             """,
             campaign_id=campaign_id,
             person_id=person_id,
@@ -244,6 +248,8 @@ async def hot_schreiben(
             runde=int(hot_runde),
             matrix_gesetzt=matrix_hot is not None,
             matrix_hot=bool(matrix_hot),
+            matrix_runde_gesetzt=matrix_hot_runde is not None,
+            matrix_hot_runde=int(matrix_hot_runde or 0),
         )
 
 
@@ -351,6 +357,7 @@ async def beginne(campaign_id: str) -> dict:
 
 
 async def beende(campaign_id: str) -> bool:
+    await matrix_hot_loeschen(campaign_id)
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
@@ -364,6 +371,24 @@ async def beende(campaign_id: str) -> bool:
         )
         record = await result.single()
         return bool(record and record["weg"])
+
+
+async def matrix_hot_loeschen(campaign_id: str) -> None:
+    """Kampf vorbei: kein Knopf mehr, also auch kein hängendes Hot.
+
+    Sonst träfe die Matrix ihn im nächsten Kampf, bevor die Bleiben-Frage
+    überhaupt drankommt.
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (p:Person {campaignId: $campaign_id})
+            WHERE coalesce(p.matrixHot, false)
+            SET p.matrixHot = false, p.matrixHotRunde = 0
+            """,
+            campaign_id=campaign_id,
+        )
 
 
 async def beschwoerung_verbrauchen(campaign_id: str, item_id: str) -> None:

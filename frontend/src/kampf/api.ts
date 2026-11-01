@@ -67,6 +67,8 @@ export interface BoosterStatus {
   paralyseSchwelle: number;
   teilnehmerId: string | null;
   setztAus: boolean;
+  /** Decker war schon Hot. Erst die Bleiben-Frage, dann diese. */
+  matrixBleibenOffen: boolean;
 }
 
 /** Hot-Zustand des eigenen Charakters. */
@@ -74,6 +76,7 @@ export interface HotStatus {
   hatNeurolink: boolean;
   hatDeck: boolean;
   matrixHot: boolean;
+  matrixBleibenFaellig: boolean;
   hotDrohneId: string | null;
   hotDrohneName: string | null;
   bleibenFaellig: boolean;
@@ -157,6 +160,8 @@ export const kampfApi = {
   hotDrohne: (cid: string, drohneId: string) => api.post<HotStatus>(`${basis(cid)}/hot`, { drohneId }),
   hotBleiben: (cid: string, bleiben: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { bleiben }),
   hotMatrix: (cid: string, matrix: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { matrix }),
+  hotMatrixBleiben: (cid: string, bleiben: boolean) =>
+    api.post<HotStatus>(`${basis(cid)}/hot`, { matrixBleiben: bleiben }),
   /** Booster zünden: zweiter Eintrag mit dem gemeldeten Zweitwurf. */
   boosterAktivieren: (cid: string, erfolge: number) =>
     api.post<Kampf>(`${basis(cid)}/booster/aktivieren`, { erfolge }),

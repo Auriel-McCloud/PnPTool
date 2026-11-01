@@ -253,7 +253,7 @@ async def hot_wegen_aus(campaign_id: str, person_id: str) -> str:
     zustand = await repository.hot_lesen(campaign_id, person_id)
     if verlust == "alles" and kick_braucht_reset("alles", zustand["hotDrohneId"], zustand["hotDrohneRunde"], zustand["matrixHot"]):
         await repository.hot_schreiben(
-            campaign_id, person_id, hot_drohne_id=None, hot_runde=0, matrix_hot=False
+            campaign_id, person_id, hot_drohne_id=None, hot_runde=0, matrix_hot=False, matrix_hot_runde=0
         )
     elif verlust == "drohne" and kick_braucht_reset("drohne", zustand["hotDrohneId"], zustand["hotDrohneRunde"], False):
         await repository.hot_schreiben(campaign_id, person_id, hot_drohne_id=None, hot_runde=0)

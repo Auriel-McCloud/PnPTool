@@ -9,12 +9,14 @@ die teilt seinen Initiative-Slot, ihr Name steht neben seinem.
 
 from app.kampf.hot import (
     anzeige_name,
+    beantworte_matrix,
     bleiben_faellig,
     booster_kandidaten,
     darf_drohne_waehlen,
     falte_hot,
     hat_neurolink,
     ist_neurolink,
+    matrix_bleiben_faellig,
     schneller,
     waehle_drohne,
     beantworte_bleiben,
@@ -188,6 +190,22 @@ def test_hot_werte_legen_fahren_drauf_auch_wenn_die_drohne_keinen_eintrag_hat():
     fahren = next(w for w in werte if w["name"] == "Fahren")
     assert fahren["rating"] == 5
     assert fahren["hotNurAnzeige"] is True
+
+
+def test_matrix_bleiben_nur_wenn_hot_aus_einer_anderen_runde_und_er_dran_ist():
+    assert matrix_bleiben_faellig(True, 1, kampf_runde=2, ist_dran=True) is True
+    assert matrix_bleiben_faellig(True, 2, kampf_runde=2, ist_dran=True) is False
+    assert matrix_bleiben_faellig(True, 1, kampf_runde=2, ist_dran=False) is False
+    assert matrix_bleiben_faellig(False, 1, kampf_runde=2, ist_dran=True) is False
+    assert matrix_bleiben_faellig(True, 1, kampf_runde=None, ist_dran=True) is False
+    # Neuer Kampf zählt wieder bei 1, die alte Runde darf die Frage nicht verschlucken.
+    assert matrix_bleiben_faellig(True, 5, kampf_runde=1, ist_dran=True) is True
+
+
+def test_matrix_nein_klinkt_aus_ja_bleibt_und_merkt_die_runde():
+    assert beantworte_matrix(True, 3) == (True, 3)
+    assert beantworte_matrix(False, 3) == (False, 3)
+    assert beantworte_matrix(False, None) == (False, 0)
 
 
 def test_dumpshock_nur_wenn_die_hot_drohne_keine_gesundheit_mehr_hat():

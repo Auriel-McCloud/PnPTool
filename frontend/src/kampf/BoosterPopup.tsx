@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { kampfApi, type BoosterStatus, type Kampf } from "./api";
-import { MATRIX_HOT_AN } from "./HotBleibenPopup";
+import { MATRIX_BLEIBEN_FERTIG, MATRIX_HOT_AN } from "./HotBleibenPopup";
 import "./booster.css";
 
 /**
@@ -67,13 +67,27 @@ export function BoosterPopup({
   }, [campaignId, eigenePersonId, kampf?.amZug]);
 
   // Beim Drankommen einmal fragen — nicht bei jedem Nachladen erneut.
+  // Liegt die Matrix-Bleiben-Frage noch offen, warten: Nein nimmt das Deck
+  // aus der Rechnung, dann gibt es diese Frage nicht.
   useEffect(() => {
-    if (!binDran || !status?.hatBooster || !status.darfAktivieren) return;
+    if (!binDran || !status?.hatBooster || !status.darfAktivieren || status.matrixBleibenOffen) return;
     const kennung = `${kampf?.runde}-${eigener?.id}`;
     if (gefragt === kennung) return;
     setGefragt(kennung);
     setModus("frage");
   }, [binDran, status, kampf?.runde, eigener?.id, gefragt]);
+
+  useEffect(() => {
+    if (!campaignId) return;
+    const beiBleiben = () => {
+      kampfApi
+        .boosterStatus(campaignId)
+        .then(setStatus)
+        .catch(() => setStatus(null));
+    };
+    window.addEventListener(MATRIX_BLEIBEN_FERTIG, beiBleiben);
+    return () => window.removeEventListener(MATRIX_BLEIBEN_FERTIG, beiBleiben);
+  }, [campaignId]);
 
   // Hot erst im eigenen Zug: das Deck zählt jetzt, die Frage kam beim
   // Drankommen noch nicht, weil matrixHot da noch aus war.

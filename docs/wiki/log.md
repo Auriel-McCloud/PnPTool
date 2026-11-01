@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Decker-Hot bleibt bis zur Bleiben-Frage
+
+Der Knopf schaltet nur ein. Beim nächsten eigenen Zug zuerst „Hot bleiben?“.
+Nein klinkt aus, die Zusatzaktion aus dem Deck kommt dann nicht. Siehe
+[[concepts/drohnen-fahrzeuge]].
+
 ## [2026-11-01] gebaut | Hot im eigenen Zug fragt nach der Zusatzaktion
 
 War der Decker schon dran und ging erst dann Hot, kam die Booster-Frage nicht.
