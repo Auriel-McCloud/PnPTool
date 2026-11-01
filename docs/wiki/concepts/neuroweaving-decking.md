@@ -144,14 +144,17 @@ sich der Pool auf Maximum plus Bonus auf. Die Tarnung bleibt der Soforteffekt.
 ## Noch nicht gebaut: temporäres Deaktivieren (teilweise umgesetzt)
 
 Der Ablauf ist im Kampf an Brute Force, Schleichen, Matrix-Navigation und
-Electronic Warfare. Was noch fehlt: das Feld an der einzelnen Waffe für
-komplett/nur Upgrades (es gilt der Typ-Default), Ki-Tama als eigene Zeile,
-und die Kampfkarte blendet abgeschaltete Waffen noch nicht aus.
+Electronic Warfare. An der Waffe, unter Umbau direkt unter der Kampfskill-Wahl,
+steht ob sie komplett ausfällt oder nur Upgrades. Leer heißt Schusswaffe
+komplett, alles andere nur Upgrades. Die Kampfkarte des Ziels zeigt eine
+komplett ausgeschaltete Waffe als tot (zuckt, keine Würfel) und holt den Stand
+alle drei Sekunden. Offen: Ki-Tama als eigene Zeile in der Hack-Liste.
 
 Mark, 01.11.2026 nachts: Decker und Neuroweaver sollen Waffen oder
 Waffen-Upgrades temporär deaktivieren können — „damit wären sie wirklich
-nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
-`aktuell` für die bestehenden Regeln.
+nützlich“. Der Kampf-Ablauf, das Umbau-Feld und die Anzeige auf der
+Kampfkarte des Ziels sind gebaut. Die Skizze darunter ist der Ursprung,
+nicht der aktuelle Stand.
 
 ### Skizze (seine Worte, noch keine Regel)
 

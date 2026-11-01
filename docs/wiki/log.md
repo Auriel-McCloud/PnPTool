@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] teilweise-umgesetzt | Deaktivieren kommt beim Ziel an
+
+Umbau-Feld an der Waffe: komplett oder nur Upgrades, Standard nach Typ.
+Kampfkarte des Ziels zeigt eine komplett ausgeschaltete Waffe als tot.
+Offen bleibt die Ki-Tama-Zeile in der Hack-Liste.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] teilweise-umgesetzt | Deaktivieren im Kampf
 
 Fenster an Brute Force, Schleichen, Navigation und Electronic Warfare.

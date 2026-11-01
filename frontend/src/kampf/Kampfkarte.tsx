@@ -11,6 +11,7 @@ import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { MatrixFenster } from "./MatrixFenster";
+import { kampfApi } from "./api";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
 import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
 import { magieBegriff } from "../traits/magieBegriffe";
@@ -126,6 +127,7 @@ export function Kampfkarte({
   // zwang zum Scrollen vorbei an Gesundheit/Rüstung/Willenskraft. Nur einer
   // der beiden Blöcke ist gleichzeitig sichtbar, umschaltbar per Knopf.
   const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
+  const [aus, setAus] = useState<{ zielId: string; art: string; runden: number }[]>([]);
 
   async function laden() {
     const [b, s, bg] = await Promise.all([
@@ -140,6 +142,24 @@ export function Kampfkarte({
 
   useEffect(() => {
     void laden();
+  }, [campaignId, personId]);
+
+  useEffect(() => {
+    let weg = false;
+    async function hol() {
+      try {
+        const stand = await kampfApi.matrixAus(campaignId, personId);
+        if (!weg) setAus(stand.aus);
+      } catch {
+        if (!weg) setAus([]);
+      }
+    }
+    void hol();
+    const takt = window.setInterval(() => void hol(), 3000);
+    return () => {
+      weg = true;
+      window.clearInterval(takt);
+    };
   }, [campaignId, personId]);
 
   const ausgeruestet = useMemo(() => sachen.filter((g) => g.ablage === "AUSGERUESTET"), [sachen]);
@@ -178,6 +198,8 @@ export function Kampfkarte({
               : name,
           wert: Number(w) || 0,
           schadenArt: schadenArtFuerWaffe(g.attackenSchadensart?.[name]),
+          traegerId: g.montiertAnId ?? "",
+          quelleId: g.id,
         }));
     });
 
@@ -417,37 +439,53 @@ export function Kampfkarte({
               {waffen.map((w) => {
                 const skill = kampfFertigkeitLesen(w.kampfFertigkeit);
                 const schaden = waffenSchaden(w);
+                const tot = aus.find((e) => e.zielId === w.id && e.art === "waffe");
+                const upgradesAus = aus.some((e) => e.art === "upgrade" && sachen.some((g) => g.id === e.zielId && g.montiertAnId === w.id));
                 return (
-                  <li key={w.id}>
+                  <li key={w.id} className={tot ? "kk-waffe-aus" : undefined}>
                     <span className="kk-waffe-name">{w.name}</span>
-                    {skill && (
-                      <span
-                        className="kk-waffe-pool"
-                        title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
-                      >
-                        {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
-                        <WuerfelZehn groesse={14} />
-                      </span>
+                    {tot ? (
+                      <span className="kk-waffe-aus-rest">aus · {tot.runden}</span>
+                    ) : (
+                      <>
+                        {skill && (
+                          <span
+                            className="kk-waffe-pool"
+                            title={`Geschicklichkeit + ${skill}, Ausrüstung schon drin`}
+                          >
+                            {KAMPF_FERTIGKEIT_LABEL[skill]} {treffenPool(skill)}
+                            <WuerfelZehn groesse={14} />
+                          </span>
+                        )}
+                        {(w.paradeBonus !== 0 || skill === "Nahkampf" || skill === "Handgemenge") && (
+                          <span
+                            className="kk-waffe-pool"
+                            title="Geschicklichkeit + Nahkampf, plus nur der Parade-Bonus dieser Waffe. Der Angriff bleibt unverändert."
+                          >
+                            Parade {treffenPool("Nahkampf") + (w.paradeBonus || 0)}
+                            <WuerfelZehn groesse={14} />
+                          </span>
+                        )}
+                        <span className="kk-waffe-schaden">
+                          Schaden {schaden}
+                          <em>+ Nettoerfolge</em>
+                        </span>
+                        {upgradesAus && <span className="kk-waffe-aus-rest">Upgrades aus</span>}
+                      </>
                     )}
-                    {(w.paradeBonus !== 0 || skill === "Nahkampf" || skill === "Handgemenge") && (
-                      <span
-                        className="kk-waffe-pool"
-                        title="Geschicklichkeit + Nahkampf, plus nur der Parade-Bonus dieser Waffe. Der Angriff bleibt unverändert."
-                      >
-                        Parade {treffenPool("Nahkampf") + (w.paradeBonus || 0)}
-                        <WuerfelZehn groesse={14} />
-                      </span>
-                    )}
-                    <span className="kk-waffe-schaden">
-                      Schaden {schaden}
-                      <em>+ Nettoerfolge</em>
-                    </span>
                   </li>
                 );
               })}
-              {attacken.map((a) => (
-                <li key={a.key}>
+              {attacken.map((a) => {
+                const tot = aus.find((e) => e.zielId === a.traegerId && e.art === "waffe")
+                  || aus.find((e) => e.zielId === a.quelleId);
+                return (
+                <li key={a.key} className={tot ? "kk-waffe-aus" : undefined}>
                   <span className="kk-waffe-name">{a.name}</span>
+                  {tot ? (
+                    <span className="kk-waffe-aus-rest">aus · {tot.runden}</span>
+                  ) : (
+                    <>
                   <span className="kk-waffe-pool" title="Intelligenz + Fertigkeitswert, keine weiteren Boni">
                     INT {intelligenz + a.wert}
                     <WuerfelZehn groesse={14} />
@@ -456,8 +494,11 @@ export function Kampfkarte({
                     {schadenArtLabel(a.schadenArt)}
                     <em>Nettoerfolge</em>
                   </span>
+                    </>
+                  )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>

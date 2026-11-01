@@ -51,6 +51,17 @@ async def _akteur(campaign_id: str, viewer: Viewer) -> str:
     return viewer.person_id
 
 
+@router.get("/aus/{person_id}")
+async def aus_von(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Was an dieser Person gerade aus ist. Sie selbst, die Party und die SL sehen es."""
+    kampf = await _kampf_oder_404(campaign_id)
+    if viewer.role != "GM" and viewer.person_id != person_id:
+        party = await matrix_store.party_ids(campaign_id, person_id)
+        if viewer.person_id not in party:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Nicht sichtbar")
+    return {"aus": matrix_store.aus_fuer(kampf["stand"], person_id)}
+
+
 @router.get("")
 async def uebersicht(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     ich = await _akteur(campaign_id, viewer)

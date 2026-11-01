@@ -173,6 +173,10 @@ export const kampfApi = {
   amZug: (cid: string, teilnehmerId: string | null) =>
     api.post<Kampf>(`${basis(cid)}/amzug`, { teilnehmerId }),
   matrix: (cid: string) => api.get<MatrixUebersicht>(`${basis(cid)}/matrix`),
+  matrixAus: (cid: string, personId: string) =>
+    api.get<{ aus: { zielId: string; name: string; art: string; runden: number }[] }>(
+      `${basis(cid)}/matrix/aus/${personId}`,
+    ),
   matrixNavigation: (cid: string, erfolge: number) =>
     api.post<{ gesehen: boolean }>(`${basis(cid)}/matrix/navigation`, { erfolge }),
   matrixEw: (cid: string, erfolge: number) =>

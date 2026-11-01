@@ -124,6 +124,7 @@ async def schaltbare(campaign_id: str, person_id: str) -> list[dict]:
             )
             RETURN g.id AS id, g.name AS name, g.typ AS typ,
                    coalesce(g.kampfFertigkeit, '') AS kampfFertigkeit,
+                   coalesce(g.deaktivModus, '') AS deaktivModus,
                    coalesce(g.istAugment, false) AS istAugment
             ORDER BY g.name
             """,
@@ -135,11 +136,13 @@ async def schaltbare(campaign_id: str, person_id: str) -> list[dict]:
     for z in zeilen:
         if z["istAugment"]:
             aus.append({**z, "art": "upgrade"})
-        elif z["typ"] == "Waffe" and z["kampfFertigkeit"] == "Schusswaffen":
-            aus.append({**z, "art": "waffe"})
-        elif z["typ"] == "Waffe":
             continue
-        elif z["typ"] == "Cyberware":
+        if z["typ"] == "Waffe":
+            modus = matrix.deaktiv_modus(z.get("deaktivModus") or "", z["kampfFertigkeit"])
+            if modus == "komplett":
+                aus.append({**z, "art": "waffe"})
+            continue
+        if z["typ"] == "Cyberware":
             aus.append({**z, "art": "cyber"})
         elif z["typ"] == "Cyberdeck":
             aus.append({**z, "art": "deck"})

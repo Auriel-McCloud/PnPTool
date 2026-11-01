@@ -67,7 +67,12 @@ def test_runde_8_laesst_den_bonus_fallen():
     assert stand["gesehen"]["ich"] == ["feind"]
 
 
-def test_party_sieht_ice_gegner_nur_nach_probe():
+def test_deaktiv_modus_default_nach_typ():
+    from app.kampf.matrix import deaktiv_modus
+    assert deaktiv_modus("", "Schusswaffen") == "komplett"
+    assert deaktiv_modus("", "Nahkampf") == "upgrades"
+    assert deaktiv_modus("upgrades", "Schusswaffen") == "upgrades"
+    assert deaktiv_modus("komplett", "Handgemenge") == "komplett"
     assert zahl_sichtbar(True, False)
     assert not zahl_sichtbar(False, False)
     assert zahl_sichtbar(False, True)

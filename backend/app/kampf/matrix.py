@@ -107,3 +107,10 @@ def zahl_sichtbar(ist_party: bool, gesehen: bool) -> bool:
 
 def navigation_trifft(erfolge: int) -> bool:
     return int(erfolge) >= NAVIGATION_MIN
+
+
+def deaktiv_modus(gespeichert: str, kampf_fertigkeit: str) -> str:
+    """Leer heißt Typ-Default: Schusswaffe komplett, alles andere nur Upgrades."""
+    if gespeichert in ("komplett", "upgrades"):
+        return gespeichert
+    return "komplett" if kampf_fertigkeit == "Schusswaffen" else "upgrades"

@@ -191,6 +191,33 @@
   color: var(--text-aus);
 }
 
+.kk-waffe-aus {
+  border-left: 3px solid var(--signal);
+  animation: kk-wackeln 2.4s steps(2) infinite;
+}
+.kk-waffe-aus-rest {
+  font-family: var(--mono);
+  color: var(--signal);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: kk-flackern 3.1s steps(1) infinite;
+}
+@keyframes kk-wackeln {
+  0%, 92%, 100% { transform: none; }
+  93% { transform: translateX(-1px) skewX(-0.4deg); }
+  95% { transform: translateX(1px) skewX(0.3deg); }
+  97% { transform: translateX(-1px); }
+}
+@keyframes kk-flackern {
+  0%, 88%, 100% { opacity: 1; }
+  90% { opacity: 0.35; }
+  92% { opacity: 1; }
+  94% { opacity: 0.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kk-waffe-aus, .kk-waffe-aus-rest { animation: none; }
+}
+
 /* --- Sphären als Zeile ------------------------------------------------- */
 
 .kk-sphaeren {

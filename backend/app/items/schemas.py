@@ -169,6 +169,8 @@ class GegenstandCreate(BaseModel):
     # 0 = kein Bonus. Ein Schild ist eine Waffe mit Schaden 0 und Parade-Bonus
     # (Mark, 31.10.2026). Kein Mindeststärke-Feld — das wurde verworfen.
     paradeBonus: int = 0
+    # Leer = Typ-Default: Schusswaffe fällt komplett aus, sonst nur Upgrades.
+    deaktivModus: str = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
     # nicht die ID, damit es unabhängig vom Ruleset lesbar bleibt. Analog zu
@@ -397,6 +399,7 @@ class GegenstandUpdate(BaseModel):
     schadenArt: SchadenArt | None = None
     kampfFertigkeit: KampfFertigkeit | None = None
     paradeBonus: int | None = None
+    deaktivModus: str | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
     verbaut: bool | None = None
@@ -522,6 +525,7 @@ class GegenstandResponse(BaseModel):
     schadenArt: SchadenArt = ""
     kampfFertigkeit: KampfFertigkeit = ""
     paradeBonus: int = 0
+    deaktivModus: str = ""
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
     verbaut: bool = False

@@ -148,6 +148,44 @@ function KampfFertigkeitFeld({
   );
 }
 
+type DeaktivModus = "" | "komplett" | "upgrades";
+
+function deaktivModusLesen(roh: string | undefined | null): DeaktivModus {
+  return roh === "komplett" || roh === "upgrades" ? roh : "";
+}
+
+function DeaktivModusFeld({
+  wert,
+  fertigkeit,
+  onChange,
+}: {
+  wert: DeaktivModus;
+  fertigkeit: KampfFertigkeit;
+  onChange: (wert: DeaktivModus) => void;
+}) {
+  const standard = fertigkeit === "Schusswaffen" ? "komplett aus" : "nur Upgrades";
+  const markiert = (aktiv: boolean) => ({
+    borderColor: aktiv ? "var(--neon)" : undefined,
+    color: aktiv ? "var(--neon)" : undefined,
+  });
+  return (
+    <div style={{ marginTop: 6 }}>
+      <span style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Beim Deaktivieren</span>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+        <button type="button" onClick={() => onChange("")} style={markiert(wert === "")} title="Schusswaffe fällt komplett aus, alles andere nur die Upgrades.">
+          Standard ({standard})
+        </button>
+        <button type="button" onClick={() => onChange("komplett")} style={markiert(wert === "komplett")}>
+          Komplett aus
+        </button>
+        <button type="button" onClick={() => onChange("upgrades")} style={markiert(wert === "upgrades")}>
+          Nur Upgrades
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ParadeFeld({ wert, onChange }: { wert: number; onChange: (wert: number) => void }) {
   return (
     <label
@@ -318,6 +356,7 @@ export function GegenstandRow({
     item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
   );
   const [kampfFertigkeit, setKampfFertigkeit] = useState<KampfFertigkeit>(kampfFertigkeitLesen(item.kampfFertigkeit));
+  const [deaktivModus, setDeaktivModus] = useState<DeaktivModus>(deaktivModusLesen(item.deaktivModus));
   const [paradeBonus, setParadeBonus] = useState(item.paradeBonus ?? 0);
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
@@ -494,6 +533,7 @@ export function GegenstandRow({
     setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
     setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
     setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
+    setDeaktivModus(deaktivModusLesen(src.deaktivModus));
     setParadeBonus(src.paradeBonus ?? 0);
     setInitiativeBonus(src.initiativeBonus);
     setZusatzaktionen(src.zusatzaktionen);
@@ -599,6 +639,7 @@ export function GegenstandRow({
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
       kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
+      deaktivModus: typ === "Waffe" || istWaffe ? deaktivModus : "",
       paradeBonus: typ === "Waffe" || istWaffe ? Number(paradeBonus) || 0 : 0,
       initiativeBonus,
       zusatzaktionen,
@@ -672,7 +713,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
       upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
@@ -1229,6 +1270,7 @@ export function GegenstandRow({
                           <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                         )}
                         <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                        <DeaktivModusFeld wert={deaktivModus} fertigkeit={kampfFertigkeit} onChange={setDeaktivModus} />
                         <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                       </>
                     )}
@@ -1588,6 +1630,7 @@ export function GegenstandRow({
                   </div>
                   <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                   <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                  <DeaktivModusFeld wert={deaktivModus} fertigkeit={kampfFertigkeit} onChange={setDeaktivModus} />
                   <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                 </div>
               )}
