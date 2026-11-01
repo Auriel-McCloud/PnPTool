@@ -367,6 +367,35 @@ export function zieltypPasst(augmentZielTyp: string, zielTyp: string): boolean {
   return !augmentZielTyp || augmentZielTyp === zielTyp;
 }
 
+export type AugmentZielTyp = "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
+
+/** Ein Menü für beide alten Filter. Waffenart gewinnt bei altem Widerspruch. */
+export type AugmentPasstAn = AugmentZielTyp | Exclude<KampfFertigkeit, "">;
+
+export function augmentPasstAnLesen(waffentyp: string, zieltyp: string): AugmentPasstAn {
+  if (waffentyp === "Schusswaffen" || waffentyp === "Nahkampf" || waffentyp === "Handgemenge") {
+    return waffentyp;
+  }
+  if (zieltyp === "Waffe" || zieltyp === "Rüstung" || zieltyp === "Cyberdeck" || zieltyp === "Riggerkonsole") {
+    return zieltyp;
+  }
+  return "";
+}
+
+/** Waffenart setzt den Zieltyp mit auf Waffe, damit die zwei Felder nicht mehr gegeneinander stehen. */
+export function augmentPasstAnSchreiben(wert: string): {
+  augmentWaffentyp: KampfFertigkeit;
+  augmentZielTyp: AugmentZielTyp;
+} {
+  if (wert === "Schusswaffen" || wert === "Nahkampf" || wert === "Handgemenge") {
+    return { augmentWaffentyp: wert, augmentZielTyp: "Waffe" };
+  }
+  if (wert === "Waffe" || wert === "Rüstung" || wert === "Cyberdeck" || wert === "Riggerkonsole") {
+    return { augmentWaffentyp: "", augmentZielTyp: wert };
+  }
+  return { augmentWaffentyp: "", augmentZielTyp: "" };
+}
+
 export const KAMPF_FERTIGKEIT_LABEL: Record<Exclude<KampfFertigkeit, "">, string> = {
   Schusswaffen: "Fernkampf",
   Nahkampf: "Nahkampf",

@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Upgrade-Material: Booster im Umbauen, ein Ziel-Menü
+
+Initiative-Bonus und Zusatzaktionen stehen beim Upgrade-Material im Umbauen,
+dieselbe Auswahl wie beim Chrom. Im Besitz bleibt ein Dropdown „Passt an“.
+Siehe [[concepts/augments-ausruestung]].
+
 ## [2026-11-01] gebaut | Overclock in der Kampfkarte
 
 Neben den NeuroWeaving-Funktionen, gleiches Format, Würfel sichtbar.

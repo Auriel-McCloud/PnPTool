@@ -1,8 +1,9 @@
 ---
 title: Waffen-/Rüstungs-/Drohnen-Augments (Werkbank)
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 type: konzept
+status: teilweise-umgesetzt
 ---
 
 # Waffen-/Rüstungs-/Drohnen-Augments (Werkbank)
@@ -29,6 +30,20 @@ Mark (29.10.2026, zweite Idee im selben Chat): "nimm Riggerkonsolen und
 Decks bitte mit" — Augments sind also nicht auf Waffen/Rüstung beschränkt,
 sondern auf **jeden Gegenstand**, bei dem ein Upgrade-Slot inhaltlich Sinn
 ergibt.
+
+## Ein Menü, Booster im Umbauen (01.11.2026, gebaut)
+
+Upgrade-Material und Ki-Tama haben im Reiter Umbauen dieselben Felder wie
+Chrom: Initiative-Bonus als Zahl, Zusatzaktionen als Auswahl keine / 1× pro
+Kampf / 2× pro Kampf / jede Runde. Dieselben Felder, keine zweite Mechanik.
+Sie zählen am Ziel erst, wenn das Upgrade montiert ist — beim Deck zusätzlich
+erst im Matrix-Hot.
+
+Im Besitz gibt es nur noch ein Dropdown „Passt an“. Waffenart schreibt
+`augmentWaffentyp` und setzt `augmentZielTyp` auf Waffe. Rüstung, Cyberdeck
+und Riggerkonsole schreiben nur den Zieltyp. „Alles“ leert beide. Ein altes
+Stück, bei dem die zwei Menüs widersprachen, zeigt die Waffenart; der
+Widerspruch fällt erst, wenn man das Menü neu setzt.
 
 ## Datenmodell
 

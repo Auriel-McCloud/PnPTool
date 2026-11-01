@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Upgrade-Material: Booster im Umbauen, ein Ziel-Menü (01.11.2026)
+
+Initiative-Bonus und Zusatzaktionen stehen bei Upgrade-Material und Ki-Tama im Umbauen, dieselbe Auswahl wie beim Chrom. Im Besitz ein Dropdown „Passt an“ statt Waffenart plus Zieltyp. `CharacterSheetPanel.tsx`, `items/api.ts`. **Nie im Browser angeklickt.**
+
 ## Overclock in der Kampfkarte (01.11.2026)
 
 Beim Neuroweaver im Cyberkampf steht Overclock neben den anderen Funktionen, gleiche Kachel, Würfel dazu. Antippen zeigt den Pool und legt Willenskraft als Bonuswürfel drauf, Deckel 12. Dieselben Regler sitzen in den Matrix-Fenstern. `OverclockFenster.tsx`, `MatrixFenster.tsx`, `Kampfkarte.tsx`. **Nie im Browser angeklickt.**

@@ -10,7 +10,7 @@ import { EMPTY_DOC, parseRichText, serializeRichText } from "../richtext/content
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
-import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, istVerschlossen, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
+import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, augmentPasstAnLesen, augmentPasstAnSchreiben, istVerschlossen, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -1481,7 +1481,7 @@ export function GegenstandRow({
                   + Bonus
                 </button>
 
-                {(CHROM_TYPEN.has(typ) || typ === "Cyberdeck") && (
+                {(CHROM_TYPEN.has(typ) || typ === "Cyberdeck" || typ === "Upgrade-Material" || typ === "Ki-Tama" || istAugment) && (
                   <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
                       Initiative-Bonus
@@ -1941,38 +1941,34 @@ export function GegenstandRow({
                         <input type="checkbox" checked={istAugment} onChange={(e) => setIstAugment(e.target.checked)} />{" "}
                         Ist selbst ein Upgrade
                       </label>
-                      {istAugment && (
+                      {(istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama") && (
                         <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
                           Passt an
-                          <select value={augmentWaffentyp} onChange={(e) => setAugmentWaffentyp(e.target.value as KampfFertigkeit)}>
-                            <option value="">alles (Waffe/Rüstung/Cyberdeck/Riggerkonsole)</option>
+                          <select
+                            value={augmentPasstAnLesen(augmentWaffentyp, augmentZielTyp)}
+                            onChange={(e) => {
+                              const ziel = augmentPasstAnSchreiben(e.target.value);
+                              setAugmentWaffentyp(ziel.augmentWaffentyp);
+                              setAugmentZielTyp(ziel.augmentZielTyp);
+                            }}
+                          >
+                            <option value="">alles (auch Drohne/Fahrzeug)</option>
+                            <option value="Waffe">nur Waffen</option>
                             <option value="Schusswaffen">nur Schusswaffen</option>
                             <option value="Nahkampf">nur Nahkampf</option>
                             <option value="Handgemenge">nur Handgemenge</option>
+                            <option value="Rüstung">nur Rüstung</option>
+                            <option value="Cyberdeck">nur Cyberdeck</option>
+                            <option value="Riggerkonsole">nur Riggerkonsole</option>
                           </select>
                         </label>
                       )}
                     </div>
                     {istAugment && (
-                      <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
-                        Nur an diesem Zieltyp
-                        <select
-                          value={augmentZielTyp}
-                          onChange={(e) => setAugmentZielTyp(e.target.value as typeof augmentZielTyp)}
-                        >
-                          <option value="">alle (Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug)</option>
-                          <option value="Waffe">nur Waffe</option>
-                          <option value="Rüstung">nur Rüstung</option>
-                          <option value="Cyberdeck">nur Cyberdeck</option>
-                          <option value="Riggerkonsole">nur Riggerkonsole</option>
-                        </select>
-                      </label>
-                    )}
-                    {istAugment && (
                       <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8, marginTop: 4 }}>
                         <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block" }}>
                           Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
-                          Schadensart, die ersetzt ihn).
+                          Schadensart, die ersetzt ihn). Initiative-Bonus und Zusatzaktionen stehen im Umbauen.
                         </label>
                         <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
                           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
@@ -2003,24 +1999,6 @@ export function GegenstandRow({
                               onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
                               style={{ width: 60 }}
                             />
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                            Initiative-Bonus
-                            <input
-                              type="number"
-                              value={initiativeBonus}
-                              onChange={(e) => setInitiativeBonus(Number(e.target.value))}
-                              style={{ width: 60 }}
-                            />
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                            Zusatzaktionen
-                            <select value={zusatzaktionen} onChange={(e) => setZusatzaktionen(Number(e.target.value))}>
-                              <option value={0}>keine</option>
-                              <option value={1}>1× pro Kampf</option>
-                              <option value={2}>2× pro Kampf</option>
-                              <option value={-1}>jede Runde</option>
-                            </select>
                           </label>
                         </div>
                         <div style={{ marginTop: 8 }}>
