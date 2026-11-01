@@ -60,7 +60,7 @@ Gerät nötig, dieselbe Matrix-Präsenz wie beim NeuroWeaving.
 | Daten Verarbeiten | Große Datenmengen in Echtzeit durchsuchen/filtern/auswerten |
 | Kompilieren | Spontan eigene Programme/Effekte erschaffen |
 | **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. **Seit 01.11.2026 zusätzlich:** dieselbe Probe hebt das ICE der ganzen Party um +1 je 2 Erfolge, auch über das Maximum hinaus. Kein +3-Deckel mehr. Tarnung bleibt der Soforteffekt. Der ICE-Bonus hält 3 Kampfrunden und füllt sich in diesen Runden mit auf, auch über dem Maximum. |
-| **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. **Seit 01.11.2026 zusätzlich:** macht der Decker oder Neuroweaver das zuerst, sieht er danach das ICE der Gegner. Das ICE der eigenen Party sieht er immer. Ob der Klick reicht oder die Probe, und wie lange die Sicht hält, ist offen. |
+| **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. **Seit 01.11.2026 zusätzlich:** macht der Decker oder Neuroweaver das zuerst, sieht er danach das ICE der Gegner. Das ICE der eigenen Party sieht er immer. Die Sicht ist eine Probe und hält den Kampf. Ein ungesehener Gegner steht in der Liste, Zahl verdeckt, nicht klickbar. |
 
 ## Matrix-Verteidigung (I.C.E.)
 
@@ -192,8 +192,9 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   Kampfrunde. Außerhalb nicht.
 - **Einstieg:** Klick auf Brute Force oder Schleichen öffnet ein
   Commlink-Fenster mit allen Kampfteilnehmern, Drohnen inklusive, und
-  ihrem ICE. Party-ICE steht immer. Gegner-ICE nur nach
-  Matrix-Navigation. Klick auf ein Ziel: das Fenster zeigt den Würfelpool
+  ihrem ICE. Party-ICE steht immer. Gegner-ICE nur nach einer
+  Matrix-Navigation-Probe, Sicht hält den Kampf. Ohne Sicht: Zeile da,
+  Zahl verdeckt, nicht klickbar. Klick auf ein Ziel: das Fenster zeigt den Würfelpool
   und nimmt die Erfolge entgegen, leeres Feld, nicht mit 0 vorbefüllt.
   Electronic Warfare ist die andere Aktion, nicht diese Liste. Daten
   Verarbeiten und Kompilieren starten das nicht.
@@ -226,10 +227,7 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
 
 ### Offene Achse
 
-Matrix-Navigation und die Teilnehmerliste. Party-ICE ist immer sichtbar.
-Gegner-ICE nur nach Navigation. Offen, nicht raten: reicht der Klick oder
-die Probe, wie lange die Sicht hält, und steht ein ungesehener Gegner in
-der Liste ohne Zahl und ohne Klick.
+Keine. Nicht gebaut.
 
 ## Siehe auch
 

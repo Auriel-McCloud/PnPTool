@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Navigation-Probe zeigt gegnerisches ICE
+
+Mark: Matrix-Navigation ist eine Probe, die Sicht hält den Kampf.
+Ungesehener Gegner steht in der Liste, Zahl verdeckt, nicht klickbar.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren-Fenster und Punktebudget
 
 Mark: Brute Force oder Schleichen öffnet die Teilnehmer mit ICE. Probe
