@@ -154,7 +154,9 @@ Electronic Warfare. An der Waffe, unter Umbau direkt unter der Kampfskill-Wahl,
 steht ob sie komplett ausfällt oder nur Upgrades. Leer heißt Schusswaffe
 komplett, alles andere nur Upgrades. Die Kampfkarte des Ziels zeigt eine
 komplett ausgeschaltete Waffe als tot (zuckt, keine Würfel) und holt den Stand
-alle drei Sekunden. Offen: Ki-Tama als eigene Zeile in der Hack-Liste.
+alle drei Sekunden. Ein gehacktes Deck steht auf der Kampfkarte als „aus“
+und verschwindet auf dem Charakterblatt. Beides kommt wieder, sobald die
+Sperre fällt — ohne Neuladen. Offen: Ki-Tama als eigene Zeile in der Hack-Liste.
 
 Mark, 01.11.2026 nachts: Decker und Neuroweaver sollen Waffen oder
 Waffen-Upgrades temporär deaktivieren können — „damit wären sie wirklich

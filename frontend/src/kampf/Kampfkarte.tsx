@@ -151,10 +151,23 @@ export function Kampfkarte({
 
   useEffect(() => {
     let weg = false;
+    let gesehen = false;
+    let letzteDecks = "";
     async function hol() {
       try {
         const stand = await kampfApi.matrixAus(campaignId, personId);
-        if (!weg) setAus(stand.aus);
+        if (weg) return;
+        setAus(stand.aus);
+        // Das Deck selbst steht in den Boni, nicht in der Waffenliste. Die
+        // Sperre ändert sich: Bogen neu holen, sonst bleibt er bis zum Reload.
+        const decks = stand.aus
+          .filter((e) => e.art === "deck")
+          .map((e) => e.zielId)
+          .sort()
+          .join("|");
+        if (gesehen && decks !== letzteDecks) void laden();
+        gesehen = true;
+        letzteDecks = decks;
       } catch {
         if (!weg) setAus([]);
       }
@@ -230,7 +243,16 @@ export function Kampfkarte({
   // Der Umschalter erscheint, sobald es eine Matrix-Seite gibt: ausgerüstetes
   // Cyberdeck (Decker) oder der Neuroweaver-Weg. Sonst bleibt die Karte ein
   // Block ohne Knöpfe.
-  const hatDeck = Object.keys(bogen.deckBoni ?? {}).length > 0;
+  const deckSperre = aus.filter((e) => e.art === "deck");
+  const gesperrteDeckIds = new Set(deckSperre.map((e) => e.zielId));
+  const ausgeruesteteDecks = sachen.filter((g) => g.typ === "Cyberdeck" && g.ablage === "AUSGERUESTET");
+  // Alle Decks tot, oder die Sperre ist da und die Sachen noch nicht: Würfel
+  // weg, sonst bliebe der alte Stand bis zum nächsten Bogen-Laden stehen.
+  const deckTot =
+    deckSperre.length > 0 &&
+    (ausgeruesteteDecks.length === 0 || ausgeruesteteDecks.every((g) => gesperrteDeckIds.has(g.id)));
+  const hatDeck =
+    deckTot || ausgeruesteteDecks.length > 0 || Object.keys(bogen.deckBoni ?? {}).length > 0;
   const istNeuroweaver = u.weg === "NEUROWEAVER";
   const hatCyber = hatDeck || istNeuroweaver;
   const cyberTitel =
@@ -415,6 +437,9 @@ export function Kampfkarte({
                     {zeigeMatrixHot && <MatrixHotKnopf campaignId={campaignId} />}
                   </div>
                 )}
+                {deckTot ? (
+                  <p className="kk-waffe-aus-rest">aus · {Math.max(...deckSperre.map((e) => e.runden))}</p>
+                ) : (
                 <div className="kk-werte">
                   {Object.entries(bogen.deckBoni).map(([name, w]) => (
                     <Zahl
@@ -434,6 +459,7 @@ export function Kampfkarte({
                     />
                   ))}
                 </div>
+                )}
               </>
             )}
             {istNeuroweaver && (

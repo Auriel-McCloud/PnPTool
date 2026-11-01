@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Gehacktes Deck zieht von allein nach
+
+Kampfkarte und Charakterblatt holen die Deck-Sperre alle drei Sekunden.
+Auf der Karte steht „aus“, auf dem Blatt verschwindet die Zeile. Beides
+kommt wieder, ohne Neuladen.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] gebaut | Decker-Hot neben Cyberdeck
 
 Der Knopf hing neben der Runde. Jetzt in der eigenen Kampfkarte neben der

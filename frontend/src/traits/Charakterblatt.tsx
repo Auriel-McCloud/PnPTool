@@ -287,6 +287,38 @@ export function Charakterblatt({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, personId, ansicht]);
 
+  // Kampfkarte pollt die Deck-Sperre alle drei Sekunden. Das Blatt auch,
+  // sonst bleibt die Cyberdeck-Zeile bis zum Neuladen stehen.
+  useEffect(() => {
+    let weg = false;
+    let gesehen = false;
+    let letzteDecks = "";
+    async function hol() {
+      try {
+        const stand = await kampfApi.matrixAus(campaignId, personId);
+        if (weg) return;
+        const decks = stand.aus
+          .filter((e) => e.art === "deck")
+          .map((e) => e.zielId)
+          .sort()
+          .join("|");
+        if (gesehen && decks !== letzteDecks) void neuLaden();
+        gesehen = true;
+        letzteDecks = decks;
+      } catch {
+        // Kein Kampf, oder die Sperre ist nicht sichtbar — der Bogen gilt.
+      }
+    }
+    void hol();
+    const takt = window.setInterval(() => void hol(), 3000);
+    return () => {
+      weg = true;
+      window.clearInterval(takt);
+    };
+    // neuLaden hängt nur an campaignId und personId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, personId]);
+
   // Gesetzte Werte nachschlagbar machen; der Katalog gibt die Reihenfolge vor,
   // damit auch ungesetzte Werte mit 0 erscheinen statt zu fehlen.
   const werte = useMemo(() => {
