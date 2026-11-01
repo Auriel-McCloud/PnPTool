@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Magenta-Puls halb so stark wie Gold
+
+Mark nach dem Sehen: Gold bleibt, hervorheben soll sichtbar leuchten und
+pulsieren, etwa die Hälfte vom Gold. Siehe [[entities/auth-und-rollen]].
+
 ## [2026-11-01] gebaut | Signifikanz vorgefertigter Charaktere
 
 SL setzt am Häkchen Normal, hervorheben oder Wichtig. Magenta- bzw.

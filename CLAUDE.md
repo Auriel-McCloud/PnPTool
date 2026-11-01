@@ -5,7 +5,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 ## Vorgefertigte Signifikanz (01.11.2026)
 
 SL setzt am Häkchen „Vorgefertigter Charakter“ die Stufe `vorgefertigtSignifikanz`:
-Normal (kein Leuchten), hervorheben (sanftes Magenta-Puls), Wichtig (breiteres
+Normal (kein Leuchten), hervorheben (Magenta-Puls, etwa halb so breit wie Gold), Wichtig (breiteres
 Gold-Puls). Auswahl und SL-Kacheln sortieren wichtig, dann hervorheben, dann
 den Rest. Feld an `Person`, Bestand ohne Feld gilt als normal. **Nie im Browser
 angeklickt.**

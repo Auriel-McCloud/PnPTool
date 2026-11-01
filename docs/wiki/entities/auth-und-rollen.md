@@ -93,7 +93,8 @@ im PC-Detail, sobald „Vorgefertigter Charakter“ an ist. Dropdown: Normal
 - Wer: die SL, nicht automatisch.
 - Wo das Leuchten sitzt: Spieler-Auswahl (`SpielerEinstieg.tsx`) und die
   SL-Kacheln in der PC-Übersicht. Normal leuchtet nicht.
-- hervorheben: sanftes Magenta-Puls. Wichtig: breiteres, goldenes Puls.
+- hervorheben: Magenta-Puls, nach dem Sehen etwa halb so breit und halb so
+  stark wie Gold, der Puls selbst bleibt deutlich. Wichtig: breiteres, goldenes Puls.
   Die Farbe entscheidet Mark nach dem Sehen — die Tokens
   `--vorgefertigt-hervorheben` / `--vorgefertigt-wichtig` tragen sie, nicht
   `--signal` (das bleibt SL-geheim).

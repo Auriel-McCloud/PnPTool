@@ -33,11 +33,13 @@
 }
 
 .vf-glanz[data-signifikanz="hervorheben"]::after {
-  opacity: 0.55;
+  inset: -4px;
+  opacity: 0.7;
   box-shadow:
-    0 0 10px 1px color-mix(in srgb, var(--vorgefertigt-hervorheben) 62%, transparent),
-    inset 0 0 14px color-mix(in srgb, var(--vorgefertigt-hervorheben) 22%, transparent);
-  animation: vf-puls-sanft 2.8s ease-in-out infinite;
+    0 0 8px 1px color-mix(in srgb, var(--vorgefertigt-hervorheben) 80%, transparent),
+    0 0 14px 4px color-mix(in srgb, var(--vorgefertigt-hervorheben) 52%, transparent),
+    0 0 24px 8px color-mix(in srgb, var(--vorgefertigt-hervorheben) 28%, transparent);
+  animation: vf-puls-sanft 2.6s ease-in-out infinite;
 }
 
 .vf-glanz[data-signifikanz="wichtig"]::after {
@@ -63,10 +65,10 @@
 @keyframes vf-puls-sanft {
   0%,
   100% {
-    opacity: 0.38;
+    opacity: 0.42;
   }
   50% {
-    opacity: 0.92;
+    opacity: 1;
   }
 }
 
