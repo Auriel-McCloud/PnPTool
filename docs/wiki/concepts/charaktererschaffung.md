@@ -1,7 +1,7 @@
 ---
 title: Charaktererschaffung
 created: 2026-09-18
-updated: 2026-10-09
+updated: 2026-11-01
 type: konzept
 tags: [charaktererschaffung, attribute, fertigkeiten, versionsgeschichte]
 sources: [../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../backend/app/traits/erstellung.py]
@@ -59,6 +59,10 @@ des Assistenten (Weg, Rasse, Punkteverteilung) bleibt lokal bis
 „Charakter anlegen“ — das war bewusst der kleinste Schnitt, nachdem Mark
 genau diesen Textverlust gemeldet hat.
 
+**Punkte auf einmal zurück (01.11.2026):** Im Fertigkeiten-Fenster nimmt ein ×
+links neben den Punkten den ganzen vergebenen Slot zurück. Runterklicken
+scheitert, sobald die nächstkleinere Stufe schon belegt ist. Feste
+Rassenpunkte (Sockel, Gratis-Zusatzfertigkeit) bleiben.
 
 ## Offene Fragen
 

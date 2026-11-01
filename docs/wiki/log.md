@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Fertigkeiten-Erstellung: alle Punkte auf einmal zurück
+
+Im Fertigkeiten-Fenster sitzt ein × links neben den Punkten und nimmt den
+ganzen vergebenen Slot zurück. Feste Rassenpunkte bleiben. Siehe
+[[concepts/charaktererschaffung]].
+
 ## [2026-11-01] gebaut | Matrix-Schlagschaden an Drohnen
 
 Decker und Neuroweaver können eine Drohne schalten oder den Überschuss als

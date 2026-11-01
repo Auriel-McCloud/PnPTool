@@ -1113,6 +1113,22 @@ function SchrittAttribute({
   );
 }
 
+/** × links neben den Punkten: den ganzen vergebenen Slot auf einmal zurück.
+ *  Runterklicken scheitert, sobald die nächstkleinere Stufe schon belegt ist. */
+function PunkteWeg({
+  onWeg,
+  titel = "Alle Punkte zurücknehmen",
+}: {
+  onWeg: () => void;
+  titel?: string;
+}) {
+  return (
+    <button type="button" className="er-punkte-weg" title={titel} aria-label={titel} onClick={onWeg}>
+      ×
+    </button>
+  );
+}
+
 function SchrittFertigkeiten({
   campaignId,
   regeln,
@@ -1282,8 +1298,8 @@ function SchrittFertigkeiten({
             )}
 
             <p className="er-hinweis">
-              Ein Wert lässt sich nur vergeben, solange davon noch einer frei ist — nochmal antippen
-              nimmt ihn zurück.
+              Ein Wert lässt sich nur vergeben, solange davon noch einer frei ist. Das × links neben
+              den Punkten nimmt den ganzen Wert auf einmal zurück. Feste Punkte von der Rasse bleiben.
             </p>
 
             {/* Zusatzfertigkeiten-Button steht jetzt ganz unten, nach dem
@@ -1304,7 +1320,7 @@ function SchrittFertigkeiten({
                 knoten.push(
                   <section key={`${kategorie}-magie`} style={{ "--cb-ton": TON[magieKategorie!] } as React.CSSProperties}>
                     <h3 className="er-spalte-titel">{magieAnzeigeName}</h3>
-                    <div className="er-wert">
+                    <div className={`er-wert${magieBonus > 0 ? " er-wert-mit-weg" : ""}`}>
                       <span className="er-wert-name">
                         {magieAnzeigeName}
                         <InfoTipp
@@ -1314,6 +1330,13 @@ function SchrittFertigkeiten({
                           erzwingen
                         />
                       </span>
+                      <span className="er-punkte-zeile">
+                      {magieBonus > 0 && (
+                        <PunkteWeg
+                          titel="Vergebene Punkte zurücknehmen — der feste Wert bleibt"
+                          onWeg={() => onWert({ ...werte, [magieTrait.name]: 0 })}
+                        />
+                      )}
                       <DotPool
                         value={regeln.magieFixwert + magieBonus}
                         max={regeln.magieFixwert + (gewaehlt.id === "PROFI" ? regeln.magieFixwertProfiBonus : 0)}
@@ -1324,6 +1347,7 @@ function SchrittFertigkeiten({
                           onWert({ ...werte, [magieTrait.name]: bonus });
                         }}
                       />
+                      </span>
                     </div>
                   </section>,
                 );
@@ -1344,7 +1368,7 @@ function SchrittFertigkeiten({
                       const wert = werte[t.name] || 0;
                       const anzeigeName = magieBegriff(magieFlavor, t.name);
                       return (
-                        <div key={t.id} className="er-wert">
+                        <div key={t.id} className={`er-wert${wert > 0 ? " er-wert-mit-weg" : ""}`}>
                           <span className="er-wert-name">
                             {anzeigeName}
                             <InfoTipp
@@ -1354,15 +1378,20 @@ function SchrittFertigkeiten({
                               erzwingen
                             />
                           </span>
-                          <DotPool
-                            value={wert}
-                            max={hoechster}
-                            onChange={(neu) => {
-                              const ziel = neu === wert ? 0 : neu;
-                              if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
-                              onWert({ ...werte, [t.name]: ziel });
-                            }}
-                          />
+                          <span className="er-punkte-zeile">
+                            {wert > 0 && (
+                              <PunkteWeg onWeg={() => onWert({ ...werte, [t.name]: 0 })} />
+                            )}
+                            <DotPool
+                              value={wert}
+                              max={hoechster}
+                              onChange={(neu) => {
+                                const ziel = neu === wert ? 0 : neu;
+                                if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                                onWert({ ...werte, [t.name]: ziel });
+                              }}
+                            />
+                          </span>
                         </div>
                       );
                     })}
@@ -1393,7 +1422,7 @@ function SchrittFertigkeiten({
                           erwarten sie dort ausdrücklich nicht — der Server
                           vergibt ihren Punkt unabhängig vom Fertigkeiten-Budget. */}
                       {gratisZf && (
-                        <div key={gratisZf.id} className="er-wert">
+                        <div key={gratisZf.id} className={`er-wert${(zusatzfertigkeitPaketPunkte[gratisZf.id] || 0) > 0 ? " er-wert-mit-weg" : ""}`}>
                           <span className="er-wert-name">
                             {gratisZf.name}
                             <ZusatzfertigkeitInfoTipp
@@ -1408,29 +1437,39 @@ function SchrittFertigkeiten({
                               ✦ Rasse
                             </span>
                           </span>
-                          <DotPool
-                            value={1 + (zusatzfertigkeitPaketPunkte[gratisZf.id] || 0)}
-                            max={1 + hoechster}
-                            fest={1}
-                            onChange={(neu) => {
-                              // Der feste Rassen-Punkt (fest=1, siehe DotPool)
-                              // ist nicht wegklickbar. Alles darüber ist eine
-                              // normale Paket-Investition wie beim Hexkraft-/
-                              // NeuroWeaving-Sockel oben: `bonus` ist die
-                              // GRÖSSE des zusätzlichen Slots, nicht der
-                              // Gesamtwert — wird unten genauso als eigener
-                              // Slot gegen `offen` geprüft/verbucht.
-                              const bonus = Math.max(0, neu - 1);
-                              if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
-                              onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [gratisZf.id]: bonus });
-                            }}
-                          />
+                          <span className="er-punkte-zeile">
+                            {(zusatzfertigkeitPaketPunkte[gratisZf.id] || 0) > 0 && (
+                              <PunkteWeg
+                                titel="Extra-Punkte zurücknehmen — der Rassenpunkt bleibt"
+                                onWeg={() =>
+                                  onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [gratisZf.id]: 0 })
+                                }
+                              />
+                            )}
+                            <DotPool
+                              value={1 + (zusatzfertigkeitPaketPunkte[gratisZf.id] || 0)}
+                              max={1 + hoechster}
+                              fest={1}
+                              onChange={(neu) => {
+                                // Der feste Rassen-Punkt (fest=1, siehe DotPool)
+                                // ist nicht wegklickbar. Alles darüber ist eine
+                                // normale Paket-Investition wie beim Hexkraft-/
+                                // NeuroWeaving-Sockel oben: `bonus` ist die
+                                // GRÖSSE des zusätzlichen Slots, nicht der
+                                // Gesamtwert — wird unten genauso als eigener
+                                // Slot gegen `offen` geprüft/verbucht.
+                                const bonus = Math.max(0, neu - 1);
+                                if (bonus > 0 && (offen[bonus] ?? 0) <= 0) return;
+                                onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [gratisZf.id]: bonus });
+                              }}
+                            />
+                          </span>
                         </div>
                       )}
                       {zusatzfertigkeiten.map((z) => {
                         const wert = zusatzfertigkeitPaketPunkte[z.id] || 0;
                         return (
-                          <div key={z.id} className="er-wert">
+                          <div key={z.id} className={`er-wert${wert > 0 ? " er-wert-mit-weg" : ""}`}>
                             <span className="er-wert-name">
                               {z.name}
                               <ZusatzfertigkeitInfoTipp
@@ -1439,15 +1478,24 @@ function SchrittFertigkeiten({
                                 detailbeschreibung={z.detailbeschreibung}
                               />
                             </span>
-                            <DotPool
-                              value={wert}
-                              max={hoechster}
-                              onChange={(neu) => {
-                                const ziel = neu === wert ? 0 : neu;
-                                if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
-                                onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: ziel });
-                              }}
-                            />
+                            <span className="er-punkte-zeile">
+                              {wert > 0 && (
+                                <PunkteWeg
+                                  onWeg={() =>
+                                    onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: 0 })
+                                  }
+                                />
+                              )}
+                              <DotPool
+                                value={wert}
+                                max={hoechster}
+                                onChange={(neu) => {
+                                  const ziel = neu === wert ? 0 : neu;
+                                  if (ziel > 0 && (offen[ziel] ?? 0) <= 0) return;
+                                  onZusatzfertigkeitPaket({ ...zusatzfertigkeitPaketPunkte, [z.id]: ziel });
+                                }}
+                              />
+                            </span>
                           </div>
                         );
                       })}

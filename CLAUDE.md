@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Fertigkeiten-Erstellung: alle Punkte auf einmal zurück (01.11.2026)
+
+Im Fertigkeiten-Fenster sitzt ein × links neben den Punkten, sobald welche vergeben sind. Ein Tipp nimmt den ganzen Slot zurück. Feste Rassenpunkte bleiben. `Charaktererstellung.tsx`. **Nie im Browser angeklickt.**
+
 ## Matrix-Schlagschaden an Drohnen (01.11.2026)
 
 Decker und Neuroweaver können eine Drohne schalten oder den Überschuss als Schlagschaden buchen, ohne Rüstung, nicht beides. Fahrzeug bleibt beim Schalten. Sitzt jemand Hot in der Drohne, nimmt der die Hälfte; bei 0 Gesundheit Dumpshock. Automata ist kein eigener Typ. `matrix.py`, `matrix_routes.py`, `MatrixFenster.tsx`. **Nie im Browser angeklickt.**

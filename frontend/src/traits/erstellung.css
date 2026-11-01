@@ -393,6 +393,55 @@
   margin-left: 4px;
 }
 
+/* × hängt links neben den Punkten, ohne die Reihe zu verschieben. */
+.er-punkte-zeile {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.er-wert-mit-weg .er-wert-name {
+  padding-right: 18px;
+}
+
+.er-punkte-weg {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  margin-right: 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.er-punkte-weg::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+
+.er-punkte-weg:hover:not(:disabled),
+.er-punkte-weg:active:not(:disabled) {
+  color: var(--neon);
+  border-color: var(--linie-hell);
+  background: var(--flaeche);
+  transform: translateY(-50%);
+}
+
 .er-wert-zusatz {
   display: block;
   font-size: 11px;
