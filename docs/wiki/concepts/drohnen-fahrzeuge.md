@@ -442,6 +442,10 @@ komplett.**
 
 ## Entwicklung
 
+- **01.11.2026 (Matrix-Schlagschaden an der Drohne):** Decker und Neuroweaver
+  können eine Drohne schalten oder den Überschuss als Schlagschaden buchen,
+  ohne Rüstung, nicht beides. Fahrzeug nicht. Hot-Rigger nimmt die Hälfte,
+  bei 0 Gesundheit Dumpshock. Automata ist hier eine Drohne, kein eigener Typ.
 - **01.11.2026 (Hot bleibt, bis er Nein sagt):** Der Decker konnte Hot
   jederzeit ausknipsen. Der Knopf schaltet nur noch ein. Beim nächsten
   eigenen Zug zuerst die Bleiben-Frage. Nein heißt nicht mehr Hot und keine

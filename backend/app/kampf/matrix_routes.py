@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_zugang
 from app.ereignisprotokoll import hooks
 from app.kampf import matrix, matrix_store, repository
+from app.kampf.hot import verbindung_bricht
 from app.kampf.matrix import (
     DECK_EINSTIEG,
     ELECTRONIC_WARFARE,
@@ -156,7 +157,9 @@ async def treffer(campaign_id: str, body: TrefferInput, viewer: Viewer = Depends
         raise HTTPException(status.HTTP_403_FORBIDDEN, "ICE noch nicht gesehen")
     info = await matrix_store.matrix_basis(campaign_id, body.zielPersonId)
     zustand = await repository.hot_lesen(campaign_id, body.zielPersonId)
-    art = matrix.treffer_art(info["weg"], zustand["matrixHot"], info["drohne"])
+    art = matrix.treffer_art(
+        info["weg"], zustand["matrixHot"], info["drohne"], info.get("roboter", False)
+    )
     bonus = matrix.aktiver_bonus(stand.get("ew") or {}, body.zielPersonId, kampf["runde"])
     maximum = matrix.ice_maximum(info["wert"], bonus)
     vorher = matrix_store.aktuelles_ice(stand, body.zielPersonId, maximum)
@@ -181,6 +184,7 @@ async def treffer(campaign_id: str, body: TrefferInput, viewer: Viewer = Depends
         "schlag": schlag,
         "art": art,
         "quelle": info["quelle"],
+        "roboter": bool(info.get("roboter")),
         "ziele": ziele,
     }
 
@@ -203,6 +207,15 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
         gebucht = await matrix_store.schlag_buchen(campaign_id, body.zielPersonId, menge)
         if gebucht < 1:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+        ziel = await matrix_store.matrix_basis(campaign_id, body.zielPersonId)
+        rueckschlag: list[dict] = []
+        schock: list[dict] = []
+        if ziel.get("roboter"):
+            rueckschlag = await repository.hot_rueckschlag_buchen(campaign_id, body.zielPersonId, gebucht)
+            if rueckschlag and verbindung_bricht(await matrix_store.gesundheit_uebrig(campaign_id, body.zielPersonId)):
+                for r in rueckschlag:
+                    await repository.dumpshock(campaign_id, r["riggerId"])
+                    schock.append({"riggerId": r["riggerId"], "riggerName": r["riggerName"]})
         matrix_store.offen_loeschen(stand, ich)
         await matrix_store.speichere(campaign_id, stand)
         await hooks.kampf_treffer(
@@ -216,7 +229,19 @@ async def bestaetigen(campaign_id: str, body: BestaetigenInput, viewer: Viewer =
             hp_menge=gebucht,
             kaestchen_schaden=0,
         )
-        return {"schlag": gebucht}
+        for r in rueckschlag:
+            await hooks.kampf_treffer(
+                campaign_id,
+                art="TREFFER",
+                ziel_person_id=r["riggerId"],
+                angreifer_person_id=ich,
+                kampf_id=kampf["id"],
+                runde=kampf["runde"],
+                hp_art="schlag",
+                hp_menge=r["schlag"],
+                kaestchen_schaden=0,
+            )
+        return {"schlag": gebucht, "hotRueckschlag": rueckschlag, "dumpshock": schock}
     if art == "schaden":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Den Neuroweaver schaltet man nicht")
     katalog = {z["id"]: z for z in await matrix_store.schaltbare(campaign_id, body.zielPersonId)}

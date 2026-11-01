@@ -122,6 +122,8 @@ export interface MatrixTreffer {
   schlag: number;
   art: "schaden" | "wahl" | "schalten";
   quelle: "willenskraft" | "geraet";
+  /** Drohne, kein Fahrzeug. Dann gilt die Wahl auch ohne Matrix-Hot. */
+  roboter?: boolean;
   ziele: MatrixZiel[];
 }
 
@@ -197,7 +199,13 @@ export const kampfApi = {
     zielPersonId: string,
     posten: { id: string; runden: number }[],
     schlag = false,
-  ) => api.post(`${basis(cid)}/matrix/bestaetigen`, { zielPersonId, posten, schlag }),
+  ) =>
+    api.post<{
+      schlag?: number;
+      aus?: { zielId: string; name: string; art: string; runden: number }[];
+      hotRueckschlag?: { riggerId: string; riggerName: string; schlag: number }[];
+      dumpshock?: { riggerId: string; riggerName: string }[];
+    }>(`${basis(cid)}/matrix/bestaetigen`, { zielPersonId, posten, schlag }),
   matrixAn: (cid: string, eintragId: string) =>
     api.post(`${basis(cid)}/matrix/reaktivieren/${eintragId}`),
 };

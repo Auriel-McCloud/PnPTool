@@ -94,6 +94,13 @@ ohne Deckel 3 und ohne Rüstung. Ein Decker, der Hot in der Matrix ist, hat
 die Wahl: schalten (Deckel 3) oder denselben Überschuss ganz als Schlagschaden.
 Nicht beides.
 
+**Drohne im Kampf: dieselbe Wahl (01.11.2026).** Nicht nur der Hot-Decker.
+Decker und Neuroweaver können eine Drohne schalten oder den ganzen Überschuss
+als Schlagschaden buchen, ohne Rüstung, nicht beides. Ein Fahrzeug bleibt
+beim Schalten. Sitzt jemand Hot in der Drohne, nimmt der die Hälfte, und bei
+0 Gesundheit Dumpshock. Automata sind kein eigener Typ — eine Drohne ist der
+Roboter.
+
 ## Entwicklung
 
 - **29.08.2026 (Tag 1 des Projekts!) — Neuroweaver-Verteidigung geändert.**
@@ -150,6 +157,12 @@ Nicht beides.
   Gleiche Mechanik, neuer Name: `magie.ts::MAGIE_HINWEISE.overclock` /
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
+- **01.11.2026 — Drohne nimmt Matrix-Schlagschaden.** Mark: Decker und
+  Neuroweaver sollen denselben direkten Schlagschaden auch bei Robotern
+  machen können. Eine Drohne bekommt die Wahl, schalten oder Überschuss als
+  Schlagschaden, ohne Rüstung. Fahrzeug bleibt beim Schalten. Hot-Rigger
+  nimmt die Hälfte, bei 0 Gesundheit Dumpshock. Automata ist kein eigenes
+  Flag. `matrix.py`, `MatrixFenster.tsx`.
 - **01.11.2026 — Neuroweaver-Hack: Willenskraft ist das Kampf-ICE, Überschuss ist Schlagschaden.**
   Mark: die Willenskraft verhält sich wie ICE, füllt sich aber nur bis zum
   selbst verbrauchten Stand auf. Den Neuroweaver deaktiviert man nicht, die

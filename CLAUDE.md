@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Matrix-Schlagschaden an Drohnen (01.11.2026)
+
+Decker und Neuroweaver können eine Drohne schalten oder den Überschuss als Schlagschaden buchen, ohne Rüstung, nicht beides. Fahrzeug bleibt beim Schalten. Sitzt jemand Hot in der Drohne, nimmt der die Hälfte; bei 0 Gesundheit Dumpshock. Automata ist kein eigener Typ. `matrix.py`, `matrix_routes.py`, `MatrixFenster.tsx`. **Nie im Browser angeklickt.**
+
 ## Decker-Hot bleibt bis zur Bleiben-Frage (01.11.2026)
 
 Der Hot-Knopf schaltet nur ein. Aus per Klick ist 409. Beim nächsten eigenen Zug zuerst „Hot bleiben?“. Nein setzt `matrixHot` aus, die Zusatzaktion aus dem Deck kommt dann nicht. Ja merkt die Runde und danach kommt die Booster-Frage. Kampfende löscht Matrix-Hot. `matrixHotRunde` auf der Person. `hot.py`, `HotBleibenPopup.tsx`, `BoosterPopup.tsx`. **Nie im Browser angeklickt.**
@@ -3124,7 +3128,7 @@ dort weitergepflegt, hier nicht mehr).
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |
-| 20 | Temporäres Deaktivieren (Decker/Neuroweaver): Fenster, ICE-Pool, Aufteilung, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Konsole wirft aus dem Drohnen-Hot, Neurolink aus beidem. Gehacktes Deck zieht auf Kampfkarte und Blatt von allein nach. Neuroweaver: restliche Willenskraft ist Kampf-ICE, Überschuss ungedeckelter Schlagschaden, nichts schalten. Hot-Decker: Wahl schalten oder Schlagschaden. Offen: Ki-Tama als eigene Hack-Zeile | **teilweise umgesetzt** (01.11.) | [[neuroweaving-decking]] |
+| 20 | Temporäres Deaktivieren (Decker/Neuroweaver): Fenster, ICE-Pool, Aufteilung, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Konsole wirft aus dem Drohnen-Hot, Neurolink aus beidem. Gehacktes Deck zieht auf Kampfkarte und Blatt von allein nach. Neuroweaver: restliche Willenskraft ist Kampf-ICE, Überschuss ungedeckelter Schlagschaden, nichts schalten. Hot-Decker: Wahl schalten oder Schlagschaden. Drohne: dieselbe Wahl, Fahrzeug nur schalten, Hot-Rigger nimmt die Hälfte. Offen: Ki-Tama als eigene Hack-Zeile, Automata als eigener Typ | **teilweise umgesetzt** (01.11.) | [[neuroweaving-decking]] |
 | 21 | Ki-Tama-Beschwörung nur einmal pro Kampf, auch Stufe 1; Fehlwurf verbraucht nicht, Patzer schon; verbrauchte Kachel verschwindet | ✅ gebaut (01.11.) | [[augments-ausruestung]] |
 | 23 | Ki-Tamas und Rüstung von Ifrit und Shiva; Blizzard, Inferno, Feuer, Eis | **offen**, Notiz — Zuordnung nicht entschieden | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |

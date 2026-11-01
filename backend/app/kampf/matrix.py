@@ -42,8 +42,14 @@ def ice_klemmen(gespeichert: int | None, maximum: int) -> int:
     return min(deckel, max(0, int(gespeichert)))
 
 
-def treffer_art(weg: str, matrix_hot: bool, ist_drohne: bool = False) -> str:
-    """Neuroweaver: nur Schaden. Hot in der Matrix: Wahl. Sonst nur schalten."""
+def treffer_art(weg: str, matrix_hot: bool, ist_drohne: bool = False, ist_roboter: bool = False) -> str:
+    """Neuroweaver: nur Schaden. Hot oder Roboter: Wahl. Fahrzeug und der Rest: nur schalten.
+
+    Roboter ist eine Drohne, kein Fahrzeug. Die Wahl ist schalten oder der ganze
+    Überschuss als Schlagschaden, nicht beides.
+    """
+    if ist_roboter:
+        return "wahl"
     if ist_drohne:
         return "schalten"
     if weg == "NEUROWEAVER":

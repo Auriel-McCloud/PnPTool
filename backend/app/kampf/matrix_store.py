@@ -10,7 +10,7 @@ from app.entities.repository import PERSON_FIELDS, get_node, update_node
 from app.items.repository import commlink_cyberwall, willenskraft_verlust
 from app.kampf import matrix, repository
 from app.kampf.matrix import leerer_stand
-from app.traits.bogen import ice_max, willenskraft_max
+from app.traits.bogen import GESUNDHEIT_GRUNDWERT, gesundheit_max, ice_max, willenskraft_max
 from app.traits.repository import get_ratings_for_entity
 
 
@@ -74,8 +74,9 @@ async def matrix_basis(campaign_id: str, person_id: str) -> dict:
     """ICE-Grundwert ohne Electronic-Warfare. Neuroweaver: restliche Willenskraft."""
     person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
     if person is None:
-        return {"wert": 0, "quelle": "geraet", "weg": "", "drohne": False}
+        return {"wert": 0, "quelle": "geraet", "weg": "", "drohne": False, "roboter": False}
     drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    roboter = bool(person.get("istDrohne")) and not bool(person.get("istFahrzeug"))
     weg = person.get("weg") or "KEINER"
     if weg == "NEUROWEAVER" and not drohne:
         ratings = await get_ratings_for_entity(campaign_id, person_id)
@@ -84,7 +85,7 @@ async def matrix_basis(campaign_id: str, person_id: str) -> dict:
             _werte(ratings), int(person.get("willenskraftBonus") or 0), chrom
         )
         rest = matrix.willenskraft_rest(maximum, int(person.get("willenskraftVerbraucht") or 0))
-        return {"wert": rest, "quelle": "willenskraft", "weg": weg, "drohne": False}
+        return {"wert": rest, "quelle": "willenskraft", "weg": weg, "drohne": False, "roboter": False}
     ratings = await get_ratings_for_entity(campaign_id, person_id)
     wall = await commlink_cyberwall(campaign_id, person_id)
     return {
@@ -92,6 +93,7 @@ async def matrix_basis(campaign_id: str, person_id: str) -> dict:
         "quelle": "geraet",
         "weg": weg,
         "drohne": drohne,
+        "roboter": roboter,
     }
 
 
@@ -283,6 +285,23 @@ async def schlag_buchen(campaign_id: str, person_id: str, menge: int) -> int:
     neu = int(person.get("schadenSchlag") or 0) + menge
     await update_node("Person", PERSON_FIELDS, campaign_id, person_id, {"schadenSchlag": neu})
     return menge
+
+
+async def gesundheit_uebrig(campaign_id: str, person_id: str) -> int:
+    """Nach dem Buchen. Für Dumpshock, dieselbe Formel wie auf dem Blatt."""
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+    if person is None:
+        return 0
+    ratings = await get_ratings_for_entity(campaign_id, person_id)
+    roh = person.get("gesundheitGrundwert")
+    grund = GESUNDHEIT_GRUNDWERT if roh is None or roh == -1 else int(roh)
+    maximum = gesundheit_max(_werte(ratings), grund)
+    verbraucht = (
+        max(0, int(person.get("schadenAggraviert") or 0))
+        + max(0, int(person.get("schadenSchwer") or 0))
+        + max(0, int(person.get("schadenSchlag") or 0))
+    )
+    return maximum - verbraucht
 
 
 def gesehen(stand: dict, viewer_id: str) -> set[str]:

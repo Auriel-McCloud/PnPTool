@@ -43,6 +43,9 @@ def test_neuroweaver_nimmt_schaden_hot_decker_hat_die_wahl():
     assert treffer_art("KEINER", True) == "wahl"
     assert treffer_art("KEINER", False) == "schalten"
     assert treffer_art("NEUROWEAVER", False, ist_drohne=True) == "schalten"
+    assert treffer_art("KEINER", False, ist_drohne=True, ist_roboter=True) == "wahl"
+    assert treffer_art("NEUROWEAVER", False, ist_roboter=True) == "wahl"
+    assert treffer_art("KEINER", False, ist_drohne=True) == "schalten"
 
 
 def test_ice_nimmt_1_zu_1_schaden():

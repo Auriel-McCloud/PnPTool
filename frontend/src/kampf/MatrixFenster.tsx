@@ -104,8 +104,21 @@ export function MatrixFenster({
     if (!ziel || !treffer) return;
     setBusy(true);
     try {
-      await kampfApi.matrixBestaetigen(campaignId, ziel.personId, [], true);
+      const gebucht = await kampfApi.matrixBestaetigen(campaignId, ziel.personId, [], true);
       setSchadenFrage(false);
+      const zeilen = [
+        ...(gebucht.hotRueckschlag ?? []).map(
+          (r) => `Hot-Rückschlag: ${r.riggerName} nimmt ${r.schlag} Schlagschaden.`,
+        ),
+        ...(gebucht.dumpshock ?? []).map(
+          (r) => `Dumpshock: ${r.riggerName} setzt den Rest der Runde aus. Die Verbindung ist tot.`,
+        ),
+      ];
+      if (zeilen.length) {
+        setHinweis(zeilen.join(" "));
+        setTreffer(null);
+        return;
+      }
       onSchliessen();
     } catch (e) {
       setHinweis(e instanceof Error ? e.message : "Nicht übernommen.");
@@ -305,7 +318,11 @@ export function MatrixFenster({
         {schadenFrage && ziel && treffer && (
           <Bestaetigung
             titel="Schlagschaden"
-            text={`Bist du sicher? ${ziel.name} nimmt ${treffer.schlag} Schlagschaden. Rüstung zählt nicht.`}
+            text={
+              treffer.roboter
+                ? `Bist du sicher? ${ziel.name} nimmt ${treffer.schlag} Schlagschaden. Rüstung zählt nicht. Sitzt jemand Hot drin, nimmt der die Hälfte.`
+                : `Bist du sicher? ${ziel.name} nimmt ${treffer.schlag} Schlagschaden. Rüstung zählt nicht.`
+            }
             jaText="Ja"
             onJa={schadenBuchen}
             onNein={() => setSchadenFrage(false)}
