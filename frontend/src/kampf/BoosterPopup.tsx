@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { kampfApi, type BoosterStatus, type Kampf } from "./api";
+import { MATRIX_HOT_AN } from "./HotBleibenPopup";
 import "./booster.css";
 
 /**
@@ -44,6 +45,8 @@ export function BoosterPopup({
   const [wert, setWert] = useState("");
   const [sendet, setSendet] = useState(false);
   const [modus, setModus] = useState<"frage" | "wurf" | "paralyse" | null>(null);
+  const modusRef = useRef(modus);
+  modusRef.current = modus;
 
   // Ist der eigene Stammeintrag gerade dran?
   const eigener = kampf?.teilnehmer.find(
@@ -71,6 +74,26 @@ export function BoosterPopup({
     setGefragt(kennung);
     setModus("frage");
   }, [binDran, status, kampf?.runde, eigener?.id, gefragt]);
+
+  // Hot erst im eigenen Zug: das Deck zählt jetzt, die Frage kam beim
+  // Drankommen noch nicht, weil matrixHot da noch aus war.
+  useEffect(() => {
+    if (!campaignId || !binDran) return;
+    const beiHot = () => {
+      if (modusRef.current === "wurf" || modusRef.current === "paralyse") return;
+      kampfApi
+        .boosterStatus(campaignId)
+        .then((frisch) => {
+          setStatus(frisch);
+          if (!frisch.hatBooster || !frisch.darfAktivieren) return;
+          setGefragt(`${kampf?.runde}-${eigener?.id}`);
+          setModus("frage");
+        })
+        .catch(() => setStatus(null));
+    };
+    window.addEventListener(MATRIX_HOT_AN, beiHot);
+    return () => window.removeEventListener(MATRIX_HOT_AN, beiHot);
+  }, [campaignId, binDran, kampf?.runde, eigener?.id]);
 
   // Nach dem Zusatzzug: Paralysewurf, wenn die Ampel voll ist.
   useEffect(() => {

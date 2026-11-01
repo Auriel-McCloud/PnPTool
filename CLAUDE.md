@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Hot im eigenen Zug fragt nach (01.11.2026)
+
+War der Decker schon dran und tippte erst dann Hot, kam die Frage nach der Zusatzaktion nicht. Sie hing am Drankommen, und da zählte das Deck noch nicht. Der Hot-Klick schickt `pnptool-matrix-hot-an`, `BoosterPopup` holt den Stand neu und öffnet dasselbe Fenster, solange er dran ist und noch eine Aktion frei ist. `HotBleibenPopup.tsx`, `BoosterPopup.tsx`. **Nie im Browser angeklickt.**
+
 ## Upgrade-Material: Booster im Umbauen, ein Ziel-Menü (01.11.2026)
 
 Initiative-Bonus und Zusatzaktionen stehen bei Upgrade-Material und Ki-Tama im Umbauen, dieselbe Auswahl wie beim Chrom. Im Besitz ein Dropdown „Passt an“ statt Waffenart plus Zieltyp. `CharacterSheetPanel.tsx`, `items/api.ts`. **Nie im Browser angeklickt.**

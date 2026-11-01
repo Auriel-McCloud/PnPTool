@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Hot im eigenen Zug fragt nach der Zusatzaktion
+
+War der Decker schon dran und ging erst dann Hot, kam die Booster-Frage nicht.
+Der Klick holt den Stand neu und öffnet dasselbe Fenster, solange noch eine
+Zusatzaktion frei ist. Siehe [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-11-01] gebaut | Upgrade-Material: Booster im Umbauen, ein Ziel-Menü
 
 Initiative-Bonus und Zusatzaktionen stehen beim Upgrade-Material im Umbauen,

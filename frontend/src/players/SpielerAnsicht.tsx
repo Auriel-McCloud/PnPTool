@@ -527,7 +527,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
     <Warnung campaignId={ich.campaignId} />
-    {/* Reflex-Booster: fragt beim Drankommen, ob aktiviert werden soll. */}
+    {/* Reflex-Booster: fragt beim Drankommen, und nochmal, wenn der Decker
+        erst im eigenen Zug Hot geht — das Deck zählt vorher nicht. */}
     <BoosterPopup
       campaignId={ich.campaignId}
       kampf={kampf}

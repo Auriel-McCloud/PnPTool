@@ -204,8 +204,10 @@ schaltet der verbaute Neurolink frei, nicht die Höhe des Bonus.
   Kampf / 2× pro Kampf / jede Runde) zählt erst, wenn er Hot ist. Nur
   ausgerüstet reicht nicht, und ohne verbauten Neurolink gibt es den Knopf
   nicht. Der Knopf sitzt in der eigenen Kampfkarte neben der Überschrift
-  Cyberdeck (Cyberkampf-Ansicht), nicht neben der Runde. Der Kampf liest
-  Zusatzaktionen bisher nur von verbautem Chrom.
+  Cyberdeck (Cyberkampf-Ansicht), nicht neben der Runde. Klickt er Hot erst,
+  während er schon dran ist, kommt dieselbe Frage sofort. Vorher kam sie nur,
+  wenn Hot schon an war, als der Zug begann. Der Kampf liest
+  Zusatzaktionen bisher nur von verbautem Chrom, plus dem Deck solange Hot.
 - **Rigger, Hot:** eine Drohne pro Runde, gewählt über den Knopf an ihrem
   Slot. Beim nächsten eigenen Slot die Frage, ob er in derselben Drohne
   bleibt. Nein heißt ausklinken; eine andere wählt er erst in der nächsten
@@ -438,6 +440,11 @@ komplett.**
 
 ## Entwicklung
 
+- **01.11.2026 (Hot im eigenen Zug fragt nach):** War der Decker schon dran
+  und ging erst dann Hot, kam die Booster-Frage nicht. Sie hing am
+  Drankommen, und da zählte das Deck noch nicht. Der Hot-Klick im eigenen
+  Zug holt den Stand neu und öffnet dasselbe Fenster, wenn noch eine
+  Zusatzaktion frei ist.
 - **01.11.2026 (Decker-Hot neben Cyberdeck):** Der Knopf hing neben der
   Rundenanzeige. Jetzt in der eigenen Kampfkarte, direkt neben der
   Überschrift Cyberdeck, sobald Cyberkampf an ist. Drohnen- und SL-Karten

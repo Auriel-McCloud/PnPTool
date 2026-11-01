@@ -4,6 +4,14 @@ import { kampfApi, type HotStatus, type Kampf } from "./api";
 import "./booster.css";
 
 /**
+ * Der Decker ist gerade Hot gegangen. Die Zusatzaktionen des Decks zählen
+ * erst ab diesem Klick — das Booster-Fenster hört zu und fragt, wenn er
+ * schon dran ist. Vorher kam die Frage nur, wenn Hot schon an war, als
+ * der Zug begann.
+ */
+export const MATRIX_HOT_AN = "pnptool-matrix-hot-an";
+
+/**
  * Fragt, wenn der Rigger wieder dran ist, ob er in der Hot-Drohne bleibt.
  * Dieselbe Lage wie das Booster-Popup: über allem, nicht nur im Kampf-Tab.
  */
@@ -34,9 +42,11 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
 
   async function umschalten() {
     if (!status) return;
+    const an = !status.matrixHot;
     setSendet(true);
     try {
-      setStatus(await kampfApi.hotMatrix(campaignId, !status.matrixHot));
+      setStatus(await kampfApi.hotMatrix(campaignId, an));
+      if (an) window.dispatchEvent(new CustomEvent(MATRIX_HOT_AN));
     } finally {
       setSendet(false);
     }
