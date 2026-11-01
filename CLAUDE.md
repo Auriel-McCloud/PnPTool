@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfkarte: Neuroweaver schaltet wie der Decker (01.11.2026)
+
+Dieselben Knöpfe Kampf / Cyberkampf neben „Würfeln“, sobald `weg` Neuroweaver ist — auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools (Willenskraft-Klick und Matrix-Fenster wie vorher), Kampf die Nahkampf-Würfel und Waffen. Der alte Block unter den Waffen ist weg. Hat er zusätzlich ein Deck, stehen beide Gruppen untereinander. `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
+
 ## Undefinierter Mentor in der Chatliste (01.11.2026)
 
 Mentor-Punkte legen einen Platz „Undefinierter Mentor“ in ◍ Kontakte. Erster Klick beschreibt, die KI legt den NPC an und gibt 20 EP je Punkt auf vorhandene Werte aus. Kein kampagnenweiter Wiederverwender mehr. `spawn.py`, `mentor_ep.py`, `Messenger.tsx`. **Nie im Browser angeklickt.**

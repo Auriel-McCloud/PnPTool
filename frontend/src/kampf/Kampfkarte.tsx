@@ -122,8 +122,8 @@ export function Kampfkarte({
   // Kompakt-Kopfzeile (Drohnen-Steckbrief): eingeklappt zeigt nur TN/TS/A/P/I
   // in Kurzform, Antippen klappt den Rest auf wie gehabt.
   const [aufgeklappt, setAufgeklappt] = useState(!kompaktStart);
-  // Kampf/Cyberkampf-Umschalter (Mark, 30.10.2026): bei einem Decker kommen
-  // sonst Nahkampf-Würfel UND Cyberdeck-Werte untereinander — genau das
+  // Kampf/Cyberkampf-Umschalter (Mark, 30.10.2026, Neuroweaver 01.11.2026):
+  // sonst kommen Nahkampf-Würfel UND Matrix-Werte untereinander — genau das
   // zwang zum Scrollen vorbei an Gesundheit/Rüstung/Willenskraft. Nur einer
   // der beiden Blöcke ist gleichzeitig sichtbar, umschaltbar per Knopf.
   const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
@@ -222,10 +222,14 @@ export function Kampfkarte({
   // klein, kann aber drauf klicken und sieht es dann ausgeschrieben und
   // schöner" — dieselben Zahlen wie unten, nur knapp beschriftet.
   const kompaktWerte = kampfKurz(bogen, ruestung);
-  // Der Umschalter erscheint nur, wenn überhaupt ein Cyberdeck ausgerüstet
-  // ist — sonst gibt es nichts zum Umschalten, und die Karte bleibt wie
-  // gehabt (ein Block, keine Knöpfe).
+  // Der Umschalter erscheint, sobald es eine Matrix-Seite gibt: ausgerüstetes
+  // Cyberdeck (Decker) oder der Neuroweaver-Weg. Sonst bleibt die Karte ein
+  // Block ohne Knöpfe.
   const hatDeck = Object.keys(bogen.deckBoni ?? {}).length > 0;
+  const istNeuroweaver = u.weg === "NEUROWEAVER";
+  const hatCyber = hatDeck || istNeuroweaver;
+  const cyberTitel =
+    istNeuroweaver && hatDeck ? "Cyberkampf" : istNeuroweaver ? "NeuroWeaving" : "Cyberdeck";
 
   return (
     <div className="kk-karte">
@@ -348,8 +352,8 @@ export function Kampfkarte({
       {/* --- Was man würfelt -------------------------------------------- */}
       <section className="kk-block">
         <div className="kk-block-kopf">
-          <h3>{hatDeck && kampfModus === "cyberkampf" ? "Cyberdeck" : "Würfeln"}</h3>
-          {hatDeck && (
+          <h3>{hatCyber && kampfModus === "cyberkampf" ? cyberTitel : "Würfeln"}</h3>
+          {hatCyber && (
             <div className="kk-modus-schalter">
               <button
                 type="button"
@@ -391,33 +395,66 @@ export function Kampfkarte({
             />
           </div>
         )}
-        {hatDeck && kampfModus === "cyberkampf" && (
-          <div className="kk-werte">
-            {Object.entries(bogen.deckBoni).map(([name, w]) => (
-              <Zahl
-                key={name}
-                titel={name}
-                // Pool wie überall sonst: Deck-Wert + Matrix-Fertigkeit —
-                // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
-                // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
-                wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
-                hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
-                wuerfel
-                onKlick={() => {
-                  const pool = w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix");
-                  if (MATRIX_AKTION.has(name) && !bogen.person.istKI) setMatrix({ name, pool });
-                  else setProbe({ name, wert: w, kategorie: "Cyberdeck" });
-                }}
-              />
-            ))}
-          </div>
+        {hatCyber && kampfModus === "cyberkampf" && (
+          <>
+            {hatDeck && (
+              <>
+                {istNeuroweaver && <h3>Cyberdeck</h3>}
+                <div className="kk-werte">
+                  {Object.entries(bogen.deckBoni).map(([name, w]) => (
+                    <Zahl
+                      key={name}
+                      titel={name}
+                      // Pool wie überall sonst: Deck-Wert + Matrix-Fertigkeit —
+                      // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
+                      // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
+                      wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
+                      hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
+                      wuerfel
+                      onKlick={() => {
+                        const pool = w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix");
+                        if (MATRIX_AKTION.has(name) && !bogen.person.istKI) setMatrix({ name, pool });
+                        else setProbe({ name, wert: w, kategorie: "Cyberdeck" });
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            {istNeuroweaver && (
+              <>
+                {hatDeck && <h3>NeuroWeaving</h3>}
+                <div className="kk-werte">
+                  {bogen.katalog
+                    .filter((t) => t.category === "NeuroWeaving")
+                    .map((t) => {
+                      const f = bogen.werte.find((x) => x.traitDefId === t.id)?.rating ?? 0;
+                      return (
+                        <Zahl
+                          key={t.id}
+                          titel={t.name}
+                          wert={Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f)}
+                          hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
+                          wuerfel
+                          onKlick={() => {
+                            const pool = Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f);
+                            if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) setMatrix({ name: t.name, pool });
+                            else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
+                          }}
+                        />
+                      );
+                    })}
+                </div>
+              </>
+            )}
+          </>
         )}
       </section>
 
       {/* --- Rüstung und Waffen ----------------------------------------- */}
       {/* Im Cyberkampf-Modus ausgeblendet (Mark, 30.10.2026): wer gerade im
-          Deck steckt, braucht die Waffenliste nicht — weniger zu scrollen. */}
-      {(!hatDeck || kampfModus === "kampf") && (
+          Deck oder im NeuroWeaving steckt, braucht die Waffenliste nicht. */}
+      {(!hatCyber || kampfModus === "kampf") && (
         <section className="kk-block">
           <h3>Schutz und Schaden</h3>
           <div className="kk-werte">
@@ -526,33 +563,6 @@ export function Kampfkarte({
                   <span key={t.id} data-leer={w === 0}>
                     {magieBegriff(u.magieFlavor, t.name)} <strong>{w}</strong>
                   </span>
-                );
-              })}
-          </div>
-        </section>
-      )}
-
-      {u.weg === "NEUROWEAVER" && (
-        <section className="kk-block">
-          <h3>NeuroWeaving</h3>
-          <div className="kk-werte">
-            {bogen.katalog
-              .filter((t) => t.category === "NeuroWeaving")
-              .map((t) => {
-                const f = bogen.werte.find((x) => x.traitDefId === t.id)?.rating ?? 0;
-                return (
-                  <Zahl
-                    key={t.id}
-                    titel={t.name}
-                    wert={Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f)}
-                    hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
-                    wuerfel
-                    onKlick={() => {
-                      const pool = Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f);
-                      if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) setMatrix({ name: t.name, pool });
-                      else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
-                    }}
-                  />
                 );
               })}
           </div>

@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Neuroweaver schaltet Kampf/Cyberkampf
+
+Dieselben Knöpfe wie beim Decker, auch ohne Deck. Cyberkampf zeigt die
+NeuroWeaving-Pools, der feste Block darunter ist weg.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] teilweise-umgesetzt | Hot endet mit Konsole oder Neurolink
 
 Konsole aus: Drohnen fallen und der Drohnen-Hot ist weg, Matrix-Hot bleibt.

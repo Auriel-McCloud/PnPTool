@@ -140,6 +140,12 @@ sich der Pool auf Maximum plus Bonus auf. Die Tarnung bleibt der Soforteffekt.
   Gleiche Mechanik, neuer Name: `magie.ts::MAGIE_HINWEISE.overclock` /
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
+- **01.11.2026 — Kampfkarte: Neuroweaver hat denselben Umschalter wie der Decker.**
+  Neben „Würfeln“ die Knöpfe Kampf / Cyberkampf, sobald der Weg Neuroweaver
+  ist, auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools
+  (Antippen weiter Willenskraft bzw. Matrix-Fenster). Kampf zeigt die
+  Nahkampf-Würfel und die Waffen. Der feste Block unter den Waffen ist weg.
+  Liegt zusätzlich ein Deck, stehen Cyberdeck und NeuroWeaving untereinander.
 
 ## Noch nicht gebaut: temporäres Deaktivieren (teilweise umgesetzt)
 
