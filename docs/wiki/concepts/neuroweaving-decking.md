@@ -130,7 +130,7 @@ vom Excel ab.
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
 
-## Noch nicht gebaut: temporäres Deaktivieren (teilweise entschieden)
+## Noch nicht gebaut: temporäres Deaktivieren (entschieden, nicht gebaut)
 
 Mark, 01.11.2026 nachts: Decker und Neuroweaver sollen Waffen oder
 Waffen-Upgrades temporär deaktivieren können — „damit wären sie wirklich
@@ -193,15 +193,13 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   Probe, ganze Party, Bonus = Erfolge, höchstens +3. Dauer und Radius
   bleiben die der Tarn-Zeile, im Kampf also der Soforteffekt.
 
-### Offene Achse — nicht raten
+- **Verrechnung:** Netto-Erfolge, also Erfolge minus ICE. Das ist die Zahl
+  für Ziele und Runden, höchstens 3. Unter 1 passiert nichts. Bei ICE 0
+  ist die Netto-Zahl die Erfolge selbst.
 
-Wie hängen die Erfolge am ICE, wenn das ICE nicht 0 ist? Schwelle 0 und
-„Erfolge zählen, höchstens 3“ gelten für kein ICE. „Gegen das ICE“ ist
-gesagt, die Verrechnung nicht. Nicht raten: Netto (Erfolge minus ICE),
-ICE als Mindest-Erfolge und danach zählen die Erfolge selbst, oder etwas
-anderes.
+### Offene Achse
 
-Keine Datenmodell-Antwort, bis das klar ist.
+Keine. Nicht gebaut.
 
 ## Siehe auch
 
