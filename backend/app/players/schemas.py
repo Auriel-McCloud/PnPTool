@@ -57,6 +57,8 @@ class VorgefertigterCharakter(BaseModel):
     fertigkeiten: SpaltenSumme = SpaltenSumme()
     sphaeren: int = 0
     neuroweaving: int = 0
+    # SL setzt das im PC-Detail. Sortierung: wichtig, hervorheben, normal.
+    vorgefertigtSignifikanz: Literal["normal", "hervorheben", "wichtig"] = "normal"
 
 
 class CharakterWaehlenRequest(BaseModel):

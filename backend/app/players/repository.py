@@ -13,7 +13,7 @@ import bcrypt
 
 from app.auth.menue import normalisiere_layouts
 from app.db.neo4j_driver import get_driver
-from app.players.auswahl_steckbrief import spalten_summen
+from app.players.auswahl_steckbrief import spalten_summen, vorgefertigte_sortiert
 
 
 def _hash(passwort: str) -> str:
@@ -198,18 +198,22 @@ async def verfuegbare_pcs(campaign_id: str) -> list[dict]:
                    coalesce(p.konzept, '') AS konzept, coalesce(p.rasse, '') AS rasse,
                    coalesce(p.weg, 'KEINER') AS weg,
                    CASE WHEN p.magieFlavor = 'HAERETIKER' THEN 'HAERETIKER' ELSE 'MAGIER' END AS magieFlavor,
+                   CASE coalesce(p.vorgefertigtSignifikanz, 'normal')
+                        WHEN 'wichtig' THEN 'wichtig'
+                        WHEN 'hervorheben' THEN 'hervorheben'
+                        ELSE 'normal'
+                   END AS vorgefertigtSignifikanz,
                    coalesce(p.ambition, '') AS ambition,
                    coalesce(p.verlangen, '') AS verlangen,
                    coalesce(p.ziel, '') AS ziel,
                    werte
-            ORDER BY toLower(p.name)
             """,
             campaign_id=campaign_id,
         )
         zeilen = [dict(record) async for record in result]
     for zeile in zeilen:
         zeile.update(spalten_summen(zeile.pop("werte")))
-    return zeilen
+    return vorgefertigte_sortiert(zeilen)
 
 
 async def charakter_waehlen(spieler_id: str, campaign_id: str, person_id: str) -> bool:

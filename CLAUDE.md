@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Vorgefertigte Signifikanz (01.11.2026)
+
+SL setzt am Häkchen „Vorgefertigter Charakter“ die Stufe `vorgefertigtSignifikanz`:
+Normal (kein Leuchten), hervorheben (sanftes Magenta-Puls), Wichtig (breiteres
+Gold-Puls). Auswahl und SL-Kacheln sortieren wichtig, dann hervorheben, dann
+den Rest. Feld an `Person`, Bestand ohne Feld gilt als normal. **Nie im Browser
+angeklickt.**
+
 ## Vorgefertigte Auswahl zeigt Häretiker (01.11.2026)
 
 In der Spieler-Auswahl steht bei einem Häretiker „Häretiker“, nicht „Magier“.

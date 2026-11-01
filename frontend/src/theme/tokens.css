@@ -53,6 +53,9 @@
   /* Gedecktes Messing für Organisationen/Fraktionen — bewusst kein Neonton,
      eine Fraktion tritt gesetzter auf als eine Person oder ein Event. */
   --p-messing: #c9a35a;
+  /* Gold für „Wichtig“ an vorgefertigten Vorlagen — bewusst nicht Bernstein,
+     der schon „Achtung“ trägt. */
+  --p-gold: #f5c542;
 
   /* == 2. Rollen ===================================================== */
   /* Flaechen, von tief nach hoch */
@@ -89,6 +92,10 @@
   --signal-schwach: color-mix(in srgb, var(--signal) 14%, transparent);
   --gut: var(--p-gruen); /* Bestaetigung */
   --warn: var(--p-bernstein); /* Achtung, Vorschau-Modus */
+  /* Vorgefertigte Vorlagen: zwei Stufen, nicht die Rollenfarben zweckentfremden.
+     Magenta hier ist das Leuchten, nicht „SL-geheim“. */
+  --vorgefertigt-hervorheben: var(--p-magenta);
+  --vorgefertigt-wichtig: var(--p-gold);
 
   /* Entscheidungspaar: durchgehend gleiche Bedeutung in allen Rueckfragen
      (Willenskraft, Wegwerfen, Level-Up). Vorher dreimal einzeln kodiert. */

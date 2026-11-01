@@ -70,7 +70,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", "versteckVonPersonIds", *_VISIBILITY_FIELDS]
@@ -146,6 +146,8 @@ _BOGEN_DEFAULTS: dict = {
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
     "istVorgefertigt": False,
+    # Fehlendes Feld (Bestand vor 01.11.2026) = keine Sonderstellung.
+    "vorgefertigtSignifikanz": "normal",
     # Gewächs: Bestandsdaten (es gibt noch keine) kennen diese Felder nicht;
     # Defaults hier als Netz, falls je ein Hand-Cypher-Pfad sie vergisst.
     "giftig": False,
@@ -311,6 +313,13 @@ def _mit_defaults(record: dict) -> dict:
     for feld, ersatz in _BOGEN_DEFAULTS.items():
         if feld in daten and daten[feld] is None:
             daten[feld] = ersatz
+    # Hand-Cypher oder Altlast: nur die drei Stufen sind gültig.
+    if "vorgefertigtSignifikanz" in daten and daten["vorgefertigtSignifikanz"] not in (
+        "normal",
+        "hervorheben",
+        "wichtig",
+    ):
+        daten["vorgefertigtSignifikanz"] = "normal"
     
     # Migration: bildUrl → bilder-Array
     if "bildUrl" in daten and "bilder" in daten:

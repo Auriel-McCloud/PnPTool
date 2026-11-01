@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 SichtbarkeitModus = Literal["GM", "ALLE", "SPEZIFISCH"]
+# Nur sinnvoll bei istVorgefertigt. Bestand ohne Feld gilt als normal.
+VorgefertigtSignifikanz = Literal["normal", "hervorheben", "wichtig"]
 
 
 class BildEintrag(BaseModel):
@@ -187,6 +189,10 @@ class PersonCreate(BaseModel):
     # Feld — Mark: das bestehende `konzept` dient als Teaser, der Spieler passt
     # es nach der Wahl selbst an.
     istVorgefertigt: bool = False
+    # Signifikanz der Vorlage in der Spieler-Auswahl (01.11.2026). Nur wenn
+    # istVorgefertigt gesetzt ist, zeigt die SL das Dropdown und leuchten
+    # die Karten. normal = kein Leuchten.
+    vorgefertigtSignifikanz: VorgefertigtSignifikanz = "normal"
     # Nur relevant bei istHaendler=true: auf welche Gegenstandstypen sich der
     # AUTOMATISCHE Shop-Bestand (Vorlagen mit automatischImShop=true) dieses
     # Händlers beschränkt. Leer = Gemischtwarenladen, zeigt alle passenden
@@ -303,6 +309,7 @@ class PersonUpdate(BaseModel):
     istMentor: bool | None = None
     istBlankoKontakt: bool | None = None
     istVorgefertigt: bool | None = None
+    vorgefertigtSignifikanz: VorgefertigtSignifikanz | None = None
     spezialisierung: list[str] | None = None
     vertriebsart: Literal["PHYSISCH", "DIGITAL"] | None = None
     shopHintergrundUrl: str | None = None
@@ -382,6 +389,7 @@ class PersonResponse(BaseModel):
     istMentor: bool = False
     istBlankoKontakt: bool = False
     istVorgefertigt: bool = False
+    vorgefertigtSignifikanz: VorgefertigtSignifikanz = "normal"
     spezialisierung: list[str] = []
     vertriebsart: str = "PHYSISCH"
     shopHintergrundUrl: str = ""

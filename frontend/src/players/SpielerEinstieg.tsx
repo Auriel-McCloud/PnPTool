@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { ApiError } from "../api/client";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
+import { glanzStufe, rangDerSignifikanz } from "../entities/vorgefertigtRang";
 import { playersApi, type SpielerMe, type SpaltenSumme, type VorgefertigterCharakter } from "./api";
+import "../entities/vorgefertigt-glanz.css";
 import "./einstieg.css";
 
 const WEG_TITEL: Record<string, string> = {
@@ -152,11 +154,25 @@ export function SpielerEinstieg({
 
             {vorgefertigte && vorgefertigte.length > 0 && (
               <div className="ei-raster">
-                {vorgefertigte.map((p) => (
+                {[...vorgefertigte]
+                  .sort(
+                    (a, b) =>
+                      rangDerSignifikanz(a.vorgefertigtSignifikanz) -
+                        rangDerSignifikanz(b.vorgefertigtSignifikanz) ||
+                      a.name.localeCompare(b.name, "de"),
+                  )
+                  .map((p) => {
+                  const glanz = glanzStufe({
+                    istVorgefertigt: true,
+                    vorgefertigtSignifikanz: p.vorgefertigtSignifikanz,
+                  });
+                  return (
                   <button
                     type="button"
                     key={p.id}
-                    className="ei-pc-karte"
+                    className={glanz ? "ei-pc-karte vf-glanz" : "ei-pc-karte"}
+                    data-signifikanz={glanz ?? undefined}
+                    title={glanz === "wichtig" ? "Wichtig" : glanz === "hervorheben" ? "hervorheben" : undefined}
                     onClick={() => {
                       setSteckbrief(p);
                       setUebernehmenOffen(false);
@@ -182,7 +198,8 @@ export function SpielerEinstieg({
                       )}
                     </div>
                   </button>
-                ))}
+                  );
+                  })}
               </div>
             )}
           </div>

@@ -103,6 +103,9 @@ export interface Person extends VisibilityFields {
    * Fenster der Spieler als wählbarer PC, solange noch niemand ihn spielt.
    * Explizites Opt-in der SL (vorher implizit "jeder unclaimed PC"). */
   istVorgefertigt?: boolean;
+  /** Nur bei istVorgefertigt: normal leuchtet nicht, hervorheben magenta,
+   * wichtig gold. Sortierung der Auswahl: wichtig, hervorheben, normal. */
+  vorgefertigtSignifikanz?: "normal" | "hervorheben" | "wichtig";
 }
 
 export interface Ort extends VisibilityFields {

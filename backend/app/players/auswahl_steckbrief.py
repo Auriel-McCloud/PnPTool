@@ -66,3 +66,22 @@ def spalten_summen(werte: list[dict]) -> dict:
         "sphaeren": sphaeren,
         "neuroweaving": neuroweaving,
     }
+
+
+_SIGNIFIKANZ_RANG = {"wichtig": 0, "hervorheben": 1, "normal": 2}
+
+
+def signifikanz_rang(wert: str | None) -> int:
+    """Wichtig vor hervorheben vor normal. Unbekannt zählt als normal."""
+    return _SIGNIFIKANZ_RANG.get(wert or "normal", 2)
+
+
+def vorgefertigte_sortiert(zeilen: list[dict]) -> list[dict]:
+    """Zuerst wichtig, dann hervorheben, dann normal — innerhalb dessen Name."""
+    return sorted(
+        zeilen,
+        key=lambda zeile: (
+            signifikanz_rang(zeile.get("vorgefertigtSignifikanz")),
+            (zeile.get("name") or "").lower(),
+        ),
+    )

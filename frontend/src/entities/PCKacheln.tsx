@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import type { Person } from "../entities/api";
 import { anzeigeName } from "../entities/api";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
+import { glanzStufe, pcKachelRang } from "./vorgefertigtRang";
 import "./pc-kacheln.css";
+import "./vorgefertigt-glanz.css";
 
 /**
  * Kachel-Übersicht für Spielercharaktere.
@@ -46,8 +48,15 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
   const schadenSchwer = uebersicht?.schadenSchwer ?? null;
   const heilZaehler = uebersicht?.schwerHeilZaehler ?? null;
 
+  const glanz = glanzStufe(person);
+
   return (
-    <div className="pc-kachel" onClick={onKlick}>
+    <div
+      className={glanz ? "pc-kachel vf-glanz" : "pc-kachel"}
+      data-signifikanz={glanz ?? undefined}
+      title={glanz === "wichtig" ? "Wichtig" : glanz === "hervorheben" ? "hervorheben" : undefined}
+      onClick={onKlick}
+    >
       <div className="pc-kachel-bild-bereich">
         {person.bildUrl ? (
           <img src={person.bildUrl} alt={person.name} className="pc-kachel-bild" />
@@ -156,9 +165,11 @@ export function PCKacheln({ campaignId, pcs, spielerMap, onPCKlick, onBlitz, onE
     return <p className="pc-kacheln-leer">Noch keine Spielercharaktere angelegt.</p>;
   }
 
+  const geordnet = [...pcs].sort((a, b) => pcKachelRang(a) - pcKachelRang(b));
+
   return (
     <div className="pc-kacheln-raster">
-      {pcs.map((p) => (
+      {geordnet.map((p) => (
         <PCKachel
           key={p.id}
           campaignId={campaignId}

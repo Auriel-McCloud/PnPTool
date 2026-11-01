@@ -84,6 +84,27 @@ erneut NPC wird). Beide loggen `CharakterEntwicklung` (`ZU_NPC_GEMACHT`/
 `ZU_PC_GEMACHT`). UI: Knopf "⇄ Zu NPC machen" im PC-Detail, "⇄ Zu PC
 machen" im NPC-Detail, je mit Commlink-Bestätigungsdialog.
 
+## Vorgefertigte Signifikanz — gebaut (01.11.2026)
+
+Mark: vorgefertigte Charaktere sollen eine Stufe bekommen. Die SL setzt sie
+im PC-Detail, sobald „Vorgefertigter Charakter“ an ist. Dropdown: Normal
+(Standard), hervorheben, Wichtig.
+
+- Wer: die SL, nicht automatisch.
+- Wo das Leuchten sitzt: Spieler-Auswahl (`SpielerEinstieg.tsx`) und die
+  SL-Kacheln in der PC-Übersicht. Normal leuchtet nicht.
+- hervorheben: sanftes Magenta-Puls. Wichtig: breiteres, goldenes Puls.
+  Die Farbe entscheidet Mark nach dem Sehen — die Tokens
+  `--vorgefertigt-hervorheben` / `--vorgefertigt-wichtig` tragen sie, nicht
+  `--signal` (das bleibt SL-geheim).
+- Sortierung der Auswahl: wichtig, dann hervorheben, dann normal, innerhalb
+  dessen nach Name. In der SL-Übersicht schweben wichtige und hervorgehobene
+  Vorlagen nach oben, der Rest bleibt in der bisherigen Reihenfolge.
+- Eigenes Feld `Person.vorgefertigtSignifikanz`
+  (`normal` | `hervorheben` | `wichtig`). `konzept` bleibt der Teaser.
+  Bestand ohne Feld gilt als normal. Abwählen des Häkchens löscht die Stufe
+  nicht — sie gilt nur, solange die Vorlage an ist.
+
 ## Häretiker in der Vorgefertigten-Auswahl — gebaut (01.11.2026)
 
 Mark: bei den vorgefertigten Charakteren stand bei Häretikern „Magier“. Das

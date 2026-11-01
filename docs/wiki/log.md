@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Signifikanz vorgefertigter Charaktere
+
+SL setzt am Häkchen Normal, hervorheben oder Wichtig. Magenta- bzw.
+Gold-Puls, Sortierung wichtig zuerst. Siehe [[entities/auth-und-rollen]].
+
 ## [2026-11-01] gebaut | Ki-Tama-Kachel verschwindet nach dem Ruf
 
 Verbrauchte Beschwörung ohne Critter in der Initiative zeigt nicht mehr

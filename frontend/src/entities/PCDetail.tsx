@@ -76,6 +76,14 @@ export function PCDetail({
   async function vorgefertigtUmschalten(wert: boolean) {
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istVorgefertigt: wert });
     setAktuellePerson(neu);
+    onLokalAktualisiert?.(neu);
+    onGeaendert();
+  }
+
+  async function signifikanzSetzen(wert: "normal" | "hervorheben" | "wichtig") {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { vorgefertigtSignifikanz: wert });
+    setAktuellePerson(neu);
+    onLokalAktualisiert?.(neu);
     onGeaendert();
   }
 
@@ -252,6 +260,22 @@ export function PCDetail({
                     />
                     Vorgefertigter Charakter (im Ersteinstieg für Spieler wählbar)
                   </label>
+                  {aktuellePerson.istVorgefertigt && (
+                    <label className="pcd-vorgefertigt-rang">
+                      <span>Signifikanz</span>
+                      <select
+                        value={aktuellePerson.vorgefertigtSignifikanz ?? "normal"}
+                        onChange={(e) =>
+                          signifikanzSetzen(e.target.value as "normal" | "hervorheben" | "wichtig")
+                        }
+                        aria-label="Signifikanz der Vorlage"
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="hervorheben">hervorheben</option>
+                        <option value="wichtig">Wichtig</option>
+                      </select>
+                    </label>
+                  )}
                   <button type="button" onClick={() => setZuNpcOffen(true)}>
                     ⇄ Zu NPC machen
                   </button>

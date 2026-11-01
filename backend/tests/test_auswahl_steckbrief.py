@@ -88,6 +88,22 @@ def test_haeretiker_bleibt_magier_und_liefert_den_flavor():
     assert modell.magieFlavor == "HAERETIKER"
 
 
+def test_signifikanz_sortiert_wichtig_vor_hervorheben_vor_normal():
+    from app.players.auswahl_steckbrief import vorgefertigte_sortiert
+
+    zeilen = [
+        {"name": "Zed", "vorgefertigtSignifikanz": "normal"},
+        {"name": "Ann", "vorgefertigtSignifikanz": "hervorheben"},
+        {"name": "Mia", "vorgefertigtSignifikanz": "wichtig"},
+        {"name": "Bea", "vorgefertigtSignifikanz": "normal"},
+        {"name": "Alt", "vorgefertigtSignifikanz": None},
+        {"name": "Quatsch", "vorgefertigtSignifikanz": "gold"},
+        {"name": "Ivo", "vorgefertigtSignifikanz": "wichtig"},
+    ]
+    namen = [zeile["name"] for zeile in vorgefertigte_sortiert(zeilen)]
+    assert namen == ["Ivo", "Mia", "Ann", "Alt", "Bea", "Quatsch", "Zed"]
+
+
 def test_jede_kernfertigkeit_hat_genau_eine_spalte():
     fertigkeiten = [name for name, kategorie, _, _ in NEOTOPIA_TRAITS if kategorie == "Fertigkeit"]
     assert len(fertigkeiten) == 30

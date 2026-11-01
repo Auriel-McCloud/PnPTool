@@ -1,0 +1,89 @@
+/* Leuchten vorgefertigter Vorlagen.
+   Puls nur über opacity auf ::after — box-shadow bleibt fest, sonst
+   malt jeder Frame den Kachelraster neu. */
+
+.pc-kachel.vf-glanz,
+.ei-pc-karte.vf-glanz {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.pc-kachel.vf-glanz .pc-kachel-bild-bereich,
+.ei-pc-karte.vf-glanz .ei-pc-bild-bereich {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.vf-glanz[data-signifikanz="hervorheben"] {
+  border-color: var(--vorgefertigt-hervorheben);
+}
+
+.vf-glanz[data-signifikanz="wichtig"] {
+  border-color: var(--vorgefertigt-wichtig);
+  z-index: 2;
+}
+
+.vf-glanz[data-signifikanz]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.vf-glanz[data-signifikanz="hervorheben"]::after {
+  opacity: 0.55;
+  box-shadow:
+    0 0 10px 1px color-mix(in srgb, var(--vorgefertigt-hervorheben) 62%, transparent),
+    inset 0 0 14px color-mix(in srgb, var(--vorgefertigt-hervorheben) 22%, transparent);
+  animation: vf-puls-sanft 2.8s ease-in-out infinite;
+}
+
+.vf-glanz[data-signifikanz="wichtig"]::after {
+  inset: -8px;
+  opacity: 0.72;
+  box-shadow:
+    0 0 10px 2px color-mix(in srgb, var(--vorgefertigt-wichtig) 88%, transparent),
+    0 0 26px 8px color-mix(in srgb, var(--vorgefertigt-wichtig) 58%, transparent),
+    0 0 48px 16px color-mix(in srgb, var(--vorgefertigt-wichtig) 32%, transparent);
+  animation: vf-puls-weit 2.4s ease-in-out infinite;
+}
+
+.pc-kachel.vf-glanz:hover,
+.ei-pc-karte.vf-glanz:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.pc-kacheln-raster:has(.vf-glanz),
+.ei-raster:has(.vf-glanz) {
+  padding: 22px 14px;
+}
+
+@keyframes vf-puls-sanft {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes vf-puls-weit {
+  0%,
+  100% {
+    opacity: 0.48;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vf-glanz[data-signifikanz="hervorheben"]::after,
+  .vf-glanz[data-signifikanz="wichtig"]::after {
+    animation: none;
+    opacity: 0.85;
+  }
+}

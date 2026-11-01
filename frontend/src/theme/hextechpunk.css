@@ -30,8 +30,9 @@
 
   /* Hextech-Kristall statt Neonroehre */
   --p-cyan: #56d8ff;
-  /* Gold traegt hier, was im Cyberpunk das Magenta trug */
+  /* Gold trägt hier, was im Cyberpunk das Magenta trug */
   --p-magenta: #f0c46a;
+  --p-gold: #f0c46a;
   --p-gruen: #52d6a4;
   --p-bernstein: #f2a63c;
   --p-blau: #6ba9ff;
@@ -62,6 +63,11 @@
   --warnung-rot: 226 60 80;
   --warnung-blau: 70 150 255;
   --warnung-violett: 165 100 245;
+
+  /* Die zwei Vorlagen-Stufen müssen unterscheidbar bleiben, auch wenn
+     --p-magenta in diesem Theme schon Gold ist. */
+  --vorgefertigt-hervorheben: #ff4fa3;
+  --vorgefertigt-wichtig: var(--p-gold);
 
   /* == 6. Form ======================================================= */
   /* Facettiert statt abgerundet */

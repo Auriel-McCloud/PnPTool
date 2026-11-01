@@ -54,6 +54,7 @@ export interface VorgefertigterCharakter {
   fertigkeiten?: SpaltenSumme;
   sphaeren?: number;
   neuroweaving?: number;
+  vorgefertigtSignifikanz?: "normal" | "hervorheben" | "wichtig";
 }
 
 export const playersApi = {

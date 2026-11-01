@@ -159,7 +159,10 @@ SL-Formular. Ein Spieler-Account ohne zugeordneten Charakter (`personId`
 fehlt) sieht nach dem Login `frontend/src/players/SpielerEinstieg.tsx`
 statt der vollen Commlink-Hülle — siehe `CLAUDE.md` Punkt 6
 ("PC-Erstellung / Ersteinstieg") für die beiden Wege (selbst erstellen /
-vorgefertigten PC wählen).
+vorgefertigten PC wählen). Die Liste liefert `vorgefertigtSignifikanz`
+(`normal` | `hervorheben` | `wichtig`) und ist danach sortiert: wichtig,
+hervorheben, normal, innerhalb dessen Name. Die SL setzt die Stufe im
+PC-Detail, nur sichtbar solange das Häkchen an ist.
 
 ---
 
