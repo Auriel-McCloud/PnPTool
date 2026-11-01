@@ -86,6 +86,12 @@ Kontakt aktualisieren. **Nur SL.**
 
 ---
 
+### POST `/{kontakt_id}/generieren`
+
+Blanko-Platz aus dem Kontakte-Hintergrund befüllen. Spieler (der eigene Kontakt) oder SL. Body: `{ "prompt": "..." }`. Legt einen KI-Charakter an, öffnet den Chat, setzt den persönlichen Alias auf den erzeugten Namen und `echterNameBekannt`. Der Platzhalter-NPC wird gelöscht. 409, wenn der Kontakt schon ausgearbeitet ist.
+
+---
+
 ### GET `/{kontakt_id}/chat`
 
 Chat-Verlauf für diesen Kontakt.

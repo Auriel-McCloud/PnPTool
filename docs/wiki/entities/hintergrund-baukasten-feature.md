@@ -157,6 +157,10 @@ Kanten `HAT_KONTAKT` + `KENNT` sofort, Sichtbarkeit wie Mentor erst
 nach Übernehmen. Mehrere Kontakte nacheinander (Massenjob), damit sich
 Namen nicht doppelklicken.
 
+**01.11.2026:** Der Spieler füllt die Plätze nicht auf dem Blatt, sondern
+in ◍ Kontakte. Zeile „Undefinierter Kontakt“, erster Klick ist die
+Beschreibung. Siehe [[kontakte-messenger]].
+
 ## Autosteigerung — Plan, nicht Resteverwertung
 
 **Nicht** „EP ausgeben weil sie da sind“ (kein Round-Robin auf die

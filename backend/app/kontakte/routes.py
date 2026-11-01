@@ -197,12 +197,21 @@ async def kontakt_generieren(
     neuer_kontakt = await repository.anlegen(
         campaign_id, roh["pcId"], erzeugt["id"], stufe="GESPROCHEN", chat_offen=True
     )
+    if neuer_kontakt is None:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Kontakt konnte nicht angelegt werden")
+    # Der Spieler hat die Person selbst beschrieben — er kennt den Namen,
+    # sonst steht im Chat nur „Unbekannter Ork“.
+    name = (erzeugt.get("name") or "").strip()
+    if name:
+        benannt = await repository.aendern(
+            campaign_id, neuer_kontakt["id"], {"alias": name, "echterNameBekannt": True}
+        )
+        if benannt is not None:
+            neuer_kontakt = benannt
     await hintergruende_repository.fuege_kontaktslot_hinzu(campaign_id, roh["pcId"], erzeugt["id"])
     await repository.loeschen(campaign_id, kontakt_id)
     await entities_repository.delete_node("Person", campaign_id, roh["npcId"])
 
-    if neuer_kontakt is None:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Kontakt konnte nicht angelegt werden")
     return kontakt_fuer_viewer(neuer_kontakt, viewer)
 
 

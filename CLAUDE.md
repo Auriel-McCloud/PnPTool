@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Undefinierter Kontakt in der Chatliste (01.11.2026)
+
+Spieler sehen leere Kontakte-Plätze unter ◍ Kontakte, gleiche Liste wie die Chats, Label „Undefinierter Kontakt“. Erster Klick öffnet die Beschreibung, `POST .../kontakte/{id}/generieren` legt den KI-Charakter an, der Chat geht auf, der Spieler sieht den Namen. `frontend/src/kontakte/Messenger.tsx`. **Nie im Browser angeklickt.**
+
 ## Vorgefertigte Signifikanz (01.11.2026)
 
 SL setzt am Häkchen „Vorgefertigter Charakter“ die Stufe `vorgefertigtSignifikanz`:

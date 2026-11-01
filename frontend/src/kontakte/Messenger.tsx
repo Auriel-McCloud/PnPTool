@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fenster } from "../shell/Fenster";
 import { alsText, kontakteApi, type Chat, type Kontakt, type Nachricht } from "./api";
 import "./messenger.css";
 
@@ -20,9 +21,32 @@ interface MessengerProps {
 
 export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: MessengerProps) {
   const [aktiv, setAktiv] = useState<Kontakt | null>(null);
+  const [blanko, setBlanko] = useState<Kontakt | null>(null);
+  const [wunsch, setWunsch] = useState("");
+  const [legtAn, setLegtAn] = useState(false);
+  const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
 
-  // Nur Kontakte mit offenem Chat zeigen
-  const chatKontakte = kontakte.filter((k) => k.chatOffen);
+  // Offene Chats und noch leere Plätze aus der Charaktererstellung.
+  // Die Plätze haben den Chat zu — ohne eigene Zeile sieht der Spieler nichts.
+  const plaetze = kontakte.filter((k) => k.istBlankoKontakt);
+  const chatKontakte = kontakte.filter((k) => k.chatOffen && !k.istBlankoKontakt);
+
+  async function platzAnlegen() {
+    if (!blanko || !wunsch.trim() || legtAn) return;
+    setLegtAn(true);
+    setAnlegenFehler(null);
+    try {
+      const neu = await kontakteApi.generieren(campaignId, blanko.id, wunsch.trim());
+      setBlanko(null);
+      setWunsch("");
+      onKontakteAktualisieren();
+      setAktiv(neu);
+    } catch (e) {
+      setAnlegenFehler(e instanceof Error ? e.message : "Konnte nicht angelegt werden");
+    } finally {
+      setLegtAn(false);
+    }
+  }
 
   if (aktiv) {
     return (
@@ -35,22 +59,82 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
     );
   }
 
+  const listeLeer = chatKontakte.length === 0 && plaetze.length === 0;
+
   return (
     <div className="msg-huelle">
-      {chatKontakte.length === 0 ? (
+      {listeLeer ? (
         <div className="msg-leer">
           <span className="msg-leer-icon">◍</span>
           <p>Noch keine Chats.</p>
-          <p style={{ fontSize: "0.8rem" }}>
+          <p className="msg-leer-hinweis">
             Tausche Kontaktdaten mit NPCs, um hier zu chatten.
           </p>
         </div>
       ) : (
         <div className="msg-liste">
+          {plaetze.map((k) => (
+            <button
+              key={k.id}
+              type="button"
+              className="msg-kontakt msg-kontakt-blanko"
+              onClick={() => {
+                setBlanko(k);
+                setWunsch("");
+                setAnlegenFehler(null);
+              }}
+            >
+              <span className="msg-portrait">
+                <span className="msg-portrait-leer">?</span>
+              </span>
+              <span className="msg-info">
+                <span className="msg-name">Undefinierter Kontakt</span>
+                <span className="msg-vorschau">Tippen und beschreiben</span>
+              </span>
+            </button>
+          ))}
           {chatKontakte.map((k) => (
             <KontaktKarte key={k.id} kontakt={k} onClick={() => setAktiv(k)} />
           ))}
         </div>
+      )}
+
+      {blanko && (
+        <Fenster
+          titel="Undefinierter Kontakt"
+          unterzeile="Wen brauchst du?"
+          kennung={`kontakt-generieren:${blanko.id}`}
+          offen={true}
+          onSchliessen={() => {
+            if (legtAn) return;
+            setBlanko(null);
+            setWunsch("");
+            setAnlegenFehler(null);
+          }}
+        >
+          <div className="msg-generieren">
+            <p className="msg-generieren-hinweis">
+              Beschreib, wer das sein soll. Daraus wird ein Kontakt, und der Chat geht auf.
+              Zurücknehmen geht danach nicht.
+            </p>
+            <textarea
+              value={wunsch}
+              onChange={(e) => setWunsch(e.target.value)}
+              placeholder="z.B. ein Dealer im Nachtmarkt, der an Chrome kommt"
+              rows={4}
+              disabled={legtAn}
+            />
+            {anlegenFehler && <p className="msg-generieren-fehler">{anlegenFehler}</p>}
+            <button
+              type="button"
+              className="cl-roehre"
+              disabled={legtAn || !wunsch.trim()}
+              onClick={() => void platzAnlegen()}
+            >
+              {legtAn ? "Wird angelegt…" : "Anlegen"}
+            </button>
+          </div>
+        </Fenster>
       )}
     </div>
   );

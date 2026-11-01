@@ -1,7 +1,7 @@
 ---
 title: Kontakte und Messenger
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-11-01
 type: entität
 tags: [kontakte, frontend, ui]
 sources: [../../api/kontakte.md, ../../../CLAUDE.md]
@@ -62,6 +62,15 @@ Betrachter sehen sie weiterhin.
 (:Person {personType: NPC})`. Nachrichten als **eigene Nodes** (`:Nachricht`),
 nicht als Array-Property — Begründung: hunderte Nachrichten pro Chat brauchen
 Paging/Indizes, ein Array wäre unhandlich.
+
+## Undefinierter Kontakt (01.11.2026)
+
+Kontakte-Hintergrund legt N Blanko-NPCs an (`istBlankoKontakt`, Chat zu).
+Die Spieler-Liste ◍ Kontakte zeigt sie trotzdem, Label „Undefinierter Kontakt“.
+Erster Klick: Beschreibung, dann `POST .../generieren`. Danach ist der
+Platzhalter weg, der neue NPC hat offenen Chat, und dieser Spieler kennt
+den Namen. Ohne die eigene Zeile blieb die Liste leer, weil der Messenger
+nur `chatOffen` zeigte.
 
 ## Siehe auch
 

@@ -135,6 +135,29 @@
   transform: translateX(12px) skewX(-2deg) scale(0.98);
 }
 
+/* Leerer Platz aus der Charaktererstellung — gleiche Liste, noch kein Chat. */
+button.msg-kontakt {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.msg-kontakt-blanko {
+  border-left-style: dashed;
+  opacity: 0.9;
+}
+
+.msg-kontakt-blanko .msg-name {
+  font-style: italic;
+  color: var(--text-leise);
+}
+
 /* Portrait im schrägen Rahmen */
 .msg-portrait {
   position: relative;
@@ -491,6 +514,56 @@
   font-size: 3rem;
   color: var(--neon);
   animation: msg-float 3s ease-in-out infinite;
+}
+
+.msg-leer-hinweis {
+  font-size: 0.8rem;
+}
+
+.msg-generieren {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-2, 8px);
+}
+
+.msg-generieren-hinweis,
+.msg-generieren-fehler {
+  margin: 0;
+}
+
+.msg-generieren-hinweis {
+  color: var(--text-leise);
+}
+
+.msg-generieren-fehler {
+  color: var(--warn);
+}
+
+.msg-generieren textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  color: var(--text);
+  background: color-mix(in srgb, var(--grund) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+  padding: var(--luft-2, 8px);
+}
+
+.msg-generieren button {
+  align-self: flex-start;
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  color: var(--text);
+  background: color-mix(in srgb, var(--neon) 12%, var(--grund));
+  padding: var(--luft-1, 4px) var(--luft-3, 16px);
+}
+
+.msg-generieren button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @keyframes msg-float {
