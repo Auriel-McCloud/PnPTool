@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] gebaut | Overclock in der Kampfkarte
+
+Neben den NeuroWeaving-Funktionen, gleiches Format, Würfel sichtbar.
+Willenskraft legt man als Bonuswürfel drauf, auch in den Matrix-Fenstern.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] gebaut | Neuroweaver-Hack und Hot-Decker-Schaden
 
 Im Kampf ist die restliche Willenskraft das ICE des Neuroweavers. Überschuss

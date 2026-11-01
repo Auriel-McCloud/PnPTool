@@ -163,6 +163,12 @@ Nicht beides.
   (Antippen weiter Willenskraft bzw. Matrix-Fenster). Kampf zeigt die
   Nahkampf-Würfel und die Waffen. Der feste Block unter den Waffen ist weg.
   Liegt zusätzlich ein Deck, stehen Cyberdeck und NeuroWeaving untereinander.
+- **01.11.2026 — Overclock als Funktion in der Kampfkarte.** Neben den sechs
+  NeuroWeaving-Knöpfen, gleiches Format, Würfelgröße sichtbar. Antippen öffnet
+  den Pool und legt Willenskraft als Bonuswürfel drauf, Deckel 12. Dieselben
+  Regler sitzen in den Matrix-Fenstern von Brute Force, Schleichen,
+  Matrix-Navigation und Electronic Warfare. Decker ohne den Weg haben das nicht.
+  `OverclockFenster.tsx`, `Kampfkarte.tsx`, `MatrixFenster.tsx`.
 
 ## Noch nicht gebaut: temporäres Deaktivieren (teilweise umgesetzt)
 

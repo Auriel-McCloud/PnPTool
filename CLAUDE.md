@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Overclock in der Kampfkarte (01.11.2026)
+
+Beim Neuroweaver im Cyberkampf steht Overclock neben den anderen Funktionen, gleiche Kachel, Würfel dazu. Antippen zeigt den Pool und legt Willenskraft als Bonuswürfel drauf, Deckel 12. Dieselben Regler sitzen in den Matrix-Fenstern. `OverclockFenster.tsx`, `MatrixFenster.tsx`, `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
+
 ## Neuroweaver-Hack: Willenskraft als ICE, Überschuss als Schlagschaden (01.11.2026)
 
 Im Kampf ist das ICE eines Neuroweavers seine restliche Willenskraft, nicht Fassung plus Geistesschärfe. Der Pool füllt sich nur bis zum unverbrauchten Stand, Electronic Warfare kommt obendrauf. Ihn schaltet man nicht: Erfolge über dem ICE werden Schlagschaden, ohne Deckel 3, ohne Rüstung. Ein Decker im Matrix-Hot wählt schalten (Deckel 3) oder denselben Überschuss als Schlagschaden. `matrix.py`, `MatrixFenster.tsx`, Kampfkarte zeigt den Pool. **Nie im Browser angeklickt.**
