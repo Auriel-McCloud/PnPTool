@@ -1470,9 +1470,15 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
     Nur **ausgerüstete** Decks zählen; eines im Rucksack nützt niemandem.
     """
     driver = get_driver()
+    gesperrt: list[str] = []
+    from app.kampf.matrix_store import deck_aus, lade as matrix_lade
+    kampf = await matrix_lade(campaign_id)
+    if kampf:
+        gesperrt = list(deck_aus(kampf["stand"], person_id))
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
         WHERE g.typ = 'Cyberdeck' AND g.ablage = 'AUSGERUESTET' AND NOT coalesce(g.weggeworfen, false)
+          AND NOT g.id IN $gesperrt
         RETURN max(coalesce(g.deckBruteForce, 0)) AS bruteForce,
                max(coalesce(g.deckSchleichen, 0)) AS schleichen,
                max(coalesce(g.deckDaten, 0)) AS daten,
@@ -1481,7 +1487,9 @@ async def deck_boni(campaign_id: str, person_id: str) -> dict[str, int]:
                max(coalesce(g.deckMatrixNavigation, 0)) AS matrixNavigation
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, gesperrt=gesperrt
+        )
         record = await result.single()
         if record is None:
             return {}

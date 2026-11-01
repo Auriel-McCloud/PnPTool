@@ -128,6 +128,11 @@ OHNE_GM_ERLAUBT = {
     # gefragt 'Reflex Booster aktivieren?'"). Serverseitig geprüft: eigener
     # Charakter, Booster verbaut, Zusatzaktion übrig, setzt nicht aus.
     "/api/campaigns/{campaign_id}/kampf/booster/aktivieren",
+    "/api/campaigns/{campaign_id}/kampf/matrix/navigation",
+    "/api/campaigns/{campaign_id}/kampf/matrix/electronic-warfare",
+    "/api/campaigns/{campaign_id}/kampf/matrix/treffer",
+    "/api/campaigns/{campaign_id}/kampf/matrix/bestaetigen",
+    "/api/campaigns/{campaign_id}/kampf/matrix/reaktivieren/{eintrag_id}",
     # Ergebnis des Paralysewurfs. Der Spieler würfelt physisch und meldet
     # geschafft/nicht geschafft — nur für den eigenen Charakter (darf_melden).
     "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/paralyse",

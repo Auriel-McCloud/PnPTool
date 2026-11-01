@@ -141,7 +141,12 @@ sich der Pool auf Maximum plus Bonus auf. Die Tarnung bleibt der Soforteffekt.
   `.overclockRueckstoss`, `Probe.tsx` und `WillenskraftFrage.tsx` zeigen den
   Namen jetzt abhängig vom Weg.
 
-## Noch nicht gebaut: temporäres Deaktivieren (entschieden, nicht gebaut)
+## Noch nicht gebaut: temporäres Deaktivieren (teilweise umgesetzt)
+
+Der Ablauf ist im Kampf an Brute Force, Schleichen, Matrix-Navigation und
+Electronic Warfare. Was noch fehlt: das Feld an der einzelnen Waffe für
+komplett/nur Upgrades (es gilt der Typ-Default), Ki-Tama als eigene Zeile,
+und die Kampfkarte blendet abgeschaltete Waffen noch nicht aus.
 
 Mark, 01.11.2026 nachts: Decker und Neuroweaver sollen Waffen oder
 Waffen-Upgrades temporär deaktivieren können — „damit wären sie wirklich

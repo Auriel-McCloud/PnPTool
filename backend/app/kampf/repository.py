@@ -521,6 +521,8 @@ async def weiter(campaign_id: str) -> dict | None:
         # Critter tickt beim Rundenwechsel runter, wer bei 0 ankommt,
         # verschwindet automatisch aus dem Tracker.
         await tick_beschwoerungen(campaign_id)
+        from app.kampf.matrix_store import tick as matrix_tick
+        await matrix_tick(campaign_id, kampf["runde"] + 1)
         return await setze_am_zug(campaign_id, naechste_id, runde=kampf["runde"] + 1)
 
     return await setze_am_zug(campaign_id, naechste_id)

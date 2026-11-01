@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] teilweise-umgesetzt | Deaktivieren im Kampf
+
+Fenster an Brute Force, Schleichen, Navigation und Electronic Warfare.
+ICE-Pool, Aufteilung, Sicht, EW-Bonus, Deck-Sperre, Drohnen fallen bei
+Konsole. Offen: Waffen-Feld, Ki-Tama-Zeile, Kampfkarte blendet nicht aus.
+Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Erfolge aufteilen, nicht koppeln
 
 Mark: jeder Netto-Erfolg ist entweder ein Ziel mehr oder eine Runde mehr.

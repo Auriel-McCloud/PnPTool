@@ -10,6 +10,7 @@ import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { Probe, type ProbeWahl } from "../traits/Probe";
+import { MatrixFenster } from "./MatrixFenster";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
 import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
 import { magieBegriff } from "../traits/magieBegriffe";
@@ -30,6 +31,7 @@ import "./kampfkarte.css";
 
 /** Fertigkeiten, mit denen man zuschlägt oder schießt. */
 const KAMPFFERTIGKEITEN = ["Nahkampf", "Handgemenge", "Schusswaffen"];
+const MATRIX_AKTION = new Set(["Brute Force", "Schleichen", "Matrix-Navigation", "Electronic Warfare"]);
 
 export function wert(bogen: Bogen, name: string) {
   const t = bogen.katalog.find((x) => x.name === name);
@@ -112,6 +114,7 @@ export function Kampfkarte({
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
   // Angetippter Wert — für Hexkraft heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
+  const [matrix, setMatrix] = useState<{ name: string; pool: number } | null>(null);
   const [fragtWillenskraft, setFragtWillenskraft] = useState(false);
   const [erklaertRuestung, setErklaertRuestung] = useState(false);
   const [trefferOffen, setTrefferOffen] = useState(false);
@@ -378,7 +381,11 @@ export function Kampfkarte({
                 wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
                 hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
                 wuerfel
-                onKlick={() => setProbe({ name, wert: w, kategorie: "Cyberdeck" })}
+                onKlick={() => {
+                  const pool = w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix");
+                  if (MATRIX_AKTION.has(name) && !bogen.person.istKI) setMatrix({ name, pool });
+                  else setProbe({ name, wert: w, kategorie: "Cyberdeck" });
+                }}
               />
             ))}
           </div>
@@ -499,7 +506,11 @@ export function Kampfkarte({
                     wert={Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f)}
                     hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
                     wuerfel
-                    onKlick={() => setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" })}
+                    onKlick={() => {
+                      const pool = Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f);
+                      if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) setMatrix({ name: t.name, pool });
+                      else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
+                    }}
                   />
                 );
               })}
@@ -615,6 +626,14 @@ export function Kampfkarte({
           });
           await laden();
         }}
+      />
+
+      <MatrixFenster
+        offen={matrix !== null}
+        campaignId={campaignId}
+        fertigkeit={matrix?.name ?? ""}
+        pool={matrix?.pool ?? 0}
+        onSchliessen={() => setMatrix(null)}
       />
 
       <Probe
