@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Erfolge aufteilen, nicht koppeln
+
+Mark: jeder Netto-Erfolg ist entweder ein Ziel mehr oder eine Runde mehr.
+2 Erfolge: 1 Ziel für 2 Runden oder 2 Ziele für 1 Runde. 3 Erfolge können
+2 Ziele sein, eines 2 Runden und eines 1. Nicht gleich viele Ziele für
+gleich viele Runden. Siehe [[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Navigation-Probe zeigt gegnerisches ICE
 
 Mark: Matrix-Navigation ist eine Probe, die Sicht hält den Kampf.

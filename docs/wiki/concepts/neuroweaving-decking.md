@@ -183,11 +183,12 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   Budget bleibt höchstens 3. Die Zwischenfassung „kein Wurf“ ist vom Tisch.
 - **Deck oder Riggerkonsole:** Zugriff weg. Schon gesprungene Drohnen fallen
   sofort raus ([[drohnen-fahrzeuge]]).
-- **Ausgabe:** Netto ist ein Punktebudget, höchstens 3. Pro Ziel wählt er
-  1, 2 oder 3 Runden, das kostet so viele Punkte. Übrige Punkte verfallen.
-  Der Satz „dieselben Erfolge für Zielzahl und Dauer, höchstens 9“ ist
-  ersetzt. ICE 4 und 6 Erfolge → Pool 0, 2 Punkte frei, nicht automatisch
-  2 Ziele für 2 Runden.
+- **Ausgabe:** jeder Netto-Erfolg zählt entweder für ein Ziel mehr oder
+  für eine Runde mehr, höchstens 3. 2 Erfolge: ein Ziel für 2 Runden, oder
+  zwei Ziele für je 1 Runde. 3 Erfolge: zum Beispiel zwei Ziele, eines
+  davon 2 Runden und eines 1 Runde. Nicht „2 Erfolge = 2 Ziele für 2
+  Runden“, und nicht höchstens 9. Übrige Punkte müssen nicht verbraucht
+  werden.
 - **Nur im Kampf** ([[kampf-und-initiative]]). Eine Runde ist eine
   Kampfrunde. Außerhalb nicht.
 - **Einstieg:** Klick auf Brute Force oder Schleichen öffnet ein
@@ -212,12 +213,12 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
 - **Der ICE-Wurf ist die ganze Probe**, auch gegen Party-Kollegen. Kein
   zusätzlicher Widerstandswurf.
 - **Verrechnung:** Netto-Erfolge, also Erfolge minus dem ICE vor diesem
-  Treffer. Das ist die Zahl für Ziele und Runden, höchstens 3. Unter 1
-  passiert nichts. Dieselben Erfolge nehmen dem Pool 1:1 Schaden, höchstens
-  bis 0. Überschuss schaltet auf demselben Treffer noch aus: ICE 4 und 6
-  Erfolge → Pool 0, bis zu 2 Ziele für 2 Runden. Der nächste Angriff in
-  derselben Runde sieht den Rest. Bei ICE 0 ist die Netto-Zahl die Erfolge
-  selbst.
+  Treffer, höchstens 3. Unter 1 passiert nichts. Dieselben Erfolge nehmen
+  dem Pool 1:1 Schaden, höchstens bis 0. Der Überschuss ist das Budget
+  von oben, nicht automatisch gleich viele Ziele für gleich viele Runden.
+  ICE 4 und 6 Erfolge → Pool 0, 2 Erfolge zum Aufteilen. Der nächste
+  Angriff in derselben Runde sieht den Rest. Bei ICE 0 ist die Netto-Zahl
+  die Erfolge selbst.
 - **Electronic Warfare** kommt zur Tarnung dazu, ersetzt sie nicht. Dieselbe
   Probe, ganze Party, +1 je 2 Erfolge, auch über das Maximum hinaus. 1
   Erfolg gibt +0. Der frühere Satz „Bonus = Erfolge, höchstens +3“ ist
