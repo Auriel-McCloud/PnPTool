@@ -1,5 +1,45 @@
 .mx { display: flex; flex-direction: column; gap: 0.75rem; min-width: 16rem; }
 .mx-pool, .mx-hinweis { margin: 0; font-family: var(--mono); letter-spacing: 0.04em; }
+.mx-pool-kachel {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  align-self: start;
+}
+.mx-pool-titel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+.mx-pool-ziffer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--neon);
+}
+.mx-punkte-block { display: flex; flex-direction: column; gap: 2px; }
+.mx-punkte-titel {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+.mx-punkte {
+  font-family: var(--mono);
+  font-size: 48px;
+  line-height: 1;
+  color: var(--signal);
+  text-shadow: 0 0 12px var(--signal);
+}
 .mx-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
 .mx-liste button, .mx-schalter button, .mx-aktionen button {
   font-family: var(--mono);
@@ -20,6 +60,33 @@
 .mx-liste button[data-aktiv="true"], .mx-schalter button[data-aktiv="true"] {
   border-color: var(--neon);
   color: var(--neon);
+}
+.mx-aus {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  animation: mx-wackeln 2.4s ease-in-out infinite;
+  border-left: 2px solid var(--signal);
+}
+.mx-aus em {
+  font-style: normal;
+  animation: mx-flackern 3.1s steps(1) infinite;
+  color: var(--signal);
+}
+@keyframes mx-wackeln {
+  0%, 92%, 100% { transform: none; }
+  93% { transform: translateX(-1px) skewX(-0.4deg); }
+  95% { transform: translateX(1px) skewX(0.3deg); }
+  97% { transform: translateX(-1px); }
+}
+@keyframes mx-flackern {
+  0%, 88%, 100% { opacity: 1; }
+  90% { opacity: 0.35; }
+  92% { opacity: 1; }
+  94% { opacity: 0.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mx-aus, .mx-aus em { animation: none; }
 }
 .mx-liste button:disabled { opacity: 0.45; }
 .mx-ziel { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }

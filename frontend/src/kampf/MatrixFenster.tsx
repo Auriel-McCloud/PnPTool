@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
+import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { kampfApi, type MatrixTreffer, type MatrixZeile } from "./api";
 import "./matrix.css";
 
@@ -40,9 +41,9 @@ export function MatrixFenster({
   const verbraucht = Object.values(wahl).reduce((s, n) => s + n, 0);
   const frei = punkte - verbraucht;
 
-  async function senden() {
-    const n = Number(erfolge);
-    if (erfolge === "" || Number.isNaN(n) || n < 0) return;
+  async function senden(navErfolg?: boolean) {
+    const n = navErfolg === undefined ? Number(erfolge) : navErfolg ? 1 : 0;
+    if (navErfolg === undefined && (erfolge === "" || Number.isNaN(n) || n < 0)) return;
     setBusy(true);
     setHinweis("");
     try {
@@ -100,7 +101,13 @@ export function MatrixFenster({
   return (
     <Fenster offen={offen} titel={fertigkeit} kennung={`matrix-${fertigkeit}`} onSchliessen={onSchliessen}>
       <div className="mx">
-        <p className="mx-pool">Würfelpool <strong>{pool}</strong></p>
+        <div className="mx-pool-kachel">
+          <span className="mx-pool-titel">Würfelpool</span>
+          <span className="mx-pool-ziffer">
+            {pool}
+            <WuerfelZehn groesse={15} />
+          </span>
+        </div>
         {hinweis && <p className="mx-hinweis">{hinweis}</p>}
 
         {EINSTIEG.has(fertigkeit) && !treffer && (
@@ -117,8 +124,14 @@ export function MatrixFenster({
                   <em>{z.ice === null ? "ICE verdeckt" : `ICE ${z.ice}`}</em>
                 </button>
                 {(z.aus ?? []).map((a) => (
-                  <button key={a.id} type="button" onClick={() => kampfApi.matrixAn(campaignId, a.id).then(() => kampfApi.matrix(campaignId).then((u) => setListe(u.teilnehmer)))}>
-                    {a.name} an · {a.runden}
+                  <button
+                    key={a.id}
+                    type="button"
+                    className="mx-aus"
+                    onClick={() => kampfApi.matrixAn(campaignId, a.id).then(() => kampfApi.matrix(campaignId).then((u) => setListe(u.teilnehmer)))}
+                  >
+                    <span>{a.name}</span>
+                    <em>{a.runden}</em>
                   </button>
                 ))}
               </li>
@@ -126,7 +139,17 @@ export function MatrixFenster({
           </ul>
         )}
 
-        {(fertigkeit === "Matrix-Navigation" || fertigkeit === "Electronic Warfare" || ziel) && !treffer && (
+        {fertigkeit === "Matrix-Navigation" && !treffer && (
+          <div className="mx-nav">
+            <p>Schwierigkeitsgrad wird von der SL festgelegt.</p>
+            <div className="mx-aktionen">
+              <button type="button" className="mx-ok" disabled={busy} onClick={() => senden(true)}>Erfolg</button>
+              <button type="button" disabled={busy} onClick={() => senden(false)}>Fehlschlag</button>
+            </div>
+          </div>
+        )}
+
+        {fertigkeit !== "Matrix-Navigation" && (fertigkeit === "Electronic Warfare" || ziel) && !treffer && (
           <label className="mx-eingabe">
             Erfolge
             <input
@@ -140,17 +163,19 @@ export function MatrixFenster({
           </label>
         )}
 
-        {!treffer && (fertigkeit !== "Brute Force" && fertigkeit !== "Schleichen" || ziel) && (
-          <button type="button" className="mx-ok" disabled={busy || erfolge === ""} onClick={senden}>
+        {!treffer && fertigkeit !== "Matrix-Navigation" && (fertigkeit !== "Brute Force" && fertigkeit !== "Schleichen" || ziel) && (
+          <button type="button" className="mx-ok" disabled={busy || erfolge === ""} onClick={() => senden()}>
             Eintragen
           </button>
         )}
 
         {treffer && treffer.punkte > 0 && (
           <>
-            <p className="mx-hinweis">
-              ICE {treffer.iceVorher} → {treffer.iceNachher}. Frei <strong>{frei}</strong> von {punkte}.
-            </p>
+            <div className="mx-punkte-block">
+              <span className="mx-punkte-titel">Punkte</span>
+              <span className="mx-punkte">{frei}</span>
+            </div>
+            <p className="mx-hinweis">ICE {treffer.iceVorher} → {treffer.iceNachher}.</p>
             <ul className="mx-liste">
               {treffer.ziele.map((z) => (
                 <li key={z.id} className="mx-ziel">
