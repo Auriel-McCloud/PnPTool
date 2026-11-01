@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Person } from "../entities/api";
 import { anzeigeName } from "../entities/api";
+import { useNachladen } from "../shell/nachladen";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css"; // Selbes Styling wie PCs
 
@@ -21,12 +22,11 @@ interface NPCKachelProps {
 function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
   const [uebersicht, setUebersicht] = useState<BogenUebersicht | null>(null);
 
-  useEffect(() => {
-    bogenApi
-      .laden(campaignId, person.id)
-      .then((bogen) => setUebersicht(bogen.uebersicht))
-      .catch(() => setUebersicht(null));
-  }, [campaignId, person.id]);
+  useNachladen(
+    () => bogenApi.laden(campaignId, person.id),
+    (bogen) => setUebersicht(bogen.uebersicht),
+    { quelle: `${campaignId}:${person.id}` },
+  );
 
   const lpAktuell = uebersicht ? uebersicht.gesundheitMax - uebersicht.gesundheitSchaden : null;
   const lpMax = uebersicht?.gesundheitMax ?? null;

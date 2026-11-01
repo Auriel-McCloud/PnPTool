@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { begleiterApi, type Begleiter } from "../begleiter/api";
 import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { itemsApi, KAMPF_FERTIGKEIT_LABEL, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, type GegenstandMitBesitzer } from "../items/api";
@@ -141,13 +141,18 @@ export function Kampfkarte({
   const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
   const [aus, setAus] = useState<{ zielId: string; art: string; runden: number }[]>([]);
   const [pool, setPool] = useState<{ ice: number; iceMax: number } | null>(null);
+  // Ein laufender Bogen-Ladevorgang (Klick, Deck-Sperre) zählt höher.
+  // Der Gesundheits-Takt darf den nicht mit einem älteren Stand überschreiben.
+  const bogenGen = useRef(0);
 
   async function laden() {
+    const meine = ++bogenGen.current;
     const [b, s, bg] = await Promise.all([
       bogenApi.laden(campaignId, personId),
       itemsApi.listAlle(campaignId),
       begleiterApi.liste(campaignId).catch(() => []),
     ]);
+    if (meine !== bogenGen.current) return;
     setBogen(b);
     setSachen(s.filter((g) => g.ownerId === personId));
     setBegleiter(bg.filter((x) => x.besitzerId === personId));
@@ -161,8 +166,21 @@ export function Kampfkarte({
     let weg = false;
     let gesehen = false;
     let letzteDecks = "";
-    let letzterSchlag = -1;
+    async function gesundheit() {
+      // matrixAus sieht der Gegner nicht, und der Schlag darin kann fehlen.
+      // Die Kästchen kommen direkt vom Bogen, sonst bleiben sie bis zum Reload stehen.
+      if (document.hidden) return;
+      const meine = bogenGen.current;
+      try {
+        const b = await bogenApi.laden(campaignId, personId);
+        if (weg || meine !== bogenGen.current) return;
+        setBogen(b);
+      } catch {
+        // Nächster Takt.
+      }
+    }
     async function hol() {
+      void gesundheit();
       try {
         const stand = await kampfApi.matrixAus(campaignId, personId);
         if (weg) return;
@@ -175,11 +193,9 @@ export function Kampfkarte({
           .map((e) => e.zielId)
           .sort()
           .join("|");
-        const schlag = stand.schlag ?? letzterSchlag;
-        if (gesehen && (decks !== letzteDecks || schlag !== letzterSchlag)) void laden();
+        if (gesehen && decks !== letzteDecks) void laden();
         gesehen = true;
         letzteDecks = decks;
-        letzterSchlag = schlag;
       } catch {
         if (!weg) {
           setAus([]);
@@ -189,10 +205,17 @@ export function Kampfkarte({
     }
     void hol();
     const takt = window.setInterval(() => void hol(), 3000);
+    const beiSicht = () => {
+      if (!document.hidden) void gesundheit();
+    };
+    document.addEventListener("visibilitychange", beiSicht);
     return () => {
       weg = true;
       window.clearInterval(takt);
+      document.removeEventListener("visibilitychange", beiSicht);
     };
+    // laden schließt über campaignId und personId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, personId]);
 
   const ausgeruestet = useMemo(() => sachen.filter((g) => g.ablage === "AUSGERUESTET"), [sachen]);
