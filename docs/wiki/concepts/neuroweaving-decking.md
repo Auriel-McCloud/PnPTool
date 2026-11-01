@@ -59,7 +59,7 @@ Gerät nötig, dieselbe Matrix-Präsenz wie beim NeuroWeaving.
 | Schleichen | Unbemerktes Eindringen, kaum Spuren, umgeht ICE |
 | Daten Verarbeiten | Große Datenmengen in Echtzeit durchsuchen/filtern/auswerten |
 | Kompilieren | Spontan eigene Programme/Effekte erschaffen |
-| **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. |
+| **Electronic Warfare** | „Rauschen" — sinnbildlich eine Rauchgranate im Netz. **Rein tarnend**, senkt NICHT gegnerische Verteidigung, sondern erschwert Ortung/Erkennung der eigenen Gruppe. Eine Probe bestimmt Radius UND Dauer zugleich; Dauer ist kontextabhängig (Szene bis Sekunden), im Kampf immer nur ein einmaliger Soforteffekt. Auffälliger als Schleichen. **Seit 01.11.2026 zusätzlich:** dieselbe Probe hebt das ICE der ganzen Party um die Erfolge, höchstens +3. Tarnung bleibt. Die 1–3 Runden vom Deaktivieren gelten hier nicht. |
 | **Matrix-Navigation** | Dinge im Netz aufspüren, auch Verstecktes. Erfolgsstufen bestimmen die Tiefe des Fundes — genug Erfolge finden sogar Backdoors in Host-Architekturen. Bewusst getrennt von Schleichen: Navigation findet den Weg, Schleichen hält unentdeckt, keine Überschneidung. |
 
 ## Matrix-Verteidigung (I.C.E.)
@@ -168,37 +168,40 @@ nützlich“. Nichts davon ist gebaut. Der `status` dieser Seite bleibt
   ([[augments-ausruestung]]) und Körper-Cyberware ([[cyberware-bioware]]).
   Bioware nicht.
 - **Dieselbe Ansicht** für Decker und Neuroweaver. KI nicht.
-- **Kein ICE:** doch ein Wurf. Die Zwischenfassung „kein Wurf, Zeug geht
-  einfach aus“ ist vom Tisch. Gegen welche Schwelle der Wurf geht, wenn
-  das ICE 0 ist, ist offen.
+- **Kein ICE:** Schwelle 0, der Wurf findet statt, Erfolge zählen, Deckel
+  bleibt 3 und 3. Die Zwischenfassung „kein Wurf“ ist vom Tisch.
 - **Deck oder Riggerkonsole:** Zugriff weg. Schon gesprungene Drohnen fallen
   sofort raus ([[drohnen-fahrzeuge]]).
 - **Ausgabe:** dieselben Erfolge für Zielzahl und Dauer, beides höchstens 3.
-  Der frühere Satz „Wahl zwischen Anzahl oder Runden“ ist damit ersetzt.
-  2 Erfolge = bis zu 2 Ziele für 2 Runden. Ob er weniger antippen darf als
-  die Erfolge hergeben, hat er nicht gesagt — naheliegend ja, nicht
-  bestätigt.
+  Der frühere Satz „Wahl zwischen Anzahl oder Runden“ ist ersetzt.
+  Deckel bestätigt: höchstens 3 Ziele und höchstens 3 Runden, also höchstens
+  9. „Höchstens“ heißt bis zu, nicht Pflicht, alle Slots zu verbrauchen.
 - **Nur im Kampf** ([[kampf-und-initiative]]). Eine Runde ist eine
   Kampfrunde. Außerhalb nicht.
+- **Einstieg:** Klick auf Brute Force oder Schleichen startet das
+  Deaktivieren, Wurf gegen das ICE des Ziels. Klick auf Electronic Warfare
+  ist die andere Aktion (Tarnung plus Party-ICE), nicht die Liste.
+  Daten Verarbeiten, Kompilieren und Matrix-Navigation starten das nicht.
 - **Wieder anschalten, eigene Leute:** jeder Decker oder Neuroweaver der
   Party ([[../entities/party-feature]]). Nicht nur der Verursacher. Das
   Ziel selbst hat er nicht genannt.
-- **Electronic Warfare** kommt zur Tarnung dazu, ersetzt sie nicht. Die
-  Tarn-Zeile oben bleibt. Wie viel ICE, für wen, und ob dieselbe Probe
-  beides macht, ist offen.
+- **Feind:** läuft nach den Runden von selbst aus. Das Ziel merkt es. Die
+  SL sieht es.
+- **Der ICE-Wurf ist die ganze Probe**, auch gegen Party-Kollegen. Kein
+  zusätzlicher Widerstandswurf.
+- **Electronic Warfare** kommt zur Tarnung dazu, ersetzt sie nicht. Dieselbe
+  Probe, ganze Party, Bonus = Erfolge, höchstens +3. Dauer und Radius
+  bleiben die der Tarn-Zeile, im Kampf also der Soforteffekt.
 
-### Offene Achsen — nicht raten
+### Offene Achse — nicht raten
 
-1. Welche Fertigkeit, gegen wessen ICE (Person, Commlink, Waffe, Deck,
-   Konsole)? Kein ICE: welche Schwelle, wenn der Wert 0 ist?
-2. Electronic Warfare zusätzlich zur Tarnung: eine Probe oder zwei? Bonus
-   für die ganze Party oder jeder sein ICE? Höhe = Erfolge, fest, Deckel?
-3. Weiß das Ziel Bescheid? Sieht die SL es? Feind-Effekt läuft nach den
-   Runden von selbst aus, oder bleibt er hängen wie bei eigenen Leuten?
-4. Widerstand zusätzlich zum ICE-Wurf, oder ist der ICE-Wurf die ganze
-   Probe? Auch gegen Party-Kollegen?
+Wie hängen die Erfolge am ICE, wenn das ICE nicht 0 ist? Schwelle 0 und
+„Erfolge zählen, höchstens 3“ gelten für kein ICE. „Gegen das ICE“ ist
+gesagt, die Verrechnung nicht. Nicht raten: Netto (Erfolge minus ICE),
+ICE als Mindest-Erfolge und danach zählen die Erfolge selbst, oder etwas
+anderes.
 
-Keine Datenmodell-Antwort, bis diese Achsen besprochen sind.
+Keine Datenmodell-Antwort, bis das klar ist.
 
 ## Siehe auch
 

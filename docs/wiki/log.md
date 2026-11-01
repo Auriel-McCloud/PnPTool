@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren, vierte Runde
+
+Mark: Einstieg über Brute Force oder Schleichen, Wurf gegen das ICE.
+Ohne ICE Schwelle 0, Deckel bleibt 3 Ziele und 3 Runden, höchstens 9.
+EW dieselbe Probe, Party-ICE +Erfolge max 3, Tarnung bleibt. Feind läuft
+aus, Ziel merkt es, SL sieht es. ICE-Wurf ist die ganze Probe. Offen nur
+noch die Verrechnung der Erfolge am ICE. Siehe
+[[concepts/neuroweaving-decking]].
+
 ## [2026-11-01] entschieden-nicht-umgesetzt | Deaktivieren, dritte Runde
 
 Mark: dieselben Erfolge für Zielzahl und Dauer, beides höchstens 3. Der
