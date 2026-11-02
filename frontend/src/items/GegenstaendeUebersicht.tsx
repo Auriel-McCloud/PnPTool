@@ -205,7 +205,17 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     }
   }, [bereiche, items.length, auswahlGesetzt]);
 
-  const sichtbareItems = filtereNachBereichen(gefiltert, bereiche, bereichAuswahl);
+  // Vorlagen bekommen beim Anlegen ablage="RUCKSACK" (Default, siehe
+  // items/schemas.py) — ohne diesen Zusatzfilter tauchten sie deshalb schon
+  // unter "Mitgeführt" (und bei "alle zeigen") mit auf, obwohl der eigene
+  // Vorlage-Reiter genau dafür da ist, sie separat zu halten (Mark,
+  // 02.11.2026: "wenn ich abhakel werden vorlagen nicht ausgeblendet").
+  // Nur sichtbar, wenn der Vorlage-Reiter selbst aktiv ist — unabhängig
+  // davon, über welchen anderen Bereich (Mitgeführt, Depot, …) der
+  // zufällige Ablage-Wert einer Vorlage sonst noch passen würde.
+  const sichtbareItems = filtereNachBereichen(gefiltert, bereiche, bereichAuswahl).filter(
+    (i) => bereichAuswahl.has("VORLAGE") || !i.istVorlage,
+  );
 
   // Wie viele Gegenstände in jedem Behälter liegen — dieselbe Grundlage wie
   // die Reiter-Zahl (gefiltert, nicht die ganze Kampagne), damit Kachel-Badge
@@ -400,17 +410,25 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
       <KategorienAuswahl vorhandeneTypen={vorhandeneTypen} gewaehlt={kategorie} onWaehlen={setKategorie} />
 
       <div className="gg-reiter">
-        {bereiche.map((b) => (
-          <button
-            key={b.id}
-            type="button"
-            data-aktiv={bereichAuswahl.has(b.id)}
-            onClick={() => schalteBereich(b.id)}
-            title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
-          >
-            {b.symbol} {b.name} <span className="gg-reiter-zahl">{gefiltert.filter(b.passt).length}</span>
-          </button>
-        ))}
+        {bereiche.map((b) => {
+          // Dieselbe Ausnahme wie oben bei sichtbareItems: eine Vorlage zählt
+          // nur am eigenen Reiter, nicht zusätzlich an einem, zu dem sie nur
+          // zufällig über ihren Default-Ablagewert passt — sonst zeigt die
+          // Zahl am Reiter mehr an, als nach dem Draufklicken erscheint.
+          const treffer = gefiltert.filter(b.passt);
+          const anzahl = b.id === "VORLAGE" ? treffer.length : treffer.filter((g) => !g.istVorlage).length;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              data-aktiv={bereichAuswahl.has(b.id)}
+              onClick={() => schalteBereich(b.id)}
+              title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
+            >
+              {b.symbol} {b.name} <span className="gg-reiter-zahl">{anzahl}</span>
+            </button>
+          );
+        })}
         {bereichAuswahl.size > 0 && (
           <button type="button" onClick={() => setBereichAuswahl(new Set())} title="Auswahl aufheben">
             alle zeigen
