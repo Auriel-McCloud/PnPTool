@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Gegenstände-Übersicht: Reiter für Vorlagen und Herrenlose (02.11.2026)
+
+Eigener Reiter „◆ Vorlage“ neben Am Körper/Mitgeführt (nicht im Besitzer-Dropdown versteckt); solange er nicht aktiv ist, bleiben Vorlagen überall ausgeblendet — sonst tauchten sie wegen ihres Default-Ablagewerts RUCKSACK unter „Mitgeführt“ mit auf. Zusätzlich neue Besitzer-Dropdown-Option „Herrenlos (kein Besitzer, keine Vorlage)“ für Gegenstände, deren Besitzer gelöscht wurde, ohne dass die Invariante istVorlage<=>kein Besitzer nachgezogen wurde — reine Aufräum-Ansicht für die SL. `GegenstaendeUebersicht.tsx`, `items/api.ts` (`HERRENLOS_SENTINEL`). **Nie im Browser angeklickt.**
+
 ## Fertigkeiten-Erstellung: alle Punkte auf einmal zurück (01.11.2026)
 
 Im Fertigkeiten-Fenster sitzt ein × links neben den Punkten, sobald welche vergeben sind. Ein Tipp nimmt den ganzen Slot zurück. Feste Rassenpunkte bleiben. `Charaktererstellung.tsx`. **Nie im Browser angeklickt.**

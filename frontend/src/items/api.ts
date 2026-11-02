@@ -444,6 +444,16 @@ export interface GegenstandMitBesitzer extends Gegenstand {
 // eine Vorlage" statt einer echten Person-ID.
 export const VORLAGE_SENTINEL = "__VORLAGE__";
 
+// Pseudo-Wert für Besitzer-Dropdowns: "kein Besitzer, aber auch keine
+// Vorlage" — die Invariante istVorlage <=> kein Besitzer (siehe
+// items/schemas.py) gilt eigentlich, bricht aber real, wenn eine Person
+// gelöscht wird, ohne dass ihre Gegenstände vorher zurückgegeben/zu Vorlagen
+// gemacht wurden (02.11.2026, Mark: "Objekte die niemanden gehören,
+// vielleicht weil wir den Besitzer gelöscht haben"). Eigener Sentinel statt
+// Wiederverwendung von VORLAGE_SENTINEL, damit sich "aufzuräumende Waisen"
+// gezielt von echten, gewollten Vorlagen trennen lassen.
+export const HERRENLOS_SENTINEL = "__HERRENLOS__";
+
 function base(campaignId: string, personId: string) {
   return `/api/campaigns/${campaignId}/personen/${personId}/gegenstaende`;
 }

@@ -6,7 +6,7 @@ import type { PersonOption } from "../entities/VisibilitySelector";
 import { Fenster } from "../shell/Fenster";
 import { useNachladen } from "../shell/nachladen";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
-import { itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
+import { HERRENLOS_SENTINEL, itemsApi, VORLAGE_SENTINEL, type GegenstandMitBesitzer, type TraglastZeile } from "./api";
 import { ermittleBereiche, filtereNachBereichen, standardAuswahl } from "./aufbewahrung";
 import { KategorienAuswahl, vorhandeneTypenSortiert } from "./KategorienAuswahl";
 import { Muelleimer } from "./Muelleimer";
@@ -142,7 +142,19 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     const s = suche.trim().toLowerCase();
     return items.filter((i) => {
       if (besitzerFilter === VORLAGE_SENTINEL && i.ownerId !== null) return false;
-      if (besitzerFilter && besitzerFilter !== VORLAGE_SENTINEL && i.ownerId !== besitzerFilter) return false;
+      // Waisen: kein Besitzer, aber auch keine Vorlage — die eigentlich
+      // geltende Invariante istVorlage<=>kein Besitzer ist hier bewusst
+      // verletzt (meist gelöschte Person), siehe HERRENLOS_SENTINEL-Kommentar
+      // in items/api.ts. Deshalb eigener Zweig statt Wiederverwendung von
+      // VORLAGE_SENTINEL.
+      if (besitzerFilter === HERRENLOS_SENTINEL && (i.ownerId !== null || i.istVorlage)) return false;
+      if (
+        besitzerFilter &&
+        besitzerFilter !== VORLAGE_SENTINEL &&
+        besitzerFilter !== HERRENLOS_SENTINEL &&
+        i.ownerId !== besitzerFilter
+      )
+        return false;
       if (kategorie !== null && i.typ !== kategorie) return false;
       if (!s) return true;
       // Auch Typ und Besitzer durchsuchen — "alle Waffen von Kira" ist die
@@ -161,6 +173,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const vorhandeneTypen = useMemo(() => {
     const basis = items.filter((i) => {
       if (besitzerFilter === VORLAGE_SENTINEL) return i.ownerId === null;
+      if (besitzerFilter === HERRENLOS_SENTINEL) return i.ownerId === null && !i.istVorlage;
       if (besitzerFilter) return i.ownerId === besitzerFilter;
       return true;
     });
@@ -181,7 +194,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   // Nur sichtbar, wenn überhaupt Vorlagen existieren — sonst ein Reiter, der
   // nie etwas zeigt (dasselbe Prinzip wie der "Montiert"-Reiter oben).
   const bereiche = useMemo(() => {
-    const basis = ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL, true);
+    const basis = ermittleBereiche(
+      items,
+      Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL && besitzerFilter !== HERRENLOS_SENTINEL,
+      true,
+    );
     if (items.some((i) => i.istVorlage)) {
       basis.push({
         id: "VORLAGE",
@@ -308,6 +325,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         <select value={besitzerFilter} onChange={(e) => setBesitzerFilter(e.target.value)}>
           <option value="">Alle Besitzer</option>
           <option value={VORLAGE_SENTINEL}>Nur Vorlagen</option>
+          <option value={HERRENLOS_SENTINEL}>Herrenlos (kein Besitzer, keine Vorlage)</option>
           {alleOptionen.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
