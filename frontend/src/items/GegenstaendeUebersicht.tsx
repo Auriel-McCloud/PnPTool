@@ -172,10 +172,27 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   // `mitMontiert=true`: die SL-Übersicht bekommt zusätzlich einen "Montiert"-
   // Reiter für Ki-Tamas/Waffen-Upgrades, die sonst komplett unsichtbar
   // blieben (Mark-Bugreport 31.10.2026).
-  const bereiche = useMemo(
-    () => ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL, true),
-    [items, besitzerFilter],
-  );
+  //
+  // "Vorlage" ist kein Ablage-Ort (istVorlage <=> kein Besitzer, siehe
+  // items/schemas.py), deshalb kein Fall für ermittleBereiche selbst — nur
+  // hier lokal angehängt, denselben Reiter-Baustein (Toggle, Zähler, "alle
+  // zeigen") wiederverwendend, wie Mark es wollte (02.11.2026: "wie Am
+  // Körper oder Mitgeführt"), statt eines eigenen Besitzer-Dropdown-Eintrags.
+  // Nur sichtbar, wenn überhaupt Vorlagen existieren — sonst ein Reiter, der
+  // nie etwas zeigt (dasselbe Prinzip wie der "Montiert"-Reiter oben).
+  const bereiche = useMemo(() => {
+    const basis = ermittleBereiche(items, Boolean(besitzerFilter) && besitzerFilter !== VORLAGE_SENTINEL, true);
+    if (items.some((i) => i.istVorlage)) {
+      basis.push({
+        id: "VORLAGE",
+        name: "Vorlage",
+        symbol: "◆",
+        greifbar: false,
+        passt: (g) => g.istVorlage,
+      });
+    }
+    return basis;
+  }, [items, besitzerFilter]);
 
   // Beim ersten Laden auf "am Körper" vorwählen — aber nur einmal, sonst
   // liesse sich die Auswahl nie wieder leeren.
