@@ -49,6 +49,9 @@ export interface FilterleisteProps {
   farbe: string;
   /** Zeitpunkt-Sortierung anbieten (nur sinnvoll bei Events). */
   mitZeitpunkt?: boolean;
+  /** Voreingestellte Sortierung dieser Liste, solange nichts anderes gewählt
+   * wurde (z.B. "verbindungen" bei Orten). Fällt sonst auf "name" zurück. */
+  standardSortierung?: Sortierung;
 }
 
 export function Filterleiste({
@@ -60,6 +63,7 @@ export function Filterleiste({
   trefferzahl,
   farbe,
   mitZeitpunkt = false,
+  standardSortierung = "name",
 }: FilterleisteProps) {
   const [optionen, setOptionen] = useState<FilterOptionen | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -109,13 +113,19 @@ export function Filterleiste({
 
   const sortierungen = mitZeitpunkt ? [ZEITPUNKT, ...SORTIERUNGEN] : SORTIERUNGEN;
   const hatBeziehungen = (optionen?.ziele.length ?? 0) > 0 || (optionen?.typen.length ?? 0) > 0;
+  // Eine Sortierung zählt nur dann als aktiver Filter, wenn sie von der
+  // Voreinstellung abweicht — sonst stünde bei Orten sofort "(gefiltert)"
+  // da, obwohl die SL noch gar nichts angefasst hat.
   const istGefiltert = Boolean(
-    filter.suche?.trim() || filter.verbundenMit || filter.verbindungsTyp || filter.sortierung
+    filter.suche?.trim() ||
+      filter.verbundenMit ||
+      filter.verbindungsTyp ||
+      (filter.sortierung && filter.sortierung !== standardSortierung)
   );
 
   function zuruecksetzen() {
     setSucheRoh("");
-    onFilter({ personType: filter.personType });
+    onFilter({ personType: filter.personType, sortierung: standardSortierung });
   }
 
   return (
@@ -142,7 +152,7 @@ export function Filterleiste({
         <label className="fl-wahl">
           <span className="fl-wahl-text">Reihenfolge</span>
           <select
-            value={filter.sortierung ?? "name"}
+            value={filter.sortierung ?? standardSortierung}
             onChange={(e) => onFilter({ ...filter, sortierung: e.target.value as Sortierung })}
           >
             {sortierungen.map((s) => (

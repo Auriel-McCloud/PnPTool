@@ -197,7 +197,7 @@ export function EntityManager({
   // Such-/Sortier-/Beziehungsfilter, je Bereich getrennt. Getrennt, damit ein
   // Wechsel von NPCs zu Orten nicht die dort gesetzte Suche mitschleppt.
   const [npcFilter, setNpcFilter] = useState<ListenFilter>({});
-  const [ortFilter, setOrtFilter] = useState<ListenFilter>({});
+  const [ortFilter, setOrtFilter] = useState<ListenFilter>({ sortierung: "verbindungen" });
   const [eventFilter, setEventFilter] = useState<ListenFilter>({});
   const [fraktionFilter, setFraktionFilter] = useState<ListenFilter>({});
 
@@ -872,6 +872,7 @@ export function EntityManager({
           onFilter={setOrtFilter}
           trefferzahl={orte.length}
           farbe="var(--bereich-orte, var(--neon))"
+          standardSortierung="verbindungen"
         />
       )}
       {ansicht === "events" && (
