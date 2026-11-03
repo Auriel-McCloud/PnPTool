@@ -2228,7 +2228,26 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
-| Rätsel | ✅ | Eine Ring-Tafel, acht Räume, SL dreht, Spieler sehen nach Freigabe zu, siehe `docs/api/raetsel.md` |
+| Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), je ein fester Ausgang pro Ebene, siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (03.11.2026 — Ring-Rätsel: zwei Ebenen, feste Ausgänge, Umschalter):**
+- **Was:** Erweiterung der Ring-Tafel vom selben Nachmittag. Umschalter Leicht/
+  Mittel oben in der Tafel (SL, mit Bestätigung — setzt Felder auf Start
+  zurück, Namen/Freigabe/Ausgänge bleiben). Mittel: 16 statt 8 Räume, zwei
+  Ringe nebeneinander dargestellt („Ebene oben“/„Ebene unten“, nicht
+  übereinander — „hinter“ war nicht festgelegt). Tür zu wechselt dort
+  abwechselnd die Ebene (gleiches Feld, anderer Ring) oder dreht beide Ringe
+  gemeinsam; die Kopfzeile zeigt an, was als Nächstes kommt. Neu in beiden
+  Modi: ein fester Ausgang pro Ring ist ein Feld, kein Raum — Klick auf einen
+  der acht Punkte in der Mitte bei „Ziel“ setzt ihn, derselbe Punkt nochmal
+  nimmt ihn weg. Nur die SL sieht die Ausgänge, auch nach Freigabe nicht die
+  Spieler.
+- **Dateien:** `backend/app/raetsel/{logic.py,routes.py,schemas.py}`,
+  `backend/tests/test_raetsel.py`, `frontend/src/raetsel/{api.ts,
+  RaetselTafel.tsx,raetsel.css}`.
+- **Verifiziert:** `pytest tests/test_raetsel.py` (22 Fälle) grün,
+  `npx tsc -b` sauber. **Nie im Browser angeklickt.**
+- **Nachlesen:** `docs/wiki/entities/ring-raetsel.md`, `docs/api/raetsel.md`.
 
 **Zuletzt gebaut (03.11.2026 — Ring-Rätsel, eine Ebene):**
 - **Was:** Burgermenü „Rätsel“ für SL und Spieler. Acht Räume um ein Ziel, Tür zu dreht den ganzen Ring ein Feld gegen den Uhrzeigersinn. Die Gruppe bleibt im Raum und muss danach extra gesetzt werden, weil Tür auf nicht Durchgehen ist. Zweite Markierung für einen Split, nur eine Tür offen. Spieler sehen dieselbe Tafel ohne Knöpfe, sobald freigegeben, live über WebSocket. Zustand als `raetselJson` an der Kampagne. Zwei Ringe und die Gewinnrechnung sind nicht gebaut.

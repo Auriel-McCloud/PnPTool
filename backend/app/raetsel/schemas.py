@@ -20,3 +20,12 @@ class NameAktion(BaseModel):
 
 class FreigabeAktion(BaseModel):
     an: bool
+
+
+class AusgangAktion(BaseModel):
+    ring: int = Field(ge=0, le=1)
+    slot: int | None = None
+
+
+class ModusAktion(BaseModel):
+    modus: Literal["leicht", "mittel"]

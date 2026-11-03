@@ -1,9 +1,15 @@
 import { api } from "../api/client";
 
 export type Seite = "N" | "O" | "S" | "W";
+export type Modus = "leicht" | "mittel";
 
 export type RaetselTafel = {
+  modus: Modus;
   drehung: number;
+  takt: number;
+  naechster: "ebene" | "drehen";
+  ringe: number[][];
+  ausgaenge: (number | null)[];
   namen: string[];
   gruppen: (number | null)[];
   offen: boolean[];
@@ -33,6 +39,10 @@ export const raetselApi = {
     api.post<RaetselTafel>(`${basis(campaignId)}/name`, { raum, name }),
   freigabe: (campaignId: string, an: boolean) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/freigabe`, { an }),
+  ausgang: (campaignId: string, ring: number, slot: number | null) =>
+    api.post<RaetselTafel>(`${basis(campaignId)}/ausgang`, { ring, slot }),
+  modus: (campaignId: string, modus: Modus) =>
+    api.post<RaetselTafel>(`${basis(campaignId)}/modus`, { modus }),
   zurueck: (campaignId: string) => api.post<RaetselTafel>(`${basis(campaignId)}/zurueck`),
   zuruecksetzen: (campaignId: string) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/zuruecksetzen`),

@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-03] gebaut | Ring-Rätsel: zwei Ebenen (Mittel), feste Ausgänge, Umschalter
+
+Umschalter Leicht/Mittel. Mittel: 16 Räume, zwei Ringe nebeneinander, Tür zu
+wechselt abwechselnd Ebene oder dreht beide Ringe. Pro Ring ein fester Ausgang
+(Feld, nicht Raum), nur der SL sieht ihn, Markierung in der Mitte bei „Ziel“.
+Siehe [[entities/ring-raetsel]].
+
 ## [2026-11-03] gebaut | Ring-Rätsel, eine Ebene
 
 Burgermenü-Tafel: acht Räume, Tür zu dreht gegen den Uhrzeigersinn, Lage der

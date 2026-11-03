@@ -3,10 +3,12 @@
 from app.main import app
 from app.raetsel.logic import (
     ANZAHL,
+    ausgang_setzen,
     fuer_draht,
     freigabe_setzen,
     gruppe_setzen,
     leer,
+    modus_setzen,
     name_setzen,
     raum_in_slot,
     slot_von_raum,
@@ -164,3 +166,47 @@ def test_raetsel_routen_sind_registriert():
     assert "post" in pfade[basis + "/freigabe"]
     assert "post" in pfade[basis + "/zurueck"]
     assert "post" in pfade[basis + "/zuruecksetzen"]
+    assert "post" in pfade[basis + "/ausgang"]
+    assert "post" in pfade[basis + "/modus"]
+
+
+def test_ausgang_bleibt_am_feld_und_dreht_nicht():
+    z = ausgang_setzen(leer(), 0, 0)
+    assert z["ausgaenge"][0] == 0
+    assert z["drehung"] == 0
+    weg = ausgang_setzen(z, 0, 0)
+    assert weg["ausgaenge"][0] is None
+
+
+def test_spieler_sehen_den_ausgang_nicht():
+    z = freigabe_setzen(ausgang_setzen(leer(), 0, 4), True)
+    assert fuer_draht(z, "PLAYER")["ausgaenge"] == [None, None]
+    assert fuer_draht(z, "GM")["ausgaenge"][0] == 4
+
+
+def test_mittel_wechselt_zuerst_die_ebene_dann_dreht():
+    z = modus_setzen(leer(), "mittel")
+    assert z["ringe"][0][0] == 0
+    assert z["ringe"][1][0] == 8
+    hoch = tuer_zu(z, 0, "N")
+    assert hoch["ringe"][1][0] == 0
+    assert hoch["ringe"][0][0] == 8
+    assert hoch["takt"] == 1
+    gedreht = tuer_zu(hoch, 0, "S")
+    assert gedreht["ringe"][1][7] == 0
+    assert gedreht["takt"] == 2
+    assert fuer_draht(gedreht, "GM")["naechster"] == "ebene"
+
+
+def test_modus_behaelt_namen_und_stellt_felder_neu():
+    z = freigabe_setzen(name_setzen(tuer_zu(leer(), 0, "N"), 0, "Archiv"), True)
+    z = ausgang_setzen(z, 0, 2)
+    neu = modus_setzen(z, "mittel")
+    assert neu["modus"] == "mittel"
+    assert neu["namen"][0] == "Archiv"
+    assert neu["freigegeben"] is True
+    assert neu["ausgaenge"][0] == 2
+    assert neu["drehung"] == 0
+    assert neu["takt"] == 0
+    assert neu["ringe"][0][0] == 0
+    assert name_setzen(neu, 8, "Oben")["namen"][8] == "Oben"

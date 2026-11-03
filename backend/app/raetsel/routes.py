@@ -11,15 +11,17 @@ from app.auth.security import decode_access_token
 from app.campaigns.repository import campaign_owned_by
 from app.raetsel import repository
 from app.raetsel.logic import (
+    ausgang_setzen,
     freigabe_setzen,
     fuer_draht,
     gruppe_setzen,
+    modus_setzen,
     name_setzen,
     tuer_zu,
     zurueck,
     zuruecksetzen,
 )
-from app.raetsel.schemas import FreigabeAktion, GruppeAktion, NameAktion, TuerAktion
+from app.raetsel.schemas import AusgangAktion, FreigabeAktion, GruppeAktion, ModusAktion, NameAktion, TuerAktion
 from app.raetsel.verteiler import Verbindung, verteiler
 
 log = logging.getLogger(__name__)
@@ -85,6 +87,16 @@ async def name(campaign_id: str, body: NameAktion):
 @router.post("/freigabe", dependencies=[Depends(require_campaign_gm)])
 async def freigabe(campaign_id: str, body: FreigabeAktion):
     return await _aendern(campaign_id, lambda z: freigabe_setzen(z, body.an))
+
+
+@router.post("/ausgang", dependencies=[Depends(require_campaign_gm)])
+async def ausgang(campaign_id: str, body: AusgangAktion):
+    return await _aendern(campaign_id, lambda z: ausgang_setzen(z, body.ring, body.slot))
+
+
+@router.post("/modus", dependencies=[Depends(require_campaign_gm)])
+async def modus(campaign_id: str, body: ModusAktion):
+    return await _aendern(campaign_id, lambda z: modus_setzen(z, body.modus))
 
 
 @router.post("/zurueck", dependencies=[Depends(require_campaign_gm)])

@@ -35,11 +35,24 @@ selbst ist sichtbar; ausblenden geht über das normale Burgermenü.
 Zustand liegt als `raetselJson` am Kampagnen-Knoten, kein eigener Knotentyp.
 Der Kampagnen-Export nimmt das Property mit.
 
-## Nicht gebaut
+## Zwei Ebenen, Ausgänge, Umschalter (03.11.2026)
 
-Zwei Ringe übereinander, Räume wechseln die Ebene (rauf, rechts, hinter, rechts).
-„Hinter“ ist nicht festgelegt. Anzeige wäre zwei Ringe nebeneinander, nicht übereinander.
-Dritte Ebene nicht anfangen.
+Umschalter oben in der Tafel, nur SL: **Leicht** (eine Ebene, wie oben) oder
+**Mittel** (zwei Ebenen). Umschalten setzt Felder auf Start zurück; Namen,
+Freigabe und Ausgänge bleiben.
+
+- Mittel hat 16 Räume statt 8, zwei Ringe nebeneinander dargestellt
+  („Ebene oben“/„Ebene unten“), nicht übereinander — „hinter“ war nicht
+  festgelegt, die Nebeneinander-Anzeige umgeht die Frage.
+- Tür zu wechselt abwechselnd: einmal die Ebene (gleiches Feld, anderer Ring),
+  einmal drehen beide Ringe gemeinsam gegen den Uhrzeigersinn. Welche der
+  beiden Aktionen als Nächstes kommt, zeigt die Kopfzeile an.
+- Fester Ausgang: pro Ring ein Feld (nicht ein Raum) lässt sich in der Mitte
+  bei „Ziel“ markieren — ein Klick auf einen der acht Punkte setzt ihn, nochmal
+  derselbe Punkt nimmt ihn weg. Er bleibt am Feld liegen, während die Räume
+  weiterwandern. Nur die SL sieht ihn, auch nach Freigabe nicht die Spieler.
+  In Leicht gibt es nur einen Ring, also nur einen Ausgang.
+- Dritte Ebene nicht angefangen.
 
 Menüpunkt wie die übrigen Bereiche, siehe [[entities/ui-konzept-commlink]].
 Der Stand hängt an der Kampagne und geht mit dem Export mit, siehe

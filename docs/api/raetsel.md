@@ -17,14 +17,19 @@ Der Rückgängig-Stapel geht nie über die Leitung.
 
 | Methode | Pfad | Wirkung |
 |---|---|---|
-| POST | `/tuer` | `{raum, seite}` — Ring ein Feld gegen den Uhrzeigersinn, diese Tür ist die offene. Gesetzte Gruppen müssen neu bestätigt werden, ihre Raum-Nummer bleibt. |
-| POST | `/gruppe` | `{index: 0\|1, raum: 0–7\|null}` — Lage setzen oder Gruppe B weg. Dreht nicht. |
+| POST | `/tuer` | `{raum, seite}` — Leicht: Ring ein Feld gegen den Uhrzeigersinn. Mittel: abwechselnd Ebene wechseln oder beide Ringe drehen. Diese Tür ist die offene. Gesetzte Gruppen müssen neu bestätigt werden, ihre Raum-Nummer bleibt. |
+| POST | `/gruppe` | `{index: 0\|1, raum: 0–7 (Leicht) / 0–15 (Mittel) \|null}` — Lage setzen oder Gruppe B weg. Dreht nicht. |
 | POST | `/name` | `{raum, name}` — Anzeigename, leer fällt auf die Nummer zurück, Schnitt bei 16. |
+| POST | `/ausgang` | `{ring: 0\|1, slot: 0–7\|null}` — fester Ausgang an diesem Feld (nicht Raum), nochmal derselbe Slot nimmt ihn weg. Nur der SL sichtbar. |
+| POST | `/modus` | `{modus: "leicht"\|"mittel"}` — Umschalter, setzt Felder auf Start zurück, Namen/Freigabe/Ausgänge bleiben. |
 | POST | `/freigabe` | `{an}` — Spieler sehen die Tafel oder nicht. Steht nicht in der Historie. |
 | POST | `/zurueck` | Letzten Klick zurück, Freigabe bleibt. |
-| POST | `/zuruecksetzen` | Startfelder. Namen und Freigabe bleiben. |
+| POST | `/zuruecksetzen` | Startfelder. Namen, Freigabe, Modus und Ausgänge bleiben. |
 
-`seite` ist `N`, `O`, `S` oder `W`.
+`seite` ist `N`, `O`, `S` oder `W`. Antwort enthält zusätzlich `modus`, `takt`,
+`naechster` (`"ebene"`\|`"drehen"`, nur im Modus Mittel relevant), `ringe`
+(ein oder zwei Arrays mit 8 Raum-Nummern) und `ausgaenge` (SL: `[slot\|null, slot\|null]`,
+Spieler immer `[null, null]`).
 
 ## Live
 

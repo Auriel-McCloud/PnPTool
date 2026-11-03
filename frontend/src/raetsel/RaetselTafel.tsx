@@ -6,6 +6,7 @@ import {
   hatTafel,
   raetselApi,
   verbindeRaetselLive,
+  type Modus,
   type RaetselAntwort,
   type RaetselTafel,
   type Seite,
@@ -14,6 +15,7 @@ import "./raetsel.css";
 
 const SEITEN: Seite[] = ["N", "O", "S", "W"];
 const SEITEN_NAME: Record<Seite, string> = { N: "Nord", O: "Ost", S: "Süd", W: "West" };
+const MODUS_NAME: Record<Modus, string> = { leicht: "Leicht", mittel: "Mittel" };
 
 /** Gleiche Zuordnung wie backend/app/raetsel/logic.py — Feld 0 ist Nord. */
 const FELDER = [
@@ -38,13 +40,11 @@ const MITTE: Record<number, Seite[]> = {
   7: ["O", "S"],
 };
 
-function raumInFeld(drehung: number, slot: number): number {
-  return (slot + drehung) % 8;
-}
+const EBENEN_NAME = ["Ebene oben", "Ebene unten"];
 
 /**
- * Tafel für den einen Ring. Die SL klickt Türen und Räume, Spieler sehen
- * dieselbe Tafel ohne Knöpfe, sobald sie freigegeben ist.
+ * Tafel für einen oder zwei Ringe. Die SL klickt Türen und Räume, Spieler
+ * sehen dieselbe Tafel ohne Knöpfe, sobald sie freigegeben ist.
  */
 export function RaetselTafelAnsicht({
   campaignId,
@@ -59,6 +59,7 @@ export function RaetselTafelAnsicht({
   const [gewaehlt, setGewaehlt] = useState(0);
   const [umbenennen, setUmbenennen] = useState<{ raum: number; name: string } | null>(null);
   const [resetOffen, setResetOffen] = useState(false);
+  const [modusWechsel, setModusWechsel] = useState<Modus | null>(null);
   const { ungueltig } = useNachladen(
     () => raetselApi.laden(campaignId, istGm),
     (daten) => setStand(daten),
@@ -105,17 +106,26 @@ export function RaetselTafelAnsicht({
   }
 
   const tafel = stand;
+  const zweiEbenen = tafel.ringe.length === 2;
   const naechsteOffene = tafel.offen.findIndex(Boolean);
   const klickSetzt = naechsteOffene >= 0 ? naechsteOffene : gewaehlt;
-  const gegenueber = tafel.drehung % 8 === 4;
+  const gegenueber = !zweiEbenen && tafel.drehung % 8 === 4;
 
   return (
     <div className="rr">
       <div className="rr-kopf">
         <h2 className="rr-titel">Rätsel</h2>
         <p className="rr-schritt">
-          Schritt {tafel.drehung}
-          {gegenueber ? " — gegenüber dem Startfeld" : ""}
+          {zweiEbenen ? (
+            <>
+              Takt {tafel.takt} · nächste Tür: {tafel.naechster === "ebene" ? "Ebene wechseln" : "drehen"}
+            </>
+          ) : (
+            <>
+              Schritt {tafel.drehung}
+              {gegenueber ? " — gegenüber dem Startfeld" : ""}
+            </>
+          )}
           {tafel.tuer
             ? ` · offen: ${tafel.namen[tafel.tuer.raum]} ${SEITEN_NAME[tafel.tuer.seite]}`
             : ""}
@@ -125,8 +135,9 @@ export function RaetselTafelAnsicht({
       {istGm && (
         <>
           <p className="rr-hinweis">
-            Tür klicken dreht alle acht Räume gegen den Uhrzeigersinn. Danach den Raum
-            klicken, in dem sie sind. Eine offene Tür heißt nicht, dass sie durch sind.
+            {zweiEbenen
+              ? "Tür zu wechselt abwechselnd die Ebene (gleiches Feld) oder dreht beide Ringe gegen den Uhrzeigersinn. Danach den Raum klicken, in dem sie sind."
+              : "Tür klicken dreht alle acht Räume gegen den Uhrzeigersinn. Danach den Raum klicken, in dem sie sind. Eine offene Tür heißt nicht, dass sie durch sind."}
           </p>
           {(naechsteOffene >= 0 || tafel.gruppen[0] == null) && (
             <p className="rr-banner">
@@ -152,6 +163,19 @@ export function RaetselTafelAnsicht({
             <button type="button" disabled={busy} onClick={() => setResetOffen(true)}>
               Auf Start
             </button>
+          </div>
+          <div className="rr-werkzeuge">
+            {(["leicht", "mittel"] as Modus[]).map((modus) => (
+              <button
+                key={modus}
+                type="button"
+                data-aktiv={tafel.modus === modus ? "true" : "false"}
+                disabled={busy}
+                onClick={() => tafel.modus !== modus && setModusWechsel(modus)}
+              >
+                {MODUS_NAME[modus]}
+              </button>
+            ))}
           </div>
           <div className="rr-gruppen">
             <button
@@ -183,36 +207,54 @@ export function RaetselTafelAnsicht({
 
       {fehler && <p className="rr-fehler">{fehler}</p>}
 
-      <div className="rr-brett">
-        <span className="rr-kompass rr-kompass-n">N</span>
-        <span className="rr-kompass rr-kompass-o">O</span>
-        <span className="rr-kompass rr-kompass-s">S</span>
-        <span className="rr-kompass rr-kompass-w">W</span>
-        <div className="rr-ring">
-          {FELDER.map(({ slot, area }) => (
-            <RaumZelle
-              key={slot}
-              area={area}
-              raum={raumInFeld(tafel.drehung, slot)}
-              tafel={tafel}
-              slot={slot}
-              istGm={istGm}
-              busy={busy}
-              onTuer={(raum, seite) => senden(() => raetselApi.tuer(campaignId, raum, seite))}
-              onRaum={(raum) => senden(() => raetselApi.gruppe(campaignId, klickSetzt, raum))}
-              onUmbenennen={(raum) => setUmbenennen({ raum, name: tafel.namen[raum] })}
-            />
-          ))}
-          <div className="rr-ziel" style={{ gridArea: "2 / 2" }}>
-            <strong>Ziel</strong>
-            <span>Tür nach innen</span>
+      <div className="rr-bretter">
+        {tafel.ringe.map((ring, ringIndex) => (
+          <div className="rr-brett-block" key={ringIndex}>
+            {zweiEbenen && <p className="rr-ebene-label">{EBENEN_NAME[ringIndex]}</p>}
+            <div className="rr-brett">
+              <span className="rr-kompass rr-kompass-n">N</span>
+              <span className="rr-kompass rr-kompass-o">O</span>
+              <span className="rr-kompass rr-kompass-s">S</span>
+              <span className="rr-kompass rr-kompass-w">W</span>
+              <div className="rr-ring">
+                {FELDER.map(({ slot, area }) => (
+                  <RaumZelle
+                    key={slot}
+                    area={area}
+                    raum={ring[slot]}
+                    tafel={tafel}
+                    slot={slot}
+                    istGm={istGm}
+                    busy={busy}
+                    onTuer={(raum, seite) => senden(() => raetselApi.tuer(campaignId, raum, seite))}
+                    onRaum={(raum) => senden(() => raetselApi.gruppe(campaignId, klickSetzt, raum))}
+                    onUmbenennen={(raum) => setUmbenennen({ raum, name: tafel.namen[raum] })}
+                  />
+                ))}
+                <div className="rr-ziel" style={{ gridArea: "2 / 2" }}>
+                  <strong>Ziel</strong>
+                  {istGm ? (
+                    <AusgangMini
+                      wert={tafel.ausgaenge[ringIndex] ?? null}
+                      busy={busy}
+                      onWaehlen={(slot) =>
+                        senden(() => raetselApi.ausgang(campaignId, ringIndex, slot))
+                      }
+                    />
+                  ) : (
+                    <span>Tür nach innen</span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       <p className="rr-legende">
         Leuchtende Tür: zuletzt zu. Gestrichelter Rahmen: Lage noch nicht bestätigt.
-        Neonkante: diese Tür zeigt zur Mitte.
+        Neonkante: diese Tür zeigt zur Mitte. Punkte in der Mitte: fester Ausgang —
+        er bleibt am Feld, auch wenn der Raum weiterwandert. Spieler sehen ihn nicht.
       </p>
 
       {istGm && umbenennen && (
@@ -248,7 +290,7 @@ export function RaetselTafelAnsicht({
       {resetOffen && (
         <Bestaetigung
           titel="Auf Start zurück?"
-          text="Bist du sicher? Die acht Räume springen auf die Startfelder zurück. Die Namen bleiben."
+          text="Bist du sicher? Die Räume springen auf die Startfelder zurück. Namen und Ausgänge bleiben."
           jaText="Zurücksetzen"
           onNein={() => setResetOffen(false)}
           onJa={() => {
@@ -257,6 +299,47 @@ export function RaetselTafelAnsicht({
           }}
         />
       )}
+
+      {modusWechsel && (
+        <Bestaetigung
+          titel={`Auf ${MODUS_NAME[modusWechsel]} umschalten?`}
+          text="Bist du sicher? Die Räume springen auf die Startfelder zurück. Namen, Freigabe und Ausgänge bleiben."
+          jaText="Umschalten"
+          onNein={() => setModusWechsel(null)}
+          onJa={() => {
+            const ziel = modusWechsel;
+            setModusWechsel(null);
+            void senden(() => raetselApi.modus(campaignId, ziel));
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AusgangMini({
+  wert,
+  busy,
+  onWaehlen,
+}: {
+  wert: number | null;
+  busy: boolean;
+  onWaehlen: (slot: number) => void;
+}) {
+  return (
+    <div className="rr-ausgang-mini" title="Fester Ausgang für dieses Feld">
+      {FELDER.map(({ slot, area }) => (
+        <button
+          key={slot}
+          type="button"
+          className="rr-ausgang-dot"
+          style={{ gridArea: area }}
+          data-aktiv={wert === slot ? "true" : "false"}
+          disabled={busy}
+          aria-label={`Ausgang an Feld ${slot + 1}${wert === slot ? ", gesetzt" : ""}`}
+          onClick={() => onWaehlen(slot)}
+        />
+      ))}
     </div>
   );
 }

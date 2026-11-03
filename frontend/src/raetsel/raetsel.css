@@ -72,7 +72,8 @@
 }
 
 .rr-gruppen button[data-aktiv="true"],
-.rr-knoepfe button[data-aktiv="true"] {
+.rr-knoepfe button[data-aktiv="true"],
+.rr-werkzeuge button[data-aktiv="true"] {
   border-color: var(--neon);
   color: var(--neon);
 }
@@ -84,6 +85,29 @@
   gap: 4px;
   width: min(100%, 560px);
   margin: 0;
+}
+
+.rr-bretter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.rr-brett-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rr-ebene-label {
+  margin: 0;
+  color: var(--text-leise);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: var(--versalien);
+  text-transform: uppercase;
 }
 
 .rr-kompass {
@@ -149,6 +173,30 @@
 .rr-umbenennen {
   font-family: var(--mono);
   font-size: 11px;
+}
+
+.rr-ausgang-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 14px);
+  grid-template-rows: repeat(3, 14px);
+  gap: 2px;
+}
+
+.rr-ausgang-dot {
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--linie);
+  background: var(--flaeche-hoch);
+  cursor: pointer;
+}
+
+.rr-ausgang-dot:hover:not(:disabled) {
+  border-color: var(--linie-hell);
+}
+
+.rr-ausgang-dot[data-aktiv="true"] {
+  border-color: var(--neon);
+  background: var(--neon);
 }
 
 .rr-tuer {
