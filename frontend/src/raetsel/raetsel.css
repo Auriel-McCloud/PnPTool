@@ -194,9 +194,14 @@
   border-color: var(--linie-hell);
 }
 
-.rr-ausgang-dot[data-aktiv="true"] {
-  border-color: var(--neon);
-  background: var(--neon);
+.rr-ausgang-dot[data-status="1"] {
+  border-color: var(--ja);
+  background: var(--ja);
+}
+
+.rr-ausgang-dot[data-status="2"] {
+  border-color: var(--nein);
+  background: var(--nein);
 }
 
 .rr-tuer {
@@ -303,13 +308,14 @@ button.rr-kern {
 }
 
 .rr-name-fenster input {
-  flex: 1 1 140px;
-  min-width: 0;
-  padding: 8px;
+  flex: 1 1 100%;
+  min-width: 220px;
+  padding: 10px;
   border: 1px solid var(--linie);
   background: var(--flaeche-tief);
   color: var(--text);
   font-family: var(--mono);
+  font-size: 14px;
 }
 
 .rr-gesperrt {

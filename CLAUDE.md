@@ -2228,7 +2228,30 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
-| Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), je ein fester Ausgang pro Ebene, siehe `docs/api/raetsel.md` |
+| Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (03.11.2026 — Ring-Rätsel: Praxistest-Korrekturen):**
+- **Was:** Mark hat die Tafel am Spieltisch angeklickt und vier Punkte
+  nachgezogen. (1) Namensfeld im Umbenennen-Popup war zu schmal zum
+  Reinklicken — Popup nicht mehr `schmal`, Eingabefeld füllt jetzt die volle
+  Breite auf eigener Zeile. (2) Neonkante (Tür zeigt zur Mitte) verriet
+  Spielern einen Lösungshinweis — jetzt nur für die SL sichtbar, Spieler sehen
+  alle vier Türen gleich. (3) Der feste Ausgang pro Ring wurde zur freien
+  Mehrfachmarkierung: jeder der acht Punkte in der Mitte schaltet per Klick
+  aus → blau → rot → aus, beliebig viele gleichzeitig, ohne eigene Logik,
+  reine Gedächtnisstütze für die SL (weiterhin unsichtbar für Spieler). (4)
+  Räume ohne eigenen Namen zeigen jetzt automatisch `<Identität>-<aktuelles
+  Feld>` (z.B. „3-1“), live mitlaufend mit der Drehung — reine
+  Frontend-Anzeige, nichts Neues gespeichert; in Mittel zählt Ring „unten“
+  zuerst 1–8, dann „oben“ 9–16, ein Ebenenwechsel springt also z.B. von „1-1“
+  auf „1-9“.
+- **Dateien:** `backend/app/raetsel/{logic.py,schemas.py}`,
+  `backend/tests/test_raetsel.py`, `frontend/src/raetsel/{api.ts,
+  RaetselTafel.tsx,raetsel.css}`.
+- **Verifiziert:** `pytest tests/test_raetsel.py` (23 Fälle) grün,
+  `npx tsc -b` sauber. **Nie im Browser angeklickt** (Mark hat die vorige
+  Version angeklickt, diese Korrekturen noch nicht).
+- **Nachlesen:** `docs/wiki/entities/ring-raetsel.md`, `docs/api/raetsel.md`.
 
 **Zuletzt gebaut (03.11.2026 — Ring-Rätsel: zwei Ebenen, feste Ausgänge, Umschalter):**
 - **Was:** Erweiterung der Ring-Tafel vom selben Nachmittag. Umschalter Leicht/

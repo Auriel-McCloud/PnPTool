@@ -12,8 +12,8 @@ Felder, von oben, im Uhrzeigersinn ab Nord:
     5  4  3
 
 Gegen den Uhrzeigersinn wandert der Raum aus Feld 0 nach Feld 7.
-Der Ausgang ist ein Feld, kein Raum: er bleibt liegen, die Räume wandern.
-Spieler sehen ihn nicht.
+Der Ausgang ist eine reine SL-Markierung pro Feld, kein Raum und keine eigene
+Logik: aus/blau/rot im Kreis, beliebig viele gleichzeitig. Spieler sehen ihn nicht.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def leer() -> dict:
         "drehung": 0,
         "takt": 0,
         "ringe": [[i for i in range(ANZAHL)], [i + ANZAHL for i in range(ANZAHL)]],
-        "ausgaenge": [None, None],
+        "ausgaenge": [[0 for _ in range(ANZAHL)], [0 for _ in range(ANZAHL)]],
         "namen": [str(i + 1) for i in range(NAMEN_MAX)],
         "gruppen": [None, None],
         "offen": [False, False],
@@ -153,15 +153,15 @@ def name_setzen(z: dict, raum: int, name: str) -> dict:
     return neu
 
 
-def ausgang_setzen(z: dict, ring: int, slot: int | None) -> dict:
-    """Ausgang ist ein Feld in der Mitte. Nochmal dasselbe Feld nimmt ihn weg."""
+def ausgang_setzen(z: dict, ring: int, slot: int) -> dict:
+    """Reine Markierung an diesem Feld, kein Raum. Jeder Klick schaltet weiter: aus, blau, rot."""
     if ring not in (0, 1) or (z["modus"] == "leicht" and ring != 0):
         raise ValueError("Diesen Ring gibt es hier nicht.")
-    if slot is not None and not _ist_slot(slot):
+    if not _ist_slot(slot):
         raise ValueError("Dieses Feld gibt es nicht.")
     neu = _kopie(z)
     _merken(neu)
-    neu["ausgaenge"][ring] = None if slot is not None and neu["ausgaenge"][ring] == slot else slot
+    neu["ausgaenge"][ring][slot] = (neu["ausgaenge"][ring][slot] + 1) % 3
     return neu
 
 
@@ -203,7 +203,7 @@ def zurueck(z: dict) -> dict:
     neu["namen"] = list(alt["namen"])
     neu["gruppen"] = list(alt["gruppen"])
     neu["offen"] = list(alt["offen"])
-    neu["ausgaenge"] = list(alt.get("ausgaenge", [None, None]))
+    neu["ausgaenge"] = [list(ring) for ring in alt.get("ausgaenge", neu["ausgaenge"])]
     neu["ringe"] = [list(ring) for ring in alt.get("ringe", neu["ringe"])]
     neu["tuer"] = None if alt["tuer"] is None else dict(alt["tuer"])
     neu["freigegeben"] = freigegeben
@@ -217,7 +217,7 @@ def zuruecksetzen(z: dict) -> dict:
     neu["modus"] = z["modus"]
     neu["namen"] = list(z["namen"])
     neu["freigegeben"] = z["freigegeben"]
-    neu["ausgaenge"] = list(z["ausgaenge"])
+    neu["ausgaenge"] = [list(ring) for ring in z["ausgaenge"]]
     return neu
 
 
@@ -231,7 +231,7 @@ def fuer_draht(z: dict, rolle: str) -> dict:
         "takt": z["takt"],
         "naechster": "ebene" if z["modus"] == "mittel" and z["takt"] % 2 == 0 else "drehen",
         "ringe": _sichtbare_ringe(z),
-        "ausgaenge": list(z["ausgaenge"]) if rolle == "GM" else [None, None],
+        "ausgaenge": [list(ring) for ring in z["ausgaenge"]] if rolle == "GM" else [[0] * ANZAHL, [0] * ANZAHL],
         "namen": list(z["namen"]),
         "gruppen": list(z["gruppen"]),
         "offen": list(z["offen"]),
@@ -289,13 +289,20 @@ def _ringe_aus(roh, drehung: int) -> list[list[int]]:
     return start
 
 
-def _ausgaenge_aus(roh) -> list:
-    aus = [None, None]
-    if isinstance(roh, list):
-        for i in range(2):
-            if i < len(roh) and _ist_slot(roh[i]):
-                aus[i] = roh[i]
-    return aus
+def _ausgaenge_aus(roh) -> list[list[int]]:
+    gueltig = (
+        isinstance(roh, list)
+        and len(roh) == 2
+        and all(isinstance(ring, list) and len(ring) == ANZAHL for ring in roh)
+        and all(_ist_status(wert) for ring in roh for wert in ring)
+    )
+    if gueltig:
+        return [list(ring) for ring in roh]
+    return [[0 for _ in range(ANZAHL)], [0 for _ in range(ANZAHL)]]
+
+
+def _ist_status(wert) -> bool:
+    return isinstance(wert, int) and not isinstance(wert, bool) and wert in (0, 1, 2)
 
 
 def _raum_id(raum) -> bool:
@@ -317,7 +324,7 @@ def _ohne_historie(z: dict) -> dict:
         "drehung": z["drehung"],
         "takt": z["takt"],
         "ringe": [list(ring) for ring in z["ringe"]],
-        "ausgaenge": list(z["ausgaenge"]),
+        "ausgaenge": [list(ring) for ring in z["ausgaenge"]],
         "namen": list(z["namen"]),
         "gruppen": list(z["gruppen"]),
         "offen": list(z["offen"]),

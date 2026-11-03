@@ -222,6 +222,7 @@ export function RaetselTafelAnsicht({
                     key={slot}
                     area={area}
                     raum={ring[slot]}
+                    feldNummer={zweiEbenen ? (ringIndex === 1 ? 0 : 8) + slot + 1 : slot + 1}
                     tafel={tafel}
                     slot={slot}
                     istGm={istGm}
@@ -235,7 +236,7 @@ export function RaetselTafelAnsicht({
                   <strong>Ziel</strong>
                   {istGm ? (
                     <AusgangMini
-                      wert={tafel.ausgaenge[ringIndex] ?? null}
+                      werte={tafel.ausgaenge[ringIndex]}
                       busy={busy}
                       onWaehlen={(slot) =>
                         senden(() => raetselApi.ausgang(campaignId, ringIndex, slot))
@@ -253,14 +254,13 @@ export function RaetselTafelAnsicht({
 
       <p className="rr-legende">
         Leuchtende Tür: zuletzt zu. Gestrichelter Rahmen: Lage noch nicht bestätigt.
-        Neonkante: diese Tür zeigt zur Mitte. Punkte in der Mitte: fester Ausgang —
-        er bleibt am Feld, auch wenn der Raum weiterwandert. Spieler sehen ihn nicht.
+        {istGm &&
+          " Neonkante: diese Tür zeigt zur Mitte, nur für dich sichtbar. Punkte in der Mitte: freie Markierung (aus/blau/rot), reine Notiz ohne eigene Logik. Spieler sehen beides nicht."}
       </p>
 
       {istGm && umbenennen && (
         <Fenster
           offen
-          schmal
           kennung="raetsel-name"
           titel={`Name: ${umbenennen.name || String(umbenennen.raum + 1)}`}
           onSchliessen={() => setUmbenennen(null)}
@@ -318,25 +318,25 @@ export function RaetselTafelAnsicht({
 }
 
 function AusgangMini({
-  wert,
+  werte,
   busy,
   onWaehlen,
 }: {
-  wert: number | null;
+  werte: number[];
   busy: boolean;
   onWaehlen: (slot: number) => void;
 }) {
   return (
-    <div className="rr-ausgang-mini" title="Fester Ausgang für dieses Feld">
+    <div className="rr-ausgang-mini" title="Freie Markierung für dich, aus/blau/rot">
       {FELDER.map(({ slot, area }) => (
         <button
           key={slot}
           type="button"
           className="rr-ausgang-dot"
           style={{ gridArea: area }}
-          data-aktiv={wert === slot ? "true" : "false"}
+          data-status={werte[slot] ?? 0}
           disabled={busy}
-          aria-label={`Ausgang an Feld ${slot + 1}${wert === slot ? ", gesetzt" : ""}`}
+          aria-label={`Markierung an Feld ${slot + 1}, Klick schaltet weiter`}
           onClick={() => onWaehlen(slot)}
         />
       ))}
@@ -348,6 +348,7 @@ function RaumZelle({
   area,
   raum,
   slot,
+  feldNummer,
   tafel,
   istGm,
   busy,
@@ -358,6 +359,7 @@ function RaumZelle({
   area: string;
   raum: number;
   slot: number;
+  feldNummer: number;
   tafel: RaetselTafel;
   istGm: boolean;
   busy: boolean;
@@ -373,9 +375,11 @@ function RaumZelle({
   const unbestaetigt = tafel.gruppen.some(
     (gruppe, index) => gruppe === raum && tafel.offen[index],
   );
+  const standardname = tafel.namen[raum] === String(raum + 1);
+  const anzeigename = standardname ? `${raum + 1}-${feldNummer}` : tafel.namen[raum];
   const kern = (
     <>
-      <span className="rr-name">{tafel.namen[raum]}</span>
+      <span className="rr-name">{anzeigename}</span>
       {marker && <span className="rr-marker">{marker}</span>}
     </>
   );
@@ -384,18 +388,12 @@ function RaumZelle({
     <div className="rr-zelle" style={{ gridArea: area }}>
       {SEITEN.map((seite) => {
         const auf = tafel.tuer?.raum === raum && tafel.tuer.seite === seite;
-        const zeigtMitte = mitte.includes(seite);
+        const zeigtMitte = istGm && mitte.includes(seite);
         const label = SEITEN_NAME[seite];
         const klasse = `rr-tuer rr-tuer-${seite.toLowerCase()}`;
         if (!istGm) {
           return (
-            <div
-              key={seite}
-              className={klasse}
-              data-auf={auf ? "true" : "false"}
-              data-mitte={zeigtMitte ? "true" : "false"}
-              title={zeigtMitte ? `${label}, zeigt zur Mitte` : label}
-            >
+            <div key={seite} className={klasse} data-auf={auf ? "true" : "false"} title={label}>
               {seite}
             </div>
           );
@@ -435,7 +433,7 @@ function RaumZelle({
           type="button"
           className="rr-umbenennen"
           title="Namen ändern"
-          aria-label={`Namen von ${tafel.namen[raum]} ändern`}
+          aria-label={`Namen von ${anzeigename} ändern`}
           onClick={() => onUmbenennen(raum)}
         >
           ✎

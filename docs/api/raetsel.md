@@ -20,7 +20,7 @@ Der Rückgängig-Stapel geht nie über die Leitung.
 | POST | `/tuer` | `{raum, seite}` — Leicht: Ring ein Feld gegen den Uhrzeigersinn. Mittel: abwechselnd Ebene wechseln oder beide Ringe drehen. Diese Tür ist die offene. Gesetzte Gruppen müssen neu bestätigt werden, ihre Raum-Nummer bleibt. |
 | POST | `/gruppe` | `{index: 0\|1, raum: 0–7 (Leicht) / 0–15 (Mittel) \|null}` — Lage setzen oder Gruppe B weg. Dreht nicht. |
 | POST | `/name` | `{raum, name}` — Anzeigename, leer fällt auf die Nummer zurück, Schnitt bei 16. |
-| POST | `/ausgang` | `{ring: 0\|1, slot: 0–7\|null}` — fester Ausgang an diesem Feld (nicht Raum), nochmal derselbe Slot nimmt ihn weg. Nur der SL sichtbar. |
+| POST | `/ausgang` | `{ring: 0\|1, slot: 0–7}` — reine SL-Markierung an diesem Feld (nicht Raum), kein eigener Logik-Effekt. Jeder Klick schaltet weiter: aus → blau → rot → aus. Beliebig viele Felder gleichzeitig. Nur der SL sichtbar. |
 | POST | `/modus` | `{modus: "leicht"\|"mittel"}` — Umschalter, setzt Felder auf Start zurück, Namen/Freigabe/Ausgänge bleiben. |
 | POST | `/freigabe` | `{an}` — Spieler sehen die Tafel oder nicht. Steht nicht in der Historie. |
 | POST | `/zurueck` | Letzten Klick zurück, Freigabe bleibt. |
@@ -28,8 +28,8 @@ Der Rückgängig-Stapel geht nie über die Leitung.
 
 `seite` ist `N`, `O`, `S` oder `W`. Antwort enthält zusätzlich `modus`, `takt`,
 `naechster` (`"ebene"`\|`"drehen"`, nur im Modus Mittel relevant), `ringe`
-(ein oder zwei Arrays mit 8 Raum-Nummern) und `ausgaenge` (SL: `[slot\|null, slot\|null]`,
-Spieler immer `[null, null]`).
+(ein oder zwei Arrays mit 8 Raum-Nummern) und `ausgaenge` (SL: ein oder zwei
+Arrays mit je 8 Werten 0/1/2 = aus/blau/rot, Spieler immer Nullen).
 
 ## Live
 

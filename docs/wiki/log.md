@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-03] gebaut | Ring-Rätsel: Praxistest-Korrekturen
+
+Namensfeld im Popup breiter. Neonkante (zeigt zur Mitte) nur noch für die SL
+sichtbar. Fester Ausgang ersetzt durch freie Mehrfachmarkierung (aus/blau/rot
+pro Feld, beliebig viele, ohne Logik). Räume ohne eigenen Namen zeigen
+automatisch `<Identität>-<aktuelles Feld>`, live mit der Drehung. Siehe
+[[entities/ring-raetsel]].
+
 ## [2026-11-03] gebaut | Ring-Rätsel: zwei Ebenen (Mittel), feste Ausgänge, Umschalter
 
 Umschalter Leicht/Mittel. Mittel: 16 Räume, zwei Ringe nebeneinander, Tür zu

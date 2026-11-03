@@ -23,10 +23,15 @@ Gegen den Uhrzeigersinn wandert der Raum aus Nord nach Nordwest.
 - Tür auf ist nicht durchgehen. Nach der Drehung muss die SL den Raum klicken,
   in dem die Spieler wirklich sind. Bis dahin pulsiert die letzte Lage.
 - Zweite Markierung für einen Split. Egal wer die Tür zumacht, der ganze Ring dreht.
-- Die Tür, die am aktuellen Feld zur Mitte zeigt, bekommt eine Neonkante.
+- Die Tür, die am aktuellen Feld zur Mitte zeigt, bekommt eine Neonkante —
+  nur die SL sieht sie, Spieler sehen alle vier Türen gleich (03.11.2026,
+  Ergänzung vom Nachmittag: vorher sahen Spieler die Kante mit).
   Ob das die richtige Stelle ist, rechnet das Tool nicht aus. Nach vier Schritten
   liegt jeder Raum gegenüber seinem Startfeld — das ist Geometrie, nicht die Lösung.
-- Namen sind Kosmetik, höchstens 16 Zeichen. Zurücknehmen lässt die Freigabe stehen.
+- Namen sind Kosmetik, höchstens 16 Zeichen. Ohne eigenen Namen zeigt ein Raum
+  automatisch `<Identität>-<aktuelles Feld>` (z.B. „3-1“ = ursprünglich Raum 3,
+  jetzt an Feld 1) — reine Frontend-Anzeige, ändert sich live mit der Drehung,
+  nichts Gespeichertes. Zurücknehmen lässt die Freigabe stehen.
 
 Spieler sehen dieselbe Tafel ohne Knöpfe, sobald die SL freigibt, und live mit.
 Vorher kommt nur „noch nicht freigegeben“, auch auf der Leitung. Der Menüpunkt
@@ -47,11 +52,12 @@ Freigabe und Ausgänge bleiben.
 - Tür zu wechselt abwechselnd: einmal die Ebene (gleiches Feld, anderer Ring),
   einmal drehen beide Ringe gemeinsam gegen den Uhrzeigersinn. Welche der
   beiden Aktionen als Nächstes kommt, zeigt die Kopfzeile an.
-- Fester Ausgang: pro Ring ein Feld (nicht ein Raum) lässt sich in der Mitte
-  bei „Ziel“ markieren — ein Klick auf einen der acht Punkte setzt ihn, nochmal
-  derselbe Punkt nimmt ihn weg. Er bleibt am Feld liegen, während die Räume
-  weiterwandern. Nur die SL sieht ihn, auch nach Freigabe nicht die Spieler.
-  In Leicht gibt es nur einen Ring, also nur einen Ausgang.
+- Freie Markierung statt festem Ausgang (03.11.2026, Ergänzung vom Nachmittag):
+  pro Ring acht Punkte in der Mitte bei „Ziel“, jeder Klick schaltet durch
+  aus → blau → rot → aus. Beliebig viele gleichzeitig markierbar, keine eigene
+  Logik — reine Gedächtnisstütze für die SL, die Punkte bedeuten nichts von
+  sich aus. Nur die SL sieht sie, auch nach Freigabe nicht die Spieler.
+  In Leicht gibt es nur einen Ring, also nur eine Acht-Punkte-Reihe.
 - Dritte Ebene nicht angefangen.
 
 Menüpunkt wie die übrigen Bereiche, siehe [[entities/ui-konzept-commlink]].

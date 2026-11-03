@@ -9,7 +9,7 @@ export type RaetselTafel = {
   takt: number;
   naechster: "ebene" | "drehen";
   ringe: number[][];
-  ausgaenge: (number | null)[];
+  ausgaenge: number[][];
   namen: string[];
   gruppen: (number | null)[];
   offen: boolean[];
@@ -39,7 +39,7 @@ export const raetselApi = {
     api.post<RaetselTafel>(`${basis(campaignId)}/name`, { raum, name }),
   freigabe: (campaignId: string, an: boolean) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/freigabe`, { an }),
-  ausgang: (campaignId: string, ring: number, slot: number | null) =>
+  ausgang: (campaignId: string, ring: number, slot: number) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/ausgang`, { ring, slot }),
   modus: (campaignId: string, modus: Modus) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/modus`, { modus }),

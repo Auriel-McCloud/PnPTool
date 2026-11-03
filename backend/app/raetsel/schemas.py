@@ -24,7 +24,7 @@ class FreigabeAktion(BaseModel):
 
 class AusgangAktion(BaseModel):
     ring: int = Field(ge=0, le=1)
-    slot: int | None = None
+    slot: int = Field(ge=0, le=7)
 
 
 class ModusAktion(BaseModel):

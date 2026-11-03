@@ -170,18 +170,26 @@ def test_raetsel_routen_sind_registriert():
     assert "post" in pfade[basis + "/modus"]
 
 
-def test_ausgang_bleibt_am_feld_und_dreht_nicht():
+def test_ausgang_schaltet_aus_blau_rot_im_kreis_und_dreht_nicht():
     z = ausgang_setzen(leer(), 0, 0)
-    assert z["ausgaenge"][0] == 0
+    assert z["ausgaenge"][0][0] == 1
     assert z["drehung"] == 0
-    weg = ausgang_setzen(z, 0, 0)
-    assert weg["ausgaenge"][0] is None
+    rot = ausgang_setzen(z, 0, 0)
+    assert rot["ausgaenge"][0][0] == 2
+    aus = ausgang_setzen(rot, 0, 0)
+    assert aus["ausgaenge"][0][0] == 0
+
+
+def test_ausgang_erlaubt_mehrere_markierungen_gleichzeitig():
+    z = ausgang_setzen(ausgang_setzen(leer(), 0, 1), 0, 5)
+    assert z["ausgaenge"][0][1] == 1
+    assert z["ausgaenge"][0][5] == 1
 
 
 def test_spieler_sehen_den_ausgang_nicht():
     z = freigabe_setzen(ausgang_setzen(leer(), 0, 4), True)
-    assert fuer_draht(z, "PLAYER")["ausgaenge"] == [None, None]
-    assert fuer_draht(z, "GM")["ausgaenge"][0] == 4
+    assert fuer_draht(z, "PLAYER")["ausgaenge"] == [[0] * ANZAHL, [0] * ANZAHL]
+    assert fuer_draht(z, "GM")["ausgaenge"][0][4] == 1
 
 
 def test_mittel_wechselt_zuerst_die_ebene_dann_dreht():
@@ -205,7 +213,7 @@ def test_modus_behaelt_namen_und_stellt_felder_neu():
     assert neu["modus"] == "mittel"
     assert neu["namen"][0] == "Archiv"
     assert neu["freigegeben"] is True
-    assert neu["ausgaenge"][0] == 2
+    assert neu["ausgaenge"][0][2] == 1
     assert neu["drehung"] == 0
     assert neu["takt"] == 0
     assert neu["ringe"][0][0] == 0
