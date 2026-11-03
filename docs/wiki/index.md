@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-01 | Seiten: 36
+> Zuletzt aktualisiert: 2026-11-03 | Seiten: 37
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -61,6 +61,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten. SL-Tabelle + KI. In der Erstellung: Button im Fertigkeiten-Popup öffnet Auswahl, danach normale Punktzeilen im Raster (Paket) und Freebees; LevelUp eigener Popup mit EP |
 | [[entities/hintergrund-baukasten-feature]] | **Teilweise (10.10.2026):** KI durch `pruefe()`; narrativer SL-Katalog (Seed ohne Mentor/Kontakte); Mentor-Pipeline/Blatt-Button noch offen |
 | [[entities/spieler-lexikon]] | Burgermenü „Lexikon" (Welt/Fauna/Flora/Objekte), entschieden-nicht-umgesetzt (09.10.): automatische `ENTDECKT`-Kante per Erreichbarkeits-Hook (max. 7 Hops, bricht an SL-geheimen Kanten ab) schaltet nur Existenz frei, `sichtbarkeit` weiter die Beschreibung; `zeigeInGraph`→`storyRelevant` für MacGuffin-Objekte; Favoriten, Notizen pro Objekt |
+| [[entities/ring-raetsel]] | Burgermenü „Rätsel": acht Räume um ein Ziel, Tür zu dreht gegen den Uhrzeigersinn, Lage der Gruppe extra, Spieler sehen nach Freigabe nur zu (03.11.) |
 
 ## Vergleiche
 

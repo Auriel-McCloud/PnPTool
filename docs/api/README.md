@@ -41,6 +41,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Zusatzfertigkeiten](./zusatzfertigkeiten.md) | Campaign-gebundener Katalog optionaler Fertigkeiten, Freebee/EP-Wahl, KI-Vorschlag | |
 | [Spieler-Notizen](./spielernotizen.md) | Privater Schmierzettel, nur der eigene Spieler-Zugang, SL sieht nichts | |
 | [Ereignisprotokoll](./ereignisprotokoll.md) | Sitzungs-Log: 8 Kategorien, Zeitleiste, Papierkorb — Backend da, Frontend fehlt | |
+| [Rätsel](./raetsel.md) | Eine Ring-Tafel pro Kampagne, SL dreht, Spieler sehen nach Freigabe live zu | ⭐ |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration
 

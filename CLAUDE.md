@@ -2228,6 +2228,12 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
+| Rätsel | ✅ | Eine Ring-Tafel, acht Räume, SL dreht, Spieler sehen nach Freigabe zu, siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (03.11.2026 — Ring-Rätsel, eine Ebene):**
+- **Was:** Burgermenü „Rätsel“ für SL und Spieler. Acht Räume um ein Ziel, Tür zu dreht den ganzen Ring ein Feld gegen den Uhrzeigersinn. Die Gruppe bleibt im Raum und muss danach extra gesetzt werden, weil Tür auf nicht Durchgehen ist. Zweite Markierung für einen Split, nur eine Tür offen. Spieler sehen dieselbe Tafel ohne Knöpfe, sobald freigegeben, live über WebSocket. Zustand als `raetselJson` an der Kampagne. Zwei Ringe und die Gewinnrechnung sind nicht gebaut.
+- **Verifiziert:** `pytest tests/test_raetsel.py` und `npx tsc -b`. Nicht im Browser geklickt.
+- **Nachlesen:** `docs/wiki/entities/ring-raetsel.md`, `docs/api/raetsel.md`.
 
 **Zuletzt gebaut (24.10.2026 — Shop-Tipp poppt automatisch im Freebees-Schritt auf):**
 - **Was:** Mark: beim Erreichen des Freebees-Schritts soll von selbst ein

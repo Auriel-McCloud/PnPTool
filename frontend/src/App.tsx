@@ -45,6 +45,7 @@ import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
 import { RastenVerwaltung } from "./traits/RastenVerwaltung";
 import { BuendelAnsicht } from "./buendel/BuendelAnsicht";
 import { ZeichnungenAnsicht } from "./zeichnungen/ZeichnungenAnsicht";
+import { RaetselTafelAnsicht } from "./raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "./drohnen/DrohnenUebersicht";
 
 /**
@@ -127,6 +128,8 @@ const BEREICHE: Bereich[] = [
   // Reparatur UND Augments (Zielfernrohr & Co. montieren), siehe
   // docs/wiki/concepts/augments-ausruestung.md.
   { id: "reparatur", name: "Werkbank", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
+  // Ring-Rätsel (03.11.2026): eine Ebene, acht Räume, SL klickt, Spieler sehen zu.
+  { id: "raetsel", name: "Rätsel", symbol: "▣", farbe: "var(--bereich-protokoll)" },
 ];
 
 const TITEL: Record<string, string> = {
@@ -152,6 +155,7 @@ const TITEL: Record<string, string> = {
   whiteboard: "Whiteboard: gemeinsame Boards zum Live-Mitzeichnen",
   drohnen: "Fahrzeuge & Drohnen: eigenes Blatt, Riggerkonsole, Nuyen-Kauf",
   reparatur: "Werkbank: Reparatur (Material + Probe) und Upgraden (montieren/demontieren)",
+  raetsel: "Rätsel: acht Räume um das Ziel, die SL dreht den Ring",
 };
 
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
@@ -416,6 +420,9 @@ function Dashboard() {
 
           {/* Werkbank (29.10.2026, vorher "Reparatur"): Reparatur + Augments in einem Burgermenü. */}
           {bereich === "reparatur" && <WerkbankUebersicht key={ansichtKennung} campaignId={kampagne.id} />}
+          {bereich === "raetsel" && (
+            <RaetselTafelAnsicht key={ansichtKennung} campaignId={kampagne.id} istGm />
+          )}
         </>
       )}
     </CommlinkShell>

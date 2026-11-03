@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-03] gebaut | Ring-Rätsel, eine Ebene
+
+Burgermenü-Tafel: acht Räume, Tür zu dreht gegen den Uhrzeigersinn, Lage der
+Gruppe extra. Spieler sehen nach Freigabe nur zu. Zwei Ringe nicht gebaut.
+Siehe [[entities/ring-raetsel]].
+
 ## [2026-11-01] gebaut | Fertigkeiten-Erstellung: alle Punkte auf einmal zurück
 
 Im Fertigkeiten-Fenster sitzt ein × links neben den Punkten und nimmt den

@@ -58,6 +58,7 @@ import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
 import { ZeichnungenAnsicht } from "../zeichnungen/ZeichnungenAnsicht";
+import { RaetselTafelAnsicht } from "../raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "../drohnen/DrohnenUebersicht";
 import { WerkbankUebersichtSpieler } from "../werkbank/WerkbankUebersichtSpieler";
 import { MeineAchievements } from "../achievements/MeineAchievements";
@@ -116,6 +117,8 @@ const BEREICHE_STATISCH: Bereich[] = [
   // ohne Händler) UND Augments, beide Self-Service (Probe am Tisch,
   // Ergebnis selbst eintragen, eigenes Material wird verbraucht).
   { id: "werkbank", name: "Werkbank", symbol: "🔧", farbe: "var(--bereich-drohnen)" },
+  // Dieselbe Tafel wie bei der SL, ohne Klicks. Inhalt bleibt zu, bis freigegeben.
+  { id: "raetsel", name: "Rätsel", symbol: "▣", farbe: "var(--bereich-protokoll)" },
 ];
 
 // Augments-Bereich: erscheint nur, wenn verbaute Augments vorhanden sind.
@@ -925,6 +928,10 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
           campaignId={ich.campaignId}
           eigenePersonId={ich.personId}
         />
+      )}
+
+      {bereich === "raetsel" && (
+        <RaetselTafelAnsicht campaignId={ich.campaignId} istGm={false} />
       )}
 
       {bereich === "werkbank" && ich.personId && (
