@@ -30,7 +30,7 @@
 
 .rr-titel {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -39,13 +39,13 @@
 .rr-gesperrt {
   margin: 0;
   color: var(--text-leise);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .rr-hinweis,
 .rr-banner {
   margin: 0;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -60,7 +60,7 @@
   margin: 0;
   color: var(--nein);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .rr-knoepfe button,
@@ -105,7 +105,7 @@
   margin: 0;
   color: var(--text-leise);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: var(--versalien);
   text-transform: uppercase;
 }
@@ -115,7 +115,7 @@
   place-items: center;
   color: var(--text-leise);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: var(--versalien);
 }
 
@@ -161,7 +161,7 @@
 .rr-ziel strong {
   color: var(--text);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: var(--versalien);
   text-transform: uppercase;
@@ -172,7 +172,7 @@
 .rr-kern,
 .rr-umbenennen {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .rr-ausgang-mini {
@@ -277,7 +277,7 @@ button.rr-kern {
 
 .rr-marker {
   color: var(--neon);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.12em;
 }
 
@@ -315,7 +315,7 @@ button.rr-kern {
   background: var(--flaeche-tief);
   color: var(--text);
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .rr-gesperrt {
