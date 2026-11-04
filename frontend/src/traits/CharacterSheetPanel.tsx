@@ -1779,9 +1779,10 @@ export function GegenstandRow({
                     <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 4 }}>
                       Kästchen-Max oben wirkt dann nur noch als Vorlagen-Hinweis — tatsächlich
                       gezählt wird live die Widerstandsfähigkeit der tragenden Person. Nicht
-                      ablegbar für den Spieler (nur die SL im Ausnahmefall), nicht reparierbar —
-                      heilt stattdessen über die Rast-Mechanik.
-                      {CHROM_TYPEN.has(typ) && " Zählt erst, sobald verbaut."}
+                      reparierbar — heilt stattdessen über die Rast-Mechanik.
+                      {CHROM_TYPEN.has(typ)
+                        ? " Solange nicht verbaut, ein normaler Gegenstand: umlegen, weitergeben, in einen Behälter. Erst eingesetzt sitzt es fest."
+                        : " Nicht ablegbar für den Spieler (nur die SL im Ausnahmefall)."}
                     </p>
                   )}
                   {item.ruestungKaestchenMax > 0 && item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && !item.istNatuerlich && (

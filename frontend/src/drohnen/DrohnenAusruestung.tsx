@@ -108,7 +108,12 @@ export function DrohnenAusruestung({
   const uebrig = gefiltert.filter((i) => i.ablage !== "AUSGERUESTET");
   // Nichts Körperliches und nichts fest Verbautes lässt sich umverteilen —
   // dieselbe Grenze wie bei `besitzer_wechseln` serverseitig (409 sonst).
-  const uebergebbar = eigene.filter((i) => !i.istNatuerlich && !i.verbaut);
+  // Unverbautes Chrom mit istNatuerlich ist noch Ware, kein Körperteil
+  // (dieselbe Grenze wie chirurgie.ist_loses_chrom). Verbautes bleibt draussen.
+  const CHROM = ["Cyberware", "Bioware", "Hexware"];
+  const uebergebbar = eigene.filter(
+    (i) => !i.verbaut && !(i.istNatuerlich && !CHROM.includes(i.typ)),
+  );
 
   function zeile(item: Gegenstand) {
     return (

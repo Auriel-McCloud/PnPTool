@@ -2294,6 +2294,19 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (04.11.2026 — unverbautes Chrom mit natürlicher Rüstung bleibt umlegbar):**
+- **Was:** Vaeliks „Komposit Knochen“ und „Unterarm Prothese“ lagen in
+  Mitgeführt mit `istNatuerlich` und ließen sich weder ausrüsten noch in den
+  Drop-Leg Bag legen. `kann_ablegen` behandelte das Häkchen als Körperteil,
+  der Spieler bekam 409, die Kachel zeigte ihn nicht. Bis zum Einsetzen
+  (`verbaut`) verhält sich solches Chrom wie ein normaler Gegenstand:
+  Ablage, Behälter, Weitergeben, Tutorial-Rückgabe. Eingesetzt bleibt es
+  fest, Weg heraus nur über Chirurgie. Natürliche Rüstung ohne Chrom-Typ
+  bleibt für den Spieler gesperrt.
+- **Stand:** `tests/test_chirurgie.py` 29 passed. `tsc` am eigenen Diff
+  sauber; ein fremder ungenutzter Import in `ReparaturUebersichtSpieler.tsx`
+  (parallele Session) nicht angefasst.
+
 **Zuletzt gebaut (04.11.2026 — Ring-Rätsel: Umbenennen entfernt, Screenshot-Check):**
 - **Was:** Mark schickte einen Screenshot Spieler- vs. SL-Ansicht. Die
   türkisen „Neonkante"-Ränder, die er bei den Spielern noch sah, waren bereits

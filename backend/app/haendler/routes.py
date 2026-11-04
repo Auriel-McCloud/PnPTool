@@ -38,6 +38,7 @@ from app.haendler.schemas import (
     SortimentHinzufuegenRequest,
     StandortRequest,
 )
+from app.items import chirurgie
 from app.items import repository as items_repository
 from app.ki.client import KiFehler, generiere_json
 from app.mitteilungen.verteiler import verteiler
@@ -358,7 +359,8 @@ async def tutorial_zurueck(
     if besitzer != kaeufer_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Das Stück gehört diesem Charakter nicht")
     stueck = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
-    if stueck is None or stueck.get("istNatuerlich"):
+    # Unverbautes Chrom mit istNatuerlich ist noch Ware, kein Körperteil.
+    if stueck is None or (stueck.get("istNatuerlich") and not chirurgie.ist_loses_chrom(stueck)):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Das Stück kann nicht zurückgegeben werden")
 
     preis = int(stueck.get("preis") or 0)

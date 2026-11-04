@@ -132,6 +132,7 @@ export function GegenstandKachel({
   const [schlossOffen, setSchlossOffen] = useState(false);
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [zusperrenFehler, setZusperrenFehler] = useState<string | null>(null);
+  const [umlegenFehler, setUmlegenFehler] = useState<string | null>(null);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -162,8 +163,13 @@ export function GegenstandKachel({
   async function umlegen(ablage: Ablage, zielId?: string | null) {
     if (!onUmlegen) return;
     setLaeuft(true);
+    setUmlegenFehler(null);
     try {
       await onUmlegen(ablage, zielId);
+    } catch (e) {
+      // Vorher verschluckt: 409 (natürliche Rüstung, verbautes Implantat)
+      // liess den Knopf tot aussehen.
+      setUmlegenFehler(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Umlegen fehlgeschlagen");
     } finally {
       setLaeuft(false);
     }
@@ -508,6 +514,7 @@ export function GegenstandKachel({
               <span aria-hidden="true">⌷</span> Weggelegt
             </button>
           </div>
+          {umlegenFehler && <p style={{ margin: "8px 0 0", fontSize: "0.85em", color: "var(--nein)" }}>{umlegenFehler}</p>}
         </section>
         )}
 

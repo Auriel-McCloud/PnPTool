@@ -508,11 +508,12 @@ async def besitzer_wechseln(campaign_id: str, item_id: str, body: ZuweisenReques
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
-    if item.get("istNatuerlich"):
+    if item.get("istNatuerlich") and not chirurgie.ist_loses_chrom(item):
         # Teil des Körpers, siehe chirurgie.kann_ablegen — ownership-Wechsel
         # wäre hier noch einschneidender als bloßes Ablegen (26.10.2026:
         # jetzt auch für den Rigger erreichbar, also lieber einmal zu viel
         # abgesichert als die automatische Drohnen-Rüstung kaputtzuschieben).
+        # Unverbautes Chrom mit dem Häkchen ist noch kein Körperteil.
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "Natürliche Rüstung ist Teil des Körpers und kann nicht übertragen werden.",
@@ -772,14 +773,14 @@ async def ablage_aendern(
     # .../chirurgie, nicht über die Ablage.
     aktuelles = await repository.get_gegenstand(campaign_id, item_id)
     if aktuelles and not chirurgie.kann_ablegen(aktuelles, viewer.role == "GM"):
-        if aktuelles.get("istNatuerlich"):
+        if chirurgie.ist_chrom(aktuelles) and aktuelles.get("verbaut"):
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                "Natürliche Rüstung lässt sich nicht ablegen — sie ist Teil des Körpers (nur die Spielleitung kann das im Ausnahmefall).",
+                "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
             )
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "Verbautes Implantat lässt sich nicht ablegen — es muss chirurgisch entfernt werden",
+            "Natürliche Rüstung lässt sich nicht ablegen — sie ist Teil des Körpers (nur die Spielleitung kann das im Ausnahmefall).",
         )
 
     # Zerschossene Rüstung lässt sich nicht wieder anlegen: mit 0 Kästchen

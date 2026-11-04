@@ -44,6 +44,18 @@ def ist_wirksam(gegenstand: dict) -> bool:
     return gegenstand.get("ablage") == "AUSGERUESTET"
 
 
+def ist_loses_chrom(gegenstand: dict) -> bool:
+    """Noch nicht eingesetztes Implantat — ein normaler Gegenstand.
+
+    `istNatuerlich` markiert am Chrom nur die Kästchen-Mechanik (heilt über
+    Rast, sobald es verbaut ist). Bis zur Chirurgie darf das Häkchen nichts
+    sperren: umlegen, in einen Behälter, weitergeben, im Tutorial-Shop
+    zurückgeben. Mark, 04.11.2026: „bis sie eingebaut sind muss sich das
+    alles wie normale Gegenstände verhalten.“
+    """
+    return ist_chrom(gegenstand) and not gegenstand.get("verbaut")
+
+
 def kann_ablegen(gegenstand: dict, ist_gm: bool = False) -> bool:
     """Darf die Ablage dieses Gegenstands geändert werden?
 
@@ -58,10 +70,13 @@ def kann_ablegen(gegenstand: dict, ist_gm: bool = False) -> bool:
     Körpers, kein Kleidungsstück), die Spielleitung darf sie im Einzelfall
     trotzdem ablegen (Mark: Sonderfälle am Tisch — Verwandlung, Ritual,
     Korrektur). Deshalb braucht nur dieser Zweig die Rolle des Aufrufers.
+
+    Unverbautes Chrom mit demselben Häkchen fällt nicht darunter — siehe
+    `ist_loses_chrom`.
     """
     if ist_chrom(gegenstand) and gegenstand.get("verbaut"):
         return False
-    if gegenstand.get("istNatuerlich") and not ist_gm:
+    if gegenstand.get("istNatuerlich") and not ist_gm and not ist_loses_chrom(gegenstand):
         return False
     return True
 

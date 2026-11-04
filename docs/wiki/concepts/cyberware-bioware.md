@@ -1,7 +1,7 @@
 ---
 title: Cyberware und Bioware
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-11-04
 type: konzept
 tags: [cyberware, versionsgeschichte]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md, ../../../backend/app/items/chrom.py]
@@ -66,6 +66,10 @@ Initiative 7, mit Stufe 2 Initiative 13, Paralyse-Fall korrekt (Ampel 0,
 
 ## Entwicklung
 
+- **04.11.2026:** Unverbautes Chrom mit `istNatuerlich` ist noch ein normaler
+  Gegenstand. Umlegen, Behälter, Weitergeben und Tutorial-Rückgabe bleiben
+  offen, bis es eingesetzt ist (`verbaut`). Danach sitzt es fest, Weg heraus
+  nur über Chirurgie. Das Häkchen markiert bis dahin nur die Kästchen-Mechanik.
 - **28.10.2026:** Neurolink ist keine eigene Ware, sondern ein Häkchen
   `istNeurolink` im Umbauen von Cyberware. Verbaut schaltet es Hot frei.
   Kosten bleiben die normale Chrom-Tabelle. Pflichtvoraussetzung fürs

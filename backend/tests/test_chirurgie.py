@@ -13,6 +13,7 @@ import pytest
 
 from app.items.chirurgie import (
     ist_chrom,
+    ist_loses_chrom,
     ist_wirksam,
     kann_ablegen,
     kann_einsetzen,
@@ -72,6 +73,19 @@ class TestAblegenVerboten:
     def test_nicht_verbautes_chrom_kann_man_umlegen(self):
         # Solange es in der Tasche liegt, ist es ein normaler Gegenstand.
         assert kann_ablegen(g(typ="Cyberware", verbaut=False)) is True
+
+    def test_unverbautes_natuerliches_chrom_bleibt_umlegbar(self):
+        # istNatuerlich am Chrom ist nur die Kästchen-Mechanik, solange es
+        # nicht eingesetzt ist. Sonst sitzt gekaufte Ware fest im Rucksack.
+        assert ist_loses_chrom(g(typ="Cyberware", verbaut=False, istNatuerlich=True)) is True
+        assert kann_ablegen(g(typ="Cyberware", verbaut=False, istNatuerlich=True)) is True
+        assert kann_ablegen(g(typ="Bioware", verbaut=False, istNatuerlich=True), ist_gm=False) is True
+        assert kann_ablegen(g(typ="Hexware", verbaut=False, istNatuerlich=True), ist_gm=False) is True
+
+    def test_verbautes_natuerliches_chrom_bleibt_gesperrt(self):
+        assert ist_loses_chrom(g(typ="Cyberware", verbaut=True, istNatuerlich=True)) is False
+        assert kann_ablegen(g(typ="Cyberware", verbaut=True, istNatuerlich=True)) is False
+        assert kann_ablegen(g(typ="Cyberware", verbaut=True, istNatuerlich=True), ist_gm=True) is False
 
     def test_normale_ausruestung_bleibt_ablegbar(self):
         assert kann_ablegen(g(typ="Waffe", ablage="AUSGERUESTET")) is True

@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] gebaut | Unverbautes Chrom mit natürlicher Rüstung bleibt umlegbar
+
+`istNatuerlich` an noch nicht eingesetztem Cyber-/Bio-/Hexware sperrt nicht
+mehr Ablage, Besitzwechsel oder Tutorial-Rückgabe. Erst `verbaut` macht es
+zum Körperteil. Siehe [[concepts/cyberware-bioware]].
+
 ## [2026-11-04] gebaut | Ring-Rätsel: Umbenennen-Route entfernt
 
 Stift-Knopf, Popup und `POST /raetsel/name` entfernt — Räume haben gute feste
