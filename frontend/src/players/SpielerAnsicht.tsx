@@ -308,13 +308,20 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     : [];
 
   // Verbaute Augments erscheinen in der Körperkarte, nicht im Inventar.
-  // Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature wie
-  // Dug'Rah) spiegelt dasselbe Prinzip: sie ist Teil des Körpers, kein
-  // normaler Inventar-Eintrag — die GM-Ansicht (PCInventar.tsx) filtert NICHT,
-  // weil dort die Ausnahme-Ablege-Möglichkeit erhalten bleiben muss.
+  // Natürliche Rüstung (11.10.2026, Rassen-/Kreatur-Feature wie Dug'Rah) ist
+  // bei Typ "Rüstung"/"Ki-Tama" immer Körperteil, kein normaler Inventar-
+  // Eintrag. Seit der Erweiterung auf Cyberware/Bioware/Hexware (04.11.2026)
+  // gilt das für Chrom-Typen NICHT mehr unbedingt: `istNatuerlich` markiert
+  // dort nur die Kästchen-Mechanik, das Stück ist erst nach der Chirurgie
+  // (`verbaut`) tatsächlich Körperteil. Vorher ohne diese Unterscheidung
+  // verschwand ein frisch gekauftes, noch unverbautes Cyberware-Stück
+  // komplett (weder Körperkarte — die zeigt nur Verbautes — noch Inventar),
+  // Mark-Bugreport 04.11.2026: "ich kann als wachmann in mitgeführt nichts
+  // sehen". Die GM-Ansicht (PCInventar.tsx) filtert weiterhin NICHT, weil
+  // dort die Ausnahme-Ablege-Möglichkeit erhalten bleiben muss.
   const CHROM_TYPEN = ["Cyberware", "Bioware", "Hexware"];
   const istVersteckteAusruestung = (g: GegenstandMitBesitzer) =>
-    (CHROM_TYPEN.includes(g.typ) && g.verbaut) || Boolean(g.istNatuerlich);
+    CHROM_TYPEN.includes(g.typ) ? Boolean(g.verbaut) : Boolean(g.istNatuerlich);
   const meineRoh = meineRohAlle.filter((g) => !istVersteckteAusruestung(g));
 
   // Werkbank (29.10.2026, Mark: "das war alles für die Spieler gedacht!"):
