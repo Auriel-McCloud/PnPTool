@@ -80,27 +80,42 @@ nachgebaut. Sie fallen auf die drei Dauern unten.
 8. **Tödliche Schwere** der Nebenwirkung ist eine eigene Uhr: nach 2 Rasten
    weg. Nicht `schadenSchwer`. Die tödliche Spur heilt einen Punkt pro Rast,
    das wollte er hier nicht.
+9. **Schlag und schwerheilbar sind Schaden**, nicht eine „Schwere“. Tippfehler,
+   04.11.2026. Die Nebenwirkung schreibt `schadenSchlag` bzw.
+   `schadenAggraviert`. Die heilen über die bestehende Rast. Tödlich bleibt
+   die Uhr aus Punkt 8, nicht die Spur.
+10. **Reduktion statt halbieren.** Keine Halbierungs-Funktion. Die Droge trägt
+    `ruestungReduktionBasis` und addiert den Wert auf die Reduktion der
+    aktiven Rüstung. Die Pool-Regel bleibt: Teile summieren sich nicht, es
+    gilt die beste Basis, dann die Kästchen-Stufe
+    ([[../concepts/ruestung-kaestchen-durchlass]]). Die Droge kommt danach
+    obendrauf, auf die effektive Reduktion, nicht in die Basis — sonst
+    würde eine kaputte Weste die Droge mitschwächen. Ohne Rüstung oder bei
+    0 Kästchen ist der Rüstungsanteil 0, die Droge addiert trotzdem. Das
+    „Rest wird schwerheilbar“ aus der Halbieren-Idee ist nicht mitgekommen.
+11. **Heilreihenfolge** (04.11.2026):
+    - minderwertig: Menge in Schlagpunkten, nur Schlag.
+    - normal: Menge in tödlichen Punkten. Zuerst tödlich, 1:1. Rest × 3 =
+      Schlag. Kein tödlicher Schaden da: die ganze Menge × 3 auf Schlag.
+      Schwerheilbar unberührt.
+    - hochwertig: Schlag und tödlich komplett weg, automatisch, verbraucht
+      die Menge nicht. Die Menge geht zuerst auf schwerheilbar.
 
 ## Noch offen
 
 Nicht bauen, bevor er das sagt.
 
-- **Heilreihenfolge.** In welcher Reihenfolge eine Heilmenge die erlaubten
-  Stufen frisst. Die Rast macht leichten zuerst, die Drohnen-Reparatur
-  schweren. Nicht entschieden.
-- **Schlag- und schwerheilbare Schwere.** Er hat sie als „heilt wie
-  Schlagschaden / schwerheilbarer Schaden“ beschrieben. Nur die tödliche
-  Schwere ist entschieden (eigene Uhr, nicht die Spur). Ob Schlag und
-  schwerheilbar echte Spuren sind oder ebenfalls Uhren, ist nicht gefragt
-  worden. Nicht als Spur festschreiben.
 - **Zählt die Rast, die einen Crash startet, bei der 2-Rasten-Uhr mit?**
   Der Bis-Rast-Fall sagt: startet bei der Rast, hält noch eine weitere.
   „Nach 2 Rasten weg“ sagt nicht, ob die startende Rast eine der zwei ist.
-- **Schaden halbieren**, Rest danach schwerheilbar. Keine bestehende
-  Funktion. Kein Menü an jeder Droge. Wartet als eigene Mechanik, wenn er
-  die eine Droge will.
 - **Granate / Wurftrank** bleibt auf [[gegenstand-transfer]]. Wird geworfen,
   nicht geschluckt.
+
+## Ersetzt, nicht mehr offen
+
+- Heilreihenfolge — Punkt 11.
+- Schlag/schwerheilbar als Uhr oder Spur — Punkt 9, es ist Schaden.
+- Schaden halbieren — Punkt 10, es ist Reduktion auf der aktiven Rüstung.
 
 ## Siehe auch
 
@@ -108,4 +123,5 @@ Nicht bauen, bevor er das sagt.
 - [[../concepts/willenskraft]] — SL-only-Rückgabe, hier die Ausnahme
 - [[../concepts/kampf-und-initiative]] — Reflex-Booster
 - [[party-feature]] — Aufenthaltsort als Szenenende
+- [[../concepts/ruestung-kaestchen-durchlass]] — Reduktion, Droge addiert obendrauf
 - [[gegenstand-transfer]] — Heiltrank-Frage, ersetzt

@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] entschieden | Drogen: Reduktion und Heilreihenfolge
+
+Halbieren wird Reduktion auf der aktiven Rüstung, nicht eine neue Funktion.
+Schlag und schwerheilbar sind Schaden. Hochwertig heilt schwerheilbar mit
+der Menge, Schlag und tödlich komplett. Normal: tödlich zuerst, Rest × 3
+Schlag. Offen bleibt nur die 2-Rasten-Zählung. Siehe [[entities/drogen]].
+
 ## [2026-11-04] entschieden | Drogen schlucken, nicht gebaut
 
 Wirkung sofort, Szene oder Rast. Nebenwirkung danach. Chrom-Funktionen,

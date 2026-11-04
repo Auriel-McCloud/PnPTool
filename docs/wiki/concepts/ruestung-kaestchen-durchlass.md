@@ -55,6 +55,10 @@ durchkommend`, Schlag nur bei Trigger `2×Stärke ≥ Kästchen-Aktuell`).
 summiert, Reduktion vom Teil mit der **besten** Basis. Verbrauchsreihenfolge:
 beste Reduktion zuerst.
 
+**Ausnahme, entschieden 04.11.2026, nicht gebaut:** eine geschluckte Droge
+addiert ihre Reduktion auf die effektive Reduktion dieses Pools, danach.
+Die Teile selbst summieren sich weiter nicht. Siehe [[../entities/drogen]].
+
 ## Die Durchlass-Fassung (10.09.2026 – 18.09.2026, abgelöst)
 
 **Diese Version gilt nicht mehr — hier nur zum Verständnis der Historie.**
