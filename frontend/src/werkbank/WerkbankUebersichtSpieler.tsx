@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Gegenstand, type GegenstandMitBesitzer, itemsApi } from "../items/api";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { partyApi, type ReparaturFreigabeEintrag } from "../party/api";
@@ -46,13 +46,24 @@ export function WerkbankUebersichtSpieler({
   const [freigeber, setFreigeber] = useState<ReparaturFreigabeEintrag[]>([]);
   const [erteilteFreigaben, setErteilteFreigaben] = useState<ReparaturFreigabeEintrag[]>([]);
   const [anfrageAn, setAnfrageAn] = useState<Set<string>>(new Set());
+  const drohnenGeneration = useRef(0);
 
-  useEffect(() => {
+  const ladeDrohnen = useCallback(() => {
+    const gen = ++drohnenGeneration.current;
     drohnenApi
       .liste(campaignId)
-      .then((liste) => setMeineDrohnen(liste.filter((d) => d.riggerId === personId)))
-      .catch(() => setMeineDrohnen([]));
+      .then((liste) => {
+        if (gen !== drohnenGeneration.current) return;
+        setMeineDrohnen(liste.filter((d) => d.riggerId === personId));
+      })
+      .catch(() => {
+        if (gen === drohnenGeneration.current) setMeineDrohnen([]);
+      });
   }, [campaignId, personId]);
+
+  useEffect(() => {
+    ladeDrohnen();
+  }, [ladeDrohnen]);
 
   const ladeReparaturDaten = useCallback(() => {
     Promise.all([
@@ -128,6 +139,7 @@ export function WerkbankUebersichtSpieler({
   function onGeaendertUndNeuLaden() {
     onGeaendert();
     ladeReparaturDaten();
+    ladeDrohnen();
   }
 
   return (

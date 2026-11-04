@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { entitiesApi, type Person } from "../entities/api";
 import { itemsApi, type Gegenstand, type GegenstandMitBesitzer } from "../items/api";
@@ -90,6 +90,19 @@ export function ReparaturFenster({
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ergebnisText, setErgebnisText] = useState<string | null>(null);
+  // Zustand kommt als Schnappschuss vom Klick auf die Kachel. Ohne eigene
+  // Kopie bleibt die Kopfzeile nach der Reparatur auf dem alten Schaden stehen,
+  // obwohl der Server schon geheilt hat — Mark, 04.11.2026: Material weg,
+  // Drohne sieht unverändert aus, fast nochmal bestätigt.
+  const [zustand, setZustand] = useState({
+    ruestungKaestchenAktuell: ziel.ruestungKaestchenAktuell,
+    ruestungKaestchenMax: ziel.ruestungKaestchenMax,
+    gesundheitAktuell: ziel.gesundheitAktuell,
+    gesundheitMax: ziel.gesundheitMax,
+    aussenhuelleAktuell: ziel.aussenhuelleAktuell,
+    aussenhuelleMax: ziel.aussenhuelleMax,
+  });
+  const offenId = useRef(ziel.id);
 
   // --- Beim Händler (nur Rüstung) --------------------------------------
   const [haendlerListe, setHaendlerListe] = useState<Person[]>([]);
@@ -126,6 +139,41 @@ export function ReparaturFenster({
     ladeMaterial();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weg, campaignId, ziel.id]);
+
+  useEffect(() => {
+    const wechsel = offenId.current !== ziel.id;
+    offenId.current = ziel.id;
+    setZustand((bisher) => {
+      if (wechsel) {
+        return {
+          ruestungKaestchenAktuell: ziel.ruestungKaestchenAktuell,
+          ruestungKaestchenMax: ziel.ruestungKaestchenMax,
+          gesundheitAktuell: ziel.gesundheitAktuell,
+          gesundheitMax: ziel.gesundheitMax,
+          aussenhuelleAktuell: ziel.aussenhuelleAktuell,
+          aussenhuelleMax: ziel.aussenhuelleMax,
+        };
+      }
+      // Ein älterer Listen-Poll darf die gerade gemeldete Heilung nicht
+      // zurückdrehen. Schaden von außen sieht man beim nächsten Öffnen.
+      return {
+        ruestungKaestchenAktuell: Math.max(bisher.ruestungKaestchenAktuell ?? 0, ziel.ruestungKaestchenAktuell ?? 0),
+        ruestungKaestchenMax: ziel.ruestungKaestchenMax ?? bisher.ruestungKaestchenMax,
+        gesundheitAktuell: Math.max(bisher.gesundheitAktuell ?? 0, ziel.gesundheitAktuell ?? 0),
+        gesundheitMax: ziel.gesundheitMax ?? bisher.gesundheitMax,
+        aussenhuelleAktuell: ziel.aussenhuelleAktuell ?? bisher.aussenhuelleAktuell,
+        aussenhuelleMax: ziel.aussenhuelleMax ?? bisher.aussenhuelleMax,
+      };
+    });
+  }, [
+    ziel.id,
+    ziel.ruestungKaestchenAktuell,
+    ziel.ruestungKaestchenMax,
+    ziel.gesundheitAktuell,
+    ziel.gesundheitMax,
+    ziel.aussenhuelleAktuell,
+    ziel.aussenhuelleMax,
+  ]);
 
   useEffect(() => {
     if (weg !== "selbst" || !gewaehlteGruppe) {
@@ -181,16 +229,35 @@ export function ReparaturFenster({
       if (ziel.typ === "ruestung") {
         const r = await itemsApi.ruestungReparierenMaterial(campaignId, ziel.id, gewaehlteGruppe.repraesentant.id, menge, ergebnis);
         setErgebnisText(ergebnisMeldung(ergebnis, r.repariert, r.materialName));
+        zustandHeilen(r.repariert);
       } else {
         const r = await drohnenApi.reparierenMaterial(campaignId, ziel.id, gewaehlteGruppe.repraesentant.id, menge, ergebnis);
         setErgebnisText(ergebnisMeldung(ergebnis, r.repariert, r.materialName));
+        zustandHeilen(r.repariert);
       }
+      ladeMaterial();
       onGeaendert();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Reparatur fehlgeschlagen");
     } finally {
       setLaeuft(false);
     }
+  }
+
+  function zustandHeilen(geheilt: number) {
+    if (geheilt <= 0) return;
+    setZustand((z) => {
+      if (ziel.typ === "ruestung") {
+        const aktuell = z.ruestungKaestchenAktuell ?? 0;
+        const max = z.ruestungKaestchenMax ?? 0;
+        const neu = aktuell + geheilt;
+        return { ...z, ruestungKaestchenAktuell: max > 0 ? Math.min(max, neu) : neu };
+      }
+      const aktuell = z.gesundheitAktuell ?? 0;
+      const max = z.gesundheitMax ?? 0;
+      const neu = aktuell + geheilt;
+      return { ...z, gesundheitAktuell: max > 0 ? Math.min(max, neu) : neu };
+    });
   }
 
   function ergebnisMeldung(ergebnis: MakerProbenErgebnis, repariert: number, materialName: string): string {
@@ -220,25 +287,25 @@ export function ReparaturFenster({
 
   return (
     <Fenster offen titel={`Reparatur: ${ziel.name}`} kennung={`reparatur:${ziel.id}`} onSchliessen={onSchliessen}>
-      {istRuestung && ziel.ruestungKaestchenMax != null && (
+      {istRuestung && zustand.ruestungKaestchenMax != null && (
         <p className="lu-hinweis">
           Zustand:{" "}
-          <strong style={ziel.ruestungKaestchenAktuell! < ziel.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
-            {ziel.ruestungKaestchenAktuell}/{ziel.ruestungKaestchenMax} Kästchen
+          <strong style={zustand.ruestungKaestchenAktuell! < zustand.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+            {zustand.ruestungKaestchenAktuell}/{zustand.ruestungKaestchenMax} Kästchen
           </strong>
         </p>
       )}
-      {!istRuestung && ziel.gesundheitMax != null && (
+      {!istRuestung && zustand.gesundheitMax != null && (
         <p className="lu-hinweis">
           Zustand: Gesundheit{" "}
-          <strong style={ziel.gesundheitAktuell! < ziel.gesundheitMax ? { color: "var(--nein)" } : undefined}>
-            {ziel.gesundheitAktuell}/{ziel.gesundheitMax}
+          <strong style={zustand.gesundheitAktuell! < zustand.gesundheitMax ? { color: "var(--nein)" } : undefined}>
+            {zustand.gesundheitAktuell}/{zustand.gesundheitMax}
           </strong>
-          {ziel.aussenhuelleMax != null && ziel.aussenhuelleMax > 0 && (
+          {zustand.aussenhuelleMax != null && zustand.aussenhuelleMax > 0 && (
             <>
               {" — "}Außenhülle{" "}
-              <strong style={ziel.aussenhuelleAktuell! < ziel.aussenhuelleMax ? { color: "var(--nein)" } : undefined}>
-                {ziel.aussenhuelleAktuell}/{ziel.aussenhuelleMax}
+              <strong style={zustand.aussenhuelleAktuell! < zustand.aussenhuelleMax ? { color: "var(--nein)" } : undefined}>
+                {zustand.aussenhuelleAktuell}/{zustand.aussenhuelleMax}
               </strong>
             </>
           )}

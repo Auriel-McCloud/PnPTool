@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] gebaut | Werkbank: Drohnen-Reparatur aktualisiert die Anzeige sofort
+
+Nach bestätigter Reparatur blieb der Gesundheitsstand im Fenster und auf der
+Kachel der alte Schnappschuss, das Material war schon weg. Siehe
+[[concepts/drohnen-fahrzeuge]].
+
 ## [2026-11-04] gebaut | Unverbautes Chrom mit natürlicher Rüstung bleibt umlegbar
 
 `istNatuerlich` an noch nicht eingesetztem Cyber-/Bio-/Hexware sperrt nicht

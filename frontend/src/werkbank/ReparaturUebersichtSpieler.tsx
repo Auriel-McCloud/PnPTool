@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Gegenstand } from "../items/api";
 import { type DrohnenEintrag } from "../drohnen/api";
 import { type ReparaturFreigabeEintrag } from "../party/api";
@@ -58,6 +58,36 @@ export function ReparaturUebersichtSpieler({
 }) {
   const [offenesZiel, setOffenesZiel] = useState<ReparaturZiel | null>(null);
   const gesamtRuestung = reparaturgruppen.reduce((n, g) => n + g.items.length, 0);
+
+  useEffect(() => {
+    setOffenesZiel((alt) => {
+      if (!alt) return alt;
+      if (alt.typ === "ruestung") {
+        for (const gruppe of reparaturgruppen) {
+          const g = gruppe.items.find((i) => i.id === alt.id);
+          if (!g) continue;
+          return {
+            ...alt,
+            name: g.name,
+            ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
+            ruestungKaestchenMax: g.ruestungKaestchenMax,
+          };
+        }
+        return alt;
+      }
+      const d = drohnen.find((x) => x.id === alt.id);
+      if (!d) return alt;
+      return {
+        ...alt,
+        name: d.name,
+        typ: d.istFahrzeug ? "fahrzeug" : "drohne",
+        gesundheitAktuell: d.gesundheitAktuell,
+        gesundheitMax: d.gesundheitMax,
+        aussenhuelleAktuell: d.aussenhuelleAktuell,
+        aussenhuelleMax: d.aussenhuelleMax,
+      };
+    });
+  }, [drohnen, reparaturgruppen]);
 
   return (
     <div className="gg-seite">
