@@ -213,13 +213,16 @@ class TestAnwendeNatuerlicheRuestungIntegration:
 
     def test_live_max_aus_widerstandsfaehigkeit_bestimmt_das_defizit(self):
         # Gespeicherter Max-Wert (5) ist Schrott — die echte Widerstands-
-        # fähigkeit ist 8, davon hat die Rüstung erst 6 "gesammelt".
+        # fähigkeit ist 8. Aktuell (6) liegt schon ÜBER dem alten Max, es
+        # gibt also kein Defizit (04.11.2026, Formel vereinheitlicht): die
+        # Rüstung war nie beschädigt, nur der gespeicherte Max-Platzhalter
+        # war veraltet — live steht sie sofort voll auf dem neuen Max 8.
         roh = [teil("a", aktuell=6, maximum=5, natuerlich=True)]
         live = anwende_natuerliche_ruestung(roh, widerstandsfaehigkeit=8)
         assert live[0]["ruestungKaestchenMax"] == 8
-        assert live[0]["ruestungKaestchenAktuell"] == 6
+        assert live[0]["ruestungKaestchenAktuell"] == 8
         folgen = ruestung_heilung(live)
-        assert folgen == [{"id": "a", "ruestungKaestchenAktuell": 7}]
+        assert folgen == []
 
     def test_gesunkene_widerstandsfaehigkeit_klemmt_aktuell_auf_das_neue_max(self):
         roh = [teil("a", aktuell=6, maximum=5, natuerlich=True)]

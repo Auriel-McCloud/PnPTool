@@ -305,12 +305,13 @@ class TestNatuerlicheRuestung:
     Abschnitt "Natürliche Rüstung"."""
 
     def test_natuerliches_teil_bekommt_das_live_max(self):
+        """Defizit bleibt absolut erhalten (04.11.2026, Formel vereinheitlicht):
+        3 Schaden (5 Max, 2 Aktuell) bleiben 3 Schaden auf dem neuen Max 6."""
         natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
         natuerlich["istNatuerlich"] = True
         live = anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=6)
         assert live[0]["ruestungKaestchenMax"] == 6
-        # Aktuell bleibt der persistierte Wert, solange er unter dem neuen Max liegt.
-        assert live[0]["ruestungKaestchenAktuell"] == 2
+        assert live[0]["ruestungKaestchenAktuell"] == 3
 
     def test_normales_teil_bleibt_unangetastet(self):
         normal = teil("b", "Lederjacke", 5, 5, 1)
@@ -353,7 +354,7 @@ class TestNatuerlicheRuestung:
         live = anwende_natuerliche_ruestung([natuerlich, jacke], widerstandsfaehigkeit=6)
         p = pool(live)
         assert p["kaestchenMax"] == 6 + 5
-        assert p["kaestchenAktuell"] == 2 + 5
+        assert p["kaestchenAktuell"] == 3 + 5
         assert p["reduktionBasis"] == 1
         assert [t["id"] for t in p["geordnet"]] == ["b", "a"]
 
@@ -408,13 +409,18 @@ class TestNatuerlicheRuestung:
         assert live[0]["ruestungKaestchenMax"] == 6
         assert live[0]["ruestungKaestchenAktuell"] == 5
 
-    def test_drohne_ohne_aussenhuelle_bleibt_beim_alten_deckel_verhalten(self):
-        """Ohne `aussenhuelle` (Dug'Rah-Pfad) gilt weiterhin die alte,
-        getestete Deckel-Logik — kein automatisches Hochziehen."""
+    def test_frisches_teil_ohne_aussenhuelle_wird_sofort_voll_intakt(self):
+        """Seit 04.11.2026 gilt die Defizit-Formel auch ohne `aussenhuelle`
+        (Dug'Rah-/Cyberware-Pfad) — ein frisches Stück (0/0, kein Defizit)
+        startet sofort voll auf dem neuen Max, statt für immer bei 0
+        Kästchen festzukleben. Genau der Bug, der Wachmanns verbaute
+        natürliche Cyberware trotz `verbaut=true` nie zur Rüstung zählen
+        ließ (Mark, 04.11.2026)."""
         frisch = teil("a", "Chitinpanzer", 0, 0, 2)
         frisch["istNatuerlich"] = True
         live = anwende_natuerliche_ruestung([frisch], widerstandsfaehigkeit=4)
-        assert live[0]["ruestungKaestchenAktuell"] == 0
+        assert live[0]["ruestungKaestchenMax"] == 4
+        assert live[0]["ruestungKaestchenAktuell"] == 4
 
 
 class TestHaendlerReparaturPreis:
