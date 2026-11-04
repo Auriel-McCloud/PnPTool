@@ -131,6 +131,17 @@ function basis(cid: string) {
   return `/api/campaigns/${cid}/kampf`;
 }
 
+/** SL-Aufruf für einen NPC. getAsGm, damit die Spieler-Vorschau das nicht umbiegt. */
+function fuerPerson(pfad: string, personId?: string | null) {
+  if (!personId) return pfad;
+  const trenner = pfad.includes("?") ? "&" : "?";
+  return `${pfad}${trenner}personId=${encodeURIComponent(personId)}`;
+}
+
+function lesen<T>(pfad: string, personId?: string | null) {
+  return personId ? api.getAsGm<T>(fuerPerson(pfad, personId)) : api.get<T>(pfad);
+}
+
 export const kampfApi = {
   laden: (cid: string) => api.get<Kampf | null>(basis(cid)),
   /** Der eigene Initiative-Pool (Geistesschärfe + Geschicklichkeit + Chrom). */
@@ -155,18 +166,26 @@ export const kampfApi = {
     api.post<Kampf>(`${basis(cid)}/gegenstaende/${itemId}/beschwoeren`, { erfolge, ausgang }),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
-  /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen. */
-  boosterStatus: (cid: string) => api.get<BoosterStatus>(`${basis(cid)}/booster/status`),
+  /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen.
+   *  personId nur für die SL: der NPC, der gerade dran ist. */
+  boosterStatus: (cid: string, personId?: string | null) =>
+    lesen<BoosterStatus>(`${basis(cid)}/booster/status`, personId),
   /** Hot: Neurolink-Pflicht, eine Drohne pro Runde, Matrix-Knopf fürs Deck. */
-  hotStatus: (cid: string) => api.get<HotStatus>(`${basis(cid)}/hot`),
-  hotDrohne: (cid: string, drohneId: string) => api.post<HotStatus>(`${basis(cid)}/hot`, { drohneId }),
-  hotBleiben: (cid: string, bleiben: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { bleiben }),
-  hotMatrix: (cid: string, matrix: boolean) => api.post<HotStatus>(`${basis(cid)}/hot`, { matrix }),
-  hotMatrixBleiben: (cid: string, bleiben: boolean) =>
-    api.post<HotStatus>(`${basis(cid)}/hot`, { matrixBleiben: bleiben }),
+  hotStatus: (cid: string, personId?: string | null) => lesen<HotStatus>(`${basis(cid)}/hot`, personId),
+  hotDrohne: (cid: string, drohneId: string, personId?: string | null) =>
+    api.post<HotStatus>(`${basis(cid)}/hot`, personId ? { drohneId, personId } : { drohneId }),
+  hotBleiben: (cid: string, bleiben: boolean, personId?: string | null) =>
+    api.post<HotStatus>(`${basis(cid)}/hot`, personId ? { bleiben, personId } : { bleiben }),
+  hotMatrix: (cid: string, matrix: boolean, personId?: string | null) =>
+    api.post<HotStatus>(`${basis(cid)}/hot`, personId ? { matrix, personId } : { matrix }),
+  hotMatrixBleiben: (cid: string, bleiben: boolean, personId?: string | null) =>
+    api.post<HotStatus>(
+      `${basis(cid)}/hot`,
+      personId ? { matrixBleiben: bleiben, personId } : { matrixBleiben: bleiben },
+    ),
   /** Booster zünden: zweiter Eintrag mit dem gemeldeten Zweitwurf. */
-  boosterAktivieren: (cid: string, erfolge: number) =>
-    api.post<Kampf>(`${basis(cid)}/booster/aktivieren`, { erfolge }),
+  boosterAktivieren: (cid: string, erfolge: number, personId?: string | null) =>
+    api.post<Kampf>(`${basis(cid)}/booster/aktivieren`, personId ? { erfolge, personId } : { erfolge }),
   /** Ergebnis des Paralysewurfs melden. */
   paralyse: (cid: string, teilnehmerId: string, geschafft: boolean) =>
     api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/paralyse`, { geschafft }),

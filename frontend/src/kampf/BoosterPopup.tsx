@@ -33,11 +33,17 @@ export function BoosterPopup({
   campaignId,
   kampf,
   eigenePersonId,
+  personId,
+  name,
   onGeaendert,
 }: {
   campaignId: string;
   kampf: Kampf | null;
   eigenePersonId: string | null;
+  /** Nur die SL: der NPC, für den gefragt wird. Spieler lassen das weg. */
+  personId?: string | null;
+  /** Steht im Titel, damit die SL weiß, welcher NPC dran ist. */
+  name?: string;
   onGeaendert: () => void;
 }) {
   const [status, setStatus] = useState<BoosterStatus | null>(null);
@@ -59,12 +65,16 @@ export function BoosterPopup({
   );
 
   useEffect(() => {
-    if (!campaignId || !eigenePersonId) return;
+    if (!campaignId || !eigenePersonId || personId === null) {
+      setStatus(null);
+      setModus(null);
+      return;
+    }
     kampfApi
-      .boosterStatus(campaignId)
+      .boosterStatus(campaignId, personId)
       .then(setStatus)
       .catch(() => setStatus(null));
-  }, [campaignId, eigenePersonId, kampf?.amZug]);
+  }, [campaignId, eigenePersonId, personId, kampf?.amZug]);
 
   // Beim Drankommen einmal fragen — nicht bei jedem Nachladen erneut.
   // Liegt die Matrix-Bleiben-Frage noch offen, warten: Nein nimmt das Deck
@@ -78,25 +88,25 @@ export function BoosterPopup({
   }, [binDran, status, kampf?.runde, eigener?.id, gefragt]);
 
   useEffect(() => {
-    if (!campaignId) return;
+    if (!campaignId || personId === null) return;
     const beiBleiben = () => {
       kampfApi
-        .boosterStatus(campaignId)
+        .boosterStatus(campaignId, personId)
         .then(setStatus)
         .catch(() => setStatus(null));
     };
     window.addEventListener(MATRIX_BLEIBEN_FERTIG, beiBleiben);
     return () => window.removeEventListener(MATRIX_BLEIBEN_FERTIG, beiBleiben);
-  }, [campaignId]);
+  }, [campaignId, personId]);
 
   // Hot erst im eigenen Zug: das Deck zählt jetzt, die Frage kam beim
   // Drankommen noch nicht, weil matrixHot da noch aus war.
   useEffect(() => {
-    if (!campaignId || !binDran) return;
+    if (!campaignId || !binDran || personId === null) return;
     const beiHot = () => {
       if (modusRef.current === "wurf" || modusRef.current === "paralyse") return;
       kampfApi
-        .boosterStatus(campaignId)
+        .boosterStatus(campaignId, personId)
         .then((frisch) => {
           setStatus(frisch);
           if (!frisch.hatBooster || !frisch.darfAktivieren) return;
@@ -107,7 +117,7 @@ export function BoosterPopup({
     };
     window.addEventListener(MATRIX_HOT_AN, beiHot);
     return () => window.removeEventListener(MATRIX_HOT_AN, beiHot);
-  }, [campaignId, binDran, kampf?.runde, eigener?.id]);
+  }, [campaignId, personId, binDran, kampf?.runde, eigener?.id]);
 
   // Nach dem Zusatzzug: Paralysewurf, wenn die Ampel voll ist.
   useEffect(() => {
@@ -119,7 +129,7 @@ export function BoosterPopup({
     if (!Number.isInteger(zahl) || zahl < 0) return;
     setSendet(true);
     try {
-      await kampfApi.boosterAktivieren(campaignId, zahl);
+      await kampfApi.boosterAktivieren(campaignId, zahl, personId);
       setModus(null);
       setWert("");
       onGeaendert();
@@ -147,10 +157,14 @@ export function BoosterPopup({
       <div className="bo-fenster">
         {modus === "frage" && (
           <>
-            <h3 className="bo-titel">{status.boosterName} aktivieren?</h3>
+            <h3 className="bo-titel">
+              {name ? `${name}: ` : ""}
+              {status.boosterName} aktivieren?
+            </h3>
             <p className="bo-text">
-              Du handelst ein zweites Mal — aber mit deinem <strong>normalen</strong> Pool,
-              ohne Boosterbonus. Meist kommst du dadurch später dran.
+              {name ? `${name} handelt` : "Du handelst"} ein zweites Mal — aber mit {name ? "dem" : "deinem"}{" "}
+              <strong>normalen</strong> Pool, ohne Boosterbonus. Meist {name ? "kommt der Zug" : "kommst du"} dadurch
+              später dran.
             </p>
             <div className="bo-zeile">
               <Ampel stand={status.ampel} max={status.ampelMax} />
@@ -178,7 +192,7 @@ export function BoosterPopup({
 
         {modus === "wurf" && (
           <>
-            <h3 className="bo-titel">Zweitwurf</h3>
+            <h3 className="bo-titel">{name ? `${name}: ` : ""}Zweitwurf</h3>
             <div className="bo-pool">
               <span className="bo-poolzahl">{status.zweitwurfPool}</span>
               <span className="bo-poolinfo">
@@ -214,7 +228,7 @@ export function BoosterPopup({
 
         {modus === "paralyse" && (
           <>
-            <h3 className="bo-titel">Überhitzung</h3>
+            <h3 className="bo-titel">{name ? `${name}: ` : ""}Überhitzung</h3>
             <p className="bo-text">
               Dein Chrom glüht. Wirf <strong>{status.paralysePool}</strong> Würfel
               (Geistesschärfe + Willenskraft) gegen <strong>{status.paralyseSchwelle}</strong> Erfolge.

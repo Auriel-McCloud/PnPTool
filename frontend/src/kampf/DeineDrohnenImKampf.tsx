@@ -73,7 +73,7 @@ export function DeineDrohnenImKampf({
   useEffect(() => {
     let weg = false;
     kampfApi
-      .hotStatus(campaignId)
+      .hotStatus(campaignId, eigenePersonId)
       .then((s) => {
         if (!weg) setHot(s);
       })
@@ -83,7 +83,7 @@ export function DeineDrohnenImKampf({
     return () => {
       weg = true;
     };
-  }, [campaignId, kampf?.runde, kampf?.amZug, drohnen]);
+  }, [campaignId, eigenePersonId, kampf?.runde, kampf?.amZug, drohnen]);
 
   // Gesundheit wird separat vom Bogen geladen, nicht aus `kampf` — der
   // Kampf-Takt (useKampf, alle 3s) weiß nichts von Schaden. Ohne eigenen
@@ -123,7 +123,7 @@ export function DeineDrohnenImKampf({
     setHotSendet(drohneId);
     setFehler(null);
     try {
-      setHot(await kampfApi.hotDrohne(campaignId, drohneId));
+      setHot(await kampfApi.hotDrohne(campaignId, drohneId, eigenePersonId));
       setDrohnen((bisher) => bisher.map((d) => ({ ...d, istHot: d.id === drohneId })));
       onGeaendert();
     } catch (e) {

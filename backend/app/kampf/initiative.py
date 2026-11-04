@@ -43,6 +43,57 @@ def darf_melden(rolle: str, eigene_person_id: str | None, ziel_person_id: str | 
     return eigene_person_id == ziel_person_id
 
 
+# Fehlercodes für Booster- und Hot-Aktionen. Die Route mappt sie auf HTTP.
+FEHLER_KEIN_CHARAKTER = "kein_charakter"
+FEHLER_KEINE_PERSON = "keine_person"
+FEHLER_UNBEKANNT = "unbekannt"
+FEHLER_NUR_SPIELER = "nur_spieler"
+
+
+def waehle_person(
+    rolle: str,
+    eigene_person_id: str | None,
+    ziel_person_id: str | None,
+    ziel_person_type: str | None,
+    *,
+    schreiben: bool,
+) -> tuple[str | None, str | None]:
+    """Wen Booster und Hot ansprechen: (person_id, fehlercode).
+
+    Der Spieler handelt immer für sich — eine fremde Angabe wird ignoriert,
+    sonst könnte er den Nachbarn zünden. Die Spielleitung hat keinen eigenen
+    Charakter und steuert die NPCs. Spielercharaktere entscheiden selbst;
+    die SL bekommt deren Popups nicht und kann sie auch nicht beantworten.
+
+    ``ziel_person_type is None`` heißt: die SL hat eine Id genannt, der
+    Knoten fehlt. Ein leerer Typ am vorhandenen Knoten ist kein PC.
+    Lesen ohne Ziel liefert (None, None) — leerer Status, kein Fehler.
+    """
+    if rolle != "GM":
+        if not eigene_person_id:
+            return None, FEHLER_KEIN_CHARAKTER
+        return eigene_person_id, None
+    if not ziel_person_id:
+        if schreiben:
+            return None, FEHLER_KEINE_PERSON
+        return None, None
+    if ziel_person_type is None:
+        return None, FEHLER_UNBEKANNT
+    if ziel_person_type == "PC":
+        return None, FEHLER_NUR_SPIELER
+    return ziel_person_id, None
+
+
+def person_fehler_http(code: str) -> tuple[int, str]:
+    """HTTP-Status und Text zu einem Fehlercode aus ``waehle_person``."""
+    return {
+        FEHLER_KEIN_CHARAKTER: (400, "Kein eigener Charakter"),
+        FEHLER_KEINE_PERSON: (400, "Keine Person angegeben"),
+        FEHLER_UNBEKANNT: (404, "Person nicht gefunden"),
+        FEHLER_NUR_SPIELER: (403, "Spielercharaktere entscheiden das selbst"),
+    }[code]
+
+
 def melde_wert(erfolge: int) -> int:
     """Prüft einen von Hand gemeldeten Initiativwert."""
     if erfolge < 0:

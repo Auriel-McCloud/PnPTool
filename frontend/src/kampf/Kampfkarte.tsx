@@ -111,7 +111,8 @@ export function Kampfkarte({
    *  Wert). Nur für Drohnen-Steckbriefe gesetzt. */
   onInitiativeKlick?: () => void;
   /** Decker-Hot neben der Überschrift Cyberdeck, nicht neben der Runde.
-   *  Nur die eigene Karte — der Knopf gilt für den eingeloggten Spieler. */
+   *  Eigene Karte: der Knopf gilt für den eingeloggten Spieler. SL-Karte
+   *  eines NPC: dieselbe Person wie die Karte, die SL steuert ihn. */
   zeigeMatrixHot?: boolean;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
@@ -430,7 +431,7 @@ export function Kampfkarte({
           <div className="kk-kopf-titel">
             <h3>{hatCyber && kampfModus === "cyberkampf" ? cyberTitel : "Würfeln"}</h3>
             {zeigeMatrixHot && hatDeck && kampfModus === "cyberkampf" && !istNeuroweaver && (
-              <MatrixHotKnopf campaignId={campaignId} />
+              <MatrixHotKnopf campaignId={campaignId} personId={personId} />
             )}
           </div>
           {hatCyber && (
@@ -482,7 +483,7 @@ export function Kampfkarte({
                 {istNeuroweaver && (
                   <div className="kk-kopf-titel">
                     <h3>Cyberdeck</h3>
-                    {zeigeMatrixHot && <MatrixHotKnopf campaignId={campaignId} />}
+                    {zeigeMatrixHot && <MatrixHotKnopf campaignId={campaignId} personId={personId} />}
                   </div>
                 )}
                 {deckTot ? (

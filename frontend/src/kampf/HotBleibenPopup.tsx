@@ -18,7 +18,7 @@ export const MATRIX_BLEIBEN_FERTIG = "pnptool-matrix-bleiben-fertig";
  * Fragt, wenn der Rigger wieder dran ist, ob er in der Hot-Drohne bleibt.
  * Dieselbe Lage wie das Booster-Popup: über allem, nicht nur im Kampf-Tab.
  */
-export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
+export function MatrixHotKnopf({ campaignId, personId }: { campaignId: string; personId?: string }) {
   const [status, setStatus] = useState<HotStatus | null>(null);
   const [sendet, setSendet] = useState(false);
 
@@ -27,7 +27,7 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
     async function hol() {
       if (document.hidden) return;
       try {
-        const s = await kampfApi.hotStatus(campaignId);
+        const s = await kampfApi.hotStatus(campaignId, personId);
         if (!weg) setStatus(s);
       } catch {
         if (!weg) setStatus(null);
@@ -39,7 +39,7 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
       weg = true;
       window.clearInterval(uhr);
     };
-  }, [campaignId]);
+  }, [campaignId, personId]);
 
   if (!status?.hatNeurolink || !status.hatDeck) return null;
 
@@ -47,7 +47,7 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
     if (!status || status.matrixHot) return;
     setSendet(true);
     try {
-      setStatus(await kampfApi.hotMatrix(campaignId, true));
+      setStatus(await kampfApi.hotMatrix(campaignId, true, personId));
       window.dispatchEvent(new CustomEvent(MATRIX_HOT_AN));
     } finally {
       setSendet(false);
@@ -71,10 +71,15 @@ export function MatrixHotKnopf({ campaignId }: { campaignId: string }) {
 export function HotBleibenPopup({
   campaignId,
   kampf,
+  personId,
+  name,
   onGeaendert,
 }: {
   campaignId: string;
   kampf: Kampf | null;
+  /** Nur die SL: der NPC, der gerade dran ist. null = niemand, nicht fragen. */
+  personId?: string | null;
+  name?: string;
   onGeaendert: () => void;
 }) {
   const [status, setStatus] = useState<HotStatus | null>(null);
@@ -82,8 +87,12 @@ export function HotBleibenPopup({
 
   useEffect(() => {
     let weg = false;
+    if (!campaignId || personId === null) {
+      setStatus(null);
+      return;
+    }
     kampfApi
-      .hotStatus(campaignId)
+      .hotStatus(campaignId, personId)
       .then((s) => {
         if (!weg) setStatus(s);
       })
@@ -93,12 +102,12 @@ export function HotBleibenPopup({
     return () => {
       weg = true;
     };
-  }, [campaignId, kampf?.runde, kampf?.amZug]);
+  }, [campaignId, personId, kampf?.runde, kampf?.amZug]);
 
   async function matrixAntwort(bleiben: boolean) {
     setSendet(true);
     try {
-      setStatus(await kampfApi.hotMatrixBleiben(campaignId, bleiben));
+      setStatus(await kampfApi.hotMatrixBleiben(campaignId, bleiben, personId));
       window.dispatchEvent(new CustomEvent(MATRIX_BLEIBEN_FERTIG));
       onGeaendert();
     } finally {
@@ -109,7 +118,7 @@ export function HotBleibenPopup({
   async function drohnenAntwort(bleiben: boolean) {
     setSendet(true);
     try {
-      setStatus(await kampfApi.hotBleiben(campaignId, bleiben));
+      setStatus(await kampfApi.hotBleiben(campaignId, bleiben, personId));
       onGeaendert();
     } finally {
       setSendet(false);
@@ -120,7 +129,7 @@ export function HotBleibenPopup({
     return createPortal(
       <div className="bo-huelle" role="alertdialog">
         <div className="bo-fenster">
-          <h3 className="bo-titel">Hot bleiben?</h3>
+          <h3 className="bo-titel">{name ? `${name}: ` : ""}Hot bleiben?</h3>
           <p className="bo-text">
             Solange du Hot bist, kann die Matrix dich treffen. Nein klinkt aus — dann auch keine Zusatzaktion aus dem Deck.
           </p>
@@ -143,7 +152,9 @@ export function HotBleibenPopup({
   return createPortal(
     <div className="bo-huelle" role="alertdialog">
       <div className="bo-fenster">
-        <h3 className="bo-titel">In {status.hotDrohneName ?? "der Drohne"} bleiben?</h3>
+        <h3 className="bo-titel">
+          {name ? `${name}: ` : ""}In {status.hotDrohneName ?? "der Drohne"} bleiben?
+        </h3>
         <p className="bo-text">Eine Drohne pro Runde. Nein klinkt aus, eine andere erst in der nächsten Runde.</p>
         <div className="bo-knoepfe">
           <button type="button" disabled={sendet} onClick={() => drohnenAntwort(true)}>

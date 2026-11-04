@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] gebaut | SL bekommt Booster- und Hot-Popups für NPCs
+
+Kommt ein NPC mit Reflex-Booster, Matrix-Hot oder Hot-Drohne dran, fragt
+dasselbe Fenster die SL. Spielercharaktere entscheiden weiter selbst. Siehe
+[[concepts/kampf-und-initiative]] und [[concepts/drohnen-fahrzeuge]].
+
 ## [2026-11-04] gebaut | Werkbank: Drohnen-Reparatur aktualisiert die Anzeige sofort
 
 Nach bestätigter Reparatur blieb der Gesundheitsstand im Fenster und auf der

@@ -4,6 +4,7 @@ import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { entitiesApi, type Person } from "../entities/api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { getViewAs } from "../api/client";
 import { bogenApi } from "../traits/bogenApi";
 import { Kampfkarte } from "./Kampfkarte";
 import { DeineDrohnenImKampf } from "./DeineDrohnenImKampf";
@@ -11,6 +12,8 @@ import { DeineBeschwoerungen } from "./DeineBeschwoerungen";
 import { KAMPFARTEN, kampfApi, type Kampf, type Kampfart, type Teilnehmer } from "./api";
 import { Initiativliste, useKampf } from "./Initiativliste";
 import { InitiativeSetzen } from "./InitiativeSetzen";
+import { BoosterPopup } from "./BoosterPopup";
+import { HotBleibenPopup } from "./HotBleibenPopup";
 import "./kampf.css";
 
 /**
@@ -204,7 +207,12 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
       >
         {bogenFuer?.personId ? (
           <>
-            <Kampfkarte campaignId={campaignId} personId={bogenFuer.personId} aenderbar />
+            <Kampfkarte
+              campaignId={campaignId}
+              personId={bogenFuer.personId}
+              aenderbar
+              zeigeMatrixHot={bogenFuer.personType !== "PC"}
+            />
             <BogenKampfzubehoer campaignId={campaignId} personId={bogenFuer.personId} kampf={kampf} />
           </>
         ) : (
@@ -221,7 +229,38 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
           }}
         />
       )}
+      {/* Dieselben Fragen wie auf dem Spieler-Tablet, für den NPC der gerade
+          dran ist. PCs entscheiden selbst. In der Vorschau nicht — da guckt
+          die SL durch fremde Augen. */}
+      <NpcZugPopups campaignId={campaignId} kampf={kampf} />
     </div>
+  );
+}
+
+function NpcZugPopups({ campaignId, kampf }: { campaignId: string; kampf: Kampf }) {
+  if (getViewAs()) return null;
+  const dran = kampf.teilnehmer.find((t) => t.id === kampf.amZug);
+  const npc = dran?.personId && dran.personType !== "PC" ? dran : null;
+  return (
+    <>
+      <BoosterPopup
+        key={npc?.personId ?? "kein-npc"}
+        campaignId={campaignId}
+        kampf={kampf}
+        eigenePersonId={npc?.personId ?? null}
+        personId={npc?.personId ?? null}
+        name={npc?.name}
+        onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+      />
+      <HotBleibenPopup
+        key={npc?.personId ?? "kein-npc"}
+        campaignId={campaignId}
+        kampf={kampf}
+        personId={npc?.personId ?? null}
+        name={npc?.name}
+        onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+      />
+    </>
   );
 }
 

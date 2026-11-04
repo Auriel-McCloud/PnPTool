@@ -210,6 +210,9 @@ schaltet der verbaute Neurolink frei, nicht die Höhe des Bonus.
   Zusatzaktion aus dem Deck kommt dann nicht. Ja bleibt Hot, danach die
   normale Booster-Frage. Klickt er Hot erst, während er schon dran ist, kommt
   die Zusatzaktion sofort — die Bleiben-Frage erst in der nächsten Runde.
+  Ist der Decker oder Rigger ein NPC, kommen dieselben Fragen bei der SL
+  an, sobald er dran ist. Der Hot-Knopf sitzt dann auf seiner Kampfkarte
+  (Bogen), nicht auf der eines Spielercharakters.
 - **Rigger, Hot:** eine Drohne pro Runde, gewählt über den Knopf an ihrem
   Slot. Beim nächsten eigenen Slot die Frage, ob er in derselben Drohne
   bleibt. Nein heißt ausklinken; eine andere wählt er erst in der nächsten
@@ -442,6 +445,11 @@ komplett.**
 
 ## Entwicklung
 
+- **04.11.2026 (SL steuert NPC-Hot):** Die Bleiben-Fragen und der
+  Hot-Knopf hingen am eingeloggten Charakter. Ein NPC-Decker oder
+  NPC-Rigger bekam sie nie, obwohl die SL ihn spielt. Jetzt dieselbe
+  Frage, wenn sein Zug kommt, und der Knopf auf seiner Kampfkarte.
+  Spielercharaktere bleiben bei ihrem Spieler.
 - **04.11.2026 (Reparatur-Anzeige):** Nach bestätigter Drohnen-Reparatur blieb
   die Kopfzeile auf dem Schnappschuss vom Öffnen, die Kachel dahinter auch,
   bis jemand die Seite neu lud. Material war schon weg. Das Fenster schreibt

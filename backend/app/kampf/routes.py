@@ -1,14 +1,14 @@
 import re
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
 from app.kampf import matrix_store, repository
-from app.kampf.initiative import darf_melden, initiative_pool, melde_wert
+from app.kampf.initiative import darf_melden, initiative_pool, melde_wert, person_fehler_http, waehle_person
 from app.kampf.sichtbarkeit import fuer_spieler
 from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
 from app.items.beschwoerung import beschwoerungsstufe, ruf_entscheidung
@@ -585,6 +585,36 @@ async def _booster_von(campaign_id: str, person_id: str) -> dict | None:
     return staerkstes(booster_kandidaten(stuecke, deck, zustand["matrixHot"]))
 
 
+async def _person_der_aktion(
+    campaign_id: str,
+    viewer: Viewer,
+    person_id: str | None,
+    *,
+    schreiben: bool,
+) -> str | None:
+    """Spieler: immer die eigene Person. SL: der genannte NPC, nie ein PC.
+
+    Lesen ohne Ziel liefert None (leerer Status). Schreiben ohne Ziel ist
+    ein Fehler — sonst zündet die SL ins Leere.
+    """
+    ziel_typ = None
+    if viewer.role == "GM" and person_id:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
+        # None = Knoten fehlt. Leerer Typ am vorhandenen Knoten ist kein PC.
+        ziel_typ = None if person is None else (person.get("personType") or "")
+    gewaehlt, fehler = waehle_person(
+        viewer.role,
+        viewer.person_id,
+        person_id,
+        ziel_typ,
+        schreiben=schreiben,
+    )
+    if fehler:
+        code, text = person_fehler_http(fehler)
+        raise HTTPException(code, text)
+    return gewaehlt
+
+
 class HotStatus(BaseModel):
     hatNeurolink: bool = False
     hatDeck: bool = False
@@ -601,6 +631,8 @@ class HotInput(BaseModel):
     bleiben: bool | None = None
     matrix: bool | None = None
     matrixBleiben: bool | None = None
+    # Nur die SL: für welchen NPC. Spieler-Angaben werden ignoriert.
+    personId: str | None = None
 
 
 async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
@@ -634,29 +666,37 @@ async def _hot_status(campaign_id: str, person_id: str) -> HotStatus:
 
 
 @router.get("/hot", response_model=HotStatus)
-async def hot_status(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
-    if not viewer.person_id:
+async def hot_status(
+    campaign_id: str,
+    viewer: Viewer = Depends(get_viewer),
+    person_id: str | None = Query(default=None, alias="personId"),
+):
+    """Hot-Zustand. Spieler: der eigene. SL: der genannte NPC, sonst leer."""
+    ziel = await _person_der_aktion(campaign_id, viewer, person_id, schreiben=False)
+    if not ziel:
         return HotStatus()
-    return await _hot_status(campaign_id, viewer.person_id)
+    return await _hot_status(campaign_id, ziel)
 
 
 @router.post("/hot", response_model=HotStatus)
 async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(get_viewer)):
-    """Hot gehen: Matrix-Knopf, Drohne an der Slot-Box, oder Bleiben-Antwort."""
-    if not viewer.person_id:
+    """Hot gehen: Matrix-Knopf, Drohne an der Slot-Box, oder Bleiben-Antwort.
+
+    Die SL nennt die NPC-Person. Ohne personId, aber mit drohneId, hängt
+    die Drohne an ihrem Rigger — der muss ebenfalls ein NPC sein.
+    """
+    ziel = body.personId
+    if viewer.role == "GM" and not ziel and body.drohneId:
+        ziel = await drohne_rigger(campaign_id, body.drohneId)
+        if not ziel:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Drohne/Fahrzeug nicht gefunden")
+    person_id = await _person_der_aktion(campaign_id, viewer, ziel, schreiben=True)
+    if person_id is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
-    person_id = viewer.person_id
     kampf = await repository.hole(campaign_id)
     runde = kampf["runde"] if kampf else None
     zustand = await repository.hot_lesen(campaign_id, person_id)
     chrom = await verbautes_chrom(campaign_id, person_id)
-
-    if body.drohneId and viewer.role == "GM":
-        rigger_id = await drohne_rigger(campaign_id, body.drohneId)
-        if rigger_id:
-            person_id = rigger_id
-            zustand = await repository.hot_lesen(campaign_id, person_id)
-            chrom = await verbautes_chrom(campaign_id, person_id)
 
     verlust = await matrix_store.hot_wegen_aus(campaign_id, person_id)
     if verlust == "alles":
@@ -745,12 +785,21 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
 
 
 @router.get("/booster/status", response_model=BoosterStatus)
-async def booster_status(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
-    """Der eigene Boosterzustand — Grundlage für das Popup beim Drankommen."""
-    if not viewer.person_id:
+async def booster_status(
+    campaign_id: str,
+    viewer: Viewer = Depends(get_viewer),
+    person_id: str | None = Query(default=None, alias="personId"),
+):
+    """Boosterzustand für das Popup beim Drankommen.
+
+    Spieler: der eigene Charakter. SL: der genannte NPC — sie steuert alle
+    NPCs und bekommt dasselbe Fenster, wenn der dran ist.
+    """
+    ziel = await _person_der_aktion(campaign_id, viewer, person_id, schreiben=False)
+    if not ziel:
         return BoosterStatus()
 
-    booster = await _booster_von(campaign_id, viewer.person_id)
+    booster = await _booster_von(campaign_id, ziel)
     if booster is None:
         return BoosterStatus()
 
@@ -761,16 +810,16 @@ async def booster_status(campaign_id: str, viewer: Viewer = Depends(get_viewer))
             (
                 t
                 for t in kampf["teilnehmer"]
-                if t.get("personId") == viewer.person_id and not t.get("zusatzzug")
+                if t.get("personId") == ziel and not t.get("zusatzzug")
             ),
             None,
         )
 
-    werte = await _werte_von(campaign_id, viewer.person_id)
+    werte = await _werte_von(campaign_id, ziel)
     ampel = eigener["ampel"] if eigener else 0
     genutzt = eigener["zusatzGenutzt"] if eigener else 0
     maximal = int(booster.get("zusatzaktionen") or 0)
-    zustand = await repository.hot_lesen(campaign_id, viewer.person_id)
+    zustand = await repository.hot_lesen(campaign_id, ziel)
     runde = kampf["runde"] if kampf else None
     ist_dran = bool(eigener and kampf and kampf["amZug"] == eigener["id"])
 
@@ -798,6 +847,8 @@ class AktivierenInput(BaseModel):
     """Der selbst gewürfelte Zweitwurf (Anzahl Erfolge)."""
 
     erfolge: int = Field(ge=0)
+    # Nur die SL: für welchen NPC. Spieler-Angaben werden ignoriert.
+    personId: str | None = None
 
 
 @router.post("/booster/aktivieren", response_model=KampfResponse)
@@ -808,14 +859,13 @@ async def booster_aktivieren(
 ):
     """Reflex-Booster zünden: zweiter Eintrag in der Initiativliste.
 
-    **Vom Spieler aufrufbar** — er entscheidet im Popup selbst. Geprüft wird
-    serverseitig: eigener Charakter, Booster verbaut, Aktionen übrig.
+    Spieler entscheidet im Popup für sich. Die SL für den NPC, der dran ist.
+    Geprüft wird serverseitig: Booster verbaut, Aktionen übrig, kein PC.
     """
-    if not viewer.person_id and viewer.role != "GM":
+    person_id = await _person_der_aktion(campaign_id, viewer, body.personId, schreiben=True)
+    if person_id is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein eigener Charakter")
-
-    person_id = viewer.person_id
-    booster = await _booster_von(campaign_id, person_id) if person_id else None
+    booster = await _booster_von(campaign_id, person_id)
     if booster is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Kein Reflex-Booster verbaut")
 

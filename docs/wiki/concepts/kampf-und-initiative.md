@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-10-31
+updated: 2026-11-04
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -56,6 +56,9 @@ automatische „0 HP = tot"-Logik.
 - **23.10.2026:** Kampfkarte zählt Ausrüstungsboni in den Würfelpool.
   Waffen (und Chrom mit `istWaffe`) können `kampfFertigkeit` tragen.
   Schadenszeile ist nur noch Waffenschaden + Nettoerfolge.
+- **04.11.2026:** Kommt ein NPC mit Reflex-Booster dran, fragt dasselbe Popup
+  die SL — sie steuert alle NPCs. Spielercharaktere entscheiden weiter
+  selbst, auf ihrem Tablet. Paralyse danach ebenso.
 - **31.10.2026:** `paradeBonus` an der Waffe. Gilt nur beim Parieren mit
   dieser Waffe. Angriff und die globale P-Zahl bleiben ohne den Bonus.
   Schild = Schaden 0 + Parade-Bonus. Mindeststärke wurde besprochen und

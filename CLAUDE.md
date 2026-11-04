@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## SL bekommt Booster- und Hot-Popups für NPCs (04.11.2026)
+
+Die Fenster hingen am eingeloggten Charakter. Die SL hat keinen, also kam bei einem NPC mit Reflex-Booster, Matrix-Hot oder Hot-Drohne nichts, obwohl sie ihn steuert. Jetzt dieselbe Frage, sobald sein Zug kommt, mit seinem Namen im Titel. Der Hot-Knopf sitzt auf seiner Kampfkarte und an seinen Drohnen-Slots. Spielercharaktere entscheiden weiter selbst. `kampf/initiative.py`, `kampf/routes.py`, `Kampfmodus.tsx`, `BoosterPopup.tsx`, `HotBleibenPopup.tsx`. **Nie im Browser angeklickt.**
+
 ## Werkbank: Drohnen-Reparatur aktualisiert die Anzeige sofort (04.11.2026)
 
 Mark: Material war weg, die Drohne sah weiter kaputt aus, erst nach Reload stimmte der Stand — fast nochmal bestätigt. Das Fenster hielt den Gesundheits-Schnappschuss vom Öffnen, die SL-Liste hat sich beim Nachladen selbst abmontiert, die Spieler-Werkbank hat Drohnen gar nicht neu geholt. Kopfzeile springt jetzt mit der Heilung, Kachel und Material auch, ohne das Fenster zuzumachen. `ReparaturFenster.tsx`, `ReparaturUebersicht.tsx`, `WerkbankUebersichtSpieler.tsx`, `ReparaturUebersichtSpieler.tsx`. `tsc -b` sauber. **Nie im Browser angeklickt.**
