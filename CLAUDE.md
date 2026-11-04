@@ -2228,7 +2228,27 @@ npm run dev
 | Party | ✅ | Gruppen, Mitgliedschaft, aktive Party, siehe `docs/api/party.md` |
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
-| Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, siehe `docs/api/raetsel.md` |
+| Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (04.11.2026 — Ring-Rätsel: Umbenennen entfernt, Screenshot-Check):**
+- **Was:** Mark schickte einen Screenshot Spieler- vs. SL-Ansicht. Die
+  türkisen „Neonkante"-Ränder, die er bei den Spielern noch sah, waren bereits
+  serverseitig entfernt (Fix vom 03.11., Commit `d8a7fe8`) — Bundle-Grep auf
+  bebop bestätigt den aktuellen Stand live, das war ein Cache-Stand bei ihm
+  (hartes Reload nötig). Neu umgesetzt: die Räume haben jetzt gute, von Mark
+  gesetzte Namen und sollen nicht mehr aus Versehen umbenannt werden —
+  Stift-Knopf, Umbenennen-Popup und die Route `POST /raetsel/name` sind
+  komplett weg (Frontend `RaetselTafel.tsx`/`api.ts`, Backend
+  `routes.py`/`schemas.py`). Die reine Funktion `name_setzen` und das Feld
+  `namen` bleiben im Backend bestehen (von Tests und der Auto-Nummerierung
+  `<Identität>-<Feld>` weiter gebraucht), nur der Schreibzugriff von außen
+  ist weg.
+- **Dateien:** `backend/app/raetsel/{routes.py,schemas.py}`,
+  `backend/tests/test_raetsel.py`, `frontend/src/raetsel/{RaetselTafel.tsx,
+  api.ts,raetsel.css}`.
+- **Verifiziert:** `pytest tests/test_raetsel.py` (23 Fälle) grün,
+  `npx tsc -b` sauber. **Nie im Browser angeklickt.**
+- **Nachlesen:** `docs/wiki/entities/ring-raetsel.md`, `docs/api/raetsel.md`.
 
 **Zuletzt gebaut (03.11.2026 — Ring-Rätsel: Praxistest-Korrekturen):**
 - **Was:** Mark hat die Tafel am Spieltisch angeklickt und vier Punkte

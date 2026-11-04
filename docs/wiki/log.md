@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] gebaut | Ring-Rätsel: Umbenennen-Route entfernt
+
+Stift-Knopf, Popup und `POST /raetsel/name` entfernt — Räume haben gute feste
+Namen, sollen nicht mehr aus Versehen umbenannt werden. Backend-Feld `namen`
+bleibt. Türkise Neonkante bei Spielern war schon vom 03.11. gefixt, nur
+Mark-seitiges Caching. Siehe [[entities/ring-raetsel]].
+
 ## [2026-11-03] gebaut | Ring-Rätsel: Praxistest-Korrekturen
 
 Namensfeld im Popup breiter. Neonkante (zeigt zur Mitte) nur noch für die SL

@@ -162,7 +162,6 @@ def test_raetsel_routen_sind_registriert():
     assert "get" in pfade[basis]
     assert "post" in pfade[basis + "/tuer"]
     assert "post" in pfade[basis + "/gruppe"]
-    assert "post" in pfade[basis + "/name"]
     assert "post" in pfade[basis + "/freigabe"]
     assert "post" in pfade[basis + "/zurueck"]
     assert "post" in pfade[basis + "/zuruecksetzen"]

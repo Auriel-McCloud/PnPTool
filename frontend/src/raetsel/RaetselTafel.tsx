@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Bestaetigung } from "../shell/Bestaetigung";
-import { Fenster } from "../shell/Fenster";
 import { useNachladen } from "../shell/nachladen";
 import {
   hatTafel,
@@ -57,7 +56,6 @@ export function RaetselTafelAnsicht({
   const [fehler, setFehler] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [gewaehlt, setGewaehlt] = useState(0);
-  const [umbenennen, setUmbenennen] = useState<{ raum: number; name: string } | null>(null);
   const [resetOffen, setResetOffen] = useState(false);
   const [modusWechsel, setModusWechsel] = useState<Modus | null>(null);
   const { ungueltig } = useNachladen(
@@ -229,7 +227,6 @@ export function RaetselTafelAnsicht({
                     busy={busy}
                     onTuer={(raum, seite) => senden(() => raetselApi.tuer(campaignId, raum, seite))}
                     onRaum={(raum) => senden(() => raetselApi.gruppe(campaignId, klickSetzt, raum))}
-                    onUmbenennen={(raum) => setUmbenennen({ raum, name: tafel.namen[raum] })}
                   />
                 ))}
                 <div className="rr-ziel" style={{ gridArea: "2 / 2" }}>
@@ -257,35 +254,6 @@ export function RaetselTafelAnsicht({
         {istGm &&
           " Neonkante: diese Tür zeigt zur Mitte, nur für dich sichtbar. Punkte in der Mitte: freie Markierung (aus/blau/rot), reine Notiz ohne eigene Logik. Spieler sehen beides nicht."}
       </p>
-
-      {istGm && umbenennen && (
-        <Fenster
-          offen
-          kennung="raetsel-name"
-          titel={`Name: ${umbenennen.name || String(umbenennen.raum + 1)}`}
-          onSchliessen={() => setUmbenennen(null)}
-        >
-          <form
-            className="rr-name-fenster"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const { raum, name } = umbenennen;
-              setUmbenennen(null);
-              void senden(() => raetselApi.name(campaignId, raum, name));
-            }}
-          >
-            <input
-              value={umbenennen.name}
-              maxLength={16}
-              autoFocus
-              onChange={(e) => setUmbenennen({ ...umbenennen, name: e.target.value })}
-            />
-            <button type="submit" disabled={busy}>
-              Speichern
-            </button>
-          </form>
-        </Fenster>
-      )}
 
       {resetOffen && (
         <Bestaetigung
@@ -354,7 +322,6 @@ function RaumZelle({
   busy,
   onTuer,
   onRaum,
-  onUmbenennen,
 }: {
   area: string;
   raum: number;
@@ -365,7 +332,6 @@ function RaumZelle({
   busy: boolean;
   onTuer: (raum: number, seite: Seite) => void;
   onRaum: (raum: number) => void;
-  onUmbenennen: (raum: number) => void;
 }) {
   const mitte = MITTE[slot];
   const marker = tafel.gruppen
@@ -427,17 +393,6 @@ function RaumZelle({
         <div className="rr-kern" data-offen={unbestaetigt ? "true" : "false"}>
           {kern}
         </div>
-      )}
-      {istGm && (
-        <button
-          type="button"
-          className="rr-umbenennen"
-          title="Namen ändern"
-          aria-label={`Namen von ${anzeigename} ändern`}
-          onClick={() => onUmbenennen(raum)}
-        >
-          ✎
-        </button>
       )}
     </div>
   );

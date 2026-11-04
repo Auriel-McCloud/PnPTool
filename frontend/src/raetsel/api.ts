@@ -35,8 +35,6 @@ export const raetselApi = {
     api.post<RaetselTafel>(`${basis(campaignId)}/tuer`, { raum, seite }),
   gruppe: (campaignId: string, index: number, raum: number | null) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/gruppe`, { index, raum }),
-  name: (campaignId: string, raum: number, name: string) =>
-    api.post<RaetselTafel>(`${basis(campaignId)}/name`, { raum, name }),
   freigabe: (campaignId: string, an: boolean) =>
     api.post<RaetselTafel>(`${basis(campaignId)}/freigabe`, { an }),
   ausgang: (campaignId: string, ring: number, slot: number) =>

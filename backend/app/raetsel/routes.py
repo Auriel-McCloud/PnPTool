@@ -16,12 +16,11 @@ from app.raetsel.logic import (
     fuer_draht,
     gruppe_setzen,
     modus_setzen,
-    name_setzen,
     tuer_zu,
     zurueck,
     zuruecksetzen,
 )
-from app.raetsel.schemas import AusgangAktion, FreigabeAktion, GruppeAktion, ModusAktion, NameAktion, TuerAktion
+from app.raetsel.schemas import AusgangAktion, FreigabeAktion, GruppeAktion, ModusAktion, TuerAktion
 from app.raetsel.verteiler import Verbindung, verteiler
 
 log = logging.getLogger(__name__)
@@ -77,11 +76,6 @@ async def tuer(campaign_id: str, body: TuerAktion):
 @router.post("/gruppe", dependencies=[Depends(require_campaign_gm)])
 async def gruppe(campaign_id: str, body: GruppeAktion):
     return await _aendern(campaign_id, lambda z: gruppe_setzen(z, body.index, body.raum))
-
-
-@router.post("/name", dependencies=[Depends(require_campaign_gm)])
-async def name(campaign_id: str, body: NameAktion):
-    return await _aendern(campaign_id, lambda z: name_setzen(z, body.raum, body.name))
 
 
 @router.post("/freigabe", dependencies=[Depends(require_campaign_gm)])

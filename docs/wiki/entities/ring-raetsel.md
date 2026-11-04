@@ -1,7 +1,7 @@
 ---
 title: Ring-Rätsel
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-04
 type: entität
 tags: [frontend, backend, ui, live]
 sources: [../../../backend/app/raetsel/logic.py, ../../../frontend/src/raetsel/RaetselTafel.tsx, ../../api/raetsel.md]
@@ -28,10 +28,13 @@ Gegen den Uhrzeigersinn wandert der Raum aus Nord nach Nordwest.
   Ergänzung vom Nachmittag: vorher sahen Spieler die Kante mit).
   Ob das die richtige Stelle ist, rechnet das Tool nicht aus. Nach vier Schritten
   liegt jeder Raum gegenüber seinem Startfeld — das ist Geometrie, nicht die Lösung.
-- Namen sind Kosmetik, höchstens 16 Zeichen. Ohne eigenen Namen zeigt ein Raum
-  automatisch `<Identität>-<aktuelles Feld>` (z.B. „3-1“ = ursprünglich Raum 3,
-  jetzt an Feld 1) — reine Frontend-Anzeige, ändert sich live mit der Drehung,
-  nichts Gespeichertes. Zurücknehmen lässt die Freigabe stehen.
+- Namen sind Kosmetik, höchstens 16 Zeichen, aber nicht mehr über die UI
+  änderbar (04.11.2026: Umbenennen-Knopf entfernt, Mark hatte die Räume schon
+  gut benannt). Backend-Feld `namen` und die reine Funktion bleiben, nur die
+  Route `/name` und der Stift-Knopf sind weg. Ohne eigenen Namen zeigt ein
+  Raum automatisch `<Identität>-<aktuelles Feld>` (z.B. „3-1“ = ursprünglich
+  Raum 3, jetzt an Feld 1) — reine Frontend-Anzeige, ändert sich live mit der
+  Drehung, nichts Gespeichertes. Zurücknehmen lässt die Freigabe stehen.
 
 Spieler sehen dieselbe Tafel ohne Knöpfe, sobald die SL freigibt, und live mit.
 Vorher kommt nur „noch nicht freigegeben“, auch auf der Leitung. Der Menüpunkt

@@ -13,11 +13,6 @@ class GruppeAktion(BaseModel):
     raum: int | None = None
 
 
-class NameAktion(BaseModel):
-    raum: int
-    name: str = ""
-
-
 class FreigabeAktion(BaseModel):
     an: bool
 

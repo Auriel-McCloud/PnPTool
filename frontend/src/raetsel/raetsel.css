@@ -64,8 +64,7 @@
 }
 
 .rr-knoepfe button,
-.rr-gruppen button,
-.rr-name-fenster button {
+.rr-gruppen button {
   font-family: var(--mono);
   letter-spacing: var(--versalien);
   text-transform: uppercase;
@@ -169,8 +168,7 @@
 
 .rr-ziel span,
 .rr-tuer,
-.rr-kern,
-.rr-umbenennen {
+.rr-kern {
   font-family: var(--mono);
   font-size: 13px;
 }
@@ -279,43 +277,6 @@ button.rr-kern {
   color: var(--neon);
   font-size: 12px;
   letter-spacing: 0.12em;
-}
-
-.rr-umbenennen {
-  position: absolute;
-  right: 46px;
-  bottom: 46px;
-  z-index: 1;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-leise);
-  cursor: pointer;
-}
-
-.rr-umbenennen:hover {
-  border-color: var(--linie-hell);
-  color: var(--neon);
-}
-
-.rr-name-fenster {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.rr-name-fenster input {
-  flex: 1 1 100%;
-  min-width: 220px;
-  padding: 10px;
-  border: 1px solid var(--linie);
-  background: var(--flaeche-tief);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 16px;
 }
 
 .rr-gesperrt {
