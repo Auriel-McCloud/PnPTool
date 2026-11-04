@@ -83,10 +83,18 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     return acc;
   }, {});
 
+  // "Rucksack" ist seit 31.10.2026 projektweit umbenannt auf "Mitgeführt" —
+  // der Reiter meint "kein bestimmter Behälter" (Symbol ▣), nicht den
+  // Behälter, den die Person zufällig trägt (z.B. Wachmanns Drop-Leg Bag,
+  // der sein eigenes GELAGERT-Fach hat). GegenstandKachel.tsx::grundAblagen
+  // und items/aufbewahrung.ts tragen das schon so; dieses Popup hatte eine
+  // eigene, nie nachgezogene Kopie (Mark-Bugreport 04.11.2026: "er besitzt
+  // keinen Rucksack, er hat einen Drop-Leg Bag Behälter, und da ist nichts
+  // drinnen" — Items standen im neutralen Mitgeführt-Topf, nicht im Behälter).
   const ablageNamen: Record<string, string> = {
     VERBAUT: "Verbaut",
     AUSGERUESTET: "Ausgerüstet",
-    RUCKSACK: "Rucksack",
+    RUCKSACK: "Mitgeführt",
     GELAGERT: "Gelagert",
   };
 
