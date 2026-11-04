@@ -2016,10 +2016,20 @@ async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
     dieselbe Unterscheidung wie in `kitama_fertigkeiten_liste`.
     """
     driver = get_driver()
+    # "WITH * WHERE" statt eines blossen "WHERE" direkt nach {LIEGT_IN}: ein
+    # WHERE unmittelbar nach einer OPTIONAL MATCH-Kette bindet sich in Cypher
+    # an genau DIESE OPTIONAL MATCH (filtert nur ziel/montiert auf NULL),
+    # nicht an die ganze Zeile — eine fehlschlagende Bedingung schliesst die
+    # Zeile dann NICHT aus. Bug 04.11.2026 (Mark: 3 nicht ausgeruestete
+    # Ruestungen wirkten trotzdem voll): ohne "WITH *" liefert diese Query
+    # schlicht JEDEN besessenen Gegenstand der Person, kompletter Typ-/
+    # Ablage-/Weggeworfen-Filter wirkungslos. "WITH *" erzwingt eine neue,
+    # eigenstaendige Projektion, an die das folgende WHERE dann korrekt als
+    # globaler Zeilenfilter bindet.
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
         {LIEGT_IN}
-        WHERE g.typ IN $ruestungs_traeger_typen
+        WITH * WHERE g.typ IN $ruestungs_traeger_typen
           AND NOT coalesce(g.weggeworfen, false)
           AND (
               coalesce(g.ruestungKaestchenMax, 0) > 0
