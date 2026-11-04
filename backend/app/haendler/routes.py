@@ -576,22 +576,32 @@ async def alltagswunsch_beantworten(campaign_id: str, wunsch_id: str, body: Allt
     return aktualisiert
 
 
-# --- Tutorial-Shop: KI-Verkäufer-Kommentar (10.10.2026) --------------------
+# --- Tutorial-Shop: KI-Verkäufer-Kommentar (10.10.2026, 04.11.2026) ---------
 #
 # Mark: das KI-Symbol, das wir für die Fertigkeiten-Vergabe gebaut haben,
-# soll im Tutorial-Shop der "Verkäufer" sein und Käufe kommentieren. Nutzt
-# dieselbe generiere_json-Infrastruktur wie der Fertigkeiten-Kommentar
-# (traits/routes.py::erstellung_kommentar) — EIN Aufruf pro Kauf, nie
-# automatisch im Hintergrund (Mark ist kostenbewusst beim LLM-Verbrauch).
+# soll im Tutorial-Shop der "Verkäufer" sein. Nutzt dieselbe generiere_json-
+# Infrastruktur wie der Fertigkeiten-Kommentar (traits/routes.py::
+# erstellung_kommentar).
+#
+# 04.11.2026 (Mark): ursprünglich EIN Aufruf PRO Kauf — das zwang den
+# Spieler, nach jedem Kauf auf die KI-Antwort zu warten, bevor der nächste
+# Kauf möglich war (reiner Flavor-Text, keine sinnvolle Wartezeit). Jetzt
+# EIN Aufruf für den GESAMTEN Einkauf, ausgelöst beim Schließen des Shops
+# (siehe TutorialShopPopup.tsx::schliessen) — kein Call pro Klick mehr,
+# weiterhin nie automatisch im Hintergrund (Mark ist kostenbewusst beim
+# LLM-Verbrauch).
 
 _TUTORIAL_VERKAEUFER_SYSTEM = (
     "Du bist eine schrullige, warmherzig-schräge KI, die als Verkäufer in einem "
     "Tutorial-Shop für ein Cyberpunk-Pen-and-Paper-Rollenspiel (NeotopiA) "
-    "auftritt — Ton wie ein overenthusiastischer Gameshow-Moderator, der jeden "
-    "Kauf mit großer Geste kommentiert. Humor durch Übertreibung und absurde "
-    "Vergleiche, NIE durch Herabsetzung oder Beleidigung. Schreib NIE wie ein "
-    "frecher Jugendlicher. 1-2 kurze, prägnante Sätze, direkt auf den gekauften "
-    "Gegenstand bezogen (Name/Typ) — kein Regel-Erklärbär, keine Kraftausdrücke."
+    "auftritt — Ton wie ein overenthusiastischer Gameshow-Moderator. Der Kunde "
+    "hat gerade seinen gesamten Einkauf abgeschlossen (eine oder mehrere "
+    "Positionen, in der Reihenfolge des Kaufs) — kommentiere den GESAMTEN "
+    "Einkauf als Ganzes, nicht nur die letzte Position. Humor durch "
+    "Übertreibung und absurde Vergleiche, NIE durch Herabsetzung oder "
+    "Beleidigung. Schreib NIE wie ein frecher Jugendlicher. 1-3 kurze, "
+    "prägnante Sätze, bezogen auf Namen/Typen der gekauften Gegenstände — "
+    "kein Regel-Erklärbär, keine Kraftausdrücke."
 )
 
 _TUTORIAL_VERKAEUFER_SCHEMA = {
@@ -601,22 +611,32 @@ _TUTORIAL_VERKAEUFER_SCHEMA = {
 }
 
 
-class TutorialKommentarInput(BaseModel):
+class TutorialKommentarPosition(BaseModel):
     gegenstandName: str
     gegenstandTyp: str
 
 
+class TutorialKommentarInput(BaseModel):
+    gegenstaende: list[TutorialKommentarPosition]
+
+
 @router.post("/{haendler_id}/tutorial-kommentar")
 async def tutorial_kommentar(campaign_id: str, haendler_id: str, body: TutorialKommentarInput):
-    """KI-Kommentar des Tutorial-Verkäufers zu einem gerade getätigten Kauf.
+    """KI-Kommentar des Tutorial-Verkäufers zum GESAMTEN Einkauf einer
+    Shopping-Session (ein Aufruf beim Schließen des Shops, siehe Kommentar
+    oben), nicht mehr pro Einzelkauf.
 
-    Rein kosmetisch, kein Einfluss auf den Kauf-Flow selbst (der ist mit
-    `POST .../kaufen` schon abgeschlossen, bevor das Frontend diese Route
-    aufruft). Kein eigener Zugriffsschutz nötig über `require_campaign_zugang`
-    hinaus (Router-weite Dependency) — jeder mit Zugang darf im eigenen
-    Tutorial-Shop kaufen und den Kommentar dazu abrufen.
+    Rein kosmetisch, kein Einfluss auf den Kauf-Flow selbst (jeder Kauf ist
+    mit `POST .../kaufen` schon abgeschlossen, bevor das Frontend diese
+    Route aufruft). Kein eigener Zugriffsschutz nötig über
+    `require_campaign_zugang` hinaus (Router-weite Dependency) — jeder mit
+    Zugang darf im eigenen Tutorial-Shop kaufen und den Kommentar dazu
+    abrufen.
     """
-    prompt = f"Gerade gekauft: {body.gegenstandName} (Typ: {body.gegenstandTyp})."
+    if not body.gegenstaende:
+        raise HTTPException(status_code=400, detail="Kein Einkauf zum Kommentieren.")
+    liste = "; ".join(f"{p.gegenstandName} (Typ: {p.gegenstandTyp})" for p in body.gegenstaende)
+    prompt = f"Gerade gekauft: {liste}."
     try:
         ergebnis = await generiere_json(
             prompt, _TUTORIAL_VERKAEUFER_SYSTEM, _TUTORIAL_VERKAEUFER_SCHEMA, campaign_id=campaign_id

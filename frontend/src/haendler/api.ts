@@ -180,12 +180,13 @@ export const haendlerApi = {
       ablehnungsGrund,
     }),
 
-  /** Tutorial-Shop (10.10.2026): KI-Kommentar des "Verkäufers" zu einem
-   * gerade getätigten Kauf — rein kosmetisch, nach dem Kauf aufgerufen. */
-  tutorialKommentar: (cid: string, haendlerId: string, gegenstandName: string, gegenstandTyp: string) =>
+  /** Tutorial-Shop (10.10.2026, 04.11.2026): KI-Kommentar des "Verkäufers"
+   * zum GESAMTEN Einkauf einer Shopping-Session — rein kosmetisch, EIN
+   * Aufruf beim Schließen des Shops statt einem pro Einzelkauf (das
+   * blockierte sonst den nächsten Kauf, bis der Kommentar da war). */
+  tutorialKommentar: (cid: string, haendlerId: string, gegenstaende: { gegenstandName: string; gegenstandTyp: string }[]) =>
     api.post<{ kommentar: string }>(`${base(cid, haendlerId)}/tutorial-kommentar`, {
-      gegenstandName,
-      gegenstandTyp,
+      gegenstaende,
     }),
 
   /** Legt per KI eine Ware in der gewählten Kategorie an und hängt sie an den Laden. */
