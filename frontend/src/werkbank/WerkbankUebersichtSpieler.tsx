@@ -56,9 +56,9 @@ export function WerkbankUebersichtSpieler({
 
   const ladeReparaturDaten = useCallback(() => {
     Promise.all([
-      partyApi.liste(campaignId),
-      partyApi.reparaturFreigabenFuerMich(campaignId),
-      partyApi.reparaturFreigabenVonMir(campaignId),
+      partyApi.liste(campaignId).catch(() => []),
+      partyApi.reparaturFreigabenFuerMich(campaignId).catch(() => [] as ReparaturFreigabeEintrag[]),
+      partyApi.reparaturFreigabenVonMir(campaignId).catch(() => [] as ReparaturFreigabeEintrag[]),
     ])
       .then(async ([parteien, freigeberListe, erteilteListe]) => {
         setFreigeber(freigeberListe);
@@ -68,7 +68,11 @@ export function WerkbankUebersichtSpieler({
         const mitglieder = (eigeneParty?.mitglieder ?? []).filter((m) => m.id !== personId);
         setPartyMitglieder(mitglieder);
 
-        const eigeneItems = await itemsApi.reparierbareItems(campaignId, personId);
+        // Jeder Item-Abruf einzeln abgesichert (05.11.2026, Nachbesserung —
+        // ein Fehler bei EINER Person darf nicht die ganze Liste leerräumen,
+        // das hatte "Deine Ausrüstung" nach einem Backend-Bug unsichtbar
+        // gemacht, obwohl nur die Freigabe-Abfrage betroffen war).
+        const eigeneItems = await itemsApi.reparierbareItems(campaignId, personId).catch(() => [] as Gegenstand[]);
         const gruppen: ReparaturGruppe[] = [{ label: "Deine Ausrüstung", personId, items: eigeneItems }];
         for (const f of freigeberListe) {
           const items = await itemsApi.reparierbareItems(campaignId, f.id).catch(() => [] as Gegenstand[]);

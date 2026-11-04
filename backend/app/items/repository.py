@@ -1599,7 +1599,8 @@ async def reparierbare_items(campaign_id: str, person_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ IN $typen
+        {LIEGT_IN}
+        WITH * WHERE g.typ IN $typen
           AND NOT coalesce(g.weggeworfen, false)
           AND coalesce(g.ruestungKaestchenMax, 0) > 0
           AND NOT coalesce(g.istNatuerlich, false)

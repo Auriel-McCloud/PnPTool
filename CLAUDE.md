@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: `reparierbare_items`-Query warf 500, löschte eigene Ausrüstung mit (05.11.2026)
+
+Mark nach dem zweiten Klicktest: "ich sehe jetzt auch meine eigene Rüstung nicht mehr". Root Cause: `items/repository.py::reparierbare_items` (neu von heute) nutzte `RETURN_FIELDS` ohne davor das `{LIEGT_IN}`-Fragment einzuschieben — `RETURN_FIELDS` referenziert aber `ziel`/`montiert`, die erst durch `LIEGT_IN`s OPTIONAL MATCHes gebunden werden. Ohne das Fragment wirft Neo4j einen Variable-nicht-gebunden-Fehler, die Route antwortet mit 500, und weil der Frontend-Aufruf für die EIGENE Ausrüstung (anders als der für Freigabe-Gruppen) keinen eigenen `.catch()` hatte, riss das die komplette `Promise`-Kette samt "Deine Ausrüstung" mit in den globalen Fallback (leere Liste). Fix: `{LIEGT_IN}` + `WITH * WHERE` ergänzt (identisches Muster wie `ruestungsteile`, inkl. derselben `WITH *`-Begründung — ein blosses `WHERE` direkt nach der OPTIONAL-MATCH-Kette würde sich nur an das letzte MATCH binden). Zusätzlich jeder Item-Abruf im Frontend jetzt einzeln mit `.catch(() => [])` abgesichert, damit ein Fehler bei einer Person nie mehr die ganze Liste leerräumt. `tsc -b` sauber, `pytest` (969 passed, 55 vorbestehende Fehlschläge unverändert — DB-Query selbst ist in dieser Suite nicht abgedeckt, Live-Test am Spieltisch nötig).
+
 ## Party-Reparatur-Freigabe: erster Klicktest, drei Korrekturen (05.11.2026)
 
 Mark nach dem ersten echten Durchklicken (Fixer fragt an, Ziel bestätigt):
