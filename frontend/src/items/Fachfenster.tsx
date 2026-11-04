@@ -19,6 +19,7 @@ import type { Bereich } from "./aufbewahrung";
 export function Fachfenster({
   fach,
   items,
+  gesamtAnzahl,
   offen,
   onSchliessen,
   onUmlegen,
@@ -31,14 +32,20 @@ export function Fachfenster({
   onGeoeffnet,
 }: {
   fach: Bereich | null;
-  /** Bereits auf dieses Fach gefiltert. */
+  /** Bereits auf dieses Fach gefiltert (UND auf einen evtl. aktiven Suchtext). */
   items: Gegenstand[];
+  /**
+   * Ungefilterte Gesamtzahl in diesem Fach, nur zur Unterscheidung "wirklich
+   * leer" von "nichts gefunden" (04.11.2026, Inventar-Suche). Fehlt sie,
+   * gilt `items.length === 0` als "wirklich leer" — unverändertes Verhalten.
+   */
+  gesamtAnzahl?: number;
   offen: boolean;
   onSchliessen: () => void;
   /** Fehlt sie, ist der Inhalt nur anzusehen — so bei fremdem Besitz. */
   onUmlegen?: (item: Gegenstand, ablage: Ablage, zielId?: string | null) => Promise<void> | void;
   /** Weitergeben an ein Party-Mitglied — siehe GegenstandKachel.tsx. */
-  onWeitergeben?: (item: Gegenstand, empfaengerPersonId: string) => Promise<void> | void;
+  onWeitergeben?: (item: Gegenstand, empfaengerId: string) => Promise<void> | void;
   campaignId?: string;
   eigenePersonId?: string;
   /**
@@ -59,6 +66,9 @@ export function Fachfenster({
   if (!fach) return null;
 
   const gewicht = items.reduce((s, g) => s + g.gewicht * (g.hatMenge ? g.menge : 1), 0);
+  // Gefiltert, aber eigentlich nicht leer: eigener Hinweis statt "nichts
+  // darin", sonst wirkt ein aktiver Suchtext wie Datenverlust.
+  const keineTreffer = items.length === 0 && (gesamtAnzahl ?? 0) > 0;
 
   return (
     <Fenster
@@ -67,6 +77,8 @@ export function Fachfenster({
       unterzeile={
         schloss && istVerschlossen(schloss)
           ? "verschlossen"
+          : keineTreffer
+          ? "keine Treffer"
           : items.length === 0
           ? "nichts darin"
           : `${items.length} ${items.length === 1 ? "Gegenstand" : "Gegenstände"}` +
@@ -84,6 +96,8 @@ export function Fachfenster({
           onSchliessen={onSchliessen}
           onGeoeffnet={onGeoeffnet}
         />
+      ) : keineTreffer ? (
+        <p style={{ color: "var(--text-leise)", margin: 0 }}>Keine Treffer für den Filter.</p>
       ) : items.length === 0 ? (
         <p style={{ color: "var(--text-leise)", margin: 0 }}>Hier liegt nichts.</p>
       ) : (
