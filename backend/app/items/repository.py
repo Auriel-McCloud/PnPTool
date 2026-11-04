@@ -1561,6 +1561,18 @@ WIRKT = """
              ELSE g.ablage = 'AUSGERUESTET' END
 """
 
+# Welche Typen natürliche Rüstungswerte (`istNatuerlich` + ruestungKaestchen*/
+# ruestungReduktionBasis) tragen dürfen (04.11.2026, Mark direkt im Anschluss
+# ans Spezialisierungs-Feature: "was es bei Cyber/Bio/Hex/Ki-Tama noch nicht
+# gibt ist natürliche Rüstungswerte hinzufügen"). Bisher nur "Rüstung" selbst
+# (Dug'Rahs Chitinpanzer u.ä., docs/wiki/concepts/augments-ausruestung.md
+# nennt das Flag ausdrücklich generisch für "jede künftige Kreatur") — ein
+# Cyberware-Dermalpanzer oder ein Ki-Tama-Schutzzauber passen fachlich genauso
+# rein: beide heilen über Rast statt über die normale Material-Reparatur
+# (items/routes.py::_rep_vorpruefung bleibt bewusst bei "nur Rüstung", siehe
+# dort), und keines der beiden lässt sich vom Spieler einfach ablegen.
+RUESTUNGSTRAEGER_TYPEN = ("Rüstung",) + CHROM_TYPEN + ("Ki-Tama",)
+
 
 
 async def willenskraft_verlust(campaign_id: str, person_id: str) -> int:
@@ -1994,22 +2006,42 @@ async def ruestungsteile(campaign_id: str, person_id: str) -> list[dict]:
     Sortierung nach Regelkriterien, sondern nur die Liste. Alte Rüstung mit bloßem
     `kraft`-Bonus taucht nicht auf; für die zählt weiter der flache
     Rüstungsbonus (siehe docs/api/ruestung.md).
+
+    Erweitert (04.11.2026) auf alle `RUESTUNGSTRAEGER_TYPEN` — ein Cyberware-
+    Dermalpanzer oder ein Ki-Tama-Schutz zählen genauso mit, wenn SIE
+    wirksam sind. "Wirksam" bedeutet je Typ etwas anderes: normale Rüstung
+    über `ablage = 'AUSGERUESTET'`, Chrom über `verbaut` (beides in `WIRKT`
+    zusammengefasst), Ki-Tama ist IMMER ein Augment und zählt stattdessen,
+    wenn es nicht defekt und an einen ausgerüsteten Träger montiert ist —
+    dieselbe Unterscheidung wie in `kitama_fertigkeiten_liste`.
     """
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ = 'Rüstung' AND g.ablage = 'AUSGERUESTET'
+        {LIEGT_IN}
+        WHERE g.typ IN $ruestungs_traeger_typen
           AND NOT coalesce(g.weggeworfen, false)
           AND (
               coalesce(g.ruestungKaestchenMax, 0) > 0
               OR coalesce(g.istNatuerlich, false)
           )
-        {LIEGT_IN}
+          AND (
+            (coalesce(g.istAugment, false) AND NOT coalesce(g.defekt, false)
+             AND montiert IS NOT NULL AND montiert.ablage = 'AUSGERUESTET')
+            OR
+            (NOT coalesce(g.istAugment, false) AND {WIRKT})
+          )
         RETURN {RETURN_FIELDS}
         ORDER BY g.name
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            ruestungs_traeger_typen=list(RUESTUNGSTRAEGER_TYPEN),
+            chrom_typen=list(CHROM_TYPEN),
+        )
         teile = [_decode(dict(record)) async for record in result]
     # Augment-Boni (29.10.2026 Nachbesserung): montierte, nicht defekte
     # Upgrade-Material-Stücke dürfen Absorption/Kästchen eines Rüstungsteils
@@ -2036,18 +2068,32 @@ async def natuerliche_ruestungsteile(campaign_id: str, person_id: str) -> list[d
     ruestung_heilung` auch zerstörte, mitgeführte Stücke sieht; die
     Aufrufer in traits/routes.py rüsten ein geheiltes Stück danach wieder
     automatisch aus, wenn es vorher nicht ausgerüstet war.
+
+    Erweitert (04.11.2026) auf alle `RUESTUNGSTRAEGER_TYPEN`. Für Chrom-Typen
+    gilt zusätzlich `verbaut = true` — ein noch nicht implantiertes Stück im
+    Rucksack ist kein Körperteil und heilt deshalb auch nicht über Rast,
+    anders als bei normaler Rüstung/Ki-Tama, die dieses Zwischenstadium
+    nicht kennen (Ki-Tama hängt ohnehin an seinem Träger, nicht an sich
+    selbst — siehe `ruestungsteile()` oben).
     """
     driver = get_driver()
     query = f"""
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
-        WHERE g.typ = 'Rüstung' AND coalesce(g.istNatuerlich, false)
+        WHERE g.typ IN $ruestungs_traeger_typen AND coalesce(g.istNatuerlich, false)
           AND NOT coalesce(g.weggeworfen, false)
+          AND (NOT (g.typ IN $chrom_typen) OR coalesce(g.verbaut, false))
         {LIEGT_IN}
         RETURN {RETURN_FIELDS}
         ORDER BY g.name
     """
     async with driver.session() as session:
-        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        result = await session.run(
+            query,
+            campaign_id=campaign_id,
+            person_id=person_id,
+            ruestungs_traeger_typen=list(RUESTUNGSTRAEGER_TYPEN),
+            chrom_typen=list(CHROM_TYPEN),
+        )
         return [_decode(dict(record)) async for record in result]
 
 

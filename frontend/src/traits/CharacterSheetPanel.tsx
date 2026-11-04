@@ -1729,10 +1729,11 @@ export function GegenstandRow({
                 </div>
               )}
 
-              {typ === "Rüstung" && (
+              {(typ === "Rüstung" || CHROM_TYPEN.has(typ) || typ === "Ki-Tama") && (
                 <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
                   <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
                     Kästchen + Schadensreduktion. Aktueller Zustand ändert sich über Treffer, nicht hier.
+                    {typ !== "Rüstung" && " Bei Cyberware/Bioware/Hexware/Ki-Tama nur sinnvoll zusammen mit \"Natürliche Rüstung\" unten — ohne das Häkchen gibt es für diesen Typ keinen Reparaturweg."}
                   </label>
                   <div style={{ display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
@@ -1771,7 +1772,8 @@ export function GegenstandRow({
                       checked={istNatuerlich}
                       onChange={(e) => setIstNatuerlich(e.target.checked)}
                     />
-                    Natürliche Rüstung (Rassen-/Kreatur-Feature, z.B. Dug'Rah)
+                    Natürliche Rüstung (Rassen-/Kreatur-Feature, z.B. Dug'Rah — auch für fest verbautes
+                    Chrom oder einen Ki-Tama-Schutz geeignet)
                   </label>
                   {istNatuerlich && (
                     <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 4 }}>
@@ -1779,6 +1781,7 @@ export function GegenstandRow({
                       gezählt wird live die Widerstandsfähigkeit der tragenden Person. Nicht
                       ablegbar für den Spieler (nur die SL im Ausnahmefall), nicht reparierbar —
                       heilt stattdessen über die Rast-Mechanik.
+                      {CHROM_TYPEN.has(typ) && " Zählt erst, sobald verbaut."}
                     </p>
                   )}
                   {item.ruestungKaestchenMax > 0 && item.ruestungKaestchenAktuell < item.ruestungKaestchenMax && !item.istNatuerlich && (
