@@ -72,7 +72,7 @@ export function WerkbankUebersichtSpieler({
         const gruppen: ReparaturGruppe[] = [{ label: "Deine Ausrüstung", personId, items: eigeneItems }];
         for (const f of freigeberListe) {
           const items = await itemsApi.reparierbareItems(campaignId, f.id).catch(() => [] as Gegenstand[]);
-          gruppen.push({ label: `${f.name}s Ausrüstung`, personId: f.id, items });
+          gruppen.push({ label: `${f.name}s Ausrüstung`, personId: f.id, items, immerZeigen: true });
         }
         setReparaturGruppen(gruppen);
       })
@@ -83,6 +83,16 @@ export function WerkbankUebersichtSpieler({
 
   useEffect(() => {
     ladeReparaturDaten();
+    // Live-Zustellung erreicht aktuell nur den EMPFÄNGER der Verhandlung
+    // (den Ziel-Spieler, der zustimmt) — der Fixer, der die Anfrage
+    // geschickt hat, bekommt vom bestehenden Verteiler keinen Push, wenn
+    // die Antwort kommt (verhandlung/routes.py::_verteilen adressiert nur
+    // `empfaengerPersonId`). Mark, 05.11.2026, nach dem ersten Klicktest:
+    // "kein auto reload, ich musste manuell refreshen" — leichtes Polling
+    // statt eines Eingriffs in den gemeinsamen Verhandlungs-Verteiler
+    // (der auch Gegenstands-Weitergabe & SL-Angebote bedient).
+    const intervall = window.setInterval(ladeReparaturDaten, 8000);
+    return () => window.clearInterval(intervall);
   }, [ladeReparaturDaten]);
 
   async function freigabeAnfragen(zielPersonId: string) {

@@ -13,6 +13,13 @@ export interface ReparaturGruppe {
   label: string;
   personId: string;
   items: Gegenstand[];
+  /** Freigegebene Gruppen (nicht die eigene) immer anzeigen, auch mit 0
+   * Items — sonst ist nicht unterscheidbar, ob eine Freigabe wirkte, aber
+   * die Person gerade nichts Kaputtes hat, oder ob die Freigabe selbst
+   * fehlschlug (Mark, 05.11.2026, nach Zustimmung: "es sind nicht mehr
+   * Möglichkeiten zum Reparieren dazugekommen" — ohne sichtbaren
+   * Gruppenkopf bei 0 Items war das nicht zu unterscheiden). */
+  immerZeigen?: boolean;
 }
 
 /**
@@ -60,40 +67,45 @@ export function ReparaturUebersichtSpieler({
 
       {reparaturgruppen.map(
         (gruppe) =>
-          gruppe.items.length > 0 && (
+          (gruppe.items.length > 0 || gruppe.immerZeigen) && (
             <div key={gruppe.personId}>
               <p className="lu-hinweis">
                 {gruppe.label} ({gruppe.items.length})
               </p>
-              <div className="wb-kachelraster">
-                {gruppe.items.map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    className="gg-kachel"
-                    onClick={() =>
-                      setOffenesZiel({
-                        typ: "ruestung",
-                        id: g.id,
-                        name: g.name,
-                        besitzerId: gruppe.personId,
-                        ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
-                        ruestungKaestchenMax: g.ruestungKaestchenMax,
-                      })
-                    }
-                  >
-                    <span className="gg-kachel-bild">
-                      {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}
-                    </span>
-                    <span className="gg-kachel-name">{g.name}</span>
-                    <span className="gg-kachel-zeile">
-                      <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
-                        {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+              {gruppe.items.length === 0 && (
+                <p className="gg-leer">Gerade nichts zu reparieren.</p>
+              )}
+              {gruppe.items.length > 0 && (
+                <div className="wb-kachelraster">
+                  {gruppe.items.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      className="gg-kachel"
+                      onClick={() =>
+                        setOffenesZiel({
+                          typ: "ruestung",
+                          id: g.id,
+                          name: g.name,
+                          besitzerId: gruppe.personId,
+                          ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
+                          ruestungKaestchenMax: g.ruestungKaestchenMax,
+                        })
+                      }
+                    >
+                      <span className="gg-kachel-bild">
+                        {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}
                       </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
+                      <span className="gg-kachel-name">{g.name}</span>
+                      <span className="gg-kachel-zeile">
+                        <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+                          {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ),
       )}
