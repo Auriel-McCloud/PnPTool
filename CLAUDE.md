@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Party-Reparatur-Freigabe: erster Klicktest, drei Korrekturen (05.11.2026)
+
+Mark nach dem ersten echten Durchklicken (Fixer fragt an, Ziel bestätigt):
+
+1. **"Ich sehe nirgendwo etwas wo ich einen Spieler meiner Party sehen würde"** — der Freigaben-Abschnitt in `ReparaturUebersichtSpieler.tsx` verschwand komplett, wenn es nichts anzufragen/widerrufen gab, ohne zu erklären warum. Zeigt jetzt IMMER einen Hinweis (`inEigenerParty`-Prop aus `WerkbankUebersichtSpieler.tsx`): "in keiner Party" vs. "niemand sonst da" vs. die Listen selbst.
+2. **"Kein auto reload, ich musste manuell refreshen"** — die Live-Zustellung der Verhandlung erreicht nur den EMPFÄNGER (`verhandlung/routes.py::_verteilen` adressiert ausschließlich `empfaengerPersonId`), der Fixer bekommt beim Antworten keinen Push. Statt in den gemeinsamen Verteiler einzugreifen (bedient auch Gegenstands-Weitergabe/SL-Angebote): `WerkbankUebersichtSpieler.tsx` pollt die Reparatur-/Freigabe-Daten jetzt alle 8s.
+3. **"Es sind nicht mehr Möglichkeiten zum Reparieren dazugekommen"** — nach Zustimmung blieb die Gruppe der freigebenden Person unsichtbar, wenn sie gerade 0 reparierbare Items hatte (nicht unterscheidbar von "Freigabe wirkte nicht"). Neues `ReparaturGruppe.immerZeigen`-Flag: Freigabe-Gruppen (anders als die eigene) werden jetzt immer mit Kopfzeile gerendert, auch bei 0 Items ("Gerade nichts zu reparieren.") — macht sichtbar, ob die Freigabe selbst ankam.
+
+Zusätzlich die Kachelgröße aus der vorherigen Korrektur (`.gg-raster` → `.wb-kachelraster`, 148×168px fest) war schon im Vorcommit enthalten, aber **noch nicht deployed** — bebop lief bis zu diesem Fix auf dem alten Stand, daher wirkten mehrere Korrekturen zunächst wie "nichts passiert". `tsc -b` sauber. **Noch kein zweiter Klicktest.**
+
 ## Party-Reparatur-Freigabe + Cyberware-Rüstung über Werkbank reparierbar (05.11.2026)
 
 Mark, Idee vom Spieltisch weg entwickelt: er überlegt ein Cyberware-Implantat (Metallbrust-Panzer), das als Rüstung wirkt, aber NICHT über Rast heilt und sich nicht ablegen lässt — jemand mit Handwerk muss es reparieren. Daraus zwei Features, gemeinsam besprochen und gebaut:
