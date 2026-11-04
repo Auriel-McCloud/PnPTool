@@ -982,6 +982,32 @@
   object-fit: cover;
 }
 
+.ts-detail-bild-knopf {
+  all: unset;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
+.ts-detail-bild-knopf img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.ts-detail-bild-knopf:hover img,
+.ts-detail-bild-knopf:focus-visible img {
+  filter: brightness(1.2);
+  transform: scale(1.06);
+}
+
+.ts-detail-bild-knopf:focus-visible {
+  outline: 2px solid var(--bereich-farbe, var(--neon));
+  outline-offset: 2px;
+}
+
 .ts-detail-name {
   margin: 0;
   font-size: 20px;

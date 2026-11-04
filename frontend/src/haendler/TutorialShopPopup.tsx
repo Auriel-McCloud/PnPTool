@@ -5,6 +5,7 @@ import { ShopKategorien } from "./ShopKategorien";
 import { ShopSortierleiste, gueltigesFeld, sortimentSortieren, type SortierRichtung } from "./ShopSortierung";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
+import { BildGross } from "../shell/BildGross";
 import { useNachladen } from "../shell/nachladen";
 import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -64,6 +65,9 @@ export function TutorialShopPopup({
   const [fehler, setFehler] = useState<string | null>(null);
   const [gekauft, setGekauft] = useState<Gegenstand[]>([]);
   const [rueckgabe, setRueckgabe] = useState<Gegenstand | null>(null);
+  // Bild in der Detailspalte antippen → groß im Popup (04.11.2026, Marks
+  // Wunsch: die Vorschaubilder sind dort winzig).
+  const [bildGrossOffen, setBildGrossOffen] = useState(false);
   // Gesamt-Kommentar (04.11.2026, Marks Wunsch): nicht mehr EIN KI-Aufruf
   // PRO Kauf (das blockierte "Kaufen" bis die Antwort da war — unnötige
   // Wartezeit für reinen Flavor-Text). Stattdessen sammelt sich hier die
@@ -256,7 +260,15 @@ export function TutorialShopPopup({
                   <div className="ts-detail-kopf">
                     <span className="ts-detail-bild">
                       {gewaehlt.bildUrl ? (
-                        <img src={gewaehlt.bildUrl} alt="" />
+                        <button
+                          type="button"
+                          className="ts-detail-bild-knopf"
+                          onClick={() => setBildGrossOffen(true)}
+                          title="Bild vergrößern"
+                          aria-label="Bild vergrößern"
+                        >
+                          <img src={gewaehlt.bildUrl} alt="" />
+                        </button>
                       ) : (
                         <span aria-hidden="true">{symbolFuerTyp(gewaehlt.typ)}</span>
                       )}
@@ -395,6 +407,14 @@ export function TutorialShopPopup({
           </div>
         </div>
       </Fenster>
+    )}
+    {gewaehlt?.bildUrl && (
+      <BildGross
+        offen={bildGrossOffen}
+        bildUrl={gewaehlt.bildUrl}
+        name={gewaehlt.name}
+        onSchliessen={() => setBildGrossOffen(false)}
+      />
     )}
     </>
   );

@@ -1,0 +1,14 @@
+/* Bild-Großansicht-Popup (BildGross.tsx) */
+
+.bg-bild-rahmen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-bild {
+  max-width: 100%;
+  max-height: min(70svh, 760px);
+  object-fit: contain;
+  border-radius: var(--radius);
+}
