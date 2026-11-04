@@ -2,9 +2,9 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
-## Spieler-Inventar: Freitext-Suche (04.11.2026)
+## Spieler-Inventar: Kategorie-Filter wie im SL-Menü (04.11.2026)
 
-Mark: "die Möglichkeit geben Sachen zu filtern, ich glaube das wäre hilfreich". `SpielerAnsicht.tsx` bekommt ein Suchfeld (`.gg-suche`, dieselbe Optik wie in der SL-Übersicht) über "Am Körper" — filtert Name/Typ, wirkt gleichzeitig auf die Körper-Kacheln UND auf das gerade offene Fach (`Fachfenster.tsx` bekommt dafür einen neuen optionalen `gesamtAnzahl`-Prop, um "keine Treffer für den Filter" von "wirklich leer" zu unterscheiden — sonst sähe ein Suchtreffer-Nichts wie Datenverlust aus). Seite wird bei jeder Sucheingabe auf 0 zurückgesetzt. `OrtFachFenster`/GM-Ansicht bewusst nicht angefasst — ging nur um das eigene Spieler-Inventar. `tsc -b` + `vite build` sauber. **Nie im Browser angeklickt.**
+Mark: "die Möglichkeit geben Sachen zu filtern, ich glaube das wäre hilfreich". Erste Fassung war ein Freitext-Suchfeld — Mark lehnte es klar ab ("das geht garnicht! ... diese schreckliche übergroße Suche"), er wollte die Kategorie-Kacheln wie in der SL-Gegenstandsübersicht (`GegenstaendeUebersicht.tsx`: Waffe, Rüstung, usw.), "nichts neu Erfundenes". Zweite Fassung nutzt exakt dieselbe `KategorienAuswahl`-Komponente wieder (keine eigene Nachbildung) über "Am Körper" — filtert `getragen` UND das gerade offene Fach über `inventarKategorie`/`passtKategorie`. `Fachfenster.tsx`s neuer `gesamtAnzahl`-Prop (für "keine Treffer" vs. "wirklich leer") bleibt bestehen, funktioniert mit jedem Prädikat gleich. `tsc -b` + `vite build` sauber, live als Wachmann geklickt.
 
 ## Bugfix: verbaute natürliche Cyberware zählte trotzdem nicht zur Rüstung (04.11.2026)
 

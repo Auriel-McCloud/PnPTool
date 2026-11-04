@@ -35,6 +35,7 @@ import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { OrtFachFenster } from "../items/OrtFachFenster";
+import { KategorienAuswahl, vorhandeneTypenSortiert } from "../items/KategorienAuswahl";
 import { KACHEL_STIL, useProSeite } from "../items/kachelraster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import { CommlinkShell, type Bereich } from "../shell/CommlinkShell";
@@ -173,11 +174,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Spielleitung den Schaden einträgt und nicht man selbst.
   const zustand = useZustand(ich?.campaignId ?? null, ich?.personId ?? null);
   const [seite, setSeite] = useState(0);
-  // Freitext-Filter übers eigene Inventar (04.11.2026, Mark: "die Möglichkeit
-  // geben Sachen zu filtern"): wirkt auf "Am Körper" UND auf das gerade
-  // offene Fach gemeinsam — bei vielen Gegenständen sonst unübersichtlich,
-  // dieselbe Suche wie in der SL-Übersicht (GegenstaendeUebersicht.tsx).
-  const [inventarSuche, setInventarSuche] = useState("");
+  // Kategorie-Filter, kein Freitext (Mark, 04.11.2026: "das geht garnicht,
+  // ich meinte so wie das im SL-Menü ist, nicht diese übergroße Suche" —
+  // erste Fassung war ein Suchfeld, das sollte weg). Exakt dasselbe Muster
+  // wie in GegenstaendeUebersicht.tsx: dieselbe Komponente (KategorienAuswahl),
+  // nichts Neues erfunden. null = "Alle".
+  const [inventarKategorie, setInventarKategorie] = useState<string | null>(null);
   const [einstellungen, setEinstellungen] = useState<Einstellungen | null>(null);
   const [traglast, setTraglast] = useState<TraglastZeile[]>([]);
   // personen wird für den Graphen geladen, auch wenn der Kontakte-Bereich
@@ -424,14 +426,17 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
   const amKoerper = bereiche.find((b) => b.greifbar);
   const faecher = bereiche.filter((b) => !b.greifbar);
-  // Freitext-Filter (Name, Typ) — dieselben Felder wie in der SL-Übersicht
-  // (GegenstaendeUebersicht.tsx), nur ohne Besitzer-Suche (hier ist eh immer
-  // man selbst). Leer = alles, kein Sonderfall nötig.
-  const sucheKlein = inventarSuche.trim().toLowerCase();
-  const passtSuche = (g: Gegenstand) =>
-    !sucheKlein ||
-    g.name.toLowerCase().includes(sucheKlein) ||
-    g.typ.toLowerCase().includes(sucheKlein);
+  // Kategorie-Filter (Name, Typ) statt Freitext — dieselben Typen wie überall
+  // sonst im Spiel (TYP_KATALOG), nur die, die der Charakter tatsächlich hat.
+  // Montierte Upgrades zählen nicht mit, die tauchen nirgends in dieser Liste
+  // auf (siehe meineRoh oben).
+  const vorhandeneTypen = vorhandeneTypenSortiert(meineRoh.filter((g) => !g.montiertAnId).map((g) => g.typ));
+  const passtKategorie = (g: Gegenstand) => inventarKategorie === null || g.typ === inventarKategorie;
+  const getragen = amKoerper ? sachen.filter((g) => amKoerper.passt(g) && !g.montiertAnId && passtKategorie(g)) : [];
+  const seiten = Math.max(1, Math.ceil(getragen.length / proSeite));
+  const aktuelleSeite = Math.min(seite, seiten - 1);
+  const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
+
   // Montierte Augments (Ki-Tama, Zielfernrohr & Co., 29.10.2026) gehören
   // keinem Ablage-Platz mehr — sie stecken an ihrem Trägergegenstand
   // (MONTIERT_AN). `ermittleBereiche` filtert das nur INTERN für die Frage
@@ -442,10 +447,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // dieselbe Montage-Ausnahme hier noch einmal explizit (Mark-Bugreport
   // 30.10.2026: montierte Ki-Tamas blieben trotz Montage im Rucksack
   // sichtbar, exakt das alte Zielfernrohr-Bugbild aus items/aufbewahrung.ts).
-  const getragen = amKoerper ? sachen.filter((g) => amKoerper.passt(g) && !g.montiertAnId && passtSuche(g)) : [];
-  const seiten = Math.max(1, Math.ceil(getragen.length / proSeite));
-  const aktuelleSeite = Math.min(seite, seiten - 1);
-  const aufDieserSeite = getragen.slice(aktuelleSeite * proSeite, (aktuelleSeite + 1) * proSeite);
 
   function inhaltVon(item: Gegenstand) {
     const fach = faecher.find((f) => f.id === item.id);
@@ -782,16 +783,13 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
               );
             })()}
 
-          <input
-            className="gg-suche"
-            type="search"
-            placeholder="Suchen — Name oder Typ"
-            value={inventarSuche}
-            onChange={(e) => {
-              setInventarSuche(e.target.value);
+          <KategorienAuswahl
+            vorhandeneTypen={vorhandeneTypen}
+            gewaehlt={inventarKategorie}
+            onWaehlen={(typ) => {
+              setInventarKategorie(typ);
               setSeite(0);
             }}
-            style={{ marginBottom: 10, width: "100%" }}
           />
 
           <h3 className="gg-abschnitt">
@@ -905,7 +903,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 key={`${fachId}:${stufe}`}
                 fach={fach}
                 offen
-                items={sachen.filter((g) => fach.passt(g) && !g.montiertAnId && passtSuche(g))}
+                items={sachen.filter((g) => fach.passt(g) && !g.montiertAnId && passtKategorie(g))}
                 gesamtAnzahl={sachen.filter((g) => fach.passt(g) && !g.montiertAnId).length}
                 inhaltVon={inhaltVon}
                 onSchliessen={() => setFachStapel((alt) => alt.slice(0, stufe))}
