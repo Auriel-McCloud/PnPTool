@@ -11,6 +11,7 @@ import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { FormelText, formelKlartext } from "../shell/formelText";
 import { ABLAGEN, AUGMENT_TRAEGER_TYPEN, augmentPasstAnLesen, augmentPasstAnSchreiben, istVerschlossen, itemsApi, KAMPF_FERTIGKEIT_LABEL, KAMPF_FERTIGKEITEN, SCHADEN_ART_LABEL, SCHADEN_MAX, kampfFertigkeitLesen, schadenArtFuerWaffe, schadenArtLabel, VORLAGE_SENTINEL, type Ablage, type AblageZiel, type Gegenstand, type GegenstandUpdate, type KampfFertigkeit, type SchadenArt } from "../items/api";
+import { DrogenFelder, type DrogeFelder } from "../items/DrogenFelder";
 import { steckbriefKurz } from "../items/steckbrief";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
@@ -414,6 +415,7 @@ export function GegenstandRow({
   const [deaktivModus, setDeaktivModus] = useState<DeaktivModus>(deaktivModusLesen(item.deaktivModus));
   const [paradeBonus, setParadeBonus] = useState(item.paradeBonus ?? 0);
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
+  const [droge, setDroge] = useState<DrogeFelder>(() => drogeAus(item));
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
   const [traitBoni, setTraitBoni] = useState<Eigenschaft[]>([]);
   const [ausruestungsfertigkeiten, setAusruestungsfertigkeiten] = useState<Eigenschaft[]>([]);
@@ -591,6 +593,7 @@ export function GegenstandRow({
     setDeaktivModus(deaktivModusLesen(src.deaktivModus));
     setParadeBonus(src.paradeBonus ?? 0);
     setInitiativeBonus(src.initiativeBonus);
+    setDroge(drogeAus(src));
     setZusatzaktionen(src.zusatzaktionen);
     setTraitBoni(
       Object.entries(src.traitBoni).map(([key, value]) => ({
@@ -702,6 +705,18 @@ export function GegenstandRow({
       deaktivModus: typ === "Waffe" || istWaffe ? deaktivModus : "",
       paradeBonus: typ === "Waffe" || istWaffe ? Number(paradeBonus) || 0 : 0,
       initiativeBonus,
+      wirkungDauer: droge.wirkungDauer,
+      nebenwirkungBoni: droge.crashBonusName.trim()
+        ? { [droge.crashBonusName.trim()]: droge.crashBonusWert }
+        : {},
+      nebenwirkungInitiative: droge.nebenwirkungInitiative,
+      heilmenge: droge.heilmenge,
+      heilQualitaet: droge.heilQualitaet,
+      willenskraftWirkung: droge.willenskraftWirkung,
+      willenskraftNebenwirkung: droge.willenskraftNebenwirkung,
+      nebenwirkungSchaden: droge.umwandeln ? "" : droge.nebenwirkungSchaden,
+      nebenwirkungSchadenMenge: droge.nebenwirkungSchadenMenge,
+      umwandeln: droge.umwandeln,
       zusatzaktionen,
       traitBoni: Object.fromEntries(
         traitBoni.filter((p) => p.key.trim() && Number(p.value)).map((p) => [p.key.trim(), Number(p.value)]),
@@ -757,7 +772,7 @@ export function GegenstandRow({
       angriff,
       agilitaet,
       ruestungKaestchenMax,
-      ruestungReduktionBasis,
+      ruestungReduktionBasis: typ === "Droge" ? droge.ruestungReduktionBasis : ruestungReduktionBasis,
       istReparaturmaterial,
       reparaturKapazitaet,
       istMaschinenteil,
@@ -1560,6 +1575,8 @@ export function GegenstandRow({
                 >
                   + Bonus
                 </button>
+
+                {typ === "Droge" && <DrogenFelder wert={droge} onChange={setDroge} />}
 
                 {(CHROM_TYPEN.has(typ) || typ === "Cyberdeck" || typ === "Upgrade-Material" || typ === "Ki-Tama" || istAugment) && (
                   <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
@@ -2394,6 +2411,24 @@ export function GegenstandRow({
       {fenster}
     </div>
   );
+}
+
+function drogeAus(item: Gegenstand): DrogeFelder {
+  const crash = Object.entries(item.nebenwirkungBoni ?? {})[0];
+  return {
+    wirkungDauer: item.wirkungDauer || "szene",
+    heilmenge: item.heilmenge ?? 0,
+    heilQualitaet: item.heilQualitaet || "",
+    willenskraftWirkung: item.willenskraftWirkung ?? 0,
+    willenskraftNebenwirkung: item.willenskraftNebenwirkung ?? 0,
+    nebenwirkungInitiative: item.nebenwirkungInitiative ?? 0,
+    nebenwirkungSchaden: item.nebenwirkungSchaden || "",
+    nebenwirkungSchadenMenge: item.nebenwirkungSchadenMenge ?? 0,
+    umwandeln: item.umwandeln || "",
+    ruestungReduktionBasis: item.ruestungReduktionBasis ?? 0,
+    crashBonusName: crash?.[0] ?? "",
+    crashBonusWert: Number(crash?.[1] ?? 0),
+  };
 }
 
 export function CharacterSheetPanel({

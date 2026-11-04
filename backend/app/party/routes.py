@@ -121,12 +121,15 @@ async def mitglied_entfernen(campaign_id: str, party_id: str, person_id: str):
     "/{party_id}/aufenthaltsort", response_model=PartyResponse, dependencies=[Depends(require_campaign_gm)]
 )
 async def aufenthaltsort_setzen(campaign_id: str, party_id: str, body: AufenthaltsortRequest):
-    """Ort/Event zuweisen oder (mit leerem Body) lösen — die Party ist dann
-    "unterwegs", ohne festen Aufenthaltsort. Ist diese Party aktiv, löst der
-    neue Aufenthaltsort gleich die passende Spotify-Playlist aus."""
+    vorher = await repository.einzeln(campaign_id, party_id)
     ergebnis = await repository.aufenthaltsort_setzen(campaign_id, party_id, body.zielId, body.zielKind)
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Party oder Ziel nicht gefunden")
+    vorher_id = (vorher or {}).get("aufenthaltsortId")
+    if vorher_id != ergebnis.get("aufenthaltsortId"):
+        from app.items.drogen import szene_fuer
+        for mitglied in ergebnis.get("mitglieder") or []:
+            await szene_fuer(campaign_id, mitglied["id"])
     return await _mit_musik_hinweis(campaign_id, ergebnis)
 
 

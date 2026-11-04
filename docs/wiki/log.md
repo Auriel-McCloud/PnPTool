@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] gebaut | Drogen schlucken
+
+Schluck am eigenen Gegenstand, SL an allem. Heilung, Willenskraft, Crash,
+Szenenwechsel, Rast. Gift an einer anderen Person im Kampf bleibt später.
+Siehe [[entities/drogen]].
+
 ## [2026-11-04] entschieden | Drogen: Crash wandelt Schaden um, Rast zählt mit
 
 Nebenwirkung kann vorhandenen Schlag zu tödlich machen, oder Schlag und

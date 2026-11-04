@@ -181,6 +181,19 @@ class GegenstandCreate(BaseModel):
     # 421-444), "Dash" +2 (Zeile 174). Freies Feld statt Sonderregel, damit
     # auch Drogen und Artefakte die Reihenfolge verschieben können.
     initiativeBonus: int = 0
+    # Schlucken (04.11.2026, docs/wiki/entities/drogen.md). Leer bei allem,
+    # was keine Droge ist. Die Kopie an der Person ist die Wahrheit, nicht
+    # diese Vorlage.
+    wirkungDauer: str = "szene"
+    nebenwirkungBoni: dict[str, int] = {}
+    nebenwirkungInitiative: int = 0
+    heilmenge: int = 0
+    heilQualitaet: str = ""
+    willenskraftWirkung: int = 0
+    willenskraftNebenwirkung: int = 0
+    nebenwirkungSchaden: str = ""
+    nebenwirkungSchadenMenge: int = 0
+    umwandeln: str = ""
     # Cyber-/Bio-/Hexware: sitzt das Stück im Körper? Chrom ist keine
     # Ausrüstung, die man an- und ablegt — es wird eingesetzt und nur per
     # Operation wieder entfernt. Wirkt nur, wenn verbaut.
@@ -415,6 +428,16 @@ class GegenstandUpdate(BaseModel):
     deaktivModus: str | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
+    wirkungDauer: str | None = None
+    nebenwirkungBoni: dict[str, int] | None = None
+    nebenwirkungInitiative: int | None = None
+    heilmenge: int | None = None
+    heilQualitaet: str | None = None
+    willenskraftWirkung: int | None = None
+    willenskraftNebenwirkung: int | None = None
+    nebenwirkungSchaden: str | None = None
+    nebenwirkungSchadenMenge: int | None = None
+    umwandeln: str | None = None
     verbaut: bool | None = None
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
@@ -542,6 +565,19 @@ class GegenstandResponse(BaseModel):
     deaktivModus: str = ""
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0
+    # Schlucken (04.11.2026, docs/wiki/entities/drogen.md). Leer bei allem,
+    # was keine Droge ist. Die Kopie an der Person ist die Wahrheit, nicht
+    # diese Vorlage.
+    wirkungDauer: str = "szene"
+    nebenwirkungBoni: dict[str, int] = {}
+    nebenwirkungInitiative: int = 0
+    heilmenge: int = 0
+    heilQualitaet: str = ""
+    willenskraftWirkung: int = 0
+    willenskraftNebenwirkung: int = 0
+    nebenwirkungSchaden: str = ""
+    nebenwirkungSchadenMenge: int = 0
+    umwandeln: str = ""
     verbaut: bool = False
     entfernungBeantragt: bool = False
     zusatzaktionen: int = 0

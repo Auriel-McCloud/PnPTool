@@ -238,6 +238,16 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "fahrzeugFertigkeiten": body.fahrzeugFertigkeiten,
         # Reflex-Booster & Co. (Regelblatt Zeile 57, 421-444).
         "initiativeBonus": body.initiativeBonus,
+        "wirkungDauer": body.wirkungDauer,
+        "nebenwirkungBoni": body.nebenwirkungBoni,
+        "nebenwirkungInitiative": body.nebenwirkungInitiative,
+        "heilmenge": body.heilmenge,
+        "heilQualitaet": body.heilQualitaet,
+        "willenskraftWirkung": body.willenskraftWirkung,
+        "willenskraftNebenwirkung": body.willenskraftNebenwirkung,
+        "nebenwirkungSchaden": body.nebenwirkungSchaden,
+        "nebenwirkungSchadenMenge": body.nebenwirkungSchadenMenge,
+        "umwandeln": body.umwandeln,
         "verbaut": body.verbaut,
         "zusatzaktionen": body.zusatzaktionen,
         "sichtbarkeit": sichtbarkeit,
@@ -700,6 +710,80 @@ async def item_wegwerfen(
         alter_besitzer_id=viewer.person_id if viewer.role != "GM" else None,
     )
     return item
+
+
+class SchluckAntwort(BaseModel):
+    text: str
+
+
+@campaign_router.post("/{item_id}/schlucken", response_model=SchluckAntwort)
+async def item_schlucken(
+    campaign_id: str,
+    item_id: str,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Schlucken. Spieler am eigenen Zeug, die SL an allem. Zieht 1 vom Stapel."""
+    from app.items import drogen
+    from app.items.repository import willenskraft_verlust
+    from app.traits.bogen import willenskraft_max
+    from app.traits.repository import get_ratings_for_entity
+    from app.entities.repository import update_node
+
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None or item.get("typ") != "Droge" or item.get("weggeworfen"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Das ist keine Droge.")
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Die Droge hat niemanden, der sie schlucken kann.")
+    if viewer.role != "GM" and besitzer != viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    if item.get("hatMenge"):
+        await repository.update_gegenstand(campaign_id, item_id, {"menge": int(item.get("menge") or 1) - 1})
+    else:
+        await repository.wegwerfen(campaign_id, item_id, "geschluckt")
+
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, besitzer)
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    werte = await get_ratings_for_entity(campaign_id, besitzer)
+    nach_name = {w["name"]: int(w.get("rating") or 0) for w in werte}
+    chrom = await willenskraft_verlust(campaign_id, besitzer)
+    maximum = willenskraft_max(nach_name, 0, chrom)
+    felder = drogen.heilen(
+        int(person.get("schadenSchlag") or 0),
+        int(person.get("schadenSchwer") or 0),
+        int(person.get("schadenAggraviert") or 0),
+        int(item.get("heilmenge") or 0),
+        item.get("heilQualitaet") or "",
+    )
+    felder["willenskraftVerbraucht"] = drogen.willenskraft_anwenden(
+        int(person.get("willenskraftVerbraucht") or 0),
+        maximum,
+        int(item.get("willenskraftWirkung") or 0),
+    )
+
+    ein = drogen.einnahme_aus_vorlage(item)
+    ein["id"] = str(uuid.uuid4())
+    dauer = ein["dauer"]
+    if dauer == "sofort":
+        ein = drogen.starte_nebenwirkung(ein)
+        felder.update(drogen.crash_auf_person({**person, **felder}, ein))
+        felder["willenskraftVerbraucht"] = drogen.willenskraft_anwenden(
+            felder["willenskraftVerbraucht"], maximum, int(ein.get("willenskraftNebenwirkung") or 0),
+        )
+        if not drogen._nebenwirkung_bleibt(ein):
+            ein = None
+        uhr = "sofort"
+    else:
+        uhr = "bis die Szene wechselt" if dauer == "szene" else "bis zur Rast"
+
+    await update_node("Person", PERSON_FIELDS, campaign_id, besitzer, felder)
+    laufend = await drogen.liste(campaign_id, besitzer)
+    if ein is not None:
+        laufend.append(ein)
+    await drogen.ersetzen(campaign_id, besitzer, laufend)
+    return SchluckAntwort(text=f"{item.get('name') or 'Droge'} geschluckt. Wirkung {uhr}.")
 
 
 @campaign_router.post("/{item_id}/zurueckholen", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])

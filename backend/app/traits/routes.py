@@ -548,7 +548,9 @@ async def ruestungstreffer(
         aussenhuelle=nach_name.get("Außenhülle", 0) if ist_drohne else None,
     )
     gesamt = pool(ruestungsteile_live)
-    if gesamt is None:
+    from app.items.drogen import reduktion as drogen_reduktion
+    extra = await drogen_reduktion(campaign_id, person_id)
+    if gesamt is None and extra <= 0:
         # Keine wirksame Rüstung: voller Schaden, unveränderte Art.
         ergebnis = {"hpArt": body.art, "hpMenge": body.staerke, "kaestchenSchaden": 0}
         folgen: list[dict] = []
@@ -559,14 +561,13 @@ async def ruestungstreffer(
         ergebnis = berechne_treffer(
             body.art,
             body.staerke,
-            gesamt["kaestchenAktuell"],
-            gesamt["kaestchenMax"],
-            gesamt["reduktionBasis"],
+            gesamt["kaestchenAktuell"] if gesamt else 1,
+            gesamt["kaestchenMax"] if gesamt else 1,
+            gesamt["reduktionBasis"] if gesamt else 0,
+            extra_reduktion=extra,
         )
-        folgen = verteile_kaestchenschaden(gesamt["geordnet"], ergebnis["kaestchenSchaden"])
-        # Welche Teile des Pools natürlich sind (Haut/Chitin/fest verbautes
-        # Implantat) — die werden beim Zerstören NIE umgelegt, siehe unten.
-        natuerliche_ids = {t["id"] for t in gesamt["geordnet"] if t.get("istNatuerlich")}
+        folgen = verteile_kaestchenschaden(gesamt["geordnet"], ergebnis["kaestchenSchaden"]) if gesamt else []
+        natuerliche_ids = {t["id"] for t in gesamt["geordnet"] if t.get("istNatuerlich")} if gesamt else set()
         for folge in folgen:
             await update_gegenstand(
                 campaign_id,
@@ -750,6 +751,12 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
         person = await get_node("Person", PERSON_FIELDS, campaign_id, person_id)
         if person is None:
             continue
+        from app.items import drogen
+        from app.items.drogen import wende_crashes
+        einnahmen = await drogen.liste(campaign_id, person_id)
+        bleiben, crash = drogen.rast_vor_heilung(einnahmen)
+        if crash:
+            person = await wende_crashes(campaign_id, person_id, person, crash)
         aenderung = rast.person_aenderung(person)
         person = await update_node("Person", PERSON_FIELDS, campaign_id, person_id, aenderung)
         if person is None:
@@ -771,6 +778,7 @@ async def personen_rasten(campaign_id: str, body: RastInput) -> dict:
                     # jetzt wieder intakt: automatisch erneut ausrüsten.
                     await set_ablage(campaign_id, folge["id"], "AUSGERUESTET", None)
 
+        await drogen.ersetzen(campaign_id, person_id, drogen.rast_danach(bleiben))
         ergebnisse[person_id] = await _bogen_fuer_person(campaign_id, person, kampagnen_ep)
     return ergebnisse
 

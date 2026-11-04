@@ -2302,6 +2302,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (04.11.2026 — Drogen schlucken):**
+- **Was:** Eine Droge schlucken zieht 1 vom Stapel und legt eine Kopie an die Person. Plus bis sofort, Szene oder Rast, danach der Crash. Heilung, Willenskraft, Reduktion auf die aktive Rüstung, Umwandeln, Booster-Zusatzaktion. Gift an einer anderen Person im Kampf nicht dabei.
+- **Wo:** `backend/app/items/drogen.py`, Schluck-Route, Rast, Party-Aufenthaltsort, Rüstungstreffer, `GegenstandKachel` „Schlucken“, Umbauen-Block bei Typ Droge. Siehe `docs/wiki/entities/drogen.md`.
+- **Verifiziert:** `pytest tests/test_drogen.py tests/test_gegenstand_felder.py`, `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (04.11.2026 — unverbautes Chrom mit natürlicher Rüstung bleibt umlegbar):**
 - **Was:** Vaeliks „Komposit Knochen“ und „Unterarm Prothese“ lagen in
   Mitgeführt mit `istNatuerlich` und ließen sich weder ausrüsten noch in den
@@ -3285,7 +3290,7 @@ dort weitergepflegt, hier nicht mehr).
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |
 | 15 | Critter-Tamagotchi/Desktop-Pet | reine Idee, **explizit zuletzt** (Marks Vorgabe) | nur Archiv |
-| 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Rest (gleicher Ort, Geld, Credstick, Granate) **offen**. Heiltrank kein eigener Typ: Schlucken entschieden, nicht gebaut | [[gegenstand-transfer]], [[drogen]] |
+| 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Schlucken ✅, am Tisch noch nicht geklickt; Rest (gleicher Ort, Geld, Credstick, Granate) **offen**. Gift an jemand anderem im Kampf später | [[gegenstand-transfer]], [[drogen]] |
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |

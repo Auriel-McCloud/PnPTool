@@ -5,7 +5,7 @@ updated: 2026-11-04
 type: entität
 tags: [inventar, kampf, cyberware, geplant]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../../backend/app/items/repository.py, ../../../backend/app/kampf/booster.py, ../../../backend/app/items/augments.py]
-status: entschieden-nicht-umgesetzt
+status: teilweise-umgesetzt
 ---
 
 # Drogen schlucken
@@ -123,8 +123,10 @@ nachgebaut. Sie fallen auf die drei Dauern unten.
 Nicht bauen, bevor er das sagt.
 
 - **Granate / Wurftrank** bleibt auf [[gegenstand-transfer]]. Wird geworfen,
-  nicht geschluckt. Ob eine Droge umwandelt und in derselben Nebenwirkung
-  noch Schaden drauflegt, ist nicht gesagt. Getrennt lassen.
+  nicht geschluckt.
+- **Gift an einer anderen Person im Kampf**, Schaden pro Kampfrunde.
+  Mark, 04.11.2026: das ist etwas anderes, später. Nicht der Schluck an
+  sich selbst.
 
 ## Ersetzt, nicht mehr offen
 

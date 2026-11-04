@@ -125,6 +125,7 @@ def berechne_treffer(
     kaestchen_aktuell: int,
     kaestchen_max: int,
     reduktion_basis: int,
+    extra_reduktion: int = 0,
 ) -> dict:
     """Ein einzelner Treffer gegen EIN Rüstungsteil.
 
@@ -159,6 +160,7 @@ def berechne_treffer(
         }
 
     reduktion = reduktion_effektiv(reduktion_basis, kaestchen_aktuell, kaestchen_max)
+    reduktion += max(0, extra_reduktion)
     absorbiert = min(staerke, reduktion)
     durchkommend = staerke - absorbiert
     hp_art, hp_menge = _abgestufter_schaden(art, durchkommend)

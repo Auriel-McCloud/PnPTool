@@ -33,6 +33,12 @@ RETURN_FIELDS = """
     g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
     g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
+    g.wirkungDauer AS wirkungDauer, g.nebenwirkungBoni AS nebenwirkungBoni,
+    g.nebenwirkungInitiative AS nebenwirkungInitiative, g.heilmenge AS heilmenge,
+    g.heilQualitaet AS heilQualitaet, g.willenskraftWirkung AS willenskraftWirkung,
+    g.willenskraftNebenwirkung AS willenskraftNebenwirkung,
+    g.nebenwirkungSchaden AS nebenwirkungSchaden,
+    g.nebenwirkungSchadenMenge AS nebenwirkungSchadenMenge, g.umwandeln AS umwandeln,
     g.entfernungBeantragt AS entfernungBeantragt,
     g.zusatzaktionen AS zusatzaktionen,
     g.weggeworfen AS weggeworfen, g.weggeworfenVon AS weggeworfenVon,
@@ -195,6 +201,7 @@ def _decode(record: dict) -> dict:
     record["deaktivModus"] = modus if modus in ("komplett", "upgrades") else ""
     for feld in (
         "traitBoni",
+        "nebenwirkungBoni",
         "ausruestungsfertigkeiten",
         "ausruestungsSpezialisierungen",
         "kiTamaFertigkeiten",
@@ -211,6 +218,20 @@ def _decode(record: dict) -> dict:
     # Feld nicht und liefern None — ohne Ersatz scheitert die Pydantic-Prüfung
     # und reisst die ganze Liste mit 500 herunter (Stolperstein 9).
     record["initiativeBonus"] = _or_default(record.get("initiativeBonus"), 0)
+    record["wirkungDauer"] = record.get("wirkungDauer") or "szene"
+    if record["wirkungDauer"] not in ("sofort", "szene", "rast"):
+        record["wirkungDauer"] = "szene"
+    record["nebenwirkungInitiative"] = _or_default(record.get("nebenwirkungInitiative"), 0)
+    record["heilmenge"] = _or_default(record.get("heilmenge"), 0)
+    qual = record.get("heilQualitaet") or ""
+    record["heilQualitaet"] = qual if qual in ("", "minderwertig", "normal", "hochwertig") else ""
+    record["willenskraftWirkung"] = _or_default(record.get("willenskraftWirkung"), 0)
+    record["willenskraftNebenwirkung"] = _or_default(record.get("willenskraftNebenwirkung"), 0)
+    schaden = record.get("nebenwirkungSchaden") or ""
+    record["nebenwirkungSchaden"] = schaden if schaden in ("", "schlag", "aggraviert", "toedlich") else ""
+    record["nebenwirkungSchadenMenge"] = _or_default(record.get("nebenwirkungSchadenMenge"), 0)
+    wandel = record.get("umwandeln") or ""
+    record["umwandeln"] = wandel if wandel in ("", "schlagZuToedlich", "allesZuAggraviert") else ""
     # Chrom sitzt im Koerper statt im Rucksack. Bestandsdaten kennen das
     # Feld nicht -> False, also "noch nicht eingesetzt".
     record["verbaut"] = _or_default(record.get("verbaut"), False)
@@ -299,6 +320,12 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             kiTamaFertigkeiten: $kiTamaFertigkeiten,
             attackenFertigkeiten: $attackenFertigkeiten, attackenSchadensart: $attackenSchadensart,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
+            wirkungDauer: $wirkungDauer, nebenwirkungBoni: $nebenwirkungBoni,
+            nebenwirkungInitiative: $nebenwirkungInitiative, heilmenge: $heilmenge,
+            heilQualitaet: $heilQualitaet, willenskraftWirkung: $willenskraftWirkung,
+            willenskraftNebenwirkung: $willenskraftNebenwirkung,
+            nebenwirkungSchaden: $nebenwirkungSchaden,
+            nebenwirkungSchadenMenge: $nebenwirkungSchadenMenge, umwandeln: $umwandeln,
             zusatzaktionen: $zusatzaktionen,
             ruestungKaestchenMax: $ruestungKaestchenMax, ruestungKaestchenAktuell: $ruestungKaestchenAktuell,
             ruestungReduktionBasis: $ruestungReduktionBasis,
@@ -379,6 +406,16 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deaktivModus=data.get("deaktivModus") if data.get("deaktivModus") in ("komplett", "upgrades") else "",
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
+            wirkungDauer=data.get("wirkungDauer") or "szene",
+            nebenwirkungBoni=json.dumps(data.get("nebenwirkungBoni") or {}),
+            nebenwirkungInitiative=int(data.get("nebenwirkungInitiative") or 0),
+            heilmenge=int(data.get("heilmenge") or 0),
+            heilQualitaet=data.get("heilQualitaet") or "",
+            willenskraftWirkung=int(data.get("willenskraftWirkung") or 0),
+            willenskraftNebenwirkung=int(data.get("willenskraftNebenwirkung") or 0),
+            nebenwirkungSchaden=data.get("nebenwirkungSchaden") or "",
+            nebenwirkungSchadenMenge=int(data.get("nebenwirkungSchadenMenge") or 0),
+            umwandeln=data.get("umwandeln") or "",
             verbaut=bool(data.get("verbaut")),
             zusatzaktionen=int(data.get("zusatzaktionen") or 0),
             # Aktuell defaultet auf den Ausgangswert, wenn nicht ausdrücklich
@@ -720,6 +757,8 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["fahrzeugFertigkeiten"] = json.dumps(changed["fahrzeugFertigkeiten"])
     if "traitBoni" in changed:
         changed["traitBoni"] = json.dumps(changed["traitBoni"])
+    if "nebenwirkungBoni" in changed:
+        changed["nebenwirkungBoni"] = json.dumps(changed["nebenwirkungBoni"])
     if "ausruestungsfertigkeiten" in changed:
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
     if "ausruestungsSpezialisierungen" in changed:
@@ -1668,7 +1707,9 @@ async def initiative_modifikator(campaign_id: str, person_id: str) -> int:
             query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
         )
         record = await result.single()
-        return int(record["summe"]) if record else 0
+        basis = int(record["summe"]) if record else 0
+    from app.items.drogen import initiative as drogen_initiative
+    return basis + await drogen_initiative(campaign_id, person_id)
 
 
 async def riggerkonsole_max_drohnen(campaign_id: str, person_id: str) -> int:
@@ -1765,6 +1806,10 @@ async def ausruestungs_trait_boni(campaign_id: str, person_id: str) -> dict[str,
                 continue
             for name, wert in boni.items():
                 summe[name] = summe.get(name, 0) + int(wert)
+        from app.items.drogen import boni as drogen_boni
+        extra = await drogen_boni(campaign_id, person_id)
+        for name, wert in extra.items():
+            summe[name] = summe.get(name, 0) + int(wert)
         return summe
 
 
@@ -1819,6 +1864,12 @@ async def ausruestungs_trait_spezialisierungen(campaign_id: str, person_id: str)
                     t = str(t)
                     if t and t not in bisher:
                         bisher.append(t)
+        from app.items.drogen import liste as drogen_liste, wirkende_spezialisierungen
+        for name, texte in wirkende_spezialisierungen(await drogen_liste(campaign_id, person_id)).items():
+            bisher = eintraege.setdefault(name, [])
+            for text in texte:
+                if text not in bisher:
+                    bisher.append(text)
         return eintraege
 
 

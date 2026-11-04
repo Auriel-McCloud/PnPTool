@@ -579,10 +579,12 @@ async def _booster_von(campaign_id: str, person_id: str) -> dict | None:
     Decker Hot ist — sonst wäre die Freischaltung nur ein Schalter ohne Tür.
     """
     stuecke = await verbautes_chrom(campaign_id, person_id)
+    from app.items.drogen import zusatz as drogen_zusatz
+    drogen_booster = await drogen_zusatz(campaign_id, person_id)
     zustand = await repository.hot_lesen(campaign_id, person_id)
     decks = await ausgeruestete_decks(campaign_id, person_id) if zustand["matrixHot"] else []
     deck = staerkstes(decks)
-    return staerkstes(booster_kandidaten(stuecke, deck, zustand["matrixHot"]))
+    return staerkstes(booster_kandidaten(stuecke, deck, zustand["matrixHot"]) + drogen_booster)
 
 
 async def _person_der_aktion(

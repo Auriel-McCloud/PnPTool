@@ -125,6 +125,7 @@ export function GegenstandKachel({
 
   const [offen, setOffen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  const [schluckText, setSchluckText] = useState<string | null>(null);
   const [frageOffen, setFrageOffen] = useState(false);
   const [weitergebenOffen, setWeitergebenOffen] = useState(false);
   const [weitergebenFehler, setWeitergebenFehler] = useState<string | null>(null);
@@ -520,6 +521,31 @@ export function GegenstandKachel({
 
         {/* Abgesetzt und leise: erst der Griff danach ist eine Entscheidung,
             die die Rückfrage stellt. Siehe wegwerfen.css. */}
+        {(item.typ === "Droge" && campaignId && onUmlegen) && (
+          <div className="gg-wegwerfen">
+            <button
+              type="button"
+              disabled={laeuft}
+              onClick={async () => {
+                setLaeuft(true);
+                setSchluckText(null);
+                try {
+                  const antwort = await itemsApi.schlucken(campaignId, item.id);
+                  setSchluckText(antwort.text);
+                  onGeoeffnet?.();
+                } catch (e) {
+                  setSchluckText(e instanceof ApiError ? e.message : "Schlucken ging nicht.");
+                } finally {
+                  setLaeuft(false);
+                }
+              }}
+            >
+              Schlucken
+            </button>
+            {schluckText && <p style={{ margin: "8px 0 0" }}>{schluckText}</p>}
+          </div>
+        )}
+
         {(onWegwerfen || onWeitergeben) && (
           <div className="gg-wegwerfen">
             {onWeitergeben && (

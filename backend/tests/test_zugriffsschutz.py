@@ -70,6 +70,7 @@ OHNE_GM_ERLAUBT = {
     # und **löscht nichts** — der Gegenstand wandert in den Mülleimer der
     # Spielleitung, die ihn zurückholen oder endgültig entfernen kann.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/wegwerfen",
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schlucken",
     # Zusammenlegen (26.10.2026, Mark: "das müssen unbedingt auch die
     # Spieler können"): mehrere gleiche Stücke des eigenen Besitzes zu einem
     # Stapel zusammenlegen. Prüft die Besitzverhältnisse selbst (Ziel UND

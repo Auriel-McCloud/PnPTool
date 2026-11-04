@@ -60,6 +60,16 @@ export interface Gegenstand {
   deckMatrixNavigation: number;
   /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
   initiativeBonus: number;
+  wirkungDauer?: string;
+  nebenwirkungBoni?: Record<string, number>;
+  nebenwirkungInitiative?: number;
+  heilmenge?: number;
+  heilQualitaet?: string;
+  willenskraftWirkung?: number;
+  willenskraftNebenwirkung?: number;
+  nebenwirkungSchaden?: string;
+  nebenwirkungSchadenMenge?: number;
+  umwandeln?: string;
   /** Chrom sitzt im Körper — nur per Operation wieder heraus. */
   verbaut: boolean;
   /** Ein Spieler hat um die Ausbau-Operation gebeten. */
@@ -321,6 +331,16 @@ export interface TraglastZeile {
   riggerBonus: number;
   /** Verschiebt die Initiative, solange ausgerüstet (Reflex-Booster: +1/+3/+6). */
   initiativeBonus: number;
+  wirkungDauer?: string;
+  nebenwirkungBoni?: Record<string, number>;
+  nebenwirkungInitiative?: number;
+  heilmenge?: number;
+  heilQualitaet?: string;
+  willenskraftWirkung?: number;
+  willenskraftNebenwirkung?: number;
+  nebenwirkungSchaden?: string;
+  nebenwirkungSchadenMenge?: number;
+  umwandeln?: string;
   /** Chrom sitzt im Körper — nur per Operation wieder heraus. */
   verbaut: boolean;
   /** Ein Spieler hat um die Ausbau-Operation gebeten. */
@@ -518,6 +538,16 @@ export interface GegenstandUpdate {
   deckElectronicWarfare?: number;
   deckMatrixNavigation?: number;
   initiativeBonus?: number;
+  wirkungDauer?: string;
+  nebenwirkungBoni?: Record<string, number>;
+  nebenwirkungInitiative?: number;
+  heilmenge?: number;
+  heilQualitaet?: string;
+  willenskraftWirkung?: number;
+  willenskraftNebenwirkung?: number;
+  nebenwirkungSchaden?: string;
+  nebenwirkungSchadenMenge?: number;
+  umwandeln?: string;
   verbaut?: boolean;
   zusatzaktionen?: number;
   maxDrohnen?: number;
@@ -713,6 +743,8 @@ export const itemsApi = {
    */
   wegwerfen: (cid: string, itemId: string) =>
     api.post<Gegenstand>(`${itemBase(cid, itemId)}/wegwerfen`, {}),
+  schlucken: (cid: string, itemId: string) =>
+    api.post<{ text: string }>(`${itemBase(cid, itemId)}/schlucken`, {}),
   /** Mülleimer-Liste — nur für die Spielleitung. */
   listWeggeworfen: (cid: string) =>
     api.get<GegenstandMitBesitzer[]>(`${campaignBase(cid)}/weggeworfen`),
