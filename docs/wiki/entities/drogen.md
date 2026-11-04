@@ -100,22 +100,38 @@ nachgebaut. Sie fallen auf die drei Dauern unten.
       Schwerheilbar unberührt.
     - hochwertig: Schlag und tödlich komplett weg, automatisch, verbraucht
       die Menge nicht. Die Menge geht zuerst auf schwerheilbar.
+12. **Umwandeln, kein neuer Schaden** (04.11.2026). Wenn die Nebenwirkung
+    einsetzt, kann ihre Funktion vorhandenen Schaden verschieben, 1:1:
+    - aller Schlag wird tödlich (`schadenSchlag` → `schadenSchwer`)
+    - oder, die schlimme Fassung: aller Schlag und aller tödliche Schaden
+      wird schwerheilbar (beide Spuren auf `schadenAggraviert`, Quellen auf 0)
+    Nichts wird addiert. Das ist nicht die 2-Rasten-Uhr aus Punkt 8. Die Uhr
+    ist eine Dauer. Umwandeln schreibt auf die echten Spuren.
+13. **Die Rast zählt mit**, auch die, die den Crash startet. Wie
+    `schwerHeilZaehler`: die Rast, in der die Bedingung da ist, ist schon
+    der erste Tick, nicht ein Freibeginn. Zwei Ticks, dann ist die
+    tödliche Uhr weg. Ein Szenenwechsel ist keine Rast und tickt nicht.
+    Die Sperre „Zähler steht, solange tödlicher Schaden offen ist“ gilt
+    weiter nur für schwerheilbar, nicht für die Drogen-Uhr.
+    Setzt der Crash in derselben Rast ein, wird zuerst umgewandelt, dann
+    heilt die Rast. Sonst ist der Schlag schon auf 0, bevor er tödlich
+    werden kann. Folge: Schlag→tödlich verliert in derselben Rast noch
+    1 tödlichen Punkt an Schritt 2 der Rast.
 
 ## Noch offen
 
 Nicht bauen, bevor er das sagt.
 
-- **Zählt die Rast, die einen Crash startet, bei der 2-Rasten-Uhr mit?**
-  Der Bis-Rast-Fall sagt: startet bei der Rast, hält noch eine weitere.
-  „Nach 2 Rasten weg“ sagt nicht, ob die startende Rast eine der zwei ist.
 - **Granate / Wurftrank** bleibt auf [[gegenstand-transfer]]. Wird geworfen,
-  nicht geschluckt.
+  nicht geschluckt. Ob eine Droge umwandelt und in derselben Nebenwirkung
+  noch Schaden drauflegt, ist nicht gesagt. Getrennt lassen.
 
 ## Ersetzt, nicht mehr offen
 
 - Heilreihenfolge — Punkt 11.
 - Schlag/schwerheilbar als Uhr oder Spur — Punkt 9, es ist Schaden.
 - Schaden halbieren — Punkt 10, es ist Reduktion auf der aktiven Rüstung.
+- Ob die startende Rast bei der 2-Rasten-Uhr mitzählt — Punkt 13, sie zählt.
 
 ## Siehe auch
 

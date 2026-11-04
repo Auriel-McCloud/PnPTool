@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] entschieden | Drogen: Crash wandelt Schaden um, Rast zählt mit
+
+Nebenwirkung kann vorhandenen Schlag zu tödlich machen, oder Schlag und
+tödlich zu schwerheilbar. Kein neuer Schaden. Die Rast, die den Crash
+startet, ist Tick 1 der 2-Rasten-Uhr. Umwandeln vor der Heilung derselben
+Rast. Siehe [[entities/drogen]].
+
 ## [2026-11-04] entschieden | Drogen: Reduktion und Heilreihenfolge
 
 Halbieren wird Reduktion auf der aktiven Rüstung, nicht eine neue Funktion.
