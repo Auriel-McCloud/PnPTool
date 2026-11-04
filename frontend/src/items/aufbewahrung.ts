@@ -48,8 +48,13 @@ const istBehaelter = (g: Gegenstand) => g.istBehaelter;
  *   bisheriges Verhalten (montierte Stücke nur als Fähnchen am Träger,
  *   keine eigene Auswahl) unverändert behalten; nur die SL-Übersicht
  *   schaltet es gezielt ein.
+ *
+ * @param _einBesitzer Historisch: steuerte, ob ein getragener Behälter allein
+ *   schon den "Mitgeführt"-Reiter zeigt. Seit 04.11.2026 zeigt der Reiter
+ *   sich nur noch bei tatsächlichem Inhalt (wie das Depot) — der Parameter
+ *   bleibt nur noch der Signatur wegen stehen, ohne Wirkung.
  */
-export function ermittleBereiche(items: Gegenstand[], einBesitzer = true, mitMontiert = false): Bereich[] {
+export function ermittleBereiche(items: Gegenstand[], _einBesitzer = true, mitMontiert = false): Bereich[] {
   // Montierte Augments (Zielfernrohr & Co., 29.10.2026) sind kein eigener
   // Ablageplatz mehr — sie stecken an ihrem Trägergegenstand (MONTIERT_AN)
   // und werden dort schon als "montierte Upgrades" angezeigt. Ihr altes
@@ -78,19 +83,14 @@ export function ermittleBereiche(items: Gegenstand[], einBesitzer = true, mitMon
   // einen Behälter (seit GegenstandKachel dasselbe erlaubt), gäbe es ohnehin
   // keinen einzelnen Namen mehr, der passt.
   //
-  // Die Existenzprüfung bleibt an einen getragenen Behälter gekoppelt: wer
-  // einen Rucksack trägt, soll "Mitgeführt" auch schon sehen, bevor etwas
-  // lose (ohne bestimmtes Ziel) darin liegt.
-  //
-  // Nur sinnvoll, solange die Gegenstände einer einzigen Person gehören. In
-  // der kampagnenweiten Übersicht der Spielleitung liegen sie quer über alle
-  // Charaktere; dort hieße der Reiter sonst nach dem Rucksack irgendeines
-  // Spielers, obwohl darin die Sachen aller stecken.
-  const getragenerBehaelter = einBesitzer
-    ? items.find((g) => istBehaelter(g) && g.ablage === "AUSGERUESTET")
-    : undefined;
+  // Nur sichtbar, wenn tatsächlich etwas lose (ohne bestimmtes Ziel) darin
+  // liegt — genau dieselbe Regel wie beim Depot weiter unten (Mark,
+  // 04.11.2026: "wird ja auch ausgeblendet wenn nichts daran ist"). Vorher
+  // reichte schon ein getragener Behälter allein, um den Reiter zu zeigen,
+  // auch wenn er leer war — das wirkte unaufgeräumt und widersprach genau
+  // dem Depot-Vorbild, das Mark hier als Maßstab wollte.
   const mitgefuehrt = items.some((g) => g.ablage === "RUCKSACK");
-  if (mitgefuehrt || getragenerBehaelter) {
+  if (mitgefuehrt) {
     bereiche.push({
       id: "MITGEFUEHRT",
       name: "Mitgeführt",
