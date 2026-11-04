@@ -9,7 +9,7 @@
  */
 import { api } from "../api/client";
 
-export type VerhandlungsArt = "RUESTUNG_REPARATUR" | "SHOP_KAUF" | "GEGENSTAND_WEITERGABE";
+export type VerhandlungsArt = "RUESTUNG_REPARATUR" | "SHOP_KAUF" | "GEGENSTAND_WEITERGABE" | "REPARATUR_FREIGABE";
 
 export interface VerhandlungPosition {
   bezeichnung: string;
@@ -52,6 +52,9 @@ export const verhandlungApi = {
   /** Spieler bietet einem Party-Mitglied einen eigenen Gegenstand an. */
   gegenstandWeitergeben: (campaignId: string, gegenstandId: string, empfaengerPersonId: string) =>
     api.post<Verhandlung>(`${basis(campaignId)}/gegenstand-weitergeben`, { gegenstandId, empfaengerPersonId }),
+  /** Fixer fragt ein Party-Mitglied um Reparatur-Zugriff (05.11.2026). */
+  reparaturFreigabeAnfragen: (campaignId: string, zielPersonId: string) =>
+    api.post<Verhandlung>(`${basis(campaignId)}/reparatur-freigabe-anfragen`, { zielPersonId }),
   /** SL zieht ein noch offenes Angebot zurück. */
   zurueckziehen: (campaignId: string, verhandlungId: string) =>
     api.delete<void>(`${basis(campaignId)}/${verhandlungId}`),

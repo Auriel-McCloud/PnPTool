@@ -18,6 +18,7 @@ from app.ereignisprotokoll import hooks
 from app.haendler.uebergabe import stueck_uebergeben
 from app.items import repository as items_repository
 from app.kampf.ruestung import repariere
+from app.party import repository as party_repository
 
 
 class VerhandlungsFehler(Exception):
@@ -162,12 +163,36 @@ async def _ausfuehren_gegenstand_weitergabe(campaign_id: str, verhandlung: dict)
     return {"gegenstand": uebergeben}
 
 
+async def _ausfuehren_reparatur_freigabe(campaign_id: str, verhandlung: dict) -> dict:
+    """Kontext: {"fixerPersonId": str}. Erteilt dem Fixer dauerhaften (bis
+    Widerruf oder Party-Wechsel) Reparatur-Zugriff auf die Ausrüstung des
+    Empfängers (05.11.2026, Party-Reparatur-Freigabe).
+
+    Prüft live nochmal, dass Fixer und Empfänger noch in derselben Party
+    sind — zwischen Anfrage und Antwort kann sich das geändert haben,
+    dieselbe Vorsicht wie bei jeder anderen Ausführung hier (vgl.
+    `_ausfuehren_shop_kauf`s Guthaben-Check).
+    """
+    kontext = verhandlung["kontext"]
+    fixer_id = kontext["fixerPersonId"]
+    ziel_id = verhandlung["empfaengerPersonId"]
+
+    fixer_party = await party_repository.get_party_von_person(campaign_id, fixer_id)
+    ziel_party = await party_repository.get_party_von_person(campaign_id, ziel_id)
+    if not fixer_party or not ziel_party or fixer_party["id"] != ziel_party["id"]:
+        raise VerhandlungsFehler("Ihr seid nicht mehr in derselben Party")
+
+    await party_repository.reparatur_freigabe_erteilen(campaign_id, fixer_id, ziel_id)
+    return {"fixerPersonId": fixer_id}
+
+
 # Dispatch-Tabelle: Verhandlungsart -> Ausführungsfunktion. Erweitern statt
 # umbauen, wenn eine neue Art dazukommt.
 _AUSFUEHRUNG = {
     "RUESTUNG_REPARATUR": _ausfuehren_ruestung_reparatur,
     "SHOP_KAUF": _ausfuehren_shop_kauf,
     "GEGENSTAND_WEITERGABE": _ausfuehren_gegenstand_weitergabe,
+    "REPARATUR_FREIGABE": _ausfuehren_reparatur_freigabe,
 }
 
 

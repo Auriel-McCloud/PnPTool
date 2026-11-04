@@ -50,6 +50,13 @@ class Mitglied(BaseModel):
     personType: str
 
 
+class ReparaturFreigabeEintrag(BaseModel):
+    """Eine Zeile in der Reparatur-Freigaben-Liste (wer/wem), 05.11.2026."""
+
+    id: str
+    name: str
+
+
 class PartyResponse(BaseModel):
     id: str
     name: str

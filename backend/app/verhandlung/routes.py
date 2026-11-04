@@ -9,6 +9,8 @@ WebSockets zu brauchen.
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.entities import repository as entities_repository
+from app.entities.repository import PERSON_FIELDS
 from app.ereignisprotokoll import hooks
 from app.items import repository as items_repository
 from app.mitteilungen.verteiler import verteiler
@@ -17,6 +19,7 @@ from app.verhandlung import logic, repository
 from app.verhandlung.logic import VerhandlungsFehler
 from app.verhandlung.schemas import (
     GegenstandWeitergebenRequest,
+    ReparaturFreigabeAnfrageRequest,
     VerhandlungAntwortRequest,
     VerhandlungCreate,
     VerhandlungResponse,
@@ -110,6 +113,50 @@ async def gegenstand_weitergeben(
         "GEGENSTAND_WEITERGABE",
         [{"bezeichnung": gegenstand["name"], "betrag": 0}],
         {"gegenstandId": body.gegenstandId, "absenderPersonId": absender_id},
+    )
+    await _verteilen(campaign_id, verhandlung)
+    return verhandlung
+
+
+@router.post("/reparatur-freigabe-anfragen", response_model=VerhandlungResponse, status_code=status.HTTP_201_CREATED)
+async def reparatur_freigabe_anfragen(
+    campaign_id: str,
+    body: ReparaturFreigabeAnfrageRequest,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Ein Fixer fragt ein Party-Mitglied, ob er dessen reparierbare
+    Ausrüstung wie die eigene behandeln darf (05.11.2026, Party-Reparatur-
+    Freigabe, Mark: "er kann auf die namen klicken, dann wird der andere
+    spieler gefragt ob er zuässt das der Fixer seine dinge repariert").
+
+    Dasselbe Zustimmungs-Muster wie `gegenstand_weitergeben` — kein Geld
+    beteiligt, das Popup dient nur der Zustimmung. Bei Annahme erteilt
+    `logic._ausfuehren_reparatur_freigabe` eine dauerhafte Freigabe (bis
+    Widerruf oder Party-Wechsel), statt einen Gegenstand zu bewegen.
+    """
+    if viewer.role == "GM" or not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur Spieler können das anfragen")
+    fixer_id = viewer.person_id
+
+    if body.zielPersonId == fixer_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nicht an sich selbst")
+
+    eigene_party = await party_repository.get_party_von_person(campaign_id, fixer_id)
+    if eigene_party is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Du bist in keiner Party")
+    mitglieder_ids = {m["id"] for m in eigene_party["mitglieder"]}
+    if body.zielPersonId not in mitglieder_ids:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur an Mitglieder der eigenen Party möglich")
+
+    fixer = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, fixer_id)
+    fixer_name = fixer["name"] if fixer else "Jemand"
+
+    verhandlung = await repository.create_verhandlung(
+        campaign_id,
+        body.zielPersonId,
+        "REPARATUR_FREIGABE",
+        [{"bezeichnung": f"{fixer_name} möchte deine Ausrüstung reparieren dürfen", "betrag": 0}],
+        {"fixerPersonId": fixer_id},
     )
     await _verteilen(campaign_id, verhandlung)
     return verhandlung

@@ -707,3 +707,62 @@ Ki-Tamas, vorher keins. `pytest tests/test_kitama.py` grün (5/5, reine
 Formel-Tests, keine DB-Abdeckung für die Cypher-Änderung selbst —
 Live-Verifikation s.o. ersetzt das hier). `tsc`/Gesamtsuite ohne neue
 Regression. Live-Deploy auf bebop (nur Backend).
+
+## Party-Reparatur-Freigabe + Cyberware-Rüstung reparierbar (05.11.2026)
+
+Mark, Idee vom Spieltisch weg: ein Cyberware-Implantat wie ein
+Metallbrust-Panzer soll als Rüstung wirken, aber NICHT über Rast heilen
+(anders als `istNatuerlich`-Chrom) — es braucht Handwerk, genau wie normale
+Rüstung. Sein zweiter Gedanke direkt im Anschluss: dann sollten
+Party-Mitglieder sich auch gegenseitig reparieren können, nicht nur sich
+selbst — aber nur nach Zustimmung, und der Fixer bringt sein eigenes
+Material mit.
+
+**1. Cyberware als reparierbare Rüstung.** `items/routes.py::
+_ruestung_fuer_reparatur` akzeptierte bisher nur `typ == "Rüstung"` —
+verbautes, nicht-natürliches Chrom mit Kästchen-Werten (zählt seit
+04.11.2026 zum Pool, siehe oben im Dokument) hatte dadurch gar keinen
+Heilweg. Jetzt akzeptiert die Vorprüfung `items_repository.
+REPARIERBARE_TYPEN = ("Rüstung",) + CHROM_TYPEN`. Ki-Tama bewusst aussen
+vor — hat schon die eigene Level-basierte Augment-Reparatur von oben.
+
+**2. Party-Reparatur-Freigabe.** Neue Kante `(:Person Fixer)-
+[:DARF_REPARIEREN]->(:Person Ziel)` (`party/repository.py`). Entsteht über
+dasselbe Verhandlungs-Zustimmungsmuster wie `GEGENSTAND_WEITERGABE` (neue
+Art `REPARATUR_FREIGABE`, `POST .../verhandlungen/reparatur-freigabe-
+anfragen`): der Fixer fragt ein Party-Mitglied, das Ziel bekommt ein
+Annehmen/Ablehnen-Popup, bei Annahme entsteht die Kante dauerhaft.
+
+- **Material + Probe vom Fixer, nicht vom Besitzer** (Mark: "der Fixer soll
+  sein eigenes Material mitbringen dürfen und verbauen können") —
+  `items/routes.py::_wer_repariert` entscheidet pro Aufruf, wessen Skill-
+  Ratings und wessen Maschinenteile zählen: Normalfall (Selbstreparatur,
+  Rigger an eigener Drohne) wie bisher der Besitzer, Dritt-Reparatur
+  (Freigabe statt eigenem Besitz) der Fixer selbst.
+- **Verfällt automatisch** bei jeder Party-Änderung einer der beiden Seiten
+  (Mark: "ja ich hätte gerne das sie automatisch verfällt!", explizit
+  gegen ein bloßes "Schlafen", das bei zufälliger Wiedervereinigung in
+  derselben Party stillschweigend reaktivieren würde) —
+  `mitglied_hinzufuegen`/`mitglied_entfernen`/`loeschen` löschen alle
+  `DARF_REPARIEREN`-Kanten der betroffenen Person(en) mit.
+- **Jederzeit selbst widerrufbar** durch die Zielperson (`DELETE .../party/
+  reparatur-freigaben/{fixerId}`), **keine SL-Übersicht** (Mark: "nein,
+  das ist nicht nötig").
+
+**Neue Endpunkte:** `GET .../gegenstaende/reparierbar/{personId}` (reparierbare
+Rüstung/Chrom einer Person, GM oder eigener Kreis oder Freigabe),
+`GET .../party/reparatur-freigaben/mir` (wer hat MIR Zugriff erteilt),
+`GET .../party/reparatur-freigaben/erteilt` (wem HABE ich Zugriff erteilt),
+`DELETE .../party/reparatur-freigaben/{fixerId}` (widerrufen).
+
+**Frontend:** `WerkbankUebersichtSpieler.tsx` lädt jetzt zusätzlich die
+eigene Party, die Freigeber-/Freigaben-Listen und baut daraus
+`ReparaturGruppe[]` (eigene Ausrüstung + eine Gruppe pro Person, die
+Zugriff erteilt hat). `ReparaturUebersichtSpieler.tsx` rendert jede Gruppe
+als eigenen Abschnitt, darunter eine Anfragen-Leiste (Party-Mitglieder ohne
+Freigabe) und eine Widerrufen-Leiste (wem ich selbst Zugriff erteilt habe).
+`VerhandlungPopup.tsx` bekommt einen dritten Zustimmungs-Zweig (neben
+Geld-Angebot und Gegenstands-Weitergabe) für `REPARATUR_FREIGABE`.
+
+`pytest` (969 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`/
+`vite build` sauber. **Kein Klicktest am Spieltisch.**

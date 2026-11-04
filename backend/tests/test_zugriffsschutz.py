@@ -81,6 +81,17 @@ OHNE_GM_ERLAUBT = {
     # verschiebt nichts sofort — legt nur ein Annehmen/Ablehnen-Angebot an,
     # dasselbe Verhandlungssystem wie SL-Angebote (Reparatur, Kauf).
     "/api/campaigns/{campaign_id}/verhandlungen/gegenstand-weitergeben",
+    # Ebenso: ein Fixer fragt ein Party-Mitglied um Reparatur-Zugriff auf
+    # dessen Ausrüstung (05.11.2026, Party-Reparatur-Freigabe). Prüft Party-
+    # Zugehörigkeit selbst (siehe verhandlung/routes.py::
+    # reparatur_freigabe_anfragen), legt nur ein Annehmen/Ablehnen-Angebot
+    # an — dasselbe Muster wie gegenstand-weitergeben.
+    "/api/campaigns/{campaign_id}/verhandlungen/reparatur-freigabe-anfragen",
+    # Die Zielperson widerruft selbst eine erteilte Reparatur-Freigabe
+    # (05.11.2026). Prüft über require_spieler/get_viewer, dass es der
+    # eigene Charakter ist (siehe party/repository.py::
+    # reparatur_freigabe_entziehen), kein SL-Eingriff nötig.
+    "/api/campaigns/{campaign_id}/party/reparatur-freigaben/{fixer_person_id}",
     # Ebenso: Schaden abhaken und Willenskraft verbrauchen gehoert zum
     # Spielen. Prueft die Person selbst und laesst nur Zustandsfelder zu.
     "/api/campaigns/{campaign_id}/personen/{person_id}/zustand",

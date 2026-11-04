@@ -661,6 +661,11 @@ export const itemsApi = {
   reparaturmaterialListe: (cid: string, itemId: string) =>
     api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/reparaturmaterial`),
   traglast: (cid: string) => api.get<TraglastZeile[]>(`${campaignBase(cid)}/traglast`),
+  /** Reparierbare Rüstung/Chrom dieser Person (05.11.2026, Party-Reparatur-
+   * Freigabe) — für die Werkbank: eigene Ausrüstung UND die reparierbaren
+   * Sachen jedes Party-Mitglieds, das einem Zugriff erteilt hat. */
+  reparierbareItems: (cid: string, personId: string) =>
+    api.get<Gegenstand[]>(`${campaignBase(cid)}/reparierbar/${personId}`),
   ablageziele: (cid: string, itemId: string) =>
     api.get<AblageZiel[]>(`${campaignBase(cid)}/${itemId}/ablageziele`),
 

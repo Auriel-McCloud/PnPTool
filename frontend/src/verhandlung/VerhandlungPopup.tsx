@@ -46,6 +46,11 @@ export function VerhandlungPopup() {
   // Titel/Text statt "Angebot der Spielleitung" mit ¥-Beträgen, die hier
   // ohnehin immer 0 sind (siehe verhandlung/routes.py::gegenstand_weitergeben).
   const istWeitergabe = angezeigt.art === "GEGENSTAND_WEITERGABE";
+  // Reparatur-Freigabe (05.11.2026): ebenfalls kein Geldgeschäft, reines
+  // Zustimmungs-Popup — "ja" erteilt einem Party-Mitglied dauerhaften
+  // Reparatur-Zugriff statt einen Gegenstand zu bewegen.
+  const istReparaturFreigabe = angezeigt.art === "REPARATUR_FREIGABE";
+  const istZustimmungsPopup = istWeitergabe || istReparaturFreigabe;
 
   return createPortal(
     <div className="vh-popup-huelle">
@@ -58,20 +63,22 @@ export function VerhandlungPopup() {
       >
         <div className="vh-popup-kopf">
           <span className="vh-popup-zeichen" aria-hidden="true">
-            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istWeitergabe ? "🎁" : "¥"}
+            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istReparaturFreigabe ? "🔧" : istWeitergabe ? "🎁" : "¥"}
           </span>
           <span className="vh-popup-titel">
             {entschieden
               ? angenommenErgebnis
-                ? istWeitergabe
+                ? istZustimmungsPopup
                   ? "Angenommen"
                   : "Angebot angenommen"
-                : istWeitergabe
+                : istZustimmungsPopup
                   ? "Abgelehnt"
                   : "Angebot abgelehnt"
-              : istWeitergabe
-                ? "Gegenstand angeboten"
-                : "Angebot der Spielleitung"}
+              : istReparaturFreigabe
+                ? "Reparatur-Zugriff angefragt"
+                : istWeitergabe
+                  ? "Gegenstand angeboten"
+                  : "Angebot der Spielleitung"}
           </span>
         </div>
 
@@ -81,12 +88,12 @@ export function VerhandlungPopup() {
               {angezeigt.positionen.map((p, i) => (
                 <li key={i} className="vh-position">
                   <span className="vh-position-bezeichnung">{p.bezeichnung}</span>
-                  {!istWeitergabe && <span className="vh-position-betrag">{p.betrag.toLocaleString("de-AT")}¥</span>}
+                  {!istZustimmungsPopup && <span className="vh-position-betrag">{p.betrag.toLocaleString("de-AT")}¥</span>}
                 </li>
               ))}
             </ul>
           )}
-          {!istWeitergabe && (
+          {!istZustimmungsPopup && (
             <div className="vh-gesamt">
               <span>{entschieden ? (angenommenErgebnis ? "Bezahlt" : "Nicht bezahlt") : "Gesamt"}</span>
               <strong>{angezeigt.gesamtbetrag.toLocaleString("de-AT")}¥</strong>

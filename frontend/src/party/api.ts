@@ -36,6 +36,12 @@ export interface Party {
 
 export type PartyEingabe = Partial<Pick<Party, "name" | "beschreibung" | "notizen" | "sichtbarkeit" | "sichtbarFuer">>;
 
+/** Eine Zeile in der Reparatur-Freigaben-Liste (wer/wem), 05.11.2026. */
+export interface ReparaturFreigabeEintrag {
+  id: string;
+  name: string;
+}
+
 function basis(campaignId: string) {
   return `/api/campaigns/${campaignId}/party`;
 }
@@ -55,4 +61,12 @@ export const partyApi = {
     api.put<Party>(`${basis(cid)}/${id}/aufenthaltsort`, { zielId, zielKind }),
   aktivieren: (cid: string, id: string) => api.post<Party>(`${basis(cid)}/${id}/aktivieren`, {}),
   deaktivieren: (cid: string, id: string) => api.post<Party>(`${basis(cid)}/${id}/deaktivieren`, {}),
+  /** Wer hat MIR (als Fixer) Reparatur-Zugriff erteilt (05.11.2026). */
+  reparaturFreigabenFuerMich: (cid: string) => api.get<ReparaturFreigabeEintrag[]>(`${basis(cid)}/reparatur-freigaben/mir`),
+  /** Wem HABE ich (als Ziel) Reparatur-Zugriff erteilt — fürs Widerrufen. */
+  reparaturFreigabenVonMir: (cid: string) =>
+    api.get<ReparaturFreigabeEintrag[]>(`${basis(cid)}/reparatur-freigaben/erteilt`),
+  /** Widerruft selbst eine erteilte Freigabe — jederzeit möglich. */
+  reparaturFreigabeEntziehen: (cid: string, fixerPersonId: string) =>
+    api.delete<void>(`${basis(cid)}/reparatur-freigaben/${fixerPersonId}`),
 };

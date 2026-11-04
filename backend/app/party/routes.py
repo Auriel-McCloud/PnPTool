@@ -9,6 +9,7 @@ from app.party.schemas import (
     PartyCreate,
     PartyResponse,
     PartyUpdate,
+    ReparaturFreigabeEintrag,
 )
 from app.spotify import dienst as spotify_dienst
 
@@ -147,3 +148,44 @@ async def deaktivieren(campaign_id: str, party_id: str):
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Party nicht gefunden")
     return ergebnis
+
+
+# =====================================================================
+# Reparatur-Freigaben (05.11.2026): ein Spieler (Fixer) fragt ein eigenes
+# Party-Mitglied, ob er dessen reparierbare Ausrüstung wie seine eigene
+# behandeln darf — die Anfrage selbst läuft über das bestehende
+# Verhandlungs-System (siehe verhandlung/routes.py::reparatur_freigabe_anfragen),
+# hier nur Lesen/Widerrufen der daraus entstandenen Freigabe-Kante
+# (`DARF_REPARIEREN`). Self-Service, keine SL-Übersicht nötig (Mark,
+# 05.11.2026: "nein, das ist nicht nötig").
+# =====================================================================
+
+
+@router.get("/reparatur-freigaben/mir", response_model=list[ReparaturFreigabeEintrag])
+async def reparatur_freigaben_fuer_mich(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Wer hat MIR (als Fixer) Reparatur-Zugriff erteilt — die Werkbank zeigt
+    zusätzlich zur eigenen Ausrüstung auch die reparierbaren Sachen dieser
+    Personen."""
+    if not viewer.person_id:
+        return []
+    return await repository.liste_freigeber_fuer(campaign_id, viewer.person_id)
+
+
+@router.get("/reparatur-freigaben/erteilt", response_model=list[ReparaturFreigabeEintrag])
+async def reparatur_freigaben_von_mir(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Wem HABE ich (als Ziel) Reparatur-Zugriff erteilt — fürs Widerrufen."""
+    if not viewer.person_id:
+        return []
+    return await repository.liste_erteilte_freigaben(campaign_id, viewer.person_id)
+
+
+@router.delete("/reparatur-freigaben/{fixer_person_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def reparatur_freigabe_entziehen(campaign_id: str, fixer_person_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Die Zielperson widerruft selbst eine erteilte Freigabe — jederzeit,
+    kein SL-Eingriff nötig (reversibles Design, wie Ablage/Wegwerfen). Nur
+    für den eigenen Charakter, deshalb ohne `require_campaign_gm` — steht
+    namentlich in der Ausnahmeliste von tests/test_zugriffsschutz.py."""
+    if not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur für den eigenen Charakter")
+    if not await repository.reparatur_freigabe_entziehen(campaign_id, fixer_person_id, viewer.person_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Keine Freigabe gefunden")

@@ -1,8 +1,19 @@
 import { useState } from "react";
-import { type GegenstandMitBesitzer } from "../items/api";
+import { type Gegenstand } from "../items/api";
 import { type DrohnenEintrag } from "../drohnen/api";
+import { type ReparaturFreigabeEintrag } from "../party/api";
 import { ReparaturFenster, type ReparaturZiel } from "../reparatur/ReparaturFenster";
 import "../items/gegenstaende.css";
+import "./werkbank.css";
+
+/** Eine Gruppe reparierbarer Gegenstände einer Person — die eigene
+ * Ausrüstung, oder (05.11.2026, Party-Reparatur-Freigabe) die eines
+ * Party-Mitglieds, das dem Fixer Zugriff erteilt hat. */
+export interface ReparaturGruppe {
+  label: string;
+  personId: string;
+  items: Gegenstand[];
+}
 
 /**
  * Werkbank-Reparatur für Spieler (29.10.2026, Mark: "das war alles für die
@@ -15,57 +26,74 @@ import "../items/gegenstaende.css";
  */
 export function ReparaturUebersichtSpieler({
   campaignId,
-  ruestungsziele,
+  reparaturgruppen,
   drohnen,
   onGeaendert,
+  partyAnfragbar,
+  anfrageLaeuft,
+  onFreigabeAnfragen,
+  erteilteFreigaben,
+  onFreigabeWiderrufen,
 }: {
   campaignId: string;
-  ruestungsziele: GegenstandMitBesitzer[];
+  reparaturgruppen: ReparaturGruppe[];
   drohnen: DrohnenEintrag[];
   onGeaendert: () => void;
+  partyAnfragbar: { id: string; name: string }[];
+  anfrageLaeuft: Set<string>;
+  onFreigabeAnfragen: (zielPersonId: string) => void;
+  erteilteFreigaben: ReparaturFreigabeEintrag[];
+  onFreigabeWiderrufen: (fixerPersonId: string) => void;
 }) {
   const [offenesZiel, setOffenesZiel] = useState<ReparaturZiel | null>(null);
+  const gesamtRuestung = reparaturgruppen.reduce((n, g) => n + g.items.length, 0);
 
   return (
     <div className="gg-seite">
-      {ruestungsziele.length === 0 && drohnen.length === 0 && (
-        <p className="gg-leer">Keine eigene Rüstung oder Drohne/Fahrzeug im Besitz.</p>
+      {gesamtRuestung === 0 && drohnen.length === 0 && (
+        <p className="gg-leer">Keine reparierbare Ausrüstung oder Drohne/Fahrzeug im Zugriff.</p>
       )}
 
-      {ruestungsziele.length > 0 && (
-        <>
-          <p className="lu-hinweis">Rüstung ({ruestungsziele.length})</p>
-          <div className="gg-raster">
-            {ruestungsziele.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                className="gg-kachel"
-                onClick={() =>
-                  setOffenesZiel({
-                    typ: "ruestung",
-                    id: g.id,
-                    name: g.name,
-                    besitzerId: g.ownerId,
-                    ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
-                    ruestungKaestchenMax: g.ruestungKaestchenMax,
-                  })
-                }
-              >
-                <span className="gg-kachel-bild">
-                  {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}
-                </span>
-                <span className="gg-kachel-name">{g.name}</span>
-                <span className="gg-kachel-zeile">
-                  <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
-                    {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
+      {reparaturgruppen.map(
+        (gruppe) =>
+          gruppe.items.length > 0 && (
+            <div key={gruppe.personId}>
+              <p className="lu-hinweis">
+                {gruppe.label} ({gruppe.items.length})
+              </p>
+              <div className="gg-raster">
+                {gruppe.items.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className="gg-kachel"
+                    onClick={() =>
+                      setOffenesZiel({
+                        typ: "ruestung",
+                        id: g.id,
+                        name: g.name,
+                        besitzerId: gruppe.personId,
+                        ruestungKaestchenAktuell: g.ruestungKaestchenAktuell,
+                        ruestungKaestchenMax: g.ruestungKaestchenMax,
+                      })
+                    }
+                  >
+                    <span className="gg-kachel-bild">
+                      {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}
+                    </span>
+                    <span className="gg-kachel-name">{g.name}</span>
+                    <span className="gg-kachel-zeile">
+                      <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
+                        {g.ruestungKaestchenAktuell}/{g.ruestungKaestchenMax} Kästchen
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ),
       )}
+
 
       {drohnen.length > 0 && (
         <>
@@ -110,6 +138,48 @@ export function ReparaturUebersichtSpieler({
         </>
       )}
 
+      {/* Party-Reparatur-Freigabe (05.11.2026): wen darf ich noch fragen, und
+          wem habe ich selbst schon Zugriff erteilt (zum Widerrufen). */}
+      {(partyAnfragbar.length > 0 || erteilteFreigaben.length > 0) && (
+        <div className="wb-freigaben">
+          {partyAnfragbar.length > 0 && (
+            <>
+              <p className="lu-hinweis">Reparatur-Zugriff bei Party-Mitgliedern anfragen</p>
+              <div className="wb-freigaben-liste">
+                {partyAnfragbar.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="wb-freigabe-knopf"
+                    disabled={anfrageLaeuft.has(m.id)}
+                    onClick={() => onFreigabeAnfragen(m.id)}
+                  >
+                    {anfrageLaeuft.has(m.id) ? `Angefragt bei ${m.name}…` : `🔧 Bei ${m.name} anfragen`}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {erteilteFreigaben.length > 0 && (
+            <>
+              <p className="lu-hinweis">Du hast Reparatur-Zugriff erteilt an</p>
+              <div className="wb-freigaben-liste">
+                {erteilteFreigaben.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="wb-freigabe-knopf wb-freigabe-widerrufen"
+                    onClick={() => onFreigabeWiderrufen(f.id)}
+                  >
+                    {f.name} — widerrufen ✕
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {offenesZiel && (
         <ReparaturFenster
           campaignId={campaignId}
@@ -122,3 +192,5 @@ export function ReparaturUebersichtSpieler({
     </div>
   );
 }
+
+export type { Gegenstand };

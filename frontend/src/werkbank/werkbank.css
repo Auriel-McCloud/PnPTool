@@ -57,3 +57,30 @@
   border-color: var(--bereich-farbe, var(--neon));
   box-shadow: 0 0 12px -4px var(--bereich-farbe, var(--neon));
 }
+
+/* Party-Reparatur-Freigabe (05.11.2026): Anfragen-/Widerrufen-Zeilen unten
+   in der Spieler-Reparatur-Übersicht — Commlink-Stil statt Inline-Liste. */
+.wb-freigaben {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.wb-freigaben-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.wb-freigabe-knopf {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78em;
+}
+
+.wb-freigabe-widerrufen {
+  border-color: var(--signal);
+  color: var(--signal);
+}

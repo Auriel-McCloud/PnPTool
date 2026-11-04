@@ -148,13 +148,26 @@ async def aendern(campaign_id: str, party_id: str, daten: dict) -> dict | None:
 async def mitglied_hinzufuegen(campaign_id: str, party_id: str, person_id: str) -> dict | None:
     """Nimmt eine Person in die Party auf — verlässt dabei automatisch eine
     etwaige vorherige Party (eine Person ist höchstens in einer Party
-    gleichzeitig, Marks Entscheidung 18.09.2026)."""
+    gleichzeitig, Marks Entscheidung 18.09.2026).
+
+    **Löscht dabei auch alle `DARF_REPARIEREN`-Freigaben dieser Person**
+    (05.11.2026, Party-Reparatur-Freigabe, Mark: "ja ich hätte gerne das sie
+    automatisch verfällt!") — egal ob sie als Fixer oder als Ziel beteiligt
+    war, in beide Richtungen. Jede Änderung der Party-Zugehörigkeit lässt
+    bestehende Freigaben wirklich verfallen statt nur zu "schlafen"; findet
+    man sich später zufällig wieder in derselben Party zusammen, muss neu
+    gefragt werden.
+    """
     driver = get_driver()
     query = f"""
         MATCH (party:Party {{id: $party_id, campaignId: $campaign_id}})
         MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})
         OPTIONAL MATCH (p)-[alt:MITGLIED_VON]->(:Party)
         DELETE alt
+        WITH party, p
+        OPTIONAL MATCH (p)-[frei:DARF_REPARIEREN]-()
+        DELETE frei
+        WITH party, p
         CREATE (p)-[:MITGLIED_VON]->(party)
         WITH party
         {_MITGLIEDER_UND_ZIEL}
@@ -170,11 +183,18 @@ async def mitglied_hinzufuegen(campaign_id: str, party_id: str, person_id: str) 
 
 
 async def mitglied_entfernen(campaign_id: str, party_id: str, person_id: str) -> dict | None:
+    """Entfernt eine Person aus der Party — löscht dabei ebenfalls alle ihre
+    `DARF_REPARIEREN`-Freigaben (dieselbe Begründung wie in
+    `mitglied_hinzufuegen`: Party-Zugehörigkeit ändert sich, Freigaben
+    verfallen)."""
     driver = get_driver()
     query = f"""
         MATCH (party:Party {{id: $party_id, campaignId: $campaign_id}})
         OPTIONAL MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[r:MITGLIED_VON]->(party)
         DELETE r
+        WITH party
+        OPTIONAL MATCH (frei_p:Person {{id: $person_id, campaignId: $campaign_id}})-[frei:DARF_REPARIEREN]-()
+        DELETE frei
         WITH party
         {_MITGLIEDER_UND_ZIEL}
         RETURN {RETURN_FIELDS}
@@ -183,6 +203,82 @@ async def mitglied_entfernen(campaign_id: str, party_id: str, person_id: str) ->
         result = await session.run(query, campaign_id=campaign_id, party_id=party_id, person_id=person_id)
         record = await result.single()
         return _decode(dict(record)) if record else None
+
+
+async def reparatur_freigabe_erteilen(campaign_id: str, fixer_person_id: str, ziel_person_id: str) -> bool:
+    """Ziel erlaubt dem Fixer, ab sofort ihre/seine reparierbare Ausrüstung
+    wie die eigene zu behandeln (05.11.2026, Party-Reparatur-Freigabe).
+    Dauerhaft, bis `reparatur_freigabe_entziehen` ODER eine Party-Änderung
+    einer der beiden Seiten sie löscht (siehe `mitglied_hinzufuegen`/
+    `mitglied_entfernen`/`loeschen`). `MERGE` statt `CREATE`, damit ein
+    erneutes Erteilen keine doppelte Kante anlegt."""
+    driver = get_driver()
+    query = """
+        MATCH (fixer:Person {id: $fixer_id, campaignId: $campaign_id})
+        MATCH (ziel:Person {id: $ziel_id, campaignId: $campaign_id})
+        MERGE (fixer)-[:DARF_REPARIEREN]->(ziel)
+        RETURN count(*) AS ok
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, fixer_id=fixer_person_id, ziel_id=ziel_person_id)
+        record = await result.single()
+        return bool(record and record["ok"])
+
+
+async def reparatur_freigabe_entziehen(campaign_id: str, fixer_person_id: str, ziel_person_id: str) -> bool:
+    """Die Zielperson widerruft eine erteilte Freigabe selbst — jederzeit,
+    reversibles Design wie Ablage/Wegwerfen."""
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $fixer_id, campaignId: $campaign_id})-[r:DARF_REPARIEREN]->(:Person {id: $ziel_id, campaignId: $campaign_id})
+        DELETE r
+        RETURN count(r) AS geloescht
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, fixer_id=fixer_person_id, ziel_id=ziel_person_id)
+        record = await result.single()
+        return bool(record and record["geloescht"])
+
+
+async def hat_reparatur_freigabe(campaign_id: str, fixer_person_id: str, ziel_person_id: str) -> bool:
+    """Darf `fixer_person_id` gerade die reparierbare Ausrüstung von
+    `ziel_person_id` wie die eigene behandeln?"""
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $fixer_id, campaignId: $campaign_id})-[:DARF_REPARIEREN]->(:Person {id: $ziel_id, campaignId: $campaign_id})
+        RETURN count(*) > 0 AS ok
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, fixer_id=fixer_person_id, ziel_id=ziel_person_id)
+        record = await result.single()
+        return bool(record and record["ok"])
+
+
+async def liste_freigeber_fuer(campaign_id: str, fixer_person_id: str) -> list[dict]:
+    """Wer hat DIESEM Fixer Reparatur-Zugriff erteilt — für die Werkbank:
+    zusätzlich zur eigenen Ausrüstung auch deren reparierbare Sachen zeigen."""
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $fixer_id, campaignId: $campaign_id})-[:DARF_REPARIEREN]->(ziel:Person {campaignId: $campaign_id})
+        RETURN ziel.id AS id, ziel.name AS name
+        ORDER BY ziel.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, fixer_id=fixer_person_id)
+        return [dict(r) async for r in result]
+
+
+async def liste_erteilte_freigaben(campaign_id: str, ziel_person_id: str) -> list[dict]:
+    """Wem HAT diese Zielperson Reparatur-Zugriff erteilt — fürs Widerrufen."""
+    driver = get_driver()
+    query = """
+        MATCH (fixer:Person {campaignId: $campaign_id})-[:DARF_REPARIEREN]->(:Person {id: $ziel_id, campaignId: $campaign_id})
+        RETURN fixer.id AS id, fixer.name AS name
+        ORDER BY fixer.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ziel_id=ziel_person_id)
+        return [dict(r) async for r in result]
 
 
 async def aufenthaltsort_setzen(campaign_id: str, party_id: str, ziel_id: str | None, ziel_kind: str | None) -> dict | None:
@@ -264,8 +360,31 @@ async def deaktivieren(campaign_id: str, party_id: str) -> dict | None:
 
 
 async def loeschen(campaign_id: str, party_id: str) -> bool:
+    """Löscht die Party — und vorher die `DARF_REPARIEREN`-Freigaben all
+    ihrer Mitglieder (05.11.2026): eine aufgelöste Party ist für jedes
+    ehemalige Mitglied dieselbe Art Party-Änderung wie ein Austritt, siehe
+    `mitglied_entfernen`."""
     driver = get_driver()
     async with driver.session() as session:
+        mitglieder = await session.run(
+            """
+            MATCH (m:Person)-[:MITGLIED_VON]->(:Party {id: $id, campaignId: $campaign_id})
+            RETURN m.id AS id
+            """,
+            campaign_id=campaign_id,
+            id=party_id,
+        )
+        mitglieder_ids = [r["id"] async for r in mitglieder]
+        if mitglieder_ids:
+            await session.run(
+                """
+                UNWIND $ids AS pid
+                MATCH (p:Person {id: pid, campaignId: $campaign_id})-[r:DARF_REPARIEREN]-()
+                DELETE r
+                """,
+                campaign_id=campaign_id,
+                ids=mitglieder_ids,
+            )
         result = await session.run(
             """
             MATCH (party:Party {id: $id, campaignId: $campaign_id})

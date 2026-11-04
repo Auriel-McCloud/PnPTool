@@ -1569,9 +1569,48 @@ WIRKT = """
 # nennt das Flag ausdrücklich generisch für "jede künftige Kreatur") — ein
 # Cyberware-Dermalpanzer oder ein Ki-Tama-Schutzzauber passen fachlich genauso
 # rein: beide heilen über Rast statt über die normale Material-Reparatur
-# (items/routes.py::_rep_vorpruefung bleibt bewusst bei "nur Rüstung", siehe
-# dort), und keines der beiden lässt sich vom Spieler einfach ablegen.
+# (istNatuerlich=true), und keines der beiden lässt sich vom Spieler einfach
+# ablegen.
 RUESTUNGSTRAEGER_TYPEN = ("Rüstung",) + CHROM_TYPEN + ("Ki-Tama",)
+
+# Welche Typen über die normale Werkbank-Material-Reparatur heilen (05.11.2026,
+# Marks Idee: ein Cyberware-Implantat wie ein Metallbrust-Panzer, das NICHT
+# über Rast heilt (istNatuerlich=false) und sich nicht ablegen lässt — jemand
+# mit Handwerk muss es reparieren, genau wie normale Rüstung). Ki-Tama bewusst
+# AUSSEN vor: das hat schon eine eigene, Level-basierte Reparatur
+# (items/augments.py::augment_reparieren_material), keine zweite Mechanik
+# dafür nötig. Siehe items/routes.py::_ruestung_fuer_reparatur für den
+# Eignungs-Check, der diese Liste verwendet.
+REPARIERBARE_TYPEN = ("Rüstung",) + CHROM_TYPEN
+
+
+async def reparierbare_items(campaign_id: str, person_id: str) -> list[dict]:
+    """Alle Rüstungs-/Chrom-Stücke dieser Person, die über die Werkbank-
+    Material-Reparatur geheilt werden können — unabhängig von Ablage/
+    Verbaut-Zustand (dieselbe Grosszügigkeit wie die bisherige Selbst-
+    Reparatur: auch unausgerüstete Ersatzrüstung im Rucksack lässt sich schon
+    reparieren). Natürliche Rüstung fällt heraus (heilt über Rast).
+
+    Grundlage für die Werkbank-Ansicht — sowohl für die eigene Ausrüstung als
+    auch (05.11.2026, Party-Reparatur-Freigabe) für die eines Party-Mitglieds,
+    das einem Fixer Zugriff erteilt hat (siehe items/routes.py::
+    reparierbare_items_route, party/repository.py::hat_reparatur_freigabe).
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE g.typ IN $typen
+          AND NOT coalesce(g.weggeworfen, false)
+          AND coalesce(g.ruestungKaestchenMax, 0) > 0
+          AND NOT coalesce(g.istNatuerlich, false)
+        RETURN {RETURN_FIELDS}
+        ORDER BY g.name
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, typen=list(REPARIERBARE_TYPEN)
+        )
+        return [_decode(dict(r)) async for r in result]
 
 
 

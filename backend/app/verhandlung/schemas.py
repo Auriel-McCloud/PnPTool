@@ -24,7 +24,9 @@ from pydantic import BaseModel, Field, model_validator
 # Bekannte Verhandlungsarten — bestimmt, welche Nebenwirkung `logic.py` bei
 # Annahme auslöst. Weisse Liste statt freiem String, damit ein Tippfehler
 # beim Erstellen nicht eine Verhandlung erzeugt, die niemand ausführen kann.
-VerhandlungsArt = Literal["RUESTUNG_REPARATUR", "SHOP_KAUF", "GEGENSTAND_WEITERGABE"]
+VerhandlungsArt = Literal[
+    "RUESTUNG_REPARATUR", "SHOP_KAUF", "GEGENSTAND_WEITERGABE", "REPARATUR_FREIGABE"
+]
 
 
 class VerhandlungPosition(BaseModel):
@@ -77,3 +79,10 @@ class GegenstandWeitergebenRequest(BaseModel):
 
     gegenstandId: str
     empfaengerPersonId: str
+
+
+class ReparaturFreigabeAnfrageRequest(BaseModel):
+    """Ein Fixer fragt ein Party-Mitglied, ob er dessen reparierbare
+    Ausrüstung wie die eigene behandeln darf (05.11.2026)."""
+
+    zielPersonId: str

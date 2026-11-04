@@ -49,6 +49,7 @@ from app.kampf.ruestung import (
     reparatur_heilung_material,
     repariere,
 )
+from app.party import repository as party_repository
 from app.traits.repository import get_ratings_for_entity, list_catalog
 from app.campaigns.repository import get_campaign
 
@@ -1245,12 +1246,25 @@ class ReparaturPreisAntwort(BaseModel):
 
 async def _ruestung_fuer_reparatur(campaign_id: str, item_id: str) -> tuple[dict, str]:
     """Lädt die Rüstung + Besitzer, prüft die Standard-Reparaturfähigkeit.
-    Gemeinsame Vorprüfung für Pool-Abfrage, Selbst- und Händler-Reparatur."""
+    Gemeinsame Vorprüfung für Pool-Abfrage, Selbst- und Händler-Reparatur.
+
+    **Erweitert (05.11.2026, Marks Cyberware-Rüstungs-Idee)** von "nur Typ
+    Rüstung" auf `items_repository.REPARIERBARE_TYPEN` (Rüstung + Cyber-/
+    Bio-/Hexware): ein verbautes Implantat wie ein Metallbrust-Panzer kann
+    genau wie normale Rüstung Kästchen-Schaden tragen (siehe
+    `items_repository.ruestungsteile`, 04.11.2026), heilt aber NICHT über
+    Rast (das ist `istNatuerlich`-Chrom vorbehalten) — es braucht also einen
+    Reparaturweg, und das ist derselbe wie bei Rüstung. Ki-Tama bewusst
+    aussen vor (eigene Level-basierte Augment-Reparatur).
+    """
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
-    if item["typ"] != "Rüstung" or item["ruestungKaestchenMax"] <= 0:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Nur Rüstung mit Kästchen-System kann repariert werden")
+    if item["typ"] not in repository.REPARIERBARE_TYPEN or item["ruestungKaestchenMax"] <= 0:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Nur Rüstung oder verbaute Cyber-/Bio-/Hexware mit Kästchen-System kann repariert werden",
+        )
     if item.get("istNatuerlich"):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
@@ -1260,6 +1274,50 @@ async def _ruestung_fuer_reparatur(campaign_id: str, item_id: str) -> tuple[dict
     if besitzer_id is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Gegenstand ohne Besitzer kann nicht repariert werden")
     return item, besitzer_id
+
+
+async def _wer_repariert(campaign_id: str, viewer: Viewer, besitzer_id: str) -> tuple[str, bool]:
+    """Wessen Ressourcen (Skill-Würfelpool UND Reparaturmaterial) für DIESE
+    Reparatur zählen (05.11.2026, Party-Reparatur-Freigabe).
+
+    Normalfall (Selbstreparatur, oder Rigger an eigener Drohne): die des
+    Besitzers — unverändert wie bisher. **Dritt-Reparatur** (Mark: "der
+    Fixer soll sein eigenes Material mitbringen dürfen und verbauen
+    können"): hat der Viewer keinen eigenen Kreis zum Besitzer, aber eine
+    `DARF_REPARIEREN`-Freigabe, zählen STATTDESSEN seine eigenen Werte/sein
+    eigenes Material — sonst würde die Probe fälschlich mit dem Handwerk-Wert
+    der Trägerin gewürfelt, nicht mit dem des Fixers.
+
+    Gibt `(person_id, ist_dritt)` zurück — GM fällt immer auf den Besitzer
+    zurück (ist_dritt=False), wie bisher.
+    """
+    if viewer.role != "GM" and viewer.person_id:
+        eigener = await _eigener_kreis(campaign_id, viewer.person_id, besitzer_id)
+        if not eigener and await party_repository.hat_reparatur_freigabe(campaign_id, viewer.person_id, besitzer_id):
+            return viewer.person_id, True
+    return besitzer_id, False
+
+
+@campaign_router.get("/reparierbar/{person_id}", response_model=list[GegenstandResponse])
+async def reparierbare_items_route(campaign_id: str, person_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Reparierbare Rüstung/Chrom dieser Person — für die Werkbank-Ansicht.
+
+    Steht vor `/{item_id}` aus demselben Grund wie `/weggeworfen`/`/traglast`/
+    `/verbaut/{person_id}`: sonst würde "reparierbar" als Gegenstands-Kennung
+    gelesen. GM immer, Spieler nur für die eigene Person/eigenen Kreis ODER
+    (05.11.2026, Party-Reparatur-Freigabe) mit `DARF_REPARIEREN`-Freigabe
+    dieser Person.
+    """
+    if viewer.role != "GM":
+        eigener = viewer.person_id and await _eigener_kreis(campaign_id, viewer.person_id, person_id)
+        dritt = (
+            not eigener
+            and viewer.person_id
+            and await party_repository.hat_reparatur_freigabe(campaign_id, viewer.person_id, person_id)
+        )
+        if not (eigener or dritt):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
+    return await repository.reparierbare_items(campaign_id, person_id)
 
 
 @campaign_router.get("/{item_id}/ruestung/reparatur-pool", response_model=ReparaturProbePool)
@@ -1272,13 +1330,19 @@ async def ruestung_reparatur_pool(
 ):
     """Pool-Infos fürs Reparatur-Popup: Rüstung repariert sich **nur über
     Handwerk** (Mark, 29.10.2026, siehe docs/wiki/concepts/drohnen-fahrzeuge.md),
-    der Attribut-Partner bleibt frei wählbar."""
+    der Attribut-Partner bleibt frei wählbar.
+
+    **Dritt-Reparatur** (05.11.2026): hat der Viewer eine Party-Freigabe statt
+    eigenem Besitz, zählen SEINE Werte, nicht die der Trägerin — siehe
+    `_wer_repariert`.
+    """
     item, besitzer_id = await _ruestung_fuer_reparatur(campaign_id, item_id)
     material = await repository.get_gegenstand(campaign_id, materialGegenstandId)
     if material is None or not material.get("istMaschinenteil"):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil")
 
-    werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, besitzer_id)}
+    wer_wuerfelt, _ = await _wer_repariert(campaign_id, viewer, besitzer_id)
+    werte = {r["name"]: r["rating"] for r in await get_ratings_for_entity(campaign_id, wer_wuerfelt)}
     campaign = await get_campaign(campaign_id)
     katalog = await list_catalog(campaign["ruleset"] if campaign else "neotopia")
     # NUR echte Personen-Attribute (29.10.2026, derselbe Fehler wie beim
@@ -1308,12 +1372,15 @@ async def ruestung_reparatur_pool(
 
 @campaign_router.get("/{item_id}/ruestung/maschinenteile", response_model=list[GegenstandResponse])
 async def ruestung_maschinenteile(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
-    """Welche Maschinenteile der Besitzer dieser Rüstung zur Auswahl hat
-    (für das Selbst-Reparieren-Popup)."""
+    """Welche Maschinenteile zur Auswahl stehen (für das Selbst-Reparieren-
+    Popup) — normalerweise die des Besitzers, bei Dritt-Reparatur (Party-
+    Freigabe, 05.11.2026) die des Fixers selbst (`_wer_repariert`: er bringt
+    sein eigenes Material mit)."""
     besitzer_id = await repository.get_owner_person_id(campaign_id, item_id)
     if besitzer_id is None:
         return []
-    return await repository.list_maschinenteile_von(campaign_id, besitzer_id)
+    quelle, _ = await _wer_repariert(campaign_id, viewer, besitzer_id)
+    return await repository.list_maschinenteile_von(campaign_id, quelle)
 
 
 @campaign_router.post("/{item_id}/ruestung/reparieren-material", response_model=ReparaturMaterialErgebnis)
@@ -1326,16 +1393,34 @@ async def ruestung_reparieren_material(
     ein, eigenes Material wird verbraucht — genau wie beim Drohnen-/
     Fahrzeug-Pendant (`entities/routes.py::drohne_reparieren_material`) und
     den Werkbank-Augments. GM darf uneingeschränkt, Spieler nur an der
-    eigenen Rüstung (siehe `_eigener_kreis`)."""
-    item, besitzer_id = await _ruestung_fuer_reparatur(campaign_id, item_id)
-    if viewer.role != "GM" and (not viewer.person_id or not await _eigener_kreis(campaign_id, viewer.person_id, besitzer_id)):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    eigenen Rüstung (siehe `_eigener_kreis`).
 
+    **Dritt-Reparatur** (05.11.2026, Party-Reparatur-Freigabe, Mark: "der
+    Fixer soll sein eigenes Material mitbringen dürfen und verbauen
+    können"): hat ein Party-Mitglied eine `DARF_REPARIEREN`-Freigabe für
+    diese Person (siehe `_wer_repariert`), darf es genauso reparieren — das
+    eingesetzte Material muss dann aber IHM gehören, nicht der Trägerin.
+    """
+    item, besitzer_id = await _ruestung_fuer_reparatur(campaign_id, item_id)
+    if viewer.role != "GM":
+        eigener = viewer.person_id and await _eigener_kreis(campaign_id, viewer.person_id, besitzer_id)
+        dritt = (
+            not eigener
+            and viewer.person_id
+            and await party_repository.hat_reparatur_freigabe(campaign_id, viewer.person_id, besitzer_id)
+        )
+        if not (eigener or dritt):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+
+    material_quelle, ist_dritt = await _wer_repariert(campaign_id, viewer, besitzer_id)
     material = await repository.get_gegenstand(campaign_id, body.materialGegenstandId)
     if material is None or not material.get("istMaschinenteil"):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein gültiges Maschinenteil")
-    if await repository.get_owner_person_id(campaign_id, body.materialGegenstandId) != besitzer_id:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Maschinenteil gehört nicht der Trägerin/dem Träger.")
+    if await repository.get_owner_person_id(campaign_id, body.materialGegenstandId) != material_quelle:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Dieses Maschinenteil gehört dir nicht." if ist_dritt else "Dieses Maschinenteil gehört nicht der Trägerin/dem Träger.",
+        )
     if material.get("menge", 1) < body.menge:
         raise HTTPException(status.HTTP_409_CONFLICT, "Nicht genug von diesem Maschinenteil vorhanden.")
 
