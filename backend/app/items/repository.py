@@ -1716,6 +1716,60 @@ async def ausruestungs_trait_boni(campaign_id: str, person_id: str) -> dict[str,
         return summe
 
 
+async def ausruestungs_trait_spezialisierungen(campaign_id: str, person_id: str) -> dict[str, list[str]]:
+    """Spezialisierungen an BESTEHENDEN Attributen/Fertigkeiten/Sphären, die
+    ein ausgerüstetes Stück per `traitBoni` verstärkt (04.11.2026, Mark: "es
+    muss aber auch zu Bonus, denn bei Bonus verstärke ich schon existierende
+    Skills") — das Gegenstück zu `ausruestungsfertigkeiten_liste` oben, das
+    nur NEUE Fertigkeiten abdeckt.
+
+    Anders als dort (höchster Bonus gewinnt, EIN Item liefert Bonus UND
+    Spezialisierung) wird hier über ALLE ausgerüsteten Stücke VEREINIGT
+    (dedupe, Reihenfolge der ersten Fundstelle): `traitBoni` selbst ist
+    additiv (mehrere Implantate auf dieselbe Fertigkeit summieren sich), also
+    sollen sich auch ihre Spezialisierungstexte addieren statt einander zu
+    verdrängen — zwei Cyberaugen mit je einer Wahrnehmungs-Spezialisierung
+    geben dem Spieler beide als Chip-Auswahl.
+
+    Nur Namen, die am selben Gegenstand auch wirklich in `traitBoni` stehen,
+    zählen — `ausruestungsSpezialisierungen` trägt am selben Item u.U. auch
+    Namen für `ausruestungsfertigkeiten` (neue Skills), die hier nichts
+    verloren haben (die behandelt `ausruestungsfertigkeiten_liste`).
+    """
+    driver = get_driver()
+    query = f"""
+        MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
+        WHERE {WIRKT}
+          AND g.ausruestungsSpezialisierungen IS NOT NULL AND g.ausruestungsSpezialisierungen <> ''
+          AND g.ausruestungsSpezialisierungen <> '{{}}'
+        RETURN g.traitBoni AS traitBoniRoh, g.ausruestungsSpezialisierungen AS spezRoh
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, person_id=person_id, chrom_typen=list(CHROM_TYPEN)
+        )
+        eintraege: dict[str, list[str]] = {}
+        async for record in result:
+            try:
+                trait_boni = json.loads(record["traitBoniRoh"]) if record.get("traitBoniRoh") else {}
+            except (json.JSONDecodeError, TypeError):
+                trait_boni = {}
+            try:
+                spez = json.loads(record["spezRoh"]) if record.get("spezRoh") else {}
+            except (json.JSONDecodeError, TypeError):
+                spez = {}
+            for name in trait_boni:
+                texte = spez.get(name)
+                if not texte:
+                    continue
+                bisher = eintraege.setdefault(name, [])
+                for t in texte:
+                    t = str(t)
+                    if t and t not in bisher:
+                        bisher.append(t)
+        return eintraege
+
+
 async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> list[dict]:
     """Neue Fertigkeiten, die ausschliesslich durch ausgerüstete Gegenstände
     entstehen (`ausruestungsfertigkeiten`) — analog zu `deck_boni`, aber ohne

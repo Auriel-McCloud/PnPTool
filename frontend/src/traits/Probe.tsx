@@ -78,14 +78,6 @@ const NEURO_PARTNER: Record<string, string> = {
  */
 const CYBERDECK_PARTNER_FERTIGKEIT = "Matrix";
 
-/**
- * Synthetisches Präfix für Spezialisierungs-Zuordnung an Ausrüstungs-Skills
- * (04.11.2026): die hängen an keinem echten TraitDef, brauchen aber trotzdem
- * eine stabile "Trait-Kennung", damit dieselbe Chip-Logik wie bei normalen
- * Fertigkeits-Spezialisierungen greift (siehe spezialisierungsTraitId unten).
- */
-const AUSRUESTUNG_SPEZ_PRAEFIX = "ausr::";
-
 export interface ProbeWahl {
   name: string;
   wert: number;
@@ -226,35 +218,40 @@ export function Probe({
   // Attribut antippen: die Spezialisierung hängt an der gewählten Fähigkeit,
   // nicht am Attribut. Sonst gäbe es den +1 nur, wenn man von der Fähigkeit kommt.
   const istAttributWahl = ATTRIBUT_KATEGORIEN.has(wahl.kategorie);
-  const spezialisierungsTraitId = istAttributWahl
-    ? attribut?.traitDefId
-    : wahl.kategorie === "Ausruestungsfertigkeit"
-      ? `${AUSRUESTUNG_SPEZ_PRAEFIX}${wahl.name}`
-      : fertigkeitTrait?.id;
-  // Ausrüstungs-Skills haben keinen echten TraitDef — ihre Spezialisierungen
-  // kommen stattdessen aus dem `ausruestungsSpezialisierungen`-Prop, erkannt
-  // am synthetischen Präfix oben. Fix von der SL vergeben (siehe Props-Doku),
-  // deshalb hier als vollwertige Chips ohne Slot-Verwaltung angehängt.
-  const ausrSpezName = spezialisierungsTraitId?.startsWith(AUSRUESTUNG_SPEZ_PRAEFIX)
-    ? spezialisierungsTraitId.slice(AUSRUESTUNG_SPEZ_PRAEFIX.length)
-    : undefined;
-  const spezialisierungenFuerTrait = spezialisierungsTraitId
-    ? [
-        ...(spezialisierungen ?? []).filter((s) => s.traitDefId === spezialisierungsTraitId && s.text),
-        ...(ausrSpezName ? (ausruestungsSpezialisierungen?.[ausrSpezName] ?? []) : []).map(
-          (text, i): Spezialisierung => ({
-            id: `${spezialisierungsTraitId}::${i}`,
-            campaignId: "",
-            personId: "",
-            traitDefId: spezialisierungsTraitId!,
-            text,
-            quelle: "gekauft",
-            benanntVonSpieler: false,
-            erstelltAm: "",
-          }),
-        ),
-      ]
-    : [];
+  // Für die ECHTEN, vom Spieler verdienten Slots (oben in `spezialisierungen`,
+  // über traitDefId gematcht) — Ausrüstungsfertigkeiten haben keinen eigenen
+  // TraitDef und liefern hier bewusst nichts.
+  const spezialisierungsTraitId = istAttributWahl ? attribut?.traitDefId : fertigkeitTrait?.id;
+  // Name des gerade kombinierten Skills — unabhängig davon, ob er ein echter
+  // TraitDef ist (Fertigkeit/NeuroWeaving, auch als Attribut-Partner gewählt)
+  // oder eine Ausrüstungsfertigkeit (existiert nur am Gegenstand). Darüber
+  // werden die vom Gegenstand FEST vergebenen Spezialisierungen gefunden
+  // (04.11.2026, Mark: "muss auch zu Bonus, da verstärke ich schon
+  // existierende Skills") — unabhängig vom Spieler-Slot-System oben, UND
+  // unabhängig davon, ob der Skill überhaupt einen echten TraitDef hat.
+  const aktiverSkillName = istAttributWahl
+    ? attribut?.name
+    : wahl.kategorie === "Fertigkeit" || wahl.kategorie === "NeuroWeaving" || wahl.kategorie === "Ausruestungsfertigkeit"
+      ? wahl.name
+      : undefined;
+  const itemSpezialisierungen = aktiverSkillName ? (ausruestungsSpezialisierungen?.[aktiverSkillName] ?? []) : [];
+  const spezialisierungenFuerTrait = [
+    ...(spezialisierungsTraitId
+      ? (spezialisierungen ?? []).filter((s) => s.traitDefId === spezialisierungsTraitId && s.text)
+      : []),
+    ...itemSpezialisierungen.map(
+      (text, i): Spezialisierung => ({
+        id: `item-spez:${aktiverSkillName}:${i}`,
+        campaignId: "",
+        personId: "",
+        traitDefId: spezialisierungsTraitId ?? "",
+        text,
+        quelle: "gekauft",
+        benanntVonSpieler: false,
+        erstelltAm: "",
+      }),
+    ),
+  ];
   const roh =
     wahl.wert +
     (attribut?.wert ?? 0) +
@@ -698,9 +695,7 @@ function FertigkeitsWahl({
           <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--wert-hexkraft)" } as React.CSSProperties}>
             Ausrüstung
           </h3>
-          {ausruestungsfertigkeiten!.map((f) =>
-            knopf(`ausruestung:${f.name}`, f.name, f.wert, `${AUSRUESTUNG_SPEZ_PRAEFIX}${f.name}`),
-          )}
+          {ausruestungsfertigkeiten!.map((f) => knopf(`ausruestung:${f.name}`, f.name, f.wert))}
         </section>
       )}
     </>

@@ -75,6 +75,13 @@ export interface Bogen {
    * (z.B. Cyberaugen +1 auf Wahrnehmung). Schlüssel ist der Fertigkeits-/
    * Attributname; wird beim Anzeigen zum Grundwert dazuaddiert. */
   ausruestungsBoni: Record<string, number>;
+  /** Spezialisierungen an BESTEHENDEN Attributen/Fertigkeiten/Sphären, die
+   * ein ausgerüstetes Stück per traitBoni verstärkt (04.11.2026) — Name ->
+   * Texte, über alle Items vereinigt (siehe items/repository.py::
+   * ausruestungs_trait_spezialisierungen). Gegenstück zu `spezialisierungen`
+   * im einzelnen ausruestungsfertigkeiten-Eintrag unten, das nur NEUE
+   * Skills abdeckt. */
+  ausruestungsSpezialisierungen: Record<string, string[]>;
   /** NEUE Fertigkeiten, die es ohne Ausrüstung nicht gibt (z.B. ein
    * Zauberstab mit "Springen 3") — eigener Abschnitt auf dem Blatt. */
   ausruestungsfertigkeiten: { name: string; bonus: number; quelle: string; spezialisierungen: string[] }[];

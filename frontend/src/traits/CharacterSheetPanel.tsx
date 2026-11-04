@@ -212,6 +212,54 @@ type Eigenschaft = {
   spezialisierungen?: string[];
 };
 
+/** Spezialisierungs-Texte an einer traitBoni- oder ausruestungsfertigkeiten-
+ * Zeile (04.11.2026, Mark: fix von der SL vergeben, wirkt wie ein normaler
+ * Spezialisierungs-Chip in der Probe). Eine kleine, eingerückte Zeile pro
+ * Eigenschafts-Zeile — kein eigenes Popup, weil es meist nur 0-2 Texte sind. */
+function SpezialisierungsEditor({
+  eintraege,
+  onChange,
+}: {
+  eintraege: string[];
+  onChange: (neu: string[]) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, marginLeft: 12, marginTop: 2 }}>
+      {eintraege.map((text, si) => (
+        <span
+          key={si}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            background: "var(--karte-rand, rgba(255,255,255,0.08))",
+            borderRadius: 4,
+            padding: "0 4px",
+          }}
+        >
+          <input
+            placeholder="Spezialisierung"
+            value={text}
+            onChange={(e) => onChange(eintraege.map((t, idx) => (idx === si ? e.target.value : t)))}
+            style={{ fontSize: "0.8em", border: "none", background: "transparent", width: 120 }}
+          />
+          <button
+            type="button"
+            title="Spezialisierung entfernen"
+            onClick={() => onChange(eintraege.filter((_, idx) => idx !== si))}
+            style={{ fontSize: "0.8em" }}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <button type="button" onClick={() => onChange([...eintraege, ""])} style={{ fontSize: "0.78em" }}>
+        + Spezialisierung
+      </button>
+    </div>
+  );
+}
+
 function recordToPairs(r: Record<string, string>): Eigenschaft[] {
   return Object.entries(r).map(([key, value]) => ({ key, value }));
 }
@@ -545,7 +593,11 @@ export function GegenstandRow({
     setInitiativeBonus(src.initiativeBonus);
     setZusatzaktionen(src.zusatzaktionen);
     setTraitBoni(
-      Object.entries(src.traitBoni).map(([key, value]) => ({ key, value: String(value) })),
+      Object.entries(src.traitBoni).map(([key, value]) => ({
+        key,
+        value: String(value),
+        spezialisierungen: src.ausruestungsSpezialisierungen?.[key] ?? [],
+      })),
     );
     setAusruestungsfertigkeiten(
       Object.entries(src.ausruestungsfertigkeiten).map(([key, value]) => ({
@@ -667,12 +719,14 @@ export function GegenstandRow({
           .filter((p) => p.key.trim() && (Number(p.value) || p.kiTama))
           .map((p) => [p.key.trim(), Number(p.value) || 0]),
       ),
-      // Spezialisierungen (04.11.2026): nur Einträge mit mindestens einem
-      // nicht-leeren Text, Name wie oben getrimmt. Unabhängig vom
-      // Wert/Ki-Tama-Filter oben — eine Spezialisierung ohne (noch) gesetzten
-      // Bonuswert bleibt erlaubt, der Bonus kann 0 sein (rein thematisch).
+      // Spezialisierungen (04.11.2026, Mark: "muss auch zu Bonus, da
+      // verstärke ich schon existierende Skills") — EIN gemeinsames Feld für
+      // beide Quellen: traitBoni (bestehende Skills) UND ausruestungsfertigkeiten
+      // (neue Skills), Name wie oben getrimmt. Nur Einträge mit mindestens
+      // einem nicht-leeren Text, unabhängig vom Wert/Ki-Tama-Filter — eine
+      // Spezialisierung ohne (noch) gesetzten Bonuswert bleibt erlaubt.
       ausruestungsSpezialisierungen: Object.fromEntries(
-        ausruestungsfertigkeiten
+        [...traitBoni, ...ausruestungsfertigkeiten]
           .map((p) => [p.key.trim(), (p.spezialisierungen ?? []).map((s) => s.trim()).filter(Boolean)])
           .filter(([key, texte]) => key && (texte as string[]).length > 0),
       ),
@@ -1458,10 +1512,12 @@ export function GegenstandRow({
 
               <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
-                  Bonus auf bestehende Werte (solange ausgerüstet)
+                  Bonus auf bestehende Werte (solange ausgerüstet). Spezialisierungen darunter
+                  sind von der SL fix vergeben, unveränderlich für den Spieler, +1 in der Probe.
                 </label>
                 {traitBoni.map((p, i) => (
-                  <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                  <div key={i} style={{ marginTop: 4 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                     <select
                       value={p.key}
                       onChange={(e) =>
@@ -1488,6 +1544,13 @@ export function GegenstandRow({
                     <button type="button" onClick={() => setTraitBoni(traitBoni.filter((_, idx) => idx !== i))}>
                       ×
                     </button>
+                    </div>
+                    <SpezialisierungsEditor
+                      eintraege={p.spezialisierungen ?? []}
+                      onChange={(neu) =>
+                        setTraitBoni(traitBoni.map((x, idx) => (idx === i ? { ...x, spezialisierungen: neu } : x)))
+                      }
+                    />
                   </div>
                 ))}
                 <button
@@ -1610,70 +1673,14 @@ export function GegenstandRow({
                     {/* Spezialisierungen (04.11.2026): fix von der SL vergebene Texte für
                         DIESEN Ausrüstungs-Skill, unveränderlich für den Spieler — wirken wie
                         ein normaler Spezialisierungs-Chip (+1) in der Probe. */}
-                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, marginLeft: 12, marginTop: 2 }}>
-                      {(p.spezialisierungen ?? []).map((text, si) => (
-                        <span
-                          key={si}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            background: "var(--karte-rand, rgba(255,255,255,0.08))",
-                            borderRadius: 4,
-                            padding: "0 4px",
-                          }}
-                        >
-                          <input
-                            placeholder="Spezialisierung"
-                            value={text}
-                            onChange={(e) =>
-                              setAusruestungsfertigkeiten(
-                                ausruestungsfertigkeiten.map((x, idx) =>
-                                  idx === i
-                                    ? {
-                                        ...x,
-                                        spezialisierungen: (x.spezialisierungen ?? []).map((t, tidx) =>
-                                          tidx === si ? e.target.value : t,
-                                        ),
-                                      }
-                                    : x,
-                                ),
-                              )
-                            }
-                            style={{ fontSize: "0.8em", border: "none", background: "transparent", width: 120 }}
-                          />
-                          <button
-                            type="button"
-                            title="Spezialisierung entfernen"
-                            onClick={() =>
-                              setAusruestungsfertigkeiten(
-                                ausruestungsfertigkeiten.map((x, idx) =>
-                                  idx === i
-                                    ? { ...x, spezialisierungen: (x.spezialisierungen ?? []).filter((_, tidx) => tidx !== si) }
-                                    : x,
-                                ),
-                              )
-                            }
-                            style={{ fontSize: "0.8em" }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAusruestungsfertigkeiten(
-                            ausruestungsfertigkeiten.map((x, idx) =>
-                              idx === i ? { ...x, spezialisierungen: [...(x.spezialisierungen ?? []), ""] } : x,
-                            ),
-                          )
-                        }
-                        style={{ fontSize: "0.78em" }}
-                      >
-                        + Spezialisierung
-                      </button>
-                    </div>
+                    <SpezialisierungsEditor
+                      eintraege={p.spezialisierungen ?? []}
+                      onChange={(neu) =>
+                        setAusruestungsfertigkeiten(
+                          ausruestungsfertigkeiten.map((x, idx) => (idx === i ? { ...x, spezialisierungen: neu } : x)),
+                        )
+                      }
+                    />
                   </div>
                 ))}
                 <button

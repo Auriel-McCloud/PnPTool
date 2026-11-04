@@ -754,9 +754,15 @@ export function Charakterblatt({
           detailbeschreibung: z.detailbeschreibung,
         }))}
         ausruestungsfertigkeiten={(bogen.ausruestungsfertigkeiten ?? []).map((f) => ({ name: f.name, wert: f.bonus }))}
-        ausruestungsSpezialisierungen={Object.fromEntries(
-          (bogen.ausruestungsfertigkeiten ?? []).map((f) => [f.name, f.spezialisierungen ?? []]),
-        )}
+        // Zusammengeführt: Spezialisierungen an bestehenden Skills (traitBoni,
+        // über alle Items vereinigt) UND an neuen Ausrüstungs-Skills (je
+        // Eintrag vom bonusstärksten Item) — Probe.tsx sucht nur noch nach
+        // dem Namen des gerade kombinierten Skills, ohne wissen zu müssen,
+        // woher der Skill überhaupt kommt.
+        ausruestungsSpezialisierungen={{
+          ...(bogen.ausruestungsSpezialisierungen ?? {}),
+          ...Object.fromEntries((bogen.ausruestungsfertigkeiten ?? []).map((f) => [f.name, f.spezialisierungen ?? []])),
+        }}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}
         campaignId={campaignId}

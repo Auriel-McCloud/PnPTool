@@ -12,6 +12,7 @@ from app.kampf import repository as kampf_repository
 from app.kampf.hot import hot_anpassung, verbindung_bricht, werte_mit_hot
 from app.items.repository import (
     ausruestungs_trait_boni,
+    ausruestungs_trait_spezialisierungen,
     ausruestungsfertigkeiten_liste,
     commlink_cyberwall,
     deck_boni,
@@ -244,6 +245,7 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
         "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
         "deckBoni": await deck_boni(campaign_id, person_id),
         "ausruestungsBoni": await ausruestungs_trait_boni(campaign_id, person_id),
+        "ausruestungsSpezialisierungen": await ausruestungs_trait_spezialisierungen(campaign_id, person_id),
         "ausruestungsfertigkeiten": await ausruestungsfertigkeiten_liste(campaign_id, person_id),
         "ruestung": ruestungs_uebersicht(ruestungsteile_live),
         "katalog": katalog_sichtbar,
