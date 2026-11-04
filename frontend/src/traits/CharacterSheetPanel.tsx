@@ -203,7 +203,14 @@ function ParadeFeld({ wert, onChange }: { wert: number; onChange: (wert: number)
   );
 }
 
-type Eigenschaft = { key: string; value: string; kiTama?: boolean; attacke?: boolean; schadensart?: SchadenArt };
+type Eigenschaft = {
+  key: string;
+  value: string;
+  kiTama?: boolean;
+  attacke?: boolean;
+  schadensart?: SchadenArt;
+  spezialisierungen?: string[];
+};
 
 function recordToPairs(r: Record<string, string>): Eigenschaft[] {
   return Object.entries(r).map(([key, value]) => ({ key, value }));
@@ -547,6 +554,7 @@ export function GegenstandRow({
         kiTama: Boolean(src.kiTamaFertigkeiten?.[key]),
         attacke: Boolean(src.attackenFertigkeiten?.[key]),
         schadensart: src.attackenSchadensart?.[key] || "schwer",
+        spezialisierungen: src.ausruestungsSpezialisierungen?.[key] ?? [],
       })),
     );
     setStufe(src.stufe);
@@ -658,6 +666,15 @@ export function GegenstandRow({
         ausruestungsfertigkeiten
           .filter((p) => p.key.trim() && (Number(p.value) || p.kiTama))
           .map((p) => [p.key.trim(), Number(p.value) || 0]),
+      ),
+      // Spezialisierungen (04.11.2026): nur Einträge mit mindestens einem
+      // nicht-leeren Text, Name wie oben getrimmt. Unabhängig vom
+      // Wert/Ki-Tama-Filter oben — eine Spezialisierung ohne (noch) gesetzten
+      // Bonuswert bleibt erlaubt, der Bonus kann 0 sein (rein thematisch).
+      ausruestungsSpezialisierungen: Object.fromEntries(
+        ausruestungsfertigkeiten
+          .map((p) => [p.key.trim(), (p.spezialisierungen ?? []).map((s) => s.trim()).filter(Boolean)])
+          .filter(([key, texte]) => key && (texte as string[]).length > 0),
       ),
       // Ki-Tama (29.10.2026, 30.10.2026 umbenannt von "Materia"): nur
       // Einträge, die auch wirklich gespeichert werden (Name gesetzt,
@@ -1507,10 +1524,12 @@ export function GegenstandRow({
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
                   Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand — Häkchen "Ki-Tama":
                   Spieler darf mit eigener EP hochleveln, Stufe bleibt am Gegenstand. Häkchen "Attacke":
-                  erscheint im Kampf wie eine Waffe, Würfelpool Intelligenz + Fertigkeitswert)
+                  erscheint im Kampf wie eine Waffe, Würfelpool Intelligenz + Fertigkeitswert. Spezialisierungen
+                  darunter sind von der SL fix vergeben, unveränderlich für den Spieler, +1 in der Probe)
                 </label>
                 {ausruestungsfertigkeiten.map((p, i) => (
-                  <div key={i} style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                  <div key={i} style={{ marginTop: 4 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                     <input
                       placeholder="Name der neuen Fertigkeit"
                       value={p.key}
@@ -1587,6 +1606,74 @@ export function GegenstandRow({
                     >
                       ×
                     </button>
+                    </div>
+                    {/* Spezialisierungen (04.11.2026): fix von der SL vergebene Texte für
+                        DIESEN Ausrüstungs-Skill, unveränderlich für den Spieler — wirken wie
+                        ein normaler Spezialisierungs-Chip (+1) in der Probe. */}
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, marginLeft: 12, marginTop: 2 }}>
+                      {(p.spezialisierungen ?? []).map((text, si) => (
+                        <span
+                          key={si}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            background: "var(--karte-rand, rgba(255,255,255,0.08))",
+                            borderRadius: 4,
+                            padding: "0 4px",
+                          }}
+                        >
+                          <input
+                            placeholder="Spezialisierung"
+                            value={text}
+                            onChange={(e) =>
+                              setAusruestungsfertigkeiten(
+                                ausruestungsfertigkeiten.map((x, idx) =>
+                                  idx === i
+                                    ? {
+                                        ...x,
+                                        spezialisierungen: (x.spezialisierungen ?? []).map((t, tidx) =>
+                                          tidx === si ? e.target.value : t,
+                                        ),
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                            style={{ fontSize: "0.8em", border: "none", background: "transparent", width: 120 }}
+                          />
+                          <button
+                            type="button"
+                            title="Spezialisierung entfernen"
+                            onClick={() =>
+                              setAusruestungsfertigkeiten(
+                                ausruestungsfertigkeiten.map((x, idx) =>
+                                  idx === i
+                                    ? { ...x, spezialisierungen: (x.spezialisierungen ?? []).filter((_, tidx) => tidx !== si) }
+                                    : x,
+                                ),
+                              )
+                            }
+                            style={{ fontSize: "0.8em" }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAusruestungsfertigkeiten(
+                            ausruestungsfertigkeiten.map((x, idx) =>
+                              idx === i ? { ...x, spezialisierungen: [...(x.spezialisierungen ?? []), ""] } : x,
+                            ),
+                          )
+                        }
+                        style={{ fontSize: "0.78em" }}
+                      >
+                        + Spezialisierung
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button

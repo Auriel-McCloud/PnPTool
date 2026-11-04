@@ -78,6 +78,14 @@ const NEURO_PARTNER: Record<string, string> = {
  */
 const CYBERDECK_PARTNER_FERTIGKEIT = "Matrix";
 
+/**
+ * Synthetisches Präfix für Spezialisierungs-Zuordnung an Ausrüstungs-Skills
+ * (04.11.2026): die hängen an keinem echten TraitDef, brauchen aber trotzdem
+ * eine stabile "Trait-Kennung", damit dieselbe Chip-Logik wie bei normalen
+ * Fertigkeits-Spezialisierungen greift (siehe spezialisierungsTraitId unten).
+ */
+const AUSRUESTUNG_SPEZ_PRAEFIX = "ausr::";
+
 export interface ProbeWahl {
   name: string;
   wert: number;
@@ -93,6 +101,7 @@ export function Probe({
   ausruestungsBoni,
   zusatzfertigkeiten,
   ausruestungsfertigkeiten,
+  ausruestungsSpezialisierungen,
   magieFlavor,
   spezialisierungen,
   campaignId,
@@ -129,6 +138,13 @@ export function Probe({
    */
   zusatzfertigkeiten?: { name: string; wert: number; kurzbeschreibung?: string; detailbeschreibung?: string }[];
   ausruestungsfertigkeiten?: { name: string; wert: number }[];
+  /** Spezialisierungen an Ausrüstungs-Skills (04.11.2026): von der SL fix am
+   * Gegenstand vergebene Texte (items/schemas.py::ausruestungsSpezialisierungen),
+   * Schlüssel ist derselbe Name wie in `ausruestungsfertigkeiten`. Wirkt wie
+   * ein normaler Spezialisierungs-Chip (+1 in der Probe), aber OHNE
+   * Slot-Verwaltung — die SL hat den Text schon beim Anlegen festgelegt,
+   * hier wird nur noch der Bonus angewendet. */
+  ausruestungsSpezialisierungen?: Record<string, string[]>;
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
   /** Fertigkeiten-Spezialisierung (22.10.2026): ALLE Slots dieser Person
@@ -210,9 +226,34 @@ export function Probe({
   // Attribut antippen: die Spezialisierung hängt an der gewählten Fähigkeit,
   // nicht am Attribut. Sonst gäbe es den +1 nur, wenn man von der Fähigkeit kommt.
   const istAttributWahl = ATTRIBUT_KATEGORIEN.has(wahl.kategorie);
-  const spezialisierungsTraitId = istAttributWahl ? attribut?.traitDefId : fertigkeitTrait?.id;
+  const spezialisierungsTraitId = istAttributWahl
+    ? attribut?.traitDefId
+    : wahl.kategorie === "Ausruestungsfertigkeit"
+      ? `${AUSRUESTUNG_SPEZ_PRAEFIX}${wahl.name}`
+      : fertigkeitTrait?.id;
+  // Ausrüstungs-Skills haben keinen echten TraitDef — ihre Spezialisierungen
+  // kommen stattdessen aus dem `ausruestungsSpezialisierungen`-Prop, erkannt
+  // am synthetischen Präfix oben. Fix von der SL vergeben (siehe Props-Doku),
+  // deshalb hier als vollwertige Chips ohne Slot-Verwaltung angehängt.
+  const ausrSpezName = spezialisierungsTraitId?.startsWith(AUSRUESTUNG_SPEZ_PRAEFIX)
+    ? spezialisierungsTraitId.slice(AUSRUESTUNG_SPEZ_PRAEFIX.length)
+    : undefined;
   const spezialisierungenFuerTrait = spezialisierungsTraitId
-    ? (spezialisierungen ?? []).filter((s) => s.traitDefId === spezialisierungsTraitId && s.text)
+    ? [
+        ...(spezialisierungen ?? []).filter((s) => s.traitDefId === spezialisierungsTraitId && s.text),
+        ...(ausrSpezName ? (ausruestungsSpezialisierungen?.[ausrSpezName] ?? []) : []).map(
+          (text, i): Spezialisierung => ({
+            id: `${spezialisierungsTraitId}::${i}`,
+            campaignId: "",
+            personId: "",
+            traitDefId: spezialisierungsTraitId!,
+            text,
+            quelle: "gekauft",
+            benanntVonSpieler: false,
+            erstelltAm: "",
+          }),
+        ),
+      ]
     : [];
   const roh =
     wahl.wert +
@@ -657,7 +698,9 @@ function FertigkeitsWahl({
           <h3 className="pr-spalte-titel" style={{ "--cb-ton": "var(--wert-hexkraft)" } as React.CSSProperties}>
             Ausrüstung
           </h3>
-          {ausruestungsfertigkeiten!.map((f) => knopf(`ausruestung:${f.name}`, f.name, f.wert))}
+          {ausruestungsfertigkeiten!.map((f) =>
+            knopf(`ausruestung:${f.name}`, f.name, f.wert, `${AUSRUESTUNG_SPEZ_PRAEFIX}${f.name}`),
+          )}
         </section>
       )}
     </>

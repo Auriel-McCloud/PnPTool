@@ -28,6 +28,7 @@ RETURN_FIELDS = """
     g.kampfFertigkeit AS kampfFertigkeit, g.paradeBonus AS paradeBonus,
     g.deaktivModus AS deaktivModus,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
+    g.ausruestungsSpezialisierungen AS ausruestungsSpezialisierungen,
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
     g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
     g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
@@ -195,6 +196,7 @@ def _decode(record: dict) -> dict:
     for feld in (
         "traitBoni",
         "ausruestungsfertigkeiten",
+        "ausruestungsSpezialisierungen",
         "kiTamaFertigkeiten",
         "attackenFertigkeiten",
         "attackenSchadensart",
@@ -293,6 +295,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             paradeBonus: $paradeBonus,
             deaktivModus: $deaktivModus,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
+            ausruestungsSpezialisierungen: $ausruestungsSpezialisierungen,
             kiTamaFertigkeiten: $kiTamaFertigkeiten,
             attackenFertigkeiten: $attackenFertigkeiten, attackenSchadensart: $attackenSchadensart,
             initiativeBonus: $initiativeBonus, verbaut: $verbaut,
@@ -398,6 +401,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             beschwoerungsSchwierigkeit=int(data.get("beschwoerungsSchwierigkeit") or 0),
             istNatuerlich=bool(data.get("istNatuerlich")),
             ausruestungsfertigkeiten=json.dumps(data.get("ausruestungsfertigkeiten") or {}),
+            ausruestungsSpezialisierungen=json.dumps(data.get("ausruestungsSpezialisierungen") or {}),
             kiTamaFertigkeiten=json.dumps(data.get("kiTamaFertigkeiten") or {}),
             attackenFertigkeiten=json.dumps(data.get("attackenFertigkeiten") or {}),
             attackenSchadensart=json.dumps(data.get("attackenSchadensart") or {}),
@@ -718,6 +722,8 @@ async def update_gegenstand(campaign_id: str, item_id: str, data: dict) -> dict 
         changed["traitBoni"] = json.dumps(changed["traitBoni"])
     if "ausruestungsfertigkeiten" in changed:
         changed["ausruestungsfertigkeiten"] = json.dumps(changed["ausruestungsfertigkeiten"])
+    if "ausruestungsSpezialisierungen" in changed:
+        changed["ausruestungsSpezialisierungen"] = json.dumps(changed["ausruestungsSpezialisierungen"])
     if "kiTamaFertigkeiten" in changed:
         changed["kiTamaFertigkeiten"] = json.dumps(changed["kiTamaFertigkeiten"])
     if "attackenFertigkeiten" in changed:
@@ -1716,6 +1722,12 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
     festen Typ-Bezug (jeder Gegenstandstyp kann das Feld tragen, nicht nur
     Cyberdecks). Liefert je Fertigkeit den höchsten Bonus UND von welchem
     Gegenstand er stammt, damit das Blatt zeigen kann, woher sie kommt.
+
+    `spezialisierungen` (04.11.2026): die fix von der SL vergebenen
+    Spezialisierungstexte (`ausruestungsSpezialisierungen`) des GEWINNENDEN
+    Gegenstands (der mit dem höchsten Bonus für diesen Namen) — dieselbe
+    "höchster Wert gewinnt"-Regel wie beim Bonus selbst, damit beide Felder
+    konsistent von ein und demselben Item stammen.
     """
     driver = get_driver()
     query = f"""
@@ -1723,7 +1735,8 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
         WHERE {WIRKT}
           AND g.ausruestungsfertigkeiten IS NOT NULL AND g.ausruestungsfertigkeiten <> ''
           AND g.ausruestungsfertigkeiten <> '{{}}'
-        RETURN g.name AS itemName, g.ausruestungsfertigkeiten AS roh
+        RETURN g.name AS itemName, g.ausruestungsfertigkeiten AS roh,
+               g.ausruestungsSpezialisierungen AS spezRoh
     """
     async with driver.session() as session:
         result = await session.run(
@@ -1735,11 +1748,20 @@ async def ausruestungsfertigkeiten_liste(campaign_id: str, person_id: str) -> li
                 fertigkeiten = json.loads(record["roh"])
             except (json.JSONDecodeError, TypeError):
                 continue
+            try:
+                spezialisierungen = json.loads(record["spezRoh"]) if record.get("spezRoh") else {}
+            except (json.JSONDecodeError, TypeError):
+                spezialisierungen = {}
             for name, wert in fertigkeiten.items():
                 wert = int(wert)
                 bisher = eintraege.get(name)
                 if bisher is None or wert > bisher["bonus"]:
-                    eintraege[name] = {"name": name, "bonus": wert, "quelle": record["itemName"]}
+                    eintraege[name] = {
+                        "name": name,
+                        "bonus": wert,
+                        "quelle": record["itemName"],
+                        "spezialisierungen": [str(s) for s in (spezialisierungen.get(name) or [])],
+                    }
         return list(eintraege.values())
 
 

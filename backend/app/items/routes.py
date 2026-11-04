@@ -215,6 +215,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "deaktivModus": body.deaktivModus if body.deaktivModus in ("komplett", "upgrades") else "",
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
+        "ausruestungsSpezialisierungen": body.ausruestungsSpezialisierungen,
         "kiTamaFertigkeiten": body.kiTamaFertigkeiten,
         "attackenFertigkeiten": body.attackenFertigkeiten,
         "attackenSchadensart": body.attackenSchadensart,

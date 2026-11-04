@@ -96,6 +96,12 @@ export interface Gegenstand {
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
   ausruestungsfertigkeiten: Record<string, number>;
+  /** Spezialisierungen für eine ausruestungsfertigkeit (04.11.2026): von der
+   * SL fix vergebene Texte, unveränderlich für den Spieler — Name (Schlüssel
+   * aus ausruestungsfertigkeiten) -> Liste von Spezialisierungstexten.
+   * Wirkt wie eine normale Fertigkeits-Spezialisierung (+1-Würfel-Chip in
+   * der Probe), siehe backend/app/items/schemas.py::ausruestungsSpezialisierungen. */
+  ausruestungsSpezialisierungen: Record<string, string[]>;
   /** Ki-Tama (29.10.2026, 30.10.2026 umbenannt von "Materia"): welche der
    * obigen Fertigkeiten der Spieler mit eigener EP hochleveln darf — Stufe
    * bleibt am Gegenstand, siehe backend/app/items/schemas.py::kiTamaFertigkeiten. */
@@ -527,6 +533,7 @@ export interface GegenstandUpdate {
   deaktivModus?: "" | "komplett" | "upgrades";
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
+  ausruestungsSpezialisierungen?: Record<string, string[]>;
   kiTamaFertigkeiten?: Record<string, boolean>;
   attackenFertigkeiten?: Record<string, boolean>;
   attackenSchadensart?: Record<string, SchadenArt>;

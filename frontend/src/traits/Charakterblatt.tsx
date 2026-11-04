@@ -754,6 +754,9 @@ export function Charakterblatt({
           detailbeschreibung: z.detailbeschreibung,
         }))}
         ausruestungsfertigkeiten={(bogen.ausruestungsfertigkeiten ?? []).map((f) => ({ name: f.name, wert: f.bonus }))}
+        ausruestungsSpezialisierungen={Object.fromEntries(
+          (bogen.ausruestungsfertigkeiten ?? []).map((f) => [f.name, f.spezialisierungen ?? []]),
+        )}
         magieFlavor={u.magieFlavor}
         spezialisierungen={spezialisierungen}
         campaignId={campaignId}
@@ -1043,7 +1046,9 @@ export function Charakterblatt({
                       ? onWertGewaehlt(f.name, f.bonus, "Ausruestungsfertigkeit")
                       : setProbe({ name: f.name, wert: f.bonus, kategorie: "Ausruestungsfertigkeit" })
                   }
-                  title={`${f.name} — von ${f.quelle}`}
+                  title={`${f.name} — von ${f.quelle}${
+                    f.spezialisierungen?.length ? `, Spezialisierung: ${f.spezialisierungen.join(", ")}` : ""
+                  }`}
                 >
                   <span className="cb-wert-name">
                     {f.name}

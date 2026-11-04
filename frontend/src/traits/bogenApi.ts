@@ -77,7 +77,7 @@ export interface Bogen {
   ausruestungsBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne Ausrüstung nicht gibt (z.B. ein
    * Zauberstab mit "Springen 3") — eigener Abschnitt auf dem Blatt. */
-  ausruestungsfertigkeiten: { name: string; bonus: number; quelle: string }[];
+  ausruestungsfertigkeiten: { name: string; bonus: number; quelle: string; spezialisierungen: string[] }[];
   /** Rüstung als eigene Kästchenleiste neben Gesundheit und Willenskraft. */
   ruestung: RuestungsUebersicht;
   /** Bereits nach dem Weg gefiltert: kein Magier, keine Sphären. */

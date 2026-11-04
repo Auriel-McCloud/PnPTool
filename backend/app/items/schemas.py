@@ -193,6 +193,19 @@ class GegenstandCreate(BaseModel):
     # magischen Stiefeln) — Name -> Bonuswürfel. Erscheinen nur, solange
     # ausgerüstet, als eigener Abschnitt auf dem Charakterbogen.
     ausruestungsfertigkeiten: dict[str, int] = {}
+    # Spezialisierungen für eine ausruestungsfertigkeit (04.11.2026, Marks
+    # Idee: Cyberware/Bioware/Hexware/Ki-Tama sollen einen von ihnen
+    # verliehenen Skill gleich mit eingebauter Spezialisierung mitgeben
+    # können). Name (muss ein Schlüssel aus ausruestungsfertigkeiten sein) ->
+    # Liste von Spezialisierungstexten. Bewusst KEIN eigenes System wie
+    # spezialisierungen/repository.py: dort "verdient" der SPIELER einen Slot
+    # (Schwelle 4/6 oder EP-Kauf) und benennt ihn selbst; hier legt die SL den
+    # Text beim Anlegen/Bearbeiten des Gegenstands fest, unveränderlich für
+    # den Spieler — ein Implantat kommt fix so spezialisiert aus der Klinik.
+    # Mehrere Texte je Fertigkeit erlaubt (Mark: "mehrere möglich"). Wirkung:
+    # genau wie eine normale Fertigkeits-Spezialisierung ein wählbarer
+    # +1-Würfel-Chip in der Probe (Probe.tsx), nur ohne Slot-Verwaltung.
+    ausruestungsSpezialisierungen: dict[str, list[str]] = {}
     # Ki-Tama (29.10.2026, Marks FF7-Idee, 30.10.2026 umbenannt von "Materia"
     # zu "Ki-Tama" — jap. "Tama" = Perle/Kugel + "Ki" = KI-Kristall):
     # welche der obigen ausruestungsfertigkeiten der Spieler mit eigener
@@ -405,6 +418,7 @@ class GegenstandUpdate(BaseModel):
     verbaut: bool | None = None
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
+    ausruestungsSpezialisierungen: dict[str, list[str]] | None = None
     kiTamaFertigkeiten: dict[str, bool] | None = None
     attackenFertigkeiten: dict[str, bool] | None = None
     attackenSchadensart: dict[str, SchadenArt] | None = None
@@ -532,6 +546,7 @@ class GegenstandResponse(BaseModel):
     entfernungBeantragt: bool = False
     zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}
+    ausruestungsSpezialisierungen: dict[str, list[str]] = {}
     kiTamaFertigkeiten: dict[str, bool] = {}
     # Siehe GegenstandCreate für die volle Begründung.
     attackenFertigkeiten: dict[str, bool] = {}

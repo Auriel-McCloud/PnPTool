@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Spezialisierungen an Ausrüstungs-Skills (04.11.2026)
+
+Cyberware/Bioware/Hexware/Ki-Tama (eigentlich jeder Gegenstandstyp, das Feld ist generisch) können einem per `ausruestungsfertigkeiten` verliehenen Skill jetzt feste Spezialisierungstexte mitgeben. Bewusst **kein** eigenes Slot-System wie bei normalen Fertigkeiten (Schwelle 4/6, Spieler benennt selbst) — die SL trägt die Texte beim Anlegen/Bearbeiten direkt ein, unveränderlich für den Spieler, beliebig viele je Skill. Wirkung: genau wie eine normale Fertigkeits-Spezialisierung ein wählbarer +1-Würfel-Chip in der Probe, nur ohne Benennen/Kaufen. Neues Feld `ausruestungsSpezialisierungen: dict[str, list[str]]` (Name aus `ausruestungsfertigkeiten` -> Texte), `items/repository.py::ausruestungsfertigkeiten_liste` liefert sie vom gewinnenden Item mit (gleiche "höchster Bonus gewinnt"-Regel). Frontend: `CharacterSheetPanel.tsx` (Editor je Ausrüstungsfertigkeit-Zeile), `Probe.tsx` (synthetische Trait-Kennung `ausr::<name>`, da Ausrüstungs-Skills keinen echten TraitDef haben). `pytest` ohne Regression (969 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b` sauber. **Nie im Browser angeklickt.**
+
 ## Gegenstände-Übersicht: Reiter für Vorlagen und Herrenlose (02.11.2026)
 
 Eigener Reiter „◆ Vorlage“ neben Am Körper/Mitgeführt (nicht im Besitzer-Dropdown versteckt); solange er nicht aktiv ist, bleiben Vorlagen überall ausgeblendet — sonst tauchten sie wegen ihres Default-Ablagewerts RUCKSACK unter „Mitgeführt“ mit auf. Zusätzlich neue Besitzer-Dropdown-Option „Herrenlos (kein Besitzer, keine Vorlage)“ für Gegenstände, deren Besitzer gelöscht wurde, ohne dass die Invariante istVorlage<=>kein Besitzer nachgezogen wurde — reine Aufräum-Ansicht für die SL. `GegenstaendeUebersicht.tsx`, `items/api.ts` (`HERRENLOS_SENTINEL`). **Nie im Browser angeklickt.**
