@@ -190,6 +190,13 @@ def berechne_treffer(
 def reihenfolge(teile: list[dict]) -> list[dict]:
     """In welcher Reihenfolge die getragenen Rüstungsteile aufgebraucht werden.
 
+    **Natürliche Rüstung (`istNatuerlich`) kommt immer zuletzt dran** (Mark,
+    04.11.2026: "man zieht ja andere Rüstung über die natürliche") — Haut,
+    Chitinpanzer oder ein fest verbautes Knochenimplantat liegen UNTER der
+    angelegten Kleidung/Rüstung, nicht darüber. Erst wenn jede andere Schicht
+    aufgebraucht ist, übernimmt die natürliche. Innerhalb der beiden Gruppen
+    (normal / natürlich) gilt unverändert:
+
     **Die beste Reduktion zuerst** — absteigend nach `ruestungReduktionBasis`.
     Marks Vorgabe (aus der Durchlass-Fassung übernommen, nur umgekehrt
     sortiert weil "hoch=gut" jetzt gilt): die beste Schicht hält den Treffer
@@ -207,14 +214,21 @@ def reihenfolge(teile: list[dict]) -> list[dict]:
     völligem Gleichstand reproduzierbar bleibt und nicht von der Sortierung
     der Datenbankabfrage abhängt.
 
-    **Zerstörte Teile fallen heraus** (0 Kästchen): sie wirken nicht mehr und
-    gelten auch nicht mehr als ausgerüstet (siehe traits/routes.py, das sie
-    ins Mitgeführte zurücklegt).
+    **Zerstörte Teile fallen heraus** (0 Kästchen): sie wirken einfach nicht
+    mehr. Für normale Rüstung legt `traits/routes.py` sie zusätzlich ins
+    Mitgeführte zurück (sie fällt ja ab); natürliche Rüstung bleibt
+    unverändert ausgerüstet — man kann die eigene Haut/ein Implantat nicht
+    "ablegen", nur beschädigt tragen.
     """
     wirksam = [t for t in teile if t.get("ruestungKaestchenAktuell", 0) > 0]
     return sorted(
         wirksam,
-        key=lambda t: (-t["ruestungReduktionBasis"], t["ruestungKaestchenAktuell"], t["id"]),
+        key=lambda t: (
+            bool(t.get("istNatuerlich")),
+            -t["ruestungReduktionBasis"],
+            t["ruestungKaestchenAktuell"],
+            t["id"],
+        ),
     )
 
 

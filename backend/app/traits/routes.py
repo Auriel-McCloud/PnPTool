@@ -564,17 +564,31 @@ async def ruestungstreffer(
             gesamt["reduktionBasis"],
         )
         folgen = verteile_kaestchenschaden(gesamt["geordnet"], ergebnis["kaestchenSchaden"])
+        # Welche Teile des Pools natürlich sind (Haut/Chitin/fest verbautes
+        # Implantat) — die werden beim Zerstören NIE umgelegt, siehe unten.
+        natuerliche_ids = {t["id"] for t in gesamt["geordnet"] if t.get("istNatuerlich")}
         for folge in folgen:
             await update_gegenstand(
                 campaign_id,
                 folge["id"],
                 {"ruestungKaestchenAktuell": folge["kaestchenNeu"]},
             )
-            if folge["zerstoert"]:
+            if folge["zerstoert"] and folge["id"] not in natuerliche_ids:
                 # Zerschossene Rüstung gilt nicht mehr als ausgerüstet
                 # (Marks Vorgabe). Ins Mitgeführte statt in den Mülleimer:
                 # sie bleibt reparierbar — dasselbe Muster wie bei
                 # chirurgisch entferntem Chrom.
+                #
+                # Natürliche Rüstung (04.11.2026, Mark: "sie wirkt einfach
+                # nicht mehr, wenn ihre Kästchen 0 sind") bleibt bewusst
+                # unverändert ausgerüstet — Haut oder ein fest verbautes
+                # Implantat "fällt" nicht ab, nur weil es beschädigt ist.
+                # Ob sie wirkt, entscheidet rein `ruestungKaestchenAktuell`
+                # (reihenfolge() lässt 0-Kästchen-Teile ohnehin aus dem Pool
+                # fallen) — kein Ablage-Wechsel nötig. Das schließt auch den
+                # Bug, dass ein verbautes natürliches Cyberware-Implantat
+                # hier ungeprüft nach RUCKSACK gelegt wurde, obwohl
+                # `chirurgie.kann_ablegen` genau das sonst überall verbietet.
                 await set_ablage(campaign_id, folge["id"], "RUCKSACK", None)
 
     if ergebnis["hpMenge"] > 0:

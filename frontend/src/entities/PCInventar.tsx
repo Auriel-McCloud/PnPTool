@@ -74,7 +74,24 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   // Fähnchen, dass sie gerade verbaut sind).
   const verbaute = items.filter((i) => i.verbaut);
   const montierte = items.filter((i) => i.montiertAnId && !i.verbaut);
-  const nichtVerbaut = items.filter((i) => !i.verbaut && !i.montiertAnId);
+
+  // Körperteil (04.11.2026, Mark nach dem Wachmann-Bugreport): `istNatuerlich`
+  // an Rüstung/Ki-Tama (Dug'Rah-Chitin & Co.) ist IMMER Körperteil, bleibt
+  // jetzt dauerhaft `ablage=AUSGERUESTET` (siehe kampf/ruestung.py::
+  // reihenfolge, traits/routes.py::ruestungstreffer) und landete deshalb
+  // unsichtbar vermischt in der normalen "Ausgerüstet"-Sektion zwischen
+  // Waffen und Kleidung. Eigene Sektion, damit die SL auf einen Blick sieht,
+  // was wirklich abnehmbar ist und was Körperteil. Chrom-Typen (Cyberware/
+  // Bioware/Hexware) NICHT hier mit rein, solange sie `verbaut=false` sind —
+  // vor der Chirurgie ist so ein Stück noch ein ganz normaler, loser
+  // Gegenstand im Rucksack, kein Körperteil (erst mit `verbaut=true` wandert
+  // es ohnehin automatisch in die "Verbaut"-Sektion oben).
+  const CHROM_TYPEN = new Set(["Cyberware", "Bioware", "Hexware"]);
+  const koerperteile = items.filter(
+    (i) => i.istNatuerlich && !i.verbaut && !i.montiertAnId && !CHROM_TYPEN.has(i.typ),
+  );
+  const koerperteilIds = new Set(koerperteile.map((i) => i.id));
+  const nichtVerbaut = items.filter((i) => !i.verbaut && !i.montiertAnId && !koerperteilIds.has(i.id));
 
   // Gruppiere nicht-verbaute nach Ablage
   const nachAblage = nichtVerbaut.reduce<Record<string, Gegenstand[]>>((acc, item) => {
@@ -132,6 +149,22 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                 montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                 // Verbaute Augments können nicht umgelagert werden
               />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Körperteil: natürliche Rüstung/Ki-Tama, immer ausgerüstet, nie
+          "ablegbar" — eigene Sektion statt vermischt mit echter Kleidung. */}
+      {koerperteile.length > 0 && (
+        <section className="pci-sektion pci-verbaut">
+          <h4 className="pci-ablage-titel">
+            <span>🧬 Körperteil</span>
+            <span className="pci-anzahl">{koerperteile.length}</span>
+          </h4>
+          <div className="pci-kachel-liste">
+            {koerperteile.map((g) => (
+              <GegenstandKachel key={g.id} item={g} />
             ))}
           </div>
         </section>

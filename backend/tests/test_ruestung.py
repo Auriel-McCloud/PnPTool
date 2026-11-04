@@ -340,9 +340,13 @@ class TestNatuerlicheRuestung:
         anwende_natuerliche_ruestung([natuerlich], widerstandsfaehigkeit=6)
         assert natuerlich["ruestungKaestchenMax"] == 5
 
-    def test_gemischter_pool_reduktion_kommt_weiterhin_vom_besten_teil(self):
+    def test_gemischter_pool_natuerliche_schicht_kommt_zuletzt_dran(self):
         """Zusammenspiel mit pool(): das Live-Max fliesst in die Kästchen-
-        Summe ein, bevor der Pool gebildet wird."""
+        Summe ein, bevor der Pool gebildet wird. Reduktion kommt jetzt vom
+        ERSTEN Teil in Verbrauchsreihenfolge — und natürliche Rüstung steht
+        darin bewusst IMMER zuletzt (Mark, 04.11.2026: "man zieht ja andere
+        Rüstung über die natürliche"), auch wenn ihre eigene Reduktion höher
+        wäre als die der normalen Schicht."""
         natuerlich = teil("a", "Chitinpanzer", 2, 5, 2)
         natuerlich["istNatuerlich"] = True
         jacke = teil("b", "Lederjacke", 5, 5, 1)
@@ -350,7 +354,8 @@ class TestNatuerlicheRuestung:
         p = pool(live)
         assert p["kaestchenMax"] == 6 + 5
         assert p["kaestchenAktuell"] == 2 + 5
-        assert p["reduktionBasis"] == 2
+        assert p["reduktionBasis"] == 1
+        assert [t["id"] for t in p["geordnet"]] == ["b", "a"]
 
     def test_aussenhuelle_none_laesst_reduktion_unangetastet(self):
         """Dug'Rah & Co.: ohne `aussenhuelle` bleibt die Reduktion der feste,
