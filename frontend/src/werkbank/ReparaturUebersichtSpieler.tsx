@@ -29,6 +29,7 @@ export function ReparaturUebersichtSpieler({
   reparaturgruppen,
   drohnen,
   onGeaendert,
+  inEigenerParty,
   partyAnfragbar,
   anfrageLaeuft,
   onFreigabeAnfragen,
@@ -39,6 +40,9 @@ export function ReparaturUebersichtSpieler({
   reparaturgruppen: ReparaturGruppe[];
   drohnen: DrohnenEintrag[];
   onGeaendert: () => void;
+  /** Ist der Spieler gerade überhaupt Mitglied einer Party? Steuert, welchen
+   * Leer-Hinweis der Freigaben-Abschnitt zeigt (05.11.2026). */
+  inEigenerParty: boolean;
   partyAnfragbar: { id: string; name: string }[];
   anfrageLaeuft: Set<string>;
   onFreigabeAnfragen: (zielPersonId: string) => void;
@@ -61,7 +65,7 @@ export function ReparaturUebersichtSpieler({
               <p className="lu-hinweis">
                 {gruppe.label} ({gruppe.items.length})
               </p>
-              <div className="gg-raster">
+              <div className="wb-kachelraster">
                 {gruppe.items.map((g) => (
                   <button
                     key={g.id}
@@ -98,7 +102,7 @@ export function ReparaturUebersichtSpieler({
       {drohnen.length > 0 && (
         <>
           <p className="lu-hinweis">Drohnen &amp; Fahrzeuge ({drohnen.length})</p>
-          <div className="gg-raster">
+          <div className="wb-kachelraster">
             {drohnen.map((d) => (
               <button
                 key={d.id}
@@ -139,46 +143,55 @@ export function ReparaturUebersichtSpieler({
       )}
 
       {/* Party-Reparatur-Freigabe (05.11.2026): wen darf ich noch fragen, und
-          wem habe ich selbst schon Zugriff erteilt (zum Widerrufen). */}
-      {(partyAnfragbar.length > 0 || erteilteFreigaben.length > 0) && (
-        <div className="wb-freigaben">
-          {partyAnfragbar.length > 0 && (
-            <>
-              <p className="lu-hinweis">Reparatur-Zugriff bei Party-Mitgliedern anfragen</p>
-              <div className="wb-freigaben-liste">
-                {partyAnfragbar.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="wb-freigabe-knopf"
-                    disabled={anfrageLaeuft.has(m.id)}
-                    onClick={() => onFreigabeAnfragen(m.id)}
-                  >
-                    {anfrageLaeuft.has(m.id) ? `Angefragt bei ${m.name}…` : `🔧 Bei ${m.name} anfragen`}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-          {erteilteFreigaben.length > 0 && (
-            <>
-              <p className="lu-hinweis">Du hast Reparatur-Zugriff erteilt an</p>
-              <div className="wb-freigaben-liste">
-                {erteilteFreigaben.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="wb-freigabe-knopf wb-freigabe-widerrufen"
-                    onClick={() => onFreigabeWiderrufen(f.id)}
-                  >
-                    {f.name} — widerrufen ✕
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+          wem habe ich selbst schon Zugriff erteilt (zum Widerrufen). Immer
+          sichtbar (nicht nur bei vorhandenen Einträgen) — Mark, nach dem
+          ersten Klicktest: "ich sehe nirgendwo etwas wo ich einen Spieler
+          meiner Party sehen würde", weil der Abschnitt bei leeren Listen
+          komplett verschwand, statt den Grund zu erklären. */}
+      <div className="wb-freigaben">
+        <p className="lu-hinweis">Reparatur unter Party-Mitgliedern</p>
+        {!inEigenerParty && (
+          <p className="gg-leer">Du bist aktuell in keiner Party — die Spielleitung muss dich erst einer zuordnen.</p>
+        )}
+        {inEigenerParty && partyAnfragbar.length === 0 && erteilteFreigaben.length === 0 && (
+          <p className="gg-leer">Niemand sonst in deiner Party, dem du Zugriff geben oder den du fragen könntest.</p>
+        )}
+        {partyAnfragbar.length > 0 && (
+          <>
+            <p className="lu-hinweis">Reparatur-Zugriff anfragen</p>
+            <div className="wb-freigaben-liste">
+              {partyAnfragbar.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="wb-freigabe-knopf"
+                  disabled={anfrageLaeuft.has(m.id)}
+                  onClick={() => onFreigabeAnfragen(m.id)}
+                >
+                  {anfrageLaeuft.has(m.id) ? `Angefragt bei ${m.name}…` : `🔧 Bei ${m.name} anfragen`}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        {erteilteFreigaben.length > 0 && (
+          <>
+            <p className="lu-hinweis">Du hast Reparatur-Zugriff erteilt an</p>
+            <div className="wb-freigaben-liste">
+              {erteilteFreigaben.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  className="wb-freigabe-knopf wb-freigabe-widerrufen"
+                  onClick={() => onFreigabeWiderrufen(f.id)}
+                >
+                  {f.name} — widerrufen ✕
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {offenesZiel && (
         <ReparaturFenster

@@ -41,6 +41,7 @@ export function WerkbankUebersichtSpieler({
   const [tab, setTab] = useState<"reparatur" | "augments">("reparatur");
   const [meineDrohnen, setMeineDrohnen] = useState<DrohnenEintrag[]>([]);
   const [reparaturGruppen, setReparaturGruppen] = useState<ReparaturGruppe[]>([]);
+  const [inEigenerParty, setInEigenerParty] = useState(false);
   const [partyMitglieder, setPartyMitglieder] = useState<{ id: string; name: string }[]>([]);
   const [freigeber, setFreigeber] = useState<ReparaturFreigabeEintrag[]>([]);
   const [erteilteFreigaben, setErteilteFreigaben] = useState<ReparaturFreigabeEintrag[]>([]);
@@ -63,6 +64,7 @@ export function WerkbankUebersichtSpieler({
         setFreigeber(freigeberListe);
         setErteilteFreigaben(erteilteListe);
         const eigeneParty = parteien.find((p) => p.mitglieder.some((m) => m.id === personId));
+        setInEigenerParty(Boolean(eigeneParty));
         const mitglieder = (eigeneParty?.mitglieder ?? []).filter((m) => m.id !== personId);
         setPartyMitglieder(mitglieder);
 
@@ -130,6 +132,7 @@ export function WerkbankUebersichtSpieler({
           reparaturgruppen={reparaturGruppen}
           drohnen={meineDrohnenKaputt}
           onGeaendert={onGeaendertUndNeuLaden}
+          inEigenerParty={inEigenerParty}
           partyAnfragbar={anfragbar}
           anfrageLaeuft={anfrageAn}
           onFreigabeAnfragen={freigabeAnfragen}
