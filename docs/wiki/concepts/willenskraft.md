@@ -50,9 +50,14 @@ wird als Schaden abgezogen.
   zurückkommt: Schlaf/Ambition/Verlangen/Ziel).
 - **Commit „Willenskraft nur von der SL zurück, Arete antippbar, Herzschlag"**
   — SL-only-Regel für die Wiederherstellung technisch durchgesetzt.
+- **04.11.2026 — entschieden, nicht gebaut:** eine geschluckte Droge darf
+  den ausgegebenen Stand heben, auch der Spieler. Ausnahme zu der Zeile
+  oben, nicht ihre Ablösung. Maximum und Chrom-Verlust bleiben, wie sie
+  sind. Siehe [[../entities/drogen]].
 
 ## Siehe auch
 
 - [[cyberware-bioware]] — WVerlust senkt das Maximum
+- [[../entities/drogen]] — Schluck hebt oder senkt den ausgegebenen Stand, nicht gebaut
 - [[magie-hexkraft]] — Wilde Magie verbraucht Willenskraft
 - [[neuroweaving-decking]] — gleiche Mechanik beim NeuroWeaving

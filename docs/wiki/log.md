@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-04] entschieden | Drogen schlucken, nicht gebaut
+
+Wirkung sofort, Szene oder Rast. Nebenwirkung danach. Chrom-Funktionen,
+kein eigener Heiltrank-Typ. Willenskraft-Ausnahme und tödliche Schwere als
+2-Rasten-Uhr entschieden. Heilreihenfolge und Schaden-halbieren offen.
+Siehe [[entities/drogen]].
+
 ## [2026-11-04] gebaut | SL bekommt Booster- und Hot-Popups für NPCs
 
 Kommt ein NPC mit Reflex-Booster, Matrix-Hot oder Hot-Drohne dran, fragt

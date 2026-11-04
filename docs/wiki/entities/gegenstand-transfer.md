@@ -89,6 +89,10 @@ dem bestehenden Typ `Verbrauchsgegenstand`? Projektregel: keine allgemeinen
 Felder für Sonderfälle — eigener Typ wäre die naheliegende Lesart, nicht
 entschieden.
 
+**Ersetzt 04.11.2026.** Kein eigener Typ, auch keine Eigenschaft auf
+`Verbrauchsgegenstand`. Heilen ist eine Droge. Siehe [[drogen]]. Der Absatz
+oben bleibt stehen, damit die alte Frage nicht als offen gelesen wird.
+
 ### Granate / Alchemisten-Wurftrank
 
 Gegenstück zum Heiltrank: Schaden oder Effekte, **ohne volle eigene Mechanik**
@@ -105,9 +109,12 @@ Mitteilung/Popup an SL+Ziel, oder soll es in die Kampfkarte einschlagen?
   NPC-Belohnung, Credstick, Heiltrank, Granate.
 - **26.09.2026, `50321a6`** — Party-interne Gegenstands-Weitergabe gebaut.
   „Gleicher Ort“, Geld, neue Typen: nicht begonnen.
+- **04.11.2026** — Heiltrank-Typfrage ersetzt: Schlucken ist eine Droge,
+  nicht gebaut. Siehe [[drogen]]. Granate bleibt offen.
 
 ## Siehe auch
 
+- [[drogen]] — Schlucken, Heiltrank kein eigener Typ, nicht gebaut
 - [[party-feature]] — Mitgliedschaft als Reichweiten-Kriterium
 - [[../concepts/waehrung-und-preise]] — NuYen, `kapital`, Shop
 - [[mitteilungen-system]] — Live-Kanal, den Verhandlungen mitbenutzen
