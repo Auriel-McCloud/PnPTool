@@ -137,8 +137,8 @@ export function CharakterportraitAnsicht({
           ))}
           <div
             className="port-galerie-thumb port-galerie-neu"
-            onClick={() => !laedt && dateiRef.current?.click()}
-            title="Weiteres Bild hochladen"
+            onClick={() => !laedt && setZeichnenOffen(true)}
+            title="Neues Bild zeichnen"
           >
             <span aria-hidden="true">+</span>
           </div>
