@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-11-04
+updated: 2026-11-05
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -47,6 +47,11 @@ automatische „0 HP = tot"-Logik.
 
 ## Entwicklung
 
+- **05.11.2026:** Kampfmenü ohne die Zeilen „Ansage von hinten“, „Schutz und
+  Schaden“ und „Würfeln“. Die Ansage-Reihenfolge gilt weiter am Tisch, steht
+  nur nicht mehr unter der Liste. Waffen, Pools und der Umschalter Kampf /
+  Cyberkampf bleiben. Grund: die Seite hat gescrollt, obwohl alles draufpassen
+  soll.
 - Initiative steht laut `CLAUDE.md` (10.09.2026) **nur noch während eines
   laufenden Kampfs** auf dem Charakterblatt, nicht mehr permanent.
 - **Reflex-Booster** (Cyberware, siehe [[cyberware-bioware]]) gibt

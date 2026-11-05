@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-05] gebaut | Kampfmenü ohne drei Zeilen
+
+Ansage von hinten, Schutz und Schaden, Würfeln sind aus der Kampfansicht.
+Pools, Waffen und der Umschalter bleiben. Siehe [[concepts/kampf-und-initiative]].
+
 ## [2026-11-05] gebaut | Nebenwirkungs-Schaden ist normaler Schaden
 
 Schlag, tödlich und schwerheilbar landen auf den bestehenden Spuren. Die

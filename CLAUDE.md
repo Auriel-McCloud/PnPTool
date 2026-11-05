@@ -116,7 +116,7 @@ Der Knopf hing neben der Runde. In der eigenen Kampfkarte sitzt er jetzt neben d
 
 ## Kampfkarte: Neuroweaver schaltet wie der Decker (01.11.2026)
 
-Dieselben Knöpfe Kampf / Cyberkampf neben „Würfeln“, sobald `weg` Neuroweaver ist — auch ohne Cyberdeck. Cyberkampf zeigt die NeuroWeaving-Pools (Willenskraft-Klick und Matrix-Fenster wie vorher), Kampf die Nahkampf-Würfel und Waffen. Der alte Block unter den Waffen ist weg. Hat er zusätzlich ein Deck, stehen beide Gruppen untereinander. `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
+Dieselben Knöpfe Kampf / Cyberkampf, sobald `weg` Neuroweaver ist — auch ohne Cyberdeck. Die Überschrift „Würfeln“ ist seit 05.11.2026 weg, die Knöpfe bleiben. Cyberkampf zeigt die NeuroWeaving-Pools (Willenskraft-Klick und Matrix-Fenster wie vorher), Kampf die Nahkampf-Würfel und Waffen. Der alte Block unter den Waffen ist weg. Hat er zusätzlich ein Deck, stehen beide Gruppen untereinander. `Kampfkarte.tsx`. **Nie im Browser angeklickt.**
 
 ## Matrix-Navigation-Fenster schmaler (01.11.2026)
 
@@ -2301,6 +2301,11 @@ npm run dev
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (05.11.2026 — Kampfmenü ohne drei Zeilen):**
+- **Was:** Ansage von hinten, die Überschrift Schutz und Schaden und die Überschrift Würfeln sind raus. Pools, Waffen und der Umschalter Kampf/Cyberkampf bleiben. Die Seite soll ohne Scrollen auskommen.
+- **Wo:** `Kampfmodus.tsx`, `SpielerAnsicht.tsx`, `Kampfkarte.tsx`, `kampf.css`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.
+- **Verifiziert:** `tsc -b`. Am Tisch noch nicht geklickt.
 
 **Zuletzt gebaut (05.11.2026 — Nebenwirkungs-Schaden ist Schlag, tödlich, schwerheilbar):**
 - **Was:** Der Schaden unter der Linie ist normaler Schaden. Tödlich schreibt auf die tödliche Spur und heilt über die Rast, nicht über eine eigene 2-Rasten-Uhr. Schlag und schwerheilbar waren das schon.

@@ -426,15 +426,20 @@ export function Kampfkarte({
       </section>
 
       {/* --- Was man würfelt -------------------------------------------- */}
+      {/* Überschrift „Würfeln“ weg (Mark, 05.11.2026): die Zahlen darunter
+          sagen das schon, und die Kampfseite soll ohne Scrollen auskommen.
+          Cyber-Titel und der Umschalter bleiben. */}
       <section className="kk-block">
-        <div className="kk-block-kopf">
-          <div className="kk-kopf-titel">
-            <h3>{hatCyber && kampfModus === "cyberkampf" ? cyberTitel : "Würfeln"}</h3>
-            {zeigeMatrixHot && hatDeck && kampfModus === "cyberkampf" && !istNeuroweaver && (
-              <MatrixHotKnopf campaignId={campaignId} personId={personId} />
+        {hatCyber && (
+          <div className="kk-block-kopf">
+            {kampfModus === "cyberkampf" && (
+              <div className="kk-kopf-titel">
+                <h3>{cyberTitel}</h3>
+                {zeigeMatrixHot && hatDeck && !istNeuroweaver && (
+                  <MatrixHotKnopf campaignId={campaignId} personId={personId} />
+                )}
+              </div>
             )}
-          </div>
-          {hatCyber && (
             <div className="kk-modus-schalter">
               <button
                 type="button"
@@ -453,8 +458,8 @@ export function Kampfkarte({
                 Cyberkampf
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
         {kampfModus === "kampf" && (
           <div className="kk-werte">
             {KAMPFFERTIGKEITEN.map((name) => {
@@ -555,7 +560,6 @@ export function Kampfkarte({
           Deck oder im NeuroWeaving steckt, braucht die Waffenliste nicht. */}
       {(!hatCyber || kampfModus === "kampf") && (
         <section className="kk-block">
-          <h3>Schutz und Schaden</h3>
           <div className="kk-werte">
             {ruestung > 0 && (
               <Zahl

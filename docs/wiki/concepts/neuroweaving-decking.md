@@ -1,7 +1,7 @@
 ---
 title: NeuroWeaving und Decking
 created: 2026-09-18
-updated: 2026-11-01
+updated: 2026-11-05
 type: konzept
 tags: [neuroweaving, versionsgeschichte, widerspruch, geplant]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -176,6 +176,9 @@ Roboter.
   (Antippen weiter Willenskraft bzw. Matrix-Fenster). Kampf zeigt die
   Nahkampf-Würfel und die Waffen. Der feste Block unter den Waffen ist weg.
   Liegt zusätzlich ein Deck, stehen Cyberdeck und NeuroWeaving untereinander.
+- **05.11.2026 — Kampfkarte: Überschrift „Würfeln“ weg.** Die Knöpfe Kampf /
+  Cyberkampf bleiben, sobald der Weg Neuroweaver ist oder ein Deck liegt.
+  Im Kampfmodus steht darüber kein Titel mehr.
 - **01.11.2026 — Overclock als Funktion in der Kampfkarte.** Neben den sechs
   NeuroWeaving-Knöpfen, gleiches Format, Würfelgröße sichtbar. Antippen öffnet
   den Pool und legt Willenskraft als Bonuswürfel drauf, Deckel 12. Dieselben

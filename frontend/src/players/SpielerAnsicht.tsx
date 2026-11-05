@@ -730,12 +730,6 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                   onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
                 />
               )}
-              {kampf.teilnehmer.length > 1 && (
-                <p className="ka-ansage">
-                  <span>Ansage von hinten:</span>{" "}
-                  {[...kampf.teilnehmer].reverse().map((t) => t.name).join(" → ")}
-                </p>
-              )}
             </>
           )}
         </div>

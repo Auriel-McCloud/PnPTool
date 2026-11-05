@@ -154,15 +154,6 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         onInitiativeBearbeiten={setInitiativeZiel}
       />
 
-      {/* Zeile 59: angesagt wird von hinten nach vorn, damit die schnellste
-          Person auf alles reagieren kann. Deshalb sichtbar dabei. */}
-      {kampf.teilnehmer.length > 1 && (
-        <p className="ka-ansage">
-          <span>Ansage von hinten:</span>{" "}
-          {[...kampf.teilnehmer].reverse().map((t) => t.name).join(" → ")}
-        </p>
-      )}
-
       <form onSubmit={hinzufuegen} className="ka-form">
         <select value={wer} onChange={(e) => uebernehmen(e.target.value)}>
           <option value="">— frei benannt —</option>

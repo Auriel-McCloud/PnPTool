@@ -185,21 +185,7 @@
   color: var(--signal);
 }
 
-/* --- Ansagereihenfolge und Aufnahme ------------------------------------ */
-
-.ka-ansage {
-  flex-shrink: 0;
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-aus);
-}
-
-.ka-ansage span {
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-leise);
-}
+/* --- Aufnahme ---------------------------------------------------------- */
 
 .ka-form {
   display: flex;
