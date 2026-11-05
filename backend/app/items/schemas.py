@@ -141,6 +141,16 @@ class GegenstandCreate(BaseModel):
     # (app/items/chrom.py). Sonst würde jedes Stück für sich aufgerundet und
     # teure Arbeit hätte sich nicht gelohnt.
     wVerlust: float = 0.0
+    # Zusätzlicher, von Hand gesetzter Willenskraftverlust (05.11.2026, Mark:
+    # "manuell steuern können, wenn es Effekte hat die wir nicht abbilden").
+    # Wird von der Bonus-Automatik oben NIE angefasst — sie rechnet weiterhin
+    # nur ihren eigenen Anteil, dieser Wert zählt obendrauf. Siehe
+    # CharacterSheetPanel.tsx: `wVerlust` bleibt die gespeicherte GESAMTSUMME
+    # (automatisch + manuell), damit jede bestehende Auswertungsstelle
+    # (z.B. `willenskraft_verlust()`) unverändert bleibt.
+    wVerlustManuell: float = 0.0
+    # Pendant für den Preis — derselbe Gedanke, nur für ¥ statt Willenskraft.
+    preisManuell: int = 0
     koerperzone: str = ""
     # Welcher der drei Plätze dieser Zone belegt ist (1-3, Regelblatt: "je
     # drei Plätze mit Bonus und Verlust"). None = kein fester Platz (z.B. bei
@@ -448,6 +458,8 @@ class GegenstandUpdate(BaseModel):
     riggerBonus: int | None = None
     maxDrohnen: int | None = None
     wVerlust: float | None = None
+    wVerlustManuell: float | None = None
+    preisManuell: int | None = None
     koerperzone: str | None = None
     slot: int | None = None
     istWaffe: bool | None = None
@@ -587,6 +599,8 @@ class GegenstandResponse(BaseModel):
     # (app/items/chrom.py). Sonst würde jedes Stück für sich aufgerundet und
     # teure Arbeit hätte sich nicht gelohnt.
     wVerlust: float = 0.0
+    wVerlustManuell: float = 0.0
+    preisManuell: int = 0
     koerperzone: str = ""
     slot: int | None = None
     istWaffe: bool = False

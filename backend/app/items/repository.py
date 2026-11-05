@@ -23,7 +23,8 @@ RETURN_FIELDS = """
     g.deckElectronicWarfare AS deckElectronicWarfare, g.deckMatrixNavigation AS deckMatrixNavigation,
     g.immerSichtbar AS immerSichtbar,
     g.riggerBonus AS riggerBonus, g.maxDrohnen AS maxDrohnen,
-    g.wVerlust AS wVerlust, g.koerperzone AS koerperzone,
+    g.wVerlust AS wVerlust, g.wVerlustManuell AS wVerlustManuell, g.preisManuell AS preisManuell,
+    g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
     g.kampfFertigkeit AS kampfFertigkeit, g.paradeBonus AS paradeBonus,
     g.deaktivModus AS deaktivModus,
@@ -188,6 +189,10 @@ def _decode(record: dict) -> dict:
     # 112-117). Der Verlust hängt am Preis je Bonuspunkt: billiges Chrom
     # reisst mehr aus einem heraus als teures.
     record["wVerlust"] = _or_default(record.get("wVerlust"), 0)
+    # Manueller Zusatzverlust/Preis-Aufschlag (05.11.2026): Bestandsdaten
+    # kennen die Felder noch nicht -> 0, genau wie bei wVerlust selbst.
+    record["wVerlustManuell"] = _or_default(record.get("wVerlustManuell"), 0)
+    record["preisManuell"] = _or_default(record.get("preisManuell"), 0)
     record["koerperzone"] = record.get("koerperzone") or ""
     # Slot: welcher der drei Plaetze in der Zone belegt ist. None ist ein
     # gültiger Zustand (kein fester Platz) — deshalb kein _or_default mit 0.
@@ -317,7 +322,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             deckElectronicWarfare: $deckElectronicWarfare, deckMatrixNavigation: $deckMatrixNavigation,
             immerSichtbar: $immerSichtbar,
             riggerBonus: $riggerBonus, maxDrohnen: $maxDrohnen,
-            wVerlust: $wVerlust, koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
+            wVerlust: $wVerlust, wVerlustManuell: $wVerlustManuell, preisManuell: $preisManuell,
+            koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
             istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
             paradeBonus: $paradeBonus,
@@ -404,6 +410,8 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             riggerBonus=data.get("riggerBonus") or 0,
             maxDrohnen=data.get("maxDrohnen") or 0,
             wVerlust=data.get("wVerlust") or 0,
+            wVerlustManuell=data.get("wVerlustManuell") or 0,
+            preisManuell=data.get("preisManuell") or 0,
             koerperzone=data.get("koerperzone") or "",
             slot=data.get("slot"),
             istWaffe=bool(data.get("istWaffe")),

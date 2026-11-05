@@ -2,6 +2,21 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Cyber-/Bio-/Hexware: manueller Preis-/Willenskraft-Zuschlag, additiv zur Automatik (05.11.2026)
+
+Mark: die automatische Preis-/Willenskraft-Berechnung (`items/chrom.py`, Bonus × Qualitätsstufe) ist gut, aber er will sie manuell ergänzen können, wenn ein Implantat Effekte hat, die das System nicht abbildet (kein `traitBoni`/`ausruestungsfertigkeiten`-Eintrag, trotzdem soll es Willenskraft/Preis kosten). Harte Vorgabe: der manuelle Wert soll **dazuzählen, nie überschrieben werden** — auch wenn später ein Bonus geändert wird, der die Automatik neu rechnen lässt.
+
+Neue Felder `Gegenstand.wVerlustManuell`/`preisManuell` (schemas.py/repository.py/routes.py, Standardmuster wie jedes andere Feld — RETURN_FIELDS, `_decode`-Default, CREATE-Klausel, `_create_data`). Wichtig: `wVerlust`/`preis` selbst bleiben weiterhin die gespeicherte **Gesamtsumme** (automatisch + manuell) — dadurch brauchte **keine** bestehende Auswertungsstelle (`willenskraft_verlust()`-Aggregation über alle Items einer Person, Shop/Händler-Preislogik) eine Änderung, sie lesen weiter denselben Wert wie bisher.
+
+Die ganze Arbeit sitzt im Frontend (`CharacterSheetPanel.tsx`, Umbauen-Tab, Chrom-Abschnitt): zwei neue Zahlenfelder "+ manueller Preis-Zuschlag"/"+ manueller Willenskraft-Zuschlag" neben den Stufen-Knöpfen, plus eine Zusammenfassung "automatisch X, manuell +Y". Drei Stellen mussten konsistent denselben manuellen Anteil addieren statt überschreiben:
+1. Der Stufen-Knopf-Klick (`setPreis(st.preis + preisManuell)` statt nur `st.preis`).
+2. Der bestehende Bonus-Neuberechnungs-`useEffect` (reagiert auf Bonus-/Stufenänderung) — rechnet jetzt `autoWert + manuellerWert` statt nur `autoWert`.
+3. Das `onChange` der manuellen Felder selbst — rechnet direkt `aktuellerWert - alterManuellerWert + neuerManuellerWert`, **nicht** nur über den Bonus-Effekt, weil der bei Bonus 0 (gar keine Stufe gewählt — genau der Fall "nicht abgebildeter Effekt") sonst nie feuert und der manuelle Zuschlag wirkungslos bliebe.
+
+Zusätzlicher Bugfix als Nebeneffekt: `openEdit()`s Erkennung der schon gewählten Stufe (`preis % kraft === 0`) zog vorher den manuellen Preisanteil nicht ab — bei gesetztem `preisManuell` wäre die Stufe beim erneuten Öffnen fälschlich als "keine gewählt" erkannt worden.
+
+**Verifiziert:** `npx tsc -b` sauber, `pytest tests/test_chrom.py tests/test_gegenstand_felder.py` grün (29 Tests, letzterer prüft genau, dass `_create_data` jedes Schemafeld durchreicht), breiterer Lauf (`-k "item or chrom or willenskraft or ruestung"`, 143 passed) ohne neue Regression — die 2 Fehlschläge dort sind die bekannte vorbestehende Windows-Proactor-Flakiness (`test_zugriffsschutz_drohnen_ausruestung.py`), unabhängig von dieser Änderung. **Kein Klicktest** — bitte am Spieltisch: ein Cyberware-Item ohne jeden Bonus anlegen, nur manuellen Willenskraft-Zuschlag setzen, prüfen dass es trotzdem gegen die Willenskraft einer Person zählt; danach einen Bonus-Wert ändern und prüfen, dass der manuelle Anteil erhalten bleibt statt zu verschwinden.
+
 ## Kampfbeginn: Korrektur — NPCs am Event kamen über Verbindungen-Menü, nicht über eine zweite Party (05.11.2026)
 
 Mark nach dem ersten Klicktest: PCs der aktiven Party landeten korrekt in der Initiative, 4 einem Event zugeordnete NPCs aber nicht. Root Cause: der erste Entwurf (siehe Eintrag direkt darunter) deckte nur "NPCs sind Mitglied einer anderen Party, die am selben Ort/Event steht" ab — Marks tatsächlicher Weg war das generische Beziehungen-Menü (`VERBINDUNG`-Kante Person<->Event, beliebige Richtung, `entities/repository.py::create_verbindung`), keine zweite NPC-Party. `party/repository.py::kampf_kandidaten` sammelt jetzt eine dritte Quelle dazu: jede Person mit einer `VERBINDUNG`-Kante (egal welcher `typ`) zum aktuellen Aufenthaltsort der aktiven Party. Backend-Import + `pytest tests/test_kampf.py tests/test_kampf_sichtbarkeit.py` grün. **Noch kein zweiter Klicktest.**

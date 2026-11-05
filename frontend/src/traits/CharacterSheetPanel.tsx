@@ -426,6 +426,11 @@ export function GegenstandRow({
   const [traitKatalog, setTraitKatalog] = useState<TraitDef[]>([]);
   const [chromstufen, setChromstufen] = useState<Chromstufe[]>([]);
   const [zonen, setZonen] = useState<string[]>([]);
+  // Manuelle Zusatz-Kosten (05.11.2026, Mark: "manuell steuern können, wenn
+  // es Effekte hat die wir nicht abbilden"). Zählt IMMER obendrauf, die
+  // Bonus-Automatik unten überschreibt nur ihren eigenen Anteil.
+  const [wVerlustManuell, setWVerlustManuell] = useState(item.wVerlustManuell ?? 0);
+  const [preisManuell, setPreisManuell] = useState(item.preisManuell ?? 0);
   // Gewählte Chromstufe (preisJeBonus) für automatische Preisberechnung
   const [gewaehlteChromstufe, setGewaehlteChromstufe] = useState<number | null>(null);
   // Blatt für Drohne/Fahrzeug/Sprite/Geist (Neotopia.xlsx)
@@ -539,15 +544,32 @@ export function GegenstandRow({
   // Wenn sich Boni oder die gewählte Stufe ändert, Preis/WK-Verlust neu berechnen.
   // Bewusst OHNE Abhängigkeit von der (async geladenen) `chromstufen`-Liste —
   // direkt aus dem Bonus berechnet, siehe TEILER_JE_PREIS oben.
+  //
+  // Manuelle Zusatzkosten (05.11.2026) zählen IMMER obendrauf: diese Automatik
+  // überschreibt nur ihren eigenen (automatischen) Anteil, nie `wVerlustManuell`/
+  // `preisManuell` selbst — ändert sich der Bonus später erneut, bleibt der
+  // manuelle Teil erhalten statt überschrieben zu werden (Mark: "sollte dazu
+  // zählen und nicht überschreiben").
   useEffect(() => {
     if (!expanded || !CHROM_TYPEN.has(typ) || gewaehlteChromstufe === null) return;
     const teiler = TEILER_JE_PREIS[gewaehlteChromstufe];
     if (!teiler) return;
     const bonus = Math.max(1, gesamtBonus);
-    setPreis(bonus * gewaehlteChromstufe);
-    setWVerlust(Math.max(1, Math.floor(bonus / teiler)));
+    setPreis(bonus * gewaehlteChromstufe + (Number(preisManuell) || 0));
+    setWVerlust(Math.max(1, Math.floor(bonus / teiler)) + (Number(wVerlustManuell) || 0));
     setKraft(bonus);
-  }, [traitBoni, ausruestungsfertigkeiten, schaden, istWaffe, gewaehlteChromstufe, gesamtBonus, expanded, typ]);
+  }, [
+    traitBoni,
+    ausruestungsfertigkeiten,
+    schaden,
+    istWaffe,
+    gewaehlteChromstufe,
+    gesamtBonus,
+    expanded,
+    typ,
+    preisManuell,
+    wVerlustManuell,
+  ]);
 
   // Katalog fürs Trait-Boni-Dropdown — nur laden, wenn das Formular offen
   // ist und Boni überhaupt angezeigt werden können.
@@ -587,6 +609,8 @@ export function GegenstandRow({
     setDeckElectronicWarfare(src.deckElectronicWarfare);
     setDeckMatrixNavigation(src.deckMatrixNavigation);
     setWVerlust(src.wVerlust);
+    setWVerlustManuell(src.wVerlustManuell ?? 0);
+    setPreisManuell(src.preisManuell ?? 0);
     setKoerperzone(src.koerperzone);
     setSlot(src.slot);
     setIstWaffe(src.istWaffe);
@@ -652,8 +676,11 @@ export function GegenstandRow({
       // Zeigt die bereits gewählte Qualitätsstufe als markiert an (z.B. von
       // der KI automatisch nach Beschreibung gewählt) — Preis ist immer ein
       // ganzzahliges Vielfaches von kraft, sonst kam preisJeBonus nirgendwo her.
+      // Der manuelle Preis-Zuschlag zählt NICHT zu diesem Vielfachen dazu,
+      // also erst abziehen, bevor die Stufe erkannt wird (05.11.2026).
+      const autoPreisSrc = src.preis - (src.preisManuell ?? 0);
       setGewaehlteChromstufe(
-        src.kraft > 0 && src.preis % src.kraft === 0 ? src.preis / src.kraft : null,
+        src.kraft > 0 && autoPreisSrc % src.kraft === 0 ? autoPreisSrc / src.kraft : null,
       );
     } else {
       setGewaehlteChromstufe(null);
@@ -699,6 +726,8 @@ export function GegenstandRow({
       deckElectronicWarfare,
       deckMatrixNavigation,
       wVerlust,
+      wVerlustManuell,
+      preisManuell,
       koerperzone,
       slot,
       istWaffe,
@@ -1385,8 +1414,8 @@ export function GegenstandRow({
                           type="button"
                           onClick={() => {
                             setGewaehlteChromstufe(st.preisJeBonus);
-                            setPreis(st.preis);
-                            setWVerlust(st.wVerlustGenau);
+                            setPreis(st.preis + (Number(preisManuell) || 0));
+                            setWVerlust(st.wVerlustGenau + (Number(wVerlustManuell) || 0));
                             setKraft(Math.max(1, gesamtBonus));
                           }}
                           style={{
@@ -1413,8 +1442,59 @@ export function GegenstandRow({
                       );
                     })}
                   </div>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.85em" }}>
+                      + manueller Preis-Zuschlag (¥)
+                      <input
+                        type="number"
+                        value={preisManuell}
+                        onChange={(e) => {
+                          const next = Number(e.target.value);
+                          // Direkt verrechnen, nicht nur auf die Bonus-Automatik
+                          // verlassen — sonst wirkt der manuelle Zuschlag nie,
+                          // solange gar keine Stufe gewählt ist (genau der Fall
+                          // "Effekte, die wir nicht abbilden": Bonus bleibt 0).
+                          setPreis((p) => p - preisManuell + next);
+                          setPreisManuell(next);
+                        }}
+                        style={{ width: 120 }}
+                        title="Für Effekte, die das System nicht abbildet. Zählt immer zusätzlich zum automatisch berechneten Preis — Bonus-/Stufenänderungen überschreiben diesen Wert nie."
+                      />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.85em" }}>
+                      + manueller Willenskraft-Zuschlag
+                      <input
+                        type="number"
+                        value={wVerlustManuell}
+                        onChange={(e) => {
+                          const next = Number(e.target.value);
+                          setWVerlust((w) => w - wVerlustManuell + next);
+                          setWVerlustManuell(next);
+                        }}
+                        style={{ width: 120 }}
+                        title="Für Effekte, die das System nicht abbildet. Zählt immer zusätzlich zum automatisch berechneten Verlust — Bonus-/Stufenänderungen überschreiben diesen Wert nie."
+                      />
+                    </label>
+                  </div>
                   <p style={{ fontSize: "0.85em", color: "var(--text-leise)", marginTop: 6 }}>
-                    Zählt mit <strong>{wVerlust.toLocaleString("de-AT")}</strong> gegen die Willenskraft.
+                    Zählt mit <strong>{wVerlust.toLocaleString("de-AT")}</strong> gegen die Willenskraft
+                    {wVerlustManuell !== 0 && (
+                      <>
+                        {" "}
+                        (automatisch {(wVerlust - wVerlustManuell).toLocaleString("de-AT")}, manuell{" "}
+                        {wVerlustManuell > 0 ? "+" : ""}
+                        {wVerlustManuell.toLocaleString("de-AT")})
+                      </>
+                    )}
+                    {" · "}Preis <strong>{preis.toLocaleString("de-AT")}¥</strong>
+                    {preisManuell !== 0 && (
+                      <>
+                        {" "}
+                        (automatisch {(preis - preisManuell).toLocaleString("de-AT")}¥, manuell{" "}
+                        {preisManuell > 0 ? "+" : ""}
+                        {preisManuell.toLocaleString("de-AT")}¥)
+                      </>
+                    )}
                   </p>
                 </div>
               )}

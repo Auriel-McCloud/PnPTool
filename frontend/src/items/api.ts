@@ -79,6 +79,13 @@ export interface Gegenstand {
   maxDrohnen: number;
   /** Cyber-/Bioware: dauerhafter Willenskraftverlust und wo es sitzt. */
   wVerlust: number;
+  /** Zusätzlicher, von Hand gesetzter Willenskraftverlust (05.11.2026) — für
+   * Effekte, die die Bonus-Automatik nicht abbildet. `wVerlust` ist die
+   * gespeicherte GESAMTSUMME (automatisch + dieser Wert); die Automatik
+   * überschreibt beim Neuberechnen nur ihren eigenen Anteil, nie diesen hier. */
+  wVerlustManuell: number;
+  /** Pendant zu wVerlustManuell, nur für den Preis statt Willenskraft. */
+  preisManuell: number;
   koerperzone: string;
   /** Welcher der drei Plätze der Zone belegt ist (1-3); null = kein fester Platz. */
   slot: number | null;
@@ -563,6 +570,8 @@ export interface GegenstandUpdate {
   zusatzaktionen?: number;
   maxDrohnen?: number;
   wVerlust?: number;
+  wVerlustManuell?: number;
+  preisManuell?: number;
   koerperzone?: string;
   slot?: number | null;
   istWaffe?: boolean;

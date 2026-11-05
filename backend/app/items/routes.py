@@ -200,6 +200,8 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         # lassen sich danach nur per PATCH nachtragen. Beim Ergänzen eines
         # neuen Feldes im Schema also IMMER auch hier eintragen.
         "wVerlust": body.wVerlust,
+        "wVerlustManuell": body.wVerlustManuell,
+        "preisManuell": body.preisManuell,
         "koerperzone": body.koerperzone,
         "slot": body.slot,
         "istWaffe": body.istWaffe,
