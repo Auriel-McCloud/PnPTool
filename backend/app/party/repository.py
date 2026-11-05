@@ -398,6 +398,35 @@ async def loeschen(campaign_id: str, party_id: str) -> bool:
         return bool(record and record["geloescht"])
 
 
+async def kampf_kandidaten(campaign_id: str) -> list[dict]:
+    """Mitglieder der aktiven Party plus Mitglieder jeder anderen Party, die
+    gerade am selben Aufenthaltsort (Ort/Event) steht wie die aktive Party.
+
+    Mark, 05.11.2026: beim Kampfbeginn nicht jeden PC/NPC einzeln raussuchen
+    müssen — die Party-Struktur kennt genau diese beiden Quellen schon
+    (`MITGLIED_VON` für die eigene Party, `BEFINDET_SICH_AN` für Partys am
+    selben Ort/Event, siehe Modul-Docstring oben). Keine aktive Party: leere
+    Liste, kein Fehler. Aktive Party ohne gesetzten Aufenthaltsort: nur ihre
+    eigenen Mitglieder.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (aktiv:Party {campaignId: $campaign_id, aktiv: true})
+        OPTIONAL MATCH (aktiv)-[:BEFINDET_SICH_AN]->(ziel)
+        OPTIONAL MATCH (eigene:Person)-[:MITGLIED_VON]->(aktiv)
+        OPTIONAL MATCH (ziel)<-[:BEFINDET_SICH_AN]-(:Party)<-[:MITGLIED_VON]-(dort:Person)
+        WITH collect(DISTINCT eigene) + collect(DISTINCT dort) AS alle
+        UNWIND alle AS p
+        WITH DISTINCT p
+        WHERE p IS NOT NULL
+        RETURN p.id AS id, p.name AS name, p.personType AS personType
+        ORDER BY p.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id)
+        return [dict(r) async for r in result]
+
+
 async def get_party_von_person(campaign_id: str, person_id: str) -> dict | None:
     """Die Party, in der diese Person gerade Mitglied ist — oder None."""
     driver = get_driver()

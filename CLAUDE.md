@@ -2,6 +2,15 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfbeginn nimmt Party + Ort/Event automatisch in die Initiative auf, Suchfeld im Auswahlformular (05.11.2026)
+
+Mark: die Auswahl im Kampfmodus-Formular war unübersichtlich, jeden PC/NPC einzeln raussuchen zu müssen nervt. Zwei Teile:
+
+1. **Auto-Aufnahme beim "Kampf beginnen".** `POST .../kampf` nimmt jetzt automatisch alle Mitglieder der aktiven Party sowie Mitglieder jeder anderen Party auf, die am selben Aufenthaltsort (Ort/Event) steht wie die aktive Party (`party/repository.py::kampf_kandidaten`, nutzt die bestehenden `MITGLIED_VON`/`BEFINDET_SICH_AN`-Kanten, keine neue Graph-Struktur). Initiative wird wie beim manuellen Hinzufügen vorgeschlagen (`traits/bogen.py::initiative`, Geistesschärfe+Geschicklichkeit+Chrom), nicht gewürfelt — der bestehende "⚄ NPC-Initiative"-Knopf würfelt danach wie gewohnt für alle Nicht-PCs. Inaktive Drohnen/Fahrzeuge bleiben außen vor (`kampf/routes.py::_party_und_ort_automatisch_aufnehmen`, dieselbe Regel wie beim manuellen `teilnehmer_hinzu`). Keine aktive Party: nichts passiert, Kampf startet wie bisher leer.
+2. **Suchfeld im Kampfmodus-Formular.** Neues Textfeld über der Auswahlliste in `Kampfmodus.tsx` filtert die Personen-/Begleiter-Optionen nach Namen UND Typ (das bestehende Label `Name (PC)`/`Name (NPC)`/`Name (Begleiter)` deckt beides ab, kein separates Typ-Filter-UI nötig).
+
+`pytest tests/test_kampf.py tests/test_kampf_sichtbarkeit.py` grün, Backend-Import geprüft, `tsc -b` sauber. **Nie im Browser angeklickt / noch kein Klicktest am Spieltisch** — insbesondere die Formel für "wer gilt als am selben Ort" (andere Party, nicht nur die aktive) sollte Mark an einer echten NPC-Party gegenprüfen.
+
 ## Drogen/Verbrauchsgegenstände beim Anlegen standardmäßig stapelbar (05.11.2026)
 
 Mark: soll beim Anlegen nicht jedes Mal extra umgeschaltet werden müssen. Neuer `model_validator(mode="after")` in `GegenstandCreate` (`items/schemas.py`): Typ Droge oder Verbrauchsgegenstand setzt `einzigartig=False` (= stapelbar) und `hatMenge=True`, `menge` bleibt beim Schema-Default 1. Reiner Default, kein Zwang — wird per `model_fields_set` nur gesetzt, wenn der Aufrufer die Felder nicht selbst mitschickt (z.B. eine explizit einzigartige Spezial-Droge bleibt möglich). Greift zentral für beide Anlege-Routen (mit Besitzer und Vorlage), keine Frontend-Änderung nötig. Per Python-Skript verifiziert, keine dedizierte Testdatei.

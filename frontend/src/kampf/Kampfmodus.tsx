@@ -38,6 +38,7 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
   const [bogenFuer, setBogenFuer] = useState<Teilnehmer | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  const [suche, setSuche] = useState("");
 
   useEffect(() => {
     entitiesApi.listPersonen(campaignId).then(setPersonen).catch(() => setPersonen([]));
@@ -52,6 +53,15 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
     ],
     [personen, begleiter],
   );
+
+  /** Mark: die Auswahlliste war unübersichtlich — ein Suchfeld darüber, das
+   *  sowohl nach Namen als auch nach "PC"/"NPC"/"Begleiter" filtert, da genau
+   *  das schon im Label steht. */
+  const gefiltert = useMemo(() => {
+    const text = suche.trim().toLowerCase();
+    if (!text) return auswahl;
+    return auswahl.filter((a) => a.label.toLowerCase().includes(text));
+  }, [auswahl, suche]);
 
   /**
    * Initiative vorschlagen. Nur für Personen — Begleiter haben keine
@@ -155,9 +165,17 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
       />
 
       <form onSubmit={hinzufuegen} className="ka-form">
+        <input
+          type="text"
+          className="ka-suche"
+          placeholder="Suchen… (Name, PC oder NPC)"
+          value={suche}
+          onChange={(e) => setSuche(e.target.value)}
+          style={{ flex: "1 1 100%", minWidth: 0 }}
+        />
         <select value={wer} onChange={(e) => uebernehmen(e.target.value)}>
           <option value="">— frei benannt —</option>
-          {auswahl.map((a) => (
+          {gefiltert.map((a) => (
             <option key={a.wert} value={a.wert}>
               {a.label}
             </option>

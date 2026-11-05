@@ -20,6 +20,8 @@ from app.kampf.sichtbarkeit import fuer_spieler
 from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
 from app.items.beschwoerung import beschwoerungsstufe, ruf_entscheidung
 from app.items.repository import ausgeruestete_decks, get_gegenstand, get_owner_person_id, initiative_modifikator, verbautes_chrom
+from app.party import repository as party_repository
+from app.traits.bogen import initiative as bogen_initiative
 from app.kampf.booster import (
     AMPEL_MAX,
     ampel_nach_nutzung,
@@ -176,9 +178,54 @@ async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)
     return kampf
 
 
+async def _werte_und_chrom(campaign_id: str, person_id: str) -> tuple[dict[str, int], int]:
+    return await _werte_von(campaign_id, person_id), await _chrom_mod(campaign_id, person_id)
+
+
+async def _party_und_ort_automatisch_aufnehmen(campaign_id: str, kampf: dict | None) -> dict | None:
+    """Beim Kampfbeginn automatisch alle PCs/NPCs der aktiven Party sowie am
+    selben Aufenthaltsort (Ort/Event) in die Initiative aufnehmen.
+
+    Mark, 05.11.2026: "alle PCs und NPCs in der aktiven Party, oder dem
+    Ort/Event mit dem die aktive Party gerade verbunden ist" automatisch
+    aufnehmen, "so dass ich sie nicht alle raussuchen muss" — die Suche im
+    Auswahlfeld war ihm zu unübersichtlich. Initiative wird vorgeschlagen,
+    nicht gewürfelt (dieselbe Formel wie beim manuellen Hinzufügen im
+    Kampfmodus-Frontend: `traits/bogen.py::initiative`) — der bestehende
+    "NPC-Initiative"-Knopf würfelt danach wie gewohnt für alle Nicht-PCs.
+    Inaktive Drohnen/Fahrzeuge bleiben außen vor (dieselbe Regel wie beim
+    manuellen Hinzufügen, siehe `teilnehmer_hinzu` oben).
+    """
+    if kampf is None:
+        return None
+    kandidaten = await party_repository.kampf_kandidaten(campaign_id)
+    for p in kandidaten:
+        person = await get_node("Person", PERSON_FIELDS, campaign_id, p["id"])
+        if person is None:
+            continue
+        ist_drohne = bool(person.get("istDrohne") or person.get("istFahrzeug"))
+        if ist_drohne and not person.get("riggerAktiv"):
+            continue
+        werte, chrom = await _werte_und_chrom(campaign_id, p["id"])
+        kampf = await repository.teilnehmer_hinzu(
+            campaign_id,
+            {
+                "name": p["name"],
+                "initiative": bogen_initiative(werte, chrom, ist_drohne),
+                "kampfart": "NAHKAMPF",
+                "notiz": "",
+                "personId": p["id"],
+                "begleiterId": None,
+            },
+        )
+    return kampf
+
+
 @router.post("", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
 async def beginne(campaign_id: str):
-    return _ohne_hilfsfelder(await repository.beginne(campaign_id))
+    kampf = await repository.beginne(campaign_id)
+    kampf = await _party_und_ort_automatisch_aufnehmen(campaign_id, kampf)
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
