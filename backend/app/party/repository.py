@@ -399,15 +399,22 @@ async def loeschen(campaign_id: str, party_id: str) -> bool:
 
 
 async def kampf_kandidaten(campaign_id: str) -> list[dict]:
-    """Mitglieder der aktiven Party plus Mitglieder jeder anderen Party, die
-    gerade am selben Aufenthaltsort (Ort/Event) steht wie die aktive Party.
+    """Mitglieder der aktiven Party, plus Mitglieder jeder anderen Party am
+    selben Aufenthaltsort (Ort/Event), plus jede Person mit einer normalen
+    Verbindung (`VERBINDUNG`, Beziehungen-Menü) zu genau diesem Ort/Event.
 
     Mark, 05.11.2026: beim Kampfbeginn nicht jeden PC/NPC einzeln raussuchen
-    müssen — die Party-Struktur kennt genau diese beiden Quellen schon
-    (`MITGLIED_VON` für die eigene Party, `BEFINDET_SICH_AN` für Partys am
-    selben Ort/Event, siehe Modul-Docstring oben). Keine aktive Party: leere
-    Liste, kein Fehler. Aktive Party ohne gesetzten Aufenthaltsort: nur ihre
-    eigenen Mitglieder.
+    müssen. Erster Versuch deckte nur die Party-eigenen Kanten ab
+    (`MITGLIED_VON`/`BEFINDET_SICH_AN`) — Marks tatsächlicher Weg, NPCs einem
+    Event zuzuordnen, war aber das generische Beziehungen-Menü (eine normale
+    `VERBINDUNG`-Kante Person<->Event/Ort, beliebige Richtung, siehe
+    `entities/repository.py::create_verbindung`), nicht eine zweite
+    NPC-Party. Dritte Quelle ergänzt (UNION-Prinzip aus
+    `feature-design-workflow.md` Punkt 19) — bewusst JEDE Verbindung, egal
+    welcher `typ` ("Gegner", "Stammgast", ...), nicht nur ein bestimmtes
+    Label: die SL hat die Kante aktiv angelegt, das reicht als Signal "gehört
+    hierher". Keine aktive Party: leere Liste, kein Fehler. Aktive Party ohne
+    gesetzten Aufenthaltsort: nur ihre eigenen Mitglieder.
     """
     driver = get_driver()
     query = """
@@ -415,7 +422,8 @@ async def kampf_kandidaten(campaign_id: str) -> list[dict]:
         OPTIONAL MATCH (aktiv)-[:BEFINDET_SICH_AN]->(ziel)
         OPTIONAL MATCH (eigene:Person)-[:MITGLIED_VON]->(aktiv)
         OPTIONAL MATCH (ziel)<-[:BEFINDET_SICH_AN]-(:Party)<-[:MITGLIED_VON]-(dort:Person)
-        WITH collect(DISTINCT eigene) + collect(DISTINCT dort) AS alle
+        OPTIONAL MATCH (ziel)-[:VERBINDUNG]-(verbunden:Person)
+        WITH collect(DISTINCT eigene) + collect(DISTINCT dort) + collect(DISTINCT verbunden) AS alle
         UNWIND alle AS p
         WITH DISTINCT p
         WHERE p IS NOT NULL

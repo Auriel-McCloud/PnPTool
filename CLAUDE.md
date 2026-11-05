@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfbeginn: Korrektur — NPCs am Event kamen über Verbindungen-Menü, nicht über eine zweite Party (05.11.2026)
+
+Mark nach dem ersten Klicktest: PCs der aktiven Party landeten korrekt in der Initiative, 4 einem Event zugeordnete NPCs aber nicht. Root Cause: der erste Entwurf (siehe Eintrag direkt darunter) deckte nur "NPCs sind Mitglied einer anderen Party, die am selben Ort/Event steht" ab — Marks tatsächlicher Weg war das generische Beziehungen-Menü (`VERBINDUNG`-Kante Person<->Event, beliebige Richtung, `entities/repository.py::create_verbindung`), keine zweite NPC-Party. `party/repository.py::kampf_kandidaten` sammelt jetzt eine dritte Quelle dazu: jede Person mit einer `VERBINDUNG`-Kante (egal welcher `typ`) zum aktuellen Aufenthaltsort der aktiven Party. Backend-Import + `pytest tests/test_kampf.py tests/test_kampf_sichtbarkeit.py` grün. **Noch kein zweiter Klicktest.**
+
 ## Kampfbeginn nimmt Party + Ort/Event automatisch in die Initiative auf, Suchfeld im Auswahlformular (05.11.2026)
 
 Mark: die Auswahl im Kampfmodus-Formular war unübersichtlich, jeden PC/NPC einzeln raussuchen zu müssen nervt. Zwei Teile:
