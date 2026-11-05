@@ -5,6 +5,8 @@ Entschieden 01.11.2026, siehe docs/wiki/concepts/neuroweaving-decking.md.
 
 from __future__ import annotations
 
+from app.items.waffenbonus import DEAKTIV_MODI
+
 DECK_EINSTIEG = ("Brute Force", "Schleichen")
 NAVIGATION = "Matrix-Navigation"
 ELECTRONIC_WARFARE = "Electronic Warfare"
@@ -151,7 +153,38 @@ def abgefallene(vorher: list[dict], nachher: list[dict], art: str) -> list[dict]
 
 
 def deaktiv_modus(gespeichert: str, kampf_fertigkeit: str) -> str:
-    """Leer heißt Typ-Default: Schusswaffe komplett, alles andere nur Upgrades."""
-    if gespeichert in ("komplett", "upgrades"):
+    """Leer heißt Typ-Default: Schusswaffe komplett, alles andere nur Upgrades.
+
+    „nicht“ ist explizit und schlägt den Typ-Default: die Waffe ist kein
+    Matrix-Ziel. Klauen an einem Critter haben keinen Grund, hackbar zu sein.
+    """
+    if gespeichert in DEAKTIV_MODI:
         return gespeichert
     return "komplett" if kampf_fertigkeit == "Schusswaffen" else "upgrades"
+
+
+def schalt_eintrag(zeile: dict) -> dict | None:
+    """Eine Zeile aus der Besitz-Query, oder None wenn sie nicht hackbar ist.
+
+    „nicht“ blendet die Waffe aus und auch Upgrades, die an ihr hängen.
+    Cyberware mit demselben Modus (Klaue als Implantat markiert) ebenso.
+    """
+    if zeile.get("istAugment"):
+        if deaktiv_modus(zeile.get("zielDeaktivModus") or "", zeile.get("zielKampfFertigkeit") or "") == "nicht":
+            return None
+        return {**zeile, "art": "upgrade"}
+    modus = deaktiv_modus(zeile.get("deaktivModus") or "", zeile.get("kampfFertigkeit") or "")
+    if modus == "nicht":
+        return None
+    typ = zeile.get("typ") or ""
+    if typ == "Waffe":
+        if modus == "komplett":
+            return {**zeile, "art": "waffe"}
+        return None
+    if typ == "Cyberware":
+        return {**zeile, "art": "cyber"}
+    if typ == "Cyberdeck":
+        return {**zeile, "art": "deck"}
+    if typ == "Riggerkonsole":
+        return {**zeile, "art": "konsole"}
+    return None

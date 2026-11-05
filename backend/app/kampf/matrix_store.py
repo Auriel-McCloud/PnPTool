@@ -7,7 +7,7 @@ import uuid
 
 from app.db.neo4j_driver import get_driver
 from app.entities.repository import PERSON_FIELDS, get_node, update_node
-from app.items.repository import commlink_cyberwall, willenskraft_verlust
+from app.items.repository import ice_blatt, willenskraft_verlust
 from app.kampf import matrix, repository
 from app.kampf.matrix import leerer_stand
 from app.traits.bogen import GESUNDHEIT_GRUNDWERT, gesundheit_max, ice_max, willenskraft_max
@@ -87,9 +87,9 @@ async def matrix_basis(campaign_id: str, person_id: str) -> dict:
         rest = matrix.willenskraft_rest(maximum, int(person.get("willenskraftVerbraucht") or 0))
         return {"wert": rest, "quelle": "willenskraft", "weg": weg, "drohne": False, "roboter": False}
     ratings = await get_ratings_for_entity(campaign_id, person_id)
-    wall = await commlink_cyberwall(campaign_id, person_id)
+    wall, extra = await ice_blatt(campaign_id, person_id, drohne=drohne)
     return {
-        "wert": ice_max(weg, _werte(ratings), wall, drohne),
+        "wert": ice_max(weg, _werte(ratings), wall, drohne, extra),
         "quelle": "geraet",
         "weg": weg,
         "drohne": drohne,
@@ -152,10 +152,14 @@ async def schaltbare(campaign_id: str, person_id: str) -> list[dict]:
                     AND (g)-[:MONTIERT_AN]->(:Gegenstand)<-[:BESITZT]-(p)
                 )
             )
+            OPTIONAL MATCH (g)-[:MONTIERT_AN]->(ziel:Gegenstand)
             RETURN g.id AS id, g.name AS name, g.typ AS typ,
                    coalesce(g.kampfFertigkeit, '') AS kampfFertigkeit,
                    coalesce(g.deaktivModus, '') AS deaktivModus,
-                   coalesce(g.istAugment, false) AS istAugment
+                   coalesce(g.istAugment, false) AS istAugment,
+                   coalesce(ziel.typ, '') AS zielTyp,
+                   coalesce(ziel.deaktivModus, '') AS zielDeaktivModus,
+                   coalesce(ziel.kampfFertigkeit, '') AS zielKampfFertigkeit
             ORDER BY g.name
             """,
             campaign_id=campaign_id,
@@ -164,20 +168,9 @@ async def schaltbare(campaign_id: str, person_id: str) -> list[dict]:
         zeilen = [dict(r) async for r in result]
     aus = []
     for z in zeilen:
-        if z["istAugment"]:
-            aus.append({**z, "art": "upgrade"})
-            continue
-        if z["typ"] == "Waffe":
-            modus = matrix.deaktiv_modus(z.get("deaktivModus") or "", z["kampfFertigkeit"])
-            if modus == "komplett":
-                aus.append({**z, "art": "waffe"})
-            continue
-        if z["typ"] == "Cyberware":
-            aus.append({**z, "art": "cyber"})
-        elif z["typ"] == "Cyberdeck":
-            aus.append({**z, "art": "deck"})
-        elif z["typ"] == "Riggerkonsole":
-            aus.append({**z, "art": "konsole"})
+        eintrag = matrix.schalt_eintrag(z)
+        if eintrag is not None:
+            aus.append(eintrag)
     return aus
 
 

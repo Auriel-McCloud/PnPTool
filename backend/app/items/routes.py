@@ -29,7 +29,7 @@ from app.items.schloss import (
 from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt, zieltyp_passt
 from app.items.augments import AUGMENT_TRAEGER_TYPEN, wende_augment_boni_an
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
-from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, schaden_art_fuer_waffe
 from app.traits import erstellung
 from app.items.schemas import (
     AblageRequest,
@@ -117,8 +117,8 @@ async def _mit_augment_boni(campaign_id: str, items: list[dict]) -> list[dict]:
 
     Reine Anzeige-/Kampfwerte — nie zurückgeschrieben, deshalb hier und nicht
     in `items/repository.py::_decode` (das würde ein Vorlagen-Kopieren sonst
-    unbeabsichtigt mit dem Bonus einfrieren). Nur Waffe/Rüstung/Cyberdeck/
-    Riggerkonsole können überhaupt Augment-Ziel sein (`AUGMENT_TRAEGER_TYPEN`).
+    unbeabsichtigt mit dem Bonus einfrieren). Waffe/Rüstung/Cyberdeck/
+    Riggerkonsole/Commlink können Augment-Ziel sein (`AUGMENT_TRAEGER_TYPEN`).
     """
     ziel_ids = [i["id"] for i in items if (i.get("typ") or "") in AUGMENT_TRAEGER_TYPEN]
     if not ziel_ids:
@@ -216,7 +216,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
             else ""
         ),
         "paradeBonus": body.paradeBonus if body.typ == "Waffe" or body.istWaffe else 0,
-        "deaktivModus": body.deaktivModus if body.deaktivModus in ("komplett", "upgrades") else "",
+        "deaktivModus": deaktiv_modus_speichern(body.deaktivModus),
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
         "ausruestungsSpezialisierungen": body.ausruestungsSpezialisierungen,
@@ -346,6 +346,8 @@ async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     # Typ per "Typ ändern"-Popup nachträglich umgestellt wird.
     if body.typ in ("Upgrade-Material", "Ki-Tama"):
         daten["istAugment"] = True
+    if daten.get("deaktivModus") is not None:
+        daten["deaktivModus"] = deaktiv_modus_speichern(daten["deaktivModus"])
     schloss_daten = {
         k: daten[k]
         for k in ("schlossArt", "schlossPasswort", "schlossRaetsel", "schluesselId", "aufgeschlossen", "spielLaenge")

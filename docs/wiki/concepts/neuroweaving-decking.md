@@ -190,8 +190,10 @@ Roboter.
 
 Der Ablauf ist im Kampf an Brute Force, Schleichen, Matrix-Navigation und
 Electronic Warfare. An der Waffe, unter Umbau direkt unter der Kampfskill-Wahl,
-steht ob sie komplett ausfällt oder nur Upgrades. Leer heißt Schusswaffe
-komplett, alles andere nur Upgrades. Die Kampfkarte des Ziels zeigt eine
+steht ob sie komplett ausfällt, nur Upgrades verliert, oder gar nicht
+hackbar ist. Leer heißt Schusswaffe komplett, alles andere nur Upgrades.
+„Nicht hackbar“ nimmt die Waffe und ihre montierten Upgrades aus der
+Hack-Liste — Klauen und andere natürliche Waffen. Die Kampfkarte des Ziels zeigt eine
 komplett ausgeschaltete Waffe als tot (zuckt, keine Würfel) und holt den Stand
 alle drei Sekunden. Ein gehacktes Deck steht auf der Kampfkarte als „aus“
 und verschwindet auf dem Charakterblatt. Beides kommt wieder, sobald die
@@ -228,6 +230,8 @@ nicht der aktuelle Stand.
 - **Schalter an jeder Waffe:** komplett aus oder nur Upgrades. Default nach
   Typ. Schusswaffe: komplett aus — nicht mehr schießen, keine Upgrades,
   keine Ki-Tama-Skills. Alles andere: nur Upgrades, die Grundfunktion bleibt.
+- **05.11.2026:** vierte Option „Nicht hackbar“. Explizit gesetzt, kein neuer
+  Default. Die Waffe und Upgrades daran fehlen in der Hack-Liste.
 - **Nur-Upgrades und Ki-Tama:** hängt an der Waffe, Default aus. Komplett-Aus
   killt Ki-Tama-Skills immer.
 - **Cyberware-Augments** = montierte Werkbank-Upgrades

@@ -60,7 +60,13 @@ def willenskraft_max(werte: dict[str, int], bonus: int = 0, chrom_verlust: int =
     )
 
 
-def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0, ist_drohne: bool = False) -> int:
+def ice_max(
+    weg: str,
+    werte: dict[str, int],
+    commlink_cyberwall: int = 0,
+    ist_drohne: bool = False,
+    upgrade_ice: int = 0,
+) -> int:
     """Matrix-Verteidigung (I.C.E. / Cyber Wall).
 
     **Drohne/Fahrzeug (25.10.2026):** eigenes, direkt gekauftes Attribut
@@ -81,7 +87,9 @@ def ice_max(weg: str, werte: dict[str, int], commlink_cyberwall: int = 0, ist_dr
     nicht im Wert, sondern darin, ob überhaupt ein Gerät da ist.
     """
     if ist_drohne:
-        return _wert(werte, "I.C.E.")
+        # Montierte Upgrades addieren auf das gekaufte Attribut. Das Commlink
+        # zählt hier weiter nicht — eine Drohne ist nicht über ein Handy online.
+        return _wert(werte, "I.C.E.") + max(0, int(upgrade_ice))
     if weg == "NEUROWEAVER":
         return _wert(werte, "Fassung") + _wert(werte, "Geistesschärfe")
     return commlink_cyberwall
@@ -136,6 +144,7 @@ def bogen_uebersicht(
     chrom_verlust: int = 0,
     initiative_mod: int = 0,
     kampagnen_ep: int = 0,
+    upgrade_ice: int = 0,
 ) -> dict:
     """Alles, was sich aus Attributen und Zustand ergibt — fertig fürs Blatt."""
     weg = person.get("weg") or "KEINER"
@@ -152,7 +161,7 @@ def bogen_uebersicht(
     g_grundwert = GESUNDHEIT_GRUNDWERT if roh_grundwert is None or roh_grundwert == -1 else int(roh_grundwert)
     g_max = gesundheit_max(werte, g_grundwert)
     w_max = willenskraft_max(werte, int(person.get("willenskraftBonus") or 0), chrom_verlust)
-    i_max = ice_max(weg, werte, commlink_cyberwall, ist_drohne)
+    i_max = ice_max(weg, werte, commlink_cyberwall, ist_drohne, upgrade_ice)
     # Gesamt-EP = individuelle Erfahrung + Kampagnen-EP + Extra-EP
     erfahrung_person = int(person.get("erfahrung") or 0)
     extra_ep = int(person.get("extraEP") or 0)

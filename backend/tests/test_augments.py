@@ -71,7 +71,7 @@ class TestAugmentReparaturWiederverwendetReparaturFormeln:
 
 class TestAugmentTraegerTypen:
     def test_enthaelt_waffe_ruestung_cyberdeck_riggerkonsole(self):
-        assert AUGMENT_TRAEGER_TYPEN == {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"}
+        assert AUGMENT_TRAEGER_TYPEN == {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole", "Commlink"}
 
 
 class TestZieltypPasst:
@@ -86,6 +86,8 @@ class TestZieltypPasst:
     def test_gesetzter_zieltyp_nur_bei_match(self):
         assert zieltyp_passt("Cyberdeck", "Cyberdeck") is True
         assert zieltyp_passt("Cyberdeck", "Riggerkonsole") is False
+        assert zieltyp_passt("Commlink", "Commlink") is True
+        assert zieltyp_passt("Commlink", "Cyberdeck") is False
         assert zieltyp_passt("Cyberdeck", "") is False  # fällt an Drohne/Fahrzeug heraus
 
 
@@ -118,6 +120,7 @@ class TestWendeAugmentBoniAn:
             "ruestungReduktionBasis": 0,
             "ruestungKaestchenMax": 0,
             "initiativeBonus": 0,
+            "cyberwall": 0,
         }
 
     def test_addiert_schaden_reduktion_kaestchen_initiative(self):
@@ -128,6 +131,7 @@ class TestWendeAugmentBoniAn:
         assert ergebnis["ruestungReduktionBasis"] == 3
         assert ergebnis["ruestungKaestchenMax"] == 8
         assert ergebnis["initiativeBonus"] == 3
+        assert wende_augment_boni_an({"cyberwall": 2}, {"cyberwall": 3})["cyberwall"] == 5
 
     def test_schadenart_override_nur_wenn_gesetzt(self):
         basis = {"schadenArt": "schwer"}

@@ -2,7 +2,7 @@ import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
-from app.items.waffenbonus import kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, schaden_art_fuer_waffe
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
@@ -205,8 +205,7 @@ def _decode(record: dict) -> dict:
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
     # Parade-Bonus fehlt an Bestandsdaten. Ohne Ersatz reisst die Liste mit 500.
     record["paradeBonus"] = _or_default(record.get("paradeBonus"), 0)
-    modus = record.get("deaktivModus") or ""
-    record["deaktivModus"] = modus if modus in ("komplett", "upgrades") else ""
+    record["deaktivModus"] = deaktiv_modus_speichern(record.get("deaktivModus"))
     for feld in (
         "traitBoni",
         "nebenwirkungBoni",
@@ -413,7 +412,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             schadenArt=data.get("schadenArt") or "",
             kampfFertigkeit=kampf_fertigkeit_lesen(data.get("kampfFertigkeit")),
             paradeBonus=int(data.get("paradeBonus") or 0),
-            deaktivModus=data.get("deaktivModus") if data.get("deaktivModus") in ("komplett", "upgrades") else "",
+            deaktivModus=deaktiv_modus_speichern(data.get("deaktivModus")),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),
             wirkungDauer=data.get("wirkungDauer") or "szene",
@@ -564,6 +563,7 @@ _AUGMENT_BONI_LEER = {
     "ruestungReduktionBasis": 0,
     "ruestungKaestchenMax": 0,
     "initiativeBonus": 0,
+    "cyberwall": 0,
     "zusatzaktionen": 0,
     "schadenArt": "",
 }
@@ -595,6 +595,7 @@ async def augment_boni_fuer_ziel(campaign_id: str, ziel_id: str) -> dict:
             coalesce(sum(coalesce(a.ruestungReduktionBasis, 0)), 0) AS ruestungReduktionBasis,
             coalesce(sum(coalesce(a.ruestungKaestchenMax, 0)), 0) AS ruestungKaestchenMax,
             coalesce(sum(coalesce(a.initiativeBonus, 0)), 0) AS initiativeBonus,
+            coalesce(sum(coalesce(a.cyberwall, 0)), 0) AS cyberwall,
             CASE WHEN any(x IN collect(a.zusatzaktionen) WHERE x = -1) THEN -1
                  ELSE coalesce(sum(CASE WHEN coalesce(a.zusatzaktionen, 0) > 0 THEN a.zusatzaktionen ELSE 0 END), 0) END AS zusatzaktionen,
             head([x IN collect(a.schadenArt) WHERE x IS NOT NULL AND x <> '']) AS schadenArt
@@ -628,10 +629,11 @@ async def augment_boni_fuer_ziele(campaign_id: str, ziel_ids: list[str]) -> dict
             coalesce(sum(coalesce(a.ruestungReduktionBasis, 0)), 0) AS ruestungReduktionBasis,
             coalesce(sum(coalesce(a.ruestungKaestchenMax, 0)), 0) AS ruestungKaestchenMax,
             coalesce(sum(coalesce(a.initiativeBonus, 0)), 0) AS initiativeBonus,
+            coalesce(sum(coalesce(a.cyberwall, 0)), 0) AS cyberwall,
             CASE WHEN any(x IN collect(a.zusatzaktionen) WHERE x = -1) THEN -1
                  ELSE coalesce(sum(CASE WHEN coalesce(a.zusatzaktionen, 0) > 0 THEN a.zusatzaktionen ELSE 0 END), 0) END AS zusatzaktionen,
             head([x IN collect(a.schadenArt) WHERE x IS NOT NULL AND x <> '']) AS schadenArt
-        RETURN z.id AS id, schaden, ruestungReduktionBasis, ruestungKaestchenMax, initiativeBonus, zusatzaktionen, schadenArt
+        RETURN z.id AS id, schaden, ruestungReduktionBasis, ruestungKaestchenMax, initiativeBonus, cyberwall, zusatzaktionen, schadenArt
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, ziel_ids=ziel_ids)
@@ -1481,18 +1483,25 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
     bis "Cywall+4" notiert). Mehrere Decks werden summiert — anders als bei
     Commlinks, weil es Zusatzausrüstung ist und kein Zugangsgerät.
 
+    Montierte, nicht defekte Upgrades addieren ihren `cyberwall` auf das
+    Gerät, bevor Maximum bzw. Summe gebildet wird. Ein ICE-Chip am Commlink
+    hebt also genau dieses Gerät, einer am Deck den Deck-Bonus.
+
     Zählt nur, was am Körper ist: ein Gerät im Versteck schützt niemanden.
     Ergibt 0, wenn nichts da ist — dann ist die Person offline.
     """
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
-            """
-            MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+            f"""
+            MATCH (p:Person {{id: $person_id, campaignId: $campaign_id}})-[:BESITZT]->(g:Gegenstand)
             WHERE g.ablage IN ['AUSGERUESTET', 'RUCKSACK'] AND NOT coalesce(g.weggeworfen, false)
+            OPTIONAL MATCH (g)<-[:MONTIERT_AN]-(a:Gegenstand)
+            WHERE {_AUGMENT_WIRKT}
+            WITH g, coalesce(g.cyberwall, 0) + coalesce(sum(coalesce(a.cyberwall, 0)), 0) AS wand
             RETURN
-              max(CASE WHEN g.typ = 'Commlink' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS grund,
-              sum(CASE WHEN g.typ = 'Cyberdeck' THEN coalesce(g.cyberwall, 0) ELSE 0 END) AS bonus
+              max(CASE WHEN g.typ = 'Commlink' THEN wand ELSE 0 END) AS grund,
+              sum(CASE WHEN g.typ = 'Cyberdeck' THEN wand ELSE 0 END) AS bonus
             """,
             campaign_id=campaign_id,
             person_id=person_id,
@@ -1504,6 +1513,35 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
         # Ohne Commlink kein Zugang — ein Deck allein bringt nichts, es
         # verstärkt nur eine vorhandene Verbindung.
         return grund + int(record["bonus"] or 0) if grund > 0 else 0
+
+
+async def montiertes_ice(campaign_id: str, ziel_id: str) -> int:
+    """Summe `cyberwall` wirksamer Upgrades, die direkt an diesem Knoten hängen.
+
+    Drohne/Fahrzeug: das I.C.E.-Attribut plus dieser Bonus. Personen laufen
+    über `commlink_cyberwall` (dort sitzt der Bonus am Gerät, nicht an der Person).
+    """
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            f"""
+            MATCH (z {{id: $ziel_id, campaignId: $campaign_id}})<-[:MONTIERT_AN]-(a:Gegenstand)
+            WHERE {_AUGMENT_WIRKT}
+            RETURN coalesce(sum(coalesce(a.cyberwall, 0)), 0) AS ice
+            """,
+            campaign_id=campaign_id,
+            ziel_id=ziel_id,
+        )
+        record = await result.single()
+        return int(record["ice"]) if record else 0
+
+
+async def ice_blatt(campaign_id: str, person_id: str, *, drohne: bool) -> tuple[int, int]:
+    """(Geräte-ICE, Upgrade-ICE an der Person). Zweiter Wert nur bei Drohne/Fahrzeug."""
+    wall = await commlink_cyberwall(campaign_id, person_id)
+    if not drohne:
+        return wall, 0
+    return wall, await montiertes_ice(campaign_id, person_id)
 
 
 # Welche Eigenschaft am Deck zu welcher Matrix-Aktion gehört (Zeile 157:

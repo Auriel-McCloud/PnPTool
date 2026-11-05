@@ -112,3 +112,14 @@ def kampf_fertigkeit_lesen(roh) -> str:
     """Nur die drei Kampfskills. Alles andere, auch „Fernkampf“, wird leer."""
     text = str(roh or "").strip()
     return text if text in KAMPF_FERTIGKEITEN else ""
+
+
+# Leer = Typ-Default (Schusswaffe komplett, sonst nur Upgrades). „nicht“ nimmt
+# die Waffe aus der Hack-Liste — Klauen und andere natürliche Waffen.
+DEAKTIV_MODI = ("komplett", "upgrades", "nicht")
+
+
+def deaktiv_modus_speichern(roh) -> str:
+    """Nur die drei gespeicherten Modi. Alles andere wird leer (Typ-Default)."""
+    text = str(roh or "").strip()
+    return text if text in DEAKTIV_MODI else ""

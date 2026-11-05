@@ -65,7 +65,7 @@ def waffentyp_passt(augment_waffentyp: str, ziel_kampf_fertigkeit: str) -> bool:
 
 # Welche Gegenstands-Typen Augments tragen können (ausserdem Drohnen/
 # Fahrzeuge, aber das sind Person-Knoten, siehe Moduldocstring oben).
-AUGMENT_TRAEGER_TYPEN = {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"}
+AUGMENT_TRAEGER_TYPEN = {"Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole", "Commlink"}
 
 
 def zieltyp_passt(augment_zieltyp: str, ziel_typ: str) -> bool:
@@ -92,7 +92,13 @@ def zieltyp_passt(augment_zieltyp: str, ziel_typ: str) -> bool:
 # Gegenstandsfelder, kein eigenes zweites Bonus-Schema. `schadenArt` läuft
 # separat (siehe `wende_augment_boni_an` unten): das ist ein Override, kein
 # Bonus, deshalb nicht in dieser Liste.
-AUGMENT_BONUS_FELDER = ("schaden", "ruestungReduktionBasis", "ruestungKaestchenMax", "initiativeBonus")
+AUGMENT_BONUS_FELDER = (
+    "schaden",
+    "ruestungReduktionBasis",
+    "ruestungKaestchenMax",
+    "initiativeBonus",
+    "cyberwall",
+)
 
 
 def kombiniere_zusatzaktionen(basis: int, bonus: int) -> int:

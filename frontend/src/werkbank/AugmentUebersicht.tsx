@@ -69,7 +69,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
       {fehler && <p style={{ color: "var(--signal)" }}>{fehler}</p>}
       {gegenstandTraeger.length === 0 && drohnenTraeger.length === 0 && (
         <p className="gg-leer">
-          Noch kein Träger mit Upgrade-Slots — das Feld lässt sich bei Waffe/Rüstung/Cyberdeck/Riggerkonsole und bei
+          Noch kein Träger mit Upgrade-Slots — das Feld lässt sich bei Waffe/Rüstung/Cyberdeck/Riggerkonsole/Commlink und bei
           Drohnen/Fahrzeugen im Bearbeiten-Formular setzen.
         </p>
       )}

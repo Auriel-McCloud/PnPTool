@@ -149,10 +149,10 @@ function KampfFertigkeitFeld({
   );
 }
 
-type DeaktivModus = "" | "komplett" | "upgrades";
+type DeaktivModus = "" | "komplett" | "upgrades" | "nicht";
 
 function deaktivModusLesen(roh: string | undefined | null): DeaktivModus {
-  return roh === "komplett" || roh === "upgrades" ? roh : "";
+  return roh === "komplett" || roh === "upgrades" || roh === "nicht" ? roh : "";
 }
 
 function DeaktivModusFeld({
@@ -181,6 +181,9 @@ function DeaktivModusFeld({
         </button>
         <button type="button" onClick={() => onChange("upgrades")} style={markiert(wert === "upgrades")}>
           Nur Upgrades
+        </button>
+        <button type="button" onClick={() => onChange("nicht")} style={markiert(wert === "nicht")} title="Klauen und andere natürliche Waffen. Taucht in der Hack-Liste nicht auf.">
+          Nicht hackbar
         </button>
       </div>
     </div>
@@ -2092,11 +2095,12 @@ export function GegenstandRow({
                             <option value="Rüstung">nur Rüstung</option>
                             <option value="Cyberdeck">nur Cyberdeck</option>
                             <option value="Riggerkonsole">nur Riggerkonsole</option>
+                            <option value="Commlink">nur Commlink</option>
                           </select>
                         </label>
                       )}
                     </div>
-                    {istAugment && (
+                    {(istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama") && (
                       <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8, marginTop: 4 }}>
                         <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block" }}>
                           Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
@@ -2129,6 +2133,16 @@ export function GegenstandRow({
                               min={0}
                               value={ruestungKaestchenMax}
                               onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
+                              style={{ width: 60 }}
+                            />
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }} title="Addiert sich auf das I.C.E. des Ziels: Commlink, Cyberdeck oder Drohne/Fahrzeug.">
+                            I.C.E.
+                            <input
+                              type="number"
+                              min={0}
+                              value={cyberwall}
+                              onChange={(e) => setCyberwall(Math.max(0, Number(e.target.value)))}
                               style={{ width: 60 }}
                             />
                           </label>

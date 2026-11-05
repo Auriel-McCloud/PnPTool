@@ -110,8 +110,27 @@ def test_deaktiv_modus_default_nach_typ():
     assert deaktiv_modus("", "Nahkampf") == "upgrades"
     assert deaktiv_modus("upgrades", "Schusswaffen") == "upgrades"
     assert deaktiv_modus("komplett", "Handgemenge") == "komplett"
+    assert deaktiv_modus("nicht", "Schusswaffen") == "nicht"
+    assert deaktiv_modus("nicht", "Handgemenge") == "nicht"
     assert zahl_sichtbar(True, False)
     assert not zahl_sichtbar(False, False)
     assert zahl_sichtbar(False, True)
     assert navigation_trifft(1)
     assert not navigation_trifft(0)
+
+
+def test_nicht_hackbar_faellt_aus_der_liste():
+    from app.kampf.matrix import schalt_eintrag
+    klaue = {"id": "k", "typ": "Waffe", "deaktivModus": "nicht", "kampfFertigkeit": "Handgemenge", "istAugment": False}
+    assert schalt_eintrag(klaue) is None
+    schuss = {"id": "s", "typ": "Waffe", "deaktivModus": "", "kampfFertigkeit": "Schusswaffen", "istAugment": False}
+    assert schalt_eintrag(schuss)["art"] == "waffe"
+    scope = {
+        "id": "u", "typ": "Upgrade-Material", "istAugment": True,
+        "zielDeaktivModus": "nicht", "zielKampfFertigkeit": "Handgemenge",
+    }
+    assert schalt_eintrag(scope) is None
+    chip = {"id": "c", "typ": "Cyberware", "deaktivModus": "nicht", "kampfFertigkeit": "", "istAugment": False}
+    assert schalt_eintrag(chip) is None
+    arm = {"id": "a", "typ": "Cyberware", "deaktivModus": "", "kampfFertigkeit": "", "istAugment": False}
+    assert schalt_eintrag(arm)["art"] == "cyber"

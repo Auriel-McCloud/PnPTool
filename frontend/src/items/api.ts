@@ -100,8 +100,8 @@ export interface Gegenstand {
   kampfFertigkeit: KampfFertigkeit;
   /** Extra-Würfel nur beim Parieren mit dieser Waffe, nicht auf den Angriff. 0 = keins. */
   paradeBonus: number;
-  /** Leer = Schusswaffe komplett aus, sonst nur Upgrades. */
-  deaktivModus?: "" | "komplett" | "upgrades";
+  /** Leer = Schusswaffe komplett aus, sonst nur Upgrades. „nicht“ = kein Matrix-Ziel. */
+  deaktivModus?: "" | "komplett" | "upgrades" | "nicht";
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
   traitBoni: Record<string, number>;
   /** NEUE Fertigkeiten, die es ohne diesen Gegenstand nicht gibt. */
@@ -193,7 +193,7 @@ export interface Gegenstand {
    * genau diesem Gegenstandstyp (z.B. ein Reflexbooster-Upgrade nur an
    * Cyberdeck/Riggerkonsole) — Pendant zu `items/augments.py::
    * zieltyp_passt`, unabhängig von `augmentWaffentyp` oben. */
-  augmentZielTyp: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
+  augmentZielTyp: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole" | "Commlink";
   /** Ein Patzer beim Montieren/Demontieren hat dieses Augment beschädigt —
    * der Bonus zählt nicht, bis es repariert ist. */
   defekt: boolean;
@@ -382,7 +382,7 @@ export const KAMPF_FERTIGKEITEN = ["Schusswaffen", "Nahkampf", "Handgemenge"] as
 /** Welche Gegenstands-Typen Augments tragen können (ausserdem Drohnen/
  * Fahrzeuge, die aber über `entities/api.ts::Person.upgradeSlots` laufen) —
  * Pendant zu `items/augments.py::AUGMENT_TRAEGER_TYPEN` im Backend. */
-export const AUGMENT_TRAEGER_TYPEN = new Set(["Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"]);
+export const AUGMENT_TRAEGER_TYPEN = new Set(["Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole", "Commlink"]);
 
 /** Ob ein Upgrade mit diesem `augmentWaffentyp` an einem Ziel mit diesem
  * `kampfFertigkeit`-Wert montierbar ist — TS-Pendant zu
@@ -401,7 +401,7 @@ export function zieltypPasst(augmentZielTyp: string, zielTyp: string): boolean {
   return !augmentZielTyp || augmentZielTyp === zielTyp;
 }
 
-export type AugmentZielTyp = "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
+export type AugmentZielTyp = "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole" | "Commlink";
 
 /** Ein Menü für beide alten Filter. Waffenart gewinnt bei altem Widerspruch. */
 export type AugmentPasstAn = AugmentZielTyp | Exclude<KampfFertigkeit, "">;
@@ -410,7 +410,7 @@ export function augmentPasstAnLesen(waffentyp: string, zieltyp: string): Augment
   if (waffentyp === "Schusswaffen" || waffentyp === "Nahkampf" || waffentyp === "Handgemenge") {
     return waffentyp;
   }
-  if (zieltyp === "Waffe" || zieltyp === "Rüstung" || zieltyp === "Cyberdeck" || zieltyp === "Riggerkonsole") {
+  if (zieltyp === "Waffe" || zieltyp === "Rüstung" || zieltyp === "Cyberdeck" || zieltyp === "Riggerkonsole" || zieltyp === "Commlink") {
     return zieltyp;
   }
   return "";
@@ -424,7 +424,7 @@ export function augmentPasstAnSchreiben(wert: string): {
   if (wert === "Schusswaffen" || wert === "Nahkampf" || wert === "Handgemenge") {
     return { augmentWaffentyp: wert, augmentZielTyp: "Waffe" };
   }
-  if (wert === "Waffe" || wert === "Rüstung" || wert === "Cyberdeck" || wert === "Riggerkonsole") {
+  if (wert === "Waffe" || wert === "Rüstung" || wert === "Cyberdeck" || wert === "Riggerkonsole" || wert === "Commlink") {
     return { augmentWaffentyp: "", augmentZielTyp: wert };
   }
   return { augmentWaffentyp: "", augmentZielTyp: "" };
@@ -571,7 +571,7 @@ export interface GegenstandUpdate {
   schadenArt?: SchadenArt;
   kampfFertigkeit?: KampfFertigkeit;
   paradeBonus?: number;
-  deaktivModus?: "" | "komplett" | "upgrades";
+  deaktivModus?: "" | "komplett" | "upgrades" | "nicht";
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;
   ausruestungsSpezialisierungen?: Record<string, string[]>;
@@ -591,7 +591,7 @@ export interface GegenstandUpdate {
   upgradeSlots?: number;
   istAugment?: boolean;
   augmentWaffentyp?: KampfFertigkeit;
-  augmentZielTyp?: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole";
+  augmentZielTyp?: "" | "Waffe" | "Rüstung" | "Cyberdeck" | "Riggerkonsole" | "Commlink";
   defekt?: boolean;
 }
 

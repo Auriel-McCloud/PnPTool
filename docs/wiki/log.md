@@ -3,6 +3,18 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-05] gebaut | Upgrade hebt I.C.E., Commlink ist Träger
+
+Upgrade-Material hat ein I.C.E.-Feld. Montiert zählt es am Commlink, am
+Cyberdeck und an Drohne/Fahrzeug. Commlink bekommt Upgrade-Slots. Siehe
+[[concepts/augments-ausruestung]].
+
+## [2026-11-05] gebaut | Waffe nicht hackbar
+
+Vierte Option beim Deaktivieren: Nicht hackbar. Die Waffe und ihre
+Upgrades stehen nicht in der Hack-Liste. Siehe
+[[concepts/neuroweaving-decking]].
+
 ## [2026-11-05] gebaut | Initiative per Klick eintragen
 
 Klick auf die Initiative-Zahl trägt die Erfolge ein. Charakter und Drohne

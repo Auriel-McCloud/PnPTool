@@ -1,7 +1,7 @@
 ---
 title: Waffen-/Rüstungs-/Drohnen-Augments (Werkbank)
 created: 2026-10-29
-updated: 2026-11-01
+updated: 2026-11-05
 type: konzept
 status: teilweise-umgesetzt
 ---
@@ -44,6 +44,23 @@ Im Besitz gibt es nur noch ein Dropdown „Passt an“. Waffenart schreibt
 und Riggerkonsole schreiben nur den Zieltyp. „Alles“ leert beide. Ein altes
 Stück, bei dem die zwei Menüs widersprachen, zeigt die Waffenart; der
 Widerspruch fällt erst, wenn man das Menü neu setzt.
+
+## I.C.E. am Upgrade, Commlink als Träger (05.11.2026, gebaut)
+
+Upgrade-Material hat im Wirkungsblock ein Feld **I.C.E.** Das ist das
+bestehende `cyberwall`, kein zweites Schema. Montiert und nicht defekt
+addiert es auf das Ziel:
+
+- **Commlink:** auf den Cyberwall dieses Geräts, bevor das Maximum über
+  mehrere Commlinks gebildet wird. Commlink ist dafür Träger
+  (`AUGMENT_TRAEGER_TYPEN`, Upgrade-Slots, „Passt an: nur Commlink“).
+- **Cyberdeck:** auf den Deck-Bonus, der zum Commlink dazukommt. Ohne
+  Commlink bleibt die Person offline.
+- **Drohne/Fahrzeug:** auf das gekaufte Attribut I.C.E., nicht über ein
+  Commlink.
+
+Waffe und Rüstung haben kein I.C.E. Ein dort montierter Wert ändert die
+Matrix-Verteidigung nicht.
 
 ## Datenmodell
 

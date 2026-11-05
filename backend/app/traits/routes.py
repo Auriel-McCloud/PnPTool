@@ -14,7 +14,7 @@ from app.items.repository import (
     ausruestungs_trait_boni,
     ausruestungs_trait_spezialisierungen,
     ausruestungsfertigkeiten_liste,
-    commlink_cyberwall,
+    ice_blatt,
     deck_boni,
     initiative_modifikator,
     natuerliche_ruestungsteile,
@@ -187,10 +187,10 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
 
     nach_name = {w["name"]: w["rating"] for w in werte}
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    ist_drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    cyberwall, upgrade_ice = await ice_blatt(campaign_id, person_id, drohne=ist_drohne)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    ist_drohne = bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
     erlaubt = sichtbare_kategorien(
         person.get("weg") or "KEINER",
         {t["category"] for t in katalog},
@@ -242,7 +242,7 @@ async def get_bogen(campaign_id: str, person_id: str, viewer: Viewer = Depends(g
             "istDrohne": bool(person.get("istDrohne")),
             "istFahrzeug": bool(person.get("istFahrzeug")),
         },
-        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep),
+        "uebersicht": bogen_uebersicht(person, nach_name, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice),
         "deckBoni": await deck_boni(campaign_id, person_id),
         "ausruestungsBoni": await ausruestungs_trait_boni(campaign_id, person_id),
         "ausruestungsSpezialisierungen": await ausruestungs_trait_spezialisierungen(campaign_id, person_id),
@@ -314,10 +314,12 @@ async def set_zustand(
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    cyberwall, upgrade_ice = await ice_blatt(
+        campaign_id, person_id, drohne=bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    )
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice)
 
 
 class SteckbriefUpdate(BaseModel):
@@ -391,10 +393,12 @@ async def set_steckbrief(
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    cyberwall, upgrade_ice = await ice_blatt(
+        campaign_id, person_id, drohne=bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    )
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+    return bogen_uebersicht(person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice)
 
 
 class TutorialKapitalInput(BaseModel):
@@ -642,7 +646,7 @@ async def ruestungstreffer(
     if person is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Person nicht gefunden")
     einstellungen = await get_einstellungen(campaign_id)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    cyberwall, upgrade_ice = await ice_blatt(campaign_id, person_id, drohne=ist_drohne)
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     uebersicht = bogen_uebersicht(
@@ -652,6 +656,7 @@ async def ruestungstreffer(
         chrom,
         init_mod,
         einstellungen.get("kampagnenEP", 0),
+        upgrade_ice,
     )
     dumpshock: list[dict] = []
     if (
@@ -692,11 +697,13 @@ async def _bogen_fuer_person(campaign_id: str, person: dict, kampagnen_ep: int) 
     Person je Aufruf behandeln)."""
     person_id = person["id"]
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    cyberwall, upgrade_ice = await ice_blatt(
+        campaign_id, person_id, drohne=bool(person.get("istDrohne")) or bool(person.get("istFahrzeug"))
+    )
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return bogen_uebersicht(
-        person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep
+        person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice
     )
 
 
@@ -1279,12 +1286,15 @@ async def erstelle_charakter(
     neue_werte = await repository.get_ratings_for_entity(campaign_id, person_id)
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    ziel = aktualisiert or person
+    cyberwall, upgrade_ice = await ice_blatt(
+        campaign_id, person_id, drohne=bool(ziel.get("istDrohne")) or bool(ziel.get("istFahrzeug"))
+    )
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
     return {
         "uebersicht": bogen_uebersicht(
-            aktualisiert or person, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom, init_mod, kampagnen_ep
+            ziel, {w["name"]: w["rating"] for w in neue_werte}, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice
         ),
         "freebeesVerbraucht": erstellung.freebee_kosten(
             auswahl, {t["name"]: t["category"] for t in katalog}
@@ -1573,10 +1583,13 @@ async def vergib_erfahrung(campaign_id: str, person_id: str, body: ErfahrungInpu
     einstellungen = await get_einstellungen(campaign_id)
     kampagnen_ep = einstellungen.get("kampagnenEP", 0)
     werte = await repository.get_ratings_for_entity(campaign_id, person_id)
-    cyberwall = await commlink_cyberwall(campaign_id, person_id)
+    ziel = aktualisiert or person
+    cyberwall, upgrade_ice = await ice_blatt(
+        campaign_id, person_id, drohne=bool(ziel.get("istDrohne")) or bool(ziel.get("istFahrzeug"))
+    )
     chrom = await willenskraft_verlust(campaign_id, person_id)
     init_mod = await initiative_modifikator(campaign_id, person_id)
-    return bogen_uebersicht(aktualisiert or person, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep)
+    return bogen_uebersicht(ziel, {w["name"]: w["rating"] for w in werte}, cyberwall, chrom, init_mod, kampagnen_ep, upgrade_ice)
 
 
 # =====================================================================

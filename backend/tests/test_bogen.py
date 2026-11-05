@@ -230,6 +230,7 @@ class TestDrohneFahrzeug:
         # Commlink/Neuroweaver-Formel darf nicht mitspielen, selbst wenn
         # beide Felder zufällig gesetzt wären.
         assert ice_max("NEUROWEAVER", werte, commlink_cyberwall=9, ist_drohne=True) == 4
+        assert ice_max("KEINER", werte, ist_drohne=True, upgrade_ice=2) == 6
 
     def test_bogen_uebersicht_erkennt_istdrohne_und_istfahrzeug(self):
         u_drohne = bogen_uebersicht(

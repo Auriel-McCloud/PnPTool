@@ -171,6 +171,7 @@ class GegenstandCreate(BaseModel):
     # (Mark, 31.10.2026). Kein Mindeststärke-Feld — das wurde verworfen.
     paradeBonus: int = 0
     # Leer = Typ-Default: Schusswaffe fällt komplett aus, sonst nur Upgrades.
+    # „nicht“: gar kein Matrix-Ziel (Klauen, natürliche Waffen).
     deaktivModus: str = ""
     # Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange
     # ausgerüstet — Schlüssel ist der TraitDef-Name (wie fahrzeugFertigkeiten),
@@ -357,7 +358,7 @@ class GegenstandCreate(BaseModel):
     # Reflexbooster-Upgrade, das nur an Cyberdeck/Riggerkonsole sinnvoll ist.
     # Unabhängig von `augmentWaffentyp` oben, das NUR innerhalb von Waffen
     # weiter nach Kampffertigkeit filtert (items/augments.py::zieltyp_passt).
-    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"] = ""
+    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole", "Commlink"] = ""
     # Boni, die dieses Augment beim Ziel bewirkt, sobald es montiert und
     # nicht defekt ist (29.10.2026 Nachbesserung, Mark: Waffenschaden,
     # Rüstungs-Absorption/Kästchen, Initiative/Zusatzaktionen änderbar
@@ -491,7 +492,7 @@ class GegenstandUpdate(BaseModel):
     upgradeSlots: int | None = None
     istAugment: bool | None = None
     augmentWaffentyp: Literal["", "Schusswaffen", "Nahkampf", "Handgemenge"] | None = None
-    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole"] | None = None
+    augmentZielTyp: Literal["", "Waffe", "Rüstung", "Cyberdeck", "Riggerkonsole", "Commlink"] | None = None
     defekt: bool | None = None
     # weggeworfen bewusst NICHT hier — wie istVorlage. Ob etwas im Mülleimer
     # liegt, ergibt sich ausschliesslich aus den Routen wegwerfen/zurueckholen,
