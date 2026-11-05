@@ -53,6 +53,20 @@ class TestMeldenDuerfen:
         assert darf_melden(rolle="PLAYER", eigene_person_id="p-1", ziel_person_id=None) is False
 
 
+class TestEigenerHaupteintrag:
+    def test_findet_den_stammeintrag(self):
+        from app.kampf.initiative import eigener_haupteintrag
+
+        stamm = {"id": "a", "personId": "p-1", "zusatzzug": False}
+        zusatz = {"id": "b", "personId": "p-1", "zusatzzug": True}
+        assert eigener_haupteintrag([zusatz, stamm], "p-1") is stamm
+
+    def test_fremder_eintrag_zaehlt_nicht(self):
+        from app.kampf.initiative import eigener_haupteintrag
+
+        assert eigener_haupteintrag([{"id": "a", "personId": "p-2"}], "p-1") is None
+
+
 class TestWertMelden:
     def test_gemeldeter_wert_landet_als_initiative(self):
         assert melde_wert(3) == 3

@@ -8,7 +8,14 @@ from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, requi
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
 from app.kampf import matrix_store, repository
-from app.kampf.initiative import darf_melden, initiative_pool, melde_wert, person_fehler_http, waehle_person
+from app.kampf.initiative import (
+    darf_melden,
+    eigener_haupteintrag,
+    initiative_pool,
+    melde_wert,
+    person_fehler_http,
+    waehle_person,
+)
 from app.kampf.sichtbarkeit import fuer_spieler
 from app.items.beschwoerung import benoetigte_erfolge as beschwoerung_benoetigte_erfolge
 from app.items.beschwoerung import beschwoerungsstufe, ruf_entscheidung
@@ -310,6 +317,53 @@ async def melde_initiative(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(fehler)) from fehler
 
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, {"initiative": wert})
+    return _ohne_hilfsfelder(kampf)
+
+
+@router.post("/ich", response_model=KampfResponse)
+async def selbst_initiative(
+    campaign_id: str,
+    body: InitiativeInput,
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Eigene Initiative eintragen, auch wenn die SL einen noch nicht aufgenommen hat.
+
+    Klick auf die Initiative-Zahl im Kampfmenü. Steht der Charakter schon in
+    der Liste, wird nur der Wert gesetzt. Sonst kommt er mit diesem Wert dazu.
+    Drohnen und Beschwörungen laufen über ihre eigenen Wege, nicht hier.
+    """
+    if viewer.role == "GM" or not viewer.person_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur für den eigenen Charakter")
+
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+
+    try:
+        wert = melde_wert(body.erfolge)
+    except ValueError as fehler:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(fehler)) from fehler
+
+    eigener = eigener_haupteintrag(kampf["teilnehmer"], viewer.person_id)
+    if eigener:
+        kampf = await repository.teilnehmer_aendern(campaign_id, eigener["id"], {"initiative": wert})
+        return _ohne_hilfsfelder(kampf)
+
+    person = await get_node("Person", PERSON_FIELDS, campaign_id, viewer.person_id)
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Charakter nicht gefunden")
+
+    kampf = await repository.teilnehmer_hinzu(
+        campaign_id,
+        {
+            "name": person.get("name") or "Charakter",
+            "initiative": wert,
+            "kampfart": "NAHKAMPF",
+            "notiz": "",
+            "personId": viewer.person_id,
+            "begleiterId": None,
+        },
+    )
     return _ohne_hilfsfelder(kampf)
 
 

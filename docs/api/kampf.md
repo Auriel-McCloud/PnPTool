@@ -103,7 +103,9 @@ Spieler-Tablets ein Eingabefeld direkt im Popup:
 └─────────────────────────────────────┘
 ```
 
-Der Wert wird via POST `/initiative` gemeldet. Die SL sieht live, wer schon
+Der Wert wird via POST `/teilnehmer/{id}/initiative` gemeldet, oder für den
+eigenen Charakter via POST `/ich`, wenn er noch nicht in der Liste steht.
+Dieselbe Zahl auf der Kampfkarte ist antippbar. Die SL sieht live, wer schon
 eingegeben hat.
 
 **Warum im Popup statt separatem Screen?**

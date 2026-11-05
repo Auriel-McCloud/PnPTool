@@ -29,6 +29,18 @@ def initiative_pool(werte: dict[str, int], cyberware_mod: int = 0) -> int:
     return max(0, _initiative_formel(werte, cyberware_mod))
 
 
+def eigener_haupteintrag(teilnehmer: list[dict], person_id: str) -> dict | None:
+    """Der eigene Kampf-Eintrag, nicht der Zusatzzug aus dem Reflex-Booster.
+
+    Der Zusatzzug hat dieselbe personId, darf aber nicht die gemeldete
+    Initiative überschreiben.
+    """
+    return next(
+        (t for t in teilnehmer if t.get("personId") == person_id and not t.get("zusatzzug")),
+        None,
+    )
+
+
 def darf_melden(rolle: str, eigene_person_id: str | None, ziel_person_id: str | None) -> bool:
     """Nur für den eigenen Charakter — die Spielleitung für alle.
 

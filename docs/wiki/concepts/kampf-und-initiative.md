@@ -47,6 +47,10 @@ automatische „0 HP = tot"-Logik.
 
 ## Entwicklung
 
+- **05.11.2026:** Klick auf die Initiative-Zahl trägt die Erfolge ein, für den
+  eigenen Charakter, die eigene Drohne und die Beschwörung. Steht der
+  Charakter oder die Drohne noch nicht in der Liste, kommt sie mit diesem
+  Wert dazu. Die SL klickt dieselbe Zahl im Bogen.
 - **05.11.2026:** Kampfmenü ohne die Zeilen „Ansage von hinten“, „Schutz und
   Schaden“ und „Würfeln“. Die Ansage-Reihenfolge gilt weiter am Tisch, steht
   nur nicht mehr unter der Liste. Waffen, Pools und der Umschalter Kampf /

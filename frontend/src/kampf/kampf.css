@@ -277,6 +277,21 @@
   color: var(--text-leise);
 }
 
+.kk-init-tipp {
+  all: unset;
+  cursor: pointer;
+  border: 1px dashed var(--linie);
+  border-radius: 4px;
+  padding: 0 3px;
+  text-align: center;
+}
+
+.kk-init-tipp:hover,
+.kk-init-tipp:focus-visible {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
 .ka-drohnen-raster {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

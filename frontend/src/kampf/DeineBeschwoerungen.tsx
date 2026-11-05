@@ -5,7 +5,7 @@ import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { kampfApi, type Kampf, type Teilnehmer } from "./api";
-import { InitiativeSetzen } from "./InitiativeSetzen";
+import { InitiativeSetzen, initiativePlatzhalter } from "./InitiativeSetzen";
 import { Kampfkarte, wert } from "./Kampfkarte";
 import "../begleiter/begleiter.css";
 import "../items/gegenstaende.css";
@@ -67,6 +67,9 @@ export function DeineBeschwoerungen({
   const [fehler, setFehler] = useState<string | null>(null);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  // Die Beschwören-Antwort kennt den neuen Eintrag sofort. Der Kampf-Takt
+  // hinkt hinterher, und genau dann soll die Initiative schon antippbar sein.
+  const [frischerKampf, setFrischerKampf] = useState<Kampf | null>(null);
   // Nur für die Intelligenz gebraucht — kein Fach für Waffen/Items, deshalb
   // ein eigener, schlanker Ladevorgang statt den vollen Bogen hochzureichen.
   const [eigenerBogen, setEigenerBogen] = useState<Bogen | null>(null);
@@ -143,8 +146,9 @@ export function DeineBeschwoerungen({
     setSendet(true);
     setFehler(null);
     try {
-      await kampfApi.beschwoeren(campaignId, probeZiel.id, benoetigteErfolge(probeZiel));
+      const neu = await kampfApi.beschwoeren(campaignId, probeZiel.id, benoetigteErfolge(probeZiel));
       const critterId = probeZiel.beschworenerCritterId;
+      setFrischerKampf(neu);
       setProbeZiel(null);
       onGeaendert();
       // Direkt weiter zur Initiative, genau wie Mark es wollte — kein
@@ -268,10 +272,13 @@ export function DeineBeschwoerungen({
             campaignId={campaignId}
             personId={offenId}
             aenderbar
-            onInitiativeKlick={(() => {
-              const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
-              return teilnahme ? () => setInitiativeZiel(teilnahme) : undefined;
-            })()}
+            onInitiativeKlick={() => {
+              const dabei =
+                kampf?.teilnehmer.find((t) => t.personId === offenId && !t.zusatzzug) ??
+                frischerKampf?.teilnehmer.find((t) => t.personId === offenId && !t.zusatzzug);
+              if (dabei) setInitiativeZiel(dabei);
+              else setInitiativeZiel(initiativePlatzhalter("Beschworener Critter", offenId));
+            }}
           />
         </Fenster>
       )}
@@ -281,7 +288,15 @@ export function DeineBeschwoerungen({
           teilnehmer={initiativeZiel}
           onSchliessen={() => setInitiativeZiel(null)}
           onSpeichern={async (initiativeWert) => {
-            await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, initiativeWert);
+            if (initiativeZiel.id) {
+              await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, initiativeWert);
+            } else {
+              const dabei =
+                kampf?.teilnehmer.find((t) => t.personId === initiativeZiel.personId && !t.zusatzzug) ??
+                frischerKampf?.teilnehmer.find((t) => t.personId === initiativeZiel.personId && !t.zusatzzug);
+              if (!dabei) throw new Error("Erst beschwören, dann die Initiative eintragen");
+              await kampfApi.meldeInitiative(campaignId, dabei.id, initiativeWert);
+            }
             onGeaendert();
           }}
         />

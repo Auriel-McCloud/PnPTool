@@ -2302,6 +2302,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — Initiative per Klick eintragen):**
+- **Was:** Die Initiative-Zahl ist wieder antippbar. Der eigene Charakter, die eigene Drohne und die Beschwörung tragen dort die Erfolge ein. Steht Charakter oder Drohne noch nicht in der Liste, kommen sie mit diesem Wert dazu. Die SL klickt dieselbe Zahl im Bogen.
+- **Wo:** `Kampfkarte.tsx`, `SpielerAnsicht.tsx`, `DeineDrohnenImKampf.tsx`, `DeineBeschwoerungen.tsx`, `Kampfmodus.tsx`, `kampf/routes.py` `POST /ich`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.
+- **Verifiziert:** `tsc -b`, `pytest tests/test_initiative.py`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (05.11.2026 — Kampfmenü ohne drei Zeilen):**
 - **Was:** Ansage von hinten, die Überschrift Schutz und Schaden und die Überschrift Würfeln sind raus. Pools, Waffen und der Umschalter Kampf/Cyberkampf bleiben. Die Seite soll ohne Scrollen auskommen.
 - **Wo:** `Kampfmodus.tsx`, `SpielerAnsicht.tsx`, `Kampfkarte.tsx`, `kampf.css`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.

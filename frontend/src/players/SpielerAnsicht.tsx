@@ -26,7 +26,7 @@ import { BoosterPopup } from "../kampf/BoosterPopup";
 import { HotBleibenPopup } from "../kampf/HotBleibenPopup";
 import { DeineDrohnenImKampf } from "../kampf/DeineDrohnenImKampf";
 import { DeineBeschwoerungen } from "../kampf/DeineBeschwoerungen";
-import { InitiativeSetzen } from "../kampf/InitiativeSetzen";
+import { InitiativeSetzen, initiativePlatzhalter } from "../kampf/InitiativeSetzen";
 import { kampfApi, type Teilnehmer } from "../kampf/api";
 import { AugmentsAnsicht } from "../augments/AugmentsAnsicht";
 import { Bestaetigung } from "../shell/Bestaetigung";
@@ -169,7 +169,7 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   const begleiterRasterRef = useRef<HTMLDivElement>(null);
   // Läuft dauerhaft mit, nicht nur im Kampfbereich: so kann später eine
   // Meldung "du bist dran" von überall aufgehen.
-  const { kampf, geladen: kampfGeladen } = useKampf(ich?.campaignId ?? null);
+  const { kampf, geladen: kampfGeladen, neuLaden } = useKampf(ich?.campaignId ?? null);
   // Der eigene Zustand, damit der Bildschirm mitblutet — auch wenn die
   // Spielleitung den Schaden einträgt und nicht man selbst.
   const zustand = useZustand(ich?.campaignId ?? null, ich?.personId ?? null);
@@ -557,12 +557,22 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       campaignId={ich.campaignId}
       kampf={kampf}
       eigenePersonId={ich.personId}
-      onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+      onGeaendert={() => {
+        if (!ich?.campaignId) return;
+        void kampfApi.laden(ich.campaignId).then((frisch) => {
+          if (frisch) neuLaden(frisch);
+        });
+      }}
     />
     <HotBleibenPopup
       campaignId={ich.campaignId}
       kampf={kampf}
-      onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+      onGeaendert={() => {
+        if (!ich?.campaignId) return;
+        void kampfApi.laden(ich.campaignId).then((frisch) => {
+          if (frisch) neuLaden(frisch);
+        });
+      }}
     />
     {/* Initiative per Klick ändern — für den eigenen Charakter und eigene
         aktive Drohnen/Fahrzeuge, siehe Initiativliste weiter unten. */}
@@ -571,7 +581,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         teilnehmer={initiativeZiel}
         onSchliessen={() => setInitiativeZiel(null)}
         onSpeichern={async (wert) => {
-          await kampfApi.meldeInitiative(ich.campaignId, initiativeZiel.id, wert);
+          if (!initiativeZiel || !ich) return;
+          const neu = initiativeZiel.id
+            ? await kampfApi.meldeInitiative(ich.campaignId, initiativeZiel.id, wert)
+            : await kampfApi.selbstInitiative(ich.campaignId, wert);
+          const frisch = await kampfApi.laden(ich.campaignId);
+          neuLaden(frisch ?? neu);
         }}
       />
     )}
@@ -708,7 +723,15 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                     personId={ich.personId}
                     aenderbar
                     zeigeMatrixHot
-                    onInitiativeKlick={eigeneTeilnahme ? () => setInitiativeZiel(eigeneTeilnahme) : undefined}
+                    onInitiativeKlick={
+                      ich.personId
+                        ? () =>
+                            setInitiativeZiel(
+                              eigeneTeilnahme ??
+                                initiativePlatzhalter(ich.personName ?? "Du", ich.personId as string),
+                            )
+                        : undefined
+                    }
                   />
                 </div>
               )}
@@ -717,7 +740,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                   campaignId={ich.campaignId}
                   eigenePersonId={ich.personId}
                   kampf={kampf}
-                  onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+                  onGeaendert={() => {
+                    if (!ich?.campaignId) return;
+                    void kampfApi.laden(ich.campaignId).then((frisch) => {
+                      if (frisch) neuLaden(frisch);
+                    });
+                  }}
                   onListeGeladen={setEigeneDrohnenIds}
                 />
               )}
@@ -727,7 +755,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                   eigenePersonId={ich.personId}
                   kampf={kampf}
                   kiTamas={eigeneKiTamas}
-                  onGeaendert={() => { /* der Takt von useKampf holt die Liste nach */ }}
+                  onGeaendert={() => {
+                    if (!ich?.campaignId) return;
+                    void kampfApi.laden(ich.campaignId).then((frisch) => {
+                      if (frisch) neuLaden(frisch);
+                    });
+                  }}
                 />
               )}
             </>

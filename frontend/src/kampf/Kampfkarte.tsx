@@ -106,9 +106,8 @@ export function Kampfkarte({
    *  A/P/I in Kurzform, antippen zeigt den Rest ausgeschrieben (Mark,
    *  26.10.2026 — für die Drohnen-Steckbriefe im Kampfmenü). */
   kompaktStart?: boolean;
-  /** Macht die Initiative-Zahl antippbar (Mark, 26.10.2026: kein eigener
-   *  Knopf — genau wie in der Initiativliste reicht ein Klick auf den
-   *  Wert). Nur für Drohnen-Steckbriefe gesetzt. */
+  /** Macht die Initiative-Zahl antippbar. Spieler, Drohne und Beschwörung
+   *  tragen hier ihre Erfolge ein, auch wenn sie noch nicht in der Liste stehen. */
   onInitiativeKlick?: () => void;
   /** Decker-Hot neben der Überschrift Cyberdeck, nicht neben der Runde.
    *  Eigene Karte: der Knopf gilt für den eingeloggten Spieler. SL-Karte
@@ -409,7 +408,13 @@ export function Kampfkarte({
             </span>
           </div>
         )}
-        <Zahl titel="Initiative" wert={u.initiative} wuerfel onKlick={onInitiativeKlick} />
+        <Zahl
+          titel="Initiative"
+          wert={u.initiative}
+          wuerfel
+          onKlick={onInitiativeKlick}
+          hinweis={onInitiativeKlick ? "Antippen und die gewürfelten Erfolge eintragen." : undefined}
+        />
         {/* Mark, 30.10.2026: direkt neben die Initiative statt weiter unten
             bei Rüstung/Waffen vergraben — im Gefecht trifft man zuerst auf
             die Initiative, der Treffer gehört in denselben Blick. */}

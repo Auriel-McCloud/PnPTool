@@ -3,7 +3,7 @@ import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi } from "../traits/bogenApi";
 import { kampfApi, type HotStatus, type Kampf, type Teilnehmer } from "./api";
-import { InitiativeSetzen } from "./InitiativeSetzen";
+import { InitiativeSetzen, initiativePlatzhalter } from "./InitiativeSetzen";
 import { Kampfkarte, kampfKurz } from "./Kampfkarte";
 import "../items/gegenstaende.css";
 import "./kampf.css";
@@ -167,23 +167,43 @@ export function DeineDrohnenImKampf({
           const teilnahme = kampf?.teilnehmer.find((t) => t.personId === d.id);
           return (
             <div className="gg-slot-spalte" key={d.id}>
-              <button
-                type="button"
+              <div
                 className={`gg-kachel${d.istHot ? " gg-slot-hot" : ""}`}
                 style={d.istHot ? undefined : { borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" }}
+                role="button"
+                tabIndex={0}
                 onClick={() => setOffenId(d.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setOffenId(d.id);
+                }}
               >
                 <span className="gg-kachel-name">{d.name}</span>
                 <span className="kk-slot-kurz">
-                  {(gesundheit[d.id] ?? []).map((k) => (
-                    <span key={k.kuerzel} title={k.titel}>
-                      <em>{k.kuerzel}</em>
-                      {k.wert}
-                    </span>
-                  ))}
+                  {(gesundheit[d.id] ?? []).map((k) =>
+                    k.kuerzel === "I" ? (
+                      <button
+                        key={k.kuerzel}
+                        type="button"
+                        className="kk-init-tipp"
+                        title="Initiative eintragen"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInitiativeZiel(teilnahme ?? initiativePlatzhalter(d.name, d.id, Number(k.wert) || 0));
+                        }}
+                      >
+                        <em>{k.kuerzel}</em>
+                        {k.wert}
+                      </button>
+                    ) : (
+                      <span key={k.kuerzel} title={k.titel}>
+                        <em>{k.kuerzel}</em>
+                        {k.wert}
+                      </span>
+                    ),
+                  )}
                   {!gesundheit[d.id] && <span>…</span>}
                 </span>
-              </button>
+              </div>
               {hot?.hatNeurolink && (
                 <button
                   type="button"
@@ -221,10 +241,11 @@ export function DeineDrohnenImKampf({
             campaignId={campaignId}
             personId={offenId}
             aenderbar
-            onInitiativeKlick={(() => {
-              const teilnahme = kampf?.teilnehmer.find((t) => t.personId === offenId);
-              return teilnahme ? () => setInitiativeZiel(teilnahme) : undefined;
-            })()}
+            onInitiativeKlick={() => {
+              const dabei = kampf?.teilnehmer.find((t) => t.personId === offenId);
+              const name = drohnen.find((d) => d.id === offenId)?.name ?? "Drohne";
+              setInitiativeZiel(dabei ?? initiativePlatzhalter(name, offenId));
+            }}
           />
         </Fenster>
       )}
@@ -234,7 +255,16 @@ export function DeineDrohnenImKampf({
           teilnehmer={initiativeZiel}
           onSchliessen={() => setInitiativeZiel(null)}
           onSpeichern={async (wert) => {
-            await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, wert);
+            if (initiativeZiel.id) {
+              await kampfApi.meldeInitiative(campaignId, initiativeZiel.id, wert);
+            } else if (initiativeZiel.personId) {
+              const aufgenommen = await kampfApi.drohneBeitreten(campaignId, initiativeZiel.personId);
+              const dabei = aufgenommen.teilnehmer.find(
+                (t) => t.personId === initiativeZiel.personId && !t.zusatzzug,
+              );
+              if (!dabei) throw new Error("Drohne nicht im Kampf");
+              await kampfApi.meldeInitiative(campaignId, dabei.id, wert);
+            }
             onGeaendert();
           }}
         />

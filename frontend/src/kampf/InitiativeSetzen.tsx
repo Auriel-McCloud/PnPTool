@@ -1,7 +1,23 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import type { Teilnehmer } from "./api";
+import type { Kampfart, Teilnehmer } from "./api";
 import "./booster.css";
+
+/** Platzhalter, solange jemand noch nicht in der Liste steht. id leer heißt:
+ *  beim Speichern erst aufnehmen, nicht einen bestehenden Eintrag ändern. */
+export function initiativePlatzhalter(name: string, personId: string, initiative = 0): Teilnehmer {
+  return {
+    id: "",
+    name,
+    initiative,
+    kampfart: "NAHKAMPF" as Kampfart,
+    notiz: "",
+    erledigt: false,
+    personId,
+    personType: null,
+    begleiterId: null,
+  };
+}
 
 /**
  * Initiative direkt in der Liste ändern — per Klick auf die Zahl.

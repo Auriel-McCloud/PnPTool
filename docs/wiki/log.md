@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-05] gebaut | Initiative per Klick eintragen
+
+Klick auf die Initiative-Zahl trägt die Erfolge ein. Charakter und Drohne
+kommen damit in die Liste, wenn sie noch nicht drin sind. Siehe
+[[concepts/kampf-und-initiative]].
+
 ## [2026-11-05] gebaut | Kampfmenü ohne drei Zeilen
 
 Ansage von hinten, Schutz und Schaden, Würfeln sind aus der Kampfansicht.

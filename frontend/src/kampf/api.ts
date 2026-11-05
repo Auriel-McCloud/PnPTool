@@ -151,6 +151,10 @@ export const kampfApi = {
    *  (26.10.2026, serverseitig über BEGLEITET-Kante geprüft). */
   meldeInitiative: (cid: string, teilnehmerId: string, erfolge: number) =>
     api.post<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/initiative`, { erfolge }),
+  /** Eigene Initiative eintragen. Steht man noch nicht in der Liste, kommt
+   *  man mit diesem Wert dazu. */
+  selbstInitiative: (cid: string, erfolge: number) =>
+    api.post<Kampf>(`${basis(cid)}/ich`, { erfolge }),
   /** Self-Service (26.10.2026): der Rigger nimmt seine eigene aktive Drohne/
    *  sein eigenes Fahrzeug selbst in den laufenden Kampf auf, Initiative
    *  startet bei 0 und wird direkt danach per Klick gesetzt. Nummeriert
