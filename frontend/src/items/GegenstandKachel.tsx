@@ -7,6 +7,7 @@ import { DotPool } from "../traits/DotPool";
 import { StufenBlatt } from "../traits/StufenBlatt";
 import type { Ablage, AblageZiel, Gegenstand } from "./api";
 import { SCHADEN_MAX, istVerschlossen, itemsApi } from "./api";
+import { DROGE_GESCHLUCKT } from "../kampf/BoosterPopup";
 import { SchlossOeffnen } from "./SchlossOeffnen";
 import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
@@ -533,6 +534,7 @@ export function GegenstandKachel({
                   const antwort = await itemsApi.schlucken(campaignId, item.id);
                   setSchluckText(antwort.text);
                   onGeoeffnet?.();
+                  window.dispatchEvent(new CustomEvent(DROGE_GESCHLUCKT));
                 } catch (e) {
                   setSchluckText(e instanceof ApiError ? e.message : "Schlucken ging nicht.");
                 } finally {

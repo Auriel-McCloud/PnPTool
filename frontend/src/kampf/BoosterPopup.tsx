@@ -18,6 +18,15 @@ import "./booster.css";
  * macht die Zusatzaktion zum Risiko: sie kommt meist später.
  */
 
+/**
+ * Eine Droge mit Zusatzaktion wurde geschluckt. Anders als beim Hot-Knopf
+ * ändert sich dabei weder `kampf.amZug` noch sonst ein Kampf-Feld — ohne
+ * dieses Signal würde das Fenster den neuen Booster erst beim nächsten
+ * Drankommen bemerken. Mark-Bugreport 05.11.2026: Redline im eigenen Zug
+ * geschluckt, keine Frage nach der Zusatzaktion gekommen.
+ */
+export const DROGE_GESCHLUCKT = "pnptool-droge-geschluckt";
+
 /** Ampel: drei Punkte, die sich bei Nutzung füllen und beim Aussetzen leeren. */
 export function Ampel({ stand, max = 3 }: { stand: number; max?: number }) {
   return (
@@ -117,6 +126,27 @@ export function BoosterPopup({
     };
     window.addEventListener(MATRIX_HOT_AN, beiHot);
     return () => window.removeEventListener(MATRIX_HOT_AN, beiHot);
+  }, [campaignId, personId, binDran, kampf?.runde, eigener?.id]);
+
+  // Eine Droge mit Zusatzaktion wurde geschluckt (z.B. Redline), mitten im
+  // eigenen Zug. Dasselbe Muster wie beim Hot-Knopf: ohne dieses Signal
+  // bliebe der neue Booster unbemerkt, weil sich `kampf.amZug` nicht ändert.
+  useEffect(() => {
+    if (!campaignId || !binDran || personId === null) return;
+    const beiSchlucken = () => {
+      if (modusRef.current === "wurf" || modusRef.current === "paralyse") return;
+      kampfApi
+        .boosterStatus(campaignId, personId)
+        .then((frisch) => {
+          setStatus(frisch);
+          if (!frisch.hatBooster || !frisch.darfAktivieren || frisch.matrixBleibenOffen) return;
+          setGefragt(`${kampf?.runde}-${eigener?.id}`);
+          setModus("frage");
+        })
+        .catch(() => setStatus(null));
+    };
+    window.addEventListener(DROGE_GESCHLUCKT, beiSchlucken);
+    return () => window.removeEventListener(DROGE_GESCHLUCKT, beiSchlucken);
   }, [campaignId, personId, binDran, kampf?.runde, eigener?.id]);
 
   // Nach dem Zusatzzug: Paralysewurf, wenn die Ampel voll ist.
