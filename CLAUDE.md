@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Drogen/Verbrauchsgegenstände beim Anlegen standardmäßig stapelbar (05.11.2026)
+
+Mark: soll beim Anlegen nicht jedes Mal extra umgeschaltet werden müssen. Neuer `model_validator(mode="after")` in `GegenstandCreate` (`items/schemas.py`): Typ Droge oder Verbrauchsgegenstand setzt `einzigartig=False` (= stapelbar) und `hatMenge=True`, `menge` bleibt beim Schema-Default 1. Reiner Default, kein Zwang — wird per `model_fields_set` nur gesetzt, wenn der Aufrufer die Felder nicht selbst mitschickt (z.B. eine explizit einzigartige Spezial-Droge bleibt möglich). Greift zentral für beide Anlege-Routen (mit Besitzer und Vorlage), keine Frontend-Änderung nötig. Per Python-Skript verifiziert, keine dedizierte Testdatei.
+
 ## Bugfix: Portrait-Galerie-"+" öffnete Datei-Upload statt Zeichenblock (05.11.2026)
 
 Mark: beim Klick auf "+" in der Portrait-Galerie kam der Datei-Upload-Dialog statt eines leeren Blatts zum Zeichnen. Ursache: `port-galerie-neu` war mit `dateiRef.current?.click()` verdrahtet. Erster Fix hängte "+" an denselben `ZeichenblockPopup`-State wie den bestehenden "✎ Zeichnen"-Knopf — der zeigte aber das aktuelle Anzeigebild als Hintergrund, also keine echte leere Fläche. Zweiter Fix (Mark: "es soll ein neuer weißer zeichen canvas sein", bestehendes Bild darf nie angefasst werden): eigener `zeichnenHintergrund`-State — "+" öffnet mit `null` (leeres Blatt, neuer Galerie-Eintrag), "✎ Zeichnen" weiterhin mit `ich.personBildUrl` (Skizze auf dem aktuellen Bild weiter). Beide Wege hängen wie bisher nur per `galerie_hinzufuegen` einen neuen Eintrag an — das bestehende Bild wird nie überschrieben. `CharakterportraitAnsicht.tsx`. `tsc -b`/`vite build` sauber, auf bebop deployed. **Noch nicht am Spieltisch getestet.**

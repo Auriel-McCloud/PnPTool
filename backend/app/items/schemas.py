@@ -1,7 +1,7 @@
 from typing import Literal
 
 from app.entities.schemas import SichtbarkeitModus
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 # Dieselben drei Arten wie im Treffer-Dialog und auf dem Blatt
 # (kampf/ruestung.py::SCHADENSARTEN). Am Tisch: Schlag / Tödlich / Schwerheilbar.
@@ -358,6 +358,20 @@ class GegenstandCreate(BaseModel):
     # montiertes Augment eine Schadensart setzen (409 beim Montieren, Mark:
     # "Montieren wird abgelehnt, wenn am Ziel schon ein Schadensart-Augment
     # sitzt").
+
+    # Drogen und Verbrauchsgegenstände sind so gut wie immer stapelbare
+    # Mengenware (z.B. 5x Trauma-Pflaster) — beim Anlegen soll das nicht
+    # jedes Mal extra umgeschaltet werden müssen (Mark, 05.11.2026). Nur ein
+    # DEFAULT: wer explizit einzigartig=true/hatMenge=false mitschickt
+    # (model_fields_set), wird nicht überstimmt.
+    @model_validator(mode="after")
+    def _drogen_verbrauch_stapelbar_default(self) -> "GegenstandCreate":
+        if self.typ in ("Droge", "Verbrauchsgegenstand"):
+            if "einzigartig" not in self.model_fields_set:
+                self.einzigartig = False
+            if "hatMenge" not in self.model_fields_set:
+                self.hatMenge = True
+        return self
 
 
 class GegenstandUpdate(BaseModel):
