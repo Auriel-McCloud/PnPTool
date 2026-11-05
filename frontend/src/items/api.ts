@@ -202,6 +202,14 @@ export interface Gegenstand {
   montiertAnId: string | null;
   montiertAnName: string | null;
   montiertAnKind: string | null;
+  /**
+   * Credstick (05.11.2026, Tresor-Modell): Geld, das auf diesem Gegenstand
+   * geladen ist — hängt am STÜCK, nicht an der Person. Laden/Entladen
+   * bucht zwischen diesem Feld und dem eigenen Kapital um; Weitergeben
+   * und Finden brauchen keinen eigenen Mechanismus, ein Credstick ist ein
+   * ganz normaler Gegenstand. Nur bei typ="Credstick" von Belang.
+   */
+  geladenesGeld: number;
 }
 
 /** Pool-Infos fürs Reparatur-Popup — Handwerk-Wert der Trägerin plus freie
@@ -516,6 +524,9 @@ export interface GegenstandUpdate {
   sichtbarkeit?: SichtbarkeitModus;
   sichtbarFuer?: string[];  gewicht?: number;
   kapazitaet?: number;
+  /** Credstick: vorbefüllter Betrag beim Anlegen/Korrigieren eines
+   * Fundstücks. Laden/Entladen laufen über eigene Routen, nicht über PATCH. */
+  geladenesGeld?: number;
   istBehaelter?: boolean;
   schlossArt?: "" | "passwort" | "schluessel" | "spiel";
   schlossPasswort?: string;
@@ -799,4 +810,17 @@ export const itemsApi = {
   /** Maschinenteile im Besitz der Besitzerin dieses defekten Augments. */
   augmentMaterial: (cid: string, itemId: string) =>
     api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/augment/material`),
+
+  // --- Credstick (05.11.2026, Tresor-Modell) ---------------------------
+  /** Geld vom eigenen Kapital auf den Credstick laden. Spieler nur am
+   * eigenen Besitz/eigenen Kreis, SL an jedem Credstick. */
+  credstickLaden: (cid: string, itemId: string, betrag: number) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/credstick/laden`, { betrag }),
+  /** Gegenstück: Geld vom Credstick zurück aufs eigene Kapital. */
+  credstickEntladen: (cid: string, itemId: string, betrag: number) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/credstick/entladen`, { betrag }),
+  /** Nur SL: Geld direkt auf einen Credstick erzeugen, ohne Abzug —
+   * für NPC-Belohnungen oder vorbereitete Fundstücke. */
+  credstickSlLaden: (cid: string, itemId: string, betrag: number) =>
+    api.post<Gegenstand>(`${itemBase(cid, itemId)}/credstick/sl-laden`, { betrag }),
 };

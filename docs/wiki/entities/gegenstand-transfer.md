@@ -70,16 +70,43 @@ SL soll Geld von NPCs direkt an Spieler als Belohnung buchen können. Ob der
 Spieler das ablehnen darf, ist **offen** (ein SL-Befehl ohne Popup wäre der
 naheliegende Kontrast zur Spieler-zu-Spieler-Zustimmung — nicht entschieden).
 
-### Credstick (neuer Gegenstandstyp)
+### Credstick — gebaut (05.11.2026)
 
 Digitaler Geldträger: Geld drauf-/runterladen das man besitzt; Credstick
 weitergeben oder finden — wer ihn hat, hat Zugriff auf das geladene Geld.
-**Offen:** nur Tresor (erst aufs eigene Kapital runterladen, dann ausgeben)
-oder direkt im Shop vom Stick zahlen? Ändert das Datenmodell.
+**Entschieden:** Tresor-Modell (erst aufs eigene Kapital runterladen, dann
+normal ausgeben) — kein direktes Zahlen im Shop vom Stick aus, Mark:
+"Tresor-Modell reicht völlig". Kein Limit (rein digitaler Speicher), beliebig
+viele Credsticks pro Person erlaubt (jeder trägt seinen eigenen Betrag).
 
-Liegt **nicht** in `GEGENSTAND_TYPEN` (`items/schemas.py` /
-`frontend/src/items/typKatalog.ts`). Typ nach dem Anlegen fix — neuer Eintrag
-muss an beiden Katalogen plus KI-Generator.
+Jetzt eigener Eintrag in `GEGENSTAND_TYPEN` (`items/schemas.py` /
+`frontend/src/items/typKatalog.ts`), neues generisches Feld `geladenesGeld`
+am Gegenstand (wie `preis`/`kraft` — nur bei typ="Credstick" von Belang).
+**Geld hängt am Gegenstand, nicht an einem Pool der Person** — deshalb
+brauchen Weitergabe (`GEGENSTAND_WEITERGABE`) und Finden (aufheben) KEINEN
+eigenen Mechanismus, ein Credstick ist ein ganz normaler Gegenstand. Eine
+Vorlagen-Kopie startet immer mit `geladenesGeld=0` (wie `weggeworfen`/
+`defekt`), sonst würde das Zuweisen einer Credstick-Vorlage Geld vervielfachen.
+
+**Laden/Entladen:** `POST .../gegenstaende/{id}/credstick/laden|entladen`
+(`items/routes.py`/`repository.py::credstick_transaktion`) bucht atomar
+zwischen `Person.kapital` und `Gegenstand.geladenesGeld` um — eine einzige
+Cypher-Anweisung mit `gedeckt`-Flag (gleiches Muster wie
+`haendler/repository.py::tutorial_kapital_schreiben`), damit kein paralleler
+Request dieselbe Quelle zweimal leert. Spieler nur im eigenen Kreis, SL an
+jedem Credstick (z.B. um NPC-Kapital auf dessen Stick umzubuchen). Steht in
+der Player-Ausnahmeliste von `tests/test_zugriffsschutz.py`.
+
+**SL-Direktvergabe:** `POST .../credstick/sl-laden` (nur SL,
+`repository.py::credstick_sl_aufladen`) erzeugt Geld direkt auf dem Stick,
+ohne irgendwo abzuziehen — für NPC-Belohnungen oder vorbereitete Fundstücke
+(Mark: "ich muss einfach so Geld drauflegen können um es NPCs zu geben").
+
+Frontend: Credstick-Abschnitt in `GegenstandKachel.tsx` (Aufladen/Abheben-
+Knöpfe, SL zusätzlich "Geld erzeugen"), `CredstickPopup.tsx` für die
+Betrag-Eingabe (gestyltes Commlink-Popup, kein Inline-Formular). Backend
+end-to-end gegen echtes Neo4j verifiziert (Laden/Entladen/Deckungsprüfung/
+SL-Erzeugung), `tsc -b` sauber. **Kein Browser-Klicktest.**
 
 ### Heiltrank
 
@@ -111,6 +138,10 @@ Mitteilung/Popup an SL+Ziel, oder soll es in die Kampfkarte einschlagen?
   „Gleicher Ort“, Geld, neue Typen: nicht begonnen.
 - **04.11.2026** — Heiltrank-Typfrage ersetzt: Schlucken ist eine Droge,
   nicht gebaut. Siehe [[drogen]]. Granate bleibt offen.
+- **05.11.2026** — Credstick gebaut: eigener Typ, Tresor-Modell entschieden
+  (kein Shop-Direktzahlen), Laden/Entladen (Spieler + SL) und SL-Direkt-
+  vergabe (NPC-Belohnung/Fundstück ohne Kapitalabzug). Geld-Weitergabe
+  (Party/gleicher Ort) und NPC→Spieler-Belohnung weiterhin nicht gebaut.
 
 ## Siehe auch
 

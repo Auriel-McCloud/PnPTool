@@ -13,6 +13,7 @@ import { steckbriefKurz } from "./steckbrief";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
 import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
+import { CredstickPopup } from "./CredstickPopup";
 import { ApiError } from "../api/client";
 import "./wegwerfen.css";
 
@@ -72,6 +73,7 @@ export function GegenstandKachel({
   onZusammengelegt,
   montierteUpgrades,
   onGeoeffnet,
+  istSpielleitung = false,
 }: {
   item: Gegenstand;
   /** Nur bei Behältern und Fahrzeugen: hineinsehen, in einem weiteren Fenster. */
@@ -119,6 +121,13 @@ export function GegenstandKachel({
   montierteUpgrades?: string[];
   /** Nach erfolgreichem Öffnen die Liste neu holen. */
   onGeoeffnet?: () => void;
+  /**
+   * Credstick (05.11.2026): nur die SL bekommt den Knopf "Geld erzeugen"
+   * (ohne Kapitalabzug, für NPC-Belohnungen/Fundstücke). Laden/Entladen
+   * selbst sind kein SL-Privileg — die erscheinen für jeden, der den
+   * Credstick bearbeiten darf (siehe `onUmlegen`).
+   */
+  istSpielleitung?: boolean;
 }) {
   // Cyber-, Bio- und Hexware sind Implantate, keine Ausrüstung.
   const CHROM = ["Cyberware", "Bioware", "Hexware"];
@@ -135,6 +144,8 @@ export function GegenstandKachel({
   const [ziele, setZiele] = useState<AblageZiel[]>([]);
   const [zusperrenFehler, setZusperrenFehler] = useState<string | null>(null);
   const [umlegenFehler, setUmlegenFehler] = useState<string | null>(null);
+  const [credstickModus, setCredstickModus] = useState<"laden" | "entladen" | "sl-laden" | null>(null);
+  const [credstickFehler, setCredstickFehler] = useState<string | null>(null);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
   const beschreibung = parseRichText(item.description);
@@ -226,6 +237,31 @@ export function GegenstandKachel({
       // äusserlich gar nichts: das Fenster blieb offen, kein Hinweis. Jetzt
       // zeigt das Popup die Fehlermeldung vom Server an.
       setWeitergebenFehler(e instanceof Error ? e.message : "Weitergeben fehlgeschlagen");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  /** Credstick auf-/entladen oder (SL) Geld erzeugen — siehe CredstickPopup.tsx.
+   * Ruft die API direkt auf (gleiches Muster wie `zusperren` oben), weil
+   * nur `campaignId`/`item.id` gebraucht werden, kein eigener Handler-Prop
+   * pro Aufrufer nötig. */
+  async function credstickAktion(betrag: number) {
+    if (!campaignId || !credstickModus) return;
+    setLaeuft(true);
+    setCredstickFehler(null);
+    try {
+      if (credstickModus === "laden") {
+        await itemsApi.credstickLaden(campaignId, item.id, betrag);
+      } else if (credstickModus === "entladen") {
+        await itemsApi.credstickEntladen(campaignId, item.id, betrag);
+      } else {
+        await itemsApi.credstickSlLaden(campaignId, item.id, betrag);
+      }
+      setCredstickModus(null);
+      onGeoeffnet?.();
+    } catch (e) {
+      setCredstickFehler(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Hat nicht geklappt.");
     } finally {
       setLaeuft(false);
     }
@@ -376,6 +412,51 @@ export function GegenstandKachel({
 
         {item.typ === "Commlink" && (
           <p style={{ color: "var(--text-leise)", fontSize: 13, margin: 0 }}>I.C.E. {item.cyberwall}</p>
+        )}
+
+        {item.typ === "Credstick" && campaignId && (
+          <section className="gg-ablage-wahl">
+            <h3>Credstick</h3>
+            <p className="gg-ablage-ort">Geladen: {item.geladenesGeld.toLocaleString("de-AT")}¥</p>
+            <div className="gg-ablage-knoepfe">
+              {onUmlegen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredstickFehler(null);
+                    setCredstickModus("laden");
+                  }}
+                  disabled={laeuft}
+                >
+                  <span aria-hidden="true">⬆</span> Aufladen
+                </button>
+              )}
+              {onUmlegen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredstickFehler(null);
+                    setCredstickModus("entladen");
+                  }}
+                  disabled={laeuft}
+                >
+                  <span aria-hidden="true">⬇</span> Abheben
+                </button>
+              )}
+              {istSpielleitung && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredstickFehler(null);
+                    setCredstickModus("sl-laden");
+                  }}
+                  disabled={laeuft}
+                >
+                  <span aria-hidden="true">✨</span> Geld erzeugen
+                </button>
+              )}
+            </div>
+          </section>
         )}
 
         {item.typ === "Cyberdeck" && (
@@ -627,6 +708,17 @@ export function GegenstandKachel({
             onZusammengelegt();
           }}
           onAbbrechen={() => setZusammenlegenOffen(false)}
+        />
+      )}
+      {credstickModus && campaignId && (
+        <CredstickPopup
+          item={item}
+          modus={credstickModus}
+          offen
+          onBestaetigen={credstickAktion}
+          onAbbrechen={() => setCredstickModus(null)}
+          laeuft={laeuft}
+          fehler={credstickFehler}
         />
       )}
       {schlossOffen && campaignId && onGeoeffnet && (

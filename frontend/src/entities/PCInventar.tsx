@@ -206,6 +206,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                   onUmlegen={(neueAblage, zielId) => umlagern(g.id, neueAblage, zielId)}
                   onWegwerfen={() => wegwerfen(g.id)}
                   montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
+                  istSpielleitung
                 />
               ))}
             </div>

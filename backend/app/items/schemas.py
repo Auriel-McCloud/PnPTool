@@ -36,6 +36,7 @@ GEGENSTAND_TYPEN = [
     "Commlink",
     "Cyberdeck",
     "Riggerkonsole",
+    "Credstick",
     "Sonstiges",
 ]
 
@@ -261,6 +262,17 @@ class GegenstandCreate(BaseModel):
     # Bei Personen ergibt sich die Traglast stattdessen aus einem Attribut,
     # siehe campaigns/repository.py (EINSTELLUNGEN_DEFAULTS).
     kapazitaet: float = 0.0
+    # Credstick (05.11.2026, Tresor-Modell): Geld, das auf diesem Gegenstand
+    # geladen ist. Kein eigener Pool an der Person — das Geld hängt am
+    # STÜCK, nicht an seinem Besitzer. Deshalb wandert es automatisch mit,
+    # sobald der Credstick weitergegeben wird oder als Fundstück irgendwo
+    # liegt (GEGENSTAND_WEITERGABE/aufheben kennen Credsticks gar nicht
+    # extra — ein Credstick ist ein ganz normaler Gegenstand). Laden/
+    # Entladen bucht ausschließlich zwischen Person.kapital und diesem Feld
+    # um (items/repository.py::credstick_transaktion), kein direktes Zahlen
+    # im Shop (Mark, 05.11.2026: "Tresor-Modell reicht völlig"). Nur bei
+    # typ="Credstick" von Belang, aber generisch gespeichert wie preis/kraft.
+    geladenesGeld: int = 0
     # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
     istEntwurf: bool = False
     # Wird beim Anlegen automatisch gesetzt (PC-Besitzer -> nur für ihn sichtbar,
@@ -408,6 +420,10 @@ class GegenstandUpdate(BaseModel):
     automatischImShop: bool | None = None
     gewicht: float | None = None
     kapazitaet: float | None = None
+    # Nicht über die normale Credstick-Laden/Entladen-Transaktion gesetzt
+    # (die hat eigene Routen, siehe routes.py), aber per PATCH korrigierbar —
+    # z.B. wenn die SL ein Fundstück mit vorbefülltem Betrag anlegt/ändert.
+    geladenesGeld: int | None = None
     istEntwurf: bool | None = None  # Verschieben zwischen Ideenschmiede und Kampagne
     istBehaelter: bool | None = None
     schlossArt: str | None = None
@@ -534,6 +550,8 @@ class GegenstandResponse(BaseModel):
     ablage: str
     gewicht: float
     kapazitaet: float
+    # Credstick: siehe GegenstandCreate für die volle Begründung.
+    geladenesGeld: int = 0
     istEntwurf: bool = False  # Ideenschmiede
     istBehaelter: bool = False
     # Leer = kein Schloss. Lösung und Schlüssel-Kennung sehen Spieler nie

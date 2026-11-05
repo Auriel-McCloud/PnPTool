@@ -39,6 +39,7 @@ export const TYP_KATALOG: TypEintrag[] = [
   { typ: "Commlink", symbol: "📱" },
   { typ: "Cyberdeck", symbol: "💻" },
   { typ: "Riggerkonsole", symbol: "🎮" },
+  { typ: "Credstick", symbol: "💳" },
   { typ: "Upgrade-Material", symbol: "🔩" },
   { typ: "Ki-Tama", symbol: "🔮", symbolBild: kiTamaBild },
   { typ: "Sonstiges", symbol: "◈" },

@@ -77,6 +77,14 @@ OHNE_GM_ERLAUBT = {
     # jede Quelle müssen demselben Besitzer gehören) und löscht nichts — die
     # Quellen wandern wie beim Wegwerfen in den Mülleimer der Spielleitung.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/zusammenlegen",
+    # Credstick auf-/entladen (05.11.2026, Tresor-Modell): bucht zwischen
+    # Person.kapital und Gegenstand.geladenesGeld um. Prüft Besitz/eigenen
+    # Kreis selbst (items/routes.py::_credstick_transaktion_oder_404) und
+    # sperrt jede Richtung, die ihre Quelle nicht deckt (409). Die dritte
+    # Credstick-Route (sl-laden, Geld ohne Gegenbuchung erzeugen) bleibt
+    # bewusst require_campaign_gm — steht NICHT hier.
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/credstick/laden",
+    "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/credstick/entladen",
     # Ebenso: eigenen Gegenstand an ein Party-Mitglied weitergeben. Prüft
     # Besitz + Party-Zugehörigkeit selbst (siehe verhandlung/routes.py) und
     # verschiebt nichts sofort — legt nur ein Annehmen/Ablehnen-Angebot an,

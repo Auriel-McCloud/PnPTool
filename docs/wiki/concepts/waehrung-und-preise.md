@@ -86,23 +86,16 @@ Ausschluss von Waffen/Rüstung über zwei unabhängige Sperren (Typ-Whitelist +
 KI-Selbsteinschätzung). Backend und Frontend fertig, E2E-verifiziert. Siehe
 `docs/api/haendler.md`.
 
-## Geplant: Geld-Weitergabe und Credstick (26.09.2026, nicht gebaut)
+## Geld-Weitergabe und Credstick
 
-Notiert in `ideen für später.txt`. **Datenmodell nicht durchgesprochen.**
-
-- **Spieler-zu-Spieler:** NuYen innerhalb der Party (und später am gleichen
-  Ort) mit demselben Annehmen/Ablehnen-Popup wie Gegenstände. Kapital sitzt
-  an `Person.kapital`, nicht an einem Item.
-- **SL-NPC-Belohnung:** Geld von NPCs direkt an Spieler. Ob der Spieler
-  ablehnen darf, ist offen.
-- **Credstick:** neuer Gegenstandstyp, Geld drauf-/runterladen, weitergeben
-  oder finden. Offen: nur Tresor oder direkt im Shop zahlbar?
-
-Details und Abgrenzung zu Heiltrank/Granate: [[../entities/gegenstand-transfer]].
+Credstick **gebaut (05.11.2026)**, Tresor-Modell entschieden — Details:
+[[../entities/gegenstand-transfer]]. Geld-Weitergabe (Party/gleicher Ort)
+und NPC→Spieler-Belohnung weiterhin nicht gebaut, notiert in
+`ideen für später.txt`.
 
 ## Siehe auch
 
 - [[../../reference/Neotopia_Gegenstaende.md]] — alle Preistabellen im Volltext
-- [[../entities/gegenstand-transfer]] — Geld-Weitergabe/Credstick geplant (26.09.)
+- [[../entities/gegenstand-transfer]] — Credstick gebaut (05.11.2026), Geld-Weitergabe geplant
 - [[cyberware-bioware]] — Preis→Willenskraftverlust
 - [[ruestung-kaestchen-durchlass]] — Reparaturkosten geklärt (23.09.2026, Punkt 9)

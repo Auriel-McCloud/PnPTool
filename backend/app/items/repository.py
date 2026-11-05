@@ -11,7 +11,7 @@ RETURN_FIELDS = """
     g.einzigartig AS einzigartig, g.hatMenge AS hatMenge, g.menge AS menge,
     g.istVorlage AS istVorlage, g.seltenheit AS seltenheit, g.automatischImShop AS automatischImShop,
     g.bildUrl AS bildUrl, g.sichtbarkeit AS sichtbarkeit, g.sichtbarFuer AS sichtbarFuer,
-    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.istEntwurf AS istEntwurf,
+    g.gewicht AS gewicht, g.kapazitaet AS kapazitaet, g.geladenesGeld AS geladenesGeld, g.istEntwurf AS istEntwurf,
     g.istBehaelter AS istBehaelter,
     g.schlossArt AS schlossArt, g.schlossPasswort AS schlossPasswort,
     g.schlossRaetsel AS schlossRaetsel, g.schluesselId AS schluesselId,
@@ -97,6 +97,11 @@ _NICHT_KOPIEREN = {
     # dieselbe Logik wie "weggeworfen" oben: Zustand des einen Stücks, keine
     # Eigenschaft der Vorlage.
     "defekt",
+    # Credstick (05.11.2026): geladenes Geld ist Zustand DIESES Stücks, keine
+    # Eigenschaft der Vorlage — eine Kopie startet immer leer, genau wie
+    # "weggeworfen"/"defekt" oben (sonst würde das Zuweisen einer Credstick-
+    # Vorlage versehentlich beliebig viel Geld vervielfältigen).
+    "geladenesGeld",
     # Ob die Kiste schon auf ist, ist Zustand dieses Stücks. Die Schloss-Art
     # selbst (Passwort, Schlüssel, Länge) gehört zur vorbereiteten Kiste und
     # wird mitkopiert — eine Kopie startet aber wieder zu.
@@ -139,6 +144,9 @@ def _decode(record: dict) -> dict:
     # _or_default statt `or` — sonst würde 0 auf den Default zurückfallen.
     record["gewicht"] = float(_or_default(record.get("gewicht"), 0.0))
     record["kapazitaet"] = float(_or_default(record.get("kapazitaet"), 0.0))
+    # Credstick (05.11.2026): Bestandsdaten (alles, was kein Credstick ist)
+    # kennen das Feld nicht — 0 ist dort ohnehin der richtige Wert.
+    record["geladenesGeld"] = _or_default(record.get("geladenesGeld"), 0)
     # Ideenschmiede: Entwürfe sind noch nicht Teil der aktiven Kampagne
     record["istEntwurf"] = _or_default(record.get("istEntwurf"), False)
     # Ob etwas anderes hineinpasst. Frueher aus dem Typ geraten — ein Motorrad
@@ -336,6 +344,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             augmentZielTyp: $augmentZielTyp,
             beschworenerCritterId: $beschworenerCritterId, beschwoerungsSchwierigkeit: $beschwoerungsSchwierigkeit,
             defekt: false,
+            geladenesGeld: $geladenesGeld,
             istEntwurf: $istEntwurf
         })
     """
@@ -373,6 +382,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             istVorlage=data["istVorlage"],
             seltenheit=data["seltenheit"],
             automatischImShop=data["automatischImShop"],
+            geladenesGeld=int(data.get("geladenesGeld") or 0),
             istBehaelter=_or_default(data.get("istBehaelter"), data["typ"] == "Behälter"),
             schlossArt=data.get("schlossArt") or "",
             schlossPasswort=data.get("schlossPasswort") or "",
@@ -2218,3 +2228,79 @@ async def verbautes_chrom(campaign_id: str, person_id: str) -> list[dict]:
             query, campaign_id=campaign_id, person_id=person_id, typen=list(CHROM_TYPEN)
         )
         return [_decode(dict(r)) async for r in result]
+
+
+# =====================================================================
+# Credstick (05.11.2026, Tresor-Modell — Mark: "ich lade Geld drauf und
+# wieder herunter, damit kann Geld weitergegeben und gefunden werden").
+# Das Geld hängt am GEGENSTAND (geladenesGeld), nicht an einem Pool der
+# Person — Weitergabe/Finden brauchen deshalb keinen eigenen Mechanismus,
+# ein Credstick ist ein ganz normaler Gegenstand. Nur das Umladen zwischen
+# Person.kapital und diesem Feld ist neu.
+# =====================================================================
+
+
+async def credstick_transaktion(
+    campaign_id: str, item_id: str, besitzer_id: str, betrag: int, richtung: str
+) -> dict | None:
+    """Verschiebt `betrag` zwischen Person.kapital und Gegenstand.geladenesGeld
+    — EINE atomare Anweisung, damit kein paralleler Request dieselbe Quelle
+    zweimal leert (dasselbe Muster wie
+    haendler/repository.py::tutorial_kapital_schreiben).
+
+    `richtung`: "laden" (Kapital -> Credstick) oder "entladen" (Credstick ->
+    Kapital). `gedeckt` in der Antwort ist falsch, wenn die Quelle nicht
+    genug hergibt — dann bleibt alles unangetastet. None nur, wenn Person
+    oder Gegenstand nicht existieren (unterschiedlich von "nicht gedeckt").
+    """
+    driver = get_driver()
+    if richtung == "laden":
+        quelle = "kapital"
+        set_clause = (
+            "SET p.kapital = CASE WHEN gedeckt THEN kapital - $betrag ELSE kapital END, "
+            "g.geladenesGeld = CASE WHEN gedeckt THEN geladen + $betrag ELSE geladen END"
+        )
+    else:
+        quelle = "geladen"
+        set_clause = (
+            "SET g.geladenesGeld = CASE WHEN gedeckt THEN geladen - $betrag ELSE geladen END, "
+            "p.kapital = CASE WHEN gedeckt THEN kapital + $betrag ELSE kapital END"
+        )
+    query = f"""
+        MATCH (p:Person {{id: $besitzer_id, campaignId: $campaign_id}})
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        WITH p, g, coalesce(p.kapital, 0) AS kapital, coalesce(g.geladenesGeld, 0) AS geladen
+        WITH p, g, kapital, geladen, {quelle} >= $betrag AS gedeckt
+        {set_clause}
+        WITH p, g, gedeckt
+        {LIEGT_IN}
+        RETURN gedeckt, {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(
+            query, campaign_id=campaign_id, item_id=item_id, besitzer_id=besitzer_id, betrag=betrag
+        )
+        record = await result.single()
+    if record is None:
+        return None
+    daten = dict(record)
+    gedeckt = bool(daten.pop("gedeckt"))
+    return {"gedeckt": gedeckt, "gegenstand": _decode(daten)}
+
+
+async def credstick_sl_aufladen(campaign_id: str, item_id: str, betrag: int) -> dict | None:
+    """SL erzeugt Geld direkt auf einem Credstick, ohne Gegenbuchung — für
+    NPC-Belohnungen oder vorbereitete Fundstücke (Mark: "ich muss einfach so
+    Geld drauflegen können um es NPCs zu geben")."""
+    driver = get_driver()
+    query = f"""
+        MATCH (g:Gegenstand {{id: $item_id, campaignId: $campaign_id}})
+        SET g.geladenesGeld = coalesce(g.geladenesGeld, 0) + $betrag
+        WITH g
+        {LIEGT_IN}
+        RETURN {RETURN_FIELDS}
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, betrag=betrag)
+        record = await result.single()
+    return _decode(dict(record)) if record else None

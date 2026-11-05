@@ -186,6 +186,9 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ablage": ablage,
         "gewicht": body.gewicht,
         "kapazitaet": body.kapazitaet,
+        # Credstick (05.11.2026): normalerweise 0 beim Anlegen, aber die SL
+        # kann hier direkt ein vorbefülltes Fundstück anlegen.
+        "geladenesGeld": body.geladenesGeld,
         "schlossArt": body.schlossArt,
         "schlossPasswort": body.schlossPasswort,
         "schlossRaetsel": body.schlossRaetsel,
@@ -954,6 +957,83 @@ async def traglast(campaign_id: str, viewer: Viewer = Depends(get_viewer)) -> li
     # fremdes Fahrzeug beladen ist, geht sie nichts an.
     eigene = {i["id"] for i in await repository.list_gegenstaende(campaign_id, viewer.person_id or "")}
     return [z for z in zeilen if z["id"] == viewer.person_id or z["id"] in eigene]
+
+
+# =====================================================================
+# Credstick (05.11.2026, Tresor-Modell — siehe docs/wiki/entities/
+# gegenstand-transfer.md): Geld lädt man vom eigenen Kapital auf einen
+# Credstick und wieder herunter. Weitergeben/Finden brauchen keine eigene
+# Route — ein Credstick ist ein ganz normaler Gegenstand, das Geld hängt
+# am Stück, nicht an einem Pool der Person.
+# =====================================================================
+
+
+class CredstickBetrag(BaseModel):
+    betrag: int = Field(ge=1)
+
+
+async def _credstick_oder_404(campaign_id: str, item_id: str) -> dict:
+    item = await repository.get_gegenstand(campaign_id, item_id)
+    if item is None or item.get("typ") != "Credstick" or item.get("weggeworfen"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Das ist kein Credstick.")
+    return item
+
+
+async def _credstick_transaktion_oder_404(
+    campaign_id: str, item_id: str, viewer: Viewer, richtung: str, betrag: int
+) -> dict:
+    """Gemeinsamer Ablauf für Laden/Entladen: Spieler nur im eigenen Kreis
+    (siehe `_eigener_kreis`), SL an jedem Credstick — z.B. um das Kapital
+    eines NPCs auf dessen Stick umzubuchen."""
+    await _credstick_oder_404(campaign_id, item_id)
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Dieser Credstick hat niemanden, mit dem umgebucht werden könnte."
+        )
+    if viewer.role != "GM":
+        if not viewer.person_id or not await _eigener_kreis(campaign_id, viewer.person_id, besitzer):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    ergebnis = await repository.credstick_transaktion(campaign_id, item_id, besitzer, betrag, richtung)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    if not ergebnis["gedeckt"]:
+        fehlermeldung = "Nicht genug Guthaben." if richtung == "laden" else "Nicht genug Geld auf dem Credstick."
+        raise HTTPException(status.HTTP_409_CONFLICT, fehlermeldung)
+    return ergebnis["gegenstand"]
+
+
+@campaign_router.post("/{item_id}/credstick/laden", response_model=GegenstandResponse)
+async def credstick_laden(
+    campaign_id: str, item_id: str, body: CredstickBetrag, viewer: Viewer = Depends(get_viewer)
+):
+    """Lädt Geld vom eigenen Kapital auf den Credstick (Tresor-Modell: das
+    Geld verlässt das Konto und hängt danach am Gegenstand — wer den
+    Credstick hat, hat auch das Geld). Spieler nur am eigenen Besitz/
+    eigenen Kreis, SL an jedem Credstick."""
+    return await _credstick_transaktion_oder_404(campaign_id, item_id, viewer, "laden", body.betrag)
+
+
+@campaign_router.post("/{item_id}/credstick/entladen", response_model=GegenstandResponse)
+async def credstick_entladen(
+    campaign_id: str, item_id: str, body: CredstickBetrag, viewer: Viewer = Depends(get_viewer)
+):
+    """Gegenstück: Geld vom Credstick zurück aufs eigene Kapital."""
+    return await _credstick_transaktion_oder_404(campaign_id, item_id, viewer, "entladen", body.betrag)
+
+
+@campaign_router.post(
+    "/{item_id}/credstick/sl-laden", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)]
+)
+async def credstick_sl_laden(campaign_id: str, item_id: str, body: CredstickBetrag):
+    """SL erzeugt Geld direkt auf einem Credstick, ohne es irgendwo
+    abzuziehen — für NPC-Belohnungen oder vorbereitete Fundstücke (Mark:
+    "ich muss einfach so Geld drauflegen können um es NPCs zu geben")."""
+    await _credstick_oder_404(campaign_id, item_id)
+    item = await repository.credstick_sl_aufladen(campaign_id, item_id, body.betrag)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return item
 
 
 
