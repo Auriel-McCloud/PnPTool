@@ -34,6 +34,11 @@ export function CharakterportraitAnsicht({
   const [loeschenUrl, setLoeschenUrl] = useState<string | null>(null);
   const [kiOffen, setKiOffen] = useState(false);
   const [zeichnenOffen, setZeichnenOffen] = useState(false);
+  // "+" in der Galerie legt ein neues, leeres Bild an (kein Hintergrund) —
+  // der "✎ Zeichnen"-Knopf daneben skizziert dagegen auf dem aktuellen
+  // Anzeigebild weiter. Beides landet trotzdem nur als neuer Galerie-Eintrag
+  // (galerie_hinzufuegen im Backend), das bestehende Bild wird nie angefasst.
+  const [zeichnenHintergrund, setZeichnenHintergrund] = useState<string | null>(null);
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraRef = useRef<HTMLInputElement>(null);
 
@@ -137,7 +142,11 @@ export function CharakterportraitAnsicht({
           ))}
           <div
             className="port-galerie-thumb port-galerie-neu"
-            onClick={() => !laedt && setZeichnenOffen(true)}
+            onClick={() => {
+              if (laedt) return;
+              setZeichnenHintergrund(null);
+              setZeichnenOffen(true);
+            }}
             title="Neues Bild zeichnen"
           >
             <span aria-hidden="true">+</span>
@@ -175,7 +184,15 @@ export function CharakterportraitAnsicht({
           <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => setKiOffen(true)}>
             ✨ KI-Bild generieren
           </button>
-          <button type="button" className="port-btn-primaer" disabled={laedt} onClick={() => setZeichnenOffen(true)}>
+          <button
+            type="button"
+            className="port-btn-primaer"
+            disabled={laedt}
+            onClick={() => {
+              setZeichnenHintergrund(ich.personBildUrl ?? null);
+              setZeichnenOffen(true);
+            }}
+          >
             ✎ Zeichnen
           </button>
           <button type="button" className="port-btn-sekundaer" disabled={laedt} onClick={zeichentischOeffnen}>
@@ -204,7 +221,7 @@ export function CharakterportraitAnsicht({
 
       <ZeichenblockPopup
         offen={zeichnenOffen}
-        bildUrl={ich.personBildUrl}
+        bildUrl={zeichnenHintergrund}
         onSchliessen={() => setZeichnenOffen(false)}
         onUebernehmen={async (blob) => {
           const datei = new File([blob], "portrait-skizze.png", { type: blob.type || "image/png" });
