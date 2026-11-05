@@ -706,9 +706,11 @@ export function GegenstandRow({
       paradeBonus: typ === "Waffe" || istWaffe ? Number(paradeBonus) || 0 : 0,
       initiativeBonus,
       wirkungDauer: droge.wirkungDauer,
-      nebenwirkungBoni: droge.crashBonusName.trim()
-        ? { [droge.crashBonusName.trim()]: droge.crashBonusWert }
-        : {},
+      nebenwirkungBoni: Object.fromEntries(
+        droge.nebenwirkungZeilen
+          .filter((p) => p.key.trim() && Number(p.value))
+          .map((p) => [p.key.trim(), Number(p.value)]),
+      ),
       nebenwirkungInitiative: droge.nebenwirkungInitiative,
       heilmenge: droge.heilmenge,
       heilQualitaet: droge.heilQualitaet,
@@ -799,7 +801,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten,
+      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten, droge,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
       upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
@@ -1526,6 +1528,21 @@ export function GegenstandRow({
               )}
 
               <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8 }}>
+                {typ === "Droge" ? (
+                  <DrogenFelder
+                    wert={droge}
+                    onChange={setDroge}
+                    katalog={traitKatalog}
+                    wirkungBoni={traitBoni}
+                    onWirkungBoni={setTraitBoni}
+                    initiative={initiativeBonus}
+                    onInitiative={setInitiativeBonus}
+                    zusatzaktionen={zusatzaktionen}
+                    onZusatzaktionen={setZusatzaktionen}
+                    spez={(texte, aendern) => <SpezialisierungsEditor eintraege={texte} onChange={aendern} />}
+                  />
+                ) : (
+                  <>
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>
                   Bonus auf bestehende Werte (solange ausgerüstet). Spezialisierungen darunter
                   sind von der SL fix vergeben, unveränderlich für den Spieler, +1 in der Probe.
@@ -1575,8 +1592,8 @@ export function GegenstandRow({
                 >
                   + Bonus
                 </button>
-
-                {typ === "Droge" && <DrogenFelder wert={droge} onChange={setDroge} />}
+                  </>
+                )}
 
                 {(CHROM_TYPEN.has(typ) || typ === "Cyberdeck" || typ === "Upgrade-Material" || typ === "Ki-Tama" || istAugment) && (
                   <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
@@ -2414,7 +2431,6 @@ export function GegenstandRow({
 }
 
 function drogeAus(item: Gegenstand): DrogeFelder {
-  const crash = Object.entries(item.nebenwirkungBoni ?? {})[0];
   return {
     wirkungDauer: item.wirkungDauer || "szene",
     heilmenge: item.heilmenge ?? 0,
@@ -2426,8 +2442,10 @@ function drogeAus(item: Gegenstand): DrogeFelder {
     nebenwirkungSchadenMenge: item.nebenwirkungSchadenMenge ?? 0,
     umwandeln: item.umwandeln || "",
     ruestungReduktionBasis: item.ruestungReduktionBasis ?? 0,
-    crashBonusName: crash?.[0] ?? "",
-    crashBonusWert: Number(crash?.[1] ?? 0),
+    nebenwirkungZeilen: Object.entries(item.nebenwirkungBoni ?? {}).map(([key, value]) => ({
+      key,
+      value: String(value),
+    })),
   };
 }
 

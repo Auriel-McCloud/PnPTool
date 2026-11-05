@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-05] gebaut | Drogen-Umbauen: Wirkung und Nebenwirkung getrennt
+
+Im Umbauen einer Droge steht die Wirkung oben, darunter eine dicke Linie und dieselben Würfelzeilen für die Nebenwirkung. Der Zeitraum der Nebenwirkung folgt weiter der Wirkung. Siehe [[entities/drogen]].
+
 ## [2026-11-04] gebaut | Drogen schlucken
 
 Schluck am eigenen Gegenstand, SL an allem. Heilung, Willenskraft, Crash,

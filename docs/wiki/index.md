@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-04 | Seiten: 38
+> Zuletzt aktualisiert: 2026-11-05 | Seiten: 38
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -56,7 +56,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/spotify-anbindung]] | Musik folgt aktiver Party, ein Konto fürs Tool, Spotify Connect statt fester Geräte-ID |
 | [[entities/kampagnen-export-import]] | Komplette Kampagne als ZIP (24.09.); Weissliste 29.09. um Protokoll/Zusatzfertigkeiten/Shop nachgezogen; Nacht-Dump auf bebop (täglich 30 Tage, 1. im Monat 1 Jahr) |
 | [[entities/gegenstand-transfer]] | Party-interne Gegenstands-Weitergabe via Verhandlungs-Popup gebaut (26.09.); Geld, NPC-Belohnung, Credstick, Granate und „gleicher Ort“ noch offen. Heiltrank-Typfrage ersetzt, siehe [[entities/drogen]] |
-| [[entities/drogen]] | Schlucken gebaut (04.11.), am Tisch noch nicht geklickt. Chrom-Funktionen, drei Dauern, Heilung, Crash, Reduktion. Gift an jemand anderem im Kampf später. |
+| [[entities/drogen]] | Schlucken gebaut (04.11.). Umbauen seit 05.11.: Wirkung oben, Nebenwirkung unter einer Linie, dieselben Würfelzeilen. Zeitraum der Nebenwirkung folgt der Wirkung. Gift an jemand anderem im Kampf später. |
 | [[entities/ereignisprotokoll]] | Sitzungs-Log: Backend 27.09., Auto-Hooks + SL-Zeitleiste 29.09. Achievements nur Konzept |
 | [[entities/achievements]] | **Gebaut (10.10.2026):** Backend-Modul + Frontend (SL-Verwaltung + Spieler-Popup, 🏆-Symbol). `einzigartig`-Häkchen trennt campaign-weit einmalige Titel von pro-Person wiederholbaren; mechanische Belohnung (EP oder Hintergrund, fest hinterlegt) — einziger Weg, Hintergründe nach der Erstellung zu steigern; 14 AUTO-Trigger inkl. parametrisierbarem Ziel-Gegenstand (Isotop/Kristalle), Endboss, Critter/Drohne, erste Sitzung überlebt; Auto-Erkennung live aus dem Ereignisprotokoll + spontane manuelle Vergabe; KI-Text bezogen auf auslösenden Log-Eintrag+Kontext. Browser-Klicktest offen |
 | [[entities/zusatzfertigkeiten]] | Campaign-gebundener Katalog optionaler Fertigkeiten. SL-Tabelle + KI. In der Erstellung: Button im Fertigkeiten-Popup öffnet Auswahl, danach normale Punktzeilen im Raster (Paket) und Freebees; LevelUp eigener Popup mit EP |

@@ -2302,6 +2302,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — Droge im Umbauen: Wirkung oben, Nebenwirkung darunter):**
+- **Was:** Beim Typ Droge steht der Zeitraum und die positiven Würfel oben. Darunter eine dicke Linie, dann dieselben Würfelzeilen für die Nebenwirkung, plus Initiative, Willenskraft, Schaden und Umwandeln. Der Zeitraum der Nebenwirkung folgt der Wirkung, kein zweiter Umschalter. Mehrere Nebenwirkungs-Boni, nicht mehr ein einzelnes Freitextfeld. Die Felder werden mitgespeichert, auch wenn sonst nichts geändert wird.
+- **Wo:** `frontend/src/items/DrogenFelder.tsx`, `CharacterSheetPanel.tsx`. Siehe `docs/wiki/entities/drogen.md`.
+- **Verifiziert:** `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (04.11.2026 — Drogen schlucken):**
 - **Was:** Eine Droge schlucken zieht 1 vom Stapel und legt eine Kopie an die Person. Plus bis sofort, Szene oder Rast, danach der Crash. Heilung, Willenskraft, Reduktion auf die aktive Rüstung, Umwandeln, Booster-Zusatzaktion. Gift an einer anderen Person im Kampf nicht dabei.
 - **Wo:** `backend/app/items/drogen.py`, Schluck-Route, Rast, Party-Aufenthaltsort, Rüstungstreffer, `GegenstandKachel` „Schlucken“, Umbauen-Block bei Typ Droge. Siehe `docs/wiki/entities/drogen.md`.

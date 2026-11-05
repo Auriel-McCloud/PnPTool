@@ -1,7 +1,7 @@
 ---
 title: Drogen schlucken
 created: 2026-11-04
-updated: 2026-11-04
+updated: 2026-11-05
 type: entität
 tags: [inventar, kampf, cyberware, geplant]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../../backend/app/items/repository.py, ../../../backend/app/kampf/booster.py, ../../../backend/app/items/augments.py]
@@ -14,7 +14,7 @@ Mark, 04.11.2026. Dinge, die eine Person schluckt. Einmal wirken, dann ist der
 Stapel um eins kleiner. Kein neuer Effekt-Baukasten. Die Droge ruft die
 Funktionen auf, die Cyberware schon hat, und hängt nur eine Uhr darum.
 
-Nicht gebaut. Die offenen Stellen unten nicht still schließen.
+Schlucken ist gebaut. Im Umbauen steht die Wirkung oben, die Nebenwirkung unter einer dicken Linie. Die offenen Stellen unten nicht still schließen.
 
 ## Was schon da ist
 
@@ -134,6 +134,10 @@ Nicht bauen, bevor er das sagt.
 - Schlag/schwerheilbar als Uhr oder Spur — Punkt 9, es ist Schaden.
 - Schaden halbieren — Punkt 10, es ist Reduktion auf der aktiven Rüstung.
 - Ob die startende Rast bei der 2-Rasten-Uhr mitzählt — Punkt 13, sie zählt.
+
+## Entwicklung
+
+- **05.11.2026** — Umbauen: Wirkung oben (Zeitraum, Würfelzeilen, Initiative, Zusatzaktion, Heilung, Willenskraft, Reduktion), dicke Linie, darunter dieselben Würfelzeilen für die Nebenwirkung. Zeitraum der Nebenwirkung bleibt abgeleitet aus Punkt 5, kein zweiter Umschalter.
 
 ## Siehe auch
 
