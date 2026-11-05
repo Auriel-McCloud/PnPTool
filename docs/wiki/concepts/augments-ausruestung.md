@@ -56,6 +56,8 @@ addiert es auf das Ziel:
   (`AUGMENT_TRAEGER_TYPEN`, Upgrade-Slots, „Passt an: nur Commlink“).
 - **Cyberdeck:** auf den Deck-Bonus, der zum Commlink dazukommt. Ohne
   Commlink bleibt die Person offline.
+- **Riggerkonsole:** derselbe Bonus wie beim Cyberdeck, auf das I.C.E. der
+  Person. Mark, 05.11.2026: dort macht die Erhöhung auch Sinn.
 - **Drohne/Fahrzeug:** auf das gekaufte Attribut I.C.E., nicht über ein
   Commlink.
 

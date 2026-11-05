@@ -2136,7 +2136,7 @@ export function GegenstandRow({
                               style={{ width: 60 }}
                             />
                           </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }} title="Addiert sich auf das I.C.E. des Ziels: Commlink, Cyberdeck oder Drohne/Fahrzeug.">
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }} title="Addiert sich auf das I.C.E. des Ziels: Commlink, Cyberdeck, Riggerkonsole oder Drohne/Fahrzeug.">
                             I.C.E.
                             <input
                               type="number"

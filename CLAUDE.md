@@ -2323,6 +2323,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — I.C.E.-Upgrade an der Riggerkonsole):**
+- **Was:** Ein montiertes I.C.E.-Upgrade an der Riggerkonsole hebt das I.C.E. der Person, dieselbe Summe wie beim Cyberdeck. Ohne Commlink bleibt sie offline.
+- **Wo:** `items/repository.py::commlink_cyberwall`. Siehe `docs/wiki/concepts/augments-ausruestung.md`.
+- **Verifiziert:** Query-Änderung, `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (05.11.2026 — Upgrade hebt I.C.E., Waffe nicht hackbar):**
 - **Was:** Upgrade-Material hat ein I.C.E.-Feld (`cyberwall`). Montiert addiert es auf Commlink, Cyberdeck-Bonus oder das I.C.E.-Attribut von Drohne/Fahrzeug. Commlink ist Upgrade-Träger (Slots, „Passt an“). Waffen haben eine vierte Option „Nicht hackbar“: sie und ihre Upgrades fehlen in der Hack-Liste.
 - **Wo:** `items/augments.py`, `items/repository.py`, `traits/bogen.py`, `kampf/matrix.py`, `CharacterSheetPanel.tsx`. Siehe `docs/wiki/concepts/augments-ausruestung.md` und `docs/wiki/concepts/neuroweaving-decking.md`.

@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-05] gebaut | I.C.E.-Upgrade auch an der Riggerkonsole
+
+Montiert zählt der Bonus wie beim Cyberdeck auf das I.C.E. der Person.
+Ohne Commlink bleibt sie offline. Siehe [[concepts/augments-ausruestung]].
+
 ## [2026-11-05] gebaut | Upgrade hebt I.C.E., Commlink ist Träger
 
 Upgrade-Material hat ein I.C.E.-Feld. Montiert zählt es am Commlink, am

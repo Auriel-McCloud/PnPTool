@@ -1479,13 +1479,15 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
     Die Liste im Regelwerk reicht von Meta Link (1) bis Transs Avalon (6);
     das Feld ist aber nicht begrenzt.
 
-    **Cyberdeck:** addiert seinen Bonus obendrauf (im Regelwerk als "Cywall+1"
-    bis "Cywall+4" notiert). Mehrere Decks werden summiert — anders als bei
-    Commlinks, weil es Zusatzausrüstung ist und kein Zugangsgerät.
+    **Cyberdeck und Riggerkonsole:** addieren ihren Bonus obendrauf (im
+    Regelwerk beim Deck als "Cywall+1" bis "Cywall+4" notiert). Mehrere
+    Geräte werden summiert — Zusatzausrüstung, kein Zugangsgerät. Eine
+    Riggerkonsole hebt das I.C.E. der Person genauso, auch über ein
+    montiertes Upgrade.
 
     Montierte, nicht defekte Upgrades addieren ihren `cyberwall` auf das
     Gerät, bevor Maximum bzw. Summe gebildet wird. Ein ICE-Chip am Commlink
-    hebt also genau dieses Gerät, einer am Deck den Deck-Bonus.
+    hebt also genau dieses Gerät, einer am Deck oder an der Konsole den Bonus.
 
     Zählt nur, was am Körper ist: ein Gerät im Versteck schützt niemanden.
     Ergibt 0, wenn nichts da ist — dann ist die Person offline.
@@ -1501,7 +1503,7 @@ async def commlink_cyberwall(campaign_id: str, person_id: str) -> int:
             WITH g, coalesce(g.cyberwall, 0) + coalesce(sum(coalesce(a.cyberwall, 0)), 0) AS wand
             RETURN
               max(CASE WHEN g.typ = 'Commlink' THEN wand ELSE 0 END) AS grund,
-              sum(CASE WHEN g.typ = 'Cyberdeck' THEN wand ELSE 0 END) AS bonus
+              sum(CASE WHEN g.typ IN ['Cyberdeck', 'Riggerkonsole'] THEN wand ELSE 0 END) AS bonus
             """,
             campaign_id=campaign_id,
             person_id=person_id,
