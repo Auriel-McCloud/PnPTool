@@ -63,22 +63,42 @@ def test_crash_bei_rast_vor_der_heilung_und_rast_zaehlt():
         "wirkungDauer": "rast",
         "traitBoni": {"Geschicklichkeit": 2},
         "nebenwirkungBoni": {"Geschicklichkeit": -1},
-        "nebenwirkungSchaden": "toedlich",
-        "nebenwirkungSchadenMenge": 2,
     })
     bleiben, crash = rast_vor_heilung([ein])
     assert crash[0]["phase"] == "nebenwirkung"
-    assert crash[0]["toedlich"] == 2
-    assert crash[0]["modus"] == "zwei-rasten"
+    assert crash[0]["modus"] == "weitere-rast"
     person = crash_auf_person({"schadenSchlag": 4, "schadenSchwer": 0, "schadenAggraviert": 0}, {
         **crash[0], "umwandeln": "schlagZuToedlich", "schadenArt": "",
     })
     assert person["schadenSchlag"] == 0
     assert person["schadenSchwer"] == 4
     nach = rast_danach(bleiben)
-    assert nach[0]["toedlichTicks"] == 1
+    assert nach[0]["frisch"] is False
     weg = rast_danach(nach)
     assert weg == []
+
+
+def test_nebenwirkung_schreibt_normalen_schaden():
+    basis = {"schadenSchlag": 1, "schadenSchwer": 2, "schadenAggraviert": 0}
+    toedlich = starte_nebenwirkung(einnahme_aus_vorlage({
+        "wirkungDauer": "sofort",
+        "nebenwirkungSchaden": "toedlich",
+        "nebenwirkungSchadenMenge": 3,
+    }))
+    assert crash_auf_person(basis, toedlich)["schadenSchwer"] == 5
+    assert toedlich["modus"] != "zwei-rasten"
+    schlag = starte_nebenwirkung(einnahme_aus_vorlage({
+        "wirkungDauer": "sofort",
+        "nebenwirkungSchaden": "schlag",
+        "nebenwirkungSchadenMenge": 2,
+    }))
+    assert crash_auf_person(basis, schlag)["schadenSchlag"] == 3
+    schwerheilbar = starte_nebenwirkung(einnahme_aus_vorlage({
+        "wirkungDauer": "sofort",
+        "nebenwirkungSchaden": "aggraviert",
+        "nebenwirkungSchadenMenge": 4,
+    }))
+    assert crash_auf_person(basis, schwerheilbar)["schadenAggraviert"] == 4
 
 
 def test_szene_kippt_ohne_tick():
@@ -104,7 +124,7 @@ def test_gift_nur_waehrend_der_wirkung():
     assert gift_schaden([starte_nebenwirkung(ein)]) == []
 
 
-def test_sofort_wandelt_nicht_doppelt_auf_die_spur():
+def test_sofort_schreibt_toedlich_einmal_auf_die_spur():
     ein = starte_nebenwirkung(einnahme_aus_vorlage({
         "wirkungDauer": "sofort",
         "nebenwirkungSchaden": "toedlich",
@@ -113,5 +133,5 @@ def test_sofort_wandelt_nicht_doppelt_auf_die_spur():
     person = crash_auf_person(
         {"schadenSchlag": 1, "schadenSchwer": 2, "schadenAggraviert": 0}, ein,
     )
-    assert person["schadenSchwer"] == 2
-    assert ein["toedlich"] == 3
+    assert person["schadenSchwer"] == 5
+    assert ein.get("toedlich", 0) == 0

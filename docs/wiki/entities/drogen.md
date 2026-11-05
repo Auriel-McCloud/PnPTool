@@ -77,13 +77,16 @@ nachgebaut. Sie fallen auf die drei Dauern unten.
      im Katalog, kein Extra-Code
    Heilt eine Droge nur und hat kein Plus, ist das sofort, und die
    Nebenwirkung startet mit dem Schluck.
-8. **Tödliche Schwere** der Nebenwirkung ist eine eigene Uhr: nach 2 Rasten
-   weg. Nicht `schadenSchwer`. Die tödliche Spur heilt einen Punkt pro Rast,
-   das wollte er hier nicht.
+8. **Tödliche Schwere** der Nebenwirkung war eine eigene Uhr: nach 2 Rasten
+   weg, nicht `schadenSchwer`. **Ersetzt 05.11.2026.** Mark: der Schaden
+   unten ist normaler Schaden. Tödlich schreibt `schadenSchwer` und heilt
+   über die bestehende Rast, einen Punkt pro Rast. Die Uhr startet nicht
+   mehr. Eine schon laufende Uhr aus der alten Fassung tickt noch aus.
 9. **Schlag und schwerheilbar sind Schaden**, nicht eine „Schwere“. Tippfehler,
    04.11.2026. Die Nebenwirkung schreibt `schadenSchlag` bzw.
-   `schadenAggraviert`. Die heilen über die bestehende Rast. Tödlich bleibt
-   die Uhr aus Punkt 8, nicht die Spur.
+   `schadenAggraviert`. Die heilen über die bestehende Rast. Tödlich ist
+   seit 05.11.2026 dieselbe Spur wie jeder andere tödliche Schaden, nicht
+   die Uhr aus dem alten Punkt 8.
 10. **Reduktion statt halbieren.** Keine Halbierungs-Funktion. Die Droge trägt
     `ruestungReduktionBasis` und addiert den Wert auf die Reduktion der
     aktiven Rüstung. Die Pool-Regel bleibt: Teile summieren sich nicht, es
@@ -134,9 +137,11 @@ Nicht bauen, bevor er das sagt.
 - Schlag/schwerheilbar als Uhr oder Spur — Punkt 9, es ist Schaden.
 - Schaden halbieren — Punkt 10, es ist Reduktion auf der aktiven Rüstung.
 - Ob die startende Rast bei der 2-Rasten-Uhr mitzählt — Punkt 13, sie zählt.
+- Tödliche Nebenwirkung als eigene 2-Rasten-Uhr — 05.11.2026, es ist normaler tödlicher Schaden.
 
 ## Entwicklung
 
+- **05.11.2026** — Nebenwirkungs-Schaden ist Schlag, tödlich oder schwerheilbar auf den normalen Spuren. Die 2-Rasten-Uhr für tödlich startet nicht mehr.
 - **05.11.2026** — Umbauen: Wirkung oben (Zeitraum, Würfelzeilen, Initiative, Zusatzaktion, Heilung, Willenskraft, Reduktion), dicke Linie, darunter dieselben Würfelzeilen für die Nebenwirkung. Zeitraum der Nebenwirkung bleibt abgeleitet aus Punkt 5, kein zweiter Umschalter.
 
 ## Siehe auch

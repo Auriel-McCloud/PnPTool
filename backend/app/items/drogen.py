@@ -57,21 +57,18 @@ def umwandeln(schlag: int, schwer: int, aggraviert: int, art: str) -> dict:
 
 
 def schaden_drauf(schlag: int, schwer: int, aggraviert: int, art: str, menge: int) -> dict:
-    """Schlag und schwerheilbar landen auf den Spuren. Tödlich nicht —
-    die Menge kommt als eigene Uhr zurück (`toedlich`).
-    """
+    """Nebenwirkung schreibt normalen Schaden: Schlag, tödlich, schwerheilbar."""
     schlag = max(0, schlag)
     schwer = max(0, schwer)
     aggraviert = max(0, aggraviert)
     menge = max(0, menge)
-    toedlich = 0
     if art == "schlag":
         schlag += menge
+    elif art == "toedlich":
+        schwer += menge
     elif art == "aggraviert":
         aggraviert += menge
-    elif art == "toedlich":
-        toedlich = menge
-    return {**_schaden(schlag, schwer, aggraviert), "toedlich": toedlich}
+    return _schaden(schlag, schwer, aggraviert)
 
 
 def willenskraft_anwenden(verbraucht: int, maximum: int, delta: int) -> int:
@@ -133,12 +130,7 @@ def starte_nebenwirkung(einnahme: dict) -> dict:
     neu["ruestungReduktion"] = 0
     neu["zusatzaktionen"] = 0
     neu["giftMenge"] = 0
-    art = einnahme.get("schadenArt") or ""
-    if art == "toedlich":
-        neu["modus"] = "zwei-rasten"
-        neu["toedlich"] = int(einnahme.get("schadenMenge") or 0)
-        neu["toedlichTicks"] = 0
-    elif einnahme.get("dauer") == "rast":
+    if einnahme.get("dauer") == "rast":
         neu["modus"] = "weitere-rast"
         neu["frisch"] = True
     else:
@@ -158,8 +150,6 @@ def crash_auf_person(person: dict, einnahme: dict) -> dict:
     art = einnahme.get("umwandeln") or ""
     if art:
         gewandelt = umwandeln(schlag, schwer, aggraviert, art)
-    elif (einnahme.get("schadenArt") or "") == "toedlich":
-        gewandelt = _schaden(schlag, schwer, aggraviert)
     else:
         gewandelt = schaden_drauf(
             schlag, schwer, aggraviert,
@@ -226,7 +216,6 @@ def szene_wechseln(einnahmen: list[dict]) -> tuple[list[dict], list[dict]]:
     for ein in einnahmen:
         if ein.get("phase") == "wirkung" and ein.get("dauer") == "szene":
             gestartet = starte_nebenwirkung(ein)
-            gestartet["modus"] = "zwei-rasten" if (ein.get("schadenArt") == "toedlich") else "rast"
             gestartet["frisch"] = False
             crash.append(gestartet)
             if _nebenwirkung_bleibt(gestartet):

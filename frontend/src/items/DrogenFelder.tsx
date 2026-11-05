@@ -48,8 +48,7 @@ const feld: React.CSSProperties = {
 
 const zahl: React.CSSProperties = { width: 70 };
 
-function zeitraumNebenwirkung(dauer: string, schaden: string): string {
-  if (schaden === "toedlich") return "Tödlicher Schaden hält zwei Rasten. Die Rast, die ihn startet, zählt mit.";
+function zeitraumNebenwirkung(dauer: string): string {
   if (dauer === "sofort") return "Startet mit dem Schluck.";
   if (dauer === "rast") return "Startet bei der Rast und hält noch eine weitere Rast.";
   return "Startet, wenn die Szene wechselt, und hält bis zur Rast.";
@@ -207,7 +206,7 @@ export function DrogenFelder({
       <section>
         <h4 style={ueberschrift}>Nebenwirkung</h4>
         <p style={hinweis}>
-          Zeitraum: {zeitraumNebenwirkung(wert.wirkungDauer, wert.umwandeln ? "" : wert.nebenwirkungSchaden)}
+          Zeitraum: {zeitraumNebenwirkung(wert.wirkungDauer)}
         </p>
         <p style={hinweis}>Dieselben Würfel noch einmal. Minus ist der Abzug.</p>
         <BonusZeilen
@@ -246,8 +245,8 @@ export function DrogenFelder({
             >
               <option value="">keiner</option>
               <option value="schlag">Schlag</option>
-              <option value="aggraviert">schwerheilbar</option>
-              <option value="toedlich">tödlich, zwei Rasten</option>
+              <option value="toedlich">Tödlich</option>
+              <option value="aggraviert">Schwerheilbar</option>
             </select>
             <input
               type="number"

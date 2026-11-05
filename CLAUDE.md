@@ -2302,6 +2302,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — Nebenwirkungs-Schaden ist Schlag, tödlich, schwerheilbar):**
+- **Was:** Der Schaden unter der Linie ist normaler Schaden. Tödlich schreibt auf die tödliche Spur und heilt über die Rast, nicht über eine eigene 2-Rasten-Uhr. Schlag und schwerheilbar waren das schon.
+- **Wo:** `backend/app/items/drogen.py`, `frontend/src/items/DrogenFelder.tsx`. Siehe `docs/wiki/entities/drogen.md`.
+- **Verifiziert:** `pytest tests/test_drogen.py`, `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (05.11.2026 — Droge im Umbauen: Wirkung oben, Nebenwirkung darunter):**
 - **Was:** Beim Typ Droge steht der Zeitraum und die positiven Würfel oben. Darunter eine dicke Linie, dann dieselben Würfelzeilen für die Nebenwirkung, plus Initiative, Willenskraft, Schaden und Umwandeln. Der Zeitraum der Nebenwirkung folgt der Wirkung, kein zweiter Umschalter. Mehrere Nebenwirkungs-Boni, nicht mehr ein einzelnes Freitextfeld. Die Felder werden mitgespeichert, auch wenn sonst nichts geändert wird.
 - **Wo:** `frontend/src/items/DrogenFelder.tsx`, `CharacterSheetPanel.tsx`. Siehe `docs/wiki/entities/drogen.md`.
