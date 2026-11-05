@@ -25,6 +25,7 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
+import { CredstickAktionen } from "../items/CredstickPopup";
 import { BehaelterHineinlegenPopup } from "../items/BehaelterHineinlegenPopup";
 import { SchlossForm } from "../items/SchlossForm";
 import "../entities/pc-detail.css";
@@ -1031,6 +1032,15 @@ export function GegenstandRow({
         <div className="pcd-bereich">
           {ansicht === "uebersicht" && (
             <div className="pcd-uebersicht">
+              {typ === "Credstick" && (
+                <CredstickAktionen
+                  item={{ ...item, geladenesGeld: item.geladenesGeld ?? 0 }}
+                  campaignId={campaignId}
+                  istSpielleitung={istGm}
+                  ohneBesitzer={!personId}
+                  onErledigt={() => onChanged()}
+                />
+              )}
               <div className="pcd-bild-bereich">
                 {item.bildUrl ? (
                   <img
@@ -2381,6 +2391,7 @@ export function GegenstandRow({
           <span className="gg-kachel-zeile">
             {item.typ}
             {item.preis > 0 && ` · ${item.preis}¥`}
+            {item.typ === "Credstick" && ` · ${(item.geladenesGeld ?? 0).toLocaleString("de-AT")}¥ geladen`}
             {item.gewicht > 0 && ` · ${item.gewicht} kg`}
           </span>
           {steckbriefKurz(item).length > 0 && (
@@ -2426,6 +2437,7 @@ export function GegenstandRow({
           {item.hatMenge && <strong>×{item.menge}</strong>}
           <span style={{ fontSize: "0.75em", color: "var(--text-leise)" }}>
             [{item.typ}
+            {item.typ === "Credstick" && `, ${(item.geladenesGeld ?? 0).toLocaleString("de-AT")}¥ geladen`}
             {item.preis > 0 && `, ${item.preis}¥`}] ({visibilityLabel(item)}){item.storyRelevant && " · Story relevant"}
             {item.istVorlage && " · Vorlage"}
           </span>

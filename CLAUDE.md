@@ -2323,6 +2323,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — Credstick laden im Objekt, SL und Spieler):**
+- **Was:** Aufladen, Abheben und (SL) Geld erzeugen sitzen oben im Credstick-Objekt und oben im Spieler-Fenster, nicht mehr nur versteckt in der Inventar-Kachel. Der Betrag steht auf der Kachel.
+- **Wo:** `frontend/src/items/CredstickPopup.tsx`, `GegenstandKachel.tsx`, `traits/CharacterSheetPanel.tsx`. Siehe `docs/wiki/entities/gegenstand-transfer.md`.
+- **Verifiziert:** `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (05.11.2026 — I.C.E.-Upgrade an der Riggerkonsole):**
 - **Was:** Ein montiertes I.C.E.-Upgrade an der Riggerkonsole hebt das I.C.E. der Person, dieselbe Summe wie beim Cyberdeck. Ohne Commlink bleibt sie offline.
 - **Wo:** `items/repository.py::commlink_cyberwall`. Siehe `docs/wiki/concepts/augments-ausruestung.md`.
@@ -3346,7 +3351,7 @@ dort weitergepflegt, hier nicht mehr).
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |
 | 15 | Critter-Tamagotchi/Desktop-Pet | reine Idee, **explizit zuletzt** (Marks Vorgabe) | nur Archiv |
-| 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Schlucken ✅, am Tisch noch nicht geklickt; Credstick ✅ (05.11.2026, Tresor-Modell, Laden/Entladen + SL-Direktvergabe); Rest (gleicher Ort, Geld-Weitergabe, Granate) **offen**. Gift an jemand anderem im Kampf später | [[gegenstand-transfer]], [[drogen]] |
+| 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Schlucken ✅, am Tisch noch nicht geklickt; Credstick ✅ (05.11.2026, Tresor-Modell; Laden sitzt im Objekt und im Spieler-Fenster); Rest (gleicher Ort, Geld-Weitergabe, Granate) **offen**. Gift an jemand anderem im Kampf später | [[gegenstand-transfer]], [[drogen]] |
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
 | 19 | Automatische Wege / eingeschränkte Weg-Auswahl bei bestimmten Rassen (z.B. manche Rassen nur Magier, manche nur Neuroweaver, manche beides offen) | **offen**, Mark will das noch besprechen (25.10.2026 angekündigt) — keine Design-Achse entschieden | nur Archiv |

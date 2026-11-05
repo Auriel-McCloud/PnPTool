@@ -1,7 +1,7 @@
 ---
 title: Gegenstand- und Geld-Transfer
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-11-05
 type: entität
 tags: [inventar, verhandlung, party, wirtschaft, geplant, offen]
 sources: [../../../CLAUDE.md, ../../api/verhandlung.md, ../../../backend/app/verhandlung/, ../../../ideen für später.txt]
@@ -102,9 +102,10 @@ der Player-Ausnahmeliste von `tests/test_zugriffsschutz.py`.
 ohne irgendwo abzuziehen — für NPC-Belohnungen oder vorbereitete Fundstücke
 (Mark: "ich muss einfach so Geld drauflegen können um es NPCs zu geben").
 
-Frontend: Credstick-Abschnitt in `GegenstandKachel.tsx` (Aufladen/Abheben-
-Knöpfe, SL zusätzlich "Geld erzeugen"), `CredstickPopup.tsx` für die
-Betrag-Eingabe (gestyltes Commlink-Popup, kein Inline-Formular). Backend
+Frontend: dieselbe Leiste `CredstickAktionen` (`CredstickPopup.tsx`) oben im
+SL-Objekt (`CharacterSheetPanel.tsx`, Übersicht) und oben im Spieler-Fenster
+(`GegenstandKachel.tsx`). Knöpfe: Aufladen, Abheben, für die SL zusätzlich
+„Geld erzeugen“. Der geladene Betrag steht schon auf der Kachel. Backend
 end-to-end gegen echtes Neo4j verifiziert (Laden/Entladen/Deckungsprüfung/
 SL-Erzeugung), `tsc -b` sauber. **Kein Browser-Klicktest.**
 
@@ -142,6 +143,8 @@ Mitteilung/Popup an SL+Ziel, oder soll es in die Kampfkarte einschlagen?
   (kein Shop-Direktzahlen), Laden/Entladen (Spieler + SL) und SL-Direkt-
   vergabe (NPC-Belohnung/Fundstück ohne Kapitalabzug). Geld-Weitergabe
   (Party/gleicher Ort) und NPC→Spieler-Belohnung weiterhin nicht gebaut.
+- **05.11.2026** — Laden-Leiste auch im SL-Objekt (Übersicht), nicht nur in
+  der Spieler-Kachel. Betrag steht auf der Kachel.
 
 ## Siehe auch
 

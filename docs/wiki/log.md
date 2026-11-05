@@ -1625,3 +1625,10 @@ Zwischenstufe je Sphäre fett. Siehe [[concepts/magie-hexkraft]].
 Klick auf Sphäre/Gott oder Fertigkeit zeigt den Tooltip-Kurztext im
 Probenfenster, Detail-Knopf öffnet die Langfassung. Größenleiter und
 Würfel/Attribute bleiben. Siehe [[entities/ui-konzept-commlink]].
+
+## [2026-11-05] update | Credstick-Laden im Objekt
+
+Aufladen, Abheben und SL-Geld-erzeugen sitzen oben im Credstick-Objekt
+(`CharacterSheetPanel`) und oben im Spieler-Fenster (`GegenstandKachel`),
+nicht mehr nur in der Inventar-Kachel. Betrag steht auf der Kachel.
+Siehe [[entities/gegenstand-transfer]].

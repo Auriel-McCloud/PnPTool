@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
-import type { Gegenstand } from "./api";
+import { ApiError } from "../api/client";
+import { itemsApi, type Gegenstand } from "./api";
 import "./wegwerfen.css";
 
 /**
@@ -90,5 +91,95 @@ export function CredstickPopup({
         </button>
       </div>
     </Fenster>
+  );
+}
+
+/**
+ * Aufladen / Abheben / (SL) Geld erzeugen — dieselbe Leiste im Spieler-Fenster
+ * und im SL-Objekt, damit das Laden nicht nur an einer der beiden Kacheln hängt.
+ */
+export function CredstickAktionen({
+  item,
+  campaignId,
+  istSpielleitung = false,
+  ohneBesitzer = false,
+  onErledigt,
+}: {
+  item: Gegenstand;
+  campaignId: string;
+  istSpielleitung?: boolean;
+  /** Vorlage oder herrenloses Stück: Umbuchen hat kein Kapital als Gegenkonto. */
+  ohneBesitzer?: boolean;
+  onErledigt?: (frisch: Gegenstand) => void;
+}) {
+  const [modus, setModus] = useState<"laden" | "entladen" | "sl-laden" | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [geladen, setGeladen] = useState(item.geladenesGeld ?? 0);
+
+  useEffect(() => {
+    setGeladen(item.geladenesGeld ?? 0);
+  }, [item.id, item.geladenesGeld]);
+
+  async function aktion(betrag: number) {
+    if (!modus) return;
+    setLaeuft(true);
+    setFehler(null);
+    try {
+      const frisch =
+        modus === "laden"
+          ? await itemsApi.credstickLaden(campaignId, item.id, betrag)
+          : modus === "entladen"
+            ? await itemsApi.credstickEntladen(campaignId, item.id, betrag)
+            : await itemsApi.credstickSlLaden(campaignId, item.id, betrag);
+      setGeladen(frisch.geladenesGeld ?? 0);
+      setModus(null);
+      onErledigt?.(frisch);
+    } catch (e) {
+      setFehler(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Hat nicht geklappt.");
+    } finally {
+      setLaeuft(false);
+    }
+  }
+
+  function oeffnen(naechster: "laden" | "entladen" | "sl-laden") {
+    setFehler(null);
+    setModus(naechster);
+  }
+
+  return (
+    <section className="gg-ablage-wahl">
+      <h3>Credstick</h3>
+      <p className="gg-ablage-ort">Geladen: {geladen.toLocaleString("de-AT")}¥</p>
+      {ohneBesitzer && (
+        <p className="gg-ablage-ort">
+          Aufladen und Abheben brauchen einen Besitzer. Geld erzeugen legt den Betrag nur auf dieses Stück — eine Vorlage kopiert ihn nicht mit.
+        </p>
+      )}
+      <div className="gg-ablage-knoepfe" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button type="button" onClick={() => oeffnen("laden")} disabled={laeuft}>
+          Aufladen
+        </button>
+        <button type="button" onClick={() => oeffnen("entladen")} disabled={laeuft}>
+          Abheben
+        </button>
+        {istSpielleitung && (
+          <button type="button" onClick={() => oeffnen("sl-laden")} disabled={laeuft}>
+            Geld erzeugen
+          </button>
+        )}
+      </div>
+      {modus && (
+        <CredstickPopup
+          item={{ ...item, geladenesGeld: geladen }}
+          modus={modus}
+          offen
+          onBestaetigen={aktion}
+          onAbbrechen={() => setModus(null)}
+          laeuft={laeuft}
+          fehler={fehler}
+        />
+      )}
+    </section>
   );
 }
