@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: Portrait-Galerie-"+" öffnete Datei-Upload statt Zeichenblock (05.11.2026)
+
+Mark: beim Klick auf "+" in der Portrait-Galerie kam der Datei-Upload-Dialog statt eines leeren Blatts zum Zeichnen. Ursache: `port-galerie-neu` war mit `dateiRef.current?.click()` verdrahtet. Erster Fix hängte "+" an denselben `ZeichenblockPopup`-State wie den bestehenden "✎ Zeichnen"-Knopf — der zeigte aber das aktuelle Anzeigebild als Hintergrund, also keine echte leere Fläche. Zweiter Fix (Mark: "es soll ein neuer weißer zeichen canvas sein", bestehendes Bild darf nie angefasst werden): eigener `zeichnenHintergrund`-State — "+" öffnet mit `null` (leeres Blatt, neuer Galerie-Eintrag), "✎ Zeichnen" weiterhin mit `ich.personBildUrl` (Skizze auf dem aktuellen Bild weiter). Beide Wege hängen wie bisher nur per `galerie_hinzufuegen` einen neuen Eintrag an — das bestehende Bild wird nie überschrieben. `CharakterportraitAnsicht.tsx`. `tsc -b`/`vite build` sauber, auf bebop deployed. **Noch nicht am Spieltisch getestet.**
+
 ## SL bekommt Booster- und Hot-Popups für NPCs (04.11.2026)
 
 Die Fenster hingen am eingeloggten Charakter. Die SL hat keinen, also kam bei einem NPC mit Reflex-Booster, Matrix-Hot oder Hot-Drohne nichts, obwohl sie ihn steuert. Jetzt dieselbe Frage, sobald sein Zug kommt, mit seinem Namen im Titel. Der Hot-Knopf sitzt auf seiner Kampfkarte und an seinen Drohnen-Slots. Spielercharaktere entscheiden weiter selbst. `kampf/initiative.py`, `kampf/routes.py`, `Kampfmodus.tsx`, `BoosterPopup.tsx`, `HotBleibenPopup.tsx`. **Nie im Browser angeklickt.**
