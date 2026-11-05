@@ -72,8 +72,10 @@ class SortimentEintrag(BaseModel):
 
 class SortimentHinzufuegenRequest(BaseModel):
     gegenstandId: str
-    # None = Grundpreis des Gegenstands übernehmen. Explizit gesetzt erlaubt
-    # Auf-/Abschlag (Schwarzmarkt teurer, Kontakt-Rabatt günstiger).
+    # None = Preis folgt live dem Grundpreis des Gegenstands (05.11.2026,
+    # ändert sich die Vorlage später, zieht der Shop automatisch nach).
+    # Explizit gesetzt friert einen Sonderpreis auf dieser Kante ein
+    # (Auf-/Abschlag, Schwarzmarkt teurer, Kontakt-Rabatt günstiger).
     preis: int | None = None
 
 

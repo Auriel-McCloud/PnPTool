@@ -144,7 +144,7 @@ export function VorlagenAuswahlPopup({
           min={0}
           value={preis}
           onChange={(e) => setPreis(e.target.value)}
-          placeholder="Preis für alle (leer = Grundpreis je Stück)"
+          placeholder="Preis für alle (leer = folgt live der Vorlage)"
           disabled={laeuft}
         />
         <button type="button" onClick={hinzufuegen} disabled={laeuft || ausgewaehlt.size === 0}>

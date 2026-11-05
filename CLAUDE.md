@@ -2310,6 +2310,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (05.11.2026 — Shop-Preis folgt live der Vorlage):**
+- **Was:** Eine explizit ins Sortiment aufgenommene Ware fror beim Hinzufügen den damaligen Vorlagen-Preis auf der `VERKAUFT`-Kante ein — änderte sich später der Grundpreis der Vorlage, blieb der Shop beim alten Wert (nur Rausschmeißen+Neu-Hinzufügen kopierte neu). Jetzt wird beim Hinzufügen ohne expliziten Sonderpreis gar kein `preis` mehr auf die Kante geschrieben, `sortiment()` liest dann live `coalesce(r.preis, g.preis)`. Ein tatsächlich übergebener Preis friert weiter bewusst einen Sonderpreis ein (Mark nutzt das aktuell nicht). Bestehende Shop-Einträge (prod + dev) per Migration einmalig von ihrem eingefrorenen `r.preis` befreit.
+- **Wo:** `backend/app/haendler/repository.py` (`verkauft_hinzufuegen`, `_EXPLIZIT_FELDER`), `routes.py` (`sortiment_hinzufuegen` gibt `body.preis` jetzt ungefiltert durch), `schemas.py` (Doku-Kommentar), `frontend/src/haendler/VorlagenAuswahlPopup.tsx` (Platzhaltertext).
+- **Verifiziert:** `tsc --noEmit`. `pytest tests/test_shop_am_ort.py tests/test_shop_unikat.py tests/test_massenidee.py` — 3 vorbestehende Fails sind Windows-asyncio-Proactor-Flakiness beim Teardown, identisch reproduzierbar auch ohne diese Änderung (vor/nach-Vergleich per `git stash`), kein Regressions-Fund. Migration live gegen `pnptool-neo4j` gefahren: vorher 1 von 92 Kanten mit abweichendem `r.preis` (Drop-Leg Bag 1800¥ eingefroren vs. 800¥ Vorlage), danach alle Kanten ohne `r.preis`, lesen live.
+
 **Zuletzt gebaut (05.11.2026 — Initiative per Klick eintragen):**
 - **Was:** Die Initiative-Zahl ist wieder antippbar. Der eigene Charakter, die eigene Drohne und die Beschwörung tragen dort die Erfolge ein. Steht Charakter oder Drohne noch nicht in der Liste, kommen sie mit diesem Wert dazu. Die SL klickt dieselbe Zahl im Bogen.
 - **Wo:** `Kampfkarte.tsx`, `SpielerAnsicht.tsx`, `DeineDrohnenImKampf.tsx`, `DeineBeschwoerungen.tsx`, `Kampfmodus.tsx`, `kampf/routes.py` `POST /ich`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.

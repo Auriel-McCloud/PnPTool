@@ -106,12 +106,14 @@ async def sortiment(campaign_id: str, haendler_id: str, viewer: Viewer = Depends
 )
 async def sortiment_hinzufuegen(campaign_id: str, haendler_id: str, body: SortimentHinzufuegenRequest):
     """Ware explizit ins Sortiment aufnehmen — mit optionalem Sonderpreis
-    (Auf-/Abschlag). Ohne Preisangabe gilt der Grundpreis des Gegenstands."""
+    (Auf-/Abschlag). Ohne Preisangabe folgt der Preis live dem Grundpreis
+    der Vorlage/des Gegenstands (05.11.2026) statt wie vorher einmalig
+    eingefroren zu werden — Mark: Preisänderungen sollen sich nicht mehr nur
+    durch Rausschmeißen+Neu-Hinzufügen im Shop zeigen."""
     gegenstand = await items_repository.get_gegenstand(campaign_id, body.gegenstandId)
     if gegenstand is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
-    preis = body.preis if body.preis is not None else gegenstand["preis"]
-    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, preis):
+    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, body.preis):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Händler nicht gefunden")
     return await repository.sortiment(campaign_id, haendler_id)
 

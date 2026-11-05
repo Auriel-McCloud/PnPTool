@@ -273,7 +273,7 @@ _STECKBRIEF_FELDER = """
 
 _EXPLIZIT_FELDER = f"""
     g.id AS gegenstandId, g.name AS name, g.bildUrl AS bildUrl, g.typ AS typ,
-    r.preis AS preis, g.istVorlage AS istVorlage,
+    coalesce(r.preis, g.preis) AS preis, g.istVorlage AS istVorlage,
     coalesce(r.rabattProzent, 0) AS rabattProzent, coalesce(r.rabattHinweis, '') AS rabattHinweis,
     {_STECKBRIEF_FELDER}
 """
@@ -403,13 +403,21 @@ async def effektiver_preis(campaign_id: str, haendler_id: str, gegenstand_id: st
     return None
 
 
-async def verkauft_hinzufuegen(campaign_id: str, haendler_id: str, gegenstand_id: str, preis: int) -> bool:
+async def verkauft_hinzufuegen(campaign_id: str, haendler_id: str, gegenstand_id: str, preis: int | None) -> bool:
+    """`preis=None` heißt „immer dem aktuellen Vorlagen-Grundpreis folgen"
+    (05.11.2026, Mark: Preisänderungen an der Vorlage sollen sich nicht mehr
+    nur durch Rausschmeißen+Neu-Hinzufügen im Shop zeigen) — die Kante trägt
+    dann gar kein eigenes `preis`, `sortiment()` liest dann live `g.preis`
+    (siehe `_EXPLIZIT_FELDER`: `coalesce(r.preis, g.preis)`). Nur ein
+    tatsächlich übergebener Wert friert einen Sonderpreis auf dieser einen
+    Kante ein."""
     driver = get_driver()
     query = """
         MATCH (o:Ort {id: $shop_id, campaignId: $campaign_id, istShop: true})
         MATCH (g:Gegenstand {id: $gegenstand_id, campaignId: $campaign_id})
         MERGE (o)-[r:VERKAUFT]->(g)
-        SET r.preis = $preis
+        REMOVE r.preis
+        SET r += CASE WHEN $preis IS NULL THEN {} ELSE {preis: $preis} END
         RETURN o.id AS id
     """
     async with driver.session() as session:
