@@ -105,6 +105,11 @@ Normal. Derselbe Schalter im Rassen-Baukasten (`istGross`, kein Rassenname im
 Code). Neue Person übernimmt den Rassen-Default, danach gilt der Personen-Wert.
 Normal = 1 Hex, Groß = 3 im Y plus Kreis.
 
+## Nachgezogen 06.11.2026 — Größe nur an der Rasse
+
+Der Schalter auf den PC-/NPC-Kacheln ist weg. Größe setzt nur der Rassen-Baukasten.
+Die Karte liest `Rasse.istGross` über `Person.rasse` (Name). Ohne Rasse: ein Hex.
+
 ## Offene Achsen 06.11. (erste Fassung, ersetzt)
 
 1. Bewegung — entschieden: überall droppen, Grün ist Hilfe.

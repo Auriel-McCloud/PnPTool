@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] nachgezogen | Battlemap-Größe nur an der Rasse
+
+Schalter von den PC-/NPC-Kacheln weg. Baukasten bleibt. Karte liest
+`Rasse.istGross`. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap mit Ort/Event verknüpfbar, Karte öffnen für Spieler
 
 Neue Listenfelder `ortIds`/`eventIds`, rein organisatorisch, kein Auto-
