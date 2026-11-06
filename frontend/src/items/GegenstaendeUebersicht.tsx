@@ -52,7 +52,10 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [items, setItems] = useState<GegenstandMitBesitzer[]>([]);
   const [loading, setLoading] = useState(true);
   const [suche, setSuche] = useState("");
-  const [besitzerFilter, setBesitzerFilter] = useState("");
+  // Standardmäßig auf Vorlagen gefiltert (Mark, 06.11.2026): das ist die
+  // Ansicht, die die SL am häufigsten braucht — "Alle Besitzer" lässt sich
+  // jederzeit im Dropdown wieder wählen.
+  const [besitzerFilter, setBesitzerFilter] = useState(VORLAGE_SENTINEL);
   // Mehrere Bereiche gleichzeitig: in der Praxis will man "Ausgerüstet und
   // Rucksack" sehen, im Auto zusätzlich dessen Inhalt, im Versteck wiederum
   // etwas anderes. Leere Auswahl = alles.
