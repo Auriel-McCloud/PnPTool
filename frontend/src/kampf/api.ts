@@ -165,6 +165,11 @@ function lesen<T>(pfad: string, personId?: string | null) {
 
 export const kampfApi = {
   laden: (cid: string) => api.get<Kampf | null>(basis(cid)),
+  /** Fürs Battlemap-Popup: Hot-Körper UND Hot-Drohne als zwei getrennte
+   *  Tokens (wie der Live-Rundruf), nicht die Initiative-Faltung aus
+   *  `laden()` — sonst trifft Schieben/Blick am Hot-Zug den Körper statt
+   *  der Drohne, bis der erste Websocket-Push kommt (Mark, 06.11.2026). */
+  fuerKarte: (cid: string) => api.get<Kampf | null>(`${basis(cid)}/karte`),
   /** Der eigene Initiative-Pool (Geistesschärfe + Geschicklichkeit + Chrom). */
   initiativePool: (cid: string) => api.get<InitiativePool>(`${basis(cid)}/initiative/pool`),
   /** Selbst gewürfelten Wert melden — landet sofort in der Liste der SL.

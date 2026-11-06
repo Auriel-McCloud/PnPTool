@@ -10,6 +10,14 @@ Fix: `draggable={false}` auf dem Token-`<img>`, zusätzlich `-webkit-user-drag: 
 
 **Verifiziert:** `npx tsc -b` sauber. Kein Klicktest am Tisch — bitte beim nächsten Mal gezielt prüfen, dass ein Ziehen am Bildbereich des Tokens jetzt genauso die Kachel übers Hex-Grid bewegt wie ein Ziehen am Rand.
 
+## Battlemap: Hot-Drohne als eigener Token auch für die SL, neue Lese-Route (06.11.2026)
+
+Mark: SL sah beim Öffnen der Karte nur den gefalteten Rigger-Eintrag — Blickrichtung-Pfeile, die der Hot-Spieler sieht, fehlten der SL komplett, und Schieben traf den Rigger-Körper statt der Drohne. Ursache: `GET /kampf` liefert für die Initiativliste bewusst die gefaltete Ansicht (Hot-Drohne teilt den Slot des Riggers, `hot-gehen.md`); die Battlemap braucht aber beide als getrennte Tokens mit eigener Position/Blickrichtung — das lieferte bisher nur der Live-Websocket-Rundruf (`_tokens_senden`) und, nur für Nicht-SL und nur bei Fog of War an, `GET /kampf` selbst. Vor dem allerersten Websocket-Push (initiales Öffnen der Karte) sah die SL deshalb ausschließlich den gefalteten Eintrag.
+
+Neue Route `GET /kampf/karte` (`kampf/routes.py::kampf_fuer_karte`) liefert für JEDE Rolle die aufgeteilte Liste (`karten_liste()` direkt für SL — „die SL sieht die Wahrheit“ —, `_fuer_spieler_kampf(..., karte=True)` für Spieler), `BattlemapPopup.tsx` lädt jetzt darüber statt über das generische `kampfApi.laden()`. Nebenbei `hotKoerper`/`hotGesteuert`/`nurKarte` in `TeilnehmerResponse` nachgetragen — fehlten dort komplett, jede HTTP-Antwort (nicht nur der Websocket) strippte sie bisher weg.
+
+**Verifiziert:** `pytest -k "kampf or battlemap or hot"` (99 Tests) grün, `npm run build` sauber. **Kein Klicktest am Spieltisch** — bitte als SL die Karte mit laufendem Hot-Gehen öffnen und prüfen: Körper und Drohne erscheinen als zwei getrennte Tokens, Blickpfeil sitzt auf der Drohne, Schieben während des Rigger-Zugs bewegt die Drohne.
+
 ## Bugfix: Kampf beginnen tat nichts — ungültige Cypher-Syntax in rasseRundum (06.11.2026)
 
 Mark: Klick auf "Kampf beginnen" passierte nichts. Ursache: `kampf/repository.py::TEILNEHMER_FELDER` (eingeführt mit der Fog-of-War-Änderung direkt darunter) nutzte eine Pattern-Comprehension mit reinem Knoten-Pattern ohne Relationship (`[(rasse:Rasse {...}) WHERE ... | ...]`) — laut Cypher-Grammatik braucht eine Pattern-Comprehension zwingend mindestens eine Relationship, ein nacktes Knoten-Pattern ist ein Syntaxfehler (`CypherSyntaxError: Invalid input 'WHERE'`). Das brach **sowohl** `GET /kampf` (Initiativliste laden) **als auch** `POST /kampf` (`beginne()` ruft intern `hole()` auf) mit 500 — der Frontend-Button feuert den Request nur ab, ohne den Fehler sichtbar zu machen (`mit()` in `Kampfmodus.tsx` hat kein Error-Handling), daher wirkte es als würde gar nichts passieren. Nebenwirkung auf bebop: mehrere Klicks legten dabei schon leere `Kampf`-Knoten an, die nie eine Antwort bekamen.

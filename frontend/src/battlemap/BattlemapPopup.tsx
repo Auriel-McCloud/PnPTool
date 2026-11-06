@@ -90,11 +90,12 @@ export function BattlemapPopup({
         standUebernehmen(frisch.pfade);
       }
     });
-    kampfApi.laden(campaignId).then(async (k) => {
+    kampfApi.fuerKarte(campaignId).then(async (k) => {
       if (tot) return;
       if (istGm && k && !k.battlemapId) {
         try {
-          k = await kampfApi.karte(campaignId, karte.id);
+          await kampfApi.karte(campaignId, karte.id);
+          k = await kampfApi.fuerKarte(campaignId);
         } catch {
           /* kein Kampf oder Karte schon anders gebunden */
         }

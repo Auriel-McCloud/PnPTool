@@ -109,6 +109,12 @@ class TeilnehmerResponse(BaseModel):
     versteckt: bool = False
     rundumsicht: bool = False
     veraltet: bool = False
+    # Hot-Gehen (28.10.2026): Körper bleibt liegen, Drohne steuert sich selbst.
+    # Fehlten bisher am Response-Schema — jede HTTP-Antwort (nicht nur der
+    # Live-Rundruf übers Websocket) strippte sie sang- und klanglos weg.
+    hotKoerper: bool = False
+    hotGesteuert: bool = False
+    nurKarte: bool = False
 
 
 class KampfResponse(BaseModel):
@@ -185,6 +191,29 @@ async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)
     if viewer.role != "GM":
         return await _fuer_spieler_kampf(kampf, viewer.person_id)
     return _ohne_hilfsfelder(kampf)
+
+
+@router.get("/karte", response_model=KampfResponse | None)
+async def kampf_fuer_karte(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Eigener Lesepfad fürs Battlemap-Popup.
+
+    `GET /kampf` (oben) bleibt für die Initiativliste gefaltet — die Hot-
+    Drohne teilt dort den Slot des Riggers (`hot-gehen.md`). Die Karte
+    braucht aber BEIDE als getrennte Tokens mit je eigener Position/Blick-
+    richtung, genau wie der Live-Rundruf (`_tokens_senden`) es schon für
+    Folgeaktionen liefert. Bisher bekam nur eine NICHT-SL-Antwort diese
+    Aufteilung (`_fuer_spieler_kampf(..., karte=True)`), und auch nur bei
+    laufendem Fog of War — die SL sah beim ERSTEN Öffnen der Karte (vor dem
+    ersten Websocket-Push) ausschließlich den gefalteten Rigger-Eintrag,
+    Schieben/Blick trafen dadurch den Körper statt der Drohne (Mark,
+    06.11.2026).
+    """
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        return None
+    if viewer.role == "GM":
+        return _ohne_hilfsfelder({**kampf, "teilnehmer": karten_liste(kampf)})
+    return await _fuer_spieler_kampf(kampf, viewer.person_id, karte=True)
 
 
 async def _werte_und_chrom(campaign_id: str, person_id: str) -> tuple[dict[str, int], int]:
