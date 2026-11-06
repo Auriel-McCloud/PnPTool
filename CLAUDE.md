@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Augment-Wirkungsfelder zurück von Besitz nach Umbauen, "Passt an" mitgezogen (06.11.2026)
+
+Mark: beim Gegenstand-Bearbeiten (`CharacterSheetPanel.tsx`) waren Schaden/Reduktion/Kästchen/ICE/Schadensart-ändern (der additive "Wirkung am Ziel, sobald montiert"-Block für Augments/Upgrade-Material/Ki-Tama) in den **Besitz**-Reiter gerutscht, gehören aber zum **Umbauen**-Reiter (alles, was ein Ding tut). Block komplett verschoben, direkt neben den schon dort sitzenden Initiative-Bonus/Zusatzaktionen-Feldern (gleiche Bedingung `istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama"`). Das "Schaden"-Feld in diesem Block zusätzlich zu **"Schadensupgrade"** umbenannt (Mark: Verwechslungsgefahr mit dem normalen Waffen-Schaden-Feld weiter oben) — betrifft nur dieses eine Label, der normale `typ === "Waffe"`-Schadens-Eintrag bleibt "Schaden".
+
+"Passt an" (augmentWaffentyp/augmentZielTyp-Auswahl) ist ebenfalls von Besitz nach Umbauen gewandert, direkt über den Wirkungsfeldern — Besitz behält nur noch die reine Kategorisierungs-Checkbox "Ist selbst ein Upgrade".
+
+**Offen, noch nicht umgesetzt (Mark hat gefragt, Antwort steht aus):** `istAugment` bei neuen Gegenständen vom Typ "Upgrade-Material"/"Ki-Tama" automatisch auf `true` setzen (Anlegen + Typ-Wechsel), damit man die Checkbox nicht jedes Mal von Hand setzen muss. Aktuell überall `false` per Default, unabhängig vom Typ.
+
+**Verifiziert:** `tsc --noEmit` sauber. Kein Klicktest — bitte am Spieltisch: ein Upgrade-Material anlegen, "Ist selbst ein Upgrade" anhaken, prüfen dass "Passt an" + Schadensupgrade/Reduktion/Kästchen/I.C.E./Schadensart-ändern jetzt alle im Umbauen-Reiter stehen (nicht mehr bei Besitz).
+
 ## Cyber-/Bio-/Hexware: manueller Preis-/Willenskraft-Zuschlag, additiv zur Automatik (05.11.2026)
 
 Mark: die automatische Preis-/Willenskraft-Berechnung (`items/chrom.py`, Bonus × Qualitätsstufe) ist gut, aber er will sie manuell ergänzen können, wenn ein Implantat Effekte hat, die das System nicht abbildet (kein `traitBoni`/`ausruestungsfertigkeiten`-Eintrag, trotzdem soll es Willenskraft/Preis kosten). Harte Vorgabe: der manuelle Wert soll **dazuzählen, nie überschrieben werden** — auch wenn später ein Bonus geändert wird, der die Automatik neu rechnen lässt.
