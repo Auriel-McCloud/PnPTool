@@ -59,6 +59,8 @@ import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
 import { ZeichnungenAnsicht } from "../zeichnungen/ZeichnungenAnsicht";
+import { battlemapApi, type Battlemap } from "../battlemap/api";
+import { BattlemapPopup } from "../battlemap/BattlemapPopup";
 import { BattlemapAnsicht } from "../battlemap/BattlemapAnsicht";
 import { RaetselTafelAnsicht } from "../raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "../drohnen/DrohnenUebersicht";
@@ -200,6 +202,12 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   // Initiativliste auf die eigene Zahl klicken — der Rigger auch für sie.
   const [eigeneDrohnenIds, setEigeneDrohnenIds] = useState<string[]>([]);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
+  // "Karte öffnen" im Kampf, wie bei der SL (06.11.2026, Mark: rechtsbündig
+  // neben der Runden-Anzeige) — Liste ist serverseitig schon auf das
+  // beschränkt, was dieser Spieler sehen darf (battlemap/routes.py::liste).
+  const [karten, setKarten] = useState<Battlemap[]>([]);
+  const [karteOffen, setKarteOffen] = useState<Battlemap | null>(null);
+  const karteFuerKampf = karten.find((k) => k.id === kampf?.battlemapId) ?? null;
   // Die eigene Zeile in der laufenden Initiative — fürs Antippen der
   // Initiative-Zahl direkt auf der eigenen Kampfkarte (Mark, 30.10.2026:
   // "das hätte ich auch gerne für den spieler selbst", bisher nur für
@@ -225,6 +233,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   useEffect(() => {
     playersApi.me().then(setIch).catch(() => setIch(null));
   }, []);
+
+  useEffect(() => {
+    if (!ich?.campaignId) return;
+    battlemapApi.liste(ich.campaignId).then(setKarten).catch(() => setKarten([]));
+  }, [ich?.campaignId]);
 
   // Zeichentisch speichert in einem eigenen Fenster. Der Kanal trifft auch,
   // wenn der Portrait-Bereich gerade nicht offen ist.
@@ -576,6 +589,18 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
         });
       }}
     />
+    {/* "Karte öffnen" wie im SL-Kampfmodus (06.11.2026) — nur die Ansicht,
+        das Anhängen ans Gefecht bleibt bewusst SL-Sache. */}
+    <BattlemapPopup
+      offen={Boolean(karteOffen)}
+      karte={karteOffen}
+      campaignId={ich.campaignId}
+      darfZeichnen={karteOffen?.spielerDuerfenZeichnen ?? false}
+      istGm={false}
+      eigenePersonId={ich.personId}
+      onSchliessen={() => setKarteOffen(null)}
+      onKarte={setKarteOffen}
+    />
     {/* Initiative per Klick ändern — für den eigenen Charakter und eigene
         aktive Drohnen/Fahrzeuge, siehe Initiativliste weiter unten. */}
     {initiativeZiel && (
@@ -702,6 +727,11 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
                 <span className="ka-runde">
                   Runde <strong>{kampf.runde}</strong>
                 </span>
+                {karteFuerKampf && (
+                  <button type="button" style={{ marginLeft: "auto" }} onClick={() => setKarteOffen(karteFuerKampf)}>
+                    Karte öffnen
+                  </button>
+                )}
               </header>
               <Initiativliste
                 kampf={kampf}

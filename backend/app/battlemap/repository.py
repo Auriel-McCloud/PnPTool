@@ -22,6 +22,8 @@ FIELDS = [
     "spawnPcR",
     "spawnNpcQ",
     "spawnNpcR",
+    "ortIds",
+    "eventIds",
 ]
 
 
@@ -43,6 +45,8 @@ def _mit_defaults(record: dict) -> dict:
     for feld in ("spawnPcQ", "spawnPcR", "spawnNpcQ", "spawnNpcR"):
         roh = daten.get(feld)
         daten[feld] = int(roh) if roh is not None else None
+    daten["ortIds"] = daten.get("ortIds") or []
+    daten["eventIds"] = daten.get("eventIds") or []
     pfade = daten.get("pfade")
     if isinstance(pfade, str):
         try:
@@ -73,6 +77,8 @@ async def erstellen(campaign_id: str, daten: dict) -> dict:
         "spawnPcR": daten.get("spawnPcR"),
         "spawnNpcQ": daten.get("spawnNpcQ"),
         "spawnNpcR": daten.get("spawnNpcR"),
+        "ortIds": daten.get("ortIds") or [],
+        "eventIds": daten.get("eventIds") or [],
     }
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})

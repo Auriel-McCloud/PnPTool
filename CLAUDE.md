@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap mit Ort/Event verknüpfbar, Karte öffnen jetzt auch für Spieler (06.11.2026)
+
+Mark: Battlemaps in den Eigenschaften mit Orten/Events verknüpfen können, und den SL-Knopf „Karte öffnen“ im Kampfmenü auch für Spieler — rechtsbündig neben „Runde N“.
+
+Neue Listenfelder `Battlemap.ortIds`/`eventIds` (`battlemap/schemas.py`/`repository.py`, Standardmuster — FIELDS, `_mit_defaults`, `erstellen()`), rein organisatorisch (Mehrfachauswahl in `BattlemapEinstellungen.tsx`, Badges in `BattlemapAnsicht.tsx`), **kein** automatisches Anhängen beim Kampfbeginn — das bleibt die bewusste SL-Auswahl im Kampfmodus. Spieler bekommen in `SpielerAnsicht.tsx` dieselbe `BattlemapPopup` wie die SL (nur `istGm=false`, Zeichnen nur bei `spielerDuerfenZeichnen`), der Knopf erscheint nur, wenn die angehängte Karte auch wirklich für sie sichtbar ist (serverseitig schon gefiltert).
+
+**Verifiziert:** Live-E2E-Skript gegen echte Neo4j (erstellen/aktualisieren/holen/leeren der neuen Felder, inkl. Leeren per PATCH mit `[]`), `npx tsc -b` sauber. **Kein Klicktest.**
+
 ## Battlemap: Hex-Karten, Tokens, Live-Zeichnen (06.11.2026)
 
 Eigenes Modul `backend/app/battlemap/`. Party-Hex blau, Gegner magenta, am Zug gold. Raster füllt die Ecken. Siehe [[battlemap]].

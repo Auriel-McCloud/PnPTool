@@ -21,6 +21,10 @@ export interface Battlemap {
   spawnPcR: number | null;
   spawnNpcQ: number | null;
   spawnNpcR: number | null;
+  /** Verknüpfung mit Orten/Events (06.11.2026): rein organisatorisch fürs
+   *  Vorbereiten, kein automatisches Anhängen beim Kampfbeginn. */
+  ortIds: string[];
+  eventIds: string[];
 }
 
 const basis = (campaignId: string) => `/api/campaigns/${campaignId}/battlemaps`;

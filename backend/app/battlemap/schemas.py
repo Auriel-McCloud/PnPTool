@@ -26,6 +26,12 @@ class BattlemapUpdate(BaseModel):
     spawnPcR: int | None = None
     spawnNpcQ: int | None = None
     spawnNpcR: int | None = None
+    # Verknüpfung mit Orten/Events (06.11.2026, Mark: Battlemap einem Ort
+    # oder Event zuordnen können). Rein organisatorisch — kein
+    # automatisches Anhängen beim Kampfbeginn, nur Anzeige/Filter beim
+    # Vorbereiten. Leer = keine Verknüpfung.
+    ortIds: list[str] | None = None
+    eventIds: list[str] | None = None
 
 
 class BattlemapResponse(BaseModel):
@@ -45,6 +51,8 @@ class BattlemapResponse(BaseModel):
     spawnPcR: int | None = None
     spawnNpcQ: int | None = None
     spawnNpcR: int | None = None
+    ortIds: list[str] = []
+    eventIds: list[str] = []
 
 
 class PfadeUpdate(BaseModel):

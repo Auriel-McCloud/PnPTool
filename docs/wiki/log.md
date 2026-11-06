@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap mit Ort/Event verknüpfbar, Karte öffnen für Spieler
+
+Neue Listenfelder `ortIds`/`eventIds`, rein organisatorisch, kein Auto-
+Anhängen beim Kampfbeginn. Spieler bekommen denselben „Karte öffnen“-Knopf
+wie die SL, rechtsbündig neben der Rundenanzeige. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap: Party-Hex blau, Raster füllt Ecken
 
 Aktive Party (inkl. NPCs/Drohnen dabei) leuchtet blau wie Spawn, andere NPCs

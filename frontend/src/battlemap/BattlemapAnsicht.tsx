@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import type { PersonOption } from "../entities/VisibilitySelector";
-import type { Person } from "../entities/api";
+import { entitiesApi, type Event, type Ort, type Person } from "../entities/api";
 import { api } from "../api/client";
 import { battlemapApi, type Battlemap } from "./api";
 import { BattlemapPopup } from "./BattlemapPopup";
@@ -33,6 +33,10 @@ export function BattlemapAnsicht({
   const [papierkorbOffen, setPapierkorbOffen] = useState(false);
   const [papierkorb, setPapierkorb] = useState<Battlemap[]>([]);
   const [allePersonen, setAllePersonen] = useState<Person[]>([]);
+  // Nur fürs Anzeigen der Verknüpfungs-Badges — die SL legt die Verknüpfung
+  // selbst in den Karten-Einstellungen an (06.11.2026).
+  const [alleOrte, setAlleOrte] = useState<Ort[]>([]);
+  const [alleEvents, setAlleEvents] = useState<Event[]>([]);
   const pcOptions: PersonOption[] = useMemo(
     () => allePersonen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name })),
     [allePersonen],
@@ -42,7 +46,11 @@ export function BattlemapAnsicht({
     setLadend(true);
     try {
       setListe(await battlemapApi.liste(campaignId));
-      if (istGm) setAllePersonen(await api.get<Person[]>(`/api/campaigns/${campaignId}/personen`));
+      if (istGm) {
+        setAllePersonen(await api.get<Person[]>(`/api/campaigns/${campaignId}/personen`));
+        setAlleOrte(await entitiesApi.listOrte(campaignId));
+        setAlleEvents(await entitiesApi.listEvents(campaignId));
+      }
     } catch {
       setFehler("Karten konnten nicht geladen werden");
     } finally {
@@ -104,6 +112,24 @@ export function BattlemapAnsicht({
                 <strong>{z.name}</strong>
                 <span className="zb-badges">
                   <span className="zb-badge">{SICHTBARKEIT_LABEL[z.sichtbarkeit]}</span>
+                  {istGm &&
+                    z.ortIds.map((id) => {
+                      const o = alleOrte.find((x) => x.id === id);
+                      return o ? (
+                        <span key={id} className="zb-badge">
+                          📍 {o.name}
+                        </span>
+                      ) : null;
+                    })}
+                  {istGm &&
+                    z.eventIds.map((id) => {
+                      const e = alleEvents.find((x) => x.id === id);
+                      return e ? (
+                        <span key={id} className="zb-badge">
+                          ⚡ {e.title}
+                        </span>
+                      ) : null;
+                    })}
                 </span>
               </span>
             </button>

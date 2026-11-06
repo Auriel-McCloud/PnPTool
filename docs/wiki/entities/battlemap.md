@@ -131,6 +131,33 @@ Hex-Rand wie Spawn: aktive Party (PCs plus NPCs/Drohnen dabei) `--p-blau`,
 andere NPCs `--p-magenta`, am Zug Gold. Raster füllt das Rechteck, keine
 leeren Ecken.
 
+## Verknüpfung mit Ort/Event, Karte öffnen für Spieler (06.11.2026)
+
+Mark: Battlemaps mit Orten oder Events verknüpfen können, Karte-öffnen-Knopf
+auch für Spieler (rechtsbündig neben der Rundenanzeige, wie bei der SL).
+
+Zwei neue Listenfelder an der Battlemap, `ortIds`/`eventIds` — rein
+organisatorisch fürs Vorbereiten/den Überblick, kein automatisches Anhängen
+beim Kampfbeginn (das bleibt die bewusste SL-Auswahl im Kampfmodus, siehe
+„Entschieden 06.11.2026“ oben). Editierbar als Mehrfachauswahl in den
+Karten-Einstellungen (`BattlemapEinstellungen.tsx`, gleiches
+`<select multiple>`-Muster wie `Ort.versteckVonPersonIds`); Badges in der
+Vorbereiten-Übersicht zeigen die Verknüpfung auf einen Blick
+(`BattlemapAnsicht.tsx`, nur für die SL).
+
+Spieler sehen jetzt denselben „Karte öffnen“-Knopf wie die SL, sobald ein
+Kampf eine Battlemap angehängt hat — rechtsbündig neben „Runde N“
+(`SpielerAnsicht.tsx`), dieselbe `BattlemapPopup`-Komponente, nur ohne
+Grid-/Spawn-Werkzeuge (`istGm=false`). Zeichnen nur, wenn die Karte es
+freigibt (`spielerDuerfenZeichnen`). Serverseitig schon auf sichtbare Karten
+beschränkt — eine SL-geheime Karte zeigt den Knopf dadurch gar nicht erst.
+
+**Verifiziert:** Live-E2E-Skript gegen echte Neo4j (erstellen/aktualisieren/
+holen/leeren der neuen Felder, inkl. Leeren per PATCH mit `[]`), `npx tsc -b`
+sauber. **Kein Klicktest** — bitte am Spieltisch: eine Karte einem Ort
+zuordnen, prüfen dass die Badge erscheint, und dass ein Spieler im Kampf die
+angehängte Karte per Knopf öffnen kann.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]
