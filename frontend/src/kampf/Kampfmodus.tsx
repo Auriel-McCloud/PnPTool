@@ -11,6 +11,7 @@ import { DeineDrohnenImKampf } from "./DeineDrohnenImKampf";
 import { DeineBeschwoerungen } from "./DeineBeschwoerungen";
 import { KAMPFARTEN, kampfApi, type Kampf, type Kampfart, type Teilnehmer } from "./api";
 import { battlemapApi, type Battlemap } from "../battlemap/api";
+import { BattlemapPopup } from "../battlemap/BattlemapPopup";
 import { Initiativliste, useKampf } from "./Initiativliste";
 import { InitiativeSetzen } from "./InitiativeSetzen";
 import { BoosterPopup } from "./BoosterPopup";
@@ -41,6 +42,7 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
   const [suche, setSuche] = useState("");
   const [karten, setKarten] = useState<Battlemap[]>([]);
+  const [karteOffen, setKarteOffen] = useState<Battlemap | null>(null);
 
   useEffect(() => {
     entitiesApi.listPersonen(campaignId).then(setPersonen).catch(() => setPersonen([]));
@@ -168,6 +170,17 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
               </option>
             ))}
           </select>
+          {kampf.battlemapId && (
+            <button
+              type="button"
+              onClick={() => {
+                const k = karten.find((x) => x.id === kampf.battlemapId);
+                if (k) setKarteOffen(k);
+              }}
+            >
+              Karte öffnen
+            </button>
+          )}
         </label>
       </header>
 
@@ -260,6 +273,15 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
           dran ist. PCs entscheiden selbst. In der Vorschau nicht — da guckt
           die SL durch fremde Augen. */}
       <NpcZugPopups campaignId={campaignId} kampf={kampf} />
+      <BattlemapPopup
+        offen={Boolean(karteOffen)}
+        karte={karteOffen}
+        campaignId={campaignId}
+        darfZeichnen
+        istGm
+        onSchliessen={() => setKarteOffen(null)}
+        onKarte={setKarteOffen}
+      />
     </div>
   );
 }

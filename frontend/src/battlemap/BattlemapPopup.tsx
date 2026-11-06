@@ -32,7 +32,7 @@ export function BattlemapPopup({
   istGm: boolean;
   eigenePersonId?: string | null;
   onSchliessen: () => void;
-  onEinstellungenOeffnen: () => void;
+  onEinstellungenOeffnen?: () => void;
   onKarte: (k: Battlemap) => void;
 }) {
   const leinwand = useRef<ReactSketchCanvasRef>(null);
@@ -85,19 +85,24 @@ export function BattlemapPopup({
         if (n.typ === "pfade") standUebernehmen(n.daten.pfade);
         if (n.typ === "karte") onKarte(n.daten);
         if (n.typ === "tokens") {
-          setKampf((alt) => {
-            if (!alt) return alt;
-            const pos = new Map(n.daten.teilnehmer.map((t) => [t.id, t]));
-            return {
-              ...alt,
-              amZug: n.daten.amZug,
-              battlemapId: n.daten.battlemapId,
-              teilnehmer: alt.teilnehmer.map((t) => {
-                const p = pos.get(t.id);
-                return p ? { ...t, ...p } : t;
-              }),
-            };
-          });
+          setKampf((alt) => ({
+            id: alt?.id ?? "",
+            runde: alt?.runde ?? 1,
+            verbrauchteBeschwoerungen: alt?.verbrauchteBeschwoerungen,
+            amZug: n.daten.amZug,
+            battlemapId: n.daten.battlemapId,
+            teilnehmer: n.daten.teilnehmer.map((t) => ({
+              initiative: 0,
+              kampfart: "NAHKAMPF" as const,
+              notiz: "",
+              erledigt: false,
+              personId: null,
+              personType: null,
+              begleiterId: null,
+              ...(alt?.teilnehmer.find((x) => x.id === t.id) ?? {}),
+              ...t,
+            })) as Teilnehmer[],
+          }));
         }
       },
       setVerbunden,
@@ -247,9 +252,11 @@ export function BattlemapPopup({
             <button type="button" data-aktiv={spawnArt === "npc"} onClick={() => setSpawnArt(spawnArt === "npc" ? null : "npc")}>
               NPC-Spawn
             </button>
-            <button type="button" className="port-mini" onClick={onEinstellungenOeffnen}>
-              Einstellungen
-            </button>
+            {onEinstellungenOeffnen && (
+              <button type="button" className="port-mini" onClick={onEinstellungenOeffnen}>
+                Einstellungen
+              </button>
+            )}
           </>
         )}
       </div>

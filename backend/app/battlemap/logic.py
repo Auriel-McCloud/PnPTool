@@ -33,3 +33,37 @@ def darf_schieben(
     if besitzer_id:
         return besitzer_id == person_id
     return token_person_id == person_id
+
+
+TOKEN_FELDER = (
+    "id",
+    "name",
+    "personId",
+    "personType",
+    "begleiterId",
+    "hexQ",
+    "hexR",
+    "hexDrehung",
+    "zugStartQ",
+    "zugStartR",
+    "bildUrl",
+    "istGross",
+    "istDrohne",
+    "istFahrzeug",
+    "istCritter",
+    "besitzerId",
+)
+
+
+def token_stand(kampf: dict) -> dict:
+    """Vollständiger Token-Stand für den Battlemap-Rundruf — inklusive neuer Teilnehmer."""
+    return {
+        "amZug": kampf.get("amZug"),
+        "battlemapId": kampf.get("battlemapId"),
+        "teilnehmer": [
+            {feld: t.get(feld) for feld in TOKEN_FELDER}
+            for t in kampf.get("teilnehmer") or []
+            if not t.get("zusatzzug")
+        ],
+    }
+

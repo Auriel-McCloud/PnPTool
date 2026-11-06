@@ -123,6 +123,9 @@ Spieler-Move `PATCH .../kampf/teilnehmer/{id}/position` (nur eigener Token am Zu
 Spieltisch-Klicktest offen. SL schiebt den Grid-Ursprung per „Grid schieben“;
 Größe bleibt der Slider. Größe-Schalter auf den PC-/NPC-Kacheln zeichnet sofort
 neu. Spieler schiebt eigene Drohnen und Beschwörungen (`besitzerId`).
+Token-Rundruf ist die volle Teilnehmerliste (Portrait, neu Hinzugekommene),
+nicht nur Positionen. Zugwechsel und Aufnehmen rufen mit. Kampfmodus hat
+„Karte öffnen“.
 
 ## Siehe auch
 

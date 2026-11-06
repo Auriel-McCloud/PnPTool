@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.battlemap.hex import drop_frei
-from app.battlemap.logic import darf_schieben
+from app.battlemap.logic import darf_schieben, token_stand
 from app.battlemap.schemas import KarteAnKampf, PositionUpdate
 from app.battlemap.verteiler import verteiler as karten_verteiler
 from app.campaigns.repository import get_einstellungen
@@ -242,37 +242,31 @@ async def _party_und_ort_automatisch_aufnehmen(campaign_id: str, kampf: dict | N
 async def beginne(campaign_id: str):
     kampf = await repository.beginne(campaign_id)
     kampf = await _party_und_ort_automatisch_aufnehmen(campaign_id, kampf)
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
 async def beende(campaign_id: str):
+    kampf = await repository.hole(campaign_id)
+    karte_id = kampf.get("battlemapId") if kampf else None
     await repository.beende(campaign_id)
-
-
-def _token_stand(kampf: dict) -> dict:
-    return {
-        "amZug": kampf.get("amZug"),
-        "battlemapId": kampf.get("battlemapId"),
-        "teilnehmer": [
-            {
-                "id": t["id"],
-                "hexQ": t.get("hexQ"),
-                "hexR": t.get("hexR"),
-                "hexDrehung": t.get("hexDrehung"),
-                "zugStartQ": t.get("zugStartQ"),
-                "zugStartR": t.get("zugStartR"),
-            }
-            for t in kampf.get("teilnehmer") or []
-            if not t.get("zusatzzug")
-        ],
-    }
+    if karte_id:
+        await karten_verteiler.rundrufen(
+            karte_id,
+            {"typ": "tokens", "daten": token_stand({"amZug": None, "battlemapId": None, "teilnehmer": []})},
+        )
 
 
 async def _tokens_senden(kampf: dict | None) -> None:
     if not kampf or not kampf.get("battlemapId"):
         return
-    await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": _token_stand(kampf)})
+    await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": token_stand(kampf)})
+
+
+async def _kampf_antworten(kampf: dict | None) -> dict | None:
+    """Mutation: Tokens live raus, Hilfsfelder runter."""
+    await _tokens_senden(kampf)
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.put("/karte", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -281,7 +275,7 @@ async def karte_anhaengen(campaign_id: str, body: KarteAnKampf):
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
     await _tokens_senden(kampf)
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.patch("/teilnehmer/{teilnehmer_id}/position", response_model=KampfResponse)
@@ -339,7 +333,7 @@ async def token_schieben(
             drohnen_besitzer=kampf.pop("_drohnenBesitzer", {}),
         )
         return kampf
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.post("/teilnehmer", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -354,7 +348,7 @@ async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
     kampf = await repository.teilnehmer_hinzu(campaign_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.patch("/teilnehmer/{teilnehmer_id}", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -362,7 +356,7 @@ async def teilnehmer_aendern(campaign_id: str, teilnehmer_id: str, body: Teilneh
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.delete("/teilnehmer/{teilnehmer_id}", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -370,7 +364,7 @@ async def teilnehmer_entfernen(campaign_id: str, teilnehmer_id: str):
     kampf = await repository.teilnehmer_entfernen(campaign_id, teilnehmer_id)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.post("/weiter", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -379,7 +373,7 @@ async def weiter(campaign_id: str):
     kampf = await repository.weiter(campaign_id)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.post("/amzug", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -388,7 +382,7 @@ async def am_zug(campaign_id: str, body: AmZugInput):
     kampf = await repository.setze_am_zug(campaign_id, body.teilnehmerId)
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 async def _werte_von(campaign_id: str, person_id: str) -> dict[str, int]:
@@ -473,7 +467,7 @@ async def melde_initiative(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(fehler)) from fehler
 
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, {"initiative": wert})
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 @router.post("/ich", response_model=KampfResponse)
@@ -503,7 +497,7 @@ async def selbst_initiative(
     eigener = eigener_haupteintrag(kampf["teilnehmer"], viewer.person_id)
     if eigener:
         kampf = await repository.teilnehmer_aendern(campaign_id, eigener["id"], {"initiative": wert})
-        return _ohne_hilfsfelder(kampf)
+        return await _kampf_antworten(kampf)
 
     person = await get_node("Person", PERSON_FIELDS, campaign_id, viewer.person_id)
     if person is None:
@@ -520,7 +514,7 @@ async def selbst_initiative(
             "begleiterId": None,
         },
     )
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 async def _darf_initiative_melden(campaign_id: str, viewer: Viewer, ziel_person_id: str | None) -> bool:
@@ -604,14 +598,14 @@ async def drohne_dem_kampf_beitreten(campaign_id: str, node_id: str, viewer: Vie
 
     bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == node_id), None)
     if bereits_dabei:
-        return _ohne_hilfsfelder(kampf)
+        return await _kampf_antworten(kampf)
 
     name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], drohne["name"])
     kampf = await repository.teilnehmer_hinzu(
         campaign_id,
         {"name": name, "initiative": 0, "kampfart": "FERNKAMPF", "notiz": "", "personId": node_id, "begleiterId": None},
     )
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
 
 
 class BeschwoerenInput(BaseModel):
@@ -687,10 +681,10 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
         )
     if entscheidung == "offen":
-        return _ohne_hilfsfelder(kampf)
+        return await _kampf_antworten(kampf)
     if entscheidung == "verbraucht":
         await repository.beschwoerung_verbrauchen(campaign_id, item_id)
-        return _ohne_hilfsfelder(await repository.hole(campaign_id))
+        return await _kampf_antworten(await repository.hole(campaign_id))
 
     critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
     if critter is None:
@@ -699,7 +693,7 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
     bereits_dabei = next((t for t in kampf["teilnehmer"] if t.get("personId") == critter_id), None)
     await repository.beschwoerung_verbrauchen(campaign_id, item_id)
     if bereits_dabei:
-        return _ohne_hilfsfelder(await repository.hole(campaign_id))
+        return await _kampf_antworten(await repository.hole(campaign_id))
 
     name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], critter.get("name") or "Beschworener Critter")
     await repository.teilnehmer_hinzu(
@@ -714,7 +708,7 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             "rundenVerbleibend": stufe,
         },
     )
-    return _ohne_hilfsfelder(await repository.hole(campaign_id))
+    return await _kampf_antworten(await repository.hole(campaign_id))
 
 
 @router.post("/initiative/npcs", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
@@ -756,7 +750,7 @@ async def wuerfle_npc_initiative(campaign_id: str):
             campaign_id, t["id"], {"initiative": ergebnis["erfolge"]}
         )
 
-    return _ohne_hilfsfelder(await repository.hole(campaign_id))
+    return await _kampf_antworten(await repository.hole(campaign_id))
 
 
 class BoosterStatus(BaseModel):
@@ -1130,7 +1124,7 @@ async def booster_aktivieren(
         },
     )
 
-    return _ohne_hilfsfelder(await repository.hole(campaign_id))
+    return await _kampf_antworten(await repository.hole(campaign_id))
 
 
 class ParalyseInput(BaseModel):
@@ -1171,7 +1165,7 @@ async def paralyse_melden(
         teilnehmer_id,
         {"ampel": 0, "setztAus": not body.geschafft},
     )
-    return _ohne_hilfsfelder(await repository.hole(campaign_id))
+    return await _kampf_antworten(await repository.hole(campaign_id))
 
 
 @router.post("/teilnehmer/{teilnehmer_id}/aussetzen-beendet", response_model=KampfResponse,
@@ -1184,4 +1178,4 @@ async def aussetzen_beendet(campaign_id: str, teilnehmer_id: str):
     kampf = await repository.teilnehmer_aendern(campaign_id, teilnehmer_id, {"setztAus": False})
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
-    return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)

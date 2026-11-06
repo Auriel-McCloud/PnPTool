@@ -62,11 +62,21 @@ export type BattlemapLive =
         battlemapId: string | null;
         teilnehmer: {
           id: string;
+          name?: string;
+          personId?: string | null;
+          personType?: string | null;
+          begleiterId?: string | null;
           hexQ: number | null;
           hexR: number | null;
           hexDrehung: number | null;
           zugStartQ: number | null;
           zugStartR: number | null;
+          bildUrl?: string;
+          istGross?: boolean;
+          istDrohne?: boolean;
+          istFahrzeug?: boolean;
+          istCritter?: boolean;
+          besitzerId?: string | null;
         }[];
       };
     };

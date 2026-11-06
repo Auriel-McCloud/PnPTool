@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap-Tokens live (Zugwechsel, neue Teilnehmer)
+
+Rundruf enthält Portrait und neue Tokens. Kampfmodus „Karte öffnen“.
+Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap Grid-Ursprung, Drohnen-Tokens
 
 SL schiebt den Hex-Ursprung. Größe-Schalter auf den Kacheln zeichnet neu.
