@@ -79,20 +79,15 @@ export const MAGIE_HINWEISE = {
 };
 
 /**
- * Obergrenze für den NeuroWeaving-Pool.
+ * Kein Pool-Deckel mehr bei Overclock (Mark, 06.11.2026).
  *
- * Marks Vorgabe (30.08.2026): **NeuroWeaving-Wert + Fertigkeit ergeben
- * höchstens 10.** Anders als bei Hexkraft, wo der Wert allein bis 10 geht,
- * treffen hier zwei Werte aufeinander — ohne Deckel käme man auf 15.
- *
- * **22.09.2026, auf 12 angehoben:** seit der Erweiterung auf 6 Skills ist
- * überall im Regelwerk 6 das neue Maximum (Attribute, Fertigkeiten,
- * NeuroWeaving-Grundwert) — 10 wirkte als Pool-Deckel dagegen unpassend
- * niedrig. 12 ist außerdem das natürliche Gesundheitsmaximum (siehe
- * `GESUNDHEIT_GRUNDWERT` in `backend/app/traits/bogen.py`), passt also zur
- * bereits etablierten "rundes Maximum bei 12"-Logik im Tool.
- *
- * Bewusst ein Deckel auf dem *Pool*, nicht auf den Werten selbst: die Werte
- * dürfen weiter steigen, nur mehr Würfel gibt es dafür nicht.
+ * Bis dahin galt ein harter Deckel von 12 (`NEUROWEAVING_POOL_MAX`, seit
+ * 22.09.2026 — davor 10). Mark hat ihn bewusst gestrichen: der Rückschlag
+ * (Willenskraftwurf gegen die Erfolge, Rest als Schlagschaden) begrenzt
+ * Overclock schon von allein — wer zu weit geht, schaltet sich im
+ * schlimmsten Fall selbst aus. Genau das soll möglich sein, bis hin zum
+ * Spieler, der sich für sein Team aufopfert. Ein zusätzlicher harter Deckel
+ * nahm diesen Momenten die Spitze, ohne einen zweiten Zweck zu erfüllen.
+ * Gilt gleichermaßen für den Neuroweaver (NeuroWeaving + Overclock) und für
+ * den Decker im Matrix-Hot (Matrix-Pool + Overclock, siehe unten).
  */
-export const NEUROWEAVING_POOL_MAX = 12;

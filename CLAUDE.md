@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Overclock ohne Pool-Deckel, auch für den Decker im Matrix-Hot (06.11.2026)
+
+Marks Idee vom Spieltisch: Neuroweaver dürfen ihre Willenskraft auf den NeuroWeaving-Pool legen (Overclock) — warum nicht genauso ein Decker, der Hot in der Matrix ist, auf seinen Matrix-Pool? Gleicher Rückschlag. Im Gespräch kam dazu noch eine zweite Korrektur: der bestehende Pool-Deckel 12 bei Overclock ergab beim Nachdenken keinen Sinn mehr — der Rückschlag (Willenskraftwurf gegen die Erfolge, Rest als Schlagschaden) begrenzt schon von allein, bis hin zum Spieler, der sich mit einem Alles-oder-nichts-Overclock für sein Team aufopfert. Ein zusätzlicher harter Deckel nahm genau diesen Momenten die Spitze.
+
+Umgesetzt, beides zusammen: **`NEUROWEAVING_POOL_MAX` komplett entfernt** (`magie.ts`, `OverclockFenster.tsx`, `MatrixFenster.tsx`, `Probe.tsx`, `Kampfkarte.tsx`) — Wilde Magie kannte den Deckel nie, jetzt ist auch Overclock deckellos, nur noch der Rückschlag begrenzt. **Decker-Overclock**: `Kampfkarte.tsx` pollt jetzt `matrixHot` genau wie schon `pool`/`aus` (alle 3s über `kampfApi.hotStatus`). Ist die Verbindung Hot, bekommen die vier Matrix-Fenster-Aktionen (Brute Force, Schleichen, Matrix-Navigation, Electronic Warfare) `basis`+`willenskraft` wie beim Neuroweaver — `MatrixFenster.tsx` zeigte den Overclock-Abschnitt schon immer generisch an, sobald beide Props da sind, keine Änderung dort nötig. Die zwei übrigen Cyberdeck-Fertigkeiten (Daten Verarbeiten, Kompilieren) laufen über `Probe.tsx`, die bisher explizit "kein Willenskraft-Abschnitt fürs Deck" sagte — neuer optionaler Schalter `cyberdeckOverclock` (nur aus der Kampfkarte gesetzt, im Charakterblatt immer aus) schaltet denselben Overclock-Block frei. Kalt bleibt das Deck komplett ohne Willenskraft-Mechanik, wie vorher.
+
+**Verifiziert:** `npx tsc -b` sauber, volle Backend-Suite ohne neue Fehlschläge (55 vorbestehende, unverändert — reine Frontend-Änderung). **Kein Klicktest** — bitte am Spieltisch: Decker Hot gehen, eine Matrix-Aktion antippen, Willenskraft als Bonuswürfel sehen (Deckel weg, auch bei NeuroWeaving/Overclock prüfen), bei Erfolg den Rückschlagwurf gegen die Erfolge machen. Details: `docs/wiki/concepts/neuroweaving-decking.md`, `docs/regeln-neotopia.md`.
+
 ## Bugfix: Fog of War aus zeigte trotzdem nur die Erinnerung (06.11.2026)
 
 Mark, direkt im Anschluss an den Matrix-Ping-Nebenfund (siehe Eintrag unten): „repariere das bitte mit“. Ursache: `kampf/routes.py::_fog_an()` las die Kampagnen-Einstellung `fogOfWar` korrekt, wurde aber nirgends aufgerufen — `_karte_fuer` filterte für Spieler IMMER über die Erinnerungs-Logik (`ansicht()`), unabhängig vom Schalterstand.

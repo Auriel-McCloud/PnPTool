@@ -15,7 +15,6 @@ import { OverclockFenster } from "./OverclockFenster";
 import { MatrixHotKnopf } from "./HotBleibenPopup";
 import { kampfApi } from "./api";
 import { WillenskraftFrage } from "../traits/WillenskraftFrage";
-import { NEUROWEAVING_POOL_MAX } from "../traits/magie";
 import { magieBegriff } from "../traits/magieBegriffe";
 import "./kampfkarte.css";
 
@@ -169,6 +168,10 @@ export function Kampfkarte({
   const [kampfModus, setKampfModus] = useState<"kampf" | "cyberkampf">("kampf");
   const [aus, setAus] = useState<{ zielId: string; art: string; runden: number }[]>([]);
   const [pool, setPool] = useState<{ ice: number; iceMax: number } | null>(null);
+  // Matrix-Hot des eigenen Decks (06.11.2026): gepollt wie `pool`/`aus` —
+  // nötig, um Overclock (Willenskraft als Bonus aufs Deck) nur dann
+  // anzubieten, wenn die Verbindung gerade wirklich heiß ist.
+  const [matrixHot, setMatrixHot] = useState(false);
   // Ein laufender Bogen-Ladevorgang (Klick, Deck-Sperre) zählt höher.
   // Der Gesundheits-Takt darf den nicht mit einem älteren Stand überschreiben.
   const bogenGen = useRef(0);
@@ -209,6 +212,12 @@ export function Kampfkarte({
     }
     async function hol() {
       void gesundheit();
+      try {
+        const hs = await kampfApi.hotStatus(campaignId, personId);
+        if (!weg) setMatrixHot(hs.matrixHot);
+      } catch {
+        if (!weg) setMatrixHot(false);
+      }
       try {
         const stand = await kampfApi.matrixAus(campaignId, personId);
         if (weg) return;
@@ -538,12 +547,23 @@ export function Kampfkarte({
                       // NICHT der rohe Deck-Bonus allein (siehe Probe.tsx::
                       // CYBERDECK_PARTNER_FERTIGKEIT, Charakterblatt.tsx).
                       wert={w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix")}
-                      hinweis="Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
+                      hinweis={
+                        matrixHot
+                          ? `Cyberdeck-Aktion + Matrix. Hot: Willenskraft als Overclock-Bonus möglich — noch ${uebrigeWillenskraft} übrig.`
+                          : "Cyberdeck-Aktion + Matrix. Antippen für die Würfelrechnung."
+                      }
                       wuerfel
                       onKlick={() => {
-                        const pool = w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix");
-                        if (MATRIX_AKTION.has(name) && !bogen.person.istKI) setMatrix({ name, pool });
-                        else setProbe({ name, wert: w, kategorie: "Cyberdeck" });
+                        const basis = w + wert(bogen, "Matrix") + ausruestungsBonus(bogen, "Matrix");
+                        if (MATRIX_AKTION.has(name) && !bogen.person.istKI) {
+                          if (matrixHot) {
+                            setMatrix({ name, pool: basis, basis, willenskraft: uebrigeWillenskraft });
+                          } else {
+                            setMatrix({ name, pool: basis });
+                          }
+                        } else {
+                          setProbe({ name, wert: w, kategorie: "Cyberdeck" });
+                        }
                       }}
                     />
                   ))}
@@ -563,12 +583,12 @@ export function Kampfkarte({
                         <Zahl
                           key={t.id}
                           titel={t.name}
-                          wert={Math.min(NEUROWEAVING_POOL_MAX, wert(bogen, "NeuroWeaving") + f)}
-                          hinweis={`NeuroWeaving + Fertigkeit, höchstens ${NEUROWEAVING_POOL_MAX}. Antippen für Willenskraft — noch ${uebrigeWillenskraft} übrig.`}
+                          wert={wert(bogen, "NeuroWeaving") + f}
+                          hinweis={`NeuroWeaving + Fertigkeit — Antippen für Willenskraft (Overclock), noch ${uebrigeWillenskraft} übrig.`}
                           wuerfel
                           onKlick={() => {
                             const basis = wert(bogen, "NeuroWeaving") + f;
-                            const pool = Math.min(NEUROWEAVING_POOL_MAX, basis);
+                            const pool = basis;
                             if (MATRIX_AKTION.has(t.name) && !bogen.person.istKI) {
                               setMatrix({ name: t.name, pool, basis, willenskraft: uebrigeWillenskraft });
                             } else setProbe({ name: t.name, wert: f, kategorie: "NeuroWeaving" });
@@ -853,6 +873,7 @@ export function Kampfkarte({
         ausruestungsBoni={bogen.ausruestungsBoni}
         magieFlavor={u.magieFlavor}
         campaignId={campaignId}
+        cyberdeckOverclock={matrixHot}
         onSchliessen={() => setProbe(null)}
       />
 

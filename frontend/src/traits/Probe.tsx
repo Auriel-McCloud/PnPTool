@@ -4,7 +4,7 @@ import { WuerfelZehn } from "./WuerfelZehn";
 import type { TraitDef } from "./api";
 import type { Spezialisierung } from "../spezialisierungen/api";
 import { SpezialisierungVerwaltung } from "./SpezialisierungPopup";
-import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
+import { MAGIE_HINWEISE, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { schluessel, useErklaerungen } from "../regeln/erklaerungen";
 import "./probe.css";
@@ -100,6 +100,7 @@ export function Probe({
   personId,
   erfahrungVerfuegbar = 0,
   istGM = false,
+  cyberdeckOverclock = false,
   onSpezialisierungAenderung,
   onSchliessen,
 }: {
@@ -152,6 +153,11 @@ export function Probe({
   personId?: string;
   erfahrungVerfuegbar?: number;
   istGM?: boolean;
+  /** Decker im Matrix-Hot (06.11.2026, Marks Idee): Willenskraft als
+   *  Bonuswürfel aufs Cyberdeck, genau wie Overclock beim Neuroweaver —
+   *  gleicher Rückschlag. Nur die hier offene Cyberdeck-Probe betrifft das,
+   *  außerhalb vom Kampf (Charakterblatt) bleibt das Deck ohne Willenskraft. */
+  cyberdeckOverclock?: boolean;
   onSpezialisierungAenderung?: () => void | Promise<void>;
   onSchliessen: () => void;
 }) {
@@ -252,16 +258,15 @@ export function Probe({
       }),
     ),
   ];
+  const istCyberdeckOverclock = wahl.kategorie === "Cyberdeck" && cyberdeckOverclock;
   const roh =
     wahl.wert +
     (attribut?.wert ?? 0) +
-    (nurWillenskraft ? wild : 0) +
+    (nurWillenskraft || istCyberdeckOverclock ? wild : 0) +
     (deck?.wert ?? 0) +
     (spezialisierung ? 1 : 0);
-  // Der Deckel gilt nur fürs NeuroWeaving; Hexkraft allein geht bis 10 und
-  // sammelt darüber hinaus nur wilde Würfel.
-  const gedeckelt = Boolean(partnerKategorie) && roh > NEUROWEAVING_POOL_MAX;
-  const pool = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
+  // Kein Deckel mehr (Mark, 06.11.2026): der Rückschlag begrenzt schon selbst.
+  const pool = roh;
   // Häretiker-Flavor: übersetzt "Hexkraft"/Sphärennamen/"Wilde Magie", sonst
   // unverändert. Zentrale Stelle statt an jeder Textausgabe einzeln.
   const wahlName = magieBegriff(magieFlavor, wahl.name);
@@ -403,7 +408,7 @@ export function Probe({
                     >
                       <span className="pr-attribut-name">{t.name}</span>
                       <span className="pr-attribut-summe">
-                        {Math.min(NEUROWEAVING_POOL_MAX, wahl.wert + wert + wild)}
+                        {wahl.wert + wert + wild}
                       </span>
                     </button>
                   );
@@ -419,7 +424,6 @@ export function Probe({
             {wahlName} {wahl.wert}
             {attribut && ` + ${attribut.name} ${attribut.wert}`}
             {wild > 0 && ` + ${wild} aus Willenskraft`}
-            {gedeckelt && ` — gedeckelt auf ${NEUROWEAVING_POOL_MAX}`}
           </p>
 
           {willenskraft > 0 ? (
@@ -464,9 +468,11 @@ export function Probe({
   // --- Cyberdeck: fix mit Matrix kombiniert, keine Auswahl nötig ---------
   // Eigener, schlanker Zweig statt des generischen Fertigkeit+Attribut-Flows
   // unten: dort würde "Womit kombinierst du?" gefragt, obwohl es (wie bei
-  // NeuroWeaving) nur einen echten Partner gibt. Kein Willenskraft-/
-  // Overclock-Abschnitt — das ist NeuroWeaving-exklusiv, ein Decker ohne
-  // diesen Weg hat keine Willenskraft-Mechanik an seinem Deck.
+  // NeuroWeaving) nur einen echten Partner gibt. Willenskraft-/Overclock-
+  // Abschnitt nur, wenn `cyberdeckOverclock` gesetzt ist — das kommt von der
+  // Kampfkarte, wenn der Decker gerade Matrix-Hot ist (06.11.2026, Marks
+  // Idee: derselbe Overclock wie beim Neuroweaver, gleicher Rückschlag).
+  // Außerhalb vom Kampf (Charakterblatt) bleibt das Deck ohne Willenskraft.
   if (wahl.kategorie === "Cyberdeck") {
     return (
       <Fenster
@@ -483,10 +489,36 @@ export function Probe({
         <p className="pr-rechnung">
           {wahlName} {wahl.wert}
           {attribut && attribut.wert > 0 && ` + ${attribut.name} ${attribut.wert}`}
+          {istCyberdeckOverclock && wild > 0 && ` + ${wild} aus Willenskraft`}
         </p>
         <p className="pr-regel">
           <strong>1–5</strong> Misserfolg · <strong>6–10</strong> Erfolg. Zwei Zehner zählen wie vier Erfolge.
         </p>
+        {istCyberdeckOverclock &&
+          (willenskraft > 0 ? (
+            <section className="pr-wild">
+              <h3>Overclock</h3>
+              <p className="pr-regel">{MAGIE_HINWEISE.overclock}</p>
+              <div className="pr-wild-reihe">
+                <button type="button" onClick={() => setWild((w) => Math.max(0, w - 1))} disabled={wild === 0}>
+                  −
+                </button>
+                <span className="pr-wild-zahl">
+                  {wild} <em>von {willenskraft}</em>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setWild((w) => Math.min(willenskraft, w + 1))}
+                  disabled={wild >= willenskraft}
+                >
+                  +
+                </button>
+              </div>
+              {wild > 0 && <p className="pr-warnung">{MAGIE_HINWEISE.overclockRueckstoss}</p>}
+            </section>
+          ) : (
+            <p className="pr-regel">Ohne Willenskraft kein Overclock.</p>
+          ))}
         {beschreibungsBlock(wahl.name, "Cyberdeck")}
       </Fenster>
     );

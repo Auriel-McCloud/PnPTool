@@ -1,7 +1,7 @@
 ---
 title: NeuroWeaving und Decking
 created: 2026-09-18
-updated: 2026-11-05
+updated: 2026-11-06
 type: konzept
 tags: [neuroweaving, versionsgeschichte, widerspruch, geplant]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -31,19 +31,26 @@ Willenskrafteinsatz und dessen Folgen, **aber**:
   Hexkraft** (Mark, 22.09.2026). Grund: Hexkraft wird bei einem kontrollierten
   Zauber allein gewürfelt und geht deshalb bis 10 — NeuroWeaving wird aber
   **immer** mit genau einer der sechs Fertigkeiten kombiniert (Wert + Fertigkeit,
-  Pool-Deckel 12, siehe `frontend/src/traits/magie.ts::NEUROWEAVING_POOL_MAX`).
-  Bei Max 10 hätte der Grundwert allein schon den ganzen Pool füllen können —
-  die Fertigkeit wäre kosmetisch gewesen. Max 6 (wie eine normale Fertigkeit)
-  erzwingt, dass beide Werte tatsächlich kombiniert werden müssen, um auf den
-  Pool-Deckel zu kommen.
-- **Wilde Magie hat KEINEN Pool-Deckel, NeuroWeaving schon** — kein
-  Widerspruch, sondern zwei verschiedene Ausgangslagen (Mark, 22.09.2026
-  nachgefragt): Hexkraft trägt die Last allein (ein Wert bis 10 + beliebig
-  viele wilde Würfel obendrauf), NeuroWeaving kombiniert zwei Werte (Grundwert
-  + Fertigkeit), die ohne Deckel linear bis 12 (6+6) explodieren würden. Wilde
-  Magie hat dafür ihre eigene Bremse: das Rückstoß-Risiko (Schaden, wenn die
-  Erfolge die Willenskraft übersteigen) — NeuroWeaving/Overclock kennt dasselbe
-  Risiko, aber eben zusätzlich den Pool-Deckel.
+  macht ohne Overclock natürlich höchstens 6+6=12). Bei Max 10 hätte der
+  Grundwert allein schon den ganzen Pool füllen können — die Fertigkeit wäre
+  kosmetisch gewesen. Max 6 (wie eine normale Fertigkeit) erzwingt, dass
+  beide Werte tatsächlich kombiniert werden müssen.
+- **Kein Pool-Deckel mehr bei Overclock (Mark, 06.11.2026).** Bis dahin lag
+  bei 12 ein harter Deckel (`NEUROWEAVING_POOL_MAX`, seit 22.09.2026 — davor
+  10). Jetzt gilt für Wilde Magie UND Overclock dieselbe Bremse: das
+  Rückstoß-Risiko (Willenskraftwurf gegen die Erfolge, Rest als
+  Schlagschaden) — wer zu weit geht, schaltet sich im schlimmsten Fall selbst
+  aus. Genau das will Mark zulassen, bis zum Spieler, der sich für sein Team
+  aufopfert; ein zusätzlicher harter Deckel nahm dem die Spitze, ohne einen
+  zweiten Zweck zu erfüllen.
+- **Overclock gilt seit 06.11.2026 auch für den Decker im Matrix-Hot**
+  (Marks Idee: dieselbe Mechanik wie beim Neuroweaver, auf den eigenen
+  Matrix-Pool statt auf NeuroWeaving). Nur während die Verbindung Hot ist —
+  kalt hat der Decker keine Willenskraft-Mechanik am Deck, genau wie vorher.
+  Gleicher Name „Overclock“, gleicher Text, gleicher Rückschlag. Betrifft
+  alle sechs Cyberdeck-Fertigkeiten, nicht nur die vier mit eigenem
+  Matrix-Fenster — `Probe.tsx`s Cyberdeck-Zweig bekam dafür einen eigenen
+  `cyberdeckOverclock`-Schalter.
 
 **Cyberwall/I.C.E.** wird für Decker (Hacker) mit Geräten benötigt. Decking
 nutzt i. d. R. Intelligenz + Matrix zum Hacken; Cyberdeck-Fertigkeiten
@@ -185,6 +192,23 @@ Roboter.
   Regler sitzen in den Matrix-Fenstern von Brute Force, Schleichen,
   Matrix-Navigation und Electronic Warfare. Decker ohne den Weg haben das nicht.
   `OverclockFenster.tsx`, `Kampfkarte.tsx`, `MatrixFenster.tsx`.
+- **06.11.2026 — Pool-Deckel bei Overclock gestrichen, Decker bekommt
+  Overclock im Matrix-Hot.** Marks Idee: wenn Deckel schon beim Rückschlag
+  reinhauen können, nimmt der zusätzliche Pool-Deckel (12) den Momenten die
+  Spitze, in denen sich jemand fürs Team opfert — also weg, für Wilde Magie
+  UND Overclock gleichermaßen (`NEUROWEAVING_POOL_MAX` entfernt aus
+  `magie.ts`, `OverclockFenster.tsx`, `MatrixFenster.tsx`, `Probe.tsx`,
+  `Kampfkarte.tsx`). Zweiter Teil: ein Decker, der gerade Matrix-Hot ist, darf
+  jetzt genau wie ein Neuroweaver Willenskraft auf seinen Matrix-Pool legen —
+  gleicher Name „Overclock“, gleicher Text, gleicher Rückschlag
+  (Willenskraftwurf gegen die Erfolge, Rest als Schlagschaden). Kalt bleibt
+  das Deck ohne Willenskraft-Mechanik, wie vorher. `Kampfkarte.tsx` pollt dafür
+  `matrixHot` genau wie schon `pool`/`aus`; die vier Matrix-Fenster-Aktionen
+  bekommen `basis`+`willenskraft` wie beim Neuroweaver, die zwei übrigen
+  (Daten Verarbeiten, Kompilieren) laufen über `Probe.tsx`s neuen
+  `cyberdeckOverclock`-Schalter. **Kein Klicktest** — bitte am Spieltisch:
+  Decker Hot gehen, Matrix-Aktion antippen, Willenskraft als Bonus sehen und
+  bei Erfolg den Rückschlagwurf gegen die Erfolge machen.
 
 ## Noch nicht gebaut: temporäres Deaktivieren (teilweise umgesetzt)
 

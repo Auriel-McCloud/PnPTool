@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
-import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX } from "../traits/magie";
+import { MAGIE_HINWEISE } from "../traits/magie";
 import { kampfApi, type MatrixTreffer, type MatrixZeile } from "./api";
 import "./matrix.css";
 import "../traits/probe.css";
@@ -54,9 +54,8 @@ export function MatrixFenster({
   const verbraucht = Object.values(wahl).reduce((s, n) => s + n, 0);
   const frei = punkte - verbraucht;
   const overclock = willenskraft != null && basis != null;
-  const roh = overclock ? basis + wild : pool;
-  const gedeckelt = overclock && roh > NEUROWEAVING_POOL_MAX;
-  const anzeige = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
+  // Kein Deckel mehr (Mark, 06.11.2026): der Rückschlag begrenzt schon selbst.
+  const anzeige = overclock ? basis + wild : pool;
 
   async function senden(navErfolg?: boolean) {
     const n = navErfolg === undefined ? Number(erfolge) : navErfolg ? 1 : 0;
@@ -171,7 +170,6 @@ export function MatrixFenster({
             <p className="pr-rechnung">
               Pool {basis ?? 0}
               {wild > 0 && ` + ${wild} aus Willenskraft`}
-              {gedeckelt && ` — gedeckelt auf ${NEUROWEAVING_POOL_MAX}`}
             </p>
             {willenskraft > 0 ? (
               <section className="pr-wild">

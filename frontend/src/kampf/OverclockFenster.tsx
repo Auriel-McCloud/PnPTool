@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
-import { MAGIE_HINWEISE, NEUROWEAVING_POOL_MAX } from "../traits/magie";
+import { MAGIE_HINWEISE } from "../traits/magie";
 import "../traits/probe.css";
 
 const MATRIX_AKTION = new Set(["Brute Force", "Schleichen", "Matrix-Navigation", "Electronic Warfare"]);
@@ -37,9 +37,8 @@ export function OverclockFenster({
   }, [offen]);
 
   const gewaehlt = fertigkeiten.find((f) => f.name === skill) ?? null;
-  const roh = gewaehlt ? grundwert + gewaehlt.wert + wild : 0;
-  const gedeckelt = Boolean(gewaehlt) && roh > NEUROWEAVING_POOL_MAX;
-  const pool = gedeckelt ? NEUROWEAVING_POOL_MAX : roh;
+  // Kein Deckel mehr (Mark, 06.11.2026): der Rückschlag begrenzt schon selbst.
+  const pool = gewaehlt ? grundwert + gewaehlt.wert + wild : 0;
 
   return (
     <Fenster
@@ -57,7 +56,7 @@ export function OverclockFenster({
         {gewaehlt
           ? `NeuroWeaving ${grundwert} + ${gewaehlt.name} ${gewaehlt.wert}${
               wild > 0 ? ` + ${wild} aus Willenskraft` : ""
-            }${gedeckelt ? ` — gedeckelt auf ${NEUROWEAVING_POOL_MAX}` : ""}`
+            }`
           : "Wähle eine Aktion. Overclock legt Willenskraft als Bonuswürfel drauf."}
       </p>
 
@@ -91,7 +90,7 @@ export function OverclockFenster({
           Aktion
         </h3>
         {fertigkeiten.map((f) => {
-          const summe = Math.min(NEUROWEAVING_POOL_MAX, grundwert + f.wert + wild);
+          const summe = grundwert + f.wert + wild;
           const aktiv = skill === f.name;
           return (
             <button

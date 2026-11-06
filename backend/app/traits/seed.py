@@ -347,7 +347,9 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     #
     # Max 6 statt 10 (Mark, 22.09.2026): anders als Hexkraft, das allein bis
     # 10 geht, wird der NeuroWeaving-Wert **immer** mit einer Fertigkeit
-    # kombiniert (Pool-Deckel NEUROWEAVING_POOL_MAX=10 in traits/magie.ts).
+    # kombiniert (macht ohne Overclock natürlich höchstens 6+6=12; ein
+    # eigener Pool-Deckel existiert seit 06.11.2026 nicht mehr, siehe
+    # frontend/src/traits/magie.ts).
     # Bei Max 10 hätte der Wert allein schon den ganzen Pool füllen können —
     # die Fertigkeit wäre kosmetisch gewesen. Max 6 wie eine normale
     # Fertigkeit erzwingt echtes Kombinieren beider Werte.

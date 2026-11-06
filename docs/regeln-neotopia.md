@@ -72,7 +72,8 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - **Aber:** die NeuroWeaving-Fähigkeiten **geben Bonuswürfel** (anders als Sphären) und wirken nicht als Begrenzung.
 - Ein Neuroweaver darf NeuroWeaving-Fertigkeiten auch nutzen, in denen er keine Punkte hat.
 - Seine Verteidigung bestimmt sich über die Willenskraft.
-- Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren, Electronic Warfare, Matrix-Navigation (letztere zwei seit 22.09.2026, Erweiterung auf 6 Skills — siehe `docs/wiki/concepts/neuroweaving-decking.md`). Der Grundwert (NeuroWeaving-Wert) geht nur bis 6 (nicht 10 wie Hexkraft), weil er immer mit einer Fertigkeit kombiniert wird — der kombinierte Pool ist bei 12 gedeckelt (`frontend/src/traits/magie.ts::NEUROWEAVING_POOL_MAX`).
+- Fähigkeiten: Brute Force, Schleichen, Daten Verarbeiten, Kompilieren, Electronic Warfare, Matrix-Navigation (letztere zwei seit 22.09.2026, Erweiterung auf 6 Skills — siehe `docs/wiki/concepts/neuroweaving-decking.md`). Der Grundwert (NeuroWeaving-Wert) geht nur bis 6 (nicht 10 wie Hexkraft), weil er immer mit einer Fertigkeit kombiniert wird. **Overclock hat seit 06.11.2026 keinen Pool-Deckel mehr** (vorher 12) — der Rückschlag begrenzt von allein, siehe unten.
+- **Overclock gilt seit 06.11.2026 auch für den Decker im Matrix-Hot** (Marks Idee): dieselbe Mechanik wie beim Neuroweaver, nur auf den Matrix-Pool statt auf NeuroWeaving — Willenskraft als Bonuswürfel, vorher Zielwert ansagen, gleicher Rückschlag. Nur während die Verbindung Hot ist; kalt hat der Decker keine Willenskraft-Mechanik am Deck.
 
 ## Schadensarten
 
