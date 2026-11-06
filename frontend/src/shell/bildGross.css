@@ -1,14 +1,33 @@
-/* Bild-Großansicht-Popup (BildGross.tsx) */
+/* Bild-Großansicht-Popup (BildGross.tsx)
+   Klassen bewusst nicht `.bg-bild` — die gehört den Begleitern
+   (object-fit: cover, max-height 220px) und würde hochformatige
+   Shop-Bilder oben/unten abschneiden. */
 
-.bg-bild-rahmen {
+.bild-gross-rahmen {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  min-height: 0;
 }
 
-.bg-bild {
+.bild-gross {
+  display: block;
+  width: auto;
+  height: auto;
   max-width: 100%;
-  max-height: min(70svh, 760px);
+  /* Fenster-Kopf + Griff + Polster abziehen, damit das Bild in der
+     Schale bleibt statt oben/unten wegzuklappen. */
+  max-height: min(calc(92svh - 6.5rem), 880px);
   object-fit: contain;
+  object-position: center;
   border-radius: var(--radius);
+}
+
+.fn-fenster:has(.bild-gross-rahmen):not(.fn-fenster-maximiert) {
+  max-height: min(92svh, 980px);
+}
+
+.fn-inhalt:has(.bild-gross-rahmen) {
+  overflow: hidden;
 }

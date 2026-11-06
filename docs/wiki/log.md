@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Shop-Bild-Großansicht zeigt das ganze Bild
+
+Hochformatige Warenbilder im Großansicht-Popup wurden oben/unten
+abgeschnitten: Klasse `.bg-bild` gehörte den Begleitern (`cover`, 220px).
+Jetzt `.bild-gross` mit `object-fit: contain`, skaliert in die Schale.
+Normaler Shop hat denselben Klick im Kauf-Fenster.
+
 ## [2026-11-05] gebaut | I.C.E.-Upgrade auch an der Riggerkonsole
 
 Montiert zählt der Bonus wie beim Cyberdeck auf das I.C.E. der Person.

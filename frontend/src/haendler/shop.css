@@ -571,6 +571,39 @@
 
 /* --- Kauf-/Verhandel-Popup (ShopWare) ----------------------------------- */
 
+.shop-ware-detail-bild {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  cursor: zoom-in;
+  background: var(--grund);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.shop-ware-detail-bild img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(42svh, 320px);
+  object-fit: contain;
+  object-position: center;
+}
+
+.shop-ware-detail-bild:hover img,
+.shop-ware-detail-bild:focus-visible img {
+  filter: brightness(1.12);
+}
+
+.shop-ware-detail-bild:focus-visible {
+  outline: 2px solid var(--bereich-farbe, var(--neon));
+  outline-offset: 2px;
+}
+
 .shop-ware-hinweis {
   margin: 0 0 10px;
   font-size: 13px;

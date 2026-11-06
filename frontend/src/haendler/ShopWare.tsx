@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { SortimentEintrag } from "./api";
+import { BildGross } from "../shell/BildGross";
 import { Fenster } from "../shell/Fenster";
 
 /**
@@ -35,6 +36,7 @@ export function ShopWare({
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [verhandelGesendet, setVerhandelGesendet] = useState(false);
+  const [bildGrossOffen, setBildGrossOffen] = useState(false);
 
   const hatRabatt = ware.rabattProzent > 0;
   const effektiverPreis = hatRabatt
@@ -43,6 +45,7 @@ export function ShopWare({
 
   function schliessen() {
     setOffen(false);
+    setBildGrossOffen(false);
     setVerhandelModus(false);
     setVerhandelGesendet(false);
     setVerhandelPreis("");
@@ -106,7 +109,20 @@ export function ShopWare({
             Angebot über {Number(verhandelPreis).toLocaleString("de-AT")}¥ an die Spielleitung geschickt — du
             bekommst Bescheid, sobald sie antwortet.
           </p>
-        ) : verhandelModus ? (
+        ) : (
+          <>
+            {ware.bildUrl && (
+              <button
+                type="button"
+                className="shop-ware-detail-bild"
+                onClick={() => setBildGrossOffen(true)}
+                title="Bild vergrößern"
+                aria-label="Bild vergrößern"
+              >
+                <img src={ware.bildUrl} alt="" />
+              </button>
+            )}
+            {verhandelModus ? (
           <div className="shop-ware-verhandel-form">
             {hatRabatt && ware.rabattHinweis && <p className="shop-ware-hinweis">{ware.rabattHinweis}</p>}
             <p className="shop-ware-hinweis">
@@ -130,7 +146,7 @@ export function ShopWare({
               </button>
             </div>
           </div>
-        ) : (
+            ) : (
           <div className="shop-ware-kauf-form">
             {hatRabatt && ware.rabattHinweis && <p className="shop-ware-hinweis">{ware.rabattHinweis}</p>}
             <p className="shop-ware-hinweis">
@@ -150,8 +166,18 @@ export function ShopWare({
               </button>
             </div>
           </div>
+            )}
+          </>
         )}
       </Fenster>
+      {ware.bildUrl && (
+        <BildGross
+          offen={bildGrossOffen}
+          bildUrl={ware.bildUrl}
+          name={ware.name}
+          onSchliessen={() => setBildGrossOffen(false)}
+        />
+      )}
     </>
   );
 }

@@ -2348,6 +2348,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (06.11.2026 — Shop-Bild-Großansicht zeigt das ganze Bild):**
+- **Was:** Klick aufs Warenbild öffnet ein Popup, das hochformatige Bilder oben/unten abschnitt. Ursache: Klasse `.bg-bild` gehörte schon den Begleitern (`object-fit: cover`, 220px). Großansicht heißt jetzt `.bild-gross`, skaliert mit `contain` in die Schale. Normaler Shop hat denselben Klick im Kauf-Fenster.
+- **Wo:** `frontend/src/shell/BildGross.tsx`, `bildGross.css`, `haendler/ShopWare.tsx`, `shop.css`.
+- **Verifiziert:** `tsc -b`. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (06.11.2026 — Credstick: Vermögen sichtbar, Felder nicht mehr vertauscht):**
 - **Was:** Drei Mark-Meldungen in einer Session behoben. (1) Übersicht-Bild lag rechts statt links — die Credstick-Buttons standen als eigenes Grid-Element VOR dem Bild-Bereich, rutschten dadurch in die schmale Grid-Spalte und schoben das Bild in die breite. (2) Spieler sehen jetzt ihr eigenes Vermögen im Aufladen-/Abheben-Popup, nicht nur den Credstick-Stand. (3) Eingabefeld (Betrag) und Anzeige (Kontostand) waren optisch vertauscht designed: die Anzeige trug den Eingabefeld-Look (Rahmen+Kasten), das echte Eingabefeld nutzte nicht existente CSS-Tokens (`--card`/`--border`/`--foreground`) und war dadurch faktisch unsichtbar/randlos.
 - **Wo:** `frontend/src/traits/CharacterSheetPanel.tsx` (Grid-Reihenfolge), `frontend/src/items/CredstickPopup.tsx` + `wegwerfen.css` (neue Klassen `.cs-stand`/`.cs-betrag`), `backend/app/items/routes.py`+`repository.py` (neuer GET-Endpoint `/credstick/vermoegen`), `frontend/src/items/api.ts`.
