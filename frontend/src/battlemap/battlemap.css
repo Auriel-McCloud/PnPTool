@@ -37,6 +37,12 @@
   width: 100%;
   height: 100%;
 }
+.bm-grid {
+  pointer-events: none;
+}
+.bm-buehne[data-modus="zeichnen"] .bm-token {
+  pointer-events: none;
+}
 .bm-hex {
   fill: transparent;
   stroke: color-mix(in srgb, var(--text) 28%, transparent);

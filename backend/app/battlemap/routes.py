@@ -79,10 +79,24 @@ async def holen(campaign_id: str, karte_id: str, viewer: Viewer = Depends(get_vi
 
 @router.patch("/{karte_id}", response_model=BattlemapResponse, dependencies=[Depends(require_campaign_gm)])
 async def aktualisieren(campaign_id: str, karte_id: str, body: BattlemapUpdate):
-    karte = await repository.aktualisieren(campaign_id, karte_id, body.model_dump())
+    daten = body.model_dump(exclude_unset=True)
+    karte = await repository.aktualisieren(campaign_id, karte_id, daten)
     if karte is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Karte nicht gefunden")
     await verteiler.rundrufen(karte_id, {"typ": "karte", "daten": karte})
+    if any(feld.startswith("spawn") for feld in daten):
+        from app.battlemap.logic import token_stand
+        from app.kampf import repository as kampf_repo
+
+        kampf = await kampf_repo.hole(campaign_id)
+        if kampf:
+            if not kampf.get("battlemapId"):
+                kampf = await kampf_repo.setze_karte(campaign_id, karte_id)
+            elif kampf.get("battlemapId") == karte_id:
+                await kampf_repo.platziere_unplatzierte(campaign_id)
+                kampf = await kampf_repo.hole(campaign_id)
+            if kampf:
+                await verteiler.rundrufen(karte_id, {"typ": "tokens", "daten": token_stand(kampf)})
     return karte
 
 

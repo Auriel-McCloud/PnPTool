@@ -125,7 +125,8 @@ Größe bleibt der Slider. Größe-Schalter auf den PC-/NPC-Kacheln zeichnet sof
 neu. Spieler schiebt eigene Drohnen und Beschwörungen (`besitzerId`).
 Token-Rundruf ist die volle Teilnehmerliste (Portrait, neu Hinzugekommene),
 nicht nur Positionen. Zugwechsel und Aufnehmen rufen mit. Kampfmodus hat
-„Karte öffnen“.
+„Karte öffnen“. Öffnen einer Karte ohne angehängten Kampf hängt sie an und
+spawnt. Grid-SVG stiehlt keine Zeichenklicks mehr.
 
 ## Siehe auch
 

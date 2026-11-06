@@ -75,7 +75,15 @@ export function BattlemapPopup({
         standUebernehmen(frisch.pfade);
       }
     });
-    kampfApi.laden(campaignId).then((k) => {
+    kampfApi.laden(campaignId).then(async (k) => {
+      if (tot) return;
+      if (istGm && k && !k.battlemapId) {
+        try {
+          k = await kampfApi.karte(campaignId, karte.id);
+        } catch {
+          /* kein Kampf oder Karte schon anders gebunden */
+        }
+      }
       if (!tot) setKampf(k);
     });
     leitung.current = verbindeBattlemapLive(

@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap: Zeichnen + Spawn ohne Kartenwahl
+
+Grid-SVG blockierte den Stift. Kampf ohne `battlemapId` spawnte nicht —
+Öffnen der Karte hängt sie an. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Critter als Vorlage, Kopieren mit Bild/Bogen/Gegenständen
 
 `Person.istVorlage` markiert einen Critter als Muster. Kopieren übernimmt
