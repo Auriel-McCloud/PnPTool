@@ -1717,9 +1717,30 @@ export function GegenstandRow({
                       Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
                       Schadensart, die ersetzt ihn).
                     </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em", marginTop: 6 }}>
+                      Passt an
+                      <select
+                        value={augmentPasstAnLesen(augmentWaffentyp, augmentZielTyp)}
+                        onChange={(e) => {
+                          const ziel = augmentPasstAnSchreiben(e.target.value);
+                          setAugmentWaffentyp(ziel.augmentWaffentyp);
+                          setAugmentZielTyp(ziel.augmentZielTyp);
+                        }}
+                      >
+                        <option value="">alles (auch Drohne/Fahrzeug)</option>
+                        <option value="Waffe">nur Waffen</option>
+                        <option value="Schusswaffen">nur Schusswaffen</option>
+                        <option value="Nahkampf">nur Nahkampf</option>
+                        <option value="Handgemenge">nur Handgemenge</option>
+                        <option value="Rüstung">nur Rüstung</option>
+                        <option value="Cyberdeck">nur Cyberdeck</option>
+                        <option value="Riggerkonsole">nur Riggerkonsole</option>
+                        <option value="Commlink">nur Commlink</option>
+                      </select>
+                    </label>
                     <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                        Schaden
+                        Schadensupgrade
                         <input
                           type="number"
                           value={schaden}
@@ -2227,29 +2248,9 @@ export function GegenstandRow({
                         <input type="checkbox" checked={istAugment} onChange={(e) => setIstAugment(e.target.checked)} />{" "}
                         Ist selbst ein Upgrade
                       </label>
-                      {(istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama") && (
-                        <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
-                          Passt an
-                          <select
-                            value={augmentPasstAnLesen(augmentWaffentyp, augmentZielTyp)}
-                            onChange={(e) => {
-                              const ziel = augmentPasstAnSchreiben(e.target.value);
-                              setAugmentWaffentyp(ziel.augmentWaffentyp);
-                              setAugmentZielTyp(ziel.augmentZielTyp);
-                            }}
-                          >
-                            <option value="">alles (auch Drohne/Fahrzeug)</option>
-                            <option value="Waffe">nur Waffen</option>
-                            <option value="Schusswaffen">nur Schusswaffen</option>
-                            <option value="Nahkampf">nur Nahkampf</option>
-                            <option value="Handgemenge">nur Handgemenge</option>
-                            <option value="Rüstung">nur Rüstung</option>
-                            <option value="Cyberdeck">nur Cyberdeck</option>
-                            <option value="Riggerkonsole">nur Riggerkonsole</option>
-                            <option value="Commlink">nur Commlink</option>
-                          </select>
-                        </label>
-                      )}
+                      {/* "Passt an" sitzt seit 06.11.2026 bei Umbauen (Mark: gehört
+                          zur Wirkung des Augments, nicht zum Besitz) — hier nur noch
+                          die reine Kategorisierungs-Checkbox. */}
                     </div>
                     <label style={{ fontSize: "0.9em" }}>
                       <input
