@@ -1032,15 +1032,6 @@ export function GegenstandRow({
         <div className="pcd-bereich">
           {ansicht === "uebersicht" && (
             <div className="pcd-uebersicht">
-              {typ === "Credstick" && (
-                <CredstickAktionen
-                  item={{ ...item, geladenesGeld: item.geladenesGeld ?? 0 }}
-                  campaignId={campaignId}
-                  istSpielleitung={istGm}
-                  ohneBesitzer={!personId}
-                  onErledigt={() => onChanged()}
-                />
-              )}
               <div className="pcd-bild-bereich">
                 {item.bildUrl ? (
                   <img
@@ -1109,6 +1100,15 @@ export function GegenstandRow({
               </div>
 
               <div className="pcd-schnellzugriff">
+                {typ === "Credstick" && (
+                  <CredstickAktionen
+                    item={{ ...item, geladenesGeld: item.geladenesGeld ?? 0 }}
+                    campaignId={campaignId}
+                    istSpielleitung={istGm}
+                    ohneBesitzer={!personId}
+                    onErledigt={() => onChanged()}
+                  />
+                )}
                 {item.istVorlage && (
                   <p style={{ fontSize: "0.85em", color: "var(--text-leise)", fontStyle: "italic", margin: "0 0 8px" }}>
                     Vorlage — hat keinen Besitzer
