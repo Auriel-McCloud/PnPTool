@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-06 | Seiten: 39
+> Zuletzt aktualisiert: 2026-11-06 | Seiten: 39 | Battlemap: Matrix-Ping/Hot-Live-Sicht ergänzt
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -63,7 +63,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/hintergrund-baukasten-feature]] | **Teilweise (10.10.2026):** KI durch `pruefe()`; narrativer SL-Katalog (Seed ohne Mentor/Kontakte); Mentor-Pipeline/Blatt-Button noch offen |
 | [[entities/spieler-lexikon]] | Burgermenü „Lexikon" (Welt/Fauna/Flora/Objekte), entschieden-nicht-umgesetzt (09.10.): automatische `ENTDECKT`-Kante per Erreichbarkeits-Hook (max. 7 Hops, bricht an SL-geheimen Kanten ab) schaltet nur Existenz frei, `sichtbarkeit` weiter die Beschreibung; `zeigeInGraph`→`storyRelevant` für MacGuffin-Objekte; Favoriten, Notizen pro Objekt |
 | [[entities/ring-raetsel]] | Burgermenü „Rätsel“: Modus Leicht (acht Räume) oder Mittel (zwei Ebenen nebeneinander, abwechselnd Ebene/Drehen), freie SL-Markierung pro Feld, Lage der Gruppe extra, Spieler sehen nach Freigabe nur zu ohne Lösungshinweise (03.11.) |
-| [[entities/battlemap]] | Hex-Kampfkarte. Party-Hex blau, Gegner magenta. Raster füllt Ecken. Fog of War optional in den Einstellungen, Standard aus (06.11.) |
+| [[entities/battlemap]] | Hex-Kampfkarte. Party-Hex blau, Gegner magenta. Raster füllt Ecken. Fog of War optional in den Einstellungen, Standard aus (06.11.2026). Matrix-Navigation pingt die Kartenerinnerung, Hot gibt dem Decker Live-Sicht wie die SL (06.11.2026) |
 
 ## Vergleiche
 

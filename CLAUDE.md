@@ -2,6 +2,18 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: Matrix-Ping und Hot-Live-Sicht für den Decker (06.11.2026)
+
+Mark: Matrix-Navigation-Erfolg soll die Kartenpositionen pingen (wie kurz hinsehen, egal in welche Richtung), bei Matrix-Hot sieht der Decker dauerhaft live wie die SL und hilft so als Operator seinem Team.
+
+Entschieden per `clarify`: normaler Ping aktualisiert nur die eigene Erinnerung des Deckers (Party teilt nicht), einmaliger Schnappschuss (was hinter ihm liegt bleibt `veraltet`, nur mit frischerer Position), Versteckt schlägt auch den Ping. Hot-Erfolg schaltet Live-Sicht wie die SL frei (echte Namen, kein Alias-Filter), hält für den Rest des Kampfes solange Hot bleibt, rein auf dem eigenen Bildschirm — Team-Hilfe ist Ansage am Tisch, keine geteilte Sicht fürs Tool.
+
+Neu: `battlemap/sicht.py::ping()` (reine Funktion, wie `start_speicher` aber für ein einzelnes Auge, Kegel ignoriert, Wände/Versteckt bleiben). `kampf/matrix_routes.py::navigation()` ruft das nach einem Erfolg auf und stößt sofort einen WebSocket-Rundruf an (`_tokens_senden`). Hot-Erfolg merkt sich `matrixStand.matrixLiveSicht`; `kampf/routes.py::_karte_fuer` liefert diesen Personen die volle `karten_liste()` statt der gefilterten `ansicht()`, geprüft live gegen `matrixHot`. `MatrixFenster.tsx` zeigt die passende Rückmeldung. Details: `docs/wiki/entities/battlemap.md`.
+
+**Verifiziert:** `tests/test_battlemap_sicht.py::TestMatrixPing` (5 neue Fälle), volle Testsuite ohne neue Fehlschläge (55 vorbestehende, unverändert), `npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch: Decker mit Neurolink+Deck Matrix-Navigation würfeln, einmal normal (Karte aktualisiert sich), einmal Hot (Karte bleibt komplett live mit echten Namen).
+
+**Gefundener Seiteneffekt, nicht hier behoben:** `kampf/routes.py::_fog_an()` liest die Kampagnen-Einstellung `fogOfWar`, wird aber nirgends aufgerufen — die Erinnerungs-Filterung läuft für Spieler unabhängig vom Schalterstand immer. „Fog of War aus = alle sehen die Wahrheit“ ist dadurch vermutlich noch nicht wirksam. Separat prüfen.
+
 ## Bugfix: Battlemap-Token verschob stattdessen das Bild, nicht die Kachel (06.11.2026)
 
 Mark: beim Ziehen einer Figur auf der Battlemap bewegte sich oft nur das Portrait-Bild im Token, nicht der Token selbst. Ursache: `<img>`-Tags sind in Browsern standardmäßig nativ per HTML5-Drag ziehbar — der Pointerdown/-move auf dem Bild im `.bm-token`-Button wurde vom nativen Bild-Drag (Geisterbild folgt dem Cursor) gekapert, statt die eigentliche Pointer-Capture-Logik (`BattlemapPopup.tsx`, `onPointerDown`/`onPointerMove`/`onPointerUp`) auszulösen.

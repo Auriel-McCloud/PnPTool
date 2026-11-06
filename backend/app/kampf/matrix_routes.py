@@ -101,12 +101,63 @@ async def uebersicht(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     return {"runde": runde, "teilnehmer": zeilen}
 
 
+async def _matrix_ping(campaign_id: str, kampf: dict, ich: str, stand: dict) -> tuple[bool, bool]:
+    """Matrix-Navigation-Erfolg pingt die eigene Kartenerinnerung auf den
+    aktuellen Stand — unabhängig von der Blickrichtung, wie ein einmaliger
+    Rundumsicht-Blick (Mark, 06.11.2026, siehe
+    docs/wiki/entities/battlemap.md). Versteckte und Wände bleiben wie beim
+    normalen Hinsehen (`battlemap/sicht.py::ping`).
+
+    Ist der Decker dabei Matrix-Hot, merkt sich der Kampf das in
+    `stand["matrixLiveSicht"]` — ab da sieht er die Karte wie die SL, für den
+    Rest des Kampfes, solange Hot bleibt (geprüft live gegen `matrixHot` beim
+    Lesen, kein eigener Ablauf-Timer nötig).
+
+    Gibt (gepingt, liveSicht) zurück. Ohne Karte oder eigenen Token auf ihr
+    passiert nichts — kein Fehler, nur kein Ping.
+    """
+    karte_id = kampf.get("battlemapId")
+    if not karte_id:
+        return False, False
+    from app.battlemap.logic import karten_liste
+    from app.battlemap.sicht import ping as sicht_ping
+    from app.battlemap.sicht import start_speicher
+
+    teilnehmer = karten_liste(kampf)
+    mein_token = next(
+        (t for t in teilnehmer if t.get("personId") == ich and not t.get("zusatzzug")),
+        None,
+    )
+    if mein_token is None or mein_token.get("hexQ") is None:
+        return False, False
+    from app.battlemap import repository as karten_repo
+
+    karte = await karten_repo.holen(campaign_id, karte_id)
+    waende = list((karte or {}).get("waende") or [])
+    speicher = kampf.get("_sichtSpeicher") or start_speicher(teilnehmer, waende)
+    speicher = sicht_ping(teilnehmer, speicher, mein_token["id"], waende)
+    await repository.setze_sicht(campaign_id, speicher)
+
+    live = False
+    hotzustand = await repository.hot_lesen(campaign_id, ich)
+    if hotzustand.get("matrixHot"):
+        erreicht = set(stand.get("matrixLiveSicht") or [])
+        erreicht.add(ich)
+        stand["matrixLiveSicht"] = sorted(erreicht)
+        live = True
+
+    from app.kampf.routes import _tokens_senden
+
+    await _tokens_senden(await repository.hole(campaign_id))
+    return True, live
+
+
 @router.post("/navigation")
 async def navigation(campaign_id: str, body: ProbeInput, viewer: Viewer = Depends(get_viewer)):
     ich = await _akteur(campaign_id, viewer)
     kampf = await _kampf_oder_404(campaign_id)
     if not matrix.navigation_trifft(body.erfolge):
-        return {"gesehen": False}
+        return {"gesehen": False, "gepingt": False, "liveSicht": False}
     stand = kampf["stand"]
     voll = await repository.hole(campaign_id)
     if voll is None:
@@ -122,8 +173,9 @@ async def navigation(campaign_id: str, body: ProbeInput, viewer: Viewer = Depend
     for gid in gegner:
         if gid not in stand["gesehen"][ich]:
             stand["gesehen"][ich].append(gid)
+    gepingt, live = await _matrix_ping(campaign_id, voll, ich, stand)
     await matrix_store.speichere(campaign_id, stand)
-    return {"gesehen": True, "anzahl": len(stand["gesehen"][ich])}
+    return {"gesehen": True, "anzahl": len(stand["gesehen"][ich]), "gepingt": gepingt, "liveSicht": live}
 
 
 @router.post("/electronic-warfare")

@@ -18,7 +18,11 @@ NAVIGATION_MIN = 1
 
 
 def leerer_stand() -> dict:
-    return {"ice": {}, "ew": {}, "gesehen": {}, "aus": [], "offen": {}}
+    # matrixLiveSicht: Person-IDs, die per erfolgreichem Matrix-Ping (siehe
+    # battlemap/sicht.py::ping) UND gleichzeitig Matrix-Hot die Live-Sicht
+    # wie die SL erreicht haben. Gilt nur so lange matrixHot noch an ist
+    # (06.11.2026, siehe docs/wiki/entities/battlemap.md).
+    return {"ice": {}, "ew": {}, "gesehen": {}, "aus": [], "offen": {}, "matrixLiveSicht": []}
 
 
 def netto(erfolge: int, ice: int) -> int:

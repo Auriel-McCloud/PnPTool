@@ -1,6 +1,6 @@
 """Letzte Sicht: Halbkreis, Gedächtnis, Versteckt, Rundumsicht."""
 
-from app.battlemap.sicht import aktualisiere, ansicht, ansicht_waende, blockiert, sektor, start_speicher, vorderkegel, zentrum
+from app.battlemap.sicht import aktualisiere, ansicht, ansicht_waende, blockiert, ping, sektor, start_speicher, vorderkegel, zentrum
 from app.campaigns.repository import EINSTELLUNGEN_DEFAULTS
 
 
@@ -180,3 +180,51 @@ class TestWaende:
         assert "b" not in speicher["a"]
         gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand)
         assert [t["id"] for t in gesehen] == ["a"]
+
+
+class TestMatrixPing:
+    """Matrix-Navigation-Erfolg: ein Auge pingt seine eigene Erinnerung auf
+    den aktuellen Stand, egal wohin es schaut (Mark, 06.11.2026)."""
+
+    def test_ping_aktualisiert_auch_hinten_als_erinnerung(self):
+        """Ping aktualisiert die Erinnerung (ALT-Position), macht aus dem
+        hinteren Halbkreis aber kein Live-Sehen — dieselbe Erinnerungslogik
+        wie beim normalen Hinsehen, nur mit frischerem Stand."""
+        a = token("a", 0, 0, blickrichtung=0)
+        hinten = token("h", -3, 0, personType="NPC")
+        speicher = start_speicher([a, hinten])
+        hinten["hexQ"] = -6
+        speicher = ping([a, hinten], speicher, "a")
+        gesehen = ansicht([a, hinten], speicher, rolle="PLAYER", person_id="a")
+        ziel = next(t for t in gesehen if t["id"] == "h")
+        assert ziel["veraltet"] is True
+        assert ziel["hexQ"] == -6
+
+    def test_ping_ist_nur_schnappschuss(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        hinten = token("h", -3, 0, personType="NPC")
+        speicher = ping([a, hinten], start_speicher([a, hinten]), "a")
+        hinten["hexQ"] = -9
+        speicher = aktualisiere([a, hinten], speicher)
+        gesehen = ansicht([a, hinten], speicher, rolle="PLAYER", person_id="a")
+        ziel = next(t for t in gesehen if t["id"] == "h")
+        assert ziel["veraltet"] is True
+        assert ziel["hexQ"] == -3
+
+    def test_ping_findet_versteckte_nicht(self):
+        a = token("a", 0, 0)
+        b = token("b", -3, 0, versteckt=True, personType="PC", personId="b")
+        speicher = ping([a, b], {}, "a")
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_ping_respektiert_waende(self):
+        vorne = token("v", 2, 0, personType="NPC")
+        a = token("a", 0, 0, blickrichtung=0)
+        wand = [_kante_osten()]
+        speicher = ping([a, vorne], {}, "a", wand)
+        assert "v" not in speicher["a"]
+
+    def test_ping_unbekanntes_auge_bleibt_unveraendert(self):
+        a = token("a", 0, 0)
+        assert ping([a], {"a": {}}, "unbekannt") == {"a": {}}

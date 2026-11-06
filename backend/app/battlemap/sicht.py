@@ -178,6 +178,40 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dic
     return {k: v for k, v in neu.items() if k in lebendig}
 
 
+def ping(
+    teilnehmer: list[dict],
+    speicher: dict | None,
+    auge_id: str,
+    waende: list[dict] | None = None,
+) -> dict:
+    """Matrix-Ping: EIN Auge aktualisiert seine Erinnerung an ALLE Ziele, egal
+    wo es hinschaut — wie ein einmaliger Rundumsicht-Blick, kein Dauerzustand.
+    Wände blockieren weiterhin, Versteckte bleiben versteckt (Mark, 06.11.2026,
+    siehe docs/wiki/entities/battlemap.md).
+
+    Einmaliger Schnappschuss: veraltet wieder normal, sobald sich jemand
+    bewegt und dieses Auge nicht erneut pingt oder hinschaut.
+    """
+    neu = {k: dict(v) for k, v in (speicher or {}).items()}
+    augen = [t for t in teilnehmer if not t.get("zusatzzug") and t.get("hexQ") is not None]
+    lebendig = {t["id"] for t in augen}
+    auge = next((a for a in augen if a["id"] == auge_id), None)
+    if auge is None:
+        return {k: v for k, v in neu.items() if k in lebendig}
+    kontrolleur = auge.get("besitzerId") or auge.get("personId")
+    ged = dict(neu.get(auge_id) or {})
+    for ziel in augen:
+        if ziel["id"] == auge_id:
+            continue
+        if ziel.get("versteckt") and not gehoert(ziel, kontrolleur):
+            continue
+        if blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+            continue
+        ged[ziel["id"]] = _schnappschuss(ziel)
+    neu[auge_id] = ged
+    return {k: v for k, v in neu.items() if k in lebendig}
+
+
 def ansicht(
     teilnehmer: list[dict],
     speicher: dict | None,

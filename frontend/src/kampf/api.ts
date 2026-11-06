@@ -246,7 +246,7 @@ export const kampfApi = {
       `${basis(cid)}/matrix/aus/${personId}`,
     ),
   matrixNavigation: (cid: string, erfolge: number) =>
-    api.post<{ gesehen: boolean }>(`${basis(cid)}/matrix/navigation`, { erfolge }),
+    api.post<{ gesehen: boolean; gepingt: boolean; liveSicht: boolean }>(`${basis(cid)}/matrix/navigation`, { erfolge }),
   matrixEw: (cid: string, erfolge: number) =>
     api.post<{ bonus: number }>(`${basis(cid)}/matrix/electronic-warfare`, { erfolge }),
   matrixTreffer: (cid: string, zielPersonId: string, erfolge: number, fertigkeit: string) =>

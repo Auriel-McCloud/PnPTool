@@ -66,7 +66,15 @@ export function MatrixFenster({
     try {
       if (fertigkeit === "Matrix-Navigation") {
         const r = await kampfApi.matrixNavigation(campaignId, n);
-        setHinweis(r.gesehen ? "Gegnerisches ICE ist für diesen Kampf sichtbar." : "Kein Erfolg, nichts gesehen.");
+        if (!r.gesehen) {
+          setHinweis("Kein Erfolg, nichts gesehen.");
+        } else if (r.liveSicht) {
+          setHinweis("Gegnerisches ICE sichtbar. Hot: du siehst die Karte live wie die SL, solange du Hot bleibst.");
+        } else if (r.gepingt) {
+          setHinweis("Gegnerisches ICE sichtbar. Ping: Kartenpositionen auf den aktuellen Stand gebracht.");
+        } else {
+          setHinweis("Gegnerisches ICE ist für diesen Kampf sichtbar.");
+        }
         const u = await kampfApi.matrix(campaignId);
         setListe(u.teilnehmer);
       } else if (fertigkeit === "Electronic Warfare") {

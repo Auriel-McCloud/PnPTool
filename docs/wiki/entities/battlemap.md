@@ -209,6 +209,59 @@ Blickrichtung nur am eigenen Zug. Gesehenes bleibt als Erinnerung (ALT, ohne Far
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 
+## Entschieden + gebaut 06.11.2026 — Matrix-Ping und Hot-Live-Sicht für den Decker
+
+Mark, nach der Idee mit Matrix-Navigation als Ping fürs Battlemap. Baut direkt
+auf der Fog-of-War-Erinnerung oben auf, kein neues System.
+
+Entschieden (per `clarify`):
+
+- **Normaler Ping (Matrix-Navigation-Erfolg, nicht Hot):** aktualisiert NUR
+  die eigene Erinnerung des Deckers auf den aktuellen Stand ALLER Ziele —
+  auch die, die gerade hinter ihm liegen. Die Party teilt das nicht, wie
+  bisher. Technisch: wie ein einmaliger Rundumsicht-Blick nur für dieses eine
+  Auge (`battlemap/sicht.py::ping`), kein Dauerzustand — was hinter ihm
+  liegt, bleibt dabei trotzdem als Erinnerung (`veraltet: true`, kein
+  Farbring), nur mit frischerer Position. Erst ein erneuter Ping oder
+  tatsächliches Hinsehen frischt wieder auf.
+- **Versteckt schlägt auch den Ping.** Wände blockieren weiterhin — der Ping
+  ist kein Durchblick, nur ein Rundumblick.
+- **Hot + Matrix-Navigation-Erfolg: Live-Sicht wie die SL**, inklusive echter
+  Namen (kein Alias-Filter). Hält für den Rest des Kampfes, solange Hot
+  bleibt — kein erneutes Pingen jede Runde nötig. Schaltet Hot ab, ist die
+  Live-Sicht sofort weg (geprüft live gegen `matrixHot`, kein Aufräumcode an
+  jeder Hot-Aus-Stelle nötig). Bleibt rein auf dem Bildschirm des Deckers;
+  dass er damit seinem Team hilft, ist Ansage am Spieltisch, keine geteilte
+  Sicht fürs Tool.
+- **Bekannte Lücke:** Hot aus und im selben Kampf wieder an zählt den alten
+  Ping-Erfolg weiter mit (kein erzwungener Neu-Ping). Seltener Randfall,
+  bewusst nicht behandelt — bei Bedarf später verschärfen.
+
+Gebaut: `battlemap/sicht.py::ping()` (reine Funktion, wie `start_speicher`
+aber für ein einzelnes Auge, Kegel ignoriert). `kampf/matrix_routes.py::
+navigation()` ruft das nach einem Erfolg für den Decker auf und pingt per
+WebSocket-Rundruf sofort (`_tokens_senden`), damit die Karte ohne
+Extra-Reload aktualisiert. Hot-Erfolg merkt sich `matrixStand.
+matrixLiveSicht` (Person-IDs); `kampf/routes.py::_karte_fuer` liefert diesen
+Personen die volle `karten_liste()` statt der gefilterten `ansicht()` —
+geprüft gegen das aktuelle `matrixHot` bei jedem Lesen. Frontend:
+`MatrixFenster.tsx` zeigt die passende Rückmeldung (nichts/ICE/Ping/Live).
+
+**Verifiziert:** `tests/test_battlemap_sicht.py::TestMatrixPing` (5 neue
+Fälle), volle Testsuite ohne neue Fehlschläge (55 vorbestehende, unverändert),
+`npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch: Decker mit
+Neurolink+Deck, Matrix-Navigation erfolgreich würfeln (einmal normal, einmal
+im Hot-Zustand), prüfen dass die eigene Karte sich aktualisiert bzw. bei Hot
+komplett live bleibt.
+
+**Gefundener Seiteneffekt, nicht Teil dieser Änderung:** die Kampagnen-
+Einstellung `fogOfWar` wird beim Umschalten zwar gespeichert und löscht die
+Erinnerung, aber `kampf/routes.py::_fog_an()` (liest die Einstellung) wird
+nirgends aufgerufen — die Erinnerungs-Filterung (`ansicht()`) läuft für
+Spieler unabhängig vom Schalterstand immer. „Fog of War aus = alle sehen die
+Wahrheit“ ist dadurch vermutlich noch nicht wirksam. Nicht im Rahmen dieser
+Änderung angefasst, da unabhängiger Fund ohne Bezug zum Ping — separat prüfen.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]
