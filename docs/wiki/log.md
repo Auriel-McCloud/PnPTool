@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] entschieden | Battlemap-Design (nicht gebaut)
+
+Whiteboard bleibt getrennt, Leinwand wird kopiert (Bild, Live-Zeichnen,
+Spieler-Mitzeichnen, skalierbares Hex-Grid). Burgermenü bereitet Karten vor,
+Kampf hängt eine an. Drop überall, Grün nur Hilfe, Spieler nur am eigenen Zug.
+Große Monster: 3 Felder im Y plus Kreis, 4-Felder-Idee ersetzt.
+Siehe [[entities/battlemap]].
+
 ## [2026-11-06] skizziert | Battlemap (Hex, Tokens aus der Initiative)
 
 Neue Seite [[entities/battlemap]]. Whiteboard nicht erweitern. Tokens am

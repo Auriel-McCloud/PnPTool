@@ -3,14 +3,14 @@ title: Battlemap
 created: 2026-11-06
 updated: 2026-11-06
 type: entität
-tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant, offen]
+tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/zeichnungen/repository.py, ../../../backend/app/kampf/repository.py, ../../api/kampf.md, ../concepts/kampf-und-initiative.md]
-status: offen
+status: entschieden-nicht-umgesetzt
 ---
 
 # Battlemap
 
-Hex-Kampfkarte. Nicht gebaut. Skizze vom 06.11.2026, Achsen offen.
+Hex-Kampfkarte. Design 06.11.2026, nicht gebaut.
 
 ## Auslöser
 
@@ -22,70 +22,64 @@ Reichweite grün umrandet: `3 + Sportlichkeit`, bei Drohnen `3 + Fliegen`.
 Große Monster nehmen 4 benachbarte Felder. Wer gerade dran ist, wird
 hervorgehoben. Frage: Whiteboard kopieren oder erweitern?
 
-## Whiteboard nicht erweitern
+## Whiteboard nicht erweitern, Leinwand kopieren
 
-Vorläufige Richtung dieser Skizze, keine Bau-Freigabe.
+Eigenes Feature, kein Aufsatz auf `Zeichnung`. Die bestehende Whiteboard-Liste
+bleibt Zeichenbrett ohne Tokens.
 
-Das Whiteboard (`Zeichnung`, `backend/app/zeichnungen/`) ist freie Striche plus
-optionalem Hintergrundbild. Permission dort: `spielerDuerfenZeichnen`. Die
-Battlemap ist ein diskretes Hex-Raster plus Tokens aus der Initiative.
-Permission dort: eigener Charakter, eigene Drohne, eigene Beschwörung. Die
-Leinwand (`react-sketch-canvas`, `pfade`-JSON) taugt nicht als Token-Layer.
+Kopiert wird das Whiteboard-Muster inklusive Leinwand: Hintergrundbild,
+`pfade` (react-sketch-canvas), `spielerDuerfenZeichnen`, Sichtbarkeit,
+Papierkorb, Verteiler mit vollem Zustand. Darauf liegen Hex-Grid und Tokens.
+Kein `EntityKind`.
 
-Kopieren, nicht mergen:
-
-- Bild-Upload, Sichtbarkeit, Papierkorb, eigener Verteiler, voller Zustand
-  statt Diff — Whiteboard-Verteiler und der geplante Kampf-WebSocket
-  ([[../concepts/kampf-und-initiative]])
-- Nicht: Zeichenpfade, `spielerDuerfenZeichnen`, kein `EntityKind`
+Erste Skizze sagte „keine Zeichenpfade“. Ersetzt 06.11.2026: Mark will auf der
+Battlemap live zeichnen und Spieler mitzeichnen lassen, plus Grid skalieren.
+Deshalb der Vergleich mit dem Whiteboard — nicht weil Tokens Striche wären.
 
 `docs/api/kampf.md` zeigt schon `position: { x, y }` an der Kante `KAEMPFT`.
 Der echte Code speichert Teilnehmer als `KampfTeilnehmer`-Knoten, ohne
 Position. Das API-Beispiel nicht als Modell nehmen.
 
-## Skizze (nicht entschieden)
+## Entschieden 06.11.2026 (nicht gebaut)
 
-Zwei Schichten, nicht eine:
+Zwei Schichten:
 
-1. **Karte** als Kampagnen-Asset (analog zur Whiteboard-Liste): Name,
-   Hintergrundbild, Hex-Kalibrierung (Ursprung, Größe, Spitz oder Flach),
-   Sichtbarkeit, Papierkorb.
+1. **Karte** als Kampagnen-Asset, eigener Burgermenü-Punkt zum Vorbereiten
+   (Liste wie Whiteboard). Name, Hintergrundbild, Zeichenpfade, Zeichenfreigabe
+   für Spieler, skalierbares Hex-Grid (Größe, Ursprung), Sichtbarkeit,
+   Papierkorb. Der laufende Kampf hängt eine vorbereitete Karte an.
 2. **Tokens** am laufenden Kampf: Position am `KampfTeilnehmer`, Portrait aus
    `Person.bildUrl`. Unplatziert, bis jemand sie aufs Raster zieht. `amZug` ist
    das Highlight. Ein Zusatzzug (Reflex-Booster) ist dieselbe Person, kein
-   zweiter Token.
+   zweiter Token. Spieler schiebt eigenen Charakter, eigene Drohnen und
+   Beschwörungen nur am eigenen Zug. Die SL schiebt immer alle.
 
-Live-Sync: der geplante Kampf-WebSocket in `docs/api/kampf.md` (ungebaut) ist
-der natürliche Kanal für Token-Züge, nicht der Whiteboard-Socket. Karten-CRUD
-bleibt REST.
-
-Die Formel `3 + Sportlichkeit` / `3 + Fliegen` steht auf keiner Regel-Seite.
-Neu, nicht Excel. Fliegen ist Zusatzfertigkeit, siehe
+Bewegung: Drop überall, rastet auf Hex. Grün (`3 + Sportlichkeit`, Drohnen
+`3 + Fliegen`) ist nur die Hilfe — Sprint, Teleport, SL räumt. Die Formel steht
+auf keiner Regel-Seite, neu, nicht Excel. Fliegen ist Zusatzfertigkeit, siehe
 [[../concepts/drohnen-fahrzeuge]].
 
-Konflikt mit [[../concepts/kampf-und-initiative]]: das Tool simuliert keine
-Würfel, es verwaltet wer dran ist und was auf dem Feld steht. Token-Position
-ist „was auf dem Feld steht“. Ob die grüne Reichweite nur Hilfe ist oder Drops
-sperrt, ist offen — eine harte Sperre wäre Regel-Simulation.
+Große Monster: **3 Felder im Y, Kreis drumherum.** Die 4-Felder-Idee aus dem
+Auslöser ist ersetzt. Belegt sind die drei Hex; der Kreis gruppiert sie optisch.
 
-Hex und „4 benachbarte Felder“: ein Quadrat 2×2 gibt es auf Hex nicht. Die Form
-ist offen.
+Live-Sync: Token-Züge über den geplanten Kampf-WebSocket
+([[../concepts/kampf-und-initiative]], ungebaut). Zeichnen wie beim Whiteboard
+(voller Pfad-Stand). Karten-CRUD bleibt REST.
 
-## Offene Achsen
+Konflikt mit [[../concepts/kampf-und-initiative]] „keine Würfel-Simulation“:
+Token-Position ist „was auf dem Feld steht“. Reichweite sperrt den Drop nicht.
 
-Nicht still beantworten.
-
-1. Bewegung: Drop nur auf grün, oder überall und Grün ist nur Hilfe?
-2. Spieler schiebt den eigenen Token nur am eigenen Zug, oder immer?
-3. Große Monster: welche vier Hex (feste Raute am Anker, oder vier
-   zusammenhängende frei)?
-4. Oberfläche: Knopf im Kampfmodus, oder eigener Burgermenü-Punkt zum
-   Vorbereiten von Karten?
-5. Unterlage: nur eigenes Bild, oder zusätzlich eine Whiteboard-Zeichnung als
-   Standbild?
-
-Nicht in der Anfrage, deshalb nicht Teil dieser Skizze: Fog of War, Facing,
+Nicht in der Anfrage, nicht Teil dieses Designs: Fog of War, Facing,
 Quadrat-Grid-Umschalter, Belegungssperre (zwei Tokens ein Hex).
+
+## Offene Achsen 06.11. (erste Fassung, ersetzt)
+
+1. Bewegung — entschieden: überall droppen, Grün ist Hilfe.
+2. Nur am eigenen Zug — entschieden: ja, SL immer alle.
+3. Große Monster — erste Frage war 4 Hex; ersetzt durch 3 im Y plus Kreis.
+4. Oberfläche — entschieden: Burgermenü zum Vorbereiten, Kampf hängt eine Karte an.
+5. Unterlage — erste Frage war Bild oder Whiteboard-Standbild; ersetzt durch
+   eigenes Bild plus Live-Zeichnen auf der Karte plus skalierbares Grid.
 
 ## Siehe auch
 
