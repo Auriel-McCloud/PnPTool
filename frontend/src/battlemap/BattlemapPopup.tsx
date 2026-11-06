@@ -576,7 +576,7 @@ export function BattlemapPopup({
                   void absetzen(e);
                 }}
               >
-                {t.bildUrl ? <img src={t.bildUrl} alt="" /> : <span>{t.name.slice(0, 2)}</span>}
+                {t.bildUrl ? <img src={t.bildUrl} alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
               </button>
               {chip && (
                 <div className="bm-name" style={{ left: cx, top: cy - size }}>

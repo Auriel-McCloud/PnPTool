@@ -141,6 +141,8 @@
   object-fit: cover;
   display: grid;
   place-items: center;
+  -webkit-user-drag: none;
+  user-select: none;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text);
