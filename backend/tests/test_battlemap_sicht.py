@@ -157,6 +157,16 @@ class TestWaende:
         gesehen = ansicht_waende([a, b], rolle="PLAYER", person_id="a", waende=[_kante_osten()])
         assert [t["id"] for t in gesehen] == ["a"]
 
+    def test_hinter_dem_blick_ist_weg(self):
+        from app.battlemap.sicht import ansicht_jetzt
+
+        a = token("a", 0, 0, blickrichtung=0)
+        hinten = token("h", -3, 0, personType="NPC")
+        vorn = token("v", 3, 0, personType="NPC")
+        gesehen = ansicht_jetzt([a, hinten, vorn], rolle="PLAYER", person_id="a")
+        ids = {t["id"] for t in gesehen}
+        assert ids == {"a", "v"}
+
     def test_geist_hinter_neuer_wand_faellt(self):
         a = token("a", 0, 0, blickrichtung=0)
         b = token("b", 2, 0, personType="NPC")

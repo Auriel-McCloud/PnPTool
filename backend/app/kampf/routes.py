@@ -314,10 +314,10 @@ async def _fuer_spieler_kampf(kampf: dict, person_id: str | None) -> dict:
     if await _fog_an(kampf):
         speicher = kampf.get("_sichtSpeicher") or await _speicher_frisch(kampf)
         kampf["teilnehmer"] = _karte_fuer(kampf, speicher, "PLAYER", person_id)
-    elif waende:
-        from app.battlemap.sicht import ansicht_waende
+    else:
+        from app.battlemap.sicht import ansicht_jetzt
 
-        gesehen = ansicht_waende(
+        gesehen = ansicht_jetzt(
             kampf.get("teilnehmer") or [],
             rolle="PLAYER",
             person_id=person_id,
@@ -325,15 +325,6 @@ async def _fuer_spieler_kampf(kampf: dict, person_id: str | None) -> dict:
         )
         kampf["teilnehmer"] = fuer_spieler(
             gesehen,
-            rassen=kampf.get("_rassen") or {},
-            eigene_person_id=person_id,
-            begleiter_besitzer=kampf.get("_begleiterBesitzer") or {},
-            npc_ids=kampf.get("_npcIds") or set(),
-            drohnen_besitzer=kampf.get("_drohnenBesitzer") or {},
-        )
-    else:
-        kampf["teilnehmer"] = fuer_spieler(
-            kampf.get("teilnehmer") or [],
             rassen=kampf.get("_rassen") or {},
             eigene_person_id=person_id,
             begleiter_besitzer=kampf.get("_begleiterBesitzer") or {},
@@ -350,12 +341,10 @@ async def _tokens_senden(kampf: dict | None) -> None:
     kampf["_waende"] = waende
     fog = await _fog_an(kampf)
     if not fog and not waende:
-        stand = token_stand(kampf)
-        stand["fog"] = False
-        stand["waende"] = []
-        await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": stand})
-        return
-    speicher = await _speicher_frisch(kampf) if fog else {}
+        # Blickrichtung filtert trotzdem je Spieler. Die SL bekommt die Wahrheit.
+        speicher = {}
+    else:
+        speicher = await _speicher_frisch(kampf) if fog else {}
 
     def bauen(verbindung):
         if verbindung.rolle == "GM":
@@ -363,9 +352,9 @@ async def _tokens_senden(kampf: dict | None) -> None:
         elif fog:
             teilnehmer = _karte_fuer(kampf, speicher, verbindung.rolle, verbindung.person_id)
         else:
-            from app.battlemap.sicht import ansicht_waende
+            from app.battlemap.sicht import ansicht_jetzt
 
-            gesehen = ansicht_waende(
+            gesehen = ansicht_jetzt(
                 kampf.get("teilnehmer") or [],
                 rolle=verbindung.rolle,
                 person_id=verbindung.person_id,
@@ -491,7 +480,7 @@ async def token_umschauen(
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
     token = next((t for t in kampf["teilnehmer"] if t["id"] == teilnehmer_id and not t.get("zusatzzug")), None)
-    if token is None or not _darf_token(viewer, token, kampf, nur_am_zug=True):
+    if token is None or not _darf_token(viewer, token, kampf, nur_am_zug=False):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht gefunden")
     kampf = await repository.setze_blick(campaign_id, teilnehmer_id, int(body.blickrichtung) % 6)
     await _tokens_senden(kampf)

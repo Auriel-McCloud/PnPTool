@@ -44,6 +44,16 @@
   overflow: auto;
   background: var(--flaeche);
   border: 1px solid var(--linie);
+  touch-action: pan-x pan-y;
+}
+.bm-skizze img,
+.bm-skizze canvas {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none !important;
+}
+.bm-buehne[data-modus="zeichnen"] .bm-skizze canvas {
+  pointer-events: auto !important;
 }
 .bm-skizze,
 .bm-grid {
@@ -138,6 +148,8 @@
   padding: 0;
   cursor: grab;
   z-index: 4;
+  touch-action: none;
+  -webkit-user-drag: none;
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
 .bm-token:active:not(:disabled) {
@@ -193,12 +205,13 @@
 }
 .bm-blick {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   width: 0;
   height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 9px solid var(--p-gold);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 16px solid var(--p-gold, #e0b84a);
+  filter: drop-shadow(0 0 1px #000);
   pointer-events: none;
 }
 .bm-name {

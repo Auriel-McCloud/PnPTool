@@ -222,6 +222,36 @@ def ansicht(
     return out
 
 
+def ansicht_jetzt(
+    teilnehmer: list[dict],
+    *,
+    rolle: str,
+    person_id: str | None,
+    waende: list[dict] | None = None,
+) -> list[dict]:
+    """Was die Augen jetzt sehen. Kegel oder Rundumsicht, Wände blockieren. Kein Gedächtnis.
+
+    Ohne eigene Figur auf der Karte gibt es keinen Standpunkt, also alles.
+    """
+    roh = [t for t in teilnehmer if not t.get("zusatzzug")]
+    if rolle == "GM":
+        return [dict(t) for t in roh]
+    eigene = [t for t in roh if gehoert(t, person_id) and t.get("hexQ") is not None]
+    if not eigene:
+        return [dict(t) for t in roh]
+    sichtbar: set[str] = set()
+    for auge in eigene:
+        sichtbar.add(auge["id"])
+        for ziel in roh:
+            if ziel["id"] in sichtbar or ziel.get("hexQ") is None:
+                continue
+            if ziel.get("versteckt") and not gehoert(ziel, person_id):
+                continue
+            if sieht_live(auge, ziel, waende):
+                sichtbar.add(ziel["id"])
+    return [dict(t) for t in roh if t["id"] in sichtbar]
+
+
 def ansicht_waende(
     teilnehmer: list[dict],
     *,

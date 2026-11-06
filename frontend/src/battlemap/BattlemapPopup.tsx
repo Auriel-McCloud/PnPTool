@@ -5,7 +5,6 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
 import { hexEcken, hexNachPixel, hexRasterRechteck, NACHBARN, naechsteEcke, pixelNachHex, reichweite, yFelder } from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
-import { einstellungenApi } from "../campaigns/einstellungen";
 import { partyApi } from "../party/api";
 import { bogenApi } from "../traits/bogenApi";
 import "../players/portrait.css";
@@ -55,10 +54,10 @@ export function BattlemapPopup({
   const [ziehOrigin, setZiehOrigin] = useState<{ x: number; y: number } | null>(null);
   const [partei, setPartei] = useState<Set<string>>(new Set());
   const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
-  const [fog, setFog] = useState(false);
   const [wahlId, setWahlId] = useState<string | null>(null);
   const [linien, setLinien] = useState<{ ax: number; ay: number; bx: number; by: number }[]>([]);
   const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
+  const wahlSperre = useRef(0);
   const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandWeg, setWandWeg] = useState<number | null>(null);
@@ -111,7 +110,6 @@ export function BattlemapPopup({
           setLinien(n.daten.waende ?? []);
         }
         if (n.typ === "tokens") {
-          setFog(Boolean(n.daten.fog));
           if (n.daten.waende) setLinien(n.daten.waende);
           setKampf((alt) => ({
             id: alt?.id ?? "",
@@ -151,7 +149,6 @@ export function BattlemapPopup({
         setPartei(new Set((aktiv?.mitglieder ?? []).map((m) => m.id)));
       })
       .catch(() => setPartei(new Set()));
-    einstellungenApi.lesen(campaignId).then((e) => setFog(Boolean(e.fogOfWar))).catch(() => undefined);
   }, [offen, campaignId]);
 
   useEffect(() => {
@@ -306,7 +303,7 @@ export function BattlemapPopup({
     for (const [q, r] of yFelder(schau.hexQ, schau.hexR, Boolean(schau.istGross), schau.hexDrehung ?? 0)) {
       wahlFelder.add(`${q},${r}`);
     }
-    if (istGm || (istEigen(schau) && istDran(schau))) {
+    if (istGm || istEigen(schau)) {
       for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
     }
   }
@@ -472,9 +469,10 @@ export function BattlemapPopup({
         }}
         onClick={(e) => {
           const ziel = e.target as HTMLElement;
+          if (Date.now() < wahlSperre.current) return;
           if (ziel.closest(".bm-token, .bm-name, .bm-aktion, .bm-wand")) return;
           const gewaehlt = tokens.find((t) => t.id === wahlId);
-          if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || (istEigen(gewaehlt) && istDran(gewaehlt)))) {
+          if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || istEigen(gewaehlt))) {
             const hex = hexUnter(e as unknown as React.PointerEvent);
             const richtung = hex
               ? NACHBARN.findIndex(([dq, dr]) => gewaehlt.hexQ! + dq === hex.q && gewaehlt.hexR! + dr === hex.r)
@@ -583,7 +581,7 @@ export function BattlemapPopup({
           const winkel = BLICK_WINKEL[t.blickrichtung ?? 0] ?? 0;
           return (
             <span key={t.id}>
-              {(fog || wahlId === t.id) && (
+              {(
                 <span
                   className="bm-blick"
                   style={{
@@ -607,9 +605,16 @@ export function BattlemapPopup({
                   width: t.istGross ? size * 2.2 : size * 1.7,
                   height: t.istGross ? size * 2.2 : size * 1.7,
                 }}
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
                 onPointerDown={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  if (t.veraltet) return;
+                  if (t.veraltet) {
+                    wahlSperre.current = Date.now() + 500;
+                    setWahlId(t.id);
+                    return;
+                  }
                   tipp.current = { id: t.id, x: e.clientX, y: e.clientY, angehoben: false };
                   e.currentTarget.setPointerCapture(e.pointerId);
                 }}
@@ -627,6 +632,7 @@ export function BattlemapPopup({
                   tipp.current = null;
                   if (!tip || tip.id !== t.id) return;
                   if (!tip.angehoben) {
+                    wahlSperre.current = Date.now() + 500;
                     setWahlId(t.id);
                     return;
                   }

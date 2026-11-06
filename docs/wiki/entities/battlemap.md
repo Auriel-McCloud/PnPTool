@@ -203,11 +203,11 @@ Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler
 bekommen nur ihre Augen (eigener Charakter, eigene Drohnen, eigene
 Beschwörungen). Vorne drei von sechs Richtungen live, hinten der letzte Stand.
 Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom.
-Antippen des eigenen Tokens am eigenen Zug (oder der eigenen Drohne, wenn sie
-dran ist) färbt die sechs Nachbarfelder. Ein Feld antippen setzt die
-Blickrichtung. Der eigene Token hat kein Namensschild auf der Figur. Name und Verstecken stehen rechts in der Kartenleiste, die Figur wird markiert. Fremde Namen schließen
-beim Wegtippen. Sichtlinien blockieren den Spielerblick auch bei ausgeschaltetem
-Fog of War und auch bei Rundumsicht.
+Antippen des eigenen Tokens (oder der eigenen Drohne) färbt die sechs
+Nachbarfelder, auch außerhalb des Zugs. Ein Feld antippen setzt die
+Blickrichtung. Der goldene Pfeil zeigt sie. Hinter dem Blick ist für den
+Spieler nichts, auch ohne Fog. Name und Verstecken stehen rechts in der
+Leiste, Wegtippen räumt sie. Sichtlinien blockieren auch Rundumsicht.
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 
