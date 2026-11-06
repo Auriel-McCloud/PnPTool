@@ -813,17 +813,25 @@ async def ablageziele(campaign_id: str, item_id: str, viewer: Viewer = Depends(g
     """Wohin dieser Gegenstand gelegt werden kann: Orte der Kampagne und
     Behälter seines Besitzers (Fahrzeuge etc.).
 
-    **Die SL sieht alle Behälter der ganzen Kampagne** (31.10.2026, Mark
-    konnte beim Schloss-Test nichts in eine besitzerlose Schatzkiste legen —
-    siehe repository.py::alle_ablageziele_fuer_gm), Spieler weiterhin nur
-    ihre eigenen — sonst könnte ein Spieler Dinge in fremde Rucksäcke legen.
+    **Die SL sieht campaignweit alle Behälter** (31.10.2026, Mark konnte beim
+    Schloss-Test nichts in eine besitzerlose Schatzkiste legen — siehe
+    repository.py::alle_ablageziele_fuer_gm) **ODER** die Orte/Behälter des
+    NPC-Besitzers (06.11.2026, Mark: NPCs sollen ihre Gegenstände nur dort
+    ablegen können, wo sie gerade sind bzw. wo sie Zugriff haben, damit die
+    Spieler die Beute am Ort des besiegten NPCs finden). Vorlagen (kein
+    Besitzer) bekommen alle Orte. Spieler weiterhin nur ihre eigenen.
     """
-    if viewer.role == "GM":
-        return await repository.alle_ablageziele_fuer_gm(campaign_id, item_id)
     besitzer = await repository.get_owner_person_id(campaign_id, item_id)
     if besitzer is None:
-        # Vorlagen haben keinen Besitzer und damit auch keine eigenen Behälter
+        # Vorlagen ohne Besitzer: SL bekommt alle Orte/Behälter (Schatzkiste
+        # aufstellen, Beute vorbereiten), Spieler bekommen leere Liste (sie
+        # können keine Vorlagen umlegen).
+        if viewer.role == "GM":
+            return await repository.alle_ablageziele_fuer_gm(campaign_id, item_id)
         return await repository.moegliche_ablageziele(campaign_id, "")
+    # Gegenstand mit Besitzer: NUR die Orte/Behälter des Besitzers (Mark:
+    # „ich will in den optionen den NPCs sie nur dort ablegen können wo der
+    # NPC ist"), unabhängig davon, ob die SL oder der Spieler selbst das tut.
     return await repository.moegliche_ablageziele(campaign_id, besitzer)
 
 

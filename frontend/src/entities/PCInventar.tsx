@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { itemsApi, type Gegenstand, type Ablage } from "../items/api";
+import { itemsApi, type Gegenstand, type Ablage, AUGMENT_TRAEGER_TYPEN } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
 import { ApiError } from "../api/client";
+import { AugmentFenster } from "../werkbank/AugmentFenster";
+import type { AugmentTraeger } from "../werkbank/AugmentTraegerPanel";
 import "./pc-inventar.css";
 
 /**
@@ -66,7 +68,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   }
 
   // Augment/Chrom einsetzen (05.11.2026-Nachtrag: Mark fehlte dieser Knopf
-  // für NPCs — "ich habe keine Möglichkeit als SL einem NPC ein Augment zu
+  // für NPCs — „ich habe keine Möglichkeit als SL einem NPC ein Augment zu
   // verbauen"). Backend konnte es längst (chirurgie_durchfuehren erlaubt der
   // SL uneingeschränkt beides), nur diese Ansicht reichte onChirurgie nie an
   // GegenstandKachel durch — SpielerAnsicht.tsx tat das bisher nur für den
@@ -83,7 +85,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
       await itemsApi.chirurgie(campaignId, item.id, true);
       refresh();
     } catch (e) {
-      // Fehlertext in einem eigenen Popup zeigen (z.B. "Magier können keine
+      // Fehlertext in einem eigenen Popup zeigen (z.B. „Magier können keine
       // Bioware einsetzen", Platzkonflikt) — dafür die Bestätigung schliessen.
       setEinsetzenFehler(e instanceof ApiError ? e.message : "Einsetzen fehlgeschlagen.");
     } finally {
@@ -92,17 +94,31 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
     }
   }
 
+  // Werkbank-Augment montieren (06.11.2026, Mark: „wenn ich einen NPC öffne
+  // und in sein inventar gehe, habe ich nicht die möglichkeit dem NPC augments
+  // zu verbauen" — gemeint sind Werkbank-Upgrades wie Zielfernrohr, Ki-Tama,
+  // nicht nur Chrom-Chirurgie oben). Das AugmentFenster ist der generische
+  // Werkbank-Dialog, zeigt Montage-Probe + Material + Reparatur — genau wie
+  // in der Werkbank-Übersicht, nur hier für EINEN Träger direkt im Inventar.
+  const [werkbankAugment, setWerkbankAugment] = useState<Gegenstand | null>(null);
+  const [werkbankTraeger, setWerkbankTraeger] = useState<AugmentTraeger | null>(null);
+
   // Trenne verbaute Augments von normalen Gegenständen. Montierte
   // Werkbank-Augments (Zielfernrohr, Ki-Tama & Co.) stecken an ihrem
-  // Trägergegenstand (MONTIERT_AN) und tauchen dort schon als "montierte
+  // Trägergegenstand (MONTIERT_AN) und tauchen dort schon als „montierte
   // Upgrades" auf, bekommen hier aber zusätzlich eine EIGENE Sektion —
   // vorher fielen sie komplett aus der Ablage-Gruppierung heraus und waren
-  // für die SL nirgends mehr anklickbar (Mark-Bugreport 31.10.2026: "wenn
+  // für die SL nirgends mehr anklickbar (Mark-Bugreport 31.10.2026: „wenn
   // Ki-Tamas oder Waffen-Upgrades verbaut sind, kann ich sie als SL auch
   // nicht mehr sehen" — er will sie weiterhin öffnen können, nur mit einem
   // Fähnchen, dass sie gerade verbaut sind).
   const verbaute = items.filter((i) => i.verbaut);
   const montierte = items.filter((i) => i.montiertAnId && !i.verbaut);
+
+  // Träger-Gegenstände mit Upgrade-Slots (06.11.2026, Mark: NPCs sollen
+  // Werkbank-Augments bekommen können — die Kachel bekommt einen
+  // „🔩 Upgraden"-Button, der das AugmentFenster öffnet).
+  const traeger = items.filter((i) => AUGMENT_TRAEGER_TYPEN.has(i.typ) && (i.upgradeSlots ?? 0) > 0);
 
   // Körperteil (04.11.2026, Mark nach dem Wachmann-Bugreport): `istNatuerlich`
   // an Rüstung/Ki-Tama (Dug'Rah-Chitin & Co.) ist IMMER Körperteil, bleibt
@@ -201,7 +217,7 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
 
       {/* Montierte Upgrades (Ki-Tama, Zielfernrohr & Co.): eigene, weiterhin
           anklickbare Sektion statt komplett unsichtbar — die Kachel selbst
-          zeigt zusätzlich das Fähnchen "Montiert an …". */}
+          zeigt zusätzlich das Fähnchen „Montiert an …". */}
       {montierte.length > 0 && (
         <section className="pci-sektion pci-verbaut">
           <h4 className="pci-ablage-titel">
@@ -212,6 +228,57 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
             {montierte.map((g) => (
               <GegenstandKachel key={g.id} item={g} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Träger mit Upgrade-Slots: Gegenstände, an denen Werkbank-Upgrades
+          montiert werden können (06.11.2026, Mark: NPCs sollen Werkbank-Augments
+          bekommen können). Button „🔩 Upgraden" öffnet das AugmentFenster. */}
+      {traeger.length > 0 && (
+        <section className="pci-sektion">
+          <h4 className="pci-ablage-titel">
+            <span>🔧 Mit Upgrade-Slots</span>
+            <span className="pci-anzahl">{traeger.length}</span>
+          </h4>
+          <div className="pci-kachel-liste">
+            {traeger.map((g) => {
+              const belegteSlots = items.filter((i) => i.montiertAnId === g.id).length;
+              return (
+                <div key={g.id} className="pci-traeger-kachel">
+                  <GegenstandKachel
+                    item={g}
+                    campaignId={campaignId}
+                    onGeoeffnet={() => void refresh()}
+                    onUmlegen={(neueAblage, zielId) => umlagern(g.id, neueAblage, zielId)}
+                    onWegwerfen={() => wegwerfen(g.id)}
+                    montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
+                    istSpielleitung
+                  />
+                  <button
+                    type="button"
+                    className="pci-upgrade-btn"
+                    onClick={() => {
+                      setWerkbankTraeger({
+                        id: g.id,
+                        name: g.name,
+                        kind: "Gegenstand",
+                        upgradeSlots: g.upgradeSlots ?? 0,
+                        kampfFertigkeit: g.kampfFertigkeit ?? "",
+                        typ: g.typ,
+                      });
+                      // Zeige das erste montierbare Upgrade, falls vorhanden
+                      const montierbar = items.filter((i) => i.istAugment && !i.montiertAnId && !i.defekt);
+                      if (montierbar.length > 0) {
+                        setWerkbankAugment(montierbar[0]);
+                      }
+                    }}
+                  >
+                    🔩 Upgraden ({belegteSlots}/{g.upgradeSlots})
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -304,6 +371,31 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
           jaText="Ok"
           onJa={() => setEinsetzenFehler(null)}
           onNein={() => setEinsetzenFehler(null)}
+        />
+      )}
+
+      {/* Werkbank-Augment-Fenster (06.11.2026, Mark: NPCs sollen Werkbank-
+          Upgrades montieren/demontieren/reparieren können — dasselbe Fenster
+          wie in der Werkbank-Übersicht, nur direkt aus dem Inventar heraus). */}
+      {werkbankAugment && werkbankTraeger && (
+        <AugmentFenster
+          campaignId={campaignId}
+          augment={{
+            ...werkbankAugment,
+            ownerId: personId,
+            ownerName: personName,
+            ownerPersonType: "NPC",
+          }}
+          vorausgewaehltesZiel={werkbankTraeger}
+          onSchliessen={() => {
+            setWerkbankAugment(null);
+            setWerkbankTraeger(null);
+          }}
+          onGeaendert={() => {
+            refresh();
+            setWerkbankAugment(null);
+            setWerkbankTraeger(null);
+          }}
         />
       )}
     </div>

@@ -160,3 +160,31 @@
 .pci-form button:hover {
   background: color-mix(in srgb, var(--ja) 35%, transparent);
 }
+
+/* --- Träger mit Upgrade-Slots -------------------------------------------- */
+
+.pci-traeger-kachel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pci-upgrade-btn {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--neon) 15%, transparent);
+  border: 1px solid var(--neon);
+  border-radius: var(--radius);
+  color: var(--neon);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.pci-upgrade-btn:hover {
+  background: color-mix(in srgb, var(--neon) 30%, transparent);
+  transform: translateY(-1px);
+}
