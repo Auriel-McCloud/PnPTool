@@ -36,7 +36,7 @@ TEILNEHMER_FELDER = """
     p.id AS personId, p.personType AS personType,
     p.bildUrl AS bildUrl, coalesce(p.istGross, false) AS istGross,
     p.istDrohne AS istDrohne, p.istFahrzeug AS istFahrzeug, p.istCritter AS istCritter,
-    coalesce(head([(rasse:Rasse {ruleset: 'neotopia'}) WHERE rasse.name = p.rasse AND p.rasse <> '' AND NOT coalesce(rasse.geloescht, false) | rasse.rundumsicht]), false) AS rasseRundum,
+    coalesce(rasseRundumRoh, false) AS rasseRundum,
     b.id AS begleiterId
 """
 
@@ -118,6 +118,9 @@ async def hole(campaign_id: str) -> dict | None:
             MATCH (k:Kampf {{id: $kampf_id}})-[:KAEMPFT]->(t:KampfTeilnehmer)
             OPTIONAL MATCH (t)-[:IST]->(p:Person)
             OPTIONAL MATCH (t)-[:IST]->(b:Begleiter)
+            OPTIONAL MATCH (rasse:Rasse {{ruleset: 'neotopia'}})
+                WHERE rasse.name = p.rasse AND p.rasse <> '' AND NOT coalesce(rasse.geloescht, false)
+            WITH t, p, b, head(collect(rasse.rundumsicht)) AS rasseRundumRoh
             RETURN {TEILNEHMER_FELDER}
             """,
             kampf_id=kampf["id"],

@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: Kampf beginnen tat nichts — ungültige Cypher-Syntax in rasseRundum (06.11.2026)
+
+Mark: Klick auf "Kampf beginnen" passierte nichts. Ursache: `kampf/repository.py::TEILNEHMER_FELDER` (eingeführt mit der Fog-of-War-Änderung direkt darunter) nutzte eine Pattern-Comprehension mit reinem Knoten-Pattern ohne Relationship (`[(rasse:Rasse {...}) WHERE ... | ...]`) — laut Cypher-Grammatik braucht eine Pattern-Comprehension zwingend mindestens eine Relationship, ein nacktes Knoten-Pattern ist ein Syntaxfehler (`CypherSyntaxError: Invalid input 'WHERE'`). Das brach **sowohl** `GET /kampf` (Initiativliste laden) **als auch** `POST /kampf` (`beginne()` ruft intern `hole()` auf) mit 500 — der Frontend-Button feuert den Request nur ab, ohne den Fehler sichtbar zu machen (`mit()` in `Kampfmodus.tsx` hat kein Error-Handling), daher wirkte es als würde gar nichts passieren. Nebenwirkung auf bebop: mehrere Klicks legten dabei schon leere `Kampf`-Knoten an, die nie eine Antwort bekamen.
+
+Fix: `OPTIONAL MATCH (rasse:Rasse {ruleset: 'neotopia'}) WHERE ...` vor der RETURN-Klausel statt der Pattern-Comprehension, Ergebnis über `WITH ... head(collect(rasse.rundumsicht))` aggregiert (schützt vor Zeilen-Vervielfachung bei doppelten Rassennamen).
+
+**Verifiziert:** Cypher-Syntax per `EXPLAIN` direkt gegen die laufende bebop-Neo4j bestätigt (vorher: `SyntaxError`, nachher: sauberer Plan), `pytest -k kampf` grün (32 Tests) — die bestehenden `test_battlemap_sicht.py`-Tests hätten den Fehler nie gefangen, da sie nur die reine `sicht.py`-Formel testen, nie die Cypher-Query von `repository.hole()`. **Lehre:** pytest-grün bewies hier nicht, dass die geänderte Query überhaupt lief.
+
 ## Fog of War auf der Battlemap, optional (06.11.2026)
 
 Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler sehen nur den vorderen Halbkreis der eigenen Figuren (Charakter, eigene Drohnen, eigene Beschwörungen). Dahinter bleibt der letzte Stand. Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom, Wände schneiden auch die. Antippen zeigt den Namen. Die SL sieht die Wahrheit. Siehe `docs/wiki/entities/battlemap.md`.
