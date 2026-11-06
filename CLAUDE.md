@@ -2348,6 +2348,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (06.11.2026 — Shop-Preis zieht nach, wenn der Gegenstand sich ändert):**
+- **Was:** Nach dem Live-Follow vom 05.11. zeigte der Tutorial-Shop trotzdem den alten Preis. Drei Löcher: (1) KI-/Unikat-/Alltagswunsch-Anlegen schrieb denselben Betrag nochmal als `r.preis` auf die Kante — `sortiment()` bevorzugt den Snapshot. (2) Der Browser durfte GET `/sortiment` cachen, der 5s-Poll sah denselben JSON. (3) Der Sortiment-Editor lud nur beim Öffnen, nicht still nach. Jetzt schreiben diese Anlege-Pfade keinen Kantenpreis mehr (Sonderpreis nur noch, wenn die SL beim „Ware wählen“ wirklich einen eingibt), Fetch ist `no-store`, der Editor pollt wie der Tutorial-Shop.
+- **Wo:** `haendler/uebergabe.py`, `ki_vorschlag.py`, `alltagswunsch.py`, `routes.py` (Tutorial-Rückgabe), `ki/routes.py`, `frontend/src/api/client.ts`, `nginx.conf`, `HaendlerBearbeiten.tsx`, `tests/test_shop_preis_live.py`.
+- **Verifiziert:** `pytest tests/test_shop_preis_live.py tests/test_shop_unikat.py tests/test_massenidee.py::test_gegenstaende_landen_im_sortiment_eines_haendlers` grün. `tsc -b` grün.
+
 **Zuletzt gebaut (06.11.2026 — Shop-Bild-Großansicht zeigt das ganze Bild):**
 - **Was:** Klick aufs Warenbild öffnet ein Popup, das hochformatige Bilder oben/unten abschnitt. Ursache: Klasse `.bg-bild` gehörte schon den Begleitern (`object-fit: cover`, 220px). Großansicht heißt jetzt `.bild-gross`, skaliert mit `contain` in die Schale. Normaler Shop hat denselben Klick im Kauf-Fenster.
 - **Wo:** `frontend/src/shell/BildGross.tsx`, `bildGross.css`, `haendler/ShopWare.tsx`, `shop.css`.

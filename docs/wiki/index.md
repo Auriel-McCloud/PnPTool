@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-05 | Seiten: 38
+> Zuletzt aktualisiert: 2026-11-06 | Seiten: 38
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -35,7 +35,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/drohnen-fahrzeuge]] | Drohne/Fahrzeug als Person-Knoten. Umbau schreibt Attributnamen aus, Punkte darunter (31.10.). Charakterblatt zeigt nur Fertigkeiten mit Punkten. Spieler setzt das Bild der eigenen Drohne (31.10.). Decker-Hot sitzt neben der Überschrift Cyberdeck, nicht neben der Runde (01.11.). Hot lässt sich nicht ausknipsen: beim nächsten Zug zuerst bleiben, Nein heißt keine Zusatzaktion (01.11.). Matrix-Hack an der Drohne: Wahl schalten oder Schlagschaden, Hot-Rigger nimmt die Hälfte (01.11.). Werkbank-Reparatur zeigt den neuen Gesundheitsstand sofort, ohne Seiten-Reload (04.11.). SL bekommt die Hot-Fragen, wenn ein NPC-Decker oder NPC-Rigger dran ist (04.11.). |
 | [[concepts/augments-ausruestung]] | **Gebaut (29.10.2026):** Burgermenü "Werkbank" (Reparatur + Augments) — montierbare Boni (Zielfernrohr & Co.) für Waffe/Rüstung/Cyberdeck/Riggerkonsole/Drohne/Fahrzeug, `upgradeSlots` 0-6, Maker/Handwerk-Probe zum Montieren/Demontieren, Patzer macht defekt, Reparatur wie Rüstung/Drohne. Ki-Tama-Beschwörung einmal pro Kampf gebaut (01.11.): Fehlwurf frei, Patzer verbraucht den Ruf. Verbrauchte Kachel verschwindet statt Hinweistext. Upgrade-Material hat im Umbauen Initiative und Zusatzaktionen wie Chrom; Besitz hat ein Menü „Passt an“ (01.11.). I.C.E.-Feld am Upgrade, Träger sind Commlink, Cyberdeck, Riggerkonsole und Drohne/Fahrzeug (05.11.). Offen: Ki-Tamas und Rüstung von Ifrit und Shiva, Blizzard/Inferno/Feuer/Eis |
 | [[concepts/erfahrung-und-steigern]] | Komplett erfunden (nicht im Excel), WoD-artige Faktor-Formel; Plan-Autosteigerung für NPCs entschieden 10.10. (nicht Resteverwertung) |
-| [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.), Shop-Frontend Phase 1+2: physisch/digital, Rarity-Rahmen, Bestellungen, KI-Alltagsgegenstand-Erzeugung mit Waffen-Ausschluss (24.09.), Credstick gebaut (05.11.), Geld-Weitergabe noch offen |
+| [[concepts/waehrung-und-preise]] | NuYen, Verweis auf alle Excel-Preistabellen, Shop-System-Kern gebaut (22.09.), KI-Sortiment-Vorschlag für Händler (23.09.), Shop-Frontend Phase 1+2: physisch/digital, Rarity-Rahmen, Bestellungen, KI-Alltagsgegenstand-Erzeugung mit Waffen-Ausschluss (24.09.), Credstick gebaut (05.11.), Shop-Preis folgt live dem Gegenstand (05.11., Nachzug 06.11.: KI-Anlegen/Cache/Editor), Geld-Weitergabe noch offen |
 
 ## Entitäten — Architektur & Features
 

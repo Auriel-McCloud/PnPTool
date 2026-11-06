@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Shop-Preis zieht nach, wenn der Gegenstand sich ändert
+
+KI-/Unikat-Anlegen fror den Preis erneut auf der `VERKAUFT`-Kante ein,
+GET-Sortiment konnte im Browser hängen, der Sortiment-Editor lud nicht
+nach. Jetzt live `g.preis`, Fetch `no-store`, Editor pollt.
+Siehe [[concepts/waehrung-und-preise]].
+
 ## [2026-11-06] gebaut | Shop-Bild-Großansicht zeigt das ganze Bild
 
 Hochformatige Warenbilder im Großansicht-Popup wurden oben/unten

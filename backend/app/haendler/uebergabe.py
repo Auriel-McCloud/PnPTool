@@ -90,7 +90,7 @@ async def unikat_anlegen(
     )
     if gegenstand is None:
         return None
-    if not await shop_repository.verkauft_hinzufuegen(campaign_id, shop_id, gegenstand["id"], body.preis):
+    if not await shop_repository.verkauft_hinzufuegen(campaign_id, shop_id, gegenstand["id"], None):
         return None
     return gegenstand
 
@@ -134,6 +134,6 @@ async def unikat_einhaengen(
             {"istVorlage": False, "einzigartig": True, "automatischImShop": False},
         ) is None:
             raise UnikatEinhangFehler("gegenstand")
-    verkaufspreis = gegenstand["preis"] if preis is None else max(0, preis)
+    verkaufspreis = None if preis is None else max(0, preis)
     if not await shop_repository.verkauft_hinzufuegen(campaign_id, shop_id, gegenstand_id, verkaufspreis):
         raise UnikatEinhangFehler("laden")

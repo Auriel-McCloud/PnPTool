@@ -124,7 +124,7 @@ def test_gegenstaende_landen_im_sortiment_eines_haendlers():
         ):
             ergebnis = await _massen_anlegen("c1", "gegenstand", "Waren für Chrom-Charlie", 2, "Person", "h1", None)
             assert verkauft.await_count == 2
-            verkauft.assert_any_await("c1", "ort-1", "g1", 500)
+            verkauft.assert_any_await("c1", "ort-1", "g1", None)
             assert all(e.verknuepft for e in ergebnis.eintraege)
 
     _run(run())

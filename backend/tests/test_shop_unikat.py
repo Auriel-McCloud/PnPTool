@@ -127,7 +127,7 @@ def test_unikat_anlegen_legt_ein_besitzerloses_einzelstueck_ins_regal():
                 )
                 record = await treffer.single()
             assert record is not None
-            assert record["preis"] == 400
+            assert record["preis"] is None
             assert record["istVorlage"] is False
         finally:
             await _weg(cid)

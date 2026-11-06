@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { haendlerApi, type HaendlerEintrag, type SortimentEintrag } from "./api";
 import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
@@ -6,6 +6,7 @@ import { entitiesApi } from "../entities/api";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { TYP_KATALOG, symbolFuerTyp } from "../items/typKatalog";
 import { VorlagenAuswahlPopup } from "./VorlagenAuswahlPopup";
+import { useNachladen } from "../shell/nachladen";
 import "./shop.css";
 
 /**
@@ -40,22 +41,38 @@ export function HaendlerBearbeiten({
   const [rabattProzent, setRabattProzent] = useState("");
   const [rabattHinweis, setRabattHinweis] = useState("");
 
-  async function laden() {
+  async function holen() {
     const [h, s, g] = await Promise.all([
       haendlerApi.einzeln(campaignId, haendlerId),
       haendlerApi.sortiment(campaignId, haendlerId),
       itemsApi.listAlle(campaignId),
     ]);
-    setHaendler(h);
-    setSortiment(s);
-    setGegenstaende(g);
+    return { h, s, g };
   }
 
-  useEffect(() => {
-    if (!offen) return;
-    laden().catch(() => setFehler("Laden fehlgeschlagen"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offen, campaignId, haendlerId]);
+  function anwenden(d: { h: HaendlerEintrag; s: SortimentEintrag[]; g: GegenstandMitBesitzer[] }) {
+    setHaendler(d.h);
+    setSortiment(d.s);
+    setGegenstaende(d.g);
+  }
+
+  // Still nachladen wie Tutorial-Shop/ShopSeite — sonst bleibt der Preis im
+  // Editor stehen, wenn die SL den Gegenstand in einem anderen Fenster ändert.
+  const { ungueltig } = useNachladen(holen, anwenden, {
+    aktiv: offen,
+    quelle: `${campaignId}:${haendlerId}`,
+  });
+
+  async function laden() {
+    ungueltig();
+    try {
+      const d = await holen();
+      ungueltig();
+      anwenden(d);
+    } catch {
+      setFehler("Laden fehlgeschlagen");
+    }
+  }
 
   const spezialisierung = haendler?.spezialisierung ?? [];
 

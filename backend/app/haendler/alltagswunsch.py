@@ -150,7 +150,7 @@ async def wunsch_beantworten(
         if gegenstand is None:
             return None
         gegenstand_id = gegenstand["id"]
-        await repository.verkauft_hinzufuegen(campaign_id, wunsch["haendlerId"], gegenstand_id, endgueltiger_preis)
+        await repository.verkauft_hinzufuegen(campaign_id, wunsch["haendlerId"], gegenstand_id, None)
 
     return await repository.alltagswunsch_antwort(
         campaign_id,

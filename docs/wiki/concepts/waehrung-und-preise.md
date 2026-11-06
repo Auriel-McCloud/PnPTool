@@ -1,7 +1,7 @@
 ---
 title: Währung und Preise
 created: 2026-09-18
-updated: 2026-09-26
+updated: 2026-11-06
 type: konzept
 tags: [wirtschaft, versionsgeschichte, offen]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../regeln-neotopia.md, ../../../CLAUDE.md]
@@ -92,6 +92,17 @@ Credstick **gebaut (05.11.2026)**, Tresor-Modell entschieden — Details:
 [[../entities/gegenstand-transfer]]. Geld-Weitergabe (Party/gleicher Ort)
 und NPC→Spieler-Belohnung weiterhin nicht gebaut, notiert in
 `ideen für später.txt`.
+
+## Shop-Preis folgt dem Gegenstand (05.11.2026, nachgezogen 06.11.)
+
+Explizite `VERKAUFT`-Ware trägt keinen eigenen Preis mehr, solange die SL
+keinen Sonderpreis eingibt. `sortiment()` liest `coalesce(r.preis, g.preis)`.
+Ändert sich der Grundpreis am Gegenstand, zieht der Shop nach — Tutorial-Shop
+und Sortiment-Editor laden still nach, API-GETs sind `no-store`.
+
+KI-Anlegen, Unikat-Anlegen und Alltagswunsch dürfen den KI-/Stückpreis
+nicht nochmal auf die Kante kopieren: das wäre wieder ein Snapshot.
+Sonderpreis nur über das Preis-Feld in „Ware wählen“.
 
 ## Siehe auch
 

@@ -286,7 +286,7 @@ async def anwenden(campaign_id: str, haendler_id: str, vorschlag: SortimentVorsc
         gegenstand_id = gegenstand["id"]
         neu_angelegt = True
 
-    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand_id, vorschlag.preis):
+    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand_id, None):
         return None
     return AnwendenErgebnis(gegenstandId=gegenstand_id, neuAngelegt=neu_angelegt)
 
@@ -365,7 +365,7 @@ async def ware_anlegen(
     gegenstand = await create_gegenstand(campaign_id, None, _create_data(body, not einmalig, "GM", []))
     if gegenstand is None:
         return None
-    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand["id"], preis):
+    if not await repository.verkauft_hinzufuegen(campaign_id, haendler_id, gegenstand["id"], None):
         return None
 
     bild_hinweis = ""

@@ -372,7 +372,7 @@ async def tutorial_zurueck(
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Zurückgeben fehlgeschlagen")
     else:
         await repository.besitzer_loesen(campaign_id, body.gegenstandId)
-        await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, preis)
+        await repository.verkauft_hinzufuegen(campaign_id, haendler_id, body.gegenstandId, None)
 
     erstattet = await repository.tutorial_rueckerstatten(campaign_id, kaeufer_id, preis)
     if erstattet is None:

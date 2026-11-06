@@ -36,6 +36,10 @@ function withViewAs(path: string): string {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
+    // Sonst kann der Browser ein GET-Sortiment cachen — Preisänderung am
+    // Gegenstand kommt dann im offenen Shop nie an (Tutorial-Shop pollt
+    // alle 5s, sieht aber denselben alten JSON).
+    cache: "no-store",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
