@@ -103,6 +103,8 @@ class TeilnehmerResponse(BaseModel):
     istDrohne: bool = False
     istFahrzeug: bool = False
     istCritter: bool = False
+    # Rigger/Beschwörer — Spieler darf den Token am Zug schieben.
+    besitzerId: str | None = None
 
 
 class KampfResponse(BaseModel):
@@ -301,7 +303,9 @@ async def token_schieben(
         am_zug = am_zug_eintrag["id"] == token["id"] or (
             token.get("personId") and am_zug_eintrag.get("personId") == token.get("personId")
         )
-    besitzer = (kampf.get("_drohnenBesitzer") or {}).get(token.get("personId"))
+    besitzer = token.get("besitzerId") or (kampf.get("_drohnenBesitzer") or {}).get(token.get("personId"))
+    if not besitzer and token.get("begleiterId"):
+        besitzer = (kampf.get("_begleiterBesitzer") or {}).get(token.get("begleiterId"))
     if not darf_schieben(
         rolle=viewer.role,
         person_id=viewer.person_id,

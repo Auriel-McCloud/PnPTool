@@ -186,6 +186,13 @@ async def hole(campaign_id: str) -> dict | None:
     teilnehmer = sortiere(teilnehmer)
     am_zug = am_zug_nach_faltung(kampf["amZug"], vorher, teilnehmer, links)
 
+    for t in teilnehmer:
+        pid = t.get("personId")
+        bid = t.get("begleiterId")
+        t["besitzerId"] = (drohnen_besitzer.get(pid) if pid else None) or (
+            begleiter_besitzer.get(bid) if bid else None
+        )
+
     return {
         "id": kampf["id"],
         "runde": kampf["runde"] or 1,

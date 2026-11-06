@@ -60,6 +60,16 @@
   stroke: var(--text-aus);
   pointer-events: none;
 }
+.bm-buehne[data-modus="grid"] {
+  cursor: grab;
+  touch-action: none;
+}
+.bm-buehne[data-modus="grid"]:active {
+  cursor: grabbing;
+}
+.bm-buehne[data-modus="grid"] .bm-token {
+  pointer-events: none;
+}
 .bm-token {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -69,6 +79,9 @@
   cursor: grab;
   z-index: 2;
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+.bm-token:active:not(:disabled) {
+  transform: translate(-50%, -50%) translateY(1px);
 }
 .bm-token[data-rand="blau"] {
   box-shadow: 0 0 0 3px var(--p-blau);

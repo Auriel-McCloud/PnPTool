@@ -43,16 +43,18 @@ export function BattlemapPopup({
   const stift = STIFTE[1];
   const [radierer, setRadierer] = useState(false);
   const [verbunden, setVerbunden] = useState(false);
-  const [modus, setModus] = useState<"zeichnen" | "schieben">("schieben");
+  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid">("schieben");
   const [spawnArt, setSpawnArt] = useState<"pc" | "npc" | null>(null);
   const [kampf, setKampf] = useState<Kampf | null>(null);
   const [ziehend, setZiehend] = useState<string | null>(null);
   const [hoverHex, setHoverHex] = useState<{ q: number; r: number } | null>(null);
   const [gruen, setGruen] = useState<Set<string>>(new Set());
+  const originZieh = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const [ziehOrigin, setZiehOrigin] = useState<{ x: number; y: number } | null>(null);
 
   const size = karte?.hexGroesse || 48;
-  const ox = karte?.originX ?? 0;
-  const oy = karte?.originY ?? 0;
+  const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
+  const oy = ziehOrigin?.y ?? karte?.originY ?? 0;
 
   useEffect(() => {
     leinwand.current?.eraseMode(radierer);
@@ -136,7 +138,7 @@ export function BattlemapPopup({
     if (istGm) return true;
     if (!eigenePersonId) return false;
     if (t.personId === eigenePersonId) return true;
-    return false;
+    return t.besitzerId === eigenePersonId;
   }
 
   function istDran(t: Teilnehmer) {
@@ -219,8 +221,18 @@ export function BattlemapPopup({
         </button>
         {istGm && (
           <>
+            <button
+              type="button"
+              data-aktiv={modus === "grid"}
+              onClick={() => {
+                setModus("grid");
+                setSpawnArt(null);
+              }}
+            >
+              Grid schieben
+            </button>
             <label>
-              Grid
+              Größe
               <input
                 type="range"
                 min={24}
@@ -267,12 +279,37 @@ export function BattlemapPopup({
       <div
         ref={buehne}
         className="bm-buehne"
+        data-modus={modus}
+        onPointerDown={(e) => {
+          if (modus !== "grid" || !istGm) return;
+          originZieh.current = { sx: e.clientX, sy: e.clientY, ox, oy };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
         onPointerMove={(e) => {
+          const z = originZieh.current;
+          if (z) {
+            setZiehOrigin({ x: z.ox + e.clientX - z.sx, y: z.oy + e.clientY - z.sy });
+            return;
+          }
           if (ziehend || spawnArt) setHoverHex(hexUnter(e));
         }}
-        onPointerUp={absetzen}
+        onPointerUp={(e) => {
+          const z = originZieh.current;
+          if (z) {
+            originZieh.current = null;
+            const nx = z.ox + e.clientX - z.sx;
+            const ny = z.oy + e.clientY - z.sy;
+            setZiehOrigin({ x: nx, y: ny });
+            void battlemapApi.aktualisieren(campaignId, karteId, { originX: nx, originY: ny }).then((neu) => {
+              onKarte(neu);
+              setZiehOrigin(null);
+            }).catch(() => setZiehOrigin(null));
+            return;
+          }
+          void absetzen(e);
+        }}
         onClick={(e) => {
-          if (!spawnArt) return;
+          if (!spawnArt || modus === "grid") return;
           const hex = hexUnter(e as unknown as React.PointerEvent);
           if (hex) void spawnKlick(hex.q, hex.r);
         }}
@@ -329,12 +366,12 @@ export function BattlemapPopup({
           if (t.hexQ == null || t.hexR == null) return null;
           const anker = ziehend === t.id && hoverHex ? hoverHex : { q: t.hexQ, r: t.hexR };
           const { x, y } = hexNachPixel(anker.q, anker.r, size, ox, oy);
-          const rand =
-            t.id === amZug || (t.personId && tokens.find((x) => x.id === amZug)?.personId === t.personId)
-              ? "gold"
-              : t.personType === "PC" && !t.istDrohne && !t.istCritter && !t.istFahrzeug
-                ? "blau"
-                : "magenta";
+          const besitzer = t.besitzerId ? tokens.find((x) => x.personId === t.besitzerId) : undefined;
+          const gehoertPc =
+            (t.personType === "PC" && !t.istDrohne && !t.istCritter && !t.istFahrzeug) ||
+            besitzer?.personType === "PC" ||
+            t.besitzerId === eigenePersonId;
+          const rand = istDran(t) ? "gold" : gehoertPc ? "blau" : "magenta";
           const felder = yFelder(anker.q, anker.r, Boolean(t.istGross), t.hexDrehung ?? 0);
           const { x: x2, y: y2 } = hexNachPixel(felder[felder.length - 1][0], felder[felder.length - 1][1], size, ox, oy);
           const cx = t.istGross ? (x + x2) / 2 : x;

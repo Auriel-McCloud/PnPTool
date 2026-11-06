@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Person } from "../entities/api";
 import { anzeigeName, entitiesApi } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
@@ -21,6 +21,11 @@ interface NPCKachelProps {
 
 function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
   const [uebersicht, setUebersicht] = useState<BogenUebersicht | null>(null);
+  const [gross, setGross] = useState(Boolean(person.istGross));
+
+  useEffect(() => {
+    setGross(Boolean(person.istGross));
+  }, [person.istGross]);
 
   useNachladen(
     () => bogenApi.laden(campaignId, person.id),
@@ -64,12 +69,13 @@ function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
           title="Battlemap-Größe"
           onClick={(e) => {
             e.stopPropagation();
-            const neu = !person.istGross;
-            void entitiesApi.updatePerson(campaignId, person.id, { istGross: neu });
+            const neu = !gross;
+            setGross(neu);
             person.istGross = neu;
+            void entitiesApi.updatePerson(campaignId, person.id, { istGross: neu });
           }}
         >
-          {person.istGross ? "Groß" : "Normal"}
+          {gross ? "Groß" : "Normal"}
         </button>
 
         <div className="pc-kachel-werte">

@@ -583,15 +583,16 @@ function RasseEditor({
               />{" "}
               Kann Kredithai sein
             </label>
-            <label className="ra-feld" style={{ marginTop: 10 }}>
-              <input type="checkbox" checked={istGross} onChange={(e) => setIstGross(e.target.checked)} />{" "}
-              Groß auf der Battlemap (3 Hex)
-            </label>
             <p className="ra-hinweis">
               Freigegebene Rassen mit diesem Häkchen sind Kandidaten, wenn die Erstellung wegen
               Kredit-Freebees einen Hai anlegt. Ohne Häkchen an jeder Rasse gelten alle
               freigegebenen.
             </p>
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              <input type="checkbox" checked={istGross} onChange={(e) => setIstGross(e.target.checked)} />{" "}
+              Groß auf der Battlemap (3 Hex)
+            </label>
+            <p className="ra-hinweis">Neue Person dieser Rasse startet Groß; danach gilt der Schalter an der Kachel.</p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>
               Hinweistext (Charakterblatt/Infobox)

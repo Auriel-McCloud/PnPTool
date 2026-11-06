@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap Grid-Ursprung, Drohnen-Tokens
+
+SL schiebt den Hex-Ursprung. Größe-Schalter auf den Kacheln zeichnet neu.
+Spieler schiebt eigene Drohnen/Beschwörungen. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap (Hex, Tokens, Live-Zeichnen)
 
 Eigenes Modul, Whiteboard bleibt getrennt. Burgermenü, Kampf hängt eine Karte

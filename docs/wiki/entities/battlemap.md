@@ -120,7 +120,9 @@ Modul `backend/app/battlemap/` (CRUD, Papierkorb, Live-Zeichnen wie Whiteboard).
 Tokens am `KampfTeilnehmer` (`hexQ`/`hexR`). Kampf hängt `battlemapId` an.
 Spieler-Move `PATCH .../kampf/teilnehmer/{id}/position` (nur eigener Token am Zug).
 `istGross` an Person und Rasse. Burgermenü Battlemap, Kartenwahl im Kampfmodus.
-Spieltisch-Klicktest offen. Ursprung des Grids bleibt 0/0 (nur Größe per Slider).
+Spieltisch-Klicktest offen. SL schiebt den Grid-Ursprung per „Grid schieben“;
+Größe bleibt der Slider. Größe-Schalter auf den PC-/NPC-Kacheln zeichnet sofort
+neu. Spieler schiebt eigene Drohnen und Beschwörungen (`besitzerId`).
 
 ## Siehe auch
 

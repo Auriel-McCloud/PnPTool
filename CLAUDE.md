@@ -4,7 +4,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Battlemap: Hex-Karten, Tokens, Live-Zeichnen (06.11.2026)
 
-Eigenes Modul `backend/app/battlemap/`, Whiteboard unangetastet. Burgermenü bereitet Karten vor, Kampf hängt eine an. Tokens aus der Initiative, Spieler nur eigenen am Zug, Drop außer belegt, Grün während Drag. `istGross` an Person und Rasse. **Nicht im Browser geklickt.** Siehe [[battlemap]].
+Eigenes Modul `backend/app/battlemap/`, Whiteboard unangetastet. Burgermenü bereitet Karten vor, Kampf hängt eine an. Tokens aus der Initiative, Spieler eigenen plus Drohnen/Beschwörungen am Zug, Drop außer belegt, Grün während Drag. SL schiebt den Grid-Ursprung. `istGross` an Person und Rasse. **Nicht im Browser geklickt.** Siehe [[battlemap]].
 
 ## Kampfkarte: große Parade von der Nahkampfwaffe, Nahkampf-Schaden inkl. Körperkraft (06.11.2026)
 

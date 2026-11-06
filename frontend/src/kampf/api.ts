@@ -47,6 +47,8 @@ export interface Teilnehmer {
   istDrohne?: boolean;
   istFahrzeug?: boolean;
   istCritter?: boolean;
+  /** Rigger/Beschwörer — Spieler schiebt diese Tokens am eigenen Zug. */
+  besitzerId?: string | null;
 }
 
 /** Was der Spieler vor dem Initiativwurf wissen muss. */
