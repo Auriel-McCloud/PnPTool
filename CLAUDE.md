@@ -18,6 +18,10 @@ Fix: `_karte_fuer` bekommt einen `fog_an`-Parameter. Ist Fog aus, läuft die ber
 
 **Verifiziert:** 3 neue Fälle in `test_battlemap_sicht.py`, neue Datei `test_kampf_karte_fuer.py` (6 Fälle, testen `_karte_fuer` direkt). Volle Testsuite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung nötig). **Kein Klicktest** — bitte am Spieltisch: Fog of War ausschalten, prüfen dass Spieler sofort echte Positionen sehen (nur Wände/Versteckte ausgenommen). Details: `docs/wiki/entities/battlemap.md`.
 
+## Bugfix: sichtDa flippte nur per WS, nie per REST (Battlemap blieb für Spieler leer) (06.11.2026)
+
+Nach dem Wand-Fix immer noch leer für Mark. Rohe WebSocket-Probe (genauer Verbindungsaufbau des Browsers) bewies: Server liefert beim Connect sofort alle Teilnehmer korrekt — Backend/Übertragung 100% ok. Rest-Bug im Frontend: `sichtDa` in `BattlemapPopup.tsx` wurde nur von der WS-"tokens"-Nachricht gesetzt, nie vom initialen REST-Fetch (der für Spieler serverseitig schon gefiltert ist). Bei leicht verzögertem WS-Connect blieb die Karte bis zum nächsten zufälligen Kartenzug leer. Fix: `setSichtDa(true)` auch im REST-Pfad. Details: `docs/wiki/entities/battlemap.md`.
+
 ## Bugfix: Matrix-Ping zeigte nur wenige Tokens, Wände blockierten ihn (06.11.2026)
 
 Mark nach echtem Spieltisch-Test: Ping zeigte nicht-hot nichts. Live-Diagnose auf bebop (10 Teilnehmer, 3 Wände) ergab: nur 3/10 kamen durch. Zwei Stellen prüften fälschlich auf Sichtlinie — `battlemap/sicht.py::ping()` respektierte Wände wie Rundumsicht (Matrix-Ortung ist aber kein Sichtkontakt), UND selbst ohne diesen Check hätte `aktualisiere()` (läuft bei jedem Kartenzug im Kampf) die wandblockierte Position sofort wieder als „physisch unmöglich“ verworfen. Fix: Ping-Einträge tragen intern `matrixGeortet: true` (nie in der API-Antwort), `aktualisiere()` lässt diese beim Wand-Verfallscheck (Kegel-Durchlauf UND zweiter Verfalls-Durchlauf) in Ruhe; Versteckt schlägt weiterhin. Reproduziert mit der exakten Live-Szene von bebop als Test: vorher 3/10, nachher 10/10, stabil über mehrere `aktualisiere()`-Durchläufe. Details: `docs/wiki/entities/battlemap.md`.

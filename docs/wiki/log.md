@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] bugfix | sichtDa flippte nur per WS, nie per REST, Karte blieb leer
+
+Roher WS-Test bewies: Backend liefert alle Teilnehmer sofort korrekt.
+sichtDa in BattlemapPopup.tsx wurde aber nur vom WS-"tokens"-Push gesetzt,
+nie vom (ebenso gefilterten) REST-Fetch — bei langsamem WS-Connect blieb
+die Karte leer. Fix: setSichtDa auch im REST-Pfad. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] bugfix | Matrix-Ping zeigte nur wenige Tokens, Wände blockierten ihn
 
 Ping respektierte Wände wie Rundumsicht, und aktualisiere() hätte das

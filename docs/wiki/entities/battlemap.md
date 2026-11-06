@@ -313,6 +313,14 @@ Live-Diagnose auf bebop (echte Kampagne, 10 Teilnehmer, 3 Wandsegmente auf der K
 
 Mark: der Erfolgstext bei Hot soll nur „Du siehst die Karte live, solange du hot bleibst“ sagen, ohne den Vergleich zur SL. `MatrixFenster.tsx` angepasst, der Rest (ICE-Text, Ping-Text) bleibt.
 
+## Bugfix 06.11.2026 — sichtDa flippte nur per WS, nie per REST (Battlemap blieb leer)
+
+Nach dem Wand-Fix meldete Mark per Screenshot weiterhin: Decker sieht fast niemanden, nur sich selbst. Ein roher WebSocket-Test (genau der Verbindungsaufbau, den der Browser macht) auf `/battlemaps/{id}/live` zeigte: der Server liefert beim Connect sofort alle 11 Teilnehmer korrekt aus — die Backend-Pipeline ist nachweislich fehlerfrei bis auf die Leitung.
+
+Gefundener Rest-Bug im Frontend: `BattlemapPopup.tsx` hält einen Zustand `sichtDa` (Spieler startet mit `false`, GM mit `true`), der beim Rendern der Tokens gilt (`sichtDa && kampf.teilnehmer`). Gesetzt wurde er bisher **nur** von der WS-"tokens"-Nachricht, nicht vom initialen REST-Aufruf `kampfApi.fuerKarte()` — obwohl dessen Antwort für Spieler serverseitig bereits genauso gefiltert ist. Kam der WS-Connect auch nur geringfügig später als der REST-Call, blieb die Karte leer, bis zufällig irgendeine andere Aktion eine neue WS-"tokens"-Nachricht auslöste. Fix: `setSichtDa(true)` jetzt auch im REST-Pfad.
+
+**Verifiziert:** `npx tsc -b` sauber. Rohe WebSocket-Probe gegen den echten Kampf von Mark (10 Teilnehmer, 3 Wände) bestätigt 11/11 auf der Leitung. **Kein Klicktest** — Mark bitte erneut am Tisch probieren (Matrix-Navigation würfeln, Karte öffnen).
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]

@@ -100,7 +100,15 @@ export function BattlemapPopup({
           /* kein Kampf oder Karte schon anders gebunden */
         }
       }
-      if (!tot) setKampf(k);
+      if (!tot) {
+        setKampf(k);
+        // Bugfix 06.11.2026: sichtDa wurde bisher NUR vom WS-"tokens"-Push
+        // gesetzt. Die REST-Antwort hier ist für Spieler bereits serverseitig
+        // gefiltert (ansicht()) — ohne dieses Set blieb die Karte bis zum
+        // nächsten zufälligen Kartenzug leer/leer-ähnlich, wenn der
+        // WS-Connect minimal später kam als dieser REST-Call.
+        if (k) setSichtDa(true);
+      }
     });
     leitung.current = verbindeBattlemapLive(
       campaignId,
