@@ -62,6 +62,22 @@ unbeschädigt → `/` → `X` → durchgestrichen → frei.
 
 ## Entwicklung
 
+- **06.11.2026 — Critter als Vorlage, Kopieren:** `Person.istVorlage`
+  (Mark: "ich möchte bei Tieren nicht, dass alle davon einzigartig sind")
+  markiert einen Critter als Muster. `POST .../critter/{id}/kopieren`
+  (GM-only, nur für `istVorlage=true`) erzeugt eine unabhängige Kopie: Name,
+  Bild, Charakterbogen (Attribute/Fertigkeiten inkl. Maxima, über
+  `traits/repository.py::get_ratings_for_entity`/`set_ratings_bulk`/
+  `setze_maxima_bulk`) werden 1:1 übernommen, dazu unabhängige KOPIEN aller
+  Gegenstände der Vorlage (`items/repository.py::assign_copy`, dieselbe
+  Funktion wie beim Zuweisen einer Gegenstand-Vorlage — Mark stellt
+  Critter-Fähigkeiten/Loot teils über Gegenstände dar). Die Kopie selbst ist
+  keine Vorlage mehr, startet unverbunden (Besitzer wie gewohnt über
+  `/critter/{id}/besitzer` setzen), unbeschadet (Schaden-/
+  Willenskraftverbrauch-Felder auf 0 statt von der Vorlage übernommen) und
+  mit Standard-Sichtbarkeit ALLE statt der Vorlagen-Sichtbarkeit. UI:
+  Checkbox „Als Vorlage markieren" + „Kopie erstellen"-Knopf in
+  `CritterFenster.tsx`, Vorlage-Badge in der Begleiter-Kachel.
 - **20.09.2026 — Fertigkeitsmaximum 5→6:** Mark wollte Einheitlichkeit mit
   dem Attributmaximum (beide jetzt 6). Betrifft alle 30 Kern-Fertigkeiten
   sowie die 4 NeuroWeaving-Fertigkeiten (zählen regeltechnisch als

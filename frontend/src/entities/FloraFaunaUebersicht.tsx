@@ -219,6 +219,12 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
             await neuLaden();
             setCritterOffen(null);
           }}
+          onKopiert={async (neueId) => {
+            await neuLaden();
+            const gefunden = await entitiesApi.listCritter(campaignId);
+            setCritter(gefunden);
+            setCritterOffen(gefunden.find((c) => c.id === neueId) ?? null);
+          }}
         />
       )}
 

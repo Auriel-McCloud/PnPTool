@@ -62,6 +62,7 @@ interface KachelEintrag {
   suchtext: string;
   art: "CRITTER" | "KI_PERSON" | BegleiterArt;
   stufe: number;
+  istVorlage: boolean;
   quelle:
     | { kind: "begleiter"; daten: Begleiter }
     | { kind: "critter"; daten: CritterEintrag }
@@ -119,6 +120,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       suchtext: `${x.name} ${x.alias ?? ""} ${ART_NAMEN[x.art]} ${x.besitzerName ?? ""}`.toLowerCase(),
       art: x.art,
       stufe: x.stufe,
+      istVorlage: false,
       quelle: { kind: "begleiter", daten: x },
     }));
     const c: KachelEintrag[] = critter.map((x) => ({
@@ -130,6 +132,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       suchtext: `${x.name} ${x.alias ?? ""} Critter ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "CRITTER",
       stufe: 0,
+      istVorlage: x.istVorlage,
       quelle: { kind: "critter", daten: x },
     }));
     const k: KachelEintrag[] = kiListe.map((x) => ({
@@ -141,6 +144,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
       suchtext: `${x.name} ${x.alias ?? ""} KI Æ ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "KI_PERSON",
       stufe: 0,
+      istVorlage: false,
       quelle: { kind: "ki", daten: x },
     }));
     return [...b, ...c, ...k].sort((x, y) => x.name.localeCompare(y.name, "de"));
@@ -218,6 +222,11 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
               {k.stufe > 0 && ` · Stufe ${k.stufe}`}
             </span>
             <span className="gg-kachel-marken">
+              {k.istVorlage && (
+                <span className="gg-marke" style={{ color: "var(--neon)" }}>
+                  Vorlage
+                </span>
+              )}
               {k.besitzerName ? (
                 <span className="gg-marke">{k.besitzerName}</span>
               ) : (
@@ -305,6 +314,12 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
           onGeaendert={async () => {
             await neuLaden();
             setCritterOffen(null);
+          }}
+          onKopiert={async (neueId) => {
+            await neuLaden();
+            const gefunden = await entitiesApi.listCritter(campaignId);
+            setCritter(gefunden);
+            setCritterOffen(gefunden.find((c) => c.id === neueId) ?? null);
           }}
         />
       )}

@@ -23,7 +23,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | Seite | Zusammenfassung |
 |---|---|
 | [[concepts/wuerfelsystem]] | W10-Pool, 6-10 Erfolg, unverändert seit Excel |
-| [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten; SL kann hängende Spezialisierungs-Slots löschen (24.10.) |
+| [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten; SL kann hängende Spezialisierungs-Slots löschen (24.10.); Critter als Vorlage markierbar, Kopieren übernimmt Bild/Bogen/Gegenstände (06.11.) |
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.); Hintergrund-Baukasten entschieden 10.10.; × nimmt einen vergebenen Fertigkeiten-Slot auf einmal zurück (01.11.) |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.); erster Gratis-Kauf auch „alle Typen“, nur einmal (24.10.). Battlemap-Größe Normal/Groß am Baukasten, nicht gebaut (06.11.) |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären 5→6 (23.10.), Wilde Magie, Häretiker-Flavor (24.09.) |

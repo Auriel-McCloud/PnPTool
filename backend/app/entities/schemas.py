@@ -166,6 +166,14 @@ class PersonCreate(BaseModel):
     istEndboss: bool = False
     # Battlemap: Normal (1 Hex) oder Groß (3 im Y). Default Normal.
     istGross: bool = False
+    # Vorlage (06.11.2026, Mark: "ich möchte nicht, dass alle Tiere
+    # einzigartig sind"): markiert einen Critter als Muster, von dem die SL
+    # per Knopf unabhängige Kopien erzeugt (Name/Bild/Charakterbogen/
+    # Gegenstände werden übernommen, siehe entities/routes.py::
+    # critter_kopieren) — analog zu Gegenstand.istVorlage. Bisher nur für
+    # Critter genutzt, aber generisch auf Person, falls andere NPC-Arten das
+    # später auch wollen.
+    istVorlage: bool = False
     # Kredithai (10.10.2026): Flag wie istHaendler. Bestehende Haie werden
     # bei Schulden aus Kredit-Freebees wiederverwendet statt neu angelegt.
     istKredithai: bool = False
@@ -308,6 +316,7 @@ class PersonUpdate(BaseModel):
     gesundheitGrundwert: int | None = None
     istEndboss: bool | None = None
     istGross: bool | None = None
+    istVorlage: bool | None = None
     istKredithai: bool | None = None
     istMentor: bool | None = None
     istBlankoKontakt: bool | None = None
@@ -389,6 +398,7 @@ class PersonResponse(BaseModel):
     gesundheitGrundwert: int = -1
     istEndboss: bool = False
     istGross: bool = False
+    istVorlage: bool = False
     istKredithai: bool = False
     istMentor: bool = False
     istBlankoKontakt: bool = False

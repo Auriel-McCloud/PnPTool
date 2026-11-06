@@ -78,6 +78,10 @@ export interface Person extends VisibilityFields {
   istKredithai?: boolean;
   /** Battlemap: Groß = 3 Hex im Y. */
   istGross?: boolean;
+  /** Vorlage (06.11.2026): Critter-Muster, von dem per Knopf unabhängige
+   * Kopien (Bild/Charakterbogen/Gegenstände) erzeugt werden können — siehe
+   * entitiesApi.critterKopieren. */
+  istVorlage?: boolean;
   /** Tutorial-Shop (10.10.2026): Händler, der NUR im Freebees-Schritt der
    * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
    * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */
@@ -270,6 +274,7 @@ export interface CritterEintrag {
   bildUrl: string;
   besitzerId: string | null;
   besitzerName: string | null;
+  istVorlage: boolean;
 }
 
 /** Dieselbe schlanke Form wie `CritterEintrag`, für KI-Personen. */
@@ -325,6 +330,10 @@ export const entitiesApi = {
   listCritter: (cid: string) => api.get<CritterEintrag[]>(`${base(cid)}/critter`),
   critterBesitzer: (cid: string, critterId: string, personId: string | null) =>
     api.post<CritterEintrag>(`${base(cid)}/critter/${critterId}/besitzer`, { personId }),
+  /** Erzeugt aus einem als Vorlage markierten Critter eine unabhängige Kopie
+   * (Bild, Charakterbogen und alle Gegenstände werden übernommen). */
+  critterKopieren: (cid: string, critterId: string) =>
+    api.post<CritterEintrag>(`${base(cid)}/critter/${critterId}/kopieren`, {}),
 
   /** KI — dasselbe Muster wie Critter, seit 20.09.2026 (revidiert) ebenfalls
    * eine echte Person (`istKI: true`) statt einer Begleiter-Art. */

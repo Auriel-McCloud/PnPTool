@@ -155,6 +155,14 @@ export function FloraFaunaListe({
             await neuLaden();
             setCritterOffen(null);
           }}
+          onKopiert={async () => {
+            // Kopie hängt nicht automatisch an diesem Ort (LEBT_IN wird hier
+            // nicht mitkopiert) — einfach schließen, die Liste dieses Orts
+            // bleibt unverändert, die Kopie findet sich in der Begleiter-/
+            // Flora-&-Fauna-Übersicht.
+            await neuLaden();
+            setCritterOffen(null);
+          }}
         />
       )}
 

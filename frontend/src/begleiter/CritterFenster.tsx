@@ -37,6 +37,7 @@ export function CritterFenster({
   personen,
   onSchliessen,
   onGeaendert,
+  onKopiert,
 }: {
   campaignId: string;
   critterId: string;
@@ -46,12 +47,15 @@ export function CritterFenster({
   personen: { id: string; label: string }[];
   onSchliessen: () => void;
   onGeaendert: () => void;
+  /** Vorlage wurde kopiert — die neue Kopie soll als Nächstes geöffnet werden. */
+  onKopiert: (neueCritterId: string) => void;
 }) {
   const [person, setPerson] = useState<Person | null>(null);
   const [unteransicht, setUnteransicht] = useState<Unteransicht>("blatt");
   const [beschreibungDoc, setBeschreibungDoc] = useState(parseRichText(""));
   const [besitzerSuche, setBesitzerSuche] = useState("");
   const [loeschenOffen, setLoeschenOffen] = useState(false);
+  const [kopiert, setKopiert] = useState(false);
 
   useEffect(() => {
     entitiesApi.getPerson(campaignId, critterId).then((p) => {
@@ -70,6 +74,16 @@ export function CritterFenster({
     setLoeschenOffen(false);
     await entitiesApi.deletePerson(campaignId, critterId);
     onGeaendert();
+  }
+
+  async function kopieErstellen() {
+    setKopiert(true);
+    try {
+      const kopie = await entitiesApi.critterKopieren(campaignId, critterId);
+      onKopiert(kopie.id);
+    } finally {
+      setKopiert(false);
+    }
   }
 
   const besitzerGefiltert = personen.filter((p) =>
@@ -234,6 +248,33 @@ export function CritterFenster({
                   leer = Standard (6) · dazu kommt Widerstandsfähigkeit, z.B. Ratte: 1 + 1 = 2
                 </span>
               </label>
+            </div>
+
+            <div className="bg-zeile" style={{ marginTop: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                <input
+                  type="checkbox"
+                  checked={!!person.istVorlage}
+                  onChange={async (e) => {
+                    const neu = await entitiesApi.updatePerson(campaignId, critterId, {
+                      istVorlage: e.target.checked,
+                    });
+                    setPerson(neu);
+                  }}
+                />
+                Als Vorlage markieren (Tiere derselben Art müssen nicht einzeln angelegt werden)
+              </label>
+              {person.istVorlage && (
+                <div style={{ marginTop: 6 }}>
+                  <button type="button" onClick={kopieErstellen} disabled={kopiert}>
+                    {kopiert ? "Kopie wird erstellt…" : "❖ Kopie erstellen"}
+                  </button>
+                  <p className="pcd-hinweis" style={{ margin: "4px 0 0" }}>
+                    Übernimmt Bild, Charakterbogen und unabhängige Kopien aller Gegenstände. Die Kopie ist
+                    unverbunden, unbeschadet und selbst keine Vorlage.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="bg-zeile" style={{ marginTop: 10 }}>

@@ -1,5 +1,6 @@
 import mimetypes
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -345,6 +346,104 @@ async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
     if ergebnis is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
     return ergebnis
+
+
+# Felder, die eine Critter-Kopie NICHT von ihrer Vorlage übernimmt — alles
+# andere automatisch (Ausnahmeliste statt Positivliste, siehe
+# items/repository.py::_NICHT_KOPIEREN, derselbe Grund: eine Positivliste
+# vergisst garantiert irgendwann ein neues Feld).
+_CRITTER_NICHT_KOPIEREN = {
+    "id",
+    "istVorlage",
+    "sichtbarkeit",
+    "sichtbarFuer",
+    # Eine Kopie ist ein frisches Tier — Wunden/verbrauchte Willenskraft der
+    # Vorlage sind kein Merkmal der Art, sondern Zustand des einen Exemplars.
+    "schadenSchlag",
+    "schadenSchwer",
+    "schadenAggraviert",
+    "schwerHeilZaehler",
+    "willenskraftVerbraucht",
+    "iceSchaden",
+}
+
+
+@router.post("/critter/{node_id}/kopieren", response_model=dict, dependencies=[Depends(require_campaign_gm)])
+async def critter_kopieren(campaign_id: str, node_id: str):
+    """Erzeugt eine unabhängige Kopie eines als Vorlage markierten Critters.
+
+    Mark (06.11.2026): "ich möchte bei Tieren nicht, dass alle davon
+    einzigartig sind" — einmal eine Art (z.B. Ratte) komplett ausbauen,
+    danach per Knopf beliebig viele eigenständige Exemplare erzeugen.
+
+    Übernommen werden Basisfelder, Bild und der komplette Charakterbogen
+    (Attribute/Fertigkeiten inkl. Maxima, siehe traits/repository.py)
+    identisch von der Vorlage, dazu unabhängige KOPIEN all ihrer Gegenstände
+    (Mark stellt Critter-Fähigkeiten/Loot teils über Gegenstände dar — über
+    `items_repository.assign_copy`, dieselbe Funktion wie beim Zuweisen einer
+    Gegenstand-Vorlage). Die Kopie selbst ist keine Vorlage mehr, startet
+    unverbunden (kein Besitzer — wie gehabt über /critter/{id}/besitzer
+    zuweisen), unbeschadet und mit Standard-Sichtbarkeit ALLE statt der
+    Vorlagen-Sichtbarkeit.
+    """
+    source = await repository.get_node("Person", PERSON_FIELDS, campaign_id, node_id)
+    if source is None or not source.get("istCritter"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
+    if not source.get("istVorlage"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur als Vorlage markierte Critter können kopiert werden")
+
+    daten = {k: v for k, v in source.items() if k not in _CRITTER_NICHT_KOPIEREN}
+    daten.update(
+        {
+            "istVorlage": False,
+            "sichtbarkeit": "ALLE",
+            "sichtbarFuer": [],
+            # Die Kopie ist ein frisch erzeugtes Exemplar, kein Nachdruck des
+            # Vorlagen-Erstelldatums (siehe schemas.py::PersonCreate.erstelltAm).
+            "erstelltAm": datetime.now(timezone.utc).isoformat(),
+            # Die ausgeschlossenen Schaden-/Willenskraft-Felder müssen mit
+            # einem frischen Wert zurückkommen — create_node() referenziert
+            # ALLE PERSON_FIELDS in der Cypher-CREATE, ein fehlender Schlüssel
+            # wirft sonst "Expected parameter(s)" (siehe create_node).
+            "schadenSchlag": 0,
+            "schadenSchwer": 0,
+            "schadenAggraviert": 0,
+            "schwerHeilZaehler": 0,
+            "willenskraftVerbraucht": 0,
+            "iceSchaden": 0,
+        }
+    )
+    kopie = await repository.create_node("Person", PERSON_FIELDS, campaign_id, daten)
+
+    ratings = await traits_repository.get_ratings_for_entity(campaign_id, node_id)
+    if ratings:
+        await traits_repository.set_ratings_bulk(
+            campaign_id, kopie["id"], {r["name"]: r["rating"] for r in ratings}
+        )
+        await traits_repository.setze_maxima_bulk(
+            campaign_id, kopie["id"], {r["name"]: r["max"] for r in ratings}
+        )
+
+    gegenstaende = await items_repository.list_gegenstaende(campaign_id, node_id)
+    for g in gegenstaende:
+        if g.get("weggeworfen"):
+            continue
+        await items_repository.assign_copy(
+            campaign_id, g, kopie["id"], g.get("sichtbarkeit") or "ALLE", g.get("sichtbarFuer") or []
+        )
+
+    await lexikon_hooks.campaign_weit_neu_berechnen(campaign_id)
+    return {
+        "id": kopie["id"],
+        "name": kopie["name"],
+        "alias": kopie.get("alias"),
+        "bildUrl": kopie.get("bildUrl", ""),
+        "besitzerId": None,
+        "besitzerName": None,
+        "sichtbarkeit": kopie["sichtbarkeit"],
+        "sichtbarFuer": kopie["sichtbarFuer"],
+        "istVorlage": False,
+    }
 
 
 @router.get("/drohnen", response_model=list[dict])

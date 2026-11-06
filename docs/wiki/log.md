@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Critter als Vorlage, Kopieren mit Bild/Bogen/Gegenständen
+
+`Person.istVorlage` markiert einen Critter als Muster. Kopieren übernimmt
+Name/Bild/Charakterbogen 1:1, dazu unabhängige Kopien aller Gegenstände
+(`items/repository.py::assign_copy`). Kopie startet unverbunden, unbeschadet,
+Sichtbarkeit ALLE. Siehe [[concepts/attribute-und-fertigkeiten]].
+
 ## [2026-11-06] gebaut | Battlemap-Tokens live (Zugwechsel, neue Teilnehmer)
 
 Rundruf enthält Portrait und neue Tokens. Kampfmodus „Karte öffnen“.
