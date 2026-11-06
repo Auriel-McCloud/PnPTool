@@ -3406,4 +3406,5 @@ dort weitergepflegt, hier nicht mehr).
 | 23 | Ki-Tamas und Rüstung von Ifrit und Shiva; Blizzard, Inferno, Feuer, Eis | **offen**, Notiz — Zuordnung nicht entschieden | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 | 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
+| 26 | Battlemap (Hex-Grid auf Bild, Tokens aus der Initiative, Spieler bewegt eigenen Charakter/Drohnen/Beschwörungen) | **offen**, Skizze 06.11.2026 — Whiteboard nicht erweitern; Achsen (Drop hart/weich, nur am Zug, 4-Hex-Form, Einstieg, Unterlage) ungeklärt | [[battlemap]] |
 

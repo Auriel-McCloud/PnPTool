@@ -86,6 +86,11 @@ automatische „0 HP = tot"-Logik.
   Updates laufen über Page-Refresh/Polling. Geplante Events:
   `teilnehmerHinzugefuegt`, `initiativeGesetzt`, `zugGewechselt`,
   `kampfBeendet`. **Status: geplant, nicht umgesetzt.**
+- **Battlemap** — Hex-Grid auf Bild, Tokens aus der Initiative, Spieler
+  bewegt eigenen Charakter/Drohnen/Beschwörungen. Skizze 06.11.2026, Achsen
+  offen, nicht gebaut. Siehe [[../entities/battlemap]]. Die Zeile oben
+  („keine Würfel-Simulation“) bleibt; ob Reichweite nur markiert oder Drops
+  sperrt, ist dort die offene Achse.
 - Widerspruch: das Beispiel-JSON in `docs/api/kampf.md` zeigt noch das alte
   generische Attributsystem — siehe [[../comparisons/veraltete-docs-vs-code]].
 

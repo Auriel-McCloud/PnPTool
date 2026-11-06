@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-06 | Seiten: 38
+> Zuletzt aktualisiert: 2026-11-06 | Seiten: 39
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -28,7 +28,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.); erster Gratis-Kauf auch „alle Typen“, nur einmal (24.10.) |
 | [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären 5→6 (23.10.), Wilde Magie, Häretiker-Flavor (24.09.) |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), 6 Skills (22.09.), Overclock, Pool-Deckel 12; Kampfkarte schaltet beim Neuroweaver wie beim Decker zwischen Kampf und Cyberkampf (01.11.). Overclock ist dort eine Funktion mit Würfel und Willenskraft. Deaktivieren teilweise umgesetzt (01.11.): Kampf-Fenster, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Gehacktes Deck zieht von allein nach. Neuroweaver-Hack: restliche Willenskraft ist das Kampf-ICE, Überschuss ist ungedeckelter Schlagschaden; Hot-Decker wählt schalten oder Schaden. Drohne ebenso: Wahl, nicht nur schalten; Fahrzeug bleibt beim Schalten. Überschrift „Würfeln“ ist weg, die Knöpfe bleiben (05.11.). Vierte Umbau-Option „Nicht hackbar“ (05.11.). Offen: Ki-Tama-Zeile, Automata als eigener Typ |
-| [[concepts/kampf-und-initiative]] | Initiative, Treffen mit Ausrüstungsbonus, Waffen-Skill, Schaden, Parade-Bonus nur an der Waffe (31.10.). SL bekommt Booster- und Hot-Popups, wenn ein NPC dran ist (04.11.). Kampfmenü ohne die Zeilen Ansage von hinten, Schutz und Schaden, Würfeln (05.11.) — Pools, Waffen und der Umschalter bleiben. Klick auf die Initiative-Zahl trägt die Erfolge ein, auch wenn Charakter oder Drohne noch nicht in der Liste stehen (05.11.). Große Parieren-Kachel nimmt die Nahkampfwaffe, Nahkampf-Schaden zeigt Waffe+Körperkraft (06.11.). |
+| [[concepts/kampf-und-initiative]] | Initiative, Treffen mit Ausrüstungsbonus, Waffen-Skill, Schaden, Parade-Bonus nur an der Waffe (31.10.). SL bekommt Booster- und Hot-Popups, wenn ein NPC dran ist (04.11.). Kampfmenü ohne die Zeilen Ansage von hinten, Schutz und Schaden, Würfeln (05.11.) — Pools, Waffen und der Umschalter bleiben. Klick auf die Initiative-Zahl trägt die Erfolge ein, auch wenn Charakter oder Drohne noch nicht in der Liste stehen (05.11.). Große Parieren-Kachel nimmt die Nahkampfwaffe, Nahkampf-Schaden zeigt Waffe+Körperkraft (06.11.). Battlemap (Hex, Tokens aus der Initiative) skizziert, nicht gebaut, Achsen offen (06.11.) |
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |
 | [[concepts/cyberware-bioware]] | Preis→Willenskraftverlust, Rundungsregel (31.08.), Reflex-Booster; unverbautes Chrom mit natürlicher Rüstung bleibt umlegbar bis zum Einsetzen (04.11.) |
 | [[concepts/willenskraft]] | Verbrauch/Rückgewinn, Verbindung zu Magie/NeuroWeaving/Cyberware |
@@ -63,6 +63,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/hintergrund-baukasten-feature]] | **Teilweise (10.10.2026):** KI durch `pruefe()`; narrativer SL-Katalog (Seed ohne Mentor/Kontakte); Mentor-Pipeline/Blatt-Button noch offen |
 | [[entities/spieler-lexikon]] | Burgermenü „Lexikon" (Welt/Fauna/Flora/Objekte), entschieden-nicht-umgesetzt (09.10.): automatische `ENTDECKT`-Kante per Erreichbarkeits-Hook (max. 7 Hops, bricht an SL-geheimen Kanten ab) schaltet nur Existenz frei, `sichtbarkeit` weiter die Beschreibung; `zeigeInGraph`→`storyRelevant` für MacGuffin-Objekte; Favoriten, Notizen pro Objekt |
 | [[entities/ring-raetsel]] | Burgermenü „Rätsel“: Modus Leicht (acht Räume) oder Mittel (zwei Ebenen nebeneinander, abwechselnd Ebene/Drehen), freie SL-Markierung pro Feld, Lage der Gruppe extra, Spieler sehen nach Freigabe nur zu ohne Lösungshinweise (03.11.) |
+| [[entities/battlemap]] | Hex-Kampfkarte. Skizze 06.11.: Grid auf Bild, Tokens aus der Initiative, Spieler schiebt eigenen Charakter/Drohnen/Beschwörungen, Reichweite 3+Sportlichkeit bzw. 3+Fliegen, große Monster 4 Felder. Whiteboard nicht erweitern. Status offen, Achsen ungeklärt, nicht gebaut |
 
 ## Vergleiche
 

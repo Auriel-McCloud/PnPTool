@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] skizziert | Battlemap (Hex, Tokens aus der Initiative)
+
+Neue Seite [[entities/battlemap]]. Whiteboard nicht erweitern. Tokens am
+Kampf, Karte als eigenes Asset. Fünf Achsen offen (Drop hart/weich, nur am
+Zug, 4-Hex-Form, Einstieg, Unterlage). Nicht gebaut.
+Siehe [[concepts/kampf-und-initiative]].
+
 ## [2026-11-06] gebaut | Kampfkarte: Parade der Nahkampfwaffe, Schaden inkl. Körperkraft
 
 Große Parieren-Kachel zeigt die ausgerüstete Nahkampfwaffe (Pistole kann
