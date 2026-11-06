@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Person } from "../entities/api";
-import { anzeigeName } from "../entities/api";
+import { anzeigeName, entitiesApi } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css"; // Selbes Styling wie PCs
@@ -58,6 +58,19 @@ function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
 
       <div className="pc-kachel-info">
         <div className="pc-kachel-name">{anzeigeName(person.name, person.alias)}</div>
+        <button
+          type="button"
+          className="pc-kachel-extra-ep"
+          title="Battlemap-Größe"
+          onClick={(e) => {
+            e.stopPropagation();
+            const neu = !person.istGross;
+            void entitiesApi.updatePerson(campaignId, person.id, { istGross: neu });
+            person.istGross = neu;
+          }}
+        >
+          {person.istGross ? "Groß" : "Normal"}
+        </button>
 
         <div className="pc-kachel-werte">
           <div className="pc-kachel-wert pc-kachel-lp" title="Lebenspunkte">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Person } from "../entities/api";
-import { anzeigeName } from "../entities/api";
+import { anzeigeName, entitiesApi } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import { glanzStufe, pcKachelRang } from "./vorgefertigtRang";
@@ -78,6 +78,19 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
 
       <div className="pc-kachel-info">
         <div className="pc-kachel-name">{anzeigeName(person.name, person.alias)}</div>
+        <button
+          type="button"
+          className="pc-kachel-extra-ep"
+          title="Battlemap-Größe"
+          onClick={(e) => {
+            e.stopPropagation();
+            const neu = !person.istGross;
+            void entitiesApi.updatePerson(campaignId, person.id, { istGross: neu });
+            person.istGross = neu;
+          }}
+        >
+          {person.istGross ? "Groß" : "Normal"}
+        </button>
         {spielerName && <div className="pc-kachel-spieler">{spielerName}</div>}
 
         {/* Extra-EP Anzeige mit + Button */}

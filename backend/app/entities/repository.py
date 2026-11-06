@@ -70,7 +70,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istGross", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", "versteckVonPersonIds", *_VISIBILITY_FIELDS]
@@ -137,6 +137,7 @@ _BOGEN_DEFAULTS: dict = {
     # nicht — ohne Ersatz scheitert GET /personen mit bool_type-Fehler
     # (Stolperstein 9).
     "istEndboss": False,
+    "istGross": False,
     "istKredithai": False,
     # Mentor/Blanko-Kontakt (11.10.2026): Bestandsdaten kennen die Felder
     # noch nicht — ohne Ersatz scheitert GET /personen (Stolperstein 9).

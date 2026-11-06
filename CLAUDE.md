@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: Hex-Karten, Tokens, Live-Zeichnen (06.11.2026)
+
+Eigenes Modul `backend/app/battlemap/`, Whiteboard unangetastet. Burgermenü bereitet Karten vor, Kampf hängt eine an. Tokens aus der Initiative, Spieler nur eigenen am Zug, Drop außer belegt, Grün während Drag. `istGross` an Person und Rasse. **Nicht im Browser geklickt.** Siehe [[battlemap]].
+
 ## Kampfkarte: große Parade von der Nahkampfwaffe, Nahkampf-Schaden inkl. Körperkraft (06.11.2026)
 
 Mark am Tisch: Parieren 6 neben Buster Sword Parade 8 verwirrt, Pistole kann nicht parieren. Große Kachel nimmt jetzt die beste ausgerüstete Nahkampf-/Handgemenge-Waffe (`parier_pool`). Nahkampf-Schadenszeile zeigt Waffe+Körperkraft (3+3=6), Fernkampf bleibt die Waffe. `Kampfkarte.tsx`, `items/waffenbonus.py`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.
@@ -3406,5 +3410,5 @@ dort weitergepflegt, hier nicht mehr).
 | 23 | Ki-Tamas und Rüstung von Ifrit und Shiva; Blizzard, Inferno, Feuer, Eis | **offen**, Notiz — Zuordnung nicht entschieden | [[augments-ausruestung]] |
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 | 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
-| 26 | Battlemap (Hex-Grid, Tokens aus der Initiative, Live-Zeichnen) | **entschieden-nicht-umgesetzt** (06.11.2026) — Spawn Blau/Magenta; Rand PC blau / NPC magenta / am Zug gold+puls; Belegung hart; Drohne/Beschwörung neben Charakter; `istGross` an Person+Rasse; 3 im Y; Grün nur während Drag; 3+Fliegen×2 | [[battlemap]] |
+| 26 | Battlemap (Hex-Grid, Tokens aus der Initiative, Live-Zeichnen) | **teilweise umgesetzt** (06.11.2026) — gebaut, Spieltisch-Klicktest offen | [[battlemap]] |
 

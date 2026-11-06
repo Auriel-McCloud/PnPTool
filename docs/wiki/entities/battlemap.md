@@ -5,12 +5,12 @@ updated: 2026-11-06
 type: entität
 tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/zeichnungen/repository.py, ../../../backend/app/kampf/repository.py, ../../api/kampf.md, ../concepts/kampf-und-initiative.md]
-status: entschieden-nicht-umgesetzt
+status: teilweise-umgesetzt
 ---
 
 # Battlemap
 
-Hex-Kampfkarte. Design 06.11.2026, nicht gebaut.
+Hex-Kampfkarte. Gebaut 06.11.2026, Spieltisch-Klicktest offen.
 
 ## Auslöser
 
@@ -113,6 +113,14 @@ Normal = 1 Hex, Groß = 3 im Y plus Kreis.
 4. Oberfläche — entschieden: Burgermenü zum Vorbereiten, Kampf hängt eine Karte an.
 5. Unterlage — erste Frage war Bild oder Whiteboard-Standbild; ersetzt durch
    eigenes Bild plus Live-Zeichnen auf der Karte plus skalierbares Grid.
+
+## Gebaut 06.11.2026
+
+Modul `backend/app/battlemap/` (CRUD, Papierkorb, Live-Zeichnen wie Whiteboard).
+Tokens am `KampfTeilnehmer` (`hexQ`/`hexR`). Kampf hängt `battlemapId` an.
+Spieler-Move `PATCH .../kampf/teilnehmer/{id}/position` (nur eigener Token am Zug).
+`istGross` an Person und Rasse. Burgermenü Battlemap, Kartenwahl im Kampfmodus.
+Spieltisch-Klicktest offen. Ursprung des Grids bleibt 0/0 (nur Größe per Slider).
 
 ## Siehe auch
 

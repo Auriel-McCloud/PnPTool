@@ -416,6 +416,7 @@ def regelwerk(
                 "gratisFertigkeitName": daten.get("gratisFertigkeitName", ""),
                 "gratisFertigkeitBonus": int(daten.get("gratisFertigkeitBonus") or 0),
                 "featureHinweis": daten.get("featureHinweis", ""),
+                "istGross": bool(daten.get("istGross")),
                 # Anzeigenamen für den Steckbrief. Leer, bis die Route sie
                 # aus Gegenstand/Zusatzfertigkeit auflöst — die IDs allein
                 # sind für Spieler unlesbar.

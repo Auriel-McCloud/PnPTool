@@ -164,6 +164,8 @@ class PersonCreate(BaseModel):
     # einem Tod dagegen (siehe app/achievements/repository.py::
     # endboss_besiegt_kandidaten).
     istEndboss: bool = False
+    # Battlemap: Normal (1 Hex) oder Groß (3 im Y). Default Normal.
+    istGross: bool = False
     # Kredithai (10.10.2026): Flag wie istHaendler. Bestehende Haie werden
     # bei Schulden aus Kredit-Freebees wiederverwendet statt neu angelegt.
     istKredithai: bool = False
@@ -305,6 +307,7 @@ class PersonUpdate(BaseModel):
     # Body) lässt das Feld unangetastet, wie bei jedem anderen PATCH-Feld.
     gesundheitGrundwert: int | None = None
     istEndboss: bool | None = None
+    istGross: bool | None = None
     istKredithai: bool | None = None
     istMentor: bool | None = None
     istBlankoKontakt: bool | None = None
@@ -385,6 +388,7 @@ class PersonResponse(BaseModel):
     # -1 = kein Override, globaler Standardwert gilt. Siehe PersonCreate oben.
     gesundheitGrundwert: int = -1
     istEndboss: bool = False
+    istGross: bool = False
     istKredithai: bool = False
     istMentor: bool = False
     istBlankoKontakt: bool = False

@@ -55,7 +55,7 @@ Basis `/api/campaigns/{campaign_id}/rassen`:
 Pfade hängen an einer Kampagne, die Daten nicht — derselbe Zuschnitt wie bei
 `/chromstufen`.
 
-## Noch nicht gebaut: `istGross` (06.11.2026)
+## Gebaut: `istGross` (06.11.2026)
 
 Battlemap-Größe, Default Normal. Siehe [[../concepts/rassen]] und
 [[battlemap]].

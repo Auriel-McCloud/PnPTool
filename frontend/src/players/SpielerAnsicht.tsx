@@ -59,6 +59,7 @@ import { ShopUebersicht } from "../haendler/ShopUebersicht";
 import { SpielerNotizen } from "../spielernotizen/SpielerNotizen";
 import { LexikonAnsicht } from "../lexikon/LexikonAnsicht";
 import { ZeichnungenAnsicht } from "../zeichnungen/ZeichnungenAnsicht";
+import { BattlemapAnsicht } from "../battlemap/BattlemapAnsicht";
 import { RaetselTafelAnsicht } from "../raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "../drohnen/DrohnenUebersicht";
 import { WerkbankUebersichtSpieler } from "../werkbank/WerkbankUebersichtSpieler";
@@ -107,6 +108,7 @@ const BEREICHE_STATISCH: Bereich[] = [
   // Whiteboard (25.10.2026): nur sichtbar, was die SL freigegeben hat —
   // Zeichnen nur, wenn das jeweilige Board es erlaubt (siehe backend/app/zeichnungen).
   { id: "whiteboard", name: "Whiteboard", symbol: "🖊", farbe: "var(--bereich-whiteboard)" },
+  { id: "battlemap", name: "Battlemap", symbol: "⬡", farbe: "var(--bereich-battlemap)" },
   // Drohnen & Fahrzeuge (25.10.2026, Phase 3): nur sichtbar, was die SL
   // freigegeben hat; Rigger-Bindung bleibt SL-Sache.
   { id: "drohnen", name: "Fahrzeuge & Drohnen", symbol: "⛭", farbe: "var(--bereich-drohnen)" },
@@ -975,6 +977,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
 
       {bereich === "whiteboard" && (
         <ZeichnungenAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} istGm={false} />
+      )}
+      {bereich === "battlemap" && (
+        <BattlemapAnsicht campaignId={ich.campaignId} eigenePersonId={ich.personId} istGm={false} />
       )}
 
       {bereich === "drohnen" && (

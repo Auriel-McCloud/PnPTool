@@ -233,6 +233,7 @@ function RasseEditor({
   const [gratisFertigkeitBonus, setGratisFertigkeitBonus] = useState(rasse.gratisFertigkeitBonus);
   const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
   const [kannKredithai, setKannKredithai] = useState(rasse.kannKredithai ?? false);
+  const [istGross, setIstGross] = useState(rasse.istGross ?? false);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [fertigkeitenKatalog, setFertigkeitenKatalog] = useState<TraitDef[]>([]);
@@ -251,6 +252,7 @@ function RasseEditor({
     setGratisFertigkeitBonus(rasse.gratisFertigkeitBonus);
     setFeatureHinweis(rasse.featureHinweis);
     setKannKredithai(rasse.kannKredithai ?? false);
+    setIstGross(rasse.istGross ?? false);
   }, [rasse.id]);
 
   // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
@@ -313,6 +315,7 @@ function RasseEditor({
         gratisFertigkeitBonus,
         featureHinweis,
         kannKredithai,
+        istGross,
       });
       await onGeaendert();
     } finally {
@@ -579,6 +582,10 @@ function RasseEditor({
                 onChange={(e) => setKannKredithai(e.target.checked)}
               />{" "}
               Kann Kredithai sein
+            </label>
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              <input type="checkbox" checked={istGross} onChange={(e) => setIstGross(e.target.checked)} />{" "}
+              Groß auf der Battlemap (3 Hex)
             </label>
             <p className="ra-hinweis">
               Freigegebene Rassen mit diesem Häkchen sind Kandidaten, wenn die Erstellung wegen

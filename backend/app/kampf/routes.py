@@ -5,6 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
+from app.battlemap.hex import drop_frei
+from app.battlemap.logic import darf_schieben
+from app.battlemap.schemas import KarteAnKampf, PositionUpdate
+from app.battlemap.verteiler import verteiler as karten_verteiler
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
 from app.kampf import matrix_store, repository
@@ -89,6 +93,16 @@ class TeilnehmerResponse(BaseModel):
     personId: str | None = None
     personType: str | None = None
     begleiterId: str | None = None
+    hexQ: int | None = None
+    hexR: int | None = None
+    hexDrehung: int | None = None
+    zugStartQ: int | None = None
+    zugStartR: int | None = None
+    bildUrl: str = ""
+    istGross: bool = False
+    istDrohne: bool = False
+    istFahrzeug: bool = False
+    istCritter: bool = False
 
 
 class KampfResponse(BaseModel):
@@ -98,6 +112,7 @@ class KampfResponse(BaseModel):
     teilnehmer: list[TeilnehmerResponse]
     # Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist.
     verbrauchteBeschwoerungen: list[str] = []
+    battlemapId: str | None = None
 
 
 class TeilnehmerInput(BaseModel):
@@ -231,6 +246,96 @@ async def beginne(campaign_id: str):
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_campaign_gm)])
 async def beende(campaign_id: str):
     await repository.beende(campaign_id)
+
+
+def _token_stand(kampf: dict) -> dict:
+    return {
+        "amZug": kampf.get("amZug"),
+        "battlemapId": kampf.get("battlemapId"),
+        "teilnehmer": [
+            {
+                "id": t["id"],
+                "hexQ": t.get("hexQ"),
+                "hexR": t.get("hexR"),
+                "hexDrehung": t.get("hexDrehung"),
+                "zugStartQ": t.get("zugStartQ"),
+                "zugStartR": t.get("zugStartR"),
+            }
+            for t in kampf.get("teilnehmer") or []
+            if not t.get("zusatzzug")
+        ],
+    }
+
+
+async def _tokens_senden(kampf: dict | None) -> None:
+    if not kampf or not kampf.get("battlemapId"):
+        return
+    await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": _token_stand(kampf)})
+
+
+@router.put("/karte", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
+async def karte_anhaengen(campaign_id: str, body: KarteAnKampf):
+    kampf = await repository.setze_karte(campaign_id, body.battlemapId)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    await _tokens_senden(kampf)
+    return _ohne_hilfsfelder(kampf)
+
+
+@router.patch("/teilnehmer/{teilnehmer_id}/position", response_model=KampfResponse)
+async def token_schieben(
+    campaign_id: str,
+    teilnehmer_id: str,
+    body: PositionUpdate,
+    viewer: Viewer = Depends(get_viewer),
+):
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    token = next((t for t in kampf["teilnehmer"] if t["id"] == teilnehmer_id), None)
+    if token is None or token.get("zusatzzug"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht gefunden")
+    am_zug_eintrag = next((t for t in kampf["teilnehmer"] if t["id"] == kampf.get("amZug")), None)
+    am_zug = False
+    if am_zug_eintrag:
+        am_zug = am_zug_eintrag["id"] == token["id"] or (
+            token.get("personId") and am_zug_eintrag.get("personId") == token.get("personId")
+        )
+    besitzer = (kampf.get("_drohnenBesitzer") or {}).get(token.get("personId"))
+    if not darf_schieben(
+        rolle=viewer.role,
+        person_id=viewer.person_id,
+        token_person_id=token.get("personId"),
+        besitzer_id=besitzer,
+        am_zug=am_zug,
+    ):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht gefunden")
+    belegt = repository._belegt_karte(kampf["teilnehmer"], ausser_id=token["id"])
+    if not drop_frei(
+        body.q,
+        body.r,
+        gross=bool(token.get("istGross")),
+        drehung=body.drehung,
+        eigene_id=token["id"],
+        belegt=belegt,
+    ):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Feld belegt")
+    kampf = await repository.setze_token_position(
+        campaign_id, teilnehmer_id, body.q, body.r, body.drehung, zug_start=am_zug
+    )
+    await _tokens_senden(kampf)
+    if viewer.role != "GM" and kampf:
+        kampf = dict(kampf)
+        kampf["teilnehmer"] = fuer_spieler(
+            kampf["teilnehmer"],
+            rassen=kampf.pop("_rassen", {}),
+            eigene_person_id=viewer.person_id,
+            begleiter_besitzer=kampf.pop("_begleiterBesitzer", {}),
+            npc_ids=kampf.pop("_npcIds", set()),
+            drohnen_besitzer=kampf.pop("_drohnenBesitzer", {}),
+        )
+        return kampf
+    return _ohne_hilfsfelder(kampf)
 
 
 @router.post("/teilnehmer", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])

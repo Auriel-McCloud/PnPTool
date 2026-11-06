@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap (Hex, Tokens, Live-Zeichnen)
+
+Eigenes Modul, Whiteboard bleibt getrennt. Burgermenü, Kampf hängt eine Karte
+an, Spieler schiebt eigenen Token am Zug. `istGross` an Person und Rasse.
+Klicktest offen. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] nachgeschärft | Battlemap: Spawn, Randfarben, Belegung, Größe
 
 Zwei Spawn-Felder auf der Karte (Blau PC, Magenta NPC). Rand `--p-blau` /

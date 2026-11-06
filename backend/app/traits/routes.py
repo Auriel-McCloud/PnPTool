@@ -912,6 +912,7 @@ async def _rassen_der_kampagne(campaign_id: str) -> dict[str, dict]:
             "gratisFertigkeitName": r["gratisFertigkeitName"],
             "gratisFertigkeitBonus": r["gratisFertigkeitBonus"],
             "kannKredithai": r.get("kannKredithai") or False,
+            "istGross": r.get("istGross") or False,
         }
         for r in await rassen_repository.liste_fuer_kampagne(campaign_id)
     }
@@ -1250,6 +1251,7 @@ async def erstelle_charakter(
             "schulden": schulden,
             "gratisGegenstandErhalten": gratis_erhalten,
             "erstellungAbgeschlossen": True,
+            "istGross": bool(rassen_feature.get("istGross")),
         },
     )
 

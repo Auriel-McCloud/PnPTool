@@ -56,6 +56,7 @@ class RasseCreate(BaseModel):
     # Kredithai (10.10.2026): Häkchen, keine Namensprüfung. Nur freigegebene
     # Rassen mit diesem Flag sind Hai-Kandidaten (Schulden-Hintergrund).
     kannKredithai: bool = False
+    istGross: bool = False
 
 
 class RasseUpdate(BaseModel):
@@ -72,6 +73,7 @@ class RasseUpdate(BaseModel):
     gratisFertigkeitBonus: int | None = None
     featureHinweis: str | None = None
     kannKredithai: bool | None = None
+    istGross: bool | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
 
@@ -106,6 +108,7 @@ class RasseResponse(BaseModel):
     gratisFertigkeitBonus: int = 0
     featureHinweis: str = ""
     kannKredithai: bool = False
+    istGross: bool = False
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

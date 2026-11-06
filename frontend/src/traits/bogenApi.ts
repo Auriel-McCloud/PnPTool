@@ -208,6 +208,7 @@ export interface Rasse {
   /** Anzeigename zur gratisGegenstandId. */
   gratisGegenstandName: string;
   featureHinweis: string;
+  istGross?: boolean;
 }
 
 export interface FertigkeitsPaket {

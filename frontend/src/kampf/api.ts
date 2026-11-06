@@ -37,6 +37,16 @@ export interface Teilnehmer {
   personId: string | null;
   personType: string | null;
   begleiterId: string | null;
+  hexQ?: number | null;
+  hexR?: number | null;
+  hexDrehung?: number | null;
+  zugStartQ?: number | null;
+  zugStartR?: number | null;
+  bildUrl?: string;
+  istGross?: boolean;
+  istDrohne?: boolean;
+  istFahrzeug?: boolean;
+  istCritter?: boolean;
 }
 
 /** Was der Spieler vor dem Initiativwurf wissen muss. */
@@ -91,6 +101,7 @@ export interface Kampf {
   teilnehmer: Teilnehmer[];
   /** Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist. */
   verbrauchteBeschwoerungen?: string[];
+  battlemapId?: string | null;
 }
 
 export interface MatrixZeile {
@@ -204,6 +215,10 @@ export const kampfApi = {
     api.patch<Kampf>(`${basis(cid)}/teilnehmer/${id}`, daten),
   entfernen: (cid: string, id: string) => api.delete<Kampf>(`${basis(cid)}/teilnehmer/${id}`),
   weiter: (cid: string) => api.post<Kampf>(`${basis(cid)}/weiter`),
+  karte: (cid: string, battlemapId: string | null) =>
+    api.put<Kampf>(`${basis(cid)}/karte`, { battlemapId }),
+  position: (cid: string, teilnehmerId: string, q: number, r: number, drehung = 0) =>
+    api.patch<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/position`, { q, r, drehung }),
   amZug: (cid: string, teilnehmerId: string | null) =>
     api.post<Kampf>(`${basis(cid)}/amzug`, { teilnehmerId }),
   matrix: (cid: string) => api.get<MatrixUebersicht>(`${basis(cid)}/matrix`),

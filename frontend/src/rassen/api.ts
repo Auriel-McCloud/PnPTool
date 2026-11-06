@@ -43,6 +43,7 @@ export interface Rasse {
   gratisFertigkeitBonus: number;
   featureHinweis: string;
   kannKredithai: boolean;
+  istGross: boolean;
 }
 
 export interface RasseEingabe {
@@ -59,6 +60,7 @@ export interface RasseEingabe {
   gratisFertigkeitBonus?: number;
   featureHinweis?: string;
   kannKredithai?: boolean;
+  istGross?: boolean;
 }
 
 function basis(cid: string) {

@@ -76,6 +76,8 @@ export interface Person extends VisibilityFields {
   istHaendler?: boolean;
   /** Kredithai (10.10.2026): bestehender Hai wird bei Schulden wiederverwendet. */
   istKredithai?: boolean;
+  /** Battlemap: Groß = 3 Hex im Y. */
+  istGross?: boolean;
   /** Tutorial-Shop (10.10.2026): Händler, der NUR im Freebees-Schritt der
    * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
    * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */

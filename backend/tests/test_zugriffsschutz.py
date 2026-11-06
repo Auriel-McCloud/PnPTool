@@ -229,6 +229,10 @@ OHNE_GM_ERLAUBT = {
     # überhaupt sehen darf. Board anlegen/umbenennen/freigeben/löschen bleibt
     # SL-Sache (require_campaign_gm an den jeweiligen Routen).
     "/api/campaigns/{campaign_id}/zeichnungen/{zeichnung_id}/pfade",
+    # Battlemap: wer zeichnen darf, darf den Stand speichern — analog Whiteboard.
+    "/api/campaigns/{campaign_id}/battlemaps/{karte_id}/pfade",
+    # Battlemap-Token: Spieler nur eigenen, nur am Zug. Prüft selbst darf_schieben.
+    "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/position",
     # --- Drohnen/Fahrzeuge: Rigger darf die eigene Verbindung schalten ------
     # Prüft selbst (entities/routes.py::drohne_aktiv_setzen): GM immer,
     # Spieler nur für die eigene Drohne/das eigene Fahrzeug (BEGLEITET-Kante

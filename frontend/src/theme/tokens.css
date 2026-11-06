@@ -160,6 +160,7 @@
   /* Whiteboard (25.10.2026): eigenes Blau wie ein Trockenlöschmarker,
      bisher ungenutzt als Bereichsfarbe. */
   --bereich-whiteboard: var(--p-blau);
+  --bereich-battlemap: var(--p-gruen);
   /* Drohnen & Fahrzeuge (25.10.2026): eigener Bernstein-Ton wie ein
      Status-LED am Chassis, bisher ungenutzt als Bereichsfarbe. */
   --bereich-drohnen: var(--p-bernstein);

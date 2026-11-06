@@ -86,9 +86,8 @@ automatische „0 HP = tot"-Logik.
   Updates laufen über Page-Refresh/Polling. Geplante Events:
   `teilnehmerHinzugefuegt`, `initiativeGesetzt`, `zugGewechselt`,
   `kampfBeendet`. **Status: geplant, nicht umgesetzt.**
-- **Battlemap** — Design 06.11.2026, nicht gebaut. Siehe
-  [[../entities/battlemap]]. Drop überall außer belegt; Grün nur während
-  des Ziehens; die Zeile oben („keine Würfel-Simulation“) bleibt.
+- **Battlemap** — gebaut 06.11.2026, Klicktest offen. Siehe
+  [[../entities/battlemap]].
 - Widerspruch: das Beispiel-JSON in `docs/api/kampf.md` zeigt noch das alte
   generische Attributsystem — siehe [[../comparisons/veraltete-docs-vs-code]].
 

@@ -10,6 +10,7 @@ import { Kampfkarte } from "./Kampfkarte";
 import { DeineDrohnenImKampf } from "./DeineDrohnenImKampf";
 import { DeineBeschwoerungen } from "./DeineBeschwoerungen";
 import { KAMPFARTEN, kampfApi, type Kampf, type Kampfart, type Teilnehmer } from "./api";
+import { battlemapApi, type Battlemap } from "../battlemap/api";
 import { Initiativliste, useKampf } from "./Initiativliste";
 import { InitiativeSetzen } from "./InitiativeSetzen";
 import { BoosterPopup } from "./BoosterPopup";
@@ -39,10 +40,12 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
   const [laeuft, setLaeuft] = useState(false);
   const [initiativeZiel, setInitiativeZiel] = useState<Teilnehmer | null>(null);
   const [suche, setSuche] = useState("");
+  const [karten, setKarten] = useState<Battlemap[]>([]);
 
   useEffect(() => {
     entitiesApi.listPersonen(campaignId).then(setPersonen).catch(() => setPersonen([]));
     begleiterApi.liste(campaignId).then(setBegleiter).catch(() => setBegleiter([]));
+    battlemapApi.liste(campaignId).then(setKarten).catch(() => setKarten([]));
   }, [campaignId]);
 
   /** Auswahl: erst die Charaktere, dann die Begleiter, dann "frei benannt". */
@@ -152,6 +155,20 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
         >
           Kampf beenden
         </button>
+        <label className="ka-suche" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          Karte
+          <select
+            value={kampf.battlemapId ?? ""}
+            onChange={(e) => mit(kampfApi.karte(campaignId, e.target.value || null))}
+          >
+            <option value="">— keine —</option>
+            {karten.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
 
       <Initiativliste

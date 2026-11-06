@@ -1,0 +1,108 @@
+/* Battlemap-Leinwand. Farben nur Tokens. */
+.bm-leiste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bm-leiste button {
+  background: transparent;
+  border: 1px solid var(--linie);
+  color: var(--text);
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+.bm-leiste button[data-aktiv="true"] {
+  border-color: var(--bereich-battlemap, var(--p-blau));
+  color: var(--bereich-battlemap, var(--p-blau));
+}
+.bm-buehne {
+  position: relative;
+  min-height: 420px;
+  height: min(70vh, 640px);
+  overflow: auto;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+.bm-skizze,
+.bm-grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.bm-hex {
+  fill: transparent;
+  stroke: color-mix(in srgb, var(--text) 28%, transparent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+.bm-hex[data-gruen="true"] {
+  stroke: var(--gut);
+  stroke-width: 2.5;
+}
+.bm-hex[data-pc="true"] {
+  stroke: var(--p-blau);
+  stroke-width: 2.5;
+}
+.bm-hex[data-npc="true"] {
+  stroke: var(--p-magenta);
+  stroke-width: 2.5;
+}
+.bm-hex-grau {
+  fill: color-mix(in srgb, var(--text-aus) 35%, transparent);
+  stroke: var(--text-aus);
+  pointer-events: none;
+}
+.bm-token {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  cursor: grab;
+  z-index: 2;
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+.bm-token[data-rand="blau"] {
+  box-shadow: 0 0 0 3px var(--p-blau);
+}
+.bm-token[data-rand="magenta"] {
+  box-shadow: 0 0 0 3px var(--p-magenta);
+}
+.bm-token[data-rand="gold"] {
+  box-shadow: 0 0 0 3px var(--p-gold), 0 0 12px var(--p-gold);
+  animation: bm-gold-puls 1.2s ease-in-out infinite;
+}
+.bm-token img,
+.bm-token span {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--flaeche-hoch);
+}
+@keyframes bm-gold-puls {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--p-gold), 0 0 6px var(--p-gold);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--p-gold), 0 0 18px var(--p-gold);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bm-token[data-rand="gold"] {
+    animation: none;
+  }
+}

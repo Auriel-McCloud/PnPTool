@@ -36,7 +36,8 @@ FELDER = """
     coalesce(r.gratisFertigkeitName, '') AS gratisFertigkeitName,
     coalesce(r.gratisFertigkeitBonus, 0) AS gratisFertigkeitBonus,
     coalesce(r.featureHinweis, '') AS featureHinweis,
-    coalesce(r.kannKredithai, false) AS kannKredithai
+    coalesce(r.kannKredithai, false) AS kannKredithai,
+    coalesce(r.istGross, false) AS istGross
 """
 
 
@@ -62,6 +63,7 @@ def _decode(record: dict) -> dict:
     daten["gratisFertigkeitBonus"] = int(daten.get("gratisFertigkeitBonus") or 0)
     daten["featureHinweis"] = daten.get("featureHinweis") or ""
     daten["kannKredithai"] = bool(daten.get("kannKredithai"))
+    daten["istGross"] = bool(daten.get("istGross"))
     return daten
 
 
@@ -139,7 +141,8 @@ async def anlegen(daten: dict) -> dict:
                 gratisGegenstandId: $gratisGegenstandId, gratisErsterKaufTyp: $gratisErsterKaufTyp,
                 gratisZusatzfertigkeitId: $gratisZusatzfertigkeitId,
                 gratisFertigkeitName: $gratisFertigkeitName, gratisFertigkeitBonus: $gratisFertigkeitBonus,
-                featureHinweis: $featureHinweis, kannKredithai: $kannKredithai
+                featureHinweis: $featureHinweis, kannKredithai: $kannKredithai,
+                istGross: $istGross
             }})
             RETURN {FELDER}
             """,
@@ -158,6 +161,7 @@ async def anlegen(daten: dict) -> dict:
             gratisFertigkeitBonus=int(daten.get("gratisFertigkeitBonus") or 0),
             featureHinweis=daten.get("featureHinweis") or "",
             kannKredithai=bool(daten.get("kannKredithai")),
+            istGross=bool(daten.get("istGross")),
         )
         return _decode(dict(await result.single()))
 

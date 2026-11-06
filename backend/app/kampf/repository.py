@@ -28,7 +28,11 @@ TEILNEHMER_FELDER = """
     t.zusatzzug AS zusatzzug, t.stammtId AS stammtId,
     t.ampel AS ampel, t.zusatzGenutzt AS zusatzGenutzt, t.setztAus AS setztAus,
     t.rundenVerbleibend AS rundenVerbleibend,
+    t.hexQ AS hexQ, t.hexR AS hexR, t.hexDrehung AS hexDrehung,
+    t.zugStartQ AS zugStartQ, t.zugStartR AS zugStartR,
     p.id AS personId, p.personType AS personType,
+    p.bildUrl AS bildUrl, coalesce(p.istGross, false) AS istGross,
+    p.istDrohne AS istDrohne, p.istFahrzeug AS istFahrzeug, p.istCritter AS istCritter,
     b.id AS begleiterId
 """
 
@@ -54,6 +58,14 @@ def _decode(record: dict) -> dict:
     # beschworener Teilnehmer, ganz normaler Teilnehmer ohne Zeitlimit.
     roh_runden = daten.get("rundenVerbleibend")
     daten["rundenVerbleibend"] = int(roh_runden) if roh_runden is not None else None
+    for feld in ("hexQ", "hexR", "hexDrehung", "zugStartQ", "zugStartR"):
+        roh = daten.get(feld)
+        daten[feld] = int(roh) if roh is not None else None
+    daten["bildUrl"] = daten.get("bildUrl") or ""
+    daten["istGross"] = bool(daten.get("istGross"))
+    daten["istDrohne"] = bool(daten.get("istDrohne"))
+    daten["istFahrzeug"] = bool(daten.get("istFahrzeug"))
+    daten["istCritter"] = bool(daten.get("istCritter"))
     return daten
 
 
@@ -84,7 +96,8 @@ async def hole(campaign_id: str) -> dict | None:
             """
             MATCH (k:Kampf {campaignId: $campaign_id})
             RETURN k.id AS id, k.runde AS runde, k.amZug AS amZug, k.begonnen AS begonnen,
-                   coalesce(k.verbrauchteBeschwoerungen, []) AS verbrauchteBeschwoerungen
+                   coalesce(k.verbrauchteBeschwoerungen, []) AS verbrauchteBeschwoerungen,
+                   k.battlemapId AS battlemapId
             """,
             campaign_id=campaign_id,
         )
@@ -186,9 +199,8 @@ async def hole(campaign_id: str) -> dict | None:
         # Position zeigte danach auf jemand anderen.
         "amZug": am_zug,
         "teilnehmer": teilnehmer,
-        # Ki-Tama-Item-IDs, deren einer Ruf in diesem Kampf schon weg ist
-        # (gelungene Beschwörung oder Patzer). Fehlt am Altknoten = leer.
         "verbrauchteBeschwoerungen": list(kampf["verbrauchteBeschwoerungen"] or []),
+        "battlemapId": kampf.get("battlemapId"),
     }
 
 
@@ -451,6 +463,7 @@ async def teilnehmer_hinzu(campaign_id: str, daten: dict) -> dict | None:
             stammt_id=daten.get("stammtId"),
             runden_verbleibend=daten.get("rundenVerbleibend"),
         )
+    await platziere_unplatzierte(campaign_id)
     return await hole(campaign_id)
 
 
@@ -495,6 +508,9 @@ async def setze_am_zug(campaign_id: str, teilnehmer_id: str | None, runde: int |
             MATCH (k:Kampf {campaignId: $campaign_id})
             SET k.amZug = $am_zug
             FOREACH (_ IN CASE WHEN $runde IS NULL THEN [] ELSE [1] END | SET k.runde = $runde)
+            WITH k
+            MATCH (k)-[:KAEMPFT]->(t:KampfTeilnehmer)
+            SET t.zugStartQ = null, t.zugStartR = null
             """,
             campaign_id=campaign_id,
             am_zug=teilnehmer_id,
@@ -621,3 +637,125 @@ async def tick_beschwoerungen(campaign_id: str) -> None:
             """,
             campaign_id=campaign_id,
         )
+
+
+async def setze_karte(campaign_id: str, battlemap_id: str | None) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (k:Kampf {campaignId: $campaign_id})
+            SET k.battlemapId = $karte
+            """,
+            campaign_id=campaign_id,
+            karte=battlemap_id,
+        )
+    if battlemap_id:
+        await platziere_unplatzierte(campaign_id)
+    return await hole(campaign_id)
+
+
+async def setze_token_position(
+    campaign_id: str,
+    teilnehmer_id: str,
+    q: int,
+    r: int,
+    drehung: int,
+    *,
+    zug_start: bool,
+) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        if zug_start:
+            await session.run(
+                """
+                MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer {id: $id})
+                SET t.hexQ = $q, t.hexR = $r, t.hexDrehung = $drehung,
+                    t.zugStartQ = coalesce(t.zugStartQ, t.hexQ, $q),
+                    t.zugStartR = coalesce(t.zugStartR, t.hexR, $r)
+                """,
+                campaign_id=campaign_id,
+                id=teilnehmer_id,
+                q=q,
+                r=r,
+                drehung=drehung,
+            )
+        else:
+            await session.run(
+                """
+                MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer {id: $id})
+                SET t.hexQ = $q, t.hexR = $r, t.hexDrehung = $drehung
+                """,
+                campaign_id=campaign_id,
+                id=teilnehmer_id,
+                q=q,
+                r=r,
+                drehung=drehung,
+            )
+    return await hole(campaign_id)
+
+
+def _belegt_karte(teilnehmer: list[dict], ausser_id: str | None = None) -> dict[tuple[int, int], str]:
+    from app.battlemap.hex import y_felder
+
+    belegt: dict[tuple[int, int], str] = {}
+    for t in teilnehmer:
+        if t.get("zusatzzug"):
+            continue
+        if ausser_id and t["id"] == ausser_id:
+            continue
+        if t.get("hexQ") is None or t.get("hexR") is None:
+            continue
+        for feld in y_felder(t["hexQ"], t["hexR"], gross=bool(t.get("istGross")), drehung=int(t.get("hexDrehung") or 0)):
+            belegt[feld] = t["id"]
+    return belegt
+
+
+async def platziere_unplatzierte(campaign_id: str) -> None:
+    """Tokens ohne Hex an die Spawn-Felder der angehängten Karte."""
+    from app.battlemap import repository as karten_repo
+    from app.battlemap.hex import spawn_platz
+
+    kampf = await hole(campaign_id)
+    if kampf is None or not kampf.get("battlemapId"):
+        return
+    karte = await karten_repo.holen(campaign_id, kampf["battlemapId"])
+    if karte is None:
+        return
+    besitzer = kampf.get("_drohnenBesitzer") or {}
+    for t in kampf["teilnehmer"]:
+        if t.get("zusatzzug") or t.get("hexQ") is not None:
+            continue
+        person_id = t.get("personId")
+        rigger = besitzer.get(person_id) if person_id else None
+        neben = None
+        if rigger:
+            haupt = next(
+                (
+                    x
+                    for x in kampf["teilnehmer"]
+                    if x.get("personId") == rigger and not x.get("zusatzzug") and x.get("hexQ") is not None
+                ),
+                None,
+            )
+            if haupt:
+                neben = (haupt["hexQ"], haupt["hexR"])
+        ist_pc = t.get("personType") == "PC" and not t.get("istDrohne") and not t.get("istFahrzeug") and not t.get("istCritter")
+        if neben is not None:
+            start = neben
+        elif ist_pc and karte.get("spawnPcQ") is not None:
+            start = (karte["spawnPcQ"], karte["spawnPcR"])
+        elif karte.get("spawnNpcQ") is not None:
+            start = (karte["spawnNpcQ"], karte["spawnNpcR"])
+        elif karte.get("spawnPcQ") is not None:
+            start = (karte["spawnPcQ"], karte["spawnPcR"])
+        else:
+            continue
+        belegt = _belegt_karte(kampf["teilnehmer"])
+        platz = spawn_platz(start[0], start[1], gross=bool(t.get("istGross")), belegt=belegt)
+        if platz is None:
+            continue
+        q, r, dreh = platz
+        await setze_token_position(campaign_id, t["id"], q, r, dreh, zug_start=False)
+        t["hexQ"], t["hexR"], t["hexDrehung"] = q, r, dreh
+
