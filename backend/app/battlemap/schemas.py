@@ -32,6 +32,7 @@ class BattlemapUpdate(BaseModel):
     # Vorbereiten. Leer = keine Verknüpfung.
     ortIds: list[str] | None = None
     eventIds: list[str] | None = None
+    waende: list[dict] | None = None
 
 
 class BattlemapResponse(BaseModel):
@@ -53,6 +54,7 @@ class BattlemapResponse(BaseModel):
     spawnNpcR: int | None = None
     ortIds: list[str] = []
     eventIds: list[str] = []
+    waende: list[dict] = []
 
 
 class PfadeUpdate(BaseModel):

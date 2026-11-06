@@ -66,7 +66,7 @@ def _ohne_hilfsfelder(kampf: dict | None) -> dict | None:
     """
     if kampf is None:
         return None
-    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer", "_sichtSpeicher", "_campaignId"):
+    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer", "_sichtSpeicher", "_campaignId", "_waende"):
         kampf.pop(feld, None)
     return kampf
 
@@ -276,12 +276,25 @@ async def _fog_an(kampf: dict | None) -> bool:
     return bool(werte.get("fogOfWar"))
 
 
+async def _waende(kampf: dict) -> list:
+    cid = kampf.get("_campaignId")
+    kid = kampf.get("battlemapId")
+    if not cid or not kid:
+        return []
+    from app.battlemap import repository as karten_repo
+
+    karte = await karten_repo.holen(cid, kid)
+    return list((karte or {}).get("waende") or [])
+
+
 async def _speicher_frisch(kampf: dict) -> dict:
     from app.battlemap.sicht import aktualisiere, start_speicher
 
     speicher = kampf.get("_sichtSpeicher") or {}
     teilnehmer = kampf.get("teilnehmer") or []
-    speicher = start_speicher(teilnehmer) if not speicher else aktualisiere(teilnehmer, speicher)
+    waende = await _waende(kampf)
+    kampf["_waende"] = waende
+    speicher = start_speicher(teilnehmer, waende) if not speicher else aktualisiere(teilnehmer, speicher, waende)
     cid = kampf.get("_campaignId")
     if cid:
         await repository.setze_sicht(cid, speicher)
@@ -292,7 +305,13 @@ async def _speicher_frisch(kampf: dict) -> dict:
 def _karte_fuer(kampf: dict, speicher: dict, rolle: str, person_id: str | None) -> list[dict]:
     from app.battlemap.sicht import ansicht
 
-    gesehen = ansicht(kampf.get("teilnehmer") or [], speicher, rolle=rolle, person_id=person_id)
+    gesehen = ansicht(
+        kampf.get("teilnehmer") or [],
+        speicher,
+        rolle=rolle,
+        person_id=person_id,
+        waende=kampf.get("_waende"),
+    )
     if rolle != "GM":
         gesehen = fuer_spieler(
             gesehen,

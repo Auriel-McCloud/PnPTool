@@ -4,7 +4,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Fog of War auf der Battlemap, optional (06.11.2026)
 
-Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler sehen nur den vorderen Halbkreis der eigenen Figuren (Charakter, eigene Drohnen, eigene Beschwörungen). Dahinter bleibt der letzte Stand. Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom. Antippen zeigt den Namen. Die SL sieht die Wahrheit. Siehe `docs/wiki/entities/battlemap.md`.
+Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler sehen nur den vorderen Halbkreis der eigenen Figuren (Charakter, eigene Drohnen, eigene Beschwörungen). Dahinter bleibt der letzte Stand. Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom, Wände schneiden auch die. Antippen zeigt den Namen. Die SL sieht die Wahrheit. Siehe `docs/wiki/entities/battlemap.md`.
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 

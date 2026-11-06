@@ -86,3 +86,28 @@ export function hexRasterRechteck(
   }
   return liste;
 }
+
+export type Ecke = { ax: number; ay: number; px: number; py: number };
+
+/** Nächste Hex-Ecke. ax/ay bleiben bei Größe und Ursprung stabil. */
+export function naechsteEcke(px: number, py: number, size: number, ox: number, oy: number): Ecke | null {
+  if (size <= 0) return null;
+  const mitte = pixelNachHex(px, py, size, ox, oy);
+  let best: Ecke | null = null;
+  let bestD = Infinity;
+  const felder = [{ q: mitte.q, r: mitte.r }, ...NACHBARN.map(([dq, dr]) => ({ q: mitte.q + dq, r: mitte.r + dr }))];
+  for (const feld of felder) {
+    const c = hexNachPixel(feld.q, feld.r, size, ox, oy);
+    for (let i = 0; i < 6; i++) {
+      const winkel = (Math.PI / 180) * (60 * i - 30);
+      const x = c.x + size * Math.cos(winkel);
+      const y = c.y + size * Math.sin(winkel);
+      const d = (x - px) ** 2 + (y - py) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = { ax: (x - ox) / size, ay: (y - oy) / size, px: x, py: y };
+      }
+    }
+  }
+  return best;
+}

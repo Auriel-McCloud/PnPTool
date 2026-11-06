@@ -84,19 +84,19 @@ async def aktualisieren(campaign_id: str, karte_id: str, body: BattlemapUpdate):
     if karte is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Karte nicht gefunden")
     await verteiler.rundrufen(karte_id, {"typ": "karte", "daten": karte})
-    if any(feld.startswith("spawn") for feld in daten):
-        from app.battlemap.logic import token_stand
+    if any(feld.startswith("spawn") for feld in daten) or "waende" in daten:
         from app.kampf import repository as kampf_repo
+        from app.kampf.routes import _tokens_senden
 
         kampf = await kampf_repo.hole(campaign_id)
-        if kampf:
+        if kampf and any(feld.startswith("spawn") for feld in daten):
             if not kampf.get("battlemapId"):
                 kampf = await kampf_repo.setze_karte(campaign_id, karte_id)
             elif kampf.get("battlemapId") == karte_id:
                 await kampf_repo.platziere_unplatzierte(campaign_id)
                 kampf = await kampf_repo.hole(campaign_id)
-            if kampf:
-                await verteiler.rundrufen(karte_id, {"typ": "tokens", "daten": token_stand(kampf)})
+        if kampf and kampf.get("battlemapId") == karte_id:
+            await _tokens_senden(kampf)
     return karte
 
 

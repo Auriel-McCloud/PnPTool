@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from "react-sketch-canvas";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
-import { hexEcken, hexNachPixel, hexRasterRechteck, pixelNachHex, reichweite, yFelder } from "./hex";
+import { hexEcken, hexNachPixel, hexRasterRechteck, naechsteEcke, pixelNachHex, reichweite, yFelder } from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
 import { einstellungenApi } from "../campaigns/einstellungen";
 import { partyApi } from "../party/api";
@@ -44,7 +45,7 @@ export function BattlemapPopup({
   const stift = STIFTE[1];
   const [radierer, setRadierer] = useState(false);
   const [verbunden, setVerbunden] = useState(false);
-  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid">("schieben");
+  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid" | "wand">("schieben");
   const [spawnArt, setSpawnArt] = useState<"pc" | "npc" | null>(null);
   const [kampf, setKampf] = useState<Kampf | null>(null);
   const [ziehend, setZiehend] = useState<string | null>(null);
@@ -57,6 +58,9 @@ export function BattlemapPopup({
   const [fog, setFog] = useState(false);
   const [chipId, setChipId] = useState<string | null>(null);
   const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
+  const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
+  const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
+  const [wandWeg, setWandWeg] = useState<number | null>(null);
 
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
@@ -162,6 +166,12 @@ export function BattlemapPopup({
     const box = buehne.current?.getBoundingClientRect();
     if (!box) return null;
     return pixelNachHex(ev.clientX - box.left, ev.clientY - box.top, size, ox, oy);
+  }
+
+  function eckeUnter(ev: React.PointerEvent) {
+    const box = buehne.current?.getBoundingClientRect();
+    if (!box) return null;
+    return naechsteEcke(ev.clientX - box.left, ev.clientY - box.top, size, ox, oy);
   }
 
   async function spawnKlick(q: number, r: number) {
@@ -276,6 +286,7 @@ export function BattlemapPopup({
   }
 
   return (
+    <>
     <Fenster
       offen={offen}
       titel={karte.name}
@@ -308,6 +319,16 @@ export function BattlemapPopup({
               }}
             >
               Grid schieben
+            </button>
+            <button
+              type="button"
+              data-aktiv={modus === "wand"}
+              onClick={() => {
+                setModus("wand");
+                setSpawnArt(null);
+              }}
+            >
+              Wand
             </button>
             <label>
               Größe
@@ -361,11 +382,24 @@ export function BattlemapPopup({
         className="bm-buehne"
         data-modus={modus}
         onPointerDown={(e) => {
+          if (modus === "wand" && istGm) {
+            if ((e.target as HTMLElement).closest(".bm-wand")) return;
+            const ecke = eckeUnter(e);
+            if (!ecke) return;
+            wandVon.current = ecke;
+            setWandZiel(ecke);
+            e.currentTarget.setPointerCapture(e.pointerId);
+            return;
+          }
           if (modus !== "grid" || !istGm) return;
           originZieh.current = { sx: e.clientX, sy: e.clientY, ox, oy };
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
+          if (wandVon.current) {
+            setWandZiel(eckeUnter(e));
+            return;
+          }
           const z = originZieh.current;
           if (z) {
             setZiehOrigin({ x: z.ox + e.clientX - z.sx, y: z.oy + e.clientY - z.sy });
@@ -374,6 +408,17 @@ export function BattlemapPopup({
           if (ziehend || spawnArt) setHoverHex(hexUnter(e));
         }}
         onPointerUp={(e) => {
+          if (wandVon.current) {
+            const start = wandVon.current;
+            wandVon.current = null;
+            const ziel = eckeUnter(e);
+            setWandZiel(null);
+            if (ziel && (Math.abs(ziel.ax - start.ax) > 0.05 || Math.abs(ziel.ay - start.ay) > 0.05)) {
+              const liste = [...(karte.waende ?? []), { ax: start.ax, ay: start.ay, bx: ziel.ax, by: ziel.ay }];
+              void battlemapApi.aktualisieren(campaignId, karteId, { waende: liste }).then(onKarte).catch(() => undefined);
+            }
+            return;
+          }
           const z = originZieh.current;
           if (z) {
             originZieh.current = null;
@@ -443,6 +488,31 @@ export function BattlemapPopup({
             const { x, y } = hexNachPixel(t.zugStartQ, t.zugStartR, size, ox, oy);
             return <polygon key={`g-${t.id}`} points={hexEcken(x, y, size * 0.95)} className="bm-hex-grau" />;
           })}
+        </svg>
+        <svg className="bm-waende">
+          {(karte.waende ?? []).map((w, i) => (
+            <line
+              key={`${w.ax}-${w.ay}-${w.bx}-${w.by}-${i}`}
+              className="bm-wand"
+              x1={w.ax * size + ox}
+              y1={w.ay * size + oy}
+              x2={w.bx * size + ox}
+              y2={w.by * size + oy}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (istGm && modus === "wand") setWandWeg(i);
+              }}
+            />
+          ))}
+          {wandVon.current && wandZiel && (
+            <line
+              className="bm-wand-vorschau"
+              x1={wandVon.current.px}
+              y1={wandVon.current.py}
+              x2={wandZiel.px}
+              y2={wandZiel.py}
+            />
+          )}
         </svg>
         {tokens.map((t) => {
           if (t.hexQ == null || t.hexR == null) return null;
@@ -540,5 +610,19 @@ export function BattlemapPopup({
         })}
       </div>
     </Fenster>
+    {wandWeg != null && (
+      <Bestaetigung
+        titel="Wand weg?"
+        text="Bist du sicher? Die Linie blockiert dann keine Sicht mehr."
+        jaText="Weg damit"
+        onNein={() => setWandWeg(null)}
+        onJa={() => {
+          const liste = (karte.waende ?? []).filter((_, i) => i !== wandWeg);
+          setWandWeg(null);
+          void battlemapApi.aktualisieren(campaignId, karteId, { waende: liste }).then(onKarte).catch(() => undefined);
+        }}
+      />
+    )}
+    </>
   );
 }

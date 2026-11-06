@@ -3,7 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
-## [2026-11-06] gebaut | Battlemap: Fog of War optional
+## [2026-11-06] gebaut | Battlemap: Sichtlinien blockieren auch Rundumsicht
+
+SL-Modus Wand, Linien an der Karte. Fog of War wertet sie mit, auch bei
+360-Grad. Siehe [[entities/battlemap]].
 
 Schalter in den Einstellungen, Standard aus. Letzte Sicht, Verstecken,
 Rundumsicht an Rasse und verbautem Chrom. Klicktest offen. Siehe

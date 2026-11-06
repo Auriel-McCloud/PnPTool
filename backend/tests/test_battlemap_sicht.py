@@ -1,6 +1,6 @@
 """Letzte Sicht: Halbkreis, Gedächtnis, Versteckt, Rundumsicht."""
 
-from app.battlemap.sicht import aktualisiere, ansicht, sektor, start_speicher, vorderkegel
+from app.battlemap.sicht import aktualisiere, ansicht, blockiert, sektor, start_speicher, vorderkegel, zentrum
 from app.campaigns.repository import EINSTELLUNGEN_DEFAULTS
 
 
@@ -118,3 +118,35 @@ class TestGedaechtnis:
 
 def test_fog_standard_aus():
     assert EINSTELLUNGEN_DEFAULTS["fogOfWar"] is False
+
+
+def _kante_osten():
+    """Gemeinsame Kante zwischen (0,0) und (1,0)."""
+    a = zentrum(0, 0)
+    import math
+
+    return {
+        "ax": a[0] + math.cos(math.radians(-30)),
+        "ay": a[1] + math.sin(math.radians(-30)),
+        "bx": a[0] + math.cos(math.radians(30)),
+        "by": a[1] + math.sin(math.radians(30)),
+    }
+
+
+class TestWaende:
+    def test_wand_blockiert_rundumsicht(self):
+        a = token("a", 0, 0, rundumsicht=True)
+        b = token("b", 2, 0, personType="NPC")
+        wand = [_kante_osten()]
+        assert blockiert(0, 0, 2, 0, wand) is True
+        speicher = start_speicher([a, b], wand)
+        assert "b" not in speicher["a"]
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand)
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_ohne_wand_sieht_rundum(self):
+        a = token("a", 0, 0, rundumsicht=True)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = aktualisiere([a, b], start_speicher([a, b]))
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        assert next(t for t in gesehen if t["id"] == "b")["veraltet"] is False

@@ -25,6 +25,8 @@ export interface Battlemap {
    *  Vorbereiten, kein automatisches Anhängen beim Kampfbeginn. */
   ortIds: string[];
   eventIds: string[];
+  /** Sichtblockaden in Hex-Einheiten. Schneiden auch Rundumsicht. */
+  waende: { ax: number; ay: number; bx: number; by: number }[];
 }
 
 const basis = (campaignId: string) => `/api/campaigns/${campaignId}/battlemaps`;

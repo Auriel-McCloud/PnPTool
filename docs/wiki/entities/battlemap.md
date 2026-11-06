@@ -204,7 +204,8 @@ bekommen nur ihre Augen (eigener Charakter, eigene Drohnen, eigene
 Beschwörungen). Vorne drei von sechs Richtungen live, hinten der letzte Stand.
 Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom.
 Antippen zeigt den Namen, Ziehen bewegt. Die SL sieht die Wahrheit, Versteckte
-abgeblendet.
+abgeblendet. Sichtlinien (`waende`) zieht die SL im Modus Wand; sie schneiden
+auch Rundumsicht. Antippen einer Linie fragt, ob sie weg soll.
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 

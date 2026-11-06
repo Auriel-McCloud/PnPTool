@@ -5,6 +5,8 @@ letzten Hinsehen. Versteckt schlägt den Kegel. Rundumsicht sieht immer
 den aktuellen Stand. Die Party teilt die Augen nicht.
 """
 
+import math
+
 from app.battlemap.hex import NACHBARN_DELTA
 
 # Felder, die ein Spieler von einem Token sehen darf. Keine Wahrheit
@@ -64,8 +66,46 @@ def gehoert(token: dict, person_id: str | None) -> bool:
     return token.get("besitzerId") == person_id
 
 
-def sieht_live(auge: dict, ziel: dict) -> bool:
-    """Liegt das Ziel im vorderen Halbkreis dieses Auges, oder sieht es rundum?"""
+def zentrum(q: float, r: float) -> tuple[float, float]:
+    """Hex-Mitte in Einheiten, unabhängig von Pixelgröße und Ursprung."""
+    return (math.sqrt(3) * (q + r / 2), 1.5 * r)
+
+
+def _orientierung(a: tuple[float, float], b: tuple[float, float], c: tuple[float, float]) -> float:
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+
+def segmente_kreuzen(a: tuple[float, float], b: tuple[float, float], c: tuple[float, float], d: tuple[float, float]) -> bool:
+    """Echte Kreuzung. Ein bloßes Antippen der Enden blockiert nicht."""
+    eps = 1e-8
+    d1 = _orientierung(c, d, a)
+    d2 = _orientierung(c, d, b)
+    d3 = _orientierung(a, b, c)
+    d4 = _orientierung(a, b, d)
+    if abs(d1) < eps or abs(d2) < eps or abs(d3) < eps or abs(d4) < eps:
+        return False
+    return (d1 > 0) != (d2 > 0) and (d3 > 0) != (d4 > 0)
+
+
+def blockiert(von_q: int, von_r: int, nach_q: int, nach_r: int, waende: list[dict] | None) -> bool:
+    """Schneidet die Sichtlinie eine Wand? Dasselbe Feld bleibt frei."""
+    if not waende or (von_q == nach_q and von_r == nach_r):
+        return False
+    a = zentrum(von_q, von_r)
+    b = zentrum(nach_q, nach_r)
+    for wand in waende:
+        try:
+            c = (float(wand["ax"]), float(wand["ay"]))
+            d = (float(wand["bx"]), float(wand["by"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if segmente_kreuzen(a, b, c, d):
+            return True
+    return False
+
+
+def im_kegel(auge: dict, ziel: dict) -> bool:
+    """Vorderer Halbkreis, oder rundum. Noch ohne Wand."""
     if auge.get("hexQ") is None or ziel.get("hexQ") is None:
         return False
     if auge.get("rundumsicht"):
@@ -76,18 +116,27 @@ def sieht_live(auge: dict, ziel: dict) -> bool:
     return richtung in vorderkegel(int(auge.get("blickrichtung") or 0))
 
 
+def sieht_live(auge: dict, ziel: dict, waende: list[dict] | None = None) -> bool:
+    """Kegel oder Rundumsicht, und keine Wand dazwischen."""
+    if not im_kegel(auge, ziel):
+        return False
+    return not blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende)
+
+
 def _schnappschuss(token: dict) -> dict:
     return {feld: token.get(feld) for feld in SICHT_FELDER if feld != "veraltet"}
 
 
-def start_speicher(teilnehmer: list[dict]) -> dict:
-    """Kampfbeginn: jedes Auge kennt den aktuellen Stand, auch hinten."""
+def start_speicher(teilnehmer: list[dict], waende: list[dict] | None = None) -> dict:
+    """Kampfbeginn: jedes Auge kennt den Stand, den es sehen kann. Wände auch bei Rundumsicht."""
     augen = [t for t in teilnehmer if not t.get("zusatzzug") and t.get("hexQ") is not None]
     speicher: dict = {}
     for auge in augen:
         kontrolleur = auge.get("besitzerId") or auge.get("personId")
         ged = {}
         for ziel in augen:
+            if ziel["id"] != auge["id"] and blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+                continue
             if ziel.get("versteckt") and not gehoert(ziel, kontrolleur):
                 continue
             ged[ziel["id"]] = _schnappschuss(ziel)
@@ -95,8 +144,8 @@ def start_speicher(teilnehmer: list[dict]) -> dict:
     return speicher
 
 
-def aktualisiere(teilnehmer: list[dict], speicher: dict | None) -> dict:
-    """Vorderen Halbkreis auffrischen. Hinten bleibt der alte Stand."""
+def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dict] | None = None) -> dict:
+    """Vorderen Halbkreis auffrischen. Hinten bleibt der alte Stand. Eine Wand löscht, was man gerade anschaut."""
     neu = {k: dict(v) for k, v in (speicher or {}).items()}
     augen = [t for t in teilnehmer if not t.get("zusatzzug") and t.get("hexQ") is not None]
     lebendig = {t["id"] for t in augen}
@@ -108,8 +157,8 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None) -> dict:
                 ged[ziel["id"]] = _schnappschuss(ziel)
                 continue
             verborgen = bool(ziel.get("versteckt")) and not gehoert(ziel, kontrolleur)
-            if sieht_live(auge, ziel):
-                if verborgen:
+            if im_kegel(auge, ziel):
+                if verborgen or blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
                     ged.pop(ziel["id"], None)
                 else:
                     ged[ziel["id"]] = _schnappschuss(ziel)
@@ -117,7 +166,14 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None) -> dict:
     return {k: v for k, v in neu.items() if k in lebendig}
 
 
-def ansicht(teilnehmer: list[dict], speicher: dict | None, *, rolle: str, person_id: str | None) -> list[dict]:
+def ansicht(
+    teilnehmer: list[dict],
+    speicher: dict | None,
+    *,
+    rolle: str,
+    person_id: str | None,
+    waende: list[dict] | None = None,
+) -> list[dict]:
     """Was dieser Betrachter auf die Karte bekommt. Die SL sieht die Wahrheit."""
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
     if rolle == "GM":
@@ -133,7 +189,7 @@ def ansicht(teilnehmer: list[dict], speicher: dict | None, *, rolle: str, person
             ziel = next((t for t in roh if t["id"] == tid), None)
             if ziel is None or ziel.get("hexQ") is None:
                 continue
-            if sieht_live(auge, ziel) and not (ziel.get("versteckt") and not gehoert(ziel, person_id)):
+            if sieht_live(auge, ziel, waende) and not (ziel.get("versteckt") and not gehoert(ziel, person_id)):
                 live.add(tid)
             else:
                 geister.setdefault(tid, snap)

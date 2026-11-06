@@ -24,6 +24,7 @@ FIELDS = [
     "spawnNpcR",
     "ortIds",
     "eventIds",
+    "waende",
 ]
 
 
@@ -47,6 +48,13 @@ def _mit_defaults(record: dict) -> dict:
         daten[feld] = int(roh) if roh is not None else None
     daten["ortIds"] = daten.get("ortIds") or []
     daten["eventIds"] = daten.get("eventIds") or []
+    waende = daten.get("waende")
+    if isinstance(waende, str):
+        try:
+            waende = json.loads(waende)
+        except (json.JSONDecodeError, TypeError):
+            waende = []
+    daten["waende"] = waende if isinstance(waende, list) else []
     pfade = daten.get("pfade")
     if isinstance(pfade, str):
         try:
@@ -79,6 +87,7 @@ async def erstellen(campaign_id: str, daten: dict) -> dict:
         "spawnNpcR": daten.get("spawnNpcR"),
         "ortIds": daten.get("ortIds") or [],
         "eventIds": daten.get("eventIds") or [],
+        "waende": json.dumps(daten.get("waende") or []),
     }
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})
@@ -132,6 +141,8 @@ async def holen(campaign_id: str, karte_id: str, *, nur_nicht_geloescht: bool = 
 
 async def aktualisieren(campaign_id: str, karte_id: str, daten: dict) -> dict | None:
     changed = {k: v for k, v in daten.items() if v is not None}
+    if "waende" in changed:
+        changed["waende"] = json.dumps(changed["waende"])
     if not changed:
         return await holen(campaign_id, karte_id)
     driver = get_driver()
