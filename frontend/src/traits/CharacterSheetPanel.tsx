@@ -1711,6 +1711,67 @@ export function GegenstandRow({
                   </div>
                 )}
 
+                {(istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama") && (
+                  <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8, marginTop: 4 }}>
+                    <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block" }}>
+                      Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
+                      Schadensart, die ersetzt ihn).
+                    </label>
+                    <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                        Schaden
+                        <input
+                          type="number"
+                          value={schaden}
+                          onChange={(e) => setSchaden(Number(e.target.value))}
+                          style={{ width: 60 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                        Reduktion
+                        <input
+                          type="number"
+                          min={0}
+                          value={ruestungReduktionBasis}
+                          onChange={(e) => setRuestungReduktionBasis(Math.max(0, Number(e.target.value)))}
+                          style={{ width: 60 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
+                        Kästchen
+                        <input
+                          type="number"
+                          min={0}
+                          value={ruestungKaestchenMax}
+                          onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
+                          style={{ width: 60 }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }} title="Addiert sich auf das I.C.E. des Ziels: Commlink, Cyberdeck, Riggerkonsole oder Drohne/Fahrzeug.">
+                        I.C.E.
+                        <input
+                          type="number"
+                          min={0}
+                          value={cyberwall}
+                          onChange={(e) => setCyberwall(Math.max(0, Number(e.target.value)))}
+                          style={{ width: 60 }}
+                        />
+                      </label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 8 }}>
+                        Schadensart ändern
+                        <select value={schadenArt} onChange={(e) => setSchadenArt(e.target.value as typeof schadenArt)}>
+                          <option value="">unverändert lassen</option>
+                          <option value="schlag">Schlag</option>
+                          <option value="schwer">Tödlich</option>
+                          <option value="aggraviert">Schwerheilbar</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block", marginTop: 12 }}>
                   Ausrüstungsfertigkeiten (neue Fertigkeiten NUR durch diesen Gegenstand — Häkchen "Ki-Tama":
                   Spieler darf mit eigener EP hochleveln, Stufe bleibt am Gegenstand. Häkchen "Attacke":
@@ -2190,66 +2251,6 @@ export function GegenstandRow({
                         </label>
                       )}
                     </div>
-                    {(istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama") && (
-                      <div style={{ borderTop: "1px solid var(--linie)", paddingTop: 8, marginTop: 4 }}>
-                        <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "block" }}>
-                          Wirkung am Ziel, sobald montiert (addiert sich auf den Basiswert — außer
-                          Schadensart, die ersetzt ihn). Initiative-Bonus und Zusatzaktionen stehen im Umbauen.
-                        </label>
-                        <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                            Schaden
-                            <input
-                              type="number"
-                              value={schaden}
-                              onChange={(e) => setSchaden(Number(e.target.value))}
-                              style={{ width: 60 }}
-                            />
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                            Reduktion
-                            <input
-                              type="number"
-                              min={0}
-                              value={ruestungReduktionBasis}
-                              onChange={(e) => setRuestungReduktionBasis(Math.max(0, Number(e.target.value)))}
-                              style={{ width: 60 }}
-                            />
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }}>
-                            Kästchen
-                            <input
-                              type="number"
-                              min={0}
-                              value={ruestungKaestchenMax}
-                              onChange={(e) => setRuestungKaestchenMax(Math.max(0, Number(e.target.value)))}
-                              style={{ width: 60 }}
-                            />
-                          </label>
-                          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9em" }} title="Addiert sich auf das I.C.E. des Ziels: Commlink, Cyberdeck, Riggerkonsole oder Drohne/Fahrzeug.">
-                            I.C.E.
-                            <input
-                              type="number"
-                              min={0}
-                              value={cyberwall}
-                              onChange={(e) => setCyberwall(Math.max(0, Number(e.target.value)))}
-                              style={{ width: 60 }}
-                            />
-                          </label>
-                        </div>
-                        <div style={{ marginTop: 8 }}>
-                          <label style={{ fontSize: "0.85em", color: "var(--text-leise)", display: "flex", alignItems: "center", gap: 8 }}>
-                            Schadensart ändern
-                            <select value={schadenArt} onChange={(e) => setSchadenArt(e.target.value as typeof schadenArt)}>
-                              <option value="">unverändert lassen</option>
-                              <option value="schlag">Schlag</option>
-                              <option value="schwer">Tödlich</option>
-                              <option value="aggraviert">Schwerheilbar</option>
-                            </select>
-                          </label>
-                        </div>
-                      </div>
-                    )}
                     <label style={{ fontSize: "0.9em" }}>
                       <input
                         type="checkbox"
