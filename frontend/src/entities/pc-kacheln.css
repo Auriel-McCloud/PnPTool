@@ -158,6 +158,22 @@
   text-overflow: ellipsis;
 }
 
+.pc-kachel-groesse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  cursor: pointer;
+}
+.pc-kachel-groesse input {
+  accent-color: var(--neon);
+}
+
 /* --- Werte (LP, WK) ----------------------------------------------------- */
 
 .pc-kachel-werte {

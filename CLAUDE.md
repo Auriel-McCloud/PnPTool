@@ -10,9 +10,9 @@ Neue Listenfelder `Battlemap.ortIds`/`eventIds` (`battlemap/schemas.py`/`reposit
 
 **Verifiziert:** Live-E2E-Skript gegen echte Neo4j (erstellen/aktualisieren/holen/leeren der neuen Felder, inkl. Leeren per PATCH mit `[]`), `npx tsc -b` sauber. **Kein Klicktest.**
 
-## Battlemap: Größe nur an der Rasse (06.11.2026)
+## Battlemap: Größe-Checkbox an der Person (06.11.2026)
 
-Normal/Groß ist von den PC- und NPC-Kacheln weg. Der Schalter bleibt im Rassen-Baukasten. Die Karte liest `Rasse.istGross` über den Rassennamen an der Person. Ohne Rasse ein Hex.
+Die Rasse ist die Vorlage (`istGross` beim Anlegen). Danach entscheidet die Checkbox „Groß“ auf der PC- und NPC-Kachel. Die Karte liest `Person.istGross`.
 
 ## Battlemap: Hex-Karten, Tokens, Live-Zeichnen (06.11.2026)
 

@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] nachgezogen | Battlemap-Größe: Checkbox an der Person
+
+Rasse bleibt die Vorlage. Checkbox „Groß“ auf PC- und NPC-Kachel entscheidet.
+Karte liest `Person.istGross`. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] nachgezogen | Battlemap-Größe nur an der Rasse
 
 Schalter von den PC-/NPC-Kacheln weg. Baukasten bleibt. Karte liest

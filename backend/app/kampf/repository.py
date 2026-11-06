@@ -22,7 +22,7 @@ from app.kampf.hot import am_zug_nach_faltung, falte_hot, hot_rueckschlag
 # Reihenfolge bei Gleichstand (Zeile 58). Kleinere Zahl handelt zuerst.
 KAMPFART_RANG = {"MATRIX": 0, "NAHKAMPF": 1, "FERNKAMPF": 2}
 
-# istGross kommt von der Rasse (Person.rasse = Name), nicht von der Kachel.
+# istGross steht an der Person (Checkbox auf der Kachel). Die Rasse setzt nur den Startwert.
 TEILNEHMER_FELDER = """
     t.id AS id, t.name AS name, t.initiative AS initiative, t.kampfart AS kampfart,
     t.notiz AS notiz, t.erledigt AS erledigt,
@@ -32,8 +32,7 @@ TEILNEHMER_FELDER = """
     t.hexQ AS hexQ, t.hexR AS hexR, t.hexDrehung AS hexDrehung,
     t.zugStartQ AS zugStartQ, t.zugStartR AS zugStartR,
     p.id AS personId, p.personType AS personType,
-    p.bildUrl AS bildUrl,
-    coalesce(head([(rasse:Rasse {ruleset: 'neotopia'}) WHERE rasse.name = p.rasse AND p.rasse <> '' AND NOT coalesce(rasse.geloescht, false) | rasse.istGross]), false) AS istGross,
+    p.bildUrl AS bildUrl, coalesce(p.istGross, false) AS istGross,
     p.istDrohne AS istDrohne, p.istFahrzeug AS istFahrzeug, p.istCritter AS istCritter,
     b.id AS begleiterId
 """

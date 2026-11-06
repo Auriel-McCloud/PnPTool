@@ -57,7 +57,7 @@ Pfade hängen an einer Kampagne, die Daten nicht — derselbe Zuschnitt wie bei
 
 ## Gebaut: `istGross` (06.11.2026)
 
-Battlemap-Größe nur im Baukasten, Default Normal. Kein Schalter an der Kachel.
+Battlemap-Größe im Baukasten ist die Vorlage. Die Checkbox an der Kachel entscheidet.
 Siehe [[../concepts/rassen]] und [[battlemap]].
 
 ## Bild-Upload-Fix (15.09.2026)

@@ -592,7 +592,7 @@ function RasseEditor({
               <input type="checkbox" checked={istGross} onChange={(e) => setIstGross(e.target.checked)} />{" "}
               Groß auf der Battlemap (3 Hex)
             </label>
-            <p className="ra-hinweis">Jede Person dieser Rasse ist auf der Battlemap groß (3 Hex). Ohne Häkchen ein Hex.</p>
+            <p className="ra-hinweis">Neue Person dieser Rasse startet groß. Danach gilt die Checkbox an der PC- oder NPC-Kachel.</p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>
               Hinweistext (Charakterblatt/Infobox)
