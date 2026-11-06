@@ -54,10 +54,15 @@ Zwei Schichten:
    zweiter Token. Spieler schiebt eigenen Charakter, eigene Drohnen und
    Beschwörungen nur am eigenen Zug. Die SL schiebt immer alle.
 
-Bewegung: Drop überall, rastet auf Hex. Grün (`3 + Sportlichkeit`, Drohnen
-`3 + Fliegen`) ist nur die Hilfe — Sprint, Teleport, SL räumt. Die Formel steht
-auf keiner Regel-Seite, neu, nicht Excel. Fliegen ist Zusatzfertigkeit, siehe
-[[../concepts/drohnen-fahrzeuge]].
+Bewegung: Drop überall, rastet auf Hex. Grün ist nur die Hilfe — Sprint,
+Teleport, SL räumt. Laufen `3 + Sportlichkeit`. Drohnen `3 + Fliegen × 2`
+(06.11. Nachschärfung, ersetzt `3 + Fliegen`: Fliegen ist schneller als
+Laufen). Die Formel steht auf keiner Regel-Seite, neu, nicht Excel. Fliegen
+ist Zusatzfertigkeit, siehe [[../concepts/drohnen-fahrzeuge]].
+
+Grün nur während des Ziehens, vom Feld wo der Token angehoben wurde, bleibt
+bis zum Loslassen. Dieses Startfeld bleibt danach grau, bis der Teilnehmer
+nicht mehr am Zug ist — dann weg. Ohne Anheben kein Grau.
 
 Große Monster: **3 Felder im Y, Kreis drumherum.** Die 4-Felder-Idee aus dem
 Auslöser ist ersetzt. Belegt sind die drei Hex; der Kreis gruppiert sie optisch.

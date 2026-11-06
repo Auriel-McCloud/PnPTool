@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] nachgeschärft | Battlemap: Grün bis Loslassen, Startfeld grau, Fliegen ×2
+
+Grün nur während des Drags, bleibt bis Mouseup. Das Anheb-Feld bleibt grau,
+bis der Teilnehmer nicht mehr am Zug ist. Drohnen-Reichweite `3 + Fliegen × 2`
+(ersetzt `3 + Fliegen`). Nicht gebaut. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] entschieden | Battlemap-Design (nicht gebaut)
 
 Whiteboard bleibt getrennt, Leinwand wird kopiert (Bild, Live-Zeichnen,
