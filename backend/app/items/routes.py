@@ -974,6 +974,10 @@ class CredstickBetrag(BaseModel):
     betrag: int = Field(ge=1)
 
 
+class CredstickVermoegen(BaseModel):
+    kapital: int
+
+
 async def _credstick_oder_404(campaign_id: str, item_id: str) -> dict:
     item = await repository.get_gegenstand(campaign_id, item_id)
     if item is None or item.get("typ") != "Credstick" or item.get("weggeworfen"):
@@ -1003,6 +1007,27 @@ async def _credstick_transaktion_oder_404(
         fehlermeldung = "Nicht genug Guthaben." if richtung == "laden" else "Nicht genug Geld auf dem Credstick."
         raise HTTPException(status.HTTP_409_CONFLICT, fehlermeldung)
     return ergebnis["gegenstand"]
+
+
+@campaign_router.get("/{item_id}/credstick/vermoegen", response_model=CredstickVermoegen)
+async def credstick_vermoegen(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Aktuelles Vermögen des Credstick-Besitzers — zeigt der Spieler vorm
+    Aufladen/Abheben, wie viel er überhaupt zur Verfügung hat (06.11.2026,
+    Mark: "Spieler sollten ihr Vermögen sehen"). Dieselbe Rechteprüfung wie
+    die Transaktionen: Spieler nur im eigenen Kreis, SL an jedem Credstick."""
+    await _credstick_oder_404(campaign_id, item_id)
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    if besitzer is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Dieser Credstick hat niemanden, dessen Vermögen das wäre."
+        )
+    if viewer.role != "GM":
+        if not viewer.person_id or not await _eigener_kreis(campaign_id, viewer.person_id, besitzer):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    kapital = await repository.get_person_kapital(campaign_id, besitzer)
+    if kapital is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    return {"kapital": kapital}
 
 
 @campaign_router.post("/{item_id}/credstick/laden", response_model=GegenstandResponse)

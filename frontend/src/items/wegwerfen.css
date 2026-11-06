@@ -41,6 +41,51 @@
   margin-top: 4px;
 }
 
+/* -------------------------------------------------------------------
+   Credstick: Kontostand anzeigen vs. Betrag eingeben (06.11.2026).
+
+   Vorher vertauscht designed: die Anzeige ("Aktuell geladen") trug den
+   Rahmen/Kasten-Look (ww-beruhigung), das echte Eingabefeld dagegen nutzte
+   --card/--border/--foreground — Tokens, die es in theme/tokens.css gar
+   nicht gibt. Ein ungültiges var() macht die ganze Deklaration ungültig,
+   das Feld blieb faktisch randlos und transparent und sah wie Fließtext
+   aus, während die reine Anzeige wie ein Eingabefeld aussah (Marks
+   Meldung: "das was aussieht als könnte man was eingeben, ist die
+   Anzeige"). Jetzt umgekehrt: Anzeige ist reiner Text, Eingabefeld sieht
+   wie jedes andere Formularfeld im Tool aus (vgl. .pcd-feld input). */
+.cs-stand {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.cs-stand strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cs-betrag {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 9px 11px;
+  font-size: 1rem;
+  font: inherit;
+  border-radius: var(--radius);
+  border: 1px solid var(--linie-hell);
+  background: var(--grund);
+  color: var(--text);
+}
+
+.cs-betrag:focus {
+  outline: none;
+  border-color: var(--neon);
+}
+
+.cs-betrag:disabled {
+  opacity: 0.6;
+}
+
 /* Gross und weit auseinander: ein Fehlgriff ärgert hier echt. */
 .ww-knoepfe button {
   flex: 1;

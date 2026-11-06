@@ -2328,6 +2328,23 @@ async def credstick_transaktion(
     return {"gedeckt": gedeckt, "gegenstand": _decode(daten)}
 
 
+async def get_person_kapital(campaign_id: str, person_id: str) -> int | None:
+    """Aktuelles Kapital einer Person — für die Vermögensanzeige im
+    Credstick-Popup (06.11.2026, Mark: "Spieler sollten ihr Vermögen sehen,
+    wenn sie Geld aufladen oder abheben wollen"). None nur, wenn die Person
+    nicht existiert."""
+    driver = get_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            "MATCH (p:Person {id: $person_id, campaignId: $campaign_id}) "
+            "RETURN coalesce(p.kapital, 0) AS kapital",
+            person_id=person_id,
+            campaign_id=campaign_id,
+        )
+        record = await result.single()
+    return None if record is None else int(record["kapital"])
+
+
 async def credstick_sl_aufladen(campaign_id: str, item_id: str, betrag: int) -> dict | None:
     """SL erzeugt Geld direkt auf einem Credstick, ohne Gegenbuchung — für
     NPC-Belohnungen oder vorbereitete Fundstücke (Mark: "ich muss einfach so

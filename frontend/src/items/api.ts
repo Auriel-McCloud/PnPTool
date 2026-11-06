@@ -812,6 +812,10 @@ export const itemsApi = {
     api.get<Gegenstand[]>(`${itemBase(cid, itemId)}/augment/material`),
 
   // --- Credstick (05.11.2026, Tresor-Modell) ---------------------------
+  /** Aktuelles Vermögen des Besitzers — zeigt der Spieler vorm Aufladen/
+   * Abheben, wie viel er überhaupt zur Verfügung hat. */
+  credstickVermoegen: (cid: string, itemId: string) =>
+    api.get<{ kapital: number }>(`${itemBase(cid, itemId)}/credstick/vermoegen`),
   /** Geld vom eigenen Kapital auf den Credstick laden. Spieler nur am
    * eigenen Besitz/eigenen Kreis, SL an jedem Credstick. */
   credstickLaden: (cid: string, itemId: string, betrag: number) =>

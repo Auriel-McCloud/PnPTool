@@ -15,6 +15,7 @@ import "./wegwerfen.css";
 export function CredstickPopup({
   item,
   modus,
+  vermoegen = null,
   offen,
   onBestaetigen,
   onAbbrechen,
@@ -25,6 +26,10 @@ export function CredstickPopup({
   /** "laden": Kapital -> Credstick. "entladen": Credstick -> Kapital.
    *  "sl-laden": SL erzeugt Geld direkt, ohne Kapitalabzug. */
   modus: "laden" | "entladen" | "sl-laden";
+  /** Eigenes Vermögen des Besitzers — nur bei "laden"/"entladen" bekannt
+   *  (06.11.2026, Mark: "Spieler sollten ihr Vermögen sehen, wenn sie Geld
+   *  aufladen oder abheben wollen"). null solange es noch lädt. */
+  vermoegen?: number | null;
   offen: boolean;
   onBestaetigen: (betrag: number) => void;
   onAbbrechen: () => void;
@@ -55,7 +60,17 @@ export function CredstickPopup({
   return (
     <Fenster offen={offen} titel={titel} kennung={`credstick:${modus}:${item.id}`} onSchliessen={onAbbrechen}>
       <p className="ww-hinweis">{hinweis}</p>
-      <p className="ww-beruhigung">Aktuell geladen: {item.geladenesGeld.toLocaleString("de-AT")}¥</p>
+      {/* Reine Anzeige, bewusst OHNE Eingabe-Optik (kein Rahmen/Kasten) —
+          vorher sah genau dieser Text wie das Eingabefeld aus und umgekehrt
+          (06.11.2026, Marks Meldung: Felder waren vertauscht designed). */}
+      <p className="cs-stand">
+        Aktuell geladen: <strong>{item.geladenesGeld.toLocaleString("de-AT")}¥</strong>
+      </p>
+      {modus !== "sl-laden" && (
+        <p className="cs-stand">
+          Dein Vermögen: <strong>{vermoegen == null ? "…" : `${vermoegen.toLocaleString("de-AT")}¥`}</strong>
+        </p>
+      )}
       <input
         type="number"
         min={1}
@@ -65,17 +80,7 @@ export function CredstickPopup({
         placeholder="Betrag in ¥"
         autoFocus
         disabled={laeuft}
-        style={{
-          width: "100%",
-          boxSizing: "border-box",
-          padding: "8px 10px",
-          borderRadius: "var(--radius)",
-          border: "1px solid var(--border)",
-          background: "var(--card)",
-          color: "var(--foreground)",
-          font: "inherit",
-          marginTop: 4,
-        }}
+        className="cs-betrag"
       />
       {fehler && (
         <p className="ww-hinweis" style={{ color: "var(--signal)" }}>
@@ -116,10 +121,22 @@ export function CredstickAktionen({
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [geladen, setGeladen] = useState(item.geladenesGeld ?? 0);
+  const [vermoegen, setVermoegen] = useState<number | null>(null);
 
   useEffect(() => {
     setGeladen(item.geladenesGeld ?? 0);
   }, [item.id, item.geladenesGeld]);
+
+  async function vermoegenLaden() {
+    try {
+      const antwort = await itemsApi.credstickVermoegen(campaignId, item.id);
+      setVermoegen(antwort.kapital);
+    } catch {
+      // Keine Rückfrage nötig — das Popup zeigt dann nur den Credstick-Stand,
+      // das eigentliche Aufladen/Abheben prüft das Guthaben ohnehin serverseitig.
+      setVermoegen(null);
+    }
+  }
 
   async function aktion(betrag: number) {
     if (!modus) return;
@@ -134,6 +151,7 @@ export function CredstickAktionen({
             : await itemsApi.credstickSlLaden(campaignId, item.id, betrag);
       setGeladen(frisch.geladenesGeld ?? 0);
       setModus(null);
+      if (modus !== "sl-laden") void vermoegenLaden();
       onErledigt?.(frisch);
     } catch (e) {
       setFehler(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Hat nicht geklappt.");
@@ -145,6 +163,10 @@ export function CredstickAktionen({
   function oeffnen(naechster: "laden" | "entladen" | "sl-laden") {
     setFehler(null);
     setModus(naechster);
+    if (naechster !== "sl-laden" && !ohneBesitzer) {
+      setVermoegen(null);
+      void vermoegenLaden();
+    }
   }
 
   return (
@@ -173,6 +195,7 @@ export function CredstickAktionen({
         <CredstickPopup
           item={{ ...item, geladenesGeld: geladen }}
           modus={modus}
+          vermoegen={vermoegen}
           offen
           onBestaetigen={aktion}
           onAbbrechen={() => setModus(null)}
