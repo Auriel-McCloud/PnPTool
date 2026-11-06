@@ -8,6 +8,8 @@
 SL-Modus Wand, Linien an der Karte. Fog of War wertet sie mit, auch bei
 360-Grad. Siehe [[entities/battlemap]].
 
+## [2026-11-06] gebaut | Battlemap: Fog of War optional
+
 Schalter in den Einstellungen, Standard aus. Letzte Sicht, Verstecken,
 Rundumsicht an Rasse und verbautem Chrom. Klicktest offen. Siehe
 [[entities/battlemap]].
