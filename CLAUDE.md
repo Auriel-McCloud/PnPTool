@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: Battlemap-Token verschob stattdessen das Bild, nicht die Kachel (06.11.2026)
+
+Mark: beim Ziehen einer Figur auf der Battlemap bewegte sich oft nur das Portrait-Bild im Token, nicht der Token selbst. Ursache: `<img>`-Tags sind in Browsern standardmäßig nativ per HTML5-Drag ziehbar — der Pointerdown/-move auf dem Bild im `.bm-token`-Button wurde vom nativen Bild-Drag (Geisterbild folgt dem Cursor) gekapert, statt die eigentliche Pointer-Capture-Logik (`BattlemapPopup.tsx`, `onPointerDown`/`onPointerMove`/`onPointerUp`) auszulösen.
+
+Fix: `draggable={false}` auf dem Token-`<img>`, zusätzlich `-webkit-user-drag: none; user-select: none;` auf `.bm-token img, .bm-token span` in `battlemap.css` (Safari-Fallback).
+
+**Verifiziert:** `npx tsc -b` sauber. Kein Klicktest am Tisch — bitte beim nächsten Mal gezielt prüfen, dass ein Ziehen am Bildbereich des Tokens jetzt genauso die Kachel übers Hex-Grid bewegt wie ein Ziehen am Rand.
+
 ## Bugfix: Kampf beginnen tat nichts — ungültige Cypher-Syntax in rasseRundum (06.11.2026)
 
 Mark: Klick auf "Kampf beginnen" passierte nichts. Ursache: `kampf/repository.py::TEILNEHMER_FELDER` (eingeführt mit der Fog-of-War-Änderung direkt darunter) nutzte eine Pattern-Comprehension mit reinem Knoten-Pattern ohne Relationship (`[(rasse:Rasse {...}) WHERE ... | ...]`) — laut Cypher-Grammatik braucht eine Pattern-Comprehension zwingend mindestens eine Relationship, ein nacktes Knoten-Pattern ist ein Syntaxfehler (`CypherSyntaxError: Invalid input 'WHERE'`). Das brach **sowohl** `GET /kampf` (Initiativliste laden) **als auch** `POST /kampf` (`beginne()` ruft intern `hole()` auf) mit 500 — der Frontend-Button feuert den Request nur ab, ohne den Fehler sichtbar zu machen (`mit()` in `Kampfmodus.tsx` hat kein Error-Handling), daher wirkte es als würde gar nichts passieren. Nebenwirkung auf bebop: mehrere Klicks legten dabei schon leere `Kampf`-Knoten an, die nie eine Antwort bekamen.
