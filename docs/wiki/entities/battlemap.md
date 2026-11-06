@@ -298,6 +298,21 @@ echten aktuellen Positionen sehen (nur Wände/Versteckte bleiben
 ausgenommen), dann wieder einschalten und prüfen dass die Erinnerungs-Logik
 von oben wieder greift.
 
+## Bugfix 06.11.2026 — Matrix-Ping zeigte nur wenige Tokens, Wände blockierten ihn
+
+Mark: „was leider nicht funktioniert ist der ping mit den Erinnerungen der Positionen, wenn ich nicht hot bin werden mir die leider nicht angezeigt“.
+
+Live-Diagnose auf bebop (echte Kampagne, 10 Teilnehmer, 3 Wandsegmente auf der Karte): der Ping zeigte nur 3 von 10 — exakt die drei, deren Sichtlinie zum Decker nicht durch eine Wand lief. Ursache: zwei Stellen prüften fälschlich auf Sichtlinie.
+
+1. **`ping()` selbst respektierte Wände** wie Rundumsicht. Matrix-Ortung ist aber kein Sichtkontakt (Geräte-/Signatur-Ortung im Netz) — eine Mauer hält kein Funksignal auf. Fix: `ping()` prüft `blockiert()` nicht mehr, nur noch Versteckt.
+2. **Selbst ohne Wand-Check in `ping()` hätte der nächste Kartenzug irgendwo auf der Karte die frisch geortete, wandblockierte Position sofort wieder gelöscht** — `aktualisiere()` (läuft bei JEDEM Token-Zug im Kampf, nicht nur beim Decker selbst) prüft serienmäßig, ob eine Wand zwischen Beobachter und gespeicherter Position steht, und verwirft die Erinnerung sonst (das ist die korrekte, gewollte Regel für physische Sichterinnerung — ein Geist hinter einer neu gezeichneten Wand soll verschwinden). Fix: jeder Ping-Eintrag trägt intern ein Flag `matrixGeortet: true` (nie Teil der API-Antwort); `aktualisiere()` lässt Einträge mit diesem Flag beim Wand-Verfallscheck unangetastet, sowohl im Kegel-Durchlauf als auch im zweiten Verfalls-Durchlauf. Versteckt schlägt weiterhin auch ein matrix-geortetes Ziel. Ein frischer Sichtkontakt (Kegel + keine Wand) überschreibt die Markierung ganz normal mit echten Live-Daten.
+
+**Verifiziert:** `TestMatrixPing` erweitert (`test_ping_ignoriert_waende`, `test_ping_ueberlebt_aktualisiere_trotz_wand`), zusätzlich die komplette Live-Szene von bebop (10 Teilnehmer, dieselben 3 Wandkoordinaten) als Python-Reproduktion direkt gegen den Code gefahren — vorher 3/10, nachher 10/10, auch nach einem zweiten `aktualisiere()`-Durchlauf stabil. Volle Testsuite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch erneut prüfen, jetzt mit echten Wänden auf der Karte.
+
+## Textkorrektur 06.11.2026 — Hot-Hinweistext ohne SL-Erwähnung
+
+Mark: der Erfolgstext bei Hot soll nur „Du siehst die Karte live, solange du hot bleibst“ sagen, ohne den Vergleich zur SL. `MatrixFenster.tsx` angepasst, der Rest (ICE-Text, Ping-Text) bleibt.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]

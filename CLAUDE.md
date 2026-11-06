@@ -10,6 +10,12 @@ Fix: `_karte_fuer` bekommt einen `fog_an`-Parameter. Ist Fog aus, läuft die ber
 
 **Verifiziert:** 3 neue Fälle in `test_battlemap_sicht.py`, neue Datei `test_kampf_karte_fuer.py` (6 Fälle, testen `_karte_fuer` direkt). Volle Testsuite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung nötig). **Kein Klicktest** — bitte am Spieltisch: Fog of War ausschalten, prüfen dass Spieler sofort echte Positionen sehen (nur Wände/Versteckte ausgenommen). Details: `docs/wiki/entities/battlemap.md`.
 
+## Bugfix: Matrix-Ping zeigte nur wenige Tokens, Wände blockierten ihn (06.11.2026)
+
+Mark nach echtem Spieltisch-Test: Ping zeigte nicht-hot nichts. Live-Diagnose auf bebop (10 Teilnehmer, 3 Wände) ergab: nur 3/10 kamen durch. Zwei Stellen prüften fälschlich auf Sichtlinie — `battlemap/sicht.py::ping()` respektierte Wände wie Rundumsicht (Matrix-Ortung ist aber kein Sichtkontakt), UND selbst ohne diesen Check hätte `aktualisiere()` (läuft bei jedem Kartenzug im Kampf) die wandblockierte Position sofort wieder als „physisch unmöglich“ verworfen. Fix: Ping-Einträge tragen intern `matrixGeortet: true` (nie in der API-Antwort), `aktualisiere()` lässt diese beim Wand-Verfallscheck (Kegel-Durchlauf UND zweiter Verfalls-Durchlauf) in Ruhe; Versteckt schlägt weiterhin. Reproduziert mit der exakten Live-Szene von bebop als Test: vorher 3/10, nachher 10/10, stabil über mehrere `aktualisiere()`-Durchläufe. Details: `docs/wiki/entities/battlemap.md`.
+
+**Verifiziert:** 2 neue/angepasste Testfälle, volle Suite ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber, Fix live im bebop-Container gegengeprüft. Zusätzlich auf Marks Wunsch: Hot-Erfolgstext in `MatrixFenster.tsx` vereinfacht auf „Du siehst die Karte live, solange du hot bleibst“ (kein SL-Vergleich mehr).
+
 ## Battlemap: Matrix-Ping und Hot-Live-Sicht für den Decker (06.11.2026)
 
 Mark: Matrix-Navigation-Erfolg soll die Kartenpositionen pingen (wie kurz hinsehen, egal in welche Richtung), bei Matrix-Hot sieht der Decker dauerhaft live wie die SL und hilft so als Operator seinem Team.

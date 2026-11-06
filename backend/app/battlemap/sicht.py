@@ -165,12 +165,24 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dic
                 continue
             verborgen = bool(ziel.get("versteckt")) and not gehoert(ziel, kontrolleur)
             if im_kegel(auge, ziel):
-                if verborgen or blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+                if verborgen:
                     ged.pop(ziel["id"], None)
+                elif blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+                    vorher = ged.get(ziel["id"])
+                    if not (isinstance(vorher, dict) and vorher.get("matrixGeortet")):
+                        # Echter Sichtkontakt wäre hier blockiert — eine
+                        # matrix-geortete Notiz bleibt davon unberührt, eine
+                        # physische Erinnerung verfällt wie bisher.
+                        ged.pop(ziel["id"], None)
                 else:
                     ged[ziel["id"]] = _schnappschuss(ziel)
         for tid, snap in list(ged.items()):
             if tid == auge["id"] or not isinstance(snap, dict) or snap.get("hexQ") is None:
+                continue
+            if snap.get("matrixGeortet"):
+                # Matrix-Ping statt Sichtkontakt: keine Sichtlinie, also kein
+                # Wand-Verfall. Sonst löscht der nächste Kartenzug irgendwo
+                # auf der Karte den Ping sofort wieder (06.11.2026).
                 continue
             if blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende):
                 ged.pop(tid, None)
@@ -182,12 +194,18 @@ def ping(
     teilnehmer: list[dict],
     speicher: dict | None,
     auge_id: str,
-    waende: list[dict] | None = None,
 ) -> dict:
-    """Matrix-Ping: EIN Auge aktualisiert seine Erinnerung an ALLE Ziele, egal
-    wo es hinschaut — wie ein einmaliger Rundumsicht-Blick, kein Dauerzustand.
-    Wände blockieren weiterhin, Versteckte bleiben versteckt (Mark, 06.11.2026,
-    siehe docs/wiki/entities/battlemap.md).
+    """Matrix-Ping: EIN Auge aktualisiert seine Erinnerung an ALLE Ziele —
+    per Geräte-/Signatur-Ortung im Netz, keine Sichtlinie. Ignoriert
+    Blickrichtung UND Wände (anders als Rundumsicht, die nur die
+    Blickrichtung ignoriert); Versteckte bleiben versteckt (Mark,
+    06.11.2026, siehe docs/wiki/entities/battlemap.md).
+
+    **Bugfix 06.11.2026:** erste Fassung respektierte Wände wie Rundumsicht —
+    auf einer Karte mit mehreren Wandsegmenten blieb dadurch der Großteil der
+    Teilnehmer unsichtbar, obwohl der Ping laut Spec „alle Tokens“ zeigen
+    soll. Matrix-Ortung ist kein Sichtkontakt, Mauern halten kein Funksignal
+    auf.
 
     Einmaliger Schnappschuss: veraltet wieder normal, sobald sich jemand
     bewegt und dieses Auge nicht erneut pingt oder hinschaut.
@@ -205,9 +223,11 @@ def ping(
             continue
         if ziel.get("versteckt") and not gehoert(ziel, kontrolleur):
             continue
-        if blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
-            continue
-        ged[ziel["id"]] = _schnappschuss(ziel)
+        # matrixGeortet markiert die Quelle als Funk-/Signaturortung, nicht
+        # Sichtkontakt — aktualisiere() lässt diese Markierung beim
+        # Wand-Verfallscheck unten in Ruhe (sonst löscht der nächste
+        # Kartenzug irgendwo auf der Karte den Ping sofort wieder).
+        ged[ziel["id"]] = {**_schnappschuss(ziel), "matrixGeortet": True}
     neu[auge_id] = ged
     return {k: v for k, v in neu.items() if k in lebendig}
 

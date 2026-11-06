@@ -69,7 +69,7 @@ export function MatrixFenster({
         if (!r.gesehen) {
           setHinweis("Kein Erfolg, nichts gesehen.");
         } else if (r.liveSicht) {
-          setHinweis("Gegnerisches ICE sichtbar. Hot: du siehst die Karte live wie die SL, solange du Hot bleibst.");
+          setHinweis("Hot: Du siehst die Karte live, solange du hot bleibst.");
         } else if (r.gepingt) {
           setHinweis("Gegnerisches ICE sichtbar. Ping: Kartenpositionen auf den aktuellen Stand gebracht.");
         } else {

@@ -133,6 +133,19 @@ def _kante_osten():
     }
 
 
+def _kante_westen():
+    """Gemeinsame Kante zwischen (0,0) und (-1,0)."""
+    a = zentrum(0, 0)
+    import math
+
+    return {
+        "ax": a[0] + math.cos(math.radians(150)),
+        "ay": a[1] + math.sin(math.radians(150)),
+        "bx": a[0] + math.cos(math.radians(210)),
+        "by": a[1] + math.sin(math.radians(210)),
+    }
+
+
 class TestWaende:
     def test_wand_blockiert_rundumsicht(self):
         a = token("a", 0, 0, rundumsicht=True)
@@ -218,12 +231,31 @@ class TestMatrixPing:
         gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
         assert [t["id"] for t in gesehen] == ["a"]
 
-    def test_ping_respektiert_waende(self):
+    def test_ping_ignoriert_waende(self):
+        """Matrix-Ortung ist kein Sichtkontakt — eine Wand hält kein
+        Funksignal auf (Bugfix 06.11.2026, siehe docs/wiki)."""
         vorne = token("v", 2, 0, personType="NPC")
         a = token("a", 0, 0, blickrichtung=0)
         wand = [_kante_osten()]
-        speicher = ping([a, vorne], {}, "a", wand)
-        assert "v" not in speicher["a"]
+        speicher = ping([a, vorne], {}, "a")
+        assert "v" in speicher["a"]
+
+    def test_ping_ueberlebt_aktualisiere_trotz_wand(self):
+        """Bugfix 06.11.2026: ein ping-geortetes, wandblockiertes Ziel darf
+        nicht beim nächsten Kartenzug irgendwo auf der Karte (jeder Zug ruft
+        aktualisiere() auf) wieder aus der Erinnerung fallen — sonst wäre der
+        Ping in der Praxis sofort wieder weg. Ziel liegt HINTER dem Decker
+        (nicht im Kegel), damit der erste Durchlauf von aktualisiere() es
+        nicht schon wegen 'im Kegel + blockiert' entfernt — das ist ein
+        separater, akzeptierter Randfall wie bei normalen Geistern."""
+        hinter_wand = token("h", -3, 0, personType="NPC")
+        a = token("a", 0, 0, blickrichtung=0)  # schaut nach Osten, h liegt im Westen (hinten)
+        wand = [_kante_westen()]
+        speicher = ping([a, hinter_wand], {}, "a")
+        assert "h" in speicher["a"]
+        # Irgendein anderer Kartenzug löst aktualisiere() aus, mit derselben Wand:
+        speicher = aktualisiere([a, hinter_wand], speicher, wand)
+        assert "h" in speicher["a"], "Matrix-geortetes Ziel darf nicht am Wand-Verfallscheck hängen"
 
     def test_ping_unbekanntes_auge_bleibt_unveraendert(self):
         a = token("a", 0, 0)

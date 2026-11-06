@@ -135,7 +135,7 @@ async def _matrix_ping(campaign_id: str, kampf: dict, ich: str, stand: dict) -> 
     karte = await karten_repo.holen(campaign_id, karte_id)
     waende = list((karte or {}).get("waende") or [])
     speicher = kampf.get("_sichtSpeicher") or start_speicher(teilnehmer, waende)
-    speicher = sicht_ping(teilnehmer, speicher, mein_token["id"], waende)
+    speicher = sicht_ping(teilnehmer, speicher, mein_token["id"])
     await repository.setze_sicht(campaign_id, speicher)
 
     live = False
