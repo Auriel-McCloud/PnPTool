@@ -3,7 +3,7 @@ import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from "r
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
-import { hexEcken, hexNachPixel, hexRasterRechteck, naechsteEcke, pixelNachHex, reichweite, yFelder } from "./hex";
+import { hexEcken, hexNachPixel, hexRasterRechteck, NACHBARN, naechsteEcke, pixelNachHex, reichweite, yFelder } from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
 import { einstellungenApi } from "../campaigns/einstellungen";
 import { partyApi } from "../party/api";
@@ -57,6 +57,8 @@ export function BattlemapPopup({
   const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
   const [fog, setFog] = useState(false);
   const [chipId, setChipId] = useState<string | null>(null);
+  const [wahlId, setWahlId] = useState<string | null>(null);
+  const [linien, setLinien] = useState<{ ax: number; ay: number; bx: number; by: number }[]>([]);
   const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
   const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
@@ -65,6 +67,10 @@ export function BattlemapPopup({
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
   const oy = ziehOrigin?.y ?? karte?.originY ?? 0;
+
+  useEffect(() => {
+    setLinien(karte?.waende ?? []);
+  }, [karte?.id, karte?.waende]);
 
   useEffect(() => {
     leinwand.current?.eraseMode(radierer);
@@ -101,9 +107,13 @@ export function BattlemapPopup({
       karte.id,
       (n) => {
         if (n.typ === "pfade") standUebernehmen(n.daten.pfade);
-        if (n.typ === "karte") onKarte(n.daten);
+        if (n.typ === "karte") {
+          onKarte(n.daten);
+          setLinien(n.daten.waende ?? []);
+        }
         if (n.typ === "tokens") {
           setFog(Boolean(n.daten.fog));
+          if (n.daten.waende) setLinien(n.daten.waende);
           setKampf((alt) => ({
             id: alt?.id ?? "",
             runde: alt?.runde ?? 1,
@@ -192,6 +202,11 @@ export function BattlemapPopup({
     if (!eigenePersonId) return false;
     if (t.personId === eigenePersonId) return true;
     return t.besitzerId === eigenePersonId;
+  }
+
+  function istEigen(t: Teilnehmer) {
+    if (!eigenePersonId) return false;
+    return t.personId === eigenePersonId || t.besitzerId === eigenePersonId;
   }
 
   function istDran(t: Teilnehmer) {
@@ -283,6 +298,12 @@ export function BattlemapPopup({
       const key = `${q},${r}`;
       if (farbe === "gold" || !belegung.has(key)) belegung.set(key, farbe);
     }
+  }
+
+  const schau = tokens.find((t) => t.id === wahlId);
+  const schauFelder = new Set<string>();
+  if (schau && schau.hexQ != null && schau.hexR != null && (istGm || (istEigen(schau) && istDran(schau)))) {
+    for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
   }
 
   return (
@@ -414,7 +435,8 @@ export function BattlemapPopup({
             const ziel = eckeUnter(e);
             setWandZiel(null);
             if (ziel && (Math.abs(ziel.ax - start.ax) > 0.05 || Math.abs(ziel.ay - start.ay) > 0.05)) {
-              const liste = [...(karte.waende ?? []), { ax: start.ax, ay: start.ay, bx: ziel.ax, by: ziel.ay }];
+              const liste = [...linien, { ax: start.ax, ay: start.ay, bx: ziel.ax, by: ziel.ay }];
+              setLinien(liste);
               void battlemapApi.aktualisieren(campaignId, karteId, { waende: liste }).then(onKarte).catch(() => undefined);
             }
             return;
@@ -434,6 +456,26 @@ export function BattlemapPopup({
           void absetzen(e);
         }}
         onClick={(e) => {
+          const ziel = e.target as HTMLElement;
+          if (ziel.closest(".bm-token, .bm-name, .bm-aktion, .bm-wand")) return;
+          const gewaehlt = tokens.find((t) => t.id === wahlId);
+          if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || (istEigen(gewaehlt) && istDran(gewaehlt)))) {
+            const hex = hexUnter(e as unknown as React.PointerEvent);
+            const richtung = hex
+              ? NACHBARN.findIndex(([dq, dr]) => gewaehlt.hexQ! + dq === hex.q && gewaehlt.hexR! + dr === hex.r)
+              : -1;
+            if (richtung >= 0) {
+              void umschauen(gewaehlt, richtung);
+              setWahlId(null);
+              setChipId(null);
+              return;
+            }
+          }
+          if (wahlId || chipId) {
+            setWahlId(null);
+            setChipId(null);
+            return;
+          }
           if (!spawnArt || modus === "grid") return;
           const hex = hexUnter(e as unknown as React.PointerEvent);
           if (hex) void spawnKlick(hex.q, hex.r);
@@ -480,6 +522,7 @@ export function BattlemapPopup({
                 data-pc={farbe === "blau" || (!farbe && spawnPc) || undefined}
                 data-npc={farbe === "magenta" || (!farbe && spawnNpc) || undefined}
                 data-hover={hover || undefined}
+                data-schau={schauFelder.has(key) || undefined}
               />
             );
           })}
@@ -490,7 +533,7 @@ export function BattlemapPopup({
           })}
         </svg>
         <svg className="bm-waende">
-          {(karte.waende ?? []).map((w, i) => (
+          {linien.map((w, i) => (
             <line
               key={`${w.ax}-${w.ay}-${w.bx}-${w.by}-${i}`}
               className="bm-wand"
@@ -527,7 +570,7 @@ export function BattlemapPopup({
           const chip = chipId === t.id;
           return (
             <span key={t.id}>
-              {fog && (
+              {(fog || wahlId === t.id) && (
                 <span
                   className="bm-blick"
                   style={{
@@ -570,7 +613,13 @@ export function BattlemapPopup({
                   tipp.current = null;
                   if (!tip || tip.id !== t.id) return;
                   if (!tip.angehoben) {
-                    setChipId(t.id);
+                    if (istEigen(t) && !istGm) {
+                      setChipId(null);
+                      setWahlId(t.id);
+                    } else {
+                      setChipId(t.id);
+                      setWahlId(istGm ? t.id : null);
+                    }
                     return;
                   }
                   void absetzen(e);
@@ -578,32 +627,23 @@ export function BattlemapPopup({
               >
                 {t.bildUrl ? <img src={t.bildUrl} alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
               </button>
-              {chip && (
+              {chip && !istEigen(t) && (
                 <div className="bm-name" style={{ left: cx, top: cy - size }}>
                   <strong>{t.name}</strong>
-                  {fog && (istGm || (gehoertMir(t) && istDran(t))) && (
-                    <div className="bm-richtungen">
-                      {BLICK_WINKEL.map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          data-aktiv={t.blickrichtung === i}
-                          onClick={() => void umschauen(t, i)}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {fog && (istGm || gehoertMir(t)) && (
-                    <button type="button" onClick={() => void verstecken(t)}>
-                      {t.versteckt ? "Sichtbar" : "Verstecken"}
-                    </button>
-                  )}
-                  <button type="button" onClick={() => setChipId(null)}>
-                    zu
-                  </button>
                 </div>
+              )}
+              {wahlId === t.id && (istGm || istEigen(t)) && (
+                <button
+                  type="button"
+                  className="bm-aktion"
+                  style={{ left: cx, top: cy + size * 0.85 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void verstecken(t);
+                  }}
+                >
+                  {t.versteckt ? "Sichtbar" : "Verstecken"}
+                </button>
               )}
             </span>
           );
@@ -617,8 +657,9 @@ export function BattlemapPopup({
         jaText="Weg damit"
         onNein={() => setWandWeg(null)}
         onJa={() => {
-          const liste = (karte.waende ?? []).filter((_, i) => i !== wandWeg);
+          const liste = linien.filter((_, i) => i !== wandWeg);
           setWandWeg(null);
+          setLinien(liste);
           void battlemapApi.aktualisieren(campaignId, karteId, { waende: liste }).then(onKarte).catch(() => undefined);
         }}
       />

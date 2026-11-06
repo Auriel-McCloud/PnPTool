@@ -1,6 +1,6 @@
 """Letzte Sicht: Halbkreis, Gedächtnis, Versteckt, Rundumsicht."""
 
-from app.battlemap.sicht import aktualisiere, ansicht, blockiert, sektor, start_speicher, vorderkegel, zentrum
+from app.battlemap.sicht import aktualisiere, ansicht, ansicht_waende, blockiert, sektor, start_speicher, vorderkegel, zentrum
 from app.campaigns.repository import EINSTELLUNGEN_DEFAULTS
 
 
@@ -150,3 +150,20 @@ class TestWaende:
         speicher = aktualisiere([a, b], start_speicher([a, b]))
         gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
         assert next(t for t in gesehen if t["id"] == "b")["veraltet"] is False
+
+    def test_wand_verdeckt_auch_ohne_kegel(self):
+        a = token("a", 0, 0)
+        b = token("b", 2, 0, personType="NPC")
+        gesehen = ansicht_waende([a, b], rolle="PLAYER", person_id="a", waende=[_kante_osten()])
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_geist_hinter_neuer_wand_faellt(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = start_speicher([a, b])
+        assert "b" in speicher["a"]
+        wand = [_kante_osten()]
+        speicher = aktualisiere([a, b], speicher, wand)
+        assert "b" not in speicher["a"]
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand)
+        assert [t["id"] for t in gesehen] == ["a"]

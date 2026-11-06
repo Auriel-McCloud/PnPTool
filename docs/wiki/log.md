@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap: Wände auch ohne Fog, Blick per Nachbarfeld
+
+Spieler sehen die SL-Linien. Dahinter ist nichts, auch wenn Fog of War aus ist.
+Blickrichtung: eigenen Token antippen, Nachbarfeld antippen. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap: Sichtlinien blockieren auch Rundumsicht
 
 SL-Modus Wand, Linien an der Karte. Fog of War wertet sie mit, auch bei

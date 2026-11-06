@@ -86,22 +86,26 @@
 .bm-buehne[data-modus="wand"] .bm-token {
   pointer-events: none;
 }
+.bm-skizze {
+  z-index: 0;
+}
 .bm-waende {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
 }
 .bm-buehne[data-modus="wand"] .bm-waende {
   pointer-events: auto;
 }
 .bm-wand,
 .bm-wand-vorschau {
-  stroke: var(--p-gold);
-  stroke-width: 4;
+  stroke: var(--p-gold, #e0b84a);
+  stroke-width: 5;
   stroke-linecap: round;
+  filter: drop-shadow(0 0 1px #000);
 }
 .bm-wand {
   pointer-events: stroke;
@@ -118,7 +122,7 @@
   overflow: hidden;
   padding: 0;
   cursor: grab;
-  z-index: 2;
+  z-index: 4;
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
 }
 .bm-token:active:not(:disabled) {
@@ -209,13 +213,24 @@
   padding: 4px 8px;
   cursor: pointer;
 }
-.bm-richtungen {
-  display: flex;
-  gap: 4px;
+.bm-hex[data-schau="true"] {
+  fill: color-mix(in srgb, var(--p-gold, #e0b84a) 40%, transparent);
+  stroke: var(--p-gold, #e0b84a);
+  stroke-width: 2;
 }
-.bm-richtungen button[data-aktiv="true"] {
-  border-color: var(--p-gold);
-  color: var(--p-gold);
+.bm-aktion {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, 0);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--linie);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  cursor: pointer;
 }
 .fn-fenster:has(.bm-buehne):not(.fn-fenster-maximiert) {
   width: min(1240px, calc(100vw - 24px));

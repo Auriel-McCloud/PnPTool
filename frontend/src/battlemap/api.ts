@@ -89,6 +89,7 @@ export type BattlemapLive =
           veraltet?: boolean;
         }[];
         fog?: boolean;
+        waende?: { ax: number; ay: number; bx: number; by: number }[];
       };
     };
 

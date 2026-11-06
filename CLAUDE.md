@@ -20,7 +20,7 @@ Fix: `OPTIONAL MATCH (rasse:Rasse {ruleset: 'neotopia'}) WHERE ...` vor der RETU
 
 ## Fog of War auf der Battlemap, optional (06.11.2026)
 
-Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler sehen nur den vorderen Halbkreis der eigenen Figuren (Charakter, eigene Drohnen, eigene Beschwörungen). Dahinter bleibt der letzte Stand. Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom, Wände schneiden auch die. Antippen zeigt den Namen. Die SL sieht die Wahrheit. Siehe `docs/wiki/entities/battlemap.md`.
+Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler sehen nur den vorderen Halbkreis der eigenen Figuren (Charakter, eigene Drohnen, eigene Beschwörungen). Dahinter bleibt der letzte Stand. Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom. Sichtlinien blockieren den Spielerblick auch bei ausgeschaltetem Fog. Blickrichtung: eigenen Token am eigenen Zug antippen, dann ein Nachbarfeld. Der eigene Token hat kein Namensschild. Die SL sieht die Wahrheit. Siehe `docs/wiki/entities/battlemap.md`.
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 

@@ -162,6 +162,11 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dic
                     ged.pop(ziel["id"], None)
                 else:
                     ged[ziel["id"]] = _schnappschuss(ziel)
+        for tid, snap in list(ged.items()):
+            if tid == auge["id"] or not isinstance(snap, dict) or snap.get("hexQ") is None:
+                continue
+            if blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende):
+                ged.pop(tid, None)
         neu[auge["id"]] = {k: v for k, v in ged.items() if k in lebendig}
     return {k: v for k, v in neu.items() if k in lebendig}
 
@@ -191,6 +196,10 @@ def ansicht(
                 continue
             if sieht_live(auge, ziel, waende) and not (ziel.get("versteckt") and not gehoert(ziel, person_id)):
                 live.add(tid)
+            elif snap.get("hexQ") is None or blockiert(
+                int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende
+            ):
+                continue
             else:
                 geister.setdefault(tid, snap)
     for auge in eigene:
@@ -211,3 +220,33 @@ def ansicht(
             zeile["versteckt"] = False
             out.append(zeile)
     return out
+
+
+def ansicht_waende(
+    teilnehmer: list[dict],
+    *,
+    rolle: str,
+    person_id: str | None,
+    waende: list[dict] | None,
+) -> list[dict]:
+    """Aktuelle Positionen, 360 Grad, Wände blockieren. Kein Gedächtnis.
+
+    Ohne eigene Figur auf der Karte gibt es keinen Standpunkt, also alles.
+    """
+    roh = [t for t in teilnehmer if not t.get("zusatzzug")]
+    if rolle == "GM" or not waende:
+        return [dict(t) for t in roh]
+    eigene = [t for t in roh if gehoert(t, person_id) and t.get("hexQ") is not None]
+    if not eigene:
+        return [dict(t) for t in roh]
+    sichtbar: set[str] = set()
+    for auge in eigene:
+        sichtbar.add(auge["id"])
+        for ziel in roh:
+            if ziel.get("hexQ") is None or ziel["id"] in sichtbar:
+                continue
+            if ziel.get("versteckt") and not gehoert(ziel, person_id):
+                continue
+            if not blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+                sichtbar.add(ziel["id"])
+    return [dict(t) for t in roh if t["id"] in sichtbar]
