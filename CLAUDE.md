@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
+
+Mark, zwei wichtige Punkte für NPCs: „wenn ich einen NPC öffne und in sein inventar gehe, habe ich nicht die möglichkeit dem NPC augments zu verbauen" (gemeint: Werkbank-Upgrades wie Zielfernrohr, Ki-Tama montieren, nicht nur Chrom-Chirurgie) UND „wenn ich die Gegenstände eines NPCs öffne bekomme ich die option diese überall anzulegne, eigentlich will ich in den optionen den NPCs sie nur dort ablegen können wo der NPC ist bzw. wo er drauf zugriff hat, damit ich seine gegenstände an den ort legne kann an dem er gerade ist und die spieler sie von dort aufsammeln können wenn sie ihn besiegt haben".
+
+**Backend** (`items/routes.py::ablageziele`): Die SL-campaignweite Liste (`alle_ablageziele_fuer_gm`) galt bisher für ALLE GM-Aufrufe — das war für Vorlagen richtig (Schatzkiste aufstellen), für NPCs aber zu weit. Jetzt verzweigt die Route: Vorlagen (kein Besitzer) bekommen weiterhin alle Orte/Behälter, Gegenstände MIT Besitzer (egal ob die SL oder der Spieler selbst das tut) nur noch die Orte/Behälter des Besitzers (`moegliche_ablageziele` statt `alle_ablageziele_fuer_gm`) — NPCs können ihre Sachen nur an ihrem Aufenthaltsort/ihren Versteck-Orten ablegen, genau wie Spieler.
+
+**Frontend** (`PCInventar.tsx`): Neue Sektion „🔧 Mit Upgrade-Slots" zeigt Gegenstände mit `upgradeSlots > 0` (Waffe/Rüstung/Cyberdeck/Riggerkonsole). Jede Kachel bekommt einen „🔩 Upgraden"-Button, der das bestehende `AugmentFenster` öffnet (dasselbe Popup wie in der Werkbank-Übersicht: Montieren/Demontieren/Reparieren mit Probe + Material) — `vorausgewaehltesZiel` setzt den Träger direkt, kein Ziel-Chooser nötig. Das Augment wird mit Owner-Info (`personId`/`personName`/`personType: "NPC"`) erweitert, weil `AugmentFenster` ein `GegenstandMitBesitzer` erwartet. CSS für `.pci-traeger-kachel` und `.pci-upgrade-btn` in `pc-inventar.css`.
+
+**Verifiziert:** Backend-Import grün, `npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch: NPC-Inventar öffnen, Gegenstand mit Upgrade-Slots (z.B. Waffe mit Slots) suchen, „🔩 Upgraden" antippen, Augment montieren/demontieren/reparieren; zweiter Test: NPC-Gegenstand „Wo es geführt wird" setzen, prüfen dass nur Orte erscheinen, wo der NPC sich aufhält oder seine Verstecke.
+
 ## Overclock ohne Pool-Deckel, auch für den Decker im Matrix-Hot (06.11.2026)
 
 Marks Idee vom Spieltisch: Neuroweaver dürfen ihre Willenskraft auf den NeuroWeaving-Pool legen (Overclock) — warum nicht genauso ein Decker, der Hot in der Matrix ist, auf seinen Matrix-Pool? Gleicher Rückschlag. Im Gespräch kam dazu noch eine zweite Korrektur: der bestehende Pool-Deckel 12 bei Overclock ergab beim Nachdenken keinen Sinn mehr — der Rückschlag (Willenskraftwurf gegen die Erfolge, Rest als Schlagschaden) begrenzt schon von allein, bis hin zum Spieler, der sich mit einem Alles-oder-nichts-Overclock für sein Team aufopfert. Ein zusätzlicher harter Deckel nahm genau diesen Momenten die Spitze.
