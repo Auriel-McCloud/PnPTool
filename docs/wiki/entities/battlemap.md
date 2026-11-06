@@ -127,6 +127,9 @@ Token-Rundruf ist die volle Teilnehmerliste (Portrait, neu Hinzugekommene),
 nicht nur Positionen. Zugwechsel und Aufnehmen rufen mit. Kampfmodus hat
 „Karte öffnen“. Öffnen einer Karte ohne angehängten Kampf hängt sie an und
 spawnt. Grid-SVG stiehlt keine Zeichenklicks mehr.
+Hex-Rand wie Spawn: aktive Party (PCs plus NPCs/Drohnen dabei) `--p-blau`,
+andere NPCs `--p-magenta`, am Zug Gold. Raster füllt das Rechteck, keine
+leeren Ecken.
 
 ## Siehe auch
 

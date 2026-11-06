@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from "react-sketch-canvas";
 import { Fenster } from "../shell/Fenster";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
-import { distanz, hexEcken, hexNachPixel, pixelNachHex, reichweite, yFelder } from "./hex";
+import { hexEcken, hexNachPixel, hexRasterRechteck, pixelNachHex, reichweite, yFelder } from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
+import { partyApi } from "../party/api";
 import { bogenApi } from "../traits/bogenApi";
 import "../players/portrait.css";
 import "../zeichnungen/whiteboard.css";
@@ -11,8 +12,6 @@ import "./battlemap.css";
 
 const FARBEN = ["#1a1a1a", "#c0392b", "#e67e22", "#d4a017", "#1e8449", "#2471a3", "#7d3c98", "#f4f4f4"];
 const STIFTE = [3, 6, 12];
-const Q_MIN = -14;
-const Q_MAX = 14;
 
 export function BattlemapPopup({
   offen,
@@ -51,6 +50,8 @@ export function BattlemapPopup({
   const [gruen, setGruen] = useState<Set<string>>(new Set());
   const originZieh = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [ziehOrigin, setZiehOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [partei, setPartei] = useState<Set<string>>(new Set());
+  const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
 
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
@@ -122,6 +123,28 @@ export function BattlemapPopup({
     };
   }, [offen, karte?.id, campaignId]);
 
+  useEffect(() => {
+    if (!offen) return;
+    partyApi
+      .liste(campaignId)
+      .then((alle) => {
+        const aktiv = alle.find((p) => p.aktiv);
+        setPartei(new Set((aktiv?.mitglieder ?? []).map((m) => m.id)));
+      })
+      .catch(() => setPartei(new Set()));
+  }, [offen, campaignId]);
+
+  useEffect(() => {
+    if (!offen) return;
+    const el = buehne.current;
+    if (!el) return;
+    const messen = () => setFlaeche({ w: el.clientWidth, h: el.clientHeight });
+    messen();
+    const ro = new ResizeObserver(messen);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [offen, karte?.id]);
+
   if (!karte) return null;
   const karteId = karte.id;
 
@@ -182,9 +205,9 @@ export function BattlemapPopup({
       }
     }
     const felder = new Set<string>();
-    for (let q = Q_MIN; q <= Q_MAX; q++) {
-      for (let r = Q_MIN; r <= Q_MAX; r++) {
-        if (distanz(t.hexQ, t.hexR, q, r) <= rwe) felder.add(`${q},${r}`);
+    for (let dq = -rwe; dq <= rwe; dq++) {
+      for (let dr = Math.max(-rwe, -dq - rwe); dr <= Math.min(rwe, -dq + rwe); dr++) {
+        felder.add(`${t.hexQ + dq},${t.hexR + dr}`);
       }
     }
     setGruen(felder);
@@ -205,9 +228,28 @@ export function BattlemapPopup({
     }
   }
 
-  const hexListe: { q: number; r: number }[] = [];
-  for (let q = Q_MIN; q <= Q_MAX; q++) {
-    for (let r = Q_MIN; r <= Q_MAX; r++) hexListe.push({ q, r });
+  const hexListe = hexRasterRechteck(flaeche.w, flaeche.h, size, ox, oy);
+
+  function inPartei(t: Teilnehmer) {
+    if (t.personId && partei.has(t.personId)) return true;
+    if (t.besitzerId && partei.has(t.besitzerId)) return true;
+    if (partei.size === 0) {
+      if (t.personType === "PC" && !t.istDrohne && !t.istCritter && !t.istFahrzeug) return true;
+      const besitzer = t.besitzerId ? tokens.find((x) => x.personId === t.besitzerId) : undefined;
+      return besitzer?.personType === "PC" || t.besitzerId === eigenePersonId;
+    }
+    return false;
+  }
+
+  const belegung = new Map<string, "blau" | "magenta" | "gold">();
+  for (const t of tokens) {
+    if (t.hexQ == null || t.hexR == null) continue;
+    const anker = ziehend === t.id && hoverHex ? hoverHex : { q: t.hexQ, r: t.hexR };
+    const farbe: "blau" | "magenta" | "gold" = istDran(t) ? "gold" : inPartei(t) ? "blau" : "magenta";
+    for (const [q, r] of yFelder(anker.q, anker.r, Boolean(t.istGross), t.hexDrehung ?? 0)) {
+      const key = `${q},${r}`;
+      if (farbe === "gold" || !belegung.has(key)) belegung.set(key, farbe);
+    }
   }
 
   return (
@@ -359,14 +401,16 @@ export function BattlemapPopup({
             const spawnPc = karte.spawnPcQ === q && karte.spawnPcR === r;
             const spawnNpc = karte.spawnNpcQ === q && karte.spawnNpcR === r;
             const hover = hoverHex && hoverHex.q === q && hoverHex.r === r;
+            const farbe = belegung.get(key);
             return (
               <polygon
                 key={key}
                 points={hexEcken(x, y, size * 0.95)}
                 className="bm-hex"
                 data-gruen={istGruen || undefined}
-                data-pc={spawnPc || undefined}
-                data-npc={spawnNpc || undefined}
+                data-gold={farbe === "gold" || undefined}
+                data-pc={farbe === "blau" || (!farbe && spawnPc) || undefined}
+                data-npc={farbe === "magenta" || (!farbe && spawnNpc) || undefined}
                 data-hover={hover || undefined}
               />
             );
@@ -381,12 +425,7 @@ export function BattlemapPopup({
           if (t.hexQ == null || t.hexR == null) return null;
           const anker = ziehend === t.id && hoverHex ? hoverHex : { q: t.hexQ, r: t.hexR };
           const { x, y } = hexNachPixel(anker.q, anker.r, size, ox, oy);
-          const besitzer = t.besitzerId ? tokens.find((x) => x.personId === t.besitzerId) : undefined;
-          const gehoertPc =
-            (t.personType === "PC" && !t.istDrohne && !t.istCritter && !t.istFahrzeug) ||
-            besitzer?.personType === "PC" ||
-            t.besitzerId === eigenePersonId;
-          const rand = istDran(t) ? "gold" : gehoertPc ? "blau" : "magenta";
+          const rand = istDran(t) ? "gold" : inPartei(t) ? "blau" : "magenta";
           const felder = yFelder(anker.q, anker.r, Boolean(t.istGross), t.hexDrehung ?? 0);
           const { x: x2, y: y2 } = hexNachPixel(felder[felder.length - 1][0], felder[felder.length - 1][1], size, ox, oy);
           const cx = t.istGross ? (x + x2) / 2 : x;

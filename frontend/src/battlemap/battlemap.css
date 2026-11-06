@@ -56,10 +56,17 @@
 .bm-hex[data-pc="true"] {
   stroke: var(--p-blau);
   stroke-width: 2.5;
+  filter: drop-shadow(0 0 5px var(--p-blau));
 }
 .bm-hex[data-npc="true"] {
   stroke: var(--p-magenta);
   stroke-width: 2.5;
+  filter: drop-shadow(0 0 5px var(--p-magenta));
+}
+.bm-hex[data-gold="true"] {
+  stroke: var(--p-gold);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px var(--p-gold));
 }
 .bm-hex-grau {
   fill: color-mix(in srgb, var(--text-aus) 35%, transparent);
@@ -124,4 +131,7 @@
   .bm-token[data-rand="gold"] {
     animation: none;
   }
+}
+.fn-fenster:has(.bm-buehne):not(.fn-fenster-maximiert) {
+  width: min(1240px, calc(100vw - 24px));
 }

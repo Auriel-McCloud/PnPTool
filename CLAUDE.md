@@ -4,7 +4,7 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Battlemap: Hex-Karten, Tokens, Live-Zeichnen (06.11.2026)
 
-Eigenes Modul `backend/app/battlemap/`, Whiteboard unangetastet. Karte ohne Kampf-Anhang hängt sich beim Öffnen an und spawnt. Zeichnen: Grid fängt keine Klicks mehr. Tokens live. Siehe [[battlemap]].
+Eigenes Modul `backend/app/battlemap/`. Party-Hex blau, Gegner magenta, am Zug gold. Raster füllt die Ecken. Siehe [[battlemap]].
 
 ## Kampfkarte: große Parade von der Nahkampfwaffe, Nahkampf-Schaden inkl. Körperkraft (06.11.2026)
 

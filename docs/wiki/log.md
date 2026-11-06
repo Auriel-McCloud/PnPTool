@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap: Party-Hex blau, Raster füllt Ecken
+
+Aktive Party (inkl. NPCs/Drohnen dabei) leuchtet blau wie Spawn, andere NPCs
+magenta. Grid rechteckig, Fenster breiter. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] gebaut | Battlemap: Zeichnen + Spawn ohne Kartenwahl
 
 Grid-SVG blockierte den Stift. Kampf ohne `battlemapId` spawnte nicht —

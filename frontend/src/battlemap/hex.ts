@@ -65,3 +65,24 @@ export function reichweite(sportlichkeit: number, fliegen: number | null) {
   if (fliegen !== null) return 3 + fliegen * 2;
   return 3 + sportlichkeit;
 }
+
+/** Axiales Raster, das ein Rechteck füllt — kein Rhombus mit leeren Ecken. */
+export function hexRasterRechteck(
+  breite: number,
+  hoehe: number,
+  size: number,
+  ox: number,
+  oy: number,
+): { q: number; r: number }[] {
+  if (breite <= 0 || hoehe <= 0 || size <= 0) return [];
+  const liste: { q: number; r: number }[] = [];
+  const oben = pixelNachHex(breite / 2, 0, size, ox, oy).r - 1;
+  const unten = pixelNachHex(breite / 2, hoehe, size, ox, oy).r + 1;
+  for (let r = oben; r <= unten; r++) {
+    const y = size * (3 / 2) * r + oy;
+    const qLinks = pixelNachHex(0, y, size, ox, oy).q - 1;
+    const qRechts = pixelNachHex(breite, y, size, ox, oy).q + 1;
+    for (let q = qLinks; q <= qRechts; q++) liste.push({ q, r });
+  }
+  return liste;
+}
