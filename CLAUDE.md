@@ -2323,6 +2323,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (06.11.2026 — Credstick: Vermögen sichtbar, Felder nicht mehr vertauscht):**
+- **Was:** Drei Mark-Meldungen in einer Session behoben. (1) Übersicht-Bild lag rechts statt links — die Credstick-Buttons standen als eigenes Grid-Element VOR dem Bild-Bereich, rutschten dadurch in die schmale Grid-Spalte und schoben das Bild in die breite. (2) Spieler sehen jetzt ihr eigenes Vermögen im Aufladen-/Abheben-Popup, nicht nur den Credstick-Stand. (3) Eingabefeld (Betrag) und Anzeige (Kontostand) waren optisch vertauscht designed: die Anzeige trug den Eingabefeld-Look (Rahmen+Kasten), das echte Eingabefeld nutzte nicht existente CSS-Tokens (`--card`/`--border`/`--foreground`) und war dadurch faktisch unsichtbar/randlos.
+- **Wo:** `frontend/src/traits/CharacterSheetPanel.tsx` (Grid-Reihenfolge), `frontend/src/items/CredstickPopup.tsx` + `wegwerfen.css` (neue Klassen `.cs-stand`/`.cs-betrag`), `backend/app/items/routes.py`+`repository.py` (neuer GET-Endpoint `/credstick/vermoegen`), `frontend/src/items/api.ts`.
+- **Verifiziert:** `tsc --noEmit`, Backend-Import sauber. Am Tisch noch nicht geklickt.
+
 **Zuletzt gebaut (05.11.2026 — Credstick laden im Objekt, SL und Spieler):**
 - **Was:** Aufladen, Abheben und (SL) Geld erzeugen sitzen oben im Credstick-Objekt und oben im Spieler-Fenster, nicht mehr nur versteckt in der Inventar-Kachel. Der Betrag steht auf der Kachel.
 - **Wo:** `frontend/src/items/CredstickPopup.tsx`, `GegenstandKachel.tsx`, `traits/CharacterSheetPanel.tsx`. Siehe `docs/wiki/entities/gegenstand-transfer.md`.
