@@ -69,5 +69,13 @@ class PositionUpdate(BaseModel):
     drehung: int = 0
 
 
+class BlickUpdate(BaseModel):
+    blickrichtung: int
+
+
+class VerstecktUpdate(BaseModel):
+    versteckt: bool
+
+
 class KarteAnKampf(BaseModel):
     battlemapId: str | None = None

@@ -213,7 +213,14 @@ async def einstellungen_aendern(campaign_id: str, body: dict) -> dict:
     wachsen können, ohne dass hier und im Frontend jedes Mal ein Feld
     nachgetragen werden muss. Unbekannte Schlüssel verwirft das Repository.
     """
-    return await set_einstellungen(campaign_id, body)
+    aktuell = await set_einstellungen(campaign_id, body)
+    if "fogOfWar" in body:
+        from app.kampf import repository as kampf_repo
+        from app.kampf.routes import _tokens_senden
+
+        await kampf_repo.setze_sicht(campaign_id, {})
+        await _tokens_senden(await kampf_repo.hole(campaign_id))
+    return aktuell
 
 
 @einstellungen_router.get("/standard", dependencies=[Depends(require_campaign_zugang)])

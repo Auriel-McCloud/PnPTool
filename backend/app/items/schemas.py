@@ -210,6 +210,8 @@ class GegenstandCreate(BaseModel):
     # Ausrüstung, die man an- und ablegt — es wird eingesetzt und nur per
     # Operation wieder entfernt. Wirkt nur, wenn verbaut.
     verbaut: bool = False
+    # Ultraschall/Rundumsicht, nur wenn verbaut. Nicht im Rucksack.
+    rundumsicht: bool = False
     # Wie oft der Reflex-Booster pro Kampf eine Zusatzaktion erlaubt:
     # 1 (Stufe 1), 2 (Stufe 2), -1 = jede Runde (Stufe 3), 0 = gar nicht.
     zusatzaktionen: int = 0
@@ -482,6 +484,7 @@ class GegenstandUpdate(BaseModel):
     nebenwirkungSchadenMenge: int | None = None
     umwandeln: str | None = None
     verbaut: bool | None = None
+    rundumsicht: bool | None = None
     zusatzaktionen: int | None = None
     ausruestungsfertigkeiten: dict[str, int] | None = None
     ausruestungsSpezialisierungen: dict[str, list[str]] | None = None
@@ -626,6 +629,8 @@ class GegenstandResponse(BaseModel):
     nebenwirkungSchadenMenge: int = 0
     umwandeln: str = ""
     verbaut: bool = False
+    # Ultraschall/Rundumsicht, nur wenn verbaut. Nicht im Rucksack.
+    rundumsicht: bool = False
     entfernungBeantragt: bool = False
     zusatzaktionen: int = 0
     ausruestungsfertigkeiten: dict[str, int] = {}

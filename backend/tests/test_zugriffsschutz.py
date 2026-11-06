@@ -233,6 +233,8 @@ OHNE_GM_ERLAUBT = {
     "/api/campaigns/{campaign_id}/battlemaps/{karte_id}/pfade",
     # Battlemap-Token: Spieler nur eigenen, nur am Zug. Prüft selbst darf_schieben.
     "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/position",
+    "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/blick",
+    "/api/campaigns/{campaign_id}/kampf/teilnehmer/{teilnehmer_id}/versteckt",
     # --- Drohnen/Fahrzeuge: Rigger darf die eigene Verbindung schalten ------
     # Prüft selbst (entities/routes.py::drohne_aktiv_setzen): GM immer,
     # Spieler nur für die eigene Drohne/das eigene Fahrzeug (BEGLEITET-Kante

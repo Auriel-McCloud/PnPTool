@@ -52,6 +52,10 @@ TOKEN_FELDER = (
     "istFahrzeug",
     "istCritter",
     "besitzerId",
+    "blickrichtung",
+    "versteckt",
+    "rundumsicht",
+    "veraltet",
 )
 
 

@@ -4,6 +4,7 @@ import { Fenster } from "../shell/Fenster";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
 import { hexEcken, hexNachPixel, hexRasterRechteck, pixelNachHex, reichweite, yFelder } from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
+import { einstellungenApi } from "../campaigns/einstellungen";
 import { partyApi } from "../party/api";
 import { bogenApi } from "../traits/bogenApi";
 import "../players/portrait.css";
@@ -12,6 +13,7 @@ import "./battlemap.css";
 
 const FARBEN = ["#1a1a1a", "#c0392b", "#e67e22", "#d4a017", "#1e8449", "#2471a3", "#7d3c98", "#f4f4f4"];
 const STIFTE = [3, 6, 12];
+const BLICK_WINKEL = [0, -60, -120, 180, 120, 60];
 
 export function BattlemapPopup({
   offen,
@@ -52,6 +54,9 @@ export function BattlemapPopup({
   const [ziehOrigin, setZiehOrigin] = useState<{ x: number; y: number } | null>(null);
   const [partei, setPartei] = useState<Set<string>>(new Set());
   const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
+  const [fog, setFog] = useState(false);
+  const [chipId, setChipId] = useState<string | null>(null);
+  const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
 
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
@@ -94,6 +99,7 @@ export function BattlemapPopup({
         if (n.typ === "pfade") standUebernehmen(n.daten.pfade);
         if (n.typ === "karte") onKarte(n.daten);
         if (n.typ === "tokens") {
+          setFog(Boolean(n.daten.fog));
           setKampf((alt) => ({
             id: alt?.id ?? "",
             runde: alt?.runde ?? 1,
@@ -132,6 +138,7 @@ export function BattlemapPopup({
         setPartei(new Set((aktiv?.mitglieder ?? []).map((m) => m.id)));
       })
       .catch(() => setPartei(new Set()));
+    einstellungenApi.lesen(campaignId).then((e) => setFog(Boolean(e.fogOfWar))).catch(() => undefined);
   }, [offen, campaignId]);
 
   useEffect(() => {
@@ -225,6 +232,22 @@ export function BattlemapPopup({
       setKampf(k);
     } catch {
       /* belegt */
+    }
+  }
+
+  async function umschauen(t: Teilnehmer, richtung: number) {
+    try {
+      setKampf(await kampfApi.blick(campaignId, t.id, richtung));
+    } catch {
+      /* nicht am Zug */
+    }
+  }
+
+  async function verstecken(t: Teilnehmer) {
+    try {
+      setKampf(await kampfApi.versteckt(campaignId, t.id, !t.versteckt));
+    } catch {
+      /* nicht der eigene Token */
     }
   }
 
@@ -430,27 +453,89 @@ export function BattlemapPopup({
           const { x: x2, y: y2 } = hexNachPixel(felder[felder.length - 1][0], felder[felder.length - 1][1], size, ox, oy);
           const cx = t.istGross ? (x + x2) / 2 : x;
           const cy = t.istGross ? (y + y2) / 2 : y;
+          const winkel = BLICK_WINKEL[t.blickrichtung ?? 0] ?? 0;
+          const chip = chipId === t.id;
           return (
-            <button
-              key={t.id}
-              type="button"
-              className="bm-token"
-              data-rand={rand}
-              data-gross={t.istGross || undefined}
-              style={{
-                left: cx,
-                top: cy,
-                width: t.istGross ? size * 2.2 : size * 1.7,
-                height: t.istGross ? size * 2.2 : size * 1.7,
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                void anheben(t);
-              }}
-              title={t.name}
-            >
-              {t.bildUrl ? <img src={t.bildUrl} alt="" /> : <span>{t.name.slice(0, 2)}</span>}
-            </button>
+            <span key={t.id}>
+              {fog && (
+                <span
+                  className="bm-blick"
+                  style={{
+                    left: cx,
+                    top: cy,
+                    transform: `translate(-50%, -50%) rotate(${winkel}deg) translateX(${size * 0.85}px)`,
+                  }}
+                />
+              )}
+              <button
+                type="button"
+                className="bm-token"
+                data-rand={rand}
+                data-gross={t.istGross || undefined}
+                data-veraltet={t.veraltet || undefined}
+                data-versteckt={t.versteckt || undefined}
+                style={{
+                  left: cx,
+                  top: cy,
+                  width: t.istGross ? size * 2.2 : size * 1.7,
+                  height: t.istGross ? size * 2.2 : size * 1.7,
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (t.veraltet) return;
+                  tipp.current = { id: t.id, x: e.clientX, y: e.clientY, angehoben: false };
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }}
+                onPointerMove={(e) => {
+                  const tip = tipp.current;
+                  if (!tip || tip.id !== t.id || tip.angehoben || t.veraltet) return;
+                  if (Math.hypot(e.clientX - tip.x, e.clientY - tip.y) > 8) {
+                    tip.angehoben = true;
+                    void anheben(t);
+                  }
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  const tip = tipp.current;
+                  tipp.current = null;
+                  if (!tip || tip.id !== t.id) return;
+                  if (!tip.angehoben) {
+                    setChipId(t.id);
+                    return;
+                  }
+                  void absetzen(e);
+                }}
+              >
+                {t.bildUrl ? <img src={t.bildUrl} alt="" /> : <span>{t.name.slice(0, 2)}</span>}
+              </button>
+              {chip && (
+                <div className="bm-name" style={{ left: cx, top: cy - size }}>
+                  <strong>{t.name}</strong>
+                  {fog && (istGm || (gehoertMir(t) && istDran(t))) && (
+                    <div className="bm-richtungen">
+                      {BLICK_WINKEL.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          data-aktiv={t.blickrichtung === i}
+                          onClick={() => void umschauen(t, i)}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {fog && (istGm || gehoertMir(t)) && (
+                    <button type="button" onClick={() => void verstecken(t)}>
+                      {t.versteckt ? "Sichtbar" : "Verstecken"}
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setChipId(null)}>
+                    zu
+                  </button>
+                </div>
+              )}
+            </span>
           );
         })}
       </div>

@@ -57,6 +57,8 @@ class RasseCreate(BaseModel):
     # Rassen mit diesem Flag sind Hai-Kandidaten (Schulden-Hintergrund).
     kannKredithai: bool = False
     istGross: bool = False
+    # Battlemap: Hören/Ultraschall, kein Hinterkopf. Kein Rassenname im Code.
+    rundumsicht: bool = False
 
 
 class RasseUpdate(BaseModel):
@@ -74,6 +76,7 @@ class RasseUpdate(BaseModel):
     featureHinweis: str | None = None
     kannKredithai: bool | None = None
     istGross: bool | None = None
+    rundumsicht: bool | None = None
     # bildUrl bewusst nicht hier: das Bild kommt über den Upload-Endpunkt,
     # wie bei Gegenständen und Personen auch.
 
@@ -109,6 +112,7 @@ class RasseResponse(BaseModel):
     featureHinweis: str = ""
     kannKredithai: bool = False
     istGross: bool = False
+    rundumsicht: bool = False
     # Kommt vom Server mit, damit Übersicht und Editor dieselbe Bewertung
     # zeigen wie die Prüfung beim Speichern.
     bilanz: Bilanz

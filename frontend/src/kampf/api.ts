@@ -49,6 +49,11 @@ export interface Teilnehmer {
   istCritter?: boolean;
   /** Rigger/Beschwörer — Spieler schiebt diese Tokens am eigenen Zug. */
   besitzerId?: string | null;
+  blickrichtung?: number;
+  versteckt?: boolean;
+  rundumsicht?: boolean;
+  /** Letzter Stand, nicht die Wahrheit. */
+  veraltet?: boolean;
 }
 
 /** Was der Spieler vor dem Initiativwurf wissen muss. */
@@ -221,6 +226,10 @@ export const kampfApi = {
     api.put<Kampf>(`${basis(cid)}/karte`, { battlemapId }),
   position: (cid: string, teilnehmerId: string, q: number, r: number, drehung = 0) =>
     api.patch<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/position`, { q, r, drehung }),
+  blick: (cid: string, teilnehmerId: string, blickrichtung: number) =>
+    api.patch<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/blick`, { blickrichtung }),
+  versteckt: (cid: string, teilnehmerId: string, versteckt: boolean) =>
+    api.patch<Kampf>(`${basis(cid)}/teilnehmer/${teilnehmerId}/versteckt`, { versteckt }),
   amZug: (cid: string, teilnehmerId: string | null) =>
     api.post<Kampf>(`${basis(cid)}/amzug`, { teilnehmerId }),
   matrix: (cid: string) => api.get<MatrixUebersicht>(`${basis(cid)}/matrix`),

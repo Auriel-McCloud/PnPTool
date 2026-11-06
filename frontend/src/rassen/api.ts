@@ -44,6 +44,7 @@ export interface Rasse {
   featureHinweis: string;
   kannKredithai: boolean;
   istGross: boolean;
+  rundumsicht: boolean;
 }
 
 export interface RasseEingabe {
@@ -61,6 +62,7 @@ export interface RasseEingabe {
   featureHinweis?: string;
   kannKredithai?: boolean;
   istGross?: boolean;
+  rundumsicht?: boolean;
 }
 
 function basis(cid: string) {

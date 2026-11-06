@@ -81,7 +81,12 @@ export type BattlemapLive =
           istFahrzeug?: boolean;
           istCritter?: boolean;
           besitzerId?: string | null;
+          blickrichtung?: number;
+          versteckt?: boolean;
+          rundumsicht?: boolean;
+          veraltet?: boolean;
         }[];
+        fog?: boolean;
       };
     };
 

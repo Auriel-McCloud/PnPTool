@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.battlemap.hex import drop_frei
 from app.battlemap.logic import darf_schieben, token_stand
-from app.battlemap.schemas import KarteAnKampf, PositionUpdate
+from app.battlemap.schemas import BlickUpdate, KarteAnKampf, PositionUpdate, VerstecktUpdate
 from app.battlemap.verteiler import verteiler as karten_verteiler
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
@@ -66,7 +66,7 @@ def _ohne_hilfsfelder(kampf: dict | None) -> dict | None:
     """
     if kampf is None:
         return None
-    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer"):
+    for feld in ("_rassen", "_npcIds", "_begleiterBesitzer", "_drohnenBesitzer", "_sichtSpeicher", "_campaignId"):
         kampf.pop(feld, None)
     return kampf
 
@@ -105,6 +105,10 @@ class TeilnehmerResponse(BaseModel):
     istCritter: bool = False
     # Rigger/Beschwörer — Spieler darf den Token am Zug schieben.
     besitzerId: str | None = None
+    blickrichtung: int = 0
+    versteckt: bool = False
+    rundumsicht: bool = False
+    veraltet: bool = False
 
 
 class KampfResponse(BaseModel):
@@ -184,15 +188,23 @@ async def laufender_kampf(campaign_id: str, viewer: Viewer = Depends(get_viewer)
     drohnen_besitzer = kampf.pop("_drohnenBesitzer", {})
 
     if viewer.role != "GM":
-        kampf["teilnehmer"] = fuer_spieler(
-            kampf["teilnehmer"],
-            rassen=rassen,
-            eigene_person_id=viewer.person_id,
-            begleiter_besitzer=begleiter_besitzer,
-            npc_ids=npc_ids,
-            drohnen_besitzer=drohnen_besitzer,
-        )
-    return kampf
+        kampf["_rassen"] = rassen
+        kampf["_npcIds"] = npc_ids
+        kampf["_begleiterBesitzer"] = begleiter_besitzer
+        kampf["_drohnenBesitzer"] = drohnen_besitzer
+        if await _fog_an(kampf):
+            speicher = await _speicher_frisch(kampf)
+            kampf["teilnehmer"] = _karte_fuer(kampf, speicher, "PLAYER", viewer.person_id)
+        else:
+            kampf["teilnehmer"] = fuer_spieler(
+                kampf["teilnehmer"],
+                rassen=rassen,
+                eigene_person_id=viewer.person_id,
+                begleiter_besitzer=begleiter_besitzer,
+                npc_ids=npc_ids,
+                drohnen_besitzer=drohnen_besitzer,
+            )
+    return _ohne_hilfsfelder(kampf)
 
 
 async def _werte_und_chrom(campaign_id: str, person_id: str) -> tuple[dict[str, int], int]:
@@ -257,10 +269,56 @@ async def beende(campaign_id: str):
         )
 
 
+async def _fog_an(kampf: dict | None) -> bool:
+    if not kampf or not kampf.get("_campaignId"):
+        return False
+    werte = await get_einstellungen(kampf["_campaignId"])
+    return bool(werte.get("fogOfWar"))
+
+
+async def _speicher_frisch(kampf: dict) -> dict:
+    from app.battlemap.sicht import aktualisiere, start_speicher
+
+    speicher = kampf.get("_sichtSpeicher") or {}
+    teilnehmer = kampf.get("teilnehmer") or []
+    speicher = start_speicher(teilnehmer) if not speicher else aktualisiere(teilnehmer, speicher)
+    cid = kampf.get("_campaignId")
+    if cid:
+        await repository.setze_sicht(cid, speicher)
+    kampf["_sichtSpeicher"] = speicher
+    return speicher
+
+
+def _karte_fuer(kampf: dict, speicher: dict, rolle: str, person_id: str | None) -> list[dict]:
+    from app.battlemap.sicht import ansicht
+
+    gesehen = ansicht(kampf.get("teilnehmer") or [], speicher, rolle=rolle, person_id=person_id)
+    if rolle != "GM":
+        gesehen = fuer_spieler(
+            gesehen,
+            rassen=kampf.get("_rassen") or {},
+            eigene_person_id=person_id,
+            begleiter_besitzer=kampf.get("_begleiterBesitzer") or {},
+            npc_ids=kampf.get("_npcIds") or set(),
+            drohnen_besitzer=kampf.get("_drohnenBesitzer") or {},
+        )
+    return gesehen
+
+
 async def _tokens_senden(kampf: dict | None) -> None:
     if not kampf or not kampf.get("battlemapId"):
         return
-    await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": token_stand(kampf)})
+    if not await _fog_an(kampf):
+        await karten_verteiler.rundrufen(kampf["battlemapId"], {"typ": "tokens", "daten": token_stand(kampf)})
+        return
+    speicher = await _speicher_frisch(kampf)
+
+    def bauen(verbindung):
+        stand = token_stand({**kampf, "teilnehmer": _karte_fuer(kampf, speicher, verbindung.rolle, verbindung.person_id)})
+        stand["fog"] = True
+        return {"typ": "tokens", "daten": stand}
+
+    await karten_verteiler.rundrufen_je(kampf["battlemapId"], bauen)
 
 
 async def _kampf_antworten(kampf: dict | None) -> dict | None:
@@ -318,21 +376,99 @@ async def token_schieben(
         belegt=belegt,
     ):
         raise HTTPException(status.HTTP_409_CONFLICT, "Feld belegt")
+    from app.battlemap.sicht import sektor
+
+    blick = int(token.get("blickrichtung") or 0)
+    if token.get("hexQ") is not None and (token.get("hexQ") != body.q or token.get("hexR") != body.r):
+        richtung = sektor(int(token["hexQ"]), int(token["hexR"]), body.q, body.r)
+        if richtung is not None:
+            blick = richtung
     kampf = await repository.setze_token_position(
         campaign_id, teilnehmer_id, body.q, body.r, body.drehung, zug_start=am_zug
     )
+    if kampf:
+        kampf = await repository.setze_blick(campaign_id, teilnehmer_id, blick)
     await _tokens_senden(kampf)
     if viewer.role != "GM" and kampf:
-        kampf = dict(kampf)
-        kampf["teilnehmer"] = fuer_spieler(
-            kampf["teilnehmer"],
-            rassen=kampf.pop("_rassen", {}),
-            eigene_person_id=viewer.person_id,
-            begleiter_besitzer=kampf.pop("_begleiterBesitzer", {}),
-            npc_ids=kampf.pop("_npcIds", set()),
-            drohnen_besitzer=kampf.pop("_drohnenBesitzer", {}),
+        if await _fog_an(kampf):
+            speicher = kampf.get("_sichtSpeicher") or {}
+            kampf = dict(kampf)
+            kampf["teilnehmer"] = _karte_fuer(kampf, speicher, "PLAYER", viewer.person_id)
+        else:
+            kampf = dict(kampf)
+            kampf["teilnehmer"] = fuer_spieler(
+                kampf["teilnehmer"],
+                rassen=kampf.pop("_rassen", {}),
+                eigene_person_id=viewer.person_id,
+                begleiter_besitzer=kampf.pop("_begleiterBesitzer", {}),
+                npc_ids=kampf.pop("_npcIds", set()),
+                drohnen_besitzer=kampf.pop("_drohnenBesitzer", {}),
+            )
+        return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
+
+
+def _darf_token(viewer: Viewer, token: dict, kampf: dict, *, nur_am_zug: bool) -> bool:
+    am_zug_eintrag = next((t for t in kampf["teilnehmer"] if t["id"] == kampf.get("amZug")), None)
+    am_zug = False
+    if am_zug_eintrag:
+        am_zug = am_zug_eintrag["id"] == token["id"] or (
+            token.get("personId") and am_zug_eintrag.get("personId") == token.get("personId")
         )
-        return kampf
+    besitzer = token.get("besitzerId") or (kampf.get("_drohnenBesitzer") or {}).get(token.get("personId"))
+    if not besitzer and token.get("begleiterId"):
+        besitzer = (kampf.get("_begleiterBesitzer") or {}).get(token.get("begleiterId"))
+    if viewer.role == "GM":
+        return True
+    if not viewer.person_id:
+        return False
+    eigener = token.get("personId") == viewer.person_id or besitzer == viewer.person_id
+    if not eigener:
+        return False
+    return bool(am_zug) if nur_am_zug else True
+
+
+@router.patch("/teilnehmer/{teilnehmer_id}/blick", response_model=KampfResponse)
+async def token_umschauen(
+    campaign_id: str,
+    teilnehmer_id: str,
+    body: BlickUpdate,
+    viewer: Viewer = Depends(get_viewer),
+):
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    token = next((t for t in kampf["teilnehmer"] if t["id"] == teilnehmer_id and not t.get("zusatzzug")), None)
+    if token is None or not _darf_token(viewer, token, kampf, nur_am_zug=True):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht gefunden")
+    kampf = await repository.setze_blick(campaign_id, teilnehmer_id, int(body.blickrichtung) % 6)
+    await _tokens_senden(kampf)
+    if viewer.role != "GM" and kampf and await _fog_an(kampf):
+        kampf = dict(kampf)
+        kampf["teilnehmer"] = _karte_fuer(kampf, kampf.get("_sichtSpeicher") or {}, "PLAYER", viewer.person_id)
+        return _ohne_hilfsfelder(kampf)
+    return await _kampf_antworten(kampf)
+
+
+@router.patch("/teilnehmer/{teilnehmer_id}/versteckt", response_model=KampfResponse)
+async def token_verstecken(
+    campaign_id: str,
+    teilnehmer_id: str,
+    body: VerstecktUpdate,
+    viewer: Viewer = Depends(get_viewer),
+):
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    token = next((t for t in kampf["teilnehmer"] if t["id"] == teilnehmer_id and not t.get("zusatzzug")), None)
+    if token is None or not _darf_token(viewer, token, kampf, nur_am_zug=False):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht gefunden")
+    kampf = await repository.setze_versteckt(campaign_id, teilnehmer_id, body.versteckt)
+    await _tokens_senden(kampf)
+    if viewer.role != "GM" and kampf and await _fog_an(kampf):
+        kampf = dict(kampf)
+        kampf["teilnehmer"] = _karte_fuer(kampf, kampf.get("_sichtSpeicher") or {}, "PLAYER", viewer.person_id)
+        return _ohne_hilfsfelder(kampf)
     return await _kampf_antworten(kampf)
 
 

@@ -52,5 +52,19 @@ class Verteiler:
         for socket in tot:
             await self.abmelden(karte_id, socket)
 
+    async def rundrufen_je(self, karte_id: str, bauen) -> None:
+        """Jeder Verbindung ihr eigenes Paket. bauen(verbindung) -> Umschlag."""
+        async with self._schloss:
+            offen = list(self._je_karte.get(karte_id, []))
+        tot: list[WebSocket] = []
+        for verbindung in offen:
+            try:
+                await verbindung.socket.send_json(bauen(verbindung))
+            except Exception:
+                log.debug("Leitung weg, wird entfernt", exc_info=True)
+                tot.append(verbindung.socket)
+        for socket in tot:
+            await self.abmelden(karte_id, socket)
+
 
 verteiler = Verteiler()

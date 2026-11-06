@@ -234,6 +234,7 @@ function RasseEditor({
   const [featureHinweis, setFeatureHinweis] = useState(rasse.featureHinweis);
   const [kannKredithai, setKannKredithai] = useState(rasse.kannKredithai ?? false);
   const [istGross, setIstGross] = useState(rasse.istGross ?? false);
+  const [rundumsicht, setRundumsicht] = useState(rasse.rundumsicht ?? false);
   const [vorlagen, setVorlagen] = useState<GegenstandMitBesitzer[]>([]);
   const [zusatzfertigkeiten, setZusatzfertigkeiten] = useState<Zusatzfertigkeit[]>([]);
   const [fertigkeitenKatalog, setFertigkeitenKatalog] = useState<TraitDef[]>([]);
@@ -253,6 +254,7 @@ function RasseEditor({
     setFeatureHinweis(rasse.featureHinweis);
     setKannKredithai(rasse.kannKredithai ?? false);
     setIstGross(rasse.istGross ?? false);
+    setRundumsicht(rasse.rundumsicht ?? false);
   }, [rasse.id]);
 
   // Vorlagen-Gegenstände für die Dug'Rah-Gratis-Rüstung-Auswahl — nur
@@ -316,6 +318,7 @@ function RasseEditor({
         featureHinweis,
         kannKredithai,
         istGross,
+        rundumsicht,
       });
       await onGeaendert();
     } finally {
@@ -593,6 +596,11 @@ function RasseEditor({
               Groß auf der Battlemap (3 Hex)
             </label>
             <p className="ra-hinweis">Neue Person dieser Rasse startet groß. Danach gilt die Checkbox im Reiter Übersicht der Person.</p>
+            <label className="ra-feld" style={{ marginTop: 10 }}>
+              <input type="checkbox" checked={rundumsicht} onChange={(e) => setRundumsicht(e.target.checked)} />{" "}
+              Rundumsicht (Hören, Ultraschall)
+            </label>
+            <p className="ra-hinweis">Kein Hinterkopf auf der Battlemap, wenn Fog of War an ist. Dug'rah hier setzen, nicht über den Namen.</p>
 
             <label className="ra-feld" style={{ marginTop: 10 }}>
               Hinweistext (Charakterblatt/Infobox)

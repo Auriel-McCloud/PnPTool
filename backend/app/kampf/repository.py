@@ -14,6 +14,7 @@ Listen aus Objekten als Eigenschaft, und ein Teilnehmer verweist ohnehin auf
 eine Person oder einen Begleiter.
 """
 
+import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
@@ -31,9 +32,11 @@ TEILNEHMER_FELDER = """
     t.rundenVerbleibend AS rundenVerbleibend,
     t.hexQ AS hexQ, t.hexR AS hexR, t.hexDrehung AS hexDrehung,
     t.zugStartQ AS zugStartQ, t.zugStartR AS zugStartR,
+    t.blickrichtung AS blickrichtung, coalesce(t.versteckt, false) AS versteckt,
     p.id AS personId, p.personType AS personType,
     p.bildUrl AS bildUrl, coalesce(p.istGross, false) AS istGross,
     p.istDrohne AS istDrohne, p.istFahrzeug AS istFahrzeug, p.istCritter AS istCritter,
+    coalesce(head([(rasse:Rasse {ruleset: 'neotopia'}) WHERE rasse.name = p.rasse AND p.rasse <> '' AND NOT coalesce(rasse.geloescht, false) | rasse.rundumsicht]), false) AS rasseRundum,
     b.id AS begleiterId
 """
 
@@ -67,6 +70,10 @@ def _decode(record: dict) -> dict:
     daten["istDrohne"] = bool(daten.get("istDrohne"))
     daten["istFahrzeug"] = bool(daten.get("istFahrzeug"))
     daten["istCritter"] = bool(daten.get("istCritter"))
+    roh_blick = daten.get("blickrichtung")
+    daten["blickrichtung"] = int(roh_blick) % 6 if roh_blick is not None else 0
+    daten["versteckt"] = bool(daten.get("versteckt"))
+    daten["rundumsicht"] = bool(daten.get("rasseRundum")) or bool(daten.get("chromRundum"))
     return daten
 
 
@@ -98,7 +105,7 @@ async def hole(campaign_id: str) -> dict | None:
             MATCH (k:Kampf {campaignId: $campaign_id})
             RETURN k.id AS id, k.runde AS runde, k.amZug AS amZug, k.begonnen AS begonnen,
                    coalesce(k.verbrauchteBeschwoerungen, []) AS verbrauchteBeschwoerungen,
-                   k.battlemapId AS battlemapId
+                   k.battlemapId AS battlemapId, k.sichtSpeicher AS sichtSpeicher
             """,
             campaign_id=campaign_id,
         )
@@ -173,6 +180,19 @@ async def hole(campaign_id: str) -> dict | None:
 
         result = await session.run(
             """
+            MATCH (p:Person {campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand)
+            WHERE g.typ IN ['Cyberware', 'Bioware', 'Hexware']
+              AND coalesce(g.verbaut, false)
+              AND coalesce(g.rundumsicht, false)
+              AND NOT coalesce(g.weggeworfen, false)
+            RETURN DISTINCT p.id AS id
+            """,
+            campaign_id=campaign_id,
+        )
+        chrom_rundum = {r["id"] async for r in result}
+
+        result = await session.run(
+            """
             MATCH (r:Person {campaignId: $campaign_id})
             WHERE coalesce(r.hotDrohneId, '') <> ''
             MATCH (d:Person {id: r.hotDrohneId, campaignId: $campaign_id})
@@ -193,6 +213,14 @@ async def hole(campaign_id: str) -> dict | None:
         t["besitzerId"] = (drohnen_besitzer.get(pid) if pid else None) or (
             begleiter_besitzer.get(bid) if bid else None
         )
+        if pid and pid in chrom_rundum:
+            t["rundumsicht"] = True
+
+    roh_speicher = kampf.get("sichtSpeicher")
+    try:
+        speicher = json.loads(roh_speicher) if roh_speicher else {}
+    except (json.JSONDecodeError, TypeError):
+        speicher = {}
 
     return {
         "id": kampf["id"],
@@ -202,6 +230,7 @@ async def hole(campaign_id: str) -> dict | None:
         "_npcIds": npc_ids,
         "_begleiterBesitzer": begleiter_besitzer,
         "_drohnenBesitzer": drohnen_besitzer,
+        "_sichtSpeicher": speicher if isinstance(speicher, dict) else {},
         # Kennung des Teilnehmers, der gerade handelt. Kennung statt Position,
         # weil sich die Reihenfolge ändern kann (jemand kommt dazu) — eine
         # Position zeigte danach auf jemand anderen.
@@ -209,6 +238,7 @@ async def hole(campaign_id: str) -> dict | None:
         "teilnehmer": teilnehmer,
         "verbrauchteBeschwoerungen": list(kampf["verbrauchteBeschwoerungen"] or []),
         "battlemapId": kampf.get("battlemapId"),
+        "_campaignId": campaign_id,
     }
 
 
@@ -660,6 +690,49 @@ async def setze_karte(campaign_id: str, battlemap_id: str | None) -> dict | None
         )
     if battlemap_id:
         await platziere_unplatzierte(campaign_id)
+    return await hole(campaign_id)
+
+
+async def setze_sicht(campaign_id: str, speicher: dict) -> None:
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (k:Kampf {campaignId: $campaign_id})
+            SET k.sichtSpeicher = $roh
+            """,
+            campaign_id=campaign_id,
+            roh=json.dumps(speicher),
+        )
+
+
+async def setze_blick(campaign_id: str, teilnehmer_id: str, blick: int) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer {id: $id})
+            SET t.blickrichtung = $blick
+            """,
+            campaign_id=campaign_id,
+            id=teilnehmer_id,
+            blick=int(blick) % 6,
+        )
+    return await hole(campaign_id)
+
+
+async def setze_versteckt(campaign_id: str, teilnehmer_id: str, versteckt: bool) -> dict | None:
+    driver = get_driver()
+    async with driver.session() as session:
+        await session.run(
+            """
+            MATCH (:Kampf {campaignId: $campaign_id})-[:KAEMPFT]->(t:KampfTeilnehmer {id: $id})
+            SET t.versteckt = $versteckt
+            """,
+            campaign_id=campaign_id,
+            id=teilnehmer_id,
+            versteckt=bool(versteckt),
+        )
     return await hole(campaign_id)
 
 

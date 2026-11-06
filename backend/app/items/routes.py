@@ -254,6 +254,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "nebenwirkungSchadenMenge": body.nebenwirkungSchadenMenge,
         "umwandeln": body.umwandeln,
         "verbaut": body.verbaut,
+        "rundumsicht": body.rundumsicht,
         "zusatzaktionen": body.zusatzaktionen,
         "sichtbarkeit": sichtbarkeit,
         "sichtbarFuer": sichtbar_fuer,

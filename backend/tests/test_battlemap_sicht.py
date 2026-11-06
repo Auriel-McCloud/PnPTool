@@ -1,0 +1,120 @@
+"""Letzte Sicht: Halbkreis, Gedächtnis, Versteckt, Rundumsicht."""
+
+from app.battlemap.sicht import aktualisiere, ansicht, sektor, start_speicher, vorderkegel
+from app.campaigns.repository import EINSTELLUNGEN_DEFAULTS
+
+
+def token(tid, q, r, **extra):
+    basis = {
+        "id": tid,
+        "name": tid,
+        "hexQ": q,
+        "hexR": r,
+        "personId": tid,
+        "personType": "PC",
+        "besitzerId": None,
+        "blickrichtung": 0,
+        "versteckt": False,
+        "rundumsicht": False,
+        "bildUrl": "",
+        "istGross": False,
+    }
+    basis.update(extra)
+    return basis
+
+
+class TestRichtung:
+    def test_osten_ist_null(self):
+        assert sektor(0, 0, 3, 0) == 0
+
+    def test_gleiches_feld_hat_keine_richtung(self):
+        assert sektor(1, 1, 1, 1) is None
+
+    def test_vorderkegel_drei_von_sechs(self):
+        assert vorderkegel(0) == {5, 0, 1}
+
+
+class TestGedaechtnis:
+    def test_start_kennt_alle(self):
+        speicher = start_speicher([token("a", 0, 0), token("b", 0, -3, personType="NPC")])
+        assert "b" in speicher["a"]
+
+    def test_hinten_friert(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 0, -3, personType="NPC")
+        speicher = start_speicher([a, b])
+        b["hexQ"], b["hexR"] = 0, -6
+        speicher = aktualisiere([a, b], speicher)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        geist = next(t for t in gesehen if t["id"] == "b")
+        assert geist["veraltet"] is True
+        assert (geist["hexQ"], geist["hexR"]) == (0, -3)
+
+    def test_vorne_ist_frisch(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = aktualisiere([a, b], start_speicher([a, b]))
+        b["hexQ"] = 3
+        speicher = aktualisiere([a, b], speicher)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        ziel = next(t for t in gesehen if t["id"] == "b")
+        assert ziel["veraltet"] is False
+        assert ziel["hexQ"] == 3
+
+    def test_versteckt_schlägt_den_kegel(self):
+        a = token("a", 0, 0)
+        b = token("b", 2, 0, versteckt=True, personType="PC", personId="b")
+        speicher = aktualisiere([a, b], {})
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_eigener_versteckter_bleibt(self):
+        a = token("a", 0, 0, versteckt=True)
+        gesehen = ansicht([a], {}, rolle="PLAYER", person_id="a")
+        assert gesehen[0]["id"] == "a"
+
+    def test_rundumsicht_sieht_hinten_live(self):
+        a = token("a", 0, 0, rundumsicht=True, blickrichtung=0)
+        b = token("b", 0, -4, personType="NPC")
+        speicher = start_speicher([a, b])
+        b["hexR"] = -6
+        speicher = aktualisiere([a, b], speicher)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a")
+        ziel = next(t for t in gesehen if t["id"] == "b")
+        assert ziel["hexR"] == -6
+        assert ziel["veraltet"] is False
+
+    def test_drohne_eigene_augen_rigger_chrom_gilt_nicht(self):
+        rigger = token("r", 0, 0, rundumsicht=True)
+        drohne = token("d", 0, -2, personId="d", besitzerId="r", rundumsicht=False, blickrichtung=0)
+        gegner = token("g", 0, -5, personType="NPC")
+        speicher = start_speicher([rigger, drohne, gegner])
+        gegner["hexR"] = -8
+        speicher = aktualisiere([rigger, drohne, gegner], speicher)
+        # Die Drohne schaut nach Osten, der Gegner liegt nordwest hinter ihr.
+        # Der Rigger sieht rundum, also ist die Vereinigung live.
+        gesehen = ansicht([rigger, drohne, gegner], speicher, rolle="PLAYER", person_id="r")
+        ziel = next(t for t in gesehen if t["id"] == "g")
+        assert ziel["hexR"] == -8
+
+    def test_party_teilt_nicht(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        freund = token("f", 1, 0, blickrichtung=2)
+        gegner = token("g", 0, -4, personType="NPC")
+        speicher = start_speicher([a, freund, gegner])
+        gegner["hexR"] = -7
+        speicher = aktualisiere([a, freund, gegner], speicher)
+        gesehen = ansicht([a, freund, gegner], speicher, rolle="PLAYER", person_id="a")
+        geist = next(t for t in gesehen if t["id"] == "g")
+        assert geist["veraltet"] is True
+        assert geist["hexR"] == -4
+
+    def test_sl_sieht_wahrheit(self):
+        a = token("a", 0, 0, versteckt=True)
+        gesehen = ansicht([a], {}, rolle="GM", person_id=None)
+        assert gesehen[0]["versteckt"] is True
+        assert gesehen[0]["hexQ"] == 0
+
+
+def test_fog_standard_aus():
+    assert EINSTELLUNGEN_DEFAULTS["fogOfWar"] is False

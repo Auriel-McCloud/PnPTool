@@ -29,6 +29,8 @@ export interface Einstellungen {
    * Fertigkeitskäufe (siehe backend/app/traits/erfahrung.py::nuyen_kosten).
    * Default 200¥, Mark: "beginnen wir einfach mal bei 200 Nuyen". */
   nuyenProXp: number;
+  /** Letzte Sicht auf der Battlemap. Aus = alle sehen die Wahrheit. */
+  fogOfWar: boolean;
   [weitere: string]: unknown;
 }
 

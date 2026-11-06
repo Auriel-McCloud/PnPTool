@@ -112,6 +112,9 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # mal bei 200 Nuyen", bewusster Startwert zum Playtesten, jederzeit
     # änderbar. Siehe `traits/erfahrung.py::nuyen_kosten`.
     "nuyenProXp": 200,
+    # Battlemap: letzte Sicht. Aus = alle sehen die Wahrheit, wie bisher.
+    # An = Spieler sehen nur den vorderen Halbkreis ihrer eigenen Figuren.
+    "fogOfWar": False,
 }
 
 

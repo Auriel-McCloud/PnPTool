@@ -3,6 +3,23 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Battlemap: Fog of War optional
+
+Schalter in den Einstellungen, Standard aus. Letzte Sicht, Verstecken,
+Rundumsicht an Rasse und verbautem Chrom. Klicktest offen. Siehe
+[[entities/battlemap]].
+
+## [2026-11-06] entschieden | Battlemap: Blickrichtung und letzte Sicht
+
+Halbkreis nach vorn, Startstand friert hinten. Umschauen, dann bewegen.
+Augen: eigener Charakter, eigene Drohnen, eigene Beschwörungen. Verstecken
+im Namens-Chip. Kein Kampf-Schalter. Nicht gebaut. Siehe [[entities/battlemap]].
+
+## [2026-11-06] skizziert | Battlemap: Blickrichtung, Verstecken, letzte Sicht
+
+Idee, nicht entschieden. Widerspricht der Ausschluss-Zeile zu Facing und
+Fog of War, die stehen bleibt. Achsen offen. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] nachgezogen | Battlemap-Größe: Checkbox an der Person
 
 Rasse bleibt die Vorlage. Checkbox „Groß“ auf PC- und NPC-Kachel entscheidet.

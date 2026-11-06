@@ -411,6 +411,7 @@ export function GegenstandRow({
   const [slot, setSlot] = useState<number | null>(item.slot);
   const [istWaffe, setIstWaffe] = useState(item.istWaffe);
   const [istNeurolink, setIstNeurolink] = useState(Boolean(item.istNeurolink));
+  const [rundumsicht, setRundumsicht] = useState(Boolean(item.rundumsicht));
   const [schaden, setSchaden] = useState(item.typ === "Waffe" ? item.schaden || item.kraft : item.schaden);
   const [schadenArt, setSchadenArt] = useState<SchadenArt>(
     item.typ === "Waffe" || item.istWaffe ? schadenArtFuerWaffe(item.schadenArt) : (item.schadenArt ?? ""),
@@ -615,6 +616,7 @@ export function GegenstandRow({
     setSlot(src.slot);
     setIstWaffe(src.istWaffe);
     setIstNeurolink(Boolean(src.istNeurolink));
+    setRundumsicht(Boolean(src.rundumsicht));
     setSchaden(src.typ === "Waffe" ? src.schaden || src.kraft : src.schaden);
     setSchadenArt(src.typ === "Waffe" || src.istWaffe ? schadenArtFuerWaffe(src.schadenArt) : (src.schadenArt ?? ""));
     setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
@@ -732,6 +734,7 @@ export function GegenstandRow({
       slot,
       istWaffe,
       istNeurolink: typ === "Cyberware" && istNeurolink,
+      rundumsicht: ["Cyberware", "Bioware", "Hexware"].includes(typ) && rundumsicht,
       schaden: typ === "Waffe" ? schaden || kraft : schaden,
       schadenArt: typ === "Waffe" || istWaffe ? schadenArtFuerWaffe(schadenArt) : schadenArt,
       kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
@@ -1388,6 +1391,16 @@ export function GegenstandRow({
                           onChange={(e) => setIstNeurolink(e.target.checked)}
                         />
                         ist ein Neurolink
+                      </label>
+                    )}
+                    {["Cyberware", "Bioware", "Hexware"].includes(typ) && (
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                        <input
+                          type="checkbox"
+                          checked={rundumsicht}
+                          onChange={(e) => setRundumsicht(e.target.checked)}
+                        />
+                        Rundumsicht, nur verbaut
                       </label>
                     )}
                     {istWaffe && (

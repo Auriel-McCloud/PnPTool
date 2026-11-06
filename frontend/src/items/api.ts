@@ -176,6 +176,8 @@ export interface Gegenstand {
    * Abschnitt „Natürliche Rüstung"). Heilt nur über die Rast-Mechanik.
    */
   istNatuerlich: boolean;
+  /** Ultraschall: Battlemap-Rundumsicht, nur wenn das Stück verbaut ist. */
+  rundumsicht: boolean;
   /**
    * Maschinenteil (26.10.2026, Material statt Nuyen beim Drohnen-/
    * Fahrzeug-Umbau): gestuft wie Reparaturmaterial — "" | "minderwertig" |
@@ -595,6 +597,7 @@ export interface GegenstandUpdate {
   istReparaturmaterial?: boolean;
   reparaturKapazitaet?: number;
   istNatuerlich?: boolean;
+  rundumsicht?: boolean;
   istMaschinenteil?: boolean;
   maschinenteilQualitaet?: string;
   upgradeSlots?: number;

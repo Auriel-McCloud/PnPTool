@@ -33,7 +33,7 @@ RETURN_FIELDS = """
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
     g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
     g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
-    g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut,
+    g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut, g.rundumsicht AS rundumsicht,
     g.wirkungDauer AS wirkungDauer, g.nebenwirkungBoni AS nebenwirkungBoni,
     g.nebenwirkungInitiative AS nebenwirkungInitiative, g.heilmenge AS heilmenge,
     g.heilQualitaet AS heilQualitaet, g.willenskraftWirkung AS willenskraftWirkung,
@@ -247,6 +247,7 @@ def _decode(record: dict) -> dict:
     # Chrom sitzt im Koerper statt im Rucksack. Bestandsdaten kennen das
     # Feld nicht -> False, also "noch nicht eingesetzt".
     record["verbaut"] = _or_default(record.get("verbaut"), False)
+    record["rundumsicht"] = _or_default(record.get("rundumsicht"), False)
     record["entfernungBeantragt"] = _or_default(record.get("entfernungBeantragt"), False)
     record["zusatzaktionen"] = _or_default(record.get("zusatzaktionen"), 0)
     record["maxDrohnen"] = _or_default(record.get("maxDrohnen"), 0)
@@ -332,7 +333,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ausruestungsSpezialisierungen: $ausruestungsSpezialisierungen,
             kiTamaFertigkeiten: $kiTamaFertigkeiten,
             attackenFertigkeiten: $attackenFertigkeiten, attackenSchadensart: $attackenSchadensart,
-            initiativeBonus: $initiativeBonus, verbaut: $verbaut,
+            initiativeBonus: $initiativeBonus, verbaut: $verbaut, rundumsicht: $rundumsicht,
             wirkungDauer: $wirkungDauer, nebenwirkungBoni: $nebenwirkungBoni,
             nebenwirkungInitiative: $nebenwirkungInitiative, heilmenge: $heilmenge,
             heilQualitaet: $heilQualitaet, willenskraftWirkung: $willenskraftWirkung,
@@ -434,6 +435,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             nebenwirkungSchadenMenge=int(data.get("nebenwirkungSchadenMenge") or 0),
             umwandeln=data.get("umwandeln") or "",
             verbaut=bool(data.get("verbaut")),
+            rundumsicht=bool(data.get("rundumsicht")),
             zusatzaktionen=int(data.get("zusatzaktionen") or 0),
             # Aktuell defaultet auf den Ausgangswert, wenn nicht ausdrücklich
             # etwas anderes mitgegeben wurde — ein frisch angelegtes Stück ist

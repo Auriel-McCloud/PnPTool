@@ -231,6 +231,13 @@ export function EinstellungenFenster({
             erklaerung="In-World-Chat zwischen Charakteren. Noch im Bau."
           />
 
+          <Schalter
+            an={Boolean(werte.fogOfWar)}
+            onAendern={(n) => aendern("fogOfWar", n)}
+            titel="Fog of War"
+            erklaerung="Auf der Battlemap sehen Spieler nur den vorderen Halbkreis ihrer Figuren. Dahinter bleibt der letzte Stand. Aus = alle sehen alles, wie bisher."
+          />
+
           <h4 style={{ margin: "16px 0 2px", fontSize: 12, color: "var(--text-aus)", letterSpacing: "0.08em" }}>
             TUTORIAL-SHOP
           </h4>

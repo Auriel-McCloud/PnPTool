@@ -162,6 +162,52 @@ sauber. **Kein Klicktest** — bitte am Spieltisch: eine Karte einem Ort
 zuordnen, prüfen dass die Badge erscheint, und dass ein Spieler im Kampf die
 angehängte Karte per Knopf öffnen kann.
 
+## Entschieden 06.11.2026 — Blickrichtung, Verstecken, letzte Sicht (nicht gebaut)
+
+Widerspricht der Zeile oben „Fog of War, Facing sind nicht Teil dieses Designs“.
+Die Zeile bleibt als erste Ausschluss-Fassung. Ersetzt durch diesen Abschnitt.
+
+Mark, nach der Idee seiner Frau:
+
+- Blickrichtung am Token (`blickrichtung` 0–5). Nicht `hexDrehung` — das dreht
+  nur die Drei-Hex-Lage großer Tokens.
+- Vorne sind drei von sechs Hex-Richtungen. Dahinter bleibt der Stand vom
+  letzten Hinsehen, kein schwarzes Loch. Zu Kampfbeginn liegt überall der
+  Startstand, der hintere Halbkreis friert, bis man sich umdreht.
+- Umschauen und Bewegen sind zwei Schritte. Umschauen setzt die Blickrichtung
+  und frischt den vorderen Halbkreis, ohne das Feld zu wechseln. Beim
+  Verschieben sucht er sich die Blickrichtung aus und sieht dann, was dort
+  liegt. Der Vorschlag ist die Schrittrichtung, eine andere ist erlaubt.
+  Dieselbe Erlaubnis wie Schieben: eigener Token am eigenen Zug, die SL immer.
+  „Kein Aus-Schalter“ ist ersetzt: Fog of War ist ein Schalter in den
+  Kampagnen-Einstellungen, Standard aus. An = die letzte Sicht gilt.
+  Aus = alle sehen die Wahrheit, wie bisher.
+- Rundumsicht (Hören, Ultraschall): immer der aktuelle Stand, kein
+  Hinterkopf. Feld an der Rasse, kein Rassenname im Code. Dasselbe Flag an
+  verbautem Chrom, nicht im Rucksack. Dug'rah setzt die SL im Baukasten.
+  Eine Drohne hat eigene Augen; das Chrom des Riggers gilt nicht für sie.
+- Augen eines Spielers: eigener Charakter plus eigene Drohnen und
+  Beschwörungen, Vereinigung. Die Party teilt die Sicht nicht.
+- Versteckt schlägt den Kegel. Spieler schaltet den eigenen Token, die SL
+  alle. Knopf im Namens-Chip, kein Doppelklick. Die SL sieht Versteckte
+  abgeblendet. Kein automatischer Wahrnehmungs-Wurf.
+- Einmal antippen zeigt den Namen groß. Ziehen bleibt Bewegen.
+- Spieler bekommen nicht die volle Teilnehmerliste, sonst steht die Wahrheit
+  im Client. Die SL sieht immer die Wahrheit.
+
+Die erste Fassung „nicht gebaut“ ist ersetzt durch den Abschnitt darunter.
+
+## Gebaut 06.11.2026 — Fog of War, optional
+
+Schalter `fogOfWar` in den Kampagnen-Einstellungen, Standard aus. An: Spieler
+bekommen nur ihre Augen (eigener Charakter, eigene Drohnen, eigene
+Beschwörungen). Vorne drei von sechs Richtungen live, hinten der letzte Stand.
+Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom.
+Antippen zeigt den Namen, Ziehen bewegt. Die SL sieht die Wahrheit, Versteckte
+abgeblendet.
+
+**Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]
