@@ -54,10 +54,43 @@ def parade_lesen(roh) -> int:
 def parade_mit_waffe(basis: int, bonus: int) -> int:
     """Parieren mit dieser Waffe: Geschick+Nahkampf plus nur deren Bonus.
 
-    Der Angriffspool bleibt `basis` ohne den Bonus. Die Kampfkarte addiert
-    denselben Schritt pro Waffe, nicht auf die globale P-Zahl.
+    Der Angriffspool bleibt `basis` ohne den Bonus.
     """
     return int(basis) + parade_lesen(bonus)
+
+
+def parier_pool(basis: int, melee_boni) -> int:
+    """Große Parieren-Kachel: beste ausgerüstete Nahkampfwaffe, sonst unbewaffnet.
+
+    Fernkampfwaffen können nicht parieren — ihre Boni gehören nicht in `melee_boni`.
+    Mehrere Nahkampf-/Handgemenge-Waffen: die höchste Parade. Keine solche Waffe:
+    nur die Basis (Geschick+Nahkampf).
+    """
+    if not melee_boni:
+        return int(basis)
+    return max(int(basis) + parade_lesen(b) for b in melee_boni)
+
+
+def ist_parade_waffe(fertigkeit: str, parade_bonus: int = 0) -> bool:
+    """Nahkampf/Handgemenge oder Schild (Parade-Bonus, keine Schusswaffe)."""
+    skill = kampf_fertigkeit_lesen(fertigkeit)
+    if skill in ("Nahkampf", "Handgemenge"):
+        return True
+    if skill == "Schusswaffen":
+        return False
+    return parade_lesen(parade_bonus) != 0
+
+
+def waffen_schaden_anzeige(waffenschaden: int, koerperkraft: int, fertigkeit: str) -> int:
+    """Schadenszeile auf der Kampfkarte.
+
+    Nahkampf und Handgemenge: Waffe + Körperkraft, Nettoerfolge extra.
+    Fernkampf (Schusswaffen) und unmarkierte Fertigkeit: nur die Waffe.
+    """
+    wert = int(waffenschaden or 0)
+    if kampf_fertigkeit_lesen(fertigkeit) in ("Nahkampf", "Handgemenge"):
+        return wert + int(koerperkraft or 0)
+    return wert
 
 
 def waffenfelder(typ: str, roh, art=None, parade=0) -> dict:

@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] gebaut | Kampfkarte: Parade der Nahkampfwaffe, Schaden inkl. Körperkraft
+
+Große Parieren-Kachel zeigt die ausgerüstete Nahkampfwaffe (Pistole kann
+nicht parieren). Nahkampf-Schadenszeile rechnet Körperkraft in die Zahl.
+Siehe [[concepts/kampf-und-initiative]].
+
 ## [2026-11-06] gebaut | Shop-Preis zieht nach, wenn der Gegenstand sich ändert
 
 KI-/Unikat-Anlegen fror den Preis erneut auf der `VERKAUFT`-Kante ein,

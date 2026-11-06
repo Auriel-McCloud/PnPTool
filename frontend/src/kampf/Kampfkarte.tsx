@@ -51,7 +51,36 @@ function geschickName(bogen: Bogen) {
   return bogen.person.istDrohne || bogen.person.istFahrzeug ? "Geschick" : "Geschicklichkeit";
 }
 
-export function kampfKurz(bogen: Bogen, ruestungKraft = 0) {
+/** Stärke der Drohne, Körperkraft beim Menschen. */
+function staerkeName(bogen: Bogen) {
+  return bogen.person.istDrohne || bogen.person.istFahrzeug ? "Stärke" : "Körperkraft";
+}
+
+type WaffeParade = { kampfFertigkeit?: string; paradeBonus?: number };
+
+/** Nahkampf/Handgemenge oder Schild. Pistole nie — damit pariert man nicht. */
+function istParadeWaffe(w: WaffeParade) {
+  const skill = kampfFertigkeitLesen(w.kampfFertigkeit);
+  if (skill === "Nahkampf" || skill === "Handgemenge") return true;
+  if (skill === "Schusswaffen") return false;
+  return (w.paradeBonus || 0) !== 0;
+}
+
+/** Große Parieren-Kachel: beste ausgerüstete Nahkampfwaffe, sonst unbewaffnet. */
+function parierPool(basis: number, waffen: WaffeParade[]) {
+  const melee = waffen.filter(istParadeWaffe);
+  if (melee.length === 0) return basis;
+  return Math.max(...melee.map((w) => basis + (w.paradeBonus || 0)));
+}
+
+/** Nahkampf/Handgemenge: Waffe + Körperkraft. Fernkampf bleibt die Waffe. */
+function waffenSchadenAnzeige(schaden: number, fertigkeit: string, koerperkraft: number) {
+  const skill = kampfFertigkeitLesen(fertigkeit);
+  if (skill === "Nahkampf" || skill === "Handgemenge") return schaden + koerperkraft;
+  return schaden;
+}
+
+export function kampfKurz(bogen: Bogen, ruestungKraft = 0, waffen: WaffeParade[] = []) {
   const name = geschickName(bogen);
   const geschick = wert(bogen, name) + ausruestungsBonus(bogen, name);
   const abzug = geschickAbzug(ruestungKraft);
@@ -64,8 +93,7 @@ export function kampfKurz(bogen: Bogen, ruestungKraft = 0) {
     { kuerzel: "TN", titel: "Treffen Nahkampf", wert: treffen("Nahkampf") },
     { kuerzel: "TS", titel: "Treffen Schusswaffen", wert: treffen("Schusswaffen") },
     { kuerzel: "A", titel: "Ausweichen", wert: effektiv + wert(bogen, "Sportlichkeit") + ausruestungsBonus(bogen, "Sportlichkeit") },
-    // Ohne Waffenbonus. Der Bonus steht an der Waffe, mit der pariert wird.
-    { kuerzel: "P", titel: "Parieren", wert: treffen("Nahkampf") },
+    { kuerzel: "P", titel: "Parieren", wert: parierPool(treffen("Nahkampf"), waffen) },
     { kuerzel: "I", titel: "Initiative", wert: u.initiative },
   ];
 }
@@ -266,6 +294,8 @@ export function Kampfkarte({
   const abzug = geschickAbzug(ruestung);
   const geschickEffektiv = Math.max(0, geschick - abzug);
   const treffenPool = (skill: string) => geschickEffektiv + wert(bogen, skill) + ausruestungsBonus(bogen, skill);
+  const koerperkraftName = staerkeName(bogen);
+  const koerperkraft = wert(bogen, koerperkraftName) + ausruestungsBonus(bogen, koerperkraftName);
   // Intelligenz-Attribut ohne jeden weiteren Bonus — Ki-Tama-Attacken rechnen
   // bewusst anders als Waffen (keine Ausrüstungsboni, kein Rüstungsabzug).
   const intelligenz = wert(bogen, "Intelligenz");
@@ -277,7 +307,7 @@ export function Kampfkarte({
   // Mark, 26.10.2026: "möglichst alles in klein ... dann sieht er alles in
   // klein, kann aber drauf klicken und sieht es dann ausgeschrieben und
   // schöner" — dieselben Zahlen wie unten, nur knapp beschriftet.
-  const kompaktWerte = kampfKurz(bogen, ruestung);
+  const kompaktWerte = kampfKurz(bogen, ruestung, waffen);
   // Der Umschalter erscheint, sobald es eine Matrix-Seite gibt: ausgerüstetes
   // Cyberdeck (Decker) oder der Neuroweaver-Weg. Sonst bleibt die Karte ein
   // Block ohne Knöpfe.
@@ -480,8 +510,8 @@ export function Kampfkarte({
             />
             <Zahl
               titel="Parieren"
-              wert={treffenPool("Nahkampf")}
-              hinweis="Ohne Waffe: Geschicklichkeit + Nahkampf. Mit einer Waffe zählt deren Parade-Bonus extra — steht an der Waffe, nicht hier. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
+              wert={parierPool(treffenPool("Nahkampf"), waffen)}
+              hinweis="Geschicklichkeit + Nahkampf, plus Parade der ausgerüsteten Nahkampfwaffe. Mit der Pistole geht das nicht. Gegen Fernkampf nur mit Cyberware oder Magie. Jeder weitere Einsatz: −1."
               wuerfel
             />
           </div>
@@ -612,7 +642,7 @@ export function Kampfkarte({
                           </span>
                         )}
                         <span className="kk-waffe-schaden">
-                          Schaden {schaden}
+                          Schaden {waffenSchadenAnzeige(schaden || 0, skill, koerperkraft)}
                           <em>+ Nettoerfolge</em>
                         </span>
                         {upgradesAus && <span className="kk-waffe-aus-rest">Upgrades aus</span>}

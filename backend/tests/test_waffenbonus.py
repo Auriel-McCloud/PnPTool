@@ -78,3 +78,34 @@ def test_parade_bonus_hebt_nur_das_parieren():
     assert parade_mit_waffe(basis, 2) == 7
     assert parade_mit_waffe(basis, 0) == basis
     assert parade_mit_waffe(basis, -1) == 4
+
+
+def test_grosse_parier_zahl_nimmt_die_nahkampfwaffe():
+    """Fernkampf kann nicht parieren — die große Kachel zeigt die Schwert-Parade."""
+    from app.items.waffenbonus import parier_pool
+
+    basis = 6
+    assert parier_pool(basis, []) == 6
+    assert parier_pool(basis, [2]) == 8
+    assert parier_pool(basis, [2, 0]) == 8
+    assert parier_pool(basis, [1, 3]) == 9
+
+
+def test_nahkampf_schaden_addiert_koerperkraft():
+    """Waffenschaden 3 + Körperkraft 3 = 6 auf der Zeile, Fernkampf bleibt 3."""
+    from app.items.waffenbonus import waffen_schaden_anzeige
+
+    assert waffen_schaden_anzeige(3, 3, "Nahkampf") == 6
+    assert waffen_schaden_anzeige(3, 3, "Handgemenge") == 6
+    assert waffen_schaden_anzeige(3, 3, "Schusswaffen") == 3
+    assert waffen_schaden_anzeige(3, 3, "") == 3
+
+
+def test_pistole_zaehlt_nicht_als_paradewaffe():
+    from app.items.waffenbonus import ist_parade_waffe
+
+    assert ist_parade_waffe("Nahkampf", 2) is True
+    assert ist_parade_waffe("Handgemenge", 0) is True
+    assert ist_parade_waffe("Schusswaffen", 2) is False
+    assert ist_parade_waffe("", 2) is True
+    assert ist_parade_waffe("", 0) is False

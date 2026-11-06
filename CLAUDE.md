@@ -2,6 +2,12 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfkarte: große Parade von der Nahkampfwaffe, Nahkampf-Schaden inkl. Körperkraft (06.11.2026)
+
+Mark am Tisch: Parieren 6 neben Buster Sword Parade 8 verwirrt, Pistole kann nicht parieren. Große Kachel nimmt jetzt die beste ausgerüstete Nahkampf-/Handgemenge-Waffe (`parier_pool`). Nahkampf-Schadenszeile zeigt Waffe+Körperkraft (3+3=6), Fernkampf bleibt die Waffe. `Kampfkarte.tsx`, `items/waffenbonus.py`. Siehe `docs/wiki/concepts/kampf-und-initiative.md`.
+
+**Verifiziert:** `pytest tests/test_waffenbonus.py` 14 passed, `tsc -b` sauber. Am Tisch noch nicht geklickt.
+
 ## Augment-Wirkungsfelder zurück von Besitz nach Umbauen, "Passt an" mitgezogen (06.11.2026)
 
 Mark: beim Gegenstand-Bearbeiten (`CharacterSheetPanel.tsx`) waren Schaden/Reduktion/Kästchen/ICE/Schadensart-ändern (der additive "Wirkung am Ziel, sobald montiert"-Block für Augments/Upgrade-Material/Ki-Tama) in den **Besitz**-Reiter gerutscht, gehören aber zum **Umbauen**-Reiter (alles, was ein Ding tut). Block komplett verschoben, direkt neben den schon dort sitzenden Initiative-Bonus/Zusatzaktionen-Feldern (gleiche Bedingung `istAugment || typ === "Upgrade-Material" || typ === "Ki-Tama"`). Das "Schaden"-Feld in diesem Block zusätzlich zu **"Schadensupgrade"** umbenannt (Mark: Verwechslungsgefahr mit dem normalen Waffen-Schaden-Feld weiter oben) — betrifft nur dieses eine Label, der normale `typ === "Waffe"`-Schadens-Eintrag bleibt "Schaden".

@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-11-05
+updated: 2026-11-06
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -28,10 +28,13 @@ und Regelwerk bleiben am Tisch — das Tool verwaltet nur *wer wann dran ist* un
   Schusswaffen, Nahkampf oder Handgemenge). Leer heißt: noch nicht
   markiert, das Tool rät nicht. **Parade-Bonus** (`paradeBonus`) addiert
   Extra-Würfel nur beim Parieren mit genau dieser Waffe, nicht auf den
-  Angriff und nicht auf die globale P-Zahl. 0 = kein Bonus. Ein Schild ist
-  eine Waffe mit Schaden 0 und Parade-Bonus.
+  Angriff. Die große Parieren-Kachel zeigt die ausgerüstete Nahkampf-/
+  Handgemenge-Waffe (Pistole kann nicht parieren); ohne solche Waffe bleibt
+  es Geschick+Nahkampf. 0 = kein Bonus. Ein Schild ist eine Waffe mit
+  Schaden 0 und Parade-Bonus.
 - **Schaden:** Fernkampf = Waffenschaden+Nettoerfolge vs. Rüstung; Nahkampf =
-  Waffenschaden+Stärke+Nettoerfolge vs. Rüstung.
+  Waffenschaden+Körperkraft+Nettoerfolge vs. Rüstung. Die Kampfkarte rechnet
+  die Körperkraft in die Schadenszahl der Nahkampf-/Handgemenge-Waffe ein.
 
 ## Initiative-Eingabe im Tool
 
@@ -47,6 +50,10 @@ automatische „0 HP = tot"-Logik.
 
 ## Entwicklung
 
+- **06.11.2026:** Große Parieren-Kachel nimmt die Parade der ausgerüsteten
+  Nahkampfwaffe (Mark am Tisch: Pistole kann nicht parieren, 6 neben 8
+  verwirrt). Nahkampf-Schadenszeile zeigt Waffe+Körperkraft, Fernkampf
+  bleibt nur die Waffe.
 - **05.11.2026:** Klick auf die Initiative-Zahl trägt die Erfolge ein, für den
   eigenen Charakter, die eigene Drohne und die Beschwörung. Steht der
   Charakter oder die Drohne noch nicht in der Liste, kommt sie mit diesem
