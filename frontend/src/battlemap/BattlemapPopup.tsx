@@ -56,7 +56,6 @@ export function BattlemapPopup({
   const [partei, setPartei] = useState<Set<string>>(new Set());
   const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
   const [fog, setFog] = useState(false);
-  const [chipId, setChipId] = useState<string | null>(null);
   const [wahlId, setWahlId] = useState<string | null>(null);
   const [linien, setLinien] = useState<{ ax: number; ay: number; bx: number; by: number }[]>([]);
   const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
@@ -302,8 +301,14 @@ export function BattlemapPopup({
 
   const schau = tokens.find((t) => t.id === wahlId);
   const schauFelder = new Set<string>();
-  if (schau && schau.hexQ != null && schau.hexR != null && (istGm || (istEigen(schau) && istDran(schau)))) {
-    for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
+  const wahlFelder = new Set<string>();
+  if (schau && schau.hexQ != null && schau.hexR != null) {
+    for (const [q, r] of yFelder(schau.hexQ, schau.hexR, Boolean(schau.istGross), schau.hexDrehung ?? 0)) {
+      wahlFelder.add(`${q},${r}`);
+    }
+    if (istGm || (istEigen(schau) && istDran(schau))) {
+      for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
+    }
   }
 
   return (
@@ -373,6 +378,16 @@ export function BattlemapPopup({
               </button>
             )}
           </>
+        )}
+        {schau && (
+          <span className="bm-wahl">
+            <strong>{schau.name}</strong>
+            {(istGm || istEigen(schau)) && (
+              <button type="button" onClick={() => void verstecken(schau)}>
+                {schau.versteckt ? "Sichtbar" : "Verstecken"}
+              </button>
+            )}
+          </span>
         )}
       </div>
 
@@ -467,13 +482,11 @@ export function BattlemapPopup({
             if (richtung >= 0) {
               void umschauen(gewaehlt, richtung);
               setWahlId(null);
-              setChipId(null);
               return;
             }
           }
-          if (wahlId || chipId) {
+          if (wahlId) {
             setWahlId(null);
-            setChipId(null);
             return;
           }
           if (!spawnArt || modus === "grid") return;
@@ -523,6 +536,7 @@ export function BattlemapPopup({
                 data-npc={farbe === "magenta" || (!farbe && spawnNpc) || undefined}
                 data-hover={hover || undefined}
                 data-schau={schauFelder.has(key) || undefined}
+                data-wahl={wahlFelder.has(key) || undefined}
               />
             );
           })}
@@ -567,7 +581,6 @@ export function BattlemapPopup({
           const cx = t.istGross ? (x + x2) / 2 : x;
           const cy = t.istGross ? (y + y2) / 2 : y;
           const winkel = BLICK_WINKEL[t.blickrichtung ?? 0] ?? 0;
-          const chip = chipId === t.id;
           return (
             <span key={t.id}>
               {(fog || wahlId === t.id) && (
@@ -584,6 +597,7 @@ export function BattlemapPopup({
                 type="button"
                 className="bm-token"
                 data-rand={rand}
+                data-wahl={wahlId === t.id || undefined}
                 data-gross={t.istGross || undefined}
                 data-veraltet={t.veraltet || undefined}
                 data-versteckt={t.versteckt || undefined}
@@ -613,13 +627,7 @@ export function BattlemapPopup({
                   tipp.current = null;
                   if (!tip || tip.id !== t.id) return;
                   if (!tip.angehoben) {
-                    if (istEigen(t) && !istGm) {
-                      setChipId(null);
-                      setWahlId(t.id);
-                    } else {
-                      setChipId(t.id);
-                      setWahlId(istGm ? t.id : null);
-                    }
+                    setWahlId(t.id);
                     return;
                   }
                   void absetzen(e);
@@ -627,24 +635,6 @@ export function BattlemapPopup({
               >
                 {t.bildUrl ? <img src={t.bildUrl} alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
               </button>
-              {chip && !istEigen(t) && (
-                <div className="bm-name" style={{ left: cx, top: cy - size }}>
-                  <strong>{t.name}</strong>
-                </div>
-              )}
-              {wahlId === t.id && (istGm || istEigen(t)) && (
-                <button
-                  type="button"
-                  className="bm-aktion"
-                  style={{ left: cx, top: cy + size * 0.85 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void verstecken(t);
-                  }}
-                >
-                  {t.versteckt ? "Sichtbar" : "Verstecken"}
-                </button>
-              )}
             </span>
           );
         })}

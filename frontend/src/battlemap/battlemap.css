@@ -22,6 +22,21 @@
   border-color: var(--bereich-battlemap, var(--p-blau));
   color: var(--bereich-battlemap, var(--p-blau));
 }
+.bm-wahl {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+.bm-wahl strong {
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
 .bm-buehne {
   position: relative;
   min-height: 420px;
@@ -138,6 +153,9 @@
   box-shadow: 0 0 0 3px var(--p-gold), 0 0 12px var(--p-gold);
   animation: bm-gold-puls 1.2s ease-in-out infinite;
 }
+.bm-token[data-wahl="true"] {
+  box-shadow: 0 0 0 4px var(--text), 0 0 14px var(--p-gold);
+}
 .bm-token img,
 .bm-token span {
   width: 100%;
@@ -217,6 +235,10 @@
   fill: color-mix(in srgb, var(--p-gold, #e0b84a) 40%, transparent);
   stroke: var(--p-gold, #e0b84a);
   stroke-width: 2;
+}
+.bm-hex[data-wahl="true"] {
+  stroke: var(--text);
+  stroke-width: 3;
 }
 .bm-aktion {
   position: absolute;

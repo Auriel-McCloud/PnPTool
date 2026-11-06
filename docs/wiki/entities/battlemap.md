@@ -205,7 +205,7 @@ Beschwörungen). Vorne drei von sechs Richtungen live, hinten der letzte Stand.
 Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom.
 Antippen des eigenen Tokens am eigenen Zug (oder der eigenen Drohne, wenn sie
 dran ist) färbt die sechs Nachbarfelder. Ein Feld antippen setzt die
-Blickrichtung. Der eigene Token hat kein Namensschild. Fremde Namen schließen
+Blickrichtung. Der eigene Token hat kein Namensschild auf der Figur. Name und Verstecken stehen rechts in der Kartenleiste, die Figur wird markiert. Fremde Namen schließen
 beim Wegtippen. Sichtlinien blockieren den Spielerblick auch bei ausgeschaltetem
 Fog of War und auch bei Rundumsicht.
 
