@@ -340,23 +340,37 @@ def _karte_fuer(
     rolle: str,
     person_id: str | None,
     live_sicht_ids: frozenset[str] = frozenset(),
+    fog_an: bool = True,
 ) -> list[dict]:
     """Was dieser Betrachter auf der Karte bekommt. Ein Decker mit Matrix-Hot-
     Live-Sicht (06.11.2026) bekommt dieselbe ungefilterte Wahrheit wie die SL —
     auch ohne `fuer_spieler`-Alias, denn „wie die SL sehen“ heißt auch echte
-    Namen."""
+    Namen.
+
+    Ist Fog of War campaignweit aus, gilt „wie bisher“: Wahrheit statt
+    Erinnerung/Kegel, Versteckt und Wände bleiben trotzdem wirksam
+    (`ansicht_waende`, Bugfix 06.11.2026 — der Schalter wurde bisher nirgends
+    gelesen)."""
     if rolle != "GM" and person_id and person_id in live_sicht_ids:
         return [dict(t) for t in karten_liste(kampf)]
 
-    from app.battlemap.sicht import ansicht
+    from app.battlemap.sicht import ansicht, ansicht_waende
 
-    gesehen = ansicht(
-        karten_liste(kampf),
-        speicher,
-        rolle=rolle,
-        person_id=person_id,
-        waende=kampf.get("_waende"),
-    )
+    if rolle != "GM" and not fog_an:
+        gesehen = ansicht_waende(
+            karten_liste(kampf),
+            rolle=rolle,
+            person_id=person_id,
+            waende=kampf.get("_waende"),
+        )
+    else:
+        gesehen = ansicht(
+            karten_liste(kampf),
+            speicher,
+            rolle=rolle,
+            person_id=person_id,
+            waende=kampf.get("_waende"),
+        )
     if rolle != "GM":
         gesehen = fuer_spieler(
             gesehen,
@@ -378,7 +392,8 @@ async def _fuer_spieler_kampf(kampf: dict, person_id: str | None, *, karte: bool
             kampf["_waende"] = await _waende(kampf)
         speicher = kampf.get("_sichtSpeicher") or await _speicher_frisch(kampf)
         live_ids = await _live_sicht_ids(kampf.get("_campaignId"))
-        kampf["teilnehmer"] = _karte_fuer(kampf, speicher, "PLAYER", person_id, frozenset(live_ids))
+        fog_an = await _fog_an(kampf)
+        kampf["teilnehmer"] = _karte_fuer(kampf, speicher, "PLAYER", person_id, frozenset(live_ids), fog_an)
     else:
         kampf["teilnehmer"] = fuer_spieler(
             kampf.get("teilnehmer") or [],
@@ -398,12 +413,13 @@ async def _tokens_senden(kampf: dict | None) -> None:
     kampf["_waende"] = waende
     speicher = await _speicher_frisch(kampf)
     live_ids = frozenset(await _live_sicht_ids(kampf.get("_campaignId")))
+    fog_an = await _fog_an(kampf)
 
     def bauen(verbindung):
         if verbindung.rolle == "GM":
             teilnehmer = karten_liste(kampf)
         else:
-            teilnehmer = _karte_fuer(kampf, speicher, verbindung.rolle, verbindung.person_id, live_ids)
+            teilnehmer = _karte_fuer(kampf, speicher, verbindung.rolle, verbindung.person_id, live_ids, fog_an)
         stand = token_stand({**kampf, "teilnehmer": teilnehmer})
         stand["waende"] = waende
         return {"typ": "tokens", "daten": stand}

@@ -228,3 +228,25 @@ class TestMatrixPing:
     def test_ping_unbekanntes_auge_bleibt_unveraendert(self):
         a = token("a", 0, 0)
         assert ping([a], {"a": {}}, "unbekannt") == {"a": {}}
+
+
+class TestAnsichtWaendeVersteckt:
+    """Bugfix 06.11.2026: ohne Wände gab ansicht_waende Versteckte lautlos
+    frei — Versteckt ist ein eigener Schalter, kein Teil von Fog of War."""
+
+    def test_versteckt_schlaegt_auch_ganz_ohne_waende(self):
+        a = token("a", 0, 0)
+        b = token("b", 2, 0, versteckt=True, personType="PC", personId="b")
+        gesehen = ansicht_waende([a, b], rolle="PLAYER", person_id="a", waende=[])
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_eigener_versteckter_bleibt_auch_ohne_waende(self):
+        a = token("a", 0, 0, versteckt=True)
+        gesehen = ansicht_waende([a], rolle="PLAYER", person_id="a", waende=None)
+        assert gesehen[0]["id"] == "a"
+
+    def test_unversteckte_bleiben_ohne_waende_sichtbar(self):
+        a = token("a", 0, 0)
+        b = token("b", 2, 0, personType="NPC")
+        gesehen = ansicht_waende([a, b], rolle="PLAYER", person_id="a", waende=None)
+        assert {t["id"] for t in gesehen} == {"a", "b"}

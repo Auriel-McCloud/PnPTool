@@ -262,6 +262,42 @@ Spieler unabhängig vom Schalterstand immer. „Fog of War aus = alle sehen die
 Wahrheit“ ist dadurch vermutlich noch nicht wirksam. Nicht im Rahmen dieser
 Änderung angefasst, da unabhängiger Fund ohne Bezug zum Ping — separat prüfen.
 
+## Bugfix 06.11.2026 — Fog of War aus zeigte trotzdem nur die Erinnerung
+
+Mark, direkt im Anschluss an den Nebenfund oben: „repariere das bitte mit“.
+
+Ursache: `_fog_an()` las die Kampagnen-Einstellung korrekt, wurde aber
+nirgends aufgerufen — `_karte_fuer` filterte für Spieler IMMER über
+`ansicht()` (Erinnerung/Kegel), unabhängig vom `fogOfWar`-Schalterstand.
+
+Fix: `_karte_fuer` bekommt einen `fog_an`-Parameter (`_fog_an(kampf)`,
+in `_fuer_spieler_kampf` und `_tokens_senden` einmal pro Aufruf geholt, wie
+schon bei `live_sicht_ids`). Ist Fog aus, läuft die bereits vorhandene, aber
+ebenfalls nie aufgerufene `battlemap/sicht.py::ansicht_waende()`
+(360-Grad-Wahrheit, Wände blockieren falls vorhanden, kein Gedächtnis) statt
+`ansicht()`. Die Matrix-Hot-Live-Sicht von oben hat weiterhin Vorrang vor
+beidem.
+
+**Zweiter Bugfix unterwegs gefunden:** `ansicht_waende()` gab Versteckte
+lautlos frei, sobald keine Wand auf der Karte gezeichnet war (`not waende`
+sprang vorzeitig auf „alles sichtbar“, noch vor der Versteckt-Prüfung).
+Versteckt ist aber ein eigener Schalter, unabhängig von Fog of War oder
+Wänden — gefixt: die Versteckt-Prüfung läuft jetzt immer zuerst, Wände
+blockieren nur zusätzlich, wenn welche existieren.
+
+**Verifiziert:** `tests/test_battlemap_sicht.py::TestAnsichtWaendeVersteckt`
+(3 neue Fälle) und neue Datei `tests/test_kampf_karte_fuer.py` (6 Fälle,
+testen `_karte_fuer` direkt: Fog aus zeigt Wahrheit, Versteckt bleibt
+trotzdem verborgen, Fog an zeigt weiter Erinnerung, SL sieht immer alles,
+Hot-Live-Sicht schlägt beides). Volle Testsuite weiter ohne neue
+Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine
+Frontend-Änderung nötig — der Schalter existiert im Frontend schon).
+**Kein Klicktest** — bitte am Spieltisch: Fog of War in den
+Kampagnen-Einstellungen ausschalten, prüfen dass Spieler jetzt sofort die
+echten aktuellen Positionen sehen (nur Wände/Versteckte bleiben
+ausgenommen), dann wieder einschalten und prüfen dass die Erinnerungs-Logik
+von oben wieder greift.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]

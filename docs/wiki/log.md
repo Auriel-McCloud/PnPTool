@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] bugfix | Fog of War aus zeigte trotzdem nur die Erinnerung
+
+`_fog_an()` wurde nie aufgerufen. Fix: `ansicht_waende()` (bisher auch
+ungenutzt) läuft jetzt bei Fog aus, zeigt Wahrheit, Wände/Versteckt bleiben
+wirksam. Zweiter Fund: `ansicht_waende` gab Versteckte ohne Wände frei,
+jetzt gefixt. Siehe [[entities/battlemap]].
+
 ## [2026-11-06] entschieden+gebaut | Battlemap: Matrix-Ping und Hot-Live-Sicht
 
 Matrix-Navigation-Erfolg pingt die eigene Kartenerinnerung (Party teilt nicht,

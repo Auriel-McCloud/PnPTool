@@ -300,12 +300,15 @@ def ansicht_waende(
     person_id: str | None,
     waende: list[dict] | None,
 ) -> list[dict]:
-    """Aktuelle Positionen, 360 Grad, Wände blockieren. Kein Gedächtnis.
+    """Aktuelle Positionen, 360 Grad, Wände blockieren falls vorhanden. Kein
+    Gedächtnis. Versteckt schlägt IMMER, auch ganz ohne gezeichnete Wände —
+    das ist ein eigener Schalter, kein Teil von Fog of War (06.11.2026,
+    Bugfix: vorher gab die fehlende Wand Versteckte lautlos frei).
 
     Ohne eigene Figur auf der Karte gibt es keinen Standpunkt, also alles.
     """
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
-    if rolle == "GM" or not waende:
+    if rolle == "GM":
         return [dict(t) for t in roh]
     eigene = [t for t in roh if ist_auge(t, person_id) and t.get("hexQ") is not None]
     if not eigene:
@@ -318,6 +321,8 @@ def ansicht_waende(
                 continue
             if ziel.get("versteckt") and not gehoert(ziel, person_id):
                 continue
-            if not blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
+            if not waende or not blockiert(
+                int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende
+            ):
                 sichtbar.add(ziel["id"])
     return [dict(t) for t in roh if t["id"] in sichtbar]

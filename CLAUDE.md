@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bugfix: Fog of War aus zeigte trotzdem nur die Erinnerung (06.11.2026)
+
+Mark, direkt im Anschluss an den Matrix-Ping-Nebenfund (siehe Eintrag unten): „repariere das bitte mit“. Ursache: `kampf/routes.py::_fog_an()` las die Kampagnen-Einstellung `fogOfWar` korrekt, wurde aber nirgends aufgerufen — `_karte_fuer` filterte für Spieler IMMER über die Erinnerungs-Logik (`ansicht()`), unabhängig vom Schalterstand.
+
+Fix: `_karte_fuer` bekommt einen `fog_an`-Parameter. Ist Fog aus, läuft die bereits vorhandene, aber ebenfalls nie aufgerufene `battlemap/sicht.py::ansicht_waende()` (360-Grad-Wahrheit, Wände blockieren falls vorhanden, kein Gedächtnis) statt `ansicht()`. Matrix-Hot-Live-Sicht hat weiterhin Vorrang vor beidem. Zweiter Bugfix unterwegs gefunden: `ansicht_waende()` gab Versteckte lautlos frei, sobald keine Wand auf der Karte lag — Versteckt ist ein eigener Schalter, unabhängig von Wänden/Fog, jetzt immer zuerst geprüft.
+
+**Verifiziert:** 3 neue Fälle in `test_battlemap_sicht.py`, neue Datei `test_kampf_karte_fuer.py` (6 Fälle, testen `_karte_fuer` direkt). Volle Testsuite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung nötig). **Kein Klicktest** — bitte am Spieltisch: Fog of War ausschalten, prüfen dass Spieler sofort echte Positionen sehen (nur Wände/Versteckte ausgenommen). Details: `docs/wiki/entities/battlemap.md`.
+
 ## Battlemap: Matrix-Ping und Hot-Live-Sicht für den Decker (06.11.2026)
 
 Mark: Matrix-Navigation-Erfolg soll die Kartenpositionen pingen (wie kurz hinsehen, egal in welche Richtung), bei Matrix-Hot sieht der Decker dauerhaft live wie die SL und hilft so als Operator seinem Team.
