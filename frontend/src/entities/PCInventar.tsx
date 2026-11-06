@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { itemsApi, type Gegenstand, type Ablage } from "../items/api";
 import { Fenster } from "../shell/Fenster";
+import { Bestaetigung } from "../shell/Bestaetigung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
 import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
+import { ApiError } from "../api/client";
 import "./pc-inventar.css";
 
 /**
@@ -61,6 +63,33 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   async function wegwerfen(itemId: string) {
     await itemsApi.wegwerfen(campaignId, itemId);
     refresh();
+  }
+
+  // Augment/Chrom einsetzen (05.11.2026-Nachtrag: Mark fehlte dieser Knopf
+  // für NPCs — "ich habe keine Möglichkeit als SL einem NPC ein Augment zu
+  // verbauen"). Backend konnte es längst (chirurgie_durchfuehren erlaubt der
+  // SL uneingeschränkt beides), nur diese Ansicht reichte onChirurgie nie an
+  // GegenstandKachel durch — SpielerAnsicht.tsx tat das bisher nur für den
+  // Spieler an SEINEM EIGENEN Chrom. Entfernen bleibt bewusst der Körperkarte
+  // vorbehalten (eigener Chirurgie-Modus dort); hier nur das Einsetzen.
+  const [zumEinsetzen, setZumEinsetzen] = useState<Gegenstand | null>(null);
+  const [einsetzenLaeuft, setEinsetzenLaeuft] = useState(false);
+  const [einsetzenFehler, setEinsetzenFehler] = useState<string | null>(null);
+
+  async function einsetzen(item: Gegenstand) {
+    setEinsetzenLaeuft(true);
+    setEinsetzenFehler(null);
+    try {
+      await itemsApi.chirurgie(campaignId, item.id, true);
+      refresh();
+    } catch (e) {
+      // Fehlertext in einem eigenen Popup zeigen (z.B. "Magier können keine
+      // Bioware einsetzen", Platzkonflikt) — dafür die Bestätigung schliessen.
+      setEinsetzenFehler(e instanceof ApiError ? e.message : "Einsetzen fehlgeschlagen.");
+    } finally {
+      setZumEinsetzen(null);
+      setEinsetzenLaeuft(false);
+    }
   }
 
   // Trenne verbaute Augments von normalen Gegenständen. Montierte
@@ -205,6 +234,10 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                   onGeoeffnet={() => void refresh()}
                   onUmlegen={(neueAblage, zielId) => umlagern(g.id, neueAblage, zielId)}
                   onWegwerfen={() => wegwerfen(g.id)}
+                  onChirurgie={(ein) => {
+                    if (ein) setZumEinsetzen(g);
+                    return Promise.resolve();
+                  }}
                   montierteUpgrades={items.filter((i) => i.montiertAnId === g.id).map((i) => i.name)}
                   istSpielleitung
                 />
@@ -248,6 +281,31 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
           </form>
         )}
       </Fenster>
+
+      {/* Bestätigung vorm Einsetzen — gleiche Warnung wie beim Spieler
+          selbst (SpielerAnsicht.tsx), nur dass hier die SL es tut. */}
+      {zumEinsetzen && (
+        <Bestaetigung
+          titel="Augment einsetzen"
+          text={`„${zumEinsetzen.name}" bei ${personName} chirurgisch einsetzen?\n\nWirkt danach sofort (Willenskraftverlust, Körperplatz). Entfernen geht später nur über die Körperkarte.`}
+          jaText={einsetzenLaeuft ? "..." : "Einsetzen"}
+          neinText="Abbrechen"
+          onJa={() => void einsetzen(zumEinsetzen)}
+          onNein={() => {
+            setZumEinsetzen(null);
+            setEinsetzenFehler(null);
+          }}
+        />
+      )}
+      {einsetzenFehler && !zumEinsetzen && (
+        <Bestaetigung
+          titel="Einsetzen fehlgeschlagen"
+          text={einsetzenFehler}
+          jaText="Ok"
+          onJa={() => setEinsetzenFehler(null)}
+          onNein={() => setEinsetzenFehler(null)}
+        />
+      )}
     </div>
   );
 }
