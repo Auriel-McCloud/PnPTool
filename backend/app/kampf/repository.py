@@ -206,18 +206,29 @@ async def hole(campaign_id: str) -> dict | None:
         links = {r["riggerId"]: (r["drohneId"], r["drohneName"] or "") async for r in result}
 
     vorher = teilnehmer
+    versteckte_ids = {drohne_id for drohne_id, _name in links.values()}
+    versteckt = [dict(t) for t in vorher if t.get("personId") in versteckte_ids and not t.get("zusatzzug")]
     teilnehmer = falte_hot(vorher, links)
     teilnehmer = sortiere(teilnehmer)
     am_zug = am_zug_nach_faltung(kampf["amZug"], vorher, teilnehmer, links)
 
+    def _besitzer(eintrag: dict) -> str | None:
+        pid = eintrag.get("personId")
+        bid = eintrag.get("begleiterId")
+        return (drohnen_besitzer.get(pid) if pid else None) or (begleiter_besitzer.get(bid) if bid else None)
+
     for t in teilnehmer:
-        pid = t.get("personId")
-        bid = t.get("begleiterId")
-        t["besitzerId"] = (drohnen_besitzer.get(pid) if pid else None) or (
-            begleiter_besitzer.get(bid) if bid else None
-        )
-        if pid and pid in chrom_rundum:
+        t["besitzerId"] = _besitzer(t)
+        if t.get("personId") and t["personId"] in chrom_rundum:
             t["rundumsicht"] = True
+        if t.get("personId") in links and not t.get("zusatzzug"):
+            t["hotKoerper"] = True
+    for d in versteckt:
+        d["besitzerId"] = _besitzer(d)
+        if d.get("personId") and d["personId"] in chrom_rundum:
+            d["rundumsicht"] = True
+        d["hotGesteuert"] = True
+        d["nurKarte"] = True
 
     roh_speicher = kampf.get("sichtSpeicher")
     try:
@@ -234,6 +245,7 @@ async def hole(campaign_id: str) -> dict | None:
         "_begleiterBesitzer": begleiter_besitzer,
         "_drohnenBesitzer": drohnen_besitzer,
         "_sichtSpeicher": speicher if isinstance(speicher, dict) else {},
+        "_hotDrohnen": versteckt,
         # Kennung des Teilnehmers, der gerade handelt. Kennung statt Position,
         # weil sich die Reihenfolge ändern kann (jemand kommt dazu) — eine
         # Position zeigte danach auf jemand anderen.

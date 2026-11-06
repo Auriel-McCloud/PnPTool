@@ -66,6 +66,13 @@ def gehoert(token: dict, person_id: str | None) -> bool:
     return token.get("besitzerId") == person_id
 
 
+def ist_auge(token: dict, person_id: str | None) -> bool:
+    """Wessen Sensoren zählen. Ein Hot-Körper ist ausgestiegen, die Drohne sieht."""
+    if token.get("hotKoerper"):
+        return False
+    return gehoert(token, person_id)
+
+
 def zentrum(q: float, r: float) -> tuple[float, float]:
     """Hex-Mitte in Einheiten, unabhängig von Pixelgröße und Ursprung."""
     return (math.sqrt(3) * (q + r / 2), 1.5 * r)
@@ -183,7 +190,7 @@ def ansicht(
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
     if rolle == "GM":
         return [dict(t) for t in roh]
-    eigene = [t for t in roh if gehoert(t, person_id)]
+    eigene = [t for t in roh if ist_auge(t, person_id)]
     live: set[str] = set()
     geister: dict[str, dict] = {}
     for auge in eigene:
@@ -236,7 +243,7 @@ def ansicht_jetzt(
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
     if rolle == "GM":
         return [dict(t) for t in roh]
-    eigene = [t for t in roh if gehoert(t, person_id) and t.get("hexQ") is not None]
+    eigene = [t for t in roh if ist_auge(t, person_id) and t.get("hexQ") is not None]
     if not eigene:
         return [dict(t) for t in roh]
     sichtbar: set[str] = set()
@@ -266,7 +273,7 @@ def ansicht_waende(
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
     if rolle == "GM" or not waende:
         return [dict(t) for t in roh]
-    eigene = [t for t in roh if gehoert(t, person_id) and t.get("hexQ") is not None]
+    eigene = [t for t in roh if ist_auge(t, person_id) and t.get("hexQ") is not None]
     if not eigene:
         return [dict(t) for t in roh]
     sichtbar: set[str] = set()

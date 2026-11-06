@@ -162,10 +162,13 @@ class TestWaende:
 
         a = token("a", 0, 0, blickrichtung=0)
         hinten = token("h", -3, 0, personType="NPC")
-        vorn = token("v", 3, 0, personType="NPC")
-        gesehen = ansicht_jetzt([a, hinten, vorn], rolle="PLAYER", person_id="a")
-        ids = {t["id"] for t in gesehen}
-        assert ids == {"a", "v"}
+        speicher = start_speicher([a, hinten])
+        hinten["hexQ"] = -6
+        speicher = aktualisiere([a, hinten], speicher)
+        gesehen = ansicht([a, hinten], speicher, rolle="PLAYER", person_id="a")
+        geist = next(t for t in gesehen if t["id"] == "h")
+        assert geist["veraltet"] is True
+        assert geist["hexQ"] == -3
 
     def test_geist_hinter_neuer_wand_faellt(self):
         a = token("a", 0, 0, blickrichtung=0)

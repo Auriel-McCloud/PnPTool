@@ -205,9 +205,7 @@ Beschwörungen). Vorne drei von sechs Richtungen live, hinten der letzte Stand.
 Versteckt schlägt den Kegel. Rundumsicht an der Rasse und an verbautem Chrom.
 Antippen des eigenen Tokens (oder der eigenen Drohne) färbt die sechs
 Nachbarfelder, auch außerhalb des Zugs. Ein Feld antippen setzt die
-Blickrichtung. Der goldene Pfeil zeigt sie. Hinter dem Blick ist für den
-Spieler nichts, auch ohne Fog. Name und Verstecken stehen rechts in der
-Leiste, Wegtippen räumt sie. Sichtlinien blockieren auch Rundumsicht.
+Blickrichtung nur am eigenen Zug. Gesehenes bleibt als Erinnerung (ALT, ohne Farbring), bis man wieder hinsieht. Spawn-Punkte nur für die SL. Hot: Körper bleibt liegen, gesteuert wird die Drohne.
 
 **Verifiziert:** `tests/test_battlemap_sicht.py`, `npx tsc -b`. **Kein Klicktest.**
 

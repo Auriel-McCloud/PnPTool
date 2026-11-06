@@ -54,6 +54,9 @@ export interface Teilnehmer {
   rundumsicht?: boolean;
   /** Letzter Stand, nicht die Wahrheit. */
   veraltet?: boolean;
+  hotKoerper?: boolean;
+  hotGesteuert?: boolean;
+  nurKarte?: boolean;
 }
 
 /** Was der Spieler vor dem Initiativwurf wissen muss. */

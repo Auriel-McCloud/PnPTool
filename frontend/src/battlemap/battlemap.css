@@ -196,8 +196,23 @@
     animation: none;
   }
 }
-.bm-token[data-veraltet="true"] {
-  opacity: 0.45;
+.bm-token[data-erinnerung="true"] {
+  box-shadow: none;
+  opacity: 0.72;
+}
+.bm-mem {
+  position: absolute;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--linie);
+  padding: 1px 4px;
 }
 .bm-token[data-versteckt="true"] {
   opacity: 0.55;

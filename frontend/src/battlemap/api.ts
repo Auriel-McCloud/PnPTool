@@ -87,6 +87,9 @@ export type BattlemapLive =
           versteckt?: boolean;
           rundumsicht?: boolean;
           veraltet?: boolean;
+          hotKoerper?: boolean;
+          hotGesteuert?: boolean;
+          nurKarte?: boolean;
         }[];
         fog?: boolean;
         waende?: { ax: number; ay: number; bx: number; by: number }[];

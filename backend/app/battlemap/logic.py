@@ -56,7 +56,21 @@ TOKEN_FELDER = (
     "versteckt",
     "rundumsicht",
     "veraltet",
+    "hotKoerper",
+    "hotGesteuert",
+    "nurKarte",
 )
+
+
+def karten_liste(kampf: dict) -> list[dict]:
+    """Initiative bleibt gefaltet. Die Karte zeigt den Hot-Körper und die Drohne."""
+    liste = [dict(t) for t in kampf.get("teilnehmer") or [] if not t.get("zusatzzug")]
+    for drohne in kampf.get("_hotDrohnen") or []:
+        kopie = dict(drohne)
+        kopie["nurKarte"] = True
+        kopie["hotGesteuert"] = True
+        liste.append(kopie)
+    return liste
 
 
 def token_stand(kampf: dict) -> dict:

@@ -185,6 +185,12 @@ async def live(websocket: WebSocket, campaign_id: str, karte_id: str):
     await websocket.accept()
     verbindung = Verbindung(socket=websocket, rolle=viewer.role, person_id=viewer.person_id)
     await verteiler.anmelden(karte_id, verbindung)
+    from app.kampf import repository as kampf_repo
+    from app.kampf.routes import _tokens_senden
+
+    kampf = await kampf_repo.hole(campaign_id)
+    if kampf and kampf.get("battlemapId") == karte_id:
+        await _tokens_senden(kampf)
 
     try:
         while True:

@@ -55,6 +55,7 @@ export function BattlemapPopup({
   const [partei, setPartei] = useState<Set<string>>(new Set());
   const [flaeche, setFlaeche] = useState({ w: 800, h: 420 });
   const [wahlId, setWahlId] = useState<string | null>(null);
+  const [sichtDa, setSichtDa] = useState(istGm);
   const [linien, setLinien] = useState<{ ax: number; ay: number; bx: number; by: number }[]>([]);
   const tipp = useRef<{ id: string; x: number; y: number; angehoben: boolean } | null>(null);
   const wahlSperre = useRef(0);
@@ -110,6 +111,7 @@ export function BattlemapPopup({
           setLinien(n.daten.waende ?? []);
         }
         if (n.typ === "tokens") {
+          setSichtDa(true);
           if (n.daten.waende) setLinien(n.daten.waende);
           setKampf((alt) => ({
             id: alt?.id ?? "",
@@ -165,7 +167,7 @@ export function BattlemapPopup({
   if (!karte) return null;
   const karteId = karte.id;
 
-  const tokens = (kampf?.battlemapId === karte.id ? kampf.teilnehmer : []).filter((t) => !t.zusatzzug);
+  const tokens = (sichtDa && kampf?.battlemapId === karte.id ? kampf.teilnehmer : []).filter((t) => !t.zusatzzug);
   const amZug = kampf?.amZug;
 
   function hexUnter(ev: React.PointerEvent) {
@@ -206,6 +208,11 @@ export function BattlemapPopup({
   }
 
   function istDran(t: Teilnehmer) {
+    if (t.hotKoerper) return false;
+    if (t.hotGesteuert) {
+      const rigger = tokens.find((x) => x.hotKoerper && x.personId === t.besitzerId);
+      return Boolean(rigger && rigger.id === amZug);
+    }
     if (!amZug) return false;
     if (t.id === amZug) return true;
     const aktueller = tokens.find((x) => x.id === amZug);
@@ -303,7 +310,7 @@ export function BattlemapPopup({
     for (const [q, r] of yFelder(schau.hexQ, schau.hexR, Boolean(schau.istGross), schau.hexDrehung ?? 0)) {
       wahlFelder.add(`${q},${r}`);
     }
-    if (istGm || istEigen(schau)) {
+    if (istGm || (istEigen(schau) && istDran(schau))) {
       for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
     }
   }
@@ -472,7 +479,7 @@ export function BattlemapPopup({
           if (Date.now() < wahlSperre.current) return;
           if (ziel.closest(".bm-token, .bm-name, .bm-aktion, .bm-wand")) return;
           const gewaehlt = tokens.find((t) => t.id === wahlId);
-          if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || istEigen(gewaehlt))) {
+          if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || (istEigen(gewaehlt) && istDran(gewaehlt)))) {
             const hex = hexUnter(e as unknown as React.PointerEvent);
             const richtung = hex
               ? NACHBARN.findIndex(([dq, dr]) => gewaehlt.hexQ! + dq === hex.q && gewaehlt.hexR! + dr === hex.r)
@@ -519,8 +526,8 @@ export function BattlemapPopup({
             const { x, y } = hexNachPixel(q, r, size, ox, oy);
             const key = `${q},${r}`;
             const istGruen = ziehend && gruen.has(key);
-            const spawnPc = karte.spawnPcQ === q && karte.spawnPcR === r;
-            const spawnNpc = karte.spawnNpcQ === q && karte.spawnNpcR === r;
+            const spawnPc = istGm && karte.spawnPcQ === q && karte.spawnPcR === r;
+            const spawnNpc = istGm && karte.spawnNpcQ === q && karte.spawnNpcR === r;
             const hover = hoverHex && hoverHex.q === q && hoverHex.r === r;
             const farbe = belegung.get(key);
             return (
@@ -573,7 +580,7 @@ export function BattlemapPopup({
           if (t.hexQ == null || t.hexR == null) return null;
           const anker = ziehend === t.id && hoverHex ? hoverHex : { q: t.hexQ, r: t.hexR };
           const { x, y } = hexNachPixel(anker.q, anker.r, size, ox, oy);
-          const rand = istDran(t) ? "gold" : inPartei(t) ? "blau" : "magenta";
+          const rand = t.veraltet ? undefined : istDran(t) ? "gold" : inPartei(t) ? "blau" : "magenta";
           const felder = yFelder(anker.q, anker.r, Boolean(t.istGross), t.hexDrehung ?? 0);
           const { x: x2, y: y2 } = hexNachPixel(felder[felder.length - 1][0], felder[felder.length - 1][1], size, ox, oy);
           const cx = t.istGross ? (x + x2) / 2 : x;
@@ -598,6 +605,7 @@ export function BattlemapPopup({
                 data-wahl={wahlId === t.id || undefined}
                 data-gross={t.istGross || undefined}
                 data-veraltet={t.veraltet || undefined}
+                data-erinnerung={t.veraltet || undefined}
                 data-versteckt={t.versteckt || undefined}
                 style={{
                   left: cx,
@@ -641,6 +649,11 @@ export function BattlemapPopup({
               >
                 {t.bildUrl ? <img src={t.bildUrl} alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
               </button>
+              {t.veraltet && (
+                <i className="bm-mem" style={{ left: cx, top: cy }} title="Erinnerung">
+                  ALT
+                </i>
+              )}
             </span>
           );
         })}
