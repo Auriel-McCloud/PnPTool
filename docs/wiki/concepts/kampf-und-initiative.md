@@ -87,8 +87,8 @@ automatische „0 HP = tot"-Logik.
   `teilnehmerHinzugefuegt`, `initiativeGesetzt`, `zugGewechselt`,
   `kampfBeendet`. **Status: geplant, nicht umgesetzt.**
 - **Battlemap** — Design 06.11.2026, nicht gebaut. Siehe
-  [[../entities/battlemap]]. Drop überall; Grün nur während des Ziehens;
-  die Zeile oben („keine Würfel-Simulation“) bleibt.
+  [[../entities/battlemap]]. Drop überall außer belegt; Grün nur während
+  des Ziehens; die Zeile oben („keine Würfel-Simulation“) bleibt.
 - Widerspruch: das Beispiel-JSON in `docs/api/kampf.md` zeigt noch das alte
   generische Attributsystem — siehe [[../comparisons/veraltete-docs-vs-code]].
 

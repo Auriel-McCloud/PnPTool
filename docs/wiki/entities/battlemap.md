@@ -49,10 +49,11 @@ Zwei Schichten:
    für Spieler, skalierbares Hex-Grid (Größe, Ursprung), Sichtbarkeit,
    Papierkorb. Der laufende Kampf hängt eine vorbereitete Karte an.
 2. **Tokens** am laufenden Kampf: Position am `KampfTeilnehmer`, Portrait aus
-   `Person.bildUrl`. Unplatziert, bis jemand sie aufs Raster zieht. `amZug` ist
-   das Highlight. Ein Zusatzzug (Reflex-Booster) ist dieselbe Person, kein
-   zweiter Token. Spieler schiebt eigenen Charakter, eigene Drohnen und
-   Beschwörungen nur am eigenen Zug. Die SL schiebt immer alle.
+   `Person.bildUrl`. Kein unplatzierter Stapel — sie entstehen an den zwei
+   Spawn-Feldern der Karte (siehe Nachschärfung). `amZug` ist das Highlight.
+   Ein Zusatzzug (Reflex-Booster) ist dieselbe Person, kein zweiter Token.
+   Spieler schiebt eigenen Charakter, eigene Drohnen und Beschwörungen nur am
+   eigenen Zug. Die SL schiebt immer alle.
 
 Bewegung: Drop überall, rastet auf Hex. Grün ist nur die Hilfe — Sprint,
 Teleport, SL räumt. Laufen `3 + Sportlichkeit`. Drohnen `3 + Fliegen × 2`
@@ -73,9 +74,36 @@ Live-Sync: Token-Züge über den geplanten Kampf-WebSocket
 
 Konflikt mit [[../concepts/kampf-und-initiative]] „keine Würfel-Simulation“:
 Token-Position ist „was auf dem Feld steht“. Reichweite sperrt den Drop nicht.
+Zwei Tokens auf einem Hex sperren den Drop — das ist Belegung, keine Probe.
 
 Nicht in der Anfrage, nicht Teil dieses Designs: Fog of War, Facing,
-Quadrat-Grid-Umschalter, Belegungssperre (zwei Tokens ein Hex).
+Quadrat-Grid-Umschalter. Belegungssperre stand hier zuerst als „nicht Teil“;
+ersetzt 06.11. (Nachschärfung): zwei Charaktere nicht auf demselben Feld.
+
+## Nachschärfung 06.11.2026 — Spawn, Rand, Größe (nicht gebaut)
+
+Damit die SL nicht jeden Token einzeln setzt: auf der Karte zwei Spawn-Felder
+(Vorbereitung). **Blau** für PCs, **Magenta** für NPCs. Tokens der Initiative
+erscheinen dort; ist das Feld belegt, auf einem freien Nachbarn — dieselbe
+Regel wie unten bei Drohne/Beschwörung.
+
+Randfarben, vorhandene Tokens: PC `--p-blau`, NPC `--p-magenta`. Drohne und
+Beschwörung in der Farbe des Besitzers (`personType` der Drohne ist NPC, zählt
+trotzdem nicht als Magenta-NPC). Wer dran ist: `--p-gold` und pulsiert —
+dasselbe Puls-Muster wie Hot (`gg-hot-puls`), Gold statt Magenta.
+`prefers-reduced-motion` bleibt.
+
+Zwei Charaktere nicht auf demselben Hex, auch die SL nicht. Das eigene
+Startfeld (grau) zählt als frei für den, der dort steht. Groß belegt alle
+drei Y-Hex.
+
+Beschwörung oder Drohne aktivieren: Token auf einem freien Feld neben dem
+Charakter. Kein freier Nachbar → nächstes freies Feld.
+
+Größe: Umschalter **Normal / Groß** in der SL-PC- und NPC-Übersicht, Default
+Normal. Derselbe Schalter im Rassen-Baukasten (`istGross`, kein Rassenname im
+Code). Neue Person übernimmt den Rassen-Default, danach gilt der Personen-Wert.
+Normal = 1 Hex, Groß = 3 im Y plus Kreis.
 
 ## Offene Achsen 06.11. (erste Fassung, ersetzt)
 
@@ -90,4 +118,5 @@ Quadrat-Grid-Umschalter, Belegungssperre (zwei Tokens ein Hex).
 
 - [[../concepts/kampf-und-initiative]]
 - [[../concepts/drohnen-fahrzeuge]]
+- [[../concepts/rassen]]
 - [[ui-konzept-commlink]]

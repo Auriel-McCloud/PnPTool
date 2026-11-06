@@ -83,8 +83,16 @@ Fertigkeitsbonus, Hinweistext. Die 15er-Formel selbst ist unverändert.
 Seit 24.10.2026 kann der erste Gratis-Kauf auch „alle Typen“ sein: ein
 Kauf, egal welcher Typ, danach normaler Preis.
 
+## Noch nicht gebaut: Battlemap-Größe (06.11.2026)
+
+Umschalter Normal/Groß im Rassen-Baukasten, Default Normal. Feld `istGross`
+an der Rasse, nicht an den Namen gebunden. Neue Person übernimmt den Wert;
+in der SL-PC-/NPC-Übersicht derselbe Umschalter am Charakter. Siehe
+[[../entities/battlemap]].
+
 ## Siehe auch
 
 - [[../entities/rassen-baukasten-feature]] — die UI/Backend-Umsetzung im Detail
 - [[attribute-und-fertigkeiten]] — worauf sich die Modifikatoren auswirken
 - [[charaktererschaffung]] — wo die Rassenwahl einsortiert ist
+- [[../entities/battlemap]] — Größe Normal/Groß, nicht gebaut
