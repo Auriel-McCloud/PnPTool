@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Person } from "../entities/api";
-import { anzeigeName, entitiesApi } from "../entities/api";
+import { anzeigeName } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css"; // Selbes Styling wie PCs
@@ -21,11 +21,6 @@ interface NPCKachelProps {
 
 function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
   const [uebersicht, setUebersicht] = useState<BogenUebersicht | null>(null);
-  const [gross, setGross] = useState(Boolean(person.istGross));
-
-  useEffect(() => {
-    setGross(Boolean(person.istGross));
-  }, [person.istGross]);
 
   useNachladen(
     () => bogenApi.laden(campaignId, person.id),
@@ -63,19 +58,6 @@ function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
 
       <div className="pc-kachel-info">
         <div className="pc-kachel-name">{anzeigeName(person.name, person.alias)}</div>
-        <label className="pc-kachel-groesse" title="Groß auf der Battlemap (3 Hex)" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={gross}
-            onChange={(e) => {
-              const neu = e.target.checked;
-              setGross(neu);
-              person.istGross = neu;
-              void entitiesApi.updatePerson(campaignId, person.id, { istGross: neu });
-            }}
-          />
-          Groß
-        </label>
 
         <div className="pc-kachel-werte">
           <div className="pc-kachel-wert pc-kachel-lp" title="Lebenspunkte">

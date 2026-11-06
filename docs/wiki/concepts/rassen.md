@@ -86,8 +86,9 @@ Kauf, egal welcher Typ, danach normaler Preis.
 ## Gebaut: Battlemap-Größe (06.11.2026)
 
 Umschalter Normal/Groß im Rassen-Baukasten, Default Normal. Das ist die Vorlage:
-eine neue Person startet so. Danach entscheidet die Checkbox „Groß“ an der
-PC- oder NPC-Kachel. Die Karte liest den Personen-Wert. Siehe [[../entities/battlemap]].
+eine neue Person startet so. Danach entscheidet die Checkbox „Groß auf der
+Battlemap“ im Reiter Übersicht von PC und NPC, nicht auf der Kachel. Siehe
+[[../entities/battlemap]].
 
 ## Siehe auch
 

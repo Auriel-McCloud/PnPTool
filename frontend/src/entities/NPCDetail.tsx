@@ -76,6 +76,12 @@ export function NPCDetail({
   const istKredithai = aktuellePerson.istKredithai ?? false;
   const bietetReparatur = aktuellePerson.bietetReparatur ?? false;
 
+  async function groesseUmschalten(wert: boolean) {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { istGross: wert });
+    setAktuellePerson(neu);
+    onLokalAktualisiert?.(neu);
+  }
+
   async function kredithaiUmschalten() {
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istKredithai: !istKredithai });
     setAktuellePerson(neu);
@@ -239,6 +245,14 @@ export function NPCDetail({
                     }}
                   />
                 </div>
+                <label className="pcd-vorgefertigt-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={aktuellePerson.istGross ?? false}
+                    onChange={(e) => void groesseUmschalten(e.target.checked)}
+                  />
+                  Groß auf der Battlemap (3 Hex)
+                </label>
                 <h3>Schnellzugriff</h3>
                 <div className="pcd-buttons">
                   <button type="button" onClick={() => setUnteransicht("blatt")}>

@@ -73,6 +73,12 @@ export function PCDetail({
   const [loeschenOffen, setLoeschenOffen] = useState(false);
   const [loeschenLaeuft, setLoeschenLaeuft] = useState(false);
 
+  async function groesseUmschalten(wert: boolean) {
+    const neu = await entitiesApi.updatePerson(campaignId, person.id, { istGross: wert });
+    setAktuellePerson(neu);
+    onLokalAktualisiert?.(neu);
+  }
+
   async function vorgefertigtUmschalten(wert: boolean) {
     const neu = await entitiesApi.updatePerson(campaignId, person.id, { istVorgefertigt: wert });
     setAktuellePerson(neu);
@@ -238,6 +244,14 @@ export function PCDetail({
                     }}
                   />
                 </div>
+                <label className="pcd-vorgefertigt-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={aktuellePerson.istGross ?? false}
+                    onChange={(e) => void groesseUmschalten(e.target.checked)}
+                  />
+                  Groß auf der Battlemap (3 Hex)
+                </label>
                 <h3>Schnellzugriff</h3>
                 <div className="pcd-buttons">
                   <button type="button" onClick={() => setUnteransicht("blatt")}>
