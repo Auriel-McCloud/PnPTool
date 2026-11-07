@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: kein Burgermenü-Punkt mehr für Spieler (07.11.2026)
+
+Mark: Spieler kommen über „Karte öffnen“ im Kampfmenü in die Karte, der Menüpunkt war überflüssig. `BEREICHE_STATISCH` und der Render-Block in `SpielerAnsicht.tsx` ohne `battlemap`; gespeicherte Layouts mit der ID fallen als unbekannt weg (`sichtbareBereiche`). SL-Menü unverändert. Folge: ohne laufenden Kampf mit angehängter Karte kommt ein Spieler nicht an die Karte. `tsc` sauber, kein Klicktest.
+
 ## Kampfende klinkt Rigger UND Decker aus (07.11.2026)
 
 `kampf/repository.py::beende` ruft `hot_loeschen` (vorher nur `matrix_hot_loeschen`): setzt bei allen Personen der Kampagne `matrixHot=false`, `matrixHotRunde=0`, `hotDrohneId=null`, `hotDrohneRunde=0`. Vorher blieb der Rigger über das Kampfende hinweg Hot und war im nächsten Kampf sofort wieder gefaltet im Slot. `beginne` löscht über `beende` ebenfalls. Gegen echtes Neo4j geprüft (Rigger, Decker, Drohne, Unbeteiligter).

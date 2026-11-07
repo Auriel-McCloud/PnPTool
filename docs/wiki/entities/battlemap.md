@@ -361,6 +361,10 @@ gesetzt, Marker erschien exakt an dieser Stelle (nicht verschoben/
 gespiegelt) — bestätigt die Rückrechnung der Klick-Koordinaten. Noch nicht
 mit einem echten Kartenbild und am echten Tablet geprüft.
 
+## Gebaut 07.11.2026 — kein Burgermenü-Punkt für Spieler
+
+Spieler öffnen die Karte nur noch über „Karte öffnen“ im Kampfmenü; der Bereich `battlemap` fehlt in `BEREICHE_STATISCH` (`SpielerAnsicht.tsx`). SL-Menü unverändert. Ohne laufenden Kampf mit angehängter Karte hat ein Spieler keinen Zugang.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]

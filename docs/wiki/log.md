@@ -1805,3 +1805,7 @@ Siehe [[entities/gegenstand-transfer]].
 ## [2026-11-07] update | Kampfende klinkt Rigger und Decker aus
 
 Kampfende löscht neben Matrix-Hot jetzt auch die Hot-Drohne des Riggers. Siehe [[concepts/drohnen-fahrzeuge]].
+
+## [2026-11-07] update | Battlemap-Menüpunkt für Spieler entfernt
+
+Spieler erreichen die Karte nur über „Karte öffnen“ im Kampf. Siehe [[entities/battlemap]].
