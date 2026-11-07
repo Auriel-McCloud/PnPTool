@@ -22,6 +22,19 @@ def _alias_von(roh: dict) -> str:
     return effektiver_alias(npc_standard, persoenlich)
 
 
+def chat_ist_offen(roh: dict) -> bool:
+    """Ist der Einzelchat offen? Eine Regel für Liste, Lesen und Senden.
+
+    `chatOffen` ist getrennt von `stufe`, damit die SL den Chat einzeln
+    öffnen/schließen kann. Nur ein nie gesetztes Feld fällt auf den
+    Kontaktaustausch zurück.
+    """
+    offen = roh.get("chatOffen")
+    if offen is None:
+        return ist_mindestens_stufe(roh.get("stufe") or "GESEHEN", "KONTAKT_AUSGETAUSCHT")
+    return bool(offen)
+
+
 def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
     """Baut die sichere Kontaktantwort für einen Spieler.
 

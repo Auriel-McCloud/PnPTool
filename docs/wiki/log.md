@@ -1809,3 +1809,7 @@ Kampfende löscht neben Matrix-Hot jetzt auch die Hot-Drohne des Riggers. Siehe 
 ## [2026-11-07] update | Battlemap-Menüpunkt für Spieler entfernt
 
 Spieler erreichen die Karte nur über „Karte öffnen“ im Kampf. Siehe [[entities/battlemap]].
+
+## [2026-11-07] update | Messenger-Verlauf folgt chatOffen
+
+Lesen und Senden nutzen dieselbe Offen-Regel wie die Liste. Siehe [[entities/kontakte-messenger]].

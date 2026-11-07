@@ -1,7 +1,7 @@
 ---
 title: Kontakte und Messenger
 created: 2026-09-18
-updated: 2026-11-01
+updated: 2026-11-07
 type: entität
 tags: [kontakte, frontend, ui]
 sources: [../../api/kontakte.md, ../../../CLAUDE.md]
@@ -71,6 +71,10 @@ Erster Klick: Beschreibung, dann `POST .../generieren`. Danach ist der
 Platzhalter weg, der neue NPC hat offenen Chat, und dieser Spieler kennt
 den Namen. Ohne die eigene Zeile blieb die Liste leer, weil der Messenger
 nur `chatOffen` zeigte.
+
+## Chatverlauf-Regel (07.11.2026)
+
+Lesen (`GET .../chat`) und Senden nutzen dieselbe Regel wie die Liste: `chat_ist_offen` in `kontakte/security.py`. Explizites `chatOffen` zählt; nur ein nie gesetztes Feld fällt auf Stufe ≥ KONTAKT_AUSGETAUSCHT zurück. Vorher lieferte Lesen bei einem von der SL angelegten Kontakt (Stufe GESEHEN, Chat offen) einen leeren Verlauf, obwohl die Nachrichten gespeichert waren.
 
 ## Siehe auch
 

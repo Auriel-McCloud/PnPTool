@@ -6,7 +6,7 @@ Spieler sieht nur seine eigenen Kontakte.
 """
 
 from app.auth.dependencies import Viewer
-from app.kontakte.security import darf_kontakt_sehen, kontakt_fuer_gm, kontakt_fuer_viewer
+from app.kontakte.security import chat_ist_offen, darf_kontakt_sehen, kontakt_fuer_gm, kontakt_fuer_viewer
 
 
 def roh(**kwargs) -> dict:
@@ -111,3 +111,17 @@ class TestSlAnsicht:
     def test_sl_sieht_die_beschreibung_auch_bei_gesehen(self):
         antwort = kontakt_fuer_gm(roh(stufe="GESEHEN"))
         assert "rote Jacke" in antwort.beschreibung
+
+
+class TestChatOffen:
+    """Lesen und Senden folgen derselben Regel wie die Kontaktliste."""
+
+    def test_von_hand_geoeffneter_chat_ist_offen_trotz_niedriger_stufe(self):
+        assert chat_ist_offen(roh(stufe="GESEHEN", chatOffen=True))
+
+    def test_explizit_geschlossen_bleibt_zu_auch_nach_kontaktaustausch(self):
+        assert not chat_ist_offen(roh(stufe="KONTAKT_AUSGETAUSCHT", chatOffen=False))
+
+    def test_nie_gesetztes_feld_faellt_auf_kontaktaustausch_zurueck(self):
+        assert chat_ist_offen(roh(stufe="KONTAKT_AUSGETAUSCHT"))
+        assert not chat_ist_offen(roh(stufe="GESPROCHEN"))

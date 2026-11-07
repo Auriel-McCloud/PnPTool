@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Messenger: Chatverlauf folgt `chatOffen` statt nur `stufe` (07.11.2026)
+
+SL legt Kontakt von Hand an (Stufe GESEHEN, `chatOffen=true`), Spieler/SL schreiben — Nachricht wird gespeichert und das Popup kommt, aber `GET .../chat` lieferte nur ab Stufe KONTAKT_AUSGETAUSCHT einen Verlauf: „Noch keine Nachrichten“. Senden prüfte `chatOffen`, Lesen die Stufe. Jetzt eine Regel für Liste, Lesen und Senden: `kontakte/security.py::chat_ist_offen` (explizites `chatOffen` gewinnt, nur ein nie gesetztes Feld fällt auf die Stufe zurück). Tests in `test_kontakte_sicherheit.py`.
+
 ## Battlemap: kein Burgermenü-Punkt mehr für Spieler (07.11.2026)
 
 Mark: Spieler kommen über „Karte öffnen“ im Kampfmenü in die Karte, der Menüpunkt war überflüssig. `BEREICHE_STATISCH` und der Render-Block in `SpielerAnsicht.tsx` ohne `battlemap`; gespeicherte Layouts mit der ID fallen als unbekannt weg (`sichtbareBereiche`). SL-Menü unverändert. Folge: ohne laufenden Kampf mit angehängter Karte kommt ein Spieler nicht an die Karte. `tsc` sauber, kein Klicktest.

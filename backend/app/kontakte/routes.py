@@ -46,7 +46,7 @@ from app.kontakte.schemas import (
     NachrichtResponse,
     NotizenUpdate,
 )
-from app.kontakte.security import darf_kontakt_sehen, kontakt_fuer_gm, kontakt_fuer_viewer
+from app.kontakte.security import chat_ist_offen, darf_kontakt_sehen, kontakt_fuer_gm, kontakt_fuer_viewer
 
 
 async def require_messenger_active(
@@ -324,7 +324,7 @@ def _nachricht_fuer(roh: dict, betrachter_id: str, alias: str) -> NachrichtRespo
 async def chat_lesen(campaign_id: str, kontakt_id: str, viewer: Viewer = Depends(get_viewer)):
     """Der Nachrichtenverlauf eines Kontakts."""
     roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
-    offen = ist_mindestens_stufe(roh.get("stufe"), "KONTAKT_AUSGETAUSCHT")
+    offen = chat_ist_offen(roh)
     alias = effektiver_alias(
         (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse")),
         roh.get("persoenlicherAlias"),
@@ -363,7 +363,7 @@ async def nachricht_senden(
     roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
 
     # Chat muss offen sein (eigenes Feld, unabhängig von Stufe)
-    if not roh.get("chatOffen"):
+    if not chat_ist_offen(roh):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "Der Chat ist nicht geöffnet",
