@@ -34,6 +34,7 @@ interface KachelEintrag {
   suchtext: string;
   art: "CRITTER" | "GEWAECHS";
   besitzerName: string | null;
+  istVorlage: boolean;
 }
 
 export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
@@ -84,6 +85,7 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
       suchtext: `${x.name} fauna critter ${x.besitzerName ?? ""}`.toLowerCase(),
       art: "CRITTER" as const,
       besitzerName: x.besitzerName,
+      istVorlage: x.istVorlage,
     }));
     const g: KachelEintrag[] = gewaechse.map((x) => ({
       id: x.id,
@@ -92,6 +94,7 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
       suchtext: `${x.name} flora gewächs gewaechs`.toLowerCase(),
       art: "GEWAECHS" as const,
       besitzerName: null,
+      istVorlage: false,
     }));
     return [...c, ...g].sort((a, b) => a.name.localeCompare(b.name, "de"));
   }, [critter, gewaechse]);
@@ -162,6 +165,11 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
             <span className="gg-kachel-zeile">{k.art === "CRITTER" ? "Fauna · Critter" : "Flora · Gewächs"}</span>
             {k.art === "CRITTER" && (
               <span className="gg-kachel-marken">
+                {k.istVorlage && (
+                  <span className="gg-marke" style={{ color: "var(--neon)" }}>
+                    Vorlage
+                  </span>
+                )}
                 <span className="gg-marke">{k.besitzerName ?? "ungebunden"}</span>
               </span>
             )}

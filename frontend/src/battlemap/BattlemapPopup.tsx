@@ -260,37 +260,39 @@ export function BattlemapPopup({
     }
   }
 
-  // Ganzes Bild einpassen: Zoom so wählen, dass die gesamte Bildfläche
-  // (plus Rand durch originX/originY) ohne Scrollen in die aktuell
-  // gemessene Bühnenfläche passt — nie größer als 100%. Setzt zusätzlich
-  // Schwenk UND Scrollposition zurück (Bugfix 07.11.2026: ein berechneter
-  // Zoom allein zeigt ohne diesen Reset weiterhin den vorher gescrollten/
-  // geschwenkten Ausschnitt, nicht das ganze Bild ab der oberen linken
-  // Ecke).
+  // Ganzes Bild einpassen: Zoom UND Schwenk zusammen berechnen, damit das
+  // Bild unabhängig davon, wie weit originX/originY es vom Koordinaten-
+  // nullpunkt wegschieben, exakt im sichtbaren Bereich landet.
   // Bugfix 07.11.2026 (Tablet-Screenshot): bei gedreht wurden die BÜHNEN-
   // Maße (flaeche.w/h) vertauscht statt der BILD-Maße — die Bühne selbst
   // dreht sich NICHT (nur ihr Inhalt), ihre Breite/Höhe bleiben also die
   // feste Bezugsgröße. Nach einer 90°-Drehung landet die Bild-BREITE auf
   // dem Bildschirm in der Höhen-Richtung (und umgekehrt) — darum müssen
   // die BILD-Maße vertauscht gegen die unveränderten Bühnen-Maße geprüft
-  // werden, nicht die Bühnen-Maße gegen die unveränderten Bild-Maße. Der
-  // Fehler ließ den Zoom viel zu klein ausfallen (Bild nur ein schmaler
-  // Streifen statt den sichtbaren Bereich zu füllen).
-  // Bugfix 07.11.2026 (Tablet-Screenshot, Teil 2): Rand-Zuschlag war
-  // `+ Math.abs(ox) * 2` — eine beidseitige Pufferannahme aus der alten,
-  // entfernten viewBox-Rechnung (die nicht wusste, in welche Richtung
-  // originX/Y gerade zeigt). Für "ganzes Bild einpassen" reicht der
-  // TATSÄCHLICHE, einseitige Rand: das Bild beginnt bei `ox`/`oy`, die
-  // Scrollposition startet immer bei 0 (nie negativ) — nötig ist also nur
-  // `bildBreite + ox` (bzw. `+ oy`), nicht `+ 2×|ox|`. Der doppelte Zuschlag
-  // hat den Zoom deutlich kleiner gerechnet als nötig.
+  // werden, nicht die Bühnen-Maße gegen die unveränderten Bild-Maße.
+  // Bugfix 07.11.2026 (Teil 2): Frühere Fassung rechnete den Zoom aus
+  // `bildBreite + originX` statt nur `bildBreite` — das zählt den LEEREN
+  // Abstand zwischen Koordinatennullpunkt und Bildanfang als "Bildfläche"
+  // mit und macht den Zoom unnötig winzig, sobald originX/Y groß ist (bei
+  // Marks „Mainframe“-Karte ~899px, fast so groß wie das Bild selbst).
+  // Der eigentliche Fix: Zoom NUR aus den echten Bildmaßen berechnen, und
+  // zusätzlich per `ansicht` (Schwenk) genau diesen Abstand wegschieben,
+  // statt ihn in die Zoom-Rechnung einzupreisen. Herleitung der Schwenk-
+  // Formel spiegelt `schirmNachInnenrahmen()`: dort gilt screen→lokal via
+  // `(ly, buehnenBreite-lx)` bei gedreht, invertiert also lokal→screen via
+  // `lx = buehnenBreite - lokalY, ly = lokalX`. Angewendet auf die unten-
+  // rechte Bildecke (lokal `oy+bildHoehe`) ergibt das die obere-linke
+  // Bildschirm-Ecke des (gedrehten) Bildes.
   function zoomEinpassen() {
-    const breite = (karte?.bildBreite || 2000) + Math.max(ox, 0);
-    const hoehe = (karte?.bildHoehe || 1200) + Math.max(oy, 0);
+    const breite = karte?.bildBreite || 2000;
+    const hoehe = karte?.bildHoehe || 1200;
     const zielBreite = gedreht ? hoehe : breite;
     const zielHoehe = gedreht ? breite : hoehe;
-    zoomSetzen(Math.min(flaeche.w / zielBreite, flaeche.h / zielHoehe, 1));
-    setAnsicht({ x: 0, y: 0 });
+    const neuerZoom = Math.round(Math.min(flaeche.w / zielBreite, flaeche.h / zielHoehe, 1) * 100) / 100;
+    const screenXMin = gedreht ? flaeche.w - (oy + hoehe) : ox;
+    const screenYMin = gedreht ? ox : oy;
+    zoomSetzen(neuerZoom);
+    setAnsicht({ x: -neuerZoom * screenXMin, y: -neuerZoom * screenYMin });
     if (buehne.current) {
       buehne.current.scrollLeft = 0;
       buehne.current.scrollTop = 0;
