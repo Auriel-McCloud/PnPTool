@@ -267,12 +267,21 @@ export function BattlemapPopup({
   // Zoom allein zeigt ohne diesen Reset weiterhin den vorher gescrollten/
   // geschwenkten Ausschnitt, nicht das ganze Bild ab der oberen linken
   // Ecke).
+  // Bugfix 07.11.2026 (Tablet-Screenshot): bei gedreht wurden die BÜHNEN-
+  // Maße (flaeche.w/h) vertauscht statt der BILD-Maße — die Bühne selbst
+  // dreht sich NICHT (nur ihr Inhalt), ihre Breite/Höhe bleiben also die
+  // feste Bezugsgröße. Nach einer 90°-Drehung landet die Bild-BREITE auf
+  // dem Bildschirm in der Höhen-Richtung (und umgekehrt) — darum müssen
+  // die BILD-Maße vertauscht gegen die unveränderten Bühnen-Maße geprüft
+  // werden, nicht die Bühnen-Maße gegen die unveränderten Bild-Maße. Der
+  // Fehler ließ den Zoom viel zu klein ausfallen (Bild nur ein schmaler
+  // Streifen statt den sichtbaren Bereich zu füllen).
   function zoomEinpassen() {
     const breite = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
     const hoehe = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
-    const sichtB = gedreht ? flaeche.h : flaeche.w;
-    const sichtH = gedreht ? flaeche.w : flaeche.h;
-    zoomSetzen(Math.min(sichtB / breite, sichtH / hoehe, 1));
+    const zielBreite = gedreht ? hoehe : breite;
+    const zielHoehe = gedreht ? breite : hoehe;
+    zoomSetzen(Math.min(flaeche.w / zielBreite, flaeche.h / zielHoehe, 1));
     setAnsicht({ x: 0, y: 0 });
     if (buehne.current) {
       buehne.current.scrollLeft = 0;
@@ -498,7 +507,7 @@ export function BattlemapPopup({
         </button>
         <label className="bm-zoom-regler">
           Zoom
-          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom - 0.05)}>
+          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom - 0.01)}>
             −
           </button>
           <input
@@ -509,7 +518,7 @@ export function BattlemapPopup({
             value={Math.round(zoom * 100)}
             onChange={(e) => zoomSetzen(Number(e.target.value) / 100)}
           />
-          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom + 0.05)}>
+          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom + 0.01)}>
             +
           </button>
           <span>{Math.round(zoom * 100)}%</span>
