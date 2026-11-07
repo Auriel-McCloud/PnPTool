@@ -37,6 +37,15 @@
   letter-spacing: 0.04em;
   color: var(--text);
 }
+.bm-zoom-regler {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bm-zoom-regler span {
+  min-width: 3.2em;
+  text-align: right;
+}
 .bm-buehne {
   position: relative;
   /* Bugfix 07.11.2026: eigener Stacking-Context nötig, sonst entkommt das
@@ -55,6 +64,13 @@
    deckungsgleich mit .bm-buehne; gedreht bekommt er vertauschte Breite/Höhe
    (inline style, aus der gemessenen Bühnenfläche) und wird mittig um 90°
    gedreht — die Drehung füllt dadurch wieder exakt die Bühnenfläche. */
+.bm-zoom {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+}
 .bm-dreh {
   position: absolute;
   inset: 0;

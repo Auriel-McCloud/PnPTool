@@ -66,6 +66,15 @@ export function BattlemapPopup({
   // Rein lokale Anzeige-Einstellung (07.11.2026), pro Gerät in localStorage
   // gemerkt — SL und Spieler können das jeweils für sich einschalten.
   const [gedreht, setGedreht] = useState(false);
+  // Zoom (07.11.2026): Hintergrundbild liegt in rohen Pixel-Koordinaten
+  // (siehe Kommentar unten) und kann größer sein als die sichtbare Fläche.
+  // Rein lokale Anzeige-Einstellung wie `gedreht`, pro Karte in localStorage
+  // gemerkt, skaliert ALLE Ebenen (Bild/Grid/Wände/Zeichnung/Tokens)
+  // gemeinsam über einen CSS-Transform auf ihrem gemeinsamen Wrapper
+  // `.bm-zoom` — kein erneutes Auseinanderlaufen wie bei der viewBox, weil
+  // hier wirklich jede Ebene (auch die reinen HTML-Tokens) denselben
+  // Transform erbt, statt nur die SVGs.
+  const [zoom, setZoom] = useState(1);
 
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
@@ -91,6 +100,16 @@ export function BattlemapPopup({
       setGedreht(localStorage.getItem(`bm-gedreht-${karte.id}`) === "1");
     } catch {
       setGedreht(false);
+    }
+  }, [karte?.id]);
+
+  useEffect(() => {
+    if (!karte) return;
+    try {
+      const gespeichert = Number(localStorage.getItem(`bm-zoom-${karte.id}`));
+      setZoom(gespeichert > 0 ? gespeichert : 1);
+    } catch {
+      setZoom(1);
     }
   }, [karte?.id]);
 
@@ -211,6 +230,27 @@ export function BattlemapPopup({
     });
   }
 
+  function zoomSetzen(wert: number) {
+    const geklemmt = Math.round(Math.min(2, Math.max(0.1, wert)) * 100) / 100;
+    setZoom(geklemmt);
+    try {
+      localStorage.setItem(`bm-zoom-${karteId}`, String(geklemmt));
+    } catch {
+      /* privater Modus o.ä. — einfach nicht merken */
+    }
+  }
+
+  // Ganzes Bild einpassen: Zoom so wählen, dass die gesamte Bildfläche
+  // (plus Rand durch originX/originY) ohne Scrollen in die aktuell
+  // gemessene Bühnenfläche passt — nie größer als 100%.
+  function zoomEinpassen() {
+    const breite = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
+    const hoehe = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
+    const sichtB = gedreht ? flaeche.h : flaeche.w;
+    const sichtH = gedreht ? flaeche.w : flaeche.h;
+    zoomSetzen(Math.min(sichtB / breite, sichtH / hoehe, 1));
+  }
+
   const tokens = (sichtDa && kampf?.battlemapId === karte.id ? kampf.teilnehmer : []).filter((t) => !t.zusatzzug);
   const amZug = kampf?.amZug;
 
@@ -221,14 +261,16 @@ export function BattlemapPopup({
   // pixelNachHex/naechsteEcke (die im Innenrahmen rechnen) ihn verwenden
   // können. Herleitung: Innenrahmen hat vertauschte Breite/Höhe und wird
   // mittig in der Bühne gedreht — Inverse von rotate(90deg) ist
-  // (cx, cy) = (ly, buehnenBreite - lx).
+  // (cx, cy) = (ly, buehnenBreite - lx). Davor wird zuerst der Zoom
+  // rausgerechnet (`.bm-zoom` liegt näher an der Bühne als `.bm-dreh`,
+  // siehe JSX), damit lx/ly wieder in echten Karten-Pixeln vorliegen.
   function schirmNachInnenrahmen(ev: React.PointerEvent): { x: number; y: number } | null {
     const box = buehne.current?.getBoundingClientRect();
     if (!box) return null;
-    const lx = ev.clientX - box.left;
-    const ly = ev.clientY - box.top;
+    const lx = (ev.clientX - box.left) / zoom;
+    const ly = (ev.clientY - box.top) / zoom;
     if (!gedreht) return { x: lx, y: ly };
-    return { x: ly, y: box.width - lx };
+    return { x: ly, y: box.width / zoom - lx };
   }
 
   function hexUnter(ev: React.PointerEvent) {
@@ -341,8 +383,19 @@ export function BattlemapPopup({
   }
 
   // Gedreht: Grid-Raster für den seitenvertauschten Innenrahmen füllen,
-  // nicht für die (ungedrehte) Bühnenfläche.
-  const hexListe = hexRasterRechteck(gedreht ? flaeche.h : flaeche.w, gedreht ? flaeche.w : flaeche.h, size, ox, oy);
+  // nicht für die (ungedrehte) Bühnenfläche. Durch den Zoom ist die
+  // sichtbare Kartenfläche in echten Pixeln größer/kleiner als die
+  // gemessene Bühnenfläche — flaeche.w/h durch zoom teilen, damit das
+  // Grid beim Rauszoomen den ganzen sichtbaren Bereich füllt.
+  const sichtbarBreite = flaeche.w / zoom;
+  const sichtbarHoehe = flaeche.h / zoom;
+  const hexListe = hexRasterRechteck(
+    gedreht ? sichtbarHoehe : sichtbarBreite,
+    gedreht ? sichtbarBreite : sichtbarHoehe,
+    size,
+    ox,
+    oy,
+  );
 
   function inPartei(t: Teilnehmer) {
     if (t.personId && partei.has(t.personId)) return true;
@@ -403,6 +456,21 @@ export function BattlemapPopup({
         </button>
         <button type="button" data-aktiv={gedreht} onClick={gedrehtUmschalten}>
           ⟳ 90° drehen
+        </button>
+        <label className="bm-zoom-regler">
+          Zoom
+          <input
+            type="range"
+            min={10}
+            max={200}
+            step={5}
+            value={Math.round(zoom * 100)}
+            onChange={(e) => zoomSetzen(Number(e.target.value) / 100)}
+          />
+          <span>{Math.round(zoom * 100)}%</span>
+        </label>
+        <button type="button" onClick={zoomEinpassen}>
+          Ganzes Bild einpassen
         </button>
         {istGm && (
           <>
@@ -565,6 +633,7 @@ export function BattlemapPopup({
           if (hex) void spawnKlick(hex.q, hex.r);
         }}
       >
+        <div className="bm-zoom" style={{ transform: `scale(${zoom})` }}>
         <div
           className="bm-dreh"
           data-gedreht={gedreht || undefined}
@@ -737,6 +806,7 @@ export function BattlemapPopup({
             </span>
           );
         })}
+        </div>
         </div>
       </div>
     </Fenster>
