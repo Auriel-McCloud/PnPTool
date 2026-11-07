@@ -10,6 +10,8 @@ FIELDS = [
     "name",
     "pfade",
     "bildUrl",
+    "bildBreite",
+    "bildHoehe",
     "spielerDuerfenZeichnen",
     "sichtbarkeit",
     "sichtbarFuer",
@@ -35,6 +37,9 @@ def _return_clause() -> str:
 def _mit_defaults(record: dict) -> dict:
     daten = dict(record)
     daten["bildUrl"] = daten.get("bildUrl") or ""
+    for feld in ("bildBreite", "bildHoehe"):
+        roh = daten.get(feld)
+        daten[feld] = int(roh) if roh is not None else None
     daten["spielerDuerfenZeichnen"] = bool(daten.get("spielerDuerfenZeichnen"))
     daten["sichtbarkeit"] = daten.get("sichtbarkeit") or "GM"
     daten["sichtbarFuer"] = daten.get("sichtbarFuer") or []
@@ -73,6 +78,8 @@ async def erstellen(campaign_id: str, daten: dict) -> dict:
         "name": daten["name"],
         "pfade": json.dumps([]),
         "bildUrl": daten.get("bildUrl") or "",
+        "bildBreite": daten.get("bildBreite"),
+        "bildHoehe": daten.get("bildHoehe"),
         "spielerDuerfenZeichnen": bool(daten.get("spielerDuerfenZeichnen")),
         "sichtbarkeit": daten.get("sichtbarkeit") or "GM",
         "sichtbarFuer": daten.get("sichtbarFuer") or [],

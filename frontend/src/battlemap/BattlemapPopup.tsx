@@ -518,8 +518,6 @@ export function BattlemapPopup({
               strokeWidth={stift}
               eraserWidth={Math.max(stift * 2, 12)}
               canvasColor="transparent"
-              backgroundImage={karte.bildUrl || ""}
-              preserveBackgroundImageAspectRatio="xMidYMid meet"
               touchAction="none"
               readOnly={!darfZeichnen || modus !== "zeichnen"}
               onChange={(p) => {
@@ -530,6 +528,18 @@ export function BattlemapPopup({
             />
           )}
         </div>
+        <svg className="bm-bild" width="100%" height="100%">
+          {karte.bildUrl && karte.bildBreite && karte.bildHoehe && (
+            <image
+              href={karte.bildUrl}
+              x={ox}
+              y={oy}
+              width={karte.bildBreite}
+              height={karte.bildHoehe}
+              preserveAspectRatio="none"
+            />
+          )}
+        </svg>
         <svg className="bm-grid" width="100%" height="100%">
           {hexListe.map(({ q, r }) => {
             const { x, y } = hexNachPixel(q, r, size, ox, oy);

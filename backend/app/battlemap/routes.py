@@ -5,6 +5,7 @@ import mimetypes
 import uuid
 
 import jwt
+from PIL import Image
 from fastapi import (
     APIRouter,
     Depends,
@@ -132,10 +133,24 @@ async def bild_hochladen(campaign_id: str, karte_id: str, file: UploadFile = Fil
     ordner.mkdir(parents=True, exist_ok=True)
     endung = mimetypes.guess_extension(file.content_type) or ""
     name = f"battlemap-{uuid.uuid4()}{endung}"
-    (ordner / name).write_bytes(inhalt)
+    pfad = ordner / name
+    pfad.write_bytes(inhalt)
+
+    # Bildgröße auslesen (Grid-Sync 07.11.2026)
+    try:
+        with Image.open(pfad) as img:
+            bild_breite, bild_hoehe = img.size
+    except Exception:
+        bild_breite, bild_hoehe = None, None
 
     karte = await repository.aktualisieren(
-        campaign_id, karte_id, {"bildUrl": f"/uploads/{campaign_id}/{name}"}
+        campaign_id,
+        karte_id,
+        {
+            "bildUrl": f"/uploads/{campaign_id}/{name}",
+            "bildBreite": bild_breite,
+            "bildHoehe": bild_hoehe,
+        },
     )
     if karte is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Karte nicht gefunden")

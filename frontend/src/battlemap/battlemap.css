@@ -56,11 +56,19 @@
   pointer-events: auto !important;
 }
 .bm-skizze,
+.bm-bild,
 .bm-grid {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+}
+.bm-bild {
+  z-index: -1;
+  pointer-events: none;
+}
+.bm-skizze {
+  z-index: 0;
 }
 .bm-grid {
   pointer-events: none;
@@ -110,9 +118,6 @@
 }
 .bm-buehne[data-modus="wand"] .bm-token {
   pointer-events: none;
-}
-.bm-skizze {
-  z-index: 0;
 }
 .bm-waende {
   position: absolute;

@@ -8,6 +8,8 @@ from app.entities.schemas import SichtbarkeitModus
 class BattlemapCreate(BaseModel):
     name: str
     bildUrl: str = ""
+    bildBreite: int | None = None
+    bildHoehe: int | None = None
     spielerDuerfenZeichnen: bool = False
     sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []
@@ -16,6 +18,8 @@ class BattlemapCreate(BaseModel):
 class BattlemapUpdate(BaseModel):
     name: str | None = None
     bildUrl: str | None = None
+    bildBreite: int | None = None
+    bildHoehe: int | None = None
     spielerDuerfenZeichnen: bool | None = None
     sichtbarkeit: SichtbarkeitModus | None = None
     sichtbarFuer: list[str] | None = None
@@ -40,6 +44,8 @@ class BattlemapResponse(BaseModel):
     name: str
     pfade: list[dict] = []
     bildUrl: str = ""
+    bildBreite: int | None = None
+    bildHoehe: int | None = None
     spielerDuerfenZeichnen: bool = False
     sichtbarkeit: SichtbarkeitModus = "ALLE"
     sichtbarFuer: list[str] = []

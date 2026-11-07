@@ -11,6 +11,10 @@ dependencies = [
     "pyjwt>=2.9",
     "python-multipart>=0.0.12",
     "httpx>=0.27",
+    # Battlemap Grid-Sync (07.11.2026): Bildgröße beim Upload auslesen,
+    # damit das SVG-Grid und das Hintergrundbild auf allen Geräten identisch
+    # verankert sind (keine Browser-abhängigen Skalierungsunterschiede).
+    "pillow>=13.0",
     # Wiki-Import (22.09.2026): Word/PDF-Dokument zu Text extrahieren, bevor
     # die KI daraus Wiki-Seiten-Entwürfe ableitet. python-docx liest .docx
     # inkl. Absatz-Formatvorlagen (Heading 1/2/3 als Gliederungssignal),

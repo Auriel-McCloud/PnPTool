@@ -9,6 +9,8 @@ export interface Battlemap {
   name: string;
   pfade: Pfad[];
   bildUrl: string;
+  bildBreite: number | null;
+  bildHoehe: number | null;
   spielerDuerfenZeichnen: boolean;
   sichtbarkeit: SichtbarkeitModus;
   sichtbarFuer: string[];

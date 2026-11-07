@@ -2,6 +2,23 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: Grid-Sync über Bildgröße in der DB (07.11.2026)
+
+Mark: „das problem im moment ist das auf jedem gerät, browser, spieler etc. an denen ich die battle map öffne, sie nicht synchron sind was grid und hintergrund bild angeht" — Browser skalierten das Hintergrundbild unterschiedlich (`preserveBackgroundImageAspectRatio="xMidYMid meet"` in ReactSketchCanvas), aber das Hex-Grid verwendete absolute Pixel-Koordinaten (`ox`/`oy`/`hexGroesse`) — auf jedem Zoom-Level/Gerät/Browser-Rendering passte es anders.
+
+**Lösung:** Hintergrundbild raus aus der ReactSketchCanvas, rein ins SVG mit festen Koordinaten wie das Grid selbst. Beim Upload liest das Backend mit PIL/Pillow die natürliche Bildgröße aus (`bildBreite`/`bildHoehe` in Pixel) und speichert sie in der DB. Das Frontend rendert drei Ebenen übereinander (alle `position: absolute; inset: 0`):
+1. **z-index: -1** — neues `.bm-bild` SVG mit `<image href={bildUrl} x={ox} y={oy} width={bildBreite} height={bildHoehe} preserveAspectRatio="none" />` (Grid und Bild teilen sich `ox`/`oy`, daher immer synchron)
+2. **z-index: 0** — `.bm-skizze` mit ReactSketchCanvas (jetzt `canvasColor="transparent"`, kein `backgroundImage` mehr)
+3. Grid/Wände/Tokens darüber wie bisher
+
+Alle Clients rendern identisch, weil SVG-Koordinaten geräteunabhängig sind. Marks Wunsch „wenn das hintergrund bild da ist, und der SL das Grid verschieben fixiert der Grid sich mehr oder weniger merkt mit welchen ‚ecken' er das hintergrund bild umrandet" → exakt so umgesetzt: Grid schieben (`originX`/`originY`) verschiebt Bild UND Grid zusammen, das `<image>`-Element hängt am selben Koordinatensystem.
+
+**Backend:** `battlemap/schemas.py` (`bildBreite`/`bildHoehe` nullable int in Create/Update/Response), `repository.py` (FIELDS, `_mit_defaults`, `erstellen`), `routes.py` (`from PIL import Image`, nach `pfad.write_bytes()` Größe auslesen und mit `bildUrl` zusammen aktualisieren), `pyproject.toml` (`pillow>=13.0` zu dependencies).
+
+**Frontend:** `api.ts` (Felder im `Battlemap`-Interface), `BattlemapPopup.tsx` (neues `.bm-bild` SVG vor `.bm-grid`, ReactSketchCanvas ohne `backgroundImage`/`preserveBackgroundImageAspectRatio`), `battlemap.css` (`.bm-bild { z-index: -1; pointer-events: none; }`, alte `.bm-skizze { z-index: 0; }` konsolidiert).
+
+**Verifiziert:** Backend-Import grün (PIL), `npx tsc -b` sauber, `test_battlemap_logic.py` durchgelaufen. Pillow in pyproject.toml dokumentiert. **Kein Klicktest** — bitte am Spieltisch: neues Bild hochladen, Grid verschieben, auf mehreren Geräten/Browsern/Zoom-Stufen öffnen und prüfen, dass Grid und Bild überall identisch verankert sind.
+
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
 
 Mark, zwei wichtige Punkte für NPCs: „wenn ich einen NPC öffne und in sein inventar gehe, habe ich nicht die möglichkeit dem NPC augments zu verbauen" (gemeint: Werkbank-Upgrades wie Zielfernrohr, Ki-Tama montieren, nicht nur Chrom-Chirurgie) UND „wenn ich die Gegenstände eines NPCs öffne bekomme ich die option diese überall anzulegne, eigentlich will ich in den optionen den NPCs sie nur dort ablegen können wo der NPC ist bzw. wo er drauf zugriff hat, damit ich seine gegenstände an den ort legne kann an dem er gerade ist und die spieler sie von dort aufsammeln können wenn sie ihn besiegt haben".
