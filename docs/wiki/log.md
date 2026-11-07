@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-06] bugfix | dritte Fundstelle: ansicht() filterte Ping-Ziele beim Lesen raus
+
+Speicher korrekt (matrixGeortet überall gesetzt), aber ansicht() hat eine
+DRITTE, unabhängige Wandprüfung im Geister-Zweig beim Lesen, die davon
+nichts wusste. Per echtem Browser-Klicktest + SSH-Dump gefunden. Lehre:
+Wand-Check existiert an 3 Stellen (ping/aktualisiere/ansicht), alle prüfen.
+Siehe [[entities/battlemap]].
+
 ## [2026-11-06] bugfix | sichtDa flippte nur per WS, nie per REST, Karte blieb leer
 
 Roher WS-Test bewies: Backend liefert alle Teilnehmer sofort korrekt.

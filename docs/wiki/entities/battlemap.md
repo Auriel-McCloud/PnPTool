@@ -321,6 +321,16 @@ Gefundener Rest-Bug im Frontend: `BattlemapPopup.tsx` hält einen Zustand `sicht
 
 **Verifiziert:** `npx tsc -b` sauber. Rohe WebSocket-Probe gegen den echten Kampf von Mark (10 Teilnehmer, 3 Wände) bestätigt 11/11 auf der Leitung. **Kein Klicktest** — Mark bitte erneut am Tisch probieren (Matrix-Navigation würfeln, Karte öffnen).
 
+## Bugfix 06.11.2026 — dritte Fundstelle: `ansicht()` filterte Ping-Ziele beim Lesen nochmal raus
+
+Trotz der beiden vorherigen Fixes (ping() ignoriert Wände, aktualisiere() lässt matrixGeortet-Einträge beim Wand-Verfall in Ruhe) zeigte `GET /kampf/karte` am echten Tisch live nur den Decker selbst, obwohl der gespeicherte `_sichtSpeicher` nachweislich alle 10 Ziele korrekt mit `matrixGeortet: true` enthielt (per SSH direkt im Container geprüft). Ursache: `battlemap/sicht.py::ansicht()` — die Funktion, die den gespeicherten Speicher beim LESEN in die tatsächliche Teilnehmerliste für die Antwort umwandelt — hat eine DRITTE, von `aktualisiere()` komplett unabhängige Wandprüfung: beim Aufbau der Geister-Liste wird für jeden gespeicherten Schnappschuss nochmal `blockiert()` geprüft, ohne von `matrixGeortet` zu wissen. Diese Stelle hatte ich beim ersten Fix übersehen, weil meine Python-Reproduktion zufällig mit einer Decker-Position getestet hatte, bei der `sieht_live()` für die Testziele schon vorher zugeschlagen hatte.
+
+Gefunden erst durch einen echten Klick-Test im Browser (Login per JWT-Cookie, `document.hidden`-Override gegen den reinen `useKampf()`-Polling-Stillstand, dann Matrix-Navigation wirklich angeklickt) — der Hinweistext kam korrekt ("Ping: Kartenpositionen auf den aktuellen Stand gebracht"), aber `GET /kampf/karte` direkt danach lieferte nur 1 Teilnehmer. Ein SSH-Dump des rohen `_sichtSpeicher` zeigte: Speicher korrekt, Lesepfad kaputt.
+
+Fix: dieselbe `matrixGeortet`-Ausnahme jetzt auch im Geister-Zweig von `ansicht()`.
+
+**Verifiziert:** neuer Test `test_ansicht_zeigt_ping_trotz_wand`, volle Suite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung diesmal). **Kein Klicktest durch Mark nötig für diesen Teil** — direkt gegen seinen echten laufenden Kampf per Browser-Klick UND Backend-Dump verifiziert.
+
 ## Siehe auch
 
 - [[../concepts/kampf-und-initiative]]

@@ -28,6 +28,10 @@ Fix: `_karte_fuer` bekommt einen `fog_an`-Parameter. Ist Fog aus, läuft die ber
 
 **Verifiziert:** 3 neue Fälle in `test_battlemap_sicht.py`, neue Datei `test_kampf_karte_fuer.py` (6 Fälle, testen `_karte_fuer` direkt). Volle Testsuite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung nötig). **Kein Klicktest** — bitte am Spieltisch: Fog of War ausschalten, prüfen dass Spieler sofort echte Positionen sehen (nur Wände/Versteckte ausgenommen). Details: `docs/wiki/entities/battlemap.md`.
 
+## Bugfix: dritte Fundstelle — ansicht() filterte Ping-Ziele beim Lesen nochmal raus (06.11.2026)
+
+Nach den ersten beiden Fixes zeigte die Karte live trotzdem nur den Decker selbst — SSH-Dump bewies: `_sichtSpeicher` korrekt (10 Ziele, `matrixGeortet: true`), aber `ansicht()` beim LESEN hat eine dritte, von `aktualisiere()` unabhängige Wandprüfung im Geister-Zweig, die nichts von `matrixGeortet` wusste. Gefunden per echtem Klick-Test im Browser (JWT-Cookie-Login + `document.hidden`-Override gegen den `useKampf()`-Polling-Stillstand). Fix: dieselbe Ausnahme jetzt auch dort. **Lehre:** der Wand-Check existiert an drei unabhängigen Stellen (`ping()`, `aktualisiere()`, `ansicht()`) — bei ähnlichen Features alle drei prüfen, nicht nur die offensichtliche. Details: `docs/wiki/entities/battlemap.md`.
+
 ## Bugfix: sichtDa flippte nur per WS, nie per REST (Battlemap blieb für Spieler leer) (06.11.2026)
 
 Nach dem Wand-Fix immer noch leer für Mark. Rohe WebSocket-Probe (genauer Verbindungsaufbau des Browsers) bewies: Server liefert beim Connect sofort alle Teilnehmer korrekt — Backend/Übertragung 100% ok. Rest-Bug im Frontend: `sichtDa` in `BattlemapPopup.tsx` wurde nur von der WS-"tokens"-Nachricht gesetzt, nie vom initialen REST-Fetch (der für Spieler serverseitig schon gefiltert ist). Bei leicht verzögertem WS-Connect blieb die Karte bis zum nächsten zufälligen Kartenzug leer. Fix: `setSichtDa(true)` auch im REST-Pfad. Details: `docs/wiki/entities/battlemap.md`.

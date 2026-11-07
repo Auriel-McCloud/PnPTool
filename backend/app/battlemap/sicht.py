@@ -257,9 +257,13 @@ def ansicht(
                 continue
             if sieht_live(auge, ziel, waende) and not (ziel.get("versteckt") and not gehoert(ziel, person_id)):
                 live.add(tid)
-            elif snap.get("hexQ") is None or blockiert(
+            elif snap.get("hexQ") is None:
+                continue
+            elif not snap.get("matrixGeortet") and blockiert(
                 int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende
             ):
+                # Matrix-Ortung ist kein Sichtkontakt — dritter Ort mit
+                # demselben Wand-Check wie ping()/aktualisiere() (06.11.2026).
                 continue
             else:
                 geister.setdefault(tid, snap)

@@ -261,6 +261,22 @@ class TestMatrixPing:
         a = token("a", 0, 0)
         assert ping([a], {"a": {}}, "unbekannt") == {"a": {}}
 
+    def test_ansicht_zeigt_ping_trotz_wand(self):
+        """Bugfix 06.11.2026 (dritte Fundstelle): ansicht() prüft beim Lesen
+        des Speichers UNABHÄNGIG von aktualisiere() nochmal selbst auf Wände
+        (Zeile mit `blockiert(...)` im Geister-Zweig). Dieselbe
+        matrixGeortet-Ausnahme muss auch hier greifen — sonst speichert der
+        Ping korrekt, aber GET /kampf/karte zeigt trotzdem nur den Decker
+        selbst, weil ansicht() die ping-georteten Ziele beim Rendern wieder
+        rausfiltert (genau der Live-Fall, der nach dem ersten Fix noch kaputt
+        war)."""
+        hinter_wand = token("h", -3, 0, personType="NPC")
+        a = token("a", 0, 0, blickrichtung=0)
+        wand = [_kante_westen()]
+        speicher = ping([a, hinter_wand], {}, "a")
+        gesehen = ansicht([a, hinter_wand], speicher, rolle="PLAYER", person_id="a", waende=wand)
+        assert any(t["id"] == "h" for t in gesehen), "ansicht() muss den Ping trotz Wand zeigen"
+
 
 class TestAnsichtWaendeVersteckt:
     """Bugfix 06.11.2026: ohne Wände gab ansicht_waende Versteckte lautlos
