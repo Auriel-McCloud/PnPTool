@@ -62,22 +62,37 @@ export function BattlemapPopup({
   const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandWeg, setWandWeg] = useState<number | null>(null);
+  // Tablet-Hochkant: Karte+Grid+Tokens um 90° drehen, ohne das Gerät zu drehen.
+  // Rein lokale Anzeige-Einstellung (07.11.2026), pro Gerät in localStorage
+  // gemerkt — SL und Spieler können das jeweils für sich einschalten.
+  const [gedreht, setGedreht] = useState(false);
 
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
   const oy = ziehOrigin?.y ?? karte?.originY ?? 0;
-  
-  // Grid-Sync viewBox (07.11.2026): Muss auf ALLEN Clients identisch sein.
-  // Basis: nur DB-Werte (bildBreite/bildHoehe/ox/oy), NICHT die gemessene
-  // Fenstergröße (die ist auf jedem Gerät anders). Das SVG wird eventuell
-  // größer als der Container → Container scrollt dann.
-  const viewBoxWidth = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
-  const viewBoxHeight = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
-  const viewBox = `0 0 ${viewBoxWidth} ${viewBoxHeight}`;
+  // Bugfix 07.11.2026 (Rettung): KEINE viewBox/preserveAspectRatio auf den
+  // SVGs mehr. Die hatte Bild/Grid/Wände auf die Containergröße skaliert,
+  // während die Spieler-Tokens als normale HTML-Buttons mit rohen Pixel-
+  // Koordinaten (ox/oy/size, siehe hexNachPixel) daneben positioniert
+  // werden — zwei verschiedene Koordinatensysteme, die bei jeder Container-
+  // größe anders auseinanderlaufen (Hintergrund weg, Grid und Tokens
+  // irgendwo). Alle Ebenen teilen sich jetzt wieder das selbe rohe
+  // Pixel-Koordinatensystem (1 SVG-Einheit = 1 CSS-Pixel), synchron weil
+  // ox/oy/hexGroesse aus der DB kommen, nicht aus der Fenstergröße. Ist das
+  // Bild größer als der sichtbare Bereich, scrollt `.bm-buehne` (overflow: auto).
 
   useEffect(() => {
     setLinien(karte?.waende ?? []);
   }, [karte?.id, karte?.waende]);
+
+  useEffect(() => {
+    if (!karte) return;
+    try {
+      setGedreht(localStorage.getItem(`bm-gedreht-${karte.id}`) === "1");
+    } catch {
+      setGedreht(false);
+    }
+  }, [karte?.id]);
 
   useEffect(() => {
     leinwand.current?.eraseMode(radierer);
@@ -184,19 +199,48 @@ export function BattlemapPopup({
   if (!karte) return null;
   const karteId = karte.id;
 
+  function gedrehtUmschalten() {
+    setGedreht((g) => {
+      const neu = !g;
+      try {
+        localStorage.setItem(`bm-gedreht-${karteId}`, neu ? "1" : "0");
+      } catch {
+        /* privater Modus o.ä. — einfach nicht merken */
+      }
+      return neu;
+    });
+  }
+
   const tokens = (sichtDa && kampf?.battlemapId === karte.id ? kampf.teilnehmer : []).filter((t) => !t.zusatzzug);
   const amZug = kampf?.amZug;
 
-  function hexUnter(ev: React.PointerEvent) {
+  // Bei gedrehter Anzeige liegt der Inhalt (Bild/Grid/Wände/Token) in einem um
+  // 90° im Uhrzeigersinn gedrehten, seitenvertauschten Innenrahmen (CSS
+  // .bm-dreh). Ein Tap in Bühnen-Koordinaten (lx,ly) muss zurück in die
+  // Koordinaten dieses ungedrehten Innenrahmens gerechnet werden, bevor
+  // pixelNachHex/naechsteEcke (die im Innenrahmen rechnen) ihn verwenden
+  // können. Herleitung: Innenrahmen hat vertauschte Breite/Höhe und wird
+  // mittig in der Bühne gedreht — Inverse von rotate(90deg) ist
+  // (cx, cy) = (ly, buehnenBreite - lx).
+  function schirmNachInnenrahmen(ev: React.PointerEvent): { x: number; y: number } | null {
     const box = buehne.current?.getBoundingClientRect();
     if (!box) return null;
-    return pixelNachHex(ev.clientX - box.left, ev.clientY - box.top, size, ox, oy);
+    const lx = ev.clientX - box.left;
+    const ly = ev.clientY - box.top;
+    if (!gedreht) return { x: lx, y: ly };
+    return { x: ly, y: box.width - lx };
+  }
+
+  function hexUnter(ev: React.PointerEvent) {
+    const p = schirmNachInnenrahmen(ev);
+    if (!p) return null;
+    return pixelNachHex(p.x, p.y, size, ox, oy);
   }
 
   function eckeUnter(ev: React.PointerEvent) {
-    const box = buehne.current?.getBoundingClientRect();
-    if (!box) return null;
-    return naechsteEcke(ev.clientX - box.left, ev.clientY - box.top, size, ox, oy);
+    const p = schirmNachInnenrahmen(ev);
+    if (!p) return null;
+    return naechsteEcke(p.x, p.y, size, ox, oy);
   }
 
   async function spawnKlick(q: number, r: number) {
@@ -296,7 +340,9 @@ export function BattlemapPopup({
     }
   }
 
-  const hexListe = hexRasterRechteck(flaeche.w, flaeche.h, size, ox, oy);
+  // Gedreht: Grid-Raster für den seitenvertauschten Innenrahmen füllen,
+  // nicht für die (ungedrehte) Bühnenfläche.
+  const hexListe = hexRasterRechteck(gedreht ? flaeche.h : flaeche.w, gedreht ? flaeche.w : flaeche.h, size, ox, oy);
 
   function inPartei(t: Teilnehmer) {
     if (t.personId && partei.has(t.personId)) return true;
@@ -354,6 +400,9 @@ export function BattlemapPopup({
           disabled={!darfZeichnen}
         >
           Zeichnen
+        </button>
+        <button type="button" data-aktiv={gedreht} onClick={gedrehtUmschalten}>
+          ⟳ 90° drehen
         </button>
         {istGm && (
           <>
@@ -516,6 +565,11 @@ export function BattlemapPopup({
           if (hex) void spawnKlick(hex.q, hex.r);
         }}
       >
+        <div
+          className="bm-dreh"
+          data-gedreht={gedreht || undefined}
+          style={gedreht ? { width: flaeche.h, height: flaeche.w } : undefined}
+        >
         <div className="bm-skizze" style={{ pointerEvents: modus === "zeichnen" && darfZeichnen ? "auto" : "none" }}>
           {offen && (
             <ReactSketchCanvas
@@ -536,7 +590,7 @@ export function BattlemapPopup({
             />
           )}
         </div>
-        <svg className="bm-bild" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
+        <svg className="bm-bild" width="100%" height="100%">
           {karte.bildUrl && karte.bildBreite && karte.bildHoehe && (
             <image
               href={karte.bildUrl}
@@ -547,7 +601,7 @@ export function BattlemapPopup({
             />
           )}
         </svg>
-        <svg className="bm-grid" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
+        <svg className="bm-grid" width="100%" height="100%">
           {hexListe.map(({ q, r }) => {
             const { x, y } = hexNachPixel(q, r, size, ox, oy);
             const key = `${q},${r}`;
@@ -577,7 +631,7 @@ export function BattlemapPopup({
             return <polygon key={`g-${t.id}`} points={hexEcken(x, y, size * 0.95)} className="bm-hex-grau" />;
           })}
         </svg>
-        <svg className="bm-waende" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
+        <svg className="bm-waende" width="100%" height="100%">
           {linien.map((w, i) => (
             <line
               key={`${w.ax}-${w.ay}-${w.bx}-${w.by}-${i}`}
@@ -683,6 +737,7 @@ export function BattlemapPopup({
             </span>
           );
         })}
+        </div>
       </div>
     </Fenster>
     {wandWeg != null && (
