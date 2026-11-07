@@ -2489,6 +2489,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (07.11.2026 — Vorlage-Badge auch im Flora & Fauna-Menü):**
+- **Was:** Die Vorlage-Markierung aus dem Begleiter-Menü (neonfarbene "Vorlage"-Marke auf der Kachel) fehlte im globalen Flora & Fauna-Katalog — dort war einem Critter nicht anzusehen, ob er eine Vorlage ist.
+- **Wo:** `entities/FloraFaunaUebersicht.tsx` (`KachelEintrag.istVorlage` ergänzt, Marke neben Besitzer-Tag).
+- **Verifiziert:** `tsc --noEmit` grün.
+
 **Zuletzt gebaut (06.11.2026 — Critter als Vorlage, Kopieren mit Bild/Bogen/Gegenständen):**
 - **Was:** Mark: "ich möchte bei Tieren nicht, dass alle davon einzigartig sind" — ein Critter lässt sich jetzt als Vorlage markieren (`Person.istVorlage`). "Kopie erstellen" (nur GM, nur für Vorlagen) erzeugt einen unabhängigen neuen Critter: Name/Bild/Charakterbogen (Attribute, Fertigkeiten inkl. Maxima) werden identisch übernommen, dazu unabhängige KOPIEN aller Gegenstände der Vorlage (Mark stellt Critter-Fähigkeiten/Loot teils über Gegenstände dar). Die Kopie ist selbst keine Vorlage mehr, startet unverbunden, unbeschadet (Schaden/Willenskraftverbrauch auf 0) und mit Standard-Sichtbarkeit ALLE statt der Vorlagen-Sichtbarkeit.
 - **Wo:** `entities/schemas.py` (`istVorlage` an PersonCreate/Update/Response), `entities/repository.py` (`PERSON_FIELDS`, `_BOGEN_DEFAULTS`, `list_critter`/`critter_besitzer_setzen`-Queries), `entities/routes.py` (`POST /critter/{id}/kopieren`), `begleiter/CritterFenster.tsx` (Checkbox + Knopf), `begleiter/BegleiterVerwaltung.tsx` (Vorlage-Badge), `entities/FloraFaunaListe.tsx`/`FloraFaunaUebersicht.tsx` (onKopiert-Wiring). Siehe `docs/wiki/concepts/attribute-und-fertigkeiten.md`.
