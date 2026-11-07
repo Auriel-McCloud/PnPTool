@@ -236,6 +236,18 @@ export function BattlemapPopup({
       }
       return neu;
     });
+    // Bugfix 07.11.2026 (Tablet): Drehen ohne Reset ließ das Bild "nach
+    // außen wandern" — der durch overflow:visible (Zoom-Fix oben) jetzt
+    // ungeclippte Bildinhalt zieht die scrollbare Fläche von .bm-buehne
+    // stark auseinander, und eine vorherige Scroll-/Schwenk-Position zeigt
+    // nach dem Drehen eine komplett andere, meist leere Ecke dieser riesigen
+    // Fläche. Schwenk und Scrollposition beim Drehen hart zurücksetzen,
+    // damit die Karte wieder vom bekannten Nullpunkt aus sichtbar ist.
+    setAnsicht({ x: 0, y: 0 });
+    if (buehne.current) {
+      buehne.current.scrollLeft = 0;
+      buehne.current.scrollTop = 0;
+    }
   }
 
   function zoomSetzen(wert: number) {
@@ -250,13 +262,22 @@ export function BattlemapPopup({
 
   // Ganzes Bild einpassen: Zoom so wählen, dass die gesamte Bildfläche
   // (plus Rand durch originX/originY) ohne Scrollen in die aktuell
-  // gemessene Bühnenfläche passt — nie größer als 100%.
+  // gemessene Bühnenfläche passt — nie größer als 100%. Setzt zusätzlich
+  // Schwenk UND Scrollposition zurück (Bugfix 07.11.2026: ein berechneter
+  // Zoom allein zeigt ohne diesen Reset weiterhin den vorher gescrollten/
+  // geschwenkten Ausschnitt, nicht das ganze Bild ab der oberen linken
+  // Ecke).
   function zoomEinpassen() {
     const breite = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
     const hoehe = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
     const sichtB = gedreht ? flaeche.h : flaeche.w;
     const sichtH = gedreht ? flaeche.w : flaeche.h;
     zoomSetzen(Math.min(sichtB / breite, sichtH / hoehe, 1));
+    setAnsicht({ x: 0, y: 0 });
+    if (buehne.current) {
+      buehne.current.scrollLeft = 0;
+      buehne.current.scrollTop = 0;
+    }
   }
 
   const tokens = (sichtDa && kampf?.battlemapId === karte.id ? kampf.teilnehmer : []).filter((t) => !t.zusatzzug);
@@ -477,6 +498,9 @@ export function BattlemapPopup({
         </button>
         <label className="bm-zoom-regler">
           Zoom
+          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom - 0.05)}>
+            −
+          </button>
           <input
             type="range"
             min={10}
@@ -485,6 +509,9 @@ export function BattlemapPopup({
             value={Math.round(zoom * 100)}
             onChange={(e) => zoomSetzen(Number(e.target.value) / 100)}
           />
+          <button type="button" className="bm-zoom-schritt" onClick={() => zoomSetzen(zoom + 0.05)}>
+            +
+          </button>
           <span>{Math.round(zoom * 100)}%</span>
         </label>
         <button type="button" onClick={zoomEinpassen}>

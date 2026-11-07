@@ -46,6 +46,15 @@
   min-width: 3.2em;
   text-align: right;
 }
+.bm-zoom-schritt {
+  min-width: 2.2em;
+  min-height: 2.2em;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
 .bm-buehne {
   position: relative;
   /* Bugfix 07.11.2026: eigener Stacking-Context nötig, sonst entkommt das

@@ -32,6 +32,8 @@ Zusätzlich neuer Button „Ansicht schieben" (für SL UND Spieler, da Grid/Bild
 
 **Verifiziert:** `npx tsc -b` sauber. Per echtem Live-Klicktest gegen bebop bestätigt (JWT-Session, `Mainframe`-Karte): Bug vor dem Fix nachgewiesen (Klick bei gedreht+50%-Zoom landete >400px daneben), nach dem Fix derselbe Klick traf den erwarteten Hex (Toleranz nur noch im Rahmen des normalen Hex-Snappings). „Ansicht schieben" per simuliertem Pointer-Drag bestätigt (Inhalt verschob sich sichtbar, „Ansicht zurücksetzen" erschien und stellte den Ausgangszustand exakt wieder her).
 
+**Nachtrag 5 (07.11.2026): Drehen ließ das Bild "nach außen wandern", Einpassen zeigte nicht das ganze Bild, Zoom-Slider zu grob für Feinjustage am Tablet.** Ursache für die ersten beiden: weder `gedrehtUmschalten()` noch `zoomEinpassen()` setzten Scrollposition/`ansicht`-Schwenk zurück — eine vorherige Scroll-/Schwenk-Position (oder einfach `scrollLeft/scrollTop` ungleich 0 vom Laden mit großem, ungezoomtem Bild) blieb nach dem Umschalten bestehen und zeigte dann einen komplett anderen, oft leeren Ausschnitt der durch `overflow: visible` (Nachtrag 3) stark vergrößerten scrollbaren Fläche. Fix: beide Funktionen setzen jetzt zusätzlich `ansicht` auf `{x:0,y:0}` und `buehne.current.scrollLeft/scrollTop` auf `0`. Dritter Punkt: Zoom-Slider-Schrittweite 5 % ist auf einem Touchscreen schwer exakt zu treffen — zwei neue `−`/`+`-Buttons (`.bm-zoom-schritt`, 5-%-Schritte, min. 2.2em Trefferfläche) links/rechts vom Slider ergänzt.
+
 
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
 
