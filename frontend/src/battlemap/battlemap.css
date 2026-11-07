@@ -69,6 +69,17 @@
   border: 1px solid var(--linie);
   touch-action: pan-x pan-y;
 }
+/* Bugfix 07.11.2026 (Mark: Vollbild-Popup am Tablet, Canvas blieb klein):
+   die feste Höhe oben gilt nur im NORMALEN Fenster. Im maximierten Popup
+   (.fn-fenster-maximiert, siehe fenster.css) hat .fn-inhalt per Flexbox
+   schon die volle verfügbare Höhe — die Bühne muss diese nur noch per
+   `flex: 1 1 auto` ausfüllen, statt an der festen vh-Obergrenze zu kleben. */
+.fn-fenster-maximiert .bm-buehne {
+  height: auto;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
 /* Tablet-Hochkant-Drehung: Innenrahmen mit Bild/Grid/Wänden/Tokens. Normal
    deckungsgleich mit .bm-buehne; gedreht bekommt er vertauschte Breite/Höhe
    (inline style, aus der gemessenen Bühnenfläche) und wird mittig um 90°

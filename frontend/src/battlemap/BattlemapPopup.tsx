@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from "react-sketch-canvas";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
@@ -212,7 +212,14 @@ export function BattlemapPopup({
       .catch(() => setPartei(new Set()));
   }, [offen, campaignId]);
 
-  useEffect(() => {
+  // Bugfix 07.11.2026 (Mark: "Grid manchmal nicht über das ganze Bild, kurz
+  // danach war er da, am Tablet noch mehr"): useEffect misst die Bühnen-
+  // größe erst NACH dem ersten Bildaufbau — bis dahin rechnet der Grid mit
+  // dem Platzhalterwert 800×420 und springt sichtbar um, sobald die echte
+  // Größe eintrifft. useLayoutEffect misst VOR dem ersten Bildaufbau, der
+  // Sprung verschwindet. Auf dem Tablet war das auffälliger, weil die
+  // echte Bühnengröße dort stärker vom Platzhalter abweicht.
+  useLayoutEffect(() => {
     if (!offen) return;
     const el = buehne.current;
     if (!el) return;
