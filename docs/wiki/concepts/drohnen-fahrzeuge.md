@@ -1,7 +1,7 @@
 ---
 title: Drohnen und Fahrzeuge
 created: 2026-09-18
-updated: 2026-11-04
+updated: 2026-11-07
 type: konzept
 tags: [drohnen, fahrzeuge, kampf, erfahrung, wirtschaft, inventar, versionsgeschichte, entschieden, offen]
 sources: [../../CLAUDE.md, ../../../backend/app/begleiter/, ../../../backend/app/entities/schemas.py, ../../../backend/app/traits/bogen.py, ../../../backend/app/traits/erfahrung.py, ../../../backend/app/kampf/ruestung.py, ../../../backend/app/kampf/initiative.py, ../../../backend/app/items/schemas.py, ../../../backend/app/items/chrom.py]
@@ -460,6 +460,10 @@ komplett.**
   können eine Drohne schalten oder den Überschuss als Schlagschaden buchen,
   ohne Rüstung, nicht beides. Fahrzeug nicht. Hot-Rigger nimmt die Hälfte,
   bei 0 Gesundheit Dumpshock. Automata ist hier eine Drohne, kein eigener Typ.
+- **07.11.2026 (Kampfende klinkt auch den Rigger aus):** Bisher löschte
+  Kampfende nur Matrix-Hot. Der Rigger blieb mit seiner Hot-Drohne
+  verbunden und war im nächsten Kampf sofort wieder Hot. Jetzt löst
+  Kampfende beides (`hotDrohneId`/`hotDrohneRunde` und `matrixHot`).
 - **01.11.2026 (Hot bleibt, bis er Nein sagt):** Der Decker konnte Hot
   jederzeit ausknipsen. Der Knopf schaltet nur noch ein. Beim nächsten
   eigenen Zug zuerst die Bleiben-Frage. Nein heißt nicht mehr Hot und keine

@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfende klinkt Rigger UND Decker aus (07.11.2026)
+
+`kampf/repository.py::beende` ruft `hot_loeschen` (vorher nur `matrix_hot_loeschen`): setzt bei allen Personen der Kampagne `matrixHot=false`, `matrixHotRunde=0`, `hotDrohneId=null`, `hotDrohneRunde=0`. Vorher blieb der Rigger über das Kampfende hinweg Hot und war im nächsten Kampf sofort wieder gefaltet im Slot. `beginne` löscht über `beende` ebenfalls. Gegen echtes Neo4j geprüft (Rigger, Decker, Drohne, Unbeteiligter).
+
 ## Battlemap: Grid/Bild/Tokens zurück auf rohe Pixel-Koordinaten, keine viewBox (07.11.2026)
 
 Mark ursprünglich: „das problem im moment ist das auf jedem gerät, browser, spieler etc. an denen ich die battle map öffne, sie nicht synchron sind was grid und hintergrund bild angeht" — Browser skalierten das Hintergrundbild unterschiedlich (`preserveBackgroundImageAspectRatio="xMidYMid meet"` in ReactSketchCanvas), aber das Hex-Grid verwendete absolute Pixel-Koordinaten (`ox`/`oy`/`hexGroesse`) — auf jedem Zoom-Level/Gerät/Browser-Rendering passte es anders.

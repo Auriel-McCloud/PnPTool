@@ -422,7 +422,7 @@ async def beginne(campaign_id: str) -> dict:
 
 
 async def beende(campaign_id: str) -> bool:
-    await matrix_hot_loeschen(campaign_id)
+    await hot_loeschen(campaign_id)
     driver = get_driver()
     async with driver.session() as session:
         result = await session.run(
@@ -438,19 +438,22 @@ async def beende(campaign_id: str) -> bool:
         return bool(record and record["weg"])
 
 
-async def matrix_hot_loeschen(campaign_id: str) -> None:
-    """Kampf vorbei: kein Knopf mehr, also auch kein hängendes Hot.
+async def hot_loeschen(campaign_id: str) -> None:
+    """Kampf vorbei: Decker UND Rigger klinken aus, kein hängendes Hot.
 
-    Sonst träfe die Matrix ihn im nächsten Kampf, bevor die Bleiben-Frage
-    überhaupt drankommt.
+    Decker: sonst träfe die Matrix ihn im nächsten Kampf, bevor die
+    Bleiben-Frage überhaupt drankommt. Rigger: sonst steht die Drohne im
+    nächsten Kampf wieder gefaltet im Slot, ohne dass er sie gewählt hat.
+    Runde auf 0, damit die Wahl der neuen Runde 1 nicht gesperrt ist.
     """
     driver = get_driver()
     async with driver.session() as session:
         await session.run(
             """
             MATCH (p:Person {campaignId: $campaign_id})
-            WHERE coalesce(p.matrixHot, false)
-            SET p.matrixHot = false, p.matrixHotRunde = 0
+            WHERE coalesce(p.matrixHot, false) OR coalesce(p.hotDrohneId, '') <> ''
+            SET p.matrixHot = false, p.matrixHotRunde = 0,
+                p.hotDrohneId = null, p.hotDrohneRunde = 0
             """,
             campaign_id=campaign_id,
         )

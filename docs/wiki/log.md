@@ -1801,3 +1801,7 @@ Aufladen, Abheben und SL-Geld-erzeugen sitzen oben im Credstick-Objekt
 (`CharacterSheetPanel`) und oben im Spieler-Fenster (`GegenstandKachel`),
 nicht mehr nur in der Inventar-Kachel. Betrag steht auf der Kachel.
 Siehe [[entities/gegenstand-transfer]].
+
+## [2026-11-07] update | Kampfende klinkt Rigger und Decker aus
+
+Kampfende löscht neben Matrix-Hot jetzt auch die Hot-Drohne des Riggers. Siehe [[concepts/drohnen-fahrzeuge]].
