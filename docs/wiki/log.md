@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-07] feature | Messenger: Spieler↔Spieler-Chat (Phase 1), Gruppenchat entschieden
+
+Spieler chatten untereinander. Kontakt per Anfrage zwischen den Spielern
+(Verhandlungsart `SPIELER_KONTAKT`, Zustimmungs-Popup), je Seite eine
+`KENNT`-Kante PC→PC. Die SL sieht und liest nichts mit, wird nicht benachrichtigt.
+Gruppenchat (SL legt an, PCs+NPCs gemischt, Dropdown für sprechenden NPC)
+als Phase 2 entschieden, nicht gebaut. Siehe [[entities/kontakte-messenger]].
+
 ## [2026-11-07] feature | Battlemap: 90°-Dreh-Button fürs Tablet-Hochkant
 
 Knopf „⟳ 90° drehen“ in der Battlemap-Werkzeugleiste, für SL und Spieler

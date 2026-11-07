@@ -9,6 +9,11 @@ Modell nach `docs/phase-5-messenger.md`:
 **Eine kanonische Richtung** (PC → NPC). "Beidseitig" beschreibt nur die
 Berechtigung, im selben Chat in beide Richtungen zu schreiben — keine zweite
 Kante.
+
+**Spieler-Kontakte (PC ↔ PC)** haben dagegen je Seite eine eigene Kante
+(`KENNT` A→B und B→A): jeder führt seinen eigenen Alias und seine eigenen
+Notizen. Die Nachrichten (`VON`/`AN`) sind ohnehin symmetrisch. Die SL sieht
+diese Kontakte nicht (`security.darf_kontakt_sehen`).
 """
 
 import uuid
@@ -25,6 +30,7 @@ KONTAKT_FELDER = """
     r.alias AS persoenlicherAlias, r.persoenlicheNotizen AS persoenlicheNotizen,
     pc.id AS pcId, pc.name AS pcName,
     npc.id AS npcId, npc.name AS npcName, npc.alias AS npcAlias,
+    coalesce(npc.personType, 'NPC') AS npcPersonType,
     npc.rasse AS npcRasse, npc.bildUrl AS npcBildUrl, npc.description AS npcDescription,
     coalesce(npc.istBlankoKontakt, false) AS npcIstBlankoKontakt,
     coalesce(npc.istMentor, false) AS npcIstMentor
@@ -55,6 +61,7 @@ async def liste_fuer_gm(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (pc:Person {{campaignId: $campaign_id, personType: 'PC'}})-[r:KENNT]->(npc:Person)
+        WHERE coalesce(npc.personType, 'NPC') <> 'PC'
         RETURN {KONTAKT_FELDER}, 0 AS ungelesen
         ORDER BY pc.name, coalesce(r.alias, npc.alias, npc.name)
     """
@@ -119,6 +126,72 @@ async def anlegen(campaign_id: str, pc_id: str, npc_id: str, stufe: str = "GESEH
     return await hole(campaign_id, record["id"])
 
 
+async def spielerkontakt_anlegen(campaign_id: str, pc_a: str, pc_b: str) -> bool:
+    """Legt den Kontakt zwischen zwei Spielercharakteren an — in beide Richtungen.
+
+    Erst nach Zustimmung des anderen Spielers aufrufen (Verhandlungsart
+    SPIELER_KONTAKT). Chat offen, Name bekannt: wer Kontakt austauscht, kennt
+    den anderen. Ein vorhandener Kontakt bleibt unverändert (MERGE).
+    """
+    driver = get_driver()
+    query = """
+        MATCH (a:Person {id: $a, campaignId: $campaign_id, personType: 'PC'})
+        MATCH (b:Person {id: $b, campaignId: $campaign_id, personType: 'PC'})
+        UNWIND [[a, b], [b, a]] AS paar
+        WITH paar[0] AS von, paar[1] AS zu
+        MERGE (von)-[r:KENNT]->(zu)
+        ON CREATE SET
+            r.id = randomUUID(),
+            r.stufe = 'KONTAKT_AUSGETAUSCHT',
+            r.chatOffen = true,
+            r.nurLesen = false,
+            r.echterNameBekannt = true,
+            r.kontaktAnfrageStatus = 'ANGENOMMEN',
+            r.alias = '',
+            r.persoenlicheNotizen = '',
+            r.erstelltAm = $jetzt,
+            r.aktualisiertAm = $jetzt
+        RETURN count(r) AS anzahl
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, a=pc_a, b=pc_b, jetzt=_jetzt())
+        record = await result.single()
+        return bool(record and record["anzahl"] == 2)
+
+
+async def spielerkontakt_besteht(campaign_id: str, pc_a: str, pc_b: str) -> bool:
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $a, campaignId: $campaign_id, personType: 'PC'})
+              -[r:KENNT]->(:Person {id: $b, campaignId: $campaign_id, personType: 'PC'})
+        RETURN count(r) AS anzahl
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, a=pc_a, b=pc_b)
+        record = await result.single()
+        return bool(record and record["anzahl"])
+
+
+async def mitspieler(campaign_id: str, ich_id: str) -> list[dict]:
+    """Die anderen Spielercharaktere der Kampagne (nur von echten Spielern gespielt).
+
+    Vorgefertigte, noch nicht gewählte PCs und Entwürfe gehören nicht dazu.
+    `bereitsKontakt` sagt, ob schon ein Kontakt besteht.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (:Spieler)-[:SPIELT]->(p:Person {campaignId: $campaign_id, personType: 'PC'})
+        WHERE p.id <> $ich_id AND coalesce(p.istEntwurf, false) = false
+        OPTIONAL MATCH (:Person {id: $ich_id, campaignId: $campaign_id})-[r:KENNT]->(p)
+        RETURN DISTINCT p.id AS id, p.name AS name, coalesce(p.bildUrl, '') AS bildUrl,
+               r IS NOT NULL AS bereitsKontakt
+        ORDER BY p.name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ich_id=ich_id)
+        return [dict(r) async for r in result]
+
+
 async def aendern(campaign_id: str, kontakt_id: str, daten: dict) -> dict | None:
     """Ändert Felder der KENNT-Kante. None-Werte werden übersprungen."""
     geaendert = {k: v for k, v in daten.items() if v is not None}
@@ -162,7 +235,7 @@ async def offene_anfragen(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (pc:Person {{campaignId: $campaign_id}})-[r:KENNT]->(npc:Person)
-        WHERE r.kontaktAnfrageStatus = 'OFFEN'
+        WHERE r.kontaktAnfrageStatus = 'OFFEN' AND coalesce(npc.personType, 'NPC') <> 'PC'
         RETURN {KONTAKT_FELDER}, 0 AS ungelesen
         ORDER BY r.aktualisiertAm
     """

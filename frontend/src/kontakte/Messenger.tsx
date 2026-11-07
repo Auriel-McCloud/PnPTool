@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Fenster } from "../shell/Fenster";
 import { alsText, kontakteApi, type Chat, type Kontakt, type Nachricht } from "./api";
+import { MitspielerFenster } from "./MitspielerFenster";
 import "./messenger.css";
 
 /**
@@ -25,6 +26,19 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
   const [wunsch, setWunsch] = useState("");
   const [legtAn, setLegtAn] = useState(false);
   const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
+  const [mitspielerOffen, setMitspielerOffen] = useState(false);
+
+  // Eine Zusage eines Mitspielers oder eine neue Nachricht kommt ohne eigene
+  // Aktion an — die Liste still nachladen, solange sie sichtbar ist.
+  const aktualisierenRef = useRef(onKontakteAktualisieren);
+  aktualisierenRef.current = onKontakteAktualisieren;
+  useEffect(() => {
+    if (aktiv) return;
+    const uhr = setInterval(() => {
+      if (!document.hidden) aktualisierenRef.current();
+    }, 5000);
+    return () => clearInterval(uhr);
+  }, [aktiv]);
 
   // Offene Chats und noch leere Plätze aus der Charaktererstellung.
   // Die Plätze haben den Chat zu — ohne eigene Zeile sieht der Spieler nichts.
@@ -63,12 +77,17 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
 
   return (
     <div className="msg-huelle">
+      <div className="msg-werkzeug">
+        <button type="button" className="cl-roehre" onClick={() => setMitspielerOffen(true)}>
+          ＋ Mitspieler
+        </button>
+      </div>
       {listeLeer ? (
         <div className="msg-leer">
           <span className="msg-leer-icon">◍</span>
           <p>Noch keine Chats.</p>
           <p className="msg-leer-hinweis">
-            Tausche Kontaktdaten mit NPCs, um hier zu chatten.
+            Tausche Kontaktdaten mit NPCs oder biete einem Mitspieler Kontakt an, um hier zu chatten.
           </p>
         </div>
       ) : (
@@ -97,6 +116,10 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
             <KontaktKarte key={k.id} kontakt={k} onClick={() => setAktiv(k)} />
           ))}
         </div>
+      )}
+
+      {mitspielerOffen && (
+        <MitspielerFenster campaignId={campaignId} onSchliessen={() => setMitspielerOffen(false)} />
       )}
 
       {blanko && (
@@ -155,7 +178,7 @@ function KontaktKarte({ kontakt, onClick }: { kontakt: Kontakt; onClick: () => v
       </div>
       <div className="msg-info">
         <span className="msg-name">{kontakt.alias}</span>
-        {kontakt.echterName && (
+        {kontakt.echterName && kontakt.echterName !== kontakt.alias && (
           <span className="msg-vorschau" style={{ color: "var(--neon)" }}>
             {kontakt.echterName}
           </span>

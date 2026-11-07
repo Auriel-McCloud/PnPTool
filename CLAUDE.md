@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Spieler↔Spieler-Chat, Phase 1 (07.11.2026)
+
+Spieler können untereinander chatten. Kontakt wird wie bei NPCs erst hergestellt, aber ohne SL: ＋ Mitspieler im Messenger (`MitspielerFenster.tsx`) → `POST .../kontakte/spieler-anfrage` legt eine Verhandlung der neuen Art `SPIELER_KONTAKT` an, der andere Spieler bekommt das Zustimmungs-Popup. Bei „Annehmen“ legt `verhandlung/logic.py::_ausfuehren_spieler_kontakt` je Seite eine `KENNT`-Kante PC→PC an (`spielerkontakt_anlegen`, Chat offen, Name bekannt, eigener Alias/Notizen je Seite). Nachrichten, Liste, Ungelesen-Zähler und Chat-UI sind unverändert die des NPC-Messengers (`VON`/`AN` waren schon symmetrisch). Kampagnenschalter `messengerAktiv` gilt mit. Neu in `KONTAKT_FELDER`: `npcPersonType`.
+
+**Privat:** `security.darf_kontakt_sehen` gibt Spielerkontakte nur dem Besitzer der Kante — die SL bekommt weder Liste noch Verlauf (404), schreibt nicht hinein, und die NACHRICHT-Mitteilung geht an `empfaengerIds=[Mitspieler]` statt „an SL“. Daten liegen unverschlüsselt in Neo4j (Idee für später: SL-Einsicht bei Missbrauch, nicht gebaut). Mitspieler-Beschreibung wird nie ausgeliefert; Anzeigename = eigener Alias, sonst Charaktername. `GET .../kontakte/mitspieler` listet nur PCs mit `(:Spieler)-[:SPIELT]`. Doppelte Anfragen (auch gegenläufig) → 409. Tests: `test_spieler_kontakte.py` (25, gemockt) + Cypher einmal gegen die lokale Neo4j geprüft. **Nie im Browser angeklickt**, nicht deployed.
+
+**Phase 2 (entschieden, nicht gebaut): Gruppenchat.** Nur die SL legt Gruppen an, Mitglieder PCs und NPCs gemischt. Modell: `(:Gruppenchat)-[:TEILNEHMER {gelesenBis}]->(:Person)`, Gruppennachricht `-[:IN]->(:Gruppenchat)` statt `AN`. Die SL schreibt als NPC und wählt bei mehreren NPCs per Dropdown, wer spricht. Spieler sehen die anderen mit Portrait wie im Einzelchat (eigener Alias bzw. „Unbekannter …“ je Betrachter). Neue Mitglieder sehen die ganze Historie. Siehe [[docs/wiki/entities/kontakte-messenger]].
+
 ## SL-Chatverlauf als Commlink-Fenster im Messenger-Stil (07.11.2026)
 
 Das Verlaufs-Popup in `KontakteGm.tsx` nutzte nicht vorhandene Theme-Variablen (`--hintergrund-karte`, `--akzent`, …) und war dadurch durchsichtig und schwer lesbar. Jetzt `Fenster` mit denselben `msg-*`-Klassen wie der Spieler-Messenger (`NachrichtBlase` exportiert, `absender`/`initial` überschreibbar). NPC-Nachrichten stehen rechts, PC-Nachrichten links mit PC-Namen. Eingabe als Textarea (Enter sendet), Verlauf lädt alle 3 s nach. Alter `.kontakte-gm-chat-*`-Block aus `kontakte-gm.css` entfernt, Fensterhöhe `.msg-gm-chat` in `messenger.css`.

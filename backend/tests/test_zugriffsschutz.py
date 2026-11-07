@@ -164,6 +164,10 @@ OHNE_GM_ERLAUBT = {
     # Kennzeichen OFFEN — entschieden wird an .../anfrage/entscheiden, und
     # das verlangt die Spielleitung.
     "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/anfrage",
+    # Spieler↔Spieler (PC↔PC): Kontaktaustausch anbieten. Die Route legt nur
+    # eine Verhandlung (Popup) an den anderen Spieler an; entschieden wird dort
+    # über .../verhandlungen/{id}/antwort — die Spielleitung ist nicht beteiligt.
+    "/api/campaigns/{campaign_id}/kontakte/spieler-anfrage",
     # Eigener Merkzettel zu einem Kontakt.
     "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/notizen",
     # Eigener Alias ("der Schläger vom Hafen"). Der NPC-Standardalias bleibt

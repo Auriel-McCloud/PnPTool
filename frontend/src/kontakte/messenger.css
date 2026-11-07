@@ -623,3 +623,27 @@ button.msg-kontakt {
     padding: var(--luft-1) var(--luft-2);
   }
 }
+
+/* ============================================================ MITSPIELER */
+
+/* Werkzeugzeile über der Kontaktliste: „＋ Mitspieler“. */
+.msg-werkzeug {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--luft-2) var(--luft-2) 0;
+}
+
+/* Auswahl im Fenster „Mitspieler anschreiben“ — dieselben Karten wie die Kontaktliste. */
+.msg-mitspieler {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-2, 8px);
+}
+
+.msg-mitspieler .msg-kontakt:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}

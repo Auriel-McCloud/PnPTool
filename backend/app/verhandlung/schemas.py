@@ -25,7 +25,11 @@ from pydantic import BaseModel, Field, model_validator
 # Annahme auslöst. Weisse Liste statt freiem String, damit ein Tippfehler
 # beim Erstellen nicht eine Verhandlung erzeugt, die niemand ausführen kann.
 VerhandlungsArt = Literal[
-    "RUESTUNG_REPARATUR", "SHOP_KAUF", "GEGENSTAND_WEITERGABE", "REPARATUR_FREIGABE"
+    "RUESTUNG_REPARATUR",
+    "SHOP_KAUF",
+    "GEGENSTAND_WEITERGABE",
+    "REPARATUR_FREIGABE",
+    "SPIELER_KONTAKT",
 ]
 
 

@@ -140,3 +140,19 @@ class ChatResponse(BaseModel):
     chatOffen: bool
     nurLesen: bool = False
     nachrichten: list[NachrichtResponse]
+
+
+class MitspielerResponse(BaseModel):
+    """Ein anderer Spielercharakter, dem man Kontakt anbieten kann."""
+
+    id: str
+    name: str
+    bildUrl: str = ""
+    # Es besteht schon ein Kontakt — dann gibt es nichts mehr anzufragen.
+    bereitsKontakt: bool = False
+
+
+class SpielerKontaktAnfrage(BaseModel):
+    """Ein Spieler bietet einem Mitspieler den Kontaktaustausch an."""
+
+    personId: str

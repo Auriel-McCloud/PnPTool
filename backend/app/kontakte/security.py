@@ -13,13 +13,29 @@ from app.kontakte.logic import effektiver_alias, ist_mindestens_stufe, standard_
 from app.kontakte.schemas import KontaktGmResponse, KontaktResponse
 
 
+def ist_spielerkontakt(roh: dict) -> bool:
+    """Ist das Gegenüber ein Spielercharakter (PC ↔ PC-Chat)?"""
+    return roh.get("npcPersonType") == "PC"
+
+
 def _alias_von(roh: dict) -> str:
-    """Anzeigename: persönlicher Alias → NPC-Standard → aus der Rasse."""
+    """Anzeigename: persönlicher Alias → NPC-Standard → aus der Rasse.
+
+    Bei einem Spielerkontakt gilt: persönlicher Alias → Name des Charakters
+    (wer Kontakt austauscht, kennt den Namen).
+    """
+    if ist_spielerkontakt(roh):
+        eigener = (roh.get("persoenlicherAlias") or roh.get("alias") or "").strip()
+        return eigener or (roh.get("npcName") or "").strip() or "Unbekannt"
     npc_standard = (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse"))
     # `alias` ist der auf der KENNT-Kante gesetzte persönliche Alias; ältere
     # Datensätze führen ihn unter `persoenlicherAlias`.
     persoenlich = (roh.get("persoenlicherAlias") or roh.get("alias") or "").strip()
     return effektiver_alias(npc_standard, persoenlich)
+
+
+# Öffentlicher Name für Routen, die den Anzeigenamen brauchen (Chat-Kopf, Absender).
+alias_von = _alias_von
 
 
 def chat_ist_offen(roh: dict) -> bool:
@@ -60,7 +76,10 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
         persoenlicherAlias=(roh.get("persoenlicherAlias") or roh.get("alias") or ""),
         bildUrl=roh.get("npcBildUrl") or "",
         # Ab GESPROCHEN kennt man mehr als das blosse Aussehen.
-        beschreibung=(roh.get("npcDescription") or "") if ist_mindestens_stufe(stufe, "GESPROCHEN") else "",
+        # Beschreibung/Hintergrund eines Mitspielers bleibt privat.
+        beschreibung=""
+        if ist_spielerkontakt(roh)
+        else (roh.get("npcDescription") or "") if ist_mindestens_stufe(stufe, "GESPROCHEN") else "",
         stufe=stufe,
         echterNameBekannt=name_bekannt,
         kontaktAnfrageStatus=roh.get("kontaktAnfrageStatus") or "KEINE",
@@ -107,7 +126,13 @@ def darf_kontakt_sehen(roh: dict, viewer: Viewer) -> bool:
     """Gehört dieses Kontaktwissen dem Betrachter?
 
     Fail-closed: ohne eigene Person sieht ein Spieler nichts.
+
+    Spielerkontakte (PC ↔ PC) sind privat: auch die Spielleitung bekommt sie
+    nicht zu sehen — kein Mitlesen, keine Meldung. (Die Daten liegen
+    unverschlüsselt in der Datenbank, falls ein Eingriff je nötig wird.)
     """
+    if ist_spielerkontakt(roh):
+        return bool(viewer.person_id) and viewer.role != "GM" and roh.get("pcId") == viewer.person_id
     if viewer.role == "GM":
         return True
     if not viewer.person_id:

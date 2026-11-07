@@ -18,6 +18,7 @@ from app.ereignisprotokoll import hooks
 from app.haendler.uebergabe import stueck_uebergeben
 from app.items import repository as items_repository
 from app.kampf.ruestung import repariere
+from app.kontakte import repository as kontakte_repository
 from app.party import repository as party_repository
 
 
@@ -186,6 +187,20 @@ async def _ausfuehren_reparatur_freigabe(campaign_id: str, verhandlung: dict) ->
     return {"fixerPersonId": fixer_id}
 
 
+async def _ausfuehren_spieler_kontakt(campaign_id: str, verhandlung: dict) -> dict:
+    """Kontext: {"anfragenderPersonId": str}. Der Empfänger stimmt zu, dass die
+    beiden Spielercharaktere Kontakt austauschen: je Seite eine KENNT-Kante,
+    Chat offen. Kein Geld, keine SL-Beteiligung.
+    """
+    anfragender_id = verhandlung["kontext"]["anfragenderPersonId"]
+    empfaenger_id = verhandlung["empfaengerPersonId"]
+    if anfragender_id == empfaenger_id:
+        raise VerhandlungsFehler("Kontakt mit sich selbst ist nicht möglich")
+    if not await kontakte_repository.spielerkontakt_anlegen(campaign_id, anfragender_id, empfaenger_id):
+        raise VerhandlungsFehler("Einer der Charaktere ist nicht mehr auffindbar")
+    return {"anfragenderPersonId": anfragender_id}
+
+
 # Dispatch-Tabelle: Verhandlungsart -> Ausführungsfunktion. Erweitern statt
 # umbauen, wenn eine neue Art dazukommt.
 _AUSFUEHRUNG = {
@@ -193,6 +208,7 @@ _AUSFUEHRUNG = {
     "SHOP_KAUF": _ausfuehren_shop_kauf,
     "GEGENSTAND_WEITERGABE": _ausfuehren_gegenstand_weitergabe,
     "REPARATUR_FREIGABE": _ausfuehren_reparatur_freigabe,
+    "SPIELER_KONTAKT": _ausfuehren_spieler_kontakt,
 }
 
 

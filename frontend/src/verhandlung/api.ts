@@ -9,7 +9,12 @@
  */
 import { api } from "../api/client";
 
-export type VerhandlungsArt = "RUESTUNG_REPARATUR" | "SHOP_KAUF" | "GEGENSTAND_WEITERGABE" | "REPARATUR_FREIGABE";
+export type VerhandlungsArt =
+  | "RUESTUNG_REPARATUR"
+  | "SHOP_KAUF"
+  | "GEGENSTAND_WEITERGABE"
+  | "REPARATUR_FREIGABE"
+  | "SPIELER_KONTAKT";
 
 export interface VerhandlungPosition {
   bezeichnung: string;

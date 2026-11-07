@@ -148,6 +148,16 @@ Empfänger (siehe [Mitteilungen](./mitteilungen.md)).
 
 ---
 
+### GET `/mitspieler`
+
+Die anderen Spielercharaktere der Kampagne (nur PCs, die ein Spieler spielt) als Auswahl für „Kontakt anbieten“. Antwort: `[{id, name, bildUrl, bereitsKontakt}]`. Spieler-only (ohne eigenen Charakter 400).
+
+### POST `/spieler-anfrage`
+
+Body `{personId}`. Bietet einem Mitspieler den Kontaktaustausch an: legt eine Verhandlung `SPIELER_KONTAKT` an den anderen Spieler an (Popup per Live-Leitung). **Die SL ist nicht beteiligt.** Bei Annahme (`POST /verhandlungen/{id}/antwort`) entsteht je Seite eine `KENNT`-Kante PC→PC, Chat offen. Fehler: 400 (sich selbst), 404 (kein Mitspieler), 409 (Kontakt besteht schon / Anfrage liegt schon vor, in jede Richtung).
+
+Spielerkontakte (`npcPersonType = PC`) sind privat: Verlauf lesen/senden gehört nur dem Besitzer der Kante, für die SL 404; Benachrichtigung geht nur an den Mitspieler.
+
 ## Stufensystem
 
 Die **Stufe** bestimmt, wie viel ein Spielercharakter über einen NPC weiß:

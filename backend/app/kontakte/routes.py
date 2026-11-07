@@ -27,11 +27,9 @@ from app.kontakte import repository
 from app.mitteilungen import repository as mitteilungen_repo
 from app.mitteilungen.verteiler import verteiler
 from app.kontakte.logic import (
-    effektiver_alias,
     erreichbare_npcs,
     ist_mindestens_stufe,
     kann_kontakt_anfragen,
-    standard_alias,
 )
 from app.kontakte.schemas import (
     AliasUpdate,
@@ -42,11 +40,21 @@ from app.kontakte.schemas import (
     KontaktGmResponse,
     KontaktGmUpdate,
     KontaktResponse,
+    MitspielerResponse,
     NachrichtCreate,
     NachrichtResponse,
     NotizenUpdate,
+    SpielerKontaktAnfrage,
 )
-from app.kontakte.security import chat_ist_offen, darf_kontakt_sehen, kontakt_fuer_gm, kontakt_fuer_viewer
+from app.kontakte.security import (
+    alias_von,
+    chat_ist_offen,
+    darf_kontakt_sehen,
+    ist_spielerkontakt,
+    kontakt_fuer_gm,
+    kontakt_fuer_viewer,
+)
+from app.verhandlung import repository as verhandlung_repository
 
 
 async def require_messenger_active(
@@ -98,6 +106,56 @@ async def meine_kontakte(campaign_id: str, viewer: Viewer = Depends(get_viewer))
     pc_id = await _eigener_pc(viewer)
     roh = await repository.liste_fuer_pc(campaign_id, pc_id)
     return [kontakt_fuer_viewer(r, viewer) for r in roh]
+
+
+@router.get("/mitspieler", response_model=list[MitspielerResponse])
+async def mitspieler(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Die anderen Spielercharaktere — Auswahl für „Kontakt anbieten“."""
+    pc_id = await _eigener_pc(viewer)
+    return [MitspielerResponse(**m) for m in await repository.mitspieler(campaign_id, pc_id)]
+
+
+@router.post("/spieler-anfrage", status_code=status.HTTP_201_CREATED)
+async def spieler_kontakt_anfragen(
+    campaign_id: str, body: SpielerKontaktAnfrage, viewer: Viewer = Depends(get_viewer)
+):
+    """Einem Mitspieler den Kontaktaustausch anbieten.
+
+    **Vom Spieler aufrufbar.** Entscheiden darf nur der andere Spieler (Popup
+    über das Verhandlungssystem); die Spielleitung ist nicht beteiligt.
+    """
+    ich = await _eigener_pc(viewer)
+    if body.personId == ich:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kontakt mit dir selbst geht nicht")
+
+    ziele = {m["id"]: m for m in await repository.mitspieler(campaign_id, ich)}
+    ziel = ziele.get(body.personId)
+    if ziel is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Mitspieler nicht gefunden")
+    if ziel["bereitsKontakt"]:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ihr habt schon Kontakt")
+
+    # Keine doppelten Anfragen — in keine Richtung.
+    for empfaenger, anfragender in ((ziel["id"], ich), (ich, ziel["id"])):
+        for offen in await verhandlung_repository.list_offene_fuer(campaign_id, empfaenger):
+            if offen["art"] == "SPIELER_KONTAKT" and offen["kontext"].get("anfragenderPersonId") == anfragender:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Es liegt schon eine Anfrage vor")
+
+    eigener = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, ich)
+    eigener_name = (eigener or {}).get("name") or "Jemand"
+    verhandlung = await verhandlung_repository.create_verhandlung(
+        campaign_id,
+        ziel["id"],
+        "SPIELER_KONTAKT",
+        [{"bezeichnung": f"{eigener_name} möchte Kontakt mit dir austauschen", "betrag": 0}],
+        {"anfragenderPersonId": ich},
+    )
+    # Dieselbe Live-Leitung wie alle Verhandlungen (verhandlung/routes.py::_verteilen).
+    await verteiler.verteilen(
+        campaign_id,
+        {**verhandlung, "_typ": "verhandlung", "empfaengerIds": [ziel["id"]]},
+    )
+    return {"ok": True}
 
 
 @router.get("/uebersicht", response_model=list[KontaktGmResponse],
@@ -325,10 +383,7 @@ async def chat_lesen(campaign_id: str, kontakt_id: str, viewer: Viewer = Depends
     """Der Nachrichtenverlauf eines Kontakts."""
     roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
     offen = chat_ist_offen(roh)
-    alias = effektiver_alias(
-        (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse")),
-        roh.get("persoenlicherAlias"),
-    )
+    alias = alias_von(roh)
 
     verlauf: list[NachrichtResponse] = []
     if offen:
@@ -373,6 +428,12 @@ async def nachricht_senden(
         von_id, an_id = roh["npcId"], roh["pcId"]
         absender_name = roh.get("npcName") or "Unbekannt"
         empfaenger_ids = [roh["pcId"]]
+    elif ist_spielerkontakt(roh):
+        # Spieler → Spieler: die Benachrichtigung geht nur an den anderen
+        # Spieler, nie an die SL (eine leere Liste hieße „an die SL“).
+        von_id, an_id = roh["pcId"], roh["npcId"]
+        absender_name = roh.get("pcName") or "Unbekannt"
+        empfaenger_ids = [roh["npcId"]]
     else:
         von_id, an_id = roh["pcId"], roh["npcId"]
         absender_name = roh.get("pcName") or "Unbekannt"
@@ -397,8 +458,4 @@ async def nachricht_senden(
         import logging
         logging.warning(f"Benachrichtigung fehlgeschlagen: {e}")
     
-    alias = effektiver_alias(
-        (roh.get("npcAlias") or "").strip() or standard_alias(roh.get("npcRasse")),
-        roh.get("persoenlicherAlias"),
-    )
-    return _nachricht_fuer(gesendet, von_id, alias)
+    return _nachricht_fuer(gesendet, von_id, alias_von(roh))

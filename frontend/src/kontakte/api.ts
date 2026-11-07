@@ -64,6 +64,15 @@ export interface Chat {
   nachrichten: Nachricht[];
 }
 
+/** Ein anderer Spielercharakter, dem man Kontakt anbieten kann. */
+export interface Mitspieler {
+  id: string;
+  name: string;
+  bildUrl: string;
+  /** Es besteht schon ein Kontakt — nichts mehr anzufragen. */
+  bereitsKontakt: boolean;
+}
+
 function basis(cid: string) {
   return `/api/campaigns/${cid}/kontakte`;
 }
@@ -103,6 +112,12 @@ export const kontakteApi = {
     api.post<KontaktGm>(`${basis(cid)}/${kontaktId}/anfrage/entscheiden`, { annehmen }),
   /** Nur SL: fehlendes „Gesehen“ aus dem Beziehungsgraphen anlegen. */
   erkennen: (cid: string) => api.post<KontaktGm[]>(`${basis(cid)}/erkennen`),
+
+  /** Die anderen Spielercharaktere — Auswahl für „Mitspieler anschreiben“. */
+  mitspieler: (cid: string) => api.get<Mitspieler[]>(`${basis(cid)}/mitspieler`),
+  /** Einem Mitspieler Kontakt anbieten — er bekommt ein Popup und entscheidet selbst. */
+  spielerAnfrage: (cid: string, personId: string) =>
+    api.post<{ ok: boolean }>(`${basis(cid)}/spieler-anfrage`, { personId }),
 
   chat: (cid: string, kontaktId: string) => api.get<Chat>(`${basis(cid)}/${kontaktId}/chat`),
   senden: (cid: string, kontaktId: string, inhalt: string) =>

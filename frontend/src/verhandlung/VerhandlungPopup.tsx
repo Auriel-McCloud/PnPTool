@@ -50,7 +50,9 @@ export function VerhandlungPopup() {
   // Zustimmungs-Popup — "ja" erteilt einem Party-Mitglied dauerhaften
   // Reparatur-Zugriff statt einen Gegenstand zu bewegen.
   const istReparaturFreigabe = angezeigt.art === "REPARATUR_FREIGABE";
-  const istZustimmungsPopup = istWeitergabe || istReparaturFreigabe;
+  // Spieler↔Spieler-Kontakt: ebenfalls reines Zustimmungs-Popup, kein Geld.
+  const istSpielerKontakt = angezeigt.art === "SPIELER_KONTAKT";
+  const istZustimmungsPopup = istWeitergabe || istReparaturFreigabe || istSpielerKontakt;
 
   return createPortal(
     <div className="vh-popup-huelle">
@@ -63,7 +65,7 @@ export function VerhandlungPopup() {
       >
         <div className="vh-popup-kopf">
           <span className="vh-popup-zeichen" aria-hidden="true">
-            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istReparaturFreigabe ? "🔧" : istWeitergabe ? "🎁" : "¥"}
+            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istSpielerKontakt ? "◍" : istReparaturFreigabe ? "🔧" : istWeitergabe ? "🎁" : "¥"}
           </span>
           <span className="vh-popup-titel">
             {entschieden
@@ -74,11 +76,13 @@ export function VerhandlungPopup() {
                 : istZustimmungsPopup
                   ? "Abgelehnt"
                   : "Angebot abgelehnt"
-              : istReparaturFreigabe
-                ? "Reparatur-Zugriff angefragt"
-                : istWeitergabe
-                  ? "Gegenstand angeboten"
-                  : "Angebot der Spielleitung"}
+              : istSpielerKontakt
+                ? "Kontaktanfrage"
+                : istReparaturFreigabe
+                  ? "Reparatur-Zugriff angefragt"
+                  : istWeitergabe
+                    ? "Gegenstand angeboten"
+                    : "Angebot der Spielleitung"}
           </span>
         </div>
 
