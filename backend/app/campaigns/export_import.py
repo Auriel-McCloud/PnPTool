@@ -76,6 +76,8 @@ KNOWN_LABELS = {
     "VerhandlungsAusgang", "CharakterEntwicklung",
     "Achievement", "AchievementVerleihung",
     "SpielerNotiz",
+    # Gruppenchat (07.11.2026): Gruppe mit gemischten Teilnehmern.
+    "Gruppenchat",
     # Flora & Fauna (06.10.2026): neue Gewächs-Entität.
     "Gewaechs",
     # Fertigkeiten-Spezialisierung (22.10.2026): ein Knoten pro Slot
@@ -95,6 +97,8 @@ KNOWN_REL_TYPES = {
     "ALTER_BESITZER", "NEUER_BESITZER", "ANGREIFER", "AUSLOESER",
     "EMPFAENGER", "NPC", "PARTY", "ORT", "PERSON", "ZIEL", "ANGEBOTEN_VON",
     "HAT_NOTIZ",
+    # Gruppenchat (07.11.2026): Gruppe -> Person, Nachricht -> Gruppe.
+    "TEILNEHMER", "IN",
     # Flora & Fauna (06.10.2026): Critter/Gewächs <-> Ort, many-to-many.
     "LEBT_IN",
     # Fertigkeiten-Spezialisierung (22.10.2026): Person <-> Spezialisierung-Slot.

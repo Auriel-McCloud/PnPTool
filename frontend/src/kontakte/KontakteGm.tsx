@@ -13,6 +13,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { NachrichtBlase } from "./Messenger";
 import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
+import { GruppenGm } from "./GruppenGm";
 import "./kontakte-gm.css";
 
 interface Props {
@@ -175,6 +176,9 @@ export function KontakteGm({ campaignId }: Props) {
           </button>
         </div>
       </fieldset>
+
+      {/* Gruppenchats: PCs und NPCs gemischt, nur die SL legt sie an */}
+      {!messengerDeaktiviert && <GruppenGm campaignId={campaignId} pcs={pcs} npcs={npcs} />}
 
       {/* Bestehende Kontakte nach PC */}
       {Array.from(nachPc.entries()).map(([pcId, liste]) => {

@@ -168,6 +168,10 @@ OHNE_GM_ERLAUBT = {
     # eine Verhandlung (Popup) an den anderen Spieler an; entschieden wird dort
     # über .../verhandlungen/{id}/antwort — die Spielleitung ist nicht beteiligt.
     "/api/campaigns/{campaign_id}/kontakte/spieler-anfrage",
+    # Gruppenchat: Spieler schreiben als eigener Charakter in eine offene Gruppe, in
+    # der sie sitzen (_gruppe_oder_404). Anlegen/Mitglieder/Schließen/Löschen sind
+    # dagegen SL-only (require_campaign_gm) und stehen deshalb nicht hier.
+    "/api/campaigns/{campaign_id}/gruppenchats/{gruppe_id}/chat",
     # Eigener Merkzettel zu einem Kontakt.
     "/api/campaigns/{campaign_id}/kontakte/{kontakt_id}/notizen",
     # Eigener Alias ("der Schläger vom Hafen"). Der NPC-Standardalias bleibt

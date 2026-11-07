@@ -92,7 +92,9 @@ Der Verlauf in der SL-Kontaktliste ist ein `Fenster` mit der Messenger-Optik der
 
 **Umsetzung der Privatsphäre:** `security.darf_kontakt_sehen` lässt Spielerkontakte nur den Besitzer der Kante sehen (SL: 404 auf Verlauf und Senden, nicht in `/uebersicht`/`/anfragen`). Die Chat-Mitteilung geht an `empfaengerIds=[Mitspieler]` — eine leere Liste hieße „an die SL“. Die Beschreibung des Mitspielers wird nie ausgeliefert, Anzeigename = eigener Alias, sonst Charaktername. Mitspieler-Liste: nur PCs mit `(:Spieler)-[:SPIELT]->`, also keine unbesetzten Vorgefertigten.
 
-## Gruppenchat (Phase 2, entschieden, nicht gebaut)
+## Gruppenchat (Phase 2, gebaut 07.11.2026)
+
+Gebaut wie unten entschieden. Modul `backend/app/gruppenchat/`, SL-Verwaltung `frontend/src/kontakte/GruppenGm.tsx`, Spieleransicht als Gruppenkarte in der Messenger-Liste. API: `docs/api/gruppenchat.md`. Details und Besonderheiten (Namen pro Betrachter, Benachrichtigung ohne Absender, `gelesenBis` ab Beitritt): CLAUDE.md „Gruppenchat, Phase 2“. **Entscheidungen:**
 
 - **Wer legt an:** nur die SL. Mitglieder PCs und NPCs gemischt.
 - **Modell:** `(:Gruppenchat {id, campaignId, name})-[:TEILNEHMER {gelesenBis}]->(:Person)`; Gruppennachricht `-[:IN]->(:Gruppenchat)` statt `AN`. Ungelesen pro Teilnehmer über `gelesenBis` (ein Gelesen-Häkchen reicht bei mehreren Empfängern nicht). Einzelchats bleiben unverändert, werden nicht in Gruppen umgebaut.

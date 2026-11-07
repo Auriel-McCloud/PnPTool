@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Fenster } from "../shell/Fenster";
 import { alsText, kontakteApi, type Chat, type Kontakt, type Nachricht } from "./api";
+import { GruppenChat } from "./GruppenChat";
+import { gruppenApi, type Gruppe } from "./gruppenApi";
 import { MitspielerFenster } from "./MitspielerFenster";
 import "./messenger.css";
 
@@ -27,18 +29,35 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
   const [legtAn, setLegtAn] = useState(false);
   const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
   const [mitspielerOffen, setMitspielerOffen] = useState(false);
+  const [gruppen, setGruppen] = useState<Gruppe[]>([]);
+  const [aktiveGruppe, setAktiveGruppe] = useState<Gruppe | null>(null);
 
-  // Eine Zusage eines Mitspielers oder eine neue Nachricht kommt ohne eigene
-  // Aktion an — die Liste still nachladen, solange sie sichtbar ist.
+  async function gruppenLaden() {
+    try {
+      setGruppen(await gruppenApi.liste(campaignId));
+    } catch {
+      // Messenger aus (403) oder Netz weg — dann gibt es einfach keine Gruppen.
+      setGruppen([]);
+    }
+  }
+
+  // Eine Zusage eines Mitspielers, eine neue Gruppe oder neue Nachrichten kommen
+  // ohne eigene Aktion an — die Liste still nachladen, solange sie sichtbar ist.
   const aktualisierenRef = useRef(onKontakteAktualisieren);
   aktualisierenRef.current = onKontakteAktualisieren;
+  const gruppenLadenRef = useRef(gruppenLaden);
+  gruppenLadenRef.current = gruppenLaden;
+  const listeSichtbar = !aktiv && !aktiveGruppe;
   useEffect(() => {
-    if (aktiv) return;
+    if (!listeSichtbar) return;
+    void gruppenLadenRef.current();
     const uhr = setInterval(() => {
-      if (!document.hidden) aktualisierenRef.current();
+      if (document.hidden) return;
+      aktualisierenRef.current();
+      void gruppenLadenRef.current();
     }, 5000);
     return () => clearInterval(uhr);
-  }, [aktiv]);
+  }, [listeSichtbar]);
 
   // Offene Chats und noch leere Plätze aus der Charaktererstellung.
   // Die Plätze haben den Chat zu — ohne eigene Zeile sieht der Spieler nichts.
@@ -73,7 +92,17 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
     );
   }
 
-  const listeLeer = chatKontakte.length === 0 && plaetze.length === 0;
+  if (aktiveGruppe) {
+    return (
+      <GruppenChat
+        campaignId={campaignId}
+        gruppeId={aktiveGruppe.id}
+        onZurueck={() => setAktiveGruppe(null)}
+      />
+    );
+  }
+
+  const listeLeer = chatKontakte.length === 0 && plaetze.length === 0 && gruppen.length === 0;
 
   return (
     <div className="msg-huelle">
@@ -111,6 +140,9 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
                 <span className="msg-vorschau">Tippen und beschreiben</span>
               </span>
             </button>
+          ))}
+          {gruppen.map((g) => (
+            <GruppenKarte key={g.id} gruppe={g} onClick={() => setAktiveGruppe(g)} />
           ))}
           {chatKontakte.map((k) => (
             <KontaktKarte key={k.id} kontakt={k} onClick={() => setAktiv(k)} />
@@ -160,6 +192,24 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
           </div>
         </Fenster>
       )}
+    </div>
+  );
+}
+
+/** Eine Gruppe in der Liste: Name, wer drin ist, Ungelesen-Zähler. */
+function GruppenKarte({ gruppe, onClick }: { gruppe: Gruppe; onClick: () => void }) {
+  const andere = gruppe.teilnehmer.filter((t) => !t.ich);
+  return (
+    <div className="msg-kontakt msg-kontakt-gruppe" onClick={onClick}>
+      <div className="msg-portrait">
+        <span className="msg-portrait-leer">◍◍</span>
+        {gruppe.ungelesen > 0 && <span className="msg-badge">{gruppe.ungelesen}</span>}
+      </div>
+      <div className="msg-info">
+        <span className="msg-name">{gruppe.name}</span>
+        <span className="msg-vorschau">{andere.map((t) => t.name).join(" · ")}</span>
+      </div>
+      <span className="msg-zeit">▶</span>
     </div>
   );
 }
@@ -346,11 +396,14 @@ export function NachrichtBlase({
   bildUrl,
   absender,
   initial = "?",
+  absenderImmer = false,
 }: {
   nachricht: Nachricht;
   bildUrl?: string;
   absender?: string;
   initial?: string;
+  /** Den Namen auch über eigenen (rechten) Blasen zeigen — SL im Gruppenchat. */
+  absenderImmer?: boolean;
 }) {
   const zeit = nachricht.erstelltAm
     ? new Date(nachricht.erstelltAm).toLocaleTimeString("de-AT", {
@@ -391,7 +444,7 @@ export function NachrichtBlase({
       )}
 
       <div className="msg-blase" style={{ "--msg-schraeg": `${schraeg}px` } as CSSProperties}>
-        {!nachricht.vonMir && (absender ?? nachricht.absender) && (
+        {(!nachricht.vonMir || absenderImmer) && (absender ?? nachricht.absender) && (
           <span className="msg-absender">{absender ?? nachricht.absender}</span>
         )}
         <span className="msg-text">{alsText(nachricht.inhalt)}</span>

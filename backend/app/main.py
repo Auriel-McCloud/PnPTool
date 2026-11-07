@@ -30,6 +30,7 @@ from app.rassen.repository import seed_rassen
 from app.db.migrate import apply_migrations
 from app.players.routes import gm_router as spieler_gm_router, login_router
 from app.kontakte.routes import router as kontakte_router
+from app.gruppenchat.routes import router as gruppenchat_router
 from app.wiki.routes import router as wiki_router
 from app.mitteilungen.routes import router as mitteilungen_router
 from app.mitteilungen.routes import ws_router as mitteilungen_ws_router
@@ -111,6 +112,7 @@ app.include_router(login_router)
 app.include_router(spieler_gm_router)
 app.include_router(wiki_router)
 app.include_router(kontakte_router)
+app.include_router(gruppenchat_router)
 app.include_router(mitteilungen_router)
 app.include_router(mitteilungen_ws_router)
 app.include_router(regelsysteme_router)

@@ -3,6 +3,14 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-07] feature | Messenger: Gruppenchat (Phase 2) gebaut
+
+Gruppen mit PCs und NPCs gemischt, nur die SL legt sie an und verwaltet Mitglieder
+(Schließen umkehrbar, Löschen mit Bestätigung). Die SL schreibt als gewähltes NPC-
+Mitglied, Spieler sehen NPCs unter Alias, Portraits wie im Einzelchat. Neue Knoten
+`Gruppenchat`, Kanten `TEILNEHMER` und `IN`. Nebenbei: Popup im Einzelchat nennt beim
+Spieler nicht mehr den echten NPC-Namen. Siehe [[entities/kontakte-messenger]].
+
 ## [2026-11-07] feature | Messenger: Spieler↔Spieler-Chat (Phase 1), Gruppenchat entschieden
 
 Spieler chatten untereinander. Kontakt per Anfrage zwischen den Spielern

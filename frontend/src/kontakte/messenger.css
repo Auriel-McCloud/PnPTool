@@ -647,3 +647,50 @@ button.msg-kontakt {
   cursor: default;
   transform: none;
 }
+
+/* ============================================================ GRUPPENCHAT */
+
+/* Wer in der Gruppe sitzt — eine Zeile unter der Kopfzeile. */
+.msg-gruppe-mitglieder {
+  padding: var(--luft-1) var(--luft-2);
+  font-size: 0.75rem;
+  color: var(--text-leise);
+  border-bottom: 1px solid color-mix(in srgb, var(--neon) 25%, var(--grund));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-kontakt-gruppe .msg-vorschau {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Eingabe mit optionaler Sprecher-Auswahl (SL) darüber. */
+.msg-eingabe-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.msg-sprecher {
+  display: flex;
+  align-items: center;
+  gap: var(--luft-2);
+  padding: var(--luft-1) var(--luft-2);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+  background: color-mix(in srgb, var(--neon) 5%, var(--grund));
+}
+
+.msg-sprecher select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--text);
+  background: var(--grund);
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+  padding: var(--luft-1) var(--luft-2);
+}

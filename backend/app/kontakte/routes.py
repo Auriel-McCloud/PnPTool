@@ -426,7 +426,8 @@ async def nachricht_senden(
 
     if viewer.role == "GM":
         von_id, an_id = roh["npcId"], roh["pcId"]
-        absender_name = roh.get("npcName") or "Unbekannt"
+        # Der Spieler bekommt dieses Popup — also den Alias, nie den echten NPC-Namen.
+        absender_name = alias_von(roh)
         empfaenger_ids = [roh["pcId"]]
     elif ist_spielerkontakt(roh):
         # Spieler → Spieler: die Benachrichtigung geht nur an den anderen

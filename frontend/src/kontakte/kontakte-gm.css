@@ -299,3 +299,107 @@
   text-align: center;
   padding: 32px;
 }
+
+/* ============================================================ GRUPPENCHATS */
+
+.gruppen-mitglieder {
+  max-width: 320px;
+  color: var(--text-leise);
+  font-size: 0.85rem;
+}
+
+.gruppen-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--luft-1, 4px);
+  justify-content: flex-end;
+}
+
+.gruppen-fehler {
+  margin: var(--luft-2, 8px) 0 0;
+  color: var(--warn);
+}
+
+/* Fenster: Gruppe anlegen / Mitglieder bearbeiten */
+.gruppen-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-3, 16px);
+}
+
+.gruppen-feld {
+  display: flex;
+  flex-direction: column;
+  gap: var(--luft-1, 4px);
+}
+
+.gruppen-feld > span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-leise);
+}
+
+.gruppen-feld input[type="text"] {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: color-mix(in srgb, var(--grund) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+  padding: var(--luft-2, 8px);
+}
+
+.gruppen-leer {
+  margin: 0;
+  color: var(--text-leise);
+}
+
+.gruppen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--luft-1, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gruppen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--luft-2, 8px);
+  padding: var(--luft-1, 4px) var(--luft-2, 8px);
+  border: 1px solid color-mix(in srgb, var(--neon) 50%, var(--grund));
+  background: color-mix(in srgb, var(--neon) 10%, var(--grund));
+}
+
+.gruppen-chip[data-npc="true"] {
+  border-color: color-mix(in srgb, var(--signal) 55%, var(--grund));
+  background: color-mix(in srgb, var(--signal) 10%, var(--grund));
+}
+
+.gruppen-chip em {
+  font-size: 0.7rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-leise);
+}
+
+.gruppen-chip button {
+  font: inherit;
+  color: var(--text-leise);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.gruppen-chip button:hover:not(:disabled) {
+  color: var(--warn);
+}
+
+.gruppen-fuss {
+  display: flex;
+  gap: var(--luft-2, 8px);
+  justify-content: flex-end;
+}

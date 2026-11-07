@@ -127,6 +127,19 @@ class TestSenden:
 
         assert mitteilung.await_args.kwargs["empfaenger_ids"] == []
 
+    def test_npc_popup_beim_spieler_nennt_den_alias_nie_den_echten_namen(self, monkeypatch):
+        # Die SL schreibt als NPC — das Popup landet beim Spieler.
+        sende, mitteilung = _senden_vorbereiten(
+            monkeypatch,
+            pc_kontakt(npcPersonType="NPC", npcName="Viktor Kane", npcRasse="Ork", echterNameBekannt=False),
+        )
+
+        _run(routes.nachricht_senden("c-1", "k-ab", NachrichtCreate(inhalt="Moin"), SL))
+
+        text = mitteilung.await_args.kwargs["inhalt"]
+        assert text == "Unbekannter Ork: Moin"
+        assert "Viktor" not in text
+
     def test_fremder_spieler_kommt_nicht_an_den_chat(self, monkeypatch):
         _senden_vorbereiten(monkeypatch, pc_kontakt())
         with pytest.raises(HTTPException) as fehler:
