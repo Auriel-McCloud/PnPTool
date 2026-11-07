@@ -355,6 +355,9 @@ async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
 _CRITTER_NICHT_KOPIEREN = {
     "id",
     "istVorlage",
+    # Eine Kopie ist ein frisches, gewöhnliches Exemplar — Aeon-Status ist
+    # ein Merkmal des einen besonderen Tiers, nicht der ganzen Art.
+    "istAeon",
     "sichtbarkeit",
     "sichtbarFuer",
     # Eine Kopie ist ein frisches Tier — Wunden/verbrauchte Willenskraft der

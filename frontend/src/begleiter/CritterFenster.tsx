@@ -278,6 +278,22 @@ export function CritterFenster({
             </div>
 
             <div className="bg-zeile" style={{ marginTop: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
+                <input
+                  type="checkbox"
+                  checked={!!person.istAeon}
+                  onChange={async (e) => {
+                    const neu = await entitiesApi.updatePerson(campaignId, critterId, {
+                      istAeon: e.target.checked,
+                    });
+                    setPerson(neu);
+                  }}
+                />
+                Als Aeon markieren
+              </label>
+            </div>
+
+            <div className="bg-zeile" style={{ marginTop: 10 }}>
               <button
                 type="button"
                 style={{ borderColor: "var(--signal)", color: "var(--signal)" }}

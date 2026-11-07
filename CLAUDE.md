@@ -2495,6 +2495,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (07.11.2026 — Aeon-Markierung + Filter nach Vorlage/Aeon):**
+- **Was:** Zweite, unabhängige Critter-Markierung neben Vorlage (`Person.istAeon`) — reines Flag, keine eigene Mechanik oder Kopier-Funktion. Checkbox "Als Aeon markieren" im Critter-Fenster, violette "Aeon"-Badge auf der Kachel (Begleiter- UND Flora&Fauna-Übersicht, analog zur neonfarbenen Vorlage-Badge). Beide Übersichten haben jetzt zusätzlich ein Filter-Dropdown: Alle / Nur Vorlagen / Nur Aeons / Ohne Vorlagen/Aeons.
+- **Wo:** `entities/schemas.py` (`istAeon` an PersonCreate/Update/Response), `entities/repository.py` (`PERSON_FIELDS`, `_BOGEN_DEFAULTS`, `list_critter`/`critter_besitzer_setzen`-Queries), `entities/routes.py` (`_CRITTER_NICHT_KOPIEREN` — Aeon-Status wird bei "Kopie erstellen" NICHT übernommen), `begleiter/CritterFenster.tsx` (Checkbox), `begleiter/BegleiterVerwaltung.tsx`/`entities/FloraFaunaUebersicht.tsx` (Badge + Filter-Select).
+- **Verifiziert:** `tsc --noEmit` grün. `pytest tests/test_flora_fauna.py` zeigt dieselben 3 vorbestehenden Windows-Proactor-Fehlschläge wie vor der Änderung (unbeteiligter Testbereich).
+
 **Zuletzt gebaut (07.11.2026 — Vorlage-Badge auch im Flora & Fauna-Menü):**
 - **Was:** Die Vorlage-Markierung aus dem Begleiter-Menü (neonfarbene "Vorlage"-Marke auf der Kachel) fehlte im globalen Flora & Fauna-Katalog — dort war einem Critter nicht anzusehen, ob er eine Vorlage ist.
 - **Wo:** `entities/FloraFaunaUebersicht.tsx` (`KachelEintrag.istVorlage` ergänzt, Marke neben Besitzer-Tag).

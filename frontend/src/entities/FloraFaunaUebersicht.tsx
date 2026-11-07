@@ -35,6 +35,7 @@ interface KachelEintrag {
   art: "CRITTER" | "GEWAECHS";
   besitzerName: string | null;
   istVorlage: boolean;
+  istAeon: boolean;
 }
 
 export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
@@ -46,6 +47,7 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
   const [gewaechsOffen, setGewaechsOffen] = useState<Gewaechs | null>(null);
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [suche, setSuche] = useState("");
+  const [markierungFilter, setMarkierungFilter] = useState<"ALLE" | "VORLAGEN" | "AEONS" | "OHNE">("ALLE");
   const rasterRef = useRef<HTMLDivElement>(null);
   const proSeite = useProSeite(rasterRef);
   const [seite, setSeite] = useState(0);
@@ -86,6 +88,7 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
       art: "CRITTER" as const,
       besitzerName: x.besitzerName,
       istVorlage: x.istVorlage,
+      istAeon: x.istAeon,
     }));
     const g: KachelEintrag[] = gewaechse.map((x) => ({
       id: x.id,
@@ -95,21 +98,26 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
       art: "GEWAECHS" as const,
       besitzerName: null,
       istVorlage: false,
+      istAeon: false,
     }));
     return [...c, ...g].sort((a, b) => a.name.localeCompare(b.name, "de"));
   }, [critter, gewaechse]);
 
   const gefiltert = useMemo(() => {
     const s = suche.trim().toLowerCase();
-    if (!s) return kacheln;
-    return kacheln.filter((k) => k.suchtext.includes(s));
-  }, [kacheln, suche]);
+    let liste = kacheln;
+    if (markierungFilter === "VORLAGEN") liste = liste.filter((k) => k.istVorlage);
+    else if (markierungFilter === "AEONS") liste = liste.filter((k) => k.istAeon);
+    else if (markierungFilter === "OHNE") liste = liste.filter((k) => !k.istVorlage && !k.istAeon);
+    if (!s) return liste;
+    return liste.filter((k) => k.suchtext.includes(s));
+  }, [kacheln, suche, markierungFilter]);
 
   // Nach einer neuen Suche kann die aktuelle Seite hinter dem gefilterten
   // Ende liegen — zurück auf die erste Seite, sonst wirkt die Liste leer.
   useEffect(() => {
     setSeite(0);
-  }, [suche]);
+  }, [suche, markierungFilter]);
 
   const seiten = Math.max(1, Math.ceil(gefiltert.length / proSeite));
   const aktuelleSeite = Math.min(seite, seiten - 1);
@@ -140,6 +148,12 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
         <button type="button" onClick={() => setAnlegenOffen(true)}>
           + Neu
         </button>
+        <select value={markierungFilter} onChange={(e) => setMarkierungFilter(e.target.value as typeof markierungFilter)}>
+          <option value="ALLE">Alle</option>
+          <option value="VORLAGEN">Nur Vorlagen</option>
+          <option value="AEONS">Nur Aeons</option>
+          <option value="OHNE">Ohne Vorlagen/Aeons</option>
+        </select>
         <span className="gg-anzahl">
           {gefiltert.length} von {kacheln.length}
         </span>
@@ -168,6 +182,11 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
                 {k.istVorlage && (
                   <span className="gg-marke" style={{ color: "var(--neon)" }}>
                     Vorlage
+                  </span>
+                )}
+                {k.istAeon && (
+                  <span className="gg-marke" style={{ color: "var(--p-violett)" }}>
+                    Aeon
                   </span>
                 )}
                 <span className="gg-marke">{k.besitzerName ?? "ungebunden"}</span>

@@ -82,6 +82,9 @@ export interface Person extends VisibilityFields {
    * Kopien (Bild/Charakterbogen/Gegenstände) erzeugt werden können — siehe
    * entitiesApi.critterKopieren. */
   istVorlage?: boolean;
+  /** Aeon (07.11.2026): zweite, unabhängige Markierung neben istVorlage —
+   * reines Flag für Kachel-Badge und Filter, ohne eigene Mechanik. */
+  istAeon?: boolean;
   /** Tutorial-Shop (10.10.2026): Händler, der NUR im Freebees-Schritt der
    * Charaktererstellung auftaucht, aus der normalen Shop-Übersicht
    * ausgeblendet bleibt (kein Verhandeln, keine Achievement-Trigger). */
@@ -275,6 +278,7 @@ export interface CritterEintrag {
   besitzerId: string | null;
   besitzerName: string | null;
   istVorlage: boolean;
+  istAeon: boolean;
 }
 
 /** Dieselbe schlanke Form wie `CritterEintrag`, für KI-Personen. */

@@ -70,7 +70,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istGross", "istVorlage", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istGross", "istVorlage", "istAeon", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", "versteckVonPersonIds", *_VISIBILITY_FIELDS]
@@ -135,6 +135,8 @@ _BOGEN_DEFAULTS: dict = {
     "gesundheitGrundwert": -1,
     # Vorlage (06.11.2026): Bestandscritter kennen das Feld noch nicht.
     "istVorlage": False,
+    # Aeon (07.11.2026): Bestandscritter kennen das Feld noch nicht.
+    "istAeon": False,
     # Endgegner-Markierung (10.10.2026): Bestandsdaten kennen das Feld noch
     # nicht — ohne Ersatz scheitert GET /personen mit bool_type-Fehler
     # (Stolperstein 9).
@@ -577,7 +579,8 @@ async def list_critter(campaign_id: str) -> list[dict]:
         RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer,
-               coalesce(n.istVorlage, false) AS istVorlage
+               coalesce(n.istVorlage, false) AS istVorlage,
+               coalesce(n.istAeon, false) AS istAeon
         ORDER BY n.name
     """
     async with driver.session() as session:
@@ -606,7 +609,8 @@ async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: 
         RETURN n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                n.sichtbarkeit AS sichtbarkeit, n.sichtbarFuer AS sichtbarFuer,
-               coalesce(n.istVorlage, false) AS istVorlage
+               coalesce(n.istVorlage, false) AS istVorlage,
+               coalesce(n.istAeon, false) AS istAeon
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, person_id=person_id)

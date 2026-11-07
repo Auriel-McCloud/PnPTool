@@ -174,6 +174,11 @@ class PersonCreate(BaseModel):
     # Critter genutzt, aber generisch auf Person, falls andere NPC-Arten das
     # später auch wollen.
     istVorlage: bool = False
+    # Aeon (07.11.2026, Marks Konzept): zweite, unabhängige Markierung neben
+    # istVorlage — kennzeichnet einen besonderen/uralten Critter rein als
+    # Flag für die Übersicht (Kachel-Badge + Filter), ohne eigene Mechanik
+    # oder Kopier-Funktion wie bei Vorlage.
+    istAeon: bool = False
     # Kredithai (10.10.2026): Flag wie istHaendler. Bestehende Haie werden
     # bei Schulden aus Kredit-Freebees wiederverwendet statt neu angelegt.
     istKredithai: bool = False
@@ -317,6 +322,7 @@ class PersonUpdate(BaseModel):
     istEndboss: bool | None = None
     istGross: bool | None = None
     istVorlage: bool | None = None
+    istAeon: bool | None = None
     istKredithai: bool | None = None
     istMentor: bool | None = None
     istBlankoKontakt: bool | None = None
@@ -399,6 +405,7 @@ class PersonResponse(BaseModel):
     istEndboss: bool = False
     istGross: bool = False
     istVorlage: bool = False
+    istAeon: bool = False
     istKredithai: bool = False
     istMentor: bool = False
     istBlankoKontakt: bool = False
