@@ -276,9 +276,17 @@ export function BattlemapPopup({
   // werden, nicht die Bühnen-Maße gegen die unveränderten Bild-Maße. Der
   // Fehler ließ den Zoom viel zu klein ausfallen (Bild nur ein schmaler
   // Streifen statt den sichtbaren Bereich zu füllen).
+  // Bugfix 07.11.2026 (Tablet-Screenshot, Teil 2): Rand-Zuschlag war
+  // `+ Math.abs(ox) * 2` — eine beidseitige Pufferannahme aus der alten,
+  // entfernten viewBox-Rechnung (die nicht wusste, in welche Richtung
+  // originX/Y gerade zeigt). Für "ganzes Bild einpassen" reicht der
+  // TATSÄCHLICHE, einseitige Rand: das Bild beginnt bei `ox`/`oy`, die
+  // Scrollposition startet immer bei 0 (nie negativ) — nötig ist also nur
+  // `bildBreite + ox` (bzw. `+ oy`), nicht `+ 2×|ox|`. Der doppelte Zuschlag
+  // hat den Zoom deutlich kleiner gerechnet als nötig.
   function zoomEinpassen() {
-    const breite = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
-    const hoehe = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
+    const breite = (karte?.bildBreite || 2000) + Math.max(ox, 0);
+    const hoehe = (karte?.bildHoehe || 1200) + Math.max(oy, 0);
     const zielBreite = gedreht ? hoehe : breite;
     const zielHoehe = gedreht ? breite : hoehe;
     zoomSetzen(Math.min(flaeche.w / zielBreite, flaeche.h / zielHoehe, 1));
