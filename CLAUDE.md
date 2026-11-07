@@ -24,6 +24,8 @@ Mark ursprünglich: „das problem im moment ist das auf jedem gerät, browser, 
 
 **Verifiziert:** `npx tsc -b` sauber. Kein Klicktest — am Spieltisch prüfen: Zoom-Slider, „Ganzes Bild einpassen“, Klick-/Tap-Ziele bei verschiedenen Zoomstufen (auch kombiniert mit 90°-Drehung).
 
+**Nachtrag 3 (07.11.2026): Reinzoomen zeigte nur denselben Ausschnitt kleiner.** Ursache: SVGs clippen per UA-Default alles, was über ihre eigene (ungezoomte, auf `.bm-buehne`-Größe begrenzte) Box hinausragt — das passiert VOR dem `transform: scale()` auf `.bm-zoom`. Der Zoom hat also nur den bereits abgeschnittenen Ausschnitt skaliert, nie mehr vom Bild aufgedeckt. Fix: `overflow: visible` auf `.bm-bild`, `.bm-grid`, `.bm-waende` ergänzt, damit Inhalt außerhalb der Nominal-Box mitgerendert wird und der äußere Zoom-Transform ihn korrekt sichtbar macht.
+
 
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
 

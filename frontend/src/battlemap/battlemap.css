@@ -101,6 +101,15 @@
   width: 100%;
   height: 100%;
 }
+/* Bugfix 07.11.2026 (Zoom): SVGs clippen standardmäßig alles, was über ihre
+   eigene (ungezoomte) Box hinausragt — das passiert VOR dem transform:
+   scale() auf .bm-zoom. Ohne overflow: visible zeigt das Reinzoomen immer
+   nur denselben vorher schon abgeschnittenen Ausschnitt kleiner an, statt
+   wirklich mehr vom Bild aufzudecken. */
+.bm-bild,
+.bm-grid {
+  overflow: visible;
+}
 .bm-bild {
   z-index: -1;
   pointer-events: none;
@@ -162,6 +171,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
   pointer-events: none;
   z-index: 3;
 }
