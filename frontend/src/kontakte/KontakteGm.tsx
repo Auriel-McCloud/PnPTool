@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  alsText,
   kontakteApi,
   type KontaktGm,
   type Kontaktstufe,
@@ -11,7 +10,8 @@ import type { Person } from "../entities/api";
 import { entitiesApi } from "../entities/api";
 import { ApiError } from "../api/client";
 import { Bestaetigung } from "../shell/Bestaetigung";
-import { useHintergrundSchliessen } from "../shell/hintergrundSchliessen";
+import { Fenster } from "../shell/Fenster";
+import { NachrichtBlase } from "./Messenger";
 import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
 import "./kontakte-gm.css";
 
@@ -292,7 +292,11 @@ export function KontakteGm({ campaignId }: Props) {
   );
 }
 
-/** Chat-Popup als eigene Komponente mit eigenem State */
+/**
+ * Chat-Verlauf als Commlink-Fenster — dieselbe Optik wie der Messenger der
+ * Spieler (`msg-*`), nur im Fenster. Die SL schreibt als der NPC: dessen
+ * Nachrichten stehen rechts („eigen“), die des PC links.
+ */
 function ChatPopup({
   kontakt,
   campaignId,
@@ -306,105 +310,110 @@ function ChatPopup({
   const [laden, setLaden] = useState(true);
   const [text, setText] = useState("");
   const [senden, setSenden] = useState(false);
-  const verlaufRef = useRef<HTMLDivElement>(null);
-  // Nur schliessen, wenn der Klick auch daneben BEGONNEN hat — sonst
-  // schliesst eine über den Rand gezogene Textauswahl im Chatverlauf
-  // versehentlich das Popup (siehe shell/hintergrundSchliessen.ts).
-  const hintergrundProps = useHintergrundSchliessen(onSchliessen);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const endeRef = useRef<HTMLDivElement>(null);
 
-  // Nachrichten laden beim Öffnen
   const ladeNachrichten = useCallback(async () => {
     try {
       const chat = await kontakteApi.chat(campaignId, kontakt.id);
       setNachrichten(chat.nachrichten);
     } catch (err) {
       console.error("Chat laden fehlgeschlagen:", err);
-      setNachrichten([]);
     } finally {
       setLaden(false);
     }
   }, [campaignId, kontakt.id]);
 
   useEffect(() => {
-    ladeNachrichten();
+    void ladeNachrichten();
+    // Neue Spieler-Nachrichten erscheinen von selbst, wie beim Spieler.
+    const uhr = setInterval(() => {
+      if (!document.hidden) void ladeNachrichten();
+    }, 3000);
+    return () => clearInterval(uhr);
   }, [ladeNachrichten]);
 
-  // Nach unten scrollen bei neuen Nachrichten
   useEffect(() => {
-    if (verlaufRef.current) {
-      verlaufRef.current.scrollTop = verlaufRef.current.scrollHeight;
-    }
-  }, [nachrichten]);
+    endeRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [nachrichten.length]);
 
-  async function absenden(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim() || senden) return;
+  async function absenden() {
+    const sauber = text.trim();
+    if (!sauber || senden) return;
     setSenden(true);
+    setFehler(null);
     try {
-      await kontakteApi.senden(campaignId, kontakt.id, text.trim());
+      await kontakteApi.senden(campaignId, kontakt.id, sauber);
       setText("");
-      // Nachrichten neu laden nach Senden
       await ladeNachrichten();
-    } catch (err) {
-      console.error("Fehler beim Senden:", err);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : "Konnte nicht senden");
     } finally {
       setSenden(false);
     }
   }
 
   return (
-    <div className="kontakte-gm-chat-overlay" {...hintergrundProps}>
-      <div className="kontakte-gm-chat-popup" onClick={(e) => e.stopPropagation()}>
-        <header className="kontakte-gm-chat-header">
-          <h3>💬 {kontakt.pcName} ↔ {kontakt.npcName}</h3>
-          <button onClick={onSchliessen}>✕</button>
-        </header>
-        <div className="kontakte-gm-chat-verlauf" ref={verlaufRef}>
-          {laden && <p className="kontakte-gm-chat-laden">Lade...</p>}
-          {!laden && nachrichten.length === 0 && (
-            <p className="kontakte-gm-chat-leer">Noch keine Nachrichten.</p>
-          )}
-          {nachrichten.map((n) => (
-            <div
-              key={n.id}
-              className={`kontakte-gm-chat-msg ${n.vonMir ? "von-npc" : "von-pc"}`}
-            >
-              <span className="kontakte-gm-chat-absender">
-                {n.vonMir ? kontakt.npcName : kontakt.pcName}:
-              </span>
-              <span className="kontakte-gm-chat-text">{alsText(n.inhalt)}</span>
-              <span className="kontakte-gm-chat-zeit">
-                {new Date(n.erstelltAm).toLocaleString("de-AT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+    <Fenster
+      offen={true}
+      titel={`${kontakt.pcName} ↔ ${kontakt.npcName}`}
+      unterzeile="Chatverlauf"
+      kennung={`gm-chat:${kontakt.id}`}
+      onSchliessen={onSchliessen}
+    >
+      <div className="msg-huelle msg-gm-chat">
+        <div className="msg-chat">
+          <div className="msg-verlauf">
+            {laden && <p style={{ color: "var(--text-leise)" }}>Lädt…</p>}
+            {!laden && nachrichten.length === 0 && (
+              <p style={{ color: "var(--text-leise)", textAlign: "center", margin: "auto" }}>
+                Noch keine Nachrichten.
+              </p>
+            )}
+            {nachrichten.map((n) => (
+              <NachrichtBlase
+                key={n.id}
+                nachricht={n}
+                absender={kontakt.pcName}
+                initial={(kontakt.pcName || "?").charAt(0).toUpperCase()}
+              />
+            ))}
+            <div ref={endeRef} />
+          </div>
+
+          {kontakt.chatOffen ? (
+            <div className="msg-eingabe">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void absenden();
+                  }
+                }}
+                placeholder={`Als ${kontakt.npcName} antworten…`}
+                rows={2}
+                disabled={senden}
+              />
+              <button
+                type="button"
+                className="msg-senden"
+                onClick={() => void absenden()}
+                disabled={senden || !text.trim()}
+              >
+                {senden ? "…" : "▶"}
+              </button>
             </div>
-          ))}
+          ) : (
+            <div className="msg-eingabe-gesperrt">Chat ist geschlossen — in der Tabelle öffnen</div>
+          )}
+
+          {fehler && (
+            <p style={{ color: "var(--warn)", padding: "var(--luft-2)", margin: 0 }}>{fehler}</p>
+          )}
         </div>
-        {kontakt.chatOffen && (
-          <form className="kontakte-gm-chat-eingabe" onSubmit={absenden}>
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={`Als ${kontakt.npcName} antworten...`}
-              disabled={senden}
-              autoFocus
-            />
-            <button type="submit" disabled={!text.trim() || senden}>
-              {senden ? "..." : "Senden"}
-            </button>
-          </form>
-        )}
-        {!kontakt.chatOffen && (
-          <p className="kontakte-gm-chat-gesperrt">
-            Chat ist geschlossen. Öffne ihn in der Tabelle.
-          </p>
-        )}
       </div>
-    </div>
+    </Fenster>
   );
 }

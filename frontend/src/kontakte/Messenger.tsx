@@ -311,13 +311,23 @@ function MessengerChat({
   );
 }
 
-/** Einzelne Nachricht im Persona-5-Stil. */
-function NachrichtBlase({
+/**
+ * Einzelne Nachricht im Persona-5-Stil.
+ *
+ * `absender` überschreibt den Namen über der Blase, `initial` den Buchstaben
+ * im Portrait-Platzhalter — die SL-Ansicht braucht beides, weil dort die
+ * Gegenseite der PC ist (die API liefert für die SL den NPC-Alias).
+ */
+export function NachrichtBlase({
   nachricht,
   bildUrl,
+  absender,
+  initial = "?",
 }: {
   nachricht: Nachricht;
   bildUrl?: string;
+  absender?: string;
+  initial?: string;
 }) {
   const zeit = nachricht.erstelltAm
     ? new Date(nachricht.erstelltAm).toLocaleTimeString("de-AT", {
@@ -353,13 +363,13 @@ function NachrichtBlase({
             color: "var(--text-leise)",
           }}
         >
-          ?
+          {initial}
         </span>
       )}
 
       <div className="msg-blase" style={{ "--msg-schraeg": `${schraeg}px` } as CSSProperties}>
-        {!nachricht.vonMir && nachricht.absender && (
-          <span className="msg-absender">{nachricht.absender}</span>
+        {!nachricht.vonMir && (absender ?? nachricht.absender) && (
+          <span className="msg-absender">{absender ?? nachricht.absender}</span>
         )}
         <span className="msg-text">{alsText(nachricht.inhalt)}</span>
         <span className="msg-uhrzeit">{zeit}</span>

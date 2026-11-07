@@ -1813,3 +1813,7 @@ Spieler erreichen die Karte nur über „Karte öffnen“ im Kampf. Siehe [[enti
 ## [2026-11-07] update | Messenger-Verlauf folgt chatOffen
 
 Lesen und Senden nutzen dieselbe Offen-Regel wie die Liste. Siehe [[entities/kontakte-messenger]].
+
+## [2026-11-07] update | SL-Chatfenster im Messenger-Stil
+
+Verlaufs-Popup der SL nutzt Fenster und msg-Klassen statt eigenem durchsichtigem Overlay. Siehe [[entities/kontakte-messenger]].

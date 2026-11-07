@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## SL-Chatverlauf als Commlink-Fenster im Messenger-Stil (07.11.2026)
+
+Das Verlaufs-Popup in `KontakteGm.tsx` nutzte nicht vorhandene Theme-Variablen (`--hintergrund-karte`, `--akzent`, …) und war dadurch durchsichtig und schwer lesbar. Jetzt `Fenster` mit denselben `msg-*`-Klassen wie der Spieler-Messenger (`NachrichtBlase` exportiert, `absender`/`initial` überschreibbar). NPC-Nachrichten stehen rechts, PC-Nachrichten links mit PC-Namen. Eingabe als Textarea (Enter sendet), Verlauf lädt alle 3 s nach. Alter `.kontakte-gm-chat-*`-Block aus `kontakte-gm.css` entfernt, Fensterhöhe `.msg-gm-chat` in `messenger.css`.
+
 ## Messenger: Chatverlauf folgt `chatOffen` statt nur `stufe` (07.11.2026)
 
 SL legt Kontakt von Hand an (Stufe GESEHEN, `chatOffen=true`), Spieler/SL schreiben — Nachricht wird gespeichert und das Popup kommt, aber `GET .../chat` lieferte nur ab Stufe KONTAKT_AUSGETAUSCHT einen Verlauf: „Noch keine Nachrichten“. Senden prüfte `chatOffen`, Lesen die Stufe. Jetzt eine Regel für Liste, Lesen und Senden: `kontakte/security.py::chat_ist_offen` (explizites `chatOffen` gewinnt, nur ein nie gesetztes Feld fällt auf die Stufe zurück). Tests in `test_kontakte_sicherheit.py`.

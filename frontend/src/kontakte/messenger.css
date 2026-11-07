@@ -584,10 +584,26 @@ button.msg-kontakt {
   letter-spacing: 0.05em;
 }
 
+/* ============================================================ SL-CHATFENSTER */
+
+/* Der Chat der SL steckt in einem Fenster (shell/Fenster) und braucht eine
+   feste Höhe, sonst wächst der Verlauf statt zu scrollen. */
+.msg-gm-chat {
+  height: min(60svh, 560px);
+  min-height: 0;
+  border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
+}
+
 /* ============================================================ RESPONSIVE */
 
 @media (max-width: 600px) {
-  .msg-huelle,
+  .msg-gm-chat {
+    height: 100%;
+    max-height: none;
+    flex: 1 1 auto;
+  }
+
+  .msg-huelle:not(.msg-gm-chat),
   .msg-chat {
     height: var(--vv-h, 100dvh);
     max-height: var(--vv-h, 100dvh);

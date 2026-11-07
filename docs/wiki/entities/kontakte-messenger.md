@@ -76,6 +76,10 @@ nur `chatOffen` zeigte.
 
 Lesen (`GET .../chat`) und Senden nutzen dieselbe Regel wie die Liste: `chat_ist_offen` in `kontakte/security.py`. Explizites `chatOffen` zählt; nur ein nie gesetztes Feld fällt auf Stufe ≥ KONTAKT_AUSGETAUSCHT zurück. Vorher lieferte Lesen bei einem von der SL angelegten Kontakt (Stufe GESEHEN, Chat offen) einen leeren Verlauf, obwohl die Nachrichten gespeichert waren.
 
+## SL-Chatfenster (07.11.2026)
+
+Der Verlauf in der SL-Kontaktliste ist ein `Fenster` mit der Messenger-Optik der Spieler (`msg-*`, `NachrichtBlase`). Vorher ein eigenes Overlay mit nicht definierten Theme-Variablen, dadurch durchsichtig. Die SL schreibt als NPC (rechts), der PC steht links.
+
 ## Siehe auch
 
 - [[mitteilungen-system]] — Zustellmechanismus für Chat-Benachrichtigungen
