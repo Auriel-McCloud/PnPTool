@@ -39,6 +39,11 @@
 }
 .bm-buehne {
   position: relative;
+  /* Bugfix 07.11.2026: eigener Stacking-Context nötig, sonst entkommt das
+     negative z-index von .bm-bild (siehe unten) dieser Ebene und landet
+     hinter dem ganzen Popup-Fenster statt nur hinter Zeichnung/Grid/Tokens
+     — Hintergrundbild unsichtbar, obwohl es korrekt positioniert ist. */
+  z-index: 0;
   min-height: 420px;
   height: min(70vh, 640px);
   overflow: auto;

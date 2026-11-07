@@ -18,6 +18,8 @@ Mark ursprünglich: „das problem im moment ist das auf jedem gerät, browser, 
 
 **Verifiziert:** `npx tsc -b` sauber. **Kein Klicktest** — bitte am Spieltisch: neues Bild hochladen, Grid verschieben, Tokens setzen, auf mehreren Geräten/Browsern/Zoom-Stufen öffnen und prüfen, dass Grid, Bild und Tokens überall identisch verankert sind; danach Drehen-Button testen.
 
+**Nachtrag (07.11.2026, nach Live-Test):** Grid und Tokens saßen korrekt, aber das Hintergrundbild war unsichtbar. Ursache war ein zweiter, unabhängiger Bug: `.bm-bild` hat `z-index: -1`, aber `.bm-buehne` (sein Elternelement, `position: relative`, undurchsichtiger Hintergrund) hatte selbst keinen `z-index` und erzeugte dadurch keinen eigenen Stacking-Context — das negative `z-index` entkam nach oben und landete hinter dem ganzen Popup-Fenster statt nur hinter Zeichnung/Grid/Tokens. Bug steckte schon seit dem allerersten viewBox-freien Commit drin, nur nie sichtbar getestet. Fix: `.bm-buehne { z-index: 0; }` ergänzt, damit der eigene Stacking-Context das negative z-index von `.bm-bild` einfängt. Auf bebop verifiziert.
+
 
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
 

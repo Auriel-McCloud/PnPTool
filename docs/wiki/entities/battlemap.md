@@ -1,7 +1,7 @@
 ---
 title: Battlemap
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 type: entität
 tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/zeichnungen/repository.py, ../../../backend/app/kampf/repository.py, ../../api/kampf.md, ../concepts/kampf-und-initiative.md]
@@ -330,6 +330,36 @@ Gefunden erst durch einen echten Klick-Test im Browser (Login per JWT-Cookie, `d
 Fix: dieselbe `matrixGeortet`-Ausnahme jetzt auch im Geister-Zweig von `ansicht()`.
 
 **Verifiziert:** neuer Test `test_ansicht_zeigt_ping_trotz_wand`, volle Suite weiter ohne neue Fehlschläge (55 vorbestehende), `npx tsc -b` sauber (keine Frontend-Änderung diesmal). **Kein Klicktest durch Mark nötig für diesen Teil** — direkt gegen seinen echten laufenden Kampf per Browser-Klick UND Backend-Dump verifiziert.
+
+## Gebaut 07.11.2026 — Tablet-Hochkant: 90°-Dreh-Button
+
+Mark: auf dem Tablet, am Hochkant gehaltenen Gerät, einen Knopf, der
+Battlemap+Grid+alles-darin um 90° dreht, damit man ohne das Tablet
+physisch zu drehen mehr von der Karte sieht. Für SL und Spieler gleich.
+
+Rein clientseitige Anzeige-Einstellung, kein Backend-Feld, kein
+WebSocket-Sync — jedes Gerät entscheidet für sich. Button „⟳ 90° drehen“
+in der Battlemap-Werkzeugleiste (`BattlemapPopup.tsx`), außerhalb des
+`istGm`-Blocks, also auch für Spieler sichtbar. Zustand pro Karte in
+`localStorage` gemerkt (`bm-gedreht-<karteId>`), damit ein erneutes Öffnen
+derselben Karte auf demselben Gerät die Drehung nicht vergisst.
+
+Technik: neuer `.bm-dreh`-Wrapper um Bild-/Grid-/Wände-SVG, Zeichenfläche
+und Tokens (alles, was vorher direkt in `.bm-buehne` lag). Normal
+deckungsgleich mit der Bühne; gedreht bekommt er per `ResizeObserver`
+vertauschte Breite/Höhe und wird mittig per CSS um 90° gedreht — dadurch
+füllt er wieder exakt dieselbe Fläche, nur quergestellt. Tap-/Klick-
+Koordinaten werden in `schirmNachInnenrahmen()` zurückgerechnet (Inverse
+der Drehung: `cx = ly, cy = bühnenBreite − lx`), bevor sie an
+`pixelNachHex`/`naechsteEcke` gehen — sonst würde man an der falschen
+Stelle klicken. `hexRasterRechteck` bekommt bei gedreht ebenfalls
+vertauschte Maße, damit das Grid die quergestellte Fläche komplett füllt.
+
+**Verifiziert:** `npx tsc -b` sauber. Echter Klicktest lokal (GM-JWT,
+Dev-Stack): PC-Spawn bei gedrehter Ansicht an eine Bildschirmposition
+gesetzt, Marker erschien exakt an dieser Stelle (nicht verschoben/
+gespiegelt) — bestätigt die Rückrechnung der Klick-Koordinaten. Noch nicht
+mit einem echten Kartenbild und am echten Tablet geprüft.
 
 ## Siehe auch
 
