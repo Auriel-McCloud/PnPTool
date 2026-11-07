@@ -30,7 +30,7 @@ Mark ursprünglich: „das problem im moment ist das auf jedem gerät, browser, 
 
 Zusätzlich neuer Button „Ansicht schieben" (für SL UND Spieler, da Grid/Bild jetzt fest synchron sind — ein Verschieben der eigenen Ansicht ändert nichts an der geteilten Karte): lokaler Pixel-Versatz `ansicht` (State, nicht persistiert, pro Sitzung), angewendet als `translate(...)` VOR `scale(zoom)` im `.bm-zoom`-Transform (wirkt dadurch in echten Bildschirmpixeln, unabhängig vom Zoomfaktor). Pointer-Koordinaten in `schirmNachInnenrahmen()` ziehen `ansicht.x`/`.y` vor der Zoom-Division ab. Button „Ansicht zurücksetzen" erscheint nur, wenn verschoben wurde. Unterscheidet sich von „Grid schieben" (nur SL, schreibt `originX`/`originY` in die DB, verschiebt die Karte für ALLE): „Ansicht schieben" ist rein lokal und schreibt nichts.
 
-**Verifiziert:** `npx tsc -b` sauber. Der Bug selbst (Klick landet weit daneben) per echtem Live-Klicktest gegen bebop NACHGEWIESEN, bevor der Fix geschrieben wurde — nach dem Fix folgt direkt der Re-Test (siehe unten). „Ansicht schieben" noch nicht geklickt-getestet.
+**Verifiziert:** `npx tsc -b` sauber. Per echtem Live-Klicktest gegen bebop bestätigt (JWT-Session, `Mainframe`-Karte): Bug vor dem Fix nachgewiesen (Klick bei gedreht+50%-Zoom landete >400px daneben), nach dem Fix derselbe Klick traf den erwarteten Hex (Toleranz nur noch im Rahmen des normalen Hex-Snappings). „Ansicht schieben" per simuliertem Pointer-Drag bestätigt (Inhalt verschob sich sichtbar, „Ansicht zurücksetzen" erschien und stellte den Ausgangszustand exakt wieder her).
 
 
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
