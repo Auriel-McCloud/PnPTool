@@ -3,6 +3,15 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-07] feature | Battlemap: 90°-Dreh-Button fürs Tablet-Hochkant
+
+Knopf „⟳ 90° drehen“ in der Battlemap-Werkzeugleiste, für SL und Spieler
+gleich. Rein lokale Anzeige-Einstellung (kein Backend/WS), pro Karte in
+localStorage gemerkt. `.bm-dreh`-Wrapper um Bild/Grid/Wände/Tokens,
+Pointer-Koordinaten werden per Inverse der Drehung zurückgerechnet.
+Echter Klicktest lokal bestätigt die Koordinaten-Rückrechnung. Siehe
+[[entities/battlemap]].
+
 ## [2026-11-06] bugfix | dritte Fundstelle: ansicht() filterte Ping-Ziele beim Lesen raus
 
 Speicher korrekt (matrixGeortet überall gesetzt), aber ansicht() hat eine
