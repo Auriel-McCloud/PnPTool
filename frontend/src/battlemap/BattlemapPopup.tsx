@@ -44,7 +44,7 @@ export function BattlemapPopup({
   const stift = STIFTE[1];
   const [radierer, setRadierer] = useState(false);
   const [verbunden, setVerbunden] = useState(false);
-  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid" | "wand">("schieben");
+  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid" | "wand" | "ansicht">("schieben");
   const [spawnArt, setSpawnArt] = useState<"pc" | "npc" | null>(null);
   const [kampf, setKampf] = useState<Kampf | null>(null);
   const [ziehend, setZiehend] = useState<string | null>(null);
@@ -62,6 +62,14 @@ export function BattlemapPopup({
   const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandWeg, setWandWeg] = useState<number | null>(null);
+  // Ansicht schieben (07.11.2026): rein lokales Schwenken für ALLE (auch
+  // Spieler) — anders als "Grid schieben" (nur SL, schreibt originX/originY
+  // in die DB und verschiebt die Karte für alle) ändert das NUR die eigene
+  // Anzeige. Sinnvoll, seit Grid/Bild fest synchron sind: Spieler können
+  // trotzdem näher ranzoomen und sich den sichtbaren Ausschnitt selbst
+  // zurechtschieben, ohne die geteilte Karte zu verschieben.
+  const ansichtZieh = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const [ansicht, setAnsicht] = useState({ x: 0, y: 0 });
   // Tablet-Hochkant: Karte+Grid+Tokens um 90° drehen, ohne das Gerät zu drehen.
   // Rein lokale Anzeige-Einstellung (07.11.2026), pro Gerät in localStorage
   // gemerkt — SL und Spieler können das jeweils für sich einschalten.
@@ -264,13 +272,23 @@ export function BattlemapPopup({
   // (cx, cy) = (ly, buehnenBreite - lx). Davor wird zuerst der Zoom
   // rausgerechnet (`.bm-zoom` liegt näher an der Bühne als `.bm-dreh`,
   // siehe JSX), damit lx/ly wieder in echten Karten-Pixeln vorliegen.
+  // Bugfix 07.11.2026 (Live-Klicktest): `box` ist `.bm-buehne` selbst —
+  // DIE wird nie skaliert, nur ihr Inhalt. `box.width` ist daher schon die
+  // richtige, zoom-UNABHÄNGIGE Bezugsgröße für die Rotations-Formel; nur
+  // lx/ly (der tatsächliche Klickpunkt) brauchen die Zoom-Korrektur. Das
+  // zusätzliche `/ zoom` auf box.width hat Klicks bei gedreht+gezoomt
+  // weit außerhalb der sichtbaren Fläche treffen lassen.
+  // `ansicht` (lokales Schwenken) wird als reiner Bildschirm-Pixel-Versatz
+  // VOR dem Zoom angewendet (siehe `.bm-zoom`-Transform: translate(...)
+  // scale(...), CSS wertet rechts nach links aus) — deshalb hier zuerst
+  // abziehen, dann erst durch zoom teilen.
   function schirmNachInnenrahmen(ev: React.PointerEvent): { x: number; y: number } | null {
     const box = buehne.current?.getBoundingClientRect();
     if (!box) return null;
-    const lx = (ev.clientX - box.left) / zoom;
-    const ly = (ev.clientY - box.top) / zoom;
+    const lx = (ev.clientX - box.left - ansicht.x) / zoom;
+    const ly = (ev.clientY - box.top - ansicht.y) / zoom;
     if (!gedreht) return { x: lx, y: ly };
-    return { x: ly, y: box.width / zoom - lx };
+    return { x: ly, y: box.width - lx };
   }
 
   function hexUnter(ev: React.PointerEvent) {
@@ -472,6 +490,18 @@ export function BattlemapPopup({
         <button type="button" onClick={zoomEinpassen}>
           Ganzes Bild einpassen
         </button>
+        <button
+          type="button"
+          data-aktiv={modus === "ansicht"}
+          onClick={() => setModus(modus === "ansicht" ? "schieben" : "ansicht")}
+        >
+          Ansicht schieben
+        </button>
+        {ansicht.x !== 0 || ansicht.y !== 0 ? (
+          <button type="button" onClick={() => setAnsicht({ x: 0, y: 0 })}>
+            Ansicht zurücksetzen
+          </button>
+        ) : null}
         {istGm && (
           <>
             <button
@@ -565,6 +595,11 @@ export function BattlemapPopup({
             e.currentTarget.setPointerCapture(e.pointerId);
             return;
           }
+          if (modus === "ansicht") {
+            ansichtZieh.current = { sx: e.clientX, sy: e.clientY, ox: ansicht.x, oy: ansicht.y };
+            e.currentTarget.setPointerCapture(e.pointerId);
+            return;
+          }
           if (modus !== "grid" || !istGm) return;
           originZieh.current = { sx: e.clientX, sy: e.clientY, ox, oy };
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -572,6 +607,11 @@ export function BattlemapPopup({
         onPointerMove={(e) => {
           if (wandVon.current) {
             setWandZiel(eckeUnter(e));
+            return;
+          }
+          const a = ansichtZieh.current;
+          if (a) {
+            setAnsicht({ x: a.ox + e.clientX - a.sx, y: a.oy + e.clientY - a.sy });
             return;
           }
           const z = originZieh.current;
@@ -592,6 +632,10 @@ export function BattlemapPopup({
               setLinien(liste);
               void battlemapApi.aktualisieren(campaignId, karteId, { waende: liste }).then(onKarte).catch(() => undefined);
             }
+            return;
+          }
+          if (ansichtZieh.current) {
+            ansichtZieh.current = null;
             return;
           }
           const z = originZieh.current;
@@ -633,7 +677,7 @@ export function BattlemapPopup({
           if (hex) void spawnKlick(hex.q, hex.r);
         }}
       >
-        <div className="bm-zoom" style={{ transform: `scale(${zoom})` }}>
+        <div className="bm-zoom" style={{ transform: `translate(${ansicht.x}px, ${ansicht.y}px) scale(${zoom})` }}>
         <div
           className="bm-dreh"
           data-gedreht={gedreht || undefined}

@@ -26,6 +26,12 @@ Mark ursprünglich: „das problem im moment ist das auf jedem gerät, browser, 
 
 **Nachtrag 3 (07.11.2026): Reinzoomen zeigte nur denselben Ausschnitt kleiner.** Ursache: SVGs clippen per UA-Default alles, was über ihre eigene (ungezoomte, auf `.bm-buehne`-Größe begrenzte) Box hinausragt — das passiert VOR dem `transform: scale()` auf `.bm-zoom`. Der Zoom hat also nur den bereits abgeschnittenen Ausschnitt skaliert, nie mehr vom Bild aufgedeckt. Fix: `overflow: visible` auf `.bm-bild`, `.bm-grid`, `.bm-waende` ergänzt, damit Inhalt außerhalb der Nominal-Box mitgerendert wird und der äußere Zoom-Transform ihn korrekt sichtbar macht.
 
+**Nachtrag 4 (07.11.2026): 90°-Drehen kombiniert mit Zoom traf komplett daneben, plus Ansicht-schieben-Button für Spieler.** Per echtem Live-Klicktest (JWT-Session, `references/live-deploy.md`) gefunden: `schirmNachInnenrahmen()` teilte `box.width` fälschlich zusätzlich durch `zoom` — `box` ist `.bm-buehne` selbst, die NIE skaliert wird, `box.width` war also schon die richtige Bezugsgröße für die Rotationsformel. Ein Klick landete dadurch bei gedreht+gezoomt weit außerhalb der sichtbaren Fläche (verifiziert: Testklick setzte einen Token weit oberhalb des sichtbaren Bereichs statt an der Klickstelle). Fix: `box.width - lx` statt `box.width / zoom - lx`.
+
+Zusätzlich neuer Button „Ansicht schieben" (für SL UND Spieler, da Grid/Bild jetzt fest synchron sind — ein Verschieben der eigenen Ansicht ändert nichts an der geteilten Karte): lokaler Pixel-Versatz `ansicht` (State, nicht persistiert, pro Sitzung), angewendet als `translate(...)` VOR `scale(zoom)` im `.bm-zoom`-Transform (wirkt dadurch in echten Bildschirmpixeln, unabhängig vom Zoomfaktor). Pointer-Koordinaten in `schirmNachInnenrahmen()` ziehen `ansicht.x`/`.y` vor der Zoom-Division ab. Button „Ansicht zurücksetzen" erscheint nur, wenn verschoben wurde. Unterscheidet sich von „Grid schieben" (nur SL, schreibt `originX`/`originY` in die DB, verschiebt die Karte für ALLE): „Ansicht schieben" ist rein lokal und schreibt nichts.
+
+**Verifiziert:** `npx tsc -b` sauber. Der Bug selbst (Klick landet weit daneben) per echtem Live-Klicktest gegen bebop NACHGEWIESEN, bevor der Fix geschrieben wurde — nach dem Fix folgt direkt der Re-Test (siehe unten). „Ansicht schieben" noch nicht geklickt-getestet.
+
 
 ## NPC-Inventar: Werkbank-Augments montierbar, Ablageorte auf NPC-Position beschränkt (06.11.2026)
 

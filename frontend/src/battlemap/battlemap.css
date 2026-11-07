@@ -163,6 +163,16 @@
 .bm-buehne[data-modus="grid"] .bm-token {
   pointer-events: none;
 }
+.bm-buehne[data-modus="ansicht"] {
+  cursor: grab;
+  touch-action: none;
+}
+.bm-buehne[data-modus="ansicht"]:active {
+  cursor: grabbing;
+}
+.bm-buehne[data-modus="ansicht"] .bm-token {
+  pointer-events: none;
+}
 .bm-buehne[data-modus="wand"] .bm-token {
   pointer-events: none;
 }
