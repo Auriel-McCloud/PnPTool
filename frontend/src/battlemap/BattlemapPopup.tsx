@@ -66,6 +66,14 @@ export function BattlemapPopup({
   const size = karte?.hexGroesse || 48;
   const ox = ziehOrigin?.x ?? karte?.originX ?? 0;
   const oy = ziehOrigin?.y ?? karte?.originY ?? 0;
+  
+  // Grid-Sync viewBox (07.11.2026): Muss auf ALLEN Clients identisch sein.
+  // Basis: nur DB-Werte (bildBreite/bildHoehe/ox/oy), NICHT die gemessene
+  // Fenstergröße (die ist auf jedem Gerät anders). Das SVG wird eventuell
+  // größer als der Container → Container scrollt dann.
+  const viewBoxWidth = (karte?.bildBreite || 2000) + Math.abs(ox) * 2;
+  const viewBoxHeight = (karte?.bildHoehe || 1200) + Math.abs(oy) * 2;
+  const viewBox = `0 0 ${viewBoxWidth} ${viewBoxHeight}`;
 
   useEffect(() => {
     setLinien(karte?.waende ?? []);
@@ -528,7 +536,7 @@ export function BattlemapPopup({
             />
           )}
         </div>
-        <svg className="bm-bild" width="100%" height="100%">
+        <svg className="bm-bild" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
           {karte.bildUrl && karte.bildBreite && karte.bildHoehe && (
             <image
               href={karte.bildUrl}
@@ -536,11 +544,10 @@ export function BattlemapPopup({
               y={oy}
               width={karte.bildBreite}
               height={karte.bildHoehe}
-              preserveAspectRatio="none"
             />
           )}
         </svg>
-        <svg className="bm-grid" width="100%" height="100%">
+        <svg className="bm-grid" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
           {hexListe.map(({ q, r }) => {
             const { x, y } = hexNachPixel(q, r, size, ox, oy);
             const key = `${q},${r}`;
@@ -570,7 +577,7 @@ export function BattlemapPopup({
             return <polygon key={`g-${t.id}`} points={hexEcken(x, y, size * 0.95)} className="bm-hex-grau" />;
           })}
         </svg>
-        <svg className="bm-waende">
+        <svg className="bm-waende" width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
           {linien.map((w, i) => (
             <line
               key={`${w.ax}-${w.ay}-${w.bx}-${w.by}-${i}`}
