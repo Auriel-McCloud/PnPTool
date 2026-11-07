@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useMitteilungen } from "../mitteilungen/MitteilungenKontext";
 import type { Verhandlung } from "./api";
+import { KontaktanfrageFenster } from "./KontaktanfrageFenster";
 import "./verhandlung.css";
 
 /**
@@ -50,9 +51,24 @@ export function VerhandlungPopup() {
   // Zustimmungs-Popup — "ja" erteilt einem Party-Mitglied dauerhaften
   // Reparatur-Zugriff statt einen Gegenstand zu bewegen.
   const istReparaturFreigabe = angezeigt.art === "REPARATUR_FREIGABE";
-  // Spieler↔Spieler-Kontakt: ebenfalls reines Zustimmungs-Popup, kein Geld.
+  // Spieler↔Spieler-Kontakt hat ein eigenes Fenster (KontaktanfrageFenster).
   const istSpielerKontakt = angezeigt.art === "SPIELER_KONTAKT";
-  const istZustimmungsPopup = istWeitergabe || istReparaturFreigabe || istSpielerKontakt;
+  const istZustimmungsPopup = istWeitergabe || istReparaturFreigabe;
+
+  // Kontaktanfrage zwischen Spielern: eigenes Fenster ohne Preis-/Angebotsoptik.
+  if (istSpielerKontakt) {
+    return createPortal(
+      <KontaktanfrageFenster
+        angezeigt={angezeigt}
+        laeuft={laeuft}
+        fehler={fehler}
+        wartend={verhandlungenWartend}
+        onAntwort={(angenommen) => void antworten(angenommen)}
+        onOk={() => setErgebnis(null)}
+      />,
+      document.body,
+    );
+  }
 
   return createPortal(
     <div className="vh-popup-huelle">
@@ -65,7 +81,7 @@ export function VerhandlungPopup() {
       >
         <div className="vh-popup-kopf">
           <span className="vh-popup-zeichen" aria-hidden="true">
-            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istSpielerKontakt ? "◍" : istReparaturFreigabe ? "🔧" : istWeitergabe ? "🎁" : "¥"}
+            {entschieden ? (angenommenErgebnis ? "✓" : "✕") : istReparaturFreigabe ? "🔧" : istWeitergabe ? "🎁" : "¥"}
           </span>
           <span className="vh-popup-titel">
             {entschieden
@@ -76,13 +92,11 @@ export function VerhandlungPopup() {
                 : istZustimmungsPopup
                   ? "Abgelehnt"
                   : "Angebot abgelehnt"
-              : istSpielerKontakt
-                ? "Kontaktanfrage"
-                : istReparaturFreigabe
-                  ? "Reparatur-Zugriff angefragt"
-                  : istWeitergabe
-                    ? "Gegenstand angeboten"
-                    : "Angebot der Spielleitung"}
+              : istReparaturFreigabe
+                ? "Reparatur-Zugriff angefragt"
+                : istWeitergabe
+                  ? "Gegenstand angeboten"
+                  : "Angebot der Spielleitung"}
           </span>
         </div>
 
