@@ -33,6 +33,8 @@ Basis: `/api/campaigns/{campaign_id}/kontakte`
 
 Alle Kontakte für diesen Betrachter.
 
+`letzteAktivitaet`: Zeit der letzten Nachricht in diesem Chat, sonst Anlage des Kontakts. Der Messenger sortiert danach (neuester oben).
+
 **Spieler-Response:**
 ```json
 [
@@ -47,7 +49,8 @@ Alle Kontakte für diesen Betrachter.
     "chatOffen": true,
     "letzteNachricht": "Hey, hast du die Daten?",
     "letzteNachrichtZeit": "2026-09-07T20:00:00.000Z",
-    "ungelesen": 2
+    "ungelesen": 2,
+    "letzteAktivitaet": "2026-11-08T10:44:37+00:00"
   }
 ]
 ```

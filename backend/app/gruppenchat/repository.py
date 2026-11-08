@@ -25,6 +25,12 @@ _TEILNEHMER = """
 """
 
 
+# Zeitpunkt der neuesten Nachricht der Gruppe ('' ohne Nachrichten). Als Pattern-Comprehension
+# vor der Aggregation, damit die Teilnehmerliste nicht je Nachricht vervielfacht wird.
+_LETZTE = """reduce(m = '', t IN [(n:Nachricht)-[:IN]->(g) | n.erstelltAm] |
+        CASE WHEN t > m THEN t ELSE m END)"""
+
+
 def _jetzt() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -34,9 +40,11 @@ async def liste_fuer_gm(campaign_id: str) -> list[dict]:
     driver = get_driver()
     query = f"""
         MATCH (g:Gruppenchat {{campaignId: $campaign_id}})
+        WITH g, {_LETZTE} AS letzte
         OPTIONAL MATCH (g)-[:TEILNEHMER]->(p:Person)
         RETURN g.id AS id, g.name AS name, coalesce(g.offen, true) AS offen,
-               g.erstelltAm AS erstelltAm, 0 AS ungelesen, {_TEILNEHMER}
+               g.erstelltAm AS erstelltAm, 0 AS ungelesen,
+               coalesce(nullif(letzte, ''), g.erstelltAm) AS letzteAktivitaet, {_TEILNEHMER}
         ORDER BY erstelltAm
     """
     async with driver.session() as session:
@@ -54,9 +62,11 @@ async def liste_fuer_person(campaign_id: str, person_id: str) -> list[dict]:
         WHERE n.erstelltAm > coalesce(mein.gelesenBis, '')
           AND NOT (n)-[:VON]->(:Person {{id: $person_id}})
         WITH g, count(n) AS ungelesen
+        WITH g, ungelesen, {_LETZTE} AS letzte
         OPTIONAL MATCH (g)-[:TEILNEHMER]->(p:Person)
         RETURN g.id AS id, g.name AS name, coalesce(g.offen, true) AS offen,
-               g.erstelltAm AS erstelltAm, ungelesen, {_TEILNEHMER}
+               g.erstelltAm AS erstelltAm, ungelesen,
+               coalesce(nullif(letzte, ''), g.erstelltAm) AS letzteAktivitaet, {_TEILNEHMER}
         ORDER BY erstelltAm
     """
     async with driver.session() as session:
@@ -68,9 +78,11 @@ async def hole(campaign_id: str, gruppe_id: str) -> dict | None:
     driver = get_driver()
     query = f"""
         MATCH (g:Gruppenchat {{id: $gruppe_id, campaignId: $campaign_id}})
+        WITH g, {_LETZTE} AS letzte
         OPTIONAL MATCH (g)-[:TEILNEHMER]->(p:Person)
         RETURN g.id AS id, g.name AS name, coalesce(g.offen, true) AS offen,
-               0 AS ungelesen, {_TEILNEHMER}
+               0 AS ungelesen,
+               coalesce(nullif(letzte, ''), g.erstelltAm) AS letzteAktivitaet, {_TEILNEHMER}
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, gruppe_id=gruppe_id)

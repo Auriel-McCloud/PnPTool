@@ -39,6 +39,8 @@ export interface Kontakt {
   istBlankoKontakt: boolean;
   /** Mentor-Platz oder schon ausgearbeiteter Mentor. */
   istMentor: boolean;
+  /** Letzte Nachricht in diesem Chat, sonst Anlage des Kontakts — danach sortiert der Messenger. */
+  letzteAktivitaet: string;
 }
 
 export interface KontaktGm extends Kontakt {

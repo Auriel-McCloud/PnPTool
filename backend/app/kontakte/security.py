@@ -89,6 +89,7 @@ def kontakt_fuer_viewer(roh: dict, viewer: Viewer) -> KontaktResponse:
         ungelesen=int(roh.get("ungelesen") or 0),
         istBlankoKontakt=bool(roh.get("npcIstBlankoKontakt")),
         istMentor=bool(roh.get("npcIstMentor")),
+        letzteAktivitaet=roh.get("letzteAktivitaet") or roh.get("erstelltAm") or "",
     )
 
 

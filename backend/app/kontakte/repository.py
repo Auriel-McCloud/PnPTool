@@ -26,7 +26,7 @@ from app.kontakte.logic import normalisiere_nachrichteninhalt
 KONTAKT_FELDER = """
     r.id AS id, r.stufe AS stufe, r.echterNameBekannt AS echterNameBekannt,
     r.kontaktAnfrageStatus AS kontaktAnfrageStatus, r.chatOffen AS chatOffen,
-    r.nurLesen AS nurLesen,
+    r.nurLesen AS nurLesen, r.erstelltAm AS erstelltAm,
     r.alias AS persoenlicherAlias, r.persoenlicheNotizen AS persoenlicheNotizen,
     pc.id AS pcId, pc.name AS pcName,
     npc.id AS npcId, npc.name AS npcName, npc.alias AS npcAlias,
@@ -54,6 +54,25 @@ async def liste_fuer_pc(campaign_id: str, pc_id: str) -> list[dict]:
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, pc_id=pc_id)
         return [dict(r) async for r in result]
+
+
+async def letzte_nachrichten(campaign_id: str, pc_id: str) -> dict[str, str]:
+    """Je Gesprächspartner der Zeitpunkt der letzten Nachricht in diesem Einzelchat.
+
+    Schlüssel ist die ID des Gegenübers (NPC oder Mitspieler). Nachrichten in beide
+    Richtungen zählen. Gruppennachrichten haben kein `AN` und fehlen hier absichtlich.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (n:Nachricht {campaignId: $campaign_id})-[:VON]->(a:Person)
+        MATCH (n)-[:AN]->(b:Person)
+        WHERE a.id = $pc_id OR b.id = $pc_id
+        WITH n, CASE WHEN a.id = $pc_id THEN b.id ELSE a.id END AS gegenueber
+        RETURN gegenueber AS id, max(n.erstelltAm) AS letzte
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, pc_id=pc_id)
+        return {r["id"]: r["letzte"] async for r in result if r["letzte"]}
 
 
 async def liste_fuer_gm(campaign_id: str) -> list[dict]:

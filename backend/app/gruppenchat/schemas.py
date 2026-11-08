@@ -29,6 +29,8 @@ class GruppeResponse(BaseModel):
     # Geschlossen = für Spieler unsichtbar, ohne etwas zu löschen.
     offen: bool = True
     ungelesen: int = 0
+    # Letzte Nachricht, sonst Anlage der Gruppe — danach sortiert der Messenger.
+    letzteAktivitaet: str = ""
     teilnehmer: list[TeilnehmerResponse] = []
 
 

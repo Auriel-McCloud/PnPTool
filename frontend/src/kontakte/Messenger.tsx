@@ -31,7 +31,8 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
   const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
   const [mitspielerOffen, setMitspielerOffen] = useState(false);
   const [gruppen, setGruppen] = useState<Gruppe[]>([]);
-  const [aktiveGruppe, setAktiveGruppe] = useState<Gruppe | null>(null);
+  // Der offene Chat steht als Popup über der Liste (wie bei der SL). Nur einer zugleich.
+  const [aktiveGruppeId, setAktiveGruppeId] = useState<string | null>(null);
 
   // „Zum Chat“ aus dem Nachrichten-Popup. Eine Gruppe kennt der Chat selbst (Name lädt er mit);
   // ein Einzelchat braucht den Eintrag aus der Kontaktliste — die kann noch fehlen, dann nachladen.
@@ -51,7 +52,7 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
         setAktiv(null);
         setMitspielerOffen(false);
         setBlanko(null);
-        setAktiveGruppe({ id, name: "", offen: true, ungelesen: 0, teilnehmer: [] });
+        setAktiveGruppeId(id);
       }),
     [],
   );
@@ -59,7 +60,7 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
     if (!zielKontaktId) return;
     const k = kontakte.find((x) => x.id === zielKontaktId);
     if (k) {
-      setAktiveGruppe(null);
+      setAktiveGruppeId(null);
       setMitspielerOffen(false);
       setBlanko(null);
       setAktiv(k);
@@ -83,14 +84,13 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
   }
 
   // Eine Zusage eines Mitspielers, eine neue Gruppe oder neue Nachrichten kommen
-  // ohne eigene Aktion an — die Liste still nachladen, solange sie sichtbar ist.
+  // ohne eigene Aktion an — die Liste still nachladen (auch hinter einem offenen Chat-
+  // Popup: Reihenfolge und Zähler bleiben so aktuell).
   const aktualisierenRef = useRef(onKontakteAktualisieren);
   aktualisierenRef.current = onKontakteAktualisieren;
   const gruppenLadenRef = useRef(gruppenLaden);
   gruppenLadenRef.current = gruppenLaden;
-  const listeSichtbar = !aktiv && !aktiveGruppe;
   useEffect(() => {
-    if (!listeSichtbar) return;
     void gruppenLadenRef.current();
     const uhr = setInterval(() => {
       if (document.hidden) return;
@@ -98,7 +98,7 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
       void gruppenLadenRef.current();
     }, 5000);
     return () => clearInterval(uhr);
-  }, [listeSichtbar]);
+  }, []);
 
   // Offene Chats und noch leere Plätze aus der Charaktererstellung.
   // Die Plätze haben den Chat zu — ohne eigene Zeile sieht der Spieler nichts.
@@ -122,25 +122,19 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
     }
   }
 
-  if (aktiv) {
-    return (
-      <MessengerChat
-        campaignId={campaignId}
-        kontakt={aktiv}
-        onZurueck={() => setAktiv(null)}
-        onGeaendert={onKontakteAktualisieren}
-      />
-    );
-  }
+  // Einzelchats und Gruppen in EINER Liste: der Chat mit der neuesten Nachricht steht oben.
+  // Ohne Nachricht zählt die Anlage; Altbestand ohne Zeit sinkt nach unten (stabile Sortierung).
+  const eintraege = [
+    ...gruppen.map((gruppe) => ({ gruppe, kontakt: null as Kontakt | null, zeit: gruppe.letzteAktivitaet || "" })),
+    ...chatKontakte.map((kontakt) => ({ gruppe: null as Gruppe | null, kontakt, zeit: kontakt.letzteAktivitaet || "" })),
+  ].sort((a, b) => (a.zeit < b.zeit ? 1 : a.zeit > b.zeit ? -1 : 0));
 
-  if (aktiveGruppe) {
-    return (
-      <GruppenChat
-        campaignId={campaignId}
-        gruppeId={aktiveGruppe.id}
-        onZurueck={() => setAktiveGruppe(null)}
-      />
-    );
+  function chatSchliessen() {
+    setAktiv(null);
+    setAktiveGruppeId(null);
+    // Zähler und Reihenfolge sofort frisch, nicht erst nach dem nächsten Takt.
+    onKontakteAktualisieren();
+    void gruppenLaden();
   }
 
   const listeLeer = chatKontakte.length === 0 && plaetze.length === 0 && gruppen.length === 0;
@@ -182,13 +176,66 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
               </span>
             </button>
           ))}
-          {gruppen.map((g) => (
-            <GruppenKarte key={g.id} gruppe={g} onClick={() => setAktiveGruppe(g)} />
-          ))}
-          {chatKontakte.map((k) => (
-            <KontaktKarte key={k.id} kontakt={k} onClick={() => setAktiv(k)} />
-          ))}
+          {eintraege.map((e) =>
+            e.gruppe ? (
+              <GruppenKarte
+                key={`g:${e.gruppe.id}`}
+                gruppe={e.gruppe}
+                onClick={() => {
+                  const g = e.gruppe;
+                  if (!g) return;
+                  setAktiv(null);
+                  setAktiveGruppeId(g.id);
+                }}
+              />
+            ) : e.kontakt ? (
+              <KontaktKarte
+                key={`k:${e.kontakt.id}`}
+                kontakt={e.kontakt}
+                onClick={() => {
+                  const k = e.kontakt;
+                  if (!k) return;
+                  setAktiveGruppeId(null);
+                  setAktiv(k);
+                }}
+              />
+            ) : null,
+          )}
         </div>
+      )}
+
+      {aktiv && (
+        <Fenster
+          titel={aktiv.alias}
+          unterzeile={aktiv.echterName && aktiv.echterName !== aktiv.alias ? aktiv.echterName : undefined}
+          kennung={`chat:${aktiv.id}`}
+          offen={true}
+          onSchliessen={chatSchliessen}
+        >
+          <div className="msg-huelle msg-gm-chat">
+            <MessengerChat
+              campaignId={campaignId}
+              kontakt={aktiv}
+              imFenster
+              onZurueck={chatSchliessen}
+              onGeaendert={onKontakteAktualisieren}
+            />
+          </div>
+        </Fenster>
+      )}
+
+      {aktiveGruppeId && (
+        <Fenster
+          titel={gruppen.find((g) => g.id === aktiveGruppeId)?.name || "Gruppenchat"}
+          unterzeile="Gruppenchat"
+          kennung={`gruppe:${aktiveGruppeId}`}
+          offen={true}
+          onSchliessen={chatSchliessen}
+        >
+          <div className="msg-huelle msg-gm-chat">
+            <GruppenChat campaignId={campaignId} gruppeId={aktiveGruppeId} onGeaendert={() => void gruppenLaden()} />
+          </div>
+        </Fenster>
       )}
 
       {mitspielerOffen && (
@@ -285,6 +332,7 @@ function MessengerChat({
   campaignId,
   kontakt,
   nurLesen = false,
+  imFenster = false,
   onZurueck,
   onGeaendert,
 }: {
@@ -292,6 +340,8 @@ function MessengerChat({
   kontakt: Kontakt;
   /** Wenn true, kann der Spieler nicht antworten. */
   nurLesen?: boolean;
+  /** Im Popup (`Fenster`): Name und Schließen stecken schon in der Fensterleiste — keine eigene Kopfzeile. */
+  imFenster?: boolean;
   onZurueck: () => void;
   onGeaendert?: () => void;
 }) {
@@ -350,22 +400,23 @@ function MessengerChat({
     }
   }
 
-  return (
-    <div className="msg-huelle">
+  const inhalt = (
       <div className="msg-chat">
         {/* Header */}
-        <header className="msg-header">
-          <button type="button" className="msg-zurueck" onClick={onZurueck}>
-            ◀
-          </button>
-          <div className="msg-partner">
-            {kontakt.bildUrl && (
-              <img className="msg-partner-bild" src={kontakt.bildUrl} alt="" />
-            )}
-            <span className="msg-partner-name">{kontakt.alias}</span>
-          </div>
-          {nurLesen && <span className="msg-readonly">Nur Empfang</span>}
-        </header>
+        {!imFenster && (
+          <header className="msg-header">
+            <button type="button" className="msg-zurueck" onClick={onZurueck}>
+              ◀
+            </button>
+            <div className="msg-partner">
+              {kontakt.bildUrl && (
+                <img className="msg-partner-bild" src={kontakt.bildUrl} alt="" />
+              )}
+              <span className="msg-partner-name">{kontakt.alias}</span>
+            </div>
+            {nurLesen && <span className="msg-readonly">Nur Empfang</span>}
+          </header>
+        )}
 
         {/* Nachrichten */}
         <div className="msg-verlauf">
@@ -421,8 +472,10 @@ function MessengerChat({
           </p>
         )}
       </div>
-    </div>
   );
+
+  // Im Popup liefert der Aufrufer die Hülle (`msg-huelle msg-gm-chat`); sonst bringt der Chat seine mit.
+  return imFenster ? inhalt : <div className="msg-huelle">{inhalt}</div>;
 }
 
 /**

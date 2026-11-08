@@ -67,6 +67,30 @@ class TestSichtbarkeit:
         assert not darf_kontakt_sehen(pc_kontakt(), Viewer(role="PLAYER", person_id=None))
 
 
+class TestSortierung:
+    """Der neueste Chat steht oben: die Liste liefert die Zeit der letzten Aktivität mit."""
+
+    def _liste(self, monkeypatch, kontakte, letzte):
+        monkeypatch.setattr(routes.repository, "liste_fuer_pc", AsyncMock(return_value=kontakte))
+        monkeypatch.setattr(routes.repository, "letzte_nachrichten", AsyncMock(return_value=letzte))
+        return _run(routes.meine_kontakte("c-1", ICH))
+
+    def test_letzte_nachricht_schlaegt_die_anlage(self, monkeypatch):
+        a = pc_kontakt(id="k-a", npcId="x1", erstelltAm="2026-01-01T00:00:00+00:00")
+        b = pc_kontakt(id="k-b", npcId="x2", erstelltAm="2026-02-01T00:00:00+00:00")
+        antwort = self._liste(monkeypatch, [a, b], {"x1": "2026-03-01T00:00:00+00:00"})
+        zeiten = {k.id: k.letzteAktivitaet for k in antwort}
+        assert zeiten == {"k-a": "2026-03-01T00:00:00+00:00", "k-b": "2026-02-01T00:00:00+00:00"}
+
+    def test_ohne_nachricht_gilt_die_anlage_des_kontakts(self, monkeypatch):
+        a = pc_kontakt(npcId="x1", erstelltAm="2026-01-01T00:00:00+00:00")
+        assert self._liste(monkeypatch, [a], {})[0].letzteAktivitaet == "2026-01-01T00:00:00+00:00"
+
+    def test_altbestand_ohne_zeit_bleibt_leer_und_stoert_nicht(self, monkeypatch):
+        a = pc_kontakt(npcId="x1")
+        assert self._liste(monkeypatch, [a], {})[0].letzteAktivitaet == ""
+
+
 class TestAnzeige:
     def test_name_des_mitspielers_ohne_alias(self):
         antwort = kontakt_fuer_viewer(pc_kontakt(), ICH)

@@ -79,6 +79,12 @@ class TestNamenProBetrachter:
         antwort = gruppe_fuer(gruppe(), ich_id=None, aliase={}, als_gm=True)
         assert {t.name for t in antwort.teilnehmer} == {"Ryu", "Mara Voss", "Viktor Kane"}
 
+    def test_letzte_aktivitaet_wird_durchgereicht(self):
+        roh = gruppe()
+        roh["letzteAktivitaet"] = "2026-03-01T00:00:00+00:00"
+        antwort = gruppe_fuer(roh, ich_id="pc-a", aliase={}, als_gm=False)
+        assert antwort.letzteAktivitaet == "2026-03-01T00:00:00+00:00"
+
     def test_ich_ist_markiert(self):
         antwort = gruppe_fuer(gruppe(), ich_id="pc-a", aliase={}, als_gm=False)
         assert [t.id for t in antwort.teilnehmer if t.ich] == ["pc-a"]

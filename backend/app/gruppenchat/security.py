@@ -67,6 +67,7 @@ def gruppe_fuer(
         name=roh.get("name") or "",
         offen=bool(roh.get("offen", True)),
         ungelesen=int(roh.get("ungelesen") or 0),
+        letzteAktivitaet=roh.get("letzteAktivitaet") or "",
         teilnehmer=[
             teilnehmer_fuer(t, ich_id=ich_id, aliase=aliase, als_gm=als_gm)
             for t in roh.get("teilnehmer") or []

@@ -694,3 +694,12 @@ button.msg-kontakt {
   border: 1px solid color-mix(in srgb, var(--neon) 40%, var(--grund));
   padding: var(--luft-1) var(--luft-2);
 }
+
+/* Chat im Popup (Spieler wie SL): am Handy füllt das Fenster den Bildschirm, der Chat
+   folgt dessen Höhe — NICHT der eigenen Viewport-Höhe wie der frühere Vollbild-Chat. */
+@media (max-width: 600px) {
+  .msg-gm-chat .msg-chat {
+    height: 100%;
+    max-height: none;
+  }
+}

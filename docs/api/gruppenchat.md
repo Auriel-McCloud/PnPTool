@@ -30,6 +30,8 @@ die SL sieht echte Namen.
 | GET | `/{gruppe_id}/chat` | Mitglied / SL | Verlauf. Für Spieler gilt er damit als gelesen. Antwort: `{gruppe, nachrichten, sprecher}`; `sprecher` nur für die SL (NPC-Mitglieder) |
 | POST | `/{gruppe_id}/chat` | Mitglied / SL | `{inhalt, alsPersonId?}`. Spieler: immer als eigener Charakter (`alsPersonId` → 403). SL: `alsPersonId` muss ein NPC-Mitglied sein (sonst 400). Geschlossene Gruppe → 409 |
 
+Jede Gruppe liefert `letzteAktivitaet` (Zeit der letzten Nachricht, sonst Anlage) — danach sortiert der Messenger.
+
 Neue Mitglieder sehen den ganzen Verlauf. Ihr `gelesenBis` startet beim Beitritt, die alte
 Historie zählt also nicht als ungelesen.
 

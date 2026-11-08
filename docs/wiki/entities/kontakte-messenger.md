@@ -107,6 +107,10 @@ Gebaut wie unten entschieden. Modul `backend/app/gruppenchat/`, SL-Verwaltung `f
 
 Das Nachrichten-Popup hat neben OK den Knopf **Zum Chat** (Spieler und SL). Die Mitteilung trägt `chatArt` (`KONTAKT`/`GRUPPE`) und `chatId`; bei Spielerkontakten die Kante des Empfängers. Details: CLAUDE.md „Zum Chat“, [[mitteilungen-system]].
 
+## Popup und Sortierung (08.11.2026)
+
+Beim Spieler öffnen Chats als `Fenster` über der Liste (wie bei der SL). Die Liste zeigt Einzelchats und Gruppen gemischt, der mit der neuesten Nachricht steht oben (`letzteAktivitaet`: letzte Nachricht, sonst Anlage). Details: CLAUDE.md „Messenger: Chats als Popup“.
+
 ## Siehe auch
 
 - [[mitteilungen-system]] — Zustellmechanismus für Chat-Benachrichtigungen

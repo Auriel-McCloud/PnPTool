@@ -50,6 +50,9 @@ class KontaktResponse(BaseModel):
     istBlankoKontakt: bool = False
     # Blanko-Mentor: derselbe Beschreiben-Pfad, plus 20 EP je Punkt.
     istMentor: bool = False
+    # Zeitpunkt der letzten Nachricht in diesem Chat, sonst der Anlage des Kontakts —
+    # danach sortiert der Messenger (neuester Chat oben).
+    letzteAktivitaet: str = ""
 
 
 class KontaktGmResponse(KontaktResponse):

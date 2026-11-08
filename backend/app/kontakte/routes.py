@@ -105,6 +105,10 @@ async def meine_kontakte(campaign_id: str, viewer: Viewer = Depends(get_viewer))
     """Das eigene Kontaktverzeichnis."""
     pc_id = await _eigener_pc(viewer)
     roh = await repository.liste_fuer_pc(campaign_id, pc_id)
+    letzte = await repository.letzte_nachrichten(campaign_id, pc_id)
+    for r in roh:
+        # Neuester Chat oben: die letzte Nachricht zählt, sonst die Anlage des Kontakts.
+        r["letzteAktivitaet"] = letzte.get(r["npcId"]) or r.get("erstelltAm") or ""
     return [kontakt_fuer_viewer(r, viewer) for r in roh]
 
 

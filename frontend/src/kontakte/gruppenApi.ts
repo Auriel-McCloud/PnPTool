@@ -25,6 +25,8 @@ export interface Gruppe {
   /** Geschlossen = für Spieler unsichtbar, nichts gelöscht. */
   offen: boolean;
   ungelesen: number;
+  /** Letzte Nachricht, sonst Anlage der Gruppe — danach sortiert der Messenger. */
+  letzteAktivitaet: string;
   teilnehmer: Teilnehmer[];
 }
 

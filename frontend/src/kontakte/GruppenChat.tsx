@@ -3,8 +3,8 @@ import { gruppenApi, type GruppenChat as ChatDaten } from "./gruppenApi";
 import { NachrichtBlase } from "./Messenger";
 
 /**
- * Der Verlauf einer Gruppe — gemeinsam für Spieler (Vollbild im Messenger) und
- * Spielleitung (im Fenster).
+ * Der Verlauf einer Gruppe — gemeinsam für Spieler und Spielleitung. Beide zeigen ihn
+ * als Popup (`Fenster`); die Hülle `msg-huelle msg-gm-chat` liefert der Aufrufer.
  *
  * Spieler schreiben als ihr eigener Charakter. Die SL schreibt als eines der
  * NPC-Mitglieder und wählt über das Auswahlfeld, welcher NPC spricht — ihr
@@ -15,15 +15,12 @@ export function GruppenChat({
   campaignId,
   gruppeId,
   alsGm = false,
-  onZurueck,
   onGeaendert,
 }: {
   campaignId: string;
   gruppeId: string;
   /** SL-Ansicht: NPC-Auswahl statt eigenem Charakter, echte Namen. */
   alsGm?: boolean;
-  /** Nur Spieleransicht: Pfeil zurück zur Liste (Vollbild mit Kopfzeile). */
-  onZurueck?: () => void;
   onGeaendert?: () => void;
 }) {
   const [chat, setChat] = useState<ChatDaten | null>(null);
@@ -85,19 +82,8 @@ export function GruppenChat({
   const geschlossen = gruppe ? !gruppe.offen : false;
   const kannSenden = !geschlossen && (!alsGm || sprecher.length > 0);
 
-  const inhalt = (
+  return (
     <div className="msg-chat">
-      {onZurueck && (
-        <header className="msg-header">
-          <button type="button" className="msg-zurueck" onClick={onZurueck}>
-            ◀
-          </button>
-          <div className="msg-partner">
-            <span className="msg-partner-name">{gruppe?.name ?? "Gruppe"}</span>
-          </div>
-        </header>
-      )}
-
       {andere.length > 0 && (
         <div className="msg-gruppe-mitglieder">{andere.map((t) => t.name).join(" · ")}</div>
       )}
@@ -165,7 +151,4 @@ export function GruppenChat({
       {fehler && <p style={{ color: "var(--warn)", padding: "var(--luft-2)", margin: 0 }}>{fehler}</p>}
     </div>
   );
-
-  // Spieler: eigene Hülle wie MessengerChat. SL: kommt schon in einer Hülle im Fenster.
-  return onZurueck ? <div className="msg-huelle">{inhalt}</div> : inhalt;
 }

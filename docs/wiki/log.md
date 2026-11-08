@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-08] feature | Messenger: Chats als Popup, Liste nach letzter Nachricht
+
+Spieler-Chats (Einzel und Gruppe) öffnen wie bei der SL als Popup über der Liste statt als
+Vollbild. Die Liste mischt Einzelchats und Gruppen und sortiert nach der letzten Nachricht
+(`letzteAktivitaet`), neuester oben. Siehe [[entities/kontakte-messenger]].
+
 ## [2026-11-07] feature | Nachrichten-Popup: „Zum Chat“-Knopf
 
 Chat-Mitteilungen verweisen auf ihren Chat (`chatArt`, `chatId`); neben OK öffnet „Zum Chat“
