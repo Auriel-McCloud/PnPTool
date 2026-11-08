@@ -1845,3 +1845,7 @@ Lesen und Senden nutzen dieselbe Offen-Regel wie die Liste. Siehe [[entities/kon
 ## [2026-11-07] update | SL-Chatfenster im Messenger-Stil
 
 Verlaufs-Popup der SL nutzt Fenster und msg-Klassen statt eigenem durchsichtigem Overlay. Siehe [[entities/kontakte-messenger]].
+
+## [2026-11-08] update | Battlemap: Schwenken per Ziehen, großer Token füllt drei Felder
+
+Ansicht-Schieben-Knopf entfällt, Ziehen auf der leeren Karte schwenkt lokal. Großer Token mit Blick-Ring um alle drei Felder. Siehe [[entities/battlemap]].

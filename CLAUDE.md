@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: Ansicht per Ziehen schwenken, großer Token füllt die drei Felder (08.11.2026)
+
+Mark: Das Bild großer Tokens saß nicht mittig, und „Ansicht verschieben“ machte seltsame Dinge.
+
+- **Ansicht schwenken:** Der Button „Ansicht schieben“ ist weg. Im Modus „Schieben“ schwenkt Ziehen auf der leeren Karte die eigene Ansicht, für SL und Spieler, rein lokal (`ansicht`, nichts in der DB). Erst ab 8 px Bewegung ein Schwenk, sonst bleibt es ein Antippen; nach dem Schwenk 400 ms Klicksperre (`wahlSperre`). Ursache der Seltsamkeiten: das Raster wurde nur für den ungeschwenkten Ausschnitt gezeichnet (leerer Rand beim Schwenken), die Bühne war `overflow: auto` (Scrollbalken tauchten auf, Treffer-Koordinaten ignorierten die Scrollposition). Jetzt `overflow: hidden`, `touch-action: none`, und `hexRasterRechteck(..., x0, y0)` füllt den sichtbaren Ausschnitt aus den vier Bühnenecken.
+- **„Grid schieben“ bleibt nur SL:** Es schreibt `originX`/`originY` in die DB und verschiebt Bild, Raster, Wände und Tokens für ALLE, die Zeichenebene (`.bm-skizze`) bleibt dabei stehen. Der Zug folgt jetzt dem Finger 1:1 bei Zoom und 90°-Drehung (`schirmDeltaNachInnen`).
+- **Großer Token:** Mitte ist der Schwerpunkt der drei Felder (`schwerpunkt()`), das Bild füllt den Umriss der drei Hex (`umriss()`, 12 Ecken, auf 0,94 eingezogen, als `clip-path: polygon(...)` an einer 4·size-Box). Der Blick-Ring (`ringFelder()`) umgibt alle drei Felder (9 Ringfelder); die Richtung 0–5 kommt aus dem Winkel Schwerpunkt→Ringfeld (`ringRichtung()`), die Pfeilspitze sitzt bei 1,8·size. Sicht und Backend bleiben am Ankerfeld.
+
+**Verifiziert:** `npx tsc -b` sauber, Hilfsfunktionen in Node gegen alle sechs Drehungen geprüft (Umriss immer 12 Ecken, Ring 9 Felder, Einzel-Token liefert dieselbe Richtung wie vorher). Kein Klicktest am echten Tablet — bitte am Spieltisch: Schwenken per Finger/Maus, großer Token mit Blickring.
+
 ## Messenger: Chats als Popup und nach letzter Nachricht sortiert (08.11.2026)
 
 **Popup statt Vollbild:** Beim Spieler öffnen Einzelchat und Gruppe jetzt wie bei der SL in einem `Fenster` über der Liste (`msg-huelle msg-gm-chat`), die Liste bleibt dahinter und aktualisiert sich weiter. Name und Schließen stecken in der Fensterleiste (`MessengerChat imFenster` blendet die eigene Kopfzeile aus; `GruppenChat` hat sie nicht mehr). Am Handy füllt das Fenster den Bildschirm und übernimmt die Tastatur-Höhe (`--vv-h`); der Chat darin folgt der Fensterhöhe (`.msg-gm-chat .msg-chat { height: 100% }` unter 600 px). **Am Handy nicht angesehen.** Schließen lädt Liste und Zähler sofort neu. „Zum Chat“ funktioniert unverändert (öffnet das Popup).

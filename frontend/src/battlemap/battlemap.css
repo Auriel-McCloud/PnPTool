@@ -64,10 +64,19 @@
   z-index: 0;
   min-height: 420px;
   height: min(70vh, 640px);
-  overflow: auto;
+  /* 08.11.2026: kein nativer Scroll mehr. Die Karte wird per Ziehen (JS,
+     `ansicht`) geschwenkt; ein scrollender Container zog dabei Scrollbalken
+     auf und rechnete die Treffer-Koordinaten gegen die Scrollposition falsch. */
+  overflow: hidden;
   background: var(--flaeche);
   border: 1px solid var(--linie);
-  touch-action: pan-x pan-y;
+  touch-action: none;
+}
+.bm-buehne[data-modus="schieben"] {
+  cursor: grab;
+}
+.bm-buehne[data-modus="schieben"]:active {
+  cursor: grabbing;
 }
 /* Bugfix 07.11.2026 (Mark: Vollbild-Popup am Tablet, Canvas blieb klein):
    die feste Höhe oben gilt nur im NORMALEN Fenster. Im maximierten Popup
@@ -181,16 +190,6 @@
   cursor: grabbing;
 }
 .bm-buehne[data-modus="grid"] .bm-token {
-  pointer-events: none;
-}
-.bm-buehne[data-modus="ansicht"] {
-  cursor: grab;
-  touch-action: none;
-}
-.bm-buehne[data-modus="ansicht"]:active {
-  cursor: grabbing;
-}
-.bm-buehne[data-modus="ansicht"] .bm-token {
   pointer-events: none;
 }
 .bm-buehne[data-modus="wand"] .bm-token {

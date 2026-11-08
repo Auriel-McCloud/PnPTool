@@ -3,7 +3,19 @@ import { ReactSketchCanvas, type CanvasPath, type ReactSketchCanvasRef } from "r
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { battlemapApi, verbindeBattlemapLive, type Battlemap, type Pfad } from "./api";
-import { hexEcken, hexNachPixel, hexRasterRechteck, NACHBARN, naechsteEcke, pixelNachHex, reichweite, yFelder } from "./hex";
+import {
+  hexEcken,
+  hexNachPixel,
+  hexRasterRechteck,
+  naechsteEcke,
+  pixelNachHex,
+  reichweite,
+  ringFelder,
+  ringRichtung,
+  schwerpunkt,
+  umriss,
+  yFelder,
+} from "./hex";
 import { kampfApi, type Kampf, type Teilnehmer } from "../kampf/api";
 import { partyApi } from "../party/api";
 import { bogenApi } from "../traits/bogenApi";
@@ -44,7 +56,7 @@ export function BattlemapPopup({
   const stift = STIFTE[1];
   const [radierer, setRadierer] = useState(false);
   const [verbunden, setVerbunden] = useState(false);
-  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid" | "wand" | "ansicht">("schieben");
+  const [modus, setModus] = useState<"zeichnen" | "schieben" | "grid" | "wand">("schieben");
   const [spawnArt, setSpawnArt] = useState<"pc" | "npc" | null>(null);
   const [kampf, setKampf] = useState<Kampf | null>(null);
   const [ziehend, setZiehend] = useState<string | null>(null);
@@ -62,13 +74,13 @@ export function BattlemapPopup({
   const wandVon = useRef<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandZiel, setWandZiel] = useState<{ ax: number; ay: number; px: number; py: number } | null>(null);
   const [wandWeg, setWandWeg] = useState<number | null>(null);
-  // Ansicht schieben (07.11.2026): rein lokales Schwenken für ALLE (auch
-  // Spieler) — anders als "Grid schieben" (nur SL, schreibt originX/originY
-  // in die DB und verschiebt die Karte für alle) ändert das NUR die eigene
-  // Anzeige. Sinnvoll, seit Grid/Bild fest synchron sind: Spieler können
-  // trotzdem näher ranzoomen und sich den sichtbaren Ausschnitt selbst
-  // zurechtschieben, ohne die geteilte Karte zu verschieben.
-  const ansichtZieh = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  // Ansicht schwenken (08.11.2026): rein lokales Schwenken für ALLE (auch
+  // Spieler) per Ziehen auf der leeren Karte im Modus "Schieben" — anders als
+  // "Grid schieben" (nur SL, schreibt originX/originY in die DB und
+  // verschiebt die Karte für alle) ändert das NUR die eigene Anzeige. Erst
+  // ab einer Bewegungs-Schwelle ein Schwenk, sonst bleibt ein Antippen ein
+  // Antippen (Auswahl räumen, Spawn setzen, Blickrichtung wählen).
+  const ansichtZieh = useRef<{ sx: number; sy: number; ox: number; oy: number; aktiv: boolean } | null>(null);
   const [ansicht, setAnsicht] = useState({ x: 0, y: 0 });
   // Tablet-Hochkant: Karte+Grid+Tokens um 90° drehen, ohne das Gerät zu drehen.
   // Rein lokale Anzeige-Einstellung (07.11.2026), pro Gerät in localStorage
@@ -338,6 +350,15 @@ export function BattlemapPopup({
     return { x: ly, y: box.width - lx };
   }
 
+  // Bildschirm-Verschiebung (dx, dy) in Karten-Pixel des Innenrahmens: Zoom
+  // rausrechnen, bei gedreht die Drehung (Inverse von rotate(90deg) ohne
+  // Versatz: (dy, -dx)). Grid schieben folgt so 1:1 dem Finger.
+  function schirmDeltaNachInnen(dx: number, dy: number) {
+    const x = dx / zoom;
+    const y = dy / zoom;
+    return gedreht ? { x: y, y: -x } : { x, y };
+  }
+
   function hexUnter(ev: React.PointerEvent) {
     const p = schirmNachInnenrahmen(ev);
     if (!p) return null;
@@ -452,14 +473,30 @@ export function BattlemapPopup({
   // sichtbare Kartenfläche in echten Pixeln größer/kleiner als die
   // gemessene Bühnenfläche — flaeche.w/h durch zoom teilen, damit das
   // Grid beim Rauszoomen den ganzen sichtbaren Bereich füllt.
-  const sichtbarBreite = flaeche.w / zoom;
-  const sichtbarHoehe = flaeche.h / zoom;
+  // Geschwenkt (08.11.2026): der sichtbare Ausschnitt liegt nicht mehr bei
+  // 0/0 — die vier Bühnenecken über dieselbe Rückrechnung wie
+  // schirmNachInnenrahmen in den Innenrahmen legen und dessen Umkasten
+  // füllen, sonst bleibt der Rand beim Schwenken ohne Raster.
+  const ecken = [
+    [0, 0],
+    [flaeche.w, 0],
+    [0, flaeche.h],
+    [flaeche.w, flaeche.h],
+  ].map(([sx, sy]) => {
+    const lx = (sx - ansicht.x) / zoom;
+    const ly = (sy - ansicht.y) / zoom;
+    return gedreht ? { x: ly, y: flaeche.w - lx } : { x: lx, y: ly };
+  });
+  const sichtX0 = Math.min(...ecken.map((e) => e.x));
+  const sichtY0 = Math.min(...ecken.map((e) => e.y));
   const hexListe = hexRasterRechteck(
-    gedreht ? sichtbarHoehe : sichtbarBreite,
-    gedreht ? sichtbarBreite : sichtbarHoehe,
+    Math.max(...ecken.map((e) => e.x)) - sichtX0,
+    Math.max(...ecken.map((e) => e.y)) - sichtY0,
     size,
     ox,
     oy,
+    sichtX0,
+    sichtY0,
   );
 
   function inPartei(t: Teilnehmer) {
@@ -492,7 +529,8 @@ export function BattlemapPopup({
       wahlFelder.add(`${q},${r}`);
     }
     if (istGm || (istEigen(schau) && istDran(schau))) {
-      for (const [dq, dr] of NACHBARN) schauFelder.add(`${schau.hexQ + dq},${schau.hexR + dr}`);
+      const belegtFelder = yFelder(schau.hexQ, schau.hexR, Boolean(schau.istGross), schau.hexDrehung ?? 0);
+      for (const [q, r] of ringFelder(belegtFelder)) schauFelder.add(`${q},${r}`);
     }
   }
 
@@ -542,13 +580,6 @@ export function BattlemapPopup({
         </label>
         <button type="button" onClick={zoomEinpassen}>
           Ganzes Bild einpassen
-        </button>
-        <button
-          type="button"
-          data-aktiv={modus === "ansicht"}
-          onClick={() => setModus(modus === "ansicht" ? "schieben" : "ansicht")}
-        >
-          Ansicht schieben
         </button>
         {ansicht.x !== 0 || ansicht.y !== 0 ? (
           <button type="button" onClick={() => setAnsicht({ x: 0, y: 0 })}>
@@ -648,9 +679,8 @@ export function BattlemapPopup({
             e.currentTarget.setPointerCapture(e.pointerId);
             return;
           }
-          if (modus === "ansicht") {
-            ansichtZieh.current = { sx: e.clientX, sy: e.clientY, ox: ansicht.x, oy: ansicht.y };
-            e.currentTarget.setPointerCapture(e.pointerId);
+          if (modus === "schieben") {
+            ansichtZieh.current = { sx: e.clientX, sy: e.clientY, ox: ansicht.x, oy: ansicht.y, aktiv: false };
             return;
           }
           if (modus !== "grid" || !istGm) return;
@@ -663,13 +693,21 @@ export function BattlemapPopup({
             return;
           }
           const a = ansichtZieh.current;
-          if (a) {
-            setAnsicht({ x: a.ox + e.clientX - a.sx, y: a.oy + e.clientY - a.sy });
+          if (a && e.buttons === 0) {
+            // Losgelassen, ohne dass die Bühne das pointerup bekam.
+            ansichtZieh.current = null;
+          } else if (a) {
+            if (!a.aktiv && Math.hypot(e.clientX - a.sx, e.clientY - a.sy) > 8) {
+              a.aktiv = true;
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }
+            if (a.aktiv) setAnsicht({ x: a.ox + e.clientX - a.sx, y: a.oy + e.clientY - a.sy });
             return;
           }
           const z = originZieh.current;
           if (z) {
-            setZiehOrigin({ x: z.ox + e.clientX - z.sx, y: z.oy + e.clientY - z.sy });
+            const d = schirmDeltaNachInnen(e.clientX - z.sx, e.clientY - z.sy);
+            setZiehOrigin({ x: z.ox + d.x, y: z.oy + d.y });
             return;
           }
           if (ziehend || spawnArt) setHoverHex(hexUnter(e));
@@ -688,14 +726,20 @@ export function BattlemapPopup({
             return;
           }
           if (ansichtZieh.current) {
+            const geschwenkt = ansichtZieh.current.aktiv;
             ansichtZieh.current = null;
-            return;
+            if (geschwenkt) {
+              // Der Klick nach dem Loslassen ist kein Antippen.
+              wahlSperre.current = Date.now() + 400;
+              return;
+            }
           }
           const z = originZieh.current;
           if (z) {
             originZieh.current = null;
-            const nx = z.ox + e.clientX - z.sx;
-            const ny = z.oy + e.clientY - z.sy;
+            const d = schirmDeltaNachInnen(e.clientX - z.sx, e.clientY - z.sy);
+            const nx = z.ox + d.x;
+            const ny = z.oy + d.y;
             setZiehOrigin({ x: nx, y: ny });
             void battlemapApi.aktualisieren(campaignId, karteId, { originX: nx, originY: ny }).then((neu) => {
               onKarte(neu);
@@ -705,6 +749,12 @@ export function BattlemapPopup({
           }
           void absetzen(e);
         }}
+        onPointerCancel={() => {
+          ansichtZieh.current = null;
+          originZieh.current = null;
+          wandVon.current = null;
+          setWandZiel(null);
+        }}
         onClick={(e) => {
           const ziel = e.target as HTMLElement;
           if (Date.now() < wahlSperre.current) return;
@@ -713,9 +763,13 @@ export function BattlemapPopup({
           if (gewaehlt && gewaehlt.hexQ != null && gewaehlt.hexR != null && (istGm || (istEigen(gewaehlt) && istDran(gewaehlt)))) {
             const hex = hexUnter(e as unknown as React.PointerEvent);
             const richtung = hex
-              ? NACHBARN.findIndex(([dq, dr]) => gewaehlt.hexQ! + dq === hex.q && gewaehlt.hexR! + dr === hex.r)
-              : -1;
-            if (richtung >= 0) {
+              ? ringRichtung(
+                  yFelder(gewaehlt.hexQ, gewaehlt.hexR, Boolean(gewaehlt.istGross), gewaehlt.hexDrehung ?? 0),
+                  hex.q,
+                  hex.r,
+                )
+              : null;
+            if (richtung != null) {
               void umschauen(gewaehlt, richtung);
               setWahlId(null);
               return;
@@ -825,12 +879,20 @@ export function BattlemapPopup({
         {tokens.map((t) => {
           if (t.hexQ == null || t.hexR == null) return null;
           const anker = ziehend === t.id && hoverHex ? hoverHex : { q: t.hexQ, r: t.hexR };
-          const { x, y } = hexNachPixel(anker.q, anker.r, size, ox, oy);
           const rand = t.veraltet ? undefined : istDran(t) ? "gold" : inPartei(t) ? "blau" : "magenta";
           const felder = yFelder(anker.q, anker.r, Boolean(t.istGross), t.hexDrehung ?? 0);
-          const { x: x2, y: y2 } = hexNachPixel(felder[felder.length - 1][0], felder[felder.length - 1][1], size, ox, oy);
-          const cx = t.istGross ? (x + x2) / 2 : x;
-          const cy = t.istGross ? (y + y2) / 2 : y;
+          // Mitte aller belegten Felder: bei einem großen Token die gemeinsame
+          // Ecke der drei Hex, nicht die Mitte zwischen erstem und letztem.
+          const { x: cx, y: cy } = schwerpunkt(felder, size, ox, oy);
+          // Großer Token: Bild füllt alle drei Felder (Umriss der Vereinigung,
+          // leicht eingezogen wie das Raster), Quadrat um die Mitte mit
+          // Radius 2·size reicht für den ganzen Umriss.
+          const grossBox = size * 4;
+          const grossUmriss = t.istGross
+            ? umriss(felder, 0.94)
+                .map(([ux, uy]) => `${grossBox / 2 + ux * size}px ${grossBox / 2 + uy * size}px`)
+                .join(", ")
+            : null;
           const winkel = BLICK_WINKEL[t.blickrichtung ?? 0] ?? 0;
           return (
             <span key={t.id}>
@@ -840,7 +902,7 @@ export function BattlemapPopup({
                   style={{
                     left: cx,
                     top: cy,
-                    transform: `translate(-50%, -50%) rotate(${winkel}deg) translateX(${size * 0.85}px)`,
+                    transform: `translate(-50%, -50%) rotate(${winkel}deg) translateX(${size * (t.istGross ? 1.8 : 0.85)}px)`,
                   }}
                 />
               )}
@@ -856,8 +918,9 @@ export function BattlemapPopup({
                 style={{
                   left: cx,
                   top: cy,
-                  width: t.istGross ? size * 2.2 : size * 1.7,
-                  height: t.istGross ? size * 2.2 : size * 1.7,
+                  width: t.istGross ? grossBox : size * 1.7,
+                  height: t.istGross ? grossBox : size * 1.7,
+                  ...(grossUmriss ? { borderRadius: 0, clipPath: `polygon(${grossUmriss})` } : null),
                 }}
                 draggable={false}
                 onDragStart={(e) => e.preventDefault()}

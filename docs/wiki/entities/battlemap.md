@@ -1,7 +1,7 @@
 ---
 title: Battlemap
 created: 2026-11-06
-updated: 2026-11-07
+updated: 2026-11-08
 type: entität
 tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/zeichnungen/repository.py, ../../../backend/app/kampf/repository.py, ../../api/kampf.md, ../concepts/kampf-und-initiative.md]
@@ -364,6 +364,14 @@ mit einem echten Kartenbild und am echten Tablet geprüft.
 ## Gebaut 07.11.2026 — kein Burgermenü-Punkt für Spieler
 
 Spieler öffnen die Karte nur noch über „Karte öffnen“ im Kampfmenü; der Bereich `battlemap` fehlt in `BEREICHE_STATISCH` (`SpielerAnsicht.tsx`). SL-Menü unverändert. Ohne laufenden Kampf mit angehängter Karte hat ein Spieler keinen Zugang.
+
+## Gebaut 08.11.2026 — Ansicht per Ziehen schwenken, großer Token füllt drei Felder
+
+Mark: großes Token-Bild saß nicht mittig, „Ansicht verschieben“ machte seltsame Dinge. Er schlug vor, den SL-Knopf „Grid schieben“ den Spielern zu geben.
+
+Entscheidung: „Grid schieben“ bleibt SL-only. Es schreibt `originX`/`originY` und verschiebt die Karte für alle (Zeichenebene bleibt stehen). Das Schwenken der eigenen Ansicht geht stattdessen ohne Knopf per Ziehen auf der leeren Karte im Modus „Schieben“, lokal, für SL und Spieler. Der Button „Ansicht schieben“ entfällt. Seltsam war: Raster nur für den ungeschwenkten Ausschnitt, Bühne `overflow: auto` mit Scrollbalken und Treffer-Koordinaten ohne Scrollposition. Jetzt `overflow: hidden`, Raster aus dem sichtbaren Ausschnitt.
+
+Großer Token: Mitte = Schwerpunkt der drei Felder, Bild füllt den Umriss der drei Hex, Blick-Ring um alle drei Felder (9 Ringfelder), Richtung aus dem Winkel Schwerpunkt→Ringfeld. Sicht/Backend unverändert am Ankerfeld. Tablet-Test offen.
 
 ## Siehe auch
 
