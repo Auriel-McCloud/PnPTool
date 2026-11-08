@@ -159,6 +159,23 @@ async def spielerkontakt_anlegen(campaign_id: str, pc_a: str, pc_b: str) -> bool
         return bool(record and record["anzahl"] == 2)
 
 
+async def spielerkontakt_id(campaign_id: str, von_pc: str, zu_pc: str) -> str:
+    """Die ID der KENNT-Kante `von → zu` (leer, wenn es sie nicht gibt).
+
+    Bei Spielerkontakten hat jede Seite eine eigene Kante — die Mitteilung an den
+    anderen Spieler muss auf SEINE Kante zeigen, damit „Zum Chat“ den Chat findet.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (:Person {id: $von, campaignId: $campaign_id})-[r:KENNT]->(:Person {id: $zu, campaignId: $campaign_id})
+        RETURN r.id AS id
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, von=von_pc, zu=zu_pc)
+        record = await result.single()
+        return (record["id"] if record else "") or ""
+
+
 async def spielerkontakt_besteht(campaign_id: str, pc_a: str, pc_b: str) -> bool:
     driver = get_driver()
     query = """

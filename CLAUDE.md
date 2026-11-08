@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## „Zum Chat“ im Nachrichten-Popup (07.11.2026)
+
+Neben OK steht bei Chat-Nachrichten (Einzelchat, Spielerchat, Gruppe) ein Knopf **Zum Chat**, für Spieler und SL. Er bestätigt die Mitteilung und öffnet direkt den Chat. Die Mitteilung kennt dafür ihren Chat: neue Felder `chatArt` (`KONTAKT`/`GRUPPE`) und `chatId` am `Mitteilung`-Knoten (`create_mitteilung(chat_art, chat_id)`, leer bei allen anderen Arten und Altbestand → kein Knopf). Bei PC↔PC zeigt `chatId` auf die Kante des **Empfängers** (`spielerkontakt_id`), nicht des Absenders. Frontend: kleiner Vermittler `kontakte/chatZiel.ts` — das Popup ruft `chatOeffnen`, die Hüllen (`SpielerAnsicht`, SL-`Dashboard`) schalten per `beiChatOeffnen` auf „Kontakte“, `Messenger` (Spieler) bzw. `KontakteGm`/`GruppenGm` (SL) übernehmen ihr Ziel per `chatZielAbonnieren`. Ist die Ansicht beim Klick noch nicht eingehängt, hält der Vermittler das Ziel 5 s. Der Einzelchat des Spielers braucht den Eintrag aus der Kontaktliste und lädt sie bis zu 3-mal nach, wenn er fehlt. Tests: Verweise in `test_spieler_kontakte.py`/`test_gruppenchat.py`, Speicherung und Empfänger-Kante einmal gegen die lokale Neo4j geprüft. **Nie im Browser angeklickt.**
+
 ## Gruppenchat, Phase 2 (07.11.2026)
 
 Gruppen mit PCs und NPCs gemischt. **Nur die SL legt sie an** (KontakteGm → Fieldset „Gruppenchats“, `GruppenGm.tsx`: Anlegen/Mitglieder im `Fenster`, Chat-Verlauf im `Fenster`, Löschen mit `Bestaetigung`). „Schließen“ (`offen=false`) ist umkehrbar: die Gruppe verschwindet nur für die Spieler. Löschen entfernt auch den Verlauf.

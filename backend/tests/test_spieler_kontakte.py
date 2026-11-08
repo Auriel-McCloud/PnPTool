@@ -95,6 +95,8 @@ class TestAnzeige:
 
 def _senden_vorbereiten(monkeypatch, roh):
     monkeypatch.setattr(routes.repository, "hole", AsyncMock(return_value=roh))
+    # Die Kante des EMPFÄNGERS (Gegenrichtung) — dorthin führt „Zum Chat“.
+    monkeypatch.setattr(routes.repository, "spielerkontakt_id", AsyncMock(return_value="k-ba"))
     sende = AsyncMock(
         return_value={"id": "n-1", "inhalt": "x", "erstelltAm": "", "gelesenAm": None, "vonId": roh["pcId"]}
     )
@@ -119,6 +121,8 @@ class TestSenden:
         assert kwargs["empfaenger_ids"] == ["pc-b"]
         assert kwargs["art"] == "NACHRICHT"
         assert kwargs["inhalt"].startswith("Ryu:")
+        # „Zum Chat“ beim Mitspieler: SEINE Kante (Gegenrichtung), nicht die des Absenders.
+        assert (kwargs["chat_art"], kwargs["chat_id"]) == ("KONTAKT", "k-ba")
 
     def test_npc_chat_geht_weiter_an_die_sl(self, monkeypatch):
         sende, mitteilung = _senden_vorbereiten(monkeypatch, pc_kontakt(npcPersonType="NPC"))
@@ -126,6 +130,11 @@ class TestSenden:
         _run(routes.nachricht_senden("c-1", "k-ab", NachrichtCreate(inhalt="Hallo"), ICH))
 
         assert mitteilung.await_args.kwargs["empfaenger_ids"] == []
+        # NPC-Chat: dieselbe Kante für SL und Spieler.
+        assert (mitteilung.await_args.kwargs["chat_art"], mitteilung.await_args.kwargs["chat_id"]) == (
+            "KONTAKT",
+            "k-ab",
+        )
 
     def test_npc_popup_beim_spieler_nennt_den_alias_nie_den_echten_namen(self, monkeypatch):
         # Die SL schreibt als NPC — das Popup landet beim Spieler.

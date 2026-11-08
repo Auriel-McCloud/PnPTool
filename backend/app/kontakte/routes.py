@@ -445,12 +445,19 @@ async def nachricht_senden(
     # Mitteilung erstellen für Live-Benachrichtigung
     vorschau = body.inhalt[:50] + ("..." if len(body.inhalt) > 50 else "")
     try:
+        # „Zum Chat“ braucht die Kontakt-ID des EMPFÄNGERS: beim NPC-Chat ist die Kante
+        # für SL und Spieler dieselbe, bei Spielerkontakten hat jeder Spieler seine eigene.
+        chat_id = roh["id"]
+        if ist_spielerkontakt(roh) and viewer.role != "GM":
+            chat_id = await repository.spielerkontakt_id(campaign_id, roh["npcId"], roh["pcId"])
         mitteilung = await mitteilungen_repo.create_mitteilung(
             campaign_id=campaign_id,
             art="NACHRICHT",
             inhalt=f"{absender_name}: {vorschau}",
             an_alle=False,
             empfaenger_ids=empfaenger_ids,
+            chat_art="KONTAKT",
+            chat_id=chat_id,
         )
         # Broadcast über WebSocket
         await verteiler.verteilen(campaign_id, mitteilung)

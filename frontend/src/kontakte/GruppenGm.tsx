@@ -3,6 +3,7 @@ import type { Person } from "../entities/api";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { GruppenChat } from "./GruppenChat";
+import { chatZielAbonnieren } from "./chatZiel";
 import { gruppenApi, type Gruppe } from "./gruppenApi";
 import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
 
@@ -27,10 +28,22 @@ export function GruppenGm({
   const [chat, setChat] = useState<Gruppe | null>(null);
   const [loeschen, setLoeschen] = useState<Gruppe | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [geladen, setGeladen] = useState(false);
+
+  // „Zum Chat“ aus dem Nachrichten-Popup: den Verlauf dieser Gruppe öffnen, sobald die Liste da ist.
+  const [zielGruppeId, setZielGruppeId] = useState<string | null>(null);
+  useEffect(() => chatZielAbonnieren("GRUPPE", setZielGruppeId), []);
+  useEffect(() => {
+    if (!zielGruppeId || !geladen) return;
+    const g = gruppen.find((x) => x.id === zielGruppeId);
+    if (g) setChat(g);
+    setZielGruppeId(null);
+  }, [zielGruppeId, gruppen, geladen]);
 
   const laden = useCallback(async () => {
     try {
       setGruppen(await gruppenApi.liste(campaignId));
+      setGeladen(true);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Gruppen konnten nicht geladen werden");
     }

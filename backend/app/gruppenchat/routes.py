@@ -223,6 +223,8 @@ async def _benachrichtigen(campaign_id: str, gruppe: dict, von_id: str, inhalt: 
                 inhalt=f"{gruppe['name']}: {vorschau}",
                 an_alle=False,
                 empfaenger_ids=pcs,
+                chat_art="GRUPPE",
+                chat_id=gruppe["id"],
             )
             await verteiler.verteilen(campaign_id, m)
         if spieler_schreibt and hat_npc:
@@ -232,6 +234,8 @@ async def _benachrichtigen(campaign_id: str, gruppe: dict, von_id: str, inhalt: 
                 inhalt=f"{absender_name} in {gruppe['name']}: {vorschau}",
                 an_alle=False,
                 empfaenger_ids=[],
+                chat_art="GRUPPE",
+                chat_id=gruppe["id"],
             )
             await verteiler.verteilen(campaign_id, m)
     except Exception as e:  # Benachrichtigung darf das Senden nie blockieren

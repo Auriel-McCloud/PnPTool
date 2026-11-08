@@ -46,6 +46,9 @@ class MitteilungResponse(BaseModel):
     gelesenVon: list[str] = []
     verstecktVon: list[str] = []
     erstelltAm: str = ""
+    # Nur bei NACHRICHT: der Chat dahinter (KONTAKT oder GRUPPE) für „Zum Chat“.
+    chatArt: str = ""
+    chatId: str = ""
 
 
 class MitteilungenAntwort(BaseModel):

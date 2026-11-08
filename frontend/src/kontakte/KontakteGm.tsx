@@ -14,6 +14,7 @@ import { Fenster } from "../shell/Fenster";
 import { NachrichtBlase } from "./Messenger";
 import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
 import { GruppenGm } from "./GruppenGm";
+import { chatZielAbonnieren } from "./chatZiel";
 import "./kontakte-gm.css";
 
 interface Props {
@@ -53,6 +54,10 @@ export function KontakteGm({ campaignId }: Props) {
 
   // Chat-Viewer
   const [chatKontakt, setChatKontakt] = useState<KontaktGm | null>(null);
+
+  // „Zum Chat“ aus dem Nachrichten-Popup: den Verlauf dieses Kontakts öffnen, sobald die Liste da ist.
+  const [zielKontaktId, setZielKontaktId] = useState<string | null>(null);
+  useEffect(() => chatZielAbonnieren("KONTAKT", setZielKontaktId), []);
 
   const laden = useCallback(async () => {
     setLoading(true);
@@ -116,6 +121,13 @@ export function KontakteGm({ campaignId }: Props) {
     setLoeschenKontakt(null);
     laden();
   }
+
+  useEffect(() => {
+    if (!zielKontaktId || loading) return;
+    const k = kontakte.find((x) => x.id === zielKontaktId);
+    if (k) setChatKontakt(k);
+    setZielKontaktId(null);
+  }, [zielKontaktId, kontakte, loading]);
 
   if (loading && kontakte.length === 0) {
     return <div className="kontakte-gm-loading">Lade Kontakte...</div>;

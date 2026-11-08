@@ -39,6 +39,7 @@ import { AlltagswunschFreigabePopup } from "./haendler/AlltagswunschFreigabePopu
 import { EinstellungenFenster } from "./campaigns/EinstellungenFenster";
 import { AugmentsAnsicht } from "./augments/AugmentsAnsicht";
 import { KontakteGm } from "./kontakte/KontakteGm";
+import { beiChatOeffnen } from "./kontakte/chatZiel";
 import { VollbildKnopf } from "./shell/VollbildKnopf";
 import { IdeenschmiedeAnsicht } from "./ideenschmiede/IdeenschmiedeAnsicht";
 import { AchievementVerwaltung } from "./achievements/AchievementVerwaltung";
@@ -210,6 +211,8 @@ function Dashboard() {
     localStorage.setItem(BEREICH_SCHLUESSEL, b);
   };
   const [menueLayouts, setMenueLayouts] = useState<MenueLayouts>(LEER_LAYOUTS);
+  // „Zum Chat“ im Nachrichten-Popup: auf die Kontakte schalten, dort öffnet sich der Chat.
+  useEffect(() => beiChatOeffnen(() => setBereich("kontakte")), []);
   const [geraet, setGeraet] = useState<Geraet>(() => (typeof window === "undefined" ? "pc" : erkenneGeraet()));
   const [menueOffen, setMenueOffen] = useState(false);
   // Person-ID der SL-Vorschau, null = normale SL-Sicht. Dient zugleich als

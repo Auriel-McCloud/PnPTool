@@ -50,6 +50,7 @@ import {
 } from "../shell/menue";
 import { VollbildKnopf } from "../shell/VollbildKnopf";
 import { Messenger } from "../kontakte/Messenger";
+import { beiChatOeffnen } from "../kontakte/chatZiel";
 import { kontakteApi, type Kontakt } from "../kontakte/api";
 import "../items/gegenstaende.css";
 import { playersApi, type SpielerMe } from "./api";
@@ -147,6 +148,8 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     setBereichRoh(b);
     localStorage.setItem(BEREICH_SCHLUESSEL, b);
   };
+  // „Zum Chat“ im Nachrichten-Popup: auf die Kontakte schalten, der Messenger öffnet den Chat.
+  useEffect(() => beiChatOeffnen(() => setBereich("kontakte")), []);
   const [menueLayouts, setMenueLayouts] = useState<MenueLayouts>(LEER_LAYOUTS);
   const [geraet, setGeraet] = useState<Geraet>(() => (typeof window === "undefined" ? "pc" : erkenneGeraet()));
   const [menueOffen, setMenueOffen] = useState(false);

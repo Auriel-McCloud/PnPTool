@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-07] feature | Nachrichten-Popup: „Zum Chat“-Knopf
+
+Chat-Mitteilungen verweisen auf ihren Chat (`chatArt`, `chatId`); neben OK öffnet „Zum Chat“
+direkt den Einzelchat, Spielerchat oder die Gruppe, für Spieler und SL. Siehe
+[[entities/kontakte-messenger]].
+
 ## [2026-11-07] feature | Messenger: Gruppenchat (Phase 2) gebaut
 
 Gruppen mit PCs und NPCs gemischt, nur die SL legt sie an und verwaltet Mitglieder

@@ -17,6 +17,9 @@ export interface Mitteilung {
   gelesenVon: string[];
   verstecktVon: string[];
   erstelltAm: string;
+  /** Nur bei NACHRICHT: der Chat dahinter (KONTAKT oder GRUPPE) für „Zum Chat“. */
+  chatArt?: string;
+  chatId?: string;
 }
 
 export interface MitteilungenStand {

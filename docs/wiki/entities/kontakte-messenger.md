@@ -103,6 +103,10 @@ Gebaut wie unten entschieden. Modul `backend/app/gruppenchat/`, SL-Verwaltung `f
 - **Historie:** neue Mitglieder sehen alles (Mark: was weniger Aufwand ist).
 - Neue Beziehungstypen (`TEILNEHMER`, `IN`) und Label `Gruppenchat` müssen in `KNOWN_LABELS`/`KNOWN_REL_TYPES` (`campaigns/export_import.py`).
 
+## Zum Chat im Popup (07.11.2026)
+
+Das Nachrichten-Popup hat neben OK den Knopf **Zum Chat** (Spieler und SL). Die Mitteilung trägt `chatArt` (`KONTAKT`/`GRUPPE`) und `chatId`; bei Spielerkontakten die Kante des Empfängers. Details: CLAUDE.md „Zum Chat“, [[mitteilungen-system]].
+
 ## Siehe auch
 
 - [[mitteilungen-system]] — Zustellmechanismus für Chat-Benachrichtigungen

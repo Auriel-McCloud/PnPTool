@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { chatOeffnen, istChatArt } from "../kontakte/chatZiel";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
 
@@ -27,6 +28,10 @@ export function MitteilungPopup() {
   if (!aktuell || aktuell.art === "WARNUNG") return null;
 
   const istNachricht = aktuell.art === "NACHRICHT";
+  // Chat-Nachrichten kennen ihren Chat: „Zum Chat“ bestätigt und springt direkt hinein.
+  const chatArt = aktuell.chatArt ?? "";
+  const chatId = aktuell.chatId ?? "";
+  const kannZumChat = istNachricht && istChatArt(chatArt) && chatId !== "";
 
   return createPortal(
     <div className="mt-popup-huelle">
@@ -64,6 +69,18 @@ export function MitteilungPopup() {
             <span className="mt-popup-rest">
               noch {wartend} weitere
             </span>
+          )}
+          {kannZumChat && (
+            <button
+              type="button"
+              onClick={() => {
+                bestaetigen();
+                if (istChatArt(chatArt)) chatOeffnen({ art: chatArt, id: chatId });
+              }}
+              style={{ color: "var(--neon)", borderColor: "var(--neon)" }}
+            >
+              Zum Chat
+            </button>
           )}
           <button
             type="button"

@@ -16,7 +16,8 @@ _FELDER = """
     m.id AS id, m.art AS art, m.inhalt AS inhalt, m.bildUrl AS bildUrl,
     m.farbe AS farbe, m.initiative AS initiative,
     m.anAlle AS anAlle, m.empfaengerIds AS empfaengerIds,
-    m.gelesenVon AS gelesenVon, m.verstecktVon AS verstecktVon, m.erstelltAm AS erstelltAm
+    m.gelesenVon AS gelesenVon, m.verstecktVon AS verstecktVon, m.erstelltAm AS erstelltAm,
+    m.chatArt AS chatArt, m.chatId AS chatId
 """
 
 # Wie viele Mitteilungen beim Verbinden nachgeladen werden. Eine Sitzung
@@ -40,6 +41,9 @@ def _mit_defaults(record) -> dict:
     m["gelesenVon"] = m.get("gelesenVon") or []
     m["verstecktVon"] = m.get("verstecktVon") or []
     m["erstelltAm"] = m.get("erstelltAm") or ""
+    # Verweis auf den Chat hinter einer NACHRICHT (für „Zum Chat“); sonst leer.
+    m["chatArt"] = m.get("chatArt") or ""
+    m["chatId"] = m.get("chatId") or ""
     return m
 
 
@@ -52,7 +56,10 @@ async def create_mitteilung(
     bild_url: str = "",
     farbe: str = "rot",
     initiative: bool = False,
+    chat_art: str = "",
+    chat_id: str = "",
 ) -> dict:
+    """`chat_art`/`chat_id` (KONTAKT bzw. GRUPPE + ID) sagen dem „Zum Chat“-Knopf, wohin."""
     driver = get_driver()
     query = f"""
         MATCH (c:Campaign {{id: $campaign_id}})
@@ -61,7 +68,8 @@ async def create_mitteilung(
             art: $art, inhalt: $inhalt, bildUrl: $bild_url, farbe: $farbe,
             initiative: $initiative,
             anAlle: $an_alle, empfaengerIds: $empfaenger_ids,
-            gelesenVon: [], erstelltAm: $jetzt
+            gelesenVon: [], erstelltAm: $jetzt,
+            chatArt: $chat_art, chatId: $chat_id
         }})
         CREATE (c)-[:HAT_MITTEILUNG]->(m)
         RETURN {_FELDER}
@@ -78,6 +86,8 @@ async def create_mitteilung(
             initiative=initiative,
             an_alle=an_alle,
             empfaenger_ids=empfaenger_ids,
+            chat_art=chat_art,
+            chat_id=chat_id,
             jetzt=_jetzt(),
         )
         record = await result.single()

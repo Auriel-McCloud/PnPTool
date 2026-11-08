@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Fenster } from "../shell/Fenster";
 import { alsText, kontakteApi, type Chat, type Kontakt, type Nachricht } from "./api";
+import { chatZielAbonnieren } from "./chatZiel";
 import { GruppenChat } from "./GruppenChat";
 import { gruppenApi, type Gruppe } from "./gruppenApi";
 import { MitspielerFenster } from "./MitspielerFenster";
@@ -31,6 +32,46 @@ export function Messenger({ campaignId, kontakte, onKontakteAktualisieren }: Mes
   const [mitspielerOffen, setMitspielerOffen] = useState(false);
   const [gruppen, setGruppen] = useState<Gruppe[]>([]);
   const [aktiveGruppe, setAktiveGruppe] = useState<Gruppe | null>(null);
+
+  // „Zum Chat“ aus dem Nachrichten-Popup. Eine Gruppe kennt der Chat selbst (Name lädt er mit);
+  // ein Einzelchat braucht den Eintrag aus der Kontaktliste — die kann noch fehlen, dann nachladen.
+  const [zielKontaktId, setZielKontaktId] = useState<string | null>(null);
+  const zielVersuche = useRef(0);
+  useEffect(
+    () =>
+      chatZielAbonnieren("KONTAKT", (id) => {
+        zielVersuche.current = 0;
+        setZielKontaktId(id);
+      }),
+    [],
+  );
+  useEffect(
+    () =>
+      chatZielAbonnieren("GRUPPE", (id) => {
+        setAktiv(null);
+        setMitspielerOffen(false);
+        setBlanko(null);
+        setAktiveGruppe({ id, name: "", offen: true, ungelesen: 0, teilnehmer: [] });
+      }),
+    [],
+  );
+  useEffect(() => {
+    if (!zielKontaktId) return;
+    const k = kontakte.find((x) => x.id === zielKontaktId);
+    if (k) {
+      setAktiveGruppe(null);
+      setMitspielerOffen(false);
+      setBlanko(null);
+      setAktiv(k);
+      setZielKontaktId(null);
+    } else if (zielVersuche.current < 3) {
+      zielVersuche.current += 1;
+      onKontakteAktualisieren();
+    } else {
+      setZielKontaktId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zielKontaktId, kontakte]);
 
   async function gruppenLaden() {
     try {

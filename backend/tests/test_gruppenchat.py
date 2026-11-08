@@ -224,6 +224,11 @@ class TestBenachrichtigung:
         _run(routes.nachricht_senden("c", "g1", GruppenNachrichtCreate(inhalt="Hallo"), RYU))
         # Mara (ohne den Absender selbst) und die SL (leere Liste = an SL).
         assert self._empfaenger(mitteilung) == [["pc-b"], []]
+        # Beide Hinweise führen mit „Zum Chat“ in dieselbe Gruppe.
+        assert [(c.kwargs["chat_art"], c.kwargs["chat_id"]) for c in mitteilung.await_args_list] == [
+            ("GRUPPE", "g1"),
+            ("GRUPPE", "g1"),
+        ]
 
     def test_ohne_npc_in_der_gruppe_erfaehrt_die_sl_nichts(self, monkeypatch):
         _, mitteilung = _vorbereiten(monkeypatch, gruppe(mit_npc=False))

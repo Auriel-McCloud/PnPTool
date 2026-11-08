@@ -42,7 +42,9 @@ Alle Mitteilungen für diesen Betrachter, neueste zuerst.
       "empfaengerIds": [],
       "gelesenVon": ["person-uuid-1"],
       "verstecktVon": [],
-      "erstelltAm": "2026-09-07T20:15:00.000Z"
+      "erstelltAm": "2026-09-07T20:15:00.000Z",
+      "chatArt": "",
+      "chatId": ""
     }
   ],
   "ungelesen": 3
@@ -288,9 +290,13 @@ Filtert eine Liste: nur was der Betrachter sehen darf UND nicht ausgeblendet hat
   empfaengerIds: ["uuid", ...],
   gelesenVon: ["uuid", ...],
   verstecktVon: ["uuid", ...],
-  erstelltAm: "2026-09-07T20:15:00.000Z"
+  erstelltAm: "2026-09-07T20:15:00.000Z",
+  chatArt: "",   // nur NACHRICHT: "KONTAKT" | "GRUPPE" — der Chat dahinter
+  chatId: ""     // Kontakt-ID bzw. Gruppen-ID; das Popup zeigt damit „Zum Chat“
 })
 ```
+
+**`chatArt`/`chatId` (07.11.2026):** Chat-Benachrichtigungen verweisen auf ihren Chat. Das Popup zeigt neben OK einen Knopf „Zum Chat“. Bei Spielerkontakten (PC↔PC) ist `chatId` die Kante des **Empfängers**, bei NPC-Chats die gemeinsame Kante von SL und Spieler. Ältere Mitteilungen haben beide Felder leer — dann gibt es keinen Knopf.
 
 Keine Beziehungen zu anderen Nodes — Mitteilungen sind "Broadcast-Pakete",
 keine vernetzten Entitäten.
