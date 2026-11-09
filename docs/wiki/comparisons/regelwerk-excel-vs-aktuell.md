@@ -1,7 +1,7 @@
 ---
 title: Regelwerk — Excel (Version 1) vs. aktueller Stand im Tool
 created: 2026-09-18
-updated: 2026-10-31
+updated: 2026-11-09
 type: vergleich
 tags: [versionsgeschichte, wuerfelsystem, attribute, magie, neuroweaving, kampf, ruestung, cyberware]
 sources: [../../reference/Neotopia_Regeln.md, ../../reference/Neotopia_Charaktererschaffung.md, ../../regeln-neotopia.md, ../../../CLAUDE.md, ../../ENTWICKLUNGSHISTORIE.md]
@@ -34,6 +34,7 @@ Datenquelle, siehe [[../../reference/INDEX.md]]).
 | Fahrzeug/Drohnen-Preisformel | Wie im Excel | Wie im Excel, aber **von Mark als fraglich markiert** (Motorrad zu teuer) | 30.08.2026 (Notiz, nicht behoben) |
 | Fertigkeitsmaximum | 5 | **6** (gleichgezogen mit Attributmaximum; Sphären damals noch bei 5) | 20.09.2026 |
 | Sphärenmaximum | 5 | **6**, neue Zwischenstufe je Sphäre, „vollständig beherrschen“ ist Stufe 6 | 23.10.2026 |
+| Sphärenname der ehemaligen Geister-Sphäre | „Geister“ | „Schattenwelten“ (Gott bleibt Izanami) | 09.11.2026 |
 
 Jede Zeile hat eine ausführlichere Behandlung auf der jeweiligen Konzeptseite
 unter „Entwicklung" — hier nur der schnelle Überblick.
@@ -42,10 +43,11 @@ unter „Entwicklung" — hier nur der schnelle Überblick.
 
 **Nicht willkürlich** — jede Änderung hat einen dokumentierten Auslöser:
 
-- **Arete → Hexkraft, Technomancer → Neuroweaver**: reine Umbenennungen für
-  Konsistenz zwischen Backend und Frontend (die Werte hießen im Code teils
-  schon anders als im Excel/UI). Brachte einen echten Bug mit sich, siehe
-  [[../entities/neo4j-datenmodell#TraitDef-Umbenennen]].
+- **Arete → Hexkraft, Technomancer → Neuroweaver, Geister → Schattenwelten**:
+  reine Umbenennungen. Die ersten beiden für Konsistenz zwischen Backend und
+  Frontend. Schattenwelten, weil der Ortsname aus dem 23.10.-Gespräch der
+  passendere Sphärenname war (09.11.2026). Umbenennen reißt die TraitDef-
+  Kennung auf, siehe [[../entities/neo4j-datenmodell#TraitDef-Umbenennen]].
 - **Neuroweaver-Verteidigung**: Willenskraft wird beim NeuroWeaving selbst
   verbraucht — hätte den Neuroweaver nach jeder eigenen Aktion verwundbarer
   gemacht. Fassung+Geistesschärfe bleibt die Blatt-Zeile. Im Kampf-Hack

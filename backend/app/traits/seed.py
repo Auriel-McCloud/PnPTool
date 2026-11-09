@@ -81,7 +81,7 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     "Materie": "Unbelebte Stoffe formen — Metall, Beton, Chemikalien verwandeln, verstärken oder erschaffen.",
     "Gedanken": "Bewusstsein beeinflussen — Gedanken lesen, Illusionen erzeugen, Willen beugen, Erinnerungen verändern.",
     "Ursprung": "Reine Energie an der Quelle anzapfen — Urkraft ziehen, Dinge aus dem Nichts erschaffen, Auren lesen.",
-    "Geister": "Mit den Schattenwelten und ihren Bewohnern interagieren — dorthin reisen, Geister rufen, binden, verbannen.",
+    "Schattenwelten": "Mit den Schattenwelten und ihren Bewohnern interagieren — dorthin reisen, Geister rufen, binden, verbannen.",
     "Zeit": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Sprünge vor oder zurück.",
     # --- NeuroWeaving (Matrix ohne Gerät) ---
     "NeuroWeaving": "Rohe Stärke beim Weben in der Matrix — wie stark und zuverlässig es wirkt.",
@@ -122,7 +122,7 @@ TRAIT_VORSCHLAEGE: dict[str, list[str]] = {
     "Materie": ["Metallurgie", "Chemische Verwandlung", "Nanotechnologie", "Strukturelle Manipulation"],
     "Gedanken": ["Gedankenlesen", "Illusionen", "Erinnerungsmanipulation", "Massensuggestion"],
     "Ursprung": ["Urkraft-Manipulation", "Machtort-Erschaffung", "Machtort-Stabilisierung"],
-    "Geister": ["Geisterbeschwörung", "Fetischbindung", "Schattenwelten-Reisen", "Exorzismus"],
+    "Schattenwelten": ["Geisterbeschwörung", "Fetischbindung", "Schattenwelten-Reisen", "Exorzismus"],
     "Zeit": ["Zeitwahrnehmung", "Zeitverzerrung", "Zeitreise", "Vorausschau"],
 }
 
@@ -182,7 +182,7 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
     'Materie': 'Diese Sphäre erlaubt es einem Magier, alle Arten von unbelebter Materie zu formen, zu verwandeln oder aus Energie zu erschaffen. Metall, Beton, Glas oder komplexe chemische Verbindungen können manipuliert werden. Kombiniert mit anderen Sphären können sogar lebende Materie oder Energie in Materie umgewandelt werden.\n\nStufen:\n• Materiewahrnehmung:\n  Der Magier kann die Eigenschaften und Struktur von Materialien spüren.\n\n•• Einfache Transmutation:\n  Der Magier kann eine Substanz in eine andere verwandeln (ohne Aggregatszustand zu ändern).\n\n••• Materie leicht formen:\n  Der Magier kann einfache Objekte leicht formen, ohne sie vollständig zu verwandeln.\n\n•••• Materie formen / Komplexe Transmutation:\n  Der Magier kann Materie formen und komplexere Verwandlungen durchführen.\n\n••••• Materie erschaffen / Permanente Veränderung:\n  Der Magier kann Materie aus Energie erschaffen und dauerhafte Veränderungen vornehmen.\n\n•••••• Materie vollständig beherrschen:\n  Der Magier hat nahezu vollständige Kontrolle über alle Formen von Materie.\n\nEmpfohlene Spezialitäten:\nMetallurgie, Chemische Verwandlung, Nanotechnologie, Materie-Erschaffung, Strukturelle Manipulation\n\nTypische Träger:\nTechnomanten, ehemalige Konzern-Materialwissenschaftler, Runner mit Fokus auf Ausrüstung.',
     'Gedanken': 'Diese Sphäre erlaubt es einem Magier, in die Köpfe anderer einzudringen, Illusionen zu erzeugen, Erinnerungen zu verändern oder Willen zu brechen. Fortgeschrittene Anwender können ganze Persönlichkeiten umformen oder kollektive Halluzinationen erzeugen.\n\nStufen:\n• Gedanken spüren:\n  Der Magier kann oberflächliche Gedanken und Emotionen wahrnehmen.\n\n•• Gedanken lesen / einfache Illusionen:\n  Der Magier kann Gedanken lesen und einfache Illusionen erzeugen — die Illusion täuscht dabei nur einen Sinn.\n\n••• Emotionen leicht lenken / stärkere Illusionen:\n  Der Magier kann Emotionen sanft beeinflussen; seine Illusionen täuschen jetzt zwei Sinne gleichzeitig.\n\n•••• Gedanken beeinflussen / starke Illusionen:\n  Der Magier kann Gedanken beeinflussen und realistische, mehrsinnige Illusionen erzeugen.\n\n••••• Bewusstsein kontrollieren / Persönlichkeitsveränderung:\n  Der Magier kann das Bewusstsein anderer stark beeinflussen und Persönlichkeiten verändern.\n\n•••••• Unterbewusstsein kontrollieren / Psyche formen:\n  Der Magier hat nahezu vollständige Kontrolle über das Bewusstsein anderer.\n\nEmpfohlene Spezialitäten:\nGedankenlesen, Illusionen, Erinnerungsmanipulation, Willensbrechung, Massensuggestion\n\nTypische Träger:\nManipulatoren, ehemalige Konzern-Psychologen, Runner mit sozialem Fokus, Kultführer.',
     'Ursprung': 'Diese Sphäre erlaubt es einem Magier, Urkraft — die rohe Urgewalt, aus der alles geschaffen wird — direkt anzuzapfen, Gegenstände mit roher magischer Energie zu erfüllen oder sogar Machtorte zu erschaffen. Auf höheren Rängen kann der Magier Machtorte dauerhaft stabilisieren und Dinge aus reiner Energie formen.\n\nStufen:\n• Urkraft spüren:\n  Der Magier kann Urkraft in Objekten und Lebewesen spüren.\n\n•• Urkraft kanalisieren:\n  Der Magier kann Urkraft aus der Umgebung ziehen und in Objekte leiten.\n\n••• Urkraft in Objekten und Tränken speichern:\n  Der Magier kann Urkraft in Gegenständen oder Tränken speichern, um sie später freizusetzen.\n\n•••• Urkraft formen / Machtorte erschaffen:\n  Der Magier kann Urkraft formen, Machtorte erschaffen.\n\n••••• Urkraft beherrschen / Machtorte stabilisieren:\n  Der Magier hat starke Kontrolle über Urkraft und kann selbst instabile Machtorte dauerhaft festigen.\n\n•••••• Urkraft vollständig beherrschen:\n  Der Magier kann Urkraft frei formen und extreme Effekte wirken.\n\nEmpfohlene Spezialitäten:\nUrkraft-Manipulation, Machtort-Erschaffung, Machtort-Stabilisierung, Energie-Erschaffung\n\nTypische Träger:\nMystiker, ehemalige Konzern-Okkultisten, Runner mit starkem Fokus auf rohe magische Kraft.',
-    'Geister': 'Diese Sphäre erlaubt es einem Magier, mit den Schattenwelten und ihren Bewohnern zu interagieren — Totenreich, Götterreich und weitere Ebenen neben unserer eigenen Wirklichkeit. Der Magier kann Dinge aus einer Schattenwelt zu uns ziehen, selbst hinüberwechseln, Geister rufen, binden oder verbannen und mit spirituellen Energien arbeiten.\n\nDie Schattenwelten sind gefährlich und fremdartig — viele alte Annahmen gelten hier nicht.\n\nStufen:\n• Schattenwelten spüren:\n  Der Magier kann die Nähe von Schattenwelten und Geistern spüren und Auren erkennen.\n\n•• Schattenwelten beeinflussen:\n  Der Magier kann für kurze Zeit Kontakt zu einer Schattenwelt aufnehmen, Geister berühren oder die Grenze zu ihr verdichten oder verdünnen.\n\n••• Etwas Kleines aus einer Schattenwelt zu uns ziehen:\n  Der Magier kann kleine Gegenstände oder schwache Wesenheiten aus einer Schattenwelt in unsere Realität holen.\n\n•••• Durchstoßen und seitwärts wechseln:\n  Der Magier kann selbst in eine Schattenwelt wechseln, Geister erwecken oder beruhigen und Geisterwesenheiten Schaden zufügen.\n\n••••• Permanente Löcher in die Schattenreiche reißen/versiegeln & Geister binden:\n  Der Magier kann dauerhafte Tore zu den Schattenreichen öffnen oder schließen und Geister dauerhaft binden oder in Fetische zwingen.\n\n•••••• Seelen/Geister schmieden & Schattenwelten erschaffen:\n  Der Magier kann Geister und Seelen selbst formen und sogar neue Schattenwelten erschaffen oder bestehende zerstören.\n\nEmpfohlene Spezialitäten:\nGeisterbeschwörung, Fetischbindung, Schattenwelten-Reisen, Exorzismus, Geisterkommando\n\nTypische Träger:\nMedien, Schamanen, ehemalige Konzern-Okkultisten, Runner mit Fokus auf das Übernatürliche.',
+    'Schattenwelten': 'Diese Sphäre erlaubt es einem Magier, mit den Schattenwelten und ihren Bewohnern zu interagieren — Totenreich, Götterreich und weitere Ebenen neben unserer eigenen Wirklichkeit. Der Magier kann Dinge aus einer Schattenwelt zu uns ziehen, selbst hinüberwechseln, Geister rufen, binden oder verbannen und mit spirituellen Energien arbeiten.\n\nDie Schattenwelten sind gefährlich und fremdartig — viele alte Annahmen gelten hier nicht.\n\nStufen:\n• Schattenwelten spüren:\n  Der Magier kann die Nähe von Schattenwelten und Geistern spüren und Auren erkennen.\n\n•• Schattenwelten beeinflussen:\n  Der Magier kann für kurze Zeit Kontakt zu einer Schattenwelt aufnehmen, Geister berühren oder die Grenze zu ihr verdichten oder verdünnen.\n\n••• Etwas Kleines aus einer Schattenwelt zu uns ziehen:\n  Der Magier kann kleine Gegenstände oder schwache Wesenheiten aus einer Schattenwelt in unsere Realität holen.\n\n•••• Durchstoßen und seitwärts wechseln:\n  Der Magier kann selbst in eine Schattenwelt wechseln, Geister erwecken oder beruhigen und Geisterwesenheiten Schaden zufügen.\n\n••••• Permanente Löcher in die Schattenreiche reißen/versiegeln & Geister binden:\n  Der Magier kann dauerhafte Tore zu den Schattenreichen öffnen oder schließen und Geister dauerhaft binden oder in Fetische zwingen.\n\n•••••• Seelen/Geister schmieden & Schattenwelten erschaffen:\n  Der Magier kann Geister und Seelen selbst formen und sogar neue Schattenwelten erschaffen oder bestehende zerstören.\n\nEmpfohlene Spezialitäten:\nGeisterbeschwörung, Fetischbindung, Schattenwelten-Reisen, Exorzismus, Geisterkommando\n\nTypische Träger:\nMedien, Schamanen, ehemalige Konzern-Okkultisten, Runner mit Fokus auf das Übernatürliche.',
     'Zeit': 'Diese Sphäre erlaubt es einem Magier, Zeit wahrzunehmen, zu verlangsamen oder kurze Sprünge zu machen. Allerdings ist Zeitreisen in Neotopia extrem gefährlich: Die Urkraft ist erst vor etwa 100 Jahren wieder zurückgekehrt, ein Zeitreisender kann leicht in einer Ära stranden, in der sie noch nicht wieder floss – und dort hilflos zurückgelassen werden. Viele Magier betrachten Zeit daher als eine der gefährlichsten Sphären überhaupt.\n\nStufen:\n• Zeit wahrnehmen:\n  Der Magier kann den Fluss der Zeit spüren und kurze Vorausschau betreiben.\n\n•• Zeit verlangsamen / Beschleunigen:\n  Der Magier kann den Zeitfluss für sich selbst oder andere leicht verändern.\n\n••• Stärker verlangsamen oder beschleunigen / Objekte durch die Zeit schicken:\n  Der Magier kann den Zeitfluss deutlich stärker verändern und Gegenstände — nicht sich selbst — in die Zukunft oder Vergangenheit schicken.\n\n•••• Zeitliche Anker setzen / Kurze Sprünge:\n  Der Magier kann kurze Zeitsprünge für sich selbst machen oder Ereignisse zeitlich verzögern.\n\n••••• Zeitliche Isolation / Längere Sprünge:\n  Der Magier kann Bereiche zeitlich isolieren oder längere Sprünge wagen (mit hohem Risiko).\n\n•••••• Zeitreise / Zeitimmunität:\n  Der Magier kann sich außerhalb der Zeit bewegen oder längere Zeitreisen unternehmen – mit extrem hohem Risiko, in einer Zeit ohne Urkraft zu stranden.\n\nEmpfohlene Spezialitäten:\nZeitwahrnehmung, Zeitverzerrung, Zeitreise, Zeitliche Isolation, Vorausschau\n\nTypische Träger:\nZeitmagier, ehemalige Konzern-Zeitforscher, Runner mit extremem Risikobewusstsein.\n\nWichtiger Hinweis:\nZeitreisen in Neotopia ist hochgefährlich. Die Urkraft ist erst vor ca. 100 Jahren wieder zurückgekehrt. Ein Zeitreisender kann leicht in einer Ära ohne Urkraft stranden.',
     # --- NeuroWeaving ---
     'NeuroWeaving': 'NeuroWeaving ist die Fähigkeit, direkt mit dem eigenen Nervensystem in die Matrix einzudringen und dort zu wirken. Im Gegensatz zum klassischen Decken braucht ein NeuroWeaver kein externes Gerät – sein Gehirn selbst wird zum Interface. Der NeuroWeaving-Wert bestimmt, wie stark und zuverlässig diese Verbindung ist. Hohe Werte bedeuten, dass der Weave tiefer, schneller und gefährlicher wird. Viele NeuroWeaver tragen sichtbare Implantate oder Narben an den Schläfen, wo die direkte Verbindung stattfindet.',
@@ -216,7 +216,7 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
 # Tezcatlipoca schon aztekisch war) und Atum → Izanagi getauscht — bewusst
 # als Paar mit Izanami (beide japanisch): Izanagi erschuf mit ihr die Welt
 # (Ursprung), verlor sie an das Totenreich Yomi und macht sie damit zur
-# Wächterin der Schattenwelten (Geister) — beide Texte verweisen aufeinander.
+# Wächterin der Schattenwelten (Sphäre, Häretiker: Izanami) — beide Texte verweisen aufeinander.
 HAERETIKER_LABELS: dict[str, str] = {
     "Hexkraft": "Glauben",
     "Korrespondenz": "Shu",
@@ -226,7 +226,7 @@ HAERETIKER_LABELS: dict[str, str] = {
     "Leben": "Enki",
     "Materie": "Ogun",
     "Ursprung": "Izanagi",
-    "Geister": "Izanami",
+    "Schattenwelten": "Izanami",
     "Zeit": "Chronos",
 }
 
@@ -374,7 +374,7 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     ("Materie", "Sphäre", 6, 5),
     ("Gedanken", "Sphäre", 6, 6),
     ("Ursprung", "Sphäre", 6, 7),
-    ("Geister", "Sphäre", 6, 8),
+    ("Schattenwelten", "Sphäre", 6, 8),
     ("Zeit", "Sphäre", 6, 9),
     # Hexkraft ist der Magiewert selbst (nicht zu verwechseln mit den Sphären,
     # die nur beschreiben was möglich ist). Auf dem Blatt eine Reihe von zehn
@@ -424,6 +424,7 @@ async def seed_traits() -> None:
             )
 
         await _migriere_arete_zu_hexkraft(session)
+        await _migriere_geister_zu_schattenwelten(session)
         await _seed_trait_erklaerungen(session, ruleset)
         await _seed_haeretiker_erklaerungen(session, ruleset)
 
@@ -581,3 +582,81 @@ async def _migriere_arete_zu_hexkraft(session) -> None:
     )
     if umgehaengt:
         print(f"[seed] Arete → Hexkraft: {umgehaengt} Charakterwert(e) umgehängt")
+
+
+# Alte Kennung, als die Sphäre noch „Geister“ hiess (09.11.2026 → Schattenwelten).
+_ALT_GEISTER_ID = "neotopia:Sphäre:Geister"
+_SCHATTENWELTEN_ID = "neotopia:Sphäre:Schattenwelten"
+
+
+async def _migriere_geister_zu_schattenwelten(session) -> None:
+    """Einmalige Datenkorrektur: Sphäre „Geister“ heißt jetzt „Schattenwelten“.
+
+    Dieselbe Falle wie bei Arete→Hexkraft: die TraitDef-Kennung ist
+    `ruleset:category:name`. Der Seed-MERGE legt sonst einen neuen leeren
+    Knoten an und lässt die echten Punkte am alten hängen.
+
+    Spezialisierungen und Ereignisprotokoll speichern die Kennung als
+    Property (`traitDefId`), nicht als Kante — die muss mit. Der
+    Erklaerungs-Schlüssel `trait:Geister` wird umbenannt, bevor der
+    Erklaerungs-Seed `trait:Schattenwelten` neu anlegt, damit ein von Hand
+    geschriebener Tooltip nicht als Leiche liegen bleibt.
+    Idempotent: ohne alten Knoten tut sie nichts.
+    """
+    ergebnis = await session.run(
+        """
+        MATCH (alt:TraitDef {id: $alt_id})
+        MATCH (n)-[h:HAS_TRAIT]->(alt)
+        MATCH (neu:TraitDef {id: $neu_id})
+        MERGE (n)-[nh:HAS_TRAIT]->(neu)
+          ON CREATE SET nh.rating = h.rating, nh.maxOverride = h.maxOverride
+          ON MATCH SET nh.rating = CASE WHEN coalesce(nh.rating, 0) = 0 THEN h.rating ELSE nh.rating END
+        DELETE h
+        RETURN count(*) AS umgehaengt
+        """,
+        alt_id=_ALT_GEISTER_ID,
+        neu_id=_SCHATTENWELTEN_ID,
+    )
+    datensatz = await ergebnis.single()
+    umgehaengt = datensatz["umgehaengt"] if datensatz else 0
+
+    await session.run(
+        """
+        MATCH (n)
+        WHERE n.traitDefId = $alt_id
+        SET n.traitDefId = $neu_id,
+            n.traitName = CASE WHEN n.traitName = 'Geister' THEN 'Schattenwelten' ELSE n.traitName END
+        """,
+        alt_id=_ALT_GEISTER_ID,
+        neu_id=_SCHATTENWELTEN_ID,
+    )
+
+    await session.run(
+        """
+        MATCH (alt:Erklaerung {ruleset: 'neotopia', schluessel: 'trait:Geister'})
+        WHERE NOT EXISTS {
+            MATCH (:Erklaerung {ruleset: 'neotopia', schluessel: 'trait:Schattenwelten'})
+        }
+        SET alt.schluessel = 'trait:Schattenwelten',
+            alt.id = 'neotopia:trait:Schattenwelten',
+            alt.titel = CASE WHEN alt.quelle = 'HAND' THEN alt.titel ELSE 'Schattenwelten' END
+        """,
+    )
+    await session.run(
+        """
+        MATCH (alt:Erklaerung {ruleset: 'neotopia', schluessel: 'trait:Geister'})
+        WHERE alt.quelle = 'KI'
+        DELETE alt
+        """,
+    )
+
+    await session.run(
+        """
+        MATCH (alt:TraitDef {id: $alt_id})
+        WHERE NOT ()-[:HAS_TRAIT]->(alt)
+        DELETE alt
+        """,
+        alt_id=_ALT_GEISTER_ID,
+    )
+    if umgehaengt:
+        print(f"[seed] Geister → Schattenwelten: {umgehaengt} Charakterwert(e) umgehängt")

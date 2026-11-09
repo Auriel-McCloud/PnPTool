@@ -26,8 +26,8 @@ export const SPHAEREN: Record<string, string> = {
   Gedanken: "„Das sind nicht die Druiden, die ihr sucht.“",
   Ursprung:
     "Reine Magie. Nötig, um Verzauberungen zu schaffen und Magie in Objekten zu festigen — und für Lichtschwerter.",
-  Geister:
-    "Medium und Reisen in die Astralwelt. Geister können mit der Realität wechselwirken, wenn du sie lässt.",
+  Schattenwelten:
+    "Schattenwelten und ihre Bewohner. Geister können mit der Realität wechselwirken, wenn du sie lässt.",
   Zeit: "Die schwierigste aller Sphären. Drei Minuten zurück retten manchmal den Abend — 300 Jahre nicht.",
 };
 

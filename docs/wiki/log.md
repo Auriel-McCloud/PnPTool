@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-09] rename | Sphäre Geister → Schattenwelten
+
+Der Magier-Name der Sphäre ist Schattenwelten. Häretiker sehen weiter Izanami.
+Wesen in den Stufentexten („Geister binden“) bleiben Geister. Punkte, Slots
+und Tooltips hängen per Seed-Migration um. Siehe [[concepts/magie-hexkraft]].
+
 ## [2026-11-09] feature | Battlemap: ALT-Erinnerung hält drei Runden
 
 Ausgegraute ALT-Tokens verschwanden, sobald man sich wegbewegte oder hinter eine Wand ging. Letzte echte Sichtung bleibt jetzt die laufende Kampfrunde und zwei weitere, auch hinter Wänden. Versteckt löscht sofort, Matrix-Ping läuft nicht nach Runden ab. Siehe [[entities/battlemap]].

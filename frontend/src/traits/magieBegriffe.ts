@@ -21,7 +21,7 @@ export const HAERETIKER_LABELS: Record<string, string> = {
   Leben: "Enki",
   Materie: "Ogun",
   Ursprung: "Izanagi",
-  Geister: "Izanami",
+  Schattenwelten: "Izanami",
   Zeit: "Chronos",
 };
 

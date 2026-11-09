@@ -1,7 +1,7 @@
 ---
 title: Magie — Hexkraft und Sphären
 created: 2026-09-18
-updated: 2026-10-31
+updated: 2026-11-09
 type: konzept
 tags: [magie, versionsgeschichte]
 sources: [../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md, ../../../backend/app/traits/seed.py]
@@ -32,11 +32,10 @@ als NeuroWeaving-Fertigkeiten, siehe [[neuroweaving-decking]]). Stufen (seit
 5 Hausgröße/starke Wirkung · 6 alles / vollständig beherrschen.
 
 Neun Sphären: Korrespondenz, Entropie, Kräfte (*Schaden automatisch +1*), Leben,
-Materie, Gedanken, Ursprung, Geister, Zeit. Volltexte in
+Materie, Gedanken, Ursprung, Schattenwelten, Zeit. Volltexte in
 `docs/reference/Sphären/` (M20-Rohtext, nicht mehr aktuell) und
-`docs/reference/Master/` (fertige NeotopiA-Tooltips, Stand 23.10.2026; dort
-heißen die Dateien zu zwei Sphären anders als im Code: `Verstand.md` =
-Gedanken, `Geist.md` = Geister).
+`docs/reference/Master/` (fertige NeotopiA-Tooltips; die Datei zu Gedanken
+heißt dort `Verstand.md`, die zu Schattenwelten `Schattenwelten.md`).
 
 **23.10.2026 — Sphären auf 6 Punkte erweitert (Mark, im Chat durchgesprochen):**
 jede Sphäre bekam eine neue Zwischenstufe, „vollständig beherrschen" rutschte
@@ -63,6 +62,12 @@ Hexkraft 0 fälschlich kein Magier.
 
 ## Entwicklung
 
+- **09.11.2026 — Sphäre Geister heißt Schattenwelten (Mark).** Der Sphärenname
+  selbst, nicht nur der Ort in den Stufentexten. Häretiker sehen weiter
+  Izanami. Geister rufen und binden in den Stufen bleibt — das sind die
+  Wesen, nicht der Name. Bestehende Punkte hängen per Seed-Migration am
+  neuen TraitDef (`seed.py::_migriere_geister_zu_schattenwelten`), dieselbe
+  Kennungs-Falle wie Arete zu Hexkraft.
 - **24.09.2026 — Flavor-Option „Häretiker".** Zweite, mechanisch identische
   Alternative zu „Magier" bei der Charaktererstellung: neues Feld
   `magieFlavor` (`MAGIER`/`HAERETIKER`) pro Person, `weg` bleibt

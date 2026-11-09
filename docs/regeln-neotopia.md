@@ -51,7 +51,7 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 - Nach einem gelungenen wilden Zauber: **Willenskraftwurf gegen die Zahl der Erfolge**. Die Differenz geht als Schaden auf die Lebenspunkte. Entfällt, wenn die Erfolge genau dem Zielwert entsprechen.
 - Kritische Treffer zählen beim Zielwert **nicht** als zusätzliche Erfolge — dort zählen nur Nettoerfolge.
 - **Sphären beschreiben, was möglich ist, und geben keine Bonuswürfel.** Seit 23.10.2026 sechs Stufen statt fünf. Die alte einheitliche Größenleiter (50 cm³ / 4 m³ / Haus / alles) gilt nicht mehr — jede Sphäre hat ihre eigene Leiter, „vollständig beherrschen“ ist Stufe 6. Volltexte für Magier und für die Götter der Häretiker stehen in den Tooltips (`backend/app/traits/seed.py`, `docs/reference/Master/`).
-- Sphären: Korrespondenz, Entropie, Kräfte, Leben, Materie, Gedanken, Ursprung, Geister, Zeit. *Schaden durch Kräfte ist automatisch +1.* Entropie verursacht erst ab Rang 5 direkt schweren, schwer heilbaren Schaden — die Zahl blieb beim Einfädeln der Zwischenstufe bewusst auf 5.
+- Sphären: Korrespondenz, Entropie, Kräfte, Leben, Materie, Gedanken, Ursprung, Schattenwelten, Zeit. *Schaden durch Kräfte ist automatisch +1.* Entropie verursacht erst ab Rang 5 direkt schweren, schwer heilbaren Schaden — die Zahl blieb beim Einfädeln der Zwischenstufe bewusst auf 5.
 - Stufentitel (fett = die neue Zwischenstufe aus dem 23.10.-Gespräch). Häretiker sehen dieselben Stufen unter dem Gottnamen.
 
 | Sphäre (Gott) | 1 | 2 | 3 | 4 | 5 | 6 |
@@ -63,7 +63,7 @@ Dreißig Stück in drei Spalten, siehe `backend/app/traits/seed.py`. Riggen, Mak
 | Materie (Ogun) | Materiewahrnehmung | Einfache Transmutation | **Materie leicht formen** | Materie formen / komplexe Transmutation | Materie erschaffen / permanente Veränderung | Materie vollständig beherrschen |
 | Gedanken (Tezcatlipoca) | Gedanken spüren | Gedanken lesen / einfache Illusionen (ein Sinn) | **Emotionen leicht lenken / Illusionen täuschen zwei Sinne** | Gedanken beeinflussen / starke Illusionen | Bewusstsein kontrollieren / Persönlichkeit verändern | Unterbewusstsein kontrollieren / Psyche formen |
 | Ursprung (Izanagi) | Urkraft spüren | Urkraft kanalisieren | **Urkraft in Objekten und Tränken speichern** | Urkraft formen / Machtorte erschaffen | Urkraft beherrschen / Machtorte stabilisieren | Urkraft vollständig beherrschen |
-| Geister (Izanami) | Schattenwelten spüren | Schattenwelten beeinflussen | **Etwas Kleines aus einer Schattenwelt ziehen** | Durchstoßen und seitwärts wechseln | Permanente Löcher in die Schattenreiche reißen oder versiegeln, Geister binden | Seelen und Geister schmieden, Schattenwelten erschaffen |
+| Schattenwelten (Izanami) | Schattenwelten spüren | Schattenwelten beeinflussen | **Etwas Kleines aus einer Schattenwelt ziehen** | Durchstoßen und seitwärts wechseln | Permanente Löcher in die Schattenreiche reißen oder versiegeln, Geister binden | Seelen und Geister schmieden, Schattenwelten erschaffen |
 | Zeit (Chronos) | Zeit wahrnehmen | Zeit leicht verlangsamen oder beschleunigen | **Deutlich stärker verlangsamen oder beschleunigen / Objekte durch die Zeit schicken** | Zeitliche Anker / kurze Sprünge | Zeitliche Isolation / längere Sprünge | Zeitreise / Zeitimmunität |
 
 ### NeuroWeaving (Neuroweaver)

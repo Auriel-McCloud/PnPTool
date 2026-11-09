@@ -2,7 +2,7 @@
 
 > Content-Katalog. Jede Seite mit Kurzbeschreibung. Zuerst hier lesen, dann in
 > die passende Seite eintauchen.
-> Zuletzt aktualisiert: 2026-11-07 | Seiten: 39 | Battlemap: 90°-Dreh-Button fürs Tablet-Hochkant
+> Zuletzt aktualisiert: 2026-11-09 | Seiten: 39 | Sphäre Geister heißt Schattenwelten
 
 **Siehe [[SCHEMA.md]]** für Konventionen, Tag-Taxonomie und das Verhältnis
 dieses Wikis zu `CLAUDE.md`/`docs/api/`/`docs/reference/` (die bleiben die
@@ -26,7 +26,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[concepts/attribute-und-fertigkeiten]] | 9 Attribute/30 Fertigkeiten, Gesundheit 5→6 (10.09.), Overflow-Grenze 10→12 (19.09.), Schadensarten; SL kann hängende Spezialisierungs-Slots löschen (24.10.); Critter als Vorlage markierbar, Kopieren übernimmt Bild/Bogen/Gegenstände (06.11.) |
 | [[concepts/charaktererschaffung]] | Rassenverteilung, Fertigkeitspakete, Freebees, Hintergründe; Zusatzfertigkeiten (28.09.); Person-Schritt als Entwurf per Autosave (09.10.); Hintergrund-Baukasten entschieden 10.10.; × nimmt einen vergebenen Fertigkeiten-Slot auf einmal zurück (01.11.) |
 | [[concepts/rassen]] | Vom Fixkatalog zum Baukasten (11.09.), gefundene 15er-Balance-Formel; Auswahlkarte mit Bild, Steckbrief listet Extras (24.10.); erster Gratis-Kauf auch „alle Typen“, nur einmal (24.10.). Battlemap-Größe: Rasse ist Vorlage, Checkbox an der Person entscheidet (06.11.) |
-| [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären 5→6 (23.10.), Wilde Magie, Häretiker-Flavor (24.09.) |
+| [[concepts/magie-hexkraft]] | Arete→Hexkraft (10.09.), Sphären 5→6 (23.10.), Geister→Schattenwelten (09.11.), Wilde Magie, Häretiker-Flavor (24.09.) |
 | [[concepts/neuroweaving-decking]] | Technomancer→Neuroweaver (10.09.), 6 Skills (22.09.), Overclock; Kampfkarte schaltet beim Neuroweaver wie beim Decker zwischen Kampf und Cyberkampf (01.11.). Overclock ist dort eine Funktion mit Würfel und Willenskraft, seit 06.11. ohne Pool-Deckel (Rückschlag begrenzt von allein) und auch für den Decker im Matrix-Hot nutzbar. Deaktivieren teilweise umgesetzt (01.11.): Kampf-Fenster, Umbau-Feld, Kampfkarte zeigt Ausgeschaltetes. Gehacktes Deck zieht von allein nach. Neuroweaver-Hack: restliche Willenskraft ist das Kampf-ICE, Überschuss ist ungedeckelter Schlagschaden; Hot-Decker wählt schalten oder Schaden. Drohne ebenso: Wahl, nicht nur schalten; Fahrzeug bleibt beim Schalten. Überschrift „Würfeln“ ist weg, die Knöpfe bleiben (05.11.). Vierte Umbau-Option „Nicht hackbar“ (05.11.). Offen: Ki-Tama-Zeile, Automata als eigener Typ |
 | [[concepts/kampf-und-initiative]] | Initiative, Treffen mit Ausrüstungsbonus, Waffen-Skill, Schaden, Parade-Bonus nur an der Waffe (31.10.). SL bekommt Booster- und Hot-Popups, wenn ein NPC dran ist (04.11.). Kampfmenü ohne die Zeilen Ansage von hinten, Schutz und Schaden, Würfeln (05.11.) — Pools, Waffen und der Umschalter bleiben. Klick auf die Initiative-Zahl trägt die Erfolge ein, auch wenn Charakter oder Drohne noch nicht in der Liste stehen (05.11.). Große Parieren-Kachel nimmt die Nahkampfwaffe, Nahkampf-Schaden zeigt Waffe+Körperkraft (06.11.). Battlemap-Design 06.11. entschieden, nicht gebaut — siehe [[entities/battlemap]] |
 | [[concepts/ruestung-kaestchen-durchlass]] | Kästchen+Schadensreduktion (18.09., höher=besser, abgelöst "Durchlass") — am längsten diskutierte Regel im Projekt |

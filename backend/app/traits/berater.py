@@ -129,7 +129,7 @@ def berate(
 # traits/seed.py::NEOTOPIA_TRAITS, dort ist es die Quelle der Wahrheit.
 _SPHAEREN_NAMEN = [
     "Korrespondenz", "Entropie", "Kräfte", "Leben", "Materie",
-    "Gedanken", "Ursprung", "Geister", "Zeit",
+    "Gedanken", "Ursprung", "Schattenwelten", "Zeit",
 ]
 _NEUROWEAVING_FERTIGKEITEN_NAMEN = [
     "Brute Force", "Schleichen", "Daten Verarbeiten", "Kompilieren",

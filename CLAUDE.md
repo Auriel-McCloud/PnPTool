@@ -1611,6 +1611,9 @@ Spieltisch getestet.**
   `test_spezialisierungen.py` — isoliert alle grün, keine Regression).
   Geister wurde inhaltlich auf **Schattenwelten** umgestellt (Totenreich,
   Götterreich — „Astralebene"/„Todesgürtel" gibt es in NeotopiA nicht mehr).
+  09.11.2026: die Sphäre selbst heißt jetzt **Schattenwelten** (nicht nur der
+  Ort in den Texten). Häretiker-Gott bleibt Izanami. Migration:
+  `seed.py::_migriere_geister_zu_schattenwelten`.
   31.10.2026 nachgezogen: `docs/regeln-neotopia.md` und die Wiki-Seiten
   zu Attributen bzw. Excel-vs-aktuell sagten noch „Sphären bleiben bei 5“.
   Die Stufentexte selbst (Magier und Götter) lagen seit 23.10. schon in
@@ -2564,6 +2567,11 @@ npm run dev
 | Spotify | ✅ | Playlist an Ort/Event, Musik folgt aktiver Party, siehe `docs/api/spotify.md` |
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
+
+**Zuletzt gebaut (09.11.2026 — Sphäre Geister heißt Schattenwelten):**
+- **Was:** Magier-Name der Sphäre von Geister auf Schattenwelten. Häretiker sehen weiter Izanami. Stufentexte über Geister als Wesen bleiben. Bestehende Punkte, Spezialisierungs-Slots und Tooltips hängen beim Start per Seed-Migration um (dieselbe TraitDef-Kennungs-Falle wie Arete→Hexkraft).
+- **Wo:** `backend/app/traits/seed.py`, `backend/app/traits/berater.py`, `frontend/src/traits/magieBegriffe.ts`, `frontend/src/traits/magie.ts`, `frontend/src/traits/berater.ts`, `docs/regeln-neotopia.md`.
+- **Verifiziert:** Katalog-Import listet Schattenwelten statt Geister, Häretiker-Label bleibt Izanami. `npx tsc -b` grün. Migration läuft beim Backend-Start, nicht in einem isolierten Pytest.
 
 **Zuletzt gebaut (07.11.2026 — Aeon-Markierung + Filter nach Vorlage/Aeon):**
 - **Was:** Zweite, unabhängige Critter-Markierung neben Vorlage (`Person.istAeon`) — reines Flag, keine eigene Mechanik oder Kopier-Funktion. Checkbox "Als Aeon markieren" im Critter-Fenster, violette "Aeon"-Badge auf der Kachel (Begleiter- UND Flora&Fauna-Übersicht, analog zur neonfarbenen Vorlage-Badge). Beide Übersichten haben jetzt zusätzlich ein Filter-Dropdown: Alle / Nur Vorlagen / Nur Aeons / Ohne Vorlagen/Aeons.
