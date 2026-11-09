@@ -31,7 +31,7 @@ export const KAMPF_FERTIGKEITEN = new Set([
   "Riggen",
 ]);
 
-const SPHAEREN_NAMEN = ["Korrespondenz", "Entropie", "Kräfte", "Leben", "Materie", "Gedanken", "Ursprung", "Schattenwelten", "Zeit"];
+const SPHAEREN_NAMEN = ["Raum", "Schicksal", "Kräfte", "Leben", "Materie", "Gedanken", "Ursprung", "Schattenwelten", "Chronurgie"];
 const NEUROWEAVING_FERTIGKEITEN_NAMEN = [
   "Brute Force",
   "Schleichen",

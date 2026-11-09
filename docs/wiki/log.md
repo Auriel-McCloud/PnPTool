@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-09] rename | Sphären Raum, Chronurgie, Schicksal
+
+Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Auf dem Blatt.
+Häretiker bleiben Shu, Chronos, Kali. Gedanken nicht angefasst.
+Siehe [[concepts/magie-hexkraft]].
+
 ## [2026-11-09] entscheidung | Sphärennamen Raum, Chronurgie, Schicksal
 
 Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Entschieden, nicht

@@ -2568,6 +2568,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (09.11.2026 — Sphären Raum, Chronurgie, Schicksal):**
+- **Was:** Magier-Namen Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Häretiker sehen weiter Shu, Chronos, Kali. Gedanken bleibt. Stufentexte behalten Zeit, Raum und den Eid als Sache, nicht als Sphärennamen. Der Chip „Schicksal“ heißt Ordnung. Bestehende Punkte hängen beim Start per Seed-Migration um.
+- **Wo:** `backend/app/traits/seed.py`, `backend/app/traits/berater.py`, `frontend/src/traits/magieBegriffe.ts`, `frontend/src/traits/magie.ts`, `frontend/src/traits/berater.ts`, `docs/regeln-neotopia.md`. Das Charakterblatt liest den Namen aus dem Katalog, kein eigener Text.
+- **Verifiziert:** Katalog-Test und `tsc -b`. Migration läuft beim Backend-Start, nicht in einem isolierten Pytest.
+
 **Zuletzt gebaut (09.11.2026 — Sphäre Geister heißt Schattenwelten):**
 - **Was:** Magier-Name der Sphäre von Geister auf Schattenwelten. Häretiker sehen weiter Izanami. Stufentexte über Geister als Wesen bleiben. Bestehende Punkte, Spezialisierungs-Slots und Tooltips hängen beim Start per Seed-Migration um (dieselbe TraitDef-Kennungs-Falle wie Arete→Hexkraft).
 - **Wo:** `backend/app/traits/seed.py`, `backend/app/traits/berater.py`, `frontend/src/traits/magieBegriffe.ts`, `frontend/src/traits/magie.ts`, `frontend/src/traits/berater.ts`, `docs/regeln-neotopia.md`.
@@ -3641,5 +3646,5 @@ dort weitergepflegt, hier nicht mehr).
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 | 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
 | 26 | Battlemap (Hex-Grid, Tokens aus der Initiative, Live-Zeichnen) | **teilweise umgesetzt** (06.11.2026) — gebaut, Spieltisch-Klicktest offen | [[battlemap]] |
-| 27 | Sphären umbenennen: Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Götter bleiben. Kräfte, Leben, Materie bleiben. Gedanken offen. | **entschieden, nicht gebaut** (09.11.) | [[magie-hexkraft]] |
+| 27 | Sphären umbenennen: Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Götter bleiben. Kräfte, Leben, Materie bleiben. | ✅ gebaut (09.11.). Gedanken weiter offen | [[magie-hexkraft]] |
 

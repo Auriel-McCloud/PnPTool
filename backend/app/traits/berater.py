@@ -128,8 +128,8 @@ def berate(
 # (bei jedem Klick), ein Katalog-Query dafür wäre unnötig. Deckt sich mit
 # traits/seed.py::NEOTOPIA_TRAITS, dort ist es die Quelle der Wahrheit.
 _SPHAEREN_NAMEN = [
-    "Korrespondenz", "Entropie", "Kräfte", "Leben", "Materie",
-    "Gedanken", "Ursprung", "Schattenwelten", "Zeit",
+    "Raum", "Schicksal", "Kräfte", "Leben", "Materie",
+    "Gedanken", "Ursprung", "Schattenwelten", "Chronurgie",
 ]
 _NEUROWEAVING_FERTIGKEITEN_NAMEN = [
     "Brute Force", "Schleichen", "Daten Verarbeiten", "Kompilieren",

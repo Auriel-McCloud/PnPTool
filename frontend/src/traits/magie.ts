@@ -18,8 +18,8 @@ export const SPHAEREN_STUFEN = [
 
 /** Kurzbeschreibung je Sphäre (Zeilen 90-92). */
 export const SPHAEREN: Record<string, string> = {
-  Korrespondenz: "Raummagie. „Entfernung? Was ist das?“",
-  Entropie: "Wahrscheinlichkeiten. „Glück? HA!“",
+  Raum: "Raummagie. „Entfernung? Was ist das?“",
+  Schicksal: "Wahrscheinlichkeiten. „Glück? HA!“",
   Kräfte: "Physikalische Kräfte manipulieren. Schaden durch Kräfte ist automatisch +1.",
   Leben: "Jede lebende Materie unterliegt meinem Willen.",
   Materie: "Alles, was nicht lebt, beugt sich meinem Willen.",
@@ -28,7 +28,7 @@ export const SPHAEREN: Record<string, string> = {
     "Reine Magie. Nötig, um Verzauberungen zu schaffen und Magie in Objekten zu festigen — und für Lichtschwerter.",
   Schattenwelten:
     "Schattenwelten und ihre Bewohner. Geister können mit der Realität wechselwirken, wenn du sie lässt.",
-  Zeit: "Die schwierigste aller Sphären. Drei Minuten zurück retten manchmal den Abend — 300 Jahre nicht.",
+  Chronurgie: "Die schwierigste aller Sphären. Drei Minuten zurück retten manchmal den Abend — 300 Jahre nicht.",
 };
 
 /**

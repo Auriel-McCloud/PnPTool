@@ -74,15 +74,15 @@ TRAIT_BESCHREIBUNGEN: dict[str, str] = {
     # --- Hexkraft (Magiewert) ---
     "Hexkraft": "Rohe magische Macht — wie stark und zuverlässig ein Zauber wirkt.",
     # --- Sphären (was die Magie bewirken kann, nicht wie stark) ---
-    "Korrespondenz": "Raum und Distanz manipulieren — Fernwahrnehmung, Teleportation, Dinge über Entfernung greifen.",
-    "Entropie": "Zufall, Glück/Pech und Verfall lenken — Wahrscheinlichkeiten biegen, Systeme zersetzen, Schwachstellen finden.",
+    "Raum": "Raum und Distanz manipulieren — Fernwahrnehmung, Teleportation, Dinge über Entfernung greifen.",
+    "Schicksal": "Zufall, Glück/Pech und Verfall lenken — Wahrscheinlichkeiten biegen, Systeme zersetzen, Schwachstellen finden.",
     "Kräfte": "Elementarenergie steuern — Feuer, Elektrizität, Schall, Licht, kinetische Wucht.",
     "Leben": "Lebendiges Gewebe formen — heilen, verwunden, mutieren, den eigenen Körper verändern.",
     "Materie": "Unbelebte Stoffe formen — Metall, Beton, Chemikalien verwandeln, verstärken oder erschaffen.",
     "Gedanken": "Bewusstsein beeinflussen — Gedanken lesen, Illusionen erzeugen, Willen beugen, Erinnerungen verändern.",
     "Ursprung": "Reine Energie an der Quelle anzapfen — Urkraft ziehen, Dinge aus dem Nichts erschaffen, Auren lesen.",
     "Schattenwelten": "Mit den Schattenwelten und ihren Bewohnern interagieren — dorthin reisen, Geister rufen, binden, verbannen.",
-    "Zeit": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Sprünge vor oder zurück.",
+    "Chronurgie": "Zeit wahrnehmen und verschieben — Vorausschau, Verlangsamung, kurze Sprünge vor oder zurück.",
     # --- NeuroWeaving (Matrix ohne Gerät) ---
     "NeuroWeaving": "Rohe Stärke beim Weben in der Matrix — wie stark und zuverlässig es wirkt.",
     "Brute Force": "Sicherheitssysteme direkt durchbrechen — roh, laut, aber effektiv.",
@@ -115,15 +115,15 @@ TRAIT_VORSCHLAEGE: dict[str, list[str]] = {
     # Sphären-Spezialisierung (23.10.2026) — übernommen aus "Empfohlene
     # Spezialitäten" in docs/reference/Master/*.md, damit die Chips im
     # SpezialisierungPopup nicht leer bleiben.
-    "Korrespondenz": ["Teleportation", "Fernwahrnehmung", "Raumlöcher", "Bannzeichen", "Multi-Lokation"],
-    "Entropie": ["Schicksal", "Glück", "Verfall", "Chaos", "Wahrscheinlichkeitsmanipulation"],
+    "Raum": ["Teleportation", "Fernwahrnehmung", "Raumlöcher", "Bannzeichen", "Multi-Lokation"],
+    "Schicksal": ["Ordnung", "Glück", "Verfall", "Chaos", "Wahrscheinlichkeitsmanipulation"],
     "Kräfte": ["Feuer", "Elektrizität", "Schall", "Licht", "Wettermanipulation"],
     "Leben": ["Heilung", "Mutation", "Gestaltwandel", "Biologische Waffen", "Selbstverwandlung"],
     "Materie": ["Metallurgie", "Chemische Verwandlung", "Nanotechnologie", "Strukturelle Manipulation"],
     "Gedanken": ["Gedankenlesen", "Illusionen", "Erinnerungsmanipulation", "Massensuggestion"],
     "Ursprung": ["Urkraft-Manipulation", "Machtort-Erschaffung", "Machtort-Stabilisierung"],
     "Schattenwelten": ["Geisterbeschwörung", "Fetischbindung", "Schattenwelten-Reisen", "Exorzismus"],
-    "Zeit": ["Zeitwahrnehmung", "Zeitverzerrung", "Zeitreise", "Vorausschau"],
+    "Chronurgie": ["Zeitwahrnehmung", "Zeitverzerrung", "Zeitreise", "Vorausschau"],
 }
 
 
@@ -175,15 +175,15 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
     'Wahrnehmung': 'In Neotopia ist es oft überlebenswichtig, seine Umgebung bewusst wahrzunehmen. Diese Fertigkeit misst deine Fähigkeit, Details, Veränderungen und subtile Hinweise in deiner Umgebung zu erkennen – sei es ein verstecktes Mikrofon, eine ungewöhnliche Bewegung in der Menge oder ein schwacher Geruch, der auf Gefahr hinweist.\n\nGute Anwender dieser Fertigkeit bemerken oft Dinge, die anderen entgehen, und können dadurch frühzeitig auf Bedrohungen oder Chancen reagieren.\n\nStufen:\n• Anfänger: Du bemerkst die offensichtlichsten Dinge in deiner Umgebung.\n•• Unerfahrener Profi: Du bist bereits aufmerksamer als die meisten und erkennst viele subtile Hinweise.\n••• Erfahrener Profi: Deine Wahrnehmung ist sehr gut – du bemerkst die meisten relevanten Details.\n•••• Sehr fähiger Profi: Du bist extrem aufmerksam und entgehen dir nur sehr wenige Hinweise.\n••••• Weltklasse: Deine Wahrnehmung ist außergewöhnlich – du bemerkst Dinge, die selbst erfahrene Beobachter übersehen.\n\nEmpfohlene Spezialitäten:\nVisuelle Wahrnehmung, Akustische Wahrnehmung, Geruchssinn, Körperhaltung lesen, Versteckte Objekte finden, Gefahrenspür\n\nTypische Träger:\nRunner, Bodyguards, ehemalige Soldaten, Spione, ehemalige Straßenkinder mit starkem Überlebensinstinkt.',
     'Matrix': 'In Neotopia ist die Matrix allgegenwärtig. Diese Fertigkeit misst deine Fähigkeit, dich in der digitalen Welt zurechtzufinden – Icons zu interpretieren, Sicherheitsmaßnahmen zu erkennen, Spuren zu verfolgen und sich unauffällig zu bewegen. Es geht um das grundlegende Verständnis der Matrix-Architektur und der darin ablaufenden Prozesse.\n\nGute Anwender dieser Fertigkeit können oft schon an der Struktur eines Hosts oder der Art eines Icons erkennen, mit welcher Art von System oder Gegner sie es zu tun haben – lange bevor der eigentliche Hack beginnt.\n\nStufen:\n• Anfänger: Du kannst dich in der Matrix grundlegend bewegen und die wichtigsten Icons erkennen.\n•• Unerfahrener Profi: Du hast ein gutes Verständnis der Matrix-Struktur und kannst die meisten gängigen Sicherheitsmaßnahmen erkennen.\n••• Erfahrener Profi: Du bewegst dich sicher in der Matrix und kannst auch komplexere Systeme einschätzen.\n•••• Sehr fähiger Profi: Deine Matrix-Kenntnisse sind sehr gut – du kannst auch anspruchsvolle Systeme analysieren.\n••••• Weltklasse: Deine Fähigkeit, die Matrix zu lesen und zu verstehen, ist auf einem extrem hohen Niveau.\n\nEmpfohlene Spezialitäten:\nHost-Architektur, Icon-Analyse, Spurenverfolgung, Sicherheitsprotokolle, Matrix-Navigation, Digitale Tarnung\n\nTypische Träger:\nDecker, Technomanten, Runner mit Matrix-Fokus, ehemalige Konzern-Matrix-Spezialisten, Datenarchivare.',
     # --- Sphären ---
-    'Korrespondenz': 'Diese Sphäre erlaubt es einem Magier, Entfernungen zu überwinden, Dinge an anderen Orten wahrzunehmen oder Gegenstände über große Distanzen zu beeinflussen. Fortgeschrittene Anwender können sogar Tore zwischen Orten reißen oder mehrere Orte gleichzeitig wahrnehmen.\n\nIn Neotopia ist Korrespondenz besonders wertvoll für Runner, Spione und alle, die Dinge über große Entfernungen bewegen oder beobachten müssen.\n\nStufen:\n• Unmittelbare Raumwahrnehmung:\n  Der Magier kann Dinge in seiner unmittelbaren Umgebung spüren, auch wenn er sie nicht sehen kann.\n\n•• Raum spüren, berühren, verdichten und hindurchgreifen:\n  Der Magier kann seine Sinne über Entfernungen ausstrecken und kleine Gegenstände durch winzige Raumlöcher ziehen.\n\n••• Kinder und kleine Tiere durch Raumlöcher ziehen:\n  Der Magier kann auch größere, lebende Ziele wie Kinder oder kleine Tiere durch den Raum versetzen.\n\n•••• Raum durchstoßen / Tore öffnen oder verschließen:\n  Der Magier kann kleine, temporäre Tore zwischen Orten erschaffen, durch die auch erwachsene Menschen passen, und selbst hindurchtreten.\n\n••••• Raum zerreißen / Bannzeichen / Selbst-Kolokation:\n  Der Magier kann permanente Tore erschaffen, Bereiche isolieren oder an mehreren Orten gleichzeitig erscheinen.\n\n•••••• Raumveränderung / Kolokation:\n  Der Magier kann Entfernungen und Dimensionen frei verändern und Orte oder Gegenstände übereinander legen.\n\nEmpfohlene Spezialitäten:\nTeleportation, Fernwahrnehmung, Raumlöcher, Bannzeichen, Multi-Lokation\n\nTypische Träger:\nSpione, ehemalige Konzern-Transporter, Runner mit Fokus auf Mobilität, ehemalige Militär-Teleporter.',
-    'Entropie': 'In Neotopia ist nichts von Dauer. Diese Sphäre gibt einem Magier die Macht, die Strömungen von Wahrscheinlichkeit und Verfall zu beeinflussen. Ein Entropie-Kundiger kann Gegnern Pech bringen, Systeme schneller altern lassen, glückliche Zufälle erzwingen oder bestehende Schwächen in Strukturen und Personen gezielt ausnutzen.\n\nIm Gegensatz zu vielen anderen Sphären verursacht Entropie erst ab Rang 5 direkt schweren, schwer heilbaren Schaden. Davor hilft sie vor allem dabei, die Umgebung oder die Wahrscheinlichkeiten gegen einen Gegner zu wenden.\n\nStufen:\n• Gespür für Schwächen, Glück und Verhängnis:\n  Der Magier kann Strömungen der Wahrscheinlichkeit spüren, Schwachstellen in Systemen erkennen und subtile Hinweise deuten, ob jemand lügt oder unter Druck steht.\n\n•• Wahrscheinlichkeit kontrollieren:\n  Der Magier kann jetzt aktiv Einfluss auf zufällige Ereignisse nehmen – Würfel, Karten oder andere scheinbar zufällige Ausgänge leicht in eine gewünschte Richtung lenken.\n\n••• Berechenbare Muster beeinflussen:\n  Der Magier kann die Geschwindigkeit kontrollieren, mit der materielle Objekte versagen oder verfallen. Besonders effektiv bei komplexen Maschinen.\n\n•••• Glück und Schwächen auch bei einfachen Wesen und massiven Objekten:\n  Der Magier kann das Glück nicht vernunftbegabter Lebewesen (Tiere, Pflanzen, kleine Critter) beeinflussen und findet Schwachstellen selbst in massiven, großen Objekten.\n\n••••• Lebende Dinge beeinflussen:\n  Der Magier kann jetzt direkt Gesundheit oder Verfall in lebende Körper bringen – Segen oder Fluch, plötzliche Krankheit oder erstaunliche Lebenskraft.\n\n•••••• Gedanken beeinflussen / Meme formen / Bindender Eid:\n  Der Magier kann Ideen, Überzeugungen und sogar Erinnerungen formen oder zerstören. Ein Eid kann das Schicksal eines Ziels dauerhaft an seine Loyalität binden.\n\nEmpfohlene Spezialitäten:\nSchicksal, Glück, Verfall, Ordnung, Chaos, Nekromantie, Meme, Wahrscheinlichkeitsmanipulation\n\nTypische Träger:\nFatalisten, ehemalige Konzern-Strategen, Straßen-Schamanen, Manipulatoren, alte Weise mit düsterem Humor.',
+    'Raum': 'Diese Sphäre erlaubt es einem Magier, Entfernungen zu überwinden, Dinge an anderen Orten wahrzunehmen oder Gegenstände über große Distanzen zu beeinflussen. Fortgeschrittene Anwender können sogar Tore zwischen Orten reißen oder mehrere Orte gleichzeitig wahrnehmen.\n\nIn Neotopia ist Raum besonders wertvoll für Runner, Spione und alle, die Dinge über große Entfernungen bewegen oder beobachten müssen.\n\nStufen:\n• Unmittelbare Raumwahrnehmung:\n  Der Magier kann Dinge in seiner unmittelbaren Umgebung spüren, auch wenn er sie nicht sehen kann.\n\n•• Raum spüren, berühren, verdichten und hindurchgreifen:\n  Der Magier kann seine Sinne über Entfernungen ausstrecken und kleine Gegenstände durch winzige Raumlöcher ziehen.\n\n••• Kinder und kleine Tiere durch Raumlöcher ziehen:\n  Der Magier kann auch größere, lebende Ziele wie Kinder oder kleine Tiere durch den Raum versetzen.\n\n•••• Raum durchstoßen / Tore öffnen oder verschließen:\n  Der Magier kann kleine, temporäre Tore zwischen Orten erschaffen, durch die auch erwachsene Menschen passen, und selbst hindurchtreten.\n\n••••• Raum zerreißen / Bannzeichen / Selbst-Kolokation:\n  Der Magier kann permanente Tore erschaffen, Bereiche isolieren oder an mehreren Orten gleichzeitig erscheinen.\n\n•••••• Raumveränderung / Kolokation:\n  Der Magier kann Entfernungen und Dimensionen frei verändern und Orte oder Gegenstände übereinander legen.\n\nEmpfohlene Spezialitäten:\nTeleportation, Fernwahrnehmung, Raumlöcher, Bannzeichen, Multi-Lokation\n\nTypische Träger:\nSpione, ehemalige Konzern-Transporter, Runner mit Fokus auf Mobilität, ehemalige Militär-Teleporter.',
+    'Schicksal': 'In Neotopia ist nichts von Dauer. Diese Sphäre gibt einem Magier die Macht, die Strömungen von Wahrscheinlichkeit und Verfall zu beeinflussen. Ein Schicksalskundiger kann Gegnern Pech bringen, Systeme schneller altern lassen, glückliche Zufälle erzwingen oder bestehende Schwächen in Strukturen und Personen gezielt ausnutzen.\n\nIm Gegensatz zu vielen anderen Sphären verursacht Schicksal erst ab Rang 5 direkt schweren, schwer heilbaren Schaden. Davor hilft sie vor allem dabei, die Umgebung oder die Wahrscheinlichkeiten gegen einen Gegner zu wenden.\n\nStufen:\n• Gespür für Schwächen, Glück und Verhängnis:\n  Der Magier kann Strömungen der Wahrscheinlichkeit spüren, Schwachstellen in Systemen erkennen und subtile Hinweise deuten, ob jemand lügt oder unter Druck steht.\n\n•• Wahrscheinlichkeit kontrollieren:\n  Der Magier kann jetzt aktiv Einfluss auf zufällige Ereignisse nehmen – Würfel, Karten oder andere scheinbar zufällige Ausgänge leicht in eine gewünschte Richtung lenken.\n\n••• Berechenbare Muster beeinflussen:\n  Der Magier kann die Geschwindigkeit kontrollieren, mit der materielle Objekte versagen oder verfallen. Besonders effektiv bei komplexen Maschinen.\n\n•••• Glück und Schwächen auch bei einfachen Wesen und massiven Objekten:\n  Der Magier kann das Glück nicht vernunftbegabter Lebewesen (Tiere, Pflanzen, kleine Critter) beeinflussen und findet Schwachstellen selbst in massiven, großen Objekten.\n\n••••• Lebende Dinge beeinflussen:\n  Der Magier kann jetzt direkt Gesundheit oder Verfall in lebende Körper bringen – Segen oder Fluch, plötzliche Krankheit oder erstaunliche Lebenskraft.\n\n•••••• Gedanken beeinflussen / Meme formen / Bindender Eid:\n  Der Magier kann Ideen, Überzeugungen und sogar Erinnerungen formen oder zerstören. Ein Eid kann das Schicksal eines Ziels dauerhaft an seine Loyalität binden.\n\nEmpfohlene Spezialitäten:\nSchicksal, Glück, Verfall, Ordnung, Chaos, Nekromantie, Meme, Wahrscheinlichkeitsmanipulation\n\nTypische Träger:\nFatalisten, ehemalige Konzern-Strategen, Straßen-Schamanen, Manipulatoren, alte Weise mit düsterem Humor.',
     'Kräfte': 'Diese Sphäre erlaubt es einem Magier, elementare Energien zu lenken und umzuwandeln — erzeugt wird dabei nie Energie aus dem Nichts, sondern stets Vorhandenes gewandelt. Feuerbälle, Blitzschläge, Schallwellen, Gravitationsbrunnen oder Lichtmanipulation sind typische Anwendungen. Auf höheren Rängen können große Gebiete beeinflusst werden (Wetter, Feuerstürme, etc.).\n\nIn Neotopia ist Kräfte eine der direktesten und zerstörerischsten Sphären.\n\nStufen:\n• Kräfte wahrnehmen:\n  Der Magier kann elementare Energien spüren (Infrarot, Elektrizität, Schall etc.).\n\n•• Schwache Energien umlenken:\n  Der Magier kann vorhandene, schwache Energien lenken oder leicht umwandeln.\n\n••• Energien umlenken:\n  Der Magier kann auch stärkere, vorhandene Energien lenken und umwandeln — weiterhin nie aus dem Nichts erzeugt.\n\n•••• Geringe Kräfte umwandeln / Telekinese:\n  Der Magier kann Energien gezielt verwandeln und telekinetische Effekte wirken.\n\n••••• Mächtige Kräfte kontrollieren / Wetterhexerei:\n  Der Magier kann große Gebiete beeinflussen und mächtige elementare Effekte erzeugen.\n\n•••••• Mächtige Kräfte verwandeln / Infernos beschwören:\n  Der Magier kann extrem zerstörerische elementare Phänomene (Tornados, Feuerstürme) hervorrufen.\n\nEmpfohlene Spezialitäten:\nFeuer, Elektrizität, Schall, Licht, Kinetik, Wettermanipulation\n\nTypische Träger:\nKampfmagier, ehemalige Konzern-Sicherheitsspezialisten, Runner mit offensiver Ausrichtung.',
     'Leben': 'Diese Sphäre erlaubt es einem Magier, lebendiges Gewebe zu heilen, zu verletzen, zu mutieren oder radikal zu verändern. Neue Gliedmaßen, biologische Waffen oder die Verwandlung des eigenen Körpers sind typische Anwendungen. Auf höchsten Rängen kann der Magier sogar neue Lebensformen erschaffen.\n\nStufen:\n• Leben spüren:\n  Der Magier kann die Anwesenheit und den Gesundheitszustand naher Lebewesen spüren.\n\n•• Einfache Lebensformen ändern / Selbstheilung:\n  Der Magier kann einfache Organismen verändern und sich selbst heilen.\n\n••• Schmerz lindern oder zufügen / kleine Selbstmutation / Heilung anderer:\n  Der Magier kann komplexen Lebewesen Schmerz nehmen oder zufügen und kleine Mutationen an sich selbst vornehmen. Er kann jetzt auch andere heilen — dabei zählt nur die Hälfte der Erfolge (aufgerundet).\n\n•••• Einfache Lebensformen verwandeln / Selbstveränderung:\n  Der Magier kann radikale Veränderungen an einfachen Organismen vornehmen und sich selbst stark verändern.\n\n••••• Komplexe Lebensformen ändern / Selbstverwandlung:\n  Der Magier kann komplexe Organismen (inklusive Menschen) radikal verändern.\n\n•••••• Komplexe Lebensformen verwandeln & erschaffen:\n  Der Magier kann jede gewünschte Lebensform annehmen oder erschaffen.\n\nEmpfohlene Spezialitäten:\nHeilung, Mutation, Gestaltwandel, Biologische Waffen, Selbstverwandlung\n\nTypische Träger:\nBiomancer, ehemalige Konzern-Genetiker, Runner mit starkem Fokus auf Körpermodifikation.',
     'Materie': 'Diese Sphäre erlaubt es einem Magier, alle Arten von unbelebter Materie zu formen, zu verwandeln oder aus Energie zu erschaffen. Metall, Beton, Glas oder komplexe chemische Verbindungen können manipuliert werden. Kombiniert mit anderen Sphären können sogar lebende Materie oder Energie in Materie umgewandelt werden.\n\nStufen:\n• Materiewahrnehmung:\n  Der Magier kann die Eigenschaften und Struktur von Materialien spüren.\n\n•• Einfache Transmutation:\n  Der Magier kann eine Substanz in eine andere verwandeln (ohne Aggregatszustand zu ändern).\n\n••• Materie leicht formen:\n  Der Magier kann einfache Objekte leicht formen, ohne sie vollständig zu verwandeln.\n\n•••• Materie formen / Komplexe Transmutation:\n  Der Magier kann Materie formen und komplexere Verwandlungen durchführen.\n\n••••• Materie erschaffen / Permanente Veränderung:\n  Der Magier kann Materie aus Energie erschaffen und dauerhafte Veränderungen vornehmen.\n\n•••••• Materie vollständig beherrschen:\n  Der Magier hat nahezu vollständige Kontrolle über alle Formen von Materie.\n\nEmpfohlene Spezialitäten:\nMetallurgie, Chemische Verwandlung, Nanotechnologie, Materie-Erschaffung, Strukturelle Manipulation\n\nTypische Träger:\nTechnomanten, ehemalige Konzern-Materialwissenschaftler, Runner mit Fokus auf Ausrüstung.',
     'Gedanken': 'Diese Sphäre erlaubt es einem Magier, in die Köpfe anderer einzudringen, Illusionen zu erzeugen, Erinnerungen zu verändern oder Willen zu brechen. Fortgeschrittene Anwender können ganze Persönlichkeiten umformen oder kollektive Halluzinationen erzeugen.\n\nStufen:\n• Gedanken spüren:\n  Der Magier kann oberflächliche Gedanken und Emotionen wahrnehmen.\n\n•• Gedanken lesen / einfache Illusionen:\n  Der Magier kann Gedanken lesen und einfache Illusionen erzeugen — die Illusion täuscht dabei nur einen Sinn.\n\n••• Emotionen leicht lenken / stärkere Illusionen:\n  Der Magier kann Emotionen sanft beeinflussen; seine Illusionen täuschen jetzt zwei Sinne gleichzeitig.\n\n•••• Gedanken beeinflussen / starke Illusionen:\n  Der Magier kann Gedanken beeinflussen und realistische, mehrsinnige Illusionen erzeugen.\n\n••••• Bewusstsein kontrollieren / Persönlichkeitsveränderung:\n  Der Magier kann das Bewusstsein anderer stark beeinflussen und Persönlichkeiten verändern.\n\n•••••• Unterbewusstsein kontrollieren / Psyche formen:\n  Der Magier hat nahezu vollständige Kontrolle über das Bewusstsein anderer.\n\nEmpfohlene Spezialitäten:\nGedankenlesen, Illusionen, Erinnerungsmanipulation, Willensbrechung, Massensuggestion\n\nTypische Träger:\nManipulatoren, ehemalige Konzern-Psychologen, Runner mit sozialem Fokus, Kultführer.',
     'Ursprung': 'Diese Sphäre erlaubt es einem Magier, Urkraft — die rohe Urgewalt, aus der alles geschaffen wird — direkt anzuzapfen, Gegenstände mit roher magischer Energie zu erfüllen oder sogar Machtorte zu erschaffen. Auf höheren Rängen kann der Magier Machtorte dauerhaft stabilisieren und Dinge aus reiner Energie formen.\n\nStufen:\n• Urkraft spüren:\n  Der Magier kann Urkraft in Objekten und Lebewesen spüren.\n\n•• Urkraft kanalisieren:\n  Der Magier kann Urkraft aus der Umgebung ziehen und in Objekte leiten.\n\n••• Urkraft in Objekten und Tränken speichern:\n  Der Magier kann Urkraft in Gegenständen oder Tränken speichern, um sie später freizusetzen.\n\n•••• Urkraft formen / Machtorte erschaffen:\n  Der Magier kann Urkraft formen, Machtorte erschaffen.\n\n••••• Urkraft beherrschen / Machtorte stabilisieren:\n  Der Magier hat starke Kontrolle über Urkraft und kann selbst instabile Machtorte dauerhaft festigen.\n\n•••••• Urkraft vollständig beherrschen:\n  Der Magier kann Urkraft frei formen und extreme Effekte wirken.\n\nEmpfohlene Spezialitäten:\nUrkraft-Manipulation, Machtort-Erschaffung, Machtort-Stabilisierung, Energie-Erschaffung\n\nTypische Träger:\nMystiker, ehemalige Konzern-Okkultisten, Runner mit starkem Fokus auf rohe magische Kraft.',
     'Schattenwelten': 'Diese Sphäre erlaubt es einem Magier, mit den Schattenwelten und ihren Bewohnern zu interagieren — Totenreich, Götterreich und weitere Ebenen neben unserer eigenen Wirklichkeit. Der Magier kann Dinge aus einer Schattenwelt zu uns ziehen, selbst hinüberwechseln, Geister rufen, binden oder verbannen und mit spirituellen Energien arbeiten.\n\nDie Schattenwelten sind gefährlich und fremdartig — viele alte Annahmen gelten hier nicht.\n\nStufen:\n• Schattenwelten spüren:\n  Der Magier kann die Nähe von Schattenwelten und Geistern spüren und Auren erkennen.\n\n•• Schattenwelten beeinflussen:\n  Der Magier kann für kurze Zeit Kontakt zu einer Schattenwelt aufnehmen, Geister berühren oder die Grenze zu ihr verdichten oder verdünnen.\n\n••• Etwas Kleines aus einer Schattenwelt zu uns ziehen:\n  Der Magier kann kleine Gegenstände oder schwache Wesenheiten aus einer Schattenwelt in unsere Realität holen.\n\n•••• Durchstoßen und seitwärts wechseln:\n  Der Magier kann selbst in eine Schattenwelt wechseln, Geister erwecken oder beruhigen und Geisterwesenheiten Schaden zufügen.\n\n••••• Permanente Löcher in die Schattenreiche reißen/versiegeln & Geister binden:\n  Der Magier kann dauerhafte Tore zu den Schattenreichen öffnen oder schließen und Geister dauerhaft binden oder in Fetische zwingen.\n\n•••••• Seelen/Geister schmieden & Schattenwelten erschaffen:\n  Der Magier kann Geister und Seelen selbst formen und sogar neue Schattenwelten erschaffen oder bestehende zerstören.\n\nEmpfohlene Spezialitäten:\nGeisterbeschwörung, Fetischbindung, Schattenwelten-Reisen, Exorzismus, Geisterkommando\n\nTypische Träger:\nMedien, Schamanen, ehemalige Konzern-Okkultisten, Runner mit Fokus auf das Übernatürliche.',
-    'Zeit': 'Diese Sphäre erlaubt es einem Magier, Zeit wahrzunehmen, zu verlangsamen oder kurze Sprünge zu machen. Allerdings ist Zeitreisen in Neotopia extrem gefährlich: Die Urkraft ist erst vor etwa 100 Jahren wieder zurückgekehrt, ein Zeitreisender kann leicht in einer Ära stranden, in der sie noch nicht wieder floss – und dort hilflos zurückgelassen werden. Viele Magier betrachten Zeit daher als eine der gefährlichsten Sphären überhaupt.\n\nStufen:\n• Zeit wahrnehmen:\n  Der Magier kann den Fluss der Zeit spüren und kurze Vorausschau betreiben.\n\n•• Zeit verlangsamen / Beschleunigen:\n  Der Magier kann den Zeitfluss für sich selbst oder andere leicht verändern.\n\n••• Stärker verlangsamen oder beschleunigen / Objekte durch die Zeit schicken:\n  Der Magier kann den Zeitfluss deutlich stärker verändern und Gegenstände — nicht sich selbst — in die Zukunft oder Vergangenheit schicken.\n\n•••• Zeitliche Anker setzen / Kurze Sprünge:\n  Der Magier kann kurze Zeitsprünge für sich selbst machen oder Ereignisse zeitlich verzögern.\n\n••••• Zeitliche Isolation / Längere Sprünge:\n  Der Magier kann Bereiche zeitlich isolieren oder längere Sprünge wagen (mit hohem Risiko).\n\n•••••• Zeitreise / Zeitimmunität:\n  Der Magier kann sich außerhalb der Zeit bewegen oder längere Zeitreisen unternehmen – mit extrem hohem Risiko, in einer Zeit ohne Urkraft zu stranden.\n\nEmpfohlene Spezialitäten:\nZeitwahrnehmung, Zeitverzerrung, Zeitreise, Zeitliche Isolation, Vorausschau\n\nTypische Träger:\nZeitmagier, ehemalige Konzern-Zeitforscher, Runner mit extremem Risikobewusstsein.\n\nWichtiger Hinweis:\nZeitreisen in Neotopia ist hochgefährlich. Die Urkraft ist erst vor ca. 100 Jahren wieder zurückgekehrt. Ein Zeitreisender kann leicht in einer Ära ohne Urkraft stranden.',
+    'Chronurgie': 'Diese Sphäre erlaubt es einem Magier, Zeit wahrzunehmen, zu verlangsamen oder kurze Sprünge zu machen. Allerdings ist Zeitreisen in Neotopia extrem gefährlich: Die Urkraft ist erst vor etwa 100 Jahren wieder zurückgekehrt, ein Zeitreisender kann leicht in einer Ära stranden, in der sie noch nicht wieder floss – und dort hilflos zurückgelassen werden. Viele Magier betrachten Chronurgie daher als eine der gefährlichsten Sphären überhaupt.\n\nStufen:\n• Zeit wahrnehmen:\n  Der Magier kann den Fluss der Zeit spüren und kurze Vorausschau betreiben.\n\n•• Zeit verlangsamen / Beschleunigen:\n  Der Magier kann den Zeitfluss für sich selbst oder andere leicht verändern.\n\n••• Stärker verlangsamen oder beschleunigen / Objekte durch die Zeit schicken:\n  Der Magier kann den Zeitfluss deutlich stärker verändern und Gegenstände — nicht sich selbst — in die Zukunft oder Vergangenheit schicken.\n\n•••• Zeitliche Anker setzen / Kurze Sprünge:\n  Der Magier kann kurze Zeitsprünge für sich selbst machen oder Ereignisse zeitlich verzögern.\n\n••••• Zeitliche Isolation / Längere Sprünge:\n  Der Magier kann Bereiche zeitlich isolieren oder längere Sprünge wagen (mit hohem Risiko).\n\n•••••• Zeitreise / Zeitimmunität:\n  Der Magier kann sich außerhalb der Zeit bewegen oder längere Zeitreisen unternehmen – mit extrem hohem Risiko, in einer Zeit ohne Urkraft zu stranden.\n\nEmpfohlene Spezialitäten:\nZeitwahrnehmung, Zeitverzerrung, Zeitreise, Zeitliche Isolation, Vorausschau\n\nTypische Träger:\nZeitmagier, ehemalige Konzern-Zeitforscher, Runner mit extremem Risikobewusstsein.\n\nWichtiger Hinweis:\nZeitreisen in Neotopia ist hochgefährlich. Die Urkraft ist erst vor ca. 100 Jahren wieder zurückgekehrt. Ein Zeitreisender kann leicht in einer Ära ohne Urkraft stranden.',
     # --- NeuroWeaving ---
     'NeuroWeaving': 'NeuroWeaving ist die Fähigkeit, direkt mit dem eigenen Nervensystem in die Matrix einzudringen und dort zu wirken. Im Gegensatz zum klassischen Decken braucht ein NeuroWeaver kein externes Gerät – sein Gehirn selbst wird zum Interface. Der NeuroWeaving-Wert bestimmt, wie stark und zuverlässig diese Verbindung ist. Hohe Werte bedeuten, dass der Weave tiefer, schneller und gefährlicher wird. Viele NeuroWeaver tragen sichtbare Implantate oder Narben an den Schläfen, wo die direkte Verbindung stattfindet.',
     'Brute Force': 'Brute Force ist die aggressivste Form des NeuroWeaving. Der Weave bricht Sicherheitsprotokolle durch pure Überwältigung – laute, schnelle und oft sehr auffällige Angriffe. Wer diese Fertigkeit nutzt, riskiert schnell ICE-Aufmerksamkeit, hinterlässt aber auch tiefe Spuren im System. Besonders effektiv gegen stark gepanzerte Hosts, aber auch extrem riskant.',
@@ -202,8 +202,8 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
 # "Häretiker" ist KEIN eigener Weg und KEINE eigene Mechanik — nur ein
 # zweites Vokabular für exakt denselben Magier-Weg (siehe
 # traits/erstellung.py::normalisiere_weg). Ein Häretiker-Charakter hat
-# intern weg="MAGIER" und dieselben TraitDefs (Hexkraft, Korrespondenz,
-# Entropie, ...); nur `magieFlavor="HAERETIKER"` sagt der Oberfläche, dass
+# intern weg="MAGIER" und dieselben TraitDefs (Hexkraft, Raum,
+# Schicksal, ...); nur `magieFlavor="HAERETIKER"` sagt der Oberfläche, dass
 # sie andere Beschriftungen zeigen soll. Diese Zuordnung ist deshalb die
 # EINZIGE Stelle, an der Häretiker-Begriffe definiert sind — Frontend und
 # ggf. spätere Server-Texte lesen von hier, statt die Zuordnung zu
@@ -219,15 +219,15 @@ TRAIT_LANGBESCHREIBUNGEN: dict[str, str] = {
 # Wächterin der Schattenwelten (Sphäre, Häretiker: Izanami) — beide Texte verweisen aufeinander.
 HAERETIKER_LABELS: dict[str, str] = {
     "Hexkraft": "Glauben",
-    "Korrespondenz": "Shu",
+    "Raum": "Shu",
     "Gedanken": "Tezcatlipoca",
-    "Entropie": "Kali",
+    "Schicksal": "Kali",
     "Kräfte": "Donar",
     "Leben": "Enki",
     "Materie": "Ogun",
     "Ursprung": "Izanagi",
     "Schattenwelten": "Izanami",
-    "Zeit": "Chronos",
+    "Chronurgie": "Chronos",
 }
 
 # "Wilde Magie" ist kein Trait-Name (kein Katalogeintrag), sondern ein reiner
@@ -367,15 +367,15 @@ NEOTOPIA_TRAITS: list[tuple[str, str, int, int]] = [
     # neue Zwischenstufe pro Sphäre eingefädelt, "vollständig beherrschen"
     # rutscht von Stufe 5 auf Stufe 6. Ersetzt die alte Begründung vom
     # 20.09.2026. Volltexte: TRAIT_BESCHREIBUNGEN oben, docs/reference/Master/*.md.
-    ("Korrespondenz", "Sphäre", 6, 1),
-    ("Entropie", "Sphäre", 6, 2),
+    ("Raum", "Sphäre", 6, 1),
+    ("Schicksal", "Sphäre", 6, 2),
     ("Kräfte", "Sphäre", 6, 3),
     ("Leben", "Sphäre", 6, 4),
     ("Materie", "Sphäre", 6, 5),
     ("Gedanken", "Sphäre", 6, 6),
     ("Ursprung", "Sphäre", 6, 7),
     ("Schattenwelten", "Sphäre", 6, 8),
-    ("Zeit", "Sphäre", 6, 9),
+    ("Chronurgie", "Sphäre", 6, 9),
     # Hexkraft ist der Magiewert selbst (nicht zu verwechseln mit den Sphären,
     # die nur beschreiben was möglich ist). Auf dem Blatt eine Reihe von zehn
     # Kästchen, daher Maximum 10 statt 5 wie bei Fähigkeiten. Kostet in der
@@ -425,6 +425,7 @@ async def seed_traits() -> None:
 
         await _migriere_arete_zu_hexkraft(session)
         await _migriere_geister_zu_schattenwelten(session)
+        await _migriere_sphaeren_namen(session)
         await _seed_trait_erklaerungen(session, ruleset)
         await _seed_haeretiker_erklaerungen(session, ruleset)
 
@@ -472,7 +473,7 @@ async def _seed_haeretiker_erklaerungen(session, ruleset: str) -> None:
 
     Eigene Schlüssel (trait:Glauben, trait:Chronos, ...) neben den
     bestehenden Magier-Schlüsseln (trait:Hexkraft, trait:Zeit, ...) — beide
-    Sätze leben nebeneinander, weil dieselbe TraitDef (z.B. "Zeit") je nach
+    Sätze leben nebeneinander, weil dieselbe TraitDef (z.B. "Chronurgie") je nach
     `magieFlavor` des Charakters unter verschiedenem Namen angezeigt wird
     (siehe HAERETIKER_LABELS oben, InfoTipp.tsx). Dieselbe HAND/KI-
     Schutzregel wie bei `_seed_trait_erklaerungen`.
@@ -660,3 +661,90 @@ async def _migriere_geister_zu_schattenwelten(session) -> None:
     )
     if umgehaengt:
         print(f"[seed] Geister → Schattenwelten: {umgehaengt} Charakterwert(e) umgehängt")
+
+
+# 09.11.2026: Korrespondenz→Raum, Entropie→Schicksal, Zeit→Chronurgie.
+# Gedanken bleibt, bis der Name steht.
+_SPHAEREN_UMBENENNUNGEN = (
+    ("Korrespondenz", "Raum"),
+    ("Entropie", "Schicksal"),
+    ("Zeit", "Chronurgie"),
+)
+
+
+async def _migriere_sphaeren_namen(session) -> None:
+    """Hängt Punkte der umbenannten Sphären an die neue TraitDef-Kennung.
+
+    Dieselbe Falle wie Arete→Hexkraft und Geister→Schattenwelten: die
+    Kennung ist ``ruleset:category:name``. Ohne Umhängen legt der Seed
+    einen leeren Knoten an und die Punkte bleiben am alten Namen.
+    Idempotent. Gedanken wird nicht angefasst.
+    """
+    for alt_name, neu_name in _SPHAEREN_UMBENENNUNGEN:
+        alt_id = f"neotopia:Sphäre:{alt_name}"
+        neu_id = f"neotopia:Sphäre:{neu_name}"
+        ergebnis = await session.run(
+            """
+            MATCH (alt:TraitDef {id: $alt_id})
+            MATCH (n)-[h:HAS_TRAIT]->(alt)
+            MATCH (neu:TraitDef {id: $neu_id})
+            MERGE (n)-[nh:HAS_TRAIT]->(neu)
+              ON CREATE SET nh.rating = h.rating, nh.maxOverride = h.maxOverride
+              ON MATCH SET nh.rating = CASE WHEN coalesce(nh.rating, 0) = 0 THEN h.rating ELSE nh.rating END
+            DELETE h
+            RETURN count(*) AS umgehaengt
+            """,
+            alt_id=alt_id,
+            neu_id=neu_id,
+        )
+        datensatz = await ergebnis.single()
+        umgehaengt = datensatz["umgehaengt"] if datensatz else 0
+
+        await session.run(
+            """
+            MATCH (n)
+            WHERE n.traitDefId = $alt_id
+            SET n.traitDefId = $neu_id,
+                n.traitName = CASE WHEN n.traitName = $alt_name THEN $neu_name ELSE n.traitName END
+            """,
+            alt_id=alt_id,
+            neu_id=neu_id,
+            alt_name=alt_name,
+            neu_name=neu_name,
+        )
+
+        alt_schluessel = f"trait:{alt_name}"
+        neu_schluessel = f"trait:{neu_name}"
+        await session.run(
+            """
+            MATCH (alt:Erklaerung {ruleset: 'neotopia', schluessel: $alt_schluessel})
+            WHERE NOT EXISTS {
+                MATCH (:Erklaerung {ruleset: 'neotopia', schluessel: $neu_schluessel})
+            }
+            SET alt.schluessel = $neu_schluessel,
+                alt.id = $neu_id_erklaerung,
+                alt.titel = CASE WHEN alt.quelle = 'HAND' THEN alt.titel ELSE $neu_name END
+            """,
+            alt_schluessel=alt_schluessel,
+            neu_schluessel=neu_schluessel,
+            neu_id_erklaerung=f"neotopia:{neu_schluessel}",
+            neu_name=neu_name,
+        )
+        await session.run(
+            """
+            MATCH (alt:Erklaerung {ruleset: 'neotopia', schluessel: $alt_schluessel})
+            WHERE alt.quelle = 'KI'
+            DELETE alt
+            """,
+            alt_schluessel=alt_schluessel,
+        )
+        await session.run(
+            """
+            MATCH (alt:TraitDef {id: $alt_id})
+            WHERE NOT ()-[:HAS_TRAIT]->(alt)
+            DELETE alt
+            """,
+            alt_id=alt_id,
+        )
+        if umgehaengt:
+            print(f"[seed] {alt_name} → {neu_name}: {umgehaengt} Charakterwert(e) umgehängt")

@@ -14,15 +14,15 @@
  * 27.09.2026: Ehecatl → Shu, Atum → Izanagi getauscht (siehe seed.py). */
 export const HAERETIKER_LABELS: Record<string, string> = {
   Hexkraft: "Glauben",
-  Korrespondenz: "Shu",
+  Raum: "Shu",
   Gedanken: "Tezcatlipoca",
-  Entropie: "Kali",
+  Schicksal: "Kali",
   Kräfte: "Donar",
   Leben: "Enki",
   Materie: "Ogun",
   Ursprung: "Izanagi",
   Schattenwelten: "Izanami",
-  Zeit: "Chronos",
+  Chronurgie: "Chronos",
 };
 
 /** "Wilde Magie" ist kein Trait-Name, sondern ein reiner UI-Begriff

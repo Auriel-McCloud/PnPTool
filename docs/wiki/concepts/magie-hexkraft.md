@@ -31,11 +31,12 @@ als NeuroWeaving-Fertigkeiten, siehe [[neuroweaving-decking]]). Stufen (seit
 3 neue Zwischenstufe je Sphäre · 4 Zimmergröße/komplexere Wirkung ·
 5 Hausgröße/starke Wirkung · 6 alles / vollständig beherrschen.
 
-Neun Sphären: Korrespondenz, Entropie, Kräfte (*Schaden automatisch +1*), Leben,
-Materie, Gedanken, Ursprung, Schattenwelten, Zeit. Volltexte in
+Neun Sphären: Raum, Schicksal, Kräfte (*Schaden automatisch +1*), Leben,
+Materie, Gedanken, Ursprung, Schattenwelten, Chronurgie. Volltexte in
 `docs/reference/Sphären/` (M20-Rohtext, nicht mehr aktuell) und
-`docs/reference/Master/` (fertige NeotopiA-Tooltips; die Datei zu Gedanken
-heißt dort `Verstand.md`, die zu Schattenwelten `Schattenwelten.md`).
+`docs/reference/Master/` (fertige NeotopiA-Tooltips; Gedanken ist
+`Verstand.md`, Raum `Raum.md`, Chronurgie `Chronurgie.md`, Schicksal
+`Schicksal.md`, Schattenwelten `Schattenwelten.md`).
 
 **23.10.2026 — Sphären auf 6 Punkte erweitert (Mark, im Chat durchgesprochen):**
 jede Sphäre bekam eine neue Zwischenstufe, „vollständig beherrschen" rutschte
@@ -62,26 +63,13 @@ Hexkraft 0 fälschlich kein Magier.
 
 ## Noch nicht gebaut
 
-**09.11.2026 — Sphärennamen, entschieden, nicht umbenannt (Mark, im Chat).**
-Die Blatt-Namen in der Definition gelten, bis der Umbau läuft. Die Punkte wandern erst,
-wenn die Namensrunde zu ist, sonst hängt dieselbe Migration zweimal um.
-Häretiker-Götter bleiben.
-
-- Korrespondenz → **Raum**. Shu bleibt. Raum ist die Sphäre, nicht ein Trick.
-  Zwischenraum, Kontinuum und Verschränkung verworfen.
-- Zeit → **Chronurgie**. Chronos bleibt. Zeitriss verworfen, weil es nur nach
-  Reisen klingt.
-- Entropie → **Schicksal**. Kali bleibt. Chaos verworfen: steht schon als
-  Spezialität neben Ordnung, deckt den bindenden Eid nicht, Segen fällt raus.
-  Schicksal kann chaotisch sein. Der Vorschlags-Chip heißt schon „Schicksal“
-  und braucht beim Umbau ein anderes Wort.
-- Kräfte, Leben, Materie bleiben. Ein schönerer Name macht sie kleiner.
-- Ursprung nicht neu entschieden.
-- Gedanken offen.
+**Gedanken** hat noch keinen neuen Namen. Telepathie ist nur das Lesen.
+Kräfte, Leben, Materie bleiben. Ursprung nicht neu entschieden.
 
 ## Entwicklung
 
-- **09.11.2026 — Sphärennamen Raum, Chronurgie, Schicksal entschieden, nicht gebaut (Mark).** Siehe „Noch nicht gebaut“. Blatt und Seed heißen weiter Korrespondenz, Zeit, Entropie.
+- **09.11.2026 — Korrespondenz heißt Raum, Zeit heißt Chronurgie, Entropie heißt Schicksal (Mark).** Häretiker sehen weiter Shu, Chronos, Kali. Gedanken bleibt. Der Vorschlags-Chip „Schicksal“ heißt jetzt Ordnung, sonst klebt er am Sphärennamen. Punkte hängen per `_migriere_sphaeren_namen` um.
+- **09.11.2026 — Sphärennamen Raum, Chronurgie, Schicksal entschieden, nicht gebaut (Mark).** Siehe den Eintrag darüber. Der Umbau ist gelaufen.
 - **09.11.2026 — Sphäre Geister heißt Schattenwelten (Mark).** Der Sphärenname
   selbst, nicht nur der Ort in den Stufentexten. Häretiker sehen weiter
   Izanami. Geister rufen und binden in den Stufen bleibt — das sind die

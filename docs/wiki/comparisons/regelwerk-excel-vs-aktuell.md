@@ -35,9 +35,9 @@ Datenquelle, siehe [[../../reference/INDEX.md]]).
 | Fertigkeitsmaximum | 5 | **6** (gleichgezogen mit Attributmaximum; Sphären damals noch bei 5) | 20.09.2026 |
 | Sphärenmaximum | 5 | **6**, neue Zwischenstufe je Sphäre, „vollständig beherrschen“ ist Stufe 6 | 23.10.2026 |
 | Sphärenname der ehemaligen Geister-Sphäre | „Geister“ | „Schattenwelten“ (Gott bleibt Izanami) | 09.11.2026 |
-| Sphärenname Korrespondenz | „Korrespondenz“ | entschieden: Raum, noch nicht umbenannt (Shu bleibt) | 09.11.2026 |
-| Sphärenname Zeit | „Zeit“ | entschieden: Chronurgie, noch nicht umbenannt (Chronos bleibt) | 09.11.2026 |
-| Sphärenname Entropie | „Entropie“ | entschieden: Schicksal, noch nicht umbenannt (Kali bleibt) | 09.11.2026 |
+| Sphärenname Korrespondenz | „Korrespondenz“ | „Raum“ (Gott bleibt Shu) | 09.11.2026 |
+| Sphärenname Zeit | „Zeit“ | „Chronurgie“ (Gott bleibt Chronos) | 09.11.2026 |
+| Sphärenname Entropie | „Entropie“ | „Schicksal“ (Gott bleibt Kali) | 09.11.2026 |
 
 Jede Zeile hat eine ausführlichere Behandlung auf der jeweiligen Konzeptseite
 unter „Entwicklung" — hier nur der schnelle Überblick.
