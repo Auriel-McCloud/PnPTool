@@ -1,7 +1,8 @@
 """Letzte Sicht auf der Battlemap, ohne Datenbank.
 
 Vorne sind drei von sechs Hex-Richtungen. Dahinter bleibt der Stand vom
-letzten Hinsehen. Versteckt schlägt den Kegel. Rundumsicht sieht immer
+letzten Hinsehen, drei Kampfrunden lang, auch hinter Wänden und nach
+eigener Bewegung. Versteckt schlägt den Kegel. Rundumsicht sieht immer
 den aktuellen Stand. Die Party teilt die Augen nicht.
 """
 
@@ -134,7 +135,32 @@ def _schnappschuss(token: dict) -> dict:
     return {feld: token.get(feld) for feld in SICHT_FELDER if feld != "veraltet"}
 
 
-def start_speicher(teilnehmer: list[dict], waende: list[dict] | None = None) -> dict:
+# Wie der EW-Bonus: die Runde des letzten echten Hinsehens und zwei weitere.
+ERINNERUNG_RUNDEN = 3
+
+
+def _stempel(runde: int | None) -> dict:
+    if runde is None:
+        return {}
+    return {"gesehenRunde": int(runde)}
+
+
+def erinnerung_vorbei(snap: dict | None, runde: int | None) -> bool:
+    """Physische Erinnerung älter als drei Kampfrunden.
+
+    Matrix-Ping hält bis zum nächsten Blick oder Ping, nicht nach Runden.
+    Ohne Runde oder ohne Stempel kein Verfall: Altbestand wird beim nächsten
+    ``aktualisiere`` gestempelt, Tests ohne Kampfzähler bleiben stabil.
+    """
+    if runde is None or not isinstance(snap, dict) or snap.get("matrixGeortet"):
+        return False
+    gesehen = snap.get("gesehenRunde")
+    if gesehen is None:
+        return False
+    return int(runde) > int(gesehen) + (ERINNERUNG_RUNDEN - 1)
+
+
+def start_speicher(teilnehmer: list[dict], waende: list[dict] | None = None, runde: int | None = None) -> dict:
     """Kampfbeginn: jedes Auge kennt den Stand, den es sehen kann. Wände auch bei Rundumsicht."""
     augen = [t for t in teilnehmer if not t.get("zusatzzug") and t.get("hexQ") is not None]
     speicher: dict = {}
@@ -146,13 +172,24 @@ def start_speicher(teilnehmer: list[dict], waende: list[dict] | None = None) -> 
                 continue
             if ziel.get("versteckt") and not gehoert(ziel, kontrolleur):
                 continue
-            ged[ziel["id"]] = _schnappschuss(ziel)
+            ged[ziel["id"]] = {**_schnappschuss(ziel), **_stempel(runde)}
         speicher[auge["id"]] = ged
     return speicher
 
 
-def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dict] | None = None) -> dict:
-    """Vorderen Halbkreis auffrischen. Hinten bleibt der alte Stand. Eine Wand löscht, was man gerade anschaut."""
+def aktualisiere(
+    teilnehmer: list[dict],
+    speicher: dict | None,
+    waende: list[dict] | None = None,
+    runde: int | None = None,
+) -> dict:
+    """Vorderen Halbkreis auffrischen. Hinten bleibt der alte Stand.
+
+    Eine Wand oder die eigene Bewegung löscht die letzte Sichtung nicht.
+    Sie bleibt drei Kampfrunden als Erinnerung, auch wenn man hinter die
+    Wand geht. Versteckt löscht sofort. Matrix-Ping verfällt nicht an
+    Wänden und nicht nach Runden.
+    """
     neu = {k: dict(v) for k, v in (speicher or {}).items()}
     augen = [t for t in teilnehmer if not t.get("zusatzzug") and t.get("hexQ") is not None]
     lebendig = {t["id"] for t in augen}
@@ -161,7 +198,7 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dic
         ged = dict(neu.get(auge["id"]) or {})
         for ziel in augen:
             if ziel["id"] == auge["id"]:
-                ged[ziel["id"]] = _schnappschuss(ziel)
+                ged[ziel["id"]] = {**_schnappschuss(ziel), **_stempel(runde)}
                 continue
             verborgen = bool(ziel.get("versteckt")) and not gehoert(ziel, kontrolleur)
             if im_kegel(auge, ziel):
@@ -169,22 +206,27 @@ def aktualisiere(teilnehmer: list[dict], speicher: dict | None, waende: list[dic
                     ged.pop(ziel["id"], None)
                 elif blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(ziel["hexQ"]), int(ziel["hexR"]), waende):
                     vorher = ged.get(ziel["id"])
-                    if not (isinstance(vorher, dict) and vorher.get("matrixGeortet")):
-                        # Echter Sichtkontakt wäre hier blockiert — eine
-                        # matrix-geortete Notiz bleibt davon unberührt, eine
-                        # physische Erinnerung verfällt wie bisher.
+                    if isinstance(vorher, dict) and vorher.get("matrixGeortet"):
+                        # Funkortung, keine Sichtlinie — Wand lässt den Ping stehen.
+                        pass
+                    elif erinnerung_vorbei(vorher, runde):
                         ged.pop(ziel["id"], None)
+                    # sonst: letzte gesehene Position bleibt, auch wenn die
+                    # aktuelle hinter einer Wand liegt.
                 else:
-                    ged[ziel["id"]] = _schnappschuss(ziel)
+                    ged[ziel["id"]] = {**_schnappschuss(ziel), **_stempel(runde)}
         for tid, snap in list(ged.items()):
             if tid == auge["id"] or not isinstance(snap, dict) or snap.get("hexQ") is None:
                 continue
             if snap.get("matrixGeortet"):
-                # Matrix-Ping statt Sichtkontakt: keine Sichtlinie, also kein
-                # Wand-Verfall. Sonst löscht der nächste Kartenzug irgendwo
-                # auf der Karte den Ping sofort wieder (06.11.2026).
+                # Matrix-Ping statt Sichtkontakt: kein Wand-Verfall und kein
+                # Drei-Runden-Ablauf. Sonst löscht der nächste Kartenzug den
+                # Ping, obwohl die Ortung keine Sichtlinie braucht.
                 continue
-            if blockiert(int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende):
+            if snap.get("gesehenRunde") is None and runde is not None:
+                snap = {**snap, "gesehenRunde": int(runde)}
+                ged[tid] = snap
+            if erinnerung_vorbei(snap, runde):
                 ged.pop(tid, None)
         neu[auge["id"]] = {k: v for k, v in ged.items() if k in lebendig}
     return {k: v for k, v in neu.items() if k in lebendig}
@@ -239,6 +281,7 @@ def ansicht(
     rolle: str,
     person_id: str | None,
     waende: list[dict] | None = None,
+    runde: int | None = None,
 ) -> list[dict]:
     """Was dieser Betrachter auf die Karte bekommt. Die SL sieht die Wahrheit."""
     roh = [t for t in teilnehmer if not t.get("zusatzzug")]
@@ -259,13 +302,12 @@ def ansicht(
                 live.add(tid)
             elif snap.get("hexQ") is None:
                 continue
-            elif not snap.get("matrixGeortet") and blockiert(
-                int(auge["hexQ"]), int(auge["hexR"]), int(snap["hexQ"]), int(snap["hexR"]), waende
-            ):
-                # Matrix-Ortung ist kein Sichtkontakt — dritter Ort mit
-                # demselben Wand-Check wie ping()/aktualisiere() (06.11.2026).
+            elif not snap.get("matrixGeortet") and erinnerung_vorbei(snap, runde):
                 continue
             else:
+                # Erinnerung bleibt drei Runden stehen, auch wenn die Linie
+                # zur letzten Sichtung jetzt eine Wand schneidet oder man
+                # selbst woanders steht. Matrix-Ping zusätzlich ohne Ablauf.
                 geister.setdefault(tid, snap)
     for auge in eigene:
         live.add(auge["id"])

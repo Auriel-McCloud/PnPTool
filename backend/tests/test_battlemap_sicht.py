@@ -183,16 +183,95 @@ class TestWaende:
         assert geist["veraltet"] is True
         assert geist["hexQ"] == -3
 
-    def test_geist_hinter_neuer_wand_faellt(self):
+    def test_geist_hinter_neuer_wand_bleibt(self):
+        """Wand zwischen Auge und letzter Sichtung löscht die Erinnerung nicht
+        mehr sofort — sie ist die Merkhilfe, auch hinter der Wand."""
         a = token("a", 0, 0, blickrichtung=0)
         b = token("b", 2, 0, personType="NPC")
-        speicher = start_speicher([a, b])
+        speicher = start_speicher([a, b], runde=1)
         assert "b" in speicher["a"]
         wand = [_kante_osten()]
-        speicher = aktualisiere([a, b], speicher, wand)
+        speicher = aktualisiere([a, b], speicher, wand, runde=1)
+        assert speicher["a"]["b"]["hexQ"] == 2
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand, runde=1)
+        geist = next(t for t in gesehen if t["id"] == "b")
+        assert geist["veraltet"] is True
+        assert geist["hexQ"] == 2
+
+    def test_hinter_dem_beobachter_und_hinter_wand_bleibt_sichtbar(self):
+        """Ziel liegt hinter dem Blick, die Linie zur Erinnerung schneidet
+        eine Wand. Genau dieser Zweig hat die ALT-Tokens bisher verschluckt."""
+        a = token("a", 0, 0, blickrichtung=3)
+        b = token("b", -3, 0, personType="NPC")
+        speicher = start_speicher([a, b], runde=2)
+        a["blickrichtung"] = 0
+        a["hexQ"] = 1
+        wand = [_kante_westen()]
+        speicher = aktualisiere([a, b], speicher, wand, runde=2)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand, runde=2)
+        geist = next(t for t in gesehen if t["id"] == "b")
+        assert geist["veraltet"] is True
+        assert geist["hexQ"] == -3
+
+    def test_erinnerung_haelt_drei_runden_dann_weg(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 0, -3, personType="NPC")
+        speicher = start_speicher([a, b], runde=1)
+        b["hexR"] = -8
+        for runde in (1, 2, 3):
+            speicher = aktualisiere([a, b], speicher, runde=runde)
+            gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", runde=runde)
+            geist = next(t for t in gesehen if t["id"] == "b")
+            assert geist["veraltet"] is True
+            assert geist["hexR"] == -3
+        speicher = aktualisiere([a, b], speicher, runde=4)
         assert "b" not in speicher["a"]
-        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", runde=4)
         assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_hinsehen_setzt_die_drei_runden_neu(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = start_speicher([a, b], runde=1)
+        speicher = aktualisiere([a, b], speicher, runde=3)
+        assert speicher["a"]["b"]["gesehenRunde"] == 3
+        b["hexQ"], b["hexR"] = 0, -4
+        speicher = aktualisiere([a, b], speicher, runde=3)
+        assert speicher["a"]["b"]["hexQ"] == 2
+        speicher = aktualisiere([a, b], speicher, runde=5)
+        assert "b" in speicher["a"]
+        speicher = aktualisiere([a, b], speicher, runde=6)
+        assert "b" not in speicher["a"]
+
+    def test_wand_loescht_nicht_vor_ablauf_aber_danach(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = start_speicher([a, b], runde=1)
+        wand = [_kante_osten()]
+        speicher = aktualisiere([a, b], speicher, wand, runde=3)
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand, runde=3)
+        assert any(t["id"] == "b" and t["veraltet"] for t in gesehen)
+        speicher = aktualisiere([a, b], speicher, wand, runde=4)
+        assert "b" not in speicher["a"]
+        gesehen = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", waende=wand, runde=4)
+        assert [t["id"] for t in gesehen] == ["a"]
+
+    def test_ansicht_blendet_abgelaufene_erinnerung_auch_ohne_aufraeumen_aus(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 0, -4, personType="NPC")
+        speicher = {"a": {"b": {"hexQ": 0, "hexR": -4, "gesehenRunde": 1}}}
+        frisch = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", runde=3)
+        assert any(t["id"] == "b" and t["veraltet"] for t in frisch)
+        alt = ansicht([a, b], speicher, rolle="PLAYER", person_id="a", runde=4)
+        assert [t["id"] for t in alt] == ["a"]
+
+    def test_versteckt_loescht_auch_innerhalb_der_drei_runden(self):
+        a = token("a", 0, 0, blickrichtung=0)
+        b = token("b", 2, 0, personType="NPC")
+        speicher = start_speicher([a, b], runde=2)
+        b["versteckt"] = True
+        speicher = aktualisiere([a, b], speicher, runde=2)
+        assert "b" not in speicher["a"]
 
 
 class TestMatrixPing:
@@ -254,8 +333,10 @@ class TestMatrixPing:
         speicher = ping([a, hinter_wand], {}, "a")
         assert "h" in speicher["a"]
         # Irgendein anderer Kartenzug löst aktualisiere() aus, mit derselben Wand:
-        speicher = aktualisiere([a, hinter_wand], speicher, wand)
+        speicher = aktualisiere([a, hinter_wand], speicher, wand, runde=9)
         assert "h" in speicher["a"], "Matrix-geortetes Ziel darf nicht am Wand-Verfallscheck hängen"
+        gesehen = ansicht([a, hinter_wand], speicher, rolle="PLAYER", person_id="a", waende=wand, runde=9)
+        assert any(t["id"] == "h" for t in gesehen)
 
     def test_ping_unbekanntes_auge_bleibt_unveraendert(self):
         a = token("a", 0, 0)

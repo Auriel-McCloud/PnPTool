@@ -1,7 +1,7 @@
 ---
 title: Battlemap
 created: 2026-11-06
-updated: 2026-11-08
+updated: 2026-11-09
 type: entität
 tags: [kampf, frontend, backend, websocket, ui, datenmodell, geplant]
 sources: [../../../CLAUDE.md, ../../../backend/app/zeichnungen/repository.py, ../../../backend/app/kampf/repository.py, ../../api/kampf.md, ../concepts/kampf-und-initiative.md]
@@ -372,6 +372,16 @@ Mark: großes Token-Bild saß nicht mittig, „Ansicht verschieben“ machte sel
 Entscheidung: „Grid schieben“ bleibt SL-only. Es schreibt `originX`/`originY` und verschiebt die Karte für alle (Zeichenebene bleibt stehen). Das Schwenken der eigenen Ansicht geht stattdessen ohne Knopf per Ziehen auf der leeren Karte im Modus „Schieben“, lokal, für SL und Spieler. Der Button „Ansicht schieben“ entfällt. Seltsam war: Raster nur für den ungeschwenkten Ausschnitt, Bühne `overflow: auto` mit Scrollbalken und Treffer-Koordinaten ohne Scrollposition. Jetzt `overflow: hidden`, Raster aus dem sichtbaren Ausschnitt.
 
 Großer Token: Mitte = Schwerpunkt der drei Felder, Bild füllt den Umriss der drei Hex, Blick-Ring um alle drei Felder (9 Ringfelder), Richtung aus dem Winkel Schwerpunkt→Ringfeld. Sicht/Backend unverändert am Ankerfeld. Tablet-Test offen.
+
+## Gebaut 09.11.2026 — ALT-Erinnerung hält drei Runden
+
+Mark: die ausgegrauten ALT-Tokens verschwinden, wenn man sich bewegt oder hinter eine Wand geht, wo sie nicht mehr sichtbar sind. Er will sie drei Runden als Merkhilfe, egal wohin man geht.
+
+Die Fassung vom 06.11. („bleibt, bis man wieder hinsieht“; eine Wand löscht den Geist sofort, auch bei neu gezeichneter Wand) ist dafür abgelöst. Eigene Bewegung und eine Wand zwischen Standpunkt und letzter Sichtung löschen die Erinnerung nicht mehr.
+
+Regel jetzt: letzte echte Sichtung bleibt die laufende Kampfrunde und zwei weitere, also drei. Ab der vierten Runde weg. Hinsehen setzt die Frist neu. Stempel `gesehenRunde` nur intern am Schnappschuss, nicht in der API. Versteckt löscht sofort. Matrix-Ping unverändert: kein Rundenablauf, hält bis zum nächsten Ping oder Hinsehen.
+
+**Verifiziert:** `tests/test_battlemap_sicht.py`. **Kein Klicktest.**
 
 ## Siehe auch
 

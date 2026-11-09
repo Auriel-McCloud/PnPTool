@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Battlemap: ALT-Erinnerung hält drei Runden, auch hinter Wänden (09.11.2026)
+
+Mark: ausgegraute ALT-Tokens verschwanden, sobald man sich wegbewegte oder hinter eine Wand ging.
+
+Ursache: `aktualisiere()` und `ansicht()` haben jede physische Erinnerung gelöscht, sobald die Linie vom aktuellen Standpunkt zur letzten Sichtung eine Wand schnitt — bei jedem Kartenzug, nicht nur bei neu gezeichneter Wand.
+
+Jetzt: letzte echte Sichtung bleibt als ALT-Token die laufende Kampfrunde und zwei weitere (drei, wie der EW-Bonus), egal wohin man geht und egal ob eine Wand dazwischen liegt. Hinsehen setzt die Frist neu. Versteckt löscht sofort. Matrix-Ping bleibt wie entschieden: kein Wand-Verfall, kein Drei-Runden-Ablauf, bis zum nächsten Ping oder Hinsehen. Stempel `gesehenRunde` nur intern, nicht in der API.
+
+**Verifiziert:** `tests/test_battlemap_sicht.py` und `tests/test_kampf_karte_fuer.py`, 40 grün. Kein Klicktest.
+
 ## Battlemap: Ansicht per Ziehen schwenken, großer Token füllt die drei Felder (08.11.2026)
 
 Mark: Das Bild großer Tokens saß nicht mittig, und „Ansicht verschieben“ machte seltsame Dinge.

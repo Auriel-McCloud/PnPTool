@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-09] feature | Battlemap: ALT-Erinnerung hält drei Runden
+
+Ausgegraute ALT-Tokens verschwanden, sobald man sich wegbewegte oder hinter eine Wand ging. Letzte echte Sichtung bleibt jetzt die laufende Kampfrunde und zwei weitere, auch hinter Wänden. Versteckt löscht sofort, Matrix-Ping läuft nicht nach Runden ab. Siehe [[entities/battlemap]].
+
 ## [2026-11-08] feature | Messenger: Chats als Popup, Liste nach letzter Nachricht
 
 Spieler-Chats (Einzel und Gruppe) öffnen wie bei der SL als Popup über der Liste statt als

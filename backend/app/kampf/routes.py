@@ -303,7 +303,12 @@ async def _speicher_frisch(kampf: dict) -> dict:
     teilnehmer = karten_liste(kampf)
     waende = await _waende(kampf)
     kampf["_waende"] = waende
-    speicher = start_speicher(teilnehmer, waende) if not speicher else aktualisiere(teilnehmer, speicher, waende)
+    runde = kampf.get("runde")
+    speicher = (
+        start_speicher(teilnehmer, waende, runde)
+        if not speicher
+        else aktualisiere(teilnehmer, speicher, waende, runde)
+    )
     cid = kampf.get("_campaignId")
     if cid:
         await repository.setze_sicht(cid, speicher)
@@ -370,6 +375,7 @@ def _karte_fuer(
             rolle=rolle,
             person_id=person_id,
             waende=kampf.get("_waende"),
+            runde=kampf.get("runde"),
         )
     if rolle != "GM":
         gesehen = fuer_spieler(
