@@ -3,6 +3,12 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-09] entscheidung | Sphärennamen Raum, Chronurgie, Schicksal
+
+Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Entschieden, nicht
+umbenannt. Götter bleiben. Kräfte, Leben, Materie bleiben. Gedanken offen.
+Siehe [[concepts/magie-hexkraft]].
+
 ## [2026-11-09] rename | Sphäre Geister → Schattenwelten
 
 Der Magier-Name der Sphäre ist Schattenwelten. Häretiker sehen weiter Izanami.

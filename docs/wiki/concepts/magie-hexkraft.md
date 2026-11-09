@@ -60,8 +60,28 @@ schließen sich aus. **Entschieden:** eigenes Feld `weg` am Charakter, nicht aus
 `Hexkraft > 0` abgeleitet — sonst wäre ein frisch erstellter Magier mit
 Hexkraft 0 fälschlich kein Magier.
 
+## Noch nicht gebaut
+
+**09.11.2026 — Sphärennamen, entschieden, nicht umbenannt (Mark, im Chat).**
+Die Blatt-Namen in der Definition gelten, bis der Umbau läuft. Die Punkte wandern erst,
+wenn die Namensrunde zu ist, sonst hängt dieselbe Migration zweimal um.
+Häretiker-Götter bleiben.
+
+- Korrespondenz → **Raum**. Shu bleibt. Raum ist die Sphäre, nicht ein Trick.
+  Zwischenraum, Kontinuum und Verschränkung verworfen.
+- Zeit → **Chronurgie**. Chronos bleibt. Zeitriss verworfen, weil es nur nach
+  Reisen klingt.
+- Entropie → **Schicksal**. Kali bleibt. Chaos verworfen: steht schon als
+  Spezialität neben Ordnung, deckt den bindenden Eid nicht, Segen fällt raus.
+  Schicksal kann chaotisch sein. Der Vorschlags-Chip heißt schon „Schicksal“
+  und braucht beim Umbau ein anderes Wort.
+- Kräfte, Leben, Materie bleiben. Ein schönerer Name macht sie kleiner.
+- Ursprung nicht neu entschieden.
+- Gedanken offen.
+
 ## Entwicklung
 
+- **09.11.2026 — Sphärennamen Raum, Chronurgie, Schicksal entschieden, nicht gebaut (Mark).** Siehe „Noch nicht gebaut“. Blatt und Seed heißen weiter Korrespondenz, Zeit, Entropie.
 - **09.11.2026 — Sphäre Geister heißt Schattenwelten (Mark).** Der Sphärenname
   selbst, nicht nur der Ort in den Stufentexten. Häretiker sehen weiter
   Izanami. Geister rufen und binden in den Stufen bleibt — das sind die

@@ -3641,4 +3641,5 @@ dort weitergepflegt, hier nicht mehr).
 | 24 | Vorgefertigte Auswahl zeigt Häretiker als Magier | ✅ gebaut (01.11.) — Anzeige „Häretiker“, `weg` bleibt MAGIER | [[auth-und-rollen]] |
 | 25 | Critter und NPCs kopieren, für 0815-Mobs | **offen**, Notiz — Umfang der Kopie nicht entschieden | [[neo4j-datenmodell]] |
 | 26 | Battlemap (Hex-Grid, Tokens aus der Initiative, Live-Zeichnen) | **teilweise umgesetzt** (06.11.2026) — gebaut, Spieltisch-Klicktest offen | [[battlemap]] |
+| 27 | Sphären umbenennen: Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Götter bleiben. Kräfte, Leben, Materie bleiben. Gedanken offen. | **entschieden, nicht gebaut** (09.11.) | [[magie-hexkraft]] |
 
