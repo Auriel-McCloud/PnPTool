@@ -9,6 +9,7 @@ import { WuerfelZehn } from "../traits/WuerfelZehn";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { anzeigeName } from "../entities/api";
 import { Charakterblatt } from "../traits/Charakterblatt";
+import { PCInventar } from "../entities/PCInventar";
 import { Probe, type ProbeWahl } from "../traits/Probe";
 import { MatrixFenster } from "./MatrixFenster";
 import { OverclockFenster } from "./OverclockFenster";
@@ -124,6 +125,7 @@ export function Kampfkarte({
   kompaktStart = false,
   onInitiativeKlick,
   zeigeMatrixHot = false,
+  zeigeInventar = false,
 }: {
   campaignId: string;
   personId: string;
@@ -140,11 +142,17 @@ export function Kampfkarte({
    *  Eigene Karte: der Knopf gilt für den eingeloggten Spieler. SL-Karte
    *  eines NPC: dieselbe Person wie die Karte, die SL steuert ihn. */
   zeigeMatrixHot?: boolean;
+  /** SL-Kampfmenü (Mark, 10.11.2026): neben „Ganzer Bogen“ ein Knopf ins
+   *  Inventar genau dieser Person — Drogen/Heiltränke mitten im Kampf
+   *  schlucken lassen. Abgerechnet wird beim Besitzer des Gegenstands
+   *  (items/routes.py::item_schlucken), also immer beim richtigen NPC. */
+  zeigeInventar?: boolean;
 }) {
   const [bogen, setBogen] = useState<Bogen | null>(null);
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
   const [vollerBogen, setVollerBogen] = useState(false);
+  const [inventarOffen, setInventarOffen] = useState(false);
   const [offenerBegleiter, setOffenerBegleiter] = useState<Begleiter | null>(null);
   // Angetippter Wert — für Hexkraft heisst das: Willenskraft dazugeben.
   const [probe, setProbe] = useState<ProbeWahl | null>(null);
@@ -751,9 +759,16 @@ export function Kampfkarte({
         </section>
       )}
 
-      <button type="button" className="kk-ganzer" onClick={() => setVollerBogen(true)}>
-        Ganzer Bogen
-      </button>
+      <div className="kk-ganzer">
+        <button type="button" onClick={() => setVollerBogen(true)}>
+          Ganzer Bogen
+        </button>
+        {zeigeInventar && (
+          <button type="button" onClick={() => setInventarOffen(true)}>
+            Inventar
+          </button>
+        )}
+      </div>
         </>
       )}
 
@@ -770,6 +785,22 @@ export function Kampfkarte({
       >
         <Charakterblatt campaignId={campaignId} personId={personId} aenderbar={aenderbar} />
       </Fenster>
+
+      {zeigeInventar && (
+        <Fenster
+          offen={inventarOffen}
+          breit
+          titel={anzeigeName(bogen.person.name, bogen.uebersicht.alias)}
+          unterzeile="Inventar"
+          kennung={`kampfkarte-inventar:${personId}`}
+          onSchliessen={() => {
+            setInventarOffen(false);
+            void laden();
+          }}
+        >
+          <PCInventar campaignId={campaignId} personId={personId} personName={bogen.person.name} />
+        </Fenster>
+      )}
 
       <Fenster
         offen={erklaertRuestung}

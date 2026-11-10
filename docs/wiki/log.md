@@ -1893,3 +1893,7 @@ Verlaufs-Popup der SL nutzt Fenster und msg-Klassen statt eigenem durchsichtigem
 ## [2026-11-08] update | Battlemap: Schwenken per Ziehen, großer Token füllt drei Felder
 
 Ansicht-Schieben-Knopf entfällt, Ziehen auf der leeren Karte schwenkt lokal. Großer Token mit Blick-Ring um alle drei Felder. Siehe [[entities/battlemap]].
+
+## [2026-11-10] update | Drogen: Inventar-Knopf im SL-Kampfmenü
+
+Kampfwerte-Fenster eines NPC hat neben „Ganzer Bogen“ einen Knopf „Inventar“, dort schlucken. Wirkung geht an den Besitzer der Droge. Siehe [[entities/drogen]].

@@ -1,7 +1,7 @@
 ---
 title: Drogen schlucken
 created: 2026-11-04
-updated: 2026-11-05
+updated: 2026-11-10
 type: entität
 tags: [inventar, kampf, cyberware, geplant]
 sources: [../../reference/Neotopia_Gegenstaende.md, ../../../backend/app/items/repository.py, ../../../backend/app/kampf/booster.py, ../../../backend/app/items/augments.py]
@@ -144,6 +144,7 @@ Nicht bauen, bevor er das sagt.
 - **05.11.2026** — Nebenwirkungs-Schaden ist Schlag, tödlich oder schwerheilbar auf den normalen Spuren. Die 2-Rasten-Uhr für tödlich startet nicht mehr.
 - **05.11.2026** — Umbauen: Wirkung oben (Zeitraum, Würfelzeilen, Initiative, Zusatzaktion, Heilung, Willenskraft, Reduktion), dicke Linie, darunter dieselben Würfelzeilen für die Nebenwirkung. Zeitraum der Nebenwirkung bleibt abgeleitet aus Punkt 5, kein zweiter Umschalter.
 - **05.11.2026, Bugfix** — Mark (Rigger) schluckt Redline mitten im eigenen Zug: keine Frage nach der Zusatzaktion. Ursache: `_booster_von` zählt die Droge serverseitig längst mit (`items/drogen.py: zusatz()`), aber `BoosterPopup.tsx` fragt `/booster/status` nur beim Drankommen (`kampf.amZug`-Wechsel) oder nach Hot-Events neu ab — Schlucken selbst löste keinen Refetch aus. Fix wie beim Hot-Knopf: `itemsApi.schlucken` feuert jetzt `DROGE_GESCHLUCKT` (`kampf/BoosterPopup.tsx`), das Popup hört mit und fragt sofort nach, wenn er gerade dran ist.
+- **10.11.2026** — Kampfmenü der SL: im Kampfwerte-Fenster eines Teilnehmers steht neben „Ganzer Bogen“ der Knopf „Inventar“ (`Kampfkarte.tsx`, Prop `zeigeInventar`). Öffnet `PCInventar` dieser Person, dort der bestehende Schlucken-Knopf. Wer die Droge besitzt, bekommt die Wirkung — die Route sucht den Besitzer selbst, das Frontend schickt keinen Empfänger mit.
 
 ## Siehe auch
 

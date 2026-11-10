@@ -254,6 +254,7 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
               personId={bogenFuer.personId}
               aenderbar
               zeigeMatrixHot={bogenFuer.personType !== "PC"}
+              zeigeInventar
               onInitiativeKlick={() => setInitiativeZiel(bogenFuer)}
             />
             <BogenKampfzubehoer campaignId={campaignId} personId={bogenFuer.personId} kampf={kampf} />

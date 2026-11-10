@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Kampfmenü: Inventar aus dem NPC-Kampfbogen (10.11.2026)
+
+Mark will mitten im Kampf Drogen/Heiltränke eines NPC schlucken lassen. `Kampfkarte` hat die Prop `zeigeInventar`; im SL-Kampfmenü (`Kampfmodus.tsx`, Fenster „Kampfwerte“) steht neben „Ganzer Bogen“ jetzt „Inventar“ → Fenster mit `PCInventar` genau dieser Person (Schlucken-Knopf an Drogen war dort schon). Abgerechnet wird serverseitig beim Besitzer des Gegenstands (`item_schlucken` → `get_owner_person_id`), also immer beim richtigen NPC. Schließen lädt die Kampfkarte neu. Nur Frontend, `tsc -b` sauber.
+
 ## Nebenfigur-Fenster: Händler direkt machen (10.11.2026)
 
 Mark fand im Übersichtsreiter keine Händler-Optionen (die gab es nur, wenn sie schon Verkäufer war). `NebenfigurDetail` hat jetzt immer einen Abschnitt „Händler“: „🏪 Als Händler an einen Laden stellen“/„Anderen Laden wählen“ (Fenster mit allen Orten, Läden markiert; setzt `istHaendler` + `haendlerApi.standortSetzen`, das macht einen Ort zum Laden), Reparatur-Schalter, „Vom Laden nehmen“ (Bestätigung, Standort null + `istHaendler=false`, Ort bleibt Laden). Aktueller Laden aus `haendlerApi.alle` + Tutorial-Shop. Nur Frontend, `tsc -b` sauber.
