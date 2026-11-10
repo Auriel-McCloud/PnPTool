@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { itemsApi, type Gegenstand, type Ablage, AUGMENT_TRAEGER_TYPEN } from "../items/api";
+import { itemsApi, type Gegenstand, type GegenstandMitBesitzer, type Ablage, AUGMENT_TRAEGER_TYPEN } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { GegenstandKachel } from "../items/GegenstandKachel";
@@ -7,7 +7,7 @@ import { TypKachelAuswahl } from "../items/TypKachelAuswahl";
 import { symbolFuerTyp } from "../items/typKatalog";
 import { ApiError } from "../api/client";
 import { AugmentFenster } from "../werkbank/AugmentFenster";
-import type { AugmentTraeger } from "../werkbank/AugmentTraegerPanel";
+import { AugmentTraegerPanel, type AugmentTraeger } from "../werkbank/AugmentTraegerPanel";
 import "./pc-inventar.css";
 
 /**
@@ -100,8 +100,22 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
   // nicht nur Chrom-Chirurgie oben). Das AugmentFenster ist der generische
   // Werkbank-Dialog, zeigt Montage-Probe + Material + Reparatur — genau wie
   // in der Werkbank-Übersicht, nur hier für EINEN Träger direkt im Inventar.
-  const [werkbankAugment, setWerkbankAugment] = useState<Gegenstand | null>(null);
-  const [werkbankTraeger, setWerkbankTraeger] = useState<AugmentTraeger | null>(null);
+  //
+  // 10.11.2026, Mark: „ich war nicht in der Lage einem NPC Augments zu
+  // installieren“ — der Knopf nahm blind das ERSTE freie Upgrade im Besitz,
+  // ohne Passt-Prüfung, ohne Auswahl, und tat bei keinem freien Upgrade gar
+  // nichts. Demontieren ging von hier aus überhaupt nicht. Jetzt öffnet der
+  // Knopf dasselbe Träger-Fach wie die Werkbank (`AugmentTraegerPanel`):
+  // montierte Upgrades (antippen = demontieren/reparieren) und die
+  // passenden freien zum Einbauen, nur aus dem Besitz dieser Person.
+  const [upgradeTraeger, setUpgradeTraeger] = useState<AugmentTraeger | null>(null);
+  const [werkbankAugment, setWerkbankAugment] = useState<{ g: GegenstandMitBesitzer; vorwaehlen: boolean } | null>(null);
+  const mitBesitzer: GegenstandMitBesitzer[] = items.map((i) => ({
+    ...i,
+    ownerId: personId,
+    ownerName: personName,
+    ownerPersonType: "NPC",
+  }));
 
   // Trenne verbaute Augments von normalen Gegenständen. Montierte
   // Werkbank-Augments (Zielfernrohr, Ki-Tama & Co.) stecken an ihrem
@@ -258,21 +272,16 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
                   <button
                     type="button"
                     className="pci-upgrade-btn"
-                    onClick={() => {
-                      setWerkbankTraeger({
+                    onClick={() =>
+                      setUpgradeTraeger({
                         id: g.id,
                         name: g.name,
                         kind: "Gegenstand",
                         upgradeSlots: g.upgradeSlots ?? 0,
                         kampfFertigkeit: g.kampfFertigkeit ?? "",
                         typ: g.typ,
-                      });
-                      // Zeige das erste montierbare Upgrade, falls vorhanden
-                      const montierbar = items.filter((i) => i.istAugment && !i.montiertAnId && !i.defekt);
-                      if (montierbar.length > 0) {
-                        setWerkbankAugment(montierbar[0]);
-                      }
-                    }}
+                      })
+                    }
                   >
                     🔩 Upgraden ({belegteSlots}/{g.upgradeSlots})
                   </button>
@@ -377,24 +386,30 @@ export function PCInventar({ campaignId, personId, personName }: PCInventarProps
       {/* Werkbank-Augment-Fenster (06.11.2026, Mark: NPCs sollen Werkbank-
           Upgrades montieren/demontieren/reparieren können — dasselbe Fenster
           wie in der Werkbank-Übersicht, nur direkt aus dem Inventar heraus). */}
-      {werkbankAugment && werkbankTraeger && (
+      <Fenster
+        offen={upgradeTraeger !== null}
+        breit
+        titel={`Upgraden: ${upgradeTraeger?.name ?? ""}`}
+        unterzeile={`Inventar von ${personName}`}
+        kennung={`pci-upgraden:${upgradeTraeger?.id ?? ""}`}
+        onSchliessen={() => setUpgradeTraeger(null)}
+      >
+        <AugmentTraegerPanel
+          traeger={upgradeTraeger}
+          alleGegenstaende={mitBesitzer}
+          onUpgradeKlick={(g, vorwaehlen) => setWerkbankAugment({ g, vorwaehlen })}
+        />
+      </Fenster>
+
+      {werkbankAugment && (
         <AugmentFenster
           campaignId={campaignId}
-          augment={{
-            ...werkbankAugment,
-            ownerId: personId,
-            ownerName: personName,
-            ownerPersonType: "NPC",
-          }}
-          vorausgewaehltesZiel={werkbankTraeger}
-          onSchliessen={() => {
-            setWerkbankAugment(null);
-            setWerkbankTraeger(null);
-          }}
+          augment={werkbankAugment.g}
+          vorausgewaehltesZiel={werkbankAugment.vorwaehlen && upgradeTraeger ? upgradeTraeger : undefined}
+          onSchliessen={() => setWerkbankAugment(null)}
           onGeaendert={() => {
-            refresh();
+            void refresh();
             setWerkbankAugment(null);
-            setWerkbankTraeger(null);
           }}
         />
       )}

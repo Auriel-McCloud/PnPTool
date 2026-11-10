@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## NPC-Inventar: Upgraden mit Auswahl und Ausbau (10.11.2026)
+
+Mark: NPCs bekommen keine Augments. Chrom-Einsetzen am NPC lief schon (05.11.). Der Werkbank-Knopf „🔩 Upgraden“ in `PCInventar.tsx` (06.11.) nahm aber blind das erste freie Upgrade ohne Passt-Prüfung, tat ohne freies Upgrade gar nichts und konnte nicht demontieren. Jetzt öffnet er ein Fenster mit `AugmentTraegerPanel` (wie die Werkbank): montierte Upgrades antippen = demontieren/reparieren, passende freie aus dem Besitz der Person = einbauen. Backend unverändert (GM darf beides). Gilt auch im Kampfmenü-Inventar. Nur Frontend, `tsc -b` sauber.
+
 ## Kampfmenü: Inventar aus dem NPC-Kampfbogen (10.11.2026)
 
 Mark will mitten im Kampf Drogen/Heiltränke eines NPC schlucken lassen. `Kampfkarte` hat die Prop `zeigeInventar`; im SL-Kampfmenü (`Kampfmodus.tsx`, Fenster „Kampfwerte“) steht neben „Ganzer Bogen“ jetzt „Inventar“ → Fenster mit `PCInventar` genau dieser Person (Schlucken-Knopf an Drogen war dort schon). Abgerechnet wird serverseitig beim Besitzer des Gegenstands (`item_schlucken` → `get_owner_person_id`), also immer beim richtigen NPC. Schließen lädt die Kampfkarte neu. Nur Frontend, `tsc -b` sauber.

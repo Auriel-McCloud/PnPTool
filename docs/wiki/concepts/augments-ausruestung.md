@@ -1,7 +1,7 @@
 ---
 title: Waffen-/Rüstungs-/Drohnen-Augments (Werkbank)
 created: 2026-10-29
-updated: 2026-11-05
+updated: 2026-11-10
 type: konzept
 status: teilweise-umgesetzt
 ---
@@ -785,3 +785,7 @@ Geld-Angebot und Gegenstands-Weitergabe) für `REPARATUR_FREIGABE`.
 
 `pytest` (969 passed, 55 vorbestehende Fehlschläge unverändert), `tsc -b`/
 `vite build` sauber. **Kein Klicktest am Spieltisch.**
+
+## NPC-Inventar: Upgraden mit Auswahl (10.11.2026)
+
+Mark: einem NPC keine Augments verbauen können. Chrom-Chirurgie im NPC-Inventar lief seit 05.11. Der Werkbank-Knopf „🔩 Upgraden“ an Trägern im NPC-Inventar (06.11.) griff blind das erste freie Upgrade, ohne Passt-Prüfung; ohne freies Upgrade passierte nichts, Demontieren ging von dort nicht. Jetzt öffnet der Knopf das Träger-Fach der Werkbank (`AugmentTraegerPanel`) für diesen einen Träger: Montiert (antippen = demontieren/reparieren), darunter die passenden freien Upgrades aus dem Besitz der Person. Ohne passendes Upgrade steht der Hinweis da statt Stille. Gilt auch im Inventar aus dem Kampfmenü. Nur Frontend, `tsc -b` sauber, kein Klicktest.

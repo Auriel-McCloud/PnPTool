@@ -1897,3 +1897,7 @@ Ansicht-Schieben-Knopf entfällt, Ziehen auf der leeren Karte schwenkt lokal. Gr
 ## [2026-11-10] update | Drogen: Inventar-Knopf im SL-Kampfmenü
 
 Kampfwerte-Fenster eines NPC hat neben „Ganzer Bogen“ einen Knopf „Inventar“, dort schlucken. Wirkung geht an den Besitzer der Droge. Siehe [[entities/drogen]].
+
+## [2026-11-10] update | Augments: NPC-Inventar Upgraden mit Auswahl und Ausbau
+
+Upgraden-Knopf im NPC-Inventar öffnet das Träger-Fach der Werkbank statt blind das erste freie Upgrade. Siehe [[concepts/augments-ausruestung]].
