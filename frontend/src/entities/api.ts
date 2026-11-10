@@ -119,6 +119,8 @@ export interface Person extends VisibilityFields {
    * Burgermenü, kein Kampf. Einbahnstraße zum NPC über
    * `entitiesApi.nebenfigurZuNpc`. Siehe docs/wiki/entities/nebenfiguren.md. */
   istNebenfigur?: boolean;
+  /** Leerer Kontakt-/Mentor-Platz aus dem Hintergrund, den der Spieler noch beschreibt. */
+  istBlankoKontakt?: boolean;
   /** Kurzes Stichwort, z.B. „Leitwolf“, „Angsthase“. */
   persoenlichkeit?: string;
   /** Freie feste Fähigkeiten, z.B. Straßenwissen 4 — kein Katalogbezug. */

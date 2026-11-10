@@ -37,7 +37,13 @@ export function NebenfigurKacheln({
             <div className="pc-kachel-info">
               <div className="pc-kachel-name">{anzeigeName(p.name, p.alias)}</div>
               {kopf && <div className="nf-kachel-zeile">{kopf}</div>}
-              {p.persoenlichkeit && <span className="nf-persoenlichkeit">{p.persoenlichkeit}</span>}
+              {p.istBlankoKontakt ? (
+                <span className="nf-persoenlichkeit" title="Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger">
+                  Platzhalter
+                </span>
+              ) : (
+                p.persoenlichkeit && <span className="nf-persoenlichkeit">{p.persoenlichkeit}</span>
+              )}
             </div>
           </div>
         );

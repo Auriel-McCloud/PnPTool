@@ -103,6 +103,16 @@ class TestZuNpcRoute:
         assert e.value.status_code == 409
         ki.assert_not_called()
 
+    def test_leerer_kontaktplatz_409(self):
+        ki = AsyncMock()
+        platz = {"id": "p1", "istNebenfigur": True, "istBlankoKontakt": True}
+        with patch.object(routes, "get_node", AsyncMock(return_value=platz)), \
+             patch.object(routes, "_idee_anlegen", ki):
+            with pytest.raises(HTTPException) as e:
+                _run(routes.zu_npc_machen("c1", "p1"))
+        assert e.value.status_code == 409
+        ki.assert_not_called()
+
     def test_nebenfigur_geht_an_die_charakter_ki(self):
         person = {"id": "p1", "name": "Mama Okoro", "istNebenfigur": True, "description": "", "notes": ""}
         danach = {**person, "istNebenfigur": False}
@@ -159,5 +169,108 @@ def test_charakter_ki_baut_bogen_in_place_mit_fixer_rasse():
             assert bulk.await_args.args[1] == "p1"
             prompt2 = ki.await_args_list[1].args[0]
             assert "Straßenwissen 4" in prompt2
+
+    _run(run())
+
+
+def test_ki_nebenfigur_als_entwurf_mit_beziehungsvorschlag():
+    from app.nebenfiguren import ki as nf_ki
+
+    antwort = {
+        "name": "Ada Okoro", "rasse": "Elf", "alter": "17", "persoenlichkeit": "Schlitzohr",
+        "beschreibung": "Tochter.", "notizen": "", "beziehung": "  Tochter   von ",
+        "faehigkeiten": [{"name": "Klatsch", "wert": 9}],
+    }
+
+    async def run():
+        create = AsyncMock(side_effect=lambda label, felder, cid, daten: {"id": "n1", **daten})
+        with (
+            patch.object(nf_ki, "_rassen_fuer_ki", lambda liste: {"Mensch": {}, "Ork": {}}),
+            patch.object(nf_ki.rassen_repository, "liste_fuer_kampagne", AsyncMock(return_value=[])),
+            patch.object(nf_ki, "sammle_kontext", AsyncMock(return_value="")),
+            patch.object(nf_ki, "generiere_json", AsyncMock(return_value=antwort)),
+            patch.object(nf_ki, "create_node", create),
+            patch.object(nf_ki, "hooks") as hooks,
+        ):
+            hooks.ki = AsyncMock()
+            person = await nf_ki.nebenfigur_generieren("c1", "Familie von X", entwurf=True)
+        daten = create.await_args.args[3]
+        assert daten["istEntwurf"] is True
+        assert daten["istNebenfigur"] is True
+        assert daten["rasse"] == "Mensch"  # Elf ist hier nicht freigegeben
+        assert daten["nebenfaehigkeiten"] == [{"name": "Klatsch", "wert": 5}]
+        assert person["beziehungVorschlag"] == "Tochter von"
+
+    _run(run())
+
+
+def test_idee_nebenfigur_geht_als_entwurf_an_den_nebenfiguren_generator():
+    from app.ki.routes import _idee_anlegen
+
+    async def run():
+        gen = AsyncMock(return_value={"id": "n1", "name": "Ada", "beziehungVorschlag": "Tochter von"})
+        with patch("app.nebenfiguren.ki.nebenfigur_generieren", gen):
+            ergebnis = await _idee_anlegen("c1", "nebenfigur", "Familie")
+        assert ergebnis == {"typ": "nebenfigur", "id": "n1", "name": "Ada", "beziehung": "Tochter von"}
+        assert gen.await_args.kwargs["entwurf"] is True
+
+    _run(run())
+
+
+def test_massen_nebenfiguren_nehmen_den_ki_vorschlag_als_kante():
+    from app.ki import routes as ki_routes
+
+    async def run():
+        idee = AsyncMock(side_effect=[
+            {"typ": "nebenfigur", "id": "n1", "name": "Ada", "beziehung": "Tochter von"},
+            {"typ": "nebenfigur", "id": "n2", "name": "Bo", "beziehung": ""},
+        ])
+        kante = AsyncMock()
+        with (
+            patch.object(ki_routes, "_idee_anlegen", idee),
+            patch.object(ki_routes, "_ziel_node", AsyncMock(return_value={"id": "x", "name": "Okoro"})),
+            patch.object(ki_routes, "verknuepfung_beziehung_anwenden", kante),
+        ):
+            ergebnis = await ki_routes._massen_anlegen("c1", "nebenfigur", "Familie", 2, "Person", "x", None)
+        typen = [c.args[1].beziehungstyp for c in kante.await_args_list]
+        assert typen == ["Tochter von", "kennt"]
+        assert kante.await_args_list[0].args[1].typ1 == "Person"
+        assert all(e.verknuepft for e in ergebnis.eintraege)
+
+    _run(run())
+
+
+def test_massen_feste_beziehung_schlaegt_den_ki_vorschlag():
+    from app.ki import routes as ki_routes
+
+    async def run():
+        idee = AsyncMock(return_value={"typ": "nebenfigur", "id": "n1", "name": "Ada", "beziehung": "Tochter von"})
+        kante = AsyncMock()
+        with (
+            patch.object(ki_routes, "_idee_anlegen", idee),
+            patch.object(ki_routes, "_ziel_node", AsyncMock(return_value={"id": "x", "name": "Okoro"})),
+            patch.object(ki_routes, "verknuepfung_beziehung_anwenden", kante),
+        ):
+            await ki_routes._massen_anlegen("c1", "nebenfigur", "Familie", 1, "Person", "x", "Familie von")
+        assert kante.await_args.args[1].beziehungstyp == "Familie von"
+
+    _run(run())
+
+
+def test_spawn_legt_kontakt_plaetze_als_nebenfigur_an():
+    from app.hintergruende import spawn
+
+    async def run():
+        create = AsyncMock(side_effect=[{"id": "k1"}, {"id": "k2"}])
+        with (
+            patch.object(spawn.repository, "kontaktslots_der_person", AsyncMock(return_value=[])),
+            patch.object(spawn.repository, "fuege_kontaktslot_hinzu", AsyncMock()),
+            patch.object(spawn.kontakte_repository, "anlegen", AsyncMock()),
+            patch.object(spawn, "create_node", create),
+        ):
+            await spawn.kontakte_nach_erstellung("c1", "pc1", 2)
+        for aufruf in create.await_args_list:
+            daten = aufruf.args[3]
+            assert daten["istBlankoKontakt"] is True and daten["istNebenfigur"] is True
 
     _run(run())

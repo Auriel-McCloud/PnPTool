@@ -257,7 +257,7 @@ export async function beratungNachricht(
 export async function beratungEntwurf(
   campaignId: string,
   id: string,
-  typ: "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung",
+  typ: "story" | "charakter" | "nebenfigur" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung",
 ): Promise<{ typ: string; id: string; name: string }> {
   return api.post(`/api/campaigns/${campaignId}/ki/beratung/${id}/entwurf`, { typ });
 }
@@ -268,7 +268,7 @@ export async function beratungEntwurf(
  * (Gegenstände landen im Sortiment eines Händlers bzw. werden einer Person
  * zugewiesen, Charaktere/Orte bekommen eine Beziehungskante zum Ziel).
  */
-export type MassenTyp = "gegenstand" | "charakter" | "ort";
+export type MassenTyp = "gegenstand" | "charakter" | "nebenfigur" | "ort";
 export type MassenZielTyp = "Person" | "Ort" | "Event" | "Fraktion";
 
 export interface MassenZiel {

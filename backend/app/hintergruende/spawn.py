@@ -97,6 +97,9 @@ async def mentor_nach_erstellung(
             description="Noch nicht ausgearbeitet — wird befüllt, sobald der Spieler ihn beschreibt.",
             istBlankoKontakt=True,
             istMentor=True,
+            # Platzhalter gehören nicht in die NPC-Liste (10.11.2026) — erst
+            # die KI-Befüllung macht aus dem Mentor einen vollen NPC.
+            istNebenfigur=True,
             sichtbarkeit="GM",
             erstellungAbgeschlossen=True,
         ).model_dump(),
@@ -133,6 +136,8 @@ async def kontakte_nach_erstellung(campaign_id: str, person_id: str, kontakte_ra
                 personType="NPC",
                 description="Noch nicht ausgearbeitet — wird befüllt, sobald der Spieler ihn braucht.",
                 istBlankoKontakt=True,
+                # Kontakt-Platz = Nebenfigur (10.11.2026), auch schon als Platzhalter.
+                istNebenfigur=True,
                 sichtbarkeit="GM",
                 erstellungAbgeschlossen=True,
             ).model_dump(),

@@ -36,8 +36,15 @@ Prefix `/api/campaigns/{campaign_id}/nebenfiguren`, nur SL.
 `POST /api/campaigns/{campaign_id}/kampf/teilnehmer` mit einer Nebenfigur → 400.
 Automatische Kampfkandidaten enthalten keine Nebenfiguren.
 
+## Ideenschmiede
+
+`POST /ki/idee` und `/ki/beratung/{id}/entwurf` kennen `typ: "nebenfigur"` (Entwurf).
+`POST /ki/massenidee` ebenso, mit `zielTyp`/`zielId`/`beziehungstyp`: leerer
+`beziehungstyp` → Vorschlag der KI je Figur, sonst Standard (`kennt`, `ist oft in` …).
+
 ## Kontakte
 
 `POST /api/campaigns/{campaign_id}/kontakte/{kontakt_id}/generieren` legt für
 einen normalen Blanko-Kontakt seit 10.11.2026 eine Nebenfigur an (ein KI-Aufruf).
-Mentoren werden weiter volle NPCs.
+Mentoren werden weiter volle NPCs. Leere Plätze sind schon als Platzhalter
+Nebenfiguren (`istBlankoKontakt` + `istNebenfigur`); `zu-npc` darauf → 409.

@@ -37,6 +37,12 @@ async def zu_npc_machen(campaign_id: str, person_id: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Nebenfigur nicht gefunden")
     if not person.get("istNebenfigur"):
         raise HTTPException(status.HTTP_409_CONFLICT, "Das ist schon ein voller NPC.")
+    if person.get("istBlankoKontakt"):
+        # Leerer Kontakt-Platz: den beschreibt der Spieler im Messenger, sonst
+        # stünde ein voller NPC als „Undefinierter Kontakt“ in seiner Liste.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Leerer Kontakt-Platz — erst vom Spieler beschreiben lassen."
+        )
 
     prompt = zu_npc_prompt(person, klartext(person.get("description")), klartext(person.get("notes")))
     await _idee_anlegen(campaign_id, "charakter", prompt, nebenfigur=person)

@@ -29,14 +29,15 @@ import "./ki.css";
 
 /** Typen, für die die Massen-Anlage angeboten wird — deckungsgleich mit
  * MassenTyp im Backend (Mark: Gegenstände/NPCs/Orte zuerst, 03.10.2026). */
-const MASSEN_TYPEN: readonly string[] = ["gegenstand", "charakter", "ort"];
+const MASSEN_TYPEN: readonly string[] = ["gegenstand", "charakter", "nebenfigur", "ort"];
 
-interface ZielOption {
+export interface ZielOption {
   id: string;
   label: string;
 }
 
-async function ladeZielOptionen(campaignId: string, zielTyp: MassenZielTyp): Promise<ZielOption[]> {
+/** Auch von der Ideenschmiede (✨ Nebenfigur mit Verbindung) genutzt. */
+export async function ladeZielOptionen(campaignId: string, zielTyp: MassenZielTyp): Promise<ZielOption[]> {
   if (zielTyp === "Person") {
     const liste = await entitiesApi.listPersonen(campaignId);
     return liste.map((p) => ({ id: p.id, label: p.istHaendler ? `${p.name} (Händler)` : p.name }));
@@ -428,6 +429,7 @@ export function BeratungPopup({
               onChange={(e) => setEntwurfTyp(e.target.value as KiTyp)}
             >
               <option value="charakter">Person / NPC</option>
+              <option value="nebenfigur">Nebenfigur (ohne Bogen)</option>
               <option value="story">Story-Part / Szene</option>
               <option value="gegenstand">Gegenstand</option>
               <option value="ort">Ort</option>
@@ -500,7 +502,9 @@ export function BeratungPopup({
                     className="ki-input"
                     value={massenBeziehungstyp}
                     onChange={(e) => setMassenBeziehungstyp(e.target.value)}
-                    placeholder="leer = sinnvoller Standard"
+                    placeholder={
+                      entwurfTyp === "nebenfigur" ? "leer = KI wählt je Figur (Mutter, Bruder …)" : "leer = sinnvoller Standard"
+                    }
                   />
                 </label>
               )}

@@ -15,12 +15,14 @@ import {
   kiIdee,
   type EntwurfItem,
   type KiTyp,
+  type NeuerEntwurfTyp,
 } from "./api";
 import { api } from "../api/client";
 import { Fenster } from "../shell/Fenster";
 import { OrtDetail } from "../entities/OrtDetail";
 import { EventDetail } from "../entities/EventDetail";
 import { NPCDetail } from "../entities/NPCDetail";
+import { NebenfigurDetail } from "../entities/NebenfigurDetail";
 import { FraktionDetail } from "../entities/FraktionDetail";
 import { WikiEditor } from "../wiki/WikiEditor";
 import { seiteSpeichern } from "../wiki/api";
@@ -28,7 +30,8 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { useAutosave } from "../shell/autosave";
 import { GegenstandRow } from "../traits/CharacterSheetPanel";
 import { itemsApi, type Gegenstand } from "../items/api";
-import { BeratungPopup } from "../ki/BeratungPopup";
+import { BeratungPopup, ladeZielOptionen, type ZielOption } from "../ki/BeratungPopup";
+import { massenIdee, massenjobStatus, type MassenZielTyp } from "../ki/api";
 import type { Ort } from "../entities/api";
 import type { Event } from "../entities/api";
 import type { Person } from "../entities/api";
@@ -71,7 +74,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   // Anlegen-Popup
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [neuerName, setNeuerName] = useState("");
-  const [neuerTyp, setNeuerTyp] = useState<EntwurfItem["typ"]>("WikiSeite");
+  const [neuerTyp, setNeuerTyp] = useState<NeuerEntwurfTyp>("WikiSeite");
   const [anlegenLaeuft, setAnlegenLaeuft] = useState(false);
 
   // KI-Popup (Gemini generiert Entwürfe)
@@ -81,6 +84,15 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   const [kiLaeuft, setKiLaeuft] = useState(false);
   const [kiFehler, setKiFehler] = useState<string | null>(null);
   const [beratungOffen, setBeratungOffen] = useState(false);
+  // ✨ Nebenfigur (10.11.2026, Mark): mehrere auf einmal und gleich verbunden,
+  // z.B. „die Familie von Händler X“ — läuft über den Massen-Job.
+  const [nfAnzahlEingabe, setNfAnzahlEingabe] = useState("1");
+  const nfAnzahl = Math.max(1, Math.min(12, parseInt(nfAnzahlEingabe, 10) || 1));
+  const [nfZielTyp, setNfZielTyp] = useState<"" | MassenZielTyp>("");
+  const [nfZielId, setNfZielId] = useState("");
+  const [nfBeziehung, setNfBeziehung] = useState("");
+  const [nfZielOptionen, setNfZielOptionen] = useState<ZielOption[]>([]);
+  const [nfFortschritt, setNfFortschritt] = useState<{ erstellt: number; gesamt: number } | null>(null);
 
   // Detail-Popups
   const [ortDetailFuer, setOrtDetailFuer] = useState<Ort | null>(null);
@@ -130,6 +142,38 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
   useEffect(() => {
     laden();
   }, [laden]);
+
+  useEffect(() => {
+    setNfZielId("");
+    if (!nfZielTyp) {
+      setNfZielOptionen([]);
+      return;
+    }
+    let aktuell = true;
+    void ladeZielOptionen(campaignId, nfZielTyp).then((optionen) => {
+      if (aktuell) setNfZielOptionen(optionen);
+    });
+    return () => {
+      aktuell = false;
+    };
+  }, [campaignId, nfZielTyp]);
+
+  /** Nebenfiguren über den Massen-Job: Anzahl + optionale Verbindung. */
+  async function nebenfigurenGenerieren() {
+    const ziel =
+      nfZielTyp && nfZielId ? { zielTyp: nfZielTyp, zielId: nfZielId, beziehungstyp: nfBeziehung } : undefined;
+    const gestartet = await massenIdee(campaignId, "nebenfigur", kiPrompt.trim(), nfAnzahl, ziel);
+    setNfFortschritt({ erstellt: 0, gesamt: gestartet.gesamt });
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const stand = await massenjobStatus(campaignId, gestartet.jobId);
+      setNfFortschritt({ erstellt: stand.erstellt, gesamt: stand.gesamt });
+      if (stand.fertig) {
+        if (stand.fehler) throw new Error(stand.fehler);
+        return;
+      }
+    }
+  }
 
   // PC-Optionen für VisibilitySelector
   const pcOptions: PersonOption[] = useMemo(
@@ -244,7 +288,14 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
     setKiLaeuft(true);
     setKiFehler(null);
     try {
-      await kiIdee(campaignId, kiTyp, kiPrompt.trim());
+      if (kiTyp === "nebenfigur") {
+        await nebenfigurenGenerieren();
+        setNfZielTyp("");
+        setNfBeziehung("");
+        setNfAnzahlEingabe("1");
+      } else {
+        await kiIdee(campaignId, kiTyp, kiPrompt.trim());
+      }
       setKiPrompt("");
       setKiOffen(false);
       await laden();
@@ -254,6 +305,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
       setKiFehler(err instanceof Error ? err.message : "Generieren fehlgeschlagen");
     } finally {
       setKiLaeuft(false);
+      setNfFortschritt(null);
     }
   };
 
@@ -356,10 +408,11 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             <select
               className="is-select"
               value={neuerTyp}
-              onChange={(e) => setNeuerTyp(e.target.value as EntwurfItem["typ"])}
+              onChange={(e) => setNeuerTyp(e.target.value as NeuerEntwurfTyp)}
             >
               <option value="WikiSeite">📄 Geschichte</option>
               <option value="Person">👤 Person / NPC</option>
+              <option value="Nebenfigur">○ Nebenfigur (ohne Bogen)</option>
               <option value="Ort">📍 Ort</option>
               <option value="Event">📅 Ereignis</option>
               <option value="Gegenstand">📦 Gegenstand</option>
@@ -410,6 +463,7 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             Was soll entstehen?
             <select className="is-select" value={kiTyp} onChange={(e) => setKiTyp(e.target.value as KiTyp)}>
               <option value="charakter">Charakter / NPC</option>
+              <option value="nebenfigur">Nebenfigur (ohne Bogen)</option>
               <option value="story">Story-Part / Szene</option>
               <option value="gegenstand">Gegenstand</option>
               <option value="ort">Ort</option>
@@ -437,6 +491,66 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
             <p style={{ margin: 0, color: "var(--text-leise)", fontSize: 12 }}>
               Landet als Kante unter Beziehungen. Fehlende Enden werden als Entwurf angelegt.
             </p>
+          )}
+
+          {kiTyp === "nebenfigur" && (
+            <>
+              <label className="is-label">
+                Anzahl
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="is-input"
+                  min={1}
+                  max={12}
+                  value={nfAnzahlEingabe}
+                  onChange={(e) => setNfAnzahlEingabe(e.target.value)}
+                  onBlur={() => setNfAnzahlEingabe(String(nfAnzahl))}
+                />
+              </label>
+              <label className="is-label">
+                Verbinden mit (optional)
+                <select
+                  className="is-select"
+                  value={nfZielTyp}
+                  onChange={(e) => setNfZielTyp(e.target.value as "" | MassenZielTyp)}
+                >
+                  <option value="">Keine Verbindung</option>
+                  <option value="Person">Person</option>
+                  <option value="Ort">Ort</option>
+                  <option value="Event">Ereignis</option>
+                  <option value="Fraktion">Fraktion</option>
+                </select>
+              </label>
+              {nfZielTyp && (
+                <label className="is-label">
+                  Ziel
+                  <select className="is-select" value={nfZielId} onChange={(e) => setNfZielId(e.target.value)}>
+                    <option value="">— auswählen —</option>
+                    {nfZielOptionen.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {nfZielTyp && nfZielId && (
+                <label className="is-label">
+                  Beziehung (optional)
+                  <input
+                    className="is-input"
+                    value={nfBeziehung}
+                    onChange={(e) => setNfBeziehung(e.target.value)}
+                    placeholder="leer = KI wählt je Figur (Mutter, Bruder …)"
+                  />
+                </label>
+              )}
+              <p style={{ margin: 0, color: "var(--text-leise)", fontSize: 12 }}>
+                Ohne Charakterbogen und Inventar. Landet als Entwurf hier, nach „Übernehmen“ im Menü Nebenfiguren.
+                {nfFortschritt && ` — ${nfFortschritt.erstellt} von ${nfFortschritt.gesamt} fertig`}
+              </p>
+            </>
           )}
 
           {kiFehler && (
@@ -510,10 +624,10 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
                 className="is-item is-item-klickbar"
                 onClick={() => handleItemKlick(item)}
               >
-                <span className="is-icon">{TYP_ICONS[item.typ]}</span>
+                <span className="is-icon">{item.istNebenfigur ? "○" : TYP_ICONS[item.typ]}</span>
                 <div className="is-inhalt">
                   <strong>{item.name}</strong>
-                  <span className="is-typ">{TYP_LABELS[item.typ]}</span>
+                  <span className="is-typ">{item.istNebenfigur ? "Nebenfigur" : TYP_LABELS[item.typ]}</span>
                   {item.beschreibung && (
                     <p className="is-beschreibung-kurz">
                       {(() => {
@@ -568,7 +682,19 @@ export function IdeenschmiedeAnsicht({ campaignId }: Props) {
           onGeaendert={detailRefreshen}
         />
       )}
-      {personDetailFuer && (
+      {personDetailFuer?.istNebenfigur && (
+        <NebenfigurDetail
+          key={personDetailFuer.id}
+          campaignId={campaignId}
+          person={personDetailFuer}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setPersonDetailFuer(null)}
+          onGeaendert={detailRefreshen}
+        />
+      )}
+      {personDetailFuer && !personDetailFuer.istNebenfigur && (
         <NPCDetail
           campaignId={campaignId}
           person={personDetailFuer}

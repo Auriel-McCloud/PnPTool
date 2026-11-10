@@ -488,7 +488,7 @@ _CHARAKTER_FERTIGKEITEN_SYSTEM = (
 
 # Dieselben Typen für ✨-Idee und „Entwurf aus Beratung“ — alles, was die
 # Schmiede (plus Verbindungen) anlegen kann.
-KiIdeeTyp = Literal["story", "charakter", "gegenstand", "ort", "event", "fraktion", "verbindung"]
+KiIdeeTyp = Literal["story", "charakter", "nebenfigur", "gegenstand", "ort", "event", "fraktion", "verbindung"]
 
 
 class KiIdeeInput(BaseModel):
@@ -958,6 +958,19 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
             )
             return {"typ": "verbindung", "id": angelegt.verbindungId, "name": name}
 
+        if typ == "nebenfigur":
+            # Nebenfigur (10.11.2026): ein KI-Aufruf, kein Bogen. Später Import,
+            # weil nebenfiguren/ki.py selbst aus diesem Modul importiert.
+            from app.nebenfiguren.ki import nebenfigur_generieren
+
+            person = await nebenfigur_generieren(campaign_id, prompt, entwurf=True)
+            return {
+                "typ": "nebenfigur",
+                "id": person["id"],
+                "name": person.get("name") or "",
+                "beziehung": person.get("beziehungVorschlag") or "",
+            }
+
         if typ != "charakter":
             raise HTTPException(status_code=422, detail="Unbekannter Ideen-Typ.")
 
@@ -1244,7 +1257,7 @@ _MASSEN_ANZAHL_MAX = 12
 # V1 bewusst auf diese drei beschränkt (Marks Wunsch) — story/event/fraktion/
 # verbindung liessen sich über denselben Mechanismus ergänzen, sind aber
 # (noch) nicht angefragt.
-MassenIdeeTyp = Literal["gegenstand", "charakter", "ort"]
+MassenIdeeTyp = Literal["gegenstand", "charakter", "nebenfigur", "ort"]
 
 _MASSEN_ZIEL_TYPEN = ("Person", "Ort", "Event", "Fraktion")
 _MASSEN_ZIEL_FELDER = {"Person": PERSON_FIELDS, "Ort": ORT_FIELDS, "Event": EVENT_FIELDS, "Fraktion": FRAKTION_FIELDS}
@@ -1254,7 +1267,7 @@ _MASSEN_ZIEL_FELDER = {"Person": PERSON_FIELDS, "Ort": ORT_FIELDS, "Event": EVEN
 # (charakter -> Person, ort -> Ort). "gegenstand" fehlt bewusst: Gegenstände
 # hängen nie an einer VERBINDUNG-Kante, sondern an BESITZT/VERKAUFT (siehe
 # _gegenstand_verknuepfen).
-_MASSEN_ENTITAETS_TYP = {"charakter": "Person", "ort": "Ort"}
+_MASSEN_ENTITAETS_TYP = {"charakter": "Person", "nebenfigur": "Person", "ort": "Ort"}
 
 # Default-Kantenbezeichnung, falls das Frontend keine eigene mitgibt —
 # nur ein Vorschlag, die SL kann jede Kante später wie gewohnt umbenennen.
@@ -1263,6 +1276,12 @@ _MASSEN_STANDARD_BEZIEHUNG = {
     ("charakter", "Ort"): "ist in",
     ("charakter", "Event"): "war dabei bei",
     ("charakter", "Fraktion"): "ist Mitglied von",
+    # Nebenfiguren (10.11.2026): nur Rückfall — meist schlägt die KI je Figur
+    # selbst eine Beziehung vor (Mutter, Bruder, Stammgast …).
+    ("nebenfigur", "Person"): "kennt",
+    ("nebenfigur", "Ort"): "ist oft in",
+    ("nebenfigur", "Event"): "war dabei bei",
+    ("nebenfigur", "Fraktion"): "gehört zu",
     ("ort", "Ort"): "liegt in",
     ("ort", "Person"): "gehört zu",
     ("ort", "Event"): "ist Schauplatz von",
@@ -1418,7 +1437,9 @@ async def _massen_anlegen(
                 kanten_typ = (
                     beziehungstyp.strip()
                     if beziehungstyp and beziehungstyp.strip()
-                    else _MASSEN_STANDARD_BEZIEHUNG.get((typ, ziel_typ), "verbunden mit")
+                    # Nebenfigur: Vorschlag der KI je Figur (Mutter, Bruder …)
+                    else (ergebnis.get("beziehung") or "").strip()
+                    or _MASSEN_STANDARD_BEZIEHUNG.get((typ, ziel_typ), "verbunden mit")
                 )
                 await verknuepfung_beziehung_anwenden(
                     campaign_id,

@@ -46,6 +46,20 @@ Beschreibung, Notiz, mehrere Bilder, Beziehungen und ein paar feste Werte.
   ihnen EP verteilt. Die neue Nebenfigur ist kein Ideenschmiede-Entwurf, sie
   steht direkt im Nebenfiguren-Menü (SL-geheim wie vorher).
 
+- **Leere Kontakt-/Mentor-Plätze sind schon als Platzhalter Nebenfiguren**
+  (10.11., Mark: Platzhalter sollen nicht in der NPC-Liste stehen).
+  `spawn.py` setzt `istNebenfigur`, Migration 014 zieht den Altbestand nach.
+  Kachel zeigt „Platzhalter“, „Zu NPC machen“ ist dort gesperrt (409) — den
+  Platz füllt der Spieler. Der Mentor-Platz wird bei der Befüllung weiter ein
+  voller NPC.
+- **Ideenschmiede (10.11.):** ✨ KI kennt den Typ „Nebenfigur“ mit Anzahl
+  (1–12) und optionaler Verbindung zu Person/Ort/Ereignis/Fraktion. Ohne
+  feste Beziehung schlägt die KI je Figur eine vor (Feld `beziehung` im
+  Schema, z. B. „Mutter von“), sonst gilt der Standard. Läuft über den
+  Massen-Job, landet als Entwurf; „Übernehmen“ schiebt sie ins
+  Nebenfiguren-Menü. „+ Neue Idee“ kann eine leere Nebenfigur anlegen,
+  Beratung kennt den Typ auch (auch als Massen-Entwurf).
+
 ## Datenmodell
 
 `Person`-Felder: `istNebenfigur: bool`, `persoenlichkeit: str`,
@@ -70,3 +84,8 @@ die Zu-NPC-Route.
   hält jetzt eine ungefilterte Personenliste für Namen in Beziehungen — vorher
   fehlten in der NPC-Ansicht Beziehungen zu PCs. **Kein Klicktest, kein
   echter KI-Lauf.**
+- **10.11.2026 — Platzhalter + Ideenschmiede.** Live gab es fünf leere
+  Kontakt-Plätze („Unbekannter Kontakt“, einer ohne PC) und einen schon
+  befüllten Kontakt als vollen NPC (Evelyn Sterling, Test Charakter) — der
+  bleibt NPC. Tests in `test_nebenfiguren.py` (KI-Entwurf, Beziehungs-
+  vorschlag, Massen-Kante, Spawn, Platzhalter-409). **Kein Klicktest.**

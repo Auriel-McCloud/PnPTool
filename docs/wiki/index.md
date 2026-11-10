@@ -45,7 +45,7 @@ darüber, mit Fokus auf **Versionsgeschichte der Regeln** und **Querverweise**).
 | [[entities/architektur-drei-ebenen]] | Regelsystem→Kampagne→Ideenschmiede, fertig 12.09. |
 | [[entities/mitteilungen-system]] | SL-Popups, kein Absender, WebSocket+Reconnect, Warnfarbe offen |
 | [[entities/kontakte-messenger]] | Persona-5-Messenger, Stufe vs. chatOffen; leere Plätze als „Undefinierter Kontakt“ in derselben Liste (01.11.); Verlauf folgt chatOffen (07.11.); Spieler↔Spieler-Chat PC↔PC (07.11.), Gruppenchat PC+NPC gebaut (07.11.); befüllte Kontakt-Plätze werden Nebenfiguren, nur Mentoren volle NPCs (10.11.) |
-| [[entities/nebenfiguren]] | Person ohne Bogen/Inventar (`istNebenfigur`), eigenes Burgermenü, kein Kampf; Rasse/Alter/Persönlichkeit/freie Fähigkeiten; Einbahnstraße „Zu NPC machen“ per Charakter-KI (10.11.) |
+| [[entities/nebenfiguren]] | Person ohne Bogen/Inventar (`istNebenfigur`), eigenes Burgermenü, kein Kampf; Rasse/Alter/Persönlichkeit/freie Fähigkeiten; Einbahnstraße „Zu NPC machen“ per Charakter-KI (10.11.); leere Kontakt-Plätze schon Nebenfigur, Ideenschmiede ✨ mit Anzahl + Verbindung (10.11.) |
 | [[entities/ingame-wiki-feature]] | Das In-Game-Wiki-Feature (NICHT dieses Meta-Wiki!), Freigabe ohne Vererbung, Editor-Schriftgröße am Handy (20.09.) |
 | [[entities/rassen-baukasten-feature]] | Technische Umsetzung des Rassen-Baukastens; Erstellung zeigt Bild auf der Karte und Extras im Steckbrief (24.10.); Gratis-Erstkauf-Option „alle Typen“ verbraucht das Feature nach einem Kauf (24.10.). Battlemap-Größe: Vorlage hier, Entscheidung an der Kachel (06.11.) |
 | [[entities/theming-system]] | Token-System, sechs Gruppen, Cytoscape-Canvas-Sonderfall |

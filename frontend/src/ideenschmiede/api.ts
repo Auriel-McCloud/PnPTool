@@ -14,7 +14,12 @@ export interface EntwurfItem {
   name: string;
   beschreibung: string;
   erstelltAm?: string;
+  /** Person-Entwurf ohne Bogen (10.11.2026) — öffnet das Nebenfigur-Detail. */
+  istNebenfigur?: boolean;
 }
+
+/** Was „+ Neue Idee“ anlegen kann: die Entwurfstypen plus Nebenfigur (eine Person). */
+export type NeuerEntwurfTyp = EntwurfItem["typ"] | "Nebenfigur";
 
 /**
  * Holt alle Entwürfe einer Kampagne (istEntwurf=true).
@@ -29,6 +34,7 @@ export async function getEntwuerfe(campaignId: string): Promise<EntwurfItem[]> {
       name: e.name || e.title || "Unbenannt",
       beschreibung: e.description || "",
       erstelltAm: e.erstelltAm,
+      istNebenfigur: Boolean(e.istNebenfigur),
     }));
   } catch {
     return [];
@@ -80,10 +86,25 @@ export async function entwurfLoeschen(
  */
 export async function entwurfAnlegen(
   campaignId: string,
-  typ: EntwurfItem["typ"],
+  typ: NeuerEntwurfTyp,
   name: string
 ): Promise<void> {
   switch (typ) {
+    case "Nebenfigur":
+      await api.post(`/api/campaigns/${campaignId}/personen`, {
+        name,
+        personType: "NPC",
+        istNebenfigur: true,
+        erstellungAbgeschlossen: true,
+        description: "",
+        notes: "",
+        istEntwurf: true,
+        sichtbarkeit: "ALLE",
+        sichtbarFuer: [],
+        notizenSichtbarkeit: "GM",
+        notizenSichtbarFuer: [],
+      });
+      break;
     case "Person":
       await api.post(`/api/campaigns/${campaignId}/personen`, {
         name,
@@ -157,7 +178,7 @@ export async function entwurfAnlegen(
   }
 }
 
-export type KiTyp = "story" | "charakter" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung";
+export type KiTyp = "story" | "charakter" | "nebenfigur" | "gegenstand" | "ort" | "event" | "fraktion" | "verbindung";
 
 /**
  * Lässt Gemini eine Idee generieren und als Entwurf in der Schmiede ablegen.

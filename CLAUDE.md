@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Nebenfiguren: Platzhalter und Ideenschmiede (10.11.2026)
+
+Leere Kontakt-/Mentor-Plätze sind schon als Platzhalter Nebenfiguren (`spawn.py` setzt `istNebenfigur`, Migration `014_blanko_kontakte_nebenfiguren.cypher` für den Altbestand) — raus aus der NPC-Liste, Kachel „Platzhalter“, `zu-npc` darauf 409. Befüllen durch den Spieler unverändert. Ideenschmiede: `typ "nebenfigur"` in `KiIdeeTyp`/`MassenIdeeTyp`; ✨ KI zeigt dafür Anzahl + „Verbinden mit“ + Beziehung und läuft über den Massen-Job. Leere Beziehung → `beziehung`-Vorschlag der KI je Figur (`nebenfigur_generieren(..., entwurf=True)` gibt `beziehungVorschlag` zurück, `_massen_anlegen` nimmt ihn vor dem Standard). „+ Neue Idee“ legt leere Nebenfigur als Entwurf an; Entwurf öffnet `NebenfigurDetail`. **Verifiziert:** `test_nebenfiguren.py` (19) grün, Migration lokal gelaufen, `tsc -b` sauber. Kein Klicktest.
+
 ## Nebenfiguren: Personen ohne Bogen, eigenes Burgermenü (10.11.2026)
 
 Mark: Kontakte, Familie eines NPCs & Co. sollen die NPC-Liste nicht fluten, brauchen aber Rasse, Name, Alter, Beschreibung, Notiz, Bilder, Beziehungen, eine Persönlichkeit („Leitwolf“) und ein paar feste Werte.

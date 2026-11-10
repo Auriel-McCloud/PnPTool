@@ -25,7 +25,10 @@ _NEBENFIGUR_SYSTEM = (
     "Schlitzohr), höchstens drei Wörter. faehigkeiten sind 1 bis 3 frei benannte "
     "Stärken, die für die Spieler nützlich sind (Wissen, Verhandeln, Beziehungen — "
     "keine Kampfwerte), wert 1 bis 5. beschreibung ist kurz und im Spiel sichtbar; "
-    "notizen ist das SL-interne Feld für alles Weitere (Motive, Geheimnisse, Haken)."
+    "notizen ist das SL-interne Feld für alles Weitere (Motive, Geheimnisse, Haken). "
+    "beziehung: nennt der Auftrag einen Bezug („Bezieht sich auf …“), steht hier in 1 bis 3 "
+    "Wörtern, wie diese Figur dazu steht (z.B. Mutter von, Bruder von, Stammgast in, "
+    "Informant von) — sonst leer."
 )
 
 
@@ -39,6 +42,7 @@ def _schema(rassen_namen: list[str]) -> dict:
             "persoenlichkeit": {"type": "STRING"},
             "beschreibung": {"type": "STRING"},
             "notizen": {"type": "STRING"},
+            "beziehung": {"type": "STRING"},
             "faehigkeiten": {
                 "type": "ARRAY",
                 "items": {
@@ -52,8 +56,14 @@ def _schema(rassen_namen: list[str]) -> dict:
     }
 
 
-async def nebenfigur_generieren(campaign_id: str, prompt: str) -> dict:
-    """Legt eine Nebenfigur per KI an (SL-geheim, kein Entwurf) und gibt den Knoten zurück."""
+async def nebenfigur_generieren(campaign_id: str, prompt: str, *, entwurf: bool = False) -> dict:
+    """Legt eine Nebenfigur per KI an (SL-geheim) und gibt den Knoten zurück.
+
+    ``entwurf=True`` für die Ideenschmiede (✨ KI, Massen, Beratung) — dort
+    erst nach „Übernehmen“ in der Kampagne. Kontakt-Plätze bleiben ohne
+    Entwurf. Der Knoten trägt zusätzlich ``beziehungVorschlag`` (nicht
+    gespeichert): wie die Figur zum genannten Bezug steht.
+    """
     rassen = _rassen_fuer_ki(await rassen_repository.liste_fuer_kampagne(campaign_id))
     rassen_namen = sorted(rassen.keys()) or ["Mensch"]
     kontext = await sammle_kontext(campaign_id)
@@ -88,9 +98,11 @@ async def nebenfigur_generieren(campaign_id: str, prompt: str) -> dict:
             ],
             # Keine Ersterstellung: eine Nebenfigur hat nie einen Bogen.
             erstellungAbgeschlossen=True,
+            istEntwurf=entwurf,
             sichtbarkeit="GM",
         ).model_dump(),
     )
+    person["beziehungVorschlag"] = " ".join((ergebnis.get("beziehung") or "").split())[:40]
     await hooks.ki(
         campaign_id, anlass="nebenfigur", prompt=prompt,
         antwort_text=name, uebernommen=True, betrifft_id=person["id"],

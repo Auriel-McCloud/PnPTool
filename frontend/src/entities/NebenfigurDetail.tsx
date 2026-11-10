@@ -289,9 +289,15 @@ export function NebenfigurDetail({
                     <button type="button" onClick={() => setEntwurf({ index: null, name: "", wert: "" })}>
                       + Fähigkeit
                     </button>
-                    <button type="button" onClick={() => setZuNpcOffen(true)} disabled={zuNpcLaeuft}>
-                      {zuNpcLaeuft ? "KI baut den Bogen…" : "⇧ Zu NPC machen"}
-                    </button>
+                    {person.istBlankoKontakt ? (
+                      <p className="nf-hinweis">
+                        Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger, dann füllt die KI ihn.
+                      </p>
+                    ) : (
+                      <button type="button" onClick={() => setZuNpcOffen(true)} disabled={zuNpcLaeuft}>
+                        {zuNpcLaeuft ? "KI baut den Bogen…" : "⇧ Zu NPC machen"}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setLoeschenOffen(true)}
