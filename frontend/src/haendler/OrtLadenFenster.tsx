@@ -227,10 +227,11 @@ export function OrtLadenFenster({
                 onChange={(e) => setNeuerVerkaeuferId(e.target.value)}
                 disabled={läuft || !istAktiv}
               >
-                <option value="">— NPC wählen —</option>
+                <option value="">— NPC oder Nebenfigur wählen —</option>
                 {wählbareNpcs.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {/* Nebenfiguren (10.11.2026): Händler ohne Charakterbogen — Ware hängt eh am Ort. */}
+                    {p.istNebenfigur ? `${p.name} (Nebenfigur)` : p.name}
                   </option>
                 ))}
               </select>

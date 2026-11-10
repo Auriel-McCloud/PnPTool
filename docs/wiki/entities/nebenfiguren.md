@@ -60,6 +60,13 @@ Beschreibung, Notiz, mehrere Bilder, Beziehungen und ein paar feste Werte.
   Nebenfiguren-Menü. „+ Neue Idee“ kann eine leere Nebenfigur anlegen,
   Beratung kennt den Typ auch (auch als Massen-Entwurf).
 
+- **Händler ohne Bogen (10.11., Mark: „nicht jeder Händler braucht ein
+  Charakterblatt“):** eine Nebenfigur kann Verkäufer-Gesicht eines Ladens
+  sein. Auswahl am Ort („Laden“), Kennzeichnung „(Nebenfigur)“. Ware und
+  Shop hängen ohnehin am Ort, Kauf/Verhandeln lesen keinen Bogen. Das
+  Nebenfigur-Fenster zeigt bei `istHaendler` den Händler-Hinweis und den
+  Reparatur-Schalter (`bietetReparatur`, Werkbank-Händlerliste).
+
 ## Datenmodell
 
 `Person`-Felder: `istNebenfigur: bool`, `persoenlichkeit: str`,

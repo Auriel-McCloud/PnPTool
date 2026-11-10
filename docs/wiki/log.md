@@ -3,6 +3,11 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-10] update | Nebenfiguren als Händler
+
+Nebenfigur kann Laden-Verkäufer sein, Reparatur-Schalter im Nebenfigur-Fenster.
+Siehe [[entities/nebenfiguren]].
+
 ## [2026-11-10] update | Nebenfiguren: Platzhalter und Ideenschmiede
 
 Leere Kontakt-Plätze sind schon Nebenfiguren (Migration 014). Ideenschmiede ✨

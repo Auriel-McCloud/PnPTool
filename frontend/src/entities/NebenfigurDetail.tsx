@@ -61,6 +61,9 @@ export function NebenfigurDetail({
   const [beschreibungDoc, setBeschreibungDoc] = useState<JSONContent>(parseRichText(person.description));
   const [notizenDoc, setNotizenDoc] = useState<JSONContent>(parseRichText(person.notes));
   const [rassen, setRassen] = useState<string[]>([]);
+  // Händler-Gesicht (10.11.2026, Mark: „nicht jeder Händler braucht ein
+  // Charakterblatt“) — Ware und Shop hängen am Ort, hier nur die Reparatur-Flagge.
+  const [bietetReparatur, setBietetReparatur] = useState(person.bietetReparatur ?? false);
 
   const [entwurf, setEntwurf] = useState<FaehigkeitEntwurf | null>(null);
   const [entfernenIndex, setEntfernenIndex] = useState<number | null>(null);
@@ -98,6 +101,12 @@ export function NebenfigurDetail({
   const autosavePersoenlichkeit = useAutosave((wert: string) => speichern({ persoenlichkeit: wert.trim() }));
   const autosaveBeschreibung = useAutosave((doc: JSONContent) => speichern({ description: serializeRichText(doc) }));
   const autosaveNotizen = useAutosave((doc: JSONContent) => speichern({ notes: serializeRichText(doc) }));
+
+  async function reparaturUmschalten() {
+    const neu = !bietetReparatur;
+    setBietetReparatur(neu);
+    await speichern({ bietetReparatur: neu });
+  }
 
   async function faehigkeitenSpeichern(neu: Nebenfaehigkeit[]) {
     setFaehigkeiten(neu);
@@ -285,10 +294,25 @@ export function NebenfigurDetail({
                     </div>
                   )}
 
+                  {person.istHaendler && (
+                    <>
+                      <div className="nf-ueberschrift">Händler</div>
+                      <p className="nf-hinweis">
+                        Verkäufer an einem Laden. Ware, Spezialisierung und Tutorial-Flag pflegst du am Ort — hier nur
+                        Kontakt, Verhandeln und Reparatur.
+                      </p>
+                    </>
+                  )}
+
                   <div className="pcd-buttons">
                     <button type="button" onClick={() => setEntwurf({ index: null, name: "", wert: "" })}>
                       + Fähigkeit
                     </button>
+                    {person.istHaendler && (
+                      <button type="button" onClick={() => void reparaturUmschalten()}>
+                        {bietetReparatur ? "🔧 Bietet Reparatur — Flag weg" : "🔧 Als Reparatur-Händler markieren"}
+                      </button>
+                    )}
                     {person.istBlankoKontakt ? (
                       <p className="nf-hinweis">
                         Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger, dann füllt die KI ihn.
