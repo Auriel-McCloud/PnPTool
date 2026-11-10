@@ -12,6 +12,7 @@ import { RichTextEditor } from "../richtext/RichTextEditor";
 import { useAutosave } from "../shell/autosave";
 import { parseRichText, serializeRichText } from "../richtext/content";
 import { rassenApi } from "../rassen/api";
+import { haendlerApi } from "../haendler/api";
 import "./pc-detail.css";
 import "./nebenfiguren.css";
 
@@ -64,6 +65,13 @@ export function NebenfigurDetail({
   // Händler-Gesicht (10.11.2026, Mark: „nicht jeder Händler braucht ein
   // Charakterblatt“) — Ware und Shop hängen am Ort, hier nur die Reparatur-Flagge.
   const [bietetReparatur, setBietetReparatur] = useState(person.bietetReparatur ?? false);
+  const [istHaendler, setIstHaendler] = useState(person.istHaendler ?? false);
+  // Laden, an dem sie verkauft — der Shop hängt am Ort (BETREIBT-Kante).
+  const [laden, setLaden] = useState<{ ortId: string; ortName: string } | null>(null);
+  const [ladenWahlOffen, setLadenWahlOffen] = useState(false);
+  const [ladenOrte, setLadenOrte] = useState<{ id: string; name: string; istShop: boolean }[]>([]);
+  const [ladenOrtId, setLadenOrtId] = useState("");
+  const [abziehenOffen, setAbziehenOffen] = useState(false);
 
   const [entwurf, setEntwurf] = useState<FaehigkeitEntwurf | null>(null);
   const [entfernenIndex, setEntfernenIndex] = useState<number | null>(null);
@@ -78,6 +86,63 @@ export function NebenfigurDetail({
       .then((liste) => setRassen(liste.map((r) => r.name)))
       .catch(() => setRassen([]));
   }, [campaignId]);
+
+  useEffect(() => {
+    if (!istHaendler) {
+      setLaden(null);
+      return;
+    }
+    Promise.all([haendlerApi.alle(campaignId), haendlerApi.tutorial(campaignId).catch(() => null)])
+      .then(([shops, tutorial]) => {
+        const alle = tutorial ? [...shops, tutorial] : shops;
+        const treffer = alle.find((s) => s.haendler.some((h) => h.id === person.id));
+        setLaden(treffer?.ortId ? { ortId: treffer.ortId, ortName: treffer.ortName ?? treffer.name } : null);
+      })
+      .catch(() => setLaden(null));
+  }, [campaignId, person.id, istHaendler]);
+
+  async function ladenWahlOeffnen() {
+    setLadenOrtId(laden?.ortId ?? "");
+    setLadenWahlOffen(true);
+    try {
+      const orte = await entitiesApi.listOrte(campaignId);
+      setLadenOrte(orte.map((o) => ({ id: o.id, name: o.name, istShop: Boolean(o.istShop) })));
+    } catch {
+      setLadenOrte([]);
+    }
+  }
+
+  async function anLadenStellen(e: FormEvent) {
+    e.preventDefault();
+    if (!ladenOrtId) return;
+    setFehler(null);
+    try {
+      if (!istHaendler) await entitiesApi.updatePerson(campaignId, person.id, { istHaendler: true });
+      // Setzt am Ort istShop — ein normaler Ort wird dabei zum Laden.
+      await haendlerApi.standortSetzen(campaignId, person.id, ladenOrtId);
+      const ort = ladenOrte.find((o) => o.id === ladenOrtId);
+      setIstHaendler(true);
+      setLaden({ ortId: ladenOrtId, ortName: ort?.name ?? "" });
+      setLadenWahlOffen(false);
+      onLokalAktualisiert?.({ istHaendler: true });
+    } catch (err) {
+      setFehler(err instanceof Error ? err.message : "Laden setzen fehlgeschlagen");
+    }
+  }
+
+  async function vomLadenNehmen() {
+    setAbziehenOffen(false);
+    setFehler(null);
+    try {
+      await haendlerApi.standortSetzen(campaignId, person.id, null);
+      await entitiesApi.updatePerson(campaignId, person.id, { istHaendler: false });
+      setIstHaendler(false);
+      setLaden(null);
+      onLokalAktualisiert?.({ istHaendler: false });
+    } catch (err) {
+      setFehler(err instanceof Error ? err.message : "Vom Laden nehmen fehlgeschlagen");
+    }
+  }
 
   const beziehungsZahl = beziehungsZeilen(person.id, verbindungen, namen).length;
 
@@ -294,25 +359,35 @@ export function NebenfigurDetail({
                     </div>
                   )}
 
-                  {person.istHaendler && (
-                    <>
-                      <div className="nf-ueberschrift">Händler</div>
-                      <p className="nf-hinweis">
-                        Verkäufer an einem Laden. Ware, Spezialisierung und Tutorial-Flag pflegst du am Ort — hier nur
-                        Kontakt, Verhandeln und Reparatur.
-                      </p>
-                    </>
+                  <div className="nf-ueberschrift">Händler</div>
+                  {istHaendler ? (
+                    <p className="nf-hinweis">
+                      Verkauft {laden ? <>im Laden <strong>{laden.ortName}</strong></> : "ohne festen Laden"}. Ware,
+                      Spezialisierung und Tutorial-Flag pflegst du am Ort unter „Laden“.
+                    </p>
+                  ) : (
+                    <p className="nf-hinweis">Kein Händler. Ein Händler braucht keinen Charakterbogen — nur einen Laden.</p>
                   )}
+                  <div className="pcd-buttons" style={{ marginBottom: 12 }}>
+                    <button type="button" onClick={() => void ladenWahlOeffnen()}>
+                      {istHaendler ? "🏪 Anderen Laden wählen" : "🏪 Als Händler an einen Laden stellen"}
+                    </button>
+                    {istHaendler && (
+                      <button type="button" onClick={() => void reparaturUmschalten()}>
+                        {bietetReparatur ? "🔧 Bietet Reparatur — Flag weg" : "🔧 Als Reparatur-Händler markieren"}
+                      </button>
+                    )}
+                    {istHaendler && (
+                      <button type="button" onClick={() => setAbziehenOffen(true)}>
+                        Vom Laden nehmen
+                      </button>
+                    )}
+                  </div>
 
                   <div className="pcd-buttons">
                     <button type="button" onClick={() => setEntwurf({ index: null, name: "", wert: "" })}>
                       + Fähigkeit
                     </button>
-                    {person.istHaendler && (
-                      <button type="button" onClick={() => void reparaturUmschalten()}>
-                        {bietetReparatur ? "🔧 Bietet Reparatur — Flag weg" : "🔧 Als Reparatur-Händler markieren"}
-                      </button>
-                    )}
                     {person.istBlankoKontakt ? (
                       <p className="nf-hinweis">
                         Leerer Kontakt-Platz — der Spieler beschreibt ihn im Messenger, dann füllt die KI ihn.
@@ -413,6 +488,40 @@ export function NebenfigurDetail({
           </form>
         )}
       </Fenster>
+
+      <Fenster
+        offen={ladenWahlOffen}
+        schmal
+        titel={`Laden für ${person.name}`}
+        unterzeile="Ein Ort ohne Laden wird dabei zum Laden"
+        kennung={`nebenfigur-laden:${person.id}`}
+        onSchliessen={() => setLadenWahlOffen(false)}
+      >
+        <form className="nf-formular" onSubmit={anLadenStellen}>
+          <select value={ladenOrtId} onChange={(e) => setLadenOrtId(e.target.value)} required>
+            <option value="">— Ort wählen —</option>
+            {ladenOrte.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.istShop ? `${o.name} (Laden)` : o.name}
+              </option>
+            ))}
+          </select>
+          <p className="nf-hinweis">Sortiment und Spezialisierung danach am Ort unter „Laden“.</p>
+          <button type="submit" className="nf-formular-knopf" disabled={!ladenOrtId}>
+            Dort verkaufen lassen
+          </button>
+        </form>
+      </Fenster>
+
+      {abziehenOffen && (
+        <Bestaetigung
+          titel={`${person.name} vom Laden nehmen?`}
+          text={`${person.name} ist danach kein Händler mehr${laden ? ` und verkauft nicht mehr in „${laden.ortName}“` : ""}. Der Ort bleibt ein Laden, sein Sortiment bleibt.`}
+          jaText="Vom Laden nehmen"
+          onJa={() => void vomLadenNehmen()}
+          onNein={() => setAbziehenOffen(false)}
+        />
+      )}
 
       {entfernenIndex !== null && (
         <Bestaetigung

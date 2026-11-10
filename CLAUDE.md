@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Nebenfigur-Fenster: Händler direkt machen (10.11.2026)
+
+Mark fand im Übersichtsreiter keine Händler-Optionen (die gab es nur, wenn sie schon Verkäufer war). `NebenfigurDetail` hat jetzt immer einen Abschnitt „Händler“: „🏪 Als Händler an einen Laden stellen“/„Anderen Laden wählen“ (Fenster mit allen Orten, Läden markiert; setzt `istHaendler` + `haendlerApi.standortSetzen`, das macht einen Ort zum Laden), Reparatur-Schalter, „Vom Laden nehmen“ (Bestätigung, Standort null + `istHaendler=false`, Ort bleibt Laden). Aktueller Laden aus `haendlerApi.alle` + Tutorial-Shop. Nur Frontend, `tsc -b` sauber.
+
 ## Nebenfiguren als Händler (10.11.2026)
 
 Mark: nicht jeder Händler braucht ein Charakterblatt. Verkäufer-Auswahl in `OrtLadenFenster.tsx` markiert Nebenfiguren „(Nebenfigur)“ (sie standen schon drin — Ware hängt am Ort, Kauf/Verhandeln lesen keinen Bogen). `NebenfigurDetail` zeigt bei `istHaendler` den Händler-Hinweis und den Schalter „🔧 Als Reparatur-Händler markieren“ (`bietetReparatur`). Nur Frontend, `tsc -b` sauber, kein Klicktest.

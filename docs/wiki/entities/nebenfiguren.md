@@ -66,6 +66,10 @@ Beschreibung, Notiz, mehrere Bilder, Beziehungen und ein paar feste Werte.
   Shop hängen ohnehin am Ort, Kauf/Verhandeln lesen keinen Bogen. Das
   Nebenfigur-Fenster zeigt bei `istHaendler` den Händler-Hinweis und den
   Reparatur-Schalter (`bietetReparatur`, Werkbank-Händlerliste).
+  Nachtrag 10.11. (Mark: „im Übersichtsreiter fehlen die Optionen“): Händler
+  wird man jetzt auch direkt im Nebenfigur-Fenster — „🏪 Als Händler an einen
+  Laden stellen“ wählt einen Ort (`standortSetzen`, ein Ort ohne Laden wird
+  dabei Laden), „Vom Laden nehmen“ löst Kante und Flag. Der Ort-Weg bleibt.
 
 ## Datenmodell
 

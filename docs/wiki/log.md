@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-10] update | Nebenfigur-Fenster macht Händler
+
+Laden direkt im Nebenfigur-Fenster wählen oder abziehen. Siehe [[entities/nebenfiguren]].
+
 ## [2026-11-10] update | Nebenfiguren als Händler
 
 Nebenfigur kann Laden-Verkäufer sein, Reparatur-Schalter im Nebenfigur-Fenster.
