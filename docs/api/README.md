@@ -42,6 +42,7 @@ mit WebSocket-Erweiterungen für Echtzeit-Features.
 | [Spieler-Notizen](./spielernotizen.md) | Privater Schmierzettel, nur der eigene Spieler-Zugang, SL sieht nichts | |
 | [Ereignisprotokoll](./ereignisprotokoll.md) | Sitzungs-Log: 8 Kategorien, Zeitleiste, Papierkorb — Backend da, Frontend fehlt | |
 | [Rätsel](./raetsel.md) | Eine Ring-Tafel pro Kampagne, SL dreht, Spieler sehen nach Freigabe live zu | ⭐ |
+| [Nebenfiguren](./nebenfiguren.md) | Personen ohne Bogen/Inventar, eigenes Menü, Einbahnstraße zum NPC per KI | ⭐ |
 
 ⭐ = Komplexe Systeme mit WebSocket-Integration
 

@@ -1,7 +1,7 @@
 ---
 title: Kontakte und Messenger
 created: 2026-09-18
-updated: 2026-11-07
+updated: 2026-11-10
 type: entität
 tags: [kontakte, frontend, ui]
 sources: [../../api/kontakte.md, ../../../CLAUDE.md]
@@ -71,6 +71,13 @@ Erster Klick: Beschreibung, dann `POST .../generieren`. Danach ist der
 Platzhalter weg, der neue NPC hat offenen Chat, und dieser Spieler kennt
 den Namen. Ohne die eigene Zeile blieb die Liste leer, weil der Messenger
 nur `chatOffen` zeigte.
+
+## Kontakt-Plätze werden Nebenfiguren (10.11.2026)
+
+Beschreibt ein Spieler einen leeren Kontakt-Platz, legt `generieren` jetzt eine
+[[entities/nebenfiguren|Nebenfigur]] an (ein KI-Aufruf, kein Bogen, kein
+Einkauf) statt eines vollen NPCs. Mentor-Plätze bleiben volle NPCs mit EP.
+Ablauf für den Spieler unverändert: Platzhalter weg, Chat offen, Name bekannt.
 
 ## Chatverlauf-Regel (07.11.2026)
 

@@ -115,6 +115,22 @@ export interface Person extends VisibilityFields {
   /** Nur bei istVorgefertigt: normal leuchtet nicht, hervorheben magenta,
    * wichtig gold. Sortierung der Auswahl: wichtig, hervorheben, normal. */
   vorgefertigtSignifikanz?: "normal" | "hervorheben" | "wichtig";
+  /** Nebenfigur (10.11.2026): Person ohne Bogen und Inventar, eigenes
+   * Burgermenü, kein Kampf. Einbahnstraße zum NPC über
+   * `entitiesApi.nebenfigurZuNpc`. Siehe docs/wiki/entities/nebenfiguren.md. */
+  istNebenfigur?: boolean;
+  /** Kurzes Stichwort, z.B. „Leitwolf“, „Angsthase“. */
+  persoenlichkeit?: string;
+  /** Freie feste Fähigkeiten, z.B. Straßenwissen 4 — kein Katalogbezug. */
+  nebenfaehigkeiten?: Nebenfaehigkeit[];
+  /** Kopfzeile des Blatts — bei Nebenfiguren direkt in der Übersicht. */
+  rasse?: string;
+  alter?: string;
+}
+
+export interface Nebenfaehigkeit {
+  name: string;
+  wert: number;
 }
 
 export interface Ort extends VisibilityFields {
@@ -241,6 +257,8 @@ export interface ListenFilter {
   verbundenMit?: string;
   /** Nur Einträge mit einer Verbindung dieser Bezeichnung. */
   verbindungsTyp?: string;
+  /** Nur Personen: true = nur Nebenfiguren, false = ohne Nebenfiguren. */
+  istNebenfigur?: boolean;
 }
 
 /** Eine Entität, mit der tatsächlich mindestens eine Verbindung besteht. */
@@ -328,6 +346,9 @@ export const entitiesApi = {
    * app/entities/repository.py::person_zu_npc/person_zu_pc. */
   personZuNpc: (cid: string, personId: string) => api.post<Person>(`${base(cid)}/personen/${personId}/zu-npc`, {}),
   personZuPc: (cid: string, personId: string) => api.post<Person>(`${base(cid)}/personen/${personId}/zu-pc`, {}),
+  /** Einbahnstraße: Nebenfigur wird voller NPC, die KI baut den Bogen. */
+  nebenfigurZuNpc: (cid: string, personId: string) =>
+    api.post<Person>(`${base(cid)}/nebenfiguren/${personId}/zu-npc`, {}),
 
   /** Critter — Tiere/Haustiere als echte NPCs (`istCritter: true`), eigene
    * schlanke Liste für die Begleiter-Übersicht statt des vollen Bogens. */

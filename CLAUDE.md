@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Nebenfiguren: Personen ohne Bogen, eigenes Burgermenü (10.11.2026)
+
+Mark: Kontakte, Familie eines NPCs & Co. sollen die NPC-Liste nicht fluten, brauchen aber Rasse, Name, Alter, Beschreibung, Notiz, Bilder, Beziehungen, eine Persönlichkeit („Leitwolf“) und ein paar feste Werte.
+
+`Person` mit `istNebenfigur=true` (kein neues Label), dazu `persoenlichkeit` und `nebenfaehigkeiten` (`[{name, wert}]`, JSON-String in Neo4j wie `bilder`). Eigener Bereich „Nebenfiguren“ (`EntityManager`-Ansicht `nebenfiguren`, `NebenfigurKacheln`/`NebenfigurDetail`); die NPC-Liste fragt `GET /personen?istNebenfigur=false`. Kein Kampf (Teilnehmer-Route 400, `kampf_kandidaten` filtert, Kampfmodus-Auswahl auch). „⇧ Zu NPC machen“ = `POST .../nebenfiguren/{id}/zu-npc`, Einbahnstraße: `_idee_anlegen(..., nebenfigur=)` baut den Bogen in-place, Rasse fix, die freien Fähigkeiten stehen im Stufe-2-Prompt. Kontakt-Plätze aus dem Hintergrund werden jetzt Nebenfiguren (`nebenfiguren/ki.py`, ein KI-Aufruf); nur Mentoren bleiben volle NPCs. Nebenbei: `EntityManager` hält `allePersonen` ungefiltert für Namen/Auswahl — vorher fehlten in der NPC-Ansicht Beziehungen zu PCs. Graph-Rechtsklick öffnet bei Nebenfiguren das eigene Detail.
+
+**Verifiziert:** `tests/test_nebenfiguren.py` (13) grün, Kampf/Kontakte/KI-Suiten ohne neue Fehler gegenüber `main`, Anlegen/Patchen/Filtern gegen die lokale Neo4j, `npx tsc -b` sauber. **Kein Klicktest, kein echter KI-Lauf.** Doku: Wiki `entities/nebenfiguren`, `docs/api/nebenfiguren.md`.
+
 ## Battlemap: ALT-Erinnerung hält drei Runden, auch hinter Wänden (09.11.2026)
 
 Mark: ausgegraute ALT-Tokens verschwanden, sobald man sich wegbewegte oder hinter eine Wand ging.

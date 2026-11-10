@@ -604,6 +604,12 @@ async def token_verstecken(
 async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
     if body.personId:
         person = await get_node("Person", PERSON_FIELDS, campaign_id, body.personId)
+        if person and person.get("istNebenfigur"):
+            # Nebenfiguren kämpfen nicht (Mark, 10.11.2026) — erst zum NPC machen.
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Nebenfiguren nehmen nicht am Kampf teil — erst zum NPC machen.",
+            )
         if person and (person.get("istDrohne") or person.get("istFahrzeug")) and not person.get("riggerAktiv"):
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,

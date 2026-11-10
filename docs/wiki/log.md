@@ -3,6 +3,13 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-10] neu | Nebenfiguren
+
+Personen ohne Bogen und Inventar, eigenes Burgermenü, kein Kampf. Zu NPC
+machen ist eine Einbahnstraße per Charakter-KI. Kontakt-Plätze werden
+Nebenfiguren, nur Mentoren volle NPCs. Siehe [[entities/nebenfiguren]],
+[[entities/kontakte-messenger]].
+
 ## [2026-11-09] rename | Sphären Raum, Chronurgie, Schicksal
 
 Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Auf dem Blatt.

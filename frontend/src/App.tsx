@@ -63,6 +63,9 @@ const BEREICHE: Bereich[] = [
   // Themewechsel sie mitzieht. Hier steht nur noch, WELCHES Token gilt.
   { id: "pcs", name: "PCs", symbol: "◉", farbe: "var(--bereich-pcs)" },
   { id: "npcs", name: "NPCs", symbol: "◌", farbe: "var(--bereich-npcs)" },
+  // Nebenfiguren (10.11.2026, Mark): Kontakte, Familie & Co. ohne Bogen und
+  // Inventar — eigenes Menü, damit die NPC-Liste nicht überläuft.
+  { id: "nebenfiguren", name: "Nebenfiguren", symbol: "○", farbe: "var(--bereich-npcs)" },
   { id: "orte", name: "Orte", symbol: "🧭", farbe: "var(--bereich-orte)" },
   { id: "events", name: "Events", symbol: "◆", farbe: "var(--bereich-events)" },
   { id: "fraktionen", name: "Fraktionen", symbol: "⬡", farbe: "var(--bereich-fraktionen)" },
@@ -139,6 +142,7 @@ const TITEL: Record<string, string> = {
   augments: "Körperkarte: wo sitzt welches Implantat",
   pcs: "Spielercharaktere",
   npcs: "Nichtspielercharaktere",
+  nebenfiguren: "Nebenfiguren: Kontakte und Bekannte ohne Charakterbogen",
   orte: "Orte",
   events: "Ereignisse",
   verbindungen: "Beziehungen zwischen Entitäten",
@@ -165,6 +169,7 @@ const TITEL: Record<string, string> = {
 const ENTITY_ANSICHT: Partial<Record<string, WeltAnsicht>> = {
   pcs: "pcs",
   npcs: "npcs",
+  nebenfiguren: "nebenfiguren",
   orte: "orte",
   events: "events",
   fraktionen: "fraktionen",
@@ -321,6 +326,7 @@ function Dashboard() {
       statisch={
         bereich === "pcs" ||
         bereich === "npcs" ||
+        bereich === "nebenfiguren" ||
         bereich === "orte" ||
         bereich === "events" ||
         bereich === "verbindungen" ||

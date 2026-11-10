@@ -208,11 +208,20 @@ async def list_personen(
     verbindungsTyp: str | None = Query(
         default=None, description="Nur Personen mit einer Verbindung dieser Bezeichnung (z.B. 'Gegner')."
     ),
+    istNebenfigur: bool | None = Query(
+        default=None,
+        description="true = nur Nebenfiguren, false = keine Nebenfiguren (NPC-Liste), weglassen = alle.",
+    ),
     viewer: Viewer = Depends(get_viewer),
 ):
     nodes = await repository.list_nodes("Person", PERSON_FIELDS, campaign_id)
     if personType is not None:
         nodes = [n for n in nodes if n.get("personType") == personType]
+    # Nebenfiguren (10.11.2026) haben ein eigenes Burgermenü — die NPC-Liste
+    # fragt mit false, das Nebenfiguren-Menü mit true. Ohne Parameter bleiben
+    # sie drin (Kontakte, Gruppenchat, Beziehungs-Auswahl brauchen sie).
+    if istNebenfigur is not None:
+        nodes = [n for n in nodes if bool(n.get("istNebenfigur")) == istNebenfigur]
     return await _aufbereiten(
         nodes,
         campaign_id,

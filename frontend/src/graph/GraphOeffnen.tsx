@@ -11,6 +11,7 @@ import {
 import { EventDetail } from "../entities/EventDetail";
 import { FraktionDetail } from "../entities/FraktionDetail";
 import { NPCDetail } from "../entities/NPCDetail";
+import { NebenfigurDetail } from "../entities/NebenfigurDetail";
 import { OrtDetail } from "../entities/OrtDetail";
 import { PCDetail } from "../entities/PCDetail";
 import { VerbindungBearbeiten } from "../entities/VerbindungBearbeiten";
@@ -184,6 +185,18 @@ export function GraphOeffnen({
   if (offen.art === "person" && offen.person.personType === "PC") {
     return (
       <PCDetail
+        {...gemeinsam}
+        person={offen.person}
+        onLokalAktualisiert={(felder) =>
+          setOffen({ art: "person", person: { ...offen.person, ...felder } })
+        }
+      />
+    );
+  }
+  // Nebenfigur: eigenes Detail ohne Bogen/Inventar (10.11.2026).
+  if (offen.art === "person" && offen.person.istNebenfigur) {
+    return (
+      <NebenfigurDetail
         {...gemeinsam}
         person={offen.person}
         onLokalAktualisiert={(felder) =>

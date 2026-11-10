@@ -426,7 +426,8 @@ async def kampf_kandidaten(campaign_id: str) -> list[dict]:
         WITH collect(DISTINCT eigene) + collect(DISTINCT dort) + collect(DISTINCT verbunden) AS alle
         UNWIND alle AS p
         WITH DISTINCT p
-        WHERE p IS NOT NULL
+        // Nebenfiguren kämpfen nicht (10.11.2026), auch nicht automatisch.
+        WHERE p IS NOT NULL AND NOT coalesce(p.istNebenfigur, false)
         RETURN p.id AS id, p.name AS name, p.personType AS personType
         ORDER BY p.name
     """

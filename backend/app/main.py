@@ -54,6 +54,7 @@ from app.zeichnungen.routes import router as zeichnungen_router
 from app.zeichnungen.routes import ws_router as zeichnungen_ws_router
 from app.battlemap.routes import router as battlemap_router
 from app.battlemap.routes import ws_router as battlemap_ws_router
+from app.nebenfiguren.routes import router as nebenfiguren_router
 from app.raetsel.routes import router as raetsel_router
 from app.raetsel.routes import ws_router as raetsel_ws_router
 from app.db.neo4j_driver import close_driver
@@ -135,6 +136,7 @@ app.include_router(zeichnungen_ws_router)
 app.include_router(battlemap_router)
 app.include_router(battlemap_ws_router)
 app.include_router(raetsel_router)
+app.include_router(nebenfiguren_router)
 app.include_router(raetsel_ws_router)
 
 Path("uploads").mkdir(exist_ok=True)

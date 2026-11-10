@@ -53,7 +53,10 @@ export function Kampfmodus({ campaignId }: { campaignId: string }) {
   /** Auswahl: erst die Charaktere, dann die Begleiter, dann "frei benannt". */
   const auswahl = useMemo(
     () => [
-      ...personen.map((p) => ({ wert: `person:${p.id}`, label: `${p.name} (${p.personType})` })),
+      // Nebenfiguren kämpfen nicht (10.11.2026) — erst zum NPC machen.
+      ...personen
+        .filter((p) => !p.istNebenfigur)
+        .map((p) => ({ wert: `person:${p.id}`, label: `${p.name} (${p.personType})` })),
       ...begleiter.map((b) => ({ wert: `begleiter:${b.id}`, label: `${b.name} (Begleiter)` })),
     ],
     [personen, begleiter],

@@ -27,6 +27,8 @@ import { PCKacheln } from "./PCKacheln";
 import { PCDetail } from "./PCDetail";
 import { NPCKacheln } from "./NPCKacheln";
 import { NPCDetail } from "./NPCDetail";
+import { NebenfigurKacheln } from "./NebenfigurKacheln";
+import { NebenfigurDetail } from "./NebenfigurDetail";
 import { OrtKacheln } from "./OrtKacheln";
 import { OrtDetail } from "./OrtDetail";
 import { EventKacheln } from "./EventKacheln";
@@ -73,7 +75,7 @@ const textInputStyle: React.CSSProperties = { fontSize: "1rem", padding: "8px 10
  * kompatibilität für die bisherige Gesamtansicht erhalten; die Shell nutzt
  * die fünf fokussierten Varianten.
  */
-export type WeltAnsicht = "welt" | "pcs" | "npcs" | "orte" | "events" | "fraktionen" | "verbindungen";
+export type WeltAnsicht = "welt" | "pcs" | "npcs" | "nebenfiguren" | "orte" | "events" | "fraktionen" | "verbindungen";
 
 // Gebündelter State für die Felder, die Personen/Orte/Events gemeinsam haben:
 // Rich-Text-Beschreibung + Notizen, je mit eigener Sichtbarkeit.
@@ -180,6 +182,12 @@ export function EntityManager({
   rastenVersion?: number;
 }) {
   const [personen, setPersonen] = useState<Person[]>([]);
+  // Alle Personen ungefiltert — für Namen in Beziehungen und die Auswahl-
+  // listen. `personen` ist in den PC/NPC/Nebenfiguren-Bereichen nach Typ
+  // gefiltert; ohne diese zweite Liste fehlten dort Beziehungen zur jeweils
+  // anderen Art (NPC→PC, Nebenfigur→NPC), weil beziehungsZeilen() Zeilen ohne
+  // Namen auslässt (10.11.2026, beim Bau der Nebenfiguren gefunden).
+  const [allePersonen, setAllePersonen] = useState<Person[]>([]);
   const [orte, setOrte] = useState<Ort[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [fraktionen, setFraktionen] = useState<Fraktion[]>([]);
@@ -197,6 +205,7 @@ export function EntityManager({
   // Such-/Sortier-/Beziehungsfilter, je Bereich getrennt. Getrennt, damit ein
   // Wechsel von NPCs zu Orten nicht die dort gesetzte Suche mitschleppt.
   const [npcFilter, setNpcFilter] = useState<ListenFilter>({});
+  const [nebenfigurFilter, setNebenfigurFilter] = useState<ListenFilter>({});
   const [ortFilter, setOrtFilter] = useState<ListenFilter>({ sortierung: "verbindungen" });
   const [eventFilter, setEventFilter] = useState<ListenFilter>({});
   const [fraktionFilter, setFraktionFilter] = useState<ListenFilter>({});
@@ -206,7 +215,9 @@ export function EntityManager({
   // Trefferzahl der Filterleiste nicht mit der Liste überein.
   const aktiverFilter: ListenFilter =
     ansicht === "npcs"
-      ? { ...npcFilter, personType: "NPC" }
+      ? { ...npcFilter, personType: "NPC", istNebenfigur: false }
+      : ansicht === "nebenfiguren"
+        ? { ...nebenfigurFilter, personType: "NPC", istNebenfigur: true }
       : ansicht === "pcs"
         ? { personType: "PC" }
         : ansicht === "orte"
@@ -225,9 +236,11 @@ export function EntityManager({
     setLaedt(true);
     try {
       const filter: ListenFilter = JSON.parse(filterSchluessel);
-      const personenFilter = ansicht === "pcs" || ansicht === "npcs" ? filter : {};
-      const [p, o, e, f, v, graph, sp, einst, party] = await Promise.all([
+      const personenGefiltert = ansicht === "pcs" || ansicht === "npcs" || ansicht === "nebenfiguren";
+      const personenFilter = personenGefiltert ? filter : {};
+      const [p, alle, o, e, f, v, graph, sp, einst, party] = await Promise.all([
         entitiesApi.listPersonen(campaignId, personenFilter),
+        personenGefiltert ? entitiesApi.listPersonen(campaignId) : Promise.resolve(null),
         entitiesApi.listOrte(campaignId, ansicht === "orte" ? filter : {}),
         entitiesApi.listEvents(campaignId, ansicht === "events" ? filter : {}),
         entitiesApi.listFraktionen(campaignId, ansicht === "fraktionen" ? filter : {}),
@@ -238,6 +251,7 @@ export function EntityManager({
         partyApi.liste(campaignId).catch(() => [] as Party[]),
       ]);
       setPersonen(p);
+      setAllePersonen(alle ?? p);
       setOrte(o);
       setEvents(e);
       setFraktionen(f);
@@ -281,9 +295,9 @@ export function EntityManager({
     setter((liste) => liste.map((item) => (item.id === id ? { ...item, ...felder } : item)));
   }
 
-  const personenById = new Map(personen.map((p) => [p.id, p.name]));
-  const pcOptions: PersonOption[] = personen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
-  const alleOptionen: PersonOption[] = personen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
+  const personenById = new Map(allePersonen.map((p) => [p.id, p.name]));
+  const pcOptions: PersonOption[] = allePersonen.filter((p) => p.personType === "PC").map((p) => ({ id: p.id, name: p.name }));
+  const alleOptionen: PersonOption[] = allePersonen.map((p) => ({ id: p.id, name: `${p.name} (${p.personType})` }));
   // Spieler-Map: personId -> Spielername (für PC-Kacheln)
   const spielerMap = new Map(
     spieler.filter((s) => s.personId).map((s) => [s.personId!, s.benutzername])
@@ -307,14 +321,14 @@ export function EntityManager({
   // unsichtbare Entität fehlt in der Tabelle und damit auch in der Liste.
   const namensTabelle = useMemo(() => {
     const tabelle = new Map<string, { name: string; kind: EntityKind }>();
-    for (const p of personen) tabelle.set(p.id, { name: p.name, kind: "Person" });
+    for (const p of allePersonen) tabelle.set(p.id, { name: p.name, kind: "Person" });
     for (const o of orte) tabelle.set(o.id, { name: o.name, kind: "Ort" });
     for (const ev of events) tabelle.set(ev.id, { name: ev.title, kind: "Event" });
     for (const fr of fraktionen) tabelle.set(fr.id, { name: fr.name, kind: "Fraktion" });
     for (const g of graphGegenstaende) tabelle.set(g.id, { name: g.label, kind: "Gegenstand" });
     for (const party of partys) tabelle.set(party.id, { name: party.name, kind: "Party" });
     return tabelle;
-  }, [personen, orte, events, fraktionen, graphGegenstaende, partys]);
+  }, [allePersonen, orte, events, fraktionen, graphGegenstaende, partys]);
 
   // --- Person ---
   const [personName, setPersonName] = useState("");
@@ -332,6 +346,9 @@ export function EntityManager({
   // PC-Detail-Popup für die Kachel-Ansicht
   const [pcDetailFuer, setPcDetailFuer] = useState<Person | null>(null);
   const [npcDetailFuer, setNpcDetailFuer] = useState<Person | null>(null);
+  const [nebenfigurDetailFuer, setNebenfigurDetailFuer] = useState<Person | null>(null);
+  const [neueNebenfigurOffen, setNeueNebenfigurOffen] = useState(false);
+  const [neueNebenfigurName, setNeueNebenfigurName] = useState("");
   // Neuer PC anlegen (Name-Eingabe-Popup)
   const [neuerPCOffen, setNeuerPCOffen] = useState(false);
   const [neuerPCName, setNeuerPCName] = useState("");
@@ -370,6 +387,9 @@ export function EntityManager({
     : null;
   const offenerNPC = npcDetailFuer
     ? (personen.find((p) => p.id === npcDetailFuer.id) ?? npcDetailFuer)
+    : null;
+  const offeneNebenfigur = nebenfigurDetailFuer
+    ? (personen.find((p) => p.id === nebenfigurDetailFuer.id) ?? nebenfigurDetailFuer)
     : null;
   const offenerOrt = ortDetailFuer ? (orte.find((o) => o.id === ortDetailFuer.id) ?? ortDetailFuer) : null;
   const offenesEvent = eventDetailFuer ? (events.find((e) => e.id === eventDetailFuer.id) ?? eventDetailFuer) : null;
@@ -481,6 +501,27 @@ export function EntityManager({
     setNeuerNPCOffen(false);
     await refreshAll();
   }
+  async function erstelleNeueNebenfigur(e: FormEvent) {
+    e.preventDefault();
+    if (!neueNebenfigurName.trim()) return;
+    const neu = await entitiesApi.createPerson(campaignId, {
+      name: neueNebenfigurName.trim(),
+      personType: "NPC",
+      istNebenfigur: true,
+      // Nebenfiguren haben nie einen Bogen — keine Ersterstellung.
+      erstellungAbgeschlossen: true,
+      description: "",
+      notes: "",
+      sichtbarkeit: "ALLE",
+      sichtbarFuer: [],
+      notizenSichtbarkeit: "GM",
+      notizenSichtbarFuer: [],
+    });
+    setNeueNebenfigurName("");
+    setNeueNebenfigurOffen(false);
+    await refreshAll();
+    setNebenfigurDetailFuer(neu);
+  }
   async function submitPerson(e: FormEvent) {
     e.preventDefault();
     await entitiesApi.createPerson(campaignId, {
@@ -560,8 +601,10 @@ export function EntityManager({
     ansicht === "pcs"
       ? personen.filter((p) => p.personType === "PC")
       : ansicht === "npcs"
-        ? personen.filter((p) => p.personType === "NPC")
-        : personen;
+        ? personen.filter((p) => p.personType === "NPC" && !p.istNebenfigur)
+        : ansicht === "nebenfiguren"
+          ? personen.filter((p) => p.istNebenfigur)
+          : personen;
   const zeigeOrte = ansicht === "welt" || ansicht === "orte";
   const zeigeEvents = ansicht === "welt" || ansicht === "events";
   const zeigeVerbindungen = ansicht === "welt" || ansicht === "verbindungen";
@@ -574,8 +617,8 @@ export function EntityManager({
         ? "Noch keine Nichtspielercharaktere angelegt."
         : "Noch keine Personen angelegt.";
 
-  const titel = ansicht === "pcs" ? "Spielercharaktere" : ansicht === "npcs" ? "Nichtspielercharaktere" : ansicht === "orte" ? "Orte" : ansicht === "events" ? "Events" : ansicht === "verbindungen" ? "Verbindungen" : "Welt";
-  const status = ansicht === "pcs" ? `${personenInAnsicht.length} PCs` : ansicht === "npcs" ? `${personenInAnsicht.length} NPCs` : ansicht === "orte" ? `${orte.length} Orte` : ansicht === "events" ? `${events.length} Events` : ansicht === "verbindungen" ? `${verbindungen.length} Verbindungen` : `${personen.length} Personen · ${orte.length} Orte · ${events.length} Events`;
+  const titel = ansicht === "pcs" ? "Spielercharaktere" : ansicht === "npcs" ? "Nichtspielercharaktere" : ansicht === "nebenfiguren" ? "Nebenfiguren" : ansicht === "orte" ? "Orte" : ansicht === "events" ? "Events" : ansicht === "verbindungen" ? "Verbindungen" : "Welt";
+  const status = ansicht === "pcs" ? `${personenInAnsicht.length} PCs` : ansicht === "npcs" ? `${personenInAnsicht.length} NPCs` : ansicht === "nebenfiguren" ? `${personenInAnsicht.length} Nebenfiguren` : ansicht === "orte" ? `${orte.length} Orte` : ansicht === "events" ? `${events.length} Events` : ansicht === "verbindungen" ? `${verbindungen.length} Verbindungen` : `${personen.length} Personen · ${orte.length} Orte · ${events.length} Events`;
   const istNurEineAnsicht = ansicht !== "welt";
 
   // Ist gerade gefiltert? Entscheidet, ob "nichts angelegt" oder "nichts
@@ -584,6 +627,7 @@ export function EntityManager({
     return Boolean(f.suche?.trim() || f.verbundenMit || f.verbindungsTyp);
   }
   const istNpcGefiltert = gefiltert(npcFilter);
+  const istNebenfigurGefiltert = gefiltert(nebenfigurFilter);
   const istOrtGefiltert = gefiltert(ortFilter);
   const istEventGefiltert = gefiltert(eventFilter);
   const istFraktionGefiltert = gefiltert(fraktionFilter);
@@ -700,6 +744,30 @@ export function EntityManager({
               }}
             >
               + Neuer NPC
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Nebenfiguren-Ansicht (10.11.2026): eigener Kopf mit Neue-Nebenfigur-Button */}
+      {ansicht === "nebenfiguren" && (
+        <div style={kopfStyle}>
+          <h2 style={{ marginBottom: 8 }}>{titel}</h2>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
+            <button
+              type="button"
+              onClick={() => setNeueNebenfigurOffen(true)}
+              style={{
+                padding: "8px 16px",
+                background: "color-mix(in srgb, var(--bereich-npcs, var(--neon)) 20%, transparent)",
+                border: "1px solid var(--bereich-npcs, var(--neon))",
+                borderRadius: "var(--radius)",
+                color: "var(--bereich-npcs, var(--neon))",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Neue Nebenfigur
             </button>
           </div>
         </div>
@@ -844,7 +912,7 @@ export function EntityManager({
         </div>
       )}
       {/* Andere Ansichten: normaler Kopf */}
-      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "orte" && ansicht !== "events" && ansicht !== "fraktionen" && ansicht !== "verbindungen" && (
+      {istNurEineAnsicht && ansicht !== "pcs" && ansicht !== "npcs" && ansicht !== "nebenfiguren" && ansicht !== "orte" && ansicht !== "events" && ansicht !== "fraktionen" && ansicht !== "verbindungen" && (
         <div style={kopfStyle}>
           <h2 style={{ marginBottom: 8 }}>{titel}</h2>
           <span className="mono" style={{ color: "var(--text-leise)", fontSize: "0.82em" }}>{status}</span>
@@ -860,6 +928,17 @@ export function EntityManager({
           personType="NPC"
           filter={npcFilter}
           onFilter={setNpcFilter}
+          trefferzahl={personenInAnsicht.length}
+          farbe="var(--bereich-npcs, var(--neon))"
+        />
+      )}
+      {ansicht === "nebenfiguren" && (
+        <Filterleiste
+          campaignId={campaignId}
+          art="personen"
+          personType="NPC"
+          filter={nebenfigurFilter}
+          onFilter={setNebenfigurFilter}
           trefferzahl={personenInAnsicht.length}
           farbe="var(--bereich-npcs, var(--neon))"
         />
@@ -953,6 +1032,22 @@ export function EntityManager({
                 : istNpcGefiltert
                   ? "Kein NPC passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
                   : "Noch keine Nichtspielercharaktere angelegt. Oben rechts anlegen."
+            }
+          />
+        </section>
+      )}
+
+      {ansicht === "nebenfiguren" && (
+        <section style={sectionStyle}>
+          <NebenfigurKacheln
+            figuren={personenInAnsicht}
+            onKlick={(p) => setNebenfigurDetailFuer(p)}
+            leertext={
+              laedt
+                ? "Lädt…"
+                : istNebenfigurGefiltert
+                  ? "Keine Nebenfigur passt zu dieser Auswahl. Filter zurücksetzen oder anders suchen."
+                  : "Noch keine Nebenfiguren. Oben rechts anlegen — oder Spieler befüllen ihre Kontakte-Plätze."
             }
           />
         </section>
@@ -1269,6 +1364,21 @@ export function EntityManager({
         />
       )}
 
+      {/* Nebenfigur-Detail-Popup */}
+      {offeneNebenfigur && (
+        <NebenfigurDetail
+          key={offeneNebenfigur.id}
+          campaignId={campaignId}
+          person={offeneNebenfigur}
+          verbindungen={verbindungen}
+          namen={namensTabelle}
+          pcOptions={pcOptions}
+          onSchliessen={() => setNebenfigurDetailFuer(null)}
+          onGeaendert={refreshAll}
+          onLokalAktualisiert={(felder) => lokalPatchen(setPersonen, offeneNebenfigur.id, felder)}
+        />
+      )}
+
       {/* Ort-Detail-Popup — offenerOrt statt ortDetailFuer, damit es nach dem
           Speichern den frischen Stand zeigt und nicht die alten Werte. */}
       {offenerOrt && (
@@ -1533,6 +1643,32 @@ export function EntityManager({
         </form>
       </Fenster>
 
+      {/* Neue Nebenfigur anlegen */}
+      <Fenster
+        offen={neueNebenfigurOffen}
+        titel="Neue Nebenfigur"
+        unterzeile="Ohne Charakterbogen und Inventar — Rest im Detail"
+        kennung="neue-nebenfigur"
+        onSchliessen={() => {
+          setNeueNebenfigurOffen(false);
+          setNeueNebenfigurName("");
+        }}
+      >
+        <form onSubmit={erstelleNeueNebenfigur} className="nf-formular">
+          <input
+            type="text"
+            value={neueNebenfigurName}
+            onChange={(e) => setNeueNebenfigurName(e.target.value)}
+            placeholder="Name"
+            autoFocus
+            required
+          />
+          <button type="submit" className="nf-formular-knopf">
+            Nebenfigur anlegen
+          </button>
+        </form>
+      </Fenster>
+
       {/* EP-Bestätigungsdialoge */}
       {epKampagneBestaetigung && (
         <Bestaetigung
@@ -1566,8 +1702,8 @@ export function EntityManager({
       )}
       <NpcCatchupPopup
         offen={catchupOffen}
-        npcs={personen.filter((p) => p.personType === "NPC")}
-        pcs={personen.filter((p) => p.personType === "PC")}
+        npcs={allePersonen.filter((p) => p.personType === "NPC" && !p.istNebenfigur)}
+        pcs={allePersonen.filter((p) => p.personType === "PC")}
         campaignId={campaignId}
         onSchliessen={() => {
           setCatchupOffen(false);

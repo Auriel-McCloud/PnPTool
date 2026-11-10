@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import require_campaign_gm
 from app.campaigns.repository import get_campaign, get_einstellungen
-from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node, get_node
+from app.entities.repository import EVENT_FIELDS, FRAKTION_FIELDS, ORT_FIELDS, PERSON_FIELDS, create_node, get_node, update_node
 from app.entities.schemas import EventCreate, FraktionCreate, KurzLangEintrag, OrtCreate, PersonCreate
 from app.haendler import ki_einkauf
 from app.haendler import repository as haendler_repository
@@ -76,6 +76,7 @@ from app.ki.wiki_import import (
     ImportAntwort,
     importiere as wiki_importiere,
 )
+from app.nebenfiguren.logic import nebenfaehigkeiten_text
 from app.rassen import repository as rassen_repository
 from app.regeln.vorlagen import archetyp_namen, nur_archetyp
 from app.traits import erstellung
@@ -740,8 +741,15 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
     return await _idee_anlegen(campaign_id, body.typ, prompt)
 
 
-async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
-    """Gemeinsamer Anlege-Pfad für ✨ KI und für „Entwurf aus Beratung“."""
+async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: dict | None = None) -> dict:
+    """Gemeinsamer Anlege-Pfad für ✨ KI und für „Entwurf aus Beratung“.
+
+    ``nebenfigur`` (nur typ ``charakter``, 10.11.2026): statt einen neuen NPC
+    anzulegen, bekommt diese bestehende Nebenfigur in-place einen vollen
+    Bogen — Name, Beschreibung, Notizen, Bilder, Beziehungen, Kontakte
+    bleiben. Rasse ist fix, die freien Fähigkeiten steuern die Auswahl der
+    Katalog-Fertigkeiten (siehe nebenfiguren/routes.py::zu_npc_machen).
+    """
     try:
         if typ == "story":
             kontext = await sammle_kontext(campaign_id)
@@ -981,6 +989,9 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         rasse_name = (konzept.get("rasse") or "").strip()
         if rasse_name not in rassen:
             rasse_name = next(iter(rassen), "Mensch")
+        # Nebenfigur: die Rasse steht schon fest, die KI darf sie nicht tauschen.
+        if nebenfigur and (nebenfigur.get("rasse") or "") in rassen:
+            rasse_name = nebenfigur["rasse"]
         weg, magie_flavor = erstellung.normalisiere_weg(konzept.get("weg") or "KEINER")
         if weg not in ("KEINER", "MAGIER", "NEUROWEAVER"):
             weg = "KEINER"
@@ -1052,6 +1063,14 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             "(Attribute, Fertigkeiten, Hintergründe oder \"Willenskraft\") — reicht das Budget nicht "
             "für alle, werden die hinteren automatisch gestrichen."
         )
+        if nebenfigur:
+            faehigkeiten = nebenfaehigkeiten_text(nebenfigur.get("nebenfaehigkeiten"))
+            if faehigkeiten:
+                prompt2 += (
+                    "\n\nDiese Figur hatte bisher nur freie, feste Fähigkeiten (Freitext, kein Katalog): "
+                    f"{faehigkeiten}. Wähle für jede die inhaltlich passendste Fertigkeit aus der Liste oben "
+                    "als Entsprechung und setze sie in fertigkeitenReihenfolge nach vorne — höchster Wert zuerst."
+                )
         if braucht_magie_bonus_feld:
             prompt2 += (
                 f"\n\nmagieBonusNutzen: true, wenn der einzige 1er-Slot des Profi-Pakets statt einer "
@@ -1117,31 +1136,60 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
         beschreibung = (konzept.get("beschreibung") or "").strip()
         vermoegen, schulden = erstellung.kapital(auswahl)
         werte = erstellung.wende_gratis_fertigkeit_an(werte, rassen.get(rasse_name, {}) or {}, katalog)
-        person = await create_node(
-            "Person",
-            PERSON_FIELDS,
-            campaign_id,
-            PersonCreate(
-                name=name,
-                personType="NPC",
-                description=beschreibung,
-                notes=(konzept.get("notizen") or "").strip(),
-                konzept=(konzept.get("konzept") or "").strip(),
-                alter=(konzept.get("alter") or "").strip(),
-                ambition=nur_archetyp(konzept.get("ambition"), archetypen),
-                verlangen=nur_archetyp(konzept.get("verlangen"), archetypen),
-                ziel=(konzept.get("ziel") or "").strip(),
-                rasse=rasse_name,
-                weg=weg,
-                magieFlavor=magie_flavor if magie_flavor in ("MAGIER", "HAERETIKER") else "MAGIER",
-                kapital=vermoegen,
-                schulden=schulden,
-                willenskraftBonus=int(auswahl.get("freebeeWillenskraft") or 0),
-                erstellungAbgeschlossen=True,
-                istEntwurf=True,
-                sichtbarkeit="GM",
-            ).model_dump(),
-        )
+        if nebenfigur:
+            # In-place: Name/Beschreibung/Notizen/Bilder/Kanten bleiben, nur der
+            # Bogen kommt dazu. Leeres Alter darf die KI füllen.
+            person = await update_node(
+                "Person",
+                PERSON_FIELDS,
+                campaign_id,
+                nebenfigur["id"],
+                {
+                    "personType": "NPC",
+                    "istNebenfigur": False,
+                    "konzept": (konzept.get("konzept") or "").strip(),
+                    "alter": (nebenfigur.get("alter") or "").strip() or (konzept.get("alter") or "").strip(),
+                    "ambition": nur_archetyp(konzept.get("ambition"), archetypen),
+                    "verlangen": nur_archetyp(konzept.get("verlangen"), archetypen),
+                    "ziel": (konzept.get("ziel") or "").strip(),
+                    "rasse": rasse_name,
+                    "weg": weg,
+                    "magieFlavor": magie_flavor if magie_flavor in ("MAGIER", "HAERETIKER") else "MAGIER",
+                    "kapital": vermoegen,
+                    "schulden": schulden,
+                    "willenskraftBonus": int(auswahl.get("freebeeWillenskraft") or 0),
+                    "erstellungAbgeschlossen": True,
+                },
+            )
+            if person is None:
+                raise HTTPException(status_code=404, detail="Nebenfigur nicht gefunden")
+            name = person.get("name") or name
+        else:
+            person = await create_node(
+                "Person",
+                PERSON_FIELDS,
+                campaign_id,
+                PersonCreate(
+                    name=name,
+                    personType="NPC",
+                    description=beschreibung,
+                    notes=(konzept.get("notizen") or "").strip(),
+                    konzept=(konzept.get("konzept") or "").strip(),
+                    alter=(konzept.get("alter") or "").strip(),
+                    ambition=nur_archetyp(konzept.get("ambition"), archetypen),
+                    verlangen=nur_archetyp(konzept.get("verlangen"), archetypen),
+                    ziel=(konzept.get("ziel") or "").strip(),
+                    rasse=rasse_name,
+                    weg=weg,
+                    magieFlavor=magie_flavor if magie_flavor in ("MAGIER", "HAERETIKER") else "MAGIER",
+                    kapital=vermoegen,
+                    schulden=schulden,
+                    willenskraftBonus=int(auswahl.get("freebeeWillenskraft") or 0),
+                    erstellungAbgeschlossen=True,
+                    istEntwurf=True,
+                    sichtbarkeit="GM",
+                ).model_dump(),
+            )
         await set_ratings_bulk(campaign_id, person["id"], werte)
         await setze_maxima_bulk(
             campaign_id, person["id"], erstellung.lebensmaxima(rasse_name, katalog, rassen)
@@ -1168,7 +1216,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str) -> dict:
             )
 
         await hooks.ki(
-            campaign_id, anlass="idee-charakter", prompt=prompt,
+            campaign_id, anlass="nebenfigur-zu-npc" if nebenfigur else "idee-charakter", prompt=prompt,
             antwort_text=name, uebernommen=True, betrifft_id=person["id"],
         )
         return {"typ": "charakter", "id": person["id"], "name": name, "traits": len(werte)}

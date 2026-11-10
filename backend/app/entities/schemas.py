@@ -25,6 +25,16 @@ class KurzLangEintrag(BaseModel):
     beschreibung: str = ""
 
 
+class Nebenfaehigkeit(BaseModel):
+    """Freie Fähigkeit einer Nebenfigur (10.11.2026, Mark): fester Wert statt
+    Charakterbogen, z.B. „Straßenwissen 4“, „Feilschen 3“. Name ist Freitext —
+    kein Bezug auf den Fertigkeitenkatalog. Beim Umwandeln in einen vollen NPC
+    sucht die KI die passende Katalog-Fertigkeit aus (siehe
+    nebenfiguren/routes.py::zu_npc_machen)."""
+    name: str = ""
+    wert: int = 0
+
+
 class SichtbarkeitInput(BaseModel):
     modus: SichtbarkeitModus = "GM"
     sichtbarFuer: list[str] = []
@@ -193,6 +203,16 @@ class PersonCreate(BaseModel):
     # kontakt_generieren), statt alle Kontakte schon bei der Erstellung
     # festlegen zu müssen.
     istBlankoKontakt: bool = False
+    # Nebenfigur (10.11.2026, Marks Konzept, docs/wiki/entities/nebenfiguren.md):
+    # Kontakte, Familie eines NPCs usw. — Person OHNE Charakterbogen und
+    # Inventar, eigenes Burgermenü statt NPC-Liste, kein Kampf. Hat Rasse,
+    # Alter, Beschreibung, Notizen, Bilder, Beziehungen, eine kurze
+    # Persönlichkeit („Leitwolf“, „Angsthase“) und freie feste Fähigkeiten.
+    # Einbahnstraße: „Zu NPC machen“ setzt das Flag auf false und lässt die KI
+    # einen Bogen bauen — zurück geht es nicht.
+    istNebenfigur: bool = False
+    persoenlichkeit: str = ""
+    nebenfaehigkeiten: list[Nebenfaehigkeit] = []
     # Vorgefertigte Charaktere (08.10.2026, Mark: Checkbox statt impliziter
     # Ableitung): bisher galt JEDER abgeschlossene PC ohne Spieler automatisch
     # als "vorgefertigt" im Ersteinstiegs-Fenster (players/SpielerEinstieg.tsx)
@@ -326,6 +346,10 @@ class PersonUpdate(BaseModel):
     istKredithai: bool | None = None
     istMentor: bool | None = None
     istBlankoKontakt: bool | None = None
+    # Nur Nebenfigur-Felder. istNebenfigur selbst gibt es hier bewusst NICHT:
+    # die Einbahnstraße zum NPC läuft nur über POST .../nebenfiguren/{id}/zu-npc.
+    persoenlichkeit: str | None = None
+    nebenfaehigkeiten: list[Nebenfaehigkeit] | None = None
     istVorgefertigt: bool | None = None
     vorgefertigtSignifikanz: VorgefertigtSignifikanz | None = None
     spezialisierung: list[str] | None = None
@@ -409,6 +433,9 @@ class PersonResponse(BaseModel):
     istKredithai: bool = False
     istMentor: bool = False
     istBlankoKontakt: bool = False
+    istNebenfigur: bool = False
+    persoenlichkeit: str = ""
+    nebenfaehigkeiten: list[Nebenfaehigkeit] = []
     istVorgefertigt: bool = False
     vorgefertigtSignifikanz: VorgefertigtSignifikanz = "normal"
     spezialisierung: list[str] = []

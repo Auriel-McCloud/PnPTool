@@ -70,7 +70,7 @@ _BOGEN_FELDER = [
 # Spielleitung kann es per Blitz an alle schicken ("so sieht er aus").
 # bilder: Bildergalerie mit mehreren Bildern und Primär-Flag
 # istEntwurf: Markiert Einträge in der Ideenschmiede (noch nicht Teil der Kampagne)
-PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istGross", "istVorlage", "istAeon", "istKredithai", "istMentor", "istBlankoKontakt", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
+PERSON_FIELDS = ["name", "personType", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istCritter", "istKI", "istDrohne", "istFahrzeug", "riggerAktiv", "upgradeSlots", "istHaendler", "istTutorialHaendler", "bietetReparatur", "istPflanzenCritter", "gesundheitGrundwert", "istEndboss", "istGross", "istVorlage", "istAeon", "istKredithai", "istMentor", "istBlankoKontakt", "istNebenfigur", "persoenlichkeit", "nebenfaehigkeiten", "istVorgefertigt", "vorgefertigtSignifikanz", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "kapitalBasis", "tutorialAusgegeben", "gratisGegenstandErhalten", "rassenFeatureGenutzt", *_BOGEN_FELDER, *_VISIBILITY_FIELDS]
 # spotifyPlaylist{Uri,Name,Bild}: siehe app/spotify/ — Playlist, die beim
 # Wechsel der aktiven Party an diesen Ort startet.
 ORT_FIELDS = ["name", "description", "notes", "bildUrl", "bilder", "istEntwurf", "istShop", "spezialisierung", "vertriebsart", "shopHintergrundUrl", "istTutorialShop", "spotifyPlaylistUri", "spotifyPlaylistName", "spotifyPlaylistBild", "versteckVonPersonIds", *_VISIBILITY_FIELDS]
@@ -147,6 +147,11 @@ _BOGEN_DEFAULTS: dict = {
     # noch nicht — ohne Ersatz scheitert GET /personen (Stolperstein 9).
     "istMentor": False,
     "istBlankoKontakt": False,
+    # Nebenfigur (10.11.2026): Bestandsdaten kennen die Felder nicht
+    # (Stolperstein 9).
+    "istNebenfigur": False,
+    "persoenlichkeit": "",
+    "nebenfaehigkeiten": [],
     # Vorgefertigte Charaktere (08.10.2026): Bestandsdaten kennen das Feld
     # noch nicht (Stolperstein 9) — Migration 009 setzt den echten Wert für
     # alle Bestands-PCs, dieser Fallback bleibt nur als Netz.
@@ -355,6 +360,14 @@ def _mit_defaults(record: dict) -> dict:
         except (json.JSONDecodeError, TypeError):
             daten["ressourcen"] = []
 
+    # nebenfaehigkeiten (Nebenfigur) aus JSON-String parsen ({name, wert})
+    if "nebenfaehigkeiten" in daten and isinstance(daten["nebenfaehigkeiten"], str):
+        import json
+        try:
+            daten["nebenfaehigkeiten"] = json.loads(daten["nebenfaehigkeiten"])
+        except (json.JSONDecodeError, TypeError):
+            daten["nebenfaehigkeiten"] = []
+
     return daten
 
 
@@ -370,7 +383,7 @@ async def create_node(label: str, fields: list[str], campaign_id: str, data: dic
     # Anlegen mit einem Neo4j-TypeError scheiterte, während eine leer
     # angelegte und später per PATCH befüllte Fraktion nie betroffen war.
     daten = dict(data)
-    for feld in ("bilder", "ziele", "ressourcen"):
+    for feld in ("bilder", "ziele", "ressourcen", "nebenfaehigkeiten"):
         if feld in daten and isinstance(daten[feld], list):
             daten[feld] = json.dumps(daten[feld])
 
@@ -434,6 +447,9 @@ async def update_node(label: str, fields: list[str], campaign_id: str, node_id: 
     # ressourcen-Liste ebenfalls als JSON-String
     if "ressourcen" in changed and isinstance(changed["ressourcen"], list):
         changed["ressourcen"] = json.dumps(changed["ressourcen"])
+    # nebenfaehigkeiten (Nebenfigur) ebenfalls als JSON-String ({name, wert})
+    if "nebenfaehigkeiten" in changed and isinstance(changed["nebenfaehigkeiten"], list):
+        changed["nebenfaehigkeiten"] = json.dumps(changed["nebenfaehigkeiten"])
     
     if not changed:
         return await get_node(label, fields, campaign_id, node_id)

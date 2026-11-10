@@ -23,6 +23,7 @@ from app.hintergruende import repository as hintergruende_repository
 from app.hintergruende.mentor_ep import ep_ausgeben as mentor_ep_ausgeben
 from app.traits.autosteigerung import mentor_ep
 from app.ki.routes import _idee_anlegen as ki_charakter_generieren
+from app.nebenfiguren.ki import nebenfigur_generieren
 from app.kontakte import repository
 from app.mitteilungen import repository as mitteilungen_repo
 from app.mitteilungen.verteiler import verteiler
@@ -242,6 +243,11 @@ async def kontakt_generieren(
     voll ausgearbeiteter NPC (inkl. Tutorial-Shop-Einkauf, derselbe Flow wie
     die Ideenschmiede-Charaktererstellung) bekommt die KENNT-Kante, der alte
     Platzhalter verschwindet.
+
+    Seit 10.11.2026 (Mark): nur Mentoren werden volle NPCs. Ein normaler
+    Kontakt wird als Nebenfigur angelegt (ein KI-Aufruf, kein Bogen, kein
+    Einkauf, eigenes Burgermenü) — die SL kann ihn später per „Zu NPC
+    machen“ hochstufen.
     """
     roh = await _kontakt_oder_404(campaign_id, kontakt_id, viewer)
     npc = await entities_repository.get_node("Person", PERSON_FIELDS, campaign_id, roh["npcId"])
@@ -266,10 +272,13 @@ async def kontakt_generieren(
         )
     else:
         prompt = (
-            f"Erzeuge einen Kontakt-NPC für {roh.get('pcName') or 'den Charakter'} — "
+            f"Erzeuge einen Kontakt für {roh.get('pcName') or 'den Charakter'} — "
             f"Wunsch des Spielers, wer/was dieser Kontakt sein soll: {wunsch}"
         )
-    erzeugt = await ki_charakter_generieren(campaign_id, "charakter", prompt)
+    if ist_mentor:
+        erzeugt = await ki_charakter_generieren(campaign_id, "charakter", prompt)
+    else:
+        erzeugt = await nebenfigur_generieren(campaign_id, prompt)
 
     neuer_kontakt = await repository.anlegen(
         campaign_id, roh["pcId"], erzeugt["id"], stufe="GESPROCHEN", chat_offen=True
