@@ -137,6 +137,12 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   lässt ihn mit Schwung fliegen; seitlich raus = er wandert zum nächsten
   Tablet.
 
+## Nebenbei gefunden 11.11.2026
+
+Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur
+Sprite/Geist-Begleiter). Behoben: eigene Critter erscheinen dort als Kachel
+mit lesbarem Charakterblatt (`GET …/critter/meine`, CLAUDE.md).
+
 ## Noch offen
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?

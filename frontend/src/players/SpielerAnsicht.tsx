@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entitiesApi, type Person } from "../entities/api";
+import { entitiesApi, type CritterEintrag, type Person } from "../entities/api";
 import { CampaignGraphView } from "../graph/CampaignGraphView";
 import { WikiAnsicht } from "../wiki/WikiAnsicht";
 import { MitteilungenAnbieter } from "../mitteilungen/MitteilungenKontext";
@@ -33,6 +33,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { useNachladen } from "../shell/nachladen";
 import { Verwundung, useZustand } from "../shell/Verwundung";
 import { BegleiterKachel } from "../begleiter/BegleiterKachel";
+import { CritterKachel } from "../begleiter/CritterKachel";
 import { Fachfenster } from "../items/Fachfenster";
 import { OrtFachFenster } from "../items/OrtFachFenster";
 import { KategorienAuswahl, vorhandeneTypenSortiert } from "../items/KategorienAuswahl";
@@ -196,6 +197,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
   void personen; // TypeScript: wird für den Graphen bereitgehalten
   const [sachen, setSachen] = useState<GegenstandMitBesitzer[]>([]);
   const [begleiter, setBegleiter] = useState<Begleiter[]>([]);
+  // Eigene Critter (11.11.2026): der Bereich zeigte bis dahin nur Begleiter-
+  // Knoten, ein zugeordneter Critter tauchte nie auf.
+  const [critter, setCritter] = useState<CritterEintrag[]>([]);
   const [kontakte, setKontakte] = useState<Kontakt[]>([]);
   // Für den Bestätigungsdialog beim Einsetzen von Augments.
   const [augmentFrage, setAugmentFrage] = useState<string | null>(null);
@@ -292,18 +296,20 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     async () => {
       const cid = ich?.campaignId;
       if (!cid) throw new Error("keine Kampagne");
-      const [sachen, last, begleiter, parteien] = await Promise.all([
+      const [sachen, last, begleiter, parteien, critter] = await Promise.all([
         itemsApi.listAlle(cid),
         itemsApi.traglast(cid),
         begleiterApi.liste(cid),
         partyApi.liste(cid),
+        entitiesApi.meineCritter(cid).catch(() => [] as CritterEintrag[]),
       ]);
-      return { sachen, last, begleiter, parteien };
+      return { sachen, last, begleiter, parteien, critter };
     },
     (frisch) => {
       setSachen(frisch.sachen);
       setTraglast(frisch.last);
       setBegleiter(frisch.begleiter);
+      setCritter(frisch.critter);
       const eigenePartei = frisch.parteien.find((p) => p.mitglieder.some((m) => m.id === ich?.personId));
       setMeinePartyOrt(
         eigenePartei?.aufenthaltsortKind === "Ort" && eigenePartei.aufenthaltsortId && eigenePartei.aufenthaltsortName
@@ -810,15 +816,18 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
       {bereich === "begleiter" && (
         <div className="gg-seite" style={KACHEL_STIL}>
           <h3 className="gg-abschnitt">
-            <span>❊ Sprites, Geister und Verbündete</span>
-            <span className="gg-abschnitt-zahl">{begleiter.length}</span>
+            <span>❊ Critter, Sprites, Geister und Verbündete</span>
+            <span className="gg-abschnitt-zahl">{begleiter.length + critter.length}</span>
           </h3>
           <div className="gg-raster" ref={begleiterRasterRef}>
+            {critter.map((c) => (
+              <CritterKachel key={c.id} campaignId={ich.campaignId} critter={c} />
+            ))}
             {begleiter.map((b) => (
               <BegleiterKachel key={b.id} begleiter={b} />
             ))}
           </div>
-          {begleiter.length === 0 && <p className="gg-leer">Dir steht noch niemand zur Seite.</p>}
+          {begleiter.length + critter.length === 0 && <p className="gg-leer">Dir steht noch niemand zur Seite.</p>}
         </div>
       )}
 

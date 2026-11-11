@@ -634,6 +634,40 @@ async def critter_besitzer_setzen(campaign_id: str, critter_id: str, person_id: 
         return dict(record) if record else None
 
 
+async def eigene_critter(campaign_id: str, person_id: str) -> list[dict]:
+    """Critter, die diesem Spielercharakter gehören — für den Begleiter-Bereich
+    der Spieleransicht (Mark, 11.11.2026: „Critter zugeordnet, wird bei seinen
+    Begleitern nicht angezeigt“ — der Bereich las bis dahin nur `Begleiter`-
+    Knoten, nie Critter).
+
+    Beide Besitzpfade wie `critter_besitzer` (siehe Sichtbarkeits-Regel):
+    direkte `BEGLEITET`-Kante ODER Besitz eines Ki-Tama mit
+    `beschworenerCritterId`. Die Critter-`sichtbarkeit` spielt keine Rolle —
+    der eigene Critter ist immer sichtbar.
+    """
+    driver = get_driver()
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        CALL (p) {
+            MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p)
+            RETURN n
+            UNION
+            MATCH (p)-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
+            WHERE g.beschworenerCritterId IS NOT NULL
+            MATCH (n:Person {id: g.beschworenerCritterId, campaignId: $campaign_id, istCritter: true})
+            RETURN n
+        }
+        RETURN DISTINCT n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
+               p.id AS besitzerId, p.name AS besitzerName,
+               coalesce(n.istVorlage, false) AS istVorlage,
+               coalesce(n.istAeon, false) AS istAeon
+        ORDER BY name
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+        return [dict(r) async for r in result]
+
+
 async def critter_von_besitzer(campaign_id: str, person_id: str) -> list[str]:
     """IDs aller Critter, die über eine `BEGLEITET`-Kante an diese Person
     gebunden sind — fürs automatische Mitrasten eines Beschwörungs-Ki-Tama-

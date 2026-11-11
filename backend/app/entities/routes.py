@@ -348,6 +348,15 @@ async def list_critter(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
     return sichtbar
 
 
+@router.get("/critter/meine", response_model=list[dict])
+async def meine_critter(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Die eigenen Critter des Spielercharakters (BEGLEITET oder Ki-Tama) —
+    unabhängig von ihrer Sichtbarkeit. SL ohne eigenen Charakter: leer."""
+    if not viewer.person_id:
+        return []
+    return await repository.eigene_critter(campaign_id, viewer.person_id)
+
+
 @router.post("/critter/{node_id}/besitzer", response_model=dict, dependencies=[Depends(require_campaign_gm)])
 async def critter_besitzer_setzen(campaign_id: str, node_id: str, body: dict):
     person_id = body.get("personId")

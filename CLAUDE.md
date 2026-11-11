@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Spieler sieht seine Critter bei den Begleitern (11.11.2026)
+
+Mark: Testcharakter hat einen Critter zugeordnet, der taucht bei seinen Begleitern nicht auf. Ursache: der Begleiter-Bereich der Spieleransicht (`SpielerAnsicht.tsx`) lud nur `begleiterApi.liste` (Sprite/Geist-`Begleiter`-Knoten); Critter sind seit 20.09. `Person{istCritter}` und kamen dort nie vor (live geprüft: „Baby Drache“ hing korrekt per `BEGLEITET` am gespielten PC). Neu: `GET /api/campaigns/{cid}/critter/meine` (`entities/repository.py::eigene_critter`, beide Besitzpfade wie `critter_besitzer`: `BEGLEITET` ODER Ki-Tama mit `beschworenerCritterId`, Sichtbarkeit egal; SL → leer). Spieleransicht zeigt sie als `begleiter/CritterKachel.tsx` (Bild, Fenster mit Charakterblatt nur lesend) vor den Begleitern; Überschrift „Critter, Sprites, Geister und Verbündete“. `tsc -b` sauber, Route im OpenAPI.
+
 ## Critter-Pet: Drache läuft über die Party-Tablets (11.11.2026)
 
 **Packen und Werfen (11.11.):** Kurz antippen = streicheln (jetzt beim Loslassen statt beim Aufsetzen). 3 s draufbleiben (`PACKEN_MS`) → er zappelt immer stärker, dann gepackt: hängt am Finger, pendelt mit, Beine strampeln. Loslassen → Wurf mit dem Schwung der letzten ~120 ms (Schwerkraft, Drehung), landet auf einer Fläche (beim Loslassen einmal erfasst) oder dem Boden; fliegt er seitlich aus dem Bild, meldet das Tablet `raus` und der Server schickt ihn zum nächsten Party-Mitglied. Finger rutscht vor Ablauf >14 px weg → nichts passiert, er macht weiter wie vorher. `.pet-figur` hat `touch-action: none` und kein Kontextmenü. Simuliert: Antippen, Packen nach 3 s, Wurf nach rechts raus, Fallenlassen auf eine Fläche, Abbrechen.

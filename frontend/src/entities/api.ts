@@ -355,6 +355,8 @@ export const entitiesApi = {
   /** Critter — Tiere/Haustiere als echte NPCs (`istCritter: true`), eigene
    * schlanke Liste für die Begleiter-Übersicht statt des vollen Bogens. */
   listCritter: (cid: string) => api.get<CritterEintrag[]>(`${base(cid)}/critter`),
+  /** Eigene Critter des Spielercharakters (BEGLEITET oder Ki-Tama), unabhängig von der Sichtbarkeit. */
+  meineCritter: (cid: string) => api.get<CritterEintrag[]>(`${base(cid)}/critter/meine`),
   critterBesitzer: (cid: string, critterId: string, personId: string | null) =>
     api.post<CritterEintrag>(`${base(cid)}/critter/${critterId}/besitzer`, { personId }),
   /** Erzeugt aus einem als Vorlage markierten Critter eine unabhängige Kopie
