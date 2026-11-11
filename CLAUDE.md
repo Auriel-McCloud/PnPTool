@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Gegenstände-Übersicht: Standard „Alle Besitzer“ + Reiter „Vorlage“ (11.11.2026)
+
+Mark: oben stand „Nur Vorlagen“, unten aber „Am Körper“/„Mitgeführt“ vorgewählt — widersprüchlich. `items/GegenstaendeUebersicht.tsx`: `besitzerFilter` startet jetzt leer (= „Alle Besitzer“), die einmalige Bereichs-Vorauswahl ist der „Vorlage“-Reiter; existieren keine Vorlagen, fällt sie auf `standardAuswahl` (Am Körper/Mitgeführt) zurück.
+
 ## Bärbel: fliegendes Buch als Pet an einem Gegenstand (11.11.2026)
 
 **Seiten bleiben an Wörtern hängen (11.11.):** Mark: „öfter mal an Wörtern usw. hängen bzw. liegen bleiben und erst zu Boden fallen, wenn man die Seite wechselt“. Eine frische Seite (`frisch` = nicht schon beim Verbinden vom Server mitgebracht, `PetOverlay.bekannt`) holt beim Lossegeln einmal die Flächen (`umgebung().flaechen()`, Text-/Kastenkanten) und bleibt auf jeder überquerten Kante mit `LANDE_CHANCE` 0,7 liegen: zerknittert, hängt per Anker am Element, meldet `verschieben`. Element weg (Bereichswechsel) → segelt ohne Halt zu Boden. Im Browser-Harness: 6 von 8 Seiten auf Text/Kacheln, 2 am Boden, nach Bereichswechsel alle 8 unten.

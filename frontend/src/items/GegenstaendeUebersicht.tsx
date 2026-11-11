@@ -52,10 +52,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const [items, setItems] = useState<GegenstandMitBesitzer[]>([]);
   const [loading, setLoading] = useState(true);
   const [suche, setSuche] = useState("");
-  // Standardmäßig auf Vorlagen gefiltert (Mark, 06.11.2026): das ist die
-  // Ansicht, die die SL am häufigsten braucht — "Alle Besitzer" lässt sich
-  // jederzeit im Dropdown wieder wählen.
-  const [besitzerFilter, setBesitzerFilter] = useState(VORLAGE_SENTINEL);
+  // Standard "Alle Besitzer" (Mark, 11.11.2026): die Vorlagen-Vorauswahl
+  // läuft jetzt über den "Vorlage"-Reiter unten statt über dieses Dropdown —
+  // vorher stand oben "Nur Vorlagen", unten aber "Am Körper"/"Mitgeführt",
+  // was sich widersprach (06.11.2026 war hier noch VORLAGE_SENTINEL).
+  const [besitzerFilter, setBesitzerFilter] = useState("");
   // Mehrere Bereiche gleichzeitig: in der Praxis will man "Ausgerüstet und
   // Rucksack" sehen, im Auto zusätzlich dessen Inhalt, im Versteck wiederum
   // etwas anderes. Leere Auswahl = alles.
@@ -214,13 +215,17 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
     return basis;
   }, [items, besitzerFilter]);
 
-  // Beim ersten Laden auf "am Körper" vorwählen — aber nur einmal, sonst
-  // liesse sich die Auswahl nie wieder leeren.
+  // Beim ersten Laden den "Vorlage"-Reiter vorwählen (Mark, 11.11.2026:
+  // statt "Am Körper"/"Mitgeführt") — aber nur einmal, sonst liesse sich die
+  // Auswahl nie wieder leeren. Gibt es (noch) keine Vorlagen, fehlt der
+  // Reiter; dann wie bisher "Am Körper"/"Mitgeführt".
   useEffect(() => {
     // Erst wenn Gegenstände geladen sind — vorher kennt ermittleBereiche nur
     // "Ausgerüstet" und die Vorauswahl bliebe unvollständig stehen.
     if (!auswahlGesetzt && items.length > 0) {
-      setBereichAuswahl(standardAuswahl(bereiche));
+      setBereichAuswahl(
+        bereiche.some((b) => b.id === "VORLAGE") ? new Set(["VORLAGE"]) : standardAuswahl(bereiche),
+      );
       setAuswahlGesetzt(true);
     }
   }, [bereiche, items.length, auswahlGesetzt]);
