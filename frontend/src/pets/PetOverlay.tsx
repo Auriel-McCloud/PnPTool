@@ -57,7 +57,9 @@ const BAERBEL = {
     blinzeln_2: { frames: 19, ms: 110 },
     blinzeln_3: { frames: 5, ms: 70 },
   } as Record<string, Takt>,
-  verwandeln: { frames: 16, ms: 70 },
+  /** Wabernde Wolke (Mark: „intensiver, länger, ruhig ein wenig wabern“):
+   *  eigene, größere Leinwand mittig über dem Buch. */
+  verwandeln: { frames: 32, ms: 70, groesse: 112 },
 } as const;
 
 function sprite(art: string) {
@@ -739,12 +741,13 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
           const v = BAERBEL.verwandeln;
           const bild = Math.min(v.frames - 1, Math.floor((jetzt - d.puff) / v.ms));
           pu.style.display = "block";
-          pu.style.width = `${BAERBEL.breite * s}px`;
-          pu.style.height = `${BAERBEL.hoehe * s}px`;
-          pu.style.left = `${d.left}px`;
-          pu.style.top = `${d.top}px`;
-          pu.style.backgroundSize = `${v.frames * BAERBEL.breite * s}px ${BAERBEL.hoehe * s}px`;
-          pu.style.backgroundPosition = `${-bild * BAERBEL.breite * s}px 0`;
+          const rand = ((v.groesse - BAERBEL.breite) / 2) * s;
+          pu.style.width = `${v.groesse * s}px`;
+          pu.style.height = `${v.groesse * s}px`;
+          pu.style.left = `${d.left - rand}px`;
+          pu.style.top = `${d.top - rand}px`;
+          pu.style.backgroundSize = `${v.frames * v.groesse * s}px ${v.groesse * s}px`;
+          pu.style.backgroundPosition = `${-bild * v.groesse * s}px 0`;
         } else pu.style.display = "none";
       }
       const tr = tropfen.current;

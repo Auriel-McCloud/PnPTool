@@ -199,6 +199,8 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 - Sprites prozedural: `docs/assets/critter-pet/baerbel_design.py` (Figur),
   `baerbel_exportieren.py` → `frontend/public/pets/baerbel/`.
 
+**Nachbesserung 11.11.:** Verwandlungswolke intensiver, länger (≈2,2 s) und wabernd, auf größerer Leinwand über dem Buch (Marks Wunsch nach dem ersten Test: „funktioniert mega cool“).
+
 **Noch offen (Ideen von Mark):** Monster wollen raus (Tentakel, Klauen,
 Fledermäuse), Blitze/Feuerbälle, die das Display „verbrennen“ (Rußfleck vom
 Drachen wiederverwenden); Vorlese-Zauber: sie schlägt sich auf, wird per

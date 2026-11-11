@@ -45,10 +45,10 @@ export const FLUG_TAKT = {
   gestalten: 3,
   klappenFrames: 5,
   klappenMs: 60,
-  verwandelnFrames: 16,
+  verwandelnFrames: 32,
   verwandelnMs: 70,
   /** Ab diesem Frame der Wolke ist sie in der neuen Gestalt. */
-  verwandelnWechsel: 8,
+  verwandelnWechsel: 16,
   blinzeln: { 2: { frames: 19, ms: 110 }, 3: { frames: 5, ms: 70 } } as Record<number, { frames: number; ms: number }>,
 };
 
@@ -66,7 +66,7 @@ type Zustand =
 
 const FLATTER_PX_S = 230;
 const SCHWEBE_PX_S = 30;
-const ZITTERN_MS = 450;
+const ZITTERN_MS = 600;
 const WURF_BREMSE = 1.6; // Luftwiderstand pro Sekunde
 const MAX_WURF_PX_S = 2600;
 const BESUCH_MIN_MS = 60_000;

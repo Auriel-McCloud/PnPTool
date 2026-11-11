@@ -48,13 +48,14 @@
       "ms": 70
     },
     "verwandeln": {
-      "frames": 16,
-      "ms": 70
+      "frames": 32,
+      "ms": 70,
+      "groesse": 112
     }
   },
   "seite": {
     "breite": 14,
     "hoehe": 11
   },
-  "verwandelnWechselFrame": 8
+  "verwandelnWechselFrame": 16
 }

@@ -38,41 +38,83 @@ def sheet(name, frames, ms):
     ANIM[name] = {"frames": len(frames), "ms": ms}
 
 
+PW = 112  # Wolken-Leinwand (größer als das Buch, mittig darüber)
+
+
 def puff(t, seed=3):
-    """Verwandlungs-Wolke (gleich wie baerbel_vorschau.py, auf 76x76)."""
-    img = leinwand()
+    """Verwandlungswolke, wabernd (Mark, 11.11.2026: „intensiver oder länger,
+    die könnte ruhig ein wenig wabern“). Phasen: aufquellen (0–0,25), wabern
+    und das Buch ganz verdecken (0,25–0,75, Gestaltwechsel bei 0,5),
+    zerfallen in aufsteigende Funken (0,75–1)."""
+    img = Image.new("RGBA", (PW, PW), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     rnd = random.Random(seed)
-    cx, cy = W // 2, H // 2
-    wachs = min(1.0, t / 0.45)
-    zerfall = max(0.0, (t - 0.55) / 0.45)
-    farben = [(190, 120, 255, 255), (240, 200, 255, 255), (255, 255, 255, 255), (140, 80, 220, 255)]
-    for i in range(16):
-        w = i / 16 * 2 * math.pi + rnd.uniform(-0.2, 0.2)
-        dist = rnd.uniform(10, 20) * wachs + zerfall * 12
-        r = rnd.uniform(6, 10) * wachs * (1 - zerfall) ** 1.3
-        x = cx + math.cos(w + t * 2) * dist
-        y = cy + math.sin(w + t * 2) * dist * 0.9
+    cx, cy = PW // 2, PW // 2
+    quell = glatt(min(1.0, t / 0.25))
+    zerfall = glatt(max(0.0, (t - 0.75) / 0.25))
+    dunkel, mittel, hell, rosa = (96, 40, 170, 255), (160, 90, 235, 255), (222, 186, 255, 255), (255, 150, 220, 255)
+    weiss, gold = (255, 255, 255, 255), (255, 228, 120, 255)
+    # Blasen im Kreis, die wabern (Radius und Lage schwingen) und langsam kreisen
+    blasen = []
+    for i in range(22):
+        w0 = i / 22 * 2 * math.pi + rnd.uniform(-0.25, 0.25)
+        dist0 = rnd.uniform(8, 26)
+        r0 = rnd.uniform(8, 14)
+        ph = rnd.uniform(0, 2 * math.pi)
+        fq = rnd.uniform(2.5, 4.5)
+        w = w0 + t * 2.2
+        wab = math.sin(t * fq * 2 * math.pi + ph)
+        dist = dist0 * (0.4 + 0.6 * quell) + zerfall * 22 + wab * 4
+        r = r0 * quell * (1 - zerfall) ** 1.4 * (1 + 0.28 * wab)
+        x = cx + math.cos(w) * dist
+        y = cy + math.sin(w) * dist * 0.9 - zerfall * 10
+        blasen.append((x, y, r, ph))
+    for x, y, r, ph in blasen:  # dunkler Rand
         if r >= 2:
-            d.ellipse([x - r, y - r, x + r, y + r], fill=farben[3])
-            d.ellipse([x - r + 1, y - r + 1, x + r - 2, y + r - 2], fill=farben[0])
-            d.ellipse([x - r * 0.4, y - r * 0.6, x, y - r * 0.2], fill=farben[1])
-    kr = 22 * math.sin(min(1, t / 0.9) * math.pi) ** 2
-    if kr > 2:
-        d.ellipse([cx - kr, cy - kr * 1.1, cx + kr, cy + kr * 1.1], fill=farben[0])
-        d.ellipse([cx - kr * 0.6, cy - kr * 0.8, cx + kr * 0.2, cy - kr * 0.1], fill=farben[1])
-    for i in range(14):
+            d.ellipse([x - r - 1, y - r - 1, x + r + 1, y + r + 1], fill=dunkel)
+    for x, y, r, ph in blasen:
+        if r >= 2:
+            d.ellipse([x - r, y - r, x + r - 1, y + r - 1], fill=mittel)
+    for x, y, r, ph in blasen:  # Glanzkuppen, die mitwabern
+        if r >= 4:
+            hx = x - r * 0.35 + math.sin(t * 9 + ph) * 1.2
+            hy = y - r * 0.45
+            d.ellipse([hx - r * 0.35, hy - r * 0.25, hx + r * 0.2, hy + r * 0.15], fill=hell)
+    # Kern deckt das Buch in der Mitte komplett
+    kern = 23 * quell * (1 - zerfall) * (1 + 0.06 * math.sin(t * 7 * 2 * math.pi))
+    if kern > 3:
+        d.ellipse([cx - kern, cy - kern * 1.05, cx + kern, cy + kern * 1.05], fill=mittel)
+        d.ellipse([cx - kern * 0.65, cy - kern * 0.8, cx + kern * 0.15, cy - kern * 0.15], fill=hell)
+        # rosa Wirbel im Kern
+        for k in range(10):
+            a = t * 8 + k * 0.6
+            rr = kern * (0.15 + k * 0.06)
+            d.point((round(cx + math.cos(a) * rr), round(cy + math.sin(a) * rr * 0.9)), fill=rosa)
+    # Funken: funkeln in der Wolke, steigen beim Zerfall auf
+    for i in range(34):
         w = rnd.uniform(0, 2 * math.pi)
-        dist = 8 + t * rnd.uniform(14, 28)
-        x = round(cx + math.cos(w) * dist)
-        y = round(cy + math.sin(w) * dist)
-        if rnd.random() < 0.3 + t * 0.6 and t < 0.97:
-            col = farben[2] if i % 2 else (255, 230, 120, 255)
-            d.point((x, y), fill=col)
-            if i % 3 == 0:
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        basis = rnd.uniform(6, 34)
+        steig = rnd.uniform(10, 30)
+        an = rnd.uniform(0, 1)
+        x = cx + math.cos(w + t * 1.5) * (basis * (0.5 + 0.5 * quell) + zerfall * 18)
+        y = cy + math.sin(w + t * 1.5) * basis * 0.9 - zerfall * steig
+        blink = math.sin(t * 2 * math.pi * 6 + an * 9) > 0.1
+        if t < 0.04 or t > 0.985 or not blink:
+            continue
+        col = (weiss, gold, rosa)[i % 3]
+        x, y = round(x), round(y)
+        d.point((x, y), fill=col)
+        if i % 4 == 0:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                d.point((x + dx, y + dy), fill=col)
+            if i % 8 == 0:
+                for dx, dy in ((2, 0), (-2, 0), (0, 2), (0, -2)):
                     d.point((x + dx, y + dy), fill=col)
     return img
+
+
+def glatt(t):
+    return t * t * (3 - 2 * t)
 
 
 def schlag(i, n):
@@ -126,14 +168,20 @@ if __name__ == "__main__":
     sheet("blinzeln_2", [mittig_zu(zu(V[1], lid, bl)) for lid, bl in plan2], 110)
     plan3 = [(0.4, 0), (1, 0), (1, 0), (0.4, 0), (0, 0)]
     sheet("blinzeln_3", [mittig_zu(zu(V[2], lid, bl)) for lid, bl in plan3], 70)
-    # Verwandlungswolke (Effekt über dem Buch; Gestaltwechsel bei Frame 8)
-    sheet("verwandeln", [puff(i / 15) for i in range(16)], 70)
+    # Verwandlungswolke (Effekt über dem Buch; Gestaltwechsel bei Frame 16)
+    # 32 Frames à 70 ms (≈2,2 s), eigene Leinwand PW×PW
+    pf = [puff(i / 31) for i in range(32)]
+    ps = Image.new("RGBA", (PW * len(pf), PW), (0, 0, 0, 0))
+    for i, f in enumerate(pf):
+        ps.alpha_composite(f, (i * PW, 0))
+    ps.save(os.path.join(ZIEL, "verwandeln.png"))
+    ANIM["verwandeln"] = {"frames": len(pf), "ms": 70, "groesse": PW}
     seiten()
     # Herz vom Drachen mitbenutzen
     herz = os.path.join(ZIEL, "..", "drache", "herz.png")
     Image.open(herz).save(os.path.join(ZIEL, "herz.png"))
     info = {"breite": W, "hoehe": H, "gestalten": len(V), "animationen": ANIM,
-            "seite": {"breite": 14, "hoehe": 11}, "verwandelnWechselFrame": 8}
+            "seite": {"breite": 14, "hoehe": 11}, "verwandelnWechselFrame": 16}
     with open(os.path.join(ZIEL, "sprite.json"), "w", encoding="utf8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
     print(json.dumps(ANIM))
