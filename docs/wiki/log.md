@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-11] update | Critter-Pet: Häufchen am Element, Ruß am Display
+
+Siehe [[entities/critter-pet]].
+
 ## [2026-11-11] update | Critter-Pet klettert am Burgermenü
 
 Zieht einen Menüpunkt heraus und schläft darauf. Siehe [[entities/critter-pet]].

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
 import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
 import "./pets.css";
@@ -37,7 +37,7 @@ const SPRITE = {
 
 const SPUR_PX = {
   haeufchen: { breite: 12, hoehe: 10 },
-  brand: { breite: 32, hoehe: 18 },
+  brand: { breite: 38, hoehe: 23 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
@@ -260,27 +260,25 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   return (
     <div className="pet-ebene">
       {haeufchen.map((h) => {
-        const art = h.art ?? "haeufchen";
-        const px = SPUR_PX[art];
-        const stil = {
-          left: h.x * window.innerWidth - (px.breite * s) / 2,
-          top: h.y * window.innerHeight - (art === "brand" ? (px.hoehe * s) / 2 : px.hoehe * s),
-          width: px.breite * s,
-          height: px.hoehe * s,
-          backgroundImage: `url(/pets/drache/${art}.png)`,
-        };
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
-        return art === "brand" ? (
-          <Brandfleck key={h.id} stil={stil} weg={weg.has(h.id)} onSauber={() => wegmachen(h.id)} />
-        ) : (
-          <div
+        if ((h.art ?? "haeufchen") === "brand") {
+          const px = SPUR_PX.brand;
+          const stil = {
+            left: h.x * window.innerWidth - (px.breite * s) / 2,
+            top: h.y * window.innerHeight - (px.hoehe * s) / 2,
+            width: px.breite * s,
+            height: px.hoehe * s,
+          };
+          return <Brandfleck key={h.id} id={h.id} stil={stil} weg={weg.has(h.id)} onSauber={() => wegmachen(h.id)} />;
+        }
+        return (
+          <HaeufchenAmElement
             key={h.id}
-            role="button"
-            className={`pet-haeufchen${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
-            title="Wegmachen"
-            style={stil}
-            onClick={() => wegmachen(h.id)}
+            h={h}
+            weg={weg.has(h.id)}
+            onWeg={() => wegmachen(h.id)}
+            onGefallen={(x, y) => senden({ typ: "verschieben", id: h.id, x, y })}
           />
         );
       })}
@@ -292,10 +290,254 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
 }
 
 /**
- * Brandfleck vom Feuerniesen (Mark, 11.11.2026): weg nur durch Wischen —
- * Finger/Maus drauf und hin und her reiben, er wird dabei blasser.
+ * Häufchen hängt am Element, auf dem es liegt (Mark, 11.11.2026: „nicht die
+ * gleiche Position, sondern am HTML-Element hängen … und runterfallen, wenn
+ * man die Seite wechselt“). Beim Auftauchen sucht es das Element unter sich
+ * und merkt sich den Versatz; es scrollt und wandert mit. Verschwindet das
+ * Element (Bereichswechsel, Popup zu, ausgeblendet), fällt es mit Schwerkraft
+ * auf den Boden und meldet die neue Lage dem Server. Findet sich nach einer
+ * Weile gar nichts darunter (z. B. nach dem Neuladen in einem anderen
+ * Bereich), fällt es ebenfalls. Gezeichnet wird direkt am DOM, kein Render
+ * pro Frame.
  */
-function Brandfleck({ stil, weg, onSauber }: { stil: React.CSSProperties; weg: boolean; onSauber: () => void }) {
+function HaeufchenAmElement({
+  h,
+  weg,
+  onWeg,
+  onGefallen,
+}: {
+  h: Haeufchen;
+  weg: boolean;
+  onWeg: () => void;
+  onGefallen: (x: number, y: number) => void;
+}) {
+  const el = useRef<HTMLDivElement | null>(null);
+  const gefallen = useRef(onGefallen);
+  gefallen.current = onGefallen;
+  const s = skala();
+  const bw = SPUR_PX.haeufchen.breite * s;
+  const bh = SPUR_PX.haeufchen.hoehe * s;
+
+  useLayoutEffect(() => {
+    const div = el.current;
+    if (!div) return;
+    // Bezugspunkt: unten Mitte (dort, wo es aufliegt).
+    let xAnteil = h.x;
+    let x = h.x * window.innerWidth;
+    let y = h.y * window.innerHeight;
+    let boden = y >= window.innerHeight - 3;
+    let anker: { el: Element; dx: number; dy: number } | null = null;
+    let fall: { t0: number; y0: number } | null = null;
+    const suchenBis = performance.now() + 2500;
+
+    const suche = () => {
+      for (const e of document.elementsFromPoint(x, Math.min(y + 3, window.innerHeight - 1))) {
+        if (e.closest(".pet-ebene")) continue;
+        if (e === document.documentElement || e === document.body || e.id === "root") return null;
+        const r = e.getBoundingClientRect();
+        return { el: e, dx: x - r.left, dy: y - r.top };
+      }
+      return null;
+    };
+
+    const zeichnen = () => {
+      div.style.left = `${x - bw / 2}px`;
+      div.style.top = `${y - bh}px`;
+    };
+
+    let rahmen = 0;
+    const takt = (jetzt: number) => {
+      if (boden) {
+        x = xAnteil * window.innerWidth;
+        y = window.innerHeight;
+      } else if (fall) {
+        const t = (jetzt - fall.t0) / 1000;
+        y = fall.y0 + 0.5 * 2600 * t * t;
+        if (y >= window.innerHeight) {
+          y = window.innerHeight;
+          fall = null;
+          boden = true;
+          xAnteil = Math.min(1, Math.max(0, x / window.innerWidth));
+          div.classList.remove("pet-haeufchen-faellt");
+          div.classList.add("pet-haeufchen-platsch");
+          gefallen.current(xAnteil, 1);
+        }
+      } else if (anker) {
+        const r = anker.el.getBoundingClientRect();
+        if (!anker.el.isConnected || (r.width === 0 && r.height === 0)) {
+          anker = null;
+          fall = { t0: jetzt, y0: y };
+          div.classList.add("pet-haeufchen-faellt");
+        } else {
+          x = r.left + anker.dx;
+          y = r.top + anker.dy;
+        }
+      } else {
+        anker = suche();
+        if (!anker && jetzt > suchenBis) {
+          fall = { t0: jetzt, y0: y };
+          div.classList.add("pet-haeufchen-faellt");
+        }
+      }
+      zeichnen();
+      rahmen = requestAnimationFrame(takt);
+    };
+    zeichnen();
+    rahmen = requestAnimationFrame(takt);
+    return () => cancelAnimationFrame(rahmen);
+    // Lage kommt nur beim Auftauchen vom Server; danach führt das Häufchen selbst.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [h.id]);
+
+  return (
+    <div
+      ref={el}
+      role="button"
+      className={`pet-haeufchen${weg ? " pet-haeufchen-weg" : ""}`}
+      title="Wegmachen"
+      style={{ width: bw, height: bh, backgroundImage: "url(/pets/drache/haeufchen.png)" }}
+      onClick={onWeg}
+    />
+  );
+}
+
+/** Zufall mit festem Startwert — jeder Fleck sieht anders aus, aber immer gleich. */
+function zufallAus(text: string) {
+  let a = 0;
+  for (let i = 0; i < text.length; i++) a = (Math.imul(a, 31) + text.charCodeAt(i)) | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const russCache = new Map<string, { bild: string; maske: string }>();
+
+/**
+ * Ruß auf dem Display-Glas (Mark, 11.11.2026: „so aussehen lassen, als
+ * würden sie am Display sein“): durchscheinender, unregelmäßiger Rußfilm mit
+ * Krümeln, Anlauffarben am Rand und einem Glanzstreif wie auf Glas. Dazu eine
+ * Maske, durch die der Inhalt dahinter verschwommen und abgedunkelt wirkt
+ * (backdrop-filter in pets.css) — wie Dreck auf der Scheibe.
+ */
+function russBild(id: string) {
+  const alt = russCache.get(id);
+  if (alt) return alt;
+  const rnd = zufallAus(id);
+  const W = 152;
+  const H = 92;
+  const cx = W / 2 + (rnd() - 0.5) * 8;
+  const cy = H / 2 + (rnd() - 0.5) * 6;
+  const zacken = Array.from({ length: 16 }, () => 0.72 + rnd() * 0.38);
+  const form = (g: CanvasRenderingContext2D, sx: number, sy: number) => {
+    g.beginPath();
+    const punkte = zacken.map((k, i) => {
+      const a = (i / zacken.length) * Math.PI * 2;
+      return [cx + Math.cos(a) * sx * k, cy + Math.sin(a) * sy * k];
+    });
+    // Weich verbunden: Mittelpunkte als Stützstellen.
+    const mitte = (i: number) => {
+      const p = punkte[i % punkte.length];
+      const q = punkte[(i + 1) % punkte.length];
+      return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    };
+    const start = mitte(0);
+    g.moveTo(start[0], start[1]);
+    for (let i = 1; i <= punkte.length; i++) {
+      const p = punkte[i % punkte.length];
+      const m = mitte(i);
+      g.quadraticCurveTo(p[0], p[1], m[0], m[1]);
+    }
+    g.closePath();
+  };
+  const neu = () => {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    return [c, c.getContext("2d")!] as const;
+  };
+
+  const [bc, g] = neu();
+  g.filter = "blur(4px)";
+  // Außen ein heller Grauschleier: Ruß auf Glas streut Licht, auf dunklem
+  // Commlink sieht man ihn sonst gar nicht.
+  form(g, W * 0.46, H * 0.42);
+  g.fillStyle = "rgba(150,132,115,0.30)";
+  g.fill();
+  g.filter = "blur(3px)";
+  form(g, W * 0.32, H * 0.29);
+  g.fillStyle = "rgba(70,56,46,0.62)";
+  g.fill();
+  g.filter = "blur(2px)";
+  form(g, W * 0.17 + rnd() * 6, H * 0.15 + rnd() * 4);
+  g.fillStyle = "rgba(14,9,6,0.88)";
+  g.fill();
+  g.filter = "none";
+  // Rußkrümel, nach außen dünner.
+  for (let i = 0; i < 90; i++) {
+    const a = rnd() * Math.PI * 2;
+    const r = Math.sqrt(rnd());
+    const px = cx + Math.cos(a) * r * W * 0.44;
+    const py = cy + Math.sin(a) * r * H * 0.4;
+    const gr = 1 + rnd() * 2.5;
+    const hell = rnd() < 0.35;
+    g.fillStyle = hell
+      ? `rgba(175,160,145,${(0.25 + rnd() * 0.35) * (1.1 - r)})`
+      : `rgba(12,8,6,${(0.3 + rnd() * 0.5) * (1.1 - r)})`;
+    g.fillRect(px, py, gr, gr);
+  }
+  // Anlauffarben und Glanz nur dort, wo Ruß ist.
+  g.globalCompositeOperation = "source-atop";
+  const ring = g.createRadialGradient(cx, cy, H * 0.12, cx, cy, W * 0.5);
+  ring.addColorStop(0, "rgba(0,0,0,0)");
+  ring.addColorStop(0.5, "rgba(130,70,210,0.22)");
+  ring.addColorStop(0.66, "rgba(40,170,210,0.2)");
+  ring.addColorStop(0.82, "rgba(225,175,70,0.18)");
+  ring.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = ring;
+  g.fillRect(0, 0, W, H);
+  const glanz = g.createLinearGradient(W * 0.1, 0, W * 0.9, H);
+  glanz.addColorStop(0.32, "rgba(255,255,255,0)");
+  glanz.addColorStop(0.4, "rgba(255,255,255,0.26)");
+  glanz.addColorStop(0.45, "rgba(255,255,255,0)");
+  glanz.addColorStop(0.52, "rgba(255,255,255,0.1)");
+  glanz.addColorStop(0.55, "rgba(255,255,255,0)");
+  g.fillStyle = glanz;
+  g.fillRect(0, 0, W, H);
+
+  const [mc, m] = neu();
+  m.filter = "blur(5px)";
+  form(m, W * 0.46, H * 0.42);
+  m.fillStyle = "rgba(0,0,0,0.75)";
+  m.fill();
+  form(m, W * 0.3, H * 0.27);
+  m.fillStyle = "rgba(0,0,0,1)";
+  m.fill();
+
+  const ergebnis = { bild: bc.toDataURL(), maske: mc.toDataURL() };
+  russCache.set(id, ergebnis);
+  return ergebnis;
+}
+
+/**
+ * Brandfleck vom Feuerniesen (Mark, 11.11.2026): sitzt am Display, nicht an
+ * der Seite — bewegt sich deshalb nie. Weg nur durch Wischen: Finger/Maus
+ * drauf und hin und her reiben, er wird dabei blasser.
+ */
+function Brandfleck({
+  id,
+  stil,
+  weg,
+  onSauber,
+}: {
+  id: string;
+  stil: React.CSSProperties;
+  weg: boolean;
+  onSauber: () => void;
+}) {
+  const russ = useMemo(() => russBild(id), [id]);
   const rest = useRef(1);
   const letzter = useRef<{ x: number; y: number } | null>(null);
   const el = useRef<HTMLDivElement | null>(null);
@@ -319,7 +561,12 @@ function Brandfleck({ stil, weg, onSauber }: { stil: React.CSSProperties; weg: b
       role="button"
       className={`pet-brand${weg ? " pet-haeufchen-weg" : ""}`}
       title="Sauberwischen"
-      style={stil}
+      style={{
+        ...stil,
+        backgroundImage: `url(${russ.bild})`,
+        maskImage: `url(${russ.maske})`,
+        WebkitMaskImage: `url(${russ.maske})`,
+      }}
       onPointerDown={(e) => {
         letzter.current = { x: e.clientX, y: e.clientY };
         e.currentTarget.setPointerCapture(e.pointerId);

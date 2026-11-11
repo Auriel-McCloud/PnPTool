@@ -17,6 +17,7 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
     {"typ": "raus", "petId", "seite": "links"|"rechts"}
     {"typ": "haeufchen", "petId", "x", "y", "art"}   (Anteile 0..1; art haeufchen|brand)
     {"typ": "wegmachen", "id"}
+    {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
 """
 
 import asyncio
@@ -219,6 +220,10 @@ class PetMotor:
         if pet is None or pet.wirt != person_id or art not in logic.SPUR_ARTEN:
             return
         await repository.haeufchen_anlegen(campaign_id, person_id, pet_id, logic.anteil(x), logic.anteil(y), art)
+        await self._haeufchen_senden(campaign_id, person_id)
+
+    async def verschieben(self, campaign_id: str, person_id: str, haeufchen_id: str, x: float, y: float) -> None:
+        await repository.haeufchen_verschieben(campaign_id, person_id, haeufchen_id, logic.anteil(x), logic.anteil(y))
         await self._haeufchen_senden(campaign_id, person_id)
 
     async def wegmachen(self, campaign_id: str, person_id: str, haeufchen_id: str) -> None:

@@ -27,6 +27,7 @@ Tablet → Server:
 - `{"typ": "raus", "petId", "seite": "links"|"rechts"}` — nur vom aktuellen Wirt angenommen.
 - `{"typ": "haeufchen", "petId", "x", "y", "art"}` — nur vom aktuellen Wirt; `art` fehlt = Häufchen; über 12 je Art fällt die älteste weg.
 - `{"typ": "wegmachen", "id"}` — nur eigene Häufchen.
+- `{"typ": "verschieben", "id", "x", "y"}` — Häufchen ist von seinem Element gefallen (Anteile 0..1, begrenzt); nur eigene, nur Art `haeufchen` — Brandflecken sitzen am Display und bewegen sich nie.
 
 Wandern: nur zu eingeloggten PCs der Party des Besitzers (ohne Party nur zum
 Besitzer), bevorzugt nicht derselbe, Pause 3–12 s, Gegenseite. Pet existiert

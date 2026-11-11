@@ -137,6 +137,20 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   lässt ihn mit Schwung fliegen; seitlich raus = er wandert zum nächsten
   Tablet.
 
+## Häufchen am Element, Ruß am Display (11.11.2026, gebaut)
+
+Mark: Häufchen sollen nicht an der Bildschirmposition kleben, sondern „am
+HTML-Element hängen … und runterfallen, wenn man die Seite wechselt“;
+Brandflecken „könnten ja am Display sein und sich deswegen nicht bewegen“
+und sollen so aussehen.
+
+- Häufchen scrollen/wandern mit ihrem Element; verschwindet es, fallen sie
+  auf den Boden, und diese Lage wird gespeichert.
+- Brandflecken bleiben fix am Bildschirm und sehen jetzt aus wie Ruß auf der
+  Glasscheibe (Inhalt dahinter verschwommen, Glanz). Wegwischen wie bisher.
+- Ersetzt die frühere Entscheidung „Spurenposition als Bildschirmanteil,
+  wandert beim Scrollen nicht mit“ — für Häufchen.
+
 ## Burgermenü-Ausflug (11.11.2026, gebaut)
 
 Mark: „es wäre genial, wenn er auf der linken Seite nicht am Bildschirmrand,

@@ -68,11 +68,17 @@ def welt(monkeypatch):
     async def haeufchen_weg(cid, pid, hid):
         stand["haeufchen"][pid] = [h for h in stand["haeufchen"].get(pid, []) if h["id"] != hid]
 
+    async def haeufchen_verschieben(cid, pid, hid, x, y):
+        for h in stand["haeufchen"].get(pid, []):
+            if h["id"] == hid and h["art"] == "haeufchen":
+                h["x"], h["y"] = x, y
+
     repo = motor_modul.repository
     monkeypatch.setattr(repo, "pets_der_kampagne", pets_der_kampagne)
     monkeypatch.setattr(repo, "haeufchen_liste", haeufchen_liste)
     monkeypatch.setattr(repo, "haeufchen_anlegen", haeufchen_anlegen)
     monkeypatch.setattr(repo, "haeufchen_weg", haeufchen_weg)
+    monkeypatch.setattr(repo, "haeufchen_verschieben", haeufchen_verschieben)
     m = PetMotor(zufall=random.Random(1), pause_min=0, pause_max=0)
     return m, stand
 
@@ -208,6 +214,22 @@ def test_brandfleck_bleibt_und_fremde_art_wird_ignoriert(welt):
         assert [h["art"] for h in stand["haeufchen"]["anna"]] == ["brand"]
         letzte = [u["daten"] for u in anna.post if u["typ"] == "haeufchen"][-1]
         assert letzte[0]["art"] == "brand"
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_heruntergefallenes_haeufchen_merkt_neue_position(welt):
+    m, stand = welt
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.haeufchen("k", "anna", "drache", 0.5, 0.4)
+        await m.verschieben("k", "anna", "h0.5", 0.5, 1.7)  # wird auf 0..1 begrenzt
+        assert stand["haeufchen"]["anna"][0]["y"] == 1.0
+        letzte = [u["daten"] for u in anna.post if u["typ"] == "haeufchen"][-1]
+        assert letzte[0]["y"] == 1.0
         m._takt.cancel()
 
     laufen(ablauf())

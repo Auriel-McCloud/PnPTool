@@ -105,6 +105,19 @@ async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: fl
         )
 
 
+async def haeufchen_verschieben(campaign_id: str, person_id: str, haeufchen_id: str, x: float, y: float) -> None:
+    """Häufchen ist vom Element gefallen, auf dem es lag (Mark, 11.11.2026) —
+    neue Bildschirmposition merken. Nur Häufchen und nur auf dem eigenen
+    Bildschirm; Brandflecken sitzen am Display und bewegen sich nie."""
+    query = """
+        MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, personId: $person_id})
+        WHERE coalesce(h.art, 'haeufchen') = 'haeufchen'
+        SET h.x = $x, h.y = $y
+    """
+    async with get_driver().session() as session:
+        await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id, x=x, y=y)
+
+
 async def haeufchen_weg(campaign_id: str, person_id: str, haeufchen_id: str) -> None:
     """Nur vom eigenen Bildschirm — fremde Häufchen kann man nicht wegmachen."""
     query = """

@@ -54,12 +54,35 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Brandfleck: muss weggewischt werden, deshalb kein Scrollen beim Reiben. */
+/* Häufchen fällt vom verschwundenen Element: leicht kippen, unten platschen. */
+.pet-haeufchen-faellt {
+  transform: rotate(-12deg);
+  transition: transform 0.3s;
+}
+
+.pet-haeufchen-platsch {
+  animation: pet-platsch 320ms ease-out;
+}
+
+@keyframes pet-platsch {
+  from { transform: scale(1.3, 0.6); }
+  60% { transform: scale(0.9, 1.12); }
+  to { transform: scale(1); }
+}
+
+/* Brandfleck: Ruß auf dem Display-Glas (11.11.2026) — der Inhalt dahinter
+   wirkt durch die Maske verschwommen und abgedunkelt. Muss weggewischt
+   werden, deshalb kein Scrollen beim Reiben. */
 .pet-brand {
   position: absolute;
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  image-rendering: pixelated;
+  -webkit-backdrop-filter: blur(1.6px) brightness(0.62) saturate(0.55) sepia(0.25);
+  backdrop-filter: blur(1.6px) brightness(0.62) saturate(0.55) sepia(0.25);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
   pointer-events: auto;
   cursor: grab;
   touch-action: none;
