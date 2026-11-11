@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel: fliegendes Buch als Pet an einem Gegenstand (11.11.2026)
+
+Idee von Marks Frau (sprechende Bibel/Zauberbuch „Bärbel“). `petArt` jetzt auch am `Gegenstand` (SL: Item-Bearbeitung → gemeinsame `pets/PetArtWahl.tsx`, auch im `CritterFenster`; `PET_ARTEN` mit `fuer`). `pets/repository.py::pets_der_kampagne` per `UNION`: PC mit `BESITZT`, nicht `weggeworfen`, nicht (verschachtelt) in verschlossener Kiste — gegen lokale Neo4j geprüft. `art_lesen/setzen` nehmen Critter ODER Gegenstand. Frontend: `pets/flug.ts` (`FlugBewegung`, Schnittstelle `PetSteuerung`): rein/raus in beliebiger Höhe oder oben, schweben zu / flattern offen, auf-/zuklappen, auf Flächen ruhen, Verwandlung zwischen 3 Gestalten (Wolke), Blinzeln, Seiten verlieren (Spur `seite`, segelt zu Boden; `FALLENDE_SPUREN`), Freuen, Packen/Werfen mit Luftwiderstand. Sprites `docs/assets/critter-pet/baerbel_*.py` → `frontend/public/pets/baerbel/`. Node-Sim (6 min, keine NaN, max 6,5 px/Frame), `test_pets.py` 16 passed, `tsc -b` sauber. Wiki [[critter-pet]].
+
 ## Spieler sieht seine Critter bei den Begleitern (11.11.2026)
 
 Mark: Testcharakter hat einen Critter zugeordnet, der taucht bei seinen Begleitern nicht auf. Ursache: der Begleiter-Bereich der Spieleransicht (`SpielerAnsicht.tsx`) lud nur `begleiterApi.liste` (Sprite/Geist-`Begleiter`-Knoten); Critter sind seit 20.09. `Person{istCritter}` und kamen dort nie vor (live geprüft: „Baby Drache“ hing korrekt per `BEGLEITET` am gespielten PC). Neu: `GET /api/campaigns/{cid}/critter/meine` (`entities/repository.py::eigene_critter`, beide Besitzpfade wie `critter_besitzer`: `BEGLEITET` ODER Ki-Tama mit `beschworenerCritterId`, Sichtbarkeit egal; SL → leer). Spieleransicht zeigt sie als `begleiter/CritterKachel.tsx` (Bild, Fenster mit Charakterblatt nur lesend) vor den Begleitern; Überschrift „Critter, Sprites, Geister und Verbündete“. `tsc -b` sauber, Route im OpenAPI.

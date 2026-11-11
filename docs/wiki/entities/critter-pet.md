@@ -168,6 +168,43 @@ schlafen — oder später etwas zu fressen“.
 - **Idee für später:** auf einem bestimmten Menüpunkt fressen (z. B. Shop
   oder Inventar) — hängt am Futter-/Hunger-Thema, noch offen.
 
+## Bärbel, die fliegende Bibel (11.11.2026, gebaut)
+
+Idee von Marks Frau: ihr Charakter hat eine Bibel namens Bärbel, die mit ihr
+spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
+
+- **Datenmodell (mit Mark abgestimmt):** Bärbel ist ein **Gegenstand**, kein
+  Critter. `petArt` gibt es jetzt auch am `Gegenstand` (SL: Item-Bearbeitung →
+  „Pet auf den Tablets“). Besitzer = wer ihn per `BESITZT` hat; Ausrüsten
+  nicht nötig („Bärbel lässt sich nicht einsperren“). Ausnahme: liegt sie
+  (auch verschachtelt) in einer verschlossenen Kiste, „wurde sie gegen ihren
+  Willen eingesperrt“ und fliegt nicht; weggeworfen ebenso nicht. Wechselt
+  der Besitzer, fliegt sie beim neuen.
+- **Wandern:** wie der Drache zu den eingeloggten Party-Mitgliedern, aber
+  sie kommt **nie unten** von der Seite, sondern in irgendeiner Höhe oder
+  von oben, und fliegt auch so raus (links/rechts/oben).
+- **Aussehen:** drei Gestalten, zwischen denen sie sich ab und zu in einer
+  violetten Zauberwolke verwandelt (Marks Wunsch „alle drei super“):
+  1 klassisch (braunes Leder, Goldkreuz), 2 Grimoire (violett, Auge — blinzelt
+  nur manchmal und schaut sich um), 3 rot mit Kulleraugen (blinzelt oft).
+- **Bewegung** (`frontend/src/pets/flug.ts`, gleiche Schnittstelle
+  `PetSteuerung` wie `PetBewegung`): zugeklappt langsam schweben, aufgeklappt
+  wie ein Vogel flattern (Deckel = Flügel, Abschlag schnell), dazwischen
+  auf-/zuklappen; landet zugeklappt auf Text/Kästchen und ruht, Fläche weg →
+  flattert weg. Antippen = Freuen (Hüpfer, Herzen); 3 s halten = packen
+  (flattert panisch), Wurf mit Luftwiderstand, fängt sich wieder oder fliegt
+  raus.
+- **Spur:** statt Häufchen verliert sie beim Flattern Seiten (`art: seite`),
+  die zu Boden segeln und dort zerknittert liegen; antippen = aufheben.
+- Sprites prozedural: `docs/assets/critter-pet/baerbel_design.py` (Figur),
+  `baerbel_exportieren.py` → `frontend/public/pets/baerbel/`.
+
+**Noch offen (Ideen von Mark):** Monster wollen raus (Tentakel, Klauen,
+Fledermäuse), Blitze/Feuerbälle, die das Display „verbrennen“ (Rußfleck vom
+Drachen wiederverwenden); Vorlese-Zauber: sie schlägt sich auf, wird per
+Glitzerwolke groß und liest ein KI-generiertes, zur Situation passendes
+Bibelzitat vor.
+
 ## Nebenbei gefunden 11.11.2026
 
 Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur
@@ -178,8 +215,8 @@ mit lesbarem Charakterblatt (`GET …/critter/meine`, CLAUDE.md).
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).
-- Woher das Sprite eines Critters kommt (fest im Code je Art vs. SL wählt
-  aus einer Liste) — erst relevant, wenn die zweite Art kommt.
+- ~~Woher das Sprite eines Critters kommt~~ — feste Arten im Code, SL wählt
+  aus der Liste (Critter: Tiere, Gegenstand: Bärbel).
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

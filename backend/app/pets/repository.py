@@ -1,7 +1,11 @@
 """Neo4j-Zugriff der Critter-Pets.
 
 Die Pet-Art steht als `petArt` direkt am Critter-`Person`-Knoten (kein
-eigener Knoten). Häufchen sind kleine eigene Knoten, weil sie liegen
+eigener Knoten) — oder an einem `Gegenstand` (Bärbel, 11.11.2026: „Bärbel
+wäre ja ein Gegenstand und kein Critter“). Beim Gegenstand ist Besitzer, wer
+ihn per `BESITZT` hat; ausgerüstet muss er nicht sein („Bärbel lässt sich
+nicht einsperren“) — nur weggeworfen oder in einer verschlossenen Kiste
+(auch verschachtelt) fliegt sie nicht. Häufchen sind kleine eigene Knoten, weil sie liegen
 bleiben, wenn das Pet weiterzieht — auch über einen Neustart hinweg.
 Wo das Pet gerade herumläuft, hält dagegen nur der Server im Speicher
 (siehe motor.py): nach einem Neustart fängt es einfach beim Besitzer an.
@@ -11,7 +15,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.db.neo4j_driver import get_driver
-from app.pets.logic import HAEUFCHEN_MAX
+from app.pets.logic import FALLENDE_SPUREN, HAEUFCHEN_MAX
 
 
 async def pets_der_kampagne(campaign_id: str) -> list[dict]:
@@ -27,6 +31,22 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         RETURN c.id AS id, coalesce(c.alias, c.name) AS name, c.petArt AS art,
                b.id AS besitzerId, b.name AS besitzerName,
                collect(DISTINCT m.id) AS mitglieder
+        UNION
+        MATCH (b:Person {campaignId: $campaign_id, personType: 'PC'})-[:BESITZT]->(c:Gegenstand {campaignId: $campaign_id})
+        WHERE c.petArt IS NOT NULL AND c.petArt <> ''
+          AND NOT coalesce(c.weggeworfen, false)
+          AND NOT EXISTS {
+              MATCH (c)-[:LIEGT_IN*1..8]->(kiste:Gegenstand)
+              WHERE kiste.schlossArt IN ['passwort', 'schluessel', 'spiel']
+                AND NOT coalesce(kiste.aufgeschlossen, false)
+          }
+        // Gehört er mehreren (Party-Safehouse), fliegt er beim ersten los.
+        WITH c, b ORDER BY b.id
+        WITH c, head(collect(b)) AS b
+        OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
+        RETURN c.id AS id, c.name AS name, c.petArt AS art,
+               b.id AS besitzerId, b.name AS besitzerName,
+               collect(DISTINCT m.id) AS mitglieder
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id)
@@ -40,9 +60,15 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         return pets
 
 
+# Critter (Person mit istCritter) oder Gegenstand — dieselbe Route für beide.
+_PET_TRAEGER = """
+        MATCH (c {id: $critter_id, campaignId: $campaign_id})
+        WHERE (c:Person AND c.istCritter = true) OR c:Gegenstand
+"""
+
+
 async def art_lesen(campaign_id: str, critter_id: str) -> dict | None:
-    query = """
-        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+    query = _PET_TRAEGER + """
         RETURN c.id AS id, c.petArt AS art
     """
     async with get_driver().session() as session:
@@ -52,8 +78,7 @@ async def art_lesen(campaign_id: str, critter_id: str) -> dict | None:
 
 
 async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict | None:
-    query = """
-        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+    query = _PET_TRAEGER + """
         SET c.petArt = $art
         RETURN c.id AS id, c.petArt AS art
     """
@@ -107,15 +132,17 @@ async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: fl
 
 async def haeufchen_verschieben(campaign_id: str, person_id: str, haeufchen_id: str, x: float, y: float) -> None:
     """Häufchen ist vom Element gefallen, auf dem es lag (Mark, 11.11.2026) —
-    neue Bildschirmposition merken. Nur Häufchen und nur auf dem eigenen
-    Bildschirm; Brandflecken sitzen am Display und bewegen sich nie."""
+    neue Bildschirmposition merken. Nur Häufchen und Bärbels Seiten (die segeln
+    zu Boden), nur auf dem eigenen Bildschirm; Brandflecken sitzen am Display
+    und bewegen sich nie."""
     query = """
         MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, personId: $person_id})
-        WHERE coalesce(h.art, 'haeufchen') = 'haeufchen'
+        WHERE coalesce(h.art, 'haeufchen') IN $arten
         SET h.x = $x, h.y = $y
     """
     async with get_driver().session() as session:
-        await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id, x=x, y=y)
+        await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id, x=x, y=y,
+                          arten=list(FALLENDE_SPUREN))
 
 
 async def haeufchen_weg(campaign_id: str, person_id: str, haeufchen_id: str) -> None:

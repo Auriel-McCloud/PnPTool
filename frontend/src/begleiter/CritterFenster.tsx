@@ -9,48 +9,8 @@ import { useAutosave } from "../shell/autosave";
 import { Bestaetigung } from "../shell/Bestaetigung";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
-import { PET_ARTEN, petsApi, type PetArt } from "../pets/api";
+import { PetArtWahl } from "../pets/PetArtWahl";
 import "../entities/pc-detail.css";
-
-/**
- * Critter-Pet (11.11.2026): läuft der Critter als Tierchen über die Tablets
- * der Party seines Besitzers? Nur wirksam, wenn er an einen Spielercharakter
- * gebunden ist.
- */
-function PetArtWahl({ campaignId, critterId, hatBesitzer }: { campaignId: string; critterId: string; hatBesitzer: boolean }) {
-  const [art, setArt] = useState<PetArt | null | undefined>(undefined);
-  useEffect(() => {
-    petsApi.artLesen(campaignId, critterId).then((d) => setArt(d.art)).catch(() => setArt(null));
-  }, [campaignId, critterId]);
-  if (art === undefined) return null;
-  return (
-    <div className="bg-zeile" style={{ marginTop: 10, flexDirection: "column", alignItems: "stretch", gap: 4 }}>
-      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
-        Pet auf den Tablets
-        <select
-          value={art ?? ""}
-          onChange={async (e) => {
-            const neu = (e.target.value || null) as PetArt | null;
-            const d = await petsApi.artSetzen(campaignId, critterId, neu);
-            setArt(d.art);
-          }}
-        >
-          <option value="">aus</option>
-          {PET_ARTEN.map((a) => (
-            <option key={a.wert} value={a.wert}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <span style={{ fontSize: 11, color: "var(--text-leise)" }}>
-        {hatBesitzer
-          ? "Läuft unten über die Tablets der Party seines Besitzers, solange der Besitzer eingeloggt ist."
-          : "Wirkt erst, wenn der Critter oben an einen Spielercharakter gebunden ist."}
-      </span>
-    </div>
-  );
-}
 
 /**
  * Critter-Fenster in der Begleiter-Übersicht.
@@ -334,7 +294,16 @@ export function CritterFenster({
               </label>
             </div>
 
-            <PetArtWahl campaignId={campaignId} critterId={critterId} hatBesitzer={!!besitzerId} />
+            <PetArtWahl
+              campaignId={campaignId}
+              zielId={critterId}
+              fuer="critter"
+              hinweis={
+                besitzerId
+                  ? "Läuft unten über die Tablets der Party seines Besitzers, solange der Besitzer eingeloggt ist."
+                  : "Wirkt erst, wenn der Critter oben an einen Spielercharakter gebunden ist."
+              }
+            />
 
             <div className="bg-zeile" style={{ marginTop: 10 }}>
               <button

@@ -15,7 +15,7 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
         — alle Spuren (Häufchen, Brandflecken) auf diesem Bildschirm.
   Tablet → Server
     {"typ": "raus", "petId", "seite": "links"|"rechts"}
-    {"typ": "haeufchen", "petId", "x", "y", "art"}   (Anteile 0..1; art haeufchen|brand)
+    {"typ": "haeufchen", "petId", "x", "y", "art"}   (Anteile 0..1; art haeufchen|brand|seite)
     {"typ": "wegmachen", "id"}
     {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
 """

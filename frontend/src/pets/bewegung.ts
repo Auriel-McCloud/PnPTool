@@ -163,10 +163,14 @@ export interface Darstellung {
   left: number;
   top: number;
   transform: string;
-  animation: Animation;
+  /** Name des Sprite-Streifens (`<animation>.png`) — beim Drachen eine `Animation`,
+   *  bei Bärbel z. B. `flattern_2` (Gestalt im Namen). */
+  animation: string;
   animStart: number;
   /** Feuerstoß beim Niesen: Startzeit, Maul-Ankerpunkt, Blickrichtung. */
   feuer: { start: number; x: number; y: number; flip: boolean } | null;
+  /** Verwandlungswolke über der Figur (Startzeit), nur fliegende Pets. */
+  puff?: number | null;
   /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
   frame: number | null;
   hockt: boolean;
@@ -181,7 +185,7 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" };
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" };
 
 /** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
 const NIESEN_MS = 22 * 80;

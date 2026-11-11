@@ -28,6 +28,7 @@ import { ZusammenlegenPopup } from "../items/ZusammenlegenPopup";
 import { CredstickAktionen } from "../items/CredstickPopup";
 import { BehaelterHineinlegenPopup } from "../items/BehaelterHineinlegenPopup";
 import { SchlossForm } from "../items/SchlossForm";
+import { PetArtWahl } from "../pets/PetArtWahl";
 import "../entities/pc-detail.css";
 
 type GgAnsicht = "uebersicht" | "beschreibung" | "umbauen" | "notizen" | "besitz";
@@ -2183,6 +2184,16 @@ export function GegenstandRow({
                     </label>
                     {istGm && istBehaelter && (
                       <SchlossForm campaignId={campaignId} item={item} onGeaendert={onChanged} />
+                    )}
+                    {/* Bärbel (11.11.2026): ein Gegenstand kann als Pet über die
+                        Tablets fliegen — bei dem, der ihn besitzt. */}
+                    {istGm && (
+                      <PetArtWahl
+                        campaignId={campaignId}
+                        zielId={item.id}
+                        fuer="gegenstand"
+                        hinweis="Fliegt über die Tablets der Party dessen, der den Gegenstand besitzt — außer er liegt im Papierkorb oder in einer verschlossenen Kiste."
+                      />
                     )}
                     {istGm && istBehaelter && (
                       <>

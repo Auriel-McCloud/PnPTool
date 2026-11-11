@@ -1,0 +1,60 @@
+{
+  "breite": 76,
+  "hoehe": 76,
+  "gestalten": 3,
+  "animationen": {
+    "schweben_1": {
+      "frames": 12,
+      "ms": 140
+    },
+    "flattern_1": {
+      "frames": 16,
+      "ms": 45
+    },
+    "klappen_1": {
+      "frames": 5,
+      "ms": 60
+    },
+    "schweben_2": {
+      "frames": 12,
+      "ms": 140
+    },
+    "flattern_2": {
+      "frames": 16,
+      "ms": 45
+    },
+    "klappen_2": {
+      "frames": 5,
+      "ms": 60
+    },
+    "schweben_3": {
+      "frames": 12,
+      "ms": 140
+    },
+    "flattern_3": {
+      "frames": 16,
+      "ms": 45
+    },
+    "klappen_3": {
+      "frames": 5,
+      "ms": 60
+    },
+    "blinzeln_2": {
+      "frames": 19,
+      "ms": 110
+    },
+    "blinzeln_3": {
+      "frames": 5,
+      "ms": 70
+    },
+    "verwandeln": {
+      "frames": 16,
+      "ms": 70
+    }
+  },
+  "seite": {
+    "breite": 14,
+    "hoehe": 11
+  },
+  "verwandelnWechselFrame": 8
+}

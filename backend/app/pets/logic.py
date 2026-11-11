@@ -9,7 +9,9 @@ import random
 
 # Welche Sprites es gibt. Der Name ist zugleich der Ordner unter
 # frontend/public/pets/. Jeder Critter kann später ein eigenes bekommen.
-PET_ARTEN = ("drache",)
+# `baerbel` (11.11.2026) ist kein Tier, sondern ein Gegenstand: die sprechende
+# Bibel/das Zauberbuch, das fliegt (frontend/src/pets/flug.ts).
+PET_ARTEN = ("drache", "baerbel")
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
@@ -18,7 +20,11 @@ HAEUFCHEN_MAX = 12
 # Was ein Pet auf einem Bildschirm hinterlassen kann: Häufchen und
 # Brandflecken vom Feuerniesen (Mark, 11.11.2026). Beides bleibt liegen,
 # bis der Spieler es wegmacht (antippen bzw. sauberwischen).
-SPUR_ARTEN = ("haeufchen", "brand")
+# Bärbel verliert stattdessen Seiten, die zerknittert liegen bleiben.
+SPUR_ARTEN = ("haeufchen", "brand", "seite")
+
+# Spuren, die vom Element herunterfallen können (neue Lage wird gemerkt).
+FALLENDE_SPUREN = ("haeufchen", "seite")
 
 # Pause zwischen „rechts raus“ und „links rein“ beim nächsten Tablet.
 UNTERWEGS_MIN_S = 3.0

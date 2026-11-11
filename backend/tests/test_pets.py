@@ -233,3 +233,28 @@ def test_heruntergefallenes_haeufchen_merkt_neue_position(welt):
         m._takt.cancel()
 
     laufen(ablauf())
+
+
+def test_baerbel_verliert_seiten(welt):
+    """Bärbel (Gegenstand-Pet, 11.11.2026) hinterlässt Seiten statt Häufchen."""
+    m, stand = welt
+    stand["pets"].append({
+        "id": "buch", "name": "Bärbel", "art": "baerbel",
+        "besitzerId": "anna", "besitzerName": "Anna", "mitglieder": ["anna", "ben", "cleo"],
+    })
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        assert sorted((p["id"], p["art"]) for p in anna.letzte_pets()) == [("buch", "baerbel"), ("drache", "drache")]
+        await m.haeufchen("k", "anna", "buch", 0.5, 0.3, "seite")
+        assert [h["art"] for h in stand["haeufchen"]["anna"]] == ["seite"]
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_pet_arten_und_spuren():
+    assert "baerbel" in logic.PET_ARTEN
+    assert "seite" in logic.SPUR_ARTEN
+    assert set(logic.FALLENDE_SPUREN) == {"haeufchen", "seite"}

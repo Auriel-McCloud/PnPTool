@@ -1,6 +1,8 @@
 """Routen der Critter-Pets.
 
-SL: legt am Critter fest, ob und als was er herumläuft (`petArt`).
+SL: legt am Critter — oder an einem Gegenstand (Bärbel, 11.11.2026) — fest,
+ob und als was er herumläuft (`petArt`). `{critter_id}` ist dann die
+Gegenstands-id.
 Spieler: eine Live-Leitung, über die das Pet kommt und geht.
 """
 
@@ -40,7 +42,7 @@ class PetArtAntwort(BaseModel):
 async def art_lesen(campaign_id: str, critter_id: str):
     d = await repository.art_lesen(campaign_id, critter_id)
     if d is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter oder Gegenstand nicht gefunden")
     return d
 
 
@@ -48,7 +50,7 @@ async def art_lesen(campaign_id: str, critter_id: str):
 async def art_setzen(campaign_id: str, critter_id: str, body: PetArt):
     d = await repository.art_setzen(campaign_id, critter_id, body.art)
     if d is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter nicht gefunden")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter oder Gegenstand nicht gefunden")
     # Sofort sichtbar machen, nicht erst im nächsten Takt.
     await motor.abgleich(campaign_id)
     return d

@@ -1,7 +1,12 @@
 import { api } from "../api/client";
 
-/** Welche Sprites es gibt — gleiche Liste wie `PET_ARTEN` in backend/app/pets/logic.py. */
-export const PET_ARTEN = [{ wert: "drache", name: "Kleiner Drache" }] as const;
+/** Welche Sprites es gibt — gleiche Liste wie `PET_ARTEN` in backend/app/pets/logic.py.
+ *  `fuer`: wo die SL sie zur Auswahl bekommt — Tiere am Critter, Bärbel (die
+ *  fliegende Bibel, 11.11.2026) an einem Gegenstand. */
+export const PET_ARTEN = [
+  { wert: "drache", name: "Kleiner Drache", fuer: "critter" },
+  { wert: "baerbel", name: "Bärbel (fliegendes Buch)", fuer: "gegenstand" },
+] as const;
 export type PetArt = (typeof PET_ARTEN)[number]["wert"];
 
 export interface PetAufSchirm {
@@ -22,8 +27,9 @@ export interface Haeufchen {
   /** Anteile 0..1 der Bildschirmbreite/-höhe. */
   x: number;
   y: number;
-  /** Häufchen (antippen) oder Brandfleck vom Feuerniesen (wegwischen). */
-  art?: "haeufchen" | "brand";
+  /** Häufchen (antippen), Brandfleck vom Feuerniesen (wegwischen) oder
+   *  Bärbels verlorene Seite (antippen = aufheben). */
+  art?: "haeufchen" | "brand" | "seite";
 }
 
 export type PetNachricht =
@@ -31,6 +37,7 @@ export type PetNachricht =
   | { typ: "haeufchen"; daten: Haeufchen[] };
 
 export const petsApi = {
+  /** `critterId` kann auch die id eines Gegenstands sein (Bärbel). */
   artLesen: (cid: string, critterId: string) =>
     api.get<{ id: string; art: PetArt | null }>(`/api/campaigns/${cid}/pets/${critterId}`),
   artSetzen: (cid: string, critterId: string, art: PetArt | null) =>

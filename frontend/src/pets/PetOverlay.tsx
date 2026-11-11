@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
 import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
+import { FlugBewegung, type PetSteuerung } from "./flug";
 import "./pets.css";
 
 /**
@@ -17,7 +18,8 @@ import "./pets.css";
  */
 
 // Gleiche Werte wie frontend/public/pets/<art>/sprite.json (aus
-// docs/assets/critter-pet/sprites_exportieren.py).
+// docs/assets/critter-pet/sprites_exportieren.py bzw. baerbel_exportieren.py).
+type Takt = { frames: number; ms: number };
 const SPRITE = {
   breite: 84,
   hoehe: 48,
@@ -32,12 +34,40 @@ const SPRITE = {
     niesen: { frames: 22, ms: 80 },
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
-  },
+  } as Record<string, Takt>,
 } as const;
+
+/** Bärbel, die fliegende Bibel (11.11.2026): alle Streifen 76×76, je Gestalt
+ *  1–3 ein eigener Streifen; Fortbewegung und Schweben macht `flug.ts`. */
+const BAERBEL = {
+  breite: 76,
+  hoehe: 76,
+  /** Leerraum unter dem zugeklappten Buch (Sprite-Pixel) — zum Draufsitzen. */
+  fussLuft: 14,
+  animationen: {
+    schweben_1: { frames: 12, ms: 140 },
+    schweben_2: { frames: 12, ms: 140 },
+    schweben_3: { frames: 12, ms: 140 },
+    flattern_1: { frames: 16, ms: 45 },
+    flattern_2: { frames: 16, ms: 45 },
+    flattern_3: { frames: 16, ms: 45 },
+    klappen_1: { frames: 5, ms: 60 },
+    klappen_2: { frames: 5, ms: 60 },
+    klappen_3: { frames: 5, ms: 60 },
+    blinzeln_2: { frames: 19, ms: 110 },
+    blinzeln_3: { frames: 5, ms: 70 },
+  } as Record<string, Takt>,
+  verwandeln: { frames: 16, ms: 70 },
+} as const;
+
+function sprite(art: string) {
+  return art === "baerbel" ? BAERBEL : SPRITE;
+}
 
 const SPUR_PX = {
   haeufchen: { breite: 12, hoehe: 10 },
   brand: { breite: 38, hoehe: 23 },
+  seite: { breite: 14, hoehe: 11 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
@@ -46,8 +76,18 @@ function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
 }
 
-function masse(): Masse {
+function masse(art = "drache"): Masse {
   const s = skala();
+  if (art === "baerbel") {
+    return {
+      bw: BAERBEL.breite * s,
+      bh: BAERBEL.hoehe * s,
+      fuss: BAERBEL.fussLuft * s,
+      maulX: 0,
+      maulY: 0,
+      feuerLaenge: 0,
+    };
+  }
   return {
     bw: SPRITE.breite * s,
     bh: SPRITE.hoehe * s,
@@ -135,8 +175,7 @@ function menuePunkt(el: HTMLElement, hoehe: number): MenuePunkt {
   };
 }
 
-function umgebung(): Umgebung {
-  const m = masse();
+function umgebung(m: Masse = masse()): Umgebung {
   const breite = window.innerWidth;
   const hoehe = window.innerHeight;
 
@@ -276,6 +315,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
           <HaeufchenAmElement
             key={h.id}
             h={h}
+            art={h.art === "seite" ? "seite" : "haeufchen"}
             weg={weg.has(h.id)}
             onWeg={() => wegmachen(h.id)}
             onGefallen={(x, y) => senden({ typ: "verschieben", id: h.id, x, y })}
@@ -302,11 +342,16 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
  */
 function HaeufchenAmElement({
   h,
+  art,
   weg,
   onWeg,
   onGefallen,
 }: {
   h: Haeufchen;
+  /** `seite` = Bärbels verlorene Seite: segelt flatternd zu Boden und liegt
+   *  dort zerknittert (Mark, 11.11.2026: „verliert Seiten, die dann
+   *  zerknittert rumliegen“). */
+  art: "haeufchen" | "seite";
   weg: boolean;
   onWeg: () => void;
   onGefallen: (x: number, y: number) => void;
@@ -315,8 +360,10 @@ function HaeufchenAmElement({
   const gefallen = useRef(onGefallen);
   gefallen.current = onGefallen;
   const s = skala();
-  const bw = SPUR_PX.haeufchen.breite * s;
-  const bh = SPUR_PX.haeufchen.hoehe * s;
+  const istSeite = art === "seite";
+  const bw = SPUR_PX[art].breite * s;
+  const bh = SPUR_PX[art].hoehe * s;
+  const liegtBild = istSeite ? "url(/pets/baerbel/seite.png)" : "url(/pets/drache/haeufchen.png)";
 
   useLayoutEffect(() => {
     const div = el.current;
@@ -327,7 +374,12 @@ function HaeufchenAmElement({
     let y = h.y * window.innerHeight;
     let boden = y >= window.innerHeight - 3;
     let anker: { el: Element; dx: number; dy: number } | null = null;
-    let fall: { t0: number; y0: number } | null = null;
+    let fall: { t0: number; y0: number; x0: number } | null = null;
+    // Eine Seite segelt sofort los — sie bleibt nicht in der Luft an etwas hängen.
+    if (istSeite && !boden) {
+      fall = { t0: performance.now(), y0: y, x0: x };
+      div.style.backgroundImage = "url(/pets/baerbel/seite_fliegt.png)";
+    }
     const suchenBis = performance.now() + 2500;
 
     const suche = () => {
@@ -351,12 +403,21 @@ function HaeufchenAmElement({
         x = xAnteil * window.innerWidth;
         y = window.innerHeight;
       } else if (fall) {
-        const t = (jetzt - fall.t0) / 1000;
-        y = fall.y0 + 0.5 * 2600 * t * t;
+        const t = Math.max(0, (jetzt - fall.t0) / 1000);
+        if (istSeite) {
+          // Segeln: langsam, pendelt seitlich und kippt dabei.
+          y = fall.y0 + 110 * t;
+          x = fall.x0 + Math.sin(t * 2.4) * 22;
+          div.style.transform = `rotate(${(Math.cos(t * 2.4) * 35).toFixed(1)}deg)`;
+        } else y = fall.y0 + 0.5 * 2600 * t * t;
         if (y >= window.innerHeight) {
           y = window.innerHeight;
           fall = null;
           boden = true;
+          if (istSeite) {
+            div.style.transform = "";
+            div.style.backgroundImage = liegtBild;
+          }
           xAnteil = Math.min(1, Math.max(0, x / window.innerWidth));
           div.classList.remove("pet-haeufchen-faellt");
           div.classList.add("pet-haeufchen-platsch");
@@ -366,7 +427,7 @@ function HaeufchenAmElement({
         const r = anker.el.getBoundingClientRect();
         if (!anker.el.isConnected || (r.width === 0 && r.height === 0)) {
           anker = null;
-          fall = { t0: jetzt, y0: y };
+          fall = { t0: jetzt, y0: y, x0: x };
           div.classList.add("pet-haeufchen-faellt");
         } else {
           x = r.left + anker.dx;
@@ -375,7 +436,7 @@ function HaeufchenAmElement({
       } else {
         anker = suche();
         if (!anker && jetzt > suchenBis) {
-          fall = { t0: jetzt, y0: y };
+          fall = { t0: jetzt, y0: y, x0: x };
           div.classList.add("pet-haeufchen-faellt");
         }
       }
@@ -394,8 +455,8 @@ function HaeufchenAmElement({
       ref={el}
       role="button"
       className={`pet-haeufchen${weg ? " pet-haeufchen-weg" : ""}`}
-      title="Wegmachen"
-      style={{ width: bw, height: bh, backgroundImage: "url(/pets/drache/haeufchen.png)" }}
+      title={istSeite ? "Aufheben" : "Wegmachen"}
+      style={{ width: bw, height: bh, backgroundImage: liegtBild }}
       onClick={onWeg}
     />
   );
@@ -589,9 +650,11 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   const zzz = useRef<HTMLSpanElement | null>(null);
   const tropfen = useRef<HTMLSpanElement | null>(null);
   const feuer = useRef<HTMLDivElement | null>(null);
+  const puff = useRef<HTMLDivElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
-  const bewegung = useRef<PetBewegung | null>(null);
+  // Laufen (Drache) oder Fliegen (Bärbel), gleiche Schnittstelle.
+  const bewegung = useRef<PetSteuerung | null>(null);
 
   // Mark, 11.11.: „er zappelt zwar, aber ich kann ihn nicht verschieben,
   // meistens verschiebe ich den ganzen Screen“. `touch-action: none` allein
@@ -616,10 +679,16 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   }, []);
 
   useEffect(() => {
-    const b = new PetBewegung(masse, umgebung(), pet.seite, performance.now(), (m) => {
-      if (m.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: m.seite });
-      else senden({ typ: "haeufchen", petId: pet.id, x: m.x, y: m.y, art: m.art });
-    });
+    const fliegt = pet.art === "baerbel";
+    const sp = sprite(pet.art);
+    const m = () => masse(pet.art);
+    const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
+      if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
+      else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
+    };
+    const b: PetSteuerung = fliegt
+      ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
+      : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden);
     bewegung.current = b;
 
     let letzte = performance.now();
@@ -627,22 +696,22 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
-      b.setzeUmgebung(umgebung());
+      b.setzeUmgebung(umgebung(m()));
       b.tick(jetzt, dt);
       const d = b.darstellung(jetzt);
 
       const el = figur.current;
       if (el) {
         const s = skala();
-        const anim = SPRITE.animationen[d.animation];
+        const anim = sp.animationen[d.animation] ?? { frames: 1, ms: 1000 };
         const frame = d.frame ?? Math.floor((jetzt - d.animStart) / anim.ms) % anim.frames;
-        el.style.width = `${SPRITE.breite * s}px`;
-        el.style.height = `${SPRITE.hoehe * s}px`;
+        el.style.width = `${sp.breite * s}px`;
+        el.style.height = `${sp.hoehe * s}px`;
         el.style.left = `${d.left}px`;
         el.style.top = `${d.top}px`;
         el.style.backgroundImage = `url(/pets/${pet.art}/${d.animation}.png)`;
-        el.style.backgroundSize = `${anim.frames * SPRITE.breite * s}px ${SPRITE.hoehe * s}px`;
-        el.style.backgroundPosition = `${-frame * SPRITE.breite * s}px 0`;
+        el.style.backgroundSize = `${anim.frames * sp.breite * s}px ${sp.hoehe * s}px`;
+        el.style.backgroundPosition = `${-frame * sp.breite * s}px 0`;
         el.style.transform = d.transform;
         el.dataset.hockt = d.hockt ? "ja" : "nein";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
@@ -662,6 +731,21 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
           fe.style.backgroundPosition = `${-bild * f.breite * s}px 0`;
           fe.style.transform = d.feuer.flip ? "scaleX(-1)" : "none";
         } else fe.style.display = "none";
+      }
+      const pu = puff.current;
+      if (pu) {
+        if (d.puff != null && pet.art === "baerbel") {
+          const s = skala();
+          const v = BAERBEL.verwandeln;
+          const bild = Math.min(v.frames - 1, Math.floor((jetzt - d.puff) / v.ms));
+          pu.style.display = "block";
+          pu.style.width = `${BAERBEL.breite * s}px`;
+          pu.style.height = `${BAERBEL.hoehe * s}px`;
+          pu.style.left = `${d.left}px`;
+          pu.style.top = `${d.top}px`;
+          pu.style.backgroundSize = `${v.frames * BAERBEL.breite * s}px ${BAERBEL.hoehe * s}px`;
+          pu.style.backgroundPosition = `${-bild * BAERBEL.breite * s}px 0`;
+        } else pu.style.display = "none";
       }
       const tr = tropfen.current;
       if (tr) {
@@ -756,7 +840,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         ref={figur}
         role="button"
         className="pet-figur"
-        title={`${pet.name} (${pet.besitzerName}) — antippen: streicheln, ${PACKEN_MS / 1000} s halten: packen und werfen`}
+        title={`${pet.name} (${pet.besitzerName}) — antippen: ${pet.art === "baerbel" ? "freuen" : "streicheln"}, ${PACKEN_MS / 1000} s halten: packen und werfen`}
         onPointerDown={runter}
         onPointerMove={bewegen}
         onPointerUp={hoch}
@@ -773,6 +857,9 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         className="pet-feuer"
         style={{ display: "none", backgroundImage: `url(/pets/${pet.art}/feuer.png)` }}
       />
+      {pet.art === "baerbel" && (
+        <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />
+      )}
       <span ref={tropfen} className="pet-tropfen" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />

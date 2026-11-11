@@ -1941,3 +1941,7 @@ Upgraden-Knopf im NPC-Inventar öffnet das Träger-Fach der Werkbank statt blind
 ## [2026-11-11] update | Tutorial-Shop: KI-Kommentar nach dem Einkauf entfernt
 
 Mark: stört und ist nicht lustig. Kein Popup, kein KI-Aufruf beim Schließen des Tutorial-Shops mehr. Route bleibt ungenutzt. Siehe [[entities/nebenfiguren]] für den Tutorial-Shop-Verkäufer.
+
+## [2026-11-11] update | Bärbel: fliegendes Buch als Pet an einem Gegenstand
+
+`petArt` auch am Gegenstand (Besitz reicht, verschlossene Kiste/weggeworfen sperrt), Flug-Logik `flug.ts`, drei Gestalten mit Verwandlung, Blinzeln, verlorene Seiten. Siehe [[entities/critter-pet]].
