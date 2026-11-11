@@ -98,6 +98,8 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   eigenen Fenster“. **Regel (Mark):** die Figur bewegt sich in ihrem Rahmen
   nicht fort, nur der Rahmen wandert über den Schirm; die Figur macht dazu
   die Laufbewegung. Körperform steht still, nur Beine tapsen, leichtes Wippen.
+  Mark: „jetzt schaut es wie gehen aus“. Danach 32 statt 16 Frames (35 ms,
+  gleicher Takt), weil es noch zuckelig wirkte.
 
 ## Noch offen
 

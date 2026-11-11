@@ -38,8 +38,10 @@ def animationen():
         idle.append(dr.frame(phase=t, welle=0.0, amp=3.0, bob=round(math.sin(t) * 0.6), blink=i in (17, 18),
                              schnurr=math.sin(t) * 0.5))
     lauf = []
-    for i in range(16):
-        t = i / 16 * 2 * math.pi
+    # 32 Frames à 35 ms = gleicher Schritt-Takt wie vorher 16 à 70, nur flüssiger
+    # (Mark, 11.11.: „ein paar mehr Frames, damit es nicht so zuckelig wirkt“).
+    for i in range(32):
+        t = i / 32 * 2 * math.pi
         # Leichtes Wiegen auf der Stelle (pendelt, wandert nicht).
         lauf.append(dr.frame(phase=t, welle=math.sin(t) * 0.12, amp=3.0, leg=2.0,
                              bob=round(math.sin(2 * t) * 0.6), schnurr=1.0))
@@ -49,7 +51,7 @@ def animationen():
         t = i / 8 * 2 * math.pi
         freuen.append((dr.frame(phase=t * 2, amp=3.0, blink=True, mund=True, schnurr=1.5),
                        round(abs(math.sin(t)) * 3)))
-    return {"idle": (idle, 110), "lauf": (lauf, 70), "freuen": (freuen, 90)}
+    return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90)}
 
 
 def pixelbild(zeilen, farben):

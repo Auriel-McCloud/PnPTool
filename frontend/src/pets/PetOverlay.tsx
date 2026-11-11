@@ -22,7 +22,7 @@ const SPRITE = {
   hoehe: 48,
   animationen: {
     idle: { frames: 24, ms: 110 },
-    lauf: { frames: 16, ms: 70 },
+    lauf: { frames: 32, ms: 35 },
     freuen: { frames: 8, ms: 90 },
   },
 } as const;
