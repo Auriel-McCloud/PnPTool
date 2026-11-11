@@ -417,7 +417,12 @@ export class PetBewegung {
 
   /** Finger drauf: er hält still und zappelt immer stärker; nach 3 s gepackt. */
   druckStart(jetzt: number): boolean {
-    if (["raus", "wurf", "sprung", "uebergang", "niesen", "gehalten", "getragen"].includes(this.zustand)) return false;
+    // Fast immer greifbar — auch mitten im Sprung, Übergang oder Niesen
+    // (Mark: „meistens zittert er nur“: bisher ließ er sich in diesen kurzen
+    // Phasen gar nicht greifen). Nur wenn er schon als „raus“ gemeldet ist,
+    // gehört er bereits dem nächsten Tablet; im Flug fangen geht nicht.
+    if (["wurf", "gehalten", "getragen"].includes(this.zustand)) return false;
+    if (this.zustand === "raus" && this.rausGemeldet) return false;
     this.griff = {
       start: jetzt,
       pose: this.aktuellePose(jetzt),
@@ -425,18 +430,32 @@ export class PetBewegung {
       vorher: { zustand: this.zustand, bis: this.bis },
     };
     this.zustand = "gehalten";
+    this.fingerSpur = [];
     return true;
   }
 
-  /** Vor Ablauf losgelassen oder weggewischt: weitermachen wie vorher. */
+  /** Wo der Finger gerade ist, solange er noch nicht gepackt hat — damit er
+   *  beim Packen genau dorthin springt, auch wenn der Finger schon losgezogen ist. */
+  fingerMerken(fx: number, fy: number, jetzt: number) {
+    if (this.zustand !== "gehalten") return;
+    this.fingerSpur.push({ x: fx, y: fy, t: jetzt });
+    while (this.fingerSpur.length > 2 && jetzt - this.fingerSpur[0].t > 100) this.fingerSpur.shift();
+  }
+
+  /** Vor Ablauf losgelassen: weitermachen wie vorher. */
   druckAbbrechen(jetzt: number) {
     if (this.zustand !== "gehalten" || !this.griff) return;
     const vorher = this.griff.vorher;
     const dauer = jetzt - this.griff.start;
     this.griff = null;
+    this.fingerSpur = [];
     this.zustand = vorher.zustand;
     this.bis = vorher.bis + dauer;
+    // Alles Zeitgesteuerte um die Haltezeit verschieben, damit er dort weitermacht.
     if (this.kletterei) this.kletterei.t0 += dauer;
+    if (this.sprung) this.sprung.t0 += dauer;
+    if (this.uebergang) this.uebergang.t0 += dauer;
+    if (this.zustand === "niesen") this.niesenStart += dauer;
   }
 
   get gepackt() {
@@ -796,7 +815,10 @@ export class PetBewegung {
           this.sprung = null;
           this.uebergang = null;
           this.nachAnkunft = null;
+          // Sofort an den Finger springen — der kann schon woanders sein.
+          const f = this.fingerSpur[this.fingerSpur.length - 1];
           this.fingerSpur = [];
+          if (f) this.tragen(f.x, f.y, jetzt);
         }
         break;
       case "getragen":

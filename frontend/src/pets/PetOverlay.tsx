@@ -396,13 +396,18 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   }, []);
 
   // Antippen = streicheln; 3 s draufbleiben = packen, ziehen, werfen.
-  const druck = useRef<{ x: number; y: number; id: number } | null>(null);
+  // Mark, 11.11.: „meistens zittert er nur und folgt meiner Maus nicht“ —
+  // wer vor Ablauf der 3 s losgezogen hat, hat das Packen bisher abgebrochen.
+  // Jetzt bricht Bewegung nichts mehr ab: solange gedrückt, wird er nach 3 s
+  // gepackt und springt dann an den Finger/die Maus, wo die gerade ist.
+  const druck = useRef<{ x: number; y: number; id: number; bewegt: boolean } | null>(null);
 
   const runter = (e: React.PointerEvent<HTMLDivElement>) => {
     const b = bewegung.current;
     if (!b) return;
     if (!b.druckStart(performance.now())) return;
-    druck.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    druck.current = { x: e.clientX, y: e.clientY, id: e.pointerId, bewegt: false };
+    b.fingerMerken(e.clientX, e.clientY, performance.now());
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -413,11 +418,9 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     const jetzt = performance.now();
     if (b.gepackt) {
       b.tragen(e.clientX, e.clientY, jetzt);
-    } else if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 40) {
-      // Großzügig: ein Finger, der 3 s draufliegt, rollt und zittert.
-      // Finger rutscht weg, bevor er gepackt ist: kein Packen, kein Streicheln.
-      b.druckAbbrechen(jetzt);
-      druck.current = null;
+    } else {
+      b.fingerMerken(e.clientX, e.clientY, jetzt);
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 40) d.bewegt = true;
     }
   };
 
@@ -432,7 +435,8 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
       b.loslassen(jetzt);
     } else {
       b.druckAbbrechen(jetzt);
-      streicheln();
+      // Kurz und ruhig getippt = streicheln; vorzeitig gezogen = nichts.
+      if (!d.bewegt) streicheln();
     }
   };
 
