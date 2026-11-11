@@ -36,7 +36,7 @@
  * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
  */
 
-export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen";
+export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen" | "fressen";
 
 export interface Masse {
   /** Box-Breite/-Höhe des Sprites in Bildschirm-Pixeln. */
@@ -90,7 +90,19 @@ export interface Umgebung {
   flaechen: () => Flaeche[];
   /** Popups, an deren Seite er hochklettern kann. */
   waende: () => Flaeche[];
+  /** Spuren auf dem Bildschirm (Seiten, Häufchen …) — damit Pets damit spielen
+   *  können (Mark, 11.11.2026: Drache frisst Seiten, Tentakel holt Häufchen). */
+  spuren?: () => SpurAufSchirm[];
   zufall: () => number;
+}
+
+export interface SpurAufSchirm {
+  id: string;
+  art: string;
+  /** Mitte und Unterkante in Bildschirm-Pixeln. */
+  x: number;
+  y: number;
+  unten: number;
 }
 
 type Ort = { art: "boden" } | { art: "flaeche"; q: Quelle };
@@ -109,6 +121,7 @@ type Zustand =
   | "landen"
   | "uebergang"
   | "niesen"
+  | "fressen"
   | "gehalten"
   | "getragen"
   | "wurf"
@@ -174,8 +187,11 @@ export interface Darstellung {
   /** Effekt-Streifen auf eigener, größerer Leinwand (z. B. `tentakel_2`);
    *  `ersetzt` = der Streifen enthält die Figur selbst, sie wird solange ausgeblendet. */
   effekt?: { name: string; start: number; ersetzt: boolean } | null;
-  /** Blitz vom Buch zum Einschlagpunkt (Bildschirm-Pixel). */
-  blitz?: { start: number; x0: number; y0: number; x1: number; y1: number } | null;
+  /** Gerade sichtbare Blitze (Bildschirm-Pixel), je mit eigener Startzeit. */
+  blitze?: { start: number; x0: number; y0: number; x1: number; y1: number }[] | null;
+  /** Spur (Seite/Häufchen), die gerade gepackt wird und mitwandert — Bildschirm-
+   *  Pixel ihrer Mitte, `skala` < 1 = verschwindet im Maul/Buch. */
+  greift?: { id: string; x: number; y: number; skala: number } | null;
   /** Figur leuchtet (lädt einen Zauber auf). */
   leuchten?: boolean;
   /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
@@ -192,7 +208,9 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" };
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" }
+  /** Spur gefressen/eingesaugt — verschwindet vom Bildschirm. */
+  | { typ: "fressen"; id: string };
 
 /** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
 const NIESEN_MS = 22 * 80;
@@ -200,6 +218,10 @@ const FEUER_AB_MS = 6 * 80;
 const FEUER_MS = 16 * 70;
 /** So lange muss man draufbleiben, bis er gepackt ist. */
 export const PACKEN_MS = 3000;
+/** Fressen (Seite schnappen und kauen): 16 Frames à 90 ms, Seite fliegt in Frame 3–5 ins Maul. */
+const FRESSEN_MS = 16 * 90;
+const SCHNAPP_AB_MS = 3 * 90;
+const SCHNAPP_BIS_MS = 6 * 90;
 const SCHWERKRAFT_PX_S2 = 2200;
 const MAX_WURF_PX_S = 2600;
 
@@ -229,6 +251,9 @@ export class PetBewegung {
   geschlafen = false;
   niesenStart = 0;
   brandGelegt = false;
+  /** Seite, die er gerade frisst (Mark, 11.11.2026: „kann der Drache das Papier,
+   *  das rumliegt, fressen, wenn er daran vorbeiläuft“). */
+  beute: { id: string; x: number; y: number; t0: number; gemeldet: boolean; weiter: { zielX: number; danach: ((jetzt: number) => void) | null } | null } | null = null;
   naechstesNiesen = 0;
   /** Herausgezogener Menüpunkt, solange er drauf ist oder hinwill. */
   menuePunkt: MenuePunkt | null = null;
@@ -468,6 +493,53 @@ export class PetBewegung {
   }
 
   /** Hatschi! Nur im Stehen, nicht beim Klettern/Springen. */
+  /** Wo das Maul gerade ist (Bildschirm-Pixel). */
+  private maul() {
+    const { bw, bh, fuss, maulX, maulY } = this.masse();
+    const top = this.fussY - bh + fuss;
+    return { x: this.richtung > 0 ? this.x + maulX : this.x + bw - maulX, y: top + maulY };
+  }
+
+  /** Seiten, die auf derselben Ebene liegen wie er steht (Boden oder Fläche). */
+  private seitenAufEbene() {
+    const { bh } = this.masse();
+    return (this.u.spuren?.() ?? []).filter((s) => s.art === "seite" && Math.abs(s.unten - this.fussY) < Math.max(14, bh * 0.15));
+  }
+
+  private seiteAufMeinerEbene() {
+    const { bw } = this.masse();
+    const mitte = this.x + bw / 2;
+    const nahe = this.seitenAufEbene().filter((s) => Math.abs(s.x - mitte) < 520);
+    if (this.ort.art === "flaeche") {
+      const r = this.ort.q.rechteck();
+      if (!r) return null;
+      return nahe.find((s) => s.x >= r.left && s.x <= r.right) ?? null;
+    }
+    return nahe[0] ?? null;
+  }
+
+  /** Beim Laufen: liegt eine Seite genau vor dem Maul? Dann stehen bleiben und fressen. */
+  private seiteVorDemMaul(jetzt: number): boolean {
+    const m = this.maul();
+    const { bw } = this.masse();
+    const treffer = this.seitenAufEbene().find((s) => {
+      const vor = (s.x - m.x) * this.richtung;
+      return vor > -bw * 0.12 && vor < bw * 0.12;
+    });
+    if (!treffer) return false;
+    this.beute = {
+      id: treffer.id,
+      x: treffer.x,
+      y: treffer.y,
+      t0: jetzt,
+      gemeldet: false,
+      weiter: Math.abs(this.zielX - this.x) > 4 ? { zielX: this.zielX, danach: this.nachAnkunft } : null,
+    };
+    this.nachAnkunft = null;
+    this.zustand = "fressen";
+    return true;
+  }
+
   private niese(jetzt: number) {
     this.zustand = "niesen";
     this.niesenStart = jetzt;
@@ -533,6 +605,7 @@ export class PetBewegung {
     if (this.sprung) this.sprung.t0 += dauer;
     if (this.uebergang) this.uebergang.t0 += dauer;
     if (this.zustand === "niesen") this.niesenStart += dauer;
+    if (this.beute) this.beute.t0 += dauer;
   }
 
   get gepackt() {
@@ -630,7 +703,7 @@ export class PetBewegung {
   }
 
   streicheln(jetzt: number): boolean {
-    if (["raus", "sprung", "klettern", "uebergang", "niesen", "gehalten", "getragen", "wurf"].includes(this.zustand))
+    if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf"].includes(this.zustand))
       return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
@@ -646,6 +719,12 @@ export class PetBewegung {
     const u = this.u;
     const w = u.zufall();
     const mitte = this.x + bw / 2;
+
+    // Liegt eine Seite auf seiner Ebene? Dann oft hin und fressen.
+    if (jetzt < this.besuchEnde && u.zufall() < 0.6) {
+      const s = this.seiteAufMeinerEbene();
+      if (s) return this.laufeZu(this.klemmeX(s.x - bw / 2));
+    }
 
     // Ab und zu Feuer niesen (Mark, 11.11.) — überall, wo er steht.
     if (jetzt >= this.naechstesNiesen && jetzt < this.besuchEnde && u.zufall() < 0.18) {
@@ -869,7 +948,7 @@ export class PetBewegung {
     const u = this.u;
 
     // Boden folgt der Fenstergröße, Fläche ihrem Element (Scrollen, Popup zu).
-    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "raus"].includes(this.zustand)) {
+    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "fressen", "raus"].includes(this.zustand)) {
       if (this.ort.art === "boden") {
         this.fussY = u.hoehe;
       } else {
@@ -887,6 +966,7 @@ export class PetBewegung {
     switch (this.zustand) {
       case "laufen":
       case "raus": {
+        if (this.zustand === "laufen" && this.seiteVorDemMaul(jetzt)) break;
         this.x += TEMPO_PX_S * dt * this.richtung;
         const angekommen = this.richtung > 0 ? this.x >= this.zielX : this.x <= this.zielX;
         if (angekommen) {
@@ -955,6 +1035,7 @@ export class PetBewegung {
           this.sprung = null;
           this.uebergang = null;
           this.nachAnkunft = null;
+          this.beute = null; // die Seite bleibt liegen
           // Sofort an den Finger springen — der kann schon woanders sein.
           const f = this.fingerSpur[this.fingerSpur.length - 1];
           this.fingerSpur = [];
@@ -989,6 +1070,30 @@ export class PetBewegung {
           this.bis = jetzt + 1500;
         }
         break;
+      case "fressen": {
+        const b = this.beute;
+        if (!b) {
+          this.zustand = "idle";
+          this.bis = jetzt + 500;
+          break;
+        }
+        const t = jetzt - b.t0;
+        if (!b.gemeldet && t >= SCHNAPP_BIS_MS) {
+          b.gemeldet = true;
+          this.melden({ typ: "fressen", id: b.id });
+        }
+        if (t >= FRESSEN_MS) {
+          const weiter = b.weiter;
+          this.beute = null;
+          if (weiter) {
+            this.laufeZu(weiter.zielX, weiter.danach);
+          } else {
+            this.zustand = "idle";
+            this.bis = jetzt + this.zw(800, 2000);
+          }
+        }
+        break;
+      }
       case "niesen": {
         const t = jetzt - this.niesenStart;
         // Flecken entstehen, wenn das Feuer am weitesten reicht.
@@ -1037,6 +1142,8 @@ export class PetBewegung {
         return "schlafen";
       case "niesen":
         return jetzt - this.niesenStart < NIESEN_MS ? "niesen" : "idle";
+      case "fressen":
+        return "fressen";
       case "gehalten":
         return this.griff?.animation ?? "idle";
       case "getragen":
@@ -1102,6 +1209,23 @@ export class PetBewegung {
     return p;
   }
 
+  /** Die Seite hüpft beim Schnappen ins Maul und wird dabei kleiner. */
+  private greiftJetzt(jetzt: number): Darstellung["greift"] {
+    const b = this.beute;
+    if (this.zustand !== "fressen" || !b || b.gemeldet) return null;
+    const t = jetzt - b.t0;
+    if (t < SCHNAPP_AB_MS) return null;
+    const k = Math.min(1, (t - SCHNAPP_AB_MS) / (SCHNAPP_BIS_MS - SCHNAPP_AB_MS));
+    const m = this.maul();
+    const e = glatt(k);
+    return {
+      id: b.id,
+      x: b.x + (m.x - b.x) * e,
+      y: b.y + (m.y - b.y) * e - Math.sin(k * Math.PI) * 18,
+      skala: 1 - 0.7 * k,
+    };
+  }
+
   darstellung(jetzt: number): Darstellung {
     const { bw, bh } = this.masse();
     const p = this.aktuellePose(jetzt);
@@ -1141,6 +1265,7 @@ export class PetBewegung {
       schwitzt,
       kopfX,
       kopfY,
+      greift: this.greiftJetzt(jetzt),
     };
   }
 }

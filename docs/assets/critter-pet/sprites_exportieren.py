@@ -86,8 +86,23 @@ def animationen():
                                     schnurr=-1.0 + math.sin(i) * 0.4), -1 if i < 9 else 0))
         else:  # erholen
             niesen.append(dr.frame(phase=0.6 + (i - 19) * 0.2, welle=0.0, amp=2.0, blink=i == 21, schnurr=0.0))
+    # Fressen (Mark, 11.11.: „kann der Drache das Papier, das rumliegt, fressen,
+    # wenn er daran vorbeiläuft“): schnuppern, Maul auf (Frame 3–5 fliegt die
+    # Seite hinein, macht das Frontend), genüsslich kauen, schlucken.
+    fressen = []
+    for i in range(16):
+        if i <= 2:
+            fressen.append(dr.frame(phase=i * 0.3, welle=0.0, amp=2.4, schnurr=0.8 + i * 0.4))
+        elif i <= 5:
+            fressen.append((dr.frame(phase=1.0, welle=0.0, amp=2.4, mund=True, schnurr=1.6), 1))
+        elif i <= 13:
+            zu_ = i % 2 == 0
+            fressen.append((dr.frame(phase=1.0 + i * 0.2, welle=0.0, amp=2.4, mund=not zu_, blink=True,
+                                     schnurr=math.sin(i) * 0.8), 0 if zu_ else 1))
+        else:
+            fressen.append(dr.frame(phase=1.2, welle=0.0, amp=2.6, blink=i == 15, schnurr=0.0))
     return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90), "klettern": (klettern, 35),
-            "niesen": (niesen, 80),
+            "niesen": (niesen, 80), "fressen": (fressen, 90),
             "sprung": (sprung, 70), "schlafen": (schlafen, 150)}
 
 

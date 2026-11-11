@@ -192,7 +192,9 @@ if __name__ == "__main__":
     Image.open(herz).save(os.path.join(ZIEL, "herz.png"))
     info = {"breite": W, "hoehe": H, "gestalten": len(V), "animationen": ANIM,
             "seite": {"breite": 14, "hoehe": 11}, "verwandelnWechselFrame": 16,
-            "tentakel": {"schlagFrame": SCHLAG_FRAME, "spitze": list(schlag_spitze(V[0]))}}
+            "tentakel": {"schlagFrame": SCHLAG_FRAME, "spitze": list(schlag_spitze(V[0])),
+                         # Spitze in Frame 33–37 (Zurückreißen) — gepacktes Häufchen folgt ihr
+                         "spitzen": [[98, 92], [96, 77], [88, 70], [80, 62], [72, 53]]}}
     with open(os.path.join(ZIEL, "sprite.json"), "w", encoding="utf8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
     print(json.dumps(ANIM))

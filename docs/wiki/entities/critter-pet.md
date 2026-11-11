@@ -205,6 +205,8 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Gebaut 11.11.:** Tentakelmonster will raus (Spalt mit glühenden Augen, Tentakel klatscht aufs Display → feuchter Schleimfleck `schleim`, wegwischen) und Blitz-Zauber (Buch leuchtet auf, Blitz schlägt im Bild ein → Brandfleck wie beim Drachen).
 
+**Gebaut 11.11. (Interaktion):** Der Drache frisst Bärbels Seiten, wenn er daran vorbeikommt (läuft auch gezielt hin); Bärbels Tentakel zieht Häufchen ins Buch. Blitz variiert: Einzel-, Gabel-, Kettenblitz, trifft oft Wörter/Kästchen. Direkte Pet-zu-Pet-Interaktion (beide gleichzeitig auf einem Bildschirm) noch nicht.
+
 **Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle; Vorlese-Zauber: sie schlägt sich auf, wird per
 Glitzerwolke groß und liest ein KI-generiertes, zur Situation passendes
 Bibelzitat vor.

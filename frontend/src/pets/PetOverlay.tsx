@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
-import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
+import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import "./pets.css";
 
@@ -34,6 +34,7 @@ const SPRITE = {
     niesen: { frames: 22, ms: 80 },
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
+    fressen: { frames: 16, ms: 90 },
   } as Record<string, Takt>,
 } as const;
 
@@ -71,6 +72,11 @@ const BAERBEL = {
 function sprite(art: string) {
   return art === "baerbel" ? BAERBEL : SPRITE;
 }
+
+/** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
+ *  Tentakel holt ein Häufchen) — Mitte in Bildschirm-Pixeln. Die Spur folgt
+ *  dann diesem Punkt statt ihrem Element. */
+const gegriffen = new Map<string, { x: number; y: number; skala: number }>();
 
 /** Wie oft Bärbels Seite auf einer Wort-/Kastenkante liegen bleibt, die sie überquert. */
 const LANDE_CHANCE = 0.7;
@@ -262,6 +268,14 @@ function umgebung(m: Masse = masse()): Umgebung {
         ? Array.from(tafel.querySelectorAll<HTMLElement>(".cl-bereich:not(:disabled)")).map((el) => menuePunkt(el, hoehe))
         : [],
     flaechen,
+    // Seiten und Häufchen, die gerade irgendwo liegen (nicht fallend/segelnd).
+    spuren: (): SpurAufSchirm[] =>
+      Array.from(document.querySelectorAll<HTMLElement>(".pet-haeufchen[data-id]:not(.pet-haeufchen-weg)"))
+        .filter((el) => el.dataset.fliegt !== "ja")
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return { id: el.dataset.id!, art: el.dataset.art!, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, unten: r.bottom };
+        }),
     // Klettern nur an Popups, die oben Platz lassen (am Handy bildschirmfüllend).
     waende: () =>
       fenster
@@ -353,7 +367,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
         );
       })}
       {pets.map((p) => (
-        <PetFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} />
+        <PetFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} wegmachen={wegmachen} />
       ))}
     </div>
   );
@@ -443,6 +457,18 @@ function HaeufchenAmElement({
 
     let rahmen = 0;
     const takt = (jetzt: number) => {
+      const griff = gegriffen.get(h.id);
+      if (griff) {
+        // Gepackt: folgt Maul/Tentakel, wird kleiner, bis es weg ist.
+        x = griff.x;
+        y = griff.y + bh / 2;
+        div.style.transform = `scale(${griff.skala.toFixed(2)})`;
+        div.dataset.fliegt = "ja";
+        zeichnen();
+        rahmen = requestAnimationFrame(takt);
+        return;
+      }
+      div.dataset.fliegt = fall ? "ja" : "";
       if (boden) {
         x = xAnteil * window.innerWidth;
         y = window.innerHeight;
@@ -523,6 +549,8 @@ function HaeufchenAmElement({
     <div
       ref={el}
       role="button"
+      data-id={h.id}
+      data-art={art}
       className={`pet-haeufchen${weg ? " pet-haeufchen-weg" : ""}`}
       title={istSeite ? "Aufheben" : "Wegmachen"}
       style={{ width: bw, height: bh, backgroundImage: liegtBild }}
@@ -855,7 +883,20 @@ interface Herz {
   y: number;
 }
 
-function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => void }) {
+function PetFigur({
+  pet,
+  senden,
+  wegmachen,
+}: {
+  pet: PetAufSchirm;
+  senden: (n: object) => void;
+  /** Spur verschwinden lassen (gefressen/eingesaugt). */
+  wegmachen: (id: string) => void;
+}) {
+  const wegmachenRef = useRef(wegmachen);
+  wegmachenRef.current = wegmachen;
+  // Was diese Figur gerade gepackt hält — beim Loslassen/Abbau wieder freigeben.
+  const gehalten = useRef<string | null>(null);
   const figur = useRef<HTMLDivElement | null>(null);
   const zzz = useRef<HTMLSpanElement | null>(null);
   const tropfen = useRef<HTMLSpanElement | null>(null);
@@ -897,7 +938,14 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     const m = () => masse(pet.art);
     const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
       if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
-      else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
+      else if (n.typ === "fressen") {
+        // Bleibt im Maul/Buch stehen, bis die Spur abgeräumt ist.
+        const zuletzt = gegriffen.get(n.id);
+        if (zuletzt) gegriffen.set(n.id, { ...zuletzt, skala: 0.15 });
+        if (gehalten.current === n.id) gehalten.current = null;
+        window.setTimeout(() => gegriffen.delete(n.id), 900);
+        wegmachenRef.current(n.id);
+      } else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
     };
     const b: PetSteuerung = fliegt
       ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
@@ -906,8 +954,6 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
 
     let letzte = performance.now();
     let rahmen = 0;
-    let blitzStart = -1;
-    let blitzNeu = 0;
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
@@ -951,6 +997,13 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
           fe.style.transform = d.feuer.flip ? "scaleX(-1)" : "none";
         } else fe.style.display = "none";
       }
+      if (d.greift) {
+        gegriffen.set(d.greift.id, { x: d.greift.x, y: d.greift.y, skala: d.greift.skala });
+        gehalten.current = d.greift.id;
+      } else if (gehalten.current) {
+        gegriffen.delete(gehalten.current);
+        gehalten.current = null;
+      }
       const ef = effekt.current;
       if (ef) {
         const e = d.effekt ? BAERBEL.effekte[d.effekt.name] : undefined;
@@ -972,12 +1025,20 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
       }
       const bs = blitzSvg.current;
       if (bs) {
-        if (d.blitz) {
-          const b = d.blitz;
-          bs.style.display = "block";
-          if (b.start !== blitzStart) {
-            blitzStart = b.start;
-            blitzNeu = 0;
+        const liste = d.blitze ?? [];
+        bs.style.display = liste.length ? "block" : "none";
+        const gruppen = bs.querySelectorAll<SVGGElement>("g");
+        gruppen.forEach((gr, i) => {
+          const b = liste[i];
+          if (!b) {
+            gr.style.display = "none";
+            gr.dataset.start = "";
+            return;
+          }
+          gr.style.display = "";
+          if (gr.dataset.start !== String(b.start)) {
+            gr.dataset.start = String(b.start);
+            gr.dataset.neu = "0";
             const licht = blitzLicht.current;
             if (licht) {
               licht.style.setProperty("--bx", `${b.x1}px`);
@@ -989,18 +1050,15 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
             }
           }
           // Alle ~60 ms ein neuer Zickzack, dazwischen flackert er.
-          if (jetzt >= blitzNeu) {
-            blitzNeu = jetzt + 60;
+          if (jetzt >= Number(gr.dataset.neu || 0)) {
+            gr.dataset.neu = String(jetzt + 60);
             const [haupt, ast] = blitzPfade(b.x0, b.y0, b.x1, b.y1, skala());
-            bs.querySelectorAll<SVGPolylineElement>(".haupt").forEach((p) => p.setAttribute("points", haupt));
-            bs.querySelectorAll<SVGPolylineElement>(".ast").forEach((p) => p.setAttribute("points", ast));
+            gr.querySelectorAll<SVGPolylineElement>(".haupt").forEach((p) => p.setAttribute("points", haupt));
+            gr.querySelectorAll<SVGPolylineElement>(".ast").forEach((p) => p.setAttribute("points", ast));
           }
           const t = jetzt - b.start;
-          bs.style.opacity = t < 90 || (t > 160 && t < 330) || (t > 400 && t < 520) ? "1" : "0.25";
-        } else {
-          bs.style.display = "none";
-          blitzStart = -1;
-        }
+          gr.style.opacity = t < 90 || (t > 160 && t < 330) || (t > 400 && t < 520) ? "1" : "0.25";
+        });
       }
       const pu = puff.current;
       if (pu) {
@@ -1035,6 +1093,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     rahmen = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(rahmen);
+      if (gehalten.current) gegriffen.delete(gehalten.current);
       b.aufraeumen();
     };
     // Ein neuer Auftritt ist ein neuer key — die Abhängigkeiten bleiben fest.
@@ -1134,11 +1193,15 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
           <div ref={effekt} className="pet-feuer" style={{ display: "none" }} />
           <div ref={blitzLicht} className="pet-blitz-licht" style={{ display: "none" }} onAnimationEnd={(e) => (e.currentTarget.style.display = "none")} />
           <svg ref={blitzSvg} className="pet-blitz" style={{ display: "none" }}>
-            <polyline className="haupt" fill="none" stroke="rgba(150,110,255,0.45)" strokeWidth={18} strokeLinejoin="round" strokeLinecap="round" />
-            <polyline className="ast" fill="none" stroke="rgba(150,110,255,0.4)" strokeWidth={8} strokeLinejoin="round" strokeLinecap="round" />
-            <polyline className="haupt" fill="none" stroke="rgba(205,185,255,0.9)" strokeWidth={6} strokeLinejoin="round" strokeLinecap="round" />
-            <polyline className="ast" fill="none" stroke="rgba(220,205,255,0.85)" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
-            <polyline className="haupt" fill="none" stroke="#ffffff" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+            {[0, 1, 2].map((i) => (
+              <g key={i} style={{ display: "none" }}>
+                <polyline className="haupt" fill="none" stroke="rgba(150,110,255,0.45)" strokeWidth={18} strokeLinejoin="round" strokeLinecap="round" />
+                <polyline className="ast" fill="none" stroke="rgba(150,110,255,0.4)" strokeWidth={8} strokeLinejoin="round" strokeLinecap="round" />
+                <polyline className="haupt" fill="none" stroke="rgba(205,185,255,0.9)" strokeWidth={6} strokeLinejoin="round" strokeLinecap="round" />
+                <polyline className="ast" fill="none" stroke="rgba(220,205,255,0.85)" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
+                <polyline className="haupt" fill="none" stroke="#ffffff" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+              </g>
+            ))}
           </svg>
         </>
       )}

@@ -22,6 +22,10 @@
       "frames": 22,
       "ms": 80
     },
+    "fressen": {
+      "frames": 16,
+      "ms": 90
+    },
     "sprung": {
       "frames": 6,
       "ms": 70
