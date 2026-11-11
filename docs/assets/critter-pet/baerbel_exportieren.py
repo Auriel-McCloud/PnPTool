@@ -7,6 +7,8 @@ from PIL import Image, ImageDraw
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
 from baerbel_design import VARIANTEN, zu, offen, outline  # noqa: E402
+from baerbel_effekte import (ETH, ETW, RAND, SCHLAG_FRAME, TENTAKEL_MS,  # noqa: E402
+                             schlag_spitze, tentakel_frames)
 
 ZIEL = os.path.normpath(os.path.join(HIER, "..", "..", "..", "frontend", "public", "pets", "baerbel"))
 W = H = 76
@@ -176,12 +178,21 @@ if __name__ == "__main__":
         ps.alpha_composite(f, (i * PW, 0))
     ps.save(os.path.join(ZIEL, "verwandeln.png"))
     ANIM["verwandeln"] = {"frames": len(pf), "ms": 70, "groesse": PW}
+    # Tentakelmonster will raus (je Gestalt, Buch steckt mit im Streifen)
+    for g, v in enumerate(V, start=1):
+        fr = tentakel_frames(v)
+        st = Image.new("RGBA", (ETW * len(fr), ETH), (0, 0, 0, 0))
+        for i, f in enumerate(fr):
+            st.alpha_composite(f, (i * ETW, 0))
+        st.save(os.path.join(ZIEL, f"tentakel_{g}.png"))
+        ANIM[f"tentakel_{g}"] = {"frames": len(fr), "ms": TENTAKEL_MS, "breite": ETW, "hoehe": ETH, "rand": RAND}
     seiten()
     # Herz vom Drachen mitbenutzen
     herz = os.path.join(ZIEL, "..", "drache", "herz.png")
     Image.open(herz).save(os.path.join(ZIEL, "herz.png"))
     info = {"breite": W, "hoehe": H, "gestalten": len(V), "animationen": ANIM,
-            "seite": {"breite": 14, "hoehe": 11}, "verwandelnWechselFrame": 16}
+            "seite": {"breite": 14, "hoehe": 11}, "verwandelnWechselFrame": 16,
+            "tentakel": {"schlagFrame": SCHLAG_FRAME, "spitze": list(schlag_spitze(V[0]))}}
     with open(os.path.join(ZIEL, "sprite.json"), "w", encoding="utf8") as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
     print(json.dumps(ANIM))

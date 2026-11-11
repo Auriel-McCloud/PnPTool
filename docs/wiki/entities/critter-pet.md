@@ -203,9 +203,9 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Nachbesserung 11.11.:** Seiten bleiben öfter (70 % je überquerter Kante) auf Wörtern/Kästchen liegen und fallen erst beim Bereichswechsel zu Boden (Mark: „erst zu Boden fallen, wenn man die Seite wechselt“).
 
-**Noch offen (Ideen von Mark):** Monster wollen raus (Tentakel, Klauen,
-Fledermäuse), Blitze/Feuerbälle, die das Display „verbrennen“ (Rußfleck vom
-Drachen wiederverwenden); Vorlese-Zauber: sie schlägt sich auf, wird per
+**Gebaut 11.11.:** Tentakelmonster will raus (Spalt mit glühenden Augen, Tentakel klatscht aufs Display → feuchter Schleimfleck `schleim`, wegwischen) und Blitz-Zauber (Buch leuchtet auf, Blitz schlägt im Bild ein → Brandfleck wie beim Drachen).
+
+**Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle; Vorlese-Zauber: sie schlägt sich auf, wird per
 Glitzerwolke groß und liest ein KI-generiertes, zur Situation passendes
 Bibelzitat vor.
 

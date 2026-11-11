@@ -59,7 +59,10 @@ def outline(img, col):
         px[p] = col
 
 
-def zu(v, lid=0.0, blick=0, band=0):
+def zu(v, lid=0.0, blick=0, band=0, spalt=0, schliesse_auf=False, schreck=False):
+    """`spalt` (0..4): Deckel springt an der Vorderkante auf, dunkler Spalt mit
+    glühenden Augen (Tentakelmonster). `schliesse_auf`: Schließe baumelt offen.
+    `schreck`: Bärbel guckt erschrocken (Gesicht/Auge)."""
     W, H = 52, 58
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -113,7 +116,10 @@ def zu(v, lid=0.0, blick=0, band=0):
             d.ellipse([cx - 8, cy - 4, cx + 8, cy + 4], fill=c(v, "G"))
             d.ellipse([cx - 6, cy - 3, cx + 6, cy + 3], fill=c(v, "D"))
             d.ellipse([cx - 3 + blick, cy - 3, cx + 3 + blick, cy + 3], fill=(250, 200, 60, 255))
-            d.line([(cx + blick, cy - 2), (cx + blick, cy + 2)], fill=(10, 10, 10, 255))
+            if schreck:
+                d.point((cx + blick, cy), fill=(10, 10, 10, 255))
+            else:
+                d.line([(cx + blick, cy - 2), (cx + blick, cy + 2)], fill=(10, 10, 10, 255))
             d.point((cx - 2 + blick, cy - 2), fill=(255, 255, 255, 255))
             if lid > 0:
                 ly = round(cy - 4 + lid * 8)
@@ -135,25 +141,47 @@ def zu(v, lid=0.0, blick=0, band=0):
                 d.line([(ex - 3, 30), (ex - 2, 31), (ex + 2, 31), (ex + 3, 30)], fill=(20, 10, 10, 255))
             else:
                 d.ellipse([ex - 3, 25, ex + 3, 33], fill=(255, 255, 255, 255))
-                d.ellipse([ex - 2 + blick, 27, ex + 2 + blick, 33], fill=(20, 10, 10, 255))
-                d.point((ex - 1 + blick, 28), fill=(255, 255, 255, 255))
-                d.point((ex + blick, 29), fill=(255, 255, 255, 255))
+                if schreck:
+                    d.rectangle([ex - 1 + blick, 28, ex + blick, 29], fill=(20, 10, 10, 255))
+                else:
+                    d.ellipse([ex - 2 + blick, 27, ex + 2 + blick, 33], fill=(20, 10, 10, 255))
+                    d.point((ex - 1 + blick, 28), fill=(255, 255, 255, 255))
+                    d.point((ex + blick, 29), fill=(255, 255, 255, 255))
                 if lid > 0:
                     d.rectangle([ex - 3, 24, ex + 3, 24 + round(lid * 8)], fill=c(v, "M"))
                     d.line([(ex - 3, 24 + round(lid * 8)), (ex + 3, 24 + round(lid * 8))], fill=(20, 10, 10, 255))
         d.point((15, 34), fill=c(v, "H"))
         d.point((35, 34), fill=c(v, "H"))
-        d.line([(23, 36), (24, 37), (26, 37), (27, 36)], fill=c(v, "K"))
+        if schreck:
+            d.ellipse([23, 35, 26, 39], fill=c(v, "K"))
+        else:
+            d.line([(23, 36), (24, 37), (26, 37), (27, 36)], fill=c(v, "K"))
         # Stern
         sx, sy = 25, 41
         d.line([(sx - 2, sy), (sx + 2, sy)], fill=c(v, "G"))
         d.line([(sx, sy - 2), (sx, sy + 2)], fill=c(v, "G"))
+    # Spalt an der Vorderkante: Deckel springt auf, drinnen ist es dunkel
+    if spalt > 0:
+        sp = round(spalt)
+        # Keil: an der Vorderkante am weitesten offen, oben/unten schmaler
+        d.polygon([(38, 6), (39 + sp, 14), (39 + sp, 38), (38, 46)], fill=(14, 6, 22, 255))
+        d.line([(39 + sp, 14), (39 + sp, 38)], fill=(120, 60, 170, 255))
+        if spalt >= 2:  # glühende Augen im Dunkeln
+            for ey in (21, 27):
+                d.rectangle([39, ey, 40, ey], fill=(255, 230, 60, 255))
+                d.point((39, ey + 1), fill=(255, 140, 30, 255))
     # Schließe rechts
-    d.rectangle([34, 25, 42, 30], fill=c(v, "K"))
-    d.rectangle([35, 26, 42, 29], fill=c(v, "D"))
-    d.rectangle([37, 24, 41, 31], fill=c(v, "G"))
-    d.rectangle([38, 26, 40, 29], fill=c(v, "g"))
-    d.point((38, 25), fill=(255, 255, 255, 255))
+    if schliesse_auf:
+        # baumelt offen nach unten
+        d.line([(36, 28), (37, 33)], fill=c(v, "D"), width=3)
+        d.rectangle([35, 33, 39, 37], fill=c(v, "G"))
+        d.rectangle([36, 34, 38, 36], fill=c(v, "g"))
+    else:
+        d.rectangle([34, 25, 42, 30], fill=c(v, "K"))
+        d.rectangle([35, 26, 42, 29], fill=c(v, "D"))
+        d.rectangle([37, 24, 41, 31], fill=c(v, "G"))
+        d.rectangle([38, 26, 40, 29], fill=c(v, "g"))
+        d.point((38, 25), fill=(255, 255, 255, 255))
     outline(img, c(v, "K"))
     return img
 

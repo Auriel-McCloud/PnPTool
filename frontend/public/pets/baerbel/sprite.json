@@ -51,11 +51,39 @@
       "frames": 32,
       "ms": 70,
       "groesse": 112
+    },
+    "tentakel_1": {
+      "frames": 44,
+      "ms": 80,
+      "breite": 128,
+      "hoehe": 120,
+      "rand": 18
+    },
+    "tentakel_2": {
+      "frames": 44,
+      "ms": 80,
+      "breite": 128,
+      "hoehe": 120,
+      "rand": 18
+    },
+    "tentakel_3": {
+      "frames": 44,
+      "ms": 80,
+      "breite": 128,
+      "hoehe": 120,
+      "rand": 18
     }
   },
   "seite": {
     "breite": 14,
     "hoehe": 11
   },
-  "verwandelnWechselFrame": 16
+  "verwandelnWechselFrame": 16,
+  "tentakel": {
+    "schlagFrame": 33,
+    "spitze": [
+      98,
+      92
+    ]
+  }
 }

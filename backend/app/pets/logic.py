@@ -20,8 +20,9 @@ HAEUFCHEN_MAX = 12
 # Was ein Pet auf einem Bildschirm hinterlassen kann: Häufchen und
 # Brandflecken vom Feuerniesen (Mark, 11.11.2026). Beides bleibt liegen,
 # bis der Spieler es wegmacht (antippen bzw. sauberwischen).
-# Bärbel verliert stattdessen Seiten, die zerknittert liegen bleiben.
-SPUR_ARTEN = ("haeufchen", "brand", "seite")
+# Bärbel verliert stattdessen Seiten, die zerknittert liegen bleiben; ihr
+# Tentakelmonster hinterlässt Schleim (wegwischen wie Brandflecken).
+SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim")
 
 # Spuren, die vom Element herunterfallen können (neue Lage wird gemerkt).
 FALLENDE_SPUREN = ("haeufchen", "seite")

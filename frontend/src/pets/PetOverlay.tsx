@@ -60,6 +60,12 @@ const BAERBEL = {
   /** Wabernde Wolke (Mark: „intensiver, länger, ruhig ein wenig wabern“):
    *  eigene, größere Leinwand mittig über dem Buch. */
   verwandeln: { frames: 32, ms: 70, groesse: 112 },
+  /** Effekt-Streifen auf eigener Leinwand; `rand` = Lage der 76er-Figur darin (links/oben). */
+  effekte: {
+    tentakel_1: { frames: 44, ms: 80, breite: 128, hoehe: 120, rand: 18 },
+    tentakel_2: { frames: 44, ms: 80, breite: 128, hoehe: 120, rand: 18 },
+    tentakel_3: { frames: 44, ms: 80, breite: 128, hoehe: 120, rand: 18 },
+  } as Record<string, { frames: number; ms: number; breite: number; hoehe: number; rand: number }>,
 } as const;
 
 function sprite(art: string) {
@@ -73,6 +79,7 @@ const SPUR_PX = {
   haeufchen: { breite: 12, hoehe: 10 },
   brand: { breite: 38, hoehe: 23 },
   seite: { breite: 14, hoehe: 11 },
+  schleim: { breite: 50, hoehe: 45 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
@@ -314,15 +321,24 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
       {haeufchen.map((h) => {
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
-        if ((h.art ?? "haeufchen") === "brand") {
-          const px = SPUR_PX.brand;
+        if (h.art === "brand" || h.art === "schleim") {
+          const px = SPUR_PX[h.art];
           const stil = {
             left: h.x * window.innerWidth - (px.breite * s) / 2,
             top: h.y * window.innerHeight - (px.hoehe * s) / 2,
             width: px.breite * s,
             height: px.hoehe * s,
           };
-          return <Brandfleck key={h.id} id={h.id} stil={stil} weg={weg.has(h.id)} onSauber={() => wegmachen(h.id)} />;
+          return (
+            <Brandfleck
+              key={h.id}
+              id={h.id}
+              art={h.art}
+              stil={stil}
+              weg={weg.has(h.id)}
+              onSauber={() => wegmachen(h.id)}
+            />
+          );
         }
         return (
           <HaeufchenAmElement
@@ -635,6 +651,111 @@ function russBild(id: string) {
   return ergebnis;
 }
 
+const schleimCache = new Map<string, { bild: string; maske: string }>();
+
+/**
+ * Feuchter Schmierfleck vom Tentakelmonster (Mark, 11.11.2026: „hinterlässt
+ * feuchte Schmierflecken am Display wie das Feuer“): durchscheinend grüner
+ * Klatscher mit Spritzern, herunterlaufenden Tropfnasen und nassem Glanz.
+ * Maske wie beim Ruß, damit der Inhalt dahinter leicht verzerrt wirkt.
+ */
+function schleimBild(id: string) {
+  const alt = schleimCache.get(id);
+  if (alt) return alt;
+  const rnd = zufallAus(id + ":schleim");
+  const W = 160;
+  const H = 144;
+  const cx = W / 2 + (rnd() - 0.5) * 10;
+  const cy = H * 0.36;
+  const zacken = Array.from({ length: 14 }, () => 0.7 + rnd() * 0.45);
+  const tropfen = Array.from({ length: 3 + Math.floor(rnd() * 3) }, () => ({
+    x: cx + (rnd() - 0.5) * W * 0.5,
+    l: H * (0.18 + rnd() * 0.4),
+    b: 4 + rnd() * 5,
+  }));
+  const spritzer = Array.from({ length: 12 }, () => {
+    const a = rnd() * Math.PI * 2;
+    const r = 0.55 + rnd() * 0.45;
+    return { x: cx + Math.cos(a) * W * 0.42 * r, y: cy + Math.sin(a) * H * 0.3 * r, g: 2 + rnd() * 4 };
+  });
+  const form = (g: CanvasRenderingContext2D, dick: number) => {
+    g.beginPath();
+    const punkte = zacken.map((k, i) => {
+      const a = (i / zacken.length) * Math.PI * 2;
+      return [cx + Math.cos(a) * W * 0.3 * k * dick, cy + Math.sin(a) * H * 0.2 * k * dick];
+    });
+    const mitte = (i: number) => {
+      const p = punkte[i % punkte.length];
+      const q = punkte[(i + 1) % punkte.length];
+      return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    };
+    const start = mitte(0);
+    g.moveTo(start[0], start[1]);
+    for (let i = 1; i <= punkte.length; i++) {
+      const p = punkte[i % punkte.length];
+      const m = mitte(i);
+      g.quadraticCurveTo(p[0], p[1], m[0], m[1]);
+    }
+    g.closePath();
+    g.fill();
+    // Tropfnasen: laufen nach unten, unten ein runder Tropfen
+    for (const t of tropfen) {
+      g.fillRect(t.x - (t.b * dick) / 2, cy, t.b * dick, t.l);
+      g.beginPath();
+      g.arc(t.x, cy + t.l, t.b * dick * 0.85, 0, Math.PI * 2);
+      g.fill();
+    }
+    for (const s of spritzer) {
+      g.beginPath();
+      g.arc(s.x, s.y, s.g * dick, 0, Math.PI * 2);
+      g.fill();
+    }
+  };
+  const neu = () => {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    return [c, c.getContext("2d")!] as const;
+  };
+  const [bc, g] = neu();
+  g.filter = "blur(1.5px)";
+  g.fillStyle = "rgba(40,120,40,0.55)"; // dunkler Rand
+  form(g, 1.06);
+  g.fillStyle = "rgba(120,220,70,0.5)";
+  form(g, 0.94);
+  g.filter = "blur(3px)";
+  g.fillStyle = "rgba(190,255,140,0.35)"; // heller Kern
+  form(g, 0.55);
+  g.filter = "none";
+  // Bläschen und nasser Glanz
+  for (let i = 0; i < 14; i++) {
+    const x = cx + (rnd() - 0.5) * W * 0.45;
+    const y = cy + (rnd() - 0.5) * H * 0.25;
+    const r = 1 + rnd() * 2.5;
+    g.strokeStyle = "rgba(230,255,210,0.6)";
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.fillStyle = "rgba(255,255,255,0.75)";
+  g.beginPath();
+  g.ellipse(cx - W * 0.1, cy - H * 0.07, W * 0.07, H * 0.025, -0.3, 0, Math.PI * 2);
+  g.fill();
+  for (const t of tropfen) {
+    g.fillStyle = "rgba(255,255,255,0.7)";
+    g.fillRect(t.x - t.b * 0.35, cy + t.l - t.b * 0.6, 2, 2);
+  }
+
+  const [mc, m] = neu();
+  m.fillStyle = "rgba(0,0,0,1)";
+  form(m, 1.0);
+
+  const ergebnis = { bild: bc.toDataURL(), maske: mc.toDataURL() };
+  schleimCache.set(id, ergebnis);
+  return ergebnis;
+}
+
 /**
  * Brandfleck vom Feuerniesen (Mark, 11.11.2026): sitzt am Display, nicht an
  * der Seite — bewegt sich deshalb nie. Weg nur durch Wischen: Finger/Maus
@@ -642,16 +763,19 @@ function russBild(id: string) {
  */
 function Brandfleck({
   id,
+  art,
   stil,
   weg,
   onSauber,
 }: {
   id: string;
+  /** `schleim`: feuchter Schmierfleck vom Tentakelmonster — gleiche Wisch-Logik. */
+  art: "brand" | "schleim";
   stil: React.CSSProperties;
   weg: boolean;
   onSauber: () => void;
 }) {
-  const russ = useMemo(() => russBild(id), [id]);
+  const russ = useMemo(() => (art === "schleim" ? schleimBild(id) : russBild(id)), [id, art]);
   const rest = useRef(1);
   const letzter = useRef<{ x: number; y: number } | null>(null);
   const el = useRef<HTMLDivElement | null>(null);
@@ -673,7 +797,7 @@ function Brandfleck({
     <div
       ref={el}
       role="button"
-      className={`pet-brand${weg ? " pet-haeufchen-weg" : ""}`}
+      className={`pet-brand${art === "schleim" ? " pet-schleim" : ""}${weg ? " pet-haeufchen-weg" : ""}`}
       title="Sauberwischen"
       style={{
         ...stil,
@@ -692,6 +816,39 @@ function Brandfleck({
   );
 }
 
+/**
+ * Zickzack eines Blitzes (Bärbel, 11.11.2026): Hauptstrahl vom Buch zum
+ * Einschlag mit seitlichem Ausschlag (an den Enden schmal) und ein
+ * Seitenast aus der Mitte. Liefert `points`-Strings für SVG-Polylinien.
+ */
+function blitzPfade(x0: number, y0: number, x1: number, y1: number, s: number): [string, string] {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const l = Math.max(1, Math.hypot(dx, dy));
+  const nx = -dy / l;
+  const ny = dx / l;
+  const n = Math.max(6, Math.round(l / 28));
+  const punkte: [number, number][] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const aus = i === 0 || i === n ? 0 : (Math.random() - 0.5) * 2 * 16 * s * Math.sin(t * Math.PI);
+    punkte.push([x0 + dx * t + nx * aus, y0 + dy * t + ny * aus]);
+  }
+  const k = Math.floor(n * (0.35 + Math.random() * 0.3));
+  const [ax, ay] = punkte[k];
+  const w = Math.atan2(dy, dx) + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
+  const ast: [number, number][] = [[ax, ay]];
+  let px = ax;
+  let py = ay;
+  for (let i = 0; i < 4; i++) {
+    px += Math.cos(w) * 18 * s + (Math.random() - 0.5) * 10 * s;
+    py += Math.sin(w) * 18 * s + (Math.random() - 0.5) * 10 * s;
+    ast.push([px, py]);
+  }
+  const txt = (p: [number, number][]) => p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  return [txt(punkte), txt(ast)];
+}
+
 interface Herz {
   id: number;
   x: number;
@@ -704,6 +861,9 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   const tropfen = useRef<HTMLSpanElement | null>(null);
   const feuer = useRef<HTMLDivElement | null>(null);
   const puff = useRef<HTMLDivElement | null>(null);
+  const effekt = useRef<HTMLDivElement | null>(null);
+  const blitzSvg = useRef<SVGSVGElement | null>(null);
+  const blitzLicht = useRef<HTMLDivElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
   // Laufen (Drache) oder Fliegen (Bärbel), gleiche Schnittstelle.
@@ -746,6 +906,8 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
 
     let letzte = performance.now();
     let rahmen = 0;
+    let blitzStart = -1;
+    let blitzNeu = 0;
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
@@ -767,6 +929,10 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         el.style.backgroundPosition = `${-frame * sp.breite * s}px 0`;
         el.style.transform = d.transform;
         el.dataset.hockt = d.hockt ? "ja" : "nein";
+        el.dataset.leuchtet = d.leuchten ? "ja" : "nein";
+        // Effekt-Streifen, der die Figur selbst enthält (Tentakelmonster): Figur
+        // unsichtbar, bleibt aber anfassbar.
+        el.style.opacity = d.effekt?.ersetzt ? "0" : "";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
       }
       const fe = feuer.current;
@@ -784,6 +950,57 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
           fe.style.backgroundPosition = `${-bild * f.breite * s}px 0`;
           fe.style.transform = d.feuer.flip ? "scaleX(-1)" : "none";
         } else fe.style.display = "none";
+      }
+      const ef = effekt.current;
+      if (ef) {
+        const e = d.effekt ? BAERBEL.effekte[d.effekt.name] : undefined;
+        if (d.effekt && e) {
+          const s = skala();
+          const bild = Math.min(e.frames - 1, Math.floor((jetzt - d.effekt.start) / e.ms));
+          ef.style.display = "block";
+          ef.style.backgroundImage = `url(/pets/${pet.art}/${d.effekt.name}.png)`;
+          ef.style.width = `${e.breite * s}px`;
+          ef.style.height = `${e.hoehe * s}px`;
+          ef.style.left = `${d.left - e.rand * s}px`;
+          ef.style.top = `${d.top - e.rand * s}px`;
+          ef.style.backgroundSize = `${e.frames * e.breite * s}px ${e.hoehe * s}px`;
+          ef.style.backgroundPosition = `${-bild * e.breite * s}px 0`;
+          // Gleiche Drehung wie die Figur, um deren Mitte.
+          ef.style.transformOrigin = `${(e.rand + BAERBEL.breite / 2) * s}px ${(e.rand + BAERBEL.hoehe / 2) * s}px`;
+          ef.style.transform = d.transform;
+        } else ef.style.display = "none";
+      }
+      const bs = blitzSvg.current;
+      if (bs) {
+        if (d.blitz) {
+          const b = d.blitz;
+          bs.style.display = "block";
+          if (b.start !== blitzStart) {
+            blitzStart = b.start;
+            blitzNeu = 0;
+            const licht = blitzLicht.current;
+            if (licht) {
+              licht.style.setProperty("--bx", `${b.x1}px`);
+              licht.style.setProperty("--by", `${b.y1}px`);
+              licht.style.display = "block";
+              licht.style.animation = "none";
+              void licht.offsetWidth; // Animation neu starten
+              licht.style.animation = "";
+            }
+          }
+          // Alle ~60 ms ein neuer Zickzack, dazwischen flackert er.
+          if (jetzt >= blitzNeu) {
+            blitzNeu = jetzt + 60;
+            const [haupt, ast] = blitzPfade(b.x0, b.y0, b.x1, b.y1, skala());
+            bs.querySelectorAll<SVGPolylineElement>(".haupt").forEach((p) => p.setAttribute("points", haupt));
+            bs.querySelectorAll<SVGPolylineElement>(".ast").forEach((p) => p.setAttribute("points", ast));
+          }
+          const t = jetzt - b.start;
+          bs.style.opacity = t < 90 || (t > 160 && t < 330) || (t > 400 && t < 520) ? "1" : "0.25";
+        } else {
+          bs.style.display = "none";
+          blitzStart = -1;
+        }
       }
       const pu = puff.current;
       if (pu) {
@@ -912,7 +1129,18 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         style={{ display: "none", backgroundImage: `url(/pets/${pet.art}/feuer.png)` }}
       />
       {pet.art === "baerbel" && (
-        <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />
+        <>
+          <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />
+          <div ref={effekt} className="pet-feuer" style={{ display: "none" }} />
+          <div ref={blitzLicht} className="pet-blitz-licht" style={{ display: "none" }} onAnimationEnd={(e) => (e.currentTarget.style.display = "none")} />
+          <svg ref={blitzSvg} className="pet-blitz" style={{ display: "none" }}>
+            <polyline className="haupt" fill="none" stroke="rgba(150,110,255,0.45)" strokeWidth={18} strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="ast" fill="none" stroke="rgba(150,110,255,0.4)" strokeWidth={8} strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="haupt" fill="none" stroke="rgba(205,185,255,0.9)" strokeWidth={6} strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="ast" fill="none" stroke="rgba(220,205,255,0.85)" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="haupt" fill="none" stroke="#ffffff" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </>
       )}
       <span ref={tropfen} className="pet-tropfen" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />

@@ -50,7 +50,19 @@ export const FLUG_TAKT = {
   /** Ab diesem Frame der Wolke ist sie in der neuen Gestalt. */
   verwandelnWechsel: 16,
   blinzeln: { 2: { frames: 19, ms: 110 }, 3: { frames: 5, ms: 70 } } as Record<number, { frames: number; ms: number }>,
+  /** Tentakelmonster: Streifen mit Buch, eigene Leinwand (siehe PetOverlay). */
+  tentakelFrames: 44,
+  tentakelMs: 80,
+  tentakelSchlagFrame: 33,
+  /** Spitze beim Klatschen auf der Effekt-Leinwand (Sprite-Pixel, ab links oben). */
+  tentakelSpitze: [98, 92] as const,
+  effektRand: 18,
 };
+
+/** Blitz-Zauber (Mark, 11.11.2026: „die Blitz-Animation, die was verbrennt“). */
+const LADEN_MS = 900;
+const BLITZ_MS = 650;
+const RUECKSTOSS_MS = 500;
 
 type Zustand =
   | "flattern" // aufgeklappt zu einem Ziel
@@ -59,6 +71,8 @@ type Zustand =
   | "klappen" // Auf-/Zuklappen
   | "zittern" // vor der Verwandlung
   | "verwandeln"
+  | "tentakel" // Monster will raus
+  | "zaubern" // Blitz: laden, Blitz, Rückstoß
   | "gehalten"
   | "getragen"
   | "wurf"
@@ -89,6 +103,11 @@ export class FlugBewegung implements PetSteuerung {
   private naechsteSeite: number;
   private puffStart: number | null = null;
   private gewechselt = false;
+  private effektStart = 0;
+  private schleimGemeldet = false;
+  private blitz: { x0: number; y0: number; x1: number; y1: number; gemeldet: boolean; rx: number; ry: number } | null = null;
+  private naechstesMonster: number;
+  private naechsterBlitz: number;
   private zitterStart = 0;
   private freudeStart = -1e9;
   private besuchEnde: number;
@@ -127,6 +146,8 @@ export class FlugBewegung implements PetSteuerung {
     this.naechstesBlinzeln = jetzt + this.blinzelPause();
     this.naechsteVerwandlung = jetzt + 15_000 + z() * 35_000;
     this.naechsteSeite = jetzt + 12_000 + z() * 25_000;
+    this.naechstesMonster = jetzt + 20_000 + z() * 40_000;
+    this.naechsterBlitz = jetzt + 25_000 + z() * 45_000;
     this.flatternZu(this.zufallsZiel(), jetzt);
   }
 
@@ -218,6 +239,41 @@ export class FlugBewegung implements PetSteuerung {
     this.blinzelStart = null;
   }
 
+  /** Tentakelmonster will raus (Mark, 11.11.2026). Nur zugeklappt. */
+  private monster(jetzt: number) {
+    if (this.offen) {
+      this.klappe(false, jetzt, () => this.monster(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+      return;
+    }
+    this.zustand = "tentakel";
+    this.effektStart = jetzt;
+    this.schleimGemeldet = false;
+    this.blinzelStart = null;
+  }
+
+  /** Blitz-Zauber: aufklappen, Seiten leuchten auf, Blitz schlägt irgendwo ein
+   *  und hinterlässt einen Brandfleck; Rückstoß, wieder zuklappen. */
+  private zaubern(jetzt: number) {
+    if (!this.offen) {
+      this.klappe(true, jetzt, () => this.zaubern(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+      return;
+    }
+    const { bw, bh } = this.masse();
+    const z = this.u.zufall;
+    const x0 = this.x + bw / 2;
+    const y0 = this.y + bh * 0.42;
+    // Ziel: meist schräg nach unten, 220–520 px weit, im Bild.
+    const w = (20 + z() * 140) * (Math.PI / 180) * (z() < 0.85 ? 1 : -1);
+    const weite = 220 + z() * 300;
+    const rand = 40;
+    const x1 = Math.min(this.u.breite - rand, Math.max((this.u.links ?? 0) + rand, x0 + Math.cos(w) * weite));
+    const y1 = Math.min(this.u.hoehe - rand, Math.max(rand, y0 + Math.sin(w) * weite));
+    const d = Math.max(1, Math.hypot(x1 - x0, y1 - y0));
+    this.blitz = { x0, y0, x1, y1, gemeldet: false, rx: -(x1 - x0) / d, ry: -(y1 - y0) / d };
+    this.zustand = "zaubern";
+    this.effektStart = jetzt;
+  }
+
   private rausFliegen(jetzt: number) {
     const { bw, bh } = this.masse();
     const z = this.u.zufall;
@@ -255,7 +311,13 @@ export class FlugBewegung implements PetSteuerung {
         else this.schwebenZu(this.zufallsZiel(), jetzt);
       } else this.schwebenZu(this.zufallsZiel(), jetzt);
     } else {
-      if (jetzt > this.naechsteVerwandlung && r < 0.3) this.verwandeln(jetzt);
+      if (jetzt > this.naechstesMonster && r < 0.25) {
+        this.naechstesMonster = jetzt + 45_000 + z() * 75_000;
+        this.monster(jetzt);
+      } else if (jetzt > this.naechsterBlitz && r > 0.75) {
+        this.naechsterBlitz = jetzt + 50_000 + z() * 80_000;
+        this.zaubern(jetzt);
+      } else if (jetzt > this.naechsteVerwandlung && r < 0.3) this.verwandeln(jetzt);
       else if (r < 0.6) this.schwebenZu(this.zufallsZiel(), jetzt);
       else this.flatternZu(this.zufallsZiel(), jetzt);
     }
@@ -377,6 +439,39 @@ export class FlugBewegung implements PetSteuerung {
         }
         break;
       }
+      case "tentakel": {
+        const t = jetzt - this.effektStart;
+        if (!this.schleimGemeldet && t >= FLUG_TAKT.tentakelSchlagFrame * FLUG_TAKT.tentakelMs) {
+          this.schleimGemeldet = true;
+          this.schleimMelden(jetzt);
+        }
+        if (t >= FLUG_TAKT.tentakelFrames * FLUG_TAKT.tentakelMs) {
+          this.naechstesBlinzeln = jetzt + 400;
+          this.schwebenZu(this.zufallsZiel(), jetzt);
+        }
+        break;
+      }
+      case "zaubern": {
+        const t = jetzt - this.effektStart;
+        const b = this.blitz;
+        if (b && !b.gemeldet && t >= LADEN_MS) {
+          b.gemeldet = true;
+          const x = b.x1 / u.breite;
+          const y = b.y1 / u.hoehe;
+          if (x > 0 && x < 1 && y > 0 && y < 1) this.melden({ typ: "haeufchen", x, y, art: "brand" });
+        }
+        if (b && t >= LADEN_MS + BLITZ_MS * 0.3 && t < LADEN_MS + BLITZ_MS + RUECKSTOSS_MS) {
+          // Rückstoß: weg vom Einschlag, auslaufend
+          const k = 1 - (t - LADEN_MS - BLITZ_MS * 0.3) / (BLITZ_MS * 0.7 + RUECKSTOSS_MS);
+          this.x += b.rx * 140 * k * dt;
+          this.y += b.ry * 140 * k * dt;
+        }
+        if (t >= LADEN_MS + BLITZ_MS + RUECKSTOSS_MS) {
+          this.blitz = null;
+          this.schwebenZu(this.zufallsZiel(), jetzt);
+        }
+        break;
+      }
       case "wurf": {
         const bremse = Math.exp(-WURF_BREMSE * dt);
         this.vx *= bremse;
@@ -428,6 +523,19 @@ export class FlugBewegung implements PetSteuerung {
     if (x > 0.02 && x < 0.98 && y > 0 && y < 0.95) this.melden({ typ: "haeufchen", x, y, art: "seite" });
   }
 
+  /** Schleimfleck dort, wo die Tentakel aufs Display klatscht. */
+  private schleimMelden(jetzt: number) {
+    const { bw } = this.masse();
+    const s = bw / 76;
+    const top = this.y + Math.sin(((jetzt - this.t0) / 1000) * 2 * Math.PI * 0.35) * 4;
+    const [sx, sy] = FLUG_TAKT.tentakelSpitze;
+    const px = this.x + (sx - FLUG_TAKT.effektRand) * s;
+    const py = top + (sy - FLUG_TAKT.effektRand) * s;
+    const x = px / this.u.breite;
+    const y = py / this.u.hoehe;
+    if (x > 0.01 && x < 0.99 && y > 0.01 && y < 0.99) this.melden({ typ: "haeufchen", x, y, art: "schleim" });
+  }
+
   private rausMelden() {
     if (this.rausGemeldet) return;
     this.rausGemeldet = true;
@@ -467,6 +575,7 @@ export class FlugBewegung implements PetSteuerung {
     this.bis = vorher.bis + dauer;
     if (this.klapp) this.klapp.t0 += dauer;
     if (this.puffStart !== null) this.puffStart += dauer;
+    this.effektStart += dauer;
     this.zitterStart += dauer;
     if (this.blinzelStart !== null) this.blinzelStart += dauer;
   }
@@ -545,6 +654,22 @@ export class FlugBewegung implements PetSteuerung {
       if (b) frame = Math.min(b.frames - 1, Math.floor((jetzt - this.blinzelStart) / b.ms));
     }
     if (this.zustand === "zittern") rot += Math.sin(jetzt / 22) * 4;
+    let effekt: Darstellung["effekt"] = null;
+    if (this.zustand === "tentakel") effekt = { name: `tentakel_${g}`, start: this.effektStart, ersetzt: true };
+    let blitz: Darstellung["blitz"] = null;
+    let leuchten = false;
+    if (this.zustand === "zaubern" && this.blitz) {
+      const t = jetzt - this.effektStart;
+      animation = `klappen_${g}`;
+      frame = FLUG_TAKT.klappenFrames - 1;
+      top = this.y; // still in der Luft, nur Zittern
+      if (t < LADEN_MS) rot += Math.sin(jetzt / 25) * (1 + (t / LADEN_MS) * 4);
+      leuchten = t < LADEN_MS + BLITZ_MS;
+      if (t >= LADEN_MS && t < LADEN_MS + BLITZ_MS) {
+        const b = this.blitz;
+        blitz = { start: this.effektStart + LADEN_MS, x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 };
+      }
+    }
     if (this.zustand === "gehalten" && this.griff) {
       const staerke = Math.min(1, (jetzt - this.griff.start) / PACKEN_MS);
       rot += Math.sin(jetzt / 30) * (2 + staerke * 9);
@@ -570,6 +695,9 @@ export class FlugBewegung implements PetSteuerung {
       frame,
       feuer: null,
       puff: this.zustand === "verwandeln" ? this.puffStart : null,
+      effekt,
+      blitz,
+      leuchten,
       hockt: false,
       gepackt: this.zustand === "getragen" || this.zustand === "gehalten",
       schlaeft: false,

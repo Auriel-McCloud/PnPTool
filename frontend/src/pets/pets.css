@@ -195,3 +195,50 @@
   20% { opacity: 1; }
   100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
 }
+
+/* Schleim vom Tentakelmonster (Bärbel, 11.11.2026): nass statt rußig —
+   dahinter leicht verschwommen und grünlich. */
+.pet-brand.pet-schleim:not(.pet-haeufchen-weg) {
+  animation: pet-klatsch 380ms ease-out;
+}
+
+@keyframes pet-klatsch {
+  0% { transform: scale(0.3); opacity: 0.4; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.pet-brand.pet-schleim {
+  -webkit-backdrop-filter: blur(1.2px) saturate(1.3) hue-rotate(-25deg);
+  backdrop-filter: blur(1.2px) saturate(1.3) hue-rotate(-25deg);
+}
+
+/* Bärbels Blitz: Linie vom Buch zum Einschlag, flackert. */
+.pet-blitz {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.pet-blitz-licht {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--bx) var(--by), rgba(230, 220, 255, 0.55), rgba(180, 150, 255, 0.12) 45%, transparent 75%);
+  animation: pet-blitz-licht 420ms ease-out forwards;
+}
+
+@keyframes pet-blitz-licht {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  30% { opacity: 0.3; }
+  45% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.pet-figur[data-leuchtet="ja"] {
+  filter: drop-shadow(0 0 6px rgba(190, 150, 255, 0.95)) drop-shadow(0 0 14px rgba(140, 100, 255, 0.6));
+}

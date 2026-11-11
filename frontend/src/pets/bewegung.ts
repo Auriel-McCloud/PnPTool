@@ -171,6 +171,13 @@ export interface Darstellung {
   feuer: { start: number; x: number; y: number; flip: boolean } | null;
   /** Verwandlungswolke über der Figur (Startzeit), nur fliegende Pets. */
   puff?: number | null;
+  /** Effekt-Streifen auf eigener, größerer Leinwand (z. B. `tentakel_2`);
+   *  `ersetzt` = der Streifen enthält die Figur selbst, sie wird solange ausgeblendet. */
+  effekt?: { name: string; start: number; ersetzt: boolean } | null;
+  /** Blitz vom Buch zum Einschlagpunkt (Bildschirm-Pixel). */
+  blitz?: { start: number; x0: number; y0: number; x1: number; y1: number } | null;
+  /** Figur leuchtet (lädt einen Zauber auf). */
+  leuchten?: boolean;
   /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
   frame: number | null;
   hockt: boolean;
@@ -185,7 +192,7 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" };
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" };
 
 /** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
 const NIESEN_MS = 22 * 80;

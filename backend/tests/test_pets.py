@@ -257,4 +257,5 @@ def test_baerbel_verliert_seiten(welt):
 def test_pet_arten_und_spuren():
     assert "baerbel" in logic.PET_ARTEN
     assert "seite" in logic.SPUR_ARTEN
+    assert "schleim" in logic.SPUR_ARTEN  # Tentakelmonster
     assert set(logic.FALLENDE_SPUREN) == {"haeufchen", "seite"}
