@@ -1,6 +1,7 @@
 import type { Fraktion } from "./api";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import "./pc-kacheln.css"; // Selbes Raster und Kachelgerüst wie bei PCs/NPCs
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Fraktionen.
@@ -27,7 +28,7 @@ function FraktionKachel({ campaignId, fraktion, verbindungen, onKlick }: Fraktio
     <div className="pc-kachel fraktion-kachel" onClick={onKlick}>
       <div className="pc-kachel-bild-bereich">
         {fraktion.bildUrl ? (
-          <img src={fraktion.bildUrl} alt={fraktion.name} className="pc-kachel-bild" />
+          <img src={vorschau(fraktion.bildUrl)} loading="lazy" decoding="async" alt={fraktion.name} className="pc-kachel-bild" />
         ) : (
           <div className="pc-kachel-bild-leer">⬡</div>
         )}

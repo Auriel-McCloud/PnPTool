@@ -9,6 +9,7 @@ import { spielernotizenApi } from "../spielernotizen/api";
 import type { JSONContent } from "@tiptap/react";
 import "../items/gegenstaende.css";
 import "./lexikon.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Spieler-Lexikon — "Gedächtnis der Welt" aus Spielersicht (09.10.2026,
@@ -131,7 +132,7 @@ export function LexikonAnsicht() {
           <button key={e.id} type="button" className="gg-kachel" onClick={() => setOffen(e)} title={e.name}>
             <span className="gg-kachel-bild">
               {e.bildUrl ? (
-                <img src={e.bildUrl} alt="" />
+                <img src={vorschau(e.bildUrl)} loading="lazy" decoding="async" alt="" />
               ) : (
                 <span aria-hidden="true">{KATEGORIEN.find((k) => k.id === e.kategorie)?.symbol}</span>
               )}

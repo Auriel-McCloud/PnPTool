@@ -1,6 +1,7 @@
 import type { Ort } from "./api";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import "./pc-kacheln.css"; // Selbes Raster und Kachelgerüst wie bei PCs/NPCs
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Orte.
@@ -29,7 +30,7 @@ function OrtKachel({ campaignId, ort, verbindungen, onKlick }: OrtKachelProps) {
     <div className="pc-kachel ort-kachel" onClick={onKlick}>
       <div className="pc-kachel-bild-bereich">
         {ort.bildUrl ? (
-          <img src={ort.bildUrl} alt={ort.name} className="pc-kachel-bild" />
+          <img src={vorschau(ort.bildUrl)} loading="lazy" decoding="async" alt={ort.name} className="pc-kachel-bild" />
         ) : (
           <div className="pc-kachel-bild-leer">⌖</div>
         )}

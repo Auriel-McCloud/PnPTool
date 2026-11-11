@@ -3,6 +3,7 @@ import { anzeigeName, type CritterEintrag } from "../entities/api";
 import { Fenster } from "../shell/Fenster";
 import { Charakterblatt } from "../traits/Charakterblatt";
 import "./begleiter.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Eigener Critter als Kachel im Begleiter-Bereich der Spieleransicht
@@ -21,7 +22,7 @@ export function CritterKachel({ campaignId, critter }: { campaignId: string; cri
     <>
       <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={name}>
         <span className="gg-kachel-bild">
-          {critter.bildUrl ? <img src={critter.bildUrl} alt="" /> : <span aria-hidden="true">❊</span>}
+          {critter.bildUrl ? <img src={vorschau(critter.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">❊</span>}
         </span>
         <span className="gg-kachel-name">{name}</span>
         <span className="gg-kachel-zeile">Critter{critter.istAeon && " · Aeon"}</span>
@@ -35,7 +36,7 @@ export function CritterKachel({ campaignId, critter }: { campaignId: string; cri
         ton="var(--bereich-begleiter)"
         onSchliessen={() => setOffen(false)}
       >
-        {critter.bildUrl && <img src={critter.bildUrl} alt={name} className="bg-bild" />}
+        {critter.bildUrl && <img src={vorschau(critter.bildUrl)} loading="lazy" decoding="async" alt={name} className="bg-bild" />}
         {offen && <Charakterblatt campaignId={campaignId} personId={critter.id} bearbeitbar={false} />}
       </Fenster>
     </>

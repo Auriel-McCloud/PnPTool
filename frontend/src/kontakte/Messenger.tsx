@@ -6,6 +6,7 @@ import { GruppenChat } from "./GruppenChat";
 import { gruppenApi, type Gruppe } from "./gruppenApi";
 import { MitspielerFenster } from "./MitspielerFenster";
 import "./messenger.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Messenger im Persona-5-Stil.
@@ -308,7 +309,7 @@ function KontaktKarte({ kontakt, onClick }: { kontakt: Kontakt; onClick: () => v
     <div className="msg-kontakt" onClick={onClick}>
       <div className="msg-portrait">
         {kontakt.bildUrl ? (
-          <img src={kontakt.bildUrl} alt="" />
+          <img src={vorschau(kontakt.bildUrl, "klein")} loading="lazy" decoding="async" alt="" />
         ) : (
           <span className="msg-portrait-leer">?</span>
         )}
@@ -410,7 +411,7 @@ function MessengerChat({
             </button>
             <div className="msg-partner">
               {kontakt.bildUrl && (
-                <img className="msg-partner-bild" src={kontakt.bildUrl} alt="" />
+                <img className="msg-partner-bild" src={vorschau(kontakt.bildUrl, "klein")} loading="lazy" decoding="async" alt="" />
               )}
               <span className="msg-partner-name">{kontakt.alias}</span>
             </div>
@@ -521,7 +522,7 @@ export function NachrichtBlase({
     <div className="msg-nachricht" data-eigen={nachricht.vonMir}>
       {/* Portrait nur bei fremden Nachrichten */}
       {!nachricht.vonMir && bildUrl && (
-        <img className="msg-mini-portrait" src={bildUrl} alt="" />
+        <img className="msg-mini-portrait" src={vorschau(bildUrl, "klein")} loading="lazy" decoding="async" alt="" />
       )}
       {!nachricht.vonMir && !bildUrl && (
         <span

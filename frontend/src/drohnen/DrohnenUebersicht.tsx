@@ -6,6 +6,7 @@ import { drohnenApi, type DrohnenEintrag } from "./api";
 import { DrohnenFenster } from "./DrohnenFenster";
 import { kampfApi, type HotStatus } from "../kampf/api";
 import "../items/gegenstaende.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Burgermenü "Fahrzeuge & Drohnen" (25.10.2026, Phase 3) — für SL und
@@ -189,7 +190,7 @@ export function DrohnenUebersicht({
                     title={d.name}
                   >
                     <span className="gg-kachel-bild">
-                      {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
+                      {d.bildUrl ? <img src={vorschau(d.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">⛭</span>}
                     </span>
                     <span className="gg-kachel-name">{d.name}</span>
                     <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>
@@ -219,7 +220,7 @@ export function DrohnenUebersicht({
           <div key={d.id} className="gg-kachel" style={{ display: "flex", flexDirection: "column" }}>
             <button type="button" style={{ all: "unset", cursor: "pointer", display: "contents" }} onClick={() => setOffenFuer(d)}>
               <span className="gg-kachel-bild">
-                {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
+                {d.bildUrl ? <img src={vorschau(d.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">⛭</span>}
               </span>
               <span className="gg-kachel-name">{d.name}</span>
               <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>

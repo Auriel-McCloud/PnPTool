@@ -16,6 +16,7 @@ import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
 import { CredstickAktionen } from "./CredstickPopup";
 import { ApiError } from "../api/client";
 import "./wegwerfen.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Ein Gegenstand aus Spielersicht: Kachel, die sich zum Fenster öffnet.
@@ -242,7 +243,7 @@ export function GegenstandKachel({
     <>
       <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
         <span className="gg-kachel-bild">
-          {item.bildUrl ? <img src={item.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
+          {item.bildUrl ? <img src={vorschau(item.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◈</span>}
           {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
         </span>
         <span className="gg-kachel-name">

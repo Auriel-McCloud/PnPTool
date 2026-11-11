@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { SortimentEintrag } from "./api";
 import { BildGross } from "../shell/BildGross";
 import { Fenster } from "../shell/Fenster";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Eine Ware im Shop-Raster. Der Seltenheitsrahmen kommt aus
@@ -91,7 +92,7 @@ export function ShopWare({
       >
         {hatRabatt && <span className="shop-ware-rabatt-band">-{ware.rabattProzent}%</span>}
         <span className="shop-ware-bild">
-          {ware.bildUrl ? <img src={ware.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
+          {ware.bildUrl ? <img src={vorschau(ware.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◈</span>}
         </span>
         {!ware.istVorlage && <span className="shop-ware-typ">Einzelstück — danach weg</span>}
         <span className="shop-ware-name">{ware.name}</span>

@@ -22,6 +22,7 @@ import { bogenApi } from "../traits/bogenApi";
 import "../players/portrait.css";
 import "../zeichnungen/whiteboard.css";
 import "./battlemap.css";
+import { vorschau } from "../shell/vorschau";
 
 const FARBEN = ["#1a1a1a", "#c0392b", "#e67e22", "#d4a017", "#1e8449", "#2471a3", "#7d3c98", "#f4f4f4"];
 const STIFTE = [3, 6, 12];
@@ -956,7 +957,7 @@ export function BattlemapPopup({
                   void absetzen(e);
                 }}
               >
-                {t.bildUrl ? <img src={t.bildUrl} alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
+                {t.bildUrl ? <img src={vorschau(t.bildUrl)} loading="lazy" decoding="async" alt="" draggable={false} /> : <span>{t.name.slice(0, 2)}</span>}
               </button>
               {t.veraltet && (
                 <i className="bm-mem" style={{ left: cx, top: cy }} title="Erinnerung">

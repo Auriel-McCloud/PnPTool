@@ -6,6 +6,7 @@ import { AugmentFenster } from "./AugmentFenster";
 import { AugmentTraegerPanel, type AugmentTraeger } from "./AugmentTraegerPanel";
 import "../items/gegenstaende.css";
 import "./werkbank.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Upgraden-Tab im Werkbank-Burgermenü (29.10.2026, siehe
@@ -57,7 +58,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
         data-aktiv={gewaehlterTraeger?.id === traeger.id}
         onClick={() => setGewaehlterTraeger(traeger)}
       >
-        <span className="gg-kachel-bild">{bildUrl ? <img src={bildUrl} alt="" /> : <span aria-hidden="true">{symbol}</span>}</span>
+        <span className="gg-kachel-bild">{bildUrl ? <img src={vorschau(bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">{symbol}</span>}</span>
         <span className="gg-kachel-name">{traeger.name}</span>
         <span className="gg-kachel-zeile">{zeile}</span>
       </button>
@@ -82,7 +83,7 @@ export function AugmentUebersicht({ campaignId }: { campaignId: string }) {
               <div className="wb-kachelraster">
                 {defekteOhneTraeger.map((g) => (
                   <button key={g.id} type="button" className="gg-kachel" onClick={() => setOffenesAugment(g)}>
-                    <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
+                    <span className="gg-kachel-bild">{g.bildUrl ? <img src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">🔩</span>}</span>
                     <span className="gg-kachel-name">{g.name}</span>
                     <span className="gg-kachel-zeile">defekt — {g.ownerName ?? "ohne Besitzer"}</span>
                     {steckbriefKurz(g).length > 0 && (

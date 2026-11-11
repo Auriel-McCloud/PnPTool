@@ -10,6 +10,7 @@ import { TYP_OPTIONEN } from "../items/typKatalog";
 import { GRATIS_KAUF_ALLE_TYPEN } from "./gratisKauf";
 import { zusatzfertigkeitenApi, type Zusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import "./rassen.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Der Rassen-Baukasten der Spielleitung.
@@ -119,7 +120,7 @@ export function RassenUebersicht({ campaignId }: { campaignId: string }) {
           <div key={rasse.id} className="ra-kachel" data-frei={rasse.freigegeben}>
             <button type="button" className="ra-kachel-flaeche" onClick={() => setOffeneRasse(rasse)}>
               <span className="ra-kachel-bild">
-                {rasse.bildUrl ? <img src={rasse.bildUrl} alt="" /> : <span aria-hidden="true">◍</span>}
+                {rasse.bildUrl ? <img src={vorschau(rasse.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◍</span>}
               </span>
               <span className="ra-kachel-name">{rasse.name}</span>
               <span className="ra-kachel-punkte">{rasse.freiePunkte.join(" / ")}</span>

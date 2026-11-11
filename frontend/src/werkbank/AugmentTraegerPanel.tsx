@@ -1,5 +1,6 @@
 import { waffentypPasst, zieltypPasst, type GegenstandMitBesitzer } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
+import { vorschau } from "../shell/vorschau";
 
 /** Ein Trägergegenstand oder eine Drohne/ein Fahrzeug mit Upgrade-Slots. */
 export interface AugmentTraeger {
@@ -58,7 +59,7 @@ export function AugmentTraegerPanel({
   function kachel(g: GegenstandMitBesitzer, zielVorwaehlen: boolean) {
     return (
       <button key={g.id} type="button" className="gg-kachel" onClick={() => onUpgradeKlick(g, zielVorwaehlen)}>
-        <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🔩</span>}</span>
+        <span className="gg-kachel-bild">{g.bildUrl ? <img src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">🔩</span>}</span>
         <span className="gg-kachel-name">{g.name}</span>
         <span className="gg-kachel-zeile">{g.defekt ? "defekt" : "frei, montierbar"}</span>
         {/* Was das Upgrade bewirkt (29.10.2026, Mark: "es wäre gut wenn das

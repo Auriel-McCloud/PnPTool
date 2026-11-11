@@ -6,6 +6,7 @@ import { Fenster } from "../shell/Fenster";
 import { CritterFenster } from "../begleiter/CritterFenster";
 import { GewaechsDetail } from "./GewaechsDetail";
 import "../items/gegenstaende.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Flora & Fauna — eigener Burgermenü-Punkt (06.10.2026, Mark: "wir brauchen
@@ -170,7 +171,7 @@ export function FloraFaunaUebersicht({ campaignId }: { campaignId: string }) {
           >
             <span className="gg-kachel-bild">
               {k.bildUrl ? (
-                <img src={k.bildUrl} alt="" />
+                <img src={vorschau(k.bildUrl)} loading="lazy" decoding="async" alt="" />
               ) : (
                 <span aria-hidden="true">{k.art === "CRITTER" ? "❖" : "🌿"}</span>
               )}

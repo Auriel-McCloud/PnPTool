@@ -11,6 +11,7 @@ import { steckbriefKurz, steckbriefZeilen } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
 import { ersterKaufTrifft } from "../rassen/gratisKauf";
 import "./shop.css";
+import { vorschau } from "../shell/vorschau";
 
 const SELTENHEIT = ["", "Gewöhnlich", "Ungewöhnlich", "Selten", "Legendär", "Mystisch"];
 
@@ -204,7 +205,7 @@ export function TutorialShopPopup({
                       }}
                     >
                       <span className="ts-zeile-bild">
-                        {ware.bildUrl ? <img src={ware.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(ware.typ)}</span>}
+                        {ware.bildUrl ? <img src={vorschau(ware.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">{symbolFuerTyp(ware.typ)}</span>}
                       </span>
                       <span className="ts-zeile-text">
                         <span className="ts-zeile-name">{ware.name}</span>

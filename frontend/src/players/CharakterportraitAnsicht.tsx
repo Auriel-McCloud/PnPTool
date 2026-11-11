@@ -5,6 +5,7 @@ import { playersApi, type SpielerMe } from "./api";
 import { ZeichenblockPopup } from "./ZeichenblockPopup";
 import { oeffneZeichentisch } from "../bilder/zeichentisch";
 import "./portrait.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Charakterportrait als eigener Bereich in der Spieler-Hülle (Mark,
@@ -125,7 +126,7 @@ export function CharakterportraitAnsicht({
               onClick={() => !bild.istPrimaer && !laedt && alsAnzeigebildWaehlen(bild.url)}
               title={bild.istPrimaer ? "Aktuelles Anzeigebild" : "Als Anzeigebild wählen"}
             >
-              <img src={bild.url} alt="" />
+              <img src={vorschau(bild.url)} loading="lazy" decoding="async" alt="" />
               <button
                 type="button"
                 className="port-galerie-loeschen"

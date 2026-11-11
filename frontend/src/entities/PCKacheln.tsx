@@ -6,6 +6,7 @@ import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import { glanzStufe, pcKachelRang } from "./vorgefertigtRang";
 import "./pc-kacheln.css";
 import "./vorgefertigt-glanz.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Spielercharaktere.
@@ -59,7 +60,7 @@ function PCKachel({ campaignId, person, spielerName, onKlick, onBlitz, onExtraEP
     >
       <div className="pc-kachel-bild-bereich">
         {person.bildUrl ? (
-          <img src={person.bildUrl} alt={person.name} className="pc-kachel-bild" />
+          <img src={vorschau(person.bildUrl)} loading="lazy" decoding="async" alt={person.name} className="pc-kachel-bild" />
         ) : (
           <div className="pc-kachel-bild-leer">◉</div>
         )}

@@ -5,10 +5,11 @@ import traceback
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from app.auth.routes import router as auth_router
+from app.bilder.vorschau import CachendeUploads
+from app.bilder.vorschau import router as bilder_vorschau_router
 from app.campaigns.routes import einstellungen_router
 from app.campaigns.routes import router as campaigns_router
 from app.config import settings
@@ -144,7 +145,10 @@ app.include_router(pets_router)
 app.include_router(pets_ws_router)
 
 Path("uploads").mkdir(exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Vorschau-Route VOR dem Mount registrieren — sonst fängt der Mount
+# /uploads/_vorschau/... ab und sucht dort eine echte Datei.
+app.include_router(bilder_vorschau_router)
+app.mount("/uploads", CachendeUploads(directory="uploads"), name="uploads")
 
 
 @app.get("/api/health")

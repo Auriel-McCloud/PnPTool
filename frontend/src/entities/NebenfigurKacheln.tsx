@@ -2,6 +2,7 @@ import type { Person } from "./api";
 import { anzeigeName } from "./api";
 import "./pc-kacheln.css";
 import "./nebenfiguren.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Nebenfiguren (10.11.2026).
@@ -29,7 +30,7 @@ export function NebenfigurKacheln({
           <div key={p.id} className="pc-kachel nf-kachel" onClick={() => onKlick(p)}>
             <div className="pc-kachel-bild-bereich">
               {p.bildUrl ? (
-                <img src={p.bildUrl} alt={p.name} className="pc-kachel-bild" />
+                <img src={vorschau(p.bildUrl)} loading="lazy" decoding="async" alt={p.name} className="pc-kachel-bild" />
               ) : (
                 <div className="pc-kachel-bild-leer">○</div>
               )}

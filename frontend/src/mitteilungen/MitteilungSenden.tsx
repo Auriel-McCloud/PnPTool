@@ -5,6 +5,7 @@ import { bildFuerAnsage, sendeMitteilung, ziehZurueck, type Warnfarbe } from "./
 import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
 import { useMitteilungen } from "./MitteilungenKontext";
 import "./mitteilungen.css";
+import { vorschau } from "../shell/vorschau";
 
 /** Was am Tisch am häufigsten gebraucht wird — mitten im Kampf tippt niemand. */
 /** Ansagen, die als Warnung sinnvoll sind — der Schirm pulsiert dabei. */
@@ -328,7 +329,7 @@ export function MitteilungSenden({ campaignId }: { campaignId: string }) {
                       </button>
                     </div>
                     {m.art === "BILD" && m.bildUrl && (
-                      <img src={m.bildUrl} alt="" style={{ maxWidth: 120, borderRadius: 4, marginBottom: 4 }} />
+                      <img src={vorschau(m.bildUrl)} loading="lazy" decoding="async" alt="" style={{ maxWidth: 120, borderRadius: 4, marginBottom: 4 }} />
                     )}
                     {m.inhalt && <div className="mt-eintrag-text">{m.inhalt}</div>}
                   </div>

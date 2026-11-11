@@ -5,6 +5,7 @@ import { type ReparaturFreigabeEintrag } from "../party/api";
 import { ReparaturFenster, type ReparaturZiel } from "../reparatur/ReparaturFenster";
 import "../items/gegenstaende.css";
 import "./werkbank.css";
+import { vorschau } from "../shell/vorschau";
 
 /** Eine Gruppe reparierbarer Gegenstände einer Person — die eigene
  * Ausrüstung, oder (05.11.2026, Party-Reparatur-Freigabe) die eines
@@ -124,7 +125,7 @@ export function ReparaturUebersichtSpieler({
                       }
                     >
                       <span className="gg-kachel-bild">
-                        {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}
+                        {g.bildUrl ? <img src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">🛡</span>}
                       </span>
                       <span className="gg-kachel-name">{g.name}</span>
                       <span className="gg-kachel-zeile">
@@ -163,7 +164,7 @@ export function ReparaturUebersichtSpieler({
                 }
               >
                 <span className="gg-kachel-bild">
-                  {d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}
+                  {d.bildUrl ? <img src={vorschau(d.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">⛭</span>}
                 </span>
                 <span className="gg-kachel-name">{d.name}</span>
                 <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"}</span>

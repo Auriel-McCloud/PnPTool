@@ -4,6 +4,7 @@ import { KiBildPopup } from "../ki/KiBildPopup";
 import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Bild einer Entität: anzeigen, hochladen, entfernen — und per Blitz allen
@@ -111,7 +112,8 @@ export function EntitaetsBild({
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0", flexWrap: "wrap" }}>
       {bildUrl && (
         <img
-          src={bildUrl}
+          src={vorschau(bildUrl, "klein")}
+          loading="lazy" decoding="async"
           alt={name}
           style={{
             width: 56,

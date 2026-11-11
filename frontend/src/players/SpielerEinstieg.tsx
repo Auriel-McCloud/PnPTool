@@ -6,6 +6,7 @@ import { glanzStufe, rangDerSignifikanz } from "../entities/vorgefertigtRang";
 import { playersApi, type SpielerMe, type SpaltenSumme, type VorgefertigterCharakter } from "./api";
 import "../entities/vorgefertigt-glanz.css";
 import "./einstieg.css";
+import { vorschau } from "../shell/vorschau";
 
 const WEG_TITEL: Record<string, string> = {
   KEINER: "",
@@ -181,7 +182,7 @@ export function SpielerEinstieg({
                   >
                     <div className="ei-pc-bild-bereich">
                       {p.bildUrl ? (
-                        <img src={p.bildUrl} alt={p.name} />
+                        <img src={vorschau(p.bildUrl)} loading="lazy" decoding="async" alt={p.name} />
                       ) : (
                         <span className="ei-pc-bild-leer" aria-hidden="true">
                           ◉

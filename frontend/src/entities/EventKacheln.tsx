@@ -1,6 +1,7 @@
 import type { Event } from "./api";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import "./pc-kacheln.css"; // Selbes Raster und Kachelgerüst wie bei PCs/NPCs
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Events.
@@ -28,7 +29,7 @@ function EventKachel({ campaignId, event, verbindungen, onKlick }: EventKachelPr
     <div className="pc-kachel event-kachel" onClick={onKlick}>
       <div className="pc-kachel-bild-bereich">
         {event.bildUrl ? (
-          <img src={event.bildUrl} alt={event.title} className="pc-kachel-bild" />
+          <img src={vorschau(event.bildUrl)} loading="lazy" decoding="async" alt={event.title} className="pc-kachel-bild" />
         ) : (
           <div className="pc-kachel-bild-leer">◆</div>
         )}

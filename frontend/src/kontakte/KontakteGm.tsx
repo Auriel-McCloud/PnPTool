@@ -16,6 +16,7 @@ import { PersonSuchAuswahl } from "./PersonSuchAuswahl";
 import { GruppenGm } from "./GruppenGm";
 import { chatZielAbonnieren } from "./chatZiel";
 import "./kontakte-gm.css";
+import { vorschau } from "../shell/vorschau";
 
 interface Props {
   campaignId: string;
@@ -215,7 +216,8 @@ export function KontakteGm({ campaignId }: Props) {
                     <td className="kontakte-gm-npc">
                       {k.bildUrl && (
                         <img
-                          src={k.bildUrl}
+                          src={vorschau(k.bildUrl, "klein")}
+                          loading="lazy" decoding="async"
                           alt=""
                           className="kontakte-gm-portrait"
                         />

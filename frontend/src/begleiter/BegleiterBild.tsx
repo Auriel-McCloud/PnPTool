@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { BildBlitz } from "../mitteilungen/BildBlitz";
 import { BildZeichenKnopfe } from "../bilder/BildZeichenKnopfe";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Bild eines Begleiters: anzeigen, hochladen, entfernen, per Blitz zeigen —
@@ -72,7 +73,8 @@ export function BegleiterBild({
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
       {bildUrl && (
         <img
-          src={bildUrl}
+          src={vorschau(bildUrl, "klein")}
+          loading="lazy" decoding="async"
           alt={name}
           style={{
             width: 56,

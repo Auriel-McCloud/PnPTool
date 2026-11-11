@@ -9,6 +9,7 @@ import { ShopSortierleiste, gueltigesFeld, sortimentSortieren, type SortierRicht
 import { HaendlerBearbeiten } from "./HaendlerBearbeiten";
 import { extrahiereReinenText } from "../richtext/content";
 import "./shop.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Die Seite eines einzelnen Shops — Optik hängt komplett an der Vertriebsart
@@ -187,10 +188,10 @@ export function ShopSeite({
           style={{ "--shop-bild": haendler.shopHintergrundUrl ? `url(${haendler.shopHintergrundUrl})` : "none" } as React.CSSProperties}
         >
           {(haendler.haendler ?? []).filter((g) => g.bildUrl).map((g) => (
-            <img key={g.id} className="shop-haendler-portrait" src={g.bildUrl} alt={g.name} />
+            <img key={g.id} className="shop-haendler-portrait" src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt={g.name} />
           ))}
           {!(haendler.haendler ?? []).some((g) => g.bildUrl) && haendler.bildUrl && (
-            <img className="shop-haendler-portrait" src={haendler.bildUrl} alt="" />
+            <img className="shop-haendler-portrait" src={vorschau(haendler.bildUrl)} loading="lazy" decoding="async" alt="" />
           )}
           <div className="shop-kopf-text">
             <h2>{haendler.name}</h2>

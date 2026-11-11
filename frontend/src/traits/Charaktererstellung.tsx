@@ -26,6 +26,7 @@ import { Bestaetigung } from "../shell/Bestaetigung";
 import { gratisKaufKurz, gratisKaufLang } from "../rassen/gratisKauf";
 import "./erstellung.css";
 import "../regeln/infotipp.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Charaktererstellung — Prototyp.
@@ -823,7 +824,7 @@ function SchrittRasse({
               onClick={() => onWaehlen(r.name)}
             >
               <span className="er-karte-bild">
-                {r.bildUrl ? <img src={r.bildUrl} alt="" /> : <span aria-hidden="true">◍</span>}
+                {r.bildUrl ? <img src={vorschau(r.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◍</span>}
               </span>
               <span className="er-karte-titel">
                 {r.name}

@@ -8,6 +8,7 @@ import { ART_NAMEN, ART_SYMBOLE, type Begleiter } from "./api";
 import { SCHADEN_MAX } from "../items/api";
 import { anzeigeName } from "../entities/api";
 import "./begleiter.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Ein Begleiter als Kachel, die sein Blatt aufklappt.
@@ -33,7 +34,7 @@ export function BegleiterBlatt({ begleiter }: { begleiter: Begleiter }) {
   return (
     <>
       {begleiter.bildUrl && (
-        <img src={begleiter.bildUrl} alt={begleiter.name} className="bg-bild" />
+        <img src={vorschau(begleiter.bildUrl)} loading="lazy" decoding="async" alt={begleiter.name} className="bg-bild" />
       )}
 
       {begleiter.beziehung && (
@@ -78,7 +79,7 @@ export function BegleiterKachel({ begleiter }: { begleiter: Begleiter }) {
       <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={anzeigeName(begleiter.name, begleiter.alias)}>
         <span className="gg-kachel-bild">
           {begleiter.bildUrl ? (
-            <img src={begleiter.bildUrl} alt="" />
+            <img src={vorschau(begleiter.bildUrl)} loading="lazy" decoding="async" alt="" />
           ) : (
             <span aria-hidden="true">{ART_SYMBOLE[begleiter.art]}</span>
           )}

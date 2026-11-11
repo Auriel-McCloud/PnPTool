@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Fenster } from "../shell/Fenster";
 import { kontakteApi, type Mitspieler } from "./api";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * „Mitspieler anschreiben“: Kontakt zu einem anderen Spielercharakter anbieten.
@@ -70,7 +71,7 @@ export function MitspielerFenster({
               onClick={() => void anfragen(m)}
             >
               <span className="msg-portrait">
-                {m.bildUrl ? <img src={m.bildUrl} alt="" /> : <span className="msg-portrait-leer">?</span>}
+                {m.bildUrl ? <img src={vorschau(m.bildUrl, "klein")} loading="lazy" decoding="async" alt="" /> : <span className="msg-portrait-leer">?</span>}
               </span>
               <span className="msg-info">
                 <span className="msg-name">{m.name}</span>

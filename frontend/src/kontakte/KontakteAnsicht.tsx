@@ -4,6 +4,7 @@ import { ChatFenster } from "./ChatFenster";
 import { STUFEN, kontakteApi, type Kontakt } from "./api";
 import { extrahiereReinenText } from "../richtext/content";
 import "./kontakte.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Das Kontaktverzeichnis eines Spielers.
@@ -109,7 +110,7 @@ export function KontakteAnsicht({ campaignId }: { campaignId: string }) {
           return (
             <li key={k.id} className="ko-eintrag" onClick={() => setOffen(k)}>
               {k.bildUrl ? (
-                <img className="ko-bild" src={k.bildUrl} alt="" />
+                <img className="ko-bild" src={vorschau(k.bildUrl, "klein")} loading="lazy" decoding="async" alt="" />
               ) : (
                 <span className="ko-bild ko-bild-leer" aria-hidden="true">
                   ?

@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Vorschaubilder: Übersichten laden nur noch kleine Bilder (11.11.2026)
+
+Mark: „jetzt wo ich allem Bilder gegeben habe lädt alles sehr lang“ (uploads auf bebop ~530 MB, 76 Dateien > 3 MB). Neu `backend/app/bilder/vorschau.py`: `GET /uploads/_vorschau/{128|480}/{kampagne}/{datei}` baut beim ersten Abruf ein WebP (Zahl = kürzere Bildseite) und legt es unter `uploads/_vorschau/` ab; kleine Bilder/animierte GIFs kommen als Original. Route steht in `main.py` VOR dem `/uploads`-Mount. `/uploads` selbst jetzt mit `Cache-Control: immutable` (`CachendeUploads`, Dateinamen sind UUIDs). Frontend: `shell/vorschau.ts` → `vorschau(url, "kachel"|"klein")` plus `loading="lazy"` in allen Kachel-/Listenbildern (Gegenstände, PC/NPC/Orte/Events/Fraktionen/Nebenfiguren, Begleiter/Critter, Drohnen, Shop, Lexikon, Rassen, Werkbank, Kontakte/Messenger, Galerie-Daumen, Battlemap-Token). Detailansichten, `BildGross`, Mitteilungs-Pushs und Battlemap-Hintergründe bleiben beim Original. Doku: `docs/api/bilder.md`. Tests: `backend/tests/test_bild_vorschau.py`.
+
 ## Gegenstände-Übersicht: Standard „Alle Besitzer“ + Reiter „Vorlage“ (11.11.2026)
 
 Mark: oben stand „Nur Vorlagen“, unten aber „Am Körper“/„Mitgeführt“ vorgewählt — widersprüchlich. `items/GegenstaendeUebersicht.tsx`: `besitzerFilter` startet jetzt leer (= „Alle Besitzer“), die einmalige Bereichs-Vorauswahl ist der „Vorlage“-Reiter; existieren keine Vorlagen, fällt sie auf `standardAuswahl` (Am Körper/Mitgeführt) zurück.

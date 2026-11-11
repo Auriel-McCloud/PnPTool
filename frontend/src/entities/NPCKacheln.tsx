@@ -4,6 +4,7 @@ import { anzeigeName } from "../entities/api";
 import { useNachladen } from "../shell/nachladen";
 import { bogenApi, type BogenUebersicht } from "../traits/bogenApi";
 import "./pc-kacheln.css"; // Selbes Styling wie PCs
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Kachel-Übersicht für Nichtspielercharaktere.
@@ -39,7 +40,7 @@ function NPCKachel({ campaignId, person, onKlick, onBlitz }: NPCKachelProps) {
     <div className="pc-kachel npc-kachel" onClick={onKlick}>
       <div className="pc-kachel-bild-bereich">
         {person.bildUrl ? (
-          <img src={person.bildUrl} alt={person.name} className="pc-kachel-bild" />
+          <img src={vorschau(person.bildUrl)} loading="lazy" decoding="async" alt={person.name} className="pc-kachel-bild" />
         ) : (
           <div className="pc-kachel-bild-leer">◉</div>
         )}

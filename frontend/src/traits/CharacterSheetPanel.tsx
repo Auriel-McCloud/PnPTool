@@ -30,6 +30,7 @@ import { BehaelterHineinlegenPopup } from "../items/BehaelterHineinlegenPopup";
 import { SchlossForm } from "../items/SchlossForm";
 import { PetArtWahl } from "../pets/PetArtWahl";
 import "../entities/pc-detail.css";
+import { vorschau } from "../shell/vorschau";
 
 type GgAnsicht = "uebersicht" | "beschreibung" | "umbauen" | "notizen" | "besitz";
 
@@ -2488,7 +2489,7 @@ export function GegenstandRow({
       <>
         <button type="button" className="gg-kachel" onClick={openEdit} title={formelKlartext(item.name)}>
           <span className="gg-kachel-bild">
-            {item.bildUrl ? <img src={item.bildUrl} alt="" /> : <span aria-hidden="true">◈</span>}
+            {item.bildUrl ? <img src={vorschau(item.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◈</span>}
             {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
           </span>
           <span className="gg-kachel-name">
@@ -2537,7 +2538,7 @@ export function GegenstandRow({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {item.bildUrl && (
-            <img src={item.bildUrl} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
+            <img src={vorschau(item.bildUrl, "klein")} loading="lazy" decoding="async" alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4 }} />
           )}
           <FormelText text={item.name} />
           {item.hatMenge && <strong>×{item.menge}</strong>}

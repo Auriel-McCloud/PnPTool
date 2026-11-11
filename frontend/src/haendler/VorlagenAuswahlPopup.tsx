@@ -4,6 +4,7 @@ import type { GegenstandMitBesitzer } from "../items/api";
 import { steckbriefKurz } from "../items/steckbrief";
 import { symbolFuerTyp } from "../items/typKatalog";
 import "./shop.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Ware-Auswahl für den Sortiment-Editor (11.10.2026, Mark: das reine
@@ -120,7 +121,7 @@ export function VorlagenAuswahlPopup({
                 </span>
               )}
               <span className="shop-ware-bild">
-                {g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">{symbolFuerTyp(g.typ)}</span>}
+                {g.bildUrl ? <img src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">{symbolFuerTyp(g.typ)}</span>}
               </span>
               <span className="shop-ware-name">{g.name}</span>
               {!g.istVorlage && <span className="shop-ware-typ">Einzelstück</span>}

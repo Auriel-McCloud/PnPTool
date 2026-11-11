@@ -3,6 +3,7 @@ import { itemsApi, type GegenstandMitBesitzer } from "../items/api";
 import { drohnenApi, type DrohnenEintrag } from "../drohnen/api";
 import { ReparaturFenster, type ReparaturZiel } from "./ReparaturFenster";
 import "../items/gegenstaende.css";
+import { vorschau } from "../shell/vorschau";
 
 /** Offenes Reparatur-Fenster an den frisch geladenen Listenstand hängen,
  * sonst zeigt die Kopfzeile weiter den Schnappschuss vom Öffnen. */
@@ -129,7 +130,7 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
                   })
                 }
               >
-                <span className="gg-kachel-bild">{g.bildUrl ? <img src={g.bildUrl} alt="" /> : <span aria-hidden="true">🛡</span>}</span>
+                <span className="gg-kachel-bild">{g.bildUrl ? <img src={vorschau(g.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">🛡</span>}</span>
                 <span className="gg-kachel-name">{g.name}</span>
                 <span className="gg-kachel-zeile">
                   <span style={g.ruestungKaestchenAktuell < g.ruestungKaestchenMax ? { color: "var(--nein)" } : undefined}>
@@ -164,7 +165,7 @@ export function ReparaturUebersicht({ campaignId }: { campaignId: string }) {
                   })
                 }
               >
-                <span className="gg-kachel-bild">{d.bildUrl ? <img src={d.bildUrl} alt="" /> : <span aria-hidden="true">⛭</span>}</span>
+                <span className="gg-kachel-bild">{d.bildUrl ? <img src={vorschau(d.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">⛭</span>}</span>
                 <span className="gg-kachel-name">{d.name}</span>
                 <span className="gg-kachel-zeile">{d.istFahrzeug ? "Fahrzeug" : "Drohne"} — {d.riggerName ?? "ungebunden"}</span>
                 <span className="gg-kachel-zeile">

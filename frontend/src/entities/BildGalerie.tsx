@@ -6,6 +6,7 @@ import { kiBildGenerieren, kiBildPrompt } from "../ki/api";
 import { extrahiereReinenText } from "../richtext/content";
 import { ZeichenblockPopup } from "../players/ZeichenblockPopup";
 import { bildHoererSetzen, oeffneZeichentisch } from "../bilder/zeichentisch";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Bildergalerie für Entitäten: mehrere Bilder anzeigen, hochladen,
@@ -241,7 +242,7 @@ export function BildGalerie({
             onClick={() => primaerSetzen(bild.url)}
             title={bild.istPrimaer ? "Primärbild" : "Als Primär setzen"}
           >
-            <img src={bild.url} alt="" />
+            <img src={vorschau(bild.url)} loading="lazy" decoding="async" alt="" />
             <button
               className="bild-galerie-loeschen"
               onClick={(e) => {

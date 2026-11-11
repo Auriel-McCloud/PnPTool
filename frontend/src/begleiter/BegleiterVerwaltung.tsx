@@ -17,6 +17,7 @@ import { CritterFenster } from "./CritterFenster";
 import { KiFenster } from "./KiFenster";
 import "../items/gegenstaende.css";
 import "./begleiter.css";
+import { vorschau } from "../shell/vorschau";
 
 /**
  * Begleiter anlegen und pflegen — Sprites, Geister, Verbündete.
@@ -229,7 +230,7 @@ export function BegleiterVerwaltung({ campaignId }: { campaignId: string }) {
         {sichtbar.map((k) => (
           <button key={k.id} type="button" className="gg-kachel" onClick={() => kachelOeffnen(k)} title={anzeigeName(k.name, k.alias)}>
             <span className="gg-kachel-bild">
-              {k.bildUrl ? <img src={k.bildUrl} alt="" /> : <span aria-hidden="true">{symbolVon(k)}</span>}
+              {k.bildUrl ? <img src={vorschau(k.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">{symbolVon(k)}</span>}
             </span>
             <span className="gg-kachel-name">{anzeigeName(k.name, k.alias)}</span>
             <span className="gg-kachel-zeile">
