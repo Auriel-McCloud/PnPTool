@@ -4,6 +4,8 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Bärbel: fliegendes Buch als Pet an einem Gegenstand (11.11.2026)
 
+**Wabernde Verwandlungswolke (11.11.):** Mark: „intensiver oder länger, die könnte ruhig ein wenig wabern“. `verwandeln.png` jetzt 32 Frames à 70 ms (≈2,2 s, vorher 1,1 s) auf eigener 112-px-Leinwand mittig über dem Buch (`BAERBEL.verwandeln.groesse`): aufquellen, 22 wabernde Blasen kreisen mit Glanzkuppen, rosa Wirbel im Kern, funkelnde Sterne, Zerfall in aufsteigende Funken; Gestaltwechsel bei Frame 16, Zittern davor 600 ms.
+
 Idee von Marks Frau (sprechende Bibel/Zauberbuch „Bärbel“). `petArt` jetzt auch am `Gegenstand` (SL: Item-Bearbeitung → gemeinsame `pets/PetArtWahl.tsx`, auch im `CritterFenster`; `PET_ARTEN` mit `fuer`). `pets/repository.py::pets_der_kampagne` per `UNION`: PC mit `BESITZT`, nicht `weggeworfen`, nicht (verschachtelt) in verschlossener Kiste — gegen lokale Neo4j geprüft. `art_lesen/setzen` nehmen Critter ODER Gegenstand. Frontend: `pets/flug.ts` (`FlugBewegung`, Schnittstelle `PetSteuerung`): rein/raus in beliebiger Höhe oder oben, schweben zu / flattern offen, auf-/zuklappen, auf Flächen ruhen, Verwandlung zwischen 3 Gestalten (Wolke), Blinzeln, Seiten verlieren (Spur `seite`, segelt zu Boden; `FALLENDE_SPUREN`), Freuen, Packen/Werfen mit Luftwiderstand. Sprites `docs/assets/critter-pet/baerbel_*.py` → `frontend/public/pets/baerbel/`. Node-Sim (6 min, keine NaN, max 6,5 px/Frame), `test_pets.py` 16 passed, `tsc -b` sauber. Wiki [[critter-pet]].
 
 ## Spieler sieht seine Critter bei den Begleitern (11.11.2026)
