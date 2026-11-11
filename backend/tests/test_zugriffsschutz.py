@@ -306,6 +306,9 @@ OHNE_GM_ERLAUBT = {
 # Die Regel ist sonst umgekehrt: Spieler dürfen lesen. Jede Ausnahme braucht
 # einen Grund, sonst höhlt sie den Spielerzugang aus.
 NUR_SPIELLEITUNG_LESBAR = {
+    # Ob ein Critter als Pet herumläuft, stellt nur die SL ein; Spieler sehen
+    # das Pet über die Live-Leitung, nicht über diese Einstellung.
+    "/api/campaigns/{campaign_id}/pets/{critter_id}",
     # Der Mülleimer. Dass ein weggeworfenes Stück noch existiert und
     # zurückgeholt werden könnte, ist eine Auskunft der Spielleitung — ein
     # Spieler soll nach dem Wegwerfen nicht nachsehen können, was noch da ist.

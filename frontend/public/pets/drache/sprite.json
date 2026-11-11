@@ -1,0 +1,18 @@
+{
+  "breite": 84,
+  "hoehe": 48,
+  "animationen": {
+    "idle": {
+      "frames": 20,
+      "ms": 110
+    },
+    "lauf": {
+      "frames": 10,
+      "ms": 80
+    },
+    "freuen": {
+      "frames": 8,
+      "ms": 90
+    }
+  }
+}

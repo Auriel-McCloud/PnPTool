@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Critter-Pet: Drache läuft über die Party-Tablets (11.11.2026)
+
+Erste Ausbaustufe von Planpunkt 15, Wiki [[critter-pet]], API `docs/api/pets.md`. SL stellt im `CritterFenster` „Pet auf den Tablets“ auf „Kleiner Drache“ (`petArt` am Critter-Knoten, `PUT …/pets/{critterId}`). Ist der Critter per `BEGLEITET` an einen PC gebunden und dessen Spieler eingeloggt, läuft das Pet unten über den Bildschirm (`pets/PetOverlay.tsx`, z-index 150 unter den Fenstern). Modul `backend/app/pets/`: `motor.py` hält im Prozessspeicher, auf welchem Tablet es ist; Tablet meldet „raus“ am Rand, Server schickt es nach 3–12 s zum nächsten eingeloggten PC derselben Party (Gegenseite rein), nie zur SL; Takt 20 s gleicht DB/Party ab, 5 min ohne Meldung → weiter. Streicheln = Hüpfer + Herzen (nur lokal). Häufchen (`PetHaeufchen`-Knoten, je Bildschirm max. 12) bleiben liegen, Antippen wischt sie weg — Annahme, Mark hat die Häufchen-/Werfen-Fragen offen gelassen. Sprites prozedural: `docs/assets/critter-pet/sprites_exportieren.py` → `frontend/public/pets/drache/` (idle/lauf/freuen, Häufchen, Herz). Noch nicht: Schlafen, Essen, Feuer-Rülpser, Traurig, Popups hochklettern, Bedürfnisse. Tests `tests/test_pets.py`, `tsc -b` sauber.
+
 ## Tutorial-Shop: KI-Verkäufer-Kommentar entfernt (11.11.2026)
 
 Mark nach ein paar Einkäufen: das Popup „⌬ Verkäufer-Kommentar“ beim Schließen des Tutorial-Shops stört nur und ist nicht lustig. `TutorialShopPopup.tsx` sammelt keine Session-Käufe mehr und ruft beim Schließen keine KI mehr auf; Popup weg. Backend-Route `POST …/tutorial/kommentar` und `haendlerApi.tutorialKommentar` bleiben ungenutzt stehen. Nur Frontend, `tsc -b` sauber.
@@ -3667,7 +3671,7 @@ dort weitergepflegt, hier nicht mehr).
 | 12 | Steckbrief nachträglich bearbeiten | ✅ erledigt | — |
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |
-| 15 | Critter-Tamagotchi/Desktop-Pet | Idee, Skizze nachgeschärft 11.11.2026 (Mushu-artiger Pixel-Drache, an Critter gekoppelt), Achsen **offen** | [[critter-pet]] |
+| 15 | Critter-Tamagotchi/Desktop-Pet | Erste Stufe ✅ 11.11.2026 (Drache läuft/wandert, Streicheln, Häufchen); weitere Animationen, Popup-Klettern, Bedürfnisse **offen** | [[critter-pet]] |
 | 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Schlucken ✅, am Tisch noch nicht geklickt; Credstick ✅ (05.11.2026, Tresor-Modell; Laden sitzt im Objekt und im Spieler-Fenster); Rest (gleicher Ort, Geld-Weitergabe, Granate) **offen**. Gift an jemand anderem im Kampf später | [[gegenstand-transfer]], [[drogen]] |
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |

@@ -5,7 +5,7 @@ updated: 2026-11-11
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
-status: offen
+status: teilweise-umgesetzt
 ---
 
 # Critter-Pet (Tamagotchi)
@@ -70,6 +70,27 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   („schräg“) und lange dünne Beine („schrecklich“). Generator + GIFs:
   `docs/assets/critter-pet/drache_final.py` (`python drache_final.py <ziel>`),
   `final_idle.gif`, `final_lauf.gif`.
+
+## Gebaut 11.11.2026 (erste Ausbaustufe)
+
+- SL: `CritterFenster` → „Pet auf den Tablets“ (aus / Kleiner Drache),
+  gespeichert als `petArt` am Critter. API `docs/api/pets.md`.
+- Server (`backend/app/pets/motor.py`) weiß, auf welchem Tablet das Pet ist;
+  Tablet meldet „raus“ am Rand → 3–12 s Pause → nächstes eingeloggtes
+  Party-Mitglied (bevorzugt ein anderes), Gegenseite rein. Nie bei der SL.
+  Pet existiert nur, solange der Besitzer verbunden ist (Annahme: es ist sein
+  Tier, ohne ihn geht es nicht auf Wanderschaft).
+- Tablet: läuft unten über den Bildschirm, Pausen, bleibt 40–120 s, dann
+  raus. Unter den Fenstern (verdeckt nie einen Dialog). Verbindet nur bei
+  sichtbarem Tab.
+- Streicheln (antippen): Freuden-Hüpfer + Herzen, nur auf diesem Tablet.
+- Häufchen: höchstens eins pro Besuch (20 % je Pause), bleibt liegen
+  (`PetHaeufchen`-Knoten je Bildschirm, max. 12, ältestes fällt weg).
+  **Annahme:** Antippen wischt es weg — Mark hat die Frage nicht beantwortet.
+- Animationen bisher: Idle, Laufen, Freuen. Sprites aus
+  `docs/assets/critter-pet/sprites_exportieren.py` → `frontend/public/pets/drache/`.
+- **Noch nicht gebaut:** Schlafen, Essen, Feuer-Rülpser, Traurig/Hunger,
+  Popups hochklettern und drauflegen, Hochheben/Werfen, Bedürfnisse.
 
 ## Noch offen
 

@@ -57,6 +57,8 @@ from app.battlemap.routes import ws_router as battlemap_ws_router
 from app.nebenfiguren.routes import router as nebenfiguren_router
 from app.raetsel.routes import router as raetsel_router
 from app.raetsel.routes import ws_router as raetsel_ws_router
+from app.pets.routes import router as pets_router
+from app.pets.routes import ws_router as pets_ws_router
 from app.db.neo4j_driver import close_driver
 
 
@@ -138,6 +140,8 @@ app.include_router(battlemap_ws_router)
 app.include_router(raetsel_router)
 app.include_router(nebenfiguren_router)
 app.include_router(raetsel_ws_router)
+app.include_router(pets_router)
+app.include_router(pets_ws_router)
 
 Path("uploads").mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

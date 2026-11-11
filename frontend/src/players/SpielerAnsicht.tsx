@@ -66,6 +66,7 @@ import { RaetselTafelAnsicht } from "../raetsel/RaetselTafel";
 import { DrohnenUebersicht } from "../drohnen/DrohnenUebersicht";
 import { WerkbankUebersichtSpieler } from "../werkbank/WerkbankUebersichtSpieler";
 import { MeineAchievements } from "../achievements/MeineAchievements";
+import { PetOverlay } from "../pets/PetOverlay";
 
 /**
  * Die Spieler-Ansicht — dieselbe Hülle wie beim Spielleiter, nur mit weniger
@@ -569,6 +570,9 @@ export function SpielerAnsicht({ onAbgemeldet }: { onAbgemeldet: () => void }) {
     {/* Vollbild-Warnung: pulsiert und liegt ueber allem, auch ueber dem
         normalen Popup. Fuer Initiative und Gefahr. */}
     <Warnung campaignId={ich.campaignId} />
+    {/* Critter-Pet der Party (11.11.2026): läuft unten über den Bildschirm
+        und wandert zwischen den Tablets der Party-Mitglieder. */}
+    <PetOverlay campaignId={ich.campaignId} />
     {/* Reflex-Booster: fragt beim Drankommen, und nochmal, wenn der Decker
         erst im eigenen Zug Hot geht — das Deck zählt vorher nicht. */}
     <BoosterPopup
