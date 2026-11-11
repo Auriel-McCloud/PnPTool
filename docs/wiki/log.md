@@ -1945,3 +1945,7 @@ Mark: stört und ist nicht lustig. Kein Popup, kein KI-Aufruf beim Schließen de
 ## [2026-11-11] update | Bärbel: fliegendes Buch als Pet an einem Gegenstand
 
 `petArt` auch am Gegenstand (Besitz reicht, verschlossene Kiste/weggeworfen sperrt), Flug-Logik `flug.ts`, drei Gestalten mit Verwandlung, Blinzeln, verlorene Seiten. Siehe [[entities/critter-pet]].
+
+## [2026-11-11] update | Bärbel liest vor, Pets treffen sich
+
+Lesung alle 15 Minuten Anwesenheit bis zum Antippen. Drache niest sie an, Blitz verkohlt ihn, Tentakel schleimt ihn. Spuren im Kampf ausgeblendet. Siehe [[entities/critter-pet]].

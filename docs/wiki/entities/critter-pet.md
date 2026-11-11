@@ -205,15 +205,15 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Gebaut 11.11.:** Tentakelmonster will raus (Spalt mit glühenden Augen, Tentakel klatscht aufs Display → feuchter Schleimfleck `schleim`, wegwischen) und Blitz-Zauber (Buch leuchtet auf, Blitz schlägt im Bild ein → Brandfleck wie beim Drachen).
 
-**Gebaut 11.11. (Interaktion):** Der Drache frisst Bärbels Seiten, wenn er daran vorbeikommt (läuft auch gezielt hin); Bärbels Tentakel zieht Häufchen ins Buch. Blitz variiert: Einzel-, Gabel-, Kettenblitz, trifft oft Wörter/Kästchen. Direkte Pet-zu-Pet-Interaktion (beide gleichzeitig auf einem Bildschirm) noch nicht.
+**Gebaut 11.11. (Interaktion):** Der Drache frisst Bärbels Seiten, wenn er daran vorbeikommt (läuft auch gezielt hin); Bärbels Tentakel zieht Häufchen ins Buch. Blitz variiert: Einzel-, Gabel-, Kettenblitz, trifft oft Wörter/Kästchen. Direkte Begegnung (11.11., gebaut): auf demselben Bildschirm niest der Drache Bärbel an (sie verwandelt sich), ihr Blitz verkohlt ihn, die Tentakel schleimt ihn voll.
 
-**Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle; Vorlese-Zauber: sie schlägt sich auf, wird per
-Glitzerwolke groß und liest ein KI-generiertes, zur Situation passendes
-Bibelzitat vor.
+**Gebaut 11.11. (Vorlesen):** Etwa alle 15 Minuten Anwesenheit (nicht Wanduhr, nicht im Kampf) schlägt sie sich groß auf und zeigt ein KI-Bibelzitat zur Lage (Ort, Anwesende, Events am Ort). Bleibt bis zum Antippen. Glitzerwolke nicht gebaut — die Tafel ist die lesbare Fläche.
+
+**Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle.
 
 ## Abdrehen und Kampfpause (11.11.2026, gebaut)
 
-Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, Default an) und im Kampf grundsätzlich keine Pets — sie verschwinden beim Kampfbeginn und kommen nach dem Kampf beim Besitzer wieder. Spuren (Häufchen, Seiten, Flecken) bleiben liegen (Annahme).
+Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, Default an) und im Kampf grundsätzlich keine Pets — sie verschwinden beim Kampfbeginn und kommen nach dem Kampf beim Besitzer wieder. Spuren bleiben gespeichert. Mark hat nachgezogen: im Kampf und bei abgedrehten Pets werden sie ausgeblendet und danach wieder eingeblendet, nicht gelöscht.
 
 ## Nebenbei gefunden 11.11.2026
 

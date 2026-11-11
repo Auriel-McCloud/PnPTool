@@ -85,6 +85,8 @@ async def live(websocket: WebSocket, campaign_id: str):
                 elif typ == "verschieben":
                     await motor.verschieben(campaign_id, person_id, str(n.get("id")),
                                             float(n.get("x", 0)), float(n.get("y", 1)))
+                elif typ == "gelesen":
+                    await motor.gelesen(campaign_id, person_id, str(n.get("petId")))
             except (TypeError, ValueError):
                 continue
     except WebSocketDisconnect:

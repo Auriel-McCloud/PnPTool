@@ -93,7 +93,17 @@ export interface Umgebung {
   /** Spuren auf dem Bildschirm (Seiten, Häufchen …) — damit Pets damit spielen
    *  können (Mark, 11.11.2026: Drache frisst Seiten, Tentakel holt Häufchen). */
   spuren?: () => SpurAufSchirm[];
+  /** Andere Pets auf diesem Bildschirm (Mitte in Pixeln). */
+  nachbarn?: () => NachbarBox[];
   zufall: () => number;
+}
+
+export interface NachbarBox {
+  art: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 export interface SpurAufSchirm {
@@ -204,13 +214,23 @@ export interface Darstellung {
   /** Kopfposition für Zzz/Herzen/Tropfen. */
   kopfX: number;
   kopfY: number;
+  /** Trefferfläche dieses Frames (Feuerkegel, Blitz, Tentakelspitze). */
+  angriff?: { art: "feuer" | "blitz" | "schleim"; x: number; y: number; r: number } | null;
+  /** Zusätzliche Größe (1 = normal). Bärbels Lesung. */
+  zoom?: number;
+  /** Aufgeschlagen und lesbar — bleibt, bis jemand antippt. */
+  liest?: boolean;
+  /** Tentakelspitze lugt seitlich raus. */
+  peek?: boolean;
 }
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
   | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" }
   /** Spur gefressen/eingesaugt — verschwindet vom Bildschirm. */
-  | { typ: "fressen"; id: string };
+  | { typ: "fressen"; id: string }
+  /** Bärbels Lesung zugeklappt. */
+  | { typ: "gelesen" };
 
 /** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
 const NIESEN_MS = 22 * 80;
@@ -541,6 +561,10 @@ export class PetBewegung {
   }
 
   private niese(jetzt: number) {
+    // Steht Bärbel ungefähr auf seiner Höhe, dreht er sich zu ihr (Mark:
+    // anniesen soll sie verwandeln, nicht an ihr vorbeigehen).
+    const sie = (this.u.nachbarn?.() ?? []).find((n) => n.art === "baerbel");
+    if (sie && Math.abs(sie.y - this.fussY) < 220) this.richtung = sie.x >= this.x ? 1 : -1;
     this.zustand = "niesen";
     this.niesenStart = jetzt;
     this.brandGelegt = false;
@@ -1251,6 +1275,16 @@ export class PetBewegung {
     }
     const schwitzt =
       this.zustand === "haengen" || (this.zustand === "klettern" && !!k && (k.phase === "rast" || k.zuege >= 3));
+    let angriff: Darstellung["angriff"] = null;
+    if (feuer) {
+      const { feuerLaenge } = this.masse();
+      angriff = {
+        art: "feuer",
+        x: feuer.x + (feuer.flip ? -1 : 1) * feuerLaenge * 0.55,
+        y: feuer.y,
+        r: feuerLaenge * 0.5,
+      };
+    }
     return {
       left: p.left,
       top: p.top,
@@ -1259,6 +1293,7 @@ export class PetBewegung {
       animStart: this.animStart,
       frame,
       feuer,
+      angriff,
       hockt: this.zustand === "haeufchen" || this.zustand === "landen",
       gepackt: this.zustand === "getragen" || this.zustand === "gehalten",
       schlaeft: this.zustand === "schlafen",

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
+import { verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
 import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
+import { alle, makel, melde, treffe, vergiss } from "./treffen";
 import "./pets.css";
+
+/** Steuerungen der gerade sichtbaren Pets — Feuer trifft die andere Figur. */
+const steuerungen = new Map<string, PetSteuerung>();
 
 /**
  * Critter-Pet auf dem Spieler-Tablet (Mark, 11.11.2026).
@@ -281,6 +285,7 @@ function umgebung(m: Masse = masse()): Umgebung {
       fenster
         .map((el) => ({ q: elementQuelle(el), r: el.getBoundingClientRect() as Rechteck }))
         .filter(({ r }) => r.top > m.bh + 30 && r.right - r.left > m.bw * 1.3),
+    nachbarn: () => alle().map((n) => ({ art: n.art, x: n.x, y: n.y, w: n.w, h: n.h })),
     zufall: Math.random,
   };
 }
@@ -294,13 +299,36 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   // Element unter ihr in der Luft zu hängen).
   const bekannt = useRef<Set<string> | null>(null);
   const leitung = useRef<ReturnType<typeof verbindePets> | null>(null);
+  const [lesungen, setLesungen] = useState<Record<string, Lesung>>({});
+  const weggelegt = useRef(new Set<string>());
 
   useEffect(() => {
     const verbinden = () => {
       if (leitung.current) return;
       leitung.current = verbindePets(campaignId, (n) => {
-        if (n.typ === "pets") setPets(n.daten);
-        else if (n.typ === "haeufchen") {
+        if (n.typ === "pets") {
+          setPets(n.daten);
+          setLesungen((alt) => {
+            const next = { ...alt };
+            const ids = new Set(n.daten.map((p) => p.id));
+            for (const id of Object.keys(next)) if (!ids.has(id)) delete next[id];
+            for (const p of n.daten) {
+              if (p.lesung && !weggelegt.current.has(p.id)) next[p.id] = p.lesung;
+              if (!p.lesung) {
+                delete next[p.id];
+                weggelegt.current.delete(p.id);
+              }
+            }
+            return next;
+          });
+        } else if (n.typ === "vorlesen") {
+          if (!weggelegt.current.has(n.petId)) {
+            setLesungen((alt) => ({
+              ...alt,
+              [n.petId]: { stelle: n.stelle, zitat: n.zitat, kommentar: n.kommentar },
+            }));
+          }
+        } else if (n.typ === "haeufchen") {
           if (bekannt.current === null) bekannt.current = new Set(n.daten.map((h) => h.id));
           setHaeufchen(n.daten);
         }
@@ -367,7 +395,21 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
         );
       })}
       {pets.map((p) => (
-        <PetFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} wegmachen={wegmachen} />
+        <PetFigur
+          key={`${p.id}:${p.ankunft}`}
+          pet={p}
+          senden={senden}
+          wegmachen={wegmachen}
+          lesung={lesungen[p.id] ?? null}
+          onGelesen={(id) => {
+            weggelegt.current.add(id);
+            setLesungen((alt) => {
+              const next = { ...alt };
+              delete next[id];
+              return next;
+            });
+          }}
+        />
       ))}
     </div>
   );
@@ -887,11 +929,15 @@ function PetFigur({
   pet,
   senden,
   wegmachen,
+  lesung,
+  onGelesen,
 }: {
   pet: PetAufSchirm;
   senden: (n: object) => void;
   /** Spur verschwinden lassen (gefressen/eingesaugt). */
   wegmachen: (id: string) => void;
+  lesung: Lesung | null;
+  onGelesen: (id: string) => void;
 }) {
   const wegmachenRef = useRef(wegmachen);
   wegmachenRef.current = wegmachen;
@@ -905,7 +951,14 @@ function PetFigur({
   const effekt = useRef<HTMLDivElement | null>(null);
   const blitzSvg = useRef<SVGSVGElement | null>(null);
   const blitzLicht = useRef<HTMLDivElement | null>(null);
+  const leseTafel = useRef<HTMLButtonElement | null>(null);
+  const peek = useRef<HTMLDivElement | null>(null);
+  const lesungRef = useRef(lesung);
+  lesungRef.current = lesung;
+  const onGelesenRef = useRef(onGelesen);
+  onGelesenRef.current = onGelesen;
   const [herzen, setHerzen] = useState<Herz[]>([]);
+  const [klecks, setKlecks] = useState(false);
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
   // Laufen (Drache) oder Fliegen (Bärbel), gleiche Schnittstelle.
   const bewegung = useRef<PetSteuerung | null>(null);
@@ -938,7 +991,10 @@ function PetFigur({
     const m = () => masse(pet.art);
     const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
       if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
-      else if (n.typ === "fressen") {
+      else if (n.typ === "gelesen") {
+        onGelesenRef.current(pet.id);
+        senden({ typ: "gelesen", petId: pet.id });
+      } else if (n.typ === "fressen") {
         // Bleibt im Maul/Buch stehen, bis die Spur abgeräumt ist.
         const zuletzt = gegriffen.get(n.id);
         if (zuletzt) gegriffen.set(n.id, { ...zuletzt, skala: 0.15 });
@@ -951,12 +1007,14 @@ function PetFigur({
       ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
       : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden);
     bewegung.current = b;
+    steuerungen.set(pet.id, b);
 
     let letzte = performance.now();
     let rahmen = 0;
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
+      if (lesungRef.current && b.lies && !b.liestGerade?.()) b.lies(jetzt);
       b.setzeUmgebung(umgebung(m()));
       b.tick(jetzt, dt);
       const d = b.darstellung(jetzt);
@@ -964,16 +1022,55 @@ function PetFigur({
       const el = figur.current;
       if (el) {
         const s = skala();
+        const z = d.zoom ?? 1;
         const anim = sp.animationen[d.animation] ?? { frames: 1, ms: 1000 };
         const frame = d.frame ?? Math.floor((jetzt - d.animStart) / anim.ms) % anim.frames;
-        el.style.width = `${sp.breite * s}px`;
-        el.style.height = `${sp.hoehe * s}px`;
-        el.style.left = `${d.left}px`;
-        el.style.top = `${d.top}px`;
+        const bw = sp.breite * s * z;
+        const bh = sp.hoehe * s * z;
+        const left = d.left - (bw - sp.breite * s) / 2;
+        const top = d.top - (bh - sp.hoehe * s) / 2;
+        el.style.width = `${bw}px`;
+        el.style.height = `${bh}px`;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
         el.style.backgroundImage = `url(/pets/${pet.art}/${d.animation}.png)`;
-        el.style.backgroundSize = `${anim.frames * sp.breite * s}px ${sp.hoehe * s}px`;
-        el.style.backgroundPosition = `${-frame * sp.breite * s}px 0`;
+        el.style.backgroundSize = `${anim.frames * sp.breite * s * z}px ${sp.hoehe * s * z}px`;
+        el.style.backgroundPosition = `${-frame * sp.breite * s * z}px 0`;
         el.style.transform = d.transform;
+        const mal = makel(pet.id, jetzt);
+        el.dataset.makel = mal ?? "";
+        if (pet.art === "drache" && mal === "schleim") setKlecks(true);
+        else if (pet.art === "drache") setKlecks(false);
+        melde({ id: pet.id, art: pet.art, x: left + bw / 2, y: top + bh / 2, w: bw, h: bh });
+        if (d.angriff) {
+          for (const hit of treffe(d.angriff, pet.id, jetzt)) {
+            if (hit.art === "feuer") steuerungen.get(hit.id)?.erschrecken?.(jetzt);
+          }
+        }
+        const tafel = leseTafel.current;
+        if (tafel) {
+          if (d.liest && lesungRef.current) {
+            const schmal = window.innerWidth < 700;
+            tafel.style.display = "block";
+            if (schmal) {
+              tafel.style.left = "12px";
+              tafel.style.width = `${window.innerWidth - 24}px`;
+              tafel.style.top = `${Math.min(top + bh + 8, window.innerHeight - 200)}px`;
+            } else {
+              tafel.style.width = "360px";
+              tafel.style.left = `${Math.min(left + bw + 12, window.innerWidth - 376)}px`;
+              tafel.style.top = `${Math.max(12, top)}px`;
+            }
+          } else tafel.style.display = "none";
+        }
+        const pk = peek.current;
+        if (pk) {
+          if (d.peek) {
+            pk.style.display = "block";
+            pk.style.left = `${left + bw - 8}px`;
+            pk.style.top = `${top + bh * 0.35}px`;
+          } else pk.style.display = "none";
+        }
         el.dataset.hockt = d.hockt ? "ja" : "nein";
         el.dataset.leuchtet = d.leuchten ? "ja" : "nein";
         // Effekt-Streifen, der die Figur selbst enthält (Tentakelmonster): Figur
@@ -1094,6 +1191,8 @@ function PetFigur({
     return () => {
       cancelAnimationFrame(rahmen);
       if (gehalten.current) gegriffen.delete(gehalten.current);
+      steuerungen.delete(pet.id);
+      vergiss(pet.id);
       b.aufraeumen();
     };
     // Ein neuer Auftritt ist ein neuer key — die Abhängigkeiten bleiben fest.
@@ -1170,13 +1269,25 @@ function PetFigur({
         ref={figur}
         role="button"
         className="pet-figur"
-        title={`${pet.name} (${pet.besitzerName}) — antippen: ${pet.art === "baerbel" ? "freuen" : "streicheln"}, ${PACKEN_MS / 1000} s halten: packen und werfen`}
+        title={
+          lesung
+            ? `${pet.name} liest vor — antippen zum Zuklappen`
+            : `${pet.name} (${pet.besitzerName}) — antippen: ${pet.art === "baerbel" ? "freuen" : "streicheln"}, ${PACKEN_MS / 1000} s halten: packen und werfen`
+        }
         onPointerDown={runter}
         onPointerMove={bewegen}
         onPointerUp={hoch}
         onPointerCancel={abgebrochen}
         onContextMenu={(e) => e.preventDefault()}
-      />
+      >
+        {klecks && (
+          <>
+            <span className="pet-schleimklecks" style={{ left: "18%", top: "30%" }} />
+            <span className="pet-schleimklecks" style={{ left: "48%", top: "42%", width: 36, height: 22 }} />
+            <span className="pet-schleimklecks" style={{ left: "28%", top: "58%", width: 22, height: 14 }} />
+          </>
+        )}
+      </div>
       <span ref={zzz} className="pet-zzz" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
@@ -1209,6 +1320,36 @@ function PetFigur({
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
       </span>
+      {pet.art === "baerbel" && (
+        <>
+          <button
+            ref={leseTafel}
+            type="button"
+            className="pet-lesung cl-roehre"
+            style={{ display: "none" }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              bewegung.current?.zuklappen?.(performance.now());
+            }}
+          >
+            {lesung && (
+              <>
+                <span className="pet-lesung-stelle">{lesung.stelle}</span>
+                <q>{lesung.zitat}</q>
+                <span className="pet-lesung-kommentar">{lesung.kommentar}</span>
+                <span className="pet-lesung-hinweis">Antippen, wenn du's gelesen hast</span>
+              </>
+            )}
+          </button>
+          <div ref={peek} className="pet-peek" style={{ display: "none" }} aria-hidden>
+            <svg viewBox="0 0 54 70">
+              <path d="M4 8 C 18 18, 8 36, 22 48 C 34 58, 28 66, 46 62" fill="none" stroke="#1a6a52" strokeWidth="10" strokeLinecap="round" />
+              <path d="M8 12 C 20 22, 12 38, 24 48 C 34 56, 30 64, 44 60" fill="none" stroke="#3aaa78" strokeWidth="5" strokeLinecap="round" />
+              <circle cx="46" cy="61" r="4" fill="#7dffe0" />
+            </svg>
+          </div>
+        </>
+      )}
       {herzen.map((h, i) => (
         <span
           key={h.id}

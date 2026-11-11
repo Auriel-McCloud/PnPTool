@@ -18,6 +18,11 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
     {"typ": "haeufchen", "petId", "x", "y", "art"}   (Anteile 0..1; art haeufchen|brand|seite)
     {"typ": "wegmachen", "id"}
     {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
+    {"typ": "gelesen", "petId"}   (Bärbels Lesung zugeklappt)
+  Server → Tablet zusätzlich
+    {"typ": "vorlesen", "petId", "stelle", "zitat", "kommentar"}
+        — Bärbel soll sich aufschlagen. Steht auch am Pet-Dict (`lesung`),
+          damit ein Neuverbinden die ungelesene Stelle nicht verliert.
 """
 
 import asyncio
@@ -28,7 +33,7 @@ from dataclasses import dataclass, field
 
 from fastapi import WebSocket
 
-from app.pets import logic, repository
+from app.pets import logic, repository, vorlesen
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +77,11 @@ class PetMotor:
     # In Tests auf 0 setzen, damit niemand Sekunden wartet.
     pause_min: float = logic.UNTERWEGS_MIN_S
     pause_max: float = logic.UNTERWEGS_MAX_S
+    # Lesung: nur Anwesenheit zählt, nicht die Wanduhr (Mark: „nicht permanent“).
+    lesen_min: float = vorlesen.LESEN_MIN_S
+    lesen_max: float = vorlesen.LESEN_MAX_S
+    _spuren_weg: dict[str, bool] = field(default_factory=dict)
+    _lesen: dict[str, dict[str, "Lesen"]] = field(default_factory=dict)
 
     # ── Leitungen ──────────────────────────────────────────────────────────
 
@@ -105,12 +115,24 @@ class PetMotor:
                 log.debug("Pet-Leitung weg", exc_info=True)
 
     async def _pets_senden(self, campaign_id: str, person_id: str) -> None:
-        hier = [p.als_dict() for p in self._pets.get(campaign_id, {}).values() if p.wirt == person_id]
+        hier = [self._als_dict(campaign_id, p) for p in self._pets.get(campaign_id, {}).values() if p.wirt == person_id]
         await self._senden(campaign_id, person_id, {"typ": "pets", "daten": hier})
 
     async def _haeufchen_senden(self, campaign_id: str, person_id: str) -> None:
+        # Kampf oder abgedreht: Spuren ausblenden, nicht löschen (Mark, 11.11.).
+        if await repository.pets_pausiert(campaign_id):
+            await self._senden(campaign_id, person_id, {"typ": "haeufchen", "daten": []})
+            return
         liste = await repository.haeufchen_liste(campaign_id, person_id)
         await self._senden(campaign_id, person_id, {"typ": "haeufchen", "daten": liste})
+
+    async def _spuren_nach_pause(self, campaign_id: str, pausiert: bool) -> None:
+        vorher = self._spuren_weg.get(campaign_id)
+        self._spuren_weg[campaign_id] = pausiert
+        if vorher is None or vorher == pausiert:
+            return
+        for person_id in list(self.online(campaign_id)):
+            await self._haeufchen_senden(campaign_id, person_id)
 
     # ── Zustand mit der Datenbank abgleichen ───────────────────────────────
 
@@ -123,7 +145,9 @@ class PetMotor:
         """
         # Abgedreht oder Kampf: alle Pets verschwinden (und kommen danach beim
         # Besitzer wieder) — wie ein Pet, das es gerade nicht gibt.
-        if await repository.pets_pausiert(campaign_id):
+        pausiert = await repository.pets_pausiert(campaign_id)
+        await self._spuren_nach_pause(campaign_id, pausiert)
+        if pausiert:
             aus_db: dict[str, dict] = {}
         else:
             aus_db = {d["id"]: d for d in await repository.pets_der_kampagne(campaign_id)}
@@ -141,6 +165,9 @@ class PetMotor:
                         alt.unterwegs.cancel()
                     if alt.wirt:
                         betroffen.add(alt.wirt)
+                    # Pause behält die ungelesene Lesung; weggeworfenes Buch nicht.
+                    if not pausiert and d is None:
+                        self._lesen.get(campaign_id, {}).pop(pet_id, None)
 
             for pet_id, d in aus_db.items():
                 if d["besitzerId"] not in online:
@@ -168,8 +195,11 @@ class PetMotor:
                         betroffen.add(neu)
                 # Ein Tablet, das sich nie meldet, hält das Pet nicht ewig fest.
                 elif pet.wirt and jetzt - pet.seit > logic.HOECHSTE_VERWEILDAUER_S:
-                    betroffen.add(pet.wirt)
-                    self._losschicken(campaign_id, pet, pet.wirt, self.zufall.choice(["links", "rechts"]))
+                    if self._hat_lesung(campaign_id, pet.id):
+                        pet.seit = jetzt
+                    else:
+                        betroffen.add(pet.wirt)
+                        self._losschicken(campaign_id, pet, pet.wirt, self.zufall.choice(["links", "rechts"]))
                 # Weder auf einem Bildschirm noch unterwegs: wieder einsetzen.
                 elif pet.wirt is None and (pet.unterwegs is None or pet.unterwegs.done()):
                     neu = logic.naechster_wirt(logic.online_mitglieder(pet.mitglieder, online), None, self.zufall)
@@ -247,8 +277,80 @@ class PetMotor:
             for campaign_id in list(self._leitungen):
                 try:
                     await self.abgleich(campaign_id)
+                    await self.lesen_takt(campaign_id, TAKT_S)
                 except Exception:
                     log.warning("Pet-Abgleich fehlgeschlagen", exc_info=True)
+
+
+@dataclass
+class Lesen:
+    """Ungelesene Stelle überlebt die Kampfpause (das Pet selbst wird dann verworfen)."""
+    anwesenheit_s: float = 0.0
+    warten_s: float = 0.0
+    text: dict | None = None
+
+
+def _petmotor_lesen_warte(self) -> float:
+    if self.lesen_max <= self.lesen_min:
+        return self.lesen_min
+    return self.zufall.uniform(self.lesen_min, self.lesen_max)
+
+
+def _petmotor_lesen(self, campaign_id: str, pet_id: str) -> bool:
+    st = self._lesen.get(campaign_id, {}).get(pet_id)
+    return bool(st and st.text)
+
+
+def _petmotor_als_dict(self, campaign_id: str, pet: Pet) -> dict:
+    d = pet.als_dict()
+    st = self._lesen.get(campaign_id, {}).get(pet.id)
+    if st and st.text:
+        d["lesung"] = st.text
+    return d
+
+
+async def _petmotor_lesen_takt(self, campaign_id: str, sekunden: float) -> None:
+    """15 Minuten Anwesenheit, nicht Wanduhr. Im Kampf steht die Uhr."""
+    if sekunden <= 0 or await repository.pets_pausiert(campaign_id):
+        return
+    if not self.online(campaign_id):
+        return
+    for pet in list(self._pets.get(campaign_id, {}).values()):
+        if pet.art != "baerbel" or not pet.wirt:
+            continue
+        je = self._lesen.setdefault(campaign_id, {})
+        st = je.get(pet.id)
+        if st is None:
+            st = Lesen(warten_s=self._lesen_warte())
+            je[pet.id] = st
+        if st.text:
+            continue
+        st.anwesenheit_s += sekunden
+        if st.anwesenheit_s < st.warten_s:
+            continue
+        st.text = await vorlesen.erzeugen(campaign_id, pet.besitzer_id, list(self.online(campaign_id)))
+        st.anwesenheit_s = 0.0
+        st.warten_s = self._lesen_warte()
+        await self._senden(campaign_id, pet.wirt, {"typ": "vorlesen", "petId": pet.id, **st.text})
+        await self._pets_senden(campaign_id, pet.wirt)
+
+
+async def _petmotor_gelesen(self, campaign_id: str, person_id: str, pet_id: str) -> None:
+    pet = self._pets.get(campaign_id, {}).get(pet_id)
+    if pet is None or pet.wirt != person_id:
+        return
+    st = self._lesen.get(campaign_id, {}).get(pet_id)
+    if st:
+        st.text = None
+        st.anwesenheit_s = 0.0
+    await self._pets_senden(campaign_id, person_id)
+
+
+PetMotor._lesen_warte = _petmotor_lesen_warte
+PetMotor._hat_lesung = _petmotor_lesen
+PetMotor._als_dict = _petmotor_als_dict
+PetMotor.lesen_takt = _petmotor_lesen_takt
+PetMotor.gelesen = _petmotor_gelesen
 
 
 motor = PetMotor()

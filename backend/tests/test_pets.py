@@ -283,3 +283,61 @@ def test_abgedreht_oder_kampf_pets_weg_und_danach_wieder_da(welt):
         m._takt.cancel()
 
     laufen(ablauf())
+
+def test_kampf_blendet_spuren_aus_und_danach_wieder_ein(welt):
+    """Mark, 11.11.: Häufchen und Schmutz im Kampf weg, danach wieder da. Nicht gelöscht."""
+    m, stand = welt
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.haeufchen("k", "anna", "drache", 0.4, 1, "haeufchen")
+        await m.haeufchen("k", "anna", "drache", 0.2, 0.8, "brand")
+        assert len(stand["haeufchen"]["anna"]) == 2
+        stand["pausiert"] = True
+        await m.abgleich("k")
+        letzte = [u["daten"] for u in anna.post if u["typ"] == "haeufchen"][-1]
+        assert letzte == []
+        assert len(stand["haeufchen"]["anna"]) == 2
+        stand["pausiert"] = False
+        await m.abgleich("k")
+        letzte = [u["daten"] for u in anna.post if u["typ"] == "haeufchen"][-1]
+        assert len(letzte) == 2
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_baerbel_liest_nach_anwesenheit_und_bleibt_bis_antippen(welt, monkeypatch):
+    """Mark, 11.11.: alle 15 Minuten Anwesenheit, nicht im Kampf, bis zum Antippen."""
+    m, stand = welt
+    m.lesen_min = 0
+    m.lesen_max = 0
+    stand["pets"].append({
+        "id": "buch", "name": "Bärbel", "art": "baerbel",
+        "besitzerId": "anna", "besitzerName": "Anna", "mitglieder": ["anna", "ben"],
+    })
+
+    async def falsch(*_a, **_k):
+        return {"stelle": "Johannes 1,5", "zitat": "Und das Licht scheint in der Finsternis.", "kommentar": "Passt."}
+
+    monkeypatch.setattr("app.pets.vorlesen.erzeugen", falsch)
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.lesen_takt("k", 1)
+        lesen = [u for u in anna.post if u["typ"] == "vorlesen"]
+        assert lesen and lesen[-1]["stelle"] == "Johannes 1,5"
+        assert anna.letzte_pets()
+        assert any(p.get("lesung", {}).get("stelle") == "Johannes 1,5" for p in anna.letzte_pets())
+        await m.gelesen("k", "anna", "buch")
+        assert all(not p.get("lesung") for p in anna.letzte_pets())
+        stand["pausiert"] = True
+        await m.abgleich("k")
+        vorher = len([u for u in anna.post if u["typ"] == "vorlesen"])
+        await m.lesen_takt("k", 999)
+        assert len([u for u in anna.post if u["typ"] == "vorlesen"]) == vorher
+        m._takt.cancel()
+
+    laufen(ablauf())

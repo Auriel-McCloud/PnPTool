@@ -18,7 +18,7 @@ verschlossenen Kiste liegt. Mehrere Besitzer → der erste nach id.
 
 ## Pause
 
-Keine Pets unterwegs, solange die Kampagneneinstellung `petsAktiv` aus ist oder ein `:Kampf` läuft (`repository.pets_pausiert`). Umschalten und Kampf beginnen/beenden gleichen sofort ab.
+Keine Pets unterwegs, solange die Kampagneneinstellung `petsAktiv` aus ist oder ein `:Kampf` läuft (`repository.pets_pausiert`). Umschalten und Kampf beginnen/beenden gleichen sofort ab. Dieselbe Pause schickt leere Spur-Listen (Daten bleiben) und hält Bärbels Lese-Uhr an.
 
 ## Spieler: Live-Leitung
 
@@ -28,7 +28,8 @@ PLAYER (SL → Close 1008).
 Server → Tablet (immer voller Stand dieses Bildschirms):
 
 - `{"typ": "pets", "daten": [{id, name, art, besitzerId, besitzerName, seite, ankunft}]}` — Pets, die gerade hier sind. `seite` = wo es reinkommt, `ankunft` zählt je Auftritt hoch.
-- `{"typ": "haeufchen", "daten": [{id, petId, x, y, erstellt, art}]}` — Spuren auf diesem Bildschirm, `x`/`y` als Anteil 0..1, `art` `haeufchen` (antippen), `brand` (Feuerniesen, wegwischen) oder `seite` (Bärbels verlorene Seite, segelt zu Boden, antippen).
+- `{"typ": "haeufchen", "daten": [{id, petId, x, y, erstellt, art}]}` — Spuren auf diesem Bildschirm, `x`/`y` als Anteil 0..1, `art` `haeufchen` (antippen), `brand` (Feuerniesen/Blitz, wegwischen), `seite` (Bärbels verlorene Seite) oder `schleim` (Tentakel, wegwischen). Im Kampf/bei Pause: leere Liste, ohne die Zeilen zu löschen.
+- `{"typ": "vorlesen", "petId", "stelle", "zitat", "kommentar"}` — Bärbel soll vorlesen. Dieselbe Stelle steht am Pet als `lesung`, bis `gelesen` kommt.
 
 Tablet → Server:
 
@@ -36,6 +37,7 @@ Tablet → Server:
 - `{"typ": "haeufchen", "petId", "x", "y", "art"}` — nur vom aktuellen Wirt; `art` fehlt = Häufchen; über 12 je Art fällt die älteste weg.
 - `{"typ": "wegmachen", "id"}` — nur eigene Häufchen.
 - `{"typ": "verschieben", "id", "x", "y"}` — Häufchen ist von seinem Element gefallen (Anteile 0..1, begrenzt); nur eigene, nur Art `haeufchen`/`seite` — Brandflecken sitzen am Display und bewegen sich nie.
+- `{"typ": "gelesen", "petId"}` — Lesung zugeklappt, nur vom aktuellen Wirt.
 
 Wandern: nur zu eingeloggten PCs der Party des Besitzers (ohne Party nur zum
 Besitzer), bevorzugt nicht derselbe, Pause 3–12 s, Gegenseite. Pet existiert

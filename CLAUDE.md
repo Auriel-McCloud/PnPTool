@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel liest vor, Pets treffen sich, Spuren im Kampf weg (11.11.2026)
+
+Mark: Lesung etwa alle 15 Minuten, nur wenn Spieler da sind, groß und aufgeschlagen, bis zum Antippen; Bibelzitat per KI aus Ort, Anwesenden und Events am Ort. `pets/vorlesen.py` (ein Aufruf je Lesung, Fallback ein echter Vers). Uhr zählt nur Anwesenheit (`lesen_takt`, 13–17 min), nicht im Kampf, nicht ohne Leitung. Ungelesenes überlebt die Pause und hält sie auf dem Tablet (`HOECHSTE_VERWEILDAUER` schiebt sie nicht weg). Antippen oder die Tafel schickt `gelesen`.
+
+Zusammentreffen auf demselben Bildschirm: Drache dreht sich zu Bärbel und der Feuerkegel verwandelt sie; ihr erster Blitz zielt meist auf ihn (verkohlt, CSS); Tentakel klatscht auf ihn (Schleimkleckse). `treffen.ts`.
+
+Spuren (Häufchen, Seiten, Brand, Schleim) werden im Kampf und bei abgedrehten Pets leer geschickt, nicht gelöscht, und danach wieder eingeblendet.
+
 ## Vorschaubilder: Übersichten laden nur noch kleine Bilder (11.11.2026)
 
 Mark: „jetzt wo ich allem Bilder gegeben habe lädt alles sehr lang“ (uploads auf bebop ~530 MB, 76 Dateien > 3 MB). Neu `backend/app/bilder/vorschau.py`: `GET /uploads/_vorschau/{128|480}/{kampagne}/{datei}` baut beim ersten Abruf ein WebP (Zahl = kürzere Bildseite) und legt es unter `uploads/_vorschau/` ab; kleine Bilder/animierte GIFs kommen als Original. Route steht in `main.py` VOR dem `/uploads`-Mount. `/uploads` selbst jetzt mit `Cache-Control: immutable` (`CachendeUploads`, Dateinamen sind UUIDs). Frontend: `shell/vorschau.ts` → `vorschau(url, "kachel"|"klein")` plus `loading="lazy"` in allen Kachel-/Listenbildern (Gegenstände, PC/NPC/Orte/Events/Fraktionen/Nebenfiguren, Begleiter/Critter, Drohnen, Shop, Lexikon, Rassen, Werkbank, Kontakte/Messenger, Galerie-Daumen, Battlemap-Token). Detailansichten, `BildGross`, Mitteilungs-Pushs und Battlemap-Hintergründe bleiben beim Original. Doku: `docs/api/bilder.md`. Tests: `backend/tests/test_bild_vorschau.py`.
@@ -12,7 +20,7 @@ Mark: oben stand „Nur Vorlagen“, unten aber „Am Körper“/„Mitgeführt�
 
 ## Desktop-Pets abdrehen, im Kampf automatisch weg (11.11.2026)
 
-Mark: „Schalter, mit dem ich die Pets abdrehen kann … grundsätzlich will ich nicht, dass die Pets im Kampf rumlaufen … erst wieder aktivieren, wenn der Kampf vorbei ist“. Neue Kampagneneinstellung `petsAktiv` (Default an, `EINSTELLUNGEN_DEFAULTS`), Schalter „Desktop-Pets aktiv“ unter Einstellungen → WEITERE. `pets/repository.py::pets_pausiert` (aus ODER `:Kampf` vorhanden) → `motor.abgleich` behandelt dann alle Pets als nicht vorhanden (verschwinden sofort, kommen danach beim Besitzer wieder). Sofortiger Abgleich beim Umschalten (`einstellungen_aendern`) und bei Kampf beginnen/beenden (`kampf/routes.py::_pets_abgleichen`), sonst spätestens im 20-s-Takt. Spuren bleiben liegen. Test `test_pets.py` (17 passed), gegen lokale Neo4j: Kampf → pausiert, danach frei, Schalter aus → pausiert.
+Mark: „Schalter, mit dem ich die Pets abdrehen kann … grundsätzlich will ich nicht, dass die Pets im Kampf rumlaufen … erst wieder aktivieren, wenn der Kampf vorbei ist“. Neue Kampagneneinstellung `petsAktiv` (Default an, `EINSTELLUNGEN_DEFAULTS`), Schalter „Desktop-Pets aktiv“ unter Einstellungen → WEITERE. `pets/repository.py::pets_pausiert` (aus ODER `:Kampf` vorhanden) → `motor.abgleich` behandelt dann alle Pets als nicht vorhanden (verschwinden sofort, kommen danach beim Besitzer wieder). Sofortiger Abgleich beim Umschalten (`einstellungen_aendern`) und bei Kampf beginnen/beenden (`kampf/routes.py::_pets_abgleichen`), sonst spätestens im 20-s-Takt. Spuren bleiben gespeichert und sind im Kampf ausgeblendet (siehe oben). Test `test_pets.py` (17 passed), gegen lokale Neo4j: Kampf → pausiert, danach frei, Schalter aus → pausiert.
 
 ## Bärbel: fliegendes Buch als Pet an einem Gegenstand (11.11.2026)
 

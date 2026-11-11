@@ -38,6 +38,12 @@ export interface PetSteuerung {
   loslassen(jetzt: number): void;
   streicheln(jetzt: number): boolean;
   aufraeumen(): void;
+  /** Lesung anfangen / läuft sie / zuklappen (nur fliegende Pets). */
+  lies?(jetzt: number): void;
+  liestGerade?(): boolean;
+  zuklappen?(jetzt: number): void;
+  /** Feuer des Drachen: sie verwandelt sich. */
+  erschrecken?(jetzt: number): void;
 }
 
 /** Sprite-Takte (gleich wie frontend/public/pets/baerbel/sprite.json). */
@@ -84,6 +90,7 @@ type Zustand =
   | "verwandeln"
   | "tentakel" // Monster will raus
   | "zaubern" // Blitz: laden, Blitz, Rückstoß
+  | "vorlesen" // groß, aufgeschlagen, bis zum Antippen
   | "gehalten"
   | "getragen"
   | "wurf"
@@ -134,6 +141,12 @@ export class FlugBewegung implements PetSteuerung {
   private zitterStart = 0;
   private freudeStart = -1e9;
   private besuchEnde: number;
+  /** Lesung (Mark, 11.11.: bleibt groß, bis man antippt). */
+  private liest = false;
+  private wartetAufLesen = false;
+  private leseStart = 0;
+  private naechsterSchreck = 0;
+  private angriff: Darstellung["angriff"] = null;
   private rausSeite: "links" | "rechts" | "oben" = "rechts";
   private rausGemeldet = false;
   private vx = 0;
@@ -319,6 +332,8 @@ export class FlugBewegung implements PetSteuerung {
       return d > 140 && d < 650;
     });
     const ziel = (vonX: number, vonY: number, weg: { x: number; y: number }[]) => {
+      // Steht der Drache im Bild, zielt der erste Strahl meist auf ihn.
+      if (drache && weg.length === 0 && z() < 0.85) return { x: drache.x, y: drache.y };
       if (flaechen.length && z() < 0.55) {
         const f = flaechen[Math.floor(z() * flaechen.length)];
         const zx = f.r.left + (f.r.right - f.r.left) * (0.2 + z() * 0.6);
@@ -335,6 +350,7 @@ export class FlugBewegung implements PetSteuerung {
         y: Math.min(this.u.hoehe - rand, Math.max(rand, vonY + Math.sin(w) * weite)),
       };
     };
+    const drache = (this.u.nachbarn?.() ?? []).find((n) => n.art === "drache");
     const art = z();
     const strahlen: NonNullable<FlugBewegung["blitz"]>["strahlen"] = [];
     const weg: { x: number; y: number }[] = [];
@@ -388,8 +404,18 @@ export class FlugBewegung implements PetSteuerung {
     }
   }
 
+  /** Zum Drachen fliegen und die Tentakel auf ihn klatschen. */
+  private drachenSchleimen(jetzt: number): boolean {
+    const d = (this.u.nachbarn?.() ?? []).find((n) => n.art === "drache");
+    if (!d) return false;
+    const p = this.greifPosition(d.x, d.y);
+    this.flatternZu(p, jetzt, null, (j) => this.monster(j));
+    return true;
+  }
+
   private entscheiden(jetzt: number) {
     const z = this.u.zufall;
+    if (this.liest) return;
     if (jetzt > this.besuchEnde) {
       this.rausFliegen(jetzt);
       return;
@@ -403,7 +429,9 @@ export class FlugBewegung implements PetSteuerung {
         else this.schwebenZu(this.zufallsZiel(), jetzt);
       } else this.schwebenZu(this.zufallsZiel(), jetzt);
     } else {
-      if (jetzt > this.naechstesMonster && r < 0.45 && this.haeufchenHolen(jetzt)) {
+      if (jetzt > this.naechstesMonster && r < 0.34 && this.drachenSchleimen(jetzt)) {
+        this.naechstesMonster = jetzt + 45_000 + z() * 75_000;
+      } else if (jetzt > this.naechstesMonster && r < 0.5 && this.haeufchenHolen(jetzt)) {
         this.naechstesMonster = jetzt + 45_000 + z() * 75_000;
       } else if (jetzt > this.naechstesMonster && r < 0.25) {
         this.naechstesMonster = jetzt + 45_000 + z() * 75_000;
@@ -422,6 +450,11 @@ export class FlugBewegung implements PetSteuerung {
   tick(jetzt: number, dt: number) {
     const { bw, bh } = this.masse();
     const u = this.u;
+    this.angriff = null;
+    if (this.wartetAufLesen && !["getragen", "gehalten", "wurf"].includes(this.zustand)) {
+      this.wartetAufLesen = false;
+      this.lies(jetzt);
+    }
 
     // Blinzeln in Ruhe (zugeklappt) — nur die Gestalten mit Augen.
     if ((this.zustand === "schweben" || this.zustand === "sitzen") && FLUG_TAKT.blinzeln[this.gestalt]) {
@@ -563,6 +596,8 @@ export class FlugBewegung implements PetSteuerung {
         }
         if (!this.schleimGemeldet && t >= schlag) {
           this.schleimGemeldet = true;
+          const spitze = this.spitze(jetzt);
+          this.angriff = { art: "schleim", x: spitze.x, y: spitze.y, r: 48 };
           if (!this.beute) this.schleimMelden(jetzt);
         }
         if (this.beute && !this.beuteGemeldet && t >= (FLUG_TAKT.tentakelSchlagFrame + 4) * FLUG_TAKT.tentakelMs) {
@@ -583,6 +618,7 @@ export class FlugBewegung implements PetSteuerung {
           for (const st of b.strahlen) {
             if (st.gemeldet || t < LADEN_MS + st.ab) continue;
             st.gemeldet = true;
+            this.angriff = { art: "blitz", x: st.x1, y: st.y1, r: 42 };
             const x = st.x1 / u.breite;
             const y = st.y1 / u.hoehe;
             if (x > 0 && x < 1 && y > 0 && y < 1) this.melden({ typ: "haeufchen", x, y, art: "brand" });
@@ -637,6 +673,8 @@ export class FlugBewegung implements PetSteuerung {
           if (f) this.tragen(f.x, f.y, jetzt);
         }
         break;
+      case "vorlesen":
+        break;
       default:
         break;
     }
@@ -652,13 +690,17 @@ export class FlugBewegung implements PetSteuerung {
   }
 
   /** Schleimfleck dort, wo die Tentakel aufs Display klatscht. */
-  private schleimMelden(jetzt: number) {
+  private spitze(jetzt: number) {
     const { bw } = this.masse();
     const s = bw / 76;
     const top = this.y + Math.sin(((jetzt - this.t0) / 1000) * 2 * Math.PI * 0.35) * 4;
     const [sx, sy] = FLUG_TAKT.tentakelSpitze;
-    const px = this.x + (sx - FLUG_TAKT.effektRand) * s;
-    const py = top + (sy - FLUG_TAKT.effektRand) * s;
+    return { x: this.x + (sx - FLUG_TAKT.effektRand) * s, y: top + (sy - FLUG_TAKT.effektRand) * s };
+  }
+
+  private schleimMelden(jetzt: number) {
+    const px = this.spitze(jetzt).x;
+    const py = this.spitze(jetzt).y;
     const x = px / this.u.breite;
     const y = py / this.u.hoehe;
     if (x > 0.01 && x < 0.99 && y > 0.01 && y < 0.99) this.melden({ typ: "haeufchen", x, y, art: "schleim" });
@@ -678,7 +720,59 @@ export class FlugBewegung implements PetSteuerung {
 
   // ── Anfassen ────────────────────────────────────────────────────────────
 
+  lies(jetzt: number) {
+    if (this.liest) return;
+    if (["getragen", "gehalten", "wurf"].includes(this.zustand)) {
+      this.wartetAufLesen = true;
+      return;
+    }
+    if (this.zustand === "raus" && this.rausGemeldet) return;
+    this.liest = true;
+    this.wartetAufLesen = false;
+    const { bw } = this.masse();
+    const ziel = {
+      x: Math.max(8, Math.min(this.u.breite * 0.42 - bw, this.u.breite - bw - 8)),
+      y: Math.max(12, Math.min(this.u.hoehe * 0.16, this.u.hoehe * 0.34)),
+    };
+    this.flatternZu(ziel, jetzt, null, (j) => this.aufschlagen(j));
+  }
+
+  liestGerade() {
+    return this.liest;
+  }
+
+  private aufschlagen(jetzt: number) {
+    if (!this.liest) return;
+    if (!this.offen) {
+      this.klappe(true, jetzt, () => this.aufschlagen(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+      return;
+    }
+    this.zustand = "vorlesen";
+    this.leseStart = jetzt;
+    this.offen = true;
+  }
+
+  zuklappen(jetzt: number) {
+    if (!this.liest) return;
+    this.liest = false;
+    this.melden({ typ: "gelesen" });
+    this.schwebenZu(this.zufallsZiel(), jetzt);
+  }
+
+  /** Feuer des Drachen: Verwandlungswolke, nicht mitten im Wurf. */
+  erschrecken(jetzt: number) {
+    if (jetzt < this.naechsterSchreck) return;
+    if (["raus", "getragen", "gehalten", "wurf", "verwandeln", "zittern", "vorlesen"].includes(this.zustand)) return;
+    if (this.liest) return;
+    this.naechsterSchreck = jetzt + 20_000;
+    this.verwandeln(jetzt);
+  }
+
   druckStart(jetzt: number): boolean {
+    if (this.liest) {
+      this.zuklappen(jetzt);
+      return false;
+    }
     if (["wurf", "gehalten", "getragen"].includes(this.zustand)) return false;
     if (this.zustand === "raus" && this.rausGemeldet) return false;
     this.griff = { start: jetzt, vorher: { zustand: this.zustand, bis: this.bis } };
@@ -824,6 +918,17 @@ export class FlugBewegung implements PetSteuerung {
       rot += Math.sin(fr * 4 * Math.PI) * 8;
     }
 
+    let zoom = 1;
+    let peek = false;
+    if (this.zustand === "vorlesen") {
+      zoom = 2.35;
+      animation = `klappen_${g}`;
+      frame = FLUG_TAKT.klappenFrames - 1;
+      top = this.y + Math.sin(sek * 2.4) * 3;
+      rot += Math.sin(sek * 1.6) * 2.4;
+      const peekT = (jetzt - this.leseStart) % 8000;
+      peek = peekT > 6400 && peekT < 7600;
+    }
     return {
       left: this.x,
       top,
@@ -832,6 +937,10 @@ export class FlugBewegung implements PetSteuerung {
       animStart,
       frame,
       feuer: null,
+      angriff: this.angriff,
+      zoom,
+      liest: this.zustand === "vorlesen",
+      peek,
       puff: this.zustand === "verwandeln" ? this.puffStart : null,
       effekt,
       blitze,

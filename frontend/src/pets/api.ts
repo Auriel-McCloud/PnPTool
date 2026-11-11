@@ -19,6 +19,14 @@ export interface PetAufSchirm {
   seite: "links" | "rechts";
   /** Zählt jede Ankunft hoch — neuer Wert = neuer Auftritt. */
   ankunft: number;
+  /** Ungelesene Bibelstelle — sie bleibt groß, bis jemand antippt. */
+  lesung?: Lesung | null;
+}
+
+export interface Lesung {
+  stelle: string;
+  zitat: string;
+  kommentar: string;
 }
 
 export interface Haeufchen {
@@ -35,7 +43,8 @@ export interface Haeufchen {
 
 export type PetNachricht =
   | { typ: "pets"; daten: PetAufSchirm[] }
-  | { typ: "haeufchen"; daten: Haeufchen[] };
+  | { typ: "haeufchen"; daten: Haeufchen[] }
+  | { typ: "vorlesen"; petId: string; stelle: string; zitat: string; kommentar: string };
 
 export const petsApi = {
   /** `critterId` kann auch die id eines Gegenstands sein (Bärbel). */

@@ -242,3 +242,81 @@
 .pet-figur[data-leuchtet="ja"] {
   filter: drop-shadow(0 0 6px rgba(190, 150, 255, 0.95)) drop-shadow(0 0 14px rgba(140, 100, 255, 0.6));
 }
+
+/* Verkohlt / vollgeschleimt (Mark, 11.11.: Pets treffen sich). */
+.pet-figur[data-makel="blitz"] {
+  filter: brightness(0.32) sepia(0.55) contrast(1.45) saturate(0.35);
+  animation: pet-zucken 0.12s linear infinite;
+}
+.pet-figur[data-makel="schleim"] {
+  filter: saturate(1.35) brightness(0.9);
+}
+.pet-schleimklecks {
+  position: absolute;
+  width: 28px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #b8f0c8, #2a8a62 70%);
+  pointer-events: none;
+  opacity: 0.85;
+}
+@keyframes pet-zucken {
+  0% { translate: 0 0; }
+  25% { translate: -1px 1px; }
+  50% { translate: 1px 0; }
+  75% { translate: -1px -1px; }
+  100% { translate: 0 0; }
+}
+
+/* Bärbel liest vor: Tafel neben dem großen Buch. */
+.pet-ebene .pet-lesung {
+  position: absolute;
+  z-index: 3;
+  pointer-events: auto;
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 14px 16px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--mono, monospace);
+  color: var(--text, inherit);
+}
+.pet-lesung-stelle {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.pet-lesung q {
+  display: block;
+  margin: 8px 0;
+  font-size: 20px;
+  line-height: 1.35;
+  quotes: none;
+}
+.pet-lesung-kommentar {
+  display: block;
+  font-size: 15px;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+.pet-lesung-hinweis {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.pet-peek {
+  position: absolute;
+  width: 54px;
+  height: 70px;
+  pointer-events: none;
+  z-index: 2;
+}
+.pet-peek svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
