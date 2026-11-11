@@ -129,11 +129,18 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
 - **Nachschärfung 11.11.:** Feuerstoß etwa doppelt so lang, Brandfleck etwa
   doppelt so groß. Schlafen bis zu 5 Minuten (Mark: „man kann ihn ja
   aufwecken, wenn man ihn antippt“) — Antippen weckt ihn.
+- **Packen und Werfen (11.11., gebaut):** Mark: „antippen und 3 Sekunden
+  drauf bleiben, dann nehmen und verschieben, und idealerweise aus dem
+  Bildschirm rauswerfen, damit er zu wem anderen geht“. Damit ist die
+  offene Frage „Hochheben/Werfen zusätzlich zum Streicheln“ entschieden:
+  ja, beides. Kurz antippen streichelt, 3 s halten packt ihn; loslassen
+  lässt ihn mit Schwung fliegen; seitlich raus = er wandert zum nächsten
+  Tablet.
 
 ## Noch offen
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
-- Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?
+- ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).
 - Woher das Sprite eines Critters kommt (fest im Code je Art vs. SL wählt
   aus einer Liste) — erst relevant, wenn die zweite Art kommt.
 

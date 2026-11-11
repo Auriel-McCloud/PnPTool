@@ -15,6 +15,13 @@
  * nach der Landung kurz einfedern sind eigene, interpolierte Schritte statt
  * harter Schnitte.
  *
+ * Packen und Werfen (Mark: „antippen und 3 Sekunden drauf bleiben, dann
+ * nehmen und verschieben — und idealerweise aus dem Bildschirm werfen, damit
+ * er zu wem anderen geht“): `druckStart` → nach 3 s gepackt, er hängt am
+ * Finger und zappelt; loslassen → er fliegt mit dem Schwung weiter, landet
+ * auf einer Fläche oder dem Boden — oder fliegt seitlich raus und wandert
+ * zum nächsten Tablet. Kurz antippen bleibt Streicheln.
+ *
  * Klettern ist mühsam (Mark: „soll sich anstrengender anfühlen“): einzelne
  * Klimmzüge mit Nachgreifen, alle paar Züge eine Verschnaufpause mit
  * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
@@ -79,6 +86,9 @@ type Zustand =
   | "landen"
   | "uebergang"
   | "niesen"
+  | "gehalten"
+  | "getragen"
+  | "wurf"
   | "raus";
 
 interface Pose {
@@ -137,6 +147,8 @@ export interface Darstellung {
   /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
   frame: number | null;
   hockt: boolean;
+  /** Finger drauf (wartet aufs Packen) oder gepackt. */
+  gepackt: boolean;
   schlaeft: boolean;
   schwitzt: boolean;
   /** Kopfposition für Zzz/Herzen/Tropfen. */
@@ -152,6 +164,11 @@ export type Meldung =
 const NIESEN_MS = 22 * 80;
 const FEUER_AB_MS = 6 * 80;
 const FEUER_MS = 16 * 70;
+/** So lange muss man draufbleiben, bis er gepackt ist. */
+export const PACKEN_MS = 3000;
+const SCHWERKRAFT_PX_S2 = 2200;
+const MAX_WURF_PX_S = 2600;
+
 /** Mindestabstand zwischen zwei Niesern. */
 const NIESEN_PAUSE_MS = 25_000;
 
@@ -179,6 +196,13 @@ export class PetBewegung {
   niesenStart = 0;
   brandGelegt = false;
   naechstesNiesen = 0;
+  /** Gepackt/geworfen: Finger-Spur für den Schwung, Flugdaten. */
+  griff: { start: number; pose: Pose; animation: Animation; vorher: { zustand: Zustand; bis: number } } | null = null;
+  fingerSpur: { x: number; y: number; t: number }[] = [];
+  vx = 0;
+  vy = 0;
+  wurfRot = 0;
+  wurfFlaechen: Flaeche[] = [];
   rausGemeldet = false;
   nachAnkunft: ((jetzt: number) => void) | null = null;
   sprung: Sprung | null = null;
@@ -389,8 +413,129 @@ export class PetBewegung {
     }
   }
 
+  // ── Packen, Tragen, Werfen ─────────────────────────────────────────────
+
+  /** Finger drauf: er hält still und zappelt immer stärker; nach 3 s gepackt. */
+  druckStart(jetzt: number): boolean {
+    if (["raus", "wurf", "sprung", "uebergang", "niesen", "gehalten", "getragen"].includes(this.zustand)) return false;
+    this.griff = {
+      start: jetzt,
+      pose: this.aktuellePose(jetzt),
+      animation: this.animation,
+      vorher: { zustand: this.zustand, bis: this.bis },
+    };
+    this.zustand = "gehalten";
+    return true;
+  }
+
+  /** Vor Ablauf losgelassen oder weggewischt: weitermachen wie vorher. */
+  druckAbbrechen(jetzt: number) {
+    if (this.zustand !== "gehalten" || !this.griff) return;
+    const vorher = this.griff.vorher;
+    const dauer = jetzt - this.griff.start;
+    this.griff = null;
+    this.zustand = vorher.zustand;
+    this.bis = vorher.bis + dauer;
+    if (this.kletterei) this.kletterei.t0 += dauer;
+  }
+
+  get gepackt() {
+    return this.zustand === "getragen";
+  }
+
+  /** Finger bewegt sich, während er gepackt ist. */
+  tragen(fx: number, fy: number, jetzt: number) {
+    if (this.zustand !== "getragen") return;
+    const { bw, bh, fuss } = this.masse();
+    this.fingerSpur.push({ x: fx, y: fy, t: jetzt });
+    while (this.fingerSpur.length > 2 && jetzt - this.fingerSpur[0].t > 100) this.fingerSpur.shift();
+    // Am Nacken gepackt: Finger sitzt etwas über der Körpermitte.
+    this.x = fx - bw / 2;
+    this.fussY = fy - bh * 0.4 + bh - fuss;
+  }
+
+  /** Loslassen: mit dem Schwung der letzten Fingerbewegung fliegen lassen. */
+  loslassen(jetzt: number) {
+    if (this.zustand !== "getragen") return;
+    const spur = this.fingerSpur.filter((p) => jetzt - p.t <= 120);
+    if (spur.length >= 2) {
+      const a = spur[0];
+      const b = spur[spur.length - 1];
+      const dt = Math.max(16, b.t - a.t) / 1000;
+      this.vx = (b.x - a.x) / dt;
+      this.vy = (b.y - a.y) / dt;
+    } else {
+      this.vx = 0;
+      this.vy = 0;
+    }
+    const v = Math.hypot(this.vx, this.vy);
+    if (v > MAX_WURF_PX_S) {
+      this.vx *= MAX_WURF_PX_S / v;
+      this.vy *= MAX_WURF_PX_S / v;
+    }
+    if (Math.abs(this.vx) > 30) this.richtung = this.vx > 0 ? 1 : -1;
+    this.wurfRot = 0;
+    // In der Luft gehört er nirgends hin — sonst zieht ihn die alte Fläche zurück.
+    this.ort = { art: "boden" };
+    // Flächen einmal merken — pro Frame alles neu abzufragen wäre zu teuer.
+    this.wurfFlaechen = this.u.flaechen();
+    this.fingerSpur = [];
+    this.griff = null;
+    this.zustand = "wurf";
+  }
+
+  private wurfTakt(jetzt: number, dt: number) {
+    const { bw } = this.masse();
+    const u = this.u;
+    const vorherFuss = this.fussY;
+    this.vy += SCHWERKRAFT_PX_S2 * dt;
+    this.x += this.vx * dt;
+    this.fussY += this.vy * dt;
+    this.wurfRot += this.vx * dt * 0.35;
+
+    // Seitlich raus: ab zum nächsten Tablet.
+    if (this.x + bw < 0 || this.x > u.breite) {
+      this.zustand = "raus";
+      this.zielX = this.x;
+      if (!this.rausGemeldet) {
+        this.rausGemeldet = true;
+        this.melden({ typ: "raus", seite: this.x > u.breite ? "rechts" : "links" });
+      }
+      return;
+    }
+    if (this.vy > 0) {
+      const mitte = this.x + bw / 2;
+      for (const f of this.wurfFlaechen) {
+        if (f.r.top < vorherFuss || f.r.top > this.fussY) continue;
+        if (mitte < f.r.left || mitte > f.r.right) continue;
+        const r = f.q.rechteck();
+        if (!r) continue;
+        this.landeNachWurf({ art: "flaeche", q: f.q }, r.top, jetzt);
+        return;
+      }
+    }
+    if (this.fussY >= u.hoehe) {
+      this.landeNachWurf({ art: "boden" }, u.hoehe, jetzt);
+    }
+  }
+
+  private landeNachWurf(ort: Ort, y: number, jetzt: number) {
+    this.ort = ort;
+    this.fussY = y;
+    this.x = this.klemmeX(this.x);
+    this.vx = 0;
+    this.vy = 0;
+    this.wurfFlaechen = [];
+    this.wand = null;
+    this.kletterei = null;
+    this.sprung = null;
+    this.zustand = "landen";
+    this.bis = jetzt + 450;
+  }
+
   streicheln(jetzt: number): boolean {
-    if (["raus", "sprung", "klettern", "uebergang", "niesen"].includes(this.zustand)) return false;
+    if (["raus", "sprung", "klettern", "uebergang", "niesen", "gehalten", "getragen", "wurf"].includes(this.zustand))
+      return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
     this.zustand = "freuen";
@@ -642,6 +787,23 @@ export class PetBewegung {
       case "klettern":
         this.kletterTakt(jetzt);
         break;
+      case "gehalten":
+        if (this.griff && jetzt - this.griff.start >= PACKEN_MS) {
+          // Gepackt! Weg von Wand, Fläche, Sprung.
+          this.zustand = "getragen";
+          this.wand = null;
+          this.kletterei = null;
+          this.sprung = null;
+          this.uebergang = null;
+          this.nachAnkunft = null;
+          this.fingerSpur = [];
+        }
+        break;
+      case "getragen":
+        break;
+      case "wurf":
+        this.wurfTakt(jetzt, dt);
+        break;
       case "haengen":
         if (jetzt >= this.bis) this.wandAbsprung(jetzt);
         break;
@@ -708,12 +870,40 @@ export class PetBewegung {
         return "schlafen";
       case "niesen":
         return jetzt - this.niesenStart < NIESEN_MS ? "niesen" : "idle";
+      case "gehalten":
+        return this.griff?.animation ?? "idle";
+      case "getragen":
+        return "lauf"; // zappelt mit den Beinen
+      case "wurf":
+        return "sprung";
       default:
         return "idle";
     }
   }
 
   private aktuellePose(jetzt: number): Pose {
+    if (this.zustand === "gehalten" && this.griff) {
+      // Wird immer zappeliger, je länger der Finger drauf ist.
+      const t = Math.min(1, (jetzt - this.griff.start) / PACKEN_MS);
+      const p = { ...this.griff.pose };
+      p.rot += Math.sin(jetzt / (70 - t * 35)) * (1 + t * 7);
+      p.top -= t * 6;
+      return p;
+    }
+    if (this.zustand === "getragen") {
+      const p = this.stehPose();
+      const spur = this.fingerSpur;
+      const n = spur.length;
+      const vx = n >= 2 ? (spur[n - 1].x - spur[0].x) / Math.max(0.016, (spur[n - 1].t - spur[0].t) / 1000) : 0;
+      // Pendelt dem Finger hinterher.
+      p.rot = Math.max(-28, Math.min(28, -vx * 0.03)) + Math.sin(jetzt / 110) * 5;
+      return p;
+    }
+    if (this.zustand === "wurf") {
+      const p = this.stehPose();
+      p.rot = this.wurfRot;
+      return p;
+    }
     const ue = this.uebergang;
     if (this.zustand === "uebergang" && ue) {
       const t = glatt(Math.min(1, (jetzt - ue.t0) / ue.dauer));
@@ -779,6 +969,7 @@ export class PetBewegung {
       frame,
       feuer,
       hockt: this.zustand === "haeufchen" || this.zustand === "landen",
+      gepackt: this.zustand === "getragen" || this.zustand === "gehalten",
       schlaeft: this.zustand === "schlafen",
       schwitzt,
       kopfX,

@@ -19,10 +19,16 @@
   image-rendering: pixelated;
   pointer-events: auto;
   cursor: pointer;
-  touch-action: manipulation;
+  /* Kein Scrollen/Zoomen/Kontextmenü beim Draufbleiben und Ziehen. */
+  touch-action: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.pet-figur[data-gepackt="ja"] {
+  cursor: grabbing;
 }
 
 .pet-figur:focus-visible {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
-import { PetBewegung, type Flaeche, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
+import { PACKEN_MS, PetBewegung, type Flaeche, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
 import "./pets.css";
 
 /**
@@ -335,6 +335,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         el.style.backgroundPosition = `${-frame * SPRITE.breite * s}px 0`;
         el.style.transform = d.transform;
         el.dataset.hockt = d.hockt ? "ja" : "nein";
+        el.dataset.gepackt = d.gepackt ? "ja" : "nein";
       }
       const fe = feuer.current;
       if (fe) {
@@ -372,6 +373,55 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Antippen = streicheln; 3 s draufbleiben = packen, ziehen, werfen.
+  const druck = useRef<{ x: number; y: number; id: number } | null>(null);
+
+  const runter = (e: React.PointerEvent<HTMLDivElement>) => {
+    const b = bewegung.current;
+    if (!b) return;
+    if (!b.druckStart(performance.now())) return;
+    druck.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const bewegen = (e: React.PointerEvent<HTMLDivElement>) => {
+    const b = bewegung.current;
+    const d = druck.current;
+    if (!b || !d || d.id !== e.pointerId) return;
+    const jetzt = performance.now();
+    if (b.gepackt) {
+      b.tragen(e.clientX, e.clientY, jetzt);
+    } else if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 14) {
+      // Finger rutscht weg, bevor er gepackt ist: kein Packen, kein Streicheln.
+      b.druckAbbrechen(jetzt);
+      druck.current = null;
+    }
+  };
+
+  const hoch = (e: React.PointerEvent<HTMLDivElement>) => {
+    const b = bewegung.current;
+    const d = druck.current;
+    druck.current = null;
+    if (!b || !d || d.id !== e.pointerId) return;
+    const jetzt = performance.now();
+    if (b.gepackt) {
+      b.tragen(e.clientX, e.clientY, jetzt);
+      b.loslassen(jetzt);
+    } else {
+      b.druckAbbrechen(jetzt);
+      streicheln();
+    }
+  };
+
+  const abgebrochen = () => {
+    const b = bewegung.current;
+    druck.current = null;
+    if (!b) return;
+    const jetzt = performance.now();
+    if (b.gepackt) b.loslassen(jetzt);
+    else b.druckAbbrechen(jetzt);
+  };
+
   const streicheln = () => {
     const b = bewegung.current;
     const jetzt = performance.now();
@@ -388,8 +438,12 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         ref={figur}
         role="button"
         className="pet-figur"
-        title={`${pet.name} (${pet.besitzerName}) — streicheln`}
-        onPointerDown={streicheln}
+        title={`${pet.name} (${pet.besitzerName}) — antippen: streicheln, ${PACKEN_MS / 1000} s halten: packen und werfen`}
+        onPointerDown={runter}
+        onPointerMove={bewegen}
+        onPointerUp={hoch}
+        onPointerCancel={abgebrochen}
+        onContextMenu={(e) => e.preventDefault()}
       />
       <span ref={zzz} className="pet-zzz" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
