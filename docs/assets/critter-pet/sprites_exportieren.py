@@ -29,22 +29,25 @@ def sheet(frames):
 
 
 def animationen():
+    # Die Welle läuft vom Kopf zum Schwanz (negative Phase) — so schiebt sich
+    # eine Schlange vorwärts. Andersherum sieht es aus, als zische er
+    # rückwärts. Viele Frames, kleine Ausschläge, sonst zuckt es.
     idle = []
-    for i in range(20):
-        t = i / 20 * 2 * math.pi
-        idle.append(dr.frame(phase=t, amp=2.0, bob=round(math.sin(t) * 0.6), blink=i in (14, 15),
+    for i in range(24):
+        t = i / 24 * 2 * math.pi
+        idle.append(dr.frame(phase=-t, amp=1.2, bob=round(math.sin(t) * 0.6), blink=i in (17, 18),
                              schnurr=math.sin(t) * 0.5))
     lauf = []
-    for i in range(10):
-        t = i / 10 * 2 * math.pi
-        lauf.append(dr.frame(phase=t, amp=4.5, leg=2.0, mund=True, schnurr=1.0))
+    for i in range(24):
+        t = i / 24 * 2 * math.pi
+        lauf.append(dr.frame(phase=-t, amp=2.5, leg=1.5, mund=True, schnurr=1.0))
     # Freuen (gestreichelt): Hüpfer mit zugekniffenen Augen und offenem Maul.
     freuen = []
     for i in range(8):
         t = i / 8 * 2 * math.pi
         freuen.append((dr.frame(phase=t * 2, amp=3.0, blink=True, mund=True, schnurr=1.5),
                        round(abs(math.sin(t)) * 3)))
-    return {"idle": (idle, 110), "lauf": (lauf, 80), "freuen": (freuen, 90)}
+    return {"idle": (idle, 110), "lauf": (lauf, 60), "freuen": (freuen, 90)}
 
 
 def pixelbild(zeilen, farben):

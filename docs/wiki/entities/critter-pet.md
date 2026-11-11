@@ -91,6 +91,9 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   `docs/assets/critter-pet/sprites_exportieren.py` → `frontend/public/pets/drache/`.
 - **Noch nicht gebaut:** Schlafen, Essen, Feuer-Rülpser, Traurig/Hunger,
   Popups hochklettern und drauflegen, Hochheben/Werfen, Bedürfnisse.
+- **Nachbesserung nach Marks Tablet-Test (11.11.):** Pet zeigte ein Kästchen
+  (globale Button-Optik) → jetzt `div`. Laufen zuckte und wirkte rückwärts →
+  24 Frames, kleinere Welle, Welle läuft Kopf → Schwanz.
 
 ## Noch offen
 

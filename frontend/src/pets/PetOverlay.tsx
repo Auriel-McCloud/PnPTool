@@ -21,8 +21,8 @@ const SPRITE = {
   breite: 84,
   hoehe: 48,
   animationen: {
-    idle: { frames: 20, ms: 110 },
-    lauf: { frames: 10, ms: 80 },
+    idle: { frames: 24, ms: 110 },
+    lauf: { frames: 24, ms: 60 },
     freuen: { frames: 8, ms: 90 },
   },
 } as const;
@@ -79,9 +79,11 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   return (
     <div className="pet-ebene">
       {haeufchen.map((h) => (
-        <button
+        // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
+        // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
+        <div
           key={h.id}
-          type="button"
+          role="button"
           className={`pet-haeufchen${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
           title="Wegmachen"
           style={{
@@ -109,7 +111,7 @@ interface Herz {
 }
 
 function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => void }) {
-  const figur = useRef<HTMLButtonElement | null>(null);
+  const figur = useRef<HTMLDivElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
   // Alles, was jeden Frame wechselt, liegt in einer Ref — kein React-Render pro Frame.
   const z = useRef({
@@ -243,9 +245,9 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
 
   return (
     <>
-      <button
+      <div
         ref={figur}
-        type="button"
+        role="button"
         className="pet-figur"
         title={`${pet.name} (${pet.besitzerName}) — streicheln`}
         onPointerDown={streicheln}

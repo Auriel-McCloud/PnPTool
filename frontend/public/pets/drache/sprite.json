@@ -3,12 +3,12 @@
   "hoehe": 48,
   "animationen": {
     "idle": {
-      "frames": 20,
+      "frames": 24,
       "ms": 110
     },
     "lauf": {
-      "frames": 10,
-      "ms": 80
+      "frames": 24,
+      "ms": 60
     },
     "freuen": {
       "frames": 8,

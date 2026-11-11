@@ -4,6 +4,8 @@ Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wah
 
 ## Critter-Pet: Drache läuft über die Party-Tablets (11.11.2026)
 
+**Nachbesserung nach Marks erstem Test (11.11.):** Pet und Häufchen sind `div role="button"` statt `<button>` — die globale Button-Optik (`index.css`, `button:hover` schlägt `.pet-figur`) machte ein sichtbares Kästchen. Laufen hat 24 statt 10 Frames, kleinere Welle, und die Welle läuft jetzt vom Kopf zum Schwanz (vorher Richtung Kopf = sah aus wie rückwärts zischen und zuckte). Idle ebenso 24 Frames.
+
 Erste Ausbaustufe von Planpunkt 15, Wiki [[critter-pet]], API `docs/api/pets.md`. SL stellt im `CritterFenster` „Pet auf den Tablets“ auf „Kleiner Drache“ (`petArt` am Critter-Knoten, `PUT …/pets/{critterId}`). Ist der Critter per `BEGLEITET` an einen PC gebunden und dessen Spieler eingeloggt, läuft das Pet unten über den Bildschirm (`pets/PetOverlay.tsx`, z-index 150 unter den Fenstern). Modul `backend/app/pets/`: `motor.py` hält im Prozessspeicher, auf welchem Tablet es ist; Tablet meldet „raus“ am Rand, Server schickt es nach 3–12 s zum nächsten eingeloggten PC derselben Party (Gegenseite rein), nie zur SL; Takt 20 s gleicht DB/Party ab, 5 min ohne Meldung → weiter. Streicheln = Hüpfer + Herzen (nur lokal). Häufchen (`PetHaeufchen`-Knoten, je Bildschirm max. 12) bleiben liegen, Antippen wischt sie weg — Annahme, Mark hat die Häufchen-/Werfen-Fragen offen gelassen. Sprites prozedural: `docs/assets/critter-pet/sprites_exportieren.py` → `frontend/public/pets/drache/` (idle/lauf/freuen, Häufchen, Herz). Noch nicht: Schlafen, Essen, Feuer-Rülpser, Traurig, Popups hochklettern, Bedürfnisse. Tests `tests/test_pets.py`, `tsc -b` sauber.
 
 ## Tutorial-Shop: KI-Verkäufer-Kommentar entfernt (11.11.2026)
