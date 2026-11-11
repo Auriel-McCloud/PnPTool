@@ -1,0 +1,56 @@
+---
+title: Critter-Pet (Tamagotchi)
+created: 2026-11-11
+updated: 2026-11-11
+type: entität
+tags: [ui, frontend, backend, datenmodell]
+sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
+status: offen
+---
+
+# Critter-Pet (Tamagotchi)
+
+Ein Critter eines Spielers lebt als animiertes Pet-Overlay in der offenen
+PnPTool-Webapp und kann auf die Bildschirme anderer Spieler wandern.
+Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
+`docs/ENTWICKLUNGSHISTORIE.md` (Punkt 15). Verwandt: [[concepts/augments-ausruestung]]
+(Ki-Tama-Critter „heilt mit wie ein Pet“), [[entities/mitteilungen-system]]
+(WebSocket-Infrastruktur), [[entities/achievements]] (`ERSTER_CRITTER`).
+
+## Skizze 24.09.2026 (unverändert übernommen)
+
+- Bedürfnisse: füttern (Tierfutter im Shop kaufen/verbrauchen), baden/pflegen.
+  Vernachlässigt verliert das Tier Lebenspunkte.
+- Persönlichkeit: stellt beim Herumlaufen Chaos an (Dinge „kaputt machen“,
+  Häufchen) — reiner Flavor, keine Spielmechanik-Folge.
+- Wandern: zwischen den offenen PnPTool-Sitzungen der Spieler einer Party;
+  läuft bei einem Client rechts raus, taucht beim nächsten links auf.
+- **Entschieden (24.09.):** Weg 1 — DOM-Overlay nur innerhalb der
+  Webapp/PWA, kein natives Android-Overlay. Server hält Zustand (Position,
+  aktueller Client, Bedürfnisse), Sync per WebSocket wie Mitteilungen.
+- Damals: „explizit ganz zum Schluss“ als Bonus-Feature.
+
+## Nachschärfung 11.11.2026
+
+- Pet ist **an einen Critter gekoppelt** (bestehender `Person{istCritter}`
+  mit `BEGLEITET`-Kante zum Besitzer).
+- Wandert vom Besitzer auf das Display **anderer Leute** (Wortlaut Mark;
+  ob nur Party oder alle Verbundenen: siehe offene Achsen).
+- Erstes Pet: kleiner roter Drache im Stil von Mushu (Mulan). Pixel-Art ist
+  okay, solange es süß aussieht. **Mehr Animationen** als nur Laufen.
+- Prototyp-Sprite 11.11.: prozedural per Python/Pillow (48×40 px, Idle +
+  Laufen, Auto-Outline) — eigene Figur, nur Mushu-inspiriert, kein
+  Disney-Asset.
+
+## Offene Achsen
+
+- Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
+  Spieler der Kampagne? Sieht die SL das Pet auch?
+- Sprite-Zuordnung: ein Sprite-Set pro Critter (SL wählt/lädt hoch) oder
+  feste Pet-Arten im Code (Drache, …)?
+- Animationsliste (Vorschlag): Idle, Laufen, Schlafen, Essen, Feuer-Rülpser,
+  Freuen/Hüpfen, Traurig/Hunger, Häufchen.
+- Tamagotchi-Mechanik: Bedürfnisse aus der Skizze 24.09. (Hunger/Pflege,
+  LP-Verlust) übernehmen oder vorerst nur Flavor ohne LP-Folge?
+- Interaktion der anderen Spieler: dürfen sie das fremde Pet streicheln/
+  füttern/zurückschicken?

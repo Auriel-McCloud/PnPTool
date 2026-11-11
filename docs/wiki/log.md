@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-11] create | Critter-Pet (Tamagotchi)
+
+Skizze vom 24.09. plus Nachschärfung: an Critter gekoppelt, wandert auf andere Displays, Mushu-artiger Pixel-Drache, mehr Animationen. Achsen offen. Siehe [[entities/critter-pet]].
+
 ## [2026-11-10] update | Nebenfigur-Fenster macht Händler
 
 Laden direkt im Nebenfigur-Fenster wählen oder abziehen. Siehe [[entities/nebenfiguren]].
