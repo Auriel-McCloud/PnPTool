@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
-import { PACKEN_MS, PetBewegung, type Flaeche, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
+import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
 import "./pets.css";
 
 /**
@@ -106,6 +106,35 @@ function brauchbar(r: Rechteck, m: Masse, hoehe: number, breite: number): boolea
   );
 }
 
+/** Ein Eintrag der Symbolspalte. Herausziehen setzt `data-pet-vor` — React
+ * verwaltet das Attribut nicht und lässt es stehen; die Optik teilt es sich
+ * mit `data-vor` (commlink.css). Das Antippen des Spielers bleibt unberührt. */
+function menuePunkt(el: HTMLElement, hoehe: number): MenuePunkt {
+  return {
+    oben: () => {
+      if (!el.isConnected) return null;
+      const r = el.getBoundingClientRect();
+      return r.height > 0 && r.top >= 0 && r.bottom <= hoehe ? r.top : null;
+    },
+    q: {
+      rechteck: () => {
+        if (!el.isConnected || el.dataset.petVor !== "true") return null;
+        if (document.querySelector(".fn-fenster")) return null; // Popup drüber: runter
+        const kante = el.closest(".cl-menue-tafel")?.getBoundingClientRect().right ?? 0;
+        const r = el.getBoundingClientRect();
+        if (r.right - kante < 40) return null;
+        return { left: kante, right: r.right, top: r.top, bottom: r.bottom };
+      },
+    },
+    aufklappen: () => {
+      el.dataset.petVor = "true";
+    },
+    zuklappen: () => {
+      delete el.dataset.petVor;
+    },
+  };
+}
+
 function umgebung(): Umgebung {
   const m = masse();
   const breite = window.innerWidth;
@@ -166,9 +195,21 @@ function umgebung(): Umgebung {
     return aus;
   };
 
+  // Symbolspalte (Burgermenü) ab Tablet-Breite, nur ohne offenes Popup. Am
+  // Handy ist sie eine eingefahrene Schublade (rechte Kante ≤ 0) bzw. offen
+  // viel breiter — dann gilt wie bisher der Bildschirmrand.
+  const tafel = fenster.length ? null : document.querySelector(".cl-menue-tafel");
+  const tr = tafel?.getBoundingClientRect();
+  const links = tr && tr.right > 0 && tr.width < 100 ? tr.right : 0;
+
   return {
     breite,
     hoehe,
+    links,
+    menuePunkte: () =>
+      links > 0 && tafel
+        ? Array.from(tafel.querySelectorAll<HTMLElement>(".cl-bereich:not(:disabled)")).map((el) => menuePunkt(el, hoehe))
+        : [],
     flaechen,
     // Klettern nur an Popups, die oben Platz lassen (am Handy bildschirmfüllend).
     waende: () =>
@@ -390,7 +431,10 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
       rahmen = requestAnimationFrame(tick);
     };
     rahmen = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rahmen);
+    return () => {
+      cancelAnimationFrame(rahmen);
+      b.aufraeumen();
+    };
     // Ein neuer Auftritt ist ein neuer key — die Abhängigkeiten bleiben fest.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

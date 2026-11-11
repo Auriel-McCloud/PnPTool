@@ -22,6 +22,15 @@
  * auf einer Fläche oder dem Boden — oder fliegt seitlich raus und wandert
  * zum nächsten Tablet. Kurz antippen bleibt Streicheln.
  *
+ * Burgermenü (Mark: „auf der linken Seite nicht am Bildschirmrand, sondern
+ * am Burgermenü außen raufklettern, zu einem Menüpunkt, den aufklappen und
+ * sich draufsetzen oder -legen, vielleicht um darauf zu schlafen“): ab
+ * Tablet-Breite ist die rechte Kante der Symbolspalte die linke Wand. Er
+ * klettert dort hoch bis knapp über einen Eintrag, zieht ihn heraus (rein
+ * optisch, wie das erste Antippen — gewechselt wird nichts), hüpft auf den
+ * herausragenden Teil und sitzt oder schläft dort. Geht er weg, klappt der
+ * Eintrag wieder zu.
+ *
  * Klettern ist mühsam (Mark: „soll sich anstrengender anfühlen“): einzelne
  * Klimmzüge mit Nachgreifen, alle paar Züge eine Verschnaufpause mit
  * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
@@ -60,9 +69,23 @@ export interface Flaeche {
   r: Rechteck;
 }
 
+/** Ein Eintrag der Symbolspalte (Burgermenü), den er herausziehen und betreten kann. */
+export interface MenuePunkt {
+  /** Oberkante des Eintrags (auch eingeklappt); null = nicht sichtbar/weg. */
+  oben(): number | null;
+  /** Der herausgefahrene Teil rechts der Spalte; null, solange eingeklappt. */
+  q: Quelle;
+  aufklappen(): void;
+  zuklappen(): void;
+}
+
 export interface Umgebung {
   breite: number;
   hoehe: number;
+  /** Rechte Kante der Symbolspalte — dort ist links die Wand. 0/fehlt = keine Spalte. */
+  links?: number;
+  /** Einträge der Symbolspalte (nur ohne offenes Popup). */
+  menuePunkte?: () => MenuePunkt[];
   /** Flächen zum Draufstehen (nur bei Entscheidungen abgefragt). */
   flaechen: () => Flaeche[];
   /** Popups, an deren Seite er hochklettern kann. */
@@ -72,7 +95,7 @@ export interface Umgebung {
 
 type Ort = { art: "boden" } | { art: "flaeche"; q: Quelle };
 /** Wo die Wand vom Pet aus gesehen ist. q = null: Bildschirmrand. */
-type Wand = { x: number; seite: "links" | "rechts"; q: Quelle | null };
+type Wand = { x: number; seite: "links" | "rechts"; q: Quelle | null; menue?: MenuePunkt };
 
 type Zustand =
   | "laufen"
@@ -196,6 +219,9 @@ export class PetBewegung {
   niesenStart = 0;
   brandGelegt = false;
   naechstesNiesen = 0;
+  /** Herausgezogener Menüpunkt, solange er drauf ist oder hinwill. */
+  menuePunkt: MenuePunkt | null = null;
+  menueEntscheidungen = 0;
   /** Gepackt/geworfen: Finger-Spur für den Schwung, Flugdaten. */
   griff: { start: number; pose: Pose; animation: Animation; vorher: { zustand: Zustand; bis: number } } | null = null;
   fingerSpur: { x: number; y: number; t: number }[] = [];
@@ -243,7 +269,8 @@ export class PetBewegung {
   }
 
   private klemmeX(x: number) {
-    return Math.min(Math.max(x, 0), Math.max(0, this.u.breite - this.masse().bw));
+    const links = this.u.links ?? 0;
+    return Math.min(Math.max(x, links), Math.max(links, this.u.breite - this.masse().bw));
   }
 
   /** x so, dass die Körpermitte über der Fläche bleibt. */
@@ -376,6 +403,45 @@ export class PetBewegung {
     } else {
       this.springe(this.klemmeX(this.x + this.richtung * this.zw(80, 200)), this.u.hoehe, { art: "boden" }, jetzt, startRot);
     }
+  }
+
+  /** Am Menü oben: auf den eben herausgezogenen Eintrag hüpfen. */
+  private menueBetreten(jetzt: number) {
+    const { bw, bh } = this.masse();
+    const wand = this.wand!;
+    const p = wand.menue!;
+    const r = p.q.rechteck();
+    if (!r) return this.wandAbsprung(jetzt);
+    this.x = this.cx - bw / 2;
+    this.fussY = this.cy + bh / 2;
+    this.richtung = 1;
+    this.wand = null;
+    this.kletterei = null;
+    this.ort = { art: "boden" };
+    this.menueEntscheidungen = 0;
+    // Mittig auf den herausragenden Teil — der ist kaum länger als er selbst.
+    this.springe((r.left + r.right) / 2 - bw / 2, r.top, { art: "flaeche", q: p.q }, jetzt, -90);
+    if (this.sprung) this.sprung.bogen = 18;
+  }
+
+  /** Eintrag wieder zuklappen, sobald er weder drauf ist noch gerade hinwill. */
+  private menueNachsehen() {
+    const p = this.menuePunkt;
+    if (!p) return;
+    const d = this.sprung?.danach;
+    const drauf =
+      (this.ort.art === "flaeche" && this.ort.q === p.q) ||
+      (d?.art === "flaeche" && d.q === p.q) ||
+      this.wand?.menue === p;
+    if (drauf) return;
+    p.zuklappen();
+    this.menuePunkt = null;
+  }
+
+  /** Pet verlässt den Schirm (Komponente weg): nichts herausgezogen lassen. */
+  aufraeumen() {
+    this.menuePunkt?.zuklappen();
+    this.menuePunkt = null;
   }
 
   private landeX(r: Rechteck) {
@@ -580,6 +646,31 @@ export class PetBewegung {
       if (!r) return this.fallen(jetzt);
       const ende = jetzt >= this.besuchEnde;
       const breit = r.right - r.left;
+      // Auf dem herausgezogenen Menüpunkt: erst gemütlich hinlegen/schlafen
+      // oder sitzen, dann noch ein bisschen bleiben, irgendwann runter.
+      if (this.menuePunkt && this.ort.q === this.menuePunkt.q) {
+        this.menueEntscheidungen += 1;
+        if (this.menueEntscheidungen === 1 && !ende) {
+          if (w < 0.6) {
+            this.zustand = "schlafen";
+            this.geschlafen = true;
+            this.bis = jetzt + this.zw(30_000, 300_000);
+            this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 40_000));
+          } else {
+            this.zustand = "idle";
+            this.bis = jetzt + this.zw(6_000, 15_000);
+          }
+          return;
+        }
+        if (this.menueEntscheidungen <= 3 && !ende && w < 0.35) {
+          this.zustand = "idle";
+          this.bis = jetzt + this.zw(4_000, 10_000);
+          return;
+        }
+        this.ort = { art: "boden" };
+        this.springe(this.klemmeX(r.right + this.zw(10, 120)), u.hoehe, { art: "boden" }, jetzt);
+        return;
+      }
       // Auch oben auf Text & Co. (Mark: „kann er oben auf den Text Häufchen machen?“).
       if (!ende && !this.haeufchenGemacht && w < 0.1) {
         this.zustand = "haeufchen";
@@ -663,6 +754,34 @@ export class PetBewegung {
         return;
       }
     }
+    const links = u.links ?? 0;
+    if (w < 0.72 && links > 0 && u.menuePunkte) {
+      // Links ist die Symbolspalte die Wand: meist zu einem Menüpunkt hoch,
+      // sonst rechts am Bildschirmrand.
+      const { bh } = this.masse();
+      const punkte = u.menuePunkte().filter((p) => {
+        const o = p.oben();
+        return o !== null && o >= bh + 10 && u.hoehe - o > SPRUNG_MAX_PX * 0.6;
+      });
+      if (punkte.length && u.zufall() < 0.75) {
+        const p = punkte[Math.floor(u.zufall() * punkte.length)];
+        const wand: Wand = { x: links, seite: "links", q: null, menue: p };
+        this.laufeZu(links, (j) => {
+          const o = p.oben();
+          if (o === null) {
+            this.zustand = "idle";
+            this.bis = j + 500;
+            return;
+          }
+          this.menuePunkt = p;
+          this.klettere(wand, o - bw / 2 - 12, j);
+        });
+        return;
+      }
+      const wand: Wand = { x: u.breite, seite: "rechts", q: null };
+      this.laufeZu(this.klemmeX(u.breite), (j) => this.klettere(wand, this.zw(0.3, 0.6) * u.hoehe, j));
+      return;
+    }
     if (w < 0.7) {
       // Bildschirmrand hochklettern, oben kurz hängen, dann abspringen.
       const links = u.zufall() < 0.5;
@@ -674,7 +793,7 @@ export class PetBewegung {
       this.springe(this.klemmeX(this.x + this.richtung * this.zw(30, 70)), u.hoehe, { art: "boden" }, jetzt);
       return;
     }
-    this.laufeZu(this.zw(0, Math.max(0, u.breite - bw)));
+    this.laufeZu(this.zw(links, Math.max(links, u.breite - bw)));
   }
 
   // ── Takt ────────────────────────────────────────────────────────────────
@@ -688,6 +807,11 @@ export class PetBewegung {
       if (!r) return this.wandAbsprung(jetzt);
       this.kletterZielY = r.top;
     }
+    if (wand.menue) {
+      const o = wand.menue.oben();
+      if (o === null) return this.wandAbsprung(jetzt);
+      this.kletterZielY = o - bw / 2 - 12;
+    }
     const t = Math.min(1, (jetzt - k.t0) / k.dauer);
     if (k.phase === "zug") this.cy = k.vonCy + (k.nachCy - k.vonCy) * auslaufen(t);
     if (k.phase === "rutsch") this.cy = k.vonCy + (k.nachCy - k.vonCy) * glatt(t);
@@ -699,7 +823,12 @@ export class PetBewegung {
     }
     if (!wand.q && this.cy <= this.kletterZielY) {
       this.zustand = "haengen";
-      this.bis = jetzt + this.zw(1800, 3500);
+      if (wand.menue) {
+        // Oben: Menüpunkt herausziehen, kurz verschnaufen, dann drauf.
+        wand.menue.aufklappen();
+        this.menuePunkt = wand.menue;
+        this.bis = jetzt + this.zw(700, 1100);
+      } else this.bis = jetzt + this.zw(1800, 3500);
       return;
     }
     const naechste = (phase: KletterPhase, dauer: number, nachCy = this.cy) => {
@@ -827,7 +956,10 @@ export class PetBewegung {
         this.wurfTakt(jetzt, dt);
         break;
       case "haengen":
-        if (jetzt >= this.bis) this.wandAbsprung(jetzt);
+        if (jetzt >= this.bis) {
+          if (this.wand?.menue) this.menueBetreten(jetzt);
+          else this.wandAbsprung(jetzt);
+        }
         break;
       case "landen":
         if (jetzt >= this.bis) {
@@ -865,6 +997,8 @@ export class PetBewegung {
         if (jetzt >= this.bis) this.entscheide(jetzt);
         break;
     }
+
+    this.menueNachsehen();
 
     const anim = this.gewuenschteAnimation(jetzt);
     if (anim !== this.animation) {

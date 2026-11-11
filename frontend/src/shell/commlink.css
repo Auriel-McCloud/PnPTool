@@ -176,7 +176,8 @@
   transition: opacity 0.18s;
 }
 
-.cl-bereich[data-vor="true"] .cl-bereich-name {
+.cl-bereich[data-vor="true"] .cl-bereich-name,
+.cl-bereich[data-pet-vor="true"] .cl-bereich-name {
   opacity: 1;
   transition-delay: 0.1s;
 }
@@ -184,7 +185,11 @@
 /* Der angetippte Eintrag faehrt aus der Spalte heraus und zeigt seinen
    Namen — umrandet in genau dem Ton, der beim Wechsel nach oben fliegt. */
 .cl-bereich[data-vor="true"],
-.cl-bereich[data-vor="true"]:hover:not(:disabled) {
+.cl-bereich[data-vor="true"]:hover:not(:disabled),
+/* Vom Critter-Pet herausgezogen (pets/PetOverlay.tsx, 11.11.2026): gleiche
+   Optik, aber ohne den Antipp-Zustand der Shell zu berühren. */
+.cl-bereich[data-pet-vor="true"],
+.cl-bereich[data-pet-vor="true"]:hover:not(:disabled) {
   overflow: visible;
   width: auto;
   min-width: calc(var(--menue-breite) - 4px);

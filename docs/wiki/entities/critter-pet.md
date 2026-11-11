@@ -137,6 +137,23 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   lässt ihn mit Schwung fliegen; seitlich raus = er wandert zum nächsten
   Tablet.
 
+## Burgermenü-Ausflug (11.11.2026, gebaut)
+
+Mark: „es wäre genial, wenn er auf der linken Seite nicht am Bildschirmrand,
+sondern am Burgermenü außen raufklettert, zu einem Menüpunkt, den aufklappen
+kann, um sich dann darauf zu setzen oder zu legen, vielleicht um darauf zu
+schlafen — oder später etwas zu fressen“.
+
+- Nur ab Tablet-Breite (Symbolspalte sichtbar) und ohne offenes Popup; am
+  Handy bleibt der linke Bildschirmrand.
+- Das Herausziehen ist rein optisch (wie das erste Antippen eines
+  Eintrags); der Bereich wird nicht gewechselt, das Antippen des Spielers
+  funktioniert unverändert.
+- Auf dem Eintrag schläft er meist (bis 5 min) oder sitzt; Antippen weckt
+  ihn, dann springt er bald runter und der Eintrag klappt zu.
+- **Idee für später:** auf einem bestimmten Menüpunkt fressen (z. B. Shop
+  oder Inventar) — hängt am Futter-/Hunger-Thema, noch offen.
+
 ## Nebenbei gefunden 11.11.2026
 
 Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur
