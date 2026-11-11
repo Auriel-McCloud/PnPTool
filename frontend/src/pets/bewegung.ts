@@ -1,17 +1,26 @@
 /**
- * Bewegungslogik des Critter-Pets (Mark, 11.11.2026: „nicht nur unten am
- * Rand rumlaufen, sondern auch wo rauf klettern oder springen“).
+ * Bewegungslogik des Critter-Pets (Mark, 11.11.2026).
  *
- * Reiner Zustandsautomat ohne React: die Komponente ruft `tick` pro Frame
- * und liest danach `darstellung()`. Die Welt kommt über `Umgebung` herein
- * (Bildschirmgröße, offene Popups) — so bleibt die Logik vom DOM getrennt.
+ * Reiner Zustandsautomat ohne React/DOM: die Komponente ruft `tick` pro
+ * Frame und liest danach `darstellung()`. Die Welt kommt über `Umgebung`
+ * herein (Bildschirmgröße, Flächen zum Draufstehen, Wände zum Klettern).
  *
- * Orte: Boden (unterer Bildschirmrand), Plattform (Oberkante eines offenen
- * Popups), Wand (Seite eines Popups oder Bildschirmrand, beim Klettern).
- * Raus läuft er nur über den Boden — so wandert er zum nächsten Tablet.
+ * - Boden: unterer Bildschirmrand. Raus zum nächsten Tablet nur von hier.
+ * - Flächen: Oberkanten von Wörtern/Textzeilen, Linien, Punkten, Kästchen,
+ *   Popups — er springt drauf, läuft darauf, hüpft von einer zur nächsten.
+ * - Wände: Seiten offener Popups und die Bildschirmränder — er klettert.
+ *
+ * Übergänge (Mark: „wir bräuchten noch eine Übergangs-Animation“): an die
+ * Wand anlehnen, oben über die Kante ziehen, von der Wand abstoßen und
+ * nach der Landung kurz einfedern sind eigene, interpolierte Schritte statt
+ * harter Schnitte.
+ *
+ * Klettern ist mühsam (Mark: „soll sich anstrengender anfühlen“): einzelne
+ * Klimmzüge mit Nachgreifen, alle paar Züge eine Verschnaufpause mit
+ * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
  */
 
-export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen";
+export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern";
 
 export interface Masse {
   /** Box-Breite/-Höhe des Sprites in Bildschirm-Pixeln. */
@@ -28,19 +37,30 @@ export interface Rechteck {
   bottom: number;
 }
 
+/** Etwas, worauf er stehen oder woran er klettern kann. Liefert das aktuelle
+ * Rechteck oder null, wenn es weg/verdeckt/aus dem Bild ist. */
+export interface Quelle {
+  rechteck(): Rechteck | null;
+}
+
+export interface Flaeche {
+  q: Quelle;
+  r: Rechteck;
+}
+
 export interface Umgebung {
   breite: number;
   hoehe: number;
-  /** Popups, auf die er klettern/springen kann. */
-  popups: () => { el: Element; r: Rechteck }[];
-  /** Aktuelles Rechteck eines Popups, null wenn es zu ist. */
-  rechteckVon: (el: Element) => Rechteck | null;
+  /** Flächen zum Draufstehen (nur bei Entscheidungen abgefragt). */
+  flaechen: () => Flaeche[];
+  /** Popups, an deren Seite er hochklettern kann. */
+  waende: () => Flaeche[];
   zufall: () => number;
 }
 
-type Ort = { art: "boden" } | { art: "plattform"; el: Element };
-/** Wo die Wand vom Pet aus gesehen ist. */
-type Wand = { x: number; seite: "links" | "rechts"; el: Element | null };
+type Ort = { art: "boden" } | { art: "flaeche"; q: Quelle };
+/** Wo die Wand vom Pet aus gesehen ist. q = null: Bildschirmrand. */
+type Wand = { x: number; seite: "links" | "rechts"; q: Quelle | null };
 
 type Zustand =
   | "laufen"
@@ -51,7 +71,17 @@ type Zustand =
   | "klettern"
   | "haengen"
   | "sprung"
+  | "landen"
+  | "uebergang"
   | "raus";
+
+interface Pose {
+  left: number;
+  top: number;
+  /** Drehung in Grad; flip = horizontal gespiegelt (schaut nach links). */
+  rot: number;
+  flip: boolean;
+}
 
 interface Sprung {
   x0: number;
@@ -62,6 +92,32 @@ interface Sprung {
   dauer: number;
   bogen: number;
   danach: Ort;
+  /** Drehung beim Absprung (von der Wand weg), läuft in den Sprung aus. */
+  startRot: number;
+}
+
+interface Uebergang {
+  von: Pose;
+  nach: Pose;
+  t0: number;
+  dauer: number;
+  animation: Animation;
+  danach: (jetzt: number) => void;
+}
+
+type KletterPhase = "zug" | "griff" | "rast" | "rutsch";
+
+interface Kletterei {
+  phase: KletterPhase;
+  t0: number;
+  dauer: number;
+  vonCy: number;
+  nachCy: number;
+  zuegeBisRast: number;
+  /** Bild der Kletter-Animation am Anfang dieses Zugs. */
+  frameBasis: number;
+  /** Gesamtzahl Züge — ab dem dritten schwitzt er. */
+  zuege: number;
 }
 
 export interface Darstellung {
@@ -70,9 +126,12 @@ export interface Darstellung {
   transform: string;
   animation: Animation;
   animStart: number;
+  /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
+  frame: number | null;
   hockt: boolean;
   schlaeft: boolean;
-  /** Kopfposition für Zzz/Herzen. */
+  schwitzt: boolean;
+  /** Kopfposition für Zzz/Herzen/Tropfen. */
   kopfX: number;
   kopfY: number;
 }
@@ -82,9 +141,14 @@ export type Meldung =
   | { typ: "haeufchen"; x: number; y: number };
 
 const TEMPO_PX_S = 45;
-const KLETTER_PX_S = 45;
 /** Höchster Satz nach oben; höhere Popups werden erklettert. */
 const SPRUNG_MAX_PX = 240;
+/** Wie weit er seitlich auf eine andere Fläche springt. */
+const SPRUNG_WEIT_PX = 450;
+const KLETTER_FRAMES = 32;
+
+const glatt = (t: number) => t * t * (3 - 2 * t);
+const auslaufen = (t: number) => 1 - (1 - t) * (1 - t);
 
 export class PetBewegung {
   zustand: Zustand = "laufen";
@@ -100,7 +164,9 @@ export class PetBewegung {
   rausGemeldet = false;
   nachAnkunft: ((jetzt: number) => void) | null = null;
   sprung: Sprung | null = null;
+  uebergang: Uebergang | null = null;
   wand: Wand | null = null;
+  kletterei: Kletterei | null = null;
   kletterZielY = 0;
   cx = 0;
   cy = 0;
@@ -111,13 +177,7 @@ export class PetBewegung {
   private u: Umgebung;
   private melden: (m: Meldung) => void;
 
-  constructor(
-    masse: () => Masse,
-    u: Umgebung,
-    seite: "links" | "rechts",
-    jetzt: number,
-    melden: (m: Meldung) => void,
-  ) {
+  constructor(masse: () => Masse, u: Umgebung, seite: "links" | "rechts", jetzt: number, melden: (m: Meldung) => void) {
     this.masse = masse;
     this.u = u;
     this.melden = melden;
@@ -143,8 +203,34 @@ export class PetBewegung {
     return Math.min(Math.max(x, 0), Math.max(0, this.u.breite - this.masse().bw));
   }
 
+  /** x so, dass die Körpermitte über der Fläche bleibt. */
+  private klemmeAufFlaeche(x: number, r: Rechteck) {
+    const { bw } = this.masse();
+    return Math.min(Math.max(x, r.left - bw / 2), r.right - bw / 2);
+  }
+
   setzeUmgebung(u: Umgebung) {
     this.u = u;
+  }
+
+  // ── Posen ───────────────────────────────────────────────────────────────
+
+  private stehPose(): Pose {
+    const { bh, fuss } = this.masse();
+    return { left: this.x, top: this.fussY - bh + fuss, rot: 0, flip: this.richtung < 0 };
+  }
+
+  private kletterPose(wand: Wand, cx: number, cy: number): Pose {
+    const { bw, bh } = this.masse();
+    // Kopf nach oben, Füße an der Wand.
+    return wand.seite === "rechts"
+      ? { left: cx - bw / 2, top: cy - bh / 2, rot: -90, flip: false }
+      : { left: cx - bw / 2, top: cy - bh / 2, rot: 90, flip: true };
+  }
+
+  private starteUebergang(nach: Pose, dauer: number, animation: Animation, jetzt: number, danach: (j: number) => void) {
+    this.uebergang = { von: this.aktuellePose(jetzt), nach, t0: jetzt, dauer, animation, danach };
+    this.zustand = "uebergang";
   }
 
   // ── Handlungen ──────────────────────────────────────────────────────────
@@ -156,7 +242,7 @@ export class PetBewegung {
     this.nachAnkunft = danach;
   }
 
-  private springe(x1: number, y1: number, danach: Ort, jetzt: number) {
+  private springe(x1: number, y1: number, danach: Ort, jetzt: number, startRot = 0) {
     const dx = x1 - this.x;
     const dy = this.fussY - y1; // > 0 = nach oben
     if (Math.abs(dx) > 2) this.richtung = dx > 0 ? 1 : -1;
@@ -166,58 +252,103 @@ export class PetBewegung {
       x1,
       y1,
       t0: jetzt,
-      dauer: 450 + Math.abs(dy) * 1.2 + Math.abs(dx) * 0.8,
+      dauer: 450 + Math.abs(dy) * 1.1 + Math.abs(dx) * 0.7,
       bogen: dy > 0 ? dy / 2 + 40 : 30,
       danach,
+      startRot,
     };
     this.zustand = "sprung";
   }
 
   private fallen(jetzt: number) {
+    this.ort = { art: "boden" };
     this.springe(this.x, this.u.hoehe, { art: "boden" }, jetzt);
     if (this.sprung) this.sprung.bogen = 8;
   }
 
-  private klettere(wand: Wand, zielY: number) {
+  /** Zur Wand drehen (Übergang), dann Klimmzug um Klimmzug hoch. */
+  private klettere(wand: Wand, zielY: number, jetzt: number) {
     const { bw, bh, fuss } = this.masse();
     this.wand = wand;
     this.kletterZielY = zielY;
+    this.richtung = wand.seite === "rechts" ? 1 : -1;
     this.cx = wand.seite === "rechts" ? wand.x - bh / 2 + fuss : wand.x + bh / 2 - fuss;
     this.cy = this.fussY - bw / 2;
-    this.zustand = "klettern";
+    this.starteUebergang(this.kletterPose(wand, this.cx, this.cy), 420, "idle", jetzt, (j) => {
+      this.zustand = "klettern";
+      this.kletterei = {
+        phase: "griff",
+        t0: j,
+        dauer: 250,
+        vonCy: this.cy,
+        nachCy: this.cy,
+        zuegeBisRast: Math.round(this.zw(4, 6)),
+        frameBasis: 0,
+        zuege: 0,
+      };
+    });
   }
 
-  /** Oben am Popup angekommen: auf die Oberkante steigen. */
-  private aufsteigen(wand: Wand, r: Rechteck, jetzt: number) {
+  /** Oben am Popup angekommen: über die Kante ziehen und hinstellen. */
+  private hochziehen(wand: Wand, r: Rechteck, jetzt: number) {
     const { bw } = this.masse();
-    this.ort = { art: "plattform", el: wand.el! };
+    this.ort = { art: "flaeche", q: wand.q! };
     this.fussY = r.top;
     if (wand.seite === "rechts") {
-      this.x = r.left - bw * 0.2;
+      this.x = r.left - bw * 0.15;
       this.richtung = 1;
     } else {
-      this.x = r.right - bw * 0.8;
+      this.x = r.right - bw * 0.85;
       this.richtung = -1;
     }
-    this.wand = null;
-    this.zustand = "idle";
-    this.bis = jetzt + this.zw(800, 2000);
+    this.kletterei = null;
+    this.starteUebergang(this.stehPose(), 750, "klettern", jetzt, (j) => {
+      this.wand = null;
+      this.zustand = "landen";
+      this.bis = j + 260;
+    });
   }
 
-  /** Von der Wand abstoßen und auf den Boden springen. */
+  /** Von der Wand abstoßen: auf eine Fläche in Reichweite oder auf den Boden. */
   private wandAbsprung(jetzt: number) {
     const { bw, bh } = this.masse();
     const wand = this.wand!;
+    const startRot = wand.seite === "links" ? -90 : 90; // Kopf oben, nach dem Spiegeln
     this.x = this.cx - bw / 2;
     this.fussY = this.cy + bh / 2;
     this.richtung = wand.seite === "links" ? 1 : -1;
     this.wand = null;
+    this.kletterei = null;
     this.ort = { art: "boden" };
-    this.springe(this.klemmeX(this.x + this.richtung * this.zw(80, 200)), this.u.hoehe, { art: "boden" }, jetzt);
+    const ziel = this.waehleFlaeche((f) => {
+      const mitte = (f.r.left + f.r.right) / 2;
+      return (
+        Math.abs(mitte - (this.x + bw / 2)) < SPRUNG_WEIT_PX &&
+        (mitte - this.x) * this.richtung > 0 &&
+        this.fussY - f.r.top <= SPRUNG_MAX_PX * 0.5
+      );
+    });
+    if (ziel && this.u.zufall() < 0.6) {
+      this.springe(this.landeX(ziel.r), ziel.r.top, { art: "flaeche", q: ziel.q }, jetzt, startRot);
+    } else {
+      this.springe(this.klemmeX(this.x + this.richtung * this.zw(80, 200)), this.u.hoehe, { art: "boden" }, jetzt, startRot);
+    }
+  }
+
+  private landeX(r: Rechteck) {
+    const { bw } = this.masse();
+    const rand = Math.min(10, (r.right - r.left) / 2);
+    return this.zw(r.left + rand, r.right - rand) - bw / 2;
+  }
+
+  private waehleFlaeche(passt: (f: Flaeche) => boolean): Flaeche | null {
+    const kandidaten = this.u.flaechen().filter(passt);
+    if (!kandidaten.length) return null;
+    return kandidaten[Math.floor(this.u.zufall() * kandidaten.length)];
   }
 
   streicheln(jetzt: number): boolean {
-    if (this.zustand === "raus" || this.zustand === "sprung" || this.zustand === "klettern") return false;
+    if (["raus", "sprung", "klettern", "uebergang"].includes(this.zustand)) return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     this.zustand = "freuen";
     this.bis = jetzt + 1600;
@@ -230,24 +361,44 @@ export class PetBewegung {
     const { bw } = this.masse();
     const u = this.u;
     const w = u.zufall();
+    const mitte = this.x + bw / 2;
 
-    if (this.ort.art === "plattform") {
-      const r = u.rechteckVon(this.ort.el);
+    if (this.ort.art === "flaeche") {
+      const r = this.ort.q.rechteck();
       if (!r) return this.fallen(jetzt);
       const ende = jetzt >= this.besuchEnde;
-      if (!ende && !this.geschlafen && w < 0.3) {
+      const breit = r.right - r.left;
+      if (!ende && !this.geschlafen && breit >= bw * 0.5 && w < 0.15) {
         this.zustand = "schlafen";
         this.geschlafen = true;
         this.bis = jetzt + this.zw(6000, 14000);
         return;
       }
-      if (!ende && w < 0.65) {
-        this.laufeZu(this.zw(r.left - bw * 0.2, r.right - bw * 0.8));
+      if (!ende && breit > bw * 0.4 && w < 0.4) {
+        this.laufeZu(this.landeX(r));
         return;
       }
-      // Runter auf den Boden, neben das Popup.
+      if (!ende && w < 0.85) {
+        // Zur nächsten Fläche hüpfen — nach oben nur in Sprungweite.
+        const ziel = this.waehleFlaeche((f) => {
+          const fm = (f.r.left + f.r.right) / 2;
+          const gleich = Math.abs(f.r.top - r.top) < 3 && f.r.left < r.right && f.r.right > r.left;
+          return (
+            !gleich &&
+            Math.abs(fm - mitte) < SPRUNG_WEIT_PX &&
+            r.top - f.r.top <= SPRUNG_MAX_PX &&
+            f.r.top - r.top > -SPRUNG_MAX_PX
+          );
+        });
+        if (ziel) {
+          this.springe(this.landeX(ziel.r), ziel.r.top, { art: "flaeche", q: ziel.q }, jetzt);
+          return;
+        }
+      }
+      // Runter auf den Boden, neben die Fläche.
       const rechts = u.zufall() < 0.5;
       const zx = rechts ? r.right + this.zw(10, 80) : r.left - bw - this.zw(10, 80);
+      this.ort = { art: "boden" };
       this.springe(this.klemmeX(zx), u.hoehe, { art: "boden" }, jetzt);
       return;
     }
@@ -259,38 +410,47 @@ export class PetBewegung {
       this.zielX = this.richtung > 0 ? u.breite + 4 : -bw - 4;
       return;
     }
-    if (!this.haeufchenGemacht && w < 0.12) {
+    if (!this.haeufchenGemacht && w < 0.1) {
       this.zustand = "haeufchen";
       this.bis = jetzt + 1800;
       return;
     }
-    const popups = u.popups();
-    if (popups.length && w < 0.5) {
-      const { el, r } = popups[Math.floor(u.zufall() * popups.length)];
-      const hoch = u.hoehe - r.top;
-      const vonLinks = this.x + bw / 2 < (r.left + r.right) / 2;
-      const springen = hoch <= SPRUNG_MAX_PX * 0.6 || (hoch <= SPRUNG_MAX_PX && u.zufall() < 0.5);
-      if (springen) {
-        const absprung = this.klemmeX(vonLinks ? r.left - bw - 30 : r.right + 30);
-        const landung = vonLinks ? r.left - bw * 0.1 : r.right - bw * 0.9;
-        this.laufeZu(absprung, (j) => this.springe(landung, r.top, { art: "plattform", el }, j));
-      } else {
-        // An der Seite hochklettern: Wand ist rechts vom Pet, wenn er links davon steht.
-        const wand: Wand = vonLinks ? { x: r.left, seite: "rechts", el } : { x: r.right, seite: "links", el };
-        const start = this.klemmeX(vonLinks ? r.left - bw * 0.6 : r.right - bw * 0.4);
-        this.laufeZu(start, () => this.klettere(wand, r.top));
+    if (w < 0.45) {
+      const ziel = this.waehleFlaeche((f) => u.hoehe - f.r.top <= SPRUNG_MAX_PX && u.hoehe - f.r.top > 20);
+      if (ziel) {
+        const zm = (ziel.r.left + ziel.r.right) / 2;
+        if (Math.abs(zm - mitte) < 220) {
+          this.springe(this.landeX(ziel.r), ziel.r.top, { art: "flaeche", q: ziel.q }, jetzt);
+        } else {
+          const absprung = this.klemmeX(zm - bw / 2 - Math.sign(zm - mitte) * 120);
+          this.laufeZu(absprung, (j) => {
+            const r = ziel.q.rechteck();
+            if (r) this.springe(this.landeX(r), r.top, { art: "flaeche", q: ziel.q }, j);
+          });
+        }
+        return;
       }
-      return;
     }
-    if (w < 0.62) {
+    if (w < 0.6) {
+      const waende = u.waende().filter((f) => u.hoehe - f.r.top > SPRUNG_MAX_PX * 0.6);
+      if (waende.length) {
+        const { q, r } = waende[Math.floor(u.zufall() * waende.length)];
+        // Wand ist rechts vom Pet, wenn er links vom Popup steht.
+        const vonLinks = mitte < (r.left + r.right) / 2;
+        const wand: Wand = vonLinks ? { x: r.left, seite: "rechts", q } : { x: r.right, seite: "links", q };
+        const start = this.klemmeX(vonLinks ? r.left - bw * 0.6 : r.right - bw * 0.4);
+        this.laufeZu(start, (j) => this.klettere(wand, r.top, j));
+        return;
+      }
+    }
+    if (w < 0.7) {
       // Bildschirmrand hochklettern, oben kurz hängen, dann abspringen.
       const links = u.zufall() < 0.5;
-      const wand: Wand = links ? { x: 0, seite: "links", el: null } : { x: u.breite, seite: "rechts", el: null };
-      this.laufeZu(links ? 0 : this.klemmeX(u.breite), () => this.klettere(wand, this.zw(0.3, 0.6) * u.hoehe));
+      const wand: Wand = links ? { x: 0, seite: "links", q: null } : { x: u.breite, seite: "rechts", q: null };
+      this.laufeZu(links ? 0 : this.klemmeX(u.breite), (j) => this.klettere(wand, this.zw(0.3, 0.6) * u.hoehe, j));
       return;
     }
-    if (w < 0.74) {
-      // Kleiner Hüpfer.
+    if (w < 0.78) {
       this.springe(this.klemmeX(this.x + this.richtung * this.zw(30, 70)), u.hoehe, { art: "boden" }, jetzt);
       return;
     }
@@ -299,25 +459,67 @@ export class PetBewegung {
 
   // ── Takt ────────────────────────────────────────────────────────────────
 
-  tick(jetzt: number, dt: number) {
+  private kletterTakt(jetzt: number) {
     const { bw, bh } = this.masse();
+    const wand = this.wand!;
+    const k = this.kletterei!;
+    if (wand.q) {
+      const r = wand.q.rechteck();
+      if (!r) return this.wandAbsprung(jetzt);
+      this.kletterZielY = r.top;
+    }
+    const t = Math.min(1, (jetzt - k.t0) / k.dauer);
+    if (k.phase === "zug") this.cy = k.vonCy + (k.nachCy - k.vonCy) * auslaufen(t);
+    if (k.phase === "rutsch") this.cy = k.vonCy + (k.nachCy - k.vonCy) * glatt(t);
+    if (t < 1) return;
+
+    // Phase vorbei → oben angekommen?
+    if (wand.q && this.cy - bw / 2 <= this.kletterZielY - bh * 0.35) {
+      return this.hochziehen(wand, wand.q.rechteck()!, jetzt);
+    }
+    if (!wand.q && this.cy <= this.kletterZielY) {
+      this.zustand = "haengen";
+      this.bis = jetzt + this.zw(1800, 3500);
+      return;
+    }
+    const naechste = (phase: KletterPhase, dauer: number, nachCy = this.cy) => {
+      k.phase = phase;
+      k.t0 = jetzt;
+      k.dauer = dauer;
+      k.vonCy = this.cy;
+      k.nachCy = nachCy;
+    };
+    if (k.phase === "zug") {
+      k.zuege += 1;
+      k.zuegeBisRast -= 1;
+      k.frameBasis = (k.frameBasis + KLETTER_FRAMES / 2) % KLETTER_FRAMES;
+      if (k.zuege > 2 && this.u.zufall() < 0.12) return naechste("rutsch", 280, this.cy + this.zw(10, 18));
+      if (k.zuegeBisRast <= 0) {
+        k.zuegeBisRast = Math.round(this.zw(4, 6));
+        return naechste("rast", this.zw(900, 1700));
+      }
+      return naechste("griff", this.zw(200, 350));
+    }
+    // griff / rast / rutsch vorbei → nächster Klimmzug, je höher desto mühsamer.
+    naechste("zug", this.zw(420, 600) + Math.min(k.zuege, 15) * 10, this.cy - this.zw(22, 32));
+  }
+
+  tick(jetzt: number, dt: number) {
+    const { bw } = this.masse();
     const u = this.u;
 
-    // Boden folgt der Fenstergröße, Plattform dem Popup.
-    if (this.zustand !== "sprung" && this.zustand !== "klettern" && this.zustand !== "haengen") {
+    // Boden folgt der Fenstergröße, Fläche ihrem Element (Scrollen, Popup zu).
+    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "raus"].includes(this.zustand)) {
       if (this.ort.art === "boden") {
         this.fussY = u.hoehe;
       } else {
-        const r = u.rechteckVon(this.ort.el);
+        const r = this.ort.q.rechteck();
         if (!r) {
-          this.ort = { art: "boden" };
           this.fallen(jetzt);
         } else {
           this.fussY = r.top;
-          const min = r.left - bw * 0.25;
-          const max = r.right - bw * 0.75;
-          this.x = Math.min(Math.max(this.x, min), max);
-          this.zielX = Math.min(Math.max(this.zielX, min), max);
+          this.x = this.klemmeAufFlaeche(this.x, r);
+          this.zielX = this.klemmeAufFlaeche(this.zielX, r);
         }
       }
     }
@@ -338,6 +540,7 @@ export class PetBewegung {
             const weiter = this.nachAnkunft;
             this.nachAnkunft = null;
             this.zustand = "idle";
+            this.bis = jetzt + 400;
             weiter(jetzt);
           } else {
             this.zustand = "idle";
@@ -348,52 +551,49 @@ export class PetBewegung {
       }
       case "sprung": {
         const s = this.sprung!;
-        let t = (jetzt - s.t0) / s.dauer;
-        if (s.danach.art === "plattform") {
-          const r = u.rechteckVon(s.danach.el);
+        const t = (jetzt - s.t0) / s.dauer;
+        if (s.danach.art === "flaeche") {
+          const r = s.danach.q.rechteck();
           if (!r) {
             s.danach = { art: "boden" };
             s.y1 = u.hoehe;
-          } else s.y1 = r.top;
+          } else {
+            s.y1 = r.top;
+            s.x1 = this.klemmeAufFlaeche(s.x1, r);
+          }
         } else s.y1 = u.hoehe;
         if (t >= 1) {
-          t = 1;
           this.x = s.x1;
           this.fussY = s.y1;
           this.ort = s.danach;
           this.sprung = null;
-          this.zustand = "idle";
-          this.bis = jetzt + this.zw(600, 1500);
+          this.zustand = "landen";
+          this.bis = jetzt + 220;
         } else {
           this.x = s.x0 + (s.x1 - s.x0) * t;
           this.fussY = s.y0 + (s.y1 - s.y0) * t - s.bogen * 4 * t * (1 - t);
         }
         break;
       }
-      case "klettern": {
-        const wand = this.wand!;
-        if (wand.el) {
-          const r = u.rechteckVon(wand.el);
-          if (!r) {
-            this.wandAbsprung(jetzt);
-            break;
-          }
-          this.kletterZielY = r.top;
-        }
-        this.cy -= KLETTER_PX_S * dt;
-        if (wand.el) {
-          // Kopf über der Kante → hinaufsteigen.
-          if (this.cy - bw / 2 <= this.kletterZielY - bh * 0.4) {
-            this.aufsteigen(wand, u.rechteckVon(wand.el)!, jetzt);
-          }
-        } else if (this.cy <= this.kletterZielY) {
-          this.zustand = "haengen";
-          this.bis = jetzt + this.zw(1500, 3500);
+      case "uebergang": {
+        const ue = this.uebergang!;
+        if (jetzt - ue.t0 >= ue.dauer) {
+          this.uebergang = null;
+          ue.danach(jetzt);
         }
         break;
       }
+      case "klettern":
+        this.kletterTakt(jetzt);
+        break;
       case "haengen":
         if (jetzt >= this.bis) this.wandAbsprung(jetzt);
+        break;
+      case "landen":
+        if (jetzt >= this.bis) {
+          this.zustand = "idle";
+          this.bis = jetzt + this.zw(500, 1400);
+        }
         break;
       case "haeufchen":
         if (jetzt >= this.bis) {
@@ -413,56 +613,94 @@ export class PetBewegung {
         break;
     }
 
-    const anim: Animation =
-      this.zustand === "laufen" || this.zustand === "raus" || this.zustand === "klettern"
-        ? "lauf"
-        : this.zustand === "sprung"
-          ? "sprung"
-          : this.zustand === "freuen"
-            ? "freuen"
-            : this.zustand === "schlafen"
-              ? "schlafen"
-              : "idle";
+    const anim = this.gewuenschteAnimation();
     if (anim !== this.animation) {
       this.animation = anim;
       this.animStart = jetzt;
     }
   }
 
-  darstellung(jetzt: number): Darstellung {
-    const { bw, bh, fuss } = this.masse();
-    const basis = {
-      animation: this.animation,
-      animStart: this.animStart,
-      hockt: this.zustand === "haeufchen",
-      schlaeft: this.zustand === "schlafen",
-    };
-    if ((this.zustand === "klettern" || this.zustand === "haengen") && this.wand) {
-      // Kopf nach oben, Füße an der Wand.
-      const rechts = this.wand.seite === "rechts";
+  private gewuenschteAnimation(): Animation {
+    switch (this.zustand) {
+      case "laufen":
+      case "raus":
+        return "lauf";
+      case "klettern":
+        return this.kletterei && this.kletterei.phase === "rast" ? "idle" : "klettern";
+      case "haengen":
+        return "idle";
+      case "uebergang":
+        return this.uebergang?.animation ?? "idle";
+      case "sprung":
+        return "sprung";
+      case "freuen":
+        return "freuen";
+      case "schlafen":
+        return "schlafen";
+      default:
+        return "idle";
+    }
+  }
+
+  private aktuellePose(jetzt: number): Pose {
+    const ue = this.uebergang;
+    if (this.zustand === "uebergang" && ue) {
+      const t = glatt(Math.min(1, (jetzt - ue.t0) / ue.dauer));
+      // Beim Hochziehen erst hoch, dann drüber: Höhe läuft voraus, Seite hinterher.
+      const tHoch = glatt(Math.min(1, t * 1.6));
       return {
-        ...basis,
-        left: this.cx - bw / 2,
-        top: this.cy - bh / 2,
-        transform: rechts ? "rotate(-90deg)" : "rotate(90deg) scaleX(-1)",
-        kopfX: this.cx,
-        kopfY: this.cy - bw / 2,
+        left: ue.von.left + (ue.nach.left - ue.von.left) * t,
+        top: ue.von.top + (ue.nach.top - ue.von.top) * tHoch,
+        rot: ue.von.rot + (ue.nach.rot - ue.von.rot) * t,
+        flip: ue.nach.flip,
       };
     }
-    let transform = this.richtung < 0 ? "scaleX(-1)" : "";
+    if ((this.zustand === "klettern" || this.zustand === "haengen") && this.wand) {
+      const p = this.kletterPose(this.wand, this.cx, this.cy);
+      // Verschnaufen/Hängen: wackelt vor Anstrengung.
+      const rast = this.zustand === "haengen" || this.kletterei?.phase === "rast";
+      if (rast) p.rot += Math.sin(jetzt / 90) * 2.5;
+      if (this.kletterei?.phase === "griff") p.rot += Math.sin(jetzt / 60) * 1.2;
+      return p;
+    }
+    const p = this.stehPose();
     if (this.zustand === "sprung" && this.sprung) {
       const t = Math.min(1, (jetzt - this.sprung.t0) / this.sprung.dauer);
-      // Nase hoch beim Steigen, runter beim Fallen.
-      transform += ` rotate(${(-18 * (1 - 2 * t)).toFixed(1)}deg)`;
+      // Nase hoch beim Steigen, runter beim Fallen; Absprung von der Wand dreht aus.
+      const neigung = (p.flip ? 18 : -18) * (1 - 2 * t);
+      const aus = Math.min(1, t / 0.35);
+      p.rot = this.sprung.startRot * (1 - aus) + neigung * aus;
     }
-    const kopfRechts = this.richtung > 0;
+    return p;
+  }
+
+  darstellung(jetzt: number): Darstellung {
+    const { bw, bh } = this.masse();
+    const p = this.aktuellePose(jetzt);
+    const k = this.kletterei;
+    let frame: number | null = null;
+    if (this.zustand === "klettern" && k && k.phase !== "rast") {
+      // Beine bewegen sich nur beim Klimmzug, beim Nachgreifen stehen sie.
+      const fortschritt = k.phase === "zug" ? Math.min(1, (jetzt - k.t0) / k.dauer) : 0;
+      frame = Math.floor(k.frameBasis + fortschritt * (KLETTER_FRAMES / 2)) % KLETTER_FRAMES;
+    }
+    const vertikal = Math.abs(p.rot) > 45;
+    const kopfX = vertikal ? p.left + bw / 2 : p.left + (p.flip ? bw * 0.2 : bw * 0.8);
+    const kopfY = vertikal ? p.top + bh / 2 - bw / 2 : p.top;
+    const schwitzt =
+      this.zustand === "haengen" || (this.zustand === "klettern" && !!k && (k.phase === "rast" || k.zuege >= 3));
     return {
-      ...basis,
-      left: this.x,
-      top: this.fussY - bh + fuss,
-      transform: transform || "none",
-      kopfX: this.x + (kopfRechts ? bw * 0.8 : bw * 0.2),
-      kopfY: this.fussY - bh + fuss,
+      left: p.left,
+      top: p.top,
+      transform: `rotate(${p.rot.toFixed(1)}deg)${p.flip ? " scaleX(-1)" : ""}`,
+      animation: this.animation,
+      animStart: this.animStart,
+      frame,
+      hockt: this.zustand === "haeufchen" || this.zustand === "landen",
+      schlaeft: this.zustand === "schlafen",
+      schwitzt,
+      kopfX,
+      kopfY,
     };
   }
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
-import { PetBewegung, type Masse, type Rechteck, type Umgebung } from "./bewegung";
+import { PetBewegung, type Flaeche, type Masse, type Quelle, type Rechteck, type Umgebung } from "./bewegung";
 import "./pets.css";
 
 /**
@@ -26,6 +26,7 @@ const SPRITE = {
     idle: { frames: 24, ms: 110 },
     lauf: { frames: 32, ms: 35 },
     freuen: { frames: 8, ms: 90 },
+    klettern: { frames: 32, ms: 35 },
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
   },
@@ -42,23 +43,123 @@ function masse(): Masse {
   return { bw: SPRITE.breite * s, bh: SPRITE.hoehe * s, fuss: SPRITE.fussLuft * s };
 }
 
-/** Bildschirm und offene Popups (`Fenster`) als Kletter-/Sprungziele. */
+/**
+ * Worauf er stehen kann (Mark, 11.11.2026: „auf Wörtern, Linien, Punkten,
+ * Kästchen usw. rumlaufen“). Textzeilen über Range-Rechtecke, dazu Knöpfe,
+ * Felder, Bilder, Linien, Punkte-Reihen, Kacheln/Karten und Popups.
+ */
+const KASTEN = [
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "img",
+  "hr",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "table",
+  ".fn-fenster",
+  ".cl-roehre",
+  ".dot-reihe",
+  ".kk-punkt",
+  ".bo-punkt",
+  "[class*='kachel']",
+  "[class*='karte']",
+].join(",");
+const MAX_TEXTKNOTEN = 400;
+const MAX_KAESTEN = 300;
+
+/** Liegt an dieser Stelle wirklich das erwartete Element oben (nicht verdeckt,
+ * nicht weggescrollt in einem Container)? Das Pet selbst zählt nicht. */
+function obenAuf(x: number, y: number, ziel: Element): boolean {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (el.closest(".pet-ebene")) continue;
+    return el === ziel || ziel.contains(el) || el.contains(ziel);
+  }
+  return false;
+}
+
+function brauchbar(r: Rechteck, m: Masse, hoehe: number, breite: number): boolean {
+  return (
+    r.right - r.left >= 14 &&
+    r.top >= m.bh - m.fuss + 4 && // Platz für den Kopf
+    r.top <= hoehe - 30 && // sonst ist es praktisch der Boden
+    r.right > 0 &&
+    r.left < breite
+  );
+}
+
 function umgebung(): Umgebung {
-  const { bw, bh } = masse();
-  const rechteckVon = (el: Element): Rechteck | null => {
-    if (!el.isConnected) return null;
-    const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 ? r : null;
+  const m = masse();
+  const breite = window.innerWidth;
+  const hoehe = window.innerHeight;
+
+  // Mit offenem Popup nur noch innerhalb des obersten Popups — der Rest liegt
+  // abgedunkelt dahinter.
+  const fenster = Array.from(document.querySelectorAll(".fn-fenster"));
+  const wurzel: Element = fenster.length ? fenster[fenster.length - 1] : document.body;
+
+  const elementQuelle = (el: Element): Quelle => ({
+    rechteck: () => {
+      if (!el.isConnected) return null;
+      const r = el.getBoundingClientRect();
+      if (!brauchbar(r, m, hoehe, breite)) return null;
+      return obenAuf((Math.max(r.left, 0) + Math.min(r.right, breite)) / 2, r.top + 2, el) ? r : null;
+    },
+  });
+
+  const flaechen = (): Flaeche[] => {
+    const aus: Flaeche[] = [];
+    const kaesten = [wurzel, ...Array.from(wurzel.querySelectorAll(KASTEN)).slice(0, MAX_KAESTEN)];
+    for (const el of kaesten) {
+      if (el === document.body) continue;
+      const q = elementQuelle(el);
+      const r = q.rechteck();
+      if (r) aus.push({ q, r });
+    }
+    const walker = document.createTreeWalker(wurzel, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) =>
+        n.nodeValue?.trim() && !n.parentElement?.closest(".pet-ebene, script, style")
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT,
+    });
+    let knoten: Node | null;
+    let gezaehlt = 0;
+    while ((knoten = walker.nextNode()) && gezaehlt < MAX_TEXTKNOTEN) {
+      gezaehlt += 1;
+      const text = knoten;
+      const eltern = text.parentElement;
+      if (!eltern) continue;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const zeilen = range.getClientRects();
+      for (let i = 0; i < zeilen.length; i++) {
+        const q: Quelle = {
+          rechteck: () => {
+            if (!text.isConnected) return null;
+            const r = range.getClientRects()[i];
+            if (!r || !brauchbar(r, m, hoehe, breite)) return null;
+            return obenAuf((r.left + r.right) / 2, r.top + Math.min(4, r.height / 2), eltern) ? r : null;
+          },
+        };
+        const r = q.rechteck();
+        if (r) aus.push({ q, r });
+      }
+    }
+    return aus;
   };
+
   return {
-    breite: window.innerWidth,
-    hoehe: window.innerHeight,
-    rechteckVon,
-    popups: () =>
-      Array.from(document.querySelectorAll(".fn-fenster"))
-        .map((el) => ({ el, r: el.getBoundingClientRect() as Rechteck }))
-        // Am Handy ist ein Fenster bildschirmfüllend — da ist oben kein Platz.
-        .filter(({ r }) => r.top > bh + 30 && r.right - r.left > bw * 1.3),
+    breite,
+    hoehe,
+    flaechen,
+    // Klettern nur an Popups, die oben Platz lassen (am Handy bildschirmfüllend).
+    waende: () =>
+      fenster
+        .map((el) => ({ q: elementQuelle(el), r: el.getBoundingClientRect() as Rechteck }))
+        .filter(({ r }) => r.top > m.bh + 30 && r.right - r.left > m.bw * 1.3),
     zufall: Math.random,
   };
 }
@@ -136,6 +237,7 @@ interface Herz {
 function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => void }) {
   const figur = useRef<HTMLDivElement | null>(null);
   const zzz = useRef<HTMLSpanElement | null>(null);
+  const tropfen = useRef<HTMLSpanElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
   const bewegung = useRef<PetBewegung | null>(null);
@@ -160,7 +262,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
       if (el) {
         const s = skala();
         const anim = SPRITE.animationen[d.animation];
-        const frame = Math.floor((jetzt - d.animStart) / anim.ms) % anim.frames;
+        const frame = d.frame ?? Math.floor((jetzt - d.animStart) / anim.ms) % anim.frames;
         el.style.width = `${SPRITE.breite * s}px`;
         el.style.height = `${SPRITE.hoehe * s}px`;
         el.style.left = `${d.left}px`;
@@ -170,6 +272,12 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         el.style.backgroundPosition = `${-frame * SPRITE.breite * s}px 0`;
         el.style.transform = d.transform;
         el.dataset.hockt = d.hockt ? "ja" : "nein";
+      }
+      const tr = tropfen.current;
+      if (tr) {
+        tr.style.display = d.schwitzt ? "block" : "none";
+        tr.style.left = `${d.kopfX}px`;
+        tr.style.top = `${d.kopfY + 6}px`;
       }
       const z = zzz.current;
       if (z) {
@@ -208,6 +316,10 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
+      </span>
+      <span ref={tropfen} className="pet-tropfen" style={{ display: "none" }}>
+        <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
+        <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
       </span>
       {herzen.map((h, i) => (
         <span

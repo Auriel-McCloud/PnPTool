@@ -57,7 +57,8 @@ export function DotPool({
   }
 
   return (
-    <span style={{ display: "inline-flex", gap: 3, flexWrap: "nowrap", verticalAlign: "middle" }}>
+    // `dot-reihe`: Landeplatz fürs Critter-Pet (pets/PetOverlay.tsx), keine Optik.
+    <span className="dot-reihe" style={{ display: "inline-flex", gap: 3, flexWrap: "nowrap", verticalAlign: "middle" }}>
       {dots.map((n) => {
         const gefuellt = n <= value;
         const istFest = n <= fest;

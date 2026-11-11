@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-11] update | Critter-Pet Übergänge und Text-Flächen
+
+Übergangs-Animationen, mühsames Klettern, Laufen auf Wörtern/Linien/Kästchen. Siehe [[entities/critter-pet]].
+
 ## [2026-11-11] update | Critter-Pet klettert und springt
 
 Springt auf Popups, klettert seitlich hoch, schläft oben, klettert am Bildschirmrand. Siehe [[entities/critter-pet]].

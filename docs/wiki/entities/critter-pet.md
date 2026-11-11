@@ -110,6 +110,15 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   Ansagen/Verhandlungen/Bestätigungen. Logik: `frontend/src/pets/bewegung.ts`.
   Erledigt damit aus der Animationsliste: Schlafen, Popups hochklettern und
   drauflegen. Offen: Essen, Feuer-Rülpser, Traurig/Hunger.
+- **Übergänge, mühsames Klettern, Wörter/Linien/Kästchen (11.11., gebaut):**
+  Mark wollte eine Übergangs-Animation, anstrengenderes Klettern und dass er
+  „auf Wörtern, Linien, Punkten, Kästchen usw.“ herumläuft. Er hüpft jetzt
+  zwischen Textzeilen, Knöpfen, Feldern, Bildern, Linien, Punkte-Reihen,
+  Kacheln/Karten und Popups; nur was wirklich sichtbar oben liegt, bei
+  offenem Popup nur darin. Weggescrollt/verdeckt → er fällt. Übergänge:
+  an die Wand drehen, über die Kante hochziehen, aus der Wand ausdrehen,
+  Landung einfedern. Klettern: Klimmzüge mit Nachgreifen, Rast mit Wackeln
+  und Schweißtropfen, manchmal abrutschen.
 
 ## Noch offen
 
