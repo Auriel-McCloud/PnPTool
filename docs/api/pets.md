@@ -16,6 +16,10 @@ Gegenstand: wirksam, solange ein PC ihn per `BESITZT` hat (ausgerüstet egal),
 er nicht `weggeworfen` ist und nicht (auch verschachtelt, `LIEGT_IN`) in einer
 verschlossenen Kiste liegt. Mehrere Besitzer → der erste nach id.
 
+## Pause
+
+Keine Pets unterwegs, solange die Kampagneneinstellung `petsAktiv` aus ist oder ein `:Kampf` läuft (`repository.pets_pausiert`). Umschalten und Kampf beginnen/beenden gleichen sofort ab.
+
 ## Spieler: Live-Leitung
 
 `WS /api/campaigns/{cid}/pets/live` — Cookie `pnptool_session`, nur Rolle

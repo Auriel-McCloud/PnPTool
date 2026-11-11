@@ -73,6 +73,10 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # Kampagne ausdrücklich aktiviert. Bestandskampagnen bleiben dadurch
     # kompatibel und D&D-Kampagnen bekommen keinen unpassenden Chat.
     "messengerAktiv": False,
+    # Desktop-Pets (Critter-Drache, Bärbel …) auf den Spieler-Tablets. Mark,
+    # 11.11.2026: Schalter, um sie abzudrehen, wenn sich die Spieler
+    # konzentrieren sollen. Während eines Kampfs sind sie ohnehin weg.
+    "petsAktiv": True,
     # Zeigt Gewicht und Kapazität an. Rein informativ — nichts wird verhindert,
     # der Balken färbt sich nur rot. Die Spielleitung zieht die Konsequenzen.
     "gewichtAktiv": True,

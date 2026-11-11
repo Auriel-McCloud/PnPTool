@@ -211,6 +211,10 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 Glitzerwolke groß und liest ein KI-generiertes, zur Situation passendes
 Bibelzitat vor.
 
+## Abdrehen und Kampfpause (11.11.2026, gebaut)
+
+Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, Default an) und im Kampf grundsätzlich keine Pets — sie verschwinden beim Kampfbeginn und kommen nach dem Kampf beim Besitzer wieder. Spuren (Häufchen, Seiten, Flecken) bleiben liegen (Annahme).
+
 ## Nebenbei gefunden 11.11.2026
 
 Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur

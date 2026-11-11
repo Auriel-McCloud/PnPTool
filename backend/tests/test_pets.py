@@ -54,6 +54,7 @@ def welt(monkeypatch):
             "besitzerId": "anna", "besitzerName": "Anna", "mitglieder": ["anna", "ben", "cleo"],
         }],
         "haeufchen": {},
+        "pausiert": False,
     }
 
     async def pets_der_kampagne(cid):
@@ -73,7 +74,11 @@ def welt(monkeypatch):
             if h["id"] == hid and h["art"] == "haeufchen":
                 h["x"], h["y"] = x, y
 
+    async def pets_pausiert(cid):
+        return stand["pausiert"]
+
     repo = motor_modul.repository
+    monkeypatch.setattr(repo, "pets_pausiert", pets_pausiert)
     monkeypatch.setattr(repo, "pets_der_kampagne", pets_der_kampagne)
     monkeypatch.setattr(repo, "haeufchen_liste", haeufchen_liste)
     monkeypatch.setattr(repo, "haeufchen_anlegen", haeufchen_anlegen)
@@ -259,3 +264,22 @@ def test_pet_arten_und_spuren():
     assert "seite" in logic.SPUR_ARTEN
     assert "schleim" in logic.SPUR_ARTEN  # Tentakelmonster
     assert set(logic.FALLENDE_SPUREN) == {"haeufchen", "seite"}
+
+
+def test_abgedreht_oder_kampf_pets_weg_und_danach_wieder_da(welt):
+    """Mark, 11.11.2026: Schalter in den Kampagnenoptionen, im Kampf automatisch aus."""
+    m, stand = welt
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        assert [p["id"] for p in anna.letzte_pets()] == ["drache"]
+        stand["pausiert"] = True
+        await m.abgleich("k")
+        assert anna.letzte_pets() == []
+        stand["pausiert"] = False
+        await m.abgleich("k")
+        assert [p["id"] for p in anna.letzte_pets()] == ["drache"]
+        m._takt.cancel()
+
+    laufen(ablauf())

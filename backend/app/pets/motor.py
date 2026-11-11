@@ -121,7 +121,12 @@ class PetMotor:
         greifen neue Pets, Besitzerwechsel und Party-Änderungen ohne Neustart.
         Ein Pet ist nur unterwegs, solange sein Besitzer eingeloggt ist.
         """
-        aus_db = {d["id"]: d for d in await repository.pets_der_kampagne(campaign_id)}
+        # Abgedreht oder Kampf: alle Pets verschwinden (und kommen danach beim
+        # Besitzer wieder) — wie ein Pet, das es gerade nicht gibt.
+        if await repository.pets_pausiert(campaign_id):
+            aus_db: dict[str, dict] = {}
+        else:
+            aus_db = {d["id"]: d for d in await repository.pets_der_kampagne(campaign_id)}
         betroffen: set[str] = set()
         async with self._schloss:
             online = self.online(campaign_id)

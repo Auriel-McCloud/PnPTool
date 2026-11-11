@@ -214,6 +214,10 @@ async def einstellungen_aendern(campaign_id: str, body: dict) -> dict:
     nachgetragen werden muss. Unbekannte Schlüssel verwirft das Repository.
     """
     aktuell = await set_einstellungen(campaign_id, body)
+    if "petsAktiv" in body:
+        from app.pets.motor import motor as pet_motor
+
+        await pet_motor.abgleich(campaign_id)
     if "fogOfWar" in body:
         from app.kampf import repository as kampf_repo
         from app.kampf.routes import _tokens_senden

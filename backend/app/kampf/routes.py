@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Literal
 
@@ -259,10 +260,21 @@ async def _party_und_ort_automatisch_aufnehmen(campaign_id: str, kampf: dict | N
     return kampf
 
 
+async def _pets_abgleichen(campaign_id: str) -> None:
+    """Kampf an → Desktop-Pets weg, Kampf aus → wieder da (Mark, 11.11.2026)."""
+    from app.pets.motor import motor as pet_motor
+
+    try:
+        await pet_motor.abgleich(campaign_id)
+    except Exception:
+        logging.getLogger(__name__).warning("Pet-Abgleich beim Kampfwechsel fehlgeschlagen", exc_info=True)
+
+
 @router.post("", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
 async def beginne(campaign_id: str):
     kampf = await repository.beginne(campaign_id)
     kampf = await _party_und_ort_automatisch_aufnehmen(campaign_id, kampf)
+    await _pets_abgleichen(campaign_id)
     return await _kampf_antworten(kampf)
 
 
@@ -271,6 +283,7 @@ async def beende(campaign_id: str):
     kampf = await repository.hole(campaign_id)
     karte_id = kampf.get("battlemapId") if kampf else None
     await repository.beende(campaign_id)
+    await _pets_abgleichen(campaign_id)
     if karte_id:
         await karten_verteiler.rundrufen(
             karte_id,

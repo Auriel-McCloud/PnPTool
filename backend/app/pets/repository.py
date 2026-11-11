@@ -67,6 +67,22 @@ _PET_TRAEGER = """
 """
 
 
+async def pets_pausiert(campaign_id: str) -> bool:
+    """Keine Pets unterwegs: in den Kampagnenoptionen abgedreht oder es läuft
+    ein Kampf (Mark, 11.11.2026: „grundsätzlich will ich nicht, dass die Pets
+    im Kampf rumlaufen“ — sie kommen nach dem Kampf von selbst wieder)."""
+    from app.campaigns.repository import get_einstellungen
+
+    if not (await get_einstellungen(campaign_id)).get("petsAktiv", True):
+        return True
+    async with get_driver().session() as session:
+        result = await session.run(
+            "MATCH (k:Kampf {campaignId: $campaign_id}) RETURN count(k) AS n", campaign_id=campaign_id
+        )
+        r = await result.single()
+        return bool(r and r["n"])
+
+
 async def art_lesen(campaign_id: str, critter_id: str) -> dict | None:
     query = _PET_TRAEGER + """
         RETURN c.id AS id, c.petArt AS art

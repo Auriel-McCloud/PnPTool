@@ -232,6 +232,13 @@ export function EinstellungenFenster({
           />
 
           <Schalter
+            an={werte.petsAktiv !== false}
+            onAendern={(n) => aendern("petsAktiv", n)}
+            titel="Desktop-Pets aktiv"
+            erklaerung="Critter und Bärbel laufen und fliegen über die Tablets der Spieler. Aus, wenn sich alle konzentrieren sollen. Während eines Kampfs sind sie immer weg und kommen danach von selbst wieder."
+          />
+
+          <Schalter
             an={Boolean(werte.fogOfWar)}
             onAendern={(n) => aendern("fogOfWar", n)}
             titel="Fog of War"

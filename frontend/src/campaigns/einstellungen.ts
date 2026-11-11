@@ -20,6 +20,8 @@ export interface Einstellungen {
   digitalesWuerfelnSL: boolean;
   /** Der In-World-Messenger ist eine optionale Kampagnenfunktion. */
   messengerAktiv: boolean;
+  /** Desktop-Pets auf den Spieler-Tablets; im Kampf ohnehin weg. */
+  petsAktiv: boolean;
   /** Kampagnenweite EP — alle PCs bekommen gemeinsam EP. */
   kampagnenEP: number;
   /** Welcher KI-Anbieter für Text-Generierung dieser Kampagne gilt:
