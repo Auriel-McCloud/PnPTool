@@ -64,6 +64,12 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   bekommen.**
 - **Optik:** länglicher, wie ein **chinesischer Drache** (statt kompaktem
   Chibi-Mushu).
+- **Design festgelegt (11.11.2026):** Design 2 (chinesischer Drache, gelbe
+  Rückenzacken, Geweih-Hörner, Schnurrhaare, Flammenquaste), Körper etwas
+  dünner, **Beine unverändert kurz**. Verworfen: Brik-Mushu-Vorlage
+  („schräg“) und lange dünne Beine („schrecklich“). Generator + GIFs:
+  `docs/assets/critter-pet/drache_final.py` (`python drache_final.py <ziel>`),
+  `final_idle.gif`, `final_lauf.gif`.
 
 ## Noch offen
 
