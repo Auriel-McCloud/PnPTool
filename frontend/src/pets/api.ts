@@ -22,6 +22,8 @@ export interface Haeufchen {
   /** Anteile 0..1 der Bildschirmbreite/-höhe. */
   x: number;
   y: number;
+  /** Häufchen (antippen) oder Brandfleck vom Feuerniesen (wegwischen). */
+  art?: "haeufchen" | "brand";
 }
 
 export type PetNachricht =

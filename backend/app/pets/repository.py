@@ -66,7 +66,8 @@ async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict
 async def haeufchen_liste(campaign_id: str, person_id: str) -> list[dict]:
     query = """
         MATCH (h:PetHaeufchen {campaignId: $campaign_id, personId: $person_id})
-        RETURN h.id AS id, h.petId AS petId, h.x AS x, h.y AS y, h.erstellt AS erstellt
+        RETURN h.id AS id, h.petId AS petId, h.x AS x, h.y AS y, h.erstellt AS erstellt,
+               coalesce(h.art, 'haeufchen') AS art
         ORDER BY h.erstellt
     """
     async with get_driver().session() as session:
@@ -74,13 +75,16 @@ async def haeufchen_liste(campaign_id: str, person_id: str) -> list[dict]:
         return [dict(r) async for r in result]
 
 
-async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: float, y: float) -> None:
-    """Legt ein Häufchen auf diesen Bildschirm; das älteste fällt bei Überlauf weg."""
+async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: float, y: float,
+                            art: str = "haeufchen") -> None:
+    """Legt eine Spur (Häufchen/Brandfleck) auf diesen Bildschirm; die älteste
+    derselben Art fällt bei Überlauf weg. Bestandsknoten ohne `art` sind Häufchen."""
     query = """
         CREATE (:PetHaeufchen {id: $id, campaignId: $campaign_id, personId: $person_id,
-                               petId: $pet_id, x: $x, y: $y, erstellt: $erstellt})
+                               petId: $pet_id, x: $x, y: $y, erstellt: $erstellt, art: $art})
         WITH 1 AS _
         MATCH (h:PetHaeufchen {campaignId: $campaign_id, personId: $person_id})
+        WHERE coalesce(h.art, 'haeufchen') = $art
         WITH h ORDER BY h.erstellt DESC
         WITH collect(h) AS alle
         UNWIND alle[$max..] AS zuviel
@@ -97,6 +101,7 @@ async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: fl
             y=y,
             erstellt=datetime.now(timezone.utc).isoformat(),
             max=HAEUFCHEN_MAX,
+            art=art,
         )
 
 

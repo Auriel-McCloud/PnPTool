@@ -119,6 +119,13 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   an die Wand drehen, über die Kante hochziehen, aus der Wand ausdrehen,
   Landung einfedern. Klettern: Klimmzüge mit Nachgreifen, Rast mit Wackeln
   und Schweißtropfen, manchmal abrutschen.
+- **Feuerniesen, Brandflecken, Häufchen auf Flächen (11.11., gebaut):** Mark:
+  „ab und zu Feuer niesen, dann Stellen verbrennen, über die man wischen muss,
+  damit sie wieder sauber werden“. Anlauf, Hatschi, Feuerstoß; 1–2
+  Brandflecken, die liegen bleiben wie Häufchen (auch nach dem Weiterziehen)
+  und nur durch Reiben weggehen. Häufchen macht er jetzt auch oben auf Text
+  und Kästchen — die Position ist eine Bildschirmstelle, beim Scrollen bleibt
+  das Häufchen also am Bildschirm, nicht am Wort.
 
 ## Noch offen
 

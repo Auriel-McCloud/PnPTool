@@ -20,12 +20,12 @@ PLAYER (SL → Close 1008).
 Server → Tablet (immer voller Stand dieses Bildschirms):
 
 - `{"typ": "pets", "daten": [{id, name, art, besitzerId, besitzerName, seite, ankunft}]}` — Pets, die gerade hier sind. `seite` = wo es reinkommt, `ankunft` zählt je Auftritt hoch.
-- `{"typ": "haeufchen", "daten": [{id, petId, x, y, erstellt}]}` — Häufchen auf diesem Bildschirm, `x`/`y` als Anteil 0..1.
+- `{"typ": "haeufchen", "daten": [{id, petId, x, y, erstellt, art}]}` — Spuren auf diesem Bildschirm, `x`/`y` als Anteil 0..1, `art` `haeufchen` (antippen) oder `brand` (Feuerniesen, wegwischen).
 
 Tablet → Server:
 
 - `{"typ": "raus", "petId", "seite": "links"|"rechts"}` — nur vom aktuellen Wirt angenommen.
-- `{"typ": "haeufchen", "petId", "x", "y"}` — nur vom aktuellen Wirt; über 12 fällt das älteste weg.
+- `{"typ": "haeufchen", "petId", "x", "y", "art"}` — nur vom aktuellen Wirt; `art` fehlt = Häufchen; über 12 je Art fällt die älteste weg.
 - `{"typ": "wegmachen", "id"}` — nur eigene Häufchen.
 
 Wandern: nur zu eingeloggten PCs der Party des Besitzers (ohne Party nur zum

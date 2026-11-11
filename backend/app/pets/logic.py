@@ -12,8 +12,13 @@ import random
 PET_ARTEN = ("drache",)
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
-# Wird es mehr, verschwindet das älteste.
+# Wird es mehr, verschwindet das älteste (je Art gezählt).
 HAEUFCHEN_MAX = 12
+
+# Was ein Pet auf einem Bildschirm hinterlassen kann: Häufchen und
+# Brandflecken vom Feuerniesen (Mark, 11.11.2026). Beides bleibt liegen,
+# bis der Spieler es wegmacht (antippen bzw. sauberwischen).
+SPUR_ARTEN = ("haeufchen", "brand")
 
 # Pause zwischen „rechts raus“ und „links rein“ beim nächsten Tablet.
 UNTERWEGS_MIN_S = 3.0

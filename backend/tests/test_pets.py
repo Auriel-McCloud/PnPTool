@@ -62,8 +62,8 @@ def welt(monkeypatch):
     async def haeufchen_liste(cid, pid):
         return list(stand["haeufchen"].get(pid, []))
 
-    async def haeufchen_anlegen(cid, pid, pet_id, x, y):
-        stand["haeufchen"].setdefault(pid, []).append({"id": f"h{x}", "petId": pet_id, "x": x, "y": y})
+    async def haeufchen_anlegen(cid, pid, pet_id, x, y, art="haeufchen"):
+        stand["haeufchen"].setdefault(pid, []).append({"id": f"h{x}", "petId": pet_id, "x": x, "y": y, "art": art})
 
     async def haeufchen_weg(cid, pid, hid):
         stand["haeufchen"][pid] = [h for h in stand["haeufchen"].get(pid, []) if h["id"] != hid]
@@ -192,6 +192,22 @@ def test_haeufchen_nur_vom_wirt_und_bleibt(welt):
         assert len(stand["haeufchen"]["anna"]) == 1  # bleibt liegen
         await m.wegmachen("k", "anna", "h0.5")
         assert stand["haeufchen"]["anna"] == []
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_brandfleck_bleibt_und_fremde_art_wird_ignoriert(welt):
+    m, stand = welt
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.haeufchen("k", "anna", "drache", 0.3, 0.4, "brand")
+        await m.haeufchen("k", "anna", "drache", 0.3, 0.4, "konfetti")  # gibt es nicht
+        assert [h["art"] for h in stand["haeufchen"]["anna"]] == ["brand"]
+        letzte = [u["daten"] for u in anna.post if u["typ"] == "haeufchen"][-1]
+        assert letzte[0]["art"] == "brand"
         m._takt.cancel()
 
     laufen(ablauf())

@@ -11,11 +11,11 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
   Server → Tablet
     {"typ": "pets", "daten": [{id, name, art, besitzerId, besitzerName, seite, ankunft}]}
         — alle Pets, die GERADE auf diesem Bildschirm sind.
-    {"typ": "haeufchen", "daten": [{id, petId, x, y}]}
-        — alle Häufchen auf diesem Bildschirm.
+    {"typ": "haeufchen", "daten": [{id, petId, x, y, art}]}
+        — alle Spuren (Häufchen, Brandflecken) auf diesem Bildschirm.
   Tablet → Server
     {"typ": "raus", "petId", "seite": "links"|"rechts"}
-    {"typ": "haeufchen", "petId", "x", "y"}   (Anteile 0..1)
+    {"typ": "haeufchen", "petId", "x", "y", "art"}   (Anteile 0..1; art haeufchen|brand)
     {"typ": "wegmachen", "id"}
 """
 
@@ -213,11 +213,12 @@ class PetMotor:
             self._losschicken(campaign_id, pet, person_id, "rechts" if seite == "rechts" else "links")
         await self._pets_senden(campaign_id, person_id)
 
-    async def haeufchen(self, campaign_id: str, person_id: str, pet_id: str, x: float, y: float) -> None:
+    async def haeufchen(self, campaign_id: str, person_id: str, pet_id: str, x: float, y: float,
+                        art: str = "haeufchen") -> None:
         pet = self._pets.get(campaign_id, {}).get(pet_id)
-        if pet is None or pet.wirt != person_id:
+        if pet is None or pet.wirt != person_id or art not in logic.SPUR_ARTEN:
             return
-        await repository.haeufchen_anlegen(campaign_id, person_id, pet_id, logic.anteil(x), logic.anteil(y))
+        await repository.haeufchen_anlegen(campaign_id, person_id, pet_id, logic.anteil(x), logic.anteil(y), art)
         await self._haeufchen_senden(campaign_id, person_id)
 
     async def wegmachen(self, campaign_id: str, person_id: str, haeufchen_id: str) -> None:

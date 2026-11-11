@@ -48,6 +48,27 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Brandfleck: muss weggewischt werden, deshalb kein Scrollen beim Reiben. */
+.pet-brand {
+  position: absolute;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  animation: pet-plopp 260ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.pet-feuer {
+  position: absolute;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .pet-haeufchen-weg {
   animation: pet-wisch 350ms ease-in forwards;
   pointer-events: none;

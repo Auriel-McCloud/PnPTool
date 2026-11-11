@@ -22,17 +22,25 @@ const SPRITE = {
   breite: 84,
   hoehe: 48,
   fussLuft: 7,
+  maul: [73, 26],
+  feuer: { breite: 56, hoehe: 28, frames: 8, ms: 70 },
   animationen: {
     idle: { frames: 24, ms: 110 },
     lauf: { frames: 32, ms: 35 },
     freuen: { frames: 8, ms: 90 },
     klettern: { frames: 32, ms: 35 },
+    niesen: { frames: 14, ms: 80 },
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
   },
 } as const;
 
-const HAEUFCHEN_PX = { breite: 12, hoehe: 10 };
+const SPUR_PX = {
+  haeufchen: { breite: 12, hoehe: 10 },
+  brand: { breite: 16, hoehe: 9 },
+} as const;
+/** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
+const WISCH_PX = 320;
 
 function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
@@ -40,7 +48,14 @@ function skala() {
 
 function masse(): Masse {
   const s = skala();
-  return { bw: SPRITE.breite * s, bh: SPRITE.hoehe * s, fuss: SPRITE.fussLuft * s };
+  return {
+    bw: SPRITE.breite * s,
+    bh: SPRITE.hoehe * s,
+    fuss: SPRITE.fussLuft * s,
+    maulX: SPRITE.maul[0] * s,
+    maulY: SPRITE.maul[1] * s,
+    feuerLaenge: SPRITE.feuer.breite * s,
+  };
 }
 
 /**
@@ -203,28 +218,75 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   const s = skala();
   return (
     <div className="pet-ebene">
-      {haeufchen.map((h) => (
+      {haeufchen.map((h) => {
+        const art = h.art ?? "haeufchen";
+        const px = SPUR_PX[art];
+        const stil = {
+          left: h.x * window.innerWidth - (px.breite * s) / 2,
+          top: h.y * window.innerHeight - (art === "brand" ? (px.hoehe * s) / 2 : px.hoehe * s),
+          width: px.breite * s,
+          height: px.hoehe * s,
+          backgroundImage: `url(/pets/drache/${art}.png)`,
+        };
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
-        <div
-          key={h.id}
-          role="button"
-          className={`pet-haeufchen${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
-          title="Wegmachen"
-          style={{
-            left: h.x * window.innerWidth - (HAEUFCHEN_PX.breite * s) / 2,
-            top: h.y * window.innerHeight - HAEUFCHEN_PX.hoehe * s,
-            width: HAEUFCHEN_PX.breite * s,
-            height: HAEUFCHEN_PX.hoehe * s,
-            backgroundImage: `url(/pets/drache/haeufchen.png)`,
-          }}
-          onClick={() => wegmachen(h.id)}
-        />
-      ))}
+        return art === "brand" ? (
+          <Brandfleck key={h.id} stil={stil} weg={weg.has(h.id)} onSauber={() => wegmachen(h.id)} />
+        ) : (
+          <div
+            key={h.id}
+            role="button"
+            className={`pet-haeufchen${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
+            title="Wegmachen"
+            style={stil}
+            onClick={() => wegmachen(h.id)}
+          />
+        );
+      })}
       {pets.map((p) => (
         <PetFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} />
       ))}
     </div>
+  );
+}
+
+/**
+ * Brandfleck vom Feuerniesen (Mark, 11.11.2026): weg nur durch Wischen —
+ * Finger/Maus drauf und hin und her reiben, er wird dabei blasser.
+ */
+function Brandfleck({ stil, weg, onSauber }: { stil: React.CSSProperties; weg: boolean; onSauber: () => void }) {
+  const rest = useRef(1);
+  const letzter = useRef<{ x: number; y: number } | null>(null);
+  const el = useRef<HTMLDivElement | null>(null);
+  const fertig = useRef(false);
+
+  const reiben = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (fertig.current || !letzter.current) return;
+    const d = Math.hypot(e.clientX - letzter.current.x, e.clientY - letzter.current.y);
+    letzter.current = { x: e.clientX, y: e.clientY };
+    rest.current = Math.max(0, rest.current - d / WISCH_PX);
+    if (el.current) el.current.style.opacity = String(0.25 + rest.current * 0.75);
+    if (rest.current <= 0) {
+      fertig.current = true;
+      onSauber();
+    }
+  };
+
+  return (
+    <div
+      ref={el}
+      role="button"
+      className={`pet-brand${weg ? " pet-haeufchen-weg" : ""}`}
+      title="Sauberwischen"
+      style={stil}
+      onPointerDown={(e) => {
+        letzter.current = { x: e.clientX, y: e.clientY };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={reiben}
+      onPointerUp={() => (letzter.current = null)}
+      onPointerCancel={() => (letzter.current = null)}
+    />
   );
 }
 
@@ -238,6 +300,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   const figur = useRef<HTMLDivElement | null>(null);
   const zzz = useRef<HTMLSpanElement | null>(null);
   const tropfen = useRef<HTMLSpanElement | null>(null);
+  const feuer = useRef<HTMLDivElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
   const bewegung = useRef<PetBewegung | null>(null);
@@ -245,7 +308,7 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   useEffect(() => {
     const b = new PetBewegung(masse, umgebung(), pet.seite, performance.now(), (m) => {
       if (m.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: m.seite });
-      else senden({ typ: "haeufchen", petId: pet.id, x: m.x, y: m.y });
+      else senden({ typ: "haeufchen", petId: pet.id, x: m.x, y: m.y, art: m.art });
     });
     bewegung.current = b;
 
@@ -272,6 +335,22 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         el.style.backgroundPosition = `${-frame * SPRITE.breite * s}px 0`;
         el.style.transform = d.transform;
         el.dataset.hockt = d.hockt ? "ja" : "nein";
+      }
+      const fe = feuer.current;
+      if (fe) {
+        if (d.feuer) {
+          const s = skala();
+          const f = SPRITE.feuer;
+          const bild = Math.min(f.frames - 1, Math.floor((jetzt - d.feuer.start) / f.ms));
+          fe.style.display = "block";
+          fe.style.width = `${f.breite * s}px`;
+          fe.style.height = `${f.hoehe * s}px`;
+          fe.style.left = `${d.feuer.flip ? d.feuer.x - f.breite * s : d.feuer.x}px`;
+          fe.style.top = `${d.feuer.y - (f.hoehe * s) / 2}px`;
+          fe.style.backgroundSize = `${f.frames * f.breite * s}px ${f.hoehe * s}px`;
+          fe.style.backgroundPosition = `${-bild * f.breite * s}px 0`;
+          fe.style.transform = d.feuer.flip ? "scaleX(-1)" : "none";
+        } else fe.style.display = "none";
       }
       const tr = tropfen.current;
       if (tr) {
@@ -317,6 +396,11 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
       </span>
+      <div
+        ref={feuer}
+        className="pet-feuer"
+        style={{ display: "none", backgroundImage: `url(/pets/${pet.art}/feuer.png)` }}
+      />
       <span ref={tropfen} className="pet-tropfen" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />

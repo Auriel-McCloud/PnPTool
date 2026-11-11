@@ -72,7 +72,19 @@ def animationen():
         t = i / 32 * 2 * math.pi
         klettern.append(dr.frame(phase=t, welle=math.sin(t) * 0.15, amp=2.5, leg=2.5, blink=True, mund=True,
                                  schnurr=0.5))
+    # Feuerniesen (Mark, 11.11.): Kopf zurück, Augen zu — dann ruckartig nach
+    # vorn mit offenem Maul. Das Feuer selbst ist ein eigenes Sheet (feuer.png).
+    niesen = []
+    for i in range(14):
+        if i <= 5:  # Anlauf: Luft holen
+            niesen.append((dr.frame(phase=i * 0.1, welle=0.0, amp=2.0 + i * 0.12, blink=i >= 3,
+                                    schnurr=0.3 + i * 0.25), min(2, i // 2)))
+        elif i <= 9:  # Hatschi!
+            niesen.append((dr.frame(phase=0.6, welle=0.0, amp=1.6, mund=True, blink=True, schnurr=-1.0), -1))
+        else:  # erholen
+            niesen.append(dr.frame(phase=0.6 + (i - 9) * 0.2, welle=0.0, amp=2.0, blink=i == 12, schnurr=0.0))
     return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90), "klettern": (klettern, 35),
+            "niesen": (niesen, 80),
             "sprung": (sprung, 70), "schlafen": (schlafen, 150)}
 
 
@@ -98,6 +110,56 @@ HAEUFCHEN = [
     "kbbbbbbbbhbk",
     ".kkkkkkkkkk.",
 ]
+def feuer_sheet():
+    """Feuerstoß aus dem Maul: wächst nach rechts, zerfällt dann in Glut und Rauch."""
+    import random
+    fw, fh, n = 56, 28, 8
+    s = Image.new("RGBA", (fw * n, fh), (0, 0, 0, 0))
+    for f in range(n):
+        rnd = random.Random(f * 7 + 3)
+        laenge = fw * min(1.0, (f + 1) / 4)
+        zerfall = max(0.0, (f - 3) / 4)  # 0 … 1
+        for x in range(fw):
+            if x > laenge:
+                continue
+            breite = 1.5 + x * 0.32
+            for y in range(fh):
+                dy = abs(y - fh / 2 + 0.5)
+                if dy > breite:
+                    continue
+                # Ausgefranste, runde Spitze statt einer geraden Kante.
+                if x > laenge - dy * 0.9 - rnd.uniform(0, 7):
+                    continue
+                if rnd.random() < zerfall * 0.85:
+                    continue
+                kern = 1 - dy / max(breite, 1)
+                hitze = kern * (1 - x / fw * 0.6) + rnd.uniform(-0.15, 0.15) - zerfall * 0.5
+                if zerfall > 0.5 and rnd.random() < 0.35:
+                    farbe = (90, 80, 80, 200)  # Rauch
+                elif hitze > 0.75:
+                    farbe = (255, 244, 170, 255)
+                elif hitze > 0.5:
+                    farbe = (255, 196, 60, 255)
+                elif hitze > 0.25:
+                    farbe = (245, 120, 30, 255)
+                else:
+                    farbe = (200, 48, 30, 255)
+                s.putpixel((f * fw + x, y), farbe)
+    return s, {"breite": fw, "hoehe": fh, "frames": n, "ms": 70}
+
+
+BRAND = [
+    "....kkkkk.......",
+    "..kkkkkkkkkk....",
+    ".kkkbbkkkkkkkk..",
+    "kkkbbbbkkokkkkk.",
+    "kkbbbbkkkkkbbkkk",
+    "kkkbbkkokkbbbbkk",
+    ".kkkkkkkkkkbbkk.",
+    "..kkkkkkkkkkkk..",
+    "....kkkkkkkk....",
+]
+
 TROPFEN = [
     "..k..",
     ".kwk.",
@@ -137,6 +199,15 @@ if __name__ == "__main__":
         os.path.join(ziel, "haeufchen.png"))
     pixelbild(HERZ, {"k": (60, 10, 20, 255), "r": (236, 64, 96, 255), "l": (255, 170, 190, 255)}).save(
         os.path.join(ziel, "herz.png"))
+    feuer, feuer_meta = feuer_sheet()
+    feuer.save(os.path.join(ziel, "feuer.png"))
+    meta["feuer"] = feuer_meta
+    pixelbild(BRAND, {"k": (34, 22, 18, 235), "b": (70, 50, 40, 235), "o": (255, 120, 30, 255)}).save(
+        os.path.join(ziel, "brand.png"))
+    # Wo das Maul im Sprite sitzt (Feuer setzt dort an).
+    pts = dr.wirbelsaeule(0.0, 2.0, 0)
+    nx, ny = pts[-1][0], pts[-1][1]
+    meta["maul"] = [round(nx + 6 + 11), round(ny - 9 + 4 + OBEN)]
     pixelbild(TROPFEN, {"k": (20, 50, 90, 255), "w": (230, 245, 255, 255), "b": (120, 190, 255, 255)}).save(
         os.path.join(ziel, "tropfen.png"))
     pixelbild(ZZZ, {"k": (30, 30, 60, 255), "w": (220, 230, 255, 255)}).save(os.path.join(ziel, "z.png"))

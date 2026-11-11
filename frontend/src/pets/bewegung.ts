@@ -20,12 +20,17 @@
  * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
  */
 
-export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern";
+export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen";
 
 export interface Masse {
   /** Box-Breite/-Höhe des Sprites in Bildschirm-Pixeln. */
   bw: number;
   bh: number;
+  /** Maul im Sprite (Bildschirm-Pixel ab links oben, Blick nach rechts). */
+  maulX: number;
+  maulY: number;
+  /** Länge des Feuerstoßes (Bildschirm-Pixel). */
+  feuerLaenge: number;
   /** Leerer Rand unter den Füßen im Sprite (Bildschirm-Pixel). */
   fuss: number;
 }
@@ -73,6 +78,7 @@ type Zustand =
   | "sprung"
   | "landen"
   | "uebergang"
+  | "niesen"
   | "raus";
 
 interface Pose {
@@ -126,6 +132,8 @@ export interface Darstellung {
   transform: string;
   animation: Animation;
   animStart: number;
+  /** Feuerstoß beim Niesen: Startzeit, Maul-Ankerpunkt, Blickrichtung. */
+  feuer: { start: number; x: number; y: number; flip: boolean } | null;
   /** Fester Frame statt Zeittakt (Klettern: Beine bewegen sich nur beim Zug). */
   frame: number | null;
   hockt: boolean;
@@ -138,7 +146,14 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number };
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" };
+
+/** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
+const NIESEN_MS = 14 * 80;
+const FEUER_AB_MS = 6 * 80;
+const FEUER_MS = 8 * 70;
+/** Mindestabstand zwischen zwei Niesern. */
+const NIESEN_PAUSE_MS = 25_000;
 
 const TEMPO_PX_S = 45;
 /** Höchster Satz nach oben; höhere Popups werden erklettert. */
@@ -161,6 +176,9 @@ export class PetBewegung {
   besuchEnde: number;
   haeufchenGemacht = false;
   geschlafen = false;
+  niesenStart = 0;
+  brandGelegt = false;
+  naechstesNiesen = 0;
   rausGemeldet = false;
   nachAnkunft: ((jetzt: number) => void) | null = null;
   sprung: Sprung | null = null;
@@ -183,6 +201,7 @@ export class PetBewegung {
     this.melden = melden;
     const { bw } = masse();
     this.besuchEnde = jetzt + this.zw(40_000, 120_000);
+    this.naechstesNiesen = jetzt + this.zw(8_000, 20_000);
     this.fussY = u.hoehe;
     // Reinkommen von der Seite, die der Server sagt.
     if (seite === "links") {
@@ -347,8 +366,31 @@ export class PetBewegung {
     return kandidaten[Math.floor(this.u.zufall() * kandidaten.length)];
   }
 
+  /** Hatschi! Nur im Stehen, nicht beim Klettern/Springen. */
+  private niese(jetzt: number) {
+    this.zustand = "niesen";
+    this.niesenStart = jetzt;
+    this.brandGelegt = false;
+    this.naechstesNiesen = jetzt + NIESEN_PAUSE_MS + this.zw(0, 30_000);
+  }
+
+  /** Wo das Feuer hinkommt: 1–2 Brandflecken vorne im Feuerstoß. */
+  private brandLegen() {
+    const { bw, bh, fuss, maulX, maulY, feuerLaenge } = this.masse();
+    const top = this.fussY - bh + fuss;
+    const mx = this.richtung > 0 ? this.x + maulX : this.x + bw - maulX;
+    const my = top + maulY;
+    const anzahl = this.u.zufall() < 0.5 ? 1 : 2;
+    for (let i = 0; i < anzahl; i++) {
+      const weit = this.zw(0.55, 0.95) * feuerLaenge;
+      const x = Math.min(Math.max(mx + this.richtung * weit, 10), this.u.breite - 10);
+      const y = Math.min(Math.max(my + this.zw(-10, 14), 10), this.u.hoehe - 4);
+      this.melden({ typ: "haeufchen", art: "brand", x: x / this.u.breite, y: y / this.u.hoehe });
+    }
+  }
+
   streicheln(jetzt: number): boolean {
-    if (["raus", "sprung", "klettern", "uebergang"].includes(this.zustand)) return false;
+    if (["raus", "sprung", "klettern", "uebergang", "niesen"].includes(this.zustand)) return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     this.zustand = "freuen";
     this.bis = jetzt + 1600;
@@ -363,18 +405,29 @@ export class PetBewegung {
     const w = u.zufall();
     const mitte = this.x + bw / 2;
 
+    // Ab und zu Feuer niesen (Mark, 11.11.) — überall, wo er steht.
+    if (jetzt >= this.naechstesNiesen && jetzt < this.besuchEnde && u.zufall() < 0.18) {
+      return this.niese(jetzt);
+    }
+
     if (this.ort.art === "flaeche") {
       const r = this.ort.q.rechteck();
       if (!r) return this.fallen(jetzt);
       const ende = jetzt >= this.besuchEnde;
       const breit = r.right - r.left;
-      if (!ende && !this.geschlafen && breit >= bw * 0.5 && w < 0.15) {
+      // Auch oben auf Text & Co. (Mark: „kann er oben auf den Text Häufchen machen?“).
+      if (!ende && !this.haeufchenGemacht && w < 0.1) {
+        this.zustand = "haeufchen";
+        this.bis = jetzt + 1800;
+        return;
+      }
+      if (!ende && !this.geschlafen && breit >= bw * 0.5 && w < 0.22) {
         this.zustand = "schlafen";
         this.geschlafen = true;
         this.bis = jetzt + this.zw(6000, 14000);
         return;
       }
-      if (!ende && breit > bw * 0.4 && w < 0.4) {
+      if (!ende && breit > bw * 0.4 && w < 0.45) {
         this.laufeZu(this.landeX(r));
         return;
       }
@@ -509,7 +562,7 @@ export class PetBewegung {
     const u = this.u;
 
     // Boden folgt der Fenstergröße, Fläche ihrem Element (Scrollen, Popup zu).
-    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "raus"].includes(this.zustand)) {
+    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "raus"].includes(this.zustand)) {
       if (this.ort.art === "boden") {
         this.fussY = u.hoehe;
       } else {
@@ -600,12 +653,25 @@ export class PetBewegung {
           const { fuss } = this.masse();
           // Liegt hinter dem Schwanz.
           const schwanz = this.richtung > 0 ? this.x + fuss : this.x + bw - fuss;
-          this.melden({ typ: "haeufchen", x: schwanz / u.breite, y: 1 });
+          this.melden({ typ: "haeufchen", art: "haeufchen", x: schwanz / u.breite, y: this.fussY / u.hoehe });
           this.haeufchenGemacht = true;
           this.zustand = "idle";
           this.bis = jetzt + 1500;
         }
         break;
+      case "niesen": {
+        const t = jetzt - this.niesenStart;
+        // Flecken entstehen, wenn das Feuer am weitesten reicht.
+        if (!this.brandGelegt && t >= FEUER_AB_MS + FEUER_MS * 0.4) {
+          this.brandGelegt = true;
+          this.brandLegen();
+        }
+        if (t >= Math.max(NIESEN_MS, FEUER_AB_MS + FEUER_MS)) {
+          this.zustand = "idle";
+          this.bis = jetzt + this.zw(800, 1800);
+        }
+        break;
+      }
       case "idle":
       case "freuen":
       case "schlafen":
@@ -613,14 +679,14 @@ export class PetBewegung {
         break;
     }
 
-    const anim = this.gewuenschteAnimation();
+    const anim = this.gewuenschteAnimation(jetzt);
     if (anim !== this.animation) {
       this.animation = anim;
       this.animStart = jetzt;
     }
   }
 
-  private gewuenschteAnimation(): Animation {
+  private gewuenschteAnimation(jetzt: number): Animation {
     switch (this.zustand) {
       case "laufen":
       case "raus":
@@ -637,6 +703,8 @@ export class PetBewegung {
         return "freuen";
       case "schlafen":
         return "schlafen";
+      case "niesen":
+        return jetzt - this.niesenStart < NIESEN_MS ? "niesen" : "idle";
       default:
         return "idle";
     }
@@ -687,6 +755,16 @@ export class PetBewegung {
     const vertikal = Math.abs(p.rot) > 45;
     const kopfX = vertikal ? p.left + bw / 2 : p.left + (p.flip ? bw * 0.2 : bw * 0.8);
     const kopfY = vertikal ? p.top + bh / 2 - bw / 2 : p.top;
+    let feuer: Darstellung["feuer"] = null;
+    if (this.zustand === "niesen" && jetzt - this.niesenStart >= FEUER_AB_MS) {
+      const { maulX, maulY } = this.masse();
+      feuer = {
+        start: this.niesenStart + FEUER_AB_MS,
+        x: p.flip ? p.left + bw - maulX : p.left + maulX,
+        y: p.top + maulY,
+        flip: p.flip,
+      };
+    }
     const schwitzt =
       this.zustand === "haengen" || (this.zustand === "klettern" && !!k && (k.phase === "rast" || k.zuege >= 3));
     return {
@@ -696,6 +774,7 @@ export class PetBewegung {
       animation: this.animation,
       animStart: this.animStart,
       frame,
+      feuer,
       hockt: this.zustand === "haeufchen" || this.zustand === "landen",
       schlaeft: this.zustand === "schlafen",
       schwitzt,

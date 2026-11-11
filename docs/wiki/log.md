@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-11] update | Critter-Pet niest Feuer
+
+Feuerniesen mit Brandflecken zum Wegwischen, Häufchen auch auf Text. Siehe [[entities/critter-pet]].
+
 ## [2026-11-11] update | Critter-Pet Übergänge und Text-Flächen
 
 Übergangs-Animationen, mühsames Klettern, Laufen auf Wörtern/Linien/Kästchen. Siehe [[entities/critter-pet]].

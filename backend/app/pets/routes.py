@@ -76,7 +76,8 @@ async def live(websocket: WebSocket, campaign_id: str):
                     await motor.raus(campaign_id, person_id, str(n.get("petId")), str(n.get("seite")))
                 elif typ == "haeufchen":
                     await motor.haeufchen(campaign_id, person_id, str(n.get("petId")),
-                                          float(n.get("x", 0)), float(n.get("y", 1)))
+                                          float(n.get("x", 0)), float(n.get("y", 1)),
+                                          str(n.get("art") or "haeufchen"))
                 elif typ == "wegmachen":
                     await motor.wegmachen(campaign_id, person_id, str(n.get("id")))
             except (TypeError, ValueError):
