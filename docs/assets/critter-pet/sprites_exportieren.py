@@ -51,7 +51,21 @@ def animationen():
         t = i / 8 * 2 * math.pi
         freuen.append((dr.frame(phase=t * 2, amp=3.0, blink=True, mund=True, schnurr=1.5),
                        round(abs(math.sin(t)) * 3)))
-    return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90)}
+    # Sprung (Mark, 11.11.: klettern und springen): Beine weit gespreizt,
+    # Maul offen, Quaste schlägt. Wenige Frames, er ist nur kurz in der Luft.
+    sprung = []
+    for i in range(6):
+        t = i / 6 * 2 * math.pi
+        sprung.append(dr.frame(phase=math.pi / 4 + math.sin(t) * 0.25, welle=0.0, amp=2.5, leg=2.5, mund=True,
+                               schnurr=1.5))
+    # Schlafen (oben auf einem Popup): flacher, Augen zu, atmet langsam.
+    schlafen = []
+    for i in range(24):
+        t = i / 24 * 2 * math.pi
+        schlafen.append((dr.frame(phase=0.0, welle=0.0, amp=1.6 + math.sin(t) * 0.3, blink=True, schnurr=-0.5),
+                         -1))
+    return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90),
+            "sprung": (sprung, 70), "schlafen": (schlafen, 150)}
 
 
 def pixelbild(zeilen, farben):
@@ -76,6 +90,15 @@ HAEUFCHEN = [
     "kbbbbbbbbhbk",
     ".kkkkkkkkkk.",
 ]
+ZZZ = [
+    "kkkkk",
+    "kwwwk",
+    "kkwkk",
+    ".kwk.",
+    "kkwkk",
+    "kwwwk",
+    "kkkkk",
+]
 HERZ = [
     ".kk...kk.",
     "krrk.krrk",
@@ -98,6 +121,13 @@ if __name__ == "__main__":
         os.path.join(ziel, "haeufchen.png"))
     pixelbild(HERZ, {"k": (60, 10, 20, 255), "r": (236, 64, 96, 255), "l": (255, 170, 190, 255)}).save(
         os.path.join(ziel, "herz.png"))
+    pixelbild(ZZZ, {"k": (30, 30, 60, 255), "w": (220, 230, 255, 255)}).save(os.path.join(ziel, "z.png"))
+    # Wie viele Pixel unter den Füßen leer sind — das Frontend setzt die Füße
+    # damit genau auf Boden, Popup-Kante oder Wand.
+    lauf_sheet = Image.open(os.path.join(ziel, "lauf.png"))
+    alpha = lauf_sheet.getchannel("A")
+    bbox = alpha.getbbox()
+    meta["fussLuft"] = lauf_sheet.height - bbox[3]
     with open(os.path.join(ziel, "sprite.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
     print(json.dumps(meta))

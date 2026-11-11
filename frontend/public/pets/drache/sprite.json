@@ -13,6 +13,15 @@
     "freuen": {
       "frames": 8,
       "ms": 90
+    },
+    "sprung": {
+      "frames": 6,
+      "ms": 70
+    },
+    "schlafen": {
+      "frames": 24,
+      "ms": 150
     }
-  }
+  },
+  "fussLuft": 7
 }

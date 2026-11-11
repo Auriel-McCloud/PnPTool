@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type PetAufSchirm } from "./api";
+import { PetBewegung, type Masse, type Rechteck, type Umgebung } from "./bewegung";
 import "./pets.css";
 
 /**
@@ -20,23 +21,46 @@ import "./pets.css";
 const SPRITE = {
   breite: 84,
   hoehe: 48,
+  fussLuft: 7,
   animationen: {
     idle: { frames: 24, ms: 110 },
     lauf: { frames: 32, ms: 35 },
     freuen: { frames: 8, ms: 90 },
+    sprung: { frames: 6, ms: 70 },
+    schlafen: { frames: 24, ms: 150 },
   },
 } as const;
-type Animation = keyof typeof SPRITE.animationen;
 
 const HAEUFCHEN_PX = { breite: 12, hoehe: 10 };
-const TEMPO_PX_S = 45;
-
-function zufall(min: number, max: number) {
-  return min + Math.random() * (max - min);
-}
 
 function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
+}
+
+function masse(): Masse {
+  const s = skala();
+  return { bw: SPRITE.breite * s, bh: SPRITE.hoehe * s, fuss: SPRITE.fussLuft * s };
+}
+
+/** Bildschirm und offene Popups (`Fenster`) als Kletter-/Sprungziele. */
+function umgebung(): Umgebung {
+  const { bw, bh } = masse();
+  const rechteckVon = (el: Element): Rechteck | null => {
+    if (!el.isConnected) return null;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 ? r : null;
+  };
+  return {
+    breite: window.innerWidth,
+    hoehe: window.innerHeight,
+    rechteckVon,
+    popups: () =>
+      Array.from(document.querySelectorAll(".fn-fenster"))
+        .map((el) => ({ el, r: el.getBoundingClientRect() as Rechteck }))
+        // Am Handy ist ein Fenster bildschirmfüllend — da ist oben kein Platz.
+        .filter(({ r }) => r.top > bh + 30 && r.right - r.left > bw * 1.3),
+    zufall: Math.random,
+  };
 }
 
 export function PetOverlay({ campaignId }: { campaignId: string }) {
@@ -103,126 +127,55 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   );
 }
 
-type Zustand = "laufen" | "idle" | "freuen" | "haeufchen" | "raus";
-
 interface Herz {
   id: number;
   x: number;
+  y: number;
 }
 
 function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => void }) {
   const figur = useRef<HTMLDivElement | null>(null);
+  const zzz = useRef<HTMLSpanElement | null>(null);
   const [herzen, setHerzen] = useState<Herz[]>([]);
-  // Alles, was jeden Frame wechselt, liegt in einer Ref — kein React-Render pro Frame.
-  const z = useRef({
-    zustand: "laufen" as Zustand,
-    x: 0,
-    richtung: 1,
-    zielX: 0,
-    bis: 0,
-    besuchEnde: performance.now() + zufall(40_000, 120_000),
-    haeufchenGemacht: false,
-    rausGemeldet: false,
-    animation: "lauf" as Animation,
-    animStart: performance.now(),
-  });
-
-  const breite = () => SPRITE.breite * skala();
+  // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
+  const bewegung = useRef<PetBewegung | null>(null);
 
   useEffect(() => {
-    const st = z.current;
-    const w = breite();
-    // Reinkommen von der Seite, die der Server sagt.
-    if (pet.seite === "links") {
-      st.x = -w;
-      st.richtung = 1;
-      st.zielX = zufall(0.1, 0.55) * window.innerWidth;
-    } else {
-      st.x = window.innerWidth;
-      st.richtung = -1;
-      st.zielX = zufall(0.4, 0.85) * window.innerWidth - w;
-    }
-
-    const setzeAnimation = (a: Animation, jetzt: number) => {
-      if (st.animation !== a) {
-        st.animation = a;
-        st.animStart = jetzt;
-      }
-    };
-
-    const naechstesZiel = () => {
-      const w2 = breite();
-      st.zielX = zufall(0, Math.max(0, window.innerWidth - w2));
-      st.richtung = st.zielX >= st.x ? 1 : -1;
-      st.zustand = "laufen";
-    };
+    const b = new PetBewegung(masse, umgebung(), pet.seite, performance.now(), (m) => {
+      if (m.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: m.seite });
+      else senden({ typ: "haeufchen", petId: pet.id, x: m.x, y: m.y });
+    });
+    bewegung.current = b;
 
     let letzte = performance.now();
     let rahmen = 0;
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
-      const w2 = breite();
-
-      if (st.zustand === "laufen" || st.zustand === "raus") {
-        setzeAnimation("lauf", jetzt);
-        const schritt = TEMPO_PX_S * dt * st.richtung;
-        st.x += schritt;
-        const angekommen = st.richtung > 0 ? st.x >= st.zielX : st.x <= st.zielX;
-        if (angekommen) {
-          st.x = st.zielX;
-          if (st.zustand === "raus") {
-            if (!st.rausGemeldet) {
-              st.rausGemeldet = true;
-              senden({ typ: "raus", petId: pet.id, seite: st.richtung > 0 ? "rechts" : "links" });
-            }
-          } else {
-            st.zustand = "idle";
-            st.bis = jetzt + zufall(2000, 6000);
-          }
-        }
-      } else if (st.zustand === "idle" || st.zustand === "haeufchen" || st.zustand === "freuen") {
-        setzeAnimation(st.zustand === "freuen" ? "freuen" : "idle", jetzt);
-        if (jetzt >= st.bis) {
-          if (st.zustand === "haeufchen") {
-            // Liegt hinter dem Schwanz: links bei Blick nach rechts, sonst rechts.
-            const s = skala();
-            const schwanz = st.richtung > 0 ? st.x + 6 * s : st.x + w2 - 6 * s;
-            senden({
-              typ: "haeufchen",
-              petId: pet.id,
-              x: schwanz / window.innerWidth,
-              y: (window.innerHeight - 2 * s) / window.innerHeight,
-            });
-            st.haeufchenGemacht = true;
-            st.zustand = "idle";
-            st.bis = jetzt + 1500;
-          } else if (jetzt >= st.besuchEnde) {
-            st.zustand = "raus";
-            st.richtung = Math.random() < 0.5 ? -1 : 1;
-            st.zielX = st.richtung > 0 ? window.innerWidth + 4 : -w2 - 4;
-          } else if (st.zustand === "idle" && !st.haeufchenGemacht && Math.random() < 0.2) {
-            st.zustand = "haeufchen";
-            st.bis = jetzt + 1800;
-          } else {
-            naechstesZiel();
-          }
-        }
-      }
+      b.setzeUmgebung(umgebung());
+      b.tick(jetzt, dt);
+      const d = b.darstellung(jetzt);
 
       const el = figur.current;
       if (el) {
         const s = skala();
-        const anim = SPRITE.animationen[st.animation];
-        const frame = Math.floor((jetzt - st.animStart) / anim.ms) % anim.frames;
+        const anim = SPRITE.animationen[d.animation];
+        const frame = Math.floor((jetzt - d.animStart) / anim.ms) % anim.frames;
         el.style.width = `${SPRITE.breite * s}px`;
         el.style.height = `${SPRITE.hoehe * s}px`;
-        el.style.left = `${st.x}px`;
-        el.style.backgroundImage = `url(/pets/${pet.art}/${st.animation}.png)`;
+        el.style.left = `${d.left}px`;
+        el.style.top = `${d.top}px`;
+        el.style.backgroundImage = `url(/pets/${pet.art}/${d.animation}.png)`;
         el.style.backgroundSize = `${anim.frames * SPRITE.breite * s}px ${SPRITE.hoehe * s}px`;
         el.style.backgroundPosition = `${-frame * SPRITE.breite * s}px 0`;
-        el.style.transform = st.richtung < 0 ? "scaleX(-1)" : "none";
-        el.dataset.hockt = st.zustand === "haeufchen" ? "ja" : "nein";
+        el.style.transform = d.transform;
+        el.dataset.hockt = d.hockt ? "ja" : "nein";
+      }
+      const z = zzz.current;
+      if (z) {
+        z.style.display = d.schlaeft ? "block" : "none";
+        z.style.left = `${d.kopfX}px`;
+        z.style.top = `${d.kopfY - 10}px`;
       }
       rahmen = requestAnimationFrame(tick);
     };
@@ -233,13 +186,12 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   }, []);
 
   const streicheln = () => {
-    const st = z.current;
-    if (st.zustand === "raus") return;
-    st.zustand = "freuen";
-    st.bis = performance.now() + 1600;
-    const mitte = st.x + breite() / 2;
+    const b = bewegung.current;
+    const jetzt = performance.now();
+    if (!b || !b.streicheln(jetzt)) return;
+    const d = b.darstellung(jetzt);
     const id = Date.now();
-    setHerzen((alt) => [...alt, { id, x: mitte - 10 }, { id: id + 1, x: mitte + 14 }]);
+    setHerzen((alt) => [...alt, { id, x: d.kopfX - 20, y: d.kopfY }, { id: id + 1, x: d.kopfX + 4, y: d.kopfY }]);
     window.setTimeout(() => setHerzen((alt) => alt.filter((h) => h.id !== id && h.id !== id + 1)), 1300);
   };
 
@@ -252,11 +204,21 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
         title={`${pet.name} (${pet.besitzerName}) — streicheln`}
         onPointerDown={streicheln}
       />
+      <span ref={zzz} className="pet-zzz" style={{ display: "none" }}>
+        <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
+        <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
+        <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
+      </span>
       {herzen.map((h, i) => (
         <span
           key={h.id}
           className="pet-herz"
-          style={{ left: h.x, animationDelay: `${i % 2 === 0 ? 0 : 180}ms`, backgroundImage: "url(/pets/drache/herz.png)" }}
+          style={{
+            left: h.x,
+            top: h.y,
+            animationDelay: `${i % 2 === 0 ? 0 : 180}ms`,
+            backgroundImage: `url(/pets/${pet.art}/herz.png)`,
+          }}
         />
       ))}
     </>

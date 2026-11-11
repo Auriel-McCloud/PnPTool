@@ -100,6 +100,16 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   die Laufbewegung. Körperform steht still, nur Beine tapsen, leichtes Wippen.
   Mark: „jetzt schaut es wie gehen aus“. Danach 32 statt 16 Frames (35 ms,
   gleicher Takt), weil es noch zuckelig wirkte.
+- **Klettern und Springen (11.11., gebaut):** Mark: „nicht nur unten am Rand
+  rumlaufen, sondern auch wo rauf klettern oder springen“. Springt auf
+  niedrige Popups, klettert an höheren seitlich hoch und steigt drauf,
+  läuft oben herum, schläft dort einmal pro Besuch (Zzz), springt wieder
+  runter. Klettert auch am Bildschirmrand hoch, hängt kurz, springt ab.
+  Popup zu → fällt runter. Raus zum nächsten Tablet nur über den Boden.
+  Dafür liegt die Pet-Ebene jetzt **über** den Fenstern (z-index 210), unter
+  Ansagen/Verhandlungen/Bestätigungen. Logik: `frontend/src/pets/bewegung.ts`.
+  Erledigt damit aus der Animationsliste: Schlafen, Popups hochklettern und
+  drauflegen. Offen: Essen, Feuer-Rülpser, Traurig/Hunger.
 
 ## Noch offen
 

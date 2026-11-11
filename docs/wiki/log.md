@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-11] update | Critter-Pet klettert und springt
+
+Springt auf Popups, klettert seitlich hoch, schläft oben, klettert am Bildschirmrand. Siehe [[entities/critter-pet]].
+
 ## [2026-11-11] update | Critter-Pet erste Ausbaustufe gebaut
 
 Drache läuft über die Party-Tablets, Server-Wandern, Streicheln, Häufchen. Status teilweise-umgesetzt. Siehe [[entities/critter-pet]].
