@@ -38,19 +38,27 @@ def wirbelsaeule(phase, amp, bob):
     return pts
 
 
-def frame(phase=0.0, amp=4.0, bob=0, blink=False, leg=0.0, schnurr=0.0, mund=False):
+def frame(phase=0.0, amp=4.0, bob=0, blink=False, leg=0.0, schnurr=0.0, mund=False, welle=None):
+    """`phase` treibt Beine, Mähne, Quaste, Schnurrhaare. `welle` (falls gesetzt)
+    bestimmt allein die Körperform — so kann er auf der Stelle tapsen, ohne
+    dass eine Welle durch den Körper wandert (Mark: die Figur darf sich in
+    ihrem Rahmen nicht fortbewegen, nur der Rahmen wandert über den Schirm)."""
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    pts = wirbelsaeule(phase, amp, bob)
+    pts = wirbelsaeule(phase if welle is None else welle, amp, bob)
 
     # Beine (hinter dem Körper): zwei Paare
     for idx, ph in ((7, 0.0), (16, math.pi)):
         x, y, r, _ = pts[idx]
         s = math.sin(phase * 2 + ph) * leg
         for off, c in ((-1.5, "D"), (1.5, "R")):
-            fx = x + off + s * (1 if c == "R" else -1)
-            d.line([(x + off, y + r - 1), (fx, y + r + 4)], fill=PAL[c], width=2)
-            d.point((fx + 1, y + r + 4), fill=PAL["H"])  # Krallen
+            vorz = 1 if c == "R" else -1
+            fx = x + off + s * vorz
+            # Fuß hebt sich beim Vorschwingen, steht beim Zurückschieben am Boden.
+            hub = max(0.0, math.cos(phase * 2 + ph) * vorz) * leg * 0.7
+            fy = y + r + 4 - hub
+            d.line([(x + off, y + r - 1), (fx, fy)], fill=PAL[c], width=2)
+            d.point((fx + 1, fy), fill=PAL["H"])  # Krallen
 
     # Mähne entlang des Rückens
     for x, y, r, t in pts[4::2]:

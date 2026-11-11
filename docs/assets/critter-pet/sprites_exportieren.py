@@ -29,25 +29,27 @@ def sheet(frames):
 
 
 def animationen():
-    # Die Welle läuft vom Kopf zum Schwanz (negative Phase) — so schiebt sich
-    # eine Schlange vorwärts. Andersherum sieht es aus, als zische er
-    # rückwärts. Viele Frames, kleine Ausschläge, sonst zuckt es.
+    # Die Körperform bleibt im Rahmen stehen (Mark, 11.11.: keine Welle, die
+    # durch den Körper läuft — das wirkte wie ein Tornado im eigenen Fenster).
+    # Nur Beine tapsen, Körper wippt leicht, Quaste/Mähne/Schnurrhaare wehen.
     idle = []
     for i in range(24):
         t = i / 24 * 2 * math.pi
-        idle.append(dr.frame(phase=-t, amp=1.2, bob=round(math.sin(t) * 0.6), blink=i in (17, 18),
+        idle.append(dr.frame(phase=t, welle=0.0, amp=3.0, bob=round(math.sin(t) * 0.6), blink=i in (17, 18),
                              schnurr=math.sin(t) * 0.5))
     lauf = []
-    for i in range(24):
-        t = i / 24 * 2 * math.pi
-        lauf.append(dr.frame(phase=-t, amp=2.5, leg=1.5, mund=True, schnurr=1.0))
+    for i in range(16):
+        t = i / 16 * 2 * math.pi
+        # Leichtes Wiegen auf der Stelle (pendelt, wandert nicht).
+        lauf.append(dr.frame(phase=t, welle=math.sin(t) * 0.12, amp=3.0, leg=2.0,
+                             bob=round(math.sin(2 * t) * 0.6), schnurr=1.0))
     # Freuen (gestreichelt): Hüpfer mit zugekniffenen Augen und offenem Maul.
     freuen = []
     for i in range(8):
         t = i / 8 * 2 * math.pi
         freuen.append((dr.frame(phase=t * 2, amp=3.0, blink=True, mund=True, schnurr=1.5),
                        round(abs(math.sin(t)) * 3)))
-    return {"idle": (idle, 110), "lauf": (lauf, 60), "freuen": (freuen, 90)}
+    return {"idle": (idle, 110), "lauf": (lauf, 70), "freuen": (freuen, 90)}
 
 
 def pixelbild(zeilen, farben):

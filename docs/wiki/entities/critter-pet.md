@@ -94,6 +94,10 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
 - **Nachbesserung nach Marks Tablet-Test (11.11.):** Pet zeigte ein Kästchen
   (globale Button-Optik) → jetzt `div`. Laufen zuckte und wirkte rückwärts →
   24 Frames, kleinere Welle, Welle läuft Kopf → Schwanz.
+- **Zweite Nachbesserung (11.11.):** auch das wirkte „wie ein Tornado im
+  eigenen Fenster“. **Regel (Mark):** die Figur bewegt sich in ihrem Rahmen
+  nicht fort, nur der Rahmen wandert über den Schirm; die Figur macht dazu
+  die Laufbewegung. Körperform steht still, nur Beine tapsen, leichtes Wippen.
 
 ## Noch offen
 
