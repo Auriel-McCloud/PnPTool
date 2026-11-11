@@ -201,6 +201,8 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Nachbesserung 11.11.:** Verwandlungswolke intensiver, länger (≈2,2 s) und wabernd, auf größerer Leinwand über dem Buch (Marks Wunsch nach dem ersten Test: „funktioniert mega cool“).
 
+**Nachbesserung 11.11.:** Seiten bleiben öfter (70 % je überquerter Kante) auf Wörtern/Kästchen liegen und fallen erst beim Bereichswechsel zu Boden (Mark: „erst zu Boden fallen, wenn man die Seite wechselt“).
+
 **Noch offen (Ideen von Mark):** Monster wollen raus (Tentakel, Klauen,
 Fledermäuse), Blitze/Feuerbälle, die das Display „verbrennen“ (Rußfleck vom
 Drachen wiederverwenden); Vorlese-Zauber: sie schlägt sich auf, wird per

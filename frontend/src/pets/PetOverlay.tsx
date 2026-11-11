@@ -66,6 +66,9 @@ function sprite(art: string) {
   return art === "baerbel" ? BAERBEL : SPRITE;
 }
 
+/** Wie oft Bärbels Seite auf einer Wort-/Kastenkante liegen bleibt, die sie überquert. */
+const LANDE_CHANCE = 0.7;
+
 const SPUR_PX = {
   haeufchen: { breite: 12, hoehe: 10 },
   brand: { breite: 38, hoehe: 23 },
@@ -265,6 +268,10 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   const [pets, setPets] = useState<PetAufSchirm[]>([]);
   const [haeufchen, setHaeufchen] = useState<Haeufchen[]>([]);
   const [weg, setWeg] = useState<Set<string>>(new Set());
+  // Welche Spuren schon da waren, als die Leitung aufging — alles danach ist
+  // frisch entstanden (Bärbels Seite segelt dann erst los, statt gleich am
+  // Element unter ihr in der Luft zu hängen).
+  const bekannt = useRef<Set<string> | null>(null);
   const leitung = useRef<ReturnType<typeof verbindePets> | null>(null);
 
   useEffect(() => {
@@ -272,12 +279,16 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
       if (leitung.current) return;
       leitung.current = verbindePets(campaignId, (n) => {
         if (n.typ === "pets") setPets(n.daten);
-        else if (n.typ === "haeufchen") setHaeufchen(n.daten);
+        else if (n.typ === "haeufchen") {
+          if (bekannt.current === null) bekannt.current = new Set(n.daten.map((h) => h.id));
+          setHaeufchen(n.daten);
+        }
       });
     };
     const trennen = () => {
       leitung.current?.schliessen();
       leitung.current = null;
+      bekannt.current = null;
       setPets([]);
     };
     const umschalten = () => (document.visibilityState === "visible" ? verbinden() : trennen());
@@ -318,6 +329,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             key={h.id}
             h={h}
             art={h.art === "seite" ? "seite" : "haeufchen"}
+            frisch={bekannt.current !== null && !bekannt.current.has(h.id)}
             weg={weg.has(h.id)}
             onWeg={() => wegmachen(h.id)}
             onGefallen={(x, y) => senden({ typ: "verschieben", id: h.id, x, y })}
@@ -345,6 +357,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
 function HaeufchenAmElement({
   h,
   art,
+  frisch,
   weg,
   onWeg,
   onGefallen,
@@ -354,6 +367,8 @@ function HaeufchenAmElement({
    *  dort zerknittert (Mark, 11.11.2026: „verliert Seiten, die dann
    *  zerknittert rumliegen“). */
   art: "haeufchen" | "seite";
+  /** Gerade erst entstanden (nicht vom Server mitgebracht): eine Seite segelt dann los. */
+  frisch: boolean;
   weg: boolean;
   onWeg: () => void;
   onGefallen: (x: number, y: number) => void;
@@ -377,11 +392,22 @@ function HaeufchenAmElement({
     let boden = y >= window.innerHeight - 3;
     let anker: { el: Element; dx: number; dy: number } | null = null;
     let fall: { t0: number; y0: number; x0: number } | null = null;
-    // Eine Seite segelt sofort los — sie bleibt nicht in der Luft an etwas hängen.
-    if (istSeite && !boden) {
-      fall = { t0: performance.now(), y0: y, x0: x };
+    // Mark, 11.11.2026: „die Seiten müssen nicht immer ganz zu Boden fallen,
+    // cooler wenn sie öfter mal an Wörtern usw. hängen bzw. liegen bleiben und
+    // erst zu Boden fallen, wenn man die Seite wechselt“. Eine frische Seite
+    // segelt los und bleibt mit LANDE_CHANCE auf jeder Wort-/Kastenkante
+    // liegen, die sie überquert; dort hängt sie am Element wie ein Häufchen.
+    // Verschwindet das Element, segelt sie ohne Halt zu Boden.
+    let landeFlaechen: Flaeche[] = [];
+    const schonGeprueft = new Set<Flaeche>();
+    const losSegeln = (jetzt: number, mitLanden: boolean) => {
+      fall = { t0: jetzt, y0: y, x0: x };
       div.style.backgroundImage = "url(/pets/baerbel/seite_fliegt.png)";
-    }
+      div.classList.remove("pet-haeufchen-platsch");
+      landeFlaechen = mitLanden ? umgebung({ bw, bh, fuss: 0, maulX: 0, maulY: 0, feuerLaenge: 0 }).flaechen() : [];
+      schonGeprueft.clear();
+    };
+    if (istSeite && frisch && !boden) losSegeln(performance.now(), true);
     const suchenBis = performance.now() + 2500;
 
     const suche = () => {
@@ -406,11 +432,34 @@ function HaeufchenAmElement({
         y = window.innerHeight;
       } else if (fall) {
         const t = Math.max(0, (jetzt - fall.t0) / 1000);
+        const vorher = y;
         if (istSeite) {
           // Segeln: langsam, pendelt seitlich und kippt dabei.
           y = fall.y0 + 110 * t;
           x = fall.x0 + Math.sin(t * 2.4) * 22;
           div.style.transform = `rotate(${(Math.cos(t * 2.4) * 35).toFixed(1)}deg)`;
+          // Auf einer Kante liegen bleiben?
+          for (const f of landeFlaechen) {
+            if (schonGeprueft.has(f) || f.r.top <= vorher || f.r.top > y) continue;
+            if (x < f.r.left || x > f.r.right) continue;
+            schonGeprueft.add(f);
+            const r = f.q.rechteck();
+            if (!r || Math.random() > LANDE_CHANCE) continue;
+            y = r.top;
+            fall = null;
+            landeFlaechen = [];
+            div.style.transform = "";
+            div.style.backgroundImage = liegtBild;
+            div.classList.add("pet-haeufchen-platsch");
+            anker = suche();
+            gefallen.current(Math.min(1, Math.max(0, x / window.innerWidth)), Math.min(1, Math.max(0, y / window.innerHeight)));
+            break;
+          }
+          if (!fall) {
+            zeichnen();
+            rahmen = requestAnimationFrame(takt);
+            return;
+          }
         } else y = fall.y0 + 0.5 * 2600 * t * t;
         if (y >= window.innerHeight) {
           y = window.innerHeight;
@@ -429,7 +478,8 @@ function HaeufchenAmElement({
         const r = anker.el.getBoundingClientRect();
         if (!anker.el.isConnected || (r.width === 0 && r.height === 0)) {
           anker = null;
-          fall = { t0: jetzt, y0: y, x0: x };
+          if (istSeite) losSegeln(jetzt, false); // Seitenwechsel: ohne Halt zu Boden
+          else fall = { t0: jetzt, y0: y, x0: x };
           div.classList.add("pet-haeufchen-faellt");
         } else {
           x = r.left + anker.dx;
@@ -438,7 +488,8 @@ function HaeufchenAmElement({
       } else {
         anker = suche();
         if (!anker && jetzt > suchenBis) {
-          fall = { t0: jetzt, y0: y, x0: x };
+          if (istSeite) losSegeln(jetzt, false);
+          else fall = { t0: jetzt, y0: y, x0: x };
           div.classList.add("pet-haeufchen-faellt");
         }
       }
