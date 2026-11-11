@@ -305,6 +305,28 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
   // Der Zustandsautomat lebt in einer Ref — kein React-Render pro Frame.
   const bewegung = useRef<PetBewegung | null>(null);
 
+  // Mark, 11.11.: „er zappelt zwar, aber ich kann ihn nicht verschieben,
+  // meistens verschiebe ich den ganzen Screen“. `touch-action: none` allein
+  // reicht auf dem Tablet nicht verlässlich — der Browser entscheidet beim
+  // Aufsetzen auf seiner (bei einer laufenden Figur oft veralteten) Kopie der
+  // Seite, ob gescrollt wird, und bricht dann unsere Pointer-Kette ab. Darum
+  // die Touch-Ereignisse direkt an der Figur abfangen (nicht passiv, sonst
+  // wirkt preventDefault nicht): kein Scrollen, kein Zurückziehen, kein
+  // Lange-Drücken-Menü. Die Pointer-Ereignisse kommen trotzdem an.
+  useEffect(() => {
+    const el = figur.current;
+    if (!el) return;
+    const stopp = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchstart", stopp, { passive: false });
+    el.addEventListener("touchmove", stopp, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", stopp);
+      el.removeEventListener("touchmove", stopp);
+    };
+  }, []);
+
   useEffect(() => {
     const b = new PetBewegung(masse, umgebung(), pet.seite, performance.now(), (m) => {
       if (m.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: m.seite });
@@ -391,7 +413,8 @@ function PetFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => v
     const jetzt = performance.now();
     if (b.gepackt) {
       b.tragen(e.clientX, e.clientY, jetzt);
-    } else if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 14) {
+    } else if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 40) {
+      // Großzügig: ein Finger, der 3 s draufliegt, rollt und zittert.
       // Finger rutscht weg, bevor er gepackt ist: kein Packen, kein Streicheln.
       b.druckAbbrechen(jetzt);
       druck.current = null;
