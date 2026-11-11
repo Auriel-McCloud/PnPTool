@@ -1901,3 +1901,7 @@ Kampfwerte-Fenster eines NPC hat neben „Ganzer Bogen“ einen Knopf „Inventa
 ## [2026-11-10] update | Augments: NPC-Inventar Upgraden mit Auswahl und Ausbau
 
 Upgraden-Knopf im NPC-Inventar öffnet das Träger-Fach der Werkbank statt blind das erste freie Upgrade. Siehe [[concepts/augments-ausruestung]].
+
+## [2026-11-11] update | Tutorial-Shop: KI-Kommentar nach dem Einkauf entfernt
+
+Mark: stört und ist nicht lustig. Kein Popup, kein KI-Aufruf beim Schließen des Tutorial-Shops mehr. Route bleibt ungenutzt. Siehe [[entities/nebenfiguren]] für den Tutorial-Shop-Verkäufer.

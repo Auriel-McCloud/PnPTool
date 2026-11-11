@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Tutorial-Shop: KI-Verkäufer-Kommentar entfernt (11.11.2026)
+
+Mark nach ein paar Einkäufen: das Popup „⌬ Verkäufer-Kommentar“ beim Schließen des Tutorial-Shops stört nur und ist nicht lustig. `TutorialShopPopup.tsx` sammelt keine Session-Käufe mehr und ruft beim Schließen keine KI mehr auf; Popup weg. Backend-Route `POST …/tutorial/kommentar` und `haendlerApi.tutorialKommentar` bleiben ungenutzt stehen. Nur Frontend, `tsc -b` sauber.
+
 ## NPC-Inventar: Upgraden mit Auswahl und Ausbau (10.11.2026)
 
 Mark: NPCs bekommen keine Augments. Chrom-Einsetzen am NPC lief schon (05.11.). Der Werkbank-Knopf „🔩 Upgraden“ in `PCInventar.tsx` (06.11.) nahm aber blind das erste freie Upgrade ohne Passt-Prüfung, tat ohne freies Upgrade gar nichts und konnte nicht demontieren. Jetzt öffnet er ein Fenster mit `AugmentTraegerPanel` (wie die Werkbank): montierte Upgrades antippen = demontieren/reparieren, passende freie aus dem Besitz der Person = einbauen. Backend unverändert (GM darf beides). Gilt auch im Kampfmenü-Inventar. Nur Frontend, `tsc -b` sauber.

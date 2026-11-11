@@ -68,16 +68,9 @@ export function TutorialShopPopup({
   // Bild in der Detailspalte antippen → groß im Popup (04.11.2026, Marks
   // Wunsch: die Vorschaubilder sind dort winzig).
   const [bildGrossOffen, setBildGrossOffen] = useState(false);
-  // Gesamt-Kommentar (04.11.2026, Marks Wunsch): nicht mehr EIN KI-Aufruf
-  // PRO Kauf (das blockierte "Kaufen" bis die Antwort da war — unnötige
-  // Wartezeit für reinen Flavor-Text). Stattdessen sammelt sich hier die
-  // Session, und beim Schließen des Shops (siehe `schliessen()`) geht EIN
-  // Aufruf über den gesamten Einkauf raus, Ergebnis in einem eigenen Popup.
-  const [sessionKaeufe, setSessionKaeufe] = useState<{ name: string; typ: string }[]>([]);
-  const [kommentarPopupOffen, setKommentarPopupOffen] = useState(false);
-  const [kommentarGesamt, setKommentarGesamt] = useState<string | null>(null);
-  const [kommentarGesamtLaedt, setKommentarGesamtLaedt] = useState(false);
-  const [kommentarGesamtFehler, setKommentarGesamtFehler] = useState<string | null>(null);
+  // KI-Verkäufer-Kommentar nach dem Einkauf entfernt (11.11.2026, Mark:
+  // „stört eigentlich nur und ist nicht lustig“). Kein KI-Aufruf mehr beim
+  // Schließen; die Backend-Route `tutorial/kommentar` bleibt ungenutzt stehen.
 
   // Still nachladen wie der normale Shop (ShopSeite.tsx) — alle 5s, solange
   // offen (24.10.2026, Marks Wunsch: die SL legt waehrend des Freebees-
@@ -128,7 +121,6 @@ export function TutorialShopPopup({
       onGekauft(antwort.kapitalNeu, antwort.tutorialAusgegeben ?? ausgegeben);
       if (!featureGenutzt && ersterKaufTrifft(gratisErsterKaufTyp, ware.typ)) onFeatureVerbraucht();
       if (!ware.istVorlage) setGewaehltId(null);
-      setSessionKaeufe((s) => [...s, { name: ware.name, typ: ware.typ }]);
       await laden();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Kauf fehlgeschlagen");
@@ -137,28 +129,8 @@ export function TutorialShopPopup({
     }
   }
 
-  /** Schließt den Shop und stößt — falls in dieser Session etwas gekauft
-   * wurde — den EINEN Gesamt-Kommentar an (eigenes Popup, siehe unten). */
   function schliessen() {
-    const positionen = sessionKaeufe.map((k) => ({ gegenstandName: k.name, gegenstandTyp: k.typ }));
-    const haendlerId = haendler?.id;
-    setSessionKaeufe([]);
     onSchliessen();
-    if (positionen.length === 0 || !haendlerId) return;
-    setKommentarPopupOffen(true);
-    setKommentarGesamt(null);
-    setKommentarGesamtFehler(null);
-    setKommentarGesamtLaedt(true);
-    void (async () => {
-      try {
-        const { kommentar } = await haendlerApi.tutorialKommentar(campaignId, haendlerId, positionen);
-        setKommentarGesamt(kommentar);
-      } catch (e) {
-        setKommentarGesamtFehler(e instanceof Error ? e.message : "Der Kommentar ist fehlgeschlagen.");
-      } finally {
-        setKommentarGesamtLaedt(false);
-      }
-    })();
   }
 
   const preis = gewaehlt ? kaufPreis(gewaehlt, gratisErsterKaufTyp, featureGenutzt) : 0;
@@ -385,28 +357,6 @@ export function TutorialShopPopup({
           }
         }}
       />
-    )}
-    {kommentarPopupOffen && (
-      <Fenster
-        offen={kommentarPopupOffen}
-        titel="⌬ Verkäufer-Kommentar"
-        kennung="tutorial-shop-kommentar"
-        schmal
-        onSchliessen={() => setKommentarPopupOffen(false)}
-      >
-        <div className="ts-verkaeufer">
-          <span className="ts-verkaeufer-symbol" aria-hidden="true">
-            ⌬
-          </span>
-          <div className="ts-verkaeufer-text">
-            {kommentarGesamtLaedt && (
-              <p className="ts-kommentar-ladend">… überlegt sich einen Spruch zum ganzen Einkauf …</p>
-            )}
-            {kommentarGesamt && <p className="ts-kommentar">{kommentarGesamt}</p>}
-            {kommentarGesamtFehler && <p className="shop-ware-fehler">{kommentarGesamtFehler}</p>}
-          </div>
-        </div>
-      </Fenster>
     )}
     {gewaehlt?.bildUrl && (
       <BildGross
