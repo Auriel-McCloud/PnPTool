@@ -149,9 +149,9 @@ export type Meldung =
   | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" };
 
 /** Niesen: Sprite-Takt und wann das Feuer kommt (passt zu niesen.png/feuer.png). */
-const NIESEN_MS = 14 * 80;
+const NIESEN_MS = 22 * 80;
 const FEUER_AB_MS = 6 * 80;
-const FEUER_MS = 8 * 70;
+const FEUER_MS = 16 * 70;
 /** Mindestabstand zwischen zwei Niesern. */
 const NIESEN_PAUSE_MS = 25_000;
 
@@ -392,6 +392,7 @@ export class PetBewegung {
   streicheln(jetzt: number): boolean {
     if (["raus", "sprung", "klettern", "uebergang", "niesen"].includes(this.zustand)) return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
+    // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
     this.zustand = "freuen";
     this.bis = jetzt + 1600;
     return true;
@@ -422,9 +423,11 @@ export class PetBewegung {
         return;
       }
       if (!ende && !this.geschlafen && breit >= bw * 0.5 && w < 0.22) {
+        // Mark, 11.11.: darf ruhig bis zu 5 Minuten schlafen — Antippen weckt ihn.
         this.zustand = "schlafen";
         this.geschlafen = true;
-        this.bis = jetzt + this.zw(6000, 14000);
+        this.bis = jetzt + this.zw(30_000, 300_000);
+        this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 40_000));
         return;
       }
       if (!ende && breit > bw * 0.4 && w < 0.45) {

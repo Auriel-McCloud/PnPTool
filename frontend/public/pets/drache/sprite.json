@@ -19,7 +19,7 @@
       "ms": 35
     },
     "niesen": {
-      "frames": 14,
+      "frames": 22,
       "ms": 80
     },
     "sprung": {
@@ -34,7 +34,7 @@
   "feuer": {
     "breite": 56,
     "hoehe": 28,
-    "frames": 8,
+    "frames": 16,
     "ms": 70
   },
   "maul": [

@@ -23,13 +23,13 @@ const SPRITE = {
   hoehe: 48,
   fussLuft: 7,
   maul: [73, 26],
-  feuer: { breite: 56, hoehe: 28, frames: 8, ms: 70 },
+  feuer: { breite: 56, hoehe: 28, frames: 16, ms: 70 },
   animationen: {
     idle: { frames: 24, ms: 110 },
     lauf: { frames: 32, ms: 35 },
     freuen: { frames: 8, ms: 90 },
     klettern: { frames: 32, ms: 35 },
-    niesen: { frames: 14, ms: 80 },
+    niesen: { frames: 22, ms: 80 },
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
   },
@@ -37,10 +37,10 @@ const SPRITE = {
 
 const SPUR_PX = {
   haeufchen: { breite: 12, hoehe: 10 },
-  brand: { breite: 16, hoehe: 9 },
+  brand: { breite: 32, hoehe: 18 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
-const WISCH_PX = 320;
+const WISCH_PX = 450;
 
 function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;

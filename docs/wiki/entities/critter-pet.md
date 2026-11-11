@@ -126,6 +126,9 @@ Herkunft: Planpunkt 15 in `CLAUDE.md`, erste Skizze 24.09.2026 in
   und nur durch Reiben weggehen. Häufchen macht er jetzt auch oben auf Text
   und Kästchen — die Position ist eine Bildschirmstelle, beim Scrollen bleibt
   das Häufchen also am Bildschirm, nicht am Wort.
+- **Nachschärfung 11.11.:** Feuerstoß etwa doppelt so lang, Brandfleck etwa
+  doppelt so groß. Schlafen bis zu 5 Minuten (Mark: „man kann ihn ja
+  aufwecken, wenn man ihn antippt“) — Antippen weckt ihn.
 
 ## Noch offen
 

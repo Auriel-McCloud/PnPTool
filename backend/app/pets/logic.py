@@ -26,7 +26,9 @@ UNTERWEGS_MAX_S = 12.0
 
 # Meldet ein Tablet nie „raus“ (Browser eingefroren, Akku leer, ohne dass
 # die Leitung zuging), zieht der Server das Pet nach dieser Zeit selbst weiter.
-HOECHSTE_VERWEILDAUER_S = 300.0
+# Großzügig: er darf bis zu 5 Minuten auf einem Popup schlafen (Mark, 11.11.),
+# dazu kommen Besuch und Kletterei.
+HOECHSTE_VERWEILDAUER_S = 600.0
 
 
 def naechster_wirt(online: list[str], aktuell: str | None, zufall: random.Random | None = None) -> str | None:
