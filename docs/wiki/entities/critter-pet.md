@@ -287,6 +287,18 @@ Noch offen:
 - Was zählt als „in der Sitzung“ (laufende Sitzung aus dem Ereignisprotokoll)?
 - Reihenfolge der Bärbel-Fähigkeiten, und ob sie auch je Sitzung freigeschaltet werden.
 
+### Marks Entscheidung 12.11.2026 (Abend): EP = Wachstum, Futter = Heilung
+
+- **Wachstum hängt an den EP** des Critters (nur EP seit der Bindung, siehe Falle oben). Pflege ist damit keine Wachstumsbedingung mehr (Neko-Lesart, von Mark noch zu bestätigen).
+- **Füttern heilt:** Der Critter kämpft mit, Futter gibt ihm Lebenspunkte zurück.
+- **Futter ist ein Verbrauchsgegenstand**, den Mark selbst anlegt (Typ `Verbrauchsgegenstand`, stapelbar, 1 Stück je Mahlzeit).
+- **Bedienidee Mark:** Den Critter im Inventar in die Nähe des Futters heben, dann fängt er an zu fressen. Neko: passt zur vorhandenen Mechanik — das Pet lässt sich schon packen (3 s halten) und werfen, und der Drache hat einen Fressen-Zustand (Bärbels Seiten). Ablegen über der Futter-Kachel = fressen. Zusätzlich Rückweg nötig, wenn das Pet gerade bei einem anderen Spieler ist: z. B. Knopf „Füttern“ am Futter ruft es heim, es läuft hin und frisst.
+
+Noch offen:
+- Wie viele LP heilt ein Futter — Wert am Futter-Gegenstand (SL trägt ein) oder fester Wert?
+- Wie viele EP je Wachstumsschritt (12 Schritte bis ausgewachsen)?
+- Darf nur der Besitzer füttern oder jeder?
+
 ## Noch offen
 
 - Wachsen/Fähigkeiten freischalten — siehe Abschnitt oben (Antworten 12.11., Rest offen).

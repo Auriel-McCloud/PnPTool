@@ -1985,3 +1985,7 @@ Drachen sollen je Sitzung größer/eleganter werden, Bärbel neue Fähigkeiten b
 ## [2026-11-12] update | Pets wachsen: Marks Antworten
 
 12 Wachstumsschritte über 10–12 Sitzungen, Pflege + Critter-EP als Auslöser, neuer Critter = wieder klein; Bärbel liest Bibelverse nur beim Besitzer, anderen Rezepte/DIY/Wetter. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Pet-Wachstum über EP, Futter heilt
+
+Wachstum an Critter-EP gekoppelt, Füttern heilt LP, Futter = Verbrauchsgegenstand (Mark legt an), Bedienidee: Pet über Futter-Kachel fallen lassen. Siehe [[entities/critter-pet]].
