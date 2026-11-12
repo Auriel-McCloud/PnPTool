@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-12] update | Neonflackern: Ameisenkrieg wieder sichtbar
+
+Gewürfeltes Rausch-SVG war ein schwarzes Rechteck, overlay auf Schwarz unsichtbar. Intensität hoch, Bild bleibt lesbar. Siehe [[entities/ui-konzept-commlink]].
+
 ## [2026-11-11] update | Critter-Pet: Häufchen am Element, Ruß am Display
 
 Siehe [[entities/critter-pet]].

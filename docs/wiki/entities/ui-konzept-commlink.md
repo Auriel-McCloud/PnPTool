@@ -1,7 +1,7 @@
 ---
 title: UI-Konzept — Das Commlink
 created: 2026-09-18
-updated: 2026-10-31
+updated: 2026-11-12
 type: entität
 tags: [ui, frontend]
 sources: [../../ui-konzept.md, ../../../frontend/src/shell/CommlinkShell.tsx, ../../../frontend/src/shell/commlink.css]
@@ -133,6 +133,18 @@ das Bild drunter noch verzerrt durchscheint"*):
   die 1,6s verteilt statt ein einzelner Blitz.
 - `prefers-reduced-motion` und die zufällige Taktung unverändert
   respektiert.
+
+**12.11.2026, Ameisenkrieg wieder sichtbar und kräftiger.** Mark: seit dem
+Zufallsmuster meist nur noch dezent, den Ameisenkrieg seitdem nicht mehr
+gesehen. Zwei Ursachen, nicht die Würfelspanne allein: der gewürfelte
+Data-URI schrieb `%23` schon vor `encodeURIComponent`, der Filter griff
+nicht, das SVG war ein schwarzes Rechteck. Dazu dimmte
+`--stoerung-intensitaet` (0,5–0,95) die Eltern-Deckkraft, und `overlay`
+auf dem dunklen Commlink schluckt Rauschen. Jetzt Filter-Verweis `url(#n)`,
+Rauschen als Geschwister mit `hard-light` (nicht Kind, sonst frisst die
+Eltern-Deckkraft die Flecken), Intensität 1,00–1,08. Auch das leise Ende
+ist sichtbarer Schnee, das Bild darunter bleibt lesbar. Taktung und
+`prefers-reduced-motion` unverändert.
 
 ## Tooltip-System: Kurztext + Detail-Popup
 

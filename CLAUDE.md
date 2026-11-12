@@ -2660,6 +2660,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (12.11.2026 — Störeffekt wieder wie ein alter Fernseher):**
+- **Was:** Der zufällige Ameisenkrieg war seit dem Zufalls-SVG weg (Filter-Verweis doppelt kodiert, Rechteck schwarz) und die Intensität 0,5–0,95 hat die Schicht zusätzlich gedimmt. `overlay` auf dem dunklen Commlink schluckt Rauschen. Jetzt sichtbarer Schnee (`hard-light`, Intensität 1,00–1,08), Bild darunter bleibt lesbar, harte Helligkeitssprünge. Taktung 5–10 Minuten und `prefers-reduced-motion` unverändert.
+- **Wo:** `frontend/src/shell/CommlinkShell.tsx` (`zufallsRauschen`, `Stoerung`), `frontend/src/shell/commlink.css` (`.cl-stoerung`, `.cl-stoerung-bild`).
+- **Verifiziert:** Data-URI-Pixelprobe (alt: schwarz, neu: echtes Rauschen). Standbild auf dunklem Commlink: bei Deckkraft 0,52 und 0,72 sind Flecken da und Text lesbar. `npx tsc -b` grün.
+
 **Zuletzt gebaut (09.11.2026 — Sphären Raum, Chronurgie, Schicksal):**
 - **Was:** Magier-Namen Korrespondenz→Raum, Zeit→Chronurgie, Entropie→Schicksal. Häretiker sehen weiter Shu, Chronos, Kali. Gedanken bleibt. Stufentexte behalten Zeit, Raum und den Eid als Sache, nicht als Sphärennamen. Der Chip „Schicksal“ heißt Ordnung. Bestehende Punkte hängen beim Start per Seed-Migration um.
 - **Wo:** `backend/app/traits/seed.py`, `backend/app/traits/berater.py`, `frontend/src/traits/magieBegriffe.ts`, `frontend/src/traits/magie.ts`, `frontend/src/traits/berater.ts`, `docs/regeln-neotopia.md`. Das Charakterblatt liest den Namen aus dem Katalog, kein eigener Text.

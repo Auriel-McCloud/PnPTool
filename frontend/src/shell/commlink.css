@@ -736,19 +736,22 @@ button.cl-bereiche-pfeil:disabled {
    (Steuerung in CommlinkShell.tsx). Kein Dauereffekt: Atmosphäre lebt
    davon, dass sie überrascht.
 
-   Optik: alter Fernseher mit Empfangsstörung. Drei Schichten:
-   1. .cl-stoerung selbst — farbiger Neon-Tint + Vignette (cl-flackern)
-   2. ::before — Schwarz-Weiß-Bildrauschen aus einem SVG-Filter
-      (feTurbulence → Graustufen → Kontrast hochgezogen = "Ameisenkrieg"),
-      per mix-blend-mode über das Bild gelegt statt es zu ersetzen
-   3. ::after — backdrop-filter (Blur/Kontrast/Hue) verzerrt das Bild
-      darunter, ohne es zu verdecken — das Motiv scheint sichtbar verzerrt
-      durch die Störung durch
-   Alle drei laufen mit steps(1, end): harte Sprünge statt weichem Faden,
-   das wirkt wie echte Empfangsaussetzer statt wie ein Fade. Mehrere kurze
-   Schübe über die volle Dauer verteilt statt ein einzelner langer Blitz. */
+   Zwei Geschwister, nicht Eltern/Kind. Eine Deckkraft oder ein Blend-Modus
+   am Eltern-Element hat das Rauschen mitgedimmt und den backdrop-filter
+   von der Seite abgeschnitten — auf dem dunklen Commlink blieb dann nur
+   ein Hauch, der Ameisenkrieg (kaputter Filter-Verweis, siehe
+   zufallsRauschen) gar nichts.
 
-.cl-stoerung {
+   1. .cl-stoerung-bild — Helligkeitssprünge, Neon-Blitz, leichte
+      Verzerrung (backdrop-filter). Sieht die Seite direkt.
+   2. .cl-stoerung — Schwarz-Weiß-Rauschen (Ameisenkrieg) als eigene
+      Fläche, mix-blend-mode hard-light, damit die Flecken auf Schwarz
+      sichtbar sind und das Bild darunter durchscheint. Deckkraft hängt
+      an --stoerung-intensitaet (1,00–1,08), sichtbar, Bild bleibt lesbar.
+   steps(1, end): harte Sprünge, wie Empfangsaussetzer, kein Fade. */
+
+.cl-stoerung,
+.cl-stoerung-bild {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -756,158 +759,169 @@ button.cl-bereiche-pfeil:disabled {
   opacity: 0;
 }
 
-.cl-stoerung[data-aktiv="true"] {
-  animation: cl-flackern 3.2s steps(1, end) both;
+.cl-stoerung-bild {
+  z-index: 9998;
 }
 
-.cl-stoerung[data-aktiv="true"]::before {
-  content: "";
-  position: absolute;
-  inset: -15%;
-  /* --cl-noise-url wird pro Auftreten in CommlinkShell.tsx neu gewürfelt
-     (zufälliger Seed fürs feTurbulence-Perlin-Rauschen); Fallback unten
-     greift nur, falls die Variable aus irgendeinem Grund fehlt. */
-  background-image: var(
-    --cl-noise-url,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncG type='linear' slope='4' intercept='-1.5'/%3E%3CfeFuncB type='linear' slope='4' intercept='-1.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")
-  );
-  background-size: 260px 260px;
-  mix-blend-mode: overlay;
-  opacity: 0;
-  animation: cl-rauschen 3.2s steps(1, end) both;
-}
-
-.cl-stoerung[data-aktiv="true"]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+.cl-stoerung-bild[data-aktiv="true"] {
+  opacity: 1;
   animation: cl-verzerrung 3.2s steps(1, end) both;
 }
 
-@keyframes cl-flackern {
-  0%,
-  15%,
-  30%,
-  47%,
-  63%,
-  79%,
-  96%,
-  100% {
-    opacity: 0;
-  }
-  4% {
-    opacity: calc(0.5 * var(--stoerung-intensitaet, 1));
-    background: color-mix(in srgb, var(--flacker-a) 5%, transparent);
-    box-shadow: inset 0 0 120px color-mix(in srgb, var(--flacker-a) 18%, transparent);
-  }
-  11% {
-    opacity: calc(0.34 * var(--stoerung-intensitaet, 1));
-    background: color-mix(in srgb, var(--flacker-a) 4%, transparent);
-  }
-  34% {
-    opacity: calc(0.42 * var(--stoerung-intensitaet, 1));
-    background: color-mix(in srgb, var(--flacker-b) 5%, transparent);
-    box-shadow: inset 0 0 90px color-mix(in srgb, var(--flacker-b) 16%, transparent);
-  }
-  42% {
-    opacity: calc(0.2 * var(--stoerung-intensitaet, 1));
-  }
-  67% {
-    opacity: calc(0.34 * var(--stoerung-intensitaet, 1));
-    background: color-mix(in srgb, var(--flacker-c) 4.5%, transparent);
-  }
-  74% {
-    opacity: calc(0.15 * var(--stoerung-intensitaet, 1));
-  }
-  93% {
-    opacity: calc(0.22 * var(--stoerung-intensitaet, 1));
-    background: color-mix(in srgb, var(--flacker-a) 4%, transparent);
-  }
+.cl-stoerung[data-aktiv="true"] {
+  /* Deckkraft bleibt 1, die Animation regelt die Schübe selbst.
+     Sonst multipliziert die Eltern-Deckkraft das Rauschen noch einmal
+     runter und der Ameisenkrieg verschwindet wieder. */
+  opacity: 1;
+  mix-blend-mode: hard-light;
+  background-image: var(
+    --cl-noise-url,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='5' intercept='-2'/%3E%3CfeFuncG type='linear' slope='5' intercept='-2'/%3E%3CfeFuncB type='linear' slope='5' intercept='-2'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")
+  );
+  background-size: 180px 180px;
+  background-repeat: repeat;
+  animation: cl-rauschen 3.2s steps(1, end) both;
 }
 
 @keyframes cl-rauschen {
   0%,
-  15%,
-  30%,
-  47%,
-  63%,
-  79%,
-  96%,
   100% {
     opacity: 0;
+    transform: none;
   }
-  4% {
-    opacity: 0.85;
-    transform: translate(-3%, 2%);
+  2% {
+    opacity: calc(0.58 * var(--stoerung-intensitaet, 1));
+    transform: translate(-4%, 2%) skewX(-1.2deg);
   }
-  7% {
-    opacity: 0.4;
-    transform: translate(2%, -3%);
+  6% {
+    opacity: calc(0.66 * var(--stoerung-intensitaet, 1));
+    transform: translate(3%, -3%) skewX(0.8deg);
   }
-  11% {
-    opacity: 0.7;
-    transform: translate(-2%, -1%);
+  10% {
+    opacity: calc(0.52 * var(--stoerung-intensitaet, 1));
+    transform: translate(-2%, 4%);
   }
-  34% {
-    opacity: 0.6;
-    transform: translate(3%, 1%);
+  14% {
+    opacity: calc(0.64 * var(--stoerung-intensitaet, 1));
+    transform: translate(5%, -1%) skewX(-0.6deg);
   }
-  38% {
-    opacity: 0.25;
-    transform: translate(-1%, 3%);
+  18% {
+    opacity: 0;
+    transform: none;
   }
-  42% {
-    opacity: 0.55;
-    transform: translate(2%, -2%);
+  21% {
+    opacity: calc(0.62 * var(--stoerung-intensitaet, 1));
+    transform: translate(-5%, -2%);
   }
-  67% {
-    opacity: 0.75;
-    transform: translate(-3%, -2%);
+  26% {
+    opacity: calc(0.68 * var(--stoerung-intensitaet, 1));
+    transform: translate(2%, 3%) skewX(1.4deg);
+  }
+  31% {
+    opacity: calc(0.50 * var(--stoerung-intensitaet, 1));
+    transform: translate(-1%, -4%);
+  }
+  36% {
+    opacity: calc(0.65 * var(--stoerung-intensitaet, 1));
+    transform: translate(4%, 2%);
+  }
+  40% {
+    opacity: 0;
+  }
+  43% {
+    opacity: calc(0.58 * var(--stoerung-intensitaet, 1));
+    transform: translate(-3%, 1%) skewX(-1deg);
+  }
+  48% {
+    opacity: calc(0.54 * var(--stoerung-intensitaet, 1));
+    transform: translate(6%, -3%);
+  }
+  53% {
+    opacity: calc(0.66 * var(--stoerung-intensitaet, 1));
+    transform: translate(-4%, 4%) skewX(0.5deg);
+  }
+  58% {
+    opacity: calc(0.50 * var(--stoerung-intensitaet, 1));
+    transform: translate(1%, -2%);
+  }
+  62% {
+    opacity: 0;
+  }
+  65% {
+    opacity: calc(0.62 * var(--stoerung-intensitaet, 1));
+    transform: translate(-6%, 2%);
   }
   70% {
-    opacity: 0.3;
-    transform: translate(1%, 3%);
+    opacity: calc(0.68 * var(--stoerung-intensitaet, 1));
+    transform: translate(3%, -4%) skewX(-1.6deg);
   }
-  74% {
-    opacity: 0.45;
-    transform: translate(-2%, 1%);
+  75% {
+    opacity: calc(0.54 * var(--stoerung-intensitaet, 1));
+    transform: translate(-2%, 3%);
+  }
+  80% {
+    opacity: calc(0.64 * var(--stoerung-intensitaet, 1));
+    transform: translate(4%, 1%) skewX(1deg);
+  }
+  85% {
+    opacity: 0;
+  }
+  88% {
+    opacity: calc(0.60 * var(--stoerung-intensitaet, 1));
+    transform: translate(-3%, -3%);
   }
   93% {
-    opacity: 0.35;
-    transform: translate(2%, 2%);
+    opacity: calc(0.50 * var(--stoerung-intensitaet, 1));
+    transform: translate(2%, 2%) skewX(-0.4deg);
+  }
+  97% {
+    opacity: 0;
   }
 }
 
 @keyframes cl-verzerrung {
   0%,
-  15%,
-  30%,
-  47%,
-  63%,
-  79%,
-  96%,
+  18%,
+  40%,
+  62%,
+  85%,
   100% {
     backdrop-filter: none;
+    background: transparent;
+    box-shadow: none;
   }
-  4% {
-    backdrop-filter: blur(1.5px) contrast(1.6) saturate(0.2) hue-rotate(8deg);
+  2%,
+  21%,
+  43%,
+  65%,
+  88% {
+    backdrop-filter: blur(0.6px) contrast(1.45) saturate(0.35) brightness(1.25) hue-rotate(6deg);
+    background: color-mix(in srgb, var(--flacker-a) 10%, transparent);
+    box-shadow: inset 0 0 80px color-mix(in srgb, var(--flacker-a) 22%, transparent);
   }
-  11% {
-    backdrop-filter: blur(2px) contrast(1.8) saturate(0) hue-rotate(-6deg);
+  6%,
+  26%,
+  53%,
+  70% {
+    backdrop-filter: blur(0.8px) contrast(1.35) saturate(0.25) brightness(1.05) hue-rotate(-6deg);
+    background: color-mix(in srgb, var(--flacker-b) 6%, transparent);
+    box-shadow: inset 0 0 60px color-mix(in srgb, var(--flacker-b) 16%, transparent);
   }
-  34% {
-    backdrop-filter: blur(1px) contrast(1.5) saturate(0.3);
+  10%,
+  31%,
+  58%,
+  75% {
+    backdrop-filter: blur(0.4px) contrast(1.35) saturate(0.5) brightness(1.15);
+    background: color-mix(in srgb, var(--flacker-c) 7%, transparent);
+    box-shadow: none;
   }
-  42% {
-    backdrop-filter: blur(1.8px) contrast(1.7) saturate(0) hue-rotate(5deg);
-  }
-  67% {
-    backdrop-filter: blur(1.2px) contrast(1.6) saturate(0.1) hue-rotate(-4deg);
-  }
-  74% {
-    backdrop-filter: blur(1.6px) contrast(1.5) saturate(0);
-  }
+  14%,
+  36%,
+  48%,
+  80%,
   93% {
-    backdrop-filter: blur(0.8px) contrast(1.3);
+    backdrop-filter: blur(0.6px) contrast(1.3) saturate(0.4) brightness(1.08) hue-rotate(4deg);
+    background: transparent;
+    box-shadow: inset 0 0 90px color-mix(in srgb, var(--flacker-a) 14%, transparent);
   }
 }

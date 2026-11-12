@@ -363,16 +363,20 @@ const STOERUNG_MS = 3200;
  */
 function zufallsRauschen(): string {
   const seed = Math.floor(Math.random() * 10_000);
-  const koernung = (0.75 + Math.random() * 0.3).toFixed(2); // 0.75–1.05
+  const koernung = (0.7 + Math.random() * 0.35).toFixed(2); // 0.70–1.05
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>` +
     `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${koernung}' ` +
     `numOctaves='3' seed='${seed}' stitchTiles='stitch'/>` +
     `<feColorMatrix type='saturate' values='0'/>` +
-    `<feComponentTransfer><feFuncR type='linear' slope='4' intercept='-1.5'/>` +
-    `<feFuncG type='linear' slope='4' intercept='-1.5'/>` +
-    `<feFuncB type='linear' slope='4' intercept='-1.5'/></feComponentTransfer>` +
-    `</filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>`;
+    `<feComponentTransfer><feFuncR type='linear' slope='5' intercept='-2'/>` +
+    `<feFuncG type='linear' slope='5' intercept='-2'/>` +
+    `<feFuncB type='linear' slope='5' intercept='-2'/></feComponentTransfer>` +
+    `</filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
+  // '#' hier roh lassen. encodeURIComponent macht daraus %23, der Browser
+  // decodiert den Data-URI wieder zu url(#n). Ein vorab geschriebenes %23
+  // wird zu %2523 und der Filter greift nicht — dann ist das Rechteck nur
+  // schwarz und der Ameisenkrieg bleibt aus.
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
@@ -382,12 +386,13 @@ function zufallsRauschen(): string {
  * Sieht aus wie ein alter Fernseher mit Empfangsproblemen: mehrere Schübe
  * aus Schwarz-Weiß-Bildrauschen ("Ameisenkrieg") legen sich kurz über den
  * Schirm, während das Bild darunter verzerrt durchscheint (CSS-Modul
- * commlink.css, Keyframes cl-flackern/cl-rauschen).
+ * commlink.css, Keyframes cl-verzerrung/cl-rauschen).
  *
  * Pro Auftreten zufällig:
  * - das Rauschmuster selbst (neuer Perlin-Seed, siehe zufallsRauschen)
- * - die Intensität der Schübe (--stoerung-intensitaet, 0,5–0,95 — mal ein
- *   leichtes Rauschen, mal ein richtig schlimmes)
+ * - die Intensität der Schübe (--stoerung-intensitaet, 1,00–1,08). Auch das
+ *   leise Ende ist sichtbarer Ameisenkrieg; das starke Ende schneit dichter,
+ *   das Bild darunter bleibt lesbar.
  *
  * Absichtlich selten: als Dauereffekt wäre es Belästigung statt Atmosphäre.
  * Wer Bewegung im System abgestellt hat, bekommt es gar nicht — Geflacker
@@ -404,7 +409,7 @@ function Stoerung() {
     const planen = () => {
       const minuten = 5 + Math.random() * 5;
       timer.current = window.setTimeout(() => {
-        const intensitaet = 0.5 + Math.random() * 0.45; // 0,5–0,95
+        const intensitaet = 1 + Math.random() * 0.08; // 1,00–1,08
         setStil({
           "--cl-noise-url": zufallsRauschen(),
           "--stoerung-intensitaet": intensitaet,
@@ -420,11 +425,18 @@ function Stoerung() {
   }, []);
 
   return (
-    <div
-      className="cl-stoerung"
-      data-aktiv={aktiv}
-      style={stil}
-      aria-hidden="true"
-    />
+    <>
+      {/* Geschwister, nicht Kind: Deckkraft oder mix-blend-mode am Eltern
+          würde das Rauschen mitdimmen und den backdrop-filter von der Seite
+          abschneiden. Bild-Schicht verzerrt und blitzt, Rausch-Schicht legt
+          den Ameisenkrieg darüber. */}
+      <div className="cl-stoerung-bild" data-aktiv={aktiv} aria-hidden="true" />
+      <div
+        className="cl-stoerung"
+        data-aktiv={aktiv}
+        style={stil}
+        aria-hidden="true"
+      />
+    </>
   );
 }
