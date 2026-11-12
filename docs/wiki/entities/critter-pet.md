@@ -252,7 +252,27 @@ Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur
 Sprite/Geist-Begleiter). Behoben: eigene Critter erscheinen dort als Kachel
 mit lesbarem Charakterblatt (`GET …/critter/meine`, CLAUDE.md).
 
+## Wachsen und neue Fähigkeiten (Idee 12.11.2026, offen)
+
+Mark: „Ich würde sie wirklich gerne mehr zu Tamagotchi-artigen Pets machen. Ich würde sie gerne wachsen lassen, mit jeder Session könnten sie ein wenig größer und eleganter werden, also zumindest die Drachen. Bärbel könnte mehr Fähigkeiten bekommen.“ — vorerst nur notiert, Besprechung später.
+
+Skizze (Neko, noch nichts entschieden):
+- **Drachen wachsen in Stufen.** Die Figur ist prozedural (`drache_final.py`), Wachstum ist ein Parameter-Satz je Stufe: Körperlänge (Wirbelzahl), Dicke, Kopf-zu-Körper-Verhältnis (Baby groß, später kleiner), Hornlänge/-verzweigung, Mähne, Schnurrhaare, Beinlänge, Schwanzquaste. Alle Animationen und Atem-Sheets je Stufe neu exportieren — billig, gilt automatisch für Drache, Eis- und Blitzdrache.
+- Realistisch klar unterscheidbar: **5–6 Stufen** (Schlüpfling → Baby (heute) → Jungtier → Halbstark → Jungdrache → ausgewachsen/ehrwürdig). Mehr Stufen gehen technisch, die Sprünge werden aber unsichtbar klein; Alternative: stufenloser Wachstumswert, gerendert in ~6–8 Zwischenstufen.
+- **Größengrenze:** heute 84×44 Sprite-Pixel, am Tablet ×2. Der Bildschirm (Handy!) begrenzt; „größer“ eher ~1,6–2× Baby-Länge, Rest über Eleganz (schlanker, länger, wallende Mähne) statt Masse.
+- **Technik:** Maße stehen heute fest in `SPRITE` (`PetOverlay.tsx`); Wachstum braucht `sprite.json` je Stufe (Maul, Füße, Breite) und Masse je Art+Stufe. Klettern/Wolkenlauf/Treffer rechnen schon aus `Masse`.
+- **Bärbel:** statt Wachstum neue Fähigkeiten freischalten (sie hat schon: 3 Gestalten/Verwandlung, Blitz, Tentakelmonster, Seiten verlieren, Vorlesen). Jede neue Fähigkeit ist eigenes Design + Code — teurer als eine Drachenstufe, etwa eine je Ausbaurunde.
+
+Offene Achsen:
+- **Auslöser fürs Wachsen:** automatisch je gespielter Sitzung (Sitzungen gibt es schon, siehe Ereignisprotokoll/Achievements), SL-Knopf „wachsen lassen“, oder Tamagotchi-Pflege (gestreichelt/gefüttert) — oder Mischung (Pflege nötig, sonst kein Wachstum).
+- **Datenmodell:** Stufe/Wachstumswert am Critter-Knoten (`petStufe`?) — je Critter eigenständig. Kann die SL zurücksetzen/korrigieren?
+- **Wie viele Stufen** und Endstufe: hört es auf („wer soweit kommt…“) oder gibt es eine Endform?
+- **Hat Wachstum Spielwirkung** am Critter (Werte) oder ist es reiner Flavor?
+- **Bärbel:** welche Fähigkeiten in welcher Reihenfolge, auch freigeschaltet je Sitzung?
+
 ## Noch offen
+
+- Wachsen/Fähigkeiten freischalten — siehe Abschnitt oben (offen, Idee 12.11.).
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).

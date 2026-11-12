@@ -1977,3 +1977,7 @@ Nach Bärbels Blitz bleibt er verrußt, bis er sich schüttelt; Flocken fallen z
 ## [2026-11-12] update | Eisdrache und Blitzdrache
 
 Zwei neue Pet-Arten (blau/Eis mit Raureif-Spur, silbern/Blitz), gleiche Figur wie der Drache. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Idee: Pets wachsen
+
+Drachen sollen je Sitzung größer/eleganter werden, Bärbel neue Fähigkeiten bekommen — notiert mit Skizze und offenen Achsen. Siehe [[entities/critter-pet]].

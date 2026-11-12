@@ -3758,7 +3758,7 @@ dort weitergepflegt, hier nicht mehr).
 | 12 | Steckbrief nachträglich bearbeiten | ✅ erledigt | — |
 | 13 | Handy-Ansicht Story-Wiki + Ideenschmiede | ✅ gebaut | [[ingame-wiki-feature]], [[ui-konzept-commlink]] |
 | 14 | Häretiker-Flavor (Magier-Reskin) | ✅ fertig | [[magie-hexkraft]] |
-| 15 | Critter-Tamagotchi/Desktop-Pet | Erste Stufe ✅ 11.11.2026 (Drache läuft/wandert, Streicheln, Häufchen); weitere Animationen, Popup-Klettern, Bedürfnisse **offen** | [[critter-pet]] |
+| 15 | Critter-Tamagotchi/Desktop-Pet | Erste Stufe ✅ 11.11.2026 (Drache läuft/wandert, Streicheln, Häufchen); weitere Animationen, Popup-Klettern, Bedürfnisse **offen**; Idee 12.11.: Drachen wachsen je Sitzung, Bärbel schaltet Fähigkeiten frei (**offen**, Achsen im Wiki) | [[critter-pet]] |
 | 16 | Inventar-Transfer + neue Gegenstandstypen | Party-Weitergabe ✅; Schlucken ✅, am Tisch noch nicht geklickt; Credstick ✅ (05.11.2026, Tresor-Modell; Laden sitzt im Objekt und im Spieler-Fenster); Rest (gleicher Ort, Geld-Weitergabe, Granate) **offen**. Gift an jemand anderem im Kampf später | [[gegenstand-transfer]], [[drogen]] |
 | 17 | Ereignisprotokoll / Sitzungs-Log | Backend+Hooks+SL-Zeitleiste ✅; Korrektur/Papierkorb-UI + NPC-Wissen + ein paar KI-Nebenpfade **offen** | [[ereignisprotokoll]], `docs/api/ereignisprotokoll.md` |
 | 18 | Gezielter NPC-Gegenstands-Scan per Augment (statt Dauer-Tab „Anderswo gesehen") | reine Idee, **nicht begonnen** — Tab 24.10.2026 ausgeblendet (`ANDERSWO_GESEHEN_AKTIV = false` in `SpielerAnsicht.tsx`), weil er frischen Charakteren pauschal alle fremden Gegenstände mit Sichtbarkeit ALLE/SPEZIFISCH zeigte | `ideen für später.txt` |
