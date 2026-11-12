@@ -13,7 +13,7 @@ export interface Nachbar {
 }
 
 export interface Angriff {
-  art: "feuer" | "blitz" | "schleim";
+  art: "feuer" | "eis" | "blitz" | "schleim";
   x: number;
   y: number;
   r: number;
@@ -22,7 +22,7 @@ export interface Angriff {
 const koerper = new Map<string, Nachbar>();
 const makelBis = new Map<string, { art: Angriff["art"]; bis: number }>();
 
-const DAUER: Record<Angriff["art"], number> = { feuer: 2200, blitz: 4500, schleim: 5500 };
+const DAUER: Record<Angriff["art"], number> = { feuer: 2200, eis: 3500, blitz: 4500, schleim: 5500 };
 
 export function melde(n: Nachbar) {
   koerper.set(n.id, n);

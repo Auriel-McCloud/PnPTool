@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Eisdrache und Blitzdrache als Pet-Arten (12.11.2026)
+
+Mark (Critter „Wolke Salamander“ = Babydrache, nur silberblau): zwei neue Pet-Arten `eisdrache` (blauer Körper, silberner Bauch/Mähne, spuckt Eis) und `blitzdrache` (silberner Körper, blaue Mähne, spuckt Blitze), wählbar am Critter wie der Drache. Gleiche Figur/Frames: `docs/assets/critter-pet/drachen_varianten.py` (Paletten + Atem-Sheets im `feuer.png`-Format), Export `sprites_exportieren.py <ziel> <art>` → `frontend/public/pets/<art>/`; Entwurfstafel `wolkensalamander_entwurf.py`. Frontend: `istDrache()`/`atemVon()` in `pets/api.ts`, `Masse.atem` steuert Angriffsart (`feuer`/`eis`/`blitz`) und Spur (Eis → neue Spur `frost` = Raureif am Display, wegwischen wie Ruß; Blitz → `brand`). Blitz verrußt getroffene Drachen (wie Bärbels Blitz), Eis lässt sie kurz bereift bibbern (`data-makel="eis"`), Bärbel erschrickt bei allem. Bärbel zielt/schleimt auf alle Drachen-Arten. Backend: `PET_ARTEN`, `SPUR_ARTEN` += `frost`.
+
 ## Verrußter Drache schüttelt den Ruß ab (12.11.2026)
 
 Mark: nach Bärbels Blitz wurde er einfach wieder normal — er soll sich irgendwann schütteln, Ruß fällt zu Boden. `bewegung.ts`: `verkohlen()` (über `PetSteuerung.verkohlen`, ausgelöst in `PetOverlay` bei `hit.art === "blitz"`) setzt `russ = 1`, Schütteln frühestens nach 7–20 s bei der nächsten Entscheidung, spätestens vor dem Weiterziehen; Zustand `schuetteln` (1,9 s, Pose wackelt wie nasser Hund, Animation `klettern`), Ruß blendet aus, ~45 `Flocke`n fliegen ab, fallen per Wurfparabel zum unteren Rand, liegen 5 s, verblassen. Filter inline aus `Darstellung.russ`, 56 `.pet-russ`-Elemente. Nur Optik, nichts gespeichert.

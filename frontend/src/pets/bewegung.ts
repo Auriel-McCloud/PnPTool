@@ -60,6 +60,8 @@ export interface Masse {
   maulY: number;
   /** Länge des Feuerstoßes (Bildschirm-Pixel). */
   feuerLaenge: number;
+  /** Was er beim Niesen spuckt (Eis-/Blitzdrache, 12.11.2026); fehlt = Feuer. */
+  atem?: "feuer" | "eis" | "blitz";
   /** Leerer Rand unter den Füßen im Sprite (Bildschirm-Pixel). */
   fuss: number;
 }
@@ -267,7 +269,7 @@ export interface Darstellung {
   kopfX: number;
   kopfY: number;
   /** Trefferfläche dieses Frames (Feuerkegel, Blitz, Tentakelspitze). */
-  angriff?: { art: "feuer" | "blitz" | "schleim"; x: number; y: number; r: number } | null;
+  angriff?: { art: "feuer" | "eis" | "blitz" | "schleim"; x: number; y: number; r: number } | null;
   /** Zusätzliche Größe (1 = normal). Bärbels Lesung. */
   zoom?: number;
   /** Liest vor: das große Buch (BaerbelBuch) übernimmt, die Figur ist weg. */
@@ -284,7 +286,7 @@ export interface Darstellung {
 
 export type Meldung =
   | { typ: "raus"; seite: "links" | "rechts" }
-  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" }
+  | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" | "frost" }
   /** Spur gefressen/eingesaugt — verschwindet vom Bildschirm. */
   | { typ: "fressen"; id: string }
   /** Bärbels Lesung zugeklappt. */
@@ -823,9 +825,11 @@ export class PetBewegung {
     this.naechstesNiesen = jetzt + NIESEN_PAUSE_MS + this.zw(0, 30_000);
   }
 
-  /** Wo das Feuer hinkommt: 1–2 Brandflecken vorne im Feuerstoß. */
+  /** Wo das Feuer hinkommt: 1–2 Brandflecken vorne im Feuerstoß
+   *  (Eisdrache: Raureif, Blitzdrache: ebenfalls Brandflecken). */
   private brandLegen() {
-    const { bw, bh, fuss, maulX, maulY, feuerLaenge } = this.masse();
+    const { bw, bh, fuss, maulX, maulY, feuerLaenge, atem } = this.masse();
+    const spur = atem === "eis" ? "frost" : "brand";
     const top = this.fussY - bh + fuss;
     const mx = this.richtung > 0 ? this.x + maulX : this.x + bw - maulX;
     const my = top + maulY;
@@ -834,7 +838,7 @@ export class PetBewegung {
       const weit = this.zw(0.55, 0.95) * feuerLaenge;
       const x = Math.min(Math.max(mx + this.richtung * weit, 10), this.u.breite - 10);
       const y = Math.min(Math.max(my + this.zw(-10, 14), 10), this.u.hoehe - 4);
-      this.melden({ typ: "haeufchen", art: "brand", x: x / this.u.breite, y: y / this.u.hoehe });
+      this.melden({ typ: "haeufchen", art: spur, x: x / this.u.breite, y: y / this.u.hoehe });
     }
   }
 
@@ -1592,9 +1596,9 @@ export class PetBewegung {
       this.zustand === "haengen" || (this.zustand === "klettern" && !!k && (k.phase === "rast" || k.zuege >= 3));
     let angriff: Darstellung["angriff"] = null;
     if (feuer) {
-      const { feuerLaenge } = this.masse();
+      const { feuerLaenge, atem } = this.masse();
       angriff = {
-        art: "feuer",
+        art: atem ?? "feuer",
         x: feuer.x + (feuer.flip ? -1 : 1) * feuerLaenge * 0.55,
         y: feuer.y,
         r: feuerLaenge * 0.5,

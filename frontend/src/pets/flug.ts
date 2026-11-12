@@ -23,6 +23,7 @@
  *   wieder — oder fliegt links/rechts/oben raus zum nächsten Tablet.
  */
 
+import { istDrache } from "./api";
 import { PACKEN_MS, type Darstellung, type Flaeche, type Masse, type Meldung, type Quelle, type Umgebung } from "./bewegung";
 
 /** Was die Komponente von einer Pet-Steuerung braucht (Laufen oder Fliegen). */
@@ -351,7 +352,7 @@ export class FlugBewegung implements PetSteuerung {
         y: Math.min(this.u.hoehe - rand, Math.max(rand, vonY + Math.sin(w) * weite)),
       };
     };
-    const drache = (this.u.nachbarn?.() ?? []).find((n) => n.art === "drache");
+    const drache = (this.u.nachbarn?.() ?? []).find((n) => istDrache(n.art));
     const art = z();
     const strahlen: NonNullable<FlugBewegung["blitz"]>["strahlen"] = [];
     const weg: { x: number; y: number }[] = [];
@@ -407,7 +408,7 @@ export class FlugBewegung implements PetSteuerung {
 
   /** Zum Drachen fliegen und die Tentakel auf ihn klatschen. */
   private drachenSchleimen(jetzt: number): boolean {
-    const d = (this.u.nachbarn?.() ?? []).find((n) => n.art === "drache");
+    const d = (this.u.nachbarn?.() ?? []).find((n) => istDrache(n.art));
     if (!d) return false;
     const p = this.greifPosition(d.x, d.y);
     this.flatternZu(p, jetzt, null, (j) => this.monster(j));

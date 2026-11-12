@@ -1965,3 +1965,7 @@ Wolkenlauf zu Flächen außer Sprungweite (oben am Tablet), Bärbel-Abstand 15�
 ## [2026-11-12] update | Drache schüttelt Ruß ab
 
 Nach Bärbels Blitz bleibt er verrußt, bis er sich schüttelt; Flocken fallen zu Boden. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Eisdrache und Blitzdrache
+
+Zwei neue Pet-Arten (blau/Eis mit Raureif-Spur, silbern/Blitz), gleiche Figur wie der Drache. Siehe [[entities/critter-pet]].

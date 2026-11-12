@@ -213,6 +213,13 @@
   backdrop-filter: blur(1.2px) saturate(1.3) hue-rotate(-25deg);
 }
 
+/* Raureif vom Eisdrachen (12.11.2026): beschlagene, kalte Scheibe —
+   dahinter milchig aufgehellt und bläulich. */
+.pet-brand.pet-frost {
+  -webkit-backdrop-filter: blur(2.2px) brightness(1.18) saturate(0.5) hue-rotate(10deg);
+  backdrop-filter: blur(2.2px) brightness(1.18) saturate(0.5) hue-rotate(10deg);
+}
+
 /* Bärbels Blitz: Linie vom Buch zum Einschlag, flackert. */
 .pet-blitz {
   position: absolute;
@@ -247,6 +254,11 @@
 .pet-figur[data-makel="blitz"] {
   filter: brightness(0.32) sepia(0.55) contrast(1.45) saturate(0.35);
   animation: pet-zucken 0.12s linear infinite;
+}
+/* Vom Eisatem getroffen: kurz bereift und bibbernd. */
+.pet-figur[data-makel="eis"] {
+  filter: saturate(0.45) brightness(1.25) hue-rotate(-15deg) drop-shadow(0 0 4px rgba(190, 230, 255, 0.95));
+  animation: pet-zucken 0.22s linear infinite;
 }
 .pet-figur[data-makel="schleim"] {
   filter: saturate(1.35) brightness(0.9);

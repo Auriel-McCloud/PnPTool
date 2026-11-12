@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
+import { atemVon, istDrache, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
 import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
@@ -93,6 +93,7 @@ const SPUR_PX = {
   brand: { breite: 38, hoehe: 23 },
   seite: { breite: 14, hoehe: 11 },
   schleim: { breite: 50, hoehe: 45 },
+  frost: { breite: 38, hoehe: 23 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
@@ -125,6 +126,7 @@ function masse(art = "drache"): Masse {
     maulX: SPRITE.maul[0] * s,
     maulY: SPRITE.maul[1] * s,
     feuerLaenge: SPRITE.feuer.breite * s,
+    atem: atemVon(art),
   };
 }
 
@@ -371,7 +373,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
       {haeufchen.map((h) => {
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
-        if (h.art === "brand" || h.art === "schleim") {
+        if (h.art === "brand" || h.art === "schleim" || h.art === "frost") {
           const px = SPUR_PX[h.art];
           const stil = {
             left: h.x * window.innerWidth - (px.breite * s) / 2,
@@ -729,6 +731,125 @@ function russBild(id: string) {
   return ergebnis;
 }
 
+const frostCache = new Map<string, { bild: string; maske: string }>();
+
+/**
+ * Raureif vom Eisdrachen (Mark, 12.11.2026): wie der Ruß ein Fleck auf dem
+ * Display-Glas, aber kalt — milchig-weißer Hauch, Eisblumen, die vom Rand
+ * nach innen wachsen, ein paar glitzernde Kristalle. Wegwischen wie Ruß.
+ */
+function frostBild(id: string) {
+  const alt = frostCache.get(id);
+  if (alt) return alt;
+  const rnd = zufallAus(id + ":frost");
+  const W = 152;
+  const H = 92;
+  const cx = W / 2 + (rnd() - 0.5) * 8;
+  const cy = H / 2 + (rnd() - 0.5) * 6;
+  const zacken = Array.from({ length: 16 }, () => 0.74 + rnd() * 0.36);
+  const form = (g: CanvasRenderingContext2D, sx: number, sy: number) => {
+    g.beginPath();
+    const punkte = zacken.map((k, i) => {
+      const a = (i / zacken.length) * Math.PI * 2;
+      return [cx + Math.cos(a) * sx * k, cy + Math.sin(a) * sy * k];
+    });
+    const mitte = (i: number) => {
+      const p = punkte[i % punkte.length];
+      const q = punkte[(i + 1) % punkte.length];
+      return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    };
+    const start = mitte(0);
+    g.moveTo(start[0], start[1]);
+    for (let i = 1; i <= punkte.length; i++) {
+      const p = punkte[i % punkte.length];
+      const m = mitte(i);
+      g.quadraticCurveTo(p[0], p[1], m[0], m[1]);
+    }
+    g.closePath();
+  };
+  const neu = () => {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    return [c, c.getContext("2d")!] as const;
+  };
+
+  const [bc, g] = neu();
+  g.filter = "blur(4px)";
+  form(g, W * 0.46, H * 0.42);
+  g.fillStyle = "rgba(200,228,255,0.30)";
+  g.fill();
+  g.filter = "blur(2px)";
+  form(g, W * 0.3, H * 0.27);
+  g.fillStyle = "rgba(235,246,255,0.38)";
+  g.fill();
+  g.filter = "none";
+  // Eisblumen: verzweigte Farnäste, vom Rand schräg zur Mitte gewachsen.
+  const ast = (x: number, y: number, w: number, l: number, tiefe: number) => {
+    if (tiefe > 3 || l < 3) return;
+    const x2 = x + Math.cos(w) * l;
+    const y2 = y + Math.sin(w) * l;
+    g.strokeStyle = `rgba(240,250,255,${0.75 - tiefe * 0.15})`;
+    g.lineWidth = Math.max(0.6, 1.6 - tiefe * 0.4);
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x2, y2);
+    g.stroke();
+    const n = 2 + Math.floor(rnd() * 3);
+    for (let i = 1; i <= n; i++) {
+      const k = i / (n + 1);
+      const bx = x + (x2 - x) * k;
+      const by = y + (y2 - y) * k;
+      ast(bx, by, w + 0.9 + (rnd() - 0.5) * 0.3, l * 0.42, tiefe + 1);
+      ast(bx, by, w - 0.9 + (rnd() - 0.5) * 0.3, l * 0.42, tiefe + 1);
+    }
+  };
+  const aeste = 5 + Math.floor(rnd() * 3);
+  for (let i = 0; i < aeste; i++) {
+    const a = (i / aeste) * Math.PI * 2 + rnd() * 0.6;
+    const r = 0.75 + rnd() * 0.2;
+    const x = cx + Math.cos(a) * W * 0.42 * r;
+    const y = cy + Math.sin(a) * H * 0.38 * r;
+    ast(x, y, a + Math.PI + (rnd() - 0.5) * 0.5, W * (0.16 + rnd() * 0.1), 0);
+  }
+  // Glitzernde Kristalle.
+  for (let i = 0; i < 26; i++) {
+    const a = rnd() * Math.PI * 2;
+    const r = Math.sqrt(rnd());
+    const px = cx + Math.cos(a) * r * W * 0.42;
+    const py = cy + Math.sin(a) * r * H * 0.38;
+    const gr = 1 + rnd() * 1.6;
+    g.fillStyle = `rgba(255,255,255,${0.5 + rnd() * 0.5})`;
+    g.fillRect(px - gr / 2, py - gr / 2, gr, gr);
+    if (rnd() < 0.3) {
+      g.fillStyle = "rgba(190,230,255,0.8)";
+      g.fillRect(px - gr * 1.5, py - 0.4, gr * 3, 0.8);
+      g.fillRect(px - 0.4, py - gr * 1.5, 0.8, gr * 3);
+    }
+  }
+  // Kalter Glanz nur auf dem Reif.
+  g.globalCompositeOperation = "source-atop";
+  const glanz = g.createLinearGradient(W * 0.1, 0, W * 0.9, H);
+  glanz.addColorStop(0.3, "rgba(150,210,255,0)");
+  glanz.addColorStop(0.42, "rgba(170,225,255,0.3)");
+  glanz.addColorStop(0.5, "rgba(150,210,255,0)");
+  g.fillStyle = glanz;
+  g.fillRect(0, 0, W, H);
+
+  const [mc, m] = neu();
+  m.filter = "blur(5px)";
+  form(m, W * 0.46, H * 0.42);
+  m.fillStyle = "rgba(0,0,0,0.75)";
+  m.fill();
+  form(m, W * 0.3, H * 0.27);
+  m.fillStyle = "rgba(0,0,0,1)";
+  m.fill();
+
+  const ergebnis = { bild: bc.toDataURL(), maske: mc.toDataURL() };
+  frostCache.set(id, ergebnis);
+  return ergebnis;
+}
+
 const schleimCache = new Map<string, { bild: string; maske: string }>();
 
 /**
@@ -847,13 +968,17 @@ function Brandfleck({
   onSauber,
 }: {
   id: string;
-  /** `schleim`: feuchter Schmierfleck vom Tentakelmonster — gleiche Wisch-Logik. */
-  art: "brand" | "schleim";
+  /** `schleim`: feuchter Schmierfleck vom Tentakelmonster, `frost`: Raureif
+   *  vom Eisdrachen — gleiche Wisch-Logik. */
+  art: "brand" | "schleim" | "frost";
   stil: React.CSSProperties;
   weg: boolean;
   onSauber: () => void;
 }) {
-  const russ = useMemo(() => (art === "schleim" ? schleimBild(id) : russBild(id)), [id, art]);
+  const russ = useMemo(
+    () => (art === "schleim" ? schleimBild(id) : art === "frost" ? frostBild(id) : russBild(id)),
+    [id, art],
+  );
   const rest = useRef(1);
   const letzter = useRef<{ x: number; y: number } | null>(null);
   const el = useRef<HTMLDivElement | null>(null);
@@ -875,7 +1000,7 @@ function Brandfleck({
     <div
       ref={el}
       role="button"
-      className={`pet-brand${art === "schleim" ? " pet-schleim" : ""}${weg ? " pet-haeufchen-weg" : ""}`}
+      className={`pet-brand${art === "schleim" ? " pet-schleim" : art === "frost" ? " pet-frost" : ""}${weg ? " pet-haeufchen-weg" : ""}`}
       title="Sauberwischen"
       style={{
         ...stil,
@@ -1053,13 +1178,16 @@ function PetFigur({
         el.style.transform = d.transform;
         const mal = makel(pet.id, jetzt);
         el.dataset.makel = mal ?? "";
-        if (pet.art === "drache" && mal === "schleim") setKlecks(true);
-        else if (pet.art === "drache") setKlecks(false);
+        if (istDrache(pet.art) && mal === "schleim") setKlecks(true);
+        else if (istDrache(pet.art)) setKlecks(false);
         melde({ id: pet.id, art: pet.art, x: left + bw / 2, y: top + bh / 2, w: bw, h: bh });
         if (d.angriff) {
           for (const hit of treffe(d.angriff, pet.id, jetzt)) {
-            if (hit.art === "feuer") steuerungen.get(hit.id)?.erschrecken?.(jetzt);
-            if (hit.art === "blitz") steuerungen.get(hit.id)?.verkohlen?.(jetzt);
+            // Blitz verrußt einen Drachen (Bärbels oder der des Blitzdrachen);
+            // Bärbel kann nicht verrußen — sie erschrickt wie bei Feuer und Eis.
+            const st = steuerungen.get(hit.id);
+            if (hit.art === "blitz" && st?.verkohlen) st.verkohlen(jetzt);
+            else if (hit.art !== "schleim") st?.erschrecken?.(jetzt);
           }
         }
         spriteRect.current = { left, top, w: bw, h: bh };
@@ -1323,7 +1451,7 @@ function PetFigur({
 
   return (
     <>
-      {pet.art === "drache" &&
+      {istDrache(pet.art) &&
         Array.from({ length: FLOCKEN_MAX }, (_, i) => (
           <span
             key={`f${i}`}
@@ -1335,7 +1463,7 @@ function PetFigur({
             style={{ display: "none" }}
           />
         ))}
-      {pet.art === "drache" &&
+      {istDrache(pet.art) &&
         Array.from({ length: WOLKEN_MAX }, (_, i) => (
           <div
             key={`w${i}`}

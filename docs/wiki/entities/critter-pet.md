@@ -232,6 +232,16 @@ Mark: „Wenn der Drache verkohlt wurde, färbt er sich danach einfach wieder no
 - Nach 7–20 Sekunden (spätestens bevor er zum nächsten Tablet geht) bleibt er stehen und schüttelt sich wie ein nasser Hund; dabei verschwindet der Ruß, Flocken (ab und zu ein Glutfunke) fliegen ab und rieseln zum unteren Bildschirmrand.
 - **Annahme:** Die Flocken bleiben etwa 5 Sekunden liegen und verblassen dann — keine dauerhafte Spur zum Wegwischen.
 
+## Eisdrache und Blitzdrache (12.11.2026, gebaut)
+
+Mark: „Ich habe einen Critter gemacht, der Wolke Salamander heißt, der ist in Wahrheit das Gleiche wie unser Babydrache, nur dass er silberblau ist“ — er spuckt Eis oder Blitze statt Feuer. Aus dem Entwurf (zwei Farbvarianten × zwei Atem): „Warum machst du nicht beide? Der blauere ist Eis und der silberne Blitz.“
+
+- Zwei neue Pet-Arten am Critter: **Kleiner Eisdrache** (blauer Körper, silberner Bauch und Mähne) und **Kleiner Blitzdrache** (silberner Körper, blaue Mähne). Gleiche Figur, gleiche Animationen und gleiches Verhalten wie der Drache (Wolkenlauf, Ruß abschütteln, Fressen, Bärbel zielt auf ihn).
+- Eisdrache niest einen Frostkegel mit Eiskristallen, der in Schneeflocken zerfällt; danach liegt **Raureif** auf dem Display (Eisblumen, dahinter milchig) — wegwischen wie Ruß.
+- Blitzdrache niest eine zackige, verästelte Entladung; sie hinterlässt Brandflecken wie das Feuer.
+- Treffen: Blitz verrußt einen anderen Drachen (wie Bärbels Blitz, dann Abschütteln), Eis lässt ihn kurz bereift bibbern; Bärbel erschrickt und verwandelt sich bei Feuer, Eis und Blitz.
+- **Annahme:** Namen „Kleiner Eisdrache“/„Kleiner Blitzdrache“; Raureif bleibt liegen, bis er weggewischt wird (taut nicht von selbst); Eis-Bibbern dauert 3,5 s.
+
 ## Abdrehen und Kampfpause (11.11.2026, gebaut)
 
 Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, Default an) und im Kampf grundsätzlich keine Pets — sie verschwinden beim Kampfbeginn und kommen nach dem Kampf beim Besitzer wieder. Spuren bleiben gespeichert. Mark hat nachgezogen: im Kampf und bei abgedrehten Pets werden sie ausgeblendet und danach wieder eingeblendet, nicht gelöscht.

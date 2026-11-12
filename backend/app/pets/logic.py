@@ -11,7 +11,9 @@ import random
 # frontend/public/pets/. Jeder Critter kann später ein eigenes bekommen.
 # `baerbel` (11.11.2026) ist kein Tier, sondern ein Gegenstand: die sprechende
 # Bibel/das Zauberbuch, das fliegt (frontend/src/pets/flug.ts).
-PET_ARTEN = ("drache", "baerbel")
+# `eisdrache`/`blitzdrache` (12.11.2026): derselbe Drache, umgefärbt, spuckt
+# Eis bzw. Blitze statt Feuer.
+PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel")
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
@@ -22,7 +24,8 @@ HAEUFCHEN_MAX = 12
 # bis der Spieler es wegmacht (antippen bzw. sauberwischen).
 # Bärbel verliert stattdessen Seiten, die zerknittert liegen bleiben; ihr
 # Tentakelmonster hinterlässt Schleim (wegwischen wie Brandflecken).
-SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim")
+# Der Eisdrache hinterlässt Raureif (`frost`), ebenfalls zum Wegwischen.
+SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim", "frost")
 
 # Spuren, die vom Element herunterfallen können (neue Lage wird gemerkt).
 FALLENDE_SPUREN = ("haeufchen", "seite")

@@ -1,5 +1,9 @@
 # Exportiert die Drachen-Animationen als transparente Sprite-Sheets fürs Frontend.
 # Aufruf: python sprites_exportieren.py C:/DEV/PnPTool/frontend/public/pets/drache
+#         python sprites_exportieren.py C:/DEV/PnPTool/frontend/public/pets/eisdrache eisdrache
+#         python sprites_exportieren.py C:/DEV/PnPTool/frontend/public/pets/blitzdrache blitzdrache
+# Die Varianten (12.11.2026) sind dieselbe Figur, nur umgefärbt; statt Feuer
+# landet ihr Eis- bzw. Blitzatem in feuer.png (drachen_varianten.py).
 # Jedes Sheet: Frames waagrecht nebeneinander, je W×H Pixel (Originalgröße,
 # das Frontend skaliert mit image-rendering: pixelated).
 import json
@@ -224,6 +228,10 @@ HERZ = [
 
 if __name__ == "__main__":
     ziel = sys.argv[1]
+    art = sys.argv[2] if len(sys.argv) > 2 else "drache"
+    if art != "drache":
+        import drachen_varianten as dv
+        dv.palette(art)
     os.makedirs(ziel, exist_ok=True)
     meta = {"breite": dr.W, "hoehe": HOEHE, "animationen": {}}
     for name, (frames, dauer) in animationen().items():
@@ -234,6 +242,8 @@ if __name__ == "__main__":
     pixelbild(HERZ, {"k": (60, 10, 20, 255), "r": (236, 64, 96, 255), "l": (255, 170, 190, 255)}).save(
         os.path.join(ziel, "herz.png"))
     feuer, feuer_meta = feuer_sheet()
+    if art != "drache":
+        feuer = dv.atem_sheet(art)
     feuer.save(os.path.join(ziel, "feuer.png"))
     meta["feuer"] = feuer_meta
     brand_bild().save(os.path.join(ziel, "brand.png"))

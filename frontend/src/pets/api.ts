@@ -5,9 +5,26 @@ import { api } from "../api/client";
  *  fliegende Bibel, 11.11.2026) an einem Gegenstand. */
 export const PET_ARTEN = [
   { wert: "drache", name: "Kleiner Drache", fuer: "critter" },
+  // Mark, 12.11.2026 (Critter „Wolke Salamander“): derselbe Babydrache,
+  // umgefärbt — blau mit silbernem Bauch spuckt Eis, silbern mit blauer Mähne Blitze.
+  { wert: "eisdrache", name: "Kleiner Eisdrache", fuer: "critter" },
+  { wert: "blitzdrache", name: "Kleiner Blitzdrache", fuer: "critter" },
   { wert: "baerbel", name: "Bärbel (fliegendes Buch)", fuer: "gegenstand" },
 ] as const;
 export type PetArt = (typeof PET_ARTEN)[number]["wert"];
+
+/** Was ein Drache beim Niesen spuckt — gleiche Figur, anderer Atem (feuer.png je Art). */
+export type Atem = "feuer" | "eis" | "blitz";
+const ATEM: Record<string, Atem> = { drache: "feuer", eisdrache: "eis", blitzdrache: "blitz" };
+
+/** Alle Drachen-Varianten verhalten sich gleich (Wolkenlauf, Ruß, Schleim, Bärbels Ziel). */
+export function istDrache(art: string): boolean {
+  return art in ATEM;
+}
+
+export function atemVon(art: string): Atem {
+  return ATEM[art] ?? "feuer";
+}
 
 export interface PetAufSchirm {
   id: string;
@@ -36,9 +53,10 @@ export interface Haeufchen {
   x: number;
   y: number;
   /** Häufchen (antippen), Brandfleck vom Feuerniesen/Blitz (wegwischen),
+   *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
    *  Tentakelmonster (wegwischen). */
-  art?: "haeufchen" | "brand" | "seite" | "schleim";
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost";
 }
 
 export type PetNachricht =
