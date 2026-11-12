@@ -41,6 +41,12 @@
     "frames": 16,
     "ms": 70
   },
+  "wolke": {
+    "breite": 36,
+    "hoehe": 20,
+    "frames": 14,
+    "ms": 110
+  },
   "maul": [
     73,
     26

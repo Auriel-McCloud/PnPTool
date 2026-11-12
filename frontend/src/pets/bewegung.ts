@@ -34,6 +34,13 @@
  * Klettern ist mühsam (Mark: „soll sich anstrengender anfühlen“): einzelne
  * Klimmzüge mit Nachgreifen, alle paar Züge eine Verschnaufpause mit
  * Schwitzen und Wackeln, manchmal rutscht er ein Stück ab.
+ *
+ * Wolkenlauf (Mark, 12.11.2026: „chinesische Drachen erzeugen kleine Wolken
+ * unter ihren Klauen und laufen darüber durch die Luft“ — damit er auf leeren
+ * Bildschirmen, etwa dem Charakterblatt am Tablet, oben an Text kommt): er
+ * ruft eine Wolke unter die Füße und läuft auf einer Bogenbahn durch die Luft
+ * zu einer Fläche außer Sprungweite; bei jedem Schritt puffen unter den
+ * Pfoten neue Wolken auf, die hinter ihm zerfasern.
  */
 
 export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen" | "fressen";
@@ -116,6 +123,31 @@ export interface SpurAufSchirm {
 }
 
 type Ort = { art: "boden" } | { art: "flaeche"; q: Quelle };
+
+/** Eine Glückswolke unter seinen Pfoten: Mitte x, Oberkante y, Startzeit. */
+export interface Wolke {
+  x: number;
+  y: number;
+  t0: number;
+}
+
+interface Wolkenlauf {
+  ziel: Quelle;
+  /** Quadratische Bézier-Bahn der Füße: Start, Kontrollpunkt, Ziel. */
+  x0: number;
+  y0: number;
+  kx: number;
+  ky: number;
+  x1: number;
+  y1: number;
+  /** Schon gelaufene Strecke (px). */
+  weg: number;
+  t0: number;
+  naechsteWolke: number;
+  pfote: number;
+  /** Steigung in Grad (> 0 = bergauf). */
+  steigung: number;
+}
 /** Wo die Wand vom Pet aus gesehen ist. q = null: Bildschirmrand. */
 type Wand = { x: number; seite: "links" | "rechts"; q: Quelle | null; menue?: MenuePunkt };
 
@@ -135,6 +167,7 @@ type Zustand =
   | "gehalten"
   | "getragen"
   | "wurf"
+  | "wolkenlauf"
   | "raus";
 
 interface Pose {
@@ -222,6 +255,8 @@ export interface Darstellung {
   liest?: boolean;
   /** Bärbels aktuelle Gestalt (1–3) — das große Buch sieht genauso aus. */
   gestalt?: number;
+  /** Glückswolken des Wolkenlaufs (auch noch die zerfasernden). */
+  wolken?: Wolke[];
 }
 
 export type Meldung =
@@ -254,6 +289,14 @@ const SPRUNG_MAX_PX = 240;
 /** Wie weit er seitlich auf eine andere Fläche springt. */
 const SPRUNG_WEIT_PX = 450;
 const KLETTER_FRAMES = 32;
+
+/** Wolkenlauf: Wolken-Streifen 14 × 110 ms (wolke.png), Tempo in der Luft,
+ *  alle wie viel ms unter einer Pfote eine neue Wolke aufpufft, wie lange er
+ *  am Anfang die erste Wolke herbeiruft. */
+export const WOLKE_MS = 14 * 110;
+const WOLKEN_TEMPO_PX_S = 85;
+const WOLKE_TAKT_MS = 280;
+const RUFEN_MS = 650;
 
 const glatt = (t: number) => t * t * (3 - 2 * t);
 const auslaufen = (t: number) => 1 - (1 - t) * (1 - t);
@@ -292,6 +335,8 @@ export class PetBewegung {
   wand: Wand | null = null;
   kletterei: Kletterei | null = null;
   kletterZielY = 0;
+  wolkenlauf: Wolkenlauf | null = null;
+  wolken: Wolke[] = [];
   cx = 0;
   cy = 0;
   animation: Animation = "lauf";
@@ -384,6 +429,138 @@ export class PetBewegung {
       startRot,
     };
     this.zustand = "sprung";
+  }
+
+  /** Ziel für einen Wolkenlauf: eine Fläche außer Sprungweite, am liebsten
+   *  in der oberen Bildschirmhälfte (dort kommt er sonst kaum hin). */
+  private wolkenZiel(aktuell: Rechteck | null): Flaeche | null {
+    const { bw, bh } = this.masse();
+    const u = this.u;
+    const links = u.links ?? 0;
+    const mitte = this.x + bw / 2;
+    const passt = (f: Flaeche) => {
+      const breit = f.r.right - f.r.left;
+      if (breit < bw * 0.6 || f.r.top < bh + 10 || f.r.left < links) return false;
+      if (aktuell && Math.abs(f.r.top - aktuell.top) < 3 && f.r.left < aktuell.right && f.r.right > aktuell.left) return false;
+      const fm = (f.r.left + f.r.right) / 2;
+      return this.fussY - f.r.top > SPRUNG_MAX_PX * 0.8 || Math.abs(fm - mitte) > SPRUNG_WEIT_PX;
+    };
+    const oben = this.waehleFlaeche((f) => passt(f) && f.r.top < u.hoehe * 0.6);
+    return oben ?? this.waehleFlaeche(passt);
+  }
+
+  private wolkenlaufZu(ziel: Flaeche, jetzt: number) {
+    const { bw } = this.masse();
+    const u = this.u;
+    const links = u.links ?? 0;
+    const x0 = this.x;
+    const y0 = this.fussY;
+    const x1 = this.landeX(ziel.r);
+    const y1 = ziel.r.top;
+    let kx = (x0 + x1) / 2;
+    let ky = Math.min(y0, y1) - 40;
+    if (Math.abs(x1 - x0) < Math.abs(y1 - y0) * 0.8) {
+      // Zu steil zum Laufen: erst seitlich ausholen und im Bogen hinauf.
+      const platzRechts = u.breite - bw - Math.max(x0, x1);
+      const platzLinks = Math.min(x0, x1) - links;
+      const seite = platzRechts >= platzLinks ? 1 : -1;
+      const aus = Math.min(Math.abs(y1 - y0) * 1.2, Math.max(platzRechts, platzLinks) * 1.6);
+      kx = (seite > 0 ? Math.max(x0, x1) : Math.min(x0, x1)) + seite * aus;
+      ky = (y0 + y1) / 2;
+    }
+    kx = Math.min(Math.max(kx, links - bw * 0.3), u.breite - bw * 0.7);
+    ky = Math.max(ky, this.masse().bh);
+    this.wolkenlauf = {
+      ziel: ziel.q,
+      x0,
+      y0,
+      kx,
+      ky,
+      x1,
+      y1,
+      weg: 0,
+      t0: jetzt,
+      naechsteWolke: jetzt + RUFEN_MS,
+      pfote: 0,
+      steigung: 0,
+    };
+    // Die erste Wolke puffte unter ihm auf — er hat sie gerufen.
+    this.wolkeSetzen(this.x + bw / 2, jetzt);
+    this.richtung = (kx + x1) / 2 >= x0 ? 1 : -1;
+    this.ort = { art: "boden" };
+    this.zustand = "wolkenlauf";
+  }
+
+  private wolkeSetzen(x: number, jetzt: number) {
+    const { bh } = this.masse();
+    // Nie ganz unter dem Bildschirmrand verschwinden lassen.
+    const y = Math.min(this.fussY - 4, this.u.hoehe - bh * 0.22);
+    this.wolken.push({ x, y, t0: jetzt });
+  }
+
+  /** Punkt und Richtung auf der Bahn bei Anteil t (0..1). */
+  private static bezier(w: Wolkenlauf, t: number) {
+    const a = (1 - t) * (1 - t);
+    const b = 2 * (1 - t) * t;
+    const c = t * t;
+    return {
+      x: a * w.x0 + b * w.kx + c * w.x1,
+      y: a * w.y0 + b * w.ky + c * w.y1,
+      tx: 2 * (1 - t) * (w.kx - w.x0) + 2 * t * (w.x1 - w.kx),
+      ty: 2 * (1 - t) * (w.ky - w.y0) + 2 * t * (w.y1 - w.ky),
+    };
+  }
+
+  private wolkenTakt(jetzt: number, dt: number) {
+    const w = this.wolkenlauf!;
+    const { bw } = this.masse();
+    const r = w.ziel.rechteck();
+    if (!r) {
+      // Ziel weg (Popup zu, weggescrollt): die Wolke trägt nicht mehr.
+      this.wolkenlauf = null;
+      return this.fallen(jetzt);
+    }
+    w.x1 = this.klemmeAufFlaeche(w.x1, r);
+    w.y1 = r.top;
+    if (jetzt - w.t0 < RUFEN_MS) return;
+
+    // Strecke über die Bahn verteilen (Bogenlänge per Stützstellen).
+    const N = 24;
+    const laengen = [0];
+    let vorher = PetBewegung.bezier(w, 0);
+    for (let i = 1; i <= N; i++) {
+      const p = PetBewegung.bezier(w, i / N);
+      laengen.push(laengen[i - 1] + Math.hypot(p.x - vorher.x, p.y - vorher.y));
+      vorher = p;
+    }
+    const gesamt = Math.max(1, laengen[N]);
+    w.weg = Math.min(gesamt, w.weg + WOLKEN_TEMPO_PX_S * dt);
+    let i = 1;
+    while (i < N && laengen[i] < w.weg) i++;
+    const t = (i - 1 + (w.weg - laengen[i - 1]) / Math.max(0.001, laengen[i] - laengen[i - 1])) / N;
+    const p = PetBewegung.bezier(w, Math.min(1, t));
+    this.x = p.x;
+    this.fussY = p.y;
+    if (Math.abs(p.tx) > Math.abs(p.ty) * 0.25) this.richtung = p.tx >= 0 ? 1 : -1;
+    const ziel = Math.max(-28, Math.min(28, (Math.atan2(-p.ty, Math.abs(p.tx)) * 180) / Math.PI));
+    w.steigung += (ziel - w.steigung) * Math.min(1, dt * 5);
+
+    if (jetzt >= w.naechsteWolke) {
+      // Abwechselnd unter Vorder- und Hinterpfote.
+      const anteil = w.pfote === 0 ? 0.64 : 0.34;
+      const px = this.richtung > 0 ? this.x + bw * anteil : this.x + bw * (1 - anteil);
+      this.wolkeSetzen(px, jetzt);
+      w.pfote = 1 - w.pfote;
+      w.naechsteWolke = jetzt + WOLKE_TAKT_MS;
+    }
+    if (w.weg >= gesamt - 0.5) {
+      this.wolkenlauf = null;
+      this.x = w.x1;
+      this.fussY = r.top;
+      this.ort = { art: "flaeche", q: w.ziel };
+      this.zustand = "landen";
+      this.bis = jetzt + 260;
+    }
   }
 
   private fallen(jetzt: number) {
@@ -630,6 +807,10 @@ export class PetBewegung {
     if (this.uebergang) this.uebergang.t0 += dauer;
     if (this.zustand === "niesen") this.niesenStart += dauer;
     if (this.beute) this.beute.t0 += dauer;
+    if (this.wolkenlauf) {
+      this.wolkenlauf.t0 += dauer;
+      this.wolkenlauf.naechsteWolke += dauer;
+    }
   }
 
   get gepackt() {
@@ -727,7 +908,7 @@ export class PetBewegung {
   }
 
   streicheln(jetzt: number): boolean {
-    if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf"].includes(this.zustand))
+    if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf", "wolkenlauf"].includes(this.zustand))
       return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
@@ -803,6 +984,10 @@ export class PetBewegung {
         this.laufeZu(this.landeX(r));
         return;
       }
+      if (!ende && w < 0.85 && u.zufall() < 0.22) {
+        const wz = this.wolkenZiel(r);
+        if (wz) return this.wolkenlaufZu(wz, jetzt);
+      }
       if (!ende && w < 0.85) {
         // Zur nächsten Fläche hüpfen — nach oben nur in Sprungweite.
         const ziel = this.waehleFlaeche((f) => {
@@ -839,6 +1024,12 @@ export class PetBewegung {
       this.zustand = "haeufchen";
       this.bis = jetzt + 1800;
       return;
+    }
+    // Hoch hinaus auf Wolken (Mark, 12.11.2026) — sonst kommt er auf leeren
+    // Bildschirmen nie an den Text oben.
+    if (u.zufall() < 0.3) {
+      const wz = this.wolkenZiel(null);
+      if (wz) return this.wolkenlaufZu(wz, jetzt);
     }
     if (w < 0.45) {
       const ziel = this.waehleFlaeche((f) => u.hoehe - f.r.top <= SPRUNG_MAX_PX && u.hoehe - f.r.top > 20);
@@ -987,7 +1178,12 @@ export class PetBewegung {
       }
     }
 
+    if (this.wolken.length) this.wolken = this.wolken.filter((w) => jetzt - w.t0 < WOLKE_MS);
+
     switch (this.zustand) {
+      case "wolkenlauf":
+        this.wolkenTakt(jetzt, dt);
+        break;
       case "laufen":
       case "raus": {
         if (this.zustand === "laufen" && this.seiteVorDemMaul(jetzt)) break;
@@ -1060,6 +1256,7 @@ export class PetBewegung {
           this.uebergang = null;
           this.nachAnkunft = null;
           this.beute = null; // die Seite bleibt liegen
+          this.wolkenlauf = null;
           // Sofort an den Finger springen — der kann schon woanders sein.
           const f = this.fingerSpur[this.fingerSpur.length - 1];
           this.fingerSpur = [];
@@ -1174,6 +1371,8 @@ export class PetBewegung {
         return "lauf"; // zappelt mit den Beinen
       case "wurf":
         return "sprung";
+      case "wolkenlauf":
+        return this.wolkenlauf && jetzt - this.wolkenlauf.t0 < RUFEN_MS ? "idle" : "lauf";
       default:
         return "idle";
     }
@@ -1223,6 +1422,11 @@ export class PetBewegung {
       return p;
     }
     const p = this.stehPose();
+    if (this.zustand === "wolkenlauf" && this.wolkenlauf) {
+      // Nase bergauf, leichtes Schweben auf den Wolken.
+      p.rot = this.wolkenlauf.steigung * (p.flip ? 1 : -1);
+      p.top += Math.sin(jetzt / 260) * 1.5;
+    }
     if (this.zustand === "sprung" && this.sprung) {
       const t = Math.min(1, (jetzt - this.sprung.t0) / this.sprung.dauer);
       // Nase hoch beim Steigen, runter beim Fallen; Absprung von der Wand dreht aus.
@@ -1294,13 +1498,17 @@ export class PetBewegung {
       frame,
       feuer,
       angriff,
-      hockt: this.zustand === "haeufchen" || this.zustand === "landen",
+      hockt:
+        this.zustand === "haeufchen" ||
+        this.zustand === "landen" ||
+        (this.zustand === "wolkenlauf" && !!this.wolkenlauf && jetzt - this.wolkenlauf.t0 < RUFEN_MS),
       gepackt: this.zustand === "getragen" || this.zustand === "gehalten",
       schlaeft: this.zustand === "schlafen",
       schwitzt,
       kopfX,
       kopfY,
       greift: this.greiftJetzt(jetzt),
+      wolken: this.wolken,
     };
   }
 }

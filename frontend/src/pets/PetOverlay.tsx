@@ -31,6 +31,8 @@ const SPRITE = {
   fussLuft: 7,
   maul: [73, 26],
   feuer: { breite: 56, hoehe: 28, frames: 16, ms: 70 },
+  /** Glückswolke des Wolkenlaufs (wolke.png). */
+  wolke: { breite: 36, hoehe: 20, frames: 14, ms: 110 },
   animationen: {
     idle: { frames: 24, ms: 110 },
     lauf: { frames: 32, ms: 35 },
@@ -94,6 +96,9 @@ const SPUR_PX = {
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
+
+/** So viele Wolken sind höchstens gleichzeitig zu sehen (Lebensdauer / Takt + Reserve). */
+const WOLKEN_MAX = 10;
 
 function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
@@ -948,6 +953,8 @@ function PetFigur({
   const zzz = useRef<HTMLSpanElement | null>(null);
   const tropfen = useRef<HTMLSpanElement | null>(null);
   const feuer = useRef<HTMLDivElement | null>(null);
+  // Wolkenlauf: feste Anzahl Wolken-Elemente, pro Frame neu gesetzt.
+  const wolkenEls = useRef<(HTMLDivElement | null)[]>([]);
   const puff = useRef<HTMLDivElement | null>(null);
   const effekt = useRef<HTMLDivElement | null>(null);
   const blitzSvg = useRef<SVGSVGElement | null>(null);
@@ -1064,6 +1071,29 @@ function PetFigur({
         el.style.opacity = d.effekt?.ersetzt || d.liest ? "0" : "";
         el.style.pointerEvents = d.liest ? "none" : "";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
+      }
+      const wl = d.wolken ?? [];
+      if (wl.length || wolkenEls.current.some((w) => w && w.style.display !== "none")) {
+        const s = skala();
+        const wk = SPRITE.wolke;
+        wolkenEls.current.forEach((we, i) => {
+          if (!we) return;
+          // Sind es einmal mehr als Elemente, zählen die neuesten.
+          const w = wl[Math.max(0, wl.length - WOLKEN_MAX) + i];
+          if (!w) {
+            we.style.display = "none";
+            return;
+          }
+          const bild = Math.min(wk.frames - 1, Math.floor((jetzt - w.t0) / wk.ms));
+          we.style.display = "block";
+          we.style.width = `${wk.breite * s}px`;
+          we.style.height = `${wk.hoehe * s}px`;
+          we.style.left = `${w.x - (wk.breite * s) / 2}px`;
+          // Pfoten sinken ein wenig ein.
+          we.style.top = `${w.y - wk.hoehe * s * 0.28}px`;
+          we.style.backgroundSize = `${wk.frames * wk.breite * s}px ${wk.hoehe * s}px`;
+          we.style.backgroundPosition = `${-bild * wk.breite * s}px 0`;
+        });
       }
       const fe = feuer.current;
       if (fe) {
@@ -1252,6 +1282,17 @@ function PetFigur({
 
   return (
     <>
+      {pet.art === "drache" &&
+        Array.from({ length: WOLKEN_MAX }, (_, i) => (
+          <div
+            key={`w${i}`}
+            ref={(el) => {
+              wolkenEls.current[i] = el;
+            }}
+            className="pet-feuer"
+            style={{ display: "none", backgroundImage: "url(/pets/drache/wolke.png)" }}
+          />
+        ))}
       <div
         ref={figur}
         role="button"

@@ -211,7 +211,18 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 
 **Nachbesserung 12.11. (Vorlesen):** Mark war mit Tafel daneben und frechen Sprüchen unzufrieden: „das Buch so groß wird und sich aufschlägt, dass man den Text im Buch lesen kann“, „höchstens umformulierte Bibelverse, gerne auch aus dem Alten Testament“, Schrift „elegant oder alt“. Jetzt: Bärbel fliegt zur Mitte, wächst als großes Buch in ihrer aktuellen Gestalt (Farben, Kreuz/Auge/Kulleraugen auf dem Deckel), der Deckel schwingt auf, der Vers steht auf den Seiten und erscheint Wort für Wort wie Tinte (Fraktur-Initiale und -Stelle, Fließtext in alter Druckschrift). Kein Kommentar mehr, nur Stelle + Vers. Antippen klappt zu und lässt sie wieder klein weiterfliegen. Ersetzt die Tafel aus dem 11.11.
 
+**Nachbesserung 12.11. (Vorlesen):** Abstand jetzt zufällig 15–45 Minuten (Mark nach dem Test). Mark hatte zweimal dasselbe Zitat: bei gleicher Lage wählte die KI denselben Vers (bzw. der Notfall-Vers war je Kampagne fest). Jetzt merkt sie sich die letzten Stellen, die KI bekommt ein zufälliges Leitbild und darf sie nicht wiederholen; eine Wiederholung wird durch einen anderen festen Vers ersetzt.
+
 **Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle.
+
+## Wolkenlauf des Drachen (12.11.2026, gebaut)
+
+Mark: „am Tablet ist das Charakterblatt vor allem in der oberen Hälfte, der Babydrache kommt dort nicht wirklich hin … chinesische Drachen erzeugen kleine Wolken unter ihren Klauen und laufen darüber durch die Luft — damit er auf relativ leeren Bildschirmen rauf zu Sachen kommt.“
+
+- Er ruft eine Glückswolke unter die Füße (kurz geduckt), läuft dann im Bogen durch die Luft zu einer Fläche, die er per Sprung nicht erreicht — bevorzugt oben am Bildschirm. Ist es zu steil, holt er seitlich aus und dreht im Bogen zurück.
+- Unter jedem Schritt puffen abwechselnd unter Vorder- und Hinterpfote Wölkchen auf, die hinter ihm zerfasern. Die Nase folgt der Steigung.
+- Verschwindet das Ziel (Popup zu, weggescrollt), fällt er runter. Packen geht auch in der Luft.
+- **Annahme:** Häufigkeit etwa 30 % der Entscheidungen am Boden, 22 % auf Flächen; Tempo 85 px/s.
 
 ## Abdrehen und Kampfpause (11.11.2026, gebaut)
 

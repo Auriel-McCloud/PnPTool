@@ -1957,3 +1957,7 @@ Lesung alle 15 Minuten Anwesenheit bis zum Antippen. Drache niest sie an, Blitz 
 ## [2026-11-12] update | Bärbel liest im großen Buch
 
 Statt Tafel mit frechem Kommentar: großes aufschlagendes Buch, nur der (umformulierte) Vers, alte Schrift. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Drache läuft auf Wolken, Bärbel ohne Wiederholung
+
+Wolkenlauf zu Flächen außer Sprungweite (oben am Tablet), Bärbel-Abstand 15–45 min, keine wiederholten Stellen. Siehe [[entities/critter-pet]].

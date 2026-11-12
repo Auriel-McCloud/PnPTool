@@ -341,3 +341,27 @@ def test_baerbel_liest_nach_anwesenheit_und_bleibt_bis_antippen(welt, monkeypatc
         m._takt.cancel()
 
     laufen(ablauf())
+
+
+def test_baerbel_wiederholt_keine_stelle(monkeypatch):
+    """Mark, 12.11.: zweimal dasselbe Zitat — gleiche Stelle wird durch einen anderen Vers ersetzt."""
+    from app.pets import vorlesen
+
+    vorlesen._ZULETZT.clear()
+    prompts = []
+
+    async def lage(*_a, **_k):
+        return "Spieler sind da."
+
+    async def ki(prompt, *_a, **_k):
+        prompts.append(prompt)
+        return {"stelle": "Psalm 23,4", "zitat": "Und ob ich schon wanderte im finstern Tal, fürchte ich kein Unglück."}
+
+    monkeypatch.setattr(vorlesen, "lage", lage)
+    monkeypatch.setattr(vorlesen, "generiere_json", ki)
+
+    erste = asyncio.run(vorlesen.erzeugen("k", "anna", ["anna"]))
+    zweite = asyncio.run(vorlesen.erzeugen("k", "anna", ["anna"]))
+    assert erste["stelle"] == "Psalm 23,4"
+    assert zweite["stelle"] != "Psalm 23,4"
+    assert "psalm23,4" in prompts[1]

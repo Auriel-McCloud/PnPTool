@@ -11,6 +11,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import drache_final as dr  # noqa: E402
+import wolke  # noqa: E402
 
 
 # Luft oben, damit die Hörner beim Freuden-Hüpfer nicht abgeschnitten werden.
@@ -236,6 +237,10 @@ if __name__ == "__main__":
     feuer.save(os.path.join(ziel, "feuer.png"))
     meta["feuer"] = feuer_meta
     brand_bild().save(os.path.join(ziel, "brand.png"))
+    # Wolkenlauf (Mark, 12.11.): Glückswolken unter den Pfoten.
+    wolken, wolken_meta = wolke.sheet()
+    wolken.save(os.path.join(ziel, "wolke.png"))
+    meta["wolke"] = wolken_meta
     # Wo das Maul im Sprite sitzt (Feuer setzt dort an).
     pts = dr.wirbelsaeule(0.0, 2.0, 0)
     nx, ny = pts[-1][0], pts[-1][1]

@@ -11,13 +11,35 @@ Text steht im aufgeschlagenen Buch, nicht in einer Tafel daneben.
 """
 
 import logging
+import random
 
 from app.ki.client import KiFehler, generiere_json
 
 log = logging.getLogger(__name__)
 
-LESEN_MIN_S = 13 * 60
-LESEN_MAX_S = 17 * 60
+# Mark, 12.11.2026: zufällig alle 15–45 Minuten Anwesenheit.
+LESEN_MIN_S = 15 * 60
+LESEN_MAX_S = 45 * 60
+
+# Zuletzt gelesene Stellen je Kampagne (Mark, 12.11.: „zweimal das gleiche
+# Zitat“ — bei gleicher Lage nimmt die KI sonst gern denselben Vers). Nur im
+# Speicher; nach einem Neustart darf sich höchstens einmal etwas wiederholen.
+_ZULETZT: dict[str, list[str]] = {}
+_MERKEN = 12
+
+# Ein zufälliges Leitbild je Lesung, damit dieselbe Lage nicht immer denselben
+# Vers ergibt.
+_LEITBILDER = [
+    "Weg und Wanderschaft", "Nacht und Wache", "Feinde und Bedrängnis", "Hoffnung", "Weisheit und Torheit",
+    "Stadt und Mauern", "Wasser und Sturm", "Feuer und Prüfung", "Brot und Gastfreundschaft", "Gold und Gier",
+    "Mut", "Geduld", "Hochmut und Fall", "Freundschaft und Treue", "Wüste und Durst", "Licht in der Finsternis",
+    "Zorn und Vergebung", "Zeit und Vergänglichkeit", "Schutz und Zuflucht", "List und Klugheit",
+]
+_BUECHER = [
+    "Psalmen", "Sprüche", "Prediger", "Hiob", "Jesaja", "Jeremia", "Klagelieder", "1. und 2. Mose", "Richter",
+    "Samuel und Könige", "Ruth", "Daniel", "die kleinen Propheten", "Sirach oder Weisheit", "die Evangelien",
+    "die Briefe des Paulus", "die Offenbarung",
+]
 
 _SCHEMA = {
     "type": "OBJECT",
@@ -67,6 +89,26 @@ _FALLBACK = [
     {
         "stelle": "Johannes 1,5",
         "zitat": "Und das Licht scheint in der Finsternis, und die Finsternis hat's nicht ergriffen.",
+    },
+    {
+        "stelle": "Psalm 46,2",
+        "zitat": "Gott ist unsre Zuversicht und Stärke, eine Hilfe in den großen Nöten, die uns getroffen haben.",
+    },
+    {
+        "stelle": "Jesaja 40,31",
+        "zitat": "Aber die auf den Herrn harren, kriegen neue Kraft, dass sie auffahren mit Flügeln wie Adler, dass sie laufen und nicht matt werden, dass sie wandeln und nicht müde werden.",
+    },
+    {
+        "stelle": "Psalm 91,11",
+        "zitat": "Denn er hat seinen Engeln befohlen über dir, dass sie dich behüten auf allen deinen Wegen.",
+    },
+    {
+        "stelle": "Prediger 4,9",
+        "zitat": "So ist's ja besser zwei als eins; denn sie genießen doch ihrer Arbeit wohl.",
+    },
+    {
+        "stelle": "Sprüche 27,17",
+        "zitat": "Ein Messer wetzt das andere und ein Mann den andern.",
     },
 ]
 
@@ -130,19 +172,41 @@ async def lage(campaign_id: str, besitzer_id: str, anwesende_ids: list[str]) -> 
     return ". ".join(teile) or "Spieler sind da. Mehr weiß sie gerade nicht."
 
 
+def _schluessel(stelle: str) -> str:
+    return "".join(stelle.lower().split()).replace("–", "-")
+
+
+def _merken(campaign_id: str, lesung: dict) -> dict:
+    liste = _ZULETZT.setdefault(campaign_id, [])
+    liste.append(_schluessel(lesung["stelle"]))
+    del liste[:-_MERKEN]
+    return lesung
+
+
 async def erzeugen(campaign_id: str, besitzer_id: str, anwesende_ids: list[str]) -> dict:
-    """Eine Lesung. Bei Ausfall ein fester Vers, nie eine erfundene Stelle."""
+    """Eine Lesung. Bei Ausfall oder Wiederholung ein fester, zuletzt nicht
+    gelesener Vers, nie eine erfundene Stelle."""
+    zuletzt = _ZULETZT.get(campaign_id, [])
     try:
         text = await lage(campaign_id, besitzer_id, anwesende_ids)
+        hinweis = (
+            f"\nLeitbild diesmal: {random.choice(_LEITBILDER)}. "
+            f"Am liebsten aus: {random.choice(_BUECHER)}."
+        )
+        if zuletzt:
+            hinweis += "\nDiese Stellen hast du gerade gelesen, nimm eine andere: " + ", ".join(zuletzt[-8:])
         roh = await generiere_json(
-            f"Lage der Runde, zu der du vorliest:\n{text}",
+            f"Lage der Runde, zu der du vorliest:\n{text}{hinweis}",
             _SYSTEM,
             _SCHEMA,
             campaign_id=campaign_id,
         )
         sauber = _sauber(roh if isinstance(roh, dict) else {})
+        if sauber and _schluessel(sauber["stelle"]) not in zuletzt:
+            return _merken(campaign_id, sauber)
         if sauber:
-            return sauber
+            log.info("Bärbel-Lesung wiederholt %s, fester Vers", sauber["stelle"])
     except (KiFehler, Exception):
         log.warning("Bärbel-Lesung ohne KI, fester Vers", exc_info=True)
-    return dict(_FALLBACK[sum(ord(c) for c in campaign_id) % len(_FALLBACK)])
+    frei = [v for v in _FALLBACK if _schluessel(v["stelle"]) not in zuletzt] or _FALLBACK
+    return _merken(campaign_id, dict(random.choice(frei)))
