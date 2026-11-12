@@ -66,3 +66,56 @@ def anteil(wert: float) -> float:
 
 def online_mitglieder(mitglieder: list[str], online: set[str]) -> list[str]:
     return sorted(m for m in mitglieder if m in online)
+
+
+# ── Wachstum der Drachen (Mark, 12.11.2026) ──────────────────────────────
+# Ein Drache fängt an einem neuen Critter als Ei an, schlüpft nach 5–10× Antippen
+# (jeder am Tisch darf tippen) und wächst danach mit den EP des Critters — nur
+# EP seit dem Schlüpfen zählen (`petEpStart`), sonst wäre ein neuer Critter mit
+# allen alten Gruppen-EP sofort ausgewachsen.
+# Fähigkeiten kommen mit dem Alter: Baby läuft nur unten, frisst, macht
+# Häufchen. Ab 3 EP der heutige Drache (klettern, niesen, hüpfen). Fliegen
+# (Wolkenlauf) und Burgermenü lernt er später — die Schwellen hier sind eine
+# Annahme (Neko), Mark entscheidet nach dem Praxistest.
+WACHSENDE_ARTEN = ("drache", "eisdrache", "blitzdrache")
+TIPPS_MIN = 5
+TIPPS_MAX = 10
+JUNG_AB_EP = 3
+FAEHIGKEITEN_AB_EP = {
+    "klettern": JUNG_AB_EP,
+    "niesen": JUNG_AB_EP,
+    "springen": JUNG_AB_EP,
+    "wolken": 8,
+    "menue": 13,
+}
+ALLE_FAEHIGKEITEN = tuple(FAEHIGKEITEN_AB_EP)
+
+
+def waechst(art: str | None) -> bool:
+    return art in WACHSENDE_ARTEN
+
+
+def stufe(art: str, pet_stufe: str | None, ep_gesamt: int, ep_start: int | None) -> tuple[str, int | None]:
+    """(`ei` | `baby` | `jung`, EP seit dem Schlüpfen oder None).
+
+    Drachen ohne `petStufe` (Bestand vor dem 12.11.2026) sind fertig und können
+    alles — sie werden nicht nachträglich wieder klein."""
+    if not waechst(art) or not pet_stufe:
+        return "jung", None
+    if pet_stufe == "ei":
+        return "ei", None
+    gewachsen = max(0, ep_gesamt - int(ep_start or 0))
+    return ("baby" if gewachsen < JUNG_AB_EP else "jung"), gewachsen
+
+
+def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:
+    if not waechst(art) or gewachsen is None:
+        return list(ALLE_FAEHIGKEITEN) if stufe_ != "ei" else []
+    return [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]
+
+
+def risse(tipps: int, noetig: int) -> int:
+    """0–4 Risse im Ei, je nachdem, wie weit es schon ist."""
+    if noetig <= 0:
+        return 4
+    return min(4, -(-4 * tipps // noetig))

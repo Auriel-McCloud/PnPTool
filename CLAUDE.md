@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Drachen schlüpfen aus dem Ei und wachsen mit EP (12.11.2026)
+
+Mark: Drache fängt als Ei an (5–10× antippen, jeder am Tisch), Baby läuft nur unten/frisst/Häufchen, ab 3 EP der heutige Drache. Daten am Critter: `petStufe` (`ei`|`geschluepft`; fehlt = Bestand, bleibt groß und kann alles), `petTipps`/`petTippsNoetig` (zufällig 5–10), `petEpStart` (EP des Critters beim Schlüpfen). `pets/repository.py::art_setzen` legt das Ei nur an, wenn ein Critter ohne Stufe zum ersten Mal einen Drachen bekommt (Farbwechsel/Abwählen behält die Stufe), `ei_tippen` zählt und schlüpft. `pets/logic.py`: `stufe()`, `faehigkeiten()` (klettern/niesen/springen ab 3 EP, Wolkenlauf ab 8, Burgermenü ab 13 — Schwellen sind Annahme), `risse()`. Pet-Dict trägt `stufe`, `kann`, `risse`; WS `{typ: tippen}`. Ei wandert nicht (`_ziel`, Verweildauer). Frontend: `EiFigur` (wackelt, hopst beim Tippen, `schluepfen.png`), Baby-Sheets unter `public/pets/<art>/baby/` (+`hut_*` mit Eierschalen-Hütchen bis zum ersten Fressen/Schlafen), `PetBewegung.kann` sperrt Fähigkeiten, Baby schläft auch am Boden; Stufenwechsel → gleiche Stelle (`startMitte`). Sprites: `docs/assets/critter-pet/drache_jung.py` + `jung_exportieren.py`. Tests in `test_pets.py`, Browser-Harness geprüft.
+
 ## Bärbel fliegt zum Vorlesen heim (12.11.2026)
 
 Mark: Bibelverse nur beim Besitzer. `pets/motor.py`: Lesung wird nur erzeugt, wenn der Besitzer online ist; ist Bärbel woanders, bekommt das Tablet statt `lesung` nur `heim: true` (`_als_dict`), `flug.ts::heim()` beendet den Besuch → sie fliegt bei der nächsten Entscheidung raus, `_ziel()` schickt sie direkt zum Besitzer, dort kommt die Lesung mit der Ankunft. Verweildauer-Verlängerung nur noch beim Besitzer. Test `test_baerbel_fliegt_zum_vorlesen_heim`.

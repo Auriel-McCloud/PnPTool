@@ -19,6 +19,7 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
     {"typ": "wegmachen", "id"}
     {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
     {"typ": "gelesen", "petId"}   (Bärbels Lesung zugeklappt)
+    {"typ": "tippen", "petId"}    (aufs Ei getippt — jeder am Tisch darf)
   Server → Tablet zusätzlich
     {"typ": "vorlesen", "petId", "stelle", "zitat"}
         — Bärbel soll sich aufschlagen. Steht auch am Pet-Dict (`lesung`),
@@ -54,6 +55,10 @@ class Pet:
     # Zählt jede Ankunft hoch — das Tablet erkennt daran einen neuen Auftritt.
     ankunft: int = 0
     unterwegs: asyncio.Task | None = None
+    # Wachstum (12.11.2026): ei | baby | jung, freigeschaltete Fähigkeiten, Risse im Ei.
+    stufe: str = "jung"
+    kann: list[str] = field(default_factory=lambda: list(logic.ALLE_FAEHIGKEITEN))
+    risse: int = 0
 
     def als_dict(self) -> dict:
         return {
@@ -64,7 +69,17 @@ class Pet:
             "besitzerName": self.besitzer_name,
             "seite": self.seite,
             "ankunft": self.ankunft,
+            "stufe": self.stufe,
+            "kann": self.kann,
+            "risse": self.risse,
         }
+
+    def wachstum_uebernehmen(self, d: dict) -> bool:
+        """Stufe/Fähigkeiten/Risse aus der DB. True = hat sich etwas geändert."""
+        neu = (d.get("stufe", "jung"), list(d.get("kann", logic.ALLE_FAEHIGKEITEN)), int(d.get("risse", 0)))
+        alt = (self.stufe, self.kann, self.risse)
+        self.stufe, self.kann, self.risse = neu
+        return neu != alt
 
 
 @dataclass
@@ -176,11 +191,13 @@ class PetMotor:
                 if pet is None:
                     pet = Pet(id=pet_id, name=d["name"], art=d["art"], besitzer_id=d["besitzerId"],
                               besitzer_name=d["besitzerName"], mitglieder=d["mitglieder"])
+                    pet.wachstum_uebernehmen(d)
                     pets[pet_id] = pet
                     self._ankommen(pet, d["besitzerId"], self.zufall.choice(["links", "rechts"]), jetzt)
                     betroffen.add(d["besitzerId"])
                     continue
                 namens_aenderung = (pet.name, pet.art) != (d["name"], d["art"])
+                namens_aenderung = pet.wachstum_uebernehmen(d) or namens_aenderung
                 pet.name, pet.art, pet.mitglieder = d["name"], d["art"], d["mitglieder"]
                 pet.besitzer_id, pet.besitzer_name = d["besitzerId"], d["besitzerName"]
                 if pet.wirt and namens_aenderung:
@@ -196,8 +213,8 @@ class PetMotor:
                 # Ein Tablet, das sich nie meldet, hält das Pet nicht ewig fest.
                 elif pet.wirt and jetzt - pet.seit > logic.HOECHSTE_VERWEILDAUER_S:
                     # Beim Besitzer wartet eine Lesung: bleiben. Woanders nicht —
-                    # dann muss sie ja gerade heim.
-                    if self._hat_lesung(campaign_id, pet.id) and pet.wirt == pet.besitzer_id:
+                    # dann muss sie ja gerade heim. Ein Ei bleibt beim Besitzer liegen.
+                    if pet.stufe == "ei" or (self._hat_lesung(campaign_id, pet.id) and pet.wirt == pet.besitzer_id):
                         pet.seit = jetzt
                     else:
                         betroffen.add(pet.wirt)
@@ -259,6 +276,16 @@ class PetMotor:
         await repository.haeufchen_anlegen(campaign_id, person_id, pet_id, logic.anteil(x), logic.anteil(y), art)
         await self._haeufchen_senden(campaign_id, person_id)
 
+    async def tippen(self, campaign_id: str, person_id: str, pet_id: str) -> None:
+        """Aufs Ei getippt (jeder, auf dessen Bildschirm es liegt). Neuer Riss
+        oder geschlüpft — der neue Stand geht an diesen Bildschirm."""
+        pet = self._pets.get(campaign_id, {}).get(pet_id)
+        if pet is None or pet.wirt != person_id or pet.stufe != "ei":
+            return
+        await repository.ei_tippen(campaign_id, pet_id)
+        await self.abgleich(campaign_id)
+        await self._pets_senden(campaign_id, person_id)
+
     async def verschieben(self, campaign_id: str, person_id: str, haeufchen_id: str, x: float, y: float) -> None:
         await repository.haeufchen_verschieben(campaign_id, person_id, haeufchen_id, logic.anteil(x), logic.anteil(y))
         await self._haeufchen_senden(campaign_id, person_id)
@@ -318,8 +345,9 @@ def _petmotor_als_dict(self, campaign_id: str, pet: Pet) -> dict:
 
 
 def _petmotor_ziel(self, campaign_id: str, pet: Pet, kandidaten: list[str], von: str | None) -> str | None:
-    """Nächstes Tablet. Wartet eine Lesung, geht es direkt zum Besitzer."""
-    if self._hat_lesung(campaign_id, pet.id) and pet.besitzer_id in kandidaten:
+    """Nächstes Tablet. Wartet eine Lesung, geht es direkt zum Besitzer; ein
+    Ei wandert nicht, es liegt beim Besitzer."""
+    if (pet.stufe == "ei" or self._hat_lesung(campaign_id, pet.id)) and pet.besitzer_id in kandidaten:
         return pet.besitzer_id
     return logic.naechster_wirt(kandidaten, von, self.zufall)
 

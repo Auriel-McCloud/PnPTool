@@ -380,21 +380,37 @@ export class PetBewegung {
   cy = 0;
   animation: Animation = "lauf";
   animStart = 0;
+  /** Was er in seinem Alter schon kann (Mark, 12.11.2026: das Baby läuft nur
+   *  unten, frisst und macht Häufchen; klettern/niesen/hüpfen ab 3 EP, Fliegen
+   *  und Burgermenü später). Kommt vom Server (`kann`), ohne Angabe: alles. */
+  kann: Set<string> = new Set(["klettern", "niesen", "springen", "wolken", "menue"]);
 
   private masse: () => Masse;
   private u: Umgebung;
   private melden: (m: Meldung) => void;
 
-  constructor(masse: () => Masse, u: Umgebung, seite: "links" | "rechts", jetzt: number, melden: (m: Meldung) => void) {
+  constructor(
+    masse: () => Masse,
+    u: Umgebung,
+    seite: "links" | "rechts",
+    jetzt: number,
+    melden: (m: Meldung) => void,
+    opt: { startX?: number; kann?: Iterable<string> } = {},
+  ) {
     this.masse = masse;
     this.u = u;
     this.melden = melden;
+    if (opt.kann) this.kann = new Set(opt.kann);
     const { bw } = masse();
     this.besuchEnde = jetzt + this.zw(40_000, 120_000);
     this.naechstesNiesen = jetzt + this.zw(8_000, 20_000);
     this.fussY = u.hoehe;
-    // Reinkommen von der Seite, die der Server sagt.
-    if (seite === "links") {
+    if (opt.startX !== undefined) {
+      // Gerade geschlüpft oder gewachsen: steht schon da und freut sich.
+      this.x = this.klemmeX(opt.startX);
+      this.zustand = "freuen";
+      this.bis = jetzt + 1600;
+    } else if (seite === "links") {
       this.x = -bw;
       this.laufeZu(this.zw(0.1, 0.5) * u.breite);
     } else {
@@ -1020,7 +1036,7 @@ export class PetBewegung {
     }
 
     // Ab und zu Feuer niesen (Mark, 11.11.) — überall, wo er steht.
-    if (jetzt >= this.naechstesNiesen && jetzt < this.besuchEnde && u.zufall() < 0.18) {
+    if (this.kann.has("niesen") && jetzt >= this.naechstesNiesen && jetzt < this.besuchEnde && u.zufall() < 0.18) {
       return this.niese(jetzt);
     }
 
@@ -1072,11 +1088,11 @@ export class PetBewegung {
         this.laufeZu(this.landeX(r));
         return;
       }
-      if (!ende && w < 0.85 && u.zufall() < 0.22) {
+      if (!ende && w < 0.85 && this.kann.has("wolken") && u.zufall() < 0.22) {
         const wz = this.wolkenZiel(r);
         if (wz) return this.wolkenlaufZu(wz, jetzt);
       }
-      if (!ende && w < 0.85) {
+      if (!ende && w < 0.85 && this.kann.has("springen")) {
         // Zur nächsten Fläche hüpfen — nach oben nur in Sprungweite.
         const ziel = this.waehleFlaeche((f) => {
           const fm = (f.r.left + f.r.right) / 2;
@@ -1113,13 +1129,31 @@ export class PetBewegung {
       this.bis = jetzt + 1800;
       return;
     }
+    // Baby (kann noch nicht hoch hinaus): tapst unten herum, macht öfter mal
+    // ein Nickerchen am Boden — Antippen weckt es.
+    if (!this.kann.has("springen") && !this.kann.has("klettern")) {
+      if (!this.geschlafen && w < 0.28) {
+        this.zustand = "schlafen";
+        this.geschlafen = true;
+        this.bis = jetzt + this.zw(20_000, 120_000);
+        this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 30_000));
+        return;
+      }
+      if (w < 0.5) {
+        this.zustand = "idle";
+        this.bis = jetzt + this.zw(2_000, 6_000);
+        return;
+      }
+      this.laufeZu(this.zw(u.links ?? 0, Math.max(u.links ?? 0, u.breite - bw)));
+      return;
+    }
     // Hoch hinaus auf Wolken (Mark, 12.11.2026) — sonst kommt er auf leeren
     // Bildschirmen nie an den Text oben.
-    if (u.zufall() < 0.3) {
+    if (this.kann.has("wolken") && u.zufall() < 0.3) {
       const wz = this.wolkenZiel(null);
       if (wz) return this.wolkenlaufZu(wz, jetzt);
     }
-    if (w < 0.45) {
+    if (w < 0.45 && this.kann.has("springen")) {
       const ziel = this.waehleFlaeche((f) => u.hoehe - f.r.top <= SPRUNG_MAX_PX && u.hoehe - f.r.top > 20);
       if (ziel) {
         const zm = (ziel.r.left + ziel.r.right) / 2;
@@ -1135,7 +1169,7 @@ export class PetBewegung {
         return;
       }
     }
-    if (w < 0.6) {
+    if (w < 0.6 && this.kann.has("klettern")) {
       const waende = u.waende().filter((f) => u.hoehe - f.r.top > SPRUNG_MAX_PX * 0.6);
       if (waende.length) {
         const { q, r } = waende[Math.floor(u.zufall() * waende.length)];
@@ -1148,7 +1182,7 @@ export class PetBewegung {
       }
     }
     const links = u.links ?? 0;
-    if (w < 0.72 && links > 0 && u.menuePunkte) {
+    if (w < 0.72 && links > 0 && u.menuePunkte && this.kann.has("menue")) {
       // Links ist die Symbolspalte die Wand: meist zu einem Menüpunkt hoch,
       // sonst rechts am Bildschirmrand.
       const { bh } = this.masse();
@@ -1175,14 +1209,14 @@ export class PetBewegung {
       this.laufeZu(this.klemmeX(u.breite), (j) => this.klettere(wand, this.zw(0.3, 0.6) * u.hoehe, j));
       return;
     }
-    if (w < 0.7) {
+    if (w < 0.7 && this.kann.has("klettern")) {
       // Bildschirmrand hochklettern, oben kurz hängen, dann abspringen.
       const links = u.zufall() < 0.5;
       const wand: Wand = links ? { x: 0, seite: "links", q: null } : { x: u.breite, seite: "rechts", q: null };
       this.laufeZu(links ? 0 : this.klemmeX(u.breite), (j) => this.klettere(wand, this.zw(0.3, 0.6) * u.hoehe, j));
       return;
     }
-    if (w < 0.78) {
+    if (w < 0.78 && this.kann.has("springen")) {
       this.springe(this.klemmeX(this.x + this.richtung * this.zw(30, 70)), u.hoehe, { art: "boden" }, jetzt);
       return;
     }

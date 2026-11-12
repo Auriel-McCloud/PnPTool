@@ -296,3 +296,18 @@
   background: #ff8a2a;
   box-shadow: 0 0 4px 1px rgba(255, 120, 30, 0.7);
 }
+
+/* Drachen-Ei (12.11.2026): wackelt ab und zu ein bisschen, ganz von allein. */
+.pet-ei {
+  transform-origin: 50% 86%;
+}
+.pet-ei-ruht {
+  animation: pet-ei-wackeln 5.5s ease-in-out infinite;
+}
+@keyframes pet-ei-wackeln {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  84% { transform: rotate(-5deg); }
+  88% { transform: rotate(4deg); }
+  92% { transform: rotate(-2deg); }
+  96% { transform: rotate(1deg); }
+}

@@ -324,6 +324,16 @@ Noch offen:
   - **Später:** Fliegen/Wolkenlauf und das Öffnen des Burgermenüs. Weitere Fähigkeiten folgen, wenn sie uns einfallen.
   - Offen: welche Fähigkeit bei welcher Stufe/EP-Schwelle; zählt jedes Antippen (auch Fremde) fürs Schlüpfen; Ei-/Baby-Sprites neu zeichnen.
 
+## Gebaut 12.11.2026: Ei, Schlüpfen, Baby
+
+Entwurf von Mark abgenommen („Perfekt!!!“). Technik siehe CLAUDE.md.
+- Neuer Drache an einem Critter = **Ei** (Schuppenmuster in der Drachenfarbe). Liegt beim Besitzer unten, wandert nicht, wackelt ab und zu. **Jeder** darf tippen; nötig sind zufällig **5–10 Tipps**, jeder Tipp lässt es hopsen, Risse wachsen (0–4).
+- **Schlüpfen:** Kappe hüpft hoch, dreht sich, landet als **Hütchen** auf dem Kopf; das Baby trägt es, bis es zum ersten Mal frisst oder schläft (Annahme Neko).
+- **Baby:** halb so lang, großer Kopf, Kulleraugen, Hornstummel. Läuft nur unten, frisst Seiten, macht Häufchen, schläft auch am Boden. Kein Klettern, Niesen, Hüpfen, Wolkenlauf, Burgermenü.
+- **Wachstum:** EP des Critters ab dem Schlüpfen. Ab **3 EP** der heutige Drache (klettern, niesen, hüpfen); **Wolkenlauf ab 8 EP, Burgermenü ab 13 EP** — Annahme Neko, Mark entscheidet nach dem Praxistest.
+- Bestandsdrachen (vor dem 12.11. gesetzt) bleiben groß und können alles. Ei neu starten: Pet-Art am Critter abwählen und neu wählen.
+- Noch nicht gebaut: weitere sichtbare Wachstumsstufen (5–6 Stufen, alle 5 EP), Futternapf/Heilung, Zutraulichkeit, SL-Korrektur der Stufe.
+
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).
 - ~~Woher das Sprite eines Critters kommt~~ — feste Arten im Code, SL wählt

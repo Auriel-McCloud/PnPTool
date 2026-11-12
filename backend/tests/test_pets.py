@@ -405,3 +405,60 @@ def test_baerbel_fliegt_zum_vorlesen_heim(welt, monkeypatch):
         m._takt.cancel()
 
     laufen(ablauf())
+
+
+def test_wachstum_stufen_und_faehigkeiten():
+    """Mark, 12.11.: Ei → Baby (nur unten) → ab 3 EP klettern/niesen/hüpfen."""
+    from app.pets import logic as lg
+
+    assert lg.stufe("drache", "ei", 50, None) == ("ei", None)
+    assert lg.stufe("drache", "geschluepft", 12, 10) == ("baby", 2)
+    assert lg.stufe("drache", "geschluepft", 13, 10) == ("jung", 3)
+    # Bestand ohne Stufe bleibt groß und kann alles.
+    assert lg.stufe("drache", None, 0, None) == ("jung", None)
+    assert lg.faehigkeiten("drache", "jung", None) == list(lg.ALLE_FAEHIGKEITEN)
+    assert lg.faehigkeiten("drache", "ei", None) == []
+    assert lg.faehigkeiten("eisdrache", "baby", 2) == []
+    kann = lg.faehigkeiten("blitzdrache", "jung", 3)
+    assert {"klettern", "niesen", "springen"} <= set(kann) and "wolken" not in kann and "menue" not in kann
+    assert "menue" in lg.faehigkeiten("drache", "jung", 20)
+    # Bärbel wächst nicht.
+    assert lg.stufe("baerbel", "ei", 0, None) == ("jung", None)
+    assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4
+
+
+def test_ei_bleibt_beim_besitzer_und_schluepft_durch_tippen(welt, monkeypatch):
+    m, stand = welt
+    stand["pets"][0].update({"stufe": "ei", "kann": [], "risse": 0})
+
+    async def ei_tippen(cid, pid):
+        p = stand["pets"][0]
+        p["tipps"] = p.get("tipps", 0) + 1
+        if p["tipps"] >= 2:
+            p.update({"stufe": "baby", "kann": [], "risse": 0})
+            return True
+        p["risse"] = 2
+        return False
+
+    monkeypatch.setattr(motor_modul.repository, "ei_tippen", ei_tippen)
+
+    async def ablauf():
+        anna, ben = Socket(), Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.anmelden("k", "ben", ben)
+        assert anna.letzte_pets()[0]["stufe"] == "ei"
+        # Ein Ei wandert nicht: auch nach „raus“ landet es wieder bei Anna.
+        await m.raus("k", "anna", "drache", "rechts")
+        await asyncio.sleep(0.01)
+        assert ben.letzte_pets() == []
+        assert [p["id"] for p in anna.letzte_pets()] == ["drache"]
+        # Ben kann nicht aus der Ferne tippen.
+        await m.tippen("k", "ben", "drache")
+        assert stand["pets"][0].get("tipps") is None
+        await m.tippen("k", "anna", "drache")
+        assert anna.letzte_pets()[0]["risse"] == 2
+        await m.tippen("k", "anna", "drache")
+        assert anna.letzte_pets()[0]["stufe"] == "baby"
+        m._takt.cancel()
+
+    laufen(ablauf())

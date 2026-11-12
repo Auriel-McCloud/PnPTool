@@ -41,6 +41,12 @@ export interface PetAufSchirm {
   /** Bärbel hat eine Bibelstelle, ist aber nicht beim Besitzer: bald heimfliegen
    *  (Mark, 12.11.2026: Bibelverse nur beim Besitzer). */
   heim?: boolean;
+  /** Wachstum der Drachen (Mark, 12.11.2026): Ei → Baby → jung. */
+  stufe?: "ei" | "baby" | "jung";
+  /** Freigeschaltete Fähigkeiten (klettern, niesen, springen, wolken, menue). */
+  kann?: string[];
+  /** Risse im Ei, 0–4. */
+  risse?: number;
 }
 
 export interface Lesung {

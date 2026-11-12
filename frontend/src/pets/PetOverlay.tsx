@@ -76,8 +76,33 @@ const BAERBEL = {
   } as Record<string, { frames: number; ms: number; breite: number; hoehe: number; rand: number }>,
 } as const;
 
-function sprite(art: string) {
-  return art === "baerbel" ? BAERBEL : SPRITE;
+/** Schlüpfling (Mark, 12.11.2026): eigene, kleinere Sheets unter
+ *  /pets/<art>/baby/ — gleiche Animationsnamen wie der große Drache, dazu
+ *  `hut_idle|lauf|freuen` mit Eierschalen-Hütchen. Werte aus
+ *  frontend/public/pets/<art>/baby/sprite.json (jung_exportieren.py). */
+const BABY = {
+  breite: 50,
+  hoehe: 38,
+  fussLuft: 1,
+  maul: [46, 22],
+  animationen: {
+    idle: { frames: 24, ms: 110 },
+    lauf: { frames: 32, ms: 35 },
+    freuen: { frames: 8, ms: 90 },
+    klettern: { frames: 32, ms: 35 },
+    niesen: { frames: 22, ms: 80 },
+    sprung: { frames: 6, ms: 70 },
+    schlafen: { frames: 24, ms: 150 },
+    fressen: { frames: 16, ms: 90 },
+  } as Record<string, Takt>,
+  /** Ei: ei.png = Risse 0–4, schluepfen.png = Kappe fliegt, Baby lugt raus. */
+  ei: { breite: 48, hoehe: 58, frames: 5, fussLuft: 8, schluepfen: { frames: 26, ms: 70 } },
+} as const;
+const HUT_ANIMATIONEN = new Set(["idle", "lauf", "freuen"]);
+
+function sprite(art: string, stufe?: string) {
+  if (art === "baerbel") return BAERBEL;
+  return stufe === "baby" ? BABY : SPRITE;
 }
 
 /** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
@@ -107,8 +132,19 @@ function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
 }
 
-function masse(art = "drache"): Masse {
+function masse(art = "drache", stufe?: string): Masse {
   const s = skala();
+  if (stufe === "baby") {
+    return {
+      bw: BABY.breite * s,
+      bh: BABY.hoehe * s,
+      fuss: BABY.fussLuft * s,
+      maulX: BABY.maul[0] * s,
+      maulY: BABY.maul[1] * s,
+      feuerLaenge: 0,
+      atem: atemVon(art),
+    };
+  }
   if (art === "baerbel") {
     return {
       bw: BAERBEL.breite * s,
@@ -311,12 +347,28 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
   const leitung = useRef<ReturnType<typeof verbindePets> | null>(null);
   const [lesungen, setLesungen] = useState<Record<string, Lesung>>({});
   const weggelegt = useRef(new Set<string>());
+  // Wachstum (12.11.2026): welche Stufe jedes Pet zuletzt hatte — Ei → Baby
+  // spielt das Schlüpfen, Baby → jung lässt ihn an derselben Stelle größer
+  // weitermachen (Körpermitte in Bildschirm-Pixeln).
+  const letzteStufe = useRef(new Map<string, string>());
+  const startMitte = useRef(new Map<string, number>());
+  const [schluepfen, setSchluepfen] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const verbinden = () => {
       if (leitung.current) return;
       leitung.current = verbindePets(campaignId, (n) => {
         if (n.typ === "pets") {
+          for (const p of n.daten) {
+            const vorher = letzteStufe.current.get(p.id);
+            const jetzt = p.stufe ?? "jung";
+            if (vorher === "ei" && jetzt !== "ei") setSchluepfen((alt) => new Set(alt).add(p.id));
+            else if (vorher && vorher !== jetzt) {
+              const k = alle().find((x) => x.id === p.id);
+              if (k) startMitte.current.set(p.id, k.x);
+            }
+            letzteStufe.current.set(p.id, jetzt);
+          }
           setPets(n.daten);
           setLesungen((alt) => {
             const next = { ...alt };
@@ -404,10 +456,27 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
           />
         );
       })}
-      {pets.map((p) => (
+      {pets.map((p) =>
+        p.stufe === "ei" || schluepfen.has(p.id) ? (
+          <EiFigur
+            key={`${p.id}:${p.ankunft}:ei`}
+            pet={p}
+            senden={senden}
+            schluepft={schluepfen.has(p.id)}
+            onGeschluepft={(mitte) => {
+              startMitte.current.set(p.id, mitte);
+              setSchluepfen((alt) => {
+                const next = new Set(alt);
+                next.delete(p.id);
+                return next;
+              });
+            }}
+          />
+        ) : (
         <PetFigur
-          key={`${p.id}:${p.ankunft}`}
+          key={`${p.id}:${p.ankunft}:${p.stufe ?? "jung"}`}
           pet={p}
+          startMitte={startMitte.current}
           senden={senden}
           wegmachen={wegmachen}
           lesung={lesungen[p.id] ?? null}
@@ -420,8 +489,100 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             });
           }}
         />
-      ))}
+        ),
+      )}
     </div>
+  );
+}
+
+/**
+ * Drachen-Ei (Mark, 12.11.2026): liegt beim Besitzer unten auf dem Schirm,
+ * wackelt ab und zu. Jeder, der draufschaut, darf tippen — jeder Tipp lässt es
+ * hopsen, der Server zählt mit und schickt neue Risse. Ist es so weit, fliegt
+ * die Kappe hoch und landet als Hütchen auf dem Kopf des Babys.
+ */
+function EiFigur({
+  pet,
+  senden,
+  schluepft,
+  onGeschluepft,
+}: {
+  pet: PetAufSchirm;
+  senden: (n: object) => void;
+  schluepft: boolean;
+  onGeschluepft: (mitte: number) => void;
+}) {
+  const e = BABY.ei;
+  const s = skala();
+  const el = useRef<HTMLDivElement | null>(null);
+  const [mitte] = useState(() => (0.3 + Math.random() * 0.4) * window.innerWidth);
+  const [bild, setBild] = useState<number | null>(null);
+  const fertig = useRef(onGeschluepft);
+  fertig.current = onGeschluepft;
+
+  useEffect(() => {
+    const d = el.current;
+    if (!d) return;
+    const stopp = (ev: TouchEvent) => {
+      if (ev.cancelable) ev.preventDefault();
+    };
+    d.addEventListener("touchstart", stopp, { passive: false });
+    return () => d.removeEventListener("touchstart", stopp);
+  }, []);
+
+  useEffect(() => {
+    if (!schluepft) return;
+    let i = 0;
+    setBild(0);
+    const t = window.setInterval(() => {
+      i += 1;
+      if (i >= e.schluepfen.frames) {
+        window.clearInterval(t);
+        fertig.current(mitte);
+        return;
+      }
+      setBild(i);
+    }, e.schluepfen.ms);
+    return () => window.clearInterval(t);
+  }, [schluepft, mitte, e.schluepfen.frames, e.schluepfen.ms]);
+
+  const tippen = () => {
+    if (schluepft) return;
+    senden({ typ: "tippen", petId: pet.id });
+    el.current?.animate(
+      [
+        { transform: "rotate(0deg) translateY(0)" },
+        { transform: "rotate(-14deg) translateY(-10px)" },
+        { transform: "rotate(11deg) translateY(-4px)" },
+        { transform: "rotate(-7deg) translateY(0)" },
+        { transform: "rotate(4deg)" },
+        { transform: "rotate(0deg)" },
+      ],
+      { duration: 520, easing: "ease-out" },
+    );
+  };
+
+  const schluepfBild = bild !== null;
+  const frames = schluepfBild ? e.schluepfen.frames : e.frames;
+  const frame = schluepfBild ? bild : Math.min(e.frames - 1, pet.risse ?? 0);
+  return (
+    <div
+      ref={el}
+      role="button"
+      className={`pet-figur pet-ei${schluepfBild ? "" : " pet-ei-ruht"}`}
+      title={`${pet.name} (${pet.besitzerName}) — ein Ei! Antippen, damit es schlüpft`}
+      onPointerDown={tippen}
+      onContextMenu={(ev) => ev.preventDefault()}
+      style={{
+        left: mitte - (e.breite * s) / 2,
+        top: window.innerHeight - (e.hoehe - e.fussLuft) * s,
+        width: e.breite * s,
+        height: e.hoehe * s,
+        backgroundImage: `url(/pets/${pet.art}/${schluepfBild ? "schluepfen" : "ei"}.png)`,
+        backgroundSize: `${frames * e.breite * s}px ${e.hoehe * s}px`,
+        backgroundPosition: `${-frame * e.breite * s}px 0`,
+      }}
+    />
   );
 }
 
@@ -1064,8 +1225,11 @@ function PetFigur({
   wegmachen,
   lesung,
   onGelesen,
+  startMitte,
 }: {
   pet: PetAufSchirm;
+  /** Frisch geschlüpft/gewachsen: hier (Körpermitte) steht er schon. */
+  startMitte?: Map<string, number>;
   senden: (n: object) => void;
   /** Spur verschwinden lassen (gefressen/eingesaugt). */
   wegmachen: (id: string) => void;
@@ -1096,6 +1260,15 @@ function PetFigur({
   lesungRef.current = lesung;
   const heimRef = useRef(pet.heim);
   heimRef.current = pet.heim;
+  const stufe = pet.stufe ?? "jung";
+  // Eierschalen-Hütchen nach dem Schlüpfen — fällt beim ersten Fressen/Schlafen ab.
+  const hut = useRef(stufe === "baby" && startMitte?.has(pet.id) === true);
+  const kannSchluessel = (pet.kann ?? []).join(",");
+  useEffect(() => {
+    const b = bewegung.current;
+    if (b instanceof PetBewegung && pet.kann) b.kann = new Set(pet.kann);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kannSchluessel]);
   const onGelesenRef = useRef(onGelesen);
   onGelesenRef.current = onGelesen;
   const [herzen, setHerzen] = useState<Herz[]>([]);
@@ -1128,8 +1301,11 @@ function PetFigur({
 
   useEffect(() => {
     const fliegt = pet.art === "baerbel";
-    const sp = sprite(pet.art);
-    const m = () => masse(pet.art);
+    const sp = sprite(pet.art, stufe);
+    const m = () => masse(pet.art, stufe);
+    const mitte = startMitte?.get(pet.id);
+    startMitte?.delete(pet.id);
+    const ordner = stufe === "baby" ? `/pets/${pet.art}/baby` : `/pets/${pet.art}`;
     const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
       if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
       else if (n.typ === "gelesen") {
@@ -1146,7 +1322,10 @@ function PetFigur({
     };
     const b: PetSteuerung = fliegt
       ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
-      : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden);
+      : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden, {
+          kann: pet.kann,
+          startX: mitte === undefined ? undefined : mitte - m().bw / 2,
+        });
     bewegung.current = b;
     steuerungen.set(pet.id, b);
 
@@ -1175,7 +1354,9 @@ function PetFigur({
         el.style.height = `${bh}px`;
         el.style.left = `${left}px`;
         el.style.top = `${top}px`;
-        el.style.backgroundImage = `url(/pets/${pet.art}/${d.animation}.png)`;
+        if (hut.current && (d.animation === "fressen" || d.animation === "schlafen")) hut.current = false;
+        const mitHut = hut.current && HUT_ANIMATIONEN.has(d.animation);
+        el.style.backgroundImage = `url(${ordner}/${mitHut ? "hut_" : ""}${d.animation}.png)`;
         el.style.backgroundSize = `${anim.frames * sp.breite * s * z}px ${sp.hoehe * s * z}px`;
         el.style.backgroundPosition = `${-frame * sp.breite * s * z}px 0`;
         el.style.transform = d.transform;

@@ -2001,3 +2001,7 @@ Zutraulichkeit als Kante Spieler-PC → Critter, Streicheln max. +1 je 5 Min.; G
 ## [2026-11-12] update | Bärbel fliegt zum Vorlesen heim; Ei-Phase und Fähigkeiten je Stufe
 
 Bibelverse nur beim Besitzer gebaut. Futter heilt 3 Schlagschaden. Ideen: Bärbel-Nachrichten ab 50 Zutraulichkeit, Drache startet als Ei (5–10× antippen), Baby nur unten, ab 3 EP heutiger Drache, Fliegen/Burgermenü später. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Drachen schlüpfen aus dem Ei
+
+Ei (5–10× tippen), Schlüpfen mit Schalenhütchen, Baby-Phase nur unten, ab 3 EP der heutige Drache; Wolkenlauf/Burgermenü später (Annahme 8/13 EP). Siehe [[entities/critter-pet]].

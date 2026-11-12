@@ -15,7 +15,18 @@ import uuid
 from datetime import datetime, timezone
 
 from app.db.neo4j_driver import get_driver
-from app.pets.logic import FALLENDE_SPUREN, HAEUFCHEN_MAX
+import random
+
+from app.pets.logic import (
+    FALLENDE_SPUREN,
+    HAEUFCHEN_MAX,
+    TIPPS_MAX,
+    TIPPS_MIN,
+    faehigkeiten,
+    risse,
+    stufe,
+    waechst,
+)
 
 
 async def pets_der_kampagne(campaign_id: str) -> list[dict]:
@@ -30,7 +41,10 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
         RETURN c.id AS id, coalesce(c.alias, c.name) AS name, c.petArt AS art,
                b.id AS besitzerId, b.name AS besitzerName,
-               collect(DISTINCT m.id) AS mitglieder
+               collect(DISTINCT m.id) AS mitglieder,
+               c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
+               c.petEpStart AS petEpStart,
+               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen
         UNION
         MATCH (b:Person {campaignId: $campaign_id, personType: 'PC'})-[:BESITZT]->(c:Gegenstand {campaignId: $campaign_id})
         WHERE c.petArt IS NOT NULL AND c.petArt <> ''
@@ -46,8 +60,10 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
         RETURN c.id AS id, c.name AS name, c.petArt AS art,
                b.id AS besitzerId, b.name AS besitzerName,
-               collect(DISTINCT m.id) AS mitglieder
+               collect(DISTINCT m.id) AS mitglieder,
+               null AS petStufe, null AS petTipps, null AS petTippsNoetig, null AS petEpStart, 0 AS epEigen
     """
+    kampagnen_ep = await _kampagnen_ep(campaign_id)
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id)
         pets = []
@@ -56,8 +72,27 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
             mitglieder = set(d["mitglieder"] or [])
             mitglieder.add(d["besitzerId"])
             d["mitglieder"] = sorted(mitglieder)
+            _stufe_ergaenzen(d, kampagnen_ep)
             pets.append(d)
         return pets
+
+
+async def _kampagnen_ep(campaign_id: str) -> int:
+    from app.campaigns.repository import get_einstellungen
+
+    return int((await get_einstellungen(campaign_id)).get("kampagnenEP", 0) or 0)
+
+
+def _stufe_ergaenzen(d: dict, kampagnen_ep: int) -> None:
+    """Wachstum aus den Rohfeldern: `stufe`, `kann`, `risse` (nur beim Ei).
+    EP wie im Charakterbogen: eigene + Kampagnen- + Extra-EP."""
+    ep_gesamt = int(d.pop("epEigen", 0) or 0) + kampagnen_ep
+    st, gewachsen = stufe(d["art"], d.pop("petStufe", None), ep_gesamt, d.pop("petEpStart", None))
+    tipps = int(d.pop("petTipps", 0) or 0)
+    noetig = int(d.pop("petTippsNoetig", 0) or 0)
+    d["stufe"] = st
+    d["kann"] = faehigkeiten(d["art"], st, gewachsen)
+    d["risse"] = risse(tipps, noetig) if st == "ei" else 0
 
 
 # Critter (Person mit istCritter) oder Gegenstand — dieselbe Route für beide.
@@ -94,14 +129,47 @@ async def art_lesen(campaign_id: str, critter_id: str) -> dict | None:
 
 
 async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict | None:
+    """Pet-Art setzen. Bekommt ein Critter zum ersten Mal einen Drachen, fängt
+    der als Ei an (Mark, 12.11.2026: „klein wäre er wieder, wenn er mit einem
+    neuen Critter verbunden wird“). Wechsel zwischen Drachen-Farben oder
+    Abwählen behält die Stufe; Bestandsdrachen (ohne `petStufe`) bleiben groß."""
     query = _PET_TRAEGER + """
+        WITH c, c.petArt AS vorher
         SET c.petArt = $art
+        WITH c, vorher
+        FOREACH (_ IN CASE WHEN c:Person AND $waechst AND c.petStufe IS NULL
+                                AND NOT coalesce(vorher, '') IN $wachsende THEN [1] ELSE [] END |
+            SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
         RETURN c.id AS id, c.petArt AS art
     """
+    from app.pets.logic import WACHSENDE_ARTEN
+
     async with get_driver().session() as session:
-        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, art=art)
+        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, art=art,
+                                   waechst=waechst(art), wachsende=list(WACHSENDE_ARTEN),
+                                   noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
         r = await result.single()
         return dict(r) if r else None
+
+
+async def ei_tippen(campaign_id: str, critter_id: str) -> bool:
+    """Einmal aufs Ei getippt. True = geschlüpft. Ab dann zählen EP fürs
+    Wachsen — `petEpStart` merkt sich die EP des Critters in diesem Moment."""
+    kampagnen_ep = await _kampagnen_ep(campaign_id)
+    query = """
+        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+        WHERE c.petStufe = 'ei'
+        SET c.petTipps = coalesce(c.petTipps, 0) + 1
+        WITH c, c.petTipps >= coalesce(c.petTippsNoetig, 1) AS fertig
+        FOREACH (_ IN CASE WHEN fertig THEN [1] ELSE [] END |
+            SET c.petStufe = 'geschluepft',
+                c.petEpStart = coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) + $kampagnen_ep)
+        RETURN fertig
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, kampagnen_ep=kampagnen_ep)
+        r = await result.single()
+        return bool(r and r["fertig"])
 
 
 async def haeufchen_liste(campaign_id: str, person_id: str) -> list[dict]:
