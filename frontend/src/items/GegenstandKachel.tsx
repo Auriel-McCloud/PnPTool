@@ -14,6 +14,7 @@ import { WeitergebenPopup } from "./WeitergebenPopup";
 import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
 import { CredstickAktionen } from "./CredstickPopup";
 import { ApiError } from "../api/client";
+import { petsApi } from "../pets/api";
 import "./wegwerfen.css";
 import { vorschau } from "../shell/vorschau";
 
@@ -135,6 +136,7 @@ export function GegenstandKachel({
   const [lesen, setLesen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [schluckText, setSchluckText] = useState<string | null>(null);
+  const [futterText, setFutterText] = useState<string | null>(null);
   const [frageOffen, setFrageOffen] = useState(false);
   const [weitergebenOffen, setWeitergebenOffen] = useState(false);
   const [weitergebenFehler, setWeitergebenFehler] = useState<string | null>(null);
@@ -563,6 +565,34 @@ export function GegenstandKachel({
               Schlucken
             </button>
             {schluckText && <p style={{ margin: "8px 0 0" }}>{schluckText}</p>}
+          </div>
+        )}
+
+        {/* Tierfutter (Mark, 12.11.2026): stellt einen Napf auf den eigenen
+            Bildschirm, bis ein Drache ihn leer frisst. Nur Spieler — die SL hat
+            keine Pets auf dem Schirm. */}
+        {item.istTierfutter && campaignId && onUmlegen && !istSpielleitung && (
+          <div className="gg-wegwerfen">
+            <button
+              type="button"
+              disabled={laeuft}
+              onClick={async () => {
+                setLaeuft(true);
+                setFutterText(null);
+                try {
+                  const antwort = await petsApi.fuettern(campaignId, item.id);
+                  setFutterText(antwort.text);
+                  onGeoeffnet?.();
+                } catch (e) {
+                  setFutterText(e instanceof ApiError ? e.message : "Füttern ging nicht.");
+                } finally {
+                  setLaeuft(false);
+                }
+              }}
+            >
+              Füttern
+            </button>
+            {futterText && <p style={{ margin: "8px 0 0" }}>{futterText}</p>}
           </div>
         )}
 

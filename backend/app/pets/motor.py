@@ -20,6 +20,8 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
     {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
     {"typ": "gelesen", "petId"}   (Bärbels Lesung zugeklappt)
     {"typ": "tippen", "petId"}    (aufs Ei getippt — jeder am Tisch darf)
+    {"typ": "streicheln", "petId"}   (Zutraulichkeit +1, höchstens alle 5 Minuten)
+    {"typ": "wegmachen", "id", "petId"}  — beim Napf: dieses Pet hat ihn leer gefressen
   Server → Tablet zusätzlich
     {"typ": "vorlesen", "petId", "stelle", "zitat"}
         — Bärbel soll sich aufschlagen. Steht auch am Pet-Dict (`lesung`),
@@ -290,9 +292,35 @@ class PetMotor:
         await repository.haeufchen_verschieben(campaign_id, person_id, haeufchen_id, logic.anteil(x), logic.anteil(y))
         await self._haeufchen_senden(campaign_id, person_id)
 
-    async def wegmachen(self, campaign_id: str, person_id: str, haeufchen_id: str) -> None:
-        await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
+    async def wegmachen(self, campaign_id: str, person_id: str, haeufchen_id: str, pet_id: str | None = None) -> None:
+        spur = await repository.haeufchen_lesen(campaign_id, person_id, haeufchen_id)
+        if spur and spur["art"] == logic.NAPF:
+            # Ein Napf verschwindet nur, wenn ein Drache auf diesem Bildschirm ihn
+            # leer frisst — nicht durch Antippen.
+            pet = self._pets.get(campaign_id, {}).get(pet_id or "")
+            if pet is None or pet.wirt != person_id or not logic.waechst(pet.art) or pet.stufe == "ei":
+                return
+            await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
+            await repository.critter_heilen(campaign_id, pet.id, logic.NAPF_HEILUNG)
+            # Der Napf steht auf dem Bildschirm dessen, der gefüttert hat.
+            await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet.id, logic.ZUTRAULICH_FUETTERN)
+        else:
+            await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
         await self._haeufchen_senden(campaign_id, person_id)
+
+    async def napf_hinstellen(self, campaign_id: str, person_id: str) -> None:
+        """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte."""
+        x = self.zufall.uniform(0.15, 0.85)
+        await repository.haeufchen_anlegen(campaign_id, person_id, "", x, 1.0, logic.NAPF)
+        await self._haeufchen_senden(campaign_id, person_id)
+
+    async def streicheln(self, campaign_id: str, person_id: str, pet_id: str) -> None:
+        """Zutraulichkeit +1 — nur wer das Pet gerade auf dem Schirm hat."""
+        pet = self._pets.get(campaign_id, {}).get(pet_id)
+        if pet is None or pet.wirt != person_id or pet.stufe == "ei":
+            return
+        await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet_id, logic.ZUTRAULICH_STREICHELN,
+                                                 logic.STREICHEL_ABKLINGEN_S)
 
     # ── Takt ───────────────────────────────────────────────────────────────
 

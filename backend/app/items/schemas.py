@@ -321,6 +321,8 @@ class GegenstandCreate(BaseModel):
     # selbstreparatur_ergebnis). Verbraucht wird IMMER genau 1 Stück pro
     # Versuch (auch bei 0 reparierten Kästchen — realistisches Risiko).
     istReparaturmaterial: bool = False
+    # Tierfutter (12.11.2026): „Füttern“ stellt einen Napf für die Critter-Pets hin.
+    istTierfutter: bool = False
     reparaturKapazitaet: int = 0
     # Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
     # z.B. Dug'Rahs Chitinpanzer, später Drachenschuppen): generisches Flag,
@@ -504,6 +506,7 @@ class GegenstandUpdate(BaseModel):
     ruestungKaestchenAktuell: int | None = None
     ruestungReduktionBasis: int | None = None
     istReparaturmaterial: bool | None = None
+    istTierfutter: bool | None = None
     reparaturKapazitaet: int | None = None
     istNatuerlich: bool | None = None
     istMaschinenteil: bool | None = None
@@ -676,6 +679,8 @@ class GegenstandResponse(BaseModel):
     ruestungKaestchenAktuell: int = 0
     ruestungReduktionBasis: int = 0
     istReparaturmaterial: bool = False
+    # Tierfutter (12.11.2026): „Füttern“ stellt einen Napf für die Critter-Pets hin.
+    istTierfutter: bool = False
     reparaturKapazitaet: int = 0
     istNatuerlich: bool = False
     istMaschinenteil: bool = False

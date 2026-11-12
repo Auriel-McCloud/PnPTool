@@ -421,7 +421,9 @@ def test_wachstum_stufen_und_faehigkeiten():
     assert lg.faehigkeiten("eisdrache", "baby", 2) == []
     kann = lg.faehigkeiten("blitzdrache", "jung", 3)
     assert {"klettern", "niesen", "springen"} <= set(kann) and "wolken" not in kann and "menue" not in kann
-    assert "menue" in lg.faehigkeiten("drache", "jung", 20)
+    # Mark: Burgermenü ab 8 EP, Wolkenlauf ab 13 EP.
+    assert "menue" in lg.faehigkeiten("drache", "jung", 8) and "wolken" not in lg.faehigkeiten("drache", "jung", 12)
+    assert "wolken" in lg.faehigkeiten("drache", "jung", 13)
     # Bärbel wächst nicht.
     assert lg.stufe("baerbel", "ei", 0, None) == ("jung", None)
     assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4
@@ -459,6 +461,51 @@ def test_ei_bleibt_beim_besitzer_und_schluepft_durch_tippen(welt, monkeypatch):
         assert anna.letzte_pets()[0]["risse"] == 2
         await m.tippen("k", "anna", "drache")
         assert anna.letzte_pets()[0]["stufe"] == "baby"
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_napf_nur_vom_drachen_leer_gefressen_heilt_und_macht_zutraulich(welt, monkeypatch):
+    """Mark, 12.11.: Napf bleibt, bis der Drache ihn frisst; heilt 3 Schlag, +5 Zutraulichkeit."""
+    m, stand = welt
+    log = []
+
+    async def haeufchen_lesen(cid, pid, hid):
+        return next(({"id": h["id"], "art": h["art"]} for h in stand["haeufchen"].get(pid, []) if h["id"] == hid), None)
+
+    async def critter_heilen(cid, critter_id, schlag):
+        log.append(("heilen", critter_id, schlag))
+
+    async def zutraulich(cid, pid, pet_id, plus, abklingen_s=0.0):
+        log.append(("zutraulich", pid, pet_id, plus, abklingen_s))
+        return plus
+
+    repo = motor_modul.repository
+    monkeypatch.setattr(repo, "haeufchen_lesen", haeufchen_lesen)
+    monkeypatch.setattr(repo, "critter_heilen", critter_heilen)
+    monkeypatch.setattr(repo, "zutraulichkeit_erhoehen", zutraulich)
+
+    async def ablauf():
+        anna = Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.napf_hinstellen("k", "anna")
+        napf = [h for h in stand["haeufchen"]["anna"] if h["art"] == "napf"]
+        assert len(napf) == 1 and napf[0]["y"] == 1.0
+        # Antippen (ohne Pet) räumt ihn nicht weg.
+        await m.wegmachen("k", "anna", napf[0]["id"])
+        assert stand["haeufchen"]["anna"]
+        # Der Drache frisst ihn leer.
+        await m.wegmachen("k", "anna", napf[0]["id"], "drache")
+        assert not stand["haeufchen"]["anna"]
+        assert ("heilen", "drache", 3) in log
+        assert ("zutraulich", "anna", "drache", 5, 0.0) in log
+        await m.streicheln("k", "anna", "drache")
+        assert ("zutraulich", "anna", "drache", 1, 300) in log
+        # Wer das Pet nicht auf dem Schirm hat, streichelt nicht.
+        vorher = len(log)
+        await m.streicheln("k", "ben", "drache")
+        assert len(log) == vorher
         m._takt.cancel()
 
     laufen(ablauf())

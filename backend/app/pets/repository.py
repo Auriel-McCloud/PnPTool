@@ -237,3 +237,75 @@ async def haeufchen_weg(campaign_id: str, person_id: str, haeufchen_id: str) -> 
     """
     async with get_driver().session() as session:
         await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id)
+
+
+async def haeufchen_lesen(campaign_id: str, person_id: str, haeufchen_id: str) -> dict | None:
+    query = """
+        MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, personId: $person_id})
+        RETURN h.id AS id, coalesce(h.art, 'haeufchen') AS art
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id)
+        r = await result.single()
+        return dict(r) if r else None
+
+
+async def napf_futter_verbrauchen(campaign_id: str, person_id: str, item_id: str) -> str | None:
+    """Ein Stück Tierfutter aus dem eigenen Besitz. Rückgabe: Fehlertext oder
+    None. Wie beim Schlucken: Stapel −1, ein Einzelstück wandert in den
+    Mülleimer der SL (nichts wird gelöscht)."""
+    from app.items import repository as items_repo
+
+    item = await items_repo.get_gegenstand(campaign_id, item_id)
+    if item is None:
+        return "Gegenstand nicht gefunden"
+    if item.get("weggeworfen"):
+        return "Das Futter ist schon aufgebraucht."
+    if not item.get("istTierfutter"):
+        return "Das ist kein Tierfutter."
+    if await items_repo.get_owner_person_id(campaign_id, item_id) != person_id:
+        return "Gegenstand nicht gefunden"
+    if item.get("hatMenge"):
+        menge = int(item.get("menge") or 0)
+        if menge <= 0:
+            return "Der Futtersack ist leer."
+        await items_repo.update_gegenstand(campaign_id, item_id, {"menge": menge - 1})
+    else:
+        await items_repo.wegwerfen(campaign_id, item_id, "verfüttert")
+    return None
+
+
+async def critter_heilen(campaign_id: str, critter_id: str, schlag: int) -> None:
+    """Gefressen: Schlagschaden des Critters sinkt (nie unter 0). Bärbel ist ein
+    Gegenstand und frisst nicht — trifft deshalb nur Person-Critter."""
+    query = """
+        MATCH (c:Person {id: $id, campaignId: $campaign_id, istCritter: true})
+        WITH c, coalesce(c.schadenSchlag, 0) - $schlag AS rest
+        SET c.schadenSchlag = CASE WHEN rest < 0 THEN 0 ELSE rest END
+    """
+    async with get_driver().session() as session:
+        await session.run(query, id=critter_id, campaign_id=campaign_id, schlag=schlag)
+
+
+async def zutraulichkeit_erhoehen(campaign_id: str, person_id: str, pet_id: str, plus: int,
+                                  abklingen_s: float = 0.0) -> int | None:
+    """Kante (Spieler-PC)-[:ZUTRAULICH {wert}]->(Pet-Träger: Critter oder Gegenstand).
+    Mit `abklingen_s` zählt es nur, wenn der letzte zählende Schub so lange her ist
+    (Streicheln: höchstens +1 alle 5 Minuten je Spieler). Rückgabe: neuer Wert."""
+    query = """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (t {id: $pet_id, campaignId: $campaign_id})
+        WHERE t:Gegenstand OR (t:Person AND t.istCritter = true)
+        MERGE (p)-[z:ZUTRAULICH]->(t)
+        ON CREATE SET z.wert = 0
+        WITH z, ($abklingen_s <= 0 OR $jetzt - coalesce(z.zuletzt, 0) >= $abklingen_s) AS zaehlt
+        SET z.wert = coalesce(z.wert, 0) + CASE WHEN zaehlt THEN $plus ELSE 0 END,
+            z.zuletzt = CASE WHEN zaehlt THEN $jetzt ELSE z.zuletzt END
+        RETURN z.wert AS wert
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, person_id=person_id, pet_id=pet_id, plus=plus,
+                                   abklingen_s=float(abklingen_s),
+                                   jetzt=datetime.now(timezone.utc).timestamp())
+        r = await result.single()
+        return int(r["wert"]) if r else None

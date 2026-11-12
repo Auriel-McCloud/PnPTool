@@ -12,7 +12,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel
 
-from app.auth.dependencies import require_campaign_gm, require_campaign_zugang
+from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.mitteilungen.routes import _viewer_aus_cookie
 from app.pets import repository
 from app.pets.logic import PET_ARTEN
@@ -56,6 +56,21 @@ async def art_setzen(campaign_id: str, critter_id: str, body: PetArt):
     return d
 
 
+@router.post("/fuettern/{item_id}")
+async def fuettern(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)) -> dict:
+    """Tierfutter verfüttern (Mark, 12.11.2026): ein Stück vom eigenen Futter,
+    dafür steht ein Napf unten auf dem eigenen Bildschirm, bis ein Drache ihn
+    leer frisst. Nur Spieler — die SL hat keine Pets auf dem Schirm. Prüft
+    den Besitz selbst (Ausnahmeliste in tests/test_zugriffsschutz.py)."""
+    if viewer.role != "PLAYER" or not viewer.person_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Füttern geht nur am eigenen Spieler-Tablet.")
+    fehler = await repository.napf_futter_verbrauchen(campaign_id, viewer.person_id, item_id)
+    if fehler:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, fehler)
+    await motor.napf_hinstellen(campaign_id, viewer.person_id)
+    return {"text": "Der Napf steht auf deinem Bildschirm — jetzt muss nur noch ein Drache vorbeikommen."}
+
+
 @ws_router.websocket("/api/campaigns/{campaign_id}/pets/live")
 async def live(websocket: WebSocket, campaign_id: str):
     """Live-Leitung eines Spieler-Tablets. Die SL bekommt keine Pets (Mark, 11.11.2026)."""
@@ -81,7 +96,10 @@ async def live(websocket: WebSocket, campaign_id: str):
                                           float(n.get("x", 0)), float(n.get("y", 1)),
                                           str(n.get("art") or "haeufchen"))
                 elif typ == "wegmachen":
-                    await motor.wegmachen(campaign_id, person_id, str(n.get("id")))
+                    await motor.wegmachen(campaign_id, person_id, str(n.get("id")),
+                                          str(n.get("petId")) if n.get("petId") else None)
+                elif typ == "streicheln":
+                    await motor.streicheln(campaign_id, person_id, str(n.get("petId")))
                 elif typ == "verschieben":
                     await motor.verschieben(campaign_id, person_id, str(n.get("id")),
                                             float(n.get("x", 0)), float(n.get("y", 1)))

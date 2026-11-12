@@ -793,7 +793,17 @@ export class PetBewegung {
   /** Seiten, die auf derselben Ebene liegen wie er steht (Boden oder Fläche). */
   private seitenAufEbene() {
     const { bh } = this.masse();
-    return (this.u.spuren?.() ?? []).filter((s) => s.art === "seite" && Math.abs(s.unten - this.fussY) < Math.max(14, bh * 0.15));
+    // Futternapf (12.11.2026) wird wie eine Seite gefressen — nur leer gefressen
+    // statt verschluckt; das Tablet meldet dann „wegmachen“ mit dem Pet dazu.
+    return (this.u.spuren?.() ?? []).filter(
+      (s) => (s.art === "seite" || s.art === "napf") && Math.abs(s.unten - this.fussY) < Math.max(14, bh * 0.15),
+    );
+  }
+
+  /** Steht unten ein Futternapf? Den riecht er über den ganzen Schirm. */
+  private napfAmBoden() {
+    if (this.ort.art !== "boden") return null;
+    return this.seitenAufEbene().find((s) => s.art === "napf") ?? null;
   }
 
   private seiteAufMeinerEbene() {
@@ -1028,6 +1038,10 @@ export class PetBewegung {
     if (this.russ > 0 && (jetzt >= this.schuettelnAb || jetzt >= this.besuchEnde)) {
       return this.schuettle(jetzt);
     }
+
+    // Futternapf (Mark, 12.11.2026): da will er fast immer hin.
+    const napf = this.napfAmBoden();
+    if (napf && u.zufall() < 0.85) return this.laufeZu(this.klemmeX(napf.x - bw / 2));
 
     // Liegt eine Seite auf seiner Ebene? Dann oft hin und fressen.
     if (jetzt < this.besuchEnde && u.zufall() < 0.6) {

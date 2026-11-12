@@ -48,6 +48,7 @@ RETURN_FIELDS = """
     g.ruestungReduktionBasis AS ruestungReduktionBasis,
     g.istNatuerlich AS istNatuerlich,
     g.istReparaturmaterial AS istReparaturmaterial, g.reparaturKapazitaet AS reparaturKapazitaet,
+    g.istTierfutter AS istTierfutter,
     g.istMaschinenteil AS istMaschinenteil, g.maschinenteilQualitaet AS maschinenteilQualitaet,
     g.upgradeSlots AS upgradeSlots, g.istAugment AS istAugment, g.augmentWaffentyp AS augmentWaffentyp,
     g.augmentZielTyp AS augmentZielTyp,
@@ -276,6 +277,7 @@ def _decode(record: dict) -> dict:
     # Reparaturmaterial: gestuft wie Chrom-Qualitätsstufen (0/False = dieser
     # Gegenstand ist keines, das ist die weit überwiegende Mehrheit).
     record["istReparaturmaterial"] = _or_default(record.get("istReparaturmaterial"), False)
+    record["istTierfutter"] = _or_default(record.get("istTierfutter"), False)
     record["reparaturKapazitaet"] = _or_default(record.get("reparaturKapazitaet"), 0)
     # Natürliche Rüstung (11.10.2026 Verfeinerung): Bestandsdaten (jeder
     # Gegenstand vor diesem Feature) kennen die Property nicht -> False,
@@ -346,6 +348,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ruestungReduktionBasis: $ruestungReduktionBasis,
             istNatuerlich: $istNatuerlich,
             istReparaturmaterial: $istReparaturmaterial, reparaturKapazitaet: $reparaturKapazitaet,
+            istTierfutter: $istTierfutter,
             istMaschinenteil: $istMaschinenteil, maschinenteilQualitaet: $maschinenteilQualitaet,
             upgradeSlots: $upgradeSlots, istAugment: $istAugment, augmentWaffentyp: $augmentWaffentyp,
             augmentZielTyp: $augmentZielTyp,
@@ -448,6 +451,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             ),
             ruestungReduktionBasis=int(data.get("ruestungReduktionBasis") or 0),
             istReparaturmaterial=bool(data.get("istReparaturmaterial")),
+            istTierfutter=bool(data.get("istTierfutter")),
             reparaturKapazitaet=int(data.get("reparaturKapazitaet") or 0),
             istMaschinenteil=bool(data.get("istMaschinenteil")),
             maschinenteilQualitaet=data.get("maschinenteilQualitaet") or "",

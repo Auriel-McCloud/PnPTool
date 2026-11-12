@@ -167,6 +167,8 @@ export interface Gegenstand {
    * `reparaturKapazitaet` deckelt, wie viele Kästchen ein Stück davon höchstens
    * abdeckt — siehe kampf/ruestung.py::selbstreparatur_ergebnis. */
   istReparaturmaterial: boolean;
+  /** Tierfutter: „Füttern“ stellt einen Napf für die Critter-Pets hin (12.11.2026). */
+  istTierfutter?: boolean;
   reparaturKapazitaet: number;
   /**
    * Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
@@ -598,6 +600,7 @@ export interface GegenstandUpdate {
   ruestungKaestchenAktuell?: number;
   ruestungReduktionBasis?: number;
   istReparaturmaterial?: boolean;
+  istTierfutter?: boolean;
   reparaturKapazitaet?: number;
   istNatuerlich?: boolean;
   rundumsicht?: boolean;

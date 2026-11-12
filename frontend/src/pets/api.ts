@@ -64,8 +64,8 @@ export interface Haeufchen {
   /** Häufchen (antippen), Brandfleck vom Feuerniesen/Blitz (wegwischen),
    *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
-   *  Tentakelmonster (wegwischen). */
-  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost";
+   *  Tentakelmonster (wegwischen). Napf: Futternapf, bis ein Drache ihn leer frisst. */
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf";
 }
 
 export type PetNachricht =
@@ -79,6 +79,9 @@ export const petsApi = {
     api.get<{ id: string; art: PetArt | null }>(`/api/campaigns/${cid}/pets/${critterId}`),
   artSetzen: (cid: string, critterId: string, art: PetArt | null) =>
     api.put<{ id: string; art: PetArt | null }>(`/api/campaigns/${cid}/pets/${critterId}`, { art }),
+  /** Tierfutter verfüttern (12.11.2026): ein Stück weg, ein Napf auf den eigenen Bildschirm. */
+  fuettern: (cid: string, itemId: string) =>
+    api.post<{ text: string }>(`/api/campaigns/${cid}/pets/fuettern/${itemId}`, {}),
 };
 
 /**

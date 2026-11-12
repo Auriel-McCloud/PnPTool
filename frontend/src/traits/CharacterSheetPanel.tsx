@@ -487,6 +487,7 @@ export function GegenstandRow({
   // Popup (siehe RuestungReparatur.tsx). Kein eigener Typ — ein Flag auf
   // jedem beliebigen Gegenstand (Klebeband, Nanopaste, Ersatzteile).
   const [istReparaturmaterial, setIstReparaturmaterial] = useState(item.istReparaturmaterial);
+  const [istTierfutter, setIstTierfutter] = useState(item.istTierfutter ?? false);
   const [reparaturKapazitaet, setReparaturKapazitaet] = useState(item.reparaturKapazitaet);
   // Maschinenteil (26.10.2026, Material statt Nuyen beim Drohnen-/Fahrzeug-
   // Umbau): dasselbe Flag-Muster wie Reparaturmaterial, gestuft statt mit
@@ -687,6 +688,7 @@ export function GegenstandRow({
     setRuestungKaestchenMax(src.ruestungKaestchenMax);
     setRuestungReduktionBasis(src.ruestungReduktionBasis);
     setIstReparaturmaterial(src.istReparaturmaterial);
+    setIstTierfutter(src.istTierfutter ?? false);
     setReparaturKapazitaet(src.reparaturKapazitaet);
     setIstMaschinenteil(src.istMaschinenteil);
     setMaschinenteilQualitaet(src.maschinenteilQualitaet);
@@ -851,6 +853,7 @@ export function GegenstandRow({
       ruestungKaestchenMax,
       ruestungReduktionBasis: typ === "Droge" ? droge.ruestungReduktionBasis : ruestungReduktionBasis,
       istReparaturmaterial,
+      istTierfutter,
       reparaturKapazitaet,
       istMaschinenteil,
       maschinenteilQualitaet,
@@ -878,7 +881,7 @@ export function GegenstandRow({
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
       istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, reichweite, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten, droge,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
-      istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
+      istReparaturmaterial, istTierfutter, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
       upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
       beschwoerungsSchwierigkeit, istNatuerlich, sichtbarkeit, sichtbarFuer,
     ],
@@ -2270,6 +2273,12 @@ export function GegenstandRow({
                         />{" "}
                         Reparaturmaterial
                       </label>
+                      {typ === "Verbrauchsgegenstand" && (
+                        <label style={{ fontSize: "0.9em" }} title="Füttern stellt einen Napf für die Drachen-Pets hin; leer gefressen heilt er den Critter um 3 Schlagschaden.">
+                          <input type="checkbox" checked={istTierfutter} onChange={(e) => setIstTierfutter(e.target.checked)} />{" "}
+                          Tierfutter
+                        </label>
+                      )}
                       {istReparaturmaterial && (
                         <label style={{ fontSize: "0.9em", display: "flex", alignItems: "center", gap: 6 }}>
                           Kapazität

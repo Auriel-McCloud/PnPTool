@@ -119,6 +119,7 @@ const SPUR_PX = {
   seite: { breite: 14, hoehe: 11 },
   schleim: { breite: 50, hoehe: 45 },
   frost: { breite: 38, hoehe: 23 },
+  napf: { breite: 22, hoehe: 13 },
 } as const;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
@@ -413,16 +414,37 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
 
   const senden = useCallback((n: object) => leitung.current?.senden(n), []);
 
-  const wegmachen = (id: string) => {
-    // Kurz ausblenden lassen, dann beim Server abmelden.
+  const wegmachen = (id: string, petId?: string) => {
+    // Kurz ausblenden lassen, dann beim Server abmelden. Beim Napf sagt
+    // `petId`, wer ihn leer gefressen hat (heilt den Critter).
     setWeg((alt) => new Set(alt).add(id));
-    window.setTimeout(() => senden({ typ: "wegmachen", id }), 350);
+    window.setTimeout(() => senden(petId ? { typ: "wegmachen", id, petId } : { typ: "wegmachen", id }), 350);
   };
 
   const s = skala();
   return (
     <div className="pet-ebene">
       {haeufchen.map((h) => {
+        if (h.art === "napf") {
+          // Futternapf (12.11.2026): steht unten, bis ein Drache ihn leer frisst —
+          // Antippen tut nichts. `pet-haeufchen` + data-*, damit er in `spuren()` auftaucht.
+          const px = SPUR_PX.napf;
+          return (
+            <div
+              key={h.id}
+              data-id={h.id}
+              data-art="napf"
+              className={`pet-haeufchen pet-napf${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
+              style={{
+                left: h.x * window.innerWidth - (px.breite * s) / 2,
+                top: window.innerHeight - px.hoehe * s,
+                width: px.breite * s,
+                height: px.hoehe * s,
+                backgroundImage: "url(/pets/napf.png)",
+              }}
+            />
+          );
+        }
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
         if (h.art === "brand" || h.art === "schleim" || h.art === "frost") {
@@ -1231,8 +1253,8 @@ function PetFigur({
   /** Frisch geschlüpft/gewachsen: hier (Körpermitte) steht er schon. */
   startMitte?: Map<string, number>;
   senden: (n: object) => void;
-  /** Spur verschwinden lassen (gefressen/eingesaugt). */
-  wegmachen: (id: string) => void;
+  /** Spur verschwinden lassen (gefressen/eingesaugt); `petId` beim Napf. */
+  wegmachen: (id: string, petId?: string) => void;
   lesung: Lesung | null;
   onGelesen: (id: string) => void;
 }) {
@@ -1317,7 +1339,8 @@ function PetFigur({
         if (zuletzt) gegriffen.set(n.id, { ...zuletzt, skala: 0.15 });
         if (gehalten.current === n.id) gehalten.current = null;
         window.setTimeout(() => gegriffen.delete(n.id), 900);
-        wegmachenRef.current(n.id);
+        const istNapf = document.querySelector(`.pet-napf[data-id="${n.id}"]`) !== null;
+        wegmachenRef.current(n.id, istNapf ? pet.id : undefined);
       } else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
     };
     const b: PetSteuerung = fliegt
@@ -1627,6 +1650,8 @@ function PetFigur({
     const b = bewegung.current;
     const jetzt = performance.now();
     if (!b || !b.streicheln(jetzt)) return;
+    // Zutraulichkeit (12.11.2026): der Server zählt höchstens +1 alle 5 Minuten.
+    senden({ typ: "streicheln", petId: pet.id });
     const d = b.darstellung(jetzt);
     const id = Date.now();
     setHerzen((alt) => [...alt, { id, x: d.kopfX - 20, y: d.kopfY }, { id: id + 1, x: d.kopfX + 4, y: d.kopfY }]);

@@ -330,9 +330,16 @@ Entwurf von Mark abgenommen („Perfekt!!!“). Technik siehe CLAUDE.md.
 - Neuer Drache an einem Critter = **Ei** (Schuppenmuster in der Drachenfarbe). Liegt beim Besitzer unten, wandert nicht, wackelt ab und zu. **Jeder** darf tippen; nötig sind zufällig **5–10 Tipps**, jeder Tipp lässt es hopsen, Risse wachsen (0–4).
 - **Schlüpfen:** Kappe hüpft hoch, dreht sich, landet als **Hütchen** auf dem Kopf; das Baby trägt es, bis es zum ersten Mal frisst oder schläft (Annahme Neko).
 - **Baby:** halb so lang, großer Kopf, Kulleraugen, Hornstummel. Läuft nur unten, frisst Seiten, macht Häufchen, schläft auch am Boden. Kein Klettern, Niesen, Hüpfen, Wolkenlauf, Burgermenü.
-- **Wachstum:** EP des Critters ab dem Schlüpfen. Ab **3 EP** der heutige Drache (klettern, niesen, hüpfen); **Wolkenlauf ab 8 EP, Burgermenü ab 13 EP** — Annahme Neko, Mark entscheidet nach dem Praxistest.
+- **Wachstum:** EP des Critters ab dem Schlüpfen. Ab **3 EP** der heutige Drache (klettern, niesen, hüpfen); **Burgermenü ab 8 EP, Wolkenlauf ab 13 EP** (Mark, 12.11.).
 - Bestandsdrachen (vor dem 12.11. gesetzt) bleiben groß und können alles. Ei neu starten: Pet-Art am Critter abwählen und neu wählen.
-- Noch nicht gebaut: weitere sichtbare Wachstumsstufen (5–6 Stufen, alle 5 EP), Futternapf/Heilung, Zutraulichkeit, SL-Korrektur der Stufe.
+- Noch nicht gebaut: weitere sichtbare Wachstumsstufen (5–6 Stufen, alle 5 EP), SL-Korrektur der Stufe.
+
+## Gebaut 12.11.2026: Futternapf, Heilung, Zutraulichkeit
+
+- **Tierfutter:** Verbrauchsgegenstand, den die SL im Bearbeiten-Formular als **„Tierfutter“** ankreuzt (Flag `istTierfutter`, Annahme Neko — Mark legt das Futter selbst an).
+- **Füttern:** Knopf „Füttern“ im Inventar (nur Spieler, eigenes Futter, 1 Stück). Dafür steht ein **Napf** unten auf dem eigenen Bildschirm, bis ein Drache vorbeikommt — er riecht ihn über den ganzen Schirm und läuft fast immer hin. Antippen räumt ihn nicht weg. Auch das Baby frisst.
+- **Leer gefressen:** Critter heilt **3 Schlagschaden**; der Fütternde bekommt **+5 Zutraulichkeit**.
+- **Streicheln:** +1 Zutraulichkeit, höchstens alle 5 Minuten je Spieler (auch bei Bärbel). Der Wert ist unsichtbar; Wirkung (Geschenke, Bärbel-Nachrichten ab 50, …) noch offen.
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).

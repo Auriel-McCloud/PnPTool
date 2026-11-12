@@ -71,6 +71,8 @@ OHNE_GM_ERLAUBT = {
     # Spielleitung, die ihn zurückholen oder endgültig entfernen kann.
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/wegwerfen",
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schlucken",
+    # Tierfutter verfüttern (12.11.2026): prüft den eigenen Besitz selbst.
+    "/api/campaigns/{campaign_id}/pets/fuettern/{item_id}",
     # Zusammenlegen (26.10.2026, Mark: "das müssen unbedingt auch die
     # Spieler können"): mehrere gleiche Stücke des eigenen Besitzes zu einem
     # Stapel zusammenlegen. Prüft die Besitzverhältnisse selbst (Ziel UND

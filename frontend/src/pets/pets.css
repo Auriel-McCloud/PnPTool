@@ -311,3 +311,9 @@
   92% { transform: rotate(-2deg); }
   96% { transform: rotate(1deg); }
 }
+
+/* Futternapf: nur zum Anschauen — fressen tut ihn der Drache. */
+.pet-napf {
+  pointer-events: none;
+  cursor: default;
+}

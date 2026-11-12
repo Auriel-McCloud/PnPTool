@@ -2005,3 +2005,7 @@ Bibelverse nur beim Besitzer gebaut. Futter heilt 3 Schlagschaden. Ideen: Bärbe
 ## [2026-11-12] update | Drachen schlüpfen aus dem Ei
 
 Ei (5–10× tippen), Schlüpfen mit Schalenhütchen, Baby-Phase nur unten, ab 3 EP der heutige Drache; Wolkenlauf/Burgermenü später (Annahme 8/13 EP). Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Futternapf, Heilung, Zutraulichkeit gebaut
+
+Tierfutter-Flag, Füttern stellt Napf hin, Drache frisst ihn leer (3 Schlagschaden geheilt, +5 Zutraulichkeit), Streicheln +1 alle 5 Min. Burgermenü ab 8, Wolkenlauf ab 13 EP. Siehe [[entities/critter-pet]].

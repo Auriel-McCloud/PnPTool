@@ -19,6 +19,20 @@ PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel")
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
 HAEUFCHEN_MAX = 12
 
+# Futternapf (Mark, 12.11.2026): „Füttern“ am Tierfutter (Verbrauchsgegenstand
+# mit `istTierfutter`) stellt einen Napf auf den eigenen Bildschirm. Er bleibt
+# liegen, bis ein Drache vorbeikommt und ihn leer frisst — das heilt den
+# Critter um 3 Schlagschaden und macht ihn dem Fütternden zutraulicher.
+# Kein SPUR_ARTEN-Eintrag: ein Tablet darf keinen Napf aus dem Nichts melden.
+NAPF = "napf"
+NAPF_HEILUNG = 3
+
+# Zutraulichkeit je Spieler und Pet (Kante ZUTRAULICH, Wert unsichtbar):
+# Streicheln +1 höchstens alle 5 Minuten je Spieler, Füttern +5 immer.
+ZUTRAULICH_STREICHELN = 1
+ZUTRAULICH_FUETTERN = 5
+STREICHEL_ABKLINGEN_S = 300
+
 # Was ein Pet auf einem Bildschirm hinterlassen kann: Häufchen und
 # Brandflecken vom Feuerniesen (Mark, 11.11.2026). Beides bleibt liegen,
 # bis der Spieler es wegmacht (antippen bzw. sauberwischen).
@@ -74,9 +88,8 @@ def online_mitglieder(mitglieder: list[str], online: set[str]) -> list[str]:
 # EP seit dem Schlüpfen zählen (`petEpStart`), sonst wäre ein neuer Critter mit
 # allen alten Gruppen-EP sofort ausgewachsen.
 # Fähigkeiten kommen mit dem Alter: Baby läuft nur unten, frisst, macht
-# Häufchen. Ab 3 EP der heutige Drache (klettern, niesen, hüpfen). Fliegen
-# (Wolkenlauf) und Burgermenü lernt er später — die Schwellen hier sind eine
-# Annahme (Neko), Mark entscheidet nach dem Praxistest.
+# Häufchen. Ab 3 EP der heutige Drache (klettern, niesen, hüpfen). Burgermenü
+# ab 8 EP, Fliegen (Wolkenlauf) ab 13 EP (Mark, 12.11.2026).
 WACHSENDE_ARTEN = ("drache", "eisdrache", "blitzdrache")
 TIPPS_MIN = 5
 TIPPS_MAX = 10
@@ -85,8 +98,8 @@ FAEHIGKEITEN_AB_EP = {
     "klettern": JUNG_AB_EP,
     "niesen": JUNG_AB_EP,
     "springen": JUNG_AB_EP,
-    "wolken": 8,
-    "menue": 13,
+    "menue": 8,
+    "wolken": 13,
 }
 ALLE_FAEHIGKEITEN = tuple(FAEHIGKEITEN_AB_EP)
 
