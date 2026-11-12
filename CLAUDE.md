@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel liest im großen Buch, ohne Kommentar (12.11.2026)
+
+Mark: Buch soll groß werden und sich aufschlagen, der Text steht IM Buch (keine Tafel/Sprechblase), keine frechen Sprüche — nur (gern umformulierte) Bibelverse, gern Altes Testament, alte/elegante Schrift. `pets/vorlesen.py`: Schema nur noch `stelle` + `zitat` (Luther-Ton, wörtlich oder behutsam auf die Lage umformuliert, keine Namen/Technik), Fallback 6 echte Verse. Frontend `pets/BaerbelBuch.tsx` + `baerbel-buch.css`: Pixel-Bärbel fliegt zur Mitte und klappt zu, an ihrer Stelle wächst ein HTML-Buch (Farben der aktuellen Gestalt, `Darstellung.gestalt`) zugeklappt auf, Deckel schwingt in 3D auf, Vers erscheint Wort für Wort; kurzer Vers rechts mit Fraktur-Initiale, links Stelle + Zierde, langer Vers auf beide Seiten verteilt; Schrift passt sich per Binärsuche an. Antippen: zu, schrumpft auf die Pixel-Bärbel, `zuklappen()`. Schriften selbst gehostet unter `frontend/public/fonts/` (IM Fell English, UnifrakturMaguntia, OFL). Alte Tafel `.pet-lesung` und Tentakel-Peek entfernt.
+
 ## Bärbel liest vor, Pets treffen sich, Spuren im Kampf weg (11.11.2026)
 
 Mark: Lesung etwa alle 15 Minuten, nur wenn Spieler da sind, groß und aufgeschlagen, bis zum Antippen; Bibelzitat per KI aus Ort, Anwesenden und Events am Ort. `pets/vorlesen.py` (ein Aufruf je Lesung, Fallback ein echter Vers). Uhr zählt nur Anwesenheit (`lesen_takt`, 13–17 min), nicht im Kampf, nicht ohne Leitung. Ungelesenes überlebt die Pause und hält sie auf dem Tablet (`HOECHSTE_VERWEILDAUER` schiebt sie nicht weg). Antippen oder die Tafel schickt `gelesen`.

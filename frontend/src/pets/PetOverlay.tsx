@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
 import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
+import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
 import "./pets.css";
 
@@ -325,7 +326,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
           if (!weggelegt.current.has(n.petId)) {
             setLesungen((alt) => ({
               ...alt,
-              [n.petId]: { stelle: n.stelle, zitat: n.zitat, kommentar: n.kommentar },
+              [n.petId]: { stelle: n.stelle, zitat: n.zitat },
             }));
           }
         } else if (n.typ === "haeufchen") {
@@ -951,8 +952,10 @@ function PetFigur({
   const effekt = useRef<HTMLDivElement | null>(null);
   const blitzSvg = useRef<SVGSVGElement | null>(null);
   const blitzLicht = useRef<HTMLDivElement | null>(null);
-  const leseTafel = useRef<HTMLButtonElement | null>(null);
-  const peek = useRef<HTMLDivElement | null>(null);
+  // Großes Buch (Bärbel liest vor): Gestalt, solange es offen ist.
+  const [buch, setBuch] = useState<number | null>(null);
+  const buchAn = useRef(false);
+  const spriteRect = useRef<BuchRechteck>({ left: 0, top: 0, w: 1, h: 1 });
   const lesungRef = useRef(lesung);
   lesungRef.current = lesung;
   const onGelesenRef = useRef(onGelesen);
@@ -1047,35 +1050,19 @@ function PetFigur({
             if (hit.art === "feuer") steuerungen.get(hit.id)?.erschrecken?.(jetzt);
           }
         }
-        const tafel = leseTafel.current;
-        if (tafel) {
-          if (d.liest && lesungRef.current) {
-            const schmal = window.innerWidth < 700;
-            tafel.style.display = "block";
-            if (schmal) {
-              tafel.style.left = "12px";
-              tafel.style.width = `${window.innerWidth - 24}px`;
-              tafel.style.top = `${Math.min(top + bh + 8, window.innerHeight - 200)}px`;
-            } else {
-              tafel.style.width = "360px";
-              tafel.style.left = `${Math.min(left + bw + 12, window.innerWidth - 376)}px`;
-              tafel.style.top = `${Math.max(12, top)}px`;
-            }
-          } else tafel.style.display = "none";
-        }
-        const pk = peek.current;
-        if (pk) {
-          if (d.peek) {
-            pk.style.display = "block";
-            pk.style.left = `${left + bw - 8}px`;
-            pk.style.top = `${top + bh * 0.35}px`;
-          } else pk.style.display = "none";
+        spriteRect.current = { left, top, w: bw, h: bh };
+        const liest = !!d.liest;
+        if (liest !== buchAn.current) {
+          buchAn.current = liest;
+          setBuch(liest ? (d.gestalt ?? 1) : null);
         }
         el.dataset.hockt = d.hockt ? "ja" : "nein";
         el.dataset.leuchtet = d.leuchten ? "ja" : "nein";
         // Effekt-Streifen, der die Figur selbst enthält (Tentakelmonster): Figur
         // unsichtbar, bleibt aber anfassbar.
-        el.style.opacity = d.effekt?.ersetzt ? "0" : "";
+        // Beim Vorlesen ebenso — das große Buch steht an ihrer Stelle.
+        el.style.opacity = d.effekt?.ersetzt || d.liest ? "0" : "";
+        el.style.pointerEvents = d.liest ? "none" : "";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
       }
       const fe = feuer.current;
@@ -1320,35 +1307,18 @@ function PetFigur({
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/tropfen.png)` }} />
       </span>
-      {pet.art === "baerbel" && (
-        <>
-          <button
-            ref={leseTafel}
-            type="button"
-            className="pet-lesung cl-roehre"
-            style={{ display: "none" }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              bewegung.current?.zuklappen?.(performance.now());
-            }}
-          >
-            {lesung && (
-              <>
-                <span className="pet-lesung-stelle">{lesung.stelle}</span>
-                <q>{lesung.zitat}</q>
-                <span className="pet-lesung-kommentar">{lesung.kommentar}</span>
-                <span className="pet-lesung-hinweis">Antippen, wenn du's gelesen hast</span>
-              </>
-            )}
-          </button>
-          <div ref={peek} className="pet-peek" style={{ display: "none" }} aria-hidden>
-            <svg viewBox="0 0 54 70">
-              <path d="M4 8 C 18 18, 8 36, 22 48 C 34 58, 28 66, 46 62" fill="none" stroke="#1a6a52" strokeWidth="10" strokeLinecap="round" />
-              <path d="M8 12 C 20 22, 12 38, 24 48 C 34 56, 30 64, 44 60" fill="none" stroke="#3aaa78" strokeWidth="5" strokeLinecap="round" />
-              <circle cx="46" cy="61" r="4" fill="#7dffe0" />
-            </svg>
-          </div>
-        </>
+      {pet.art === "baerbel" && buch !== null && (
+        <BaerbelBuch
+          lesung={lesung}
+          gestalt={buch}
+          start={() => spriteRect.current}
+          onFertig={() => {
+            // Erst die Lesung vergessen, sonst schlägt sie im nächsten Frame
+            // gleich wieder auf, bevor React neu gerendert hat.
+            lesungRef.current = null;
+            bewegung.current?.zuklappen?.(performance.now());
+          }}
+        />
       )}
       {herzen.map((h, i) => (
         <span

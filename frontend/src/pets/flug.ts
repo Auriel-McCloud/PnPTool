@@ -144,7 +144,6 @@ export class FlugBewegung implements PetSteuerung {
   /** Lesung (Mark, 11.11.: bleibt groß, bis man antippt). */
   private liest = false;
   private wartetAufLesen = false;
-  private leseStart = 0;
   private naechsterSchreck = 0;
   private angriff: Darstellung["angriff"] = null;
   private rausSeite: "links" | "rechts" | "oben" = "rechts";
@@ -729,10 +728,11 @@ export class FlugBewegung implements PetSteuerung {
     if (this.zustand === "raus" && this.rausGemeldet) return;
     this.liest = true;
     this.wartetAufLesen = false;
-    const { bw } = this.masse();
+    // Zur Bildschirmmitte — dort wächst das große Buch aus ihr heraus.
+    const { bw, bh } = this.masse();
     const ziel = {
-      x: Math.max(8, Math.min(this.u.breite * 0.42 - bw, this.u.breite - bw - 8)),
-      y: Math.max(12, Math.min(this.u.hoehe * 0.16, this.u.hoehe * 0.34)),
+      x: Math.max(8, this.u.breite / 2 - bw / 2),
+      y: Math.max(12, this.u.hoehe / 2 - bh / 2),
     };
     this.flatternZu(ziel, jetzt, null, (j) => this.aufschlagen(j));
   }
@@ -741,15 +741,15 @@ export class FlugBewegung implements PetSteuerung {
     return this.liest;
   }
 
+  /** Angekommen: zuklappen, dann übernimmt das große Buch (zugeklappt, es
+   *  schlägt sich selbst auf). */
   private aufschlagen(jetzt: number) {
     if (!this.liest) return;
-    if (!this.offen) {
-      this.klappe(true, jetzt, () => this.aufschlagen(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+    if (this.offen) {
+      this.klappe(false, jetzt, () => this.aufschlagen(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
       return;
     }
     this.zustand = "vorlesen";
-    this.leseStart = jetzt;
-    this.offen = true;
   }
 
   zuklappen(jetzt: number) {
@@ -918,16 +918,13 @@ export class FlugBewegung implements PetSteuerung {
       rot += Math.sin(fr * 4 * Math.PI) * 8;
     }
 
-    let zoom = 1;
-    let peek = false;
     if (this.zustand === "vorlesen") {
-      zoom = 2.35;
-      animation = `klappen_${g}`;
-      frame = FLUG_TAKT.klappenFrames - 1;
-      top = this.y + Math.sin(sek * 2.4) * 3;
-      rot += Math.sin(sek * 1.6) * 2.4;
-      const peekT = (jetzt - this.leseStart) % 8000;
-      peek = peekT > 6400 && peekT < 7600;
+      // Unsichtbar, solange das große Buch liest; ruhig, damit es beim
+      // Zurückschrumpfen genau hier landet.
+      animation = `schweben_${g}`;
+      frame = 0;
+      top = this.y;
+      rot = 0;
     }
     return {
       left: this.x,
@@ -938,9 +935,8 @@ export class FlugBewegung implements PetSteuerung {
       frame,
       feuer: null,
       angriff: this.angriff,
-      zoom,
       liest: this.zustand === "vorlesen",
-      peek,
+      gestalt: g,
       puff: this.zustand === "verwandeln" ? this.puffStart : null,
       effekt,
       blitze,

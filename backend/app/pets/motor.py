@@ -20,7 +20,7 @@ Protokoll (voller Zustand je Bildschirm, keine Diffs):
     {"typ": "verschieben", "id", "x", "y"}   (Häufchen ist von seinem Element gefallen)
     {"typ": "gelesen", "petId"}   (Bärbels Lesung zugeklappt)
   Server → Tablet zusätzlich
-    {"typ": "vorlesen", "petId", "stelle", "zitat", "kommentar"}
+    {"typ": "vorlesen", "petId", "stelle", "zitat"}
         — Bärbel soll sich aufschlagen. Steht auch am Pet-Dict (`lesung`),
           damit ein Neuverbinden die ungelesene Stelle nicht verliert.
 """

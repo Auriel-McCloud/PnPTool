@@ -1,0 +1,340 @@
+/* Bärbel liest vor (Mark, 12.11.2026): großes aufgeschlagenes Buch, der Vers
+   steht auf den Seiten — alte Schrift, keine Tafel daneben. */
+
+@font-face {
+  font-family: "IM Fell English";
+  src: url("/fonts/im-fell-english.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: "IM Fell English";
+  src: url("/fonts/im-fell-english-kursiv.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: "UnifrakturMaguntia";
+  src: url("/fonts/unifraktur-maguntia.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+.bb-buehne {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bb-flug {
+  container-type: inline-size;
+  width: min(94vw, 920px, calc(84vh * 1.5));
+}
+
+.bb-lage {
+  perspective: 2600px;
+  transform: translateX(-25%);
+  transition: transform 1.5s cubic-bezier(0.45, 0.05, 0.3, 1);
+}
+.bb-lage[data-offen="ja"] {
+  transform: none;
+}
+
+.bb-buch {
+  /* Gestalt 1: klassisch, braunes Leder, Gold. */
+  --bb-leder: #4a2816;
+  --bb-leder-dunkel: #1e100a;
+  --bb-leder-hell: #7a4a2c;
+  --bb-gold: #f0c446;
+  --bb-gold-dunkel: #9a6c1e;
+  --bb-rubrik: #8e1c1c;
+  --bb-tinte: #2c1a0c;
+  --bb-papier: #f2e4c0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  transform-style: preserve-3d;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: none;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bb-buch[data-gestalt="2"] {
+  /* Grimoire: violett, Silber. */
+  --bb-leder: #3a1a54;
+  --bb-leder-dunkel: #160a20;
+  --bb-leder-hell: #6a3a90;
+  --bb-gold: #d6dcec;
+  --bb-gold-dunkel: #7c82a0;
+  --bb-rubrik: #4e2a80;
+}
+.bb-buch[data-gestalt="3"] {
+  /* Rotes Leder, Gold, Kulleraugen. */
+  --bb-leder: #6e1622;
+  --bb-leder-dunkel: #24080e;
+  --bb-leder-hell: #a8323a;
+  --bb-gold: #f6c850;
+  --bb-gold-dunkel: #a87a24;
+  --bb-rubrik: #a01c28;
+}
+
+/* Warmes Leuchten hinter dem offenen Buch. */
+.bb-buch::before {
+  content: "";
+  position: absolute;
+  inset: -14% -8%;
+  background: radial-gradient(closest-side, rgba(255, 214, 130, 0.38), rgba(255, 214, 130, 0) 100%);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  transform: translateZ(-4px);
+  pointer-events: none;
+}
+.bb-buch[data-phase="oeffnen"]::before,
+.bb-buch[data-phase="offen"]::before {
+  opacity: 1;
+}
+
+/* Rückdeckel mit der rechten Seite. */
+.bb-hinten {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  border-radius: 0 1.4cqw 1.4cqw 0;
+  background: radial-gradient(ellipse at 60% 40%, var(--bb-leder), var(--bb-leder-dunkel));
+  box-shadow: 0 1.6cqw 3.6cqw rgba(0, 0, 0, 0.55);
+}
+
+/* Vorderdeckel: dreht um den Rücken nach links auf. */
+.bb-deckel {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  transition: transform 1.5s cubic-bezier(0.45, 0.05, 0.3, 1);
+}
+.bb-lage[data-offen="ja"] .bb-deckel {
+  transform: rotateY(-180deg);
+}
+.bb-vorne,
+.bb-innen {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.bb-vorne {
+  border-radius: 0 1.4cqw 1.4cqw 0;
+  background:
+    linear-gradient(to right, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 9%),
+    radial-gradient(ellipse at 42% 34%, var(--bb-leder-hell), var(--bb-leder) 55%, var(--bb-leder-dunkel));
+  /* Zugeklappt: Seitenblock und Rückdeckel schauen unten rechts raus. */
+  box-shadow:
+    0.45cqw 0.35cqw 0 -0.05cqw #e9d8ae,
+    0.8cqw 0.65cqw 0 -0.05cqw var(--bb-leder-dunkel),
+    0 1.6cqw 3.6cqw rgba(0, 0, 0, 0.55);
+}
+/* Bünde am Rücken. */
+.bb-vorne::before {
+  content: "";
+  position: absolute;
+  left: 1.2%;
+  top: 0;
+  bottom: 0;
+  width: 5%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 14%,
+    rgba(0, 0, 0, 0.35) 14% 15%,
+    rgba(255, 255, 255, 0.12) 15% 16%,
+    transparent 16% 20%
+  );
+}
+.bb-rahmen {
+  position: absolute;
+  inset: 8% 9% 8% 13%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7%;
+  border: 0.32cqw solid var(--bb-gold);
+  outline: 0.14cqw solid var(--bb-gold-dunkel);
+  outline-offset: 0.55cqw;
+  border-radius: 0.6cqw;
+  box-shadow: inset 0 0 1.6cqw rgba(0, 0, 0, 0.5);
+}
+.bb-titel {
+  font-family: "UnifrakturMaguntia", "Old English Text MT", serif;
+  font-size: 6.2cqw;
+  line-height: 1;
+  color: var(--bb-gold);
+  text-shadow:
+    0 0.14cqw 0 var(--bb-gold-dunkel),
+    0 0.35cqw 0.7cqw rgba(0, 0, 0, 0.6);
+}
+.bb-zier {
+  display: block;
+  width: 32%;
+  color: var(--bb-gold);
+  filter: drop-shadow(0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.5));
+}
+.bb-auge {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bb-blinzeln 4.2s infinite;
+}
+.bb-auge + .bb-auge {
+  animation-delay: 0.05s;
+}
+@keyframes bb-blinzeln {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.08); }
+}
+
+/* Innenseite des Vorderdeckels mit der linken Seite. */
+.bb-innen {
+  transform: rotateY(180deg);
+  border-radius: 1.4cqw 0 0 1.4cqw;
+  background: radial-gradient(ellipse at 40% 40%, var(--bb-leder), var(--bb-leder-dunkel));
+}
+
+.bb-papier {
+  position: absolute;
+  top: 3.5%;
+  bottom: 3.5%;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 7% 8% 10%;
+  color: var(--bb-tinte);
+  background-color: var(--bb-papier);
+}
+.bb-rechts {
+  left: 0;
+  right: 4%;
+  border-radius: 0 0.5cqw 0.5cqw 0;
+  background-image:
+    linear-gradient(to right, rgba(96, 62, 22, 0.38), rgba(96, 62, 22, 0.08) 7%, rgba(96, 62, 22, 0) 16%),
+    radial-gradient(ellipse at 55% 45%, rgba(255, 250, 230, 0.55), rgba(150, 110, 50, 0.22) 100%);
+  box-shadow:
+    0.22cqw 0 0 #e3d1a6,
+    0.44cqw 0 0 #cfba8c,
+    0.66cqw 0 0 #e3d1a6;
+}
+/* Kurzer Vers allein auf der rechten Seite: mittig. */
+.bb-mittig {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.bb-links {
+  left: 4%;
+  right: 0;
+  border-radius: 0.5cqw 0 0 0.5cqw;
+  background-image:
+    linear-gradient(to left, rgba(96, 62, 22, 0.38), rgba(96, 62, 22, 0.08) 7%, rgba(96, 62, 22, 0) 16%),
+    radial-gradient(ellipse at 45% 45%, rgba(255, 250, 230, 0.55), rgba(150, 110, 50, 0.22) 100%);
+  box-shadow:
+    -0.22cqw 0 0 #e3d1a6,
+    -0.44cqw 0 0 #cfba8c,
+    -0.66cqw 0 0 #e3d1a6;
+}
+
+.bb-stelle {
+  margin: 0 0 0.15em;
+  font-family: "UnifrakturMaguntia", "Old English Text MT", serif;
+  font-weight: 400;
+  font-size: max(16px, calc(3.5cqw * min(var(--bb-schrift, 1), 1.15)));
+  line-height: 1.15;
+  text-align: center;
+  color: var(--bb-rubrik);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bb-schnoerkel {
+  display: block;
+  width: 62%;
+  margin: 0 auto 0.7em;
+  color: var(--bb-gold-dunkel);
+}
+.bb-schmuck {
+  display: flex;
+  justify-content: center;
+  margin-top: 10%;
+}
+.bb-schmuck .bb-zier {
+  width: 36%;
+  color: var(--bb-rubrik);
+  filter: none;
+  opacity: 0.85;
+}
+
+.bb-vers {
+  margin: 0;
+  font-family: "IM Fell English", "EB Garamond", Garamond, Georgia, serif;
+  font-size: max(13px, calc(2.45cqw * var(--bb-schrift, 1)));
+  line-height: 1.42;
+  text-align: left;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+.bb-initiale {
+  float: left;
+  font-family: "UnifrakturMaguntia", "Old English Text MT", serif;
+  font-size: 3.2em;
+  line-height: 0.82;
+  margin: 0.06em 0.08em 0 0;
+  color: var(--bb-rubrik);
+}
+
+/* Tinte: Wort für Wort, erst wenn der Deckel aufgeht. */
+.bb-wort {
+  opacity: 0;
+  animation: bb-tinte 0.9s ease-out forwards;
+}
+.bb-buch[data-phase="anflug"] .bb-wort {
+  animation: none;
+}
+@keyframes bb-tinte {
+  from { opacity: 0; filter: blur(3px); }
+  to { opacity: 1; filter: none; }
+}
+
+.bb-hinweis {
+  position: absolute;
+  right: 8%;
+  bottom: 3.5%;
+  font-family: "IM Fell English", Georgia, serif;
+  font-style: italic;
+  font-size: max(10px, 1.25cqw);
+  color: rgba(70, 42, 16, 0.55);
+  opacity: 0;
+  transition: opacity 0.8s ease 0.4s;
+}
+.bb-buch[data-phase="offen"] .bb-hinweis {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-lage,
+  .bb-deckel {
+    transition-duration: 0.01s;
+  }
+  .bb-wort {
+    animation-duration: 0.01s;
+    animation-delay: 0s !important;
+  }
+}

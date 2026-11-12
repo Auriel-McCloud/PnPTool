@@ -1953,3 +1953,7 @@ Mark: stört und ist nicht lustig. Kein Popup, kein KI-Aufruf beim Schließen de
 ## [2026-11-11] update | Bärbel liest vor, Pets treffen sich
 
 Lesung alle 15 Minuten Anwesenheit bis zum Antippen. Drache niest sie an, Blitz verkohlt ihn, Tentakel schleimt ihn. Spuren im Kampf ausgeblendet. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Bärbel liest im großen Buch
+
+Statt Tafel mit frechem Kommentar: großes aufschlagendes Buch, nur der (umformulierte) Vers, alte Schrift. Siehe [[entities/critter-pet]].

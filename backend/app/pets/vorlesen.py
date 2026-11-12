@@ -1,9 +1,13 @@
 """Bärbel liest vor — ein KI-Anruf je Lesung, nicht je Frame.
 
 Mark, 11.11.2026: etwa alle 15 Minuten, solange Spieler da sind, schlägt sie
-sich groß auf und kommentiert die Lage mit einem echten Bibelzitat. Bleibt,
-bis jemand antippt. Fällt der Anbieter aus, nimmt sie einen bekannten Vers,
-damit die Lesung nicht still ausbleibt.
+sich groß auf und liest eine Bibelstelle zur Lage vor. Bleibt, bis jemand
+antippt. Fällt der Anbieter aus, nimmt sie einen bekannten Vers, damit die
+Lesung nicht still ausbleibt.
+
+Mark, 12.11.2026: keine frechen Kommentare mehr — nur der Vers selbst, gern
+leicht umformuliert, damit er zur Lage passt, gern auch Altes Testament. Der
+Text steht im aufgeschlagenen Buch, nicht in einer Tafel daneben.
 """
 
 import logging
@@ -20,44 +24,49 @@ _SCHEMA = {
     "properties": {
         "stelle": {"type": "STRING"},
         "zitat": {"type": "STRING"},
-        "kommentar": {"type": "STRING"},
     },
-    "required": ["stelle", "zitat", "kommentar"],
+    "required": ["stelle", "zitat"],
 }
 
 _SYSTEM = (
-    "Du bist Bärbel, eine sprechende Bibel und zugleich ein kleines Zauberbuch "
-    "in einem Cyberpunk-Pen-and-Paper. Du kommentierst die Lage der Spielrunde "
-    "ausschließlich über ein echtes Bibelzitat auf Deutsch (Luther oder "
-    "Einheitsübersetzung) plus einen kurzen, frechen Satz, der das Zitat auf "
-    "genau diese Situation münzt. Keine Predigt, keine moderne Politik, kein "
-    "Belehren. Nur eine Stelle, von der du die Wortlaut sicher kennst — lieber "
-    "ein bekannter Vers als ein erfundener. stelle ist „Buch Kapitel,Vers“. "
-    "zitat höchstens 240 Zeichen, kommentar höchstens 160, ohne Anführungszeichen "
-    "um das Zitat."
+    "Du bist Bärbel, eine alte Bibel, die einer Pen-and-Paper-Runde vorliest. "
+    "Wähle zur geschilderten Lage genau EINE passende Bibelstelle — gern aus dem "
+    "Alten Testament (Psalmen, Sprüche, Prediger, Hiob, Jesaja, die Bücher Mose, "
+    "Könige, Richter …), aber auch Neues Testament ist erlaubt — und gib sie auf "
+    "Deutsch im feierlichen, altertümlichen Ton der Lutherbibel wieder: wörtlich "
+    "oder behutsam umformuliert, sodass sie auf die Lage passt. Anspielungen nur "
+    "in biblischen Bildern (Wanderer, Wüste, Tal, Stadt, Feinde, Licht, "
+    "Finsternis, Sturm, Brot). Kein Kommentar, kein Witz, keine Ironie, keine "
+    "Anrede der Spieler, keine Namen, keine modernen Begriffe, keine Technik. "
+    "Die zugrunde liegende Stelle muss echt sein. stelle ist „Buch Kapitel,Vers“ "
+    "dieser Vorlage. zitat höchstens 260 Zeichen, ohne Anführungszeichen."
 )
 
-# Echte, kurze Verse — nur der Notnagel, wenn kein Anbieter antwortet.
+# Echte Verse (Luther) — nur der Notnagel, wenn kein Anbieter antwortet.
 _FALLBACK = [
     {
-        "stelle": "Johannes 1,5",
-        "zitat": "Und das Licht scheint in der Finsternis, und die Finsternis hat's nicht ergriffen.",
-        "kommentar": "Steht hier auch so. Ob ihr das Licht seid oder die Finsternis, sagt sie nicht.",
+        "stelle": "Psalm 23,4",
+        "zitat": "Und ob ich schon wanderte im finstern Tal, fürchte ich kein Unglück; denn du bist bei mir, dein Stecken und Stab trösten mich.",
     },
     {
         "stelle": "Prediger 3,1",
         "zitat": "Ein jegliches hat seine Zeit, und alles Vorhaben unter dem Himmel hat seine Stunde.",
-        "kommentar": "Auch das Herumstehen. Sie blättert weiter und tut so, als wäre das Trost.",
     },
     {
-        "stelle": "Psalm 23,4",
-        "zitat": "Und ob ich schon wanderte im finstern Tal, fürchte ich kein Unglück; denn du bist bei mir.",
-        "kommentar": "Sie ist ja da. Ob das beruhigt, ist eine andere Frage.",
+        "stelle": "Josua 1,9",
+        "zitat": "Sei getrost und unverzagt. Lass dir nicht grauen und entsetze dich nicht; denn der Herr, dein Gott, ist mit dir in allem, was du tun wirst.",
     },
     {
-        "stelle": "Matthäus 5,14",
-        "zitat": "Ihr seid das Licht der Welt.",
-        "kommentar": "Sie klappt eine Seite um und murmelt, das sei hier eher die Ausnahme.",
+        "stelle": "Psalm 121,1–2",
+        "zitat": "Ich hebe meine Augen auf zu den Bergen. Woher kommt mir Hilfe? Meine Hilfe kommt vom Herrn, der Himmel und Erde gemacht hat.",
+    },
+    {
+        "stelle": "Sprüche 16,9",
+        "zitat": "Des Menschen Herz erdenkt sich seinen Weg; aber der Herr allein lenkt seinen Schritt.",
+    },
+    {
+        "stelle": "Johannes 1,5",
+        "zitat": "Und das Licht scheint in der Finsternis, und die Finsternis hat's nicht ergriffen.",
     },
 ]
 
@@ -69,11 +78,10 @@ def _kurz(wert: object, laenge: int) -> str:
 
 def _sauber(roh: dict) -> dict | None:
     stelle = _kurz(roh.get("stelle"), 60)
-    zitat = _kurz(roh.get("zitat"), 280)
-    kommentar = _kurz(roh.get("kommentar"), 180)
-    if len(stelle) < 3 or len(zitat) < 12 or len(kommentar) < 8:
+    zitat = _kurz(roh.get("zitat"), 300).strip("„“\"»«")
+    if len(stelle) < 3 or len(zitat) < 12:
         return None
-    return {"stelle": stelle, "zitat": zitat, "kommentar": kommentar}
+    return {"stelle": stelle, "zitat": zitat}
 
 
 async def lage(campaign_id: str, besitzer_id: str, anwesende_ids: list[str]) -> str:
@@ -127,7 +135,7 @@ async def erzeugen(campaign_id: str, besitzer_id: str, anwesende_ids: list[str])
     try:
         text = await lage(campaign_id, besitzer_id, anwesende_ids)
         roh = await generiere_json(
-            f"Situation, die du kommentierst:\n{text}",
+            f"Lage der Runde, zu der du vorliest:\n{text}",
             _SYSTEM,
             _SCHEMA,
             campaign_id=campaign_id,

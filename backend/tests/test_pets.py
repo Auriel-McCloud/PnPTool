@@ -319,7 +319,7 @@ def test_baerbel_liest_nach_anwesenheit_und_bleibt_bis_antippen(welt, monkeypatc
     })
 
     async def falsch(*_a, **_k):
-        return {"stelle": "Johannes 1,5", "zitat": "Und das Licht scheint in der Finsternis.", "kommentar": "Passt."}
+        return {"stelle": "Johannes 1,5", "zitat": "Und das Licht scheint in der Finsternis."}
 
     monkeypatch.setattr("app.pets.vorlesen.erzeugen", falsch)
 

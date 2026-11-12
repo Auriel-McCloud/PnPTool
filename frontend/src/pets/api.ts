@@ -25,8 +25,8 @@ export interface PetAufSchirm {
 
 export interface Lesung {
   stelle: string;
+  /** Der Vers (gern leicht umformuliert), steht im aufgeschlagenen Buch. */
   zitat: string;
-  kommentar: string;
 }
 
 export interface Haeufchen {
@@ -44,7 +44,7 @@ export interface Haeufchen {
 export type PetNachricht =
   | { typ: "pets"; daten: PetAufSchirm[] }
   | { typ: "haeufchen"; daten: Haeufchen[] }
-  | { typ: "vorlesen"; petId: string; stelle: string; zitat: string; kommentar: string };
+  | { typ: "vorlesen"; petId: string; stelle: string; zitat: string };
 
 export const petsApi = {
   /** `critterId` kann auch die id eines Gegenstands sein (Bärbel). */

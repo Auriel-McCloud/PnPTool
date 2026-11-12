@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-12
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
@@ -208,6 +208,8 @@ spricht — zugleich Zauberbuch. Pixel-Buch mit „BÄRBEL“ auf dem Titel.
 **Gebaut 11.11. (Interaktion):** Der Drache frisst Bärbels Seiten, wenn er daran vorbeikommt (läuft auch gezielt hin); Bärbels Tentakel zieht Häufchen ins Buch. Blitz variiert: Einzel-, Gabel-, Kettenblitz, trifft oft Wörter/Kästchen. Direkte Begegnung (11.11., gebaut): auf demselben Bildschirm niest der Drache Bärbel an (sie verwandelt sich), ihr Blitz verkohlt ihn, die Tentakel schleimt ihn voll.
 
 **Gebaut 11.11. (Vorlesen):** Etwa alle 15 Minuten Anwesenheit (nicht Wanduhr, nicht im Kampf) schlägt sie sich groß auf und zeigt ein KI-Bibelzitat zur Lage (Ort, Anwesende, Events am Ort). Bleibt bis zum Antippen. Glitzerwolke nicht gebaut — die Tafel ist die lesbare Fläche.
+
+**Nachbesserung 12.11. (Vorlesen):** Mark war mit Tafel daneben und frechen Sprüchen unzufrieden: „das Buch so groß wird und sich aufschlägt, dass man den Text im Buch lesen kann“, „höchstens umformulierte Bibelverse, gerne auch aus dem Alten Testament“, Schrift „elegant oder alt“. Jetzt: Bärbel fliegt zur Mitte, wächst als großes Buch in ihrer aktuellen Gestalt (Farben, Kreuz/Auge/Kulleraugen auf dem Deckel), der Deckel schwingt auf, der Vers steht auf den Seiten und erscheint Wort für Wort wie Tinte (Fraktur-Initiale und -Stelle, Fließtext in alter Druckschrift). Kein Kommentar mehr, nur Stelle + Vers. Antippen klappt zu und lässt sie wieder klein weiterfliegen. Ersetzt die Tafel aus dem 11.11.
 
 **Noch offen (Ideen von Mark):** weitere Monster (Klauen, Fledermäuse), Feuerbälle.
 

@@ -218,10 +218,10 @@ export interface Darstellung {
   angriff?: { art: "feuer" | "blitz" | "schleim"; x: number; y: number; r: number } | null;
   /** Zusätzliche Größe (1 = normal). Bärbels Lesung. */
   zoom?: number;
-  /** Aufgeschlagen und lesbar — bleibt, bis jemand antippt. */
+  /** Liest vor: das große Buch (BaerbelBuch) übernimmt, die Figur ist weg. */
   liest?: boolean;
-  /** Tentakelspitze lugt seitlich raus. */
-  peek?: boolean;
+  /** Bärbels aktuelle Gestalt (1–3) — das große Buch sieht genauso aus. */
+  gestalt?: number;
 }
 
 export type Meldung =
