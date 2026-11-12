@@ -350,7 +350,7 @@ async def list_critter(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
 
 @router.get("/critter/meine", response_model=list[dict])
 async def meine_critter(campaign_id: str, viewer: Viewer = Depends(get_viewer)):
-    """Die eigenen Critter des Spielercharakters (BEGLEITET oder Ki-Tama) —
+    """Die eigenen Critter des Spielercharakters (nur BEGLEITET, keine Ki-Tama-Beschwörungen) —
     unabhängig von ihrer Sichtbarkeit. SL ohne eigenen Charakter: leer."""
     if not viewer.person_id:
         return []

@@ -1993,3 +1993,7 @@ Wachstum an Critter-EP gekoppelt, Füttern heilt LP, Futter = Verbrauchsgegensta
 ## [2026-11-12] update | Futternapf, Heilung nur Schlag, 5 EP je Schritt
 
 Füttern legt einen Napf auf den Schirm, heilt nur Schlagschaden (Rest über Rast), jeder darf füttern/streicheln, Idee Zutraulichkeits-Meter. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Zutraulichkeit entschieden, Ki-Tama raus aus Begleitern
+
+Zutraulichkeit als Kante Spieler-PC → Critter, Streicheln max. +1 je 5 Min.; Geschenke-Idee. Ki-Tama-Beschwörungen nicht mehr im Begleiter-Bereich. Siehe [[entities/critter-pet]].

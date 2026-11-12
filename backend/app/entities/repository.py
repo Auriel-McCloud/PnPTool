@@ -640,23 +640,17 @@ async def eigene_critter(campaign_id: str, person_id: str) -> list[dict]:
     Begleitern nicht angezeigt“ — der Bereich las bis dahin nur `Begleiter`-
     Knoten, nie Critter).
 
-    Beide Besitzpfade wie `critter_besitzer` (siehe Sichtbarkeits-Regel):
-    direkte `BEGLEITET`-Kante ODER Besitz eines Ki-Tama mit
-    `beschworenerCritterId`. Die Critter-`sichtbarkeit` spielt keine Rolle —
-    der eigene Critter ist immer sichtbar.
+    Nur die direkte `BEGLEITET`-Kante zählt. Ki-Tama-Beschwörungen
+    (`Gegenstand.beschworenerCritterId`) gehören NICHT hierher (Mark,
+    12.11.2026: „wenn jemand eine Ki-Tama-Beschwörung hat, sieht er die dann
+    unter Begleiter? Das würde ich nämlich eigentlich nicht wollen“) — die
+    zeigt der Kampf unter „Deine Beschwörungen“. Die Critter-`sichtbarkeit`
+    spielt keine Rolle — der eigene Critter ist immer sichtbar.
     """
     driver = get_driver()
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
-        CALL (p) {
-            MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p)
-            RETURN n
-            UNION
-            MATCH (p)-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
-            WHERE g.beschworenerCritterId IS NOT NULL
-            MATCH (n:Person {id: g.beschworenerCritterId, campaignId: $campaign_id, istCritter: true})
-            RETURN n
-        }
+        MATCH (n:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(p)
         RETURN DISTINCT n.id AS id, n.name AS name, n.alias AS alias, n.bildUrl AS bildUrl,
                p.id AS besitzerId, p.name AS besitzerName,
                coalesce(n.istVorlage, false) AS istVorlage,

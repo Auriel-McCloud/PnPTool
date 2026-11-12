@@ -251,6 +251,8 @@ Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, 
 Der Spieler sah seinen Critter gar nicht im Begleiter-Bereich (der las nur
 Sprite/Geist-Begleiter). Behoben: eigene Critter erscheinen dort als Kachel
 mit lesbarem Charakterblatt (`GET …/critter/meine`, CLAUDE.md).
+12.11.2026: nur noch Critter mit `BEGLEITET`-Kante — Ki-Tama-Beschwörungen
+erscheinen dort nicht (Mark), sie stehen im Kampf unter „Deine Beschwörungen“.
 
 ## Wachsen und neue Fähigkeiten (Idee 12.11.2026, offen)
 
@@ -303,7 +305,8 @@ Nachschärfung Mark (gleicher Abend):
 
 Noch offen:
 - Wie viele Schlagschaden-Kästchen heilt ein Futter (Wert am Futter-Gegenstand oder fest)?
-- Zutraulichkeit: Datenmodell (Vorschlag: Kante Spieler-PC → Critter mit `wert`), Spam-Schutz beim Streicheln, Wirkung.
+- ~~Zutraulichkeit: Datenmodell, Spam-Schutz~~ Entschieden 12.11.: Kante Spieler-PC → Critter mit `wert` (je Spieler und Critter eigener Wert); Streicheln zählt höchstens +1 alle 5 Minuten je Spieler, Füttern (+5) zählt immer.
+- Zutraulichkeit — Wirkung (später): Ideen Neko: wandert öfter zu Lieblingen, faucht/niest bei Fremden, rollt sich bei Lieblingen zum Schlafen ein. Idee Mark: ab hoher Zuneigung findet das Pet Dinge und bringt Geschenke. Der Wert muss **nicht sichtbar** sein.
 
 ## Noch offen
 
