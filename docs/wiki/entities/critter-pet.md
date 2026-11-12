@@ -270,9 +270,27 @@ Offene Achsen:
 - **Hat Wachstum Spielwirkung** am Critter (Werte) oder ist es reiner Flavor?
 - **Bärbel:** welche Fähigkeiten in welcher Reihenfolge, auch freigeschaltet je Sitzung?
 
+### Marks Antworten 12.11.2026
+
+- **Stufen:** 5–6 deutlich sichtbare Stufen, dazwischen jeweils eine Zwischenstufe, in der kaum etwas passiert → etwa **12 Schritte**, ausgewachsen nach **10–12 Sitzungen**.
+- **Auslöser (Mischung):** Er wächst nur, wenn er in der Sitzung **gefüttert und gestreichelt** wurde. Zusätzlich die Idee, das Wachstum an die **Erfahrungspunkte des Critters** zu koppeln, an dem das Pet hängt.
+- **Ende/Neustart:** Ausgewachsen hört es optisch auf. Wird die Pet-Art an einen **neuen Critter** gehängt, fängt sie dort wieder klein an → Stufe gehört zum Critter, nicht zur Pet-Art.
+- **Spielwirkung andersherum:** Das Wachstum gibt keine Werte. Umgekehrt soll der **Critter mit der Gruppe EP bekommen** (er hängt an einem Spieler): bekommt die Kampagne EP, bekommt er auch welche. Mark will das noch testen.
+  - Code-Stand 12.11. (Neko): `kampagnenEP` fließt in `bogen_uebersicht` bei **jeder** Person ein, auch beim Critter (keine Ausnahme für `istCritter`) — er sollte die Gruppen-EP also schon haben. Am Spieltisch gegenprüfen.
+  - Falle fürs Koppeln: `kampagnenEP` ist ein Kampagnen-Gesamtwert. Ein neu angelegter Critter „hat“ sofort alle bisherigen Gruppen-EP — fürs Wachstum zählen also nur EP **seit der Bindung** (Startwert beim Setzen der Pet-Art merken), sonst wäre er sofort ausgewachsen.
+- **Bärbel — Fähigkeiten:** so viele, wie uns einfallen. Ideen: weitere Monster (Fledermäuse; schon notiert: Klauen), **andere Kreaturen ausspucken**, **Eis- und Feuerzauber** lernen.
+- **Bärbel — Vorlesen (wichtig!):** Für die **Bibelzitate kehrt Bärbel immer zu ihrem Besitzer zurück** und liest dort vor (heute liest sie auf dem Tablet, auf dem sie gerade ist — `motor.py::_petmotor_lesen_takt` sendet an `pet.wirt`). Den **anderen** zeigt sie später andere Texte: **Kochrezepte**, **DIY-Anleitungen für irgendeinen Blödsinn**, **Wettervorhersage für irgendein Land an irgendeinem Tag**.
+
+Noch offen:
+- Wie genau Pflege und EP zusammenspielen: Pflege als Bedingung und EP als Maß (z. B. Stufe nur bei Pflege, Tempo nach EP)? Oder eins von beiden?
+- **Füttern gibt es noch nicht** (heute frisst der Drache nur Bärbels Seiten): Womit wird gefüttert (Tierfutter-Gegenstand aus dem Shop, Futter-Knopf, Antippen mit Futter)? Wer darf füttern/streicheln, damit es zählt (nur Besitzer oder jeder)?
+- Was zählt als „in der Sitzung“ (laufende Sitzung aus dem Ereignisprotokoll)?
+- Reihenfolge der Bärbel-Fähigkeiten, und ob sie auch je Sitzung freigeschaltet werden.
+
 ## Noch offen
 
-- Wachsen/Fähigkeiten freischalten — siehe Abschnitt oben (offen, Idee 12.11.).
+- Wachsen/Fähigkeiten freischalten — siehe Abschnitt oben (Antworten 12.11., Rest offen).
+- Bärbel liest Bibelzitate nur beim Besitzer; anderen zeigt sie Rezepte/DIY/Wetter — entschieden 12.11., noch nicht gebaut.
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).

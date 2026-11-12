@@ -1981,3 +1981,7 @@ Zwei neue Pet-Arten (blau/Eis mit Raureif-Spur, silbern/Blitz), gleiche Figur wi
 ## [2026-11-12] update | Idee: Pets wachsen
 
 Drachen sollen je Sitzung größer/eleganter werden, Bärbel neue Fähigkeiten bekommen — notiert mit Skizze und offenen Achsen. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Pets wachsen: Marks Antworten
+
+12 Wachstumsschritte über 10–12 Sitzungen, Pflege + Critter-EP als Auslöser, neuer Critter = wieder klein; Bärbel liest Bibelverse nur beim Besitzer, anderen Rezepte/DIY/Wetter. Siehe [[entities/critter-pet]].
