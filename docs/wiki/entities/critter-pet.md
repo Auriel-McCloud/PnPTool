@@ -294,10 +294,16 @@ Noch offen:
 - **Futter ist ein Verbrauchsgegenstand**, den Mark selbst anlegt (Typ `Verbrauchsgegenstand`, stapelbar, 1 Stück je Mahlzeit).
 - **Bedienidee Mark:** Den Critter im Inventar in die Nähe des Futters heben, dann fängt er an zu fressen. Neko: passt zur vorhandenen Mechanik — das Pet lässt sich schon packen (3 s halten) und werfen, und der Drache hat einen Fressen-Zustand (Bärbels Seiten). Ablegen über der Futter-Kachel = fressen. Zusätzlich Rückweg nötig, wenn das Pet gerade bei einem anderen Spieler ist: z. B. Knopf „Füttern“ am Futter ruft es heim, es läuft hin und frisst.
 
+Nachschärfung Mark (gleicher Abend):
+- **Futternapf statt Heimruf:** „Füttern“ am Futter legt einen **Napf** auf den Bildschirm, der dort liegen bleibt (wie Häufchen/Seiten), bis der Drache vorbeikommt und ihn leer frisst. Das Pet wird nicht herbeigerufen.
+- **Heilung nur Schlagschaden.** Schwerer/aggravierter Schaden heilt der Critter wie die Spieler über die Rast. Code-Stand: `personen_rasten` nimmt per `_mit_gebundenen_crittern` alle über `BEGLEITET` an den Besitzer gebundenen Critter automatisch mit (seit 30.10. für Ki-Tama-Pets).
+- **Wachstum: alle 5 EP ein Schritt** (vorläufig — Mark kann noch nicht einschätzen, ob das viel ist; als Kampagnen-Einstellung verstellbar machen). Live-Stand 12.11.: `kampagnenEP` = 0, keine Sitzungen protokolliert — kein Erfahrungswert. 12 Schritte × 5 = 60 EP.
+- **Füttern und Streicheln darf jeder am Tisch.**
+- **Zutraulichkeits-Meter (Idee):** Wert je Spieler und Critter, Streicheln +1, Füttern +5. Wirkung noch offen.
+
 Noch offen:
-- Wie viele LP heilt ein Futter — Wert am Futter-Gegenstand (SL trägt ein) oder fester Wert?
-- Wie viele EP je Wachstumsschritt (12 Schritte bis ausgewachsen)?
-- Darf nur der Besitzer füttern oder jeder?
+- Wie viele Schlagschaden-Kästchen heilt ein Futter (Wert am Futter-Gegenstand oder fest)?
+- Zutraulichkeit: Datenmodell (Vorschlag: Kante Spieler-PC → Critter mit `wert`), Spam-Schutz beim Streicheln, Wirkung.
 
 ## Noch offen
 

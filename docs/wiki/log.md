@@ -1989,3 +1989,7 @@ Drachen sollen je Sitzung größer/eleganter werden, Bärbel neue Fähigkeiten b
 ## [2026-11-12] update | Pet-Wachstum über EP, Futter heilt
 
 Wachstum an Critter-EP gekoppelt, Füttern heilt LP, Futter = Verbrauchsgegenstand (Mark legt an), Bedienidee: Pet über Futter-Kachel fallen lassen. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Futternapf, Heilung nur Schlag, 5 EP je Schritt
+
+Füttern legt einen Napf auf den Schirm, heilt nur Schlagschaden (Rest über Rast), jeder darf füttern/streicheln, Idee Zutraulichkeits-Meter. Siehe [[entities/critter-pet]].
