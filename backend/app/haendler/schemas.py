@@ -47,6 +47,7 @@ class SortimentEintrag(BaseModel):
     schadenArt: str = ""
     kampfFertigkeit: str = ""
     paradeBonus: int = 0
+    reichweite: int = 1
     istWaffe: bool = False
     ruestungReduktionBasis: int = 0
     ruestungKaestchenAktuell: int = 0

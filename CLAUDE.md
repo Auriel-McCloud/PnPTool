@@ -2676,6 +2676,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (12.11.2026 — Nahkampf-Reichweite im Steckbrief):**
+- **Was:** Nahkampf- und Handgemenge-Waffen haben Reichweite 1 kurz, 2 mittel, 3 lang. Standard ist kurz und wird nicht angezeigt. Mittel und lang stehen im Steckbrief als `mittel (2)` und `lang (3)`. Die SL setzt das im Umbauen.
+- **Wo:** `backend/app/items/schemas.py`, `backend/app/items/waffenbonus.py`, `frontend/src/items/steckbrief.ts`, `frontend/src/traits/CharacterSheetPanel.tsx`.
+- **Verifiziert:** `pytest tests/test_gegenstand_felder.py`, `npx tsc -b`.
+
 **Zuletzt gebaut (12.11.2026 — Spieler lesen Beschreibung und Steckbrief im Inventar):**
 - **Was:** Im Spieler-Inventar fehlte ein Knopf, um Beschreibung und Werte eines Gegenstands zu lesen. Der Knopf „Beschreibung“ sitzt im geöffneten Gegenstand rechts neben Name und Wert, nicht auf der Kachel. Das Fenster ist nur lesen: Steckbrief und Beschreibung. Unter dem Bild steht der Text nicht. SL-Notizen bleiben unsichtbar.
 - **Wo:** `frontend/src/items/GegenstandKachel.tsx`, `frontend/src/items/GegenstandLesen.tsx`, `frontend/src/shell/Fenster.tsx`, `frontend/src/items/gegenstaende.css`.

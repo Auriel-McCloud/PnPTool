@@ -152,6 +152,40 @@ function KampfFertigkeitFeld({
   );
 }
 
+function ReichweiteFeld({
+  wert,
+  onChange,
+}: {
+  wert: number;
+  onChange: (wert: number) => void;
+}) {
+  const stufen = [
+    [1, "kurz"],
+    [2, "mittel"],
+    [3, "lang"],
+  ] as const;
+  return (
+    <div style={{ marginTop: 6 }}>
+      <span style={{ fontSize: "0.85em", color: "var(--text-leise)" }}>Reichweite</span>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+        {stufen.map(([n, label]) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            style={{
+              borderColor: wert === n ? "var(--neon)" : undefined,
+              color: wert === n ? "var(--neon)" : undefined,
+            }}
+          >
+            {label} ({n})
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type DeaktivModus = "" | "komplett" | "upgrades" | "nicht";
 
 function deaktivModusLesen(roh: string | undefined | null): DeaktivModus {
@@ -421,6 +455,7 @@ export function GegenstandRow({
   const [kampfFertigkeit, setKampfFertigkeit] = useState<KampfFertigkeit>(kampfFertigkeitLesen(item.kampfFertigkeit));
   const [deaktivModus, setDeaktivModus] = useState<DeaktivModus>(deaktivModusLesen(item.deaktivModus));
   const [paradeBonus, setParadeBonus] = useState(item.paradeBonus ?? 0);
+  const [reichweite, setReichweite] = useState(item.reichweite === 2 || item.reichweite === 3 ? item.reichweite : 1);
   const [initiativeBonus, setInitiativeBonus] = useState(item.initiativeBonus);
   const [droge, setDroge] = useState<DrogeFelder>(() => drogeAus(item));
   const [zusatzaktionen, setZusatzaktionen] = useState(item.zusatzaktionen);
@@ -624,6 +659,7 @@ export function GegenstandRow({
     setKampfFertigkeit(kampfFertigkeitLesen(src.kampfFertigkeit));
     setDeaktivModus(deaktivModusLesen(src.deaktivModus));
     setParadeBonus(src.paradeBonus ?? 0);
+    setReichweite(src.reichweite === 2 || src.reichweite === 3 ? src.reichweite : 1);
     setInitiativeBonus(src.initiativeBonus);
     setDroge(drogeAus(src));
     setZusatzaktionen(src.zusatzaktionen);
@@ -742,6 +778,7 @@ export function GegenstandRow({
       kampfFertigkeit: typ === "Waffe" || istWaffe ? kampfFertigkeit : "",
       deaktivModus: typ === "Waffe" || istWaffe ? deaktivModus : "",
       paradeBonus: typ === "Waffe" || istWaffe ? Number(paradeBonus) || 0 : 0,
+      reichweite: typ === "Waffe" || istWaffe ? (reichweite === 2 || reichweite === 3 ? reichweite : 1) : 1,
       initiativeBonus,
       wirkungDauer: droge.wirkungDauer,
       nebenwirkungBoni: Object.fromEntries(
@@ -839,7 +876,7 @@ export function GegenstandRow({
       hatMenge, menge, automatischImShop, gewicht, kapazitaet, istBehaelter, immerSichtbar,
       riggerBonus, maxDrohnen, cyberwall, deckBruteForce, deckSchleichen, deckDaten,
       deckKompilieren, deckElectronicWarfare, deckMatrixNavigation, wVerlust, koerperzone, slot,
-      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten, droge,
+      istWaffe, istNeurolink, schadenArt, kampfFertigkeit, deaktivModus, paradeBonus, reichweite, initiativeBonus, zusatzaktionen, traitBoni, ausruestungsfertigkeiten, droge,
       stufe, widerstand, angriff, agilitaet, ruestungKaestchenMax, ruestungReduktionBasis,
       istReparaturmaterial, reparaturKapazitaet, istMaschinenteil, maschinenteilQualitaet,
       upgradeSlots, istAugment, augmentWaffentyp, augmentZielTyp, beschworenerCritterId,
@@ -1221,6 +1258,9 @@ export function GegenstandRow({
                     {(typ === "Waffe" || istWaffe) && kampfFertigkeit && (
                       <li>Würfelt mit: {KAMPF_FERTIGKEIT_LABEL[kampfFertigkeit]}</li>
                     )}
+                    {(typ === "Waffe" || istWaffe) && (kampfFertigkeit === "Nahkampf" || kampfFertigkeit === "Handgemenge") && reichweite > 1 && (
+                      <li>Reichweite: {reichweite === 3 ? "lang (3)" : "mittel (2)"}</li>
+                    )}
                     {(typ === "Waffe" || istWaffe) && paradeBonus !== 0 && (
                       <li>
                         Parade {paradeBonus > 0 ? "+" : ""}
@@ -1415,6 +1455,9 @@ export function GegenstandRow({
                           <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                         )}
                         <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                        {(kampfFertigkeit === "Nahkampf" || kampfFertigkeit === "Handgemenge") && (
+                          <ReichweiteFeld wert={reichweite} onChange={setReichweite} />
+                        )}
                         <DeaktivModusFeld wert={deaktivModus} fertigkeit={kampfFertigkeit} onChange={setDeaktivModus} />
                         <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                       </>
@@ -1948,6 +1991,9 @@ export function GegenstandRow({
                   </div>
                   <SchadensartFeld wert={schadenArt} onChange={setSchadenArt} />
                   <KampfFertigkeitFeld wert={kampfFertigkeit} onChange={setKampfFertigkeit} />
+                  {(kampfFertigkeit === "Nahkampf" || kampfFertigkeit === "Handgemenge") && (
+                    <ReichweiteFeld wert={reichweite} onChange={setReichweite} />
+                  )}
                   <DeaktivModusFeld wert={deaktivModus} fertigkeit={kampfFertigkeit} onChange={setDeaktivModus} />
                   <ParadeFeld wert={paradeBonus} onChange={setParadeBonus} />
                 </div>

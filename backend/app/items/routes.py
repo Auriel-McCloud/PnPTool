@@ -29,7 +29,7 @@ from app.items.schloss import (
 from app.items.augments import augment_level, benoetigte_erfolge_montage, waffentyp_passt, zieltyp_passt
 from app.items.augments import AUGMENT_TRAEGER_TYPEN, wende_augment_boni_an
 from app.items.chrom import KOERPERZONEN, stufen_uebersicht
-from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, reichweite_speichern, schaden_art_fuer_waffe
 from app.traits import erstellung
 from app.items.schemas import (
     AblageRequest,
@@ -218,6 +218,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
             else ""
         ),
         "paradeBonus": body.paradeBonus if body.typ == "Waffe" or body.istWaffe else 0,
+        "reichweite": reichweite_speichern(body.reichweite) if body.typ == "Waffe" or body.istWaffe else 1,
         "deaktivModus": deaktiv_modus_speichern(body.deaktivModus),
         "traitBoni": body.traitBoni,
         "ausruestungsfertigkeiten": body.ausruestungsfertigkeiten,
@@ -344,6 +345,8 @@ async def create_vorlage(campaign_id: str, body: GegenstandCreate):
 @campaign_router.patch("/{item_id}", response_model=GegenstandResponse, dependencies=[Depends(require_campaign_gm)])
 async def update_item(campaign_id: str, item_id: str, body: GegenstandUpdate):
     daten = body.model_dump()
+    if daten.get("reichweite") is not None:
+        daten["reichweite"] = reichweite_speichern(daten["reichweite"])
     # Dieselbe Regel wie beim Anlegen (siehe _create_data): Typ "Upgrade-
     # Material" ODER "Ki-Tama" erzwingt istAugment=true, auch wenn nur der
     # Typ per "Typ ändern"-Popup nachträglich umgestellt wird.

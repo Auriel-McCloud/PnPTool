@@ -107,6 +107,8 @@ export interface Gegenstand {
   kampfFertigkeit: KampfFertigkeit;
   /** Extra-Würfel nur beim Parieren mit dieser Waffe, nicht auf den Angriff. 0 = keins. */
   paradeBonus: number;
+  /** Nahkampf: 1 kurz (nicht anzeigen), 2 mittel, 3 lang. */
+  reichweite: number;
   /** Leer = Schusswaffe komplett aus, sonst nur Upgrades. „nicht“ = kein Matrix-Ziel. */
   deaktivModus?: "" | "komplett" | "upgrades" | "nicht";
   /** Bonuswürfel auf BESTEHENDE Attribute/Fertigkeiten/Sphären, solange ausgerüstet. */
@@ -582,6 +584,7 @@ export interface GegenstandUpdate {
   schadenArt?: SchadenArt;
   kampfFertigkeit?: KampfFertigkeit;
   paradeBonus?: number;
+  reichweite?: number;
   deaktivModus?: "" | "komplett" | "upgrades" | "nicht";
   traitBoni?: Record<string, number>;
   ausruestungsfertigkeiten?: Record<string, number>;

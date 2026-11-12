@@ -2,7 +2,7 @@ import json
 import uuid
 
 from app.db.neo4j_driver import get_driver
-from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, schaden_art_fuer_waffe
+from app.items.waffenbonus import deaktiv_modus_speichern, kampf_fertigkeit_lesen, reichweite_speichern, schaden_art_fuer_waffe
 
 RETURN_FIELDS = """
     g.id AS id, g.name AS name, g.description AS description, g.notes AS notes,
@@ -26,7 +26,7 @@ RETURN_FIELDS = """
     g.wVerlust AS wVerlust, g.wVerlustManuell AS wVerlustManuell, g.preisManuell AS preisManuell,
     g.koerperzone AS koerperzone,
     g.slot AS slot, g.istWaffe AS istWaffe, g.istNeurolink AS istNeurolink, g.schaden AS schaden, g.schadenArt AS schadenArt,
-    g.kampfFertigkeit AS kampfFertigkeit, g.paradeBonus AS paradeBonus,
+    g.kampfFertigkeit AS kampfFertigkeit, g.paradeBonus AS paradeBonus, g.reichweite AS reichweite,
     g.deaktivModus AS deaktivModus,
     g.traitBoni AS traitBoni, g.ausruestungsfertigkeiten AS ausruestungsfertigkeiten,
     g.ausruestungsSpezialisierungen AS ausruestungsSpezialisierungen,
@@ -210,6 +210,7 @@ def _decode(record: dict) -> dict:
     record["kampfFertigkeit"] = kampf_fertigkeit_lesen(record.get("kampfFertigkeit"))
     # Parade-Bonus fehlt an Bestandsdaten. Ohne Ersatz reisst die Liste mit 500.
     record["paradeBonus"] = _or_default(record.get("paradeBonus"), 0)
+    record["reichweite"] = reichweite_speichern(record.get("reichweite"))
     record["deaktivModus"] = deaktiv_modus_speichern(record.get("deaktivModus"))
     for feld in (
         "traitBoni",
@@ -327,7 +328,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             koerperzone: $koerperzone, slot: $slot, istWaffe: $istWaffe,
             istNeurolink: $istNeurolink,
             schaden: $schaden, schadenArt: $schadenArt, kampfFertigkeit: $kampfFertigkeit,
-            paradeBonus: $paradeBonus,
+            paradeBonus: $paradeBonus, reichweite: $reichweite,
             deaktivModus: $deaktivModus,
             traitBoni: $traitBoni, ausruestungsfertigkeiten: $ausruestungsfertigkeiten,
             ausruestungsSpezialisierungen: $ausruestungsSpezialisierungen,
@@ -421,6 +422,7 @@ async def create_gegenstand(campaign_id: str, owner_person_id: str | None, data:
             schadenArt=data.get("schadenArt") or "",
             kampfFertigkeit=kampf_fertigkeit_lesen(data.get("kampfFertigkeit")),
             paradeBonus=int(data.get("paradeBonus") or 0),
+            reichweite=reichweite_speichern(data.get("reichweite")),
             deaktivModus=deaktiv_modus_speichern(data.get("deaktivModus")),
             traitBoni=json.dumps(data.get("traitBoni") or {}),
             initiativeBonus=int(data.get("initiativeBonus") or 0),

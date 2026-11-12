@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-11-06
+updated: 2026-11-12
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -31,7 +31,7 @@ und Regelwerk bleiben am Tisch — das Tool verwaltet nur *wer wann dran ist* un
   Angriff. Die große Parieren-Kachel zeigt die ausgerüstete Nahkampf-/
   Handgemenge-Waffe (Pistole kann nicht parieren); ohne solche Waffe bleibt
   es Geschick+Nahkampf. 0 = kein Bonus. Ein Schild ist eine Waffe mit
-  Schaden 0 und Parade-Bonus.
+  Schaden 0 und Parade-Bonus. **Reichweite** an Nahkampf- und Handgemenge-Waffen: 1 kurz, 2 mittel, 3 lang. Kurz erscheint nicht im Steckbrief. Mittel und lang stehen als `mittel (2)` und `lang (3)`.
 - **Schaden:** Fernkampf = Waffenschaden+Nettoerfolge vs. Rüstung; Nahkampf =
   Waffenschaden+Körperkraft+Nettoerfolge vs. Rüstung. Die Kampfkarte rechnet
   die Körperkraft in die Schadenszahl der Nahkampf-/Handgemenge-Waffe ein.

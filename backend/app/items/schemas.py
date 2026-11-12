@@ -180,6 +180,9 @@ class GegenstandCreate(BaseModel):
     # 0 = kein Bonus. Ein Schild ist eine Waffe mit Schaden 0 und Parade-Bonus
     # (Mark, 31.10.2026). Kein Mindeststärke-Feld — das wurde verworfen.
     paradeBonus: int = 0
+    # Nahkampf/Handgemenge: 1 kurz, 2 mittel, 3 lang. Kurz ist der Normalfall
+    # und wird nicht angezeigt (Mark, 12.11.2026).
+    reichweite: int = 1
     # Leer = Typ-Default: Schusswaffe fällt komplett aus, sonst nur Upgrades.
     # „nicht“: gar kein Matrix-Ziel (Klauen, natürliche Waffen).
     deaktivModus: str = ""
@@ -470,6 +473,7 @@ class GegenstandUpdate(BaseModel):
     schadenArt: SchadenArt | None = None
     kampfFertigkeit: KampfFertigkeit | None = None
     paradeBonus: int | None = None
+    reichweite: int | None = None
     deaktivModus: str | None = None
     traitBoni: dict[str, int] | None = None
     initiativeBonus: int | None = None
@@ -612,6 +616,7 @@ class GegenstandResponse(BaseModel):
     schadenArt: SchadenArt = ""
     kampfFertigkeit: KampfFertigkeit = ""
     paradeBonus: int = 0
+    reichweite: int = 1
     deaktivModus: str = ""
     traitBoni: dict[str, int] = {}
     initiativeBonus: int = 0

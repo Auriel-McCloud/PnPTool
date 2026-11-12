@@ -51,6 +51,12 @@ def test_parade_bonus_kommt_an_und_hebt_den_angriff_nicht():
 
     jacke = GegenstandCreate(name="Jacke", typ="Sonstiges", paradeBonus=4)
     assert _create_data(jacke, False, "GM", [])["paradeBonus"] == 0
+
+    speer = GegenstandCreate(name="Speer", typ="Waffe", kampfFertigkeit="Nahkampf", reichweite=2)
+    assert _create_data(speer, False, "GM", [])["reichweite"] == 2
+    muell = GegenstandCreate(name="Dolch", typ="Waffe", reichweite=9)
+    assert _create_data(muell, False, "GM", [])["reichweite"] == 1
+    assert _create_data(jacke, False, "GM", [])["reichweite"] == 1
     # Der konkrete Fall, der den Fehler aufgedeckt hat.
     body = GegenstandCreate(name="Reflex Booster", initiativeBonus=3)
     daten = _create_data(body, ist_vorlage=False, sichtbarkeit="GM", sichtbar_fuer=[])

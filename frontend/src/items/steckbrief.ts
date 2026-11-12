@@ -22,6 +22,8 @@ export type SteckbriefQuelle = {
   /** Optional, damit ältere Aufrufer ohne das Feld nicht brechen. */
   kampfFertigkeit?: string;
   paradeBonus?: number;
+  /** 1 kurz, 2 mittel, 3 lang. Fehlt = kurz. */
+  reichweite?: number;
   istWaffe: boolean;
   ruestungReduktionBasis: number;
   ruestungKaestchenAktuell: number;
@@ -46,6 +48,15 @@ export type SteckbriefQuelle = {
   schlossArt?: string;
   aufgeschlossen?: boolean;
 };
+
+function reichweiteText(item: SteckbriefQuelle): string {
+  const skill = item.kampfFertigkeit ?? "";
+  if (skill !== "Nahkampf" && skill !== "Handgemenge") return "";
+  if (item.typ !== "Waffe" && !item.istWaffe) return "";
+  if (item.reichweite === 2) return "mittel (2)";
+  if (item.reichweite === 3) return "lang (3)";
+  return "";
+}
 
 function kampfFertigkeitZeile(item: SteckbriefQuelle): string {
   const skill = kampfFertigkeitLesen(item.kampfFertigkeit);
@@ -86,6 +97,9 @@ export function steckbriefZeilen(item: SteckbriefQuelle): SteckbriefZeile[] {
 
   const wuerfeltMitZeile = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
   if (wuerfeltMitZeile) zeilen.push({ label: "Würfelt mit", wert: wuerfeltMitZeile });
+
+  const reichweite = reichweiteText(item);
+  if (reichweite) zeilen.push({ label: "Reichweite", wert: reichweite });
 
   if ((item.paradeBonus ?? 0) !== 0) {
     const bonus = item.paradeBonus ?? 0;
@@ -181,6 +195,9 @@ export function steckbriefKurz(item: SteckbriefQuelle): string[] {
 
   const wuerfeltMit = (item.typ === "Waffe" || item.istWaffe) ? kampfFertigkeitZeile(item) : "";
   if (wuerfeltMit) teile.push(wuerfeltMit);
+
+  const reichweite = reichweiteText(item);
+  if (reichweite) teile.push(reichweite);
 
   if ((item.paradeBonus ?? 0) !== 0) {
     const bonus = item.paradeBonus ?? 0;

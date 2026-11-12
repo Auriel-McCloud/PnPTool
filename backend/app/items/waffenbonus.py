@@ -147,6 +147,15 @@ def kampf_fertigkeit_lesen(roh) -> str:
     return text if text in KAMPF_FERTIGKEITEN else ""
 
 
+def reichweite_speichern(roh) -> int:
+    """1 kurz, 2 mittel, 3 lang. Alles andere ist kurz."""
+    try:
+        wert = int(roh)
+    except (TypeError, ValueError):
+        return 1
+    return wert if wert in (1, 2, 3) else 1
+
+
 # Leer = Typ-Default (Schusswaffe komplett, sonst nur Upgrades). „nicht“ nimmt
 # die Waffe aus der Hack-Liste — Klauen und andere natürliche Waffen.
 DEAKTIV_MODI = ("komplett", "upgrades", "nicht")
