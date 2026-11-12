@@ -12,7 +12,7 @@ Die Oberfläche soll sich anfühlen wie ein **Commlink** — ein Zukunfts-Handy 
 
 - **Links: Bereichswechsel.** Charakterblatt, Gegenstände, Kontakte, Graph, Notizen, Kampfmodus, Regeln — Liste noch nicht abschließend.
 - **Oben: Werkzeugleiste.** Symbole für SL-Popups, den Tooltip-Schalter (siehe unten) und weitere Funktionen, die noch zu definieren sind.
-- **Fenster** statt Inline-Akkordeons: ein Gegenstand öffnet sich als eigenes, fokussiertes Fenster. Auf allen Geräten echte Fenster; am Handy bildschirmfüllend mit Griff oben mittig. **Position wechselt bewusst** — mal weiter oben, unten, rechts oder links statt immer starr zentriert.
+- **Fenster** statt Inline-Akkordeons: ein Gegenstand öffnet sich als eigenes, fokussiertes Fenster. Auf allen Geräten echte Fenster; am Handy bildschirmfüllend mit Griff oben mittig. **Position wechselt bewusst** — mal weiter oben, unten, rechts oder links statt immer starr zentriert. Spieler lesen Beschreibung und Steckbrief eines Inventar-Gegenstands in einem eigenen Readonly-Fenster, nicht im Handlungsfenster.
 - **Störeffekte**: gelegentliches Flackern wie bei einer Neonröhre oder einem gestörten Fernseher, etwa alle 5 bis zufällig 10 Minuten. Bewusst selten, als Würze.
 - **Neonröhren als Feldbegrenzung**: leuchtende Ränder um Eingabeflächen. Bewusst in CSS statt als animierte Bilddateien — passt sich jeder Feldgröße an, bleibt auf hochauflösenden Displays scharf und ist umfärbbar (Magenta trägt die Bedeutung "SL-geheim"). Nur auf aktiven Flächen, nicht auf jedem Listeneintrag, sonst flimmert die Seite.
 

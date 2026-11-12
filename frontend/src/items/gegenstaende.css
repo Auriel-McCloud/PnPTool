@@ -47,6 +47,7 @@
 }
 
 .gg-kachel {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -59,6 +60,52 @@
   border-radius: var(--radius);
   cursor: pointer;
   overflow: hidden;
+}
+
+/* Die Kachel bleibt die Fläche; der eigentliche Klick sitzt im inneren
+   Knopf, damit „Beschreibung“ daneben ein eigener Treffer ist. */
+.gg-kachel-haupt {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  letter-spacing: normal;
+  box-shadow: none;
+}
+
+.gg-kachel-haupt:hover {
+  background: transparent;
+  border-color: transparent;
+  color: inherit;
+}
+
+/* Ecke der Kachel, nicht die ganze Bildfläche — die Höhe der Kachel ist
+   fest (nie scrollen), ein Balken in der Zeile würde Namen abschneiden. */
+.gg-kachel-lesen {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tipp);
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgb(var(--grund-rgb) / 0.9);
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--bereich-farbe, var(--neon));
 }
 
 /* Riggerkonsole-Slots (26.10.2026): eigene Reihe pro Rigger, feste Anzahl
@@ -346,6 +393,36 @@
 .gg-eigenschaften dd {
   margin: 0;
   color: var(--text);
+}
+
+.gg-lesen-knopf {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  border-color: var(--bereich-farbe, var(--neon));
+  color: var(--bereich-farbe, var(--neon));
+  font-family: var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.gg-lesen-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gg-lesen-block + .gg-lesen-block {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linie);
+}
+
+.gg-lesen-leer {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 13px;
 }
 
 .gg-ablage-wahl h3 {

@@ -10,6 +10,7 @@ import { SCHADEN_MAX, istVerschlossen, itemsApi } from "./api";
 import { DROGE_GESCHLUCKT } from "../kampf/BoosterPopup";
 import { SchlossOeffnen } from "./SchlossOeffnen";
 import { steckbriefKurz } from "./steckbrief";
+import { GegenstandLesen } from "./GegenstandLesen";
 import { WegwerfenFrage } from "./WegwerfenFrage";
 import { WeitergebenPopup } from "./WeitergebenPopup";
 import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
@@ -133,6 +134,7 @@ export function GegenstandKachel({
   const istChrom = CHROM.includes(item.typ);
 
   const [offen, setOffen] = useState(false);
+  const [lesen, setLesen] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [schluckText, setSchluckText] = useState<string | null>(null);
   const [frageOffen, setFrageOffen] = useState(false);
@@ -241,7 +243,11 @@ export function GegenstandKachel({
 
   return (
     <>
-      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
+      <div className="gg-kachel">
+        <button type="button" className="gg-kachel-lesen" onClick={() => setLesen(true)}>
+          Beschreibung
+        </button>
+        <button type="button" className="gg-kachel-haupt" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
         <span className="gg-kachel-bild">
           {item.bildUrl ? <img src={vorschau(item.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◈</span>}
           {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
@@ -291,7 +297,8 @@ export function GegenstandKachel({
             </span>
           )}
         </span>
-      </button>
+        </button>
+      </div>
 
       <Fenster
         offen={offen}
@@ -302,6 +309,9 @@ export function GegenstandKachel({
         kennung={`gegenstand:${item.id}`}
         onSchliessen={() => setOffen(false)}
       >
+        <button type="button" className="gg-lesen-knopf" onClick={() => setLesen(true)}>
+          Beschreibung
+        </button>
         {item.typ === "Credstick" && campaignId && (
           <CredstickAktionen
             item={item}
@@ -609,6 +619,13 @@ export function GegenstandKachel({
           </div>
         )}
       </Fenster>
+
+      <GegenstandLesen
+        item={item}
+        offen={lesen}
+        montierteUpgrades={montierteUpgrades}
+        onSchliessen={() => setLesen(false)}
+      />
 
       {onWegwerfen && (
         <WegwerfenFrage

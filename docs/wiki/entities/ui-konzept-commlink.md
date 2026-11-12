@@ -205,6 +205,10 @@ des großen Formulars (Preis, Kraft, Eigenschaften, …) bleibt hinter dem
 bestehenden "Speichern"-Knopf. Keine Statusanzeige ("speichert…") wie im
 Wiki — still im Hintergrund, auf Marks ausdrücklichen Wunsch.
 
+## Spieler lesen Gegenstand (12.11.2026)
+
+Im Inventar der Spieler öffnet die Kachel nur die Handlungen (Umlegen, Wegwerfen, Weitergeben). Beschreibung und Werte waren dort nicht als eigenes Fenster erreichbar. Jede Kachel und das geöffnete Gegenstandfenster haben einen Knopf „Beschreibung“. Das Fenster ist nur lesen: Steckbrief und Beschreibung. SL-Notizen bleiben unsichtbar.
+
 ## Siehe auch
 
 - [[theming-system]] — technische Umsetzung der Farbwelt

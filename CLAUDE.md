@@ -2676,6 +2676,11 @@ npm run dev
 | Whiteboard | ✅ | Mehrere live mitzeichenbare Boards pro Kampagne, siehe `backend/app/zeichnungen/` |
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
+**Zuletzt gebaut (12.11.2026 — Spieler lesen Beschreibung und Steckbrief im Inventar):**
+- **Was:** Im Spieler-Inventar fehlte ein Knopf, um Beschreibung und Werte eines Gegenstands zu lesen. Jede Kachel hat jetzt „Beschreibung“; dasselbe im geöffneten Gegenstand. Das Fenster ist nur lesen: Steckbrief (Kampfwerte, Zone, Fahrzeug, Droge, verbaute Upgrades) und die Beschreibung. SL-Notizen bleiben unsichtbar.
+- **Wo:** `frontend/src/items/GegenstandKachel.tsx`, `frontend/src/items/GegenstandLesen.tsx`, `frontend/src/items/gegenstaende.css`.
+- **Verifiziert:** `npx tsc -b` grün.
+
 **Zuletzt gebaut (12.11.2026 — Störeffekt wieder wie ein alter Fernseher):**
 - **Was:** Der zufällige Ameisenkrieg war seit dem Zufalls-SVG weg (Filter-Verweis doppelt kodiert, Rechteck schwarz) und die Intensität 0,5–0,95 hat die Schicht zusätzlich gedimmt. `overlay` auf dem dunklen Commlink schluckt Rauschen. Jetzt sichtbarer Schnee (`hard-light`, Intensität 1,00–1,08), Bild darunter bleibt lesbar, harte Helligkeitssprünge. Taktung 5–10 Minuten und `prefers-reduced-motion` unverändert.
 - **Wo:** `frontend/src/shell/CommlinkShell.tsx` (`zufallsRauschen`, `Stoerung`), `frontend/src/shell/commlink.css` (`.cl-stoerung`, `.cl-stoerung-bild`).

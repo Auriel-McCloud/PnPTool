@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-12] gebaut | Spieler-Inventar: Beschreibung und Steckbrief lesen
+
+Knopf „Beschreibung“ an der Inventar-Kachel und im Gegenstandfenster. Readonly-Popup mit Steckbrief und Beschreibung. SL-Notizen bleiben unsichtbar. Siehe [[entities/ui-konzept-commlink]].
+
 ## [2026-11-12] update | Neonflackern: Ameisenkrieg wieder sichtbar
 
 Gewürfeltes Rausch-SVG war ein schwarzes Rechteck, overlay auf Schwarz unsichtbar. Intensität hoch, Bild bleibt lesbar. Siehe [[entities/ui-konzept-commlink]].
