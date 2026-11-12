@@ -77,7 +77,7 @@ export function GegenstandLesen({
     <Fenster
       offen={offen}
       titel={item.name}
-      unterzeile={`${item.typ} · nur lesen`}
+      unterzeile={item.typ}
       kennung={`gegenstand-lesen:${item.id}`}
       onSchliessen={onSchliessen}
     >

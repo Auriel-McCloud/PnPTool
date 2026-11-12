@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { parseRichText } from "../richtext/content";
-import { RichTextView } from "../richtext/RichTextView";
 import { Fenster } from "../shell/Fenster";
 import { FormelText, formelKlartext } from "../shell/formelText";
 import { DotPool } from "../traits/DotPool";
@@ -147,7 +145,6 @@ export function GegenstandKachel({
   const [umlegenFehler, setUmlegenFehler] = useState<string | null>(null);
 
   const eigenschaften = Object.entries(item.eigenschaften ?? {});
-  const beschreibung = parseRichText(item.description);
 
   // Eigene Behälter (und Orte) live holen, sobald das Fenster offen ist —
   // genau wie CharacterSheetPanel es für die Spielleitung schon tut. Nicht
@@ -243,11 +240,7 @@ export function GegenstandKachel({
 
   return (
     <>
-      <div className="gg-kachel">
-        <button type="button" className="gg-kachel-lesen" onClick={() => setLesen(true)}>
-          Beschreibung
-        </button>
-        <button type="button" className="gg-kachel-haupt" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
+      <button type="button" className="gg-kachel" onClick={() => setOffen(true)} title={formelKlartext(item.name)}>
         <span className="gg-kachel-bild">
           {item.bildUrl ? <img src={vorschau(item.bildUrl)} loading="lazy" decoding="async" alt="" /> : <span aria-hidden="true">◈</span>}
           {item.hatMenge && <span className="gg-kachel-menge">×{item.menge}</span>}
@@ -297,8 +290,7 @@ export function GegenstandKachel({
             </span>
           )}
         </span>
-        </button>
-      </div>
+      </button>
 
       <Fenster
         offen={offen}
@@ -307,11 +299,13 @@ export function GegenstandKachel({
           .filter(Boolean)
           .join(" · ")}
         kennung={`gegenstand:${item.id}`}
+        kopfExtra={
+          <button type="button" className="gg-lesen-knopf" onClick={() => setLesen(true)}>
+            Beschreibung
+          </button>
+        }
         onSchliessen={() => setOffen(false)}
       >
-        <button type="button" className="gg-lesen-knopf" onClick={() => setLesen(true)}>
-          Beschreibung
-        </button>
         {item.typ === "Credstick" && campaignId && (
           <CredstickAktionen
             item={item}
@@ -324,7 +318,7 @@ export function GegenstandKachel({
           <img
             src={item.bildUrl}
             alt=""
-            style={{ width: "100%", maxHeight: 240, objectFit: "contain", borderRadius: "var(--radius)" }}
+            style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: "var(--radius)" }}
           />
         )}
 
@@ -335,8 +329,6 @@ export function GegenstandKachel({
               : "Trägst du es offen, sieht es jeder."}
           </p>
         )}
-
-        {beschreibung && <RichTextView content={beschreibung} />}
 
         {inhalt && (
           <button type="button" className="gg-hineinsehen" onClick={inhalt.oeffnen}>

@@ -207,7 +207,7 @@ Wiki — still im Hintergrund, auf Marks ausdrücklichen Wunsch.
 
 ## Spieler lesen Gegenstand (12.11.2026)
 
-Im Inventar der Spieler öffnet die Kachel nur die Handlungen (Umlegen, Wegwerfen, Weitergeben). Beschreibung und Werte waren dort nicht als eigenes Fenster erreichbar. Jede Kachel und das geöffnete Gegenstandfenster haben einen Knopf „Beschreibung“. Das Fenster ist nur lesen: Steckbrief und Beschreibung. SL-Notizen bleiben unsichtbar.
+Im Inventar der Spieler öffnet die Kachel die Handlungen. Beschreibung und Steckbrief stehen nur im Readonly-Fenster, Knopf „Beschreibung“ rechts neben Name und Wert im Gegenstandfenster. Nicht unter dem Bild. SL-Notizen bleiben unsichtbar.
 
 ## Siehe auch
 

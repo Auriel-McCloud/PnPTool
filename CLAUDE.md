@@ -2677,8 +2677,8 @@ npm run dev
 | Rätsel | ✅ | Leicht (acht Räume) oder Mittel (zwei Ebenen), freie SL-Markierung (aus/blau/rot) pro Feld, Namen fix (nicht mehr änderbar), siehe `docs/api/raetsel.md` |
 
 **Zuletzt gebaut (12.11.2026 — Spieler lesen Beschreibung und Steckbrief im Inventar):**
-- **Was:** Im Spieler-Inventar fehlte ein Knopf, um Beschreibung und Werte eines Gegenstands zu lesen. Jede Kachel hat jetzt „Beschreibung“; dasselbe im geöffneten Gegenstand. Das Fenster ist nur lesen: Steckbrief (Kampfwerte, Zone, Fahrzeug, Droge, verbaute Upgrades) und die Beschreibung. SL-Notizen bleiben unsichtbar.
-- **Wo:** `frontend/src/items/GegenstandKachel.tsx`, `frontend/src/items/GegenstandLesen.tsx`, `frontend/src/items/gegenstaende.css`.
+- **Was:** Im Spieler-Inventar fehlte ein Knopf, um Beschreibung und Werte eines Gegenstands zu lesen. Der Knopf „Beschreibung“ sitzt im geöffneten Gegenstand rechts neben Name und Wert, nicht auf der Kachel. Das Fenster ist nur lesen: Steckbrief und Beschreibung. Unter dem Bild steht der Text nicht. SL-Notizen bleiben unsichtbar.
+- **Wo:** `frontend/src/items/GegenstandKachel.tsx`, `frontend/src/items/GegenstandLesen.tsx`, `frontend/src/shell/Fenster.tsx`, `frontend/src/items/gegenstaende.css`.
 - **Verifiziert:** `npx tsc -b` grün.
 
 **Zuletzt gebaut (12.11.2026 — Störeffekt wieder wie ein alter Fernseher):**

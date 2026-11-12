@@ -57,6 +57,7 @@ export function Fenster({
   breit = false,
   schmal = false,
   blitzt = false,
+  kopfExtra,
   onSchliessen,
   children,
 }: {
@@ -85,6 +86,8 @@ export function Fenster({
    * kein Dauerzustand (Mark, 31.10.2026).
    */
   blitzt?: boolean;
+  /** Knopf rechts neben Name und Unterzeile, vor Maximieren/Schließen. */
+  kopfExtra?: ReactNode;
   onSchliessen: () => void;
   children: ReactNode;
 }) {
@@ -259,8 +262,9 @@ export function Fenster({
               <FormelText text={titel} />
             </h2>
             {unterzeile && <div className="fn-unterzeile">{unterzeile}</div>}
-          </div>
-          <button
+            </div>
+            {kopfExtra}
+            <button
             type="button"
             className="fn-maximieren"
             onClick={() => setMaximiert((m) => !m)}
