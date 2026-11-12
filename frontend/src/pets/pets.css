@@ -268,3 +268,19 @@
   100% { translate: 0 0; }
 }
 
+/* Abgeschüttelter Ruß (Mark, 12.11.2026): Flocken rieseln zu Boden. */
+.pet-russ {
+  position: absolute;
+  pointer-events: none;
+  /* Grauer Ruß mit hellerer Kante — auf dem dunklen Commlink sonst unsichtbar. */
+  background: #5e534c;
+  box-shadow: inset -1px -1px 0 #2a221e, inset 1px 1px 0 #8c8078;
+}
+.pet-russ[data-dunkel="ja"] {
+  background: #3b322d;
+  box-shadow: inset 1px 1px 0 #6e625a;
+}
+.pet-russ[data-glut="ja"] {
+  background: #ff8a2a;
+  box-shadow: 0 0 4px 1px rgba(255, 120, 30, 0.7);
+}

@@ -44,6 +44,8 @@ export interface PetSteuerung {
   zuklappen?(jetzt: number): void;
   /** Feuer des Drachen: sie verwandelt sich. */
   erschrecken?(jetzt: number): void;
+  /** Bärbels Blitz: der Drache ist verrußt, bis er sich schüttelt. */
+  verkohlen?(jetzt: number): void;
 }
 
 /** Sprite-Takte (gleich wie frontend/public/pets/baerbel/sprite.json). */

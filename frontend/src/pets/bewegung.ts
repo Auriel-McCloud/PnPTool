@@ -41,6 +41,12 @@
  * ruft eine Wolke unter die Füße und läuft auf einer Bogenbahn durch die Luft
  * zu einer Fläche außer Sprungweite; bei jedem Schritt puffen unter den
  * Pfoten neue Wolken auf, die hinter ihm zerfasern.
+ *
+ * Verrußt (Mark, 12.11.2026: „wenn er verkohlt wurde, färbt er sich einfach
+ * wieder normal … cooler, wenn er sich irgendwann schütteln würde und der Ruß
+ * abfallen und zu Boden fallen würde“): nach Bärbels Blitz bleibt er dunkel,
+ * bis er sich bei einer späteren Entscheidung wie ein nasser Hund schüttelt —
+ * dabei fliegen Rußflocken weg und rieseln zu Boden.
  */
 
 export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen" | "fressen";
@@ -124,6 +130,18 @@ export interface SpurAufSchirm {
 
 type Ort = { art: "boden" } | { art: "flaeche"; q: Quelle };
 
+/** Eine Rußflocke beim Schütteln: Start, Anfangsgeschwindigkeit, Boden. */
+export interface Flocke {
+  x0: number;
+  y0: number;
+  vx: number;
+  vy: number;
+  t0: number;
+  boden: number;
+  groesse: number;
+  glut: boolean;
+}
+
 /** Eine Glückswolke unter seinen Pfoten: Mitte x, Oberkante y, Startzeit. */
 export interface Wolke {
   x: number;
@@ -168,6 +186,7 @@ type Zustand =
   | "getragen"
   | "wurf"
   | "wolkenlauf"
+  | "schuetteln"
   | "raus";
 
 interface Pose {
@@ -257,6 +276,10 @@ export interface Darstellung {
   gestalt?: number;
   /** Glückswolken des Wolkenlaufs (auch noch die zerfasernden). */
   wolken?: Wolke[];
+  /** Wie verrußt (0 = sauber, 1 = ganz schwarz). */
+  russ?: number;
+  /** Abgeschüttelte Rußflocken (fallen, liegen kurz, verblassen). */
+  flocken?: Flocke[];
 }
 
 export type Meldung =
@@ -298,6 +321,14 @@ const WOLKEN_TEMPO_PX_S = 85;
 const WOLKE_TAKT_MS = 280;
 const RUFEN_MS = 650;
 
+/** Schütteln nach dem Verkohlen: Dauer, Flocken-Takt, Schwerkraft der
+ *  Flocken, wie lange sie unten liegen, bevor sie verblassen. */
+const SCHUETTEL_MS = 1900;
+const FLOCKEN_TAKT_MS = 45;
+export const FLOCKEN_G = 1300;
+export const FLOCKE_LIEGT_MS = 5000;
+const FLOCKE_LEBT_MS = 9000;
+
 const glatt = (t: number) => t * t * (3 - 2 * t);
 const auslaufen = (t: number) => 1 - (1 - t) * (1 - t);
 
@@ -337,6 +368,12 @@ export class PetBewegung {
   kletterZielY = 0;
   wolkenlauf: Wolkenlauf | null = null;
   wolken: Wolke[] = [];
+  russ = 0;
+  schuettelnAb = 0;
+  schuettelStart = 0;
+  russVorher = 0;
+  naechsteFlocke = 0;
+  flocken: Flocke[] = [];
   cx = 0;
   cy = 0;
   animation: Animation = "lauf";
@@ -560,6 +597,44 @@ export class PetBewegung {
       this.ort = { art: "flaeche", q: w.ziel };
       this.zustand = "landen";
       this.bis = jetzt + 260;
+    }
+  }
+
+  /** Bärbels Blitz hat ihn getroffen: schwarz, bis er sich schüttelt. */
+  verkohlen(jetzt: number) {
+    this.russ = 1;
+    // Erst nach dem Zucken (treffen.ts, 4,5 s) und eine Weile beleidigt rußig.
+    this.schuettelnAb = jetzt + this.zw(7_000, 20_000);
+    if (this.zustand === "schuetteln") {
+      this.zustand = "idle";
+      this.bis = jetzt + 600;
+    }
+  }
+
+  private schuettle(jetzt: number) {
+    this.zustand = "schuetteln";
+    this.schuettelStart = jetzt;
+    this.russVorher = this.russ;
+    this.naechsteFlocke = jetzt + 120;
+  }
+
+  private flockenWerfen(jetzt: number, anzahl: number) {
+    const { bw, bh, fuss } = this.masse();
+    const top = this.fussY - bh + fuss;
+    for (let i = 0; i < anzahl; i++) {
+      const x0 = this.x + this.zw(0.12, 0.88) * bw;
+      const y0 = top + this.zw(0.25, 0.85) * (bh - fuss);
+      const raus = x0 < this.x + bw / 2 ? -1 : 1;
+      this.flocken.push({
+        x0,
+        y0,
+        vx: raus * this.zw(30, 190),
+        vy: -this.zw(40, 220),
+        t0: jetzt,
+        boden: this.u.hoehe - this.zw(1, 5),
+        groesse: this.u.zufall() < 0.35 ? 4 : 3,
+        glut: this.u.zufall() < 0.08,
+      });
     }
   }
 
@@ -811,6 +886,10 @@ export class PetBewegung {
       this.wolkenlauf.t0 += dauer;
       this.wolkenlauf.naechsteWolke += dauer;
     }
+    if (this.zustand === "schuetteln") {
+      this.schuettelStart += dauer;
+      this.naechsteFlocke += dauer;
+    }
   }
 
   get gepackt() {
@@ -908,7 +987,7 @@ export class PetBewegung {
   }
 
   streicheln(jetzt: number): boolean {
-    if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf", "wolkenlauf"].includes(this.zustand))
+    if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf", "wolkenlauf", "schuetteln"].includes(this.zustand))
       return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
     // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
@@ -924,6 +1003,11 @@ export class PetBewegung {
     const u = this.u;
     const w = u.zufall();
     const mitte = this.x + bw / 2;
+
+    // Verrußt: irgendwann abschütteln — spätestens, bevor er weiterzieht.
+    if (this.russ > 0 && (jetzt >= this.schuettelnAb || jetzt >= this.besuchEnde)) {
+      return this.schuettle(jetzt);
+    }
 
     // Liegt eine Seite auf seiner Ebene? Dann oft hin und fressen.
     if (jetzt < this.besuchEnde && u.zufall() < 0.6) {
@@ -1163,7 +1247,7 @@ export class PetBewegung {
     const u = this.u;
 
     // Boden folgt der Fenstergröße, Fläche ihrem Element (Scrollen, Popup zu).
-    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "fressen", "raus"].includes(this.zustand)) {
+    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "fressen", "schuetteln", "raus"].includes(this.zustand)) {
       if (this.ort.art === "boden") {
         this.fussY = u.hoehe;
       } else {
@@ -1179,11 +1263,27 @@ export class PetBewegung {
     }
 
     if (this.wolken.length) this.wolken = this.wolken.filter((w) => jetzt - w.t0 < WOLKE_MS);
+    if (this.flocken.length) this.flocken = this.flocken.filter((f) => jetzt - f.t0 < FLOCKE_LEBT_MS);
 
     switch (this.zustand) {
       case "wolkenlauf":
         this.wolkenTakt(jetzt, dt);
         break;
+      case "schuetteln": {
+        const t = Math.min(1, (jetzt - this.schuettelStart) / SCHUETTEL_MS);
+        this.russ = this.russVorher * (1 - glatt(Math.min(1, t / 0.9)));
+        if (t < 0.85 && jetzt >= this.naechsteFlocke) {
+          // Am heftigsten in der Mitte des Schüttelns.
+          this.flockenWerfen(jetzt, Math.max(1, Math.round(Math.sin(t * Math.PI) * 2.2 * this.russVorher)));
+          this.naechsteFlocke = jetzt + FLOCKEN_TAKT_MS;
+        }
+        if (t >= 1) {
+          this.russ = 0;
+          this.zustand = "idle";
+          this.bis = jetzt + this.zw(600, 1400);
+        }
+        break;
+      }
       case "laufen":
       case "raus": {
         if (this.zustand === "laufen" && this.seiteVorDemMaul(jetzt)) break;
@@ -1257,6 +1357,7 @@ export class PetBewegung {
           this.nachAnkunft = null;
           this.beute = null; // die Seite bleibt liegen
           this.wolkenlauf = null;
+          if (this.russ > 0) this.schuettelnAb = jetzt + this.zw(3_000, 8_000);
           // Sofort an den Finger springen — der kann schon woanders sein.
           const f = this.fingerSpur[this.fingerSpur.length - 1];
           this.fingerSpur = [];
@@ -1373,6 +1474,8 @@ export class PetBewegung {
         return "sprung";
       case "wolkenlauf":
         return this.wolkenlauf && jetzt - this.wolkenlauf.t0 < RUFEN_MS ? "idle" : "lauf";
+      case "schuetteln":
+        return "klettern"; // Augen zugekniffen, Maul auf, Beine zappeln
       default:
         return "idle";
     }
@@ -1422,6 +1525,14 @@ export class PetBewegung {
       return p;
     }
     const p = this.stehPose();
+    if (this.zustand === "schuetteln") {
+      // Wie ein nasser Hund: schnelles Hin und Her, in der Mitte am wildesten.
+      const t = Math.min(1, (jetzt - this.schuettelStart) / SCHUETTEL_MS);
+      const e = Math.sin(t * Math.PI);
+      p.rot += Math.sin(jetzt / 26) * 13 * e;
+      p.left += Math.sin(jetzt / 19) * 4 * e;
+      p.top -= Math.abs(Math.sin(jetzt / 38)) * 3 * e;
+    }
     if (this.zustand === "wolkenlauf" && this.wolkenlauf) {
       // Nase bergauf, leichtes Schweben auf den Wolken.
       p.rot = this.wolkenlauf.steigung * (p.flip ? 1 : -1);
@@ -1509,6 +1620,8 @@ export class PetBewegung {
       kopfY,
       greift: this.greiftJetzt(jetzt),
       wolken: this.wolken,
+      russ: this.russ,
+      flocken: this.flocken,
     };
   }
 }

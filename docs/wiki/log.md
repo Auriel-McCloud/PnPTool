@@ -1961,3 +1961,7 @@ Statt Tafel mit frechem Kommentar: großes aufschlagendes Buch, nur der (umformu
 ## [2026-11-12] update | Drache läuft auf Wolken, Bärbel ohne Wiederholung
 
 Wolkenlauf zu Flächen außer Sprungweite (oben am Tablet), Bärbel-Abstand 15–45 min, keine wiederholten Stellen. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Drache schüttelt Ruß ab
+
+Nach Bärbels Blitz bleibt er verrußt, bis er sich schüttelt; Flocken fallen zu Boden. Siehe [[entities/critter-pet]].

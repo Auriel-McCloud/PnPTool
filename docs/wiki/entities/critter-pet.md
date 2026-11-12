@@ -224,6 +224,14 @@ Mark: „am Tablet ist das Charakterblatt vor allem in der oberen Hälfte, der B
 - Verschwindet das Ziel (Popup zu, weggescrollt), fällt er runter. Packen geht auch in der Luft.
 - **Annahme:** Häufigkeit etwa 30 % der Entscheidungen am Boden, 22 % auf Flächen; Tempo 85 px/s.
 
+## Ruß abschütteln (12.11.2026, gebaut)
+
+Mark: „Wenn der Drache verkohlt wurde, färbt er sich danach einfach wieder normal … cooler, wenn er sich irgendwann schütteln würde und der Ruß abfallen und zu Boden fallen würde.“
+
+- Nach Bärbels Blitz zuckt er wie bisher kurz, bleibt danach aber schwarz verrußt und macht normal weiter.
+- Nach 7–20 Sekunden (spätestens bevor er zum nächsten Tablet geht) bleibt er stehen und schüttelt sich wie ein nasser Hund; dabei verschwindet der Ruß, Flocken (ab und zu ein Glutfunke) fliegen ab und rieseln zum unteren Bildschirmrand.
+- **Annahme:** Die Flocken bleiben etwa 5 Sekunden liegen und verblassen dann — keine dauerhafte Spur zum Wegwischen.
+
 ## Abdrehen und Kampfpause (11.11.2026, gebaut)
 
 Mark: Schalter zum Abdrehen in den Kampagnenoptionen („Desktop-Pets aktiv“, Default an) und im Kampf grundsätzlich keine Pets — sie verschwinden beim Kampfbeginn und kommen nach dem Kampf beim Besitzer wieder. Spuren bleiben gespeichert. Mark hat nachgezogen: im Kampf und bei abgedrehten Pets werden sie ausgeblendet und danach wieder eingeblendet, nicht gelöscht.

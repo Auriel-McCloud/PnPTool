@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
-import { PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
+import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
@@ -99,6 +99,8 @@ const WISCH_PX = 450;
 
 /** So viele Wolken sind höchstens gleichzeitig zu sehen (Lebensdauer / Takt + Reserve). */
 const WOLKEN_MAX = 10;
+/** Rußflocken beim Schütteln (je Schütteln etwa 40). */
+const FLOCKEN_MAX = 56;
 
 function skala() {
   return window.innerWidth < 700 ? 1.5 : 2;
@@ -955,6 +957,8 @@ function PetFigur({
   const feuer = useRef<HTMLDivElement | null>(null);
   // Wolkenlauf: feste Anzahl Wolken-Elemente, pro Frame neu gesetzt.
   const wolkenEls = useRef<(HTMLDivElement | null)[]>([]);
+  // Abgeschüttelter Ruß: ebenso ein fester Vorrat an Flocken.
+  const flockenEls = useRef<(HTMLSpanElement | null)[]>([]);
   const puff = useRef<HTMLDivElement | null>(null);
   const effekt = useRef<HTMLDivElement | null>(null);
   const blitzSvg = useRef<SVGSVGElement | null>(null);
@@ -1055,6 +1059,7 @@ function PetFigur({
         if (d.angriff) {
           for (const hit of treffe(d.angriff, pet.id, jetzt)) {
             if (hit.art === "feuer") steuerungen.get(hit.id)?.erschrecken?.(jetzt);
+            if (hit.art === "blitz") steuerungen.get(hit.id)?.verkohlen?.(jetzt);
           }
         }
         spriteRect.current = { left, top, w: bw, h: bh };
@@ -1071,6 +1076,42 @@ function PetFigur({
         el.style.opacity = d.effekt?.ersetzt || d.liest ? "0" : "";
         el.style.pointerEvents = d.liest ? "none" : "";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
+      }
+      // Verrußt (Bärbels Blitz), bis er sich schüttelt.
+      if (figur.current) {
+        const r = d.russ ?? 0;
+        figur.current.style.filter =
+          r > 0.01
+            ? `brightness(${(1 - 0.68 * r).toFixed(3)}) sepia(${(0.55 * r).toFixed(3)}) contrast(${(1 + 0.45 * r).toFixed(3)}) saturate(${(1 - 0.65 * r).toFixed(3)})`
+            : "";
+      }
+      const fl = d.flocken ?? [];
+      if (fl.length || flockenEls.current.some((f) => f && f.style.display !== "none")) {
+        const s = skala();
+        flockenEls.current.forEach((fe, i) => {
+          if (!fe) return;
+          const f = fl[Math.max(0, fl.length - FLOCKEN_MAX) + i];
+          if (!f) {
+            fe.style.display = "none";
+            return;
+          }
+          const t = (jetzt - f.t0) / 1000;
+          // Wann sie unten aufkommt (Wurfparabel), danach liegt sie still.
+          const tl = (-f.vy + Math.sqrt(f.vy * f.vy + 2 * FLOCKEN_G * Math.max(0, f.boden - f.y0))) / FLOCKEN_G;
+          const tf = Math.min(t, tl);
+          const k = 1.6; // Luftwiderstand seitlich
+          const x = f.x0 + (f.vx * (1 - Math.exp(-k * tf))) / k;
+          const y = Math.min(f.boden, f.y0 + f.vy * tf + 0.5 * FLOCKEN_G * tf * tf);
+          const liegt = t - tl - FLOCKE_LIEGT_MS / 1000;
+          const g = f.groesse * s;
+          fe.style.display = "block";
+          fe.style.width = `${g}px`;
+          fe.style.height = `${g}px`;
+          fe.style.left = `${x}px`;
+          fe.style.top = `${y - g}px`;
+          fe.style.opacity = liegt > 0 ? String(Math.max(0, 1 - liegt / 1.4)) : "1";
+          fe.dataset.glut = f.glut && t < tl + 0.8 ? "ja" : "nein";
+        });
       }
       const wl = d.wolken ?? [];
       if (wl.length || wolkenEls.current.some((w) => w && w.style.display !== "none")) {
@@ -1282,6 +1323,18 @@ function PetFigur({
 
   return (
     <>
+      {pet.art === "drache" &&
+        Array.from({ length: FLOCKEN_MAX }, (_, i) => (
+          <span
+            key={`f${i}`}
+            ref={(el) => {
+              flockenEls.current[i] = el;
+            }}
+            className="pet-russ"
+            data-dunkel={i % 3 === 0 ? "ja" : "nein"}
+            style={{ display: "none" }}
+          />
+        ))}
       {pet.art === "drache" &&
         Array.from({ length: WOLKEN_MAX }, (_, i) => (
           <div

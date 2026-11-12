@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Verrußter Drache schüttelt den Ruß ab (12.11.2026)
+
+Mark: nach Bärbels Blitz wurde er einfach wieder normal — er soll sich irgendwann schütteln, Ruß fällt zu Boden. `bewegung.ts`: `verkohlen()` (über `PetSteuerung.verkohlen`, ausgelöst in `PetOverlay` bei `hit.art === "blitz"`) setzt `russ = 1`, Schütteln frühestens nach 7–20 s bei der nächsten Entscheidung, spätestens vor dem Weiterziehen; Zustand `schuetteln` (1,9 s, Pose wackelt wie nasser Hund, Animation `klettern`), Ruß blendet aus, ~45 `Flocke`n fliegen ab, fallen per Wurfparabel zum unteren Rand, liegen 5 s, verblassen. Filter inline aus `Darstellung.russ`, 56 `.pet-russ`-Elemente. Nur Optik, nichts gespeichert.
+
 ## Drache läuft auf Wolken, Bärbel wiederholt sich nicht (12.11.2026)
 
 Mark: am Tablet liegt das Charakterblatt oben, der Drache kam nie hin — chinesische Drachen laufen auf selbst erzeugten Wölkchen durch die Luft. `bewegung.ts`: Zustand `wolkenlauf` (Ziel = Fläche außer Sprungweite, bevorzugt obere 60 %; Boden 30 %, Fläche 22 % je Entscheidung), Fußbahn als quadratische Bézier (zu steil → seitlich ausholen), 85 px/s, Nase folgt der Steigung (±28°), alle 280 ms Wolke abwechselnd unter Vorder-/Hinterpfote, 650 ms „Rufen“ am Anfang; Ziel weg → fällt. `Darstellung.wolken`, `PetOverlay` mit 10 Wolken-Elementen. Sprite `docs/assets/critter-pet/wolke.py` → `drache/wolke.png` (14×110 ms: aufpuffen, Locke dreht, zerfasern). Bärbel: Intervall 15–45 min; `vorlesen.py` merkt sich die letzten 12 Stellen je Kampagne, gibt der KI zufälliges Leitbild/Buch plus „nicht wiederholen“-Liste, Wiederholung → anderer fester Vers (jetzt 11).
