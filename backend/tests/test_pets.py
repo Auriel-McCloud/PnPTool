@@ -365,3 +365,43 @@ def test_baerbel_wiederholt_keine_stelle(monkeypatch):
     assert erste["stelle"] == "Psalm 23,4"
     assert zweite["stelle"] != "Psalm 23,4"
     assert "psalm23,4" in prompts[1]
+
+def test_baerbel_fliegt_zum_vorlesen_heim(welt, monkeypatch):
+    """Mark, 12.11.: Bibelverse nur beim Besitzer — woanders fliegt sie heim."""
+    m, stand = welt
+    m.lesen_min = 0
+    m.lesen_max = 0
+    stand["pets"] = [{
+        "id": "buch", "name": "Bärbel", "art": "baerbel",
+        "besitzerId": "anna", "besitzerName": "Anna", "mitglieder": ["anna", "ben", "cleo"],
+    }]
+
+    async def falsch(*_a, **_k):
+        return {"stelle": "Psalm 23,1", "zitat": "Der Herr ist mein Hirte."}
+
+    monkeypatch.setattr("app.pets.vorlesen.erzeugen", falsch)
+
+    async def ablauf():
+        anna, ben, cleo = Socket(), Socket(), Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.anmelden("k", "ben", ben)
+        await m.anmelden("k", "cleo", cleo)
+        await m.raus("k", "anna", "buch", "rechts")
+        await asyncio.sleep(0.01)
+        wirt = next(p for p, s in (("ben", ben), ("cleo", cleo)) if s.letzte_pets())
+        bei = ben if wirt == "ben" else cleo
+        await m.lesen_takt("k", 1)
+        # Beim Fremden: kein Vers, nur der Heimweg.
+        assert not [u for u in bei.post if u["typ"] == "vorlesen"]
+        pets = bei.letzte_pets()
+        assert pets[0].get("heim") is True and not pets[0].get("lesung")
+        # Sie fliegt raus und landet beim Besitzer, nicht beim Dritten.
+        await m.raus("k", wirt, "buch", "links")
+        await asyncio.sleep(0.01)
+        bei_anna = anna.letzte_pets()
+        assert [p["id"] for p in bei_anna] == ["buch"]
+        assert bei_anna[0]["lesung"]["stelle"] == "Psalm 23,1"
+        assert not bei_anna[0].get("heim")
+        m._takt.cancel()
+
+    laufen(ablauf())

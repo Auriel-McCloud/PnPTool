@@ -195,14 +195,16 @@ class PetMotor:
                         betroffen.add(neu)
                 # Ein Tablet, das sich nie meldet, hält das Pet nicht ewig fest.
                 elif pet.wirt and jetzt - pet.seit > logic.HOECHSTE_VERWEILDAUER_S:
-                    if self._hat_lesung(campaign_id, pet.id):
+                    # Beim Besitzer wartet eine Lesung: bleiben. Woanders nicht —
+                    # dann muss sie ja gerade heim.
+                    if self._hat_lesung(campaign_id, pet.id) and pet.wirt == pet.besitzer_id:
                         pet.seit = jetzt
                     else:
                         betroffen.add(pet.wirt)
                         self._losschicken(campaign_id, pet, pet.wirt, self.zufall.choice(["links", "rechts"]))
                 # Weder auf einem Bildschirm noch unterwegs: wieder einsetzen.
                 elif pet.wirt is None and (pet.unterwegs is None or pet.unterwegs.done()):
-                    neu = logic.naechster_wirt(logic.online_mitglieder(pet.mitglieder, online), None, self.zufall)
+                    neu = self._ziel(campaign_id, pet, logic.online_mitglieder(pet.mitglieder, online), None)
                     if neu:
                         self._ankommen(pet, neu, self.zufall.choice(["links", "rechts"]), jetzt)
                         betroffen.add(neu)
@@ -232,7 +234,7 @@ class PetMotor:
                 return
             pet.unterwegs = None
             kandidaten = logic.online_mitglieder(pet.mitglieder, self.online(campaign_id))
-            neu = logic.naechster_wirt(kandidaten, von, self.zufall)
+            neu = self._ziel(campaign_id, pet, kandidaten, von)
             if neu is None:
                 return
             self._ankommen(pet, neu, logic.gegenseite(raus_seite), time.monotonic())
@@ -305,8 +307,21 @@ def _petmotor_als_dict(self, campaign_id: str, pet: Pet) -> dict:
     d = pet.als_dict()
     st = self._lesen.get(campaign_id, {}).get(pet.id)
     if st and st.text:
-        d["lesung"] = st.text
+        # Bibelverse nur beim Besitzer (Mark, 12.11.2026: „Für die Bibelzitate
+        # soll Bärbel immer zu ihrem Besitzer zurückkehren“). Woanders weiß das
+        # Tablet nur: sie will heim und fliegt bald raus.
+        if pet.wirt == pet.besitzer_id:
+            d["lesung"] = st.text
+        else:
+            d["heim"] = True
     return d
+
+
+def _petmotor_ziel(self, campaign_id: str, pet: Pet, kandidaten: list[str], von: str | None) -> str | None:
+    """Nächstes Tablet. Wartet eine Lesung, geht es direkt zum Besitzer."""
+    if self._hat_lesung(campaign_id, pet.id) and pet.besitzer_id in kandidaten:
+        return pet.besitzer_id
+    return logic.naechster_wirt(kandidaten, von, self.zufall)
 
 
 async def _petmotor_lesen_takt(self, campaign_id: str, sekunden: float) -> None:
@@ -328,10 +343,16 @@ async def _petmotor_lesen_takt(self, campaign_id: str, sekunden: float) -> None:
         st.anwesenheit_s += sekunden
         if st.anwesenheit_s < st.warten_s:
             continue
+        # Ohne Besitzer keine Bibelstelle — die Zeit läuft weiter auf.
+        if pet.besitzer_id not in self.online(campaign_id):
+            continue
         st.text = await vorlesen.erzeugen(campaign_id, pet.besitzer_id, list(self.online(campaign_id)))
         st.anwesenheit_s = 0.0
         st.warten_s = self._lesen_warte()
-        await self._senden(campaign_id, pet.wirt, {"typ": "vorlesen", "petId": pet.id, **st.text})
+        if pet.wirt == pet.besitzer_id:
+            await self._senden(campaign_id, pet.wirt, {"typ": "vorlesen", "petId": pet.id, **st.text})
+        # Sonst bekommt das fremde Tablet nur `heim` und lässt sie rausfliegen;
+        # beim Besitzer kommt die Lesung mit der Ankunft (`lesung` im Pet).
         await self._pets_senden(campaign_id, pet.wirt)
 
 
@@ -349,6 +370,7 @@ async def _petmotor_gelesen(self, campaign_id: str, person_id: str, pet_id: str)
 PetMotor._lesen_warte = _petmotor_lesen_warte
 PetMotor._hat_lesung = _petmotor_lesen
 PetMotor._als_dict = _petmotor_als_dict
+PetMotor._ziel = _petmotor_ziel
 PetMotor.lesen_takt = _petmotor_lesen_takt
 PetMotor.gelesen = _petmotor_gelesen
 

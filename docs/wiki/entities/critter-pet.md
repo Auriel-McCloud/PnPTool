@@ -304,14 +304,25 @@ Nachschärfung Mark (gleicher Abend):
 - **Zutraulichkeits-Meter (Idee):** Wert je Spieler und Critter, Streicheln +1, Füttern +5. Wirkung noch offen.
 
 Noch offen:
-- Wie viele Schlagschaden-Kästchen heilt ein Futter (Wert am Futter-Gegenstand oder fest)?
+- ~~Wie viele Schlagschaden-Kästchen heilt ein Futter?~~ Entschieden 12.11.: **3 Schlagschaden** je Futter.
 - ~~Zutraulichkeit: Datenmodell, Spam-Schutz~~ Entschieden 12.11.: Kante Spieler-PC → Critter mit `wert` (je Spieler und Critter eigener Wert); Streicheln zählt höchstens +1 alle 5 Minuten je Spieler, Füttern (+5) zählt immer.
 - Zutraulichkeit — Wirkung (später): Ideen Neko: wandert öfter zu Lieblingen, faucht/niest bei Fremden, rollt sich bei Lieblingen zum Schlafen ein. Idee Mark: ab hoher Zuneigung findet das Pet Dinge und bringt Geschenke. Der Wert muss **nicht sichtbar** sein.
 
 ## Noch offen
 
 - Wachsen/Fähigkeiten freischalten — siehe Abschnitt oben (Antworten 12.11., Rest offen).
-- Bärbel liest Bibelzitate nur beim Besitzer; anderen zeigt sie Rezepte/DIY/Wetter — entschieden 12.11., noch nicht gebaut.
+- Bärbel liest Bibelzitate nur beim Besitzer — **gebaut 12.11.** (fliegt dafür heim, siehe CLAUDE.md). Anderen Rezepte/DIY/Wetter: noch nicht gebaut.
+
+### Weitere Ideen Mark 12.11.2026 (Abend)
+
+- **Bärbel als Critter?** Bärbel ist ein Gegenstand und bekommt keine EP. Mark fragt seine Spieler und bereitet einen Bärbel-Critter vor — wird spontan entschieden.
+- **Nachrichten an Vertraute:** Hat ein anderer Spieler als der Besitzer **50 Zutraulichkeit** zu Bärbel, bekommt er manchmal auch Nachrichten von ihr (eher keine Bibelverse; was genau, später).
+- **Drachen lernen mit dem Wachstum** (Fähigkeiten statt alles von Anfang an):
+  - **Phase 1 — Ei:** schlüpft nach **5–10 Mal Antippen**.
+  - **Phase 2 — Baby:** läuft nur unten herum, will Futter, macht Häufchen.
+  - **Nach 3 EP:** wird zum heutigen Drachen — kann klettern, niesen, evtl. hüpfen.
+  - **Später:** Fliegen/Wolkenlauf und das Öffnen des Burgermenüs. Weitere Fähigkeiten folgen, wenn sie uns einfallen.
+  - Offen: welche Fähigkeit bei welcher Stufe/EP-Schwelle; zählt jedes Antippen (auch Fremde) fürs Schlüpfen; Ei-/Baby-Sprites neu zeichnen.
 
 - Häufchen entfernen: wegklicken/wischen, nach Zeit, oder nur durch den Besitzer?
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).

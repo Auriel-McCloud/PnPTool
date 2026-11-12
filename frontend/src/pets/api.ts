@@ -38,6 +38,9 @@ export interface PetAufSchirm {
   ankunft: number;
   /** Ungelesene Bibelstelle — sie bleibt groß, bis jemand antippt. */
   lesung?: Lesung | null;
+  /** Bärbel hat eine Bibelstelle, ist aber nicht beim Besitzer: bald heimfliegen
+   *  (Mark, 12.11.2026: Bibelverse nur beim Besitzer). */
+  heim?: boolean;
 }
 
 export interface Lesung {

@@ -1094,6 +1094,8 @@ function PetFigur({
   const spriteRect = useRef<BuchRechteck>({ left: 0, top: 0, w: 1, h: 1 });
   const lesungRef = useRef(lesung);
   lesungRef.current = lesung;
+  const heimRef = useRef(pet.heim);
+  heimRef.current = pet.heim;
   const onGelesenRef = useRef(onGelesen);
   onGelesenRef.current = onGelesen;
   const [herzen, setHerzen] = useState<Herz[]>([]);
@@ -1154,6 +1156,7 @@ function PetFigur({
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
       if (lesungRef.current && b.lies && !b.liestGerade?.()) b.lies(jetzt);
+      if (heimRef.current && b.heim) b.heim(jetzt);
       b.setzeUmgebung(umgebung(m()));
       b.tick(jetzt, dt);
       const d = b.darstellung(jetzt);

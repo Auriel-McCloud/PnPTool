@@ -1997,3 +1997,7 @@ Füttern legt einen Napf auf den Schirm, heilt nur Schlagschaden (Rest über Ras
 ## [2026-11-12] update | Zutraulichkeit entschieden, Ki-Tama raus aus Begleitern
 
 Zutraulichkeit als Kante Spieler-PC → Critter, Streicheln max. +1 je 5 Min.; Geschenke-Idee. Ki-Tama-Beschwörungen nicht mehr im Begleiter-Bereich. Siehe [[entities/critter-pet]].
+
+## [2026-11-12] update | Bärbel fliegt zum Vorlesen heim; Ei-Phase und Fähigkeiten je Stufe
+
+Bibelverse nur beim Besitzer gebaut. Futter heilt 3 Schlagschaden. Ideen: Bärbel-Nachrichten ab 50 Zutraulichkeit, Drache startet als Ei (5–10× antippen), Baby nur unten, ab 3 EP heutiger Drache, Fliegen/Burgermenü später. Siehe [[entities/critter-pet]].

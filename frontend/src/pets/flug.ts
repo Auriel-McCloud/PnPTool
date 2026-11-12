@@ -42,6 +42,8 @@ export interface PetSteuerung {
   /** Lesung anfangen / läuft sie / zuklappen (nur fliegende Pets). */
   lies?(jetzt: number): void;
   liestGerade?(): boolean;
+  /** Bald heimfliegen (Bärbel will beim Besitzer vorlesen). */
+  heim?(jetzt: number): void;
   zuklappen?(jetzt: number): void;
   /** Feuer des Drachen: sie verwandelt sich. */
   erschrecken?(jetzt: number): void;
@@ -742,6 +744,12 @@ export class FlugBewegung implements PetSteuerung {
 
   liestGerade() {
     return this.liest;
+  }
+
+  /** Besuch beenden: bei der nächsten Entscheidung fliegt sie raus — der
+   *  Server schickt sie dann direkt zum Besitzer (Bibelvers nur dort). */
+  heim(jetzt: number) {
+    if (this.besuchEnde > jetzt) this.besuchEnde = jetzt;
   }
 
   /** Angekommen: zuklappen, dann übernimmt das große Buch (zugeklappt, es

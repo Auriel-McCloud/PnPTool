@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Bärbel fliegt zum Vorlesen heim (12.11.2026)
+
+Mark: Bibelverse nur beim Besitzer. `pets/motor.py`: Lesung wird nur erzeugt, wenn der Besitzer online ist; ist Bärbel woanders, bekommt das Tablet statt `lesung` nur `heim: true` (`_als_dict`), `flug.ts::heim()` beendet den Besuch → sie fliegt bei der nächsten Entscheidung raus, `_ziel()` schickt sie direkt zum Besitzer, dort kommt die Lesung mit der Ankunft. Verweildauer-Verlängerung nur noch beim Besitzer. Test `test_baerbel_fliegt_zum_vorlesen_heim`.
+
 ## Ki-Tama-Beschwörungen nicht mehr unter Begleiter (12.11.2026)
 
 Mark: Ki-Tama-Beschwörungen sollen Spieler nicht im Begleiter-Bereich sehen. `entities/repository.py::eigene_critter` (`GET …/critter/meine`) liefert nur noch Critter mit `BEGLEITET`-Kante zum Spieler, nicht mehr über `Gegenstand.beschworenerCritterId`. Beschwörungen bleiben im Kampf unter „Deine Beschwörungen“; Besitzer-/Sichtbarkeitsregel (`critter_besitzer`) unverändert.
