@@ -2009,3 +2009,7 @@ Ei (5–10× tippen), Schlüpfen mit Schalenhütchen, Baby-Phase nur unten, ab 3
 ## [2026-11-12] update | Futternapf, Heilung, Zutraulichkeit gebaut
 
 Tierfutter-Flag, Füttern stellt Napf hin, Drache frisst ihn leer (3 Schlagschaden geheilt, +5 Zutraulichkeit), Streicheln +1 alle 5 Min. Burgermenü ab 8, Wolkenlauf ab 13 EP. Siehe [[entities/critter-pet]].
+
+## [2026-11-13] update | Entwurf Drachen-Stufen 3–6 und Einkringeln
+
+Entwurfstafel für die restlichen Wachstumsstufen (Halbstarker, Jungdrache, Drache, Ehrwürdiger Drache) und die eingekringelte Schlafpose; noch nicht abgenommen, nichts gebaut. Siehe [[entities/critter-pet]].

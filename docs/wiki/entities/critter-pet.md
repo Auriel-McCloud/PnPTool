@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-12
+updated: 2026-11-13
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
@@ -345,6 +345,16 @@ Entwurf von Mark abgenommen („Perfekt!!!“). Technik siehe CLAUDE.md.
 - ~~Drag and Drop/Werfen zusätzlich zum Streicheln: ja oder nein?~~ Entschieden 11.11.: ja (3 s halten, siehe oben).
 - ~~Woher das Sprite eines Critters kommt~~ — feste Arten im Code, SL wählt
   aus der Liste (Critter: Tiere, Gegenstand: Bärbel).
+
+## Entwurf 13.11.2026: Stufen 3–6 und Einkringeln (noch nicht abgenommen, nicht gebaut)
+
+Mark: „entwirf mir die restlichen Altersstufen … sie sollten immer größer, eleganter und wie chinesische Drachen aussehen, ich hätte dann auch gerne, dass sie sich zum Schlafen einkringeln können.“
+
+- Generator: `docs/assets/critter-pet/drache_stufen_entwurf.py` (`python drache_stufen_entwurf.py <ziel>`), Tafel: `docs/assets/critter-pet/stufen_entwurf.png`. Eine Figur, je Stufe ein Parameter-Satz (`STUFEN`) — gilt für Drache, Eis- und Blitzdrache.
+- **Stufen (Arbeitsnamen):** 1 Schlüpfling und 2 heutiger Drache unverändert; neu 3 Halbstarker, 4 Jungdrache, 5 Drache, 6 Ehrwürdiger Drache. Sprite-Breite 84 → 102 → 116 → 132 → 149 px (inkl. Schnurrhaare und Schwanzflamme), Höhe 44 → 42 → 48 → 52 → 60.
+- **Was wächst:** Körper länger und im Verhältnis schlanker, Körperbögen höher, Schwanz steigt nach hinten an, Hals länger mit S-Schwung, Geweih länger und verzweigter (1 → 3 Enden), Kopfmähne lang und wallend, Schnurrhaare im S-Bogen, Schwanzflamme mehrzüngig. Ab Stufe 4: Bauchplatten, Flammen an den Fersen, Flammenbraue, Pfoten mit Schenkel. Ab Stufe 5: Fangzahn, feinerer Schwanz. Beine bleiben kurz (Marks Grenze vom 11.11.).
+- **Einkringeln:** gestapelte Spirale wie ein aufgerolltes Tau — Brust außen unten, Schwanz innen oben, die Schwanzflamme steht in der Mitte hoch wie eine Kerze, Kopf liegt vorn am Boden, Schnurrhaare hängen. Für alle sechs Stufen entworfen (Schlüpfling = kleiner Kringel). Übergang: legt sich hin, rollt sich vom Schwanz her ein; schlafend atmet er.
+- **Offen (Mark):** Aussehen abnehmen; Größe am Handy (Stufe 6 = 149 px × 1,5 ≈ 224 px Breite); EP-Schwellen je Stufe; ob die 12 Schritte echte Zwischenformen bekommen (Parameter lassen sich zwischen zwei Stufen überblenden); ob jede Stufe eine neue Fähigkeit bringt.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
