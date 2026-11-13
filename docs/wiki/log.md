@@ -2013,3 +2013,7 @@ Tierfutter-Flag, Füttern stellt Napf hin, Drache frisst ihn leer (3 Schlagschad
 ## [2026-11-13] update | Entwurf Drachen-Stufen 3–6 und Einkringeln
 
 Entwurfstafel für die restlichen Wachstumsstufen (Halbstarker, Jungdrache, Drache, Ehrwürdiger Drache) und die eingekringelte Schlafpose; noch nicht abgenommen, nichts gebaut. Siehe [[entities/critter-pet]].
+
+## [2026-11-13] update | Große Drachen-Stufen und Schlafkringel gebaut
+
+Entwurf von Mark abgenommen und eingebaut: Halbstarker, Jungdrache, Drache, Ehrwürdiger Drache (15/30/45/60 EP, EP je Schritt als Kampagnen-Einstellung `petWachstumEp`); alle Drachen kringeln sich zum Schlafen ein. Siehe [[entities/critter-pet]].

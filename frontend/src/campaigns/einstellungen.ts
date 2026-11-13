@@ -22,6 +22,9 @@ export interface Einstellungen {
   messengerAktiv: boolean;
   /** Desktop-Pets auf den Spieler-Tablets; im Kampf ohnehin weg. */
   petsAktiv: boolean;
+  /** So viele EP des Critters braucht ein Wachstumsschritt des Drachen-Pets
+   *  (alle 3 Schritte eine neue Gestalt). Mark, 12.11.2026: vorläufig 5. */
+  petWachstumEp: number;
   /** Kampagnenweite EP — alle PCs bekommen gemeinsam EP. */
   kampagnenEP: number;
   /** Welcher KI-Anbieter für Text-Generierung dieser Kampagne gilt:

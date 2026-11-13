@@ -424,6 +424,19 @@ def test_wachstum_stufen_und_faehigkeiten():
     # Mark: Burgermenü ab 8 EP, Wolkenlauf ab 13 EP.
     assert "menue" in lg.faehigkeiten("drache", "jung", 8) and "wolken" not in lg.faehigkeiten("drache", "jung", 12)
     assert "wolken" in lg.faehigkeiten("drache", "jung", 13)
+    # Mark, 13.11.: größere Gestalten — alle 5 EP ein Schritt, alle 3 Schritte
+    # eine neue Gestalt (15/30/45/60 EP seit dem Schlüpfen).
+    assert lg.stufe("drache", "geschluepft", 24, 10) == ("jung", 14)
+    assert lg.stufe("drache", "geschluepft", 25, 10) == ("halbstark", 15)
+    assert lg.stufe("eisdrache", "geschluepft", 40, 10)[0] == "jungdrache"
+    assert lg.stufe("blitzdrache", "geschluepft", 55, 10)[0] == "gross"
+    assert lg.stufe("drache", "geschluepft", 70, 10)[0] == "ehrwuerdig"
+    assert lg.stufe("drache", "geschluepft", 500, 10)[0] == "ehrwuerdig"
+    # Kampagnen-Einstellung `petWachstumEp`: 10 EP je Schritt → doppelt so langsam.
+    assert lg.stufe("drache", "geschluepft", 39, 10, 10)[0] == "jung"
+    assert lg.stufe("drache", "geschluepft", 40, 10, 10)[0] == "halbstark"
+    # Die Großen können alles.
+    assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN)
     # Bärbel wächst nicht.
     assert lg.stufe("baerbel", "ei", 0, None) == ("jung", None)
     assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4

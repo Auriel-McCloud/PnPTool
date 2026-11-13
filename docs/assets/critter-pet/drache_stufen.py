@@ -1,10 +1,12 @@
-# ENTWURF 13.11.2026 (noch nicht von Mark abgenommen, noch nicht im Frontend):
-# die restlichen Wachstumsstufen des Drachen und das Einkringeln zum Schlafen.
-# Mark: „immer größer, eleganter und wie chinesische Drachen … zum Schlafen
-# einkringeln“. Stufen bisher: Ei, Schlüpfling (drache_jung.py), heutiger
-# Drache (drache_final.py). Neu: Stufe 3–6 als Parameter-Satz EINER Figur —
-# gilt damit automatisch für Drache, Eis- und Blitzdrache (drachen_varianten).
-# Aufruf: python drache_stufen_entwurf.py <zielordner>
+# Wachstumsstufen des Drachen und das Einkringeln zum Schlafen (Marks Wahl
+# 13.11.2026: „die sind perfekt!“). Mark: „immer größer, eleganter und wie
+# chinesische Drachen … zum Schlafen einkringeln“.
+# Ei und Schlüpfling zeichnet drache_jung.py, den jungen Drachen drache_final.py
+# (beide unverändert). Hier: die vier größeren Stufen als Parameter-Satz EINER
+# Figur — gilt damit automatisch für Drache, Eis- und Blitzdrache
+# (drachen_varianten) — und der Schlafkringel samt Übergang für ALLE Stufen.
+# Export ins Frontend: stufen_exportieren.py.
+# Vorschau-Tafeln: python drache_stufen.py <zielordner>
 import math
 import os
 import sys
@@ -38,22 +40,24 @@ STUFEN = {
     "jung": NS(name="Jungtier (heute)", L=50, lam=22, amp=2.0, hub_s=2, schlank=0.22, rt=1.5, rm=4.3, hals=(6, 9, 0.0), kr=(7.2, 6.2),
                schn=4.5, horn=8, zweige=1, mh=3.0, km=6, kmn=3, bart=4, wl=10, quaste=5.5, bein=4, bb=2, krallen=1,
                tuft=False, platten=False, schuppen=0, braue=False, zahn=False, a=11.0, eng=3.5, hub=5.5, baby=False),
-    "s3": NS(name="Halbstarker", L=60, lam=30, amp=3.5, hub_s=7, schlank=0.24, rt=1.4, rm=4.4, hals=(7, 11, 0.3), kr=(7.2, 6.2),
+    "halbstark": NS(name="Halbstarker", L=60, lam=30, amp=3.5, hub_s=7, schlank=0.24, rt=1.4, rm=4.4, hals=(7, 11, 0.3), kr=(7.2, 6.2),
              schn=5.0, horn=10, zweige=1, mh=3.5, km=8, kmn=3, bart=5, wl=13, quaste=7, bein=4.5, bb=2, krallen=2,
              tuft=False, platten=False, schuppen=1, braue=False, zahn=False, a=12.5, eng=3.5, hub=5.5, baby=False),
-    "s4": NS(name="Jungdrache", L=70, lam=32, amp=4.5, hub_s=9, schlank=0.28, rt=1.4, rm=4.6, hals=(8, 14, 0.55), kr=(7.3, 6.2),
+    "jungdrache": NS(name="Jungdrache", L=70, lam=32, amp=4.5, hub_s=9, schlank=0.28, rt=1.4, rm=4.6, hals=(8, 14, 0.55), kr=(7.3, 6.2),
              schn=5.5, horn=12, zweige=2, mh=4.0, km=10, kmn=3, bart=6, wl=16, quaste=9, bein=5, bb=3, krallen=2,
              tuft=True, platten=True, schuppen=1, braue=True, zahn=False, a=14.0, eng=3.5, hub=5.8, baby=False),
-    "s5": NS(name="Drache", L=80, lam=34, amp=5.5, hub_s=11, schlank=0.32, rt=1.3, rm=4.8, hals=(9, 17, 0.8), kr=(7.4, 6.1),
+    "gross": NS(name="Drache", L=80, lam=34, amp=5.5, hub_s=11, schlank=0.32, rt=1.3, rm=4.8, hals=(9, 17, 0.8), kr=(7.4, 6.1),
              schn=6.0, horn=14, zweige=2, mh=4.5, km=12, kmn=4, bart=7, wl=20, quaste=11, bein=5, bb=3, krallen=3,
              tuft=True, platten=True, schuppen=2, braue=True, zahn=True, a=15.5, eng=3.5, hub=6.0, baby=False),
-    "s6": NS(name="Ehrwürdiger Drache", L=90, lam=36, amp=6.5, hub_s=14, schlank=0.36, rt=1.3, rm=5.0, hals=(10, 20, 1.0),
+    "ehrwuerdig": NS(name="Ehrwürdiger Drache", L=90, lam=36, amp=6.5, hub_s=14, schlank=0.36, rt=1.3, rm=5.0, hals=(10, 20, 1.0),
              kr=(7.6, 6.0), schn=6.5, horn=17, zweige=3, mh=5.0, km=15, kmn=5, bart=8, wl=25, quaste=13, bein=5.5,
              bb=3, krallen=3, tuft=True, platten=True, schuppen=2, braue=True, zahn=True, a=17.0, eng=3.5,
              hub=6.2,
              baby=False),
 }
-NEU = ["s3", "s4", "s5", "s6"]
+NEU = ["halbstark", "jungdrache", "gross", "ehrwuerdig"]
+# Der Atem wächst mit (Feuer/Eis/Blitz-Streifen wird im Frontend größer gezeigt).
+FEUER_SKALA = {"halbstark": 1.15, "jungdrache": 1.3, "gross": 1.45, "ehrwuerdig": 1.6}
 
 
 def farbe(c):
@@ -75,6 +79,8 @@ class Z:
         self.rk = Image.new("I", (GW, GH), 0)        # Malreihenfolge (höher = weiter vorn)
         self.dk = ImageDraw.Draw(self.rk)
         self.rang = 1
+        self.maul = (0.0, 0.0)   # setzt kopf(): wo Feuer und Futter ansetzen
+        self.kopf = (0.0, 0.0)
 
     def ell(self, cx, cy, rx, ry, c, s):
         box = [round(cx - rx), round(cy - ry), round(cx + rx), round(cy + ry)]
@@ -105,8 +111,9 @@ class Z:
         frei = {P["F"], P["M"]}
         out = self.img.copy()
         po = out.load()
-        for y in range(GH):
-            for x in range(GW):
+        box = self.img.getbbox() or (1, 1, 2, 2)
+        for y in range(max(0, box[1] - 1), min(GH, box[3] + 1)):
+            for x in range(max(0, box[0] - 1), min(GW, box[2] + 1)):
                 c = px[x, y]
                 nachbarn = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
                 if c[3] == 0:
@@ -144,17 +151,17 @@ def abtasten(fein):
     return pts
 
 
-def kette_wach(st, welle=0.0):
+def kette_wach(st, welle=0.0, ampf=1.0, bob=0):
     """Wirbelsäule im Stehen: Beinpaare an den Tiefpunkten, dazwischen ein Bogen
     nach oben, Schwanz steigt nach hinten an, Hals im S-Schwung zum Kopf."""
     x0 = 60.0
     xf = x0 + st.L - 6      # Vorderbeine
     xr = xf - st.lam        # Hinterbeine
-    yb = BODEN - st.bein - st.rm
+    yb = BODEN - st.bein - st.rm + bob
     fein = []
     for i in range(801):
         x = x0 + st.L * i / 800
-        y = yb - st.amp * (1 - math.cos(2 * math.pi * (x - xf) / st.lam)) / 2
+        y = yb - st.amp * ampf * (1 - math.cos(2 * math.pi * (x - xf) / st.lam)) / 2
         if x < xr:
             k = (xr - x) / (xr - x0)
             y -= st.hub_s * k ** 1.8 + math.sin(welle) * 1.2 * k
@@ -298,7 +305,7 @@ def quaste(z, st, pts, phase, hoch=False):
 def geweih(z, bx, by, laenge, zweige, s, hinten=False):
     """Geweih-Horn. Das hintere ist dunkler und liegt flacher, damit sich die
     beiden bei langen Hörnern nicht zu einem Kamm vermischen."""
-    c = dunkler("H", 0.78) if hinten and laenge > 4 else "H"
+    c = dunkler("H", 0.78) if hinten and laenge > 9 else "H"
     if laenge <= 4:
         z.line([(bx, by - 1), (bx - 1, by - 1 - laenge)], c, s, width=2)
         return
@@ -326,6 +333,7 @@ def kopf(z, st, hx, hy, s, phase=0.0, blink=False, mund=False, schnurr=0.0, lieg
     `liegt` = Bodenhöhe, wenn er schläft (Schnurrhaare und Bart hängen)."""
     rx, ry = st.kr
     hx, hy = round(hx), round(hy)
+    z.kopf = (hx, hy)
     for n, bx in enumerate((hx - 3, hx + 1) if st.baby else (hx - 4, hx + 1)):
         geweih(z, bx, hy - 4, st.horn, st.zweige, s, hinten=n == 0)
     # Kopfmähne: Strähnen fächern nach hinten auf, bei den Großen lang und wallend
@@ -350,6 +358,7 @@ def kopf(z, st, hx, hy, s, phase=0.0, blink=False, mund=False, schnurr=0.0, lieg
     z.ell(scx, hy + 2, st.schn, 3, "D", s)
     z.ell(scx - 0.2, hy + 1.5, st.schn - 0.4, 2.5, "R", s)
     rechts = scx + st.schn
+    z.maul = (rechts - 0.5, hy + 4)
     z.point((rechts - 1.5, hy), "K", s)
     if st.schn >= 5.5:  # Nasenhöcker
         z.point((rechts - 2.5, hy - 1), "L", s)
@@ -387,6 +396,9 @@ def kopf(z, st, hx, hy, s, phase=0.0, blink=False, mund=False, schnurr=0.0, lieg
             if liegt is not None:      # hängen nach vorn auf den Boden
                 x = rechts - 1.5 + wl * (0.55 if oben else 0.3) * math.sin(u * 1.7)
                 y = min(liegt - 1, hy + 1 + (wl * 0.45 * u if oben else wl * 0.5 * u ** 0.7) + wackel * 0.3)
+            elif wl <= 10:             # kurz: gerade nach vorn, leicht gespreizt
+                x = rechts - 1.5 + u * wl
+                y = hy + (1 if oben else 2) + (-1 if oben else 1) * u * 3 * wl / 10 + wackel
             elif oben:
                 x = rechts - 1.5 + wl * 0.78 * math.sin(u * 1.9)
                 y = hy + 1 - wl * 0.42 * u ** 1.5 + wackel
@@ -403,9 +415,9 @@ def zuschneiden(img, rand=2, unten=None):
     return img.crop((b[0] - rand, b[1] - rand, b[2] + rand, u))
 
 
-def roh_wach(st, phase=0.0, blink=False, leg=0.0, mund=False, schnurr=0.0, welle=0.0):
+def roh_wach(st, phase=0.0, blink=False, leg=0.0, mund=False, schnurr=0.0, welle=0.0, ampf=1.0, bob=0, mit_z=False):
     z = Z()
-    pts, anker, _ = kette_wach(st, welle)
+    pts, anker, _ = kette_wach(st, welle, ampf, bob)
     beine(z, st, pts, anker, phase, leg)
     koerper(z, st, pts, list(range(len(pts))), phase)
     if st.tuft:
@@ -413,7 +425,7 @@ def roh_wach(st, phase=0.0, blink=False, leg=0.0, mund=False, schnurr=0.0, welle
     quaste(z, st, pts, phase)
     e = pts[-1]
     kopf(z, st, e.x + 1, e.y - 1, e.s + 6, phase, blink, mund, schnurr)
-    return z.fertig()
+    return (z.fertig(), z) if mit_z else z.fertig()
 
 
 def wach(st, **kw):
@@ -458,9 +470,30 @@ def kette_ring(st, atem=0.0):
     return pts, s_bein, boden
 
 
-def roh_ring(st, atem=0.0, phase=0.0):
+_VERSATZ = {}
+
+
+def ring_versatz(st):
+    """Wohin der Kringel auf der Arbeitsleinwand gehört: waagrecht mittig unter
+    der wachen Figur, unten auf der Fußlinie."""
+    if st.name not in _VERSATZ:
+        w = roh_wach(st).getbbox()
+        _VERSATZ[st.name] = (0, 0)
+        r, boden = roh_ring(st, am_platz=False)
+        rb = r.getbbox()
+        _VERSATZ[st.name] = (round((w[0] + w[2]) / 2 - (rb[0] + rb[2]) / 2), round(BODEN - boden))
+    return _VERSATZ[st.name]
+
+
+def roh_ring(st, atem=0.0, phase=0.0, am_platz=True, mit_z=False):
     z = Z()
     pts, s_bein, boden = kette_ring(st, atem)
+    if am_platz:
+        dx, dy = ring_versatz(st)
+        for q in pts:
+            q.x += dx
+            q.y += dy
+        boden += dy
     gruppen = {}
     for i, p in enumerate(pts):
         gruppen.setdefault(p.halb, []).append(i)
@@ -484,11 +517,11 @@ def roh_ring(st, atem=0.0, phase=0.0):
     e = pts[-1]
     hy = boden - st.kr[1] - 0.5 + (0.6 if atem > 0.5 else 0)
     kopf(z, st, e.x + 5, hy, e.s + 6, phase, blink=True, schnurr=-0.5, liegt=boden)
-    return z.fertig(), boden
+    return (z.fertig(), z) if mit_z else (z.fertig(), boden)
 
 
 def ring(st, **kw):
-    img, boden = roh_ring(st, **kw)
+    img, boden = roh_ring(st, am_platz=False, **kw)
     return zuschneiden(img, unten=round(boden) + 3)
 
 
@@ -516,8 +549,7 @@ def roh_einkringeln(st, t, phase=0.0):
     Q, s_bein, boden = kette_ring(st)
     n = min(len(P_), len(Q))
     P_, Q = P_[-n:], Q[-n:]
-    brust = min(range(n), key=lambda i: abs(P_[i].s - s_k))
-    qx, qy = P_[brust].x - Q[-1].x + 2, BODEN - boden
+    qx, qy = ring_versatz(st)
     def weich(v):
         v = max(0.0, min(1.0, v))
         return v * v * (3 - 2 * v)
@@ -577,33 +609,75 @@ def roh_hinlegen(st, k, phase=0.0, blink=False):
     return z.fertig()
 
 
+EINKRINGELN_MS = 80
+HINLEGEN_FRAMES = 4
+EINROLL_SCHRITTE = 14
+
+
+def einkringeln_frames(st):
+    """Übergang wach → Kringel als Rohbilder: erst hinlegen, dann einrollen.
+    Rückwärts abgespielt ist es das Aufwachen."""
+    fr = [roh_hinlegen(st, i / HINLEGEN_FRAMES, phase=i * 0.4, blink=i >= 3) for i in range(1, HINLEGEN_FRAMES + 1)]
+    fr += [roh_einkringeln(st, i / EINROLL_SCHRITTE, phase=i * 0.3) for i in range(1, EINROLL_SCHRITTE)]
+    return fr
+
+
+def schlafen_frames(st, n=24):
+    """Schlafend: atmet langsam, die Schwanzflamme züngelt (nahtlose Schleife)."""
+    return [roh_ring(st, atem=math.sin(i / n * 2 * math.pi), phase=i / n * 4 * math.pi)[0] for i in range(n)]
+
+
+def animationen(st):
+    """Alle Animationen einer großen Stufe als Rohbilder auf der Arbeitsleinwand —
+    gleiche Namen, Frame-Zahlen und Takte wie beim jungen Drachen
+    (sprites_exportieren.py), damit das Frontend nichts unterscheiden muss.
+    Einträge: Bild oder (Bild, Hüpfhöhe)."""
+    T = 2 * math.pi
+    W = lambda **kw: roh_wach(st, **kw)  # noqa: E731
+    idle = [W(phase=i / 24 * T, bob=round(math.sin(i / 24 * T) * 0.6), blink=i in (17, 18),
+              schnurr=math.sin(i / 24 * T) * 0.5) for i in range(24)]
+    lauf = [W(phase=i / 32 * T, welle=i / 32 * T, leg=2.0, bob=round(math.sin(2 * i / 32 * T) * 0.6), schnurr=1.0)
+            for i in range(32)]
+    freuen = [(W(phase=i / 8 * 2 * T, blink=True, mund=True, schnurr=1.5), round(abs(math.sin(i / 8 * T)) * 3))
+              for i in range(8)]
+    sprung = [W(phase=math.pi / 4 + math.sin(i / 6 * T) * 0.25, leg=2.5, mund=True, schnurr=1.5) for i in range(6)]
+    klettern = [W(phase=i / 32 * T, welle=i / 32 * T, leg=2.5, blink=True, mund=True, schnurr=0.5) for i in range(32)]
+    niesen = []
+    for i in range(22):
+        if i <= 5:      # Luft holen
+            niesen.append((W(phase=i * 0.1, ampf=1 + i * 0.05, blink=i >= 3, schnurr=0.3 + i * 0.25), min(2, i // 2)))
+        elif i <= 19:   # Hatschi — Maul offen, solange der Atem strömt
+            niesen.append((W(phase=0.6 + (i - 6) * 0.35, ampf=0.8, mund=True, blink=True,
+                             schnurr=-1.0 + math.sin(i) * 0.4), -1 if i < 9 else 0))
+        else:
+            niesen.append(W(phase=0.6 + (i - 19) * 0.2, blink=i == 21))
+    fressen = []
+    for i in range(16):
+        if i <= 2:
+            fressen.append(W(phase=i * 0.3, schnurr=0.8 + i * 0.4))
+        elif i <= 5:
+            fressen.append((W(phase=1.0, mund=True, schnurr=1.6), 1))
+        elif i <= 13:
+            zu = i % 2 == 0
+            fressen.append((W(phase=1.0 + i * 0.2, mund=not zu, blink=True, schnurr=math.sin(i) * 0.8), 0 if zu else 1))
+        else:
+            fressen.append(W(phase=1.2, blink=i == 15))
+    return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90), "klettern": (klettern, 35),
+            "niesen": (niesen, 80), "fressen": (fressen, 90), "sprung": (sprung, 70),
+            "schlafen": (schlafen_frames(st), 150), "einkringeln": (einkringeln_frames(st), EINKRINGELN_MS)}
+
+
 def schlaf_film(st):
-    """Wach → hinlegen → einkringeln → schlafen (atmen) → aufwachen."""
+    """Vorschau: wach → hinlegen → einkringeln → schlafen → aufwachen."""
     roh, ms = [], []
     for i in range(10):
         roh.append(roh_wach(st, phase=i / 10 * 2 * math.pi, blink=i in (6, 7))); ms.append(110)
-    for i in range(1, 5):
-        roh.append(roh_hinlegen(st, i / 4, phase=i * 0.4, blink=i >= 3)); ms.append(90)
-    N = 14
-    for i in range(1, N):
-        roh.append(roh_einkringeln(st, i / N, phase=i * 0.3)); ms.append(80)
-    dx = None
-    for i in range(36):
-        at = math.sin(i / 18 * 2 * math.pi)
-        img, boden = roh_ring(st, atem=at, phase=i / 18 * 2 * math.pi * 0.5)
-        if dx is None:  # Ring an dieselbe Stelle setzen wie das Ende des Einkringelns
-            P_, _, s_k = kette_wach(st)
-            Q, _, _ = kette_ring(st)
-            brust = min(range(len(P_)), key=lambda j: abs(P_[j].s - s_k))
-            dx, dy = round(P_[brust].x - Q[-1].x + 2), round(BODEN - boden)
-        verschoben = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        verschoben.paste(img, (dx, dy))
-        roh.append(verschoben); ms.append(150)
-    for i in range(N - 1, 0, -2):
-        roh.append(roh_einkringeln(st, i / N, phase=i * 0.3)); ms.append(70)
-    for i in range(3, 0, -1):
-        roh.append(roh_hinlegen(st, i / 4, phase=i * 0.4)); ms.append(80)
-    # gemeinsamer Ausschnitt über alle Frames
+    ein = einkringeln_frames(st)
+    roh += ein; ms += [EINKRINGELN_MS] * len(ein)
+    sl = schlafen_frames(st)
+    roh += sl + sl[:12]; ms += [150] * 36
+    for f in ein[::-1][::2]:
+        roh.append(f); ms.append(70)
     box = None
     for f in roh:
         b = f.getbbox()
@@ -690,7 +764,7 @@ if __name__ == "__main__":
     tafel().save(f"{ziel}/stufen_rot.png")
     for art in ("eisdrache", "blitzdrache"):
         mit_farbe(art, tafel).save(f"{ziel}/stufen_{art}.png")
-    gross = STUFEN["s6"]
+    gross = STUFEN["ehrwuerdig"]
     stapel([reihe([wach(gross), ring(gross)], abstand=10)], 5).save(f"{ziel}/ehrwuerdig.png")
     fr, ms = schlaf_film(gross)
     gif(fr, f"{ziel}/einkringeln.gif", ms, 4)

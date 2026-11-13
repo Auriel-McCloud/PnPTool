@@ -214,7 +214,7 @@ async def einstellungen_aendern(campaign_id: str, body: dict) -> dict:
     nachgetragen werden muss. Unbekannte Schlüssel verwirft das Repository.
     """
     aktuell = await set_einstellungen(campaign_id, body)
-    if "petsAktiv" in body:
+    if "petsAktiv" in body or "petWachstumEp" in body:
         from app.pets.motor import motor as pet_motor
 
         await pet_motor.abgleich(campaign_id)

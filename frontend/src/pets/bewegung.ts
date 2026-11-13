@@ -49,7 +49,9 @@
  * dabei fliegen Rußflocken weg und rieseln zu Boden.
  */
 
-export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen" | "fressen";
+import { EINKRINGELN } from "./drachenstufen";
+
+export type Animation = "idle" | "lauf" | "freuen" | "sprung" | "schlafen" | "klettern" | "niesen" | "fressen" | "einkringeln";
 
 export interface Masse {
   /** Box-Breite/-Höhe des Sprites in Bildschirm-Pixeln. */
@@ -177,6 +179,7 @@ type Zustand =
   | "freuen"
   | "haeufchen"
   | "schlafen"
+  | "aufwachen"
   | "klettern"
   | "haengen"
   | "sprung"
@@ -296,6 +299,10 @@ export type Meldung =
 const NIESEN_MS = 22 * 80;
 const FEUER_AB_MS = 6 * 80;
 const FEUER_MS = 16 * 70;
+/** Einkringeln zum Schlafen (Mark, 13.11.2026): der Streifen läuft einmal vor
+ *  dem Schlaf-Kringel und beim Aufwachen rückwärts, dann etwas flotter. */
+const EINKRINGELN_MS = EINKRINGELN.frames * EINKRINGELN.ms;
+const AUFWACH_TAKT_MS = 45;
 /** So lange muss man draufbleiben, bis er gepackt ist. */
 export const PACKEN_MS = 3000;
 /** Fressen (Seite schnappen und kauen): 16 Frames à 90 ms, Seite fliegt in Frame 3–5 ins Maul. */
@@ -345,6 +352,10 @@ export class PetBewegung {
   besuchEnde: number;
   haeufchenGemacht = false;
   geschlafen = false;
+  /** Wann er sich hingelegt hat — die erste Zeit kringelt er sich erst ein. */
+  schlafStart = 0;
+  /** Aufwachen: Einkringeln rückwärts ab Bild `von`; danach freuen (geweckt) oder weiter. */
+  private aufwach: { t0: number; von: number; dann: "freuen" | "weiter" } | null = null;
   niesenStart = 0;
   brandGelegt = false;
   /** Seite, die er gerade frisst (Mark, 11.11.2026: „kann der Drache das Papier,
@@ -1020,10 +1031,33 @@ export class PetBewegung {
     if (["raus", "sprung", "klettern", "uebergang", "niesen", "fressen", "gehalten", "getragen", "wurf", "wolkenlauf", "schuetteln"].includes(this.zustand))
       return false;
     if (this.zustand === "haengen") return true; // Herzchen ja, loslassen nein
-    // Schlafend: Antippen weckt ihn — er freut sich und macht dann weiter.
+    // Schlafend: Antippen weckt ihn — er rollt sich aus, freut sich und macht dann weiter.
+    if (this.zustand === "schlafen") {
+      this.wacheAuf(jetzt, "freuen");
+      return true;
+    }
+    if (this.zustand === "aufwachen") {
+      if (this.aufwach) this.aufwach.dann = "freuen";
+      return true;
+    }
     this.zustand = "freuen";
     this.bis = jetzt + 1600;
     return true;
+  }
+
+  /** Legt sich hin und kringelt sich ein (Mark, 13.11.2026). */
+  private schlafeEin(jetzt: number, dauerMs: number) {
+    this.zustand = "schlafen";
+    this.geschlafen = true;
+    this.schlafStart = jetzt;
+    this.bis = jetzt + dauerMs;
+  }
+
+  /** Rollt sich wieder aus — von dort, wie weit er schon eingekringelt war. */
+  private wacheAuf(jetzt: number, dann: "freuen" | "weiter") {
+    const von = Math.min(EINKRINGELN.frames - 1, Math.floor((jetzt - this.schlafStart) / EINKRINGELN.ms));
+    this.aufwach = { t0: jetzt, von: Math.max(0, von), dann };
+    this.zustand = "aufwachen";
   }
 
   // ── Entscheidungen ──────────────────────────────────────────────────────
@@ -1065,9 +1099,7 @@ export class PetBewegung {
         this.menueEntscheidungen += 1;
         if (this.menueEntscheidungen === 1 && !ende) {
           if (w < 0.6) {
-            this.zustand = "schlafen";
-            this.geschlafen = true;
-            this.bis = jetzt + this.zw(30_000, 300_000);
+            this.schlafeEin(jetzt, this.zw(30_000, 300_000));
             this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 40_000));
           } else {
             this.zustand = "idle";
@@ -1092,9 +1124,7 @@ export class PetBewegung {
       }
       if (!ende && !this.geschlafen && breit >= bw * 0.5 && w < 0.22) {
         // Mark, 11.11.: darf ruhig bis zu 5 Minuten schlafen — Antippen weckt ihn.
-        this.zustand = "schlafen";
-        this.geschlafen = true;
-        this.bis = jetzt + this.zw(30_000, 300_000);
+        this.schlafeEin(jetzt, this.zw(30_000, 300_000));
         this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 40_000));
         return;
       }
@@ -1147,9 +1177,7 @@ export class PetBewegung {
     // ein Nickerchen am Boden — Antippen weckt es.
     if (!this.kann.has("springen") && !this.kann.has("klettern")) {
       if (!this.geschlafen && w < 0.28) {
-        this.zustand = "schlafen";
-        this.geschlafen = true;
-        this.bis = jetzt + this.zw(20_000, 120_000);
+        this.schlafeEin(jetzt, this.zw(20_000, 120_000));
         this.besuchEnde = Math.max(this.besuchEnde, this.bis + this.zw(10_000, 30_000));
         return;
       }
@@ -1299,7 +1327,7 @@ export class PetBewegung {
     const u = this.u;
 
     // Boden folgt der Fenstergröße, Fläche ihrem Element (Scrollen, Popup zu).
-    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "landen", "niesen", "fressen", "schuetteln", "raus"].includes(this.zustand)) {
+    if (["laufen", "idle", "freuen", "haeufchen", "schlafen", "aufwachen", "landen", "niesen", "fressen", "schuetteln", "raus"].includes(this.zustand)) {
       if (this.ort.art === "boden") {
         this.fussY = u.hoehe;
       } else {
@@ -1483,9 +1511,22 @@ export class PetBewegung {
       }
       case "idle":
       case "freuen":
-      case "schlafen":
         if (jetzt >= this.bis) this.entscheide(jetzt);
         break;
+      case "schlafen":
+        if (jetzt >= this.bis) this.wacheAuf(jetzt, "weiter");
+        break;
+      case "aufwachen": {
+        const a = this.aufwach;
+        if (!a || jetzt - a.t0 >= (a.von + 1) * AUFWACH_TAKT_MS) {
+          this.aufwach = null;
+          if (a?.dann === "freuen") {
+            this.zustand = "freuen";
+            this.bis = jetzt + 1600;
+          } else this.entscheide(jetzt);
+        }
+        break;
+      }
     }
 
     this.menueNachsehen();
@@ -1513,7 +1554,9 @@ export class PetBewegung {
       case "freuen":
         return "freuen";
       case "schlafen":
-        return "schlafen";
+        return jetzt - this.schlafStart < EINKRINGELN_MS ? "einkringeln" : "schlafen";
+      case "aufwachen":
+        return "einkringeln";
       case "niesen":
         return jetzt - this.niesenStart < NIESEN_MS ? "niesen" : "idle";
       case "fressen":
@@ -1627,6 +1670,11 @@ export class PetBewegung {
       const fortschritt = k.phase === "zug" ? Math.min(1, (jetzt - k.t0) / k.dauer) : 0;
       frame = Math.floor(k.frameBasis + fortschritt * (KLETTER_FRAMES / 2)) % KLETTER_FRAMES;
     }
+    if (this.zustand === "schlafen" && this.animation === "einkringeln") {
+      frame = Math.min(EINKRINGELN.frames - 1, Math.max(0, Math.floor((jetzt - this.schlafStart) / EINKRINGELN.ms)));
+    } else if (this.zustand === "aufwachen" && this.aufwach) {
+      frame = Math.max(0, this.aufwach.von - Math.floor((jetzt - this.aufwach.t0) / AUFWACH_TAKT_MS));
+    }
     const vertikal = Math.abs(p.rot) > 45;
     const kopfX = vertikal ? p.left + bw / 2 : p.left + (p.flip ? bw * 0.2 : bw * 0.8);
     const kopfY = vertikal ? p.top + bh / 2 - bw / 2 : p.top;
@@ -1666,7 +1714,8 @@ export class PetBewegung {
         this.zustand === "landen" ||
         (this.zustand === "wolkenlauf" && !!this.wolkenlauf && jetzt - this.wolkenlauf.t0 < RUFEN_MS),
       gepackt: this.zustand === "getragen" || this.zustand === "gehalten",
-      schlaeft: this.zustand === "schlafen",
+      // Zzz erst, wenn er fertig eingekringelt ist.
+      schlaeft: this.zustand === "schlafen" && this.animation === "schlafen",
       schwitzt,
       kopfX,
       kopfY,

@@ -22,6 +22,7 @@ from app.pets.logic import (
     HAEUFCHEN_MAX,
     TIPPS_MAX,
     TIPPS_MIN,
+    WACHSTUM_EP_STANDARD,
     faehigkeiten,
     risse,
     stufe,
@@ -63,7 +64,7 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
                collect(DISTINCT m.id) AS mitglieder,
                null AS petStufe, null AS petTipps, null AS petTippsNoetig, null AS petEpStart, 0 AS epEigen
     """
-    kampagnen_ep = await _kampagnen_ep(campaign_id)
+    kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id)
         pets = []
@@ -72,22 +73,32 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
             mitglieder = set(d["mitglieder"] or [])
             mitglieder.add(d["besitzerId"])
             d["mitglieder"] = sorted(mitglieder)
-            _stufe_ergaenzen(d, kampagnen_ep)
+            _stufe_ergaenzen(d, kampagnen_ep, ep_je_schritt)
             pets.append(d)
         return pets
 
 
-async def _kampagnen_ep(campaign_id: str) -> int:
+async def _wachstum(campaign_id: str) -> tuple[int, int]:
+    """(Kampagnen-EP, EP je Wachstumsschritt) aus den Kampagnen-Einstellungen."""
     from app.campaigns.repository import get_einstellungen
 
-    return int((await get_einstellungen(campaign_id)).get("kampagnenEP", 0) or 0)
+    e = await get_einstellungen(campaign_id)
+    try:
+        je_schritt = max(1, int(e.get("petWachstumEp") or WACHSTUM_EP_STANDARD))
+    except (TypeError, ValueError):
+        je_schritt = WACHSTUM_EP_STANDARD
+    return int(e.get("kampagnenEP", 0) or 0), je_schritt
 
 
-def _stufe_ergaenzen(d: dict, kampagnen_ep: int) -> None:
+async def _kampagnen_ep(campaign_id: str) -> int:
+    return (await _wachstum(campaign_id))[0]
+
+
+def _stufe_ergaenzen(d: dict, kampagnen_ep: int, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> None:
     """Wachstum aus den Rohfeldern: `stufe`, `kann`, `risse` (nur beim Ei).
     EP wie im Charakterbogen: eigene + Kampagnen- + Extra-EP."""
     ep_gesamt = int(d.pop("epEigen", 0) or 0) + kampagnen_ep
-    st, gewachsen = stufe(d["art"], d.pop("petStufe", None), ep_gesamt, d.pop("petEpStart", None))
+    st, gewachsen = stufe(d["art"], d.pop("petStufe", None), ep_gesamt, d.pop("petEpStart", None), ep_je_schritt)
     tipps = int(d.pop("petTipps", 0) or 0)
     noetig = int(d.pop("petTippsNoetig", 0) or 0)
     d["stufe"] = st

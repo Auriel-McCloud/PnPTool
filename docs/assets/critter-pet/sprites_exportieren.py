@@ -15,6 +15,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import drache_final as dr  # noqa: E402
+import stufen_exportieren  # noqa: E402
 import wolke  # noqa: E402
 
 
@@ -63,12 +64,8 @@ def animationen():
         t = i / 6 * 2 * math.pi
         sprung.append(dr.frame(phase=math.pi / 4 + math.sin(t) * 0.25, welle=0.0, amp=2.5, leg=2.5, mund=True,
                                schnurr=1.5))
-    # Schlafen (oben auf einem Popup): flacher, Augen zu, atmet langsam.
-    schlafen = []
-    for i in range(24):
-        t = i / 24 * 2 * math.pi
-        schlafen.append((dr.frame(phase=0.0, welle=0.0, amp=1.6 + math.sin(t) * 0.3, blink=True, schnurr=-0.5),
-                         -1))
+    # Schlafen: seit 13.11.2026 kringelt er sich ein (Mark) — schlafen.png und
+    # einkringeln.png kommen aus stufen_exportieren.alt_schlaf(), siehe unten.
     # Klettern (Mark, 11.11.: soll sich anstrengender anfühlen): wie Laufen,
     # aber Augen zusammengekniffen und Maul offen. Das Frontend schaltet die
     # Frames im Takt der Klimmzüge weiter, nicht nach Zeit.
@@ -108,7 +105,7 @@ def animationen():
             fressen.append(dr.frame(phase=1.2, welle=0.0, amp=2.6, blink=i == 15, schnurr=0.0))
     return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90), "klettern": (klettern, 35),
             "niesen": (niesen, 80), "fressen": (fressen, 90),
-            "sprung": (sprung, 70), "schlafen": (schlafen, 150)}
+            "sprung": (sprung, 70)}
 
 
 def pixelbild(zeilen, farben):
@@ -237,6 +234,8 @@ if __name__ == "__main__":
     for name, (frames, dauer) in animationen().items():
         sheet(frames).save(os.path.join(ziel, f"{name}.png"))
         meta["animationen"][name] = {"frames": len(frames), "ms": dauer}
+    schlaf = stufen_exportieren.alt_schlaf(ziel, "jung")
+    meta["animationen"].update(schlaf["animationen"])
     pixelbild(HAEUFCHEN, {"k": (40, 22, 10, 255), "b": (120, 72, 30, 255), "h": (170, 112, 56, 255)}).save(
         os.path.join(ziel, "haeufchen.png"))
     pixelbild(HERZ, {"k": (60, 10, 20, 255), "r": (236, 64, 96, 255), "l": (255, 170, 190, 255)}).save(
@@ -264,6 +263,7 @@ if __name__ == "__main__":
     alpha = lauf_sheet.getchannel("A")
     bbox = alpha.getbbox()
     meta["fussLuft"] = lauf_sheet.height - bbox[3]
+    meta["schlafZ"] = schlaf["schlafZ"]
     with open(os.path.join(ziel, "sprite.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
     print(json.dumps(meta))

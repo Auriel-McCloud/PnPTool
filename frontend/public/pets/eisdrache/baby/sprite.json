@@ -33,6 +33,10 @@
     "schlafen": {
       "frames": 24,
       "ms": 150
+    },
+    "einkringeln": {
+      "frames": 17,
+      "ms": 80
     }
   },
   "fussLuft": 1,
@@ -49,5 +53,9 @@
       "frames": 26,
       "ms": 70
     }
-  }
+  },
+  "schlafZ": [
+    31,
+    14
+  ]
 }

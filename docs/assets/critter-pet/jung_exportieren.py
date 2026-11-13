@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import drache_final as dr  # noqa: E402
 import drachen_varianten as dv  # noqa: E402
 import drache_jung as dj  # noqa: E402
+import stufen_exportieren  # noqa: E402
 
 ORIGINAL = dict(dr.PAL)
 OBEN = 4
@@ -41,8 +42,7 @@ def baby_animationen(hut=False):
         return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90)}
     sprung = [B(phase=math.pi / 4 + math.sin(i / 6 * 2 * math.pi) * 0.25, welle=0.0, amp=1.5, leg=2.0, mund=True)
               for i in range(6)]
-    schlafen = [(B(phase=0.0, welle=0.0, amp=0.8 + math.sin(i / 24 * 2 * math.pi) * 0.3, blink=True), -1)
-                for i in range(24)]
+    # Schlafen: seit 13.11.2026 als Kringel aus stufen_exportieren.alt_schlaf().
     klettern = [B(phase=i / 32 * 2 * math.pi, welle=math.sin(i / 32 * 2 * math.pi) * 0.15, amp=1.5, leg=2.0,
                   blink=True, mund=True) for i in range(32)]
     niesen = [B(phase=i * 0.1, welle=0.0, amp=1.4, blink=i % 7 == 0) for i in range(22)]
@@ -58,7 +58,7 @@ def baby_animationen(hut=False):
         else:
             fressen.append(B(phase=1.2, welle=0.0, amp=1.6, blink=i == 15))
     return {"idle": (idle, 110), "lauf": (lauf, 35), "freuen": (freuen, 90), "klettern": (klettern, 35),
-            "niesen": (niesen, 80), "fressen": (fressen, 90), "sprung": (sprung, 70), "schlafen": (schlafen, 150)}
+            "niesen": (niesen, 80), "fressen": (fressen, 90), "sprung": (sprung, 70)}
 
 
 def ei_bilder():
@@ -89,6 +89,8 @@ if __name__ == "__main__":
                 sheet(frames, dj.BW, dj.BH, OBEN).save(os.path.join(ziel, f"{datei}.png"))
                 if not hut:
                     meta["animationen"][name] = {"frames": len(frames), "ms": ms}
+        schlaf = stufen_exportieren.alt_schlaf(ziel, "baby")
+        meta["animationen"].update(schlaf["animationen"])
         lauf = Image.open(os.path.join(ziel, "lauf.png"))
         meta["fussLuft"] = lauf.height - lauf.getchannel("A").getbbox()[3]
         # Maul (Stupsnase vorn) — für Fressen/Greifen; Niesen kann das Baby nicht.
@@ -100,6 +102,7 @@ if __name__ == "__main__":
         unten = eier[0].getchannel("A").getbbox()[3]
         meta["ei"] = {"breite": ew, "hoehe": eh, "frames": len(eier), "fussLuft": eh - unten,
                       "schluepfen": {"frames": len(sch), "ms": 70}}
+        meta["schlafZ"] = schlaf["schlafZ"]
         with open(os.path.join(ziel, "sprite.json"), "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
         print(art, json.dumps(meta))

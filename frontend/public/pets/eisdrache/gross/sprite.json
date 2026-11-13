@@ -1,0 +1,52 @@
+{
+  "breite": 132,
+  "hoehe": 54,
+  "animationen": {
+    "idle": {
+      "frames": 24,
+      "ms": 110
+    },
+    "lauf": {
+      "frames": 32,
+      "ms": 35
+    },
+    "freuen": {
+      "frames": 8,
+      "ms": 90
+    },
+    "klettern": {
+      "frames": 32,
+      "ms": 35
+    },
+    "niesen": {
+      "frames": 22,
+      "ms": 80
+    },
+    "fressen": {
+      "frames": 16,
+      "ms": 90
+    },
+    "sprung": {
+      "frames": 6,
+      "ms": 70
+    },
+    "schlafen": {
+      "frames": 24,
+      "ms": 150
+    },
+    "einkringeln": {
+      "frames": 17,
+      "ms": 80
+    }
+  },
+  "fussLuft": 1,
+  "maul": [
+    114,
+    26
+  ],
+  "schlafZ": [
+    71,
+    9
+  ],
+  "feuerSkala": 1.45
+}

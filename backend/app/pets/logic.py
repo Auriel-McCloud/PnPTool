@@ -103,13 +103,31 @@ FAEHIGKEITEN_AB_EP = {
 }
 ALLE_FAEHIGKEITEN = tuple(FAEHIGKEITEN_AB_EP)
 
+# Größere Gestalten (Mark, 13.11.2026: „immer größer, eleganter und wie
+# chinesische Drachen“). Mark, 12.11.: etwa 12 Wachstumsschritte, alle 5 EP
+# einer — die EP je Schritt sind die Kampagnen-Einstellung `petWachstumEp`,
+# weil er den Wert erst nach dem Praxistest einschätzen kann.
+# Annahme Neko: alle 3 Schritte eine sichtbar neue Gestalt (15/30/45/60 EP),
+# nach 12 Schritten ist er ausgewachsen. Der Name ist zugleich der Ordner
+# unter frontend/public/pets/<art>/.
+WACHSTUM_EP_STANDARD = 5
+STUFEN_AB_SCHRITT = (
+    ("ehrwuerdig", 12),
+    ("gross", 9),
+    ("jungdrache", 6),
+    ("halbstark", 3),
+)
+
 
 def waechst(art: str | None) -> bool:
     return art in WACHSENDE_ARTEN
 
 
-def stufe(art: str, pet_stufe: str | None, ep_gesamt: int, ep_start: int | None) -> tuple[str, int | None]:
-    """(`ei` | `baby` | `jung`, EP seit dem Schlüpfen oder None).
+def stufe(
+    art: str, pet_stufe: str | None, ep_gesamt: int, ep_start: int | None, ep_je_schritt: int = WACHSTUM_EP_STANDARD
+) -> tuple[str, int | None]:
+    """(`ei` | `baby` | `jung` | `halbstark` | `jungdrache` | `gross` | `ehrwuerdig`,
+    EP seit dem Schlüpfen oder None).
 
     Drachen ohne `petStufe` (Bestand vor dem 12.11.2026) sind fertig und können
     alles — sie werden nicht nachträglich wieder klein."""
@@ -118,7 +136,13 @@ def stufe(art: str, pet_stufe: str | None, ep_gesamt: int, ep_start: int | None)
     if pet_stufe == "ei":
         return "ei", None
     gewachsen = max(0, ep_gesamt - int(ep_start or 0))
-    return ("baby" if gewachsen < JUNG_AB_EP else "jung"), gewachsen
+    if gewachsen < JUNG_AB_EP:
+        return "baby", gewachsen
+    schritte = gewachsen // max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
+    for name, ab in STUFEN_AB_SCHRITT:
+        if schritte >= ab:
+            return name, gewachsen
+    return "jung", gewachsen
 
 
 def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:

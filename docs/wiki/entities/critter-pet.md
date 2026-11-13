@@ -332,7 +332,7 @@ Entwurf von Mark abgenommen („Perfekt!!!“). Technik siehe CLAUDE.md.
 - **Baby:** halb so lang, großer Kopf, Kulleraugen, Hornstummel. Läuft nur unten, frisst Seiten, macht Häufchen, schläft auch am Boden. Kein Klettern, Niesen, Hüpfen, Wolkenlauf, Burgermenü.
 - **Wachstum:** EP des Critters ab dem Schlüpfen. Ab **3 EP** der heutige Drache (klettern, niesen, hüpfen); **Burgermenü ab 8 EP, Wolkenlauf ab 13 EP** (Mark, 12.11.).
 - Bestandsdrachen (vor dem 12.11. gesetzt) bleiben groß und können alles. Ei neu starten: Pet-Art am Critter abwählen und neu wählen.
-- Noch nicht gebaut: weitere sichtbare Wachstumsstufen (5–6 Stufen, alle 5 EP), SL-Korrektur der Stufe.
+- ~~Noch nicht gebaut: weitere sichtbare Wachstumsstufen (5–6 Stufen, alle 5 EP)~~ — gebaut 13.11.2026, siehe unten. Offen: SL-Korrektur der Stufe.
 
 ## Gebaut 12.11.2026: Futternapf, Heilung, Zutraulichkeit
 
@@ -346,15 +346,27 @@ Entwurf von Mark abgenommen („Perfekt!!!“). Technik siehe CLAUDE.md.
 - ~~Woher das Sprite eines Critters kommt~~ — feste Arten im Code, SL wählt
   aus der Liste (Critter: Tiere, Gegenstand: Bärbel).
 
-## Entwurf 13.11.2026: Stufen 3–6 und Einkringeln (noch nicht abgenommen, nicht gebaut)
+## Entwurf 13.11.2026: Stufen 3–6 und Einkringeln (abgenommen und gebaut, siehe nächster Abschnitt)
 
 Mark: „entwirf mir die restlichen Altersstufen … sie sollten immer größer, eleganter und wie chinesische Drachen aussehen, ich hätte dann auch gerne, dass sie sich zum Schlafen einkringeln können.“
 
-- Generator: `docs/assets/critter-pet/drache_stufen_entwurf.py` (`python drache_stufen_entwurf.py <ziel>`), Tafel: `docs/assets/critter-pet/stufen_entwurf.png`. Eine Figur, je Stufe ein Parameter-Satz (`STUFEN`) — gilt für Drache, Eis- und Blitzdrache.
+- Generator: `docs/assets/critter-pet/drache_stufen.py` (`python drache_stufen.py <ziel>` malt die Vorschau-Tafeln), Tafel: `docs/assets/critter-pet/stufen_entwurf.png`. Eine Figur, je Stufe ein Parameter-Satz (`STUFEN`) — gilt für Drache, Eis- und Blitzdrache.
 - **Stufen (Arbeitsnamen):** 1 Schlüpfling und 2 heutiger Drache unverändert; neu 3 Halbstarker, 4 Jungdrache, 5 Drache, 6 Ehrwürdiger Drache. Sprite-Breite 84 → 102 → 116 → 132 → 149 px (inkl. Schnurrhaare und Schwanzflamme), Höhe 44 → 42 → 48 → 52 → 60.
 - **Was wächst:** Körper länger und im Verhältnis schlanker, Körperbögen höher, Schwanz steigt nach hinten an, Hals länger mit S-Schwung, Geweih länger und verzweigter (1 → 3 Enden), Kopfmähne lang und wallend, Schnurrhaare im S-Bogen, Schwanzflamme mehrzüngig. Ab Stufe 4: Bauchplatten, Flammen an den Fersen, Flammenbraue, Pfoten mit Schenkel. Ab Stufe 5: Fangzahn, feinerer Schwanz. Beine bleiben kurz (Marks Grenze vom 11.11.).
 - **Einkringeln:** gestapelte Spirale wie ein aufgerolltes Tau — Brust außen unten, Schwanz innen oben, die Schwanzflamme steht in der Mitte hoch wie eine Kerze, Kopf liegt vorn am Boden, Schnurrhaare hängen. Für alle sechs Stufen entworfen (Schlüpfling = kleiner Kringel). Übergang: legt sich hin, rollt sich vom Schwanz her ein; schlafend atmet er.
 - **Offen (Mark):** Aussehen abnehmen; Größe am Handy (Stufe 6 = 149 px × 1,5 ≈ 224 px Breite); EP-Schwellen je Stufe; ob die 12 Schritte echte Zwischenformen bekommen (Parameter lassen sich zwischen zwei Stufen überblenden); ob jede Stufe eine neue Fähigkeit bringt.
+
+## Gebaut 13.11.2026: große Stufen und Schlafkringel
+
+Mark zum Entwurf: „die sind perfekt! bitte bau das ein!“
+
+- **Stufen:** nach Schlüpfling und jungem Drachen kommen Halbstarker, Jungdrache, Drache und Ehrwürdiger Drache (`halbstark`, `jungdrache`, `gross`, `ehrwuerdig`) — für Drache, Eis- und Blitzdrache. Sprite-Breite 100 / 116 / 132 / 148 px (junger Drache 84).
+- **Wann:** Wachstum in Schritten, ein Schritt kostet so viele EP des Critters, wie in den Kampagnen-Einstellungen unter „Drachen-Wachstum: EP je Schritt“ steht (Mark, 12.11.: 5, vorläufig). **Annahme Neko:** alle 3 Schritte eine neue Gestalt → 15, 30, 45, 60 EP seit dem Schlüpfen; nach 12 Schritten ausgewachsen. Die Zwischenschritte haben keine eigene Gestalt.
+- **Fähigkeiten:** unverändert (klettern/niesen/hüpfen ab 3 EP, Burgermenü ab 8, Wolkenlauf ab 13) — die großen Stufen können alles. **Annahme Neko:** der Atem (Feuer/Eis/Blitz) wird mit jeder Stufe etwas größer (×1,15 bis ×1,6).
+- **Einkringeln:** jeder Drache — auch Schlüpfling, junger Drache und Bestandsdrachen — legt sich zum Schlafen hin, rollt sich vom Schwanz her ein und schläft als Kringel; Zzz steigt erst dann auf. Antippen oder Ausschlafen rollt ihn wieder aus (dieselbe Bewegung rückwärts, etwas schneller), geweckt freut er sich.
+- Bestandsdrachen ohne Stufe bleiben der junge Drache und wachsen nicht (wie bisher; Ei neu starten = Pet-Art ab- und wieder anwählen).
+- Technik: CLAUDE.md, Abschnitt 13.11.2026.
+- **Noch offen:** eigene Gestalten für die Zwischenschritte; neue Fähigkeit je großer Stufe; SL-Korrektur der Stufe.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

@@ -3,6 +3,7 @@ import { atemVon, istDrache, verbindePets, type Haeufchen, type Lesung, type Pet
 import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
+import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z } from "./drachenstufen";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
 import "./pets.css";
 
@@ -42,6 +43,7 @@ const SPRITE = {
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
     fressen: { frames: 16, ms: 90 },
+    einkringeln: EINKRINGELN,
   } as Record<string, Takt>,
 } as const;
 
@@ -94,15 +96,36 @@ const BABY = {
     sprung: { frames: 6, ms: 70 },
     schlafen: { frames: 24, ms: 150 },
     fressen: { frames: 16, ms: 90 },
+    einkringeln: EINKRINGELN,
   } as Record<string, Takt>,
   /** Ei: ei.png = Risse 0–4, schluepfen.png = Kappe fliegt, Baby lugt raus. */
   ei: { breite: 48, hoehe: 58, frames: 5, fussLuft: 8, schluepfen: { frames: 26, ms: 70 } },
 } as const;
 const HUT_ANIMATIONEN = new Set(["idle", "lauf", "freuen"]);
 
+/** Größere Stufen (Mark, 13.11.2026): eigene Sheets unter /pets/<art>/<stufe>/,
+ *  gleiche Animationsnamen und Takte wie der junge Drache, nur größerer Rahmen. */
+function grosseStufe(art: string, stufe?: string) {
+  return stufe && istDrache(art) ? DRACHEN_STUFEN[stufe] : undefined;
+}
+
 function sprite(art: string, stufe?: string) {
   if (art === "baerbel") return BAERBEL;
-  return stufe === "baby" ? BABY : SPRITE;
+  if (stufe === "baby") return BABY;
+  const g = grosseStufe(art, stufe);
+  return g ? { breite: g.breite, hoehe: g.hoehe, animationen: SPRITE.animationen } : SPRITE;
+}
+
+/** Ordner der Sheets dieser Stufe. */
+function spriteOrdner(art: string, stufe?: string) {
+  return stufe === "baby" || grosseStufe(art, stufe) ? `/pets/${art}/${stufe}` : `/pets/${art}`;
+}
+
+/** Wo das Zzz über dem Schlafkringel aufsteigt (Sprite-Pixel), nur Drachen. */
+function schlafAnker(art: string, stufe?: string): readonly [number, number] | null {
+  if (!istDrache(art)) return null;
+  if (stufe === "baby") return SCHLAF_Z.baby;
+  return grosseStufe(art, stufe)?.schlafZ ?? SCHLAF_Z.jung;
 }
 
 /** Spuren, die ein Pet gerade gepackt hat (Drache schnappt eine Seite, Bärbels
@@ -143,6 +166,18 @@ function masse(art = "drache", stufe?: string): Masse {
       maulX: BABY.maul[0] * s,
       maulY: BABY.maul[1] * s,
       feuerLaenge: 0,
+      atem: atemVon(art),
+    };
+  }
+  const g = grosseStufe(art, stufe);
+  if (g) {
+    return {
+      bw: g.breite * s,
+      bh: g.hoehe * s,
+      fuss: g.fussLuft * s,
+      maulX: g.maul[0] * s,
+      maulY: g.maul[1] * s,
+      feuerLaenge: SPRITE.feuer.breite * s * g.feuerSkala,
       atem: atemVon(art),
     };
   }
@@ -1327,7 +1362,13 @@ function PetFigur({
     const m = () => masse(pet.art, stufe);
     const mitte = startMitte?.get(pet.id);
     startMitte?.delete(pet.id);
-    const ordner = stufe === "baby" ? `/pets/${pet.art}/baby` : `/pets/${pet.art}`;
+    const ordner = spriteOrdner(pet.art, stufe);
+    const schlafZ = schlafAnker(pet.art, stufe);
+    // Der Atem wächst mit der Stufe.
+    const feuerSkala = grosseStufe(pet.art, stufe)?.feuerSkala ?? 1;
+    // Alle Streifen vorab laden — sonst blitzt beim ersten Wechsel (z. B.
+    // Einkringeln → Schlafen) kurz ein leeres Bild auf.
+    if (!fliegt) for (const name of Object.keys(sp.animationen)) new Image().src = `${ordner}/${name}.png`;
     const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
       if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
       else if (n.typ === "gelesen") {
@@ -1474,7 +1515,7 @@ function PetFigur({
       const fe = feuer.current;
       if (fe) {
         if (d.feuer) {
-          const s = skala();
+          const s = skala() * feuerSkala;
           const f = SPRITE.feuer;
           const bild = Math.min(f.frames - 1, Math.floor((jetzt - d.feuer.start) / f.ms));
           fe.style.display = "block";
@@ -1575,8 +1616,16 @@ function PetFigur({
       const z = zzz.current;
       if (z) {
         z.style.display = d.schlaeft ? "block" : "none";
-        z.style.left = `${d.kopfX}px`;
-        z.style.top = `${d.kopfY - 10}px`;
+        if (schlafZ) {
+          // Eingekringelt liegt der Kopf vorn unten — Zzz steigt über dem Kringel auf.
+          const s = skala();
+          const gespiegelt = d.transform.includes("scaleX(-1)");
+          z.style.left = `${d.left + (gespiegelt ? sp.breite - schlafZ[0] : schlafZ[0]) * s}px`;
+          z.style.top = `${d.top + schlafZ[1] * s - 4}px`;
+        } else {
+          z.style.left = `${d.kopfX}px`;
+          z.style.top = `${d.kopfY - 10}px`;
+        }
       }
       rahmen = requestAnimationFrame(tick);
     };

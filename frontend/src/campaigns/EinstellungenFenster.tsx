@@ -238,6 +238,22 @@ export function EinstellungenFenster({
             erklaerung="Critter und Bärbel laufen und fliegen über die Tablets der Spieler. Aus, wenn sich alle konzentrieren sollen. Während eines Kampfs sind sie immer weg und kommen danach von selbst wieder."
           />
 
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
+            <strong style={{ fontSize: 14 }}>Drachen-Wachstum: EP je Schritt</strong>
+            <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+              So viele Erfahrungspunkte seines Critters braucht ein Drachen-Pet für einen Wachstumsschritt. Alle
+              3 Schritte bekommt es eine größere Gestalt, nach 12 Schritten ist es ausgewachsen. Startwert 5 —
+              also neue Gestalten bei 15, 30, 45 und 60 EP seit dem Schlüpfen.
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={Number(werte.petWachstumEp ?? 5)}
+              onChange={(e) => aendern("petWachstumEp", Math.max(1, Math.round(Number(e.target.value) || 1)))}
+              style={{ marginTop: 4, maxWidth: 140 }}
+            />
+          </label>
+
           <Schalter
             an={Boolean(werte.fogOfWar)}
             onAendern={(n) => aendern("fogOfWar", n)}

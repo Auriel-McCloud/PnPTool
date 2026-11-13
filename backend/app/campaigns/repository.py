@@ -77,6 +77,11 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # 11.11.2026: Schalter, um sie abzudrehen, wenn sich die Spieler
     # konzentrieren sollen. Während eines Kampfs sind sie ohnehin weg.
     "petsAktiv": True,
+    # Wachstum der Drachen-Pets (Mark, 12.11.2026: „alle 5 EP ein Schritt“,
+    # vorläufig — er justiert nach dem Praxistest). So viele EP des Critters
+    # braucht ein Wachstumsschritt; alle 3 Schritte eine neue Gestalt
+    # (pets/logic.py::STUFEN_AB_SCHRITT).
+    "petWachstumEp": 5,
     # Zeigt Gewicht und Kapazität an. Rein informativ — nichts wird verhindert,
     # der Balken färbt sich nur rot. Die Spielleitung zieht die Konsequenzen.
     "gewichtAktiv": True,
