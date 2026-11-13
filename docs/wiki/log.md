@@ -2026,6 +2026,10 @@ Jeder der 12 Wachstumsschritte hat eine eigene Form (zwei Zwischenformen je Gest
 
 Wachstumsstufe eines Drachen im Critter-Fenster einstellbar; „Alles sauber machen“ in den Einstellungen. Ideen Feuerball, Drachenperle und weitere Fähigkeiten als offen notiert. Siehe [[entities/critter-pet]].
 
+## [2026-11-13] update | Entwurf KI-Begleiter als Pet
+
+Drei Entwürfe (Datenwolke, Lichtkern, Glitch-Geist) mit je fünf Wachstumsstufen und Gestalten notiert, nicht abgenommen, nicht gebaut. Siehe [[entities/critter-pet]].
+
 ## [2026-11-13] update | Drachenperle gebaut
 
 Der Ehrwürdige Drache holt ab und zu seine Perle hervor; man kann sie werfen, aus dem Bild geworfen landet sie auf einem anderen Tablet, er sucht sie und bringt sie zurück. Siehe [[entities/critter-pet]].

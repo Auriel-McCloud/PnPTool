@@ -396,6 +396,19 @@ Mark: „Mach so eine Drachenperle! Aber vielleicht, dass sie nicht immer da ist
 - **Annahmen Neko:** alle Zeiten oben; beim Suchen und Tragen läuft er 2,4-mal so schnell; die Perle ist für alle drei Drachenfarben gleich; „Alles sauber machen“ räumt sie mit weg; keine Spielwerte.
 - **Noch offen:** Perle im Schlaf in der Mitte des Kringels; Belohnung fürs Zurückbringen (Herzen, Zutraulichkeit).
 
+## KI-Begleiter als Pet — Entwurf 13.11.2026 (nicht abgenommen, nicht gebaut)
+
+Mark: „Einer meiner Spieler hat eine eigene KI, und ich dachte mir, wir könnten sie als Datenwolke oder cooles, Licht pulsierendes, manchmal verschiedene Formen oder Gestalten annehmendes Wesen machen … Die KI wäre auch ein Begleiter, der wachsen kann.“
+
+Drei Entwürfe, je fünf Wachstumsstufen (Funke, Keim, Geist, Wesen, Entität — Arbeitstitel), Generator `docs/assets/critter-pet/ki_entwurf.py`, Tafeln `ki_entwurf_wachstum.png` und `ki_entwurf_gestalten.png`:
+
+- **A Datenwolke:** Schwarm aus Datenpunkten mit dichtem Kern und Augen; wächst zu Wolke mit Netz, Nullen/Einsen und Umlaufbahn. Gestalten: die Punkte lösen sich und formen das Bild.
+- **B Lichtkern:** pulsierende Kugel mit Strahlen; bekommt Ringe und Trabanten. Gestalten: zeichnet Umrisse aus Licht.
+- **C Glitch-Geist:** Hologramm-Gestalt aus Bildzeilen mit Visier, verrutschten Zeilen und Farbsaum; bekommt Hände, Reif, Splitter. Gestalten: flackert zur Form um.
+- Gestalten im Entwurf: Katze, Totenkopf, Herz, Schlüssel, Pfeil, Warnung. Farbe als Palette frei wählbar (Cyan, Magenta, Grün, Bernstein gezeigt). Leuchten kommt im Tool aus einem CSS-Filter, nicht aus dem Sprite.
+
+**Offen (Mark):** welcher Entwurf oder Mischung/Verwandlung zwischen ihnen; woran die KI hängt (Critter wie der Drache, Gegenstand wie Bärbel, oder etwas Eigenes) und wodurch sie wächst; welche Gestalten und wann sie sie annimmt; was sie auf den Tablets tut.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
