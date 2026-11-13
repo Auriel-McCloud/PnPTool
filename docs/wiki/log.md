@@ -2017,3 +2017,7 @@ Entwurfstafel für die restlichen Wachstumsstufen (Halbstarker, Jungdrache, Drac
 ## [2026-11-13] update | Große Drachen-Stufen und Schlafkringel gebaut
 
 Entwurf von Mark abgenommen und eingebaut: Halbstarker, Jungdrache, Drache, Ehrwürdiger Drache (15/30/45/60 EP, EP je Schritt als Kampagnen-Einstellung `petWachstumEp`); alle Drachen kringeln sich zum Schlafen ein. Siehe [[entities/critter-pet]].
+
+## [2026-11-13] update | Zwischenformen der Drachen gebaut
+
+Jeder der 12 Wachstumsschritte hat eine eigene Form (zwei Zwischenformen je Gestalt). Siehe [[entities/critter-pet]].

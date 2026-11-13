@@ -55,9 +55,42 @@ STUFEN = {
              hub=6.2,
              baby=False),
 }
-NEU = ["halbstark", "jungdrache", "gross", "ehrwuerdig"]
+HAUPT = ["jung", "halbstark", "jungdrache", "gross", "ehrwuerdig"]
 # Der Atem wächst mit (Feuer/Eis/Blitz-Streifen wird im Frontend größer gezeigt).
-FEUER_SKALA = {"halbstark": 1.15, "jungdrache": 1.3, "gross": 1.45, "ehrwuerdig": 1.6}
+FEUER_SKALA = {"jung": 1.0, "halbstark": 1.15, "jungdrache": 1.3, "gross": 1.45, "ehrwuerdig": 1.6}
+
+# Zwischenformen (Mark, 13.11.2026: „bitte mach Zwischenformen“): zwischen zwei
+# Gestalten liegen zwei Wachstumsschritte. Alles Messbare (Länge, Bögen, Hals,
+# Geweih, Mähne, Schnurrhaare, Flamme …) wächst je Schritt um ein Drittel des
+# Wegs; neue Merkmale (Bauchplatten, Fersenflammen, Geweih-Enden, Fangzahn …)
+# kommen erst mit der nächsten Gestalt.
+_STETIG = ("L", "lam", "amp", "hub_s", "schlank", "rt", "rm", "hals", "kr", "schn", "horn", "mh", "km", "bart",
+           "wl", "quaste", "bein", "a", "eng", "hub")
+
+
+def _zwischen(von, nach, f, name):
+    a, b = STUFEN[von], STUFEN[nach]
+    st = NS(**vars(a))
+    st.name = name
+    for k in _STETIG:
+        x, y = getattr(a, k), getattr(b, k)
+        setattr(st, k, tuple(p + (q - p) * f for p, q in zip(x, y)) if isinstance(x, tuple) else x + (y - x) * f)
+    return st
+
+
+# Reihenfolge = Wachstumsschritte 0–12 ab dem jungen Drachen (pets/logic.py::STUFEN_FOLGE).
+FOLGE = []
+for _von, _nach in zip(HAUPT, HAUPT[1:]):
+    FOLGE.append(_von)
+    for _n in (1, 2):
+        _key = f"{_von}{_n}"
+        STUFEN[_key] = _zwischen(_von, _nach, _n / 3, f"{STUFEN[_von].name} +{_n}")
+        FEUER_SKALA[_key] = round(FEUER_SKALA[_von] + (FEUER_SKALA[_nach] - FEUER_SKALA[_von]) * _n / 3, 2)
+        FOLGE.append(_key)
+FOLGE.append(HAUPT[-1])
+# Alles außer Schlüpfling und jungem Drachen (die haben ihre alten Zeichner) wird hier gezeichnet.
+NEU = FOLGE[1:]
+GROSS = HAUPT[1:]
 
 
 def farbe(c):
@@ -723,11 +756,11 @@ def alle_wach():
     """Alle sechs Stufen im Größenvergleich: Baby und heutiger Drache aus den
     abgenommenen Generatoren, Stufe 3–6 neu."""
     alt = zuschneiden(dr.frame(welle=0.0, amp=3.0), unten=None)
-    return [zuschneiden(dj.baby()), alt] + [wach(STUFEN[k]) for k in NEU]
+    return [zuschneiden(dj.baby()), alt] + [wach(STUFEN[k]) for k in GROSS]
 
 
 def alle_ring():
-    return [ring(STUFEN[k]) for k in ["baby", "jung"] + NEU]
+    return [ring(STUFEN[k]) for k in ["baby", "jung"] + GROSS]
 
 
 def gif(frames, name, ms, scale):
@@ -768,6 +801,10 @@ if __name__ == "__main__":
     stapel([reihe([wach(gross), ring(gross)], abstand=10)], 5).save(f"{ziel}/ehrwuerdig.png")
     fr, ms = schlaf_film(gross)
     gif(fr, f"{ziel}/einkringeln.gif", ms, 4)
+    # Alle 13 Wachstumsschritte ab dem jungen Drachen in einer Tafel (4 Zeilen).
+    alle = [zuschneiden(dr.frame(welle=0.0, amp=3.0))] + [wach(STUFEN[k]) for k in NEU]
+    stapel([reihe(alle[i:i + 3], abstand=8) for i in range(0, 12, 3)] + [reihe(alle[12:], abstand=8)], 3).save(
+        f"{ziel}/schritte.png")
     for kx in NEU:
         print(kx, STUFEN[kx].name, "wach", wach(STUFEN[kx]).size, "ring", ring(STUFEN[kx]).size)
     print("ok")

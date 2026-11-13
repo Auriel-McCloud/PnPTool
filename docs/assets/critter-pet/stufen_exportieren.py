@@ -1,7 +1,8 @@
 # Exportiert die großen Wachstumsstufen des Drachen (Mark, 13.11.2026) und den
 # Schlafkringel für ALLE Stufen ins Frontend.
 # Aufruf: python stufen_exportieren.py C:/DEV/PnPTool/frontend/public/pets
-#   → <art>/<stufe>/<animation>.png + sprite.json   (halbstark, jungdrache, gross, ehrwuerdig)
+#   → <art>/<stufe>/<animation>.png + sprite.json   (jung1, jung2, halbstark, halbstark1 … ehrwuerdig:
+#     vier große Gestalten und je zwei Zwischenformen, siehe drache_stufen.FOLGE)
 #   → <art>/schlafen.png, <art>/einkringeln.png      (junger Drache, im alten 84×48-Rahmen)
 #   → <art>/baby/schlafen.png, <art>/baby/einkringeln.png
 #   → frontend/src/pets/drachenstufen.ts             (Maße für PetOverlay — nicht von Hand ändern)

@@ -108,15 +108,21 @@ ALLE_FAEHIGKEITEN = tuple(FAEHIGKEITEN_AB_EP)
 # einer — die EP je Schritt sind die Kampagnen-Einstellung `petWachstumEp`,
 # weil er den Wert erst nach dem Praxistest einschätzen kann.
 # Annahme Neko: alle 3 Schritte eine sichtbar neue Gestalt (15/30/45/60 EP),
-# nach 12 Schritten ist er ausgewachsen. Der Name ist zugleich der Ordner
-# unter frontend/public/pets/<art>/.
+# nach 12 Schritten ist er ausgewachsen. Dazwischen je zwei Zwischenformen
+# (Mark, 13.11.2026: „bitte mach Zwischenformen“) — er wird mit jedem Schritt
+# ein Stück länger und eleganter, neue Merkmale kommen mit der nächsten Gestalt.
+# Index = Wachstumsschritt; der Name ist zugleich der Ordner unter
+# frontend/public/pets/<art>/ (gleiche Liste: docs/assets/critter-pet/drache_stufen.py::FOLGE).
 WACHSTUM_EP_STANDARD = 5
-STUFEN_AB_SCHRITT = (
-    ("ehrwuerdig", 12),
-    ("gross", 9),
-    ("jungdrache", 6),
-    ("halbstark", 3),
+STUFEN_FOLGE = (
+    "jung", "jung1", "jung2",
+    "halbstark", "halbstark1", "halbstark2",
+    "jungdrache", "jungdrache1", "jungdrache2",
+    "gross", "gross1", "gross2",
+    "ehrwuerdig",
 )
+# Was die SL von Hand einstellen darf (CritterFenster → Wachstum).
+SETZBARE_STUFEN = ("ei", "baby") + STUFEN_FOLGE
 
 
 def waechst(art: str | None) -> bool:
@@ -126,8 +132,7 @@ def waechst(art: str | None) -> bool:
 def stufe(
     art: str, pet_stufe: str | None, ep_gesamt: int, ep_start: int | None, ep_je_schritt: int = WACHSTUM_EP_STANDARD
 ) -> tuple[str, int | None]:
-    """(`ei` | `baby` | `jung` | `halbstark` | `jungdrache` | `gross` | `ehrwuerdig`,
-    EP seit dem Schlüpfen oder None).
+    """(`ei` | `baby` | ein Name aus `STUFEN_FOLGE`, EP seit dem Schlüpfen oder None).
 
     Drachen ohne `petStufe` (Bestand vor dem 12.11.2026) sind fertig und können
     alles — sie werden nicht nachträglich wieder klein."""
@@ -139,10 +144,18 @@ def stufe(
     if gewachsen < JUNG_AB_EP:
         return "baby", gewachsen
     schritte = gewachsen // max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
-    for name, ab in STUFEN_AB_SCHRITT:
-        if schritte >= ab:
-            return name, gewachsen
-    return "jung", gewachsen
+    return STUFEN_FOLGE[min(schritte, len(STUFEN_FOLGE) - 1)], gewachsen
+
+
+def gewachsen_fuer(stufe_: str, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> int | None:
+    """So viele EP seit dem Schlüpfen braucht diese Stufe mindestens — damit die
+    SL eine Stufe von Hand setzen kann, ohne ein eigenes Feld dafür: gesetzt
+    wird nur der Startwert `petEpStart`. None = Ei oder unbekannt."""
+    if stufe_ == "baby":
+        return 0
+    if stufe_ not in STUFEN_FOLGE:
+        return None
+    return max(JUNG_AB_EP, STUFEN_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD)))
 
 
 def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:

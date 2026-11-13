@@ -426,15 +426,28 @@ def test_wachstum_stufen_und_faehigkeiten():
     assert "wolken" in lg.faehigkeiten("drache", "jung", 13)
     # Mark, 13.11.: größere Gestalten — alle 5 EP ein Schritt, alle 3 Schritte
     # eine neue Gestalt (15/30/45/60 EP seit dem Schlüpfen).
-    assert lg.stufe("drache", "geschluepft", 24, 10) == ("jung", 14)
+    assert lg.stufe("drache", "geschluepft", 14, 10) == ("jung", 4)
+    # Zwischenformen: jeder Schritt (5 EP) eine eigene, etwas größere Form.
+    assert lg.stufe("drache", "geschluepft", 15, 10) == ("jung1", 5)
+    assert lg.stufe("drache", "geschluepft", 24, 10) == ("jung2", 14)
     assert lg.stufe("drache", "geschluepft", 25, 10) == ("halbstark", 15)
+    assert lg.stufe("drache", "geschluepft", 32, 10)[0] == "halbstark1"
+    assert lg.stufe("drache", "geschluepft", 68, 10)[0] == "gross2"
+    assert len(lg.STUFEN_FOLGE) == 13
     assert lg.stufe("eisdrache", "geschluepft", 40, 10)[0] == "jungdrache"
     assert lg.stufe("blitzdrache", "geschluepft", 55, 10)[0] == "gross"
     assert lg.stufe("drache", "geschluepft", 70, 10)[0] == "ehrwuerdig"
     assert lg.stufe("drache", "geschluepft", 500, 10)[0] == "ehrwuerdig"
     # Kampagnen-Einstellung `petWachstumEp`: 10 EP je Schritt → doppelt so langsam.
-    assert lg.stufe("drache", "geschluepft", 39, 10, 10)[0] == "jung"
+    assert lg.stufe("drache", "geschluepft", 39, 10, 10)[0] == "jung2"
     assert lg.stufe("drache", "geschluepft", 40, 10, 10)[0] == "halbstark"
+    # SL setzt eine Stufe: die nötigen EP seit dem Schlüpfen ergeben wieder genau sie.
+    for name in lg.STUFEN_FOLGE:
+        for je in (1, 5, 10):
+            ep = lg.gewachsen_fuer(name, je)
+            if je >= lg.JUNG_AB_EP or lg.STUFEN_FOLGE.index(name) * je >= lg.JUNG_AB_EP:
+                assert lg.stufe("drache", "geschluepft", ep, 0, je)[0] == name, (name, je)
+    assert lg.gewachsen_fuer("baby") == 0 and lg.gewachsen_fuer("ei") is None
     # Die Großen können alles.
     assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN)
     # Bärbel wächst nicht.

@@ -366,7 +366,8 @@ Mark zum Entwurf: „die sind perfekt! bitte bau das ein!“
 - **Einkringeln:** jeder Drache — auch Schlüpfling, junger Drache und Bestandsdrachen — legt sich zum Schlafen hin, rollt sich vom Schwanz her ein und schläft als Kringel; Zzz steigt erst dann auf. Antippen oder Ausschlafen rollt ihn wieder aus (dieselbe Bewegung rückwärts, etwas schneller), geweckt freut er sich.
 - Bestandsdrachen ohne Stufe bleiben der junge Drache und wachsen nicht (wie bisher; Ei neu starten = Pet-Art ab- und wieder anwählen).
 - Technik: CLAUDE.md, Abschnitt 13.11.2026.
-- **Noch offen:** eigene Gestalten für die Zwischenschritte; neue Fähigkeit je großer Stufe; SL-Korrektur der Stufe.
+- **Noch offen:** neue Fähigkeit je großer Stufe; SL-Korrektur der Stufe.
+- **Zwischenformen (13.11.2026, gebaut):** Mark: „ja das klingt gut, bitte mach Zwischenformen.“ Jeder der 12 Wachstumsschritte hat jetzt eine eigene Form: zwischen zwei Gestalten liegen zwei Zwischenformen, in denen er nur ein Stück länger und eleganter wird (Länge, Bögen, Hals, Geweih, Mähne, Schnurrhaare, Schwanzflamme je ein Drittel des Wegs). Neue Merkmale (Bauchplatten, Fersenflammen, Geweih-Enden, Fangzahn) kommen erst mit der nächsten Gestalt. Mit 5 EP je Schritt ändert sich also alle 5 EP etwas. Beim Wachsen freut er sich an Ort und Stelle. Tafel aller 13 Schritte: `docs/assets/critter-pet/schritte_tafel.png`.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

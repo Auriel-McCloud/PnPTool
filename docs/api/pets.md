@@ -18,7 +18,7 @@ verschlossenen Kiste liegt. Mehrere Besitzer → der erste nach id.
 
 ## Pause
 
-Drachen wachsen: `stufe` im Pet-Dict ist `ei`, `baby`, `jung`, `halbstark`, `jungdrache`, `gross` oder `ehrwuerdig` (ab `halbstark` alle 3 Wachstumsschritte eine Gestalt; ein Schritt kostet `petWachstumEp` EP des Critters, Kampagneneinstellung, Standard 5). `kann` listet die freigeschalteten Fähigkeiten.
+Drachen wachsen: `stufe` im Pet-Dict ist `ei`, `baby` oder einer der 13 Namen aus `pets/logic.py::STUFEN_FOLGE` (`jung`, `jung1`, `jung2`, `halbstark`, … `ehrwuerdig`; Index = Wachstumsschritt, alle 3 Schritte eine neue Gestalt, dazwischen Zwischenformen; ein Schritt kostet `petWachstumEp` EP des Critters, Kampagneneinstellung, Standard 5). `kann` listet die freigeschalteten Fähigkeiten.
 
 Keine Pets unterwegs, solange die Kampagneneinstellung `petsAktiv` aus ist oder ein `:Kampf` läuft (`repository.pets_pausiert`). Umschalten und Kampf beginnen/beenden gleichen sofort ab. Dieselbe Pause schickt leere Spur-Listen (Daten bleiben) und hält Bärbels Lese-Uhr an.
 

@@ -41,10 +41,10 @@ export interface PetAufSchirm {
   /** Bärbel hat eine Bibelstelle, ist aber nicht beim Besitzer: bald heimfliegen
    *  (Mark, 12.11.2026: Bibelverse nur beim Besitzer). */
   heim?: boolean;
-  /** Wachstum der Drachen (Mark, 12./13.11.2026): Ei → Baby → jung → halbstark →
-   *  Jungdrache → groß → ehrwürdig. Ab `halbstark` eigene Sprites je Stufe
-   *  (drachenstufen.ts). */
-  stufe?: "ei" | "baby" | "jung" | "halbstark" | "jungdrache" | "gross" | "ehrwuerdig";
+  /** Wachstum der Drachen (Mark, 12./13.11.2026): `ei` → `baby` → `jung` → … →
+   *  `ehrwuerdig`, dazwischen Zwischenformen (`jung1`, `halbstark2` …). Alles ab
+   *  `jung1` hat eigene Sprites je Stufe (drachenstufen.ts). */
+  stufe?: string;
   /** Freigeschaltete Fähigkeiten (klettern, niesen, springen, wolken, menue). */
   kann?: string[];
   /** Risse im Ei, 0–4. */
