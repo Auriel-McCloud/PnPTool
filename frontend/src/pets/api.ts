@@ -75,12 +75,46 @@ export type PetNachricht =
   | { typ: "haeufchen"; daten: Haeufchen[] }
   | { typ: "vorlesen"; petId: string; stelle: string; zitat: string };
 
+/** Pet-Art eines Critters/Gegenstands, bei Drachen am Critter samt Wachstumsstand. */
+export interface PetStand {
+  id: string;
+  art: PetArt | null;
+  /** Nur Drachen an einem Critter wachsen. */
+  waechst: boolean;
+  stufe: string | null;
+  /** EP seit dem Schlüpfen; null = Ei oder Bestandsdrache, der (noch) nicht wächst. */
+  gewachsen: number | null;
+}
+
+/** Was die SL als Wachstumsstufe einstellen kann (Mark, 13.11.2026) — gleiche
+ *  Reihenfolge wie `SETZBARE_STUFEN` in backend/app/pets/logic.py. */
+const GESTALTEN: [string, string][] = [
+  ["jung", "Junger Drache"],
+  ["halbstark", "Halbstarker"],
+  ["jungdrache", "Jungdrache"],
+  ["gross", "Drache"],
+];
+export const WACHSTUM_STUFEN: { wert: string; name: string }[] = [
+  { wert: "ei", name: "Ei" },
+  { wert: "baby", name: "Schlüpfling" },
+  ...GESTALTEN.flatMap(([wert, name]) => [
+    { wert, name },
+    { wert: `${wert}1`, name: `${name} +1` },
+    { wert: `${wert}2`, name: `${name} +2` },
+  ]),
+  { wert: "ehrwuerdig", name: "Ehrwürdiger Drache" },
+];
+
 export const petsApi = {
   /** `critterId` kann auch die id eines Gegenstands sein (Bärbel). */
-  artLesen: (cid: string, critterId: string) =>
-    api.get<{ id: string; art: PetArt | null }>(`/api/campaigns/${cid}/pets/${critterId}`),
+  artLesen: (cid: string, critterId: string) => api.get<PetStand>(`/api/campaigns/${cid}/pets/${critterId}`),
   artSetzen: (cid: string, critterId: string, art: PetArt | null) =>
-    api.put<{ id: string; art: PetArt | null }>(`/api/campaigns/${cid}/pets/${critterId}`, { art }),
+    api.put<PetStand>(`/api/campaigns/${cid}/pets/${critterId}`, { art }),
+  /** SL stellt die Wachstumsstufe eines Drachen ein; er wächst danach normal weiter. */
+  wachstumSetzen: (cid: string, critterId: string, stufe: string) =>
+    api.put<PetStand>(`/api/campaigns/${cid}/pets/${critterId}/wachstum`, { stufe }),
+  /** SL: alle Spuren (Häufchen, Brand, Raureif, Schleim, Seiten) von allen Tablets; Näpfe bleiben. */
+  sauberMachen: (cid: string) => api.post<{ entfernt: number }>(`/api/campaigns/${cid}/pets/saubermachen`, {}),
   /** Tierfutter verfüttern (12.11.2026): ein Stück weg, ein Napf auf den eigenen Bildschirm. */
   fuettern: (cid: string, itemId: string) =>
     api.post<{ text: string }>(`/api/campaigns/${cid}/pets/fuettern/${itemId}`, {}),

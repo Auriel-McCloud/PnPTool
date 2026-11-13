@@ -308,6 +308,14 @@ class PetMotor:
             await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
         await self._haeufchen_senden(campaign_id, person_id)
 
+    async def sauber(self, campaign_id: str) -> int:
+        """SL-Knopf (Mark, 13.11.2026): alle Spuren der Kampagne weg, jedes
+        verbundene Tablet bekommt sofort seine (leere) Liste. Näpfe bleiben."""
+        n = await repository.spuren_alle_weg(campaign_id)
+        for person_id in list(self.online(campaign_id)):
+            await self._haeufchen_senden(campaign_id, person_id)
+        return n
+
     async def napf_hinstellen(self, campaign_id: str, person_id: str) -> None:
         """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte."""
         x = self.zufall.uniform(0.15, 0.85)

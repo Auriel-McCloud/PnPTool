@@ -455,6 +455,37 @@ def test_wachstum_stufen_und_faehigkeiten():
     assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4
 
 
+def test_sl_macht_alle_tablets_sauber_naepfe_bleiben(welt, monkeypatch):
+    """Mark, 13.11.: SL-Knopf räumt alle Spuren weg; jedes Tablet bekommt sofort die neue Liste."""
+    m, stand = welt
+    stand["haeufchen"] = {
+        "anna": [{"id": "h1", "petId": "drache", "x": 0.2, "y": 1, "art": "brand"},
+                 {"id": "n1", "petId": "", "x": 0.5, "y": 1, "art": "napf"}],
+        "ben": [{"id": "h2", "petId": "drache", "x": 0.4, "y": 1, "art": "haeufchen"}],
+    }
+
+    async def spuren_alle_weg(cid):
+        n = 0
+        for pid, liste in stand["haeufchen"].items():
+            n += sum(1 for h in liste if h["art"] != "napf")
+            stand["haeufchen"][pid] = [h for h in liste if h["art"] == "napf"]
+        return n
+
+    monkeypatch.setattr(motor_modul.repository, "spuren_alle_weg", spuren_alle_weg)
+
+    async def ablauf():
+        anna, ben = Socket(), Socket()
+        await m.anmelden("k", "anna", anna)
+        await m.anmelden("k", "ben", ben)
+        assert await m.sauber("k") == 2
+        letzte = lambda s: [n for n in s.post if n["typ"] == "haeufchen"][-1]["daten"]  # noqa: E731
+        assert [h["id"] for h in letzte(anna)] == ["n1"]
+        assert letzte(ben) == []
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
 def test_ei_bleibt_beim_besitzer_und_schluepft_durch_tippen(welt, monkeypatch):
     m, stand = welt
     stand["pets"][0].update({"stufe": "ei", "kann": [], "risse": 0})

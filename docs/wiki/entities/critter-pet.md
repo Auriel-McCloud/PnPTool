@@ -366,8 +366,20 @@ Mark zum Entwurf: „die sind perfekt! bitte bau das ein!“
 - **Einkringeln:** jeder Drache — auch Schlüpfling, junger Drache und Bestandsdrachen — legt sich zum Schlafen hin, rollt sich vom Schwanz her ein und schläft als Kringel; Zzz steigt erst dann auf. Antippen oder Ausschlafen rollt ihn wieder aus (dieselbe Bewegung rückwärts, etwas schneller), geweckt freut er sich.
 - Bestandsdrachen ohne Stufe bleiben der junge Drache und wachsen nicht (wie bisher; Ei neu starten = Pet-Art ab- und wieder anwählen).
 - Technik: CLAUDE.md, Abschnitt 13.11.2026.
-- **Noch offen:** neue Fähigkeit je großer Stufe; SL-Korrektur der Stufe.
+- **Noch offen:** neue Fähigkeit je großer Stufe (Ideen siehe „Fähigkeiten der großen Drachen“ unten).
+- **SL-Knöpfe (13.11.2026, gebaut):** Mark: „ja ein SL-Knopf wäre auch gut! vor allem auch um alles sauber zu machen!“
+  - **Wachstum einstellen:** im Critter-Fenster unter „Pet auf den Tablets“ gibt es bei Drachen die Auswahl „Wachstum“ (Ei, Schlüpfling, alle 13 Schritte). Die Wahl setzt ihn auf diese Stufe; danach wächst er mit seinen EP normal weiter. Kein neues Datenfeld — es wird nur der Startwert der EP-Zählung verschoben. Ein Bestandsdrache (steht als „Junger Drache (wächst nicht)“ da) wächst ab der ersten Wahl mit.
+  - **Alles sauber machen:** Knopf in den Kampagnen-Einstellungen mit Rückfrage. Räumt Häufchen, Brandflecken, Raureif, Schleim und Bärbels Seiten von allen Spieler-Tablets. **Annahme Neko:** Futternäpfe bleiben stehen (sie haben ein Stück Futter gekostet); „sauber machen“ meint die Spuren, nicht ein Zurücksetzen der Drachen.
 - **Zwischenformen (13.11.2026, gebaut):** Mark: „ja das klingt gut, bitte mach Zwischenformen.“ Jeder der 12 Wachstumsschritte hat jetzt eine eigene Form: zwischen zwei Gestalten liegen zwei Zwischenformen, in denen er nur ein Stück länger und eleganter wird (Länge, Bögen, Hals, Geweih, Mähne, Schnurrhaare, Schwanzflamme je ein Drittel des Wegs). Neue Merkmale (Bauchplatten, Fersenflammen, Geweih-Enden, Fangzahn) kommen erst mit der nächsten Gestalt. Mit 5 EP je Schritt ändert sich also alle 5 EP etwas. Beim Wachsen freut er sich an Ort und Stelle. Tafel aller 13 Schritte: `docs/assets/critter-pet/schritte_tafel.png`.
+
+## Fähigkeiten der großen Drachen (Ideen 13.11.2026, offen)
+
+Mark: „vielleicht könnte er auch Feuerbälle schießen, die weiter fliegen“, „was ist denn eine Drachenperle? das klingt gut!“, „hast du noch Ideen für Fähigkeiten?“ — noch nichts gebaut, Zuordnung zu den Stufen offen.
+
+- **Feuerball (Idee Mark):** fliegt weit über den Bildschirm statt nur vor dem Maul zu lodern; Eisdrache Eisball, Blitzdrache Kugelblitz. Einschlag = größerer Fleck. Offen: prallt er an Wörtern/Kästchen ab oder fliegt er bis zum Rand; fliegt er manchmal zum Nachbar-Tablet weiter.
+- **Drachenperle (Vorschlag Neko, gefällt Mark):** die leuchtende Perle der chinesischen Drachen (Weisheit, Glück, Donner/Mond), der sie nachjagen. Für den Ehrwürdigen: schwebt vor ihm, er jagt und jongliert sie, Spieler können sie wegschnippen, im Schlaf liegt sie leuchtend in der Mitte des Kringels. Keine Spielwerte (Wachstum gibt keine Werte).
+- **Weitere Vorschläge Neko:** Regen machen (chinesische Drachen bringen Regen: Wolke wäscht Flecken vom Bildschirm; Eisdrache Schnee, Blitzdrache Gewitter); frei durch die Luft schlängeln statt nur Wolkenlauf; Brüllen (Schirm wackelt, Häufchen fliegen weg, andere Pets erschrecken); um ein Popup oder Portrait wickeln; Schatz horten (sammelt Seiten und Krümel auf einen Haufen); Geschenke bringen bei hoher Zutraulichkeit (Marks Idee vom 12.11.); kleinere Pets reiten auf ihm.
+- **Vorschlag Reihenfolge (Neko, nicht entschieden):** Halbstarker Feuerball → Jungdrache Regen → Drache frei fliegen und Brüllen → Ehrwürdiger Drachenperle.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

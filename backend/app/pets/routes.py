@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.mitteilungen.routes import _viewer_aus_cookie
 from app.pets import repository
-from app.pets.logic import PET_ARTEN
+from app.pets.logic import PET_ARTEN, SETZBARE_STUFEN
 from app.pets.motor import motor
 
 log = logging.getLogger(__name__)
@@ -36,6 +36,22 @@ class PetArt(BaseModel):
 class PetArtAntwort(BaseModel):
     id: str
     art: str | None = None
+    # Nur Drachen an einem Critter wachsen (Mark, 12./13.11.2026).
+    waechst: bool = False
+    stufe: str | None = None
+    # EP seit dem Schlüpfen; None = Ei oder Bestandsdrache ohne Wachstum.
+    gewachsen: int | None = None
+
+
+class PetWachstum(BaseModel):
+    stufe: Literal[SETZBARE_STUFEN]  # type: ignore[valid-type]
+
+
+@router.post("/saubermachen", dependencies=[Depends(require_campaign_gm)])
+async def saubermachen(campaign_id: str) -> dict:
+    """Alle Tablets sauber machen (Mark, 13.11.2026): Häufchen, Brandflecken,
+    Raureif, Schleim und Seiten der ganzen Kampagne weg. Näpfe bleiben."""
+    return {"entfernt": await motor.sauber(campaign_id)}
 
 
 @router.get("/{critter_id}", response_model=PetArtAntwort, dependencies=[Depends(require_campaign_gm)])
@@ -52,6 +68,17 @@ async def art_setzen(campaign_id: str, critter_id: str, body: PetArt):
     if d is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Critter oder Gegenstand nicht gefunden")
     # Sofort sichtbar machen, nicht erst im nächsten Takt.
+    await motor.abgleich(campaign_id)
+    return d
+
+
+@router.put("/{critter_id}/wachstum", response_model=PetArtAntwort, dependencies=[Depends(require_campaign_gm)])
+async def wachstum_setzen(campaign_id: str, critter_id: str, body: PetWachstum):
+    """Die SL stellt die Wachstumsstufe eines Drachen ein (Mark, 13.11.2026) —
+    Ei, Schlüpfling oder einer der 13 Schritte. Er wächst danach normal weiter."""
+    d = await repository.wachstum_setzen(campaign_id, critter_id, body.stufe)
+    if d is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nur Drachen an einem Critter wachsen")
     await motor.abgleich(campaign_id)
     return d
 

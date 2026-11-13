@@ -20,11 +20,14 @@ import random
 from app.pets.logic import (
     FALLENDE_SPUREN,
     HAEUFCHEN_MAX,
+    NAPF,
+    WACHSENDE_ARTEN,
     TIPPS_MAX,
     TIPPS_MIN,
     WACHSTUM_EP_STANDARD,
     faehigkeiten,
     risse,
+    gewachsen_fuer,
     stufe,
     waechst,
 )
@@ -130,13 +133,71 @@ async def pets_pausiert(campaign_id: str) -> bool:
 
 
 async def art_lesen(campaign_id: str, critter_id: str) -> dict | None:
+    """Pet-Art und — bei Drachen am Critter — der Wachstumsstand für die SL:
+    `stufe`, `gewachsen` (EP seit dem Schlüpfen; None = Bestandsdrache ohne
+    Wachstum oder Ei)."""
     query = _PET_TRAEGER + """
-        RETURN c.id AS id, c.petArt AS art
+        RETURN c.id AS id, c.petArt AS art, c:Person AS istCritter,
+               c.petStufe AS petStufe, c.petEpStart AS petEpStart,
+               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id)
         r = await result.single()
-        return dict(r) if r else None
+    if not r:
+        return None
+    d = {"id": r["id"], "art": r["art"], "waechst": bool(r["istCritter"]) and waechst(r["art"]),
+         "stufe": None, "gewachsen": None}
+    if d["waechst"]:
+        kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
+        d["stufe"], d["gewachsen"] = stufe(r["art"], r["petStufe"], int(r["epEigen"] or 0) + kampagnen_ep,
+                                           r["petEpStart"], ep_je_schritt)
+    return d
+
+
+async def wachstum_setzen(campaign_id: str, critter_id: str, stufe_: str) -> dict | None:
+    """Die SL stellt die Stufe eines Drachen von Hand ein (Mark, 13.11.2026).
+    Kein eigenes Feld: gesetzt wird der Startwert `petEpStart` so, dass der
+    Critter genau die EP „seit dem Schlüpfen“ hat, die diese Stufe braucht —
+    danach wächst er mit seinen EP normal weiter. Auch ein Bestandsdrache
+    (ohne `petStufe`) wächst ab dann mit. `ei` legt ihn zurück ins Ei.
+    None = kein Drache an einem Critter."""
+    kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
+    ziel = gewachsen_fuer(stufe_, ep_je_schritt)
+    query = """
+        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
+        WHERE c.petArt IN $wachsende
+        FOREACH (_ IN CASE WHEN $ziel IS NULL THEN [1] ELSE [] END |
+            SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
+        FOREACH (_ IN CASE WHEN $ziel IS NULL THEN [] ELSE [1] END |
+            SET c.petStufe = 'geschluepft',
+                c.petEpStart = coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) + $kampagnen_ep - $ziel)
+        RETURN c.id AS id
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, ziel=ziel,
+                                   kampagnen_ep=kampagnen_ep, wachsende=list(WACHSENDE_ARTEN),
+                                   noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
+        if await result.single() is None:
+            return None
+    return await art_lesen(campaign_id, critter_id)
+
+
+async def spuren_alle_weg(campaign_id: str) -> int:
+    """Alle Tablets sauber machen (Mark, 13.11.2026): Häufchen, Brandflecken,
+    Raureif, Schleim und Bärbels Seiten der ganzen Kampagne. Futternäpfe
+    bleiben stehen — die hat jemand mit einem Stück Futter bezahlt."""
+    query = """
+        MATCH (h:PetHaeufchen {campaignId: $campaign_id})
+        WHERE coalesce(h.art, 'haeufchen') <> $napf
+        WITH collect(h) AS alle
+        FOREACH (h IN alle | DETACH DELETE h)
+        RETURN size(alle) AS n
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, napf=NAPF)
+        r = await result.single()
+        return int(r["n"]) if r else 0
 
 
 async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict | None:
@@ -153,14 +214,13 @@ async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict
             SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
         RETURN c.id AS id, c.petArt AS art
     """
-    from app.pets.logic import WACHSENDE_ARTEN
-
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, art=art,
                                    waechst=waechst(art), wachsende=list(WACHSENDE_ARTEN),
                                    noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
-        r = await result.single()
-        return dict(r) if r else None
+        if await result.single() is None:
+            return None
+    return await art_lesen(campaign_id, critter_id)
 
 
 async def ei_tippen(campaign_id: str, critter_id: str) -> bool:

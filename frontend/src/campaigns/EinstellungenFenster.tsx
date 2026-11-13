@@ -6,6 +6,8 @@ import { wikiSweep, wikiVerknuepfungSweep, type SweepErgebnis, type SweepVerknue
 import { PruefungPopup } from "../wiki/PruefungPopup";
 import { SweepVerknuepfungPopup } from "../ideenschmiede/SweepVerknuepfungPopup";
 import { TutorialShopVerwaltung } from "../haendler/TutorialShopVerwaltung";
+import { Bestaetigung } from "../shell/Bestaetigung";
+import { petsApi } from "../pets/api";
 import "../spotify/spotify.css";
 
 /**
@@ -168,6 +170,19 @@ export function EinstellungenFenster({
     }
   }
 
+  // Mark, 13.11.2026: SL-Knopf, der alle Pet-Spuren von allen Tablets räumt.
+  const [sauberFrage, setSauberFrage] = useState(false);
+  const [sauberText, setSauberText] = useState<string | null>(null);
+  async function tabletsSauberMachen() {
+    setSauberFrage(false);
+    try {
+      const { entfernt } = await petsApi.sauberMachen(campaignId);
+      setSauberText(entfernt === 0 ? "Es war schon alles sauber." : `${entfernt} ${entfernt === 1 ? "Spur" : "Spuren"} weggeputzt.`);
+    } catch (e) {
+      setSauberText(e instanceof Error ? e.message : "Konnte nicht sauber machen");
+    }
+  }
+
   async function aendern(feld: string, wert: unknown) {
     if (!werte) return;
     // Sofort anzeigen, dann speichern — sonst wirkt der Schalter träge.
@@ -253,6 +268,20 @@ export function EinstellungenFenster({
               style={{ marginTop: 4, maxWidth: 140 }}
             />
           </label>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
+            <strong style={{ fontSize: 14 }}>Tablets sauber machen</strong>
+            <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+              Räumt alles weg, was die Pets hinterlassen haben: Häufchen, Brandflecken, Raureif, Schleim und
+              Bärbels Seiten — auf allen Spieler-Tablets. Futternäpfe bleiben stehen.
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+              <button type="button" onClick={() => setSauberFrage(true)}>
+                Alles sauber machen
+              </button>
+              {sauberText && <span style={{ fontSize: 12, color: "var(--text-leise)" }}>{sauberText}</span>}
+            </div>
+          </div>
 
           <Schalter
             an={Boolean(werte.fogOfWar)}
@@ -436,6 +465,16 @@ export function EinstellungenFenster({
 
       {fehler && <p style={{ color: "var(--signal)", fontSize: 13 }}>{fehler}</p>}
     </Fenster>
+
+    {sauberFrage && (
+      <Bestaetigung
+        titel="Alle Tablets sauber machen?"
+        text="Häufchen, Brandflecken, Raureif, Schleim und Bärbels Seiten verschwinden von allen Spieler-Tablets. Futternäpfe bleiben stehen. Das lässt sich nicht rückgängig machen."
+        jaText="Sauber machen"
+        onJa={tabletsSauberMachen}
+        onNein={() => setSauberFrage(false)}
+      />
+    )}
 
     {/* Popup im Popup ("Pop-ups die zu Pop-ups führen") — Fenster.tsx trägt
         das über ein Portal, unabhängig von der Verschachtelungstiefe hier. */}

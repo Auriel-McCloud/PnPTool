@@ -2021,3 +2021,7 @@ Entwurf von Mark abgenommen und eingebaut: Halbstarker, Jungdrache, Drache, Ehrw
 ## [2026-11-13] update | Zwischenformen der Drachen gebaut
 
 Jeder der 12 Wachstumsschritte hat eine eigene Form (zwei Zwischenformen je Gestalt). Siehe [[entities/critter-pet]].
+
+## [2026-11-13] update | SL-Knöpfe für Pets, Fähigkeiten-Ideen notiert
+
+Wachstumsstufe eines Drachen im Critter-Fenster einstellbar; „Alles sauber machen“ in den Einstellungen. Ideen Feuerball, Drachenperle und weitere Fähigkeiten als offen notiert. Siehe [[entities/critter-pet]].
