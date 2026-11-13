@@ -49,6 +49,9 @@ export interface PetAufSchirm {
   kann?: string[];
   /** Risse im Ei, 0–4. */
   risse?: number;
+  /** Drachenperle (Mark, 13.11.2026): was der Drache gerade damit vorhat —
+   *  siehe `PerleModus` in bewegung.ts. Wo sie liegt, erfährt das Tablet nie. */
+  perle?: "spiel" | "sucht" | "gefunden" | "bringt" | "zurueck" | null;
 }
 
 export interface Lesung {
@@ -67,7 +70,10 @@ export interface Haeufchen {
    *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
    *  Tentakelmonster (wegwischen). Napf: Futternapf, bis ein Drache ihn leer frisst. */
-  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf";
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle";
+  erstellt?: string;
+  /** Perle: kam von einem anderen Tablet angeflogen (fliegt herein statt aufzuleuchten). */
+  geworfen?: boolean;
 }
 
 export type PetNachricht =

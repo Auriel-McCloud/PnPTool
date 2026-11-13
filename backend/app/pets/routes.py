@@ -134,6 +134,12 @@ async def live(websocket: WebSocket, campaign_id: str):
                     await motor.gelesen(campaign_id, person_id, str(n.get("petId")))
                 elif typ == "tippen":
                     await motor.tippen(campaign_id, person_id, str(n.get("petId")))
+                elif typ == "perle":
+                    await motor.perle(campaign_id, person_id, str(n.get("petId")), float(n.get("x", 0.5)))
+                elif typ == "perleWurf":
+                    await motor.perle_wurf(campaign_id, person_id, str(n.get("id")))
+                elif typ == "perleGefunden":
+                    await motor.perle_gefunden(campaign_id, person_id, str(n.get("petId")), str(n.get("id")))
             except (TypeError, ValueError):
                 continue
     except WebSocketDisconnect:

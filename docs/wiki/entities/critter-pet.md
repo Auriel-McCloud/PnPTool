@@ -377,9 +377,24 @@ Mark zum Entwurf: „die sind perfekt! bitte bau das ein!“
 Mark: „vielleicht könnte er auch Feuerbälle schießen, die weiter fliegen“, „was ist denn eine Drachenperle? das klingt gut!“, „hast du noch Ideen für Fähigkeiten?“ — noch nichts gebaut, Zuordnung zu den Stufen offen.
 
 - **Feuerball (Idee Mark):** fliegt weit über den Bildschirm statt nur vor dem Maul zu lodern; Eisdrache Eisball, Blitzdrache Kugelblitz. Einschlag = größerer Fleck. Offen: prallt er an Wörtern/Kästchen ab oder fliegt er bis zum Rand; fliegt er manchmal zum Nachbar-Tablet weiter.
-- **Drachenperle (Vorschlag Neko, gefällt Mark):** die leuchtende Perle der chinesischen Drachen (Weisheit, Glück, Donner/Mond), der sie nachjagen. Für den Ehrwürdigen: schwebt vor ihm, er jagt und jongliert sie, Spieler können sie wegschnippen, im Schlaf liegt sie leuchtend in der Mitte des Kringels. Keine Spielwerte (Wachstum gibt keine Werte).
+- **Drachenperle — gebaut 13.11.2026, siehe Abschnitt „Drachenperle“ unten.** Ursprünglicher Vorschlag: die leuchtende Perle der chinesischen Drachen (Weisheit, Glück, Donner/Mond), der sie nachjagen. Für den Ehrwürdigen: schwebt vor ihm, er jagt und jongliert sie, Spieler können sie wegschnippen, im Schlaf liegt sie leuchtend in der Mitte des Kringels. Keine Spielwerte (Wachstum gibt keine Werte).
 - **Weitere Vorschläge Neko:** Regen machen (chinesische Drachen bringen Regen: Wolke wäscht Flecken vom Bildschirm; Eisdrache Schnee, Blitzdrache Gewitter); frei durch die Luft schlängeln statt nur Wolkenlauf; Brüllen (Schirm wackelt, Häufchen fliegen weg, andere Pets erschrecken); um ein Popup oder Portrait wickeln; Schatz horten (sammelt Seiten und Krümel auf einen Haufen); Geschenke bringen bei hoher Zutraulichkeit (Marks Idee vom 12.11.); kleinere Pets reiten auf ihm.
 - **Vorschlag Reihenfolge (Neko, nicht entschieden):** Halbstarker Feuerball → Jungdrache Regen → Drache frei fliegen und Brüllen → Ehrwürdiger Drachenperle.
+
+## Drachenperle (13.11.2026, gebaut)
+
+Mark: „Mach so eine Drachenperle! Aber vielleicht, dass sie nicht immer da ist … Vielleicht kann man die Drachenperle auch aus dem Bildschirm werfen, weil sie ein Objekt ist, und dann geht er sie auf anderen Tablets suchen und bringt sie zurück … (ohne dass er weiß, auf welchem es liegt) … so als Minispiel.“
+
+- **Wer:** nur der Ehrwürdige Drache (alle drei Farben, dieselbe Perle).
+- **Nicht immer da:** frühestens 15–45 s nach der Ankunft auf einem Tablet holt er sie manchmal hervor (leuchtet vor seinem Maul auf). Sie bleibt 1–2,5 Minuten, dann verschluckt er sie wieder und wartet 3–8 Minuten. Bevor er weiterzieht, steckt er sie ein.
+- **Ein Ding auf dem Schirm:** sie liegt leuchtend am Boden. Antippen lässt sie hüpfen, packen und loslassen wirft sie; sie prallt am Rand ab und rollt aus. Der Drache stupst sie selbst ab und zu mit der Nase an.
+- **Hinauswerfen:** mit Schwung über den linken oder rechten Rand — sie landet auf einem zufälligen anderen Tablet der Party (fliegt dort herein). Ist sonst niemand eingeloggt, kommt sie zurück.
+- **Suchen:** der Drache erschrickt („!“), rennt hinaus und sucht ein Tablet nach dem anderen ab, keins doppelt. Wo sie nicht liegt, läuft er in die Mitte, schaut sich um („?“) und rennt weiter. Der Server verrät dem Tablet nie, wo die Perle liegt, und wählt das nächste Tablet zufällig.
+- **Finden und Zurückbringen:** „!“, er hebt sie auf, trägt sie vor dem Maul und bringt sie dem, der sie hinausgeworfen hat (ist der weg: dem Besitzer). Dort legt er sie stolz ab.
+- **Weiterwerfen:** wer die Perle bei sich liegen hat, darf sie auch weiterwerfen — der Drache muss weitersuchen; zurückgebracht wird sie trotzdem dem ersten Werfer.
+- **Tablet aus:** geht das Tablet aus, auf dem die Perle liegt, kullert sie auf ein anderes Tablet der Party weiter — sonst fände er sie nie. Gibt es den Drachen nicht mehr (oder stellt die SL ihn jünger), verschwindet die Perle.
+- **Annahmen Neko:** alle Zeiten oben; beim Suchen und Tragen läuft er 2,4-mal so schnell; die Perle ist für alle drei Drachenfarben gleich; „Alles sauber machen“ räumt sie mit weg; keine Spielwerte.
+- **Noch offen:** Perle im Schlaf in der Mitte des Kringels; Belohnung fürs Zurückbringen (Herzen, Zutraulichkeit).
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

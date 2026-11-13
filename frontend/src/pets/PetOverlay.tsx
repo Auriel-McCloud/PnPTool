@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { atemVon, istDrache, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
-import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
+import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type PerleModus, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
 import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z } from "./drachenstufen";
@@ -143,7 +143,15 @@ const SPUR_PX = {
   schleim: { breite: 50, hoehe: 45 },
   frost: { breite: 38, hoehe: 23 },
   napf: { breite: 22, hoehe: 13 },
+  perle: { breite: 16, hoehe: 16 },
 } as const;
+
+/** Drachenperle (Mark, 13.11.2026): liegende Perlen nehmen hier einen Stups vom
+ *  Drachen entgegen (Spur-id → Anstoß in px/s). */
+const perlenStoss = new Map<string, (vx: number, vy: number) => void>();
+/** Ab diesem Tempo fliegt eine geworfene Perle am Rand hinaus statt abzuprallen. */
+const PERLE_RAUS_PX_S = 380;
+const PERLE_G = 1900;
 /** So viel muss man über einen Brandfleck reiben, bis er weg ist. */
 const WISCH_PX = 450;
 
@@ -360,7 +368,7 @@ function umgebung(m: Masse = masse()): Umgebung {
         .filter((el) => el.dataset.fliegt !== "ja")
         .map((el) => {
           const r = el.getBoundingClientRect();
-          return { id: el.dataset.id!, art: el.dataset.art!, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, unten: r.bottom };
+          return { id: el.dataset.id!, art: el.dataset.art!, petId: el.dataset.pet, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, unten: r.bottom };
         }),
     // Klettern nur an Popups, die oben Platz lassen (am Handy bildschirmfüllend).
     waende: () =>
@@ -427,7 +435,10 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             }));
           }
         } else if (n.typ === "haeufchen") {
-          if (bekannt.current === null) bekannt.current = new Set(n.daten.map((h) => h.id));
+          // Perlen wandern mit derselben id von Tablet zu Tablet — bekannt ist nur
+          // genau diese Ablage (id + Zeitpunkt), sonst flöge sie beim Wiederkommen nicht herein.
+          if (bekannt.current === null)
+            bekannt.current = new Set(n.daten.map((h) => (h.art === "perle" ? `${h.id}:${h.erstellt}` : h.id)));
           setHaeufchen(n.daten);
         }
       });
@@ -477,6 +488,18 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
                 height: px.hoehe * s,
                 backgroundImage: "url(/pets/napf.png)",
               }}
+            />
+          );
+        }
+        if (h.art === "perle") {
+          const ablage = `${h.id}:${h.erstellt}`;
+          return (
+            <PerleSpur
+              key={ablage}
+              h={h}
+              frisch={bekannt.current !== null && !bekannt.current.has(ablage)}
+              weg={weg.has(h.id)}
+              senden={senden}
             />
           );
         }
@@ -549,6 +572,205 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
         ),
       )}
     </div>
+  );
+}
+
+/**
+ * Drachenperle (Mark, 13.11.2026): „weil sie ein Objekt ist“ — sie liegt
+ * leuchtend unten auf dem Schirm, man kann sie antippen (sie hüpft), packen
+ * und werfen. Fliegt sie mit Schwung seitlich hinaus, landet sie auf einem
+ * anderen Tablet (`perleWurf`); der Drache sucht sie dann. Prallt sie nur ab
+ * oder rollt aus, merkt sich der Server die neue Stelle.
+ */
+function PerleSpur({
+  h,
+  frisch,
+  weg,
+  senden,
+}: {
+  h: Haeufchen;
+  frisch: boolean;
+  weg: boolean;
+  senden: (n: object) => void;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const sendenRef = useRef(senden);
+  sendenRef.current = senden;
+  const serverX = useRef(h.x);
+  serverX.current = h.x;
+  const neu = frisch && !h.geworfen;
+
+  useEffect(() => {
+    const div = ref.current;
+    if (!div) return;
+    const g = SPUR_PX.perle.breite * skala();
+    const r = g / 2;
+    const breite = () => window.innerWidth;
+    const boden = () => window.innerHeight - r;
+    const klemme = (v: number, grenze: number) => Math.max(-grenze, Math.min(grenze, v));
+    let x = h.x * breite();
+    let y = boden();
+    let vx = 0;
+    let vy = 0;
+    let modus: "ruht" | "fliegt" | "gezogen" | "weg" = "ruht";
+    // Nur ein Wurf von Hand darf hinaus — hereinfliegen und Stupser prallen ab.
+    let darfRaus = false;
+    let gesehenX = h.x;
+    let finger: { x: number; y: number; t: number }[] = [];
+    let start: { x: number; y: number; t: number } | null = null;
+    if (frisch && h.geworfen) {
+      // Kommt von einem anderen Tablet hereingeflogen.
+      const vonLinks = Math.random() < 0.5;
+      x = vonLinks ? -g : breite() + g;
+      y = window.innerHeight * 0.45;
+      vx = (h.x * breite() - x) / 0.9;
+      vy = -220;
+      modus = "fliegt";
+    }
+    perlenStoss.set(h.id, (svx, svy) => {
+      if (modus !== "ruht") return;
+      vx = svx;
+      vy = svy;
+      darfRaus = false;
+      modus = "fliegt";
+    });
+    const zurRuhe = () => {
+      modus = "ruht";
+      vx = vy = 0;
+      y = boden();
+      x = Math.max(r, Math.min(breite() - r, x));
+      sendenRef.current({ typ: "verschieben", id: h.id, x: x / breite(), y: 1 });
+    };
+
+    let letzte = performance.now();
+    let rahmen = 0;
+    const takt = (jetzt: number) => {
+      const dt = Math.min(0.05, (jetzt - letzte) / 1000);
+      letzte = jetzt;
+      const griff = gegriffen.get(h.id);
+      let groesse = 1;
+      if (griff) {
+        // Der Drache hat sie im Maul (aufheben/einstecken).
+        x = griff.x;
+        y = griff.y;
+        groesse = griff.skala;
+      } else if (modus === "fliegt") {
+        vy += PERLE_G * dt;
+        x += vx * dt;
+        y += vy * dt;
+        if (y >= boden()) {
+          y = boden();
+          if (Math.abs(vy) > 150) {
+            vy = -vy * 0.55;
+            vx *= 0.8;
+          } else {
+            // Rollt aus.
+            vy = 0;
+            vx *= Math.max(0, 1 - 4 * dt);
+            if (Math.abs(vx) < 14) zurRuhe();
+          }
+        }
+        const hinaus = (x < r && vx < 0) || (x > breite() - r && vx > 0);
+        if (hinaus) {
+          if (darfRaus && Math.abs(vx) > PERLE_RAUS_PX_S) {
+            if (x < -g || x > breite() + g) {
+              modus = "weg";
+              sendenRef.current({ typ: "perleWurf", id: h.id });
+            }
+          } else {
+            x = x < r ? r : breite() - r;
+            vx = -vx * 0.6;
+          }
+        }
+      } else if (modus === "ruht") {
+        y = boden();
+        // Neue Stelle vom Server (oder Fenstergröße geändert).
+        if (serverX.current !== gesehenX) {
+          gesehenX = serverX.current;
+          x = gesehenX * breite();
+        }
+      }
+      div.style.display = modus === "weg" ? "none" : "";
+      div.style.left = `${x - r}px`;
+      div.style.top = `${y - r}px`;
+      div.style.transform = groesse === 1 ? "" : `scale(${groesse.toFixed(2)})`;
+      div.dataset.fliegt = modus === "ruht" && !griff ? "nein" : "ja";
+      div.dataset.gepackt = modus === "gezogen" ? "ja" : "nein";
+      rahmen = requestAnimationFrame(takt);
+    };
+    rahmen = requestAnimationFrame(takt);
+
+    const runter = (e: PointerEvent) => {
+      if (modus === "weg" || gegriffen.has(h.id)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      div.setPointerCapture(e.pointerId);
+      modus = "gezogen";
+      start = { x: e.clientX, y: e.clientY, t: performance.now() };
+      finger = [start];
+    };
+    const bewegen = (e: PointerEvent) => {
+      if (modus !== "gezogen") return;
+      x = e.clientX;
+      y = Math.min(e.clientY, boden());
+      const t = performance.now();
+      finger.push({ x: e.clientX, y: e.clientY, t });
+      while (finger.length > 2 && t - finger[0].t > 120) finger.shift();
+    };
+    const los = (e: PointerEvent) => {
+      if (modus !== "gezogen") return;
+      const t = performance.now();
+      const getippt = !!start && t - start.t < 300 && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10;
+      if (getippt) {
+        // Antippen: sie hüpft davon, bleibt aber hier.
+        vx = (Math.random() < 0.5 ? -1 : 1) * (160 + Math.random() * 220);
+        vy = -(480 + Math.random() * 260);
+        darfRaus = false;
+      } else {
+        const a = finger[0];
+        const b = finger[finger.length - 1];
+        const dauer = Math.max(0.016, (b.t - a.t) / 1000);
+        vx = klemme((b.x - a.x) / dauer, 2600);
+        vy = klemme((b.y - a.y) / dauer, 2600);
+        darfRaus = true;
+      }
+      modus = "fliegt";
+    };
+    const stopp = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+    };
+    div.addEventListener("pointerdown", runter);
+    div.addEventListener("pointermove", bewegen);
+    div.addEventListener("pointerup", los);
+    div.addEventListener("pointercancel", los);
+    div.addEventListener("touchstart", stopp, { passive: false });
+    div.addEventListener("touchmove", stopp, { passive: false });
+    return () => {
+      cancelAnimationFrame(rahmen);
+      perlenStoss.delete(h.id);
+      div.removeEventListener("pointerdown", runter);
+      div.removeEventListener("pointermove", bewegen);
+      div.removeEventListener("pointerup", los);
+      div.removeEventListener("pointercancel", los);
+      div.removeEventListener("touchstart", stopp);
+      div.removeEventListener("touchmove", stopp);
+    };
+    // Eine neue Ablage ist ein neuer key — die Abhängigkeiten bleiben fest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const g = SPUR_PX.perle.breite * skala();
+  return (
+    <div
+      ref={ref}
+      data-id={h.id}
+      data-art="perle"
+      data-pet={h.petId}
+      data-fliegt="ja"
+      className={`pet-haeufchen pet-perle${neu ? " pet-perle-neu" : ""}${weg ? " pet-haeufchen-weg" : ""}`}
+      style={{ width: g, height: g, ["--pw" as string]: `${g}px` }}
+      onContextMenu={(e) => e.preventDefault()}
+    />
   );
 }
 
@@ -1306,6 +1528,9 @@ function PetFigur({
   // Abgeschüttelter Ruß: ebenso ein fester Vorrat an Flocken.
   const flockenEls = useRef<(HTMLSpanElement | null)[]>([]);
   const puff = useRef<HTMLDivElement | null>(null);
+  // Drachenperle: getragen vor dem Maul; Rufzeichen über dem Kopf.
+  const perleTrag = useRef<HTMLDivElement | null>(null);
+  const rufEl = useRef<HTMLSpanElement | null>(null);
   const effekt = useRef<HTMLDivElement | null>(null);
   const blitzSvg = useRef<SVGSVGElement | null>(null);
   const blitzLicht = useRef<HTMLDivElement | null>(null);
@@ -1326,6 +1551,11 @@ function PetFigur({
     if (b instanceof PetBewegung && pet.kann) b.kann = new Set(pet.kann);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kannSchluessel]);
+  const perleModus = (pet.perle ?? null) as PerleModus;
+  useEffect(() => {
+    const b = bewegung.current;
+    if (b instanceof PetBewegung) b.setzePerle(perleModus, performance.now());
+  }, [perleModus]);
   const onGelesenRef = useRef(onGelesen);
   onGelesenRef.current = onGelesen;
   const [herzen, setHerzen] = useState<Herz[]>([]);
@@ -1382,13 +1612,24 @@ function PetFigur({
         window.setTimeout(() => gegriffen.delete(n.id), 900);
         const istNapf = document.querySelector(`.pet-napf[data-id="${n.id}"]`) !== null;
         wegmachenRef.current(n.id, istNapf ? pet.id : undefined);
-      } else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
+      } else if (n.typ === "perle") senden({ typ: "perle", petId: pet.id, x: n.x });
+      else if (n.typ === "perleGefunden") {
+        // Verschwindet im Maul; der Server nimmt sie vom Schirm, er trägt sie.
+        const zuletzt = gegriffen.get(n.id);
+        if (zuletzt) gegriffen.set(n.id, { ...zuletzt, skala: 0.15 });
+        if (gehalten.current === n.id) gehalten.current = null;
+        window.setTimeout(() => gegriffen.delete(n.id), 900);
+        senden({ typ: "perleGefunden", petId: pet.id, id: n.id });
+      } else if (n.typ === "stups") perlenStoss.get(n.id)?.(n.vx, n.vy);
+      else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
     };
     const b: PetSteuerung = fliegt
       ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
       : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden, {
           kann: pet.kann,
           startX: mitte === undefined ? undefined : mitte - m().bw / 2,
+          petId: pet.id,
+          perle: (pet.perle ?? null) as PerleModus,
         });
     bewegung.current = b;
     steuerungen.set(pet.id, b);
@@ -1607,6 +1848,32 @@ function PetFigur({
           pu.style.backgroundPosition = `${-bild * v.groesse * s}px 0`;
         } else pu.style.display = "none";
       }
+      const pt = perleTrag.current;
+      if (pt) {
+        if (d.perle) {
+          const g = SPUR_PX.perle.breite * skala();
+          pt.style.display = "block";
+          pt.style.width = `${g}px`;
+          pt.style.height = `${g}px`;
+          pt.style.setProperty("--pw", `${g}px`);
+          pt.style.left = `${d.perle.x - g / 2}px`;
+          pt.style.top = `${d.perle.y - g / 2}px`;
+        } else pt.style.display = "none";
+      }
+      const ru = rufEl.current;
+      if (ru) {
+        if (d.ruf) {
+          // Etwas größer als die übrigen Zeichen — man soll es quer über den Tisch sehen.
+          const s = skala() * 1.5;
+          const [bw_, bh_] = d.ruf === "?" ? [7, 10] : [4, 10];
+          ru.style.display = "block";
+          ru.style.backgroundImage = `url(/pets/${d.ruf === "?" ? "frage" : "ausruf"}.png)`;
+          ru.style.width = `${bw_ * s}px`;
+          ru.style.height = `${bh_ * s}px`;
+          ru.style.left = `${d.kopfX - (bw_ * s) / 2}px`;
+          ru.style.top = `${d.kopfY - bh_ * s - 6}px`;
+        } else ru.style.display = "none";
+      }
       const tr = tropfen.current;
       if (tr) {
         tr.style.display = d.schwitzt ? "block" : "none";
@@ -1755,6 +2022,12 @@ function PetFigur({
           </>
         )}
       </div>
+      {istDrache(pet.art) && (
+        <>
+          <div ref={perleTrag} className="pet-perle pet-perle-getragen" style={{ display: "none" }} />
+          <span ref={rufEl} className="pet-ruf" style={{ display: "none" }} />
+        </>
+      )}
       <span ref={zzz} className="pet-zzz" style={{ display: "none" }}>
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />
         <i style={{ backgroundImage: `url(/pets/${pet.art}/z.png)` }} />

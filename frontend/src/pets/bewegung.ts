@@ -123,9 +123,17 @@ export interface NachbarBox {
   h: number;
 }
 
+/** Drachenperle (Mark, 13.11.2026) — was der Server dem Tablet dazu sagt, nie wo sie liegt:
+ *  `spiel` = liegt hier, er spielt damit · `sucht` = jemand hat sie hinausgeworfen,
+ *  er sucht die Tablets ab · `gefunden` = hier liegt die gesuchte Perle ·
+ *  `bringt` = er trägt sie zum Werfer · `zurueck` = beim Werfer angekommen, legt sie ab. */
+export type PerleModus = "spiel" | "sucht" | "gefunden" | "bringt" | "zurueck" | null;
+
 export interface SpurAufSchirm {
   id: string;
   art: string;
+  /** Zu welchem Pet die Spur gehört (bei der Perle: wessen Perle). */
+  petId?: string;
   /** Mitte und Unterkante in Bildschirm-Pixeln. */
   x: number;
   y: number;
@@ -285,6 +293,10 @@ export interface Darstellung {
   russ?: number;
   /** Abgeschüttelte Rußflocken (fallen, liegen kurz, verblassen). */
   flocken?: Flocke[];
+  /** Getragene Drachenperle vor dem Maul (Bildschirm-Pixel ihrer Mitte). */
+  perle?: { x: number; y: number } | null;
+  /** Rufzeichen über dem Kopf: sucht („?“) oder hat etwas entdeckt („!“). */
+  ruf?: "?" | "!" | null;
 }
 
 export type Meldung =
@@ -292,6 +304,12 @@ export type Meldung =
   | { typ: "haeufchen"; x: number; y: number; art: "haeufchen" | "brand" | "seite" | "schleim" | "frost" }
   /** Spur gefressen/eingesaugt — verschwindet vom Bildschirm. */
   | { typ: "fressen"; id: string }
+  /** Drachenperle herausholen/ablegen (x als Anteil der Breite). */
+  | { typ: "perle"; x: number }
+  /** Gesuchte Perle aufgehoben — ab jetzt trägt er sie. */
+  | { typ: "perleGefunden"; id: string }
+  /** Perle mit der Nase anstupsen: sie hüpft davon. */
+  | { typ: "stups"; id: string; vx: number; vy: number }
   /** Bärbels Lesung zugeklappt. */
   | { typ: "gelesen" };
 
@@ -303,6 +321,13 @@ const FEUER_MS = 16 * 70;
  *  dem Schlaf-Kringel und beim Aufwachen rückwärts, dann etwas flotter. */
 const EINKRINGELN_MS = EINKRINGELN.frames * EINKRINGELN.ms;
 const AUFWACH_TAKT_MS = 45;
+/** Drachenperle: wann er sie nach der Ankunft frühestens herausholt, wie lange
+ *  sie draußen bleibt und wie lange er nach dem Einstecken wartet (Annahmen Neko). */
+const PERLE_FRUEHESTENS_MS: [number, number] = [15_000, 45_000];
+const PERLE_DAUER_MS: [number, number] = [60_000, 150_000];
+const PERLE_PAUSE_MS: [number, number] = [180_000, 480_000];
+/** So viel schneller läuft er, wenn er die Perle sucht oder zurückbringt. */
+const PERLE_EILE = 2.4;
 /** So lange muss man draufbleiben, bis er gepackt ist. */
 export const PACKEN_MS = 3000;
 /** Fressen (Seite schnappen und kauen): 16 Frames à 90 ms, Seite fliegt in Frame 3–5 ins Maul. */
@@ -352,6 +377,8 @@ export class PetBewegung {
   besuchEnde: number;
   haeufchenGemacht = false;
   geschlafen = false;
+  /** Beim Suchen: bis dahin schaut er sich um (dreht sich einmal). */
+  private umsehenBis = 0;
   /** Wann er sich hingelegt hat — die erste Zeit kringelt er sich erst ein. */
   schlafStart = 0;
   /** Aufwachen: Einkringeln rückwärts ab Bild `von`; danach freuen (geweckt) oder weiter. */
@@ -360,7 +387,19 @@ export class PetBewegung {
   brandGelegt = false;
   /** Seite, die er gerade frisst (Mark, 11.11.2026: „kann der Drache das Papier,
    *  das rumliegt, fressen, wenn er daran vorbeiläuft“). */
-  beute: { id: string; x: number; y: number; t0: number; gemeldet: boolean; weiter: { zielX: number; danach: ((jetzt: number) => void) | null } | null } | null = null;
+  beute: { id: string; x: number; y: number; t0: number; gemeldet: boolean; weiter: { zielX: number; danach: ((jetzt: number) => void) | null } | null; aufheben?: boolean } | null = null;
+  /** Drachenperle (Mark, 13.11.2026): Stand vom Server, siehe `PerleModus`. */
+  perleModus: PerleModus = null;
+  /** Eigene id — daran erkennt er seine Perle unter den Spuren. */
+  private petId = "";
+  /** Wann er die Perle frühestens herausholt und wann er sie wieder einsteckt. */
+  private naechstePerle = 0;
+  private perleBis = 0;
+  /** Herausholen/Ablegen gemeldet, Server hat noch nicht geantwortet. */
+  private perleGemeldet = false;
+  /** Suche auf diesem Tablet: 0 = gerade gekommen, 1 = hat sich umgesehen. */
+  private suchSchritt = 0;
+  private ruf: { zeichen: "?" | "!"; bis: number } | null = null;
   naechstesNiesen = 0;
   /** Herausgezogener Menüpunkt, solange er drauf ist oder hinwill. */
   menuePunkt: MenuePunkt | null = null;
@@ -406,12 +445,15 @@ export class PetBewegung {
     seite: "links" | "rechts",
     jetzt: number,
     melden: (m: Meldung) => void,
-    opt: { startX?: number; kann?: Iterable<string> } = {},
+    opt: { startX?: number; kann?: Iterable<string>; petId?: string; perle?: PerleModus } = {},
   ) {
     this.masse = masse;
     this.u = u;
     this.melden = melden;
     if (opt.kann) this.kann = new Set(opt.kann);
+    this.petId = opt.petId ?? "";
+    this.perleModus = opt.perle ?? null;
+    this.naechstePerle = jetzt + PERLE_FRUEHESTENS_MS[0] + u.zufall() * (PERLE_FRUEHESTENS_MS[1] - PERLE_FRUEHESTENS_MS[0]);
     const { bw } = masse();
     this.besuchEnde = jetzt + this.zw(40_000, 120_000);
     this.naechstesNiesen = jetzt + this.zw(8_000, 20_000);
@@ -1045,6 +1087,185 @@ export class PetBewegung {
     return true;
   }
 
+  // ── Drachenperle (Mark, 13.11.2026) ─────────────────────────────────────
+
+  /** Neuer Stand vom Server. Fliegt ihm die Perle weg, schreckt er hoch. */
+  setzePerle(modus: PerleModus, jetzt: number) {
+    const vorher = this.perleModus;
+    if (modus === vorher) return;
+    this.perleModus = modus;
+    this.perleGemeldet = false;
+    if (modus === "sucht" && vorher === "spiel") {
+      // Er hat gesehen, wie sie hinausflog: nicht erst umsehen, gleich hinterher.
+      this.suchSchritt = 1;
+      this.ruf = { zeichen: "!", bis: jetzt + 1300 };
+      this.aufschrecken(jetzt, 1300);
+    } else if (modus === "gefunden") {
+      this.ruf = { zeichen: "!", bis: jetzt + 1300 };
+      this.aufschrecken(jetzt, 700);
+    } else if (modus === "spiel") {
+      if (this.perleBis < jetzt) this.perleBis = jetzt + this.zw(30_000, 80_000);
+      this.besuchEnde = Math.max(this.besuchEnde, this.perleBis + 8_000);
+    }
+  }
+
+  /** Ruhige Zustände sofort beenden, damit er gleich neu entscheidet. */
+  private aufschrecken(jetzt: number, inMs: number) {
+    if (this.zustand === "schlafen") this.wacheAuf(jetzt, "weiter");
+    else if (this.zustand === "idle" || this.zustand === "freuen") this.bis = Math.min(this.bis, jetzt + inMs);
+    else if (this.zustand === "laufen") {
+      this.nachAnkunft = null;
+      this.zustand = "idle";
+      this.bis = jetzt + inMs;
+    }
+  }
+
+  /** Seine Perle, wenn sie auf diesem Bildschirm ruhig daliegt. */
+  private meinePerle() {
+    return (this.u.spuren?.() ?? []).find((s) => s.art === "perle" && (!s.petId || s.petId === this.petId)) ?? null;
+  }
+
+  /** Von einer Fläche hinunter — die Perle liegt immer am Boden. */
+  private runterZumBoden(jetzt: number) {
+    this.ort = { art: "boden" };
+    this.springe(this.klemmeX(this.x), this.u.hoehe, { art: "boden" }, jetzt);
+  }
+
+  private laufeRaus() {
+    const { bw } = this.masse();
+    const u = this.u;
+    this.zustand = "raus";
+    // Zum näheren Rand — er hat es eilig.
+    this.richtung = this.x + bw / 2 < ((u.links ?? 0) + u.breite) / 2 ? -1 : 1;
+    this.zielX = this.richtung > 0 ? u.breite + 4 : -bw - 4;
+  }
+
+  /** Zur Perle laufen, bis das Maul darüber ist; dann `dann`. */
+  private laufeZurPerle(p: SpurAufSchirm, dann: (jetzt: number) => void) {
+    const { bw, maulX } = this.masse();
+    const nachRechts = p.x >= this.x + bw / 2;
+    const ziel = this.klemmeX(nachRechts ? p.x - maulX : p.x - (bw - maulX));
+    this.laufeZu(ziel, (j) => {
+      this.richtung = nachRechts ? 1 : -1;
+      dann(j);
+    });
+  }
+
+  /** Perle ins Maul nehmen: verschlucken (`aufheben` = false) oder forttragen. */
+  private schnappePerle(p: SpurAufSchirm, aufheben: boolean, jetzt: number) {
+    this.beute = { id: p.id, x: p.x, y: p.y, t0: jetzt, gemeldet: false, weiter: null, aufheben };
+    this.zustand = "fressen";
+  }
+
+  /** true = er hat sich für etwas mit der Perle entschieden. */
+  private perleEntscheide(jetzt: number): boolean {
+    const u = this.u;
+    const { bw } = this.masse();
+    const modus = this.perleModus;
+    const amBoden = this.ort.art === "boden";
+    if (this.perleGemeldet) return false; // wartet auf die Antwort des Servers
+
+    if (modus === "bringt") {
+      // Er trägt sie: nichts wie hin zum Werfer.
+      if (!amBoden) this.runterZumBoden(jetzt);
+      else this.laufeRaus();
+      return true;
+    }
+    if (modus === "zurueck") {
+      // Angekommen: ein Stück hereinlaufen, stolz ablegen.
+      if (!amBoden) {
+        this.runterZumBoden(jetzt);
+        return true;
+      }
+      const links = u.links ?? 0;
+      const ziel = this.klemmeX(links + (u.breite - links) * this.zw(0.3, 0.6) - bw / 2);
+      this.laufeZu(ziel, (j) => {
+        this.melden({ typ: "perle", x: (this.maul().x + this.richtung * 14) / u.breite });
+        this.perleGemeldet = true;
+        this.perleBis = j + this.zw(40_000, 90_000);
+        this.zustand = "freuen";
+        this.bis = j + 1600;
+      });
+      return true;
+    }
+    if (modus === "sucht") {
+      if (!amBoden) {
+        this.runterZumBoden(jetzt);
+        return true;
+      }
+      if (this.suchSchritt === 0) {
+        // In die Mitte, stehen bleiben, sich umsehen.
+        this.suchSchritt = 1;
+        const links = u.links ?? 0;
+        this.laufeZu(this.klemmeX(links + (u.breite - links) * this.zw(0.35, 0.65) - bw / 2), (j) => {
+          this.ruf = { zeichen: "?", bis: j + 2600 };
+          this.zustand = "idle";
+          this.bis = j + this.zw(2400, 3600);
+          this.umsehenBis = this.bis;
+        });
+        return true;
+      }
+      // Hier ist sie nicht — weiter zum nächsten Tablet.
+      this.laufeRaus();
+      return true;
+    }
+    if (modus === "gefunden") {
+      if (!amBoden) {
+        this.runterZumBoden(jetzt);
+        return true;
+      }
+      const p = this.meinePerle();
+      if (!p) {
+        // Fliegt gerade noch herein oder jemand hält sie fest.
+        this.zustand = "idle";
+        this.bis = jetzt + 500;
+        return true;
+      }
+      this.ruf = { zeichen: "!", bis: jetzt + 1200 };
+      this.laufeZurPerle(p, (j) => {
+        const da = this.meinePerle();
+        if (da && Math.abs(da.x - this.maul().x) < bw * 0.25) this.schnappePerle(da, true, j);
+      });
+      return true;
+    }
+    if (modus === "spiel") {
+      const p = this.meinePerle();
+      if (!p) return false;
+      const einstecken = jetzt >= this.perleBis || jetzt >= this.besuchEnde;
+      if (!einstecken && u.zufall() > 0.45) return false; // sonst macht er, was er eben so macht
+      if (!amBoden) {
+        this.runterZumBoden(jetzt);
+        return true;
+      }
+      this.laufeZurPerle(p, (j) => {
+        const da = this.meinePerle();
+        if (!da || Math.abs(da.x - this.maul().x) > bw * 0.25) return;
+        if (einstecken) {
+          // Genug gespielt: er verschluckt sie wieder.
+          this.schnappePerle(da, false, j);
+          this.naechstePerle = j + this.zw(PERLE_PAUSE_MS[0], PERLE_PAUSE_MS[1]);
+        } else {
+          // Mit der Nase anstupsen — sie hüpft davon.
+          this.melden({ typ: "stups", id: da.id, vx: this.richtung * this.zw(140, 340), vy: -this.zw(420, 680) });
+          this.zustand = "freuen";
+          this.bis = j + 700;
+        }
+      });
+      return true;
+    }
+    // Keine Perle draußen: ab und zu holt er sie hervor (nur am Boden, mit Zeit).
+    if (amBoden && jetzt >= this.naechstePerle && jetzt < this.besuchEnde - 20_000 && u.zufall() < 0.35) {
+      this.melden({ typ: "perle", x: (this.maul().x + this.richtung * 14) / u.breite });
+      this.perleGemeldet = true;
+      this.perleBis = jetzt + this.zw(PERLE_DAUER_MS[0], PERLE_DAUER_MS[1]);
+      this.naechstePerle = this.perleBis + this.zw(PERLE_PAUSE_MS[0], PERLE_PAUSE_MS[1]);
+      this.zustand = "freuen";
+      this.bis = jetzt + 1200;
+      return true;
+    }
+    return false;
+  }
+
   /** Legt sich hin und kringelt sich ein (Mark, 13.11.2026). */
   private schlafeEin(jetzt: number, dauerMs: number) {
     this.zustand = "schlafen";
@@ -1072,6 +1293,9 @@ export class PetBewegung {
     if (this.russ > 0 && (jetzt >= this.schuettelnAb || jetzt >= this.besuchEnde)) {
       return this.schuettle(jetzt);
     }
+
+    // Drachenperle (Mark, 13.11.2026): suchen, aufheben, zurückbringen, spielen.
+    if (this.kann.has("perle") && this.perleEntscheide(jetzt)) return;
 
     // Futternapf (Mark, 12.11.2026): da will er fast immer hin.
     const napf = this.napfAmBoden();
@@ -1367,7 +1591,9 @@ export class PetBewegung {
       case "laufen":
       case "raus": {
         if (this.zustand === "laufen" && this.seiteVorDemMaul(jetzt)) break;
-        this.x += TEMPO_PX_S * dt * this.richtung;
+        // Sucht er seine Perle oder trägt er sie heim, hat er es eilig.
+        const eilig = this.perleModus === "sucht" || this.perleModus === "gefunden" || this.perleModus === "bringt";
+        this.x += TEMPO_PX_S * (eilig ? PERLE_EILE : 1) * dt * this.richtung;
         const angekommen = this.richtung > 0 ? this.x >= this.zielX : this.x <= this.zielX;
         if (angekommen) {
           this.x = this.zielX;
@@ -1482,7 +1708,10 @@ export class PetBewegung {
         const t = jetzt - b.t0;
         if (!b.gemeldet && t >= SCHNAPP_BIS_MS) {
           b.gemeldet = true;
-          this.melden({ typ: "fressen", id: b.id });
+          if (b.aufheben) {
+            this.melden({ typ: "perleGefunden", id: b.id });
+            this.perleGemeldet = true;
+          } else this.melden({ typ: "fressen", id: b.id });
         }
         if (t >= FRESSEN_MS) {
           const weiter = b.weiter;
@@ -1511,6 +1740,11 @@ export class PetBewegung {
       }
       case "idle":
       case "freuen":
+        // Suchend umsehen: auf halber Strecke einmal umdrehen.
+        if (this.umsehenBis && jetzt >= this.umsehenBis - 1400) {
+          this.umsehenBis = 0;
+          this.richtung = -this.richtung;
+        }
         if (jetzt >= this.bis) this.entscheide(jetzt);
         break;
       case "schlafen":
@@ -1643,6 +1877,19 @@ export class PetBewegung {
     return p;
   }
 
+  /** Trägt er die Perle, schwebt sie vor seinem Maul. */
+  private getragenePerle(jetzt: number, p: Pose): { x: number; y: number } | null {
+    const traegt =
+      this.perleModus === "bringt" || (this.perleModus === "zurueck" && !this.perleGemeldet);
+    if (!traegt || Math.abs(p.rot) > 45) return null;
+    const { bw, maulX, maulY } = this.masse();
+    const vor = p.flip ? -1 : 1;
+    return {
+      x: (p.flip ? p.left + bw - maulX : p.left + maulX) + vor * 12,
+      y: p.top + maulY - 4 + Math.sin(jetzt / 240) * 2.5,
+    };
+  }
+
   /** Die Seite hüpft beim Schnappen ins Maul und wird dabei kleiner. */
   private greiftJetzt(jetzt: number): Darstellung["greift"] {
     const b = this.beute;
@@ -1723,6 +1970,8 @@ export class PetBewegung {
       wolken: this.wolken,
       russ: this.russ,
       flocken: this.flocken,
+      perle: this.getragenePerle(jetzt, p),
+      ruf: this.ruf && jetzt < this.ruf.bis ? this.ruf.zeichen : null,
     };
   }
 }

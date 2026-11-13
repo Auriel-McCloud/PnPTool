@@ -61,6 +61,22 @@ class Pet:
     stufe: str = "jung"
     kann: list[str] = field(default_factory=lambda: list(logic.ALLE_FAEHIGKEITEN))
     risse: int = 0
+    # Drachenperle (13.11.2026): wo sie liegt (aus der DB), wer sie geworfen hat,
+    # wem er sie gerade zurückbringt, und welche Tablets er schon abgesucht hat.
+    perle_ort: str | None = None
+    perle_von: str | None = None
+    bringt_zu: str | None = None
+    gesucht: set[str] = field(default_factory=set)
+
+    def perle_modus(self) -> str | None:
+        """Was das Tablet über die Perle wissen muss — nie, WO sie liegt."""
+        if self.bringt_zu:
+            return "zurueck" if self.wirt == self.bringt_zu else "bringt"
+        if self.perle_ort is None:
+            return None
+        if self.perle_ort != self.wirt:
+            return "sucht"
+        return "gefunden" if self.perle_von else "spiel"
 
     def als_dict(self) -> dict:
         return {
@@ -74,6 +90,7 @@ class Pet:
             "stufe": self.stufe,
             "kann": self.kann,
             "risse": self.risse,
+            "perle": self.perle_modus(),
         }
 
     def wachstum_uebernehmen(self, d: dict) -> bool:
@@ -228,6 +245,8 @@ class PetMotor:
                         self._ankommen(pet, neu, self.zufall.choice(["links", "rechts"]), jetzt)
                         betroffen.add(neu)
 
+        # Erst die Perlen (neue Pets wissen sonst nicht, dass ihre irgendwo liegt).
+        await self._perlen_abgleich(campaign_id, None if pausiert else set(aus_db))
         for person_id in betroffen:
             await self._pets_senden(campaign_id, person_id)
 
@@ -304,6 +323,19 @@ class PetMotor:
             await repository.critter_heilen(campaign_id, pet.id, logic.NAPF_HEILUNG)
             # Der Napf steht auf dem Bildschirm dessen, der gefüttert hat.
             await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet.id, logic.ZUTRAULICH_FUETTERN)
+        elif spur and spur["art"] == logic.PERLE:
+            # Die Perle steckt nur ihr Drache wieder ein, und nur, wo er gerade ist —
+            # Antippen lässt sie hüpfen, nicht verschwinden.
+            p = await repository.perle_lesen(campaign_id, haeufchen_id)
+            pet = self._pets.get(campaign_id, {}).get(p["petId"]) if p else None
+            if pet is None or pet.wirt != person_id:
+                return
+            await repository.perle_weg(campaign_id, haeufchen_id)
+            await self._haeufchen_senden(campaign_id, person_id)
+            # Sofort abgleichen: sonst hielte er sie bis zum nächsten Takt für
+            # verloren und liefe auf dem nächsten Tablet suchend herum.
+            await self._perlen_abgleich(campaign_id)
+            return
         else:
             await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
         await self._haeufchen_senden(campaign_id, person_id)
@@ -314,7 +346,104 @@ class PetMotor:
         n = await repository.spuren_alle_weg(campaign_id)
         for person_id in list(self.online(campaign_id)):
             await self._haeufchen_senden(campaign_id, person_id)
+        await self._perlen_abgleich(campaign_id)
         return n
+
+    # ── Drachenperle (Mark, 13.11.2026) ────────────────────────────────────
+
+    async def _perlen_abgleich(self, campaign_id: str, bekannt: set[str] | None = None) -> None:
+        """Wo liegen die Perlen? Aus der DB, damit ein Neustart nichts vergisst.
+        Wessen Stand sich ändert, dessen Tablet bekommt ihn neu.
+
+        `bekannt` = alle Pets der Kampagne (nur beim großen Abgleich): Perlen,
+        deren Drache es nicht mehr gibt, verschwinden."""
+        liegen = await repository.perlen(campaign_id)
+        online = self.online(campaign_id)
+        pets = self._pets.get(campaign_id, {})
+        neu_senden: set[str] = set()
+        for pet_id, p in list(liegen.items()):
+            pet = pets.get(pet_id)
+            verwaist = (bekannt is not None and pet_id not in bekannt) or (pet is not None and logic.PERLE not in pet.kann)
+            if verwaist:
+                # Drache weg oder (SL hat die Stufe zurückgestellt) zu jung für die Perle.
+                await repository.perle_weg(campaign_id, p["id"])
+                neu_senden.add(p["personId"])
+                del liegen[pet_id]
+                continue
+            if pet is None:
+                continue  # Besitzer nicht da — sie bleibt liegen, bis der Drache wiederkommt
+            kreis = logic.online_mitglieder(pet.mitglieder, online)
+            if kreis and p["personId"] not in kreis:
+                # Das Tablet, auf dem sie liegt, ist aus: dort fände er sie nie.
+                # Sie kullert auf ein anderes weiter, das an ist.
+                ziel = logic.perle_ziel(kreis, p["personId"], self.zufall)
+                await repository.perle_umlegen(campaign_id, p["id"], ziel, self.zufall.uniform(0.2, 0.8), p["von"])
+                p["personId"] = ziel
+                pet.gesucht.clear()
+                neu_senden.add(ziel)
+        for person_id in neu_senden & online:
+            await self._haeufchen_senden(campaign_id, person_id)
+        betroffen: set[str] = set()
+        for pet in self._pets.get(campaign_id, {}).values():
+            vorher = pet.perle_modus()
+            p = liegen.get(pet.id)
+            pet.perle_ort, pet.perle_von = (p["personId"], p["von"]) if p else (None, None)
+            if pet.perle_ort is None:
+                pet.gesucht.clear()
+            if pet.wirt and pet.perle_modus() != vorher:
+                betroffen.add(pet.wirt)
+        for person_id in betroffen:
+            await self._pets_senden(campaign_id, person_id)
+
+    async def perle(self, campaign_id: str, person_id: str, pet_id: str, x: float) -> None:
+        """Der Drache holt seine Perle heraus oder legt die zurückgebrachte ab —
+        nur auf dem Tablet, auf dem er gerade ist, und nur, wenn sie nicht
+        schon irgendwo liegt."""
+        pet = self._pets.get(campaign_id, {}).get(pet_id)
+        if pet is None or pet.wirt != person_id or logic.PERLE not in pet.kann:
+            return
+        if pet.perle_ort is not None and not pet.bringt_zu:
+            return
+        pet.bringt_zu = None
+        pet.gesucht.clear()
+        await repository.perle_legen(campaign_id, person_id, pet_id, logic.anteil(x))
+        await self._haeufchen_senden(campaign_id, person_id)
+        await self._perlen_abgleich(campaign_id)
+        await self._pets_senden(campaign_id, person_id)
+
+    async def perle_wurf(self, campaign_id: str, person_id: str, perle_id: str) -> None:
+        """Jemand hat die Perle aus seinem Bildschirm geworfen: sie landet auf
+        einem zufälligen anderen Tablet der Party. Wirft sie dem Drachen weg,
+        wer ihn gerade bei sich hat, bringt er sie genau dem zurück; wer sie nur
+        weiterwirft, ändert daran nichts."""
+        p = await repository.perle_lesen(campaign_id, perle_id)
+        if p is None or p["personId"] != person_id:
+            return
+        pet = self._pets.get(campaign_id, {}).get(p["petId"])
+        online = self.online(campaign_id)
+        kreis = logic.online_mitglieder(pet.mitglieder, online) if pet else sorted(online)
+        ziel = logic.perle_ziel(kreis, person_id, self.zufall)
+        von = person_id if (pet and pet.wirt == person_id) or not p["von"] else p["von"]
+        await repository.perle_umlegen(campaign_id, perle_id, ziel, self.zufall.uniform(0.2, 0.8), von)
+        if pet:
+            pet.gesucht.clear()
+        for wer in {person_id, ziel}:
+            await self._haeufchen_senden(campaign_id, wer)
+        await self._perlen_abgleich(campaign_id)
+
+    async def perle_gefunden(self, campaign_id: str, person_id: str, pet_id: str, perle_id: str) -> None:
+        """Der Drache hebt die Perle auf dem Tablet auf, auf dem er sie gefunden
+        hat, und bringt sie dem Werfer zurück (ist der weg: dem Besitzer)."""
+        pet = self._pets.get(campaign_id, {}).get(pet_id)
+        p = await repository.perle_lesen(campaign_id, perle_id)
+        if pet is None or pet.wirt != person_id or p is None or p["personId"] != person_id or p["petId"] != pet_id:
+            return
+        kreis = logic.online_mitglieder(pet.mitglieder, self.online(campaign_id))
+        pet.bringt_zu = next((w for w in (p["von"], pet.besitzer_id, person_id) if w in kreis), person_id)
+        await repository.perle_weg(campaign_id, perle_id)
+        await self._haeufchen_senden(campaign_id, person_id)
+        await self._perlen_abgleich(campaign_id)
+        await self._pets_senden(campaign_id, person_id)
 
     async def napf_hinstellen(self, campaign_id: str, person_id: str) -> None:
         """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte."""
@@ -385,6 +514,17 @@ def _petmotor_ziel(self, campaign_id: str, pet: Pet, kandidaten: list[str], von:
     Ei wandert nicht, es liegt beim Besitzer."""
     if (pet.stufe == "ei" or self._hat_lesung(campaign_id, pet.id)) and pet.besitzer_id in kandidaten:
         return pet.besitzer_id
+    # Drachenperle: mit der gefundenen Perle direkt zum Werfer; sonst suchen —
+    # ohne zu wissen, wo sie liegt: ein Tablet nach dem anderen, keins doppelt.
+    if pet.bringt_zu:
+        if pet.bringt_zu not in kandidaten:
+            pet.bringt_zu = pet.besitzer_id if pet.besitzer_id in kandidaten else None
+        if pet.bringt_zu:
+            return pet.bringt_zu
+    if pet.perle_ort is not None:
+        if von:
+            pet.gesucht.add(von)
+        return logic.such_ziel(kandidaten, von, pet.gesucht, self.zufall)
     return logic.naechster_wirt(kandidaten, von, self.zufall)
 
 

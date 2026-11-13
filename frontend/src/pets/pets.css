@@ -317,3 +317,57 @@
   pointer-events: none;
   cursor: default;
 }
+
+/* Drachenperle (Mark, 13.11.2026): leuchtet, Flammen züngeln (8 Bilder im Streifen);
+   --pw = Breite eines Bildes in Bildschirm-Pixeln. */
+.pet-perle {
+  position: absolute;
+  background-image: url(/pets/perle.png);
+  background-size: calc(var(--pw) * 8) 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  animation: pet-perle-zuengeln 0.9s steps(8) infinite;
+  filter: drop-shadow(0 0 5px rgba(255, 214, 120, 0.85)) drop-shadow(0 0 12px rgba(120, 200, 255, 0.45));
+  touch-action: none;
+  cursor: grab;
+}
+
+.pet-perle[data-gepackt="ja"] {
+  cursor: grabbing;
+}
+
+.pet-perle-getragen {
+  pointer-events: none;
+}
+
+/* Frisch hervorgeholt: leuchtet auf, statt hereinzufliegen. */
+.pet-perle-neu {
+  animation:
+    pet-perle-zuengeln 0.9s steps(8) infinite,
+    pet-perle-auf 520ms ease-out;
+}
+
+@keyframes pet-perle-zuengeln {
+  to { background-position-x: calc(var(--pw) * -8); }
+}
+
+@keyframes pet-perle-auf {
+  from { scale: 0.1; opacity: 0.2; }
+  60% { scale: 1.35; opacity: 1; }
+  to { scale: 1; }
+}
+
+/* „?“ beim Suchen, „!“ beim Entdecken — über dem Kopf, wippt leicht. */
+.pet-ruf {
+  position: absolute;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: pet-ruf 600ms ease-in-out infinite alternate;
+}
+
+@keyframes pet-ruf {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}

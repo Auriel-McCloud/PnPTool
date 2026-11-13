@@ -20,6 +20,8 @@ verschlossenen Kiste liegt. Mehrere Besitzer → der erste nach id.
 
 Drachen wachsen: `stufe` im Pet-Dict ist `ei`, `baby` oder einer der 13 Namen aus `pets/logic.py::STUFEN_FOLGE` (`jung`, `jung1`, `jung2`, `halbstark`, … `ehrwuerdig`; Index = Wachstumsschritt, alle 3 Schritte eine neue Gestalt, dazwischen Zwischenformen; ein Schritt kostet `petWachstumEp` EP des Critters, Kampagneneinstellung, Standard 5). `kann` listet die freigeschalteten Fähigkeiten.
 
+Drachenperle (13.11.2026, nur Stufe `ehrwuerdig`, Fähigkeit `perle`): eine Spur mit `art: "perle"` in der `haeufchen`-Liste (`geworfen: true` = kam von einem anderen Tablet). Pet-Dict `perle`: `spiel` (liegt hier), `sucht` (hinausgeworfen, er sucht), `gefunden` (die gesuchte liegt hier), `bringt` (trägt sie zum Werfer), `zurueck` (beim Werfer, legt ab) oder `null` — nie der Ort. Tablet → Server: `{"typ": "perle", "petId", "x"}` herausholen/ablegen (nur wo der Drache ist), `{"typ": "perleWurf", "id"}` aus dem eigenen Bild geworfen (landet auf einem zufälligen anderen Party-Tablet), `{"typ": "perleGefunden", "petId", "id"}` aufgehoben; Rollen/Stupsen über `verschieben`, Einstecken über `wegmachen`.
+
 SL-Werkzeuge (13.11.2026, beide nur Spielleitung):
 - `GET/PUT /api/campaigns/{cid}/pets/{critter_id}` antworten mit `{id, art, waechst, stufe, gewachsen}` — `waechst` nur bei Drachen an einem Critter, `gewachsen` = EP seit dem Schlüpfen (`null` beim Ei und beim Bestandsdrachen ohne Wachstum).
 - `PUT /api/campaigns/{cid}/pets/{critter_id}/wachstum` mit `{"stufe": "ei" | "baby" | <Name aus STUFEN_FOLGE>}` stellt die Stufe ein; gespeichert wird nur der Startwert `petEpStart`, der Drache wächst danach mit seinen EP weiter. 404, wenn es kein Drache an einem Critter ist.

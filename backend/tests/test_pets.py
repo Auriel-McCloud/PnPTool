@@ -77,7 +77,39 @@ def welt(monkeypatch):
     async def pets_pausiert(cid):
         return stand["pausiert"]
 
+    # Drachenperle: liegt als Spur mit art "perle" bei einer Person.
+    def _perlen():
+        return [(pid, h) for pid, liste in stand["haeufchen"].items() for h in liste if h["art"] == "perle"]
+
+    async def perlen(cid):
+        return {h["petId"]: {"id": h["id"], "petId": h["petId"], "personId": pid, "von": h.get("von")}
+                for pid, h in _perlen()}
+
+    async def perle_lesen(cid, hid):
+        return next(({"id": h["id"], "petId": h["petId"], "personId": pid, "von": h.get("von")}
+                     for pid, h in _perlen() if h["id"] == hid), None)
+
+    async def perle_weg(cid, hid):
+        for pid, liste in stand["haeufchen"].items():
+            stand["haeufchen"][pid] = [h for h in liste if h["id"] != hid]
+
+    async def perle_legen(cid, pid, pet_id, x):
+        for _, h in _perlen():
+            if h["petId"] == pet_id:
+                await perle_weg(cid, h["id"])
+        stand["perlen_nr"] = stand.get("perlen_nr", 0) + 1
+        stand["haeufchen"].setdefault(pid, []).append(
+            {"id": f"perle{stand['perlen_nr']}", "petId": pet_id, "x": x, "y": 1.0, "art": "perle", "von": None})
+
+    async def perle_umlegen(cid, hid, ziel, x, von):
+        alt = next(h for _, h in _perlen() if h["id"] == hid)
+        await perle_weg(cid, hid)
+        stand["haeufchen"].setdefault(ziel, []).append({**alt, "x": x, "von": von, "geworfen": True})
+
     repo = motor_modul.repository
+    for name, fn in (("perlen", perlen), ("perle_lesen", perle_lesen), ("perle_weg", perle_weg),
+                     ("perle_legen", perle_legen), ("perle_umlegen", perle_umlegen)):
+        monkeypatch.setattr(repo, name, fn)
     monkeypatch.setattr(repo, "pets_pausiert", pets_pausiert)
     monkeypatch.setattr(repo, "pets_der_kampagne", pets_der_kampagne)
     monkeypatch.setattr(repo, "haeufchen_liste", haeufchen_liste)
@@ -449,10 +481,140 @@ def test_wachstum_stufen_und_faehigkeiten():
                 assert lg.stufe("drache", "geschluepft", ep, 0, je)[0] == name, (name, je)
     assert lg.gewachsen_fuer("baby") == 0 and lg.gewachsen_fuer("ei") is None
     # Die Großen können alles.
-    assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN)
+    assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN) | {"perle"}
     # Bärbel wächst nicht.
     assert lg.stufe("baerbel", "ei", 0, None) == ("jung", None)
     assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4
+
+
+def test_drachenperle_werfen_suchen_zurueckbringen(welt):
+    """Mark, 13.11.: Perle aus dem Bild werfen → sie liegt auf einem anderen Tablet,
+    der Drache sucht (ohne zu wissen wo), hebt sie auf und bringt sie dem Werfer."""
+    from app.pets import logic as lg
+
+    assert "perle" in lg.faehigkeiten("drache", "ehrwuerdig", 60)
+    assert "perle" not in lg.faehigkeiten("drache", "gross2", 58)
+    assert "perle" not in lg.faehigkeiten("drache", "jung", None)  # Bestandsdrache
+    # Suche: kein Tablet doppelt, bis alle durch sind.
+    gesucht = {"ben"}
+    assert lg.such_ziel(["anna", "ben", "cleo"], "anna", gesucht, random.Random(1)) == "cleo"
+    assert lg.perle_ziel(["anna"], "anna") == "anna" and lg.perle_ziel(["anna", "ben"], "anna") == "ben"
+
+    m, stand = welt
+    stand["pets"][0].update({"stufe": "ehrwuerdig", "kann": ["klettern", "perle"]})
+
+    async def ablauf():
+        anna, ben, cleo = Socket(), Socket(), Socket()
+        for name, s in (("anna", anna), ("ben", ben), ("cleo", cleo)):
+            await m.anmelden("k", name, s)
+        assert anna.letzte_pets()[0]["perle"] is None
+        # Nur wo der Drache ist, kann er die Perle herausholen.
+        await m.perle("k", "ben", "drache", 0.5)
+        assert stand["haeufchen"].get("ben", []) == []
+        await m.perle("k", "anna", "drache", 0.5)
+        assert anna.letzte_pets()[0]["perle"] == "spiel"
+        perle_id = stand["haeufchen"]["anna"][0]["id"]
+        # Ein zweites Mal herausholen geht nicht — es gibt nur eine.
+        await m.perle("k", "anna", "drache", 0.2)
+        assert len(stand["haeufchen"]["anna"]) == 1
+        # Ben kann Annas Perle nicht werfen.
+        await m.perle_wurf("k", "ben", perle_id)
+        assert stand["haeufchen"]["anna"]
+        # Anna wirft sie hinaus: sie liegt bei jemand anderem, der Drache sucht.
+        await m.perle_wurf("k", "anna", perle_id)
+        assert stand["haeufchen"]["anna"] == []
+        wo = next(p for p in ("ben", "cleo") if stand["haeufchen"].get(p))
+        assert stand["haeufchen"][wo][0]["von"] == "anna"
+        assert anna.letzte_pets()[0]["perle"] == "sucht"
+        # Er läuft raus und sucht Tablet für Tablet, bis er dort ist, wo sie liegt.
+        besucht = []
+        wirt = "anna"
+        for _ in range(3):
+            await m.raus("k", wirt, "drache", "rechts")
+            await asyncio.sleep(0.01)
+            wirt = next(n for n, s in (("anna", anna), ("ben", ben), ("cleo", cleo)) if s.letzte_pets())
+            besucht.append(wirt)
+            if wirt == wo:
+                break
+        assert wirt == wo and len(set(besucht)) == len(besucht) and "anna" not in besucht
+        sock = {"ben": ben, "cleo": cleo}[wo]
+        assert sock.letzte_pets()[0]["perle"] == "gefunden"
+        # Aufheben: Perle weg vom Schirm, er trägt sie und geht direkt zu Anna.
+        await m.perle_gefunden("k", wo, "drache", perle_id)
+        assert stand["haeufchen"][wo] == [] and sock.letzte_pets()[0]["perle"] == "bringt"
+        await m.raus("k", wo, "drache", "links")
+        await asyncio.sleep(0.01)
+        assert anna.letzte_pets()[0]["perle"] == "zurueck"
+        # Bei Anna legt er sie ab — jetzt ist sie wieder zum Spielen da.
+        await m.perle("k", "anna", "drache", 0.4)
+        assert anna.letzte_pets()[0]["perle"] == "spiel" and stand["haeufchen"]["anna"][0]["von"] is None
+        # Wer die Perle nur weiterwirft, bleibt nicht der, dem sie gebracht wird.
+        pid2 = stand["haeufchen"]["anna"][0]["id"]
+        await m.perle_wurf("k", "anna", pid2)
+        wo2 = next(p for p in ("ben", "cleo") if stand["haeufchen"].get(p))
+        await m.perle_wurf("k", wo2, pid2)
+        liegt = next(h for liste in stand["haeufchen"].values() for h in liste if h["art"] == "perle")
+        assert liegt["von"] == "anna"
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_drachenperle_einstecken_tablet_aus_und_verwaist(welt, monkeypatch):
+    """Einstecken gilt sofort (sonst sucht er auf dem nächsten Tablet); liegt die
+    Perle auf einem Tablet, das ausgeht, kullert sie weiter; ohne Drachen
+    verschwindet sie."""
+    m, stand = welt
+    stand["pets"][0].update({"stufe": "ehrwuerdig", "kann": ["klettern", "perle"]})
+
+    async def haeufchen_lesen(cid, pid, hid):
+        return next(({"id": h["id"], "art": h["art"]} for h in stand["haeufchen"].get(pid, []) if h["id"] == hid), None)
+
+    monkeypatch.setattr(motor_modul.repository, "haeufchen_lesen", haeufchen_lesen)
+
+    def perlen_bei():
+        return sorted(pid for pid, liste in stand["haeufchen"].items() for h in liste if h["art"] == "perle")
+
+    async def ablauf():
+        anna, ben, cleo = Socket(), Socket(), Socket()
+        for name, s in (("anna", anna), ("ben", ben), ("cleo", cleo)):
+            await m.anmelden("k", name, s)
+        await m.perle("k", "anna", "drache", 0.5)
+        pid = stand["haeufchen"]["anna"][0]["id"]
+        # Ben kann sie nicht wegtippen — nur der Drache steckt sie ein, wo er ist.
+        stand["haeufchen"].setdefault("ben", [])
+        await m.wegmachen("k", "ben", pid)
+        assert perlen_bei() == ["anna"]
+        await m.wegmachen("k", "anna", pid)
+        assert perlen_bei() == [] and anna.letzte_pets()[0]["perle"] is None
+        # Danach wandert er normal weiter, nicht suchend.
+        await m.raus("k", "anna", "drache", "rechts")
+        await asyncio.sleep(0.01)
+        wirt = next(n for n, s in (("ben", ben), ("cleo", cleo)) if s.letzte_pets())
+        assert {"ben": ben, "cleo": cleo}[wirt].letzte_pets()[0]["perle"] is None
+
+        # Perle liegt bei Ben, Ben macht sein Tablet aus: sie kullert zu jemandem, der da ist.
+        await m.perle("k", wirt, "drache", 0.5)
+        pid = stand["haeufchen"][wirt][0]["id"]
+        await m.perle_wurf("k", wirt, pid)
+        liegt = perlen_bei()[0]
+        assert liegt != wirt
+        await m.abmelden("k", liegt, {"anna": anna, "ben": ben, "cleo": cleo}[liegt])
+        assert perlen_bei() and perlen_bei()[0] != liegt
+        h = next(h for liste in stand["haeufchen"].values() for h in liste if h["art"] == "perle")
+        assert h["von"] == wirt  # zurückgebracht wird sie weiter dem Werfer
+
+        # SL stellt den Drachen jünger: die Perle verschwindet.
+        stand["pets"][0].update({"stufe": "gross", "kann": ["klettern"]})
+        await m.abgleich("k")
+        assert perlen_bei() == []
+        # Perle eines Drachen, den es nicht mehr gibt: weg.
+        stand["haeufchen"]["anna"] = [{"id": "alt", "petId": "fort", "x": 0.5, "y": 1.0, "art": "perle", "von": None}]
+        await m.abgleich("k")
+        assert perlen_bei() == []
+        m._takt.cancel()
+
+    laufen(ablauf())
 
 
 def test_sl_macht_alle_tablets_sauber_naepfe_bleiben(welt, monkeypatch):

@@ -21,6 +21,7 @@ from app.pets.logic import (
     FALLENDE_SPUREN,
     HAEUFCHEN_MAX,
     NAPF,
+    PERLE,
     WACHSENDE_ARTEN,
     TIPPS_MAX,
     TIPPS_MIN,
@@ -247,12 +248,74 @@ async def haeufchen_liste(campaign_id: str, person_id: str) -> list[dict]:
     query = """
         MATCH (h:PetHaeufchen {campaignId: $campaign_id, personId: $person_id})
         RETURN h.id AS id, h.petId AS petId, h.x AS x, h.y AS y, h.erstellt AS erstellt,
-               coalesce(h.art, 'haeufchen') AS art
+               coalesce(h.art, 'haeufchen') AS art, coalesce(h.geworfen, false) AS geworfen
         ORDER BY h.erstellt
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
         return [dict(r) async for r in result]
+
+
+# ── Drachenperle (Mark, 13.11.2026) ──────────────────────────────────────
+# Eine Spur mit art = 'perle': liegt auf dem Bildschirm einer Person, gehört
+# zu einem Pet (`petId`). `von` = wer sie hinausgeworfen hat (dem bringt der
+# Drache sie zurück), `geworfen` = sie kam angeflogen (das Tablet lässt sie
+# dann hereinfliegen statt aufleuchten).
+
+async def perlen(campaign_id: str) -> dict[str, dict]:
+    """Alle Perlen der Kampagne, nach Pet: {petId: {id, personId, von}}."""
+    query = """
+        MATCH (h:PetHaeufchen {campaignId: $campaign_id, art: $perle})
+        RETURN h.id AS id, h.petId AS petId, h.personId AS personId, h.von AS von
+        ORDER BY h.erstellt
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, perle=PERLE)
+        return {r["petId"]: dict(r) async for r in result}
+
+
+async def perle_lesen(campaign_id: str, perle_id: str) -> dict | None:
+    query = """
+        MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, art: $perle})
+        RETURN h.id AS id, h.petId AS petId, h.personId AS personId, h.von AS von
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, id=perle_id, campaign_id=campaign_id, perle=PERLE)
+        r = await result.single()
+        return dict(r) if r else None
+
+
+async def perle_legen(campaign_id: str, person_id: str, pet_id: str, x: float) -> None:
+    """Der Drache holt seine Perle heraus oder legt die gefundene ab. Es gibt
+    je Pet nur eine — eine alte verschwindet."""
+    query = """
+        OPTIONAL MATCH (alt:PetHaeufchen {campaignId: $campaign_id, petId: $pet_id, art: $perle})
+        DETACH DELETE alt
+        WITH count(*) AS _
+        CREATE (:PetHaeufchen {id: $id, campaignId: $campaign_id, personId: $person_id, petId: $pet_id,
+                               x: $x, y: 1.0, erstellt: $erstellt, art: $perle, geworfen: false})
+    """
+    async with get_driver().session() as session:
+        await session.run(query, id=str(uuid.uuid4()), campaign_id=campaign_id, person_id=person_id, pet_id=pet_id,
+                          x=x, erstellt=datetime.now(timezone.utc).isoformat(), perle=PERLE)
+
+
+async def perle_umlegen(campaign_id: str, perle_id: str, person_id: str, x: float, von: str | None) -> None:
+    """Hinausgeworfen (oder weitergekullert, weil ihr Tablet aus ist): die Perle
+    liegt jetzt auf einem anderen Bildschirm."""
+    query = """
+        MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, art: $perle})
+        SET h.personId = $person_id, h.x = $x, h.y = 1.0, h.von = $von, h.geworfen = true, h.erstellt = $erstellt
+    """
+    async with get_driver().session() as session:
+        await session.run(query, id=perle_id, campaign_id=campaign_id, person_id=person_id, x=x, von=von,
+                          erstellt=datetime.now(timezone.utc).isoformat(), perle=PERLE)
+
+
+async def perle_weg(campaign_id: str, perle_id: str) -> None:
+    query = "MATCH (h:PetHaeufchen {id: $id, campaignId: $campaign_id, art: $perle}) DETACH DELETE h"
+    async with get_driver().session() as session:
+        await session.run(query, id=perle_id, campaign_id=campaign_id, perle=PERLE)
 
 
 async def haeufchen_anlegen(campaign_id: str, person_id: str, pet_id: str, x: float, y: float,
@@ -297,7 +360,7 @@ async def haeufchen_verschieben(campaign_id: str, person_id: str, haeufchen_id: 
     """
     async with get_driver().session() as session:
         await session.run(query, id=haeufchen_id, campaign_id=campaign_id, person_id=person_id, x=x, y=y,
-                          arten=list(FALLENDE_SPUREN))
+                          arten=[*FALLENDE_SPUREN, PERLE])  # die Perle rollt und wird gestupst
 
 
 async def haeufchen_weg(campaign_id: str, person_id: str, haeufchen_id: str) -> None:

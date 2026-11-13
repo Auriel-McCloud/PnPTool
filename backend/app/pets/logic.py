@@ -158,10 +158,53 @@ def gewachsen_fuer(stufe_: str, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> in
     return max(JUNG_AB_EP, STUFEN_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD)))
 
 
+# Fähigkeiten, die an einer Gestalt hängen statt an EP (Index in STUFEN_FOLGE).
+# Drachenperle (Mark, 13.11.2026): nur der Ehrwürdige Drache hat sie.
+FAEHIGKEITEN_AB_SCHRITT = {
+    "perle": len(STUFEN_FOLGE) - 1,
+}
+
+
 def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:
     if not waechst(art) or gewachsen is None:
         return list(ALLE_FAEHIGKEITEN) if stufe_ != "ei" else []
-    return [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]
+    kann = [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]
+    if stufe_ in STUFEN_FOLGE:
+        schritt = STUFEN_FOLGE.index(stufe_)
+        kann += [f for f, ab in FAEHIGKEITEN_AB_SCHRITT.items() if schritt >= ab]
+    return kann
+
+
+# ── Drachenperle (Mark, 13.11.2026) ──────────────────────────────────────
+# Der Ehrwürdige Drache holt ab und zu seine leuchtende Perle heraus. Sie ist
+# ein Ding auf dem Bildschirm (eine Spur wie der Napf): wer sie aus dem Bild
+# wirft, schickt sie auf ein zufälliges anderes Tablet der Party. Der Drache
+# weiß nicht, auf welchem sie liegt — er sucht eins nach dem anderen ab, hebt
+# sie auf und bringt sie dem zurück, der sie geworfen hat.
+# Kein SPUR_ARTEN-Eintrag: die Perle entsteht und wandert nur über eigene
+# Meldungen (`perle`, `perleWurf`, `perleGefunden`).
+PERLE = "perle"
+
+
+def perle_ziel(online: list[str], werfer: str, zufall: random.Random | None = None) -> str:
+    """Wohin eine hinausgeworfene Perle fliegt: zu irgendeinem anderen
+    eingeloggten Party-Mitglied; ist sonst niemand da, kommt sie zurück."""
+    andere = sorted(p for p in online if p != werfer)
+    return (zufall or random).choice(andere) if andere else werfer
+
+
+def such_ziel(online: list[str], von: str | None, gesucht: set[str], zufall: random.Random | None = None) -> str | None:
+    """Nächstes Tablet der Suche: eins, auf dem er noch nicht war. Hat er alle
+    durch (jemand hat die Perle weitergeworfen), fängt er von vorn an."""
+    if not online:
+        return None
+    z = zufall or random
+    offen = sorted(p for p in online if p != von and p not in gesucht)
+    if offen:
+        return z.choice(offen)
+    gesucht.clear()
+    andere = sorted(p for p in online if p != von)
+    return z.choice(andere) if andere else sorted(online)[0]
 
 
 def risse(tipps: int, noetig: int) -> int:
