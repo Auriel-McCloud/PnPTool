@@ -66,6 +66,10 @@ export interface Masse {
   atem?: "feuer" | "eis" | "blitz";
   /** Leerer Rand unter den Füßen im Sprite (Bildschirm-Pixel). */
   fuss: number;
+  /** Mulde in der Mitte des Schlafkringels (Bildschirm-Pixel ab links oben,
+   *  Blick nach rechts) — dort liegt die Drachenperle, wenn er um sie schläft. */
+  schlafMitteX?: number;
+  schlafMitteY?: number;
 }
 
 export interface Rechteck {
@@ -297,6 +301,9 @@ export interface Darstellung {
   perle?: { x: number; y: number } | null;
   /** Rufzeichen über dem Kopf: sucht („?“) oder hat etwas entdeckt („!“). */
   ruf?: "?" | "!" | null;
+  /** Drachenperle, um die er sich zum Schlafen gekringelt hat: liegt in der
+   *  Mitte des Kringels (Bildschirm-Pixel ihrer Mitte). */
+  nest?: { id: string; x: number; y: number } | null;
 }
 
 export type Meldung =
@@ -308,6 +315,8 @@ export type Meldung =
   | { typ: "perle"; x: number }
   /** Gesuchte Perle aufgehoben — ab jetzt trägt er sie. */
   | { typ: "perleGefunden"; id: string }
+  /** Feuerball (Mark, 13.11.2026): fliegt vom Maul weit über den Schirm. */
+  | { typ: "feuerball"; x: number; y: number; richtung: 1 | -1 }
   /** Perle mit der Nase anstupsen: sie hüpft davon. */
   | { typ: "stups"; id: string; vx: number; vy: number }
   /** Bärbels Lesung zugeklappt. */
@@ -328,6 +337,10 @@ const PERLE_DAUER_MS: [number, number] = [60_000, 150_000];
 const PERLE_PAUSE_MS: [number, number] = [180_000, 480_000];
 /** So viel schneller läuft er, wenn er die Perle sucht oder zurückbringt. */
 const PERLE_EILE = 2.4;
+/** So oft legt er sich zur Perle schlafen, wenn er sich für sie interessiert (Annahme Neko). */
+const PERLE_SCHLAF_ANTEIL = 0.25;
+/** So oft wird aus dem Niesen ein Feuerball, wenn er das schon kann (Annahme Neko). */
+const FEUERBALL_ANTEIL = 0.5;
 /** So lange muss man draufbleiben, bis er gepackt ist. */
 export const PACKEN_MS = 3000;
 /** Fressen (Seite schnappen und kauen): 16 Frames à 90 ms, Seite fliegt in Frame 3–5 ins Maul. */
@@ -377,6 +390,10 @@ export class PetBewegung {
   besuchEnde: number;
   haeufchenGemacht = false;
   geschlafen = false;
+  /** Dieses Niesen ist ein Feuerball statt eines Feuerstoßes. */
+  private ballSchuss = false;
+  /** Perle, um die er sich gerade kringelt — und wo sie vorher lag. */
+  private schlafPerle: { id: string; vonX: number; vonY: number } | null = null;
   /** Beim Suchen: bis dahin schaut er sich um (dreht sich einmal). */
   private umsehenBis = 0;
   /** Wann er sich hingelegt hat — die erste Zeit kringelt er sich erst ein. */
@@ -898,6 +915,13 @@ export class PetBewegung {
     // anniesen soll sie verwandeln, nicht an ihr vorbeigehen).
     const sie = (this.u.nachbarn?.() ?? []).find((n) => n.art === "baerbel");
     if (sie && Math.abs(sie.y - this.fussY) < 220) this.richtung = sie.x >= this.x ? 1 : -1;
+    // Feuerball (Mark, 13.11.2026): ab dem Halbstarken schießt er öfter einen
+    // Ball, der weit fliegt — meist dorthin, wo mehr Platz ist.
+    this.ballSchuss = this.kann.has("feuerball") && this.u.zufall() < FEUERBALL_ANTEIL;
+    if (this.ballSchuss && !sie && this.u.zufall() < 0.7) {
+      const { bw } = this.masse();
+      this.richtung = this.x + bw / 2 < ((this.u.links ?? 0) + this.u.breite) / 2 ? 1 : -1;
+    }
     this.zustand = "niesen";
     this.niesenStart = jetzt;
     this.brandGelegt = false;
@@ -1232,6 +1256,18 @@ export class PetBewegung {
       const p = this.meinePerle();
       if (!p) return false;
       const einstecken = jetzt >= this.perleBis || jetzt >= this.besuchEnde;
+      // Ab und zu legt er sich zu ihr und kringelt sich um sie zum Schlafen.
+      if (!einstecken && !this.geschlafen && amBoden && u.zufall() < PERLE_SCHLAF_ANTEIL) {
+        const { bw: breit, schlafMitteX = breit / 2 } = this.masse();
+        const nachRechts = this.richtung > 0;
+        this.laufeZu(this.klemmeX(nachRechts ? p.x - schlafMitteX : p.x - (breit - schlafMitteX)), (j) => {
+          this.richtung = nachRechts ? 1 : -1;
+          this.schlafeEin(j, this.zw(25_000, 70_000));
+          this.perleBis = Math.max(this.perleBis, this.bis + 15_000);
+          this.besuchEnde = Math.max(this.besuchEnde, this.bis + 25_000);
+        });
+        return true;
+      }
       if (!einstecken && u.zufall() > 0.45) return false; // sonst macht er, was er eben so macht
       if (!amBoden) {
         this.runterZumBoden(jetzt);
@@ -1272,6 +1308,31 @@ export class PetBewegung {
     this.geschlafen = true;
     this.schlafStart = jetzt;
     this.bis = jetzt + dauerMs;
+    // Liegt seine Perle gleich neben ihm, kringelt er sich um sie (Mark, 13.11.2026).
+    const { bw, schlafMitteX } = this.masse();
+    const p = schlafMitteX !== undefined && this.perleModus === "spiel" && this.ort.art === "boden" ? this.meinePerle() : null;
+    this.schlafPerle = p && Math.abs(p.x - (this.x + bw / 2)) < bw * 0.75 ? { id: p.id, vonX: p.x, vonY: p.y } : null;
+  }
+
+  /** Die Perle im Kringel: rollt beim Einkringeln in die Mulde und bleibt dort. */
+  private nestJetzt(jetzt: number, p: Pose): Darstellung["nest"] {
+    const sp = this.schlafPerle;
+    if (!sp) return null;
+    if (this.zustand !== "schlafen" && this.zustand !== "aufwachen") {
+      this.schlafPerle = null;
+      return null;
+    }
+    const { bw, schlafMitteX = bw / 2, schlafMitteY = 0 } = this.masse();
+    const zx = p.flip ? p.left + bw - schlafMitteX : p.left + schlafMitteX;
+    const zy = p.top + schlafMitteY;
+    const k = this.zustand === "aufwachen" ? 1 : Math.min(1, Math.max(0, (jetzt - this.schlafStart) / EINKRINGELN_MS));
+    const w = k * k * (3 - 2 * k);
+    return {
+      id: sp.id,
+      x: sp.vonX + (zx - sp.vonX) * w,
+      // Kleiner Bogen: der Schwanz hebt sie hinein.
+      y: sp.vonY + (zy - sp.vonY) * w - Math.sin(k * Math.PI) * 10,
+    };
   }
 
   /** Rollt sich wieder aus — von dort, wie weit er schon eingekringelt war. */
@@ -1728,7 +1789,14 @@ export class PetBewegung {
       case "niesen": {
         const t = jetzt - this.niesenStart;
         // Flecken entstehen, wenn das Feuer am weitesten reicht.
-        if (!this.brandGelegt && t >= FEUER_AB_MS + FEUER_MS * 0.4) {
+        if (this.ballSchuss) {
+          // Der Ball verlässt das Maul, sobald es offen ist; Flecken macht erst der Einschlag.
+          if (!this.brandGelegt && t >= FEUER_AB_MS) {
+            this.brandGelegt = true;
+            const m = this.maul();
+            this.melden({ typ: "feuerball", x: m.x, y: m.y, richtung: this.richtung > 0 ? 1 : -1 });
+          }
+        } else if (!this.brandGelegt && t >= FEUER_AB_MS + FEUER_MS * 0.4) {
           this.brandGelegt = true;
           this.brandLegen();
         }
@@ -1926,7 +1994,7 @@ export class PetBewegung {
     const kopfX = vertikal ? p.left + bw / 2 : p.left + (p.flip ? bw * 0.2 : bw * 0.8);
     const kopfY = vertikal ? p.top + bh / 2 - bw / 2 : p.top;
     let feuer: Darstellung["feuer"] = null;
-    if (this.zustand === "niesen" && jetzt - this.niesenStart >= FEUER_AB_MS) {
+    if (this.zustand === "niesen" && !this.ballSchuss && jetzt - this.niesenStart >= FEUER_AB_MS) {
       const { maulX, maulY } = this.masse();
       feuer = {
         start: this.niesenStart + FEUER_AB_MS,
@@ -1971,6 +2039,7 @@ export class PetBewegung {
       russ: this.russ,
       flocken: this.flocken,
       perle: this.getragenePerle(jetzt, p),
+      nest: this.nestJetzt(jetzt, p),
       ruf: this.ruf && jetzt < this.ruf.bis ? this.ruf.zeichen : null,
     };
   }

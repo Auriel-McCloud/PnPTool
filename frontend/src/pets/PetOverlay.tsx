@@ -4,11 +4,24 @@ import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type PerleModus, ty
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
 import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z } from "./drachenstufen";
+import { herein, schiesse } from "./feuerball";
+import { KiFigur } from "./KiFigur";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
 import "./pets.css";
 
 /** Steuerungen der gerade sichtbaren Pets — Feuer trifft die andere Figur. */
 const steuerungen = new Map<string, PetSteuerung>();
+
+/** Was ein Treffer (Atem, Feuerball, Blitz) bei den Getroffenen auslöst. */
+function trefferWirken(treffer: ReturnType<typeof treffe>, jetzt: number) {
+  for (const hit of treffer) {
+    // Blitz verrußt einen Drachen (Bärbels oder der des Blitzdrachen);
+    // Bärbel kann nicht verrußen — sie erschrickt wie bei Feuer und Eis.
+    const st = steuerungen.get(hit.id);
+    if (hit.art === "blitz" && st?.verkohlen) st.verkohlen(jetzt);
+    else if (hit.art !== "schleim") st?.erschrecken?.(jetzt);
+  }
+}
 
 /**
  * Critter-Pet auf dem Spieler-Tablet (Mark, 11.11.2026).
@@ -142,6 +155,9 @@ const SPUR_PX = {
   seite: { breite: 14, hoehe: 11 },
   schleim: { breite: 50, hoehe: 45 },
   frost: { breite: 38, hoehe: 23 },
+  // Einschlag eines Feuerballs/Kugelblitzes bzw. Eisballs (13.11.2026): derselbe Fleck, groß.
+  krater: { breite: 88, hoehe: 54 },
+  eiskrater: { breite: 88, hoehe: 54 },
   napf: { breite: 22, hoehe: 13 },
   perle: { breite: 16, hoehe: 16 },
 } as const;
@@ -187,6 +203,8 @@ function masse(art = "drache", stufe?: string): Masse {
       maulY: g.maul[1] * s,
       feuerLaenge: SPRITE.feuer.breite * s * g.feuerSkala,
       atem: atemVon(art),
+      schlafMitteX: g.schlafMitte[0] * s,
+      schlafMitteY: g.schlafMitte[1] * s,
     };
   }
   if (art === "baerbel") {
@@ -440,6 +458,11 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
           if (bekannt.current === null)
             bekannt.current = new Set(n.daten.map((h) => (h.art === "perle" ? `${h.id}:${h.erstellt}` : h.id)));
           setHaeufchen(n.daten);
+        } else if (n.typ === "feuerball") {
+          // Von einem anderen Tablet herübergeflogen; die Flecken legt der Server zum Einschlag.
+          herein(atemVon(n.art), n.seite, n.x * window.innerWidth, n.y * window.innerHeight, n.ms, skala() * 1.3, (t) =>
+            trefferWirken(t, performance.now()),
+          );
         }
       });
     };
@@ -505,8 +528,9 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
         }
         // Bewusst kein <button>: die globale Button-Optik (Fläche, Rahmen,
         // Hover-Leuchten) machte aus dem Sprite ein sichtbares Kästchen.
-        if (h.art === "brand" || h.art === "schleim" || h.art === "frost") {
+        if (h.art === "brand" || h.art === "schleim" || h.art === "frost" || h.art === "krater" || h.art === "eiskrater") {
           const px = SPUR_PX[h.art];
+          const gross = h.art === "krater" || h.art === "eiskrater";
           const stil = {
             left: h.x * window.innerWidth - (px.breite * s) / 2,
             top: h.y * window.innerHeight - (px.hoehe * s) / 2,
@@ -517,7 +541,8 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             <Brandfleck
               key={h.id}
               id={h.id}
-              art={h.art}
+              art={h.art === "krater" ? "brand" : h.art === "eiskrater" ? "frost" : h.art}
+              gross={gross}
               stil={stil}
               weg={weg.has(h.id)}
               onSauber={() => wegmachen(h.id)}
@@ -552,6 +577,8 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
               });
             }}
           />
+        ) : p.art === "ki" ? (
+          <KiFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} />
         ) : (
         <PetFigur
           key={`${p.id}:${p.ankunft}:${p.stufe ?? "jung"}`}
@@ -616,6 +643,7 @@ function PerleSpur({
     // Nur ein Wurf von Hand darf hinaus — hereinfliegen und Stupser prallen ab.
     let darfRaus = false;
     let gesehenX = h.x;
+    let imNest = false;
     let finger: { x: number; y: number; t: number }[] = [];
     let start: { x: number; y: number; t: number } | null = null;
     if (frisch && h.geworfen) {
@@ -649,11 +677,21 @@ function PerleSpur({
       letzte = jetzt;
       const griff = gegriffen.get(h.id);
       let groesse = 1;
+      if (!griff && imNest) {
+        // Er ist aufgewacht: sie kullert aus dem Kringel auf den Boden.
+        imNest = false;
+        vx = 0;
+        vy = 0;
+        darfRaus = false;
+        modus = "fliegt";
+      }
       if (griff) {
-        // Der Drache hat sie im Maul (aufheben/einstecken).
+        // Der Drache hat sie im Maul (aufheben/einstecken) oder schläft um sie gekringelt.
         x = griff.x;
         y = griff.y;
         groesse = griff.skala;
+        imNest = griff.skala > 0.9;
+        if (modus !== "weg") modus = "ruht";
       } else if (modus === "fliegt") {
         vy += PERLE_G * dt;
         x += vx * dt;
@@ -694,6 +732,9 @@ function PerleSpur({
       div.style.left = `${x - r}px`;
       div.style.top = `${y - r}px`;
       div.style.transform = groesse === 1 ? "" : `scale(${groesse.toFixed(2)})`;
+      // Im Kringel liegt sie vor ihm, und wer dort tippt, weckt den Drachen.
+      div.style.zIndex = griff ? "2" : "";
+      div.style.pointerEvents = griff ? "none" : "";
       div.dataset.fliegt = modus === "ruht" && !griff ? "nein" : "ja";
       div.dataset.gepackt = modus === "gezogen" ? "ja" : "nein";
       rahmen = requestAnimationFrame(takt);
@@ -1403,11 +1444,14 @@ function schleimBild(id: string) {
 function Brandfleck({
   id,
   art,
+  gross = false,
   stil,
   weg,
   onSauber,
 }: {
   id: string;
+  /** Einschlag eines Feuerballs: größer, braucht mehr Wischen. */
+  gross?: boolean;
   /** `schleim`: feuchter Schmierfleck vom Tentakelmonster, `frost`: Raureif
    *  vom Eisdrachen — gleiche Wisch-Logik. */
   art: "brand" | "schleim" | "frost";
@@ -1428,7 +1472,7 @@ function Brandfleck({
     if (fertig.current || !letzter.current) return;
     const d = Math.hypot(e.clientX - letzter.current.x, e.clientY - letzter.current.y);
     letzter.current = { x: e.clientX, y: e.clientY };
-    rest.current = Math.max(0, rest.current - d / WISCH_PX);
+    rest.current = Math.max(0, rest.current - d / (gross ? WISCH_PX * 1.8 : WISCH_PX));
     if (el.current) el.current.style.opacity = String(0.25 + rest.current * 0.75);
     if (rest.current <= 0) {
       fertig.current = true;
@@ -1621,6 +1665,30 @@ function PetFigur({
         window.setTimeout(() => gegriffen.delete(n.id), 900);
         senden({ typ: "perleGefunden", petId: pet.id, id: n.id });
       } else if (n.typ === "stups") perlenStoss.get(n.id)?.(n.vx, n.vy);
+      else if (n.typ === "feuerball") {
+        const atem = atemVon(pet.art);
+        const sk = skala();
+        schiesse({
+          art: atem,
+          petId: pet.id,
+          x: n.x,
+          y: n.y,
+          richtung: n.richtung,
+          skala: sk * feuerSkala,
+          onEinschlag: (x, y, treffer) => {
+            trefferWirken(treffer, performance.now());
+            senden({
+              typ: "haeufchen",
+              petId: pet.id,
+              art: atem === "eis" ? "eiskrater" : "krater",
+              x: Math.min(0.99, Math.max(0.01, x / window.innerWidth)),
+              y: Math.min(0.995, Math.max(0.01, (y - 21 * sk) / window.innerHeight)),
+            });
+          },
+          // Über den Rand hinaus: er fliegt auf ein anderes Tablet weiter.
+          onHinaus: (seite) => senden({ typ: "feuerball", petId: pet.id, seite }),
+        });
+      }
       else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
     };
     const b: PetSteuerung = fliegt
@@ -1670,15 +1738,7 @@ function PetFigur({
         if (istDrache(pet.art) && mal === "schleim") setKlecks(true);
         else if (istDrache(pet.art)) setKlecks(false);
         melde({ id: pet.id, art: pet.art, x: left + bw / 2, y: top + bh / 2, w: bw, h: bh });
-        if (d.angriff) {
-          for (const hit of treffe(d.angriff, pet.id, jetzt)) {
-            // Blitz verrußt einen Drachen (Bärbels oder der des Blitzdrachen);
-            // Bärbel kann nicht verrußen — sie erschrickt wie bei Feuer und Eis.
-            const st = steuerungen.get(hit.id);
-            if (hit.art === "blitz" && st?.verkohlen) st.verkohlen(jetzt);
-            else if (hit.art !== "schleim") st?.erschrecken?.(jetzt);
-          }
-        }
+        if (d.angriff) trefferWirken(treffe(d.angriff, pet.id, jetzt), jetzt);
         spriteRect.current = { left, top, w: bw, h: bh };
         const liest = !!d.liest;
         if (liest !== buchAn.current) {
@@ -1769,9 +1829,11 @@ function PetFigur({
           fe.style.transform = d.feuer.flip ? "scaleX(-1)" : "none";
         } else fe.style.display = "none";
       }
-      if (d.greift) {
-        gegriffen.set(d.greift.id, { x: d.greift.x, y: d.greift.y, skala: d.greift.skala });
-        gehalten.current = d.greift.id;
+      // Im Maul (fressen/aufheben) oder in der Mitte des Schlafkringels (Perle).
+      const halt = d.greift ?? (d.nest ? { ...d.nest, skala: 1 } : null);
+      if (halt) {
+        gegriffen.set(halt.id, { x: halt.x, y: halt.y, skala: halt.skala });
+        gehalten.current = halt.id;
       } else if (gehalten.current) {
         gegriffen.delete(gehalten.current);
         gehalten.current = null;

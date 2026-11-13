@@ -481,10 +481,81 @@ def test_wachstum_stufen_und_faehigkeiten():
                 assert lg.stufe("drache", "geschluepft", ep, 0, je)[0] == name, (name, je)
     assert lg.gewachsen_fuer("baby") == 0 and lg.gewachsen_fuer("ei") is None
     # Die Großen können alles.
-    assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN) | {"perle"}
+    assert set(lg.faehigkeiten("drache", "ehrwuerdig", 60)) == set(lg.ALLE_FAEHIGKEITEN) | {"perle", "feuerball"}
+    # Feuerball ab dem Halbstarken, nicht für Bestandsdrachen.
+    assert "feuerball" in lg.faehigkeiten("eisdrache", "halbstark", 15)
+    assert "feuerball" not in lg.faehigkeiten("drache", "jung2", 14)
+    assert "feuerball" not in lg.faehigkeiten("drache", "jung", None)
     # Bärbel wächst nicht.
     assert lg.stufe("baerbel", "ei", 0, None) == ("jung", None)
     assert lg.risse(0, 8) == 0 and lg.risse(4, 8) == 2 and lg.risse(8, 8) == 4
+
+
+def test_ki_waechst_ohne_ei_in_dreizehn_schritten():
+    """Mark, 13.11.: die KI ist ein Begleiter, der wachsen kann — Funke bis Entität."""
+    from app.pets import logic as lg
+
+    assert "ki" in lg.PET_ARTEN and lg.waechst("ki") and lg.ist_ki("ki") and not lg.ist_drache("ki")
+    assert len(lg.KI_FOLGE) == len(lg.STUFEN_FOLGE) == 13
+    # Kein Ei, kein Baby: ab dem ersten EP zählt jeder Schritt.
+    assert lg.stufe("ki", "geschluepft", 10, 10) == ("funke", 0)
+    assert lg.stufe("ki", "geschluepft", 14, 10) == ("funke", 4)
+    assert lg.stufe("ki", "geschluepft", 15, 10)[0] == "funke1"
+    assert lg.stufe("ki", "geschluepft", 25, 10)[0] == "keim"
+    assert lg.stufe("ki", "geschluepft", 70, 10)[0] == "entitaet"
+    assert lg.stufe("ki", "geschluepft", 900, 10)[0] == "entitaet"
+    assert lg.stufe("ki", "geschluepft", 30, 10, 10)[0] == "funke2"
+    # Ohne Stufenfeld (KI an einem Gegenstand) bleibt sie ein Funke.
+    assert lg.stufe("ki", None, 500, None) == ("funke", None)
+    for name in lg.KI_FOLGE:
+        for je in (1, 5, 10):
+            assert lg.stufe("ki", "geschluepft", lg.gewachsen_fuer(name, je), 0, je)[0] == name
+    # Jede Art nur mit ihren eigenen Stufen.
+    assert lg.stufe_passt("ki", "wesen1") and not lg.stufe_passt("ki", "ei") and not lg.stufe_passt("ki", "gross")
+    assert lg.stufe_passt("drache", "ei") and lg.stufe_passt("eisdrache", "gross") and not lg.stufe_passt("drache", "keim")
+    assert not lg.stufe_passt("baerbel", "jung")
+    assert lg.faehigkeiten("ki", "entitaet", 60) == []
+
+
+def test_feuerball_fliegt_aufs_nachbar_tablet(welt):
+    """Mark, 13.11.: Feuerbälle, die weiter fliegen — über den Rand hinaus landet
+    er bei jemand anderem aus der Party und hinterlässt dort einen großen Fleck."""
+    m, stand = welt
+    m.feuerball_flug = 0
+    stand["pets"][0].update({"art": "eisdrache", "stufe": "halbstark", "kann": ["niesen", "feuerball"]})
+
+    async def ablauf():
+        anna, ben = Socket(), Socket()
+        await m.anmelden("k", "anna", anna)
+        # Allein am Tisch: er verpufft.
+        await m.feuerball("k", "anna", "drache", "rechts")
+        await asyncio.sleep(0.01)
+        assert stand["haeufchen"] == {}
+        await m.anmelden("k", "ben", ben)
+        # Nur wer den Drachen hat, kann schießen.
+        await m.feuerball("k", "ben", "drache", "rechts")
+        assert not [u for u in anna.post + ben.post if u["typ"] == "feuerball"]
+        await m.feuerball("k", "anna", "drache", "rechts")
+        await asyncio.sleep(0.01)
+        ball = [u for u in ben.post if u["typ"] == "feuerball"]
+        assert len(ball) == 1 and ball[0]["seite"] == "links" and ball[0]["art"] == "eisdrache"
+        assert not [u for u in anna.post if u["typ"] == "feuerball"]
+        flecken = stand["haeufchen"]["ben"]
+        assert len(flecken) == 1 and flecken[0]["art"] == "eiskrater"
+        assert [u for u in ben.post if u["typ"] == "haeufchen"][-1]["daten"] == flecken
+        # Nicht im Sekundentakt.
+        await m.feuerball("k", "anna", "drache", "links")
+        await asyncio.sleep(0.01)
+        assert len([u for u in ben.post if u["typ"] == "feuerball"]) == 1
+        # Zu jung: kein Feuerball.
+        stand["pets"][0].update({"stufe": "jung2", "kann": ["niesen"]})
+        await m.abgleich("k")
+        m._pets["k"]["drache"].feuerball_zuletzt = -1e9
+        await m.feuerball("k", "anna", "drache", "rechts")
+        assert len([u for u in ben.post if u["typ"] == "feuerball"]) == 1
+        m._takt.cancel()
+
+    laufen(ablauf())
 
 
 def test_drachenperle_werfen_suchen_zurueckbringen(welt):

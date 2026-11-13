@@ -67,6 +67,8 @@ class Pet:
     perle_von: str | None = None
     bringt_zu: str | None = None
     gesucht: set[str] = field(default_factory=set)
+    # Feuerball: wann er zuletzt einen aufs Nachbar-Tablet geschossen hat.
+    feuerball_zuletzt: float = -1e9
 
     def perle_modus(self) -> str | None:
         """Was das Tablet über die Perle wissen muss — nie, WO sie liegt."""
@@ -115,6 +117,9 @@ class PetMotor:
     lesen_min: float = vorlesen.LESEN_MIN_S
     lesen_max: float = vorlesen.LESEN_MAX_S
     _spuren_weg: dict[str, bool] = field(default_factory=dict)
+    # Feuerbälle, die gerade auf ein anderes Tablet fliegen (Aufgaben festhalten).
+    feuerball_flug: float = logic.FEUERBALL_FLUG_S
+    _einschlaege: set[asyncio.Task] = field(default_factory=set)
     _lesen: dict[str, dict[str, "Lesen"]] = field(default_factory=dict)
 
     # ── Leitungen ──────────────────────────────────────────────────────────
@@ -317,7 +322,7 @@ class PetMotor:
             # Ein Napf verschwindet nur, wenn ein Drache auf diesem Bildschirm ihn
             # leer frisst — nicht durch Antippen.
             pet = self._pets.get(campaign_id, {}).get(pet_id or "")
-            if pet is None or pet.wirt != person_id or not logic.waechst(pet.art) or pet.stufe == "ei":
+            if pet is None or pet.wirt != person_id or not logic.ist_drache(pet.art) or pet.stufe == "ei":
                 return
             await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
             await repository.critter_heilen(campaign_id, pet.id, logic.NAPF_HEILUNG)
@@ -444,6 +449,39 @@ class PetMotor:
         await self._haeufchen_senden(campaign_id, person_id)
         await self._perlen_abgleich(campaign_id)
         await self._pets_senden(campaign_id, person_id)
+
+    # ── Feuerball (Mark, 13.11.2026) ───────────────────────────────────────
+
+    async def feuerball(self, campaign_id: str, person_id: str, pet_id: str, seite: str) -> None:
+        """Der Feuerball ist über den Rand hinausgeflogen: er kommt auf einem
+        anderen Tablet der Party herein (Gegenseite) und schlägt dort ein.
+        Ist sonst niemand da, verpufft er."""
+        pet = self._pets.get(campaign_id, {}).get(pet_id)
+        jetzt = time.monotonic()
+        if pet is None or pet.wirt != person_id or logic.FEUERBALL not in pet.kann:
+            return
+        if jetzt - pet.feuerball_zuletzt < logic.FEUERBALL_ABKLINGEN_S or await repository.pets_pausiert(campaign_id):
+            return
+        kreis = logic.online_mitglieder(pet.mitglieder, self.online(campaign_id))
+        ziel = logic.perle_ziel(kreis, person_id, self.zufall)
+        if ziel == person_id:
+            return
+        pet.feuerball_zuletzt = jetzt
+        x, y = self.zufall.uniform(0.25, 0.75), self.zufall.uniform(0.45, 0.9)
+        await self._senden(campaign_id, ziel, {
+            "typ": "feuerball", "art": pet.art, "x": x, "y": y,
+            "seite": logic.gegenseite("rechts" if seite == "rechts" else "links"),
+            "ms": int(logic.FEUERBALL_FLUG_S * 1000),
+        })
+        aufgabe = asyncio.create_task(self._feuerball_einschlag(campaign_id, ziel, pet_id, pet.art, x, y))
+        self._einschlaege.add(aufgabe)
+        aufgabe.add_done_callback(self._einschlaege.discard)
+
+    async def _feuerball_einschlag(self, campaign_id: str, ziel: str, pet_id: str, art: str, x: float, y: float) -> None:
+        await asyncio.sleep(self.feuerball_flug)
+        await repository.haeufchen_anlegen(campaign_id, ziel, pet_id, logic.anteil(x), logic.anteil(y),
+                                           logic.feuerball_spur(art))
+        await self._haeufchen_senden(campaign_id, ziel)
 
     async def napf_hinstellen(self, campaign_id: str, person_id: str) -> None:
         """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte."""

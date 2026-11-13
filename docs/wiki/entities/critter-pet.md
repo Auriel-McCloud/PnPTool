@@ -376,7 +376,7 @@ Mark zum Entwurf: „die sind perfekt! bitte bau das ein!“
 
 Mark: „vielleicht könnte er auch Feuerbälle schießen, die weiter fliegen“, „was ist denn eine Drachenperle? das klingt gut!“, „hast du noch Ideen für Fähigkeiten?“ — noch nichts gebaut, Zuordnung zu den Stufen offen.
 
-- **Feuerball (Idee Mark):** fliegt weit über den Bildschirm statt nur vor dem Maul zu lodern; Eisdrache Eisball, Blitzdrache Kugelblitz. Einschlag = größerer Fleck. Offen: prallt er an Wörtern/Kästchen ab oder fliegt er bis zum Rand; fliegt er manchmal zum Nachbar-Tablet weiter.
+- **Feuerball — gebaut 13.11.2026, siehe Abschnitt „Feuerball“ unten.** Ursprüngliche Idee Mark: fliegt weit über den Bildschirm statt nur vor dem Maul zu lodern; Eisdrache Eisball, Blitzdrache Kugelblitz. Einschlag = größerer Fleck. Offen: prallt er an Wörtern/Kästchen ab oder fliegt er bis zum Rand; fliegt er manchmal zum Nachbar-Tablet weiter.
 - **Drachenperle — gebaut 13.11.2026, siehe Abschnitt „Drachenperle“ unten.** Ursprünglicher Vorschlag: die leuchtende Perle der chinesischen Drachen (Weisheit, Glück, Donner/Mond), der sie nachjagen. Für den Ehrwürdigen: schwebt vor ihm, er jagt und jongliert sie, Spieler können sie wegschnippen, im Schlaf liegt sie leuchtend in der Mitte des Kringels. Keine Spielwerte (Wachstum gibt keine Werte).
 - **Weitere Vorschläge Neko:** Regen machen (chinesische Drachen bringen Regen: Wolke wäscht Flecken vom Bildschirm; Eisdrache Schnee, Blitzdrache Gewitter); frei durch die Luft schlängeln statt nur Wolkenlauf; Brüllen (Schirm wackelt, Häufchen fliegen weg, andere Pets erschrecken); um ein Popup oder Portrait wickeln; Schatz horten (sammelt Seiten und Krümel auf einen Haufen); Geschenke bringen bei hoher Zutraulichkeit (Marks Idee vom 12.11.); kleinere Pets reiten auf ihm.
 - **Vorschlag Reihenfolge (Neko, nicht entschieden):** Halbstarker Feuerball → Jungdrache Regen → Drache frei fliegen und Brüllen → Ehrwürdiger Drachenperle.
@@ -394,9 +394,35 @@ Mark: „Mach so eine Drachenperle! Aber vielleicht, dass sie nicht immer da ist
 - **Weiterwerfen:** wer die Perle bei sich liegen hat, darf sie auch weiterwerfen — der Drache muss weitersuchen; zurückgebracht wird sie trotzdem dem ersten Werfer.
 - **Tablet aus:** geht das Tablet aus, auf dem die Perle liegt, kullert sie auf ein anderes Tablet der Party weiter — sonst fände er sie nie. Gibt es den Drachen nicht mehr (oder stellt die SL ihn jünger), verschwindet die Perle.
 - **Annahmen Neko:** alle Zeiten oben; beim Suchen und Tragen läuft er 2,4-mal so schnell; die Perle ist für alle drei Drachenfarben gleich; „Alles sauber machen“ räumt sie mit weg; keine Spielwerte.
-- **Noch offen:** Perle im Schlaf in der Mitte des Kringels; Belohnung fürs Zurückbringen (Herzen, Zutraulichkeit).
+- **Perle im Schlafkringel (gebaut 13.11.2026, Mark: „die Perle mit Schlafkringel“):** liegt die Perle draußen, legt er sich ab und zu zu ihr und kringelt sich um sie — sie rollt beim Einkringeln in die Mulde in der Mitte und leuchtet dort, bis er aufwacht; dann kullert sie wieder heraus. Im Kringel kann man sie nicht greifen, Antippen weckt den Drachen.
+- **Noch offen:** Belohnung fürs Zurückbringen (Herzen, Zutraulichkeit); Perle dem schlafenden Drachen stehlen.
 
-## KI-Begleiter als Pet — Entwurf 13.11.2026 (nicht abgenommen, nicht gebaut)
+## Feuerball (13.11.2026, gebaut)
+
+Mark: „vielleicht könnte er auch Feuerbälle schießen, die weiter fliegen“, dann „ein Go für alles“.
+
+- **Wer:** ab dem Halbstarken (Schritt 3), alle drei Farben: Feuerball, Eisball (Eisdrache), Kugelblitz (Blitzdrache). Bestandsdrachen ohne Wachstum nicht.
+- **Wann:** etwa jedes zweite Niesen wird ein Ball statt des Feuerstoßes; er dreht sich dafür meist dorthin, wo mehr Platz ist.
+- **Flug:** im flachen Bogen weit über den Schirm, schlägt unten ein und hinterlässt einen großen Fleck (`krater`, beim Eisdrachen `eiskrater`) — Wegwischen wie Brandfleck und Raureif, braucht nur mehr Reiben. Der Einschlag trifft andere Pets wie der Atem.
+- **Aufs Nachbar-Tablet:** fliegt er über den Seitenrand hinaus, kommt er auf einem zufälligen anderen Tablet der Party von der Gegenseite herein und schlägt dort ein. Ist sonst niemand da, verpufft er. Höchstens alle 4 s je Drache.
+- **Annahmen Neko:** jedes zweite Niesen; Flugweite und -höhe; prallt nicht an Wörtern oder Kästchen ab; der Ball wächst mit dem Atem der Stufe.
+
+## KI-Begleiter als Pet (13.11.2026, gebaut)
+
+Mark zu den Entwürfen: „Ich mag A Datenwolke und B Lichtkern! Es kann gerne zwischen den 2 Gestalten wechseln und auch verschiedene Farben und Gestalten annehmen. Bitte bau die KI … ein Go für alles.“
+
+- **Pet-Art `ki`**, wählbar am Critter („KI (Datenwolke / Lichtkern)“). Keine Sprites: ein Schwarm aus Teilchen auf einer kleinen Leinwand (`frontend/src/pets/ki.ts`, `KiFigur.tsx`), das Leuchten macht ein CSS-Filter in ihrer Farbe.
+- **Zwei Grundformen:** Datenwolke (Schwarm mit dichtem Kern und Augen, später Datennetz, Nullen und Einsen, Umlaufbahn) und Lichtkern (pulsierende Kugel mit Strahlen, später Ringe und Trabanten). Sie wechselt von selbst; die Teilchen fließen von einem Platz zum anderen.
+- **Gestalten:** Katze, Totenkopf, Herz, Schlüssel, Pfeil, Warnung, Stern, Blitz, Smiley — aus der Wolke als gefüllte Punktform, aus dem Lichtkern als Umriss aus Licht. Jede Gestalt bringt eine Farbe mit.
+- **Farben:** Cyan (Start), Magenta, Grün, Bernstein, Violett, Rot; sie wechselt von selbst und behält die Farbe der letzten Gestalt.
+- **Wachstum:** wie die Drachen 12 Schritte mit den EP ihres Critters (`petWachstumEp`), ohne Ei: Funke → Keim → Geist → Wesen → Entität, alle 3 Schritte eine neue Gestalt, dazwischen wird sie mit jedem Schritt größer und dichter. Die SL stellt die Stufe im Critter-Fenster ein.
+- **Was sie kann, wächst mit:** Funke schwebt und pulsiert · Keim wechselt Wolke/Lichtkern, blinzelt, wird beim Antippen ein Herz, schläft (Standby) · Geist nimmt Farben und Gestalten an · Wesen liest Daten (schwebt über eine Zeile, ein Lichtstrich fährt darüber, Pixel strömen in sie hinein) · Entität hat Umlaufbahn und drei Ringe und zeigt Gestalten öfter.
+- **Anfassen:** Antippen = sie freut sich. Ziehen = sie kommt mit; mit Schwung über den Seitenrand geworfen fliegt sie zum nächsten Tablet. Feuer, Eis und Blitz der anderen Pets geben ihr eine Bildstörung.
+- **Hinterlässt nichts** — keine Spuren, also nichts zum Saubermachen.
+- **Annahmen Neko:** hängt an einem Critter und wächst mit dessen EP (wie der Drache); Stufennamen; Startfarbe Cyan; welche Fähigkeit mit welcher Stufe kommt; Besuchsdauer 1–2,5 Minuten; Glitch-Geist (Entwurf C) nicht gebaut.
+- **Offen:** eine feste Lieblingsfarbe je KI; eigene Gestalten nach Wunsch des Spielers; KI an einem Gegenstand statt Critter.
+
+### Entwurf 13.11.2026 (Auswahl getroffen: A und B)
 
 Mark: „Einer meiner Spieler hat eine eigene KI, und ich dachte mir, wir könnten sie als Datenwolke oder cooles, Licht pulsierendes, manchmal verschiedene Formen oder Gestalten annehmendes Wesen machen … Die KI wäre auch ein Begleiter, der wachsen kann.“
 
@@ -407,7 +433,7 @@ Drei Entwürfe, je fünf Wachstumsstufen (Funke, Keim, Geist, Wesen, Entität �
 - **C Glitch-Geist:** Hologramm-Gestalt aus Bildzeilen mit Visier, verrutschten Zeilen und Farbsaum; bekommt Hände, Reif, Splitter. Gestalten: flackert zur Form um.
 - Gestalten im Entwurf: Katze, Totenkopf, Herz, Schlüssel, Pfeil, Warnung. Farbe als Palette frei wählbar (Cyan, Magenta, Grün, Bernstein gezeigt). Leuchten kommt im Tool aus einem CSS-Filter, nicht aus dem Sprite.
 
-**Offen (Mark):** welcher Entwurf oder Mischung/Verwandlung zwischen ihnen; woran die KI hängt (Critter wie der Drache, Gegenstand wie Bärbel, oder etwas Eigenes) und wodurch sie wächst; welche Gestalten und wann sie sie annimmt; was sie auf den Tablets tut.
+Marks Wahl: A und B, Wechsel zwischen beiden, dazu Farben und Gestalten. C nicht gebaut. Die übrigen Achsen (woran sie hängt, was sie tut) hat Neko als Annahme gebaut, siehe oben.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

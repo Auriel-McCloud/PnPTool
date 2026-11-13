@@ -75,10 +75,11 @@ async def art_setzen(campaign_id: str, critter_id: str, body: PetArt):
 @router.put("/{critter_id}/wachstum", response_model=PetArtAntwort, dependencies=[Depends(require_campaign_gm)])
 async def wachstum_setzen(campaign_id: str, critter_id: str, body: PetWachstum):
     """Die SL stellt die Wachstumsstufe eines Drachen ein (Mark, 13.11.2026) —
-    Ei, Schlüpfling oder einer der 13 Schritte. Er wächst danach normal weiter."""
+    Ei, Schlüpfling oder einer der 13 Schritte. Er wächst danach normal weiter.
+    Genauso bei der KI (13 Schritte von Funke bis Entität)."""
     d = await repository.wachstum_setzen(campaign_id, critter_id, body.stufe)
     if d is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nur Drachen an einem Critter wachsen")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nur Drachen und KIs an einem Critter wachsen, jede mit ihren eigenen Stufen")
     await motor.abgleich(campaign_id)
     return d
 
@@ -138,6 +139,8 @@ async def live(websocket: WebSocket, campaign_id: str):
                     await motor.perle(campaign_id, person_id, str(n.get("petId")), float(n.get("x", 0.5)))
                 elif typ == "perleWurf":
                     await motor.perle_wurf(campaign_id, person_id, str(n.get("id")))
+                elif typ == "feuerball":
+                    await motor.feuerball(campaign_id, person_id, str(n.get("petId")), str(n.get("seite")))
                 elif typ == "perleGefunden":
                     await motor.perle_gefunden(campaign_id, person_id, str(n.get("petId")), str(n.get("id")))
             except (TypeError, ValueError):

@@ -22,7 +22,9 @@ from app.pets.logic import (
     HAEUFCHEN_MAX,
     NAPF,
     PERLE,
-    WACHSENDE_ARTEN,
+    DRACHEN_ARTEN,
+    KI_ARTEN,
+    stufe_passt,
     TIPPS_MAX,
     TIPPS_MIN,
     WACHSTUM_EP_STANDARD,
@@ -165,6 +167,8 @@ async def wachstum_setzen(campaign_id: str, critter_id: str, stufe_: str) -> dic
     None = kein Drache an einem Critter."""
     kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
     ziel = gewachsen_fuer(stufe_, ep_je_schritt)
+    # Jede Art hat ihre eigenen Stufen: keine Drachenstufe (oder ein Ei) an der KI.
+    passende = [a for a in DRACHEN_ARTEN + KI_ARTEN if stufe_passt(a, stufe_)]
     query = """
         MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
         WHERE c.petArt IN $wachsende
@@ -177,7 +181,7 @@ async def wachstum_setzen(campaign_id: str, critter_id: str, stufe_: str) -> dic
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, ziel=ziel,
-                                   kampagnen_ep=kampagnen_ep, wachsende=list(WACHSENDE_ARTEN),
+                                   kampagnen_ep=kampagnen_ep, wachsende=passende,
                                    noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
         if await result.single() is None:
             return None
@@ -205,19 +209,26 @@ async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict
     """Pet-Art setzen. Bekommt ein Critter zum ersten Mal einen Drachen, fängt
     der als Ei an (Mark, 12.11.2026: „klein wäre er wieder, wenn er mit einem
     neuen Critter verbunden wird“). Wechsel zwischen Drachen-Farben oder
-    Abwählen behält die Stufe; Bestandsdrachen (ohne `petStufe`) bleiben groß."""
+    Abwählen behält die Stufe; Bestandsdrachen (ohne `petStufe`) bleiben groß.
+    Eine KI (13.11.2026) hat kein Ei: sie fängt als Funke an und wächst ab den
+    EP, die der Critter in diesem Moment hat — auch wenn dort noch ein Ei lag."""
+    kampagnen_ep = await _kampagnen_ep(campaign_id)
     query = _PET_TRAEGER + """
         WITH c, c.petArt AS vorher
         SET c.petArt = $art
         WITH c, vorher
-        FOREACH (_ IN CASE WHEN c:Person AND $waechst AND c.petStufe IS NULL
-                                AND NOT coalesce(vorher, '') IN $wachsende THEN [1] ELSE [] END |
+        FOREACH (_ IN CASE WHEN c:Person AND $drache AND c.petStufe IS NULL
+                                AND NOT coalesce(vorher, '') IN $drachen THEN [1] ELSE [] END |
             SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
+        FOREACH (_ IN CASE WHEN c:Person AND $ki AND (c.petStufe IS NULL OR c.petStufe = 'ei') THEN [1] ELSE [] END |
+            SET c.petStufe = 'geschluepft',
+                c.petEpStart = coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) + $kampagnen_ep)
         RETURN c.id AS id, c.petArt AS art
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, art=art,
-                                   waechst=waechst(art), wachsende=list(WACHSENDE_ARTEN),
+                                   drache=art in DRACHEN_ARTEN, drachen=list(DRACHEN_ARTEN), ki=art in KI_ARTEN,
+                                   kampagnen_ep=kampagnen_ep,
                                    noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
         if await result.single() is None:
             return None

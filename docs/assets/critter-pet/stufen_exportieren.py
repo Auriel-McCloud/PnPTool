@@ -71,6 +71,12 @@ def stufe_exportieren(ziel, key):
     _, zr = ds.roh_ring(st, mit_z=True)
     ring_oben = _union(anis["schlafen"][0])[1]
     meta["schlafZ"] = [round(zr.kopf[0] - box[0]), ring_oben - box[1]]
+    # Mulde in der Mitte des Kringels, wo die Schwanzspitze herausschaut — dort
+    # liegt im Schlaf die Drachenperle (Mark, 13.11.2026).
+    pts, _, _ = ds.kette_ring(st)
+    dx, dy = ds.ring_versatz(st)
+    spitze = pts[0]
+    meta["schlafMitte"] = [round(spitze.x + dx - box[0]), round(spitze.y + dy - box[1]) + 5]
     meta["feuerSkala"] = ds.FEUER_SKALA[key]
     with open(os.path.join(ziel, "sprite.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
@@ -136,6 +142,8 @@ def ts_schreiben(pfad, stufen, alt):
          "  maul: readonly [number, number];",
          "  /** Wo das Zzz über dem Schlafkringel sitzt (Kopf-x, Oberkante). */",
          "  schlafZ: readonly [number, number];",
+         "  /** Mulde in der Mitte des Schlafkringels — dort liegt die Drachenperle. */",
+         "  schlafMitte: readonly [number, number];",
          "  /** Der Atem wächst mit. */",
          "  feuerSkala: number;",
          "}",
@@ -146,6 +154,7 @@ def ts_schreiben(pfad, stufen, alt):
         m = stufen[key]
         z.append(f"  {key}: {{ breite: {m['breite']}, hoehe: {m['hoehe']}, fussLuft: {m['fussLuft']}, "
                  f"maul: [{m['maul'][0]}, {m['maul'][1]}], schlafZ: [{m['schlafZ'][0]}, {m['schlafZ'][1]}], "
+                 f"schlafMitte: [{m['schlafMitte'][0]}, {m['schlafMitte'][1]}], "
                  f"feuerSkala: {m['feuerSkala']} }},")
     z += ["};", "", "/** Zzz-Anker für Schlüpfling und jungen Drachen (alte Rahmen). */",
           "export const SCHLAF_Z: Record<string, readonly [number, number]> = {"]

@@ -2026,6 +2026,10 @@ Jeder der 12 Wachstumsschritte hat eine eigene Form (zwei Zwischenformen je Gest
 
 Wachstumsstufe eines Drachen im Critter-Fenster einstellbar; „Alles sauber machen“ in den Einstellungen. Ideen Feuerball, Drachenperle und weitere Fähigkeiten als offen notiert. Siehe [[entities/critter-pet]].
 
+## [2026-11-13] update | KI-Begleiter, Feuerball und Perle im Schlafkringel gebaut
+
+Marks „Go für alles“: Pet-Art `ki` (Datenwolke und Lichtkern, Gestalten, Farben, wächst in 13 Schritten), Feuerball ab dem Halbstarken (fliegt bis aufs Nachbar-Tablet, großer Fleck), Drache kringelt sich um seine Perle. Siehe [[entities/critter-pet]].
+
 ## [2026-11-13] update | Entwurf KI-Begleiter als Pet
 
 Drei Entwürfe (Datenwolke, Lichtkern, Glitch-Geist) mit je fünf Wachstumsstufen und Gestalten notiert, nicht abgenommen, nicht gebaut. Siehe [[entities/critter-pet]].

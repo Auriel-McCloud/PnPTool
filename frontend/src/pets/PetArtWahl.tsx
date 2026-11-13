@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { PET_ARTEN, WACHSTUM_STUFEN, petsApi, type PetArt, type PetStand } from "./api";
+import { KI_STUFEN, PET_ARTEN, WACHSTUM_STUFEN, istKi, petsApi, type PetArt, type PetStand } from "./api";
 
 /**
  * SL-Auswahl „Pet auf den Tablets“ — am Critter (Tiere) und am Gegenstand
  * (Bärbel, 11.11.2026: „Bärbel wäre ja ein Gegenstand und kein Critter“).
  * Bei Drachen am Critter dazu die Wachstumsstufe (Mark, 13.11.2026: SL-Knopf
- * zum Korrigieren) — er wächst von dort mit seinen EP normal weiter.
+ * zum Korrigieren) — er wächst von dort mit seinen EP normal weiter. Die KI
+ * (13.11.2026) hat ihre eigenen Stufen von Funke bis Entität, ohne Ei.
  */
 export function PetArtWahl({
   campaignId,
@@ -27,6 +28,7 @@ export function PetArtWahl({
   // Eine schon gesetzte Art bleibt wählbar, auch wenn sie eigentlich zur anderen Sorte gehört.
   const arten = PET_ARTEN.filter((a) => a.fuer === fuer || a.wert === art);
   const leise = { fontSize: 11, color: "var(--text-leise)" };
+  const ki = istKi(art);
   return (
     <div className="bg-zeile" style={{ marginTop: 10, flexDirection: "column", alignItems: "stretch", gap: 4 }}>
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
@@ -58,8 +60,10 @@ export function PetArtWahl({
               }}
             >
               {/* Bestandsdrache von vor dem Wachstum: eigener Eintrag, damit auch „Junger Drache“ wählbar ist. */}
-              {stand.gewachsen === null && stand.stufe !== "ei" && <option value="">Junger Drache (wächst nicht)</option>}
-              {WACHSTUM_STUFEN.map((s) => (
+              {stand.gewachsen === null && stand.stufe !== "ei" && (
+                <option value="">{ki ? "Funke (wächst nicht)" : "Junger Drache (wächst nicht)"}</option>
+              )}
+              {(ki ? KI_STUFEN : WACHSTUM_STUFEN).map((s) => (
                 <option key={s.wert} value={s.wert}>
                   {s.name}
                 </option>
@@ -67,7 +71,11 @@ export function PetArtWahl({
             </select>
           </label>
           <span style={leise}>
-            {stand.stufe === "ei"
+            {ki
+              ? stand.gewachsen === null
+                ? "Diese KI wächst noch nicht mit. Wähle eine Stufe, dann wächst sie ab dort mit den EP ihres Critters."
+                : `${stand.gewachsen} EP seit dem ersten Funken. Stufe wählen setzt sie dorthin, danach wächst sie normal weiter.`
+              : stand.stufe === "ei"
               ? "Liegt als Ei beim Besitzer, bis es oft genug angetippt wurde."
               : stand.gewachsen === null
                 ? "Dieser Drache wächst noch nicht mit. Wähle eine Stufe, dann wächst er ab dort mit den EP seines Critters."

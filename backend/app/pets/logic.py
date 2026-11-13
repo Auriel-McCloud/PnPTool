@@ -13,7 +13,9 @@ import random
 # Bibel/das Zauberbuch, das fliegt (frontend/src/pets/flug.ts).
 # `eisdrache`/`blitzdrache` (12.11.2026): derselbe Drache, umgefärbt, spuckt
 # Eis bzw. Blitze statt Feuer.
-PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel")
+# `ki` (13.11.2026): die KI eines Spielers — Datenwolke/Lichtkern, wird im
+# Frontend gezeichnet statt aus Sprites gelesen (frontend/src/pets/ki.ts).
+PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel", "ki")
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
@@ -39,7 +41,9 @@ STREICHEL_ABKLINGEN_S = 300
 # Bärbel verliert stattdessen Seiten, die zerknittert liegen bleiben; ihr
 # Tentakelmonster hinterlässt Schleim (wegwischen wie Brandflecken).
 # Der Eisdrache hinterlässt Raureif (`frost`), ebenfalls zum Wegwischen.
-SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim", "frost")
+# `krater`/`eiskrater` (13.11.2026): der große Fleck, wo ein Feuerball,
+# Kugelblitz oder Eisball einschlägt — wie Brandfleck und Raureif, nur größer.
+SPUR_ARTEN = ("haeufchen", "brand", "seite", "schleim", "frost", "krater", "eiskrater")
 
 # Spuren, die vom Element herunterfallen können (neue Lage wird gemerkt).
 FALLENDE_SPUREN = ("haeufchen", "seite")
@@ -90,7 +94,20 @@ def online_mitglieder(mitglieder: list[str], online: set[str]) -> list[str]:
 # Fähigkeiten kommen mit dem Alter: Baby läuft nur unten, frisst, macht
 # Häufchen. Ab 3 EP der heutige Drache (klettern, niesen, hüpfen). Burgermenü
 # ab 8 EP, Fliegen (Wolkenlauf) ab 13 EP (Mark, 12.11.2026).
-WACHSENDE_ARTEN = ("drache", "eisdrache", "blitzdrache")
+DRACHEN_ARTEN = ("drache", "eisdrache", "blitzdrache")
+# KI-Begleiter (Mark, 13.11.2026: „ein Begleiter, der wachsen kann“): kein Ei,
+# fängt als Funke an und wächst im selben Takt wie die Drachen — 12 Schritte,
+# alle 3 Schritte eine neue Gestalt (Funke, Keim, Geist, Wesen, Entität),
+# dazwischen wird sie mit jedem Schritt etwas größer und dichter.
+KI_ARTEN = ("ki",)
+KI_FOLGE = (
+    "funke", "funke1", "funke2",
+    "keim", "keim1", "keim2",
+    "geist", "geist1", "geist2",
+    "wesen", "wesen1", "wesen2",
+    "entitaet",
+)
+WACHSENDE_ARTEN = DRACHEN_ARTEN + KI_ARTEN
 TIPPS_MIN = 5
 TIPPS_MAX = 10
 JUNG_AB_EP = 3
@@ -122,11 +139,26 @@ STUFEN_FOLGE = (
     "ehrwuerdig",
 )
 # Was die SL von Hand einstellen darf (CritterFenster → Wachstum).
-SETZBARE_STUFEN = ("ei", "baby") + STUFEN_FOLGE
+SETZBARE_STUFEN = ("ei", "baby") + STUFEN_FOLGE + KI_FOLGE
 
 
 def waechst(art: str | None) -> bool:
     return art in WACHSENDE_ARTEN
+
+
+def ist_drache(art: str | None) -> bool:
+    return art in DRACHEN_ARTEN
+
+
+def ist_ki(art: str | None) -> bool:
+    return art in KI_ARTEN
+
+
+def stufe_passt(art: str | None, stufe_: str) -> bool:
+    """Darf die SL diese Stufe an dieser Art einstellen? (Keine Drachenstufe an der KI.)"""
+    if ist_ki(art):
+        return stufe_ in KI_FOLGE
+    return ist_drache(art) and stufe_ in ("ei", "baby") + STUFEN_FOLGE
 
 
 def stufe(
@@ -135,7 +167,15 @@ def stufe(
     """(`ei` | `baby` | ein Name aus `STUFEN_FOLGE`, EP seit dem Schlüpfen oder None).
 
     Drachen ohne `petStufe` (Bestand vor dem 12.11.2026) sind fertig und können
-    alles — sie werden nicht nachträglich wieder klein."""
+    alles — sie werden nicht nachträglich wieder klein.
+    KI: ein Name aus `KI_FOLGE`; ohne `petStufe` (z. B. an einem Gegenstand)
+    bleibt sie ein Funke."""
+    if ist_ki(art):
+        if not pet_stufe:
+            return KI_FOLGE[0], None
+        gewachsen = max(0, ep_gesamt - int(ep_start if ep_start is not None else ep_gesamt))
+        schritte = gewachsen // max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
+        return KI_FOLGE[min(schritte, len(KI_FOLGE) - 1)], gewachsen
     if not waechst(art) or not pet_stufe:
         return "jung", None
     if pet_stufe == "ei":
@@ -153,6 +193,8 @@ def gewachsen_fuer(stufe_: str, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> in
     wird nur der Startwert `petEpStart`. None = Ei oder unbekannt."""
     if stufe_ == "baby":
         return 0
+    if stufe_ in KI_FOLGE:
+        return KI_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
     if stufe_ not in STUFEN_FOLGE:
         return None
     return max(JUNG_AB_EP, STUFEN_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD)))
@@ -160,12 +202,17 @@ def gewachsen_fuer(stufe_: str, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> in
 
 # Fähigkeiten, die an einer Gestalt hängen statt an EP (Index in STUFEN_FOLGE).
 # Drachenperle (Mark, 13.11.2026): nur der Ehrwürdige Drache hat sie.
+# Feuerball (Mark, 13.11.2026: „Feuerbälle schießen, die weiter fliegen“): ab
+# dem Halbstarken — beim Eisdrachen ein Eisball, beim Blitzdrachen ein Kugelblitz.
 FAEHIGKEITEN_AB_SCHRITT = {
+    "feuerball": STUFEN_FOLGE.index("halbstark"),
     "perle": len(STUFEN_FOLGE) - 1,
 }
 
 
 def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:
+    if ist_ki(art):
+        return []  # was die KI kann, liest das Tablet aus ihrer Stufe
     if not waechst(art) or gewachsen is None:
         return list(ALLE_FAEHIGKEITEN) if stufe_ != "ei" else []
     kann = [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]
@@ -205,6 +252,19 @@ def such_ziel(online: list[str], von: str | None, gesucht: set[str], zufall: ran
     gesucht.clear()
     andere = sorted(p for p in online if p != von)
     return z.choice(andere) if andere else sorted(online)[0]
+
+
+# ── Feuerball (Mark, 13.11.2026) ─────────────────────────────────────────
+# Fliegt er über den Bildschirmrand hinaus, kommt er auf einem anderen Tablet
+# der Party wieder herein und schlägt dort ein. So lange fliegt er dort (das
+# Tablet zeichnet den Flug, der Server legt den Fleck zum Einschlag).
+FEUERBALL = "feuerball"
+FEUERBALL_FLUG_S = 1.1
+FEUERBALL_ABKLINGEN_S = 4.0
+
+
+def feuerball_spur(art: str) -> str:
+    return "eiskrater" if art == "eisdrache" else "krater"
 
 
 def risse(tipps: int, noetig: int) -> int:

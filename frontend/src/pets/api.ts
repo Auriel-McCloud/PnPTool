@@ -10,6 +10,9 @@ export const PET_ARTEN = [
   { wert: "eisdrache", name: "Kleiner Eisdrache", fuer: "critter" },
   { wert: "blitzdrache", name: "Kleiner Blitzdrache", fuer: "critter" },
   { wert: "baerbel", name: "Bärbel (fliegendes Buch)", fuer: "gegenstand" },
+  // Mark, 13.11.2026: die eigene KI eines Spielers — Datenwolke und Lichtkern,
+  // wechselt zwischen beiden, nimmt Farben und Gestalten an, wächst mit den EP.
+  { wert: "ki", name: "KI (Datenwolke / Lichtkern)", fuer: "critter" },
 ] as const;
 export type PetArt = (typeof PET_ARTEN)[number]["wert"];
 
@@ -70,7 +73,7 @@ export interface Haeufchen {
    *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
    *  Tentakelmonster (wegwischen). Napf: Futternapf, bis ein Drache ihn leer frisst. */
-  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle";
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle" | "krater" | "eiskrater";
   erstellt?: string;
   /** Perle: kam von einem anderen Tablet angeflogen (fliegt herein statt aufzuleuchten). */
   geworfen?: boolean;
@@ -79,13 +82,15 @@ export interface Haeufchen {
 export type PetNachricht =
   | { typ: "pets"; daten: PetAufSchirm[] }
   | { typ: "haeufchen"; daten: Haeufchen[] }
-  | { typ: "vorlesen"; petId: string; stelle: string; zitat: string };
+  | { typ: "vorlesen"; petId: string; stelle: string; zitat: string }
+  /** Feuerball von einem anderen Tablet: fliegt von `seite` herein, schlägt nach `ms` bei x/y (Anteile) ein. */
+  | { typ: "feuerball"; art: string; seite: "links" | "rechts"; x: number; y: number; ms: number };
 
 /** Pet-Art eines Critters/Gegenstands, bei Drachen am Critter samt Wachstumsstand. */
 export interface PetStand {
   id: string;
   art: PetArt | null;
-  /** Nur Drachen an einem Critter wachsen. */
+  /** Nur Drachen und KIs an einem Critter wachsen. */
   waechst: boolean;
   stufe: string | null;
   /** EP seit dem Schlüpfen; null = Ei oder Bestandsdrache, der (noch) nicht wächst. */
@@ -100,16 +105,41 @@ const GESTALTEN: [string, string][] = [
   ["jungdrache", "Jungdrache"],
   ["gross", "Drache"],
 ];
-export const WACHSTUM_STUFEN: { wert: string; name: string }[] = [
-  { wert: "ei", name: "Ei" },
-  { wert: "baby", name: "Schlüpfling" },
-  ...GESTALTEN.flatMap(([wert, name]) => [
+const mitZwischen = (gestalten: [string, string][]) =>
+  gestalten.flatMap(([wert, name]) => [
     { wert, name },
     { wert: `${wert}1`, name: `${name} +1` },
     { wert: `${wert}2`, name: `${name} +2` },
-  ]),
+  ]);
+export const WACHSTUM_STUFEN: { wert: string; name: string }[] = [
+  { wert: "ei", name: "Ei" },
+  { wert: "baby", name: "Schlüpfling" },
+  ...mitZwischen(GESTALTEN),
   { wert: "ehrwuerdig", name: "Ehrwürdiger Drache" },
 ];
+
+/** Die KI (Mark, 13.11.2026) wächst in denselben 13 Schritten, ohne Ei —
+ *  gleiche Reihenfolge wie `KI_FOLGE` in backend/app/pets/logic.py. */
+export const KI_FOLGE = [
+  "funke", "funke1", "funke2",
+  "keim", "keim1", "keim2",
+  "geist", "geist1", "geist2",
+  "wesen", "wesen1", "wesen2",
+  "entitaet",
+] as const;
+export const KI_STUFEN: { wert: string; name: string }[] = [
+  ...mitZwischen([
+    ["funke", "Funke"],
+    ["keim", "Keim"],
+    ["geist", "Geist"],
+    ["wesen", "Wesen"],
+  ]),
+  { wert: "entitaet", name: "Entität" },
+];
+
+export function istKi(art: string | null | undefined): boolean {
+  return art === "ki";
+}
 
 export const petsApi = {
   /** `critterId` kann auch die id eines Gegenstands sein (Bärbel). */

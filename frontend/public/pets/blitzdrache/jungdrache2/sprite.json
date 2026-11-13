@@ -48,5 +48,9 @@
     69,
     11
   ],
+  "schlafMitte": [
+    60,
+    30
+  ],
   "feuerSkala": 1.4
 }

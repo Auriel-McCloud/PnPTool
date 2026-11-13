@@ -51,3 +51,7 @@ Tablet → Server:
 Wandern: nur zu eingeloggten PCs der Party des Besitzers (ohne Party nur zum
 Besitzer), bevorzugt nicht derselbe, Pause 3–12 s, Gegenseite. Pet existiert
 nur, solange der Besitzer verbunden ist.
+
+Feuerball (13.11.2026, Fähigkeit `feuerball` ab Stufe `halbstark`): Tablet → Server `{"typ": "feuerball", "petId", "seite"}`, wenn der Ball über den Seitenrand hinausgeflogen ist; Server → ein anderes Party-Tablet `{"typ": "feuerball", "art", "seite", "x", "y", "ms"}` (fliegt von `seite` herein, schlägt nach `ms` bei den Anteilen x/y ein — den Fleck legt der Server). Neue Spur-Arten `krater` und `eiskrater` (großer Brandfleck bzw. Raureif).
+
+KI (13.11.2026): Pet-Art `ki` am Critter. `stufe` im Pet-Dict ist einer der 13 Namen `funke`, `funke1`, `funke2`, `keim` … `entitaet`; `kann` ist leer. `PUT …/wachstum` nimmt für eine KI nur diese Namen (kein `ei`, keine Drachenstufe), für Drachen nur die Drachenstufen — sonst 404.
