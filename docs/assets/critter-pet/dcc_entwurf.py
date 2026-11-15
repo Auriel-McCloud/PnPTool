@@ -98,8 +98,13 @@ def ei(schale, punkt, seed, gross=1.0, flecken=14):
 
 
 # ── Mongo ─────────────────────────────────────────────────────────────────
-def mongo(stufe, p, pose="stehen"):
+def mongo(stufe, p, pose="stehen", phase=0.0):
     t = (stufe - 1) / 5
+    # Mark 15.11.: „wenn er läuft, etwas gebückter, damit er gefährlicher aussieht“.
+    # Gebückt wächst mit: das Küken watschelt aufrecht, der Große duckt sich.
+    lauf = pose == "laufen"
+    gb = t if lauf else 0.0
+    ph = 2 * math.pi * phase
     D, M, L, B, F, F2, G, S = (c(p, k) for k in "D M L B F F2 G S".split())
     img = Image.new("RGBA", (150, 100), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -107,13 +112,15 @@ def mongo(stufe, p, pose="stehen"):
 
     bein = lerp(4.5, 21, t)
     rk = lerp(6.8, 8.6, t)  # Rumpfdicke
-    hip = (ox, oy - bein - rk * 0.45)
-    w = math.radians(lerp(-62, -10, t))
+    hip = (ox, oy - bein * (1 - 0.14 * gb) - rk * 0.45 + gb * 1.2 * abs(math.sin(ph)))
+    w = math.radians(lerp(-62, -10, t) + gb * 14)
     lang = lerp(2.5, 19, t)
     sch = (hip[0] + math.cos(w) * lang, hip[1] + math.sin(w) * lang)
-    wn = math.radians(lerp(-82, -58, t))
+    wn = lerp(-82, -58, t) + gb * 34
     hl = lerp(3.5, 20, t)  # Mark 15.11.: Hals beim Großen länger und dünner
-    hals = (sch[0] + math.cos(wn) * hl, sch[1] + math.sin(wn) * hl)
+    w1, w2 = math.radians(wn - 28 * gb), math.radians(wn + 26 * gb)  # gebückt: S-Hals, Kopf vorgestreckt
+    mitte = (sch[0] + math.cos(w1) * hl * 0.5, sch[1] + math.sin(w1) * hl * 0.5)
+    hals = (mitte[0] + math.cos(w2) * hl * 0.5, mitte[1] + math.sin(w2) * hl * 0.5)
     kr = lerp(5.6, 5.8, t)
     kopf = (hals[0] + kr * 0.35, hals[1] - kr * 0.25)
 
@@ -126,7 +133,7 @@ def mongo(stufe, p, pose="stehen"):
     s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl - lerp(0, 4, t))
     schwanz = kette([s2, s1, hip])
     rumpf = kette([hip, sch])
-    halsk = kette([sch, hals])
+    halsk = kette([sch, mitte, hals])
 
     def r_schwanz(s):
         return lerp(lerp(2.2, 0.6, t), rk * lerp(0.85, 0.62, t), s ** lerp(0.8, 2.2, t))
@@ -138,11 +145,14 @@ def mongo(stufe, p, pose="stehen"):
         return lerp(rk * lerp(0.9, 0.5, t), kr * lerp(0.9, 0.46, t), s)
 
     def bein_malen(vorne):
-        dunkel = 0 if vorne else 1
         bx = hip[0] + (1.5 if vorne else -1.5)
-        knie = (bx + lerp(1.5, 4, t), hip[1] + bein * 0.45)
-        knoechel = (bx - lerp(0.5, 4.5, t), hip[1] + bein * 0.8)
-        fuss = (bx + lerp(0.5, 2, t), oy - 1)
+        lp = ph + (0 if vorne else math.pi)
+        schritt = lerp(1.5, 8, t) if lauf else 0.0
+        off = math.sin(lp) * schritt
+        hebt = max(0.0, math.cos(lp)) * lerp(1, 3.5, t) if lauf else 0.0
+        knie = (bx + lerp(1.5, 4, t) + off * 0.3, hip[1] + bein * 0.45)
+        knoechel = (bx - lerp(0.5, 4.5, t) + off * 0.8, hip[1] + bein * 0.8 * (1 - 0.1 * gb) - hebt * 0.7)
+        fuss = (bx + lerp(0.5, 2, t) + off, oy - 1 - hebt)
         gf = G if vorne else tuple(max(0, v - 40) if i < 3 else v for i, v in enumerate(G))
         mf = M if vorne else D
         # Keule
