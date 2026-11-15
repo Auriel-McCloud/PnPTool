@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-13
+updated: 2026-11-15
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
@@ -445,6 +445,22 @@ Drei Entwürfe, je fünf Wachstumsstufen (Funke, Keim, Geist, Wesen, Entität �
 - Gestalten im Entwurf: Katze, Totenkopf, Herz, Schlüssel, Pfeil, Warnung. Farbe als Palette frei wählbar (Cyan, Magenta, Grün, Bernstein gezeigt). Leuchten kommt im Tool aus einem CSS-Filter, nicht aus dem Sprite.
 
 Marks Wahl: A und B, Wechsel zwischen beiden, dazu Farben und Gestalten. C nicht gebaut. Die übrigen Achsen (woran sie hängt, was sie tut) hat Neko als Annahme gebaut, siehe oben.
+
+## Mongo und Tummy-Acher (Idee 15.11.2026, offen)
+
+Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongoliensis, der klein wie ein seltsames Hühnchen und groß wie ein ausgewachsener gefiederter Raptor aussieht, und dann einen Tummy-Acher, eine runde tollpatschige Fleischkugel auf 2 Beinen, die alles frisst und fast unzerstörbar ist, und aus irgendeinem Grund sehr niedlich ist.“ Er will beide vor dem Android-Desktop-Pet bauen.
+
+- **Mongo (Mongoliensis):** wächst vom komischen Küken zum gefiederten Raptor.
+- **Tummy-Acher:** runde Fleischkugel auf zwei Beinen, tollpatschig, frisst alles, fast unzerstörbar, niedlich.
+- Eigene Figuren, nur von den Büchern inspiriert (wie beim Mushu-Drachen).
+- **Offene Achsen** (Formular 15.11. ohne Antwort abgelaufen):
+  - Mongo-Wachstum: wie der Drache (Ei, viele EP-Schritte) / ohne Ei als Küken / nur 2–3 große Stufen.
+  - Was Mongo kann: andere Pets jagen, schnell rennen und weit springen, Kreischen mit Bildschirmwackeln, fremde Finger anfauchen.
+  - Was der Tummy-Acher frisst: alle Spuren (auch Perle), Näpfe anderer Pets, Knöpfe/Wörter anknabbern, andere Pets kurz verschlucken.
+  - Unzerstörbar zeigen: Gummiball beim Werfen, frisst Feuerbälle/Blitze, plumpst flach und ploppt rund, Mongo beißt rein und er rollt weg.
+  - Tummy-Acher-Wachstum: über EP / gar nicht / kurz nach jedem Fressen.
+  - Woran sie hängen: naheliegend am Critter wie der Drache (noch nicht bestätigt).
+- Optik: wie üblich erst eine Entwurfstafel, Mark wählt.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

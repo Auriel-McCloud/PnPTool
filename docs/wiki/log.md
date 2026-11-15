@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-15] idee | Pets Mongo und Tummy-Acher
+
+Zwei neue Pet-Ideen aus Dungeon Crawler Carl: Mongo (Küken bis Raptor) und Tummy-Acher (Fleischkugel, frisst alles, fast unzerstörbar). Achsen offen. Siehe [[entities/critter-pet]].
+
 ## [2026-11-15] gebaut | Begleiter freisetzen, KI am Gegenstand
 
 Begleiter im Kampf freisetzen/zurückrufen in der Beschwörungsleiste, ohne Probe. KI-Person an einen Gegenstand koppeln, Besitzer schaltet ihr Desktop-Pet an/aus. Siehe [[concepts/kampf-und-initiative]], [[entities/critter-pet]].
