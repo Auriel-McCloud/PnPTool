@@ -128,15 +128,18 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
     # Mark 15.11.: Schwanz dünner und länger wie beim echten Raptor — lang, steif,
     # fast waagrecht, zur Spitze leicht ansteigend.
     sl = lerp(4, 60, t)
-    sa = math.radians(lerp(-140, -178, t))
-    s1 = (hip[0] + math.cos(sa) * sl * 0.5, hip[1] + math.sin(sa) * sl * 0.5 + lerp(0, 0.5, t))
-    s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl - lerp(0, 4, t))
+    # Mark 15.11.: auf der Jagd keine Kante vor dem Schwanz — Rücken und Schwanz
+    # eine gerade Linie, also Schwanz genau in Verlängerung des Rumpfs.
+    sa = math.radians(lerp(lerp(-140, -178, t), math.degrees(w) + 180 - 360, gb))
+    s1 = (hip[0] + math.cos(sa) * sl * 0.5, hip[1] + math.sin(sa) * sl * 0.5 + lerp(0, 0.5, t) * (1 - gb))
+    s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl - lerp(0, 4, t) * (1 - gb))
     schwanz = kette([s2, s1, hip])
     rumpf = kette([hip, sch])
     halsk = kette([sch, mitte, hals])
 
     def r_schwanz(s):
-        return lerp(lerp(2.2, 0.6, t), rk * lerp(0.85, 0.62, t), s ** lerp(0.8, 2.2, t))
+        # Ansatz so dick wie der Rumpf an der Hüfte, sonst steht dort ein Höcker
+        return lerp(lerp(2.2, 0.6, t), rk * lerp(0.85, 0.97, t), s ** lerp(0.8, 2.2, t))
 
     def r_rumpf(s):
         return lerp(rk, rk * lerp(0.95, 0.78, t), s)
@@ -386,11 +389,15 @@ def tummy(stufe, p, pose="stehen"):
     d.pieslice([round(mx0), round(my - mh), round(mx1), round(my + mh)], 0, 180, fill=MUND)
     d.line([(mx0, my), (mx1, my)], fill=K)
     if pose == "maul" or (not platt and t > 0.3):
-        ell(d, (mx0 + mx1) / 2 + rx * 0.1, my + mh * 0.68, (mx1 - mx0) * 0.2, max(0.6, mh * 0.25), ZUNGE)
-    zh = lerp(1.6, 4.2, t) * (0.7 if platt else 1)
-    zx = mx0 + (mx1 - mx0) * 0.3
-    zb = lerp(1.0, 2.0, t)
-    d.polygon([(zx - zb, my + mh * 0.75), (zx + zb, my + mh * 0.75), (zx + zb * 0.4, my + mh * 0.75 - zh)], fill=W)
+        ell(d, mx0 + (mx1 - mx0) * 0.3, my + mh * 0.68, (mx1 - mx0) * 0.17, max(0.6, mh * 0.25), ZUNGE)  # Zunge links, Zahn rechts frei
+    # Mark 15.11.: Zahn weiter zur Mitte/anderen Seite und tiefer im Mund,
+    # wächst aus dem Unterkiefer (Zahnfleisch drüber), nicht aufgeklebt.
+    zh = lerp(1.8, 4.4, t) * (0.7 if platt else 1)
+    zx = mx0 + (mx1 - mx0) * 0.62
+    zb = lerp(0.9, 1.7, t)
+    fuss = my + mh * 0.97 - 0.5  # sitzt auf der Kieferkante
+    d.polygon([(zx - zb, fuss), (zx + zb, fuss), (zx + zb * 0.3, fuss - zh)], fill=W)
+    d.line([(zx + zb * 0.3, fuss - zh + 1), (zx + zb, fuss)], fill=(214, 200, 188, 255))  # Schattenseite
     return outline(img)
 
 
