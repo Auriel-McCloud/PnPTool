@@ -465,6 +465,7 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
   - Woran sie hängen: naheliegend am Critter wie der Drache (noch nicht bestätigt).
   - Design: Entwurfstafeln `docs/assets/critter-pet/mongo_entwurf.png` und `tummy_entwurf.png` (Generator `dcc_entwurf.py`), je drei Farbvarianten (Mongo: Dschungel, Wüste, Bonbon; Tummy-Acher: Rosa, Pfirsich, Lila), Ei + 6 Schritte plus Kreischen bzw. Mampf/Platt. Mark wählt.
   - Nachschärfung 15.11. (Mark mit Velociraptor-Referenzbild): „Schwanz dünner und länger, ganz ausgewachsen ein wenig mehr wie auf dem Bild“. Umgesetzt: Schwanz fast doppelt so lang, dünn zulaufend, waagrecht steif mit Federsaum statt Fächer; Rücken dunkel, Bauch nur noch schmaler Streifen; längere Schnauze und Beine; gefaltete Flügelfedern mit Krallen; Kamm liegt beim Großen nach hinten. Küken-Stufen fast unverändert.
+  - Nachschärfung 15.11.: Mark „Hals noch länger und dünner, dann passt es“. Hals beim Großen gut 50 % länger und deutlich schmaler (`hl` 13 → 20, Halsdicke ~0,5 statt 0,62). Damit ist die Mongo-Figur für Mark abgenommen.
   - Nachschärfung 15.11. (Mark mit Buchcover): Tummy-Acher „mehr wie ein seltsamer Fleischklops … mit Zahn und Dellen“, süß ja, aber seltsam. Umgesetzt: klumpiger Körper aus Beulen, Dellen und Sprenkel, ungleich große Glubschaugen mit blauer Iris über dem Umriss, breites Grinsen mit einem Zahn, keine Arme mehr, Haarbüschel weg. Farben jetzt A Fleisch (wie Cover), B Rosa, C Lila (Pfirsich entfällt, war fast wie Fleisch).
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)

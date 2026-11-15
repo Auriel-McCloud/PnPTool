@@ -112,7 +112,7 @@ def mongo(stufe, p, pose="stehen"):
     lang = lerp(2.5, 19, t)
     sch = (hip[0] + math.cos(w) * lang, hip[1] + math.sin(w) * lang)
     wn = math.radians(lerp(-82, -58, t))
-    hl = lerp(3.5, 13, t)
+    hl = lerp(3.5, 20, t)  # Mark 15.11.: Hals beim Großen länger und dünner
     hals = (sch[0] + math.cos(wn) * hl, sch[1] + math.sin(wn) * hl)
     kr = lerp(5.6, 5.8, t)
     kopf = (hals[0] + kr * 0.35, hals[1] - kr * 0.25)
@@ -135,7 +135,7 @@ def mongo(stufe, p, pose="stehen"):
         return lerp(rk, rk * lerp(0.95, 0.78, t), s)
 
     def r_hals(s):
-        return lerp(rk * lerp(0.9, 0.62, t), kr * lerp(0.9, 0.62, t), s)
+        return lerp(rk * lerp(0.9, 0.5, t), kr * lerp(0.9, 0.46, t), s)
 
     def bein_malen(vorne):
         dunkel = 0 if vorne else 1
