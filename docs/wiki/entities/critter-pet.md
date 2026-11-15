@@ -453,14 +453,17 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
 - **Mongo (Mongoliensis):** wächst vom komischen Küken zum gefiederten Raptor.
 - **Tummy-Acher:** runde Fleischkugel auf zwei Beinen, tollpatschig, frisst alles, fast unzerstörbar, niedlich.
 - Eigene Figuren, nur von den Büchern inspiriert (wie beim Mushu-Drachen).
-- **Offene Achsen** (Formular 15.11. ohne Antwort abgelaufen):
-  - Mongo-Wachstum: wie der Drache (Ei, viele EP-Schritte) / ohne Ei als Küken / nur 2–3 große Stufen.
-  - Was Mongo kann: andere Pets jagen, schnell rennen und weit springen, Kreischen mit Bildschirmwackeln, fremde Finger anfauchen.
-  - Was der Tummy-Acher frisst: alle Spuren (auch Perle), Näpfe anderer Pets, Knöpfe/Wörter anknabbern, andere Pets kurz verschlucken.
-  - Unzerstörbar zeigen: Gummiball beim Werfen, frisst Feuerbälle/Blitze, plumpst flach und ploppt rund, Mongo beißt rein und er rollt weg.
-  - Tummy-Acher-Wachstum: über EP / gar nicht / kurz nach jedem Fressen.
+- **Entscheidungen 15.11.2026 (Mark):**
+  - Mongo: **Ei + 6 Schritte** bis groß. Tummy-Acher „theoretisch auch“: ebenfalls Ei + 6 Schritte.
+  - Mongo kann: andere Pets jagen und scheuchen, schnell rennen und weite Raptor-Sprünge, kreischen (Bildschirm wackelt), fremde Finger anfauchen (beschützt seinen Besitzer) — alles gewünscht. Neu dazu: **versteckt sich hinter Objekten** und **zieht andere Pets aus dem Bildschirm** (sie wandern dann weiter).
+  - Tummy-Acher frisst: alle Spuren (Häufchen, Seiten, Ruß, auch die Perle), Näpfe auch anderer Pets, knabbert Knöpfe/Wörter an (kurz weg, dann wieder da), verschluckt andere Pets kurz und spuckt sie wieder aus. Unzerstörbar: springt geworfen wie ein Gummiball, frisst Feuerbälle/Blitze, plumpst flach und ploppt wieder rund, Mongo beißt rein und er rollt kichernd weg — alles gewünscht („Jaaah … klingt super“). Neu dazu: **leckt die Bildschirme frei von Ruß und Schleim**.
+  - Tummy-Acher wächst **über EP und über Futter**.
+  - Neu: **Spezialfutter für das KI-Pet** (heute frisst nur der Drache aus dem Napf).
+- **Noch offen:**
+  - Wie viel Wachstum ein Futter bringt, und ob Futter auch Mongo/Drachen wachsen lässt oder nur den Tummy-Acher.
+  - KI-Futter im Datenmodell: eigenes Häkchen neben „Tierfutter“ oder eine Auswahl „Futter für“; Wirkung (heilen, Zutraulichkeit, Wachstum) und Optik.
   - Woran sie hängen: naheliegend am Critter wie der Drache (noch nicht bestätigt).
-- Optik: wie üblich erst eine Entwurfstafel, Mark wählt.
+  - Design: Entwurfstafeln `docs/assets/critter-pet/mongo_entwurf.png` und `tummy_entwurf.png` (Generator `dcc_entwurf.py`), je drei Farbvarianten (Mongo: Dschungel, Wüste, Bonbon; Tummy-Acher: Rosa, Pfirsich, Lila), Ei + 6 Schritte plus Kreischen bzw. Mampf/Platt. Mark wählt.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

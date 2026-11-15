@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-15] update | Mongo und Tummy-Acher: Entscheidungen und Entwurf
+
+Ei + 6 Schritte für beide, Fähigkeiten gewählt (Verstecken, Pets rausziehen, Bildschirm frei lecken neu), Tummy-Acher wächst über EP und Futter, KI-Spezialfutter gewünscht. Entwurfstafeln mit je drei Farben. Siehe [[entities/critter-pet]].
+
 ## [2026-11-15] idee | Pets Mongo und Tummy-Acher
 
 Zwei neue Pet-Ideen aus Dungeon Crawler Carl: Mongo (Küken bis Raptor) und Tummy-Acher (Fleischkugel, frisst alles, fast unzerstörbar). Achsen offen. Siehe [[entities/critter-pet]].
