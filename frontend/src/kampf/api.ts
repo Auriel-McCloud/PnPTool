@@ -163,6 +163,16 @@ function lesen<T>(pfad: string, personId?: string | null) {
   return personId ? api.getAsGm<T>(fuerPerson(pfad, personId)) : api.get<T>(pfad);
 }
 
+/** Begleiter im Kampf freisetzen (15.11.2026): Critter/KI sind Personen
+ *  (`personId`), Sprite/Geist sind Begleiter-Knoten (`begleiterId`). */
+export type BegleiterKampfArt = "critter" | "ki" | "begleiter";
+export interface FreisetzbarerBegleiter {
+  id: string;
+  name: string;
+  bildUrl: string;
+  art: BegleiterKampfArt;
+}
+
 export const kampfApi = {
   laden: (cid: string) => api.get<Kampf | null>(basis(cid)),
   /** Fürs Battlemap-Popup: Hot-Körper UND Hot-Drohne als zwei getrennte
@@ -194,6 +204,15 @@ export const kampfApi = {
    *  danach wie bei Drohnen per `meldeInitiative` gesetzt. */
   beschwoeren: (cid: string, itemId: string, erfolge: number, ausgang: "ja" | "nein" | "patzer" = "ja") =>
     api.post<Kampf>(`${basis(cid)}/gegenstaende/${itemId}/beschwoeren`, { erfolge, ausgang }),
+  /** Eigene Begleiter, die im Kampf freigesetzt werden können (15.11.2026).
+   *  personId nur für die SL: der Charakter, dessen Bogen sie offen hat. */
+  freisetzbareBegleiter: (cid: string, personId?: string | null) =>
+    lesen<FreisetzbarerBegleiter[]>(`${basis(cid)}/begleiter/freisetzbar`, personId),
+  /** Keine Probe, keine Runden — steht in der Initiative bis zum Zurückrufen. */
+  freisetzen: (cid: string, art: BegleiterKampfArt, id: string) =>
+    api.post<Kampf>(`${basis(cid)}/begleiter/${art}/${id}/freisetzen`, {}),
+  zurueckrufen: (cid: string, art: BegleiterKampfArt, id: string) =>
+    api.post<Kampf>(`${basis(cid)}/begleiter/${art}/${id}/zurueckrufen`, {}),
   /** Nur SL: Initiative aller NPCs und Begleiter automatisch würfeln. */
   wuerfleNpcs: (cid: string) => api.post<Kampf>(`${basis(cid)}/initiative/npcs`),
   /** Eigener Boosterzustand — Grundlage für das Popup beim Drankommen.

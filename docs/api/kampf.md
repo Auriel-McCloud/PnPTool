@@ -89,6 +89,12 @@ Löscht den Kampf-Node, alle sind wieder im "Erkunden"-Modus.
 
 ---
 
+### Begleiter freisetzen (15.11.2026)
+
+- `GET /begleiter/freisetzbar[?personId=]` → `[{id, name, bildUrl, art}]`, `art` = `critter` | `ki` | `begleiter`. Spieler: immer die eigenen; SL: für `personId`.
+- `POST /begleiter/{art}/{id}/freisetzen` → Kampf. Keine Probe, keine Runden; Critter/KI als `personId`, Sprite/Geist als `begleiterId`, Initiative 0 (danach `POST /teilnehmer/{tid}/initiative`). Schon dabei = unverändert. Fremder Begleiter = 404.
+- `POST /begleiter/{art}/{id}/zurueckrufen` → Kampf. Nimmt die Zeile(n) ohne `rundenVerbleibend` wieder raus; danach erneut freisetzbar.
+
 ## Initiative-Eingabe
 
 Wenn die SL eine WARNUNG mit `initiative: true` schickt, erscheint auf den

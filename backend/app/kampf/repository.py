@@ -169,11 +169,15 @@ async def hole(campaign_id: str) -> dict | None:
         result = await session.run(
             """
             MATCH (d:Person {campaignId: $campaign_id})
-            WHERE d.istDrohne = true OR d.istFahrzeug = true OR d.istCritter = true
+            WHERE d.istDrohne = true OR d.istFahrzeug = true OR d.istCritter = true OR d.istKI = true
             OPTIONAL MATCH (d)-[:BEGLEITET]->(p1:Person)
             OPTIONAL MATCH (p2:Person {campaignId: $campaign_id})-[:BESITZT]->
                 (:Gegenstand {campaignId: $campaign_id, beschworenerCritterId: d.id})
-            WITH d, coalesce(p1.id, p2.id) AS besitzerId
+            // Freigesetzte KI (15.11.2026): auch über den Gegenstand, an den
+            // die SL sie gekoppelt hat (`kiPersonId`).
+            OPTIONAL MATCH (p3:Person {campaignId: $campaign_id})-[:BESITZT]->
+                (:Gegenstand {campaignId: $campaign_id, kiPersonId: d.id})
+            WITH d, coalesce(p1.id, p2.id, p3.id) AS besitzerId
             WHERE besitzerId IS NOT NULL
             RETURN d.id AS drohneId, besitzerId AS riggerId
             """,

@@ -33,6 +33,7 @@ RETURN_FIELDS = """
     g.kiTamaFertigkeiten AS kiTamaFertigkeiten,
     g.attackenFertigkeiten AS attackenFertigkeiten, g.attackenSchadensart AS attackenSchadensart,
     g.beschworenerCritterId AS beschworenerCritterId, g.beschwoerungsSchwierigkeit AS beschwoerungsSchwierigkeit,
+    g.kiPersonId AS kiPersonId, g.kiAktiv AS kiAktiv,
     g.initiativeBonus AS initiativeBonus, g.verbaut AS verbaut, g.rundumsicht AS rundumsicht,
     g.wirkungDauer AS wirkungDauer, g.nebenwirkungBoni AS nebenwirkungBoni,
     g.nebenwirkungInitiative AS nebenwirkungInitiative, g.heilmenge AS heilmenge,
@@ -299,6 +300,10 @@ def _decode(record: dict) -> dict:
     # noch nicht -> leer/0, genau wie bei istAugment/augmentZielTyp oben.
     record["beschworenerCritterId"] = record.get("beschworenerCritterId") or ""
     record["beschwoerungsSchwierigkeit"] = _or_default(record.get("beschwoerungsSchwierigkeit"), 0)
+    # KI-Begleiter am Gegenstand (15.11.2026) — gesetzt nur über die
+    # Pet-Routen (pets/routes.py), hier nur gelesen.
+    record["kiPersonId"] = record.get("kiPersonId") or ""
+    record["kiAktiv"] = _or_default(record.get("kiAktiv"), False)
     return record
 
 

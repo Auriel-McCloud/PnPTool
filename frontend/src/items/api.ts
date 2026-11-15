@@ -138,6 +138,10 @@ export interface Gegenstand {
   beschworenerCritterId: string;
   /** SL-Schwierigkeitsgrad (0-2), additiv auf die benötigten Erfolge. */
   beschwoerungsSchwierigkeit: number;
+  /** KI-Begleiter am Gegenstand (15.11.2026): gekoppelte KI-Person und ob ihr
+   * Desktop-Pet gerade läuft. Gesetzt über `petsApi.kiKoppeln`/`kiAktiv`. */
+  kiPersonId?: string;
+  kiAktiv?: boolean;
   /** Liegt im Mülleimer der Spielleitung — überall sonst ausgeblendet. */
   weggeworfen: boolean;
   /** Wer es weggeworfen hat; leer, wenn es nie weggeworfen wurde. */

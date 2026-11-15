@@ -69,6 +69,30 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
                b.id AS besitzerId, b.name AS besitzerName,
                collect(DISTINCT m.id) AS mitglieder,
                null AS petStufe, null AS petTipps, null AS petTippsNoetig, null AS petEpStart, 0 AS epEigen
+        UNION
+        // KI-Begleiter am Gegenstand (Mark, 15.11.2026): die SL koppelt eine
+        // KI-Person an einen Gegenstand (`kiPersonId`), der Besitzer schaltet
+        // sie dort an und aus (`kiAktiv`). Gleiche Regeln wie bei Bärbel
+        // (weggeworfen oder verschlossen eingepackt = kein Pet); das Pet ist
+        // die KI selbst und wächst mit ihren EP.
+        MATCH (b:Person {campaignId: $campaign_id, personType: 'PC'})-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
+        WHERE coalesce(g.kiPersonId, '') <> '' AND coalesce(g.kiAktiv, false)
+          AND NOT coalesce(g.weggeworfen, false)
+          AND NOT EXISTS {
+              MATCH (g)-[:LIEGT_IN*1..8]->(kiste:Gegenstand)
+              WHERE kiste.schlossArt IN ['passwort', 'schluessel', 'spiel']
+                AND NOT coalesce(kiste.aufgeschlossen, false)
+          }
+        MATCH (c:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
+        WITH c, b ORDER BY b.id
+        WITH c, head(collect(b)) AS b
+        OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
+        RETURN c.id AS id, coalesce(c.alias, c.name) AS name, 'ki' AS art,
+               b.id AS besitzerId, b.name AS besitzerName,
+               collect(DISTINCT m.id) AS mitglieder,
+               c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
+               c.petEpStart AS petEpStart,
+               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen
     """
     kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
     async with get_driver().session() as session:
@@ -112,10 +136,11 @@ def _stufe_ergaenzen(d: dict, kampagnen_ep: int, ep_je_schritt: int = WACHSTUM_E
     d["risse"] = risse(tipps, noetig) if st == "ei" else 0
 
 
-# Critter (Person mit istCritter) oder Gegenstand — dieselbe Route für beide.
+# Critter (Person mit istCritter), KI (istKI, 15.11.2026) oder Gegenstand —
+# dieselbe Route für alle.
 _PET_TRAEGER = """
         MATCH (c {id: $critter_id, campaignId: $campaign_id})
-        WHERE (c:Person AND c.istCritter = true) OR c:Gegenstand
+        WHERE (c:Person AND (c.istCritter = true OR c.istKI = true)) OR c:Gegenstand
 """
 
 
@@ -170,8 +195,8 @@ async def wachstum_setzen(campaign_id: str, critter_id: str, stufe_: str) -> dic
     # Jede Art hat ihre eigenen Stufen: keine Drachenstufe (oder ein Ei) an der KI.
     passende = [a for a in DRACHEN_ARTEN + KI_ARTEN if stufe_passt(a, stufe_)]
     query = """
-        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id, istCritter: true})
-        WHERE c.petArt IN $wachsende
+        MATCH (c:Person {id: $critter_id, campaignId: $campaign_id})
+        WHERE (c.istCritter = true OR c.istKI = true) AND c.petArt IN $wachsende
         FOREACH (_ IN CASE WHEN $ziel IS NULL THEN [1] ELSE [] END |
             SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
         FOREACH (_ IN CASE WHEN $ziel IS NULL THEN [] ELSE [1] END |
@@ -440,7 +465,7 @@ async def zutraulichkeit_erhoehen(campaign_id: str, person_id: str, pet_id: str,
     query = """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
         MATCH (t {id: $pet_id, campaignId: $campaign_id})
-        WHERE t:Gegenstand OR (t:Person AND t.istCritter = true)
+        WHERE t:Gegenstand OR (t:Person AND (t.istCritter = true OR t.istKI = true))
         MERGE (p)-[z:ZUTRAULICH]->(t)
         ON CREATE SET z.wert = 0
         WITH z, ($abklingen_s <= 0 OR $jetzt - coalesce(z.zuletzt, 0) >= $abklingen_s) AS zaehlt
@@ -454,3 +479,63 @@ async def zutraulichkeit_erhoehen(campaign_id: str, person_id: str, pet_id: str,
                                    jetzt=datetime.now(timezone.utc).timestamp())
         r = await result.single()
         return int(r["wert"]) if r else None
+
+
+# ── KI-Begleiter am Gegenstand (15.11.2026) ──────────────────────────────
+
+
+async def ki_kopplung_lesen(campaign_id: str, item_id: str) -> dict | None:
+    """`kiPersonId`/`kiAktiv` eines Gegenstands plus Name der KI."""
+    query = """
+        MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+        OPTIONAL MATCH (k:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
+        RETURN g.id AS id, coalesce(g.kiPersonId, '') AS kiPersonId, coalesce(g.kiAktiv, false) AS kiAktiv,
+               coalesce(k.alias, k.name, '') AS kiName
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id)
+        r = await result.single()
+        return dict(r) if r else None
+
+
+async def ki_koppeln(campaign_id: str, item_id: str, ki_id: str | None) -> dict | None:
+    """Die SL koppelt eine KI an den Gegenstand oder löst sie. Neu gekoppelt
+    ist sie gleich aktiv. Hat die KI noch keine Pet-Art, wird sie zur KI
+    (Funke, wächst ab jetzt mit ihren EP) — dieselbe Startlogik wie
+    `art_setzen`. None = die KI gibt es nicht (oder den Gegenstand nicht)."""
+    if ki_id:
+        query = """
+            MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+            MATCH (k:Person {id: $ki_id, campaignId: $campaign_id, istKI: true})
+            SET g.kiAktiv = CASE WHEN coalesce(g.kiPersonId, '') = $ki_id THEN coalesce(g.kiAktiv, true) ELSE true END,
+                g.kiPersonId = $ki_id
+            RETURN coalesce(k.petArt, '') AS art
+        """
+    else:
+        query = """
+            MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+            SET g.kiPersonId = '', g.kiAktiv = false
+            RETURN 'ki' AS art
+        """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, ki_id=ki_id or "")
+        r = await result.single()
+        if r is None:
+            return None
+    if ki_id and r["art"] not in KI_ARTEN:
+        await art_setzen(campaign_id, ki_id, KI_ARTEN[0])
+    return await ki_kopplung_lesen(campaign_id, item_id)
+
+
+async def ki_aktiv_setzen(campaign_id: str, item_id: str, aktiv: bool) -> dict | None:
+    query = """
+        MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
+        WHERE coalesce(g.kiPersonId, '') <> ''
+        SET g.kiAktiv = $aktiv
+        RETURN g.id AS id
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, item_id=item_id, aktiv=aktiv)
+        if await result.single() is None:
+            return None
+    return await ki_kopplung_lesen(campaign_id, item_id)

@@ -249,6 +249,8 @@ async def get_person(campaign_id: str, node_id: str, viewer: Viewer = Depends(ge
             eigene_drohne_oder_critter = await repository.drohne_rigger(campaign_id, node_id) == viewer.person_id
         elif node.get("istCritter"):
             eigene_drohne_oder_critter = await repository.critter_besitzer(campaign_id, node_id) == viewer.person_id
+        elif node.get("istKI"):
+            eigene_drohne_oder_critter = await repository.ki_besitzer(campaign_id, node_id) == viewer.person_id
         if eigene_drohne_oder_critter:
             # node["id"] als eigener viewer_person_id vorgetäuscht, damit
             # filter_entity_for_viewer dieselbe "eigener Charakter"-Behandlung

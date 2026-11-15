@@ -154,7 +154,21 @@ export const petsApi = {
   /** Tierfutter verfüttern (12.11.2026): ein Stück weg, ein Napf auf den eigenen Bildschirm. */
   fuettern: (cid: string, itemId: string) =>
     api.post<{ text: string }>(`/api/campaigns/${cid}/pets/fuettern/${itemId}`, {}),
+  /** SL koppelt eine KI an einen Gegenstand (leer = lösen); neu gekoppelt ist sie an. */
+  kiKoppeln: (cid: string, itemId: string, kiPersonId: string | null) =>
+    api.put<KiKopplung>(`/api/campaigns/${cid}/pets/ki-gegenstand/${itemId}`, { kiPersonId }),
+  /** Besitzer (oder SL) schaltet das Desktop-Pet der KI an/aus. */
+  kiAktiv: (cid: string, itemId: string, aktiv: boolean) =>
+    api.put<KiKopplung>(`/api/campaigns/${cid}/pets/ki-gegenstand/${itemId}/aktiv`, { aktiv }),
 };
+
+/** KI-Begleiter am Gegenstand (15.11.2026). */
+export interface KiKopplung {
+  id: string;
+  kiPersonId: string;
+  kiAktiv: boolean;
+  kiName: string;
+}
 
 /**
  * Live-Leitung fürs Pet. Gleiches Wiederverbinden wie bei den Mitteilungen.

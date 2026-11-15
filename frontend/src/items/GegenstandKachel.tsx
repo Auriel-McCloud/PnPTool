@@ -15,6 +15,7 @@ import { ZusammenlegenPopup } from "./ZusammenlegenPopup";
 import { CredstickAktionen } from "./CredstickPopup";
 import { ApiError } from "../api/client";
 import { petsApi } from "../pets/api";
+import { KiSchalter } from "../pets/KiSchalter";
 import "./wegwerfen.css";
 import { vorschau } from "../shell/vorschau";
 
@@ -594,6 +595,17 @@ export function GegenstandKachel({
             </button>
             {futterText && <p style={{ margin: "8px 0 0" }}>{futterText}</p>}
           </div>
+        )}
+
+        {/* KI-Begleiter am Gegenstand (Mark, 15.11.2026): der Besitzer
+            schaltet ihr Desktop-Pet an und aus. */}
+        {item.kiPersonId && campaignId && onUmlegen && (
+          <KiSchalter
+            campaignId={campaignId}
+            itemId={item.id}
+            aktiv={Boolean(item.kiAktiv)}
+            onGeaendert={() => onGeoeffnet?.()}
+          />
         )}
 
         {(onWegwerfen || onWeitergeben) && (

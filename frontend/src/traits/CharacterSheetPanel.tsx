@@ -29,6 +29,7 @@ import { CredstickAktionen } from "../items/CredstickPopup";
 import { BehaelterHineinlegenPopup } from "../items/BehaelterHineinlegenPopup";
 import { SchlossForm } from "../items/SchlossForm";
 import { PetArtWahl } from "../pets/PetArtWahl";
+import { KiKopplungWahl } from "../pets/KiKopplungWahl";
 import "../entities/pc-detail.css";
 import { vorschau } from "../shell/vorschau";
 
@@ -2243,6 +2244,15 @@ export function GegenstandRow({
                         zielId={item.id}
                         fuer="gegenstand"
                         hinweis="Fliegt über die Tablets der Party dessen, der den Gegenstand besitzt — außer er liegt im Papierkorb oder in einer verschlossenen Kiste."
+                      />
+                    )}
+                    {/* KI-Begleiter am Gegenstand (15.11.2026). */}
+                    {istGm && (
+                      <KiKopplungWahl
+                        campaignId={campaignId}
+                        itemId={item.id}
+                        kiPersonId={item.kiPersonId ?? ""}
+                        kiAktiv={Boolean(item.kiAktiv)}
                       />
                     )}
                     {istGm && istBehaelter && (

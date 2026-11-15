@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Begleiter im Kampf freisetzen, KI am Gegenstand (15.11.2026)
+
+Mark: „Kann ein Spieler eigentlich seine Begleiter in einem Kampf freisetzen? … dieselbe Leiste wie die Beschwörungen … Freisetzen anstelle von Beschwören“ und „eine KI als Begleiter … an einen Gegenstand koppeln … aktivieren/deaktivieren-Button … nur um das Desktop-Pet“. Entschieden per Rückfrage: keine Probe, keine Runden, Zurückrufen erlaubt, für Critter, KI und Sprite/Geist; die KI bleibt eine eigene KI-Person (Blatt, wächst mit ihren EP), die SL koppelt sie am Gegenstand.
+
+- **Freisetzen:** `entities/repository.py::freisetzbare_begleiter` (Critter/KI mit `BEGLEITET`, KI über eigenen Gegenstand mit `kiPersonId`, `Begleiter`-Knoten; Ki-Tama-Critter und Drohnen bewusst nicht). Routen `GET kampf/begleiter/freisetzbar[?personId]`, `POST kampf/begleiter/{art}/{id}/freisetzen|zurueckrufen` (`art` = `critter`|`ki`|`begleiter`; Critter/KI als `personId`, Sprite/Geist als `begleiterId`; Initiative 0, danach `melde_initiative`; Zurückrufen nimmt nur Zeilen ohne `rundenVerbleibend`). `_darf_initiative_melden` kennt jetzt `begleiterId` und KI-Besitz (`ki_besitzer`: `BEGLEITET` oder Besitzer des Gegenstands). `_darf_person_sehen`/`get_person` lassen den Besitzer seine KI lesen (Kampfkarte). Kampf-Besitzer-Map (`kampf/repository.py`) kennt KIs. Frontend: `DeineBeschwoerungen.tsx` lädt die Liste selbst, Kacheln mit „Freisetzen“/„Zurückrufen“, Critter/KI öffnen die Kampfkarte, Sprite/Geist das `BegleiterBlatt` mit Initiative-Knopf; Überschrift „Deine Beschwörungen & Begleiter“ je nach Inhalt.
+- **KI am Gegenstand:** Felder `Gegenstand.kiPersonId`/`kiAktiv` (nur gelesen in `items/`, geschrieben über `PUT pets/ki-gegenstand/{item}` (SL, neu gekoppelt = an; KI ohne Pet-Art wird `ki`, Funke) und `PUT pets/ki-gegenstand/{item}/aktiv` (Besitzer oder SL)). `pets_der_kampagne` hat einen dritten UNION-Zweig: das Pet ist die KI-Person selbst (wächst mit ihren EP), fliegt nur bei `kiAktiv`, nicht weggeworfen, nicht in verschlossener Kiste. `_PET_TRAEGER`/`wachstum_setzen`/Zutraulichkeit kennen `istKI`. Frontend: `pets/KiKopplungWahl.tsx` im SL-Bearbeiten-Formular unter „Pet auf den Tablets“ (KI wählen, wach-Häkchen, Wachstum), `pets/KiSchalter.tsx` im Gegenstandfenster des Besitzers („KI aktivieren/deaktivieren“).
+- Smoke gegen lokale Neo4j (Wegwerf-Kampagne) grün; `tsc -b` grün; pytest ohne neue Fehlschläge.
+
 ## KI-Begleiter, Feuerball, Perle im Schlafkringel (13.11.2026)
 
 Mark: „Ich mag A Datenwolke und B Lichtkern … zwischen den 2 Gestalten wechseln … verschiedene Farben und Gestalten … ein Go für alles.“

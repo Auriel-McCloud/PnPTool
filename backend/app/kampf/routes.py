@@ -741,7 +741,7 @@ async def melde_initiative(
     if eintrag is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Teilnehmer nicht im Kampf")
 
-    if not await _darf_initiative_melden(campaign_id, viewer, eintrag.get("personId")):
+    if not await _darf_initiative_melden(campaign_id, viewer, eintrag.get("personId"), eintrag.get("begleiterId")):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur für den eigenen Charakter")
 
     try:
@@ -800,7 +800,9 @@ async def selbst_initiative(
     return await _kampf_antworten(kampf)
 
 
-async def _darf_initiative_melden(campaign_id: str, viewer: Viewer, ziel_person_id: str | None) -> bool:
+async def _darf_initiative_melden(
+    campaign_id: str, viewer: Viewer, ziel_person_id: str | None, ziel_begleiter_id: str | None = None
+) -> bool:
     """Wie `darf_melden`, nur zusätzlich: der Rigger darf auch für seine
     eigene(n) aktive(n) Drohne(n)/Fahrzeug(e) melden (26.10.2026, Mark:
     \"er geht ins Popup rein, klickt da drauf und seine Drohnen fügen sich
@@ -813,13 +815,25 @@ async def _darf_initiative_melden(campaign_id: str, viewer: Viewer, ziel_person_
     """
     if darf_melden(viewer.role, viewer.person_id, ziel_person_id):
         return True
-    if viewer.role == "GM" or not ziel_person_id or not viewer.person_id:
+    if viewer.role == "GM" or not viewer.person_id:
+        return False
+    # Freigesetzte Begleiter (15.11.2026): KI und Sprite/Geist gehören dem
+    # Spieler über dieselbe Liste, aus der er sie freisetzt.
+    if ziel_begleiter_id and not ziel_person_id:
+        from app.entities.repository import freisetzbare_begleiter
+
+        return any(b["id"] == ziel_begleiter_id for b in await freisetzbare_begleiter(campaign_id, viewer.person_id))
+    if not ziel_person_id:
         return False
     rigger_id = await drohne_rigger(campaign_id, ziel_person_id)
     if rigger_id is not None and rigger_id == viewer.person_id:
         return True
     beschwoerer_id = await critter_besitzer(campaign_id, ziel_person_id)
-    return beschwoerer_id is not None and beschwoerer_id == viewer.person_id
+    if beschwoerer_id is not None and beschwoerer_id == viewer.person_id:
+        return True
+    from app.entities.repository import ki_besitzer
+
+    return await ki_besitzer(campaign_id, ziel_person_id) == viewer.person_id
 
 
 NUMMER_MUSTER = re.compile(r"^(.*) (\d+)$")
@@ -991,6 +1005,132 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             "rundenVerbleibend": stufe,
         },
     )
+    return await _kampf_antworten(await repository.hole(campaign_id))
+
+
+# ── Begleiter freisetzen (15.11.2026) ─────────────────────────────────────
+# Mark: „Kann ein Spieler eigentlich seine Begleiter in einem Kampf
+# freisetzen? … gerne dieselbe Leiste wie die Beschwörungen, und dann eben
+# Freisetzen anstelle von Beschwören.“ Entschieden: keine Probe, keine
+# Rundenbegrenzung, Zurückrufen erlaubt (danach wieder freisetzbar), für
+# Critter, KI und Sprite/Geist.
+
+BegleiterArt = Literal["critter", "ki", "begleiter"]
+
+
+class FreisetzbarerBegleiter(BaseModel):
+    id: str
+    name: str = ""
+    bildUrl: str = ""
+    art: BegleiterArt
+
+
+async def _begleiter_person_id(viewer: Viewer, person_id: str | None) -> str:
+    """Für wen die Liste gilt: der Spieler immer nur für sich selbst, die SL
+    für den Charakter, dessen Bogen sie gerade offen hat."""
+    if viewer.role == "GM" and person_id:
+        return person_id
+    if not viewer.person_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein eigener Charakter")
+    return viewer.person_id
+
+
+async def _eigener_begleiter_oder_404(campaign_id: str, viewer: Viewer, art: str, begleiter_id: str) -> dict:
+    """Der Begleiter gehört dem Spieler — sonst 404 (fremde Begleiter sollen
+    nicht einmal als existierend erkennbar sein, wie bei den Drohnen). Die SL
+    darf jeden Begleiter freisetzen, der überhaupt einem Charakter gehört."""
+    from app.entities.repository import freisetzbare_begleiter
+
+    if viewer.role == "GM":
+        besitzer = await _begleiter_besitzer(campaign_id, art, begleiter_id)
+        if besitzer:
+            for b in await freisetzbare_begleiter(campaign_id, besitzer):
+                if b["id"] == begleiter_id and b["art"] == art:
+                    return b
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter nicht gefunden")
+    if viewer.person_id:
+        for b in await freisetzbare_begleiter(campaign_id, viewer.person_id):
+            if b["id"] == begleiter_id and b["art"] == art:
+                return b
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Begleiter nicht gefunden")
+
+
+async def _begleiter_besitzer(campaign_id: str, art: str, begleiter_id: str) -> str | None:
+    from app.entities.repository import ki_besitzer
+
+    if art == "critter":
+        return await critter_besitzer(campaign_id, begleiter_id)
+    if art == "ki":
+        return await ki_besitzer(campaign_id, begleiter_id)
+    from app.begleiter import repository as begleiter_repository
+
+    for b in await begleiter_repository.liste(campaign_id):
+        if b.get("id") == begleiter_id:
+            return b.get("besitzerId")
+    return None
+
+
+def _teilnahme_von(kampf: dict, art: str, begleiter_id: str) -> dict | None:
+    feld = "begleiterId" if art == "begleiter" else "personId"
+    return next((t for t in kampf["teilnehmer"] if t.get(feld) == begleiter_id and not t.get("zusatzzug")), None)
+
+
+@router.get("/begleiter/freisetzbar", response_model=list[FreisetzbarerBegleiter])
+async def freisetzbare_begleiter_liste(
+    campaign_id: str,
+    personId: str | None = Query(default=None),
+    viewer: Viewer = Depends(get_viewer),
+):
+    """Die eigenen Begleiter für die Leiste „Deine Beschwörungen“."""
+    from app.entities.repository import freisetzbare_begleiter
+
+    wer = await _begleiter_person_id(viewer, personId)
+    return [
+        {**b, "name": b.get("name") or "", "bildUrl": b.get("bildUrl") or ""}
+        for b in await freisetzbare_begleiter(campaign_id, wer)
+    ]
+
+
+@router.post("/begleiter/{art}/{begleiter_id}/freisetzen", response_model=KampfResponse)
+async def begleiter_freisetzen(campaign_id: str, art: BegleiterArt, begleiter_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Self-Service: der Spieler setzt seinen Begleiter in den laufenden Kampf
+    frei. Keine Probe, keine Runden — er steht in der Initiative, bis er
+    zurückgerufen wird oder der Kampf endet. Initiative startet bei 0 und
+    wird danach über `melde_initiative` gesetzt (wie bei Drohne/Beschwörung)."""
+    b = await _eigener_begleiter_oder_404(campaign_id, viewer, art, begleiter_id)
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    if _teilnahme_von(kampf, art, begleiter_id):
+        return await _kampf_antworten(kampf)
+
+    name = await _mit_nummer_falls_doppelt(campaign_id, kampf["teilnehmer"], b.get("name") or "Begleiter")
+    await repository.teilnehmer_hinzu(
+        campaign_id,
+        {
+            "name": name,
+            "initiative": 0,
+            "kampfart": "FERNKAMPF" if art == "ki" else "NAHKAMPF",
+            "notiz": "",
+            "personId": begleiter_id if art != "begleiter" else None,
+            "begleiterId": begleiter_id if art == "begleiter" else None,
+        },
+    )
+    return await _kampf_antworten(await repository.hole(campaign_id))
+
+
+@router.post("/begleiter/{art}/{begleiter_id}/zurueckrufen", response_model=KampfResponse)
+async def begleiter_zurueckrufen(campaign_id: str, art: BegleiterArt, begleiter_id: str, viewer: Viewer = Depends(get_viewer)):
+    """Den freigesetzten Begleiter wieder aus der Initiative nehmen — danach
+    kann er erneut freigesetzt werden. Beschworene Critter (mit Runden)
+    laufen über ihr Ki-Tama und werden hier nicht angefasst."""
+    await _eigener_begleiter_oder_404(campaign_id, viewer, art, begleiter_id)
+    kampf = await repository.hole(campaign_id)
+    if kampf is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    feld = "begleiterId" if art == "begleiter" else "personId"
+    for t in [t for t in kampf["teilnehmer"] if t.get(feld) == begleiter_id and t.get("rundenVerbleibend") is None]:
+        await repository.teilnehmer_entfernen(campaign_id, t["id"])
     return await _kampf_antworten(await repository.hole(campaign_id))
 
 

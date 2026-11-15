@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.auth.dependencies import Viewer, get_viewer, require_campaign_gm, require_campaign_zugang
 from app.campaigns.repository import get_campaign, get_einstellungen
-from app.entities.repository import PERSON_FIELDS, critter_besitzer, critter_von_besitzer, drohne_rigger, get_node, update_node
+from app.entities.repository import PERSON_FIELDS, critter_besitzer, critter_von_besitzer, drohne_rigger, get_node, ki_besitzer, update_node
 from app.ereignisprotokoll import hooks
 from app.kampf import repository as kampf_repository
 from app.kampf.hot import hot_anpassung, verbindung_bricht, werte_mit_hot
@@ -90,6 +90,10 @@ async def _darf_person_sehen(campaign_id: str, person_id: str, person: dict, vie
         return await drohne_rigger(campaign_id, person_id) == viewer.person_id
     if person.get("istCritter"):
         return await critter_besitzer(campaign_id, person_id) == viewer.person_id
+    # KI-Begleiter (15.11.2026): freigesetzt im Kampf zeigt die Kampfkarte
+    # ihre Werte — derselbe Besitzer-Vorbehalt wie beim Critter.
+    if person.get("istKI"):
+        return await ki_besitzer(campaign_id, person_id) == viewer.person_id
     return False
 
 

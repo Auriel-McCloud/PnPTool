@@ -84,6 +84,52 @@ async def wachstum_setzen(campaign_id: str, critter_id: str, body: PetWachstum):
     return d
 
 
+class KiKopplung(BaseModel):
+    id: str
+    kiPersonId: str = ""
+    kiAktiv: bool = False
+    kiName: str = ""
+
+
+class KiKoppeln(BaseModel):
+    # Leer/None = Kopplung lösen.
+    kiPersonId: str | None = None
+
+
+class KiAktiv(BaseModel):
+    aktiv: bool
+
+
+@router.put("/ki-gegenstand/{item_id}", response_model=KiKopplung, dependencies=[Depends(require_campaign_gm)])
+async def ki_koppeln(campaign_id: str, item_id: str, body: KiKoppeln):
+    """Die SL koppelt einen KI-Begleiter an einen Gegenstand (Mark,
+    15.11.2026: „die KI an einen Gegenstand koppeln, mit einem
+    aktivieren/deaktivieren-Button für den Spieler“). Neu gekoppelt ist sie aktiv."""
+    d = await repository.ki_koppeln(campaign_id, item_id, body.kiPersonId or None)
+    if d is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand oder KI nicht gefunden")
+    await motor.abgleich(campaign_id)
+    return d
+
+
+@router.put("/ki-gegenstand/{item_id}/aktiv", response_model=KiKopplung)
+async def ki_aktiv(campaign_id: str, item_id: str, body: KiAktiv, viewer: Viewer = Depends(get_viewer)):
+    """Der Besitzer schaltet die KI auf seinem Gegenstand an oder aus — nur
+    das Desktop-Pet, sonst nichts. Prüft den Besitz selbst (Ausnahmeliste in
+    tests/test_zugriffsschutz.py); fremde Gegenstände: 404."""
+    from app.items.repository import get_owner_person_id
+
+    if viewer.role != "GM":
+        besitzer = await get_owner_person_id(campaign_id, item_id)
+        if not viewer.person_id or besitzer != viewer.person_id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    d = await repository.ki_aktiv_setzen(campaign_id, item_id, body.aktiv)
+    if d is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Keine KI an diesem Gegenstand")
+    await motor.abgleich(campaign_id)
+    return d
+
+
 @router.post("/fuettern/{item_id}")
 async def fuettern(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_viewer)) -> dict:
     """Tierfutter verfüttern (Mark, 12.11.2026): ein Stück vom eigenen Futter,

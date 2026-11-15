@@ -73,6 +73,9 @@ OHNE_GM_ERLAUBT = {
     "/api/campaigns/{campaign_id}/gegenstaende/{item_id}/schlucken",
     # Tierfutter verfüttern (12.11.2026): prüft den eigenen Besitz selbst.
     "/api/campaigns/{campaign_id}/pets/fuettern/{item_id}",
+    # KI am Gegenstand an-/ausschalten (15.11.2026): nur das Desktop-Pet,
+    # prüft den eigenen Besitz selbst.
+    "/api/campaigns/{campaign_id}/pets/ki-gegenstand/{item_id}/aktiv",
     # Zusammenlegen (26.10.2026, Mark: "das müssen unbedingt auch die
     # Spieler können"): mehrere gleiche Stücke des eigenen Besitzes zu einem
     # Stapel zusammenlegen. Prüft die Besitzverhältnisse selbst (Ziel UND
@@ -140,6 +143,10 @@ OHNE_GM_ERLAUBT = {
     # die SL zu bitten. Besitz-Check über die BEGLEITET-Kante (`drohne_rigger`),
     # dieselbe 404-statt-403-Logik wie bei entities/routes.py::_drohne_und_rigger_oder_404.
     "/api/campaigns/{campaign_id}/kampf/drohnen/{node_id}/beitreten",
+    # Begleiter freisetzen/zurückrufen (15.11.2026): nur eigene Begleiter,
+    # Besitz über `freisetzbare_begleiter`, fremde = 404.
+    "/api/campaigns/{campaign_id}/kampf/begleiter/{art}/{begleiter_id}/freisetzen",
+    "/api/campaigns/{campaign_id}/kampf/begleiter/{art}/{begleiter_id}/zurueckrufen",
     # Ein Spieler bittet darum, ein Implantat entfernen zu lassen. Setzt NUR
     # ein Kennzeichen — operiert wird über .../chirurgie, und das verlangt
     # die Spielleitung. Mark: "SL, aber ein Spieler kann 'Entfernung

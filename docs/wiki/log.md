@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-15] gebaut | Begleiter freisetzen, KI am Gegenstand
+
+Begleiter im Kampf freisetzen/zurückrufen in der Beschwörungsleiste, ohne Probe. KI-Person an einen Gegenstand koppeln, Besitzer schaltet ihr Desktop-Pet an/aus. Siehe [[concepts/kampf-und-initiative]], [[entities/critter-pet]].
+
 ## [2026-11-12] gebaut | Nahkampf-Reichweite im Steckbrief
 
 Feld `reichweite` an Nahkampf- und Handgemenge-Waffen: 1 kurz, 2 mittel, 3 lang. Steckbrief zeigt nur mittel und lang. Siehe [[concepts/kampf-und-initiative]].

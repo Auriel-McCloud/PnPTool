@@ -1,7 +1,7 @@
 ---
 title: Kampf und Initiative
 created: 2026-09-18
-updated: 2026-11-12
+updated: 2026-11-15
 type: konzept
 tags: [kampf, versionsgeschichte]
 sources: [../../api/kampf.md, ../../reference/Neotopia_Regeln.md, ../../regeln-neotopia.md]
@@ -79,6 +79,16 @@ automatische „0 HP = tot"-Logik.
   dieser Waffe. Angriff und die globale P-Zahl bleiben ohne den Bonus.
   Schild = Schaden 0 + Parade-Bonus. Mindeststärke wurde besprochen und
   verworfen.
+- **15.11.2026: Begleiter freisetzen.** Mark: „Kann ein Spieler eigentlich
+  seine Begleiter in einem Kampf freisetzen? … dieselbe Leiste wie die
+  Beschwörungen, und dann eben Freisetzen anstelle von Beschwören.“
+  Entschieden: **keine Probe, keine Rundenbegrenzung**, der Spieler darf ihn
+  **zurückrufen** (danach wieder freisetzbar). Freisetzbar sind Critter, KI
+  und Sprite/Geist („auch wenn wir die noch nicht im Detail behandelt
+  haben“) — Ki-Tama-Beschwörungen bleiben bei der Probe, Drohnen in ihrer
+  eigenen Leiste. Nach dem Freisetzen öffnet sich wie bei der Beschwörung
+  die Kampfkarte (Sprite/Geist: Begleiter-Blatt) mit der Initiative-Eingabe.
+  Gebaut, Klicktest am Tisch offen.
 
 ## Was noch fehlt
 

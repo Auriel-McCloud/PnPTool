@@ -420,7 +420,17 @@ Mark zu den Entwürfen: „Ich mag A Datenwolke und B Lichtkern! Es kann gerne z
 - **Anfassen:** Antippen = sie freut sich. Ziehen = sie kommt mit; mit Schwung über den Seitenrand geworfen fliegt sie zum nächsten Tablet. Feuer, Eis und Blitz der anderen Pets geben ihr eine Bildstörung.
 - **Hinterlässt nichts** — keine Spuren, also nichts zum Saubermachen.
 - **Annahmen Neko:** hängt an einem Critter und wächst mit dessen EP (wie der Drache); Stufennamen; Startfarbe Cyan; welche Fähigkeit mit welcher Stufe kommt; Besuchsdauer 1–2,5 Minuten; Glitch-Geist (Entwurf C) nicht gebaut.
-- **Offen:** eine feste Lieblingsfarbe je KI; eigene Gestalten nach Wunsch des Spielers; KI an einem Gegenstand statt Critter.
+- **Offen:** eine feste Lieblingsfarbe je KI; eigene Gestalten nach Wunsch des Spielers; KI an einem Gegenstand statt Critter (→ 15.11. gebaut, siehe unten).
+
+### KI am Gegenstand (15.11.2026, gebaut)
+
+Mark: „Und dann wollte ich noch, dass ein Spieler eine KI als Begleiter hat, ich dachte mir, dass wir die an einen Gegenstand koppeln könnten, und wir in dem Gegenstand für den Spieler einen aktivieren/deaktivieren-Button … da geht es aber eigentlich nur um das Desktop-Pet.“
+
+- **Datenmodell (Rückfrage beantwortet):** die KI bleibt ein eigener Begleiter — KI-Person (`istKI`) mit Blatt aus der Begleiter-Verwaltung, wächst mit ihren EP. Die SL koppelt sie im Bearbeiten-Formular des Gegenstands (unter „Pet auf den Tablets“, Feld „KI-Begleiter“). Am Gegenstand: `kiPersonId` und `kiAktiv`.
+- **Schalter:** der Besitzer sieht im Gegenstandfenster „KI aktivieren/deaktivieren“; er schaltet nur das Desktop-Pet. Die SL hat dasselbe als Häkchen „KI wach“ im Formular, dazu die Wachstumsstufe.
+- **Wann sie fliegt:** wie Bärbel — beim Besitzer des Gegenstands und seiner Party, nicht weggeworfen, nicht in einer verschlossenen Kiste, und nur wenn wach. Neu gekoppelt ist sie wach; eine KI ohne Pet-Art wird beim Koppeln zur KI-Pet-Art (Funke).
+- **Annahmen Neko:** Ausrüsten nicht nötig (wie Bärbel); Startzustand wach; die KI am Critter (13.11.) bleibt daneben möglich.
+- Im Kampf ist sie wie jeder Begleiter freisetzbar (siehe [[concepts/kampf-und-initiative]]), unabhängig vom Schalter.
 
 ### Entwurf 13.11.2026 (Auswahl getroffen: A und B)
 

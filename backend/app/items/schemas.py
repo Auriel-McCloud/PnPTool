@@ -663,6 +663,11 @@ class GegenstandResponse(BaseModel):
     # automatisch so leicht sind wie schwache". 0-2 vorgesehen, kein hartes
     # Enum-Cap (wer mehr einträgt, hat's sich selbst zuzuschreiben).
     beschwoerungsSchwierigkeit: int = 0
+    # KI-Begleiter am Gegenstand (15.11.2026): die SL koppelt eine KI-Person
+    # (`istKI`) an den Gegenstand, der Besitzer schaltet ihr Desktop-Pet an/aus.
+    # Nur lesend hier — geschrieben über pets/routes.py (`ki-gegenstand`).
+    kiPersonId: str = ""
+    kiAktiv: bool = False
     # ein einzigartiges Stück wäre sonst fort. Überall ausgeblendet ausser in
     # der Mülleimer-Liste; zählt weder Gewicht noch Boni.
     weggeworfen: bool = False

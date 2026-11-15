@@ -788,6 +788,72 @@ async def critter_besitzer(campaign_id: str, critter_id: str) -> str | None:
         return record["besitzerId"] if record else None
 
 
+async def ki_besitzer(campaign_id: str, ki_id: str) -> str | None:
+    """Wem diese KI gehört — Pendant zu `critter_besitzer` für `istKI`.
+
+    Zwei Wege (Mark, 15.11.2026): die `BEGLEITET`-Kante aus der
+    Begleiter-Verwaltung ODER der Besitzer des Gegenstands, an den die SL die
+    KI gekoppelt hat (`Gegenstand.kiPersonId`, z.B. das Deck, auf dem sie
+    läuft). Ein weggeworfener Gegenstand zählt nicht mehr.
+    """
+    query = """
+        MATCH (n:Person {id: $ki_id, campaignId: $campaign_id, istKI: true})
+        OPTIONAL MATCH (n)-[:BEGLEITET]->(p1:Person)
+        OPTIONAL MATCH (p2:Person {campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id, kiPersonId: $ki_id})
+        WHERE NOT coalesce(g.weggeworfen, false)
+        RETURN coalesce(p1.id, p2.id) AS besitzerId
+        LIMIT 1
+    """
+    async with get_driver().session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ki_id=ki_id)
+        record = await result.single()
+        return record["besitzerId"] if record else None
+
+
+async def freisetzbare_begleiter(campaign_id: str, person_id: str) -> list[dict]:
+    """Begleiter, die dieser Charakter im Kampf freisetzen darf (Mark,
+    15.11.2026: „dieselbe Leiste wie die Beschwörungen, nur Freisetzen statt
+    Beschwören“) — Critter und KIs mit `BEGLEITET`-Kante, KIs an einem
+    eigenen Gegenstand (`kiPersonId`) und Sprite/Geist-Begleiter-Knoten.
+
+    Ki-Tama-Beschwörungen gehören NICHT dazu (die haben keine
+    `BEGLEITET`-Kante und laufen über die Probe), Drohnen/Fahrzeuge auch nicht
+    (eigene Leiste). `art`: `critter` | `ki` | `begleiter` — die ersten beiden
+    sind Person-Knoten (Kampf-`personId`), `begleiter` ein `Begleiter`-Knoten
+    (Kampf-`begleiterId`).
+    """
+    abfragen = [
+        """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
+        MATCH (n:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p)
+        WHERE n.istCritter = true OR n.istKI = true
+        RETURN n.id AS id, coalesce(n.alias, n.name) AS name, n.bildUrl AS bildUrl,
+               CASE WHEN n.istKI = true THEN 'ki' ELSE 'critter' END AS art
+        """,
+        """
+        MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
+        WHERE coalesce(g.kiPersonId, '') <> '' AND NOT coalesce(g.weggeworfen, false)
+        MATCH (n:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
+        RETURN n.id AS id, coalesce(n.alias, n.name) AS name, n.bildUrl AS bildUrl, 'ki' AS art
+        """,
+        """
+        MATCH (b:Begleiter {campaignId: $campaign_id})-[:BEGLEITET]->(:Person {id: $person_id, campaignId: $campaign_id})
+        RETURN b.id AS id, b.name AS name, b.bildUrl AS bildUrl, 'begleiter' AS art
+        """,
+    ]
+    gesehen: set[str] = set()
+    liste: list[dict] = []
+    async with get_driver().session() as session:
+        for query in abfragen:
+            result = await session.run(query, campaign_id=campaign_id, person_id=person_id)
+            async for r in result:
+                if r["id"] in gesehen:
+                    continue
+                gesehen.add(r["id"])
+                liste.append(dict(r))
+    return sorted(liste, key=lambda b: (b["name"] or "").lower())
+
+
 async def aktive_drohnen_zahl(campaign_id: str, rigger_person_id: str) -> int:
     """Wie viele Drohnen/Fahrzeuge dieser Rigger gerade aktiv verbunden hat
     (`riggerAktiv=true`) — zum Gegenprüfen gegen `maxDrohnen` der Konsole."""

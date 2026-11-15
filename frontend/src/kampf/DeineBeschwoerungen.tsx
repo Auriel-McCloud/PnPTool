@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { begleiterApi, type Begleiter } from "../begleiter/api";
+import { BegleiterBlatt } from "../begleiter/BegleiterKachel";
 import { entitiesApi } from "../entities/api";
 import type { Gegenstand } from "../items/api";
 import { Fenster } from "../shell/Fenster";
 import { bogenApi, type Bogen } from "../traits/bogenApi";
 import { WuerfelZehn } from "../traits/WuerfelZehn";
-import { kampfApi, type Kampf, type Teilnehmer } from "./api";
+import { kampfApi, type FreisetzbarerBegleiter, type Kampf, type Teilnehmer } from "./api";
 import { InitiativeSetzen, initiativePlatzhalter } from "./InitiativeSetzen";
 import { Kampfkarte, wert } from "./Kampfkarte";
 import "../begleiter/begleiter.css";
@@ -35,6 +37,12 @@ function beschwoerungswert(item: Gegenstand): number {
 function benoetigteErfolge(item: Gegenstand): number {
   const stufe = beschwoerungswert(item);
   return Math.max(1, Math.ceil(stufe / 2) + (item.beschwoerungsSchwierigkeit || 0));
+}
+
+/** Die Initiative-Zeile eines freigesetzten Begleiters — Critter/KI über
+ *  `personId`, Sprite/Geist über `begleiterId`. */
+function teilnahmeIn(k: Kampf | null, b: FreisetzbarerBegleiter): Teilnehmer | undefined {
+  return k?.teilnehmer.find((t) => (b.art === "begleiter" ? t.begleiterId : t.personId) === b.id && !t.zusatzzug);
 }
 
 /**
@@ -78,6 +86,67 @@ export function DeineBeschwoerungen({
   // standardmäßig ALLE-sichtbar (siehe BegleiterVerwaltung.tsx), der
   // normale Spieler-lesbare Personen-Endpunkt reicht deshalb.
   const [critterBild, setCritterBild] = useState<string | null>(null);
+  // Begleiter freisetzen (15.11.2026, Mark: „dieselbe Leiste wie die
+  // Beschwörungen, und dann eben Freisetzen anstelle von Beschwören“). Keine
+  // Probe, keine Runden; Zurückrufen nimmt ihn wieder raus. Critter und KI
+  // öffnen die Kampfkarte, Sprite/Geist ihr Begleiter-Blatt.
+  const [begleiter, setBegleiter] = useState<FreisetzbarerBegleiter[]>([]);
+  const [offenTitel, setOffenTitel] = useState("Beschworener Critter");
+  const [offenerBegleiter, setOffenerBegleiter] = useState<FreisetzbarerBegleiter | null>(null);
+  const [begleiterBlatt, setBegleiterBlatt] = useState<Begleiter | null>(null);
+  const [begleiterSendet, setBegleiterSendet] = useState<string | null>(null);
+  const [begleiterFehler, setBegleiterFehler] = useState<string | null>(null);
+  // Nach Freisetzen/Zurückrufen gilt der eigene Klick, bis der Kampf-Takt
+  // denselben Stand liefert — sonst springt die Kachel kurz zurück.
+  const [vorgemerkt, setVorgemerkt] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setVorgemerkt((alt) => {
+      const neu = { ...alt };
+      let geaendert = false;
+      for (const b of begleiter) {
+        if (b.id in neu && Boolean(teilnahmeIn(kampf, b)) === neu[b.id]) {
+          delete neu[b.id];
+          geaendert = true;
+        }
+      }
+      return geaendert ? neu : alt;
+    });
+  }, [kampf, begleiter]);
+
+  useEffect(() => {
+    let weg = false;
+    kampfApi
+      .freisetzbareBegleiter(campaignId, eigenePersonId)
+      .then((liste) => {
+        if (!weg) setBegleiter(liste);
+      })
+      .catch(() => {
+        if (!weg) setBegleiter([]);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, eigenePersonId, kampf?.teilnehmer.length]);
+
+  useEffect(() => {
+    if (!offenerBegleiter) {
+      setBegleiterBlatt(null);
+      return;
+    }
+    let weg = false;
+    begleiterApi
+      .liste(campaignId)
+      .then((alle) => {
+        if (!weg) setBegleiterBlatt(alle.find((b) => b.id === offenerBegleiter.id) ?? null);
+      })
+      .catch(() => {
+        if (!weg) setBegleiterBlatt(null);
+      });
+    return () => {
+      weg = true;
+    };
+  }, [campaignId, offenerBegleiter]);
 
   useEffect(() => {
     let weg = false;
@@ -126,7 +195,64 @@ export function DeineBeschwoerungen({
     const verbraucht = kampf?.verbrauchteBeschwoerungen?.includes(item.id) ?? false;
     return Boolean(dabei) || !verbraucht;
   });
-  if (sichtbar.length === 0) return null;
+  if (sichtbar.length === 0 && begleiter.length === 0) return null;
+
+  /** Auch aus der frischen Antwort, damit die Initiative gleich nach dem
+   *  Freisetzen antippbar ist — aber nie einen schon zurückgerufenen. */
+  function teilnahmeVon(b: FreisetzbarerBegleiter): Teilnehmer | undefined {
+    if (vorgemerkt[b.id] === false) return undefined;
+    return teilnahmeIn(kampf, b) ?? (vorgemerkt[b.id] ? teilnahmeIn(frischerKampf, b) : undefined);
+  }
+
+  function begleiterOeffnen(b: FreisetzbarerBegleiter) {
+    if (b.art === "begleiter") {
+      setOffenerBegleiter(b);
+    } else {
+      setOffenTitel(b.art === "ki" ? "Freigesetzte KI" : "Freigesetzter Begleiter");
+      setOffenId(b.id);
+    }
+  }
+
+  async function freisetzen(b: FreisetzbarerBegleiter) {
+    setBegleiterSendet(b.id);
+    setBegleiterFehler(null);
+    try {
+      const neu = await kampfApi.freisetzen(campaignId, b.art, b.id);
+      setFrischerKampf(neu);
+      setVorgemerkt((v) => ({ ...v, [b.id]: true }));
+      onGeaendert();
+      // Direkt weiter zur Initiative, wie bei der Beschwörung.
+      begleiterOeffnen(b);
+    } catch (e) {
+      setBegleiterFehler(e instanceof Error ? e.message : "Freisetzen ging nicht");
+    } finally {
+      setBegleiterSendet(null);
+    }
+  }
+
+  async function zurueckrufen(b: FreisetzbarerBegleiter) {
+    setBegleiterSendet(b.id);
+    setBegleiterFehler(null);
+    try {
+      const neu = await kampfApi.zurueckrufen(campaignId, b.art, b.id);
+      setFrischerKampf(neu);
+      setVorgemerkt((v) => ({ ...v, [b.id]: false }));
+      if (offenerBegleiter?.id === b.id) setOffenerBegleiter(null);
+      if (offenId === b.id) setOffenId(null);
+      onGeaendert();
+    } catch (e) {
+      setBegleiterFehler(e instanceof Error ? e.message : "Zurückrufen ging nicht");
+    } finally {
+      setBegleiterSendet(null);
+    }
+  }
+
+  const ueberschrift =
+    sichtbar.length && begleiter.length
+      ? "Deine Beschwörungen & Begleiter"
+      : sichtbar.length
+        ? "Deine Beschwörungen"
+        : "Deine Begleiter";
 
   const intelligenz = eigenerBogen ? wert(eigenerBogen, "Intelligenz") : null;
   // Würfelpool der Probe — Intelligenz des Beschwörers + Beschwörungswert
@@ -187,8 +313,9 @@ export function DeineBeschwoerungen({
   return (
     <div className="ka-drohnen">
       <h3 className="gg-abschnitt">
-        <span>🔮 Deine Beschwörungen</span>
+        <span>🔮 {ueberschrift}</span>
       </h3>
+      {begleiterFehler && <p className="bo-warnung">{begleiterFehler}</p>}
       <div className="gg-slotboxen">
         {sichtbar.map((item) => {
           const critterId = item.beschworenerCritterId;
@@ -213,6 +340,34 @@ export function DeineBeschwoerungen({
               {!teilnahme && (
                 <button type="button" onClick={() => setProbeZiel(item)} disabled={!kampf}>
                   Beschwören
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {begleiter.map((b) => {
+          const teilnahme = teilnahmeVon(b);
+          return (
+            <div className="gg-slot-spalte" key={`${b.art}:${b.id}`}>
+              <button
+                type="button"
+                className="gg-kachel"
+                style={teilnahme ? { borderColor: "var(--ja)", boxShadow: "0 0 8px var(--ja)" } : undefined}
+                onClick={() => (teilnahme ? begleiterOeffnen(b) : undefined)}
+                disabled={!teilnahme}
+              >
+                <span className="gg-kachel-name">{b.name}</span>
+                <span className="kk-slot-kurz">
+                  <em>{b.art === "ki" ? "KI" : b.art === "critter" ? "Critter" : "Begleiter"}</em>
+                </span>
+              </button>
+              {teilnahme ? (
+                <button type="button" onClick={() => zurueckrufen(b)} disabled={begleiterSendet === b.id}>
+                  {begleiterSendet === b.id ? "…" : "Zurückrufen"}
+                </button>
+              ) : (
+                <button type="button" onClick={() => freisetzen(b)} disabled={!kampf || begleiterSendet === b.id}>
+                  {begleiterSendet === b.id ? "…" : "Freisetzen"}
                 </button>
               )}
             </div>
@@ -263,7 +418,7 @@ export function DeineBeschwoerungen({
       {offenId && (
         <Fenster
           offen
-          titel="Beschworener Critter"
+          titel={offenTitel}
           unterzeile="Kampfwerte"
           kennung={`kampf-critter:${offenId}`}
           onSchliessen={() => setOffenId(null)}
@@ -277,9 +432,35 @@ export function DeineBeschwoerungen({
                 kampf?.teilnehmer.find((t) => t.personId === offenId && !t.zusatzzug) ??
                 frischerKampf?.teilnehmer.find((t) => t.personId === offenId && !t.zusatzzug);
               if (dabei) setInitiativeZiel(dabei);
-              else setInitiativeZiel(initiativePlatzhalter("Beschworener Critter", offenId));
+              else setInitiativeZiel(initiativePlatzhalter(offenTitel, offenId));
             }}
           />
+        </Fenster>
+      )}
+
+      {offenerBegleiter && (
+        <Fenster
+          offen
+          titel={offenerBegleiter.name}
+          unterzeile="Freigesetzter Begleiter"
+          kennung={`kampf-begleiter:${offenerBegleiter.id}`}
+          onSchliessen={() => setOffenerBegleiter(null)}
+        >
+          {(() => {
+            const dabei = teilnahmeVon(offenerBegleiter);
+            return (
+              <div className="bo-knoepfe">
+                <button type="button" onClick={() => dabei && setInitiativeZiel(dabei)} disabled={!dabei}>
+                  Initiative {dabei && dabei.initiative ? `(${dabei.initiative})` : "eintragen"}
+                </button>
+              </div>
+            );
+          })()}
+          {begleiterBlatt ? (
+            <BegleiterBlatt begleiter={begleiterBlatt} />
+          ) : (
+            <p style={{ color: "var(--text-leise)" }}>Kein Bogen hinterlegt.</p>
+          )}
         </Fenster>
       )}
 
