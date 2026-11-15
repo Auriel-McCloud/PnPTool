@@ -446,7 +446,18 @@ Drei Entwürfe, je fünf Wachstumsstufen (Funke, Keim, Geist, Wesen, Entität �
 
 Marks Wahl: A und B, Wechsel zwischen beiden, dazu Farben und Gestalten. C nicht gebaut. Die übrigen Achsen (woran sie hängt, was sie tut) hat Neko als Annahme gebaut, siehe oben.
 
-## Mongo und Tummy-Acher (Idee 15.11.2026, offen)
+## Mongo und Tummy-Acher (15.11.2026, Grundausstattung gebaut)
+
+### Gebaut 15.11.2026 (Mark: „Fang gut bauen an!“)
+
+- Alle drei Farben je Pet als eigene Art am Critter: Mongo Dschungel/Wüste/Bonbon, Tummy-Acher Fleisch/Rosa/Lila.
+- Ei (antippen wie beim Drachen) + 6 Schritte. **Annahme Neko:** gleich schnell ausgewachsen wie der Drache — bei „EP je Schritt“ 5 alle 12 EP ein Schritt, groß bei 60 EP.
+- Können vorerst, was der Drache ohne Atem kann: Küken nur am Boden, fressen, Häufchen; ab Schritt 2 klettern und springen, ab 3 aufs Burgermenü; schlafen, streicheln, packen/werfen, Ruß abschütteln. Animationen: stehen, laufen (Mongo gebückt), freuen, springen, fressen (Mongo senkt den Kopf, Tummy mampft), hinlegen/schlafen.
+- **Futter lässt wachsen** (Mark: „über XP und Futter“): ein leer gefressener Napf zählt wie 1 EP — Kampagnen-Einstellung „Pet-Wachstum: EP je Futter“. **Annahme Neko:** gilt für alle wachsenden Pets, nicht nur den Tummy-Acher (0 stellt es ab).
+- **KI-Futter:** im Bearbeiten-Formular beim Häkchen „Futter“ die Auswahl „für Tiere (Napf) / für KI (Datenpaket)“. Das Datenpaket schwebt leuchtend auf dem Bildschirm, die KI fliegt hin und saugt es ein; heilt, macht zutraulich, lässt wachsen wie der Napf. Tiere fressen kein Datenpaket, die KI keinen Napf.
+- **Noch nicht gebaut** (entschieden, nächste Stufen): Mongo jagt/scheucht andere Pets, rennt schnell und springt weit, kreischt mit Bildschirmwackeln, faucht fremde Finger an, versteckt sich hinter Objekten, zieht Pets aus dem Bildschirm. Tummy-Acher frisst alle Spuren (auch die Perle), Näpfe anderer, knabbert Knöpfe/Wörter an, verschluckt Pets kurz, Gummiball beim Werfen, frisst Feuerbälle/Blitze, plumpst platt und ploppt rund, Mongo beißt rein und er rollt weg, leckt Ruß und Schleim vom Bildschirm.
+
+### Idee und Entwurf (15.11.2026)
 
 Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongoliensis, der klein wie ein seltsames Hühnchen und groß wie ein ausgewachsener gefiederter Raptor aussieht, und dann einen Tummy-Acher, eine runde tollpatschige Fleischkugel auf 2 Beinen, die alles frisst und fast unzerstörbar ist, und aus irgendeinem Grund sehr niedlich ist.“ Er will beide vor dem Android-Desktop-Pet bauen.
 
@@ -459,10 +470,7 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
   - Tummy-Acher frisst: alle Spuren (Häufchen, Seiten, Ruß, auch die Perle), Näpfe auch anderer Pets, knabbert Knöpfe/Wörter an (kurz weg, dann wieder da), verschluckt andere Pets kurz und spuckt sie wieder aus. Unzerstörbar: springt geworfen wie ein Gummiball, frisst Feuerbälle/Blitze, plumpst flach und ploppt wieder rund, Mongo beißt rein und er rollt kichernd weg — alles gewünscht („Jaaah … klingt super“). Neu dazu: **leckt die Bildschirme frei von Ruß und Schleim**.
   - Tummy-Acher wächst **über EP und über Futter**.
   - Neu: **Spezialfutter für das KI-Pet** (heute frisst nur der Drache aus dem Napf).
-- **Noch offen:**
-  - Wie viel Wachstum ein Futter bringt, und ob Futter auch Mongo/Drachen wachsen lässt oder nur den Tummy-Acher.
-  - KI-Futter im Datenmodell: eigenes Häkchen neben „Tierfutter“ oder eine Auswahl „Futter für“; Wirkung (heilen, Zutraulichkeit, Wachstum) und Optik.
-  - Woran sie hängen: naheliegend am Critter wie der Drache (noch nicht bestätigt).
+- **Damals offen, am 15.11. entschieden** (Mark: „Fang gut bauen an!“ auf Nekos Vorschläge): Futter-Wachstum als Kampagnen-Einstellung „EP je Futter“ (Start 1); KI-Futter als Auswahl „für Tiere/für KI“ am Futter, wirkt wie Tierfutter; alle Farben als eigene Arten; hängen am Critter wie der Drache.
   - Design: Entwurfstafeln `docs/assets/critter-pet/mongo_entwurf.png` und `tummy_entwurf.png` (Generator `dcc_entwurf.py`), je drei Farbvarianten (Mongo: Dschungel, Wüste, Bonbon; Tummy-Acher: Rosa, Pfirsich, Lila), Ei + 6 Schritte plus Kreischen bzw. Mampf/Platt. Mark wählt.
   - Nachschärfung 15.11. (Mark mit Velociraptor-Referenzbild): „Schwanz dünner und länger, ganz ausgewachsen ein wenig mehr wie auf dem Bild“. Umgesetzt: Schwanz fast doppelt so lang, dünn zulaufend, waagrecht steif mit Federsaum statt Fächer; Rücken dunkel, Bauch nur noch schmaler Streifen; längere Schnauze und Beine; gefaltete Flügelfedern mit Krallen; Kamm liegt beim Großen nach hinten. Küken-Stufen fast unverändert.
   - Nachschärfung 15.11.: Mark „Hals noch länger und dünner, dann passt es“. Hals beim Großen gut 50 % länger und deutlich schmaler (`hl` 13 → 20, Halsdicke ~0,5 statt 0,62). Damit ist die Mongo-Figur für Mark abgenommen.

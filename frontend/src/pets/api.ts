@@ -13,6 +13,15 @@ export const PET_ARTEN = [
   // Mark, 13.11.2026: die eigene KI eines Spielers — Datenwolke und Lichtkern,
   // wechselt zwischen beiden, nimmt Farben und Gestalten an, wächst mit den EP.
   { wert: "ki", name: "KI (Datenwolke / Lichtkern)", fuer: "critter" },
+  // Mark, 15.11.2026 (Dungeon Crawler Carl): Mongo, vom komischen Küken zum
+  // gefiederten Raptor, und der Tummy-Acher, ein Fleischklops mit einem Zahn.
+  // Ei + 6 Schritte, je Farbe eine eigene Art.
+  { wert: "mongo", name: "Mongo (Dschungel)", fuer: "critter" },
+  { wert: "mongo_wueste", name: "Mongo (Wüste)", fuer: "critter" },
+  { wert: "mongo_bonbon", name: "Mongo (Bonbon)", fuer: "critter" },
+  { wert: "tummy", name: "Tummy-Acher (Fleisch)", fuer: "critter" },
+  { wert: "tummy_rosa", name: "Tummy-Acher (Rosa)", fuer: "critter" },
+  { wert: "tummy_lila", name: "Tummy-Acher (Lila)", fuer: "critter" },
 ] as const;
 export type PetArt = (typeof PET_ARTEN)[number]["wert"];
 
@@ -27,6 +36,18 @@ export function istDrache(art: string): boolean {
 
 export function atemVon(art: string): Atem {
   return ATEM[art] ?? "feuer";
+}
+
+/** Mongo oder Tummy-Acher (15.11.2026) — Familie für Sprites/Maße (tierstufen.ts). */
+export function tierFamilie(art: string): "mongo" | "tummy" | null {
+  if (art === "mongo" || art.startsWith("mongo_")) return "mongo";
+  if (art === "tummy" || art.startsWith("tummy_")) return "tummy";
+  return null;
+}
+
+/** Tiere, die laufen, klettern, aus dem Napf fressen und Ruß abschütteln. */
+export function istTier(art: string): boolean {
+  return tierFamilie(art) !== null;
 }
 
 export interface PetAufSchirm {
@@ -73,7 +94,7 @@ export interface Haeufchen {
    *  Raureif vom Eisdrachen (wegwischen),
    *  Bärbels verlorene Seite (antippen = aufheben) oder Schleim vom
    *  Tentakelmonster (wegwischen). Napf: Futternapf, bis ein Drache ihn leer frisst. */
-  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle" | "krater" | "eiskrater";
+  art?: "haeufchen" | "brand" | "seite" | "schleim" | "frost" | "napf" | "perle" | "krater" | "eiskrater" | "datenpaket";
   erstellt?: string;
   /** Perle: kam von einem anderen Tablet angeflogen (fliegt herein statt aufzuleuchten). */
   geworfen?: boolean;
@@ -136,6 +157,16 @@ export const KI_STUFEN: { wert: string; name: string }[] = [
   ]),
   { wert: "entitaet", name: "Entität" },
 ];
+
+/** Mongo und Tummy-Acher (15.11.2026): Ei + 6 Schritte — gleiche Reihenfolge
+ *  wie `TIER_FOLGE` in backend/app/pets/logic.py. */
+export function tierStufen(art: string | null | undefined): { wert: string; name: string }[] {
+  const mongo = tierFamilie(art ?? "") === "mongo";
+  const namen = mongo
+    ? ["Küken", "Küken +1", "Halbstarker", "Halbstarker +1", "Junger Raptor", "Raptor"]
+    : ["Klöpschen", "Klöpschen +1", "Klops", "Klops +1", "Großer Klops", "Riesenklops"];
+  return [{ wert: "ei", name: "Ei" }, ...namen.map((name, i) => ({ wert: `s${i + 1}`, name }))];
+}
 
 export function istKi(art: string | null | undefined): boolean {
   return art === "ki";

@@ -318,16 +318,21 @@ class PetMotor:
 
     async def wegmachen(self, campaign_id: str, person_id: str, haeufchen_id: str, pet_id: str | None = None) -> None:
         spur = await repository.haeufchen_lesen(campaign_id, person_id, haeufchen_id)
-        if spur and spur["art"] == logic.NAPF:
-            # Ein Napf verschwindet nur, wenn ein Drache auf diesem Bildschirm ihn
-            # leer frisst — nicht durch Antippen.
+        if spur and spur["art"] in logic.FUTTER_SPUREN:
+            # Ein Napf verschwindet nur, wenn ein Tier (Drache, Mongo, Tummy-Acher)
+            # auf diesem Bildschirm ihn leer frisst — nicht durch Antippen. Das
+            # Datenpaket (KI-Futter, 15.11.2026) saugt nur eine KI ein.
             pet = self._pets.get(campaign_id, {}).get(pet_id or "")
-            if pet is None or pet.wirt != person_id or not logic.ist_drache(pet.art) or pet.stufe == "ei":
+            darf = logic.ist_ki(pet.art) if pet and spur["art"] == logic.DATENPAKET else bool(pet and logic.frisst_napf(pet.art))
+            if pet is None or pet.wirt != person_id or not darf or pet.stufe == "ei":
                 return
             await repository.haeufchen_weg(campaign_id, person_id, haeufchen_id)
             await repository.critter_heilen(campaign_id, pet.id, logic.NAPF_HEILUNG)
             # Der Napf steht auf dem Bildschirm dessen, der gefüttert hat.
             await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet.id, logic.ZUTRAULICH_FUETTERN)
+            # Futter lässt wachsen (15.11.2026) — gleich abgleichen, damit es sichtbar wächst.
+            await repository.futter_wachsen(campaign_id, pet.id, await repository.futter_ep(campaign_id))
+            await self.abgleich(campaign_id)
         elif spur and spur["art"] == logic.PERLE:
             # Die Perle steckt nur ihr Drache wieder ein, und nur, wo er gerade ist —
             # Antippen lässt sie hüpfen, nicht verschwinden.
@@ -483,10 +488,15 @@ class PetMotor:
                                            logic.feuerball_spur(art))
         await self._haeufchen_senden(campaign_id, ziel)
 
-    async def napf_hinstellen(self, campaign_id: str, person_id: str) -> None:
-        """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte."""
+    async def napf_hinstellen(self, campaign_id: str, person_id: str, fuer: str = "tier") -> None:
+        """Futternapf unten auf den eigenen Bildschirm, irgendwo in der Mitte.
+        KI-Futter (15.11.2026): ein Datenpaket schwebt in der Luft."""
         x = self.zufall.uniform(0.15, 0.85)
-        await repository.haeufchen_anlegen(campaign_id, person_id, "", x, 1.0, logic.NAPF)
+        if fuer == "ki":
+            await repository.haeufchen_anlegen(campaign_id, person_id, "", x, self.zufall.uniform(0.3, 0.65),
+                                               logic.DATENPAKET)
+        else:
+            await repository.haeufchen_anlegen(campaign_id, person_id, "", x, 1.0, logic.NAPF)
         await self._haeufchen_senden(campaign_id, person_id)
 
     async def streicheln(self, campaign_id: str, person_id: str, pet_id: str) -> None:

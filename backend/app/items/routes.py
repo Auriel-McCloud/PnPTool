@@ -267,6 +267,7 @@ def _create_data(body: GegenstandCreate, ist_vorlage: bool, sichtbarkeit: str, s
         "ruestungReduktionBasis": body.ruestungReduktionBasis,
         "istReparaturmaterial": body.istReparaturmaterial,
         "istTierfutter": body.istTierfutter,
+        "futterFuer": body.futterFuer,
         "reparaturKapazitaet": body.reparaturKapazitaet,
         # Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreaturfeature
         # wie Dug'Rah): siehe docs/api/ruestung.md, Abschnitt "Natürliche

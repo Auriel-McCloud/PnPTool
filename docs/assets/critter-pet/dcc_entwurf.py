@@ -98,8 +98,19 @@ def ei(schale, punkt, seed, gross=1.0, flecken=14):
 
 
 # ── Mongo ─────────────────────────────────────────────────────────────────
-def mongo(stufe, p, pose="stehen", phase=0.0):
+ANKER = {}  # zuletzt gezeichnete Anker (Maul, Kopf) — für sprite.json
+
+
+def mongo(stufe, p, pose="stehen", phase=0.0, blink=False, kiefer=None, schlaf=0.0, kopf_tief=0.0,
+          freude=False, atem=0.0):
+    """Animations-Parameter (Export 15.11.2026): `blink` Augen zu, `kiefer` 0..1
+    Maul offen, `schlaf` 0..1 hinlegen (Beine einklappen, Kopf auf den Boden),
+    `kopf_tief` 0..1 Kopf zum Fressen runter, `freude` Augen zu Bögen, `atem`
+    -1..1 Brustkorb. Ohne Parameter exakt die abgenommene Entwurfsfigur."""
     t = (stufe - 1) / 5
+    if kiefer is None:
+        kiefer = 1.0 if pose == "kreischen" else 0.0
+    sl_ = schlaf
     # Mark 15.11.: „wenn er läuft, etwas gebückter, damit er gefährlicher aussieht“.
     # Gebückt wächst mit: das Küken watschelt aufrecht, der Große duckt sich.
     lauf = pose == "laufen"
@@ -112,13 +123,19 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
 
     bein = lerp(4.5, 21, t)
     rk = lerp(6.8, 8.6, t)  # Rumpfdicke
+    rk = rk * (1 + 0.03 * atem)
     hip = (ox, oy - bein * (1 - 0.14 * gb) - rk * 0.45 + gb * 1.2 * abs(math.sin(ph)))
-    w = math.radians(lerp(-62, -10, t) + gb * 14)
+    if sl_:
+        hip = (ox, lerp(hip[1], oy - rk * 1.05 - 0.5, sl_))
+    w = math.radians(lerp(lerp(-62, -10, t) + gb * 14, lerp(-30, 0, t), sl_) + 18 * kopf_tief)
     lang = lerp(2.5, 19, t)
     sch = (hip[0] + math.cos(w) * lang, hip[1] + math.sin(w) * lang)
     wn = lerp(-82, -58, t) + gb * 34
     hl = lerp(3.5, 20, t)  # Mark 15.11.: Hals beim Großen länger und dünner
-    w1, w2 = math.radians(wn - 28 * gb), math.radians(wn + 26 * gb)  # gebückt: S-Hals, Kopf vorgestreckt
+    w1d, w2d = wn - 28 * gb, wn + 26 * gb  # gebückt: S-Hals, Kopf vorgestreckt
+    w1d, w2d = lerp(w1d, 20, kopf_tief), lerp(w2d, 62, kopf_tief)
+    w1d, w2d = lerp(w1d, lerp(-60, -30, t), sl_), lerp(w2d, lerp(20, 38, t), sl_)
+    w1, w2 = math.radians(w1d), math.radians(w2d)
     mitte = (sch[0] + math.cos(w1) * hl * 0.5, sch[1] + math.sin(w1) * hl * 0.5)
     hals = (mitte[0] + math.cos(w2) * hl * 0.5, mitte[1] + math.sin(w2) * hl * 0.5)
     kr = lerp(5.6, 5.8, t)
@@ -133,6 +150,9 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
     sa = math.radians(lerp(lerp(-140, -178, t), math.degrees(w) + 180 - 360, gb))
     s1 = (hip[0] + math.cos(sa) * sl * 0.5, hip[1] + math.sin(sa) * sl * 0.5 + lerp(0, 0.5, t) * (1 - gb))
     s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl - lerp(0, 4, t) * (1 - gb))
+    if sl_:  # im Liegen ruht der Schwanz am Boden
+        s2 = (s2[0], lerp(s2[1], oy - 1.5, sl_))
+        s1 = (s1[0], lerp(s1[1], (hip[1] + oy - 1.5) / 2, sl_))
     schwanz = kette([s2, s1, hip])
     rumpf = kette([hip, sch])
     halsk = kette([sch, mitte, hals])
@@ -156,6 +176,10 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
         knie = (bx + lerp(1.5, 4, t) + off * 0.3, hip[1] + bein * 0.45)
         knoechel = (bx - lerp(0.5, 4.5, t) + off * 0.8, hip[1] + bein * 0.8 * (1 - 0.1 * gb) - hebt * 0.7)
         fuss = (bx + lerp(0.5, 2, t) + off, oy - 1 - hebt)
+        if sl_:  # eingeklappt unter dem Bauch
+            knie = (lerp(knie[0], bx + bein * 0.3, sl_), lerp(knie[1], oy - 2, sl_))
+            knoechel = (lerp(knoechel[0], bx - bein * 0.15, sl_), lerp(knoechel[1], oy - 1, sl_))
+            fuss = (lerp(fuss[0], bx + bein * 0.2, sl_), lerp(fuss[1], oy - 1, sl_))
         gf = G if vorne else tuple(max(0, v - 40) if i < 3 else v for i, v in enumerate(G))
         mf = M if vorne else D
         # Keule
@@ -254,15 +278,16 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
 
     # Kopf
     kx, ky = kopf
-    offen = pose == "kreischen"
+    offen = kiefer > 0.15
+    kreischt = pose == "kreischen"
     sn = lerp(1.6, 11, t)
     if offen:  # Unterkiefer klappt runter
         uk = Image.new("RGBA", img.size, (0, 0, 0, 0))
         ud = ImageDraw.Draw(uk)
         ell(ud, kx + kr * 0.5 + sn * 0.45, ky + kr * 0.55, sn * 0.55 + 1.5, 1.6, D)
         ell(ud, kx + kr * 0.5 + sn * 0.45, ky + kr * 0.5, sn * 0.55 + 1.2, 1.2, M)
-        uk = uk.rotate(-28, resample=Image.NEAREST, center=(kx + kr * 0.2, ky + kr * 0.4))
-        ell(d, kx + kr * 0.55 + sn * 0.3, ky + kr * 0.55, sn * 0.45 + 1.5, 2.2, MUND)
+        uk = uk.rotate(-28 * kiefer, resample=Image.NEAREST, center=(kx + kr * 0.2, ky + kr * 0.4))
+        ell(d, kx + kr * 0.55 + sn * 0.3, ky + kr * 0.55, sn * 0.45 + 1.5, 2.2 * min(1.0, kiefer + 0.2), MUND)
         img.alpha_composite(uk)
         d = ImageDraw.Draw(img)
     ell(d, kx, ky + 0.4, kr, kr * 0.95, D)
@@ -285,18 +310,28 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
     # Auge
     ar = lerp(2.7, 1.7, t)
     ax, ay = kx + kr * 0.1, ky - kr * 0.22
-    ell(d, ax, ay, ar, ar + 0.3, W)
-    d.rectangle([round(ax + ar * 0.2), round(ay - ar * 0.5), round(ax + ar * 0.2 + max(1, ar * 0.7)), round(ay + ar * 0.5)], fill=PUP)
-    d.point((round(ax + ar * 0.2), round(ay - ar * 0.5)), fill=W)
+    zu = blink or sl_ > 0.5
+    if zu or freude:
+        ell(d, ax, ay, ar, ar + 0.3, M)
+        if freude and not zu:  # froh zusammengekniffen: Bogen nach oben
+            d.arc([round(ax - ar), round(ay - ar * 0.4), round(ax + ar), round(ay + ar)], 200, 340, fill=K)
+        else:
+            d.line([(ax - ar, ay + 0.5), (ax + ar, ay + 0.5)], fill=K)
+    else:
+        ell(d, ax, ay, ar, ar + 0.3, W)
+        d.rectangle([round(ax + ar * 0.2), round(ay - ar * 0.5), round(ax + ar * 0.2 + max(1, ar * 0.7)), round(ay + ar * 0.5)], fill=PUP)
+        d.point((round(ax + ar * 0.2), round(ay - ar * 0.5)), fill=W)
+    ANKER["maul"] = (sx + sn * 0.5, sy + 1.5)
+    ANKER["kopf"] = (kx, ky - kr)
     if t >= 0.4:  # Brauenwulst: frech statt böse
         d.line([(ax - ar, ay - ar - 0.5), (ax + ar + 1, ay - ar + 0.5)], fill=S, width=1)
     # Kamm
-    n = int(lerp(1, 4, t)) + (1 if offen else 0)
+    n = int(lerp(1, 4, t)) + (1 if kreischt else 0)
     for k in range(n):
         bx = kx - kr * 0.2 - k * 1.6
         by = ky - kr * 0.75 + k * 0.6
-        hl_ = lerp(2.5, 7.5, t) * (1 - k * 0.12) * (1.35 if offen else 1)
-        wk = math.radians(lerp(-120, -150, t) - k * 14 - (15 if offen else 0))
+        hl_ = lerp(2.5, 7.5, t) * (1 - k * 0.12) * (1.35 if kreischt else 1)
+        wk = math.radians(lerp(-120, -150, t) - k * 14 - (15 if kreischt else 0))
         d.line([(bx, by), (bx + math.cos(wk) * hl_, by + math.sin(wk) * hl_)], fill=F if k % 2 == 0 else F2, width=2 if t > 0.5 else 1)
 
     bein_malen(True)
@@ -305,11 +340,17 @@ def mongo(stufe, p, pose="stehen", phase=0.0):
 
 
 # ── Tummy-Acher ───────────────────────────────────────────────────────────
-def tummy(stufe, p, pose="stehen"):
+def tummy(stufe, p, pose="stehen", phase=None, blink=False, mund=None, quetsch=0.0, schlaf=0.0,
+          freude=False, kipp=0.0):
     """Mark 15.11. (Buchcover): seltsamer Fleischklops mit Dellen, Glubschaugen
     (ungleich groß, stehen über den Umriss), breites Grinsen mit EINEM Zahn,
-    keine Arme, zwei Stummelbeine. Süß bleibt er trotzdem."""
+    keine Arme, zwei Stummelbeine. Süß bleibt er trotzdem.
+    Animations-Parameter (Export): `phase` Watschelschritt, `blink`/`schlaf`
+    Lider zu, `mund` Maulhöhe-Faktor (1 = Grinsen, 1.9 = Mampf), `quetsch`
+    -1..1 platt/gestreckt, `freude` Augen froh, `kipp` Grad Neigung."""
     t = (stufe - 1) / 5
+    if mund is None:
+        mund = 1.9 if pose == "maul" else 1.0
     D, M, L, S, R = (c(p, k) for k in "D M L S R".split())
     img = Image.new("RGBA", (110, 90), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -318,8 +359,12 @@ def tummy(stufe, p, pose="stehen"):
     bl = lerp(3, 6, t)
     platt = pose == "platt"
     rx, ry = (r * 1.5, r * 0.58) if platt else (r * 1.05, r * 0.95)
+    quetsch = quetsch + 0.3 * schlaf
+    if quetsch:
+        rx, ry = rx * (1 + 0.2 * quetsch), ry * (1 - 0.2 * quetsch)
     if platt:
         bl = 0.5
+    bl = bl * (1 - 0.6 * schlaf)
     cx, cy = ox, oy - bl - ry * 0.95
 
     # Stummelbeine (hinten zuerst)
@@ -327,9 +372,14 @@ def tummy(stufe, p, pose="stehen"):
         fx = cx + dx
         farbe = D if vorne else S
         bb = lerp(1.6, 3.4, t)
+        hebt = 0.0
+        if phase is not None:  # watscheln: abwechselnd Fuß hoch und vor
+            lp = 2 * math.pi * phase + (0 if vorne else math.pi)
+            fx += math.sin(lp) * lerp(1, 3, t)
+            hebt = max(0.0, math.cos(lp)) * lerp(1, 2.5, t)
         if not platt:
-            d.rectangle([round(fx - bb), round(cy + ry * 0.6), round(fx + bb), round(oy - 1)], fill=farbe)
-        ell(d, fx + bb * 0.6, oy - 1.2, bb + 1.4, 1.4, farbe)
+            d.rectangle([round(fx - bb), round(cy + ry * 0.6), round(fx + bb), round(oy - 1 - hebt)], fill=farbe)
+        ell(d, fx + bb * 0.6, oy - 1.2 - hebt, bb + 1.4, 1.4, farbe)
 
     # Klumpiger Körper: Grundellipse plus feste Beulen
     beulen = [(-2.5, 0.78, 0.42), (-1.75, 0.82, 0.4), (-1.0, 0.8, 0.36), (-0.25, 0.74, 0.38),
@@ -369,8 +419,17 @@ def tummy(stufe, p, pose="stehen"):
     augen = [(cx + rx * 0.08, cy - ry * 0.52, ea), (cx + rx * 0.78, cy - ry * 0.3, ea * 0.82)]
     if platt:
         augen = [(cx + rx * 0.05, cy - ry * 0.95, ea), (cx + rx * 0.6, cy - ry * 0.85, ea * 0.82)]
+    zu = blink or schlaf > 0.5
     for k, (ax, ay, e) in enumerate(augen):
         ell(d, ax, ay + 0.5, e + 1, e + 0.8, D)  # Lid-Wulst
+        if zu or freude:  # Lid zu: Fleisch drüber, Wimpernstrich
+            ell(d, ax, ay, e, e, M)
+            ell(d, ax - e * 0.3, ay - e * 0.45, e * 0.35, e * 0.2, L)
+            if freude and not zu:
+                d.arc([round(ax - e * 0.7), round(ay - e * 0.3), round(ax + e * 0.7), round(ay + e * 0.9)], 200, 340, fill=K)
+            else:
+                d.line([(ax - e * 0.75, ay + e * 0.25), (ax + e * 0.75, ay + e * 0.25)], fill=K)
+            continue
         ell(d, ax, ay, e, e, weiss)
         if e > 4:
             d.line([(ax - e * 0.8, ay + e * 0.1), (ax - e * 0.45, ay + e * 0.2)], fill=ader)
@@ -385,10 +444,10 @@ def tummy(stufe, p, pose="stehen"):
     # Breites Grinsen mit EINEM Zahn (unten, steht hoch)
     mx0, mx1 = cx - rx * 0.12, cx + rx * 0.9
     my = cy + ry * (0.05 if platt else 0.12)
-    mh = lerp(2.2, 6.0, t) * (1.9 if pose == "maul" else (0.45 if platt else 1))
+    mh = lerp(2.2, 6.0, t) * (0.45 if platt else mund) * (1 - 0.45 * schlaf)
     d.pieslice([round(mx0), round(my - mh), round(mx1), round(my + mh)], 0, 180, fill=MUND)
     d.line([(mx0, my), (mx1, my)], fill=K)
-    if pose == "maul" or (not platt and t > 0.3):
+    if mund > 1.3 or (not platt and t > 0.3):
         ell(d, mx0 + (mx1 - mx0) * 0.3, my + mh * 0.68, (mx1 - mx0) * 0.17, max(0.6, mh * 0.25), ZUNGE)  # Zunge links, Zahn rechts frei
     # Mark 15.11.: Zahn weiter zur Mitte/anderen Seite und tiefer im Mund,
     # wächst aus dem Unterkiefer (Zahnfleisch drüber), nicht aufgeklebt.
@@ -398,6 +457,10 @@ def tummy(stufe, p, pose="stehen"):
     fuss = my + mh * 0.97 - 0.5  # sitzt auf der Kieferkante
     d.polygon([(zx - zb, fuss), (zx + zb, fuss), (zx + zb * 0.3, fuss - zh)], fill=W)
     d.line([(zx + zb * 0.3, fuss - zh + 1), (zx + zb, fuss)], fill=(214, 200, 188, 255))  # Schattenseite
+    ANKER["maul"] = ((mx0 + mx1) / 2, my + mh * 0.3)
+    ANKER["kopf"] = (cx + rx * 0.3, cy - ry)
+    if kipp:
+        img = img.rotate(-kipp, resample=Image.NEAREST, center=(ox, oy))
     return outline(img)
 
 

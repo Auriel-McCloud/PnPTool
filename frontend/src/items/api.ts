@@ -173,6 +173,8 @@ export interface Gegenstand {
   istReparaturmaterial: boolean;
   /** Tierfutter: „Füttern“ stellt einen Napf für die Critter-Pets hin (12.11.2026). */
   istTierfutter?: boolean;
+  /** Für wen das Futter ist (15.11.2026): Napf für Tiere oder Datenpaket für die KI. */
+  futterFuer?: "tier" | "ki";
   reparaturKapazitaet: number;
   /**
    * Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
@@ -605,6 +607,7 @@ export interface GegenstandUpdate {
   ruestungReduktionBasis?: number;
   istReparaturmaterial?: boolean;
   istTierfutter?: boolean;
+  futterFuer?: "tier" | "ki";
   reparaturKapazitaet?: number;
   istNatuerlich?: boolean;
   rundumsicht?: boolean;

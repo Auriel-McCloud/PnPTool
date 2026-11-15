@@ -318,6 +318,26 @@
   cursor: default;
 }
 
+/* KI-Futter (Mark, 15.11.2026): ein leuchtendes Datenpaket schwebt in der Luft,
+   bis eine KI es einsaugt (KiFigur bewegt es dabei per transform zu sich). */
+.pet-datenpaket {
+  position: absolute;
+  pointer-events: none;
+  background: url(/pets/datenpaket.png) center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 4px rgba(90, 230, 255, 0.9)) drop-shadow(0 0 10px rgba(90, 230, 255, 0.5));
+  animation: pet-datenpaket-schweben 2.4s ease-in-out infinite;
+}
+
+.pet-datenpaket[data-saugt="ja"] {
+  animation: none;
+}
+
+@keyframes pet-datenpaket-schweben {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -6px; }
+}
+
 /* Drachenperle (Mark, 13.11.2026): leuchtet, Flammen züngeln (8 Bilder im Streifen);
    --pw = Breite eines Bildes in Bildschirm-Pixeln. */
 .pet-perle {

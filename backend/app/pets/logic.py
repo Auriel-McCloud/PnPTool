@@ -15,7 +15,10 @@ import random
 # Eis bzw. Blitze statt Feuer.
 # `ki` (13.11.2026): die KI eines Spielers — Datenwolke/Lichtkern, wird im
 # Frontend gezeichnet statt aus Sprites gelesen (frontend/src/pets/ki.ts).
-PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel", "ki")
+# Mongo und Tummy-Acher (15.11.2026, Dungeon Crawler Carl): je Farbe eine Art,
+# siehe Abschnitt „Tiere mit Ei und sechs Schritten“ unten.
+PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel", "ki",
+             "mongo", "mongo_wueste", "mongo_bonbon", "tummy", "tummy_rosa", "tummy_lila")
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
@@ -28,6 +31,17 @@ HAEUFCHEN_MAX = 12
 # Kein SPUR_ARTEN-Eintrag: ein Tablet darf keinen Napf aus dem Nichts melden.
 NAPF = "napf"
 NAPF_HEILUNG = 3
+# KI-Futter (Mark, 15.11.2026: „wir brauchen Spezialfutter für das KI-Pet“):
+# Futter mit `futterFuer = 'ki'` legt statt eines Napfs ein leuchtendes
+# Datenpaket in die Luft; die KI saugt es ein. Wirkt wie der Napf (heilen,
+# Zutraulichkeit, Wachstum). Ebenfalls kein SPUR_ARTEN-Eintrag.
+DATENPAKET = "datenpaket"
+FUTTER_SPUREN = (NAPF, DATENPAKET)
+# Futter lässt wachsen (Mark, 15.11.2026: „über XP und Futter wachsen“): ein
+# leer gefressener Napf zählt wie so viele EP fürs Wachstum — Kampagnen-
+# Einstellung `petFutterEp`, Standard 1. Annahme Neko: gilt für jedes Pet, das
+# wächst, nicht nur den Tummy-Acher (0 stellt es ab).
+FUTTER_EP_STANDARD = 1
 
 # Zutraulichkeit je Spieler und Pet (Kante ZUTRAULICH, Wert unsichtbar):
 # Streicheln +1 höchstens alle 5 Minuten je Spieler, Füttern +5 immer.
@@ -107,7 +121,37 @@ KI_FOLGE = (
     "wesen", "wesen1", "wesen2",
     "entitaet",
 )
-WACHSENDE_ARTEN = DRACHEN_ARTEN + KI_ARTEN
+# ── Tiere mit Ei und sechs Schritten (Mark, 15.11.2026) ──────────────────
+# Mongo (Mongoliensis, vom komischen Küken zum gefiederten Raptor) und der
+# Tummy-Acher (Fleischklops) aus Dungeon Crawler Carl: „Ei + 6 Schritte bis er
+# groß ist“. Schlüpfen wie der Drache (5–10× antippen). Annahme Neko: gleich
+# schnell ausgewachsen wie der Drache — ein Schritt alle 12/5 × `petWachstumEp`
+# EP (Standard 5 → 0/12/24/36/48/60 EP seit dem Schlüpfen).
+MONGO_ARTEN = ("mongo", "mongo_wueste", "mongo_bonbon")
+TUMMY_ARTEN = ("tummy", "tummy_rosa", "tummy_lila")
+TIER_ARTEN = MONGO_ARTEN + TUMMY_ARTEN
+TIER_FOLGE = ("s1", "s2", "s3", "s4", "s5", "s6")
+# Fähigkeiten nach Schritt (Index in TIER_FOLGE): das Küken läuft nur unten,
+# frisst und macht Häufchen wie der Schlüpfling; ab Schritt 2 klettern und
+# springen, ab Schritt 3 das Burgermenü. Kein Niesen, keine Wolken.
+TIER_FAEHIGKEITEN_AB_SCHRITT = {"klettern": 1, "springen": 1, "menue": 2}
+WACHSENDE_ARTEN = DRACHEN_ARTEN + KI_ARTEN + TIER_ARTEN
+EI_ARTEN = DRACHEN_ARTEN + TIER_ARTEN
+
+
+def familie(art: str | None) -> tuple[str, ...]:
+    """Farbvarianten derselben Figur: Wechsel innerhalb behält die Stufe."""
+    for f in (DRACHEN_ARTEN, MONGO_ARTEN, TUMMY_ARTEN, KI_ARTEN):
+        if art in f:
+            return f
+    return (art,) if art else ()
+
+
+def _tier_schritt(gewachsen: int, ep_je_schritt: int) -> int:
+    """Schritt-Index nach EP seit dem Schlüpfen — ganzzahlig gerechnet (12/5 × EP
+    je Drachenschritt), damit die Schwellen nicht an Kommastellen kippen."""
+    je = max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
+    return gewachsen * (len(TIER_FOLGE) - 1) // (12 * je)
 TIPPS_MIN = 5
 TIPPS_MAX = 10
 JUNG_AB_EP = 3
@@ -139,7 +183,7 @@ STUFEN_FOLGE = (
     "ehrwuerdig",
 )
 # Was die SL von Hand einstellen darf (CritterFenster → Wachstum).
-SETZBARE_STUFEN = ("ei", "baby") + STUFEN_FOLGE + KI_FOLGE
+SETZBARE_STUFEN = ("ei", "baby") + STUFEN_FOLGE + KI_FOLGE + TIER_FOLGE
 
 
 def waechst(art: str | None) -> bool:
@@ -154,10 +198,21 @@ def ist_ki(art: str | None) -> bool:
     return art in KI_ARTEN
 
 
+def ist_tier(art: str | None) -> bool:
+    """Mongo oder Tummy-Acher (Ei + 6 Schritte)."""
+    return art in TIER_ARTEN
+
+
+def frisst_napf(art: str | None) -> bool:
+    return ist_drache(art) or ist_tier(art)
+
+
 def stufe_passt(art: str | None, stufe_: str) -> bool:
     """Darf die SL diese Stufe an dieser Art einstellen? (Keine Drachenstufe an der KI.)"""
     if ist_ki(art):
         return stufe_ in KI_FOLGE
+    if ist_tier(art):
+        return stufe_ in ("ei",) + TIER_FOLGE
     return ist_drache(art) and stufe_ in ("ei", "baby") + STUFEN_FOLGE
 
 
@@ -176,6 +231,14 @@ def stufe(
         gewachsen = max(0, ep_gesamt - int(ep_start if ep_start is not None else ep_gesamt))
         schritte = gewachsen // max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
         return KI_FOLGE[min(schritte, len(KI_FOLGE) - 1)], gewachsen
+    if ist_tier(art):
+        if pet_stufe == "ei":
+            return "ei", None
+        if not pet_stufe:  # ohne Wachstumsstand (sollte es nicht geben): groß
+            return TIER_FOLGE[-1], None
+        gewachsen = max(0, ep_gesamt - int(ep_start or 0))
+        schritt = _tier_schritt(gewachsen, ep_je_schritt)
+        return TIER_FOLGE[min(schritt, len(TIER_FOLGE) - 1)], gewachsen
     if not waechst(art) or not pet_stufe:
         return "jung", None
     if pet_stufe == "ei":
@@ -195,6 +258,9 @@ def gewachsen_fuer(stufe_: str, ep_je_schritt: int = WACHSTUM_EP_STANDARD) -> in
         return 0
     if stufe_ in KI_FOLGE:
         return KI_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
+    if stufe_ in TIER_FOLGE:
+        je = max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD))
+        return -(-TIER_FOLGE.index(stufe_) * 12 * je // (len(TIER_FOLGE) - 1))
     if stufe_ not in STUFEN_FOLGE:
         return None
     return max(JUNG_AB_EP, STUFEN_FOLGE.index(stufe_) * max(1, int(ep_je_schritt or WACHSTUM_EP_STANDARD)))
@@ -213,6 +279,11 @@ FAEHIGKEITEN_AB_SCHRITT = {
 def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:
     if ist_ki(art):
         return []  # was die KI kann, liest das Tablet aus ihrer Stufe
+    if ist_tier(art):
+        if stufe_ not in TIER_FOLGE:
+            return []
+        schritt = TIER_FOLGE.index(stufe_)
+        return [f for f, ab in TIER_FAEHIGKEITEN_AB_SCHRITT.items() if schritt >= ab]
     if not waechst(art) or gewachsen is None:
         return list(ALLE_FAEHIGKEITEN) if stufe_ != "ei" else []
     kann = [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]

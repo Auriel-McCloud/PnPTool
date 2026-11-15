@@ -2,6 +2,15 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Pets Mongo und Tummy-Acher, KI-Futter, Futter lässt wachsen (15.11.2026)
+
+Mark: zwei Pets aus Dungeon Crawler Carl — Mongo (Mongoliensis, Küken → gefiederter Raptor) und der Tummy-Acher (Fleischklops mit einem Zahn), je „Ei + 6 Schritte“, wachsen über EP und Futter; dazu „Spezialfutter für das KI-Pet“. Figuren nach mehreren Entwurfsrunden abgenommen. Diese Stufe ist die Grundausstattung; die Sonderfähigkeiten (siehe Wiki) kommen danach.
+
+- **Arten:** `mongo`, `mongo_wueste`, `mongo_bonbon`, `tummy`, `tummy_rosa`, `tummy_lila` (`logic.TIER_ARTEN`, `familie()`), wählbar am Critter. Ei wie beim Drachen (`EI_ARTEN`; `repository.art_setzen`: neues Ei auch beim Wechsel aus einer anderen Tierfamilie, Farbwechsel behält die Stufe). Stufen `s1`…`s6` (`TIER_FOLGE`), ganzzahlig `gewachsen*5 // (12*petWachstumEp)` → bei 5 alle 12 EP ein Schritt, ausgewachsen bei 60 wie der Drache (Annahme). Fähigkeiten `TIER_FAEHIGKEITEN_AB_SCHRITT`: s1 nur Boden, ab s2 klettern/springen, ab s3 Burgermenü; kein Niesen/Wolken/Perle.
+- **Sprites:** Figur `docs/assets/critter-pet/dcc_entwurf.py` (Animations-Parameter, Standbild pixelgleich zum Entwurf), Export `dcc_exportieren.py <repo>` → `public/pets/<art>/{ei,schluepfen}.png` + `s1..s6/` mit denselben Animationsnamen/Takten wie der Drache, dazu generiert `frontend/src/pets/tierstufen.ts` (nicht von Hand ändern). `PetOverlay.grosseStufe()` liest Tiere aus `TIER_STUFEN` (`api.ts::tierFamilie/istTier`), Ruß-Flocken und Schleimkleckse wie beim Drachen. SL-Wachstumsauswahl `api.ts::tierStufen()`.
+- **Futter:** Napf fressen jetzt alle Tiere (`logic.frisst_napf`). Gegenstand-Feld `futterFuer` (`tier`|`ki`, Auswahl „für“ neben dem Häkchen „Futter“ im Bearbeiten-Formular); `ki` legt per `fuettern` ein schwebendes `datenpaket` (Spur, `FUTTER_SPUREN`, wird von „Alles sauber machen“ verschont). `KiFigur` holt es sich vor allem anderen und saugt es ein (`SAUGEN_MS`), meldet `wegmachen` mit `petId`. Datenpaket nur für die KI, Napf nur für Tiere. Beides heilt 3 (jetzt auch KI-Personen), +5 Zutraulichkeit und lässt wachsen: `repository.futter_wachsen` verschiebt `petEpStart` um die Kampagnen-Einstellung `petFutterEp` (Standard 1, 0 = aus; Annahme: gilt für alle wachsenden Pets), danach sofort `abgleich`.
+- Tests `test_pets.py::test_mongo_und_tummy_wachsen_aus_dem_ei_in_sechs_schritten`, `test_mongo_frisst_napf_datenpaket_nur_fuer_die_ki`; Browser-Harness: Mongo frisst Napf, KI saugt Datenpaket, Ei rendert.
+
 ## Treffer eintragen: Elementar nicht mehr wählbar (15.11.2026)
 
 Mark: Elementar ergibt beim Eintragen keinen Sinn — dann ist schon klar, wie effektiv die Attacke war, also direkt Schlag/Tödlich/Schwerheilbar wählen. `RuestungsTreffer.tsx` bietet nur noch die drei echten Arten, Effektivitäts-Nachfrage entfernt. Waffen-/Ki-Tama-Schadensart "Elementar" bleibt unverändert (ersetzt Punkt 2 im Eintrag vom 30.10.2026, was die Treffer-Eingabe angeht).

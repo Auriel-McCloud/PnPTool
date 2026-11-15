@@ -323,6 +323,8 @@ class GegenstandCreate(BaseModel):
     istReparaturmaterial: bool = False
     # Tierfutter (12.11.2026): „Füttern“ stellt einen Napf für die Critter-Pets hin.
     istTierfutter: bool = False
+    # Für wen (15.11.2026): 'tier' = Napf, 'ki' = Datenpaket für das KI-Pet.
+    futterFuer: Literal["tier", "ki"] = "tier"
     reparaturKapazitaet: int = 0
     # Natürliche Rüstung (11.10.2026 Verfeinerung, Rassen-/Kreatur-Feature —
     # z.B. Dug'Rahs Chitinpanzer, später Drachenschuppen): generisches Flag,
@@ -507,6 +509,7 @@ class GegenstandUpdate(BaseModel):
     ruestungReduktionBasis: int | None = None
     istReparaturmaterial: bool | None = None
     istTierfutter: bool | None = None
+    futterFuer: Literal["tier", "ki"] | None = None
     reparaturKapazitaet: int | None = None
     istNatuerlich: bool | None = None
     istMaschinenteil: bool | None = None
@@ -686,6 +689,7 @@ class GegenstandResponse(BaseModel):
     istReparaturmaterial: bool = False
     # Tierfutter (12.11.2026): „Füttern“ stellt einen Napf für die Critter-Pets hin.
     istTierfutter: bool = False
+    futterFuer: str = "tier"
     reparaturKapazitaet: int = 0
     istNatuerlich: bool = False
     istMaschinenteil: bool = False

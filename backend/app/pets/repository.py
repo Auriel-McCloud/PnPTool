@@ -23,7 +23,12 @@ from app.pets.logic import (
     NAPF,
     PERLE,
     DRACHEN_ARTEN,
+    EI_ARTEN,
+    FUTTER_EP_STANDARD,
+    FUTTER_SPUREN,
     KI_ARTEN,
+    TIER_ARTEN,
+    familie,
     stufe_passt,
     TIPPS_MAX,
     TIPPS_MIN,
@@ -194,7 +199,7 @@ async def wachstum_setzen(campaign_id: str, critter_id: str, stufe_: str) -> dic
     kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
     ziel = gewachsen_fuer(stufe_, ep_je_schritt)
     # Jede Art hat ihre eigenen Stufen: keine Drachenstufe (oder ein Ei) an der KI.
-    passende = [a for a in DRACHEN_ARTEN + KI_ARTEN if stufe_passt(a, stufe_)]
+    passende = [a for a in DRACHEN_ARTEN + KI_ARTEN + TIER_ARTEN if stufe_passt(a, stufe_)]
     query = """
         MATCH (c:Person {id: $critter_id, campaignId: $campaign_id})
         WHERE (c.istCritter = true OR c.istKI = true) AND c.petArt IN $wachsende
@@ -220,13 +225,13 @@ async def spuren_alle_weg(campaign_id: str) -> int:
     bleiben stehen — die hat jemand mit einem Stück Futter bezahlt."""
     query = """
         MATCH (h:PetHaeufchen {campaignId: $campaign_id})
-        WHERE coalesce(h.art, 'haeufchen') <> $napf
+        WHERE NOT coalesce(h.art, 'haeufchen') IN $futter
         WITH collect(h) AS alle
         FOREACH (h IN alle | DETACH DELETE h)
         RETURN size(alle) AS n
     """
     async with get_driver().session() as session:
-        result = await session.run(query, campaign_id=campaign_id, napf=NAPF)
+        result = await session.run(query, campaign_id=campaign_id, futter=list(FUTTER_SPUREN))
         r = await result.single()
         return int(r["n"]) if r else 0
 
@@ -237,14 +242,17 @@ async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict
     neuen Critter verbunden wird“). Wechsel zwischen Drachen-Farben oder
     Abwählen behält die Stufe; Bestandsdrachen (ohne `petStufe`) bleiben groß.
     Eine KI (13.11.2026) hat kein Ei: sie fängt als Funke an und wächst ab den
-    EP, die der Critter in diesem Moment hat — auch wenn dort noch ein Ei lag."""
+    EP, die der Critter in diesem Moment hat — auch wenn dort noch ein Ei lag.
+    Mongo und Tummy-Acher (15.11.2026) fangen wie der Drache als Ei an; wer von
+    einer anderen Tierart (z. B. Drache → Mongo) wechselt, bekommt auch ein
+    neues Ei — eine andere Farbe derselben Figur behält die Stufe."""
     kampagnen_ep = await _kampagnen_ep(campaign_id)
     query = _PET_TRAEGER + """
         WITH c, c.petArt AS vorher
         SET c.petArt = $art
         WITH c, vorher
-        FOREACH (_ IN CASE WHEN c:Person AND $drache AND c.petStufe IS NULL
-                                AND NOT coalesce(vorher, '') IN $drachen THEN [1] ELSE [] END |
+        FOREACH (_ IN CASE WHEN c:Person AND $ei_art AND NOT coalesce(vorher, '') IN $familie
+                                AND (c.petStufe IS NULL OR coalesce(vorher, '') <> '') THEN [1] ELSE [] END |
             SET c.petStufe = 'ei', c.petTipps = 0, c.petTippsNoetig = $noetig, c.petEpStart = null)
         FOREACH (_ IN CASE WHEN c:Person AND $ki AND (c.petStufe IS NULL OR c.petStufe = 'ei') THEN [1] ELSE [] END |
             SET c.petStufe = 'geschluepft',
@@ -253,7 +261,7 @@ async def art_setzen(campaign_id: str, critter_id: str, art: str | None) -> dict
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, critter_id=critter_id, art=art,
-                                   drache=art in DRACHEN_ARTEN, drachen=list(DRACHEN_ARTEN), ki=art in KI_ARTEN,
+                                   ei_art=art in EI_ARTEN, familie=list(familie(art)), ki=art in KI_ARTEN,
                                    kampagnen_ep=kampagnen_ep,
                                    noetig=random.randint(TIPPS_MIN, TIPPS_MAX))
         if await result.single() is None:
@@ -421,10 +429,17 @@ async def haeufchen_lesen(campaign_id: str, person_id: str, haeufchen_id: str) -
         return dict(r) if r else None
 
 
-async def napf_futter_verbrauchen(campaign_id: str, person_id: str, item_id: str) -> str | None:
-    """Ein Stück Tierfutter aus dem eigenen Besitz. Rückgabe: Fehlertext oder
-    None. Wie beim Schlucken: Stapel −1, ein Einzelstück wandert in den
-    Mülleimer der SL (nichts wird gelöscht)."""
+async def napf_futter_verbrauchen(campaign_id: str, person_id: str, item_id: str) -> tuple[str | None, str]:
+    """Ein Stück Tierfutter aus dem eigenen Besitz. Rückgabe: (Fehlertext oder
+    None, für wen: 'tier' | 'ki'). Wie beim Schlucken: Stapel −1, ein
+    Einzelstück wandert in den Mülleimer der SL (nichts wird gelöscht)."""
+    fehler = await _futter_verbrauchen(campaign_id, person_id, item_id)
+    if isinstance(fehler, str):
+        return fehler, "tier"
+    return None, fehler["fuer"]
+
+
+async def _futter_verbrauchen(campaign_id: str, person_id: str, item_id: str) -> str | dict:
     from app.items import repository as items_repo
 
     item = await items_repo.get_gegenstand(campaign_id, item_id)
@@ -443,19 +458,46 @@ async def napf_futter_verbrauchen(campaign_id: str, person_id: str, item_id: str
         await items_repo.update_gegenstand(campaign_id, item_id, {"menge": menge - 1})
     else:
         await items_repo.wegwerfen(campaign_id, item_id, "verfüttert")
-    return None
+    return {"fuer": "ki" if item.get("futterFuer") == "ki" else "tier"}
 
 
 async def critter_heilen(campaign_id: str, critter_id: str, schlag: int) -> None:
     """Gefressen: Schlagschaden des Critters sinkt (nie unter 0). Bärbel ist ein
     Gegenstand und frisst nicht — trifft deshalb nur Person-Critter."""
     query = """
-        MATCH (c:Person {id: $id, campaignId: $campaign_id, istCritter: true})
+        MATCH (c:Person {id: $id, campaignId: $campaign_id})
+        WHERE c.istCritter = true OR c.istKI = true
         WITH c, coalesce(c.schadenSchlag, 0) - $schlag AS rest
         SET c.schadenSchlag = CASE WHEN rest < 0 THEN 0 ELSE rest END
     """
     async with get_driver().session() as session:
         await session.run(query, id=critter_id, campaign_id=campaign_id, schlag=schlag)
+
+
+async def futter_ep(campaign_id: str) -> int:
+    """Wie viele EP ein leer gefressener Napf/ein Datenpaket fürs Wachsen zählt."""
+    from app.campaigns.repository import get_einstellungen
+
+    e = await get_einstellungen(campaign_id)
+    try:
+        return max(0, int(e.get("petFutterEp", FUTTER_EP_STANDARD)))
+    except (TypeError, ValueError):
+        return FUTTER_EP_STANDARD
+
+
+async def futter_wachsen(campaign_id: str, pet_id: str, ep: int) -> None:
+    """Futter lässt wachsen (Mark, 15.11.2026): kein neues Feld — der Startwert
+    der Wachstums-EP rückt um `ep` zurück, als hätte das Pet so viele EP mehr.
+    Nur geschlüpfte Pets, die mitwachsen (Bestandsdrachen ohne Stufe nicht)."""
+    if ep <= 0:
+        return
+    query = """
+        MATCH (c:Person {id: $id, campaignId: $campaign_id})
+        WHERE (c.istCritter = true OR c.istKI = true) AND c.petStufe = 'geschluepft' AND c.petEpStart IS NOT NULL
+        SET c.petEpStart = c.petEpStart - $ep
+    """
+    async with get_driver().session() as session:
+        await session.run(query, id=pet_id, campaign_id=campaign_id, ep=ep)
 
 
 async def zutraulichkeit_erhoehen(campaign_id: str, person_id: str, pet_id: str, plus: int,

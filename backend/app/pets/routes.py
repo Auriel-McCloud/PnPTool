@@ -138,11 +138,13 @@ async def fuettern(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_
     den Besitz selbst (Ausnahmeliste in tests/test_zugriffsschutz.py)."""
     if viewer.role != "PLAYER" or not viewer.person_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Füttern geht nur am eigenen Spieler-Tablet.")
-    fehler = await repository.napf_futter_verbrauchen(campaign_id, viewer.person_id, item_id)
+    fehler, fuer = await repository.napf_futter_verbrauchen(campaign_id, viewer.person_id, item_id)
     if fehler:
         raise HTTPException(status.HTTP_404_NOT_FOUND, fehler)
-    await motor.napf_hinstellen(campaign_id, viewer.person_id)
-    return {"text": "Der Napf steht auf deinem Bildschirm — jetzt muss nur noch ein Drache vorbeikommen."}
+    await motor.napf_hinstellen(campaign_id, viewer.person_id, fuer)
+    if fuer == "ki":
+        return {"text": "Ein Datenpaket schwebt auf deinem Bildschirm — jetzt muss nur noch eine KI vorbeikommen."}
+    return {"text": "Der Napf steht auf deinem Bildschirm — jetzt muss nur noch ein Tier vorbeikommen."}
 
 
 @ws_router.websocket("/api/campaigns/{campaign_id}/pets/live")

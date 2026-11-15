@@ -20,7 +20,10 @@ import { makel, melde, vergiss } from "./treffen";
  * eine Leinwand direkt am DOM, kein Render pro Frame.
  */
 
-type Zustand = "gleiten" | "schweben" | "gestalt" | "lesen" | "schlafen" | "raus" | "gezogen" | "wurf" | "weg";
+type Zustand = "gleiten" | "schweben" | "gestalt" | "lesen" | "schlafen" | "raus" | "gezogen" | "wurf" | "weg" | "saugen";
+
+/** KI-Futter (Mark, 15.11.2026): so lange saugt sie ein Datenpaket ein. */
+const SAUGEN_MS = 1500;
 
 /** Wie lange sie bleibt, bevor sie weiterzieht (Annahme Neko, wie Bärbel). */
 const BESUCH_MS: [number, number] = [60_000, 150_000];
@@ -51,7 +54,18 @@ function leseZiel(): Element | null {
   return kandidaten.length ? kandidaten[Math.floor(Math.random() * kandidaten.length)] : null;
 }
 
-export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object) => void }) {
+export function KiFigur({
+  pet,
+  senden,
+  wegmachen,
+}: {
+  pet: PetAufSchirm;
+  senden: (n: object) => void;
+  /** Datenpaket eingesaugt: Spur weg, `petId` = sie hat es gefressen (heilt, wächst). */
+  wegmachen: (id: string, petId?: string) => void;
+}) {
+  const wegmachenRef = useRef(wegmachen);
+  wegmachenRef.current = wegmachen;
   const leinwand = useRef<HTMLCanvasElement | null>(null);
   const griff = useRef<HTMLDivElement | null>(null);
   const scan = useRef<HTMLDivElement | null>(null);
@@ -95,6 +109,15 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
     let letzterMakel = 0;
     let finger: { x: number; y: number; t: number }[] = [];
     let druck: { id: number; x: number; y: number; bewegt: boolean; vorher: Zustand } | null = null;
+    // Datenpaket, das sie gerade einsaugt (Element, Spur-id, Start und Lage).
+    let saugen: { el: HTMLElement; id: string; t0: number; x0: number; y0: number } | null = null;
+    const saugenAbbrechen = () => {
+      if (!saugen) return;
+      saugen.el.style.transform = "";
+      saugen.el.style.opacity = "";
+      saugen.el.dataset.saugt = "";
+      saugen = null;
+    };
 
     const klemme = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
     const irgendwo = () => ({
@@ -130,6 +153,24 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
         const nachRechts = x > breite() / 2;
         zustand = "raus";
         ziel = { x: nachRechts ? breite() + KI_G * p : -KI_G * p, y: klemme(y + zw(-80, 80), 60, hoehe() - 60) };
+        return;
+      }
+      // Futter geht vor (15.11.2026): liegt ein Datenpaket da, holt sie es sich.
+      const paket = Array.from(document.querySelectorAll<HTMLElement>(".pet-datenpaket")).find(
+        (el) => !el.classList.contains("pet-haeufchen-weg") && el.dataset.saugt !== "ja",
+      );
+      if (paket?.dataset.id) {
+        const r = paket.getBoundingClientRect();
+        const id = paket.dataset.id;
+        gleite({ x: r.left + r.width / 2, y: Math.max(rand(), r.top + r.height / 2 - wesen.radius() * p * 0.5) }, () => {
+          if (!paket.isConnected) return schwebe(performance.now(), 600);
+          const rr = paket.getBoundingClientRect();
+          paket.dataset.saugt = "ja";
+          saugen = { el: paket, id, t0: performance.now(), x0: rr.left + rr.width / 2, y0: rr.top + rr.height / 2 };
+          wesen.liest = true;
+          zustand = "saugen";
+          bis = performance.now() + SAUGEN_MS;
+        });
         return;
       }
       const st = stufe();
@@ -217,6 +258,28 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
             if ((x < rand() && vx <= 0) || (x > breite() - rand() && vx >= 0)) gleite(irgendwo());
             else schwebe(jetzt, zw(800, 2000));
           }
+        } else if (zustand === "saugen") {
+          vx *= Math.max(0, 1 - 6 * dt);
+          vy *= Math.max(0, 1 - 6 * dt);
+          const sg = saugen;
+          if (!sg || !sg.el.isConnected) {
+            saugen = null;
+            wesen.liest = false;
+            schwebe(jetzt, 600);
+          } else {
+            // Das Paket wird in sie hineingezogen und schrumpft dabei.
+            const k = Math.min(1, (jetzt - sg.t0) / SAUGEN_MS);
+            const e = k * k;
+            sg.el.style.transform = `translate(${(x - sg.x0) * e}px, ${(y - sg.y0) * e}px) scale(${1 - 0.9 * e})`;
+            sg.el.style.opacity = String(1 - 0.7 * e);
+            if (k >= 1) {
+              saugen = null;
+              wesen.liest = false;
+              wegmachenRef.current(sg.id, pet.id);
+              wesen.freude(jetzt);
+              schwebe(jetzt, 1400);
+            }
+          }
         } else if (zustand === "gezogen") {
           const f = finger[finger.length - 1];
           if (f) {
@@ -295,6 +358,7 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
       while (finger.length > 2 && t - finger[0].t > 120) finger.shift();
       if (!druck.bewegt && Math.hypot(e.clientX - druck.x, e.clientY - druck.y) > 10) {
         druck.bewegt = true;
+        saugenAbbrechen();
         // Mitgenommen: was sie gerade tat, ist vorbei.
         wesen.schlaf = false;
         wesen.liest = false;
@@ -318,6 +382,7 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
         zustand = "wurf";
         return;
       }
+      saugenAbbrechen();
       // Angetippt: sie freut sich — ab dem Keim wird sie kurz ein Herz.
       sendenRef.current({ typ: "streicheln", petId: pet.id });
       wesen.schlaf = false;
@@ -343,6 +408,7 @@ export function KiFigur({ pet, senden }: { pet: PetAufSchirm; senden: (n: object
     gr.addEventListener("touchmove", stopp, { passive: false });
     return () => {
       cancelAnimationFrame(rahmen);
+      saugenAbbrechen();
       vergiss(pet.id);
       wesenRef.current = null;
       gr.removeEventListener("pointerdown", runter);

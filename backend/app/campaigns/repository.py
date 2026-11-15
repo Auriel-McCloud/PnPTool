@@ -82,6 +82,9 @@ EINSTELLUNGEN_DEFAULTS: dict = {
     # braucht ein Wachstumsschritt; alle 3 Schritte eine neue Gestalt
     # (pets/logic.py::STUFEN_AB_SCHRITT).
     "petWachstumEp": 5,
+    # Futter lässt wachsen (Mark, 15.11.2026): ein leer gefressener Napf bzw.
+    # ein eingesaugtes Datenpaket zählt wie so viele EP fürs Wachstum (0 = aus).
+    "petFutterEp": 1,
     # Zeigt Gewicht und Kapazität an. Rein informativ — nichts wird verhindert,
     # der Balken färbt sich nur rot. Die Spielleitung zieht die Konsequenzen.
     "gewichtAktiv": True,

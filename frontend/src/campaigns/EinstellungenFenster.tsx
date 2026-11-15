@@ -254,17 +254,33 @@ export function EinstellungenFenster({
           />
 
           <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
-            <strong style={{ fontSize: 14 }}>Drachen-Wachstum: EP je Schritt</strong>
+            <strong style={{ fontSize: 14 }}>Pet-Wachstum: EP je Schritt</strong>
             <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
               So viele Erfahrungspunkte seines Critters braucht ein Drachen-Pet für einen Wachstumsschritt. Alle
               3 Schritte bekommt es eine größere Gestalt, nach 12 Schritten ist es ausgewachsen. Startwert 5 —
-              also neue Gestalten bei 15, 30, 45 und 60 EP seit dem Schlüpfen.
+              also neue Gestalten bei 15, 30, 45 und 60 EP seit dem Schlüpfen. Mongo und Tummy-Acher haben 6
+              Schritte und sind gleich schnell ausgewachsen (bei 5: alle 12 EP ein Schritt).
             </span>
             <input
               type="number"
               min={1}
               value={Number(werte.petWachstumEp ?? 5)}
               onChange={(e) => aendern("petWachstumEp", Math.max(1, Math.round(Number(e.target.value) || 1)))}
+              style={{ marginTop: 4, maxWidth: 140 }}
+            />
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, padding: "10px 0" }}>
+            <strong style={{ fontSize: 14 }}>Pet-Wachstum: EP je Futter</strong>
+            <span style={{ fontSize: 12, color: "var(--text-leise)" }}>
+              Frisst ein Pet einen Napf leer (oder saugt eine KI ein Datenpaket ein), zählt das wie so viele
+              Erfahrungspunkte fürs Wachsen. Startwert 1, 0 stellt es ab.
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={Number(werte.petFutterEp ?? 1)}
+              onChange={(e) => aendern("petFutterEp", Math.max(0, Math.round(Number(e.target.value) || 0)))}
               style={{ marginTop: 4, maxWidth: 140 }}
             />
           </label>

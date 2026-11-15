@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KI_STUFEN, PET_ARTEN, WACHSTUM_STUFEN, istKi, petsApi, type PetArt, type PetStand } from "./api";
+import { KI_STUFEN, PET_ARTEN, WACHSTUM_STUFEN, istKi, istTier, petsApi, tierStufen, type PetArt, type PetStand } from "./api";
 
 /**
  * SL-Auswahl „Pet auf den Tablets“ — am Critter (Tiere) und am Gegenstand
@@ -29,6 +29,8 @@ export function PetArtWahl({
   const arten = PET_ARTEN.filter((a) => a.fuer === fuer || a.wert === art);
   const leise = { fontSize: 11, color: "var(--text-leise)" };
   const ki = istKi(art);
+  const tier = istTier(art ?? "");
+  const stufen = ki ? KI_STUFEN : tier ? tierStufen(art) : WACHSTUM_STUFEN;
   return (
     <div className="bg-zeile" style={{ marginTop: 10, flexDirection: "column", alignItems: "stretch", gap: 4 }}>
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.9em" }}>
@@ -63,7 +65,7 @@ export function PetArtWahl({
               {stand.gewachsen === null && stand.stufe !== "ei" && (
                 <option value="">{ki ? "Funke (wächst nicht)" : "Junger Drache (wächst nicht)"}</option>
               )}
-              {(ki ? KI_STUFEN : WACHSTUM_STUFEN).map((s) => (
+              {stufen.map((s) => (
                 <option key={s.wert} value={s.wert}>
                   {s.name}
                 </option>
@@ -79,7 +81,7 @@ export function PetArtWahl({
               ? "Liegt als Ei beim Besitzer, bis es oft genug angetippt wurde."
               : stand.gewachsen === null
                 ? "Dieser Drache wächst noch nicht mit. Wähle eine Stufe, dann wächst er ab dort mit den EP seines Critters."
-                : `${stand.gewachsen} EP seit dem Schlüpfen. Stufe wählen setzt ihn dorthin, danach wächst er normal weiter.`}
+                : `${stand.gewachsen} EP seit dem Schlüpfen${tier ? " (Futter zählt mit)" : ""}. Stufe wählen setzt ihn dorthin, danach wächst er normal weiter.`}
           </span>
         </>
       )}

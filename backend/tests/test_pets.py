@@ -771,10 +771,18 @@ def test_napf_nur_vom_drachen_leer_gefressen_heilt_und_macht_zutraulich(welt, mo
         log.append(("zutraulich", pid, pet_id, plus, abklingen_s))
         return plus
 
+    async def futter_ep(cid):
+        return 1
+
+    async def futter_wachsen(cid, pet_id, ep):
+        log.append(("wachsen", pet_id, ep))
+
     repo = motor_modul.repository
     monkeypatch.setattr(repo, "haeufchen_lesen", haeufchen_lesen)
     monkeypatch.setattr(repo, "critter_heilen", critter_heilen)
     monkeypatch.setattr(repo, "zutraulichkeit_erhoehen", zutraulich)
+    monkeypatch.setattr(repo, "futter_ep", futter_ep)
+    monkeypatch.setattr(repo, "futter_wachsen", futter_wachsen)
 
     async def ablauf():
         anna = Socket()
@@ -790,12 +798,101 @@ def test_napf_nur_vom_drachen_leer_gefressen_heilt_und_macht_zutraulich(welt, mo
         assert not stand["haeufchen"]["anna"]
         assert ("heilen", "drache", 3) in log
         assert ("zutraulich", "anna", "drache", 5, 0.0) in log
+        # Futter lässt wachsen (15.11.2026).
+        assert ("wachsen", "drache", 1) in log
         await m.streicheln("k", "anna", "drache")
         assert ("zutraulich", "anna", "drache", 1, 300) in log
         # Wer das Pet nicht auf dem Schirm hat, streichelt nicht.
         vorher = len(log)
         await m.streicheln("k", "ben", "drache")
         assert len(log) == vorher
+        m._takt.cancel()
+
+    laufen(ablauf())
+
+
+def test_mongo_und_tummy_wachsen_aus_dem_ei_in_sechs_schritten():
+    """Mark, 15.11.2026: „Ei + 6 Schritte bis er groß ist“ — für Mongo und den
+    Tummy-Acher, je Farbe eine Art. Annahme Neko: gleich schnell ausgewachsen
+    wie der Drache (bei 5 EP je Drachenschritt alle 12 EP ein Schritt)."""
+    from app.pets import logic as lg
+
+    for art in lg.TIER_ARTEN:
+        assert art in lg.PET_ARTEN and lg.waechst(art) and lg.ist_tier(art) and not lg.ist_drache(art)
+        assert lg.frisst_napf(art) and art in lg.EI_ARTEN
+    assert lg.familie("mongo_bonbon") == lg.MONGO_ARTEN and lg.familie("tummy") == lg.TUMMY_ARTEN
+    assert lg.familie("drache") != lg.familie("mongo")
+    assert lg.stufe("mongo", "ei", 50, None) == ("ei", None)
+    assert lg.stufe("mongo", "geschluepft", 10, 10) == ("s1", 0)
+    assert lg.stufe("tummy", "geschluepft", 21, 10)[0] == "s1"
+    assert lg.stufe("tummy", "geschluepft", 22, 10)[0] == "s2"
+    assert lg.stufe("mongo", "geschluepft", 70, 10)[0] == "s6"
+    assert lg.stufe("mongo", "geschluepft", 999, 10)[0] == "s6"
+    for name in lg.TIER_FOLGE:
+        for je in (1, 3, 5, 10):
+            assert lg.stufe("mongo_wueste", "geschluepft", lg.gewachsen_fuer(name, je), 0, je)[0] == name
+    assert lg.stufe_passt("tummy_lila", "ei") and lg.stufe_passt("mongo", "s4")
+    assert not lg.stufe_passt("mongo", "baby") and not lg.stufe_passt("mongo", "gross") and not lg.stufe_passt("drache", "s2")
+    assert "s3" in lg.SETZBARE_STUFEN
+    # Küken läuft nur unten; ab Schritt 2 klettern/springen, ab 3 Burgermenü; nie niesen.
+    assert lg.faehigkeiten("mongo", "s1", 0) == []
+    assert set(lg.faehigkeiten("tummy", "s2", 12)) == {"klettern", "springen"}
+    assert set(lg.faehigkeiten("mongo", "s6", 60)) == {"klettern", "springen", "menue"}
+    assert lg.faehigkeiten("mongo", "ei", None) == []
+
+
+def test_mongo_frisst_napf_datenpaket_nur_fuer_die_ki(welt, monkeypatch):
+    """Napf: jedes Tier (auch Mongo); Datenpaket (KI-Futter, 15.11.2026): nur die KI.
+    Beides heilt, macht zutraulich und lässt wachsen."""
+    m, stand = welt
+    stand["pets"] = [
+        {"id": "mongo", "name": "Mongo", "art": "mongo", "besitzerId": "anna", "besitzerName": "Anna",
+         "mitglieder": ["anna"], "stufe": "s2", "kann": ["klettern", "springen"]},
+        {"id": "ki", "name": "Babybell", "art": "ki", "besitzerId": "anna", "besitzerName": "Anna",
+         "mitglieder": ["anna"], "stufe": "funke", "kann": []},
+    ]
+    log = []
+
+    async def haeufchen_lesen(cid, pid, hid):
+        return next(({"id": h["id"], "art": h["art"]} for h in stand["haeufchen"].get(pid, []) if h["id"] == hid), None)
+
+    async def critter_heilen(cid, critter_id, schlag):
+        log.append(("heilen", critter_id))
+
+    async def zutraulich(cid, pid, pet_id, plus, abklingen_s=0.0):
+        return plus
+
+    async def futter_ep(cid):
+        return 2
+
+    async def futter_wachsen(cid, pet_id, ep):
+        log.append(("wachsen", pet_id, ep))
+
+    repo = motor_modul.repository
+    for name, fn in (("haeufchen_lesen", haeufchen_lesen), ("critter_heilen", critter_heilen),
+                     ("zutraulichkeit_erhoehen", zutraulich), ("futter_ep", futter_ep),
+                     ("futter_wachsen", futter_wachsen)):
+        monkeypatch.setattr(repo, name, fn)
+
+    async def ablauf():
+        await m.anmelden("k", "anna", Socket())
+        await m.napf_hinstellen("k", "anna", "ki")
+        paket = [h for h in stand["haeufchen"]["anna"] if h["art"] == "datenpaket"]
+        assert len(paket) == 1 and 0.3 <= paket[0]["y"] <= 0.65  # schwebt in der Luft
+        # Mongo darf das Datenpaket nicht fressen, die KI schon.
+        await m.wegmachen("k", "anna", paket[0]["id"], "mongo")
+        assert paket[0] in stand["haeufchen"]["anna"]
+        await m.wegmachen("k", "anna", paket[0]["id"], "ki")
+        assert paket[0] not in stand["haeufchen"]["anna"]
+        assert ("heilen", "ki") in log and ("wachsen", "ki", 2) in log
+        # Den Napf frisst Mongo, die KI nicht.
+        await m.napf_hinstellen("k", "anna")
+        napf = [h for h in stand["haeufchen"]["anna"] if h["art"] == "napf"]
+        await m.wegmachen("k", "anna", napf[0]["id"], "ki")
+        assert napf[0] in stand["haeufchen"]["anna"]
+        await m.wegmachen("k", "anna", napf[0]["id"], "mongo")
+        assert napf[0] not in stand["haeufchen"]["anna"]
+        assert ("wachsen", "mongo", 2) in log
         m._takt.cancel()
 
     laufen(ablauf())

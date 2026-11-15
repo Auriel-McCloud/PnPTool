@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { atemVon, istDrache, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
+import { atemVon, istDrache, istTier, tierFamilie, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
 import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type PerleModus, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
-import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z } from "./drachenstufen";
+import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z, type DrachenStufe } from "./drachenstufen";
+import { TIER_STUFEN } from "./tierstufen";
 import { herein, schiesse } from "./feuerball";
 import { KiFigur } from "./KiFigur";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
@@ -118,8 +119,14 @@ const HUT_ANIMATIONEN = new Set(["idle", "lauf", "freuen"]);
 
 /** Größere Stufen (Mark, 13.11.2026): eigene Sheets unter /pets/<art>/<stufe>/,
  *  gleiche Animationsnamen und Takte wie der junge Drache, nur größerer Rahmen. */
-function grosseStufe(art: string, stufe?: string) {
-  return stufe && istDrache(art) ? DRACHEN_STUFEN[stufe] : undefined;
+function grosseStufe(art: string, stufe?: string): DrachenStufe | undefined {
+  if (!stufe) return undefined;
+  if (istDrache(art)) return DRACHEN_STUFEN[stufe];
+  // Mongo und Tummy-Acher (15.11.2026): gleiche Animationsnamen und Takte, eigene
+  // Rahmen je Schritt (tierstufen.ts). Kein Atem, keine Perle.
+  const fam = tierFamilie(art);
+  const t = fam ? TIER_STUFEN[fam][stufe] : undefined;
+  return t ? { ...t, schlafMitte: t.schlafZ, feuerSkala: 0 } : undefined;
 }
 
 function sprite(art: string, stufe?: string) {
@@ -136,6 +143,7 @@ function spriteOrdner(art: string, stufe?: string) {
 
 /** Wo das Zzz über dem Schlafkringel aufsteigt (Sprite-Pixel), nur Drachen. */
 function schlafAnker(art: string, stufe?: string): readonly [number, number] | null {
+  if (istTier(art)) return grosseStufe(art, stufe)?.schlafZ ?? null;
   if (!istDrache(art)) return null;
   if (stufe === "baby") return SCHLAF_Z.baby;
   return grosseStufe(art, stufe)?.schlafZ ?? SCHLAF_Z.jung;
@@ -159,6 +167,7 @@ const SPUR_PX = {
   krater: { breite: 88, hoehe: 54 },
   eiskrater: { breite: 88, hoehe: 54 },
   napf: { breite: 22, hoehe: 13 },
+  datenpaket: { breite: 14, hoehe: 14 },
   perle: { breite: 16, hoehe: 16 },
 } as const;
 
@@ -514,6 +523,24 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             />
           );
         }
+        if (h.art === "datenpaket") {
+          // KI-Futter (15.11.2026): schwebt leuchtend in der Luft, bis eine KI es
+          // einsaugt (KiFigur sucht `.pet-datenpaket`). Antippen tut nichts.
+          const g = SPUR_PX.datenpaket.breite * s;
+          return (
+            <div
+              key={h.id}
+              data-id={h.id}
+              className={`pet-datenpaket${weg.has(h.id) ? " pet-haeufchen-weg" : ""}`}
+              style={{
+                left: h.x * window.innerWidth - g / 2,
+                top: h.y * window.innerHeight - g / 2,
+                width: g,
+                height: g,
+              }}
+            />
+          );
+        }
         if (h.art === "perle") {
           const ablage = `${h.id}:${h.erstellt}`;
           return (
@@ -578,7 +605,7 @@ export function PetOverlay({ campaignId }: { campaignId: string }) {
             }}
           />
         ) : p.art === "ki" ? (
-          <KiFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} />
+          <KiFigur key={`${p.id}:${p.ankunft}`} pet={p} senden={senden} wegmachen={wegmachen} />
         ) : (
         <PetFigur
           key={`${p.id}:${p.ankunft}:${p.stufe ?? "jung"}`}
@@ -1735,8 +1762,8 @@ function PetFigur({
         el.style.transform = d.transform;
         const mal = makel(pet.id, jetzt);
         el.dataset.makel = mal ?? "";
-        if (istDrache(pet.art) && mal === "schleim") setKlecks(true);
-        else if (istDrache(pet.art)) setKlecks(false);
+        if ((istDrache(pet.art) || istTier(pet.art)) && mal === "schleim") setKlecks(true);
+        else if (istDrache(pet.art) || istTier(pet.art)) setKlecks(false);
         melde({ id: pet.id, art: pet.art, x: left + bw / 2, y: top + bh / 2, w: bw, h: bh });
         if (d.angriff) trefferWirken(treffe(d.angriff, pet.id, jetzt), jetzt);
         spriteRect.current = { left, top, w: bw, h: bh };
@@ -2038,7 +2065,7 @@ function PetFigur({
 
   return (
     <>
-      {istDrache(pet.art) &&
+      {(istDrache(pet.art) || istTier(pet.art)) &&
         Array.from({ length: FLOCKEN_MAX }, (_, i) => (
           <span
             key={`f${i}`}
