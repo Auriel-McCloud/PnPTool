@@ -464,6 +464,7 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
   - KI-Futter im Datenmodell: eigenes Häkchen neben „Tierfutter“ oder eine Auswahl „Futter für“; Wirkung (heilen, Zutraulichkeit, Wachstum) und Optik.
   - Woran sie hängen: naheliegend am Critter wie der Drache (noch nicht bestätigt).
   - Design: Entwurfstafeln `docs/assets/critter-pet/mongo_entwurf.png` und `tummy_entwurf.png` (Generator `dcc_entwurf.py`), je drei Farbvarianten (Mongo: Dschungel, Wüste, Bonbon; Tummy-Acher: Rosa, Pfirsich, Lila), Ei + 6 Schritte plus Kreischen bzw. Mampf/Platt. Mark wählt.
+  - Nachschärfung 15.11. (Mark mit Velociraptor-Referenzbild): „Schwanz dünner und länger, ganz ausgewachsen ein wenig mehr wie auf dem Bild“. Umgesetzt: Schwanz fast doppelt so lang, dünn zulaufend, waagrecht steif mit Federsaum statt Fächer; Rücken dunkel, Bauch nur noch schmaler Streifen; längere Schnauze und Beine; gefaltete Flügelfedern mit Krallen; Kamm liegt beim Großen nach hinten. Küken-Stufen fast unverändert.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

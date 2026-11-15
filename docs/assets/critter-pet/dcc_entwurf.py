@@ -105,11 +105,11 @@ def mongo(stufe, p, pose="stehen"):
     d = ImageDraw.Draw(img)
     ox, oy = 62, 96  # Hüfte x, Boden y
 
-    bein = lerp(4.5, 19, t)
+    bein = lerp(4.5, 21, t)
     rk = lerp(6.8, 8.6, t)  # Rumpfdicke
     hip = (ox, oy - bein - rk * 0.45)
     w = math.radians(lerp(-62, -10, t))
-    lang = lerp(2.5, 17, t)
+    lang = lerp(2.5, 19, t)
     sch = (hip[0] + math.cos(w) * lang, hip[1] + math.sin(w) * lang)
     wn = math.radians(lerp(-82, -58, t))
     hl = lerp(3.5, 13, t)
@@ -118,16 +118,18 @@ def mongo(stufe, p, pose="stehen"):
     kopf = (hals[0] + kr * 0.35, hals[1] - kr * 0.25)
 
     # Schwanz: nach hinten, beim Küken aufgestellter Bürzel
-    sl = lerp(4, 36, t)
-    sa = math.radians(lerp(-140, -176, t))
-    s1 = (hip[0] + math.cos(sa) * sl * 0.5, hip[1] + math.sin(sa) * sl * 0.5 + lerp(0, 2, t))
-    s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl + lerp(0, -1, t))
+    # Mark 15.11.: Schwanz dünner und länger wie beim echten Raptor — lang, steif,
+    # fast waagrecht, zur Spitze leicht ansteigend.
+    sl = lerp(4, 60, t)
+    sa = math.radians(lerp(-140, -178, t))
+    s1 = (hip[0] + math.cos(sa) * sl * 0.5, hip[1] + math.sin(sa) * sl * 0.5 + lerp(0, 0.5, t))
+    s2 = (hip[0] + math.cos(sa) * sl, hip[1] + math.sin(sa) * sl - lerp(0, 4, t))
     schwanz = kette([s2, s1, hip])
     rumpf = kette([hip, sch])
     halsk = kette([sch, hals])
 
     def r_schwanz(s):
-        return lerp(lerp(2.2, 1.1, t), rk * 0.85, s ** 0.8)
+        return lerp(lerp(2.2, 0.6, t), rk * lerp(0.85, 0.62, t), s ** lerp(0.8, 2.2, t))
 
     def r_rumpf(s):
         return lerp(rk, rk * lerp(0.95, 0.78, t), s)
@@ -164,10 +166,17 @@ def mongo(stufe, p, pose="stehen"):
             return
         ell_ = (a0[0] + lerp(1, 3, t), a0[1] + lerp(2, 5, t))
         hand = (ell_[0] + lerp(1, 4, t), ell_[1] + lerp(0.5, 1.5, t))
-        fl = lerp(1.5, 5, t)
+        fl = lerp(1.5, 8, t)
         d.polygon([a0, ell_, hand, (hand[0] - 1, hand[1] + fl * 0.6), (ell_[0] - 1.5, ell_[1] + fl), (a0[0] - 2, a0[1] + fl * 0.7)],
                   fill=F if vorne else tuple(max(0, v - 50) if i < 3 else v for i, v in enumerate(F)))
+        if t >= 0.4:  # gefaltete Flügelfedern hängen unter dem Arm, Spitzen gezackt
+            fd = tuple(max(0, v - 30) if i < 3 else v for i, v in enumerate(F if vorne else D))
+            for k in range(int(lerp(2, 6, t))):
+                fx = ell_[0] - 1.5 + k * 1.1
+                d.line([(fx, ell_[1]), (fx - 1, ell_[1] + fl * (0.9 + 0.12 * (k % 2)))], fill=fd, width=1)
         d.line([a0, ell_, hand], fill=M if vorne else D, width=2 if t > 0.5 else 1)
+        if t >= 0.4:  # Krallen
+            d.line([(hand[0] + 1, hand[1]), (hand[0] + 2, hand[1] + 2)], fill=W)
         d.point((round(hand[0] + 1), round(hand[1])), fill=W)
 
     bein_malen(False)
@@ -179,15 +188,17 @@ def mongo(stufe, p, pose="stehen"):
             ell(d, x, y + 0.4, rf(s), rf(s), D)
     for pk, rf in teile:
         for x, y, s in pk:
-            r = rf(s) - 0.9
-            ell(d, x - 0.3, y - 0.6, r, r, M)
+            r = max(0.0, rf(s) - 0.9)
+            ell(d, x - 0.3, y - 0.6 * min(1.0, rf(s) / 2), r, r, M)
     # Bauch
-    for pk, rf, an in ((rumpf, r_rumpf, True), (halsk, r_hals, True), (schwanz, r_schwanz, t > 0.3)):
+    # Bauch: beim Großen nur ein schmaler heller Streifen unten, der Rücken dominiert
+    bh = lerp(0.42, 0.3, t)
+    for pk, rf, an in ((rumpf, r_rumpf, True), (halsk, r_hals, True), (schwanz, r_schwanz, False)):
         if not an:
             continue
         for x, y, s in pk:
             r = rf(s)
-            ell(d, x + r * 0.15, y + r * 0.45, r * 0.62, r * 0.42, B)
+            ell(d, x + r * 0.15, y + r * lerp(0.45, 0.6, t), r * 0.62, r * bh, B)
     # Rückenstreifen und Rückenfedern
     if t >= 0.2:
         alle = schwanz + rumpf
@@ -215,17 +226,23 @@ def mongo(stufe, p, pose="stehen"):
             x = hip[0] + math.cos(a) * (rk + 0.3)
             y = hip[1] - 1 + math.sin(a) * (rk + 0.3)
             ell(d, x, y, 1.2, 1.2, L)
-    # Schwanzfächer
+    # Federsaum am hinteren Schwanzdrittel (statt Fächer, wie beim echten Raptor)
     if t >= 0.35:
+        fl = lerp(1, 3.5, (t - 0.35) / 0.65)
+        ende = int(len(schwanz) * 0.4)
+        for i in range(2, ende, 5):
+            x, y, s_ = schwanz[i]
+            r = r_schwanz(s_)
+            farbe = D if (i // 5) % 2 else S
+            d.line([(x + 0.5, y - r), (x - fl, y - r - fl * 0.5)], fill=farbe, width=1)
+            d.line([(x + 0.5, y + r), (x - fl, y + r + fl * 0.4)], fill=farbe, width=1)
         x, y, _ = schwanz[0]
-        fl = lerp(0, 7, (t - 0.35) / 0.65)
-        for k, (dx, dy) in enumerate(((-1, -0.55), (-1, 0), (-1, 0.5))):
-            d.polygon([(x + 1, y - 1), (x + 1, y + 1), (x + dx * fl, y + dy * fl + 1)], fill=F if k != 1 else F2)
+        d.line([(x, y), (x - fl * 1.3, y - 0.5)], fill=F, width=1)
 
     # Kopf
     kx, ky = kopf
     offen = pose == "kreischen"
-    sn = lerp(1.6, 9, t)
+    sn = lerp(1.6, 11, t)
     if offen:  # Unterkiefer klappt runter
         uk = Image.new("RGBA", img.size, (0, 0, 0, 0))
         ud = ImageDraw.Draw(uk)
@@ -266,7 +283,7 @@ def mongo(stufe, p, pose="stehen"):
         bx = kx - kr * 0.2 - k * 1.6
         by = ky - kr * 0.75 + k * 0.6
         hl_ = lerp(2.5, 7.5, t) * (1 - k * 0.12) * (1.35 if offen else 1)
-        wk = math.radians(-120 - k * 14 - (15 if offen else 0))
+        wk = math.radians(lerp(-120, -150, t) - k * 14 - (15 if offen else 0))
         d.line([(bx, by), (bx + math.cos(wk) * hl_, by + math.sin(wk) * hl_)], fill=F if k % 2 == 0 else F2, width=2 if t > 0.5 else 1)
 
     bein_malen(True)
