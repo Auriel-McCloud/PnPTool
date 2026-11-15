@@ -317,6 +317,16 @@ export function GegenstandKachel({
             onErledigt={() => onGeoeffnet?.()}
           />
         )}
+        {/* KI-Begleiter am Gegenstand (Mark, 15.11.2026): der Besitzer
+            schaltet ihr Desktop-Pet an und aus — oben, wie beim Credstick. */}
+        {item.kiPersonId && campaignId && onUmlegen && (
+          <KiSchalter
+            campaignId={campaignId}
+            itemId={item.id}
+            aktiv={Boolean(item.kiAktiv)}
+            onGeaendert={() => onGeoeffnet?.()}
+          />
+        )}
         {item.bildUrl && (
           <img
             src={item.bildUrl}
@@ -595,17 +605,6 @@ export function GegenstandKachel({
             </button>
             {futterText && <p style={{ margin: "8px 0 0" }}>{futterText}</p>}
           </div>
-        )}
-
-        {/* KI-Begleiter am Gegenstand (Mark, 15.11.2026): der Besitzer
-            schaltet ihr Desktop-Pet an und aus. */}
-        {item.kiPersonId && campaignId && onUmlegen && (
-          <KiSchalter
-            campaignId={campaignId}
-            itemId={item.id}
-            aktiv={Boolean(item.kiAktiv)}
-            onGeaendert={() => onGeoeffnet?.()}
-          />
         )}
 
         {(onWegwerfen || onWeitergeben) && (

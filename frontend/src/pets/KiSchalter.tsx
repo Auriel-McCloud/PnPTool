@@ -38,15 +38,18 @@ export function KiSchalter({
     }
   }
 
+  // Oben im Fenster wie die Credstick-Aktionen, nicht in der leisen
+  // Fußzeile — Mark hat den Knopf dort unten nicht gefunden (15.11.2026).
   return (
-    <div className="gg-wegwerfen">
-      <button type="button" disabled={laeuft} onClick={umschalten}>
-        {laeuft ? "…" : aktiv ? "KI deaktivieren" : "KI aktivieren"}
-      </button>
-      <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-leise)" }}>
+    <section className="gg-ablage-wahl">
+      <h3>KI-Begleiter</h3>
+      <p className="gg-ablage-ort">
         {aktiv ? "Die KI ist wach und schwebt über die Tablets." : "Die KI schläft — kein Pet auf den Tablets."}
       </p>
-      {fehler && <p style={{ margin: "8px 0 0" }}>{fehler}</p>}
-    </div>
+      <button type="button" className="gg-hineinsehen" disabled={laeuft} onClick={umschalten}>
+        {laeuft ? "…" : aktiv ? "KI deaktivieren" : "KI aktivieren"}
+      </button>
+      {fehler && <p className="gg-ablage-ort">{fehler}</p>}
+    </section>
   );
 }
