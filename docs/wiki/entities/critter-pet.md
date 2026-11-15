@@ -469,6 +469,7 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
   - Nachschärfung 15.11.: „Wenn er läuft, etwas gebückter, damit er gefährlicher aussieht.“ Pose `laufen` in `dcc_entwurf.py`: Rumpf nach vorn gekippt, Hüfte tiefer (Knie gebeugt), S-Hals mit vorgestrecktem tiefem Kopf, Schrittweite wächst mit. Gebückt skaliert mit dem Wachstum — das Küken watschelt aufrecht (Annahme Neko). Stehen unverändert. Tafel `mongo_laufen_entwurf.png`.
   - Nachschärfung 15.11.: Kante/Höcker am Rücken vor dem Schwanz auf der Jagd „schaut falsch aus“. Schwanz läuft beim Laufen genau in Verlängerung des Rumpfs (gerade Rückenlinie), Schwanzansatz so dick wie die Hüfte.
   - Nachschärfung 15.11. Tummy-Acher („fast perfekt“): Zahn wirkte aufgeklebt. Jetzt rechts der Mitte, wächst von der Unterkieferkante hoch, mit Schattenseite; Zunge nach links verschoben.
+  - 15.11.: Mark „die gefallen mir sehr gut!!“ — beide Figuren abgenommen. Letzte Korrektur: bei Schritt 2 und 4 war der Zahn zu hoch; Zahnhöhe jetzt höchstens 60 % der Mundhöhe.
   - Nachschärfung 15.11. (Mark mit Buchcover): Tummy-Acher „mehr wie ein seltsamer Fleischklops … mit Zahn und Dellen“, süß ja, aber seltsam. Umgesetzt: klumpiger Körper aus Beulen, Dellen und Sprenkel, ungleich große Glubschaugen mit blauer Iris über dem Umriss, breites Grinsen mit einem Zahn, keine Arme mehr, Haarbüschel weg. Farben jetzt A Fleisch (wie Cover), B Rosa, C Lila (Pfirsich entfällt, war fast wie Fleisch).
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)

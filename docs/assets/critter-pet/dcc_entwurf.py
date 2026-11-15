@@ -392,7 +392,7 @@ def tummy(stufe, p, pose="stehen"):
         ell(d, mx0 + (mx1 - mx0) * 0.3, my + mh * 0.68, (mx1 - mx0) * 0.17, max(0.6, mh * 0.25), ZUNGE)  # Zunge links, Zahn rechts frei
     # Mark 15.11.: Zahn weiter zur Mitte/anderen Seite und tiefer im Mund,
     # wächst aus dem Unterkiefer (Zahnfleisch drüber), nicht aufgeklebt.
-    zh = lerp(1.8, 4.4, t) * (0.7 if platt else 1)
+    zh = min(lerp(1.8, 4.4, t), mh * 0.6) * (0.7 if platt else 1)  # Mark: bei kleinen Stufen ragte er bis an die Oberlippe
     zx = mx0 + (mx1 - mx0) * 0.62
     zb = lerp(0.9, 1.7, t)
     fuss = my + mh * 0.97 - 0.5  # sitzt auf der Kieferkante
