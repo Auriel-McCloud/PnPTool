@@ -25,8 +25,8 @@ MONGO_PAL = {
                      F=(238, 86, 148), F2=(255, 204, 84), G=(236, 150, 90), S=(82, 42, 110)),
 }
 TUMMY_PAL = {
-    "A Rosa": dict(D=(196, 88, 110), M=(240, 140, 152), L=(255, 196, 196), S=(214, 108, 128), R=(255, 110, 130)),
-    "B Pfirsich": dict(D=(206, 108, 70), M=(246, 162, 112), L=(255, 212, 172), S=(226, 132, 92), R=(250, 100, 90)),
+    "A Fleisch": dict(D=(146, 58, 44), M=(208, 108, 78), L=(240, 164, 126), S=(170, 74, 56), R=(230, 96, 80)),
+    "B Rosa": dict(D=(196, 88, 110), M=(240, 140, 152), L=(255, 196, 196), S=(214, 108, 128), R=(255, 110, 130)),
     "C Lila": dict(D=(126, 78, 158), M=(176, 126, 204), L=(218, 184, 238), S=(150, 96, 184), R=(240, 120, 190)),
 }
 
@@ -293,6 +293,9 @@ def mongo(stufe, p, pose="stehen"):
 
 # ── Tummy-Acher ───────────────────────────────────────────────────────────
 def tummy(stufe, p, pose="stehen"):
+    """Mark 15.11. (Buchcover): seltsamer Fleischklops mit Dellen, Glubschaugen
+    (ungleich groß, stehen über den Umriss), breites Grinsen mit EINEM Zahn,
+    keine Arme, zwei Stummelbeine. Süß bleibt er trotzdem."""
     t = (stufe - 1) / 5
     D, M, L, S, R = (c(p, k) for k in "D M L S R".split())
     img = Image.new("RGBA", (110, 90), (0, 0, 0, 0))
@@ -301,76 +304,83 @@ def tummy(stufe, p, pose="stehen"):
     r = lerp(7, 21, t)
     bl = lerp(3, 6, t)
     platt = pose == "platt"
-    rx, ry = (r * 1.55, r * 0.55) if platt else (r * 1.05, r)
+    rx, ry = (r * 1.5, r * 0.58) if platt else (r * 1.05, r * 0.95)
     if platt:
         bl = 0.5
     cx, cy = ox, oy - bl - ry * 0.95
 
-    # Beinchen (hinten zuerst)
-    for vorne, dx in ((False, -r * 0.35), (True, r * 0.2)):
+    # Stummelbeine (hinten zuerst)
+    for vorne, dx in ((False, -r * 0.4), (True, r * 0.15)):
         fx = cx + dx
         farbe = D if vorne else S
-        bb = lerp(1.6, 3.2, t)
+        bb = lerp(1.6, 3.4, t)
         if not platt:
-            d.rectangle([round(fx - bb), round(cy + ry * 0.7), round(fx + bb), round(oy - 1)], fill=farbe)
+            d.rectangle([round(fx - bb), round(cy + ry * 0.6), round(fx + bb), round(oy - 1)], fill=farbe)
         ell(d, fx + bb * 0.6, oy - 1.2, bb + 1.4, 1.4, farbe)
-    # Arm hinten
-    if not platt:
-        ell(d, cx - rx * 0.92, cy + ry * 0.05, lerp(1.6, 3.2, t), lerp(2.2, 4.4, t), S)
 
-    ell(d, cx, cy + 0.6, rx, ry, D)
-    ell(d, cx - 0.6, cy - 0.8, rx - 1.1, ry - 1.3, M)
-    ell(d, cx + rx * 0.1, cy + ry * 0.35, rx * 0.62, ry * 0.5, L)  # Bauch
+    # Klumpiger Körper: Grundellipse plus feste Beulen
+    beulen = [(-2.5, 0.78, 0.42), (-1.75, 0.82, 0.4), (-1.0, 0.8, 0.36), (-0.25, 0.74, 0.38),
+              (0.7, 0.7, 0.4), (2.35, 0.74, 0.4), (3.0, 0.6, 0.44), (1.6, 0.62, 0.42)]
+    formen = [(cx, cy, rx * 0.9, ry * 0.9)]
+    for a, dist, gr in beulen:
+        formen.append((cx + math.cos(a) * rx * dist * 0.62, cy + math.sin(a) * ry * dist * 0.62,
+                       r * gr * (1.35 if platt else 1), r * gr * (0.75 if platt else 1)))
+    for x, y, a, b in formen:
+        ell(d, x, y + 0.6, a, b, D)
+    for x, y, a, b in formen:
+        ell(d, x - 0.5, y - 0.7, max(0.0, a - 1), max(0.0, b - 1), M)
+    # Schatten unten, Glanz oben links
+    ell(d, cx + rx * 0.05, cy + ry * 0.7, rx * 0.6, ry * 0.15, S)
+    ell(d, cx - rx * 0.42, cy - ry * 0.48, max(1.2, rx * 0.2), max(1.0, ry * 0.13), L)
+    d.point((round(cx - rx * 0.46), round(cy - ry * 0.52)), fill=W)
+    # Dellen: dunkle Mulde, heller Rand unten
     rnd = random.Random(11)
-    for _ in range(int(lerp(3, 9, t))):  # Flecken
-        a = rnd.uniform(-math.pi, -0.2)
-        rr = rnd.uniform(0.35, 0.8)
-        fr = rnd.choice((0.8, 1.2, 1.8)) * lerp(0.8, 1.4, t)
-        ell(d, cx - rx * 0.15 + math.cos(a) * rr * rx * 0.85, cy + math.sin(a) * rr * ry * 0.85, fr, fr * 0.8, S)
-    ell(d, cx - rx * 0.45, cy - ry * 0.5, max(1.2, rx * 0.16), max(1, ry * 0.12), L)  # Glanz
-    d.point((round(cx - rx * 0.45), round(cy - ry * 0.55)), fill=W)
+    for _ in range(int(lerp(3, 10, t))):
+        a = rnd.uniform(-math.pi * 0.98, -0.1) if rnd.random() < 0.75 else rnd.uniform(2.2, 3.1)
+        rr = rnd.uniform(0.3, 0.78)
+        x, y = cx - rx * 0.2 + math.cos(a) * rr * rx * 0.8, cy + math.sin(a) * rr * ry * 0.8
+        g = rnd.choice((0.9, 1.3, 1.8)) * lerp(0.75, 1.35, t)
+        ell(d, x + 0.4, y + 0.6, g + 0.3, g * 0.75, L)
+        ell(d, x, y, g, g * 0.7, S)
+    # Sprenkel
+    for _ in range(int(lerp(4, 14, t))):
+        a = rnd.uniform(-math.pi, math.pi)
+        rr = math.sqrt(rnd.uniform(0, 0.75))
+        d.point((round(cx + math.cos(a) * rr * rx), round(cy + math.sin(a) * rr * ry)), fill=D)
 
-    # Haarbüschel wächst
-    for k in range(1 + int(t * 3)):
-        hx = cx - rx * 0.1 + k * 1.8
-        hy = cy - ry + 1
-        d.line([(hx, hy), (hx - 1 + k, hy - lerp(2, 5, t) + k * 0.5)], fill=D, width=1)
-
-    # Gesicht
-    ea = lerp(2.2, 3.6, t)
-    gx, gy = cx + rx * 0.36, cy - ry * 0.28
+    # Glubschaugen: ungleich groß, stehen über den Umriss
+    weiss = (246, 236, 230, 255)
+    iris = (84, 156, 214, 255)
+    ader = (226, 150, 150, 255)
+    ea = lerp(3.0, 6.2, t)
+    augen = [(cx + rx * 0.08, cy - ry * 0.52, ea), (cx + rx * 0.78, cy - ry * 0.3, ea * 0.82)]
     if platt:
-        for ax in (gx - ea * 1.4, gx + ea * 0.9):
-            d.line([(ax - 1.2, gy - 1.2), (ax + 1.2, gy + 1.2)], fill=K)
-            d.line([(ax - 1.2, gy + 1.2), (ax + 1.2, gy - 1.2)], fill=K)
-    else:
-        for ax in (gx - ea * 1.3, gx + ea * 1.0):
-            ell(d, ax, gy, ea * 0.75, ea, W)
-            ell(d, ax + ea * 0.2, gy + ea * 0.15, ea * 0.45, ea * 0.6, PUP)
-            d.point((round(ax), round(gy - ea * 0.4)), fill=W)
-            d.point((round(ax + ea * 0.35), round(gy + ea * 0.35)), fill=W)
-    ell(d, gx - ea * 2.5, gy + ea * 1.4, ea * 0.6, ea * 0.35, R)  # Bäckchen
-    ell(d, gx + ea * 2.0, gy + ea * 1.4, ea * 0.5, ea * 0.35, R)
-    mx, my = gx - ea * 0.2, gy + ea * 1.9
-    mb = lerp(4, 10, t)
-    if pose == "maul":
-        ell(d, mx, my + mb * 0.45, mb * 0.85, mb * 0.75, MUND)
-        ell(d, mx + mb * 0.1, my + mb * 0.85, mb * 0.45, mb * 0.28, ZUNGE)
-        for k in range(-2, 3):
-            d.point((round(mx + k * mb * 0.28), round(my - mb * 0.2)), fill=W)
-    elif platt:
-        d.arc([round(mx - mb * 0.4), round(my - 1), round(mx + mb * 0.4), round(my + 2)], 0, 180, fill=K)
-        d.point((round(mx + mb * 0.45), round(my + 3)), fill=ZUNGE)
-    else:
-        d.arc([round(mx - mb * 0.5), round(my - mb * 0.35), round(mx + mb * 0.5), round(my + mb * 0.35)], 10, 170, fill=K)
-        d.point((round(mx + mb * 0.15), round(my + mb * 0.35)), fill=W)  # Zähnchen
-        if t > 0.5:
-            ell(d, mx + mb * 0.3, my + mb * 0.38, 1, 0.8, ZUNGE)
-    # Arm vorne
-    if not platt:
-        ax_ = cx - rx * 0.62
-        ell(d, ax_, cy + ry * 0.38, lerp(1.6, 3.2, t), lerp(2.2, 4.4, t), D)
-        ell(d, ax_ - 0.4, cy + ry * 0.33, lerp(1.1, 2.4, t), lerp(1.6, 3.6, t), M)
+        augen = [(cx + rx * 0.05, cy - ry * 0.95, ea), (cx + rx * 0.6, cy - ry * 0.85, ea * 0.82)]
+    for k, (ax, ay, e) in enumerate(augen):
+        ell(d, ax, ay + 0.5, e + 1, e + 0.8, D)  # Lid-Wulst
+        ell(d, ax, ay, e, e, weiss)
+        if e > 4:
+            d.line([(ax - e * 0.8, ay + e * 0.1), (ax - e * 0.45, ay + e * 0.2)], fill=ader)
+        if platt:
+            ix, iy = ax + (0.6 if k else -0.6), ay + 0.3  # schielt nach dem Plumps
+        else:
+            ix, iy = ax + e * 0.22, ay + e * 0.05
+        ell(d, ix, iy, e * 0.56, e * 0.56, iris)
+        ell(d, ix, iy, e * 0.27, e * 0.27, PUP)
+        d.point((round(ix - e * 0.25), round(iy - e * 0.3)), fill=W)
+
+    # Breites Grinsen mit EINEM Zahn (unten, steht hoch)
+    mx0, mx1 = cx - rx * 0.12, cx + rx * 0.9
+    my = cy + ry * (0.05 if platt else 0.12)
+    mh = lerp(2.2, 6.0, t) * (1.9 if pose == "maul" else (0.45 if platt else 1))
+    d.pieslice([round(mx0), round(my - mh), round(mx1), round(my + mh)], 0, 180, fill=MUND)
+    d.line([(mx0, my), (mx1, my)], fill=K)
+    if pose == "maul" or (not platt and t > 0.3):
+        ell(d, (mx0 + mx1) / 2 + rx * 0.1, my + mh * 0.68, (mx1 - mx0) * 0.2, max(0.6, mh * 0.25), ZUNGE)
+    zh = lerp(1.6, 4.2, t) * (0.7 if platt else 1)
+    zx = mx0 + (mx1 - mx0) * 0.3
+    zb = lerp(1.0, 2.0, t)
+    d.polygon([(zx - zb, my + mh * 0.75), (zx + zb, my + mh * 0.75), (zx + zb * 0.4, my + mh * 0.75 - zh)], fill=W)
     return outline(img)
 
 
