@@ -303,9 +303,21 @@ export function GegenstandKachel({
           .join(" · ")}
         kennung={`gegenstand:${item.id}`}
         kopfExtra={
-          <button type="button" className="gg-lesen-knopf" onClick={() => setLesen(true)}>
-            Beschreibung
-          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+            {/* KI-Begleiter am Gegenstand (Mark, 15.11.2026): der Besitzer
+                schaltet ihr Desktop-Pet an und aus — links neben Beschreibung. */}
+            {item.kiPersonId && campaignId && onUmlegen && (
+              <KiSchalter
+                campaignId={campaignId}
+                itemId={item.id}
+                aktiv={Boolean(item.kiAktiv)}
+                onGeaendert={() => onGeoeffnet?.()}
+              />
+            )}
+            <button type="button" className="gg-lesen-knopf" onClick={() => setLesen(true)}>
+              Beschreibung
+            </button>
+          </div>
         }
         onSchliessen={() => setOffen(false)}
       >
@@ -315,16 +327,6 @@ export function GegenstandKachel({
             campaignId={campaignId}
             istSpielleitung={istSpielleitung}
             onErledigt={() => onGeoeffnet?.()}
-          />
-        )}
-        {/* KI-Begleiter am Gegenstand (Mark, 15.11.2026): der Besitzer
-            schaltet ihr Desktop-Pet an und aus — oben, wie beim Credstick. */}
-        {item.kiPersonId && campaignId && onUmlegen && (
-          <KiSchalter
-            campaignId={campaignId}
-            itemId={item.id}
-            aktiv={Boolean(item.kiAktiv)}
-            onGeaendert={() => onGeoeffnet?.()}
           />
         )}
         {item.bildUrl && (
@@ -501,7 +503,8 @@ export function GegenstandKachel({
         )}
         {onUmlegen && !(istChrom && item.verbaut) && (
         <section className="gg-ablage-wahl">
-          <h3>Wo ist es?</h3>
+          {/* Überschrift „Wo ist es?“ entfernt (Mark, 15.11.2026): sagt nicht,
+              dass man hier verschiebt — die großen Knöpfe sprechen für sich. */}
           {item.ablage === "GELAGERT" && item.ablageZielName && (
             <p className="gg-ablage-ort">
               Liegt in <strong>{item.ablageZielName}</strong>.

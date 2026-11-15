@@ -38,18 +38,18 @@ export function KiSchalter({
     }
   }
 
-  // Oben im Fenster wie die Credstick-Aktionen, nicht in der leisen
-  // Fußzeile — Mark hat den Knopf dort unten nicht gefunden (15.11.2026).
+  // Im Fensterkopf links neben „Beschreibung“, gleiche Optik, ohne
+  // Überschrift und Statuszeile (Mark, 15.11.2026: „fügt sich besser ins
+  // Bild“). Ein Fehler steht kurz im Knopf und als Tooltip.
   return (
-    <section className="gg-ablage-wahl">
-      <h3>KI-Begleiter</h3>
-      <p className="gg-ablage-ort">
-        {aktiv ? "Die KI ist wach und schwebt über die Tablets." : "Die KI schläft — kein Pet auf den Tablets."}
-      </p>
-      <button type="button" className="gg-hineinsehen" disabled={laeuft} onClick={umschalten}>
-        {laeuft ? "…" : aktiv ? "KI deaktivieren" : "KI aktivieren"}
-      </button>
-      {fehler && <p className="gg-ablage-ort">{fehler}</p>}
-    </section>
+    <button
+      type="button"
+      className="gg-lesen-knopf"
+      disabled={laeuft}
+      onClick={umschalten}
+      title={fehler ?? undefined}
+    >
+      {laeuft ? "…" : fehler ? "Ging nicht" : aktiv ? "KI deaktivieren" : "KI aktivieren"}
+    </button>
   );
 }
