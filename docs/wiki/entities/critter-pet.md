@@ -431,6 +431,7 @@ Mark: „Und dann wollte ich noch, dass ein Spieler eine KI als Begleiter hat, i
 - **Wann sie fliegt:** wie Bärbel — beim Besitzer des Gegenstands und seiner Party, nicht weggeworfen, nicht in einer verschlossenen Kiste, und nur wenn wach. Neu gekoppelt ist sie wach; eine KI ohne Pet-Art wird beim Koppeln zur KI-Pet-Art (Funke).
 - **Annahmen Neko:** Ausrüsten nicht nötig (wie Bärbel); Startzustand wach; die KI am Critter (13.11.) bleibt daneben möglich.
 - Im Kampf ist sie wie jeder Begleiter freisetzbar (siehe [[concepts/kampf-und-initiative]]), unabhängig vom Schalter.
+- **Bestands-NPCs als KI (15.11.):** Mark hatte KIs als normale NPCs angelegt. Es gibt (noch) keinen KI-Schalter im NPC-Detail; auf seinen Wunsch wurde nur **Babybell** live per Einmal-Update auf `istKI = true` gestellt (Babel bewusst nicht). Weitere NPCs gleich so umstellen oder ein Häkchen bauen, wenn er es braucht.
 
 ### Entwurf 13.11.2026 (Auswahl getroffen: A und B)
 
