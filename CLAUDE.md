@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Treffer eintragen: Elementar nicht mehr wählbar (15.11.2026)
+
+Mark: Elementar ergibt beim Eintragen keinen Sinn — dann ist schon klar, wie effektiv die Attacke war, also direkt Schlag/Tödlich/Schwerheilbar wählen. `RuestungsTreffer.tsx` bietet nur noch die drei echten Arten, Effektivitäts-Nachfrage entfernt. Waffen-/Ki-Tama-Schadensart "Elementar" bleibt unverändert (ersetzt Punkt 2 im Eintrag vom 30.10.2026, was die Treffer-Eingabe angeht).
+
 ## Begleiter im Kampf freisetzen, KI am Gegenstand (15.11.2026)
 
 Mark: „Kann ein Spieler eigentlich seine Begleiter in einem Kampf freisetzen? … dieselbe Leiste wie die Beschwörungen … Freisetzen anstelle von Beschwören“ und „eine KI als Begleiter … an einen Gegenstand koppeln … aktivieren/deaktivieren-Button … nur um das Desktop-Pet“. Entschieden per Rückfrage: keine Probe, keine Runden, Zurückrufen erlaubt, für Critter, KI und Sprite/Geist; die KI bleibt eine eigene KI-Person (Blatt, wächst mit ihren EP), die SL koppelt sie am Gegenstand.
@@ -996,6 +1000,7 @@ Spieltisch getestet.**
      auf vier Werte erweitert, dieselbe Erweiterung in `items/api.ts`).
      Löst sich NICHT selbst auf — `kampf/ruestung.py` kennt weiterhin nur die
      drei physischen Arten (schlag/schwer/aggraviert). Stattdessen fragt
+     [ÜBERHOLT 15.11.2026: Elementar ist in der Treffer-Eingabe nicht mehr wählbar]
      `RuestungsTreffer.tsx` beim Eintragen eines Treffers mit Art "Elementar"
      zusätzlich nach der **Effektivität gegen das Ziel** (Mark: "meist
      Tödlicher Schaden, außer er ist sehr effektiv, dann Schwerheilbar, oder
