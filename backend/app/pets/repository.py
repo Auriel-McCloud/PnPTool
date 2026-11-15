@@ -46,7 +46,8 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         MATCH (c:Person {campaignId: $campaign_id, istCritter: true})-[:BEGLEITET]->(b:Person {personType: 'PC'})
         WHERE c.petArt IS NOT NULL AND c.petArt <> ''
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
-        RETURN c.id AS id, coalesce(c.alias, c.name) AS name, c.petArt AS art,
+        // Leerer Alias ('') ist kein Name — sonst hieß das Pet „“.
+        RETURN c.id AS id, CASE WHEN coalesce(c.alias, '') <> '' THEN c.alias ELSE c.name END AS name, c.petArt AS art,
                b.id AS besitzerId, b.name AS besitzerName,
                collect(DISTINCT m.id) AS mitglieder,
                c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
@@ -87,7 +88,7 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         WITH c, b ORDER BY b.id
         WITH c, head(collect(b)) AS b
         OPTIONAL MATCH (b)-[:MITGLIED_VON]->(:Party)<-[:MITGLIED_VON]-(m:Person {personType: 'PC'})
-        RETURN c.id AS id, coalesce(c.alias, c.name) AS name, 'ki' AS art,
+        RETURN c.id AS id, CASE WHEN coalesce(c.alias, '') <> '' THEN c.alias ELSE c.name END AS name, 'ki' AS art,
                b.id AS besitzerId, b.name AS besitzerName,
                collect(DISTINCT m.id) AS mitglieder,
                c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
@@ -490,7 +491,7 @@ async def ki_kopplung_lesen(campaign_id: str, item_id: str) -> dict | None:
         MATCH (g:Gegenstand {id: $item_id, campaignId: $campaign_id})
         OPTIONAL MATCH (k:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
         RETURN g.id AS id, coalesce(g.kiPersonId, '') AS kiPersonId, coalesce(g.kiAktiv, false) AS kiAktiv,
-               coalesce(k.alias, k.name, '') AS kiName
+               coalesce(CASE WHEN coalesce(k.alias, '') <> '' THEN k.alias ELSE k.name END, '') AS kiName
     """
     async with get_driver().session() as session:
         result = await session.run(query, campaign_id=campaign_id, item_id=item_id)

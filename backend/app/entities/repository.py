@@ -827,14 +827,14 @@ async def freisetzbare_begleiter(campaign_id: str, person_id: str) -> list[dict]
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})
         MATCH (n:Person {campaignId: $campaign_id})-[:BEGLEITET]->(p)
         WHERE n.istCritter = true OR n.istKI = true
-        RETURN n.id AS id, coalesce(n.alias, n.name) AS name, n.bildUrl AS bildUrl,
+        RETURN n.id AS id, CASE WHEN coalesce(n.alias, '') <> '' THEN n.alias ELSE n.name END AS name, n.bildUrl AS bildUrl,
                CASE WHEN n.istKI = true THEN 'ki' ELSE 'critter' END AS art
         """,
         """
         MATCH (p:Person {id: $person_id, campaignId: $campaign_id})-[:BESITZT]->(g:Gegenstand {campaignId: $campaign_id})
         WHERE coalesce(g.kiPersonId, '') <> '' AND NOT coalesce(g.weggeworfen, false)
         MATCH (n:Person {id: g.kiPersonId, campaignId: $campaign_id, istKI: true})
-        RETURN n.id AS id, coalesce(n.alias, n.name) AS name, n.bildUrl AS bildUrl, 'ki' AS art
+        RETURN n.id AS id, CASE WHEN coalesce(n.alias, '') <> '' THEN n.alias ELSE n.name END AS name, n.bildUrl AS bildUrl, 'ki' AS art
         """,
         """
         MATCH (b:Begleiter {campaignId: $campaign_id})-[:BEGLEITET]->(:Person {id: $person_id, campaignId: $campaign_id})
