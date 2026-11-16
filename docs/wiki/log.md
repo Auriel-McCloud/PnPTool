@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-16] gebaut | Tummy-Acher frisst Punkte
+
+Frisst gefüllte Punkte von Fertigkeiten/Attributen (nur Optik), Streicheln spuckt sie zurück. Siehe [[entities/critter-pet]].
+
 ## [2026-11-15] gebaut | Mongo, Tummy-Acher, KI-Futter
 
 Mongo und Tummy-Acher in je drei Farben als Pets mit Ei + 6 Schritten, Grundverhalten wie der Drache. Futter lässt wachsen (EP je Futter, Standard 1). KI-Futter als schwebendes Datenpaket, das die KI einsaugt. Sonderfähigkeiten folgen. Siehe [[entities/critter-pet]].

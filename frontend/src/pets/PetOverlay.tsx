@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { atemVon, istDrache, istTier, tierFamilie, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
+import { anzahlImBauch, ausspucken, istPunkt, punktFressen, punktGreifen, punktLoslassen, PUNKTE_MAX, sichtbarePunkte } from "./punkte";
 import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type PerleModus, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
@@ -1675,6 +1676,10 @@ function PetFigur({
       else if (n.typ === "gelesen") {
         onGelesenRef.current(pet.id);
         senden({ typ: "gelesen", petId: pet.id });
+      } else if (n.typ === "fressen" && istPunkt(n.id)) {
+        // Tummy-Acher hat einen Punkt verschluckt (nur Optik, punkte.ts).
+        punktFressen(pet.id, n.id);
+        if (gehalten.current === n.id) gehalten.current = null;
       } else if (n.typ === "fressen") {
         // Bleibt im Maul/Buch stehen, bis die Spur abgeräumt ist.
         const zuletzt = gegriffen.get(n.id);
@@ -1731,12 +1736,15 @@ function PetFigur({
 
     let letzte = performance.now();
     let rahmen = 0;
+    // Tummy-Acher frisst Punkte (Mark, 16.11.2026) — bis der Bauch voll ist.
+    const frisstPunkte = tierFamilie(pet.art) === "tummy";
+    const punkte = () => (anzahlImBauch(pet.id) < PUNKTE_MAX ? sichtbarePunkte() : []);
     const tick = (jetzt: number) => {
       const dt = Math.min(0.1, (jetzt - letzte) / 1000);
       letzte = jetzt;
       if (lesungRef.current && b.lies && !b.liestGerade?.()) b.lies(jetzt);
       if (heimRef.current && b.heim) b.heim(jetzt);
-      b.setzeUmgebung(umgebung(m()));
+      b.setzeUmgebung(frisstPunkte ? { ...umgebung(m()), punkte } : umgebung(m()));
       b.tick(jetzt, dt);
       const d = b.darstellung(jetzt);
 
@@ -1858,11 +1866,16 @@ function PetFigur({
       }
       // Im Maul (fressen/aufheben) oder in der Mitte des Schlafkringels (Perle).
       const halt = d.greift ?? (d.nest ? { ...d.nest, skala: 1 } : null);
-      if (halt) {
+      if (halt && istPunkt(halt.id)) {
+        punktGreifen(halt.id, halt.x, halt.y, halt.skala);
+        gehalten.current = halt.id;
+      } else if (halt) {
         gegriffen.set(halt.id, { x: halt.x, y: halt.y, skala: halt.skala });
         gehalten.current = halt.id;
       } else if (gehalten.current) {
-        gegriffen.delete(gehalten.current);
+        // Gepackt, bevor er schlucken konnte: der Punkt springt zurück.
+        if (istPunkt(gehalten.current)) punktLoslassen(gehalten.current);
+        else gegriffen.delete(gehalten.current);
         gehalten.current = null;
       }
       const ef = effekt.current;
@@ -1988,7 +2001,8 @@ function PetFigur({
     rahmen = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(rahmen);
-      if (gehalten.current) gegriffen.delete(gehalten.current);
+      if (gehalten.current && istPunkt(gehalten.current)) punktLoslassen(gehalten.current);
+      else if (gehalten.current) gegriffen.delete(gehalten.current);
       steuerungen.delete(pet.id);
       vergiss(pet.id);
       b.aufraeumen();
@@ -2058,6 +2072,9 @@ function PetFigur({
     // Zutraulichkeit (12.11.2026): der Server zählt höchstens +1 alle 5 Minuten.
     senden({ typ: "streicheln", petId: pet.id });
     const d = b.darstellung(jetzt);
+    // Tummy-Acher: Streicheln lässt ihn rülpsen — die gefressenen Punkte
+    // fliegen aus dem Maul an ihren Platz zurück (Mark, 16.11.2026).
+    if (tierFamilie(pet.art) === "tummy") ausspucken(pet.id, d.kopfX, d.kopfY + 10);
     const id = Date.now();
     setHerzen((alt) => [...alt, { id, x: d.kopfX - 20, y: d.kopfY }, { id: id + 1, x: d.kopfX + 4, y: d.kopfY }]);
     window.setTimeout(() => setHerzen((alt) => alt.filter((h) => h.id !== id && h.id !== id + 1)), 1300);

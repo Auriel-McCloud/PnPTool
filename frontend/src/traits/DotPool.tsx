@@ -78,6 +78,8 @@ export function DotPool({
         return (
           <span
             key={n}
+            // Für den Tummy-Acher (pets/punkte.ts): nur gefüllte Punkte schmecken.
+            data-punkt={gefuellt ? "voll" : "leer"}
             onClick={() => handleClick(n)}
             role={anklickbar ? "button" : undefined}
             title={

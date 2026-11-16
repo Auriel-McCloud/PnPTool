@@ -116,6 +116,9 @@ export interface Umgebung {
   spuren?: () => SpurAufSchirm[];
   /** Andere Pets auf diesem Bildschirm (Mitte in Pixeln). */
   nachbarn?: () => NachbarBox[];
+  /** Punkte der Fertigkeiten/Attribute, die er fressen mag (nur der Tummy-Acher,
+   *  Mark 16.11.2026; leer, wenn der Bauch voll ist). `unten` = Oberkante der Reihe. */
+  punkte?: () => SpurAufSchirm[];
   zufall: () => number;
 }
 
@@ -865,9 +868,41 @@ export class PetBewegung {
     const { bh } = this.masse();
     // Futternapf (12.11.2026) wird wie eine Seite gefressen — nur leer gefressen
     // statt verschluckt; das Tablet meldet dann „wegmachen“ mit dem Pet dazu.
-    return (this.u.spuren?.() ?? []).filter(
+    const spuren = (this.u.spuren?.() ?? []).filter(
       (s) => (s.art === "seite" || s.art === "napf") && Math.abs(s.unten - this.fussY) < Math.max(14, bh * 0.15),
     );
+    // Punkte nur, wenn er genau auf ihrer Reihe steht.
+    if (this.u.punkte && this.ort.art === "flaeche") spuren.push(...this.u.punkte().filter((p) => Math.abs(p.unten - this.fussY) < 5));
+    return spuren;
+  }
+
+  /** Punktereihe in Sprungweite, auf der noch etwas Leckeres liegt. */
+  private punkteReihe(): Flaeche | null {
+    const punkte = this.u.punkte?.() ?? [];
+    if (!punkte.length) return null;
+    const { bw } = this.masse();
+    const mitte = this.x + bw / 2;
+    const aufBoden = this.ort.art === "boden";
+    const reihen = this.u.flaechen().filter(
+      (f) =>
+        this.fussY - f.r.top <= SPRUNG_MAX_PX &&
+        Math.abs(f.r.top - this.fussY) > 3 &&
+        (aufBoden || Math.abs((f.r.left + f.r.right) / 2 - mitte) < SPRUNG_WEIT_PX) &&
+        punkte.some((p) => Math.abs(p.unten - f.r.top) < 5 && p.x >= f.r.left && p.x <= f.r.right),
+    );
+    return reihen.length ? reihen[Math.floor(this.u.zufall() * reihen.length)] : null;
+  }
+
+  /** Hinlaufen und den Punkt unter sich wegmampfen (auch wenn er nicht genau vorm Maul liegt). */
+  private zumPunkt(p: SpurAufSchirm) {
+    const { bw } = this.masse();
+    this.laufeZu(this.klemmeX(p.x - bw / 2), (j) => {
+      const noch = this.seitenAufEbene().find((s) => s.id === p.id);
+      if (!noch) return;
+      this.richtung = noch.x >= this.x + bw / 2 ? 1 : -1;
+      this.beute = { id: noch.id, x: noch.x, y: noch.y, t0: j, gemeldet: false, weiter: null };
+      this.zustand = "fressen";
+    });
   }
 
   /** Steht unten ein Futternapf? Den riecht er über den ganzen Schirm. */
@@ -1365,7 +1400,25 @@ export class PetBewegung {
     // Liegt eine Seite auf seiner Ebene? Dann oft hin und fressen.
     if (jetzt < this.besuchEnde && u.zufall() < 0.6) {
       const s = this.seiteAufMeinerEbene();
+      if (s?.art === "punkt") return this.zumPunkt(s);
       if (s) return this.laufeZu(this.klemmeX(s.x - bw / 2));
+    }
+
+    // Tummy-Acher (Mark, 16.11.2026): hüpft gern auf Punktereihen und frisst die Punkte.
+    if (u.punkte && this.kann.has("springen") && jetzt < this.besuchEnde && u.zufall() < 0.4) {
+      const reihe = this.punkteReihe();
+      if (reihe) {
+        const zm = (reihe.r.left + reihe.r.right) / 2;
+        if (this.ort.art === "flaeche" || Math.abs(zm - mitte) < 220) {
+          this.springe(this.landeX(reihe.r), reihe.r.top, { art: "flaeche", q: reihe.q }, jetzt);
+        } else {
+          this.laufeZu(this.klemmeX(zm - bw / 2 - Math.sign(zm - mitte) * 120), (j) => {
+            const r = reihe.q.rechteck();
+            if (r) this.springe(this.landeX(r), r.top, { art: "flaeche", q: reihe.q }, j);
+          });
+        }
+        return;
+      }
     }
 
     // Ab und zu Feuer niesen (Mark, 11.11.) — überall, wo er steht.

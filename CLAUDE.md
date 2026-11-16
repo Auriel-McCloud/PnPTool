@@ -2,6 +2,14 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Tummy-Acher frisst Punkte (16.11.2026)
+
+Mark: „er könnte ja auch die Punkte der Fertigkeiten und Attribute der Spieler fressen … vielleicht wenn man ihn streichelt?“ — entschieden: **nur Optik**, zurück **durch Streicheln**.
+
+- `pets/punkte.ts` (kein Server): `sichtbarePunkte()` liest gefüllte DotPool-Punkte (`data-punkt="voll"` in `traits/DotPool.tsx`), `punktGreifen` verschiebt den echten Punkt per `transform` ins Maul, `punktFressen` setzt `.pet-punkt-weg` (opacity 0 `!important`, Wert bleibt, bleibt anklickbar), `ausspucken` lässt alle per WAAPI im Bogen an ihren Platz fliegen. Bauch höchstens `PUNKTE_MAX` = 12 (Annahme), merkt sich pro Pet-id auch über Besuche hinweg; Neuladen bringt sie ohnehin zurück.
+- `bewegung.ts`: `Umgebung.punkte` (nur Tummy, gesetzt in `PetOverlay`-Tick), Punkte zählen in `seitenAufEbene` nur auf der eigenen Reihe; `punkteReihe()` + Sprung dorthin (40 % je Entscheidung, ab „springen“), `zumPunkt()` frisst auch den Punkt unter sich. Streicheln (`PetOverlay.streicheln`) ruft `ausspucken`.
+- Browser-Harness: Tummy s4 frisst 4 Punkte von „Stärke“, Klick spuckt sie zurück.
+
 ## Pets Mongo und Tummy-Acher, KI-Futter, Futter lässt wachsen (15.11.2026)
 
 Mark: zwei Pets aus Dungeon Crawler Carl — Mongo (Mongoliensis, Küken → gefiederter Raptor) und der Tummy-Acher (Fleischklops mit einem Zahn), je „Ei + 6 Schritte“, wachsen über EP und Futter; dazu „Spezialfutter für das KI-Pet“. Figuren nach mehreren Entwurfsrunden abgenommen. Diese Stufe ist die Grundausstattung; die Sonderfähigkeiten (siehe Wiki) kommen danach.

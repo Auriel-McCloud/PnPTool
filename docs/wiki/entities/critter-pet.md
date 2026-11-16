@@ -457,6 +457,13 @@ Marks Wahl: A und B, Wechsel zwischen beiden, dazu Farben und Gestalten. C nicht
 - **KI-Futter:** im Bearbeiten-Formular beim Häkchen „Futter“ die Auswahl „für Tiere (Napf) / für KI (Datenpaket)“. Das Datenpaket schwebt leuchtend auf dem Bildschirm, die KI fliegt hin und saugt es ein; heilt, macht zutraulich, lässt wachsen wie der Napf. Tiere fressen kein Datenpaket, die KI keinen Napf.
 - **Noch nicht gebaut** (entschieden, nächste Stufen): Mongo jagt/scheucht andere Pets, rennt schnell und springt weit, kreischt mit Bildschirmwackeln, faucht fremde Finger an, versteckt sich hinter Objekten, zieht Pets aus dem Bildschirm. Tummy-Acher frisst alle Spuren (auch die Perle), Näpfe anderer, knabbert Knöpfe/Wörter an, verschluckt Pets kurz, Gummiball beim Werfen, frisst Feuerbälle/Blitze, plumpst platt und ploppt rund, Mongo beißt rein und er rollt weg, leckt Ruß und Schleim vom Bildschirm.
 
+### Tummy-Acher frisst Punkte (16.11.2026, gebaut)
+
+Mark: „er könnte ja auch die Punkte der Fertigkeiten und Attribute der Spieler fressen, die Frage ist wie sie die wieder bekommen, vielleicht wenn man ihn streichelt?“ — entschieden: **nur Optik** (der Wert bleibt gleich), zurück **durch Streicheln**.
+
+- Ab Schritt 2 (springen) hüpft er gern auf Punktereihen im Charakterbogen und mampft gefüllte Punkte weg; sie fliegen ins Maul, an ihrer Stelle ist eine Lücke. Der Wert ändert sich nicht und lässt sich weiter anklicken.
+- Höchstens 12 Punkte im Bauch (Annahme Neko). Er behält sie auch, wenn er weiterzieht — erst Streicheln bringt sie zurück: er rülpst, die Punkte fliegen im Bogen an ihren Platz. Neu laden bringt sie ebenfalls zurück.
+
 ### Idee und Entwurf (15.11.2026)
 
 Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongoliensis, der klein wie ein seltsames Hühnchen und groß wie ein ausgewachsener gefiederter Raptor aussieht, und dann einen Tummy-Acher, eine runde tollpatschige Fleischkugel auf 2 Beinen, die alles frisst und fast unzerstörbar ist, und aus irgendeinem Grund sehr niedlich ist.“ Er will beide vor dem Android-Desktop-Pet bauen.
