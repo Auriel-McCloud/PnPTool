@@ -1,7 +1,7 @@
 ---
 title: Ereignisprotokoll (Sitzungs-Log)
 created: 2026-09-27
-updated: 2026-09-29
+updated: 2026-11-16
 type: entität
 tags: [ereignisprotokoll, datenmodell, ki-integration, inventar, wirtschaft, party, kampf, verhandlung, erfahrung, rassen, backend]
 sources: [../../../CLAUDE.md, ../../../backend/app/ereignisprotokoll/, ../../../docs/api/ereignisprotokoll.md]
@@ -471,6 +471,17 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Sitzung wählen/anlegen, Kategoriefilter, Suche. Zeitleiste-UNION liefert
   `kurz`. Burgermenü-Layouts am GM-Account, PC≠Tablet. Korrektur/Papierkorb
   in der UI später.
+- **16.11.2026** — Session starten/beenden. Mark: „einfach einen Session
+  aktiv und deaktiviert Button, wo ich die Nummer eintragen kann“. Vorher
+  galt die zuletzt angelegte Sitzung als aktiv, beenden ging nicht.
+  Jetzt: `Sitzung.nummer` und `Sitzung.beendetAm` ('' = läuft); aktiv ist
+  die jüngste nicht beendete, höchstens eine (Starten/Fortsetzen beendet die
+  laufende). `PUT /sitzungen/{id}/aktiv`. Statuszeile im Protokoll:
+  „Session N läuft“ + Beenden/Nächste Session, sonst Starten (Nummer
+  vorbelegt). Beendete Sitzung lässt sich fortsetzen. Ohne laufende Sitzung
+  bleiben Auto-Einträge unzugeordnet. **Annahmen:** Nummer wird mit
+  höchster+1 vorbelegt, Beenden ohne Bestätigung (umkehrbar), Spieler sehen
+  vom Start nichts (eine Ansage „Session 1 beginnt“ ist weiter offen).
 
 ## Siehe auch
 

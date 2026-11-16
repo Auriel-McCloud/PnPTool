@@ -364,7 +364,7 @@ export function NPCDetail({
       {zuPcOffen && (
         <Bestaetigung
           titel={`${person.name} zum PC machen?`}
-          text="Wird in-place zum PC — Inventar, Charakterbogen und Beziehungen bleiben vollständig erhalten. Händler-Status, Critter- und KI-Markierung gehen dabei verloren (ergeben an einem PC keinen Sinn). Kann jederzeit im PC-Detail wieder zu einem NPC gemacht werden."
+          text="Wird in-place zum PC — Inventar, Charakterbogen und Beziehungen bleiben vollständig erhalten. Händler-Status, Critter- und KI-Markierung ruhen als PC (ergeben dort keinen Sinn). Wird er im PC-Detail wieder zum NPC, bekommt er sie zurück."
           jaText={zuPcLaeuft ? "..." : "Zu PC machen"}
           onJa={zuPcMachen}
           onNein={() => setZuPcOffen(false)}

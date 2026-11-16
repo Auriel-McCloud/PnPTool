@@ -5,6 +5,7 @@ from app.ereignisprotokoll import repository
 from app.ereignisprotokoll.schemas import (
     KorrekturInput,
     LoeschenInput,
+    SitzungAktiv,
     SitzungCreate,
     SitzungResponse,
     SitzungUpdate,
@@ -30,7 +31,19 @@ async def sitzungen_liste(campaign_id: str, viewer: Viewer = Depends(get_viewer)
 
 @router.post("/sitzungen", response_model=SitzungResponse, dependencies=[Depends(require_campaign_gm)])
 async def sitzung_anlegen(campaign_id: str, body: SitzungCreate):
-    return await repository.erzeuge_sitzung(campaign_id, body.datum, body.ingameDatum, body.titel, body.notiz)
+    return await repository.erzeuge_sitzung(
+        campaign_id, body.datum, body.ingameDatum, body.titel, body.notiz, body.nummer
+    )
+
+
+@router.put("/sitzungen/{sitzung_id}/aktiv", response_model=SitzungResponse, dependencies=[Depends(require_campaign_gm)])
+async def sitzung_aktiv(campaign_id: str, sitzung_id: str, body: SitzungAktiv):
+    """Sitzung beenden oder wieder fortsetzen (16.11.2026). Beendet ist keine
+    aktiv; automatische Einträge bleiben dann ohne Sitzung."""
+    ergebnis = await repository.sitzung_aktiv_setzen(campaign_id, sitzung_id, body.aktiv)
+    if ergebnis is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Sitzung nicht gefunden")
+    return ergebnis
 
 
 @router.patch("/sitzungen/{sitzung_id}", response_model=SitzungResponse, dependencies=[Depends(require_campaign_gm)])

@@ -80,7 +80,9 @@ und löst eine bestehende `SPIELT`-Kante (der Spieler landet wieder im
 Ersteinstieg). NPC→PC verliert `istHaendler`/`istCritter`/`istKI`/
 `istPflanzenCritter` (ergeben an einem PC keinen Sinn; Händler-Sortiment
 bleibt dabei in der DB erhalten, nur das Flag kippt, falls er später
-erneut NPC wird). Beide loggen `CharakterEntwicklung` (`ZU_NPC_GEMACHT`/
+erneut NPC wird). Seit 16.11.2026 merkt sich NPC→PC die abgelegten Rollen
+in `npcRollenVorPc`, PC→NPC gibt sie zurück (Anlass: Babybell verlor beim
+Verklicken ihr KI-Kennzeichen und damit ihr Pet). Beide loggen `CharakterEntwicklung` (`ZU_NPC_GEMACHT`/
 `ZU_PC_GEMACHT`). UI: Knopf "⇄ Zu NPC machen" im PC-Detail, "⇄ Zu PC
 machen" im NPC-Detail, je mit Commlink-Bestätigungsdialog.
 

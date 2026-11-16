@@ -7,6 +7,16 @@ export interface Sitzung {
   titel: string;
   notiz: string;
   erstelltAm: string;
+  nummer: number | null;
+  /** Leer = läuft noch. */
+  beendetAm: string;
+  aktiv: boolean;
+}
+
+/** „Session 3“, sonst Titel oder Datum. */
+export function sitzungName(s: Sitzung): string {
+  if (s.nummer != null) return `Session ${s.nummer}`;
+  return s.titel || s.datum;
 }
 
 export interface ZeitleisteEintrag {
@@ -33,8 +43,12 @@ export const KATEGORIE_TITEL: Record<string, string> = {
 export const protokollApi = {
   sitzungen: (campaignId: string) =>
     api.get<Sitzung[]>(`/api/campaigns/${campaignId}/ereignisprotokoll/sitzungen`),
-  anlegen: (campaignId: string, body: { datum: string; titel?: string; ingameDatum?: string; notiz?: string }) =>
-    api.post<Sitzung>(`/api/campaigns/${campaignId}/ereignisprotokoll/sitzungen`, body),
+  anlegen: (
+    campaignId: string,
+    body: { datum: string; titel?: string; ingameDatum?: string; notiz?: string; nummer?: number | null },
+  ) => api.post<Sitzung>(`/api/campaigns/${campaignId}/ereignisprotokoll/sitzungen`, body),
+  aktivSetzen: (campaignId: string, sitzungId: string, aktiv: boolean) =>
+    api.put<Sitzung>(`/api/campaigns/${campaignId}/ereignisprotokoll/sitzungen/${sitzungId}/aktiv`, { aktiv }),
   zeitleiste: (campaignId: string, sitzungId?: string) => {
     const q = sitzungId ? `?sitzung_id=${encodeURIComponent(sitzungId)}` : "";
     return api.get<ZeitleisteEintrag[]>(`/api/campaigns/${campaignId}/ereignisprotokoll/zeitleiste${q}`);

@@ -42,65 +42,121 @@ def _jetzt() -> str:
 # ===========================================================================
 
 
+# Starten und Beenden (Mark, 16.11.2026: „einfach einen Session aktiv und
+# deaktiviert Button, wo ich die Nummer eintragen kann“). Aktiv ist die
+# jüngste Sitzung ohne `beendetAm`; Bestandssitzungen ohne das Feld laufen.
+# Höchstens eine läuft: Starten oder Fortsetzen beendet die laufende.
+_SITZUNG_FELDER = """s.id AS id, s.datum AS datum, s.ingameDatum AS ingameDatum,
+               s.titel AS titel, s.notiz AS notiz, s.erstelltAm AS erstelltAm,
+               s.nummer AS nummer, coalesce(s.beendetAm, '') AS beendetAm"""
+
+_ANDERE_BEENDEN = """
+        CALL () {
+            OPTIONAL MATCH (alt:Sitzung {campaignId: $campaign_id})
+            WHERE alt.id <> $sid AND coalesce(alt.beendetAm, '') = ''
+            SET alt.beendetAm = $jetzt
+            RETURN count(alt) AS beendet
+        }
+"""
+
+
 def _decode_sitzung(record: dict) -> dict:
     s = dict(record)
     s["ingameDatum"] = s.get("ingameDatum") or ""
     s["titel"] = s.get("titel") or ""
     s["notiz"] = s.get("notiz") or ""
     s["erstelltAm"] = s.get("erstelltAm") or ""
+    s["beendetAm"] = s.get("beendetAm") or ""
+    s["aktiv"] = False  # setzt `_aktiv_markieren`
     return s
 
 
-async def erzeuge_sitzung(campaign_id: str, datum: str, ingame_datum: str, titel: str, notiz: str) -> dict:
+async def _aktiv_markieren(campaign_id: str, sitzungen: list[dict]) -> list[dict]:
+    aktiv = await aktive_sitzung_id(campaign_id)
+    for s in sitzungen:
+        s["aktiv"] = s["id"] == aktiv
+    return sitzungen
+
+
+async def erzeuge_sitzung(
+    campaign_id: str, datum: str, ingame_datum: str, titel: str, notiz: str, nummer: int | None = None
+) -> dict:
+    """Neue Sitzung, läuft ab sofort; eine noch laufende wird beendet."""
     driver = get_driver()
     sid = str(uuid.uuid4())
-    query = """
-        MATCH (c:Campaign {id: $campaign_id})
-        CREATE (s:Sitzung {
+    query = f"""
+        MATCH (c:Campaign {{id: $campaign_id}})
+        {_ANDERE_BEENDEN}
+        CREATE (s:Sitzung {{
             id: $sid, campaignId: $campaign_id, datum: $datum, ingameDatum: $ingame_datum,
-            titel: $titel, notiz: $notiz, erstelltAm: $jetzt
-        })
+            titel: $titel, notiz: $notiz, erstelltAm: $jetzt, nummer: $nummer, beendetAm: ''
+        }})
         CREATE (c)-[:HAT_SITZUNG]->(s)
-        RETURN s.id AS id, s.datum AS datum, s.ingameDatum AS ingameDatum,
-               s.titel AS titel, s.notiz AS notiz, s.erstelltAm AS erstelltAm
+        RETURN {_SITZUNG_FELDER}
     """
     async with driver.session() as session:
         result = await session.run(
             query, campaign_id=campaign_id, sid=sid, datum=datum,
-            ingame_datum=ingame_datum, titel=titel, notiz=notiz, jetzt=_jetzt(),
+            ingame_datum=ingame_datum, titel=titel, notiz=notiz, jetzt=_jetzt(), nummer=nummer,
         )
         record = await result.single()
-        return _decode_sitzung(dict(record))
+        return (await _aktiv_markieren(campaign_id, [_decode_sitzung(dict(record))]))[0]
+
+
+async def sitzung_aktiv_setzen(campaign_id: str, sitzung_id: str, aktiv: bool) -> dict | None:
+    """Beenden oder wieder fortsetzen (aus Versehen beendet = umkehrbar).
+    Fortsetzen beendet eine andere laufende Sitzung. None = gibt es nicht."""
+    driver = get_driver()
+    if aktiv:
+        query = f"""
+            MATCH (s:Sitzung {{id: $sid, campaignId: $campaign_id}})
+            {_ANDERE_BEENDEN}
+            SET s.beendetAm = '', s.erstelltAm = CASE WHEN s.erstelltAm IS NULL THEN $jetzt ELSE s.erstelltAm END
+            RETURN s.id AS id
+        """
+    else:
+        query = """
+            MATCH (s:Sitzung {id: $sid, campaignId: $campaign_id})
+            SET s.beendetAm = CASE WHEN coalesce(s.beendetAm, '') = '' THEN $jetzt ELSE s.beendetAm END
+            RETURN s.id AS id
+        """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, sid=sitzung_id, jetzt=_jetzt())
+        if await result.single() is None:
+            return None
+    return await get_sitzung(campaign_id, sitzung_id)
 
 
 async def list_sitzungen(campaign_id: str) -> list[dict]:
     driver = get_driver()
-    query = """
-        MATCH (s:Sitzung {campaignId: $campaign_id})
-        RETURN s.id AS id, s.datum AS datum, s.ingameDatum AS ingameDatum,
-               s.titel AS titel, s.notiz AS notiz, s.erstelltAm AS erstelltAm
-        ORDER BY s.datum DESC
+    query = f"""
+        MATCH (s:Sitzung {{campaignId: $campaign_id}})
+        RETURN {_SITZUNG_FELDER}
+        ORDER BY s.datum DESC, s.erstelltAm DESC
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id)
-        return [_decode_sitzung(dict(r)) async for r in result]
+        liste = [_decode_sitzung(dict(r)) async for r in result]
+    return await _aktiv_markieren(campaign_id, liste)
 
 
 async def get_sitzung(campaign_id: str, sitzung_id: str) -> dict | None:
     driver = get_driver()
-    query = """
-        MATCH (s:Sitzung {id: $sid, campaignId: $campaign_id})
-        RETURN s.id AS id, s.datum AS datum, s.ingameDatum AS ingameDatum,
-               s.titel AS titel, s.notiz AS notiz, s.erstelltAm AS erstelltAm
+    query = f"""
+        MATCH (s:Sitzung {{id: $sid, campaignId: $campaign_id}})
+        RETURN {_SITZUNG_FELDER}
     """
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, sid=sitzung_id)
         record = await result.single()
-        return _decode_sitzung(dict(record)) if record else None
+    if not record:
+        return None
+    return (await _aktiv_markieren(campaign_id, [_decode_sitzung(dict(record))]))[0]
 
 
 async def aktive_sitzung_id(campaign_id: str) -> str | None:
-    """Die zuletzt angelegte Sitzung dieser Kampagne — Fallback-Zuordnung für
+    """Die jüngste nicht beendete Sitzung dieser Kampagne (seit 16.11.2026:
+    beendete zählen nicht mehr, dann ist keine aktiv) — Fallback-Zuordnung für
     automatische Log-Hooks (Kampf-Treffer, Verhandlungsausgang, ...), die
     selbst keine sitzungId übergeben. Die SL legt üblicherweise zu
     Spielbeginn eine neue Sitzung an ("Session 14"); solange sie das tut,
@@ -111,6 +167,7 @@ async def aktive_sitzung_id(campaign_id: str) -> str | None:
     driver = get_driver()
     query = """
         MATCH (s:Sitzung {campaignId: $campaign_id})
+        WHERE coalesce(s.beendetAm, '') = ''
         RETURN s.id AS id
         ORDER BY s.erstelltAm DESC
         LIMIT 1

@@ -108,3 +108,46 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Session starten/beenden (16.11.2026) */
+.ep-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+
+.ep-status-text {
+  flex: 1;
+  min-width: 10rem;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ep-status[data-aktiv="true"] .ep-status-text {
+  color: var(--bereich-farbe, var(--neon));
+}
+
+.ep-status button {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+}
+
+.ep-status-fehler {
+  font-size: 12px;
+  color: var(--warn);
+}
+
+.ep-hinweis {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-leise);
+}

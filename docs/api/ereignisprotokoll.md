@@ -63,11 +63,22 @@ Alle Sitzungen der Kampagne. Auch Spieler (Filter nach Abend).
 
 ### POST `/sitzungen` — nur SL
 
-Body: `datum` (YYYY-MM-DD, Pflicht), `ingameDatum`, `titel`, `notiz`.
+Body: `datum` (YYYY-MM-DD, Pflicht), `ingameDatum`, `titel`, `notiz`,
+`nummer` (int, optional). Die neue Sitzung läuft sofort; eine noch laufende
+wird dabei beendet.
 
 ### PATCH `/sitzungen/{sitzung_id}` — nur SL
 
 Teilupdate derselben Felder.
+
+### PUT `/sitzungen/{sitzung_id}/aktiv` — nur SL (16.11.2026)
+
+Body `{aktiv: bool}`. `false` beendet (setzt `beendetAm`), `true` setzt fort
+und beendet eine andere laufende. 404 bei unbekannter Sitzung.
+
+Antwortfelder jeder Sitzung zusätzlich: `nummer`, `beendetAm` ('' = läuft),
+`aktiv` (= die Sitzung, der automatische Einträge gerade zugeordnet werden:
+jüngste nicht beendete).
 
 ## Zeitleiste — nur SL
 

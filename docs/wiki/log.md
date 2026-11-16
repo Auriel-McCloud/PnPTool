@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-16] gebaut | Session starten/beenden, Zu-PC umkehrbar
+
+Protokoll hat eine Statuszeile mit Session starten (Nummer), beenden und fortsetzen; aktiv ist höchstens eine. NPC→PC merkt sich KI-/Critter-/Händler-Kennzeichen, zurück zum NPC kommen sie wieder. Siehe [[entities/ereignisprotokoll]], [[entities/auth-und-rollen]].
+
 ## [2026-11-16] gebaut | Burgermenü per Ziehen sortieren
 
 Beim Anpassen des Burgermenüs (SL und Spieler) hat jede Zeile links einen Griff zum Ziehen; ↑/↓ bleiben. Am Fensterrand scrollt die Liste mit.

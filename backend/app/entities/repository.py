@@ -545,8 +545,18 @@ async def person_zu_npc(campaign_id: str, person_id: str) -> dict | None:
         MATCH (n:Person {{id: $person_id, campaignId: $campaign_id, personType: 'PC'}})
         OPTIONAL MATCH (:Spieler)-[r:SPIELT]->(n)
         DELETE r
-        WITH n
-        SET n.personType = 'NPC', n.istVorgefertigt = false
+        WITH DISTINCT n
+        // Rollen, die „zu PC“ abgelegt hat, kommen zurück (Mark, 16.11.2026:
+        // „damit es rückgängig machbar ist“ — Babybell verlor beim Verklicken
+        // ihr KI-Kennzeichen und damit ihr Pet).
+        WITH n, coalesce(n.npcRollenVorPc, []) AS vorher
+        SET n.personType = 'NPC', n.istVorgefertigt = false,
+            n.istHaendler = coalesce(n.istHaendler, false) OR 'istHaendler' IN vorher,
+            n.istCritter = coalesce(n.istCritter, false) OR 'istCritter' IN vorher,
+            n.istKI = coalesce(n.istKI, false) OR 'istKI' IN vorher,
+            n.istPflanzenCritter = coalesce(n.istPflanzenCritter, false) OR 'istPflanzenCritter' IN vorher,
+            n.istKredithai = coalesce(n.istKredithai, false) OR 'istKredithai' IN vorher
+        REMOVE n.npcRollenVorPc
         RETURN {_return_clause('n', PERSON_FIELDS)}
     """
     async with driver.session() as session:
@@ -563,12 +573,17 @@ async def person_zu_pc(campaign_id: str, person_id: str) -> dict | None:
     verliert"), Critter/KI (ersetzen sonst die Körperlich-Spalte durch
     AttributMatrix, siehe traits/bogen.py::sichtbare_kategorien). Sortiment
     hängt am Ort, nicht an der Person — das Flag kippt nur die Rolle als
-    Gesicht.
+    Gesicht. Die abgelegten Rollen merkt sich `npcRollenVorPc`; zurück zum
+    NPC bekommt die Person sie wieder (16.11.2026, Verklicken umkehrbar).
     """
     driver = get_driver()
     query = f"""
         MATCH (n:Person {{id: $person_id, campaignId: $campaign_id, personType: 'NPC'}})
-        SET n.personType = 'PC', n.istHaendler = false, n.istCritter = false,
+        // Abgelegte Rollen merken, `person_zu_npc` setzt sie wieder (16.11.2026).
+        WITH n, [f IN ['istHaendler', 'istCritter', 'istKI', 'istPflanzenCritter', 'istKredithai']
+                 WHERE coalesce(n[f], false)] AS vorher
+        SET n.npcRollenVorPc = vorher,
+            n.personType = 'PC', n.istHaendler = false, n.istCritter = false,
             n.istKI = false, n.istPflanzenCritter = false, n.istKredithai = false
         RETURN {_return_clause('n', PERSON_FIELDS)}
     """

@@ -2,6 +2,12 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Session starten/beenden, Zu-PC umkehrbar (16.11.2026)
+
+- **Session:** Mark: „einfach einen Session aktiv und deaktiviert Button, wo ich die Nummer eintragen kann“. `Sitzung.nummer` (int, optional) und `Sitzung.beendetAm` ('' = läuft). Aktiv = jüngste nicht beendete (`aktive_sitzung_id`), höchstens eine: Starten oder Fortsetzen beendet die laufende. Neue Route `PUT .../ereignisprotokoll/sitzungen/{id}/aktiv` (`{aktiv}`, nur SL); `SitzungResponse` hat `nummer`, `beendetAm`, `aktiv`. Protokoll-Ansicht: Statuszeile „Session N läuft“ mit Beenden/Nächste Session bzw. „Keine Session aktiv“ mit Starten (Fenster: Nummer vorbelegt mit höchster+1, Datum heute, Titel optional); beendete gewählte Sitzung lässt sich fortsetzen (umkehrbar, daher ohne Bestätigung). Beendet = Auto-Einträge bleiben ohne Sitzung. Bestandssitzungen ohne Feld zählen als laufend.
+- **Zu PC umkehrbar:** Anlass Babybell (KI am Chip) — verklickt zu PC und zurück, KI-Kennzeichen weg, Pet tot. `person_zu_pc` merkt die abgelegten Rollen in `npcRollenVorPc` (Liste), `person_zu_npc` setzt sie wieder und entfernt das Feld. Bestätigungstext im NPC-Detail angepasst. Babybell live repariert (`istKI` + `kiAktiv`).
+- Wegwerf-Kampagne gegen lokale Neo4j: Rollen-Rundreise, Starten/Beenden/Fortsetzen, Bestandssitzung — alles wie erwartet. `tsc -b` grün; `test_zugriffsschutz` mit denselben zwei Altfehlern wie vorher.
+
 ## Burgermenü per Ziehen sortieren (16.11.2026)
 
 Mark: „so viele Menüpunkte, dass das mit rauf und runter sehr mühsam ist“. `shell/MenueAnpassen.tsx` (SL und Spieler teilen es): Griff ⠿ links je Zeile, Pointer-Events statt HTML5-Drag (Tablet), Capture auf der `<ol>` (React verschiebt die Zeile im DOM), Vorschau lokal, gespeichert wird einmal beim Loslassen; am Fensterrand scrollt die Liste mit. ↑/↓ bleiben für Einzelschritte. CSS `.cl-menue-griff` in `commlink.css`. Harness: 0→4, 6→1 und 2→22 (mit Auto-Scroll) korrekt gespeichert.

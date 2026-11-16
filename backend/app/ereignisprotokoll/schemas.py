@@ -28,6 +28,8 @@ class SitzungCreate(BaseModel):
     ingameDatum: str = ""  # Freitext-Platzhalter, echtes Kalendersystem folgt später
     titel: str = ""
     notiz: str = ""
+    # „Session 1“ (Mark, 16.11.2026: „wo ich die Nummer eintragen kann“).
+    nummer: int | None = None
 
 
 class SitzungUpdate(BaseModel):
@@ -35,6 +37,11 @@ class SitzungUpdate(BaseModel):
     ingameDatum: str | None = None
     titel: str | None = None
     notiz: str | None = None
+    nummer: int | None = None
+
+
+class SitzungAktiv(BaseModel):
+    aktiv: bool
 
 
 class SitzungResponse(BaseModel):
@@ -44,6 +51,10 @@ class SitzungResponse(BaseModel):
     titel: str = ""
     notiz: str = ""
     erstelltAm: str = ""
+    nummer: int | None = None
+    # Leer = läuft noch. Beendet die SL die Sitzung, steht hier der Zeitpunkt.
+    beendetAm: str = ""
+    aktiv: bool = False
 
 
 # --- KiProtokollEintrag ---------------------------------------------------

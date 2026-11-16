@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Fenster } from "../shell/Fenster";
-import { KATEGORIE_TITEL, protokollApi, type Sitzung, type ZeitleisteEintrag } from "./api";
+import { KATEGORIE_TITEL, protokollApi, sitzungName, type Sitzung, type ZeitleisteEintrag } from "./api";
 import "./protokoll.css";
 
 function uhr(iso: string): string {
@@ -20,6 +20,9 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [neuDatum, setNeuDatum] = useState(() => new Date().toISOString().slice(0, 10));
   const [neuTitel, setNeuTitel] = useState("");
+  const [neuNummer, setNeuNummer] = useState("");
+  const [schaltet, setSchaltet] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
 
   async function laden(sid: string) {
     const liste = await protokollApi.sitzungen(campaignId);
@@ -43,32 +46,94 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
     });
   }, [eintraege, kategorie, suche]);
 
+  // Starten/Beenden (Mark, 16.11.2026: „einen Session aktiv und deaktiviert
+  // Button, wo ich die Nummer eintragen kann“). Aktiv ist höchstens eine.
+  const aktive = sitzungen.find((s) => s.aktiv) ?? null;
+  const gewaehlt = sitzungen.find((s) => s.id === sitzungId) ?? null;
+
+  function startenOeffnen() {
+    const hoechste = Math.max(0, ...sitzungen.map((s) => s.nummer ?? 0));
+    setNeuNummer(String(hoechste + 1));
+    setNeuDatum(new Date().toISOString().slice(0, 10));
+    setNeuTitel("");
+    setFehler(null);
+    setAnlegenOffen(true);
+  }
+
   async function anlegen(e: FormEvent) {
     e.preventDefault();
     if (!neuDatum) return;
-    const neu = await protokollApi.anlegen(campaignId, { datum: neuDatum, titel: neuTitel.trim() });
-    setAnlegenOffen(false);
-    setNeuTitel("");
-    setSitzungId(neu.id);
+    const nummer = neuNummer.trim() ? Number(neuNummer) : null;
+    try {
+      const neu = await protokollApi.anlegen(campaignId, {
+        datum: neuDatum,
+        titel: neuTitel.trim(),
+        nummer: nummer != null && Number.isFinite(nummer) ? nummer : null,
+      });
+      setAnlegenOffen(false);
+      setNeuTitel("");
+      setSitzungId(neu.id);
+      if (neu.id === sitzungId) await laden(neu.id);
+    } catch {
+      setFehler("Starten ging nicht.");
+    }
+  }
+
+  async function aktivSetzen(s: Sitzung, aktiv: boolean) {
+    setSchaltet(true);
+    setFehler(null);
+    try {
+      await protokollApi.aktivSetzen(campaignId, s.id, aktiv);
+      await laden(sitzungId);
+    } catch {
+      setFehler(aktiv ? "Fortsetzen ging nicht." : "Beenden ging nicht.");
+    } finally {
+      setSchaltet(false);
+    }
   }
 
   if (laedt) return <p style={{ color: "var(--text-leise)" }}>Lade Protokoll…</p>;
 
   return (
     <div className="ep-seite">
+      <div className="ep-status cl-roehre" data-aktiv={aktive ? "true" : undefined}>
+        <span className="ep-status-text">
+          {aktive ? `${sitzungName(aktive)} läuft` : "Keine Session aktiv"}
+        </span>
+        {aktive ? (
+          <button type="button" disabled={schaltet} onClick={() => aktivSetzen(aktive, false)}>
+            {schaltet ? "…" : "Session beenden"}
+          </button>
+        ) : (
+          <button type="button" onClick={startenOeffnen}>
+            Session starten
+          </button>
+        )}
+        {gewaehlt && !gewaehlt.aktiv && (
+          <button type="button" disabled={schaltet} onClick={() => aktivSetzen(gewaehlt, true)}>
+            {sitzungName(gewaehlt)} fortsetzen
+          </button>
+        )}
+        {aktive && (
+          <button type="button" onClick={startenOeffnen}>
+            Nächste Session
+          </button>
+        )}
+        {fehler && <span className="ep-status-fehler">{fehler}</span>}
+      </div>
+
       <div className="ep-kopf">
         <select value={sitzungId} onChange={(ev) => setSitzungId(ev.target.value)} aria-label="Sitzung">
           <option value="">Alle Sitzungen</option>
           {sitzungen.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.datum}
-              {s.titel ? ` — ${s.titel}` : ""}
+              {sitzungName(s)}
+              {s.nummer != null && s.titel ? ` — ${s.titel}` : ""}
+              {` · ${s.datum}`}
+              {s.aktiv ? " · läuft" : ""}
             </option>
           ))}
         </select>
-        <button type="button" onClick={() => setAnlegenOffen(true)}>
-          + Sitzung
-        </button>
         <input
           className="ep-suche"
           type="search"
@@ -117,20 +182,32 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
 
       <Fenster
         offen={anlegenOffen}
-        titel="Neue Sitzung"
+        titel="Session starten"
         kennung="sitzung-anlegen"
         onSchliessen={() => setAnlegenOffen(false)}
       >
         <form className="ep-form" onSubmit={anlegen}>
+          {aktive && <p className="ep-hinweis">{sitzungName(aktive)} wird dabei beendet.</p>}
+          <label>
+            Nummer
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={neuNummer}
+              onChange={(ev) => setNeuNummer(ev.target.value)}
+            />
+          </label>
           <label>
             Datum
             <input type="date" value={neuDatum} onChange={(ev) => setNeuDatum(ev.target.value)} required />
           </label>
           <label>
-            Titel
-            <input value={neuTitel} onChange={(ev) => setNeuTitel(ev.target.value)} placeholder="Session 14" />
+            Titel (optional)
+            <input value={neuTitel} onChange={(ev) => setNeuTitel(ev.target.value)} placeholder="Der Überfall" />
           </label>
-          <button type="submit">Anlegen</button>
+          {fehler && <p className="ep-status-fehler">{fehler}</p>}
+          <button type="submit">Starten</button>
         </form>
       </Fenster>
     </div>
