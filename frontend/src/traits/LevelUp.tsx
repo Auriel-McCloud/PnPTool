@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { DotPool } from "./DotPool";
 import { bogenApi, KATEGORIE_TITEL, type Steigerungen, type Steigerungspreis } from "./bogenApi";
+import { rassenBegriff } from "./rassenBegriffe";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ZusatzfertigkeitPopup } from "../zusatzfertigkeiten/ZusatzfertigkeitPopup";
 import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
@@ -315,7 +316,7 @@ export function LevelUp({
                 const voll = e.aktuell >= e.max;
                 const leistbar = !voll && e.kosten <= stand.verfuegbar;
                 const geaendert = (kaeufe[e.traitDefId] ?? 0) > 0;
-                const anzeigeName = magieBegriff(magieFlavor, e.name);
+                const anzeigeName = rassenBegriff(rasse, magieBegriff(magieFlavor, e.name));
                 return (
                   <button
                     key={e.traitDefId}

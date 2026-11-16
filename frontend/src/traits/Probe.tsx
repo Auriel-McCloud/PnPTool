@@ -5,6 +5,7 @@ import type { TraitDef } from "./api";
 import type { Spezialisierung } from "../spezialisierungen/api";
 import { SpezialisierungVerwaltung } from "./SpezialisierungPopup";
 import { MAGIE_HINWEISE, SPHAEREN, SPHAEREN_STUFEN } from "./magie";
+import { rassenBegriff } from "./rassenBegriffe";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { schluessel, useErklaerungen } from "../regeln/erklaerungen";
 import "./probe.css";
@@ -95,6 +96,7 @@ export function Probe({
   ausruestungsfertigkeiten,
   ausruestungsSpezialisierungen,
   magieFlavor,
+  rasse,
   spezialisierungen,
   campaignId,
   personId,
@@ -140,6 +142,8 @@ export function Probe({
   ausruestungsSpezialisierungen?: Record<string, string[]>;
   /** Häretiker-Flavor (24.09.2026): nur Anzeige, siehe magieBegriffe.ts. */
   magieFlavor?: MagieFlavor;
+  /** Æ/Automata (16.11.2026): nur Anzeige, siehe rassenBegriffe.ts. */
+  rasse?: string;
   /** Fertigkeiten-Spezialisierung (22.10.2026): ALLE Slots dieser Person
    * (benannt wie unbenannt) — nur die BENANNTEN werden als Chip angeboten,
    * und nur für die plain Fertigkeit+Attribut-Kombination unten, nie für
@@ -269,7 +273,7 @@ export function Probe({
   const pool = roh;
   // Häretiker-Flavor: übersetzt "Hexkraft"/Sphärennamen/"Wilde Magie", sonst
   // unverändert. Zentrale Stelle statt an jeder Textausgabe einzeln.
-  const wahlName = magieBegriff(magieFlavor, wahl.name);
+  const wahlName = rassenBegriff(rasse, magieBegriff(magieFlavor, wahl.name));
   const wildeMagieName = magieBegriff(magieFlavor, "Wilde Magie");
 
   const deckAktionen = Object.entries(deckBoni ?? {});
@@ -330,7 +334,7 @@ export function Probe({
     const anzeige = magieBegriff(magieFlavor, name);
     const e = erklaerungen.zu(schluessel.trait(anzeige));
     return {
-      titel: e?.titel || anzeige,
+      titel: rassenBegriff(rasse, e?.titel || anzeige),
       text: e?.text ?? "",
       langtext: e?.langtext ?? "",
     };

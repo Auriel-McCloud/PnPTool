@@ -90,6 +90,16 @@ eine neue Person startet so. Danach entscheidet die Checkbox „Groß auf der
 Battlemap“ im Reiter Übersicht von PC und NPC, nicht auf der Kachel. Siehe
 [[../entities/battlemap]].
 
+## Gebaut: Maschinen-Rassen heißen anders (16.11.2026)
+
+Mark: „bei Æ und Automata soll es nur anders heißen, das reicht, das ist nur
+optisch“. Bei diesen beiden Rassen zeigt das Blatt Geistesschärfe als **CPU**
+und Fassung als **Arbeitsspeicher** (auch LevelUp, Probe-Fenster,
+Attribut-Schritt der Erstellung). Werte und Regeln bleiben die der
+eigentlichen Attribute. Erkannt am Rassennamen
+(`frontend/src/traits/rassenBegriffe.ts`) — **Annahme:** kein Schalter im
+Baukasten; wird eine der Rassen umbenannt, die Liste dort mitziehen.
+
 ## Siehe auch
 
 - [[../entities/rassen-baukasten-feature]] — die UI/Backend-Umsetzung im Detail

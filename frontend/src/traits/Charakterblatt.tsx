@@ -16,6 +16,7 @@ import { ATTRIBUT_KATEGORIEN, ATTRIBUT_KATEGORIEN_DROHNE, ATTRIBUT_KATEGORIEN_KI
 import { kampfApi } from "../kampf/api";
 import { RuestungsTreffer } from "../kampf/RuestungsTreffer";
 import { traitsApi, type TraitDef } from "./api";
+import { rassenBegriff } from "./rassenBegriffe";
 import { magieBegriff } from "./magieBegriffe";
 import { zusatzfertigkeitenApi, type PersonZusatzfertigkeit } from "../zusatzfertigkeiten/api";
 import { spezialisierungenApi, type Spezialisierung } from "../spezialisierungen/api";
@@ -475,7 +476,8 @@ export function Charakterblatt({
             const ausruestungsBonus = bogen?.ausruestungsBoni[t.name] ?? 0;
             // Häretiker-Flavor: nur Hexkraft/Sphären-Namen sind in der
             // Mapping-Tabelle, alles andere kommt unverändert zurück.
-            const anzeigeName = magieBegriff(u.magieFlavor, t.name);
+            // Æ/Automata (16.11.2026): Geistesschärfe → CPU, Fassung → Arbeitsspeicher.
+            const anzeigeName = rassenBegriff(u.rasse, magieBegriff(u.magieFlavor, t.name));
             const spezSlots = spezialisierungenNachTrait.get(t.id) ?? [];
             // Ab der ersten Schwelle (Sphäre 2, sonst 4) oder bei schon
             // vorhandenen Slots leuchtet der Name neon — der alte Badge
@@ -764,6 +766,7 @@ export function Charakterblatt({
           ...Object.fromEntries((bogen.ausruestungsfertigkeiten ?? []).map((f) => [f.name, f.spezialisierungen ?? []])),
         }}
         magieFlavor={u.magieFlavor}
+        rasse={u.rasse}
         spezialisierungen={spezialisierungen}
         campaignId={campaignId}
         personId={personId}

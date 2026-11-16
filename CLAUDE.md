@@ -2,6 +2,11 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Æ/Automata: CPU und Arbeitsspeicher; Gegenstände am Handy (16.11.2026)
+
+- **Maschinen-Rassen:** Mark: „bei Æ und Automata soll es nur anders heißen, das reicht, das ist nur optisch“. `traits/rassenBegriffe.ts::rassenBegriff(rasse, name)`: Geistesschärfe → CPU, Fassung → Arbeitsspeicher, erkannt am Rassennamen (`Æ`, `Automata`, ohne Groß/Klein). Nur Anzeige: Charakterblatt-Zeilen, LevelUp, Probe-Fenster (Titel, Prop `rasse` aus Blatt und Kampfkarte), Attribut-Schritt der Erstellung. Werte, Regeln, Erklärungs-Schlüssel und Texte wie „Initiative = Geistesschärfe + …“ bleiben. Wird eine der Rassen im Baukasten umbenannt, die Liste mitziehen.
+- **Gegenstände am Handy:** Kopf 174px + Kategorien 356px + Bereiche-Reiter 738px ließen dem Raster 0px (gemessen auf bebop, 393×780). Unter 600px: Besitzer, Kategorie und Bereiche im Fenster „Filter“ (Knopf zeigt Anzahl aktiver Filter, „Alle Filter aus“, „N zeigen“), Suche volle Breite, „+ Neu“, 🗑. Desktop/Tablet unverändert. Nebenbei: `useProSeite` maß nie (Effekt lief, solange noch „Lade…“ stand, Raster fehlte) und blieb bei 12 — misst jetzt nach dem Laden.
+
 ## Session starten/beenden, Zu-PC umkehrbar (16.11.2026)
 
 - **Session:** Mark: „einfach einen Session aktiv und deaktiviert Button, wo ich die Nummer eintragen kann“. `Sitzung.nummer` (int, optional) und `Sitzung.beendetAm` ('' = läuft). Aktiv = jüngste nicht beendete (`aktive_sitzung_id`), höchstens eine: Starten oder Fortsetzen beendet die laufende. Neue Route `PUT .../ereignisprotokoll/sitzungen/{id}/aktiv` (`{aktiv}`, nur SL); `SitzungResponse` hat `nummer`, `beendetAm`, `aktiv`. Protokoll-Ansicht: Statuszeile „Session N läuft“ mit Beenden/Nächste Session bzw. „Keine Session aktiv“ mit Starten (Fenster: Nummer vorbelegt mit höchster+1, Datum heute, Titel optional); beendete gewählte Sitzung lässt sich fortsetzen (umkehrbar, daher ohne Bestätigung). Beendet = Auto-Einträge bleiben ohne Sitzung. Bestandssitzungen ohne Feld zählen als laufend.

@@ -26,7 +26,7 @@ const ABSTAND = 10;
  * wird gemessen und der Rest geblättert. Rechnet bei jeder Größenänderung neu,
  * damit Hoch- und Querformat am Tablet gleichermaßen aufgehen.
  */
-function useProSeite(ref: React.RefObject<HTMLDivElement | null>) {
+function useProSeite(ref: React.RefObject<HTMLDivElement | null>, bereit: boolean) {
   const [proSeite, setProSeite] = useState(12);
 
   useLayoutEffect(() => {
@@ -42,9 +42,24 @@ function useProSeite(ref: React.RefObject<HTMLDivElement | null>) {
     const beobachter = new ResizeObserver(messen);
     beobachter.observe(el);
     return () => beobachter.disconnect();
-  }, [ref]);
+    // `bereit`: das Raster gibt es erst nach dem Laden — ohne diese
+    // Abhängigkeit lief die Messung nur einmal ins Leere (blieb bei 12).
+  }, [ref, bereit]);
 
   return proSeite;
+}
+
+/** Handy (unter 600px, wie im ganzen Commlink). Hört auf Drehen/Resize. */
+function useIstHandy() {
+  const abfrage = "(max-width: 599px)";
+  const [handy, setHandy] = useState(() => typeof window !== "undefined" && window.matchMedia(abfrage).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(abfrage);
+    const neu = () => setHandy(mq.matches);
+    mq.addEventListener("change", neu);
+    return () => mq.removeEventListener("change", neu);
+  }, []);
+  return handy;
 }
 
 export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
@@ -82,6 +97,11 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   // 31.10.2026). Jetzt bekommt der Fehlschlag einen sichtbaren Grund.
   const [anlegenFehler, setAnlegenFehler] = useState<string | null>(null);
   const [muelleimerOffen, setMuelleimerOffen] = useState(false);
+  // Handy (Mark, 16.11.2026: „die Filter und Auswahlen der Behälter gehen so
+  // weit runter, dass ich gar keine Gegenstände sehe“): Besitzer, Kategorie
+  // und Bereiche wandern in ein Filter-Fenster, das Raster bekommt den Platz.
+  const istHandy = useIstHandy();
+  const [filterOffen, setFilterOffen] = useState(false);
   // Wie viele Gegenstand-Bearbeiten-Fenster gerade offen sind. Solange
   // eines offen ist, nicht nachladen — sonst kann die Kachel von der
   // Seite rutschen und das Fenster mit sich nehmen.
@@ -91,7 +111,7 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
   const istGm = useAuthFallsVorhanden()?.me?.role === "GM";
 
   const rasterRef = useRef<HTMLDivElement>(null);
-  const proSeite = useProSeite(rasterRef);
+  const proSeite = useProSeite(rasterRef, !loading);
 
   function anwenden(d: {
     p: Person[];
@@ -311,6 +331,54 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
 
   if (loading) return <p style={{ color: "var(--text-leise)" }}>Lade Gegenstände…</p>;
 
+  const besitzerWahl = (
+    <select value={besitzerFilter} onChange={(e) => setBesitzerFilter(e.target.value)}>
+      <option value="">Alle Besitzer</option>
+      <option value={VORLAGE_SENTINEL}>Nur Vorlagen</option>
+      <option value={HERRENLOS_SENTINEL}>Herrenlos (kein Besitzer, keine Vorlage)</option>
+      {alleOptionen.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+        </option>
+      ))}
+    </select>
+  );
+
+  const kategorieWahl = (
+    <KategorienAuswahl vorhandeneTypen={vorhandeneTypen} gewaehlt={kategorie} onWaehlen={setKategorie} />
+  );
+
+  const reiter = (
+    <div className="gg-reiter">
+      {bereiche.map((b) => {
+        // Dieselbe Ausnahme wie oben bei sichtbareItems: eine Vorlage zählt
+        // nur am eigenen Reiter, nicht zusätzlich an einem, zu dem sie nur
+        // zufällig über ihren Default-Ablagewert passt — sonst zeigt die
+        // Zahl am Reiter mehr an, als nach dem Draufklicken erscheint.
+        const treffer = gefiltert.filter(b.passt);
+        const anzahl = b.id === "VORLAGE" ? treffer.length : treffer.filter((g) => !g.istVorlage).length;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            data-aktiv={bereichAuswahl.has(b.id)}
+            onClick={() => schalteBereich(b.id)}
+            title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
+          >
+            {b.symbol} {b.name} <span className="gg-reiter-zahl">{anzahl}</span>
+          </button>
+        );
+      })}
+      {bereichAuswahl.size > 0 && (
+        <button type="button" onClick={() => setBereichAuswahl(new Set())} title="Auswahl aufheben">
+          alle zeigen
+        </button>
+      )}
+    </div>
+  );
+
+  const aktiveFilter = (besitzerFilter ? 1 : 0) + (kategorie ? 1 : 0) + bereichAuswahl.size;
+
   return (
     <div
       className="gg-seite"
@@ -330,22 +398,24 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
         />
-        <select value={besitzerFilter} onChange={(e) => setBesitzerFilter(e.target.value)}>
-          <option value="">Alle Besitzer</option>
-          <option value={VORLAGE_SENTINEL}>Nur Vorlagen</option>
-          <option value={HERRENLOS_SENTINEL}>Herrenlos (kein Besitzer, keine Vorlage)</option>
-          {alleOptionen.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        {istHandy ? (
+          <button
+            type="button"
+            className="gg-filter-knopf"
+            data-aktiv={aktiveFilter > 0 ? "true" : undefined}
+            onClick={() => setFilterOffen(true)}
+          >
+            Filter{aktiveFilter > 0 ? ` · ${aktiveFilter}` : ""}
+          </button>
+        ) : (
+          besitzerWahl
+        )}
         <button type="button" onClick={() => setAnlegenOffen(true)}>
-          + Neuer Gegenstand
+          {istHandy ? "+ Neu" : "+ Neuer Gegenstand"}
         </button>
         {istGm && (
           <button type="button" onClick={() => setMuelleimerOffen(true)} title="Weggeworfene Gegenstände">
-            🗑 Mülleimer
+            {istHandy ? "🗑" : "🗑 Mülleimer"}
           </button>
         )}
         <span className="gg-anzahl">
@@ -433,34 +503,48 @@ export function GegenstaendeUebersicht({ campaignId }: { campaignId: string }) {
         </div>
       )}
 
-      <KategorienAuswahl vorhandeneTypen={vorhandeneTypen} gewaehlt={kategorie} onWaehlen={setKategorie} />
+      {!istHandy && (
+        <>
+          {kategorieWahl}
+          {reiter}
+        </>
+      )}
 
-      <div className="gg-reiter">
-        {bereiche.map((b) => {
-          // Dieselbe Ausnahme wie oben bei sichtbareItems: eine Vorlage zählt
-          // nur am eigenen Reiter, nicht zusätzlich an einem, zu dem sie nur
-          // zufällig über ihren Default-Ablagewert passt — sonst zeigt die
-          // Zahl am Reiter mehr an, als nach dem Draufklicken erscheint.
-          const treffer = gefiltert.filter(b.passt);
-          const anzahl = b.id === "VORLAGE" ? treffer.length : treffer.filter((g) => !g.istVorlage).length;
-          return (
-            <button
-              key={b.id}
-              type="button"
-              data-aktiv={bereichAuswahl.has(b.id)}
-              onClick={() => schalteBereich(b.id)}
-              title="Mehrere Bereiche lassen sich gleichzeitig anzeigen"
-            >
-              {b.symbol} {b.name} <span className="gg-reiter-zahl">{anzahl}</span>
-            </button>
-          );
-        })}
-        {bereichAuswahl.size > 0 && (
-          <button type="button" onClick={() => setBereichAuswahl(new Set())} title="Auswahl aufheben">
-            alle zeigen
-          </button>
-        )}
-      </div>
+      {istHandy && (
+        <Fenster
+          offen={filterOffen}
+          titel="Filter"
+          unterzeile={`${sichtbareItems.length} von ${items.length} Gegenständen`}
+          kennung="gegenstaende-filter"
+          onSchliessen={() => setFilterOffen(false)}
+        >
+          <div className="gg-filter-fenster">
+            <h3 className="gg-filter-titel">Besitzer</h3>
+            {besitzerWahl}
+            {vorhandeneTypen.length > 1 && <h3 className="gg-filter-titel">Kategorie</h3>}
+            {kategorieWahl}
+            <h3 className="gg-filter-titel">Bereiche</h3>
+            {reiter}
+            <div className="gg-filter-fuss">
+              {aktiveFilter > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBesitzerFilter("");
+                    setKategorie(null);
+                    setBereichAuswahl(new Set());
+                  }}
+                >
+                  Alle Filter aus
+                </button>
+              )}
+              <button type="button" onClick={() => setFilterOffen(false)}>
+                {sichtbareItems.length} zeigen
+              </button>
+            </div>
+          </div>
+        </Fenster>
+      )}
 
       <div className="gg-raster" ref={rasterRef}>
         {sichtbar.map((item) => (

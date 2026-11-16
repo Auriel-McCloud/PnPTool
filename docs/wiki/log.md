@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-16] gebaut | Æ/Automata mit CPU/Arbeitsspeicher, Gegenstände-Filter am Handy
+
+Geistesschärfe/Fassung heißen bei Æ und Automata CPU/Arbeitsspeicher (nur Anzeige). Gegenstände-Übersicht am Handy: Filter im Fenster, das Raster hat wieder Platz. Siehe [[concepts/rassen]], [[entities/ui-konzept-commlink]].
+
 ## [2026-11-16] gebaut | Session starten/beenden, Zu-PC umkehrbar
 
 Protokoll hat eine Statuszeile mit Session starten (Nummer), beenden und fortsetzen; aktiv ist höchstens eine. NPC→PC merkt sich KI-/Critter-/Händler-Kennzeichen, zurück zum NPC kommen sie wieder. Siehe [[entities/ereignisprotokoll]], [[entities/auth-und-rollen]].

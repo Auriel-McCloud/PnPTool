@@ -15,6 +15,7 @@ import {
   type Rasse,
   type SteckbriefUpdate,
 } from "./bogenApi";
+import { rassenBegriff } from "./rassenBegriffe";
 import { magieBegriff, type MagieFlavor } from "./magieBegriffe";
 import { ErstellungsAssistent } from "./ErstellungsAssistent";
 import { ErstellungsKommentar } from "./ErstellungsKommentar";
@@ -1057,11 +1058,11 @@ function SchrittAttribute({
                 // die Namen verschieden lang sind — das sah unruhig aus.
                 <div key={name} className="er-wert er-wert-gestapelt">
                   <span className="er-wert-name">
-                    {name}
+                    {rassenBegriff(rasse.name, name)}
                     <InfoTipp
                       campaignId={campaignId}
                       schluessel={erklaerungsSchluessel.trait(name)}
-                      titel={name}
+                      titel={rassenBegriff(rasse.name, name)}
                       erzwingen
                     />
                     {/* Ohne diese Marke bleibt unerklärt, warum eine Reihe

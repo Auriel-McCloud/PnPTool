@@ -903,6 +903,7 @@ export function Kampfkarte({
         deckBoni={bogen.deckBoni}
         ausruestungsBoni={bogen.ausruestungsBoni}
         magieFlavor={u.magieFlavor}
+        rasse={u.rasse}
         campaignId={campaignId}
         cyberdeckOverclock={matrixHot}
         onSchliessen={() => setProbe(null)}

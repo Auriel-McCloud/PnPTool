@@ -803,3 +803,52 @@
 .schloss-taste:active:not(:disabled) {
   transform: translate(-50%, -50%) translateY(1px);
 }
+
+/* --- Handy: Filter im Fenster (16.11.2026) ----------------------------
+   Besitzer, Kategorie und Bereiche fraßen am Handy die ganze Höhe, das
+   Raster blieb 0px hoch. Dort sitzen sie jetzt hinter „Filter“.           */
+
+.gg-filter-knopf {
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gg-filter-knopf[data-aktiv="true"] {
+  color: var(--bereich-farbe, var(--neon));
+  border-color: var(--bereich-farbe, var(--neon));
+}
+
+.gg-filter-fenster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gg-filter-fenster select {
+  width: 100%;
+}
+
+.gg-filter-titel {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.gg-filter-fuss {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+@media (max-width: 599px) {
+  .gg-suche {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}

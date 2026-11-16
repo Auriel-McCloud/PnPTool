@@ -205,6 +205,13 @@ des großen Formulars (Preis, Kraft, Eigenschaften, …) bleibt hinter dem
 bestehenden "Speichern"-Knopf. Keine Statusanzeige ("speichert…") wie im
 Wiki — still im Hintergrund, auf Marks ausdrücklichen Wunsch.
 
+## Gegenstände-Übersicht am Handy (16.11.2026)
+
+Mark: am Handy gingen Filter und Behälter-Auswahl so weit runter, dass keine
+Gegenstände mehr zu sehen waren (Raster 0px hoch). Unter 600px sitzen
+Besitzer, Kategorie und Bereiche jetzt im Fenster „Filter“; der Knopf zeigt,
+wie viele Filter aktiv sind. Tablet und PC unverändert.
+
 ## Spieler lesen Gegenstand (12.11.2026)
 
 Im Inventar der Spieler öffnet die Kachel die Handlungen. Beschreibung und Steckbrief stehen nur im Readonly-Fenster, Knopf „Beschreibung“ rechts neben Name und Wert im Gegenstandfenster. Nicht unter dem Bild. SL-Notizen bleiben unsichtbar.
