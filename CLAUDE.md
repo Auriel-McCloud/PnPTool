@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Burgermenü per Ziehen sortieren (16.11.2026)
+
+Mark: „so viele Menüpunkte, dass das mit rauf und runter sehr mühsam ist“. `shell/MenueAnpassen.tsx` (SL und Spieler teilen es): Griff ⠿ links je Zeile, Pointer-Events statt HTML5-Drag (Tablet), Capture auf der `<ol>` (React verschiebt die Zeile im DOM), Vorschau lokal, gespeichert wird einmal beim Loslassen; am Fensterrand scrollt die Liste mit. ↑/↓ bleiben für Einzelschritte. CSS `.cl-menue-griff` in `commlink.css`. Harness: 0→4, 6→1 und 2→22 (mit Auto-Scroll) korrekt gespeichert.
+
 ## Tummy-Acher frisst Punkte (16.11.2026)
 
 Mark: „er könnte ja auch die Punkte der Fertigkeiten und Attribute der Spieler fressen … vielleicht wenn man ihn streichelt?“ — entschieden: **nur Optik**, zurück **durch Streicheln**.

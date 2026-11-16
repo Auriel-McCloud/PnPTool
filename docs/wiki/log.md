@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-16] gebaut | Burgermenü per Ziehen sortieren
+
+Beim Anpassen des Burgermenüs (SL und Spieler) hat jede Zeile links einen Griff zum Ziehen; ↑/↓ bleiben. Am Fensterrand scrollt die Liste mit.
+
 ## [2026-11-16] gebaut | Tummy-Acher frisst Punkte
 
 Frisst gefüllte Punkte von Fertigkeiten/Attributen (nur Optik), Streicheln spuckt sie zurück. Siehe [[entities/critter-pet]].

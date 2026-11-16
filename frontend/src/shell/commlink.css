@@ -462,7 +462,42 @@ button.cl-bereiche-pfeil:disabled {
   gap: 8px;
 }
 
+/* Griff zum Ziehen (16.11.2026) — am Tablet groß genug zum Treffen. */
+.cl-menue-griff {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tipp, 40px);
+  min-height: var(--tipp, 40px);
+  color: var(--text-aus);
+  font-size: 1.2em;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.cl-menue-griff:hover {
+  color: var(--neon);
+}
+
+.cl-menue-anpassen-liste[data-zieht="ja"] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.cl-menue-anpassen-liste li[data-gezogen="ja"] {
+  outline: 1px solid var(--neon);
+  box-shadow: 0 0 10px var(--neon);
+}
+
+.cl-menue-anpassen-liste li[data-gezogen="ja"] .cl-menue-griff {
+  color: var(--neon);
+  cursor: grabbing;
+}
+
 .cl-menue-anpassen-liste label {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 8px;
