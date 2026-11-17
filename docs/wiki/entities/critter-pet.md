@@ -498,10 +498,11 @@ Skizze (Neko, nichts entschieden):
 - **Technik:** erste menschenähnliche Pixel-Figur — Laufzyklus und Proportionen (Kopf groß → klein) sind aufwändiger als bei den Tieren; Entwurfstafel zuerst.
 
 Offene Achsen (Formular vom 17.11. ohne Antwort abgelaufen):
-- **Weggabelung Stufe 3:** SL wählt (bleibt Fledermaus/wird Vampir) · immer Vampir · Zufall.
+- ~~Weggabelung Stufe 3~~ **Entschieden 17.11. (Mark):** „Sie bleibt eine Fledermaus, sie kann sich aber in einen Vampir verwandeln, wenn sie möchte.“ → Grundgestalt ist immer die Fledermaus; ab Stufe 3 verwandelt sie sich von selbst ab und zu in die Vampirgestalt ihrer Stufe und zurück (wie Bärbels Gestaltwechsel). Lesart Neko: die Stufen 3–6 beschreiben die Vampirgestalt; die Fledermaus wächst mit.
 - **Mann/Frau:** zwei eigene Pet-Arten (wie Drachenfarben) · SL wählt bei der Verwandlung · Zufall.
 - **Start:** schlafende Baby-Fledermaus kopfüber, 5–10× antippen weckt sie · Ei · gleich wach.
 - **Fortbewegung Vampir:** laufen + zum Wandern/Klettern Fledermaus-Verwandlung · schweben · nur laufen/springen.
+  Neko: durch die Entscheidung oben naheliegend — als Fledermaus fliegt/wandert sie, als Vampir läuft sie. Noch offen: wann/wie oft sie sich verwandelt (zufällig, beim Streicheln, nachts …).
 - **Stufenfolge:** wie oben · oder Stufe 3 noch Fledermaus mit Umhang, Vampir-Kind entfällt.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
