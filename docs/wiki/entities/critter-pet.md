@@ -513,6 +513,17 @@ Offene Achsen (Formular vom 17.11. ohne Antwort abgelaufen):
 - **Bärbel will die Fledermaus fressen:** Bärbel spuckt laut Ideenliste manchmal Fledermäuse aus (noch nicht gebaut). Neu: trifft Bärbel die Fledermaus-Pets, will sie sie unbedingt fressen (jagt sie, schnappt mit dem Deckel, Tentakel greift). Ausgang (entkommt sie immer, verschluckt und wieder ausgespuckt?) offen.
 - Noch offen: Entwurfstafel (Fledermaus-Stufen + Vampirgestalten M/W je Stufe); was die Vampirgestalt tut; Futter und Spur.
 
+### Entwurf 17.11.2026 (Mark: „Das klingt perfekt und lustig! Machen wir das“)
+
+Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab und zu verschluckt Bärbel sie, rülpst und spuckt sie zerzaust wieder aus.
+
+- Generator `docs/assets/critter-pet/vampir_entwurf.py` (`python vampir_entwurf.py <ziel>`), Tafeln `fledermaus_entwurf.png` und `vampir_entwurf.png`.
+- **Fledermaus M** (schiefergrau-violett) und **W** (lila, Wimpern, Locke im Büschel): Ei + 6 Stufen, Flügel angelegt; ab Stufe 3 rote Augen und Fangzähnchen, ab 4 Fellkrause, ab 5 längere Fänge. Dazu Flugpose und kopfüber an einer Kante.
+- **Vampirgestalt M:** 3 Kind (Stehkragen-Umhang, Fliege) · 4 Teen (Emo-Pony, offene Jacke, Shirt mit Fledermaus-Logo, kurzer Umhang) · 5 ~18 (offenes weißes Hemd, Weste, lose Strähne, Schmunzeln mit Fang) · 6 erwachsen (Frack, rote Weste, Halstuch mit Rubin, hoher Kragen, graue Schläfen).
+- **Vampirgestalt W:** 3 Kind (Zöpfe, Kleidchen mit Bubikragen) · 4 Teen (gerader Pony, knielanges Kleid, Ringelstrümpfe, Stiefel) · 5 ~18 (schulterfreies Kleid, Samtband, rote Lippen) · 6 erwachsen (bodenlanges Abendkleid mit Schlitz, Opernhandschuhe, Rose im Haar, hoher Kragen).
+- Größe: Vampir 38 → 70 px hoch (Drache Stufe 6: 60 px); am Handy ×1,5.
+- Offen: Aussehen abnehmen; Verwandlungseffekt (Rauch mit Mini-Fledermäusen); Animationen.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
