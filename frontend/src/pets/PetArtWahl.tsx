@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KI_STUFEN, PET_ARTEN, WACHSTUM_STUFEN, istKi, istTier, petsApi, tierStufen, type PetArt, type PetStand } from "./api";
+import { KI_STUFEN, PET_ARTEN, WACHSTUM_STUFEN, istFledermaus, istKi, istTier, petsApi, tierStufen, type PetArt, type PetStand } from "./api";
 
 /**
  * SL-Auswahl „Pet auf den Tablets“ — am Critter (Tiere) und am Gegenstand
@@ -29,7 +29,7 @@ export function PetArtWahl({
   const arten = PET_ARTEN.filter((a) => a.fuer === fuer || a.wert === art);
   const leise = { fontSize: 11, color: "var(--text-leise)" };
   const ki = istKi(art);
-  const tier = istTier(art ?? "");
+  const tier = istTier(art ?? "") || istFledermaus(art);
   const stufen = ki ? KI_STUFEN : tier ? tierStufen(art) : WACHSTUM_STUFEN;
   return (
     <div className="bg-zeile" style={{ marginTop: 10, flexDirection: "column", alignItems: "stretch", gap: 4 }}>

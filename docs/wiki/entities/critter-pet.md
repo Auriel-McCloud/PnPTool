@@ -527,6 +527,17 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - Nachschärfung Mark („Sehr gut“): Arm eine Spur kürzer, Knauf als silberner Totenkopf (Hand liegt auf dem Schädeldach). Danach Totenkopf eine Spur kleiner (7 → 5 px breit).
 - Offen: Verwandlungseffekt (Rauch mit Mini-Fledermäusen); Animationen.
 
+### Gebaut 17.11.2026 (Mark: „Sehr gut! Bitte setz das um“)
+
+- Zwei Pet-Arten am Critter: **Vampir-Fledermaus (Mann)** und **(Frau)**. Ei (5–10× antippen) + 6 Schritte wie Mongo; Futter aus dem Napf heilt und lässt wachsen. SL-Stufennamen: Fledermäuschen, Fledermaus, Vampir: Kind, Teen, ~18, erwachsen.
+- **Fledermaus:** fliegt herein (in irgendeiner Höhe oder von oben), **hängt kopfüber** unter Knöpfen, Textzeilen, Kacheln, Popups oder oben am Bildschirmrand und pendelt leicht; döst 8–25 s oder schläft (Zzz) bis 3 Minuten. Antippen weckt sie bzw. sie freut sich (Herzen, Wackeln). Lässt beim Hängen manchmal ein Häufchen fallen (höchstens eins je Besuch). Verschwindet die Kante, fliegt sie los. Napf: landet daneben und frisst.
+- **Vampir (ab Schritt 3):** landet auf dem Boden oder einer breiten Fläche, verwandelt sich in einer Rauchwolke mit kleinen Fledermäusen, läuft dort herum, wirft beim Streicheln eine **Kusshand**; danach wieder Rauchwolke und als Fledermaus weiter. Der erwachsene Mann setzt sich manchmal den **Zylinder** auf (kleine Wolke am Kopf), lüftet ihn zum Gruß und nimmt ihn vor der Rückverwandlung wieder ab; den **Gehstock** hat er immer.
+- **Zutraulichkeit:** Das Tablet bekommt die Zutraulichkeit seines Spielers zum Pet. Je höher, desto öfter wird sie zum Vampir (12 % → 50 % der Entscheidungen) und desto länger bleibt sie es (15–30 s → bis dreimal so lang). **Annahme Neko:** volle Wirkung ab 40 Zutraulichkeit.
+- **Bärbel will sie fressen:** sieht Bärbel eine Fledermaus, klappt sie auf und jagt hinterher; die Fledermaus flieht (ein Vampir verwandelt sich vor Schreck zurück). Kommt Bärbel nah, schnappt sie zu — meist daneben, ab und zu (**Annahme: 35 %**) sitzt es: die Fledermaus ist im Buch, das Buch beult und wackelt 2,6 s, dann rülpst Bärbel (eine Seite fliegt raus) und spuckt sie zerzaust mit Kringelaugen aus; sie taumelt und fliegt weiter. Jagd höchstens alle 35–90 s, je 8 s.
+- Packen (3 s) und Werfen wie bei allen Pets; ein Vampir wird dabei sofort wieder zur Fledermaus. Feuer/Eis/Blitz anderer Pets lassen sie fliehen.
+- **Annahmen Neko:** Pausen, Dauern und Wahrscheinlichkeiten oben; Vampir-Laufen von vorn (Gehbewegung im Stand, der Rahmen wandert); Rauch dunkelviolett; Zylinder/Lüften nur beim erwachsenen Mann (der 18-Jährige ohne — Marks Frage dazu offen).
+- Noch offen: Bärbel spuckt selbst Fledermäuse aus (Ideenliste); was der Vampir sonst noch tun könnte.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten

@@ -1,0 +1,72 @@
+{
+  "breite": 68,
+  "hoehe": 68,
+  "fussLuft": 0,
+  "griff": 1,
+  "maul": [
+    34,
+    46
+  ],
+  "kopfStehen": [
+    34,
+    33
+  ],
+  "kopfHaengen": [
+    34,
+    33
+  ],
+  "kopfFlug": [
+    34,
+    5
+  ],
+  "kopfVampir": [
+    34,
+    15
+  ],
+  "animationen": {
+    "flattern": {
+      "frames": 8,
+      "ms": 70
+    },
+    "haengen": {
+      "frames": 24,
+      "ms": 110
+    },
+    "schlafen": {
+      "frames": 24,
+      "ms": 150
+    },
+    "stehen": {
+      "frames": 24,
+      "ms": 110
+    },
+    "fressen": {
+      "frames": 16,
+      "ms": 90
+    },
+    "freuen": {
+      "frames": 8,
+      "ms": 90
+    },
+    "taumeln": {
+      "frames": 8,
+      "ms": 60
+    },
+    "v_idle": {
+      "frames": 24,
+      "ms": 110
+    },
+    "v_lauf": {
+      "frames": 16,
+      "ms": 70
+    },
+    "v_freuen": {
+      "frames": 12,
+      "ms": 90
+    },
+    "verwandeln": {
+      "frames": 16,
+      "ms": 70
+    }
+  }
+}

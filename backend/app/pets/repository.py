@@ -57,7 +57,10 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
                collect(DISTINCT m.id) AS mitglieder,
                c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
                c.petEpStart AS petEpStart,
-               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen
+               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen,
+               // Vampir-Fledermaus (17.11.2026): wem sie wie sehr vertraut — bei
+               // hoher Zutraulichkeit verwandelt sie sich öfter und länger.
+               [(z:Person)-[zr:ZUTRAULICH]->(c) | [z.id, coalesce(zr.wert, 0)]] AS zutraulich
         UNION
         MATCH (b:Person {campaignId: $campaign_id, personType: 'PC'})-[:BESITZT]->(c:Gegenstand {campaignId: $campaign_id})
         WHERE c.petArt IS NOT NULL AND c.petArt <> ''
@@ -74,7 +77,8 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
         RETURN c.id AS id, c.name AS name, c.petArt AS art,
                b.id AS besitzerId, b.name AS besitzerName,
                collect(DISTINCT m.id) AS mitglieder,
-               null AS petStufe, null AS petTipps, null AS petTippsNoetig, null AS petEpStart, 0 AS epEigen
+               null AS petStufe, null AS petTipps, null AS petTippsNoetig, null AS petEpStart, 0 AS epEigen,
+               [] AS zutraulich
         UNION
         // KI-Begleiter am Gegenstand (Mark, 15.11.2026): die SL koppelt eine
         // KI-Person an einen Gegenstand (`kiPersonId`), der Besitzer schaltet
@@ -98,7 +102,8 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
                collect(DISTINCT m.id) AS mitglieder,
                c.petStufe AS petStufe, c.petTipps AS petTipps, c.petTippsNoetig AS petTippsNoetig,
                c.petEpStart AS petEpStart,
-               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen
+               coalesce(c.erfahrung, 0) + coalesce(c.extraEP, 0) AS epEigen,
+               [] AS zutraulich
     """
     kampagnen_ep, ep_je_schritt = await _wachstum(campaign_id)
     async with get_driver().session() as session:
@@ -109,6 +114,7 @@ async def pets_der_kampagne(campaign_id: str) -> list[dict]:
             mitglieder = set(d["mitglieder"] or [])
             mitglieder.add(d["besitzerId"])
             d["mitglieder"] = sorted(mitglieder)
+            d["zutraulich"] = {pid: int(w or 0) for pid, w in (d.get("zutraulich") or [])}
             _stufe_ergaenzen(d, kampagnen_ep, ep_je_schritt)
             pets.append(d)
         return pets

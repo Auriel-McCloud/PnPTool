@@ -37,7 +37,7 @@ PLAYER (SL → Close 1008).
 
 Server → Tablet (immer voller Stand dieses Bildschirms):
 
-- `{"typ": "pets", "daten": [{id, name, art, besitzerId, besitzerName, seite, ankunft}]}` — Pets, die gerade hier sind. `seite` = wo es reinkommt, `ankunft` zählt je Auftritt hoch.
+- `{"typ": "pets", "daten": [{id, name, art, besitzerId, besitzerName, seite, ankunft}]}` — Pets, die gerade hier sind. `seite` = wo es reinkommt, `ankunft` zählt je Auftritt hoch. Dazu `zutraulich` (17.11.2026): Zutraulichkeit des Spielers dieses Tablets zum Pet (0 ohne Kante) — die Vampir-Fledermaus verwandelt sich danach öfter/länger.
 - `{"typ": "haeufchen", "daten": [{id, petId, x, y, erstellt, art}]}` — Spuren auf diesem Bildschirm, `x`/`y` als Anteil 0..1, `art` `haeufchen` (antippen), `brand` (Feuerniesen/Blitz, wegwischen), `seite` (Bärbels verlorene Seite) oder `schleim` (Tentakel, wegwischen). Im Kampf/bei Pause: leere Liste, ohne die Zeilen zu löschen.
 - `{"typ": "vorlesen", "petId", "stelle", "zitat"}` — Bärbel soll vorlesen. Dieselbe Stelle steht am Pet als `lesung`, bis `gelesen` kommt.
 
@@ -54,5 +54,7 @@ Besitzer), bevorzugt nicht derselbe, Pause 3–12 s, Gegenseite. Pet existiert
 nur, solange der Besitzer verbunden ist.
 
 Feuerball (13.11.2026, Fähigkeit `feuerball` ab Stufe `halbstark`): Tablet → Server `{"typ": "feuerball", "petId", "seite"}`, wenn der Ball über den Seitenrand hinausgeflogen ist; Server → ein anderes Party-Tablet `{"typ": "feuerball", "art", "seite", "x", "y", "ms"}` (fliegt von `seite` herein, schlägt nach `ms` bei den Anteilen x/y ein — den Fleck legt der Server). Neue Spur-Arten `krater` und `eiskrater` (großer Brandfleck bzw. Raureif).
+
+Vampir-Fledermaus (17.11.2026): Arten `fledermaus` (Mann) und `fledermaus_w` (Frau), Stufen `ei` + `s1`–`s6` wie Mongo; `kann` = `["verwandeln"]` ab `s3`.
 
 KI (13.11.2026): Pet-Art `ki` am Critter. `stufe` im Pet-Dict ist einer der 13 Namen `funke`, `funke1`, `funke2`, `keim` … `entitaet`; `kann` ist leer. `PUT …/wachstum` nimmt für eine KI nur diese Namen (kein `ei`, keine Drachenstufe), für Drachen nur die Drachenstufen — sonst 404.

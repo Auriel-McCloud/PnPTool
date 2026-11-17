@@ -896,3 +896,55 @@ def test_mongo_frisst_napf_datenpaket_nur_fuer_die_ki(welt, monkeypatch):
         m._takt.cancel()
 
     laufen(ablauf())
+
+
+def test_fledermaus_waechst_aus_dem_ei_und_verwandelt_sich_ab_schritt_drei():
+    """Vampir-Fledermaus (Mark, 17.11.2026): Mann und Frau, Ei + 6 Schritte wie
+    Mongo, ab Schritt 3 kann sie sich in den Vampir verwandeln."""
+    lg = logic
+    assert {"fledermaus", "fledermaus_w"} <= set(lg.PET_ARTEN)
+    assert lg.familie("fledermaus_w") == lg.FLEDERMAUS_ARTEN
+    assert lg.ist_tier("fledermaus") and lg.frisst_napf("fledermaus_w") and lg.waechst("fledermaus")
+    assert "fledermaus" in lg.EI_ARTEN
+    assert lg.stufe("fledermaus", "ei", 50, None) == ("ei", None)
+    assert lg.stufe("fledermaus_w", "geschluepft", 10, 10) == ("s1", 0)
+    assert lg.stufe_passt("fledermaus", "s3") and not lg.stufe_passt("fledermaus", "baby")
+    assert lg.faehigkeiten("fledermaus", "s1", 0) == []
+    assert lg.faehigkeiten("fledermaus_w", "s2", 12) == []
+    assert lg.faehigkeiten("fledermaus", "s3", 24) == ["verwandeln"]
+    assert lg.faehigkeiten("fledermaus_w", "s6", 60) == ["verwandeln"]
+    # Mongo bleibt beim Alten
+    assert set(lg.faehigkeiten("mongo", "s6", 60)) == {"klettern", "springen", "menue"}
+
+
+def test_fledermaus_kennt_die_zutraulichkeit_des_wirts(welt, monkeypatch):
+    """Bei hoher Zutraulichkeit verwandelt sie sich öfter und bleibt länger
+    Vampir — das Tablet bekommt den Wert des Spielers, bei dem sie gerade ist."""
+    m, stand = welt
+    stand["pets"] = [{
+        "id": "flatter", "name": "Flatter", "art": "fledermaus_w", "besitzerId": "anna", "besitzerName": "Anna",
+        "mitglieder": ["anna", "ben"], "stufe": "s3", "kann": ["verwandeln"], "risse": 0,
+        "zutraulich": {"anna": 42, "ben": 3},
+    }]
+    gesetzt = []
+
+    async def zutraulichkeit_erhoehen(cid, pid, pet_id, plus, abklingen_s=0.0):
+        gesetzt.append((pid, pet_id, plus))
+        return 4
+
+    monkeypatch.setattr(motor_modul.repository, "zutraulichkeit_erhoehen", zutraulichkeit_erhoehen)
+
+    async def ablauf():
+        anna, ben = Socket(), Socket()
+        await m.anmelden("k", "ben", ben)
+        await m.anmelden("k", "anna", anna)
+        p = anna.letzte_pets()[0]
+        assert p["art"] == "fledermaus_w" and p["zutraulich"] == 42 and p["kann"] == ["verwandeln"]
+        await m.raus("k", "anna", "flatter", "rechts")
+        await asyncio.sleep(0.01)
+        assert ben.letzte_pets()[0]["zutraulich"] == 3
+        await m.streicheln("k", "ben", "flatter")
+        assert m._pets["k"]["flatter"].zutraulich["ben"] == 4
+        m._takt.cancel()
+
+    laufen(ablauf())

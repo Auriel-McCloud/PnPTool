@@ -307,6 +307,12 @@ export interface Darstellung {
   /** Drachenperle, um die er sich zum Schlafen gekringelt hat: liegt in der
    *  Mitte des Kringels (Bildschirm-Pixel ihrer Mitte). */
   nest?: { id: string; x: number; y: number } | null;
+  /** Drehpunkt der Figur (CSS transform-origin), z. B. die Krallen beim Hängen. */
+  drehpunkt?: string;
+  /** Kleine Wolke an einer Stelle (Zylinder auf-/absetzen, Fledermaus 17.11.2026). */
+  puffKlein?: { start: number; x: number; y: number } | null;
+  /** Figur gerade nicht zu sehen (von Bärbel verschluckt). */
+  unsichtbar?: boolean;
 }
 
 export type Meldung =

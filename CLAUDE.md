@@ -2,6 +2,16 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Vampir-Fledermaus als Pet (17.11.2026)
+
+Mark: süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), „sie bleibt eine Fledermaus, kann sich aber verwandeln, wenn sie möchte“, kopfüber hängen ist wichtig, Bärbel will sie fressen. Wiki: `entities/critter-pet.md` (Abschnitt Vampir-Fledermaus).
+- **Arten** `fledermaus` (Mann) und `fledermaus_w` (Frau): `logic.FLEDERMAUS_ARTEN`, Teil von `TIER_ARTEN` (Ei + `TIER_FOLGE` s1–s6, Napf, Wachstum wie Mongo). Fähigkeit `verwandeln` ab s3 (`FLEDERMAUS_FAEHIGKEITEN_AB_SCHRITT`).
+- **Zutraulichkeit ans Tablet:** `pets_der_kampagne` liest `ZUTRAULICH`-Kanten je Spieler (`zutraulich` Map), `Pet.als_dict` schickt `zutraulich` = Wert des aktuellen Wirts (Streicheln aktualisiert sofort). Gilt für alle Pets, genutzt nur von der Fledermaus.
+- **Sprites:** `docs/assets/critter-pet/fledermaus_exportieren.py` (Figuren aus `vampir_entwurf.py`, Animations-Parameter mit neutralem Default — Entwurfstafeln bit-gleich) → `public/pets/<art>/s1..s6/` + generiertes `frontend/src/pets/fledermausstufen.ts`. Ein Rahmen je Stufe für alle Streifen: Boden-Streifen (stehen, fressen, `v_*`) fußbündig, Hänge-Streifen (haengen, schlafen, freuen) mit Krallen in Zeile `griff`, Flug mittig. `verwandeln.png` = Rauchwolke mit Mini-Fledermäusen; Hut-Streifen (`v_*_hut`, `v_hut`) nur `fledermaus/s6`.
+- **Steuerung** `frontend/src/pets/fledermaus.ts` (`FledermausBewegung`, gleiche Schnittstelle wie Flug/Lauf): fliegt, hängt unter Unterkanten von Flächen oder am oberen Rand (schläft dort bis 3 min, lässt ein Häufchen fallen), frisst am Napf, verwandelt sich ab s3 auf Boden/Fläche in den Vampir (läuft, Kusshand beim Streicheln, erwachsener Mann: Zylinder per Mini-Wolke, Hut lüften, Gehstock immer). Häufigkeit/Dauer der Verwandlung nach Zutraulichkeit (`VOLL_ZUTRAULICH = 40`, Annahme). Neue `Darstellung`-Felder: `drehpunkt`, `puffKlein`, `unsichtbar`.
+- **Bärbel jagt sie** (`flug.ts`: `jagen`/`verdauen`, Registry `treffen.ts::beuteTiere`): Fledermaus flieht (Vampir puff zurück), Schnapp sitzt zu 35 %, dann 2,6 s im Buch, Rülpser (Seite fliegt raus), sie taumelt zerzaust heraus. Notausgang nach 8 s, falls Bärbel weg ist.
+- Getestet: pytest (`test_pets.py`, 33), echte Neo4j-Query (Wegwerf-Kampagne), Browser-Harness (Hängen, Freuen, Verwandeln, Hut, Kusshand, Laufen, Napf, Jagd, Verschlucken, Ausspucken, Decke).
+
 ## Protokoll zeigt, was die KI gesagt hat (17.11.2026)
 
 Mark: im Protokoll steht nur „Beratung“, nicht was beraten oder generiert wurde. Die Texte lagen schon am `KiProtokollEintrag` (`prompt`, `antwortText`), die Zeitleiste lieferte nur `anlass`. `kurz` ist jetzt eine lesbare Zeile (Frage → Antwort, beim Generieren das Ergebnis). Klick öffnet den Volltext. Neue Entwürfe loggen Name plus Beschreibung, nicht mehr nur den Namen. Alte Beratungen sind damit lesbar; alte Entwürfe, die nur den Namen gespeichert haben, zeigen den Namen plus den Wunsch.

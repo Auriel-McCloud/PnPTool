@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { atemVon, istDrache, istTier, tierFamilie, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
+import { atemVon, istDrache, istFledermaus, istTier, tierFamilie, verbindePets, type Haeufchen, type Lesung, type PetAufSchirm } from "./api";
 import { anzahlImBauch, ausspucken, istPunkt, punktFressen, punktGreifen, punktLoslassen, PUNKTE_MAX, sichtbarePunkte } from "./punkte";
 import { FLOCKE_LIEGT_MS, FLOCKEN_G, PACKEN_MS, PetBewegung, type PerleModus, type Flaeche, type MenuePunkt, type Masse, type Quelle, type Rechteck, type SpurAufSchirm, type Umgebung } from "./bewegung";
 import { FlugBewegung, type PetSteuerung } from "./flug";
 import { BaerbelBuch, type Rechteck as BuchRechteck } from "./BaerbelBuch";
 import { DRACHEN_STUFEN, EINKRINGELN, SCHLAF_Z, type DrachenStufe } from "./drachenstufen";
 import { TIER_STUFEN } from "./tierstufen";
+import { FLEDERMAUS_STUFEN, FLEDERMAUS_TAKT } from "./fledermausstufen";
+import { FledermausBewegung } from "./fledermaus";
 import { herein, schiesse } from "./feuerball";
 import { KiFigur } from "./KiFigur";
 import { alle, makel, melde, treffe, vergiss } from "./treffen";
@@ -130,8 +132,26 @@ function grosseStufe(art: string, stufe?: string): DrachenStufe | undefined {
   return t ? { ...t, schlafMitte: t.schlafZ, feuerSkala: 0 } : undefined;
 }
 
+/** Vampir-Fledermaus (17.11.2026): ein Rahmen je Stufe für alle Streifen (fledermausstufen.ts). */
+function fledermausStufe(stufe?: string) {
+  return FLEDERMAUS_STUFEN[stufe ?? "s1"] ?? FLEDERMAUS_STUFEN.s1;
+}
+
+/** Welche Streifen es für diese Fledermaus gibt (Vampir erst ab s3, Hut nur beim erwachsenen Mann). */
+function fledermausStreifen(art: string, stufe?: string): string[] {
+  const vampir = fledermausStufe(stufe).kopfVampir !== null;
+  const hut = art === "fledermaus" && stufe === "s6";
+  return Object.keys(FLEDERMAUS_TAKT).filter((a) =>
+    a.startsWith("v_") || a === "verwandeln" ? vampir && (hut || !(a.endsWith("_hut") || a === "v_hut")) : true,
+  );
+}
+
 function sprite(art: string, stufe?: string) {
   if (art === "baerbel") return BAERBEL;
+  if (istFledermaus(art)) {
+    const f = fledermausStufe(stufe);
+    return { breite: f.breite, hoehe: f.hoehe, animationen: FLEDERMAUS_TAKT as Record<string, Takt> };
+  }
   if (stufe === "baby") return BABY;
   const g = grosseStufe(art, stufe);
   return g ? { breite: g.breite, hoehe: g.hoehe, animationen: SPRITE.animationen } : SPRITE;
@@ -139,6 +159,7 @@ function sprite(art: string, stufe?: string) {
 
 /** Ordner der Sheets dieser Stufe. */
 function spriteOrdner(art: string, stufe?: string) {
+  if (istFledermaus(art)) return `/pets/${art}/${stufe ?? "s1"}`;
   return stufe === "baby" || grosseStufe(art, stufe) ? `/pets/${art}/${stufe}` : `/pets/${art}`;
 }
 
@@ -192,6 +213,10 @@ function skala() {
 
 function masse(art = "drache", stufe?: string): Masse {
   const s = skala();
+  if (istFledermaus(art)) {
+    const f = fledermausStufe(stufe);
+    return { bw: f.breite * s, bh: f.hoehe * s, fuss: f.fussLuft * s, maulX: f.maul[0] * s, maulY: f.maul[1] * s, feuerLaenge: 0 };
+  }
   if (stufe === "baby") {
     return {
       bw: BABY.breite * s,
@@ -1600,6 +1625,7 @@ function PetFigur({
   // Abgeschüttelter Ruß: ebenso ein fester Vorrat an Flocken.
   const flockenEls = useRef<(HTMLSpanElement | null)[]>([]);
   const puff = useRef<HTMLDivElement | null>(null);
+  const puffKlein = useRef<HTMLDivElement | null>(null);
   // Drachenperle: getragen vor dem Maul; Rufzeichen über dem Kopf.
   const perleTrag = useRef<HTMLDivElement | null>(null);
   const rufEl = useRef<HTMLSpanElement | null>(null);
@@ -1618,6 +1644,10 @@ function PetFigur({
   // Eierschalen-Hütchen nach dem Schlüpfen — fällt beim ersten Fressen/Schlafen ab.
   const hut = useRef(stufe === "baby" && startMitte?.has(pet.id) === true);
   const kannSchluessel = (pet.kann ?? []).join(",");
+  useEffect(() => {
+    const b = bewegung.current;
+    if (b instanceof FledermausBewegung) b.setzeZutraulich(pet.zutraulich ?? 0);
+  }, [pet.zutraulich]);
   useEffect(() => {
     const b = bewegung.current;
     if (b instanceof PetBewegung && pet.kann) b.kann = new Set(pet.kann);
@@ -1660,6 +1690,7 @@ function PetFigur({
 
   useEffect(() => {
     const fliegt = pet.art === "baerbel";
+    const fledermaus = istFledermaus(pet.art);
     const sp = sprite(pet.art, stufe);
     const m = () => masse(pet.art, stufe);
     const mitte = startMitte?.get(pet.id);
@@ -1670,7 +1701,8 @@ function PetFigur({
     const feuerSkala = grosseStufe(pet.art, stufe)?.feuerSkala ?? 1;
     // Alle Streifen vorab laden — sonst blitzt beim ersten Wechsel (z. B.
     // Einkringeln → Schlafen) kurz ein leeres Bild auf.
-    if (!fliegt) for (const name of Object.keys(sp.animationen)) new Image().src = `${ordner}/${name}.png`;
+    if (fledermaus) for (const name of fledermausStreifen(pet.art, stufe)) new Image().src = `${ordner}/${name}.png`;
+    else if (!fliegt) for (const name of Object.keys(sp.animationen)) new Image().src = `${ordner}/${name}.png`;
     const melden = (n: Parameters<ConstructorParameters<typeof PetBewegung>[4]>[0]) => {
       if (n.typ === "raus") senden({ typ: "raus", petId: pet.id, seite: n.seite });
       else if (n.typ === "gelesen") {
@@ -1723,7 +1755,15 @@ function PetFigur({
       }
       else senden({ typ: "haeufchen", petId: pet.id, x: n.x, y: n.y, art: n.art });
     };
-    const b: PetSteuerung = fliegt
+    const b: PetSteuerung = fledermaus
+      ? new FledermausBewegung(m, umgebung(m()), pet.seite, performance.now(), melden, {
+          petId: pet.id,
+          stufe: fledermausStufe(stufe),
+          kannVerwandeln: (pet.kann ?? []).includes("verwandeln") && fledermausStufe(stufe).kopfVampir !== null,
+          zylinder: pet.art === "fledermaus" && stufe === "s6",
+          zutraulich: pet.zutraulich ?? 0,
+        })
+      : fliegt
       ? new FlugBewegung(m, umgebung(m()), pet.seite, performance.now(), melden)
       : new PetBewegung(m, umgebung(m()), pet.seite, performance.now(), melden, {
           kann: pet.kann,
@@ -1768,6 +1808,7 @@ function PetFigur({
         el.style.backgroundSize = `${anim.frames * sp.breite * s * z}px ${sp.hoehe * s * z}px`;
         el.style.backgroundPosition = `${-frame * sp.breite * s * z}px 0`;
         el.style.transform = d.transform;
+        el.style.transformOrigin = d.drehpunkt ?? "";
         const mal = makel(pet.id, jetzt);
         el.dataset.makel = mal ?? "";
         if ((istDrache(pet.art) || istTier(pet.art)) && mal === "schleim") setKlecks(true);
@@ -1785,7 +1826,7 @@ function PetFigur({
         // Effekt-Streifen, der die Figur selbst enthält (Tentakelmonster): Figur
         // unsichtbar, bleibt aber anfassbar.
         // Beim Vorlesen ebenso — das große Buch steht an ihrer Stelle.
-        el.style.opacity = d.effekt?.ersetzt || d.liest ? "0" : "";
+        el.style.opacity = d.effekt?.ersetzt || d.liest || d.unsichtbar ? "0" : "";
         el.style.pointerEvents = d.liest ? "none" : "";
         el.dataset.gepackt = d.gepackt ? "ja" : "nein";
       }
@@ -1935,7 +1976,38 @@ function PetFigur({
         });
       }
       const pu = puff.current;
-      if (pu) {
+      if (pu && fledermaus) {
+        // Verwandlungswolke der Fledermaus: gleicher Rahmen wie die Figur.
+        const v = FLEDERMAUS_TAKT.verwandeln;
+        const s = skala();
+        if (d.puff != null) {
+          const bild = Math.min(v.frames - 1, Math.floor((jetzt - d.puff) / v.ms));
+          pu.style.display = "block";
+          pu.style.width = `${sp.breite * s}px`;
+          pu.style.height = `${sp.hoehe * s}px`;
+          pu.style.left = `${d.left}px`;
+          pu.style.top = `${d.top}px`;
+          pu.style.backgroundSize = `${v.frames * sp.breite * s}px ${sp.hoehe * s}px`;
+          pu.style.backgroundPosition = `${-bild * sp.breite * s}px 0`;
+        } else pu.style.display = "none";
+        const pk = puffKlein.current;
+        if (pk) {
+          if (d.puffKlein) {
+            // Kleine Wolke am Kopf (Zylinder auf/ab): dieselbe Wolke, kleiner und schneller.
+            const k = 0.5;
+            const bild = Math.min(v.frames - 1, Math.floor(((jetzt - d.puffKlein.start) / 700) * v.frames));
+            const w = sp.breite * s * k;
+            const h = sp.hoehe * s * k;
+            pk.style.display = "block";
+            pk.style.width = `${w}px`;
+            pk.style.height = `${h}px`;
+            pk.style.left = `${d.puffKlein.x - w / 2}px`;
+            pk.style.top = `${d.puffKlein.y - h * 0.62}px`;
+            pk.style.backgroundSize = `${v.frames * w}px ${h}px`;
+            pk.style.backgroundPosition = `${-bild * w}px 0`;
+          } else pk.style.display = "none";
+        }
+      } else if (pu) {
         if (d.puff != null && pet.art === "baerbel") {
           const s = skala();
           const v = BAERBEL.verwandeln;
@@ -2144,6 +2216,12 @@ function PetFigur({
         className="pet-feuer"
         style={{ display: "none", backgroundImage: `url(/pets/${pet.art}/feuer.png)` }}
       />
+      {istFledermaus(pet.art) && (
+        <>
+          <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: `url(${spriteOrdner(pet.art, stufe)}/verwandeln.png)` }} />
+          <div ref={puffKlein} className="pet-feuer" style={{ display: "none", backgroundImage: `url(${spriteOrdner(pet.art, stufe)}/verwandeln.png)` }} />
+        </>
+      )}
       {pet.art === "baerbel" && (
         <>
           <div ref={puff} className="pet-feuer" style={{ display: "none", backgroundImage: "url(/pets/baerbel/verwandeln.png)" }} />

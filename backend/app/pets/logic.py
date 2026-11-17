@@ -17,8 +17,10 @@ import random
 # Frontend gezeichnet statt aus Sprites gelesen (frontend/src/pets/ki.ts).
 # Mongo und Tummy-Acher (15.11.2026, Dungeon Crawler Carl): je Farbe eine Art,
 # siehe Abschnitt „Tiere mit Ei und sechs Schritten“ unten.
+# Vampir-Fledermaus (17.11.2026): Mann `fledermaus`, Frau `fledermaus_w`.
 PET_ARTEN = ("drache", "eisdrache", "blitzdrache", "baerbel", "ki",
-             "mongo", "mongo_wueste", "mongo_bonbon", "tummy", "tummy_rosa", "tummy_lila")
+             "mongo", "mongo_wueste", "mongo_bonbon", "tummy", "tummy_rosa", "tummy_lila",
+             "fledermaus", "fledermaus_w")
 
 # Häufchen bleiben liegen, wenn das Pet weiterzieht — aber nicht unbegrenzt.
 # Wird es mehr, verschwindet das älteste (je Art gezählt).
@@ -129,19 +131,27 @@ KI_FOLGE = (
 # EP (Standard 5 → 0/12/24/36/48/60 EP seit dem Schlüpfen).
 MONGO_ARTEN = ("mongo", "mongo_wueste", "mongo_bonbon")
 TUMMY_ARTEN = ("tummy", "tummy_rosa", "tummy_lila")
-TIER_ARTEN = MONGO_ARTEN + TUMMY_ARTEN
+# Vampir-Fledermaus (Mark, 17.11.2026): „eine süße Fledermaus, die ab Stufe 3 auch
+# zu einem Vampir werden kann“ — „Sie bleibt eine Fledermaus, sie kann sich aber in
+# einen Vampir verwandeln, wenn sie möchte“. Zwei Arten (Mann/Frau), Ei + 6
+# Schritte wie Mongo; sie fliegt, hängt kopfüber und frisst aus dem Napf.
+FLEDERMAUS_ARTEN = ("fledermaus", "fledermaus_w")
+TIER_ARTEN = MONGO_ARTEN + TUMMY_ARTEN + FLEDERMAUS_ARTEN
 TIER_FOLGE = ("s1", "s2", "s3", "s4", "s5", "s6")
 # Fähigkeiten nach Schritt (Index in TIER_FOLGE): das Küken läuft nur unten,
 # frisst und macht Häufchen wie der Schlüpfling; ab Schritt 2 klettern und
 # springen, ab Schritt 3 das Burgermenü. Kein Niesen, keine Wolken.
 TIER_FAEHIGKEITEN_AB_SCHRITT = {"klettern": 1, "springen": 1, "menue": 2}
+# Die Fledermaus fliegt von Anfang an; ab Schritt 3 (Index 2) kann sie sich in
+# den Vampir ihrer Stufe verwandeln (3 Kind, 4 Teen, 5 ~18, 6 erwachsen).
+FLEDERMAUS_FAEHIGKEITEN_AB_SCHRITT = {"verwandeln": 2}
 WACHSENDE_ARTEN = DRACHEN_ARTEN + KI_ARTEN + TIER_ARTEN
 EI_ARTEN = DRACHEN_ARTEN + TIER_ARTEN
 
 
 def familie(art: str | None) -> tuple[str, ...]:
     """Farbvarianten derselben Figur: Wechsel innerhalb behält die Stufe."""
-    for f in (DRACHEN_ARTEN, MONGO_ARTEN, TUMMY_ARTEN, KI_ARTEN):
+    for f in (DRACHEN_ARTEN, MONGO_ARTEN, TUMMY_ARTEN, FLEDERMAUS_ARTEN, KI_ARTEN):
         if art in f:
             return f
     return (art,) if art else ()
@@ -199,8 +209,12 @@ def ist_ki(art: str | None) -> bool:
 
 
 def ist_tier(art: str | None) -> bool:
-    """Mongo oder Tummy-Acher (Ei + 6 Schritte)."""
+    """Mongo, Tummy-Acher oder Fledermaus (Ei + 6 Schritte)."""
     return art in TIER_ARTEN
+
+
+def ist_fledermaus(art: str | None) -> bool:
+    return art in FLEDERMAUS_ARTEN
 
 
 def frisst_napf(art: str | None) -> bool:
@@ -283,7 +297,8 @@ def faehigkeiten(art: str, stufe_: str, gewachsen: int | None) -> list[str]:
         if stufe_ not in TIER_FOLGE:
             return []
         schritt = TIER_FOLGE.index(stufe_)
-        return [f for f, ab in TIER_FAEHIGKEITEN_AB_SCHRITT.items() if schritt >= ab]
+        ab_schritt = FLEDERMAUS_FAEHIGKEITEN_AB_SCHRITT if ist_fledermaus(art) else TIER_FAEHIGKEITEN_AB_SCHRITT
+        return [f for f, ab in ab_schritt.items() if schritt >= ab]
     if not waechst(art) or gewachsen is None:
         return list(ALLE_FAEHIGKEITEN) if stufe_ != "ei" else []
     kann = [f for f, ab in FAEHIGKEITEN_AB_EP.items() if gewachsen >= ab]

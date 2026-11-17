@@ -25,6 +25,7 @@
 
 import { istDrache } from "./api";
 import { PACKEN_MS, type Darstellung, type Flaeche, type Masse, type Meldung, type Quelle, type Umgebung } from "./bewegung";
+import { beuteTiere } from "./treffen";
 
 /** Was die Komponente von einer Pet-Steuerung braucht (Laufen oder Fliegen). */
 export interface PetSteuerung {
@@ -99,9 +100,19 @@ type Zustand =
   | "gehalten"
   | "getragen"
   | "wurf"
+  | "jagen" // hinter der Fledermaus her (17.11.2026)
+  | "verdauen" // Fledermaus im Buch
   | "raus";
 
 const FLATTER_PX_S = 230;
+/** Bärbel jagt die Fledermaus (Mark, 17.11.2026: „dass Bärbel die Fledermaus
+ *  unbedingt fressen will“). Tempo, Dauer, Abstand zum Schnappen; wie oft der
+ *  Schnapp sitzt (meist entkommt sie knapp) und wie lange sie im Buch bleibt.
+ *  Alles Annahmen Neko. */
+const JAGD_PX_S = 330;
+const JAGD_MS = 8000;
+const SCHNAPP_TREFFER = 0.35;
+const VERDAUEN_MS = 2600;
 const SCHWEBE_PX_S = 30;
 const ZITTERN_MS = 600;
 const WURF_BREMSE = 1.6; // Luftwiderstand pro Sekunde
@@ -165,8 +176,14 @@ export class FlugBewegung implements PetSteuerung {
   private u: Umgebung;
   private melden: (m: Meldung) => void;
 
+  private naechsteJagd = 0;
+  private jagd: { id: string; bis: number; drohung: number } | null = null;
+  private verdauBis = 0;
+  private verdaut: string | null = null;
+
   constructor(masse: () => Masse, u: Umgebung, seite: "links" | "rechts", jetzt: number, melden: (m: Meldung) => void) {
     this.masse = masse;
+    this.naechsteJagd = jetzt + 12_000 + u.zufall() * 20_000;
     this.u = u;
     this.melden = melden;
     const { bw, bh } = masse();
@@ -417,6 +434,53 @@ export class FlugBewegung implements PetSteuerung {
     return true;
   }
 
+  /** Fledermaus im Bild? Aufklappen und hinterher. */
+  private jagdStarten(jetzt: number): boolean {
+    const ids = [...beuteTiere.keys()];
+    if (!ids.length) return false;
+    const id = ids[Math.floor(this.u.zufall() * ids.length)];
+    this.naechsteJagd = jetzt + 35_000 + this.u.zufall() * 55_000;
+    const los = (j: number) => {
+      this.jagd = { id, bis: j + JAGD_MS, drohung: 0 };
+      this.zustand = "jagen";
+      this.setzeAnim(j);
+    };
+    if (!this.offen) this.klappe(true, jetzt, () => los(jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs));
+    else los(jetzt);
+    return true;
+  }
+
+  /** Zuschnappen: Deckel zu — sitzt es, ist die Fledermaus im Buch. */
+  private schnappen(jetzt: number) {
+    const j = this.jagd;
+    if (!j) return;
+    this.klappe(false, jetzt, () => {
+      const t = jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs;
+      const b = beuteTiere.get(j.id);
+      if (b && this.u.zufall() < SCHNAPP_TREFFER && b.verschlucken(t)) {
+        this.jagd = null;
+        this.verdaut = j.id;
+        this.verdauBis = t + VERDAUEN_MS;
+        this.zustand = "verdauen";
+        this.zitterStart = t;
+        return;
+      }
+      // Daneben: wieder auf und weiter hinterher (sie flieht).
+      const { bw, bh } = this.masse();
+      b?.bedroht(t, this.x + bw / 2, this.y + bh / 2);
+      j.drohung = t;
+      this.klappe(true, t, () => {
+        if (this.jagd && t < this.jagd.bis) {
+          this.zustand = "jagen";
+          this.setzeAnim(t);
+        } else {
+          this.jagd = null;
+          this.flatternZu(this.zufallsZiel(), t);
+        }
+      });
+    });
+  }
+
   private entscheiden(jetzt: number) {
     const z = this.u.zufall;
     if (this.liest) return;
@@ -424,6 +488,7 @@ export class FlugBewegung implements PetSteuerung {
       this.rausFliegen(jetzt);
       return;
     }
+    if (jetzt > this.naechsteJagd && z() < 0.6 && this.jagdStarten(jetzt)) return;
     const r = z();
     if (this.offen) {
       if (r < 0.45) this.flatternZu(this.zufallsZiel(), jetzt);
@@ -679,6 +744,48 @@ export class FlugBewegung implements PetSteuerung {
         break;
       case "vorlesen":
         break;
+      case "jagen": {
+        const j = this.jagd;
+        const b = j ? beuteTiere.get(j.id) : undefined;
+        if (!j || !b || jetzt > j.bis) {
+          this.jagd = null;
+          this.flatternZu(this.zufallsZiel(), jetzt);
+          break;
+        }
+        const m = b.mitte();
+        const zx = m.x - bw / 2;
+        const zy = m.y - bh * 0.45;
+        const dx = zx - this.x;
+        const dy = zy - this.y;
+        const d = Math.hypot(dx, dy);
+        zielKipp = Math.max(-18, Math.min(18, (dx / Math.max(d, 1)) * 18));
+        // Kommt sie nah, flieht die Fledermaus (höchstens alle 1,2 s neu).
+        if (d < 260 && jetzt - j.drohung > 1200) {
+          j.drohung = jetzt;
+          b.bedroht(jetzt, this.x + bw / 2, this.y + bh / 2);
+        }
+        if (d < bw * 0.4) {
+          this.schnappen(jetzt);
+          break;
+        }
+        const schritt = JAGD_PX_S * dt;
+        this.x += (dx / Math.max(d, 1)) * Math.min(schritt, d);
+        this.y += (dy / Math.max(d, 1)) * Math.min(schritt, d);
+        break;
+      }
+      case "verdauen":
+        if (jetzt > this.verdauBis) {
+          // Rülpsen, aufklappen, ausspucken — zerzaust, aber heil.
+          const id = this.verdaut;
+          this.verdaut = null;
+          this.klappe(true, jetzt, () => {
+            const t = jetzt + FLUG_TAKT.klappenFrames * FLUG_TAKT.klappenMs;
+            if (id) beuteTiere.get(id)?.ausspucken(t, this.x + bw / 2, this.y + bh * 0.45);
+            this.seiteVerlieren();
+            this.flatternZu(this.zufallsZiel(), t);
+          });
+        }
+        break;
       default:
         break;
     }
@@ -887,6 +994,12 @@ export class FlugBewegung implements PetSteuerung {
       if (b) frame = Math.min(b.frames - 1, Math.floor((jetzt - this.blinzelStart) / b.ms));
     }
     if (this.zustand === "zittern") rot += Math.sin(jetzt / 22) * 4;
+    // Fledermaus im Bauch: das Buch beult und wackelt.
+    let zoom = 1;
+    if (this.zustand === "verdauen") {
+      rot += Math.sin(jetzt / 60) * 6;
+      zoom = 1 + Math.abs(Math.sin(jetzt / 140)) * 0.07;
+    }
     let effekt: Darstellung["effekt"] = null;
     let greift: Darstellung["greift"] = null;
     if (this.zustand === "tentakel") {
@@ -948,6 +1061,7 @@ export class FlugBewegung implements PetSteuerung {
       angriff: this.angriff,
       liest: this.zustand === "vorlesen",
       gestalt: g,
+      zoom,
       puff: this.zustand === "verwandeln" ? this.puffStart : null,
       effekt,
       blitze,

@@ -55,6 +55,22 @@ export function treffe(angriff: Angriff, taeter: string, jetzt: number): { id: s
   return neu;
 }
 
+/** Vampir-Fledermaus (17.11.2026): Bärbel will sie unbedingt fressen. Jede
+ *  Fledermaus auf diesem Bildschirm meldet sich hier an; Bärbel (flug.ts) jagt
+ *  sie, verschluckt sie manchmal und spuckt sie wieder aus. */
+export interface Beute {
+  /** Körpermitte in Bildschirm-Pixeln. */
+  mitte(): { x: number; y: number };
+  /** Bärbel kommt (von x/y) — fliehen. */
+  bedroht(jetzt: number, x: number, y: number): void;
+  /** Erwischt! true = sie ist jetzt im Buch (unsichtbar). */
+  verschlucken(jetzt: number): boolean;
+  /** Wieder raus, an dieser Stelle (Bildschirm-Pixel). */
+  ausspucken(jetzt: number, x: number, y: number): void;
+}
+
+export const beuteTiere = new Map<string, Beute>();
+
 export function makel(id: string, jetzt: number): Angriff["art"] | null {
   const t = makelBis.get(id);
   if (!t || t.bis < jetzt) return null;

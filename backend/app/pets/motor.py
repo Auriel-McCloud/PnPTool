@@ -69,6 +69,8 @@ class Pet:
     gesucht: set[str] = field(default_factory=set)
     # Feuerball: wann er zuletzt einen aufs Nachbar-Tablet geschossen hat.
     feuerball_zuletzt: float = -1e9
+    # Zutraulichkeit je Spieler (17.11.2026, für die Vampir-Fledermaus).
+    zutraulich: dict[str, int] = field(default_factory=dict)
 
     def perle_modus(self) -> str | None:
         """Was das Tablet über die Perle wissen muss — nie, WO sie liegt."""
@@ -93,6 +95,8 @@ class Pet:
             "kann": self.kann,
             "risse": self.risse,
             "perle": self.perle_modus(),
+            # Wie sehr das Pet dem vertraut, auf dessen Tablet es gerade ist.
+            "zutraulich": self.zutraulich.get(self.wirt or "", 0),
         }
 
     def wachstum_uebernehmen(self, d: dict) -> bool:
@@ -216,6 +220,7 @@ class PetMotor:
                     pet = Pet(id=pet_id, name=d["name"], art=d["art"], besitzer_id=d["besitzerId"],
                               besitzer_name=d["besitzerName"], mitglieder=d["mitglieder"])
                     pet.wachstum_uebernehmen(d)
+                    pet.zutraulich = dict(d.get("zutraulich") or {})
                     pets[pet_id] = pet
                     self._ankommen(pet, d["besitzerId"], self.zufall.choice(["links", "rechts"]), jetzt)
                     betroffen.add(d["besitzerId"])
@@ -223,6 +228,7 @@ class PetMotor:
                 namens_aenderung = (pet.name, pet.art) != (d["name"], d["art"])
                 namens_aenderung = pet.wachstum_uebernehmen(d) or namens_aenderung
                 pet.name, pet.art, pet.mitglieder = d["name"], d["art"], d["mitglieder"]
+                pet.zutraulich = dict(d.get("zutraulich") or {})
                 pet.besitzer_id, pet.besitzer_name = d["besitzerId"], d["besitzerName"]
                 if pet.wirt and namens_aenderung:
                     betroffen.add(pet.wirt)
@@ -504,8 +510,10 @@ class PetMotor:
         pet = self._pets.get(campaign_id, {}).get(pet_id)
         if pet is None or pet.wirt != person_id or pet.stufe == "ei":
             return
-        await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet_id, logic.ZUTRAULICH_STREICHELN,
-                                                 logic.STREICHEL_ABKLINGEN_S)
+        wert = await repository.zutraulichkeit_erhoehen(campaign_id, person_id, pet_id, logic.ZUTRAULICH_STREICHELN,
+                                                        logic.STREICHEL_ABKLINGEN_S)
+        if wert is not None:
+            pet.zutraulich[person_id] = wert
 
     # ── Takt ───────────────────────────────────────────────────────────────
 

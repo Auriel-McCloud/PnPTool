@@ -137,15 +137,21 @@ FLED = {
 }
 
 
-def fledermaus(stufe, g, pose="stehen", augen="offen"):
-    """stufe 1..6, g 'M'/'W'. pose: stehen (Flügel angelegt), flug, haengen."""
+def fledermaus(stufe, g, pose="stehen", augen="offen", fluegel=0.0, stange=True, maul_auf=False,
+               atem=0.0, zerzaust=False, gross=False):
+    """stufe 1..6, g 'M'/'W'. pose: stehen (Flügel angelegt), flug, haengen.
+    Animation (Export 17.11.2026): `fluegel` -1 (oben) … 1 (unten) im Flug,
+    `augen` offen/zu/freude/kringel, `maul_auf` (fressen), `atem` -1..1,
+    `zerzaust` (von Bärbel ausgespuckt), `stange` = Kante beim Hängen mitmalen
+    (nur Entwurf), `gross` = höhere Leinwand (Export: der Flügelschlag nach
+    unten ragt sonst unten heraus). Ohne Parameter exakt die abgenommene Entwurfsfigur."""
     p = {k: rgba(v) for k, v in FLED[g].items()}
     t = (stufe - 1) / 5
-    L_ = Leinwand(96, 70)
+    L_ = Leinwand(96, 110 if gross else 70)
     cx, boden = 48, 66
     rk = lerp(7.2, 8.0, t)            # Kopf
     rb = lerp(5.6, 9.2, t)            # Rumpf
-    rbh = rb * lerp(0.95, 1.12, t)
+    rbh = rb * lerp(0.95, 1.12, t) * (1 + 0.04 * atem)
     by = boden - 2.2 - rbh            # Rumpfmitte
     ky = by - rbh * lerp(0.55, 0.85, t) - rk * 0.55  # Kopfmitte
     oh = lerp(5.5, 9.5, t)            # Ohrhöhe
@@ -156,9 +162,11 @@ def fledermaus(stufe, g, pose="stehen", augen="offen"):
     if fl:
         sp = lerp(38, 82, t)
         for s in (-1, 1):
-            wrist = (cx + s * sp * 0.30, sy - sp * 0.22)
-            tips = [(cx + s * sp * 0.50, sy - sp * 0.10), (cx + s * sp * 0.48, sy + sp * 0.12),
-                    (cx + s * sp * 0.33, sy + sp * 0.22)]
+            f_ = fluegel
+            wrist = (cx + s * sp * 0.30 * (1 - 0.12 * abs(f_)), sy - sp * 0.22 + f_ * sp * 0.30)
+            tips = [(cx + s * sp * 0.50 * (1 - 0.18 * abs(f_)), sy - sp * 0.10 + f_ * sp * 0.40),
+                    (cx + s * sp * 0.48 * (1 - 0.14 * abs(f_)), sy + sp * 0.12 + f_ * sp * 0.30),
+                    (cx + s * sp * 0.33 * (1 - 0.08 * abs(f_)), sy + sp * 0.22 + f_ * sp * 0.18)]
             koerper = (cx + s * rb * 0.6, by + rbh * 0.55)
             pts = [(cx + s * rb * 0.5, sy - 1), wrist, tips[0]]
             prev = tips[0]
@@ -229,6 +237,15 @@ def fledermaus(stufe, g, pose="stehen", augen="offen"):
         if augen == "zu":
             L_.lege([("linie", [(ex - er, ey), (ex, ey + 0.8), (ex + er, ey)], 0.9)], K)
             continue
+        if augen == "freude":
+            L_.lege([("linie", [(ex - er, ey + 0.6), (ex, ey - 1.0), (ex + er, ey + 0.6)], 0.9)], K)
+            L_.px(ex + s * 1.2, ey + er + 1.2, p["O"])
+            continue
+        if augen == "kringel":
+            L_.lege([("ell", ex, ey, er, er * 1.1)], WEISS)
+            L_.lege([("ell", ex, ey, er * 0.55, er * 0.55)], K)
+            L_.px(ex, ey, WEISS)
+            continue
         L_.lege([("ell", ex, ey, er, er * 1.1)], K)
         if stufe >= 3:
             L_.lege([("ell", ex, ey + 0.4, er * 0.62, er * 0.62)], p["A"])
@@ -245,25 +262,34 @@ def fledermaus(stufe, g, pose="stehen", augen="offen"):
     L_.px(cx - 0.7, ny, p["D"])
     L_.px(cx + 0.7, ny, p["D"])
     my = ny + 1.4
-    L_.karte(round(cx) - 2, round(my), ["K...K", ".KKK."], {"K": K})
+    if maul_auf:
+        L_.karte(round(cx) - 2, round(my), ["KKKKK", "KMMMK", ".KKK."], {"K": K, "M": (170, 60, 80)})
+    else:
+        L_.karte(round(cx) - 2, round(my), ["K...K", ".KKK."], {"K": K})
     if stufe >= 3:
         lang = 2 if stufe >= 5 else 1
         for i in range(lang):
             L_.px(round(cx) - 1, round(my) + 2 + i, WEISS)
             L_.px(round(cx) + 1, round(my) + 2 + i, WEISS)
+    if zerzaust:  # abstehende Fellbüschel
+        for (dx, dy, lx, ly) in ((-rk * 0.7, -rk * 0.6, -2, -2), (rk * 0.6, -rk * 0.75, 2, -2),
+                                 (-rb * 0.9, rbh * 0.1 + (by - ky), -2, 0), (rb * 0.9, rbh * 0.3 + (by - ky), 2, 1)):
+            x0, y0 = cx + dx, ky + dy
+            L_.lege([("linie", [(x0, y0), (x0 + lx, y0 + ly)], 0.8)], p["L"])
     bild = L_.fertig()
     if pose == "haengen":
         bild = bild.transpose(Image.FLIP_TOP_BOTTOM)
         bb = bild.getbbox()
         neu = Image.new("RGBA", (96, 74), (0, 0, 0, 0))
         neu.paste(bild, (0, 4 - bb[1]), bild)
-        d = ImageDraw.Draw(neu)
-        d.rectangle([cx - 16, 0, cx + 16, 3], fill=(96, 104, 128, 255))  # Kante (Popup/Menü)
-        d.line([(cx - 16, 3), (cx + 16, 3)], fill=(60, 66, 86, 255))
-        # Krallen um die Kante
-        for s in (-1, 1):
-            x = round(cx + s * rb * 0.38)
-            d.point([(x - 1, 2), (x + 1, 2), (x, 2)], fill=rgba(FLED[g]["D"]))
+        if stange:
+            d = ImageDraw.Draw(neu)
+            d.rectangle([cx - 16, 0, cx + 16, 3], fill=(96, 104, 128, 255))  # Kante (Popup/Menü)
+            d.line([(cx - 16, 3), (cx + 16, 3)], fill=(60, 66, 86, 255))
+            # Krallen um die Kante
+            for s in (-1, 1):
+                x = round(cx + s * rb * 0.38)
+                d.point([(x - 1, 2), (x + 1, 2), (x, 2)], fill=rgba(FLED[g]["D"]))
         bild = neu
     return bild
 
@@ -292,9 +318,13 @@ MASSE = {
 }
 
 
-def vampir(g, stufe, zylinder=False, stock=False):
+def vampir(g, stufe, zylinder=False, stock=False, gang=None, blink=False, hub=0, kuss=0.0, hut_hoch=0.0):
     """zylinder/stock: Accessoires des Mannes (Mark 17.11.: setzt sich manchmal
-    einen Zylinder auf, eleganter Gehstock)."""
+    einen Zylinder auf, eleganter Gehstock).
+    Animation (Export 17.11.2026): `gang` 0..1 Schrittphase (von vorn), `blink`,
+    `hub` Oberkörper 0/1 px hoch (Atmen), `kuss` 0..1 Kusshand mit der linken
+    Hand (zum Mund, dann hinaus), `hut_hoch` 0..1 Zylinder lüften.
+    Ohne Parameter exakt die abgenommene Entwurfsfigur."""
     m_ = MASSE[(g, stufe)]
     L_ = Leinwand(72, 96)
     cx, boden = 36, 94
@@ -303,6 +333,10 @@ def vampir(g, stufe, zylinder=False, stock=False):
     kinn = ky + rk * 0.92
     sy = kinn + m_["hals"]              # Schulterlinie
     hy = sy + m_["tor"]                 # Hüfte
+    # Atmen: Kopf und Schultern heben sich, die Hüfte bleibt.
+    ky, kinn, sy = ky - hub, kinn - hub, sy - hub
+    ph = 2 * math.pi * gang if gang is not None else 0.0
+    hebe = {s: (max(0.0, math.sin(ph) * s) * (boden - hy) * 0.13 if gang is not None else 0.0) for s in (-1, 1)}
     beine = boden - hy
     sch, ta, hu = m_["sch"], m_["ta"], m_["hu"]
     hz = HAAR[g]
@@ -354,39 +388,41 @@ def vampir(g, stufe, zylinder=False, stock=False):
     if g == "M":
         hose = STOFF["D"] if stufe != 4 else (34, 32, 48)
         for s in (-1, 1):
-            pts = [(cx + s * 0.3, hy), (cx + s * hu, hy - 0.5), (cx + s * (hu * 0.62), boden - 2), (cx + s * 0.9, boden - 2)]
+            fb = boden - hebe[s]
+            pts = [(cx + s * 0.3, hy), (cx + s * hu, hy - 0.5), (cx + s * (hu * 0.62), fb - 2), (cx + s * 0.9, fb - 2)]
             mb = L_.lege([("poly", pts)], hose, kante=STOFF["D"])
             L_.licht(mb, hell=STOFF["L"] if stufe != 4 else (60, 58, 80), b=1, dx=-s)
             schuh = STOFF["D"] if stufe != 4 else (30, 30, 40)
-            L_.lege([("ell", cx + s * (hu * 0.42 + 0.4), boden - 1.3, hu * 0.45 + 0.6, 1.4)], schuh, kante=K)
+            L_.lege([("ell", cx + s * (hu * 0.42 + 0.4), fb - 1.3, hu * 0.45 + 0.6, 1.4)], schuh, kante=K)
             if stufe == 4:  # Turnschuh-Sohle
-                L_.lege([("poly", [(cx + s * 0.9, boden - 0.6), (cx + s * (hu * 0.84 + 0.8), boden - 0.6), (cx + s * (hu * 0.84 + 0.8), boden), (cx + s * 0.9, boden)])], (230, 230, 236))
+                L_.lege([("poly", [(cx + s * 0.9, fb - 0.6), (cx + s * (hu * 0.84 + 0.8), fb - 0.6), (cx + s * (hu * 0.84 + 0.8), fb), (cx + s * 0.9, fb)])], (230, 230, 236))
             else:
-                L_.px(cx + s * (hu * 0.42 + 0.4) - 1, boden - 2, STOFF["L"])
+                L_.px(cx + s * (hu * 0.42 + 0.4) - 1, fb - 2, STOFF["L"])
     else:
         bein_farbe = {3: (240, 238, 244), 4: (60, 44, 76), 5: HAUT["M"], 6: HAUT["M"]}[stufe]
         for s in (-1, 1):
             if stufe == 6 and s == -1:
                 continue  # das andere Bein bleibt unterm Kleid
-            pts = [(cx + s * 0.6, hy), (cx + s * hu * 0.8, hy), (cx + s * (hu * 0.42 + 0.6), boden - 2), (cx + s * 1.0, boden - 2)]
+            fb = boden - hebe[s]
+            pts = [(cx + s * 0.6, hy), (cx + s * hu * 0.8, hy), (cx + s * (hu * 0.42 + 0.6), fb - 2), (cx + s * 1.0, fb - 2)]
             mb = L_.lege([("poly", pts)], bein_farbe, kante=HAUT["D"] if stufe >= 5 else STOFF["M"])
             if stufe == 4:  # Ringelstrümpfe
                 y = hy + 2
-                while y < boden - 3:
+                while y < fb - 3:
                     L_.lege([("poly", [(cx - 8, y), (cx + 8, y), (cx + 8, y + 1), (cx - 8, y + 1)])], (24, 18, 32), clip=mb)
                     y += 2
             if stufe >= 5:
                 L_.licht(mb, hell=HAUT["L"], dunkel=HAUT["D"], dx=-s)
             # Schuhe
             if stufe == 3:
-                L_.lege([("ell", cx + s * (hu * 0.3 + 0.8), boden - 1.2, 2.2, 1.3)], STOFF["D"])
+                L_.lege([("ell", cx + s * (hu * 0.3 + 0.8), fb - 1.2, 2.2, 1.3)], STOFF["D"])
             elif stufe == 4:  # Stiefel
-                L_.lege([("poly", [(cx + s * 0.9, knie + 4), (cx + s * (hu * 0.55 + 0.9), knie + 4), (cx + s * (hu * 0.62 + 1.6), boden), (cx + s * 0.6, boden)])], STOFF["D"], kante=K)
+                L_.lege([("poly", [(cx + s * 0.9, knie + 4 - hebe[s]), (cx + s * (hu * 0.55 + 0.9), knie + 4 - hebe[s]), (cx + s * (hu * 0.62 + 1.6), fb), (cx + s * 0.6, fb)])], STOFF["D"], kante=K)
                 L_.px(cx + s * (hu * 0.45), knie + 5, STOFF["L"])
             else:  # Absatzschuhe
                 fx = cx + s * (hu * 0.42 + 0.9)
-                L_.lege([("poly", [(fx - 1.6, boden - 2.5), (fx + 1.6, boden - 2.5), (fx + 1.2, boden - 0.5), (fx - 1.2, boden - 0.5)])], ROT["D"] if stufe == 5 else STOFF["D"])
-                L_.px(fx + s * 1, boden, STOFF["D"])
+                L_.lege([("poly", [(fx - 1.6, fb - 2.5), (fx + 1.6, fb - 2.5), (fx + 1.2, fb - 0.5), (fx - 1.2, fb - 0.5)])], ROT["D"] if stufe == 5 else STOFF["D"])
+                L_.px(fx + s * 1, fb, STOFF["D"])
 
     # ── Rumpf / Kleid ──
     tw = sy + m_["tor"] * 0.62
@@ -467,8 +503,11 @@ def vampir(g, stufe, zylinder=False, stock=False):
     # ── Arme ──
     arm_b = {3: 2.4, 4: 2.3, 5: 2.3, 6: 2.6}[stufe] * (0.88 if g == "W" else 1)
     for s in (-1, 1):
+        if kuss > 0 and s == -1:
+            continue  # die Kusshand kommt nach dem Gesicht
         sx, s_y = cx + s * (sch - arm_b * 0.5), sy + arm_b * 0.5
-        hand = (cx + s * (hu + arm_b * 0.4 + (1.6 if g == "M" else 1.4)), hy + {3: 0.5, 4: 2.5, 5: 4, 6: 4.5}[stufe])
+        hand = (cx + s * (hu + arm_b * 0.4 + (1.6 if g == "M" else 1.4)),
+                hy + {3: 0.5, 4: 2.5, 5: 4, 6: 4.5}[stufe] + (s * math.sin(ph) * 1.2 if gang is not None else 0))
         ell_ = (lerp(sx, hand[0], 0.5) + s * 0.8, lerp(s_y, hand[1], 0.5))
         if stock and s == 1:  # Mark 17.11.: Arm ausgestreckt, stützt sich elegant auf den Stock
             hand = (cx + sch + 8.5, hy - 0.5)  # Mark: Arm eine Spur kürzer
@@ -516,16 +555,41 @@ def vampir(g, stufe, zylinder=False, stock=False):
         spitz = 1.6 if stufe >= 5 else 0.6
         L_.lege([("poly", [(ox - s * 0.6, ky - 0.6), (ox + s * spitz, ky - 1.6 - spitz), (ox + s * 0.8, ky + 2)])], HAUT["M"], kante=HAUT["D"])
 
-    gesicht(L_, g, stufe, cx, ky, rk)
+    gesicht(L_, g, stufe, cx, ky, rk, blink=blink, kuss=kuss > 0)
     haar_vorn(L_, g, stufe, cx, ky, rk, hz)
     if zylinder:
-        zylinder_malen(L_, cx, ky, rk)
+        zylinder_malen(L_, cx, ky, rk, hoch=hut_hoch)
+    if kuss > 0:
+        kusshand(L_, g, stufe, cx, ky, rk, sch, sy, hu, hy, kuss)
     return L_.fertig()
 
 
-def zylinder_malen(L_, cx, ky, rk):
-    """Zylinder leicht schräg auf dem Kopf, rotes Band, breite Krempe."""
-    krempe = ky - rk * 0.62
+def kusshand(L_, g, stufe, cx, ky, rk, sch, sy, hu, hy, kuss):
+    """Linke Hand zum Mund, dann mit Schwung hinaus (Kusshand beim Streicheln)."""
+    arm_b = {3: 2.4, 4: 2.3, 5: 2.3, 6: 2.6}[stufe] * (0.88 if g == "W" else 1)
+    sx, s_y = cx - (sch - arm_b * 0.5), sy + arm_b * 0.5
+    ruhe = (cx - (hu + arm_b * 0.4 + 1.5), hy + 2)
+    mund = (cx - 1.2, ky + rk * 0.62)
+    weg = (cx - sch - rk * 1.1, ky - rk * 0.3)
+    k1, k2 = min(1.0, kuss * 2), max(0.0, kuss * 2 - 1)
+    hx, hy_ = lerp(ruhe[0], mund[0], k1), lerp(ruhe[1], mund[1], k1)
+    hx, hy_ = lerp(hx, weg[0], k2), lerp(hy_, weg[1], k2)
+    ell_ = (min(sx, hx) - 2.5 - 1.5 * (1 - k2), max(s_y, hy_) + 2.0 - 3 * k2)
+    if g == "M":
+        aermel = HEMD["M"] if stufe == 5 else STOFF["M"]
+    else:
+        aermel = {3: STOFF["M"], 4: STOFF["M"], 5: HAUT["M"], 6: HAUT["M"]}[stufe]
+    L_.lege([("linie", [(sx, s_y), ell_, (hx, hy_)], arm_b)], aermel, kante=STOFF["D"] if aermel != HAUT["M"] else HAUT["D"])
+    if g == "W" and stufe == 6:
+        L_.lege([("linie", [ell_, (hx, hy_)], arm_b)], STOFF["D"])
+    L_.lege([("ell", hx, hy_, arm_b * 0.55, arm_b * 0.6)], STOFF["D"] if (g == "W" and stufe == 6) else HAUT["M"], kante=HAUT["D"])
+
+
+def zylinder_malen(L_, cx, ky, rk, hoch=0.0):
+    """Zylinder leicht schräg auf dem Kopf, rotes Band, breite Krempe.
+    `hoch` 0..1: zum Gruß gelüftet (hebt sich und kippt)."""
+    krempe = ky - rk * 0.62 - hoch * 4.5
+    cx = cx + hoch * 1.5
     hoch = rk * 1.55
     b_unten, b_oben = rk * 0.72, rk * 0.8
     k = 0.8  # Schräglage nach rechts
@@ -540,10 +604,32 @@ def zylinder_malen(L_, cx, ky, rk):
     L_.px(cx - rk * 0.9, krempe - 0.2, STOFF["L"])
 
 
-def gesicht(L_, g, stufe, cx, ky, rk):
+def gesicht(L_, g, stufe, cx, ky, rk, blink=False, kuss=False):
     x0 = round(cx)
     ey = round(ky + rk * 0.12)
     f = {"K": K, "R": AUGE, "W": WEISS, "M": (120, 30, 44), "Z": WEISS, "L": LIPPE, "B": (226, 160, 172), "H": HAUT["D"]}
+    if blink or kuss:
+        # Augen zu (Blinzeln) bzw. genießerisch geschlossen (Kusshand)
+        dx = 4 if stufe == 3 and rk > 8 else 3
+        for s in (-1, 1):
+            if stufe == 3:
+                L_.karte(x0 + s * dx - 1, ey + 1, ["KKK"], f)
+            else:
+                L_.karte(x0 + s * 3 - (2 if s < 0 else 0), ey, ["KKK"] if stufe >= 5 else (["KK"] if s < 0 else [".KK"]), f)
+            if g == "W":
+                L_.px(x0 + s * (dx + 1 if stufe == 3 else 4), ey - (0 if stufe == 3 else 1), K)
+        if kuss:  # Kussmund
+            L_.karte(x0 - 1, ey + (4 if stufe == 3 else 3), [".L.", "L.L", ".L."] if g == "W" else [".M.", "M.M", ".M."], f)
+            return
+        if stufe == 3:
+            L_.karte(x0 - 2, ey + 4, ["K...K", ".KKK.", ".Z.Z."], f)
+        elif stufe == 4:
+            L_.karte(x0 - 1, ey + 3, ["KKK", "..Z"] if g == "M" else [".M.", "Z.Z"], f)
+        elif g == "M":
+            L_.karte(x0 - 1, ey + 4, ["..m", "mm.", "Z.."], {**f, "m": (132, 70, 86)})
+        else:
+            L_.karte(x0 - 1, ey + 4, ["LLL"] if stufe == 5 else ["LLL", ".L."], f)
+        return
     if stufe == 3:  # große Kinderaugen, Grinsen mit Zähnchen
         auge = ["KKK", "RRW" if g == "M" else "RRW", "RRR"]
         dx = 4 if rk > 8 else 3

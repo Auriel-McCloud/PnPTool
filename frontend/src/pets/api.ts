@@ -22,6 +22,10 @@ export const PET_ARTEN = [
   { wert: "tummy", name: "Tummy-Acher (Fleisch)", fuer: "critter" },
   { wert: "tummy_rosa", name: "Tummy-Acher (Rosa)", fuer: "critter" },
   { wert: "tummy_lila", name: "Tummy-Acher (Lila)", fuer: "critter" },
+  // Mark, 17.11.2026: süße Fledermaus, ab Stufe 3 verwandelt sie sich nach Lust
+  // in einen Vampir (Kind, Teen, ~18, erwachsen) — je eine Art für Mann und Frau.
+  { wert: "fledermaus", name: "Vampir-Fledermaus (Mann)", fuer: "critter" },
+  { wert: "fledermaus_w", name: "Vampir-Fledermaus (Frau)", fuer: "critter" },
 ] as const;
 export type PetArt = (typeof PET_ARTEN)[number]["wert"];
 
@@ -50,6 +54,11 @@ export function istTier(art: string): boolean {
   return tierFamilie(art) !== null;
 }
 
+/** Vampir-Fledermaus (17.11.2026): fliegt, hängt kopfüber, ab s3 Vampir. */
+export function istFledermaus(art: string | null | undefined): boolean {
+  return art === "fledermaus" || art === "fledermaus_w";
+}
+
 export interface PetAufSchirm {
   id: string;
   name: string;
@@ -76,6 +85,9 @@ export interface PetAufSchirm {
   /** Drachenperle (Mark, 13.11.2026): was der Drache gerade damit vorhat —
    *  siehe `PerleModus` in bewegung.ts. Wo sie liegt, erfährt das Tablet nie. */
   perle?: "spiel" | "sucht" | "gefunden" | "bringt" | "zurueck" | null;
+  /** Zutraulichkeit des Spielers dieses Tablets zum Pet (unsichtbar; die
+   *  Vampir-Fledermaus verwandelt sich bei hohem Wert öfter und länger). */
+  zutraulich?: number;
 }
 
 export interface Lesung {
@@ -162,9 +174,11 @@ export const KI_STUFEN: { wert: string; name: string }[] = [
  *  wie `TIER_FOLGE` in backend/app/pets/logic.py. */
 export function tierStufen(art: string | null | undefined): { wert: string; name: string }[] {
   const mongo = tierFamilie(art ?? "") === "mongo";
-  const namen = mongo
-    ? ["Küken", "Küken +1", "Halbstarker", "Halbstarker +1", "Junger Raptor", "Raptor"]
-    : ["Klöpschen", "Klöpschen +1", "Klops", "Klops +1", "Großer Klops", "Riesenklops"];
+  const namen = istFledermaus(art)
+    ? ["Fledermäuschen", "Fledermaus", "Vampir: Kind", "Vampir: Teen", "Vampir: ~18", "Vampir: erwachsen"]
+    : mongo
+      ? ["Küken", "Küken +1", "Halbstarker", "Halbstarker +1", "Junger Raptor", "Raptor"]
+      : ["Klöpschen", "Klöpschen +1", "Klops", "Klops +1", "Großer Klops", "Riesenklops"];
   return [{ wert: "ei", name: "Ei" }, ...namen.map((name, i) => ({ wert: `s${i + 1}`, name }))];
 }
 

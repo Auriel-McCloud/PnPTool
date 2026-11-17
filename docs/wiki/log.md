@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-17] gebaut | Vampir-Fledermaus
+
+Zwei Arten (Mann/Frau), Ei + 6 Schritte, hängt kopfüber, ab Stufe 3 Vampir (Kusshand, Zylinder, Gehstock) je nach Zutraulichkeit, Bärbel jagt sie. Siehe [[entities/critter-pet]].
+
 ## [2026-11-17] idee | Vampir-Fledermaus als Pet
 
 Süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), Teen, ~18, ausgewachsen. Achsen offen. Siehe [[entities/critter-pet]].
