@@ -860,6 +860,15 @@ def _kappen(text: str) -> str:
     return text[:_ZEITLEISTE_TEXT_LIMIT].rstrip() + "\n…"
 
 
+def _zeitleiste_sortieren(rows: list[dict]) -> list[dict]:
+    """Neu oben, alt unten. Leerer Zeitpunkt ganz unten.
+
+    ORDER BY hinter UNION gilt in Neo4j nur für den letzten Zweig, nicht für
+    die ganze Liste — deshalb hier, nicht in Cypher.
+    """
+    return sorted(rows, key=lambda r: r.get("zeitpunkt") or "", reverse=True)
+
+
 async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[dict]:
     """"Was ist am Abend X passiert" — eine Abfrage über alle acht Kategorien.
 
@@ -896,10 +905,11 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
                e.ingameZeitpunkt AS ingameZeitpunkt, e.sitzungId AS sitzungId, e.slNotiz AS slNotiz,
                {kurz[kategorie]} AS kurz, {extra}
         """)
-    query = "\nUNION\n".join(teile) + "\nORDER BY zeitpunkt DESC"
+    query = "\nUNION\n".join(teile)
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, sitzung_id=sitzung_id)
         rows = [dict(r) async for r in result]
+    rows = _zeitleiste_sortieren(rows)
     for row in rows:
         if row.get("kategorie") != "ki":
             continue

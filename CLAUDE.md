@@ -12,6 +12,10 @@ Mark: süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), „sie bleibt eine F
 - **Bärbel jagt sie** (`flug.ts`: `jagen`/`verdauen`, Registry `treffen.ts::beuteTiere`): Fledermaus flieht (Vampir puff zurück), Schnapp sitzt zu 35 %, dann 2,6 s im Buch, Rülpser (Seite fliegt raus), sie taumelt zerzaust heraus. Notausgang nach 8 s, falls Bärbel weg ist.
 - Getestet: pytest (`test_pets.py`, 33), echte Neo4j-Query (Wegwerf-Kampagne), Browser-Harness (Hängen, Freuen, Verwandeln, Hut, Kusshand, Laufen, Napf, Jagd, Verschlucken, Ausspucken, Decke).
 
+## Protokoll: neu oben, alt unten (17.11.2026)
+
+Mark: alte Einträge nach unten, neue nach oben. `ORDER BY` hinter dem UNION sortierte in Neo4j nur die letzte Kategorie. Die Zeitleiste wird jetzt in Python nach `zeitpunkt` absteigend sortiert, die Liste im Frontend nochmal.
+
 ## Protokoll zeigt, was die KI gesagt hat (17.11.2026)
 
 Mark: im Protokoll steht nur „Beratung“, nicht was beraten oder generiert wurde. Die Texte lagen schon am `KiProtokollEintrag` (`prompt`, `antwortText`), die Zeitleiste lieferte nur `anlass`. `kurz` ist jetzt eine lesbare Zeile (Frage → Antwort, beim Generieren das Ergebnis). Klick öffnet den Volltext. Neue Entwürfe loggen Name plus Beschreibung, nicht mehr nur den Namen. Alte Beratungen sind damit lesbar; alte Entwürfe, die nur den Namen gespeichert haben, zeigen den Namen plus den Wunsch.

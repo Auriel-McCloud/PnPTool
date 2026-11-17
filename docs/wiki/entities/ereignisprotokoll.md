@@ -488,6 +488,9 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Generierte. Klick öffnet den Volltext. Neue Entwürfe speichern Name plus
   Text, nicht nur den Namen. Alte Beratungen sind lesbar, weil der Text schon
   am Knoten lag.
+- **17.11.2026, danach** — Zeitleiste neu oben, alt unten. `ORDER BY` hinter
+  dem UNION sortierte nur die letzte Kategorie. Sortierung jetzt in Python
+  nach `zeitpunkt` absteigend, die Liste sortiert nochmal.
 
 ## Siehe auch
 

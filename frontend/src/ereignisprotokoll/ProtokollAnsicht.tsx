@@ -69,12 +69,15 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
 
   const gefiltert = useMemo(() => {
     const nadel = suche.trim().toLowerCase();
-    return eintraege.filter((e) => {
+    const treffer = eintraege.filter((e) => {
       if (kategorie && e.kategorie !== kategorie) return false;
       if (!nadel) return true;
       const hay = `${KATEGORIE_TITEL[e.kategorie] ?? e.kategorie} ${e.kurz} ${e.slNotiz} ${e.prompt ?? ""} ${e.antwort ?? ""}`.toLowerCase();
       return hay.includes(nadel);
     });
+    // Neu oben, alt unten. Die API liefert das schon so; hier nochmal, falls
+    // eine alte Antwort ungeordnet ankommt.
+    return [...treffer].sort((a, b) => (b.zeitpunkt || "").localeCompare(a.zeitpunkt || ""));
   }, [eintraege, kategorie, suche]);
 
   // Starten/Beenden (Mark, 16.11.2026: „einen Session aktiv und deaktiviert

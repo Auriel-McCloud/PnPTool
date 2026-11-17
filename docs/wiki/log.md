@@ -15,6 +15,10 @@ Süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), Teen, ~18, ausgewachsen. A
 
 Zeitleiste sagt nicht mehr nur „Beratung“: Frage und Antwort bzw. das Generierte stehen in der Zeile, Klick öffnet den Volltext. Neue Entwürfe loggen Name plus Text. Siehe [[entities/ereignisprotokoll]].
 
+## [2026-11-17] gebaut | Protokoll neu oben
+
+Zeitleiste sortiert nach Zeitpunkt, neueste oben. Das Cypher-ORDER-BY hinter UNION galt nur für die letzte Kategorie. Siehe [[entities/ereignisprotokoll]].
+
 ## [2026-11-16] gebaut | Æ/Automata mit CPU/Arbeitsspeicher, Gegenstände-Filter am Handy
 
 Geistesschärfe/Fassung heißen bei Æ und Automata CPU/Arbeitsspeicher (nur Anzeige). Gegenstände-Übersicht am Handy: Filter im Fenster, das Raster hat wieder Platz. Siehe [[concepts/rassen]], [[entities/ui-konzept-commlink]].
