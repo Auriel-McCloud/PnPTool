@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Protokoll zeigt, was die KI gesagt hat (17.11.2026)
+
+Mark: im Protokoll steht nur „Beratung“, nicht was beraten oder generiert wurde. Die Texte lagen schon am `KiProtokollEintrag` (`prompt`, `antwortText`), die Zeitleiste lieferte nur `anlass`. `kurz` ist jetzt eine lesbare Zeile (Frage → Antwort, beim Generieren das Ergebnis). Klick öffnet den Volltext. Neue Entwürfe loggen Name plus Beschreibung, nicht mehr nur den Namen. Alte Beratungen sind damit lesbar; alte Entwürfe, die nur den Namen gespeichert haben, zeigen den Namen plus den Wunsch.
+
 ## Æ/Automata: CPU und Arbeitsspeicher; Gegenstände am Handy (16.11.2026)
 
 - **Maschinen-Rassen:** Mark: „bei Æ und Automata soll es nur anders heißen, das reicht, das ist nur optisch“. `traits/rassenBegriffe.ts::rassenBegriff(rasse, name)`: Geistesschärfe → CPU, Fassung → Arbeitsspeicher, erkannt am Rassennamen (`Æ`, `Automata`, ohne Groß/Klein). Nur Anzeige: Charakterblatt-Zeilen, LevelUp, Probe-Fenster (Titel, Prop `rasse` aus Blatt und Kampfkarte), Attribut-Schritt der Erstellung. Werte, Regeln, Erklärungs-Schlüssel und Texte wie „Initiative = Geistesschärfe + …“ bleiben. Wird eine der Rassen im Baukasten umbenannt, die Liste mitziehen.

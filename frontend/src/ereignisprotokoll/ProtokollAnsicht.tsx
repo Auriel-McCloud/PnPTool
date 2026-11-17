@@ -10,6 +10,36 @@ function uhr(iso: string): string {
   return d.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
 }
 
+const ANLASS_TITEL: Record<string, string> = {
+  beratung: "Beratung",
+  "idee-story": "Story generiert",
+  "idee-gegenstand": "Gegenstand generiert",
+  "idee-ort": "Ort generiert",
+  "idee-event": "Ereignis generiert",
+  "idee-fraktion": "Fraktion generiert",
+  "idee-verbindung": "Verbindung generiert",
+  "idee-charakter": "Charakter generiert",
+  nebenfigur: "Nebenfigur generiert",
+  "nebenfigur-zu-npc": "Nebenfigur zum NPC",
+  "objekt-text": "Objekttext",
+  "bild-prompt": "Bild-Prompt",
+  "bild-generieren": "Bild generiert",
+  "wiki-pruefung": "Wiki-Prüfung",
+  "auto-verknuepfung": "Verknüpfung",
+  "beziehungen-aus-beschreibungen": "Beziehungen",
+  achievement_text: "Achievement-Text",
+  "erstellung-kommentar": "Erstellungs-Kommentar",
+};
+
+function detailLabels(anlass: string): { titel: string; links: string; rechts: string } {
+  const titel = ANLASS_TITEL[anlass] ?? (anlass ? anlass.replace(/[-_]/g, " ") : "KI");
+  if (anlass === "beratung") return { titel, links: "Frage", rechts: "Antwort" };
+  if (anlass.startsWith("idee-") || anlass === "nebenfigur" || anlass === "nebenfigur-zu-npc") {
+    return { titel, links: "Wunsch", rechts: "Generiert" };
+  }
+  return { titel, links: "Eingabe", rechts: "Ausgabe" };
+}
+
 export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
   const [sitzungen, setSitzungen] = useState<Sitzung[]>([]);
   const [sitzungId, setSitzungId] = useState<string>("");
@@ -23,6 +53,7 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
   const [neuNummer, setNeuNummer] = useState("");
   const [schaltet, setSchaltet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ZeitleisteEintrag | null>(null);
 
   async function laden(sid: string) {
     const liste = await protokollApi.sitzungen(campaignId);
@@ -41,7 +72,7 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
     return eintraege.filter((e) => {
       if (kategorie && e.kategorie !== kategorie) return false;
       if (!nadel) return true;
-      const hay = `${KATEGORIE_TITEL[e.kategorie] ?? e.kategorie} ${e.kurz} ${e.slNotiz}`.toLowerCase();
+      const hay = `${KATEGORIE_TITEL[e.kategorie] ?? e.kategorie} ${e.kurz} ${e.slNotiz} ${e.prompt ?? ""} ${e.antwort ?? ""}`.toLowerCase();
       return hay.includes(nadel);
     });
   }, [eintraege, kategorie, suche]);
@@ -169,14 +200,56 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
 
       {gefiltert.length > 0 && (
         <ol className="ep-liste">
-          {gefiltert.map((e) => (
-            <li key={e.id} className="ep-zeile cl-roehre">
-              <span className="ep-zeit">{uhr(e.zeitpunkt)}</span>
-              <span className="ep-kat">{KATEGORIE_TITEL[e.kategorie] ?? e.kategorie}</span>
-              <span className="ep-kurz">{e.kurz || "—"}</span>
-              {e.slNotiz && <span className="ep-notiz">{e.slNotiz}</span>}
-            </li>
-          ))}
+          {gefiltert.map((e) => {
+            const hatText = Boolean((e.prompt || "").trim() || (e.antwort || "").trim());
+            const labels = detailLabels(e.anlass || "");
+            return (
+              <li key={e.id}>
+                <div
+                  className="ep-zeile cl-roehre"
+                  data-klick={hatText ? "true" : undefined}
+                  role={hatText ? "button" : undefined}
+                  tabIndex={hatText ? 0 : undefined}
+                  onClick={() => hatText && setDetail(e)}
+                  onKeyDown={(ev) => {
+                    if (!hatText) return;
+                    if (ev.key === "Enter" || ev.key === " ") {
+                      ev.preventDefault();
+                      setDetail(e);
+                    }
+                  }}
+                >
+                  <span className="ep-zeit">{uhr(e.zeitpunkt)}</span>
+                  <span className="ep-kat">{KATEGORIE_TITEL[e.kategorie] ?? e.kategorie}</span>
+                  <span className="ep-kurz">{e.kurz || "—"}</span>
+                  {e.slNotiz && <span className="ep-notiz">{e.slNotiz}</span>}
+                </div>
+                {detail?.id === e.id && (
+                  <Fenster
+                    offen
+                    titel={labels.titel}
+                    kennung={`protokoll-${e.id}`}
+                    onSchliessen={() => setDetail(null)}
+                  >
+                    <div className="ep-detail">
+                      {e.prompt?.trim() && (
+                        <section>
+                          <p className="ep-detail-label">{labels.links}</p>
+                          <p className="ep-detail-text">{e.prompt}</p>
+                        </section>
+                      )}
+                      {e.antwort?.trim() && (
+                        <section>
+                          <p className="ep-detail-label">{labels.rechts}</p>
+                          <p className="ep-detail-text">{e.antwort}</p>
+                        </section>
+                      )}
+                    </div>
+                  </Fenster>
+                )}
+              </li>
+            );
+          })}
         </ol>
       )}
 

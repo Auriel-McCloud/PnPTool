@@ -1,7 +1,7 @@
 ---
 title: Ereignisprotokoll (Sitzungs-Log)
 created: 2026-09-27
-updated: 2026-11-16
+updated: 2026-11-17
 type: entität
 tags: [ereignisprotokoll, datenmodell, ki-integration, inventar, wirtschaft, party, kampf, verhandlung, erfahrung, rassen, backend]
 sources: [../../../CLAUDE.md, ../../../backend/app/ereignisprotokoll/, ../../../docs/api/ereignisprotokoll.md]
@@ -482,6 +482,12 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   bleiben Auto-Einträge unzugeordnet. **Annahmen:** Nummer wird mit
   höchster+1 vorbelegt, Beenden ohne Bestätigung (umkehrbar), Spieler sehen
   vom Start nichts (eine Ansage „Session 1 beginnt“ ist weiter offen).
+- **17.11.2026** — Protokoll-Zeile sagt, was die KI getan hat. Mark: da steht
+  nur „Beratung“, nicht was beraten oder generiert wurde. Zeitleiste liefert
+  für KI `anlass`, `prompt`, `antwort`; `kurz` ist Frage → Antwort bzw. das
+  Generierte. Klick öffnet den Volltext. Neue Entwürfe speichern Name plus
+  Text, nicht nur den Namen. Alte Beratungen sind lesbar, weil der Text schon
+  am Knoten lag.
 
 ## Siehe auch
 

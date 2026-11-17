@@ -79,6 +79,15 @@
 
 .ep-kurz {
   color: var(--text);
+  white-space: pre-wrap;
+}
+
+.ep-zeile[data-klick="true"] {
+  cursor: pointer;
+}
+
+.ep-zeile[data-klick="true"]:hover {
+  border-color: var(--bereich-farbe, var(--neon));
 }
 
 .ep-notiz {
@@ -150,4 +159,27 @@
   margin: 0;
   font-size: 12px;
   color: var(--text-leise);
+}
+
+.ep-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.ep-detail-label {
+  margin: 0 0 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ep-detail-text {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--text);
 }

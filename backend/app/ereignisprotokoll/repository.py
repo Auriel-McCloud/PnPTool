@@ -798,14 +798,74 @@ async def list_charakterentwicklung(campaign_id: str, person_id: str | None = No
 # Gemeinsame Zeitleiste — Cypher-UNION über alle Kategorien
 # ===========================================================================
 
+# Anlass-Kennung → lesbare Zeile. Unbekannte Anlässe bleiben als Text stehen,
+# damit ein neuer KI-Pfad nicht wieder nur als Roh-Schlüssel in der Liste liegt.
+_ANLASS_TITEL = {
+    "beratung": "Beratung",
+    "idee-story": "Story generiert",
+    "idee-gegenstand": "Gegenstand generiert",
+    "idee-ort": "Ort generiert",
+    "idee-event": "Ereignis generiert",
+    "idee-fraktion": "Fraktion generiert",
+    "idee-verbindung": "Verbindung generiert",
+    "idee-charakter": "Charakter generiert",
+    "nebenfigur": "Nebenfigur generiert",
+    "nebenfigur-zu-npc": "Nebenfigur zum NPC",
+    "objekt-text": "Objekttext",
+    "bild-prompt": "Bild-Prompt",
+    "bild-generieren": "Bild generiert",
+    "wiki-pruefung": "Wiki-Prüfung",
+    "auto-verknuepfung": "Verknüpfung",
+    "beziehungen-aus-beschreibungen": "Beziehungen",
+    "achievement_text": "Achievement-Text",
+    "erstellung-kommentar": "Erstellungs-Kommentar",
+}
+
+# Volltext in der Zeitleisten-Antwort kappen — die Liste ist fürs Lesen am
+# Tisch, nicht fürs Archiv. Der Knoten selbst behält den kompletten Text.
+_ZEITLEISTE_TEXT_LIMIT = 8000
+
+
+def _eine_zeile(text: str, laenge: int) -> str:
+    text = " ".join((text or "").split())
+    if len(text) <= laenge:
+        return text
+    return text[: laenge - 1].rstrip() + "…"
+
+
+def _anlass_titel(anlass: str) -> str:
+    if anlass in _ANLASS_TITEL:
+        return _ANLASS_TITEL[anlass]
+    text = (anlass or "KI").replace("-", " ").replace("_", " ")
+    return text[:1].upper() + text[1:]
+
+
+def ki_kurz(anlass: str, prompt: str, antwort: str) -> str:
+    """Eine Zeile für die Protokoll-Liste: was beraten oder generiert wurde,
+    nicht nur die Anlass-Kennung."""
+    titel = _anlass_titel(anlass)
+    if anlass == "beratung":
+        kern = " → ".join(x for x in (_eine_zeile(prompt, 90), _eine_zeile(antwort, 160)) if x)
+    else:
+        # Beim Generieren ist der Wunsch oft das ganze Gespräch — die Zeile
+        # zeigt das Ergebnis, den Wunsch gibt es im Volltext.
+        kern = _eine_zeile(antwort, 200) or _eine_zeile(prompt, 120)
+    return f"{titel}: {kern}" if kern else titel
+
+
+def _kappen(text: str) -> str:
+    text = text or ""
+    if len(text) <= _ZEITLEISTE_TEXT_LIMIT:
+        return text
+    return text[:_ZEITLEISTE_TEXT_LIMIT].rstrip() + "\n…"
+
 
 async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[dict]:
     """"Was ist am Abend X passiert" — eine Abfrage über alle acht Kategorien.
 
-    Liefert je Eintrag nur die Basis-Felder + Kategorie-Kennung; Details
-    holt der Aufrufer bei Bedarf über die kategoriespezifischen list_*-
-    Funktionen (kein Overengineering einer vollständig generischen
-    Detail-Antwort).
+    KI-Einträge liefern zusätzlich ``anlass``, ``prompt`` und ``antwort``,
+    damit die Liste nicht nur „Beratung“ zeigt. Andere Kategorien lassen
+    diese drei Felder leer.
     """
     driver = get_driver()
     sitzung_filter = "AND e.sitzungId = $sitzung_id" if sitzung_id else ""
@@ -821,14 +881,32 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
         "charakterentwicklung": "coalesce(e.art, '')",
     }
     for kategorie, label in LOG_LABELS.items():
+        if kategorie == "ki":
+            extra = (
+                "coalesce(e.anlass, '') AS anlass, "
+                "coalesce(e.prompt, '') AS prompt, "
+                "coalesce(e.antwortText, '') AS antwort"
+            )
+        else:
+            extra = "'' AS anlass, '' AS prompt, '' AS antwort"
         teile.append(f"""
         MATCH (e:{label} {{campaignId: $campaign_id}})
         WHERE NOT coalesce(e.geloescht, false) {sitzung_filter}
         RETURN e.id AS id, '{kategorie}' AS kategorie, e.zeitpunkt AS zeitpunkt,
                e.ingameZeitpunkt AS ingameZeitpunkt, e.sitzungId AS sitzungId, e.slNotiz AS slNotiz,
-               {kurz[kategorie]} AS kurz
+               {kurz[kategorie]} AS kurz, {extra}
         """)
     query = "\nUNION\n".join(teile) + "\nORDER BY zeitpunkt DESC"
     async with driver.session() as session:
         result = await session.run(query, campaign_id=campaign_id, sitzung_id=sitzung_id)
-        return [dict(r) async for r in result]
+        rows = [dict(r) async for r in result]
+    for row in rows:
+        if row.get("kategorie") != "ki":
+            continue
+        anlass = row.get("anlass") or ""
+        prompt = row.get("prompt") or ""
+        antwort = row.get("antwort") or ""
+        row["kurz"] = ki_kurz(anlass, prompt, antwort)
+        row["prompt"] = _kappen(prompt)
+        row["antwort"] = _kappen(antwort)
+    return rows

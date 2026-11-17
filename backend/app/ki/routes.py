@@ -741,6 +741,16 @@ async def ki_idee(campaign_id: str, body: KiIdeeInput):
     return await _idee_anlegen(campaign_id, body.typ, prompt)
 
 
+def _protokoll_text(*teile: str | None, limit: int = 4000) -> str:
+    """Was ins Protokoll soll: Name und der generierte Text, nicht nur der Name."""
+    zeilen: list[str] = []
+    for teil in teile:
+        text = (teil or "").strip()
+        if text and text not in zeilen:
+            zeilen.append(text)
+    return "\n".join(zeilen)[:limit]
+
+
 async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: dict | None = None) -> dict:
     """Gemeinsamer Anlege-Pfad für ✨ KI und für „Entwurf aus Beratung“.
 
@@ -769,7 +779,7 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
                 raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
             await hooks.ki(
                 campaign_id, anlass="idee-story", prompt=prompt,
-                antwort_text=inhalt, uebernommen=True, betrifft_id=seite["id"],
+                antwort_text=_protokoll_text(titel, inhalt), uebernommen=True, betrifft_id=seite["id"],
             )
             return {"typ": "story", "id": seite["id"], "name": titel}
 
@@ -848,7 +858,12 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
                 raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
             await hooks.ki(
                 campaign_id, anlass="idee-gegenstand", prompt=prompt,
-                antwort_text=name, uebernommen=True, betrifft_id=gegenstand["id"],
+                antwort_text=_protokoll_text(
+                    f"{name} ({gegenstand_typ})",
+                    ergebnis.get("beschreibung"),
+                    ergebnis.get("notizen"),
+                ),
+                uebernommen=True, betrifft_id=gegenstand["id"],
             )
             return {"typ": "gegenstand", "id": gegenstand["id"], "name": name}
 
@@ -870,7 +885,8 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
             )
             await hooks.ki(
                 campaign_id, anlass="idee-ort", prompt=prompt,
-                antwort_text=name, uebernommen=True, betrifft_id=node["id"],
+                antwort_text=_protokoll_text(name, ergebnis.get("beschreibung"), ergebnis.get("notizen")),
+                uebernommen=True, betrifft_id=node["id"],
             )
             return {"typ": "ort", "id": node["id"], "name": name}
 
@@ -893,7 +909,8 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
             )
             await hooks.ki(
                 campaign_id, anlass="idee-event", prompt=prompt,
-                antwort_text=titel, uebernommen=True, betrifft_id=node["id"],
+                antwort_text=_protokoll_text(titel, ergebnis.get("beschreibung"), ergebnis.get("notizen")),
+                uebernommen=True, betrifft_id=node["id"],
             )
             return {"typ": "event", "id": node["id"], "name": titel}
 
@@ -917,7 +934,8 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
             )
             await hooks.ki(
                 campaign_id, anlass="idee-fraktion", prompt=prompt,
-                antwort_text=name, uebernommen=True, betrifft_id=node["id"],
+                antwort_text=_protokoll_text(name, ergebnis.get("beschreibung"), ergebnis.get("notizen")),
+                uebernommen=True, betrifft_id=node["id"],
             )
             return {"typ": "fraktion", "id": node["id"], "name": name}
 
@@ -954,7 +972,8 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
             name = f"{von_name} — {kanten_typ} — {zu_name}"
             await hooks.ki(
                 campaign_id, anlass="idee-verbindung", prompt=prompt,
-                antwort_text=name, uebernommen=True, betrifft_id=angelegt.verbindungId,
+                antwort_text=_protokoll_text(name, ergebnis.get("beschreibung")),
+                uebernommen=True, betrifft_id=angelegt.verbindungId,
             )
             return {"typ": "verbindung", "id": angelegt.verbindungId, "name": name}
 
@@ -1230,7 +1249,13 @@ async def _idee_anlegen(campaign_id: str, typ: str, prompt: str, *, nebenfigur: 
 
         await hooks.ki(
             campaign_id, anlass="nebenfigur-zu-npc" if nebenfigur else "idee-charakter", prompt=prompt,
-            antwort_text=name, uebernommen=True, betrifft_id=person["id"],
+            antwort_text=_protokoll_text(
+                name,
+                f"Rasse {rasse_name}, Weg {weg}",
+                konzept.get("konzept"),
+                beschreibung,
+            ),
+            uebernommen=True, betrifft_id=person["id"],
         )
         return {"typ": "charakter", "id": person["id"], "name": name, "traits": len(werte)}
 

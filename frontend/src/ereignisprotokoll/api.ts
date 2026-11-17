@@ -27,6 +27,10 @@ export interface ZeitleisteEintrag {
   sitzungId: string | null;
   slNotiz: string;
   kurz: string;
+  /** Nur KI-Einträge. Leer bei den anderen Kategorien. */
+  anlass?: string;
+  prompt?: string;
+  antwort?: string;
 }
 
 export const KATEGORIE_TITEL: Record<string, string> = {

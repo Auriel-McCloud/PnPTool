@@ -105,6 +105,16 @@ async def nebenfigur_generieren(campaign_id: str, prompt: str, *, entwurf: bool 
     person["beziehungVorschlag"] = " ".join((ergebnis.get("beziehung") or "").split())[:40]
     await hooks.ki(
         campaign_id, anlass="nebenfigur", prompt=prompt,
-        antwort_text=name, uebernommen=True, betrifft_id=person["id"],
+        antwort_text="\n".join(
+            t for t in (
+                name,
+                f"Rasse {rasse}",
+                persoenlichkeit_saeubern(ergebnis.get("persoenlichkeit")),
+                beschreibung,
+                notizen,
+            )
+            if t
+        )[:4000],
+        uebernommen=True, betrifft_id=person["id"],
     )
     return person

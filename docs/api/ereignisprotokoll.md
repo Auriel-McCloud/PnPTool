@@ -87,7 +87,9 @@ jüngste nicht beendete).
 UNION über alle acht Labels, neueste zuerst. Optional auf eine Sitzung
 filtern. Enthält KI-Rohtext und Bewegungen aller Personen — deshalb GM-only.
 Felder: `id`, `kategorie`, `zeitpunkt`, `ingameZeitpunkt`, `sitzungId`,
-`slNotiz`, `kurz` (Art/Anlass, eine Zeile).
+`slNotiz`, `kurz` (eine Zeile: bei KI Frage und Antwort bzw. das Generierte,
+sonst Art/Anlass). KI-Einträge zusätzlich `anlass`, `prompt`, `antwort`
+(Volltext, in der Antwort auf 8000 Zeichen gekappt; der Knoten behält alles).
 
 ## Kategorie-Listen
 
