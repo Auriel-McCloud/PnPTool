@@ -471,7 +471,7 @@ def vampir(g, stufe, zylinder=False, stock=False):
         hand = (cx + s * (hu + arm_b * 0.4 + (1.6 if g == "M" else 1.4)), hy + {3: 0.5, 4: 2.5, 5: 4, 6: 4.5}[stufe])
         ell_ = (lerp(sx, hand[0], 0.5) + s * 0.8, lerp(s_y, hand[1], 0.5))
         if stock and s == 1:  # Mark 17.11.: Arm ausgestreckt, stützt sich elegant auf den Stock
-            hand = (cx + sch + 10.5, hy - 1.5)
+            hand = (cx + sch + 8.5, hy - 0.5)  # Mark: Arm eine Spur kürzer
             ell_ = (lerp(sx, hand[0], 0.5) + 0.4, lerp(s_y, hand[1], 0.5) - 0.8)
         if g == "M":
             aermel = HEMD["M"] if stufe == 5 else STOFF["M"]
@@ -488,11 +488,21 @@ def vampir(g, stufe, zylinder=False, stock=False):
             L_.lege([("linie", [(lerp(ell_[0], hand[0], 0.85), lerp(ell_[1], hand[1], 0.85)), hand], arm_b * 0.9)], HEMD["M"])
         if stock and s == 1:  # Gehstock: schwarz lackiert, Silberknauf, Spitze am Boden
             fuss = (hand[0] + 1.2, boden - 0.5)
-            L_.lege([("linie", [(hand[0], hand[1] + 2), fuss], 1.6)], K)
-            L_.lege([("linie", [(hand[0] - 0.3, hand[1] + 5), (fuss[0] - 0.6, fuss[1] - 3)], 0.6)], (118, 106, 140))
+            L_.lege([("linie", [(hand[0], hand[1] + 4), fuss], 1.6)], K)
+            L_.lege([("linie", [(hand[0] - 0.3, hand[1] + 8), (fuss[0] - 0.6, fuss[1] - 3)], 0.6)], (118, 106, 140))
             L_.lege([("ell", fuss[0], fuss[1] - 0.6, 0.9, 1.0)], (210, 214, 226))
-            L_.lege([("ell", hand[0] + 0.3, hand[1] + 3.0, 2.0, 1.6)], (214, 218, 230), kante=(110, 114, 132))  # Knauf unter der Hand
-            L_.px(hand[0] - 0.8, hand[1] + 2.6, WEISS)
+            # Knauf als silberner Totenkopf (Mark 17.11.), die Hand liegt auf dem Schädeldach
+            silber, schatten = (218, 222, 234), (132, 136, 156)
+            tx, ty = round(hand[0] + 0.2), round(hand[1] + 3.2)
+            L_.karte(tx - 3, ty - 2, [
+                ".SSSSS.",
+                "SSSSSSS",
+                "SkkSkkS",
+                "SkkSkkd",
+                ".SSkSd.",
+                "..S.S..",
+                "..dSd..",
+            ], {"S": silber, "k": (28, 22, 36), "d": schatten})
         L_.lege([("ell", hand[0], hand[1] + 1.2, arm_b * 0.5, arm_b * 0.62)], STOFF["D"] if (g == "W" and stufe == 6) else HAUT["M"], kante=HAUT["D"])
 
     # ── Hals, Kopf ──
