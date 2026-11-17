@@ -31,6 +31,9 @@ export interface ZeitleisteEintrag {
   anlass?: string;
   prompt?: string;
   antwort?: string;
+  /** Kampf-Einträge: Events der Kampfkarte zum Zeitpunkt der Aktion. */
+  eventIds?: string[];
+  eventNamen?: string[];
 }
 
 export const KATEGORIE_TITEL: Record<string, string> = {

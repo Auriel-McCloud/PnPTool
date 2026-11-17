@@ -16,6 +16,19 @@ async def _sitzung(campaign_id: str) -> str | None:
     return await repository.aktive_sitzung_id(campaign_id)
 
 
+async def _event_ids(campaign_id: str) -> list[str]:
+    """Events der Kampfkarte, die gerade liegt. Annahme: die Karte trägt das
+    Event, nicht der Kampf selbst. Keine Karte oder kein Event → leer."""
+    from app.battlemap import repository as karten
+    from app.kampf import repository as kampf_repo
+
+    kampf = await kampf_repo.hole(campaign_id)
+    if not kampf or not kampf.get("battlemapId"):
+        return []
+    karte = await karten.holen(campaign_id, kampf["battlemapId"])
+    return [str(i) for i in ((karte or {}).get("eventIds") or []) if i]
+
+
 async def kampf_treffer(
     campaign_id: str,
     *,
@@ -38,6 +51,40 @@ async def kampf_treffer(
         hp_art=hp_art,
         hp_menge=hp_menge,
         kaestchen_schaden=kaestchen_schaden,
+        event_ids=await _event_ids(campaign_id),
+        sitzung_id=await _sitzung(campaign_id),
+    )
+
+
+async def kampf_aktion(
+    campaign_id: str,
+    *,
+    art: str,
+    akteur_id: str | None = None,
+    ziel_id: str | None = None,
+    detail: str = "",
+) -> None:
+    """Kampfaktion ins Protokoll. Schaden bleibt bei kampf_treffer (Initiative
+    als Angreifer). Hier ist der Akteur die Person, die die Aktion ausführt;
+    fehlt sie, fällt es auf den Initiative-Zug zurück."""
+    from app.kampf import repository as kampf_repo
+
+    kampf = await kampf_repo.hole(campaign_id)
+    if akteur_id is None and kampf:
+        akteur_id = await kampf_repo.angreifer_person_id(campaign_id)
+    if ziel_id and akteur_id and ziel_id != akteur_id:
+        angreifer, ziel = akteur_id, ziel_id
+    else:
+        angreifer, ziel = None, akteur_id or ziel_id
+    await repository.log_kampf_eintrag(
+        campaign_id,
+        art=art,
+        ziel_person_id=ziel,
+        angreifer_person_id=angreifer,
+        kampf_id=(kampf or {}).get("id", ""),
+        runde=int((kampf or {}).get("runde") or 0),
+        detail=detail,
+        event_ids=await _event_ids(campaign_id),
         sitzung_id=await _sitzung(campaign_id),
     )
 

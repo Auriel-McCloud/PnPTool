@@ -90,6 +90,8 @@ Felder: `id`, `kategorie`, `zeitpunkt`, `ingameZeitpunkt`, `sitzungId`,
 `slNotiz`, `kurz` (eine Zeile: bei KI Frage und Antwort bzw. das Generierte,
 sonst wer und was sich geändert hat, z.B. „Name: zu NPC gemacht (PC → NPC)“). KI-Einträge zusätzlich `anlass`, `prompt`, `antwort`
 (Volltext, in der Antwort auf 8000 Zeichen gekappt; der Knoten behält alles).
+Kampf-Einträge zusätzlich `eventIds` und `eventNamen` (Events der Kampfkarte
+zum Zeitpunkt der Aktion).
 
 ## Kategorie-Listen
 

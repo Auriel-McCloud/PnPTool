@@ -23,6 +23,10 @@ Zeitleiste sortiert nach Zeitpunkt, neueste oben. Das Cypher-ORDER-BY hinter UNI
 
 „zu NPC gemacht“ zeigt jetzt den Namen und PC → NPC. Steigerung, Gegenstand und Treffer nennen ebenfalls, wen oder was es getroffen hat. Siehe [[entities/ereignisprotokoll]].
 
+## [2026-11-17] gebaut | Kampflog und Event-Filter
+
+Kampfaktionen außer dem Treffer schreiben jetzt mit (Droge, Beschwören, Hot, Matrix, Booster, Freisetzen, Kampfbeginn/-ende). Im Protokoll Session plus Event filtern. Event kommt von der Kampfkarte. Siehe [[entities/ereignisprotokoll]].
+
 ## [2026-11-16] gebaut | Æ/Automata mit CPU/Arbeitsspeicher, Gegenstände-Filter am Handy
 
 Geistesschärfe/Fassung heißen bei Æ und Automata CPU/Arbeitsspeicher (nur Anzeige). Gegenstände-Übersicht am Handy: Filter im Fenster, das Raster hat wieder Platz. Siehe [[concepts/rassen]], [[entities/ui-konzept-commlink]].

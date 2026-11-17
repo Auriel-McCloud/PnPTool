@@ -12,6 +12,7 @@ from app.battlemap.schemas import BlickUpdate, KarteAnKampf, PositionUpdate, Ver
 from app.battlemap.verteiler import verteiler as karten_verteiler
 from app.campaigns.repository import get_einstellungen
 from app.entities.repository import PERSON_FIELDS, critter_besitzer, drohne_rigger, get_node
+from app.ereignisprotokoll import hooks
 from app.kampf import matrix_store, repository
 from app.kampf.initiative import (
     darf_melden,
@@ -274,6 +275,7 @@ async def _pets_abgleichen(campaign_id: str) -> None:
 async def beginne(campaign_id: str):
     kampf = await repository.beginne(campaign_id)
     kampf = await _party_und_ort_automatisch_aufnehmen(campaign_id, kampf)
+    await hooks.kampf_aktion(campaign_id, art="KAMPF_START")
     await _pets_abgleichen(campaign_id)
     return await _kampf_antworten(kampf)
 
@@ -282,6 +284,7 @@ async def beginne(campaign_id: str):
 async def beende(campaign_id: str):
     kampf = await repository.hole(campaign_id)
     karte_id = kampf.get("battlemapId") if kampf else None
+    await hooks.kampf_aktion(campaign_id, art="KAMPFENDE")
     await repository.beende(campaign_id)
     await _pets_abgleichen(campaign_id)
     if karte_id:
@@ -973,6 +976,10 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             "Diese Beschwörung wurde in diesem Kampf schon gerufen.",
         )
     if entscheidung == "zu-wenig":
+        await hooks.kampf_aktion(
+            campaign_id, art="BESCHWOEREN", akteur_id=besitzer_id,
+            detail=f"misslungen, {benoetigt} nötig, {body.erfolge} erzielt",
+        )
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             f"Beschwörung misslungen — {benoetigt} Erfolge nötig, {body.erfolge} erzielt.",
@@ -981,6 +988,9 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
         return await _kampf_antworten(kampf)
     if entscheidung == "verbraucht":
         await repository.beschwoerung_verbrauchen(campaign_id, item_id)
+        await hooks.kampf_aktion(
+            campaign_id, art="BESCHWOEREN", akteur_id=besitzer_id, detail="Patzer, Ruf weg"
+        )
         return await _kampf_antworten(await repository.hole(campaign_id))
 
     critter = await get_node("Person", PERSON_FIELDS, campaign_id, critter_id)
@@ -1004,6 +1014,10 @@ async def item_beschwoeren(campaign_id: str, item_id: str, body: BeschwoerenInpu
             "begleiterId": None,
             "rundenVerbleibend": stufe,
         },
+    )
+    await hooks.kampf_aktion(
+        campaign_id, art="BESCHWOEREN", akteur_id=besitzer_id, ziel_id=critter_id,
+        detail=critter.get("name") or "Critter",
     )
     return await _kampf_antworten(await repository.hole(campaign_id))
 
@@ -1116,6 +1130,9 @@ async def begleiter_freisetzen(campaign_id: str, art: BegleiterArt, begleiter_id
             "begleiterId": begleiter_id if art == "begleiter" else None,
         },
     )
+    await hooks.kampf_aktion(
+        campaign_id, art="FREISETZEN", akteur_id=viewer.person_id, detail=name
+    )
     return await _kampf_antworten(await repository.hole(campaign_id))
 
 
@@ -1129,8 +1146,17 @@ async def begleiter_zurueckrufen(campaign_id: str, art: BegleiterArt, begleiter_
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
     feld = "begleiterId" if art == "begleiter" else "personId"
+    namen = [
+        t.get("name") or "Begleiter"
+        for t in kampf["teilnehmer"]
+        if t.get(feld) == begleiter_id and t.get("rundenVerbleibend") is None
+    ]
     for t in [t for t in kampf["teilnehmer"] if t.get(feld) == begleiter_id and t.get("rundenVerbleibend") is None]:
         await repository.teilnehmer_entfernen(campaign_id, t["id"])
+    if namen:
+        await hooks.kampf_aktion(
+            campaign_id, art="ZURUECKRUFEN", akteur_id=viewer.person_id, detail=namen[0]
+        )
     return await _kampf_antworten(await repository.hole(campaign_id))
 
 
@@ -1350,6 +1376,12 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
         await repository.hot_schreiben(
             campaign_id, person_id, hot_drohne_id=antwort.hot_drohne_id, hot_runde=antwort.hot_runde
         )
+        await hooks.kampf_aktion(
+            campaign_id,
+            art="HOT_AUS" if not body.bleiben else "HOT_AN",
+            akteur_id=person_id,
+            detail="Drohne bleibt" if body.bleiben else "Drohne aus",
+        )
         return await _hot_status(campaign_id, person_id)
 
     if body.matrixBleiben is not None:
@@ -1371,6 +1403,12 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
             matrix_hot=bleibt,
             matrix_hot_runde=neue_runde,
         )
+        await hooks.kampf_aktion(
+            campaign_id,
+            art="HOT_AUS" if not body.matrixBleiben else "HOT_AN",
+            akteur_id=person_id,
+            detail="Matrix bleibt" if body.matrixBleiben else "Matrix aus",
+        )
         return await _hot_status(campaign_id, person_id)
 
     if body.matrix is not None:
@@ -1384,6 +1422,7 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
             matrix_hot=True,
             matrix_hot_runde=runde if runde is not None else 0,
         )
+        await hooks.kampf_aktion(campaign_id, art="HOT_AN", akteur_id=person_id, detail="Matrix")
         return await _hot_status(campaign_id, person_id)
 
     if not body.drohneId:
@@ -1409,6 +1448,9 @@ async def hot_setzen(campaign_id: str, body: HotInput, viewer: Viewer = Depends(
         raise HTTPException(status.HTTP_409_CONFLICT, wahl.fehler or "Hot gerade nicht möglich.")
     await repository.hot_schreiben(
         campaign_id, person_id, hot_drohne_id=wahl.hot_drohne_id, hot_runde=wahl.hot_runde
+    )
+    await hooks.kampf_aktion(
+        campaign_id, art="HOT_AN", akteur_id=person_id, detail=drohne.get("name") or "Drohne"
     )
     return await _hot_status(campaign_id, person_id)
 
@@ -1546,7 +1588,7 @@ async def booster_aktivieren(
             "ampel": ampel_nach_nutzung(eigener["ampel"]),
         },
     )
-
+    await hooks.kampf_aktion(campaign_id, art="BOOSTER", akteur_id=person_id, detail=eigener["name"])
     return await _kampf_antworten(await repository.hole(campaign_id))
 
 

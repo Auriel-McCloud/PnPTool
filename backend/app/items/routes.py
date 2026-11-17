@@ -796,6 +796,9 @@ async def item_schlucken(
     if ein is not None:
         laufend.append(ein)
     await drogen.ersetzen(campaign_id, besitzer, laufend)
+    await hooks.kampf_aktion(
+        campaign_id, art="DROGE", akteur_id=besitzer, detail=item.get("name") or "Droge"
+    )
     return SchluckAntwort(text=f"{item.get('name') or 'Droge'} geschluckt. Wirkung {uhr}.")
 
 

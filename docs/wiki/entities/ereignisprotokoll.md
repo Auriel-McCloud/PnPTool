@@ -494,6 +494,11 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
 - **17.11.2026, danach** — Zeile nennt, wen es getroffen hat. „zu NPC gemacht“
   wird zu „Name: zu NPC gemacht (PC → NPC)“. Ebenso Steigerung (Wert alt → neu),
   Gegenstand (Besitzer), Treffer (Ziel). Die Namen lagen schon an den Kanten.
+- **17.11.2026, danach** — Kampflog um die übrigen Aktionen erweitert
+  (Droge, Beschwören, Hot, Matrix, Booster, Freisetzen, Kampfbeginn/-ende).
+  Filter Event + Session. **Annahme:** Event = die Events der Kampfkarte
+  zum Zeitpunkt der Aktion. Bewusstlos/tot/geflohen bleiben ungeschrieben,
+  es gibt keinen Knopf dafür.
 
 ## Siehe auch
 

@@ -162,7 +162,12 @@ class NpcWissenszuwachsResponse(NpcWissenszuwachsCreate):
 
 # --- KampfLogEintrag -----------------------------------------------------------
 
-KampfLogArt = Literal["TREFFER", "KRITISCH", "BEWUSSTLOS", "TOD", "GEFLOHEN", "KAMPFENDE"]
+KampfLogArt = Literal[
+    "TREFFER", "KRITISCH", "BEWUSSTLOS", "TOD", "GEFLOHEN", "KAMPFENDE",
+    "KAMPF_START", "DROGE", "BESCHWOEREN", "HOT_AN", "HOT_AUS",
+    "MATRIX_NAVIGATION", "MATRIX_ANGRIFF", "ELECTRONIC_WARFARE",
+    "BOOSTER", "FREISETZEN", "ZURUECKRUFEN",
+]
 RuestungsArtLog = Literal["schlag", "schwer", "aggraviert"]
 
 

@@ -157,6 +157,9 @@ async def navigation(campaign_id: str, body: ProbeInput, viewer: Viewer = Depend
     ich = await _akteur(campaign_id, viewer)
     kampf = await _kampf_oder_404(campaign_id)
     if not matrix.navigation_trifft(body.erfolge):
+        await hooks.kampf_aktion(
+            campaign_id, art="MATRIX_NAVIGATION", akteur_id=ich, detail="daneben"
+        )
         return {"gesehen": False, "gepingt": False, "liveSicht": False}
     stand = kampf["stand"]
     voll = await repository.hole(campaign_id)
@@ -175,6 +178,10 @@ async def navigation(campaign_id: str, body: ProbeInput, viewer: Viewer = Depend
             stand["gesehen"][ich].append(gid)
     gepingt, live = await _matrix_ping(campaign_id, voll, ich, stand)
     await matrix_store.speichere(campaign_id, stand)
+    await hooks.kampf_aktion(
+        campaign_id, art="MATRIX_NAVIGATION", akteur_id=ich,
+        detail=f"gesehen, {len(stand['gesehen'][ich])}",
+    )
     return {"gesehen": True, "anzahl": len(stand["gesehen"][ich]), "gepingt": gepingt, "liveSicht": live}
 
 
@@ -184,6 +191,7 @@ async def electronic_warfare(campaign_id: str, body: ProbeInput, viewer: Viewer 
     kampf = await _kampf_oder_404(campaign_id)
     bonus = matrix.ew_bonus(body.erfolge)
     if bonus <= 0:
+        await hooks.kampf_aktion(campaign_id, art="ELECTRONIC_WARFARE", akteur_id=ich, detail="daneben")
         return {"bonus": 0}
     party = list(await matrix_store.party_ids(campaign_id, ich))
     if ich not in party:
@@ -191,6 +199,9 @@ async def electronic_warfare(campaign_id: str, body: ProbeInput, viewer: Viewer 
     stand = kampf["stand"]
     stand["ew"] = matrix.ew_setzen(stand.get("ew") or {}, party, bonus, kampf["runde"])
     await matrix_store.speichere(campaign_id, stand)
+    await hooks.kampf_aktion(
+        campaign_id, art="ELECTRONIC_WARFARE", akteur_id=ich, detail=f"+{bonus} für 3 Runden"
+    )
     return {"bonus": bonus, "runden": 3}
 
 
@@ -226,6 +237,10 @@ async def treffer(campaign_id: str, body: TrefferInput, viewer: Viewer = Depends
         "art": art,
     }
     await matrix_store.speichere(campaign_id, stand)
+    await hooks.kampf_aktion(
+        campaign_id, art="MATRIX_ANGRIFF", akteur_id=ich, ziel_id=body.zielPersonId,
+        detail=f"{body.fertigkeit}, {body.erfolge} Erfolge",
+    )
     ziele = []
     if art != "schaden" and punkte:
         ziele = await matrix_store.schaltbare(campaign_id, body.zielPersonId)

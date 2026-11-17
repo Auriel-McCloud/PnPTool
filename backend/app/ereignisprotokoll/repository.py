@@ -583,29 +583,36 @@ async def list_npc_wissenszuwachs(campaign_id: str, npc_person_id: str | None = 
 
 
 async def log_kampf_eintrag(
-    campaign_id: str, *, art: str, ziel_person_id: str,
+    campaign_id: str, *, art: str, ziel_person_id: str | None = None,
     kampf_id: str = "", runde: int = 0,
     hp_art: str | None = None, hp_menge: int = 0, kaestchen_schaden: int = 0,
     angreifer_person_id: str | None = None,
+    detail: str = "", event_ids: list[str] | None = None,
     sitzung_id: str | None = None, ingame_zeitpunkt: str = "", sl_notiz: str = "",
 ) -> dict:
     driver = get_driver()
     eid = str(uuid.uuid4())
     query = """
         MATCH (c:Campaign {id: $campaign_id})
-        MATCH (ziel:Person {id: $ziel_person_id, campaignId: $campaign_id})
         CREATE (e:KampfLogEintrag {
             id: $eid, campaignId: $campaign_id, zeitpunkt: $zeitpunkt,
             ingameZeitpunkt: $ingame_zeitpunkt, sitzungId: $sitzung_id, slNotiz: $sl_notiz,
             geloescht: false, kampfId: $kampf_id, runde: $runde, art: $art,
-            hpArt: $hp_art, hpMenge: $hp_menge, kaestchenSchaden: $kaestchen_schaden
+            hpArt: $hp_art, hpMenge: $hp_menge, kaestchenSchaden: $kaestchen_schaden,
+            detail: $detail
         })
         CREATE (c)-[:HAT_EREIGNIS]->(e)
-        CREATE (e)-[:ZIEL]->(ziel)
+        WITH e
+        OPTIONAL MATCH (ziel:Person {id: $ziel_person_id, campaignId: $campaign_id})
+        FOREACH (_ IN CASE WHEN ziel IS NULL THEN [] ELSE [1] END | CREATE (e)-[:ZIEL]->(ziel))
         WITH e
         OPTIONAL MATCH (angreifer:Person {id: $angreifer_person_id, campaignId: $campaign_id})
         FOREACH (_ IN CASE WHEN angreifer IS NULL THEN [] ELSE [1] END | CREATE (e)-[:ANGREIFER]->(angreifer))
-        RETURN e.id AS id
+        WITH e
+        UNWIND CASE WHEN size($event_ids) = 0 THEN [null] ELSE $event_ids END AS evId
+        OPTIONAL MATCH (ev:Event {id: evId, campaignId: $campaign_id})
+        FOREACH (_ IN CASE WHEN ev IS NULL THEN [] ELSE [1] END | MERGE (e)-[:BEI_EVENT]->(ev))
+        RETURN DISTINCT e.id AS id
     """
     async with driver.session() as session:
         result = await session.run(
@@ -613,7 +620,8 @@ async def log_kampf_eintrag(
             ingame_zeitpunkt=ingame_zeitpunkt, sitzung_id=sitzung_id, sl_notiz=sl_notiz,
             kampf_id=kampf_id, runde=runde, art=art, hp_art=hp_art, hp_menge=hp_menge,
             kaestchen_schaden=kaestchen_schaden, ziel_person_id=ziel_person_id,
-            angreifer_person_id=angreifer_person_id,
+            angreifer_person_id=angreifer_person_id, detail=detail,
+            event_ids=event_ids or [],
         )
         record = await result.single()
         return {"id": eid} if record else {"id": None}
@@ -898,6 +906,17 @@ _ART_TITEL = {
     "TOD": "tot",
     "GEFLOHEN": "geflohen",
     "KAMPFENDE": "Kampfende",
+    "KAMPF_START": "Kampf begonnen",
+    "DROGE": "Droge genommen",
+    "BESCHWOEREN": "beschworen",
+    "HOT_AN": "Hot gegangen",
+    "HOT_AUS": "Hot aus",
+    "MATRIX_NAVIGATION": "Matrix-Navigation",
+    "MATRIX_ANGRIFF": "Matrix-Angriff",
+    "ELECTRONIC_WARFARE": "Electronic Warfare",
+    "BOOSTER": "Booster gezündet",
+    "FREISETZEN": "freigesetzt",
+    "ZURUECKRUFEN": "zurückgerufen",
 }
 
 
@@ -985,6 +1004,7 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
                             + CASE WHEN coalesce(e.kaestchenSchaden, 0) = 0 THEN ''
                                    ELSE ', ' + toString(e.kaestchenSchaden) + ' Kästchen' END
                   END
+                + CASE WHEN coalesce(e.detail, '') = '' THEN '' ELSE ' · ' + e.detail END
             )""",
             "coalesce(e.art, '')",
         ),
@@ -1048,4 +1068,24 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
             )
         row.pop("wer", None)
         row.pop("was", None)
+    events = await _kampf_events(campaign_id, [r["id"] for r in rows if r.get("kategorie") == "kampf"])
+    for row in rows:
+        ids, namen = events.get(row["id"], ([], []))
+        row["eventIds"] = ids
+        row["eventNamen"] = namen
     return rows
+
+
+async def _kampf_events(campaign_id: str, ids: list[str]) -> dict[str, tuple[list[str], list[str]]]:
+    if not ids:
+        return {}
+    driver = get_driver()
+    query = """
+        MATCH (e:KampfLogEintrag {campaignId: $campaign_id})-[:BEI_EVENT]->(ev:Event)
+        WHERE e.id IN $ids AND NOT coalesce(ev.geloescht, false)
+        RETURN e.id AS id, collect(DISTINCT ev.id) AS eventIds,
+               collect(DISTINCT coalesce(ev.title, ev.name, '')) AS eventNamen
+    """
+    async with driver.session() as session:
+        result = await session.run(query, campaign_id=campaign_id, ids=ids)
+        return {r["id"]: (list(r["eventIds"]), list(r["eventNamen"])) async for r in result}

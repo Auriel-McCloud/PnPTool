@@ -12,6 +12,10 @@ Mark: süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), „sie bleibt eine F
 - **Bärbel jagt sie** (`flug.ts`: `jagen`/`verdauen`, Registry `treffen.ts::beuteTiere`): Fledermaus flieht (Vampir puff zurück), Schnapp sitzt zu 35 %, dann 2,6 s im Buch, Rülpser (Seite fliegt raus), sie taumelt zerzaust heraus. Notausgang nach 8 s, falls Bärbel weg ist.
 - Getestet: pytest (`test_pets.py`, 33), echte Neo4j-Query (Wegwerf-Kampagne), Browser-Harness (Hängen, Freuen, Verwandeln, Hut, Kusshand, Laufen, Napf, Jagd, Verschlucken, Ausspucken, Decke).
 
+## Kampf-Log: Aktionen und Event-Filter (17.11.2026)
+
+Mark: detailliertes Kampflog, danach filterbar nach Event aus einer Session. Treffer gab es schon (Angreifer = Initiative). Dazu Droge, Beschwören, Hot an/aus, Matrix-Navigation und -Angriff, Electronic Warfare, Booster, Freisetzen/Zurückrufen, Kampfbeginn und -ende. Event kommt von der Kampfkarte zum Zeitpunkt der Aktion (Annahme: die Karte trägt die Events). Protokoll: Session wie bisher, dazu Event-Auswahl. Bewusstlos/tot/geflohen schreibt niemand, weil es dafür keinen Knopf gibt.
+
 ## Protokoll nennt, wen es getroffen hat (17.11.2026)
 
 Mark: „zu NPC gemacht“, aber nicht wer oder was sich geändert hat. Die Zeile holt den Namen von der Kante und zeigt die Änderung (PC → NPC, Fertigkeit alt → neu, Gegenstand und Besitzer, Treffer mit Ziel). Gilt für die alten Einträge, die Daten lagen schon da.

@@ -46,6 +46,7 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
   const [eintraege, setEintraege] = useState<ZeitleisteEintrag[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [kategorie, setKategorie] = useState<string>("");
+  const [eventId, setEventId] = useState("");
   const [suche, setSuche] = useState("");
   const [anlegenOffen, setAnlegenOffen] = useState(false);
   const [neuDatum, setNeuDatum] = useState(() => new Date().toISOString().slice(0, 10));
@@ -71,14 +72,25 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
     const nadel = suche.trim().toLowerCase();
     const treffer = eintraege.filter((e) => {
       if (kategorie && e.kategorie !== kategorie) return false;
+      if (eventId && !(e.eventIds ?? []).includes(eventId)) return false;
       if (!nadel) return true;
-      const hay = `${KATEGORIE_TITEL[e.kategorie] ?? e.kategorie} ${e.kurz} ${e.slNotiz} ${e.prompt ?? ""} ${e.antwort ?? ""}`.toLowerCase();
+      const hay = `${KATEGORIE_TITEL[e.kategorie] ?? e.kategorie} ${e.kurz} ${e.slNotiz} ${e.prompt ?? ""} ${e.antwort ?? ""} ${(e.eventNamen ?? []).join(" ")}`.toLowerCase();
       return hay.includes(nadel);
     });
     // Neu oben, alt unten. Die API liefert das schon so; hier nochmal, falls
     // eine alte Antwort ungeordnet ankommt.
     return [...treffer].sort((a, b) => (b.zeitpunkt || "").localeCompare(a.zeitpunkt || ""));
-  }, [eintraege, kategorie, suche]);
+  }, [eintraege, kategorie, eventId, suche]);
+
+  const events = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const e of eintraege) {
+      (e.eventIds ?? []).forEach((id, i) => {
+        if (!map.has(id)) map.set(id, e.eventNamen?.[i] || id);
+      });
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "de"));
+  }, [eintraege]);
 
   // Starten/Beenden (Mark, 16.11.2026: „einen Session aktiv und deaktiviert
   // Button, wo ich die Nummer eintragen kann“). Aktiv ist höchstens eine.
@@ -165,6 +177,14 @@ export function ProtokollAnsicht({ campaignId }: { campaignId: string }) {
               {s.nummer != null && s.titel ? ` — ${s.titel}` : ""}
               {` · ${s.datum}`}
               {s.aktiv ? " · läuft" : ""}
+            </option>
+          ))}
+        </select>
+        <select value={eventId} onChange={(ev) => setEventId(ev.target.value)} aria-label="Event">
+          <option value="">Alle Events</option>
+          {events.map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
             </option>
           ))}
         </select>
