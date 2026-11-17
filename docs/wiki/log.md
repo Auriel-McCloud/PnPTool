@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-17] gebaut | Geldzeile nennt wofür
+
+`Mira: Handel (120¥ · Klinge)`. Alte Käufe über handelId. Siehe [[entities/ereignisprotokoll]].
+
 ## [2026-11-17] gebaut | Gegenstand im Protokoll
 
 Zeile nennt Person und Stück (`Mira: gekauft (Comlink)`). Neu: aufheben, zuweisen, hineinlegen, anlegen/ablegen, Implantat, Augment. Siehe [[entities/ereignisprotokoll]].

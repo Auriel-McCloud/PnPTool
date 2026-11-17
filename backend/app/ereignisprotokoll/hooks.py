@@ -180,6 +180,7 @@ async def geld(
     von_person_id: str | None = None,
     an_person_id: str | None = None,
     handel_id: str | None = None,
+    detail: str = "",
 ) -> None:
     await repository.log_geldbewegung(
         campaign_id,
@@ -188,6 +189,7 @@ async def geld(
         von_person_id=von_person_id,
         an_person_id=an_person_id,
         handel_id=handel_id,
+        detail=detail,
         sitzung_id=await _sitzung(campaign_id),
     )
 

@@ -34,7 +34,7 @@ Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
 |---|---|---|
 | `ki` | `KiProtokollEintrag` | KI-Ausgabe, auch wenn nicht übernommen |
 | `gegenstand` | `GegenstandsBewegung` | Besitzerkette; Zeile nennt Person und Stück |
-| `geld` | `GeldBewegung` | Kapital, optional `handelId` |
+| `geld` | `GeldBewegung` | Kapital; Zeile nennt Betrag und wofür |
 | `aufenthalt` | `Aufenthalt` | Party/Person an Ort/Event, Historie |
 | `npcwissen` | `NpcWissenszuwachs` | was ein NPC erfahren hat |
 | `kampf` | `KampfLogEintrag` | Treffer und Aktionen, inkl. Drohne/Fahrzeug-Beitritt |

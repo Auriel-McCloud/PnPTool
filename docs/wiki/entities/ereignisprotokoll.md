@@ -506,6 +506,9 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   `Mira: gekauft (Comlink)`, bei Wechsel `Mira → Vaelik: weitergegeben (Comlink)`.
   Neu geloggt: aufheben, zuweisen, hineinlegen, anlegen/ablegen, Implantat,
   Augment montieren/demontieren. Alte Einträge nutzen die vorhandenen Kanten.
+- **17.11.2026, danach** — Geldzeile nennt, wofür: `Mira: Handel (120¥ · Klinge)`.
+  Alte Käufe über `handelId`. Digitale Bestellung und Reparatur ab jetzt mit Namen.
+  Drohnen-Umbau und Credstick bleiben außerhalb dieses Filters.
 
 ## Siehe auch
 

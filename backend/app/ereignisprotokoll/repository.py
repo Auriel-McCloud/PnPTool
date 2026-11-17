@@ -386,7 +386,8 @@ async def list_gegenstandsbewegungen(campaign_id: str, gegenstand_id: str | None
 async def log_geldbewegung(
     campaign_id: str, *, betrag: int, art: str,
     von_person_id: str | None = None, an_person_id: str | None = None,
-    handel_id: str | None = None, sitzung_id: str | None = None,
+    handel_id: str | None = None, detail: str = "",
+    sitzung_id: str | None = None,
     ingame_zeitpunkt: str = "", sl_notiz: str = "",
 ) -> dict:
     driver = get_driver()
@@ -396,7 +397,7 @@ async def log_geldbewegung(
         CREATE (e:GeldBewegung {
             id: $eid, campaignId: $campaign_id, zeitpunkt: $zeitpunkt,
             ingameZeitpunkt: $ingame_zeitpunkt, sitzungId: $sitzung_id, slNotiz: $sl_notiz,
-            geloescht: false, betrag: $betrag, art: $art, handelId: $handel_id
+            geloescht: false, betrag: $betrag, art: $art, handelId: $handel_id, detail: $detail
         })
         CREATE (c)-[:HAT_EREIGNIS]->(e)
         WITH e
@@ -411,7 +412,7 @@ async def log_geldbewegung(
         await session.run(
             query, campaign_id=campaign_id, eid=eid, zeitpunkt=_jetzt(),
             ingame_zeitpunkt=ingame_zeitpunkt, sitzung_id=sitzung_id, sl_notiz=sl_notiz,
-            betrag=betrag, art=art, handel_id=handel_id,
+            betrag=betrag, art=art, handel_id=handel_id, detail=detail,
             von_person_id=von_person_id, an_person_id=an_person_id,
         )
     return {"id": eid}
@@ -984,10 +985,21 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
         ),
         "geld": (
             """OPTIONAL MATCH (e)-[:VON]->(von:Person)
-            OPTIONAL MATCH (e)-[:AN]->(an:Person)""",
-            """CASE WHEN von IS NULL AND an IS NULL THEN ''
-                 ELSE coalesce(von.name, '—') + ' → ' + coalesce(an.name, '—') END""",
-            "CASE WHEN e.betrag IS NULL THEN '' ELSE toString(e.betrag) + '¥' END",
+            OPTIONAL MATCH (e)-[:AN]->(an:Person)
+            OPTIONAL MATCH (ware:GegenstandsBewegung {campaignId: $campaign_id})
+              WHERE coalesce(e.handelId, '') <> '' AND ware.handelId = e.handelId
+            OPTIONAL MATCH (ware)-[:BETRIFFT]->(g:Gegenstand)""",
+            """CASE WHEN von IS NOT NULL AND an IS NOT NULL
+                 THEN coalesce(von.name, '') + ' → ' + coalesce(an.name, '')
+                 WHEN von IS NOT NULL THEN coalesce(von.name, '')
+                 WHEN an IS NOT NULL THEN coalesce(an.name, '')
+                 ELSE '' END""",
+            """trim(
+                CASE WHEN e.betrag IS NULL THEN '' ELSE toString(e.betrag) + '¥' END
+                + CASE WHEN coalesce(g.name, '') <> '' THEN ' · ' + g.name
+                       WHEN coalesce(e.detail, '') <> '' THEN ' · ' + e.detail
+                       ELSE '' END
+            )""",
             "coalesce(e.art, '')",
         ),
         "aufenthalt": (

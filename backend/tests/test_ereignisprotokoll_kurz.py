@@ -54,6 +54,8 @@ def test_zu_npc_nennt_wen_und_was():
 def test_droge_und_matrix_sind_lesbar():
     from app.ereignisprotokoll.repository import _protokoll_zeile
 
+    assert _protokoll_zeile("geld", "AUSGABE", "Mira", "500¥ · Comlink") == "Mira: Ausgabe (500¥ · Comlink)"
+    assert _protokoll_zeile("geld", "HANDEL", "Mira → Doc", "120¥ · Klinge") == "Mira → Doc: Handel (120¥ · Klinge)"
     assert _protokoll_zeile("gegenstand", "GEKAUFT", "Mira", "Comlink · bei Doc") == "Mira: gekauft (Comlink · bei Doc)"
     assert _protokoll_zeile("gegenstand", "WEITERGEGEBEN", "Mira → Vaelik", "Comlink") == (
         "Mira → Vaelik: weitergegeben (Comlink)"

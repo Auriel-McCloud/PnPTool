@@ -65,6 +65,7 @@ async def _ausfuehren_ruestung_reparatur(campaign_id: str, verhandlung: dict) ->
     )
     await hooks.geld(
         campaign_id, betrag=preis, art="AUSGABE", von_person_id=person_id,
+        detail=gegenstand.get("name") or "Reparatur",
     )
     return {"gegenstand": aktualisiert, "kapitalNeu": kapital - preis}
 

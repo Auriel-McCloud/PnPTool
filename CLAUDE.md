@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Geldzeile nennt, wofür (17.11.2026)
+
+Mark: im Geld-Filter stand nur der Betrag. Zeile `Mira: Handel (120¥ · Klinge)`. Alte Käufe holen den Gegenstand über `handelId`. Digitale Bestellung und Reparatur schreiben den Namen ab jetzt mit. Drohnen-Umbau und Credstick stehen nicht in diesem Filter.
+
 ## Gegenstand im Protokoll nennt Person und Stück (17.11.2026)
 
 Mark: wer welchen Gegenstand gekauft, weitergegeben, aufgenommen oder eingebaut hat. Zeile `Mira: gekauft (Comlink)`, bei Wechsel `Mira → Vaelik: weitergegeben (Comlink)`. Alte Einträge lesen die Namen von den Kanten. Neu mitgeschrieben: aufheben, zuweisen, hineinlegen, anlegen/ablegen, Implantat einsetzen/entfernen, Augment montieren/demontieren.

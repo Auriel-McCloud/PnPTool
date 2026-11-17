@@ -293,6 +293,10 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         )
         await hooks.geld(
             campaign_id, betrag=preis, art="AUSGABE", von_person_id=kaeufer_id,
+            detail=(
+                f"{gegenstand.get('name') or 'Bestellung'} bei {haendler['name']}"
+                if haendler.get("name") else (gegenstand.get("name") or "Bestellung")
+            ),
         )
         return KaufResponse(
             gegenstand=None, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben, bestellung=bestellung
