@@ -292,10 +292,12 @@ MASSE = {
 }
 
 
-def vampir(g, stufe):
+def vampir(g, stufe, zylinder=False, stock=False):
+    """zylinder/stock: Accessoires des Mannes (Mark 17.11.: setzt sich manchmal
+    einen Zylinder auf, eleganter Gehstock)."""
     m_ = MASSE[(g, stufe)]
-    L_ = Leinwand(72, 84)
-    cx, boden = 36, 82
+    L_ = Leinwand(72, 96)
+    cx, boden = 36, 94
     H, rk = m_["H"], m_["rk"]
     ky = boden - H + rk                 # Kopfmitte
     kinn = ky + rk * 0.92
@@ -479,6 +481,13 @@ def vampir(g, stufe):
             L_.lege([("linie", [(lerp(sx, ell_[0], 0.6), lerp(s_y, ell_[1], 0.6)), ell_, hand], arm_b)], STOFF["D"])
         if g == "M" and stufe == 6:  # Manschette
             L_.lege([("linie", [(lerp(ell_[0], hand[0], 0.8), lerp(ell_[1], hand[1], 0.8)), hand], arm_b * 0.9)], HEMD["M"])
+        if stock and s == 1:  # Gehstock: schwarz lackiert, Silberknauf, Spitze am Boden
+            fuss = (hand[0] + 6.5, boden - 0.5)
+            L_.lege([("linie", [(hand[0] + 0.2, hand[1] + 0.2), fuss], 1.6)], K)
+            L_.lege([("linie", [(hand[0] + 1.2, hand[1] + 4), (fuss[0] - 0.4, fuss[1] - 3)], 0.6)], (118, 106, 140))
+            L_.lege([("ell", fuss[0], fuss[1] - 0.6, 0.9, 1.0)], (210, 214, 226))
+            L_.lege([("ell", hand[0] + 0.1, hand[1] - 1.4, 2.2, 1.8)], (214, 218, 230), kante=(110, 114, 132))
+            L_.px(hand[0] - 0.6, hand[1] - 2.2, WEISS)
         L_.lege([("ell", hand[0], hand[1] + 1.2, arm_b * 0.5, arm_b * 0.62)], STOFF["D"] if (g == "W" and stufe == 6) else HAUT["M"], kante=HAUT["D"])
 
     # ── Hals, Kopf ──
@@ -496,7 +505,26 @@ def vampir(g, stufe):
 
     gesicht(L_, g, stufe, cx, ky, rk)
     haar_vorn(L_, g, stufe, cx, ky, rk, hz)
+    if zylinder:
+        zylinder_malen(L_, cx, ky, rk)
     return L_.fertig()
+
+
+def zylinder_malen(L_, cx, ky, rk):
+    """Zylinder leicht schräg auf dem Kopf, rotes Band, breite Krempe."""
+    krempe = ky - rk * 0.62
+    hoch = rk * 1.55
+    b_unten, b_oben = rk * 0.72, rk * 0.8
+    k = 0.8  # Schräglage nach rechts
+    korpus = [(cx - b_unten + k * 0.3, krempe), (cx + b_unten + k * 0.3, krempe),
+              (cx + b_oben + k, krempe - hoch), (cx - b_oben + k, krempe - hoch)]
+    mz = L_.lege([("poly", korpus)], STOFF["M"], kante=STOFF["D"])
+    L_.licht(mz, hell=STOFF["L"], dunkel=STOFF["D"])
+    L_.lege([("ell", cx + k, krempe - hoch, b_oben, 1.0)], STOFF["L"], kante=STOFF["D"])  # Deckel
+    L_.lege([("poly", [(cx - b_unten, krempe - 1.0), (cx + b_unten + 0.6, krempe - 1.0),
+                      (cx + b_unten + 0.7, krempe - 2.8), (cx - b_unten + 0.1, krempe - 2.8)])], ROT["M"])  # Band
+    L_.lege([("ell", cx + 0.3, krempe + 0.2, rk * 1.18, 1.3)], STOFF["D"], kante=K)  # Krempe
+    L_.px(cx - rk * 0.9, krempe - 0.2, STOFF["L"])
 
 
 def gesicht(L_, g, stufe, cx, ky, rk):
@@ -620,9 +648,10 @@ def main(ziel):
 
     zeilen = []
     for g, name in (("M", "Vampir M"), ("W", "Vampir W")):
-        zeilen.append((name, [fledermaus(s, g) for s in (3, 4, 5, 6)] + [vampir(g, s) for s in (3, 4, 5, 6)]))
+        extra = [vampir("M", 6, zylinder=True, stock=True)] if g == "M" else []
+        zeilen.append((name, [fledermaus(s, g) for s in (3, 4, 5, 6)] + [vampir(g, s) for s in (3, 4, 5, 6)] + extra))
     tafel("VAMPIRGESTALT – je Stufe: links die Fledermaus, rechts ihre Vampirgestalt", zeilen,
-          ["Fl. 3", "Fl. 4", "Fl. 5", "Fl. 6", "3 Kind", "4 Teen", "5 ~18", "6 erwachsen"],
+          ["Fl. 3", "Fl. 4", "Fl. 5", "Fl. 6", "3 Kind", "4 Teen", "5 ~18", "6 erwachsen", "6 Zylinder+Stock"],
           os.path.join(ziel, "vampir_entwurf.png"))
 
 

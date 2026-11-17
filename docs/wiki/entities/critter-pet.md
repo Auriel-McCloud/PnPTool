@@ -522,7 +522,8 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - **Vampirgestalt M:** 3 Kind (Stehkragen-Umhang, Fliege) · 4 Teen (Emo-Pony, offene Jacke, Shirt mit Fledermaus-Logo, kurzer Umhang) · 5 ~18 (offenes weißes Hemd, Weste, lose Strähne, Schmunzeln mit Fang) · 6 erwachsen (Frack, rote Weste, Halstuch mit Rubin, hoher Kragen, graue Schläfen).
 - **Vampirgestalt W:** 3 Kind (Zöpfe, Kleidchen mit Bubikragen) · 4 Teen (gerader Pony, knielanges Kleid, Ringelstrümpfe, Stiefel) · 5 ~18 (schulterfreies Kleid, Samtband, rote Lippen) · 6 erwachsen (bodenlanges Abendkleid mit Schlitz, Opernhandschuhe, Rose im Haar, hoher Kragen).
 - Größe: Vampir 38 → 70 px hoch (Drache Stufe 6: 60 px); am Handy ×1,5.
-- Offen: Aussehen abnehmen; Verwandlungseffekt (Rauch mit Mini-Fledermäusen); Animationen.
+- Mark: „Das find ich super!“ — Aussehen abgenommen. Nachschärfung: „Der Mann müsste sich vielleicht noch manchmal einen Zylinder aufsetzen und vielleicht einen eleganten Gehstock haben.“ Entworfen für den erwachsenen Vampir M (Spalte „6 Zylinder+Stock“): Zylinder leicht schräg mit rotem Band, schwarzer Gehstock mit Silberknauf. **Annahme Neko:** Zylinder nur ab und zu (holt ihn hervor, setzt ihn auf, lüftet ihn zum Gruß), Gehstock nur beim Erwachsenen; ob schon der 18-Jährige Hut/Stock bekommt, offen.
+- Offen: Verwandlungseffekt (Rauch mit Mini-Fledermäusen); Animationen.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
