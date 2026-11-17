@@ -505,6 +505,14 @@ Offene Achsen (Formular vom 17.11. ohne Antwort abgelaufen):
   Neko: durch die Entscheidung oben naheliegend — als Fledermaus fliegt/wandert sie, als Vampir läuft sie. Noch offen: wann/wie oft sie sich verwandelt (zufällig, beim Streicheln, nachts …).
 - **Stufenfolge:** wie oben · oder Stufe 3 noch Fledermaus mit Umhang, Vampir-Kind entfällt.
 
+### Marks Entscheidungen 17.11.2026 (zweite Antwort)
+
+- **Mann/Frau:** zwei eigene Pet-Arten — Fledermaus M und Fledermaus W. Die SL wählt beim Setzen am Critter.
+- **Verwandeln nach Zutraulichkeit:** bei hoher Zutraulichkeit verwandelt sie sich öfter in den Vampir und bleibt länger in der Gestalt. Lesart Neko: zählt die Zutraulichkeit des Spielers, auf dessen Tablet sie gerade ist (Wert je Spieler und Critter, unsichtbar).
+- **Start:** Ei wie beim Drachen. **Kopfüber hängen ist wichtig** (Mark) — Kernverhalten der Fledermaus (an Popup-Kanten, Menüpunkten, oben am Bildschirm).
+- **Bärbel will die Fledermaus fressen:** Bärbel spuckt laut Ideenliste manchmal Fledermäuse aus (noch nicht gebaut). Neu: trifft Bärbel die Fledermaus-Pets, will sie sie unbedingt fressen (jagt sie, schnappt mit dem Deckel, Tentakel greift). Ausgang (entkommt sie immer, verschluckt und wieder ausgespuckt?) offen.
+- Noch offen: Entwurfstafel (Fledermaus-Stufen + Vampirgestalten M/W je Stufe); was die Vampirgestalt tut; Futter und Spur.
+
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 
 - Wanderziel: nur Party-Mitglieder (Skizze 24.09.) oder alle eingeloggten
