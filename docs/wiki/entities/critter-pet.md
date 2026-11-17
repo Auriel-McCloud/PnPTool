@@ -1,7 +1,7 @@
 ---
 title: Critter-Pet (Tamagotchi)
 created: 2026-11-11
-updated: 2026-11-15
+updated: 2026-11-17
 type: entität
 tags: [ui, frontend, backend, datenmodell]
 sources: [../../ENTWICKLUNGSHISTORIE.md, gespräch 2026-11-11]
@@ -486,6 +486,23 @@ Mark: „Ich hätte gerne 2 Pets aus Dungeon Crawler Carl, und zwar einen Mongol
   - Nachschärfung 15.11. Tummy-Acher („fast perfekt“): Zahn wirkte aufgeklebt. Jetzt rechts der Mitte, wächst von der Unterkieferkante hoch, mit Schattenseite; Zunge nach links verschoben.
   - 15.11.: Mark „die gefallen mir sehr gut!!“ — beide Figuren abgenommen. Letzte Korrektur: bei Schritt 2 und 4 war der Zahn zu hoch; Zahnhöhe jetzt höchstens 60 % der Mundhöhe.
   - Nachschärfung 15.11. (Mark mit Buchcover): Tummy-Acher „mehr wie ein seltsamer Fleischklops … mit Zahn und Dellen“, süß ja, aber seltsam. Umgesetzt: klumpiger Körper aus Beulen, Dellen und Sprenkel, ungleich große Glubschaugen mit blauer Iris über dem Umriss, breites Grinsen mit einem Zahn, keine Arme mehr, Haarbüschel weg. Farben jetzt A Fleisch (wie Cover), B Rosa, C Lila (Pfirsich entfällt, war fast wie Fleisch).
+
+## Vampir-Fledermaus (Idee 17.11.2026, offen)
+
+Mark: „eine süße Fledermaus, die ab Stufe 3 auch zu einem Vampir werden kann, wir brauchen aber auf jeden Fall einen Vampir-Mann und eine Vampir-Frau; mit Stufe 4 wäre die dann ein junger Teenager, 5 dann schon so 18, ein wenig sexy oder elegant, und [6] wäre dann halt der ausgewachsene elegante Vampir mit viel Charme und Sexappeal.“
+
+Skizze (Neko, nichts entschieden):
+- **Stufen:** 1 Baby-Fledermaus · 2 Fledermaus · 3 Vampir-Kind (Chibi mit Umhang) · 4 Teenager · 5 junger Erwachsener (~18, elegant) · 6 ausgewachsener Vampir mit Charme. Wachstum wie die anderen Pets über die Critter-EP (12 Schritte, Zwischenformen).
+- **Rahmen Optik:** Stufe 3–4 niedlich/frech bzw. düster-melancholischer Teen, nichts Anzügliches; Eleganz, Charme und Sexappeal erst ab Stufe 5 (erwachsen).
+- **Verhaltensideen:** hängt kopfüber an Popup-Kanten und Menüpunkten und schläft so (bzw. im Sarg ab Stufe 3); verwandelt sich zum Wandern in eine Fledermaus mit Rauchwölkchen; Umhang-Schwung; Kusshand/Herzen beim Streicheln, hypnotisiert andere Pets; Futter als Blutkonserve oder Tomatensaft; Spur: Blutstropfen oder Fledermaus-Guano.
+- **Technik:** erste menschenähnliche Pixel-Figur — Laufzyklus und Proportionen (Kopf groß → klein) sind aufwändiger als bei den Tieren; Entwurfstafel zuerst.
+
+Offene Achsen (Formular vom 17.11. ohne Antwort abgelaufen):
+- **Weggabelung Stufe 3:** SL wählt (bleibt Fledermaus/wird Vampir) · immer Vampir · Zufall.
+- **Mann/Frau:** zwei eigene Pet-Arten (wie Drachenfarben) · SL wählt bei der Verwandlung · Zufall.
+- **Start:** schlafende Baby-Fledermaus kopfüber, 5–10× antippen weckt sie · Ei · gleich wach.
+- **Fortbewegung Vampir:** laufen + zum Wandern/Klettern Fledermaus-Verwandlung · schweben · nur laufen/springen.
+- **Stufenfolge:** wie oben · oder Stufe 3 noch Fledermaus mit Umhang, Vampir-Kind entfällt.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
 

@@ -3,6 +3,10 @@
 > Chronologischer Verlauf aller Wiki-Aktionen. Nur anhängen.
 > Format: `## [YYYY-MM-DD] aktion | betreff`
 
+## [2026-11-17] idee | Vampir-Fledermaus als Pet
+
+Süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), Teen, ~18, ausgewachsen. Achsen offen. Siehe [[entities/critter-pet]].
+
 ## [2026-11-17] gebaut | Protokoll zeigt KI-Inhalt
 
 Zeitleiste sagt nicht mehr nur „Beratung“: Frage und Antwort bzw. das Generierte stehen in der Zeile, Klick öffnet den Volltext. Neue Entwürfe loggen Name plus Text. Siehe [[entities/ereignisprotokoll]].
