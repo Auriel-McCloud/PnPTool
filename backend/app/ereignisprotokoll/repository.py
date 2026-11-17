@@ -869,6 +869,62 @@ def _zeitleiste_sortieren(rows: list[dict]) -> list[dict]:
     return sorted(rows, key=lambda r: r.get("zeitpunkt") or "", reverse=True)
 
 
+_ART_TITEL = {
+    "ZU_NPC_GEMACHT": "zu NPC gemacht",
+    "ZU_PC_GEMACHT": "zu PC gemacht",
+    "STEIGERUNG": "Steigerung",
+    "WILLENSKRAFT": "Willenskraft",
+    "ERFAHRUNG_VERGEBEN": "Erfahrung",
+    "RASSE_GEAENDERT": "Rasse geändert",
+    "SPEZIALISIERUNG": "Spezialisierung",
+    "SPEZIALISIERUNG_ENTFERNT": "Spezialisierung entfernt",
+    "GEFUNDEN": "gefunden",
+    "GEKAUFT": "gekauft",
+    "VERKAUFT": "verkauft",
+    "WEITERGEGEBEN": "weitergegeben",
+    "GESTOHLEN": "gestohlen",
+    "ZERSTOERT": "zerstört",
+    "REPARIERT": "repariert",
+    "ENTSORGT": "entsorgt",
+    "SONSTIGES": "sonstiges",
+    "HANDEL": "Handel",
+    "WEITERGABE": "Weitergabe",
+    "NPC_BELOHNUNG": "NPC-Belohnung",
+    "DIEBSTAHL": "Diebstahl",
+    "AUSGABE": "Ausgabe",
+    "TREFFER": "Treffer",
+    "KRITISCH": "kritisch",
+    "BEWUSSTLOS": "bewusstlos",
+    "TOD": "tot",
+    "GEFLOHEN": "geflohen",
+    "KAMPFENDE": "Kampfende",
+}
+
+
+def _art_titel(art: str) -> str:
+    if not art:
+        return ""
+    if art in _ART_TITEL:
+        return _ART_TITEL[art]
+    text = art.replace("_", " ")
+    return text[:1].upper() + text[1:].lower()
+
+
+def _protokoll_zeile(kategorie: str, art: str, wer: str, was: str) -> str:
+    """Wer, und was sich geändert hat — nicht nur die Art."""
+    wer = (wer or "").strip()
+    was = (was or "").strip(" ·")
+    if kategorie == "aufenthalt":
+        if wer and was:
+            return f"{wer} an {was}"
+        return wer or was or "Aufenthalt"
+    titel = _art_titel(art)
+    kopf = f"{wer}: {titel}" if wer and titel else (wer or titel)
+    if was:
+        return f"{kopf} ({was})" if kopf else was
+    return kopf
+
+
 async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[dict]:
     """"Was ist am Abend X passiert" — eine Abfrage über alle acht Kategorien.
 
@@ -879,17 +935,84 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
     driver = get_driver()
     sitzung_filter = "AND e.sitzungId = $sitzung_id" if sitzung_id else ""
     teile = []
-    kurz = {
-        "ki": "coalesce(e.anlass, '')",
-        "gegenstand": "coalesce(e.art, '')",
-        "geld": "coalesce(e.art, '') + CASE WHEN e.betrag IS NULL THEN '' ELSE ' ' + toString(e.betrag) + '¥' END",
-        "aufenthalt": "''",
-        "npcwissen": "coalesce(e.wieErfahren, '')",
-        "kampf": "coalesce(e.art, '')",
-        "verhandlung": "coalesce(e.art, '') + CASE WHEN coalesce(e.angenommen, false) THEN ' angenommen' ELSE ' abgelehnt' END",
-        "charakterentwicklung": "coalesce(e.art, '')",
+    # (OPTIONAL MATCH, wer, was, art). Namen kommen von den Kanten, die der
+    # Writer schon legt — die Zeile hat sie bisher nur nicht gezeigt.
+    zweig = {
+        "ki": ("", "''", "''", "coalesce(e.anlass, '')"),
+        "gegenstand": (
+            """OPTIONAL MATCH (e)-[:BETRIFFT]->(g:Gegenstand)
+            OPTIONAL MATCH (e)-[:ALTER_BESITZER]->(altp:Person)
+            OPTIONAL MATCH (e)-[:NEUER_BESITZER]->(neup:Person)""",
+            "coalesce(g.name, '')",
+            """CASE WHEN altp IS NULL AND neup IS NULL THEN ''
+                 ELSE coalesce(altp.name, '—') + ' → ' + coalesce(neup.name, '—') END""",
+            "coalesce(e.art, '')",
+        ),
+        "geld": (
+            """OPTIONAL MATCH (e)-[:VON]->(von:Person)
+            OPTIONAL MATCH (e)-[:AN]->(an:Person)""",
+            """CASE WHEN von IS NULL AND an IS NULL THEN ''
+                 ELSE coalesce(von.name, '—') + ' → ' + coalesce(an.name, '—') END""",
+            "CASE WHEN e.betrag IS NULL THEN '' ELSE toString(e.betrag) + '¥' END",
+            "coalesce(e.art, '')",
+        ),
+        "aufenthalt": (
+            """OPTIONAL MATCH (e)-[:PERSON]->(person:Person)
+            OPTIONAL MATCH (e)-[:PARTY]->(party:Party)
+            OPTIONAL MATCH (e)-[:ORT]->(ort)""",
+            "coalesce(person.name, party.name, '')",
+            "coalesce(ort.name, ort.title, '')",
+            "''",
+        ),
+        "npcwissen": (
+            """OPTIONAL MATCH (e)-[:NPC]->(npc:Person)
+            OPTIONAL MATCH (e)-[:AUSLOESER]->(ausl)""",
+            "coalesce(npc.name, '')",
+            """trim(coalesce(e.wieErfahren, '') + CASE WHEN ausl IS NULL THEN ''
+                 ELSE ' · ' + coalesce(ausl.name, ausl.title, '') END)""",
+            "''",
+        ),
+        "kampf": (
+            """OPTIONAL MATCH (e)-[:ZIEL]->(ziel:Person)
+            OPTIONAL MATCH (e)-[:ANGREIFER]->(ang:Person)""",
+            "coalesce(ziel.name, '')",
+            """trim(
+                CASE WHEN ang IS NULL THEN '' ELSE 'von ' + coalesce(ang.name, '') END
+                + CASE WHEN coalesce(e.hpArt, '') = '' AND coalesce(e.hpMenge, 0) = 0
+                            AND coalesce(e.kaestchenSchaden, 0) = 0 THEN ''
+                       ELSE ' · ' + coalesce(e.hpArt, '')
+                            + CASE WHEN coalesce(e.hpMenge, 0) = 0 THEN '' ELSE ' ' + toString(e.hpMenge) END
+                            + CASE WHEN coalesce(e.kaestchenSchaden, 0) = 0 THEN ''
+                                   ELSE ', ' + toString(e.kaestchenSchaden) + ' Kästchen' END
+                  END
+            )""",
+            "coalesce(e.art, '')",
+        ),
+        "verhandlung": (
+            "OPTIONAL MATCH (e)-[:EMPFAENGER]->(emp:Person)",
+            "coalesce(emp.name, '')",
+            """trim(
+                CASE WHEN coalesce(e.angenommen, false) THEN 'angenommen' ELSE 'abgelehnt' END
+                + CASE WHEN e.gesamtbetrag IS NULL OR e.gesamtbetrag = 0 THEN ''
+                       ELSE ' · ' + toString(e.gesamtbetrag) + '¥' END
+            )""",
+            "coalesce(e.art, '')",
+        ),
+        "charakterentwicklung": (
+            "OPTIONAL MATCH (e)-[:PERSON]->(person:Person)",
+            "coalesce(person.name, '')",
+            """trim(
+                coalesce(e.traitName, '')
+                + CASE WHEN coalesce(e.alt, '') = '' AND coalesce(e.neu, '') = '' THEN ''
+                       ELSE ' ' + coalesce(e.alt, '') + ' → ' + coalesce(e.neu, '') END
+                + CASE WHEN e.kostenOderMenge IS NULL OR e.kostenOderMenge = 0 THEN ''
+                       ELSE ' · ' + toString(e.kostenOderMenge) + ' EP' END
+            )""",
+            "coalesce(e.art, '')",
+        ),
     }
     for kategorie, label in LOG_LABELS.items():
+        mit, wer, was, art = zweig[kategorie]
         if kategorie == "ki":
             extra = (
                 "coalesce(e.anlass, '') AS anlass, "
@@ -901,9 +1024,10 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
         teile.append(f"""
         MATCH (e:{label} {{campaignId: $campaign_id}})
         WHERE NOT coalesce(e.geloescht, false) {sitzung_filter}
+        {mit}
         RETURN e.id AS id, '{kategorie}' AS kategorie, e.zeitpunkt AS zeitpunkt,
                e.ingameZeitpunkt AS ingameZeitpunkt, e.sitzungId AS sitzungId, e.slNotiz AS slNotiz,
-               {kurz[kategorie]} AS kurz, {extra}
+               {art} AS kurz, {wer} AS wer, {was} AS was, {extra}
         """)
     query = "\nUNION\n".join(teile)
     async with driver.session() as session:
@@ -911,12 +1035,17 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
         rows = [dict(r) async for r in result]
     rows = _zeitleiste_sortieren(rows)
     for row in rows:
-        if row.get("kategorie") != "ki":
-            continue
-        anlass = row.get("anlass") or ""
-        prompt = row.get("prompt") or ""
-        antwort = row.get("antwort") or ""
-        row["kurz"] = ki_kurz(anlass, prompt, antwort)
-        row["prompt"] = _kappen(prompt)
-        row["antwort"] = _kappen(antwort)
+        if row.get("kategorie") == "ki":
+            anlass = row.get("anlass") or ""
+            prompt = row.get("prompt") or ""
+            antwort = row.get("antwort") or ""
+            row["kurz"] = ki_kurz(anlass, prompt, antwort)
+            row["prompt"] = _kappen(prompt)
+            row["antwort"] = _kappen(antwort)
+        else:
+            row["kurz"] = _protokoll_zeile(
+                row.get("kategorie") or "", row.get("kurz") or "", row.get("wer") or "", row.get("was") or ""
+            )
+        row.pop("wer", None)
+        row.pop("was", None)
     return rows

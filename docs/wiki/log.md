@@ -19,6 +19,10 @@ Zeitleiste sagt nicht mehr nur „Beratung“: Frage und Antwort bzw. das Generi
 
 Zeitleiste sortiert nach Zeitpunkt, neueste oben. Das Cypher-ORDER-BY hinter UNION galt nur für die letzte Kategorie. Siehe [[entities/ereignisprotokoll]].
 
+## [2026-11-17] gebaut | Protokoll nennt wen
+
+„zu NPC gemacht“ zeigt jetzt den Namen und PC → NPC. Steigerung, Gegenstand und Treffer nennen ebenfalls, wen oder was es getroffen hat. Siehe [[entities/ereignisprotokoll]].
+
 ## [2026-11-16] gebaut | Æ/Automata mit CPU/Arbeitsspeicher, Gegenstände-Filter am Handy
 
 Geistesschärfe/Fassung heißen bei Æ und Automata CPU/Arbeitsspeicher (nur Anzeige). Gegenstände-Übersicht am Handy: Filter im Fenster, das Raster hat wieder Platz. Siehe [[concepts/rassen]], [[entities/ui-konzept-commlink]].

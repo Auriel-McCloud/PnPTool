@@ -491,6 +491,9 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
 - **17.11.2026, danach** — Zeitleiste neu oben, alt unten. `ORDER BY` hinter
   dem UNION sortierte nur die letzte Kategorie. Sortierung jetzt in Python
   nach `zeitpunkt` absteigend, die Liste sortiert nochmal.
+- **17.11.2026, danach** — Zeile nennt, wen es getroffen hat. „zu NPC gemacht“
+  wird zu „Name: zu NPC gemacht (PC → NPC)“. Ebenso Steigerung (Wert alt → neu),
+  Gegenstand (Besitzer), Treffer (Ziel). Die Namen lagen schon an den Kanten.
 
 ## Siehe auch
 

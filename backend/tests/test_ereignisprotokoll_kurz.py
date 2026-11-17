@@ -31,7 +31,7 @@ def test_leerer_text_bleibt_beim_titel():
 
 
 def test_zeitleiste_sortiert_neu_oben():
-    from app.ereignisprotokoll.repository import _zeitleiste_sortieren
+    from app.ereignisprotokoll.repository import _protokoll_zeile, _zeitleiste_sortieren
 
     rows = [
         {"zeitpunkt": "2026-10-03T14:00:00+00:00", "kurz": "alt"},
@@ -41,3 +41,19 @@ def test_zeitleiste_sortiert_neu_oben():
     ]
     sortiert = _zeitleiste_sortieren(rows)
     assert [r["kurz"] for r in sortiert] == ["neu", "mitte", "alt", "ohne"]
+
+
+def test_zu_npc_nennt_wen_und_was():
+    from app.ereignisprotokoll.repository import _protokoll_zeile
+
+    assert _protokoll_zeile("charakterentwicklung", "ZU_NPC_GEMACHT", "Babybell", "PC → NPC") == (
+        "Babybell: zu NPC gemacht (PC → NPC)"
+    )
+
+
+def test_steigerung_nennt_wert_und_kosten():
+    from app.ereignisprotokoll.repository import _protokoll_zeile
+
+    assert _protokoll_zeile(
+        "charakterentwicklung", "STEIGERUNG", "Mira", "Schusswaffen 3 → 4 · 8 EP"
+    ) == "Mira: Steigerung (Schusswaffen 3 → 4 · 8 EP)"

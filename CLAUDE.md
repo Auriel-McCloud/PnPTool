@@ -12,6 +12,10 @@ Mark: süße Fledermaus, ab Stufe 3 Vampir (Mann und Frau), „sie bleibt eine F
 - **Bärbel jagt sie** (`flug.ts`: `jagen`/`verdauen`, Registry `treffen.ts::beuteTiere`): Fledermaus flieht (Vampir puff zurück), Schnapp sitzt zu 35 %, dann 2,6 s im Buch, Rülpser (Seite fliegt raus), sie taumelt zerzaust heraus. Notausgang nach 8 s, falls Bärbel weg ist.
 - Getestet: pytest (`test_pets.py`, 33), echte Neo4j-Query (Wegwerf-Kampagne), Browser-Harness (Hängen, Freuen, Verwandeln, Hut, Kusshand, Laufen, Napf, Jagd, Verschlucken, Ausspucken, Decke).
 
+## Protokoll nennt, wen es getroffen hat (17.11.2026)
+
+Mark: „zu NPC gemacht“, aber nicht wer oder was sich geändert hat. Die Zeile holt den Namen von der Kante und zeigt die Änderung (PC → NPC, Fertigkeit alt → neu, Gegenstand und Besitzer, Treffer mit Ziel). Gilt für die alten Einträge, die Daten lagen schon da.
+
 ## Protokoll: neu oben, alt unten (17.11.2026)
 
 Mark: alte Einträge nach unten, neue nach oben. `ORDER BY` hinter dem UNION sortierte in Neo4j nur die letzte Kategorie. Die Zeitleiste wird jetzt in Python nach `zeitpunkt` absteigend sortiert, die Liste im Frontend nochmal.
