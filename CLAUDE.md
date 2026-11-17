@@ -2,6 +2,10 @@
 
 Diese Datei wird von Claude Code automatisch geladen. Sie ist die Quelle der Wahrheit für den Projektstand — bei jeder größeren Änderung aktualisieren. **Bleibt bewusst schlank:** Details wandern nach `docs/api/` bzw. ins Wiki, nicht hier hinein.
 
+## Gegenstand im Protokoll nennt Person und Stück (17.11.2026)
+
+Mark: wer welchen Gegenstand gekauft, weitergegeben, aufgenommen oder eingebaut hat. Zeile `Mira: gekauft (Comlink)`, bei Wechsel `Mira → Vaelik: weitergegeben (Comlink)`. Alte Einträge lesen die Namen von den Kanten. Neu mitgeschrieben: aufheben, zuweisen, hineinlegen, anlegen/ablegen, Implantat einsetzen/entfernen, Augment montieren/demontieren.
+
 ## Drohne und Fahrzeug im Kampflog (17.11.2026)
 
 Mark: Beitritt soll auch für Drohnen zählen. Zeile `Name: Drohne beigetreten (Scout)`, beim Fahrzeug `Fahrzeug beigetreten`. Schreibt der Rigger-Knopf, das SL-Hinzufügen und die automatische Aufnahme beim Kampfbeginn. Rausnehmen aus der Initiative schreibt noch nichts.

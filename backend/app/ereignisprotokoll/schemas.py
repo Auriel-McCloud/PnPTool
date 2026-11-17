@@ -81,6 +81,8 @@ class KiProtokollEintragResponse(KiProtokollEintragCreate):
 GegenstandsBewegungArt = Literal[
     "GEFUNDEN", "GEKAUFT", "VERKAUFT", "WEITERGEGEBEN",
     "GESTOHLEN", "ZERSTOERT", "REPARIERT", "ENTSORGT", "SONSTIGES",
+    "AUFGEHOBEN", "EINGEBAUT", "DEMONTIERT", "ENTFERNT", "ZUGEWIESEN",
+    "HINEINGELEGT", "ANGELEGT", "ABGELEGT",
 ]
 
 

@@ -320,6 +320,7 @@ async def kaufen(campaign_id: str, haendler_id: str, body: KaufRequest, viewer: 
         betrag=preis,
         von_person_id=haendler_id,
         alter_besitzer_id=alter_besitzer,
+        detail=f"bei {haendler['name']}" if haendler.get("name") else "",
     )
 
     return KaufResponse(gegenstand=gekauft, kapitalNeu=kapital_neu, tutorialAusgegeben=tutorial_ausgegeben)

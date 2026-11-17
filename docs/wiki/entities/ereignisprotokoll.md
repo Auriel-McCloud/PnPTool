@@ -502,6 +502,10 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
 - **17.11.2026, danach** — Drohne und Fahrzeug schreiben beim Beitritt
   `Name: Drohne beigetreten (Scout)`. Wege: Rigger-Knopf, SL-Hinzufügen,
   automatische Aufnahme beim Kampfbeginn. Rausnehmen bleibt ungeschrieben.
+- **17.11.2026, danach** — Gegenstandszeile nennt Person und Stück:
+  `Mira: gekauft (Comlink)`, bei Wechsel `Mira → Vaelik: weitergegeben (Comlink)`.
+  Neu geloggt: aufheben, zuweisen, hineinlegen, anlegen/ablegen, Implantat,
+  Augment montieren/demontieren. Alte Einträge nutzen die vorhandenen Kanten.
 
 ## Siehe auch
 

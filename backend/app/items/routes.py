@@ -482,6 +482,12 @@ async def hineinlegen(campaign_id: str, item_id: str, body: HineinlegenRequest):
     result = await repository.lege_in_behaelter(campaign_id, behaelter, gegenstand)
     if result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Hineinlegen fehlgeschlagen")
+    await hooks.gegenstand(
+        campaign_id,
+        art="HINEINGELEGT",
+        gegenstand_id=result["id"],
+        detail=f"in {behaelter.get('name') or 'Behälter'}",
+    )
     return result
 
 
@@ -508,6 +514,12 @@ async def zuweisen(campaign_id: str, item_id: str, body: ZuweisenRequest):
         result = await repository.assign_owner(campaign_id, item_id, body.zielPersonId, sichtbarkeit, sichtbar_fuer)
     if result is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Zuweisen fehlgeschlagen")
+    await hooks.gegenstand(
+        campaign_id,
+        art="ZUGEWIESEN",
+        gegenstand_id=result["id"],
+        neuer_besitzer_id=body.zielPersonId,
+    )
     return result
 
 
@@ -927,6 +939,19 @@ async def ablage_aendern(
     item = await repository.set_ablage(campaign_id, item_id, body.ablage, body.zielId)
     if item is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ablage konnte nicht gesetzt werden")
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    detail = ""
+    if body.ablage == "RUCKSACK":
+        detail = "Rucksack"
+    elif body.ablage == "GELAGERT":
+        detail = item.get("ablageZielName") or "gelagert"
+    await hooks.gegenstand(
+        campaign_id,
+        art="ANGELEGT" if body.ablage == "AUSGERUESTET" else "ABGELEGT",
+        gegenstand_id=item_id,
+        neuer_besitzer_id=besitzer,
+        detail=detail,
+    )
     return item
 
 
@@ -945,6 +970,7 @@ async def aufheben(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_
     """
     if viewer.role == "GM" or not viewer.person_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur ein Spieler mit eigenem Charakter kann aufheben")
+    alter = await repository.get_owner_person_id(campaign_id, item_id)
     try:
         item = await repository.aufheben(campaign_id, item_id, viewer.person_id)
     except repository.NichtAmBodenLiegend as fehler:
@@ -955,6 +981,13 @@ async def aufheben(campaign_id: str, item_id: str, viewer: Viewer = Depends(get_
         ) from fehler
     if item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Gegenstand nicht gefunden")
+    await hooks.gegenstand(
+        campaign_id,
+        art="AUFGEHOBEN",
+        gegenstand_id=item_id,
+        alter_besitzer_id=alter,
+        neuer_besitzer_id=viewer.person_id,
+    )
     return item
 
 
@@ -1192,6 +1225,13 @@ async def chirurgie_durchfuehren(
     ergebnis = await repository.setze_verbaut(campaign_id, item_id, body.einsetzen)
     if ergebnis is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Operation fehlgeschlagen")
+    besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+    await hooks.gegenstand(
+        campaign_id,
+        art="EINGEBAUT" if body.einsetzen else "ENTFERNT",
+        gegenstand_id=item_id,
+        neuer_besitzer_id=besitzer,
+    )
     return ergebnis
 
 
@@ -1916,6 +1956,7 @@ async def augment_montieren(campaign_id: str, item_id: str, body: AugmentMontier
 
     defekt_neu = body.probenErgebnis == "patzer"
     erfolgreich = body.probenErgebnis == "ja"
+    zielname = ziel.get("name") or ""
     if erfolgreich:
         aktualisiert = await repository.montiere_augment(campaign_id, item_id, body.zielId)
     elif defekt_neu:
@@ -1924,6 +1965,18 @@ async def augment_montieren(campaign_id: str, item_id: str, body: AugmentMontier
         aktualisiert = augment
     if aktualisiert is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Montage fehlgeschlagen")
+    if erfolgreich or defekt_neu:
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        extra = f"an {zielname}" if zielname else ""
+        if defekt_neu:
+            extra = f"Patzer{', ' + extra if extra else ''}"
+        await hooks.gegenstand(
+            campaign_id,
+            art="EINGEBAUT",
+            gegenstand_id=item_id,
+            neuer_besitzer_id=besitzer or (viewer.person_id if viewer.role != "GM" else None),
+            detail=extra,
+        )
     return AugmentAktionsErgebnis(erfolgreich=erfolgreich, defekt=bool(aktualisiert.get("defekt")), gegenstand=aktualisiert)
 
 
@@ -1944,6 +1997,7 @@ async def augment_demontieren(campaign_id: str, item_id: str, body: AugmentDemon
         raise HTTPException(status.HTTP_409_CONFLICT, "Dieses Augment ist nicht montiert.")
 
     erfolgreich = body.probenErgebnis == "ja"
+    zielname = augment.get("montiertAnName") or ""
     if erfolgreich:
         aktualisiert = await repository.demontiere_augment(campaign_id, item_id)
     elif body.probenErgebnis == "patzer":
@@ -1952,6 +2006,18 @@ async def augment_demontieren(campaign_id: str, item_id: str, body: AugmentDemon
         aktualisiert = augment
     if aktualisiert is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Demontage fehlgeschlagen")
+    if erfolgreich or body.probenErgebnis == "patzer":
+        besitzer = await repository.get_owner_person_id(campaign_id, item_id)
+        extra = f"von {zielname}" if zielname else ""
+        if body.probenErgebnis == "patzer":
+            extra = f"Patzer{', ' + extra if extra else ''}"
+        await hooks.gegenstand(
+            campaign_id,
+            art="DEMONTIERT",
+            gegenstand_id=item_id,
+            neuer_besitzer_id=besitzer or (viewer.person_id if viewer.role != "GM" else None),
+            detail=extra,
+        )
     return AugmentAktionsErgebnis(erfolgreich=erfolgreich, defekt=bool(aktualisiert.get("defekt")), gegenstand=aktualisiert)
 
 

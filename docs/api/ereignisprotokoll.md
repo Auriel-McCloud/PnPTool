@@ -33,7 +33,7 @@ Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
 | Pfad-Key | Neo4j-Label | Inhalt |
 |---|---|---|
 | `ki` | `KiProtokollEintrag` | KI-Ausgabe, auch wenn nicht übernommen |
-| `gegenstand` | `GegenstandsBewegung` | Besitzerkette (gefunden/gekauft/weitergegeben/…) |
+| `gegenstand` | `GegenstandsBewegung` | Besitzerkette; Zeile nennt Person und Stück |
 | `geld` | `GeldBewegung` | Kapital, optional `handelId` |
 | `aufenthalt` | `Aufenthalt` | Party/Person an Ort/Event, Historie |
 | `npcwissen` | `NpcWissenszuwachs` | was ein NPC erfahren hat |

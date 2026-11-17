@@ -318,6 +318,7 @@ async def log_gegenstandsbewegung(
     campaign_id: str, *, art: str, gegenstand_id: str,
     alter_besitzer_id: str | None = None, neuer_besitzer_id: str | None = None,
     ort_id: str | None = None, ort_kind: str | None = None, handel_id: str | None = None,
+    detail: str = "",
     sitzung_id: str | None = None, ingame_zeitpunkt: str = "", sl_notiz: str = "",
 ) -> dict:
     driver = get_driver()
@@ -327,7 +328,7 @@ async def log_gegenstandsbewegung(
         CREATE (e:GegenstandsBewegung {{
             id: $eid, campaignId: $campaign_id, zeitpunkt: $zeitpunkt,
             ingameZeitpunkt: $ingame_zeitpunkt, sitzungId: $sitzung_id, slNotiz: $sl_notiz,
-            geloescht: false, art: $art, handelId: $handel_id
+            geloescht: false, art: $art, handelId: $handel_id, detail: $detail
         }})
         CREATE (c)-[:HAT_EREIGNIS]->(e)
         WITH e
@@ -348,7 +349,7 @@ async def log_gegenstandsbewegung(
         await session.run(
             query, campaign_id=campaign_id, eid=eid, zeitpunkt=_jetzt(),
             ingame_zeitpunkt=ingame_zeitpunkt, sitzung_id=sitzung_id, sl_notiz=sl_notiz,
-            art=art, handel_id=handel_id, gegenstand_id=gegenstand_id,
+            art=art, handel_id=handel_id, detail=detail, gegenstand_id=gegenstand_id,
             alter_besitzer_id=alter_besitzer_id, neuer_besitzer_id=neuer_besitzer_id,
             ort_id=ort_id,
         )
@@ -919,6 +920,14 @@ _ART_TITEL = {
     "ZURUECKRUFEN": "zurückgerufen",
     "DROHNE_BEITRITT": "Drohne beigetreten",
     "FAHRZEUG_BEITRITT": "Fahrzeug beigetreten",
+    "AUFGEHOBEN": "aufgenommen",
+    "EINGEBAUT": "eingebaut",
+    "DEMONTIERT": "demontiert",
+    "ENTFERNT": "entfernt",
+    "ZUGEWIESEN": "zugewiesen",
+    "HINEINGELEGT": "hineingelegt",
+    "ANGELEGT": "angelegt",
+    "ABGELEGT": "abgelegt",
 }
 
 
@@ -964,9 +973,13 @@ async def zeitleiste(campaign_id: str, sitzung_id: str | None = None) -> list[di
             """OPTIONAL MATCH (e)-[:BETRIFFT]->(g:Gegenstand)
             OPTIONAL MATCH (e)-[:ALTER_BESITZER]->(altp:Person)
             OPTIONAL MATCH (e)-[:NEUER_BESITZER]->(neup:Person)""",
-            "coalesce(g.name, '')",
-            """CASE WHEN altp IS NULL AND neup IS NULL THEN ''
-                 ELSE coalesce(altp.name, '—') + ' → ' + coalesce(neup.name, '—') END""",
+            """CASE WHEN altp IS NOT NULL AND neup IS NOT NULL AND altp <> neup
+                 THEN coalesce(altp.name, '') + ' → ' + coalesce(neup.name, '')
+                 WHEN neup IS NOT NULL THEN coalesce(neup.name, '')
+                 WHEN altp IS NOT NULL THEN coalesce(altp.name, '')
+                 ELSE '' END""",
+            """trim(coalesce(g.name, '') + CASE WHEN coalesce(e.detail, '') = '' THEN ''
+                 ELSE ' · ' + e.detail END)""",
             "coalesce(e.art, '')",
         ),
         "geld": (

@@ -158,6 +158,7 @@ async def gegenstand(
     alter_besitzer_id: str | None = None,
     neuer_besitzer_id: str | None = None,
     handel_id: str | None = None,
+    detail: str = "",
 ) -> None:
     await repository.log_gegenstandsbewegung(
         campaign_id,
@@ -166,6 +167,7 @@ async def gegenstand(
         alter_besitzer_id=alter_besitzer_id,
         neuer_besitzer_id=neuer_besitzer_id,
         handel_id=handel_id,
+        detail=detail,
         sitzung_id=await _sitzung(campaign_id),
     )
 
@@ -199,6 +201,7 @@ async def handel(
     von_person_id: str | None = None,
     alter_besitzer_id: str | None = None,
     gegenstand_art: str = "GEKAUFT",
+    detail: str = "",
 ) -> None:
     """Kauf: eine GegenstandsBewegung + eine GeldBewegung, gemeinsame handelId."""
     hid = str(uuid.uuid4())
@@ -209,6 +212,7 @@ async def handel(
         alter_besitzer_id=alter_besitzer_id,
         neuer_besitzer_id=neuer_besitzer_id,
         handel_id=hid,
+        detail=detail,
     )
     await geld(
         campaign_id,
