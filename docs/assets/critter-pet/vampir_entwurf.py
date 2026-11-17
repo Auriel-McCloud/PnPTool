@@ -470,6 +470,9 @@ def vampir(g, stufe, zylinder=False, stock=False):
         sx, s_y = cx + s * (sch - arm_b * 0.5), sy + arm_b * 0.5
         hand = (cx + s * (hu + arm_b * 0.4 + (1.6 if g == "M" else 1.4)), hy + {3: 0.5, 4: 2.5, 5: 4, 6: 4.5}[stufe])
         ell_ = (lerp(sx, hand[0], 0.5) + s * 0.8, lerp(s_y, hand[1], 0.5))
+        if stock and s == 1:  # Mark 17.11.: Arm ausgestreckt, stützt sich elegant auf den Stock
+            hand = (cx + sch + 10.5, hy - 1.5)
+            ell_ = (lerp(sx, hand[0], 0.5) + 0.4, lerp(s_y, hand[1], 0.5) - 0.8)
         if g == "M":
             aermel = HEMD["M"] if stufe == 5 else STOFF["M"]
         else:
@@ -479,15 +482,17 @@ def vampir(g, stufe, zylinder=False, stock=False):
             L_.licht(ma, dunkel=HAUT["D"], dx=-s)
         if g == "W" and stufe == 6:  # Opernhandschuhe bis über den Ellbogen
             L_.lege([("linie", [(lerp(sx, ell_[0], 0.6), lerp(s_y, ell_[1], 0.6)), ell_, hand], arm_b)], STOFF["D"])
+        if aermel == STOFF["M"]:
+            L_.licht(ma, hell=STOFF["L"], dx=-s)
         if g == "M" and stufe == 6:  # Manschette
-            L_.lege([("linie", [(lerp(ell_[0], hand[0], 0.8), lerp(ell_[1], hand[1], 0.8)), hand], arm_b * 0.9)], HEMD["M"])
+            L_.lege([("linie", [(lerp(ell_[0], hand[0], 0.85), lerp(ell_[1], hand[1], 0.85)), hand], arm_b * 0.9)], HEMD["M"])
         if stock and s == 1:  # Gehstock: schwarz lackiert, Silberknauf, Spitze am Boden
-            fuss = (hand[0] + 6.5, boden - 0.5)
-            L_.lege([("linie", [(hand[0] + 0.2, hand[1] + 0.2), fuss], 1.6)], K)
-            L_.lege([("linie", [(hand[0] + 1.2, hand[1] + 4), (fuss[0] - 0.4, fuss[1] - 3)], 0.6)], (118, 106, 140))
+            fuss = (hand[0] + 1.2, boden - 0.5)
+            L_.lege([("linie", [(hand[0], hand[1] + 2), fuss], 1.6)], K)
+            L_.lege([("linie", [(hand[0] - 0.3, hand[1] + 5), (fuss[0] - 0.6, fuss[1] - 3)], 0.6)], (118, 106, 140))
             L_.lege([("ell", fuss[0], fuss[1] - 0.6, 0.9, 1.0)], (210, 214, 226))
-            L_.lege([("ell", hand[0] + 0.1, hand[1] - 1.4, 2.2, 1.8)], (214, 218, 230), kante=(110, 114, 132))
-            L_.px(hand[0] - 0.6, hand[1] - 2.2, WEISS)
+            L_.lege([("ell", hand[0] + 0.3, hand[1] + 3.0, 2.0, 1.6)], (214, 218, 230), kante=(110, 114, 132))  # Knauf unter der Hand
+            L_.px(hand[0] - 0.8, hand[1] + 2.6, WEISS)
         L_.lege([("ell", hand[0], hand[1] + 1.2, arm_b * 0.5, arm_b * 0.62)], STOFF["D"] if (g == "W" and stufe == 6) else HAUT["M"], kante=HAUT["D"])
 
     # ── Hals, Kopf ──
