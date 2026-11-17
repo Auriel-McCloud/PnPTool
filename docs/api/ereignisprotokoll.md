@@ -37,7 +37,7 @@ Commit `233c939` (27.09.2026). Auto-Hooks 29.09.2026.
 | `geld` | `GeldBewegung` | Kapital, optional `handelId` |
 | `aufenthalt` | `Aufenthalt` | Party/Person an Ort/Event, Historie |
 | `npcwissen` | `NpcWissenszuwachs` | was ein NPC erfahren hat |
-| `kampf` | `KampfLogEintrag` | Treffer/kritisch/bewusstlos/tot/Kampfende |
+| `kampf` | `KampfLogEintrag` | Treffer und Aktionen, inkl. Drohne/Fahrzeug-Beitritt |
 | `verhandlung` | `VerhandlungsAusgang` | angenommen **und** abgelehnt, Positions-Schnappschuss |
 | `charakterentwicklung` | `CharakterEntwicklung` | Steigerung, Willenskraft, EP, Rassenwechsel |
 

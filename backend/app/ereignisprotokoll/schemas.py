@@ -167,6 +167,7 @@ KampfLogArt = Literal[
     "KAMPF_START", "DROGE", "BESCHWOEREN", "HOT_AN", "HOT_AUS",
     "MATRIX_NAVIGATION", "MATRIX_ANGRIFF", "ELECTRONIC_WARFARE",
     "BOOSTER", "FREISETZEN", "ZURUECKRUFEN",
+    "DROHNE_BEITRITT", "FAHRZEUG_BEITRITT",
 ]
 RuestungsArtLog = Literal["schlag", "schwer", "aggraviert"]
 

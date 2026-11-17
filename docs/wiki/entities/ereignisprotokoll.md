@@ -499,6 +499,9 @@ nur zusätzlicher Betriebsaufwand ohne echten Nutzen.
   Filter Event + Session. **Annahme:** Event = die Events der Kampfkarte
   zum Zeitpunkt der Aktion. Bewusstlos/tot/geflohen bleiben ungeschrieben,
   es gibt keinen Knopf dafür.
+- **17.11.2026, danach** — Drohne und Fahrzeug schreiben beim Beitritt
+  `Name: Drohne beigetreten (Scout)`. Wege: Rigger-Knopf, SL-Hinzufügen,
+  automatische Aufnahme beim Kampfbeginn. Rausnehmen bleibt ungeschrieben.
 
 ## Siehe auch
 

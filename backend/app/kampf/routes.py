@@ -258,6 +258,8 @@ async def _party_und_ort_automatisch_aufnehmen(campaign_id: str, kampf: dict | N
                 "begleiterId": None,
             },
         )
+        if ist_drohne and kampf is not None:
+            await _drohne_beitritt_loggen(campaign_id, person, p["name"])
     return kampf
 
 
@@ -618,6 +620,7 @@ async def token_verstecken(
 
 @router.post("/teilnehmer", response_model=KampfResponse, dependencies=[Depends(require_campaign_gm)])
 async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
+    person = None
     if body.personId:
         person = await get_node("Person", PERSON_FIELDS, campaign_id, body.personId)
         if person and person.get("istNebenfigur"):
@@ -634,6 +637,8 @@ async def teilnehmer_hinzu(campaign_id: str, body: TeilnehmerInput):
     kampf = await repository.teilnehmer_hinzu(campaign_id, body.model_dump())
     if kampf is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kein laufender Kampf")
+    if person and (person.get("istDrohne") or person.get("istFahrzeug")):
+        await _drohne_beitritt_loggen(campaign_id, person, body.name)
     return await _kampf_antworten(kampf)
 
 
@@ -873,6 +878,22 @@ async def _mit_nummer_falls_doppelt(campaign_id: str, teilnehmer: list[dict], ba
     return f"{basis_name} {max(nummern, default=0) + 1}"
 
 
+async def _drohne_beitritt_loggen(
+    campaign_id: str, person: dict, name: str, akteur_id: str | None = None,
+) -> None:
+    """Drohne oder Fahrzeug kommt in die Initiative. Akteur ist der Rigger,
+    sonst leer. Fahrzeug nur, wenn es keine Drohne ist."""
+    if akteur_id is None and person.get("id"):
+        akteur_id = await drohne_rigger(campaign_id, person["id"])
+    fahrzeug = bool(person.get("istFahrzeug")) and not person.get("istDrohne")
+    await hooks.kampf_aktion(
+        campaign_id,
+        art="FAHRZEUG_BEITRITT" if fahrzeug else "DROHNE_BEITRITT",
+        akteur_id=akteur_id,
+        detail=name or person.get("name") or ("Fahrzeug" if fahrzeug else "Drohne"),
+    )
+
+
 @router.post("/drohnen/{node_id}/beitreten", response_model=KampfResponse)
 async def drohne_dem_kampf_beitreten(campaign_id: str, node_id: str, viewer: Viewer = Depends(get_viewer)):
     """Self-Service: der Rigger nimmt seine eigene aktive Drohne/sein eigenes
@@ -905,6 +926,7 @@ async def drohne_dem_kampf_beitreten(campaign_id: str, node_id: str, viewer: Vie
         campaign_id,
         {"name": name, "initiative": 0, "kampfart": "FERNKAMPF", "notiz": "", "personId": node_id, "begleiterId": None},
     )
+    await _drohne_beitritt_loggen(campaign_id, drohne, name, akteur_id=rigger_id or viewer.person_id)
     return await _kampf_antworten(kampf)
 
 

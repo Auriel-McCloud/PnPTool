@@ -55,6 +55,8 @@ def test_droge_und_matrix_sind_lesbar():
     from app.ereignisprotokoll.repository import _protokoll_zeile
 
     assert _protokoll_zeile("kampf", "DROGE", "Mira", "Kick") == "Mira: Droge genommen (Kick)"
+    assert _protokoll_zeile("kampf", "DROHNE_BEITRITT", "Mira", "Scout") == "Mira: Drohne beigetreten (Scout)"
+    assert _protokoll_zeile("kampf", "FAHRZEUG_BEITRITT", "Mira", "Bike") == "Mira: Fahrzeug beigetreten (Bike)"
     assert _protokoll_zeile("kampf", "MATRIX_ANGRIFF", "Wachmann", "von Mira · Brute Force") == (
         "Wachmann: Matrix-Angriff (von Mira · Brute Force)"
     )

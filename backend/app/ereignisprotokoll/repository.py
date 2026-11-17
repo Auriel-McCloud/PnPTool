@@ -917,6 +917,8 @@ _ART_TITEL = {
     "BOOSTER": "Booster gezündet",
     "FREISETZEN": "freigesetzt",
     "ZURUECKRUFEN": "zurückgerufen",
+    "DROHNE_BEITRITT": "Drohne beigetreten",
+    "FAHRZEUG_BEITRITT": "Fahrzeug beigetreten",
 }
 
 
