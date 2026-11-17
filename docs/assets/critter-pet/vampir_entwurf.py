@@ -493,15 +493,13 @@ def vampir(g, stufe, zylinder=False, stock=False):
             L_.lege([("ell", fuss[0], fuss[1] - 0.6, 0.9, 1.0)], (210, 214, 226))
             # Knauf als silberner Totenkopf (Mark 17.11.), die Hand liegt auf dem Schädeldach
             silber, schatten = (218, 222, 234), (132, 136, 156)
-            tx, ty = round(hand[0] + 0.2), round(hand[1] + 3.2)
-            L_.karte(tx - 3, ty - 2, [
-                ".SSSSS.",
-                "SSSSSSS",
-                "SkkSkkS",
-                "SkkSkkd",
-                ".SSkSd.",
-                "..S.S..",
-                "..dSd..",
+            tx, ty = round(hand[0] + 0.2), round(hand[1] + 2.2)  # Mark: eine Spur kleiner
+            L_.karte(tx - 2, ty, [
+                ".SSS.",
+                "SSSSS",
+                "SkSkd",
+                ".SkS.",
+                ".S.d.",
             ], {"S": silber, "k": (28, 22, 36), "d": schatten})
         L_.lege([("ell", hand[0], hand[1] + 1.2, arm_b * 0.5, arm_b * 0.62)], STOFF["D"] if (g == "W" and stufe == 6) else HAUT["M"], kante=HAUT["D"])
 

@@ -524,7 +524,7 @@ Mark hat das Bärbel-Duell abgenommen: meist entkommt die Fledermaus knapp, ab u
 - Größe: Vampir 38 → 70 px hoch (Drache Stufe 6: 60 px); am Handy ×1,5.
 - Mark: „Das find ich super!“ — Aussehen abgenommen. Nachschärfung: „Der Mann müsste sich vielleicht noch manchmal einen Zylinder aufsetzen und vielleicht einen eleganten Gehstock haben.“ Entworfen für den erwachsenen Vampir M (Spalte „6 Zylinder+Stock“): Zylinder leicht schräg mit rotem Band, schwarzer Gehstock mit Silberknauf. **Annahme Neko:** Zylinder nur ab und zu (holt ihn hervor, setzt ihn auf, lüftet ihn zum Gruß), Gehstock nur beim Erwachsenen; ob schon der 18-Jährige Hut/Stock bekommt, offen.
 - Nachschärfung Mark: Stock „schaut nicht elegant aus, wenn er so schräg wegsteht, er müsste den Arm ausstrecken und sich ein wenig draufstützen“. Jetzt: Arm seitlich ausgestreckt über dem roten Umhangfutter, Hand ruht auf dem Silberknauf, Stock steht fast senkrecht.
-- Nachschärfung Mark („Sehr gut“): Arm eine Spur kürzer, Knauf als silberner Totenkopf (Hand liegt auf dem Schädeldach).
+- Nachschärfung Mark („Sehr gut“): Arm eine Spur kürzer, Knauf als silberner Totenkopf (Hand liegt auf dem Schädeldach). Danach Totenkopf eine Spur kleiner (7 → 5 px breit).
 - Offen: Verwandlungseffekt (Rauch mit Mini-Fledermäusen); Animationen.
 
 ## Offene Achsen (Stand vor 11.11.-Antwort)
